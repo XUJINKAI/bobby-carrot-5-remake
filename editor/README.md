@@ -1,6 +1,6 @@
 # Bobby Editor
 
-Editor 是玩家功能，也是 Engine 的最短测试入口。它编辑的是 bc5r 自己的语义 `EditorLevel`；Play Test 每次都把一份 clone 转成 Runtime `LevelData` 交给同一个 Engine，Editor 不实现第二套机关/碰撞规则。
+Editor 是玩家功能，也是 Engine 的最短测试入口。它编辑的是 bc5r 自己的语义 `EditorLevel`；Play Test 每次都把一份 clone 转成语义 `LevelData` 交给同一个 Engine，Editor 不实现第二套机关/碰撞规则。
 
 ## 编辑交互
 
@@ -39,7 +39,7 @@ Object Layout 定义它占用的完整 footprint；Dragon 的鼠标落点定义�
 - `/play#map=...` 与 `/edit#map=...` 读取同一份分享 payload，因此从分享游玩页点击“编辑地图”可以直接继续编辑；
 - 旧版 `z.` / `j.` semantic JSON 分享链接仍可读取并规范化到当前 EditorLevel。
 
-当前 Engine Runtime 使用 occupancy object grid，所以 `toLevelData()` 会在 Play 前根据 Object Layout 临时展开 multi-cell Object；`fromLevelData()` 进入 Editor 时则折回 anchor。这个展开结果不是 Editor 持久化数据。
+`EditorLevel`、语义 `LevelData`、generated JSON 和 DAT share 都保持 anchor。只有 `Game.loadLevel()` 在创建 Runtime `World` 前根据 Object Layout 临时展开 occupancy；`fromLevelData()` 仍能兼容已经展开过的 LevelData 并折回 anchor。
 
 官方关卡进入 Editor 时只创建副本，原始 JAR / generated level 永远不会被 Editor 修改。
 
