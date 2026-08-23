@@ -1,40 +1,51 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ObjectId, Terrain } from '../dist/index.js';
-import { World } from '../dist/world/World.js';
+import {
+  ObjectId,
+  collapseObjectLayouts,
+  expandObjectLayouts,
+  isMultiCellObject,
+  isObjectLayoutPart,
+  objectLayoutFor,
+  objectVariantCycle,
+  transformObjectVariant
+} from '../dist/index.js';
 
-function level(objects) {
-  return {
-    schemaVersion: 2,
-    id: 'independent-object-test',
-    source: { edition: 'test', packFile: 'test.dat', levelIndex: 0 },
-    recordLength: 0,
-    recordSha256: 'test',
-    width: 6,
-    height: 3,
-    dynamicSlots: 0,
-    terrainEncoding: 'semantic-row-major',
-    terrain: Array.from({ length: 3 }, (_, y) => Array.from({ length: 6 }, (_, x) => x === 0 && y === 0 ? Terrain.START : Terrain.GROUND_C)),
-    objects
-  };
-}
-
-test('World does not synthesize Dragon body/tail from a head tile', () => {
-  const world = new World(level([{ type: ObjectId.DRAGON_HEAD_BASE, x: 2, y: 1 }]));
-  assert.equal(world.objectIdAt(2, 1), ObjectId.DRAGON_HEAD_BASE);
-  assert.equal(world.objectIdAt(3, 1), ObjectId.EMPTY);
-  assert.equal(world.objectIdAt(4, 1), ObjectId.EMPTY);
+test('Dragon/Sandman/Dream Machine/Beaver 使用 anchor + semantic footprint', () => {
+  assert.equal(isMultiCellObject(ObjectId.DRAGON_HEAD_BASE), true);
+  assert.equal(isObjectLayoutPart(ObjectId.DRAGON_BODY), true);
+  assert.deepEqual(objectLayoutFor(ObjectId.DRAGON_HEAD_BASE), {
+    cells: [
+      { dx: 0, dy: 0, type: ObjectId.DRAGON_HEAD_BASE },
+      { dx: 1, dy: 0, type: ObjectId.DRAGON_BODY },
+      { dx: 2, dy: 0, type: ObjectId.DRAGON_TAIL }
+    ],
+    cursor: { dx: 1, dy: 0 }
+  });
 });
 
-test('World preserves intentionally broken multi-tile layouts verbatim', () => {
-  const world = new World(level([
+test('anchor 可以展开为 Runtime occupancy，也能折回 authoring anchor', () => {
+  const anchors = [
     { type: ObjectId.DRAGON_HEAD_BASE, x: 1, y: 1 },
-    { type: ObjectId.DRAGON_TAIL, x: 3, y: 1 },
-    { type: ObjectId.BEAVER_BODY, x: 5, y: 2 }
-  ]));
+    { type: ObjectId.BEAVER_BASE, x: 6, y: 1 }
+  ];
+  const expanded = expandObjectLayouts(anchors, 10, 6);
+  assert.deepEqual(expanded.slice(0, 3), [
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 1, y: 1 },
+    { type: ObjectId.DRAGON_BODY, x: 2, y: 1 },
+    { type: ObjectId.DRAGON_TAIL, x: 3, y: 1 }
+  ]);
+  assert.deepEqual(collapseObjectLayouts(expanded), anchors);
+});
 
-  assert.equal(world.objectIdAt(1, 1), ObjectId.DRAGON_HEAD_BASE);
-  assert.equal(world.objectIdAt(2, 1), ObjectId.EMPTY);
-  assert.equal(world.objectIdAt(3, 1), ObjectId.DRAGON_TAIL);
-  assert.equal(world.objectIdAt(5, 2), ObjectId.BEAVER_BODY);
+test('Editor authoring variants 支持 Q/E / wheel 双向循环', () => {
+  assert.deepEqual(objectVariantCycle(ObjectId.WINDMILL_UP), [
+    ObjectId.WINDMILL_UP,
+    ObjectId.WINDMILL_RIGHT,
+    ObjectId.WINDMILL_DOWN,
+    ObjectId.WINDMILL_LEFT
+  ]);
+  assert.equal(transformObjectVariant(ObjectId.WINDMILL_UP, 1), ObjectId.WINDMILL_RIGHT);
+  assert.equal(transformObjectVariant(ObjectId.WINDMILL_UP, -1), ObjectId.WINDMILL_LEFT);
+  assert.equal(transformObjectVariant(ObjectId.CARROT, 1), undefined);
 });
