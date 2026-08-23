@@ -262,8 +262,7 @@ async function renderGame(levelIdRaw: string): Promise<void> {
         <button data-move="up" aria-label="向上">↑</button><button data-move="left" aria-label="向左">←</button>
         <button data-move="down" aria-label="向下">↓</button><button data-move="right" aria-label="向右">→</button>
       </div>
-      <aside id="debug-panel" class="debug-panel" aria-live="polite"></aside>
-      <div id="status" class="game-status" hidden></div>
+      <aside id="debug-panel" class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside>
       <div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true" aria-live="polite"></section></div>
     </main>
     <dialog id="level-info-dialog" class="game-dialog">
@@ -297,8 +296,9 @@ async function renderGame(levelIdRaw: string): Promise<void> {
   </div>`;
 
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
-  const status = document.querySelector<HTMLDivElement>('#status');
   const debugPanel = document.querySelector<HTMLElement>('#debug-panel');
+  const debugEngine = debugPanel?.querySelector<HTMLElement>('.debug-engine');
+  const debugInspector = debugPanel?.querySelector<HTMLElement>('.debug-inspector');
   const gameResult = document.querySelector<HTMLDivElement>('#game-result');
   const resultCard = gameResult?.querySelector<HTMLElement>('.result-card');
   const hudTime = document.querySelector<HTMLElement>('#hud-time');
@@ -306,7 +306,7 @@ async function renderGame(levelIdRaw: string): Promise<void> {
   const hudObjectiveIcon = document.querySelector<HTMLElement>('#hud-objective-icon');
   const hudMoves = document.querySelector<HTMLElement>('#hud-moves');
   const hudItems = document.querySelector<HTMLElement>('#hud-items');
-  if (!canvas || !status || !debugPanel || !gameResult || !resultCard || !hudTime || !hudObjectives || !hudObjectiveIcon || !hudMoves || !hudItems) throw new Error('Game UI failed to mount');
+  if (!canvas || !debugPanel || !debugEngine || !debugInspector || !gameResult || !resultCard || !hudTime || !hudObjectives || !hudObjectiveIcon || !hudMoves || !hudItems) throw new Error('Game UI failed to mount');
 
   const level = await fetchJson<LevelData>(siteUrl(`assets/${meta.path}`));
   const profile = loadProfile();
@@ -394,10 +394,8 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     debugPanel.classList.toggle('visible', activeGame.debug);
     const move = activeGame.lastMove;
     const engineMessage = move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason} [${move.passage.confidence}]` : 'Engine: no passage yet';
-    debugPanel.textContent = activeGame.debug ? `${debugInspection ?? 'DEBUG\n点击地图格查看详情'}\n\nENGINE MESSAGE\n${engineMessage}` : '';
-    status.classList.toggle('debug', activeGame.debug);
-    status.hidden = !activeGame.debug;
-    status.textContent = activeGame.debug ? engineMessage : '';
+    debugEngine.textContent = activeGame.debug ? `ENGINE MESSAGE\n${engineMessage}` : '';
+    debugInspector.textContent = activeGame.debug ? (debugInspection ?? 'DEBUG\n点击地图格查看详情') : '';
     renderResult();
   };
   activeGame.on('change', update);
