@@ -12,7 +12,7 @@ function hasObject(level, type, x, y) {
   return level.objects.some((object) => object.type === type && object.x === x && object.y === y);
 }
 
-test('original decoded levels store multi-tile object parts explicitly', () => {
+test('generated original levels materialize implicit multi-tile parts before Engine runtime', () => {
   const catalog = JSON.parse(fs.readFileSync('assets/generated/catalog.json', 'utf8'));
   const stats = {
     dragon: { anchor: 0, partA: 0, partB: 0, complete: 0 },
@@ -43,9 +43,9 @@ test('original decoded levels store multi-tile object parts explicitly', () => {
     }
   }
 
-  console.log('source multi-tile layout stats', JSON.stringify(stats));
-  assert.ok(stats.dragon.partA > 0 && stats.dragon.partB > 0, 'original levels must contain explicit dragon body/tail records');
-  assert.ok(stats.sandman.part > 0, 'original levels must contain explicit sandman-body records');
-  assert.ok(stats.dreamMachine.part > 0, 'original levels must contain explicit dream-machine-body records');
-  assert.ok(stats.beaver.part > 0, 'original levels must contain explicit beaver-body records');
+  assert.ok(stats.dragon.anchor > 0 && stats.sandman.anchor > 0 && stats.dreamMachine.anchor > 0 && stats.beaver.anchor > 0);
+  assert.equal(stats.dragon.complete, stats.dragon.anchor, 'every original Dragon anchor should be materialized as head/body/tail');
+  assert.equal(stats.sandman.complete, stats.sandman.anchor, 'every original Sandman anchor should get its body tile');
+  assert.equal(stats.dreamMachine.complete, stats.dreamMachine.anchor, 'every original Dream Machine anchor should get its body tile');
+  assert.equal(stats.beaver.complete, stats.beaver.anchor, 'every original Beaver anchor should get its body tile');
 });
