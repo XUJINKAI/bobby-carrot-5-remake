@@ -140,7 +140,9 @@ export class InputController {
     const pointer = this.pointers.get(event.pointerId);
     const wasPinching = this.pointers.size >= 2;
     this.pointers.delete(event.pointerId);
-    if (pointer?.moved || wasPinching) this.suppressNextClick = true;
+    // 只有会产生后续 click 的左键/触摸拖动需要抑制 click；中键结束只会触发 auxclick。
+    const mayProduceClick = event.pointerType !== 'mouse' || event.button === 0;
+    if (mayProduceClick && (pointer?.moved || wasPinching)) this.suppressNextClick = true;
     if (this.pointers.size < 2) this.pinchStartDistance = 0;
     for (const remaining of this.pointers.values()) {
       remaining.startX = remaining.x;
