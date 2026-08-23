@@ -17,7 +17,10 @@ export type TerrainType =
   | 'color-yellow-switch-raised' | 'color-yellow-switch-pressed' | 'color-pink-switch-raised' | 'color-pink-switch-pressed'
   | 'color-yellow-block-raised' | 'color-yellow-block-lowered' | 'color-pink-block-raised' | 'color-pink-block-lowered'
   | 'high-grass' | 'high-grass-objective'
-  | `terrain-${string}`;
+  /** DAT 中暂未逆出更具体含义，但字节码确认属于普通可步行地形的美术变体。 */
+  | `walkable-variant-${string}`
+  /** DAT 中暂未逆出含义且不应由普通碰撞规则自动放行的背景/边界变体。 */
+  | `background-variant-${string}`;
 
 export type ObjectType =
   | 'consumed-carrot' | 'carrot' | 'egg-nest-empty' | 'egg-nest-filled' | 'lock'
@@ -30,7 +33,7 @@ export type ObjectType =
   | 'cloud-grid-red' | 'cloud-grid-purple' | 'cloud-grid-green' | 'kite' | 'whirlwind' | 'landing'
   | 'golden-carrot' | 'beaver-body' | 'bonus-coin'
   | 'fence-1' | 'fence-2' | 'fence-3' | 'fence-4' | 'fence-5' | 'fence-6' | 'empty'
-  | `object-${string}`;
+  | `object-variant-${string}`;
 
 export interface LevelSource {
   edition: string;
@@ -57,6 +60,12 @@ export interface LevelObject {
   y: number;
 }
 
+/**
+ * bc5r 自己的关卡合同。
+ *
+ * 这里没有 DAT byte、signed byte、hexId 或其它原版序列化细节；
+ * 原版格式只允许在 tools/src/dat-codec.mjs 的边界内出现。
+ */
 export interface LevelData {
   schemaVersion: 2;
   id?: string;
@@ -69,6 +78,7 @@ export interface LevelData {
   difficulty?: DifficultyInfo;
   source: LevelSource;
   sources?: LevelSource[];
+  /** 档案字段，用于验证官方 source record 未被错误改写。 */
   recordLength: number;
   recordSha256: string;
   width: number;
