@@ -1,0 +1,53 @@
+Applied remaining semantic registry migration.
+
+> bobby-web@0.1.0 verify
+> node tools/scripts/verify.mjs
+
+解包 base -> assets/extracted/base
+解包 up01 -> assets/extracted/up01
+解包 up02 -> assets/extracted/up02
+解包 up03 -> assets/extracted/up03
+解包 up04 -> assets/extracted/up04
+解包 up05 -> assets/extracted/up05
+解包 up06 -> assets/extracted/up06
+解包 up07 -> assets/extracted/up07
+解包 up08 -> assets/extracted/up08
+解包 up09 -> assets/extracted/up09
+解码 base: 53 个 source level
+解码 up01: 53 个 source level
+解码 up02: 53 个 source level
+解码 up03: 53 个 source level
+解码 up04: 53 个 source level
+解码 up05: 53 个 source level
+解码 up06: 53 个 source level
+解码 up07: 53 个 source level
+解码 up08: 53 个 source level
+解码 up09: 53 个 source level
+共解码 530 条 source level 记录。
+构建主库：485 个唯一关卡 / 530 条 source 记录；历史难度 288，估算 192。
+engine/src/world/World.ts(608,12): error TS2304: Cannot find name 'CLOUD_OBJECT_IDS'.
+engine/src/world/World.ts(665,21): error TS2552: Cannot find name 'CLOUD_GRID_FOR_OBJECT'. Did you mean 'cloudGridForObject'?
+file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/util.mjs:15
+  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit code ${result.status}`);
+                                 ^
+
+Error: /home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/node_modules/.bin/tsc -p engine/tsconfig.json failed with exit code 2
+    at run (file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/util.mjs:15:34)
+    at file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/build.mjs:16:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
+file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/util.mjs:15
+  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit code ${result.status}`);
+                                 ^
+
+Error: /opt/hostedtoolcache/node/20.20.2/x64/bin/node tools/scripts/build.mjs failed with exit code 1
+    at run (file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/util.mjs:15:34)
+    at file:///home/runner/work/bobby-carrot-5-remake/bobby-carrot-5-remake/tools/scripts/verify.mjs:5:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
