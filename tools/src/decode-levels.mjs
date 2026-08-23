@@ -9,9 +9,43 @@ const root = path.resolve(here, '../..');
 const generated = path.join(root, 'assets/generated');
 const sourceRoot = path.join(generated, 'sources');
 
+const IMPLICIT_OBJECT_PARTS = new Map([
+  ['dragon-head', [
+    { dx: 1, dy: 0, type: 'dragon-body' },
+    { dx: 2, dy: 0, type: 'dragon-tail' }
+  ]],
+  ['sandman', [{ dx: 0, dy: 1, type: 'sandman-body' }]],
+  ['dream-machine', [{ dx: 0, dy: 1, type: 'dream-machine-body' }]],
+  ['beaver-base', [{ dx: 0, dy: 1, type: 'beaver-body' }]]
+]);
+
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/**
+ * 原版 DAT 只保存 Dragon/Sandman/Dream Machine/Beaver 的主 Object；原程序在载入时隐式补出其余格。
+ * bc5r 在原版导入边界就把这些隐式格物化成普通语义 Object。之后 Engine、Editor、分享地图都只处理
+ * LevelData 中真实存在的独立 Tile，不再维护 composite/anchor 关系。
+ */
+export function materializeOriginalObjectParts(level) {
+  const objects = level.objects.map((object) => ({ ...object }));
+  const occupied = new Set(objects.map((object) => `${object.x},${object.y}`));
+  for (const anchor of level.objects) {
+    const parts = IMPLICIT_OBJECT_PARTS.get(anchor.type);
+    if (!parts) continue;
+    for (const part of parts) {
+      const x = anchor.x + part.dx;
+      const y = anchor.y + part.dy;
+      if (x < 0 || y < 0 || x >= level.width || y >= level.height) continue;
+      const key = `${x},${y}`;
+      if (occupied.has(key)) continue;
+      occupied.add(key);
+      objects.push({ type: part.type, x, y });
+    }
+  }
+  return { ...level, objects };
 }
 
 fs.rmSync(sourceRoot, { recursive: true, force: true });
@@ -45,7 +79,8 @@ for (const release of RELEASES) {
     };
     packs.push(packInfo);
 
-    for (const level of parsed.levels) {
+    for (const rawLevel of parsed.levels) {
+      const level = materializeOriginalObjectParts(rawLevel);
       const name = `${packFile}-${String(level.source.levelIndex).padStart(2, '0')}.json`;
       writeJson(path.join(releaseOut, 'levels', name), {
         ...level,
