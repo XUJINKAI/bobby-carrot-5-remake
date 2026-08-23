@@ -9,7 +9,11 @@ Editor 是玩家功能，也是 Engine 的最短测试入口。它编辑的是 b
 - 左键 / 左键拖动：放置当前 Terrain 或 Object；
 - 右键 / 右键拖动：删除鼠标指向的完整 Object，Terrain 不存在“擦空”状态；
 - `Del` 等同右键，作用于鼠标当前指向的 Object；
-- 鼠标滚轮、`Q` / `E` 可以循环切换支持 authoring variant 的 Object，例如 Windmill 方向、Fence 形态、Cloud/Cloud Grid 颜色；
+- `Q` / `E` 循环切换支持 authoring variant 的 Object，例如 Windmill 方向、Fence 形态、Cloud / Cloud Grid 颜色；
+- 鼠标滚轮：放大 / 缩小地图，并尽量保持鼠标当前指向的位置不漂移；
+- 按住鼠标中键拖动：平移 Editor 地图视图；
+- Play / Play Test 中左键拖动仍可平移，同时也支持中键拖动；滚轮统一用于缩放；
+- Play 中如果手动拖开 Camera，Bobby 下一次真正移动时会平滑取消 pan offset 并重新居中跟随，不会瞬移；
 - 鼠标悬停时半透明预览当前待放素材；所有即将被删除/替换的完整 Object 会泛蓝高亮；
 - `Ctrl/Cmd + Z` 撤销，`Ctrl/Cmd + Y` 或 `Ctrl/Cmd + Shift + Z` 重做；
 - 地图尺寸、校验信息、当前素材 Definition 与当前格 Terrain/Object inspect 都在右侧 Inspector；
