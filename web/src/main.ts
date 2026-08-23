@@ -27,6 +27,7 @@ const audio = new TinySynthAudioBackend();
 let activeGame: Game | null = null;
 let activeInput: InputController | null = null;
 let activeEditor: BobbyEditor | null = null;
+let activeUiTimer: number | null = null;
 let selectedReleaseId = preferredRelease();
 
 interface PlayerProfile {
@@ -170,46 +171,31 @@ function renderLevels(): void {
 
   app.innerHTML = shell(`
     <section class="level-browser-head">
-      <div class="section-title">
-        <div><h1>选择关卡</h1><p>按原版发行包 → 章节 → 关卡浏览。内部 001～485 编号不再作为玩家界面。</p></div>
-      </div>
+      <div class="section-title"><div><h1>选择关卡</h1><p>按原版发行包 → 章节 → 关卡浏览。内部 001～485 编号不再作为玩家界面。</p></div></div>
       <div class="level-browser-actions">
         <a class="primary-btn" href="/play/${last.publicId}" data-nav>继续 · ${displayLevelId(last)}</a>
         <button id="random-level" class="ghost-btn">随机一个关卡</button>
       </div>
     </section>
-
     <div class="release-tabs" role="tablist" aria-label="Bobby Carrot 5 发行包">
       ${catalog.releases.map((item) => `<button class="release-tab ${item.id === release.id ? 'active' : ''}" data-release="${item.id}">
         <strong>${item.id === 'base' ? 'BASE' : item.id.toUpperCase()}</strong>
-        <span>${escapeHtml(item.中文名 || item.label)}</span>
-        <small>${item.levelCount} 关</small>
+        <span>${escapeHtml(item.中文名 || item.label)}</span><small>${item.levelCount} 关</small>
       </button>`).join('')}
     </div>
-
     <section class="release-summary">
       <div><span class="eyebrow">${release.id === 'base' ? 'BASE / FOREVER' : release.id.toUpperCase()}</span><h2>${escapeHtml(release.中文名 || release.label)}</h2></div>
       <div class="muted">${chapters.length} 个章节 · ${release.levelCount} 关</div>
     </section>
-
-    <div class="chapter-list">
-      ${chapters.map((chapter) => renderChapter(chapter.id, completed)).join('')}
-    </div>
-
+    <div class="chapter-list">${chapters.map((chapter) => renderChapter(chapter.id, completed)).join('')}</div>
     <div class="difficulty-legend muted">
-      <span><i class="difficulty-dot easy"></i>简单</span>
-      <span><i class="difficulty-dot medium"></i>中等</span>
-      <span><i class="difficulty-dot hard"></i>困难</span>
+      <span><i class="difficulty-dot easy"></i>简单</span><span><i class="difficulty-dot medium"></i>中等</span><span><i class="difficulty-dot hard"></i>困难</span>
       <span>带“≈”的是根据 A～F 历史难度合集估算；无“≈”为历史难度资料直接映射。</span>
     </div>
   `);
-
   bindNavigation();
   document.querySelectorAll<HTMLButtonElement>('button[data-release]').forEach((button) => {
-    button.addEventListener('click', () => {
-      selectedReleaseId = button.dataset.release ?? 'base';
-      renderLevels();
-    });
+    button.addEventListener('click', () => { selectedReleaseId = button.dataset.release ?? 'base'; renderLevels(); });
   });
   document.querySelector<HTMLButtonElement>('#random-level')?.addEventListener('click', () => navigate(`/play/${randomLevel().publicId}`));
 }
@@ -221,20 +207,14 @@ function renderChapter(chapterId: string, completed: Set<string>): string {
     .map((publicId) => catalog.levels.find((level) => level.publicId === publicId))
     .filter((level): level is CatalogLevel => Boolean(level));
   return `<section class="chapter-card">
-    <header class="chapter-head">
-      <div>
-        <div class="chapter-number">${chapter.chapter === 0 ? 'TUTORIAL' : `CHAPTER ${chapter.chapter}`}</div>
-        <h3>${escapeHtml(chapter.title)}</h3>
-      </div>
-      <span class="muted">${levels.length} 关</span>
-    </header>
+    <header class="chapter-head"><div><div class="chapter-number">${chapter.chapter === 0 ? 'TUTORIAL' : `CHAPTER ${chapter.chapter}`}</div><h3>${escapeHtml(chapter.title)}</h3></div><span class="muted">${levels.length} 关</span></header>
     <div class="chapter-levels">
       ${levels.map((level) => {
         const done = completed.has(level.canonicalId);
         return `<a class="chapter-level ${done ? 'completed' : ''}" href="/play/${level.publicId}" data-nav title="${escapeHtml(level.publicId)} · ${escapeHtml(level.difficulty.label)}">
           <span class="chapter-level-no">${level.chapterLevel}</span>
           <span class="difficulty-badge ${level.difficulty.level} ${level.difficulty.source}">${escapeHtml(level.difficulty.label)}</span>
-          ${done ? '<span class="done-mark">✓</span>' : ''}
+          ${done ? '<span class="done-mark" title="已通关">✓</span>' : ''}
         </a>`;
       }).join('')}
     </div>
@@ -251,45 +231,76 @@ async function renderGame(levelIdRaw: string): Promise<void> {
   selectedReleaseId = meta.release;
 
   app.innerHTML = `<div class="game-page">
-    <header class="game-toolbar">
-      <button id="back" class="ghost-btn">← 选关</button>
-      <span class="level-label">${displayLevelId(meta)}</span>
-      <span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span>
-      <span class="muted hide-mobile">${escapeHtml(meta.chapterTitle)} · ${meta.width}×${meta.height}</span>
-      <div class="spacer"></div>
-      <button id="edit-level" class="icon-btn">Edit</button>
-      <button id="music" class="icon-btn">${audio.isEnabled() ? '♫' : '♪̸'}</button>
-      <button id="undo" class="icon-btn">Undo</button>
-      <button id="restart" class="icon-btn">Restart</button>
-      <button id="zoom-out" class="icon-btn">−</button>
-      <span id="zoom" class="muted">100%</span>
-      <button id="zoom-in" class="icon-btn">+</button>
-      <button id="debug" class="icon-btn">Debug</button>
+    <header class="game-toolbar game-toolbar-v2">
+      <div class="game-toolbar-left">
+        <button id="back" class="icon-btn" title="选择关卡" aria-label="选择关卡">←</button>
+        <span class="level-label">${displayLevelId(meta)}</span>
+        <span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span>
+        <button id="level-info" class="icon-btn" title="关卡信息" aria-label="关卡信息">ⓘ</button>
+      </div>
+      <div class="game-hud" aria-label="游戏状态">
+        <span class="hud-chip" title="本次游玩时间">⏱ <strong id="hud-time">00:00</strong></span>
+        <span class="hud-chip" title="剩余主要目标">🥕 <strong id="hud-objectives">—</strong></span>
+        <span id="hud-items" class="hud-items" aria-label="已取得物品"></span>
+      </div>
+      <div class="game-toolbar-right">
+        <span class="hud-chip step-chip" title="移动步数">👣 <strong id="hud-moves">0</strong></span>
+        <button id="undo" class="icon-btn" title="撤销上一步" aria-label="撤销上一步">↶</button>
+        <button id="restart" class="icon-btn" title="重新开始本关" aria-label="重新开始本关">↻</button>
+        <button id="music" class="icon-btn" title="音乐开关" aria-label="音乐开关">${audio.isEnabled() ? '♫' : '♪̸'}</button>
+        <button id="edit-level" class="icon-btn" title="在编辑器中打开" aria-label="编辑器">✎</button>
+        <button id="game-settings" class="icon-btn" title="设置" aria-label="设置">⚙</button>
+        <button id="game-help" class="icon-btn" title="游玩帮助" aria-label="游玩帮助">?</button>
+      </div>
     </header>
     <main class="game-stage">
       <canvas id="game"></canvas>
-      <div id="status" class="game-status">Loading level…</div>
-      <div class="touch-hint">Swipe to move · pinch to zoom</div>
-      <pre id="debug-panel" class="debug-panel">Click a tile to inspect.</pre>
-      <div id="game-result" class="game-result" hidden>
-        <section class="result-card" role="dialog" aria-modal="true" aria-live="polite"></section>
-      </div>
+      <div id="status" class="game-status">正在载入关卡…</div>
+      <div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true" aria-live="polite"></section></div>
     </main>
+    <dialog id="level-info-dialog" class="game-dialog">
+      <header><strong>关卡信息</strong><button class="dialog-close icon-btn" title="关闭">×</button></header>
+      <dl class="info-grid">
+        <dt>关卡</dt><dd>${displayLevelId(meta)}</dd>
+        <dt>章节</dt><dd>${escapeHtml(meta.chapterTitle)}</dd>
+        <dt>难度</dt><dd>${escapeHtml(meta.difficulty.label)}</dd>
+        <dt>地图</dt><dd>${meta.width} × ${meta.height}</dd>
+      </dl>
+      ${meta.chapterDescription ? `<p class="muted">${escapeHtml(meta.chapterDescription)}</p>` : ''}
+    </dialog>
+    <dialog id="game-settings-dialog" class="game-dialog">
+      <header><strong>设置</strong><button class="dialog-close icon-btn" title="关闭">×</button></header>
+      <label class="dialog-setting"><span>音乐</span><input id="game-music-enabled" type="checkbox" ${audio.isEnabled() ? 'checked' : ''}></label>
+      <label class="dialog-setting"><span>音乐音量</span><input id="game-music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></label>
+      <label class="dialog-setting"><span>MIDI 音色</span><select id="game-midi-tone"><option value="fm" ${audio.getTone() === 'fm' ? 'selected' : ''}>TinySynth FM</option><option value="chip" ${audio.getTone() === 'chip' ? 'selected' : ''}>TinySynth Chip</option></select></label>
+      <label class="dialog-setting"><span>混响</span><input id="game-reverb" type="range" min="0" max="100" value="${Math.round(audio.getReverbLevel() * 100)}"></label>
+      <label class="dialog-setting"><span>音效音量</span><input id="game-sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></label>
+    </dialog>
+    <dialog id="game-help-dialog" class="game-dialog">
+      <header><strong>游玩帮助</strong><button class="dialog-close icon-btn" title="关闭">×</button></header>
+      <div class="help-list">
+        <p><kbd>WASD</kbd> / <kbd>方向键</kbd>：移动；按住连续移动，抬起后当前格结束即停。</p>
+        <p>触屏 Swipe：移动一格。</p>
+        <p>鼠标滚轮 / 双指 Pinch：放大缩小。</p>
+        <p><kbd>~</kbd>：DEBUG。开启后点击地图格，调试信息会显示在左下角状态栏。</p>
+        <p><kbd>Z</kbd> / <kbd>U</kbd>：撤销；<kbd>R</kbd>：重玩。</p>
+      </div>
+    </dialog>
   </div>`;
 
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
   const status = document.querySelector<HTMLDivElement>('#status');
-  const zoom = document.querySelector<HTMLSpanElement>('#zoom');
-  const debugPanel = document.querySelector<HTMLPreElement>('#debug-panel');
   const gameResult = document.querySelector<HTMLDivElement>('#game-result');
   const resultCard = gameResult?.querySelector<HTMLElement>('.result-card');
-  if (!canvas || !status || !zoom || !debugPanel || !gameResult || !resultCard) throw new Error('Game UI failed to mount');
+  const hudTime = document.querySelector<HTMLElement>('#hud-time');
+  const hudObjectives = document.querySelector<HTMLElement>('#hud-objectives');
+  const hudMoves = document.querySelector<HTMLElement>('#hud-moves');
+  const hudItems = document.querySelector<HTMLElement>('#hud-items');
+  if (!canvas || !status || !gameResult || !resultCard || !hudTime || !hudObjectives || !hudMoves || !hudItems) throw new Error('Game UI failed to mount');
 
-  activeInput?.destroy();
-  activeGame?.destroy();
   const level = await fetchJson<LevelData>(`/assets/${meta.path}`);
   const profile = loadProfile();
-  const isBonus = level.objects.some((object) => object.id === 0xe7 || object.id === 0xf7 || object.id === 0xf8);
+  const isBonus = meta.chapterLevel > 10;
   const hasLock = level.objects.some((object) => object.id === 0xcd);
   let temporaryKey = false;
 
@@ -304,24 +315,17 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     audio,
     profile: { superKey: profile.superKey, temporaryKey, speedShoes: profile.speedShoes },
     assets: {
-      atlasUrl: '/assets/art/hd/ts.png',
-      animationAtlasUrl: '/assets/art/hd/ta.png',
-      bobbyUrls: {
-        left: '/assets/art/hd/b0.png',
-        right: '/assets/art/hd/b1.png',
-        up: '/assets/art/hd/b2.png',
-        down: '/assets/art/hd/b3.png'
-      },
-      mowerBobbyUrl: '/assets/art/hd/b7.png',
-      kiteUrl: '/assets/art/hd/b9.png',
-      sourceTileSize: 48
+      atlasUrl: '/assets/art/hd/ts.png', animationAtlasUrl: '/assets/art/hd/ta.png',
+      bobbyUrls: { left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
+      mowerBobbyUrl: '/assets/art/hd/b7.png', kiteUrl: '/assets/art/hd/b9.png', sourceTileSize: 48
     }
   });
   activeInput = new InputController(activeGame);
   await activeGame.loadLevel(level);
-
   audio.playMusic(isBonus ? 'bonus' : `ingame${meta.number % 3}`);
 
+  let levelStartedAt = performance.now();
+  let debugInspection: string | null = null;
   let visibleResult: 'death' | 'complete' | null = null;
   const closeResult = (): void => { visibleResult = null; gameResult.hidden = true; };
   const renderResult = (): void => {
@@ -338,86 +342,143 @@ async function renderGame(levelIdRaw: string): Promise<void> {
       const index = catalog.levels.findIndex((entry) => entry.canonicalId === meta.canonicalId);
       const next = catalog.levels[index + 1];
       resultCard.innerHTML = `
-        <div class="result-kicker">${displayLevelId(meta)}</div>
-        <h2>关卡完成</h2>
-        <p>移动 ${world.state.moves} 步 · 目标 ${world.objectiveTotal}/${world.objectiveTotal} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p>
+        <div class="result-kicker">${displayLevelId(meta)}</div><h2>关卡完成</h2>
+        <p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p>
         <div class="result-actions">
           ${next ? `<button class="primary-btn" data-result="next" data-next="${next.publicId}">下一关 · ${displayLevelId(next)}</button>` : ''}
-          <button class="ghost-btn" data-result="replay">重玩</button>
-          <button class="ghost-btn" data-result="levels">关卡列表</button>
+          <button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">关卡列表</button>
         </div>`;
     } else {
       resultCard.innerHTML = `
-        <div class="result-kicker danger">BOBBY FAILED</div>
-        <h2>失败</h2>
-        <p>${escapeHtml(world.state.deathReason ?? 'Bobby 没能继续前进。')}</p>
-        <div class="result-actions">
-          ${activeGame.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ''}
-          <button class="ghost-btn" data-result="retry">重新开始</button>
-          <button class="ghost-btn" data-result="levels">关卡列表</button>
-        </div>`;
+        <div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? 'Bobby 没能继续前进。')}</p>
+        <div class="result-actions">${activeGame.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ''}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">关卡列表</button></div>`;
     }
     gameResult.hidden = false;
   };
 
+  const renderHud = (): void => {
+    if (!activeGame?.hasLevel) return;
+    const world = activeGame.world;
+    hudTime.textContent = formatElapsed(performance.now() - levelStartedAt);
+    hudObjectives.textContent = String(world.objectiveRemaining);
+    hudMoves.textContent = String(world.state.moves);
+    const items: string[] = [];
+    if (world.state.profile.superKey) items.push('<span class="item-chip" title="Super Key">🔑+</span>');
+    else if (world.state.profile.temporaryKey) items.push('<span class="item-chip" title="本关钥匙">🔑</span>');
+    if (world.state.inventory.gas) items.push('<span class="item-chip" title="汽油">⛽</span>');
+    if (world.state.inventory.shovel) items.push('<span class="item-chip" title="雪铲">🛠</span>');
+    if (world.state.inventory.kite) items.push('<span class="item-chip" title="风筝">◇</span>');
+    if (world.state.inventory.beans > 0) items.push(`<span class="item-chip" title="魔豆">🌱${world.state.inventory.beans}</span>`);
+    if (world.state.goldenCarrotsInLevel > 0) items.push(`<span class="item-chip" title="本关金胡萝卜">🥕★${world.state.goldenCarrotsInLevel}</span>`);
+    if (world.state.bonusCoinsInLevel > 0) items.push(`<span class="item-chip" title="本关 Bonus Coin">●${world.state.bonusCoinsInLevel}</span>`);
+    if (world.state.bonusTimeRemainingMs !== null) items.push(`<span class="item-chip bonus-time" title="Bonus 剩余时间">⌛${Math.ceil(world.state.bonusTimeRemainingMs / 1000)}s</span>`);
+    hudItems.innerHTML = items.join('');
+  };
+
   const update = (): void => {
     if (!activeGame?.hasLevel) return;
-    zoom.textContent = `${Math.round(activeGame.zoom * 100)}%`;
-    const move = activeGame.lastMove;
-    const objective = `${activeGame.world.objectiveTotal - activeGame.world.objectiveRemaining}/${activeGame.world.objectiveTotal}`;
-    const time = activeGame.world.state.bonusTimeRemainingMs === null ? '' : ` · ⏱ ${Math.ceil(activeGame.world.state.bonusTimeRemainingMs / 1000)}s`;
-    status.textContent = move
-      ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason} · 目标 ${objective}${time}`
-      : `${displayLevelId(meta)} · 目标 ${objective}${time}`;
+    renderHud();
+    if (activeGame.debug && debugInspection) {
+      status.textContent = debugInspection;
+      status.classList.add('debug');
+    } else {
+      status.classList.remove('debug');
+      const move = activeGame.lastMove;
+      status.textContent = activeGame.debug
+        ? 'DEBUG · 点击地图格查看 Terrain / Object / Dynamic 状态'
+        : move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason}` : `${displayLevelId(meta)} · 准备就绪`;
+    }
     renderResult();
   };
   activeGame.on('change', update);
+  activeGame.on('debug-change', () => { if (!activeGame?.debug) debugInspection = null; update(); });
   update();
+  activeUiTimer = window.setInterval(renderHud, 250);
+
+  const askUndo = (): void => {
+    if (!activeGame?.canUndo) return;
+    if (window.confirm('撤销上一步？')) { activeGame.undo(); closeResult(); }
+  };
+  const askRestart = (): void => {
+    if (!activeGame) return;
+    if (window.confirm('重新开始本关？当前进度会丢失。')) {
+      activeGame.restart();
+      levelStartedAt = performance.now();
+      debugInspection = null;
+      closeResult();
+      update();
+    }
+  };
 
   gameResult.addEventListener('click', (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-result]');
     if (!button || !activeGame) return;
     const action = button.dataset.result;
-    if (action === 'undo') { activeGame.undo(); closeResult(); }
-    else if (action === 'retry' || action === 'replay') { activeGame.restart(); closeResult(); }
+    if (action === 'undo') askUndo();
+    else if (action === 'retry' || action === 'replay') askRestart();
     else if (action === 'levels') navigate('/levels');
     else if (action === 'next' && button.dataset.next) navigate(`/play/${button.dataset.next}`);
   });
 
   document.querySelector<HTMLButtonElement>('#back')?.addEventListener('click', () => navigate('/levels'));
   document.querySelector<HTMLButtonElement>('#edit-level')?.addEventListener('click', () => navigate(`/edit/${meta.publicId}`));
-  document.querySelector<HTMLButtonElement>('#undo')?.addEventListener('click', () => activeGame?.undo());
-  document.querySelector<HTMLButtonElement>('#restart')?.addEventListener('click', () => activeGame?.restart());
-  document.querySelector<HTMLButtonElement>('#zoom-in')?.addEventListener('click', () => activeGame?.zoomBy(1.1));
-  document.querySelector<HTMLButtonElement>('#zoom-out')?.addEventListener('click', () => activeGame?.zoomBy(1 / 1.1));
+  document.querySelector<HTMLButtonElement>('#undo')?.addEventListener('click', askUndo);
+  document.querySelector<HTMLButtonElement>('#restart')?.addEventListener('click', askRestart);
   document.querySelector<HTMLButtonElement>('#music')?.addEventListener('click', (event) => {
     audio.setEnabled(!audio.isEnabled());
     (event.currentTarget as HTMLButtonElement).textContent = audio.isEnabled() ? '♫' : '♪̸';
-    if (audio.isEnabled()) audio.playMusic(isBonus ? 'bonus' : `ingame${meta.number % 3}`);
+    const checkbox = document.querySelector<HTMLInputElement>('#game-music-enabled');
+    if (checkbox) checkbox.checked = audio.isEnabled();
   });
-  document.querySelector<HTMLButtonElement>('#debug')?.addEventListener('click', () => {
-    activeGame?.toggleDebug();
-    debugPanel.classList.toggle('visible', activeGame?.debug ?? false);
+
+  const infoDialog = document.querySelector<HTMLDialogElement>('#level-info-dialog');
+  const settingsDialog = document.querySelector<HTMLDialogElement>('#game-settings-dialog');
+  const helpDialog = document.querySelector<HTMLDialogElement>('#game-help-dialog');
+  document.querySelector<HTMLButtonElement>('#level-info')?.addEventListener('click', () => infoDialog?.showModal());
+  document.querySelector<HTMLButtonElement>('#game-settings')?.addEventListener('click', () => settingsDialog?.showModal());
+  document.querySelector<HTMLButtonElement>('#game-help')?.addEventListener('click', () => helpDialog?.showModal());
+  document.querySelectorAll<HTMLButtonElement>('.game-dialog .dialog-close').forEach((button) => button.addEventListener('click', () => button.closest<HTMLDialogElement>('dialog')?.close()));
+  document.querySelectorAll<HTMLDialogElement>('.game-dialog').forEach((dialog) => dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); }));
+
+  document.querySelector<HTMLInputElement>('#game-music-enabled')?.addEventListener('change', (event) => {
+    audio.setEnabled((event.currentTarget as HTMLInputElement).checked);
+    const button = document.querySelector<HTMLButtonElement>('#music');
+    if (button) button.textContent = audio.isEnabled() ? '♫' : '♪̸';
   });
+  document.querySelector<HTMLInputElement>('#game-music-volume')?.addEventListener('input', (event) => audio.setMusicVolume(Number((event.currentTarget as HTMLInputElement).value) / 100));
+  document.querySelector<HTMLInputElement>('#game-sound-volume')?.addEventListener('input', (event) => audio.setSoundVolume(Number((event.currentTarget as HTMLInputElement).value) / 100));
+  document.querySelector<HTMLSelectElement>('#game-midi-tone')?.addEventListener('change', (event) => audio.setTone((event.currentTarget as HTMLSelectElement).value === 'chip' ? 'chip' : 'fm'));
+  document.querySelector<HTMLInputElement>('#game-reverb')?.addEventListener('input', (event) => audio.setReverbLevel(Number((event.currentTarget as HTMLInputElement).value) / 100));
+
   canvas.addEventListener('click', (event) => {
     if (!activeGame?.debug) return;
     const tile: TileInspection | null = activeGame.inspectCanvasPoint(event.clientX, event.clientY);
-    debugPanel.textContent = tile ? JSON.stringify(tile, null, 2) : 'Outside map.';
+    debugInspection = tile ? formatTileInspection(tile) : 'DEBUG · 地图外';
+    update();
   });
 }
 
+function formatElapsed(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatTileInspection(tile: TileInspection): string {
+  const dynamic = tile.dynamicEntity ? ` · Dynamic 0x${tile.dynamicEntity.id.toString(16).toUpperCase()}` : '';
+  return `DEBUG ${tile.x},${tile.y} · Terrain ${tile.terrainHexId} · Object ${tile.object ? tile.objectHexId : 'EMPTY'}${dynamic}${tile.isPlayer ? ' · BOBBY' : ''}`;
+}
 
 async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
   audio.stopMusic();
   let level: EditorLevel;
   const shared = shareValueFromHash(location.hash);
   if (shared) {
-    try {
-      level = await decodeShareLevel(shared);
-    } catch (error) {
+    try { level = await decodeShareLevel(shared); }
+    catch (error) {
       app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="/edit" data-nav>新建地图</a></section>`);
-      bindNavigation();
-      return;
+      bindNavigation(); return;
     }
   } else if (levelIdRaw) {
     const decoded = decodeURIComponent(levelIdRaw).toLowerCase();
@@ -426,29 +487,16 @@ async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
     const official = await fetchJson<LevelData>(`/assets/${meta.path}`);
     level = fromLevelData(official);
     level.name = `${meta.publicId.toUpperCase()} · Copy`;
-  } else {
-    level = createBlankLevel(16, 16);
-  }
+  } else level = createBlankLevel(16, 16);
 
   app.innerHTML = '<div id="editor-mount"></div>';
   const root = document.querySelector<HTMLElement>('#editor-mount');
   if (!root) throw new Error('Editor mount failed');
   activeEditor = new BobbyEditor({
-    root,
-    level,
-    atlasUrl: '/assets/art/hd/ts.png',
-    animationAtlasUrl: '/assets/art/hd/ta.png',
-    bobbyUrls: {
-      left: '/assets/art/hd/b0.png',
-      right: '/assets/art/hd/b1.png',
-      up: '/assets/art/hd/b2.png',
-      down: '/assets/art/hd/b3.png'
-    },
-    mowerBobbyUrl: '/assets/art/hd/b7.png',
-    kiteUrl: '/assets/art/hd/b9.png',
-    audio,
-    shareOrigin: location.origin,
-    onClose: () => navigate('/levels')
+    root, level, atlasUrl: '/assets/art/hd/ts.png', animationAtlasUrl: '/assets/art/hd/ta.png',
+    bobbyUrls: { left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
+    mowerBobbyUrl: '/assets/art/hd/b7.png', kiteUrl: '/assets/art/hd/b9.png', audio,
+    shareOrigin: location.origin, onClose: () => navigate('/levels')
   });
 }
 
@@ -456,62 +504,35 @@ async function renderSharedGame(): Promise<void> {
   const encoded = shareValueFromHash(location.hash);
   if (!encoded) { navigate('/edit'); return; }
   let editorLevel: EditorLevel;
-  try {
-    editorLevel = await decodeShareLevel(encoded);
-  } catch (error) {
+  try { editorLevel = await decodeShareLevel(encoded); }
+  catch (error) {
     app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="/edit" data-nav>打开编辑器</a></section>`);
-    bindNavigation();
-    return;
+    bindNavigation(); return;
   }
   const level = toLevelData(editorLevel);
   audio.playMusic('ingame0');
   app.innerHTML = `<div class="game-page">
-    <header class="game-toolbar">
-      <button id="back" class="ghost-btn">← 首页</button>
-      <span class="level-label">${escapeHtml(editorLevel.name)}</span>
-      <span class="muted hide-mobile">Custom JSON · ${editorLevel.width}×${editorLevel.height}</span>
-      <div class="spacer"></div>
-      <button id="edit-level" class="icon-btn">Edit</button>
-      <button id="undo" class="icon-btn">Undo</button>
-      <button id="restart" class="icon-btn">Restart</button>
-      <button id="zoom-out" class="icon-btn">−</button>
-      <span id="zoom" class="muted">100%</span>
-      <button id="zoom-in" class="icon-btn">+</button>
-    </header>
-    <main class="game-stage">
-      <canvas id="game"></canvas>
-      <div id="status" class="game-status">正在载入分享地图…</div>
-      <div class="touch-hint">Swipe to move · pinch to zoom</div>
-      <div id="game-result" class="game-result" hidden><section class="result-card"></section></div>
-    </main>
+    <header class="game-toolbar"><button id="back" class="ghost-btn">← 首页</button><span class="level-label">${escapeHtml(editorLevel.name)}</span><span class="muted hide-mobile">Custom JSON · ${editorLevel.width}×${editorLevel.height}</span><div class="spacer"></div><button id="edit-level" class="icon-btn">Edit</button><button id="undo" class="icon-btn">Undo</button><button id="restart" class="icon-btn">Restart</button></header>
+    <main class="game-stage"><canvas id="game"></canvas><div id="status" class="game-status">正在载入分享地图…</div><div id="game-result" class="game-result" hidden><section class="result-card"></section></div></main>
   </div>`;
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
   const status = document.querySelector<HTMLDivElement>('#status');
-  const zoom = document.querySelector<HTMLSpanElement>('#zoom');
   const result = document.querySelector<HTMLDivElement>('#game-result');
   const resultCard = result?.querySelector<HTMLElement>('.result-card');
-  if (!canvas || !status || !zoom || !result || !resultCard) throw new Error('Shared game UI failed to mount');
+  if (!canvas || !status || !result || !resultCard) throw new Error('Shared game UI failed to mount');
 
-  activeGame = new Game({
-    canvas,
-    audio,
-    assets: {
-      atlasUrl: '/assets/art/hd/ts.png',
-      animationAtlasUrl: '/assets/art/hd/ta.png',
-      bobbyUrls: { left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
-      mowerBobbyUrl: '/assets/art/hd/b7.png',
-      kiteUrl: '/assets/art/hd/b9.png',
-      sourceTileSize: 48
-    }
-  });
+  activeGame = new Game({ canvas, audio, assets: {
+    atlasUrl:'/assets/art/hd/ts.png', animationAtlasUrl:'/assets/art/hd/ta.png',
+    bobbyUrls:{ left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
+    mowerBobbyUrl:'/assets/art/hd/b7.png', kiteUrl:'/assets/art/hd/b9.png', sourceTileSize:48
+  }});
   activeInput = new InputController(activeGame);
   await activeGame.loadLevel(level);
 
   const update = (): void => {
     if (!activeGame?.hasLevel) return;
     const world = activeGame.world;
-    zoom.textContent = `${Math.round(activeGame.zoom * 100)}%`;
-    status.textContent = `Custom · Bobby ${world.player.x},${world.player.y} · 目标 ${world.objectiveTotal - world.objectiveRemaining}/${world.objectiveTotal}`;
+    status.textContent = `Custom · Bobby ${world.player.x},${world.player.y} · 剩余目标 ${world.objectiveRemaining} · ${world.state.moves} 步`;
     if ((world.dead || world.completed) && activeGame && !activeGame.isAnimating) {
       resultCard.innerHTML = world.completed
         ? `<div class="result-kicker">CUSTOM LEVEL</div><h2>关卡完成</h2><div class="result-actions"><button class="primary-btn" data-shared="edit">编辑这个地图</button><button class="ghost-btn" data-shared="replay">重玩</button></div>`
@@ -519,19 +540,16 @@ async function renderSharedGame(): Promise<void> {
       result.hidden = false;
     }
   };
-  activeGame.on('change', update);
-  update();
+  activeGame.on('change', update); update();
   document.querySelector<HTMLButtonElement>('#back')?.addEventListener('click', () => navigate('/'));
   document.querySelector<HTMLButtonElement>('#edit-level')?.addEventListener('click', () => navigate(`/edit${location.hash}`));
-  document.querySelector<HTMLButtonElement>('#undo')?.addEventListener('click', () => activeGame?.undo());
-  document.querySelector<HTMLButtonElement>('#restart')?.addEventListener('click', () => { activeGame?.restart(); result.hidden = true; });
-  document.querySelector<HTMLButtonElement>('#zoom-in')?.addEventListener('click', () => activeGame?.zoomBy(1.1));
-  document.querySelector<HTMLButtonElement>('#zoom-out')?.addEventListener('click', () => activeGame?.zoomBy(1 / 1.1));
+  document.querySelector<HTMLButtonElement>('#undo')?.addEventListener('click', () => { if (window.confirm('撤销上一步？')) activeGame?.undo(); });
+  document.querySelector<HTMLButtonElement>('#restart')?.addEventListener('click', () => { if (window.confirm('重新开始？')) { activeGame?.restart(); result.hidden = true; } });
   result.addEventListener('click', (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-shared]');
     if (!button) return;
     if (button.dataset.shared === 'edit') navigate(`/edit${location.hash}`);
-    else { activeGame?.restart(); result.hidden = true; }
+    else if (window.confirm('重新开始？')) { activeGame?.restart(); result.hidden = true; }
   });
 }
 
@@ -539,46 +557,40 @@ function renderSettings(): void {
   audio.playMusic('title');
   const profile = loadProfile();
   app.innerHTML = shell(`
-    <div class="section-title"><h1>设置</h1><p>原始 MIDI 通过 WebAudio TinySynth 直接在浏览器合成播放。</p></div>
+    <div class="section-title"><h1>设置</h1><p>保留原始 MIDI；TinySynth 可切换两套算法音色。SoundFont 后端会作为独立实现接入。</p></div>
     <section class="profile-strip"><div><strong>${profile.bonusCoins}</strong><span>Bonus Coin</span></div><div><strong>${profile.goldenCarrots}</strong><span>Golden Carrot</span></div><div><strong>${profile.superKey ? '已获得' : '未获得'}</strong><span>Super Key</span></div></section>
     <section class="settings-card">
-      <div class="setting"><div><strong>音乐</strong><div class="muted">WebAudio TinySynth 1.1.4 · 原始 .mid</div></div><label class="switch-label"><input id="music-enabled" type="checkbox" ${audio.isEnabled() ? 'checked' : ''}> 启用</label></div>
+      <div class="setting"><div><strong>音乐</strong><div class="muted">WebAudio TinySynth 1.1.3 · 原始 .mid</div></div><label class="switch-label"><input id="music-enabled" type="checkbox" ${audio.isEnabled() ? 'checked' : ''}> 启用</label></div>
+      <div class="setting"><div><strong>MIDI 音色</strong><div class="muted">FM 更接近 GM；Chip 更接近简单硬件合成</div></div><select id="midi-tone"><option value="fm" ${audio.getTone() === 'fm' ? 'selected' : ''}>TinySynth FM</option><option value="chip" ${audio.getTone() === 'chip' ? 'selected' : ''}>TinySynth Chip</option></select></div>
+      <div class="setting"><div><strong>混响</strong><div class="muted">减少干硬/尖锐感</div></div><input id="midi-reverb" type="range" min="0" max="100" value="${Math.round(audio.getReverbLevel() * 100)}"></div>
       <div class="setting"><div><strong>音乐音量</strong><div class="muted">0–100%</div></div><input id="music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></div>
       <div class="setting"><div><strong>音效音量</strong><div class="muted">收集/机关反馈</div></div><input id="sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></div>
-      <div class="setting"><div><strong>美术</strong><div class="muted">UP9 HD 48px 原版素材</div></div><span>启用</span></div>
-      <div class="setting"><div><strong>操作</strong><div class="muted">WASD / 方向键 / Swipe / Pinch Zoom</div></div><span>Modern</span></div>
+      <div class="setting"><div><strong>SoundFont MIDI</strong><div class="muted">下一后端：SpessaSynth + 可再分发 SF2/SF3；不替换原 MIDI</div></div><span>Planned</span></div>
+      <div class="setting"><div><strong>操作</strong><div class="muted">WASD / 方向键 / Swipe / Wheel / Pinch / ~ DEBUG</div></div><span>Modern</span></div>
     </section>
   `);
   bindNavigation();
   document.querySelector<HTMLInputElement>('#music-enabled')?.addEventListener('change', (event) => audio.setEnabled((event.currentTarget as HTMLInputElement).checked));
   document.querySelector<HTMLInputElement>('#music-volume')?.addEventListener('input', (event) => audio.setMusicVolume(Number((event.currentTarget as HTMLInputElement).value) / 100));
   document.querySelector<HTMLInputElement>('#sound-volume')?.addEventListener('input', (event) => audio.setSoundVolume(Number((event.currentTarget as HTMLInputElement).value) / 100));
+  document.querySelector<HTMLSelectElement>('#midi-tone')?.addEventListener('change', (event) => audio.setTone((event.currentTarget as HTMLSelectElement).value === 'chip' ? 'chip' : 'fm'));
+  document.querySelector<HTMLInputElement>('#midi-reverb')?.addEventListener('input', (event) => audio.setReverbLevel(Number((event.currentTarget as HTMLInputElement).value) / 100));
 }
 
 function requestBonusAccess(profile: PlayerProfile, overlay: HTMLDivElement, card: HTMLElement): Promise<boolean> {
   return new Promise((resolve) => {
     const canBuy = profile.bonusCoins >= 3;
     card.innerHTML = `
-      <div class="result-kicker">BEAVER BONUS ROUND</div>
-      <h2>奖励关钥匙</h2>
-      <p>${canBuy
-        ? `原版规则：没有 Super Key 时，可花 <strong>3 Bonus Coin</strong> 向 Beaver 购买本关的一次性钥匙。当前有 ${profile.bonusCoins} 个。`
-        : `你没有足够的 Bonus Coin。原版 Beaver 还留了一个例外：<strong>Pretty please.</strong>`}</p>
-      <div class="result-actions">
-        <button class="primary-btn" data-bonus-access="enter">${canBuy ? '花 3 Coin 进入' : 'Pretty please · 免费进入'}</button>
-        <button class="ghost-btn" data-bonus-access="back">返回选关</button>
-      </div>`;
+      <div class="result-kicker">BEAVER BONUS ROUND</div><h2>奖励关钥匙</h2>
+      <p>${canBuy ? `原版规则：没有 Super Key 时，可花 <strong>3 Bonus Coin</strong> 向 Beaver 购买本关的一次性钥匙。当前有 ${profile.bonusCoins} 个。` : `你没有足够的 Bonus Coin。原版 Beaver 还留了一个例外：<strong>Pretty please.</strong>`}</p>
+      <div class="result-actions"><button class="primary-btn" data-bonus-access="enter">${canBuy ? '花 3 Coin 进入' : 'Pretty please · 免费进入'}</button><button class="ghost-btn" data-bonus-access="back">返回选关</button></div>`;
     overlay.hidden = false;
     const handler = (event: Event): void => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-bonus-access]');
       if (!button) return;
-      overlay.removeEventListener('click', handler);
-      overlay.hidden = true;
+      overlay.removeEventListener('click', handler); overlay.hidden = true;
       if (button.dataset.bonusAccess === 'enter') {
-        if (canBuy) {
-          profile.bonusCoins -= 3;
-          saveProfile(profile);
-        }
+        if (canBuy) { profile.bonusCoins -= 3; saveProfile(profile); }
         resolve(true);
       } else resolve(false);
     };
@@ -586,26 +598,19 @@ function requestBonusAccess(profile: PlayerProfile, overlay: HTMLDivElement, car
   });
 }
 
-function displayLevelId(level: CatalogLevel): string {
-  return level.publicId.toUpperCase();
-}
+function displayLevelId(level: CatalogLevel): string { return level.publicId.toUpperCase(); }
 
 function bindNavigation(): void {
   document.querySelectorAll<HTMLAnchorElement>('a[data-nav]').forEach((anchor) => {
-    anchor.addEventListener('click', (event) => {
-      event.preventDefault();
-      navigate(new URL(anchor.href).pathname);
-    });
+    anchor.addEventListener('click', (event) => { event.preventDefault(); navigate(new URL(anchor.href).pathname); });
   });
 }
 
 async function renderRoute(): Promise<void> {
-  activeInput?.destroy();
-  activeInput = null;
-  activeGame?.destroy();
-  activeGame = null;
-  activeEditor?.destroy();
-  activeEditor = null;
+  if (activeUiTimer !== null) { window.clearInterval(activeUiTimer); activeUiTimer = null; }
+  activeInput?.destroy(); activeInput = null;
+  activeGame?.destroy(); activeGame = null;
+  activeEditor?.destroy(); activeEditor = null;
   const path = location.pathname.replace(/\/+$/, '') || '/';
   if (path === '/') renderHome();
   else if (path === '/levels') renderLevels();
