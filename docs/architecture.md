@@ -90,7 +90,7 @@ Object Layout Definition
 - `behaviors`：真正的可组合规则模块；
 - `source`：原版来源和逆向置信度，只用于 provenance/debug，不得作为规则输入；
 - `footprint / cursor`：描述一个 persisted Object 在地图空间的完整占用和 Editor 鼠标基准；
-- `authoringVariants`：描述 Editor 可以通过滚轮 / Q / E 循环切换的等价编辑形态。
+- `authoringVariants`：描述 Editor 可以通过 `Q / E` 循环切换的等价编辑形态。
 
 Behavior 是协议，不是继承基类。机关通过组合工厂生成 Behavior。`World` 负责移动事务、状态生命周期、Tick 和跨格算法，然后 dispatch Terrain/Object 的 passage、onEnter、onLeave 等 hook。
 
@@ -103,7 +103,18 @@ Behavior 是协议，不是继承基类。机关通过组合工厂生成 Behavio
 1. multi-cell Object 的 footprint 与 Editor cursor anchor；
 2. Editor 可循环的 authoring variant，例如 Windmill 四方向、Fence 形态、Cloud / Cloud Grid 颜色。
 
-它不包含 Dragon 动画帧、冰融化、木板碎裂等 runtime animation/state transition。后者仍由 Engine gameplay 行为决定，不应被滚轮编辑逻辑误用。
+它不包含 Dragon 动画帧、冰融化、木板碎裂等 runtime animation/state transition。后者仍由 Engine gameplay 行为决定，不应被 Editor 变体操作误用。
+
+### Camera / Input
+
+Play 的 Camera 始终跟随 Bobby，但允许用户临时拖动画面查看周围：
+
+- 左键拖动：保留原有 Play 平移；
+- 中键拖动：Play / Edit 都使用的统一平移手势；
+- 滚轮：Play / Edit 都用于地图缩放；
+- Touch：Play 继续使用拖动和平移、双指缩放。
+
+Play 中的手动 pan 只是临时 offset。用户拖开 Camera 后，**下一次真正发生的移动**会启动一次 ease-out recenter，把 offset 平滑收回到 0；被阻挡的移动不会触发归中。连续移动或 forced movement 不会反复重启同一个回中动画；用户如果在回中期间重新拖动，则新的 pan 会取消旧动画，下一次移动再重新开始归中。
 
 ## Debug Inspector
 
@@ -121,10 +132,12 @@ Editor 同样复用 Engine definition 查询。对于 multi-cell Object，Editor
 左键 / 拖动     -> 放置当前 Terrain / Object
 右键 / 拖动     -> 删除鼠标指向的完整 Object
 Del              -> 同右键
-滚轮 / Q / E     -> 变换鼠标指向且支持 authoring variant 的 Object
+Q / E            -> 变换鼠标指向且支持 authoring variant 的 Object
+滚轮             -> 地图缩放
+中键 / 拖动      -> 地图平移
 ```
 
-没有 Eyedropper，也没有独立 Eraser mode。
+没有 Eyedropper，也没有独立 Eraser mode。Editor 的地图 viewport 与 Play 使用相同的滚轮缩放 / 中键平移心智模型；进入 Play Test 时会移除 Editor 自己的 Canvas transform，把 Canvas 交给 Game Camera，Stop 后再恢复 Editor viewport。
 
 ### Multi-cell Object owner
 
@@ -166,11 +179,25 @@ Editor 的持久化出口只有两种：
 - `/play#map=...`：直接游玩分享地图；
 - `/edit#map=...`：继续编辑同一份分享地图。
 
+### 关卡筛选
+
+Catalog 继续保持轻量的关卡目录合同；关卡内容筛选使用构建期生成的 `assets/generated/level-filters.json`。`tools/src/build-level-filters.mjs` 一次扫描 semantic generated levels，提取：
+
+```text
+difficulty      <- catalog 现有难度字段
+carrotCount     <- 主目标胡萝卜数量
+specialItems    <- 雪铲 / 割草机 / 汽油 / 魔豆 / 风筝 / 金胡萝卜 / Bonus Coin
+scenes          <- 草地 / 水域 / 雪地 / 冰面 / 高草 / 商店
+mechanics       <- 潮汐 / 加速带 / Carousel / 风 / 镜子 / 陷阱 / 彩色开关 / ...
+```
+
+浏览器进入 `/levels` 时只加载 catalog + 这一个紧凑索引，不逐关 fetch 485 个 LevelData。筛选规则是：**同一类别内 OR，不同类别之间 AND**；切换 Base / UP1…UP9 时保留筛选状态。场景与机关选项使用 semantic → atlas mapping 显示原版图标，而不是重新维护图标坐标表。有筛选条件时“随机一个关卡”只从当前发行包的匹配结果中选择。
+
 Web 的普通运行时只消费语义状态。DEBUG Inspector 可以显示 Definition 中的原版 DAT provenance，但不得依赖该 byte 决定规则。
 
 ## Assets / Tools
 
-`assets/original/` 保留不可变 JAR；`assets/extracted/`、`assets/generated/` 都是可重建结果。Tools 负责 JAR 提取、DAT codec 和官方 Catalog，不进入浏览器 gameplay runtime。
+`assets/original/` 保留不可变 JAR；`assets/extracted/`、`assets/generated/` 都是可重建结果。Tools 负责 JAR 提取、DAT codec、官方 Catalog 与关卡筛选索引，不进入浏览器 gameplay runtime。
 
 官方 DAT decode **不再物化** multi-cell body/tail；generated level 保留原始 anchor 语义。运行时展开只发生在 Engine 的 level-load 边界。
 
@@ -180,6 +207,7 @@ Web 的普通运行时只消费语义状态。DEBUG Inspector 可以显示 Defin
 
 ```text
 original/extracted DAT -> tools DAT codec -> semantic generated LevelData(anchor)
+semantic generated LevelData -> build-level-filters -> level-filters.json
 web -> engine
 web -> editor
 editor -> engine
@@ -187,7 +215,7 @@ editor share boundary -> DAT level-record transport encoding
 Game.loadLevel -> Object Layout Definition -> Runtime World occupancy
 editor authoring -> Object Layout Definition -> owner/preview/collision/variants
 engine runtime -> Tile Definition Registry -> Traits / Behaviors
-renderer/editor -> semantic art mapping -> original atlas
+renderer/editor/web filter icons -> semantic art mapping -> original atlas
 DEBUG -> Engine semantic definitions
 ```
 
@@ -203,4 +231,5 @@ web gameplay -> raw DAT/JAR
 editor 自己实现机关/碰撞
 Renderer 用 DAT byte 推导 atlas 坐标
 Editor 为 Dragon/Beaver/Sandman 单独写 owner 删除/预览逻辑
+level browser -> 运行时逐关加载 485 个 LevelData 才能筛选
 ```
