@@ -171,6 +171,12 @@ export function passageFor(
   const vector = DIRECTIONS[direction];
   const fromTerrain = state.terrain[fromY]?.[fromX];
 
+  // 原版帮助/实机资料明确：割草机可以压陷阱和踩按钮，但不能进入 Carousel 通道。
+  // 这个限制必须先于 Carousel 自身的方向判定，否则方向恰好匹配时会被错误放行。
+  if (state.ridingMower && (isCarousel(terrainId) || (fromTerrain !== undefined && isCarousel(fromTerrain)))) {
+    return { passable: false, reason: '割草机不能进入旋转通道', confidence: 'confirmed' };
+  }
+
   if (fromTerrain !== undefined && isCarousel(fromTerrain) && !canLeaveCarousel(fromTerrain, vector)) {
     return { passable: false, reason: '当前旋转地板不允许从这个方向离开', confidence: 'confirmed' };
   }
