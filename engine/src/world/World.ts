@@ -1,35 +1,36 @@
 import type { LevelData, LevelObject, ObjectType, TerrainType } from '../data/types.js';
 import {
-  CLOUD_GRID_FOR_OBJECT,
-  CLOUD_OBJECT_IDS,
   DIRECTIONS,
-  DYNAMIC_OBJECT_IDS,
   EMPTY_OBJECT,
   ObjectId,
-  SPEED_TERRAIN_DIRECTION,
-  TIDE_TERRAIN_DIRECTION,
   Terrain,
-  WINDMILL_DIRECTION,
   type Direction
 } from '../mechanics/ids.js';
 import {
-  isCarousel,
-  isMirror,
   isOrdinaryWalkableTerrain,
   isWaterTerrain,
   passageFor,
-  rotateCarousel,
-  rotateMirror,
-  toggleColorTerrain,
-  toggleSpeedTerrain,
-  toggleTideTerrain,
   type PassageResult
 } from '../mechanics/rules.js';
 import {
-  allowsBeanstalkGrowth,
-  isCloudPassableBackground,
-  isDragonFireBackground
-} from '../mechanics/terrainTraits.js';
+  cloudGridForObject,
+  initialObjectFootprint,
+  inspectObjectDefinition,
+  inspectTerrainDefinition,
+  objectHasTrait,
+  reflectFireForTerrain,
+  runObjectEnter,
+  runObjectLeave,
+  runTerrainEnter,
+  runTerrainLeave,
+  terrainHasTrait,
+  tideDirectionForTerrain,
+  windmillInfoForObject,
+  windSwitchIndexForTerrain,
+  windSwitchPeerForTerrain,
+  type TileDefinitionInspection
+} from '../mechanics/definitions.js';
+import type { BehaviorRuntimeContext } from '../mechanics/behaviors.js';
 import type {
   DynamicEntity,
   Point,
@@ -68,8 +69,10 @@ export interface TileInspection {
   x: number;
   y: number;
   terrainType: TerrainType;
+  terrainDefinition: TileDefinitionInspection;
   object: LevelObject | null;
   objectType: ObjectType;
+  objectDefinition: TileDefinitionInspection;
   dynamicEntity: DynamicEntity | null;
   isPlayer: boolean;
   isStart: boolean;
@@ -79,10 +82,6 @@ const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, 
 
 function emptyGrid<T>(width: number, height: number, value: T): T[][] {
   return Array.from({ length: height }, () => Array.from({ length: width }, () => value));
-}
-
-function pointEquals(a: Point | null, b: Point): boolean {
-  return a !== null && a.x === b.x && a.y === b.y;
 }
 
 function copyPoint(point: Point): Point { return { x: point.x, y: point.y }; }
@@ -116,7 +115,7 @@ export class World {
   get forcedKind(): string | null { return this.stateValue.forced?.kind ?? null; }
   get isPlayerClimbing(): boolean {
     const type = this.objectIdAt(this.stateValue.player.x, this.stateValue.player.y);
-    return type === ObjectId.BEANSTALK_TIP || type === ObjectId.BEANSTALK_MID || type === ObjectId.BEANSTALK_BASE;
+    return objectHasTrait(type, 'climbable');
   }
 
   getRiddenDynamicEntity(): DynamicEntity | null {
@@ -181,9 +180,9 @@ export class World {
     const to = { x: from.x + vector.dx, y: from.y + vector.dy };
 
     const ridden = state.dynamicEntities.find((entity) => entity.rider && isSameCell(entity, from.x, from.y));
-    if (ridden?.type === ObjectId.LEAF) return this.moveWithLeaf(ridden, direction, from, to, events, forced);
+    if (ridden && objectHasTrait(ridden.type, 'dynamic-leaf')) return this.moveWithLeaf(ridden, direction, from, to, events, forced);
 
-    if (ridden && CLOUD_OBJECT_IDS.has(ridden.type)) {
+    if (ridden && objectHasTrait(ridden.type, 'dynamic-cloud')) {
       const passage = this.passageTo(from, to, direction);
       if (!passage.passable) return this.result(false, from, to, passage, events);
       ridden.rider = false;
@@ -223,7 +222,7 @@ export class World {
       dynamicTarget.rider = true;
       if (dynamicTarget.type === ObjectId.LEAF) {
         const underlyingTerrain = this.terrainAt(to.x, to.y);
-        const tideDirection = underlyingTerrain ? TIDE_TERRAIN_DIRECTION.get(underlyingTerrain) : undefined;
+        const tideDirection = underlyingTerrain ? tideDirectionForTerrain(underlyingTerrain) : undefined;
         if (tideDirection && isOppositeDirection(tideDirection, direction)) {
           dynamicTarget.settled = true;
           dynamicTarget.direction = null;
@@ -250,10 +249,6 @@ export class World {
     state.moves += forced ? 0 : 1;
     this.applyPassageSideEffects(passage, to, events);
 
-    if (this.objectIdAt(to.x, to.y) === ObjectId.CRUMBLY_ROCK && state.ridingMower && state.forced?.kind === 'speed') {
-      this.setObject(to.x, to.y, EMPTY_OBJECT);
-      events.push({ type: 'break-rock', message: '高速割草机撞碎岩石', ...to });
-    }
 
     this.afterEnter(to, direction, events, { justBoarded: passage.boardsMower === true });
     return this.result(true, from, to, passage, events);
@@ -267,8 +262,10 @@ export class World {
       x,
       y,
       terrainType,
+      terrainDefinition: inspectTerrainDefinition(terrainType),
       object: objectType === EMPTY_OBJECT ? null : { type: objectType, x, y },
       objectType,
+      objectDefinition: inspectObjectDefinition(objectType),
       dynamicEntity: this.dynamicEntityAt(x, y),
       isPlayer: statePoint(this.stateValue.player, x, y),
       isStart: statePoint(this.stateValue.start, x, y)
@@ -283,27 +280,21 @@ export class World {
 
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
-        if (terrain[y]?.[x] === Terrain.START) start = { x, y };
+        if (terrain[y]?.[x] && terrainHasTrait(terrain[y]![x]!, 'start')) start = { x, y };
       }
     }
 
     for (const sourceObject of level.objects) {
       const type = sourceObject.type;
       const { x, y } = sourceObject;
-      if (DYNAMIC_OBJECT_IDS.has(type)) {
+      if (objectHasTrait(type, 'dynamic')) {
         dynamicEntities.push({ type, x, y, direction: null, rider: false, settled: false, offsetXpx: 0, offsetYpx: 0 });
         continue;
       }
       objects[y]![x] = type;
-      if (type === ObjectId.DRAGON_HEAD_BASE) {
-        if (x + 1 < level.width) objects[y]![x + 1] = ObjectId.DRAGON_BODY;
-        if (x + 2 < level.width) objects[y]![x + 2] = ObjectId.DRAGON_TAIL;
-      } else if (type === ObjectId.SANDMAN && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.SANDMAN_BODY;
-      } else if (type === ObjectId.DREAM_MACHINE && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.DREAM_MACHINE_BODY;
-      } else if (type === ObjectId.BEAVER_BASE && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.BEAVER_BODY;
+      for (const part of initialObjectFootprint(type)) {
+        const px=x+part.dx, py=y+part.dy;
+        if(px>=0&&py>=0&&px<level.width&&py<level.height) objects[py]![px]=part.type;
       }
     }
 
@@ -315,9 +306,9 @@ export class World {
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
         const object = objects[y]![x]!;
-        if (object === ObjectId.CARROT) carrotCount += 1;
-        if (object === ObjectId.EGG_NEST_EMPTY) nestCount += 1;
-        if (terrain[y]![x] === Terrain.HIGH_GRASS_OBJECTIVE && object === EMPTY_OBJECT) hiddenCount += 1;
+        if (objectHasTrait(object,'objective-carrot')) carrotCount += 1;
+        if (objectHasTrait(object,'objective-nest')) nestCount += 1;
+        if (terrainHasTrait(terrain[y]![x]!,'hidden-objective') && object === EMPTY_OBJECT) hiddenCount += 1;
       }
     }
     const objectiveMode = carrotCount > 0 ? 'carrot' : 'nest';
@@ -326,20 +317,8 @@ export class World {
 
     const windmillsEnabled: [boolean, boolean, boolean, boolean] = [false, false, false, false];
     const hasSwitch: [boolean, boolean, boolean, boolean] = [false, false, false, false];
-    const onTiles: TerrainType[] = [Terrain.WIND_SWITCH_0_ON, Terrain.WIND_SWITCH_1_ON, Terrain.WIND_SWITCH_2_ON, Terrain.WIND_SWITCH_3_ON];
-    const offTiles: TerrainType[] = [Terrain.WIND_SWITCH_0_OFF, Terrain.WIND_SWITCH_1_OFF, Terrain.WIND_SWITCH_2_OFF, Terrain.WIND_SWITCH_3_OFF];
-    for (const row of terrain) {
-      for (const type of row) {
-        for (let i = 0; i < 4; i += 1) {
-          if (type === onTiles[i]) { hasSwitch[i] = true; windmillsEnabled[i] = true; }
-          if (type === offTiles[i]) hasSwitch[i] = true;
-        }
-      }
-    }
-    const windmillTypes: ObjectType[] = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];
-    for (let i = 0; i < 4; i += 1) {
-      if (!hasSwitch[i] && objects.some((row) => row.includes(windmillTypes[i]!))) windmillsEnabled[i] = true;
-    }
+    for (const row of terrain) for (const type of row) { const index=windSwitchIndexForTerrain(type); if(index!==undefined){hasSwitch[index]=true;if(type.endsWith('-on'))windmillsEnabled[index]=true;} }
+    for (const row of objects) for (const type of row) { const info=windmillInfoForObject(type); if(info&&!hasSwitch[info.index])windmillsEnabled[info.index]=true; }
 
     const bonusTimeRemainingMs = (level.chapterLevel ?? 0) > 10 ? 60_000 : null;
 
@@ -409,199 +388,75 @@ export class World {
     if (passage.startsFlight) this.stateValue.forced = { kind: 'flight', direction: this.stateValue.facing };
   }
 
+  private behaviorContext(
+    point: Point,
+    direction: Direction,
+    events: WorldEvent[],
+    mode: 'normal' | 'flight',
+    justBoarded: boolean
+  ): BehaviorRuntimeContext {
+    const state = this.stateValue;
+    const terrainId = this.terrainAt(point.x, point.y)!;
+    const objectId = this.objectIdAt(point.x, point.y);
+    return {
+      state, direction, terrainId, objectId, x: point.x, y: point.y, mode, justBoarded,
+      api: {
+        setTerrain: (type) => this.setTerrain(point.x, point.y, type),
+        setObject: (type) => this.setObject(point.x, point.y, type),
+        mapTerrain: (mapper) => this.mapTerrain(mapper),
+        event: (type, message) => events.push({ type: type as WorldEvent['type'], message, ...point }),
+        kill: (reason) => this.kill(reason, events, point.x, point.y),
+        fireDragon: () => this.fireDragon(events),
+        propelClouds: () => this.propelCloudsByWind(events),
+        toggleWind: (index) => {
+          state.windmillsEnabled[index] = !state.windmillsEnabled[index];
+          this.toggleWindSwitchTiles(index);
+        },
+        mowedGround: () => GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!
+      }
+    };
+  }
+
   private beforeLeave(from: Point, events: WorldEvent[]): void {
     const state = this.stateValue;
-    if (pointEquals(state.pendingTrap, from)) {
-      this.setTerrain(from.x, from.y, Terrain.TRAP_ACTIVE);
-      state.pendingTrap = null;
-    }
-    if (pointEquals(state.pendingCarousel, from)) {
-      this.setTerrain(from.x, from.y, rotateCarousel(this.terrainAt(from.x, from.y)!));
-      state.pendingCarousel = null;
-    }
-    if (pointEquals(state.pendingMirror, from)) {
-      this.setTerrain(from.x, from.y, rotateMirror(this.terrainAt(from.x, from.y)!));
-      state.pendingMirror = null;
-    }
-    if (pointEquals(state.pendingNest, from)) {
-      if (this.objectIdAt(from.x, from.y) === ObjectId.EGG_NEST_EMPTY) {
-        this.setObject(from.x, from.y, ObjectId.EGG_NEST_FILLED);
-        state.objectiveRemaining = Math.max(0, state.objectiveRemaining - 1);
-        events.push({ type: 'fill-nest', message: '填满一个彩蛋巢', ...from });
-      }
-      state.pendingNest = null;
-    }
-    if (state.previousCrumblingPlank && !pointEquals(state.previousCrumblingPlank, from)) {
+    if (state.previousCrumblingPlank && (state.previousCrumblingPlank.x !== from.x || state.previousCrumblingPlank.y !== from.y)) {
       const old = state.previousCrumblingPlank;
       const oldType = this.objectIdAt(old.x, old.y);
       if (oldType === ObjectId.PLANK_CRUMBLING || oldType === ObjectId.PLANK_FRAGMENT) this.setObject(old.x, old.y, EMPTY_OBJECT);
       state.previousCrumblingPlank = null;
     }
-    if (pointEquals(state.pendingPlank, from)) {
-      this.setObject(from.x, from.y, ObjectId.PLANK_CRUMBLING);
-      state.previousCrumblingPlank = copyPoint(from);
-      state.pendingPlank = null;
-    }
+    const terrain = this.terrainAt(from.x, from.y)!;
+    const object = this.objectIdAt(from.x, from.y);
+    const ctx = this.behaviorContext(from, state.facing, events, 'normal', false);
+    runTerrainLeave(terrain, ctx);
+    runObjectLeave(object, ctx);
   }
 
   private afterEnter(point: Point, direction: Direction, events: WorldEvent[], options: { skipDynamic?: boolean; justBoarded?: boolean } = {}): void {
     const state = this.stateValue;
-    let terrain = this.terrainAt(point.x, point.y)!;
-    const object = this.objectIdAt(point.x, point.y);
+    const initialTerrain = this.terrainAt(point.x, point.y)!;
+    let ctx = this.behaviorContext(point, direction, events, 'normal', options.justBoarded === true);
+    if (runTerrainEnter(initialTerrain, ctx, 'before-object')) return;
 
-    if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) {
-      const hiddenObjective = terrain === Terrain.HIGH_GRASS_OBJECTIVE;
-      const ground = GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!;
-      this.setTerrain(point.x, point.y, ground);
-      if (hiddenObjective && object === EMPTY_OBJECT) this.setObject(point.x, point.y, state.objectiveMode === 'carrot' ? ObjectId.CARROT : ObjectId.EGG_NEST_EMPTY);
-      events.push({ type: 'mow', message: hiddenObjective ? '割开高草，发现目标' : '割开高草', ...point });
-      return;
-    }
+    const initialObject = this.objectIdAt(point.x, point.y);
+    runObjectEnter(initialObject, ctx);
 
-    switch (object) {
-      case ObjectId.CARROT:
-        state.objectiveRemaining = Math.max(0, state.objectiveRemaining - 1);
-        this.setObject(point.x, point.y, ObjectId.CONSUMED_CARROT);
-        events.push({ type: 'collect-carrot', message: '收集胡萝卜', ...point });
-        break;
-      case ObjectId.EGG_NEST_EMPTY:
-        state.pendingNest = copyPoint(point);
-        break;
-      case ObjectId.GAS:
-        state.inventory.gas = true;
-        this.setObject(point.x, point.y, EMPTY_OBJECT);
-        events.push({ type: 'collect-gas', message: '取得割草机汽油，本关永久有效', ...point });
-        break;
-      case ObjectId.KITE:
-        state.inventory.kite = true;
-        this.setObject(point.x, point.y, EMPTY_OBJECT);
-        events.push({ type: 'collect-kite', message: '取得风筝', ...point });
-        break;
-      case ObjectId.BEAN:
-        state.inventory.beans += 1;
-        this.setObject(point.x, point.y, EMPTY_OBJECT);
-        events.push({ type: 'collect-bean', message: '取得魔豆', ...point });
-        break;
-      case ObjectId.BEAN_FIELD:
-        if (state.inventory.beans > 0) {
-          state.inventory.beans -= 1;
-          this.setObject(point.x, point.y, ObjectId.BEAN_SPROUT);
-          state.beanstalkGrowth.push({ x: point.x, baseY: point.y, stage: 1, ticksUntilGrowth: 16 });
-          events.push({ type: 'plant-bean', message: '种下魔豆，藤蔓开始生长', ...point });
-        }
-        break;
-      case ObjectId.GOLDEN_CARROT:
-        state.goldenCarrotsInLevel += 1;
-        this.setObject(point.x, point.y, EMPTY_OBJECT);
-        events.push({ type: 'collect-golden-carrot', message: '取得金胡萝卜', ...point });
-        break;
-      case ObjectId.BONUS_COIN:
-        state.bonusCoinsInLevel += 1;
-        this.setObject(point.x, point.y, EMPTY_OBJECT);
-        events.push({ type: 'collect-bonus-coin', message: '取得 Bonus Coin', ...point });
-        break;
-      case ObjectId.DRAGON_TAIL:
-        this.fireDragon(events);
-        break;
-      case ObjectId.PLANK:
-        state.pendingPlank = copyPoint(point);
-        break;
-    }
+    const currentTerrain = this.terrainAt(point.x, point.y)!;
+    ctx = this.behaviorContext(point, direction, events, 'normal', options.justBoarded === true);
+    runTerrainEnter(currentTerrain, ctx, 'after-object');
 
-    terrain = this.terrainAt(point.x, point.y)!;
-    if (terrain === Terrain.SHOVEL_PICKUP) {
-      state.inventory.shovel = true;
-      this.setTerrain(point.x, point.y, Terrain.SHOVEL_CLEARED_GROUND);
-      events.push({ type: 'collect-shovel', message: '取得雪铲', ...point });
-      terrain = Terrain.SHOVEL_CLEARED_GROUND;
-    }
-
-    if (terrain === Terrain.TRAP_INACTIVE) state.pendingTrap = copyPoint(point);
-    if (terrain === Terrain.TRAP_ACTIVE && !state.ridingMower) this.kill('踩中了已经激活的陷阱', events, point.x, point.y);
-    if (isCarousel(terrain)) state.pendingCarousel = copyPoint(point);
-    if (isMirror(terrain)) state.pendingMirror = copyPoint(point);
-
-    if (terrain === Terrain.CAROUSEL_SWITCH_RAISED) {
-      this.mapTerrain((type) => isCarousel(type)
-        ? rotateCarousel(type)
-        : type === Terrain.CAROUSEL_SWITCH_RAISED
-          ? Terrain.CAROUSEL_SWITCH_PRESSED
-          : type === Terrain.CAROUSEL_SWITCH_PRESSED
-            ? Terrain.CAROUSEL_SWITCH_RAISED
-            : type);
-      events.push({ type: 'toggle-switch', message: '旋转全部 Carousel 地板', ...point });
-      terrain = this.terrainAt(point.x, point.y)!;
-    }
-
-    if (terrain === Terrain.SPEED_SWITCH_RAISED) {
-      this.mapTerrain(toggleSpeedTerrain);
-      events.push({ type: 'toggle-switch', message: '反转全部加速方向', ...point });
-      terrain = this.terrainAt(point.x, point.y)!;
-    }
-
-    if (terrain === Terrain.TIDE_SWITCH_RAISED) {
-      this.mapTerrain(toggleTideTerrain);
-      events.push({ type: 'toggle-switch', message: '反转潮汐方向', ...point });
-      terrain = this.terrainAt(point.x, point.y)!;
-    }
-
-    if (terrain === Terrain.COLOR_YELLOW_SWITCH_RAISED) {
-      this.mapTerrain((type) => toggleColorTerrain(type, 'yellow'));
-      events.push({ type: 'toggle-switch', message: '切换黄色机关', ...point });
-      terrain = this.terrainAt(point.x, point.y)!;
-    } else if (terrain === Terrain.COLOR_PINK_SWITCH_RAISED) {
-      this.mapTerrain((type) => toggleColorTerrain(type, 'pink'));
-      events.push({ type: 'toggle-switch', message: '切换粉色机关', ...point });
-      terrain = this.terrainAt(point.x, point.y)!;
-    }
-
-    const windSwitch = this.windSwitchIndex(terrain);
-    if (windSwitch !== null) {
-      state.windmillsEnabled[windSwitch] = !state.windmillsEnabled[windSwitch];
-      this.toggleWindSwitchTiles(windSwitch);
-      events.push({ type: 'toggle-switch', message: `切换风车 ${windSwitch + 1}`, ...point });
-      this.propelCloudsByWind(events);
-      terrain = this.terrainAt(point.x, point.y)!;
-    }
-
-    const speedDirection = SPEED_TERRAIN_DIRECTION.get(terrain);
-    if (speedDirection) state.forced = { kind: 'speed', direction: speedDirection };
-    else if (terrain === Terrain.ICE) state.forced = { kind: 'ice', direction };
-    else if (state.forced?.kind === 'speed' || state.forced?.kind === 'ice') state.forced = null;
-
-    if (object === ObjectId.LANDING && state.forced?.kind === 'flight') state.forced = null;
-
-    if (state.ridingMower && terrain === Terrain.MOWER_PARKING && !options.justBoarded) {
-      this.setObject(point.x, point.y, ObjectId.MOWER);
-      state.ridingMower = false;
-      state.forced = { kind: 'mower-exit', direction: 'right' };
-      events.push({ type: 'leave-mower', message: '在停车位自动下车', ...point });
-    }
-
+    const finalTerrain = this.terrainAt(point.x, point.y)!;
+    if ((state.forced?.kind === 'speed' || state.forced?.kind === 'ice') && !terrainHasTrait(finalTerrain, 'forced-movement')) state.forced = null;
     if (!options.skipDynamic) this.propelCloudsByWind(events);
-
-    if (!state.ridingMower && state.objectiveRemaining === 0 && terrain === Terrain.EXIT) {
-      state.completed = true;
-      state.forced = null;
-      events.push({ type: 'complete', message: '关卡完成', ...point });
-    }
   }
 
   private afterEnterFlight(point: Point, direction: Direction, events: WorldEvent[]): void {
     const object = this.objectIdAt(point.x, point.y);
-    if (object === ObjectId.LANDING) {
-      this.stateValue.forced = null;
+    const ctx = this.behaviorContext(point, direction, events, 'flight', false);
+    runObjectEnter(object, ctx);
+    if (this.stateValue.forced === null) {
       this.afterEnter(point, direction, events);
       return;
-    }
-    if (object === ObjectId.GOLDEN_CARROT) {
-      this.stateValue.goldenCarrotsInLevel += 1;
-      this.setObject(point.x, point.y, EMPTY_OBJECT);
-      events.push({ type: 'collect-golden-carrot', message: '飞行中取得金胡萝卜', ...point });
-    } else if (object === ObjectId.BONUS_COIN) {
-      this.stateValue.bonusCoinsInLevel += 1;
-      this.setObject(point.x, point.y, EMPTY_OBJECT);
-      events.push({ type: 'collect-bonus-coin', message: '飞行中取得 Bonus Coin', ...point });
     }
     this.stateValue.forced = { kind: 'flight', direction };
   }
@@ -619,7 +474,7 @@ export class World {
     const object = this.objectIdAt(to.x, to.y);
 
     if (!entity.settled && isWaterTerrain(terrain) && !dynamicTarget && object === EMPTY_OBJECT) {
-      const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);
+      const tideDirection = tideDirectionForTerrain(terrain);
       if (tideDirection && isOppositeDirection(tideDirection, direction)) {
         state.forced = null;
         entity.settled = true;
@@ -677,7 +532,7 @@ export class World {
       const canGrow = this.inBounds(item.x, targetY)
         && this.objectIdAt(item.x, targetY) === EMPTY_OBJECT
         && targetTerrain !== null
-        && allowsBeanstalkGrowth(targetTerrain);
+        && terrainHasTrait(targetTerrain, 'beanstalk-growth');
 
       if (!canGrow) {
         growth.splice(index, 1);
@@ -698,7 +553,7 @@ export class World {
     let head: Point | null = null;
     outer: for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        if (this.objectIdAt(x, y) === ObjectId.DRAGON_HEAD_BASE) { head = { x, y }; break outer; }
+        if (objectHasTrait(this.objectIdAt(x,y),'dragon-head')) { head = { x, y }; break outer; }
       }
     }
     if (!head) return;
@@ -718,17 +573,15 @@ export class World {
 
       const terrain = this.terrainAt(x, y)!;
       const object = this.objectIdAt(x, y);
-      if (object === ObjectId.ICE_BLOCK) {
-        this.setObject(x, y, EMPTY_OBJECT);
-        events.push({ type: 'melt-ice', message: '龙火融化冰块', x, y });
-      } else if (object === ObjectId.DRAGON_HEAD_BASE || object === ObjectId.DRAGON_BODY || object === ObjectId.CRUMBLY_ROCK) {
-        break;
-      }
+      if (objectHasTrait(object,'dragon-fire-melt')) {
+        this.setObject(x,y,EMPTY_OBJECT);
+        events.push({type:'melt-ice',message:'龙火融化冰块',x,y});
+      } else if (objectHasTrait(object,'dragon-fire-blocking')) break;
 
-      const reflected = this.reflectFire(terrain, direction);
+      const reflected = reflectFireForTerrain(terrain, direction);
       if (reflected === false) break;
       if (reflected) direction = reflected;
-      else if (!this.fireTerrainPassable(terrain)) break;
+      else if (!terrainHasTrait(terrain,'dragon-fire-passable')) break;
 
       const vector = DIRECTIONS[direction];
       x += vector.dx;
@@ -739,49 +592,20 @@ export class World {
     events.push({ type: 'dragon-fire', message: `龙喷火经过 ${trail.length} 格`, x: head.x, y: head.y });
   }
 
-  private reflectFire(terrain: TerrainType, direction: Direction): Direction | null | false {
-    switch (terrain) {
-      case Terrain.MIRROR_1:
-        if (direction === 'left') return 'down';
-        if (direction === 'up') return 'right';
-        return false;
-      case Terrain.MIRROR_2:
-        if (direction === 'right') return 'down';
-        if (direction === 'up') return 'left';
-        return false;
-      case Terrain.MIRROR_3:
-        if (direction === 'left') return 'up';
-        if (direction === 'down') return 'right';
-        return false;
-      case Terrain.MIRROR_4:
-        if (direction === 'right') return 'up';
-        if (direction === 'down') return 'left';
-        return false;
-      default:
-        return null;
-    }
-  }
-
-  private fireTerrainPassable(terrain: TerrainType): boolean {
-    return isDragonFireBackground(terrain)
-      && terrain !== Terrain.COLOR_YELLOW_BLOCK_RAISED
-      && terrain !== Terrain.COLOR_PINK_BLOCK_RAISED;
-  }
 
   private propelCloudsByWind(events: WorldEvent[]): void {
     const state = this.stateValue;
     const windmills: Array<{ x: number; y: number; direction: Direction; enabled: boolean }> = [];
-    const types: ObjectType[] = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        const object = this.objectIdAt(x, y);
-        const index = types.indexOf(object);
-        if (index >= 0) windmills.push({ x, y, direction: WINDMILL_DIRECTION.get(object)!, enabled: state.windmillsEnabled[index]! });
+        const object = this.objectIdAt(x,y);
+        const info=windmillInfoForObject(object);
+        if(info)windmills.push({x,y,direction:info.direction,enabled:state.windmillsEnabled[info.index]!});
       }
     }
 
     for (const entity of state.dynamicEntities) {
-      if (!CLOUD_OBJECT_IDS.has(entity.type)) continue;
+      if (!objectHasTrait(entity.type,'dynamic-cloud')) continue;
       const wind = windmills.find((candidate) => candidate.enabled && this.isInWindTunnel(entity.x, entity.y, candidate.x, candidate.y, candidate.direction));
       if (wind) entity.direction = wind.direction;
     }
@@ -792,7 +616,7 @@ export class World {
     const state = this.stateValue;
     const tilePx = 48;
     for (const entity of state.dynamicEntities) {
-      if (!CLOUD_OBJECT_IDS.has(entity.type) || !entity.direction) continue;
+      if (!objectHasTrait(entity.type,'dynamic-cloud') || !entity.direction) continue;
       const vector = DIRECTIONS[entity.direction];
       const speed = entity.rider ? 6 : 3;
       entity.offsetXpx += vector.dx * speed;
@@ -816,7 +640,7 @@ export class World {
       entity.offsetYpx -= vector.dy * tilePx;
       if (entity.rider) state.player = { x: nx, y: ny };
 
-      const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);
+      const ownGrid = cloudGridForObject(entity.type);
       if (ownGrid !== undefined && this.objectIdAt(nx, ny) === ownGrid) {
         entity.direction = null;
         entity.offsetXpx = 0;
@@ -838,30 +662,13 @@ export class World {
     if (!this.inBounds(x, y)) return false;
     if (this.dynamicEntityAt(x, y)) return false;
     const object = this.objectIdAt(x, y);
-    const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);
+    const ownGrid = cloudGridForObject(entity.type);
     if (object !== EMPTY_OBJECT && object !== ownGrid) return false;
     const terrain = this.terrainAt(x, y)!;
-    return isCloudPassableBackground(terrain);
+    return terrainHasTrait(terrain,'cloud-passable');
   }
 
-  private windSwitchIndex(terrain: TerrainType): number | null {
-    if (terrain === Terrain.WIND_SWITCH_0_ON || terrain === Terrain.WIND_SWITCH_0_OFF) return 0;
-    if (terrain === Terrain.WIND_SWITCH_1_ON || terrain === Terrain.WIND_SWITCH_1_OFF) return 1;
-    if (terrain === Terrain.WIND_SWITCH_2_ON || terrain === Terrain.WIND_SWITCH_2_OFF) return 2;
-    if (terrain === Terrain.WIND_SWITCH_3_ON || terrain === Terrain.WIND_SWITCH_3_OFF) return 3;
-    return null;
-  }
-
-  private toggleWindSwitchTiles(index: number): void {
-    const pairs: Array<[TerrainType, TerrainType]> = [
-      [Terrain.WIND_SWITCH_0_ON, Terrain.WIND_SWITCH_0_OFF],
-      [Terrain.WIND_SWITCH_1_ON, Terrain.WIND_SWITCH_1_OFF],
-      [Terrain.WIND_SWITCH_2_ON, Terrain.WIND_SWITCH_2_OFF],
-      [Terrain.WIND_SWITCH_3_ON, Terrain.WIND_SWITCH_3_OFF]
-    ];
-    const pair = pairs[index]!;
-    this.mapTerrain((type) => type === pair[0] ? pair[1] : type === pair[1] ? pair[0] : type);
-  }
+  private toggleWindSwitchTiles(index:number):void{this.mapTerrain((type)=>windSwitchIndexForTerrain(type)===index?(windSwitchPeerForTerrain(type)??type):type);}
 
   private mapTerrain(mapper: (type: TerrainType) => TerrainType): void {
     for (let y = 0; y < this.height; y += 1) {
