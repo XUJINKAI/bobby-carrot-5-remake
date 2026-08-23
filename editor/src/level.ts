@@ -2,6 +2,10 @@ import {
   DYNAMIC_OBJECT_IDS,
   ObjectId,
   Terrain,
+  collapseObjectLayouts,
+  expandObjectLayouts,
+  isObjectLayoutPart,
+  objectLayoutFor,
   type LevelData,
   type LevelObject,
   type ObjectType,
@@ -11,8 +15,8 @@ import {
 /**
  * Editor / 分享使用的最小地图格式。
  *
- * 这是 bc5r 自己的语义关卡格式，不是 DAT dump。Editor 不认识原版 byte；
- * DAT 导入/导出只能经过独立 codec 层。
+ * Multi-cell Object 只保存 anchor。Dragon 等完整外观由 Object Layout 在预览/运行时展开；
+ * EditorLevel 本身不会写入 body/tail 这类内部组成格。
  */
 export interface EditorLevel {
   schemaVersion: 2;
@@ -53,20 +57,22 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
 }
 
 export function fromLevelData(level: LevelData): EditorLevel {
-  return {
+  const anchors = collapseObjectLayouts(level.objects);
+  return normalizeEditorLevel({
     schemaVersion: 2,
     name: level.publicId ? level.publicId.toUpperCase() : level.id ? `Level ${level.id}` : 'Bobby Level',
     width: level.width,
     height: level.height,
     terrain: level.terrain.map((row) => [...row]),
-    objects: level.objects.map(({ type, x, y }) => ({ type, x, y }))
-  };
+    objects: anchors.map(({ type, x, y }) => ({ type, x, y }))
+  });
 }
 
-/** 把 Editor Draft 转成 Engine 真正运行的 LevelData。每次 Play 都重新生成，绝不让 Runtime 反写 Draft。 */
+/** 把 anchor-based Editor Draft 转成当前 Engine Runtime 使用的占用格 LevelData。 */
 export function toLevelData(level: EditorLevel): LevelData {
   const normalized = normalizeEditorLevel(level);
-  const objects: LevelObject[] = normalized.objects.map(({ type, x, y }) => ({ type, x, y }));
+  const anchors: LevelObject[] = normalized.objects.map(({ type, x, y }) => ({ type, x, y }));
+  const objects = expandObjectLayouts(anchors, normalized.width, normalized.height);
   return {
     schemaVersion: 2,
     id: 'custom',
@@ -91,17 +97,19 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     Array.from({ length: width }, (_, x) => normalizeTerrain(input.terrain?.[y]?.[x]))
   );
 
-  const seen = new Set<string>();
+  const occupied = new Set<string>();
   const objects: EditorObject[] = [];
-  for (const object of input.objects ?? []) {
-    const x = Math.trunc(Number(object.x));
-    const y = Math.trunc(Number(object.y));
+  for (const raw of input.objects ?? []) {
+    const x = Math.trunc(Number(raw.x));
+    const y = Math.trunc(Number(raw.y));
+    const type = normalizeObject(raw.type);
+    if (type === ObjectId.EMPTY || isObjectLayoutPart(type)) continue;
     if (x < 0 || y < 0 || x >= width || y >= height) continue;
-    const type = normalizeObject(object.type);
-    if (type === ObjectId.EMPTY) continue;
-    const key = `${x},${y}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+
+    const cells = objectLayoutFor(type).cells.map((cell) => ({ x: x + cell.dx, y: y + cell.dy }));
+    if (cells.some((cell) => cell.x < 0 || cell.y < 0 || cell.x >= width || cell.y >= height)) continue;
+    if (cells.some((cell) => occupied.has(`${cell.x},${cell.y}`))) continue;
+    for (const cell of cells) occupied.add(`${cell.x},${cell.y}`);
     objects.push({ type, x, y });
   }
 
