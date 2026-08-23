@@ -2,6 +2,7 @@ import type { LevelData } from '../data/types.js';
 import type { AudioBackend } from '../audio/AudioBackend.js';
 import { NullAudioBackend } from '../audio/AudioBackend.js';
 import type { Direction } from '../mechanics/ids.js';
+import { expandObjectLayouts } from '../mechanics/object-layouts.js';
 import { Renderer, type RendererAssets, type VisualPlayerState } from '../render/Renderer.js';
 import { World, type MoveResult, type TileInspection, type WorldEvent, type WorldSnapshot } from '../world/World.js';
 import type { ProfileCapabilities } from '../world/RuntimeState.js';
@@ -71,8 +72,9 @@ export class Game {
   get canUndo(): boolean { return this.history.length > 0; }
 
   async loadLevel(level: LevelData): Promise<void> {
-    this.initialLevel = structuredClone(level);
-    this.worldValue = new World(structuredClone(level), this.profile);
+    const runtimeLevel = this.prepareRuntimeLevel(level);
+    this.initialLevel = structuredClone(runtimeLevel);
+    this.worldValue = new World(structuredClone(runtimeLevel), this.profile);
     this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
@@ -184,6 +186,13 @@ export class Game {
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener('resize', this.onResize);
     this.audio.stopMusic();
+  }
+
+  private prepareRuntimeLevel(level: LevelData): LevelData {
+    return {
+      ...structuredClone(level),
+      objects: expandObjectLayouts(level.objects, level.width, level.height)
+    };
   }
 
   private startLogicalMove(direction: Direction, forced: boolean): MoveResult {
