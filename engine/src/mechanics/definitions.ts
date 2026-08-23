@@ -242,7 +242,7 @@ for (const [id, hex] of blockingObjects) {
     presentation: { name: id, category: 'blocking-object' },
     traits: ['blocking'],
     behaviors: [markerBehavior('blocks-passage', '默认阻挡 Bobby 通过')],
-    source: hex ? original(hex) : undefined
+    ...(hex ? { source: original(hex) } : {})
   });
 }
 
