@@ -92,6 +92,10 @@ function isSameCell(entity: DynamicEntity, x: number, y: number): boolean {
   return entity.x === x && entity.y === y;
 }
 
+function isOppositeDirection(a: Direction, b: Direction): boolean {
+  return DIRECTIONS[a].dx === -DIRECTIONS[b].dx && DIRECTIONS[a].dy === -DIRECTIONS[b].dy;
+}
+
 export class World {
   readonly level: LevelData;
   private stateValue: RuntimeState;
@@ -114,21 +118,15 @@ export class World {
   get facing(): Direction { return this.stateValue.facing; }
   get forcedDirection(): Direction | null { return this.stateValue.forced?.direction ?? null; }
   get forcedKind(): string | null { return this.stateValue.forced?.kind ?? null; }
-  /** Bobby 是否正站在 CE/DE/EE 三种成熟藤蔓段上。原版此时强制使用向上/背面人物动画。 */
   get isPlayerClimbing(): boolean {
     const id = this.objectIdAt(this.stateValue.player.x, this.stateValue.player.y);
     return id === ObjectId.BEANSTALK_TIP || id === ObjectId.BEANSTALK_MID || id === ObjectId.BEANSTALK_BASE;
   }
 
-  /** 当前被 Bobby 搭乘的动态对象。供 Game 判断“载具和人物是否应共用同一段插值”。 */
   getRiddenDynamicEntity(): DynamicEntity | null {
     return this.stateValue.dynamicEntities.find((entity) => entity.rider && isSameCell(entity, this.stateValue.player.x, this.stateValue.player.y)) ?? null;
   }
 
-  /**
-   * 推进原版约 62ms 的逻辑时钟。当前首先用于精确复刻魔豆 S() 的 16 Tick 分段生长。
-   * 返回的事件由 Game 统一转发给 UI / 音频层。
-   */
   advanceTime(deltaMs: number): WorldEvent[] {
     if (!Number.isFinite(deltaMs) || deltaMs <= 0 || this.stateValue.dead || this.stateValue.completed) return [];
     const events: WorldEvent[] = [];
@@ -147,21 +145,10 @@ export class World {
     return events;
   }
 
-  clearTransientEffects(): void {
-    this.stateValue.fireTrail = [];
-  }
-
-  snapshot(): WorldSnapshot {
-    return structuredClone(this.stateValue);
-  }
-
-  restore(snapshot: WorldSnapshot): void {
-    this.stateValue = structuredClone(snapshot);
-  }
-
-  setProfile(profile: Partial<ProfileCapabilities>): void {
-    this.stateValue.profile = { ...this.stateValue.profile, ...profile };
-  }
+  clearTransientEffects(): void { this.stateValue.fireTrail = []; }
+  snapshot(): WorldSnapshot { return structuredClone(this.stateValue); }
+  restore(snapshot: WorldSnapshot): void { this.stateValue = structuredClone(snapshot); }
+  setProfile(profile: Partial<ProfileCapabilities>): void { this.stateValue.profile = { ...this.stateValue.profile, ...profile }; }
 
   terrainAt(x: number, y: number): number | null {
     if (!this.inBounds(x, y)) return null;
@@ -183,14 +170,8 @@ export class World {
     return this.stateValue.dynamicEntities.find((entity) => isSameCell(entity, x, y)) ?? null;
   }
 
-  getDynamicEntities(): readonly DynamicEntity[] {
-    return this.stateValue.dynamicEntities;
-  }
+  getDynamicEntities(): readonly DynamicEntity[] { return this.stateValue.dynamicEntities; }
 
-  /**
-   * 执行一个“逻辑格”移动。视觉插值由 Game/Renderer 完成。
-   * 如果存在冰面、加速、飞行等强制状态，Game 会在本次动画结束后继续调用 forcedDirection。
-   */
   move(direction: Direction, forced = false): MoveResult {
     const state = this.stateValue;
     const from = copyPoint(state.player);
@@ -204,13 +185,9 @@ export class World {
     const vector = DIRECTIONS[direction];
     const to = { x: from.x + vector.dx, y: from.y + vector.dy };
 
-    // Bobby 正搭乘荷叶时，移动语义不同于普通地面。
     const ridden = state.dynamicEntities.find((entity) => entity.rider && isSameCell(entity, from.x, from.y));
-    if (ridden?.id === ObjectId.LEAF) {
-      return this.moveWithLeaf(ridden, direction, from, to, events, forced);
-    }
+    if (ridden?.id === ObjectId.LEAF) return this.moveWithLeaf(ridden, direction, from, to, events, forced);
 
-    // 站在云上时，可向普通地面下云；云本身不随玩家输入移动。
     if (ridden && CLOUD_OBJECT_IDS.has(ridden.id)) {
       const passage = this.passageTo(from, to, direction);
       if (!passage.passable) return this.result(false, from, to, passage, events);
@@ -225,15 +202,11 @@ export class World {
     }
 
     if (!this.inBounds(to.x, to.y)) {
-      if (state.forced?.kind === 'flight') {
-        this.kill('风筝飞出了地图边界', events, from.x, from.y);
-      } else {
-        state.forced = null;
-      }
+      if (state.forced?.kind === 'flight') this.kill('风筝飞出了地图边界', events, from.x, from.y);
+      else state.forced = null;
       return this.result(false, from, to, { passable: false, reason: '地图边界', confidence: 'confirmed' }, events);
     }
 
-    // 飞行状态不走普通碰撞：保持方向，直到落到 F5；越界会失败。
     if (state.forced?.kind === 'flight') {
       this.beforeLeave(from, events);
       state.player = to;
@@ -242,7 +215,6 @@ export class World {
       return this.result(true, from, to, { passable: true, reason: '风筝飞行', confidence: 'confirmed' }, events);
     }
 
-    // 可以从陆地踏上动态荷叶/云，即使其下方是水或不可步行地形。
     const dynamicTarget = this.dynamicEntityAt(to.x, to.y);
     if (dynamicTarget) {
       const staticObject = this.objectIdAt(to.x, to.y);
@@ -255,9 +227,17 @@ export class World {
       state.moves += forced ? 0 : 1;
       dynamicTarget.rider = true;
       if (dynamicTarget.id === ObjectId.LEAF) {
-        // 重新登上已经停住的荷叶会解除 settled；这是原版帮助文本明确规定的“必须下去再上来”。
-        dynamicTarget.settled = false;
-        state.forced = { kind: 'leaf', direction };
+        const tideDirection = TIDE_TERRAIN_DIRECTION.get(this.terrainAt(to.x, to.y) ?? -1);
+        // 登叶时就要读取荷叶脚下的水流。逆流方向登叶只能站上去，不能先错误漂一格再停。
+        if (tideDirection && isOppositeDirection(tideDirection, direction)) {
+          dynamicTarget.settled = true;
+          dynamicTarget.direction = null;
+          state.forced = null;
+        } else {
+          dynamicTarget.settled = false;
+          dynamicTarget.direction = tideDirection ?? direction;
+          state.forced = { kind: 'leaf', direction: tideDirection ?? direction };
+        }
       }
       this.afterEnter(to, direction, events, { skipDynamic: true });
       return this.result(true, from, to, { passable: true, reason: '踏上动态载具', confidence: 'confirmed' }, events);
@@ -265,7 +245,6 @@ export class World {
 
     const passage = this.passageTo(from, to, direction);
     if (!passage.passable) {
-      // 冰面/加速撞到障碍后停止强制移动，而不是无限重复。
       if (forced) state.forced = null;
       return this.result(false, from, to, passage, events);
     }
@@ -316,7 +295,6 @@ export class World {
       }
     }
 
-    // 原版 e(int,int) 会把四种动态对象从 cv[][] 中抽出来，并展开若干多格对象。
     for (const sourceObject of level.objects) {
       const id = sourceObject.id & 0xff;
       const { x, y } = sourceObject;
@@ -350,8 +328,6 @@ export class World {
         if (terrain[y]![x] === Terrain.HIGH_GRASS_OBJECTIVE && object === EMPTY_OBJECT) hiddenCount += 1;
       }
     }
-    // 原版 cU 初值为 false；扫描到 CA 时设 true，扫描到 CB 时设 false。
-    // 只有没有显式 Object 的 C8 才是“隐式隐藏目标”；C8 上若已有金币等 Object，不能重复计目标。
     const objectiveMode = carrotCount > 0 ? 'carrot' : 'nest';
     const visibleObjective = objectiveMode === 'carrot' ? carrotCount : nestCount;
     const objectiveTotal = visibleObjective + hiddenCount;
@@ -368,11 +344,14 @@ export class World {
         }
       }
     }
-    // 没有对应开关的风车按“常开”处理；这是对帮助文本和原版渲染行为的保守推断。
     const windmillIds = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];
     for (let i = 0; i < 4; i += 1) {
       if (!hasSwitch[i] && objects.some((row) => row.includes(windmillIds[i]!))) windmillsEnabled[i] = true;
     }
+
+    // 原版每章 1..10 是普通谜题，11/12 是 Bonus Level；只有 Bonus 是 60 秒倒计时。
+    // 不能再以 F8 Bonus Coin / Beaver 是否出现来猜，否则普通关只要包含奖励物就会被错误限时。
+    const bonusTimeRemainingMs = (level.chapterLevel ?? 0) > 10 ? 60_000 : null;
 
     return {
       terrain,
@@ -397,7 +376,7 @@ export class World {
       windmillsEnabled,
       beanstalkGrowth: [],
       logicRemainderMs: 0,
-      bonusTimeRemainingMs: level.objects.some((object) => object.id === ObjectId.BEAVER_BASE || object.id === ObjectId.BEAVER_BODY || object.id === ObjectId.BONUS_COIN) ? 60_000 : null,
+      bonusTimeRemainingMs,
       bonusCoinsInLevel: 0,
       goldenCarrotsInLevel: 0,
       moves: 0,
@@ -430,9 +409,7 @@ export class World {
       this.stateValue.ridingMower = true;
       events.push({ type: 'board-mower', message: '登上割草机', ...to });
     }
-    if (passage.startsFlight) {
-      this.stateValue.forced = { kind: 'flight', direction: this.stateValue.facing };
-    }
+    if (passage.startsFlight) this.stateValue.forced = { kind: 'flight', direction: this.stateValue.facing };
   }
 
   private beforeLeave(from: Point, events: WorldEvent[]): void {
@@ -442,17 +419,14 @@ export class World {
       this.setTerrain(from.x, from.y, Terrain.TRAP_ACTIVE);
       state.pendingTrap = null;
     }
-
     if (pointEquals(state.pendingCarousel, from)) {
       this.setTerrain(from.x, from.y, rotateCarousel(this.terrainAt(from.x, from.y)!));
       state.pendingCarousel = null;
     }
-
     if (pointEquals(state.pendingMirror, from)) {
       this.setTerrain(from.x, from.y, rotateMirror(this.terrainAt(from.x, from.y)!));
       state.pendingMirror = null;
     }
-
     if (pointEquals(state.pendingNest, from)) {
       if (this.objectIdAt(from.x, from.y) === ObjectId.EGG_NEST_EMPTY) {
         this.setObject(from.x, from.y, ObjectId.EGG_NEST_FILLED);
@@ -461,7 +435,6 @@ export class World {
       }
       state.pendingNest = null;
     }
-
     if (state.previousCrumblingPlank && !pointEquals(state.previousCrumblingPlank, from)) {
       const old = state.previousCrumblingPlank;
       if (this.objectIdAt(old.x, old.y) === ObjectId.PLANK_CRUMBLING || this.objectIdAt(old.x, old.y) === ObjectId.PLANK_FRAGMENT) {
@@ -469,7 +442,6 @@ export class World {
       }
       state.previousCrumblingPlank = null;
     }
-
     if (pointEquals(state.pendingPlank, from)) {
       this.setObject(from.x, from.y, ObjectId.PLANK_CRUMBLING);
       state.previousCrumblingPlank = copyPoint(from);
@@ -482,8 +454,6 @@ export class World {
     let terrain = this.terrainAt(point.x, point.y)!;
     const object = this.objectIdAt(point.x, point.y);
 
-    // Terrain 与 Object 是独立层。割草只揭掉 Terrain 覆盖，不得覆盖原 DAT 已存在的 Object。
-    // 第一次进入草格只负责 reveal；隐藏对象不会在同一逻辑拍被自动拾取。
     if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) {
       const hiddenObjective = terrain === Terrain.HIGH_GRASS_OBJECTIVE;
       const ground = GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!;
@@ -522,7 +492,6 @@ export class World {
       case ObjectId.BEAN_FIELD:
         if (state.inventory.beans > 0) {
           state.inventory.beans -= 1;
-          // 原版 S()：DF 豆田先变 EF 萌芽；16 个逻辑 Tick 后才开始逐格向上长。
           this.setObject(point.x, point.y, ObjectId.BEAN_SPROUT);
           state.beanstalkGrowth.push({ x: point.x, baseY: point.y, stage: 1, ticksUntilGrowth: 16 });
           events.push({ type: 'plant-bean', message: '种下魔豆，藤蔓开始生长', ...point });
@@ -550,7 +519,6 @@ export class World {
 
     if (terrain === Terrain.SHOVEL_PICKUP) {
       state.inventory.shovel = true;
-      // 原版字节码明确将该格替换为 unsigned 124 (0x7C)。
       this.setTerrain(point.x, point.y, 0x7c);
       events.push({ type: 'collect-shovel', message: '取得雪铲', ...point });
       terrain = 0x7c;
@@ -561,14 +529,15 @@ export class World {
     if (isCarousel(terrain)) state.pendingCarousel = copyPoint(point);
     if (isMirror(terrain)) state.pendingMirror = copyPoint(point);
 
-    // A 是未按下/可触发态；全局翻转后当前格变 B。B 允许踩，但不得再次触发。
+    // A/B 只是 raw ID 对；不能再把字母本身当作“抬起/按下”的含义。
     if (terrain === Terrain.CAROUSEL_SWITCH_A) {
       this.mapTerrain((id) => isCarousel(id) ? rotateCarousel(id) : (id === Terrain.CAROUSEL_SWITCH_A ? Terrain.CAROUSEL_SWITCH_B : id === Terrain.CAROUSEL_SWITCH_B ? Terrain.CAROUSEL_SWITCH_A : id));
       events.push({ type: 'toggle-switch', message: '旋转全部 Carousel 地板', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
     }
 
-    if (terrain === Terrain.SPEED_SWITCH_A) {
+    // 实机/atlas 对照：Speed 开关的抬起可触发态是 B，上一版把 A/B 视觉状态猜反了。
+    if (terrain === Terrain.SPEED_SWITCH_B) {
       this.mapTerrain(toggleSpeedTerrain);
       events.push({ type: 'toggle-switch', message: '反转全部加速方向', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
@@ -604,7 +573,6 @@ export class World {
     else if (terrain === Terrain.ICE) state.forced = { kind: 'ice', direction };
     else if (state.forced?.kind === 'speed' || state.forced?.kind === 'ice') state.forced = null;
 
-    // F4 的 passage 已设置 flight；F5 结束飞行。
     if (object === ObjectId.LANDING && state.forced?.kind === 'flight') state.forced = null;
 
     if (state.ridingMower && terrain === Terrain.MOWER_PARKING && !options.justBoarded) {
@@ -630,7 +598,6 @@ export class World {
       this.afterEnter(point, direction, events);
       return;
     }
-    // 飞行中仍可收金胡萝卜/金币；其他机关按原版 cutscene 逻辑不触发。
     if (object === ObjectId.GOLDEN_CARROT) {
       this.stateValue.goldenCarrotsInLevel += 1;
       this.setObject(point.x, point.y, EMPTY_OBJECT);
@@ -655,13 +622,12 @@ export class World {
     const dynamicTarget = this.dynamicEntityAt(to.x, to.y);
     const object = this.objectIdAt(to.x, to.y);
 
-    // 原版说明：荷叶一旦撞停，在 Bobby 下去并重新登叶之前，不能再次从普通水面启动。
     if (!entity.settled && isWaterTerrain(terrain) && !dynamicTarget && object === EMPTY_OBJECT) {
       const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);
-      // 反向潮汐不是“立即掉头”：它会让当前荷叶停住。
-      if (tideDirection && DIRECTIONS[tideDirection].dx === -DIRECTIONS[direction].dx && DIRECTIONS[tideDirection].dy === -DIRECTIONS[direction].dy) {
+      if (tideDirection && isOppositeDirection(tideDirection, direction)) {
         state.forced = null;
         entity.settled = true;
+        entity.direction = null;
         return this.result(false, from, to, { passable: false, reason: '荷叶遇到反向潮汐并停住', confidence: 'confirmed' }, events);
       }
       entity.x = to.x;
@@ -673,17 +639,17 @@ export class World {
       return this.result(true, from, to, { passable: true, reason: tideDirection ? '荷叶受潮汐推动' : '荷叶继续漂流', confidence: 'confirmed' }, events);
     }
 
-    // 漂流是强制移动：撞到可步行陆地也只会“靠岸停住”，不会自动把 Bobby 弹上岸。
-    // 玩家下一次主动输入时才真正下荷叶。
     const passage = this.passageTo(from, to, direction);
     if (passage.passable && forced) {
       state.forced = null;
       entity.settled = true;
+      entity.direction = null;
       return this.result(false, from, to, { passable: false, reason: '荷叶靠岸并停住', confidence: 'confirmed' }, events);
     }
     if (passage.passable) {
       entity.rider = false;
       state.forced = null;
+      entity.direction = null;
       this.beforeLeave(from, events);
       state.player = to;
       state.facing = direction;
@@ -695,6 +661,7 @@ export class World {
 
     state.forced = null;
     entity.settled = true;
+    entity.direction = null;
     return this.result(false, from, to, { passable: false, reason: '荷叶撞到障碍并停住；需先下叶再重新登上', confidence: 'confirmed' }, events);
   }
 
@@ -702,7 +669,6 @@ export class World {
     this.propelCloudsByWind(events);
     this.advanceCloudMotion(events);
     const growth = this.stateValue.beanstalkGrowth;
-    // 对应原版 private S()：从后往前删除已停止生长的任务。
     for (let index = growth.length - 1; index >= 0; index -= 1) {
       const item = growth[index]!;
       if (item.ticksUntilGrowth > 0) {
@@ -713,7 +679,6 @@ export class World {
       const targetY = item.baseY - item.stage;
       const canGrow = this.inBounds(item.x, targetY)
         && this.objectIdAt(item.x, targetY) === EMPTY_OBJECT
-        // 原版 S() 的字节码是 unsigned terrain <= 93 (0x5D)。
         && (this.terrainAt(item.x, targetY) ?? 0xff) <= 0x5d;
 
       if (!canGrow) {
@@ -721,7 +686,6 @@ export class World {
         continue;
       }
 
-      // 旧顶端 CE 变成中段 DE；第一段生长时豆田 EF 同时变成根部 EE。
       this.setObject(item.x, item.baseY - item.stage + 1, ObjectId.BEANSTALK_MID);
       if (item.stage <= 1) this.setObject(item.x, item.baseY, ObjectId.BEANSTALK_BASE);
       this.setObject(item.x, targetY, ObjectId.BEANSTALK_TIP);
@@ -741,7 +705,6 @@ export class World {
     }
     if (!head) return;
 
-    // 原版 Q(): 火球从龙头格中心开始，dt=0；其方向枚举 0/1/2/3 = 左/右/上/下。
     let direction: Direction = 'left';
     let x = head.x - 1;
     let y = head.y;
@@ -780,7 +743,6 @@ export class World {
   }
 
   private reflectFire(terrain: number, direction: Direction): Direction | null | false {
-    // 从原版 Q() 逐分支恢复；未列出的入射方向会被镜子背面挡住。
     switch (terrain) {
       case Terrain.MIRROR_1:
         if (direction === 'left') return 'down';
@@ -804,7 +766,6 @@ export class World {
   }
 
   private fireTerrainPassable(terrain: number): boolean {
-    // 原版 Q() 明确允许 94..200、85..93、71..76；其中 C3/C5 两个升起方块阻挡。
     const inRange = (terrain >= 94 && terrain <= 200) || (terrain >= 85 && terrain <= 93) || (terrain >= 71 && terrain <= 76);
     return inRange && terrain !== Terrain.COLOR_YELLOW_BLOCK_ON && terrain !== Terrain.COLOR_PINK_BLOCK_ON;
   }
@@ -821,7 +782,6 @@ export class World {
       }
     }
 
-    // 原版 P() 的风道只负责“捕获/改变云方向”；云离开前三格风道后仍保留惯性继续漂。
     for (const entity of state.dynamicEntities) {
       if (!CLOUD_OBJECT_IDS.has(entity.id)) continue;
       const wind = windmills.find((candidate) => candidate.enabled && this.isInWindTunnel(entity.x, entity.y, candidate.x, candidate.y, candidate.direction));
@@ -830,10 +790,6 @@ export class World {
     void events;
   }
 
-  /**
-   * UP9 原版 P() 中无人云每逻辑 Tick 移动 3px，Bobby 搭乘时移动 6px；高清 Tile 为 48px。
-   * 这里保留整数格碰撞，同时积累亚格像素偏移供 Renderer 平滑绘制。
-   */
   private advanceCloudMotion(events: WorldEvent[]): void {
     const state = this.stateValue;
     const tilePx = 48;
@@ -887,13 +843,10 @@ export class World {
     const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.id);
     if (object !== EMPTY_OBJECT && object !== ownGrid) return false;
     const terrain = this.terrainAt(x, y)!;
-    // 云在空中可跨越大多数底图，但实心墙/树区域仍停止；这里沿用火球的“可见游戏区域”范围作保守边界。
     return isOrdinaryWalkableTerrain(terrain) || isWaterTerrain(terrain) || (terrain >= 0x47 && terrain <= 0x5d);
   }
 
   private windSwitchIndex(terrain: number): number | null {
-    // 风车开关的 ON/OFF 命名表达的是风车状态，不等同于 A/B 的“按下/未按下”视觉态；
-    // 在字节码确认其触发边之前保持双态可触发，避免把未经确认的 A/B 规则硬套到风车系统。
     if (terrain === Terrain.WIND_SWITCH_0_ON || terrain === Terrain.WIND_SWITCH_0_OFF) return 0;
     if (terrain === Terrain.WIND_SWITCH_1_ON || terrain === Terrain.WIND_SWITCH_1_OFF) return 1;
     if (terrain === Terrain.WIND_SWITCH_2_ON || terrain === Terrain.WIND_SWITCH_2_OFF) return 2;
