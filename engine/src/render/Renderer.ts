@@ -5,9 +5,7 @@ import type { World } from '../world/World.js';
 
 export interface RendererAssets {
   atlasUrl: string;
-  /** 原版动态格动画图集 ta.png（高清版为 4×15 个 48px 单元）。 */
   animationAtlasUrl?: string;
-  /** 兼容旧调用：不提供 bobbyUrls 时作为向右/默认 sprite。 */
   bobbyUrl?: string;
   bobbyUrls?: Partial<Record<Direction, string>>;
   kiteUrl?: string;
@@ -21,7 +19,6 @@ export interface VisualPlayerState {
   direction: Direction;
   progress: number;
   moving: boolean;
-  /** 当前动画中 Bobby 与动态载具是否共享同一条像素插值轨迹。 */
   ridingDynamic: boolean;
 }
 
@@ -142,7 +139,6 @@ export class Renderer {
         if (animatedTerrain && this.animationAtlas) this.drawAnimationTile(this.animationAtlas, animatedTerrain.taIndex, screen.x, screen.y, size);
         else this.drawAtlasTile(atlas, terrain, screen.x, screen.y, size);
 
-        // Object 与 Terrain 是独立层，但高草在原版视觉上是覆盖层：草没割开前，格内对象不可见。
         const object = world.objectIdAt(x, y);
         const objectCoveredByGrass = terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE;
         if (object !== ObjectId.EMPTY && !objectCoveredByGrass) {
@@ -165,10 +161,7 @@ export class Renderer {
       }
     }
 
-    // 动态云与荷叶不在静态 cv[][] 中，必须单独画。
     for (const entity of world.getDynamicEntities()) {
-      // 原版 P() 在 Bobby 搭乘荷叶/云时给载具和人物施加完全相同的像素增量。
-      // 逻辑世界会先到目标格，所以只有“本次移动从载具上开始且仍在载具上”时才共用视觉插值。
       const renderX = entity.rider && visualPlayer.ridingDynamic
         ? visualPlayer.x
         : entity.x + entity.offsetXpx / this.sourceTileSize;
@@ -179,7 +172,6 @@ export class Renderer {
       this.drawAtlasTile(atlas, entity.id, screen.x, screen.y, size);
     }
 
-    // 龙火轨迹保留一小段视觉提示；状态变化已经由 World 完成。
     if (world.state.fireTrail.length > 0) {
       ctx.save();
       ctx.globalAlpha = 0.55;
@@ -205,7 +197,6 @@ export class Renderer {
     const screen = this.camera.worldToScreen(playerX, playerY);
     const forcedKind = world.forcedKind;
 
-    // 风筝飞行用 b9 原版动画素材；四个大帧按左右/上下近似映射。
     if (forcedKind === 'flight' && this.kite) {
       const frameWidth = this.kite.width / 4;
       const frame = visual.direction === 'left' ? 0 : visual.direction === 'right' ? 1 : visual.direction === 'up' ? 2 : 3;
@@ -216,7 +207,6 @@ export class Renderer {
       return;
     }
 
-    // 驾驶割草机时优先使用 b7。其源图是 4 列×2 行的复合帧，第一行即可覆盖四个方向。
     if (world.ridingMower && this.mowerBobby) {
       const frameWidth = this.mowerBobby.width / 4;
       const frameHeight = this.mowerBobby.height / 2;
@@ -226,30 +216,59 @@ export class Renderer {
       return;
     }
 
-    // 原版 bj 标志：站在 CE/DE/EE 藤蔓段时强制用 b2（背面/向上）人物动画。
     const spriteDirection: Direction = world.isPlayerClimbing ? 'up' : visual.direction;
     const image = this.bobby.get(spriteDirection) ?? this.bobby.get('down');
     if (!image) return;
     const frameWidth = this.sourceTileSize;
     const frameHeight = image.height;
     const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
-    // 静止使用第 0 帧；移动时让 8 帧序列随插值进度走完一次，避免“滑过去”。
     const frame = visual.moving ? Math.min(frameCount - 1, Math.floor(visual.progress * frameCount)) : 0;
     const scale = size / this.sourceTileSize;
     const drawHeight = frameHeight * scale;
     ctx.drawImage(image, frame * frameWidth, 0, frameWidth, frameHeight, screen.x, screen.y + size - drawHeight, size, drawHeight);
   }
 
+  private snappedTileRect(x: number, y: number, size: number): { x: number; y: number; width: number; height: number } {
+    // Camera/zoom 往往得到小数 CSS 像素。相邻 drawImage 各自使用小数边界时，Canvas 在部分 DPR/缩放
+    // 组合下会露出背景色形成“格子线”。用同一套 floor/ceil 边界覆盖到相邻像素，避免非原版网格缝。
+    const left = Math.floor(x);
+    const top = Math.floor(y);
+    const right = Math.ceil(x + size);
+    const bottom = Math.ceil(y + size);
+    return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+  }
+
   private drawAnimationTile(atlas: HTMLImageElement, index: number, x: number, y: number, size: number): void {
-    // ta.png 是 4 列线性动画图集，与 ts.png 的 16×16 ID 图集不同。
     const column = index % 4;
     const row = Math.floor(index / 4);
-    this.context.drawImage(atlas, column * this.sourceTileSize, row * this.sourceTileSize, this.sourceTileSize, this.sourceTileSize, x, y, size, size);
+    const target = this.snappedTileRect(x, y, size);
+    this.context.drawImage(
+      atlas,
+      column * this.sourceTileSize,
+      row * this.sourceTileSize,
+      this.sourceTileSize,
+      this.sourceTileSize,
+      target.x,
+      target.y,
+      target.width,
+      target.height
+    );
   }
 
   private drawAtlasTile(atlas: HTMLImageElement, id: number, x: number, y: number, size: number): void {
     const column = id & 0x0f;
     const row = id >> 4;
-    this.context.drawImage(atlas, column * this.sourceTileSize, row * this.sourceTileSize, this.sourceTileSize, this.sourceTileSize, x, y, size, size);
+    const target = this.snappedTileRect(x, y, size);
+    this.context.drawImage(
+      atlas,
+      column * this.sourceTileSize,
+      row * this.sourceTileSize,
+      this.sourceTileSize,
+      this.sourceTileSize,
+      target.x,
+      target.y,
+      target.width,
+      target.height
+    );
   }
 }
