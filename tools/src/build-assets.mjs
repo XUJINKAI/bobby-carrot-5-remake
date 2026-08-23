@@ -51,6 +51,9 @@ for (const release of RELEASES) {
 
   for (const name of ordered) {
     const level = readJson(path.join(dir, name));
+    if (level.schemaVersion !== 2 || level.terrainEncoding !== 'semantic-row-major') {
+      throw new Error(`Source level is not semantic schema v2: ${release.id}/${name}`);
+    }
     totalSourceLevels += 1;
     const sourceRef = {
       edition: level.source.edition,
@@ -130,23 +133,30 @@ for (const collection of legacy.collections) {
 }
 
 const COMPLEX_TERRAIN = new Set([
-  0x4d, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x94,
-  0x9f, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6,
-  0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae,
-  0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4,
-  0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe,
-  0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8
+  'snow', 'water-animated', 'tide-up', 'tide-down', 'tide-left', 'tide-right', 'ice',
+  'shovel-pickup', 'mower-parking', 'speed-switch-pressed', 'speed-switch-raised',
+  'carousel-switch-raised', 'carousel-switch-pressed', 'tide-switch-raised', 'tide-switch-pressed',
+  'wind-switch-0-on', 'wind-switch-0-off', 'wind-switch-1-on', 'wind-switch-1-off',
+  'wind-switch-2-on', 'wind-switch-2-off', 'wind-switch-3-on', 'wind-switch-3-off',
+  'trap-active', 'trap-inactive', 'mirror-1', 'mirror-2', 'mirror-3', 'mirror-4',
+  'speed-up', 'speed-down', 'speed-left', 'speed-right',
+  'carousel-1', 'carousel-2', 'carousel-3', 'carousel-4', 'carousel-vertical', 'carousel-horizontal',
+  'color-yellow-switch-raised', 'color-yellow-switch-pressed', 'color-pink-switch-raised', 'color-pink-switch-pressed',
+  'color-yellow-block-raised', 'color-yellow-block-lowered', 'color-pink-block-raised', 'color-pink-block-lowered',
+  'high-grass', 'high-grass-objective'
 ]);
-const COMPLEX_OBJECT = new Set(Array.from({ length: 0x100 - 0xcd }, (_, i) => 0xcd + i));
+const SIMPLE_OBJECT = new Set(['consumed-carrot', 'carrot', 'egg-nest-empty', 'egg-nest-filled']);
+function isComplexObject(type) { return !SIMPLE_OBJECT.has(type); }
 
 function featureVector(level) {
   const terrainFlat = level.terrain.flat();
-  const objectIds = level.objects.map((o) => o.id);
+  const objectTypes = level.objects.map((o) => o.type);
   const uniqueTerrain = new Set(terrainFlat);
-  const uniqueObject = new Set(objectIds);
+  const uniqueObject = new Set(objectTypes);
   const area = level.width * level.height;
-  const complexCells = terrainFlat.filter((id) => COMPLEX_TERRAIN.has(id)).length + objectIds.filter((id) => COMPLEX_OBJECT.has(id)).length;
-  const objectives = terrainFlat.filter((id) => id === 0xc8).length + objectIds.filter((id) => id === 0xca || id === 0xcb).length;
+  const complexCells = terrainFlat.filter((type) => COMPLEX_TERRAIN.has(type)).length + objectTypes.filter(isComplexObject).length;
+  const objectives = terrainFlat.filter((type) => type === 'high-grass-objective').length
+    + objectTypes.filter((type) => type === 'carrot' || type === 'egg-nest-empty').length;
   return [
     Math.log2(Math.max(1, area)),
     level.objects.length / Math.sqrt(Math.max(1, area)),
@@ -155,7 +165,7 @@ function featureVector(level) {
     level.dynamicSlots,
     objectives,
     complexCells / Math.sqrt(Math.max(1, area)),
-    [...uniqueTerrain].filter((id) => COMPLEX_TERRAIN.has(id)).length + [...uniqueObject].filter((id) => COMPLEX_OBJECT.has(id)).length
+    [...uniqueTerrain].filter((type) => COMPLEX_TERRAIN.has(type)).length + [...uniqueObject].filter(isComplexObject).length
   ];
 }
 
