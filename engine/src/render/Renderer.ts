@@ -1,5 +1,5 @@
 import { Camera } from './Camera.js';
-import { ObjectId, type Direction } from '../mechanics/ids.js';
+import { ObjectId, Terrain, type Direction } from '../mechanics/ids.js';
 import { animatedObjectTile, animatedTerrainTile } from './animation.js';
 import type { World } from '../world/World.js';
 
@@ -142,8 +142,10 @@ export class Renderer {
         if (animatedTerrain && this.animationAtlas) this.drawAnimationTile(this.animationAtlas, animatedTerrain.taIndex, screen.x, screen.y, size);
         else this.drawAtlasTile(atlas, terrain, screen.x, screen.y, size);
 
+        // Object 与 Terrain 是独立层，但高草在原版视觉上是覆盖层：草没割开前，格内对象不可见。
         const object = world.objectIdAt(x, y);
-        if (object !== ObjectId.EMPTY) {
+        const objectCoveredByGrass = terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE;
+        if (object !== ObjectId.EMPTY && !objectCoveredByGrass) {
           const animatedObject = this.animationAtlas ? animatedObjectTile(object, world.state, animationElapsed) : null;
           if (animatedObject && this.animationAtlas) this.drawAnimationTile(this.animationAtlas, animatedObject.taIndex, screen.x, screen.y, size);
           else this.drawAtlasTile(atlas, object, screen.x, screen.y, size);

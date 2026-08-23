@@ -347,11 +347,11 @@ export class World {
         const object = objects[y]![x]!;
         if (object === ObjectId.CARROT) carrotCount += 1;
         if (object === ObjectId.EGG_NEST_EMPTY) nestCount += 1;
-        if (terrain[y]![x] === Terrain.HIGH_GRASS_OBJECTIVE) hiddenCount += 1;
+        if (terrain[y]![x] === Terrain.HIGH_GRASS_OBJECTIVE && object === EMPTY_OBJECT) hiddenCount += 1;
       }
     }
     // 原版 cU 初值为 false；扫描到 CA 时设 true，扫描到 CB 时设 false。
-    // 正式关卡几乎不混用两种目标，因此这里用显式对象决定模式；仅隐藏草目标时沿用 nest。
+    // 只有没有显式 Object 的 C8 才是“隐式隐藏目标”；C8 上若已有金币等 Object，不能重复计目标。
     const objectiveMode = carrotCount > 0 ? 'carrot' : 'nest';
     const visibleObjective = objectiveMode === 'carrot' ? carrotCount : nestCount;
     const objectiveTotal = visibleObjective + hiddenCount;
@@ -480,17 +480,19 @@ export class World {
   private afterEnter(point: Point, direction: Direction, events: WorldEvent[], options: { skipDynamic?: boolean; justBoarded?: boolean } = {}): void {
     const state = this.stateValue;
     let terrain = this.terrainAt(point.x, point.y)!;
-    let object = this.objectIdAt(point.x, point.y);
+    const object = this.objectIdAt(point.x, point.y);
 
-    // 割草动作发生在站上格子后；隐藏目标立即变成可交互对象。
+    // Terrain 与 Object 是独立层。割草只揭掉 Terrain 覆盖，不得覆盖原 DAT 已存在的 Object。
+    // 第一次进入草格只负责 reveal；隐藏对象不会在同一逻辑拍被自动拾取。
     if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) {
-      const hidden = terrain === Terrain.HIGH_GRASS_OBJECTIVE;
+      const hiddenObjective = terrain === Terrain.HIGH_GRASS_OBJECTIVE;
       const ground = GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!;
       this.setTerrain(point.x, point.y, ground);
-      if (hidden) this.setObject(point.x, point.y, state.objectiveMode === 'carrot' ? ObjectId.CARROT : ObjectId.EGG_NEST_EMPTY);
-      events.push({ type: 'mow', message: hidden ? '割开高草，发现目标' : '割开高草', ...point });
-      terrain = ground;
-      object = this.objectIdAt(point.x, point.y);
+      if (hiddenObjective && object === EMPTY_OBJECT) {
+        this.setObject(point.x, point.y, state.objectiveMode === 'carrot' ? ObjectId.CARROT : ObjectId.EGG_NEST_EMPTY);
+      }
+      events.push({ type: 'mow', message: hiddenObjective ? '割开高草，发现目标' : '割开高草', ...point });
+      return;
     }
 
     switch (object) {
@@ -559,28 +561,30 @@ export class World {
     if (isCarousel(terrain)) state.pendingCarousel = copyPoint(point);
     if (isMirror(terrain)) state.pendingMirror = copyPoint(point);
 
-    if (terrain === Terrain.CAROUSEL_SWITCH_B || terrain === Terrain.CAROUSEL_SWITCH_A) {
+    // A 是未按下/可触发态；全局翻转后当前格变 B。B 允许踩，但不得再次触发。
+    if (terrain === Terrain.CAROUSEL_SWITCH_A) {
       this.mapTerrain((id) => isCarousel(id) ? rotateCarousel(id) : (id === Terrain.CAROUSEL_SWITCH_A ? Terrain.CAROUSEL_SWITCH_B : id === Terrain.CAROUSEL_SWITCH_B ? Terrain.CAROUSEL_SWITCH_A : id));
       events.push({ type: 'toggle-switch', message: '旋转全部 Carousel 地板', ...point });
+      terrain = this.terrainAt(point.x, point.y)!;
     }
 
-    if (terrain === Terrain.SPEED_SWITCH_A || terrain === Terrain.SPEED_SWITCH_B) {
+    if (terrain === Terrain.SPEED_SWITCH_A) {
       this.mapTerrain(toggleSpeedTerrain);
       events.push({ type: 'toggle-switch', message: '反转全部加速方向', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
     }
 
-    if (terrain === Terrain.TIDE_SWITCH_A || terrain === Terrain.TIDE_SWITCH_B) {
+    if (terrain === Terrain.TIDE_SWITCH_A) {
       this.mapTerrain(toggleTideTerrain);
       events.push({ type: 'toggle-switch', message: '反转潮汐方向', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
     }
 
-    if (terrain === Terrain.COLOR_YELLOW_SWITCH_A || terrain === Terrain.COLOR_YELLOW_SWITCH_B) {
+    if (terrain === Terrain.COLOR_YELLOW_SWITCH_A) {
       this.mapTerrain((id) => toggleColorTerrain(id, 'yellow'));
       events.push({ type: 'toggle-switch', message: '切换黄色机关', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
-    } else if (terrain === Terrain.COLOR_PINK_SWITCH_A || terrain === Terrain.COLOR_PINK_SWITCH_B) {
+    } else if (terrain === Terrain.COLOR_PINK_SWITCH_A) {
       this.mapTerrain((id) => toggleColorTerrain(id, 'pink'));
       events.push({ type: 'toggle-switch', message: '切换粉色机关', ...point });
       terrain = this.terrainAt(point.x, point.y)!;
@@ -592,6 +596,7 @@ export class World {
       this.toggleWindSwitchTiles(windSwitch);
       events.push({ type: 'toggle-switch', message: `切换风车 ${windSwitch + 1}`, ...point });
       this.propelCloudsByWind(events);
+      terrain = this.terrainAt(point.x, point.y)!;
     }
 
     const speedDirection = SPEED_TERRAIN_DIRECTION.get(terrain);
@@ -650,16 +655,22 @@ export class World {
     const dynamicTarget = this.dynamicEntityAt(to.x, to.y);
     const object = this.objectIdAt(to.x, to.y);
 
-    // 原版说明：荷叶一旦撞停，在 Bobby 下去并重新登叶之前，不能再次从水面启动。
+    // 原版说明：荷叶一旦撞停，在 Bobby 下去并重新登叶之前，不能再次从普通水面启动。
     if (!entity.settled && isWaterTerrain(terrain) && !dynamicTarget && object === EMPTY_OBJECT) {
+      const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);
+      // 反向潮汐不是“立即掉头”：它会让当前荷叶停住。
+      if (tideDirection && DIRECTIONS[tideDirection].dx === -DIRECTIONS[direction].dx && DIRECTIONS[tideDirection].dy === -DIRECTIONS[direction].dy) {
+        state.forced = null;
+        entity.settled = true;
+        return this.result(false, from, to, { passable: false, reason: '荷叶遇到反向潮汐并停住', confidence: 'confirmed' }, events);
+      }
       entity.x = to.x;
       entity.y = to.y;
-      entity.direction = direction;
+      entity.direction = tideDirection ?? direction;
       state.player = to;
       state.facing = direction;
-      const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);
       state.forced = { kind: 'leaf', direction: tideDirection ?? direction };
-      return this.result(true, from, to, { passable: true, reason: tideDirection ? '荷叶随潮汐漂流' : '荷叶继续漂流', confidence: 'confirmed' }, events);
+      return this.result(true, from, to, { passable: true, reason: tideDirection ? '荷叶受潮汐推动' : '荷叶继续漂流', confidence: 'confirmed' }, events);
     }
 
     // 漂流是强制移动：撞到可步行陆地也只会“靠岸停住”，不会自动把 Bobby 弹上岸。
@@ -881,6 +892,8 @@ export class World {
   }
 
   private windSwitchIndex(terrain: number): number | null {
+    // 风车开关的 ON/OFF 命名表达的是风车状态，不等同于 A/B 的“按下/未按下”视觉态；
+    // 在字节码确认其触发边之前保持双态可触发，避免把未经确认的 A/B 规则硬套到风车系统。
     if (terrain === Terrain.WIND_SWITCH_0_ON || terrain === Terrain.WIND_SWITCH_0_OFF) return 0;
     if (terrain === Terrain.WIND_SWITCH_1_ON || terrain === Terrain.WIND_SWITCH_1_OFF) return 1;
     if (terrain === Terrain.WIND_SWITCH_2_ON || terrain === Terrain.WIND_SWITCH_2_OFF) return 2;

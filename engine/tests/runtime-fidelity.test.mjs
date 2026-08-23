@@ -92,6 +92,21 @@ test('荷叶撞岸后保持 rider 但进入 settled，必须下叶再重登才�
   assert.equal(leaf?.settled, false, '重登后解除 settled，可以再次漂流');
 });
 
+test('荷叶遇到与运动方向相反的潮汐时停住，不会立即掉头', () => {
+  const world = new World(level({
+    width: 3,
+    height: 1,
+    terrain: [[0x95, 0x56, 0x59]],
+    objects: [object(0xec, 1, 0)]
+  }));
+  assert.equal(world.move('right').moved, true, '先向右登叶');
+  const result = world.move('right', true);
+  assert.equal(result.moved, false, '右行遇到向左潮汐应停止');
+  assert.deepEqual(world.player, { x: 1, y: 0 });
+  assert.equal(world.getRiddenDynamicEntity()?.settled, true);
+  assert.equal(world.forcedDirection, null);
+});
+
 test('一次性 Beaver Key 可以开锁且开锁后立即消耗', () => {
   const world = new World(
     level({ width: 2, height: 1, terrain: [[0x95, 0x90]], objects: [object(0xcd, 1, 0)] }),
@@ -131,11 +146,73 @@ test('割草机不能进入 Carousel 通道，即使该方向对步行者本来�
   assert.match(blocked.passage.reason, /割草机.*旋转通道/);
 });
 
+test('水面木板属于 Object 覆盖 Terrain；木板消失后底层水重新阻挡', () => {
+  const world = new World(level({
+    width: 5,
+    height: 1,
+    terrain: [[0x95, 0x56, 0x90, 0x90, 0x90]],
+    objects: [object(0xd4, 1, 0)]
+  }));
+  assert.equal(world.move('right').moved, true, 'D4 木板应覆盖水面碰撞');
+  assert.equal(world.move('right').moved, true, '离开木板后进入坍塌状态');
+  assert.equal(world.objectIdAt(1, 0), 0xd5);
+  assert.equal(world.move('right').moved, true, '再离开一格后旧木板被清除');
+  assert.equal(world.objectIdAt(1, 0), EMPTY);
+  assert.equal(world.move('left').moved, true);
+  assert.equal(world.move('left').moved, false, 'Object 消失后底层 0x56 水面重新阻挡');
+});
+
 test('木板 D5/D6 坍塌中间态不能重新进入', () => {
   for (const id of [0xd5, 0xd6]) {
     const world = new World(level({ width: 2, height: 1, terrain: [[0x95, 0x90]], objects: [object(id, 1, 0)] }));
     assert.equal(world.move('right').moved, false, `0x${id.toString(16)} 应阻挡`);
   }
+});
+
+test('高草覆盖已有 Bonus Coin；割草只揭示，不覆盖也不在同一拍自动收集', () => {
+  const world = new World(level({
+    width: 3,
+    height: 1,
+    terrain: [[0x95, 0xc7, 0x90]],
+    objects: [object(0xf8, 1, 0)]
+  }));
+  world.state.ridingMower = true;
+  assert.equal(world.move('right').moved, true);
+  assert.notEqual(world.terrainAt(1, 0), 0xc7, '割草只修改 Terrain layer');
+  assert.equal(world.objectIdAt(1, 0), 0xf8, '草下已有 Object 必须保留');
+  assert.equal(world.state.bonusCoinsInLevel, 0, '第一次只 reveal');
+  assert.equal(world.move('left').moved, true);
+  assert.equal(world.move('right').moved, true);
+  assert.equal(world.objectIdAt(1, 0), EMPTY, '草已移除后再次进入才收集对象');
+  assert.equal(world.state.bonusCoinsInLevel, 1);
+});
+
+test('C8 上已有显式 Object 时不会重复生成/计数隐藏主目标', () => {
+  const world = new World(level({
+    width: 2,
+    height: 1,
+    terrain: [[0x95, 0xc8]],
+    objects: [object(0xf8, 1, 0)]
+  }));
+  assert.equal(world.objectiveTotal, 0, '显式 Bonus Coin 不应被 C8 重复算作主目标');
+  world.state.ridingMower = true;
+  assert.equal(world.move('right').moved, true);
+  assert.equal(world.objectIdAt(1, 0), 0xf8, '割开 C8 后仍保留原显式 Object');
+});
+
+test('A/B 型按钮只有未按下 A 状态触发；B 状态不重复触发', () => {
+  const world = new World(level({
+    width: 4,
+    height: 1,
+    terrain: [[0x95, 0xa1, 0x90, 0xb5]]
+  }));
+  assert.equal(world.move('right').moved, true);
+  assert.equal(world.terrainAt(1, 0), 0xa2, 'A 被按下后变 B');
+  assert.equal(world.terrainAt(3, 0), 0xb6, '第一次触发反转全局速度格');
+  assert.equal(world.move('left').moved, true);
+  assert.equal(world.move('right').moved, true, 'B 仍允许踩入');
+  assert.equal(world.terrainAt(1, 0), 0xa2, 'B 保持按下');
+  assert.equal(world.terrainAt(3, 0), 0xb6, 'B 不会再次触发并翻回');
 });
 
 test('Bonus Round 使用 60 秒倒计时并在耗尽时死亡', () => {

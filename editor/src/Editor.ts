@@ -195,7 +195,12 @@ export class BobbyEditor {
         this.drawAtlasTile(context, this.level.terrain[y]![x]!, x, y);
       }
     }
-    for (const object of this.level.objects) this.drawAtlasTile(context, object.id, object.x, object.y);
+    // Editor 的数据仍完整保存 Object；这里只复刻原版可见性：未割高草会遮住格内对象。
+    for (const object of this.level.objects) {
+      const terrain = this.level.terrain[object.y]?.[object.x];
+      if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) continue;
+      this.drawAtlasTile(context, object.id, object.x, object.y);
+    }
 
     context.strokeStyle = 'rgba(255,255,255,.12)';
     context.lineWidth = 1;
@@ -203,7 +208,7 @@ export class BobbyEditor {
       context.beginPath(); context.moveTo(x * EDIT_TILE_SIZE + .5, 0); context.lineTo(x * EDIT_TILE_SIZE + .5, cssHeight); context.stroke();
     }
     for (let y = 0; y <= this.level.height; y += 1) {
-      context.beginPath(); context.moveTo(0, y * EDIT_TILE_SIZE + .5); context.lineTo(cssWidth, y * EDIT_TILE_SIZE + .5); context.stroke();
+      context.beginPath(); context.moveTo(0, y * EDIT_TILE_SIZE + .5); context.lineTo(cssWidth, y * EDIT_TILE_SIZE + .5,); context.stroke();
     }
 
     if (this.selectedCell) {

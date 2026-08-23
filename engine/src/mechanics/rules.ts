@@ -139,6 +139,18 @@ export function isFence(id: number): boolean {
   return id >= ObjectId.FENCE_1 && id <= ObjectId.FENCE_6;
 }
 
+/**
+ * 原版 cv/object layer 中少数对象本身提供“可站立覆盖面”。
+ * 这些对象存在时可以覆盖底层 Terrain 的普通不可通行性；对象删除后，
+ * 原 Terrain 立即重新决定碰撞。这是水面木板、低 ID 背景上的藤蔓等机制的基础。
+ */
+export function objectOverridesTerrainPassage(id: number): boolean {
+  return id === ObjectId.PLANK
+    || id === ObjectId.BEANSTALK_TIP
+    || id === ObjectId.BEANSTALK_MID
+    || id === ObjectId.BEANSTALK_BASE;
+}
+
 export function objectBlocksByDefault(id: number): boolean {
   return id === ObjectId.EGG_NEST_FILLED
     || id === ObjectId.WINDMILL_UP
@@ -201,12 +213,14 @@ export function passageFor(
       : { passable: false, reason: '需要雪铲', confidence: 'confirmed' };
   }
 
-  // 潮汐/水面不能直接步行；动态荷叶单独处理。
-  if (isWaterTerrain(terrainId)) {
-    return { passable: false, reason: '水面需要荷叶等动态载具', confidence: 'confirmed' };
+  const overlayPassable = objectOverridesTerrainPassage(objectId);
+
+  // Terrain/Object 是独立层。水本身不可步行，但 D4 木板等覆盖对象可以临时提供通路。
+  if (isWaterTerrain(terrainId) && !overlayPassable) {
+    return { passable: false, reason: '水面需要荷叶或桥面等覆盖对象', confidence: 'confirmed' };
   }
 
-  if (!isOrdinaryWalkableTerrain(terrainId) && objectId !== ObjectId.BEANSTALK_TIP && objectId !== ObjectId.BEANSTALK_BASE && objectId !== ObjectId.PLANK && objectId !== ObjectId.BEANSTALK_MID) {
+  if (!isOrdinaryWalkableTerrain(terrainId) && !overlayPassable) {
     return { passable: false, reason: `地形 0x${terrainId.toString(16).toUpperCase()} 不可直接通行`, confidence: 'inferred' };
   }
 
@@ -246,5 +260,5 @@ export function passageFor(
   }
 
   // D8/D9（龙身体/尾巴）在原碰撞表中并非统一阻挡；D9 必须可踩以触发喷火。
-  return { passable: true, reason: '可通行', confidence: 'confirmed' };
+  return { passable: true, reason: overlayPassable ? '覆盖对象提供通路' : '可通行', confidence: 'confirmed' };
 }
