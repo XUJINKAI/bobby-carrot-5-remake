@@ -59,6 +59,7 @@ export interface TileBehavior {
   onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
+  reflectFire?(direction: Direction): Direction | null | false;
 }
 
 export function directionalPassage(options: { enter: Direction[]; leave: Direction[]; }): TileBehavior {
@@ -67,12 +68,8 @@ export function directionalPassage(options: { enter: Direction[]; leave: Directi
   return {
     id: 'directional-passage',
     describe: () => ({ id: 'directional-passage', summary: '只允许从指定方向进入和离开', config: { enter, leave } }),
-    canEnter(ctx) {
-      return enter.includes(ctx.direction) ? undefined : { passable: false, reason: '目标旋转地板不允许从这个方向进入', confidence: 'confirmed' };
-    },
-    canLeave(ctx) {
-      return leave.includes(ctx.direction) ? undefined : { passable: false, reason: '当前旋转地板不允许从这个方向离开', confidence: 'confirmed' };
-    }
+    canEnter(ctx) { return enter.includes(ctx.direction) ? undefined : { passable: false, reason: '目标旋转地板不允许从这个方向进入', confidence: 'confirmed' }; },
+    canLeave(ctx) { return leave.includes(ctx.direction) ? undefined : { passable: false, reason: '当前旋转地板不允许从这个方向离开', confidence: 'confirmed' }; }
   };
 }
 
@@ -85,46 +82,30 @@ export function rotateOnLeave(next: TerrainType): TileBehavior {
   };
 }
 
-export function passageBehavior(
+export function fireReflectionBehavior(
   id: string,
-  summary: string,
-  handler: (ctx: BehaviorContext) => BehaviorPassageResult | undefined,
-  config?: Record<string, string | number | boolean | string[]>
+  reflections: Partial<Record<Direction, Direction>>
 ): TileBehavior {
+  const config = Object.fromEntries(Object.entries(reflections).map(([from, to]) => [from, String(to)]));
+  return {
+    id,
+    describe: () => ({ id, summary: '按镜面朝向反射龙火；其它入射方向被镜面阻断', config }),
+    reflectFire(direction) { return reflections[direction] ?? false; }
+  };
+}
+
+export function passageBehavior(id: string, summary: string, handler: (ctx: BehaviorContext) => BehaviorPassageResult | undefined, config?: Record<string, string | number | boolean | string[]>): TileBehavior {
   return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }), passage: handler };
 }
-
-export function enterBehavior(
-  id: string,
-  summary: string,
-  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
-  config?: Record<string, string | number | boolean | string[]>
-): TileBehavior {
+export function enterBehavior(id: string, summary: string, handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void, config?: Record<string, string | number | boolean | string[]>): TileBehavior {
   return { id, enterPhase: 'after-object', describe: () => ({ id, summary, ...(config ? { config } : {}) }), onEnter: handler };
 }
-
-export function preEnterBehavior(
-  id: string,
-  summary: string,
-  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
-  config?: Record<string, string | number | boolean | string[]>
-): TileBehavior {
+export function preEnterBehavior(id: string, summary: string, handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void, config?: Record<string, string | number | boolean | string[]>): TileBehavior {
   return { id, enterPhase: 'before-object', describe: () => ({ id, summary, ...(config ? { config } : {}) }), onEnter: handler };
 }
-
-export function leaveBehavior(
-  id: string,
-  summary: string,
-  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
-  config?: Record<string, string | number | boolean | string[]>
-): TileBehavior {
+export function leaveBehavior(id: string, summary: string, handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void, config?: Record<string, string | number | boolean | string[]>): TileBehavior {
   return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }), onLeave: handler };
 }
-
-export function markerBehavior(
-  id: string,
-  summary: string,
-  config?: Record<string, string | number | boolean | string[]>
-): TileBehavior {
+export function markerBehavior(id: string, summary: string, config?: Record<string, string | number | boolean | string[]>): TileBehavior {
   return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }) };
 }
