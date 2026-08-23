@@ -40,9 +40,8 @@ export interface BehaviorRuntimeContext extends BehaviorContext {
   api: BehaviorRuntimeApi;
 }
 
-export interface BehaviorRuntimeResult {
-  stop?: boolean;
-}
+export interface BehaviorRuntimeResult { stop?: boolean; }
+export type BehaviorEnterPhase = 'before-object' | 'after-object';
 
 export interface BehaviorDescription {
   id: string;
@@ -56,33 +55,23 @@ export interface TileBehavior {
   canEnter?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   canLeave?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   passage?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
+  enterPhase?: BehaviorEnterPhase;
   onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
 }
 
-export function directionalPassage(options: {
-  enter: Direction[];
-  leave: Direction[];
-}): TileBehavior {
+export function directionalPassage(options: { enter: Direction[]; leave: Direction[]; }): TileBehavior {
   const enter = [...options.enter];
   const leave = [...options.leave];
   return {
     id: 'directional-passage',
-    describe: () => ({
-      id: 'directional-passage',
-      summary: '只允许从指定方向进入和离开',
-      config: { enter, leave }
-    }),
+    describe: () => ({ id: 'directional-passage', summary: '只允许从指定方向进入和离开', config: { enter, leave } }),
     canEnter(ctx) {
-      return enter.includes(ctx.direction)
-        ? undefined
-        : { passable: false, reason: '目标旋转地板不允许从这个方向进入', confidence: 'confirmed' };
+      return enter.includes(ctx.direction) ? undefined : { passable: false, reason: '目标旋转地板不允许从这个方向进入', confidence: 'confirmed' };
     },
     canLeave(ctx) {
-      return leave.includes(ctx.direction)
-        ? undefined
-        : { passable: false, reason: '当前旋转地板不允许从这个方向离开', confidence: 'confirmed' };
+      return leave.includes(ctx.direction) ? undefined : { passable: false, reason: '当前旋转地板不允许从这个方向离开', confidence: 'confirmed' };
     }
   };
 }
@@ -90,17 +79,9 @@ export function directionalPassage(options: {
 export function rotateOnLeave(next: TerrainType): TileBehavior {
   return {
     id: 'rotate-on-leave',
-    describe: () => ({
-      id: 'rotate-on-leave',
-      summary: 'Bobby 离开后切换到下一旋转状态',
-      config: { next }
-    }),
-    onLeave(ctx) {
-      ctx.api.setTerrain(next);
-    },
-    nextTerrainOnLeave(current) {
-      return current === next ? undefined : next;
-    }
+    describe: () => ({ id: 'rotate-on-leave', summary: 'Bobby 离开后切换到下一旋转状态', config: { next } }),
+    onLeave(ctx) { ctx.api.setTerrain(next); },
+    nextTerrainOnLeave(current) { return current === next ? undefined : next; }
   };
 }
 
@@ -110,11 +91,7 @@ export function passageBehavior(
   handler: (ctx: BehaviorContext) => BehaviorPassageResult | undefined,
   config?: Record<string, string | number | boolean | string[]>
 ): TileBehavior {
-  return {
-    id,
-    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
-    passage: handler
-  };
+  return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }), passage: handler };
 }
 
 export function enterBehavior(
@@ -123,11 +100,16 @@ export function enterBehavior(
   handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
   config?: Record<string, string | number | boolean | string[]>
 ): TileBehavior {
-  return {
-    id,
-    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
-    onEnter: handler
-  };
+  return { id, enterPhase: 'after-object', describe: () => ({ id, summary, ...(config ? { config } : {}) }), onEnter: handler };
+}
+
+export function preEnterBehavior(
+  id: string,
+  summary: string,
+  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
+  config?: Record<string, string | number | boolean | string[]>
+): TileBehavior {
+  return { id, enterPhase: 'before-object', describe: () => ({ id, summary, ...(config ? { config } : {}) }), onEnter: handler };
 }
 
 export function leaveBehavior(
@@ -136,11 +118,7 @@ export function leaveBehavior(
   handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
   config?: Record<string, string | number | boolean | string[]>
 ): TileBehavior {
-  return {
-    id,
-    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
-    onLeave: handler
-  };
+  return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }), onLeave: handler };
 }
 
 export function markerBehavior(
@@ -148,8 +126,5 @@ export function markerBehavior(
   summary: string,
   config?: Record<string, string | number | boolean | string[]>
 ): TileBehavior {
-  return {
-    id,
-    describe: () => ({ id, summary, ...(config ? { config } : {}) })
-  };
+  return { id, describe: () => ({ id, summary, ...(config ? { config } : {}) }) };
 }
