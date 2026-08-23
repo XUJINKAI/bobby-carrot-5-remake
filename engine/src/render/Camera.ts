@@ -50,6 +50,7 @@ export class Camera {
 
   /** 下一次移动时调用：把用户拖动产生的偏移用 ease-out 平滑收回，而不是瞬移归零。 */
   recenterPan(durationMs = 260): void {
+    if (this.panReturn) return;
     if (!this.hasPanOffset) {
       this.resetPan();
       return;
