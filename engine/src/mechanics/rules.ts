@@ -1,6 +1,5 @@
 import type { ObjectType, TerrainType } from '../data/types.js';
 import { ObjectId, Terrain, type Direction, type StepVector } from './ids.js';
-import { isOrdinaryWalkableTerrainType, isWaterTerrainType } from './terrainTraits.js';
 import type { RuntimeState } from '../world/RuntimeState.js';
 import {
   getObjectDefinition,
@@ -66,8 +65,8 @@ export function toggleColorTerrain(id: TerrainType, color: 'yellow' | 'pink'): T
 
 export function isCarousel(id: TerrainType): boolean { return terrainHasTrait(id, 'carousel'); }
 export function isMirror(id: TerrainType): boolean { return terrainHasTrait(id, 'mirror'); }
-export function isWaterTerrain(id: TerrainType): boolean { return isWaterTerrainType(id); }
-export function isOrdinaryWalkableTerrain(id: TerrainType): boolean { return isOrdinaryWalkableTerrainType(id); }
+export function isWaterTerrain(id: TerrainType): boolean { return terrainHasTrait(id, 'water'); }
+export function isOrdinaryWalkableTerrain(id: TerrainType): boolean { return terrainHasTrait(id, 'walkable'); }
 export function isFence(id: ObjectType): boolean {
   return id === ObjectId.FENCE_1 || id === ObjectId.FENCE_2 || id === ObjectId.FENCE_3
     || id === ObjectId.FENCE_4 || id === ObjectId.FENCE_5 || id === ObjectId.FENCE_6;

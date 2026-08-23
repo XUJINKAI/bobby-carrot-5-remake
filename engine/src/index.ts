@@ -40,6 +40,7 @@ export {
   enterBehavior,
   preEnterBehavior,
   leaveBehavior,
+  fireReflectionBehavior,
   markerBehavior,
   type TileBehavior,
   type BehaviorDescription

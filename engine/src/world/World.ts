@@ -1,14 +1,9 @@
 import type { LevelData, LevelObject, ObjectType, TerrainType } from '../data/types.js';
 import {
-  CLOUD_GRID_FOR_OBJECT,
-  CLOUD_OBJECT_IDS,
   DIRECTIONS,
-  DYNAMIC_OBJECT_IDS,
   EMPTY_OBJECT,
   ObjectId,
-  TIDE_TERRAIN_DIRECTION,
   Terrain,
-  WINDMILL_DIRECTION,
   type Direction
 } from '../mechanics/ids.js';
 import {
@@ -18,21 +13,24 @@ import {
   type PassageResult
 } from '../mechanics/rules.js';
 import {
+  cloudGridForObject,
+  initialObjectFootprint,
   inspectObjectDefinition,
   inspectTerrainDefinition,
+  objectHasTrait,
+  reflectFireForTerrain,
   runObjectEnter,
   runObjectLeave,
   runTerrainEnter,
   runTerrainLeave,
   terrainHasTrait,
+  tideDirectionForTerrain,
+  windmillInfoForObject,
+  windSwitchIndexForTerrain,
+  windSwitchPeerForTerrain,
   type TileDefinitionInspection
 } from '../mechanics/definitions.js';
 import type { BehaviorRuntimeContext } from '../mechanics/behaviors.js';
-import {
-  allowsBeanstalkGrowth,
-  isCloudPassableBackground,
-  isDragonFireBackground
-} from '../mechanics/terrainTraits.js';
 import type {
   DynamicEntity,
   Point,
@@ -117,7 +115,7 @@ export class World {
   get forcedKind(): string | null { return this.stateValue.forced?.kind ?? null; }
   get isPlayerClimbing(): boolean {
     const type = this.objectIdAt(this.stateValue.player.x, this.stateValue.player.y);
-    return type === ObjectId.BEANSTALK_TIP || type === ObjectId.BEANSTALK_MID || type === ObjectId.BEANSTALK_BASE;
+    return objectHasTrait(type, 'climbable');
   }
 
   getRiddenDynamicEntity(): DynamicEntity | null {
@@ -182,9 +180,9 @@ export class World {
     const to = { x: from.x + vector.dx, y: from.y + vector.dy };
 
     const ridden = state.dynamicEntities.find((entity) => entity.rider && isSameCell(entity, from.x, from.y));
-    if (ridden?.type === ObjectId.LEAF) return this.moveWithLeaf(ridden, direction, from, to, events, forced);
+    if (ridden && objectHasTrait(ridden.type, 'dynamic-leaf')) return this.moveWithLeaf(ridden, direction, from, to, events, forced);
 
-    if (ridden && CLOUD_OBJECT_IDS.has(ridden.type)) {
+    if (ridden && objectHasTrait(ridden.type, 'dynamic-cloud')) {
       const passage = this.passageTo(from, to, direction);
       if (!passage.passable) return this.result(false, from, to, passage, events);
       ridden.rider = false;
@@ -224,7 +222,7 @@ export class World {
       dynamicTarget.rider = true;
       if (dynamicTarget.type === ObjectId.LEAF) {
         const underlyingTerrain = this.terrainAt(to.x, to.y);
-        const tideDirection = underlyingTerrain ? TIDE_TERRAIN_DIRECTION.get(underlyingTerrain) : undefined;
+        const tideDirection = underlyingTerrain ? tideDirectionForTerrain(underlyingTerrain) : undefined;
         if (tideDirection && isOppositeDirection(tideDirection, direction)) {
           dynamicTarget.settled = true;
           dynamicTarget.direction = null;
@@ -282,27 +280,21 @@ export class World {
 
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
-        if (terrain[y]?.[x] === Terrain.START) start = { x, y };
+        if (terrain[y]?.[x] && terrainHasTrait(terrain[y]![x]!, 'start')) start = { x, y };
       }
     }
 
     for (const sourceObject of level.objects) {
       const type = sourceObject.type;
       const { x, y } = sourceObject;
-      if (DYNAMIC_OBJECT_IDS.has(type)) {
+      if (objectHasTrait(type, 'dynamic')) {
         dynamicEntities.push({ type, x, y, direction: null, rider: false, settled: false, offsetXpx: 0, offsetYpx: 0 });
         continue;
       }
       objects[y]![x] = type;
-      if (type === ObjectId.DRAGON_HEAD_BASE) {
-        if (x + 1 < level.width) objects[y]![x + 1] = ObjectId.DRAGON_BODY;
-        if (x + 2 < level.width) objects[y]![x + 2] = ObjectId.DRAGON_TAIL;
-      } else if (type === ObjectId.SANDMAN && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.SANDMAN_BODY;
-      } else if (type === ObjectId.DREAM_MACHINE && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.DREAM_MACHINE_BODY;
-      } else if (type === ObjectId.BEAVER_BASE && y + 1 < level.height) {
-        objects[y + 1]![x] = ObjectId.BEAVER_BODY;
+      for (const part of initialObjectFootprint(type)) {
+        const px=x+part.dx, py=y+part.dy;
+        if(px>=0&&py>=0&&px<level.width&&py<level.height) objects[py]![px]=part.type;
       }
     }
 
@@ -314,9 +306,9 @@ export class World {
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
         const object = objects[y]![x]!;
-        if (object === ObjectId.CARROT) carrotCount += 1;
-        if (object === ObjectId.EGG_NEST_EMPTY) nestCount += 1;
-        if (terrain[y]![x] === Terrain.HIGH_GRASS_OBJECTIVE && object === EMPTY_OBJECT) hiddenCount += 1;
+        if (objectHasTrait(object,'objective-carrot')) carrotCount += 1;
+        if (objectHasTrait(object,'objective-nest')) nestCount += 1;
+        if (terrainHasTrait(terrain[y]![x]!,'hidden-objective') && object === EMPTY_OBJECT) hiddenCount += 1;
       }
     }
     const objectiveMode = carrotCount > 0 ? 'carrot' : 'nest';
@@ -325,20 +317,8 @@ export class World {
 
     const windmillsEnabled: [boolean, boolean, boolean, boolean] = [false, false, false, false];
     const hasSwitch: [boolean, boolean, boolean, boolean] = [false, false, false, false];
-    const onTiles: TerrainType[] = [Terrain.WIND_SWITCH_0_ON, Terrain.WIND_SWITCH_1_ON, Terrain.WIND_SWITCH_2_ON, Terrain.WIND_SWITCH_3_ON];
-    const offTiles: TerrainType[] = [Terrain.WIND_SWITCH_0_OFF, Terrain.WIND_SWITCH_1_OFF, Terrain.WIND_SWITCH_2_OFF, Terrain.WIND_SWITCH_3_OFF];
-    for (const row of terrain) {
-      for (const type of row) {
-        for (let i = 0; i < 4; i += 1) {
-          if (type === onTiles[i]) { hasSwitch[i] = true; windmillsEnabled[i] = true; }
-          if (type === offTiles[i]) hasSwitch[i] = true;
-        }
-      }
-    }
-    const windmillTypes: ObjectType[] = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];
-    for (let i = 0; i < 4; i += 1) {
-      if (!hasSwitch[i] && objects.some((row) => row.includes(windmillTypes[i]!))) windmillsEnabled[i] = true;
-    }
+    for (const row of terrain) for (const type of row) { const index=windSwitchIndexForTerrain(type); if(index!==undefined){hasSwitch[index]=true;if(type.endsWith('-on'))windmillsEnabled[index]=true;} }
+    for (const row of objects) for (const type of row) { const info=windmillInfoForObject(type); if(info&&!hasSwitch[info.index])windmillsEnabled[info.index]=true; }
 
     const bonusTimeRemainingMs = (level.chapterLevel ?? 0) > 10 ? 60_000 : null;
 
@@ -494,7 +474,7 @@ export class World {
     const object = this.objectIdAt(to.x, to.y);
 
     if (!entity.settled && isWaterTerrain(terrain) && !dynamicTarget && object === EMPTY_OBJECT) {
-      const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);
+      const tideDirection = tideDirectionForTerrain(terrain);
       if (tideDirection && isOppositeDirection(tideDirection, direction)) {
         state.forced = null;
         entity.settled = true;
@@ -552,7 +532,7 @@ export class World {
       const canGrow = this.inBounds(item.x, targetY)
         && this.objectIdAt(item.x, targetY) === EMPTY_OBJECT
         && targetTerrain !== null
-        && allowsBeanstalkGrowth(targetTerrain);
+        && terrainHasTrait(targetTerrain, 'beanstalk-growth');
 
       if (!canGrow) {
         growth.splice(index, 1);
@@ -573,7 +553,7 @@ export class World {
     let head: Point | null = null;
     outer: for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        if (this.objectIdAt(x, y) === ObjectId.DRAGON_HEAD_BASE) { head = { x, y }; break outer; }
+        if (objectHasTrait(this.objectIdAt(x,y),'dragon-head')) { head = { x, y }; break outer; }
       }
     }
     if (!head) return;
@@ -593,17 +573,15 @@ export class World {
 
       const terrain = this.terrainAt(x, y)!;
       const object = this.objectIdAt(x, y);
-      if (object === ObjectId.ICE_BLOCK) {
-        this.setObject(x, y, EMPTY_OBJECT);
-        events.push({ type: 'melt-ice', message: '龙火融化冰块', x, y });
-      } else if (object === ObjectId.DRAGON_HEAD_BASE || object === ObjectId.DRAGON_BODY || object === ObjectId.CRUMBLY_ROCK) {
-        break;
-      }
+      if (objectHasTrait(object,'dragon-fire-melt')) {
+        this.setObject(x,y,EMPTY_OBJECT);
+        events.push({type:'melt-ice',message:'龙火融化冰块',x,y});
+      } else if (objectHasTrait(object,'dragon-fire-blocking')) break;
 
-      const reflected = this.reflectFire(terrain, direction);
+      const reflected = reflectFireForTerrain(terrain, direction);
       if (reflected === false) break;
       if (reflected) direction = reflected;
-      else if (!this.fireTerrainPassable(terrain)) break;
+      else if (!terrainHasTrait(terrain,'dragon-fire-passable')) break;
 
       const vector = DIRECTIONS[direction];
       x += vector.dx;
@@ -614,49 +592,20 @@ export class World {
     events.push({ type: 'dragon-fire', message: `龙喷火经过 ${trail.length} 格`, x: head.x, y: head.y });
   }
 
-  private reflectFire(terrain: TerrainType, direction: Direction): Direction | null | false {
-    switch (terrain) {
-      case Terrain.MIRROR_1:
-        if (direction === 'left') return 'down';
-        if (direction === 'up') return 'right';
-        return false;
-      case Terrain.MIRROR_2:
-        if (direction === 'right') return 'down';
-        if (direction === 'up') return 'left';
-        return false;
-      case Terrain.MIRROR_3:
-        if (direction === 'left') return 'up';
-        if (direction === 'down') return 'right';
-        return false;
-      case Terrain.MIRROR_4:
-        if (direction === 'right') return 'up';
-        if (direction === 'down') return 'left';
-        return false;
-      default:
-        return null;
-    }
-  }
-
-  private fireTerrainPassable(terrain: TerrainType): boolean {
-    return isDragonFireBackground(terrain)
-      && terrain !== Terrain.COLOR_YELLOW_BLOCK_RAISED
-      && terrain !== Terrain.COLOR_PINK_BLOCK_RAISED;
-  }
 
   private propelCloudsByWind(events: WorldEvent[]): void {
     const state = this.stateValue;
     const windmills: Array<{ x: number; y: number; direction: Direction; enabled: boolean }> = [];
-    const types: ObjectType[] = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        const object = this.objectIdAt(x, y);
-        const index = types.indexOf(object);
-        if (index >= 0) windmills.push({ x, y, direction: WINDMILL_DIRECTION.get(object)!, enabled: state.windmillsEnabled[index]! });
+        const object = this.objectIdAt(x,y);
+        const info=windmillInfoForObject(object);
+        if(info)windmills.push({x,y,direction:info.direction,enabled:state.windmillsEnabled[info.index]!});
       }
     }
 
     for (const entity of state.dynamicEntities) {
-      if (!CLOUD_OBJECT_IDS.has(entity.type)) continue;
+      if (!objectHasTrait(entity.type,'dynamic-cloud')) continue;
       const wind = windmills.find((candidate) => candidate.enabled && this.isInWindTunnel(entity.x, entity.y, candidate.x, candidate.y, candidate.direction));
       if (wind) entity.direction = wind.direction;
     }
@@ -667,7 +616,7 @@ export class World {
     const state = this.stateValue;
     const tilePx = 48;
     for (const entity of state.dynamicEntities) {
-      if (!CLOUD_OBJECT_IDS.has(entity.type) || !entity.direction) continue;
+      if (!objectHasTrait(entity.type,'dynamic-cloud') || !entity.direction) continue;
       const vector = DIRECTIONS[entity.direction];
       const speed = entity.rider ? 6 : 3;
       entity.offsetXpx += vector.dx * speed;
@@ -691,7 +640,7 @@ export class World {
       entity.offsetYpx -= vector.dy * tilePx;
       if (entity.rider) state.player = { x: nx, y: ny };
 
-      const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);
+      const ownGrid = cloudGridForObject(entity.type);
       if (ownGrid !== undefined && this.objectIdAt(nx, ny) === ownGrid) {
         entity.direction = null;
         entity.offsetXpx = 0;
@@ -713,22 +662,13 @@ export class World {
     if (!this.inBounds(x, y)) return false;
     if (this.dynamicEntityAt(x, y)) return false;
     const object = this.objectIdAt(x, y);
-    const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);
+    const ownGrid = cloudGridForObject(entity.type);
     if (object !== EMPTY_OBJECT && object !== ownGrid) return false;
     const terrain = this.terrainAt(x, y)!;
-    return isCloudPassableBackground(terrain);
+    return terrainHasTrait(terrain,'cloud-passable');
   }
 
-  private toggleWindSwitchTiles(index: number): void {
-    const pairs: Array<[TerrainType, TerrainType]> = [
-      [Terrain.WIND_SWITCH_0_ON, Terrain.WIND_SWITCH_0_OFF],
-      [Terrain.WIND_SWITCH_1_ON, Terrain.WIND_SWITCH_1_OFF],
-      [Terrain.WIND_SWITCH_2_ON, Terrain.WIND_SWITCH_2_OFF],
-      [Terrain.WIND_SWITCH_3_ON, Terrain.WIND_SWITCH_3_OFF]
-    ];
-    const pair = pairs[index]!;
-    this.mapTerrain((type) => type === pair[0] ? pair[1] : type === pair[1] ? pair[0] : type);
-  }
+  private toggleWindSwitchTiles(index:number):void{this.mapTerrain((type)=>windSwitchIndexForTerrain(type)===index?(windSwitchPeerForTerrain(type)??type):type);}
 
   private mapTerrain(mapper: (type: TerrainType) => TerrainType): void {
     for (let y = 0; y < this.height; y += 1) {
