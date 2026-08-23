@@ -263,7 +263,7 @@ async function renderGame(levelIdRaw: string): Promise<void> {
         <button data-move="down" aria-label="向下">↓</button><button data-move="right" aria-label="向右">→</button>
       </div>
       <aside id="debug-panel" class="debug-panel" aria-live="polite"></aside>
-      <div id="status" class="game-status">正在载入关卡…</div>
+      <div id="status" class="game-status" hidden></div>
       <div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true" aria-live="polite"></section></div>
     </main>
     <dialog id="level-info-dialog" class="game-dialog">
@@ -392,10 +392,12 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     if (!activeGame?.hasLevel) return;
     renderHud();
     debugPanel.classList.toggle('visible', activeGame.debug);
-    debugPanel.textContent = activeGame.debug ? (debugInspection ?? 'DEBUG\n点击地图格查看详情') : '';
-    status.classList.remove('debug');
     const move = activeGame.lastMove;
-    status.textContent = move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason}` : `${displayLevelId(meta)} · 准备就绪`;
+    const engineMessage = move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason} [${move.passage.confidence}]` : 'Engine: no passage yet';
+    debugPanel.textContent = activeGame.debug ? `${debugInspection ?? 'DEBUG\n点击地图格查看详情'}\n\nENGINE MESSAGE\n${engineMessage}` : '';
+    status.classList.toggle('debug', activeGame.debug);
+    status.hidden = !activeGame.debug;
+    status.textContent = activeGame.debug ? engineMessage : '';
     renderResult();
   };
   activeGame.on('change', update);
@@ -476,10 +478,28 @@ function formatElapsed(milliseconds: number): string {
 function formatTileInspection(tile: TileInspection, game: Game): string {
   const world = game.world;
   const dynamic = tile.dynamicEntity;
+  const formatDefinition = (label: string, definition: TileInspection['terrainDefinition']): string[] => {
+    const source = definition.source;
+    const lines = [
+      `${label}: ${definition.id}`,
+      `  presentation: ${definition.presentation.name} / ${definition.presentation.category}`,
+      `  source: ${source?.datHexIds?.join(', ') ?? 'n/a'}${source ? ` [${source.confidence}]` : ''}`,
+      `  traits: ${definition.traits.length ? definition.traits.join(', ') : 'none'}`,
+      '  behaviors:'
+    ];
+    if (!definition.behaviors.length) lines.push('    none');
+    for (const behavior of definition.behaviors) {
+      const config = behavior.config ? ` · ${Object.entries(behavior.config).map(([key, value]) => `${key}=${Array.isArray(value) ? value.join('|') : value}`).join(' · ')}` : '';
+      lines.push(`    ${behavior.id}${config}`, `      ${behavior.summary}`);
+    }
+    return lines;
+  };
   return [
     `Tile (${tile.x}, ${tile.y})`,
-    `Terrain: ${tile.terrainType}`,
-    `Object: ${tile.object ? tile.objectType : 'empty'}`,
+    ...formatDefinition('Terrain', tile.terrainDefinition),
+    '',
+    ...formatDefinition('Object', tile.objectDefinition),
+    '',
     dynamic ? `Dynamic: ${dynamic.type}` : 'Dynamic: none',
     dynamic ? `  direction: ${dynamic.direction ?? 'none'}` : '',
     dynamic ? `  rider: ${dynamic.rider} · settled: ${dynamic.settled}` : '',
@@ -491,8 +511,7 @@ function formatTileInspection(tile: TileInspection, game: Game): string {
     `Mower: ${world.ridingMower}`,
     `Objectives: ${world.objectiveRemaining}/${world.objectiveTotal}`,
     `Moves: ${world.state.moves}`,
-    `Inventory: gas=${world.state.inventory.gas} kite=${world.state.inventory.kite} shovel=${world.state.inventory.shovel} beans=${world.state.inventory.beans}`,
-    game.lastMove ? `Last passage: ${game.lastMove.passage.reason} [${game.lastMove.passage.confidence}]` : 'Last passage: none'
+    `Inventory: gas=${world.state.inventory.gas} kite=${world.state.inventory.kite} shovel=${world.state.inventory.shovel} beans=${world.state.inventory.beans}`
   ].filter(Boolean).join('\n');
 }
 

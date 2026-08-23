@@ -37,6 +37,9 @@ export {
   directionalPassage,
   rotateOnLeave,
   passageBehavior,
+  enterBehavior,
+  preEnterBehavior,
+  leaveBehavior,
   markerBehavior,
   type TileBehavior,
   type BehaviorDescription

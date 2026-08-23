@@ -7,6 +7,7 @@ import {
   leaveBehavior,
   markerBehavior,
   passageBehavior,
+  preEnterBehavior,
   rotateOnLeave,
   type BehaviorDescription,
   type BehaviorRuntimeContext,
@@ -201,7 +202,7 @@ for(const id of [Terrain.COLOR_YELLOW_BLOCK_LOWERED,Terrain.COLOR_PINK_BLOCK_LOW
 for(const id of [Terrain.HIGH_GRASS,Terrain.HIGH_GRASS_OBJECTIVE]){
   terrainDef(id,'mower',['terrain-passage-override'],[
     passageBehavior('requires-mower','只有驾驶割草机才能通过',(ctx)=>ctx.state.ridingMower?{passable:true,reason:'割草机可以通过高草',confidence:'confirmed'}:{passable:false,reason:'高草必须使用割草机通过',confidence:'confirmed'}),
-    enterBehavior('mow-on-enter',id===Terrain.HIGH_GRASS_OBJECTIVE?'割开高草并揭示隐藏目标':'割开高草',(ctx)=>{
+    preEnterBehavior('mow-on-enter',id===Terrain.HIGH_GRASS_OBJECTIVE?'割开高草并揭示隐藏目标':'割开高草',(ctx)=>{
       if(ctx.mode!=='normal')return;
       const hidden=ctx.terrainId===Terrain.HIGH_GRASS_OBJECTIVE;
       ctx.api.setTerrain(ctx.api.mowedGround());
@@ -288,7 +289,7 @@ export function terrainHasTrait(id: TerrainType,trait:TileTrait):boolean{return 
 export function objectHasTrait(id:ObjectType,trait:TileTrait):boolean{return getObjectDefinition(id).traits.includes(trait);}
 export function nextTerrainAfterLeave(id:TerrainType):TerrainType{for(const behavior of getTerrainDefinition(id).behaviors){const next=behavior.nextTerrainOnLeave?.(id);if(next!==undefined)return next;}return id;}
 
-export function runTerrainEnter(id:TerrainType,ctx:BehaviorRuntimeContext):boolean{for(const behavior of getTerrainDefinition(id).behaviors){if(behavior.onEnter?.(ctx)?.stop)return true;}return false;}
+export function runTerrainEnter(id:TerrainType,ctx:BehaviorRuntimeContext,phase:'before-object'|'after-object'='after-object'):boolean{for(const behavior of getTerrainDefinition(id).behaviors){if(!behavior.onEnter||(behavior.enterPhase??'after-object')!==phase)continue;if(behavior.onEnter(ctx)?.stop)return true;}return false;}
 export function runTerrainLeave(id:TerrainType,ctx:BehaviorRuntimeContext):boolean{for(const behavior of getTerrainDefinition(id).behaviors){if(behavior.onLeave?.(ctx)?.stop)return true;}return false;}
 export function runObjectEnter(id:ObjectType,ctx:BehaviorRuntimeContext):boolean{for(const behavior of getObjectDefinition(id).behaviors){if(behavior.onEnter?.(ctx)?.stop)return true;}return false;}
 export function runObjectLeave(id:ObjectType,ctx:BehaviorRuntimeContext):boolean{for(const behavior of getObjectDefinition(id).behaviors){if(behavior.onLeave?.(ctx)?.stop)return true;}return false;}
