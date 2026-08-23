@@ -22,4 +22,23 @@ export {
   CLOUD_GRID_FOR_OBJECT,
   type Direction
 } from './mechanics/ids.js';
+export {
+  getTerrainDefinition,
+  getObjectDefinition,
+  inspectTerrainDefinition,
+  inspectObjectDefinition,
+  type TileDefinition,
+  type TileDefinitionInspection,
+  type TilePresentation,
+  type TileSourceMetadata,
+  type TileTrait
+} from './mechanics/definitions.js';
+export {
+  directionalPassage,
+  rotateOnLeave,
+  passageBehavior,
+  markerBehavior,
+  type TileBehavior,
+  type BehaviorDescription
+} from './mechanics/behaviors.js';
 export { terrainAtlasCell, objectAtlasCell, type AtlasCell } from './render/atlas.js';
