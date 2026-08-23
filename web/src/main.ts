@@ -1,6 +1,7 @@
 import {
   Game,
   InputController,
+  ObjectId,
   fetchJson,
   type CatalogLevel,
   type LevelCatalog,
@@ -301,7 +302,7 @@ async function renderGame(levelIdRaw: string): Promise<void> {
   const level = await fetchJson<LevelData>(`/assets/${meta.path}`);
   const profile = loadProfile();
   const isBonus = meta.chapterLevel > 10;
-  const hasLock = level.objects.some((object) => object.id === 0xcd);
+  const hasLock = level.objects.some((object) => object.type === ObjectId.LOCK);
   let temporaryKey = false;
 
   if (isBonus && hasLock && !profile.superKey) {
@@ -466,8 +467,8 @@ function formatElapsed(milliseconds: number): string {
 }
 
 function formatTileInspection(tile: TileInspection): string {
-  const dynamic = tile.dynamicEntity ? ` · Dynamic 0x${tile.dynamicEntity.id.toString(16).toUpperCase()}` : '';
-  return `DEBUG ${tile.x},${tile.y} · Terrain ${tile.terrainHexId} · Object ${tile.object ? tile.objectHexId : 'EMPTY'}${dynamic}${tile.isPlayer ? ' · BOBBY' : ''}`;
+  const dynamic = tile.dynamicEntity ? ` · Dynamic ${tile.dynamicEntity.type}` : '';
+  return `DEBUG ${tile.x},${tile.y} · Terrain ${tile.terrainType} · Object ${tile.object ? tile.objectType : 'empty'}${dynamic}${tile.isPlayer ? ' · BOBBY' : ''}`;
 }
 
 async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
