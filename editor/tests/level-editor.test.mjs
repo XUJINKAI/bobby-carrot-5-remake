@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ObjectId } from '../../engine/dist/index.js';
+import { ObjectId, expandObjectLayouts } from '../../engine/dist/index.js';
 import {
   createBlankLevel,
   fromLevelData,
@@ -29,20 +29,23 @@ test('Editor JSON 只保留可分享的语义地图字段，并可转回 Engine 
   assert.equal(runtime.source.edition, 'custom');
 });
 
-test('Multi-cell Object 在 EditorLevel 只保存 anchor，进入 Runtime 时展开 occupancy', () => {
+test('Multi-cell Object 在 EditorLevel / LevelData 都只保存 anchor，Runtime occupancy 单独展开', () => {
   const level = createBlankLevel(12, 8);
   level.objects.push({ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 });
   const normalized = normalizeEditorLevel(level);
   assert.deepEqual(normalized.objects, [{ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 }]);
 
-  const runtime = toLevelData(normalized);
-  assert.deepEqual(runtime.objects.filter((object) => object.y === 3), [
+  const semantic = toLevelData(normalized);
+  assert.deepEqual(semantic.objects, [{ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 }]);
+
+  const runtimeObjects = expandObjectLayouts(semantic.objects, semantic.width, semantic.height);
+  assert.deepEqual(runtimeObjects.filter((object) => object.y === 3), [
     { type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 },
     { type: ObjectId.DRAGON_BODY, x: 4, y: 3 },
     { type: ObjectId.DRAGON_TAIL, x: 5, y: 3 }
   ]);
 
-  const restored = fromLevelData(runtime);
+  const restored = fromLevelData({ ...semantic, objects: runtimeObjects });
   assert.deepEqual(restored.objects, [{ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 }]);
 });
 
