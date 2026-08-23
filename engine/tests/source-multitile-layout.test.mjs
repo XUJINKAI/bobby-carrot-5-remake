@@ -8,44 +8,32 @@ function countObject(level, type) {
   return level.objects.filter((object) => object.type === type).length;
 }
 
-function hasObject(level, type, x, y) {
-  return level.objects.some((object) => object.type === type && object.x === x && object.y === y);
-}
-
-test('generated original levels materialize implicit multi-tile parts before Engine runtime', () => {
+test('original decoded levels preserve implicit multi-cell objects as anchors', () => {
   const catalog = JSON.parse(fs.readFileSync('assets/generated/catalog.json', 'utf8'));
   const stats = {
-    dragon: { anchor: 0, partA: 0, partB: 0, complete: 0 },
-    sandman: { anchor: 0, part: 0, complete: 0 },
-    dreamMachine: { anchor: 0, part: 0, complete: 0 },
-    beaver: { anchor: 0, part: 0, complete: 0 }
+    dragon: { anchor: 0, body: 0, tail: 0 },
+    sandman: { anchor: 0, body: 0 },
+    dreamMachine: { anchor: 0, body: 0 },
+    beaver: { anchor: 0, body: 0 }
   };
 
   for (const entry of catalog.levels) {
     const level = JSON.parse(fs.readFileSync(path.join('assets/generated', entry.path), 'utf8'));
     stats.dragon.anchor += countObject(level, ObjectId.DRAGON_HEAD_BASE);
-    stats.dragon.partA += countObject(level, ObjectId.DRAGON_BODY);
-    stats.dragon.partB += countObject(level, ObjectId.DRAGON_TAIL);
+    stats.dragon.body += countObject(level, ObjectId.DRAGON_BODY);
+    stats.dragon.tail += countObject(level, ObjectId.DRAGON_TAIL);
     stats.sandman.anchor += countObject(level, ObjectId.SANDMAN);
-    stats.sandman.part += countObject(level, ObjectId.SANDMAN_BODY);
+    stats.sandman.body += countObject(level, ObjectId.SANDMAN_BODY);
     stats.dreamMachine.anchor += countObject(level, ObjectId.DREAM_MACHINE);
-    stats.dreamMachine.part += countObject(level, ObjectId.DREAM_MACHINE_BODY);
+    stats.dreamMachine.body += countObject(level, ObjectId.DREAM_MACHINE_BODY);
     stats.beaver.anchor += countObject(level, ObjectId.BEAVER_BASE);
-    stats.beaver.part += countObject(level, ObjectId.BEAVER_BODY);
-
-    for (const object of level.objects) {
-      if (object.type === ObjectId.DRAGON_HEAD_BASE
-        && hasObject(level, ObjectId.DRAGON_BODY, object.x + 1, object.y)
-        && hasObject(level, ObjectId.DRAGON_TAIL, object.x + 2, object.y)) stats.dragon.complete += 1;
-      if (object.type === ObjectId.SANDMAN && hasObject(level, ObjectId.SANDMAN_BODY, object.x, object.y + 1)) stats.sandman.complete += 1;
-      if (object.type === ObjectId.DREAM_MACHINE && hasObject(level, ObjectId.DREAM_MACHINE_BODY, object.x, object.y + 1)) stats.dreamMachine.complete += 1;
-      if (object.type === ObjectId.BEAVER_BASE && hasObject(level, ObjectId.BEAVER_BODY, object.x, object.y + 1)) stats.beaver.complete += 1;
-    }
+    stats.beaver.body += countObject(level, ObjectId.BEAVER_BODY);
   }
 
-  assert.ok(stats.dragon.anchor > 0 && stats.sandman.anchor > 0 && stats.dreamMachine.anchor > 0 && stats.beaver.anchor > 0);
-  assert.equal(stats.dragon.complete, stats.dragon.anchor, 'every original Dragon anchor should be materialized as head/body/tail');
-  assert.equal(stats.sandman.complete, stats.sandman.anchor, 'every original Sandman anchor should get its body tile');
-  assert.equal(stats.dreamMachine.complete, stats.dreamMachine.anchor, 'every original Dream Machine anchor should get its body tile');
-  assert.equal(stats.beaver.complete, stats.beaver.anchor, 'every original Beaver anchor should get its body tile');
+  assert.deepEqual(stats, {
+    dragon: { anchor: 101, body: 0, tail: 0 },
+    sandman: { anchor: 7, body: 0 },
+    dreamMachine: { anchor: 1, body: 0 },
+    beaver: { anchor: 83, body: 0 }
+  });
 });
