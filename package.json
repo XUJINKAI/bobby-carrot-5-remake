@@ -1,0 +1,39 @@
+{
+  "name": "bobby-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bobby Carrot 5 的现代 Web 重制：485 关、原版高清美术、Engine、JSON 地图 Editor 与 URL 分享。",
+  "scripts": {
+    "assets:extract": "node tools/src/extract-jars.mjs",
+    "assets:decode": "node tools/src/decode-levels.mjs",
+    "assets:build": "node tools/src/build-assets.mjs",
+    "build": "node tools/scripts/build.mjs",
+    "dev": "node tools/scripts/dev-server.mjs web",
+    "dev:web": "node tools/scripts/dev-server.mjs web",
+    "dev:engine": "node tools/scripts/dev-server.mjs engine",
+    "test": "node tools/scripts/run-tests.mjs",
+    "verify": "node tools/scripts/verify.mjs",
+    "clean": "node tools/scripts/clean.mjs",
+    "serve": "node tools/scripts/dev-server.mjs web --no-build",
+    "serve:engine": "node tools/scripts/dev-server.mjs engine --no-build",
+    "clean:generated": "node -e \"const fs=require('fs');for(const p of ['assets/extracted','assets/generated'])fs.rmSync(p,{recursive:true,force:true});console.log('已清理可生成资产')\"",
+    "dev:editor": "node tools/scripts/dev-server.mjs editor",
+    "serve:editor": "node tools/scripts/dev-server.mjs editor --no-build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "engine",
+    "editor",
+    "web",
+    "tools"
+  ],
+  "dependencies": {
+    "webaudio-tinysynth": "1.1.3"
+  }
+}
