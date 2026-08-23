@@ -320,8 +320,9 @@ export class Game {
 
     if (this.motion) {
       const raw = Math.min(1, Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration));
-      // smoothstep：保留格子感，同时避免线性滑动显得机械。
-      const t = raw * raw * (3 - 2 * raw);
+      // 原版人物/载具按固定像素增量推进，没有格间的加速-减速 easing。
+      // Web 渲染仍可按 RAF 插值，但必须保持恒定速度，避免每一格起止都出现不属于原版的顿挫。
+      const t = raw;
       this.visual.x = this.motion.fromX + (this.motion.toX - this.motion.fromX) * t;
       this.visual.y = this.motion.fromY + (this.motion.toY - this.motion.fromY) * t;
       this.visual.progress = raw;
