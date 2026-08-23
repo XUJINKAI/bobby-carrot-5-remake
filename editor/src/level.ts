@@ -3,7 +3,6 @@ import {
   ObjectId,
   Terrain,
   collapseObjectLayouts,
-  expandObjectLayouts,
   isObjectLayoutPart,
   objectLayoutFor,
   type LevelData,
@@ -68,11 +67,10 @@ export function fromLevelData(level: LevelData): EditorLevel {
   });
 }
 
-/** 把 anchor-based Editor Draft 转成当前 Engine Runtime 使用的占用格 LevelData。 */
+/** 把 Editor Draft 转成 Engine 的语义 LevelData；multi-cell 仍保持 anchor，由 Game.loadLevel() 统一展开 Runtime occupancy。 */
 export function toLevelData(level: EditorLevel): LevelData {
   const normalized = normalizeEditorLevel(level);
-  const anchors: LevelObject[] = normalized.objects.map(({ type, x, y }) => ({ type, x, y }));
-  const objects = expandObjectLayouts(anchors, normalized.width, normalized.height);
+  const objects: LevelObject[] = normalized.objects.map(({ type, x, y }) => ({ type, x, y }));
   return {
     schemaVersion: 2,
     id: 'custom',
