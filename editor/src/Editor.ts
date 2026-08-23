@@ -6,8 +6,13 @@ import {
   Terrain,
   inspectObjectDefinition,
   inspectTerrainDefinition,
+  isMultiCellObject,
+  isObjectLayoutPart,
   objectAtlasCell,
+  objectLayoutFor,
+  objectVariantCycle,
   terrainAtlasCell,
+  transformObjectVariant,
   type AudioBackend,
   type ObjectType,
   type TerrainType,
@@ -35,19 +40,20 @@ export interface BobbyEditorOptions {
   mowerBobbyUrl?: string;
   kiteUrl?: string;
   audio?: AudioBackend;
-  /** 返回玩家 Web；Editor 自身不负责路由。 */
   onClose?: () => void;
-  /** 生成游玩链接时使用，默认 location.origin。 */
   shareOrigin?: string;
 }
 
 interface Cell { x: number; y: number; }
-interface StampCell { dx: number; dy: number; type: ObjectType; }
+interface OccupiedCell extends Cell { type: ObjectType; }
+interface ResolvedObject {
+  object: EditorObject;
+  cells: OccupiedCell[];
+  partType: ObjectType;
+}
 interface TerrainPaletteItem { kind: 'terrain'; type: TerrainType; }
 interface ObjectPaletteItem { kind: 'object'; type: ObjectType; }
-interface StampPaletteItem { kind: 'stamp'; id: string; name: string; cells: readonly StampCell[]; }
-type PaletteItem = TerrainPaletteItem | ObjectPaletteItem | StampPaletteItem;
-
+type PaletteItem = TerrainPaletteItem | ObjectPaletteItem;
 type PointerButton = 0 | 2 | null;
 
 const TILE_SOURCE_SIZE = 48;
@@ -57,33 +63,18 @@ const PALETTE_SIZES = [32, 40, 48, 56, 64] as const;
 const DEFAULT_PALETTE_SIZE = 48;
 const PALETTE_SIZE_KEY = 'bobby.editor.paletteSize';
 
-const terrainNames = semanticNameMap(Terrain);
-const objectNames = semanticNameMap(ObjectId);
+const HIDDEN_AUTHORING_OBJECTS = new Set<ObjectType>([
+  ObjectId.CONSUMED_CARROT,
+  ObjectId.PLANK_CRUMBLING,
+  ObjectId.PLANK_FRAGMENT,
+  ObjectId.ICE_MELT_1,
+  ObjectId.ICE_MELT_2,
+  ObjectId.ICE_MELT_3,
+  ObjectId.DRAGON_ANIM_1,
+  ObjectId.DRAGON_ANIM_2,
+  ObjectId.BEAN_SPROUT
+]);
 
-const STAMPS: readonly StampPaletteItem[] = [
-  {
-    kind: 'stamp', id: 'dragon', name: 'Dragon',
-    cells: [
-      { dx: -1, dy: 0, type: ObjectId.DRAGON_HEAD_BASE },
-      { dx: 0, dy: 0, type: ObjectId.DRAGON_BODY },
-      { dx: 1, dy: 0, type: ObjectId.DRAGON_TAIL }
-    ]
-  },
-  {
-    kind: 'stamp', id: 'sandman', name: 'Sandman',
-    cells: [{ dx: 0, dy: 0, type: ObjectId.SANDMAN }, { dx: 0, dy: 1, type: ObjectId.SANDMAN_BODY }]
-  },
-  {
-    kind: 'stamp', id: 'dream-machine', name: 'Dream Machine',
-    cells: [{ dx: 0, dy: 0, type: ObjectId.DREAM_MACHINE }, { dx: 0, dy: 1, type: ObjectId.DREAM_MACHINE_BODY }]
-  },
-  {
-    kind: 'stamp', id: 'beaver', name: 'Beaver',
-    cells: [{ dx: 0, dy: 0, type: ObjectId.BEAVER_BASE }, { dx: 0, dy: 1, type: ObjectId.BEAVER_BODY }]
-  }
-];
-
-const STAMP_COMPONENTS = new Set<ObjectType>(STAMPS.flatMap((stamp) => stamp.cells.map((cell) => cell.type)));
 const GROUP_ORDER = ['地面', '水域', '障碍物', '机关', '目标与标记', '道具', '载具与动态', '角色与大型对象', '其他'] as const;
 
 export class BobbyEditor {
@@ -133,6 +124,7 @@ export class BobbyEditor {
     this.destroyed = true;
     this.stopPlay();
     window.removeEventListener('keydown', this.onKeyDown);
+    this.canvas?.removeEventListener('wheel', this.onWheel);
     this.root.replaceChildren();
   }
 
@@ -175,7 +167,7 @@ export class BobbyEditor {
           <label class="editor-field"><span>描述</span><textarea data-share-description maxlength="500" rows="3" placeholder="可选"></textarea></label>
           <div class="editor-dialog-section">
             <button class="editor-btn editor-primary" data-editor="copy-share">复制游玩链接</button>
-            <p class="editor-muted">链接使用 bc5r metadata + 原版 DAT level record，再压缩为 base64url；同一链接也可以重新进入编辑器。</p>
+            <p class="editor-muted">链接保存 metadata + 原版 DAT anchor record，再 deflate/base64url；从游玩页可直接重新进入本地图编辑器。</p>
           </div>
           <div class="editor-dialog-actions">
             <button class="editor-btn" data-editor="import">导入 JSON</button>
@@ -186,13 +178,15 @@ export class BobbyEditor {
         <dialog class="editor-dialog editor-help-dialog" data-editor-help-dialog>
           <header><strong>操作帮助</strong><button class="editor-mini-btn" data-dialog-close>×</button></header>
           <div class="editor-help-list">
-            <p><strong>左键 / 左键拖动</strong><span>放置当前选择的 Terrain、Object 或大型素材 Stamp。</span></p>
-            <p><strong>右键 / 右键拖动</strong><span>只删除 Object；Terrain 永远不会被“擦空”。</span></p>
-            <p><strong>鼠标移动</strong><span>地图格上会显示当前素材的半透明预览；擦除时改为红色橡皮标记。</span></p>
-            <p><strong>素材 − / +</strong><span>缩小或放大素材格，选择会保存在本机。</span></p>
+            <p><strong>左键 / 左键拖动</strong><span>放置当前 Terrain 或 Object。大型 Object 会按 footprint 整体预览和放置。</span></p>
+            <p><strong>右键 / 右键拖动</strong><span>删除鼠标指向的完整 Object；Terrain 不受影响。</span></p>
+            <p><strong>Del</strong><span>等同右键：删除鼠标当前指向的完整 Object。</span></p>
+            <p><strong>滚轮 / Q / E</strong><span>鼠标指向可变化 Object 时循环旋转/翻转/变体；Q 向前、E 向后。</span></p>
+            <p><strong>泛蓝高亮</strong><span>表示当前鼠标操作会删除或替换的完整 Object；指着 Dragon 尾巴也会高亮整条 Dragon。</span></p>
+            <p><strong>鼠标移动</strong><span>半透明显示当前待放素材；大型 Object 的鼠标落点按定义的 cursor anchor 对齐。</span></p>
+            <p><strong>素材 − / +</strong><span>缩小或放大素材格，选择保存在浏览器本机。</span></p>
             <p><strong>Ctrl/Cmd + Z</strong><span>撤销；Ctrl/Cmd + Y 或 Ctrl/Cmd + Shift + Z 重做。</span></p>
-            <p><strong>大型素材</strong><span>Dragon 等只在“放置瞬间”批量写入多个普通 Object Tile；之后各格互不关联，可自然覆盖或逐格擦除。</span></p>
-            <p><strong>右栏</strong><span>查看地图尺寸、校验、当前素材 Definition，以及鼠标所在格的 Terrain/Object inspect 信息。</span></p>
+            <p><strong>右栏</strong><span>查看地图尺寸、校验、当前素材 Definition，以及鼠标格对应 Object owner 的 inspect 信息。</span></p>
           </div>
         </dialog>
       </div>`;
@@ -211,6 +205,7 @@ export class BobbyEditor {
     this.canvas.addEventListener('pointercancel', this.onPointerUp);
     this.canvas.addEventListener('lostpointercapture', this.onPointerUp);
     this.canvas.addEventListener('pointerleave', this.onPointerLeave);
+    this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     window.addEventListener('keydown', this.onKeyDown);
 
@@ -259,11 +254,9 @@ export class BobbyEditor {
     for (let y = 0; y < this.level.height; y += 1) {
       for (let x = 0; x < this.level.width; x += 1) this.drawTerrainTile(context, this.level.terrain[y]![x]!, x, y);
     }
-    for (const object of this.level.objects) {
-      const terrain = this.level.terrain[object.y]?.[object.x];
-      if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) continue;
-      this.drawObjectTile(context, object.type, object.x, object.y);
-    }
+    for (const object of this.level.objects) this.drawPlacedObject(context, object);
+
+    for (const object of this.affectedObjectsForHover()) this.drawBlueObjectHighlight(context, object);
 
     context.strokeStyle = 'rgba(255,255,255,.12)';
     context.lineWidth = 1;
@@ -282,31 +275,44 @@ export class BobbyEditor {
     }
   }
 
-  private drawPointerPreview(context: CanvasRenderingContext2D, cell: Cell): void {
-    context.save();
-    if (this.pointerButton === 2) {
-      context.fillStyle = 'rgba(190,58,50,.34)';
-      context.fillRect(cell.x * EDIT_TILE_SIZE, cell.y * EDIT_TILE_SIZE, EDIT_TILE_SIZE, EDIT_TILE_SIZE);
-      context.strokeStyle = 'rgba(255,175,165,.95)';
-      context.lineWidth = 3;
-      const pad = 10;
-      const left = cell.x * EDIT_TILE_SIZE + pad;
-      const top = cell.y * EDIT_TILE_SIZE + pad;
-      const right = (cell.x + 1) * EDIT_TILE_SIZE - pad;
-      const bottom = (cell.y + 1) * EDIT_TILE_SIZE - pad;
-      context.beginPath(); context.moveTo(left, top); context.lineTo(right, bottom); context.moveTo(right, top); context.lineTo(left, bottom); context.stroke();
-      context.restore();
-      return;
+  private drawPlacedObject(context: CanvasRenderingContext2D, object: EditorObject): void {
+    for (const cell of this.occupiedCells(object)) {
+      const terrain = this.level.terrain[cell.y]?.[cell.x];
+      if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) continue;
+      this.drawObjectTile(context, cell.type, cell.x, cell.y);
     }
+  }
 
+  private drawBlueObjectHighlight(context: CanvasRenderingContext2D, object: EditorObject): void {
+    context.save();
+    for (const cell of this.occupiedCells(object)) {
+      context.fillStyle = 'rgba(74,151,235,.38)';
+      context.fillRect(cell.x * EDIT_TILE_SIZE, cell.y * EDIT_TILE_SIZE, EDIT_TILE_SIZE, EDIT_TILE_SIZE);
+      context.strokeStyle = 'rgba(145,205,255,.94)';
+      context.lineWidth = 2;
+      context.strokeRect(cell.x * EDIT_TILE_SIZE + 1, cell.y * EDIT_TILE_SIZE + 1, EDIT_TILE_SIZE - 2, EDIT_TILE_SIZE - 2);
+    }
+    context.restore();
+  }
+
+  private drawPointerPreview(context: CanvasRenderingContext2D, cell: Cell): void {
+    if (this.pointerButton === 2) return;
+    context.save();
     context.globalAlpha = .58;
-    if (this.selection.kind === 'terrain') this.drawTerrainTile(context, this.selection.type, cell.x, cell.y);
-    else if (this.selection.kind === 'object') this.drawObjectTile(context, this.selection.type, cell.x, cell.y);
-    else {
-      for (const part of this.selection.cells) {
-        const x = cell.x + part.dx;
-        const y = cell.y + part.dy;
-        if (this.inBounds(x, y)) this.drawObjectTile(context, part.type, x, y);
+    if (this.selection.kind === 'terrain') {
+      this.drawTerrainTile(context, this.selection.type, cell.x, cell.y);
+    } else {
+      const anchor = this.anchorFromCursor(this.selection.type, cell);
+      for (const part of this.layoutCellsAt(this.selection.type, anchor.x, anchor.y)) {
+        if (this.inBounds(part.x, part.y)) this.drawObjectTile(context, part.type, part.x, part.y);
+      }
+      if (!this.objectFits(this.selection.type, anchor.x, anchor.y)) {
+        context.globalAlpha = 1;
+        context.strokeStyle = 'rgba(255,128,117,.95)';
+        context.lineWidth = 3;
+        for (const part of this.layoutCellsAt(this.selection.type, anchor.x, anchor.y)) {
+          if (this.inBounds(part.x, part.y)) context.strokeRect(part.x * EDIT_TILE_SIZE + 2, part.y * EDIT_TILE_SIZE + 2, EDIT_TILE_SIZE - 4, EDIT_TILE_SIZE - 4);
+        }
       }
     }
     context.restore();
@@ -339,9 +345,9 @@ export class BobbyEditor {
     const terrain = [...new Set<TerrainType>([...Object.values(Terrain), ...this.level.terrain.flat()])]
       .map((type): TerrainPaletteItem => ({ kind: 'terrain', type }));
     const objects = [...new Set<ObjectType>([...Object.values(ObjectId), ...this.level.objects.map((object) => object.type)])]
-      .filter((type) => type !== ObjectId.EMPTY && !STAMP_COMPONENTS.has(type))
+      .filter((type) => type !== ObjectId.EMPTY && !isObjectLayoutPart(type) && !HIDDEN_AUTHORING_OBJECTS.has(type))
       .map((type): ObjectPaletteItem => ({ kind: 'object', type }));
-    return [...terrain, ...objects, ...STAMPS];
+    return [...terrain, ...objects];
   }
 
   private renderPalette(): void {
@@ -365,46 +371,45 @@ export class BobbyEditor {
     const key = paletteKey(item);
     const active = key === paletteKey(this.selection) ? ' active' : '';
     const name = paletteItemName(item);
-    if (item.kind === 'stamp') {
-      return `<button class="editor-palette-tile editor-stamp-tile${active}" data-palette-key="${escapeAttribute(key)}" title="${escapeAttribute(name)} · Editor Stamp">${this.renderStampThumbnail(item)}</button>`;
+    if (item.kind === 'object' && isMultiCellObject(item.type)) {
+      return `<button class="editor-palette-tile editor-multicell-tile${active}" data-palette-key="${escapeAttribute(key)}" title="${escapeAttribute(name)} · multi-cell Object">${this.renderObjectThumbnail(item.type)}</button>`;
     }
     const source = item.kind === 'terrain' ? terrainAtlasCell(item.type) : objectAtlasCell(item.type);
     return `<button class="editor-palette-tile${active}" data-palette-key="${escapeAttribute(key)}" title="${escapeAttribute(name)} · ${escapeAttribute(item.type)}" style="${atlasBackgroundStyle(source, this.paletteSize, this.options.atlasUrl)}"></button>`;
   }
 
-  private renderStampThumbnail(stamp: StampPaletteItem): string {
-    const minX = Math.min(...stamp.cells.map((cell) => cell.dx));
-    const maxX = Math.max(...stamp.cells.map((cell) => cell.dx));
-    const minY = Math.min(...stamp.cells.map((cell) => cell.dy));
-    const maxY = Math.max(...stamp.cells.map((cell) => cell.dy));
+  private renderObjectThumbnail(type: ObjectType): string {
+    const cells = objectLayoutFor(type).cells;
+    const minX = Math.min(...cells.map((cell) => cell.dx));
+    const maxX = Math.max(...cells.map((cell) => cell.dx));
+    const minY = Math.min(...cells.map((cell) => cell.dy));
+    const maxY = Math.max(...cells.map((cell) => cell.dy));
     const width = maxX - minX + 1;
     const height = maxY - minY + 1;
     const cellSize = Math.max(8, Math.floor((this.paletteSize - 8) / Math.max(width, height)));
-    const totalWidth = width * cellSize;
-    const totalHeight = height * cellSize;
-    const leftBase = Math.floor((this.paletteSize - totalWidth) / 2);
-    const topBase = Math.floor((this.paletteSize - totalHeight) / 2);
-    return stamp.cells.map((cell) => {
+    const leftBase = Math.floor((this.paletteSize - width * cellSize) / 2);
+    const topBase = Math.floor((this.paletteSize - height * cellSize) / 2);
+    return cells.map((cell) => {
       const source = objectAtlasCell(cell.type);
       const left = leftBase + (cell.dx - minX) * cellSize;
       const top = topBase + (cell.dy - minY) * cellSize;
-      return `<span class="editor-stamp-sprite" style="left:${left}px;top:${top}px;width:${cellSize}px;height:${cellSize}px;${atlasBackgroundStyle(source, cellSize, this.options.atlasUrl)}"></span>`;
+      return `<span class="editor-multicell-sprite" style="left:${left}px;top:${top}px;width:${cellSize}px;height:${cellSize}px;${atlasBackgroundStyle(source, cellSize, this.options.atlasUrl)}"></span>`;
     }).join('');
   }
 
   private renderSelectedTile(): void {
     const target = this.required<HTMLElement>('[data-editor-selected]');
     const name = paletteItemName(this.selection);
-    const kind = this.selection.kind === 'terrain' ? 'Terrain' : this.selection.kind === 'object' ? 'Object' : 'Stamp';
-    const id = this.selection.kind === 'stamp' ? this.selection.id : this.selection.type;
-    target.innerHTML = `<strong>${escapeHtml(name)}</strong><span>${kind} · ${escapeHtml(id)}</span>`;
+    const id = this.selection.type;
+    const detail = this.selection.kind === 'terrain' ? 'Terrain' : isMultiCellObject(this.selection.type) ? 'Multi-cell Object' : 'Object';
+    target.innerHTML = `<strong>${escapeHtml(name)}</strong><span>${detail} · ${escapeHtml(id)}</span>`;
   }
 
   private renderInspector(): void {
     const issues = validateEditorLevel(this.level);
     const cell = this.selectedCell;
     const terrain = cell ? this.level.terrain[cell.y]?.[cell.x] ?? null : null;
-    const object = cell ? this.objectAt(cell.x, cell.y)?.type ?? ObjectId.EMPTY : null;
+    const resolved = cell ? this.resolveObjectOwner(cell.x, cell.y) : undefined;
     this.inspector.innerHTML = `
       <section class="editor-inspector-section">
         <div class="editor-panel-title">地图</div>
@@ -424,23 +429,32 @@ export class BobbyEditor {
       </section>
       <section class="editor-inspector-section">
         <div class="editor-panel-title">当前格${cell ? ` · ${cell.x}, ${cell.y}` : ''}</div>
-        ${cell && terrain && object ? `${this.renderDefinition('Terrain', inspectTerrainDefinition(terrain))}${this.renderDefinition('Object', inspectObjectDefinition(object))}` : '<p class="editor-muted">把鼠标移到地图格上查看 Terrain / Object Definition。</p>'}
+        ${cell && terrain ? `${this.renderDefinition('Terrain', inspectTerrainDefinition(terrain))}${resolved ? this.renderResolvedObject(resolved) : this.renderDefinition('Object', inspectObjectDefinition(ObjectId.EMPTY))}` : '<p class="editor-muted">把鼠标移到地图格上查看 Terrain / Object Definition。</p>'}
       </section>`;
   }
 
   private renderSelectionInspection(): string {
     if (this.selection.kind === 'terrain') return this.renderDefinition('Terrain', inspectTerrainDefinition(this.selection.type));
-    if (this.selection.kind === 'object') return this.renderDefinition('Object', inspectObjectDefinition(this.selection.type));
-    const parts = this.selection.cells.map((cell) => `${cell.dx >= 0 ? '+' : ''}${cell.dx},${cell.dy >= 0 ? '+' : ''}${cell.dy} · ${cell.type}`).join('<br>');
-    return `<article class="editor-definition editor-stamp-definition">
-      <header><strong>${escapeHtml(this.selection.name)}</strong><span>Editor Stamp</span></header>
-      <p>一次左键写入 ${this.selection.cells.length} 个普通 Object Tile；写入后不保存组合关系。</p>
-      <div class="editor-definition-row"><span>cells</span><code>${parts}</code></div>
-      ${this.renderDefinition('Anchor Object', inspectObjectDefinition(this.selection.cells.find((cell) => cell.dx === 0 && cell.dy === 0)?.type ?? this.selection.cells[0]!.type))}
-    </article>`;
+    const type = this.selection.type;
+    const layout = objectLayoutFor(type);
+    const variants = objectVariantCycle(type);
+    const extra = `<div class="editor-definition-block"><span>layout</span><div class="editor-layout-info">${layout.cells.map((cell) => `<code>${formatOffset(cell.dx, cell.dy)} ${escapeHtml(cell.type)}</code>`).join(' ')}</div></div>
+      ${isMultiCellObject(type) ? `<div class="editor-definition-row"><span>cursor</span><code>${formatOffset(layout.cursor.dx, layout.cursor.dy)}</code></div>` : ''}
+      ${variants ? `<div class="editor-definition-row"><span>variants</span><code>${variants.map(escapeHtml).join(' → ')}</code></div>` : ''}`;
+    return this.renderDefinition('Object', inspectObjectDefinition(type), extra);
   }
 
-  private renderDefinition(label: string, definition: TileDefinitionInspection): string {
+  private renderResolvedObject(resolved: ResolvedObject): string {
+    const layout = objectLayoutFor(resolved.object.type);
+    const variants = objectVariantCycle(resolved.object.type);
+    const extra = `<div class="editor-definition-row"><span>anchor</span><code>${resolved.object.x}, ${resolved.object.y}</code></div>
+      <div class="editor-definition-row"><span>part</span><code>${escapeHtml(resolved.partType)}</code></div>
+      ${isMultiCellObject(resolved.object.type) ? `<div class="editor-definition-block"><span>footprint</span><div class="editor-layout-info">${layout.cells.map((cell) => `<code>${formatOffset(cell.dx, cell.dy)} ${escapeHtml(cell.type)}</code>`).join(' ')}</div></div>` : ''}
+      ${variants ? '<div class="editor-definition-row"><span>edit</span><code>Wheel / Q / E</code></div>' : ''}`;
+    return this.renderDefinition('Object owner', inspectObjectDefinition(resolved.object.type), extra);
+  }
+
+  private renderDefinition(label: string, definition: TileDefinitionInspection, extra = ''): string {
     const source = definition.source;
     const dat = source?.datHexIds?.join(', ') ?? '—';
     const traits = definition.traits.length ? definition.traits.map((trait) => `<code>${escapeHtml(trait)}</code>`).join(' ') : '<span class="editor-muted">none</span>';
@@ -457,6 +471,7 @@ export class BobbyEditor {
       <div class="editor-definition-row"><span>id</span><code>${escapeHtml(definition.id)}</code></div>
       <div class="editor-definition-row"><span>category</span><code>${escapeHtml(definition.presentation.category)}</code></div>
       <div class="editor-definition-row"><span>source</span><code>${escapeHtml(dat)}${source ? ` · ${source.confidence}` : ''}</code></div>
+      ${extra}
       <div class="editor-definition-block"><span>traits</span><div class="editor-traits">${traits}</div></div>
       <div class="editor-definition-block"><span>behaviors</span><div>${behaviors}</div></div>
     </article>`;
@@ -577,13 +592,21 @@ export class BobbyEditor {
     if (!this.playing) this.renderCanvas();
   };
 
+  private readonly onWheel = (event: WheelEvent): void => {
+    if (this.playing || !this.hoverCell || event.deltaY === 0) return;
+    if (this.transformHoveredObject(event.deltaY < 0 ? -1 : 1)) event.preventDefault();
+  };
+
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.playing) return;
     const active = document.activeElement;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
     const key = event.key.toLowerCase();
     if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); event.shiftKey ? this.redo() : this.undo(); return; }
-    if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); this.redo(); }
+    if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); this.redo(); return; }
+    if (event.key === 'Delete' && this.deleteHoveredObject()) { event.preventDefault(); return; }
+    if (key === 'q' && this.transformHoveredObject(-1)) { event.preventDefault(); return; }
+    if (key === 'e' && this.transformHoveredObject(1)) event.preventDefault();
   };
 
   private applyPointerAction(cell: Cell): void {
@@ -591,32 +614,116 @@ export class BobbyEditor {
     if (key === this.lastStrokeCell) return;
     this.lastStrokeCell = key;
     this.selectedCell = cell;
-    if (this.pointerButton === 2) this.removeObject(cell.x, cell.y);
-    else if (this.selection.kind === 'terrain') this.level.terrain[cell.y]![cell.x] = this.selection.type;
-    else if (this.selection.kind === 'object') this.setObject(cell.x, cell.y, this.selection.type);
-    else {
-      for (const part of this.selection.cells) {
-        const x = cell.x + part.dx;
-        const y = cell.y + part.dy;
-        if (this.inBounds(x, y)) this.setObject(x, y, part.type);
-      }
+    if (this.pointerButton === 2) {
+      this.removeOwnerAt(cell.x, cell.y);
+    } else if (this.selection.kind === 'terrain') {
+      this.level.terrain[cell.y]![cell.x] = this.selection.type;
+    } else {
+      this.placeObjectAtCursor(this.selection.type, cell);
     }
     this.renderInspector();
     this.renderCanvas();
   }
 
-  private objectAt(x: number, y: number): EditorObject | undefined {
-    return this.level.objects.find((object) => object.x === x && object.y === y);
+  private placeObjectAtCursor(type: ObjectType, cell: Cell): boolean {
+    const anchor = this.anchorFromCursor(type, cell);
+    if (!this.objectFits(type, anchor.x, anchor.y)) {
+      this.setStatus('该 Object 的 footprint 超出地图边界', true);
+      return false;
+    }
+    const affected = this.objectsIntersecting(this.layoutCellsAt(type, anchor.x, anchor.y));
+    this.removeObjects(affected);
+    this.level.objects.push({ type, x: anchor.x, y: anchor.y });
+    return true;
   }
 
-  private setObject(x: number, y: number, type: ObjectType): void {
-    this.removeObject(x, y);
-    if (type !== ObjectId.EMPTY) this.level.objects.push({ type, x, y });
+  private deleteHoveredObject(): boolean {
+    if (!this.hoverCell) return false;
+    const resolved = this.resolveObjectOwner(this.hoverCell.x, this.hoverCell.y);
+    if (!resolved) return false;
+    this.pushHistory();
+    this.redoStack.length = 0;
+    this.removeObjects([resolved.object]);
+    this.renderInspector();
+    this.renderCanvas();
+    return true;
   }
 
-  private removeObject(x: number, y: number): void {
-    const index = this.level.objects.findIndex((object) => object.x === x && object.y === y);
-    if (index >= 0) this.level.objects.splice(index, 1);
+  private transformHoveredObject(step: -1 | 1): boolean {
+    if (!this.hoverCell) return false;
+    const resolved = this.resolveObjectOwner(this.hoverCell.x, this.hoverCell.y);
+    if (!resolved) return false;
+    const next = transformObjectVariant(resolved.object.type, step);
+    if (!next) return false;
+
+    const anchor = { x: resolved.object.x, y: resolved.object.y };
+    if (!this.objectFits(next, anchor.x, anchor.y)) return false;
+    const placement = this.layoutCellsAt(next, anchor.x, anchor.y);
+    const affected = this.objectsIntersecting(placement).filter((object) => object !== resolved.object);
+
+    this.pushHistory();
+    this.redoStack.length = 0;
+    this.removeObjects([resolved.object, ...affected]);
+    this.level.objects.push({ type: next, x: anchor.x, y: anchor.y });
+    this.renderInspector();
+    this.renderCanvas();
+    return true;
+  }
+
+  private removeOwnerAt(x: number, y: number): boolean {
+    const resolved = this.resolveObjectOwner(x, y);
+    if (!resolved) return false;
+    this.removeObjects([resolved.object]);
+    return true;
+  }
+
+  private removeObjects(objects: readonly EditorObject[]): void {
+    if (!objects.length) return;
+    const remove = new Set(objects);
+    this.level.objects = this.level.objects.filter((object) => !remove.has(object));
+  }
+
+  private resolveObjectOwner(x: number, y: number): ResolvedObject | undefined {
+    for (const object of this.level.objects) {
+      const cells = this.occupiedCells(object);
+      const part = cells.find((cell) => cell.x === x && cell.y === y);
+      if (part) return { object, cells, partType: part.type };
+    }
+    return undefined;
+  }
+
+  private occupiedCells(object: EditorObject): OccupiedCell[] {
+    return this.layoutCellsAt(object.type, object.x, object.y);
+  }
+
+  private layoutCellsAt(type: ObjectType, anchorX: number, anchorY: number): OccupiedCell[] {
+    return objectLayoutFor(type).cells.map((cell) => ({ x: anchorX + cell.dx, y: anchorY + cell.dy, type: cell.type }));
+  }
+
+  private anchorFromCursor(type: ObjectType, cursor: Cell): Cell {
+    const { cursor: offset } = objectLayoutFor(type);
+    return { x: cursor.x - offset.dx, y: cursor.y - offset.dy };
+  }
+
+  private objectFits(type: ObjectType, anchorX: number, anchorY: number): boolean {
+    return this.layoutCellsAt(type, anchorX, anchorY).every((cell) => this.inBounds(cell.x, cell.y));
+  }
+
+  private objectsIntersecting(cells: readonly Cell[]): EditorObject[] {
+    const keys = new Set(cells.map((cell) => `${cell.x},${cell.y}`));
+    return this.level.objects.filter((object) => this.occupiedCells(object).some((cell) => keys.has(`${cell.x},${cell.y}`)));
+  }
+
+  private affectedObjectsForHover(): EditorObject[] {
+    if (!this.hoverCell) return [];
+    const affected = new Set<EditorObject>();
+    const direct = this.resolveObjectOwner(this.hoverCell.x, this.hoverCell.y);
+    if (direct) affected.add(direct.object);
+    if (this.pointerButton !== 2 && this.selection.kind === 'object') {
+      const anchor = this.anchorFromCursor(this.selection.type, this.hoverCell);
+      for (const object of this.objectsIntersecting(this.layoutCellsAt(this.selection.type, anchor.x, anchor.y))) affected.add(object);
+    }
+    return [...affected];
   }
 
   private pushHistory(): void {
@@ -667,12 +774,9 @@ export class BobbyEditor {
   }
 
   private syncShareDialog(): void {
-    const name = this.required<HTMLInputElement>('[data-share-name]');
-    const author = this.required<HTMLInputElement>('[data-share-author]');
-    const description = this.required<HTMLTextAreaElement>('[data-share-description]');
-    name.value = this.level.name;
-    author.value = this.level.author ?? '';
-    description.value = this.level.description ?? '';
+    this.required<HTMLInputElement>('[data-share-name]').value = this.level.name;
+    this.required<HTMLInputElement>('[data-share-author]').value = this.level.author ?? '';
+    this.required<HTMLTextAreaElement>('[data-share-description]').value = this.level.description ?? '';
   }
 
   private exportJson(): void {
@@ -696,7 +800,7 @@ export class BobbyEditor {
         return;
       }
       await copyText(url);
-      this.setStatus('已复制游玩链接；该链接也可从游戏页重新打开编辑器');
+      this.setStatus('已复制游玩链接；游戏页可直接重新打开编辑器');
     } catch (error) {
       this.setStatus(`生成分享链接失败：${error instanceof Error ? error.message : String(error)}`, true);
     }
@@ -776,7 +880,6 @@ export class BobbyEditor {
 }
 
 function paletteGroup(item: PaletteItem): typeof GROUP_ORDER[number] {
-  if (item.kind === 'stamp') return '角色与大型对象';
   const definition = item.kind === 'terrain' ? inspectTerrainDefinition(item.type) : inspectObjectDefinition(item.type);
   const id = item.type;
   const traits = new Set(definition.traits);
@@ -789,6 +892,7 @@ function paletteGroup(item: PaletteItem): typeof GROUP_ORDER[number] {
     if (id.startsWith('ground-') || id.startsWith('walkable-variant-') || definition.presentation.category.includes('terrain')) return '地面';
     return '其他';
   }
+  if (isMultiCellObject(item.type)) return '角色与大型对象';
   if (traits.has('windmill')) return '机关';
   if (traits.has('objective-carrot') || traits.has('objective-nest') || traits.has('collectible')) return '目标与标记';
   if (traits.has('pickup') || id.includes('bean')) return '道具';
@@ -797,14 +901,11 @@ function paletteGroup(item: PaletteItem): typeof GROUP_ORDER[number] {
   return '其他';
 }
 
-function paletteKey(item: PaletteItem): string {
-  return item.kind === 'stamp' ? `stamp:${item.id}` : `${item.kind}:${item.type}`;
-}
+function paletteKey(item: PaletteItem): string { return `${item.kind}:${item.type}`; }
 
 function paletteItemName(item: PaletteItem): string {
-  if (item.kind === 'stamp') return item.name;
   const definition = item.kind === 'terrain' ? inspectTerrainDefinition(item.type) : inspectObjectDefinition(item.type);
-  return definition.presentation.name || (item.kind === 'terrain' ? terrainNames : objectNames).get(item.type) || item.type;
+  return definition.presentation.name || item.type;
 }
 
 function atlasBackgroundStyle(source: { column: number; row: number }, size: number, atlasUrl: string): string {
@@ -816,23 +917,10 @@ function readPaletteSize(): number {
   return PALETTE_SIZES.includes(value as typeof PALETTE_SIZES[number]) ? value : DEFAULT_PALETTE_SIZE;
 }
 
-function sameCell(a: Cell | null, b: Cell | null): boolean {
-  return a?.x === b?.x && a?.y === b?.y;
-}
-
-function semanticNameMap(values: Record<string, string>): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const [name, type] of Object.entries(values)) if (!map.has(type)) map.set(type, name);
-  return map;
-}
-
-function slug(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>\"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;' })[char] ?? char);
-}
+function sameCell(a: Cell | null, b: Cell | null): boolean { return a?.x === b?.x && a?.y === b?.y; }
+function formatOffset(dx: number, dy: number): string { return `${dx >= 0 ? '+' : ''}${dx},${dy >= 0 ? '+' : ''}${dy}`; }
+function slug(value: string): string { return value.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').slice(0, 80); }
+function escapeHtml(value: string): string { return value.replace(/[&<>\"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;' })[char] ?? char); }
 function escapeAttribute(value: string): string { return escapeHtml(value).replaceAll("'", '&#39;'); }
 
 async function copyText(value: string): Promise<void> {
