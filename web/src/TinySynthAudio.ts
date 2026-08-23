@@ -19,7 +19,7 @@ interface TinySynthLike {
 
 export type TinySynthTone = 'fm' | 'chip';
 
-const LOCAL_TINYSYNTH_URL = '/vendor/webaudio-tinysynth.min.js';
+const LOCAL_TINYSYNTH_URL = new URL('vendor/webaudio-tinysynth.min.js', document.baseURI).href;
 const CDN_TINYSYNTH_URL = 'https://cdn.jsdelivr.net/npm/webaudio-tinysynth@1.1.3/webaudio-tinysynth.min.js';
 
 /**
@@ -47,7 +47,7 @@ export class TinySynthAudioBackend implements AudioBackend {
     const serial = ++this.requestSerial;
     void this.ensureSynth().then(async (synth) => {
       if (serial !== this.requestSerial || !this.enabled || this.currentMusic !== id) return;
-      const response = await fetch(`/assets/audio/midi/${encodeURIComponent(id)}.mid`);
+      const response = await fetch(new URL(`assets/audio/midi/${encodeURIComponent(id)}.mid`, document.baseURI));
       if (!response.ok) return;
       const data = await response.arrayBuffer();
       if (serial !== this.requestSerial || !this.enabled || this.currentMusic !== id) return;

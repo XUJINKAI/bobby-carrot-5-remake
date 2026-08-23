@@ -6,6 +6,7 @@ interface PointerState {
   y: number;
   startX: number;
   startY: number;
+  moved: boolean;
 }
 
 const KEY_DIRECTION: Record<string, Direction> = {
@@ -15,12 +16,7 @@ const KEY_DIRECTION: Record<string, Direction> = {
   arrowright: 'right', d: 'right'
 };
 
-/**
- * 输入控制器只维护“此刻”的玩家意图，不生成移动指令队列。
- *
- * 原版移动循环持续读取按键状态：键抬起后，完成当前格就停；不会因为浏览器 key-repeat
- * 已经投递了若干 keydown 而继续跑很多格。冰面/跑道/荷叶等强制运动仍由 Engine 自己续步。
- */
+/** 输入层只表达当前意图：键盘/移动端方向键负责移动，画布拖动只负责相机。 */
 export class InputController {
   private readonly game: Game;
   private readonly canvas: HTMLCanvasElement;
@@ -28,6 +24,7 @@ export class InputController {
   private readonly heldMovementKeys: string[] = [];
   private pinchStartDistance = 0;
   private pinchStartZoom = 1;
+  private suppressNextClick = false;
   private enabled = true;
 
   constructor(game: Game) {
@@ -48,6 +45,12 @@ export class InputController {
     if (!value) this.clearHeldMovement();
   }
 
+  consumePointerClickSuppression(): boolean {
+    const value = this.suppressNextClick;
+    this.suppressNextClick = false;
+    return value;
+  }
+
   destroy(): void {
     this.clearHeldMovement();
     window.removeEventListener('keydown', this.onKeyDown);
@@ -66,7 +69,6 @@ export class InputController {
     const direction = KEY_DIRECTION[key];
     if (direction) {
       event.preventDefault();
-      // 浏览器 key-repeat 不应制造逻辑步数。只在物理按键首次按下时更新优先级。
       if (!event.repeat && !this.heldMovementKeys.includes(key)) this.heldMovementKeys.push(key);
       this.game.setHeldDirection(this.currentHeldDirection());
       return;
@@ -101,9 +103,13 @@ export class InputController {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!this.enabled) return;
+    if (!this.enabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
     this.canvas.setPointerCapture(event.pointerId);
-    this.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY });
+    this.pointers.set(event.pointerId, {
+      x: event.clientX, y: event.clientY,
+      startX: event.clientX, startY: event.clientY,
+      moved: false
+    });
     if (this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
@@ -113,29 +119,30 @@ export class InputController {
   private readonly onPointerMove = (event: PointerEvent): void => {
     const pointer = this.pointers.get(event.pointerId);
     if (!pointer) return;
+    const dx = event.clientX - pointer.x;
+    const dy = event.clientY - pointer.y;
     pointer.x = event.clientX;
     pointer.y = event.clientY;
+    if (Math.hypot(pointer.x - pointer.startX, pointer.y - pointer.startY) >= 4) pointer.moved = true;
+
     if (this.pointers.size === 2 && this.pinchStartDistance > 0) {
-      const distance = this.pointerDistance();
-      this.game.setZoom(this.pinchStartZoom * (distance / this.pinchStartDistance));
+      this.game.setZoom(this.pinchStartZoom * (this.pointerDistance() / this.pinchStartDistance));
+      return;
     }
+    if (this.pointers.size === 1 && (dx !== 0 || dy !== 0)) this.game.panByScreen(dx, dy);
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
     const pointer = this.pointers.get(event.pointerId);
     const wasPinching = this.pointers.size >= 2;
     this.pointers.delete(event.pointerId);
-    if (!pointer || wasPinching || !this.enabled || !this.game.hasLevel) return;
-
-    const dx = event.clientX - pointer.startX;
-    const dy = event.clientY - pointer.startY;
-    const distance = Math.hypot(dx, dy);
-    if (distance < 24) return;
-    const direction: Direction = Math.abs(dx) > Math.abs(dy)
-      ? (dx < 0 ? 'left' : 'right')
-      : (dy < 0 ? 'up' : 'down');
-    // Swipe 是一次离散动作，不建立持续持键状态。
-    this.game.move(direction);
+    if (pointer?.moved || wasPinching) this.suppressNextClick = true;
+    if (this.pointers.size < 2) this.pinchStartDistance = 0;
+    for (const remaining of this.pointers.values()) {
+      remaining.startX = remaining.x;
+      remaining.startY = remaining.y;
+      remaining.moved = false;
+    }
   };
 
   private readonly onWheel = (event: WheelEvent): void => {

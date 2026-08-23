@@ -73,6 +73,7 @@ export class Game {
   async loadLevel(level: LevelData): Promise<void> {
     this.initialLevel = structuredClone(level);
     this.worldValue = new World(structuredClone(level), this.profile);
+    this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
     this.motion = null;
@@ -121,6 +122,7 @@ export class Game {
   restart(): void {
     if (!this.initialLevel) return;
     this.worldValue = new World(structuredClone(this.initialLevel), this.profile);
+    this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
     this.motion = null;
@@ -142,6 +144,11 @@ export class Game {
   }
 
   zoomBy(factor: number): void { this.setZoom(this.zoom * factor); }
+
+  panByScreen(dx: number, dy: number): void {
+    this.renderer.camera.panByScreen(dx, dy);
+    this.render();
+  }
 
   setDebug(value: boolean): void {
     this.debugValue = value;
