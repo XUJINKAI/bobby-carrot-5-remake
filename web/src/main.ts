@@ -22,8 +22,9 @@ import { TinySynthAudioBackend } from './TinySynthAudio.js';
 const rootElement = document.querySelector<HTMLDivElement>('#app');
 if (!rootElement) throw new Error('#app not found');
 const app: HTMLDivElement = rootElement;
+const siteUrl = (path: string): string => new URL(path.replace(/^\/+/, ''), document.baseURI).href;
 
-const catalog = await fetchJson<LevelCatalog>('/assets/catalog.json');
+const catalog = await fetchJson<LevelCatalog>(siteUrl('assets/catalog.json'));
 const audio = new TinySynthAudioBackend();
 let activeGame: Game | null = null;
 let activeInput: InputController | null = null;
@@ -116,18 +117,19 @@ function escapeHtml(value: string): string {
 }
 
 function navigate(path: string): void {
-  history.pushState(null, '', path);
+  const target = new URL(path.replace(/^\/+/, ''), document.baseURI);
+  history.pushState(null, '', `${target.pathname}${target.search}${target.hash}`);
   void renderRoute();
 }
 
 function shell(content: string): string {
   return `<div class="shell">
     <nav class="topbar">
-      <a class="brand" href="/" data-nav>Bobby Carrot</a>
+      <a class="brand" href="" data-nav>Bobby Carrot</a>
       <div class="spacer"></div>
-      <a class="nav-link desktop" href="/levels" data-nav>选择关卡</a>
-      <a class="nav-link desktop" href="/edit" data-nav>地图编辑器</a>
-      <a class="nav-link desktop" href="/settings" data-nav>设置</a>
+      <a class="nav-link desktop" href="levels" data-nav>选择关卡</a>
+      <a class="nav-link desktop" href="edit" data-nav>地图编辑器</a>
+      <a class="nav-link desktop" href="settings" data-nav>设置</a>
     </nav>
     <main class="content">${content}</main>
   </div>`;
@@ -143,13 +145,13 @@ function renderHome(): void {
         <h1>Bobby<br>Carrot</h1>
         <p>保留第五代 Base + UP1～UP9 的原版高清美术、关卡结构和谜题机制，用现代浏览器重新实现 Camera、动画、键盘与手机操作。</p>
         <div class="actions">
-          <a class="primary-btn" href="/play/${last.publicId}" data-nav>继续游玩 · ${displayLevelId(last)}</a>
-          <a class="ghost-btn" href="/levels" data-nav>选择关卡</a>
-          <a class="ghost-btn" href="/edit" data-nav>创建地图</a>
+          <a class="primary-btn" href="play/${last.publicId}" data-nav>继续游玩 · ${displayLevelId(last)}</a>
+          <a class="ghost-btn" href="levels" data-nav>选择关卡</a>
+          <a class="ghost-btn" href="edit" data-nav>创建地图</a>
           <button id="home-random" class="ghost-btn">随机一关</button>
         </div>
       </div>
-      <img class="hero-art" src="/assets/art/hd/title.png" alt="Bobby Carrot 5 original title art" />
+      <img class="hero-art" src="assets/art/hd/title.png" alt="Bobby Carrot 5 original title art" />
     </section>
     <section class="stat-row">
       <div class="stat"><strong>10</strong><span>正式发行包</span></div>
@@ -174,7 +176,7 @@ function renderLevels(): void {
     <section class="level-browser-head">
       <div class="section-title"><div><h1>选择关卡</h1><p>按原版发行包 → 章节 → 关卡浏览。内部 001～485 编号不再作为玩家界面。</p></div></div>
       <div class="level-browser-actions">
-        <a class="primary-btn" href="/play/${last.publicId}" data-nav>继续 · ${displayLevelId(last)}</a>
+        <a class="primary-btn" href="play/${last.publicId}" data-nav>继续 · ${displayLevelId(last)}</a>
         <button id="random-level" class="ghost-btn">随机一个关卡</button>
       </div>
     </section>
@@ -212,7 +214,7 @@ function renderChapter(chapterId: string, completed: Set<string>): string {
     <div class="chapter-levels">
       ${levels.map((level) => {
         const done = completed.has(level.canonicalId);
-        return `<a class="chapter-level ${done ? 'completed' : ''}" href="/play/${level.publicId}" data-nav title="${escapeHtml(level.publicId)} · ${escapeHtml(level.difficulty.label)}">
+        return `<a class="chapter-level ${done ? 'completed' : ''}" href="play/${level.publicId}" data-nav title="${escapeHtml(level.publicId)} · ${escapeHtml(level.difficulty.label)}">
           <span class="chapter-level-no">${level.chapterLevel}</span>
           <span class="difficulty-badge ${level.difficulty.level} ${level.difficulty.source}">${escapeHtml(level.difficulty.label)}</span>
           ${done ? '<span class="done-mark" title="已通关">✓</span>' : ''}
@@ -240,12 +242,12 @@ async function renderGame(levelIdRaw: string): Promise<void> {
         <button id="level-info" class="icon-btn" title="关卡信息" aria-label="关卡信息">ⓘ</button>
       </div>
       <div class="game-hud" aria-label="游戏状态">
-        <span class="hud-chip" title="本次游玩时间">⏱ <strong id="hud-time">00:00</strong></span>
-        <span class="hud-chip" title="剩余主要目标">🥕 <strong id="hud-objectives">—</strong></span>
+        <span class="hud-chip" title="本次游玩时间"><strong id="hud-time">00:00</strong></span>
+        <span class="hud-chip" title="剩余主要目标"><span id="hud-objective-icon" class="hud-art hud-carrot" aria-hidden="true"></span><strong id="hud-objectives">—</strong></span>
         <span id="hud-items" class="hud-items" aria-label="已取得物品"></span>
       </div>
       <div class="game-toolbar-right">
-        <span class="hud-chip step-chip" title="移动步数">👣 <strong id="hud-moves">0</strong></span>
+        <span class="hud-chip step-chip" title="移动步数"><strong id="hud-moves">0</strong><span class="hud-text-label">STEPS</span></span>
         <button id="undo" class="icon-btn" title="撤销上一步" aria-label="撤销上一步">↶</button>
         <button id="restart" class="icon-btn" title="重新开始本关" aria-label="重新开始本关">↻</button>
         <button id="music" class="icon-btn" title="音乐开关" aria-label="音乐开关">${audio.isEnabled() ? '♫' : '♪̸'}</button>
@@ -256,6 +258,11 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     </header>
     <main class="game-stage">
       <canvas id="game"></canvas>
+      <div class="mobile-dpad" aria-label="移动方向">
+        <button data-move="up" aria-label="向上">↑</button><button data-move="left" aria-label="向左">←</button>
+        <button data-move="down" aria-label="向下">↓</button><button data-move="right" aria-label="向右">→</button>
+      </div>
+      <aside id="debug-panel" class="debug-panel" aria-live="polite"></aside>
       <div id="status" class="game-status">正在载入关卡…</div>
       <div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true" aria-live="polite"></section></div>
     </main>
@@ -281,9 +288,9 @@ async function renderGame(levelIdRaw: string): Promise<void> {
       <header><strong>游玩帮助</strong><button class="dialog-close icon-btn" title="关闭">×</button></header>
       <div class="help-list">
         <p><kbd>WASD</kbd> / <kbd>方向键</kbd>：移动；按住连续移动，抬起后当前格结束即停。</p>
-        <p>触屏 Swipe：移动一格。</p>
-        <p>鼠标滚轮 / 双指 Pinch：放大缩小。</p>
-        <p><kbd>~</kbd>：DEBUG。开启后点击地图格，调试信息会显示在左下角状态栏。</p>
+        <p>手机方向键：按住连续移动；抬起后当前格结束即停。</p>
+        <p>鼠标/单指拖动地图；鼠标滚轮 / 双指 Pinch：放大缩小。</p>
+        <p><kbd>~</kbd>：DEBUG。开启后地图只显示格线，点击格子后右侧显示详情。</p>
         <p><kbd>Z</kbd> / <kbd>U</kbd>：撤销；<kbd>R</kbd>：重玩。</p>
       </div>
     </dialog>
@@ -291,15 +298,17 @@ async function renderGame(levelIdRaw: string): Promise<void> {
 
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
   const status = document.querySelector<HTMLDivElement>('#status');
+  const debugPanel = document.querySelector<HTMLElement>('#debug-panel');
   const gameResult = document.querySelector<HTMLDivElement>('#game-result');
   const resultCard = gameResult?.querySelector<HTMLElement>('.result-card');
   const hudTime = document.querySelector<HTMLElement>('#hud-time');
   const hudObjectives = document.querySelector<HTMLElement>('#hud-objectives');
+  const hudObjectiveIcon = document.querySelector<HTMLElement>('#hud-objective-icon');
   const hudMoves = document.querySelector<HTMLElement>('#hud-moves');
   const hudItems = document.querySelector<HTMLElement>('#hud-items');
-  if (!canvas || !status || !gameResult || !resultCard || !hudTime || !hudObjectives || !hudMoves || !hudItems) throw new Error('Game UI failed to mount');
+  if (!canvas || !status || !debugPanel || !gameResult || !resultCard || !hudTime || !hudObjectives || !hudObjectiveIcon || !hudMoves || !hudItems) throw new Error('Game UI failed to mount');
 
-  const level = await fetchJson<LevelData>(`/assets/${meta.path}`);
+  const level = await fetchJson<LevelData>(siteUrl(`assets/${meta.path}`));
   const profile = loadProfile();
   const isBonus = meta.chapterLevel > 10;
   const hasLock = level.objects.some((object) => object.type === ObjectId.LOCK);
@@ -316,12 +325,14 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     audio,
     profile: { superKey: profile.superKey, temporaryKey, speedShoes: profile.speedShoes },
     assets: {
-      atlasUrl: '/assets/art/hd/ts.png', animationAtlasUrl: '/assets/art/hd/ta.png',
-      bobbyUrls: { left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
-      mowerBobbyUrl: '/assets/art/hd/b7.png', kiteUrl: '/assets/art/hd/b9.png', sourceTileSize: 48
+      atlasUrl: 'assets/art/hd/ts.png', animationAtlasUrl: 'assets/art/hd/ta.png',
+      bobbyUrls: { left:'assets/art/hd/b0.png', right:'assets/art/hd/b1.png', up:'assets/art/hd/b2.png', down:'assets/art/hd/b3.png' },
+      mowerBobbyUrl: 'assets/art/hd/b7.png', idleBobbyUrl: 'assets/art/hd/b4.png', deathBobbyUrl: 'assets/art/hd/b5.png',
+      kiteUrl: 'assets/art/hd/b9.png', sourceTileSize: 48
     }
   });
   activeInput = new InputController(activeGame);
+  bindMobileControls(activeGame);
   await activeGame.loadLevel(level);
   audio.playMusic(isBonus ? 'bonus' : `ingame${meta.number % 3}`);
 
@@ -362,33 +373,29 @@ async function renderGame(levelIdRaw: string): Promise<void> {
     const world = activeGame.world;
     hudTime.textContent = formatElapsed(performance.now() - levelStartedAt);
     hudObjectives.textContent = String(world.objectiveRemaining);
+    hudObjectiveIcon.classList.toggle('hud-carrot', world.state.objectiveMode === 'carrot');
+    hudObjectiveIcon.classList.toggle('hud-egg', world.state.objectiveMode !== 'carrot');
     hudMoves.textContent = String(world.state.moves);
     const items: string[] = [];
-    if (world.state.profile.superKey) items.push('<span class="item-chip" title="Super Key">🔑+</span>');
-    else if (world.state.profile.temporaryKey) items.push('<span class="item-chip" title="本关钥匙">🔑</span>');
-    if (world.state.inventory.gas) items.push('<span class="item-chip" title="汽油">⛽</span>');
-    if (world.state.inventory.shovel) items.push('<span class="item-chip" title="雪铲">🛠</span>');
-    if (world.state.inventory.kite) items.push('<span class="item-chip" title="风筝">◇</span>');
-    if (world.state.inventory.beans > 0) items.push(`<span class="item-chip" title="魔豆">🌱${world.state.inventory.beans}</span>`);
-    if (world.state.goldenCarrotsInLevel > 0) items.push(`<span class="item-chip" title="本关金胡萝卜">🥕★${world.state.goldenCarrotsInLevel}</span>`);
-    if (world.state.bonusCoinsInLevel > 0) items.push(`<span class="item-chip" title="本关 Bonus Coin">●${world.state.bonusCoinsInLevel}</span>`);
-    if (world.state.bonusTimeRemainingMs !== null) items.push(`<span class="item-chip bonus-time" title="Bonus 剩余时间">⌛${Math.ceil(world.state.bonusTimeRemainingMs / 1000)}s</span>`);
+    if (world.state.profile.superKey || world.state.profile.temporaryKey) items.push('<span class="item-chip" title="钥匙"><span class="hud-art hud-key" aria-hidden="true"></span></span>');
+    if (world.state.inventory.gas) items.push('<span class="item-chip" title="汽油"><span class="hud-art hud-gas" aria-hidden="true"></span></span>');
+    if (world.state.inventory.shovel) items.push('<span class="item-chip" title="雪铲"><span class="hud-art hud-shovel" aria-hidden="true"></span></span>');
+    if (world.state.inventory.kite) items.push('<span class="item-chip" title="风筝"><span class="hud-art hud-kite" aria-hidden="true"></span></span>');
+    if (world.state.inventory.beans > 0) items.push(`<span class="item-chip" title="魔豆"><span class="hud-art hud-bean" aria-hidden="true"></span><strong>${world.state.inventory.beans}</strong></span>`);
+    if (world.state.goldenCarrotsInLevel > 0) items.push(`<span class="item-chip" title="本关金胡萝卜"><img class="hud-golden-carrot" src="assets/art/hd/icon.png" alt=""><strong>${world.state.goldenCarrotsInLevel}</strong></span>`);
+    if (world.state.bonusCoinsInLevel > 0) items.push(`<span class="item-chip" title="本关 Bonus Coin">BONUS <strong>${world.state.bonusCoinsInLevel}</strong></span>`);
+    if (world.state.bonusTimeRemainingMs !== null) items.push(`<span class="item-chip bonus-time" title="Bonus 剩余时间"><strong>${Math.ceil(world.state.bonusTimeRemainingMs / 1000)}s</strong></span>`);
     hudItems.innerHTML = items.join('');
   };
 
   const update = (): void => {
     if (!activeGame?.hasLevel) return;
     renderHud();
-    if (activeGame.debug && debugInspection) {
-      status.textContent = debugInspection;
-      status.classList.add('debug');
-    } else {
-      status.classList.remove('debug');
-      const move = activeGame.lastMove;
-      status.textContent = activeGame.debug
-        ? 'DEBUG · 点击地图格查看 Terrain / Object / Dynamic 状态'
-        : move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason}` : `${displayLevelId(meta)} · 准备就绪`;
-    }
+    debugPanel.classList.toggle('visible', activeGame.debug);
+    debugPanel.textContent = activeGame.debug ? (debugInspection ?? 'DEBUG\n点击地图格查看详情') : '';
+    status.classList.remove('debug');
+    const move = activeGame.lastMove;
+    status.textContent = move ? `${move.moved ? '移动' : '阻挡'} · ${move.passage.reason}` : `${displayLevelId(meta)} · 准备就绪`;
     renderResult();
   };
   activeGame.on('change', update);
@@ -452,9 +459,9 @@ async function renderGame(levelIdRaw: string): Promise<void> {
   document.querySelector<HTMLInputElement>('#game-reverb')?.addEventListener('input', (event) => audio.setReverbLevel(Number((event.currentTarget as HTMLInputElement).value) / 100));
 
   canvas.addEventListener('click', (event) => {
-    if (!activeGame?.debug) return;
+    if (!activeGame?.debug || activeInput?.consumePointerClickSuppression()) return;
     const tile: TileInspection | null = activeGame.inspectCanvasPoint(event.clientX, event.clientY);
-    debugInspection = tile ? formatTileInspection(tile) : 'DEBUG · 地图外';
+    debugInspection = tile ? formatTileInspection(tile, activeGame) : 'DEBUG\n地图外';
     update();
   });
 }
@@ -466,9 +473,46 @@ function formatElapsed(milliseconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-function formatTileInspection(tile: TileInspection): string {
-  const dynamic = tile.dynamicEntity ? ` · Dynamic ${tile.dynamicEntity.type}` : '';
-  return `DEBUG ${tile.x},${tile.y} · Terrain ${tile.terrainType} · Object ${tile.object ? tile.objectType : 'empty'}${dynamic}${tile.isPlayer ? ' · BOBBY' : ''}`;
+function formatTileInspection(tile: TileInspection, game: Game): string {
+  const world = game.world;
+  const dynamic = tile.dynamicEntity;
+  return [
+    `Tile (${tile.x}, ${tile.y})`,
+    `Terrain: ${tile.terrainType}`,
+    `Object: ${tile.object ? tile.objectType : 'empty'}`,
+    dynamic ? `Dynamic: ${dynamic.type}` : 'Dynamic: none',
+    dynamic ? `  direction: ${dynamic.direction ?? 'none'}` : '',
+    dynamic ? `  rider: ${dynamic.rider} · settled: ${dynamic.settled}` : '',
+    dynamic ? `  offsetPx: ${dynamic.offsetXpx}, ${dynamic.offsetYpx}` : '',
+    `Flags: player=${tile.isPlayer} · start=${tile.isStart}`,
+    '',
+    `Bobby: (${world.player.x}, ${world.player.y}) · facing=${world.facing}`,
+    `Forced: ${world.forcedKind ?? 'none'} / ${world.forcedDirection ?? 'none'}`,
+    `Mower: ${world.ridingMower}`,
+    `Objectives: ${world.objectiveRemaining}/${world.objectiveTotal}`,
+    `Moves: ${world.state.moves}`,
+    `Inventory: gas=${world.state.inventory.gas} kite=${world.state.inventory.kite} shovel=${world.state.inventory.shovel} beans=${world.state.inventory.beans}`,
+    game.lastMove ? `Last passage: ${game.lastMove.passage.reason} [${game.lastMove.passage.confidence}]` : 'Last passage: none'
+  ].filter(Boolean).join('\n');
+}
+
+function bindMobileControls(game: Game): void {
+  document.querySelectorAll<HTMLButtonElement>('[data-move]').forEach((button) => {
+    const direction = button.dataset.move as 'up' | 'down' | 'left' | 'right';
+    const press = (event: PointerEvent): void => {
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      game.setHeldDirection(direction);
+    };
+    const release = (event: PointerEvent): void => {
+      event.preventDefault();
+      game.setHeldDirection(null);
+    };
+    button.addEventListener('pointerdown', press);
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', () => game.setHeldDirection(null));
+  });
 }
 
 async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
@@ -478,14 +522,14 @@ async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
   if (shared) {
     try { level = await decodeShareLevel(shared); }
     catch (error) {
-      app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="/edit" data-nav>新建地图</a></section>`);
+      app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="edit" data-nav>新建地图</a></section>`);
       bindNavigation(); return;
     }
   } else if (levelIdRaw) {
     const decoded = decodeURIComponent(levelIdRaw).toLowerCase();
     const meta = catalog.levels.find((entry) => entry.publicId === decoded || entry.id === decoded.padStart(3, '0'));
     if (!meta) { navigate('/edit'); return; }
-    const official = await fetchJson<LevelData>(`/assets/${meta.path}`);
+    const official = await fetchJson<LevelData>(`assets/${meta.path}`);
     level = fromLevelData(official);
     level.name = `${meta.publicId.toUpperCase()} · Copy`;
   } else level = createBlankLevel(16, 16);
@@ -494,10 +538,10 @@ async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
   const root = document.querySelector<HTMLElement>('#editor-mount');
   if (!root) throw new Error('Editor mount failed');
   activeEditor = new BobbyEditor({
-    root, level, atlasUrl: '/assets/art/hd/ts.png', animationAtlasUrl: '/assets/art/hd/ta.png',
-    bobbyUrls: { left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
-    mowerBobbyUrl: '/assets/art/hd/b7.png', kiteUrl: '/assets/art/hd/b9.png', audio,
-    shareOrigin: location.origin, onClose: () => navigate('/levels')
+    root, level, atlasUrl: 'assets/art/hd/ts.png', animationAtlasUrl: 'assets/art/hd/ta.png',
+    bobbyUrls: { left:'assets/art/hd/b0.png', right:'assets/art/hd/b1.png', up:'assets/art/hd/b2.png', down:'assets/art/hd/b3.png' },
+    mowerBobbyUrl: 'assets/art/hd/b7.png', kiteUrl: 'assets/art/hd/b9.png', audio,
+    shareOrigin: new URL('.', document.baseURI).href.replace(/\/$/, ''), onClose: () => navigate('/levels')
   });
 }
 
@@ -507,14 +551,14 @@ async function renderSharedGame(): Promise<void> {
   let editorLevel: EditorLevel;
   try { editorLevel = await decodeShareLevel(encoded); }
   catch (error) {
-    app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="/edit" data-nav>打开编辑器</a></section>`);
+    app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="edit" data-nav>打开编辑器</a></section>`);
     bindNavigation(); return;
   }
   const level = toLevelData(editorLevel);
   audio.playMusic('ingame0');
   app.innerHTML = `<div class="game-page">
     <header class="game-toolbar"><button id="back" class="ghost-btn">← 首页</button><span class="level-label">${escapeHtml(editorLevel.name)}</span><span class="muted hide-mobile">Custom JSON · ${editorLevel.width}×${editorLevel.height}</span><div class="spacer"></div><button id="edit-level" class="icon-btn">Edit</button><button id="undo" class="icon-btn">Undo</button><button id="restart" class="icon-btn">Restart</button></header>
-    <main class="game-stage"><canvas id="game"></canvas><div id="status" class="game-status">正在载入分享地图…</div><div id="game-result" class="game-result" hidden><section class="result-card"></section></div></main>
+    <main class="game-stage"><canvas id="game"></canvas><div class="mobile-dpad" aria-label="移动方向"><button data-move="up" aria-label="向上">↑</button><button data-move="left" aria-label="向左">←</button><button data-move="down" aria-label="向下">↓</button><button data-move="right" aria-label="向右">→</button></div><div id="status" class="game-status">正在载入分享地图…</div><div id="game-result" class="game-result" hidden><section class="result-card"></section></div></main>
   </div>`;
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
   const status = document.querySelector<HTMLDivElement>('#status');
@@ -523,11 +567,12 @@ async function renderSharedGame(): Promise<void> {
   if (!canvas || !status || !result || !resultCard) throw new Error('Shared game UI failed to mount');
 
   activeGame = new Game({ canvas, audio, assets: {
-    atlasUrl:'/assets/art/hd/ts.png', animationAtlasUrl:'/assets/art/hd/ta.png',
-    bobbyUrls:{ left:'/assets/art/hd/b0.png', right:'/assets/art/hd/b1.png', up:'/assets/art/hd/b2.png', down:'/assets/art/hd/b3.png' },
-    mowerBobbyUrl:'/assets/art/hd/b7.png', kiteUrl:'/assets/art/hd/b9.png', sourceTileSize:48
+    atlasUrl:'assets/art/hd/ts.png', animationAtlasUrl:'assets/art/hd/ta.png',
+    bobbyUrls:{ left:'assets/art/hd/b0.png', right:'assets/art/hd/b1.png', up:'assets/art/hd/b2.png', down:'assets/art/hd/b3.png' },
+    mowerBobbyUrl:'assets/art/hd/b7.png', idleBobbyUrl:'assets/art/hd/b4.png', deathBobbyUrl:'assets/art/hd/b5.png', kiteUrl:'assets/art/hd/b9.png', sourceTileSize:48
   }});
   activeInput = new InputController(activeGame);
+  bindMobileControls(activeGame);
   await activeGame.loadLevel(level);
 
   const update = (): void => {
@@ -567,7 +612,7 @@ function renderSettings(): void {
       <div class="setting"><div><strong>音乐音量</strong><div class="muted">0–100%</div></div><input id="music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></div>
       <div class="setting"><div><strong>音效音量</strong><div class="muted">收集/机关反馈</div></div><input id="sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></div>
       <div class="setting"><div><strong>SoundFont MIDI</strong><div class="muted">下一后端：SpessaSynth + 可再分发 SF2/SF3；不替换原 MIDI</div></div><span>Planned</span></div>
-      <div class="setting"><div><strong>操作</strong><div class="muted">WASD / 方向键 / Swipe / Wheel / Pinch / ~ DEBUG</div></div><span>Modern</span></div>
+      <div class="setting"><div><strong>操作</strong><div class="muted">WASD / 方向键 / Drag / Wheel / Pinch / ~ DEBUG</div></div><span>Modern</span></div>
     </section>
   `);
   bindNavigation();
@@ -603,7 +648,7 @@ function displayLevelId(level: CatalogLevel): string { return level.publicId.toU
 
 function bindNavigation(): void {
   document.querySelectorAll<HTMLAnchorElement>('a[data-nav]').forEach((anchor) => {
-    anchor.addEventListener('click', (event) => { event.preventDefault(); navigate(new URL(anchor.href).pathname); });
+    anchor.addEventListener('click', (event) => { event.preventDefault(); navigate(anchor.getAttribute('href') ?? '/'); });
   });
 }
 
@@ -612,7 +657,9 @@ async function renderRoute(): Promise<void> {
   activeInput?.destroy(); activeInput = null;
   activeGame?.destroy(); activeGame = null;
   activeEditor?.destroy(); activeEditor = null;
-  const path = location.pathname.replace(/\/+$/, '') || '/';
+  const basePath = new URL(document.baseURI).pathname.replace(/\/+$/, '');
+  const localPath = basePath && basePath !== '/' && location.pathname.startsWith(basePath) ? location.pathname.slice(basePath.length) : location.pathname;
+  const path = localPath.replace(/\/+$/, '') || '/';
   if (path === '/') renderHome();
   else if (path === '/levels') renderLevels();
   else if (path === '/settings') renderSettings();

@@ -7,6 +7,8 @@ export class Camera {
   viewportHeight = 1;
   zoom = 1;
   readonly sourceTileSize: number;
+  private panOffsetX = 0;
+  private panOffsetY = 0;
 
   constructor(sourceTileSize = 48) {
     this.sourceTileSize = sourceTileSize;
@@ -23,11 +25,26 @@ export class Camera {
     this.zoom = Math.min(2.75, Math.max(0.3, value));
   }
 
+  resetPan(): void {
+    this.panOffsetX = 0;
+    this.panOffsetY = 0;
+  }
+
+  panByScreen(dx: number, dy: number): void {
+    const size = this.tileScreenSize;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || size <= 0) return;
+    this.panOffsetX -= dx / size;
+    this.panOffsetY -= dy / size;
+  }
+
   follow(point: CameraPoint, worldWidth: number, worldHeight: number): void {
-    // 现代版相机直接追踪平滑插值后的角色坐标，因此不会随逻辑格瞬移。
-    this.centerX = point.x + 0.5;
-    this.centerY = point.y + 0.5;
+    const baseX = point.x + 0.5;
+    const baseY = point.y + 0.5;
+    this.centerX = baseX + this.panOffsetX;
+    this.centerY = baseY + this.panOffsetY;
     this.clamp(worldWidth, worldHeight);
+    this.panOffsetX = this.centerX - baseX;
+    this.panOffsetY = this.centerY - baseY;
   }
 
   worldToScreen(x: number, y: number): CameraPoint {

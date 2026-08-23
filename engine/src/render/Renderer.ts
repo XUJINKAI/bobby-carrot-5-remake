@@ -12,6 +12,8 @@ export interface RendererAssets {
   bobbyUrls?: Partial<Record<Direction, string>>;
   kiteUrl?: string;
   mowerBobbyUrl?: string;
+  idleBobbyUrl?: string;
+  deathBobbyUrl?: string;
   sourceTileSize?: number;
 }
 
@@ -42,6 +44,11 @@ export class Renderer {
   private readonly bobby = new Map<Direction, HTMLImageElement>();
   private kite: HTMLImageElement | null = null;
   private mowerBobby: HTMLImageElement | null = null;
+  private idleBobby: HTMLImageElement | null = null;
+  private deathBobby: HTMLImageElement | null = null;
+  private idleSince = performance.now();
+  private deathSince: number | null = null;
+  private lastPlayerCell = '';
   private debug = false;
   private readonly sourceTileSize: number;
   private loaded = false;
@@ -65,12 +72,14 @@ export class Renderer {
       up: assets.bobbyUrls?.up ?? fallback,
       down: assets.bobbyUrls?.down ?? fallback
     };
-    const [atlas, animationAtlas, right, left, up, down, kite, mower] = await Promise.all([
+    const [atlas, animationAtlas, right, left, up, down, kite, mower, idle, death] = await Promise.all([
       loadImage(assets.atlasUrl),
       assets.animationAtlasUrl ? loadImage(assets.animationAtlasUrl) : Promise.resolve(null),
       loadImage(urls.right), loadImage(urls.left), loadImage(urls.up), loadImage(urls.down),
       assets.kiteUrl ? loadImage(assets.kiteUrl) : Promise.resolve(null),
-      assets.mowerBobbyUrl ? loadImage(assets.mowerBobbyUrl) : Promise.resolve(null)
+      assets.mowerBobbyUrl ? loadImage(assets.mowerBobbyUrl) : Promise.resolve(null),
+      assets.idleBobbyUrl ? loadImage(assets.idleBobbyUrl) : Promise.resolve(null),
+      assets.deathBobbyUrl ? loadImage(assets.deathBobbyUrl) : Promise.resolve(null)
     ]);
     this.atlas = atlas;
     this.animationAtlas = animationAtlas;
@@ -80,6 +89,8 @@ export class Renderer {
     this.bobby.set('down', down);
     this.kite = kite;
     this.mowerBobby = mower;
+    this.idleBobby = idle;
+    this.deathBobby = death;
     this.loaded = true;
   }
 
@@ -152,13 +163,6 @@ export class Renderer {
           ctx.strokeStyle = 'rgba(255,255,255,.18)';
           ctx.lineWidth = 1;
           ctx.strokeRect(Math.round(screen.x) + 0.5, Math.round(screen.y) + 0.5, Math.round(size) - 1, Math.round(size) - 1);
-          if (size >= 40) {
-            ctx.fillStyle = 'rgba(0,0,0,.55)';
-            ctx.fillRect(screen.x + 2, screen.y + 2, Math.min(size - 4, 110), 14);
-            ctx.fillStyle = '#fff';
-            ctx.font = '9px ui-monospace,monospace';
-            ctx.fillText(shortSemanticLabel(terrain), screen.x + 5, screen.y + 12);
-          }
         }
       }
     }
@@ -198,6 +202,19 @@ export class Renderer {
     const playerY = visual.moving ? visual.y : world.player.y + (ridden?.offsetYpx ?? 0) / this.sourceTileSize;
     const screen = this.camera.worldToScreen(playerX, playerY);
     const forcedKind = world.forcedKind;
+    const now = performance.now();
+    const playerCell = `${world.player.x},${world.player.y}`;
+    if (playerCell !== this.lastPlayerCell || visual.moving || forcedKind || world.ridingMower) {
+      this.lastPlayerCell = playerCell;
+      this.idleSince = now;
+    }
+
+    if (world.dead && this.deathBobby) {
+      if (this.deathSince === null) this.deathSince = now;
+      this.drawBobbyStrip(this.deathBobby, screen.x, screen.y, size, Math.min(1, (now - this.deathSince) / 800));
+      return;
+    }
+    this.deathSince = null;
 
     if (forcedKind === 'flight' && this.kite) {
       const frameWidth = this.kite.width / 4;
@@ -218,6 +235,12 @@ export class Renderer {
       return;
     }
 
+    if (!visual.moving && !forcedKind && !world.ridingMower && !world.isPlayerClimbing && this.idleBobby && now - this.idleSince >= 5000) {
+      const loop = ((now - this.idleSince - 5000) % 900) / 900;
+      this.drawBobbyStrip(this.idleBobby, screen.x, screen.y, size, loop);
+      return;
+    }
+
     const spriteDirection: Direction = world.isPlayerClimbing ? 'up' : visual.direction;
     const image = this.bobby.get(spriteDirection) ?? this.bobby.get('down');
     if (!image) return;
@@ -228,6 +251,16 @@ export class Renderer {
     const scale = size / this.sourceTileSize;
     const drawHeight = frameHeight * scale;
     ctx.drawImage(image, frame * frameWidth, 0, frameWidth, frameHeight, screen.x, screen.y + size - drawHeight, size, drawHeight);
+  }
+
+  private drawBobbyStrip(image: HTMLImageElement, x: number, y: number, size: number, progress: number): void {
+    const frameWidth = this.sourceTileSize;
+    const frameHeight = image.height;
+    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
+    const frame = Math.min(frameCount - 1, Math.floor(Math.max(0, Math.min(0.999999, progress)) * frameCount));
+    const scale = size / this.sourceTileSize;
+    const drawHeight = frameHeight * scale;
+    this.context.drawImage(image, frame * frameWidth, 0, frameWidth, frameHeight, x, y + size - drawHeight, size, drawHeight);
   }
 
   private snappedTileRect(x: number, y: number, size: number): { x: number; y: number; width: number; height: number } {
@@ -268,6 +301,3 @@ export class Renderer {
   }
 }
 
-function shortSemanticLabel(type: string): string {
-  return type.length <= 16 ? type : `${type.slice(0, 15)}…`;
-}
