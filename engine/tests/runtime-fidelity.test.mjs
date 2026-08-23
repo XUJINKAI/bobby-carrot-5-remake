@@ -9,13 +9,14 @@ function object(id, x, y) {
   return { id, signedId: id > 127 ? id - 256 : id, hexId: `0x${id.toString(16).toUpperCase().padStart(2, '0')}`, x, y };
 }
 
-function level({ width, height, terrain, objects = [] }) {
+function level({ width, height, terrain, objects = [], chapterLevel }) {
   return {
     schemaVersion: 1,
     id: 'test',
     source: { edition: 'test', packFile: 'test.dat', levelIndex: 0 },
     recordLength: 0,
     recordSha256: 'test',
+    ...(chapterLevel === undefined ? {} : { chapterLevel }),
     width,
     height,
     dynamicSlots: 0,
@@ -105,6 +106,21 @@ test('荷叶遇到与运动方向相反的潮汐时停住，不会立即掉头',
   assert.deepEqual(world.player, { x: 1, y: 0 });
   assert.equal(world.getRiddenDynamicEntity()?.settled, true);
   assert.equal(world.forcedDirection, null);
+});
+
+test('逆着荷叶脚下的湍急水流登叶时可以上叶，但不会启动漂流', () => {
+  const world = new World(level({
+    width: 3,
+    height: 1,
+    terrain: [[0x95, 0x59, 0x56]],
+    objects: [object(0xec, 1, 0)]
+  }));
+  const boarded = world.move('right');
+  assert.equal(boarded.moved, true, 'Bobby 本身仍能踏上荷叶');
+  assert.deepEqual(world.player, { x: 1, y: 0 });
+  assert.equal(world.getRiddenDynamicEntity()?.settled, true, '向右登叶但脚下水流向左，应立即成为停止态');
+  assert.equal(world.getRiddenDynamicEntity()?.direction, null);
+  assert.equal(world.forcedDirection, null, '不能先错误漂一格再停');
 });
 
 test('一次性 Beaver Key 可以开锁且开锁后立即消耗', () => {
@@ -200,23 +216,36 @@ test('C8 上已有显式 Object 时不会重复生成/计数隐藏主目标', ()
   assert.equal(world.objectIdAt(1, 0), 0xf8, '割开 C8 后仍保留原显式 Object');
 });
 
-test('A/B 型按钮只有未按下 A 状态触发；B 状态不重复触发', () => {
+test('Speed 开关只有抬起的 B 状态触发；按下的 A 状态不会重复触发', () => {
   const world = new World(level({
     width: 4,
     height: 1,
-    terrain: [[0x95, 0xa1, 0x90, 0xb5]]
+    terrain: [[0x95, 0xa2, 0x90, 0xb5]]
   }));
   assert.equal(world.move('right').moved, true);
-  assert.equal(world.terrainAt(1, 0), 0xa2, 'A 被按下后变 B');
+  assert.equal(world.terrainAt(1, 0), 0xa1, '抬起 B 被踩后变成按下 A');
   assert.equal(world.terrainAt(3, 0), 0xb6, '第一次触发反转全局速度格');
   assert.equal(world.move('left').moved, true);
-  assert.equal(world.move('right').moved, true, 'B 仍允许踩入');
-  assert.equal(world.terrainAt(1, 0), 0xa2, 'B 保持按下');
-  assert.equal(world.terrainAt(3, 0), 0xb6, 'B 不会再次触发并翻回');
+  assert.equal(world.move('right').moved, true, '按下 A 仍允许踩入');
+  assert.equal(world.terrainAt(1, 0), 0xa1, '按下状态保持 A');
+  assert.equal(world.terrainAt(3, 0), 0xb6, '按下 A 不会再次触发并翻回');
 });
 
-test('Bonus Round 使用 60 秒倒计时并在耗尽时死亡', () => {
-  const world = new World(level({ width: 2, height: 1, terrain: [[0x95, 0x90]], objects: [object(0xf8, 1, 0)] }));
+test('普通关即使包含 Bonus Coin 也没有 60 秒倒计时', () => {
+  const world = new World(level({
+    width: 2,
+    height: 1,
+    chapterLevel: 4,
+    terrain: [[0x95, 0x90]],
+    objects: [object(0xf8, 1, 0)]
+  }));
+  assert.equal(world.state.bonusTimeRemainingMs, null);
+  world.advanceTime(60_001);
+  assert.equal(world.dead, false);
+});
+
+test('原版每章第 11/12 个 Bonus Level 使用 60 秒倒计时并在耗尽时死亡', () => {
+  const world = new World(level({ width: 2, height: 1, chapterLevel: 11, terrain: [[0x95, 0x90]] }));
   assert.equal(world.state.bonusTimeRemainingMs, 60_000);
   const events = world.advanceTime(60_001);
   assert.equal(world.dead, true);
