@@ -1,6 +1,8 @@
 import { Camera } from './Camera.js';
 import { ObjectId, Terrain, type Direction } from '../mechanics/ids.js';
+import type { ObjectType, TerrainType } from '../data/types.js';
 import { animatedObjectTile, animatedTerrainTile } from './animation.js';
+import { objectAtlasCell, terrainAtlasCell, type AtlasCell } from './atlas.js';
 import type { World } from '../world/World.js';
 
 export interface RendererAssets {
@@ -137,25 +139,25 @@ export class Renderer {
         const screen = this.camera.worldToScreen(x, y);
         const animatedTerrain = this.animationAtlas ? animatedTerrainTile(terrain, world.state, animationElapsed) : null;
         if (animatedTerrain && this.animationAtlas) this.drawAnimationTile(this.animationAtlas, animatedTerrain.taIndex, screen.x, screen.y, size);
-        else this.drawAtlasTile(atlas, terrain, screen.x, screen.y, size);
+        else this.drawTerrainTile(atlas, terrain, screen.x, screen.y, size);
 
         const object = world.objectIdAt(x, y);
         const objectCoveredByGrass = terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE;
         if (object !== ObjectId.EMPTY && !objectCoveredByGrass) {
           const animatedObject = this.animationAtlas ? animatedObjectTile(object, world.state, animationElapsed) : null;
           if (animatedObject && this.animationAtlas) this.drawAnimationTile(this.animationAtlas, animatedObject.taIndex, screen.x, screen.y, size);
-          else this.drawAtlasTile(atlas, object, screen.x, screen.y, size);
+          else this.drawObjectTile(atlas, object, screen.x, screen.y, size);
         }
         if (this.debug) {
           ctx.strokeStyle = 'rgba(255,255,255,.18)';
           ctx.lineWidth = 1;
           ctx.strokeRect(Math.round(screen.x) + 0.5, Math.round(screen.y) + 0.5, Math.round(size) - 1, Math.round(size) - 1);
-          if (size >= 26) {
+          if (size >= 40) {
             ctx.fillStyle = 'rgba(0,0,0,.55)';
-            ctx.fillRect(screen.x + 2, screen.y + 2, Math.min(size - 4, 42), 14);
+            ctx.fillRect(screen.x + 2, screen.y + 2, Math.min(size - 4, 110), 14);
             ctx.fillStyle = '#fff';
-            ctx.font = '10px ui-monospace,monospace';
-            ctx.fillText(terrain.toString(16).toUpperCase().padStart(2, '0'), screen.x + 5, screen.y + 12);
+            ctx.font = '9px ui-monospace,monospace';
+            ctx.fillText(shortSemanticLabel(terrain), screen.x + 5, screen.y + 12);
           }
         }
       }
@@ -169,7 +171,7 @@ export class Renderer {
         ? visualPlayer.y
         : entity.y + entity.offsetYpx / this.sourceTileSize;
       const screen = this.camera.worldToScreen(renderX, renderY);
-      this.drawAtlasTile(atlas, entity.id, screen.x, screen.y, size);
+      this.drawObjectTile(atlas, entity.type, screen.x, screen.y, size);
     }
 
     if (world.state.fireTrail.length > 0) {
@@ -229,8 +231,6 @@ export class Renderer {
   }
 
   private snappedTileRect(x: number, y: number, size: number): { x: number; y: number; width: number; height: number } {
-    // Camera/zoom 往往得到小数 CSS 像素。相邻 drawImage 各自使用小数边界时，Canvas 在部分 DPR/缩放
-    // 组合下会露出背景色形成“格子线”。用同一套 floor/ceil 边界覆盖到相邻像素，避免非原版网格缝。
     const left = Math.floor(x);
     const top = Math.floor(y);
     const right = Math.ceil(x + size);
@@ -241,28 +241,23 @@ export class Renderer {
   private drawAnimationTile(atlas: HTMLImageElement, index: number, x: number, y: number, size: number): void {
     const column = index % 4;
     const row = Math.floor(index / 4);
-    const target = this.snappedTileRect(x, y, size);
-    this.context.drawImage(
-      atlas,
-      column * this.sourceTileSize,
-      row * this.sourceTileSize,
-      this.sourceTileSize,
-      this.sourceTileSize,
-      target.x,
-      target.y,
-      target.width,
-      target.height
-    );
+    this.drawAtlasCell(atlas, { column, row }, x, y, size);
   }
 
-  private drawAtlasTile(atlas: HTMLImageElement, id: number, x: number, y: number, size: number): void {
-    const column = id & 0x0f;
-    const row = id >> 4;
+  private drawTerrainTile(atlas: HTMLImageElement, type: TerrainType, x: number, y: number, size: number): void {
+    this.drawAtlasCell(atlas, terrainAtlasCell(type), x, y, size);
+  }
+
+  private drawObjectTile(atlas: HTMLImageElement, type: ObjectType, x: number, y: number, size: number): void {
+    this.drawAtlasCell(atlas, objectAtlasCell(type), x, y, size);
+  }
+
+  private drawAtlasCell(atlas: HTMLImageElement, source: AtlasCell, x: number, y: number, size: number): void {
     const target = this.snappedTileRect(x, y, size);
     this.context.drawImage(
       atlas,
-      column * this.sourceTileSize,
-      row * this.sourceTileSize,
+      source.column * this.sourceTileSize,
+      source.row * this.sourceTileSize,
       this.sourceTileSize,
       this.sourceTileSize,
       target.x,
@@ -271,4 +266,8 @@ export class Renderer {
       target.height
     );
   }
+}
+
+function shortSemanticLabel(type: string): string {
+  return type.length <= 16 ? type : `${type.slice(0, 15)}…`;
 }
