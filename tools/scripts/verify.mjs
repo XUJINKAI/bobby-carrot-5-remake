@@ -17,13 +17,38 @@ if (catalog.difficulty.estimatedLevels !== 192) throw new Error(`Expected 192 es
 if (catalog.levels[0]?.publicId !== 'base-0-1') throw new Error('First public ID must be base-0-1');
 if (catalog.levels[5]?.publicId !== 'base-1-1') throw new Error('Base chapter route mismatch');
 if (catalog.levels.at(-1)?.publicId !== 'up9-4-12') throw new Error('Last public ID must be up9-4-12');
+
 for (const level of catalog.levels) {
   const file = path.join(root, 'assets/generated', level.path);
   if (!fs.existsSync(file)) throw new Error(`Missing canonical level ${file}`);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (data.schemaVersion !== 2) throw new Error(`Level ${level.id} must use semantic schema v2`);
+  if (data.terrainEncoding !== 'semantic-row-major') throw new Error(`Level ${level.id} has non-semantic terrain encoding`);
   if (data.terrain.length !== data.height) throw new Error(`Bad terrain height in ${level.id}`);
   if (data.terrain.some((row) => row.length !== data.width)) throw new Error(`Bad terrain width in ${level.id}`);
+  if (data.terrain.some((row) => row.some((type) => typeof type !== 'string'))) throw new Error(`Raw terrain value leaked into ${level.id}`);
+  if (data.objects.some((object) => typeof object.type !== 'string')) throw new Error(`Raw object value leaked into ${level.id}`);
+  if (data.objects.some((object) => 'id' in object || 'signedId' in object || 'hexId' in object)) throw new Error(`Legacy DAT object fields leaked into ${level.id}`);
 }
+
+const legacyFieldPatterns = [
+  /\.signedId\b/,
+  /\.hexId\b/,
+  /\.terrainHexId\b/,
+  /\.objectHexId\b/,
+  /\bsignedId\s*:/,
+  /\bhexId\s*:/,
+  /\bterrainHexId\s*:/,
+  /\bobjectHexId\s*:/
+];
+for (const sourcePath of ['engine/src', 'editor/src', 'web/src']) {
+  walkSource(path.join(root, sourcePath), (file, text) => {
+    if (legacyFieldPatterns.some((pattern) => pattern.test(text))) {
+      throw new Error(`Legacy DAT field usage leaked into ${path.relative(root, file)}`);
+    }
+  });
+}
+
 for (const file of [
   'dist/web/index.html',
   'dist/web/app.js',
@@ -53,4 +78,13 @@ for (const file of [
 ]) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Missing build artifact: ${file}`);
 }
-console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；Engine + Editor + Web、JSON/URL 分享与全部测试通过。');
+
+console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；semantic LevelData + DAT codec round-trip、Engine + Editor + Web 与全部测试通过。');
+
+function walkSource(directory, visitor) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) walkSource(file, visitor);
+    else if (/\.(?:ts|js|mjs)$/.test(entry.name)) visitor(file, fs.readFileSync(file, 'utf8'));
+  }
+}

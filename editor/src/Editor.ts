@@ -4,9 +4,11 @@ import {
   NullAudioBackend,
   ObjectId,
   Terrain,
-  hexByte,
-  signedByte,
-  type AudioBackend
+  objectAtlasCell,
+  terrainAtlasCell,
+  type AudioBackend,
+  type ObjectType,
+  type TerrainType
 } from '@bobby/engine';
 import {
   createBlankLevel,
@@ -16,7 +18,8 @@ import {
   serializeEditorLevel,
   toLevelData,
   validateEditorLevel,
-  type EditorLevel
+  type EditorLevel,
+  type EditorObject
 } from './level.js';
 import { encodeShareLevel } from './share.js';
 
@@ -43,8 +46,8 @@ const TILE_SOURCE_SIZE = 48;
 const EDIT_TILE_SIZE = 38;
 const HISTORY_LIMIT = 100;
 
-const terrainNames = idNameMap(Terrain);
-const objectNames = idNameMap(ObjectId);
+const terrainNames = semanticNameMap(Terrain);
+const objectNames = semanticNameMap(ObjectId);
 
 export class BobbyEditor {
   private readonly root: HTMLElement;
@@ -52,8 +55,8 @@ export class BobbyEditor {
   private level: EditorLevel;
   private layer: Layer = 'terrain';
   private tool: Tool = 'pencil';
-  private selectedTerrain = 0x90;
-  private selectedObject = 0xca;
+  private selectedTerrain: TerrainType = Terrain.GROUND_C;
+  private selectedObject: ObjectType = ObjectId.CARROT;
   private selectedCell: Cell | null = null;
   private readonly undoStack: string[] = [];
   private readonly redoStack: string[] = [];
@@ -78,9 +81,7 @@ export class BobbyEditor {
     void this.loadAtlas();
   }
 
-  getLevel(): EditorLevel {
-    return structuredClone(this.level);
-  }
+  getLevel(): EditorLevel { return structuredClone(this.level); }
 
   setLevel(level: EditorLevel): void {
     this.stopPlay();
@@ -192,14 +193,13 @@ export class BobbyEditor {
 
     for (let y = 0; y < this.level.height; y += 1) {
       for (let x = 0; x < this.level.width; x += 1) {
-        this.drawAtlasTile(context, this.level.terrain[y]![x]!, x, y);
+        this.drawTerrainTile(context, this.level.terrain[y]![x]!, x, y);
       }
     }
-    // Editor 的数据仍完整保存 Object；这里只复刻原版可见性：未割高草会遮住格内对象。
     for (const object of this.level.objects) {
       const terrain = this.level.terrain[object.y]?.[object.x];
       if (terrain === Terrain.HIGH_GRASS || terrain === Terrain.HIGH_GRASS_OBJECTIVE) continue;
-      this.drawAtlasTile(context, object.id, object.x, object.y);
+      this.drawObjectTile(context, object.type, object.x, object.y);
     }
 
     context.strokeStyle = 'rgba(255,255,255,.12)';
@@ -208,7 +208,7 @@ export class BobbyEditor {
       context.beginPath(); context.moveTo(x * EDIT_TILE_SIZE + .5, 0); context.lineTo(x * EDIT_TILE_SIZE + .5, cssHeight); context.stroke();
     }
     for (let y = 0; y <= this.level.height; y += 1) {
-      context.beginPath(); context.moveTo(0, y * EDIT_TILE_SIZE + .5); context.lineTo(cssWidth, y * EDIT_TILE_SIZE + .5,); context.stroke();
+      context.beginPath(); context.moveTo(0, y * EDIT_TILE_SIZE + .5); context.lineTo(cssWidth, y * EDIT_TILE_SIZE + .5); context.stroke();
     }
 
     if (this.selectedCell) {
@@ -218,14 +218,20 @@ export class BobbyEditor {
     }
   }
 
-  private drawAtlasTile(context: CanvasRenderingContext2D, id: number, x: number, y: number): void {
+  private drawTerrainTile(context: CanvasRenderingContext2D, type: TerrainType, x: number, y: number): void {
+    this.drawAtlasCell(context, terrainAtlasCell(type), x, y);
+  }
+
+  private drawObjectTile(context: CanvasRenderingContext2D, type: ObjectType, x: number, y: number): void {
+    this.drawAtlasCell(context, objectAtlasCell(type), x, y);
+  }
+
+  private drawAtlasCell(context: CanvasRenderingContext2D, source: { column: number; row: number }, x: number, y: number): void {
     if (!this.atlas) return;
-    const column = id & 0x0f;
-    const row = id >> 4;
     context.drawImage(
       this.atlas,
-      column * TILE_SOURCE_SIZE,
-      row * TILE_SOURCE_SIZE,
+      source.column * TILE_SOURCE_SIZE,
+      source.row * TILE_SOURCE_SIZE,
       TILE_SOURCE_SIZE,
       TILE_SOURCE_SIZE,
       x * EDIT_TILE_SIZE,
@@ -235,35 +241,39 @@ export class BobbyEditor {
     );
   }
 
-  private renderPalette(): void {
-    const known = this.layer === 'terrain' ? terrainNames : objectNames;
-    const selected = this.layer === 'terrain' ? this.selectedTerrain : this.selectedObject;
-    const ids = this.layer === 'terrain'
-      ? Array.from({ length: 256 }, (_, id) => id)
-      : Array.from({ length: 55 }, (_, index) => 0xc9 + index);
+  private terrainPalette(): TerrainType[] {
+    return [...new Set<TerrainType>([...Object.values(Terrain), ...this.level.terrain.flat()])];
+  }
 
-    this.paletteGrid.innerHTML = ids.map((id) => {
-      const col = id & 15;
-      const row = id >> 4;
-      const name = known.get(id) ?? 'UNKNOWN';
-      return `<button class="editor-palette-tile ${id === selected ? 'active' : ''}" data-palette-id="${id}"
-        title="${hexByte(id)} / ${signedByte(id)} · ${escapeHtml(name)}"
-        style="background-image:url('${escapeAttribute(this.options.atlasUrl)}');background-size:${16 * 30}px ${16 * 30}px;background-position:${-col * 30}px ${-row * 30}px"></button>`;
+  private objectPalette(): ObjectType[] {
+    return [...new Set<ObjectType>([...Object.values(ObjectId), ...this.level.objects.map((object) => object.type)])]
+      .filter((type) => type !== ObjectId.EMPTY);
+  }
+
+  private renderPalette(): void {
+    const values: Array<TerrainType | ObjectType> = this.layer === 'terrain' ? this.terrainPalette() : this.objectPalette();
+    const selected = this.layer === 'terrain' ? this.selectedTerrain : this.selectedObject;
+    this.paletteGrid.innerHTML = values.map((type) => {
+      const source = this.layer === 'terrain' ? terrainAtlasCell(type as TerrainType) : objectAtlasCell(type as ObjectType);
+      const name = (this.layer === 'terrain' ? terrainNames : objectNames).get(type) ?? type;
+      return `<button class="editor-palette-tile ${type === selected ? 'active' : ''}" data-palette-type="${escapeAttribute(type)}"
+        title="${escapeAttribute(type)} · ${escapeAttribute(name)}"
+        style="background-image:url('${escapeAttribute(this.options.atlasUrl)}');background-size:${16 * 30}px ${16 * 30}px;background-position:${-source.column * 30}px ${-source.row * 30}px"></button>`;
     }).join('');
     this.renderSelectedTile();
   }
 
   private renderSelectedTile(): void {
-    const id = this.layer === 'terrain' ? this.selectedTerrain : this.selectedObject;
-    const name = (this.layer === 'terrain' ? terrainNames : objectNames).get(id) ?? 'UNKNOWN';
+    const type = this.layer === 'terrain' ? this.selectedTerrain : this.selectedObject;
+    const name = (this.layer === 'terrain' ? terrainNames : objectNames).get(type) ?? type;
     const target = this.required<HTMLElement>('[data-editor-selected]');
-    target.innerHTML = `<strong>${this.layer === 'terrain' ? 'Terrain' : 'Object'} · ${hexByte(id)}</strong><span>${signedByte(id)} · ${escapeHtml(name)}</span>`;
+    target.innerHTML = `<strong>${this.layer === 'terrain' ? 'Terrain' : 'Object'}</strong><span>${escapeHtml(type)} · ${escapeHtml(name)}</span>`;
   }
 
   private renderInspector(): void {
     const cell = this.selectedCell;
-    const terrain = cell ? this.level.terrain[cell.y]?.[cell.x] ?? 0xff : null;
-    const object = cell ? this.objectAt(cell.x, cell.y)?.id ?? 0xff : null;
+    const terrain = cell ? this.level.terrain[cell.y]?.[cell.x] ?? null : null;
+    const object = cell ? this.objectAt(cell.x, cell.y)?.type ?? null : null;
     const issues = validateEditorLevel(this.level);
     this.inspector.innerHTML = `
       <div class="editor-panel-title">地图</div>
@@ -278,8 +288,8 @@ export class BobbyEditor {
       ${cell ? `
         <div class="editor-inspect-grid">
           <span>位置</span><strong>${cell.x}, ${cell.y}</strong>
-          <span>Terrain</span><strong>${hexByte(terrain!)} · ${escapeHtml(terrainNames.get(terrain!) ?? 'UNKNOWN')}</strong>
-          <span>Object</span><strong>${object === 0xff ? 'EMPTY' : `${hexByte(object!)} · ${escapeHtml(objectNames.get(object!) ?? 'UNKNOWN')}`}</strong>
+          <span>Terrain</span><strong>${terrain ? `${escapeHtml(terrain)} · ${escapeHtml(terrainNames.get(terrain) ?? terrain)}` : '—'}</strong>
+          <span>Object</span><strong>${object ? `${escapeHtml(object)} · ${escapeHtml(objectNames.get(object) ?? object)}` : 'EMPTY'}</strong>
         </div>` : '<p class="editor-muted">点击地图中的格子查看。</p>'}
       <div class="editor-panel-title inspector-gap">校验</div>
       <div class="editor-issues">${issues.length ? issues.map((issue) => `<div class="editor-issue ${issue.level}">${escapeHtml(issue.message)}</div>`).join('') : '<div class="editor-ok">地图结构正常</div>'}</div>`;
@@ -304,11 +314,12 @@ export class BobbyEditor {
 
   private readonly onRootClick = (event: Event): void => {
     const target = event.target as HTMLElement;
-    const palette = target.closest<HTMLElement>('[data-palette-id]');
+    const palette = target.closest<HTMLElement>('[data-palette-type]');
     if (palette && !this.playing) {
-      const id = Number(palette.dataset.paletteId);
-      if (this.layer === 'terrain') this.selectedTerrain = id;
-      else this.selectedObject = id;
+      const type = palette.dataset.paletteType;
+      if (!type) return;
+      if (this.layer === 'terrain') this.selectedTerrain = type as TerrainType;
+      else this.selectedObject = type as ObjectType;
       this.tool = 'pencil';
       this.renderPalette();
       this.updateToolbar();
@@ -356,7 +367,7 @@ export class BobbyEditor {
           this.level = parseEditorLevel(text);
           this.redoStack.length = 0;
           this.selectedCell = null;
-          this.setStatus('已导入 JSON 地图');
+          this.setStatus('已导入语义 JSON 地图');
           this.refreshAll();
         } catch (error) {
           this.setStatus(`导入失败：${error instanceof Error ? error.message : String(error)}`, true);
@@ -421,7 +432,7 @@ export class BobbyEditor {
       this.strokeStarted = true;
     }
     if (this.tool === 'erase') {
-      if (this.layer === 'terrain') this.level.terrain[cell.y]![cell.x] = 0x90;
+      if (this.layer === 'terrain') this.level.terrain[cell.y]![cell.x] = Terrain.GROUND_C;
       else this.removeObject(cell.x, cell.y);
     } else if (this.layer === 'terrain') {
       this.level.terrain[cell.y]![cell.x] = this.selectedTerrain;
@@ -434,19 +445,19 @@ export class BobbyEditor {
 
   private pick(cell: Cell): void {
     if (this.layer === 'terrain') this.selectedTerrain = this.level.terrain[cell.y]![cell.x]!;
-    else this.selectedObject = this.objectAt(cell.x, cell.y)?.id ?? 0xff;
+    else this.selectedObject = this.objectAt(cell.x, cell.y)?.type ?? ObjectId.CARROT;
     this.tool = 'pencil';
     this.renderPalette();
     this.updateToolbar();
   }
 
-  private objectAt(x: number, y: number): { id: number; x: number; y: number } | undefined {
+  private objectAt(x: number, y: number): EditorObject | undefined {
     return this.level.objects.find((object) => object.x === x && object.y === y);
   }
 
-  private setObject(x: number, y: number, id: number): void {
+  private setObject(x: number, y: number, type: ObjectType): void {
     this.removeObject(x, y);
-    if (id !== 0xff) this.level.objects.push({ id, x, y });
+    if (type !== ObjectId.EMPTY) this.level.objects.push({ type, x, y });
   }
 
   private removeObject(x: number, y: number): void {
@@ -497,7 +508,7 @@ export class BobbyEditor {
     anchor.download = `${slug(this.level.name) || 'bobby-level'}.json`;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
-    this.setStatus('已导出 JSON');
+    this.setStatus('已导出语义 JSON');
   }
 
   private async share(kind: 'play' | 'edit'): Promise<void> {
@@ -587,9 +598,9 @@ export class BobbyEditor {
   }
 }
 
-function idNameMap(values: Record<string, number>): Map<number, string> {
-  const map = new Map<number, string>();
-  for (const [name, id] of Object.entries(values)) if (!map.has(id)) map.set(id, name);
+function semanticNameMap(values: Record<string, string>): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const [name, type] of Object.entries(values)) if (!map.has(type)) map.set(type, name);
   return map;
 }
 

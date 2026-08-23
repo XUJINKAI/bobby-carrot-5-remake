@@ -1,24 +1,32 @@
-import type { LevelData, LevelObject } from '@bobby/engine';
+import {
+  DYNAMIC_OBJECT_IDS,
+  ObjectId,
+  Terrain,
+  type LevelData,
+  type LevelObject,
+  type ObjectType,
+  type TerrainType
+} from '@bobby/engine';
 
 /**
  * Editor / 分享使用的最小地图格式。
  *
- * 它故意不携带 DAT recordLength、SHA-256、release 等档案字段；
- * 官方地图进入 Editor 时先复制成这个 Draft，导出后就是普通自定义 JSON。
+ * 这是 bc5r 自己的语义关卡格式，不是 DAT dump。Editor 不认识原版 byte；
+ * DAT 导入/导出只能经过独立 codec 层。
  */
 export interface EditorLevel {
-  schemaVersion: 1;
+  schemaVersion: 2;
   name: string;
   author?: string;
   description?: string;
   width: number;
   height: number;
-  terrain: number[][];
+  terrain: TerrainType[][];
   objects: EditorObject[];
 }
 
 export interface EditorObject {
-  id: number;
+  type: ObjectType;
   x: number;
   y: number;
 }
@@ -31,12 +39,11 @@ export interface LevelValidationIssue {
 export function createBlankLevel(width = 16, height = 16): EditorLevel {
   const safeWidth = clampDimension(width);
   const safeHeight = clampDimension(height);
-  const terrain = Array.from({ length: safeHeight }, () => Array.from({ length: safeWidth }, () => 0x90));
-  // 默认地图直接可进入 Engine：左上附近出生、右下附近出口。
-  terrain[Math.min(2, safeHeight - 1)]![Math.min(2, safeWidth - 1)] = 0x95;
-  terrain[Math.max(0, safeHeight - 3)]![Math.max(0, safeWidth - 3)] = 0x96;
+  const terrain = Array.from({ length: safeHeight }, () => Array.from({ length: safeWidth }, () => Terrain.GROUND_C as TerrainType));
+  terrain[Math.min(2, safeHeight - 1)]![Math.min(2, safeWidth - 1)] = Terrain.START;
+  terrain[Math.max(0, safeHeight - 3)]![Math.max(0, safeWidth - 3)] = Terrain.EXIT;
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     name: 'Untitled Bobby Level',
     width: safeWidth,
     height: safeHeight,
@@ -47,27 +54,21 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
 
 export function fromLevelData(level: LevelData): EditorLevel {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     name: level.publicId ? level.publicId.toUpperCase() : level.id ? `Level ${level.id}` : 'Bobby Level',
     width: level.width,
     height: level.height,
     terrain: level.terrain.map((row) => [...row]),
-    objects: level.objects.map(({ id, x, y }) => ({ id, x, y }))
+    objects: level.objects.map(({ type, x, y }) => ({ type, x, y }))
   };
 }
 
 /** 把 Editor Draft 转成 Engine 真正运行的 LevelData。每次 Play 都重新生成，绝不让 Runtime 反写 Draft。 */
 export function toLevelData(level: EditorLevel): LevelData {
   const normalized = normalizeEditorLevel(level);
-  const objects: LevelObject[] = normalized.objects.map(({ id, x, y }) => ({
-    id,
-    signedId: signedByte(id),
-    hexId: hexByte(id),
-    x,
-    y
-  }));
+  const objects: LevelObject[] = normalized.objects.map(({ type, x, y }) => ({ type, x, y }));
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: 'custom',
     canonicalId: 'custom',
     publicId: 'custom',
@@ -76,8 +77,8 @@ export function toLevelData(level: EditorLevel): LevelData {
     recordSha256: 'custom-json',
     width: normalized.width,
     height: normalized.height,
-    dynamicSlots: objects.filter((object) => [0xe0, 0xe1, 0xe2, 0xec].includes(object.id)).length,
-    terrainEncoding: 'u8-row-major',
+    dynamicSlots: objects.filter((object) => DYNAMIC_OBJECT_IDS.has(object.type)).length,
+    terrainEncoding: 'semantic-row-major',
     terrain: normalized.terrain.map((row) => [...row]),
     objects
   };
@@ -87,7 +88,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
   const width = clampDimension(Number(input.width));
   const height = clampDimension(Number(input.height));
   const terrain = Array.from({ length: height }, (_, y) =>
-    Array.from({ length: width }, (_, x) => normalizeByte(input.terrain?.[y]?.[x] ?? 0x90))
+    Array.from({ length: width }, (_, x) => normalizeTerrain(input.terrain?.[y]?.[x]))
   );
 
   const seen = new Set<string>();
@@ -96,17 +97,16 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     const x = Math.trunc(Number(object.x));
     const y = Math.trunc(Number(object.y));
     if (x < 0 || y < 0 || x >= width || y >= height) continue;
-    const id = normalizeByte(object.id);
-    if (id === 0xff) continue;
+    const type = normalizeObject(object.type);
+    if (type === ObjectId.EMPTY) continue;
     const key = `${x},${y}`;
-    // 原始正式关卡每格最多一个静态对象；Editor 同样维持这个约束。
     if (seen.has(key)) continue;
     seen.add(key);
-    objects.push({ id, x, y });
+    objects.push({ type, x, y });
   }
 
   const level: EditorLevel = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     name: String(input.name || 'Untitled Bobby Level').slice(0, 120),
     width,
     height,
@@ -124,20 +124,19 @@ export function validateEditorLevel(level: EditorLevel): LevelValidationIssue[] 
   let starts = 0;
   let exits = 0;
   for (const row of normalized.terrain) {
-    for (const id of row) {
-      if (id === 0x95) starts += 1;
-      if (id === 0x96) exits += 1;
+    for (const type of row) {
+      if (type === Terrain.START) starts += 1;
+      if (type === Terrain.EXIT) exits += 1;
     }
   }
-  if (starts === 0) issues.push({ level: 'warning', message: '没有 0x95 Bobby 出生点；Engine 会使用第一个可步行格作为回退出生点。' });
+  if (starts === 0) issues.push({ level: 'warning', message: '没有 Bobby 出生点；Engine 会使用第一个可步行格作为回退出生点。' });
   if (starts > 1) issues.push({ level: 'warning', message: `存在 ${starts} 个出生点；原版语义只需要一个。` });
-  if (exits === 0) issues.push({ level: 'warning', message: '没有 0x96 出口，因此地图通常无法正常通关。' });
+  if (exits === 0) issues.push({ level: 'warning', message: '没有出口，因此地图通常无法正常通关。' });
   return issues;
 }
 
 export function resizeEditorLevel(level: EditorLevel, width: number, height: number): EditorLevel {
-  const next = normalizeEditorLevel({ ...level, width, height });
-  return next;
+  return normalizeEditorLevel({ ...level, width, height });
 }
 
 export function serializeEditorLevel(level: EditorLevel): string {
@@ -146,7 +145,7 @@ export function serializeEditorLevel(level: EditorLevel): string {
 
 export function parseEditorLevel(text: string): EditorLevel {
   const parsed = JSON.parse(text) as Partial<EditorLevel>;
-  if (parsed.schemaVersion !== 1) throw new Error(`不支持的地图 schemaVersion：${String(parsed.schemaVersion)}`);
+  if (parsed.schemaVersion !== 2) throw new Error(`不支持的地图 schemaVersion：${String(parsed.schemaVersion)}；当前只接受语义 schema v2`);
   if (!Array.isArray(parsed.terrain)) throw new Error('JSON 缺少 terrain 二维数组');
   return normalizeEditorLevel(parsed as EditorLevel);
 }
@@ -156,10 +155,10 @@ function clampDimension(value: number): number {
   return Math.min(128, Math.max(3, Math.trunc(value)));
 }
 
-function normalizeByte(value: number): number {
-  if (!Number.isFinite(Number(value))) return 0xff;
-  return Math.min(255, Math.max(0, Math.trunc(Number(value)))) & 0xff;
+function normalizeTerrain(value: unknown): TerrainType {
+  return typeof value === 'string' && value.length > 0 ? value as TerrainType : Terrain.GROUND_C;
 }
 
-function signedByte(id: number): number { return id > 127 ? id - 256 : id; }
-function hexByte(id: number): string { return `0x${(id & 0xff).toString(16).padStart(2, '0').toUpperCase()}`; }
+function normalizeObject(value: unknown): ObjectType {
+  return typeof value === 'string' && value.length > 0 ? value as ObjectType : ObjectId.EMPTY;
+}

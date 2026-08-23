@@ -1,12 +1,5 @@
 import crypto from 'node:crypto';
-
-export function toSignedByte(value) {
-  return value > 127 ? value - 256 : value;
-}
-
-export function toHexByte(value) {
-  return `0x${value.toString(16).padStart(2, '0').toUpperCase()}`;
-}
+import { decodeDatLevel, encodeDatObject, encodeDatTerrain } from './dat-codec.mjs';
 
 function sha256(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
@@ -42,6 +35,11 @@ export function parsePackMetadata(record) {
   return { packType, languages };
 }
 
+/**
+ * Parse one original DAT level record and immediately cross the codec boundary.
+ * The returned value is the semantic bc5r LevelData shape; raw DAT tile/object bytes
+ * never escape this module + dat-codec.mjs.
+ */
 export function parseLevelRecord(record, source) {
   if (record.length < 5) throw new Error(`Level record too short: ${record.length}`);
   let offset = 0;
@@ -52,39 +50,69 @@ export function parseLevelRecord(record, source) {
     throw new Error(`Invalid dimensions ${width}x${height} for record length ${record.length}`);
   }
 
-  const terrain = [];
+  const rawTerrain = [];
   for (let y = 0; y < height; y += 1) {
-    terrain.push(Array.from(record.subarray(offset + y * width, offset + (y + 1) * width)));
+    rawTerrain.push(Array.from(record.subarray(offset + y * width, offset + (y + 1) * width)));
   }
   offset += terrainBytes;
 
   const dynamicSlots = record.readUInt8(offset++);
   const objectCount = record.readUInt16BE(offset);
   offset += 2;
-  const objects = [];
+  const rawObjects = [];
   for (let index = 0; index < objectCount; index += 1) {
     if (offset + 3 > record.length) throw new Error('Truncated object table');
-    const id = record.readUInt8(offset++);
-    const x = record.readUInt8(offset++);
-    const y = record.readUInt8(offset++);
-    objects.push({ id, signedId: toSignedByte(id), hexId: toHexByte(id), x, y });
+    rawObjects.push({
+      id: record.readUInt8(offset++),
+      x: record.readUInt8(offset++),
+      y: record.readUInt8(offset++)
+    });
   }
   if (offset !== record.length) {
     throw new Error(`Level record has ${record.length - offset} unread bytes`);
   }
 
-  return {
-    schemaVersion: 1,
+  return decodeDatLevel({
     source,
     recordLength: record.length,
     recordSha256: sha256(record),
     width,
     height,
     dynamicSlots,
-    terrainEncoding: 'u8-row-major',
-    terrain,
-    objects
-  };
+    terrain: rawTerrain,
+    objects: rawObjects
+  });
+}
+
+/** Encode the semantic level model back to an original DAT level record. */
+export function encodeLevelRecord(level) {
+  const width = Number(level.width);
+  const height = Number(level.height);
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || width > 255 || height < 1 || height > 255) {
+    throw new Error(`DAT dimensions must fit unsigned bytes: ${width}x${height}`);
+  }
+  if (!Array.isArray(level.terrain) || level.terrain.length !== height || level.terrain.some((row) => !Array.isArray(row) || row.length !== width)) {
+    throw new Error('Semantic terrain dimensions do not match level width/height');
+  }
+  if (!Array.isArray(level.objects) || level.objects.length > 0xffff) throw new Error('Too many DAT objects');
+
+  const recordLength = 2 + width * height + 1 + 2 + level.objects.length * 3;
+  const record = Buffer.alloc(recordLength);
+  let offset = 0;
+  record.writeUInt8(width, offset++);
+  record.writeUInt8(height, offset++);
+  for (const row of level.terrain) {
+    for (const type of row) record.writeUInt8(encodeDatTerrain(type), offset++);
+  }
+  record.writeUInt8(Math.max(0, Math.min(255, Math.trunc(Number(level.dynamicSlots ?? 0)))), offset++);
+  record.writeUInt16BE(level.objects.length, offset);
+  offset += 2;
+  for (const object of level.objects) {
+    record.writeUInt8(encodeDatObject(object.type), offset++);
+    record.writeUInt8(object.x, offset++);
+    record.writeUInt8(object.y, offset++);
+  }
+  return record;
 }
 
 export function parseDatPackage(buffer, sourceBase) {
