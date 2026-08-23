@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { ObjectId } from '../../engine/dist/index.js';
 import {
   createBlankLevel,
+  fromLevelData,
   normalizeEditorLevel,
   parseEditorLevel,
   resizeEditorLevel,
@@ -28,42 +29,58 @@ test('Editor JSON 只保留可分享的语义地图字段，并可转回 Engine 
   assert.equal(runtime.source.edition, 'custom');
 });
 
-test('Resize 保留左上区域并删除越界对象', () => {
+test('Multi-cell Object 在 EditorLevel 只保存 anchor，进入 Runtime 时展开 occupancy', () => {
+  const level = createBlankLevel(12, 8);
+  level.objects.push({ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 });
+  const normalized = normalizeEditorLevel(level);
+  assert.deepEqual(normalized.objects, [{ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 }]);
+
+  const runtime = toLevelData(normalized);
+  assert.deepEqual(runtime.objects.filter((object) => object.y === 3), [
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 },
+    { type: ObjectId.DRAGON_BODY, x: 4, y: 3 },
+    { type: ObjectId.DRAGON_TAIL, x: 5, y: 3 }
+  ]);
+
+  const restored = fromLevelData(runtime);
+  assert.deepEqual(restored.objects, [{ type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 }]);
+});
+
+test('Normalize 删除内部 body/tail，并保证 multi-cell footprint 不重叠', () => {
+  const level = createBlankLevel(10, 8);
+  level.objects = [
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 2, y: 2 },
+    { type: ObjectId.DRAGON_BODY, x: 3, y: 2 },
+    { type: ObjectId.CARROT, x: 4, y: 2 },
+    { type: ObjectId.BEAN, x: 7, y: 2 }
+  ];
+  assert.deepEqual(normalizeEditorLevel(level).objects, [
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 2, y: 2 },
+    { type: ObjectId.BEAN, x: 7, y: 2 }
+  ]);
+});
+
+test('Resize 会整体删除越界的 multi-cell Object', () => {
   const level = createBlankLevel(12, 12);
-  level.objects.push({ type: ObjectId.CARROT, x: 10, y: 10 });
+  level.objects.push({ type: ObjectId.DRAGON_HEAD_BASE, x: 9, y: 3 });
   level.objects.push({ type: ObjectId.BEAN, x: 3, y: 3 });
-  const resized = resizeEditorLevel(level, 8, 8);
-  assert.equal(resized.width, 8);
-  assert.equal(resized.height, 8);
+  const resized = resizeEditorLevel(level, 10, 8);
   assert.deepEqual(resized.objects, [{ type: ObjectId.BEAN, x: 3, y: 3 }]);
 });
 
-test('Normalize 保证每格最多一个 Object', () => {
-  const level = createBlankLevel(8, 8);
-  level.objects = [{ type: ObjectId.CARROT, x: 2, y: 2 }, { type: ObjectId.BEAN, x: 2, y: 2 }];
-  assert.equal(normalizeEditorLevel(level).objects.length, 1);
-});
-
-test('URL share codec 使用 DAT 二进制并完整往返地图 metadata', async () => {
+test('URL share codec 使用 DAT anchor 编码并完整往返地图 metadata', async () => {
   const level = createBlankLevel(20, 16);
   level.name = 'Shared Test';
   level.author = 'xjk';
   level.description = 'DAT binary share';
-  level.objects.push({ type: ObjectId.CARROT, x: 5, y: 5 }, { type: ObjectId.MOWER, x: 7, y: 8 });
+  level.objects.push({ type: ObjectId.DRAGON_HEAD_BASE, x: 5, y: 5 }, { type: ObjectId.MOWER, x: 9, y: 8 });
   const encoded = await encodeShareLevel(level);
   assert.ok(encoded.startsWith('d.') || encoded.startsWith('r.'));
   const decoded = await decodeShareLevel(encoded);
   assert.deepEqual(decoded, normalizeEditorLevel(level));
+  assert.deepEqual(decoded.objects, [
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 5, y: 5 },
+    { type: ObjectId.MOWER, x: 9, y: 8 }
+  ]);
   assert.ok(encoded.length < serializeEditorLevel(level).length);
-});
-
-test('URL share codec 保留独立的 Dragon Tile，不引入 Stamp metadata', async () => {
-  const level = createBlankLevel(12, 8);
-  level.objects.push(
-    { type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 },
-    { type: ObjectId.DRAGON_BODY, x: 4, y: 3 },
-    { type: ObjectId.DRAGON_TAIL, x: 5, y: 3 }
-  );
-  const decoded = await decodeShareLevel(await encodeShareLevel(level));
-  assert.deepEqual(decoded.objects, level.objects);
 });
