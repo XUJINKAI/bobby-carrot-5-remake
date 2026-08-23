@@ -1,21 +1,22 @@
+import type { ObjectType, TerrainType } from '@bobby/engine';
 import type { EditorLevel } from './level.js';
 import { normalizeEditorLevel } from './level.js';
 
 interface CompactLevel {
-  v: 1;
+  v: 2;
   n: string;
   a?: string;
   d?: string;
   w: number;
   h: number;
-  /** terrain 的 [byte,count,byte,count...] RLE。 */
-  t: number[];
-  /** objects 的 [id,x,y,id,x,y...] 扁平数组。 */
-  o: number[];
+  /** semantic terrain 的 [type,count,type,count...] RLE。 */
+  t: Array<TerrainType | number>;
+  /** semantic objects 的 [type,x,y,type,x,y...] 扁平数组。 */
+  o: Array<ObjectType | number>;
 }
 
 /**
- * URL 分享格式：compact JSON -> deflate-raw（浏览器支持时）-> base64url。
+ * URL 分享格式：compact semantic JSON -> deflate-raw（浏览器支持时）-> base64url。
  * 前缀 z. 表示 deflate-raw，j. 表示仅 compact JSON 的兼容回退。
  */
 export async function encodeShareLevel(level: EditorLevel): Promise<string> {
@@ -55,43 +56,44 @@ export function shareValueFromHash(hash = location.hash): string | null {
 
 function compactLevel(level: EditorLevel): CompactLevel {
   const flat = level.terrain.flat();
-  const t: number[] = [];
-  for (const id of flat) {
+  const t: Array<TerrainType | number> = [];
+  for (const type of flat) {
     const lastCountIndex = t.length - 1;
-    if (t.length >= 2 && t[t.length - 2] === id && (t[lastCountIndex] ?? 0) < 65535) {
-      t[lastCountIndex] = (t[lastCountIndex] ?? 0) + 1;
+    if (t.length >= 2 && t[t.length - 2] === type && typeof t[lastCountIndex] === 'number' && (t[lastCountIndex] as number) < 65535) {
+      t[lastCountIndex] = (t[lastCountIndex] as number) + 1;
     } else {
-      t.push(id, 1);
+      t.push(type, 1);
     }
   }
-  const o = level.objects.flatMap(({ id, x, y }) => [id, x, y]);
-  const compact: CompactLevel = { v: 1, n: level.name, w: level.width, h: level.height, t, o };
+  const o: Array<ObjectType | number> = [];
+  for (const object of level.objects) o.push(object.type, object.x, object.y);
+  const compact: CompactLevel = { v: 2, n: level.name, w: level.width, h: level.height, t, o };
   if (level.author) compact.a = level.author;
   if (level.description) compact.d = level.description;
   return compact;
 }
 
 function expandLevel(compact: CompactLevel): EditorLevel {
-  if (compact.v !== 1) throw new Error(`不支持的分享地图版本：${String(compact.v)}`);
-  const flat: number[] = [];
+  if (compact.v !== 2) throw new Error(`不支持的分享地图版本：${String(compact.v)}；旧 raw-id 分享格式不再兼容`);
+  const flat: TerrainType[] = [];
   for (let index = 0; index < compact.t.length; index += 2) {
-    const id = compact.t[index];
+    const type = compact.t[index];
     const count = compact.t[index + 1];
-    if (id === undefined || count === undefined || count < 1) throw new Error('分享地图 terrain RLE 损坏');
-    for (let i = 0; i < count; i += 1) flat.push(id);
+    if (typeof type !== 'string' || typeof count !== 'number' || count < 1) throw new Error('分享地图 terrain RLE 损坏');
+    for (let i = 0; i < count; i += 1) flat.push(type as TerrainType);
   }
   if (flat.length !== compact.w * compact.h) throw new Error('分享地图 terrain 尺寸不一致');
   const terrain = Array.from({ length: compact.h }, (_, y) => flat.slice(y * compact.w, (y + 1) * compact.w));
-  const objects = [];
+  const objects: Array<{ type: ObjectType; x: number; y: number }> = [];
   for (let index = 0; index < compact.o.length; index += 3) {
-    const id = compact.o[index];
+    const type = compact.o[index];
     const x = compact.o[index + 1];
     const y = compact.o[index + 2];
-    if (id === undefined || x === undefined || y === undefined) throw new Error('分享地图 object 数据损坏');
-    objects.push({ id, x, y });
+    if (typeof type !== 'string' || typeof x !== 'number' || typeof y !== 'number') throw new Error('分享地图 object 数据损坏');
+    objects.push({ type: type as ObjectType, x, y });
   }
   return normalizeEditorLevel({
-    schemaVersion: 1,
+    schemaVersion: 2,
     name: compact.n || 'Shared Bobby Level',
     ...(compact.a ? { author: compact.a } : {}),
     ...(compact.d ? { description: compact.d } : {}),
