@@ -1,5 +1,5 @@
 import type { Game } from '../core/Game.js';
-import type { Direction } from '../mechanics/registry.js';
+import type { Direction } from '../mechanics/ids.js';
 
 interface PointerState {
   x: number;
@@ -8,10 +8,24 @@ interface PointerState {
   startY: number;
 }
 
+const KEY_DIRECTION: Record<string, Direction> = {
+  arrowup: 'up', w: 'up',
+  arrowdown: 'down', s: 'down',
+  arrowleft: 'left', a: 'left',
+  arrowright: 'right', d: 'right'
+};
+
+/**
+ * 输入控制器只维护“此刻”的玩家意图，不生成移动指令队列。
+ *
+ * 原版移动循环持续读取按键状态：键抬起后，完成当前格就停；不会因为浏览器 key-repeat
+ * 已经投递了若干 keydown 而继续跑很多格。冰面/跑道/荷叶等强制运动仍由 Engine 自己续步。
+ */
 export class InputController {
   private readonly game: Game;
   private readonly canvas: HTMLCanvasElement;
   private readonly pointers = new Map<number, PointerState>();
+  private readonly heldMovementKeys: string[] = [];
   private pinchStartDistance = 0;
   private pinchStartZoom = 1;
   private enabled = true;
@@ -20,6 +34,8 @@ export class InputController {
     this.game = game;
     this.canvas = game.renderer.canvas;
     window.addEventListener('keydown', this.onKeyDown, { passive: false });
+    window.addEventListener('keyup', this.onKeyUp, { passive: false });
+    window.addEventListener('blur', this.onBlur);
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.canvas.addEventListener('pointermove', this.onPointerMove);
     this.canvas.addEventListener('pointerup', this.onPointerUp);
@@ -27,10 +43,16 @@ export class InputController {
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
   }
 
-  setEnabled(value: boolean): void { this.enabled = value; }
+  setEnabled(value: boolean): void {
+    this.enabled = value;
+    if (!value) this.clearHeldMovement();
+  }
 
   destroy(): void {
+    this.clearHeldMovement();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onBlur);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
@@ -41,24 +63,42 @@ export class InputController {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (!this.enabled || !this.game.hasLevel) return;
     const key = event.key.toLowerCase();
-    const movement: Record<string, Direction> = {
-      arrowup: 'up', w: 'up',
-      arrowdown: 'down', s: 'down',
-      arrowleft: 'left', a: 'left',
-      arrowright: 'right', d: 'right'
-    };
-    const direction = movement[key];
+    const direction = KEY_DIRECTION[key];
     if (direction) {
       event.preventDefault();
-      this.game.move(direction);
+      // 浏览器 key-repeat 不应制造逻辑步数。只在物理按键首次按下时更新优先级。
+      if (!event.repeat && !this.heldMovementKeys.includes(key)) this.heldMovementKeys.push(key);
+      this.game.setHeldDirection(this.currentHeldDirection());
       return;
     }
+    if (event.repeat) return;
     if (key === 'r') this.game.restart();
     else if (key === 'z' || key === 'u') this.game.undo();
     else if (key === '=' || key === '+') this.game.zoomBy(1.1);
     else if (key === '-' || key === '_') this.game.zoomBy(1 / 1.1);
-    else if (key === 'f2') this.game.toggleDebug();
+    else if (event.code === 'Backquote' || key === '`' || key === '~') this.game.toggleDebug();
   };
+
+  private readonly onKeyUp = (event: KeyboardEvent): void => {
+    const key = event.key.toLowerCase();
+    if (!KEY_DIRECTION[key]) return;
+    event.preventDefault();
+    const index = this.heldMovementKeys.lastIndexOf(key);
+    if (index >= 0) this.heldMovementKeys.splice(index, 1);
+    this.game.setHeldDirection(this.currentHeldDirection());
+  };
+
+  private readonly onBlur = (): void => this.clearHeldMovement();
+
+  private clearHeldMovement(): void {
+    this.heldMovementKeys.length = 0;
+    this.game.setHeldDirection(null);
+  }
+
+  private currentHeldDirection(): Direction | null {
+    const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
+    return key ? KEY_DIRECTION[key] ?? null : null;
+  }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     if (!this.enabled) return;
@@ -94,6 +134,7 @@ export class InputController {
     const direction: Direction = Math.abs(dx) > Math.abs(dy)
       ? (dx < 0 ? 'left' : 'right')
       : (dy < 0 ? 'up' : 'down');
+    // Swipe 是一次离散动作，不建立持续持键状态。
     this.game.move(direction);
   };
 

@@ -2,8 +2,7 @@ name: verify
 
 on:
   push:
-    branches: [main, reverse/runtime-fidelity-core]
-  pull_request:
+    branches: [main]
 
 jobs:
   verify:

@@ -26,7 +26,6 @@ interface Motion {
   startedAt: number;
   duration: number;
   forced: boolean;
-  /** 本段动画中动态载具与 Bobby 必须共享同一条视觉轨迹。 */
   ridingDynamic: boolean;
 }
 
@@ -41,7 +40,8 @@ export class Game {
   private debugValue = false;
   private motion: Motion | null = null;
   private visual: VisualPlayerState = { x: 0, y: 0, direction: 'down', progress: 0, moving: false, ridingDynamic: false };
-  private readonly inputQueue: Direction[] = [];
+  /** 当前物理按键状态。这里只保留“现在想往哪走”，绝不积压历史 keydown。 */
+  private heldDirection: Direction | null = null;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -74,7 +74,7 @@ export class Game {
     this.initialLevel = structuredClone(level);
     this.worldValue = new World(structuredClone(level), this.profile);
     this.history.length = 0;
-    this.inputQueue.length = 0;
+    this.heldDirection = null;
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -86,23 +86,29 @@ export class Game {
   }
 
   /**
-   * 请求移动。动画进行中时只缓存方向，不修改世界状态；
-   * 因此连续按键/手机连续 Swipe 不会造成角色逻辑坐标提前跳跃。
+   * 一次离散移动请求（Swipe、按钮等）。动画进行中时直接忽略，不排队。
+   * 键盘长按使用 setHeldDirection()，每格结束时重新读取当前物理状态。
    */
   move(direction: Direction): MoveResult | null {
-    if (!this.worldValue || this.world.dead || this.world.completed) return null;
-    if (this.motion) {
-      if (this.inputQueue.length < 4) this.inputQueue.push(direction);
-      return null;
-    }
+    if (!this.worldValue || this.world.dead || this.world.completed || this.motion) return null;
     return this.startLogicalMove(direction, false);
+  }
+
+  /**
+   * 更新当前键盘方向。keyup(null) 不会取消已经开始的当前格动画，但该格结束后立即停。
+   */
+  setHeldDirection(direction: Direction | null): void {
+    this.heldDirection = direction;
+    if (direction && this.worldValue && !this.motion && !this.world.dead && !this.world.completed && !this.world.forcedDirection) {
+      this.startLogicalMove(direction, false);
+    }
   }
 
   undo(): boolean {
     const previous = this.history.pop();
     if (!previous || !this.worldValue) return false;
     this.world.restore(previous);
-    this.inputQueue.length = 0;
+    this.heldDirection = null;
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -116,7 +122,7 @@ export class Game {
     if (!this.initialLevel) return;
     this.worldValue = new World(structuredClone(this.initialLevel), this.profile);
     this.history.length = 0;
-    this.inputQueue.length = 0;
+    this.heldDirection = null;
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -186,8 +192,6 @@ export class Game {
       this.emit('blocked');
       this.handleWorldEvents(result.events);
       this.emit('change');
-      // 强制状态撞墙后已经由 World 清除，可继续处理用户队列。
-      if (!forced) this.dequeueUserMove();
       return result;
     }
 
@@ -234,25 +238,18 @@ export class Game {
     this.motion = null;
 
     if (this.world.dead || this.world.completed) {
-      this.inputQueue.length = 0;
+      this.heldDirection = null;
       this.emit('change');
       return;
     }
 
+    // 机关强制运动优先于玩家按键。若没有强制状态，才读取“这一刻”仍按着的方向。
     const forcedDirection = this.world.forcedDirection;
     if (forcedDirection) {
-      const result = this.startLogicalMove(forcedDirection, true);
-      // 强制移动若立即撞墙，递归会在 World 中清除 forced；随后允许用户队列继续。
-      if (!result.moved && !this.world.forcedDirection) this.dequeueUserMove();
+      this.startLogicalMove(forcedDirection, true);
       return;
     }
-    this.dequeueUserMove();
-  }
-
-  private dequeueUserMove(): void {
-    if (this.motion || this.world.dead || this.world.completed) return;
-    const direction = this.inputQueue.shift();
-    if (direction) this.startLogicalMove(direction, false);
+    if (this.heldDirection) this.startLogicalMove(this.heldDirection, false);
   }
 
   private handleWorldEvents(events: WorldEvent[]): void {
@@ -320,8 +317,6 @@ export class Game {
 
     if (this.motion) {
       const raw = Math.min(1, Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration));
-      // 原版人物/载具按固定像素增量推进，没有格间的加速-减速 easing。
-      // Web 渲染仍可按 RAF 插值，但必须保持恒定速度，避免每一格起止都出现不属于原版的顿挫。
       const t = raw;
       this.visual.x = this.motion.fromX + (this.motion.toX - this.motion.fromX) * t;
       this.visual.y = this.motion.fromY + (this.motion.toY - this.motion.fromY) * t;
