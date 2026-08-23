@@ -107,7 +107,11 @@ const OPTIONS: Record<FilterGroup, FilterOption[]> = {
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
-  const observer = new MutationObserver(() => scheduleEnhance());
+  const observer = new MutationObserver(() => {
+    // 只在主 SPA 重新渲染出选关页、而筛选壳尚未重新挂载时触发。
+    // 筛选 UI 自己更新 innerHTML 时不重复调度，避免 observer 自激循环。
+    if (document.querySelector('.release-tabs') && !document.querySelector('.level-filter-shell')) scheduleEnhance();
+  });
   observer.observe(app, { childList: true, subtree: true });
   scheduleEnhance();
   document.addEventListener('click', interceptFilteredRandom, true);
