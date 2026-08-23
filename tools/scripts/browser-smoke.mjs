@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { root } from './util.mjs';
 
 const webRoot = path.join(root, 'dist/web');
@@ -20,37 +20,22 @@ try {
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('Failed to determine smoke-test server port');
   const origin = `http://127.0.0.1:${address.port}`;
-  smoke(`${origin}/`, ['class="shell"', 'class="hero"']);
-  smoke(`${origin}/play/base-0-1/`, ['class="game-page"', 'id="game"']);
+  await smoke(`${origin}/`, ['class="shell"', 'class="hero"']);
+  await smoke(`${origin}/play/base-0-1/`, ['class="game-page"', 'id="game"']);
   console.log(`browser smoke: OK — ${path.basename(browser)} loaded home and /play/base-0-1/ from dist/web`);
 } finally {
   await new Promise((resolve) => server.close(resolve));
 }
 
-function smoke(url, expectedFragments) {
-  const result = spawnSync(browser, [
-    '--headless=new',
-    '--disable-gpu',
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-background-networking',
-    '--virtual-time-budget=4000',
-    '--dump-dom',
-    url
-  ], {
-    encoding: 'utf8',
-    timeout: 20000,
-    maxBuffer: 8 * 1024 * 1024
-  });
-
-  if (result.error) throw result.error;
+async function smoke(url, expectedFragments) {
+  const result = await runBrowser(url);
   if (result.status !== 0) {
     throw new Error(`Browser failed for ${url} (exit ${result.status})\n${result.stderr || result.stdout}`);
   }
-  const output = result.stdout ?? '';
+  const output = result.stdout;
   for (const fragment of expectedFragments) {
     if (!output.includes(fragment)) {
-      throw new Error(`Browser did not mount the expected app for ${url}; missing ${fragment}\n${compact(output)}\n${compact(result.stderr ?? '')}`);
+      throw new Error(`Browser did not mount the expected app for ${url}; missing ${fragment}\n${compact(output)}\n${compact(result.stderr)}`);
     }
   }
   const fatalPatterns = [
@@ -58,9 +43,44 @@ function smoke(url, expectedFragments) {
     /blocked by a null value/i,
     /Uncaught TypeError/i
   ];
-  const diagnostics = `${result.stderr ?? ''}\n${output}`;
+  const diagnostics = `${result.stderr}\n${output}`;
   const fatal = fatalPatterns.find((pattern) => pattern.test(diagnostics));
   if (fatal) throw new Error(`Browser reported a fatal module/runtime error for ${url}: ${fatal}`);
+}
+
+function runBrowser(url) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(browser, [
+      '--headless=new',
+      '--disable-gpu',
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-background-networking',
+      '--virtual-time-budget=4000',
+      '--dump-dom',
+      url
+    ], { stdio: ['ignore', 'pipe', 'pipe'] });
+
+    let stdout = '';
+    let stderr = '';
+    const maxBuffer = 8 * 1024 * 1024;
+    const append = (current, chunk) => {
+      const next = current + chunk.toString();
+      if (Buffer.byteLength(next) > maxBuffer) throw new Error('Browser smoke output exceeded 8 MiB');
+      return next;
+    };
+    child.stdout.on('data', (chunk) => { try { stdout = append(stdout, chunk); } catch (error) { child.kill('SIGKILL'); reject(error); } });
+    child.stderr.on('data', (chunk) => { try { stderr = append(stderr, chunk); } catch (error) { child.kill('SIGKILL'); reject(error); } });
+    child.once('error', reject);
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error(`Browser smoke timed out for ${url}`));
+    }, 20000);
+    child.once('close', (status) => {
+      clearTimeout(timeout);
+      resolve({ status, stdout, stderr });
+    });
+  });
 }
 
 function serveStatic(request, response) {
