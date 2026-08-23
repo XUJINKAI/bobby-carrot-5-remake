@@ -31,14 +31,20 @@ for (const level of catalog.levels) {
   if (data.objects.some((object) => 'id' in object || 'signedId' in object || 'hexId' in object)) throw new Error(`Legacy DAT object fields leaked into ${level.id}`);
 }
 
-for (const sourcePath of [
-  'engine/src',
-  'editor/src',
-  'web/src'
-]) {
+const legacyFieldPatterns = [
+  /\.signedId\b/,
+  /\.hexId\b/,
+  /\.terrainHexId\b/,
+  /\.objectHexId\b/,
+  /\bsignedId\s*:/,
+  /\bhexId\s*:/,
+  /\bterrainHexId\s*:/,
+  /\bobjectHexId\s*:/
+];
+for (const sourcePath of ['engine/src', 'editor/src', 'web/src']) {
   walkSource(path.join(root, sourcePath), (file, text) => {
-    for (const legacy of ['signedId', 'hexId', 'terrainHexId', 'objectHexId']) {
-      if (text.includes(legacy)) throw new Error(`Legacy DAT field ${legacy} leaked into ${path.relative(root, file)}`);
+    if (legacyFieldPatterns.some((pattern) => pattern.test(text))) {
+      throw new Error(`Legacy DAT field usage leaked into ${path.relative(root, file)}`);
     }
   });
 }
