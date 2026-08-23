@@ -42,26 +42,14 @@ edit('engine/src/mechanics/definitions.ts', (text) => {
     "for(const [id,direction] of SPEED_TERRAIN_DIRECTION) terrainDef(id,'movement',['walkable','forced-movement'],[enterBehavior('force-speed','进入后按格子方向高速移动',(ctx)=>{if(ctx.mode==='normal')ctx.state.forced={kind:'speed',direction};},{direction})]);",
     "const speedDirections:Array<[TerrainType,Direction]>=[[Terrain.SPEED_LEFT,'left'],[Terrain.SPEED_RIGHT,'right'],[Terrain.SPEED_UP,'up'],[Terrain.SPEED_DOWN,'down']];\nfor(const [id,direction] of speedDirections) terrainDef(id,'movement',['walkable','forced-movement'],[enterBehavior('force-speed','进入后按格子方向高速移动',(ctx)=>{if(ctx.mode==='normal')ctx.state.forced={kind:'speed',direction};},{direction})]);",
     'speed registry');
-  text = once(text,
-    "objectDef(ObjectId.CRUMBLY_ROCK,'mower',['object-passage-override'],[",
-    "objectDef(ObjectId.CRUMBLY_ROCK,'mower',['object-passage-override','dragon-fire-blocking'],[",
-    'rock fire trait');
-  text = once(text,
-    "objectDef(ObjectId.CARROT,'collectible',['collectible'],[",
-    "objectDef(ObjectId.CARROT,'collectible',['collectible','objective-carrot'],[",
-    'carrot objective trait');
-  text = once(text,
-    "objectDef(ObjectId.EGG_NEST_EMPTY,'objective',['collectible'],[",
-    "objectDef(ObjectId.EGG_NEST_EMPTY,'objective',['collectible','objective-nest'],[",
-    'nest objective trait');
+  text = once(text, "objectDef(ObjectId.CRUMBLY_ROCK,'mower',['object-passage-override'],[", "objectDef(ObjectId.CRUMBLY_ROCK,'mower',['object-passage-override','dragon-fire-blocking'],[", 'rock fire trait');
+  text = once(text, "objectDef(ObjectId.CARROT,'collectible',['collectible'],[", "objectDef(ObjectId.CARROT,'collectible',['collectible','objective-carrot'],[", 'carrot objective trait');
+  text = once(text, "objectDef(ObjectId.EGG_NEST_EMPTY,'objective',['collectible'],[", "objectDef(ObjectId.EGG_NEST_EMPTY,'objective',['collectible','objective-nest'],[", 'nest objective trait');
   text = once(text,
     "for(const id of [ObjectId.CLOUD_RED,ObjectId.CLOUD_PURPLE,ObjectId.CLOUD_GREEN,ObjectId.LEAF]){\n  const current=objectDefinitions.get(id)!; object({...current,traits:[...new Set([...current.traits,'dynamic' as TileTrait])],behaviors:[markerBehavior('dynamic-entity','由 World 的动态实体系统更新位置')]});\n}",
     `const cloudInfo:Array<[ObjectType,ObjectType]>=[[ObjectId.CLOUD_RED,ObjectId.CLOUD_GRID_RED],[ObjectId.CLOUD_PURPLE,ObjectId.CLOUD_GRID_PURPLE],[ObjectId.CLOUD_GREEN,ObjectId.CLOUD_GRID_GREEN]];\nfor(const [id] of cloudInfo){const current=objectDefinitions.get(id)!;object({...current,traits:[...new Set([...current.traits,'dynamic','dynamic-cloud'] as TileTrait[])],behaviors:[markerBehavior('dynamic-cloud','由 World 动态实体系统按风场移动')]});}\n{const current=objectDefinitions.get(ObjectId.LEAF)!;object({...current,traits:[...new Set([...current.traits,'dynamic','dynamic-leaf'] as TileTrait[])],behaviors:[markerBehavior('dynamic-leaf','由 World 动态实体系统按水流/玩家方向漂流')]});}\nfor(const id of [ObjectId.BEANSTALK_TIP,ObjectId.BEANSTALK_MID,ObjectId.BEANSTALK_BASE]){const current=objectDefinitions.get(id)!;object({...current,traits:[...new Set([...current.traits,'climbable'] as TileTrait[])]});}\nfor(const id of [ObjectId.CLOUD_GRID_RED,ObjectId.CLOUD_GRID_PURPLE,ObjectId.CLOUD_GRID_GREEN]){const current=objectDefinitions.get(id)!;object({...current,traits:[...new Set([...current.traits,'cloud-grid'] as TileTrait[])]});}\nfor(const id of [ObjectId.DRAGON_HEAD_BASE,ObjectId.DRAGON_BODY]){const current=objectDefinitions.get(id)!;object({...current,traits:[...new Set([...current.traits,'dragon-fire-blocking',...(id===ObjectId.DRAGON_HEAD_BASE?['dragon-head' as TileTrait]:[])] as TileTrait[])]});}\n{const current=objectDefinitions.get(ObjectId.ICE_BLOCK)!;object({...current,traits:[...new Set([...current.traits,'dragon-fire-melt'] as TileTrait[])]});}\nterrainDef(Terrain.START,'marker',['start'],[markerBehavior('start-position','Bobby 的出生点')]);\nterrainDef(Terrain.HIGH_GRASS_OBJECTIVE,'mower',['terrain-passage-override','hidden-objective'],getTerrainDefinition(Terrain.HIGH_GRASS_OBJECTIVE).behaviors as TileBehavior[]);\nfor(const [id] of [[ObjectId.WINDMILL_UP,'up'],[ObjectId.WINDMILL_DOWN,'down'],[ObjectId.WINDMILL_LEFT,'left'],[ObjectId.WINDMILL_RIGHT,'right']] as Array<[ObjectType,Direction]>){const current=objectDefinitions.get(id)!;object({...current,traits:[...new Set([...current.traits,'windmill'] as TileTrait[])]});}`,
     'dynamic and semantic traits');
-  text = once(text,
-    "  const source=sourceForTerrain(id); const water=isWaterTerrainType(id); const walkable=isOrdinaryWalkableTerrainType(id);",
-    "  const source=sourceForTerrain(id); const water=isWaterSemantic(id); const walkable=isWalkableSemantic(id);",
-    'variant classifier');
+  text = once(text, "  const source=sourceForTerrain(id); const water=isWaterTerrainType(id); const walkable=isOrdinaryWalkableTerrainType(id);", "  const source=sourceForTerrain(id); const water=isWaterSemantic(id); const walkable=isWalkableSemantic(id);", 'variant classifier');
   const exportsMarker = "export function getTerrainDefinition(id: TerrainType): TileDefinition<TerrainType> {";
   const queryHelpers = `const TIDE_DIRECTION = new Map<TerrainType,Direction>([[Terrain.TIDE_UP,'up'],[Terrain.TIDE_DOWN,'down'],[Terrain.TIDE_LEFT,'left'],[Terrain.TIDE_RIGHT,'right']]);\nconst WINDMILL_INFO = new Map<ObjectType,{index:number;direction:Direction}>([[ObjectId.WINDMILL_UP,{index:0,direction:'up'}],[ObjectId.WINDMILL_DOWN,{index:1,direction:'down'}],[ObjectId.WINDMILL_LEFT,{index:2,direction:'left'}],[ObjectId.WINDMILL_RIGHT,{index:3,direction:'right'}]]);\nconst WIND_SWITCH_INDEX = new Map<TerrainType,number>([[Terrain.WIND_SWITCH_0_ON,0],[Terrain.WIND_SWITCH_0_OFF,0],[Terrain.WIND_SWITCH_1_ON,1],[Terrain.WIND_SWITCH_1_OFF,1],[Terrain.WIND_SWITCH_2_ON,2],[Terrain.WIND_SWITCH_2_OFF,2],[Terrain.WIND_SWITCH_3_ON,3],[Terrain.WIND_SWITCH_3_OFF,3]]);\nconst WIND_SWITCH_PEER = new Map<TerrainType,TerrainType>([[Terrain.WIND_SWITCH_0_ON,Terrain.WIND_SWITCH_0_OFF],[Terrain.WIND_SWITCH_0_OFF,Terrain.WIND_SWITCH_0_ON],[Terrain.WIND_SWITCH_1_ON,Terrain.WIND_SWITCH_1_OFF],[Terrain.WIND_SWITCH_1_OFF,Terrain.WIND_SWITCH_1_ON],[Terrain.WIND_SWITCH_2_ON,Terrain.WIND_SWITCH_2_OFF],[Terrain.WIND_SWITCH_2_OFF,Terrain.WIND_SWITCH_2_ON],[Terrain.WIND_SWITCH_3_ON,Terrain.WIND_SWITCH_3_OFF],[Terrain.WIND_SWITCH_3_OFF,Terrain.WIND_SWITCH_3_ON]]);\nconst CLOUD_GRID = new Map<ObjectType,ObjectType>(cloudInfo);\nconst FOOTPRINT = new Map<ObjectType,Array<{dx:number;dy:number;type:ObjectType}>>([[ObjectId.DRAGON_HEAD_BASE,[{dx:1,dy:0,type:ObjectId.DRAGON_BODY},{dx:2,dy:0,type:ObjectId.DRAGON_TAIL}]],[ObjectId.SANDMAN,[{dx:0,dy:1,type:ObjectId.SANDMAN_BODY}]],[ObjectId.DREAM_MACHINE,[{dx:0,dy:1,type:ObjectId.DREAM_MACHINE_BODY}]],[ObjectId.BEAVER_BASE,[{dx:0,dy:1,type:ObjectId.BEAVER_BODY}]]]);\nexport function tideDirectionForTerrain(id:TerrainType):Direction|undefined{return TIDE_DIRECTION.get(id);}\nexport function windmillInfoForObject(id:ObjectType):{index:number;direction:Direction}|undefined{return WINDMILL_INFO.get(id);}\nexport function windSwitchIndexForTerrain(id:TerrainType):number|undefined{return WIND_SWITCH_INDEX.get(id);}\nexport function windSwitchPeerForTerrain(id:TerrainType):TerrainType|undefined{return WIND_SWITCH_PEER.get(id);}\nexport function cloudGridForObject(id:ObjectType):ObjectType|undefined{return CLOUD_GRID.get(id);}\nexport function initialObjectFootprint(id:ObjectType):readonly {dx:number;dy:number;type:ObjectType}[]{return FOOTPRINT.get(id)??[];}\nexport function reflectFireForTerrain(id:TerrainType,direction:Direction):Direction|null|false{for(const behavior of getTerrainDefinition(id).behaviors){if(behavior.reflectFire)return behavior.reflectFire(direction);}return null;}\n\n${exportsMarker}`;
   text = once(text, exportsMarker, queryHelpers, 'registry query helpers');
@@ -82,30 +70,15 @@ edit('engine/src/world/World.ts', (text) => {
   text = text.replace("  DYNAMIC_OBJECT_IDS,\n", '');
   text = text.replace("  TIDE_TERRAIN_DIRECTION,\n", '');
   text = text.replace("  WINDMILL_DIRECTION,\n", '');
-  text = once(text,
-    "  inspectObjectDefinition,\n  inspectTerrainDefinition,",
-    "  cloudGridForObject,\n  initialObjectFootprint,\n  inspectObjectDefinition,\n  inspectTerrainDefinition,\n  objectHasTrait,\n  reflectFireForTerrain,",
-    'world registry imports 1');
-  text = once(text,
-    "  terrainHasTrait,\n  type TileDefinitionInspection",
-    "  terrainHasTrait,\n  tideDirectionForTerrain,\n  windmillInfoForObject,\n  windSwitchIndexForTerrain,\n  windSwitchPeerForTerrain,\n  type TileDefinitionInspection",
-    'world registry imports 2');
+  text = once(text, "  inspectObjectDefinition,\n  inspectTerrainDefinition,", "  cloudGridForObject,\n  initialObjectFootprint,\n  inspectObjectDefinition,\n  inspectTerrainDefinition,\n  objectHasTrait,\n  reflectFireForTerrain,", 'world registry imports 1');
+  text = once(text, "  terrainHasTrait,\n  type TileDefinitionInspection", "  terrainHasTrait,\n  tideDirectionForTerrain,\n  windmillInfoForObject,\n  windSwitchIndexForTerrain,\n  windSwitchPeerForTerrain,\n  type TileDefinitionInspection", 'world registry imports 2');
   text = text.replace(/import \{\n  allowsBeanstalkGrowth,\n  isCloudPassableBackground,\n  isDragonFireBackground\n\} from '\.\.\/mechanics\/terrainTraits\.js';\n/, '');
-  text = once(text,
-    "    return type === ObjectId.BEANSTALK_TIP || type === ObjectId.BEANSTALK_MID || type === ObjectId.BEANSTALK_BASE;",
-    "    return objectHasTrait(type, 'climbable');",
-    'climbing trait');
+  text = once(text, "    return type === ObjectId.BEANSTALK_TIP || type === ObjectId.BEANSTALK_MID || type === ObjectId.BEANSTALK_BASE;", "    return objectHasTrait(type, 'climbable');", 'climbing trait');
   text = text.replace("if (ridden?.type === ObjectId.LEAF)", "if (ridden && objectHasTrait(ridden.type, 'dynamic-leaf'))");
   text = text.replace("if (ridden && CLOUD_OBJECT_IDS.has(ridden.type))", "if (ridden && objectHasTrait(ridden.type, 'dynamic-cloud'))");
   text = text.replace("const tideDirection = underlyingTerrain ? TIDE_TERRAIN_DIRECTION.get(underlyingTerrain) : undefined;", "const tideDirection = underlyingTerrain ? tideDirectionForTerrain(underlyingTerrain) : undefined;");
-  text = once(text,
-    "        if (terrain[y]?.[x] === Terrain.START) start = { x, y };",
-    "        if (terrain[y]?.[x] && terrainHasTrait(terrain[y]![x]!, 'start')) start = { x, y };",
-    'start trait');
-  text = once(text,
-    "      if (DYNAMIC_OBJECT_IDS.has(type)) {",
-    "      if (objectHasTrait(type, 'dynamic')) {",
-    'dynamic trait');
+  text = once(text, "        if (terrain[y]?.[x] === Terrain.START) start = { x, y };", "        if (terrain[y]?.[x] && terrainHasTrait(terrain[y]![x]!, 'start')) start = { x, y };", 'start trait');
+  text = once(text, "      if (DYNAMIC_OBJECT_IDS.has(type)) {", "      if (objectHasTrait(type, 'dynamic')) {", 'dynamic trait');
   const footprintsOld = `      objects[y]![x] = type;\n      if (type === ObjectId.DRAGON_HEAD_BASE) {\n        if (x + 1 < level.width) objects[y]![x + 1] = ObjectId.DRAGON_BODY;\n        if (x + 2 < level.width) objects[y]![x + 2] = ObjectId.DRAGON_TAIL;\n      } else if (type === ObjectId.SANDMAN && y + 1 < level.height) {\n        objects[y + 1]![x] = ObjectId.SANDMAN_BODY;\n      } else if (type === ObjectId.DREAM_MACHINE && y + 1 < level.height) {\n        objects[y + 1]![x] = ObjectId.DREAM_MACHINE_BODY;\n      } else if (type === ObjectId.BEAVER_BASE && y + 1 < level.height) {\n        objects[y + 1]![x] = ObjectId.BEAVER_BODY;\n      }`;
   const footprintsNew = `      objects[y]![x] = type;\n      for (const part of initialObjectFootprint(type)) {\n        const px=x+part.dx, py=y+part.dy;\n        if(px>=0&&py>=0&&px<level.width&&py<level.height) objects[py]![px]=part.type;\n      }`;
   text = once(text, footprintsOld, footprintsNew, 'generic footprints');
@@ -118,18 +91,16 @@ edit('engine/src/world/World.ts', (text) => {
   text = text.replace("const tideDirection = TIDE_TERRAIN_DIRECTION.get(terrain);", "const tideDirection = tideDirectionForTerrain(terrain);");
   text = once(text, "        && allowsBeanstalkGrowth(targetTerrain);", "        && terrainHasTrait(targetTerrain, 'beanstalk-growth');", 'growth trait');
   text = once(text, "        if (this.objectIdAt(x, y) === ObjectId.DRAGON_HEAD_BASE) { head = { x, y }; break outer; }", "        if (objectHasTrait(this.objectIdAt(x,y),'dragon-head')) { head = { x, y }; break outer; }", 'dragon head trait');
-  text = once(text,
-    "      if (object === ObjectId.ICE_BLOCK) {\n        this.setObject(x, y, EMPTY_OBJECT);\n        events.push({ type: 'melt-ice', message: '龙火融化冰块', x, y });\n      } else if (object === ObjectId.DRAGON_HEAD_BASE || object === ObjectId.DRAGON_BODY || object === ObjectId.CRUMBLY_ROCK) {\n        break;\n      }\n\n      const reflected = this.reflectFire(terrain, direction);",
-    "      if (objectHasTrait(object,'dragon-fire-melt')) {\n        this.setObject(x,y,EMPTY_OBJECT);\n        events.push({type:'melt-ice',message:'龙火融化冰块',x,y});\n      } else if (objectHasTrait(object,'dragon-fire-blocking')) break;\n\n      const reflected = reflectFireForTerrain(terrain, direction);",
-    'dragon object and reflection traits');
+  text = once(text, "      if (object === ObjectId.ICE_BLOCK) {\n        this.setObject(x, y, EMPTY_OBJECT);\n        events.push({ type: 'melt-ice', message: '龙火融化冰块', x, y });\n      } else if (object === ObjectId.DRAGON_HEAD_BASE || object === ObjectId.DRAGON_BODY || object === ObjectId.CRUMBLY_ROCK) {\n        break;\n      }\n\n      const reflected = this.reflectFire(terrain, direction);", "      if (objectHasTrait(object,'dragon-fire-melt')) {\n        this.setObject(x,y,EMPTY_OBJECT);\n        events.push({type:'melt-ice',message:'龙火融化冰块',x,y});\n      } else if (objectHasTrait(object,'dragon-fire-blocking')) break;\n\n      const reflected = reflectFireForTerrain(terrain, direction);", 'dragon object and reflection traits');
   text = once(text, "      else if (!this.fireTerrainPassable(terrain)) break;", "      else if (!terrainHasTrait(terrain,'dragon-fire-passable')) break;", 'fire passable trait');
   text = text.replace(/\n  private reflectFire\(terrain: TerrainType, direction: Direction\): Direction \| null \| false \{[\s\S]*?\n  }\n\n  private fireTerrainPassable\(terrain: TerrainType\): boolean \{[\s\S]*?\n  }\n/, '\n');
   const propelOld = `        const object = this.objectIdAt(x, y);\n        const index = types.indexOf(object);\n        if (index >= 0) windmills.push({ x, y, direction: WINDMILL_DIRECTION.get(object)!, enabled: state.windmillsEnabled[index]! });`;
   const propelNew = `        const object = this.objectIdAt(x,y);\n        const info=windmillInfoForObject(object);\n        if(info)windmills.push({x,y,direction:info.direction,enabled:state.windmillsEnabled[info.index]!});`;
   text = once(text, "    const types: ObjectType[] = [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT, ObjectId.WINDMILL_RIGHT];\n", '', 'windmill types array');
   text = once(text, propelOld, propelNew, 'windmill registry info');
+  text = text.replace("if (!CLOUD_OBJECT_IDS.has(entity.type)) continue;", "if (!objectHasTrait(entity.type,'dynamic-cloud')) continue;");
   text = text.replace("if (!CLOUD_OBJECT_IDS.has(entity.type) || !entity.direction) continue;", "if (!objectHasTrait(entity.type,'dynamic-cloud') || !entity.direction) continue;");
-  text = text.replace("const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);", "const ownGrid = cloudGridForObject(entity.type);");
+  text = text.replaceAll("const ownGrid = CLOUD_GRID_FOR_OBJECT.get(entity.type);", "const ownGrid = cloudGridForObject(entity.type);");
   text = once(text, "    return isCloudPassableBackground(terrain);", "    return terrainHasTrait(terrain,'cloud-passable');", 'cloud terrain trait');
   const toggleStart=text.indexOf('  private toggleWindSwitchTiles(index: number): void {');
   const toggleEnd=text.indexOf('  private mapTerrain(',toggleStart);
