@@ -20,6 +20,30 @@ export interface BehaviorContext {
   fromTerrain?: TerrainType;
 }
 
+export interface BehaviorRuntimeApi {
+  setTerrain(type: TerrainType): void;
+  setObject(type: ObjectType): void;
+  mapTerrain(mapper: (type: TerrainType) => TerrainType): void;
+  event(type: string, message: string): void;
+  kill(reason: string): void;
+  fireDragon(): void;
+  propelClouds(): void;
+  toggleWind(index: number): void;
+  mowedGround(): TerrainType;
+}
+
+export interface BehaviorRuntimeContext extends BehaviorContext {
+  x: number;
+  y: number;
+  mode: 'normal' | 'flight';
+  justBoarded: boolean;
+  api: BehaviorRuntimeApi;
+}
+
+export interface BehaviorRuntimeResult {
+  stop?: boolean;
+}
+
 export interface BehaviorDescription {
   id: string;
   summary: string;
@@ -32,6 +56,8 @@ export interface TileBehavior {
   canEnter?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   canLeave?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   passage?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
+  onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
+  onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
 }
 
@@ -69,6 +95,9 @@ export function rotateOnLeave(next: TerrainType): TileBehavior {
       summary: 'Bobby 离开后切换到下一旋转状态',
       config: { next }
     }),
+    onLeave(ctx) {
+      ctx.api.setTerrain(next);
+    },
     nextTerrainOnLeave(current) {
       return current === next ? undefined : next;
     }
@@ -85,6 +114,32 @@ export function passageBehavior(
     id,
     describe: () => ({ id, summary, ...(config ? { config } : {}) }),
     passage: handler
+  };
+}
+
+export function enterBehavior(
+  id: string,
+  summary: string,
+  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
+  config?: Record<string, string | number | boolean | string[]>
+): TileBehavior {
+  return {
+    id,
+    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
+    onEnter: handler
+  };
+}
+
+export function leaveBehavior(
+  id: string,
+  summary: string,
+  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
+  config?: Record<string, string | number | boolean | string[]>
+): TileBehavior {
+  return {
+    id,
+    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
+    onLeave: handler
   };
 }
 
