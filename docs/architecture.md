@@ -17,11 +17,13 @@ Semantic LevelData / JSON
         |              |
         +------ Web ----+
 
-Semantic tile type -> Definition Registry -> Art Mapping -> Original Atlas
-                         |
-                         +-> Traits
-                         +-> Composable Behaviors
-                         +-> Source / DAT provenance
+Semantic type -> Engine semantic definitions
+                    |
+                    +-> Tile Definition Registry
+                    |     +-> presentation / traits / behaviors / source
+                    |
+                    +-> Object Layout Definition
+                          +-> footprint / cursor / authoring variants
 
 Multi-cell Object anchor -> Object Layout -> Runtime occupancy
 ```
@@ -56,14 +58,14 @@ Runtime occupancy
 (x+2,y)   dragon-tail
 ```
 
-`World` 只消费已经准备好的 occupancy；multi-cell 组合关系由 `engine/src/mechanics/object-layouts.ts` 统一声明，不在 World 里继续堆 Dragon/Sandman/Beaver 特判。
+`World` 只消费已经准备好的 occupancy；multi-cell 组合关系由 Engine 的 Object Layout Definition 统一声明，不在 World、Tools 或 Editor 里继续堆 Dragon/Sandman/Beaver 特判。
 
-### Tile Definition Registry
+### Semantic Definition Layer
 
-Terrain 和 Object 保持两层独立语义，但每一种语义 ID 都通过 Definition Registry 描述：
+Terrain / Object 的语义事实都属于 Engine definition layer，但按职责分成两个声明面：
 
 ```text
-Definition
+Tile Definition Registry
 ├── id
 ├── presentation
 ├── traits
@@ -72,22 +74,31 @@ Definition
     ├── original DAT hex id
     ├── confidence
     └── evidence
+
+Object Layout Definition
+├── footprint[]
+├── cursor
+└── authoringVariants[]
 ```
+
+`Tile Definition Registry` 是 gameplay 语义来源；`Object Layout Definition` 是空间占用和 authoring 语义来源。二者都以 semantic Object ID 为键，都位于 Engine，调用方只能通过查询函数使用；Editor、World、Tools 不维护第二份 ID 表。
 
 其中：
 
 - `presentation`：供 Renderer / Editor / DEBUG 使用的显示信息，不参与机关规则；
 - `traits`：可组合的分类事实，例如 `walkable / water / climbable / cloud-passable / dragon-fire-passable`；
 - `behaviors`：真正的可组合规则模块；
-- `source`：原版来源和逆向置信度，只用于 provenance/debug，不得作为规则输入。
+- `source`：原版来源和逆向置信度，只用于 provenance/debug，不得作为规则输入；
+- `footprint / cursor`：描述一个 persisted Object 在地图空间的完整占用和 Editor 鼠标基准；
+- `authoringVariants`：描述 Editor 可以通过滚轮 / Q / E 循环切换的等价编辑形态。
 
 Behavior 是协议，不是继承基类。机关通过组合工厂生成 Behavior。`World` 负责移动事务、状态生命周期、Tick 和跨格算法，然后 dispatch Terrain/Object 的 passage、onEnter、onLeave 等 hook。
 
-跨多个格子的算法，例如藤蔓生长、龙火路径、云和荷叶移动，仍由 World 调度；但 Tile 分类、方向、反射、覆盖、阻挡等语义必须来自 Definition Registry / semantic helper，而不是维护第二套 gameplay ID switch。
+跨多个格子的算法，例如藤蔓生长、龙火路径、云和荷叶移动，仍由 World 调度；但 Tile 分类、方向、反射、覆盖、阻挡等语义必须来自 Engine semantic definition layer，而不是维护第二套 gameplay ID switch。
 
 ### Object Layout / Authoring Variant
 
-`engine/src/mechanics/object-layouts.ts` 保存两类**非 gameplay-state**语义：
+`engine/src/mechanics/object-layouts.ts` 是 Object Layout Definition 的实现模块，保存两类**非 gameplay-state**语义：
 
 1. multi-cell Object 的 footprint 与 Editor cursor anchor；
 2. Editor 可循环的 authoring variant，例如 Windmill 四方向、Fence 形态、Cloud / Cloud Grid 颜色。
@@ -98,7 +109,7 @@ Behavior 是协议，不是继承基类。机关通过组合工厂生成 Behavio
 
 `World.inspect(x, y)` 返回当前格的 Terrain/Object/Dynamic 状态以及 Terrain/Object Definition introspection。正常游玩不显示这些规则诊断信息；DEBUG 模式可以显示 semantic id、原版 DAT provenance、traits、behaviors 和运行时状态。
 
-Editor 同样复用 Definition introspection。对于 multi-cell Object，Editor 另外显示 owner anchor、当前指向的组成 part、footprint 与可用 authoring variants。
+Editor 同样复用 Engine definition 查询。对于 multi-cell Object，Editor 另外显示 owner anchor、当前指向的组成 part、footprint 与可用 authoring variants。
 
 ## Editor
 
@@ -144,7 +155,7 @@ Editor 的持久化出口只有两种：
 
 没有单独的 “Edit Share” 格式。`/play#map=...` 和 `/edit#map=...` 读取同一个 payload，所以从分享游玩页点击“编辑地图”只是把同一份 hash 带进 Editor。
 
-`toLevelData()` 保持 multi-cell anchor，不产生内部 body/tail；唯一展开点是 `Game.loadLevel()` 创建 Runtime World 之前。`fromLevelData()` 仍能兼容已经展开过的 occupancy 并折回 authoring anchor。Editor 与 Engine 始终共用同一份 Object Layout helper，不维护第二套 footprint 表。
+`toLevelData()` 保持 multi-cell anchor，不产生内部 body/tail；唯一展开点是 `Game.loadLevel()` 创建 Runtime World 之前。`fromLevelData()` 仍能兼容已经展开过的 occupancy 并折回 authoring anchor。Editor 与 Engine 始终共用同一份 Object Layout Definition，不维护第二套 footprint 表。
 
 ## Web
 
@@ -173,11 +184,11 @@ web -> engine
 web -> editor
 editor -> engine
 editor share boundary -> DAT level-record transport encoding
-Game.loadLevel -> Object Layout -> Runtime World occupancy
-editor authoring -> Object Layout -> owner/preview/collision
-engine runtime -> Definition Registry -> Traits / Behaviors
+Game.loadLevel -> Object Layout Definition -> Runtime World occupancy
+editor authoring -> Object Layout Definition -> owner/preview/collision/variants
+engine runtime -> Tile Definition Registry -> Traits / Behaviors
 renderer/editor -> semantic art mapping -> original atlas
-DEBUG -> Definition source/provenance
+DEBUG -> Engine semantic definitions
 ```
 
 禁止：
