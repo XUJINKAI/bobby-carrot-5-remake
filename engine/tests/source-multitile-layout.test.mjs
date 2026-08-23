@@ -2,13 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ObjectId } from '../dist/index.js';
+import { ObjectId, isMultiCellObject, objectLayoutFor } from '../dist/index.js';
 
 function countObject(level, type) {
   return level.objects.filter((object) => object.type === type).length;
 }
 
-test('original decoded levels preserve implicit multi-cell objects as anchors', () => {
+test('original decoded levels preserve implicit multi-cell objects as unambiguous anchors', () => {
   const catalog = JSON.parse(fs.readFileSync('assets/generated/catalog.json', 'utf8'));
   const stats = {
     dragon: { anchor: 0, body: 0, tail: 0 },
@@ -28,6 +28,21 @@ test('original decoded levels preserve implicit multi-cell objects as anchors', 
     stats.dreamMachine.body += countObject(level, ObjectId.DREAM_MACHINE_BODY);
     stats.beaver.anchor += countObject(level, ObjectId.BEAVER_BASE);
     stats.beaver.body += countObject(level, ObjectId.BEAVER_BODY);
+
+    const explicit = new Map(level.objects.map((object) => [`${object.x},${object.y}`, object]));
+    for (const anchor of level.objects) {
+      if (!isMultiCellObject(anchor.type)) continue;
+      for (const cell of objectLayoutFor(anchor.type).cells.slice(1)) {
+        const x = anchor.x + cell.dx;
+        const y = anchor.y + cell.dy;
+        const conflict = explicit.get(`${x},${y}`);
+        assert.equal(
+          conflict,
+          undefined,
+          `${entry.publicId ?? entry.id}: ${anchor.type}@${anchor.x},${anchor.y} footprint overlaps explicit ${conflict?.type ?? 'object'}@${x},${y}`
+        );
+      }
+    }
   }
 
   assert.deepEqual(stats, {
