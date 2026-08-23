@@ -144,7 +144,7 @@ Editor 的持久化出口只有两种：
 
 没有单独的 “Edit Share” 格式。`/play#map=...` 和 `/edit#map=...` 读取同一个 payload，所以从分享游玩页点击“编辑地图”只是把同一份 hash 带进 Editor。
 
-`toLevelData()` 会把 Editor anchor 临时展开为 Runtime occupancy；`fromLevelData()` 会把 occupancy 折回 authoring anchor。这个转换使用 Engine 的 Object Layout helper，因此 Editor 与 Engine 不维护两份 footprint 表。
+`toLevelData()` 保持 multi-cell anchor，不产生内部 body/tail；唯一展开点是 `Game.loadLevel()` 创建 Runtime World 之前。`fromLevelData()` 仍能兼容已经展开过的 occupancy 并折回 authoring anchor。Editor 与 Engine 始终共用同一份 Object Layout helper，不维护第二套 footprint 表。
 
 ## Web
 
