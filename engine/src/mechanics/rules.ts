@@ -1,6 +1,6 @@
 import type { ObjectType, TerrainType } from '../data/types.js';
-import { isOriginalOrdinaryWalkableTerrain, isOriginalWaterTerrain } from '../data/originalCodes.js';
 import { DIRECTIONS, ObjectId, Terrain, type Direction, type StepVector } from './ids.js';
+import { isOrdinaryWalkableTerrainType, isWaterTerrainType } from './terrainTraits.js';
 import type { RuntimeState } from '../world/RuntimeState.js';
 
 export interface PassageResult {
@@ -86,8 +86,8 @@ const FENCES = new Set<ObjectType>([ObjectId.FENCE_1, ObjectId.FENCE_2, ObjectId
 
 export function isCarousel(id: TerrainType): boolean { return CAROUSELS.has(id); }
 export function isMirror(id: TerrainType): boolean { return MIRRORS.has(id); }
-export function isWaterTerrain(id: TerrainType): boolean { return isOriginalWaterTerrain(id); }
-export function isOrdinaryWalkableTerrain(id: TerrainType): boolean { return isOriginalOrdinaryWalkableTerrain(id); }
+export function isWaterTerrain(id: TerrainType): boolean { return isWaterTerrainType(id); }
+export function isOrdinaryWalkableTerrain(id: TerrainType): boolean { return isOrdinaryWalkableTerrainType(id); }
 export function isFence(id: ObjectType): boolean { return FENCES.has(id); }
 
 export function canLeaveCarousel(id: TerrainType, vector: StepVector): boolean {
