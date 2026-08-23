@@ -34,6 +34,17 @@ export {
   type TileTrait
 } from './mechanics/definitions.js';
 export {
+  objectLayoutFor,
+  isMultiCellObject,
+  isObjectLayoutPart,
+  objectVariantCycle,
+  transformObjectVariant,
+  expandObjectLayouts,
+  collapseObjectLayouts,
+  type ObjectLayout,
+  type ObjectLayoutCell
+} from './mechanics/object-layouts.js';
+export {
   directionalPassage,
   rotateOnLeave,
   passageBehavior,
