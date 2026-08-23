@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseDatPackage } from '../../tools/src/level-format.mjs';
+import { encodeLevelRecord, parseDatPackage } from '../../tools/src/level-format.mjs';
 
 function decodeEdition(edition) {
   const levels = [];
@@ -26,12 +26,27 @@ test('base and UP9 share the five 00.dat levels byte-for-byte', () => {
   assert.deepEqual(base.levels.map((level) => level.recordSha256), hd.levels.map((level) => level.recordSha256));
 });
 
-test('level 001 decodes exact dimensions, object count, and start marker', () => {
+test('level 001 crosses the DAT boundary as semantic schema v2', () => {
   const parsed = parseDatPackage(fs.readFileSync('assets/extracted/base/00.dat'), { edition:'base', packFile:'00' });
   const level = parsed.levels[0];
   assert.ok(level);
+  assert.equal(level.schemaVersion, 2);
+  assert.equal(level.terrainEncoding, 'semantic-row-major');
   assert.equal(level.width, 25);
   assert.equal(level.height, 20);
   assert.equal(level.objects.length, 10);
-  assert.equal(level.terrain[16]?.[7], 0x95);
+  assert.equal(level.terrain[16]?.[7], 'start');
+  assert.ok(level.objects.every((object) => typeof object.type === 'string' && !('id' in object)));
+});
+
+test('semantic level can encode back to the exact original DAT record', () => {
+  const dat = fs.readFileSync('assets/extracted/base/00.dat');
+  const parsed = parseDatPackage(dat, { edition:'base', packFile:'00' });
+  const level = parsed.levels[0];
+  assert.ok(level);
+  const metadataLength = dat.readUInt16BE(0);
+  const recordLengthOffset = 2 + metadataLength;
+  const originalLength = dat.readUInt16BE(recordLengthOffset);
+  const original = dat.subarray(recordLengthOffset + 2, recordLengthOffset + 2 + originalLength);
+  assert.deepEqual(encodeLevelRecord(level), original);
 });
