@@ -44,13 +44,26 @@ test('Normalize 保证每格最多一个 Object', () => {
   assert.equal(normalizeEditorLevel(level).objects.length, 1);
 });
 
-test('URL share codec 可以往返语义地图，并对 terrain 做紧凑编码', async () => {
+test('URL share codec 使用 DAT 二进制并完整往返地图 metadata', async () => {
   const level = createBlankLevel(20, 16);
   level.name = 'Shared Test';
+  level.author = 'xjk';
+  level.description = 'DAT binary share';
   level.objects.push({ type: ObjectId.CARROT, x: 5, y: 5 }, { type: ObjectId.MOWER, x: 7, y: 8 });
   const encoded = await encodeShareLevel(level);
-  assert.ok(encoded.startsWith('z.') || encoded.startsWith('j.'));
+  assert.ok(encoded.startsWith('d.') || encoded.startsWith('r.'));
   const decoded = await decodeShareLevel(encoded);
   assert.deepEqual(decoded, normalizeEditorLevel(level));
   assert.ok(encoded.length < serializeEditorLevel(level).length);
+});
+
+test('URL share codec 保留独立的 Dragon Tile，不引入 Stamp metadata', async () => {
+  const level = createBlankLevel(12, 8);
+  level.objects.push(
+    { type: ObjectId.DRAGON_HEAD_BASE, x: 3, y: 3 },
+    { type: ObjectId.DRAGON_BODY, x: 4, y: 3 },
+    { type: ObjectId.DRAGON_TAIL, x: 5, y: 3 }
+  );
+  const decoded = await decodeShareLevel(await encodeShareLevel(level));
+  assert.deepEqual(decoded.objects, level.objects);
 });
