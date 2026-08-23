@@ -31,6 +31,20 @@ for (const level of catalog.levels) {
   if (data.objects.some((object) => 'id' in object || 'signedId' in object || 'hexId' in object)) throw new Error(`Legacy DAT object fields leaked into ${level.id}`);
 }
 
+const filterIndexPath = path.join(root, 'assets/generated/level-filters.json');
+if (!fs.existsSync(filterIndexPath)) throw new Error('Missing generated level filter index');
+const filterIndex = JSON.parse(fs.readFileSync(filterIndexPath, 'utf8'));
+if (filterIndex.schemaVersion !== 1) throw new Error(`Expected level filter schema 1, got ${filterIndex.schemaVersion}`);
+if (filterIndex.levelCount !== 485) throw new Error(`Expected 485 level filter rows, got ${filterIndex.levelCount}`);
+for (const level of catalog.levels) {
+  const features = filterIndex.levels?.[level.publicId];
+  if (!features) throw new Error(`Missing filter features for ${level.publicId}`);
+  if (!Number.isInteger(features.carrotCount) || features.carrotCount < 0) throw new Error(`Bad carrot count for ${level.publicId}`);
+  for (const key of ['specialItems', 'scenes', 'mechanics']) {
+    if (!Array.isArray(features[key]) || features[key].some((value) => typeof value !== 'string')) throw new Error(`Bad ${key} filter data for ${level.publicId}`);
+  }
+}
+
 const legacyFieldPatterns = [
   /\.signedId\b/,
   /\.hexId\b/,
@@ -52,10 +66,13 @@ for (const sourcePath of ['engine/src', 'editor/src', 'web/src']) {
 for (const file of [
   'dist/web/index.html',
   'dist/web/app.js',
+  'dist/web/level-filters.js',
+  'dist/web/level-filters.css',
   'dist/web/engine/index.js',
   'dist/web/editor/index.js',
   'dist/web/editor.css',
   'dist/web/assets/catalog.json',
+  'dist/web/assets/level-filters.json',
   'dist/web/assets/art/hd/ts.png',
   'dist/web/assets/art/hd/ta.png',
   'dist/web/assets/art/hd/b0.png',
@@ -82,7 +99,7 @@ for (const file of [
 verifyWebModuleEntry(path.join(root, 'dist/web'));
 if (process.env.CI) run(process.execPath, ['tools/scripts/browser-smoke.mjs']);
 
-console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；semantic LevelData + DAT codec round-trip、Engine + Editor + Web 与全部测试通过。');
+console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；semantic LevelData + 筛选索引 + DAT codec round-trip、Engine + Editor + Web 与全部测试通过。');
 
 function verifyWebModuleEntry(webRoot) {
   const indexPath = path.join(webRoot, 'index.html');
