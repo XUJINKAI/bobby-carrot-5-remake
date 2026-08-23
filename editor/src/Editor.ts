@@ -53,6 +53,7 @@ interface ResolvedObject {
 }
 interface TerrainPaletteItem { kind: 'terrain'; type: TerrainType; }
 interface ObjectPaletteItem { kind: 'object'; type: ObjectType; }
+interface MapPanState { pointerId: number; lastX: number; lastY: number; }
 type PaletteItem = TerrainPaletteItem | ObjectPaletteItem;
 type PointerButton = 0 | 2 | null;
 
@@ -62,6 +63,10 @@ const HISTORY_LIMIT = 100;
 const PALETTE_SIZES = [32, 40, 48, 56, 64] as const;
 const DEFAULT_PALETTE_SIZE = 48;
 const PALETTE_SIZE_KEY = 'bobby.editor.paletteSize';
+const MAP_ZOOM_MIN = 0.35;
+const MAP_ZOOM_MAX = 2.75;
+const MAP_ZOOM_STEP = 1.08;
+const MAP_MARGIN = 28;
 
 const HIDDEN_AUTHORING_OBJECTS = new Set<ObjectType>([
   ObjectId.CONSUMED_CARROT,
@@ -85,6 +90,7 @@ export class BobbyEditor {
   private selectedCell: Cell | null = null;
   private hoverCell: Cell | null = null;
   private pointerButton: PointerButton = null;
+  private middlePan: MapPanState | null = null;
   private lastStrokeCell: string | null = null;
   private readonly undoStack: string[] = [];
   private readonly redoStack: string[] = [];
@@ -99,6 +105,9 @@ export class BobbyEditor {
   private playing = false;
   private destroyed = false;
   private paletteSize = readPaletteSize();
+  private mapZoom = 1;
+  private mapPanX = 0;
+  private mapPanY = 0;
 
   constructor(options: BobbyEditorOptions) {
     this.options = options;
@@ -117,6 +126,7 @@ export class BobbyEditor {
     this.redoStack.length = 0;
     this.selectedCell = null;
     this.hoverCell = null;
+    this.resetMapView();
     this.refreshAll();
   }
 
@@ -180,8 +190,10 @@ export class BobbyEditor {
           <div class="editor-help-list">
             <p><strong>左键 / 左键拖动</strong><span>放置当前 Terrain 或 Object。大型 Object 会按 footprint 整体预览和放置。</span></p>
             <p><strong>右键 / 右键拖动</strong><span>删除鼠标指向的完整 Object；Terrain 不受影响。</span></p>
+            <p><strong>中键拖动</strong><span>拖动地图视图；Play 与 Edit 使用同一种中键平移逻辑。</span></p>
+            <p><strong>鼠标滚轮</strong><span>以鼠标所在位置为中心放大 / 缩小地图。</span></p>
             <p><strong>Del</strong><span>等同右键：删除鼠标当前指向的完整 Object。</span></p>
-            <p><strong>滚轮 / Q / E</strong><span>鼠标指向可变化 Object 时循环旋转/翻转/变体；Q 向前、E 向后。</span></p>
+            <p><strong>Q / E</strong><span>鼠标指向可变化 Object 时循环旋转 / 翻转 / 变体。</span></p>
             <p><strong>泛蓝高亮</strong><span>表示当前鼠标操作会删除或替换的完整 Object；指着 Dragon 尾巴也会高亮整条 Dragon。</span></p>
             <p><strong>鼠标移动</strong><span>半透明显示当前待放素材；大型 Object 的鼠标落点按定义的 cursor anchor 对齐。</span></p>
             <p><strong>素材 − / +</strong><span>缩小或放大素材格，选择保存在浏览器本机。</span></p>
@@ -196,6 +208,7 @@ export class BobbyEditor {
     this.status = this.required<HTMLElement>('[data-editor-status]');
     this.inspector = this.required<HTMLElement>('[data-editor-inspector]');
     this.palette = this.required<HTMLElement>('[data-editor-palette]');
+    this.configureEditMapCanvas();
 
     this.root.addEventListener('click', this.onRootClick);
     this.root.addEventListener('input', this.onRootInput);
@@ -207,6 +220,7 @@ export class BobbyEditor {
     this.canvas.addEventListener('pointerleave', this.onPointerLeave);
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+    this.canvas.addEventListener('auxclick', (event) => { if (event.button === 1) event.preventDefault(); });
     window.addEventListener('keydown', this.onKeyDown);
 
     this.root.querySelectorAll<HTMLDialogElement>('dialog').forEach((dialog) => {
@@ -234,6 +248,7 @@ export class BobbyEditor {
     const cssHeight = this.level.height * EDIT_TILE_SIZE;
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
+    this.applyMapView();
     this.canvas.width = Math.round(cssWidth * dpr);
     this.canvas.height = Math.round(cssHeight * dpr);
     const context = this.canvas.getContext('2d');
@@ -296,7 +311,7 @@ export class BobbyEditor {
   }
 
   private drawPointerPreview(context: CanvasRenderingContext2D, cell: Cell): void {
-    if (this.pointerButton === 2) return;
+    if (this.pointerButton === 2 || this.middlePan) return;
     context.save();
     context.globalAlpha = .58;
     if (this.selection.kind === 'terrain') {
@@ -450,7 +465,7 @@ export class BobbyEditor {
     const extra = `<div class="editor-definition-row"><span>anchor</span><code>${resolved.object.x}, ${resolved.object.y}</code></div>
       <div class="editor-definition-row"><span>part</span><code>${escapeHtml(resolved.partType)}</code></div>
       ${isMultiCellObject(resolved.object.type) ? `<div class="editor-definition-block"><span>footprint</span><div class="editor-layout-info">${layout.cells.map((cell) => `<code>${formatOffset(cell.dx, cell.dy)} ${escapeHtml(cell.type)}</code>`).join(' ')}</div></div>` : ''}
-      ${variants ? '<div class="editor-definition-row"><span>edit</span><code>Wheel / Q / E</code></div>' : ''}`;
+      ${variants ? '<div class="editor-definition-row"><span>edit</span><code>Q / E</code></div>' : ''}`;
     return this.renderDefinition('Object owner', inspectObjectDefinition(resolved.object.type), extra);
   }
 
@@ -538,6 +553,7 @@ export class BobbyEditor {
           this.redoStack.length = 0;
           this.selectedCell = null;
           this.hoverCell = null;
+          this.resetMapView();
           this.setStatus('已导入语义 JSON 地图');
           this.syncShareDialog();
           this.refreshAll();
@@ -551,7 +567,15 @@ export class BobbyEditor {
   };
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (this.playing || (event.button !== 0 && event.button !== 2)) return;
+    if (this.playing) return;
+    if (event.button === 1) {
+      event.preventDefault();
+      this.canvas.setPointerCapture(event.pointerId);
+      this.middlePan = { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY };
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+    if (event.button !== 0 && event.button !== 2) return;
     const cell = this.cellFromPointer(event);
     if (!cell) return;
     event.preventDefault();
@@ -568,6 +592,18 @@ export class BobbyEditor {
 
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (this.playing) return;
+    if (this.middlePan?.pointerId === event.pointerId) {
+      const dx = event.clientX - this.middlePan.lastX;
+      const dy = event.clientY - this.middlePan.lastY;
+      this.middlePan.lastX = event.clientX;
+      this.middlePan.lastY = event.clientY;
+      if (dx !== 0 || dy !== 0) {
+        this.mapPanX += dx;
+        this.mapPanY += dy;
+        this.applyMapView();
+      }
+      return;
+    }
     const cell = this.cellFromPointer(event);
     const changed = !sameCell(cell, this.hoverCell);
     this.hoverCell = cell;
@@ -580,12 +616,24 @@ export class BobbyEditor {
   };
 
   private readonly onPointerLeave = (): void => {
-    if (this.pointerButton !== null) return;
+    if (this.pointerButton !== null || this.middlePan) return;
     this.hoverCell = null;
     this.renderCanvas();
   };
 
-  private readonly onPointerUp = (): void => {
+  private readonly onPointerUp = (event: PointerEvent): void => {
+    if (this.middlePan?.pointerId === event.pointerId) {
+      this.middlePan = null;
+      this.canvas.style.cursor = '';
+      const cell = this.cellFromPointer(event);
+      this.hoverCell = cell;
+      if (cell) this.selectedCell = cell;
+      if (!this.playing) {
+        this.renderInspector();
+        this.renderCanvas();
+      }
+      return;
+    }
     this.pointerButton = null;
     this.lastStrokeCell = null;
     this.canvas?.classList.remove('erasing');
@@ -593,8 +641,9 @@ export class BobbyEditor {
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
-    if (this.playing || !this.hoverCell || event.deltaY === 0) return;
-    if (this.transformHoveredObject(event.deltaY < 0 ? -1 : 1)) event.preventDefault();
+    if (this.playing || event.deltaY === 0) return;
+    event.preventDefault();
+    this.zoomMapAt(event.clientX, event.clientY, event.deltaY < 0 ? MAP_ZOOM_STEP : 1 / MAP_ZOOM_STEP);
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
@@ -715,7 +764,7 @@ export class BobbyEditor {
   }
 
   private affectedObjectsForHover(): EditorObject[] {
-    if (!this.hoverCell) return [];
+    if (!this.hoverCell || this.middlePan) return [];
     const affected = new Set<EditorObject>();
     const direct = this.resolveObjectOwner(this.hoverCell.x, this.hoverCell.y);
     if (direct) affected.add(direct.object);
@@ -810,6 +859,7 @@ export class BobbyEditor {
     if (this.playing) return;
     this.playing = true;
     this.updateToolbar();
+    this.clearEditMapCanvasStyles();
     this.canvasShell.classList.add('playing');
     this.status.textContent = '正在载入测试…';
     const audio = this.options.audio ?? new NullAudioBackend();
@@ -837,7 +887,7 @@ export class BobbyEditor {
           ? `✕ ${world.state.deathReason ?? '测试失败'}`
           : `Play Test · Bobby ${world.player.x},${world.player.y} · 目标 ${objective}`;
     });
-    this.status.textContent = 'Play Test · WASD / 方向键 / Swipe · 点击 Stop 返回编辑';
+    this.status.textContent = 'Play Test · WASD / 方向键 / Swipe · 左键或中键拖动 · 滚轮缩放 · 点击 Stop 返回编辑';
   }
 
   private stopPlay(): void {
@@ -848,15 +898,63 @@ export class BobbyEditor {
     this.game = null;
     this.playing = false;
     this.canvasShell?.classList.remove('playing');
+    this.configureEditMapCanvas();
     if (this.status) this.status.textContent = '';
     if (this.canvas) this.renderCanvas();
     if (this.root.isConnected) this.updateToolbar();
   }
 
+  private configureEditMapCanvas(): void {
+    this.canvasShell.style.overflow = 'hidden';
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.left = `${MAP_MARGIN}px`;
+    this.canvas.style.top = `${MAP_MARGIN}px`;
+    this.canvas.style.transformOrigin = '0 0';
+    this.applyMapView();
+  }
+
+  private clearEditMapCanvasStyles(): void {
+    this.middlePan = null;
+    this.canvasShell.style.overflow = '';
+    this.canvas.style.position = '';
+    this.canvas.style.left = '';
+    this.canvas.style.top = '';
+    this.canvas.style.transform = '';
+    this.canvas.style.transformOrigin = '';
+    this.canvas.style.cursor = '';
+  }
+
+  private resetMapView(): void {
+    this.mapZoom = 1;
+    this.mapPanX = 0;
+    this.mapPanY = 0;
+    if (this.canvas && !this.playing) this.applyMapView();
+  }
+
+  private applyMapView(): void {
+    if (!this.canvas || this.playing) return;
+    this.canvas.style.transform = `translate3d(${this.mapPanX}px, ${this.mapPanY}px, 0) scale(${this.mapZoom})`;
+  }
+
+  private zoomMapAt(clientX: number, clientY: number, factor: number): void {
+    const next = Math.min(MAP_ZOOM_MAX, Math.max(MAP_ZOOM_MIN, this.mapZoom * factor));
+    if (Math.abs(next - this.mapZoom) < 0.0001) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const localX = (clientX - rect.left) / this.mapZoom;
+    const localY = (clientY - rect.top) / this.mapZoom;
+    const baseLeft = rect.left - this.mapPanX;
+    const baseTop = rect.top - this.mapPanY;
+    this.mapPanX = clientX - baseLeft - localX * next;
+    this.mapPanY = clientY - baseTop - localY * next;
+    this.mapZoom = next;
+    this.applyMapView();
+  }
+
   private cellFromPointer(event: PointerEvent): Cell | null {
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.floor((event.clientX - rect.left) / EDIT_TILE_SIZE);
-    const y = Math.floor((event.clientY - rect.top) / EDIT_TILE_SIZE);
+    const tileSize = EDIT_TILE_SIZE * this.mapZoom;
+    const x = Math.floor((event.clientX - rect.left) / tileSize);
+    const y = Math.floor((event.clientY - rect.top) / tileSize);
     return this.inBounds(x, y) ? { x, y } : null;
   }
 
