@@ -1,13 +1,15 @@
 name: apply-requested-ui
 
 on:
-  push:
-    branches: [feature/mobile-pages-debug]
   pull_request:
     branches: [main]
 
 permissions:
   contents: write
+
+concurrency:
+  group: apply-requested-ui
+  cancel-in-progress: true
 
 jobs:
   apply:
@@ -22,14 +24,15 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: node tools/scripts/apply-requested-ui-changes.mjs
+      - run: python3 tools/scripts/apply-requested-ui-changes.py
       - run: npm run verify
       - name: Commit applied changes
         run: |
+          rm tools/scripts/apply-requested-ui-changes.py
           rm tools/scripts/apply-requested-ui-changes.mjs
           rm .github/workflows/apply-requested-ui.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- engine/src/render/Camera.ts engine/src/input/InputController.ts engine/src/core/Game.ts engine/src/render/Renderer.ts web/index.html web/src/main.ts web/style.css .github/workflows/pages.yml tools/scripts/apply-requested-ui-changes.mjs .github/workflows/apply-requested-ui.yml
+          git add -- engine/src/render/Camera.ts engine/src/input/InputController.ts engine/src/core/Game.ts engine/src/render/Renderer.ts web/index.html web/src/main.ts web/style.css .github/workflows/pages.yml tools/scripts/apply-requested-ui-changes.py tools/scripts/apply-requested-ui-changes.mjs .github/workflows/apply-requested-ui.yml
           git commit -m "web: improve mobile controls debug HUD and Pages"
           git push origin HEAD:feature/mobile-pages-debug
