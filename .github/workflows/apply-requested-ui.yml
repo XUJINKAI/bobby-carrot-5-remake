@@ -3,6 +3,8 @@ name: apply-requested-ui
 on:
   push:
     branches: [feature/mobile-pages-debug]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
