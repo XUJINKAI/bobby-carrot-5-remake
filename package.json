@@ -13,6 +13,7 @@
     "dev:web": "node tools/scripts/dev-server.mjs web",
     "dev:engine": "node tools/scripts/dev-server.mjs engine",
     "test": "node tools/scripts/run-tests.mjs",
+    "test:browser": "npm run build && node tools/scripts/browser-smoke.mjs",
     "verify": "node tools/scripts/verify.mjs",
     "clean": "node tools/scripts/clean.mjs",
     "serve": "node tools/scripts/dev-server.mjs web --no-build",

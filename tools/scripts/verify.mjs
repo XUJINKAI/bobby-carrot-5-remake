@@ -79,7 +79,53 @@ for (const file of [
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Missing build artifact: ${file}`);
 }
 
+verifyWebModuleEntry(path.join(root, 'dist/web'));
+if (process.env.CI) run(process.execPath, ['tools/scripts/browser-smoke.mjs']);
+
 console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；semantic LevelData + DAT codec round-trip、Engine + Editor + Web 与全部测试通过。');
+
+function verifyWebModuleEntry(webRoot) {
+  const indexPath = path.join(webRoot, 'index.html');
+  const html = fs.readFileSync(indexPath, 'utf8');
+  const baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? '/';
+  const importMapText = html.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i)?.[1];
+  if (!importMapText) throw new Error('dist/web/index.html is missing an import map');
+
+  let importMap;
+  try { importMap = JSON.parse(importMapText); }
+  catch (error) { throw new Error(`Invalid import map JSON: ${error instanceof Error ? error.message : String(error)}`); }
+
+  const imports = importMap?.imports;
+  if (!imports || typeof imports !== 'object') throw new Error('Import map must define imports');
+  for (const [specifier, target] of Object.entries(imports)) {
+    if (typeof target !== 'string') throw new Error(`Import map target for ${specifier} must be a string`);
+    if (!isUrlLikeImportTarget(target)) {
+      throw new Error(`Import map target for ${specifier} is not URL-like: ${JSON.stringify(target)}. Relative targets must start with ./ or ../`);
+    }
+    verifyLocalWebTarget(webRoot, baseHref, target, `import map ${specifier}`);
+  }
+
+  for (const match of html.matchAll(/<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi)) {
+    verifyLocalWebTarget(webRoot, baseHref, match[1], 'module script');
+  }
+}
+
+function isUrlLikeImportTarget(target) {
+  return target.startsWith('/') || target.startsWith('./') || target.startsWith('../') || /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(target);
+}
+
+function verifyLocalWebTarget(webRoot, baseHref, target, label) {
+  const origin = 'https://verify.invalid';
+  const baseUrl = new URL(baseHref, `${origin}/index.html`);
+  const resolved = new URL(target, baseUrl);
+  if (resolved.origin !== origin) return;
+  const pathname = decodeURIComponent(resolved.pathname);
+  const relative = pathname.replace(/^\/+/, '');
+  const file = path.resolve(webRoot, relative);
+  const normalizedRoot = `${path.resolve(webRoot)}${path.sep}`;
+  if (file !== path.resolve(webRoot) && !file.startsWith(normalizedRoot)) throw new Error(`${label} escapes dist/web: ${target}`);
+  if (!fs.existsSync(file)) throw new Error(`${label} resolves to missing build artifact: ${target} -> ${path.relative(root, file)}`);
+}
 
 function walkSource(directory, visitor) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
