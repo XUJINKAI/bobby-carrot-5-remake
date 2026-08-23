@@ -211,6 +211,8 @@ export class Game {
       return result;
     }
 
+    // 用户拖动查看地图后，下一次真正移动会平滑取消相机 offset，重新回到跟随 Bobby。
+    this.renderer.camera.recenterPan();
     if (snapshot) this.history.push(snapshot);
     this.motion = {
       fromX: result.from.x,
