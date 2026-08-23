@@ -117,6 +117,20 @@ test('割草机第一次从停车位上车不会同帧自动下车，并可安�
   assert.equal(world.dead, false, '割草机可以安全通过已激活陷阱');
 });
 
+test('割草机不能进入 Carousel 通道，即使该方向对步行者本来可通行', () => {
+  const world = new World(level({
+    width: 3,
+    height: 1,
+    terrain: [[0x95, 0xa0, 0xba]],
+    objects: [object(0xdc, 1, 0)]
+  }));
+  world.state.inventory.gas = true;
+  assert.equal(world.move('right').moved, true, '先在停车位登上割草机');
+  const blocked = world.move('right');
+  assert.equal(blocked.moved, false, 'BA 对向右进入的步行者可通，但割草机必须被阻挡');
+  assert.match(blocked.passage.reason, /割草机.*旋转通道/);
+});
+
 test('木板 D5/D6 坍塌中间态不能重新进入', () => {
   for (const id of [0xd5, 0xd6]) {
     const world = new World(level({ width: 2, height: 1, terrain: [[0x95, 0x90]], objects: [object(id, 1, 0)] }));
