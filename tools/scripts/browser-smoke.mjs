@@ -22,7 +22,8 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
   await smoke(`${origin}/`, ['class="shell"', 'class="hero"']);
   await smoke(`${origin}/play/base-0-1/`, ['class="game-page"', 'id="game"']);
-  console.log(`browser smoke: OK — ${path.basename(browser)} loaded home and /play/base-0-1/ from dist/web`);
+  await smoke(`${origin}/edit/`, ['class="bobby-editor"', 'data-editor="play-toggle"', 'data-editor-palette']);
+  console.log(`browser smoke: OK — ${path.basename(browser)} loaded home, play and unified editor routes from dist/web`);
 } finally {
   await new Promise((resolve) => server.close(resolve));
 }
