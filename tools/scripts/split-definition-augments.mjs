@@ -5,7 +5,7 @@ import { root } from "./util.mjs";
 const definitionFile = path.join(root, "engine/src/mechanics/definitions.ts");
 let source = fs.readFileSync(definitionFile, "utf8");
 
-if (!source.includes('./definition-augments.js')) {
+if (!source.includes("./definition-augments.js")) {
   const block = take(
     source,
     "const blockingObjects: ObjectType[] =",
