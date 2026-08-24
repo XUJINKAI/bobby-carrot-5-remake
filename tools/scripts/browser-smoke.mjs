@@ -4,8 +4,8 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { root } from './util.mjs';
 
-const webRoot = path.join(root, 'dist/web');
-if (!fs.existsSync(path.join(webRoot, 'index.html'))) throw new Error('dist/web is missing; run npm run build first');
+const webRoot = path.join(root, 'dist');
+if (!fs.existsSync(path.join(webRoot, 'index.html'))) throw new Error('dist is missing; run npm run build first');
 
 const browser = findBrowser();
 if (!browser) throw new Error('Browser smoke test requires Chrome/Chromium. Set BROWSER_PATH if it is not on PATH.');
@@ -21,10 +21,10 @@ try {
   if (!address || typeof address === 'string') throw new Error('Failed to determine smoke-test server port');
   const origin = `http://127.0.0.1:${address.port}`;
   await smoke(`${origin}/`, ['class="shell"', 'class="hero"']);
-  await smoke(`${origin}/levels/`, ['class="release-tabs"', 'class="level-filter-shell"', 'data-filter-trigger="difficulty"', 'data-filter-trigger="mechanics"']);
-  await smoke(`${origin}/play/base-0-1/`, ['class="game-page"', 'id="game"']);
-  await smoke(`${origin}/edit/`, ['class="bobby-editor"', 'data-editor="play-toggle"', 'data-editor-palette']);
-  console.log(`browser smoke: OK — ${path.basename(browser)} loaded home, filtered levels, play and unified editor routes from dist/web`);
+  await smoke(`${origin}/levels`, ['class="release-tabs"', 'class="level-filter-shell"', 'data-filter-trigger="difficulty"', 'data-filter-trigger="mechanics"']);
+  await smoke(`${origin}/play/base-0-1`, ['class="game-page"', 'id="game"']);
+  await smoke(`${origin}/edit`, ['class="bobby-editor"', 'data-editor="play-toggle"', 'data-editor-palette']);
+  console.log(`browser smoke: OK — ${path.basename(browser)} loaded home, filtered levels, play and editor SPA routes from dist`);
 } finally {
   await new Promise((resolve) => server.close(resolve));
 }
@@ -89,18 +89,14 @@ function runBrowser(url) {
 function serveStatic(request, response) {
   try {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
-    let relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
-    if (!relative || relative.endsWith('/')) relative += 'index.html';
-    const file = path.resolve(webRoot, relative);
+    const relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    let file = path.resolve(webRoot, relative || 'index.html');
     const normalizedRoot = `${path.resolve(webRoot)}${path.sep}`;
     if (file !== path.resolve(webRoot) && !file.startsWith(normalizedRoot)) {
       response.writeHead(403).end('Forbidden');
       return;
     }
-    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
-      response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found');
-      return;
-    }
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) file = path.join(webRoot, 'index.html');
     response.writeHead(200, { 'content-type': contentType(file), 'cache-control': 'no-store' });
     fs.createReadStream(file).pipe(response);
   } catch (error) {
@@ -132,7 +128,7 @@ function findBrowser() {
     process.platform === 'win32' ? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe' : null
   ].filter(Boolean);
   for (const candidate of candidates) {
-    const probe = spawnSync(candidate, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    const probe = spawnSync(candidate, ['--version'], { encoding:'utf8', timeout:5000 });
     if (!probe.error && probe.status === 0) return candidate;
   }
   return null;
