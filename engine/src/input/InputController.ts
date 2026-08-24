@@ -10,7 +10,23 @@ interface PointerState {
 }
 
 export interface InputControllerOptions {
+  movement?: boolean;
+  undo?: boolean;
+  restart?: boolean;
+  pan?: boolean;
+  zoom?: boolean;
+  debug?: boolean;
+  /** @deprecated 使用 `undo`。保留该字段只为兼容现有调用。 */
   allowUndo?: boolean;
+}
+
+interface InputCapabilities {
+  movement: boolean;
+  undo: boolean;
+  restart: boolean;
+  pan: boolean;
+  zoom: boolean;
+  debug: boolean;
 }
 
 const KEY_DIRECTION: Record<string, Direction> = {
@@ -24,13 +40,19 @@ const KEY_DIRECTION: Record<string, Direction> = {
   d: "right",
 };
 
-/** 输入层只表达当前意图：键盘/移动端方向键负责移动，画布拖动只负责相机。 */
+/**
+ * 通用 Gameplay 输入适配器。
+ *
+ * Controller 负责把浏览器输入和外部方向控件翻译成 Game 动作；
+ * Game 本身只认识移动、撤回、重开、相机等语义动作，不认识键盘或摇杆 DOM。
+ */
 export class InputController {
   private readonly game: Game;
   private readonly canvas: HTMLCanvasElement;
-  private readonly allowUndo: boolean;
+  private readonly capabilities: InputCapabilities;
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
+  private externalDirection: Direction | null = null;
   private pinchStartDistance = 0;
   private pinchStartZoom = 1;
   private suppressNextClick = false;
@@ -39,7 +61,14 @@ export class InputController {
   constructor(game: Game, options: InputControllerOptions = {}) {
     this.game = game;
     this.canvas = game.renderer.canvas;
-    this.allowUndo = options.allowUndo ?? true;
+    this.capabilities = {
+      movement: options.movement ?? true,
+      undo: options.undo ?? options.allowUndo ?? true,
+      restart: options.restart ?? true,
+      pan: options.pan ?? true,
+      zoom: options.zoom ?? true,
+      debug: options.debug ?? true,
+    };
     window.addEventListener("keydown", this.onKeyDown, { passive: false });
     window.addEventListener("keyup", this.onKeyUp, { passive: false });
     window.addEventListener("blur", this.onBlur);
@@ -54,6 +83,17 @@ export class InputController {
   setEnabled(value: boolean): void {
     this.enabled = value;
     if (!value) this.clearHeldMovement();
+  }
+
+  /** 供屏幕摇杆、方向按钮或其他宿主控件复用同一条移动输入路径。 */
+  setHeldDirection(direction: Direction | null): void {
+    if (!this.enabled || !this.capabilities.movement) {
+      this.externalDirection = null;
+      this.applyHeldDirection();
+      return;
+    }
+    this.externalDirection = direction;
+    this.applyHeldDirection();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -79,45 +119,58 @@ export class InputController {
     if (!this.enabled || !this.game.hasLevel) return;
     const key = event.key.toLowerCase();
     const direction = KEY_DIRECTION[key];
-    if (direction) {
+    if (direction && this.capabilities.movement) {
       event.preventDefault();
       if (!event.repeat && !this.heldMovementKeys.includes(key))
         this.heldMovementKeys.push(key);
-      this.game.setHeldDirection(this.currentHeldDirection());
+      this.applyHeldDirection();
       return;
     }
     if (event.repeat) return;
-    if (key === "r") this.game.restart();
-    else if (this.allowUndo && (key === "z" || key === "u")) this.game.undo();
-    else if (key === "=" || key === "+") this.game.zoomBy(1.1);
-    else if (key === "-" || key === "_") this.game.zoomBy(1 / 1.1);
-    else if (event.code === "Backquote" || key === "`" || key === "~")
+    if (key === "r" && this.capabilities.restart) this.game.restart();
+    else if ((key === "z" || key === "u") && this.capabilities.undo)
+      this.game.undo();
+    else if ((key === "=" || key === "+") && this.capabilities.zoom)
+      this.game.zoomBy(1.1);
+    else if ((key === "-" || key === "_") && this.capabilities.zoom)
+      this.game.zoomBy(1 / 1.1);
+    else if (
+      this.capabilities.debug &&
+      (event.code === "Backquote" || key === "`" || key === "~")
+    )
       this.game.toggleDebug();
   };
 
   private readonly onKeyUp = (event: KeyboardEvent): void => {
     const key = event.key.toLowerCase();
-    if (!KEY_DIRECTION[key]) return;
+    if (!KEY_DIRECTION[key] || !this.capabilities.movement) return;
     event.preventDefault();
     const index = this.heldMovementKeys.lastIndexOf(key);
     if (index >= 0) this.heldMovementKeys.splice(index, 1);
-    this.game.setHeldDirection(this.currentHeldDirection());
+    this.applyHeldDirection();
   };
 
   private readonly onBlur = (): void => this.clearHeldMovement();
 
   private clearHeldMovement(): void {
     this.heldMovementKeys.length = 0;
+    this.externalDirection = null;
     this.game.setHeldDirection(null);
   }
 
-  private currentHeldDirection(): Direction | null {
+  private applyHeldDirection(): void {
+    this.game.setHeldDirection(
+      this.externalDirection ?? this.currentKeyboardDirection(),
+    );
+  }
+
+  private currentKeyboardDirection(): Direction | null {
     const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
     return key ? (KEY_DIRECTION[key] ?? null) : null;
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!this.enabled) return;
+    if (!this.enabled || (!this.capabilities.pan && !this.capabilities.zoom)) return;
     if (
       event.pointerType === "mouse" &&
       event.button !== 0 &&
@@ -133,7 +186,7 @@ export class InputController {
       startY: event.clientY,
       moved: false,
     });
-    if (this.pointers.size === 2) {
+    if (this.capabilities.zoom && this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
     }
@@ -149,14 +202,22 @@ export class InputController {
     if (Math.hypot(pointer.x - pointer.startX, pointer.y - pointer.startY) >= 4)
       pointer.moved = true;
 
-    if (this.pointers.size === 2 && this.pinchStartDistance > 0) {
+    if (
+      this.capabilities.zoom &&
+      this.pointers.size === 2 &&
+      this.pinchStartDistance > 0
+    ) {
       this.game.setZoom(
         this.pinchStartZoom *
           (this.pointerDistance() / this.pinchStartDistance),
       );
       return;
     }
-    if (this.pointers.size === 1 && (dx !== 0 || dy !== 0))
+    if (
+      this.capabilities.pan &&
+      this.pointers.size === 1 &&
+      (dx !== 0 || dy !== 0)
+    )
       this.game.panByScreen(dx, dy);
   };
 
@@ -164,7 +225,6 @@ export class InputController {
     const pointer = this.pointers.get(event.pointerId);
     const wasPinching = this.pointers.size >= 2;
     this.pointers.delete(event.pointerId);
-    // 只有会产生后续 click 的左键/触摸拖动需要抑制 click；中键结束只会触发 auxclick。
     const mayProduceClick = event.pointerType !== "mouse" || event.button === 0;
     if (mayProduceClick && (pointer?.moved || wasPinching))
       this.suppressNextClick = true;
@@ -177,13 +237,13 @@ export class InputController {
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.capabilities.zoom) return;
     event.preventDefault();
     this.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
   };
 
   private readonly onAuxClick = (event: MouseEvent): void => {
-    if (event.button === 1) event.preventDefault();
+    if (event.button === 1 && this.capabilities.pan) event.preventDefault();
   };
 
   private pointerDistance(): number {
