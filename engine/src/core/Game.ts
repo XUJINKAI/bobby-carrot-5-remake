@@ -1,7 +1,7 @@
 import type { LevelMap, LevelObject } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
-import { ObjectId, type Direction } from "../mechanics/ids.js";
+import type { Direction } from "../mechanics/ids.js";
 import { expandObjectLayouts } from "../mechanics/object-layouts.js";
 import {
   Renderer,
@@ -17,6 +17,7 @@ import {
 } from "../world/World.js";
 import type { ProfileCapabilities } from "../world/RuntimeState.js";
 import { worldEventForObjectTouch } from "./object-touch.js";
+import { TimedChallenge } from "./TimedChallenge.js";
 
 export interface GameOptions {
   canvas: HTMLCanvasElement;
@@ -58,6 +59,7 @@ export class Game {
   readonly renderer: Renderer;
   readonly audio: AudioBackend;
   private readonly profile: Partial<ProfileCapabilities>;
+  private readonly timedChallenge = new TimedChallenge();
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
   private readonly history: GameSnapshot[] = [];
@@ -74,7 +76,6 @@ export class Game {
     ridingDynamic: false,
   };
   private heldDirection: Direction | null = null;
-  private timedChallengeRemainingMsValue: number | null = null;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -118,7 +119,7 @@ export class Game {
   }
 
   get timedChallengeRemainingMs(): number | null {
-    return this.timedChallengeRemainingMsValue;
+    return this.timedChallenge.remainingMs;
   }
 
   async loadLevel(level: LevelMap): Promise<void> {
@@ -128,7 +129,7 @@ export class Game {
     this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
-    this.timedChallengeRemainingMsValue = null;
+    this.timedChallenge.reset();
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -167,7 +168,7 @@ export class Game {
     const previous = this.history.pop();
     if (!previous || !this.worldValue) return false;
     this.world.restore(previous.world);
-    this.timedChallengeRemainingMsValue = previous.timedChallengeRemainingMs;
+    this.timedChallenge.restore(previous.timedChallengeRemainingMs);
     this.heldDirection = null;
     this.motion = null;
     this.lastMove = null;
@@ -187,7 +188,7 @@ export class Game {
     this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
-    this.timedChallengeRemainingMsValue = null;
+    this.timedChallenge.reset();
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -292,7 +293,7 @@ export class Game {
       snapshot = !forced
         ? {
             world: world.snapshot(),
-            timedChallengeRemainingMs: this.timedChallengeRemainingMsValue,
+            timedChallengeRemainingMs: this.timedChallenge.snapshot(),
           }
         : null,
       result = world.move(direction, forced),
@@ -344,14 +345,6 @@ export class Game {
     );
   }
 
-  private timedChallengeMsAt(x: number, y: number): number | null {
-    const raw = this.runtimeObjectAt(x, y)?.properties?.timedChallengeMs;
-    if (raw === undefined || raw.trim() === "") return null;
-    const value = Number(raw);
-    if (!Number.isFinite(value) || value <= 0) return null;
-    return Math.floor(value);
-  }
-
   private motionDuration(forcedKind: string | null): number {
     let duration = 132;
     if (forcedKind === "speed") duration = 70;
@@ -386,21 +379,9 @@ export class Game {
 
   private handleWorldEvents(events: WorldEvent[]): void {
     for (const event of events) {
-      if (
-        event.type === "object-interaction" &&
-        event.objectType === ObjectId.LOCK &&
-        event.action === "open" &&
-        event.x !== undefined &&
-        event.y !== undefined
-      ) {
-        const duration = this.timedChallengeMsAt(event.x, event.y);
-        if (duration !== null) this.timedChallengeRemainingMsValue = duration;
-      } else if (event.type === "collect-golden-carrot") {
-        this.timedChallengeRemainingMsValue = null;
-      } else if (event.type === "death" || event.type === "complete") {
-        this.timedChallengeRemainingMsValue = null;
-      }
-
+      this.timedChallenge.handleWorldEvent(event, (x, y) =>
+        this.runtimeObjectAt(x, y),
+      );
       for (const listener of this.worldEventListeners) listener(event);
       switch (event.type) {
         case "collect-carrot":
@@ -429,13 +410,7 @@ export class Game {
   }
 
   private advanceTimedChallenge(deltaMs: number): void {
-    if (this.timedChallengeRemainingMsValue === null) return;
-    this.timedChallengeRemainingMsValue = Math.max(
-      0,
-      this.timedChallengeRemainingMsValue - deltaMs,
-    );
-    if (this.timedChallengeRemainingMsValue > 0) return;
-    this.timedChallengeRemainingMsValue = null;
+    if (!this.timedChallenge.advance(deltaMs)) return;
     this.killPlayer("限时挑战时间耗尽");
   }
 
