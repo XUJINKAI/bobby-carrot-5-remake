@@ -31,6 +31,12 @@ export interface BeanstalkGrowth {
   ticksUntilGrowth: number;
 }
 
+export interface TimedChallengeState {
+  remainingMs: number;
+  target: "golden-carrot";
+  source: Point;
+}
+
 export interface InventoryState {
   gas: boolean;
   kite: boolean;
@@ -67,6 +73,7 @@ export interface RuntimeState {
   windmillsEnabled: [boolean, boolean, boolean, boolean];
   beanstalkGrowth: BeanstalkGrowth[];
   logicRemainderMs: number;
+  timedChallenge: TimedChallengeState | null;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
   moves: number;
