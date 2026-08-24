@@ -76,9 +76,9 @@ export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
           }),
         ),
       ],
-      authoring:
-        id === ObjectId.SANDMAN
-          ? {
+      ...(id === ObjectId.SANDMAN
+        ? {
+            authoring: {
               ...(current.authoring ?? { palette: true }),
               properties: [
                 {
@@ -90,8 +90,9 @@ export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
                   placeholder: "可选；留空时仍会触发空对白框",
                 },
               ],
-            }
-          : current.authoring,
+            },
+          }
+        : {}),
     });
   }
 
