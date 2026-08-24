@@ -1,55 +1,52 @@
 # AGENTS.md
 
-本仓库把 Bobby Carrot 5 重构为现代 Web 游戏。它不是 Java ME 模拟器，也不是 320×240 UI 外壳。
+本仓库把 Bobby Carrot 5 重构为现代 Web 游戏，同时保留一条可验证原版逻辑的格式互操作链路。
 
 ## 修改前先读
-
 - 产品目标：`docs/design.md`
 - 架构边界：`docs/architecture.md`
 - Engine API：`docs/contracts/engine-api.md`
 - 关卡格式：`docs/contracts/level-format.md`
 - Editor：`docs/features/editor.md`
-- 资产管线：`docs/contracts/asset-layout.md`
-- 逆向机关流程：`docs/workflows/add-mechanic.md`
+- 原版验证：`docs/workflows/validate-original.md`
+- 逆向机关：`docs/workflows/add-mechanic.md`
 - 原版事实：`docs/reference/`
 
 ## 硬规则
-
-1. 禁止修改 `assets/original/official-hd/` 中的 10 个原始 JAR。
-2. `assets/extracted/`、`assets/generated/`、`dist/` 都是生成物，不提交 Git，不手工修。
-3. 玩家可见关卡 ID 使用 `base-1-1 / up1-2-7`；`001...485` 只是内部 canonical ID。
-4. 游戏规则只属于 `engine/`；`web/` 与 `editor/` 都禁止复制碰撞、机关、死亡/胜利条件。
-5. `editor/` 只维护 JSON Level Draft。Play Test 必须 clone/normalize 后调用 `@bobby/engine`，Runtime 不得反写 Draft。
-6. Editor Import/Export 只使用语义 JSON，不新增 DAT 编辑逻辑。需要 DAT 导入/导出时只能经过独立 DAT codec；官方关卡必须复制后编辑。
-7. `engine/` 不依赖 Web UI、Editor、框架、历史下载包菜单或 Java ME API。
-8. 世界逻辑使用格子坐标；48px 等源素材尺寸只属于渲染/已确认的原版像素速度换算。
-9. **原版 DAT terrain/object byte（包括 signed byte、hex 魔数、按 byte range 推导规则）只能出现在 DAT codec、codec 测试和逆向参考资料中。** Engine / Editor / Web / 语义 JSON / Runtime 一律使用 `ground-c`、`tide-left`、`leaf` 等语义 ID。未确认具体含义的格子使用稳定语义分类（如 `walkable-variant-*`），不得把 raw byte 泄漏回来。
-10. `ts.png` / `ta.png` 图集位置属于渲染协议，不属于 DAT 协议。Renderer/Editor 必须通过 semantic → atlas mapping 取图，禁止拿 DAT byte 直接计算图集位置。
-11. 不根据图片随意发明机关规则。未确认行为必须写成“推断/未确认”；需要对照原始 byte 时放进 `docs/reference/` 或 codec 测试，不污染运行时模型。
-12. 新机关必须加最小回归测试，并能在 `engine/playground/` 或 Editor 测试地图中验证。
-13. 默认保留原版美术和 MIDI，不擅自 AI 重绘或替换编曲。
-14. **每次完成任务、准备提交或告诉用户“已完成”之前，都必须执行 `npm run verify`。** 不仅限于结构性改动。若 verify 失败，不得把任务描述为完成；必须修复或明确记录失败原因。
-15. GitHub Actions 只负责 `main` 的兜底验证；分支/PR 不依赖 CI 代替本地 verify。AI 修改代码时必须主动运行 verify。
+1. `assets/original/official-hd/` 的 10 个原始 JAR 永远只读；验证 JAR 只能生成到 `tmp/` 等生成目录。
+2. `assets/extracted/`、`assets/generated/`、`dist/`、`tmp/` 都是生成物，不提交 Git，不手工修。
+3. 玩家可见关卡 ID 使用 `base-1-1 / up1-2-7`；`001...485` 只是内部 canonical ID，不作为 URL 或兼容路由。
+4. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；禁止加入 JAR/DAT byte、发布包、SHA、HTTP 或 gameplay 规则。
+5. **所有原版 DAT byte ↔ semantic 映射只能位于 `@bobby/dat`。** Engine / Model 不允许维护第二份 DAT table；Editor/Web 只有分享或 Debug provenance 这种明确边界可以调用 `@bobby/dat` API。
+6. `engine/` 是唯一游戏规则实现。Web 与 Editor 禁止复制碰撞、机关、死亡/胜利条件。
+7. `Game.loadLevel()` 消费纯语义 `LevelMap`。release、chapter、difficulty、record hash、JAR source 等属于内容档案层，不能成为 Engine 输入要求。
+8. Editor 只持久化语义 JSON Draft；Play Test clone/normalize 后把 `LevelMap` 交给 Engine，Runtime 不得反写 Draft。
+9. multi-cell Object 持久化只保存 anchor；唯一 Runtime 展开点是 Engine level-load 边界。Editor owner/preview/variant 必须共用 Engine Object Layout。
+10. Editor Palette 是否允许某个 Object 出现属于 Engine Definition 的 authoring metadata，不维护 Editor 私有 ID 黑名单。
+11. `ts.png` / `ta.png` 坐标属于 semantic atlas mapping，不允许由 DAT byte 推导。
+12. 新机关必须有最小回归测试，并能在 Editor 测试地图验证；需要确认原版行为时再用 `npm run original:patch` 打回原版 JAR。
+13. 原版验证工具只 patch 目标 DAT level record，尽量保留其它 JAR/DAT 内容；修改后失效的签名文件必须移除，Manifest 保留。
+14. 新机制不根据图片猜规则。未确认行为标注推断/未确认。
+15. 默认保留原版美术与 MIDI，不擅自替换。
+16. 每次准备提交或告诉用户“完成”前必须执行 `npm run verify`；失败就继续修。
+17. 正式构建只有 `dist/` 一个站点根。禁止 `dist/web`、Engine Playground、逐路由静态 `index.html`、canonical ID 兼容 URL。
+18. Web 页面模块通过函数/API 协作；禁止用 MutationObserver 观察 DOM 来猜另一个模块何时渲染完成。
 
 ## 依赖方向
-
 ```text
-original DAT -> DAT codec -> semantic LevelData
-                         -> generated semantic JSON
-web -> engine
-web -> editor
-editor -> engine
-engine -> semantic LevelData
-renderer/editor art -> semantic atlas mapping -> original art atlas
-tools -> original / extracted assets
+@bobby/model <- @bobby/dat
+@bobby/model <- engine
+@bobby/model <- editor <- web
+@bobby/dat   <- editor (share/debug boundary)
+engine       <- editor <- web
+tools        -> @bobby/dat / original JAR
 ```
 
 禁止：
-
 ```text
-engine -> DAT byte / raw magic number
-engine -> web/editor
-editor -> raw DAT/JAR
-web -> raw DAT/JAR
+engine -> @bobby/dat / JAR / Catalog / HTTP
+model  -> engine / dat / web / editor
+editor -> raw DAT literals
+web    -> raw DAT literals
 mechanics -> DOM
 ```

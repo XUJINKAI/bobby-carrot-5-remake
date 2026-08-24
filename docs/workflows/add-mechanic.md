@@ -1,14 +1,12 @@
-# 逆向 / 新增一个机关
+# 新增 / 校正机关流程
 
-1. 选择一个尚未完整支持的 terrain/object 行为；
-2. 找到包含该原始 ID 的一个或多个关卡；
-3. 用 `?level=NNN&debug=1` 在 Engine Playground 定位坐标和 ID；
-4. 能运行原版时先观察原版；
-5. 追踪对应 `a.class` 字节码；
-6. 只把已确认事实写入 `docs/reference/`；
-7. 在 `engine/src/mechanics/` 或对应 World System 实现；
-8. 为恢复出的规则增加最小、针对性的测试；
-9. 先在 Engine Playground 验证，再考虑 Web UI；
-10. 执行 `npm run verify`。
+1. 在 `docs/reference/` 记录原版事实、字节码位置和仍未确认的问题。
+2. 先判断事实属于 Tile Definition、Object Layout 还是 World 跨格算法。
+3. 在 Engine 唯一实现规则，不在 Web/Editor 复制。
+4. 增加最小 Node 回归测试。
+5. 在 Editor 建最小测试地图并 Play Test。
+6. 如果行为仍有疑问，导出该地图并执行 `npm run original:patch -- --map <json> --target <public-id>`，在原版模拟器跑同一输入。
+7. 对比原版与 bc5r，再回到字节码解释差异。
+8. `npm run verify` 全量验证后再完成任务。
 
-如果行为仍有歧义，就明确保留为 partial/unknown；禁止在 Web UI 里写补偿逻辑掩盖 Engine 错误。
+原版验证不是另一个 Engine Playground：测试地图仍由 Editor authoring，bc5r 侧仍调用正式 Engine；JAR 工具只负责原版格式互操作。

@@ -9,21 +9,8 @@ const BACKGROUND = 'background-variant-081';
 
 function object(type, x, y) { return { type, x, y }; }
 
-function level({ width, height, terrain, objects = [], chapterLevel }) {
-  return {
-    schemaVersion: 2,
-    id: 'test',
-    source: { edition: 'test', packFile: 'test.dat', levelIndex: 0 },
-    recordLength: 0,
-    recordSha256: 'test',
-    ...(chapterLevel === undefined ? {} : { chapterLevel }),
-    width,
-    height,
-    dynamicSlots: 0,
-    terrainEncoding: 'semantic-row-major',
-    terrain,
-    objects
-  };
+function level({ width, height, terrain, objects = [] }) {
+  return { width, height, terrain, objects };
 }
 
 test('原版 ta.png 动画计数器和关键格映射', () => {
@@ -222,7 +209,6 @@ test('普通关即使包含 Bonus Coin 也没有 60 秒倒计时', () => {
   const world = new World(level({
     width: 2,
     height: 1,
-    chapterLevel: 4,
     terrain: [[Terrain.START, Terrain.GROUND_C]],
     objects: [object(ObjectId.BONUS_COIN, 1, 0)]
   }));
@@ -231,8 +217,9 @@ test('普通关即使包含 Bonus Coin 也没有 60 秒倒计时', () => {
   assert.equal(world.dead, false);
 });
 
-test('原版每章第 11/12 个 Bonus Level 使用 60 秒倒计时并在耗尽时死亡', () => {
-  const world = new World(level({ width: 2, height: 1, chapterLevel: 11, terrain: [[Terrain.START, Terrain.GROUND_C]] }));
+test('Bonus session 显式注入 60 秒倒计时并在耗尽时死亡', () => {
+  const map = level({ width: 2, height: 1, terrain: [[Terrain.START, Terrain.GROUND_C]] });
+  const world = new World(map, {}, { bonusTimeMs: 60_000 });
   assert.equal(world.state.bonusTimeRemainingMs, 60_000);
   const events = world.advanceTime(60_001);
   assert.equal(world.dead, true);

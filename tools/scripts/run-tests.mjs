@@ -1,6 +1,1 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { root, run, tscCommand } from './util.mjs';
-if (!fs.existsSync(path.join(root, 'engine/dist/index.js'))) run(tscCommand(), ['-p', 'engine/tsconfig.json']);
-if (!fs.existsSync(path.join(root, 'editor/dist/index.js'))) run(tscCommand(), ['-p', 'editor/tsconfig.json']);
-run(process.execPath, ['--test', 'engine/tests/*.test.mjs', 'editor/tests/*.test.mjs'], { shell: true });
+import fs from 'node:fs';import path from 'node:path';import {root,run,tscCommand} from './util.mjs';if(!fs.existsSync(path.join(root,'dat/dist/index.js'))||!fs.existsSync(path.join(root,'engine/dist/index.js'))||!fs.existsSync(path.join(root,'editor/dist/index.js')))run(tscCommand(),['-b','model','dat','engine','editor','--force']);run(process.execPath,['--test','dat/tests/*.test.mjs','engine/tests/*.test.mjs','editor/tests/*.test.mjs'],{shell:true});

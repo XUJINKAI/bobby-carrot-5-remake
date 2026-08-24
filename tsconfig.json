@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./model" },
+    { "path": "./dat" },
+    { "path": "./engine" },
+    { "path": "./editor" },
+    { "path": "./web" }
+  ]
+}

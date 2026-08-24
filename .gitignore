@@ -1,27 +1,13 @@
-tmp/
-
-# 依赖
 node_modules/
-
-# 构建产物：发布时由 npm run build 重新生成
 dist/
+model/dist/
+dat/dist/
 engine/dist/
 editor/dist/
 web/dist-src/
-
-# 从原始 JAR 可重复生成的中间资产
 assets/extracted/
 assets/generated/
-
-# 日志 / 编辑器 / 系统文件
-*.log
+tmp/
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-
-# 临时文件
-*.tmp
-*.swp
-*.swo
-coverage/

@@ -1,20 +1,6 @@
 {
   "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist-src",
-    "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "@bobby/engine": [
-        "../engine/dist/index.d.ts"
-      ],
-      "@bobby/editor": [
-        "../editor/dist/index.d.ts"
-      ]
-    }
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "compilerOptions": { "rootDir": "src", "outDir": "dist-src", "composite": true, "sourceMap": true },
+  "references": [{"path":"../model"},{"path":"../dat"},{"path":"../engine"},{"path":"../editor"}],
+  "include": ["src/**/*.ts"]
 }
