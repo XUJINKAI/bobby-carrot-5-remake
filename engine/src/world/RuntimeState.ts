@@ -1,4 +1,8 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
+import type {
+  LevelObjectProperties,
+  ObjectType,
+  TerrainType,
+} from "../data/types.js";
 import type { Direction } from "../mechanics/ids.js";
 
 export interface Point {
@@ -17,6 +21,7 @@ export interface DynamicEntity {
   type: ObjectType;
   x: number;
   y: number;
+  properties?: LevelObjectProperties;
   direction: Direction | null;
   rider: boolean;
   settled: boolean;
@@ -47,6 +52,8 @@ export interface RuntimeState {
   terrain: TerrainType[][];
   /** 每格至多一个静态对象；`empty` 表示空。 */
   objects: ObjectType[][];
+  /** 与 objects 同尺寸，保留对象实例参数；运行时替换对象时同时清空。 */
+  objectProperties: Array<Array<LevelObjectProperties | undefined>>;
   dynamicEntities: DynamicEntity[];
   player: Point;
   facing: Direction;
