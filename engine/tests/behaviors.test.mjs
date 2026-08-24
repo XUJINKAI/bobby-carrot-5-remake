@@ -9,7 +9,6 @@ import {
 
 test('carousel definitions expose composable directional and rotation behaviors', () => {
   const definition = inspectTerrainDefinition(Terrain.CAROUSEL_1);
-  assert.equal(definition.source?.datHexIds?.[0], '0xB9');
   assert.ok(definition.traits.includes('carousel'));
   assert.deepEqual(definition.behaviors.map((behavior) => behavior.id), ['directional-passage', 'rotate-on-leave']);
   assert.deepEqual(definition.behaviors[0].config.enter, ['left', 'down']);
@@ -18,7 +17,6 @@ test('carousel definitions expose composable directional and rotation behaviors'
 
 test('mirror definition composes passage, dragon-fire reflection and rotation', () => {
   const mirror = inspectTerrainDefinition(Terrain.MIRROR_1);
-  assert.equal(mirror.source?.datHexIds?.[0], '0xB1');
   assert.deepEqual(mirror.behaviors.map((behavior) => behavior.id), [
     'mower-blocked', 'reflect-dragon-fire', 'rotate-on-leave'
   ]);
@@ -26,44 +24,41 @@ test('mirror definition composes passage, dragon-fire reflection and rotation', 
   assert.equal(mirror.behaviors[1].config.up, 'right');
 });
 
-test('object definitions expose original provenance and passage behavior', () => {
+test('object definitions expose passage and authoring behavior', () => {
   const lock = inspectObjectDefinition(ObjectId.LOCK);
-  assert.equal(lock.source?.datHexIds?.[0], '0xCD');
   assert.equal(lock.behaviors[0].id, 'requires-key');
+  assert.equal(lock.authoring?.palette, true);
+
+  const internal = inspectObjectDefinition(ObjectId.DRAGON_BODY);
+  assert.equal(internal.authoring?.palette, false);
 });
 
-test('every known semantic Terrain and Object has a definition, behavior metadata and original DAT provenance', () => {
+test('every known semantic Terrain and Object has a definition and behavior metadata', () => {
   for (const id of Object.values(Terrain)) {
     const definition = inspectTerrainDefinition(id);
     assert.equal(definition.id, id);
     assert.ok(definition.behaviors.length > 0, `terrain ${id} must expose behavior metadata`);
-    assert.match(definition.source?.datHexIds?.[0] ?? '', /^0x[0-9A-F]{2}$/);
+    assert.equal(typeof definition.authoring?.palette, 'boolean', `terrain ${id} must expose authoring metadata`);
   }
   for (const id of Object.values(ObjectId)) {
     const definition = inspectObjectDefinition(id);
     assert.equal(definition.id, id);
     assert.ok(definition.behaviors.length > 0, `object ${id} must expose behavior metadata`);
-    assert.match(definition.source?.datHexIds?.[0] ?? '', /^0x[0-9A-F]{2}$/);
+    assert.equal(typeof definition.authoring?.palette, 'boolean', `object ${id} must expose authoring metadata`);
   }
 });
 
-test('unnamed semantic variants keep introspectable original hex and category traits', () => {
+test('unnamed semantic variants keep category traits without importing DAT ownership', () => {
   const walkable = inspectTerrainDefinition('walkable-variant-01');
-  assert.equal(walkable.source?.datHexIds?.[0], '0x60');
-  assert.equal(walkable.source?.confidence, 'inferred');
   assert.ok(walkable.traits.includes('walkable'));
   assert.ok(walkable.traits.includes('cloud-passable'));
   assert.ok(walkable.traits.includes('dragon-fire-passable'));
 
   const background = inspectTerrainDefinition('background-variant-001');
-  assert.equal(background.source?.datHexIds?.[0], '0x00');
-  assert.equal(background.source?.confidence, 'inferred');
   assert.ok(background.traits.includes('beanstalk-growth'));
   assert.ok(background.traits.includes('cloud-passable'));
   assert.ok(background.traits.includes('dragon-fire-passable'));
 
   const objectVariant = inspectObjectDefinition('object-variant-001');
-  assert.equal(objectVariant.source?.datHexIds?.[0], '0x00');
-  assert.equal(objectVariant.source?.confidence, 'inferred');
   assert.ok(objectVariant.behaviors.some((behavior) => behavior.id === 'unknown-object'));
 });
