@@ -1,6 +1,6 @@
 # 游戏运行时
 
-当前 Engine 以“恢复原版规则、现代化呈现”为原则，不再把关卡当作只能浏览的静态地图。
+当前 Engine 以“恢复原版地图内规则、现代化呈现”为原则，不再把关卡当作只能浏览的静态地图。
 
 已经实现的基础能力：
 
@@ -17,9 +17,19 @@
 - 荷叶漂流与停靠语义；
 - 风筝、龙火、风车、动态云等已恢复逻辑；
 - 完整 World Snapshot Undo、Restart；
+- 通用 `killPlayer(reason)` 外部失败入口；
+- 通用 `onWorldEvent()` 世界事件流；
 - 死亡/通关事件与 Web 结果层；
 - semantic Tile/Object Definition 调试检查；需要原版 hex provenance 时由 Web/Editor Debug 层查询 `@bobby/dat`。
 
-官方 Bonus Round 的倒计时等发行上下文不是 `LevelMap` 字段，由 Web 在创建 session 时显式传入 Engine runtime options。分享地图和 Editor Play Test 不根据地图内容猜测 Bonus 模式。
+Engine 不保存或递减原版 Bonus 倒计时。成功开锁只产生通用：
 
-尚未经过 485 关逐关人工验证的复杂行为必须继续标明 `confirmed / inferred`，不能因为“看起来能玩”就声称与原版完全一致。
+```text
+object-interaction
+objectType = ObjectId.LOCK
+action = open
+```
+
+`@bobby/adventure` 订阅这条事件流后实现原版 Bonus 的 60 秒规则；收到 `complete/death` 时结束倒计时，超时通过 `killPlayer()` 通知 Engine。Explore、分享地图与 Editor Play Test 不启用这套 Adventure 规则。
+
+尚未经过全部正式关卡逐关人工验证的复杂行为必须继续标明 `confirmed / inferred`，不能因为“看起来能玩”就声称与原版完全一致。
