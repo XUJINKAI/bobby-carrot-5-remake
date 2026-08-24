@@ -27,7 +27,9 @@ jobs:
       # 本轮迁移临时步骤：按职责拆分超长文件，并统一格式化全部维护源码。
       - name: 拆分超长源码
         if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
-        run: node tools/scripts/migrate-readable-layout.mjs
+        run: |
+          node tools/scripts/migrate-readable-layout.mjs
+          node tools/scripts/split-definition-augments.mjs
 
       - name: 格式化全部维护源码
         if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
@@ -52,7 +54,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add model dat adventure engine editor web tools package.json tsconfig.json tsconfig.base.json
-            git commit -m "refactor: split oversized source files"
+            git commit -m "refactor: finish definition split"
             git push origin HEAD:chore/code-quality-frontend-foundation
           fi
 
