@@ -27,7 +27,7 @@ export function createAdventureSave(): AdventureSave {
   return {
     schemaVersion: 1,
     game: 'bc5r',
-    campaign: { completedLevels: [], completedEvents: [], unlockedChapters: [1] },
+    campaign: { completedLevels: [], completedEvents: [], unlockedChapters: initialUnlockedChapters() },
     economy: { bonusCoins: 0, goldenCarrots: 0 },
     upgrades: { speedShoes: false, magnifyingGlass: false, goldenKey: false },
     claimedRewards: [],
@@ -56,7 +56,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
     .map((id) => parseAdventureLevelId(id)?.id)
     .filter((id): id is AdventureLevelId => Boolean(id));
   const unlockedChapters = numberArray(campaign.unlockedChapters).filter((chapter) => chapter >= 1 && chapter <= CHAPTER_COUNT);
-  if (!unlockedChapters.includes(1)) unlockedChapters.push(1);
+  for (const chapter of initialUnlockedChapters()) if (!unlockedChapters.includes(chapter)) unlockedChapters.push(chapter);
   return {
     schemaVersion: 1,
     game: 'bc5r',
@@ -121,6 +121,11 @@ export function completeAdventureEvent(save: AdventureSave, eventId: string): Ad
   return normalizeAdventureSave(next);
 }
 
+function initialUnlockedChapters(): number[] {
+  const chapters: number[] = [];
+  for (let chapter = 1; chapter <= CHAPTER_COUNT; chapter += 4) chapters.push(chapter);
+  return chapters;
+}
 function objectValue(value: unknown): Record<string, unknown> { return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function stringArray(value: unknown): string[] { return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean) : []; }
 function numberArray(value: unknown): number[] { return Array.isArray(value) ? value.map(Number).filter(Number.isInteger) : []; }
