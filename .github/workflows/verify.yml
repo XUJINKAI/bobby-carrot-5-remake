@@ -6,58 +6,14 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-
       - run: npm ci
-
-      # 本轮迁移临时步骤：按职责拆分超长文件，并统一格式化全部维护源码。
-      - name: 拆分超长源码
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
-        run: |
-          node tools/scripts/migrate-readable-layout.mjs
-          node tools/scripts/split-definition-augments.mjs
-          node tools/scripts/dedupe-mechanic-links.mjs
-          node tools/scripts/fix-verify-format-regex.mjs
-
-      - name: 格式化全部维护源码
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
-        run: >-
-          npx --yes prettier@3.6.2 --write
-          "model/**/*.{ts,js,mjs,json}"
-          "dat/**/*.{ts,js,mjs,json}"
-          "adventure/**/*.{ts,js,mjs,json}"
-          "engine/**/*.{ts,js,mjs,json}"
-          "editor/**/*.{ts,js,mjs,css,json}"
-          "web/**/*.{ts,js,mjs,css,html,json}"
-          "tools/**/*.{ts,js,mjs,json}"
-          "package.json"
-          "tsconfig*.json"
-
-      - name: 提交迁移结果
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
-        run: |
-          if git diff --quiet; then
-            echo "源码结构和格式已经完成迁移"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add model dat adventure engine editor web tools package.json tsconfig.json tsconfig.base.json
-            git commit -m "test: normalize source boundary assertions"
-            git push origin HEAD:chore/code-quality-frontend-foundation
-          fi
-
       - run: npm run verify
