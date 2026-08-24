@@ -6,6 +6,7 @@ import {
   campaignSequenceForChapter,
   claimPersistentReward,
   completeAdventureLevel,
+  createAdventureRuntime,
   createAdventureSave,
   isAdventureLevelUnlocked,
   planAdventureSession,
@@ -53,4 +54,34 @@ test('Bonus session config arms a 60 second challenge without making it a separa
   assert.equal(planAdventureSession('1-bonus-1', save).timedChallengeMs, 60_000);
   assert.equal(planAdventureSession('1-4', save).timedChallengeMs, null);
   assert.equal(planAdventureSession('1-bonus-1', save).viewportPolicy, 'original-portrait');
+});
+
+test('Adventure subscribes to generic object interactions and owns the Bonus countdown', () => {
+  let now = 1_000;
+  let listener = () => {};
+  let killed = null;
+  const engine = {
+    onWorldEvent(next) { listener = next; return () => { listener = () => {}; }; },
+    killPlayer(reason) { killed = reason; listener({ type: 'death' }); }
+  };
+  const runtime = createAdventureRuntime(planAdventureSession('1-bonus-1', createAdventureSave()), engine, () => now);
+
+  listener({ type: 'object-interaction', objectType: ObjectId.BONUS_COIN, action: 'open' });
+  assert.equal(runtime.remainingMs, null, 'unrelated objects must not start the original Bonus timer');
+
+  listener({ type: 'object-interaction', objectType: ObjectId.LOCK, action: 'open' });
+  assert.equal(runtime.remainingMs, 60_000);
+  now += 59_999;
+  runtime.update();
+  assert.equal(runtime.remainingMs, 1);
+
+  listener({ type: 'complete' });
+  assert.equal(runtime.remainingMs, null, 'level completion cancels the Adventure timer');
+
+  listener({ type: 'object-interaction', objectType: ObjectId.LOCK, action: 'open' });
+  now += 60_000;
+  runtime.update();
+  assert.equal(killed, 'Bonus Round 的挑战时间耗尽');
+  assert.equal(runtime.remainingMs, null);
+  runtime.destroy();
 });
