@@ -2,7 +2,7 @@
 
 ## 定位
 
-Bobby Carrot 5 Web 是第五代的现代浏览器重制与原版研究工程。
+Bobby Carrot 5 Remake 是第五代的现代浏览器重制与原版研究工程。
 
 同一套 semantic LevelMap / Engine 服务两种官方地图体验：
 
@@ -83,6 +83,7 @@ Base / UP、DAT package、record index 只属于 archive provenance。内部 can
 2. **关卡筛选难度**：历史 A～F 数据及其余正式关的估算值。
 
 历史 A～F 不是章节星级：
+
 - 288 个正式关能直接获得历史单关难度标签；
 - 192 个正式关没有历史 A～F 标签；
 - 对这 192 关，构建工具用已标注关卡特征做估算；
