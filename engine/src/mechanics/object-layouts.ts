@@ -1,5 +1,5 @@
-import type { LevelObject, ObjectType } from '../data/types.js';
-import { ObjectId } from './ids.js';
+import type { LevelObject, ObjectType } from "../data/types.js";
+import { ObjectId } from "./ids.js";
 
 export interface ObjectLayoutCell {
   dx: number;
@@ -17,39 +17,53 @@ export interface ObjectLayout {
 const SINGLE_CURSOR = { dx: 0, dy: 0 } as const;
 
 const MULTI_CELL_LAYOUTS = new Map<ObjectType, ObjectLayout>([
-  [ObjectId.DRAGON_HEAD_BASE, {
-    cells: [
-      { dx: 0, dy: 0, type: ObjectId.DRAGON_HEAD_BASE },
-      { dx: 1, dy: 0, type: ObjectId.DRAGON_BODY },
-      { dx: 2, dy: 0, type: ObjectId.DRAGON_TAIL }
-    ],
-    cursor: { dx: 1, dy: 0 }
-  }],
-  [ObjectId.SANDMAN, {
-    cells: [
-      { dx: 0, dy: 0, type: ObjectId.SANDMAN },
-      { dx: 0, dy: 1, type: ObjectId.SANDMAN_BODY }
-    ],
-    cursor: SINGLE_CURSOR
-  }],
-  [ObjectId.DREAM_MACHINE, {
-    cells: [
-      { dx: 0, dy: 0, type: ObjectId.DREAM_MACHINE },
-      { dx: 0, dy: 1, type: ObjectId.DREAM_MACHINE_BODY }
-    ],
-    cursor: SINGLE_CURSOR
-  }],
-  [ObjectId.BEAVER_BASE, {
-    cells: [
-      { dx: 0, dy: 0, type: ObjectId.BEAVER_BASE },
-      { dx: 0, dy: 1, type: ObjectId.BEAVER_BODY }
-    ],
-    cursor: SINGLE_CURSOR
-  }]
+  [
+    ObjectId.DRAGON_HEAD_BASE,
+    {
+      cells: [
+        { dx: 0, dy: 0, type: ObjectId.DRAGON_HEAD_BASE },
+        { dx: 1, dy: 0, type: ObjectId.DRAGON_BODY },
+        { dx: 2, dy: 0, type: ObjectId.DRAGON_TAIL },
+      ],
+      cursor: { dx: 1, dy: 0 },
+    },
+  ],
+  [
+    ObjectId.SANDMAN,
+    {
+      cells: [
+        { dx: 0, dy: 0, type: ObjectId.SANDMAN },
+        { dx: 0, dy: 1, type: ObjectId.SANDMAN_BODY },
+      ],
+      cursor: SINGLE_CURSOR,
+    },
+  ],
+  [
+    ObjectId.DREAM_MACHINE,
+    {
+      cells: [
+        { dx: 0, dy: 0, type: ObjectId.DREAM_MACHINE },
+        { dx: 0, dy: 1, type: ObjectId.DREAM_MACHINE_BODY },
+      ],
+      cursor: SINGLE_CURSOR,
+    },
+  ],
+  [
+    ObjectId.BEAVER_BASE,
+    {
+      cells: [
+        { dx: 0, dy: 0, type: ObjectId.BEAVER_BASE },
+        { dx: 0, dy: 1, type: ObjectId.BEAVER_BODY },
+      ],
+      cursor: SINGLE_CURSOR,
+    },
+  ],
 ]);
 
 const INTERNAL_PARTS = new Set<ObjectType>(
-  [...MULTI_CELL_LAYOUTS.values()].flatMap((layout) => layout.cells.slice(1).map((cell) => cell.type))
+  [...MULTI_CELL_LAYOUTS.values()].flatMap((layout) =>
+    layout.cells.slice(1).map((cell) => cell.type),
+  ),
 );
 
 /**
@@ -57,18 +71,40 @@ const INTERNAL_PARTS = new Set<ObjectType>(
  * A positive step corresponds to E / wheel-down; a negative step corresponds to Q / wheel-up.
  */
 const VARIANT_CYCLES: readonly (readonly ObjectType[])[] = [
-  [ObjectId.WINDMILL_UP, ObjectId.WINDMILL_RIGHT, ObjectId.WINDMILL_DOWN, ObjectId.WINDMILL_LEFT],
-  [ObjectId.FENCE_1, ObjectId.FENCE_2, ObjectId.FENCE_3, ObjectId.FENCE_4, ObjectId.FENCE_5, ObjectId.FENCE_6],
+  [
+    ObjectId.WINDMILL_UP,
+    ObjectId.WINDMILL_RIGHT,
+    ObjectId.WINDMILL_DOWN,
+    ObjectId.WINDMILL_LEFT,
+  ],
+  [
+    ObjectId.FENCE_1,
+    ObjectId.FENCE_2,
+    ObjectId.FENCE_3,
+    ObjectId.FENCE_4,
+    ObjectId.FENCE_5,
+    ObjectId.FENCE_6,
+  ],
   [ObjectId.CLOUD_RED, ObjectId.CLOUD_PURPLE, ObjectId.CLOUD_GREEN],
-  [ObjectId.CLOUD_GRID_RED, ObjectId.CLOUD_GRID_PURPLE, ObjectId.CLOUD_GRID_GREEN]
+  [
+    ObjectId.CLOUD_GRID_RED,
+    ObjectId.CLOUD_GRID_PURPLE,
+    ObjectId.CLOUD_GRID_GREEN,
+  ],
 ];
 
 const VARIANT_LOOKUP = new Map<ObjectType, readonly ObjectType[]>();
-for (const cycle of VARIANT_CYCLES) for (const type of cycle) VARIANT_LOOKUP.set(type, cycle);
+for (const cycle of VARIANT_CYCLES)
+  for (const type of cycle) VARIANT_LOOKUP.set(type, cycle);
 
 /** Semantic layout for one persisted Object anchor. 1×1 objects return a synthetic single-cell layout. */
 export function objectLayoutFor(type: ObjectType): ObjectLayout {
-  return MULTI_CELL_LAYOUTS.get(type) ?? { cells: [{ dx: 0, dy: 0, type }], cursor: SINGLE_CURSOR };
+  return (
+    MULTI_CELL_LAYOUTS.get(type) ?? {
+      cells: [{ dx: 0, dy: 0, type }],
+      cursor: SINGLE_CURSOR,
+    }
+  );
 }
 
 export function isMultiCellObject(type: ObjectType): boolean {
@@ -79,11 +115,16 @@ export function isObjectLayoutPart(type: ObjectType): boolean {
   return INTERNAL_PARTS.has(type);
 }
 
-export function objectVariantCycle(type: ObjectType): readonly ObjectType[] | undefined {
+export function objectVariantCycle(
+  type: ObjectType,
+): readonly ObjectType[] | undefined {
   return VARIANT_LOOKUP.get(type);
 }
 
-export function transformObjectVariant(type: ObjectType, step: number): ObjectType | undefined {
+export function transformObjectVariant(
+  type: ObjectType,
+  step: number,
+): ObjectType | undefined {
   const cycle = objectVariantCycle(type);
   if (!cycle || cycle.length < 2 || step === 0) return undefined;
   const index = cycle.indexOf(type);
@@ -93,7 +134,11 @@ export function transformObjectVariant(type: ObjectType, step: number): ObjectTy
 }
 
 /** Expand persisted anchor objects into the occupancy objects consumed by the current Engine runtime. */
-export function expandObjectLayouts(objects: readonly LevelObject[], width: number, height: number): LevelObject[] {
+export function expandObjectLayouts(
+  objects: readonly LevelObject[],
+  width: number,
+  height: number,
+): LevelObject[] {
   const expanded: LevelObject[] = [];
   const occupied = new Set<string>();
   for (const anchor of objects) {
@@ -114,7 +159,9 @@ export function expandObjectLayouts(objects: readonly LevelObject[], width: numb
  * Collapse a runtime occupancy list back to authoring anchors. Internal layout parts are omitted;
  * anchor objects remain exactly where the original DAT stores them.
  */
-export function collapseObjectLayouts(objects: readonly LevelObject[]): LevelObject[] {
+export function collapseObjectLayouts(
+  objects: readonly LevelObject[],
+): LevelObject[] {
   return objects
     .filter((object) => !isObjectLayoutPart(object.type))
     .map(({ type, x, y }) => ({ type, x, y }));

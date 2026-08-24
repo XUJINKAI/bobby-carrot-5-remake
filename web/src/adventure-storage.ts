@@ -1,12 +1,21 @@
-import { createAdventureSave, normalizeAdventureSave, parseAdventureSave, serializeAdventureSave, type AdventureSave } from '@bobby/adventure';
+import {
+  createAdventureSave,
+  normalizeAdventureSave,
+  parseAdventureSave,
+  serializeAdventureSave,
+  type AdventureSave,
+} from "@bobby/adventure";
 
-const SAVE_KEY = 'bobby.adventure.save';
+const SAVE_KEY = "bobby.adventure.save";
 
 export function loadAdventureSave(): AdventureSave {
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) return createAdventureSave();
-  try { return parseAdventureSave(raw); }
-  catch { return createAdventureSave(); }
+  try {
+    return parseAdventureSave(raw);
+  } catch {
+    return createAdventureSave();
+  }
 }
 
 export function saveAdventureSave(save: AdventureSave): AdventureSave {
@@ -22,9 +31,11 @@ export function resetAdventureSave(): AdventureSave {
 }
 
 export function exportAdventureSave(): void {
-  const blob = new Blob([serializeAdventureSave(loadAdventureSave())], { type:'application/json' });
+  const blob = new Blob([serializeAdventureSave(loadAdventureSave())], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
+  const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = `bc5r-save-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();

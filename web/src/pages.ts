@@ -1,9 +1,21 @@
-import type { TinySynthAudioBackend } from './TinySynthAudio.js';
-import { bindNavigation, escapeHtml, shell, type Navigate } from './common.js';
-import { completedExploreLevels, lastExploreLevelId } from './explore-progress.js';
-import { hasActiveLevelFilters, mountLevelFilters, randomFilteredLevel } from './level-filters.js';
-import { exportAdventureSave, importAdventureSave, loadAdventureSave, resetAdventureSave } from './adventure-storage.js';
-import type { CatalogChapter, CatalogLevel, LevelCatalog } from './catalog.js';
+import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
+import { bindNavigation, escapeHtml, shell, type Navigate } from "./common.js";
+import {
+  completedExploreLevels,
+  lastExploreLevelId,
+} from "./explore-progress.js";
+import {
+  hasActiveLevelFilters,
+  mountLevelFilters,
+  randomFilteredLevel,
+} from "./level-filters.js";
+import {
+  exportAdventureSave,
+  importAdventureSave,
+  loadAdventureSave,
+  resetAdventureSave,
+} from "./adventure-storage.js";
+import type { CatalogChapter, CatalogLevel, LevelCatalog } from "./catalog.js";
 
 export interface PageContext {
   app: HTMLDivElement;
@@ -18,11 +30,17 @@ export function lastLevel(catalog: LevelCatalog): CatalogLevel {
     const found = catalog.levels.find((level) => level.publicId === stored);
     if (found) return found;
   }
-  return catalog.levels.find((level) => level.publicId === '1-1') ?? catalog.levels[0]!;
+  return (
+    catalog.levels.find((level) => level.publicId === "1-1") ??
+    catalog.levels[0]!
+  );
 }
 
 function randomLevel(catalog: LevelCatalog): CatalogLevel {
-  return catalog.levels[Math.floor(Math.random() * catalog.levels.length)] ?? catalog.levels[0]!;
+  return (
+    catalog.levels[Math.floor(Math.random() * catalog.levels.length)] ??
+    catalog.levels[0]!
+  );
 }
 
 export function displayLevelId(level: CatalogLevel): string {
@@ -30,17 +48,19 @@ export function displayLevelId(level: CatalogLevel): string {
 }
 
 export function displayLevelShort(level: CatalogLevel): string {
-  return level.bonusOrdinal ? `BONUS ${level.bonusOrdinal}` : String(level.sourceLevelIndex);
+  return level.bonusOrdinal
+    ? `BONUS ${level.bonusOrdinal}`
+    : String(level.sourceLevelIndex);
 }
 
 export function chapterStars(stars: number): string {
-  return `${'★'.repeat(stars)}${'☆'.repeat(Math.max(0, 3 - stars))}`;
+  return `${"★".repeat(stars)}${"☆".repeat(Math.max(0, 3 - stars))}`;
 }
 
 export function renderHome(context: PageContext): void {
   const { app, catalog, audio, navigate } = context;
   const last = lastLevel(catalog);
-  audio.playMusic('title');
+  audio.playMusic("title");
 
   app.innerHTML = shell(`
     <section class="nostalgia-home">
@@ -63,16 +83,18 @@ export function renderHome(context: PageContext): void {
   `);
 
   bindNavigation(app, navigate);
-  app.querySelector<HTMLButtonElement>('#home-random')?.addEventListener('click', () => {
-    navigate(`/play/${randomLevel(catalog).publicId}`);
-  });
+  app
+    .querySelector<HTMLButtonElement>("#home-random")
+    ?.addEventListener("click", () => {
+      navigate(`/play/${randomLevel(catalog).publicId}`);
+    });
 }
 
 export async function renderLevels(context: PageContext): Promise<void> {
   const { app, catalog, audio, navigate } = context;
   const last = lastLevel(catalog);
   const completed = completedExploreLevels();
-  audio.playMusic('title');
+  audio.playMusic("title");
 
   app.innerHTML = shell(`
     <section class="level-browser-head">
@@ -91,7 +113,7 @@ export async function renderLevels(context: PageContext): Promise<void> {
       </div>
     </section>
     <div class="chapter-list">
-      ${catalog.chapters.map((chapter) => renderExploreChapter(catalog, chapter, completed)).join('')}
+      ${catalog.chapters.map((chapter) => renderExploreChapter(catalog, chapter, completed)).join("")}
     </div>
     <div class="difficulty-legend muted">
       <span><i class="difficulty-dot easy"></i>简单</span>
@@ -103,10 +125,14 @@ export async function renderLevels(context: PageContext): Promise<void> {
 
   bindNavigation(app, navigate);
   await mountLevelFilters(catalog);
-  app.querySelector<HTMLButtonElement>('#random-level')?.addEventListener('click', () => {
-    const chosen = hasActiveLevelFilters() ? randomFilteredLevel() : randomLevel(catalog);
-    if (chosen) navigate(`/play/${chosen.publicId}`);
-  });
+  app
+    .querySelector<HTMLButtonElement>("#random-level")
+    ?.addEventListener("click", () => {
+      const chosen = hasActiveLevelFilters()
+        ? randomFilteredLevel()
+        : randomLevel(catalog);
+      if (chosen) navigate(`/play/${chosen.publicId}`);
+    });
 }
 
 function renderExploreChapter(
@@ -115,7 +141,9 @@ function renderExploreChapter(
   completed: Set<string>,
 ): string {
   const levels = chapter.levelPublicIds
-    .map((publicId) => catalog.levels.find((level) => level.publicId === publicId))
+    .map((publicId) =>
+      catalog.levels.find((level) => level.publicId === publicId),
+    )
     .filter((level): level is CatalogLevel => Boolean(level));
 
   const levelLinks = levels
@@ -123,7 +151,7 @@ function renderExploreChapter(
       const done = completed.has(level.canonicalId);
       return `
         <a
-          class="chapter-level ${done ? 'completed' : ''} ${level.contentKind === 'bonus' ? 'bonus-level' : ''}"
+          class="chapter-level ${done ? "completed" : ""} ${level.contentKind === "bonus" ? "bonus-level" : ""}"
           href="play/${level.publicId}"
           data-nav
           title="${escapeHtml(level.publicId)} · ${escapeHtml(level.difficulty.label)}"
@@ -132,11 +160,11 @@ function renderExploreChapter(
           <span class="difficulty-badge ${level.difficulty.level} ${level.difficulty.source}">
             ${escapeHtml(level.difficulty.label)}
           </span>
-          ${done ? '<span class="done-mark" title="自由浏览中已通关">✓</span>' : ''}
+          ${done ? '<span class="done-mark" title="自由浏览中已通关">✓</span>' : ""}
         </a>
       `;
     })
-    .join('');
+    .join("");
 
   return `
     <section class="chapter-card">
@@ -160,7 +188,7 @@ function renderExploreChapter(
 export function renderSettings(context: PageContext): void {
   const { app, audio, navigate } = context;
   const save = loadAdventureSave();
-  audio.playMusic('title');
+  audio.playMusic("title");
 
   app.innerHTML = shell(`
     <div class="section-title">
@@ -170,7 +198,7 @@ export function renderSettings(context: PageContext): void {
     <section class="profile-strip">
       <div><strong>${save.economy.bonusCoins}</strong><span>Bonus Coin</span></div>
       <div><strong>${save.economy.goldenCarrots}</strong><span>Golden Carrot</span></div>
-      <div><strong>${save.upgrades.goldenKey ? '已获得' : '未获得'}</strong><span>Golden Key</span></div>
+      <div><strong>${save.upgrades.goldenKey ? "已获得" : "未获得"}</strong><span>Golden Key</span></div>
       <div><strong>${save.campaign.completedLevels.length}</strong><span>Adventure 完成</span></div>
     </section>
     <section class="settings-card">
@@ -192,14 +220,14 @@ export function renderSettings(context: PageContext): void {
           <div class="muted">WebAudio TinySynth 1.1.3 · 原始 .mid</div>
         </div>
         <label class="switch-label">
-          <input id="music-enabled" type="checkbox" ${audio.isEnabled() ? 'checked' : ''}> 启用
+          <input id="music-enabled" type="checkbox" ${audio.isEnabled() ? "checked" : ""}> 启用
         </label>
       </div>
       <div class="setting">
         <div><strong>MIDI 音色</strong></div>
         <select id="midi-tone">
-          <option value="fm" ${audio.getTone() === 'fm' ? 'selected' : ''}>TinySynth FM</option>
-          <option value="chip" ${audio.getTone() === 'chip' ? 'selected' : ''}>TinySynth Chip</option>
+          <option value="fm" ${audio.getTone() === "fm" ? "selected" : ""}>TinySynth FM</option>
+          <option value="chip" ${audio.getTone() === "chip" ? "selected" : ""}>TinySynth Chip</option>
         </select>
       </div>
       <div class="setting">
@@ -219,45 +247,73 @@ export function renderSettings(context: PageContext): void {
 
   bindNavigation(app, navigate);
 
-  app.querySelector<HTMLButtonElement>('#save-export')?.addEventListener('click', exportAdventureSave);
+  app
+    .querySelector<HTMLButtonElement>("#save-export")
+    ?.addEventListener("click", exportAdventureSave);
 
-  const file = app.querySelector<HTMLInputElement>('#save-file');
-  app.querySelector<HTMLButtonElement>('#save-import')?.addEventListener('click', () => file?.click());
-  file?.addEventListener('change', () => {
+  const file = app.querySelector<HTMLInputElement>("#save-file");
+  app
+    .querySelector<HTMLButtonElement>("#save-import")
+    ?.addEventListener("click", () => file?.click());
+  file?.addEventListener("change", () => {
     const selected = file.files?.[0];
     if (!selected) return;
 
     void importAdventureSave(selected)
       .then(() => {
-        window.alert('Adventure 存档已导入。');
-        navigate('/settings');
+        window.alert("Adventure 存档已导入。");
+        navigate("/settings");
       })
-      .catch((error) => window.alert(error instanceof Error ? error.message : String(error)))
+      .catch((error) =>
+        window.alert(error instanceof Error ? error.message : String(error)),
+      )
       .finally(() => {
-        file.value = '';
+        file.value = "";
       });
   });
 
-  app.querySelector<HTMLButtonElement>('#save-reset')?.addEventListener('click', () => {
-    if (window.confirm('清空 Adventure 存档？自由选关记录不会受影响。')) {
-      resetAdventureSave();
-      navigate('/settings');
-    }
-  });
+  app
+    .querySelector<HTMLButtonElement>("#save-reset")
+    ?.addEventListener("click", () => {
+      if (window.confirm("清空 Adventure 存档？自由选关记录不会受影响。")) {
+        resetAdventureSave();
+        navigate("/settings");
+      }
+    });
 
-  app.querySelector<HTMLInputElement>('#music-enabled')?.addEventListener('change', (event) => {
-    audio.setEnabled((event.currentTarget as HTMLInputElement).checked);
-  });
-  app.querySelector<HTMLInputElement>('#music-volume')?.addEventListener('input', (event) => {
-    audio.setMusicVolume(Number((event.currentTarget as HTMLInputElement).value) / 100);
-  });
-  app.querySelector<HTMLInputElement>('#sound-volume')?.addEventListener('input', (event) => {
-    audio.setSoundVolume(Number((event.currentTarget as HTMLInputElement).value) / 100);
-  });
-  app.querySelector<HTMLSelectElement>('#midi-tone')?.addEventListener('change', (event) => {
-    audio.setTone((event.currentTarget as HTMLSelectElement).value === 'chip' ? 'chip' : 'fm');
-  });
-  app.querySelector<HTMLInputElement>('#midi-reverb')?.addEventListener('input', (event) => {
-    audio.setReverbLevel(Number((event.currentTarget as HTMLInputElement).value) / 100);
-  });
+  app
+    .querySelector<HTMLInputElement>("#music-enabled")
+    ?.addEventListener("change", (event) => {
+      audio.setEnabled((event.currentTarget as HTMLInputElement).checked);
+    });
+  app
+    .querySelector<HTMLInputElement>("#music-volume")
+    ?.addEventListener("input", (event) => {
+      audio.setMusicVolume(
+        Number((event.currentTarget as HTMLInputElement).value) / 100,
+      );
+    });
+  app
+    .querySelector<HTMLInputElement>("#sound-volume")
+    ?.addEventListener("input", (event) => {
+      audio.setSoundVolume(
+        Number((event.currentTarget as HTMLInputElement).value) / 100,
+      );
+    });
+  app
+    .querySelector<HTMLSelectElement>("#midi-tone")
+    ?.addEventListener("change", (event) => {
+      audio.setTone(
+        (event.currentTarget as HTMLSelectElement).value === "chip"
+          ? "chip"
+          : "fm",
+      );
+    });
+  app
+    .querySelector<HTMLInputElement>("#midi-reverb")
+    ?.addEventListener("input", (event) => {
+      audio.setReverbLevel(
+        Number((event.currentTarget as HTMLInputElement).value) / 100,
+      );
+    });
 }

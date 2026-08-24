@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import zlib from 'node:zlib';
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
 
 const SIG_EOCD = 0x06054b50;
 const SIG_CENTRAL = 0x02014b50;
@@ -11,11 +11,11 @@ function findEocd(buffer) {
   for (let i = buffer.length - 22; i >= min; i -= 1) {
     if (buffer.readUInt32LE(i) === SIG_EOCD) return i;
   }
-  throw new Error('ZIP EOCD record not found');
+  throw new Error("ZIP EOCD record not found");
 }
 
 function safeOutputPath(root, name) {
-  const normalized = name.replaceAll('\\', '/').replace(/^\/+/, '');
+  const normalized = name.replaceAll("\\", "/").replace(/^\/+/, "");
   const target = path.resolve(root, normalized);
   const resolvedRoot = path.resolve(root) + path.sep;
   if (target !== path.resolve(root) && !target.startsWith(resolvedRoot)) {
@@ -45,12 +45,14 @@ export function extractZip(zipPath, outputDir) {
     const extraLength = buffer.readUInt16LE(cursor + 30);
     const commentLength = buffer.readUInt16LE(cursor + 32);
     const localOffset = buffer.readUInt32LE(cursor + 42);
-    const name = buffer.subarray(cursor + 46, cursor + 46 + fileNameLength).toString('utf8');
+    const name = buffer
+      .subarray(cursor + 46, cursor + 46 + fileNameLength)
+      .toString("utf8");
 
     cursor += 46 + fileNameLength + extraLength + commentLength;
     const target = safeOutputPath(outputDir, name);
 
-    if (name.endsWith('/')) {
+    if (name.endsWith("/")) {
       fs.mkdirSync(target, { recursive: true });
       continue;
     }
@@ -66,10 +68,15 @@ export function extractZip(zipPath, outputDir) {
     let data;
     if (method === 0) data = compressed;
     else if (method === 8) data = zlib.inflateRawSync(compressed);
-    else throw new Error(`Unsupported ZIP compression method ${method} for ${name}`);
+    else
+      throw new Error(
+        `Unsupported ZIP compression method ${method} for ${name}`,
+      );
 
     if (data.length !== uncompressedSize) {
-      throw new Error(`Size mismatch for ${name}: got ${data.length}, expected ${uncompressedSize}`);
+      throw new Error(
+        `Size mismatch for ${name}: got ${data.length}, expected ${uncompressedSize}`,
+      );
     }
 
     fs.mkdirSync(path.dirname(target), { recursive: true });

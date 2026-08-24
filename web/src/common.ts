@@ -9,15 +9,15 @@ export const NOOP_CONTROLLER: PageController = {
 };
 
 export function siteUrl(path: string): string {
-  return new URL(path.replace(/^\/+/, ''), document.baseURI).href;
+  return new URL(path.replace(/^\/+/, ""), document.baseURI).href;
 }
 
 export function escapeHtml(value: string): string {
   const entities: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
   };
 
   return value.replace(/[&<>"]/g, (char) => entities[char] ?? char);
@@ -39,10 +39,10 @@ export function shell(content: string): string {
 }
 
 export function bindNavigation(root: ParentNode, navigate: Navigate): void {
-  root.querySelectorAll<HTMLAnchorElement>('a[data-nav]').forEach((anchor) => {
-    anchor.addEventListener('click', (event) => {
+  root.querySelectorAll<HTMLAnchorElement>("a[data-nav]").forEach((anchor) => {
+    anchor.addEventListener("click", (event) => {
       event.preventDefault();
-      navigate(anchor.getAttribute('href') ?? '/');
+      navigate(anchor.getAttribute("href") ?? "/");
     });
   });
 }
@@ -52,23 +52,23 @@ export function formatElapsed(milliseconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 export function gameAssets() {
   return {
-    atlasUrl: siteUrl('assets/art/hd/ts.png'),
-    animationAtlasUrl: siteUrl('assets/art/hd/ta.png'),
+    atlasUrl: siteUrl("assets/art/hd/ts.png"),
+    animationAtlasUrl: siteUrl("assets/art/hd/ta.png"),
     bobbyUrls: {
-      left: siteUrl('assets/art/hd/b0.png'),
-      right: siteUrl('assets/art/hd/b1.png'),
-      up: siteUrl('assets/art/hd/b2.png'),
-      down: siteUrl('assets/art/hd/b3.png'),
+      left: siteUrl("assets/art/hd/b0.png"),
+      right: siteUrl("assets/art/hd/b1.png"),
+      up: siteUrl("assets/art/hd/b2.png"),
+      down: siteUrl("assets/art/hd/b3.png"),
     },
-    mowerBobbyUrl: siteUrl('assets/art/hd/b7.png'),
-    idleBobbyUrl: siteUrl('assets/art/hd/b4.png'),
-    deathBobbyUrl: siteUrl('assets/art/hd/b5.png'),
-    kiteUrl: siteUrl('assets/art/hd/b9.png'),
+    mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
+    idleBobbyUrl: siteUrl("assets/art/hd/b4.png"),
+    deathBobbyUrl: siteUrl("assets/art/hd/b5.png"),
+    kiteUrl: siteUrl("assets/art/hd/b9.png"),
     sourceTileSize: 48,
   };
 }

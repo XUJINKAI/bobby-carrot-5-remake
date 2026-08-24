@@ -1,4 +1,7 @@
-export interface CameraPoint { x: number; y: number; }
+export interface CameraPoint {
+  x: number;
+  y: number;
+}
 
 interface PanReturn {
   fromX: number;
@@ -24,8 +27,14 @@ export class Camera {
     this.sourceTileSize = sourceTileSize;
   }
 
-  get tileScreenSize(): number { return this.sourceTileSize * this.zoom; }
-  get hasPanOffset(): boolean { return Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001; }
+  get tileScreenSize(): number {
+    return this.sourceTileSize * this.zoom;
+  }
+  get hasPanOffset(): boolean {
+    return (
+      Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001
+    );
+  }
 
   setViewport(width: number, height: number): void {
     this.viewportWidth = Math.max(1, width);
@@ -69,7 +78,7 @@ export class Camera {
       fromX: this.panOffsetX,
       fromY: this.panOffsetY,
       startedAt: performance.now(),
-      durationMs: Math.max(80, durationMs)
+      durationMs: Math.max(80, durationMs),
     };
   }
 
@@ -88,7 +97,7 @@ export class Camera {
     const size = this.tileScreenSize;
     return {
       x: (x - this.centerX) * size + this.viewportWidth / 2,
-      y: (y - this.centerY) * size + this.viewportHeight / 2
+      y: (y - this.centerY) * size + this.viewportHeight / 2,
     };
   }
 
@@ -96,14 +105,17 @@ export class Camera {
     const size = this.tileScreenSize;
     return {
       x: Math.floor((screenX - this.viewportWidth / 2) / size + this.centerX),
-      y: Math.floor((screenY - this.viewportHeight / 2) / size + this.centerY)
+      y: Math.floor((screenY - this.viewportHeight / 2) / size + this.centerY),
     };
   }
 
   private updatePanReturn(now: number): void {
     const returning = this.panReturn;
     if (!returning) return;
-    const raw = Math.min(1, Math.max(0, (now - returning.startedAt) / returning.durationMs));
+    const raw = Math.min(
+      1,
+      Math.max(0, (now - returning.startedAt) / returning.durationMs),
+    );
     const eased = 1 - (1 - raw) ** 3;
     const remaining = 1 - eased;
     this.panOffsetX = returning.fromX * remaining;
@@ -115,8 +127,16 @@ export class Camera {
     const visibleWidth = this.viewportWidth / this.tileScreenSize;
     const visibleHeight = this.viewportHeight / this.tileScreenSize;
     if (worldWidth <= visibleWidth) this.centerX = worldWidth / 2;
-    else this.centerX = Math.min(worldWidth - visibleWidth / 2, Math.max(visibleWidth / 2, this.centerX));
+    else
+      this.centerX = Math.min(
+        worldWidth - visibleWidth / 2,
+        Math.max(visibleWidth / 2, this.centerX),
+      );
     if (worldHeight <= visibleHeight) this.centerY = worldHeight / 2;
-    else this.centerY = Math.min(worldHeight - visibleHeight / 2, Math.max(visibleHeight / 2, this.centerY));
+    else
+      this.centerY = Math.min(
+        worldHeight - visibleHeight / 2,
+        Math.max(visibleHeight / 2, this.centerY),
+      );
   }
 }
