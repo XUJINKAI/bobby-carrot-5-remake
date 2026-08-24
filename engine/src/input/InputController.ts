@@ -9,6 +9,10 @@ interface PointerState {
   moved: boolean;
 }
 
+export interface InputControllerOptions {
+  allowUndo?: boolean;
+}
+
 const KEY_DIRECTION: Record<string, Direction> = {
   arrowup: 'up', w: 'up',
   arrowdown: 'down', s: 'down',
@@ -20,6 +24,7 @@ const KEY_DIRECTION: Record<string, Direction> = {
 export class InputController {
   private readonly game: Game;
   private readonly canvas: HTMLCanvasElement;
+  private readonly allowUndo: boolean;
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
   private pinchStartDistance = 0;
@@ -27,9 +32,10 @@ export class InputController {
   private suppressNextClick = false;
   private enabled = true;
 
-  constructor(game: Game) {
+  constructor(game: Game, options: InputControllerOptions = {}) {
     this.game = game;
     this.canvas = game.renderer.canvas;
+    this.allowUndo = options.allowUndo ?? true;
     window.addEventListener('keydown', this.onKeyDown, { passive: false });
     window.addEventListener('keyup', this.onKeyUp, { passive: false });
     window.addEventListener('blur', this.onBlur);
@@ -77,7 +83,7 @@ export class InputController {
     }
     if (event.repeat) return;
     if (key === 'r') this.game.restart();
-    else if (key === 'z' || key === 'u') this.game.undo();
+    else if (this.allowUndo && (key === 'z' || key === 'u')) this.game.undo();
     else if (key === '=' || key === '+') this.game.zoomBy(1.1);
     else if (key === '-' || key === '_') this.game.zoomBy(1 / 1.1);
     else if (event.code === 'Backquote' || key === '`' || key === '~') this.game.toggleDebug();
