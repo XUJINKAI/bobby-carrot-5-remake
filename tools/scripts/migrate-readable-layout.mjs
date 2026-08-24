@@ -10,15 +10,23 @@ function splitMechanicDefinitions() {
   const file = path.join(root, "engine/src/mechanics/definitions.ts");
   let source = fs.readFileSync(file, "utf8");
 
-  if (source.includes('./definition-types.js')) return;
+  if (source.includes("./definition-types.js")) return;
 
-  const typeBlock = take(source, "export type TileTrait =", "const terrainDefinitions");
+  const typeBlock = take(
+    source,
+    "export type TileTrait =",
+    "const terrainDefinitions",
+  );
   const semanticsBlock = take(
     source,
     "const HIDDEN_AUTHORING_OBJECTS",
     "function terrain(",
   );
-  const transformsBlock = take(source, "function toggleSpeed", "function defineCarousel");
+  const transformsBlock = take(
+    source,
+    "function toggleSpeed",
+    "function defineCarousel",
+  );
   const cloudInfoBlock = take(
     source,
     "const cloudInfo: Array<[ObjectType, ObjectType]> =",
@@ -47,12 +55,21 @@ function splitMechanicDefinitions() {
     'import type { TileTrait } from "./definition-types.js";',
     "",
     semanticsBlock
-      .replace("const HIDDEN_AUTHORING_OBJECTS", "export const HIDDEN_AUTHORING_OBJECTS")
+      .replace(
+        "const HIDDEN_AUTHORING_OBJECTS",
+        "export const HIDDEN_AUTHORING_OBJECTS",
+      )
       .replace("const DYNAMIC_IDS", "export const DYNAMIC_IDS")
       .replace("function pretty", "export function pretty")
       .replace("function isWaterSemantic", "export function isWaterSemantic")
-      .replace("function isWalkableSemantic", "export function isWalkableSemantic")
-      .replace("function environmentTraits", "export function environmentTraits")
+      .replace(
+        "function isWalkableSemantic",
+        "export function isWalkableSemantic",
+      )
+      .replace(
+        "function environmentTraits",
+        "export function environmentTraits",
+      )
       .trim(),
     "",
   ].join("\n");
@@ -99,35 +116,35 @@ function splitMechanicDefinitions() {
   );
 
   const sharedImports = [
-    'import {',
-    '  DYNAMIC_IDS,',
-    '  HIDDEN_AUTHORING_OBJECTS,',
-    '  environmentTraits,',
-    '  isWalkableSemantic,',
-    '  isWaterSemantic,',
-    '  pretty,',
+    "import {",
+    "  DYNAMIC_IDS,",
+    "  HIDDEN_AUTHORING_OBJECTS,",
+    "  environmentTraits,",
+    "  isWalkableSemantic,",
+    "  isWaterSemantic,",
+    "  pretty,",
     '} from "./definition-semantics.js";',
-    'import {',
-    '  CAROUSEL_NEXT,',
-    '  rotateCarousel,',
-    '  toggleColor,',
-    '  toggleSpeed,',
-    '  toggleTide,',
+    "import {",
+    "  CAROUSEL_NEXT,",
+    "  rotateCarousel,",
+    "  toggleColor,",
+    "  toggleSpeed,",
+    "  toggleTide,",
     '} from "./terrain-transforms.js";',
     'import { CLOUD_INFO } from "./mechanic-links.js";',
-    'import type {',
-    '  TileAuthoring,',
-    '  TileDefinition,',
-    '  TileDefinitionInspection,',
-    '  TilePresentation,',
-    '  TileTrait,',
+    "import type {",
+    "  TileAuthoring,",
+    "  TileDefinition,",
+    "  TileDefinitionInspection,",
+    "  TilePresentation,",
+    "  TileTrait,",
     '} from "./definition-types.js";',
-    'export type {',
-    '  TileAuthoring,',
-    '  TileDefinition,',
-    '  TileDefinitionInspection,',
-    '  TilePresentation,',
-    '  TileTrait,',
+    "export type {",
+    "  TileAuthoring,",
+    "  TileDefinition,",
+    "  TileDefinitionInspection,",
+    "  TilePresentation,",
+    "  TileTrait,",
     '} from "./definition-types.js";',
     "",
   ].join("\n");
@@ -140,12 +157,12 @@ function splitMechanicDefinitions() {
   source = source.replace(
     linksBlock,
     [
-      'export {',
-      '  cloudGridForObject,',
-      '  tideDirectionForTerrain,',
-      '  windmillInfoForObject,',
-      '  windSwitchIndexForTerrain,',
-      '  windSwitchPeerForTerrain,',
+      "export {",
+      "  cloudGridForObject,",
+      "  tideDirectionForTerrain,",
+      "  windmillInfoForObject,",
+      "  windSwitchIndexForTerrain,",
+      "  windSwitchPeerForTerrain,",
       '} from "./mechanic-links.js";\n',
     ].join("\n"),
   );
@@ -157,9 +174,13 @@ function splitWorldTypes() {
   const file = path.join(root, "engine/src/world/World.ts");
   let source = fs.readFileSync(file, "utf8");
 
-  if (source.includes('./WorldTypes.js')) return;
+  if (source.includes("./WorldTypes.js")) return;
 
-  const block = take(source, "export interface WorldEvent", "const GROUND_AFTER_MOW");
+  const block = take(
+    source,
+    "export interface WorldEvent",
+    "const GROUND_AFTER_MOW",
+  );
   const typesFile = [
     'import type { LevelObject, ObjectType, TerrainType } from "@bobby/model";',
     'import type { Direction } from "../mechanics/ids.js";',
@@ -170,7 +191,10 @@ function splitWorldTypes() {
     block.trim(),
     "",
   ].join("\n");
-  fs.writeFileSync(path.join(root, "engine/src/world/WorldTypes.ts"), typesFile);
+  fs.writeFileSync(
+    path.join(root, "engine/src/world/WorldTypes.ts"),
+    typesFile,
+  );
 
   source = source.replace(
     block,

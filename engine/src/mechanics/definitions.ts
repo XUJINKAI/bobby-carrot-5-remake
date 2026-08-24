@@ -14,127 +14,38 @@ import {
   type TileBehavior,
 } from "./behaviors.js";
 
-export type TileTrait =
-  | "walkable"
-  | "water"
-  | "carousel"
-  | "mirror"
-  | "directional-passage"
-  | "rotatable"
-  | "terrain-passage-override"
-  | "object-passage-override"
-  | "terrain-overlay"
-  | "blocking"
-  | "collectible"
-  | "dynamic"
-  | "forced-movement"
-  | "switch"
-  | "hazard"
-  | "exit"
-  | "pickup"
-  | "beanstalk-growth"
-  | "cloud-passable"
-  | "dragon-fire-passable"
-  | "dragon-fire-melt"
-  | "dragon-fire-blocking"
-  | "dragon-head"
-  | "climbable"
-  | "dynamic-cloud"
-  | "dynamic-leaf"
-  | "windmill"
-  | "cloud-grid"
-  | "start"
-  | "objective-carrot"
-  | "objective-nest"
-  | "hidden-objective";
-export interface TilePresentation {
-  name: string;
-  category: string;
-}
-export interface TileAuthoring {
-  palette: boolean;
-}
-export interface TileDefinition<T extends string> {
-  id: T;
-  presentation: TilePresentation;
-  traits: readonly TileTrait[];
-  behaviors: readonly TileBehavior[];
-  authoring?: TileAuthoring;
-}
-export interface TileDefinitionInspection {
-  id: string;
-  presentation: TilePresentation;
-  traits: readonly TileTrait[];
-  behaviors: BehaviorDescription[];
-  authoring?: TileAuthoring;
-}
+import {
+  DYNAMIC_IDS,
+  HIDDEN_AUTHORING_OBJECTS,
+  environmentTraits,
+  isWalkableSemantic,
+  isWaterSemantic,
+  pretty,
+} from "./definition-semantics.js";
+import {
+  CAROUSEL_NEXT,
+  rotateCarousel,
+  toggleColor,
+  toggleSpeed,
+  toggleTide,
+} from "./terrain-transforms.js";
+import { CLOUD_INFO } from "./mechanic-links.js";
+import type {
+  TileAuthoring,
+  TileDefinition,
+  TileDefinitionInspection,
+  TilePresentation,
+  TileTrait,
+} from "./definition-types.js";
+export type {
+  TileAuthoring,
+  TileDefinition,
+  TileDefinitionInspection,
+  TilePresentation,
+  TileTrait,
+} from "./definition-types.js";
 const terrainDefinitions = new Map<TerrainType, TileDefinition<TerrainType>>(),
   objectDefinitions = new Map<ObjectType, TileDefinition<ObjectType>>();
-const HIDDEN_AUTHORING_OBJECTS = new Set<ObjectType>([
-  ObjectId.CONSUMED_CARROT,
-  ObjectId.PLANK_CRUMBLING,
-  ObjectId.PLANK_FRAGMENT,
-  ObjectId.ICE_MELT_1,
-  ObjectId.ICE_MELT_2,
-  ObjectId.ICE_MELT_3,
-  ObjectId.DRAGON_ANIM_1,
-  ObjectId.DRAGON_ANIM_2,
-  ObjectId.BEAN_SPROUT,
-]);
-function pretty(id: string): string {
-  return id
-    .split("-")
-    .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-const WATER_IDS = new Set<TerrainType>([
-  Terrain.WATER,
-  Terrain.WATER_ANIMATED,
-  Terrain.TIDE_UP,
-  Terrain.TIDE_DOWN,
-  Terrain.TIDE_LEFT,
-  Terrain.TIDE_RIGHT,
-  Terrain.WATER_VARIANT_1,
-  Terrain.WATER_VARIANT_2,
-  Terrain.WATER_VARIANT_3,
-]);
-const DYNAMIC_IDS = new Set<ObjectType>([
-  ObjectId.CLOUD_RED,
-  ObjectId.CLOUD_PURPLE,
-  ObjectId.CLOUD_GREEN,
-  ObjectId.LEAF,
-]);
-function isWaterSemantic(id: TerrainType): boolean {
-  return WATER_IDS.has(id);
-}
-function isWalkableSemantic(id: TerrainType): boolean {
-  if (id.startsWith("walkable-variant-")) return true;
-  if (id.startsWith("background-variant-")) return false;
-  if (isWaterSemantic(id) || id === Terrain.SNOW) return false;
-  return true;
-}
-function environmentTraits(id: TerrainType): TileTrait[] {
-  const out: TileTrait[] = [];
-  if (isWalkableSemantic(id)) out.push("walkable");
-  if (isWaterSemantic(id)) out.push("water");
-  if (
-    isWalkableSemantic(id) ||
-    isWaterSemantic(id) ||
-    id.startsWith("background-variant-")
-  )
-    out.push("cloud-passable");
-  if (
-    (isWalkableSemantic(id) ||
-      isWaterSemantic(id) ||
-      id.startsWith("background-variant-")) &&
-    id !== Terrain.COLOR_YELLOW_BLOCK_RAISED &&
-    id !== Terrain.COLOR_PINK_BLOCK_RAISED
-  )
-    out.push("dragon-fire-passable");
-  if (isWaterSemantic(id) || id.startsWith("background-variant-"))
-    out.push("beanstalk-growth");
-  return out;
-}
 function terrain(definition: TileDefinition<TerrainType>): void {
   terrainDefinitions.set(definition.id, definition);
 }
@@ -202,57 +113,6 @@ for (const id of Object.values(ObjectId) as ObjectType[])
     DYNAMIC_IDS.has(id) ? ["dynamic"] : [],
     [markerBehavior("static-object", "无额外运行时行为")],
   );
-function toggleSpeed(id: TerrainType): TerrainType {
-  if (id === Terrain.SPEED_UP) return Terrain.SPEED_DOWN;
-  if (id === Terrain.SPEED_DOWN) return Terrain.SPEED_UP;
-  if (id === Terrain.SPEED_LEFT) return Terrain.SPEED_RIGHT;
-  if (id === Terrain.SPEED_RIGHT) return Terrain.SPEED_LEFT;
-  if (id === Terrain.SPEED_SWITCH_PRESSED) return Terrain.SPEED_SWITCH_RAISED;
-  if (id === Terrain.SPEED_SWITCH_RAISED) return Terrain.SPEED_SWITCH_PRESSED;
-  return id;
-}
-function toggleTide(id: TerrainType): TerrainType {
-  if (id === Terrain.TIDE_UP) return Terrain.TIDE_DOWN;
-  if (id === Terrain.TIDE_DOWN) return Terrain.TIDE_UP;
-  if (id === Terrain.TIDE_LEFT) return Terrain.TIDE_RIGHT;
-  if (id === Terrain.TIDE_RIGHT) return Terrain.TIDE_LEFT;
-  if (id === Terrain.TIDE_SWITCH_RAISED) return Terrain.TIDE_SWITCH_PRESSED;
-  if (id === Terrain.TIDE_SWITCH_PRESSED) return Terrain.TIDE_SWITCH_RAISED;
-  return id;
-}
-function toggleColor(id: TerrainType, color: "yellow" | "pink"): TerrainType {
-  if (color === "yellow") {
-    if (id === Terrain.COLOR_YELLOW_SWITCH_RAISED)
-      return Terrain.COLOR_YELLOW_SWITCH_PRESSED;
-    if (id === Terrain.COLOR_YELLOW_SWITCH_PRESSED)
-      return Terrain.COLOR_YELLOW_SWITCH_RAISED;
-    if (id === Terrain.COLOR_YELLOW_BLOCK_RAISED)
-      return Terrain.COLOR_YELLOW_BLOCK_LOWERED;
-    if (id === Terrain.COLOR_YELLOW_BLOCK_LOWERED)
-      return Terrain.COLOR_YELLOW_BLOCK_RAISED;
-  } else {
-    if (id === Terrain.COLOR_PINK_SWITCH_RAISED)
-      return Terrain.COLOR_PINK_SWITCH_PRESSED;
-    if (id === Terrain.COLOR_PINK_SWITCH_PRESSED)
-      return Terrain.COLOR_PINK_SWITCH_RAISED;
-    if (id === Terrain.COLOR_PINK_BLOCK_RAISED)
-      return Terrain.COLOR_PINK_BLOCK_LOWERED;
-    if (id === Terrain.COLOR_PINK_BLOCK_LOWERED)
-      return Terrain.COLOR_PINK_BLOCK_RAISED;
-  }
-  return id;
-}
-const CAROUSEL_NEXT = new Map<TerrainType, TerrainType>([
-  [Terrain.CAROUSEL_1, Terrain.CAROUSEL_4],
-  [Terrain.CAROUSEL_2, Terrain.CAROUSEL_1],
-  [Terrain.CAROUSEL_3, Terrain.CAROUSEL_2],
-  [Terrain.CAROUSEL_4, Terrain.CAROUSEL_3],
-  [Terrain.CAROUSEL_VERTICAL, Terrain.CAROUSEL_HORIZONTAL],
-  [Terrain.CAROUSEL_HORIZONTAL, Terrain.CAROUSEL_VERTICAL],
-]);
-function rotateCarousel(id: TerrainType): TerrainType {
-  return CAROUSEL_NEXT.get(id) ?? id;
-}
 function defineCarousel(
   id: TerrainType,
   next: TerrainType,
@@ -997,12 +857,7 @@ for (const id of blockingObjects)
     ["blocking"],
     [markerBehavior("blocks-passage", "默认阻挡 Bobby 通过")],
   );
-const cloudInfo: Array<[ObjectType, ObjectType]> = [
-  [ObjectId.CLOUD_RED, ObjectId.CLOUD_GRID_RED],
-  [ObjectId.CLOUD_PURPLE, ObjectId.CLOUD_GRID_PURPLE],
-  [ObjectId.CLOUD_GREEN, ObjectId.CLOUD_GRID_GREEN],
-];
-for (const [id] of cloudInfo) {
+for (const [id] of CLOUD_INFO) {
   const current = objectDefinitions.get(id)!;
   object({
     ...current,
@@ -1171,7 +1026,7 @@ const WIND_SWITCH_PEER = new Map<TerrainType, TerrainType>([
   [Terrain.WIND_SWITCH_3_ON, Terrain.WIND_SWITCH_3_OFF],
   [Terrain.WIND_SWITCH_3_OFF, Terrain.WIND_SWITCH_3_ON],
 ]);
-const CLOUD_GRID = new Map<ObjectType, ObjectType>(cloudInfo);
+const CLOUD_GRID = new Map<ObjectType, ObjectType>(CLOUD_INFO);
 export function tideDirectionForTerrain(
   id: TerrainType,
 ): Direction | undefined {
