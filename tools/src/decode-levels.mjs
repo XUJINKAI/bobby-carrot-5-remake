@@ -63,7 +63,7 @@ for (const release of RELEASES) {
   writeJson(path.join(releaseOut, 'packs.json'), { schemaVersion: 2, release, packs, levelCount: count });
   sourceIndex.releases.push({ ...release, tileSize: SOURCE_TILE_SIZE, levelCount: count, packs });
   sourceIndex.totalSourceLevels += count;
-  console.log(`解码 ${release.id}: ${count} 个 source level`);
+  console.log(`解码 ${release.id}: ${count} 个 source level；packType ${packs.map((pack) => `${pack.packFile}:${String(pack.packType)}`).join(' ')}`);
 }
 
 writeJson(path.join(generated, 'source-index.json'), sourceIndex);
