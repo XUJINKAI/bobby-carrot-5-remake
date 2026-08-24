@@ -13,6 +13,8 @@ Original JAR / DAT
    Engine <----- Editor ------------------------┘
       ▲            ▲
       └----- Web ---┘
+             ▲
+             └------ @bobby/dat provenance (DEBUG only)
 
 Official archive metadata / Catalog ---------> Web
 ```
@@ -110,15 +112,17 @@ Editor 持久化 `EditorLevel extends LevelMap`：
 1. JSON Import / Export：长期编辑与备份格式；
 2. 分享链接：`bc5r metadata envelope + original DAT level record -> deflate-raw + base64url`。
 
-分享不是第二套 DAT codec；`editor/share.ts` 只能调用 `@bobby/dat`。
+分享不是第二套 DAT codec；`editor/share.ts` 只能调用 `@bobby/dat`。`editor/inspector.ts` 也可以按 semantic ID 查询 DAT provenance，但这只用于 DEBUG 展示，不参与 authoring 或 gameplay。
 
-Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine。所有 owner resolve、footprint、Q/E variant 使用 Engine Object Layout。
+Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine。所有 owner resolve、footprint、Q/E variant 使用 Engine Object Layout。临时 Game/Input 生命周期由 `editor/playtest.ts` 管理，`Editor.ts` 只编排编辑状态与交互。
 
 ## Web
 
 Web 是产品壳：Home、Level Browser、Play、Editor route、Settings。
 
 Level Browser 的筛选索引仍由构建期生成，但筛选模块通过 `mountLevelFilters(catalog)` 显式挂载；禁止 MutationObserver 偷看 `.release-tabs` 是否出现。筛选模块只额外加载 `level-filters.json`，不重复 fetch catalog。
+
+正式关卡和分享关卡都通过 Web-owned `game-session.ts` 创建/销毁 Game + Input；页面负责传入关卡内容、profile 和 session metadata。官方 Bonus Round 的 `bonusTimeMs` 在 `official-game.ts` 显式注入，shared/custom play 不推断 Bonus 模式。
 
 正式 URL 是 SPA 路由：
 ```text
@@ -130,7 +134,7 @@ Level Browser 的筛选索引仍由构建期生成，但筛选模块通过 `moun
 /edit#map=...
 ```
 
-服务器负责 app-route fallback，构建不生成逐路由目录。
+服务器负责 app-route fallback，构建不生成逐路由目录。缺失的静态资源必须返回 404，不能用 `index.html` 假装成功。
 
 ## Original JAR Validation
 
@@ -181,9 +185,11 @@ JAR patcher 的原则：
 model <- dat
 model <- engine
 model + engine + dat <- editor
-model + engine + editor <- web
+model + dat + engine + editor <- web
 tools -> dat + original assets
 ```
+
+其中 Editor/Web 对 `dat` 的普通产品逻辑只能走 codec/provenance API；raw DAT table 仍唯一存在于 `dat/src/mapping.ts`。
 
 禁止：
 ```text
