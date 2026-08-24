@@ -15,18 +15,18 @@ if (start >= 0 && end >= 0) {
 }
 
 const exportBlock = [
-  'export {',
-  '  cloudGridForObject,',
-  '  tideDirectionForTerrain,',
-  '  windmillInfoForObject,',
-  '  windSwitchIndexForTerrain,',
-  '  windSwitchPeerForTerrain,',
+  "export {",
+  "  cloudGridForObject,",
+  "  tideDirectionForTerrain,",
+  "  windmillInfoForObject,",
+  "  windSwitchIndexForTerrain,",
+  "  windSwitchPeerForTerrain,",
   '} from "./mechanic-links.js";',
-  '',
+  "",
 ].join("\n");
 
 if (!source.includes("tideDirectionForTerrain,")) {
-  const anchor = 'export type {\n';
+  const anchor = "export type {\n";
   const index = source.indexOf(anchor);
   if (index < 0) throw new Error("找不到 definitions.ts 的导出区");
   source = source.slice(0, index) + exportBlock + source.slice(index);
