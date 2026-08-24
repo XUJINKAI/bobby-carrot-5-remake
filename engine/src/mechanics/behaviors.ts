@@ -21,7 +21,6 @@ export interface BehaviorContext {
   direction: Direction;
   terrainId: TerrainType;
   objectId: ObjectType;
-  object?: LevelObject | null;
   fromTerrain?: TerrainType;
 }
 
@@ -30,7 +29,6 @@ export interface BehaviorRuntimeApi {
   setObject(type: ObjectType): void;
   mapTerrain(mapper: (type: TerrainType) => TerrainType): void;
   event(type: string, message: string): void;
-  dialog(text?: string): void;
   kill(reason: string): void;
   fireDragon(): void;
   propelClouds(): void;
@@ -51,6 +49,12 @@ export interface BehaviorRuntimeResult {
 }
 export type BehaviorEnterPhase = "before-object" | "after-object";
 
+export type ObjectTouchResult =
+  | {
+      kind: "dialog";
+      text?: string;
+    };
+
 export interface BehaviorDescription {
   id: string;
   summary: string;
@@ -64,7 +68,7 @@ export interface TileBehavior {
   canLeave?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   passage?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   enterPhase?: BehaviorEnterPhase;
-  onTouch?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
+  onTouch?(object: LevelObject): ObjectTouchResult | void;
   onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
@@ -158,7 +162,7 @@ export function passageBehavior(
 export function touchBehavior(
   id: string,
   summary: string,
-  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
+  handler: (object: LevelObject) => ObjectTouchResult | void,
   config?: Record<string, string | number | boolean | string[]>,
 ): TileBehavior {
   return {
