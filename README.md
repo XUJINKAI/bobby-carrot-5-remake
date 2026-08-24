@@ -1,6 +1,6 @@
-# Bobby Carrot 5 Web
+# Bobby Carrot 5 Remake
 
-Bobby Carrot 5（兔子波比 5）的现代 Web 重制与原版机制研究工程。
+**Bobby Carrot 5 Remake**（兔子波比 5）的现代 Web 重制与原版机制研究工程。
 
 目标不是套 Java ME 模拟器，而是保留第五代原始关卡、高清像素美术、MIDI 与谜题机制，重新实现现代 Web Engine；同时保留一条可把**同一张自定义语义地图重新打回原版 JAR** 的验证链路，用原版模拟器确认逆向逻辑。
 
@@ -129,7 +129,7 @@ npm run original:patch -- \
 于是同一测试输入可以分别跑：
 
 ```text
-Editor Play Test -> bc5r Engine
+Editor Play Test -> Bobby Carrot 5 Remake Engine
 patched JAR      -> original Java ME Engine
 ```
 
@@ -163,7 +163,7 @@ SPA 深链接由服务器 fallback 到 `/index.html`，缺失静态资源仍必�
 npm run verify
 ```
 
-会重建 10 个原始发行包，验证 530 条 source record / 485 个唯一 DAT map / 480 个 Campaign level、全部 source `dynamic_slots` 派生、DAT round-trip、Adventure/Engine/Editor tests、原版 JAR patch round-trip、静态路由与浏览器 Explore/Adventure smoke。
+会重建 10 个原始发行包，验证 530 条 source record / 485 个唯一 DAT map / 480 个 Campaign level、全部 source `dynamic_slots` 派生、DAT round-trip、Adventure/Engine/Editor tests、原版 JAR patch round-trip、静态路由与浏览器 Explore/Adventure smoke，以及源码质量门禁。
 
 ## Git
 
