@@ -18,10 +18,7 @@ const replacements = [
     "/type\\\\s*:\\\\s*[\"']open-lock[\"']/",
     "/type\\s*:\\s*[\"']open-lock[\"']/",
   ],
-  [
-    "/type:'open-lock'/",
-    "/type\\s*:\\s*[\"']open-lock[\"']/",
-  ],
+  ["/type:'open-lock'/", "/type\\s*:\\s*[\"']open-lock[\"']/"],
   [
     "/onWorldEvent\\(listener:WorldEventListener\\)/",
     "/onWorldEvent\\(listener\\s*:\\s*WorldEventListener\\)/",

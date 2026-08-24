@@ -315,7 +315,7 @@ function verifySourceBoundaries() {
     throw new Error(
       "Official Bonus rules must come from Adventure session identity, not archive chapterLevel",
     );
-  if (!/createAdventureRuntime\(plan,game\)/.test(officialGame))
+  if (!/createAdventureRuntime\(plan\s*,\s*game\)/.test(officialGame))
     throw new Error(
       "Official Adventure play must bind the Adventure runtime to Engine through the generic port",
     );
@@ -333,17 +333,17 @@ function verifySourceBoundaries() {
       "Shared/custom play must not infer or own the original Adventure Bonus timeout",
     );
   if (
-    !/type:'object-interaction',objectType:ObjectId\.LOCK,action:'open'/.test(
+    !/type\s*:\s*["']object-interaction["']\s*,\s*objectType\s*:\s*ObjectId\.LOCK\s*,\s*action\s*:\s*["']open["']/.test(
       world,
     ) ||
-    /type\\s*:\\s*["']open-lock["']/.test(world)
+    /type\s*:\s*["']open-lock["']/.test(world)
   )
     throw new Error(
       "Engine World must report lock behavior through the generic object-interaction event shape",
     );
   if (
-    !/onWorldEvent\(listener:WorldEventListener\)/.test(game) ||
-    !/killPlayer\(reason:string\)/.test(game) ||
+    !/onWorldEvent\(listener\s*:\s*WorldEventListener\)/.test(game) ||
+    !/killPlayer\(reason\s*:\s*string\)/.test(game) ||
     /lock-opened/.test(game)
   )
     throw new Error(
@@ -352,11 +352,11 @@ function verifySourceBoundaries() {
   if (
     !/engine\.onWorldEvent/.test(adventureRuntime) ||
     !/ObjectId\.LOCK/.test(adventureRuntime) ||
-    !/event\.type === 'object-interaction'/.test(adventureRuntime) ||
-    !/event\.type === 'complete' \|\| event\.type === 'death'/.test(
+    !/event\.type\s*===\s*["']object-interaction["']/.test(adventureRuntime) ||
+    !/event\.type\s*===\s*["']complete["']\s*\|\|\s*event\.type\s*===\s*["']death["']/.test(
       adventureRuntime,
     ) ||
-    !/engine\.killPlayer\('Bonus Round/.test(adventureRuntime)
+    !/engine\.killPlayer\(\s*["']Bonus Round/.test(adventureRuntime)
   )
     throw new Error(
       "Adventure runtime must own Bonus timing by consuming generic Engine events",
