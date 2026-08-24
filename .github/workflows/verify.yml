@@ -30,6 +30,7 @@ jobs:
         run: |
           node tools/scripts/migrate-readable-layout.mjs
           node tools/scripts/split-definition-augments.mjs
+          node tools/scripts/dedupe-mechanic-links.mjs
 
       - name: 格式化全部维护源码
         if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'chore/code-quality-frontend-foundation'
@@ -54,7 +55,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add model dat adventure engine editor web tools package.json tsconfig.json tsconfig.base.json
-            git commit -m "refactor: finish definition split"
+            git commit -m "refactor: dedupe mechanic link definitions"
             git push origin HEAD:chore/code-quality-frontend-foundation
           fi
 
