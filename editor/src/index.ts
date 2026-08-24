@@ -12,8 +12,3 @@ export {
   type EditorObject,
   type LevelValidationIssue,
 } from "./level.js";
-export {
-  encodeShareLevel,
-  decodeShareLevel,
-  shareValueFromHash,
-} from "./share.js";
