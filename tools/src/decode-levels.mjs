@@ -38,7 +38,7 @@ for (const release of RELEASES) {
       packageSha256: parsed.packageSha256,
       metadataLength: parsed.metadataLength,
       packType: parsed.metadata?.packType ?? null,
-      title: english?.title ?? (packFile === '00' ? 'Tutorial' : `${release.label} / ${packFile}`),
+      title: english?.title ?? (packFile === '00' ? 'Special Scenes' : `${release.label} / ${packFile}`),
       description: english?.description ?? '',
       metadata: parsed.metadata,
       levelCount: parsed.levels.length

@@ -14,6 +14,8 @@ export class Camera {
   viewportHeight = 1;
   zoom = 1;
   readonly sourceTileSize: number;
+  private minZoom = 0.3;
+  private maxZoom = 2.75;
   private panOffsetX = 0;
   private panOffsetY = 0;
   private panReturn: PanReturn | null = null;
@@ -30,8 +32,16 @@ export class Camera {
     this.viewportHeight = Math.max(1, height);
   }
 
+  setZoomLimits(min: number, max = 2.75): void {
+    const safeMin = Number.isFinite(min) ? Math.max(0.1, min) : 0.3;
+    const safeMax = Number.isFinite(max) ? Math.max(safeMin, max) : 2.75;
+    this.minZoom = safeMin;
+    this.maxZoom = safeMax;
+    this.setZoom(this.zoom);
+  }
+
   setZoom(value: number): void {
-    this.zoom = Math.min(2.75, Math.max(0.3, value));
+    this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, value));
   }
 
   resetPan(): void {

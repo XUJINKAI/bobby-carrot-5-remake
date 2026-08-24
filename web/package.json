@@ -7,6 +7,7 @@
     "@bobby/model": "0.1.0",
     "@bobby/dat": "0.1.0",
     "@bobby/engine": "0.1.0",
-    "@bobby/editor": "0.1.0"
+    "@bobby/editor": "0.1.0",
+    "@bobby/adventure": "0.1.0"
   }
 }

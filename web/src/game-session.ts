@@ -1,4 +1,4 @@
-import { Game, InputController, type GameOptions, type LevelLoadOptions, type LevelMap } from '@bobby/engine';
+import { Game, InputController, type GameOptions, type InputControllerOptions, type LevelMap } from '@bobby/engine';
 
 export interface GameSession {
   game: Game;
@@ -11,21 +11,21 @@ export interface CreateGameSessionOptions {
   canvas: HTMLCanvasElement;
   level: LevelMap;
   gameOptions: Omit<GameOptions, 'canvas'>;
-  loadOptions?: LevelLoadOptions;
+  inputOptions?: InputControllerOptions;
 }
 
 /**
  * Web-owned adapter around the Engine lifecycle.
  *
- * Pages decide what level/profile/session options mean. This module only owns the
+ * Pages decide what level/profile/session rules mean. This module only owns the
  * repeated browser plumbing around Game + InputController + mobile controls.
  */
 export async function createGameSession(options: CreateGameSessionOptions): Promise<GameSession> {
   const game = new Game({ canvas: options.canvas, ...options.gameOptions });
-  const input = new InputController(game);
+  const input = new InputController(game, options.inputOptions);
   bindMobileControls(options.root, game);
   try {
-    await game.loadLevel(options.level, options.loadOptions ?? {});
+    await game.loadLevel(options.level);
   } catch (error) {
     input.destroy();
     game.destroy();

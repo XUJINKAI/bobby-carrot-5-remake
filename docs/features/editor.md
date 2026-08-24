@@ -19,7 +19,7 @@ Editor 是 Bobby Carrot 5 Web 的玩家功能，也是 Engine 的首选交互式
 }
 ```
 
-核心内容就是 `@bobby/model::LevelMap { width, height, terrain, objects }`，再附加 name/author/description。DAT record length、SHA-256、发行包、chapter、difficulty、dynamic_slots 等官方档案字段不进入 Editor Draft。
+核心内容就是 `@bobby/model::LevelMap { width, height, terrain, objects }`，再附加 name/author/description。DAT record length、SHA-256、发行包、chapter、difficulty、dynamic_slots、Adventure progress 等字段不进入 Editor Draft。
 
 Terrain/Object 永远使用 semantic ID；Editor 不读取或保存 raw DAT byte。
 
@@ -48,7 +48,7 @@ EditorLevel
 
 Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等不会污染编辑结果。
 
-官方 Bonus Round 的 60 秒属于 Web session metadata，不属于地图语义；Editor Play Test 不根据地图内容猜 Bonus 模式。
+原版 Adventure 的 Campaign、全局经济和 Bonus 60 秒都不属于地图语义。Editor Play Test 不创建 `@bobby/adventure` runtime，因此即使自定义地图里存在 `ObjectId.LOCK`，也不会自动启动原版 Bonus 倒计时。
 
 ## 编辑交互
 
@@ -101,4 +101,4 @@ Editor Draft -> Play Test -> bc5r Engine
             \-> @bobby/dat -> patched JAR -> original Java ME Engine
 ```
 
-这样可以用同一张最小测试地图对比 Dragon、藤蔓、云、荷叶、开关等逆向机制，而不让原版格式细节渗入 Engine 或 Editor authoring 模型。
+这样可以用同一张最小测试地图对比 Dragon、藤蔓、云、荷叶、开关等逆向机制，而不让原版格式或 Adventure Campaign 细节渗入 Engine / Editor authoring 模型。

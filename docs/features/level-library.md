@@ -1,39 +1,105 @@
 # 关卡浏览与身份
 
-## 两套 ID
+## 三种身份
 
-每关同时有：
+正式内容现在明确区分：
 
-1. **public ID**：玩家可见，尊重原版发行结构；
-2. **canonical ID**：内部去重/旧存档兼容。
+1. **archive identity**：Base / UP、DAT 包、source record；只用于 provenance 和原版 JAR patch；
+2. **campaign/public ID**：玩家可见，连续 1～40 章；
+3. **canonical ID**：内部去重 identity，不作为 URL。
 
 例如：
 
 ```text
-public:    up3-2-7
-canonical: 160
+archive:   up09 / pack 04 / source level 10
+public:    40-10
+canonical: internal only
 ```
 
-不要在新 UI、分享链接或未来自定义关卡 API 中重新暴露 canonical ID。
+不要在新 UI、分享链接或自定义关卡 API 中暴露 Base/UP 或 canonical ID。
 
-## 浏览层级
+## 正式 Campaign 编排
+
+每章有 12 个连续流程节点：
 
 ```text
-发行包 → 章节 → 关卡
+1
+2
+3
+bonus-1
+4
+5
+6
+bonus-2
+7
+8
+9
+10
 ```
 
-Base 包含 5 个公共 Tutorial 关和 4×12 个正式章节关；UP1~UP9 各显示 4×12 个本包关卡，重复的 Tutorial 不重复展示。
-
-总计：
+所以第一章玩家 ID 是：
 
 ```text
-Base: 53
-UP1~UP9: 9 × 48
-= 485
+1-1
+1-2
+1-3
+1-bonus-1
+1-4
+1-5
+1-6
+1-bonus-2
+1-7
+1-8
+1-9
+1-10
 ```
 
-## 快捷入口
+直到 `40-10`。
 
-- **继续游玩**：读取 `bobby.lastLevel` 的 public ID；
-- **随机一个关卡**：从 485 个 canonical 唯一关中均匀选择；
-- 完成状态仍按 canonical ID 保存，避免未来 public 命名规则微调破坏存档。
+## 原版内容数量
+
+10 个 JAR 共 530 条 source record。重复内容去重后：
+
+```text
+480 个正式 Campaign map
+5 个共享 Special Scene
+= 485 个唯一 DAT map
+```
+
+5 个 Special Scene 来自原先被误称为 Tutorial 的特殊记录：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。
+
+## 章节难度
+
+原版章节选择界面的 1～3 星难度直接来自每章 DAT metadata 的 `packType`。这是章节级原始数据。
+
+Explore 的关卡级“简单/中等/困难”等筛选仍使用单关难度数据；两者不要混为一个字段。
+
+## Explore / 自由选关
+
+浏览层级直接按连续章节：
+
+```text
+Chapter 1
+Chapter 2
+...
+Chapter 40
+```
+
+Explore 模式：
+- 全 480 个正式关卡开放；
+- 不受 Adventure 锁关影响；
+- 支持筛选和随机；
+- 完成记录只服务自由浏览体验；
+- 允许 DEBUG、自由缩放和 Editor 跳转。
+
+## Adventure / 原版冒险
+
+Adventure 使用同一批官方 LevelMap，但另有：
+- 章内线性解锁；
+- 原版章节选择 UI 语义；
+- Adventure Save；
+- 全局经济、永久升级、一次性奖励；
+- portrait viewport 限制；
+- 特殊场景与 Campaign event。
+
+Explore 与 Adventure 的进度不能互相污染。

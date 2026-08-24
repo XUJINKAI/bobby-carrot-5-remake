@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist-src", "composite": true, "sourceMap": true },
-  "references": [{"path":"../model"},{"path":"../dat"},{"path":"../engine"},{"path":"../editor"}],
+  "references": [{"path":"../model"},{"path":"../dat"},{"path":"../engine"},{"path":"../editor"},{"path":"../adventure"}],
   "include": ["src/**/*.ts"]
 }

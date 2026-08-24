@@ -1,8 +1,8 @@
-export { Game, type GameOptions, type LevelLoadOptions } from './core/Game.js';
-export { InputController } from './input/InputController.js';
+export { Game, type GameOptions } from './core/Game.js';
+export { InputController, type InputControllerOptions } from './input/InputController.js';
 export { NullAudioBackend, type AudioBackend } from './audio/AudioBackend.js';
 export type { LevelMap, LevelObject, TerrainType, ObjectType } from '@bobby/model';
-export { type TileInspection, type MoveResult, type Point, type WorldOptions } from './world/World.js';
+export { type TileInspection, type MoveResult, type Point, type WorldEvent } from './world/World.js';
 export { Terrain,ObjectId,EMPTY_OBJECT,DIRECTIONS,DYNAMIC_OBJECT_IDS,CLOUD_OBJECT_IDS,CLOUD_GRID_FOR_OBJECT,type Direction } from './mechanics/ids.js';
 export { getTerrainDefinition,getObjectDefinition,inspectTerrainDefinition,inspectObjectDefinition,isObjectAuthorable,type TileDefinition,type TileDefinitionInspection,type TilePresentation,type TileAuthoring,type TileTrait } from './mechanics/definitions.js';
 export { objectLayoutFor,isMultiCellObject,isObjectLayoutPart,objectVariantCycle,transformObjectVariant,expandObjectLayouts,collapseObjectLayouts,type ObjectLayout,type ObjectLayoutCell } from './mechanics/object-layouts.js';

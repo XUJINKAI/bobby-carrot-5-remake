@@ -52,7 +52,6 @@ export interface RuntimeState {
   windmillsEnabled: [boolean, boolean, boolean, boolean];
   beanstalkGrowth: BeanstalkGrowth[];
   logicRemainderMs: number;
-  bonusTimeRemainingMs: number | null;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
   moves: number;

@@ -98,14 +98,16 @@ test('逆着荷叶脚下的湍急水流登叶时可以上叶，但不会启动�
   assert.equal(world.forcedDirection, null);
 });
 
-test('一次性 Beaver Key 可以开锁且开锁后立即消耗', () => {
+test('一次性 Beaver Key 可以开锁、立即消耗并报告通用 object-interaction', () => {
   const world = new World(
     level({ width: 2, height: 1, terrain: [[Terrain.START, Terrain.GROUND_C]], objects: [object(ObjectId.LOCK, 1, 0)] }),
     { temporaryKey: true }
   );
-  assert.equal(world.move('right').moved, true);
+  const result = world.move('right');
+  assert.equal(result.moved, true);
   assert.equal(world.objectIdAt(1, 0), EMPTY);
   assert.equal(world.state.profile.temporaryKey, false);
+  assert.ok(result.events.some((event) => event.type === 'object-interaction' && event.objectType === ObjectId.LOCK && event.action === 'open'));
 });
 
 test('割草机第一次从停车位上车不会同帧自动下车，并可安全碾过激活陷阱', () => {
@@ -205,25 +207,24 @@ test('Speed 开关只有 raised 状态触发；pressed 状态不会重复触发'
   assert.equal(world.terrainAt(3, 0), Terrain.SPEED_DOWN);
 });
 
-test('普通关即使包含 Bonus Coin 也没有 60 秒倒计时', () => {
+test('Engine 不保存或递减 Adventure Bonus 倒计时', () => {
   const world = new World(level({
     width: 2,
     height: 1,
     terrain: [[Terrain.START, Terrain.GROUND_C]],
     objects: [object(ObjectId.BONUS_COIN, 1, 0)]
   }));
-  assert.equal(world.state.bonusTimeRemainingMs, null);
+  assert.equal('bonusTimeRemainingMs' in world.state, false);
+  assert.equal('bonusTimeLimitMs' in world.state, false);
   world.advanceTime(60_001);
   assert.equal(world.dead, false);
 });
 
-test('Bonus session 显式注入 60 秒倒计时并在耗尽时死亡', () => {
-  const map = level({ width: 2, height: 1, terrain: [[Terrain.START, Terrain.GROUND_C]] });
-  const world = new World(map, {}, { bonusTimeMs: 60_000 });
-  assert.equal(world.state.bonusTimeRemainingMs, 60_000);
-  const events = world.advanceTime(60_001);
+test('外部规则可以通过通用 killPlayer 让 Bobby 死亡', () => {
+  const world = new World(level({ width: 2, height: 1, terrain: [[Terrain.START, Terrain.GROUND_C]] }));
+  const events = world.killPlayer('外部规则判定失败');
   assert.equal(world.dead, true);
-  assert.equal(world.state.bonusTimeRemainingMs, 0);
+  assert.equal(world.state.deathReason, '外部规则判定失败');
   assert.ok(events.some((event) => event.type === 'death'));
 });
 
