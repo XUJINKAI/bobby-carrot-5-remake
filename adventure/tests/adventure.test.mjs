@@ -24,14 +24,21 @@ test('original campaign uses continuous 1-40 ids and inserts bonus records after
   assert.equal(specialSceneIdForSource(5), 'campaign-intro');
 });
 
-test('Adventure progress is linear inside a chapter while Explore remains outside this domain', () => {
+test('Adventure unlocks each four-chapter group like the original while keeping level progress linear', () => {
   let save = createAdventureSave();
+  assert.deepEqual(save.campaign.unlockedChapters, [1,5,9,13,17,21,25,29,33,37]);
   assert.equal(isAdventureLevelUnlocked(save, '1-1'), true);
   assert.equal(isAdventureLevelUnlocked(save, '1-2'), false);
+  assert.equal(isAdventureLevelUnlocked(save, '5-1'), true);
+  assert.equal(isAdventureLevelUnlocked(save, '6-1'), false);
+
   save = completeAdventureLevel(save, '1-1');
   assert.equal(isAdventureLevelUnlocked(save, '1-2'), true);
   for (const id of campaignSequenceForChapter(1).slice(1)) save = completeAdventureLevel(save, id);
-  assert.deepEqual(save.campaign.unlockedChapters, [1,2,3,4]);
+  assert.deepEqual(save.campaign.unlockedChapters, [1,2,3,4,5,9,13,17,21,25,29,33,37]);
+
+  for (const id of campaignSequenceForChapter(13)) save = completeAdventureLevel(save, id);
+  assert.deepEqual(save.campaign.unlockedChapters, [1,2,3,4,5,9,13,14,15,16,17,21,25,29,33,37]);
 });
 
 test('persistent global rewards are identified by level and map position', () => {
