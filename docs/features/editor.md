@@ -1,6 +1,6 @@
 # 地图编辑器
 
-Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互式调试入口；它不是第二套 gameplay 实现。
+Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互式调试入口。Play Test 统一使用正式 Engine gameplay 实现。
 
 ## 地图格式
 
@@ -19,9 +19,9 @@ Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互
 }
 ```
 
-核心内容就是 `@bobby/model::LevelMap { width, height, terrain, objects }`，再附加 name/author/description。DAT record length、SHA-256、发行包、chapter、difficulty、dynamic_slots、Adventure progress 等字段不进入 Editor Draft。
+核心内容是 `@bobby/model::LevelMap { width, height, terrain, objects }`，再附加 name/author/description。DAT record length、SHA-256、发行包、chapter、difficulty、dynamic_slots、Adventure progress 等信息由各自的 provenance/Campaign 层持有。
 
-Terrain/Object 永远使用 semantic ID；Editor 不读取或保存 raw DAT byte。
+Terrain/Object 始终使用 semantic ID；raw DAT byte 的互操作统一由 `@bobby/dat` 负责。
 
 ## Multi-cell Object
 
@@ -31,13 +31,13 @@ Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存�
 - 右键 / Del 删除完整 owner；
 - 放置新对象时，与 footprint 相交的旧 owner 整体替换；
 - Q/E 或滚轮切换 Engine 定义的 authoring variant；
-- runtime occupancy 只在 `Game.loadLevel()` 边界展开，不写回 Draft。
+- runtime occupancy 在 `Game.loadLevel()` 边界展开，Draft 始终保持 anchor 表示。
 
-Editor Palette 的可见性由 Engine Definition 的 `authoring.palette` 决定，不维护私有 Object ID 黑名单。
+Editor Palette 的可见性由 Engine Definition 的 `authoring.palette` 决定。
 
 ## Play Test
 
-Editor 永远不把 Draft 本体交给 Runtime。点击 Play：
+点击 Play 时，Editor 从 Draft 构造独立的运行时地图：
 
 ```text
 EditorLevel
@@ -46,9 +46,9 @@ EditorLevel
   -> 正式 Game.loadLevel()
 ```
 
-Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等不会污染编辑结果。
+Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等与编辑 Draft 相互隔离。
 
-原版 Adventure 的 Campaign、全局经济和 Bonus 60 秒都不属于地图语义。Editor Play Test 不创建 `@bobby/adventure` runtime，因此即使自定义地图里存在 `ObjectId.LOCK`，也不会自动启动原版 Bonus 倒计时。
+原版 Adventure 的 Campaign、全局经济和 Bonus 60 秒由 `@bobby/adventure` runtime 负责。Editor Play Test 使用纯 Engine session，自定义地图中的 `ObjectId.LOCK` 只产生通用世界事件。
 
 ## 编辑交互
 
@@ -60,8 +60,6 @@ Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/In
 - Ctrl/Cmd+Z、Y：Undo / Redo；
 - 泛蓝高亮：表示本次操作将删除或替换的完整 owner。
 
-没有 Eyedropper，也没有独立 Eraser mode。
-
 ## URL 分享
 
 分享数据放在 URL Fragment：
@@ -71,9 +69,9 @@ Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/In
 /edit#map=...
 ```
 
-两种路由使用同一个 payload，保留 name/author/description；从游玩链接进入后仍可直接打开同一地图的 Editor。
+两种路由使用同一个 payload，保留 name/author/description；从游玩链接进入后可以直接打开同一地图的 Editor。
 
-唯一分享编码：
+分享编码：
 
 ```text
 BC5R magic/version
@@ -83,22 +81,22 @@ BC5R magic/version
 -> base64url
 ```
 
-前缀只有：
+前缀：
 
 ```text
 d.   compressed
 r.   raw
 ```
 
-分享不是第二套 DAT codec；`editor/share.ts` 只调用 `@bobby/dat`。项目不继续兼容早期 `j.` / `z.` JSON 分享格式。
+`editor/share.ts` 通过 `@bobby/dat` 完成 DAT 编解码，分享层只负责 metadata envelope、压缩和 URL 表示。
 
 ## 与原版验证的关系
 
-Editor JSON 是长期编辑/备份格式；分享链接是短期传输格式；原版 JAR patch 是验证工具。三者最终都围绕同一张 semantic `LevelMap`：
+Editor JSON 是长期编辑/备份格式；分享链接是传输格式；原版 JAR patch 是验证工具。三者围绕同一张 semantic `LevelMap`：
 
 ```text
 Editor Draft -> Play Test -> bc5r Engine
             \-> @bobby/dat -> patched JAR -> original Java ME Engine
 ```
 
-这样可以用同一张最小测试地图对比 Dragon、藤蔓、云、荷叶、开关等逆向机制，而不让原版格式或 Adventure Campaign 细节渗入 Engine / Editor authoring 模型。
+同一张最小测试地图可以用于对比 Dragon、藤蔓、云、荷叶、开关等逆向机制；Engine / Editor authoring 模型保持纯 semantic，原版格式和 Adventure Campaign 由边界层负责。
