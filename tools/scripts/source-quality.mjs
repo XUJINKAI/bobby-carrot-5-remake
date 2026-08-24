@@ -9,12 +9,6 @@ const SCRIPT_EXTENSIONS = new Set(['.ts', '.js', '.mjs']);
 const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
 
-// 这些文件仍在本轮重排中。完成后必须从白名单移除。
-const LEGACY_COMPACT_FILES = new Set([
-  'engine/src/mechanics/definitions.ts',
-  'tools/scripts/verify.mjs',
-]);
-
 const errors = [];
 const warnings = [];
 
@@ -32,7 +26,7 @@ for (const sourceRoot of SOURCE_ROOTS) {
       warnings.push(`${relative}: ${lineCount} 行，建议检查是否需要按职责拆分`);
     }
 
-    if (SCRIPT_EXTENSIONS.has(path.extname(file)) && !LEGACY_COMPACT_FILES.has(relative)) {
+    if (SCRIPT_EXTENSIONS.has(path.extname(file))) {
       checkCompactCode(file, text, relative);
     }
   });
