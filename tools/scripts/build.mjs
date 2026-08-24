@@ -42,6 +42,7 @@ fs.mkdirSync(dist, { recursive: true });
 for (const file of [
   "index.html",
   "style.css",
+  "game-ui.css",
   "level-filters.css",
   "adventure.css",
 ]) {
