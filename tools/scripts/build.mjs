@@ -20,12 +20,13 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-// 资产首次生成依赖纯数据层，因此无论是否命中生成资产缓存都先编译这些包。
-run(tsc, ["-b", "model", "dat", "adventure", "--force"]);
+// 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
+run(tsc, ["-b", "model", "adventure", "--force"]);
 
 if (hasGeneratedAssets()) {
   console.log("检测到 assets/generated 已有内容，跳过资产生成。");
 } else {
+  run(tsc, ["-b", "dat", "--force"]);
   run(process.execPath, ["tools/src/extract-jars.mjs"]);
   run(process.execPath, ["tools/src/decode-levels.mjs"]);
   run(process.execPath, ["tools/src/build-assets.mjs"]);
@@ -33,7 +34,7 @@ if (hasGeneratedAssets()) {
   run(process.execPath, ["tools/src/build-level-filters.mjs"]);
 }
 
-// Engine、Editor 和 Web 消费已存在或刚生成的语义资产。
+// Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "web", "--force"]);
 
 fs.mkdirSync(dist, { recursive: true });
@@ -50,7 +51,6 @@ copyFile(path.join(root, "editor/style.css"), path.join(dist, "editor.css"));
 
 copyTree(path.join(root, "web/dist-src"), dist);
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
-copyTree(path.join(root, "dat/dist"), path.join(dist, "dat"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));
 copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));
 copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
