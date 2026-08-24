@@ -1,7 +1,7 @@
 import type { LevelMap, LevelObject } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
-import type { Direction } from "../mechanics/ids.js";
+import { ObjectId, type Direction } from "../mechanics/ids.js";
 import { expandObjectLayouts } from "../mechanics/object-layouts.js";
 import {
   Renderer,
@@ -49,13 +49,18 @@ interface Motion {
   ridingDynamic: boolean;
 }
 
+interface GameSnapshot {
+  world: WorldSnapshot;
+  timedChallengeRemainingMs: number | null;
+}
+
 export class Game {
   readonly renderer: Renderer;
   readonly audio: AudioBackend;
   private readonly profile: Partial<ProfileCapabilities>;
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
-  private readonly history: WorldSnapshot[] = [];
+  private readonly history: GameSnapshot[] = [];
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
@@ -69,6 +74,7 @@ export class Game {
     ridingDynamic: false,
   };
   private heldDirection: Direction | null = null;
+  private timedChallengeRemainingMsValue: number | null = null;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -111,6 +117,10 @@ export class Game {
     return this.history.length > 0;
   }
 
+  get timedChallengeRemainingMs(): number | null {
+    return this.timedChallengeRemainingMsValue;
+  }
+
   async loadLevel(level: LevelMap): Promise<void> {
     const runtimeLevel = this.prepareRuntimeLevel(level);
     this.initialLevel = structuredClone(runtimeLevel);
@@ -118,6 +128,7 @@ export class Game {
     this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
+    this.timedChallengeRemainingMsValue = null;
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -155,7 +166,8 @@ export class Game {
   undo(): boolean {
     const previous = this.history.pop();
     if (!previous || !this.worldValue) return false;
-    this.world.restore(previous);
+    this.world.restore(previous.world);
+    this.timedChallengeRemainingMsValue = previous.timedChallengeRemainingMs;
     this.heldDirection = null;
     this.motion = null;
     this.lastMove = null;
@@ -175,6 +187,7 @@ export class Game {
     this.renderer.camera.resetPan();
     this.history.length = 0;
     this.heldDirection = null;
+    this.timedChallengeRemainingMsValue = null;
     this.motion = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -276,7 +289,12 @@ export class Game {
   private startLogicalMove(direction: Direction, forced: boolean): MoveResult {
     const world = this.world,
       riddenBefore = world.getRiddenDynamicEntity(),
-      snapshot = !forced ? world.snapshot() : null,
+      snapshot = !forced
+        ? {
+            world: world.snapshot(),
+            timedChallengeRemainingMs: this.timedChallengeRemainingMsValue,
+          }
+        : null,
       result = world.move(direction, forced),
       riddenAfter = world.getRiddenDynamicEntity();
     if (!result.moved) this.appendObjectTouchEvent(result);
@@ -326,6 +344,14 @@ export class Game {
     );
   }
 
+  private timedChallengeMsAt(x: number, y: number): number | null {
+    const raw = this.runtimeObjectAt(x, y)?.properties?.timedChallengeMs;
+    if (raw === undefined || raw.trim() === "") return null;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return Math.floor(value);
+  }
+
   private motionDuration(forcedKind: string | null): number {
     let duration = 132;
     if (forcedKind === "speed") duration = 70;
@@ -360,6 +386,21 @@ export class Game {
 
   private handleWorldEvents(events: WorldEvent[]): void {
     for (const event of events) {
+      if (
+        event.type === "object-interaction" &&
+        event.objectType === ObjectId.LOCK &&
+        event.action === "open" &&
+        event.x !== undefined &&
+        event.y !== undefined
+      ) {
+        const duration = this.timedChallengeMsAt(event.x, event.y);
+        if (duration !== null) this.timedChallengeRemainingMsValue = duration;
+      } else if (event.type === "collect-golden-carrot") {
+        this.timedChallengeRemainingMsValue = null;
+      } else if (event.type === "death" || event.type === "complete") {
+        this.timedChallengeRemainingMsValue = null;
+      }
+
       for (const listener of this.worldEventListeners) listener(event);
       switch (event.type) {
         case "collect-carrot":
@@ -385,6 +426,17 @@ export class Game {
           break;
       }
     }
+  }
+
+  private advanceTimedChallenge(deltaMs: number): void {
+    if (this.timedChallengeRemainingMsValue === null) return;
+    this.timedChallengeRemainingMsValue = Math.max(
+      0,
+      this.timedChallengeRemainingMsValue - deltaMs,
+    );
+    if (this.timedChallengeRemainingMsValue > 0) return;
+    this.timedChallengeRemainingMsValue = null;
+    this.killPlayer("限时挑战时间耗尽");
   }
 
   private syncVisualToWorld(): void {
@@ -427,6 +479,7 @@ export class Game {
         this.handleWorldEvents(timedEvents);
         this.emit("change");
       }
+      this.advanceTimedChallenge(deltaMs);
     }
     if (this.motion) {
       const raw = Math.min(
