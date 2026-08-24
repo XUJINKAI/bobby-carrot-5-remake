@@ -1,7 +1,8 @@
-import type { LevelMap } from "@bobby/model";
+import type { LevelMap, LevelObject } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
 import type { Direction } from "../mechanics/ids.js";
+import { touchResultForObject } from "../mechanics/interactions.js";
 import { expandObjectLayouts } from "../mechanics/object-layouts.js";
 import {
   Renderer,
@@ -247,6 +248,7 @@ export class Game {
       snapshot = !forced ? world.snapshot() : null,
       result = world.move(direction, forced),
       riddenAfter = world.getRiddenDynamicEntity();
+    if (!result.moved) this.appendObjectTouchEvent(result);
     this.lastMove = result;
     this.lastWorldEvents = result.events;
     if (!result.moved) {
@@ -276,6 +278,29 @@ export class Game {
     this.handleWorldEvents(result.events);
     this.emit("change");
     return result;
+  }
+  private appendObjectTouchEvent(result: MoveResult): void {
+    const object = this.runtimeObjectAt(result.to.x, result.to.y);
+    if (!object) return;
+    const touch = touchResultForObject(object);
+    if (!touch) return;
+    if (touch.kind === "dialog") {
+      result.events.push({
+        type: "dialog",
+        message: "触发对象对白",
+        ...(touch.text !== undefined ? { text: touch.text } : {}),
+        x: object.x,
+        y: object.y,
+        objectType: object.type,
+      });
+    }
+  }
+  private runtimeObjectAt(x: number, y: number): LevelObject | null {
+    return (
+      this.initialLevel?.objects.find(
+        (object) => object.x === x && object.y === y,
+      ) ?? null
+    );
   }
   private motionDuration(forcedKind: string | null): number {
     let duration = 132;
