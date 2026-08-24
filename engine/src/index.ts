@@ -1,5 +1,5 @@
 export { Game, type GameOptions } from './core/Game.js';
-export { InputController } from './input/InputController.js';
+export { InputController, type InputControllerOptions } from './input/InputController.js';
 export { NullAudioBackend, type AudioBackend } from './audio/AudioBackend.js';
 export type { LevelMap, LevelObject, TerrainType, ObjectType } from '@bobby/model';
 export { type TileInspection, type MoveResult, type Point, type WorldEvent } from './world/World.js';
