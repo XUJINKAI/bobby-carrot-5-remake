@@ -52,10 +52,6 @@ export interface RuntimeState {
   windmillsEnabled: [boolean, boolean, boolean, boolean];
   beanstalkGrowth: BeanstalkGrowth[];
   logicRemainderMs: number;
-  /** Adventure 可预装一个挑战时限；金锁打开前只处于 armed 状态。 */
-  bonusTimeLimitMs: number | null;
-  /** null 表示尚未启动；打开金锁后才从 bonusTimeLimitMs 开始倒计时。 */
-  bonusTimeRemainingMs: number | null;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
   moves: number;
