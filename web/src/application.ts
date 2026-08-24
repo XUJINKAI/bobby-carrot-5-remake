@@ -1,4 +1,3 @@
-import { shareValueFromHash } from "@bobby/editor";
 import { TinySynthAudioBackend } from "./TinySynthAudio.js";
 import { fetchJson, type LevelCatalog } from "./catalog.js";
 import { NOOP_CONTROLLER, siteUrl, type PageController } from "./common.js";
@@ -11,7 +10,6 @@ import {
 import { renderEditorPage } from "./editor-page.js";
 import { renderOfficialGame } from "./official-game.js";
 import { renderHome, renderLevels, renderSettings } from "./pages.js";
-import { renderSharedGame } from "./shared-game.js";
 
 export class BobbyApp {
   private readonly app: HTMLDivElement;
@@ -118,10 +116,6 @@ export class BobbyApp {
       this.controller = publicId
         ? await renderEditorPage({ ...context, publicId })
         : await renderEditorPage(context);
-      return;
-    }
-    if (path === "/play" && shareValueFromHash(location.hash)) {
-      this.controller = await renderSharedGame(context);
       return;
     }
     if (path.startsWith("/play/")) {
