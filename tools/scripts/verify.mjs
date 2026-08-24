@@ -12,8 +12,8 @@ if (catalog.uniqueLevels !== 485) throw new Error(`Expected 485 unique levels, g
 if (catalog.schemaVersion !== 3) throw new Error(`Expected catalog schema 3, got ${catalog.schemaVersion}`);
 if (catalog.releases.length !== 10) throw new Error(`Expected 10 releases, got ${catalog.releases.length}`);
 if (catalog.chapters.length !== 41) throw new Error(`Expected Base tutorial + 40 formal chapters = 41, got ${catalog.chapters.length}`);
-if (catalog.difficulty.historicalNonTutorialLevels !== 288) throw new Error(`Expected 288 historical difficulty labels`);
-if (catalog.difficulty.estimatedLevels !== 192) throw new Error(`Expected 192 estimated difficulty labels`);
+if (catalog.difficulty.historicalNonTutorialLevels !== 288) throw new Error('Expected 288 historical difficulty labels');
+if (catalog.difficulty.estimatedLevels !== 192) throw new Error('Expected 192 estimated difficulty labels');
 if (catalog.levels[0]?.publicId !== 'base-0-1') throw new Error('First public ID must be base-0-1');
 if (catalog.levels[5]?.publicId !== 'base-1-1') throw new Error('Base chapter route mismatch');
 if (catalog.levels.at(-1)?.publicId !== 'up9-4-12') throw new Error('Last public ID must be up9-4-12');
@@ -45,86 +45,60 @@ for (const level of catalog.levels) {
   }
 }
 
-const legacyFieldPatterns = [
-  /\.signedId\b/,
-  /\.hexId\b/,
-  /\.terrainHexId\b/,
-  /\.objectHexId\b/,
-  /\bsignedId\s*:/,
-  /\bhexId\s*:/,
-  /\bterrainHexId\s*:/,
-  /\bobjectHexId\s*:/
-];
+const legacyFieldPatterns = [/\.signedId\b/, /\.hexId\b/, /\.terrainHexId\b/, /\.objectHexId\b/, /\bsignedId\s*:/, /\bhexId\s*:/, /\bterrainHexId\s*:/, /\bobjectHexId\s*:/];
 for (const sourcePath of ['engine/src', 'editor/src', 'web/src']) {
   walkSource(path.join(root, sourcePath), (file, text) => {
-    if (legacyFieldPatterns.some((pattern) => pattern.test(text))) {
-      throw new Error(`Legacy DAT field usage leaked into ${path.relative(root, file)}`);
-    }
+    if (legacyFieldPatterns.some((pattern) => pattern.test(text))) throw new Error(`Legacy DAT field usage leaked into ${path.relative(root, file)}`);
   });
 }
 
 for (const file of [
-  'dist/web/index.html',
-  'dist/web/app.js',
-  'dist/web/level-filters.js',
-  'dist/web/level-filters.css',
-  'dist/web/engine/index.js',
-  'dist/web/editor/index.js',
-  'dist/web/editor.css',
-  'dist/web/assets/catalog.json',
-  'dist/web/assets/level-filters.json',
-  'dist/web/assets/art/hd/ts.png',
-  'dist/web/assets/art/hd/ta.png',
-  'dist/web/assets/art/hd/b0.png',
-  'dist/web/assets/art/hd/b1.png',
-  'dist/web/assets/art/hd/b2.png',
-  'dist/web/assets/art/hd/b3.png',
-  'dist/web/edit/index.html',
-  'dist/web/edit/base-1-1/index.html',
-  'dist/web/edit/up9-4-12/index.html',
-  'dist/web/play/index.html',
-  'dist/web/play/base-0-1/index.html',
-  'dist/web/play/base-1-1/index.html',
-  'dist/web/play/up9-4-12/index.html',
-  'dist/web/play/001/index.html',
-  'dist/web/play/485/index.html',
-  'dist/web/TinySynthAudio.js',
-  'dist/web/levels/index.html',
-  'dist/web/404.html',
-  'dist/engine-playground/index.html'
+  'dist/index.html',
+  'dist/app.js',
+  'dist/level-filters.js',
+  'dist/level-filters.css',
+  'dist/engine/index.js',
+  'dist/editor/index.js',
+  'dist/editor.css',
+  'dist/assets/catalog.json',
+  'dist/assets/level-filters.json',
+  'dist/assets/art/hd/ts.png',
+  'dist/assets/art/hd/ta.png',
+  'dist/assets/art/hd/b0.png',
+  'dist/assets/art/hd/b1.png',
+  'dist/assets/art/hd/b2.png',
+  'dist/assets/art/hd/b3.png',
+  'dist/TinySynthAudio.js'
 ]) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Missing build artifact: ${file}`);
 }
 
-verifyWebModuleEntry(path.join(root, 'dist/web'));
+for (const removed of ['dist/web', 'dist/engine-playground', 'dist/play', 'dist/edit', 'dist/levels', 'dist/settings', 'dist/404.html']) {
+  if (fs.existsSync(path.join(root, removed))) throw new Error(`Obsolete static build artifact still exists: ${removed}`);
+}
+
+verifyWebModuleEntry(path.join(root, 'dist'));
 if (process.env.CI) run(process.execPath, ['tools/scripts/browser-smoke.mjs']);
 
-console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；semantic LevelData + 筛选索引 + DAT codec round-trip、Engine + Editor + Web 与全部测试通过。');
+console.log('verify: OK — 10 个发行包 / 41 章节 / 485 关；单一 dist SPA、semantic LevelData、Engine + Editor + Web 与全部测试通过。');
 
 function verifyWebModuleEntry(webRoot) {
   const indexPath = path.join(webRoot, 'index.html');
   const html = fs.readFileSync(indexPath, 'utf8');
   const baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? '/';
   const importMapText = html.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i)?.[1];
-  if (!importMapText) throw new Error('dist/web/index.html is missing an import map');
-
+  if (!importMapText) throw new Error('dist/index.html is missing an import map');
   let importMap;
   try { importMap = JSON.parse(importMapText); }
   catch (error) { throw new Error(`Invalid import map JSON: ${error instanceof Error ? error.message : String(error)}`); }
-
   const imports = importMap?.imports;
   if (!imports || typeof imports !== 'object') throw new Error('Import map must define imports');
   for (const [specifier, target] of Object.entries(imports)) {
     if (typeof target !== 'string') throw new Error(`Import map target for ${specifier} must be a string`);
-    if (!isUrlLikeImportTarget(target)) {
-      throw new Error(`Import map target for ${specifier} is not URL-like: ${JSON.stringify(target)}. Relative targets must start with ./ or ../`);
-    }
+    if (!isUrlLikeImportTarget(target)) throw new Error(`Import map target for ${specifier} is not URL-like: ${JSON.stringify(target)}`);
     verifyLocalWebTarget(webRoot, baseHref, target, `import map ${specifier}`);
   }
-
-  for (const match of html.matchAll(/<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi)) {
-    verifyLocalWebTarget(webRoot, baseHref, match[1], 'module script');
-  }
+  for (const match of html.matchAll(/<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi)) verifyLocalWebTarget(webRoot, baseHref, match[1], 'module script');
 }
 
 function isUrlLikeImportTarget(target) {
@@ -136,11 +110,10 @@ function verifyLocalWebTarget(webRoot, baseHref, target, label) {
   const baseUrl = new URL(baseHref, `${origin}/index.html`);
   const resolved = new URL(target, baseUrl);
   if (resolved.origin !== origin) return;
-  const pathname = decodeURIComponent(resolved.pathname);
-  const relative = pathname.replace(/^\/+/, '');
+  const relative = decodeURIComponent(resolved.pathname).replace(/^\/+/, '');
   const file = path.resolve(webRoot, relative);
   const normalizedRoot = `${path.resolve(webRoot)}${path.sep}`;
-  if (file !== path.resolve(webRoot) && !file.startsWith(normalizedRoot)) throw new Error(`${label} escapes dist/web: ${target}`);
+  if (file !== path.resolve(webRoot) && !file.startsWith(normalizedRoot)) throw new Error(`${label} escapes dist: ${target}`);
   if (!fs.existsSync(file)) throw new Error(`${label} resolves to missing build artifact: ${target} -> ${path.relative(root, file)}`);
 }
 
