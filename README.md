@@ -33,7 +33,7 @@ up1-2-7       # UP1 / Chapter 2 / Level 7
 up9-4-12      # UP9 / Chapter 4 / Level 12
 ```
 
-`001...485` 仍保留为内部 canonical ID，用于内容去重和旧存档兼容，不作为主 UI 编号。这个命名空间也方便以后增加 `custom-*` 自定义关卡。
+`001...485` 只保留为内部 canonical ID，用于内容去重和内部数据关联，不作为玩家 URL，也不提供旧 ID 路由兼容。这个命名空间也方便以后增加 `custom-*` 自定义关卡。
 
 ## 当前功能
 
@@ -75,13 +75,13 @@ Editor 是游戏本身的一项能力，不分 Inspect/Edit 两套模式，也�
 
 分享链接使用 URL Fragment `#map=`：Terrain 先 RLE，Object 压成三元组，再优先 `deflate-raw + base64url`。实测正式关卡通常只有约 500～900 个分享字符；超过约 8KB 时 Editor 会建议改用 JSON 文件。
 
-`editor/examples/mechanics-smoke.json` 是用于 Engine 开发的综合机关测试地图，可直接 Import。
+`editor/examples/mechanics-smoke.json` 是用于 Engine 开发的综合机关测试地图，可直接 Import。独立 Engine Playground 已移除；机关调试统一通过 Editor Play Test 与 Debug Inspector 完成。
 
 ## MIDI
 
 原始 `.mid` 不转换成 MP3/OGG。
 
-浏览器使用 `webaudio-tinysynth@1.1.4`：它是单文件 WebAudio GM-like 合成器，自带 MIDI-SMF sequencer，Apache-2.0。
+浏览器使用 `webaudio-tinysynth@1.1.3`：它是单文件 WebAudio GM-like 合成器，自带 MIDI-SMF sequencer，Apache-2.0。
 
 正常执行：
 
@@ -90,7 +90,7 @@ npm install
 npm run build
 ```
 
-构建脚本会把 TinySynth 从 `node_modules` 复制进 `dist/web/vendor/`，所以正式发布后音乐不依赖 CDN。只有在没有安装 npm dependency 的受限开发环境中，运行时才回退到固定版本 jsDelivr URL。
+构建脚本会把 TinySynth 从 `node_modules` 复制进 `dist/vendor/`，所以正式发布后音乐不依赖 CDN。只有在没有安装 npm dependency 的受限开发环境中，运行时才回退到固定版本 jsDelivr URL。
 
 ## 开发
 
@@ -107,18 +107,13 @@ npm run dev
 http://localhost:5173
 ```
 
-只调试 Engine：
+直接打开 Editor：
 
 ```bash
-npm run dev:engine
 npm run dev:editor   # http://localhost:5175/edit
 ```
 
-例如：
-
-```text
-http://localhost:5174/?level=001&debug=1
-```
+Engine 机关调试直接使用 `/edit/<public-id>` 复制官方关卡，或 Import `editor/examples/mechanics-smoke.json` 后进入 Play Test。这里调用的就是正式 `@bobby/engine`，不再维护单独的 Playground。
 
 ## 构建
 
@@ -141,16 +136,16 @@ DAT 解码
   ↓
 TypeScript Engine + Editor + Web
   ↓
-dist/web
+dist/
 ```
 
-发布目录：
+发布目录只有：
 
 ```text
-dist/web/
+dist/
 ```
 
-构建会同时生成 `/levels`、`/settings`、全部 `/play/<public-id>/` 静态入口以及 `404.html`，普通静态服务器无需额外 SPA fallback 也能直接刷新关卡 URL。
+`/levels`、`/settings`、`/play/<public-id>`、`/edit/<public-id>` 都是 SPA 客户端路由。构建不会为这些 URL 生成目录、重复 `index.html`、旧 `001...485` 路由或 `404.html`。部署服务器需要把不存在的应用路径回落到 `/index.html`；项目自带开发服务器和 browser smoke test 已按这个规则工作。
 
 ## 验证
 
@@ -158,7 +153,7 @@ dist/web/
 npm run verify
 ```
 
-它会从原始 JAR 重新构建全部数据、编译 Engine/Web、运行机关回归测试并校验 10 个发行包、41 个可见章节、485 关 public ID 和发布文件。
+它会从原始 JAR 重新构建全部数据、编译 Engine/Editor/Web、运行机关回归测试并校验 10 个发行包、41 个可见章节、485 关 public ID 和单一 `dist/` 发布结构。
 
 ## Git
 
