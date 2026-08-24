@@ -94,7 +94,7 @@ function markLevelCompleted(canonicalId: string): void {
 function lastLevel(): CatalogLevel {
   const stored = localStorage.getItem('bobby.lastLevel');
   if (stored) {
-    const found = catalog.levels.find((level) => level.publicId === stored || level.id === stored);
+    const found = catalog.levels.find((level) => level.publicId === stored);
     if (found) return found;
   }
   return catalog.levels[0]!;
@@ -104,7 +104,7 @@ function preferredRelease(): string {
   const saved = localStorage.getItem('bobby.selectedRelease');
   if (saved && catalog.releases.some((release) => release.id === saved)) return saved;
   const stored = localStorage.getItem('bobby.lastLevel');
-  const fromLast = catalog.levels.find((level) => level.publicId === stored || level.id === stored)?.release;
+  const fromLast = catalog.levels.find((level) => level.publicId === stored)?.release;
   return fromLast ?? 'base';
 }
 
@@ -226,7 +226,7 @@ function renderChapter(chapterId: string, completed: Set<string>): string {
 
 async function renderGame(levelIdRaw: string): Promise<void> {
   const decoded = decodeURIComponent(levelIdRaw).toLowerCase();
-  const meta = catalog.levels.find((level) => level.publicId === decoded || level.id === decoded.padStart(3, '0'));
+  const meta = catalog.levels.find((level) => level.publicId === decoded);
   if (!meta) { navigate('/levels'); return; }
 
   localStorage.setItem('bobby.lastLevel', meta.publicId);
@@ -544,7 +544,7 @@ async function renderEditorRoute(levelIdRaw?: string): Promise<void> {
     }
   } else if (levelIdRaw) {
     const decoded = decodeURIComponent(levelIdRaw).toLowerCase();
-    const meta = catalog.levels.find((entry) => entry.publicId === decoded || entry.id === decoded.padStart(3, '0'));
+    const meta = catalog.levels.find((entry) => entry.publicId === decoded);
     if (!meta) { navigate('/edit'); return; }
     const official = await fetchJson<LevelData>(`assets/${meta.path}`);
     level = fromLevelData(official);
