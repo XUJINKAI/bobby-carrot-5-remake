@@ -65,9 +65,16 @@ export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
       ...current,
       behaviors: [
         ...current.behaviors,
-        touchBehavior("sandman-dialog", "触碰 Sandman 时请求展示对象实例对白", (ctx) => {
-          ctx.api.dialog(ctx.object?.properties?.dialogue);
-        }),
+        touchBehavior(
+          "sandman-dialog",
+          "触碰 Sandman 时请求展示对象实例对白",
+          (object) => ({
+            kind: "dialog",
+            ...(object.properties?.dialogue !== undefined
+              ? { text: object.properties.dialogue }
+              : {}),
+          }),
+        ),
       ],
       authoring:
         id === ObjectId.SANDMAN
