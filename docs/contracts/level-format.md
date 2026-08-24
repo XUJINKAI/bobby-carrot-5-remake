@@ -13,14 +13,15 @@ interface LevelMap {
 }
 ```
 
-它不包含 DAT byte、dynamic_slots、source、release、chapter、SHA 或 HTTP 信息。Engine 与 Editor 都围绕这个合同工作。
+它不包含 DAT byte、dynamic_slots、source、release、chapter、SHA、HTTP、Adventure save 或 Campaign rule。Engine 与 Editor 都围绕这个合同工作。
 
 ## 原始 DAT package
 
 原版外部协议：
+
 ```text
 u16 metadata_record_length  big-endian
-metadata_record[...]        opaque to gameplay
+metadata_record[...]        archive/campaign metadata
 
 repeat until EOF:
   u16 level_record_length   big-endian
@@ -38,6 +39,7 @@ repeat until EOF:
 raw byte 映射唯一存在于 `dat/src/mapping.ts`。
 
 `@bobby/dat` 提供：
+
 ```text
 decode/encodeDatTerrain
 decode/encodeDatObject
@@ -48,6 +50,7 @@ replaceDatLevelRecord
 ```
 
 官方 DAT 必须满足：
+
 ```text
 original record
  -> decode LevelMap
@@ -55,9 +58,22 @@ original record
  == original record byte-for-byte
 ```
 
-## OfficialLevelData
+## OfficialLevelData / Catalog identity
 
-构建出的官方 JSON 可以附加档案字段：source、record hash、public/canonical ID、difficulty 等。它们用于 Catalog、逆向证据与内容浏览；不是 Engine 的必需字段。
+构建出的官方 JSON 可以附加档案字段：source、record hash、difficulty、public/canonical ID 等。它们用于 Catalog、逆向证据与内容浏览；不是 Engine 的必需字段。
+
+正式 Campaign public ID 是连续章节身份：
+
+```text
+1-1
+1-bonus-1
+...
+40-10
+```
+
+Base/UP、DAT package 和 source record 只属于 archive provenance。40×12 个正式 map 之外还有 5 个共享 Special Scene；它们同样是 LevelMap，但不是正式关卡节点。
+
+章节 1～3 星难度来自 DAT metadata `packType`，仍属于 Catalog/Adventure metadata，不进入 LevelMap。
 
 ## Multi-cell Object
 
@@ -65,11 +81,12 @@ DAT Object table 和所有 authoring/persistence 模型只保存 anchor。Dragon
 
 ## Editor JSON
 
-Editor JSON 是 bc5r 自定义长期编辑格式，schemaVersion=2，额外允许 name/author/description。它保持 semantic ID 与 anchor object，不保存 raw DAT。
+Editor JSON 是 bc5r 自定义长期编辑格式，schemaVersion=2，额外允许 name/author/description。它保持 semantic ID 与 anchor object，不保存 raw DAT 或 Adventure state。
 
 ## URL Share
 
 分享只是一个窄的传输边界：
+
 ```text
 BC5R magic/version
 name/author/description lengths + UTF-8 metadata
@@ -80,8 +97,8 @@ deflate-raw when beneficial
 base64url
 ```
 
-没有旧 `j.`/`z.` JSON 分享兼容分支。
+没有旧 `j.`/`z.` JSON 分享兼容分支。Shared Play 只启动 Engine，不自动应用 Adventure Campaign/Bonus rule。
 
 ## Original JAR patch
 
-`npm run original:patch` 把 Editor JSON 的 LevelMap 编码成一个 DAT level record，替换指定 public ID 对应的原版槽位，然后写出独立验证 JAR。原始 JAR 永不修改。详见 `docs/workflows/validate-original.md`。
+`npm run original:patch` 把 Editor JSON 的 LevelMap 编码成一个 DAT level record，替换指定 Campaign public ID 对应的原版槽位，然后写出独立验证 JAR。原始 JAR 永不修改。详见 `docs/workflows/validate-original.md`。
