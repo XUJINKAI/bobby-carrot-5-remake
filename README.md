@@ -7,11 +7,11 @@
 ## 功能
 
 - **Adventure**：按原版 Campaign 结构游玩 40 章，包含章内进度、存档、Bonus、全局经济、永久道具与特殊场景等原版冒险系统。
-- **Explore**：自由浏览全部正式关卡，支持筛选、调试和自由缩放，适合找关与研究机制。
+- **Explore**：自由浏览原版 400 个普通关卡和 80 个 Bonus 奖励关，支持筛选、调试和自由缩放，适合找关与研究机制。
 - **Editor**：编辑语义地图，支持 Undo/Redo、Object 变换、Play Test、JSON 导入导出和 URL 分享。
 - **现代 Web Engine**：重新实现移动、碰撞、机关、动画和地图内胜负规则，不依赖原版 Java ME Runtime。
 - **原版数据互操作**：解析和生成 Bobby Carrot 5 DAT 关卡数据，并可将自定义地图 patch 回原版 JAR 进行差分验证。
-- **原版内容还原**：整合 Base / Forever 与 UP1～UP9，共 480 个正式 Campaign 地图和 5 个共享特殊场景。
+- **原版内容还原**：整合 Base / Forever 与 UP1～UP9，还原 400 个普通关卡、80 个 Bonus 奖励关，以及 Beaver Shop 等商店和特殊场景。
 
 更完整的产品设计、架构、格式与机制说明见 [`docs/`](docs/README.md)。
 
