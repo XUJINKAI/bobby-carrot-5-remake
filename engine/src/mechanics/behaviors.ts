@@ -21,7 +21,7 @@ export interface BehaviorContext {
   direction: Direction;
   terrainId: TerrainType;
   objectId: ObjectType;
-  object: LevelObject | null;
+  object?: LevelObject | null;
   fromTerrain?: TerrainType;
 }
 
