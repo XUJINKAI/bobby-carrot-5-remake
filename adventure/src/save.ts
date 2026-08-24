@@ -18,9 +18,6 @@ export interface AdventureSave {
     goldenKey: boolean;
   };
   claimedRewards: string[];
-  legacy: {
-    magicCodes: string[];
-  };
 }
 
 export function createAdventureSave(): AdventureSave {
@@ -30,8 +27,7 @@ export function createAdventureSave(): AdventureSave {
     campaign: { completedLevels: [], completedEvents: [], unlockedChapters: initialUnlockedChapters() },
     economy: { bonusCoins: 0, goldenCarrots: 0 },
     upgrades: { speedShoes: false, magnifyingGlass: false, goldenKey: false },
-    claimedRewards: [],
-    legacy: { magicCodes: [] }
+    claimedRewards: []
   };
 }
 
@@ -51,7 +47,6 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);
   const upgrades = objectValue(raw.upgrades);
-  const legacy = objectValue(raw.legacy);
   const completedLevels = stringArray(campaign.completedLevels)
     .map((id) => parseAdventureLevelId(id)?.id)
     .filter((id): id is AdventureLevelId => Boolean(id));
@@ -74,8 +69,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
       magnifyingGlass: upgrades.magnifyingGlass === true,
       goldenKey: upgrades.goldenKey === true
     },
-    claimedRewards: unique(stringArray(raw.claimedRewards)).sort(),
-    legacy: { magicCodes: unique(stringArray(legacy.magicCodes)).sort() }
+    claimedRewards: unique(stringArray(raw.claimedRewards)).sort()
   };
 }
 
