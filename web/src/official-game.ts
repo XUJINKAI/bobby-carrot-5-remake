@@ -2,7 +2,6 @@ import {
   campaignSequenceForChapter,
   claimPersistentReward,
   completeAdventureLevel,
-  createAdventureRuntime,
   isAdventureLevelUnlocked,
   planAdventureSession,
   prepareAdventureLevel,
@@ -96,11 +95,13 @@ export async function renderOfficialGame(
         : { superKey: true },
       assets: gameAssets(),
     },
-    inputOptions: { allowUndo: mode === "explore" },
+    inputOptions: {
+      undo: mode === "explore",
+      debug: mode === "explore",
+    },
   });
   const { game, input } = session,
-    isBonus = meta.contentKind === "bonus",
-    adventureRuntime = plan ? createAdventureRuntime(plan, game) : null;
+    isBonus = meta.contentKind === "bonus";
   audio.playMusic(isBonus ? "bonus" : `ingame${meta.number % 3}`);
   let levelStartedAt = performance.now(),
     debugInspection: string | null = null,
@@ -218,10 +219,10 @@ export async function renderOfficialGame(
       items.push(
         `<span class="item-chip" title="本关 Bonus Coin">BONUS <strong>${world.state.bonusCoinsInLevel}</strong></span>`,
       );
-    const challengeRemainingMs = adventureRuntime?.remainingMs ?? null;
+    const challengeRemainingMs = game.timedChallengeRemainingMs;
     if (challengeRemainingMs !== null)
       items.push(
-        `<span class="item-chip bonus-time" title="金锁开启后的 Bonus 剩余时间"><strong>${Math.ceil(challengeRemainingMs / 1000)}s</strong></span>`,
+        `<span class="item-chip bonus-time" title="限时挑战剩余时间"><strong>${Math.ceil(challengeRemainingMs / 1000)}s</strong></span>`,
       );
     hudItems.innerHTML = items.join("");
   };
@@ -249,10 +250,7 @@ export async function renderOfficialGame(
     update();
   });
   update();
-  const uiTimer = window.setInterval(() => {
-    adventureRuntime?.update();
-    renderHud();
-  }, 100);
+  const uiTimer = window.setInterval(renderHud, 100);
   const askUndo = (): void => {
     if (mode === "explore" && game.canUndo && window.confirm("撤销上一步？")) {
       game.undo();
@@ -261,7 +259,6 @@ export async function renderOfficialGame(
   };
   const askRestart = (): void => {
     if (!window.confirm("重新开始本关？当前进度会丢失。")) return;
-    adventureRuntime?.reset();
     game.restart();
     levelStartedAt = performance.now();
     debugInspection = null;
@@ -320,7 +317,6 @@ export async function renderOfficialGame(
   return {
     destroy(): void {
       window.clearInterval(uiTimer);
-      adventureRuntime?.destroy();
       if (mode === "adventure")
         window.removeEventListener("resize", applyAdventureCamera);
       session.destroy();
@@ -344,7 +340,7 @@ function gamePageHtml(
   audio: TinySynthAudioBackend,
   mode: OfficialGameMode,
 ): string {
-  return `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}"><header class="game-toolbar game-toolbar-v2"><div class="game-toolbar-left"><button id="back" class="icon-btn" title="返回" aria-label="返回">←</button><span class="level-label">${displayLevelId(meta)}</span><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span></div><div class="game-hud" aria-label="游戏状态"><span class="hud-chip"><strong id="hud-time">00:00</strong></span><span class="hud-chip"><span id="hud-objective-icon" class="hud-art hud-carrot" aria-hidden="true"></span><strong id="hud-objectives">—</strong></span><span id="hud-items" class="hud-items"></span></div><div class="game-toolbar-right"><span class="hud-chip step-chip"><strong id="hud-moves">0</strong><span class="hud-text-label">STEPS</span></span>${mode === "explore" ? '<button id="undo" class="icon-btn" title="撤销">↶</button>' : ""}<button id="restart" class="icon-btn" title="重新开始">↻</button><button id="music" class="icon-btn" title="音乐">${audio.isEnabled() ? "♫" : "♪̸"}</button>${mode === "explore" ? '<button id="edit-level" class="icon-btn" title="在编辑器中打开">✎</button>' : ""}<button id="game-settings" class="icon-btn" title="设置">⚙</button><button id="game-help" class="icon-btn" title="帮助">?</button></div></header><main class="game-stage"><canvas id="game"></canvas><div class="mobile-dpad" aria-label="移动方向"><button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button></div><aside id="debug-panel" class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside><div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true"></section></div></main><dialog id="game-settings-dialog" class="game-dialog"><header><strong>设置</strong><button class="dialog-close icon-btn">×</button></header><label class="dialog-setting"><span>音乐</span><input id="game-music-enabled" type="checkbox" ${audio.isEnabled() ? "checked" : ""}></label><label class="dialog-setting"><span>音乐音量</span><input id="game-music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></label><label class="dialog-setting"><span>音效音量</span><input id="game-sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></label></dialog><dialog id="game-help-dialog" class="game-dialog"><header><strong>${mode === "adventure" ? "Adventure" : "游玩"}帮助</strong><button class="dialog-close icon-btn">×</button></header><div class="help-list"><p><kbd>WASD</kbd> / <kbd>方向键</kbd>：移动。</p><p>鼠标/单指拖动地图；滚轮 / Pinch：缩放。</p>${mode === "adventure" ? "<p>Adventure 强制竖屏视野，并限制最小缩放，避免一次看到整张原版谜题地图。</p><p>Adventure 不提供 Undo；Bonus 的 60 秒规则由 Adventure 订阅 Engine 的通用 object-interaction 事件实现。</p>" : "<p><kbd>~</kbd>：DEBUG；自由选关允许完整地图浏览和调试。</p>"}</div></dialog></div>`;
+  return `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}"><header class="game-toolbar game-toolbar-v2"><div class="game-toolbar-left"><button id="back" class="icon-btn" title="返回" aria-label="返回">←</button><span class="level-label">${displayLevelId(meta)}</span><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span></div><div class="game-hud" aria-label="游戏状态"><span class="hud-chip"><strong id="hud-time">00:00</strong></span><span class="hud-chip"><span id="hud-objective-icon" class="hud-art hud-carrot" aria-hidden="true"></span><strong id="hud-objectives">—</strong></span><span id="hud-items" class="hud-items"></span></div><div class="game-toolbar-right"><span class="hud-chip step-chip"><strong id="hud-moves">0</strong><span class="hud-text-label">STEPS</span></span>${mode === "explore" ? '<button id="undo" class="icon-btn" title="撤销">↶</button>' : ""}<button id="restart" class="icon-btn" title="重新开始">↻</button><button id="music" class="icon-btn" title="音乐">${audio.isEnabled() ? "♫" : "♪̸"}</button>${mode === "explore" ? '<button id="edit-level" class="icon-btn" title="在编辑器中打开">✎</button>' : ""}<button id="game-settings" class="icon-btn" title="设置">⚙</button><button id="game-help" class="icon-btn" title="帮助">?</button></div></header><main class="game-stage"><canvas id="game"></canvas><div class="mobile-dpad" aria-label="移动方向"><button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button></div><aside id="debug-panel" class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside><div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true"></section></div></main><dialog id="game-settings-dialog" class="game-dialog"><header><strong>设置</strong><button class="dialog-close icon-btn">×</button></header><label class="dialog-setting"><span>音乐</span><input id="game-music-enabled" type="checkbox" ${audio.isEnabled() ? "checked" : ""}></label><label class="dialog-setting"><span>音乐音量</span><input id="game-music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></label><label class="dialog-setting"><span>音效音量</span><input id="game-sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></label></dialog><dialog id="game-help-dialog" class="game-dialog"><header><strong>${mode === "adventure" ? "Adventure" : "游玩"}帮助</strong><button class="dialog-close icon-btn">×</button></header><div class="help-list"><p><kbd>WASD</kbd> / <kbd>方向键</kbd>：移动。</p><p>鼠标/单指拖动地图；滚轮 / Pinch：缩放。</p>${mode === "adventure" ? "<p>Adventure 强制竖屏视野，并限制最小缩放，避免一次看到整张原版谜题地图。</p><p>Adventure 不提供 Undo；Bonus 的限时规则已经编码在地图机关实例中，由正式 Engine 执行。</p>" : "<p><kbd>~</kbd>：DEBUG；自由选关允许完整地图浏览和调试。</p>"}</div></dialog></div>`;
 }
 function bindAudioControls(
   root: ParentNode,
