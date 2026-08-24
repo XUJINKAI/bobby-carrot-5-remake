@@ -1,6 +1,6 @@
 # 地图编辑器
 
-Editor 是 Bobby Carrot 5 Web 的玩家功能，也是 Engine 的首选交互式调试入口；它不是第二套 gameplay 实现。
+Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互式调试入口；它不是第二套 gameplay 实现。
 
 ## 地图格式
 
