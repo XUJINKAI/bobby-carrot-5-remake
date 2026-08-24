@@ -11,23 +11,27 @@
 ```bash
 npm run original:patch -- \
   --map ./dragon-test.json \
-  --target up9-4-12
+  --target 40-10
 ```
 
-默认输出：
+默认输出到：
+
 ```text
-tmp/original-validation/dragon-test-up9-4-12.jar
+tmp/original-validation/
 ```
 
 也可指定：
+
 ```bash
 npm run original:patch -- \
   --map ./dragon-test.json \
-  --target up9-4-12 \
+  --target 40-10 \
   --out ./tmp/original-validation/dragon.jar
 ```
 
-`--target` 只选择原版发行 JAR、`00.dat`～`04.dat` 与关卡槽位；不会要求自定义地图与目标官方关尺寸相同。
+`--target` 使用玩家 Campaign public ID（例如 `1-1`、`1-bonus-1`、`40-10`）。工具通过 Catalog provenance 找回真正的 Base/UP JAR、DAT 包与原始 level slot；不会要求自定义地图与目标官方关尺寸相同。
+
+Base/UP、`00.dat`～`04.dat`、record index 都只属于 archive identity，不再作为公开 target ID。
 
 ## 3. 工具自动验证的内容
 
