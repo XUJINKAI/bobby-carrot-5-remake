@@ -52,7 +52,11 @@ export class BobbyApp {
     }
     if (path === '/settings') { renderSettings(context); return; }
     if (path === '/edit') { this.controller = await renderEditorPage(context); return; }
-    if (path.startsWith('/edit/')) { this.controller = await renderEditorPage({ ...context, publicId: path.split('/').pop() }); return; }
+    if (path.startsWith('/edit/')) {
+      const publicId = decodeURIComponent(path.slice('/edit/'.length)).toLowerCase();
+      this.controller = await renderEditorPage({ ...context, publicId });
+      return;
+    }
     if (path === '/play' && shareValueFromHash(location.hash)) { this.controller = await renderSharedGame(context); return; }
     if (path.startsWith('/play/')) {
       const publicId = decodeURIComponent(path.split('/').pop() ?? '').toLowerCase();
