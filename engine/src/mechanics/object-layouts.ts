@@ -149,7 +149,14 @@ export function expandObjectLayouts(
       const key = `${x},${y}`;
       if (occupied.has(key)) continue;
       occupied.add(key);
-      expanded.push({ type: cell.type, x, y });
+      expanded.push({
+        type: cell.type,
+        x,
+        y,
+        ...(anchor.properties
+          ? { properties: { ...anchor.properties } }
+          : {}),
+      });
     }
   }
   return expanded;
@@ -164,5 +171,12 @@ export function collapseObjectLayouts(
 ): LevelObject[] {
   return objects
     .filter((object) => !isObjectLayoutPart(object.type))
-    .map(({ type, x, y }) => ({ type, x, y }));
+    .map((object) => ({
+      type: object.type,
+      x: object.x,
+      y: object.y,
+      ...(object.properties
+        ? { properties: { ...object.properties } }
+        : {}),
+    }));
 }
