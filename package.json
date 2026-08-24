@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Bobby Carrot 5 的现代 Web 重制：485 关、原版高清美术、Engine、JSON 地图 Editor 与 URL 分享。",
+  "description": "Bobby Carrot 5 的现代 Web 重制：原版 1～40 章、Adventure、自由选关、Engine、JSON 地图 Editor 与 URL 分享。",
   "scripts": {
     "assets:extract": "node tools/src/extract-jars.mjs",
     "assets:decode": "node tools/src/decode-levels.mjs",
@@ -23,6 +23,6 @@
   },
   "devDependencies": { "typescript": "^5.9.2" },
   "engines": { "node": ">=20" },
-  "workspaces": ["model","dat","engine","editor","web","tools"],
+  "workspaces": ["model","dat","engine","editor","adventure","web","tools"],
   "dependencies": { "webaudio-tinysynth": "1.1.3" }
 }
