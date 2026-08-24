@@ -12,6 +12,8 @@
 - 原版验证：`docs/workflows/validate-original.md`
 - 逆向机关：`docs/workflows/add-mechanic.md`
 - 原版事实：`docs/reference/`
+- 项目许可证：`LICENSE`
+- 第三方资产版权边界：`THIRD_PARTY_ASSETS.md`
 
 ## 代码与文档质量
 
@@ -24,12 +26,30 @@
 7. 可机械验证的质量规则必须进入 `npm run verify`。`AGENTS.md` 负责说明规则，verify 才是强制门禁。
 8. 项目在文档与 Web 用户界面中的正式名称统一为 **Bobby Carrot 5 Remake**；不得使用历史产品名或缩略显示名替代正式名称。包名、仓库名和 `bc5r` 内部代号不受此规则影响。
 
+## 避免回显已否决内容
+
+* 用户否决、纠正、放弃的方案，以及 AI 在过程中产生的失败尝试，只作为当前任务的控制信息，不应成为最终结果的一部分。
+* 最终产物应像读者从未看过前面的讨论一样独立成立，直接描述“现在是什么、现在怎么工作”，而不是解释“没有采用什么”。
+* 避免使用“无 X”“非 X 版”“不再使用 X”“没有采用 X”“相比之前方案”等负向或对比式表达；不要仅通过换同义词继续保留相同的负向语义。
+* 区分“项目真实历史”和“当前会话历史”。只有已经存在于代码库、已发布版本或明确基线中的行为，才可以描述为“移除、替换、迁移、改为”；讨论中的草案、临时代码、未提交修改和被否决方案不算项目历史。
+* 如果某个方案只在本次讨论中出现过，最终应描述新方案本身。例如优先写“使用 YAML 保存配置”，而不是“移除 SQLite，改用 YAML”。
+* 此规则适用于所有最终输出，包括正文、标题、文件名、UI 文案、代码注释、文档、测试名称、Commit Message、PR 描述、Changelog、Release Note 和任务总结。
+* 只有当被排除内容本身具有实际信息价值时才应提及，例如真实的 Breaking Change、兼容性变化、迁移要求、安全限制、审计记录，或用户明确要求进行方案比较。
+* 最终检查时，确认没有把用户已经否决的内容、AI 的思考过程、失败尝试或临时实现重新包装成产品特性、项目历史或说明文字。
+
+## 许可证与版权边界
+
+1. 项目自身原创的源代码、文档及其他可由相应作者授权的原创材料受根目录 `LICENSE` 约束；分发修改版时必须遵守其中的非商业、源码公开与同许可证延续要求。
+2. 原版 Bobby Carrot 的 JAR、美术、音频、音乐、地图、DAT 数据、角色、名称、Logo、商标，以及从这些内容提取、解码、转换或生成的派生资源，不属于本项目 `LICENSE` 的授权范围。
+3. 不得在 README、注释、文档、发布说明或 UI 中把第三方资产描述为“由本项目许可证授权”“自由使用”或“项目拥有版权”。第三方内容的权利边界统一以 `THIRD_PARTY_ASSETS.md` 为准。
+4. 新增第三方资源、第三方代码或其派生物时，应明确来源和许可证/版权边界；无法确认授权时，不得擅自把它纳入本项目原创许可证范围。
+
 ## 硬规则
 
 1. `assets/original/official-hd/` 的 10 个原始 JAR 永远只读；验证 JAR 只能生成到 `tmp/` 等生成目录。
 2. `assets/extracted/`、`assets/generated/`、`dist/`、`tmp/` 都是生成物，不提交 Git，不手工修。
 3. 正式 Campaign 玩家 ID 使用连续章节编号：`1-1 / 1-bonus-1 / ... / 40-10`。`base / up01 ... up09`、DAT 包名和 record slot 只属于 archive provenance；`001...485` 仍只是内部 canonical identity。
-4. 原始内容必须区分：40×12=480 个正式 Campaign map，以及 5 个共享 Special Scene；不要把 `00.dat` 的 5 条记录称作 Tutorial。
+4. 原始 Campaign 内容必须区分：40 章共 400 个普通关卡 + 80 个 Bonus 奖励关；此外还有 5 个共享商店 / Special Scene：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。技术上可以把前两者统称为 480 个 Campaign map，但面向玩家的文案使用 400 个普通关卡 + 80 个 Bonus 奖励关的产品表述。
 5. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；禁止加入 JAR/DAT byte、发布包、SHA、HTTP、Campaign 或 gameplay 规则。
 6. **所有原版 DAT byte ↔ semantic 映射只能位于 `@bobby/dat`。** Engine / Model 不允许维护第二份 DAT table；Editor/Web 只有分享或 Debug provenance 这种明确边界可以调用 `@bobby/dat` API。
 7. `engine/` 是唯一地图内游戏规则实现。Web、Adventure 与 Editor 禁止复制碰撞、机关、地图内死亡/胜利条件。
