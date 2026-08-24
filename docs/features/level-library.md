@@ -2,11 +2,11 @@
 
 ## 三种身份
 
-正式内容现在明确区分：
+正式内容明确区分：
 
-1. **archive identity**：Base / UP、DAT 包、source record；只用于 provenance 和原版 JAR patch；
+1. **archive identity**：Base / UP、DAT 包、source record；用于 provenance 和原版 JAR patch；
 2. **campaign/public ID**：玩家可见，连续 1～40 章；
-3. **canonical ID**：内部去重 identity，不作为 URL。
+3. **canonical ID**：内部去重 identity，用于内容和工具链定位。
 
 例如：
 
@@ -16,7 +16,7 @@ public:    40-10
 canonical: internal only
 ```
 
-不要在新 UI、分享链接或自定义关卡 API 中暴露 Base/UP 或 canonical ID。
+新 UI、分享链接和自定义关卡 API 使用玩家语义或自定义地图身份；Base/UP 与 canonical ID 保持为内部 provenance。
 
 ## 正式 Campaign 编排
 
@@ -66,13 +66,13 @@ bonus-2
 = 485 个唯一 DAT map
 ```
 
-5 个 Special Scene 来自原先被误称为 Tutorial 的特殊记录：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。
+5 个 Special Scene 分别是 Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。
 
 ## 章节难度
 
 原版章节选择界面的 1～3 星难度直接来自每章 DAT metadata 的 `packType`。这是章节级原始数据。
 
-Explore 的关卡级“简单/中等/困难”等筛选仍使用单关难度数据；两者不要混为一个字段。
+Explore 的关卡级“简单/中等/困难”等筛选使用单关难度数据，与章节星级分别维护。
 
 ## Explore / 自由选关
 
@@ -86,15 +86,15 @@ Chapter 40
 ```
 
 Explore 模式：
-- 全 480 个正式关卡开放；
-- 不受 Adventure 锁关影响；
+- 全 480 个正式 Campaign map 开放；
+- 使用独立的自由浏览进度；
 - 支持筛选和随机；
-- 完成记录只服务自由浏览体验；
+- 完成记录服务自由浏览体验；
 - 允许 DEBUG、自由缩放和 Editor 跳转。
 
 ## Adventure / 原版冒险
 
-Adventure 使用同一批官方 LevelMap，但另有：
+Adventure 使用同一批官方 LevelMap，并增加：
 - 章内线性解锁；
 - 原版章节选择 UI 语义；
 - Adventure Save；
@@ -102,4 +102,4 @@ Adventure 使用同一批官方 LevelMap，但另有：
 - portrait viewport 限制；
 - 特殊场景与 Campaign event。
 
-Explore 与 Adventure 的进度不能互相污染。
+Explore 与 Adventure 分别维护进度。
