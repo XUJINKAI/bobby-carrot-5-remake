@@ -44,7 +44,7 @@ Engine Game
 - `LevelObject`；
 - `LevelMap { width, height, terrain, objects }`。
 
-`LevelMap` 表示“能被玩/编辑的一张地图”，不表示“某个官方发行记录”或“Campaign 节点”。它没有 release、chapter、difficulty、JAR path、record SHA、dynamicSlots、save progress 等字段。
+`LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 
 ## @bobby/dat
 
@@ -56,7 +56,7 @@ LevelMap <-> DAT level record
 DAT package <-> metadata + level records
 ```
 
-`dat/src/mapping.ts` 是唯一 raw DAT ID table。Debug 需要显示原版 hex ID 时调用 `datSourceForTerrain/Object()`；Engine Definition 自己不保存 DAT byte。
+`dat/src/mapping.ts` 是唯一 raw DAT ID table。Debug 需要显示原版 hex ID 时调用 `datSourceForTerrain/Object()`；Engine Definition 只保存 semantic definition。
 
 `dynamic_slots` 属于原版 record 的序列化字段，由 `deriveDatDynamicSlots(LevelMap)` 派生。`verify` 对全部 530 条官方 source record 检查派生值与原值一致。
 
@@ -78,11 +78,11 @@ Object Layout expansion
 Runtime World occupancy
 ```
 
-Engine 不知道 Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 或 Adventure Bonus。
+Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 和 Adventure Bonus 由 Engine 外层系统负责。
 
 ### 通用运行时事件接口
 
-Engine 不为 Campaign 规则增加专用事件。`Game.onWorldEvent()` 暴露一条通用 WorldEvent 流，例如：
+Engine 使用通用 WorldEvent 表达地图内事实。`Game.onWorldEvent()` 暴露事件流，例如：
 
 ```text
 collect-bonus-coin
@@ -104,9 +104,9 @@ objectType = ObjectId.LOCK
 action = "open"
 ```
 
-Engine 还提供 `killPlayer(reason)` 这种通用运行时能力。它不知道“为什么外部规则要让 Bobby 死亡”。
+Engine 还提供 `killPlayer(reason)` 这种通用运行时能力。外层规则通过这些通用接口与 Engine 协作。
 
-禁止新增 `lock-opened`、`bonus-timeout`、`bonusTimeMs` 等 Adventure 专用 Engine API。
+Adventure 专用 Campaign 语义保持在 `@bobby/adventure`，Engine API 维持通用 gameplay/runtime 边界。
 
 ### Semantic Definition Layer
 
@@ -125,7 +125,7 @@ Object Layout Definition
 └─ authoringVariants[]
 ```
 
-`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Object 不应进入 Editor 素材栏。Editor 不维护第二份 ID 黑名单。
+`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Object 的 authoring 可见性。Editor Palette 直接消费这份 metadata。
 
 ## @bobby/adventure
 
@@ -140,11 +140,11 @@ Object Layout Definition
 - Adventure session plan；
 - 原版 Bonus timed challenge runtime。
 
-它不知道：Base/UP、DAT byte、pack file、record SHA、JAR、HTTP、DOM、localStorage。
+Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
 ### Bonus 60 秒规则
 
-60 秒不是 Engine 规则，也不是 LevelMap 属性。
+60 秒倒计时由 Adventure runtime 管理：
 
 ```text
 Engine reports generic WorldEvent
@@ -159,9 +159,7 @@ complete/death -> clear clock
 timeout -> engine.killPlayer(...)
 ```
 
-因此 Explore、Editor Play Test 和 Shared Play 即使地图中有锁，也不会自动获得原版 Bonus 倒计时。
-
-Adventure runtime 通过结构化 port 使用 `onWorldEvent()` + `killPlayer()`，所以仍不需要 import `@bobby/engine`。
+Explore、Editor Play Test 和 Shared Play 使用纯 Engine session；Adventure session 通过结构化 port 使用 `onWorldEvent()` + `killPlayer()`，保持 package dependency 单向隔离。
 
 ## Official content / Catalog
 
@@ -177,22 +175,22 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 - 480 个正式 Campaign map；
 - 5 个共享 Special Scene。
 
-`00.dat` 的五张地图不是 Tutorial，而是 Beaver Shop / Cloud 9 / Dream Machine / Dreamland Reward / Campaign Intro。
+`00.dat` 的五张地图分别是 Beaver Shop / Cloud 9 / Dream Machine / Dreamland Reward / Campaign Intro。
 
-每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。关卡级难度筛选仍使用现有历史/估算数据，两者不是一回事。
+每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。关卡级难度筛选使用现有历史/估算数据，两类数据分别维护。
 
 ## Editor
 
 Editor 持久化 `EditorLevel extends LevelMap`：
 - schemaVersion / name / author / description；
 - semantic terrain / objects；
-- multi-cell 仍只保存 anchor。
+- multi-cell 只保存 anchor。
 
-持久化出口只有：
+持久化出口：
 1. JSON Import / Export；
 2. 分享链接：`bc5r metadata envelope + original DAT level record -> deflate-raw + base64url`。
 
-Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine。它不创建 Adventure runtime，因此没有 Campaign、全局经济或 Bonus 60 秒规则。
+Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine。Campaign、全局经济和 Bonus 60 秒由 Adventure session 提供。
 
 ## Web
 
@@ -203,13 +201,13 @@ Web 是浏览器产品壳：怀旧 Home、Explore、Adventure UI、Editor route�
 - 40 章全部开放；
 - 平铺浏览；
 - 筛选、随机、DEBUG、自由缩放；
-- 不受 Adventure Save 限制。
+- 使用独立的自由浏览进度。
 
 ### Adventure
 
-Web 提供竖屏容器、章节/关卡列表、存档文件导入导出等浏览器表现层；Campaign 规则本身来自 `@bobby/adventure`。
+Web 提供竖屏容器、章节/关卡列表、存档文件导入导出等浏览器表现层；Campaign 规则来自 `@bobby/adventure`。
 
-Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera 最小 zoom，避免显示完整谜题地图。
+Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera 最小 zoom，保持谜题的信息边界。
 
 正式 URL：
 
@@ -226,11 +224,11 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 /edit#map=...
 ```
 
-服务器负责 app-route fallback；缺失静态资源必须真正返回 404。
+服务器负责 app-route fallback；静态资源路径按真实文件提供。
 
 ## Adventure Save
 
-Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize，Web 只负责 localStorage 与文件导入导出。
+Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize，Web 负责 localStorage 与文件导入导出。
 
 持久奖励用稳定 ID：
 
@@ -238,7 +236,7 @@ Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize�
 Campaign level ID + semantic Object type + x/y
 ```
 
-已经领取的奖励在进入 Adventure session 前从 LevelMap clone 中移除；原始官方 LevelMap 不修改。
+已经领取的奖励在进入 Adventure session 前从 LevelMap clone 中移除；原始官方 LevelMap 保持不可变。
 
 ## Original JAR Validation
 
@@ -263,11 +261,11 @@ npm run original:patch -- \
   --out tmp/original-validation/mechanics.jar
 ```
 
-目标 public ID 只用于通过 Catalog provenance 找回原始 JAR / DAT / slot。
+目标 public ID 用于通过 Catalog provenance 找回原始 JAR / DAT / slot。
 
 ## Tools / Assets
 
-`assets/original/` 不可变；`assets/extracted/`、`assets/generated/` 可重建。Tools 负责 JAR 解包、source provenance、Catalog、章节星级、筛选索引和原版验证 JAR。
+`assets/original/` 是不可变原始输入；`assets/extracted/`、`assets/generated/` 是可重建产物。Tools 负责 JAR 解包、source provenance、Catalog、章节星级、筛选索引和原版验证 JAR。
 
 ## 依赖规则
 
@@ -282,7 +280,7 @@ model + dat + engine + adventure + editor <- web
 tools -> dat + original assets + generated metadata
 ```
 
-Adventure runtime 与 Engine 只通过结构化 event/death port 对接，不形成 package dependency。
+Adventure runtime 与 Engine 通过结构化 event/death port 对接，保持 package dependency 隔离。
 
 禁止：
 
