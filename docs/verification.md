@@ -1,11 +1,14 @@
-# 验证
+# Bobby Carrot 5 Remake 验证
 
 完成任何任务前：
+
 ```bash
 npm run verify
 ```
 
 它会：
+
+- 先执行源码质量门禁：仓库维护的源代码单文件不得超过 1000 行，800 行起提示职责审查，并检查文档与 Web 的正式产品名；
 - 用 TypeScript project references 编译 model/dat/engine/editor/web；
 - 从 10 个不可变原始 JAR 重建全部资产与 530 source / 485 unique 关卡；
 - 验证 semantic schema、public ID、章节、难度、筛选索引；
@@ -15,5 +18,11 @@ npm run verify
 - 生成一个临时 patched original JAR 并做 JAR → DAT → LevelMap round-trip；
 - 校验单一 `dist/`、model/dat/engine/editor browser modules 和 import map；
 - CI 中用 Chrome/Chromium smoke test 加载 Home、Level Browser、Play、Editor SPA 路由。
+
+源码质量门禁也可以单独运行：
+
+```bash
+npm run source:check
+```
 
 `verify` 失败时不能把任务描述为完成。
