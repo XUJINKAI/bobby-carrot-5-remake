@@ -7,7 +7,7 @@
   "scripts": {
     "assets:extract": "node tools/src/extract-jars.mjs",
     "assets:decode": "node tools/src/decode-levels.mjs",
-    "assets:build": "node tools/src/build-assets.mjs",
+    "assets:build": "node tools/src/build-assets.mjs && node tools/src/build-level-filters.mjs",
     "build": "node tools/scripts/build.mjs",
     "dev": "node tools/scripts/dev-server.mjs web",
     "dev:web": "node tools/scripts/dev-server.mjs web",

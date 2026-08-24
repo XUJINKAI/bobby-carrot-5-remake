@@ -14,7 +14,6 @@ import {
 } from '../mechanics/rules.js';
 import {
   cloudGridForObject,
-  initialObjectFootprint,
   inspectObjectDefinition,
   inspectTerrainDefinition,
   objectHasTrait,
@@ -249,7 +248,6 @@ export class World {
     state.moves += forced ? 0 : 1;
     this.applyPassageSideEffects(passage, to, events);
 
-
     this.afterEnter(to, direction, events, { justBoarded: passage.boardsMower === true });
     return this.result(true, from, to, passage, events);
   }
@@ -292,10 +290,6 @@ export class World {
         continue;
       }
       objects[y]![x] = type;
-      for (const part of initialObjectFootprint(type)) {
-        const px=x+part.dx, py=y+part.dy;
-        if(px>=0&&py>=0&&px<level.width&&py<level.height) objects[py]![px]=part.type;
-      }
     }
 
     if (!start) start = this.findFallbackStart(terrain);
@@ -591,7 +585,6 @@ export class World {
     state.fireTrail = trail;
     events.push({ type: 'dragon-fire', message: `龙喷火经过 ${trail.length} 格`, x: head.x, y: head.y });
   }
-
 
   private propelCloudsByWind(events: WorldEvent[]): void {
     const state = this.stateValue;

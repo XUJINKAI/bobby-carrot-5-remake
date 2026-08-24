@@ -38,6 +38,7 @@ export class InputController {
     this.canvas.addEventListener('pointerup', this.onPointerUp);
     this.canvas.addEventListener('pointercancel', this.onPointerUp);
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
+    this.canvas.addEventListener('auxclick', this.onAuxClick);
   }
 
   setEnabled(value: boolean): void {
@@ -61,6 +62,7 @@ export class InputController {
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('pointercancel', this.onPointerUp);
     this.canvas.removeEventListener('wheel', this.onWheel);
+    this.canvas.removeEventListener('auxclick', this.onAuxClick);
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
@@ -103,7 +105,9 @@ export class InputController {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!this.enabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    if (!this.enabled) return;
+    if (event.pointerType === 'mouse' && event.button !== 0 && event.button !== 1) return;
+    event.preventDefault();
     this.canvas.setPointerCapture(event.pointerId);
     this.pointers.set(event.pointerId, {
       x: event.clientX, y: event.clientY,
@@ -136,7 +140,9 @@ export class InputController {
     const pointer = this.pointers.get(event.pointerId);
     const wasPinching = this.pointers.size >= 2;
     this.pointers.delete(event.pointerId);
-    if (pointer?.moved || wasPinching) this.suppressNextClick = true;
+    // 只有会产生后续 click 的左键/触摸拖动需要抑制 click；中键结束只会触发 auxclick。
+    const mayProduceClick = event.pointerType !== 'mouse' || event.button === 0;
+    if (mayProduceClick && (pointer?.moved || wasPinching)) this.suppressNextClick = true;
     if (this.pointers.size < 2) this.pinchStartDistance = 0;
     for (const remaining of this.pointers.values()) {
       remaining.startX = remaining.x;
@@ -149,6 +155,10 @@ export class InputController {
     if (!this.enabled) return;
     event.preventDefault();
     this.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
+  };
+
+  private readonly onAuxClick = (event: MouseEvent): void => {
+    if (event.button === 1) event.preventDefault();
   };
 
   private pointerDistance(): number {

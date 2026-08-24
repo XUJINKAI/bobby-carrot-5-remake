@@ -1,5 +1,12 @@
 export interface CameraPoint { x: number; y: number; }
 
+interface PanReturn {
+  fromX: number;
+  fromY: number;
+  startedAt: number;
+  durationMs: number;
+}
+
 export class Camera {
   centerX = 0;
   centerY = 0;
@@ -9,12 +16,14 @@ export class Camera {
   readonly sourceTileSize: number;
   private panOffsetX = 0;
   private panOffsetY = 0;
+  private panReturn: PanReturn | null = null;
 
   constructor(sourceTileSize = 48) {
     this.sourceTileSize = sourceTileSize;
   }
 
   get tileScreenSize(): number { return this.sourceTileSize * this.zoom; }
+  get hasPanOffset(): boolean { return Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001; }
 
   setViewport(width: number, height: number): void {
     this.viewportWidth = Math.max(1, width);
@@ -28,16 +37,34 @@ export class Camera {
   resetPan(): void {
     this.panOffsetX = 0;
     this.panOffsetY = 0;
+    this.panReturn = null;
   }
 
   panByScreen(dx: number, dy: number): void {
     const size = this.tileScreenSize;
     if (!Number.isFinite(dx) || !Number.isFinite(dy) || size <= 0) return;
+    this.panReturn = null;
     this.panOffsetX -= dx / size;
     this.panOffsetY -= dy / size;
   }
 
+  /** 下一次移动时调用：把用户拖动产生的偏移用 ease-out 平滑收回，而不是瞬移归零。 */
+  recenterPan(durationMs = 260): void {
+    if (this.panReturn) return;
+    if (!this.hasPanOffset) {
+      this.resetPan();
+      return;
+    }
+    this.panReturn = {
+      fromX: this.panOffsetX,
+      fromY: this.panOffsetY,
+      startedAt: performance.now(),
+      durationMs: Math.max(80, durationMs)
+    };
+  }
+
   follow(point: CameraPoint, worldWidth: number, worldHeight: number): void {
+    this.updatePanReturn(performance.now());
     const baseX = point.x + 0.5;
     const baseY = point.y + 0.5;
     this.centerX = baseX + this.panOffsetX;
@@ -61,6 +88,17 @@ export class Camera {
       x: Math.floor((screenX - this.viewportWidth / 2) / size + this.centerX),
       y: Math.floor((screenY - this.viewportHeight / 2) / size + this.centerY)
     };
+  }
+
+  private updatePanReturn(now: number): void {
+    const returning = this.panReturn;
+    if (!returning) return;
+    const raw = Math.min(1, Math.max(0, (now - returning.startedAt) / returning.durationMs));
+    const eased = 1 - (1 - raw) ** 3;
+    const remaining = 1 - eased;
+    this.panOffsetX = returning.fromX * remaining;
+    this.panOffsetY = returning.fromY * remaining;
+    if (raw >= 1) this.resetPan();
   }
 
   private clamp(worldWidth: number, worldHeight: number): void {

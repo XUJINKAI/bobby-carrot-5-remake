@@ -316,13 +316,11 @@ const WINDMILL_INFO = new Map<ObjectType,{index:number;direction:Direction}>([[O
 const WIND_SWITCH_INDEX = new Map<TerrainType,number>([[Terrain.WIND_SWITCH_0_ON,0],[Terrain.WIND_SWITCH_0_OFF,0],[Terrain.WIND_SWITCH_1_ON,1],[Terrain.WIND_SWITCH_1_OFF,1],[Terrain.WIND_SWITCH_2_ON,2],[Terrain.WIND_SWITCH_2_OFF,2],[Terrain.WIND_SWITCH_3_ON,3],[Terrain.WIND_SWITCH_3_OFF,3]]);
 const WIND_SWITCH_PEER = new Map<TerrainType,TerrainType>([[Terrain.WIND_SWITCH_0_ON,Terrain.WIND_SWITCH_0_OFF],[Terrain.WIND_SWITCH_0_OFF,Terrain.WIND_SWITCH_0_ON],[Terrain.WIND_SWITCH_1_ON,Terrain.WIND_SWITCH_1_OFF],[Terrain.WIND_SWITCH_1_OFF,Terrain.WIND_SWITCH_1_ON],[Terrain.WIND_SWITCH_2_ON,Terrain.WIND_SWITCH_2_OFF],[Terrain.WIND_SWITCH_2_OFF,Terrain.WIND_SWITCH_2_ON],[Terrain.WIND_SWITCH_3_ON,Terrain.WIND_SWITCH_3_OFF],[Terrain.WIND_SWITCH_3_OFF,Terrain.WIND_SWITCH_3_ON]]);
 const CLOUD_GRID = new Map<ObjectType,ObjectType>(cloudInfo);
-const FOOTPRINT = new Map<ObjectType,Array<{dx:number;dy:number;type:ObjectType}>>([[ObjectId.DRAGON_HEAD_BASE,[{dx:1,dy:0,type:ObjectId.DRAGON_BODY},{dx:2,dy:0,type:ObjectId.DRAGON_TAIL}]],[ObjectId.SANDMAN,[{dx:0,dy:1,type:ObjectId.SANDMAN_BODY}]],[ObjectId.DREAM_MACHINE,[{dx:0,dy:1,type:ObjectId.DREAM_MACHINE_BODY}]],[ObjectId.BEAVER_BASE,[{dx:0,dy:1,type:ObjectId.BEAVER_BODY}]]]);
 export function tideDirectionForTerrain(id:TerrainType):Direction|undefined{return TIDE_DIRECTION.get(id);}
 export function windmillInfoForObject(id:ObjectType):{index:number;direction:Direction}|undefined{return WINDMILL_INFO.get(id);}
 export function windSwitchIndexForTerrain(id:TerrainType):number|undefined{return WIND_SWITCH_INDEX.get(id);}
 export function windSwitchPeerForTerrain(id:TerrainType):TerrainType|undefined{return WIND_SWITCH_PEER.get(id);}
 export function cloudGridForObject(id:ObjectType):ObjectType|undefined{return CLOUD_GRID.get(id);}
-export function initialObjectFootprint(id:ObjectType):readonly {dx:number;dy:number;type:ObjectType}[]{return FOOTPRINT.get(id)??[];}
 export function reflectFireForTerrain(id:TerrainType,direction:Direction):Direction|null|false{for(const behavior of getTerrainDefinition(id).behaviors){if(behavior.reflectFire)return behavior.reflectFire(direction);}return null;}
 
 export function getTerrainDefinition(id: TerrainType): TileDefinition<TerrainType> {

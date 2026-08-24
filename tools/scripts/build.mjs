@@ -11,6 +11,7 @@ fs.rmSync(path.join(root, 'web/dist-src'), { recursive: true, force: true });
 run(process.execPath, ['tools/src/extract-jars.mjs']);
 run(process.execPath, ['tools/src/decode-levels.mjs']);
 run(process.execPath, ['tools/src/build-assets.mjs']);
+run(process.execPath, ['tools/src/build-level-filters.mjs']);
 
 const tsc = tscCommand();
 run(tsc, ['-p', 'engine/tsconfig.json']);
@@ -21,6 +22,7 @@ const webOut = path.join(dist, 'web');
 fs.mkdirSync(webOut, { recursive: true });
 copyFile(path.join(root, 'web/index.html'), path.join(webOut, 'index.html'));
 copyFile(path.join(root, 'web/style.css'), path.join(webOut, 'style.css'));
+copyFile(path.join(root, 'web/level-filters.css'), path.join(webOut, 'level-filters.css'));
 copyFile(path.join(root, 'editor/style.css'), path.join(webOut, 'editor.css'));
 // Web 源码可能拆成多个 ESM 模块；先整体复制编译目录，再把 main.js 复制为 index.html 使用的 app.js。
 copyTree(path.join(root, 'web/dist-src'), webOut);
