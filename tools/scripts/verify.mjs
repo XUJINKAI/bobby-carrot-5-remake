@@ -336,7 +336,7 @@ function verifySourceBoundaries() {
     !/type:'object-interaction',objectType:ObjectId\.LOCK,action:'open'/.test(
       world,
     ) ||
-    /type:'open-lock'/.test(world)
+    /type\\s*:\\s*["']open-lock["']/.test(world)
   )
     throw new Error(
       "Engine World must report lock behavior through the generic object-interaction event shape",
