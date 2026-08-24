@@ -31,7 +31,7 @@ export async function createGameSession(
 ): Promise<GameSession> {
   const game = new Game({ canvas: options.canvas, ...options.gameOptions });
   const input = new InputController(game, options.inputOptions);
-  bindMobileControls(options.root, game);
+  bindMobileControls(options.root, input);
   let disposeDialog = (): void => {};
   try {
     await game.loadLevel(options.level);
@@ -52,22 +52,22 @@ export async function createGameSession(
   };
 }
 
-function bindMobileControls(root: ParentNode, game: Game): void {
+function bindMobileControls(root: ParentNode, input: InputController): void {
   root.querySelectorAll<HTMLButtonElement>("[data-move]").forEach((button) => {
     const direction = button.dataset.move as "up" | "down" | "left" | "right";
     button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
-      game.setHeldDirection(direction);
+      input.setHeldDirection(direction);
     });
     const release = (event: PointerEvent): void => {
       event.preventDefault();
-      game.setHeldDirection(null);
+      input.setHeldDirection(null);
     };
     button.addEventListener("pointerup", release);
     button.addEventListener("pointercancel", release);
     button.addEventListener("lostpointercapture", () =>
-      game.setHeldDirection(null),
+      input.setHeldDirection(null),
     );
   });
 }
