@@ -7,7 +7,7 @@ Bobby Carrot 5 Remake 是第五代的现代浏览器重制与原版研究工程�
 同一套 semantic LevelMap / Engine 服务两种官方地图体验：
 
 - **Adventure**：尽量恢复原作 Campaign、存档、经济、章节选择和手机竖屏信息限制；
-- **Explore**：现代化自由浏览，全部正式关开放、可筛选、可调试、可自由缩放。
+- **Explore**：现代化自由浏览，全部普通关与 Bonus 奖励关开放、可筛选、可调试、可自由缩放。
 
 自定义地图、分享地图与 Editor Play Test 只使用 Engine，不自动进入 Adventure Campaign。
 
@@ -43,7 +43,7 @@ Adventure 的目标不是复刻 Java ME 按键，而是恢复原版设计依赖�
 
 Explore 是现在的现代平铺选关体验：
 
-- 40 章 / 480 个正式关全部开放；
+- 40 章，共 400 个普通关卡 + 80 个 Bonus 奖励关，全部开放；
 - 章节平铺、一目了然；
 - 难度、萝卜、特殊道具、场景、机关筛选；
 - 随机一关、最近浏览；
@@ -57,12 +57,15 @@ Explore 的完成记录不影响 Adventure Save。
 原版 10 个 JAR 共 530 条 source record，去重后：
 
 ```text
-480 个正式 Campaign map
-5 个共享 Special Scene
+400 个普通 Campaign 关卡
+80 个 Bonus 奖励关
+5 个共享商店 / Special Scene
 = 485 个唯一 DAT map
 ```
 
-玩家正式关卡 ID：
+这里的 480 个 Campaign map 是技术上的地图总数，不应在面向玩家的文案中笼统称作“480 个关卡”；更准确的产品表述是 400 个普通关卡 + 80 个 Bonus 奖励关，另有商店和特殊场景。
+
+玩家 Campaign ID：
 
 ```text
 1-1
@@ -80,13 +83,13 @@ Base / UP、DAT package、record index 只属于 archive provenance。内部 can
 这里有两种不同难度数据：
 
 1. **章节难度**：原版章节选择界面的 1～3 星，直接读取 DAT chapter metadata `packType`；
-2. **关卡筛选难度**：历史 A～F 数据及其余正式关的估算值。
+2. **关卡筛选难度**：历史 A～F 数据及其余 Campaign map 的估算值。
 
 历史 A～F 不是章节星级：
 
-- 288 个正式关能直接获得历史单关难度标签；
-- 192 个正式关没有历史 A～F 标签；
-- 对这 192 关，构建工具用已标注关卡特征做估算；
+- 288 个 Campaign map 能直接获得历史单关难度标签；
+- 192 个 Campaign map 没有历史 A～F 标签；
+- 对这 192 张地图，构建工具用已标注关卡特征做估算；
 - 估算结果在 UI 中必须带 `≈`，不能伪装成原版事实。
 
 ## 现代化原则
@@ -104,6 +107,6 @@ Base / UP、DAT package、record index 只属于 archive provenance。内部 can
 
 - 在网页里运行 Java ME 模拟器；
 - 模拟数字键/软键 UI；
-- 把 480 个正式关变成一个无章节语义的巨大列表；
+- 把 400 个普通关卡和 80 个 Bonus 奖励关变成一个无章节语义的巨大列表；
 - 在 Adventure 中允许通过横屏/全图缩放破坏原版谜题信息；
 - 把原游戏重画成另一套视觉风格。
