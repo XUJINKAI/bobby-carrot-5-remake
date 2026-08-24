@@ -1,0 +1,162 @@
+Bobby Carrot 5 Remake Non-Commercial Copyleft License 1.0
+Bobby Carrot 5 Remake 非商业 Copyleft 许可证 1.0
+
+Copyright (c) 2026 XUJINKAI
+
+======================================================================
+English Version
+======================================================================
+
+1. Scope
+
+This License applies only to original source code, documentation, and other original materials authored specifically for the Bobby Carrot 5 Remake project by the copyright holder or contributors who have the right to license their contributions.
+
+This License does NOT apply to any third-party material, including but not limited to original Bobby Carrot game assets, artwork, audio, music, MIDI derived from original content, maps, level data, DAT/JAR content, characters, names, logos, trademarks, or other material owned by or derived from third parties. No rights to such third-party material are granted by this License.
+
+2. Permission
+
+Subject to the terms of this License, you are granted a worldwide, royalty-free, non-exclusive license to:
+
+- view and study the covered source code;
+- use the covered software for personal, educational, research, archival, and other non-commercial purposes;
+- modify the covered software; and
+- copy and redistribute the covered software or modified versions for non-commercial purposes.
+
+3. Source Availability and Copyleft
+
+If you distribute the covered software or any modified or derivative version of it, you must:
+
+- provide the complete corresponding source code for the distributed version, including all modifications necessary to build and run that version;
+- license the entire covered derivative work under this same License, without adding terms that further restrict recipients from exercising the permissions granted here;
+- keep this License and applicable copyright notices with the distributed source code; and
+- clearly state that the work has been modified when you distribute a modified version.
+
+You may not distribute a covered executable, application, archive, hosted build, binary package, or other usable form without making the complete corresponding source code available under this License at no additional charge.
+
+4. Non-Commercial Restriction
+
+You may not use, distribute, sublicense, host, bundle, or otherwise make the covered software or a derivative work available for commercial advantage or monetary compensation.
+
+Without limiting the above, the following are prohibited unless you have separate written permission from the copyright holder:
+
+- selling the software or a derivative work;
+- charging for downloading, obtaining, accessing, installing, activating, or using the software;
+- distributing it as part of a paid product, paid bundle, subscription, membership, commercial service, or paid hosting service;
+- distributing or hosting it in a manner primarily supported by advertising, sponsorship, affiliate revenue, or other monetization tied to access to or use of the software;
+- using it as a material component of a commercial product or service; or
+- receiving direct or indirect monetary compensation specifically for providing the software, a derivative work, or access to either.
+
+General donations or sponsorships that are not conditioned on access to the software, special builds, exclusive features, downloads, services, or other software-related benefits are not by themselves considered commercial use under this License.
+
+5. No Closed-Source Distribution
+
+You may not distribute a modified or unmodified covered work under terms that withhold the complete corresponding source code, prohibit recipients from modifying the source code, or prevent recipients from redistributing the covered work under this License.
+
+6. Third-Party Rights
+
+Nothing in this License grants permission to use third-party copyrighted material, trademarks, game assets, characters, music, data, or other third-party rights. You are solely responsible for obtaining any permission required for third-party material included in or used with a copy of the project.
+
+For this project's third-party content notice, see THIRD_PARTY_ASSETS.md.
+
+7. Attribution and Misrepresentation
+
+You must preserve applicable copyright and license notices. Modified versions must not be represented as an official release of Bobby Carrot 5 Remake or as being endorsed by the original project maintainers unless such endorsement has been expressly granted in writing.
+
+8. No Trademark License
+
+This License grants no rights to use any trademark, trade name, logo, or brand belonging to the Bobby Carrot rights holders, the project maintainer, or any other party, except as reasonably necessary to describe the origin of the software and comply with attribution requirements.
+
+9. Termination
+
+Your rights under this License terminate automatically if you materially violate its terms. Your rights are reinstated automatically if you cure the violation within 30 days after becoming aware of it, provided this is your first violation of this License. Otherwise, reinstatement requires written permission from the copyright holder.
+
+10. Disclaimer of Warranty
+
+THE COVERED SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE AUTHORS AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+
+11. Separate Permission
+
+The copyright holder may grant separate permissions, exceptions, or commercial licenses in writing. Such permission applies only to the recipient and scope expressly stated in that writing and does not change this License for other recipients.
+
+12. Language
+
+This License is provided in English and Chinese. Both versions are intended to express the same terms. If the two versions conflict in a way that cannot reasonably be reconciled, the English version controls.
+
+======================================================================
+中文版
+======================================================================
+
+1. 适用范围
+
+本许可证仅适用于由版权持有人或有权许可其贡献的贡献者，为 Bobby Carrot 5 Remake 项目专门创作的原创源代码、文档及其他原创材料。
+
+本许可证不适用于任何第三方材料，包括但不限于原版 Bobby Carrot 游戏的资产、美术、音频、音乐、由原版内容衍生的 MIDI、地图、关卡数据、DAT/JAR 内容、角色、名称、Logo、商标，以及其他由第三方拥有或来源于第三方的材料。本许可证不授予任何此类第三方材料的权利。
+
+2. 授权
+
+在遵守本许可证条款的前提下，你获得一项全球范围、免版税、非独占的许可，可以：
+
+- 查看和研究受本许可证覆盖的源代码；
+- 将受本许可证覆盖的软件用于个人、教育、研究、存档及其他非商业用途；
+- 修改受本许可证覆盖的软件；
+- 为非商业目的复制和再分发受本许可证覆盖的软件或其修改版本。
+
+3. 源代码公开与 Copyleft
+
+如果你分发受本许可证覆盖的软件，或其任何修改版、衍生版本，你必须：
+
+- 提供该分发版本的完整对应源代码，包括构建和运行该版本所需的全部修改；
+- 将整个受本许可证覆盖的衍生作品继续以本许可证授权，不得增加会进一步限制接收者行使本许可证所授予权利的条款；
+- 随源代码保留本许可证及适用的版权声明；
+- 分发修改版本时，明确说明该版本已经被修改。
+
+你不得在不同时以本许可证、且不额外收费地提供完整对应源代码的情况下，分发受本许可证覆盖的可执行文件、应用程序、压缩包、托管构建、二进制包或其他可直接使用的形式。
+
+4. 非商业限制
+
+你不得为了商业利益或金钱补偿，使用、分发、再许可、托管、捆绑，或以其他方式提供受本许可证覆盖的软件或其衍生作品。
+
+在不限制上述原则的前提下，除非另行获得版权持有人的书面许可，下列行为明确禁止：
+
+- 销售本软件或其衍生作品；
+- 对下载、获取、访问、安装、激活或使用本软件收费；
+- 将其作为付费产品、付费捆绑包、订阅、会员、商业服务或付费托管服务的一部分进行分发；
+- 以主要依靠广告、赞助、联盟分成或其他与访问或使用本软件直接关联的变现方式进行分发或托管；
+- 将其作为商业产品或商业服务的重要组成部分；
+- 因提供本软件、其衍生作品，或提供对二者的访问而直接或间接获得金钱补偿。
+
+如果一般性的捐赠或赞助并不以获得软件访问权、特殊构建、独占功能、下载、服务或其他与软件相关的利益为条件，则此类捐赠或赞助本身不视为本许可证所禁止的商业使用。
+
+5. 禁止闭源分发
+
+你不得以任何方式分发修改或未修改的受本许可证覆盖作品，如果该方式隐瞒完整对应源代码、禁止接收者修改源代码，或阻止接收者依据本许可证继续再分发该作品。
+
+6. 第三方权利
+
+本许可证不授予任何第三方版权材料、商标、游戏资产、角色、音乐、数据或其他第三方权利的使用许可。对于项目副本中包含或配合使用的第三方材料，你有责任自行取得所需的许可。
+
+本项目的第三方内容说明见 THIRD_PARTY_ASSETS.md。
+
+7. 署名与禁止冒充
+
+你必须保留适用的版权和许可证声明。除非得到明确书面授权，修改版本不得宣称为 Bobby Carrot 5 Remake 的官方发布版本，也不得宣称获得原项目维护者的认可或背书。
+
+8. 不授予商标权
+
+本许可证不授予任何使用 Bobby Carrot 权利人、项目维护者或其他任何主体的商标、商号、Logo 或品牌的权利，但为合理说明软件来源和履行署名义务所必需的使用除外。
+
+9. 终止
+
+如果你实质性违反本许可证条款，你依据本许可证获得的权利将自动终止。如果这是你第一次违反本许可证，并且你在知悉违约后 30 日内完成纠正，则权利自动恢复；其他情况下，恢复权利需要版权持有人的书面许可。
+
+10. 免责声明
+
+受本许可证覆盖的软件按“现状”提供，不附带任何明示或默示保证，包括但不限于适销性、特定用途适用性、权利完整性及不侵权保证。在法律允许的最大范围内，作者和版权持有人不对因本软件或其使用而产生或与之相关的任何索赔、损害或其他责任承担责任。
+
+11. 单独授权
+
+版权持有人可以通过书面形式授予单独许可、例外或商业授权。此类授权仅适用于书面文件明确指定的接收者和范围，不改变其他接收者适用的本许可证条款。
+
+12. 语言
+
+本许可证同时提供英文版与中文版，两种版本旨在表达相同条款。如果两种版本出现无法通过合理解释消除的冲突，以英文版为准。
