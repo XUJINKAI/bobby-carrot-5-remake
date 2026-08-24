@@ -1,4 +1,10 @@
-import { Game, InputController, type GameOptions, type InputControllerOptions, type LevelMap } from '@bobby/engine';
+import {
+  Game,
+  InputController,
+  type GameOptions,
+  type InputControllerOptions,
+  type LevelMap,
+} from "@bobby/engine";
 
 export interface GameSession {
   game: Game;
@@ -10,7 +16,7 @@ export interface CreateGameSessionOptions {
   root: ParentNode;
   canvas: HTMLCanvasElement;
   level: LevelMap;
-  gameOptions: Omit<GameOptions, 'canvas'>;
+  gameOptions: Omit<GameOptions, "canvas">;
   inputOptions?: InputControllerOptions;
 }
 
@@ -20,7 +26,9 @@ export interface CreateGameSessionOptions {
  * Pages decide what level/profile/session rules mean. This module only owns the
  * repeated browser plumbing around Game + InputController + mobile controls.
  */
-export async function createGameSession(options: CreateGameSessionOptions): Promise<GameSession> {
+export async function createGameSession(
+  options: CreateGameSessionOptions,
+): Promise<GameSession> {
   const game = new Game({ canvas: options.canvas, ...options.gameOptions });
   const input = new InputController(game, options.inputOptions);
   bindMobileControls(options.root, game);
@@ -37,14 +45,14 @@ export async function createGameSession(options: CreateGameSessionOptions): Prom
     destroy(): void {
       input.destroy();
       game.destroy();
-    }
+    },
   };
 }
 
 function bindMobileControls(root: ParentNode, game: Game): void {
-  root.querySelectorAll<HTMLButtonElement>('[data-move]').forEach((button) => {
-    const direction = button.dataset.move as 'up' | 'down' | 'left' | 'right';
-    button.addEventListener('pointerdown', (event) => {
+  root.querySelectorAll<HTMLButtonElement>("[data-move]").forEach((button) => {
+    const direction = button.dataset.move as "up" | "down" | "left" | "right";
+    button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
       game.setHeldDirection(direction);
@@ -53,8 +61,10 @@ function bindMobileControls(root: ParentNode, game: Game): void {
       event.preventDefault();
       game.setHeldDirection(null);
     };
-    button.addEventListener('pointerup', release);
-    button.addEventListener('pointercancel', release);
-    button.addEventListener('lostpointercapture', () => game.setHeldDirection(null));
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", () =>
+      game.setHeldDirection(null),
+    );
   });
 }

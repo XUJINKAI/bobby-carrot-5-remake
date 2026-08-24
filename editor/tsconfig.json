@@ -1,6 +1,17 @@
 {
   "extends": "../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "dist", "composite": true, "declaration": true, "declarationMap": true, "sourceMap": true },
-  "references": [{"path":"../model"},{"path":"../dat"},{"path":"../engine"}],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../model" },
+    { "path": "../dat" },
+    { "path": "../engine" }
+  ],
   "include": ["src/**/*.ts"]
 }

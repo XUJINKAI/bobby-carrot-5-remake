@@ -1,8 +1,15 @@
-import { ObjectId, type LevelMap, type LevelObject, type ObjectType } from '@bobby/model';
-import { parseAdventureLevelId, type AdventureLevelId } from './campaign.js';
-import { normalizeAdventureSave, type AdventureSave } from './save.js';
+import {
+  ObjectId,
+  type LevelMap,
+  type LevelObject,
+  type ObjectType,
+} from "@bobby/model";
+import { parseAdventureLevelId, type AdventureLevelId } from "./campaign.js";
+import { normalizeAdventureSave, type AdventureSave } from "./save.js";
 
-export type PersistentRewardType = typeof ObjectId.BONUS_COIN | typeof ObjectId.GOLDEN_CARROT;
+export type PersistentRewardType =
+  | typeof ObjectId.BONUS_COIN
+  | typeof ObjectId.GOLDEN_CARROT;
 
 export interface PersistentReward {
   id: string;
@@ -12,35 +19,67 @@ export interface PersistentReward {
   y: number;
 }
 
-export function persistentRewardsForLevel(levelId: string, level: LevelMap): PersistentReward[] {
+export function persistentRewardsForLevel(
+  levelId: string,
+  level: LevelMap,
+): PersistentReward[] {
   const parsed = parseAdventureLevelId(levelId);
   if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
   return level.objects.flatMap((object) => {
     if (!isPersistentRewardType(object.type)) return [];
-    return [{ id: persistentRewardId(parsed.id, object.type, object.x, object.y), levelId: parsed.id, type: object.type, x: object.x, y: object.y }];
+    return [
+      {
+        id: persistentRewardId(parsed.id, object.type, object.x, object.y),
+        levelId: parsed.id,
+        type: object.type,
+        x: object.x,
+        y: object.y,
+      },
+    ];
   });
 }
 
-export function persistentRewardId(levelId: AdventureLevelId, type: PersistentRewardType, x: number, y: number): string {
+export function persistentRewardId(
+  levelId: AdventureLevelId,
+  type: PersistentRewardType,
+  x: number,
+  y: number,
+): string {
   return `${levelId}:${type}:${x},${y}`;
 }
 
-export function prepareAdventureLevel(levelId: string, level: LevelMap, save: AdventureSave): LevelMap {
+export function prepareAdventureLevel(
+  levelId: string,
+  level: LevelMap,
+  save: AdventureSave,
+): LevelMap {
   const claimed = new Set(normalizeAdventureSave(save).claimedRewards);
-  const rewards = new Map(persistentRewardsForLevel(levelId, level).map((reward) => [`${reward.x},${reward.y}:${reward.type}`, reward.id]));
+  const rewards = new Map(
+    persistentRewardsForLevel(levelId, level).map((reward) => [
+      `${reward.x},${reward.y}:${reward.type}`,
+      reward.id,
+    ]),
+  );
   return {
     ...structuredClone(level),
     objects: level.objects.filter((object) => {
       if (!isPersistentRewardType(object.type)) return true;
       const id = rewards.get(`${object.x},${object.y}:${object.type}`);
       return !id || !claimed.has(id);
-    })
+    }),
   };
 }
 
-export function claimPersistentReward(save: AdventureSave, levelId: string, type: ObjectType, x: number, y: number): AdventureSave {
+export function claimPersistentReward(
+  save: AdventureSave,
+  levelId: string,
+  type: ObjectType,
+  x: number,
+  y: number,
+): AdventureSave {
   const parsed = parseAdventureLevelId(levelId);
-  if (!parsed || !isPersistentRewardType(type)) return normalizeAdventureSave(save);
+  if (!parsed || !isPersistentRewardType(type))
+    return normalizeAdventureSave(save);
   const id = persistentRewardId(parsed.id, type, x, y);
   const next = structuredClone(normalizeAdventureSave(save));
   if (next.claimedRewards.includes(id)) return next;
@@ -50,22 +89,30 @@ export function claimPersistentReward(save: AdventureSave, levelId: string, type
   return normalizeAdventureSave(next);
 }
 
-export function spendBonusCoins(save: AdventureSave, amount: number): AdventureSave {
+export function spendBonusCoins(
+  save: AdventureSave,
+  amount: number,
+): AdventureSave {
   const cost = Math.max(0, Math.floor(amount));
   const next = structuredClone(normalizeAdventureSave(save));
-  if (next.economy.bonusCoins < cost) throw new Error('Bonus Coin 不足');
+  if (next.economy.bonusCoins < cost) throw new Error("Bonus Coin 不足");
   next.economy.bonusCoins -= cost;
   return normalizeAdventureSave(next);
 }
 
-export function spendGoldenCarrots(save: AdventureSave, amount: number): AdventureSave {
+export function spendGoldenCarrots(
+  save: AdventureSave,
+  amount: number,
+): AdventureSave {
   const cost = Math.max(0, Math.floor(amount));
   const next = structuredClone(normalizeAdventureSave(save));
-  if (next.economy.goldenCarrots < cost) throw new Error('Golden Carrot 不足');
+  if (next.economy.goldenCarrots < cost) throw new Error("Golden Carrot 不足");
   next.economy.goldenCarrots -= cost;
   return normalizeAdventureSave(next);
 }
 
-function isPersistentRewardType(type: ObjectType): type is PersistentRewardType {
+function isPersistentRewardType(
+  type: ObjectType,
+): type is PersistentRewardType {
   return type === ObjectId.BONUS_COIN || type === ObjectId.GOLDEN_CARROT;
 }

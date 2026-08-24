@@ -1,7 +1,20 @@
-import { decodeShareLevel, shareValueFromHash, toLevelMap, type EditorLevel } from '@bobby/editor';
-import type { TinySynthAudioBackend } from './TinySynthAudio.js';
-import { bindNavigation, escapeHtml, gameAssets, NOOP_CONTROLLER, shell, type Navigate, type PageController } from './common.js';
-import { createGameSession } from './game-session.js';
+import {
+  decodeShareLevel,
+  shareValueFromHash,
+  toLevelMap,
+  type EditorLevel,
+} from "@bobby/editor";
+import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
+import {
+  bindNavigation,
+  escapeHtml,
+  gameAssets,
+  NOOP_CONTROLLER,
+  shell,
+  type Navigate,
+  type PageController,
+} from "./common.js";
+import { createGameSession } from "./game-session.js";
 
 export interface SharedGameContext {
   app: HTMLDivElement;
@@ -9,11 +22,13 @@ export interface SharedGameContext {
   navigate: Navigate;
 }
 
-export async function renderSharedGame(context: SharedGameContext): Promise<PageController> {
+export async function renderSharedGame(
+  context: SharedGameContext,
+): Promise<PageController> {
   const { app, audio, navigate } = context;
   const encoded = shareValueFromHash(location.hash);
   if (!encoded) {
-    navigate('/edit');
+    navigate("/edit");
     return NOOP_CONTROLLER;
   }
 
@@ -21,23 +36,25 @@ export async function renderSharedGame(context: SharedGameContext): Promise<Page
   try {
     editorLevel = await decodeShareLevel(encoded);
   } catch (error) {
-    app.innerHTML = shell(`<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="edit" data-nav>打开编辑器</a></section>`);
+    app.innerHTML = shell(
+      `<section class="settings-card"><h2>分享地图无法打开</h2><p class="muted">${escapeHtml(error instanceof Error ? error.message : String(error))}</p><a class="primary-btn" href="edit" data-nav>打开编辑器</a></section>`,
+    );
     bindNavigation(app, navigate);
     return NOOP_CONTROLLER;
   }
 
-  audio.playMusic('ingame0');
+  audio.playMusic("ingame0");
   app.innerHTML = `<div class="game-page"><header class="game-toolbar"><button id="back" class="ghost-btn">← 首页</button><span class="level-label">${escapeHtml(editorLevel.name)}</span><span class="muted hide-mobile">Custom JSON · ${editorLevel.width}×${editorLevel.height}</span><div class="spacer"></div><button id="edit-level" class="icon-btn">Edit</button><button id="undo" class="icon-btn">Undo</button><button id="restart" class="icon-btn">Restart</button></header><main class="game-stage"><canvas id="game"></canvas><div class="mobile-dpad" aria-label="移动方向"><button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button></div><div id="status" class="game-status">正在载入分享地图…</div><div id="game-result" class="game-result" hidden><section class="result-card"></section></div></main></div>`;
 
-  const canvas = required<HTMLCanvasElement>(app, '#game');
-  const status = required<HTMLDivElement>(app, '#status');
-  const result = required<HTMLDivElement>(app, '#game-result');
-  const resultCard = required<HTMLElement>(result, '.result-card');
+  const canvas = required<HTMLCanvasElement>(app, "#game");
+  const status = required<HTMLDivElement>(app, "#status");
+  const result = required<HTMLDivElement>(app, "#game-result");
+  const resultCard = required<HTMLElement>(result, ".result-card");
   const session = await createGameSession({
     root: app,
     canvas,
     level: toLevelMap(editorLevel),
-    gameOptions: { audio, assets: gameAssets() }
+    gameOptions: { audio, assets: gameAssets() },
   });
   const { game } = session;
 
@@ -48,29 +65,39 @@ export async function renderSharedGame(context: SharedGameContext): Promise<Page
     if ((world.dead || world.completed) && !game.isAnimating) {
       resultCard.innerHTML = world.completed
         ? '<div class="result-kicker">CUSTOM LEVEL</div><h2>关卡完成</h2><div class="result-actions"><button class="primary-btn" data-shared="edit">编辑这个地图</button><button class="ghost-btn" data-shared="replay">重玩</button></div>'
-        : `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? '')}</p><div class="result-actions"><button class="primary-btn" data-shared="edit">编辑这个地图</button><button class="ghost-btn" data-shared="replay">重试</button></div>`;
+        : `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? "")}</p><div class="result-actions"><button class="primary-btn" data-shared="edit">编辑这个地图</button><button class="ghost-btn" data-shared="replay">重试</button></div>`;
       result.hidden = false;
     }
   };
 
-  game.on('change', update);
+  game.on("change", update);
   update();
-  app.querySelector<HTMLButtonElement>('#back')?.addEventListener('click', () => navigate('/'));
-  app.querySelector<HTMLButtonElement>('#edit-level')?.addEventListener('click', () => navigate(`/edit${location.hash}`));
-  app.querySelector<HTMLButtonElement>('#undo')?.addEventListener('click', () => {
-    if (window.confirm('撤销上一步？')) game.undo();
-  });
-  app.querySelector<HTMLButtonElement>('#restart')?.addEventListener('click', () => {
-    if (window.confirm('重新开始？')) {
-      game.restart();
-      result.hidden = true;
-    }
-  });
-  result.addEventListener('click', (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-shared]');
+  app
+    .querySelector<HTMLButtonElement>("#back")
+    ?.addEventListener("click", () => navigate("/"));
+  app
+    .querySelector<HTMLButtonElement>("#edit-level")
+    ?.addEventListener("click", () => navigate(`/edit${location.hash}`));
+  app
+    .querySelector<HTMLButtonElement>("#undo")
+    ?.addEventListener("click", () => {
+      if (window.confirm("撤销上一步？")) game.undo();
+    });
+  app
+    .querySelector<HTMLButtonElement>("#restart")
+    ?.addEventListener("click", () => {
+      if (window.confirm("重新开始？")) {
+        game.restart();
+        result.hidden = true;
+      }
+    });
+  result.addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-shared]",
+    );
     if (!button) return;
-    if (button.dataset.shared === 'edit') navigate(`/edit${location.hash}`);
-    else if (window.confirm('重新开始？')) {
+    if (button.dataset.shared === "edit") navigate(`/edit${location.hash}`);
+    else if (window.confirm("重新开始？")) {
       game.restart();
       result.hidden = true;
     }

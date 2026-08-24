@@ -1,11 +1,17 @@
-import type { ObjectType, TerrainType } from '../data/types.js';
-import type { Direction } from '../mechanics/ids.js';
+import type { ObjectType, TerrainType } from "../data/types.js";
+import type { Direction } from "../mechanics/ids.js";
 
-export interface Point { x: number; y: number; }
-export type ObjectiveMode = 'carrot' | 'nest';
-export type ForcedKind = 'speed' | 'ice' | 'flight' | 'leaf' | 'mower-exit';
+export interface Point {
+  x: number;
+  y: number;
+}
+export type ObjectiveMode = "carrot" | "nest";
+export type ForcedKind = "speed" | "ice" | "flight" | "leaf" | "mower-exit";
 
-export interface ForcedMovement { kind: ForcedKind; direction: Direction; }
+export interface ForcedMovement {
+  kind: ForcedKind;
+  direction: Direction;
+}
 
 export interface DynamicEntity {
   type: ObjectType;
@@ -25,8 +31,17 @@ export interface BeanstalkGrowth {
   ticksUntilGrowth: number;
 }
 
-export interface InventoryState { gas: boolean; kite: boolean; shovel: boolean; beans: number; }
-export interface ProfileCapabilities { superKey: boolean; temporaryKey: boolean; speedShoes: boolean; }
+export interface InventoryState {
+  gas: boolean;
+  kite: boolean;
+  shovel: boolean;
+  beans: number;
+}
+export interface ProfileCapabilities {
+  superKey: boolean;
+  temporaryKey: boolean;
+  speedShoes: boolean;
+}
 
 export interface RuntimeState {
   terrain: TerrainType[][];

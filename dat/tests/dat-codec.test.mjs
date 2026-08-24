@@ -1,7 +1,7 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import { ObjectId, Terrain } from '../../model/dist/index.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { ObjectId, Terrain } from "../../model/dist/index.js";
 import {
   datSourceForObject,
   datSourceForTerrain,
@@ -9,61 +9,76 @@ import {
   deriveDatDynamicSlots,
   encodeDatLevelRecord,
   replaceDatLevelRecord,
-  splitDatPackage
-} from '../dist/index.js';
+  splitDatPackage,
+} from "../dist/index.js";
 
-test('DAT record round-trips byte-for-byte through semantic LevelMap', () => {
-  const dat = fs.readFileSync('assets/extracted/base/00.dat');
+test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
+  const dat = fs.readFileSync("assets/extracted/base/00.dat");
   const parts = splitDatPackage(dat);
   const record = parts.levelRecords[0];
   assert.ok(record);
   const decoded = decodeDatLevelRecord(record);
-  assert.equal(decoded.map.terrain[16]?.[7], 'start');
+  assert.equal(decoded.map.terrain[16]?.[7], "start");
   assert.equal(deriveDatDynamicSlots(decoded.map), decoded.dynamicSlots);
-  assert.deepEqual(Buffer.from(encodeDatLevelRecord(decoded.map)), Buffer.from(record));
+  assert.deepEqual(
+    Buffer.from(encodeDatLevelRecord(decoded.map)),
+    Buffer.from(record),
+  );
 });
 
-test('DAT package replacement preserves metadata and untouched records', () => {
-  const dat = fs.readFileSync('assets/extracted/base/00.dat');
+test("DAT package replacement preserves metadata and untouched records", () => {
+  const dat = fs.readFileSync("assets/extracted/base/00.dat");
   const before = splitDatPackage(dat);
   const replacement = before.levelRecords[0];
   assert.ok(replacement);
   const patched = splitDatPackage(replaceDatLevelRecord(dat, 2, replacement));
-  assert.deepEqual(Buffer.from(patched.metadataRecord), Buffer.from(before.metadataRecord));
-  assert.deepEqual(Buffer.from(patched.levelRecords[0]), Buffer.from(before.levelRecords[0]));
-  assert.deepEqual(Buffer.from(patched.levelRecords[1]), Buffer.from(replacement));
+  assert.deepEqual(
+    Buffer.from(patched.metadataRecord),
+    Buffer.from(before.metadataRecord),
+  );
+  assert.deepEqual(
+    Buffer.from(patched.levelRecords[0]),
+    Buffer.from(before.levelRecords[0]),
+  );
+  assert.deepEqual(
+    Buffer.from(patched.levelRecords[1]),
+    Buffer.from(replacement),
+  );
   for (let index = 2; index < before.levelRecords.length; index += 1) {
-    assert.deepEqual(Buffer.from(patched.levelRecords[index]), Buffer.from(before.levelRecords[index]));
+    assert.deepEqual(
+      Buffer.from(patched.levelRecords[index]),
+      Buffer.from(before.levelRecords[index]),
+    );
   }
 });
 
-test('original DAT provenance belongs to @bobby/dat', () => {
-  assert.equal(datSourceForTerrain(Terrain.CAROUSEL_1)?.datHexIds[0], '0xB9');
-  assert.equal(datSourceForTerrain(Terrain.MIRROR_1)?.datHexIds[0], '0xB1');
-  assert.equal(datSourceForObject(ObjectId.LOCK)?.datHexIds[0], '0xCD');
+test("original DAT provenance belongs to @bobby/dat", () => {
+  assert.equal(datSourceForTerrain(Terrain.CAROUSEL_1)?.datHexIds[0], "0xB9");
+  assert.equal(datSourceForTerrain(Terrain.MIRROR_1)?.datHexIds[0], "0xB1");
+  assert.equal(datSourceForObject(ObjectId.LOCK)?.datHexIds[0], "0xCD");
 
   for (const id of Object.values(Terrain)) {
     const source = datSourceForTerrain(id);
-    assert.match(source?.datHexIds[0] ?? '', /^0x[0-9A-F]{2}$/);
-    assert.equal(source?.confidence, 'confirmed');
+    assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
+    assert.equal(source?.confidence, "confirmed");
   }
   for (const id of Object.values(ObjectId)) {
     const source = datSourceForObject(id);
-    assert.match(source?.datHexIds[0] ?? '', /^0x[0-9A-F]{2}$/);
-    assert.equal(source?.confidence, 'confirmed');
+    assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
+    assert.equal(source?.confidence, "confirmed");
   }
 });
 
-test('unnamed semantic variants keep inferred DAT provenance in @bobby/dat', () => {
-  const walkable = datSourceForTerrain('walkable-variant-01');
-  assert.equal(walkable?.datHexIds[0], '0x60');
-  assert.equal(walkable?.confidence, 'inferred');
+test("unnamed semantic variants keep inferred DAT provenance in @bobby/dat", () => {
+  const walkable = datSourceForTerrain("walkable-variant-01");
+  assert.equal(walkable?.datHexIds[0], "0x60");
+  assert.equal(walkable?.confidence, "inferred");
 
-  const background = datSourceForTerrain('background-variant-001');
-  assert.equal(background?.datHexIds[0], '0x00');
-  assert.equal(background?.confidence, 'inferred');
+  const background = datSourceForTerrain("background-variant-001");
+  assert.equal(background?.datHexIds[0], "0x00");
+  assert.equal(background?.confidence, "inferred");
 
-  const objectVariant = datSourceForObject('object-variant-001');
-  assert.equal(objectVariant?.datHexIds[0], '0x00');
-  assert.equal(objectVariant?.confidence, 'inferred');
+  const objectVariant = datSourceForObject("object-variant-001");
+  assert.equal(objectVariant?.datHexIds[0], "0x00");
+  assert.equal(objectVariant?.confidence, "inferred");
 });

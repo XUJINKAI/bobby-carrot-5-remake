@@ -1,7 +1,454 @@
-import fs from 'node:fs';import path from 'node:path';import {root,run} from './util.mjs';import {resolveDistRequest} from './static-server.mjs';
-run(process.execPath,['tools/scripts/build.mjs']);run(process.execPath,['--test','dat/tests/*.test.mjs','adventure/tests/*.test.mjs','engine/tests/*.test.mjs','editor/tests/*.test.mjs'],{shell:true});const{deriveDatDynamicSlots,splitDatPackage,decodeDatLevelRecord}=await import('../../dat/dist/index.js');const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/generated/catalog.json'),'utf8'));if(catalog.totalSourceLevels!==530)throw new Error(`Expected 530 source levels, got ${catalog.totalSourceLevels}`);if(catalog.uniqueMaps!==485)throw new Error(`Expected 485 unique source maps, got ${catalog.uniqueMaps}`);if(catalog.uniqueLevels!==480||catalog.levels.length!==480)throw new Error(`Expected 480 Adventure/Explore levels, got ${catalog.uniqueLevels}`);if(catalog.specialSceneCount!==5||catalog.specialScenes.length!==5)throw new Error('Expected five shared original special scenes');if(catalog.schemaVersion!==4)throw new Error(`Expected catalog schema 4, got ${catalog.schemaVersion}`);if(catalog.sourceReleases.length!==10)throw new Error(`Expected 10 archive releases, got ${catalog.sourceReleases.length}`);if(catalog.chapters.length!==40)throw new Error(`Expected 40 original chapters, got ${catalog.chapters.length}`);if(catalog.difficulty.historicalNonTutorialLevels!==288)throw new Error('Expected 288 historical per-level difficulty labels');if(catalog.difficulty.estimatedLevels!==192)throw new Error('Expected 192 estimated per-level difficulty labels');if(catalog.levels[0]?.publicId!=='1-1'||!catalog.levels.some((level)=>level.publicId==='1-bonus-1')||catalog.levels.at(-1)?.publicId!=='40-bonus-2')throw new Error('Continuous 1-40 public ID boundaries changed');if(catalog.chapters[0]?.difficultyStars!==1||catalog.chapters[1]?.difficultyStars!==2||catalog.chapters[2]?.difficultyStars!==3||catalog.chapters[3]?.difficultyStars!==1||catalog.chapters.at(-1)?.difficultyStars!==1)throw new Error('Original DAT chapter star ratings changed');for(const chapter of catalog.chapters){if(![1,2,3].includes(chapter.difficultyStars))throw new Error(`Chapter ${chapter.number} has invalid original star difficulty`);if(chapter.levelPublicIds.length!==12)throw new Error(`Chapter ${chapter.number} must contain 10 main + 2 bonus nodes`);const expected=[`${chapter.number}-1`,`${chapter.number}-2`,`${chapter.number}-3`,`${chapter.number}-bonus-1`,`${chapter.number}-4`,`${chapter.number}-5`,`${chapter.number}-6`,`${chapter.number}-bonus-2`,`${chapter.number}-7`,`${chapter.number}-8`,`${chapter.number}-9`,`${chapter.number}-10`];if(JSON.stringify(chapter.levelPublicIds)!==JSON.stringify(expected))throw new Error(`Chapter ${chapter.number} campaign order changed`);}for(const level of catalog.levels){const file=path.join(root,'assets/generated',level.path);if(!fs.existsSync(file))throw new Error(`Missing canonical level ${file}`);const data=JSON.parse(fs.readFileSync(file,'utf8'));if(data.schemaVersion!==2||data.terrainEncoding!=='semantic-row-major')throw new Error(`Level ${level.id} is not semantic schema v2`);if(data.publicId!==level.publicId||data.chapter!==level.chapter||data.contentKind!==level.contentKind)throw new Error(`Generated level identity mismatch for ${level.publicId}`);if(data.terrain.length!==data.height||data.terrain.some((row)=>row.length!==data.width))throw new Error(`Bad terrain dimensions in ${level.id}`);if(data.terrain.some((row)=>row.some((type)=>typeof type!=='string'))||data.objects.some((object)=>typeof object.type!=='string'))throw new Error(`Raw DAT values leaked into ${level.id}`);if(data.objects.some((object)=>'id'in object||'signedId'in object||'hexId'in object))throw new Error(`Legacy DAT object fields leaked into ${level.id}`);if(deriveDatDynamicSlots(data)!==data.dynamicSlots)throw new Error(`dynamicSlots is not derivable for ${level.publicId}`);}verifyAllSourceDynamicSlots(deriveDatDynamicSlots,splitDatPackage,decodeDatLevelRecord);const filterIndex=JSON.parse(fs.readFileSync(path.join(root,'assets/generated/level-filters.json'),'utf8'));if(filterIndex.schemaVersion!==1||filterIndex.levelCount!==480)throw new Error('Bad generated level filter index');for(const level of catalog.levels){const features=filterIndex.levels?.[level.publicId];if(!features)throw new Error(`Missing filter features for ${level.publicId}`);if(!Number.isInteger(features.carrotCount)||features.carrotCount<0)throw new Error(`Bad carrot count for ${level.publicId}`);for(const key of ['specialItems','scenes','mechanics'])if(!Array.isArray(features[key])||features[key].some((value)=>typeof value!=='string'))throw new Error(`Bad ${key} for ${level.publicId}`);}verifySourceBoundaries();for(const file of ['dist/index.html','dist/app.js','dist/application.js','dist/common.js','dist/pages.js','dist/adventure-pages.js','dist/adventure-storage.js','dist/explore-progress.js','dist/official-game.js','dist/shared-game.js','dist/editor-page.js','dist/game-session.js','dist/game-debug.js','dist/model/index.js','dist/dat/index.js','dist/adventure/index.js','dist/engine/index.js','dist/editor/index.js','dist/adventure.css','dist/editor.css','dist/assets/catalog.json','dist/assets/level-filters.json','dist/assets/art/hd/ts.png','dist/assets/art/hd/ta.png','dist/assets/art/hd/b0.png','dist/assets/art/hd/b1.png','dist/assets/art/hd/b2.png','dist/assets/art/hd/b3.png','dist/TinySynthAudio.js'])if(!fs.existsSync(path.join(root,file)))throw new Error(`Missing build artifact: ${file}`);for(const removed of ['dist/web','dist/engine-playground','dist/play','dist/edit','dist/levels','dist/settings','dist/404.html','dist/debug-layout.js','dist/main.js'])if(fs.existsSync(path.join(root,removed)))throw new Error(`Obsolete build artifact still exists: ${removed}`);verifyWebModuleEntry(path.join(root,'dist'));verifySpaVsStaticRouting(path.join(root,'dist'));const jarOut=path.join(root,'tmp/original-validation/verify.jar');run(process.execPath,['tools/src/patch-original-jar.mjs','--map','editor/examples/mechanics-smoke.json','--target','1-1','--out',jarOut]);if(!fs.existsSync(jarOut))throw new Error('Original JAR validation artifact was not created');fs.rmSync(path.join(root,'tmp'),{recursive:true,force:true});if(process.env.CI)run(process.execPath,['tools/scripts/browser-smoke.mjs']);console.log('verify: OK — 1-40 Adventure campaign, original chapter stars, persistent save/rewards, Adventure-owned Bonus countdown over generic Engine events, model/dat/adventure/engine/editor/web boundaries, original-JAR round-trip and Explore/Adventure SPA routing all passed.');
-function verifyAllSourceDynamicSlots(derive,split,decode){const sourceIndex=JSON.parse(fs.readFileSync(path.join(root,'assets/generated/source-index.json'),'utf8'));let count=0;for(const release of sourceIndex.releases)for(const pack of release.packs){const bytes=fs.readFileSync(path.join(root,'assets/extracted',release.id,`${pack.packFile}.dat`));for(const record of split(bytes).levelRecords){const decoded=decode(record);if(derive(decoded.map)!==decoded.dynamicSlots)throw new Error(`dynamicSlots mismatch in ${release.id}/${pack.packFile} source record ${count+1}`);count++;}}if(count!==530)throw new Error(`Expected to verify dynamicSlots on all 530 source records, got ${count}`);}
-function verifySourceBoundaries(){if(fs.existsSync(path.join(root,'tools/src/dat-codec.mjs')))throw new Error('Legacy duplicated DAT codec still exists');if(fs.existsSync(path.join(root,'web/src/main.ts')))throw new Error('Legacy monolithic web/src/main.ts still exists');if(!fs.existsSync(path.join(root,'web/src/app.ts')))throw new Error('Modular web app entry is missing');const allowed=new Map([['model/src',new Set()],['dat/src',new Set(['@bobby/model'])],['engine/src',new Set(['@bobby/model'])],['editor/src',new Set(['@bobby/model','@bobby/dat','@bobby/engine'])],['adventure/src',new Set(['@bobby/model'])]]);for(const[sourcePath,packages]of allowed)walkSource(path.join(root,sourcePath),(file,text)=>{for(const match of text.matchAll(/from\s+['"](@bobby\/[^'"]+)['"]/g))if(!packages.has(match[1]))throw new Error(`Forbidden package dependency ${match[1]} in ${path.relative(root,file)}`);});walkSource(path.join(root,'model/src'),(file,text)=>{if(/\b(?:schemaVersion|recordSha256|recordLength|dynamicSlots|chapterLevel|terrainEncoding)\b/.test(text))throw new Error(`Official/DAT metadata leaked into pure model: ${path.relative(root,file)}`);});walkSource(path.join(root,'engine/src'),(file,text)=>{if(/\b(?:TERRAIN_BY_DAT|OBJECT_BY_DAT|DAT_BY_TERRAIN|DAT_BY_OBJECT|datHexIds|datSourceForTerrain|datSourceForObject|chapterLevel|recordSha256|releaseSourceId|bonusTimeMs|bonusTimeLimitMs|bonusTimeRemainingMs|timedChallengeMs|lock-opened)\b/.test(text))throw new Error(`Original-format/catalog/Adventure timing metadata leaked into Engine: ${path.relative(root,file)}`);});walkSource(path.join(root,'adventure/src'),(file,text)=>{if(/\b(?:DAT_BY_|TERRAIN_BY_DAT|OBJECT_BY_DAT|recordSha256|releaseSourceId|packFile|localStorage|document|window)\b/.test(text))throw new Error(`Archive/browser implementation leaked into Adventure domain: ${path.relative(root,file)}`);});const officialGame=fs.readFileSync(path.join(root,'web/src/official-game.ts'),'utf8'),gameSession=fs.readFileSync(path.join(root,'web/src/game-session.ts'),'utf8'),sharedGame=fs.readFileSync(path.join(root,'web/src/shared-game.ts'),'utf8'),world=fs.readFileSync(path.join(root,'engine/src/world/World.ts'),'utf8'),game=fs.readFileSync(path.join(root,'engine/src/core/Game.ts'),'utf8'),adventureRuntime=fs.readFileSync(path.join(root,'adventure/src/runtime.ts'),'utf8');if(!/planAdventureSession\(meta\.publicId/.test(officialGame)||/meta\.chapterLevel\s*>\s*10/.test(officialGame))throw new Error('Official Bonus rules must come from Adventure session identity, not archive chapterLevel');if(!/createAdventureRuntime\(plan,game\)/.test(officialGame))throw new Error('Official Adventure play must bind the Adventure runtime to Engine through the generic port');if(!/game\.loadLevel\(options\.level\)/.test(gameSession)||/\bloadOptions\b/.test(gameSession))throw new Error('Web game session must load a pure LevelMap without Adventure timing options');if(/\b(?:bonusTimeMs|bonusTimeRemainingMs|timedChallengeMs)\b/.test(sharedGame))throw new Error('Shared/custom play must not infer or own the original Adventure Bonus timeout');if(!/type:'object-interaction',objectType:ObjectId\.LOCK,action:'open'/.test(world)||/type:'open-lock'/.test(world))throw new Error('Engine World must report lock behavior through the generic object-interaction event shape');if(!/onWorldEvent\(listener:WorldEventListener\)/.test(game)||!/killPlayer\(reason:string\)/.test(game)||/lock-opened/.test(game))throw new Error('Engine Game must expose generic WorldEvent subscription plus generic player death, without lock-specific API');if(!/engine\.onWorldEvent/.test(adventureRuntime)||!/ObjectId\.LOCK/.test(adventureRuntime)||!/event\.type === 'object-interaction'/.test(adventureRuntime)||!/event\.type === 'complete' \|\| event\.type === 'death'/.test(adventureRuntime)||!/engine\.killPlayer\('Bonus Round/.test(adventureRuntime))throw new Error('Adventure runtime must own Bonus timing by consuming generic Engine events');}
-function verifySpaVsStaticRouting(distRoot){for(const route of ['/levels','/play/1-1','/adventure','/adventure/chapters','/adventure/chapter/1','/adventure/play/1-1','/edit']){const result=resolveDistRequest(distRoot,route);if(result.status!==200||!result.spaFallback||path.basename(result.file??'')!=='index.html')throw new Error(`SPA route did not fall back to index.html: ${route}`);}for(const missing of ['/assets/missing.png','/engine/missing.js','/model/missing','/adventure/missing.js','/vendor/missing']){const result=resolveDistRequest(distRoot,missing);if(result.status!==404||result.file)throw new Error(`Missing static resource incorrectly fell back to SPA: ${missing}`);}}
-function verifyWebModuleEntry(webRoot){const html=fs.readFileSync(path.join(webRoot,'index.html'),'utf8'),baseHref=html.match(/<base\s+href=["']([^"']+)["']/i)?.[1]??'/',mapText=html.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i)?.[1];if(!mapText)throw new Error('dist/index.html is missing import map');const imports=JSON.parse(mapText)?.imports;if(!imports||typeof imports!=='object')throw new Error('Import map must define imports');for(const specifier of ['@bobby/model','@bobby/dat','@bobby/adventure','@bobby/engine','@bobby/editor'])if(typeof imports[specifier]!=='string')throw new Error(`Import map missing ${specifier}`);for(const[specifier,target]of Object.entries(imports)){if(typeof target!=='string'||!isUrlLike(target))throw new Error(`Bad import map target for ${specifier}`);verifyLocal(webRoot,baseHref,target,`import map ${specifier}`);}for(const match of html.matchAll(/<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi))verifyLocal(webRoot,baseHref,match[1],'module script');}
-function isUrlLike(target){return target.startsWith('/')||target.startsWith('./')||target.startsWith('../')||/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(target);}function verifyLocal(webRoot,baseHref,target,label){const origin='https://verify.invalid',baseUrl=new URL(baseHref,`${origin}/index.html`),resolved=new URL(target,baseUrl);if(resolved.origin!==origin)return;const relative=decodeURIComponent(resolved.pathname).replace(/^\/+/,''),file=path.resolve(webRoot,relative),normalizedRoot=`${path.resolve(webRoot)}${path.sep}`;if(file!==path.resolve(webRoot)&&!file.startsWith(normalizedRoot))throw new Error(`${label} escapes dist: ${target}`);if(!fs.existsSync(file))throw new Error(`${label} resolves to missing build artifact: ${target}`);}function walkSource(directory,visitor){for(const entry of fs.readdirSync(directory,{withFileTypes:true})){const file=path.join(directory,entry.name);if(entry.isDirectory())walkSource(file,visitor);else if(/\.(?:ts|js|mjs)$/.test(entry.name))visitor(file,fs.readFileSync(file,'utf8'));}}
+import fs from "node:fs";
+import path from "node:path";
+import { root, run } from "./util.mjs";
+import { resolveDistRequest } from "./static-server.mjs";
+run(process.execPath, ["tools/scripts/build.mjs"]);
+run(
+  process.execPath,
+  [
+    "--test",
+    "dat/tests/*.test.mjs",
+    "adventure/tests/*.test.mjs",
+    "engine/tests/*.test.mjs",
+    "editor/tests/*.test.mjs",
+  ],
+  { shell: true },
+);
+const { deriveDatDynamicSlots, splitDatPackage, decodeDatLevelRecord } =
+  await import("../../dat/dist/index.js");
+const catalog = JSON.parse(
+  fs.readFileSync(path.join(root, "assets/generated/catalog.json"), "utf8"),
+);
+if (catalog.totalSourceLevels !== 530)
+  throw new Error(
+    `Expected 530 source levels, got ${catalog.totalSourceLevels}`,
+  );
+if (catalog.uniqueMaps !== 485)
+  throw new Error(`Expected 485 unique source maps, got ${catalog.uniqueMaps}`);
+if (catalog.uniqueLevels !== 480 || catalog.levels.length !== 480)
+  throw new Error(
+    `Expected 480 Adventure/Explore levels, got ${catalog.uniqueLevels}`,
+  );
+if (catalog.specialSceneCount !== 5 || catalog.specialScenes.length !== 5)
+  throw new Error("Expected five shared original special scenes");
+if (catalog.schemaVersion !== 4)
+  throw new Error(`Expected catalog schema 4, got ${catalog.schemaVersion}`);
+if (catalog.sourceReleases.length !== 10)
+  throw new Error(
+    `Expected 10 archive releases, got ${catalog.sourceReleases.length}`,
+  );
+if (catalog.chapters.length !== 40)
+  throw new Error(
+    `Expected 40 original chapters, got ${catalog.chapters.length}`,
+  );
+if (catalog.difficulty.historicalNonTutorialLevels !== 288)
+  throw new Error("Expected 288 historical per-level difficulty labels");
+if (catalog.difficulty.estimatedLevels !== 192)
+  throw new Error("Expected 192 estimated per-level difficulty labels");
+if (
+  catalog.levels[0]?.publicId !== "1-1" ||
+  !catalog.levels.some((level) => level.publicId === "1-bonus-1") ||
+  catalog.levels.at(-1)?.publicId !== "40-bonus-2"
+)
+  throw new Error("Continuous 1-40 public ID boundaries changed");
+if (
+  catalog.chapters[0]?.difficultyStars !== 1 ||
+  catalog.chapters[1]?.difficultyStars !== 2 ||
+  catalog.chapters[2]?.difficultyStars !== 3 ||
+  catalog.chapters[3]?.difficultyStars !== 1 ||
+  catalog.chapters.at(-1)?.difficultyStars !== 1
+)
+  throw new Error("Original DAT chapter star ratings changed");
+for (const chapter of catalog.chapters) {
+  if (![1, 2, 3].includes(chapter.difficultyStars))
+    throw new Error(
+      `Chapter ${chapter.number} has invalid original star difficulty`,
+    );
+  if (chapter.levelPublicIds.length !== 12)
+    throw new Error(
+      `Chapter ${chapter.number} must contain 10 main + 2 bonus nodes`,
+    );
+  const expected = [
+    `${chapter.number}-1`,
+    `${chapter.number}-2`,
+    `${chapter.number}-3`,
+    `${chapter.number}-bonus-1`,
+    `${chapter.number}-4`,
+    `${chapter.number}-5`,
+    `${chapter.number}-6`,
+    `${chapter.number}-bonus-2`,
+    `${chapter.number}-7`,
+    `${chapter.number}-8`,
+    `${chapter.number}-9`,
+    `${chapter.number}-10`,
+  ];
+  if (JSON.stringify(chapter.levelPublicIds) !== JSON.stringify(expected))
+    throw new Error(`Chapter ${chapter.number} campaign order changed`);
+}
+for (const level of catalog.levels) {
+  const file = path.join(root, "assets/generated", level.path);
+  if (!fs.existsSync(file)) throw new Error(`Missing canonical level ${file}`);
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (data.schemaVersion !== 2 || data.terrainEncoding !== "semantic-row-major")
+    throw new Error(`Level ${level.id} is not semantic schema v2`);
+  if (
+    data.publicId !== level.publicId ||
+    data.chapter !== level.chapter ||
+    data.contentKind !== level.contentKind
+  )
+    throw new Error(`Generated level identity mismatch for ${level.publicId}`);
+  if (
+    data.terrain.length !== data.height ||
+    data.terrain.some((row) => row.length !== data.width)
+  )
+    throw new Error(`Bad terrain dimensions in ${level.id}`);
+  if (
+    data.terrain.some((row) => row.some((type) => typeof type !== "string")) ||
+    data.objects.some((object) => typeof object.type !== "string")
+  )
+    throw new Error(`Raw DAT values leaked into ${level.id}`);
+  if (
+    data.objects.some(
+      (object) => "id" in object || "signedId" in object || "hexId" in object,
+    )
+  )
+    throw new Error(`Legacy DAT object fields leaked into ${level.id}`);
+  if (deriveDatDynamicSlots(data) !== data.dynamicSlots)
+    throw new Error(`dynamicSlots is not derivable for ${level.publicId}`);
+}
+verifyAllSourceDynamicSlots(
+  deriveDatDynamicSlots,
+  splitDatPackage,
+  decodeDatLevelRecord,
+);
+const filterIndex = JSON.parse(
+  fs.readFileSync(
+    path.join(root, "assets/generated/level-filters.json"),
+    "utf8",
+  ),
+);
+if (filterIndex.schemaVersion !== 1 || filterIndex.levelCount !== 480)
+  throw new Error("Bad generated level filter index");
+for (const level of catalog.levels) {
+  const features = filterIndex.levels?.[level.publicId];
+  if (!features)
+    throw new Error(`Missing filter features for ${level.publicId}`);
+  if (!Number.isInteger(features.carrotCount) || features.carrotCount < 0)
+    throw new Error(`Bad carrot count for ${level.publicId}`);
+  for (const key of ["specialItems", "scenes", "mechanics"])
+    if (
+      !Array.isArray(features[key]) ||
+      features[key].some((value) => typeof value !== "string")
+    )
+      throw new Error(`Bad ${key} for ${level.publicId}`);
+}
+verifySourceBoundaries();
+for (const file of [
+  "dist/index.html",
+  "dist/app.js",
+  "dist/application.js",
+  "dist/common.js",
+  "dist/pages.js",
+  "dist/adventure-pages.js",
+  "dist/adventure-storage.js",
+  "dist/explore-progress.js",
+  "dist/official-game.js",
+  "dist/shared-game.js",
+  "dist/editor-page.js",
+  "dist/game-session.js",
+  "dist/game-debug.js",
+  "dist/model/index.js",
+  "dist/dat/index.js",
+  "dist/adventure/index.js",
+  "dist/engine/index.js",
+  "dist/editor/index.js",
+  "dist/adventure.css",
+  "dist/editor.css",
+  "dist/assets/catalog.json",
+  "dist/assets/level-filters.json",
+  "dist/assets/art/hd/ts.png",
+  "dist/assets/art/hd/ta.png",
+  "dist/assets/art/hd/b0.png",
+  "dist/assets/art/hd/b1.png",
+  "dist/assets/art/hd/b2.png",
+  "dist/assets/art/hd/b3.png",
+  "dist/TinySynthAudio.js",
+])
+  if (!fs.existsSync(path.join(root, file)))
+    throw new Error(`Missing build artifact: ${file}`);
+for (const removed of [
+  "dist/web",
+  "dist/engine-playground",
+  "dist/play",
+  "dist/edit",
+  "dist/levels",
+  "dist/settings",
+  "dist/404.html",
+  "dist/debug-layout.js",
+  "dist/main.js",
+])
+  if (fs.existsSync(path.join(root, removed)))
+    throw new Error(`Obsolete build artifact still exists: ${removed}`);
+verifyWebModuleEntry(path.join(root, "dist"));
+verifySpaVsStaticRouting(path.join(root, "dist"));
+const jarOut = path.join(root, "tmp/original-validation/verify.jar");
+run(process.execPath, [
+  "tools/src/patch-original-jar.mjs",
+  "--map",
+  "editor/examples/mechanics-smoke.json",
+  "--target",
+  "1-1",
+  "--out",
+  jarOut,
+]);
+if (!fs.existsSync(jarOut))
+  throw new Error("Original JAR validation artifact was not created");
+fs.rmSync(path.join(root, "tmp"), { recursive: true, force: true });
+if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
+console.log(
+  "verify: OK — 1-40 Adventure campaign, original chapter stars, persistent save/rewards, Adventure-owned Bonus countdown over generic Engine events, model/dat/adventure/engine/editor/web boundaries, original-JAR round-trip and Explore/Adventure SPA routing all passed.",
+);
+function verifyAllSourceDynamicSlots(derive, split, decode) {
+  const sourceIndex = JSON.parse(
+    fs.readFileSync(
+      path.join(root, "assets/generated/source-index.json"),
+      "utf8",
+    ),
+  );
+  let count = 0;
+  for (const release of sourceIndex.releases)
+    for (const pack of release.packs) {
+      const bytes = fs.readFileSync(
+        path.join(root, "assets/extracted", release.id, `${pack.packFile}.dat`),
+      );
+      for (const record of split(bytes).levelRecords) {
+        const decoded = decode(record);
+        if (derive(decoded.map) !== decoded.dynamicSlots)
+          throw new Error(
+            `dynamicSlots mismatch in ${release.id}/${pack.packFile} source record ${count + 1}`,
+          );
+        count++;
+      }
+    }
+  if (count !== 530)
+    throw new Error(
+      `Expected to verify dynamicSlots on all 530 source records, got ${count}`,
+    );
+}
+function verifySourceBoundaries() {
+  if (fs.existsSync(path.join(root, "tools/src/dat-codec.mjs")))
+    throw new Error("Legacy duplicated DAT codec still exists");
+  if (fs.existsSync(path.join(root, "web/src/main.ts")))
+    throw new Error("Legacy monolithic web/src/main.ts still exists");
+  if (!fs.existsSync(path.join(root, "web/src/app.ts")))
+    throw new Error("Modular web app entry is missing");
+  const allowed = new Map([
+    ["model/src", new Set()],
+    ["dat/src", new Set(["@bobby/model"])],
+    ["engine/src", new Set(["@bobby/model"])],
+    ["editor/src", new Set(["@bobby/model", "@bobby/dat", "@bobby/engine"])],
+    ["adventure/src", new Set(["@bobby/model"])],
+  ]);
+  for (const [sourcePath, packages] of allowed)
+    walkSource(path.join(root, sourcePath), (file, text) => {
+      for (const match of text.matchAll(/from\s+['"](@bobby\/[^'"]+)['"]/g))
+        if (!packages.has(match[1]))
+          throw new Error(
+            `Forbidden package dependency ${match[1]} in ${path.relative(root, file)}`,
+          );
+    });
+  walkSource(path.join(root, "model/src"), (file, text) => {
+    if (
+      /\b(?:schemaVersion|recordSha256|recordLength|dynamicSlots|chapterLevel|terrainEncoding)\b/.test(
+        text,
+      )
+    )
+      throw new Error(
+        `Official/DAT metadata leaked into pure model: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "engine/src"), (file, text) => {
+    if (
+      /\b(?:TERRAIN_BY_DAT|OBJECT_BY_DAT|DAT_BY_TERRAIN|DAT_BY_OBJECT|datHexIds|datSourceForTerrain|datSourceForObject|chapterLevel|recordSha256|releaseSourceId|bonusTimeMs|bonusTimeLimitMs|bonusTimeRemainingMs|timedChallengeMs|lock-opened)\b/.test(
+        text,
+      )
+    )
+      throw new Error(
+        `Original-format/catalog/Adventure timing metadata leaked into Engine: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "adventure/src"), (file, text) => {
+    if (
+      /\b(?:DAT_BY_|TERRAIN_BY_DAT|OBJECT_BY_DAT|recordSha256|releaseSourceId|packFile|localStorage|document|window)\b/.test(
+        text,
+      )
+    )
+      throw new Error(
+        `Archive/browser implementation leaked into Adventure domain: ${path.relative(root, file)}`,
+      );
+  });
+  const officialGame = fs.readFileSync(
+      path.join(root, "web/src/official-game.ts"),
+      "utf8",
+    ),
+    gameSession = fs.readFileSync(
+      path.join(root, "web/src/game-session.ts"),
+      "utf8",
+    ),
+    sharedGame = fs.readFileSync(
+      path.join(root, "web/src/shared-game.ts"),
+      "utf8",
+    ),
+    world = fs.readFileSync(
+      path.join(root, "engine/src/world/World.ts"),
+      "utf8",
+    ),
+    game = fs.readFileSync(path.join(root, "engine/src/core/Game.ts"), "utf8"),
+    adventureRuntime = fs.readFileSync(
+      path.join(root, "adventure/src/runtime.ts"),
+      "utf8",
+    );
+  if (
+    !/planAdventureSession\(meta\.publicId/.test(officialGame) ||
+    /meta\.chapterLevel\s*>\s*10/.test(officialGame)
+  )
+    throw new Error(
+      "Official Bonus rules must come from Adventure session identity, not archive chapterLevel",
+    );
+  if (!/createAdventureRuntime\(plan\s*,\s*game\)/.test(officialGame))
+    throw new Error(
+      "Official Adventure play must bind the Adventure runtime to Engine through the generic port",
+    );
+  if (
+    !/game\.loadLevel\(options\.level\)/.test(gameSession) ||
+    /\bloadOptions\b/.test(gameSession)
+  )
+    throw new Error(
+      "Web game session must load a pure LevelMap without Adventure timing options",
+    );
+  if (
+    /\b(?:bonusTimeMs|bonusTimeRemainingMs|timedChallengeMs)\b/.test(sharedGame)
+  )
+    throw new Error(
+      "Shared/custom play must not infer or own the original Adventure Bonus timeout",
+    );
+  if (
+    !/type\s*:\s*["']object-interaction["']\s*,\s*objectType\s*:\s*ObjectId\.LOCK\s*,\s*action\s*:\s*["']open["']/.test(
+      world,
+    ) ||
+    /type\s*:\s*["']open-lock["']/.test(world)
+  )
+    throw new Error(
+      "Engine World must report lock behavior through the generic object-interaction event shape",
+    );
+  if (
+    !/onWorldEvent\(listener\s*:\s*WorldEventListener\)/.test(game) ||
+    !/killPlayer\(reason\s*:\s*string\)/.test(game) ||
+    /lock-opened/.test(game)
+  )
+    throw new Error(
+      "Engine Game must expose generic WorldEvent subscription plus generic player death, without lock-specific API",
+    );
+  if (
+    !/engine\.onWorldEvent/.test(adventureRuntime) ||
+    !/ObjectId\.LOCK/.test(adventureRuntime) ||
+    !/event\.type\s*===\s*["']object-interaction["']/.test(adventureRuntime) ||
+    !/event\.type\s*===\s*["']complete["']\s*\|\|\s*event\.type\s*===\s*["']death["']/.test(
+      adventureRuntime,
+    ) ||
+    !/engine\.killPlayer\(\s*["']Bonus Round/.test(adventureRuntime)
+  )
+    throw new Error(
+      "Adventure runtime must own Bonus timing by consuming generic Engine events",
+    );
+}
+function verifySpaVsStaticRouting(distRoot) {
+  for (const route of [
+    "/levels",
+    "/play/1-1",
+    "/adventure",
+    "/adventure/chapters",
+    "/adventure/chapter/1",
+    "/adventure/play/1-1",
+    "/edit",
+  ]) {
+    const result = resolveDistRequest(distRoot, route);
+    if (
+      result.status !== 200 ||
+      !result.spaFallback ||
+      path.basename(result.file ?? "") !== "index.html"
+    )
+      throw new Error(`SPA route did not fall back to index.html: ${route}`);
+  }
+  for (const missing of [
+    "/assets/missing.png",
+    "/engine/missing.js",
+    "/model/missing",
+    "/adventure/missing.js",
+    "/vendor/missing",
+  ]) {
+    const result = resolveDistRequest(distRoot, missing);
+    if (result.status !== 404 || result.file)
+      throw new Error(
+        `Missing static resource incorrectly fell back to SPA: ${missing}`,
+      );
+  }
+}
+function verifyWebModuleEntry(webRoot) {
+  const html = fs.readFileSync(path.join(webRoot, "index.html"), "utf8"),
+    baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? "/",
+    mapText = html.match(
+      /<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i,
+    )?.[1];
+  if (!mapText) throw new Error("dist/index.html is missing import map");
+  const imports = JSON.parse(mapText)?.imports;
+  if (!imports || typeof imports !== "object")
+    throw new Error("Import map must define imports");
+  for (const specifier of [
+    "@bobby/model",
+    "@bobby/dat",
+    "@bobby/adventure",
+    "@bobby/engine",
+    "@bobby/editor",
+  ])
+    if (typeof imports[specifier] !== "string")
+      throw new Error(`Import map missing ${specifier}`);
+  for (const [specifier, target] of Object.entries(imports)) {
+    if (typeof target !== "string" || !isUrlLike(target))
+      throw new Error(`Bad import map target for ${specifier}`);
+    verifyLocal(webRoot, baseHref, target, `import map ${specifier}`);
+  }
+  for (const match of html.matchAll(
+    /<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi,
+  ))
+    verifyLocal(webRoot, baseHref, match[1], "module script");
+}
+function isUrlLike(target) {
+  return (
+    target.startsWith("/") ||
+    target.startsWith("./") ||
+    target.startsWith("../") ||
+    /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(target)
+  );
+}
+function verifyLocal(webRoot, baseHref, target, label) {
+  const origin = "https://verify.invalid",
+    baseUrl = new URL(baseHref, `${origin}/index.html`),
+    resolved = new URL(target, baseUrl);
+  if (resolved.origin !== origin) return;
+  const relative = decodeURIComponent(resolved.pathname).replace(/^\/+/, ""),
+    file = path.resolve(webRoot, relative),
+    normalizedRoot = `${path.resolve(webRoot)}${path.sep}`;
+  if (file !== path.resolve(webRoot) && !file.startsWith(normalizedRoot))
+    throw new Error(`${label} escapes dist: ${target}`);
+  if (!fs.existsSync(file))
+    throw new Error(`${label} resolves to missing build artifact: ${target}`);
+}
+function walkSource(directory, visitor) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) walkSource(file, visitor);
+    else if (/\.(?:ts|js|mjs)$/.test(entry.name))
+      visitor(file, fs.readFileSync(file, "utf8"));
+  }
+}
