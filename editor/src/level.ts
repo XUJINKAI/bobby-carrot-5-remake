@@ -2,6 +2,8 @@ import {
   ObjectId,
   Terrain,
   type LevelMap,
+  type LevelObject,
+  type LevelObjectProperties,
   type ObjectType,
   type TerrainType,
 } from "@bobby/model";
@@ -17,11 +19,7 @@ export interface EditorLevel extends LevelMap {
   description?: string;
   objects: EditorObject[];
 }
-export interface EditorObject {
-  type: ObjectType;
-  x: number;
-  y: number;
-}
+export interface EditorObject extends LevelObject {}
 export interface LevelValidationIssue {
   level: "error" | "warning";
   message: string;
@@ -56,7 +54,7 @@ export function fromLevelMap(
     width: level.width,
     height: level.height,
     terrain: level.terrain.map((row) => [...row]),
-    objects: anchors.map(({ type, x, y }) => ({ type, x, y })),
+    objects: anchors.map(cloneObject),
   });
 }
 export function toLevelMap(level: EditorLevel): LevelMap {
@@ -65,7 +63,7 @@ export function toLevelMap(level: EditorLevel): LevelMap {
     width: normalized.width,
     height: normalized.height,
     terrain: normalized.terrain.map((row) => [...row]),
-    objects: normalized.objects.map(({ type, x, y }) => ({ type, x, y })),
+    objects: normalized.objects.map(cloneObject),
   };
 }
 export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
@@ -97,7 +95,13 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     )
       continue;
     for (const cell of cells) occupied.add(`${cell.x},${cell.y}`);
-    objects.push({ type, x, y });
+    const properties = normalizeProperties(raw.properties);
+    objects.push({
+      type,
+      x,
+      y,
+      ...(properties ? { properties } : {}),
+    });
   }
   const level: EditorLevel = {
     schemaVersion: 2,
@@ -160,6 +164,25 @@ export function parseEditorLevel(text: string): EditorLevel {
   if (!Array.isArray(parsed.terrain))
     throw new Error("JSON 缺少 terrain 二维数组");
   return normalizeEditorLevel(parsed as EditorLevel);
+}
+function cloneObject(object: LevelObject): EditorObject {
+  return {
+    type: object.type,
+    x: object.x,
+    y: object.y,
+    ...(object.properties
+      ? { properties: { ...object.properties } }
+      : {}),
+  };
+}
+function normalizeProperties(
+  value: unknown,
+): LevelObjectProperties | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const properties: LevelObjectProperties = {};
+  for (const [key, item] of Object.entries(value))
+    if (key.length > 0 && typeof item === "string") properties[key] = item;
+  return Object.keys(properties).length > 0 ? properties : undefined;
 }
 function clampDimension(value: number): number {
   if (!Number.isFinite(value)) return 16;
