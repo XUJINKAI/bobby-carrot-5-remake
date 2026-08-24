@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  PRIMARY_ART_RELEASE,
+  OFFICIAL_RUNTIME_ASSET_SOURCES,
   RELEASES,
   SOURCE_TILE_SIZE,
 } from "./source-definitions.mjs";
@@ -332,24 +332,24 @@ for (const item of canonical) {
   writeJson(file, level);
 }
 
-// Web 运行时只需要一套权威高清美术；选择 UP9 HD（后期 v1.3.5）作为主美术。
+/**
+ * 官方运行时资产按语义来源生成，而不是把某个发行包视为整套“主资产”。
+ * 完整 hash 证据与选择理由见 docs/reference/official-release-provenance.md。
+ */
 const artOut = path.join(generated, "art", "hd");
-fs.rmSync(artOut, { recursive: true, force: true });
-fs.mkdirSync(artOut, { recursive: true });
-const artSource = path.join(root, "assets/extracted", PRIMARY_ART_RELEASE);
-for (const name of fs.readdirSync(artSource)) {
-  if (name.toLowerCase().endsWith(".png"))
-    copy(path.join(artSource, name), path.join(artOut, name));
-}
-
-// MIDI 保留原文件，由 WebAudio TinySynth 直接播放。
 const midiOut = path.join(generated, "audio", "midi");
+fs.rmSync(artOut, { recursive: true, force: true });
 fs.rmSync(midiOut, { recursive: true, force: true });
+fs.mkdirSync(artOut, { recursive: true });
 fs.mkdirSync(midiOut, { recursive: true });
-for (const name of fs.readdirSync(artSource)) {
-  if (name.toLowerCase().endsWith(".mid"))
-    copy(path.join(artSource, name), path.join(midiOut, name));
-}
+copyRuntimeAssetCategory(
+  OFFICIAL_RUNTIME_ASSET_SOURCES.artwork,
+  artOut,
+);
+copyRuntimeAssetCategory(
+  OFFICIAL_RUNTIME_ASSET_SOURCES.music,
+  midiOut,
+);
 
 const sourceIndex = readJson(path.join(generated, "source-index.json"));
 const chapters = [];
@@ -404,14 +404,21 @@ const catalog = {
   uniqueLevels: canonical.length,
   duplicateSourceRecords: totalSourceLevels - canonical.length,
   expectedUniqueLevels: 485,
-  primaryArt: {
-    edition: PRIMARY_ART_RELEASE,
+  art: {
     tileSize: SOURCE_TILE_SIZE,
     basePath: "art/hd",
+    provenance: {
+      defaultRelease: OFFICIAL_RUNTIME_ASSET_SOURCES.artwork.defaultRelease,
+      overrides: OFFICIAL_RUNTIME_ASSET_SOURCES.artwork.overrides,
+    },
   },
   music: {
     basePath: "audio/midi",
     format: "midi",
+    provenance: {
+      defaultRelease: OFFICIAL_RUNTIME_ASSET_SOURCES.music.defaultRelease,
+      overrides: OFFICIAL_RUNTIME_ASSET_SOURCES.music.overrides,
+    },
     files: fs
       .readdirSync(midiOut)
       .filter((n) => n.endsWith(".mid"))
@@ -441,3 +448,24 @@ writeJson(path.join(generated, "catalog.json"), catalog);
 console.log(
   `构建主库：${catalog.uniqueLevels} 个唯一关卡 / ${catalog.totalSourceLevels} 条 source 记录；历史难度 ${catalog.difficulty.historicalNonTutorialLevels}，估算 ${catalog.difficulty.estimatedLevels}。`,
 );
+
+function copyRuntimeAssetCategory(rule, outputDir) {
+  const sourceRoot = path.join(
+    root,
+    "assets/extracted",
+    rule.defaultRelease,
+  );
+  const names = fs
+    .readdirSync(sourceRoot)
+    .filter((name) => name.toLowerCase().endsWith(rule.extension))
+    .sort();
+
+  for (const name of names) {
+    const release = rule.overrides[name] ?? rule.defaultRelease;
+    const source = path.join(root, "assets/extracted", release, name);
+    if (!fs.existsSync(source)) {
+      throw new Error(`运行时资产来源不存在：${release}/${name}`);
+    }
+    copy(source, path.join(outputDir, name));
+  }
+}

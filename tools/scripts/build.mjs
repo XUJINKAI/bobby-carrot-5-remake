@@ -3,6 +3,7 @@ import path from "node:path";
 import { copyFile, copyTree, root, run, tscCommand } from "./util.mjs";
 
 const dist = path.join(root, "dist");
+const generatedAssets = path.join(root, "assets/generated");
 const generatedTargets = [
   dist,
   "model/dist",
@@ -19,15 +20,20 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-// 先构建生成资产所依赖的纯数据层，再生成 Catalog 和美术资产。
+// 资产首次生成依赖纯数据层，因此无论是否命中生成资产缓存都先编译这些包。
 run(tsc, ["-b", "model", "dat", "adventure", "--force"]);
-run(process.execPath, ["tools/src/extract-jars.mjs"]);
-run(process.execPath, ["tools/src/decode-levels.mjs"]);
-run(process.execPath, ["tools/src/build-assets.mjs"]);
-run(process.execPath, ["tools/src/build-adventure-catalog.mjs"]);
-run(process.execPath, ["tools/src/build-level-filters.mjs"]);
 
-// Engine、Editor 和 Web 会消费上一步生成的语义资产。
+if (hasGeneratedAssets()) {
+  console.log("检测到 assets/generated 已有内容，跳过资产生成。");
+} else {
+  run(process.execPath, ["tools/src/extract-jars.mjs"]);
+  run(process.execPath, ["tools/src/decode-levels.mjs"]);
+  run(process.execPath, ["tools/src/build-assets.mjs"]);
+  run(process.execPath, ["tools/src/build-adventure-catalog.mjs"]);
+  run(process.execPath, ["tools/src/build-level-filters.mjs"]);
+}
+
+// Engine、Editor 和 Web 消费已存在或刚生成的语义资产。
 run(tsc, ["-b", "engine", "editor", "web", "--force"]);
 
 fs.mkdirSync(dist, { recursive: true });
@@ -48,7 +54,7 @@ copyTree(path.join(root, "dat/dist"), path.join(dist, "dat"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));
 copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));
 copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
-copyTree(path.join(root, "assets/generated"), path.join(dist, "assets"));
+copyTree(generatedAssets, path.join(dist, "assets"));
 
 const tinySynthCandidates = [
   path.join(root, "node_modules/webaudio-tinysynth/webaudio-tinysynth.min.js"),
@@ -70,3 +76,10 @@ if (tinySynthSource) {
 }
 
 console.log("Build complete: dist");
+
+function hasGeneratedAssets() {
+  return (
+    fs.existsSync(generatedAssets) &&
+    fs.readdirSync(generatedAssets).length > 0
+  );
+}

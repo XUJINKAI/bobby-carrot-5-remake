@@ -1,8 +1,8 @@
 /**
  * 第五代正式发行线：Base（Forever）+ UP1~UP9。
  *
- * 资料包里的英文普通版、中文“永恒之夜/进阶1~9”和高清版，关卡 DAT
- * 均可按发行版本一一对应。构建时只取高清版作为权威源，避免重复资产。
+ * 发行包只描述原版档案来源。关卡、代码和运行时资产各自记录 provenance，
+ * 不能把某一个发行包当作其它内容的隐式“主版本”。
  */
 export const RELEASES = [
   {
@@ -25,5 +25,25 @@ export const RELEASES = [
 ];
 
 export const DAT_FILES = ["00", "01", "02", "03", "04"];
-export const PRIMARY_ART_RELEASE = "up09";
 export const SOURCE_TILE_SIZE = 48;
+
+/**
+ * 运行时官方资产按语义类别选择来源。
+ *
+ * 证据见 docs/reference/official-release-provenance.md：24 个普通 PNG 与全部
+ * MIDI 在十包字节一致；title.png 有两个版本，产品明确采用 Forever/Base 版。
+ */
+export const OFFICIAL_RUNTIME_ASSET_SOURCES = {
+  artwork: {
+    defaultRelease: "base",
+    extension: ".png",
+    overrides: {
+      "title.png": "base",
+    },
+  },
+  music: {
+    defaultRelease: "base",
+    extension: ".mid",
+    overrides: {},
+  },
+};
