@@ -98,7 +98,7 @@ test('逆着荷叶脚下的湍急水流登叶时可以上叶，但不会启动�
   assert.equal(world.forcedDirection, null);
 });
 
-test('一次性 Beaver Key 可以开锁、立即消耗并报告 open-lock', () => {
+test('一次性 Beaver Key 可以开锁、立即消耗并报告通用 object-interaction', () => {
   const world = new World(
     level({ width: 2, height: 1, terrain: [[Terrain.START, Terrain.GROUND_C]], objects: [object(ObjectId.LOCK, 1, 0)] }),
     { temporaryKey: true }
@@ -107,7 +107,7 @@ test('一次性 Beaver Key 可以开锁、立即消耗并报告 open-lock', () =
   assert.equal(result.moved, true);
   assert.equal(world.objectIdAt(1, 0), EMPTY);
   assert.equal(world.state.profile.temporaryKey, false);
-  assert.ok(result.events.some((event) => event.type === 'open-lock'));
+  assert.ok(result.events.some((event) => event.type === 'object-interaction' && event.objectType === ObjectId.LOCK && event.action === 'open'));
 });
 
 test('割草机第一次从停车位上车不会同帧自动下车，并可安全碾过激活陷阱', () => {
