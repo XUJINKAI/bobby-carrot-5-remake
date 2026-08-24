@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "./util.mjs";
 import { resolveDistRequest } from "./static-server.mjs";
+
 run(process.execPath, ["tools/scripts/build.mjs"]);
 run(
   process.execPath,
@@ -14,11 +15,13 @@ run(
   ],
   { shell: true },
 );
+
 const { deriveDatDynamicSlots, splitDatPackage, decodeDatLevelRecord } =
   await import("../../dat/dist/index.js");
 const catalog = JSON.parse(
   fs.readFileSync(path.join(root, "assets/generated/catalog.json"), "utf8"),
 );
+
 if (catalog.totalSourceLevels !== 530)
   throw new Error(
     `Expected 530 source levels, got ${catalog.totalSourceLevels}`,
@@ -59,6 +62,7 @@ if (
   catalog.chapters.at(-1)?.difficultyStars !== 1
 )
   throw new Error("Original DAT chapter star ratings changed");
+
 for (const chapter of catalog.chapters) {
   if (![1, 2, 3].includes(chapter.difficultyStars))
     throw new Error(
@@ -85,6 +89,7 @@ for (const chapter of catalog.chapters) {
   if (JSON.stringify(chapter.levelPublicIds) !== JSON.stringify(expected))
     throw new Error(`Chapter ${chapter.number} campaign order changed`);
 }
+
 for (const level of catalog.levels) {
   const file = path.join(root, "assets/generated", level.path);
   if (!fs.existsSync(file)) throw new Error(`Missing canonical level ${file}`);
@@ -116,11 +121,13 @@ for (const level of catalog.levels) {
   if (deriveDatDynamicSlots(data) !== data.dynamicSlots)
     throw new Error(`dynamicSlots is not derivable for ${level.publicId}`);
 }
+
 verifyAllSourceDynamicSlots(
   deriveDatDynamicSlots,
   splitDatPackage,
   decodeDatLevelRecord,
 );
+
 const filterIndex = JSON.parse(
   fs.readFileSync(
     path.join(root, "assets/generated/level-filters.json"),
@@ -142,7 +149,9 @@ for (const level of catalog.levels) {
     )
       throw new Error(`Bad ${key} for ${level.publicId}`);
 }
+
 verifySourceBoundaries();
+
 for (const file of [
   "dist/index.html",
   "dist/app.js",
@@ -153,15 +162,14 @@ for (const file of [
   "dist/adventure-storage.js",
   "dist/explore-progress.js",
   "dist/official-game.js",
-  "dist/shared-game.js",
   "dist/editor-page.js",
   "dist/game-session.js",
   "dist/game-debug.js",
   "dist/model/index.js",
-  "dist/dat/index.js",
   "dist/adventure/index.js",
   "dist/engine/index.js",
   "dist/editor/index.js",
+  "dist/game-ui.css",
   "dist/adventure.css",
   "dist/editor.css",
   "dist/assets/catalog.json",
@@ -176,7 +184,10 @@ for (const file of [
 ])
   if (!fs.existsSync(path.join(root, file)))
     throw new Error(`Missing build artifact: ${file}`);
+
 for (const removed of [
+  "dist/dat",
+  "dist/shared-game.js",
   "dist/web",
   "dist/engine-playground",
   "dist/play",
@@ -189,8 +200,10 @@ for (const removed of [
 ])
   if (fs.existsSync(path.join(root, removed)))
     throw new Error(`Obsolete build artifact still exists: ${removed}`);
+
 verifyWebModuleEntry(path.join(root, "dist"));
 verifySpaVsStaticRouting(path.join(root, "dist"));
+
 const jarOut = path.join(root, "tmp/original-validation/verify.jar");
 run(process.execPath, [
   "tools/src/patch-original-jar.mjs",
@@ -204,10 +217,13 @@ run(process.execPath, [
 if (!fs.existsSync(jarOut))
   throw new Error("Original JAR validation artifact was not created");
 fs.rmSync(path.join(root, "tmp"), { recursive: true, force: true });
+
 if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
+
 console.log(
-  "verify: OK — 1-40 Adventure campaign, original chapter stars, persistent save/rewards, Adventure-owned Bonus countdown over generic Engine events, model/dat/adventure/engine/editor/web boundaries, original-JAR round-trip and Explore/Adventure SPA routing all passed.",
+  "verify: OK — JSON-only user maps, LevelObject properties, generic Engine dialog events, Adventure map augmentation, DAT-free Web/Editor product boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",
 );
+
 function verifyAllSourceDynamicSlots(derive, split, decode) {
   const sourceIndex = JSON.parse(
     fs.readFileSync(
@@ -235,19 +251,34 @@ function verifyAllSourceDynamicSlots(derive, split, decode) {
       `Expected to verify dynamicSlots on all 530 source records, got ${count}`,
     );
 }
+
 function verifySourceBoundaries() {
-  if (fs.existsSync(path.join(root, "tools/src/dat-codec.mjs")))
-    throw new Error("Legacy duplicated DAT codec still exists");
-  if (fs.existsSync(path.join(root, "web/src/main.ts")))
-    throw new Error("Legacy monolithic web/src/main.ts still exists");
+  for (const removed of [
+    "tools/src/dat-codec.mjs",
+    "editor/src/share.ts",
+    "web/src/shared-game.ts",
+    "web/src/main.ts",
+  ])
+    if (fs.existsSync(path.join(root, removed)))
+      throw new Error(`Legacy source still exists: ${removed}`);
   if (!fs.existsSync(path.join(root, "web/src/app.ts")))
     throw new Error("Modular web app entry is missing");
+
   const allowed = new Map([
     ["model/src", new Set()],
     ["dat/src", new Set(["@bobby/model"])],
     ["engine/src", new Set(["@bobby/model"])],
-    ["editor/src", new Set(["@bobby/model", "@bobby/dat", "@bobby/engine"])],
+    ["editor/src", new Set(["@bobby/model", "@bobby/engine"])],
     ["adventure/src", new Set(["@bobby/model"])],
+    [
+      "web/src",
+      new Set([
+        "@bobby/model",
+        "@bobby/adventure",
+        "@bobby/engine",
+        "@bobby/editor",
+      ]),
+    ],
   ]);
   for (const [sourcePath, packages] of allowed)
     walkSource(path.join(root, sourcePath), (file, text) => {
@@ -257,6 +288,30 @@ function verifySourceBoundaries() {
             `Forbidden package dependency ${match[1]} in ${path.relative(root, file)}`,
           );
     });
+
+  for (const relative of [
+    "editor/package.json",
+    "editor/tsconfig.json",
+    "web/package.json",
+    "web/tsconfig.json",
+  ]) {
+    const text = fs.readFileSync(path.join(root, relative), "utf8");
+    if (/@bobby\/dat|\.\.\/dat/.test(text))
+      throw new Error(`DAT dependency leaked into product config: ${relative}`);
+  }
+
+  for (const sourcePath of ["editor/src", "web/src"])
+    walkSource(path.join(root, sourcePath), (file, text) => {
+      if (
+        /\b(?:encodeShareLevel|decodeShareLevel|shareValueFromHash)\b|#map=/.test(
+          text,
+        )
+      )
+        throw new Error(
+          `Legacy URL/DAT share code leaked into product source: ${path.relative(root, file)}`,
+        );
+    });
+
   walkSource(path.join(root, "model/src"), (file, text) => {
     if (
       /\b(?:schemaVersion|recordSha256|recordLength|dynamicSlots|chapterLevel|terrainEncoding)\b/.test(
@@ -267,6 +322,7 @@ function verifySourceBoundaries() {
         `Official/DAT metadata leaked into pure model: ${path.relative(root, file)}`,
       );
   });
+
   walkSource(path.join(root, "engine/src"), (file, text) => {
     if (
       /\b(?:TERRAIN_BY_DAT|OBJECT_BY_DAT|DAT_BY_TERRAIN|DAT_BY_OBJECT|datHexIds|datSourceForTerrain|datSourceForObject|chapterLevel|recordSha256|releaseSourceId|bonusTimeMs|bonusTimeLimitMs|bonusTimeRemainingMs|timedChallengeMs|lock-opened)\b/.test(
@@ -277,6 +333,7 @@ function verifySourceBoundaries() {
         `Original-format/catalog/Adventure timing metadata leaked into Engine: ${path.relative(root, file)}`,
       );
   });
+
   walkSource(path.join(root, "adventure/src"), (file, text) => {
     if (
       /\b(?:DAT_BY_|TERRAIN_BY_DAT|OBJECT_BY_DAT|recordSha256|releaseSourceId|packFile|localStorage|document|window)\b/.test(
@@ -287,16 +344,13 @@ function verifySourceBoundaries() {
         `Archive/browser implementation leaked into Adventure domain: ${path.relative(root, file)}`,
       );
   });
+
   const officialGame = fs.readFileSync(
       path.join(root, "web/src/official-game.ts"),
       "utf8",
     ),
     gameSession = fs.readFileSync(
       path.join(root, "web/src/game-session.ts"),
-      "utf8",
-    ),
-    sharedGame = fs.readFileSync(
-      path.join(root, "web/src/shared-game.ts"),
       "utf8",
     ),
     world = fs.readFileSync(
@@ -307,7 +361,16 @@ function verifySourceBoundaries() {
     adventureRuntime = fs.readFileSync(
       path.join(root, "adventure/src/runtime.ts"),
       "utf8",
+    ),
+    adventureRewards = fs.readFileSync(
+      path.join(root, "adventure/src/rewards.ts"),
+      "utf8",
+    ),
+    objectTouch = fs.readFileSync(
+      path.join(root, "engine/src/core/object-touch.ts"),
+      "utf8",
     );
+
   if (
     !/planAdventureSession\(meta\.publicId/.test(officialGame) ||
     /meta\.chapterLevel\s*>\s*10/.test(officialGame)
@@ -319,6 +382,15 @@ function verifySourceBoundaries() {
     throw new Error(
       "Official Adventure play must bind the Adventure runtime to Engine through the generic port",
     );
+  if (!/prepareAdventureLevel\(meta\.publicId/.test(officialGame))
+    throw new Error(
+      "Adventure play must prepare/augment a LevelMap before passing it to Engine",
+    );
+  if (!/augmentAdventureLevel\(level\s*,\s*propertyPatches\)/.test(adventureRewards))
+    throw new Error(
+      "Adventure preparation must expose a pure LevelMap augmentation seam",
+    );
+
   if (
     !/game\.loadLevel\(options\.level\)/.test(gameSession) ||
     /\bloadOptions\b/.test(gameSession)
@@ -327,11 +399,13 @@ function verifySourceBoundaries() {
       "Web game session must load a pure LevelMap without Adventure timing options",
     );
   if (
-    /\b(?:bonusTimeMs|bonusTimeRemainingMs|timedChallengeMs)\b/.test(sharedGame)
+    !/event\.type\s*!==\s*["']dialog["']/.test(gameSession) ||
+    !/event\.text\s*\?\?\s*["']\.\.\.["']/.test(gameSession)
   )
     throw new Error(
-      "Shared/custom play must not infer or own the original Adventure Bonus timeout",
+      "Web game session must present generic Engine dialog events, including empty dialogue",
     );
+
   if (
     !/type\s*:\s*["']object-interaction["']\s*,\s*objectType\s*:\s*ObjectId\.LOCK\s*,\s*action\s*:\s*["']open["']/.test(
       world,
@@ -344,11 +418,16 @@ function verifySourceBoundaries() {
   if (
     !/onWorldEvent\(listener\s*:\s*WorldEventListener\)/.test(game) ||
     !/killPlayer\(reason\s*:\s*string\)/.test(game) ||
-    /lock-opened/.test(game)
+    /lock-opened/.test(game) ||
+    !/worldEventForObjectTouch\(object\)/.test(game)
   )
     throw new Error(
-      "Engine Game must expose generic WorldEvent subscription plus generic player death, without lock-specific API",
+      "Engine Game must expose generic WorldEvent subscription, generic player death and object-touch event translation, without lock-specific API",
     );
+
+  if (!/type\s*:\s*["']dialog["']/.test(objectTouch))
+    throw new Error("Engine object-touch adapter must translate Definition touch results into dialog events");
+
   if (
     !/engine\.onWorldEvent/.test(adventureRuntime) ||
     !/ObjectId\.LOCK/.test(adventureRuntime) ||
@@ -362,6 +441,7 @@ function verifySourceBoundaries() {
       "Adventure runtime must own Bonus timing by consuming generic Engine events",
     );
 }
+
 function verifySpaVsStaticRouting(distRoot) {
   for (const route of [
     "/levels",
@@ -394,6 +474,7 @@ function verifySpaVsStaticRouting(distRoot) {
       );
   }
 }
+
 function verifyWebModuleEntry(webRoot) {
   const html = fs.readFileSync(path.join(webRoot, "index.html"), "utf8"),
     baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? "/",
@@ -404,9 +485,10 @@ function verifyWebModuleEntry(webRoot) {
   const imports = JSON.parse(mapText)?.imports;
   if (!imports || typeof imports !== "object")
     throw new Error("Import map must define imports");
+  if (imports["@bobby/dat"] !== undefined)
+    throw new Error("Product import map must not expose @bobby/dat");
   for (const specifier of [
     "@bobby/model",
-    "@bobby/dat",
     "@bobby/adventure",
     "@bobby/engine",
     "@bobby/editor",
@@ -423,6 +505,7 @@ function verifyWebModuleEntry(webRoot) {
   ))
     verifyLocal(webRoot, baseHref, match[1], "module script");
 }
+
 function isUrlLike(target) {
   return (
     target.startsWith("/") ||
@@ -431,6 +514,7 @@ function isUrlLike(target) {
     /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(target)
   );
 }
+
 function verifyLocal(webRoot, baseHref, target, label) {
   const origin = "https://verify.invalid",
     baseUrl = new URL(baseHref, `${origin}/index.html`),
@@ -444,6 +528,7 @@ function verifyLocal(webRoot, baseHref, target, label) {
   if (!fs.existsSync(file))
     throw new Error(`${label} resolves to missing build artifact: ${target}`);
 }
+
 function walkSource(directory, visitor) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
