@@ -1,8 +1,9 @@
 # AGENTS.md
 
-本仓库把 Bobby Carrot 5 重构为现代 Web 游戏，同时保留一条可验证原版逻辑的格式互操作链路。
+本仓库将 **Bobby Carrot 5 Remake** 实现为现代 Web 游戏，同时保留一条可验证原版逻辑的格式互操作链路。
 
 ## 修改前先读
+
 - 产品目标：`docs/design.md`
 - 架构边界：`docs/architecture.md`
 - Engine API：`docs/contracts/engine-api.md`
@@ -12,7 +13,19 @@
 - 逆向机关：`docs/workflows/add-mechanic.md`
 - 原版事实：`docs/reference/`
 
+## 代码与文档质量
+
+1. 仓库维护的源代码必须以便于人类阅读和审查的形式提交，禁止为了缩短文件而把多个声明、语句、分支或回调压缩到同一行；构建产物和第三方代码除外。
+2. 单个仓库维护的源代码文件不得超过 1000 行。达到约 800 行时应主动检查职责是否过多，并优先按领域职责拆分，而不是机械切文件。
+3. 文档和代码注释统一使用中文。技术标识符、API 名称、文件名、协议字段、原版专有名称保持原始拼写；`README_en.md`、第三方许可证/声明和必要的外部原文引用除外。
+4. 注释解释“为什么”、不明显的约束、边界条件、原版行为依据，以及看似可以简化但实际上不能简化的原因；不要机械复述代码。
+5. 复杂规则已有 `docs/` 文档时，以文档为单一可信源。代码只引用对应文档并解释实现关系，不复制一份可能发生漂移的规则说明。
+6. 不得把新职责默认塞入 `common`、`utils`、`helpers` 等通用模块；能明确归属领域时必须放入所属模块。
+7. 可机械验证的质量规则必须进入 `npm run verify`。`AGENTS.md` 负责说明规则，verify 才是强制门禁。
+8. 项目在文档与 Web 用户界面中的正式名称统一为 **Bobby Carrot 5 Remake**；不要再使用 `Bobby Carrot 5 Web`、裸 `Bobby Carrot` 等旧产品名。包名、仓库名和 `bc5r` 内部代号不受此规则影响。
+
 ## 硬规则
+
 1. `assets/original/official-hd/` 的 10 个原始 JAR 永远只读；验证 JAR 只能生成到 `tmp/` 等生成目录。
 2. `assets/extracted/`、`assets/generated/`、`dist/`、`tmp/` 都是生成物，不提交 Git，不手工修。
 3. 正式 Campaign 玩家 ID 使用连续章节编号：`1-1 / 1-bonus-1 / ... / 40-10`。`base / up01 ... up09`、DAT 包名和 record slot 只属于 archive provenance；`001...485` 仍只是内部 canonical identity。
@@ -40,6 +53,7 @@
 25. Web 页面模块通过函数/API 协作；禁止用 MutationObserver 观察 DOM 来猜另一个模块何时渲染完成。
 
 ## 依赖方向
+
 ```text
 @bobby/model <- @bobby/dat
 @bobby/model <- engine
@@ -53,6 +67,7 @@ tools        -> @bobby/dat / original JAR / generated Catalog
 ```
 
 禁止：
+
 ```text
 engine    -> @bobby/adventure / @bobby/dat / JAR / Catalog / HTTP
 adventure -> @bobby/engine / @bobby/dat / JAR / Catalog archive fields / DOM / localStorage
