@@ -1,4 +1,4 @@
-import { Game, InputController, type GameOptions, type LevelMap } from '@bobby/engine';
+import { Game, InputController, type GameOptions, type InputControllerOptions, type LevelMap } from '@bobby/engine';
 
 export interface GameSession {
   game: Game;
@@ -11,6 +11,7 @@ export interface CreateGameSessionOptions {
   canvas: HTMLCanvasElement;
   level: LevelMap;
   gameOptions: Omit<GameOptions, 'canvas'>;
+  inputOptions?: InputControllerOptions;
 }
 
 /**
@@ -21,7 +22,7 @@ export interface CreateGameSessionOptions {
  */
 export async function createGameSession(options: CreateGameSessionOptions): Promise<GameSession> {
   const game = new Game({ canvas: options.canvas, ...options.gameOptions });
-  const input = new InputController(game);
+  const input = new InputController(game, options.inputOptions);
   bindMobileControls(options.root, game);
   try {
     await game.loadLevel(options.level);
