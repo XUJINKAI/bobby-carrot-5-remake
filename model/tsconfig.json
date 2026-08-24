@@ -8,6 +8,5 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../model" }],
   "include": ["src/**/*.ts"]
 }

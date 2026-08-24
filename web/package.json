@@ -2,5 +2,11 @@
   "name": "@bobby/web",
   "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@bobby/model": "0.1.0",
+    "@bobby/dat": "0.1.0",
+    "@bobby/engine": "0.1.0",
+    "@bobby/editor": "0.1.0"
+  }
 }
