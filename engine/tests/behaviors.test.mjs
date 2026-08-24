@@ -29,7 +29,7 @@ test('object definitions expose passage and authoring behavior', () => {
   assert.equal(lock.behaviors[0].id, 'requires-key');
   assert.equal(lock.authoring?.palette, true);
 
-  const internal = inspectObjectDefinition(ObjectId.DRAGON_BODY);
+  const internal = inspectObjectDefinition(ObjectId.CONSUMED_CARROT);
   assert.equal(internal.authoring?.palette, false);
 });
 
