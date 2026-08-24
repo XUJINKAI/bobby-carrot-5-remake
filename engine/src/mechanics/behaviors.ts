@@ -1,4 +1,8 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
+import type {
+  LevelObject,
+  ObjectType,
+  TerrainType,
+} from "../data/types.js";
 import type { RuntimeState } from "../world/RuntimeState.js";
 import type { Direction } from "./ids.js";
 
@@ -17,6 +21,7 @@ export interface BehaviorContext {
   direction: Direction;
   terrainId: TerrainType;
   objectId: ObjectType;
+  object: LevelObject | null;
   fromTerrain?: TerrainType;
 }
 
@@ -25,6 +30,7 @@ export interface BehaviorRuntimeApi {
   setObject(type: ObjectType): void;
   mapTerrain(mapper: (type: TerrainType) => TerrainType): void;
   event(type: string, message: string): void;
+  dialog(text?: string): void;
   kill(reason: string): void;
   fireDragon(): void;
   propelClouds(): void;
@@ -58,6 +64,7 @@ export interface TileBehavior {
   canLeave?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   passage?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   enterPhase?: BehaviorEnterPhase;
+  onTouch?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
@@ -147,6 +154,20 @@ export function passageBehavior(
     passage: handler,
   };
 }
+
+export function touchBehavior(
+  id: string,
+  summary: string,
+  handler: (ctx: BehaviorRuntimeContext) => BehaviorRuntimeResult | void,
+  config?: Record<string, string | number | boolean | string[]>,
+): TileBehavior {
+  return {
+    id,
+    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
+    onTouch: handler,
+  };
+}
+
 export function enterBehavior(
   id: string,
   summary: string,
