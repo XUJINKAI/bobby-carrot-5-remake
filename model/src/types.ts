@@ -128,10 +128,17 @@ export type ObjectType =
   | "empty"
   | `object-variant-${string}`;
 
+/**
+ * 对象实例参数。当前只需要字符串和枚举/频道，因此统一持久化为字符串；
+ * 哪些 key 合法以及如何编辑由 Engine Definition 描述，而不是由地图格式硬编码。
+ */
+export type LevelObjectProperties = Record<string, string>;
+
 export interface LevelObject {
   type: ObjectType;
   x: number;
   y: number;
+  properties?: LevelObjectProperties;
 }
 
 /** Pure playable/authorable map. No release, JAR, hash, catalog or DAT fields belong here. */

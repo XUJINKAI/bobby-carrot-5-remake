@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import type { LevelMap, LevelObject } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
 import type { Direction } from "../mechanics/ids.js";
@@ -16,6 +16,8 @@ import {
   type WorldSnapshot,
 } from "../world/World.js";
 import type { ProfileCapabilities } from "../world/RuntimeState.js";
+import { worldEventForObjectTouch } from "./object-touch.js";
+
 export interface GameOptions {
   canvas: HTMLCanvasElement;
   assets: RendererAssets;
@@ -23,6 +25,7 @@ export interface GameOptions {
   debug?: boolean;
   profile?: Partial<ProfileCapabilities>;
 }
+
 type GameEventName =
   | "change"
   | "move"
@@ -33,6 +36,7 @@ type GameEventName =
   | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
+
 interface Motion {
   fromX: number;
   fromY: number;
@@ -44,6 +48,7 @@ interface Motion {
   forced: boolean;
   ridingDynamic: boolean;
 }
+
 export class Game {
   readonly renderer: Renderer;
   readonly audio: AudioBackend;
@@ -70,6 +75,7 @@ export class Game {
   private fireTrailClearAt = 0;
   lastMove: MoveResult | null = null;
   lastWorldEvents: WorldEvent[] = [];
+
   constructor(options: GameOptions) {
     this.renderer = new Renderer(options.canvas, options.assets);
     this.audio = options.audio ?? new NullAudioBackend();
@@ -79,25 +85,32 @@ export class Game {
     window.addEventListener("resize", this.onResize);
     this.animationFrame = requestAnimationFrame(this.tick);
   }
+
   get world(): World {
     if (!this.worldValue) throw new Error("尚未载入关卡");
     return this.worldValue;
   }
+
   get hasLevel(): boolean {
     return this.worldValue !== null;
   }
+
   get debug(): boolean {
     return this.debugValue;
   }
+
   get zoom(): number {
     return this.renderer.camera.zoom;
   }
+
   get isAnimating(): boolean {
     return this.motion !== null;
   }
+
   get canUndo(): boolean {
     return this.history.length > 0;
   }
+
   async loadLevel(level: LevelMap): Promise<void> {
     const runtimeLevel = this.prepareRuntimeLevel(level);
     this.initialLevel = structuredClone(runtimeLevel);
@@ -114,6 +127,7 @@ export class Game {
     this.emit("level-loaded");
     this.emit("change");
   }
+
   move(direction: Direction): MoveResult | null {
     if (
       !this.worldValue ||
@@ -124,6 +138,7 @@ export class Game {
       return null;
     return this.startLogicalMove(direction, false);
   }
+
   setHeldDirection(direction: Direction | null): void {
     this.heldDirection = direction;
     if (
@@ -136,6 +151,7 @@ export class Game {
     )
       this.startLogicalMove(direction, false);
   }
+
   undo(): boolean {
     const previous = this.history.pop();
     if (!previous || !this.worldValue) return false;
@@ -149,6 +165,7 @@ export class Game {
     this.emit("change");
     return true;
   }
+
   restart(): void {
     if (!this.initialLevel) return;
     this.worldValue = new World(
@@ -165,6 +182,7 @@ export class Game {
     this.render();
     this.emit("change");
   }
+
   killPlayer(reason: string): void {
     if (!this.worldValue) return;
     const events = this.worldValue.killPlayer(reason);
@@ -176,26 +194,32 @@ export class Game {
     this.render();
     this.emit("change");
   }
+
   setProfile(profile: Partial<ProfileCapabilities>): void {
     if (this.worldValue) this.worldValue.setProfile(profile);
   }
+
   setZoomLimits(min: number, max = 2.75): void {
     this.renderer.camera.setZoomLimits(min, max);
     this.render();
     this.emit("change");
   }
+
   setZoom(value: number): void {
     this.renderer.camera.setZoom(value);
     this.render();
     this.emit("change");
   }
+
   zoomBy(factor: number): void {
     this.setZoom(this.zoom * factor);
   }
+
   panByScreen(dx: number, dy: number): void {
     this.renderer.camera.panByScreen(dx, dy);
     this.render();
   }
+
   setDebug(value: boolean): void {
     this.debugValue = value;
     this.renderer.setDebug(value);
@@ -203,9 +227,11 @@ export class Game {
     this.emit("debug-change");
     this.emit("change");
   }
+
   toggleDebug(): void {
     this.setDebug(!this.debugValue);
   }
+
   inspectCanvasPoint(clientX: number, clientY: number): TileInspection | null {
     if (!this.worldValue) return null;
     const rect = this.renderer.canvas.getBoundingClientRect(),
@@ -215,19 +241,23 @@ export class Game {
       );
     return this.world.inspect(point.x, point.y);
   }
+
   render(): void {
     if (this.worldValue) this.renderer.render(this.worldValue, this.visual);
   }
+
   on(event: GameEventName, listener: Listener): () => void {
     const set = this.listeners.get(event) ?? new Set<Listener>();
     set.add(listener);
     this.listeners.set(event, set);
     return () => set.delete(listener);
   }
+
   onWorldEvent(listener: WorldEventListener): () => void {
     this.worldEventListeners.add(listener);
     return () => this.worldEventListeners.delete(listener);
   }
+
   destroy(): void {
     this.destroyed = true;
     cancelAnimationFrame(this.animationFrame);
@@ -235,18 +265,21 @@ export class Game {
     this.worldEventListeners.clear();
     this.audio.stopMusic();
   }
+
   private prepareRuntimeLevel(level: LevelMap): LevelMap {
     return {
       ...structuredClone(level),
       objects: expandObjectLayouts(level.objects, level.width, level.height),
     };
   }
+
   private startLogicalMove(direction: Direction, forced: boolean): MoveResult {
     const world = this.world,
       riddenBefore = world.getRiddenDynamicEntity(),
       snapshot = !forced ? world.snapshot() : null,
       result = world.move(direction, forced),
       riddenAfter = world.getRiddenDynamicEntity();
+    if (!result.moved) this.appendObjectTouchEvent(result);
     this.lastMove = result;
     this.lastWorldEvents = result.events;
     if (!result.moved) {
@@ -277,6 +310,22 @@ export class Game {
     this.emit("change");
     return result;
   }
+
+  private appendObjectTouchEvent(result: MoveResult): void {
+    const object = this.runtimeObjectAt(result.to.x, result.to.y);
+    if (!object) return;
+    const event = worldEventForObjectTouch(object);
+    if (event) result.events.push(event);
+  }
+
+  private runtimeObjectAt(x: number, y: number): LevelObject | null {
+    return (
+      this.initialLevel?.objects.find(
+        (object) => object.x === x && object.y === y,
+      ) ?? null
+    );
+  }
+
   private motionDuration(forcedKind: string | null): number {
     let duration = 132;
     if (forcedKind === "speed") duration = 70;
@@ -287,6 +336,7 @@ export class Game {
     if (this.world.state.profile.speedShoes) duration *= 0.76;
     return duration;
   }
+
   private finishMotion(): void {
     if (!this.motion) return;
     this.visual.x = this.motion.toX;
@@ -307,6 +357,7 @@ export class Game {
     }
     if (this.heldDirection) this.startLogicalMove(this.heldDirection, false);
   }
+
   private handleWorldEvents(events: WorldEvent[]): void {
     for (const event of events) {
       for (const listener of this.worldEventListeners) listener(event);
@@ -335,6 +386,7 @@ export class Game {
       }
     }
   }
+
   private syncVisualToWorld(): void {
     if (!this.worldValue) return;
     this.visual = {
@@ -346,9 +398,11 @@ export class Game {
       ridingDynamic: false,
     };
   }
+
   private emit(event: GameEventName): void {
     for (const listener of this.listeners.get(event) ?? []) listener(this);
   }
+
   private async waitForRenderer(): Promise<void> {
     const deadline = Date.now() + 10000;
     while (!this.renderer.ready) {
@@ -356,7 +410,9 @@ export class Game {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
   }
+
   private readonly onResize = (): void => this.render();
+
   private readonly tick = (timestamp: number): void => {
     if (this.destroyed) return;
     const deltaMs =

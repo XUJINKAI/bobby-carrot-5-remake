@@ -7,6 +7,7 @@ export { NullAudioBackend, type AudioBackend } from "./audio/AudioBackend.js";
 export type {
   LevelMap,
   LevelObject,
+  LevelObjectProperties,
   TerrainType,
   ObjectType,
 } from "@bobby/model";
@@ -38,6 +39,12 @@ export {
   type TileAuthoring,
   type TileTrait,
 } from "./mechanics/definitions.js";
+export type {
+  ObjectPropertyDefinition,
+  StringPropertyDefinition,
+  EnumPropertyDefinition,
+  EnumPropertyOption,
+} from "./mechanics/definition-types.js";
 export {
   objectLayoutFor,
   isMultiCellObject,
@@ -53,6 +60,7 @@ export {
   directionalPassage,
   rotateOnLeave,
   passageBehavior,
+  touchBehavior,
   enterBehavior,
   preEnterBehavior,
   leaveBehavior,
@@ -60,6 +68,7 @@ export {
   markerBehavior,
   type TileBehavior,
   type BehaviorDescription,
+  type ObjectTouchResult,
 } from "./mechanics/behaviors.js";
 export {
   terrainAtlasCell,

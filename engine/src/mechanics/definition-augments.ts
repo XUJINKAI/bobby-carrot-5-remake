@@ -1,6 +1,10 @@
 import type { ObjectType, TerrainType } from "../data/types.js";
 import { ObjectId, Terrain, type Direction } from "./ids.js";
-import { markerBehavior, type TileBehavior } from "./behaviors.js";
+import {
+  markerBehavior,
+  touchBehavior,
+  type TileBehavior,
+} from "./behaviors.js";
 import { CLOUD_INFO } from "./mechanic-links.js";
 import type { TileDefinition, TileTrait } from "./definition-types.js";
 
@@ -53,6 +57,45 @@ export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
       ["blocking"],
       [markerBehavior("blocks-passage", "默认阻挡 Bobby 通过")],
     );
+
+  // Sandman 的实例对白属于 LevelObject properties；原版地图没有文本时也照样触发 dialog(undefined)。
+  for (const id of [ObjectId.SANDMAN, ObjectId.SANDMAN_BODY]) {
+    const current = ports.getObject(id)!;
+    ports.setObject({
+      ...current,
+      behaviors: [
+        ...current.behaviors,
+        touchBehavior(
+          "sandman-dialog",
+          "触碰 Sandman 时请求展示对象实例对白",
+          (object) => ({
+            kind: "dialog",
+            ...(object.properties?.dialogue !== undefined
+              ? { text: object.properties.dialogue }
+              : {}),
+          }),
+        ),
+      ],
+      ...(id === ObjectId.SANDMAN
+        ? {
+            authoring: {
+              ...(current.authoring ?? { palette: true }),
+              properties: [
+                {
+                  key: "dialogue",
+                  kind: "string",
+                  label: "对白",
+                  multiline: true,
+                  maxLength: 1000,
+                  placeholder: "可选；留空时仍会触发空对白框",
+                },
+              ],
+            },
+          }
+        : {}),
+    });
+  }
+
   for (const [id] of CLOUD_INFO) {
     const current = ports.getObject(id)!;
     ports.setObject({

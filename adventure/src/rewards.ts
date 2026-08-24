@@ -6,6 +6,10 @@ import {
 } from "@bobby/model";
 import { parseAdventureLevelId, type AdventureLevelId } from "./campaign.js";
 import { normalizeAdventureSave, type AdventureSave } from "./save.js";
+import {
+  augmentAdventureLevel,
+  type AdventureObjectPropertiesPatch,
+} from "./augment.js";
 
 export type PersistentRewardType =
   | typeof ObjectId.BONUS_COIN
@@ -52,17 +56,20 @@ export function prepareAdventureLevel(
   levelId: string,
   level: LevelMap,
   save: AdventureSave,
+  propertyPatches: readonly AdventureObjectPropertiesPatch[] = [],
 ): LevelMap {
+  // 顺序固定为：官方/基础 LevelMap → Adventure 实例参数增强 → 持久奖励过滤 → Engine。
+  const augmented = augmentAdventureLevel(level, propertyPatches);
   const claimed = new Set(normalizeAdventureSave(save).claimedRewards);
   const rewards = new Map(
-    persistentRewardsForLevel(levelId, level).map((reward) => [
+    persistentRewardsForLevel(levelId, augmented).map((reward) => [
       `${reward.x},${reward.y}:${reward.type}`,
       reward.id,
     ]),
   );
   return {
-    ...structuredClone(level),
-    objects: level.objects.filter((object) => {
+    ...augmented,
+    objects: augmented.objects.filter((object) => {
       if (!isPersistentRewardType(object.type)) return true;
       const id = rewards.get(`${object.x},${object.y}:${object.type}`);
       return !id || !claimed.has(id);

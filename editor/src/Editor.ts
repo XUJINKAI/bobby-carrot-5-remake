@@ -36,7 +36,6 @@ import {
   type EditorLevel,
 } from "./level.js";
 import { EditorPlayTest } from "./playtest.js";
-import { encodeShareLevel } from "./share.js";
 
 export interface BobbyEditorOptions {
   root: HTMLElement;
@@ -48,7 +47,6 @@ export interface BobbyEditorOptions {
   kiteUrl?: string;
   audio?: AudioBackend;
   onClose?: () => void;
-  shareOrigin?: string;
 }
 
 type PointerButton = 0 | 2 | null;
@@ -122,7 +120,7 @@ export class BobbyEditor {
   }
 
   private mount(): void {
-    this.root.innerHTML = `<div class="bobby-editor"><header class="editor-toolbar"><button class="editor-btn editor-back" data-editor="close">← 返回</button><strong class="editor-title">Bobby Editor</strong><span class="editor-spacer"></span><button class="editor-btn editor-play" data-editor="play-toggle">▶ Play</button><button class="editor-btn" data-editor="share">分享 / 文件</button><button class="editor-btn editor-help" data-editor="help">?</button><input type="file" accept="application/json,.json" data-editor-file hidden></header><main class="editor-body"><aside class="editor-palette"><div class="editor-palette-head"><div class="editor-panel-title">素材</div><div class="editor-palette-zoom"><button class="editor-mini-btn" data-editor="palette-smaller">−</button><span data-editor-palette-size>${this.paletteSize}</span><button class="editor-mini-btn" data-editor="palette-larger">+</button></div></div><div class="editor-selected-tile" data-editor-selected></div><div class="editor-palette-groups" data-editor-palette></div></aside><section class="editor-map-shell" data-editor-map-shell><canvas class="editor-canvas" data-editor-canvas></canvas><div class="editor-play-status" data-editor-status></div></section><aside class="editor-inspector" data-editor-inspector></aside></main><dialog class="editor-dialog" data-editor-share-dialog><header><strong>地图文件与分享</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><label class="editor-field"><span>名称</span><input data-share-name maxlength="120"></label><label class="editor-field"><span>作者</span><input data-share-author maxlength="80" placeholder="可选"></label><label class="editor-field"><span>描述</span><textarea data-share-description maxlength="500" rows="3" placeholder="可选"></textarea></label><div class="editor-dialog-section"><button class="editor-btn editor-primary" data-editor="copy-share">复制游玩链接</button><p class="editor-muted">分享与原版验证共用 @bobby/dat 的 DAT level-record codec；JSON 是长期编辑格式。</p></div><div class="editor-dialog-actions"><button class="editor-btn" data-editor="import">导入 JSON</button><button class="editor-btn" data-editor="export">导出 JSON</button></div></dialog><dialog class="editor-dialog editor-help-dialog" data-editor-help-dialog><header><strong>操作帮助</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><div class="editor-help-list"><p><strong>左键 / 拖动</strong><span>放置当前 Terrain / Object；相交的大型 Object 会整体替换。</span></p><p><strong>右键 / Del</strong><span>删除鼠标指向的完整 Object。</span></p><p><strong>Q / E</strong><span>旋转 / 翻转 / 切换鼠标指向 Object 的 authoring variant。</span></p><p><strong>滚轮</strong><span>指向可变 Object 时切换变体，否则缩放地图。</span></p><p><strong>中键拖动</strong><span>平移地图。</span></p><p><strong>Ctrl/Cmd+Z / Y</strong><span>Undo / Redo。</span></p><p><strong>泛蓝高亮</strong><span>表示当前操作会删除或替换的完整 owner。</span></p></div></dialog></div>`;
+    this.root.innerHTML = `<div class="bobby-editor"><header class="editor-toolbar"><button class="editor-btn editor-back" data-editor="close">← 返回</button><strong class="editor-title">Bobby Editor</strong><span class="editor-spacer"></span><button class="editor-btn editor-play" data-editor="play-toggle">▶ Play</button><button class="editor-btn" data-editor="file">地图文件</button><button class="editor-btn editor-help" data-editor="help">?</button><input type="file" accept="application/json,.json" data-editor-file hidden></header><main class="editor-body"><aside class="editor-palette"><div class="editor-palette-head"><div class="editor-panel-title">素材</div><div class="editor-palette-zoom"><button class="editor-mini-btn" data-editor="palette-smaller">−</button><span data-editor-palette-size>${this.paletteSize}</span><button class="editor-mini-btn" data-editor="palette-larger">+</button></div></div><div class="editor-selected-tile" data-editor-selected></div><div class="editor-palette-groups" data-editor-palette></div></aside><section class="editor-map-shell" data-editor-map-shell><canvas class="editor-canvas" data-editor-canvas></canvas><div class="editor-play-status" data-editor-status></div></section><aside class="editor-inspector" data-editor-inspector></aside></main><dialog class="editor-dialog" data-editor-file-dialog><header><strong>地图文件</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><label class="editor-field"><span>名称</span><input data-map-name maxlength="120"></label><label class="editor-field"><span>作者</span><input data-map-author maxlength="80" placeholder="可选"></label><label class="editor-field"><span>描述</span><textarea data-map-description maxlength="500" rows="3" placeholder="可选"></textarea></label><p class="editor-muted">Bobby Carrot 5 Remake 的用户地图只使用语义 JSON；原版 DAT 仅供工具链验证与官方地图解码。</p><div class="editor-dialog-actions"><button class="editor-btn" data-editor="import">导入 JSON</button><button class="editor-btn editor-primary" data-editor="export">导出 JSON</button></div></dialog><dialog class="editor-dialog editor-help-dialog" data-editor-help-dialog><header><strong>操作帮助</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><div class="editor-help-list"><p><strong>左键 / 拖动</strong><span>放置当前 Terrain / Object；相交的大型 Object 会整体替换。</span></p><p><strong>右键 / Del</strong><span>删除鼠标指向的完整 Object。</span></p><p><strong>Q / E</strong><span>旋转 / 翻转 / 切换鼠标指向 Object 的 authoring variant。</span></p><p><strong>滚轮</strong><span>指向可变 Object 时切换变体，否则缩放地图。</span></p><p><strong>中键拖动</strong><span>平移地图。</span></p><p><strong>Ctrl/Cmd+Z / Y</strong><span>Undo / Redo。</span></p><p><strong>泛蓝高亮</strong><span>表示当前操作会删除或替换的完整 owner。</span></p></div></dialog></div>`;
     this.canvas = this.required("[data-editor-canvas]");
     this.palette = this.required("[data-editor-palette]");
     this.inspector = this.required("[data-editor-inspector]");
@@ -588,11 +586,8 @@ export class BobbyEditor {
       case "play-toggle":
         this.playing ? this.stopPlay() : void this.startPlay();
         break;
-      case "share":
-        this.openShare();
-        break;
-      case "copy-share":
-        void this.copyShare();
+      case "file":
+        this.openFileDialog();
         break;
       case "import":
         this.required<HTMLInputElement>("[data-editor-file]").click();
@@ -618,7 +613,12 @@ export class BobbyEditor {
   };
 
   private readonly onRootInput = (event: Event): void => {
-    const input = event.target as HTMLInputElement;
+    const input = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    if (input.matches("[data-object-property]")) {
+      this.updateObjectProperty(input);
+      return;
+    }
+    if (!(input instanceof HTMLInputElement)) return;
     if (!input.matches("[data-editor-file]") || !input.files?.[0]) return;
     const file = input.files[0];
     void file.text().then((text) => {
@@ -632,47 +632,49 @@ export class BobbyEditor {
     });
   };
 
-  private openShare(): void {
-    const dialog = this.required<HTMLDialogElement>(
-      "[data-editor-share-dialog]",
+  private updateObjectProperty(
+    input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+  ): void {
+    const key = input.dataset.objectProperty;
+    const x = Number(input.dataset.objectX);
+    const y = Number(input.dataset.objectY);
+    if (!key || !Number.isInteger(x) || !Number.isInteger(y)) return;
+    const object = this.level.objects.find(
+      (candidate) => candidate.x === x && candidate.y === y,
     );
-    this.required<HTMLInputElement>("[data-share-name]").value =
-      this.level.name;
-    this.required<HTMLInputElement>("[data-share-author]").value =
+    if (!object) return;
+    const previous = object.properties?.[key] ?? "";
+    if (previous === input.value) return;
+    this.pushHistory();
+    const properties = { ...(object.properties ?? {}) };
+    if (input.value === "") delete properties[key];
+    else properties[key] = input.value;
+    if (Object.keys(properties).length > 0) object.properties = properties;
+    else delete object.properties;
+  }
+
+  private openFileDialog(): void {
+    const dialog = this.required<HTMLDialogElement>("[data-editor-file-dialog]");
+    this.required<HTMLInputElement>("[data-map-name]").value = this.level.name;
+    this.required<HTMLInputElement>("[data-map-author]").value =
       this.level.author ?? "";
-    this.required<HTMLTextAreaElement>("[data-share-description]").value =
+    this.required<HTMLTextAreaElement>("[data-map-description]").value =
       this.level.description ?? "";
     dialog.showModal();
   }
 
   private syncMetadata(): void {
     this.level.name =
-      this.required<HTMLInputElement>("[data-share-name]").value.trim() ||
+      this.required<HTMLInputElement>("[data-map-name]").value.trim() ||
       "Untitled Bobby Level";
-    const author = this.required<HTMLInputElement>(
-      "[data-share-author]",
-    ).value.trim();
+    const author = this.required<HTMLInputElement>("[data-map-author]").value.trim();
     const description = this.required<HTMLTextAreaElement>(
-      "[data-share-description]",
+      "[data-map-description]",
     ).value.trim();
     if (author) this.level.author = author;
     else delete this.level.author;
     if (description) this.level.description = description;
     else delete this.level.description;
-  }
-
-  private async copyShare(): Promise<void> {
-    this.syncMetadata();
-    const encoded = await encodeShareLevel(this.level);
-    const origin = this.options.shareOrigin ?? location.origin;
-    const url = `${origin.replace(/\/$/, "")}/play#map=${encodeURIComponent(encoded)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      this.status.textContent = `已复制游玩链接 · ${encoded.length} 字符`;
-    } catch {
-      window.prompt("复制这个游玩链接：", url);
-    }
-    this.renderInspector();
   }
 
   private exportJson(): void {

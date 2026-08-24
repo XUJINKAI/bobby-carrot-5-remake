@@ -10,7 +10,6 @@
   },
   "references": [
     { "path": "../model" },
-    { "path": "../dat" },
     { "path": "../engine" }
   ],
   "include": ["src/**/*.ts"]

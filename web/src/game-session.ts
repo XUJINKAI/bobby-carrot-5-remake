@@ -32,8 +32,10 @@ export async function createGameSession(
   const game = new Game({ canvas: options.canvas, ...options.gameOptions });
   const input = new InputController(game, options.inputOptions);
   bindMobileControls(options.root, game);
+  let disposeDialog = (): void => {};
   try {
     await game.loadLevel(options.level);
+    disposeDialog = bindWorldDialog(options.root, game);
   } catch (error) {
     input.destroy();
     game.destroy();
@@ -43,6 +45,7 @@ export async function createGameSession(
     game,
     input,
     destroy(): void {
+      disposeDialog();
       input.destroy();
       game.destroy();
     },
@@ -67,4 +70,30 @@ function bindMobileControls(root: ParentNode, game: Game): void {
       game.setHeldDirection(null),
     );
   });
+}
+
+/** Web 只负责展示通用 dialog 事件；不知道事件来自 Sandman、Adventure 还是 Maker。 */
+function bindWorldDialog(root: ParentNode, game: Game): () => void {
+  if (!(root instanceof HTMLElement)) return () => {};
+  const dialog = document.createElement("dialog");
+  dialog.className = "game-dialog engine-dialog";
+  dialog.setAttribute("aria-label", "对象对白");
+  dialog.innerHTML = `<header><strong>对话</strong><button class="dialog-close icon-btn" type="button" aria-label="关闭">×</button></header><div class="engine-dialog-text" aria-live="polite"></div>`;
+  const text = dialog.querySelector<HTMLElement>(".engine-dialog-text");
+  const close = dialog.querySelector<HTMLButtonElement>(".dialog-close");
+  if (!text || !close) throw new Error("Web dialog failed to mount");
+  close.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  root.append(dialog);
+  const unsubscribe = game.onWorldEvent((event) => {
+    if (event.type !== "dialog") return;
+    text.textContent = event.text ?? "...";
+    if (!dialog.open) dialog.showModal();
+  });
+  return () => {
+    unsubscribe();
+    dialog.remove();
+  };
 }

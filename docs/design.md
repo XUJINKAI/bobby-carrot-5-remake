@@ -9,7 +9,7 @@ Bobby Carrot 5 Remake 是第五代的现代浏览器重制与原版研究工程�
 - **Adventure**：尽量恢复原作 Campaign、存档、经济、章节选择和手机竖屏信息限制；
 - **Explore**：现代化自由浏览，全部普通关与 Bonus 奖励关开放、可筛选、可调试、可自由缩放。
 
-自定义地图、分享地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。
+自定义地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。用户地图的长期交换格式是 JSON，不把原版 DAT 暴露成产品格式。
 
 ## 保留
 
@@ -37,7 +37,8 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
 - 已领取全局奖励按地图位置记忆，每个稳定奖励位置只领取一次；
-- 原版 Bonus 60 秒由 Adventure 管理，并在成功打开金锁后开始。
+- 原版 Bonus 60 秒由 Adventure 管理，并在成功打开金锁后开始；
+- Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，而不把 Campaign 语义塞进 Engine。
 
 ## Explore
 
@@ -51,6 +52,19 @@ Explore 是现代平铺选关体验：
 - 可以直接在 Editor 中打开官方地图 clone。
 
 Explore 与 Adventure 分别维护自己的完成记录和 Adventure Save。
+
+## Editor 与自定义地图
+
+Editor 编辑的是与 Engine 共用的 semantic `LevelMap`：
+
+- Terrain / Object 都使用稳定语义 ID；
+- 多格对象只持久化 anchor；
+- 对象实例参数放在 `LevelObject.properties`；
+- Inspector 根据 Engine Definition 的 authoring metadata 生成当前需要的属性控件；
+- 当前 Sandman 支持可选 `dialogue`；
+- JSON Import / Export 是唯一用户地图交换格式。
+
+不提供 DAT 导入导出，也不把 DAT 当作 URL 分享编码。DAT 是原版研究与验证格式，不是面向玩家的地图格式。
 
 ## 内容身份
 
@@ -96,7 +110,7 @@ Base / UP、DAT package、record index 属于 archive provenance。内部 canoni
 现代化集中在浏览器外壳、操作和可访问性，同时保留原版谜题设计依赖的信息边界：
 
 - 键盘、触摸、Swipe / Pinch；
-- JSON 存档导入导出；
+- JSON 地图与存档导入导出；
 - Engine Debug / Tile Inspector；
 - 可替换 AudioBackend；
 - Explore 自由视野；

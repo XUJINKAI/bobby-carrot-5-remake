@@ -15,6 +15,7 @@ export interface WorldEvent {
     | "collect-golden-carrot"
     | "collect-bonus-coin"
     | "object-interaction"
+    | "dialog"
     | "board-mower"
     | "leave-mower"
     | "mow"
@@ -28,6 +29,7 @@ export interface WorldEvent {
     | "complete"
     | "warning";
   message: string;
+  text?: string;
   x?: number;
   y?: number;
   objectType?: ObjectType;

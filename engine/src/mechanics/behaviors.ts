@@ -1,4 +1,8 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
+import type {
+  LevelObject,
+  ObjectType,
+  TerrainType,
+} from "../data/types.js";
 import type { RuntimeState } from "../world/RuntimeState.js";
 import type { Direction } from "./ids.js";
 
@@ -45,6 +49,12 @@ export interface BehaviorRuntimeResult {
 }
 export type BehaviorEnterPhase = "before-object" | "after-object";
 
+export type ObjectTouchResult =
+  | {
+      kind: "dialog";
+      text?: string;
+    };
+
 export interface BehaviorDescription {
   id: string;
   summary: string;
@@ -58,6 +68,7 @@ export interface TileBehavior {
   canLeave?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   passage?(ctx: BehaviorContext): BehaviorPassageResult | undefined;
   enterPhase?: BehaviorEnterPhase;
+  onTouch?(object: LevelObject): ObjectTouchResult | void;
   onEnter?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   onLeave?(ctx: BehaviorRuntimeContext): BehaviorRuntimeResult | void;
   nextTerrainOnLeave?(current: TerrainType): TerrainType | undefined;
@@ -147,6 +158,20 @@ export function passageBehavior(
     passage: handler,
   };
 }
+
+export function touchBehavior(
+  id: string,
+  summary: string,
+  handler: (object: LevelObject) => ObjectTouchResult | void,
+  config?: Record<string, string | number | boolean | string[]>,
+): TileBehavior {
+  return {
+    id,
+    describe: () => ({ id, summary, ...(config ? { config } : {}) }),
+    onTouch: handler,
+  };
+}
+
 export function enterBehavior(
   id: string,
   summary: string,

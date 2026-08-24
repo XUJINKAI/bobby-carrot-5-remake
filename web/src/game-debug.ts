@@ -1,4 +1,3 @@
-import { datSourceForObject, datSourceForTerrain } from "@bobby/dat";
 import type { Game, TileInspection } from "@bobby/engine";
 
 export function formatTileInspection(tile: TileInspection, game: Game): string {
@@ -7,12 +6,10 @@ export function formatTileInspection(tile: TileInspection, game: Game): string {
   const formatDefinition = (
     label: string,
     definition: TileInspection["terrainDefinition"],
-    source: ReturnType<typeof datSourceForTerrain>,
   ): string[] => {
     const lines = [
       `${label}: ${definition.id}`,
       `  presentation: ${definition.presentation.name} / ${definition.presentation.category}`,
-      `  DAT: ${source?.datHexIds.join(", ") ?? "n/a"}${source ? ` [${source.confidence}]` : ""}`,
       `  traits: ${definition.traits.length ? definition.traits.join(", ") : "none"}`,
       "  behaviors:",
     ];
@@ -33,18 +30,13 @@ export function formatTileInspection(tile: TileInspection, game: Game): string {
 
   return [
     `Tile (${tile.x}, ${tile.y})`,
-    ...formatDefinition(
-      "Terrain",
-      tile.terrainDefinition,
-      datSourceForTerrain(tile.terrainType),
-    ),
+    ...formatDefinition("Terrain", tile.terrainDefinition),
     "",
-    ...formatDefinition(
-      "Object",
-      tile.objectDefinition,
-      datSourceForObject(tile.objectType),
-    ),
+    ...formatDefinition("Object", tile.objectDefinition),
     "",
+    tile.object?.properties
+      ? `Object properties: ${JSON.stringify(tile.object.properties)}`
+      : "Object properties: none",
     dynamic ? `Dynamic: ${dynamic.type}` : "Dynamic: none",
     dynamic ? `  direction: ${dynamic.direction ?? "none"}` : "",
     dynamic ? `  rider: ${dynamic.rider} · settled: ${dynamic.settled}` : "",
