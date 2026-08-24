@@ -31,7 +31,9 @@ Adventure 的目标不是复刻 Java ME 按键，而是恢复原版设计依赖�
 - 桌面也使用 portrait game viewport；
 - 限制最小缩放，避免一次看完整张原版谜题地图；
 - 先选章节，再选该章关卡；
-- 章内按原顺序线性解锁；
+- 章节以四章为一组：`1/5/9/.../37` 这些组首章初始开放；组首章通关后开放同组其余三章；
+- 章节之间的进度彼此独立，章内仍按原顺序线性解锁；
+- Adventure 不提供 Undo，避免外部 Campaign runtime 与 Engine world snapshot 产生不一致；
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
 - 已领取全局奖励按地图位置记忆，不能无限刷；
