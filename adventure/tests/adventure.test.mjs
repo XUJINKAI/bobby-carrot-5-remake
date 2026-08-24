@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ObjectId, Terrain } from '../../model/dist/index.js';
 import {
-  adventureLevelIdForSource,
+  adventureLevelId,
   campaignSequenceForChapter,
   claimPersistentReward,
   completeAdventureLevel,
@@ -14,8 +14,8 @@ import {
 } from '../dist/index.js';
 
 test('original campaign uses continuous 1-40 ids and inserts bonus records after 3 and 6', () => {
-  assert.equal(adventureLevelIdForSource(0, '01', 1), '1-1');
-  assert.equal(adventureLevelIdForSource(9, '04', 10), '40-10');
+  assert.equal(adventureLevelId(1, 1), '1-1');
+  assert.equal(adventureLevelId(40, 10), '40-10');
   assert.deepEqual(campaignSequenceForChapter(1), [
     '1-1','1-2','1-3','1-bonus-1','1-4','1-5','1-6','1-bonus-2','1-7','1-8','1-9','1-10'
   ]);
