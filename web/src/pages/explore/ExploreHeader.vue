@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { explorePlayPath } from "../../app/routes.js";
 defineProps<{
-  chapterCount: number;
-  levelCount: number;
-  lastLevelId: string;
+  collection: string;
+  title: string;
+  description: string;
+  summary: string;
+  lastMapId: string;
+  lastMapLabel: string;
 }>();
 const emit = defineEmits<{
   navigate: [path: string];
@@ -16,22 +19,19 @@ const emit = defineEmits<{
     <div class="section-title">
       <div>
         <div class="eyebrow">EXPLORE MODE</div>
-        <h1>自由选关</h1>
-        <p>原版 1～40 章全部开放。这里用于找关、筛选、研究机关，不受 Adventure 存档限制。</p>
+        <h1>{{ title }}</h1>
+        <p>{{ description }}</p>
       </div>
       <div class="level-browser-summary muted">
-        {{ chapterCount }} 章 · {{ levelCount }} 关
+        {{ summary }}
       </div>
     </div>
     <div class="level-browser-actions">
-      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection: 'original', id: lastLevelId }))">
-        继续浏览 · {{ lastLevelId.toUpperCase() }}
+      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
+        继续游玩 · {{ lastMapLabel }}
       </button>
       <button id="random-level" class="ghost-btn" @click="emit('random')">
-        随机一个关卡
-      </button>
-      <button class="ghost-btn" @click="emit('navigate', '/adventure/chapters')">
-        进入冒险模式
+        随机关卡
       </button>
     </div>
   </section>

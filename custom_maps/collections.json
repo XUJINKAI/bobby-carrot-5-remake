@@ -1,14 +1,14 @@
 [
   {
-    "id": "sokoban",
-    "name": "推箱子",
+    "id": "pushbox",
+    "name": "Pushbox",
     "description": "推动石块覆盖全部目标，完成紧凑的推箱子谜题。",
     "order": 10,
     "visible": true
   },
   {
-    "id": "engine-lab",
-    "name": "测试地图",
+    "id": "test",
+    "name": "Test",
     "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
     "order": 100,
     "visible": true

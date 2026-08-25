@@ -151,7 +151,7 @@ Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
                          InputController
                                  │
                                  ▼
-       move / held direction / undo / restart / pan / zoom / debug
+    move / held direction / undo / redo / restart / pan / zoom / debug
                                  │
                                  ▼
                                 Game
@@ -418,11 +418,11 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 ```text
 /explore
 /explore/original
-/explore/sokoban
-/explore/engine-lab
+/explore/pushbox
+/explore/test
 /explore/play/original/1-1
-/explore/play/sokoban/box-01
-/explore/play/engine-lab/test-portal
+/explore/play/pushbox/box-01
+/explore/play/test/test-portal
 /adventure
 /adventure/chapters
 /adventure/chapter/1
@@ -430,8 +430,8 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 /settings
 /edit
 /edit/original/1-1
-/edit/sokoban/box-01
-/edit/engine-lab/test-portal
+/edit/pushbox/box-01
+/edit/test/test-portal
 ```
 
 `/explore` 直接显示 Original Tab。Explore gameplay 使用 `/explore/play/<collection>/<map-id>`，Editor clone 使用 `/edit/<collection>/<map-id>`；路径由 Web 的集中 route builder 生成。

@@ -4,4 +4,4 @@
 
 构建工具把这些源码生成到 `assets/generated/custom-maps.json` 与 `assets/generated/custom-maps/`，Web 只消费生成后的产品资产。地图可由 Editor 导入并直接 Play Test。
 
-`engine-lab/` 中的小地图同时作为 Portal、Pushbox 和最大步数规则的人工验证入口。
+`test/` 中的小地图同时作为 Portal、Pushbox 和最大步数规则的人工验证入口。

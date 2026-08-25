@@ -28,24 +28,28 @@ try {
     'class="home-root"',
     'class="home-mode-panel"',
   ]);
-  await smoke(`${origin}/explore`, [
-    'class="explore-tabs"',
-    'class="level-browser-head"',
-    'class="level-filter-shell"',
-    'data-filter-trigger="difficulty"',
-    'data-filter-trigger="mechanics"',
-  ]);
-  await smoke(`${origin}/explore/sokoban`, [
+  await smoke(
+    `${origin}/explore`,
+    [
+      'class="explore-tabs"',
+      'class="level-browser-head"',
+      'class="level-filter-shell"',
+      'data-filter-trigger="difficulty"',
+      'data-filter-trigger="mechanics"',
+    ],
+    ["进入冒险模式"],
+  );
+  await smoke(`${origin}/explore/pushbox`, [
     'class="explore-tabs"',
     'class="explore-custom-collection"',
-    "推箱子 1",
+    "Pushbox 1",
   ]);
-  await smoke(`${origin}/explore/engine-lab`, [
+  await smoke(`${origin}/explore/test`, [
     'class="explore-custom-collection"',
     "Portal Lab",
     "Maximum Moves Lab",
   ]);
-  await smoke(`${origin}/explore/play/engine-lab/test-portal`, [
+  await smoke(`${origin}/explore/play/test/test-portal`, [
     'class="game-page"',
     'id="game"',
     "Portal Lab",
@@ -54,11 +58,16 @@ try {
     'class="game-page"',
     'id="game"',
     'id="undo"',
+    'id="redo"',
+    'class="app-leading-actions"',
+    'class="app-context-actions"',
+    'class="app-trailing-actions"',
+    'class="app-action-badge difficulty-badge',
   ]);
-  await smoke(`${origin}/explore/play/sokoban/box-01`, [
+  await smoke(`${origin}/explore/play/pushbox/box-01`, [
     'class="game-page"',
     'id="game"',
-    "推箱子 1",
+    "Pushbox 1",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
@@ -86,9 +95,9 @@ try {
     'id="editor-play"',
     'class="editor-palette"',
   ]);
-  await smoke(`${origin}/edit/sokoban/box-01`, [
+  await smoke(`${origin}/edit/pushbox/box-01`, [
     'class="bobby-editor"',
-    "推箱子 1 · 副本",
+    "Pushbox 1 · 副本",
   ]);
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");

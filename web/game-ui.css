@@ -27,7 +27,7 @@
 .app-topbar {
   min-height: 58px;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto auto minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 14px;
   padding: max(8px, env(safe-area-inset-top)) 14px 8px;
@@ -51,7 +51,13 @@
 }
 .mode-selector,
 .app-actions,
+.app-leading-actions,
 .app-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.app-trailing-actions {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -59,7 +65,9 @@
 .mode-selector summary,
 .mode-selector a,
 .app-actions button,
+.app-leading-actions button,
 .app-context-actions button,
+.app-trailing-actions button,
 .app-bottom-bar button {
   min-height: 34px;
   padding: 6px 10px;
@@ -114,6 +122,28 @@
 .app-context-actions {
   justify-content: center;
   min-width: 0;
+}
+.app-leading-actions {
+  justify-content: flex-start;
+}
+.app-trailing-actions {
+  justify-content: flex-end;
+}
+.app-action-with-badge {
+  position: relative;
+}
+.app-action-badge {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  z-index: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #17251b;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 5px;
+  white-space: nowrap;
 }
 .app-actions {
   justify-content: flex-end;
@@ -465,10 +495,10 @@
 }
 @media (max-width: 700px) {
   .app-topbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
-      "brand global"
-      "mode context";
+      "brand brand brand global"
+      "mode leading context trailing";
     gap: 7px;
     min-height: 88px;
   }
@@ -484,6 +514,9 @@
   .mode-selector {
     grid-area: mode;
   }
+  .app-leading-actions {
+    grid-area: leading;
+  }
   .app-context-actions {
     grid-area: context;
     justify-content: flex-end;
@@ -492,6 +525,9 @@
   .app-actions {
     grid-area: global;
     gap: 3px;
+  }
+  .app-trailing-actions {
+    grid-area: trailing;
   }
   .app-actions button {
     width: 31px;

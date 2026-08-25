@@ -240,8 +240,10 @@ async function verifyCustomMaps() {
     "test-pushable.json",
     "test-max-moves.json",
   ])
-    if (!fs.existsSync(path.join(directory, "engine-lab", required)))
+    if (!fs.existsSync(path.join(directory, "test", required)))
       throw new Error(`缺少核心 Engine Lab 地图：${required}`);
+  if (!fs.existsSync(path.join(directory, "pushbox", "box-01.json")))
+    throw new Error("缺少核心 Pushbox 地图：box-01.json");
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8");
     const editorLevel = parseEditorLevel(source);
@@ -702,17 +704,17 @@ function verifySpaVsStaticRouting(distRoot) {
   for (const route of [
     "/explore",
     "/explore/original",
-    "/explore/sokoban",
-    "/explore/engine-lab",
+    "/explore/pushbox",
+    "/explore/test",
     "/explore/play/original/1-1",
-    "/explore/play/sokoban/box-01",
+    "/explore/play/pushbox/box-01",
     "/adventure",
     "/adventure/chapters",
     "/adventure/chapter/1",
     "/adventure/play/1-1",
     "/edit",
     "/edit/original/1-1",
-    "/edit/sokoban/box-01",
+    "/edit/pushbox/box-01",
   ]) {
     const result = resolveDistRequest(distRoot, route);
     if (

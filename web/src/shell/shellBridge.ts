@@ -5,6 +5,12 @@ export interface ShellContextAction {
   label: string;
   title?: string;
   className?: string;
+  placement?: "leading" | "center" | "trailing";
+  badge?: {
+    label: string;
+    title?: string;
+    className?: string;
+  } | undefined;
 }
 
 export interface ShellOptions {

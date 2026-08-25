@@ -7,6 +7,7 @@ import {
 } from "../../services/catalog/catalogSelection.js";
 import {
   completedExploreLevels,
+  lastExploreMapId,
   lastExploreLevelId,
 } from "../../storage/exploreProgressStorage.js";
 import { renderAppShell } from "../../shell/shellBridge.js";
@@ -31,6 +32,12 @@ export async function renderLevels(
     return { destroy() {} };
   }
   const last = resolveCatalogLevel(catalog, lastExploreLevelId());
+  const customLastId = customCollection
+    ? lastExploreMapId(collectionId) ?? customCollection.maps[0]!.id
+    : null;
+  const customLast = customCollection?.maps.find(
+    (entry) => entry.id === customLastId,
+  ) ?? customCollection?.maps[0];
   const completed = completedExploreLevels();
   audio.playMusic("title");
   app.innerHTML = renderAppShell({
@@ -59,12 +66,21 @@ export async function renderLevels(
     levelsByChapter,
     completedIds: completed,
     levelCount: catalog.levels.length,
-    lastLevelId: last.publicId,
+    lastMapId: customLast?.id ?? last.publicId,
+    lastMapLabel: customLast?.name ?? last.publicId.toUpperCase(),
     activeCollection: collectionId,
     customCollections: customMapCatalog.collections,
     customCollection,
     onNavigate: navigate,
     onRandom: () => {
+      if (customCollection) {
+        const chosen = customCollection.maps[
+          Math.floor(Math.random() * customCollection.maps.length)
+        ];
+        if (chosen)
+          navigate(explorePlayPath({ collection: collectionId, id: chosen.id }));
+        return;
+      }
       const chosen = hasActiveLevelFilters()
         ? randomFilteredLevel()
         : randomCatalogLevel(catalog);

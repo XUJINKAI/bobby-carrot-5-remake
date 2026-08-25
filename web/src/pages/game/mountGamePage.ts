@@ -23,7 +23,7 @@ import {
 import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadAdventureSave, saveAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
-  rememberExploreLevel,
+  rememberExploreMap,
   markExploreLevelCompleted,
 } from "../../storage/exploreProgressStorage.js";
 import { formatTileInspection } from "../../runtime/game/formatTileInspection.js";
@@ -69,7 +69,9 @@ export async function renderGamePage(
     navigate(`/adventure/chapter/${meta!.chapter}`);
     return NOOP_CONTROLLER;
   }
-  if (mode === "explore" && meta) rememberExploreLevel(meta.publicId);
+  if (mode === "explore") {
+    rememberExploreMap(identity.collection, identity.id);
+  }
   const plan = adventureSave
     ? planAdventureSession(meta!.publicId, adventureSave)
     : null;
@@ -234,6 +236,12 @@ export async function renderGamePage(
       closeResult();
     }
   };
+  const askRedo = (): void => {
+    if (mode === "explore" && game.canRedo) {
+      game.redo();
+      closeResult();
+    }
+  };
   const askRestart = (): void => {
     game.restart();
     levelStartedAt = performance.now();
@@ -265,6 +273,7 @@ export async function renderGamePage(
       navigate(backPath(identity, meta, mode));
     } else if (action === "edit") navigate(editorMapPath(identity));
     else if (action === "undo") askUndo();
+    else if (action === "redo") askRedo();
     else if (action === "restart") askRestart();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
@@ -310,19 +319,33 @@ function gameContextActions(
   mode: GamePageMode,
 ) {
   return [
-    { id: "back", label: `← ${identity.title}`, title: "返回" },
-    ...(meta
-      ? [{
-          label: meta.difficulty.label,
-          className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
-        }]
-      : []),
+    {
+      id: "back",
+      label: `← ${identity.title}`,
+      title: "返回",
+      placement: "leading" as const,
+      badge: meta
+        ? {
+            label: meta.difficulty.label,
+            title: "关卡难度",
+            className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+          }
+        : undefined,
+    },
     ...(mode === "explore"
-      ? [{ id: "undo", label: "↶", title: "撤销" }]
+      ? [
+          { id: "undo", label: "↶", title: "撤销" },
+          { id: "redo", label: "↷", title: "重做" },
+        ]
       : []),
     { id: "restart", label: "↻", title: "重新开始" },
     ...(mode === "explore"
-      ? [{ id: "edit", label: "✎", title: "在编辑器中打开" }]
+      ? [{
+          id: "edit",
+          label: "✎",
+          title: "在编辑器中打开",
+          placement: "trailing" as const,
+        }]
       : []),
   ];
 }

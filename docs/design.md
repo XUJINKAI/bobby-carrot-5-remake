@@ -44,10 +44,11 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 
 Explore 是所有非 Adventure 自由游玩内容的统一入口：
 
-- 原版关卡、推箱子与 Engine 测试地图使用独立 collection Tab；
+- 原版关卡、Pushbox 与 Test 使用独立 collection Tab；
 - 原版关卡的 40 章、400 个普通关卡和 80 个 Bonus 奖励关全部开放；
 - 原版 Tab 提供章节平铺、筛选、随机一关和最近浏览；
-- 内置自定义 collection 使用专门的地图卡片展示；
+- 每个 collection 独立记录最近游玩的地图，并提供继续游玩和随机关卡；
+- 内置自定义 collection 使用整张可点击的地图卡片展示；
 - 所有 collection 共享自由缩放、DEBUG 与同一个 Engine gameplay 页面；
 - 任意内置地图都可以作为 clone 在 Editor 中打开。
 

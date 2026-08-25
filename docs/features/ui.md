@@ -165,7 +165,7 @@ TopBar 只显示当前模式名称，不平铺三个模式入口。当前模式�
 
 选择其它模式后导航到该模式的入口页。Editor 存在未保存修改时，选择其它模式先进入统一的未保存确认 Dialog。Custom Map 是内容来源，Custom Play 在模式位置显示“自由探索模式”，上下文区域显示地图名称与 `Custom` 标识。
 
-上下文区域可以包含关卡返回、Undo、Restart、Edit、Editor 历史和 Play Test 等操作。目标、背包、收集数量和地图内 Timer 统一进入 Game HUD。
+游戏页把返回动作放在模式选择器右侧，难度作为返回按钮右上角的 badge；Undo、Redo、Restart 位于顶栏中间；Edit 位于全局音乐操作左侧。其它页面的上下文区域可以包含 Editor 历史和 Play Test 等操作。目标、背包、收集数量和地图内 Timer 统一进入 Game HUD。
 
 全局操作固定为：
 
@@ -473,7 +473,7 @@ Level Browser：
 ┌────────────────────────────────────────────────────────────────────────┐
 │ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ 自由选关     ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
-│ [ 原版关卡 ] [ 推箱子 ] [ 测试地图 ]                                  │
+│ [ 原版关卡 ] [ Pushbox ] [ Test ]                                    │
 │                                                                        │
 │ [继续 12-4]  [随机一关]                                               │
 │                                                                        │
@@ -490,7 +490,7 @@ Level Browser：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/sokoban` 与 `/explore/engine-lab` 分别显示推箱子和测试地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
+Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/pushbox` 与 `/explore/test` 分别显示 Pushbox 和 Test 地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
 
 - 最近浏览；
 - 随机一关；
@@ -498,7 +498,7 @@ Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original`
 - 独立完成记录；
 - 章节星级与单关难度的来源区分。
 
-Custom collection 使用地图卡片展示名称、说明、游玩与编辑副本入口。Tab 外壳保持统一，列表内容可以根据 collection 的信息需求专门设计。
+每个 collection 独立记录最近游玩的地图，并与 Original 共用继续游玩和随机关卡入口。Custom collection 使用整张可点击的地图卡片展示名称与说明，点击卡片直接开始游玩；编辑入口位于游玩页顶栏。Tab 外壳保持统一，列表内容可以根据 collection 的信息需求专门设计。
 
 Explore Play：
 
@@ -518,7 +518,7 @@ Explore Play：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。Explore 使用自由 Camera，提供 Undo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
+所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
 
 ### Editor
 
