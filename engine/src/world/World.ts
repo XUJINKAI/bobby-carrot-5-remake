@@ -1,22 +1,6 @@
-import type {
-  LevelMap,
-  LevelObject,
-  ObjectType,
-  TerrainType,
-} from "@bobby/model";
-import {
-  DIRECTIONS,
-  EMPTY_OBJECT,
-  ObjectId,
-  Terrain,
-  type Direction,
-} from "../mechanics/ids.js";
-import {
-  isOrdinaryWalkableTerrain,
-  isWaterTerrain,
-  passageFor,
-  type PassageResult,
-} from "../mechanics/rules.js";
+import type { LevelMap, LevelObject, LevelObjectProperties, LevelObjectTraits, ObjectType, TerrainType } from "@bobby/model";
+import { DIRECTIONS, EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
+import { isWaterTerrain, passageFor, type PassageResult } from "../mechanics/rules.js";
 import {
   cloudGridForObject,
   inspectObjectDefinition,
@@ -35,50 +19,29 @@ import {
   type TileDefinitionInspection,
 } from "../mechanics/definitions.js";
 import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
-import type {
-  DynamicEntity,
-  Point,
-  ProfileCapabilities,
-  RuntimeState,
-  WorldSnapshot,
-} from "./RuntimeState.js";
+import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
 export type { PassageResult } from "../mechanics/rules.js";
-
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
+import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
+import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
+import { canPushObject, commitPushObject } from "../mechanics/movement/pushable.js";
+import { commitActorMovement } from "../mechanics/movement/commit.js";
+import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
+import type { ActiveLevelRule } from "../mechanics/rules/types.js";
+import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
+import { createBobbyState, updateBobbyProfile } from "../actors/bobby-state.js";
+import { effectiveObjectHasTrait } from "../mechanics/traits/effective.js";
+import { runtimeObject } from "./object-instance.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
-const GROUND_AFTER_MOW = [
-  Terrain.GROUND_A,
-  Terrain.GROUND_B,
-  Terrain.GROUND_C,
-  Terrain.GROUND_D,
-] as const;
-function emptyGrid<T>(width: number, height: number, value: T): T[][] {
-  return Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => value),
-  );
-}
-function copyPoint(point: Point): Point {
-  return { x: point.x, y: point.y };
-}
-function statePoint(point: Point, x: number, y: number): boolean {
-  return point.x === x && point.y === y;
-}
-function isSameCell(entity: DynamicEntity, x: number, y: number): boolean {
-  return entity.x === x && entity.y === y;
-}
-function isOppositeDirection(a: Direction, b: Direction): boolean {
-  return (
-    DIRECTIONS[a].dx === -DIRECTIONS[b].dx &&
-    DIRECTIONS[a].dy === -DIRECTIONS[b].dy
-  );
-}
-
+const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, Terrain.GROUND_D] as const;
 export class World {
   readonly level: LevelMap;
+  private readonly activeRules: ActiveLevelRule[];
   private stateValue: RuntimeState;
   constructor(level: LevelMap, profile: Partial<ProfileCapabilities> = {}) {
     this.level = level;
+    this.activeRules = createActiveLevelRules(level);
     this.stateValue = this.createInitialState(level, profile);
   }
   get state(): Readonly<RuntimeState> {
@@ -176,7 +139,7 @@ export class World {
     this.stateValue = structuredClone(snapshot);
   }
   setProfile(profile: Partial<ProfileCapabilities>): void {
-    this.stateValue.profile = { ...this.stateValue.profile, ...profile };
+    updateBobbyProfile(this.stateValue, profile);
   }
   terrainAt(x: number, y: number): TerrainType | null {
     if (!this.inBounds(x, y)) return null;
@@ -188,7 +151,15 @@ export class World {
   }
   objectsAt(x: number, y: number): LevelObject[] {
     const type = this.objectIdAt(x, y);
-    return type === EMPTY_OBJECT ? [] : [{ type, x, y }];
+    const properties = this.objectPropertiesAt(x, y);
+    const traits = this.inBounds(x, y)
+      ? this.stateValue.objectTraits[y]?.[x]
+      : undefined;
+    return runtimeObject(type, x, y, traits, properties);
+  }
+  objectPropertiesAt(x: number, y: number): LevelObjectProperties | undefined {
+    if (!this.inBounds(x, y)) return undefined;
+    return this.stateValue.objectProperties[y]?.[x];
   }
   dynamicEntityAt(x: number, y: number): DynamicEntity | null {
     return (
@@ -200,7 +171,6 @@ export class World {
   getDynamicEntities(): readonly DynamicEntity[] {
     return this.stateValue.dynamicEntities;
   }
-
   move(direction: Direction, forced = false): MoveResult {
     const state = this.stateValue,
       from = copyPoint(state.player),
@@ -217,7 +187,6 @@ export class World {
         },
         events,
       );
-    if (!forced) state.facing = direction;
     const vector = DIRECTIONS[direction],
       to = { x: from.x + vector.dx, y: from.y + vector.dy };
     const ridden = state.dynamicEntities.find(
@@ -231,11 +200,10 @@ export class World {
         return this.result(false, from, to, passage, events);
       ridden.rider = false;
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves += forced ? 0 : 1;
+      commitActorMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
+      this.applySuccessfulMoveRules(forced, events);
       return this.result(true, from, to, passage, events);
     }
     if (!this.inBounds(to.x, to.y)) {
@@ -253,6 +221,7 @@ export class World {
     if (state.forced?.kind === "flight") {
       this.beforeLeave(from, events);
       state.player = to;
+      state.position = to;
       state.facing = direction;
       this.afterEnterFlight(to, direction, events);
       return this.result(
@@ -284,9 +253,7 @@ export class World {
           events,
         );
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves += forced ? 0 : 1;
+      commitActorMovement(state, to, direction, forced);
       dynamicTarget.rider = true;
       if (dynamicTarget.type === ObjectId.LEAF) {
         const underlyingTerrain = this.terrainAt(to.x, to.y),
@@ -307,6 +274,7 @@ export class World {
         }
       }
       this.afterEnter(to, direction, events, { skipDynamic: true });
+      this.applySuccessfulMoveRules(forced, events);
       return this.result(
         true,
         from,
@@ -315,32 +283,72 @@ export class World {
         events,
       );
     }
+    const targetObject = this.objectIdAt(to.x, to.y);
+    if (
+      effectiveObjectHasTrait(
+        targetObject,
+        state.objectTraits[to.y]?.[to.x],
+        "pushable",
+      )
+    ) {
+      const pushedTo = { x: to.x + vector.dx, y: to.y + vector.dy };
+      if (!canPushObject(state, this.level, to, pushedTo))
+        return this.result(
+          false,
+          from,
+          to,
+          {
+            passable: false,
+            reason: "石头后方没有可推动空间",
+            confidence: "confirmed",
+          },
+          events,
+        );
+      const pushPassage = this.passageTo(from, to, direction, EMPTY_OBJECT);
+      if (!pushPassage.passable)
+        return this.result(false, from, to, pushPassage, events);
+      commitPushObject(state, this.level, to, pushedTo);
+      events.push({
+        type: "object-interaction",
+        objectType: targetObject,
+        action: "push",
+        message: "推动对象",
+        ...pushedTo,
+      });
+    }
     const passage = this.passageTo(from, to, direction);
     if (!passage.passable) {
       if (forced) state.forced = null;
       return this.result(false, from, to, passage, events);
     }
     this.beforeLeave(from, events);
-    state.player = to;
-    state.facing = direction;
-    state.moves += forced ? 0 : 1;
+    commitActorMovement(state, to, direction, forced);
     this.applyPassageSideEffects(passage, to, events);
     this.afterEnter(to, direction, events, {
       justBoarded: passage.boardsMower === true,
     });
+    this.applySuccessfulMoveRules(forced, events);
     return this.result(true, from, to, passage, events);
   }
-
   inspect(x: number, y: number): TileInspection | null {
     const terrainType = this.terrainAt(x, y);
     if (terrainType === null) return null;
     const objectType = this.objectIdAt(x, y);
+    const objectProperties = this.objectPropertiesAt(x, y);
     return {
       x,
       y,
       terrainType,
       terrainDefinition: inspectTerrainDefinition(terrainType),
-      object: objectType === EMPTY_OBJECT ? null : { type: objectType, x, y },
+      object:
+        objectType === EMPTY_OBJECT
+          ? null
+          : {
+              type: objectType,
+              x,
+              y,
+              ...(objectProperties ? { properties: objectProperties } : {}),
+            },
       objectType,
       objectDefinition: inspectObjectDefinition(objectType),
       dynamicEntity: this.dynamicEntityAt(x, y),
@@ -348,13 +356,22 @@ export class World {
       isStart: statePoint(this.stateValue.start, x, y),
     };
   }
-
   private createInitialState(
     level: LevelMap,
     profile: Partial<ProfileCapabilities>,
   ): RuntimeState {
     const terrain = level.terrain.map((row) => [...row]),
       objects = emptyGrid<ObjectType>(level.width, level.height, EMPTY_OBJECT),
+      objectProperties = emptyGrid<LevelObjectProperties | undefined>(
+        level.width,
+        level.height,
+        undefined,
+      ),
+      objectTraits = emptyGrid<LevelObjectTraits | undefined>(
+        level.width,
+        level.height,
+        undefined,
+      ),
       dynamicEntities: DynamicEntity[] = [];
     let start: Point | null = null;
     for (let y = 0; y < level.height; y++)
@@ -377,25 +394,15 @@ export class World {
         continue;
       }
       objects[y]![x] = type;
+      objectProperties[y]![x] = sourceObject.properties
+        ? { ...sourceObject.properties }
+        : undefined;
+      objectTraits[y]![x] = sourceObject.traits
+        ? [...sourceObject.traits]
+        : undefined;
     }
-    if (!start) start = this.findFallbackStart(terrain);
-    let carrotCount = 0,
-      nestCount = 0,
-      hiddenCount = 0;
-    for (let y = 0; y < level.height; y++)
-      for (let x = 0; x < level.width; x++) {
-        const object = objects[y]![x]!;
-        if (objectHasTrait(object, "objective-carrot")) carrotCount++;
-        if (objectHasTrait(object, "objective-nest")) nestCount++;
-        if (
-          terrainHasTrait(terrain[y]![x]!, "hidden-objective") &&
-          object === EMPTY_OBJECT
-        )
-          hiddenCount++;
-      }
-    const objectiveMode = carrotCount > 0 ? "carrot" : "nest",
-      visibleObjective = objectiveMode === "carrot" ? carrotCount : nestCount,
-      objectiveTotal = visibleObjective + hiddenCount;
+    if (!start) start = findFallbackStart(terrain);
+    const objectives = deriveInitialObjectives(terrain, objects, objectTraits);
     const windmillsEnabled: [boolean, boolean, boolean, boolean] = [
         false,
         false,
@@ -422,22 +429,17 @@ export class World {
         if (info && !hasSwitch[info.index]) windmillsEnabled[info.index] = true;
       }
     return {
+      ...createBobbyState(start, profile),
       terrain,
       objects,
+      objectProperties,
+      objectTraits,
       dynamicEntities,
-      player: copyPoint(start),
-      facing: "down",
       start: copyPoint(start),
-      objectiveMode,
-      objectiveRemaining: objectiveTotal,
-      objectiveTotal,
-      inventory: { gas: false, kite: false, shovel: false, beans: 0 },
-      profile: {
-        superKey: profile.superKey ?? false,
-        temporaryKey: profile.temporaryKey ?? false,
-        speedShoes: profile.speedShoes ?? false,
-      },
-      ridingMower: false,
+      objectiveMode: objectives.mode,
+      objectiveRemaining: objectives.remaining,
+      objectiveTotal: objectives.total,
+      pushGoalsRemaining: objectives.pushGoalsRemaining,
       forced: null,
       pendingTrap: null,
       pendingCarousel: null,
@@ -450,19 +452,17 @@ export class World {
       logicRemainderMs: 0,
       bonusCoinsInLevel: 0,
       goldenCarrotsInLevel: 0,
-      moves: 0,
-      dead: false,
       deathReason: null,
       completed: false,
       fireTrail: [],
       warnings: [],
     };
   }
-
   private passageTo(
     from: Point,
     to: Point,
     direction: Direction,
+    objectOverride?: ObjectType,
   ): PassageResult {
     if (!this.inBounds(to.x, to.y))
       return { passable: false, reason: "地图边界", confidence: "confirmed" };
@@ -474,7 +474,7 @@ export class World {
       to.y,
       direction,
       this.terrainAt(to.x, to.y)!,
-      this.objectIdAt(to.x, to.y),
+      objectOverride ?? this.objectIdAt(to.x, to.y),
     );
   }
   private applyPassageSideEffects(
@@ -542,6 +542,22 @@ export class World {
           this.toggleWindSwitchTiles(index);
         },
         mowedGround: () => GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!,
+        relocateToMatchingObject: (type, propertyKey) =>
+          relocateToMatchingObject(
+            this.stateValue,
+            this.level,
+            point,
+            type,
+            propertyKey,
+          ),
+        objectInteraction: (objectType, action, message, target = point) =>
+          events.push({
+            type: "object-interaction",
+            objectType,
+            action,
+            message,
+            ...target,
+          }),
       },
     };
   }
@@ -616,7 +632,6 @@ export class World {
     }
     this.stateValue.forced = { kind: "flight", direction };
   }
-
   private moveWithLeaf(
     entity: DynamicEntity,
     direction: Direction,
@@ -671,6 +686,7 @@ export class World {
       entity.y = to.y;
       entity.direction = tideDirection ?? direction;
       state.player = to;
+      state.position = to;
       state.facing = direction;
       state.forced = { kind: "leaf", direction: tideDirection ?? direction };
       return this.result(
@@ -703,11 +719,10 @@ export class World {
       state.forced = null;
       entity.direction = null;
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves++;
+      commitActorMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
+      this.applySuccessfulMoveRules(forced, events);
       return this.result(true, from, to, passage, events);
     }
     state.forced = null;
@@ -869,7 +884,10 @@ export class World {
       entity.y = ny;
       entity.offsetXpx -= vector.dx * tilePx;
       entity.offsetYpx -= vector.dy * tilePx;
-      if (entity.rider) state.player = { x: nx, y: ny };
+      if (entity.rider) {
+        state.player = { x: nx, y: ny };
+        state.position = { x: nx, y: ny };
+      }
       const ownGrid = cloudGridForObject(entity.type);
       if (ownGrid !== undefined && this.objectIdAt(nx, ny) === ownGrid) {
         entity.direction = null;
@@ -921,7 +939,27 @@ export class World {
     if (this.inBounds(x, y)) this.stateValue.terrain[y]![x] = type;
   }
   private setObject(x: number, y: number, type: ObjectType): void {
-    if (this.inBounds(x, y)) this.stateValue.objects[y]![x] = type;
+    if (!this.inBounds(x, y)) return;
+    this.stateValue.objects[y]![x] = type;
+    if (type === EMPTY_OBJECT) {
+      this.stateValue.objectProperties[y]![x] = undefined;
+      this.stateValue.objectTraits[y]![x] = undefined;
+    }
+  }
+  private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
+    if (this.stateValue.completed) return;
+    const reason = evaluateRulesAfterMove(
+      this.activeRules,
+      this.stateValue,
+      forced,
+    );
+    if (reason)
+      this.kill(
+        reason,
+        events,
+        this.stateValue.player.x,
+        this.stateValue.player.y,
+      );
   }
   private kill(
     reason: string,
@@ -937,14 +975,6 @@ export class World {
   }
   private inBounds(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.width && y < this.height;
-  }
-  private findFallbackStart(terrain: TerrainType[][]): Point {
-    for (let y = 0; y < terrain.length; y++)
-      for (let x = 0; x < (terrain[y]?.length ?? 0); x++) {
-        const type = terrain[y]![x]!;
-        if (isOrdinaryWalkableTerrain(type)) return { x, y };
-      }
-    return { x: 0, y: 0 };
   }
   private result(
     moved: boolean,

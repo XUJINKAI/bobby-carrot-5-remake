@@ -49,6 +49,8 @@ Palette / Canvas / Inspector / Metadata / Resize
 
 Terrain/Object 始终使用 semantic ID；raw DAT byte 的互操作统一由 `@bobby/dat` 负责。
 
+Object 的实例能力保存到 `LevelObject.traits`，Editor 只展示 Definition `authoring.traits` 白名单中的选项。`dialogue`、`channel`、`timedChallengeMs` 等参数继续保存到 `LevelObject.properties`。
+
 ## Multi-cell Object
 
 Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存一个 anchor。footprint、cursor、authoring variant 都复用 Engine Object Layout：

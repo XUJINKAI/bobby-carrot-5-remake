@@ -18,6 +18,7 @@ export interface InspectorModel {
     width: number;
     height: number;
     objectCount: number;
+    maxMoves?: number;
   };
   selection: TileDefinitionInspection;
   hover: Cell | null;
@@ -38,6 +39,7 @@ export function buildInspectorModel(
       width: level.width,
       height: level.height,
       objectCount: level.objects.length,
+      ...(level.rules?.maxMoves ? { maxMoves: level.rules.maxMoves } : {}),
     },
     selection:
       selection.kind === "terrain"

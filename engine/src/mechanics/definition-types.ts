@@ -32,7 +32,9 @@ export type TileTrait =
   | "start"
   | "objective-carrot"
   | "objective-nest"
-  | "hidden-objective";
+  | "hidden-objective"
+  | "pushable"
+  | "push-goal";
 
 export interface TilePresentation {
   name: string;
@@ -70,7 +72,13 @@ export type ObjectPropertyDefinition =
 
 export interface TileAuthoring {
   palette: boolean;
+  traits?: readonly InstanceTraitDefinition[];
   properties?: readonly ObjectPropertyDefinition[];
+}
+
+export interface InstanceTraitDefinition {
+  trait: TileTrait;
+  label: string;
 }
 
 export interface TileDefinition<T extends string> {

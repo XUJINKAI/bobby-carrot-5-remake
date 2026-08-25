@@ -60,6 +60,7 @@ Editor 编辑的是与 Engine 共用的 semantic `LevelMap`：
 - Terrain / Object 都使用稳定语义 ID；
 - 多格对象只持久化 anchor；
 - 对象实例参数放在 `LevelObject.properties`；
+- 对象实例能力放在 `LevelObject.traits`，可选项由 Engine Definition 的 `authoring.traits` 声明；
 - Inspector 根据 Engine Definition 的 authoring metadata 生成当前需要的属性控件；
 - 当前 Sandman 支持可选 `dialogue`；
 - JSON Import / Export 是唯一用户地图交换格式。

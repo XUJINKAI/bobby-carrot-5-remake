@@ -154,6 +154,7 @@ for (const level of catalog.levels) {
 
 verifySourceBoundaries();
 verifyUnifiedUiShell();
+await verifyCustomMaps();
 
 for (const file of [
   "dist/index.html",
@@ -206,11 +207,57 @@ if (!fs.existsSync(jarOut))
   throw new Error("Original JAR validation artifact was not created");
 fs.rmSync(path.join(root, "tmp"), { recursive: true, force: true });
 
-if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
+if (process.env.CI)
+  run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
 
 console.log(
   "verify: OK — JSON-only user maps, LevelObject properties, self-contained Engine gameplay rules, configurable gameplay input, Adventure map augmentation, DAT-free Web/Editor boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",
 );
+
+async function verifyCustomMaps() {
+  const { parseEditorLevel, serializeEditorLevel, toLevelMap } =
+    await import("../../editor/dist/index.js");
+  const { getObjectDefinition, hasObjectDefinition, hasTerrainDefinition } =
+    await import("../../engine/dist/index.js");
+  const directory = path.join(root, "custom_maps");
+  const files = [];
+  walkSource(directory, (file) => {
+    if (file.endsWith(".json")) files.push(file);
+  });
+  for (const required of ["portal.json", "pushbox.json", "max-moves.json"])
+    if (!fs.existsSync(path.join(directory, "engine-lab", required)))
+      throw new Error(`缺少核心 Engine Lab 地图：${required}`);
+  for (const file of files) {
+    const source = fs.readFileSync(file, "utf8");
+    const editorLevel = parseEditorLevel(source);
+    const roundTrip = parseEditorLevel(serializeEditorLevel(editorLevel));
+    const level = toLevelMap(roundTrip);
+    for (const row of level.terrain)
+      for (const type of row)
+        if (type.startsWith("custom:") && !hasTerrainDefinition(type))
+          throw new Error(`${file}: terrain ${type} has no Definition`);
+    for (const object of level.objects) {
+      const definition = getObjectDefinition(object.type);
+      if (object.type.startsWith("custom:") && !hasObjectDefinition(object.type))
+        throw new Error(`${file}: object ${object.type} has no Definition`);
+      const allowed = new Set(
+        (definition.authoring?.properties ?? []).map((property) => property.key),
+      );
+      for (const key of Object.keys(object.properties ?? {}))
+        if (!allowed.has(key))
+          throw new Error(`${file}: property ${object.type}.${key} is undefined`);
+      const allowedTraits = new Set(
+        (definition.authoring?.traits ?? []).map((item) => item.trait),
+      );
+      for (const trait of object.traits ?? [])
+        if (!allowedTraits.has(trait))
+          throw new Error(`${file}: trait ${object.type}.${trait} is undefined`);
+    }
+    const maxMoves = level.rules?.maxMoves;
+    if (maxMoves !== undefined && (!Number.isInteger(maxMoves) || maxMoves <= 0))
+      throw new Error(`${file}: maxMoves must be a positive integer`);
+  }
+}
 
 function verifyAllSourceDynamicSlots(derive, split, decode) {
   const sourceIndex = JSON.parse(
@@ -322,6 +369,7 @@ function verifySourceBoundaries() {
         `Original-format/catalog/Campaign metadata leaked into Engine: ${path.relative(root, file)}`,
       );
   });
+  verifyEngineInternalBoundaries();
 
   walkSource(path.join(root, "adventure/src"), (file, text) => {
     if (
@@ -474,6 +522,64 @@ function verifySourceBoundaries() {
     throw new Error(
       "Engine object-touch adapter must translate Definition touch results into dialog events",
     );
+}
+
+function verifyEngineInternalBoundaries() {
+  for (const relative of ["object/index.ts", "terrain/index.ts"]) {
+    const source = fs.readFileSync(
+      path.join(root, "engine/src/original", relative),
+      "utf8",
+    );
+    if (/\b(?:ObjectId|Terrain)\s*\./.test(source))
+      throw new Error(`Original 分类注册入口不得包含元素 Definition：${relative}`);
+  }
+  for (const area of ["terrain", "object"])
+    if (fs.existsSync(path.join(root, "engine/src/original", area, "augments.ts")))
+      throw new Error(`Original ${area} 不得使用 Definition augment 阶段`);
+  const forbiddenByArea = new Map([
+    ["actors", ["/original/", "/custom/", "/render/", "/input/", "/ui/"]],
+    ["mechanics", ["/render/", "/input/", "/audio/", "/ui/"]],
+    ["original", ["/render/", "/input/", "/audio/", "/ui/"]],
+    ["custom", ["/render/", "/input/", "/audio/", "/ui/"]],
+  ]);
+  for (const [area, forbidden] of forbiddenByArea) {
+    const directory = path.join(root, "engine/src", area);
+    walkSource(directory, (file, text) => {
+      for (const specifier of text.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+        const dependency = specifier[1];
+        if (forbidden.some((segment) => dependency.includes(segment)))
+          throw new Error(
+            `Forbidden Engine dependency ${dependency} in ${path.relative(root, file)}`,
+          );
+      }
+    });
+  }
+  walkSource(path.join(root, "engine/src/original/terrain"), (file, text) => {
+    if (/\b(?:defineObject|objectDef)\s*\(/.test(text))
+      throw new Error(
+        `Object Definition leaked into original/terrain: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "engine/src/original/object"), (file, text) => {
+    if (/\b(?:defineTerrain|terrainDef)\s*\(/.test(text))
+      throw new Error(
+        `Terrain Definition leaked into original/object: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "engine/src"), (file, text) => {
+    if (/\bpushbox\b|custom:rock-goal/.test(text))
+      throw new Error(
+        `Legacy Pushbox naming remains in ${path.relative(root, file)}`,
+      );
+  });
+  for (const relative of [
+    "engine/src/mechanics/movement/pushable.ts",
+    "engine/src/mechanics/goals/objectives.ts",
+  ]) {
+    const text = fs.readFileSync(path.join(root, relative), "utf8");
+    if (/\b(?:ObjectId|CustomObjectId|CustomTerrain)\b/.test(text))
+      throw new Error(`通用 Mechanics 出现具体 semantic ID：${relative}`);
+  }
 }
 
 function verifyUnifiedUiShell() {

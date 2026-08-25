@@ -130,3 +130,13 @@ export const ObjectId = {
   FENCE_6: "fence-6",
   EMPTY: "empty",
 } as const satisfies Record<string, ObjectType>;
+
+/** Bobby Carrot 5 Remake 扩展对象使用独立命名空间。 */
+export const CustomObjectId = {
+  PORTAL: "custom:portal",
+} as const satisfies Record<string, ObjectType>;
+
+/** Bobby Carrot 5 Remake 扩展地形使用独立命名空间。 */
+export const CustomTerrain = {
+  PUSH_GOAL: "custom:push-goal",
+} as const satisfies Record<string, TerrainType>;

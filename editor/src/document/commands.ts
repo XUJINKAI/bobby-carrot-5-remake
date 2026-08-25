@@ -115,6 +115,29 @@ export function updateObjectProperty(
   });
 }
 
+export function updateObjectTrait(
+  anchor: Cell,
+  trait: string,
+  enabled: boolean,
+): EditorCommand {
+  return command((level) => {
+    const index = level.objects.findIndex(
+      (object) => object.x === anchor.x && object.y === anchor.y,
+    );
+    if (index < 0) return level;
+    const object = level.objects[index]!;
+    const traits = new Set(object.traits ?? []);
+    if (enabled) traits.add(trait);
+    else traits.delete(trait);
+    const objects = [...level.objects];
+    const { traits: _previousTraits, ...base } = object;
+    objects[index] = traits.size > 0
+      ? { ...base, traits: [...traits] }
+      : base;
+    return normalizeEditorLevel({ ...level, objects });
+  });
+}
+
 export function updateMetadata(metadata: {
   name: string;
   author?: string;
@@ -135,6 +158,16 @@ export function updateMetadata(metadata: {
 
 export function resizeDocument(width: number, height: number): EditorCommand {
   return command((level) => resizeEditorLevel(level, width, height));
+}
+
+export function updateMaxMoves(value: number | null): EditorCommand {
+  return command((level) => {
+    const next = { ...level };
+    if (value !== null && Number.isInteger(value) && value > 0)
+      next.rules = { ...level.rules, maxMoves: value };
+    else delete next.rules;
+    return normalizeEditorLevel(next);
+  });
 }
 
 function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {

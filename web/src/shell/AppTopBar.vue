@@ -27,6 +27,7 @@ const emit = defineEmits<{
       <template v-for="item in contextActions" :key="item.id ?? item.label">
         <button
           v-if="item.id"
+          :id="item.id"
           type="button"
           :class="item.className"
           :title="item.title"

@@ -27,8 +27,10 @@ export {
   removeObject,
   transformObject,
   updateObjectProperty,
+  updateObjectTrait,
   updateMetadata,
   resizeDocument,
+  updateMaxMoves,
 } from "./document/commands.js";
 export type { EditorCommand } from "./document/commands.js";
 export {

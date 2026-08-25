@@ -137,6 +137,25 @@ test("authoring visibility and properties are Engine Definition facts", () => {
   ]);
 });
 
+test("实例 Trait 按 Object Definition 白名单 round-trip", () => {
+  const level = createBlankLevel(8, 8);
+  level.objects.push({
+    type: ObjectId.CRUMBLY_ROCK,
+    x: 3,
+    y: 3,
+    traits: ["pushable"],
+  });
+  const parsed = parseEditorLevel(serializeEditorLevel(level));
+  assert.deepEqual(parsed.objects[0]?.traits, ["pushable"]);
+  assert.throws(
+    () => normalizeEditorLevel({
+      ...level,
+      objects: [{ type: ObjectId.CARROT, x: 2, y: 2, traits: ["pushable"] }],
+    }),
+    /不允许实例 Trait/,
+  );
+});
+
 test("一次 stroke 形成一个 Undo，回到保存点时 dirty 恢复", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();

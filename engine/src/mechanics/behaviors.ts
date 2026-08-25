@@ -34,6 +34,16 @@ export interface BehaviorRuntimeApi {
   propelClouds(): void;
   toggleWind(index: number): void;
   mowedGround(): TerrainType;
+  relocateToMatchingObject(
+    type: ObjectType,
+    propertyKey: string,
+  ): { x: number; y: number } | null;
+  objectInteraction(
+    objectType: ObjectType,
+    action: string,
+    message: string,
+    point?: { x: number; y: number },
+  ): void;
 }
 
 export interface BehaviorRuntimeContext extends BehaviorContext {

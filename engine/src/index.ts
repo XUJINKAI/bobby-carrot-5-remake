@@ -37,9 +37,12 @@ export {
   type Point,
   type WorldEvent,
 } from "./world/World.js";
+export { World } from "./world/World.js";
 export {
   Terrain,
   ObjectId,
+  CustomObjectId,
+  CustomTerrain,
   EMPTY_OBJECT,
   DIRECTIONS,
   DYNAMIC_OBJECT_IDS,
@@ -53,6 +56,10 @@ export {
   inspectTerrainDefinition,
   inspectObjectDefinition,
   isObjectAuthorable,
+  hasTerrainDefinition,
+  hasObjectDefinition,
+  terrainDefinitions,
+  objectDefinitions,
   type TileDefinition,
   type TileDefinitionInspection,
   type TilePresentation,
@@ -95,3 +102,4 @@ export {
   objectAtlasCell,
   type AtlasCell,
 } from "./render/atlas.js";
+export { drawCustomObject, drawCustomTerrain, customTileIconStyle } from "./render/custom-tiles.js";

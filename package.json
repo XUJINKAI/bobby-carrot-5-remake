@@ -16,6 +16,7 @@
     "serve:editor": "node tools/scripts/dev-server.mjs editor --no-build",
     "test": "node tools/scripts/run-tests.mjs",
     "test:browser": "npm run build && node tools/scripts/browser-smoke.mjs",
+    "verify:browser": "npm run test:browser",
     "source:check": "node tools/scripts/source-quality.mjs",
     "verify": "npm run source:check && node tools/scripts/verify.mjs",
     "original:patch": "node tools/scripts/original-patch.mjs",

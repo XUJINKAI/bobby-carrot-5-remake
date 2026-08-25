@@ -153,6 +153,7 @@ export function expandObjectLayouts(
         type: cell.type,
         x,
         y,
+        ...(anchor.traits ? { traits: [...anchor.traits] } : {}),
         ...(anchor.properties
           ? { properties: { ...anchor.properties } }
           : {}),
@@ -175,6 +176,7 @@ export function collapseObjectLayouts(
       type: object.type,
       x: object.x,
       y: object.y,
+      ...(object.traits ? { traits: [...object.traits] } : {}),
       ...(object.properties
         ? { properties: { ...object.properties } }
         : {}),

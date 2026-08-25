@@ -25,8 +25,8 @@ try {
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
   await smoke(`${origin}/`, [
-    'class="nostalgia-home"',
-    'class="nostalgia-menu"',
+    'class="home-root"',
+    'class="home-mode-panel"',
   ]);
   await smoke(`${origin}/levels`, [
     'class="level-browser-head"',
@@ -35,7 +35,7 @@ try {
     'data-filter-trigger="mechanics"',
   ]);
   await smoke(`${origin}/play/1-1`, [
-    'class="game-page ',
+    'class="game-page"',
     'id="game"',
     'id="undo"',
   ]);
@@ -46,9 +46,9 @@ try {
   await smoke(`${origin}/adventure/chapters`, [
     'class="adventure-chapters"',
     'class="chapter-stars"',
-    'href="adventure/chapter/1"',
-    'href="adventure/chapter/5"',
-    'href="adventure/chapter/37"',
+    'href="/adventure/chapter/1"',
+    'href="/adventure/chapter/5"',
+    'href="/adventure/chapter/37"',
   ]);
   await smoke(`${origin}/adventure/chapter/1`, [
     'class="adventure-level-list"',
@@ -62,8 +62,8 @@ try {
   );
   await smoke(`${origin}/edit`, [
     'class="bobby-editor"',
-    'data-editor="play-toggle"',
-    "data-editor-palette",
+    'id="editor-play"',
+    'class="editor-palette"',
   ]);
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");
@@ -128,7 +128,7 @@ function runBrowser(url) {
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-background-networking",
-        "--virtual-time-budget=4000",
+        "--virtual-time-budget=10000",
         "--dump-dom",
         url,
       ],

@@ -49,7 +49,7 @@ game.toggleDebug();
 game.inspectCanvasPoint(clientX, clientY);
 ```
 
-`Game.loadLevel()` 只接受 semantic `LevelMap`。地图内机关实例参数放在 `LevelObject.properties` 中；Campaign、release metadata、DAT provenance、HTTP 或路由信息都不进入 Engine load options。
+`Game.loadLevel()` 只接受 semantic `LevelMap`。地图内机关实例能力放在经过 Definition 白名单约束的 `LevelObject.traits`，实例参数放在 `LevelObject.properties`；Campaign、release metadata、DAT provenance、HTTP 或路由信息都不进入 Engine load options。
 
 一次地图 session 的标准生命周期是：
 

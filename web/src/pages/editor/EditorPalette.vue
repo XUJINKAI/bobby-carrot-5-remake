@@ -7,7 +7,7 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
-import { objectAtlasCell, terrainAtlasCell } from "@bobby/engine";
+import { customTileIconStyle, objectAtlasCell, terrainAtlasCell } from "@bobby/engine";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -30,6 +30,8 @@ const groups = computed(() =>
 );
 
 function iconStyle(item: PaletteItem): Record<string, string> {
+  const customStyle = customTileIconStyle(item.type, props.size);
+  if (customStyle) return customStyle;
   const cell =
     item.kind === "terrain"
       ? terrainAtlasCell(item.type)

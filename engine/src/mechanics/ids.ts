@@ -1,11 +1,19 @@
 import {
   EMPTY_OBJECT,
   ObjectId,
+  CustomObjectId,
+  CustomTerrain,
   Terrain,
   type ObjectType,
   type TerrainType,
 } from "@bobby/model";
-export { EMPTY_OBJECT, ObjectId, Terrain } from "@bobby/model";
+export {
+  EMPTY_OBJECT,
+  ObjectId,
+  CustomObjectId,
+  CustomTerrain,
+  Terrain,
+} from "@bobby/model";
 export type Direction = "left" | "right" | "up" | "down";
 export interface StepVector {
   dx: number;
