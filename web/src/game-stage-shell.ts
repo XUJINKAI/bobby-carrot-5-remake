@@ -1,3 +1,5 @@
+import { renderGameplayHud, renderResultOverlay } from "./gameplay-overlay.js";
+
 export interface GameStageOptions {
   canvasId?: string;
   hud?: string;
@@ -17,11 +19,11 @@ export function renderGameStage(options: GameStageOptions = {}): string {
         ${options.content ?? `<canvas id="${options.canvasId ?? "game"}"></canvas>`}
       </div>
       <div class="hud-overlay" data-hud-overlay>
-        ${options.hud ?? ""}
+        ${options.hud ?? renderGameplayHud()}
       </div>
       <div class="screen-control-overlay" data-screen-control hidden></div>
       <div class="result-overlay" data-result-overlay hidden>
-        ${options.overlay ?? ""}
+        ${options.overlay ?? renderResultOverlay()}
       </div>
     </section>
   `;
