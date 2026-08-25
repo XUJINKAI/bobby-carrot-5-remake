@@ -20,12 +20,7 @@ export interface CreateGameSessionOptions {
   inputOptions?: InputControllerOptions;
 }
 
-/**
- * Web-owned adapter around the Engine lifecycle.
- *
- * Pages decide what level/profile/session rules mean. This module only owns the
- * repeated browser plumbing around Game + InputController + mobile controls.
- */
+/** 页面决定关卡与 session 语义；这里统一管理浏览器侧 Engine 生命周期和屏幕控件。 */
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {

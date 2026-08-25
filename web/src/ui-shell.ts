@@ -6,8 +6,10 @@ export interface ShellOptions {
   title?: string;
   content: string;
   mode?: AppMode;
+  contextActions?: string;
   contextInfo?: string;
   showBottomBar?: boolean;
+  showScreenControlToggle?: boolean;
 }
 
 const modeLinks: Array<{ mode: AppMode; label: string; href: string }> = [
@@ -21,7 +23,7 @@ export function renderAppShell(options: ShellOptions): string {
   const bottomBar = options.showBottomBar === false ? "" : `
       <footer class="app-bottom-bar">
         <span data-context-info>${options.contextInfo ?? "准备就绪"}</span>
-        <button type="button" data-action="screen-control">屏幕摇杆</button>
+        ${options.showScreenControlToggle === false ? "" : '<button type="button" data-action="screen-control" aria-pressed="false">屏幕摇杆：关</button>'}
       </footer>`;
 
   return `
@@ -33,10 +35,11 @@ export function renderAppShell(options: ShellOptions): string {
             <a href="${item.href}" data-nav class="${mode === item.mode ? "active" : ""}">${item.label}</a>
           `).join("")}
         </nav>
+        <div class="app-context-actions">${options.contextActions ?? options.title ?? ""}</div>
         <div class="app-actions">
-          <button type="button" data-action="music">♫</button>
-          <button type="button" data-action="settings">⚙</button>
-          <button type="button" data-action="help">?</button>
+          <button type="button" data-action="music" title="音乐" aria-label="音乐">♫</button>
+          <button type="button" data-action="settings" title="设置" aria-label="设置">⚙</button>
+          <button type="button" data-action="help" title="帮助" aria-label="帮助">?</button>
         </div>
       </header>
       <main class="app-content">${options.content}</main>
@@ -60,16 +63,22 @@ export function closeDialog(root: ParentNode): void {
   layer.hidden = true;
 }
 
-export function renderSettingsDialog(): string {
+export function renderSettingsDialog(options: {
+  musicEnabled: boolean;
+  musicVolume: number;
+  soundVolume: number;
+  screenControlEnabled: boolean;
+}): string {
   return `
     <section class="global-dialog settings-dialog" role="dialog" aria-label="设置">
       <header>设置 <button data-action="close-dialog">×</button></header>
       <div>
         <h3>音频</h3>
-        <label>音乐 <input type="checkbox" checked></label>
-        <label>音效 <input type="range"></label>
+        <label>音乐 <input data-setting="music-enabled" type="checkbox" ${options.musicEnabled ? "checked" : ""}></label>
+        <label>音乐音量 <input data-setting="music-volume" type="range" min="0" max="100" value="${options.musicVolume}"></label>
+        <label>音效音量 <input data-setting="sound-volume" type="range" min="0" max="100" value="${options.soundVolume}"></label>
         <h3>操作</h3>
-        <label>屏幕摇杆 <input type="checkbox"></label>
+        <label>屏幕摇杆 <input data-setting="screen-control" type="checkbox" ${options.screenControlEnabled ? "checked" : ""}></label>
       </div>
     </section>`;
 }

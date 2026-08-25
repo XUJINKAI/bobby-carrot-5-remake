@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { root, run } from "./util.mjs";
+import { root, run, tscCommand } from "./util.mjs";
 import { resolveDistRequest } from "./static-server.mjs";
 
 run(process.execPath, ["tools/scripts/build.mjs"]);
+// 产品构建不会发布 DAT，但验证测试和原版一致性检查需要其本地编译产物。
+run(tscCommand(), ["-b", "dat", "--force"]);
 run(
   process.execPath,
   [

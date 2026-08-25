@@ -32,6 +32,16 @@ import {
 import { formatTileInspection } from "./game-debug.js";
 import { createGameSession } from "./game-session.js";
 import { displayLevelId } from "./pages.js";
+import { renderGameStage, toggleScreenControl } from "./game-stage-shell.js";
+import { renderScreenControl } from "./screen-control.js";
+import {
+  bindShellNavigation,
+  closeDialog,
+  openDialog,
+  renderAppShell,
+  renderHelpDialog,
+  renderSettingsDialog,
+} from "./ui-shell.js";
 
 export type OfficialGameMode = "explore" | "adventure";
 export interface OfficialGameContext {
@@ -68,19 +78,19 @@ export async function renderOfficialGame(
     : official;
   app.innerHTML =
     mode === "adventure"
-      ? `<div class="adventure-desktop adventure-game-desktop"><div class="adventure-phone adventure-game-phone"><div class="adventure-phone-inner">${gamePageHtml(meta, audio, mode)}</div></div></div>`
-      : gamePageHtml(meta, audio, mode);
+      ? `<div class="adventure-desktop adventure-game-desktop"><div class="adventure-phone adventure-game-phone"><div class="adventure-phone-inner">${gamePageHtml(meta, mode)}</div></div></div>`
+      : gamePageHtml(meta, mode);
   const canvas = required<HTMLCanvasElement>(app, "#game"),
-    debugPanel = required<HTMLElement>(app, "#debug-panel"),
+    debugPanel = required<HTMLElement>(app, "[data-debug-panel]"),
     debugEngine = required<HTMLElement>(debugPanel, ".debug-engine"),
     debugInspector = required<HTMLElement>(debugPanel, ".debug-inspector"),
-    gameResult = required<HTMLDivElement>(app, "#game-result"),
-    resultCard = required<HTMLElement>(gameResult, ".result-card"),
-    hudTime = required<HTMLElement>(app, "#hud-time"),
-    hudObjectives = required<HTMLElement>(app, "#hud-objectives"),
-    hudObjectiveIcon = required<HTMLElement>(app, "#hud-objective-icon"),
-    hudMoves = required<HTMLElement>(app, "#hud-moves"),
-    hudItems = required<HTMLElement>(app, "#hud-items");
+    gameResult = required<HTMLDivElement>(app, "[data-result-overlay]"),
+    resultCard = required<HTMLElement>(gameResult, "[data-result-card]"),
+    hudTime = required<HTMLElement>(app, "[data-hud-time]"),
+    hudObjectives = required<HTMLElement>(app, "[data-hud-objective]"),
+    hudObjectiveIcon = required<HTMLElement>(app, "[data-hud-objective-icon]"),
+    hudMoves = required<HTMLElement>(app, "[data-hud-moves]"),
+    hudItems = required<HTMLElement>(app, "[data-hud-items]");
   const session = await createGameSession({
     root: app,
     canvas,
@@ -252,13 +262,12 @@ export async function renderOfficialGame(
   update();
   const uiTimer = window.setInterval(renderHud, 100);
   const askUndo = (): void => {
-    if (mode === "explore" && game.canUndo && window.confirm("撤销上一步？")) {
+    if (mode === "explore" && game.canUndo) {
       game.undo();
       closeResult();
     }
   };
   const askRestart = (): void => {
-    if (!window.confirm("重新开始本关？当前进度会丢失。")) return;
     game.restart();
     levelStartedAt = performance.now();
     debugInspection = null;
@@ -286,23 +295,23 @@ export async function renderOfficialGame(
       );
   });
   app
-    .querySelector<HTMLButtonElement>("#back")
+    .querySelector<HTMLButtonElement>("[data-game-action='back']")
     ?.addEventListener("click", () =>
       navigate(
         mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
       ),
     );
   app
-    .querySelector<HTMLButtonElement>("#edit-level")
+    .querySelector<HTMLButtonElement>("[data-game-action='edit']")
     ?.addEventListener("click", () => navigate(`/edit/${meta.publicId}`));
   app
-    .querySelector<HTMLButtonElement>("#undo")
+    .querySelector<HTMLButtonElement>("[data-game-action='undo']")
     ?.addEventListener("click", askUndo);
   app
-    .querySelector<HTMLButtonElement>("#restart")
+    .querySelector<HTMLButtonElement>("[data-game-action='restart']")
     ?.addEventListener("click", askRestart);
-  bindAudioControls(app, audio);
-  bindDialogs(app);
+  bindShellNavigation(app, navigate);
+  bindGameShell(app, audio, input, mode);
   canvas.addEventListener("click", (event) => {
     if (
       mode !== "explore" ||
@@ -337,70 +346,113 @@ function nextCampaignLevel(
 }
 function gamePageHtml(
   meta: CatalogLevel,
-  audio: TinySynthAudioBackend,
   mode: OfficialGameMode,
 ): string {
-  return `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}"><header class="game-toolbar game-toolbar-v2"><div class="game-toolbar-left"><button id="back" class="icon-btn" title="返回" aria-label="返回">←</button><span class="level-label">${displayLevelId(meta)}</span><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span></div><div class="game-hud" aria-label="游戏状态"><span class="hud-chip"><strong id="hud-time">00:00</strong></span><span class="hud-chip"><span id="hud-objective-icon" class="hud-art hud-carrot" aria-hidden="true"></span><strong id="hud-objectives">—</strong></span><span id="hud-items" class="hud-items"></span></div><div class="game-toolbar-right"><span class="hud-chip step-chip"><strong id="hud-moves">0</strong><span class="hud-text-label">STEPS</span></span>${mode === "explore" ? '<button id="undo" class="icon-btn" title="撤销">↶</button>' : ""}<button id="restart" class="icon-btn" title="重新开始">↻</button><button id="music" class="icon-btn" title="音乐">${audio.isEnabled() ? "♫" : "♪̸"}</button>${mode === "explore" ? '<button id="edit-level" class="icon-btn" title="在编辑器中打开">✎</button>' : ""}<button id="game-settings" class="icon-btn" title="设置">⚙</button><button id="game-help" class="icon-btn" title="帮助">?</button></div></header><main class="game-stage"><canvas id="game"></canvas><div class="mobile-dpad" aria-label="移动方向"><button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button></div><aside id="debug-panel" class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside><div id="game-result" class="game-result" hidden><section class="result-card" role="dialog" aria-modal="true"></section></div></main><dialog id="game-settings-dialog" class="game-dialog"><header><strong>设置</strong><button class="dialog-close icon-btn">×</button></header><label class="dialog-setting"><span>音乐</span><input id="game-music-enabled" type="checkbox" ${audio.isEnabled() ? "checked" : ""}></label><label class="dialog-setting"><span>音乐音量</span><input id="game-music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}"></label><label class="dialog-setting"><span>音效音量</span><input id="game-sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}"></label></dialog><dialog id="game-help-dialog" class="game-dialog"><header><strong>${mode === "adventure" ? "Adventure" : "游玩"}帮助</strong><button class="dialog-close icon-btn">×</button></header><div class="help-list"><p><kbd>WASD</kbd> / <kbd>方向键</kbd>：移动。</p><p>鼠标/单指拖动地图；滚轮 / Pinch：缩放。</p>${mode === "adventure" ? "<p>Adventure 强制竖屏视野，并限制最小缩放，避免一次看到整张原版谜题地图。</p><p>Adventure 不提供 Undo；Bonus 的限时规则已经编码在地图机关实例中，由正式 Engine 执行。</p>" : "<p><kbd>~</kbd>：DEBUG；自由选关允许完整地图浏览和调试。</p>"}</div></dialog></div>`;
+  const actions = `<button data-game-action="back" title="返回">← ${displayLevelId(meta)}</button><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span>${mode === "explore" ? '<button data-game-action="undo" title="撤销">↶</button>' : ""}<button data-game-action="restart" title="重新开始">↻</button>${mode === "explore" ? '<button data-game-action="edit" title="在编辑器中打开">✎</button>' : ""}`;
+  const debug = '<aside data-debug-panel class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside>';
+  const stage = renderGameStage({
+    content: `<canvas id="game"></canvas>${debug}`,
+  }).replace(
+    '<div class="screen-control-overlay" data-screen-control hidden></div>',
+    `<div class="screen-control-overlay" data-screen-control hidden>${renderScreenControl()}</div>`,
+  );
+  return renderAppShell({
+    mode,
+    contextActions: actions,
+    contextInfo:
+      mode === "adventure"
+        ? "WASD / 方向键移动 · 拖动查看地图"
+        : "WASD / 方向键移动 · 拖动查看地图 · 滚轮缩放 · ~ DEBUG",
+    content: `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}">${stage}</div>`,
+  });
 }
-function bindAudioControls(
+const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
+
+function bindGameShell(
   root: ParentNode,
   audio: TinySynthAudioBackend,
+  input: { setEnabled(value: boolean): void },
+  mode: OfficialGameMode,
 ): void {
-  root
-    .querySelector<HTMLButtonElement>("#music")
-    ?.addEventListener("click", (event) => {
-      audio.setEnabled(!audio.isEnabled());
-      (event.currentTarget as HTMLButtonElement).textContent = audio.isEnabled()
-        ? "♫"
-        : "♪̸";
-      const checkbox = root.querySelector<HTMLInputElement>(
-        "#game-music-enabled",
-      );
-      if (checkbox) checkbox.checked = audio.isEnabled();
-    });
-  root
-    .querySelector<HTMLInputElement>("#game-music-enabled")
-    ?.addEventListener("change", (event) => {
-      audio.setEnabled((event.currentTarget as HTMLInputElement).checked);
-    });
-  root
-    .querySelector<HTMLInputElement>("#game-music-volume")
-    ?.addEventListener("input", (event) =>
-      audio.setMusicVolume(
-        Number((event.currentTarget as HTMLInputElement).value) / 100,
-      ),
-    );
-  root
-    .querySelector<HTMLInputElement>("#game-sound-volume")
-    ?.addEventListener("input", (event) =>
-      audio.setSoundVolume(
-        Number((event.currentTarget as HTMLInputElement).value) / 100,
-      ),
-    );
-}
-function bindDialogs(root: ParentNode): void {
-  const settings = root.querySelector<HTMLDialogElement>(
-      "#game-settings-dialog",
-    ),
-    help = root.querySelector<HTMLDialogElement>("#game-help-dialog");
-  root
-    .querySelector<HTMLButtonElement>("#game-settings")
-    ?.addEventListener("click", () => settings?.showModal());
-  root
-    .querySelector<HTMLButtonElement>("#game-help")
-    ?.addEventListener("click", () => help?.showModal());
-  root
-    .querySelectorAll<HTMLButtonElement>(".game-dialog .dialog-close")
-    .forEach((button) =>
-      button.addEventListener("click", () =>
-        button.closest<HTMLDialogElement>("dialog")?.close(),
-      ),
-    );
-  root.querySelectorAll<HTMLDialogElement>(".game-dialog").forEach((dialog) =>
-    dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) dialog.close();
-    }),
+  const music = root.querySelector<HTMLButtonElement>("[data-action='music']");
+  const screenToggle = root.querySelector<HTMLButtonElement>(
+    "[data-action='screen-control']",
   );
+  let screenControlEnabled = loadScreenControlPreference();
+  const updateScreenControl = (): void => {
+    toggleScreenControl(root, screenControlEnabled);
+    if (screenToggle) {
+      screenToggle.textContent = `屏幕摇杆：${screenControlEnabled ? "开" : "关"}`;
+      screenToggle.setAttribute("aria-pressed", String(screenControlEnabled));
+    }
+  };
+  const setScreenControl = (enabled: boolean): void => {
+    screenControlEnabled = enabled;
+    localStorage.setItem(SCREEN_CONTROL_STORAGE_KEY, String(enabled));
+    updateScreenControl();
+  };
+  const updateMusicButton = (): void => {
+    if (music) music.textContent = audio.isEnabled() ? "♫" : "♪̸";
+  };
+  updateScreenControl();
+  updateMusicButton();
+  music?.addEventListener("click", () => {
+    audio.setEnabled(!audio.isEnabled());
+    updateMusicButton();
+  });
+  screenToggle?.addEventListener("click", () => {
+    setScreenControl(!screenControlEnabled);
+  });
+  const showDialog = (html: string): void => {
+    input.setEnabled(false);
+    openDialog(root, html);
+  };
+  root
+    .querySelector<HTMLButtonElement>("[data-action='settings']")
+    ?.addEventListener("click", () => {
+      showDialog(
+        renderSettingsDialog({
+          musicEnabled: audio.isEnabled(),
+          musicVolume: Math.round(audio.getMusicVolume() * 100),
+          soundVolume: Math.round(audio.getSoundVolume() * 100),
+          screenControlEnabled,
+        }),
+      );
+    });
+  root
+    .querySelector<HTMLButtonElement>("[data-action='help']")
+    ?.addEventListener("click", () => showDialog(renderHelpDialog(mode)));
+  const dialogLayer = root.querySelector<HTMLElement>("[data-dialog-layer]");
+  dialogLayer?.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("[data-action='close-dialog']")) {
+      closeDialog(root);
+      input.setEnabled(true);
+    }
+  });
+  const applySetting = (event: Event): void => {
+    const target = event.target as HTMLElement;
+    const setting = target.closest<HTMLInputElement>("[data-setting]");
+    if (!setting) return;
+    if (setting.dataset.setting === "music-enabled") {
+      audio.setEnabled(setting.checked);
+      updateMusicButton();
+    } else if (setting.dataset.setting === "music-volume") {
+      audio.setMusicVolume(Number(setting.value) / 100);
+    } else if (setting.dataset.setting === "sound-volume") {
+      audio.setSoundVolume(Number(setting.value) / 100);
+    } else if (setting.dataset.setting === "screen-control") {
+      setScreenControl(setting.checked);
+    }
+  };
+  dialogLayer?.addEventListener("input", applySetting);
+  dialogLayer?.addEventListener("change", applySetting);
+}
+
+function loadScreenControlPreference(): boolean {
+  const stored = localStorage.getItem(SCREEN_CONTROL_STORAGE_KEY);
+  if (stored !== null) return stored === "true";
+  return window.matchMedia("(pointer: coarse)").matches;
 }
 function required<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);

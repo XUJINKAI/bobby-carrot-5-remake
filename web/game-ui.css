@@ -1,4 +1,221 @@
 /* ---------- Play HUD v2 ---------- */
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #07100b;
+}
+.app-topbar {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: max(8px, env(safe-area-inset-top)) 14px 8px;
+  border-bottom: 1px solid #26352b;
+  background: #101a14ee;
+  z-index: 20;
+}
+.app-brand {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mode-switcher,
+.app-actions,
+.app-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-switcher a,
+.app-actions button,
+.app-context-actions button,
+.app-bottom-bar button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #17251b;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mode-switcher a.active {
+  border-color: #9fc875;
+  background: #293d25;
+  color: #e6f4ce;
+}
+.app-context-actions {
+  justify-content: center;
+  min-width: 0;
+}
+.app-actions {
+  justify-content: flex-end;
+}
+.app-actions button {
+  width: 36px;
+  padding: 0;
+}
+.app-content {
+  min-height: 0;
+  overflow: auto;
+}
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)) {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0 60px;
+}
+.app-content > .adventure-desktop {
+  min-height: 100%;
+  height: 100%;
+}
+.app-bottom-bar {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px max(6px, env(safe-area-inset-bottom));
+  border-top: 1px solid #26352b;
+  background: #101a14;
+  color: #aebdb1;
+  font-size: 0.76rem;
+  z-index: 20;
+}
+.global-dialog-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #02050399;
+  backdrop-filter: blur(4px);
+  z-index: 50;
+}
+.global-dialog-layer[hidden] {
+  display: none;
+}
+.global-dialog {
+  width: min(430px, 100%);
+  max-height: min(76vh, 620px);
+  overflow: auto;
+  border: 1px solid #ffffff20;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #18261c, #0d1710);
+  box-shadow: 0 25px 80px #000b;
+}
+.global-dialog > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #ffffff12;
+}
+.global-dialog > header button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.4rem;
+}
+.global-dialog > div {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+.global-dialog h3,
+.global-dialog p {
+  margin: 0;
+}
+.global-dialog label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.game-page,
+.game-page .game-stage {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.game-page {
+  display: block;
+}
+.game-canvas-layer {
+  position: absolute;
+  inset: 0;
+}
+.hud-overlay {
+  position: absolute;
+  inset: 12px 12px auto;
+  z-index: 5;
+  pointer-events: none;
+}
+.gameplay-hud {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.gameplay-hud .step-chip {
+  margin-left: auto;
+}
+.screen-control-overlay {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 7;
+}
+.screen-control-overlay[hidden] {
+  display: none;
+}
+.screen-control {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(2, 52px);
+  gap: 5px;
+  touch-action: none;
+}
+.screen-control button {
+  border: 1px solid #ffffff35;
+  border-radius: 14px;
+  background: #0b140ecf;
+  color: #eef5ef;
+  font-size: 1.2rem;
+  touch-action: none;
+  user-select: none;
+  backdrop-filter: blur(8px);
+}
+.screen-control button[data-move="up"] {
+  grid-column: 2;
+}
+.screen-control button[data-move="left"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+.screen-control button[data-move="down"] {
+  grid-column: 2;
+  grid-row: 2;
+}
+.screen-control button[data-move="right"] {
+  grid-column: 3;
+  grid-row: 2;
+}
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #04090685;
+  backdrop-filter: blur(5px);
+  z-index: 10;
+}
+.result-overlay[hidden] {
+  display: none;
+}
+
 .game-toolbar-v2 {
   position: relative;
   display: grid;
@@ -185,6 +402,47 @@
   }
 }
 @media (max-width: 700px) {
+  .app-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 7px;
+    min-height: 52px;
+    overflow: hidden;
+  }
+  .app-brand {
+    width: 30px;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .app-brand::before {
+    content: "🥕";
+    font-size: 1.2rem;
+  }
+  .mode-switcher {
+    display: none;
+  }
+  .app-context-actions {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .app-actions {
+    gap: 3px;
+  }
+  .app-actions button {
+    width: 31px;
+    min-height: 31px;
+  }
+  .app-bottom-bar > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .hud-overlay {
+    inset: 8px 8px auto;
+  }
+  .gameplay-hud [data-hud-time],
+  .gameplay-hud .step-chip {
+    display: none;
+  }
   .game-toolbar-v2 {
     display: flex;
     overflow-x: auto;

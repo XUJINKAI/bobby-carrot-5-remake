@@ -11,6 +11,7 @@ import { bindNavigation, escapeHtml, type Navigate } from "./common.js";
 import { loadAdventureSave } from "./adventure-storage.js";
 import { chapterStars, displayLevelShort } from "./pages.js";
 import type { CatalogLevel, LevelCatalog } from "./catalog.js";
+import { renderAppShell } from "./ui-shell.js";
 
 export interface AdventurePageContext {
   app: HTMLDivElement;
@@ -24,8 +25,8 @@ export function renderAdventureHome(context: AdventurePageContext): void {
     save = loadAdventureSave(),
     next = nextAdventureLevel(catalog, save);
   audio.playMusic("title");
-  app.innerHTML = portraitShell(
-    `<header class="adventure-title"><div class="eyebrow">ORIGINAL ADVENTURE</div><h1>Bobby Carrot 5</h1><p>按原版章节顺序游玩；存档、全局道具、一次性奖励和受限竖屏视野只属于这里。</p></header><nav class="adventure-menu">${next ? `<a class="primary-btn" href="adventure/play/${next.publicId}" data-nav>继续 · ${next.publicId.toUpperCase()}</a>` : `<a class="primary-btn" href="adventure/chapters" data-nav>选择章节</a>`}<a class="ghost-btn" href="adventure/chapters" data-nav>章节选择</a><a class="ghost-btn" href="levels" data-nav>自由选关</a><a class="ghost-btn" href="settings" data-nav>存档 / 设置</a></nav><section class="adventure-wallet"><span>BONUS <strong>${save.economy.bonusCoins}</strong></span><span>GOLDEN CARROT <strong>${save.economy.goldenCarrots}</strong></span><span>KEY <strong>${save.upgrades.goldenKey ? "★" : "—"}</strong></span></section>`,
+  app.innerHTML = adventureShell(
+    `<header class="adventure-title"><div class="eyebrow">ORIGINAL ADVENTURE</div><h1>Bobby Carrot 5 Remake</h1><p>按原版章节顺序游玩；存档、全局道具、一次性奖励和受限竖屏视野只属于这里。</p></header><nav class="adventure-menu">${next ? `<a class="primary-btn" href="adventure/play/${next.publicId}" data-nav>继续 · ${next.publicId.toUpperCase()}</a>` : `<a class="primary-btn" href="adventure/chapters" data-nav>选择章节</a>`}<a class="ghost-btn" href="adventure/chapters" data-nav>章节选择</a><a class="ghost-btn" href="levels" data-nav>自由选关</a><a class="ghost-btn" href="settings" data-nav>存档 / 设置</a></nav><section class="adventure-wallet"><span>BONUS <strong>${save.economy.bonusCoins}</strong></span><span>GOLDEN CARROT <strong>${save.economy.goldenCarrots}</strong></span><span>KEY <strong>${save.upgrades.goldenKey ? "★" : "—"}</strong></span></section>`,
   );
   bindNavigation(app, navigate);
 }
@@ -34,7 +35,7 @@ export function renderAdventureChapters(context: AdventurePageContext): void {
   const { app, catalog, audio, navigate } = context,
     save = loadAdventureSave();
   audio.playMusic("title");
-  app.innerHTML = portraitShell(
+  app.innerHTML = adventureShell(
     `<header class="adventure-toolbar"><a href="adventure" data-nav>←</a><strong>CHAPTER SELECT</strong><span></span></header><main class="adventure-scroll"><div class="adventure-chapters">${catalog.chapters
       .map((chapter) => {
         const unlocked = save.campaign.unlockedChapters.includes(
@@ -69,7 +70,7 @@ export function renderAdventureChapter(
   }
   const sequence = campaignSequenceForChapter(chapterNumber),
     byId = new Map(catalog.levels.map((level) => [level.publicId, level]));
-  app.innerHTML = portraitShell(
+  app.innerHTML = adventureShell(
     `<header class="adventure-toolbar"><a href="adventure/chapters" data-nav>←</a><strong>CHAPTER ${chapterNumber}</strong><span class="chapter-stars">${chapterStars(chapter.difficultyStars)}</span></header><section class="adventure-chapter-title"><h2>${escapeHtml(chapter.title)}</h2>${chapter.description ? `<p>${escapeHtml(chapter.description)}</p>` : ""}</section><main class="adventure-scroll"><div class="adventure-level-list">${sequence
       .map((id) => {
         const level = byId.get(id);
@@ -117,4 +118,13 @@ function nextAdventureLevel(
 
 function portraitShell(content: string): string {
   return `<div class="adventure-desktop"><div class="adventure-phone"><div class="adventure-phone-inner">${content}</div></div></div>`;
+}
+
+function adventureShell(content: string): string {
+  return renderAppShell({
+    mode: "adventure",
+    contextInfo: "原版 Campaign · 章节进度与永久奖励",
+    showScreenControlToggle: false,
+    content: portraitShell(content),
+  });
 }

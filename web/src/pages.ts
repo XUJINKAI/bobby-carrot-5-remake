@@ -1,5 +1,5 @@
 import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
-import { bindNavigation, escapeHtml, shell, type Navigate } from "./common.js";
+import { bindNavigation, escapeHtml, type Navigate } from "./common.js";
 import {
   completedExploreLevels,
   lastExploreLevelId,
@@ -16,6 +16,7 @@ import {
   resetAdventureSave,
 } from "./adventure-storage.js";
 import type { CatalogChapter, CatalogLevel, LevelCatalog } from "./catalog.js";
+import { renderAppShell } from "./ui-shell.js";
 
 export interface PageContext {
   app: HTMLDivElement;
@@ -62,7 +63,11 @@ export function renderHome(context: PageContext): void {
   const last = lastLevel(catalog);
   audio.playMusic("title");
 
-  app.innerHTML = shell(`
+  app.innerHTML = renderAppShell({
+    mode: "home",
+    showBottomBar: false,
+    showScreenControlToggle: false,
+    content: `
     <section class="nostalgia-home">
       <img class="nostalgia-logo" src="assets/art/hd/title.png" alt="Bobby Carrot 5 Remake">
       <div class="nostalgia-menu" role="navigation" aria-label="主菜单">
@@ -80,7 +85,8 @@ export function renderHome(context: PageContext): void {
       <span>最近浏览：${displayLevelId(last)}</span>
       <button id="home-random" class="ghost-btn">随机一关</button>
     </section>
-  `);
+  `,
+  });
 
   bindNavigation(app, navigate);
   app
@@ -96,7 +102,11 @@ export async function renderLevels(context: PageContext): Promise<void> {
   const completed = completedExploreLevels();
   audio.playMusic("title");
 
-  app.innerHTML = shell(`
+  app.innerHTML = renderAppShell({
+    mode: "explore",
+    contextInfo: "全部关卡开放 · ✓ 表示曾通关",
+    showScreenControlToggle: false,
+    content: `
     <section class="level-browser-head">
       <div class="section-title">
         <div>
@@ -121,7 +131,8 @@ export async function renderLevels(context: PageContext): Promise<void> {
       <span><i class="difficulty-dot hard"></i>困难</span>
       <span>章节标题旁的 ★ 是原版章节选择界面的 1～3 星难度；关卡 A～F 难度仍用于筛选。</span>
     </div>
-  `);
+  `,
+  });
 
   bindNavigation(app, navigate);
   await mountLevelFilters(catalog);
@@ -190,7 +201,10 @@ export function renderSettings(context: PageContext): void {
   const save = loadAdventureSave();
   audio.playMusic("title");
 
-  app.innerHTML = shell(`
+  app.innerHTML = renderAppShell({
+    title: "设置",
+    showScreenControlToggle: false,
+    content: `
     <div class="section-title">
       <h1>设置</h1>
       <p>音乐、操作与 Adventure 存档。</p>
@@ -243,7 +257,8 @@ export function renderSettings(context: PageContext): void {
         <input id="sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}">
       </div>
     </section>
-  `);
+  `,
+  });
 
   bindNavigation(app, navigate);
 

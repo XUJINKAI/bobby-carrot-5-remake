@@ -7,11 +7,7 @@ export interface GameStageOptions {
   overlay?: string;
 }
 
-/**
- * Shared gameplay container.
- * The Engine owns canvas rendering; this layer owns the product-side
- * placement of HUD, controls and overlays around it.
- */
+/** Engine 绘制 Canvas；产品层在同一个 Stage 内组织 HUD、屏幕控件和结果层。 */
 export function renderGameStage(options: GameStageOptions = {}): string {
   return `
     <section class="game-stage" data-game-stage>

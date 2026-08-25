@@ -12,12 +12,12 @@ import {
 } from "./catalog.js";
 import {
   NOOP_CONTROLLER,
-  shell,
   siteUrl,
   type Navigate,
   type PageController,
 } from "./common.js";
 import { bindNavigation } from "./common.js";
+import { renderAppShell } from "./ui-shell.js";
 
 export interface EditorPageContext {
   app: HTMLDivElement;
@@ -47,15 +47,18 @@ export async function renderEditorPage(
     level.name = `${meta.publicId.toUpperCase()} · Copy`;
   } else level = createBlankLevel(16, 16);
 
-  app.innerHTML = shell(`
-    <section class="editor-shell">
+  app.innerHTML = renderAppShell({
+    mode: "editor",
+    contextInfo: "左键放置 · 右键 / Del 删除 · Q / E 切换形态",
+    showScreenControlToggle: false,
+    content: `<section class="editor-shell">
       <header class="editor-header">
         <h1>地图编辑器</h1>
         <p>创建、修改并测试 Bobby Carrot 关卡。</p>
       </header>
       <div id="editor-mount"></div>
-    </section>
-  `);
+    </section>`,
+  });
   bindNavigation(app, navigate);
   const root = app.querySelector<HTMLElement>("#editor-mount");
   if (!root) throw new Error("Editor mount failed");
