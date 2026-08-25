@@ -137,6 +137,16 @@ export function resizeDocument(width: number, height: number): EditorCommand {
   return command((level) => resizeEditorLevel(level, width, height));
 }
 
+export function updateMaxMoves(value: number | null): EditorCommand {
+  return command((level) => {
+    const next = { ...level };
+    if (value !== null && Number.isInteger(value) && value > 0)
+      next.rules = { ...level.rules, maxMoves: value };
+    else delete next.rules;
+    return normalizeEditorLevel(next);
+  });
+}
+
 function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {
   return { apply };
 }

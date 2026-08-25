@@ -154,6 +154,7 @@ for (const level of catalog.levels) {
 
 verifySourceBoundaries();
 verifyUnifiedUiShell();
+await verifyCustomMaps();
 
 for (const file of [
   "dist/index.html",
@@ -211,6 +212,41 @@ if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
 console.log(
   "verify: OK — JSON-only user maps, LevelObject properties, self-contained Engine gameplay rules, configurable gameplay input, Adventure map augmentation, DAT-free Web/Editor boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",
 );
+
+async function verifyCustomMaps() {
+  const { parseEditorLevel, serializeEditorLevel, toLevelMap } =
+    await import("../../editor/dist/index.js");
+  const { getObjectDefinition, getTerrainDefinition } =
+    await import("../../engine/dist/index.js");
+  const directory = path.join(root, "custom_maps/engine-lab");
+  const files = fs.readdirSync(directory).filter((file) => file.endsWith(".json"));
+  if (files.length !== 3)
+    throw new Error(`Expected three Engine Lab maps, got ${files.length}`);
+  for (const file of files) {
+    const source = fs.readFileSync(path.join(directory, file), "utf8");
+    const editorLevel = parseEditorLevel(source);
+    const roundTrip = parseEditorLevel(serializeEditorLevel(editorLevel));
+    const level = toLevelMap(roundTrip);
+    for (const row of level.terrain)
+      for (const type of row)
+        if (getTerrainDefinition(type).id !== type)
+          throw new Error(`${file}: terrain ${type} has no Definition`);
+    for (const object of level.objects) {
+      const definition = getObjectDefinition(object.type);
+      if (definition.id !== object.type)
+        throw new Error(`${file}: object ${object.type} has no Definition`);
+      const allowed = new Set(
+        (definition.authoring?.properties ?? []).map((property) => property.key),
+      );
+      for (const key of Object.keys(object.properties ?? {}))
+        if (!allowed.has(key))
+          throw new Error(`${file}: property ${object.type}.${key} is undefined`);
+    }
+    const maxMoves = level.rules?.maxMoves;
+    if (maxMoves !== undefined && (!Number.isInteger(maxMoves) || maxMoves <= 0))
+      throw new Error(`${file}: maxMoves must be a positive integer`);
+  }
+}
 
 function verifyAllSourceDynamicSlots(derive, split, decode) {
   const sourceIndex = JSON.parse(

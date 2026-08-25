@@ -1,6 +1,8 @@
 import {
   objectAtlasCell,
   terrainAtlasCell,
+  drawCustomObject,
+  drawCustomTerrain,
 } from "@bobby/engine";
 import { intersectingOwners, objectCells, resolveObjectOwner, type Cell } from "../authoring/objectOwners.js";
 import { placementCells, placementFits } from "../authoring/objectPlacement.js";
@@ -54,10 +56,28 @@ export class EditorCanvasRenderer {
     if (this.atlas) {
       for (let y = 0; y < level.height; y++)
         for (let x = 0; x < level.width; x++)
-          this.draw(context, terrainAtlasCell(level.terrain[y]![x]!), x, y);
+          if (
+            !drawCustomTerrain(
+              context,
+              level.terrain[y]![x]!,
+              x * EDITOR_TILE_SIZE,
+              y * EDITOR_TILE_SIZE,
+              EDITOR_TILE_SIZE,
+            )
+          )
+            this.draw(context, terrainAtlasCell(level.terrain[y]![x]!), x, y);
       for (const object of level.objects)
         for (const cell of objectCells(object))
-          this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
+          if (
+            !drawCustomObject(
+              context,
+              cell.type,
+              cell.x * EDITOR_TILE_SIZE,
+              cell.y * EDITOR_TILE_SIZE,
+              EDITOR_TILE_SIZE,
+            )
+          )
+            this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
     }
     this.drawGrid(context, level.width, level.height);
     this.drawPreview(context, state);
@@ -111,10 +131,22 @@ export class EditorCanvasRenderer {
     if (this.atlas) {
       context.globalAlpha = 0.55;
       if (selection.kind === "terrain")
-        this.draw(context, terrainAtlasCell(selection.type), hover.x, hover.y);
+        drawCustomTerrain(
+          context,
+          selection.type,
+          hover.x * EDITOR_TILE_SIZE,
+          hover.y * EDITOR_TILE_SIZE,
+          EDITOR_TILE_SIZE,
+        ) || this.draw(context, terrainAtlasCell(selection.type), hover.x, hover.y);
       else if (placementFits(level, selection.type, hover))
         for (const cell of preview)
-          this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
+          drawCustomObject(
+            context,
+            cell.type,
+            cell.x * EDITOR_TILE_SIZE,
+            cell.y * EDITOR_TILE_SIZE,
+            EDITOR_TILE_SIZE,
+          ) || this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
       context.globalAlpha = 1;
     }
     context.strokeStyle = "#99d6ff";

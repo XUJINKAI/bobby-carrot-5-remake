@@ -1,5 +1,10 @@
 import type { ObjectType, TerrainType } from "../data/types.js";
-import { EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "./ids.js";
+import {
+  EMPTY_OBJECT,
+  ObjectId,
+  Terrain,
+  type Direction,
+} from "./ids.js";
 import {
   directionalPassage,
   fireReflectionBehavior,
@@ -664,7 +669,7 @@ objectDef(
 objectDef(
   ObjectId.CRUMBLY_ROCK,
   "mower",
-  ["object-passage-override", "dragon-fire-blocking"],
+  ["object-passage-override", "dragon-fire-blocking", "pushable"],
   [
     passageBehavior("break-by-fast-mower", "高速割草机可以撞碎", (ctx) =>
       ctx.state.ridingMower && ctx.state.forced?.kind === "speed"

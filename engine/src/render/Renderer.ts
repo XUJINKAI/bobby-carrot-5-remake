@@ -4,6 +4,7 @@ import type { ObjectType, TerrainType } from "../data/types.js";
 import { animatedObjectTile, animatedTerrainTile } from "./animation.js";
 import { objectAtlasCell, terrainAtlasCell, type AtlasCell } from "./atlas.js";
 import type { World } from "../world/World.js";
+import { drawCustomObject, drawCustomTerrain } from "../custom/rendering.js";
 
 export interface RendererAssets {
   atlasUrl: string;
@@ -189,7 +190,8 @@ export class Renderer {
             screen.y,
             size,
           );
-        else this.drawTerrainTile(atlas, terrain, screen.x, screen.y, size);
+        else if (!drawCustomTerrain(ctx, terrain, screen.x, screen.y, size))
+          this.drawTerrainTile(atlas, terrain, screen.x, screen.y, size);
 
         const object = world.objectIdAt(x, y);
         const objectCoveredByGrass =
@@ -207,7 +209,8 @@ export class Renderer {
               screen.y,
               size,
             );
-          else this.drawObjectTile(atlas, object, screen.x, screen.y, size);
+          else if (!drawCustomObject(ctx, object, screen.x, screen.y, size))
+            this.drawObjectTile(atlas, object, screen.x, screen.y, size);
         }
         if (this.debug) {
           ctx.strokeStyle = "rgba(255,255,255,.18)";

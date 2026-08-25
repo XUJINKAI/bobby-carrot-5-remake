@@ -67,6 +67,7 @@ export type TerrainType =
   | "color-pink-block-lowered"
   | "high-grass"
   | "high-grass-objective"
+  | `custom:${string}`
   | `walkable-variant-${string}`
   | `background-variant-${string}`;
 
@@ -126,6 +127,7 @@ export type ObjectType =
   | "fence-5"
   | "fence-6"
   | "empty"
+  | `custom:${string}`
   | `object-variant-${string}`;
 
 /**
@@ -141,10 +143,15 @@ export interface LevelObject {
   properties?: LevelObjectProperties;
 }
 
+export interface LevelRules {
+  maxMoves?: number;
+}
+
 /** Pure playable/authorable map. No release, JAR, hash, catalog or DAT fields belong here. */
 export interface LevelMap {
   width: number;
   height: number;
   terrain: TerrainType[][];
   objects: LevelObject[];
+  rules?: LevelRules;
 }

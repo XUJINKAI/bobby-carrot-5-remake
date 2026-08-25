@@ -8,6 +8,7 @@ import {
   toLevelMap,
   transformObject,
   updateMetadata,
+  updateMaxMoves,
   updateObjectProperty,
   type Cell,
   type EditorLevel,
@@ -74,6 +75,9 @@ export function useEditorPage(initialLevel: EditorLevel) {
     },
     resize(width: number, height: number): void {
       document.execute(resizeDocument(width, height));
+    },
+    setMaxMoves(value: number | null): void {
+      document.execute(updateMaxMoves(value));
     },
     updateMetadata(metadata: {
       name: string;

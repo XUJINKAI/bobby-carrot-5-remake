@@ -37,9 +37,12 @@ export {
   type Point,
   type WorldEvent,
 } from "./world/World.js";
+export { World } from "./world/World.js";
 export {
   Terrain,
   ObjectId,
+  CustomObjectId,
+  CustomTerrain,
   EMPTY_OBJECT,
   DIRECTIONS,
   DYNAMIC_OBJECT_IDS,
@@ -95,3 +98,4 @@ export {
   objectAtlasCell,
   type AtlasCell,
 } from "./render/atlas.js";
+export { drawCustomObject, drawCustomTerrain } from "./custom/rendering.js";

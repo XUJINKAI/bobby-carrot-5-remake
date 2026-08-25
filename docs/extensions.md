@@ -1,0 +1,44 @@
+# Engine 扩展机制
+
+Bobby Carrot 5 Remake 使用 `custom:` semantic ID 和 `LevelMap.rules` 承载自定义地图机制。扩展地图集中保存在 `custom_maps/`，可由 Editor 导入并使用正式 Engine Play Test。
+
+## Portal
+
+Portal 使用对象 `custom:portal`，实例属性 `channel` 支持 `blue`、`red`、`green`。Bobby 进入 Portal 后传送到地图中同频道的另一端；一次传送只处理一端到另一端，避免成对 Portal 循环触发。
+
+Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材。该素材属于项目原创的程序化视觉，不使用原版 atlas 或第三方资源。
+
+## 推动石头
+
+推动对象复用 `crumbly-rock` 的语义身份与原版美术。地图实例通过以下属性启用推动能力：
+
+```json
+{
+  "type": "crumbly-rock",
+  "x": 3,
+  "y": 4,
+  "properties": { "pushable": "true" }
+}
+```
+
+`custom:rock-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。
+
+## 最大步数
+
+地图可在 `LevelMap.rules` 声明最大步数：
+
+```json
+{
+  "rules": { "maxMoves": 20 }
+}
+```
+
+第 21 次成功的主动移动触发地图内死亡。阻挡输入与强制移动不计入步数，Undo 和 Restart 通过 Engine snapshot 生命周期恢复规则状态。
+
+## 验证地图
+
+- `custom_maps/engine-lab/portal.json`
+- `custom_maps/engine-lab/sokoban.json`
+- `custom_maps/engine-lab/max-moves.json`
+
+`npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。

@@ -46,6 +46,7 @@ export function fromLevelMap(
     height: level.height,
     terrain: level.terrain.map((row) => [...row]),
     objects: anchors.map(cloneObject),
+    ...(level.rules ? { rules: { ...level.rules } } : {}),
   });
 }
 
@@ -56,6 +57,7 @@ export function toLevelMap(level: EditorLevel): LevelMap {
     height: normalized.height,
     terrain: normalized.terrain.map((row) => [...row]),
     objects: normalized.objects.map(cloneObject),
+    ...(normalized.rules ? { rules: { ...normalized.rules } } : {}),
   };
 }
 
@@ -109,6 +111,9 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
   if (input.author) level.author = String(input.author).slice(0, 80);
   if (input.description)
     level.description = String(input.description).slice(0, 500);
+  const maxMoves = Number(input.rules?.maxMoves);
+  if (Number.isInteger(maxMoves) && maxMoves > 0)
+    level.rules = { maxMoves };
   return level;
 }
 

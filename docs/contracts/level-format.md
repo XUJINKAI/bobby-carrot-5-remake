@@ -17,6 +17,9 @@ interface LevelMap {
   height: number;
   terrain: TerrainType[][];
   objects: LevelObject[];
+  rules?: {
+    maxMoves?: number;
+  };
 }
 ```
 
@@ -35,7 +38,7 @@ interface LevelMap {
 }
 ```
 
-Engine、Editor 与 Adventure 都围绕同一个 `LevelMap` 合同工作。Engine 不区分官方地图、Adventure 增强地图或 Editor 地图。
+Engine、Editor 与 Adventure 都围绕同一个 `LevelMap` 合同工作。Engine 不区分官方地图、Adventure 增强地图或 Editor 地图。自定义 Engine 机制与地图规则见 [`../extensions.md`](../extensions.md)。
 
 ## 原始 DAT package
 

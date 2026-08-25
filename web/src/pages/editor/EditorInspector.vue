@@ -6,6 +6,7 @@ const props = defineProps<{ model: InspectorModel }>();
 const emit = defineEmits<{
   resize: [width: number, height: number];
   property: [x: number, y: number, key: string, value: string];
+  maxMoves: [value: number | null];
 }>();
 const width = ref(props.model.document.width);
 const height = ref(props.model.document.height);
@@ -32,6 +33,19 @@ watch(
         <label class="editor-field"><span>高</span><input v-model.number="height" type="number" min="3" max="128"></label>
         <button class="editor-btn" type="button" @click="emit('resize', width, height)">调整地图</button>
       </div>
+    </section>
+    <section class="editor-inspector-section">
+      <strong>地图规则</strong>
+      <label class="editor-field">
+        <span>最大步数</span>
+        <input
+          type="number"
+          min="1"
+          :value="model.document.maxMoves ?? ''"
+          placeholder="不限"
+          @change="emit('maxMoves', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null)"
+        >
+      </label>
     </section>
     <section class="editor-inspector-section editor-definition">
       <header><strong>当前素材</strong><span>{{ model.selection.presentation.category }}</span></header>

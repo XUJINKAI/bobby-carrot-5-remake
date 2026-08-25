@@ -32,7 +32,9 @@ export type TileTrait =
   | "start"
   | "objective-carrot"
   | "objective-nest"
-  | "hidden-objective";
+  | "hidden-objective"
+  | "pushable"
+  | "push-goal";
 
 export interface TilePresentation {
   name: string;

@@ -191,6 +191,7 @@ function isTextInput(target: EventTarget | null): boolean {
       @transform="transform"
       @resize="page.resize"
       @property="(x, y, key, value) => page.updateProperty({ x, y }, key, value)"
+      @max-moves="page.setMaxMoves"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"

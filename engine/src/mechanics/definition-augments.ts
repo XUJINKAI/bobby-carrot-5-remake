@@ -1,5 +1,11 @@
 import type { ObjectType, TerrainType } from "../data/types.js";
-import { ObjectId, Terrain, type Direction } from "./ids.js";
+import {
+  CustomObjectId,
+  CustomTerrain,
+  ObjectId,
+  Terrain,
+  type Direction,
+} from "./ids.js";
 import {
   markerBehavior,
   touchBehavior,
@@ -27,6 +33,51 @@ interface DefinitionAugmentPorts {
 }
 
 export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
+  ports.defineTerrain(
+    CustomTerrain.ROCK_GOAL,
+    "custom-objective",
+    ["walkable", "push-goal"],
+    [markerBehavior("push-goal", "Crumbly Rock 推入后完成目标")],
+  );
+  ports.defineObject(
+    CustomObjectId.PORTAL,
+    "custom-mechanic",
+    [],
+    [markerBehavior("portal", "进入后传送到相同频道的另一端")],
+  );
+  ports.setObject({
+    ...ports.getObject(CustomObjectId.PORTAL),
+    authoring: {
+      palette: true,
+      properties: [
+        {
+          key: "channel",
+          kind: "enum",
+          label: "频道",
+          options: [
+            { value: "blue", label: "蓝色" },
+            { value: "red", label: "红色" },
+            { value: "green", label: "绿色" },
+          ],
+        },
+      ],
+    },
+  });
+  ports.setObject({
+    ...ports.getObject(ObjectId.CRUMBLY_ROCK),
+    presentation: { name: "Crumbly Rock", category: "mower" },
+    authoring: {
+      palette: true,
+      properties: [
+        {
+          key: "pushable",
+          kind: "enum",
+          label: "可推动",
+          options: [{ value: "true", label: "启用" }],
+        },
+      ],
+    },
+  });
   const blockingObjects: ObjectType[] = [
     ObjectId.EGG_NEST_FILLED,
     ObjectId.WINDMILL_UP,
