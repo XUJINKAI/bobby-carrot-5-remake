@@ -34,15 +34,42 @@ export function renderAppShell(options: ShellOptions): string {
           `).join("")}
         </nav>
         <div class="app-actions">
-          <button type="button" data-action="music">♫</button>
-          <button type="button" data-action="settings">⚙</button>
-          <button type="button" data-action="help">?</button>
+          <button type="button" data-action="music" aria-label="音乐开关">♫</button>
+          <button type="button" data-action="settings" aria-label="设置">⚙</button>
+          <button type="button" data-action="help" aria-label="帮助">?</button>
         </div>
       </header>
       <main class="app-content">${options.content}</main>
       ${bottomBar}
+      <div class="global-dialog-layer" data-dialog-layer hidden></div>
     </div>
   `;
+}
+
+export function renderSettingsDialog(): string {
+  return `
+    <section class="global-dialog settings-dialog" role="dialog" aria-label="设置">
+      <header>设置 <button data-action="close-dialog">×</button></header>
+      <div>
+        <h3>音频</h3>
+        <label>音乐 <input type="checkbox" checked></label>
+        <label>音效 <input type="range"></label>
+        <h3>操作</h3>
+        <label>屏幕摇杆 <input type="checkbox"></label>
+      </div>
+    </section>`;
+}
+
+export function renderHelpDialog(context: AppMode): string {
+  return `
+    <section class="global-dialog help-dialog" role="dialog" aria-label="帮助">
+      <header>${context} 操作帮助 <button data-action="close-dialog">×</button></header>
+      <div>
+        <p>WASD / 方向键：移动</p>
+        <p>拖动画面：查看地图</p>
+        ${context === "editor" ? "<p>右键 / Del：删除对象，Q / E：切换形态</p>" : ""}
+      </div>
+    </section>`;
 }
 
 export function bindShellNavigation(root: ParentNode, navigate: Navigate): void {
