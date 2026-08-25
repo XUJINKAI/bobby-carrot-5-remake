@@ -5,6 +5,7 @@ dat/dist/
 engine/dist/
 editor/dist/
 web/dist-src/
+web/dist-vite/
 assets/extracted/
 assets/generated/
 tmp/

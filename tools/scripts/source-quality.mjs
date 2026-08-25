@@ -12,7 +12,14 @@ const SOURCE_ROOTS = [
   "web",
   "tools",
 ];
-const SOURCE_EXTENSIONS = new Set([".ts", ".js", ".mjs", ".css", ".html"]);
+const SOURCE_EXTENSIONS = new Set([
+  ".ts",
+  ".js",
+  ".mjs",
+  ".css",
+  ".html",
+  ".vue",
+]);
 const SCRIPT_EXTENSIONS = new Set([".ts", ".js", ".mjs"]);
 const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
@@ -111,6 +118,7 @@ function walk(directory, visitor) {
     if (
       entry.name === "dist" ||
       entry.name === "dist-src" ||
+      entry.name === "dist-vite" ||
       entry.name === "node_modules"
     )
       continue;

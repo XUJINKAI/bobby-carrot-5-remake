@@ -5,20 +5,21 @@ import {
   parseEditorLevel,
   type EditorLevel,
 } from "@bobby/editor";
-import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
+import { createApp } from "vue";
+import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import {
   fetchJson,
   type LevelCatalog,
   type OfficialLevelData,
-} from "./catalog.js";
+} from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
-  siteUrl,
   type Navigate,
   type PageController,
-} from "./common.js";
-import { bindNavigation } from "./common.js";
-import { renderAppShell } from "./ui-shell.js";
+} from "../../app/pageContracts.js";
+import { siteUrl } from "../../services/assets/gameAssets.js";
+import { renderAppShell } from "../../shell/shellBridge.js";
+import EditorPageHost from "./EditorPageHost.vue";
 
 export interface EditorPageContext {
   app: HTMLDivElement;
@@ -60,15 +61,12 @@ export async function renderEditorPage(
     mode: "editor",
     contextInfo: "左键放置 · 右键 / Del 删除 · Q / E 切换形态",
     showScreenControlToggle: false,
-    content: `<section class="editor-shell">
-      <header class="editor-header">
-        <h1>地图编辑器</h1>
-        <p>创建、修改并测试 Bobby Carrot 关卡。</p>
-      </header>
-      <div id="editor-mount"></div>
-    </section>`,
+    topBarFixed: true,
+    bottomBarFixed: true,
+    content: "",
   });
-  bindNavigation(app, navigate);
+  const editorPage = createApp(EditorPageHost);
+  editorPage.mount(app);
   const root = app.querySelector<HTMLElement>("#editor-mount");
   if (!root) throw new Error("Editor mount failed");
 
@@ -94,6 +92,7 @@ export async function renderEditorPage(
   return {
     destroy(): void {
       editor.destroy();
+      editorPage.unmount();
     },
   };
 }

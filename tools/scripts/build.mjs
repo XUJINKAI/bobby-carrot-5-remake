@@ -12,6 +12,7 @@ const generatedTargets = [
   "engine/dist",
   "editor/dist",
   "web/dist-src",
+  "web/dist-vite",
 ].map((value) => (path.isAbsolute(value) ? value : path.join(root, value)));
 
 for (const target of generatedTargets) {
@@ -35,7 +36,9 @@ if (hasGeneratedAssets()) {
 }
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
-run(tsc, ["-b", "engine", "editor", "web", "--force"]);
+run(tsc, ["-b", "engine", "editor", "--force"]);
+run("npm", ["run", "--workspace", "@bobby/web", "typecheck"]);
+run("npm", ["run", "--workspace", "@bobby/web", "build"]);
 
 fs.mkdirSync(dist, { recursive: true });
 
@@ -50,7 +53,7 @@ for (const file of [
 }
 copyFile(path.join(root, "editor/style.css"), path.join(dist, "editor.css"));
 
-copyTree(path.join(root, "web/dist-src"), dist);
+copyTree(path.join(root, "web/dist-vite"), dist);
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));
 copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));

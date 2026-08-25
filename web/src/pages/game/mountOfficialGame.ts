@@ -8,37 +8,34 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { ObjectId } from "@bobby/engine";
-import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
+import { createApp } from "vue";
+import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import {
   fetchJson,
   type CatalogLevel,
   type LevelCatalog,
   type OfficialLevelData,
-} from "./catalog.js";
+} from "../../services/catalog/catalog.js";
 import {
-  escapeHtml,
-  formatElapsed,
-  gameAssets,
   NOOP_CONTROLLER,
-  siteUrl,
   type Navigate,
   type PageController,
-} from "./common.js";
-import { loadAdventureSave, saveAdventureSave } from "./adventure-storage.js";
+} from "../../app/pageContracts.js";
+import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
+import { loadAdventureSave, saveAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
   rememberExploreLevel,
   markExploreLevelCompleted,
-} from "./explore-progress.js";
-import { formatTileInspection } from "./game-debug.js";
-import { createGameSession } from "./game-session.js";
-import { displayLevelId } from "./pages.js";
-import { renderGameStage } from "./game-stage-shell.js";
+} from "../../storage/exploreProgressStorage.js";
+import { formatTileInspection } from "../../runtime/game/formatTileInspection.js";
+import { createGameSession } from "../../runtime/game/createGameSession.js";
+import { displayLevelId } from "../../services/catalog/catalogPresentation.js";
+import { escapeHtml, formatElapsed } from "./resultFormatting.js";
+import OfficialGamePage from "./OfficialGamePage.vue";
 import {
-  bindShellNavigation,
   loadScreenControlPreference,
   renderAppShell,
-  storeScreenControlPreference,
-} from "./ui-shell.js";
+} from "../../shell/shellBridge.js";
 
 export type OfficialGameMode = "explore" | "adventure";
 export interface OfficialGameContext {
@@ -73,10 +70,19 @@ export async function renderOfficialGame(
   const sessionLevel = adventureSave
     ? prepareAdventureLevel(meta.publicId, official, adventureSave)
     : official;
-  app.innerHTML =
-    mode === "adventure"
-      ? `<div class="adventure-desktop adventure-game-desktop"><div class="adventure-phone adventure-game-phone"><div class="adventure-phone-inner">${gamePageHtml(meta, mode)}</div></div></div>`
-      : gamePageHtml(meta, mode);
+  app.innerHTML = renderAppShell({
+    mode,
+    contextActions: gameContextActions(meta, mode),
+    contextInfo:
+      mode === "adventure"
+        ? "WASD / 方向键移动 · 拖动查看地图"
+        : "WASD / 方向键移动 · 拖动查看地图 · 滚轮缩放 · ~ DEBUG",
+    topBarFixed: true,
+    bottomBarFixed: true,
+    content: "",
+  });
+  const gamePage = createApp(OfficialGamePage, { mode });
+  gamePage.mount(app);
   const canvas = required<HTMLCanvasElement>(app, "#game"),
     debugPanel = required<HTMLElement>(app, "[data-debug-panel]"),
     debugEngine = required<HTMLElement>(debugPanel, ".debug-engine"),
@@ -249,28 +255,18 @@ export async function renderOfficialGame(
           : `/play/${button.dataset.next}`,
       );
   });
-  app
-    .querySelector<HTMLButtonElement>("[data-game-action='back']")
-    ?.addEventListener("click", () =>
+  const onGameShellAction = (event: Event): void => {
+    const action = (event as CustomEvent<{ action: string }>).detail.action;
+    if (action === "back") {
       navigate(
         mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
-      ),
-    );
-  app
-    .querySelector<HTMLButtonElement>("[data-game-action='edit']")
-    ?.addEventListener("click", () => navigate(`/edit/${meta.publicId}`));
-  app
-    .querySelector<HTMLButtonElement>("[data-game-action='undo']")
-    ?.addEventListener("click", askUndo);
-  app
-    .querySelector<HTMLButtonElement>("[data-game-action='restart']")
-    ?.addEventListener("click", askRestart);
-  bindShellNavigation(app, navigate);
-  const disposeGameShell = bindGameShell(
-    app,
-    input,
-    screenControlEnabled,
-  );
+      );
+    } else if (action === "edit") navigate(`/edit/${meta.publicId}`);
+    else if (action === "undo") askUndo();
+    else if (action === "restart") askRestart();
+  };
+  window.addEventListener("game-shell-action", onGameShellAction);
+  const disposeGameShell = bindGameShell(input, screenControlEnabled);
   canvas.addEventListener("click", (event) => {
     if (
       mode !== "explore" ||
@@ -287,8 +283,10 @@ export async function renderOfficialGame(
       window.clearInterval(statisticsTimer);
       if (mode === "adventure")
         window.removeEventListener("resize", applyAdventureCamera);
+      window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       session.destroy();
+      gamePage.unmount();
     },
   };
 }
@@ -304,52 +302,37 @@ function nextCampaignLevel(
     ? catalog.levels.find((level) => level.publicId === next)
     : undefined;
 }
-function gamePageHtml(
+function gameContextActions(
   meta: CatalogLevel,
   mode: OfficialGameMode,
-): string {
-  const actions = `<button data-game-action="back" title="返回">← ${displayLevelId(meta)}</button><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span>${mode === "explore" ? '<button data-game-action="undo" title="撤销">↶</button>' : ""}<button data-game-action="restart" title="重新开始">↻</button>${mode === "explore" ? '<button data-game-action="edit" title="在编辑器中打开">✎</button>' : ""}`;
-  const statistics = mode === "explore" ? '<div class="product-game-statistics" data-product-stats></div>' : "";
-  const debug = '<aside data-debug-panel class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside>';
-  const stage = renderGameStage({
-    content: `<canvas id="game"></canvas>${statistics}${debug}`,
-  });
-  return renderAppShell({
-    mode,
-    contextActions: actions,
-    contextInfo:
-      mode === "adventure"
-        ? "WASD / 方向键移动 · 拖动查看地图"
-        : "WASD / 方向键移动 · 拖动查看地图 · 滚轮缩放 · ~ DEBUG",
-    content: `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}">${stage}</div>`,
-  });
+) {
+  return [
+    { id: "back", label: `← ${displayLevelId(meta)}`, title: "返回" },
+    {
+      label: meta.difficulty.label,
+      className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+    },
+    ...(mode === "explore"
+      ? [{ id: "undo", label: "↶", title: "撤销" }]
+      : []),
+    { id: "restart", label: "↻", title: "重新开始" },
+    ...(mode === "explore"
+      ? [{ id: "edit", label: "✎", title: "在编辑器中打开" }]
+      : []),
+  ];
 }
 function bindGameShell(
-  root: HTMLElement,
   input: {
     setEnabled(value: boolean): void;
     setScreenJoystickEnabled(value: boolean): void;
   },
   initialScreenControlEnabled: boolean,
 ): () => void {
-  const screenToggle = root.querySelector<HTMLButtonElement>(
-    "[data-action='screen-control']",
-  );
   let screenControlEnabled = initialScreenControlEnabled;
   const updateScreenControl = (): void => {
     input.setScreenJoystickEnabled(screenControlEnabled);
-    if (screenToggle) {
-      screenToggle.textContent = `屏幕摇杆：${screenControlEnabled ? "开" : "关"}`;
-      screenToggle.setAttribute("aria-pressed", String(screenControlEnabled));
-    }
-  };
-  const setScreenControl = (enabled: boolean): void => {
-    storeScreenControlPreference(root, enabled);
   };
   updateScreenControl();
-  const onScreenToggle = (): void => {
-    setScreenControl(!screenControlEnabled);
-  };
   const onScreenControlChange = (event: Event): void => {
     screenControlEnabled = Boolean(
       (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
@@ -358,15 +341,13 @@ function bindGameShell(
   };
   const onDialogOpen = (): void => input.setEnabled(false);
   const onDialogClose = (): void => input.setEnabled(true);
-  screenToggle?.addEventListener("click", onScreenToggle);
-  root.addEventListener("screen-control-change", onScreenControlChange);
-  root.addEventListener("shell-dialog-open", onDialogOpen);
-  root.addEventListener("shell-dialog-close", onDialogClose);
+  window.addEventListener("screen-control-change", onScreenControlChange);
+  window.addEventListener("shell-dialog-open", onDialogOpen);
+  window.addEventListener("shell-dialog-close", onDialogClose);
   return () => {
-    screenToggle?.removeEventListener("click", onScreenToggle);
-    root.removeEventListener("screen-control-change", onScreenControlChange);
-    root.removeEventListener("shell-dialog-open", onDialogOpen);
-    root.removeEventListener("shell-dialog-close", onDialogClose);
+    window.removeEventListener("screen-control-change", onScreenControlChange);
+    window.removeEventListener("shell-dialog-open", onDialogOpen);
+    window.removeEventListener("shell-dialog-close", onDialogClose);
   };
 }
 function required<T extends Element>(root: ParentNode, selector: string): T {

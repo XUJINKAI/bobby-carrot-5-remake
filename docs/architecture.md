@@ -309,6 +309,22 @@ Web 不依赖 `@bobby/dat`，产品 `dist/` 也不发布 `dat/` browser module�
 
 Web 的通用 Game Session 负责提供 `LevelMap + Runtime Config`、组合 Engine 生命周期并展示通用 `dialog` WorldEvent；它不实现基础 HUD、Screen Joystick 或地图规则。
 
+Web 源码按产品职责组织：
+
+```text
+web/src
+├── app/                 Vue 根应用、路由协调与页面生命周期合同
+├── shell/               TopBar、BottomBar、模式选择、全局 Dialog 与 Shell 配置
+├── pages/<mode>/        页面组件、页面挂载器与页面私有交互
+├── runtime/game/        Web 对 Engine session 生命周期的适配
+├── services/            Audio、Catalog 与产品资产访问
+├── storage/             浏览器持久化适配
+├── app.ts               Web 入口
+└── vue-env.d.ts         Vue SFC 类型声明
+```
+
+页面相关的 TypeScript 与 `.vue` 文件共置在对应 `pages/<mode>/` 中。Web 根目录不承载页面实现、运行时服务或模糊的通用工具模块。
+
 Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 Web，因为这些动作描述的是游戏结束后的产品流程。
 
 ### Product Shell 与 GameStage
