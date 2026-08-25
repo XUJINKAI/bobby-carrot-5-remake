@@ -32,10 +32,8 @@ resolve destination
 具体 Terrain/Object Definition 按内容来源组织：
 
 ```text
-original/terrain/definitions.ts  原版 Terrain Definition
-original/terrain/augments.ts     原版 Terrain augmentation
-original/object/definitions.ts   原版 Object Definition
-original/object/augments.ts      原版 Object augmentation
+original/terrain/index.ts        原版 Terrain Definition 注册入口
+original/object/index.ts         原版 Object Definition 注册入口
 custom/terrain/               扩展 Terrain Definition
 custom/object/                扩展 Object Definition 与对应 hook
 mechanics/definitions.ts      稳定查询 façade

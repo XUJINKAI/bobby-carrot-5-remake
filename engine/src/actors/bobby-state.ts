@@ -9,6 +9,7 @@ export function createBobbyState(
   profile: Partial<ProfileCapabilities>,
 ): BobbyActorState {
   return {
+    position: { ...start },
     player: { ...start },
     facing: "down",
     dead: false,

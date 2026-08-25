@@ -1,5 +1,6 @@
 import type {
   LevelObjectProperties,
+  LevelObjectTraits,
   ObjectType,
   TerrainType,
 } from "../data/types.js";
@@ -43,6 +44,8 @@ export interface RuntimeState extends BobbyActorState {
   objects: ObjectType[][];
   /** 与静态对象格同步移动，供 Definition behavior 读取实例参数。 */
   objectProperties: (LevelObjectProperties | undefined)[][];
+  /** Definition 白名单校验后的实例附加 Trait。 */
+  objectTraits: (LevelObjectTraits | undefined)[][];
   dynamicEntities: DynamicEntity[];
   start: Point;
   objectiveMode: ObjectiveMode;

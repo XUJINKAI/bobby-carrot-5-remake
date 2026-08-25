@@ -13,7 +13,7 @@
     ["background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1"]
   ],
   "objects": [
-    { "type": "crumbly-rock", "x": 2, "y": 2, "properties": { "pushable": "true" } },
-    { "type": "crumbly-rock", "x": 3, "y": 2, "properties": { "pushable": "true" } }
+    { "type": "crumbly-rock", "x": 2, "y": 2, "traits": ["pushable"] },
+    { "type": "crumbly-rock", "x": 3, "y": 2, "traits": ["pushable"] }
   ]
 }

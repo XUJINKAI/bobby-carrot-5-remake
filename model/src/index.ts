@@ -9,6 +9,7 @@ export type {
   TerrainType,
   ObjectType,
   LevelObjectProperties,
+  LevelObjectTraits,
   LevelObject,
   LevelRules,
   LevelMap,

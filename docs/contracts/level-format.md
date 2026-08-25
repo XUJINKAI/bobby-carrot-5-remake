@@ -9,6 +9,7 @@ interface LevelObject {
   type: ObjectType;
   x: number;
   y: number;
+  traits?: string[];
   properties?: Record<string, string>;
 }
 
@@ -23,7 +24,7 @@ interface LevelMap {
 }
 ```
 
-`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。两者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
+`traits` 是 Definition 白名单允许的实例能力，`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。三者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
 
 例如带作者对白的 Sandman：
 

@@ -5,6 +5,7 @@ import {
   terrainHasTrait,
 } from "../definitions.js";
 import type { ObjectiveMode } from "../../world/RuntimeState.js";
+import { effectiveObjectHasTrait } from "../traits/effective.js";
 
 export interface InitialObjectives {
   mode: ObjectiveMode;
@@ -16,6 +17,7 @@ export interface InitialObjectives {
 export function deriveInitialObjectives(
   terrain: TerrainType[][],
   objects: ObjectType[][],
+  objectTraits: (readonly string[] | undefined)[][] = [],
 ): InitialObjectives {
   let carrotCount = 0;
   let nestCount = 0;
@@ -29,7 +31,10 @@ export function deriveInitialObjectives(
       if (objectHasTrait(object, "objective-nest")) nestCount++;
       if (terrainHasTrait(terrain[y]![x]!, "push-goal")) {
         rockGoalCount++;
-        if (objectHasTrait(object, "pushable")) filledRockGoalCount++;
+        if (
+          effectiveObjectHasTrait(object, objectTraits[y]?.[x], "pushable")
+        )
+          filledRockGoalCount++;
       }
       if (
         terrainHasTrait(terrain[y]![x]!, "hidden-objective") &&

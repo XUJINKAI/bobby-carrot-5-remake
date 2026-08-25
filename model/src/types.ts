@@ -135,11 +135,13 @@ export type ObjectType =
  * 哪些 key 合法以及如何编辑由 Engine Definition 描述，而不是由地图格式硬编码。
  */
 export type LevelObjectProperties = Record<string, string>;
+export type LevelObjectTraits = string[];
 
 export interface LevelObject {
   type: ObjectType;
   x: number;
   y: number;
+  traits?: LevelObjectTraits;
   properties?: LevelObjectProperties;
 }
 

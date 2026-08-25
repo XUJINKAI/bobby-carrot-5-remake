@@ -5,6 +5,12 @@ export interface ActorPosition {
   y: number;
 }
 
+export interface ActorState {
+  position: ActorPosition;
+  facing: Direction;
+  dead: boolean;
+}
+
 export interface InventoryState {
   gas: boolean;
   kite: boolean;
@@ -19,10 +25,9 @@ export interface ProfileCapabilities {
 }
 
 /** 当前唯一可控制 Actor 的状态合同；字段名保持 Runtime snapshot 兼容。 */
-export interface BobbyActorState {
+export interface BobbyActorState extends ActorState {
+  /** 单 Bobby 公开 snapshot 的兼容字段，与 position 同步。 */
   player: ActorPosition;
-  facing: Direction;
-  dead: boolean;
   inventory: InventoryState;
   profile: ProfileCapabilities;
   ridingMower: boolean;

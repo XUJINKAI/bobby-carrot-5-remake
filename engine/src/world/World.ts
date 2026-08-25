@@ -1,4 +1,4 @@
-import type { LevelMap, LevelObject, LevelObjectProperties, ObjectType, TerrainType } from "@bobby/model";
+import type { LevelMap, LevelObject, LevelObjectProperties, LevelObjectTraits, ObjectType, TerrainType } from "@bobby/model";
 import { DIRECTIONS, EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
 import { isWaterTerrain, passageFor, type PassageResult } from "../mechanics/rules.js";
 import {
@@ -22,7 +22,6 @@ import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
 import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
 export type { PassageResult } from "../mechanics/rules.js";
-
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
 import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
@@ -32,9 +31,10 @@ import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rul
 import type { ActiveLevelRule } from "../mechanics/rules/types.js";
 import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
 import { createBobbyState, updateBobbyProfile } from "../actors/bobby-state.js";
+import { effectiveObjectHasTrait } from "../mechanics/traits/effective.js";
+import { runtimeObject } from "./object-instance.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, Terrain.GROUND_D] as const;
-
 export class World {
   readonly level: LevelMap;
   private readonly activeRules: ActiveLevelRule[];
@@ -152,9 +152,10 @@ export class World {
   objectsAt(x: number, y: number): LevelObject[] {
     const type = this.objectIdAt(x, y);
     const properties = this.objectPropertiesAt(x, y);
-    return type === EMPTY_OBJECT
-      ? []
-      : [{ type, x, y, ...(properties ? { properties } : {}) }];
+    const traits = this.inBounds(x, y)
+      ? this.stateValue.objectTraits[y]?.[x]
+      : undefined;
+    return runtimeObject(type, x, y, traits, properties);
   }
   objectPropertiesAt(x: number, y: number): LevelObjectProperties | undefined {
     if (!this.inBounds(x, y)) return undefined;
@@ -170,7 +171,6 @@ export class World {
   getDynamicEntities(): readonly DynamicEntity[] {
     return this.stateValue.dynamicEntities;
   }
-
   move(direction: Direction, forced = false): MoveResult {
     const state = this.stateValue,
       from = copyPoint(state.player),
@@ -221,6 +221,7 @@ export class World {
     if (state.forced?.kind === "flight") {
       this.beforeLeave(from, events);
       state.player = to;
+      state.position = to;
       state.facing = direction;
       this.afterEnterFlight(to, direction, events);
       return this.result(
@@ -284,8 +285,11 @@ export class World {
     }
     const targetObject = this.objectIdAt(to.x, to.y);
     if (
-      objectHasTrait(targetObject, "pushable") &&
-      this.objectPropertiesAt(to.x, to.y)?.pushable === "true"
+      effectiveObjectHasTrait(
+        targetObject,
+        state.objectTraits[to.y]?.[to.x],
+        "pushable",
+      )
     ) {
       const pushedTo = { x: to.x + vector.dx, y: to.y + vector.dy };
       if (!canPushObject(state, this.level, to, pushedTo))
@@ -326,7 +330,6 @@ export class World {
     this.applySuccessfulMoveRules(forced, events);
     return this.result(true, from, to, passage, events);
   }
-
   inspect(x: number, y: number): TileInspection | null {
     const terrainType = this.terrainAt(x, y);
     if (terrainType === null) return null;
@@ -353,7 +356,6 @@ export class World {
       isStart: statePoint(this.stateValue.start, x, y),
     };
   }
-
   private createInitialState(
     level: LevelMap,
     profile: Partial<ProfileCapabilities>,
@@ -361,6 +363,11 @@ export class World {
     const terrain = level.terrain.map((row) => [...row]),
       objects = emptyGrid<ObjectType>(level.width, level.height, EMPTY_OBJECT),
       objectProperties = emptyGrid<LevelObjectProperties | undefined>(
+        level.width,
+        level.height,
+        undefined,
+      ),
+      objectTraits = emptyGrid<LevelObjectTraits | undefined>(
         level.width,
         level.height,
         undefined,
@@ -390,9 +397,12 @@ export class World {
       objectProperties[y]![x] = sourceObject.properties
         ? { ...sourceObject.properties }
         : undefined;
+      objectTraits[y]![x] = sourceObject.traits
+        ? [...sourceObject.traits]
+        : undefined;
     }
     if (!start) start = findFallbackStart(terrain);
-    const objectives = deriveInitialObjectives(terrain, objects);
+    const objectives = deriveInitialObjectives(terrain, objects, objectTraits);
     const windmillsEnabled: [boolean, boolean, boolean, boolean] = [
         false,
         false,
@@ -423,6 +433,7 @@ export class World {
       terrain,
       objects,
       objectProperties,
+      objectTraits,
       dynamicEntities,
       start: copyPoint(start),
       objectiveMode: objectives.mode,
@@ -447,7 +458,6 @@ export class World {
       warnings: [],
     };
   }
-
   private passageTo(
     from: Point,
     to: Point,
@@ -622,7 +632,6 @@ export class World {
     }
     this.stateValue.forced = { kind: "flight", direction };
   }
-
   private moveWithLeaf(
     entity: DynamicEntity,
     direction: Direction,
@@ -677,6 +686,7 @@ export class World {
       entity.y = to.y;
       entity.direction = tideDirection ?? direction;
       state.player = to;
+      state.position = to;
       state.facing = direction;
       state.forced = { kind: "leaf", direction: tideDirection ?? direction };
       return this.result(
@@ -874,7 +884,10 @@ export class World {
       entity.y = ny;
       entity.offsetXpx -= vector.dx * tilePx;
       entity.offsetYpx -= vector.dy * tilePx;
-      if (entity.rider) state.player = { x: nx, y: ny };
+      if (entity.rider) {
+        state.player = { x: nx, y: ny };
+        state.position = { x: nx, y: ny };
+      }
       const ownGrid = cloudGridForObject(entity.type);
       if (ownGrid !== undefined && this.objectIdAt(nx, ny) === ownGrid) {
         entity.direction = null;
@@ -928,7 +941,10 @@ export class World {
   private setObject(x: number, y: number, type: ObjectType): void {
     if (!this.inBounds(x, y)) return;
     this.stateValue.objects[y]![x] = type;
-    if (type === EMPTY_OBJECT) this.stateValue.objectProperties[y]![x] = undefined;
+    if (type === EMPTY_OBJECT) {
+      this.stateValue.objectProperties[y]![x] = undefined;
+      this.stateValue.objectTraits[y]![x] = undefined;
+    }
   }
   private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
     if (this.stateValue.completed) return;

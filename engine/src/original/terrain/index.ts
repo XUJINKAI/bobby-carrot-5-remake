@@ -51,6 +51,7 @@ export function registerOriginalTerrainDefinitions({
       [
         ...(walkable ? ["walkable" as TileTrait] : []),
         ...(water ? ["water" as TileTrait] : []),
+        ...(id === Terrain.START ? ["start" as TileTrait] : []),
       ],
       [
         markerBehavior(
@@ -223,7 +224,12 @@ export function registerOriginalTerrainDefinitions({
     terrainDef(
       id,
       "mower",
-      ["terrain-passage-override"],
+      [
+        "terrain-passage-override",
+        ...(id === Terrain.HIGH_GRASS_OBJECTIVE
+          ? ["hidden-objective" as TileTrait]
+          : []),
+      ],
       [
         passageBehavior("requires-mower", "只有驾驶割草机才能通过", (ctx) =>
           ctx.state.ridingMower

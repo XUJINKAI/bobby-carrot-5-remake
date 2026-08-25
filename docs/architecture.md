@@ -45,7 +45,7 @@ interface LevelObject {
 }
 ```
 
-`properties` 与 `rules` 承载声明式地图 gameplay semantics，不表达 DAT、Catalog、Adventure 或 Editor 来源。具体执行逻辑只位于 Engine，Engine 始终只接收一份 `LevelMap`。
+`LevelObject.traits`、`properties` 与 `rules` 承载声明式地图 gameplay semantics。实例 Trait 只能来自 Definition 的 `authoring.traits` 白名单；参数由 `authoring.properties` 描述。它们不表达 DAT、Catalog、Adventure 或 Editor 来源。具体执行逻辑只位于 Engine，Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 

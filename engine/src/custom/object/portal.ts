@@ -23,10 +23,7 @@ export function registerPortal(ports: DefinitionRegistrationPorts): void {
           );
       }),
     ],
-  );
-  ports.setObject({
-    ...ports.getObject(CustomObjectId.PORTAL),
-    authoring: {
+    {
       palette: true,
       properties: [
         {
@@ -41,5 +38,5 @@ export function registerPortal(ports: DefinitionRegistrationPorts): void {
         },
       ],
     },
-  });
+  );
 }

@@ -29,6 +29,7 @@ const emit = defineEmits<{
   transform: [cell: Cell, step: number, result: (changed: boolean) => void];
   resize: [width: number, height: number];
   property: [x: number, y: number, key: string, value: string];
+  trait: [x: number, y: number, trait: string, enabled: boolean];
   maxMoves: [value: number | null];
 }>();
 </script>
@@ -67,6 +68,7 @@ const emit = defineEmits<{
       :model="inspector"
       @resize="(width, height) => emit('resize', width, height)"
       @property="(x, y, key, value) => emit('property', x, y, key, value)"
+      @trait="(x, y, trait, enabled) => emit('trait', x, y, trait, enabled)"
       @max-moves="emit('maxMoves', $event)"
     />
   </main>

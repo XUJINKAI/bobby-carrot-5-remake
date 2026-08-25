@@ -18,6 +18,7 @@ export function relocateToMatchingObject(
         state.objectProperties[y]?.[x]?.[propertyKey] === value
       ) {
         state.player = { x, y };
+        state.position = { x, y };
         return { x, y };
       }
   return null;

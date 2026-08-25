@@ -4,11 +4,13 @@ import {
   type LevelMap,
   type LevelObject,
   type LevelObjectProperties,
+  type LevelObjectTraits,
   type ObjectType,
   type TerrainType,
 } from "@bobby/model";
 import {
   collapseObjectLayouts,
+  getObjectDefinition,
   isObjectLayoutPart,
   objectLayoutFor,
 } from "@bobby/engine";
@@ -93,10 +95,12 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
       continue;
     for (const cell of cells) occupied.add(`${cell.x},${cell.y}`);
     const properties = normalizeProperties(raw.properties);
+    const traits = normalizeTraits(type, raw.traits);
     objects.push({
       type,
       x,
       y,
+      ...(traits ? { traits } : {}),
       ...(properties ? { properties } : {}),
     });
   }
@@ -130,10 +134,30 @@ function cloneObject(object: LevelObject): EditorObject {
     type: object.type,
     x: object.x,
     y: object.y,
+    ...(object.traits ? { traits: [...object.traits] } : {}),
     ...(object.properties
       ? { properties: { ...object.properties } }
       : {}),
   };
+}
+
+function normalizeTraits(
+  type: ObjectType,
+  value: unknown,
+): LevelObjectTraits | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const definition = getObjectDefinition(type);
+  const allowed = new Set(
+    (definition.authoring?.traits ?? []).map((item) => item.trait),
+  );
+  const traits: string[] = [];
+  for (const trait of value) {
+    if (typeof trait !== "string" || !allowed.has(trait as never))
+      throw new Error(`Object ${type} 不允许实例 Trait：${String(trait)}`);
+    traits.push(trait);
+  }
+  const unique = [...new Set(traits)];
+  return unique.length > 0 ? unique : undefined;
 }
 
 function normalizeProperties(

@@ -27,6 +27,7 @@ export {
   removeObject,
   transformObject,
   updateObjectProperty,
+  updateObjectTrait,
   updateMetadata,
   resizeDocument,
   updateMaxMoves,

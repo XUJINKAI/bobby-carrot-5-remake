@@ -47,7 +47,7 @@ test("显式 pushable 对象可推入目标且阻挡连续对象", () => {
     level({
       terrain,
       objects: [
-        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushable: "true" } },
+        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, traits: ["pushable"] },
       ],
     }),
   );
@@ -58,12 +58,25 @@ test("显式 pushable 对象可推入目标且阻挡连续对象", () => {
   const blocked = new World(
     level({
       objects: [
-        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushable: "true" } },
-        { type: ObjectId.CRUMBLY_ROCK, x: 2, y: 1, properties: { pushable: "true" } },
+        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, traits: ["pushable"] },
+        { type: ObjectId.CRUMBLY_ROCK, x: 2, y: 1, traits: ["pushable"] },
       ],
     }),
   );
   assert.equal(blocked.move("right").moved, false);
+});
+
+test("pushable Property 不会赋予对象 Trait 能力", () => {
+  const world = new World(level({
+    objects: [{
+      type: ObjectId.CRUMBLY_ROCK,
+      x: 1,
+      y: 1,
+      properties: { pushable: "true" },
+    }],
+  }));
+  assert.equal(world.move("right").moved, false);
+  assert.equal(world.objectIdAt(1, 1), ObjectId.CRUMBLY_ROCK);
 });
 
 test("maxMoves 在第 N+1 次成功主动移动后触发死亡", () => {
@@ -81,7 +94,7 @@ test("推动后的 Actor 通路不合法时 Movement Transaction 保持原状", 
   terrain[1][1] = Terrain.WATER;
   const world = new World(level({
     terrain,
-    objects: [{ type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushable: "true" } }],
+    objects: [{ type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, traits: ["pushable"] }],
   }));
   const before = world.snapshot();
   const result = world.move("right");
@@ -96,7 +109,7 @@ test("Push Goal 与原版目标共同满足后才能从 Exit 完成", () => {
     terrain,
     objects: [
       { type: ObjectId.CARROT, x: 1, y: 1 },
-      { type: ObjectId.CRUMBLY_ROCK, x: 3, y: 0, properties: { pushable: "true" } },
+      { type: ObjectId.CRUMBLY_ROCK, x: 3, y: 0, traits: ["pushable"] },
     ],
   }));
   for (let step = 0; step < 5; step++) world.move("right");

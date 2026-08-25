@@ -1,7 +1,8 @@
 import type { LevelMap } from "../../data/types.js";
 import { EMPTY_OBJECT } from "../ids.js";
-import { objectHasTrait, terrainHasTrait } from "../definitions.js";
+import { terrainHasTrait } from "../definitions.js";
 import type { Point, RuntimeState } from "../../world/RuntimeState.js";
+import { effectiveObjectHasTrait } from "../traits/effective.js";
 
 export function canPushObject(
   state: RuntimeState,
@@ -25,12 +26,15 @@ export function canPushObject(
 export function commitPushObject(state: RuntimeState, level: LevelMap, from: Point, to: Point): void {
   const type = state.objects[from.y]![from.x]!;
   const properties = state.objectProperties[from.y]![from.x];
+  const traits = state.objectTraits[from.y]![from.x];
   state.objects[to.y]![to.x] = type;
   state.objectProperties[to.y]![to.x] = properties
     ? { ...properties }
     : undefined;
+  state.objectTraits[to.y]![to.x] = traits ? [...traits] : undefined;
   state.objects[from.y]![from.x] = EMPTY_OBJECT;
   state.objectProperties[from.y]![from.x] = undefined;
+  state.objectTraits[from.y]![from.x] = undefined;
   refreshRockGoals(state, level);
 }
 
@@ -41,7 +45,14 @@ function refreshRockGoals(state: RuntimeState, level: LevelMap): void {
     for (let x = 0; x < level.width; x++)
       if (terrainHasTrait(state.terrain[y]![x]!, "push-goal")) {
         total++;
-        if (objectHasTrait(state.objects[y]![x]!, "pushable")) filled++;
+        if (
+          effectiveObjectHasTrait(
+            state.objects[y]![x]!,
+            state.objectTraits[y]?.[x],
+            "pushable",
+          )
+        )
+          filled++;
       }
   if (total > 0) {
     state.pushGoalsRemaining = total - filled;

@@ -6,6 +6,7 @@ const props = defineProps<{ model: InspectorModel }>();
 const emit = defineEmits<{
   resize: [width: number, height: number];
   property: [x: number, y: number, key: string, value: string];
+  trait: [x: number, y: number, trait: string, enabled: boolean];
   maxMoves: [value: number | null];
 }>();
 const width = ref(props.model.document.width);
@@ -62,6 +63,18 @@ watch(
         <header><strong>{{ model.ownerDefinition.presentation.name }}</strong><span>{{ model.ownerDefinition.presentation.category }}</span></header>
         <code>{{ model.ownerDefinition.id }}</code>
       </div>
+      <label
+        v-for="trait in model.ownerDefinition.authoring?.traits ?? []"
+        :key="trait.trait"
+        class="editor-field"
+      >
+        <span>{{ trait.label }}</span>
+        <input
+          type="checkbox"
+          :checked="model.owner.object.traits?.includes(trait.trait) ?? false"
+          @change="emit('trait', model.owner.object.x, model.owner.object.y, trait.trait, ($event.target as HTMLInputElement).checked)"
+        >
+      </label>
       <label
         v-for="property in model.ownerDefinition.authoring?.properties ?? []"
         :key="property.key"

@@ -245,6 +245,12 @@ async function verifyCustomMaps() {
       for (const key of Object.keys(object.properties ?? {}))
         if (!allowed.has(key))
           throw new Error(`${file}: property ${object.type}.${key} is undefined`);
+      const allowedTraits = new Set(
+        (definition.authoring?.traits ?? []).map((item) => item.trait),
+      );
+      for (const trait of object.traits ?? [])
+        if (!allowedTraits.has(trait))
+          throw new Error(`${file}: trait ${object.type}.${trait} is undefined`);
     }
     const maxMoves = level.rules?.maxMoves;
     if (maxMoves !== undefined && (!Number.isInteger(maxMoves) || maxMoves <= 0))
@@ -518,6 +524,9 @@ function verifySourceBoundaries() {
 }
 
 function verifyEngineInternalBoundaries() {
+  for (const area of ["terrain", "object"])
+    if (fs.existsSync(path.join(root, "engine/src/original", area, "augments.ts")))
+      throw new Error(`Original ${area} 不得使用 Definition augment 阶段`);
   const forbiddenByArea = new Map([
     ["actors", ["/original/", "/custom/", "/render/", "/input/", "/ui/"]],
     ["mechanics", ["/render/", "/input/", "/audio/", "/ui/"]],
@@ -554,6 +563,14 @@ function verifyEngineInternalBoundaries() {
         `Legacy Pushbox naming remains in ${path.relative(root, file)}`,
       );
   });
+  for (const relative of [
+    "engine/src/mechanics/movement/pushable.ts",
+    "engine/src/mechanics/goals/objectives.ts",
+  ]) {
+    const text = fs.readFileSync(path.join(root, relative), "utf8");
+    if (/\b(?:ObjectId|CustomObjectId|CustomTerrain)\b/.test(text))
+      throw new Error(`通用 Mechanics 出现具体 semantic ID：${relative}`);
+  }
 }
 
 function verifyUnifiedUiShell() {

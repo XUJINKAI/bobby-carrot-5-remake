@@ -10,6 +10,7 @@ export function commitActorMovement(
   forced: boolean,
 ): void {
   state.player = to;
+  state.position = to;
   state.facing = direction;
   state.moves += forced ? 0 : 1;
 }

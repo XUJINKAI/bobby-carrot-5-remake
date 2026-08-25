@@ -3,46 +3,76 @@
  * 具体 Terrain/Object 定义分别位于 `original/` 与 `custom/`。
  */
 import { registerCustomDefinitions } from "../custom/register.js";
-import { markerBehavior } from "./behaviors.js";
 import { environmentTraits, HIDDEN_AUTHORING_OBJECTS, pretty } from "./definition-semantics.js";
 import { definitionRegistry } from "./definition/registry.js";
 import type { DefinitionRegistrationPorts } from "./definition/registration.js";
 import type { ObjectType, TerrainType } from "../data/types.js";
-import type { TileDefinition, TileTrait } from "./definition-types.js";
+import type { TileAuthoring, TileDefinition, TileTrait } from "./definition-types.js";
 import type { TileBehavior } from "./behaviors.js";
-import { registerOriginalTerrainDefinitions } from "../original/terrain/definitions.js";
-import { registerOriginalObjectDefinitions } from "../original/object/definitions.js";
-import { applyTerrainDefinitionAugments } from "../original/terrain/augments.js";
-import { applyObjectDefinitionAugments } from "../original/object/augments.js";
-import { getObjectDefinition, getTerrainDefinition } from "../original/definitions.js";
+import { registerOriginalTerrainDefinitions } from "../original/terrain/index.js";
+import { registerOriginalObjectDefinitions } from "../original/object/index.js";
+import { completeOriginalObjectDefinition } from "../original/object/complete-definition.js";
+
+function terrainDefinition(
+  id: TerrainType,
+  category: string,
+  traits: TileTrait[],
+  behaviors: TileBehavior[],
+): TileDefinition<TerrainType> {
+  return {
+    id,
+    presentation: { name: pretty(id), category },
+    traits: [...new Set([...environmentTraits(id), ...traits])],
+    behaviors,
+    authoring: { palette: true },
+  };
+}
+
+function objectDefinition(
+  id: ObjectType,
+  category: string,
+  traits: TileTrait[],
+  behaviors: TileBehavior[],
+  authoring?: TileAuthoring,
+): TileDefinition<ObjectType> {
+  return {
+    id,
+    presentation: { name: pretty(id), category },
+    traits,
+    behaviors,
+    authoring: authoring ?? { palette: !HIDDEN_AUTHORING_OBJECTS.has(id) },
+  };
+}
 
 const ports: DefinitionRegistrationPorts = {
   defineTerrain(id: TerrainType, category: string, traits: TileTrait[], behaviors: TileBehavior[]) {
-    const definition = { id, presentation: { name: pretty(id), category }, traits: [...new Set([...environmentTraits(id), ...traits])], behaviors, authoring: { palette: true } };
-    if (definitionRegistry.hasTerrain(id)) definitionRegistry.updateTerrain(definition);
-    else definitionRegistry.registerTerrain(definition);
+    definitionRegistry.registerTerrain(terrainDefinition(id, category, traits, behaviors));
   },
-  defineObject(id: ObjectType, category: string, traits: TileTrait[], behaviors: TileBehavior[]) {
-    const definition = { id, presentation: { name: pretty(id), category }, traits, behaviors, authoring: { palette: !HIDDEN_AUTHORING_OBJECTS.has(id) } };
-    if (definitionRegistry.hasObject(id)) definitionRegistry.updateObject(definition);
-    else definitionRegistry.registerObject(definition);
-  },
-  getTerrain: getTerrainDefinition,
-  getObject: getObjectDefinition,
-  setObject(definition: TileDefinition<ObjectType>) {
-    definitionRegistry.updateObject(definition);
+  defineObject(id: ObjectType, category: string, traits: TileTrait[], behaviors: TileBehavior[], authoring) {
+    definitionRegistry.registerObject(objectDefinition(id, category, traits, behaviors, authoring));
   },
 };
-registerOriginalTerrainDefinitions({ terrainDef: ports.defineTerrain });
+
+const originalTerrains = new Map<TerrainType, TileDefinition<TerrainType>>();
+registerOriginalTerrainDefinitions({
+  terrainDef(id, category, traits, behaviors) {
+    originalTerrains.set(id, terrainDefinition(id, category, traits, behaviors));
+  },
+});
+for (const definition of originalTerrains.values())
+  definitionRegistry.registerTerrain(definition);
+
+const originalObjects = new Map<ObjectType, TileDefinition<ObjectType>>();
 registerOriginalObjectDefinitions({
   object(definition) {
-    if (definitionRegistry.hasObject(definition.id)) definitionRegistry.updateObject(definition);
-    else definitionRegistry.registerObject(definition);
+    originalObjects.set(definition.id, definition);
   },
-  objectDef: ports.defineObject,
+  objectDef(id, category, traits, behaviors) {
+    originalObjects.set(id, objectDefinition(id, category, traits, behaviors));
+  },
 });
-applyTerrainDefinitionAugments(ports);
-applyObjectDefinitionAugments(ports);
+for (const definition of originalObjects.values())
+  definitionRegistry.registerObject(completeOriginalObjectDefinition(definition));
 registerCustomDefinitions(ports);
 
-export * from "../original/definitions.js";
+export * from "./definition/catalog.js";

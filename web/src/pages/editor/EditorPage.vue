@@ -191,6 +191,7 @@ function isTextInput(target: EventTarget | null): boolean {
       @transform="transform"
       @resize="page.resize"
       @property="(x, y, key, value) => page.updateProperty({ x, y }, key, value)"
+      @trait="(x, y, trait, enabled) => page.updateTrait({ x, y }, trait, enabled)"
       @max-moves="page.setMaxMoves"
     />
     <EditorFileDialog

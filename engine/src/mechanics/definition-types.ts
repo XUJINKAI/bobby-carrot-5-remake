@@ -72,7 +72,13 @@ export type ObjectPropertyDefinition =
 
 export interface TileAuthoring {
   palette: boolean;
+  traits?: readonly InstanceTraitDefinition[];
   properties?: readonly ObjectPropertyDefinition[];
+}
+
+export interface InstanceTraitDefinition {
+  trait: TileTrait;
+  label: string;
 }
 
 export interface TileDefinition<T extends string> {

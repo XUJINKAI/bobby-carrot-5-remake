@@ -115,6 +115,29 @@ export function updateObjectProperty(
   });
 }
 
+export function updateObjectTrait(
+  anchor: Cell,
+  trait: string,
+  enabled: boolean,
+): EditorCommand {
+  return command((level) => {
+    const index = level.objects.findIndex(
+      (object) => object.x === anchor.x && object.y === anchor.y,
+    );
+    if (index < 0) return level;
+    const object = level.objects[index]!;
+    const traits = new Set(object.traits ?? []);
+    if (enabled) traits.add(trait);
+    else traits.delete(trait);
+    const objects = [...level.objects];
+    const { traits: _previousTraits, ...base } = object;
+    objects[index] = traits.size > 0
+      ? { ...base, traits: [...traits] }
+      : base;
+    return normalizeEditorLevel({ ...level, objects });
+  });
+}
+
 export function updateMetadata(metadata: {
   name: string;
   author?: string;

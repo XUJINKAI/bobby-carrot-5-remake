@@ -1,10 +1,10 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
+import type { ObjectType, TerrainType } from "../../data/types.js";
 import {
   EMPTY_OBJECT,
   ObjectId,
   Terrain,
   type Direction,
-} from "../mechanics/ids.js";
+} from "../ids.js";
 import {
   directionalPassage,
   fireReflectionBehavior,
@@ -17,7 +17,7 @@ import {
   type BehaviorDescription,
   type BehaviorRuntimeContext,
   type TileBehavior,
-} from "../mechanics/behaviors.js";
+} from "../behaviors.js";
 
 import {
   DYNAMIC_IDS,
@@ -26,39 +26,39 @@ import {
   isWalkableSemantic,
   isWaterSemantic,
   pretty,
-} from "../mechanics/definition-semantics.js";
+} from "../definition-semantics.js";
 import {
   CAROUSEL_NEXT,
   rotateCarousel,
   toggleColor,
   toggleSpeed,
   toggleTide,
-} from "../mechanics/terrain-transforms.js";
-import { CLOUD_INFO } from "../mechanics/mechanic-links.js";
+} from "../terrain-transforms.js";
+import { CLOUD_INFO } from "../mechanic-links.js";
 import type {
   TileAuthoring,
   TileDefinition,
   TileDefinitionInspection,
   TilePresentation,
   TileTrait,
-} from "../mechanics/definition-types.js";
-import { definitionRegistry } from "../mechanics/definition/registry.js";
-import { inspectDefinition } from "../mechanics/definition/inspection.js";
-import { definitionHasTrait } from "../mechanics/traits/queries.js";
+} from "../definition-types.js";
+import { definitionRegistry } from "./registry.js";
+import { inspectDefinition } from "./inspection.js";
+import { definitionHasTrait } from "../traits/queries.js";
 export {
   cloudGridForObject,
   tideDirectionForTerrain,
   windmillInfoForObject,
   windSwitchIndexForTerrain,
   windSwitchPeerForTerrain,
-} from "../mechanics/mechanic-links.js";
+} from "../mechanic-links.js";
 export type {
   TileAuthoring,
   TileDefinition,
   TileDefinitionInspection,
   TilePresentation,
   TileTrait,
-} from "../mechanics/definition-types.js";
+} from "../definition-types.js";
 export function hasTerrainDefinition(id: TerrainType): boolean {
   return definitionRegistry.hasTerrain(id);
 }
