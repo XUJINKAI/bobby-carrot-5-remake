@@ -26,8 +26,8 @@ export type { PassageResult } from "../mechanics/rules.js";
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
 import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
-import { tryPushboxObject } from "../mechanics/movement/pushbox.js";
-import { commitPlayerMovement } from "../mechanics/movement/commit.js";
+import { canPushObject, commitPushObject } from "../mechanics/movement/pushable.js";
+import { commitActorMovement } from "../mechanics/movement/commit.js";
 import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
 import type { ActiveLevelRule } from "../mechanics/rules/types.js";
 import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
@@ -187,7 +187,6 @@ export class World {
         },
         events,
       );
-    if (!forced) state.facing = direction;
     const vector = DIRECTIONS[direction],
       to = { x: from.x + vector.dx, y: from.y + vector.dy };
     const ridden = state.dynamicEntities.find(
@@ -201,7 +200,7 @@ export class World {
         return this.result(false, from, to, passage, events);
       ridden.rider = false;
       this.beforeLeave(from, events);
-      commitPlayerMovement(state, to, direction, forced);
+      commitActorMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
       this.applySuccessfulMoveRules(forced, events);
@@ -253,7 +252,7 @@ export class World {
           events,
         );
       this.beforeLeave(from, events);
-      commitPlayerMovement(state, to, direction, forced);
+      commitActorMovement(state, to, direction, forced);
       dynamicTarget.rider = true;
       if (dynamicTarget.type === ObjectId.LEAF) {
         const underlyingTerrain = this.terrainAt(to.x, to.y),
@@ -285,11 +284,11 @@ export class World {
     }
     const targetObject = this.objectIdAt(to.x, to.y);
     if (
-      objectHasTrait(targetObject, "pushbox") &&
-      this.objectPropertiesAt(to.x, to.y)?.pushbox === "true"
+      objectHasTrait(targetObject, "pushable") &&
+      this.objectPropertiesAt(to.x, to.y)?.pushable === "true"
     ) {
       const pushedTo = { x: to.x + vector.dx, y: to.y + vector.dy };
-      if (!tryPushboxObject(state, this.level, to, pushedTo))
+      if (!canPushObject(state, this.level, to, pushedTo))
         return this.result(
           false,
           from,
@@ -301,6 +300,10 @@ export class World {
           },
           events,
         );
+      const pushPassage = this.passageTo(from, to, direction, EMPTY_OBJECT);
+      if (!pushPassage.passable)
+        return this.result(false, from, to, pushPassage, events);
+      commitPushObject(state, this.level, to, pushedTo);
       events.push({
         type: "object-interaction",
         objectType: targetObject,
@@ -315,7 +318,7 @@ export class World {
       return this.result(false, from, to, passage, events);
     }
     this.beforeLeave(from, events);
-    commitPlayerMovement(state, to, direction, forced);
+    commitActorMovement(state, to, direction, forced);
     this.applyPassageSideEffects(passage, to, events);
     this.afterEnter(to, direction, events, {
       justBoarded: passage.boardsMower === true,
@@ -425,6 +428,7 @@ export class World {
       objectiveMode: objectives.mode,
       objectiveRemaining: objectives.remaining,
       objectiveTotal: objectives.total,
+      pushGoalsRemaining: objectives.pushGoalsRemaining,
       forced: null,
       pendingTrap: null,
       pendingCarousel: null,
@@ -448,6 +452,7 @@ export class World {
     from: Point,
     to: Point,
     direction: Direction,
+    objectOverride?: ObjectType,
   ): PassageResult {
     if (!this.inBounds(to.x, to.y))
       return { passable: false, reason: "地图边界", confidence: "confirmed" };
@@ -459,7 +464,7 @@ export class World {
       to.y,
       direction,
       this.terrainAt(to.x, to.y)!,
-      this.objectIdAt(to.x, to.y),
+      objectOverride ?? this.objectIdAt(to.x, to.y),
     );
   }
   private applyPassageSideEffects(
@@ -704,7 +709,7 @@ export class World {
       state.forced = null;
       entity.direction = null;
       this.beforeLeave(from, events);
-      commitPlayerMovement(state, to, direction, forced);
+      commitActorMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
       this.applySuccessfulMoveRules(forced, events);
@@ -926,6 +931,7 @@ export class World {
     if (type === EMPTY_OBJECT) this.stateValue.objectProperties[y]![x] = undefined;
   }
   private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
+    if (this.stateValue.completed) return;
     const reason = evaluateRulesAfterMove(
       this.activeRules,
       this.stateValue,

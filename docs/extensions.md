@@ -17,11 +17,11 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
   "type": "crumbly-rock",
   "x": 3,
   "y": 4,
-  "properties": { "pushbox": "true" }
+  "properties": { "pushable": "true" }
 }
 ```
 
-`custom:push-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。通用 pushbox 算法位于 `engine/src/mechanics/movement/pushbox.ts`。
+`custom:push-goal` 是可步行目标地形。带 `pushable` trait 且实例参数启用的对象可以推动；所有 Push Goal 都被这类对象占据后，该完成条件成立。它与原版主要目标、到达 Exit 共同组成 AND 条件。推动要求后方为可步行地形、没有静态对象且没有动态实体。通用推动算法位于 `engine/src/mechanics/movement/pushable.ts`。
 
 ## 最大步数
 

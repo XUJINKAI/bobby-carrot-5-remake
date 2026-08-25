@@ -23,7 +23,7 @@ interface LevelMap {
 }
 ```
 
-`properties` 是对象实例参数。它不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态。
+`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。两者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
 
 例如带作者对白的 Sandman：
 

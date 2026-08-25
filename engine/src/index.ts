@@ -56,6 +56,10 @@ export {
   inspectTerrainDefinition,
   inspectObjectDefinition,
   isObjectAuthorable,
+  hasTerrainDefinition,
+  hasObjectDefinition,
+  terrainDefinitions,
+  objectDefinitions,
   type TileDefinition,
   type TileDefinitionInspection,
   type TilePresentation,
@@ -98,4 +102,4 @@ export {
   objectAtlasCell,
   type AtlasCell,
 } from "./render/atlas.js";
-export { drawCustomObject, drawCustomTerrain } from "./render/custom-tiles.js";
+export { drawCustomObject, drawCustomTerrain, customTileIconStyle } from "./render/custom-tiles.js";

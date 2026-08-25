@@ -18,10 +18,6 @@ import {
   type BehaviorRuntimeContext,
   type TileBehavior,
 } from "../mechanics/behaviors.js";
-import { applyObjectDefinitionAugments } from "./object/augments.js";
-import { applyTerrainDefinitionAugments } from "./terrain/augments.js";
-import { registerOriginalTerrainDefinitions } from "./terrain/definitions.js";
-import { registerOriginalObjectDefinitions } from "./object/definitions.js";
 
 import {
   DYNAMIC_IDS,
@@ -63,52 +59,18 @@ export type {
   TilePresentation,
   TileTrait,
 } from "../mechanics/definition-types.js";
-function terrain(definition: TileDefinition<TerrainType>): void {
-  definitionRegistry.registerTerrain(definition);
+export function hasTerrainDefinition(id: TerrainType): boolean {
+  return definitionRegistry.hasTerrain(id);
 }
-function object(definition: TileDefinition<ObjectType>): void {
-  definitionRegistry.registerObject(definition);
+export function hasObjectDefinition(id: ObjectType): boolean {
+  return definitionRegistry.hasObject(id);
 }
-function terrainDef(
-  id: TerrainType,
-  category: string,
-  traits: TileTrait[],
-  behaviors: TileBehavior[],
-): void {
-  terrain({
-    id,
-    presentation: { name: pretty(id), category },
-    traits: [...new Set([...environmentTraits(id), ...traits])],
-    behaviors,
-    authoring: { palette: true },
-  });
+export function terrainDefinitions(): readonly TileDefinition<TerrainType>[] {
+  return definitionRegistry.terrains();
 }
-function objectDef(
-  id: ObjectType,
-  category: string,
-  traits: TileTrait[],
-  behaviors: TileBehavior[],
-): void {
-  object({
-    id,
-    presentation: { name: pretty(id), category },
-    traits,
-    behaviors,
-    authoring: { palette: !HIDDEN_AUTHORING_OBJECTS.has(id) },
-  });
+export function objectDefinitions(): readonly TileDefinition<ObjectType>[] {
+  return definitionRegistry.objects();
 }
-registerOriginalTerrainDefinitions({ terrainDef });
-registerOriginalObjectDefinitions({ object, objectDef });
-const originalDefinitionPorts = {
-  defineObject: objectDef,
-  getObject: getObjectDefinition,
-  setObject: object,
-  defineTerrain: terrainDef,
-  getTerrain: getTerrainDefinition,
-};
-applyTerrainDefinitionAugments(originalDefinitionPorts);
-applyObjectDefinitionAugments(originalDefinitionPorts);
-export const definitionRegistrationPorts = originalDefinitionPorts;
 function variantTerrainDefinition(
   id: TerrainType,
 ): TileDefinition<TerrainType> {
@@ -152,12 +114,18 @@ export function reflectFireForTerrain(
 export function getTerrainDefinition(
   id: TerrainType,
 ): TileDefinition<TerrainType> {
-  return definitionRegistry.terrain(id) ?? variantTerrainDefinition(id);
+  const definition = definitionRegistry.terrain(id);
+  if (definition) return definition;
+  if (id.startsWith("custom:")) throw new Error(`未注册 Custom Terrain：${id}`);
+  return variantTerrainDefinition(id);
 }
 export function getObjectDefinition(
   id: ObjectType,
 ): TileDefinition<ObjectType> {
-  return definitionRegistry.object(id) ?? variantObjectDefinition(id);
+  const definition = definitionRegistry.object(id);
+  if (definition) return definition;
+  if (id.startsWith("custom:")) throw new Error(`未注册 Custom Object：${id}`);
+  return variantObjectDefinition(id);
 }
 export function isObjectAuthorable(id: ObjectType): boolean {
   return getObjectDefinition(id).authoring?.palette !== false;

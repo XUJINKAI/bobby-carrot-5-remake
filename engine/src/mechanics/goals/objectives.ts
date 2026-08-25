@@ -1,5 +1,5 @@
 import type { ObjectType, TerrainType } from "../../data/types.js";
-import { CustomTerrain, EMPTY_OBJECT, ObjectId } from "../ids.js";
+import { EMPTY_OBJECT } from "../ids.js";
 import {
   objectHasTrait,
   terrainHasTrait,
@@ -10,6 +10,7 @@ export interface InitialObjectives {
   mode: ObjectiveMode;
   total: number;
   remaining: number;
+  pushGoalsRemaining: number;
 }
 
 export function deriveInitialObjectives(
@@ -26,9 +27,9 @@ export function deriveInitialObjectives(
       const object = objects[y]![x]!;
       if (objectHasTrait(object, "objective-carrot")) carrotCount++;
       if (objectHasTrait(object, "objective-nest")) nestCount++;
-      if (terrain[y]![x] === CustomTerrain.PUSH_GOAL) {
+      if (terrainHasTrait(terrain[y]![x]!, "push-goal")) {
         rockGoalCount++;
-        if (object === ObjectId.CRUMBLY_ROCK) filledRockGoalCount++;
+        if (objectHasTrait(object, "pushable")) filledRockGoalCount++;
       }
       if (
         terrainHasTrait(terrain[y]![x]!, "hidden-objective") &&
@@ -38,10 +39,11 @@ export function deriveInitialObjectives(
     }
   const mode = carrotCount > 0 ? "carrot" : "nest";
   const visible = mode === "carrot" ? carrotCount : nestCount;
-  const total = rockGoalCount > 0 ? rockGoalCount : visible + hiddenCount;
+  const total = visible + hiddenCount;
   return {
     mode,
     total,
-    remaining: rockGoalCount > 0 ? rockGoalCount - filledRockGoalCount : total,
+    remaining: total,
+    pushGoalsRemaining: rockGoalCount - filledRockGoalCount,
   };
 }

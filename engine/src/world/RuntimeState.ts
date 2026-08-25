@@ -48,6 +48,7 @@ export interface RuntimeState extends BobbyActorState {
   objectiveMode: ObjectiveMode;
   objectiveRemaining: number;
   objectiveTotal: number;
+  pushGoalsRemaining: number;
   forced: ForcedMovement | null;
   pendingTrap: Point | null;
   pendingCarousel: Point | null;

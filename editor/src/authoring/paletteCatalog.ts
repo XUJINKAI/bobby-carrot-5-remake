@@ -1,8 +1,7 @@
 import {
   ObjectId,
-  CustomObjectId,
-  CustomTerrain,
-  Terrain,
+  terrainDefinitions,
+  objectDefinitions,
   getObjectDefinition,
   getTerrainDefinition,
   isObjectAuthorable,
@@ -38,12 +37,8 @@ export const GROUP_ORDER = [
 export type PaletteGroup = (typeof GROUP_ORDER)[number];
 
 export function paletteItems(level: EditorLevel): PaletteItem[] {
-  const terrain = new Set<TerrainType>(Object.values(Terrain) as TerrainType[]);
-  const objects = new Set<ObjectType>(Object.values(ObjectId) as ObjectType[]);
-  for (const type of Object.values(CustomTerrain) as TerrainType[])
-    terrain.add(type);
-  for (const type of Object.values(CustomObjectId) as ObjectType[])
-    objects.add(type);
+  const terrain = new Set<TerrainType>(terrainDefinitions().filter((definition) => definition.authoring?.palette).map((definition) => definition.id));
+  const objects = new Set<ObjectType>(objectDefinitions().filter((definition) => definition.authoring?.palette).map((definition) => definition.id));
   for (const row of level.terrain) for (const type of row) terrain.add(type);
   for (const object of level.objects) objects.add(object.type);
   return [

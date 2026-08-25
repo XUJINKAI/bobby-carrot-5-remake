@@ -491,7 +491,8 @@ export function registerOriginalTerrainDefinitions({
         if (
           ctx.mode === "normal" &&
           !ctx.state.ridingMower &&
-          ctx.state.objectiveRemaining === 0
+          ctx.state.objectiveRemaining === 0 &&
+          ctx.state.pushGoalsRemaining === 0
         ) {
           ctx.state.completed = true;
           ctx.state.forced = null;

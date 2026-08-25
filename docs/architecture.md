@@ -32,7 +32,7 @@ Original JAR / DAT
 - `TerrainType` / `ObjectType`；
 - `Terrain` / `ObjectId` 稳定语义常量；
 - `LevelObject`；
-- `LevelMap { width, height, terrain, objects }`。
+- `LevelMap { width, height, terrain, objects, rules? }`。
 
 对象实例可以携带可选参数：
 
@@ -45,7 +45,7 @@ interface LevelObject {
 }
 ```
 
-`properties` 只表达地图实例参数，不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
+`properties` 与 `rules` 承载声明式地图 gameplay semantics，不表达 DAT、Catalog、Adventure 或 Editor 来源。具体执行逻辑只位于 Engine，Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 
@@ -124,7 +124,7 @@ Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明�
 actors/                 当前 Bobby Actor 的状态合同与初始化
 mechanics/definition/   Definition Registry、注册端口与 inspection
 mechanics/traits/       trait 查询
-mechanics/movement/     passage、移动提交与 pushbox
+mechanics/movement/     passage、原子移动提交与 pushable
 mechanics/goals/        地图目标初始化与评估
 mechanics/rules/        当前地图 active rules
 mechanics/interactions/ 通用对象交互能力

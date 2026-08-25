@@ -41,7 +41,7 @@ custom/object/                扩展 Object Definition 与对应 hook
 mechanics/definitions.ts      稳定查询 façade
 ```
 
-通用能力位于 `mechanics/`。例如 pushbox 位于 `mechanics/movement/`，Portal Definition 使用 `mechanics/interactions/relocation.ts` 提供的通用重定位能力。
+通用能力位于 `mechanics/`。例如 pushable movement transaction 位于 `mechanics/movement/`，Portal Definition 使用 `mechanics/interactions/relocation.ts` 提供的通用重定位能力。
 
 避免这种结构：
 

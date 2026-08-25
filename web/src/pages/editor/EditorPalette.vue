@@ -7,7 +7,7 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
-import { objectAtlasCell, terrainAtlasCell } from "@bobby/engine";
+import { customTileIconStyle, objectAtlasCell, terrainAtlasCell } from "@bobby/engine";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -30,21 +30,8 @@ const groups = computed(() =>
 );
 
 function iconStyle(item: PaletteItem): Record<string, string> {
-  if (item.type === "custom:portal")
-    return {
-      width: `${props.size}px`,
-      height: `${props.size}px`,
-      borderRadius: "50%",
-      background: "radial-gradient(circle, transparent 20%, #7c5cff 42%, #54e8ff 58%, transparent 64%)",
-    };
-  if (item.type === "custom:push-goal")
-    return {
-      width: `${props.size}px`,
-      height: `${props.size}px`,
-      background: "linear-gradient(#6c543d,#6c543d) padding-box",
-      border: `${Math.max(2, props.size * 0.08)}px solid #f2c14e`,
-      boxSizing: "border-box",
-    };
+  const customStyle = customTileIconStyle(item.type, props.size);
+  if (customStyle) return customStyle;
   const cell =
     item.kind === "terrain"
       ? terrainAtlasCell(item.type)

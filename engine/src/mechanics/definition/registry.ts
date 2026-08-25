@@ -16,10 +16,14 @@ export class DefinitionRegistry {
   >();
 
   registerTerrain(definition: TileDefinition<TerrainType>): void {
+    if (this.terrainDefinitions.has(definition.id))
+      throw new Error(`Terrain Definition 重复注册：${definition.id}`);
     this.terrainDefinitions.set(definition.id, definition);
   }
 
   registerObject(definition: TileDefinition<ObjectType>): void {
+    if (this.objectDefinitions.has(definition.id))
+      throw new Error(`Object Definition 重复注册：${definition.id}`);
     this.objectDefinitions.set(definition.id, definition);
   }
 
@@ -29,6 +33,31 @@ export class DefinitionRegistry {
 
   object(id: ObjectType): TileDefinition<ObjectType> | undefined {
     return this.objectDefinitions.get(id);
+  }
+
+  updateObject(definition: TileDefinition<ObjectType>): void {
+    if (!this.objectDefinitions.has(definition.id))
+      throw new Error(`Object Definition 尚未注册：${definition.id}`);
+    this.objectDefinitions.set(definition.id, definition);
+  }
+
+  updateTerrain(definition: TileDefinition<TerrainType>): void {
+    if (!this.terrainDefinitions.has(definition.id))
+      throw new Error(`Terrain Definition 尚未注册：${definition.id}`);
+    this.terrainDefinitions.set(definition.id, definition);
+  }
+
+  hasTerrain(id: TerrainType): boolean {
+    return this.terrainDefinitions.has(id);
+  }
+  hasObject(id: ObjectType): boolean {
+    return this.objectDefinitions.has(id);
+  }
+  terrains(): readonly TileDefinition<TerrainType>[] {
+    return [...this.terrainDefinitions.values()];
+  }
+  objects(): readonly TileDefinition<ObjectType>[] {
+    return [...this.objectDefinitions.values()];
   }
 }
 

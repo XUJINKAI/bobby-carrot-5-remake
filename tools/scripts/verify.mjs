@@ -216,24 +216,28 @@ console.log(
 async function verifyCustomMaps() {
   const { parseEditorLevel, serializeEditorLevel, toLevelMap } =
     await import("../../editor/dist/index.js");
-  const { getObjectDefinition, getTerrainDefinition } =
+  const { getObjectDefinition, hasObjectDefinition, hasTerrainDefinition } =
     await import("../../engine/dist/index.js");
-  const directory = path.join(root, "custom_maps/engine-lab");
-  const files = fs.readdirSync(directory).filter((file) => file.endsWith(".json"));
-  if (files.length !== 3)
-    throw new Error(`Expected three Engine Lab maps, got ${files.length}`);
+  const directory = path.join(root, "custom_maps");
+  const files = [];
+  walkSource(directory, (file) => {
+    if (file.endsWith(".json")) files.push(file);
+  });
+  for (const required of ["portal.json", "pushbox.json", "max-moves.json"])
+    if (!fs.existsSync(path.join(directory, "engine-lab", required)))
+      throw new Error(`缺少核心 Engine Lab 地图：${required}`);
   for (const file of files) {
-    const source = fs.readFileSync(path.join(directory, file), "utf8");
+    const source = fs.readFileSync(file, "utf8");
     const editorLevel = parseEditorLevel(source);
     const roundTrip = parseEditorLevel(serializeEditorLevel(editorLevel));
     const level = toLevelMap(roundTrip);
     for (const row of level.terrain)
       for (const type of row)
-        if (getTerrainDefinition(type).id !== type)
+        if (type.startsWith("custom:") && !hasTerrainDefinition(type))
           throw new Error(`${file}: terrain ${type} has no Definition`);
     for (const object of level.objects) {
       const definition = getObjectDefinition(object.type);
-      if (definition.id !== object.type)
+      if (object.type.startsWith("custom:") && !hasObjectDefinition(object.type))
         throw new Error(`${file}: object ${object.type} has no Definition`);
       const allowed = new Set(
         (definition.authoring?.properties ?? []).map((property) => property.key),
@@ -545,7 +549,7 @@ function verifyEngineInternalBoundaries() {
       );
   });
   walkSource(path.join(root, "engine/src"), (file, text) => {
-    if (/\bpushable\b|custom:rock-goal/.test(text))
+    if (/\bpushbox\b|custom:rock-goal/.test(text))
       throw new Error(
         `Legacy Pushbox naming remains in ${path.relative(root, file)}`,
       );

@@ -148,7 +148,7 @@ export function registerOriginalObjectDefinitions({
   objectDef(
     ObjectId.CRUMBLY_ROCK,
     "mower",
-    ["object-passage-override", "dragon-fire-blocking", "pushbox"],
+    ["object-passage-override", "dragon-fire-blocking", "pushable"],
     [
       passageBehavior("break-by-fast-mower", "高速割草机可以撞碎", (ctx) =>
         ctx.state.ridingMower && ctx.state.forced?.kind === "speed"
