@@ -77,6 +77,8 @@ Engine 负责：
 - 移动、碰撞、机关与动态实体；
 - 地图内 Timer、死亡与完成条件；
 - Camera / Renderer；
+- 基础 Gameplay HUD 的状态与渲染；
+- 可配置 Screen Joystick 的渲染与拖动输入；
 - Audio 抽象；
 - semantic Definition 与 Object Layout；
 - 通用 `InputController`。
@@ -99,24 +101,28 @@ Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 等产品/�
 
 ### 输入边界
 
-`InputController` 是 Engine 提供的通用浏览器 gameplay 输入适配器：
+`InputController` 与 `ScreenJoystick` 是 Engine 提供的通用浏览器 gameplay 输入能力：
 
 ```text
-Keyboard / Pointer / Wheel / Pinch
-              │
-              ▼
-       InputController
-              │
-              ▼
-move / held direction / undo / restart / pan / zoom / debug
-              │
-              ▼
-             Game
+Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
+                  │                     render + drag vector
+                  │                              │
+                  └──────────────┬───────────────┘
+                                 ▼
+                         InputController
+                                 │
+                                 ▼
+       move / held direction / undo / restart / pan / zoom / debug
+                                 │
+                                 ▼
+                                Game
 ```
 
 能力通过配置逐项开关：`movement / undo / restart / pan / zoom / debug`。Controller 不认识 Adventure、Explore 或 Editor 页面。
 
-具体屏幕摇杆/方向按钮的 DOM 属于宿主 UI，但通过 `InputController.setHeldDirection()` 进入与键盘相同的移动路径。Editor Authoring 输入属于 Editor；Editor Play Test 复用通用 Gameplay InputController。
+Engine `ScreenJoystick` 负责半透明圆形底座和球头的渲染、pointer capture、dead zone、主轴方向、方向迟滞与回中，并将结果送入同一个 `InputController` held-direction 路径。调用方通过 Runtime Config 决定是否启用、透明度和安全区域。
+
+外部宿主控件仍可调用 `InputController.setHeldDirection()`，用于无障碍控制器或产品自定义输入；这是一条扩展入口，不承担基础 Screen Joystick 实现。Editor Authoring 输入属于 Editor；Editor Play Test 直接启用 Engine Gameplay Input。
 
 ### 通用运行时事件接口
 
@@ -301,9 +307,29 @@ Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Setti
 
 Web 不依赖 `@bobby/dat`，产品 `dist/` 也不发布 `dat/` browser module。
 
-Web 的通用 Game Session 负责组合 `Game + InputController`、绑定屏幕方向控件以及展示通用 `dialog` WorldEvent；它不实现地图规则。
+Web 的通用 Game Session 负责提供 `LevelMap + Runtime Config`、组合 Engine 生命周期并展示通用 `dialog` WorldEvent；它不实现基础 HUD、Screen Joystick 或地图规则。
 
 Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 Web，因为这些动作描述的是游戏结束后的产品流程。
+
+### Product Shell 与 GameStage
+
+Web 使用统一 Product Shell 组织 Home、Adventure、Explore、Editor、Custom、Settings 和 Help。可游玩页面共享同一个 GameStage 组合：
+
+```text
+GameStage
+├── Engine Gameplay Layer
+│   ├── Renderer Canvas
+│   ├── Gameplay HUD
+│   └── Screen Joystick
+├── Debug Inspector
+└── Product Result Overlay
+```
+
+Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。统计用时、模式导航和 Result 动作属于 Web。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
+
+Engine HUD 使用统一布局约束：所有已获得道具锚定在 GameStage 右上角，各产品模式只配置 HUD 能力，不重新实现道具布局。
+
+Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test 都创建正式 Engine session。它们通过输入能力、Camera 限制、外层进度和 Result 动作表达差异，不维护各自的 gameplay 实现。
 
 ### Explore
 

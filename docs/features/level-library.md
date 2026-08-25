@@ -103,3 +103,5 @@ Adventure 使用同一批官方 LevelMap，并增加：
 - 特殊场景与 Campaign event。
 
 Explore 与 Adventure 分别维护进度。
+
+两种体验在 Web 中共享 Product Shell 和 GameStage，通过 Camera、输入能力、Debug、进度与 Result 动作表达差异。页面结构见 [`ui.md`](ui.md)。
