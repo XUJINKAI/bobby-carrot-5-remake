@@ -128,7 +128,8 @@ mechanics/movement/     passage、移动提交与 pushbox
 mechanics/goals/        地图目标初始化与评估
 mechanics/rules/        当前地图 active rules
 mechanics/interactions/ 通用对象交互能力
-original/               原版 Terrain/Object Definition
+original/terrain/       原版 Terrain Definition 与 augmentation
+original/object/        原版 Object Definition 与 augmentation
 custom/                 扩展 Terrain/Object Definition
 world/                  RuntimeState、事务顺序与世界状态推进
 ```

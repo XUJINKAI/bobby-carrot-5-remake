@@ -1,15 +1,14 @@
-import type { ObjectType } from "../data/types.js";
-import { ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
+import type { ObjectType } from "../../data/types.js";
+import { ObjectId, type Direction } from "../../mechanics/ids.js";
 import {
   markerBehavior,
   touchBehavior,
-  type TileBehavior,
-} from "../mechanics/behaviors.js";
-import { CLOUD_INFO } from "../mechanics/mechanic-links.js";
-import type { TileTrait } from "../mechanics/definition-types.js";
-import type { DefinitionRegistrationPorts } from "../mechanics/definition/registration.js";
+} from "../../mechanics/behaviors.js";
+import { CLOUD_INFO } from "../../mechanics/mechanic-links.js";
+import type { TileTrait } from "../../mechanics/definition-types.js";
+import type { DefinitionRegistrationPorts } from "../../mechanics/definition/registration.js";
 
-export function applyDefinitionAugments(
+export function applyObjectDefinitionAugments(
   ports: DefinitionRegistrationPorts,
 ): void {
   ports.setObject({
@@ -196,18 +195,6 @@ export function applyDefinitionAugments(
       ],
     });
   }
-  ports.defineTerrain(
-    Terrain.START,
-    "marker",
-    ["start"],
-    [markerBehavior("start-position", "Bobby 的出生点")],
-  );
-  ports.defineTerrain(
-    Terrain.HIGH_GRASS_OBJECTIVE,
-    "mower",
-    ["terrain-passage-override", "hidden-objective"],
-    ports.getTerrain(Terrain.HIGH_GRASS_OBJECTIVE).behaviors as TileBehavior[],
-  );
   for (const [id] of [
     [ObjectId.WINDMILL_UP, "up"],
     [ObjectId.WINDMILL_DOWN, "down"],

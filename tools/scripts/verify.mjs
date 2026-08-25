@@ -532,6 +532,24 @@ function verifyEngineInternalBoundaries() {
       }
     });
   }
+  walkSource(path.join(root, "engine/src/original/terrain"), (file, text) => {
+    if (/\b(?:defineObject|objectDef)\s*\(/.test(text))
+      throw new Error(
+        `Object Definition leaked into original/terrain: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "engine/src/original/object"), (file, text) => {
+    if (/\b(?:defineTerrain|terrainDef)\s*\(/.test(text))
+      throw new Error(
+        `Terrain Definition leaked into original/object: ${path.relative(root, file)}`,
+      );
+  });
+  walkSource(path.join(root, "engine/src"), (file, text) => {
+    if (/\bpushable\b|custom:rock-goal/.test(text))
+      throw new Error(
+        `Legacy Pushbox naming remains in ${path.relative(root, file)}`,
+      );
+  });
 }
 
 function verifyUnifiedUiShell() {
