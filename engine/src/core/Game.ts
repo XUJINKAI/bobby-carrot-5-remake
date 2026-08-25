@@ -79,6 +79,7 @@ export class Game {
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
   private readonly history: GameSnapshot[] = [];
+  private readonly future: GameSnapshot[] = [];
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
@@ -142,6 +143,10 @@ export class Game {
     return this.history.length > 0;
   }
 
+  get canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
   get timedChallengeRemainingMs(): number | null {
     return this.timedChallenge.remainingMs;
   }
@@ -152,6 +157,7 @@ export class Game {
     this.worldValue = new World(structuredClone(runtimeLevel), this.profile);
     this.renderer.camera.resetPan();
     this.history.length = 0;
+    this.future.length = 0;
     this.heldDirection = null;
     this.timedChallenge.reset();
     this.motion = null;
@@ -191,15 +197,16 @@ export class Game {
   undo(): boolean {
     const previous = this.history.pop();
     if (!previous || !this.worldValue) return false;
-    this.world.restore(previous.world);
-    this.timedChallenge.restore(previous.timedChallengeRemainingMs);
-    this.heldDirection = null;
-    this.motion = null;
-    this.lastMove = null;
-    this.lastWorldEvents = [];
-    this.syncVisualToWorld();
-    this.render();
-    this.emit("change");
+    this.future.push(this.snapshot());
+    this.restoreSnapshot(previous);
+    return true;
+  }
+
+  redo(): boolean {
+    const next = this.future.pop();
+    if (!next || !this.worldValue) return false;
+    this.history.push(this.snapshot());
+    this.restoreSnapshot(next);
     return true;
   }
 
@@ -211,6 +218,7 @@ export class Game {
     );
     this.renderer.camera.resetPan();
     this.history.length = 0;
+    this.future.length = 0;
     this.heldDirection = null;
     this.timedChallenge.reset();
     this.motion = null;
@@ -225,6 +233,7 @@ export class Game {
     if (!this.worldValue) return;
     const events = this.worldValue.killPlayer(reason);
     if (events.length === 0) return;
+    this.future.length = 0;
     this.heldDirection = null;
     this.motion = null;
     this.lastWorldEvents = events;
@@ -334,6 +343,7 @@ export class Game {
       this.emit("change");
       return result;
     }
+    this.future.length = 0;
     this.renderer.camera.recenterPan();
     if (snapshot) this.history.push(snapshot);
     this.motion = {
@@ -355,6 +365,25 @@ export class Game {
     this.handleWorldEvents(result.events);
     this.emit("change");
     return result;
+  }
+
+  private snapshot(): GameSnapshot {
+    return {
+      world: this.world.snapshot(),
+      timedChallengeRemainingMs: this.timedChallenge.snapshot(),
+    };
+  }
+
+  private restoreSnapshot(snapshot: GameSnapshot): void {
+    this.world.restore(snapshot.world);
+    this.timedChallenge.restore(snapshot.timedChallengeRemainingMs);
+    this.heldDirection = null;
+    this.motion = null;
+    this.lastMove = null;
+    this.lastWorldEvents = [];
+    this.syncVisualToWorld();
+    this.render();
+    this.emit("change");
   }
 
   private appendObjectTouchEvent(result: MoveResult): void {
