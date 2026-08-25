@@ -20,31 +20,7 @@ export function escapeHtml(value: string): string {
     '"': "&quot;",
   };
 
-  return value.replace(/[&<>"]/g, (char) => entities[char] ?? char);
-}
-
-export function shell(content: string): string {
-  return `
-    <div class="shell">
-      <nav class="topbar">
-        <a class="brand" href="" data-nav>Bobby Carrot 5 Remake</a>
-        <div class="spacer"></div>
-        <a class="nav-link desktop" href="levels" data-nav>选择关卡</a>
-        <a class="nav-link desktop" href="edit" data-nav>地图编辑器</a>
-        <a class="nav-link desktop" href="settings" data-nav>设置</a>
-      </nav>
-      <main class="content">${content}</main>
-    </div>
-  `;
-}
-
-export function bindNavigation(root: ParentNode, navigate: Navigate): void {
-  root.querySelectorAll<HTMLAnchorElement>("a[data-nav]").forEach((anchor) => {
-    anchor.addEventListener("click", (event) => {
-      event.preventDefault();
-      navigate(anchor.getAttribute("href") ?? "/");
-    });
-  });
+  return value.replace(/[&<>\"]/g, (char) => entities[char] ?? char);
 }
 
 export function formatElapsed(milliseconds: number): string {
