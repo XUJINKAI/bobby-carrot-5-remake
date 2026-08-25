@@ -358,6 +358,7 @@ function verifySourceBoundaries() {
         `Original-format/catalog/Campaign metadata leaked into Engine: ${path.relative(root, file)}`,
       );
   });
+  verifyEngineInternalBoundaries();
 
   walkSource(path.join(root, "adventure/src"), (file, text) => {
     if (
@@ -510,6 +511,27 @@ function verifySourceBoundaries() {
     throw new Error(
       "Engine object-touch adapter must translate Definition touch results into dialog events",
     );
+}
+
+function verifyEngineInternalBoundaries() {
+  const forbiddenByArea = new Map([
+    ["actors", ["/original/", "/custom/", "/render/", "/input/", "/ui/"]],
+    ["mechanics", ["/render/", "/input/", "/audio/", "/ui/"]],
+    ["original", ["/render/", "/input/", "/audio/", "/ui/"]],
+    ["custom", ["/render/", "/input/", "/audio/", "/ui/"]],
+  ]);
+  for (const [area, forbidden] of forbiddenByArea) {
+    const directory = path.join(root, "engine/src", area);
+    walkSource(directory, (file, text) => {
+      for (const specifier of text.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+        const dependency = specifier[1];
+        if (forbidden.some((segment) => dependency.includes(segment)))
+          throw new Error(
+            `Forbidden Engine dependency ${dependency} in ${path.relative(root, file)}`,
+          );
+      }
+    });
+  }
 }
 
 function verifyUnifiedUiShell() {

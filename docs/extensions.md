@@ -4,7 +4,7 @@ Bobby Carrot 5 Remake 使用 `custom:` semantic ID 和 `LevelMap.rules` 承载�
 
 ## Portal
 
-Portal 使用对象 `custom:portal`，实例属性 `channel` 支持 `blue`、`red`、`green`。Bobby 进入 Portal 后传送到地图中同频道的另一端；一次传送只处理一端到另一端，避免成对 Portal 循环触发。
+Portal 使用对象 `custom:portal`，实例属性 `channel` 支持 `blue`、`red`、`green`。Bobby 进入 Portal 后传送到地图中同频道的另一端；Portal Definition 位于 `engine/src/custom/object/portal.ts`，并通过通用 relocation API 完成状态变更。
 
 Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材。该素材属于项目原创的程序化视觉，不使用原版 atlas 或第三方资源。
 
@@ -21,7 +21,7 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
 }
 ```
 
-`custom:rock-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。
+`custom:rock-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。通用 pushable 算法位于 `engine/src/mechanics/movement/pushable.ts`。
 
 ## 最大步数
 
@@ -33,7 +33,7 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
 }
 ```
 
-第 21 次成功的主动移动触发地图内死亡。阻挡输入与强制移动不计入步数，Undo 和 Restart 通过 Engine snapshot 生命周期恢复规则状态。
+第 21 次成功的主动移动触发地图内死亡。阻挡输入与强制移动不计入步数，Undo 和 Restart 通过 Engine snapshot 生命周期恢复规则状态。Level load 从 `LevelMap.rules` 创建当前地图的 active rule 列表。
 
 ## 验证地图
 

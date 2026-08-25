@@ -99,6 +99,44 @@ Runtime World occupancy
 
 Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 等产品/来源信息由 Engine 外层系统负责。
 
+### Engine 内部职责
+
+Engine 使用固定 gameplay 生命周期与 Definition Registry 协作：
+
+```text
+InputController
+       ↓ semantic action
+Game / World transaction
+       ↓
+Movement Pipeline
+passage → interaction → commit → leave/enter → goals → active rules
+       ↓
+WorldEvent
+       ↓
+Renderer / Audio / Web
+```
+
+Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明确控制。`WorldEvent` 描述已经发生的世界事实，供表现层和产品层消费。
+
+源码职责按以下边界组织：
+
+```text
+actors/                 当前 Bobby Actor 的状态合同与初始化
+mechanics/definition/   Definition Registry、注册端口与 inspection
+mechanics/traits/       trait 查询
+mechanics/movement/     passage、移动提交与 pushable
+mechanics/goals/        地图目标初始化与评估
+mechanics/rules/        当前地图 active rules
+mechanics/interactions/ 通用对象交互能力
+original/               原版 Terrain/Object Definition
+custom/                 扩展 Terrain/Object Definition
+world/                  RuntimeState、事务顺序与世界状态推进
+```
+
+`mechanics/definitions.ts` 是稳定 façade：加载原版 Definition 后注册扩展 Definition，并保持现有 Engine/Editor 查询 API。地图加载时只为当前 `LevelMap` 创建 active rule 列表；移动完成后按注册顺序同步执行。
+
+当前只有 Bobby 一个可控制 Actor。`actors/BobbyActorState` 明确角色状态归属，同时保持 `RuntimeState` snapshot 字段以及 `World.player / facing / dead` 等公开访问方式稳定。
+
 ### 输入边界
 
 `InputController` 与 `ScreenJoystick` 是 Engine 提供的通用浏览器 gameplay 输入能力：

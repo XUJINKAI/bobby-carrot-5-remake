@@ -1,18 +1,45 @@
 # 机关实现模式
 
-本项目不为每个 Tile 建深层继承树，而使用轻量、数据驱动的规则组织：
+本项目使用轻量、数据驱动的 Definition Registry 与固定 gameplay lifecycle：
 
 ```text
-原始 terrain/object ID
-        |
-        v
-规则/通行/状态转换
-        |
-        v
-World Action / World Event
+semantic terrain/object ID
+        ↓ O(1) Registry lookup
+Terrain/Object Definition
+        ↓ synchronous hook
+World transaction
+        ↓
+WorldEvent
 ```
 
-随着逆向深入，一个机制可以拥有进入、离开、动作、Tick 更新等行为，但原始 ID 必须始终可追溯，方便和 JAR 字节码、Debug Inspector 对照。
+随着逆向深入，一个机制可以拥有进入、离开、动作、Tick 更新等行为，但 semantic ID 必须始终可追溯，方便和 JAR 字节码、Debug Inspector 对照。
+
+移动事务的顺序固定为：
+
+```text
+resolve destination
+→ movement interaction
+→ passage
+→ commit
+→ leave / enter hooks
+→ goals
+→ active rules
+→ WorldEvent notification
+```
+
+局部机制通过目标格 Definition 直接派发。全图规则在 Level load 时生成当前地图的 active rule 列表，成功移动后只遍历该列表。
+
+具体 Terrain/Object Definition 按内容来源组织：
+
+```text
+original/definitions.ts       原版 Definition 注册
+original/definition-augments.ts
+custom/terrain/               扩展 Terrain Definition
+custom/object/                扩展 Object Definition 与对应 hook
+mechanics/definitions.ts      稳定查询 façade
+```
+
+通用能力位于 `mechanics/`。例如 pushable 位于 `mechanics/movement/`，Portal Definition 使用 `mechanics/interactions/relocation.ts` 提供的通用重定位能力。
 
 避免这种结构：
 
