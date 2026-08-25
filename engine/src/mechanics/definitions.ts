@@ -43,6 +43,9 @@ import type {
   TilePresentation,
   TileTrait,
 } from "./definition-types.js";
+import { definitionRegistry } from "./definition/registry.js";
+import { inspectDefinition } from "./definition/inspection.js";
+import { definitionHasTrait } from "./traits/queries.js";
 export {
   cloudGridForObject,
   tideDirectionForTerrain,
@@ -57,13 +60,11 @@ export type {
   TilePresentation,
   TileTrait,
 } from "./definition-types.js";
-const terrainDefinitions = new Map<TerrainType, TileDefinition<TerrainType>>(),
-  objectDefinitions = new Map<ObjectType, TileDefinition<ObjectType>>();
 function terrain(definition: TileDefinition<TerrainType>): void {
-  terrainDefinitions.set(definition.id, definition);
+  definitionRegistry.registerTerrain(definition);
 }
 function object(definition: TileDefinition<ObjectType>): void {
-  objectDefinitions.set(definition.id, definition);
+  definitionRegistry.registerObject(definition);
 }
 function terrainDef(
   id: TerrainType,
@@ -890,21 +891,21 @@ export function reflectFireForTerrain(
 export function getTerrainDefinition(
   id: TerrainType,
 ): TileDefinition<TerrainType> {
-  return terrainDefinitions.get(id) ?? variantTerrainDefinition(id);
+  return definitionRegistry.terrain(id) ?? variantTerrainDefinition(id);
 }
 export function getObjectDefinition(
   id: ObjectType,
 ): TileDefinition<ObjectType> {
-  return objectDefinitions.get(id) ?? variantObjectDefinition(id);
+  return definitionRegistry.object(id) ?? variantObjectDefinition(id);
 }
 export function isObjectAuthorable(id: ObjectType): boolean {
   return getObjectDefinition(id).authoring?.palette !== false;
 }
 export function terrainHasTrait(id: TerrainType, trait: TileTrait): boolean {
-  return getTerrainDefinition(id).traits.includes(trait);
+  return definitionHasTrait(getTerrainDefinition(id), trait);
 }
 export function objectHasTrait(id: ObjectType, trait: TileTrait): boolean {
-  return getObjectDefinition(id).traits.includes(trait);
+  return definitionHasTrait(getObjectDefinition(id), trait);
 }
 export function nextTerrainAfterLeave(id: TerrainType): TerrainType {
   for (const behavior of getTerrainDefinition(id).behaviors) {
@@ -949,24 +950,13 @@ export function runObjectLeave(
     if (behavior.onLeave?.(ctx)?.stop) return true;
   return false;
 }
-function inspect<T extends string>(
-  definition: TileDefinition<T>,
-): TileDefinitionInspection {
-  return {
-    id: definition.id,
-    presentation: definition.presentation,
-    traits: definition.traits,
-    behaviors: definition.behaviors.map((behavior) => behavior.describe()),
-    ...(definition.authoring ? { authoring: definition.authoring } : {}),
-  };
-}
 export function inspectTerrainDefinition(
   id: TerrainType,
 ): TileDefinitionInspection {
-  return inspect(getTerrainDefinition(id));
+  return inspectDefinition(getTerrainDefinition(id));
 }
 export function inspectObjectDefinition(
   id: ObjectType,
 ): TileDefinitionInspection {
-  return inspect(getObjectDefinition(id));
+  return inspectDefinition(getObjectDefinition(id));
 }
