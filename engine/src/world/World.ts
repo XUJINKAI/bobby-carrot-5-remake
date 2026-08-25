@@ -26,7 +26,7 @@ export type { PassageResult } from "../mechanics/rules.js";
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
 import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
-import { tryPushObject } from "../mechanics/movement/pushable.js";
+import { tryPushboxObject } from "../mechanics/movement/pushbox.js";
 import { commitPlayerMovement } from "../mechanics/movement/commit.js";
 import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
 import type { ActiveLevelRule } from "../mechanics/rules/types.js";
@@ -285,11 +285,11 @@ export class World {
     }
     const targetObject = this.objectIdAt(to.x, to.y);
     if (
-      objectHasTrait(targetObject, "pushable") &&
-      this.objectPropertiesAt(to.x, to.y)?.pushable === "true"
+      objectHasTrait(targetObject, "pushbox") &&
+      this.objectPropertiesAt(to.x, to.y)?.pushbox === "true"
     ) {
       const pushedTo = { x: to.x + vector.dx, y: to.y + vector.dy };
-      if (!tryPushObject(state, this.level, to, pushedTo))
+      if (!tryPushboxObject(state, this.level, to, pushedTo))
         return this.result(
           false,
           from,

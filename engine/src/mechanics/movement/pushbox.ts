@@ -3,7 +3,7 @@ import { CustomTerrain, EMPTY_OBJECT, ObjectId } from "../ids.js";
 import { terrainHasTrait } from "../definitions.js";
 import type { Point, RuntimeState } from "../../world/RuntimeState.js";
 
-export function tryPushObject(
+export function tryPushboxObject(
   state: RuntimeState,
   level: LevelMap,
   from: Point,
@@ -36,7 +36,7 @@ function refreshRockGoals(state: RuntimeState, level: LevelMap): void {
   let filled = 0;
   for (let y = 0; y < level.height; y++)
     for (let x = 0; x < level.width; x++)
-      if (state.terrain[y]?.[x] === CustomTerrain.ROCK_GOAL) {
+      if (state.terrain[y]?.[x] === CustomTerrain.PUSH_GOAL) {
         total++;
         if (state.objects[y]?.[x] === ObjectId.CRUMBLY_ROCK) filled++;
       }

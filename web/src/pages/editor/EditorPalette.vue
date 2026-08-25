@@ -37,7 +37,7 @@ function iconStyle(item: PaletteItem): Record<string, string> {
       borderRadius: "50%",
       background: "radial-gradient(circle, transparent 20%, #7c5cff 42%, #54e8ff 58%, transparent 64%)",
     };
-  if (item.type === "custom:rock-goal")
+  if (item.type === "custom:push-goal")
     return {
       width: `${props.size}px`,
       height: `${props.size}px`,

@@ -8,7 +8,7 @@ Portal 使用对象 `custom:portal`，实例属性 `channel` 支持 `blue`、`re
 
 Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材。该素材属于项目原创的程序化视觉，不使用原版 atlas 或第三方资源。
 
-## 推动石头
+## Pushbox
 
 推动对象复用 `crumbly-rock` 的语义身份与原版美术。地图实例通过以下属性启用推动能力：
 
@@ -17,11 +17,11 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
   "type": "crumbly-rock",
   "x": 3,
   "y": 4,
-  "properties": { "pushable": "true" }
+  "properties": { "pushbox": "true" }
 }
 ```
 
-`custom:rock-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。通用 pushable 算法位于 `engine/src/mechanics/movement/pushable.ts`。
+`custom:push-goal` 是可步行目标地形。地图中存在石头目标时，未被 Crumbly Rock 占据的目标数量成为主要目标；全部目标占据后可通过普通 Exit 完成关卡。推动要求石头后方为可步行地形、没有静态对象且没有动态实体。通用 pushbox 算法位于 `engine/src/mechanics/movement/pushbox.ts`。
 
 ## 最大步数
 
@@ -38,7 +38,7 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
 ## 验证地图
 
 - `custom_maps/engine-lab/portal.json`
-- `custom_maps/engine-lab/sokoban.json`
+- `custom_maps/engine-lab/pushbox.json`
 - `custom_maps/engine-lab/max-moves.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。

@@ -9,7 +9,7 @@ export function drawCustomTerrain(
   y: number,
   size: number,
 ): boolean {
-  if (type !== CustomTerrain.ROCK_GOAL) return false;
+  if (type !== CustomTerrain.PUSH_GOAL) return false;
   context.save();
   context.fillStyle = "#6c543d";
   context.fillRect(x, y, size, size);

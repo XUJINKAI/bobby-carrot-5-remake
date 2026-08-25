@@ -40,14 +40,14 @@ test("Portal 按 channel 配对并保留到 Undo snapshot", () => {
   assert.deepEqual(world.player, { x: 0, y: 1 });
 });
 
-test("显式 pushable 的 Crumbly Rock 可推入目标且阻挡连续石头", () => {
+test("显式 pushbox 的 Crumbly Rock 可推入目标且阻挡连续石头", () => {
   const terrain = level().terrain.map((row) => [...row]);
-  terrain[1][2] = CustomTerrain.ROCK_GOAL;
+  terrain[1][2] = CustomTerrain.PUSH_GOAL;
   const world = new World(
     level({
       terrain,
       objects: [
-        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushable: "true" } },
+        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushbox: "true" } },
       ],
     }),
   );
@@ -58,8 +58,8 @@ test("显式 pushable 的 Crumbly Rock 可推入目标且阻挡连续石头", ()
   const blocked = new World(
     level({
       objects: [
-        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushable: "true" } },
-        { type: ObjectId.CRUMBLY_ROCK, x: 2, y: 1, properties: { pushable: "true" } },
+        { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, properties: { pushbox: "true" } },
+        { type: ObjectId.CRUMBLY_ROCK, x: 2, y: 1, properties: { pushbox: "true" } },
       ],
     }),
   );

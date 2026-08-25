@@ -1,10 +1,10 @@
 import type { DefinitionRegistrationPorts } from "../mechanics/definition/registration.js";
 import { registerPortal } from "./object/portal.js";
-import { registerRockGoal } from "./terrain/rock-goal.js";
+import { registerPushGoal } from "./terrain/push-goal.js";
 
 export function registerCustomDefinitions(
   ports: DefinitionRegistrationPorts,
 ): void {
-  registerRockGoal(ports);
+  registerPushGoal(ports);
   registerPortal(ports);
 }

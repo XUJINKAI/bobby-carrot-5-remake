@@ -138,5 +138,5 @@ export const CustomObjectId = {
 
 /** Bobby Carrot 5 Remake 扩展地形使用独立命名空间。 */
 export const CustomTerrain = {
-  ROCK_GOAL: "custom:rock-goal",
+  PUSH_GOAL: "custom:push-goal",
 } as const satisfies Record<string, TerrainType>;

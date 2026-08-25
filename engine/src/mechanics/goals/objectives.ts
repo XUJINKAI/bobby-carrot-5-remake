@@ -26,7 +26,7 @@ export function deriveInitialObjectives(
       const object = objects[y]![x]!;
       if (objectHasTrait(object, "objective-carrot")) carrotCount++;
       if (objectHasTrait(object, "objective-nest")) nestCount++;
-      if (terrain[y]![x] === CustomTerrain.ROCK_GOAL) {
+      if (terrain[y]![x] === CustomTerrain.PUSH_GOAL) {
         rockGoalCount++;
         if (object === ObjectId.CRUMBLY_ROCK) filledRockGoalCount++;
       }

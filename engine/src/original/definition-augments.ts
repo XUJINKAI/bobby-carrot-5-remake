@@ -19,9 +19,9 @@ export function applyDefinitionAugments(
       palette: true,
       properties: [
         {
-          key: "pushable",
+          key: "pushbox",
           kind: "enum",
-          label: "可推动",
+          label: "Pushbox",
           options: [{ value: "true", label: "启用" }],
         },
       ],

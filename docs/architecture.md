@@ -124,7 +124,7 @@ Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明�
 actors/                 当前 Bobby Actor 的状态合同与初始化
 mechanics/definition/   Definition Registry、注册端口与 inspection
 mechanics/traits/       trait 查询
-mechanics/movement/     passage、移动提交与 pushable
+mechanics/movement/     passage、移动提交与 pushbox
 mechanics/goals/        地图目标初始化与评估
 mechanics/rules/        当前地图 active rules
 mechanics/interactions/ 通用对象交互能力
