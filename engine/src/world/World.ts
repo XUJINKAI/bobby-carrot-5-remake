@@ -31,6 +31,7 @@ import { commitPlayerMovement } from "../mechanics/movement/commit.js";
 import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
 import type { ActiveLevelRule } from "../mechanics/rules/types.js";
 import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
+import { createBobbyState, updateBobbyProfile } from "../actors/bobby-state.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, Terrain.GROUND_D] as const;
 
@@ -138,7 +139,7 @@ export class World {
     this.stateValue = structuredClone(snapshot);
   }
   setProfile(profile: Partial<ProfileCapabilities>): void {
-    this.stateValue.profile = { ...this.stateValue.profile, ...profile };
+    updateBobbyProfile(this.stateValue, profile);
   }
   terrainAt(x: number, y: number): TerrainType | null {
     if (!this.inBounds(x, y)) return null;
@@ -415,23 +416,15 @@ export class World {
         if (info && !hasSwitch[info.index]) windmillsEnabled[info.index] = true;
       }
     return {
+      ...createBobbyState(start, profile),
       terrain,
       objects,
       objectProperties,
       dynamicEntities,
-      player: copyPoint(start),
-      facing: "down",
       start: copyPoint(start),
       objectiveMode: objectives.mode,
       objectiveRemaining: objectives.remaining,
       objectiveTotal: objectives.total,
-      inventory: { gas: false, kite: false, shovel: false, beans: 0 },
-      profile: {
-        superKey: profile.superKey ?? false,
-        temporaryKey: profile.temporaryKey ?? false,
-        speedShoes: profile.speedShoes ?? false,
-      },
-      ridingMower: false,
       forced: null,
       pendingTrap: null,
       pendingCarousel: null,
@@ -444,8 +437,6 @@ export class World {
       logicRemainderMs: 0,
       bonusCoinsInLevel: 0,
       goldenCarrotsInLevel: 0,
-      moves: 0,
-      dead: false,
       deathReason: null,
       completed: false,
       fireTrail: [],
