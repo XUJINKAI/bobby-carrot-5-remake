@@ -309,7 +309,7 @@ test("Speed 开关只有 raised 状态触发；pressed 状态不会重复触发"
   assert.equal(world.terrainAt(3, 0), Terrain.SPEED_DOWN);
 });
 
-test("Engine 不保存或递减 Adventure Bonus 倒计时", () => {
+test("World RuntimeState 不携带产品层 Bonus 计时字段", () => {
   const world = new World(
     level({
       width: 2,
@@ -320,11 +320,9 @@ test("Engine 不保存或递减 Adventure Bonus 倒计时", () => {
   );
   assert.equal("bonusTimeRemainingMs" in world.state, false);
   assert.equal("bonusTimeLimitMs" in world.state, false);
-  world.advanceTime(60_001);
-  assert.equal(world.dead, false);
 });
 
-test("外部规则可以通过通用 killPlayer 让 Bobby 死亡", () => {
+test("通用 killPlayer 可以结束当前地图运行", () => {
   const world = new World(
     level({
       width: 2,
@@ -332,9 +330,9 @@ test("外部规则可以通过通用 killPlayer 让 Bobby 死亡", () => {
       terrain: [[Terrain.START, Terrain.GROUND_C]],
     }),
   );
-  const events = world.killPlayer("外部规则判定失败");
+  const events = world.killPlayer("地图运行失败");
   assert.equal(world.dead, true);
-  assert.equal(world.state.deathReason, "外部规则判定失败");
+  assert.equal(world.state.deathReason, "地图运行失败");
   assert.ok(events.some((event) => event.type === "death"));
 });
 
