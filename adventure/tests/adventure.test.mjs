@@ -6,7 +6,6 @@ import {
   campaignSequenceForChapter,
   claimPersistentReward,
   completeAdventureLevel,
-  createAdventureRuntime,
   createAdventureSave,
   isAdventureLevelUnlocked,
   planAdventureSession,
@@ -86,77 +85,32 @@ test("persistent global rewards are identified by level and map position", () =>
   assert.equal(again.economy.bonusCoins, 1);
 });
 
-test("Bonus session config arms a 60 second challenge without making it a separate progression branch", () => {
-  const save = createAdventureSave();
-  assert.equal(
-    planAdventureSession("1-bonus-1", save).timedChallengeMs,
-    60_000,
-  );
-  assert.equal(planAdventureSession("1-4", save).timedChallengeMs, null);
-  assert.equal(
-    planAdventureSession("1-bonus-1", save).viewportPolicy,
-    "original-portrait",
-  );
-});
-
-test("Adventure subscribes to generic object interactions and owns the Bonus countdown", () => {
-  let now = 1_000;
-  let listener = () => {};
-  let killed = null;
-  const engine = {
-    onWorldEvent(next) {
-      listener = next;
-      return () => {
-        listener = () => {};
-      };
-    },
-    killPlayer(reason) {
-      killed = reason;
-      listener({ type: "death" });
-    },
+test("Bonus maps encode the original 60 second challenge into Lock properties", () => {
+  const level = {
+    width: 3,
+    height: 1,
+    terrain: [[Terrain.START, Terrain.GROUND_C, Terrain.EXIT]],
+    objects: [
+      { type: ObjectId.LOCK, x: 1, y: 0 },
+      { type: ObjectId.GOLDEN_CARROT, x: 2, y: 0 },
+    ],
   };
-  const runtime = createAdventureRuntime(
-    planAdventureSession("1-bonus-1", createAdventureSave()),
-    engine,
-    () => now,
-  );
+  const save = createAdventureSave();
+  const bonus = prepareAdventureLevel("1-bonus-1", level, save);
+  const regular = prepareAdventureLevel("1-1", level, save);
 
-  listener({
-    type: "object-interaction",
-    objectType: ObjectId.BONUS_COIN,
-    action: "open",
-  });
   assert.equal(
-    runtime.remainingMs,
-    null,
-    "unrelated objects must not start the original Bonus timer",
+    bonus.objects.find((object) => object.type === ObjectId.LOCK)?.properties
+      ?.timedChallengeMs,
+    "60000",
   );
-
-  listener({
-    type: "object-interaction",
-    objectType: ObjectId.LOCK,
-    action: "open",
-  });
-  assert.equal(runtime.remainingMs, 60_000);
-  now += 59_999;
-  runtime.update();
-  assert.equal(runtime.remainingMs, 1);
-
-  listener({ type: "complete" });
   assert.equal(
-    runtime.remainingMs,
-    null,
-    "level completion cancels the Adventure timer",
+    regular.objects.find((object) => object.type === ObjectId.LOCK)?.properties,
+    undefined,
   );
-
-  listener({
-    type: "object-interaction",
-    objectType: ObjectId.LOCK,
-    action: "open",
-  });
-  now += 60_000;
-  runtime.update();
-  assert.equal(killed, "Bonus Round 的挑战时间耗尽");
-  assert.equal(runtime.remainingMs, null);
-  runtime.destroy();
+  assert.equal(planAdventureSession("1-bonus-1", save).viewportPolicy, "original-portrait");
+  assert.equal(
+    Object.hasOwn(planAdventureSession("1-bonus-1", save), "timedChallengeMs"),
+    false,
+  );
 });

@@ -1,5 +1,4 @@
 import {
-  isBonusLevelId,
   parseAdventureLevelId,
   type AdventureLevelId,
 } from "./campaign.js";
@@ -16,7 +15,6 @@ export interface AdventureCapabilities {
 export interface AdventureSessionPlan {
   levelId: AdventureLevelId;
   viewportPolicy: AdventureViewportPolicy;
-  timedChallengeMs: number | null;
   capabilities: AdventureCapabilities;
 }
 
@@ -30,7 +28,6 @@ export function planAdventureSession(
   return {
     levelId: parsed.id,
     viewportPolicy: "original-portrait",
-    timedChallengeMs: isBonusLevelId(parsed.id) ? 60_000 : null,
     capabilities: {
       speedShoes: normalized.upgrades.speedShoes,
       magnifyingGlass: normalized.upgrades.magnifyingGlass,

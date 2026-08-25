@@ -96,6 +96,25 @@ export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
     });
   }
 
+  {
+    const current = ports.getObject(ObjectId.LOCK)!;
+    ports.setObject({
+      ...current,
+      authoring: {
+        ...(current.authoring ?? { palette: true }),
+        properties: [
+          ...(current.authoring?.properties ?? []),
+          {
+            key: "timedChallengeMs",
+            kind: "string",
+            label: "限时挑战（毫秒）",
+            placeholder: "例如 60000；留空表示不开启",
+          },
+        ],
+      },
+    });
+  }
+
   for (const [id] of CLOUD_INFO) {
     const current = ports.getObject(id)!;
     ports.setObject({

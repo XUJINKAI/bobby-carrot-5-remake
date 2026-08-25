@@ -4,7 +4,11 @@ import {
   type LevelObject,
   type ObjectType,
 } from "@bobby/model";
-import { parseAdventureLevelId, type AdventureLevelId } from "./campaign.js";
+import {
+  isBonusLevelId,
+  parseAdventureLevelId,
+  type AdventureLevelId,
+} from "./campaign.js";
 import { normalizeAdventureSave, type AdventureSave } from "./save.js";
 import {
   augmentAdventureLevel,
@@ -58,8 +62,11 @@ export function prepareAdventureLevel(
   save: AdventureSave,
   propertyPatches: readonly AdventureObjectPropertiesPatch[] = [],
 ): LevelMap {
-  // 顺序固定为：官方/基础 LevelMap → Adventure 实例参数增强 → 持久奖励过滤 → Engine。
-  const augmented = augmentAdventureLevel(level, propertyPatches);
+  // 原版 Bonus 的 60 秒规则先编码为纯地图实例参数，再进入通用增强和奖励过滤。
+  const withOriginalBonusRule = isBonusLevelId(levelId)
+    ? withTimedBonusLocks(level)
+    : structuredClone(level);
+  const augmented = augmentAdventureLevel(withOriginalBonusRule, propertyPatches);
   const claimed = new Set(normalizeAdventureSave(save).claimedRewards);
   const rewards = new Map(
     persistentRewardsForLevel(levelId, augmented).map((reward) => [
@@ -116,6 +123,22 @@ export function spendGoldenCarrots(
   if (next.economy.goldenCarrots < cost) throw new Error("Golden Carrot 不足");
   next.economy.goldenCarrots -= cost;
   return normalizeAdventureSave(next);
+}
+
+function withTimedBonusLocks(level: LevelMap): LevelMap {
+  const result = structuredClone(level);
+  result.objects = result.objects.map((object) =>
+    object.type === ObjectId.LOCK
+      ? {
+          ...object,
+          properties: {
+            ...(object.properties ?? {}),
+            timedChallengeMs: object.properties?.timedChallengeMs ?? "60000",
+          },
+        }
+      : object,
+  );
+  return result;
 }
 
 function isPersistentRewardType(

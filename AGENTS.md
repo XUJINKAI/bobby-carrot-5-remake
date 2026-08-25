@@ -26,6 +26,19 @@
 7. 可机械验证的质量规则必须进入 `npm run verify`。`AGENTS.md` 负责说明规则，verify 才是强制门禁。
 8. 项目在文档与 Web 用户界面中的正式名称统一为 **Bobby Carrot 5 Remake**；不得使用历史产品名或缩略显示名替代正式名称。包名、仓库名和 `bc5r` 内部代号不受此规则影响。
 
+## Engine 总原则
+
+**给 Engine 一个纯语义 `LevelMap`（JSON 地图）和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
+
+由此派生：
+
+- 单独加载一张地图时仍应成立的移动、碰撞、机关、地图内计时、死亡/胜利条件与运行状态，属于 Engine。
+- Engine 自带 Renderer、Camera、基础 Gameplay HUD 与可复用 `InputController`；调用方通过简单配置决定通用输入能力是否启用。
+- `Game` 只接收 `move / setHeldDirection / undo / restart / pan / zoom` 等语义动作，不直接理解键盘键位、PointerEvent、屏幕摇杆 DOM 或具体产品页面。
+- `InputController` 是 Engine 提供的通用输入适配器，可以理解键盘/指针等浏览器输入，并把外部屏幕方向控件提供的 `up/down/left/right` 统一转换为 Game 动作；具体摇杆 UI 仍由宿主持有。
+- Result、章节跳转、存档、路由、产品导航等“玩完以后怎么办”的流程属于外层产品。
+- 判断一条规则属于 Engine 还是 Adventure 时，优先问：**脱离 Campaign 单独玩这张 `LevelMap`，规则是否仍然应该成立？** 是则进入 Engine；只有跨关、章节、经济、永久进度等 Campaign 语义进入 Adventure。
+
 ## 避免回显已否决内容
 
 * 用户否决、纠正、放弃的方案，以及 AI 在过程中产生的失败尝试，只作为当前任务的控制信息，不应成为最终结果的一部分。
@@ -52,12 +65,12 @@
 4. 原始 Campaign 内容必须区分：40 章共 400 个普通关卡 + 80 个 Bonus 奖励关；此外还有 5 个共享商店 / Special Scene：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。技术上可以把前两者统称为 480 个 Campaign map，但面向玩家的文案使用 400 个普通关卡 + 80 个 Bonus 奖励关的产品表述。
 5. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；禁止加入 JAR/DAT byte、发布包、SHA、HTTP、Campaign 或 gameplay 规则。
 6. **所有原版 DAT byte ↔ semantic 映射只能位于 `@bobby/dat`。** Engine / Model 不允许维护第二份 DAT table；Editor/Web 只有分享或 Debug provenance 这种明确边界可以调用 `@bobby/dat` API。
-7. `engine/` 是唯一地图内游戏规则实现。Web、Adventure 与 Editor 禁止复制碰撞、机关、地图内死亡/胜利条件。
-8. Engine 不知道 Adventure。`Game.loadLevel()` 只消费纯语义 `LevelMap`；release、chapter、difficulty、record hash、JAR source、Bonus 60 秒等都不能成为 Engine load options。
-9. Engine 对外通过通用 `onWorldEvent()` 报告世界事件，并提供 `killPlayer(reason)` 等通用运行时能力。禁止为 Adventure 增加 `lock-opened`、`bonus-timeout` 等专用 Engine API。
-10. Object 交互优先通过通用事件形状表达，例如 `object-interaction { objectType, action, x, y }`。Adventure 可以订阅该流并按 semantic Object ID 解释原版 Campaign 规则。
-11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久奖励、Adventure session/runtime rule；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
-12. 原版 Bonus 60 秒属于 Adventure：Adventure 订阅 Engine 的通用 object interaction，在成功打开 `ObjectId.LOCK` 后开始倒计时；收到 `complete/death` 后结束；超时调用通用 `killPlayer()`。Explore、Editor、Shared Play 不自动计时。
+7. `engine/` 是唯一地图内游戏规则实现。Web、Adventure 与 Editor 禁止复制碰撞、机关、地图内计时、地图内死亡/胜利条件。
+8. Engine 不知道 Adventure。`Game.loadLevel()` 只消费纯语义 `LevelMap`；release、chapter、difficulty、record hash、JAR source 等产品/来源字段不能成为 Engine load options。地图内机关实例参数通过 `LevelObject.properties` 随 `LevelMap` 进入 Engine。
+9. Engine 对外通过通用 `onWorldEvent()` 报告世界事件，并提供通用 Game 动作。禁止为 Adventure 增加 `bonus-timeout` 等 Campaign 专用 Engine API。
+10. Object 交互优先通过通用事件形状表达，例如 `object-interaction { objectType, action, x, y }`。地图内后续规则应由 Engine 根据 semantic Object 与实例 properties 执行；Adventure 只解释跨关 Campaign 语义。
+11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久奖励与 session plan；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
+12. 原版 Bonus 60 秒以 Lock 的语义实例参数进入 `LevelMap`：成功打开带限时挑战参数的 Lock 后由 Engine 启动倒计时；取得目标金胡萝卜则结束挑战，超时由 Engine 触发地图内死亡。自定义地图与 Editor Play Test 使用同一规则。
 13. Adventure Save 是版本化 JSON；持久奖励按稳定 Campaign level ID + Object 类型 + 地图坐标记录，不能修改原始 LevelMap 来表达“已经拿过”。
 14. Explore 与 Adventure 是两种不同官方地图体验：Explore 全关开放、可筛选/调试/自由缩放；Adventure 才有线性章内进度、全局存档与受限竖屏视野。
 15. Editor 只持久化语义 JSON Draft；Play Test clone/normalize 后把 `LevelMap` 交给 Engine，Runtime 不得反写 Draft。
@@ -82,7 +95,6 @@
 @bobby/dat   <- editor (share/debug boundary)
 engine       <- editor <- web
 @bobby/adventure <- web
-engine generic event port <- @bobby/adventure runtime adapter (structural interface only; no package dependency)
 tools        -> @bobby/dat / original JAR / generated Catalog
 ```
 
