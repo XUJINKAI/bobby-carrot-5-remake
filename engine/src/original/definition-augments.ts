@@ -1,68 +1,17 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
-import {
-  CustomObjectId,
-  CustomTerrain,
-  ObjectId,
-  Terrain,
-  type Direction,
-} from "./ids.js";
+import type { ObjectType } from "../data/types.js";
+import { ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
 import {
   markerBehavior,
   touchBehavior,
   type TileBehavior,
-} from "./behaviors.js";
-import { CLOUD_INFO } from "./mechanic-links.js";
-import type { TileDefinition, TileTrait } from "./definition-types.js";
+} from "../mechanics/behaviors.js";
+import { CLOUD_INFO } from "../mechanics/mechanic-links.js";
+import type { TileTrait } from "../mechanics/definition-types.js";
+import type { DefinitionRegistrationPorts } from "../mechanics/definition/registration.js";
 
-interface DefinitionAugmentPorts {
-  defineObject(
-    id: ObjectType,
-    category: string,
-    traits: TileTrait[],
-    behaviors: TileBehavior[],
-  ): void;
-  getObject(id: ObjectType): TileDefinition<ObjectType>;
-  setObject(definition: TileDefinition<ObjectType>): void;
-  defineTerrain(
-    id: TerrainType,
-    category: string,
-    traits: TileTrait[],
-    behaviors: TileBehavior[],
-  ): void;
-  getTerrain(id: TerrainType): TileDefinition<TerrainType>;
-}
-
-export function applyDefinitionAugments(ports: DefinitionAugmentPorts): void {
-  ports.defineTerrain(
-    CustomTerrain.ROCK_GOAL,
-    "custom-objective",
-    ["walkable", "push-goal"],
-    [markerBehavior("push-goal", "Crumbly Rock 推入后完成目标")],
-  );
-  ports.defineObject(
-    CustomObjectId.PORTAL,
-    "custom-mechanic",
-    [],
-    [markerBehavior("portal", "进入后传送到相同频道的另一端")],
-  );
-  ports.setObject({
-    ...ports.getObject(CustomObjectId.PORTAL),
-    authoring: {
-      palette: true,
-      properties: [
-        {
-          key: "channel",
-          kind: "enum",
-          label: "频道",
-          options: [
-            { value: "blue", label: "蓝色" },
-            { value: "red", label: "红色" },
-            { value: "green", label: "绿色" },
-          ],
-        },
-      ],
-    },
-  });
+export function applyDefinitionAugments(
+  ports: DefinitionRegistrationPorts,
+): void {
   ports.setObject({
     ...ports.getObject(ObjectId.CRUMBLY_ROCK),
     presentation: { name: "Crumbly Rock", category: "mower" },

@@ -4,7 +4,7 @@ import type { ObjectType, TerrainType } from "../data/types.js";
 import { animatedObjectTile, animatedTerrainTile } from "./animation.js";
 import { objectAtlasCell, terrainAtlasCell, type AtlasCell } from "./atlas.js";
 import type { World } from "../world/World.js";
-import { drawCustomObject, drawCustomTerrain } from "../custom/rendering.js";
+import { drawCustomObject, drawCustomTerrain } from "./custom-tiles.js";
 
 export interface RendererAssets {
   atlasUrl: string;

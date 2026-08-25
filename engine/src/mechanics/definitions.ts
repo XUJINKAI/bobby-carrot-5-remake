@@ -18,7 +18,7 @@ import {
   type BehaviorRuntimeContext,
   type TileBehavior,
 } from "./behaviors.js";
-import { applyDefinitionAugments } from "./definition-augments.js";
+import { applyDefinitionAugments } from "../original/definition-augments.js";
 
 import {
   DYNAMIC_IDS,
@@ -46,6 +46,7 @@ import type {
 import { definitionRegistry } from "./definition/registry.js";
 import { inspectDefinition } from "./definition/inspection.js";
 import { definitionHasTrait } from "./traits/queries.js";
+import { registerCustomDefinitions } from "../custom/register.js";
 export {
   cloudGridForObject,
   tideDirectionForTerrain,
@@ -842,6 +843,13 @@ objectDef(
   ],
 );
 applyDefinitionAugments({
+  defineObject: objectDef,
+  getObject: getObjectDefinition,
+  setObject: object,
+  defineTerrain: terrainDef,
+  getTerrain: getTerrainDefinition,
+});
+registerCustomDefinitions({
   defineObject: objectDef,
   getObject: getObjectDefinition,
   setObject: object,

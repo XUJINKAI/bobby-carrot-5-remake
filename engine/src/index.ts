@@ -98,4 +98,4 @@ export {
   objectAtlasCell,
   type AtlasCell,
 } from "./render/atlas.js";
-export { drawCustomObject, drawCustomTerrain } from "./custom/rendering.js";
+export { drawCustomObject, drawCustomTerrain } from "./render/custom-tiles.js";
