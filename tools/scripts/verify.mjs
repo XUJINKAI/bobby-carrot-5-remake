@@ -221,7 +221,7 @@ fs.rmSync(path.join(root, "tmp"), { recursive: true, force: true });
 if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
 
 console.log(
-  "verify: OK — JSON-only user maps, LevelObject properties, generic Engine dialog events, Adventure map augmentation, DAT-free Web/Editor product boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",
+  "verify: OK — JSON-only user maps, LevelObject properties, self-contained Engine gameplay rules, configurable gameplay input, Adventure map augmentation, DAT-free Web/Editor boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",
 );
 
 function verifyAllSourceDynamicSlots(derive, split, decode) {
@@ -258,6 +258,7 @@ function verifySourceBoundaries() {
     "editor/src/share.ts",
     "web/src/shared-game.ts",
     "web/src/main.ts",
+    "adventure/src/runtime.ts",
   ])
     if (fs.existsSync(path.join(root, removed)))
       throw new Error(`Legacy source still exists: ${removed}`);
@@ -325,12 +326,12 @@ function verifySourceBoundaries() {
 
   walkSource(path.join(root, "engine/src"), (file, text) => {
     if (
-      /\b(?:TERRAIN_BY_DAT|OBJECT_BY_DAT|DAT_BY_TERRAIN|DAT_BY_OBJECT|datHexIds|datSourceForTerrain|datSourceForObject|chapterLevel|recordSha256|releaseSourceId|bonusTimeMs|bonusTimeLimitMs|bonusTimeRemainingMs|timedChallengeMs|lock-opened)\b/.test(
+      /\b(?:TERRAIN_BY_DAT|OBJECT_BY_DAT|DAT_BY_TERRAIN|DAT_BY_OBJECT|datHexIds|datSourceForTerrain|datSourceForObject|chapterLevel|recordSha256|releaseSourceId|bonusTimeMs|bonusTimeLimitMs|bonusTimeRemainingMs|lock-opened)\b/.test(
         text,
       )
     )
       throw new Error(
-        `Original-format/catalog/Adventure timing metadata leaked into Engine: ${path.relative(root, file)}`,
+        `Original-format/catalog/Campaign metadata leaked into Engine: ${path.relative(root, file)}`,
       );
   });
 
@@ -358,8 +359,12 @@ function verifySourceBoundaries() {
       "utf8",
     ),
     game = fs.readFileSync(path.join(root, "engine/src/core/Game.ts"), "utf8"),
-    adventureRuntime = fs.readFileSync(
-      path.join(root, "adventure/src/runtime.ts"),
+    timedChallenge = fs.readFileSync(
+      path.join(root, "engine/src/core/TimedChallenge.ts"),
+      "utf8",
+    ),
+    inputController = fs.readFileSync(
+      path.join(root, "engine/src/input/InputController.ts"),
       "utf8",
     ),
     adventureRewards = fs.readFileSync(
@@ -376,19 +381,28 @@ function verifySourceBoundaries() {
     /meta\.chapterLevel\s*>\s*10/.test(officialGame)
   )
     throw new Error(
-      "Official Bonus rules must come from Adventure session identity, not archive chapterLevel",
+      "Official Adventure identity must come from Adventure session planning, not archive chapterLevel",
     );
-  if (!/createAdventureRuntime\(plan\s*,\s*game\)/.test(officialGame))
+  if (/createAdventureRuntime|adventureRuntime/.test(officialGame))
     throw new Error(
-      "Official Adventure play must bind the Adventure runtime to Engine through the generic port",
+      "Web must not host a second Adventure gameplay runtime beside Engine",
     );
   if (!/prepareAdventureLevel\(meta\.publicId/.test(officialGame))
     throw new Error(
       "Adventure play must prepare/augment a LevelMap before passing it to Engine",
     );
-  if (!/augmentAdventureLevel\(level\s*,\s*propertyPatches\)/.test(adventureRewards))
+  if (!/augmentAdventureLevel\(withOriginalBonusRule\s*,\s*propertyPatches\)/.test(adventureRewards))
     throw new Error(
       "Adventure preparation must expose a pure LevelMap augmentation seam",
+    );
+  if (
+    !/isBonusLevelId\(levelId\)/.test(adventureRewards) ||
+    !/timedChallengeMs\s*:\s*object\.properties\?\.timedChallengeMs\s*\?\?\s*["']60000["']/.test(
+      adventureRewards,
+    )
+  )
+    throw new Error(
+      "Original Bonus identity must be encoded into generic Lock timedChallengeMs properties before Engine",
     );
 
   if (
@@ -396,7 +410,11 @@ function verifySourceBoundaries() {
     /\bloadOptions\b/.test(gameSession)
   )
     throw new Error(
-      "Web game session must load a pure LevelMap without Adventure timing options",
+      "Web game session must load a pure LevelMap without product-specific gameplay options",
+    );
+  if (!/input\.setHeldDirection\(direction\)/.test(gameSession))
+    throw new Error(
+      "Web screen direction controls must enter gameplay through InputController",
     );
   if (
     !/event\.type\s*!==\s*["']dialog["']/.test(gameSession) ||
@@ -417,28 +435,42 @@ function verifySourceBoundaries() {
     );
   if (
     !/onWorldEvent\(listener\s*:\s*WorldEventListener\)/.test(game) ||
-    !/killPlayer\(reason\s*:\s*string\)/.test(game) ||
     /lock-opened/.test(game) ||
-    !/worldEventForObjectTouch\(object\)/.test(game)
+    !/worldEventForObjectTouch\(object\)/.test(game) ||
+    !/new TimedChallenge\(\)/.test(game) ||
+    !/timedChallengeRemainingMs/.test(game)
   )
     throw new Error(
-      "Engine Game must expose generic WorldEvent subscription, generic player death and object-touch event translation, without lock-specific API",
+      "Engine Game must own generic world events, object-touch translation and map-internal TimedChallenge state",
+    );
+  if (
+    !/properties\?\.timedChallengeMs/.test(timedChallenge) ||
+    !/collect-golden-carrot/.test(timedChallenge) ||
+    !/event\.type\s*===\s*["']death["']/.test(timedChallenge) ||
+    !/event\.type\s*===\s*["']complete["']/.test(timedChallenge)
+  )
+    throw new Error(
+      "Engine TimedChallenge must be driven by generic LevelObject properties and WorldEvents",
+    );
+
+  for (const capability of [
+    "movement",
+    "undo",
+    "restart",
+    "pan",
+    "zoom",
+    "debug",
+  ])
+    if (!new RegExp(`${capability}\\?: boolean`).test(inputController))
+      throw new Error(`InputController is missing configurable ${capability} capability`);
+  if (!/setHeldDirection\(direction\s*:\s*Direction\s*\|\s*null\)/.test(inputController))
+    throw new Error(
+      "InputController must expose a generic held-direction entry for host controls",
     );
 
   if (!/type\s*:\s*["']dialog["']/.test(objectTouch))
-    throw new Error("Engine object-touch adapter must translate Definition touch results into dialog events");
-
-  if (
-    !/engine\.onWorldEvent/.test(adventureRuntime) ||
-    !/ObjectId\.LOCK/.test(adventureRuntime) ||
-    !/event\.type\s*===\s*["']object-interaction["']/.test(adventureRuntime) ||
-    !/event\.type\s*===\s*["']complete["']\s*\|\|\s*event\.type\s*===\s*["']death["']/.test(
-      adventureRuntime,
-    ) ||
-    !/engine\.killPlayer\(\s*["']Bonus Round/.test(adventureRuntime)
-  )
     throw new Error(
-      "Adventure runtime must own Bonus timing by consuming generic Engine events",
+      "Engine object-touch adapter must translate Definition touch results into dialog events",
     );
 }
 
