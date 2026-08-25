@@ -49,8 +49,9 @@ import { deriveInitialObjectives } from "./objectives.js";
 import {
   maxMovesDeathReason,
   teleportFromPortal,
-  tryPushObject,
 } from "../custom/runtime.js";
+import { tryPushObject } from "../mechanics/movement/pushable.js";
+import { commitPlayerMovement } from "../mechanics/movement/commit.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 const GROUND_AFTER_MOW = [
   Terrain.GROUND_A,
@@ -223,9 +224,7 @@ export class World {
         return this.result(false, from, to, passage, events);
       ridden.rider = false;
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves += forced ? 0 : 1;
+      commitPlayerMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
       this.applySuccessfulMoveRules(forced, events);
@@ -277,9 +276,7 @@ export class World {
           events,
         );
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves += forced ? 0 : 1;
+      commitPlayerMovement(state, to, direction, forced);
       dynamicTarget.rider = true;
       if (dynamicTarget.type === ObjectId.LEAF) {
         const underlyingTerrain = this.terrainAt(to.x, to.y),
@@ -341,9 +338,7 @@ export class World {
       return this.result(false, from, to, passage, events);
     }
     this.beforeLeave(from, events);
-    state.player = to;
-    state.facing = direction;
-    state.moves += forced ? 0 : 1;
+    commitPlayerMovement(state, to, direction, forced);
     this.applyPassageSideEffects(passage, to, events);
     this.afterEnter(to, direction, events, {
       justBoarded: passage.boardsMower === true,
@@ -728,9 +723,7 @@ export class World {
       state.forced = null;
       entity.direction = null;
       this.beforeLeave(from, events);
-      state.player = to;
-      state.facing = direction;
-      state.moves++;
+      commitPlayerMovement(state, to, direction, forced);
       this.applyPassageSideEffects(passage, to, events);
       this.afterEnter(to, direction, events);
       this.applySuccessfulMoveRules(forced, events);
