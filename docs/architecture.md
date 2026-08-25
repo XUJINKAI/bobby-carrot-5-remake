@@ -17,18 +17,6 @@ Original JAR / DAT
 
 `@bobby/dat` 是原版格式互操作边界，不属于浏览器产品依赖链。Web、Editor、Engine 都不能依赖它。
 
-运行时还有一条刻意保持很小的结构化接口：
-
-```text
-Engine Game
-├─ onWorldEvent(listener)
-└─ killPlayer(reason)
-        ▲
-        │ structural port（Adventure 不 import @bobby/engine）
-        │
-@bobby/adventure runtime
-```
-
 项目同时服务三个目标：
 
 1. 原版 Adventure 体验重制；
@@ -81,7 +69,17 @@ DAT package <-> metadata + level records
 
 ## Engine
 
-`engine/` 是唯一地图内游戏规则实现：World、移动事务、机关、动态实体、Camera、Renderer、Input、Audio 抽象、semantic Definition 与 Object Layout。
+`engine/` 是唯一地图内游戏规则实现。核心目标是：**给 Engine 一个纯语义 `LevelMap` 和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
+
+Engine 负责：
+
+- `Game` / `World`；
+- 移动、碰撞、机关与动态实体；
+- 地图内 Timer、死亡与完成条件；
+- Camera / Renderer；
+- Audio 抽象；
+- semantic Definition 与 Object Layout；
+- 通用 `InputController`。
 
 Game 的关卡输入只有纯 `LevelMap`：
 
@@ -93,9 +91,32 @@ Object Layout expansion
 Runtime World occupancy
 ```
 
-多格对象展开时保留 anchor 的实例 `properties`，因此 Sandman body 等隐式 runtime cell 仍能访问同一份实例参数。
+多格对象展开时保留 anchor 的实例 `properties`，因此隐式 runtime cell 仍能访问同一份实例参数。
 
-Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 和 Adventure Bonus 由 Engine 外层系统负责。
+判断一条规则属于 Engine 还是 Adventure 时，优先问：**脱离 Campaign，单独加载这张 `LevelMap` 时规则是否仍然应该成立？** 如果成立，它就是地图内 gameplay rule，进入 Engine；只有章节、跨关存档、永久经济等 Campaign 语义进入 Adventure。
+
+Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 等产品/来源信息由 Engine 外层系统负责。
+
+### 输入边界
+
+`InputController` 是 Engine 提供的通用浏览器 gameplay 输入适配器：
+
+```text
+Keyboard / Pointer / Wheel / Pinch
+              │
+              ▼
+       InputController
+              │
+              ▼
+move / held direction / undo / restart / pan / zoom / debug
+              │
+              ▼
+             Game
+```
+
+能力通过配置逐项开关：`movement / undo / restart / pan / zoom / debug`。Controller 不认识 Adventure、Explore 或 Editor 页面。
+
+具体屏幕摇杆/方向按钮的 DOM 属于宿主 UI，但通过 `InputController.setHeldDirection()` 进入与键盘相同的移动路径。Editor Authoring 输入属于 Editor；Editor Play Test 复用通用 Gameplay InputController。
 
 ### 通用运行时事件接口
 
@@ -103,6 +124,7 @@ Engine 使用通用 `WorldEvent` 表达地图内事实。`Game.onWorldEvent()` �
 
 ```text
 collect-bonus-coin
+collect-golden-carrot
 complete
 death
 dialog { text? }
@@ -136,9 +158,30 @@ Web presentation
 
 没有作者对白时仍产生 `dialog(undefined)`；Web 可以显示空对白框或 `...`。Engine 不恢复、猜测或内置原版对白。
 
-Engine 还提供 `killPlayer(reason)` 这种通用运行时能力。外层规则通过这些通用接口与 Engine 协作。
+Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
-Adventure 专用 Campaign 语义保持在 `@bobby/adventure`，Engine API 维持通用 gameplay/runtime 边界。
+### 地图内 Timed Challenge
+
+地图实例可以通过 `LevelObject.properties` 为 Lock 声明限时挑战：
+
+```text
+Lock.properties.timedChallengeMs = "60000"
+```
+
+运行关系：
+
+```text
+成功打开带 timedChallengeMs 的 Lock
+        ↓
+Engine TimedChallenge
+        ├─ Golden Carrot -> clear
+        ├─ complete / death -> clear
+        └─ timeout -> death
+```
+
+计时生命周期属于当前 `Game`。Undo 同时恢复 World Snapshot 与计时快照；Restart / loadLevel 重置计时。`game.timedChallengeRemainingMs` 供展示层读取。
+
+这条规则不含 Adventure 语义，因此自定义 JSON、Explore 与 Editor Play Test 都可以直接使用。
 
 ### Semantic Definition Layer
 
@@ -162,7 +205,7 @@ Object Layout Definition
 
 `authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Object 的 authoring 可见性。`authoring.properties` 描述当前对象允许编辑的实例参数；Editor Inspector 直接消费这份 Definition metadata，不维护对象类型特判表。
 
-当前只需要字符串和 enum/channel 两类属性描述。不要提前扩张为脚本系统、通用表单引擎或对白树。
+当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 
 ## @bobby/adventure
 
@@ -176,7 +219,6 @@ Object Layout Definition
 - Adventure Save contract；
 - 全局经济 / 永久升级 / 一次性奖励位置；
 - Adventure session plan；
-- 原版 Bonus timed challenge runtime；
 - 在基础 `LevelMap` 进入 Engine 前按需要增强对象实例参数。
 
 地图准备顺序固定为：
@@ -191,28 +233,23 @@ persistent reward filtering
 Engine Game.loadLevel(LevelMap)
 ```
 
-Adventure 可以覆盖 Sandman `dialogue` 或未来已定义的实例参数；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
+Adventure 可以覆盖 Sandman `dialogue`、Lock `timedChallengeMs` 或未来已经由 semantic Definition 定义的实例参数；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
-### Bonus 60 秒规则
+### 原版 Bonus 地图增强
 
-60 秒倒计时由 Adventure runtime 管理：
+Adventure 知道哪些 Campaign ID 是原版 Bonus 关，因此在这些地图进入 Engine 前，把原版 60 秒事实编码成普通地图实例属性：
 
 ```text
-Engine reports generic WorldEvent
-        ↓
-Adventure runtime sees:
-object-interaction + ObjectId.LOCK + action=open
-        ↓
-Adventure starts 60s clock
-        ↓
-complete/death -> clear clock
-        ↓
-timeout -> engine.killPlayer(...)
+Bonus LevelMap
+   ↓
+Lock.properties.timedChallengeMs = "60000"
+   ↓
+Engine
 ```
 
-Explore 与 Editor Play Test 使用纯 Engine session；Adventure session 通过结构化 port 使用 `onWorldEvent()` + `killPlayer()`，保持 package dependency 单向隔离。
+从这一刻开始，倒计时、成功取消、超时死亡、Undo / Restart 都完全由 Engine 执行。Adventure 不持有第二套 gameplay runtime。
 
 ## Official content / Catalog
 
@@ -254,17 +291,19 @@ JSON Export
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。未来如果重新设计分享格式，需要单独定义新的产品协议，不能把原版 DAT 重新带回 Web/Editor 依赖链。
 
-Inspector 根据 Engine Definition 的 `authoring.properties` 生成属性编辑控件。当前 Sandman 的 `dialogue` 就通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Engine Definition 的 `authoring.properties` 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `timedChallengeMs` 都通过这条通用路径编辑并由 JSON round-trip 保留。
 
-Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine。Campaign、全局经济和 Bonus 60 秒由 Adventure session 提供。
+Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
 ## Web
 
-Web 是浏览器产品壳：怀旧 Home、Explore、Adventure UI、Editor route、Settings、localStorage/file adapters。
+Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Settings、localStorage/file adapters 和 Result 流程。
 
 Web 不依赖 `@bobby/dat`，产品 `dist/` 也不发布 `dat/` browser module。
 
-Web 的通用 Game Session 订阅 `dialog` WorldEvent 并负责显示对话框；它不判断事件来自 Sandman、Adventure 还是 Editor 地图。
+Web 的通用 Game Session 负责组合 `Game + InputController`、绑定屏幕方向控件以及展示通用 `dialog` WorldEvent；它不实现地图规则。
+
+Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 Web，因为这些动作描述的是游戏结束后的产品流程。
 
 ### Explore
 
@@ -276,7 +315,7 @@ Web 的通用 Game Session 订阅 `dialog` WorldEvent 并负责显示对话框�
 
 ### Adventure
 
-Web 提供竖屏容器、章节/关卡列表、存档文件导入导出等浏览器表现层；Campaign 规则来自 `@bobby/adventure`。
+Web 提供竖屏容器、章节/关卡列表、存档文件导入导出等浏览器表现层；Campaign 规则来自 `@bobby/adventure`，地图内规则来自 Engine。
 
 Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera 最小 zoom，保持谜题的信息边界。
 
@@ -351,8 +390,6 @@ model + engine <- editor
 model + engine + adventure + editor <- web
 tools -> dat + model + original assets + generated metadata
 ```
-
-Adventure runtime 与 Engine 通过结构化 event/death port 对接，保持 package dependency 隔离。
 
 禁止：
 
