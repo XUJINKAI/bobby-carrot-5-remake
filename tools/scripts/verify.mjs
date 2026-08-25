@@ -524,6 +524,14 @@ function verifySourceBoundaries() {
 }
 
 function verifyEngineInternalBoundaries() {
+  for (const relative of ["object/index.ts", "terrain/index.ts"]) {
+    const source = fs.readFileSync(
+      path.join(root, "engine/src/original", relative),
+      "utf8",
+    );
+    if (/\b(?:ObjectId|Terrain)\s*\./.test(source))
+      throw new Error(`Original 分类注册入口不得包含元素 Definition：${relative}`);
+  }
   for (const area of ["terrain", "object"])
     if (fs.existsSync(path.join(root, "engine/src/original", area, "augments.ts")))
       throw new Error(`Original ${area} 不得使用 Definition augment 阶段`);

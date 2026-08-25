@@ -32,11 +32,15 @@ resolve destination
 具体 Terrain/Object Definition 按内容来源组织：
 
 ```text
-original/terrain/index.ts        原版 Terrain Definition 注册入口
-original/object/index.ts         原版 Object Definition 注册入口
-custom/terrain/               扩展 Terrain Definition
-custom/object/                扩展 Object Definition 与对应 hook
-mechanics/definitions.ts      稳定查询 façade
+original/terrain/index.ts       原版 Terrain 分类注册入口
+original/terrain/{ground,water,movement,switches,hazards,objectives,pickups}.ts
+                                按元素类别维护完整 Terrain Definition
+original/object/index.ts        原版 Object 分类注册入口
+original/object/{collectibles,pickups,obstacles,characters,dynamic,machines,structures}.ts
+                                按元素类别维护完整 Object Definition
+custom/terrain/                 扩展 Terrain Definition
+custom/object/                  扩展 Object Definition 与对应 hook
+mechanics/definitions.ts        稳定查询 façade
 ```
 
 通用能力位于 `mechanics/`。例如 pushable movement transaction 位于 `mechanics/movement/`，Portal Definition 使用 `mechanics/interactions/relocation.ts` 提供的通用重定位能力。
