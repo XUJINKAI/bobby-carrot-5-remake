@@ -1,10 +1,10 @@
-import type { ObjectType, TerrainType } from "../data/types.js";
-import { CustomTerrain, EMPTY_OBJECT, ObjectId } from "../mechanics/ids.js";
+import type { ObjectType, TerrainType } from "../../data/types.js";
+import { CustomTerrain, EMPTY_OBJECT, ObjectId } from "../ids.js";
 import {
   objectHasTrait,
   terrainHasTrait,
-} from "../mechanics/definitions.js";
-import type { ObjectiveMode } from "./RuntimeState.js";
+} from "../definitions.js";
+import type { ObjectiveMode } from "../../world/RuntimeState.js";
 
 export interface InitialObjectives {
   mode: ObjectiveMode;

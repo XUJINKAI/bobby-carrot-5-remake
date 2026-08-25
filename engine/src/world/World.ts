@@ -1,12 +1,5 @@
 import type { LevelMap, LevelObject, LevelObjectProperties, ObjectType, TerrainType } from "@bobby/model";
-import {
-  DIRECTIONS,
-  EMPTY_OBJECT,
-  ObjectId,
-  Terrain,
-  CustomObjectId,
-  type Direction,
-} from "../mechanics/ids.js";
+import { DIRECTIONS, EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
 import { isWaterTerrain, passageFor, type PassageResult } from "../mechanics/rules.js";
 import {
   cloudGridForObject,
@@ -26,45 +19,28 @@ import {
   type TileDefinitionInspection,
 } from "../mechanics/definitions.js";
 import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
-import type {
-  DynamicEntity,
-  Point,
-  ProfileCapabilities,
-  RuntimeState,
-  WorldSnapshot,
-} from "./RuntimeState.js";
+import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
 export type { PassageResult } from "../mechanics/rules.js";
 
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
-import {
-  copyPoint,
-  emptyGrid,
-  findFallbackStart,
-  isOppositeDirection,
-  isSameCell,
-  statePoint,
-} from "./world-grid.js";
-import { deriveInitialObjectives } from "./objectives.js";
-import {
-  maxMovesDeathReason,
-  teleportFromPortal,
-} from "../custom/runtime.js";
+import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
+import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
 import { tryPushObject } from "../mechanics/movement/pushable.js";
 import { commitPlayerMovement } from "../mechanics/movement/commit.js";
+import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
+import type { ActiveLevelRule } from "../mechanics/rules/types.js";
+import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
-const GROUND_AFTER_MOW = [
-  Terrain.GROUND_A,
-  Terrain.GROUND_B,
-  Terrain.GROUND_C,
-  Terrain.GROUND_D,
-] as const;
+const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, Terrain.GROUND_D] as const;
 
 export class World {
   readonly level: LevelMap;
+  private readonly activeRules: ActiveLevelRule[];
   private stateValue: RuntimeState;
   constructor(level: LevelMap, profile: Partial<ProfileCapabilities> = {}) {
     this.level = level;
+    this.activeRules = createActiveLevelRules(level);
     this.stateValue = this.createInitialState(level, profile);
   }
   get state(): Readonly<RuntimeState> {
@@ -560,6 +536,22 @@ export class World {
           this.toggleWindSwitchTiles(index);
         },
         mowedGround: () => GROUND_AFTER_MOW[(point.x * 17 + point.y * 31) & 3]!,
+        relocateToMatchingObject: (type, propertyKey) =>
+          relocateToMatchingObject(
+            this.stateValue,
+            this.level,
+            point,
+            type,
+            propertyKey,
+          ),
+        objectInteraction: (objectType, action, message, target = point) =>
+          events.push({
+            type: "object-interaction",
+            objectType,
+            action,
+            message,
+            ...target,
+          }),
       },
     };
   }
@@ -603,8 +595,6 @@ export class World {
     if (runTerrainEnter(initialTerrain, ctx, "before-object")) return;
     const initialObject = this.objectIdAt(point.x, point.y);
     runObjectEnter(initialObject, ctx);
-    if (initialObject === CustomObjectId.PORTAL)
-      teleportFromPortal(state, this.level, point, events);
     const currentTerrain = this.terrainAt(point.x, point.y)!;
     ctx = this.behaviorContext(
       point,
@@ -945,7 +935,11 @@ export class World {
     if (type === EMPTY_OBJECT) this.stateValue.objectProperties[y]![x] = undefined;
   }
   private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
-    const reason = maxMovesDeathReason(this.stateValue, this.level, forced);
+    const reason = evaluateRulesAfterMove(
+      this.activeRules,
+      this.stateValue,
+      forced,
+    );
     if (reason)
       this.kill(
         reason,

@@ -1,4 +1,4 @@
-import { markerBehavior } from "../../mechanics/behaviors.js";
+import { enterBehavior } from "../../mechanics/behaviors.js";
 import type { DefinitionRegistrationPorts } from "../../mechanics/definition/registration.js";
 import { CustomObjectId } from "../../mechanics/ids.js";
 
@@ -7,7 +7,22 @@ export function registerPortal(ports: DefinitionRegistrationPorts): void {
     CustomObjectId.PORTAL,
     "custom-mechanic",
     [],
-    [markerBehavior("portal", "进入后传送到相同频道的另一端")],
+    [
+      enterBehavior("portal", "进入后传送到相同频道的另一端", (context) => {
+        if (context.mode !== "normal") return;
+        const destination = context.api.relocateToMatchingObject(
+          CustomObjectId.PORTAL,
+          "channel",
+        );
+        if (destination)
+          context.api.objectInteraction(
+            CustomObjectId.PORTAL,
+            "teleport",
+            "通过 Portal",
+            destination,
+          );
+      }),
+    ],
   );
   ports.setObject({
     ...ports.getObject(CustomObjectId.PORTAL),
