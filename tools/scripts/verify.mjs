@@ -235,7 +235,11 @@ async function verifyCustomMaps() {
     if (file.endsWith(".json") && file !== path.join(directory, "collections.json"))
       files.push(file);
   });
-  for (const required of ["portal.json", "pushbox.json", "max-moves.json"])
+  for (const required of [
+    "test-portal.json",
+    "test-pushable.json",
+    "test-max-moves.json",
+  ])
     if (!fs.existsSync(path.join(directory, "engine-lab", required)))
       throw new Error(`缺少核心 Engine Lab 地图：${required}`);
   for (const file of files) {

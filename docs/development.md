@@ -76,14 +76,14 @@ tmp/
 
 ## 部署
 
-`/levels`、`/settings`、`/play/*`、`/edit/*` 等均为 SPA 路由。部署服务器应仅对应用路由 fallback 到 `/index.html`；缺失的静态资源必须返回真正的 404，不能被 SPA fallback 吞掉。
+`/explore/*`、`/adventure/*`、`/settings`、`/edit/*` 等均为 SPA 路由。部署服务器应仅对应用路由 fallback 到 `/index.html`；缺失的静态资源必须返回真正的 404，不能被 SPA fallback 吞掉。
 
 ## 机关与 Editor 调试
 
 Engine 机关调试统一通过 Editor Play Test。可以打开：
 
 ```text
-/edit/<public-id>
+/edit/<collection>/<map-id>
 ```
 
 也可以 Import `editor/examples/mechanics-smoke.json` 等测试地图。

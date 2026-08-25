@@ -45,6 +45,11 @@ try {
     "Portal Lab",
     "Maximum Moves Lab",
   ]);
+  await smoke(`${origin}/explore/play/engine-lab/test-portal`, [
+    'class="game-page"',
+    'id="game"',
+    "Portal Lab",
+  ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',

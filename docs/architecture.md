@@ -313,6 +313,19 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 `00.dat` 的五张地图分别是 Beaver Shop / Cloud 9 / Dream Machine / Dreamland Reward / Campaign Intro。
 
+## Explore content / Custom Map Catalog
+
+Explore 使用 collection 组织所有自由游玩内容。`original` 由 Web 固定为第一个 collection，内置自定义内容由 `custom_maps/collections.json` 定义展示名称、顺序与说明：
+
+```text
+custom_maps/<collection>/<map>.json
+        ↓ build
+assets/generated/custom-maps.json
+assets/generated/custom-maps/<collection>/<map>.json
+```
+
+源码目录负责内容归类，manifest 负责产品展示。Web 只消费生成后的 Catalog 与地图资产，不直接读取源码目录。列表页面可以按 collection 使用专门布局；游玩和编辑入口统一先解析为纯 `LevelMap`。
+
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。关卡级难度筛选使用现有历史/估算数据，两类数据分别维护。
 
 ## Editor
@@ -403,16 +416,25 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 正式 URL：
 
 ```text
-/levels
-/play/1-1
+/explore
+/explore/original
+/explore/sokoban
+/explore/engine-lab
+/explore/play/original/1-1
+/explore/play/sokoban/box-01
+/explore/play/engine-lab/test-portal
 /adventure
 /adventure/chapters
 /adventure/chapter/1
 /adventure/play/1-1
 /settings
 /edit
-/edit/1-1
+/edit/original/1-1
+/edit/sokoban/box-01
+/edit/engine-lab/test-portal
 ```
+
+`/explore` 直接显示 Original Tab。Explore gameplay 使用 `/explore/play/<collection>/<map-id>`，Editor clone 使用 `/edit/<collection>/<map-id>`；路径由 Web 的集中 route builder 生成。
 
 服务器负责 app-route fallback；静态资源路径按真实文件提供。
 

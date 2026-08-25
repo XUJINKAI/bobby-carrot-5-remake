@@ -51,12 +51,14 @@ Bobby Carrot 5 Remake
 │   ├── Level Select
 │   └── Play
 ├── Explore
-│   ├── Level Browser
+│   ├── Original Collection
+│   ├── Sokoban Collection
+│   ├── Engine Lab Collection
 │   └── Play
 ├── Editor
 │   ├── New Map
 │   ├── Imported Map
-│   ├── Official Map Copy
+│   ├── Built-in Map Copy
 │   └── Play Test
 └── Custom
     └── Imported Map Play
@@ -471,6 +473,8 @@ Level Browser：
 ┌────────────────────────────────────────────────────────────────────────┐
 │ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ 自由选关     ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
+│ [ 原版关卡 ] [ 推箱子 ] [ 测试地图 ]                                  │
+│                                                                        │
 │ [继续 12-4]  [随机一关]                                               │
 │                                                                        │
 │ 筛选：难度 ▼  机关 ▼  道具 ▼  场景 ▼                    [ 清除 ]      │
@@ -486,13 +490,15 @@ Level Browser：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Level Browser 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关。页面提供：
+Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/sokoban` 与 `/explore/engine-lab` 分别显示推箱子和测试地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
 
 - 最近浏览；
 - 随机一关；
 - 难度、机关、道具和场景筛选；
 - 独立完成记录；
 - 章节星级与单关难度的来源区分。
+
+Custom collection 使用地图卡片展示名称、说明、游玩与编辑副本入口。Tab 外壳保持统一，列表内容可以根据 collection 的信息需求专门设计。
 
 Explore Play：
 
@@ -512,7 +518,7 @@ Explore Play：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Explore 使用自由 Camera，提供 Undo、Restart、Debug 和打开官方地图 clone 到 Editor 的动作。
+所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。Explore 使用自由 Camera，提供 Undo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
 
 ### Editor
 
@@ -598,7 +604,7 @@ Import Dialog：
 
 Import Dialog 接受语义 JSON，解析成功后展示地图名称、作者、尺寸和描述，并提供“游玩”和“编辑”两个动作。
 
-Custom Play 使用与 Explore 相同的通用 GameStage，但上下文标识内容来源，Result 动作回到自定义地图信息或 Editor。用户地图交换格式以 [`../contracts/level-format.md`](../contracts/level-format.md) 为准；当前产品入口使用 JSON Import / Export。
+内置 Custom Map 通过 Explore collection 进入通用 GameStage，上下文标识地图名称，Result 动作返回对应 collection。用户导入地图同样使用通用 GameStage。用户地图交换格式以 [`../contracts/level-format.md`](../contracts/level-format.md) 为准；当前产品入口使用 JSON Import / Export。
 
 ## Settings 与 Help
 

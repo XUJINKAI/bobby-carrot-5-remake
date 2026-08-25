@@ -42,14 +42,14 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 
 ## Explore
 
-Explore 是现代平铺选关体验：
+Explore 是所有非 Adventure 自由游玩内容的统一入口：
 
-- 40 章，共 400 个普通关卡 + 80 个 Bonus 奖励关，全部开放；
-- 章节平铺、一目了然；
-- 难度、萝卜、特殊道具、场景、机关筛选；
-- 随机一关、最近浏览；
-- 自由缩放和 DEBUG；
-- 可以直接在 Editor 中打开官方地图 clone。
+- 原版关卡、推箱子与 Engine 测试地图使用独立 collection Tab；
+- 原版关卡的 40 章、400 个普通关卡和 80 个 Bonus 奖励关全部开放；
+- 原版 Tab 提供章节平铺、筛选、随机一关和最近浏览；
+- 内置自定义 collection 使用专门的地图卡片展示；
+- 所有 collection 共享自由缩放、DEBUG 与同一个 Engine gameplay 页面；
+- 任意内置地图都可以作为 clone 在 Editor 中打开。
 
 Explore 与 Adventure 分别维护自己的完成记录和 Adventure Save。
 
