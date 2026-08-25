@@ -45,6 +45,9 @@ export interface BobbyEditorOptions {
   bobbyUrls: { left: string; right: string; up: string; down: string };
   mowerBobbyUrl?: string;
   kiteUrl?: string;
+  hudAtlasUrl?: string;
+  goldenCarrotUrl?: string;
+  screenJoystick?: boolean;
   audio?: AudioBackend;
   onClose?: () => void;
 }
@@ -93,6 +96,12 @@ export class BobbyEditor {
     this.root = options.root;
     this.level = normalizeEditorLevel(options.level ?? createBlankLevel());
     this.mount();
+    window.addEventListener("shell-dialog-open", this.onShellDialogOpen);
+    window.addEventListener("shell-dialog-close", this.onShellDialogClose);
+    window.addEventListener(
+      "screen-control-change",
+      this.onScreenControlChange,
+    );
     void this.loadAtlas();
   }
 
@@ -116,11 +125,33 @@ export class BobbyEditor {
     this.destroyed = true;
     this.stopPlay();
     window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("shell-dialog-open", this.onShellDialogOpen);
+    window.removeEventListener("shell-dialog-close", this.onShellDialogClose);
+    window.removeEventListener(
+      "screen-control-change",
+      this.onScreenControlChange,
+    );
     this.root.replaceChildren();
   }
 
+  private readonly onShellDialogOpen = (): void => {
+    this.playTest.setInputEnabled(false);
+  };
+
+  private readonly onShellDialogClose = (): void => {
+    this.playTest.setInputEnabled(true);
+  };
+
+  private readonly onScreenControlChange = (event: Event): void => {
+    const enabled = Boolean(
+      (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
+    );
+    this.options.screenJoystick = enabled;
+    this.playTest.setScreenJoystickEnabled(enabled);
+  };
+
   private mount(): void {
-    this.root.innerHTML = `<div class="bobby-editor"><header class="editor-toolbar"><button class="editor-btn editor-back" data-editor="close">← 返回</button><strong class="editor-title">Bobby Editor</strong><span class="editor-spacer"></span><button class="editor-btn editor-play" data-editor="play-toggle">▶ Play</button><button class="editor-btn" data-editor="file">地图文件</button><button class="editor-btn editor-help" data-editor="help">?</button><input type="file" accept="application/json,.json" data-editor-file hidden></header><main class="editor-body"><aside class="editor-palette"><div class="editor-palette-head"><div class="editor-panel-title">素材</div><div class="editor-palette-zoom"><button class="editor-mini-btn" data-editor="palette-smaller">−</button><span data-editor-palette-size>${this.paletteSize}</span><button class="editor-mini-btn" data-editor="palette-larger">+</button></div></div><div class="editor-selected-tile" data-editor-selected></div><div class="editor-palette-groups" data-editor-palette></div></aside><section class="editor-map-shell" data-editor-map-shell><canvas class="editor-canvas" data-editor-canvas></canvas><div class="editor-play-status" data-editor-status></div></section><aside class="editor-inspector" data-editor-inspector></aside></main><dialog class="editor-dialog" data-editor-file-dialog><header><strong>地图文件</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><label class="editor-field"><span>名称</span><input data-map-name maxlength="120"></label><label class="editor-field"><span>作者</span><input data-map-author maxlength="80" placeholder="可选"></label><label class="editor-field"><span>描述</span><textarea data-map-description maxlength="500" rows="3" placeholder="可选"></textarea></label><p class="editor-muted">Bobby Carrot 5 Remake 的用户地图只使用语义 JSON；原版 DAT 仅供工具链验证与官方地图解码。</p><div class="editor-dialog-actions"><button class="editor-btn" data-editor="import">导入 JSON</button><button class="editor-btn editor-primary" data-editor="export">导出 JSON</button></div></dialog><dialog class="editor-dialog editor-help-dialog" data-editor-help-dialog><header><strong>操作帮助</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><div class="editor-help-list"><p><strong>左键 / 拖动</strong><span>放置当前 Terrain / Object；相交的大型 Object 会整体替换。</span></p><p><strong>右键 / Del</strong><span>删除鼠标指向的完整 Object。</span></p><p><strong>Q / E</strong><span>旋转 / 翻转 / 切换鼠标指向 Object 的 authoring variant。</span></p><p><strong>滚轮</strong><span>指向可变 Object 时切换变体，否则缩放地图。</span></p><p><strong>中键拖动</strong><span>平移地图。</span></p><p><strong>Ctrl/Cmd+Z / Y</strong><span>Undo / Redo。</span></p><p><strong>泛蓝高亮</strong><span>表示当前操作会删除或替换的完整 owner。</span></p></div></dialog></div>`;
+    this.root.innerHTML = `<div class="bobby-editor"><header class="editor-toolbar"><button class="editor-btn editor-back" data-editor="close">← 返回</button><strong class="editor-title">Bobby Carrot 5 Remake</strong><span class="editor-spacer"></span><button class="editor-btn editor-play" data-editor="play-toggle">▶ Play</button><button class="editor-btn" data-editor="file">地图文件</button><button class="editor-btn editor-help" data-editor="help">?</button><input type="file" accept="application/json,.json" data-editor-file hidden></header><main class="editor-body"><aside class="editor-palette"><div class="editor-palette-head"><div class="editor-panel-title">素材</div><div class="editor-palette-zoom"><button class="editor-mini-btn" data-editor="palette-smaller">−</button><span data-editor-palette-size>${this.paletteSize}</span><button class="editor-mini-btn" data-editor="palette-larger">+</button></div></div><div class="editor-selected-tile" data-editor-selected></div><div class="editor-palette-groups" data-editor-palette></div></aside><section class="editor-map-shell" data-editor-map-shell><canvas class="editor-canvas" data-editor-canvas></canvas><div class="editor-play-status" data-editor-status></div></section><aside class="editor-inspector" data-editor-inspector></aside></main><dialog class="editor-dialog" data-editor-file-dialog><header><strong>地图文件</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><label class="editor-field"><span>名称</span><input data-map-name maxlength="120"></label><label class="editor-field"><span>作者</span><input data-map-author maxlength="80" placeholder="可选"></label><label class="editor-field"><span>描述</span><textarea data-map-description maxlength="500" rows="3" placeholder="可选"></textarea></label><p class="editor-muted">Bobby Carrot 5 Remake 的用户地图只使用语义 JSON；原版 DAT 仅供工具链验证与官方地图解码。</p><div class="editor-dialog-actions"><button class="editor-btn" data-editor="import">导入 JSON</button><button class="editor-btn editor-primary" data-editor="export">导出 JSON</button></div></dialog><dialog class="editor-dialog editor-help-dialog" data-editor-help-dialog><header><strong>操作帮助</strong><button class="editor-mini-btn" data-dialog-close>×</button></header><div class="editor-help-list"><p><strong>左键 / 拖动</strong><span>放置当前 Terrain / Object；相交的大型 Object 会整体替换。</span></p><p><strong>右键 / Del</strong><span>删除鼠标指向的完整 Object。</span></p><p><strong>Q / E</strong><span>旋转 / 翻转 / 切换鼠标指向 Object 的 authoring variant。</span></p><p><strong>滚轮</strong><span>指向可变 Object 时切换变体，否则缩放地图。</span></p><p><strong>中键拖动</strong><span>平移地图。</span></p><p><strong>Ctrl/Cmd+Z / Y</strong><span>Undo / Redo。</span></p><p><strong>泛蓝高亮</strong><span>表示当前操作会删除或替换的完整 owner。</span></p></div></dialog></div>`;
     this.canvas = this.required("[data-editor-canvas]");
     this.palette = this.required("[data-editor-palette]");
     this.inspector = this.required("[data-editor-inspector]");
@@ -730,8 +761,17 @@ export class BobbyEditor {
             ? { mowerBobbyUrl: this.options.mowerBobbyUrl }
             : {}),
           ...(this.options.kiteUrl ? { kiteUrl: this.options.kiteUrl } : {}),
+          ...(this.options.hudAtlasUrl
+            ? { hudAtlasUrl: this.options.hudAtlasUrl }
+            : {}),
+          ...(this.options.goldenCarrotUrl
+            ? { goldenCarrotUrl: this.options.goldenCarrotUrl }
+            : {}),
           sourceTileSize: SOURCE_TILE,
         },
+        ...(this.options.screenJoystick === undefined
+          ? {}
+          : { screenJoystick: this.options.screenJoystick }),
         ...(this.options.audio ? { audio: this.options.audio } : {}),
         onStatus: (text) => {
           if (this.playing) this.status.textContent = text;

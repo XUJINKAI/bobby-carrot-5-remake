@@ -34,4 +34,14 @@ Adventure Bonus 只负责把原版 Campaign 事实增强为普通 `LevelMap` 属
 
 Result 的重玩、下一关、返回章节等产品动作仍由 Web 持有。
 
+## HUD 与计时边界
+
+目标、背包、地图内收集物和 Timed Challenge 的状态与基础 HUD 渲染属于 Engine。它们在所有 Engine session 中保持相同语义和呈现，包括 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test。
+
+所有已获得道具统一显示在 GameStage 右上角。道具从右向左排列，并在窄屏上向下换行；Adventure、Explore、Custom Play 和 Editor Play Test 使用同一布局。
+
+本次游玩用时、模式完成记录等统计信息由 Web 记录，并作为产品 Overlay 展示。统计 Timer 不参与移动、死亡、完成或 Undo Snapshot。HUD 和 Result 的页面布局见 [`ui.md`](ui.md)。
+
+地图完成与死亡是 Engine 事实；下一关、返回章节、打开 Editor 等动作由启动该 session 的产品入口决定。
+
 尚未经过全部正式关卡逐关人工验证的复杂行为必须继续标明 `confirmed / inferred`；“与原版一致”的结论以原版验证结果为依据。

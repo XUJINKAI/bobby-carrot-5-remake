@@ -1,4 +1,277 @@
 /* ---------- Play HUD v2 ---------- */
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-areas:
+    "top"
+    "scroll"
+    "bottom";
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: #07100b;
+}
+.app-shell-fixed-top {
+  grid-area: top;
+}
+.app-shell-fixed-bottom {
+  grid-area: bottom;
+}
+.app-scroll-region {
+  grid-area: scroll;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.app-topbar {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: max(8px, env(safe-area-inset-top)) 14px 8px;
+  border-bottom: 1px solid #26352b;
+  background: #101a14ee;
+  z-index: 20;
+}
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.app-brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.mode-selector,
+.app-actions,
+.app-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mode-selector summary,
+.mode-selector a,
+.app-actions button,
+.app-context-actions button,
+.app-bottom-bar button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #17251b;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mode-selector {
+  position: relative;
+}
+.mode-selector summary {
+  list-style: none;
+  cursor: pointer;
+}
+.mode-selector summary::-webkit-details-marker {
+  display: none;
+}
+.mode-selector summary::after {
+  content: " ▾";
+  color: var(--muted);
+}
+.mode-selector[open] summary::after {
+  content: " ▴";
+}
+.mode-selector nav {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  display: grid;
+  gap: 4px;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #101a14f7;
+  box-shadow: 0 16px 44px #0009;
+}
+.mode-selector a {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 5px;
+}
+.mode-selector a.active {
+  border-color: #9fc875;
+  background: #293d25;
+  color: #e6f4ce;
+}
+.app-context-actions {
+  justify-content: center;
+  min-width: 0;
+}
+.app-actions {
+  justify-content: flex-end;
+}
+.app-actions button {
+  width: 36px;
+  padding: 0;
+}
+.app-content {
+  min-height: 100%;
+  flex: 1 0 auto;
+}
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)) {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0 60px;
+}
+.app-content:has(.home-page) {
+  width: 100%;
+  padding: 0;
+}
+.app-content > .adventure-desktop {
+  min-height: 100%;
+  height: 100%;
+}
+.app-content > .adventure-desktop .adventure-phone {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  aspect-ratio: 5 / 8;
+}
+.app-bottom-bar {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px max(6px, env(safe-area-inset-bottom));
+  border-top: 1px solid #26352b;
+  background: #101a14;
+  color: #aebdb1;
+  font-size: 0.76rem;
+  z-index: 20;
+}
+.global-dialog-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #02050399;
+  backdrop-filter: blur(4px);
+  z-index: 50;
+}
+.global-dialog-layer[hidden] {
+  display: none;
+}
+.global-dialog {
+  width: min(430px, 100%);
+  max-height: min(76vh, 620px);
+  overflow: auto;
+  border: 1px solid #ffffff20;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #18261c, #0d1710);
+  box-shadow: 0 25px 80px #000b;
+}
+.global-dialog > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #ffffff12;
+}
+.global-dialog > header button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.4rem;
+}
+.global-dialog > div {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+.global-dialog h3,
+.global-dialog p {
+  margin: 0;
+}
+.global-dialog label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.global-dialog select,
+.settings-save-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #17251b;
+  color: inherit;
+}
+.settings-save-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.settings-save-summary,
+.settings-feedback {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.settings-feedback {
+  min-height: 1.2em;
+}
+.game-page,
+.game-page .game-stage {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.game-page {
+  display: block;
+}
+.game-canvas-layer {
+  position: absolute;
+  inset: 0;
+}
+.product-game-statistics {
+  position: absolute;
+  left: 12px;
+  top: 52px;
+  z-index: 6;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid #ffffff29;
+  border-radius: 999px;
+  background: #06100abd;
+  color: #dce8de;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #04090685;
+  backdrop-filter: blur(5px);
+  z-index: 10;
+}
+.result-overlay[hidden] {
+  display: none;
+}
+
 .game-toolbar-v2 {
   position: relative;
   display: grid;
@@ -185,6 +458,44 @@
   }
 }
 @media (max-width: 700px) {
+  .app-topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand global"
+      "mode context";
+    gap: 7px;
+    min-height: 88px;
+  }
+  .app-brand {
+    grid-area: brand;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-brand img {
+    flex: 0 0 auto;
+  }
+  .mode-selector {
+    grid-area: mode;
+  }
+  .app-context-actions {
+    grid-area: context;
+    justify-content: flex-end;
+    overflow-x: auto;
+  }
+  .app-actions {
+    grid-area: global;
+    gap: 3px;
+  }
+  .app-actions button {
+    width: 31px;
+    min-height: 31px;
+  }
+  .app-bottom-bar > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   .game-toolbar-v2 {
     display: flex;
     overflow-x: auto;
@@ -216,63 +527,7 @@
   }
 }
 
-/* Original HUD art, mobile held-direction input and DEBUG inspector. */
-.hud-art {
-  display: inline-block;
-  height: 38px;
-  overflow: hidden;
-  flex: 0 0 auto;
-  background-image: url("assets/art/hd/hud.png");
-  background-repeat: no-repeat;
-  background-size: 350px 38px;
-}
-.hud-carrot {
-  width: 39px;
-  background-position: -42px 0;
-}
-.hud-gas {
-  width: 37px;
-  background-position: -83px 0;
-}
-.hud-key {
-  width: 20px;
-  background-position: -122px 0;
-}
-.hud-kite {
-  width: 35px;
-  background-position: -144px 0;
-}
-.hud-shovel {
-  width: 37px;
-  background-position: -179px 0;
-}
-.hud-egg {
-  width: 29px;
-  background-position: -217px 0;
-}
-.hud-bean {
-  width: 35px;
-  background-position: -247px 0;
-}
-.hud-golden-carrot {
-  display: block;
-  max-height: 32px;
-  width: auto;
-}
-.hud-text-label {
-  font-size: 0.58rem;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-}
-.hud-chip:has(.hud-art),
-.item-chip:has(.hud-art) {
-  height: 42px;
-  padding-top: 1px;
-  padding-bottom: 1px;
-}
-.mobile-dpad {
-  display: none;
-}
+/* DEBUG 检查器。 */
 .debug-panel {
   z-index: 6;
   line-height: 1.45;
@@ -284,44 +539,6 @@
   }
   .game-toolbar #edit-level {
     display: none !important;
-  }
-  .mobile-dpad {
-    position: absolute;
-    right: max(14px, env(safe-area-inset-right));
-    bottom: max(16px, env(safe-area-inset-bottom));
-    display: grid;
-    grid-template-columns: repeat(3, 52px);
-    grid-template-rows: repeat(2, 52px);
-    gap: 5px;
-    z-index: 7;
-    touch-action: none;
-  }
-  .mobile-dpad button {
-    border: 1px solid #ffffff35;
-    background: #0b140ecf;
-    color: #eef5ef;
-    border-radius: 14px;
-    font-size: 1.35rem;
-    backdrop-filter: blur(8px);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .mobile-dpad button[data-move="up"] {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .mobile-dpad button[data-move="left"] {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .mobile-dpad button[data-move="down"] {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .mobile-dpad button[data-move="right"] {
-    grid-column: 3;
-    grid-row: 2;
   }
   .game-status {
     right: 190px;

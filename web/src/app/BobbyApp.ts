@@ -1,35 +1,66 @@
-import { TinySynthAudioBackend } from "./TinySynthAudio.js";
-import { fetchJson, type LevelCatalog } from "./catalog.js";
-import { NOOP_CONTROLLER, siteUrl, type PageController } from "./common.js";
+import { createApp, reactive, type App as VueApp } from "vue";
+import { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
+import { fetchJson, type LevelCatalog } from "../services/catalog/catalog.js";
+import { siteUrl } from "../services/assets/gameAssets.js";
+import { NOOP_CONTROLLER, type PageController } from "./pageContracts.js";
 import {
+  findAdventureLevel,
   renderAdventureChapter,
   renderAdventureChapters,
   renderAdventureHome,
-  findAdventureLevel,
-} from "./adventure-pages.js";
-import { renderEditorPage } from "./editor-page.js";
-import { renderOfficialGame } from "./official-game.js";
-import { renderHome, renderLevels, renderSettings } from "./pages.js";
+} from "../pages/adventure/mountAdventurePages.js";
+import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
+import { renderOfficialGame } from "../pages/game/mountOfficialGame.js";
+import { renderHome } from "../pages/home/mountHomePage.js";
+import { renderLevels } from "../pages/explore/mountExplorePage.js";
+import {
+  installShellBridge,
+  type ShellOptions,
+  type ShellViewState,
+} from "../shell/shellBridge.js";
+import AppRoot from "./AppRoot.vue";
+
+interface AppRootHandle {
+  openSettings(feedback?: string): void;
+}
 
 export class BobbyApp {
-  private readonly app: HTMLDivElement;
+  private readonly mount: HTMLDivElement;
   private readonly audio = new TinySynthAudioBackend();
+  private readonly shell = reactive<ShellViewState>(defaultShellState());
   private catalog!: LevelCatalog;
+  private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
+  private vueApp: VueApp<Element> | null = null;
+  private vueRoot: AppRootHandle | null = null;
 
-  constructor(app: HTMLDivElement) {
-    this.app = app;
+  constructor(mount: HTMLDivElement) {
+    this.mount = mount;
   }
 
   async start(): Promise<void> {
     this.catalog = await fetchJson<LevelCatalog>(
       siteUrl("assets/catalog.json"),
     );
+    installShellBridge({ apply: (options) => this.applyShell(options) });
+    const contentReady = new Promise<void>((resolve) => {
+      this.vueApp = createApp(AppRoot, {
+        shell: this.shell,
+        audio: this.audio,
+        navigate: this.navigate,
+        onContentReady: (element: HTMLDivElement) => {
+          this.content = element;
+          resolve();
+        },
+      });
+      this.vueRoot = this.vueApp.mount(this.mount) as unknown as AppRootHandle;
+    });
     document.addEventListener("pointerdown", this.resumeAudio, {
       passive: true,
     });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
+    await contentReady;
     await this.renderRoute();
   }
 
@@ -38,12 +69,29 @@ export class BobbyApp {
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
     window.removeEventListener("popstate", this.onPopState);
+    installShellBridge(null);
+    this.vueApp?.unmount();
+    this.vueApp = null;
+    this.vueRoot = null;
+  }
+
+  private applyShell(options: ShellOptions): void {
+    this.shell.mode = options.mode ?? "home";
+    this.shell.contextActions = options.contextActions ?? [];
+    this.shell.contextInfo = options.contextInfo ?? "准备就绪";
+    this.shell.showBottomBar = options.showBottomBar !== false;
+    this.shell.showScreenControlToggle =
+      options.showScreenControlToggle !== false;
+    this.shell.topBarFixed = options.topBarFixed ?? true;
+    this.shell.bottomBarFixed = options.bottomBarFixed ?? true;
   }
 
   private readonly resumeAudio = (): void => this.audio.resume();
+
   private readonly onPopState = (): void => {
     void this.renderRoute();
   };
+
   private readonly navigate = (path: string): void => {
     const target = new URL(path.replace(/^\/+/, ""), document.baseURI);
     history.pushState(
@@ -59,29 +107,30 @@ export class BobbyApp {
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();
     const context = {
-      app: this.app,
+      app: this.content,
       catalog: this.catalog,
       audio: this.audio,
       navigate: this.navigate,
     };
     if (path === "/") {
-      renderHome(context);
+      this.controller = await renderHome(context);
       return;
     }
     if (path === "/levels") {
-      await renderLevels(context);
+      this.controller = await renderLevels(context);
       return;
     }
     if (path === "/settings") {
-      renderSettings(context);
+      this.controller = await renderHome(context);
+      this.vueRoot?.openSettings();
       return;
     }
     if (path === "/adventure") {
-      renderAdventureHome(context);
+      this.controller = renderAdventureHome(context);
       return;
     }
     if (path === "/adventure/chapters") {
-      renderAdventureChapters(context);
+      this.controller = renderAdventureChapters(context);
       return;
     }
     if (path.startsWith("/adventure/chapter/")) {
@@ -90,7 +139,7 @@ export class BobbyApp {
         this.navigate("/adventure/chapters");
         return;
       }
-      renderAdventureChapter(context, chapter);
+      this.controller = renderAdventureChapter(context, chapter);
       return;
     }
     if (path.startsWith("/adventure/play/")) {
@@ -138,6 +187,18 @@ export class BobbyApp {
     }
     this.navigate("/");
   }
+}
+
+function defaultShellState(): ShellViewState {
+  return {
+    mode: "home",
+    contextActions: [],
+    contextInfo: "准备就绪",
+    showBottomBar: false,
+    showScreenControlToggle: false,
+    topBarFixed: true,
+    bottomBarFixed: true,
+  };
 }
 
 function localRoutePath(): string {

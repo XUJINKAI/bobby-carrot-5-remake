@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { root, run } from "./util.mjs";
+import { root, run, tscCommand } from "./util.mjs";
 import { resolveDistRequest } from "./static-server.mjs";
 
 run(process.execPath, ["tools/scripts/build.mjs"]);
+// 产品构建不会发布 DAT，但验证测试和原版一致性检查需要其本地编译产物。
+run(tscCommand(), ["-b", "dat", "--force"]);
 run(
   process.execPath,
   [
@@ -151,27 +153,14 @@ for (const level of catalog.levels) {
 }
 
 verifySourceBoundaries();
+verifyUnifiedUiShell();
 
 for (const file of [
   "dist/index.html",
-  "dist/app.js",
-  "dist/application.js",
-  "dist/common.js",
-  "dist/pages.js",
-  "dist/adventure-pages.js",
-  "dist/adventure-storage.js",
-  "dist/explore-progress.js",
-  "dist/official-game.js",
-  "dist/editor-page.js",
-  "dist/game-session.js",
-  "dist/game-debug.js",
   "dist/model/index.js",
   "dist/adventure/index.js",
   "dist/engine/index.js",
   "dist/editor/index.js",
-  "dist/game-ui.css",
-  "dist/adventure.css",
-  "dist/editor.css",
   "dist/assets/catalog.json",
   "dist/assets/level-filters.json",
   "dist/assets/art/hd/ts.png",
@@ -180,7 +169,6 @@ for (const file of [
   "dist/assets/art/hd/b1.png",
   "dist/assets/art/hd/b2.png",
   "dist/assets/art/hd/b3.png",
-  "dist/TinySynthAudio.js",
 ])
   if (!fs.existsSync(path.join(root, file)))
     throw new Error(`Missing build artifact: ${file}`);
@@ -347,11 +335,11 @@ function verifySourceBoundaries() {
   });
 
   const officialGame = fs.readFileSync(
-      path.join(root, "web/src/official-game.ts"),
+      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
       "utf8",
     ),
     gameSession = fs.readFileSync(
-      path.join(root, "web/src/game-session.ts"),
+      path.join(root, "web/src/runtime/game/createGameSession.ts"),
       "utf8",
     ),
     world = fs.readFileSync(
@@ -365,6 +353,10 @@ function verifySourceBoundaries() {
     ),
     inputController = fs.readFileSync(
       path.join(root, "engine/src/input/InputController.ts"),
+      "utf8",
+    ),
+    screenJoystick = fs.readFileSync(
+      path.join(root, "engine/src/input/ScreenJoystick.ts"),
       "utf8",
     ),
     adventureRewards = fs.readFileSync(
@@ -406,15 +398,23 @@ function verifySourceBoundaries() {
     );
 
   if (
-    !/game\.loadLevel\(options\.level\)/.test(gameSession) ||
+    !/createGameplayRuntime\(\{[\s\S]*level:\s*options\.level/.test(
+      gameSession,
+    ) ||
     /\bloadOptions\b/.test(gameSession)
   )
     throw new Error(
       "Web game session must load a pure LevelMap without product-specific gameplay options",
     );
-  if (!/input\.setHeldDirection\(direction\)/.test(gameSession))
+  if (
+    !/screenJoystick\?:\s*boolean\s*\|\s*ScreenJoystickOptions/.test(
+      inputController,
+    ) ||
+    !/new ScreenJoystick\(/.test(inputController) ||
+    !/directionForJoystickVector\(/.test(screenJoystick)
+  )
     throw new Error(
-      "Web screen direction controls must enter gameplay through InputController",
+      "Engine ScreenJoystick must enter gameplay through InputController",
     );
   if (
     !/event\.type\s*!==\s*["']dialog["']/.test(gameSession) ||
@@ -454,6 +454,8 @@ function verifySourceBoundaries() {
     );
 
   for (const capability of [
+    "keyboard",
+    "pointer",
     "movement",
     "undo",
     "restart",
@@ -472,6 +474,107 @@ function verifySourceBoundaries() {
     throw new Error(
       "Engine object-touch adapter must translate Definition touch results into dialog events",
     );
+}
+
+function verifyUnifiedUiShell() {
+  const webSourceRoot = path.join(root, "web/src"),
+    allowedRootFiles = new Set(["app.ts", "vue-env.d.ts"]),
+    unexpectedRootSources = fs
+      .readdirSync(webSourceRoot, { withFileTypes: true })
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          /\.(?:ts|vue)$/.test(entry.name) &&
+          !allowedRootFiles.has(entry.name),
+      );
+  if (unexpectedRootSources.length > 0)
+    throw new Error(
+      `Web source files must live in responsibility folders: ${unexpectedRootSources
+        .map((entry) => entry.name)
+        .join(", ")}`,
+    );
+
+  const application = fs.readFileSync(
+      path.join(root, "web/src/app/BobbyApp.ts"),
+      "utf8",
+    ),
+    shell = fs.readFileSync(
+      path.join(root, "web/src/shell/shellBridge.ts"),
+      "utf8",
+    ),
+    appRoot = fs.readFileSync(
+      path.join(root, "web/src/app/AppRoot.vue"),
+      "utf8",
+    ),
+    modeSelector = fs.readFileSync(
+      path.join(root, "web/src/shell/ModeSelector.vue"),
+      "utf8",
+    ),
+    dialogLayer = fs.readFileSync(
+      path.join(root, "web/src/shell/dialogs/GlobalDialogLayer.vue"),
+      "utf8",
+    ),
+    settingsDialog = fs.readFileSync(
+      path.join(root, "web/src/shell/dialogs/SettingsDialog.vue"),
+      "utf8",
+    ),
+    homePage = ["HomeDemo.vue", "HomeModeMenu.vue", "ProjectIntro.vue"]
+      .map((file) =>
+        fs.readFileSync(path.join(root, "web/src/pages/home", file), "utf8"),
+      )
+      .join("\n"),
+    officialGame = fs.readFileSync(
+      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
+      "utf8",
+    ),
+    pageAdapters = [
+      "web/src/pages/home/mountHomePage.ts",
+      "web/src/pages/explore/mountExplorePage.ts",
+      "web/src/pages/adventure/mountAdventurePages.ts",
+      "web/src/pages/editor/mountEditorPage.ts",
+      "web/src/pages/game/mountOfficialGame.ts",
+    ]
+      .map((file) => fs.readFileSync(path.join(root, file), "utf8"))
+      .join("\n");
+
+  for (const region of ["home-demo-panel", "home-mode-panel", "home-about"])
+    if (!homePage.includes(region))
+      throw new Error(`Home is missing required region: ${region}`);
+  if (
+    !/createApp\(AppRoot/.test(application) ||
+    !/installShellBridge/.test(application) ||
+    !/root\.value\?\.contains\(target\)/.test(modeSelector)
+  )
+    throw new Error("Vue App Root must own routing shell and outside-dismiss modes");
+  if (
+    !/@click\.self=["']emit\('close'\)["']/.test(dialogLayer) ||
+    !/class=["']global-dialog settings-dialog["']/.test(settingsDialog)
+  )
+    throw new Error("Vue global settings dialog must close through its backdrop");
+  if (/renderSettingsDialog|settings-card/.test(officialGame))
+    throw new Error("Gameplay pages must use the shared application settings dialog");
+  if (!/Vue App Shell/.test(shell) || !/renderAppShell/.test(shell))
+    throw new Error("Web page adapters must submit state to the Vue App Shell");
+  if (/template\s*:/.test(appRoot) || !/AppTopBar/.test(appRoot))
+    throw new Error("Vue UI must use responsibility-focused .vue SFC files");
+  for (const fixedOption of ["topBarFixed", "bottomBarFixed"]) {
+    const configuredPages = pageAdapters.match(
+      new RegExp(`${fixedOption}\\s*:\\s*true`, "g"),
+    )?.length;
+    if (!configuredPages || configuredPages < 4)
+      throw new Error(`Internal pages must explicitly configure ${fixedOption}`);
+  }
+  if (!/app-scroll-region/.test(appRoot))
+    throw new Error("Fixed Shell bars must leave scrolling to the content region");
+  for (const component of [
+    "HomePage.vue",
+    "ExplorePage.vue",
+    "AdventureHomePage.vue",
+    "OfficialGamePage.vue",
+    "EditorPageHost.vue",
+  ])
+    if (!pageAdapters.includes(component))
+      throw new Error(`Web page adapter is missing Vue component: ${component}`);
 }
 
 function verifySpaVsStaticRouting(distRoot) {
@@ -509,42 +612,15 @@ function verifySpaVsStaticRouting(distRoot) {
 
 function verifyWebModuleEntry(webRoot) {
   const html = fs.readFileSync(path.join(webRoot, "index.html"), "utf8"),
-    baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? "/",
-    mapText = html.match(
-      /<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i,
-    )?.[1];
-  if (!mapText) throw new Error("dist/index.html is missing import map");
-  const imports = JSON.parse(mapText)?.imports;
-  if (!imports || typeof imports !== "object")
-    throw new Error("Import map must define imports");
-  if (imports["@bobby/dat"] !== undefined)
-    throw new Error("Product import map must not expose @bobby/dat");
-  for (const specifier of [
-    "@bobby/model",
-    "@bobby/adventure",
-    "@bobby/engine",
-    "@bobby/editor",
-  ])
-    if (typeof imports[specifier] !== "string")
-      throw new Error(`Import map missing ${specifier}`);
-  for (const [specifier, target] of Object.entries(imports)) {
-    if (typeof target !== "string" || !isUrlLike(target))
-      throw new Error(`Bad import map target for ${specifier}`);
-    verifyLocal(webRoot, baseHref, target, `import map ${specifier}`);
-  }
+    baseHref = html.match(/<base\s+href=["']([^"']+)["']/i)?.[1] ?? "/";
+  if (/type=["']importmap["']/.test(html))
+    throw new Error("Vite Web build must bundle dependencies without an import map");
+  if (!/assets\/[^"]+\.js/.test(html) || !/assets\/[^"]+\.css/.test(html))
+    throw new Error("Vite Web build is missing bundled JavaScript or CSS assets");
   for (const match of html.matchAll(
     /<script\s+type=["']module["'][^>]*\ssrc=["']([^"']+)["']/gi,
   ))
     verifyLocal(webRoot, baseHref, match[1], "module script");
-}
-
-function isUrlLike(target) {
-  return (
-    target.startsWith("/") ||
-    target.startsWith("./") ||
-    target.startsWith("../") ||
-    /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(target)
-  );
 }
 
 function verifyLocal(webRoot, baseHref, target, label) {

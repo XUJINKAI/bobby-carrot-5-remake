@@ -13,3 +13,5 @@ Renderer 使用 UP9 高清版 48px 源素材，再乘以 Camera Zoom。Viewport 
 - Zoom 当前范围约 0.35×–2.5×。
 
 以后增加 Overview/Pan 仍只能属于 Camera 层，不能修改 World 坐标。
+
+Explore、Custom 和 Editor Play Test 可以使用自由视野能力。Adventure 在桌面与移动端都使用 portrait puzzle viewport，并设置适合原版信息边界的最小 Zoom。模式只配置 Camera 能力和限制，不复制 Camera 实现。

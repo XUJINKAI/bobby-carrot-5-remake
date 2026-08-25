@@ -1,5 +1,9 @@
 import type { Game } from "../core/Game.js";
 import type { Direction } from "../mechanics/ids.js";
+import {
+  ScreenJoystick,
+  type ScreenJoystickOptions,
+} from "./ScreenJoystick.js";
 
 interface PointerState {
   x: number;
@@ -10,17 +14,22 @@ interface PointerState {
 }
 
 export interface InputControllerOptions {
+  keyboard?: boolean;
+  pointer?: boolean;
   movement?: boolean;
   undo?: boolean;
   restart?: boolean;
   pan?: boolean;
   zoom?: boolean;
   debug?: boolean;
+  screenJoystick?: boolean | ScreenJoystickOptions;
   /** @deprecated 使用 `undo`。保留该字段只为兼容现有调用。 */
   allowUndo?: boolean;
 }
 
 interface InputCapabilities {
+  keyboard: boolean;
+  pointer: boolean;
   movement: boolean;
   undo: boolean;
   restart: boolean;
@@ -52,7 +61,9 @@ export class InputController {
   private readonly capabilities: InputCapabilities;
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
+  private readonly screenJoystick: ScreenJoystick | null;
   private externalDirection: Direction | null = null;
+  private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
   private pinchStartZoom = 1;
   private suppressNextClick = false;
@@ -62,6 +73,8 @@ export class InputController {
     this.game = game;
     this.canvas = game.renderer.canvas;
     this.capabilities = {
+      keyboard: options.keyboard ?? true,
+      pointer: options.pointer ?? true,
       movement: options.movement ?? true,
       undo: options.undo ?? options.allowUndo ?? true,
       restart: options.restart ?? true,
@@ -78,14 +91,28 @@ export class InputController {
     this.canvas.addEventListener("pointercancel", this.onPointerUp);
     this.canvas.addEventListener("wheel", this.onWheel, { passive: false });
     this.canvas.addEventListener("auxclick", this.onAuxClick);
+    const joystick = options.screenJoystick;
+    this.screenJoystick =
+      joystick === undefined || joystick === false
+        ? null
+        : new ScreenJoystick(
+            this.canvas,
+            joystick === true ? {} : joystick,
+            this.setJoystickDirection,
+          );
   }
 
   setEnabled(value: boolean): void {
     this.enabled = value;
+    this.screenJoystick?.setInteractionEnabled(value);
     if (!value) this.clearHeldMovement();
   }
 
-  /** 供屏幕摇杆、方向按钮或其他宿主控件复用同一条移动输入路径。 */
+  setScreenJoystickEnabled(value: boolean): void {
+    this.screenJoystick?.setEnabled(value);
+  }
+
+  /** 供 ScreenJoystick 和宿主方向输入复用同一条移动输入路径。 */
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
@@ -113,10 +140,12 @@ export class InputController {
     this.canvas.removeEventListener("pointercancel", this.onPointerUp);
     this.canvas.removeEventListener("wheel", this.onWheel);
     this.canvas.removeEventListener("auxclick", this.onAuxClick);
+    this.screenJoystick?.destroy();
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (!this.enabled || !this.game.hasLevel) return;
+    if (!this.enabled || !this.capabilities.keyboard || !this.game.hasLevel)
+      return;
     const key = event.key.toLowerCase();
     const direction = KEY_DIRECTION[key];
     if (direction && this.capabilities.movement) {
@@ -142,6 +171,7 @@ export class InputController {
   };
 
   private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (!this.capabilities.keyboard) return;
     const key = event.key.toLowerCase();
     if (!KEY_DIRECTION[key] || !this.capabilities.movement) return;
     event.preventDefault();
@@ -150,19 +180,30 @@ export class InputController {
     this.applyHeldDirection();
   };
 
-  private readonly onBlur = (): void => this.clearHeldMovement();
+  private readonly onBlur = (): void => {
+    this.screenJoystick?.reset();
+    this.clearHeldMovement();
+  };
 
   private clearHeldMovement(): void {
     this.heldMovementKeys.length = 0;
     this.externalDirection = null;
+    this.joystickDirection = null;
     this.game.setHeldDirection(null);
   }
 
   private applyHeldDirection(): void {
     this.game.setHeldDirection(
-      this.externalDirection ?? this.currentKeyboardDirection(),
+      this.joystickDirection ??
+        this.externalDirection ??
+        this.currentKeyboardDirection(),
     );
   }
+
+  private readonly setJoystickDirection = (direction: Direction | null): void => {
+    this.joystickDirection = direction;
+    this.applyHeldDirection();
+  };
 
   private currentKeyboardDirection(): Direction | null {
     const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
@@ -170,7 +211,12 @@ export class InputController {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!this.enabled || (!this.capabilities.pan && !this.capabilities.zoom)) return;
+    if (
+      !this.enabled ||
+      !this.capabilities.pointer ||
+      (!this.capabilities.pan && !this.capabilities.zoom)
+    )
+      return;
     if (
       event.pointerType === "mouse" &&
       event.button !== 0 &&
@@ -237,7 +283,12 @@ export class InputController {
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
-    if (!this.enabled || !this.capabilities.zoom) return;
+    if (
+      !this.enabled ||
+      !this.capabilities.pointer ||
+      !this.capabilities.zoom
+    )
+      return;
     event.preventDefault();
     this.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
   };

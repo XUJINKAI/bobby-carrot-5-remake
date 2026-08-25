@@ -37,8 +37,8 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
 - 已领取全局奖励按地图位置记忆，每个稳定奖励位置只领取一次；
-- 原版 Bonus 60 秒由 Adventure 管理，并在成功打开金锁后开始；
-- Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，而不把 Campaign 语义塞进 Engine。
+- 原版 Bonus 60 秒由 Adventure 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
+- Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，倒计时、超时死亡、Undo 和 Restart 等地图内生命周期统一由 Engine 执行。
 
 ## Explore
 
@@ -117,3 +117,5 @@ Base / UP、DAT package、record index 属于 archive provenance。内部 canoni
 - Adventure 使用 portrait puzzle viewport；
 - 游戏世界沿用原版美术与动画素材；
 - 正式关卡保持章节与 Bonus 的原作组织语义。
+
+Web UI 使用同一个产品外壳组织 Adventure、Explore、Editor 和 Custom，同一个 GameStage 承载所有可游玩入口。Engine 在 GameStage 中渲染基础 Gameplay HUD 和可配置 Screen Joystick；TopBar 表达产品位置与操作，BottomBar 表达操作提示，Result Overlay 表达地图结束后的产品流程。完整规范见 [`features/ui.md`](features/ui.md)。

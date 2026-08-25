@@ -48,7 +48,9 @@ EditorLevel
 
 Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等与编辑 Draft 相互隔离。
 
-原版 Adventure 的 Campaign、全局经济和 Bonus 60 秒由 `@bobby/adventure` runtime 负责。Editor Play Test 使用纯 Engine session，自定义地图中的 `ObjectId.LOCK` 只产生通用世界事件。
+Play Test 通过 Runtime Config 启用 Engine Gameplay HUD 和 Screen Joystick，与 Adventure、Explore 和 Custom Play 共用同一套基础呈现与移动输入。
+
+原版 Adventure 的 Campaign 和全局经济由 `@bobby/adventure` 负责。Adventure 把 Bonus 60 秒编码为 Lock 的 `timedChallengeMs` 实例参数；Editor Play Test 中带相同参数的 Lock 由 Engine 执行同一套倒计时、超时死亡、Undo 和 Restart 规则。
 
 ## 编辑交互
 
@@ -60,39 +62,24 @@ Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/In
 - Ctrl/Cmd+Z、Y：Undo / Redo；
 - 泛蓝高亮：表示本次操作将删除或替换的完整 owner。
 
-## URL 分享
+## 文件与产品入口
 
-分享数据放在 URL Fragment：
-
-```text
-/play#map=...
-/edit#map=...
-```
-
-两种路由使用同一个 payload，保留 name/author/description；从游玩链接进入后可以直接打开同一地图的 Editor。
-
-分享编码：
+用户地图的长期交换动作是：
 
 ```text
-BC5R magic/version
-+ UTF-8 metadata envelope
-+ @bobby/dat 编码的 original DAT level record
--> 如果更小则 deflate-raw
--> base64url
+JSON Import
+JSON Export
 ```
 
-前缀：
+Home 的 Import Dialog 读取 JSON 后展示地图摘要，并提供“游玩”和“编辑”两个入口。Custom Play 可以用相同语义地图重新进入 Editor。
 
-```text
-d.   compressed
-r.   raw
-```
+当前产品没有 URL share 协议。未来增加分享能力时，应为语义 JSON 单独定义版本化产品协议，并保留 `name / author / description` 与 `LevelObject.properties`。
 
-`editor/share.ts` 通过 `@bobby/dat` 完成 DAT 编解码，分享层只负责 metadata envelope、压缩和 URL 表示。
+Editor 工作区、Play Test 与 Custom Map 的页面结构见 [`ui.md`](ui.md)。
 
 ## 与原版验证的关系
 
-Editor JSON 是长期编辑/备份格式；分享链接是传输格式；原版 JAR patch 是验证工具。三者围绕同一张 semantic `LevelMap`：
+Editor JSON 是长期编辑/备份格式，原版 JAR patch 是独立验证工具。两条路径围绕同一张 semantic `LevelMap`：
 
 ```text
 Editor Draft -> Play Test -> bc5r Engine

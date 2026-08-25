@@ -1,56 +1,145 @@
-.nostalgia-home {
-  min-height: calc(100vh - 150px);
+.home-page {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+}
+.home-hero {
+  min-height: calc(100dvh - 58px);
   display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 24px;
-  text-align: center;
-  padding: 40px 20px;
-  background: radial-gradient(
-    circle at 50% 35%,
-    rgba(53, 105, 190, 0.24),
-    transparent 48%
-  );
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: clamp(24px, 4vw, 54px);
+  align-items: center;
+  padding: 42px 0;
 }
-.nostalgia-logo {
-  width: min(620px, 90vw);
-  max-height: 240px;
-  object-fit: contain;
-  image-rendering: auto;
+.home-demo-panel,
+.home-mode-panel,
+.home-about article {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #142219e8, #0d1711e8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
-.nostalgia-menu {
+.home-demo-panel {
+  padding: 18px;
+}
+.home-demo-panel > header,
+.home-mode-panel > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.home-demo-panel h1,
+.home-mode-panel h2,
+.home-about h2 {
+  margin: 3px 0 0;
+}
+.home-demo-stage {
+  position: relative;
+  min-height: 360px;
+  height: min(52vh, 540px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+  background: #06100a;
+}
+.home-demo-stage .game-stage,
+.home-demo-stage .game-canvas-layer {
+  position: absolute;
+  inset: 0;
+}
+.home-demo-panel > p,
+.home-import-feedback {
+  min-height: 1.4em;
+  margin: 12px 2px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.home-mode-panel {
   display: grid;
   gap: 10px;
-  width: min(360px, 88vw);
+  padding: 20px;
 }
-.nostalgia-menu a {
-  display: block;
-  padding: 13px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  background: rgba(7, 17, 12, 0.76);
-  color: #f5f7ef;
+.home-mode-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+  color: inherit;
+  text-align: left;
   text-decoration: none;
-  font-weight: 800;
-  letter-spacing: 0.05em;
 }
-.nostalgia-menu a:hover {
-  transform: translateY(-1px);
-  background: rgba(24, 59, 42, 0.9);
+.home-mode-card.primary {
+  border-color: rgba(185, 224, 126, 0.5);
+  background: linear-gradient(135deg, #314827, #1d3020);
 }
-.nostalgia-menu .nostalgia-primary {
-  background: rgba(30, 105, 70, 0.94);
-  font-size: 1.08rem;
+.home-mode-card strong {
+  font-size: 1rem;
 }
-.nostalgia-foot {
-  max-width: 680px;
+.home-mode-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
 }
-.home-explore-strip {
+.home-mode-card b {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 1.2rem;
+}
+.home-about {
+  min-height: 78vh;
+  display: grid;
+  align-content: center;
+  gap: 24px;
+  padding: 80px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.home-about-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.home-about article {
+  padding: 24px;
+}
+.home-about h3 {
+  margin: 0 0 10px;
+}
+.home-about p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.home-about-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.home-quick-row {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 12px 20px;
+}
+@media (max-width: 760px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+    align-content: start;
+    padding: 24px 0 42px;
+  }
+  .home-mode-panel {
+    order: -1;
+  }
+  .home-demo-stage {
+    min-height: 320px;
+    height: 56vh;
+  }
+  .home-about-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .chapter-stars {
   white-space: nowrap;
@@ -60,14 +149,6 @@
 }
 .bonus-level {
   outline: 1px solid rgba(247, 212, 95, 0.2);
-}
-.setting-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.ghost-btn.danger {
-  border-color: rgba(255, 100, 100, 0.4);
 }
 .adventure-desktop {
   min-height: 100dvh;
@@ -114,7 +195,8 @@
   gap: 12px;
   padding: 12px 26px;
 }
-.adventure-menu a {
+.adventure-menu a,
+.adventure-menu button {
   text-align: center;
   text-decoration: none;
 }
@@ -265,8 +347,5 @@
   .adventure-game-phone {
     width: 100vw;
     height: 100dvh;
-  }
-  .nostalgia-logo {
-    max-height: 180px;
   }
 }

@@ -3,7 +3,7 @@
 - `design.md`：产品是什么，以及哪些地方明确要现代化。
 - `architecture.md`：模块边界与依赖方向。
 - `contracts/`：Engine API、关卡格式、资产目录等跨模块契约。
-- `features/`：具体功能的行为约束；地图编辑器见 `features/editor.md`。
+- `features/`：具体功能的行为约束；Web UI 见 `features/ui.md`，地图编辑器见 `features/editor.md`。
 - `workflows/`：新增关卡、逆向机关等跨模块工作流。
 - `patterns/`：可复用实现模式。
 - `decisions/`：长期有效的重要决策与原因。

@@ -12,5 +12,5 @@
     { "path": "../editor" },
     { "path": "../adventure" }
   ],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"]
 }

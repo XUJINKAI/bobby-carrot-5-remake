@@ -6,7 +6,11 @@ import {
   type ObjectType,
   type TerrainType,
 } from "@bobby/engine";
-import { fetchJson, type CatalogLevel, type LevelCatalog } from "./catalog.js";
+import {
+  fetchJson,
+  type CatalogLevel,
+  type LevelCatalog,
+} from "../../services/catalog/catalog.js";
 type FilterGroup = "difficulty" | "carrots" | "items" | "scenes" | "mechanics";
 interface LevelFilterFeatures {
   carrotCount: number;
