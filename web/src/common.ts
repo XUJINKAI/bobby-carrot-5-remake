@@ -1,3 +1,5 @@
+import { bindShellNavigation, renderAppShell } from "./ui-shell.js";
+
 export type Navigate = (path: string) => void;
 
 export interface PageController {
@@ -21,6 +23,18 @@ export function escapeHtml(value: string): string {
   };
 
   return value.replace(/[&<>\"]/g, (char) => entities[char] ?? char);
+}
+
+/**
+ * Compatibility wrapper while pages migrate to renderAppShell.
+ * New code should import renderAppShell directly.
+ */
+export function shell(content: string): string {
+  return renderAppShell({ content });
+}
+
+export function bindNavigation(root: ParentNode, navigate: Navigate): void {
+  bindShellNavigation(root, navigate);
 }
 
 export function formatElapsed(milliseconds: number): string {
