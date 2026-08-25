@@ -406,6 +406,65 @@ button {
   gap: 24px;
   margin-bottom: 22px;
 }
+
+.explore-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.explore-tabs a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  text-decoration: none;
+}
+
+.explore-tabs a.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.explore-custom-collection .section-title {
+  align-items: flex-start;
+}
+
+.explore-map-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.explore-map-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 210px;
+  padding: 20px;
+}
+
+.explore-map-card h2 {
+  margin: 6px 0 8px;
+}
+
+.explore-map-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.explore-map-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
 .level-browser-head .section-title {
   margin: 0;
 }

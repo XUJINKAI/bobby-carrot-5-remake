@@ -28,8 +28,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       >章节选择</a>
       <a
         class="ghost-btn"
-        href="/levels"
-        @click.prevent="emit('navigate', '/levels')"
+        href="/explore"
+        @click.prevent="emit('navigate', '/explore')"
       >自由探索模式</a>
       <button class="ghost-btn" type="button" data-action="settings">存档 / 设置</button>
     </nav>

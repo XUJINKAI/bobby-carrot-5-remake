@@ -131,6 +131,26 @@ export interface LevelCatalog {
   difficulty: { historicalNonTutorialLevels: number; estimatedLevels: number };
 }
 
+export interface CustomMapCatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  path: string;
+}
+
+export interface CustomMapCollection {
+  id: string;
+  name: string;
+  description: string;
+  order: number;
+  maps: CustomMapCatalogEntry[];
+}
+
+export interface CustomMapCatalog {
+  schemaVersion: 1;
+  collections: CustomMapCollection[];
+}
+
 export async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok)

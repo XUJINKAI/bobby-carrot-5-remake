@@ -8,13 +8,12 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { ObjectId } from "@bobby/engine";
+import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import {
-  fetchJson,
   type CatalogLevel,
   type LevelCatalog,
-  type OfficialLevelData,
 } from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
@@ -31,48 +30,55 @@ import { formatTileInspection } from "../../runtime/game/formatTileInspection.js
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { displayLevelId } from "../../services/catalog/catalogPresentation.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
-import OfficialGamePage from "./OfficialGamePage.vue";
+import GamePage from "./GamePage.vue";
+import { editorMapPath, exploreCollectionPath, explorePlayPath } from "../../app/routes.js";
 import {
   loadScreenControlPreference,
   renderAppShell,
 } from "../../shell/shellBridge.js";
 
-export type OfficialGameMode = "explore" | "adventure";
-export interface OfficialGameContext {
+export type GamePageMode = "explore" | "adventure";
+export interface GameIdentity {
+  collection: string;
+  id: string;
+  title: string;
+}
+export interface GamePageContext {
   app: HTMLDivElement;
   catalog: LevelCatalog;
   audio: TinySynthAudioBackend;
   navigate: Navigate;
-  level: CatalogLevel;
-  mode: OfficialGameMode;
+  level: LevelMap;
+  identity: GameIdentity;
+  official?: CatalogLevel | undefined;
+  mode: GamePageMode;
 }
 
-export async function renderOfficialGame(
-  context: OfficialGameContext,
+export async function renderGamePage(
+  context: GamePageContext,
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate, level: meta, mode } = context;
+  const { app, catalog, audio, navigate, level, identity, official: meta, mode } = context;
+  if (mode === "adventure" && !meta)
+    throw new Error("Adventure GamePage 需要官方 Campaign identity");
   let adventureSave: AdventureSave | null =
     mode === "adventure" ? loadAdventureSave() : null;
   if (
     adventureSave &&
-    !isAdventureLevelUnlocked(adventureSave, meta.publicId)
+    !isAdventureLevelUnlocked(adventureSave, meta!.publicId)
   ) {
-    navigate(`/adventure/chapter/${meta.chapter}`);
+    navigate(`/adventure/chapter/${meta!.chapter}`);
     return NOOP_CONTROLLER;
   }
-  if (mode === "explore") rememberExploreLevel(meta.publicId);
-  const official = await fetchJson<OfficialLevelData>(
-    siteUrl(`assets/${meta.path}`),
-  );
+  if (mode === "explore" && meta) rememberExploreLevel(meta.publicId);
   const plan = adventureSave
-    ? planAdventureSession(meta.publicId, adventureSave)
+    ? planAdventureSession(meta!.publicId, adventureSave)
     : null;
   const sessionLevel = adventureSave
-    ? prepareAdventureLevel(meta.publicId, official, adventureSave)
-    : official;
+    ? prepareAdventureLevel(meta!.publicId, level, adventureSave)
+    : level;
   app.innerHTML = renderAppShell({
     mode,
-    contextActions: gameContextActions(meta, mode),
+    contextActions: gameContextActions(identity, meta, mode),
     contextInfo:
       mode === "adventure"
         ? "WASD / 方向键移动 · 拖动查看地图"
@@ -81,7 +87,7 @@ export async function renderOfficialGame(
     bottomBarFixed: true,
     content: "",
   });
-  const gamePage = createApp(OfficialGamePage, { mode });
+  const gamePage = createApp(GamePage, { mode });
   gamePage.mount(app);
   const canvas = required<HTMLCanvasElement>(app, "#game"),
     debugPanel = required<HTMLElement>(app, "[data-debug-panel]"),
@@ -120,8 +126,8 @@ export async function renderOfficialGame(
     },
   });
   const { game, input } = session,
-    isBonus = meta.contentKind === "bonus";
-  audio.playMusic(isBonus ? "bonus" : `ingame${meta.number % 3}`);
+    isBonus = meta?.contentKind === "bonus";
+  audio.playMusic(isBonus ? "bonus" : `ingame${meta ? meta.number % 3 : 1}`);
   let levelStartedAt = performance.now(),
     debugInspection: string | null = null,
     visibleResult: "death" | "complete" | null = null,
@@ -148,7 +154,7 @@ export async function renderOfficialGame(
       if (event.type === "collect-bonus-coin")
         next = claimPersistentReward(
           next,
-          meta.publicId,
+          meta!.publicId,
           ObjectId.BONUS_COIN,
           event.x,
           event.y,
@@ -156,7 +162,7 @@ export async function renderOfficialGame(
       else if (event.type === "collect-golden-carrot")
         next = claimPersistentReward(
           next,
-          meta.publicId,
+          meta!.publicId,
           ObjectId.GOLDEN_CARROT,
           event.x,
           event.y,
@@ -182,14 +188,14 @@ export async function renderOfficialGame(
       let nextLevel: CatalogLevel | undefined;
       if (adventureSave) {
         adventureSave = saveAdventureSave(
-          completeAdventureLevel(adventureSave, meta.publicId),
+          completeAdventureLevel(adventureSave, meta!.publicId),
         );
-        nextLevel = nextCampaignLevel(catalog, meta);
-      } else {
+        nextLevel = nextCampaignLevel(catalog, meta!);
+      } else if (meta) {
         markExploreLevelCompleted(meta.canonicalId);
         nextLevel = nextCampaignLevel(catalog, meta);
       }
-      resultCard.innerHTML = `<div class="result-kicker">${displayLevelId(meta)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextLevel ? `<button class="primary-btn" data-result="next" data-next="${nextLevel.publicId}">下一关 · ${displayLevelId(nextLevel)}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由选关"}</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextLevel ? `<button class="primary-btn" data-result="next" data-next="${nextLevel.publicId}">下一关 · ${displayLevelId(nextLevel)}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
     } else {
       resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
@@ -245,23 +251,19 @@ export async function renderOfficialGame(
     if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
     else if (action === "levels")
-      navigate(
-        mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
-      );
+      navigate(backPath(identity, meta, mode));
     else if (action === "next" && button.dataset.next)
       navigate(
         mode === "adventure"
           ? `/adventure/play/${button.dataset.next}`
-          : `/play/${button.dataset.next}`,
+          : explorePlayPath({ collection: "original", id: button.dataset.next }),
       );
   });
   const onGameShellAction = (event: Event): void => {
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
-      navigate(
-        mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
-      );
-    } else if (action === "edit") navigate(`/edit/${meta.publicId}`);
+      navigate(backPath(identity, meta, mode));
+    } else if (action === "edit") navigate(editorMapPath(identity));
     else if (action === "undo") askUndo();
     else if (action === "restart") askRestart();
   };
@@ -303,15 +305,18 @@ function nextCampaignLevel(
     : undefined;
 }
 function gameContextActions(
-  meta: CatalogLevel,
-  mode: OfficialGameMode,
+  identity: GameIdentity,
+  meta: CatalogLevel | undefined,
+  mode: GamePageMode,
 ) {
   return [
-    { id: "back", label: `← ${displayLevelId(meta)}`, title: "返回" },
-    {
-      label: meta.difficulty.label,
-      className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
-    },
+    { id: "back", label: `← ${identity.title}`, title: "返回" },
+    ...(meta
+      ? [{
+          label: meta.difficulty.label,
+          className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+        }]
+      : []),
     ...(mode === "explore"
       ? [{ id: "undo", label: "↶", title: "撤销" }]
       : []),
@@ -320,6 +325,16 @@ function gameContextActions(
       ? [{ id: "edit", label: "✎", title: "在编辑器中打开" }]
       : []),
   ];
+}
+
+function backPath(
+  identity: GameIdentity,
+  meta: CatalogLevel | undefined,
+  mode: GamePageMode,
+): string {
+  return mode === "adventure"
+    ? `/adventure/chapter/${meta!.chapter}`
+    : exploreCollectionPath(identity.collection);
 }
 function bindGameShell(
   input: {

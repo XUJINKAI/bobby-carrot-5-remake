@@ -393,8 +393,8 @@ function verifySourceBoundaries() {
       );
   });
 
-  const officialGame = fs.readFileSync(
-      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
+  const gamePage = fs.readFileSync(
+      path.join(root, "web/src/pages/game/mountGamePage.ts"),
       "utf8",
     ),
     gameSession = fs.readFileSync(
@@ -428,17 +428,17 @@ function verifySourceBoundaries() {
     );
 
   if (
-    !/planAdventureSession\(meta\.publicId/.test(officialGame) ||
-    /meta\.chapterLevel\s*>\s*10/.test(officialGame)
+    !/planAdventureSession\(meta!?\.publicId/.test(gamePage) ||
+    /meta!?\.chapterLevel\s*>\s*10/.test(gamePage)
   )
     throw new Error(
       "Official Adventure identity must come from Adventure session planning, not archive chapterLevel",
     );
-  if (/createAdventureRuntime|adventureRuntime/.test(officialGame))
+  if (/createAdventureRuntime|adventureRuntime/.test(gamePage))
     throw new Error(
       "Web must not host a second Adventure gameplay runtime beside Engine",
     );
-  if (!/prepareAdventureLevel\(meta\.publicId/.test(officialGame))
+  if (!/prepareAdventureLevel\(meta!?\.publicId/.test(gamePage))
     throw new Error(
       "Adventure play must prepare/augment a LevelMap before passing it to Engine",
     );
@@ -640,8 +640,8 @@ function verifyUnifiedUiShell() {
         fs.readFileSync(path.join(root, "web/src/pages/home", file), "utf8"),
       )
       .join("\n"),
-    officialGame = fs.readFileSync(
-      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
+    gamePage = fs.readFileSync(
+      path.join(root, "web/src/pages/game/mountGamePage.ts"),
       "utf8",
     ),
     pageAdapters = [
@@ -649,7 +649,7 @@ function verifyUnifiedUiShell() {
       "web/src/pages/explore/mountExplorePage.ts",
       "web/src/pages/adventure/mountAdventurePages.ts",
       "web/src/pages/editor/mountEditorPage.ts",
-      "web/src/pages/game/mountOfficialGame.ts",
+      "web/src/pages/game/mountGamePage.ts",
     ]
       .map((file) => fs.readFileSync(path.join(root, file), "utf8"))
       .join("\n");
@@ -668,7 +668,7 @@ function verifyUnifiedUiShell() {
     !/class=["']global-dialog settings-dialog["']/.test(settingsDialog)
   )
     throw new Error("Vue global settings dialog must close through its backdrop");
-  if (/renderSettingsDialog|settings-card/.test(officialGame))
+  if (/renderSettingsDialog|settings-card/.test(gamePage))
     throw new Error("Gameplay pages must use the shared application settings dialog");
   if (!/Vue App Shell/.test(shell) || !/renderAppShell/.test(shell))
     throw new Error("Web page adapters must submit state to the Vue App Shell");
@@ -687,7 +687,7 @@ function verifyUnifiedUiShell() {
     "HomePage.vue",
     "ExplorePage.vue",
     "AdventureHomePage.vue",
-    "OfficialGamePage.vue",
+    "GamePage.vue",
     "EditorPage.vue",
   ])
     if (!pageAdapters.includes(component))
@@ -696,13 +696,19 @@ function verifyUnifiedUiShell() {
 
 function verifySpaVsStaticRouting(distRoot) {
   for (const route of [
-    "/levels",
-    "/play/1-1",
+    "/explore",
+    "/explore/original",
+    "/explore/sokoban",
+    "/explore/engine-lab",
+    "/explore/play/original/1-1",
+    "/explore/play/sokoban/box-01",
     "/adventure",
     "/adventure/chapters",
     "/adventure/chapter/1",
     "/adventure/play/1-1",
     "/edit",
+    "/edit/original/1-1",
+    "/edit/sokoban/box-01",
   ]) {
     const result = resolveDistRequest(distRoot, route);
     if (

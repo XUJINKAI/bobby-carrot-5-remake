@@ -28,16 +28,32 @@ try {
     'class="home-root"',
     'class="home-mode-panel"',
   ]);
-  await smoke(`${origin}/levels`, [
+  await smoke(`${origin}/explore`, [
+    'class="explore-tabs"',
     'class="level-browser-head"',
     'class="level-filter-shell"',
     'data-filter-trigger="difficulty"',
     'data-filter-trigger="mechanics"',
   ]);
-  await smoke(`${origin}/play/1-1`, [
+  await smoke(`${origin}/explore/sokoban`, [
+    'class="explore-tabs"',
+    'class="explore-custom-collection"',
+    "推箱子 1",
+  ]);
+  await smoke(`${origin}/explore/engine-lab`, [
+    'class="explore-custom-collection"',
+    "Portal Lab",
+    "Maximum Moves Lab",
+  ]);
+  await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',
     'id="undo"',
+  ]);
+  await smoke(`${origin}/explore/play/sokoban/box-01`, [
+    'class="game-page"',
+    'id="game"',
+    "推箱子 1",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
@@ -64,6 +80,10 @@ try {
     'class="bobby-editor"',
     'id="editor-play"',
     'class="editor-palette"',
+  ]);
+  await smoke(`${origin}/edit/sokoban/box-01`, [
+    'class="bobby-editor"',
+    "推箱子 1 · 副本",
   ]);
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");

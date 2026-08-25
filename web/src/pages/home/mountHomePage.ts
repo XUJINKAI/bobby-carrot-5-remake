@@ -17,6 +17,7 @@ import {
 } from "../../shell/shellBridge.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
+import { explorePlayPath } from "../../app/routes.js";
 
 export async function renderHome(
   context: PageContext,
@@ -48,7 +49,12 @@ export async function renderHome(
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
     onRandom: () =>
-      navigate(`/play/${randomCatalogLevel(catalog).publicId}`),
+      navigate(
+        explorePlayPath({
+          collection: "original",
+          id: randomCatalogLevel(catalog).publicId,
+        }),
+      ),
     onImportMap: (file: File) => importHomeMap(file, view, navigate),
   });
   homeApp.mount(app);

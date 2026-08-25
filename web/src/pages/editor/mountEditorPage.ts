@@ -6,46 +6,40 @@ import {
 } from "@bobby/editor";
 import { createApp } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
-import {
-  fetchJson,
-  type LevelCatalog,
-  type OfficialLevelData,
-} from "../../services/catalog/catalog.js";
+import type { CustomMapCatalog, LevelCatalog } from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
   type Navigate,
   type PageController,
 } from "../../app/pageContracts.js";
-import { siteUrl } from "../../services/assets/gameAssets.js";
 import { renderAppShell } from "../../shell/shellBridge.js";
 import EditorPage from "./EditorPage.vue";
+import type { ExploreMapRef } from "../../app/routes.js";
+import { resolveExploreMap } from "../../services/catalog/exploreMaps.js";
 
 export interface EditorPageContext {
   app: HTMLDivElement;
   catalog: LevelCatalog;
+  customMapCatalog: CustomMapCatalog;
   audio: TinySynthAudioBackend;
   navigate: Navigate;
-  publicId?: string;
+  mapRef?: ExploreMapRef;
 }
 
 export async function renderEditorPage(
   context: EditorPageContext,
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate, publicId } = context;
+  const { app, catalog, customMapCatalog, audio, navigate, mapRef } = context;
   audio.stopMusic();
   let level: EditorLevel;
-  if (publicId) {
-    const decoded = decodeURIComponent(publicId).toLowerCase(),
-      meta = catalog.levels.find((entry) => entry.publicId === decoded);
-    if (!meta) {
+  if (mapRef) {
+    const resolved = await resolveExploreMap(catalog, customMapCatalog, mapRef);
+    if (!resolved) {
       navigate("/edit");
       return NOOP_CONTROLLER;
     }
-    const official = await fetchJson<OfficialLevelData>(
-      siteUrl(`assets/${meta.path}`),
-    );
-    level = fromLevelMap(official);
-    level.name = `${meta.publicId.toUpperCase()} · Copy`;
+    level = fromLevelMap(resolved.level);
+    level.name = `${resolved.title} · 副本`;
   } else {
     const pending = sessionStorage.getItem("bc5r:pending-editor-level");
     if (pending) {

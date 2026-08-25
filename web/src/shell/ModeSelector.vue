@@ -8,7 +8,7 @@ const root = ref<HTMLDetailsElement | null>(null);
 const open = ref(false);
 const modes = [
   { mode: "adventure", label: "冒险模式", href: "/adventure" },
-  { mode: "explore", label: "自由探索模式", href: "/levels" },
+  { mode: "explore", label: "自由探索模式", href: "/explore" },
   { mode: "editor", label: "编辑器模式", href: "/edit" },
 ] as const;
 const selectedMode = computed(() =>

@@ -11,6 +11,7 @@ import {
 } from "../../storage/exploreProgressStorage.js";
 import { renderAppShell } from "../../shell/shellBridge.js";
 import ExplorePage from "./ExplorePage.vue";
+import { explorePlayPath } from "../../app/routes.js";
 import {
   hasActiveLevelFilters,
   mountLevelFilters,
@@ -19,14 +20,25 @@ import {
 
 export async function renderLevels(
   context: PageContext,
+  collectionId = "original",
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate } = context;
+  const { app, catalog, customMapCatalog, audio, navigate } = context;
+  const customCollection = customMapCatalog.collections.find(
+    (entry) => entry.id === collectionId,
+  );
+  if (collectionId !== "original" && !customCollection) {
+    navigate("/explore");
+    return { destroy() {} };
+  }
   const last = resolveCatalogLevel(catalog, lastExploreLevelId());
   const completed = completedExploreLevels();
   audio.playMusic("title");
   app.innerHTML = renderAppShell({
     mode: "explore",
-    contextInfo: "全部关卡开放 · ✓ 表示曾通关",
+    contextInfo:
+      collectionId === "original"
+        ? "全部关卡开放 · ✓ 表示曾通关"
+        : `${customCollection!.name} · ${customCollection!.maps.length} 张地图`,
     showScreenControlToggle: false,
     topBarFixed: true,
     bottomBarFixed: true,
@@ -48,17 +60,21 @@ export async function renderLevels(
     completedIds: completed,
     levelCount: catalog.levels.length,
     lastLevelId: last.publicId,
+    activeCollection: collectionId,
+    customCollections: customMapCatalog.collections,
+    customCollection,
     onNavigate: navigate,
     onRandom: () => {
       const chosen = hasActiveLevelFilters()
         ? randomFilteredLevel()
         : randomCatalogLevel(catalog);
-      if (chosen) navigate(`/play/${chosen.publicId}`);
+      if (chosen)
+        navigate(explorePlayPath({ collection: "original", id: chosen.publicId }));
     },
   });
   exploreApp.mount(app);
   await nextTick();
-  await mountLevelFilters(catalog);
+  if (collectionId === "original") await mountLevelFilters(catalog);
   return {
     destroy(): void {
       exploreApp.unmount();

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CatalogChapter, CatalogLevel } from "../../services/catalog/catalog.js";
+import { explorePlayPath } from "../../app/routes.js";
 
 defineProps<{
   chapter: CatalogChapter;
@@ -45,9 +46,9 @@ function stars(value: number): string {
           completed: completedIds.has(level.canonicalId),
           'bonus-level': level.contentKind === 'bonus',
         }"
-        :href="`play/${level.publicId}`"
+        :href="explorePlayPath({ collection: 'original', id: level.publicId })"
         :title="`${level.publicId} · ${level.difficulty.label}`"
-        @click.prevent="emit('navigate', `/play/${level.publicId}`)"
+        @click.prevent="emit('navigate', explorePlayPath({ collection: 'original', id: level.publicId }))"
       >
         <span class="chapter-level-no">{{ displayShort(level) }}</span>
         <span

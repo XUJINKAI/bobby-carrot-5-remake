@@ -21,8 +21,6 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
-run(process.execPath, ["tools/src/build-custom-map-catalog.mjs"]);
-
 // 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
 run(tsc, ["-b", "model", "adventure", "--force"]);
 
@@ -36,6 +34,7 @@ if (hasGeneratedAssets()) {
   run(process.execPath, ["tools/src/build-adventure-catalog.mjs"]);
   run(process.execPath, ["tools/src/build-level-filters.mjs"]);
 }
+run(process.execPath, ["tools/src/build-custom-map-catalog.mjs"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "--force"]);

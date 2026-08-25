@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { OfficialGameMode } from "./mountOfficialGame.js";
+import type { GamePageMode } from "./mountGamePage.js";
 import GameStage from "./GameStage.vue";
 
-defineProps<{ mode: OfficialGameMode }>();
+defineProps<{ mode: GamePageMode }>();
 </script>
 
 <template>

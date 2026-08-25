@@ -30,10 +30,10 @@ function importFile(event: Event): void {
     </a>
     <a
       class="home-mode-card"
-      href="/levels"
-      @click.prevent="emit('navigate', '/levels')"
+      href="/explore"
+      @click.prevent="emit('navigate', '/explore')"
     >
-      <strong>自由探索模式</strong><span>全部官方关卡开放浏览</span><b>→</b>
+      <strong>自由探索模式</strong><span>浏览原版关卡与内置地图集合</span><b>→</b>
     </a>
     <a
       class="home-mode-card"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { explorePlayPath } from "../../app/routes.js";
 defineProps<{
   chapterCount: number;
   levelCount: number;
@@ -23,7 +24,7 @@ const emit = defineEmits<{
       </div>
     </div>
     <div class="level-browser-actions">
-      <button class="primary-btn" @click="emit('navigate', `/play/${lastLevelId}`)">
+      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection: 'original', id: lastLevelId }))">
         继续浏览 · {{ lastLevelId.toUpperCase() }}
       </button>
       <button id="random-level" class="ghost-btn" @click="emit('random')">
