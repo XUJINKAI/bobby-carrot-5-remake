@@ -207,7 +207,8 @@ if (!fs.existsSync(jarOut))
   throw new Error("Original JAR validation artifact was not created");
 fs.rmSync(path.join(root, "tmp"), { recursive: true, force: true });
 
-if (process.env.CI) run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
+if (process.env.CI)
+  run(process.execPath, ["tools/scripts/browser-smoke.mjs"]);
 
 console.log(
   "verify: OK — JSON-only user maps, LevelObject properties, self-contained Engine gameplay rules, configurable gameplay input, Adventure map augmentation, DAT-free Web/Editor boundaries, original-JAR validation and Explore/Adventure SPA routing all passed.",

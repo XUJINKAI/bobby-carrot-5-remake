@@ -25,8 +25,8 @@ try {
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
   await smoke(`${origin}/`, [
-    'class="nostalgia-home"',
-    'class="nostalgia-menu"',
+    'class="home-root"',
+    'class="home-mode-panel"',
   ]);
   await smoke(`${origin}/levels`, [
     'class="level-browser-head"',
