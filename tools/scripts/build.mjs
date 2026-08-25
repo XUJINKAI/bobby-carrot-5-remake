@@ -21,6 +21,8 @@ for (const target of generatedTargets) {
 
 const tsc = tscCommand();
 
+run(process.execPath, ["tools/src/build-custom-map-catalog.mjs"]);
+
 // 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
 run(tsc, ["-b", "model", "adventure", "--force"]);
 

@@ -220,9 +220,20 @@ async function verifyCustomMaps() {
   const { getObjectDefinition, hasObjectDefinition, hasTerrainDefinition } =
     await import("../../engine/dist/index.js");
   const directory = path.join(root, "custom_maps");
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(directory, "collections.json"), "utf8"),
+  );
+  const catalog = JSON.parse(
+    fs.readFileSync(path.join(root, "assets/generated/custom-maps.json"), "utf8"),
+  );
+  if (catalog.schemaVersion !== 1 || !Array.isArray(catalog.collections))
+    throw new Error("Custom Map Catalog 格式无效");
+  if (catalog.collections.length !== manifest.filter((item) => item.visible).length)
+    throw new Error("Custom Map Catalog 与 collection manifest 不一致");
   const files = [];
   walkSource(directory, (file) => {
-    if (file.endsWith(".json")) files.push(file);
+    if (file.endsWith(".json") && file !== path.join(directory, "collections.json"))
+      files.push(file);
   });
   for (const required of ["portal.json", "pushbox.json", "max-moves.json"])
     if (!fs.existsSync(path.join(directory, "engine-lab", required)))
