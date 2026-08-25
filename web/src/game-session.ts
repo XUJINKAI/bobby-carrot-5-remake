@@ -1,8 +1,9 @@
 import {
-  Game,
-  InputController,
+  createGameplayRuntime,
+  type Game,
+  type InputController,
   type GameOptions,
-  type InputControllerOptions,
+  type GameplayRuntimeConfig,
   type LevelMap,
 } from "@bobby/engine";
 
@@ -16,24 +17,26 @@ export interface CreateGameSessionOptions {
   root: ParentNode;
   canvas: HTMLCanvasElement;
   level: LevelMap;
-  gameOptions: Omit<GameOptions, "canvas">;
-  inputOptions?: InputControllerOptions;
+  gameOptions: Omit<GameOptions, "canvas" | "runtime">;
+  runtime?: GameplayRuntimeConfig;
 }
 
 /** 页面决定关卡与 session 语义；这里统一管理浏览器侧 Engine 生命周期和屏幕控件。 */
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {
-  const game = new Game({ canvas: options.canvas, ...options.gameOptions });
-  const input = new InputController(game, options.inputOptions);
-  bindMobileControls(options.root, input);
+  const runtime = await createGameplayRuntime({
+    canvas: options.canvas,
+    level: options.level,
+    ...options.gameOptions,
+    ...(options.runtime ? { runtime: options.runtime } : {}),
+  });
+  const { game, input } = runtime;
   let disposeDialog = (): void => {};
   try {
-    await game.loadLevel(options.level);
     disposeDialog = bindWorldDialog(options.root, game);
   } catch (error) {
-    input.destroy();
-    game.destroy();
+    runtime.destroy();
     throw error;
   }
   return {
@@ -41,30 +44,9 @@ export async function createGameSession(
     input,
     destroy(): void {
       disposeDialog();
-      input.destroy();
-      game.destroy();
+      runtime.destroy();
     },
   };
-}
-
-function bindMobileControls(root: ParentNode, input: InputController): void {
-  root.querySelectorAll<HTMLButtonElement>("[data-move]").forEach((button) => {
-    const direction = button.dataset.move as "up" | "down" | "left" | "right";
-    button.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      button.setPointerCapture(event.pointerId);
-      input.setHeldDirection(direction);
-    });
-    const release = (event: PointerEvent): void => {
-      event.preventDefault();
-      input.setHeldDirection(null);
-    };
-    button.addEventListener("pointerup", release);
-    button.addEventListener("pointercancel", release);
-    button.addEventListener("lostpointercapture", () =>
-      input.setHeldDirection(null),
-    );
-  });
 }
 
 /** Web 只负责展示通用 dialog 事件；不知道事件来自 Sandman、Adventure 还是 Maker。 */

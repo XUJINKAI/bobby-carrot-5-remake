@@ -124,7 +124,7 @@ game.on("level-complete", ...);
 
 Engine 暴露并渲染基础 HUD 所需的地图内状态，包括目标、背包、移动步数、死亡/完成状态与 `timedChallengeRemainingMs`。Gameplay HUD 与 Canvas、Camera、Screen Joystick 共同构成可独立运行的 Engine Gameplay Layer。
 
-所有已获得道具使用固定的右上角 HUD anchor。钥匙、汽油、雪铲、风筝、魔豆、Golden Carrot 和 Bonus Coin 从右向左排列，空间不足时向下换行。该布局由 Engine HUD 统一实现，各宿主不能为不同模式重新排列。
+所有已获得道具使用固定的右上角 HUD anchor。Golden Key、加速鞋、临时钥匙、汽油、雪铲、风筝、魔豆、Golden Carrot 和 Bonus Coin 从右向左排列，空间不足时向下换行。该布局由 Engine HUD 统一实现，各宿主不能为不同模式重新排列。
 
 目标、背包和地图内 Timer 的状态与基础渲染属于 Engine；统计用时、模式名称、关卡导航和完成后的按钮属于产品层。Web 可以叠加产品统计 HUD，但不能复制或接管基础 Gameplay HUD。Web UI 规范见 [`../features/ui.md`](../features/ui.md)。
 

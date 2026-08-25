@@ -45,6 +45,9 @@ export interface BobbyEditorOptions {
   bobbyUrls: { left: string; right: string; up: string; down: string };
   mowerBobbyUrl?: string;
   kiteUrl?: string;
+  hudAtlasUrl?: string;
+  goldenCarrotUrl?: string;
+  screenJoystick?: boolean;
   audio?: AudioBackend;
   onClose?: () => void;
 }
@@ -730,8 +733,17 @@ export class BobbyEditor {
             ? { mowerBobbyUrl: this.options.mowerBobbyUrl }
             : {}),
           ...(this.options.kiteUrl ? { kiteUrl: this.options.kiteUrl } : {}),
+          ...(this.options.hudAtlasUrl
+            ? { hudAtlasUrl: this.options.hudAtlasUrl }
+            : {}),
+          ...(this.options.goldenCarrotUrl
+            ? { goldenCarrotUrl: this.options.goldenCarrotUrl }
+            : {}),
           sourceTileSize: SOURCE_TILE,
         },
+        ...(this.options.screenJoystick === undefined
+          ? {}
+          : { screenJoystick: this.options.screenJoystick }),
         ...(this.options.audio ? { audio: this.options.audio } : {}),
         onStatus: (text) => {
           if (this.playing) this.status.textContent = text;

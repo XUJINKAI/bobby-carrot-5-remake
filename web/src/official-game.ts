@@ -32,8 +32,7 @@ import {
 import { formatTileInspection } from "./game-debug.js";
 import { createGameSession } from "./game-session.js";
 import { displayLevelId } from "./pages.js";
-import { renderGameStage, toggleScreenControl } from "./game-stage-shell.js";
-import { renderScreenControl } from "./screen-control.js";
+import { renderGameStage } from "./game-stage-shell.js";
 import {
   bindShellNavigation,
   closeDialog,
@@ -85,12 +84,9 @@ export async function renderOfficialGame(
     debugEngine = required<HTMLElement>(debugPanel, ".debug-engine"),
     debugInspector = required<HTMLElement>(debugPanel, ".debug-inspector"),
     gameResult = required<HTMLDivElement>(app, "[data-result-overlay]"),
-    resultCard = required<HTMLElement>(gameResult, "[data-result-card]"),
-    hudTime = required<HTMLElement>(app, "[data-hud-time]"),
-    hudObjectives = required<HTMLElement>(app, "[data-hud-objective]"),
-    hudObjectiveIcon = required<HTMLElement>(app, "[data-hud-objective-icon]"),
-    hudMoves = required<HTMLElement>(app, "[data-hud-moves]"),
-    hudItems = required<HTMLElement>(app, "[data-hud-items]");
+    resultCard = required<HTMLElement>(gameResult, "[data-result-card]");
+  const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
+  const screenControlEnabled = loadScreenControlPreference();
   const session = await createGameSession({
     root: app,
     canvas,
@@ -105,9 +101,18 @@ export async function renderOfficialGame(
         : { superKey: true },
       assets: gameAssets(),
     },
-    inputOptions: {
-      undo: mode === "explore",
-      debug: mode === "explore",
+    runtime: {
+      hud: {
+        hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
+        goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
+      },
+      input: {
+        undo: mode === "explore",
+        debug: mode === "explore",
+        screenJoystick: {
+          enabled: screenControlEnabled,
+        },
+      },
     },
   });
   const { game, input } = session,
@@ -186,59 +191,11 @@ export async function renderOfficialGame(
     }
     gameResult.hidden = false;
   };
-  const renderHud = (): void => {
-    if (!game.hasLevel) return;
-    const world = game.world;
-    hudTime.textContent = formatElapsed(performance.now() - levelStartedAt);
-    hudObjectives.textContent = String(world.objectiveRemaining);
-    hudObjectiveIcon.classList.toggle(
-      "hud-carrot",
-      world.state.objectiveMode === "carrot",
-    );
-    hudObjectiveIcon.classList.toggle(
-      "hud-egg",
-      world.state.objectiveMode !== "carrot",
-    );
-    hudMoves.textContent = String(world.state.moves);
-    const items: string[] = [];
-    if (world.state.profile.superKey || world.state.profile.temporaryKey)
-      items.push(
-        '<span class="item-chip" title="钥匙"><span class="hud-art hud-key" aria-hidden="true"></span></span>',
-      );
-    if (world.state.inventory.gas)
-      items.push(
-        '<span class="item-chip" title="汽油"><span class="hud-art hud-gas" aria-hidden="true"></span></span>',
-      );
-    if (world.state.inventory.shovel)
-      items.push(
-        '<span class="item-chip" title="雪铲"><span class="hud-art hud-shovel" aria-hidden="true"></span></span>',
-      );
-    if (world.state.inventory.kite)
-      items.push(
-        '<span class="item-chip" title="风筝"><span class="hud-art hud-kite" aria-hidden="true"></span></span>',
-      );
-    if (world.state.inventory.beans > 0)
-      items.push(
-        `<span class="item-chip" title="魔豆"><span class="hud-art hud-bean" aria-hidden="true"></span><strong>${world.state.inventory.beans}</strong></span>`,
-      );
-    if (world.state.goldenCarrotsInLevel > 0)
-      items.push(
-        `<span class="item-chip" title="本关金胡萝卜"><img class="hud-golden-carrot" src="assets/art/hd/icon.png" alt=""><strong>${world.state.goldenCarrotsInLevel}</strong></span>`,
-      );
-    if (world.state.bonusCoinsInLevel > 0)
-      items.push(
-        `<span class="item-chip" title="本关 Bonus Coin">BONUS <strong>${world.state.bonusCoinsInLevel}</strong></span>`,
-      );
-    const challengeRemainingMs = game.timedChallengeRemainingMs;
-    if (challengeRemainingMs !== null)
-      items.push(
-        `<span class="item-chip bonus-time" title="限时挑战剩余时间"><strong>${Math.ceil(challengeRemainingMs / 1000)}s</strong></span>`,
-      );
-    hudItems.innerHTML = items.join("");
-  };
   const update = (): void => {
     processAdventureRewards();
-    renderHud();
+    if (productStats && game.hasLevel) {
+      productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.world.state.moves} STEPS`;
+    }
     debugPanel.classList.toggle("visible", mode === "explore" && game.debug);
     const move = game.lastMove,
       engineMessage = move
@@ -260,7 +217,7 @@ export async function renderOfficialGame(
     update();
   });
   update();
-  const uiTimer = window.setInterval(renderHud, 100);
+  const statisticsTimer = window.setInterval(update, 250);
   const askUndo = (): void => {
     if (mode === "explore" && game.canUndo) {
       game.undo();
@@ -311,7 +268,7 @@ export async function renderOfficialGame(
     .querySelector<HTMLButtonElement>("[data-game-action='restart']")
     ?.addEventListener("click", askRestart);
   bindShellNavigation(app, navigate);
-  bindGameShell(app, audio, input, mode);
+  bindGameShell(app, audio, input, mode, screenControlEnabled);
   canvas.addEventListener("click", (event) => {
     if (
       mode !== "explore" ||
@@ -325,7 +282,7 @@ export async function renderOfficialGame(
   });
   return {
     destroy(): void {
-      window.clearInterval(uiTimer);
+      window.clearInterval(statisticsTimer);
       if (mode === "adventure")
         window.removeEventListener("resize", applyAdventureCamera);
       session.destroy();
@@ -349,13 +306,11 @@ function gamePageHtml(
   mode: OfficialGameMode,
 ): string {
   const actions = `<button data-game-action="back" title="返回">← ${displayLevelId(meta)}</button><span class="difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}">${escapeHtml(meta.difficulty.label)}</span>${mode === "explore" ? '<button data-game-action="undo" title="撤销">↶</button>' : ""}<button data-game-action="restart" title="重新开始">↻</button>${mode === "explore" ? '<button data-game-action="edit" title="在编辑器中打开">✎</button>' : ""}`;
+  const statistics = mode === "explore" ? '<div class="product-game-statistics" data-product-stats></div>' : "";
   const debug = '<aside data-debug-panel class="debug-panel" aria-live="polite"><div class="debug-engine"></div><pre class="debug-inspector"></pre></aside>';
   const stage = renderGameStage({
-    content: `<canvas id="game"></canvas>${debug}`,
-  }).replace(
-    '<div class="screen-control-overlay" data-screen-control hidden></div>',
-    `<div class="screen-control-overlay" data-screen-control hidden>${renderScreenControl()}</div>`,
-  );
+    content: `<canvas id="game"></canvas>${statistics}${debug}`,
+  });
   return renderAppShell({
     mode,
     contextActions: actions,
@@ -371,16 +326,20 @@ const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
 function bindGameShell(
   root: ParentNode,
   audio: TinySynthAudioBackend,
-  input: { setEnabled(value: boolean): void },
+  input: {
+    setEnabled(value: boolean): void;
+    setScreenJoystickEnabled(value: boolean): void;
+  },
   mode: OfficialGameMode,
+  initialScreenControlEnabled: boolean,
 ): void {
   const music = root.querySelector<HTMLButtonElement>("[data-action='music']");
   const screenToggle = root.querySelector<HTMLButtonElement>(
     "[data-action='screen-control']",
   );
-  let screenControlEnabled = loadScreenControlPreference();
+  let screenControlEnabled = initialScreenControlEnabled;
   const updateScreenControl = (): void => {
-    toggleScreenControl(root, screenControlEnabled);
+    input.setScreenJoystickEnabled(screenControlEnabled);
     if (screenToggle) {
       screenToggle.textContent = `屏幕摇杆：${screenControlEnabled ? "开" : "关"}`;
       screenToggle.setAttribute("aria-pressed", String(screenControlEnabled));

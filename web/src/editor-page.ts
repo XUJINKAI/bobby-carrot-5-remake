@@ -76,6 +76,9 @@ export async function renderEditorPage(
     },
     mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
     kiteUrl: siteUrl("assets/art/hd/b9.png"),
+    hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
+    goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
+    screenJoystick: loadScreenControlPreference(),
     audio,
     onClose: () => navigate("/levels"),
   });
@@ -84,4 +87,10 @@ export async function renderEditorPage(
       editor.destroy();
     },
   };
+}
+
+function loadScreenControlPreference(): boolean {
+  const stored = localStorage.getItem("bc5r:screen-control");
+  if (stored !== null) return stored === "true";
+  return window.matchMedia("(pointer: coarse)").matches;
 }

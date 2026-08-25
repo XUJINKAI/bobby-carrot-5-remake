@@ -243,12 +243,12 @@ Explore HUD：
 HUD 数据：
 
 - 当前目标与剩余数量；
-- 临时钥匙、汽油、雪铲、风筝、魔豆等背包状态；
+- Golden Key、加速鞋、临时钥匙、汽油、雪铲、风筝、魔豆等持有状态；
 - 当前地图取得的 Golden Carrot / Bonus Coin；
 - Engine Timed Challenge 剩余时间；
 - 当前模式允许展示的移动步数和统计用时。
 
-Engine HUD 使用原版图标和紧凑 Overlay。所有已获得道具统一锚定在 GameStage 右上角，包括临时钥匙、汽油、雪铲、风筝、魔豆、Golden Carrot 和 Bonus Coin。道具从右向左排列；空间不足时从右上角向下换行。物品只在持有或数量大于零时出现。
+Engine HUD 使用原版图标和紧凑 Overlay。所有已获得道具统一锚定在 GameStage 右上角，包括 Golden Key、加速鞋、临时钥匙、汽油、雪铲、风筝、魔豆、Golden Carrot 和 Bonus Coin。道具从右向左排列；空间不足时从右上角向下换行。物品只在持有或数量大于零时出现。
 
 ```text
 右上角 HUD 锚点
@@ -264,7 +264,7 @@ Adventure 通过 Runtime Config 选择紧凑 HUD，优先保持原作信息边�
 
 ### Screen Control
 
-Screen Control 是 Engine 提供的 `ScreenJoystick`。Engine 负责半透明圆形底座、可拖动球头、手势状态与渲染生命周期。界面不显示四个方向按键。
+Screen Control 是 Engine 提供的 `ScreenJoystick`。Engine 负责半透明圆形底座、可拖动球头、手势状态与渲染生命周期，并把拖动向量持续转换为四方向 Game Action。
 
 ```text
 静止                         向左拖动                     向右上拖动

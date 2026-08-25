@@ -13,13 +13,26 @@ export interface ShellOptions {
 }
 
 const modeLinks: Array<{ mode: AppMode; label: string; href: string }> = [
-  { mode: "adventure", label: "冒险", href: "/adventure" },
-  { mode: "explore", label: "自由选关", href: "/levels" },
-  { mode: "editor", label: "编辑器", href: "/edit" },
+  { mode: "adventure", label: "冒险模式", href: "/adventure" },
+  { mode: "explore", label: "自由探索模式", href: "/levels" },
+  { mode: "editor", label: "编辑器模式", href: "/edit" },
 ];
 
 export function renderAppShell(options: ShellOptions): string {
   const mode = options.mode ?? "home";
+  const selectedMode = mode === "custom" ? "explore" : mode;
+  const currentMode = modeLinks.find((item) => item.mode === selectedMode);
+  const modeSelector = currentMode
+    ? `<details class="mode-selector">
+        <summary>${currentMode.label}</summary>
+        <nav aria-label="切换模式">
+          ${modeLinks.map((item) => `
+            <a href="${item.href}" data-nav class="${selectedMode === item.mode ? "active" : ""}">
+              <span aria-hidden="true">${selectedMode === item.mode ? "✓" : ""}</span>${item.label}
+            </a>`).join("")}
+        </nav>
+      </details>`
+    : "";
   const bottomBar = options.showBottomBar === false ? "" : `
       <footer class="app-bottom-bar">
         <span data-context-info>${options.contextInfo ?? "准备就绪"}</span>
@@ -29,12 +42,8 @@ export function renderAppShell(options: ShellOptions): string {
   return `
     <div class="app-shell" data-mode="${mode}">
       <header class="app-topbar">
-        <a class="app-brand" href="/" data-nav>Bobby Carrot 5 Remake</a>
-        <nav class="mode-switcher" aria-label="游戏模式">
-          ${modeLinks.map((item) => `
-            <a href="${item.href}" data-nav class="${mode === item.mode ? "active" : ""}">${item.label}</a>
-          `).join("")}
-        </nav>
+        <a class="app-brand" href="/" data-nav><img src="assets/art/hd/icon.png" alt="">Bobby Carrot 5 Remake</a>
+        ${modeSelector}
         <div class="app-context-actions">${options.contextActions ?? options.title ?? ""}</div>
         <div class="app-actions">
           <button type="button" data-action="music" title="音乐" aria-label="音乐">♫</button>

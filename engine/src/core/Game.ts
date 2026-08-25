@@ -16,8 +16,21 @@ import {
   type WorldSnapshot,
 } from "../world/World.js";
 import type { ProfileCapabilities } from "../world/RuntimeState.js";
+import {
+  InputController,
+  type InputControllerOptions,
+} from "../input/InputController.js";
 import { worldEventForObjectTouch } from "./object-touch.js";
 import { TimedChallenge } from "./TimedChallenge.js";
+import {
+  GameplayHud,
+  type GameplayHudOptions,
+} from "../ui/GameplayHud.js";
+
+export interface GameRuntimeOptions {
+  hud?: boolean | GameplayHudOptions;
+  input?: InputControllerOptions;
+}
 
 export interface GameOptions {
   canvas: HTMLCanvasElement;
@@ -25,6 +38,7 @@ export interface GameOptions {
   audio?: AudioBackend;
   debug?: boolean;
   profile?: Partial<ProfileCapabilities>;
+  runtime?: GameRuntimeOptions;
 }
 
 type GameEventName =
@@ -58,6 +72,8 @@ interface GameSnapshot {
 export class Game {
   readonly renderer: Renderer;
   readonly audio: AudioBackend;
+  readonly inputController: InputController | null;
+  private readonly gameplayHud: GameplayHud | null;
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly timedChallenge = new TimedChallenge();
   private worldValue: World | null = null;
@@ -89,6 +105,14 @@ export class Game {
     this.profile = options.profile ?? {};
     this.debugValue = options.debug ?? false;
     this.renderer.setDebug(this.debugValue);
+    const hud = options.runtime?.hud;
+    this.gameplayHud =
+      hud === undefined || hud === false
+        ? null
+        : new GameplayHud(this, options.canvas, hud === true ? {} : hud);
+    this.inputController = options.runtime?.input
+      ? new InputController(this, options.runtime.input)
+      : null;
     window.addEventListener("resize", this.onResize);
     this.animationFrame = requestAnimationFrame(this.tick);
   }
@@ -258,6 +282,7 @@ export class Game {
 
   render(): void {
     if (this.worldValue) this.renderer.render(this.worldValue, this.visual);
+    this.gameplayHud?.render();
   }
 
   on(event: GameEventName, listener: Listener): () => void {
@@ -277,6 +302,8 @@ export class Game {
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener("resize", this.onResize);
     this.worldEventListeners.clear();
+    this.inputController?.destroy();
+    this.gameplayHud?.destroy();
     this.audio.stopMusic();
   }
 

@@ -17,19 +17,28 @@
   z-index: 20;
 }
 .app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: inherit;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
 }
-.mode-switcher,
+.app-brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.mode-selector,
 .app-actions,
 .app-context-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.mode-switcher a,
+.mode-selector summary,
+.mode-selector a,
 .app-actions button,
 .app-context-actions button,
 .app-bottom-bar button {
@@ -42,7 +51,43 @@
   text-decoration: none;
   white-space: nowrap;
 }
-.mode-switcher a.active {
+.mode-selector {
+  position: relative;
+}
+.mode-selector summary {
+  list-style: none;
+  cursor: pointer;
+}
+.mode-selector summary::-webkit-details-marker {
+  display: none;
+}
+.mode-selector summary::after {
+  content: " ▾";
+  color: var(--muted);
+}
+.mode-selector[open] summary::after {
+  content: " ▴";
+}
+.mode-selector nav {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  display: grid;
+  gap: 4px;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #101a14f7;
+  box-shadow: 0 16px 44px #0009;
+}
+.mode-selector a {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 5px;
+}
+.mode-selector a.active {
   border-color: #9fc875;
   background: #293d25;
   color: #e6f4ce;
@@ -147,60 +192,20 @@
   position: absolute;
   inset: 0;
 }
-.hud-overlay {
+.product-game-statistics {
   position: absolute;
-  inset: 12px 12px auto;
-  z-index: 5;
+  left: 12px;
+  top: 52px;
+  z-index: 6;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid #ffffff29;
+  border-radius: 999px;
+  background: #06100abd;
+  color: #dce8de;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
-}
-.gameplay-hud {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.gameplay-hud .step-chip {
-  margin-left: auto;
-}
-.screen-control-overlay {
-  position: absolute;
-  right: max(14px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 7;
-}
-.screen-control-overlay[hidden] {
-  display: none;
-}
-.screen-control {
-  display: grid;
-  grid-template-columns: repeat(3, 52px);
-  grid-template-rows: repeat(2, 52px);
-  gap: 5px;
-  touch-action: none;
-}
-.screen-control button {
-  border: 1px solid #ffffff35;
-  border-radius: 14px;
-  background: #0b140ecf;
-  color: #eef5ef;
-  font-size: 1.2rem;
-  touch-action: none;
-  user-select: none;
-  backdrop-filter: blur(8px);
-}
-.screen-control button[data-move="up"] {
-  grid-column: 2;
-}
-.screen-control button[data-move="left"] {
-  grid-column: 1;
-  grid-row: 2;
-}
-.screen-control button[data-move="down"] {
-  grid-column: 2;
-  grid-row: 2;
-}
-.screen-control button[data-move="right"] {
-  grid-column: 3;
-  grid-row: 2;
 }
 .result-overlay {
   position: absolute;
@@ -403,28 +408,32 @@
 }
 @media (max-width: 700px) {
   .app-topbar {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand global"
+      "mode context";
     gap: 7px;
-    min-height: 52px;
-    overflow: hidden;
+    min-height: 88px;
   }
   .app-brand {
-    width: 30px;
+    grid-area: brand;
+    min-width: 0;
     overflow: hidden;
-    font-size: 0;
+    text-overflow: ellipsis;
   }
-  .app-brand::before {
-    content: "🥕";
-    font-size: 1.2rem;
+  .app-brand img {
+    flex: 0 0 auto;
   }
-  .mode-switcher {
-    display: none;
+  .mode-selector {
+    grid-area: mode;
   }
   .app-context-actions {
-    justify-content: flex-start;
+    grid-area: context;
+    justify-content: flex-end;
     overflow-x: auto;
   }
   .app-actions {
+    grid-area: global;
     gap: 3px;
   }
   .app-actions button {
@@ -435,13 +444,6 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-  }
-  .hud-overlay {
-    inset: 8px 8px auto;
-  }
-  .gameplay-hud [data-hud-time],
-  .gameplay-hud .step-chip {
-    display: none;
   }
   .game-toolbar-v2 {
     display: flex;
@@ -474,63 +476,7 @@
   }
 }
 
-/* Original HUD art, mobile held-direction input and DEBUG inspector. */
-.hud-art {
-  display: inline-block;
-  height: 38px;
-  overflow: hidden;
-  flex: 0 0 auto;
-  background-image: url("assets/art/hd/hud.png");
-  background-repeat: no-repeat;
-  background-size: 350px 38px;
-}
-.hud-carrot {
-  width: 39px;
-  background-position: -42px 0;
-}
-.hud-gas {
-  width: 37px;
-  background-position: -83px 0;
-}
-.hud-key {
-  width: 20px;
-  background-position: -122px 0;
-}
-.hud-kite {
-  width: 35px;
-  background-position: -144px 0;
-}
-.hud-shovel {
-  width: 37px;
-  background-position: -179px 0;
-}
-.hud-egg {
-  width: 29px;
-  background-position: -217px 0;
-}
-.hud-bean {
-  width: 35px;
-  background-position: -247px 0;
-}
-.hud-golden-carrot {
-  display: block;
-  max-height: 32px;
-  width: auto;
-}
-.hud-text-label {
-  font-size: 0.58rem;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-}
-.hud-chip:has(.hud-art),
-.item-chip:has(.hud-art) {
-  height: 42px;
-  padding-top: 1px;
-  padding-bottom: 1px;
-}
-.mobile-dpad {
-  display: none;
-}
+/* DEBUG 检查器。 */
 .debug-panel {
   z-index: 6;
   line-height: 1.45;
@@ -542,44 +488,6 @@
   }
   .game-toolbar #edit-level {
     display: none !important;
-  }
-  .mobile-dpad {
-    position: absolute;
-    right: max(14px, env(safe-area-inset-right));
-    bottom: max(16px, env(safe-area-inset-bottom));
-    display: grid;
-    grid-template-columns: repeat(3, 52px);
-    grid-template-rows: repeat(2, 52px);
-    gap: 5px;
-    z-index: 7;
-    touch-action: none;
-  }
-  .mobile-dpad button {
-    border: 1px solid #ffffff35;
-    background: #0b140ecf;
-    color: #eef5ef;
-    border-radius: 14px;
-    font-size: 1.35rem;
-    backdrop-filter: blur(8px);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .mobile-dpad button[data-move="up"] {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .mobile-dpad button[data-move="left"] {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .mobile-dpad button[data-move="down"] {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .mobile-dpad button[data-move="right"] {
-    grid-column: 3;
-    grid-row: 2;
   }
   .game-status {
     right: 190px;

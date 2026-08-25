@@ -369,6 +369,10 @@ function verifySourceBoundaries() {
       path.join(root, "engine/src/input/InputController.ts"),
       "utf8",
     ),
+    screenJoystick = fs.readFileSync(
+      path.join(root, "engine/src/input/ScreenJoystick.ts"),
+      "utf8",
+    ),
     adventureRewards = fs.readFileSync(
       path.join(root, "adventure/src/rewards.ts"),
       "utf8",
@@ -408,15 +412,23 @@ function verifySourceBoundaries() {
     );
 
   if (
-    !/game\.loadLevel\(options\.level\)/.test(gameSession) ||
+    !/createGameplayRuntime\(\{[\s\S]*level:\s*options\.level/.test(
+      gameSession,
+    ) ||
     /\bloadOptions\b/.test(gameSession)
   )
     throw new Error(
       "Web game session must load a pure LevelMap without product-specific gameplay options",
     );
-  if (!/input\.setHeldDirection\(direction\)/.test(gameSession))
+  if (
+    !/screenJoystick\?:\s*boolean\s*\|\s*ScreenJoystickOptions/.test(
+      inputController,
+    ) ||
+    !/new ScreenJoystick\(/.test(inputController) ||
+    !/directionForJoystickVector\(/.test(screenJoystick)
+  )
     throw new Error(
-      "Web screen direction controls must enter gameplay through InputController",
+      "Engine ScreenJoystick must enter gameplay through InputController",
     );
   if (
     !/event\.type\s*!==\s*["']dialog["']/.test(gameSession) ||
@@ -456,6 +468,8 @@ function verifySourceBoundaries() {
     );
 
   for (const capability of [
+    "keyboard",
+    "pointer",
     "movement",
     "undo",
     "restart",
