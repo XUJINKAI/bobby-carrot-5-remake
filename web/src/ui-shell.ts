@@ -34,9 +34,9 @@ export function renderAppShell(options: ShellOptions): string {
           `).join("")}
         </nav>
         <div class="app-actions">
-          <button type="button" data-action="music" aria-label="音乐开关">♫</button>
-          <button type="button" data-action="settings" aria-label="设置">⚙</button>
-          <button type="button" data-action="help" aria-label="帮助">?</button>
+          <button type="button" data-action="music">♫</button>
+          <button type="button" data-action="settings">⚙</button>
+          <button type="button" data-action="help">?</button>
         </div>
       </header>
       <main class="app-content">${options.content}</main>
@@ -44,6 +44,20 @@ export function renderAppShell(options: ShellOptions): string {
       <div class="global-dialog-layer" data-dialog-layer hidden></div>
     </div>
   `;
+}
+
+export function openDialog(root: ParentNode, html: string): void {
+  const layer = root.querySelector<HTMLElement>("[data-dialog-layer]");
+  if (!layer) return;
+  layer.innerHTML = html;
+  layer.hidden = false;
+}
+
+export function closeDialog(root: ParentNode): void {
+  const layer = root.querySelector<HTMLElement>("[data-dialog-layer]");
+  if (!layer) return;
+  layer.innerHTML = "";
+  layer.hidden = true;
 }
 
 export function renderSettingsDialog(): string {
