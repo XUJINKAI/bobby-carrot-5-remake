@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Bobby Carrot 5 Remake：原版 1～40 章、Adventure、自由选关、Engine、JSON 地图 Editor 与 URL 分享。",
+  "description": "Bobby Carrot 5 Remake：原版 1～40 章、Adventure、自由选关、Engine 与 JSON 地图 Editor。",
   "scripts": {
     "assets:extract": "node tools/src/extract-jars.mjs",
     "assets:decode": "node tools/src/decode-levels.mjs",

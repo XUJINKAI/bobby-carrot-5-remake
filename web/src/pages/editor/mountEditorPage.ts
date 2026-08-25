@@ -1,5 +1,4 @@
 import {
-  BobbyEditor,
   createBlankLevel,
   fromLevelMap,
   parseEditorLevel,
@@ -19,7 +18,7 @@ import {
 } from "../../app/pageContracts.js";
 import { siteUrl } from "../../services/assets/gameAssets.js";
 import { renderAppShell } from "../../shell/shellBridge.js";
-import EditorPageHost from "./EditorPageHost.vue";
+import EditorPage from "./EditorPage.vue";
 
 export interface EditorPageContext {
   app: HTMLDivElement;
@@ -59,46 +58,27 @@ export async function renderEditorPage(
 
   app.innerHTML = renderAppShell({
     mode: "editor",
+    contextActions: [
+      { id: "editor-undo", label: "↶", title: "Undo" },
+      { id: "editor-redo", label: "↷", title: "Redo" },
+      { id: "editor-play", label: "Play", title: "Play Test" },
+      { id: "editor-file", label: "文件", title: "JSON 导入与导出" },
+    ],
     contextInfo: "左键放置 · 右键 / Del 删除 · Q / E 切换形态",
     showScreenControlToggle: false,
     topBarFixed: true,
     bottomBarFixed: true,
     content: "",
   });
-  const editorPage = createApp(EditorPageHost);
-  editorPage.mount(app);
-  const root = app.querySelector<HTMLElement>("#editor-mount");
-  if (!root) throw new Error("Editor mount failed");
-
-  const editor = new BobbyEditor({
-    root,
-    level,
-    atlasUrl: siteUrl("assets/art/hd/ts.png"),
-    animationAtlasUrl: siteUrl("assets/art/hd/ta.png"),
-    bobbyUrls: {
-      left: siteUrl("assets/art/hd/b0.png"),
-      right: siteUrl("assets/art/hd/b1.png"),
-      up: siteUrl("assets/art/hd/b2.png"),
-      down: siteUrl("assets/art/hd/b3.png"),
-    },
-    mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
-    kiteUrl: siteUrl("assets/art/hd/b9.png"),
-    hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
-    goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
-    screenJoystick: loadScreenControlPreference(),
+  const editorPage = createApp(EditorPage, {
+    initialLevel: level,
     audio,
-    onClose: () => navigate("/levels"),
+    navigate,
   });
+  editorPage.mount(app);
   return {
     destroy(): void {
-      editor.destroy();
       editorPage.unmount();
     },
   };
-}
-
-function loadScreenControlPreference(): boolean {
-  const stored = localStorage.getItem("bc5r:screen-control");
-  if (stored !== null) return stored === "true";
-  return window.matchMedia("(pointer: coarse)").matches;
 }

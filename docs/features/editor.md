@@ -2,6 +2,32 @@
 
 Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互式调试入口。Play Test 统一使用正式 Engine gameplay 实现。
 
+## 模块结构
+
+Editor Core 按稳定职责组织：
+
+```text
+editor/src
+├── level/       EditorLevel、规范化、校验与 JSON 序列化
+├── document/    EditorDocument、History 与编辑命令
+├── authoring/   owner/layout、放置、Palette Catalog 与 Inspector Model
+└── canvas/      Renderer、Input、Viewport 与坐标转换
+```
+
+`@bobby/editor` 不创建页面 DOM，也不访问 File、Blob、URL、Dialog、Router、`localStorage` 或 `sessionStorage`。这些浏览器产品能力由 `web/src/pages/editor/` 的 Vue 页面持有。
+
+地图修改统一进入：
+
+```text
+Palette / Canvas / Inspector / Metadata / Resize
+                    ↓
+            EditorDocument.execute(command)
+                    ↓
+                 EditorLevel
+```
+
+`EditorDocument` 发布只读 snapshot，包含 `revision / canUndo / canRedo / dirty`。History 保存 `EditorLevel` checkpoint；连续 pointer stroke 使用 transaction 合并成一次 Undo。`markSaved()` 记录保存 checkpoint，Undo 回到该 checkpoint 时 `dirty=false`。
+
 ## 地图格式
 
 导入/导出 JSON 使用长期稳定的语义 authoring 格式：
@@ -48,7 +74,7 @@ EditorLevel
 
 Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等与编辑 Draft 相互隔离。
 
-Play Test 通过 Runtime Config 启用 Engine Gameplay HUD 和 Screen Joystick，与 Adventure、Explore 和 Custom Play 共用同一套基础呈现与移动输入。
+Web 把 snapshot 转成纯 `LevelMap`，通过 `web/src/runtime/game/createGameSession.ts` 创建 Play Test。Play Test 通过 Runtime Config 启用 Engine Gameplay HUD 和 Screen Joystick，与 Adventure、Explore 和 Custom Play 共用同一套基础呈现与移动输入。
 
 原版 Adventure 的 Campaign 和全局经济由 `@bobby/adventure` 负责。Adventure 把 Bonus 60 秒编码为 Lock 的 `timedChallengeMs` 实例参数；Editor Play Test 中带相同参数的 Lock 由 Engine 执行同一套倒计时、超时死亡、Undo 和 Restart 规则。
 
@@ -59,6 +85,7 @@ Play Test 通过 Runtime Config 启用 Engine Gameplay HUD 和 Screen Joystick�
 - Q / E：旋转、翻转或切换支持 authoring variant 的 Object；
 - 滚轮：指向可变 Object 时切换 variant，否则缩放地图；
 - 中键拖动：平移；
+- 两指手势：缩放 Editor viewport；
 - Ctrl/Cmd+Z、Y：Undo / Redo；
 - 泛蓝高亮：表示本次操作将删除或替换的完整 owner。
 
@@ -76,6 +103,8 @@ Home 的 Import Dialog 读取 JSON 后展示地图摘要，并提供“游玩”
 当前产品没有 URL share 协议。未来增加分享能力时，应为语义 JSON 单独定义版本化产品协议，并保留 `name / author / description` 与 `LevelObject.properties`。
 
 Editor 工作区、Play Test 与 Custom Map 的页面结构见 [`ui.md`](ui.md)。
+
+Web Editor 页面由 `EditorPage.vue` 协调 `EditorWorkspace.vue`、`EditorPalette.vue`、`EditorCanvas.vue`、`EditorInspector.vue` 与 `EditorFileDialog.vue`。编辑画布和 Engine Play Test Canvas 位于同一个 Stage；进入 Play Test 时暂停 authoring input，Stop 后恢复原 Editor viewport。
 
 ## 与原版验证的关系
 

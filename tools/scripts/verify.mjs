@@ -571,7 +571,7 @@ function verifyUnifiedUiShell() {
     "ExplorePage.vue",
     "AdventureHomePage.vue",
     "OfficialGamePage.vue",
-    "EditorPageHost.vue",
+    "EditorPage.vue",
   ])
     if (!pageAdapters.includes(component))
       throw new Error(`Web page adapter is missing Vue component: ${component}`);

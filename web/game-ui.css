@@ -126,10 +126,16 @@
   min-height: 100%;
   flex: 1 0 auto;
 }
-.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
+}
+.app-content:has(.bobby-editor) {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
 }
 .app-content:has(.home-page) {
   width: 100%;

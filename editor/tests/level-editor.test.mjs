@@ -14,7 +14,10 @@ import {
   resizeEditorLevel,
   serializeEditorLevel,
   toLevelMap,
-} from "../dist/level.js";
+  EditorDocument,
+  paintTerrain,
+} from "../dist/index.js";
+import { Terrain } from "../../model/dist/index.js";
 
 test("Editor JSON only stores semantic LevelMap plus authoring metadata", () => {
   const level = createBlankLevel(10, 8);
@@ -132,4 +135,19 @@ test("authoring visibility and properties are Engine Definition facts", () => {
       placeholder: "可选；留空时仍会触发空对白框",
     },
   ]);
+});
+
+test("一次 stroke 形成一个 Undo，回到保存点时 dirty 恢复", () => {
+  const document = new EditorDocument(createBlankLevel(8, 8));
+  document.beginTransaction();
+  document.execute(paintTerrain({ x: 1, y: 1 }, Terrain.WATER));
+  document.execute(paintTerrain({ x: 2, y: 1 }, Terrain.WATER));
+  document.commitTransaction();
+  assert.equal(document.getSnapshot().canUndo, true);
+  assert.equal(document.getSnapshot().dirty, true);
+  document.undo();
+  assert.equal(document.getSnapshot().canUndo, false);
+  assert.equal(document.getSnapshot().dirty, false);
+  assert.equal(document.getSnapshot().level.terrain[1][1], Terrain.GROUND_C);
+  assert.equal(document.getSnapshot().level.terrain[1][2], Terrain.GROUND_C);
 });

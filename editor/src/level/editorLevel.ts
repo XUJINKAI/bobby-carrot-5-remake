@@ -12,24 +12,14 @@ import {
   isObjectLayoutPart,
   objectLayoutFor,
 } from "@bobby/engine";
-export interface EditorLevel extends LevelMap {
-  schemaVersion: 2;
-  name: string;
-  author?: string;
-  description?: string;
-  objects: EditorObject[];
-}
-export interface EditorObject extends LevelObject {}
-export interface LevelValidationIssue {
-  level: "error" | "warning";
-  message: string;
-}
+import type { EditorLevel, EditorObject } from "./types.js";
+
 export function createBlankLevel(width = 16, height = 16): EditorLevel {
-  const safeWidth = clampDimension(width),
-    safeHeight = clampDimension(height),
-    terrain = Array.from({ length: safeHeight }, () =>
-      Array.from({ length: safeWidth }, () => Terrain.GROUND_C as TerrainType),
-    );
+  const safeWidth = clampDimension(width);
+  const safeHeight = clampDimension(height);
+  const terrain = Array.from({ length: safeHeight }, () =>
+    Array.from({ length: safeWidth }, () => Terrain.GROUND_C as TerrainType),
+  );
   terrain[Math.min(2, safeHeight - 1)]![Math.min(2, safeWidth - 1)] =
     Terrain.START;
   terrain[Math.max(0, safeHeight - 3)]![Math.max(0, safeWidth - 3)] =
@@ -43,6 +33,7 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
     objects: [],
   };
 }
+
 export function fromLevelMap(
   level: LevelMap,
   name = "Bobby Level",
@@ -57,6 +48,7 @@ export function fromLevelMap(
     objects: anchors.map(cloneObject),
   });
 }
+
 export function toLevelMap(level: EditorLevel): LevelMap {
   const normalized = normalizeEditorLevel(level);
   return {
@@ -66,33 +58,36 @@ export function toLevelMap(level: EditorLevel): LevelMap {
     objects: normalized.objects.map(cloneObject),
   };
 }
+
+export function cloneEditorLevel(level: EditorLevel): EditorLevel {
+  return normalizeEditorLevel(structuredClone(level));
+}
+
 export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
-  const width = clampDimension(Number(input.width)),
-    height = clampDimension(Number(input.height)),
-    terrain = Array.from({ length: height }, (_, y) =>
-      Array.from({ length: width }, (_, x) =>
-        normalizeTerrain(input.terrain?.[y]?.[x]),
-      ),
+  const width = clampDimension(Number(input.width));
+  const height = clampDimension(Number(input.height));
+  const terrain = Array.from({ length: height }, (_, y) =>
+    Array.from({ length: width }, (_, x) =>
+      normalizeTerrain(input.terrain?.[y]?.[x]),
     ),
-    occupied = new Set<string>(),
-    objects: EditorObject[] = [];
+  );
+  const occupied = new Set<string>();
+  const objects: EditorObject[] = [];
   for (const raw of input.objects ?? []) {
-    const x = Math.trunc(Number(raw.x)),
-      y = Math.trunc(Number(raw.y)),
-      type = normalizeObject(raw.type);
+    const x = Math.trunc(Number(raw.x));
+    const y = Math.trunc(Number(raw.y));
+    const type = normalizeObject(raw.type);
     if (type === ObjectId.EMPTY || isObjectLayoutPart(type)) continue;
     if (x < 0 || y < 0 || x >= width || y >= height) continue;
     const cells = objectLayoutFor(type).cells.map((cell) => ({
       x: x + cell.dx,
       y: y + cell.dy,
     }));
-    if (
-      cells.some(
-        (cell) =>
-          cell.x < 0 || cell.y < 0 || cell.x >= width || cell.y >= height,
-      ) ||
-      cells.some((cell) => occupied.has(`${cell.x},${cell.y}`))
-    )
+    const outside = cells.some(
+      (cell) =>
+        cell.x < 0 || cell.y < 0 || cell.x >= width || cell.y >= height,
+    );
+    if (outside || cells.some((cell) => occupied.has(`${cell.x},${cell.y}`)))
       continue;
     for (const cell of cells) occupied.add(`${cell.x},${cell.y}`);
     const properties = normalizeProperties(raw.properties);
@@ -116,35 +111,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     level.description = String(input.description).slice(0, 500);
   return level;
 }
-export function validateEditorLevel(
-  level: EditorLevel,
-): LevelValidationIssue[] {
-  const normalized = normalizeEditorLevel(level),
-    issues: LevelValidationIssue[] = [];
-  let starts = 0,
-    exits = 0;
-  for (const row of normalized.terrain)
-    for (const type of row) {
-      if (type === Terrain.START) starts++;
-      if (type === Terrain.EXIT) exits++;
-    }
-  if (starts === 0)
-    issues.push({
-      level: "warning",
-      message: "没有 Bobby 出生点；Engine 会使用第一个可步行格作为回退出生点。",
-    });
-  if (starts > 1)
-    issues.push({
-      level: "warning",
-      message: `存在 ${starts} 个出生点；原版语义只需要一个。`,
-    });
-  if (exits === 0)
-    issues.push({
-      level: "warning",
-      message: "没有出口，因此地图通常无法正常通关。",
-    });
-  return issues;
-}
+
 export function resizeEditorLevel(
   level: EditorLevel,
   width: number,
@@ -152,19 +119,7 @@ export function resizeEditorLevel(
 ): EditorLevel {
   return normalizeEditorLevel({ ...level, width, height });
 }
-export function serializeEditorLevel(level: EditorLevel): string {
-  return `${JSON.stringify(normalizeEditorLevel(level), null, 2)}\n`;
-}
-export function parseEditorLevel(text: string): EditorLevel {
-  const parsed = JSON.parse(text) as Partial<EditorLevel>;
-  if (parsed.schemaVersion !== 2)
-    throw new Error(
-      `不支持的地图 schemaVersion：${String(parsed.schemaVersion)}；当前只接受语义 schema v2`,
-    );
-  if (!Array.isArray(parsed.terrain))
-    throw new Error("JSON 缺少 terrain 二维数组");
-  return normalizeEditorLevel(parsed as EditorLevel);
-}
+
 function cloneObject(object: LevelObject): EditorObject {
   return {
     type: object.type,
@@ -175,24 +130,29 @@ function cloneObject(object: LevelObject): EditorObject {
       : {}),
   };
 }
+
 function normalizeProperties(
   value: unknown,
 ): LevelObjectProperties | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return undefined;
   const properties: LevelObjectProperties = {};
   for (const [key, item] of Object.entries(value))
     if (key.length > 0 && typeof item === "string") properties[key] = item;
   return Object.keys(properties).length > 0 ? properties : undefined;
 }
+
 function clampDimension(value: number): number {
   if (!Number.isFinite(value)) return 16;
   return Math.min(128, Math.max(3, Math.trunc(value)));
 }
+
 function normalizeTerrain(value: unknown): TerrainType {
   return typeof value === "string" && value.length > 0
     ? (value as TerrainType)
     : Terrain.GROUND_C;
 }
+
 function normalizeObject(value: unknown): ObjectType {
   return typeof value === "string" && value.length > 0
     ? (value as ObjectType)

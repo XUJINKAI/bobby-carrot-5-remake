@@ -8,16 +8,20 @@ import {
   type ObjectType,
   type TerrainType,
 } from "@bobby/engine";
-import type { EditorLevel } from "./level.js";
+import type { EditorLevel } from "../level/types.js";
+
 export interface TerrainPaletteItem {
   kind: "terrain";
   type: TerrainType;
 }
+
 export interface ObjectPaletteItem {
   kind: "object";
   type: ObjectType;
 }
+
 export type PaletteItem = TerrainPaletteItem | ObjectPaletteItem;
+
 export const GROUP_ORDER = [
   "地面",
   "水域",
@@ -30,9 +34,10 @@ export const GROUP_ORDER = [
   "其他",
 ] as const;
 export type PaletteGroup = (typeof GROUP_ORDER)[number];
+
 export function paletteItems(level: EditorLevel): PaletteItem[] {
-  const terrain = new Set<TerrainType>(Object.values(Terrain) as TerrainType[]),
-    objects = new Set<ObjectType>(Object.values(ObjectId) as ObjectType[]);
+  const terrain = new Set<TerrainType>(Object.values(Terrain) as TerrainType[]);
+  const objects = new Set<ObjectType>(Object.values(ObjectId) as ObjectType[]);
   for (const row of level.terrain) for (const type of row) terrain.add(type);
   for (const object of level.objects) objects.add(object.type);
   return [
@@ -47,13 +52,14 @@ export function paletteItems(level: EditorLevel): PaletteItem[] {
       .map((type) => ({ kind: "object" as const, type })),
   ];
 }
+
 export function paletteGroup(item: PaletteItem): PaletteGroup {
-  const def =
-      item.kind === "terrain"
-        ? getTerrainDefinition(item.type)
-        : getObjectDefinition(item.type),
-    category = def.presentation.category,
-    id = item.type;
+  const definition =
+    item.kind === "terrain"
+      ? getTerrainDefinition(item.type)
+      : getObjectDefinition(item.type);
+  const category = definition.presentation.category;
+  const id = item.type;
   if (item.kind === "terrain") {
     if (category === "water" || id.includes("water") || id.startsWith("tide-"))
       return "水域";
@@ -71,20 +77,11 @@ export function paletteGroup(item: PaletteItem): PaletteGroup {
     return "地面";
   }
   if (id.includes("carrot") || id.includes("egg-nest")) return "目标与标记";
-  if (
-    id === "bean" ||
-    id === "gas" ||
-    id === "kite" ||
-    id === "bonus-coin" ||
-    id === "golden-carrot"
-  )
+  if (["bean", "gas", "kite", "bonus-coin", "golden-carrot"].includes(id))
     return "道具";
   if (
     id.includes("cloud") ||
-    id === "leaf" ||
-    id === "mower" ||
-    id === "whirlwind" ||
-    id === "landing"
+    ["leaf", "mower", "whirlwind", "landing"].includes(id)
   )
     return "载具与动态";
   if (
@@ -95,7 +92,7 @@ export function paletteGroup(item: PaletteItem): PaletteGroup {
   )
     return "角色与大型对象";
   if (
-    def.traits.includes("blocking") ||
+    definition.traits.includes("blocking") ||
     id.includes("fence") ||
     id.includes("rock") ||
     id.includes("ice-block")
@@ -109,6 +106,7 @@ export function paletteGroup(item: PaletteItem): PaletteGroup {
     return "机关";
   return "其他";
 }
+
 export function paletteLabel(item: PaletteItem): string {
   return (
     item.kind === "terrain"
