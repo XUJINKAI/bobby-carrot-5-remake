@@ -153,6 +153,7 @@ for (const level of catalog.levels) {
 }
 
 verifySourceBoundaries();
+verifyUnifiedUiShell();
 
 for (const file of [
   "dist/index.html",
@@ -488,6 +489,37 @@ function verifySourceBoundaries() {
     throw new Error(
       "Engine object-touch adapter must translate Definition touch results into dialog events",
     );
+}
+
+function verifyUnifiedUiShell() {
+  const pages = fs.readFileSync(path.join(root, "web/src/pages.ts"), "utf8"),
+    application = fs.readFileSync(
+      path.join(root, "web/src/application.ts"),
+      "utf8",
+    ),
+    shell = fs.readFileSync(path.join(root, "web/src/ui-shell.ts"), "utf8"),
+    officialGame = fs.readFileSync(
+      path.join(root, "web/src/official-game.ts"),
+      "utf8",
+    );
+
+  for (const region of ["home-demo-panel", "home-mode-panel", "home-about"])
+    if (!pages.includes(region))
+      throw new Error(`Home is missing required region: ${region}`);
+  if (
+    !/\.mode-selector\[open\]/.test(application) ||
+    !/!selector\.contains\(target\)/.test(application)
+  )
+    throw new Error("Mode selector must close when pointer input lands outside it");
+  if (
+    !/target\s*===\s*dialogLayer/.test(application) ||
+    !/renderSettingsDialog\(/.test(application)
+  )
+    throw new Error("Global settings dialog must close through its shared backdrop");
+  if (/renderSettingsDialog|settings-card/.test(officialGame))
+    throw new Error("Gameplay pages must use the shared application settings dialog");
+  if (!/data-dialog-layer/.test(shell) || !/settings-dialog/.test(shell))
+    throw new Error("App Shell must own the shared settings dialog layer");
 }
 
 function verifySpaVsStaticRouting(distRoot) {

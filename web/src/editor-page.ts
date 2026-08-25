@@ -2,6 +2,7 @@ import {
   BobbyEditor,
   createBlankLevel,
   fromLevelMap,
+  parseEditorLevel,
   type EditorLevel,
 } from "@bobby/editor";
 import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
@@ -45,7 +46,15 @@ export async function renderEditorPage(
     );
     level = fromLevelMap(official);
     level.name = `${meta.publicId.toUpperCase()} · Copy`;
-  } else level = createBlankLevel(16, 16);
+  } else {
+    const pending = sessionStorage.getItem("bc5r:pending-editor-level");
+    if (pending) {
+      sessionStorage.removeItem("bc5r:pending-editor-level");
+      level = parseEditorLevel(pending);
+    } else {
+      level = createBlankLevel(16, 16);
+    }
+  }
 
   app.innerHTML = renderAppShell({
     mode: "editor",

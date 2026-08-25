@@ -9,12 +9,20 @@ import {
 } from "./adventure-pages.js";
 import { renderEditorPage } from "./editor-page.js";
 import { renderOfficialGame } from "./official-game.js";
-import { renderHome, renderLevels, renderSettings } from "./pages.js";
+import { renderHome, renderLevels } from "./pages.js";
+import {
+  exportAdventureSave,
+  importAdventureSave,
+  loadAdventureSave,
+  resetAdventureSave,
+} from "./adventure-storage.js";
 import {
   closeDialog,
+  loadScreenControlPreference,
   openDialog,
   renderHelpDialog,
   renderSettingsDialog,
+  storeScreenControlPreference,
   type AppMode,
 } from "./ui-shell.js";
 
@@ -39,6 +47,8 @@ export class BobbyApp {
     window.addEventListener("popstate", this.onPopState);
     this.app.addEventListener("click", this.onShellClick);
     this.app.addEventListener("input", this.onShellSetting);
+    this.app.addEventListener("change", this.onShellSetting);
+    document.addEventListener("pointerdown", this.onDocumentPointerDown);
     await this.renderRoute();
   }
 
@@ -49,6 +59,8 @@ export class BobbyApp {
     window.removeEventListener("popstate", this.onPopState);
     this.app.removeEventListener("click", this.onShellClick);
     this.app.removeEventListener("input", this.onShellSetting);
+    this.app.removeEventListener("change", this.onShellSetting);
+    document.removeEventListener("pointerdown", this.onDocumentPointerDown);
   }
 
   private readonly resumeAudio = (): void => this.audio.resume();
@@ -64,24 +76,28 @@ export class BobbyApp {
     );
     void this.renderRoute();
   };
+  private readonly onDocumentPointerDown = (event: PointerEvent): void => {
+    const target = event.target as Node | null;
+    this.app
+      .querySelectorAll<HTMLDetailsElement>(".mode-selector[open]")
+      .forEach((selector) => {
+        if (!target || !selector.contains(target)) selector.open = false;
+      });
+  };
   private readonly onShellClick = (event: Event): void => {
-    if (this.app.querySelector(".game-page")) return;
     const target = event.target as HTMLElement;
+    const dialogLayer = target.closest<HTMLElement>("[data-dialog-layer]");
+    if (dialogLayer && target === dialogLayer) {
+      closeDialog(this.app);
+      return;
+    }
     const action = target.closest<HTMLElement>("[data-action]")?.dataset.action;
     if (action === "music") {
       this.audio.setEnabled(!this.audio.isEnabled());
       target.closest<HTMLButtonElement>("button")!.textContent =
         this.audio.isEnabled() ? "♫" : "♪̸";
     } else if (action === "settings") {
-      openDialog(
-        this.app,
-        renderSettingsDialog({
-          musicEnabled: this.audio.isEnabled(),
-          musicVolume: Math.round(this.audio.getMusicVolume() * 100),
-          soundVolume: Math.round(this.audio.getSoundVolume() * 100),
-          screenControlEnabled: false,
-        }),
-      );
+      this.openSettings();
     } else if (action === "help") {
       const value = this.app.querySelector<HTMLElement>(".app-shell")?.dataset
         .mode;
@@ -89,21 +105,100 @@ export class BobbyApp {
     } else if (action === "close-dialog") {
       closeDialog(this.app);
     }
+    const settingsAction = target.closest<HTMLElement>(
+      "[data-settings-action]",
+    )?.dataset.settingsAction;
+    if (settingsAction === "export") {
+      exportAdventureSave();
+    } else if (settingsAction === "import") {
+      this.app.querySelector<HTMLInputElement>("[data-settings-file]")?.click();
+    } else if (settingsAction === "reset") {
+      const reset = target.closest<HTMLButtonElement>(
+        "[data-settings-action='reset']",
+      );
+      if (reset?.dataset.confirming === "true") {
+        resetAdventureSave();
+        this.openSettings("Adventure 存档已清空。");
+      } else if (reset) {
+        reset.dataset.confirming = "true";
+        reset.textContent = "再次点击确认清空";
+        this.setSettingsFeedback("自由探索记录会继续保留。");
+      }
+    }
   };
   private readonly onShellSetting = (event: Event): void => {
-    if (this.app.querySelector(".game-page")) return;
-    const input = (event.target as HTMLElement).closest<HTMLInputElement>(
+    const target = event.target as HTMLElement;
+    const file = target.closest<HTMLInputElement>("[data-settings-file]");
+    if (file && event.type === "change") {
+      const selected = file.files?.[0];
+      if (!selected) return;
+      void importAdventureSave(selected)
+        .then(() => this.openSettings("Adventure 存档已导入。"))
+        .catch((error) =>
+          this.setSettingsFeedback(
+            error instanceof Error ? error.message : String(error),
+          ),
+        );
+      return;
+    }
+    const input = target.closest<HTMLInputElement | HTMLSelectElement>(
       "[data-setting]",
     );
     if (!input) return;
-    if (input.dataset.setting === "music-enabled") {
+    if (
+      input.dataset.setting === "music-enabled" &&
+      input instanceof HTMLInputElement
+    ) {
       this.audio.setEnabled(input.checked);
+      this.updateMusicButton();
     } else if (input.dataset.setting === "music-volume") {
       this.audio.setMusicVolume(Number(input.value) / 100);
     } else if (input.dataset.setting === "sound-volume") {
       this.audio.setSoundVolume(Number(input.value) / 100);
+    } else if (input.dataset.setting === "midi-tone") {
+      this.audio.setTone(input.value === "chip" ? "chip" : "fm");
+    } else if (input.dataset.setting === "midi-reverb") {
+      this.audio.setReverbLevel(Number(input.value) / 100);
+    } else if (
+      input.dataset.setting === "screen-control" &&
+      input instanceof HTMLInputElement
+    ) {
+      storeScreenControlPreference(this.app, input.checked);
     }
   };
+
+  private openSettings(feedback = ""): void {
+    const save = loadAdventureSave();
+    openDialog(
+      this.app,
+      renderSettingsDialog({
+        musicEnabled: this.audio.isEnabled(),
+        musicVolume: Math.round(this.audio.getMusicVolume() * 100),
+        soundVolume: Math.round(this.audio.getSoundVolume() * 100),
+        screenControlEnabled: loadScreenControlPreference(),
+        tone: this.audio.getTone(),
+        reverb: Math.round(this.audio.getReverbLevel() * 100),
+        bonusCoins: save.economy.bonusCoins,
+        goldenCarrots: save.economy.goldenCarrots,
+        completedLevels: save.campaign.completedLevels.length,
+      }),
+    );
+    this.setSettingsFeedback(feedback);
+  }
+
+  private setSettingsFeedback(message: string): void {
+    const feedback = this.app.querySelector<HTMLElement>(
+      "[data-settings-feedback]",
+    );
+    if (feedback) feedback.textContent = message;
+  }
+
+  private updateMusicButton(): void {
+    const music = this.app.querySelector<HTMLButtonElement>(
+      "[data-action='music']",
+    );
+    if (music) music.textContent = this.audio.isEnabled() ? "♫" : "♪̸";
+  }
 
   private async renderRoute(): Promise<void> {
     this.controller.destroy();
@@ -116,7 +211,7 @@ export class BobbyApp {
       navigate: this.navigate,
     };
     if (path === "/") {
-      renderHome(context);
+      this.controller = await renderHome(context);
       return;
     }
     if (path === "/levels") {
@@ -124,7 +219,8 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      renderSettings(context);
+      this.controller = await renderHome(context);
+      this.openSettings();
       return;
     }
     if (path === "/adventure") {

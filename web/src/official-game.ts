@@ -35,11 +35,9 @@ import { displayLevelId } from "./pages.js";
 import { renderGameStage } from "./game-stage-shell.js";
 import {
   bindShellNavigation,
-  closeDialog,
-  openDialog,
+  loadScreenControlPreference,
   renderAppShell,
-  renderHelpDialog,
-  renderSettingsDialog,
+  storeScreenControlPreference,
 } from "./ui-shell.js";
 
 export type OfficialGameMode = "explore" | "adventure";
@@ -268,7 +266,11 @@ export async function renderOfficialGame(
     .querySelector<HTMLButtonElement>("[data-game-action='restart']")
     ?.addEventListener("click", askRestart);
   bindShellNavigation(app, navigate);
-  bindGameShell(app, audio, input, mode, screenControlEnabled);
+  const disposeGameShell = bindGameShell(
+    app,
+    input,
+    screenControlEnabled,
+  );
   canvas.addEventListener("click", (event) => {
     if (
       mode !== "explore" ||
@@ -285,6 +287,7 @@ export async function renderOfficialGame(
       window.clearInterval(statisticsTimer);
       if (mode === "adventure")
         window.removeEventListener("resize", applyAdventureCamera);
+      disposeGameShell();
       session.destroy();
     },
   };
@@ -321,19 +324,14 @@ function gamePageHtml(
     content: `<div class="game-page ${mode === "adventure" ? "original-adventure-game" : ""}">${stage}</div>`,
   });
 }
-const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
-
 function bindGameShell(
-  root: ParentNode,
-  audio: TinySynthAudioBackend,
+  root: HTMLElement,
   input: {
     setEnabled(value: boolean): void;
     setScreenJoystickEnabled(value: boolean): void;
   },
-  mode: OfficialGameMode,
   initialScreenControlEnabled: boolean,
-): void {
-  const music = root.querySelector<HTMLButtonElement>("[data-action='music']");
+): () => void {
   const screenToggle = root.querySelector<HTMLButtonElement>(
     "[data-action='screen-control']",
   );
@@ -346,72 +344,30 @@ function bindGameShell(
     }
   };
   const setScreenControl = (enabled: boolean): void => {
-    screenControlEnabled = enabled;
-    localStorage.setItem(SCREEN_CONTROL_STORAGE_KEY, String(enabled));
-    updateScreenControl();
-  };
-  const updateMusicButton = (): void => {
-    if (music) music.textContent = audio.isEnabled() ? "♫" : "♪̸";
+    storeScreenControlPreference(root, enabled);
   };
   updateScreenControl();
-  updateMusicButton();
-  music?.addEventListener("click", () => {
-    audio.setEnabled(!audio.isEnabled());
-    updateMusicButton();
-  });
-  screenToggle?.addEventListener("click", () => {
+  const onScreenToggle = (): void => {
     setScreenControl(!screenControlEnabled);
-  });
-  const showDialog = (html: string): void => {
-    input.setEnabled(false);
-    openDialog(root, html);
   };
-  root
-    .querySelector<HTMLButtonElement>("[data-action='settings']")
-    ?.addEventListener("click", () => {
-      showDialog(
-        renderSettingsDialog({
-          musicEnabled: audio.isEnabled(),
-          musicVolume: Math.round(audio.getMusicVolume() * 100),
-          soundVolume: Math.round(audio.getSoundVolume() * 100),
-          screenControlEnabled,
-        }),
-      );
-    });
-  root
-    .querySelector<HTMLButtonElement>("[data-action='help']")
-    ?.addEventListener("click", () => showDialog(renderHelpDialog(mode)));
-  const dialogLayer = root.querySelector<HTMLElement>("[data-dialog-layer]");
-  dialogLayer?.addEventListener("click", (event) => {
-    const target = event.target as HTMLElement;
-    if (target.closest("[data-action='close-dialog']")) {
-      closeDialog(root);
-      input.setEnabled(true);
-    }
-  });
-  const applySetting = (event: Event): void => {
-    const target = event.target as HTMLElement;
-    const setting = target.closest<HTMLInputElement>("[data-setting]");
-    if (!setting) return;
-    if (setting.dataset.setting === "music-enabled") {
-      audio.setEnabled(setting.checked);
-      updateMusicButton();
-    } else if (setting.dataset.setting === "music-volume") {
-      audio.setMusicVolume(Number(setting.value) / 100);
-    } else if (setting.dataset.setting === "sound-volume") {
-      audio.setSoundVolume(Number(setting.value) / 100);
-    } else if (setting.dataset.setting === "screen-control") {
-      setScreenControl(setting.checked);
-    }
+  const onScreenControlChange = (event: Event): void => {
+    screenControlEnabled = Boolean(
+      (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
+    );
+    updateScreenControl();
   };
-  dialogLayer?.addEventListener("input", applySetting);
-  dialogLayer?.addEventListener("change", applySetting);
-}
-
-function loadScreenControlPreference(): boolean {
-  const stored = localStorage.getItem(SCREEN_CONTROL_STORAGE_KEY);
-  if (stored !== null) return stored === "true";
-  return window.matchMedia("(pointer: coarse)").matches;
+  const onDialogOpen = (): void => input.setEnabled(false);
+  const onDialogClose = (): void => input.setEnabled(true);
+  screenToggle?.addEventListener("click", onScreenToggle);
+  root.addEventListener("screen-control-change", onScreenControlChange);
+  root.addEventListener("shell-dialog-open", onDialogOpen);
+  root.addEventListener("shell-dialog-close", onDialogClose);
+  return () => {
+    screenToggle?.removeEventListener("click", onScreenToggle);
+    root.removeEventListener("screen-control-change", onScreenControlChange);
+    root.removeEventListener("shell-dialog-open", onDialogOpen);
+    root.removeEventListener("shell-dialog-close", onDialogClose);
+  };
 }
 function required<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);

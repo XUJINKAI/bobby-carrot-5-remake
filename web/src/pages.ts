@@ -1,5 +1,13 @@
 import type { TinySynthAudioBackend } from "./TinySynthAudio.js";
-import { bindNavigation, escapeHtml, type Navigate } from "./common.js";
+import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import {
+  bindNavigation,
+  escapeHtml,
+  gameAssets,
+  siteUrl,
+  type Navigate,
+  type PageController,
+} from "./common.js";
 import {
   completedExploreLevels,
   lastExploreLevelId,
@@ -10,13 +18,18 @@ import {
   randomFilteredLevel,
 } from "./level-filters.js";
 import {
-  exportAdventureSave,
-  importAdventureSave,
-  loadAdventureSave,
-  resetAdventureSave,
-} from "./adventure-storage.js";
-import type { CatalogChapter, CatalogLevel, LevelCatalog } from "./catalog.js";
-import { renderAppShell } from "./ui-shell.js";
+  fetchJson,
+  type CatalogChapter,
+  type CatalogLevel,
+  type LevelCatalog,
+  type OfficialLevelData,
+} from "./catalog.js";
+import { createGameSession } from "./game-session.js";
+import { renderGameStage } from "./game-stage-shell.js";
+import {
+  loadScreenControlPreference,
+  renderAppShell,
+} from "./ui-shell.js";
 
 export interface PageContext {
   app: HTMLDivElement;
@@ -58,7 +71,9 @@ export function chapterStars(stars: number): string {
   return `${"★".repeat(stars)}${"☆".repeat(Math.max(0, 3 - stars))}`;
 }
 
-export function renderHome(context: PageContext): void {
+export async function renderHome(
+  context: PageContext,
+): Promise<PageController> {
   const { app, catalog, audio, navigate } = context;
   const last = lastLevel(catalog);
   audio.playMusic("title");
@@ -68,23 +83,42 @@ export function renderHome(context: PageContext): void {
     showBottomBar: false,
     showScreenControlToggle: false,
     content: `
-    <section class="nostalgia-home">
-      <img class="nostalgia-logo" src="assets/art/hd/title.png" alt="Bobby Carrot 5 Remake">
-      <div class="nostalgia-menu" role="navigation" aria-label="主菜单">
-        <a class="nostalgia-primary" href="adventure" data-nav>继续冒险</a>
-        <a href="adventure/chapters" data-nav>冒险模式</a>
-        <a href="levels" data-nav>自由选关</a>
-        <a href="edit" data-nav>地图编辑器</a>
-        <a href="settings" data-nav>设置</a>
-      </div>
-      <div class="nostalgia-foot muted">
-        原版冒险保持章节顺序、存档与竖屏视野；自由选关开放全部 ${catalog.uniqueLevels} 关并保留筛选。
-      </div>
-    </section>
-    <section class="home-explore-strip">
-      <span>最近浏览：${displayLevelId(last)}</span>
-      <button id="home-random" class="ghost-btn">随机一关</button>
-    </section>
+    <div class="home-page">
+      <section class="home-hero" aria-label="开始游戏">
+        <article class="home-demo-panel">
+          <header>
+            <div><span class="eyebrow">WELCOME DEMO</span><h1>先走两步</h1></div>
+            <button type="button" class="ghost-btn" data-demo-restart>重新开始</button>
+          </header>
+          <div class="home-demo-stage">
+            ${renderGameStage({ canvasId: "home-demo-canvas" })}
+          </div>
+          <p data-demo-status>方向键 / WASD 移动，体验 Engine 的地图规则。</p>
+        </article>
+        <nav class="home-mode-panel" aria-label="选择模式">
+          <header><span class="eyebrow">PLAY YOUR WAY</span><h2>选择模式</h2></header>
+          <a class="home-mode-card primary" href="adventure" data-nav><strong>冒险模式</strong><span>按章节推进原版 Campaign</span><b>→</b></a>
+          <a class="home-mode-card" href="levels" data-nav><strong>自由探索模式</strong><span>全部官方关卡开放浏览</span><b>→</b></a>
+          <a class="home-mode-card" href="edit" data-nav><strong>编辑器模式</strong><span>创建地图并随时 Play Test</span><b>→</b></a>
+          <button class="home-mode-card" type="button" data-import-map><strong>导入自定义地图</strong><span>打开语义 JSON Draft</span><b>＋</b></button>
+          <input data-import-map-file type="file" accept="application/json,.json" hidden>
+          <p class="home-import-feedback" data-import-feedback aria-live="polite"></p>
+        </nav>
+      </section>
+      <section class="home-about" aria-labelledby="home-about-title">
+        <header><span class="eyebrow">ABOUT THE PROJECT</span><h2 id="home-about-title">从原作到现代 Web 游戏</h2></header>
+        <div class="home-about-grid">
+          <article><h3>原作重制</h3><p>保留 Bobby Carrot 5 的地图、机关、美术与 MIDI，并以现代浏览器运行。</p></article>
+          <article><h3>可验证研究</h3><p>语义地图与原版 DAT 维持可验证的格式互操作链路，让机制结论能够回到原作验证。</p></article>
+          <article><h3>地图编辑器</h3><p>使用语义 JSON 创建和交换自定义地图，并通过同一套 Engine 直接 Play Test。</p></article>
+        </div>
+        <p class="home-about-note">项目代码与原创文档遵循仓库许可证；原版资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。</p>
+        <div class="home-quick-row">
+          <span>最近浏览：${displayLevelId(last)}</span>
+          <button id="home-random" class="ghost-btn">随机一关</button>
+        </div>
+      </section>
+    </div>
   `,
   });
 
@@ -94,6 +128,113 @@ export function renderHome(context: PageContext): void {
     ?.addEventListener("click", () => {
       navigate(`/play/${randomLevel(catalog).publicId}`);
     });
+
+  bindHomeImport(app, navigate);
+  const demoMeta =
+    catalog.levels.find((level) => level.publicId === "1-1") ?? last;
+  const demoLevel = await fetchJson<OfficialLevelData>(
+    siteUrl(`assets/${demoMeta.path}`),
+  );
+  const canvas = app.querySelector<HTMLCanvasElement>("#home-demo-canvas");
+  if (!canvas) throw new Error("Home Demo canvas 挂载失败");
+  const session = await createGameSession({
+    root: app,
+    canvas,
+    level: demoLevel,
+    gameOptions: {
+      audio,
+      profile: { superKey: true },
+      assets: gameAssets(),
+    },
+    runtime: {
+      hud: {
+        hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
+        goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
+      },
+      input: {
+        undo: false,
+        debug: false,
+        screenJoystick: { enabled: loadScreenControlPreference() },
+      },
+    },
+  });
+  const status = app.querySelector<HTMLElement>("[data-demo-status]");
+  const result = app.querySelector<HTMLElement>("[data-result-overlay]");
+  const resultCard = app.querySelector<HTMLElement>("[data-result-card]");
+  const updateDemo = (): void => {
+    if (!session.game.hasLevel || !status) return;
+    const world = session.game.world;
+    status.textContent = world.completed
+      ? "Demo 完成，可以进入冒险模式。"
+      : world.dead
+        ? "Bobby 遇到了危险，可以重新开始。"
+        : `方向键 / WASD 移动 · ${world.state.moves} 步 · 剩余目标 ${world.objectiveRemaining}`;
+    if (!result || !resultCard) return;
+    result.hidden = !world.completed && !world.dead;
+    if (world.completed) {
+      resultCard.innerHTML = `<h2>Demo 完成</h2><p>Engine 已完成这张语义地图。</p><div class="result-actions"><button class="primary-btn" data-demo-adventure>开始冒险</button><button class="ghost-btn" data-demo-restart>重玩</button></div>`;
+    } else if (world.dead) {
+      resultCard.innerHTML = `<h2>再试一次</h2><p>${escapeHtml(world.state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions"><button class="primary-btn" data-demo-restart>重新开始</button></div>`;
+    }
+  };
+  session.game.on("change", updateDemo);
+  updateDemo();
+  const onHomeClick = (event: Event): void => {
+    const target = event.target as HTMLElement;
+    if (target.closest("[data-demo-restart]")) session.game.restart();
+    if (target.closest("[data-demo-adventure]")) navigate("/adventure");
+  };
+  const onDialogOpen = (): void => session.input.setEnabled(false);
+  const onDialogClose = (): void => session.input.setEnabled(true);
+  const onScreenControlChange = (event: Event): void => {
+    const enabled = Boolean(
+      (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
+    );
+    session.input.setScreenJoystickEnabled(enabled);
+  };
+  app.addEventListener("click", onHomeClick);
+  app.addEventListener("shell-dialog-open", onDialogOpen);
+  app.addEventListener("shell-dialog-close", onDialogClose);
+  app.addEventListener("screen-control-change", onScreenControlChange);
+  return {
+    destroy(): void {
+      app.removeEventListener("click", onHomeClick);
+      app.removeEventListener("shell-dialog-open", onDialogOpen);
+      app.removeEventListener("shell-dialog-close", onDialogClose);
+      app.removeEventListener("screen-control-change", onScreenControlChange);
+      session.destroy();
+    },
+  };
+}
+
+function bindHomeImport(app: HTMLDivElement, navigate: Navigate): void {
+  const file = app.querySelector<HTMLInputElement>("[data-import-map-file]");
+  const feedback = app.querySelector<HTMLElement>("[data-import-feedback]");
+  app
+    .querySelector<HTMLButtonElement>("[data-import-map]")
+    ?.addEventListener("click", () => file?.click());
+  file?.addEventListener("change", () => {
+    const selected = file.files?.[0];
+    if (!selected) return;
+    void selected
+      .text()
+      .then((text) => {
+        const level = parseEditorLevel(text);
+        sessionStorage.setItem(
+          "bc5r:pending-editor-level",
+          serializeEditorLevel(level),
+        );
+        navigate("/edit");
+      })
+      .catch((error) => {
+        if (feedback)
+          feedback.textContent =
+            error instanceof Error ? error.message : String(error);
+      })
+      .finally(() => {
+        file.value = "";
+      });
+  });
 }
 
 export async function renderLevels(context: PageContext): Promise<void> {
@@ -194,141 +335,4 @@ function renderExploreChapter(
       <div class="chapter-levels">${levelLinks}</div>
     </section>
   `;
-}
-
-export function renderSettings(context: PageContext): void {
-  const { app, audio, navigate } = context;
-  const save = loadAdventureSave();
-  audio.playMusic("title");
-
-  app.innerHTML = renderAppShell({
-    title: "设置",
-    showScreenControlToggle: false,
-    content: `
-    <div class="section-title">
-      <h1>设置</h1>
-      <p>音乐、操作与 Adventure 存档。</p>
-    </div>
-    <section class="profile-strip">
-      <div><strong>${save.economy.bonusCoins}</strong><span>Bonus Coin</span></div>
-      <div><strong>${save.economy.goldenCarrots}</strong><span>Golden Carrot</span></div>
-      <div><strong>${save.upgrades.goldenKey ? "已获得" : "未获得"}</strong><span>Golden Key</span></div>
-      <div><strong>${save.campaign.completedLevels.length}</strong><span>Adventure 完成</span></div>
-    </section>
-    <section class="settings-card">
-      <div class="setting">
-        <div>
-          <strong>Adventure 存档</strong>
-          <div class="muted">纯 JSON；包含章节进度、全局金币、金胡萝卜、永久道具和已领取奖励位置。</div>
-        </div>
-        <div class="setting-actions">
-          <button id="save-export" class="ghost-btn">导出 JSON</button>
-          <button id="save-import" class="ghost-btn">导入 JSON</button>
-          <button id="save-reset" class="ghost-btn danger">清空存档</button>
-          <input id="save-file" type="file" accept="application/json,.json" hidden>
-        </div>
-      </div>
-      <div class="setting">
-        <div>
-          <strong>音乐</strong>
-          <div class="muted">WebAudio TinySynth 1.1.3 · 原始 .mid</div>
-        </div>
-        <label class="switch-label">
-          <input id="music-enabled" type="checkbox" ${audio.isEnabled() ? "checked" : ""}> 启用
-        </label>
-      </div>
-      <div class="setting">
-        <div><strong>MIDI 音色</strong></div>
-        <select id="midi-tone">
-          <option value="fm" ${audio.getTone() === "fm" ? "selected" : ""}>TinySynth FM</option>
-          <option value="chip" ${audio.getTone() === "chip" ? "selected" : ""}>TinySynth Chip</option>
-        </select>
-      </div>
-      <div class="setting">
-        <div><strong>混响</strong></div>
-        <input id="midi-reverb" type="range" min="0" max="100" value="${Math.round(audio.getReverbLevel() * 100)}">
-      </div>
-      <div class="setting">
-        <div><strong>音乐音量</strong></div>
-        <input id="music-volume" type="range" min="0" max="100" value="${Math.round(audio.getMusicVolume() * 100)}">
-      </div>
-      <div class="setting">
-        <div><strong>音效音量</strong></div>
-        <input id="sound-volume" type="range" min="0" max="100" value="${Math.round(audio.getSoundVolume() * 100)}">
-      </div>
-    </section>
-  `,
-  });
-
-  bindNavigation(app, navigate);
-
-  app
-    .querySelector<HTMLButtonElement>("#save-export")
-    ?.addEventListener("click", exportAdventureSave);
-
-  const file = app.querySelector<HTMLInputElement>("#save-file");
-  app
-    .querySelector<HTMLButtonElement>("#save-import")
-    ?.addEventListener("click", () => file?.click());
-  file?.addEventListener("change", () => {
-    const selected = file.files?.[0];
-    if (!selected) return;
-
-    void importAdventureSave(selected)
-      .then(() => {
-        window.alert("Adventure 存档已导入。");
-        navigate("/settings");
-      })
-      .catch((error) =>
-        window.alert(error instanceof Error ? error.message : String(error)),
-      )
-      .finally(() => {
-        file.value = "";
-      });
-  });
-
-  app
-    .querySelector<HTMLButtonElement>("#save-reset")
-    ?.addEventListener("click", () => {
-      if (window.confirm("清空 Adventure 存档？自由选关记录不会受影响。")) {
-        resetAdventureSave();
-        navigate("/settings");
-      }
-    });
-
-  app
-    .querySelector<HTMLInputElement>("#music-enabled")
-    ?.addEventListener("change", (event) => {
-      audio.setEnabled((event.currentTarget as HTMLInputElement).checked);
-    });
-  app
-    .querySelector<HTMLInputElement>("#music-volume")
-    ?.addEventListener("input", (event) => {
-      audio.setMusicVolume(
-        Number((event.currentTarget as HTMLInputElement).value) / 100,
-      );
-    });
-  app
-    .querySelector<HTMLInputElement>("#sound-volume")
-    ?.addEventListener("input", (event) => {
-      audio.setSoundVolume(
-        Number((event.currentTarget as HTMLInputElement).value) / 100,
-      );
-    });
-  app
-    .querySelector<HTMLSelectElement>("#midi-tone")
-    ?.addEventListener("change", (event) => {
-      audio.setTone(
-        (event.currentTarget as HTMLSelectElement).value === "chip"
-          ? "chip"
-          : "fm",
-      );
-    });
-  app
-    .querySelector<HTMLInputElement>("#midi-reverb")
-    ?.addEventListener("input", (event) => {
-      audio.setReverbLevel(
-        Number((event.currentTarget as HTMLInputElement).value) / 100,
-      );
-    });
 }

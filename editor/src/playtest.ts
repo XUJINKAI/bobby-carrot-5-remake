@@ -30,6 +30,14 @@ export interface EditorPlayTestOptions {
 export class EditorPlayTest {
   private runtime: GameplayRuntime | null = null;
 
+  setInputEnabled(enabled: boolean): void {
+    this.runtime?.input.setEnabled(enabled);
+  }
+
+  setScreenJoystickEnabled(enabled: boolean): void {
+    this.runtime?.input.setScreenJoystickEnabled(enabled);
+  }
+
   async start(options: EditorPlayTestOptions): Promise<void> {
     this.stop();
     const assets = options.assets;

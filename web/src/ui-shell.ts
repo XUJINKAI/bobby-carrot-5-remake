@@ -18,6 +18,29 @@ const modeLinks: Array<{ mode: AppMode; label: string; href: string }> = [
   { mode: "editor", label: "编辑器模式", href: "/edit" },
 ];
 
+const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
+
+export function loadScreenControlPreference(): boolean {
+  const stored = localStorage.getItem(SCREEN_CONTROL_STORAGE_KEY);
+  if (stored !== null) return stored === "true";
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
+export function storeScreenControlPreference(
+  root: ParentNode,
+  enabled: boolean,
+): void {
+  localStorage.setItem(SCREEN_CONTROL_STORAGE_KEY, String(enabled));
+  if (root instanceof HTMLElement) {
+    root.dispatchEvent(
+      new CustomEvent("screen-control-change", {
+        bubbles: true,
+        detail: { enabled },
+      }),
+    );
+  }
+}
+
 export function renderAppShell(options: ShellOptions): string {
   const mode = options.mode ?? "home";
   const selectedMode = mode === "custom" ? "explore" : mode;
@@ -63,13 +86,15 @@ export function openDialog(root: ParentNode, html: string): void {
   if (!layer) return;
   layer.innerHTML = html;
   layer.hidden = false;
+  layer.dispatchEvent(new CustomEvent("shell-dialog-open", { bubbles: true }));
 }
 
 export function closeDialog(root: ParentNode): void {
   const layer = root.querySelector<HTMLElement>("[data-dialog-layer]");
-  if (!layer) return;
+  if (!layer || layer.hidden) return;
   layer.innerHTML = "";
   layer.hidden = true;
+  layer.dispatchEvent(new CustomEvent("shell-dialog-close", { bubbles: true }));
 }
 
 export function renderSettingsDialog(options: {
@@ -77,6 +102,11 @@ export function renderSettingsDialog(options: {
   musicVolume: number;
   soundVolume: number;
   screenControlEnabled: boolean;
+  tone: "fm" | "chip";
+  reverb: number;
+  bonusCoins: number;
+  goldenCarrots: number;
+  completedLevels: number;
 }): string {
   return `
     <section class="global-dialog settings-dialog" role="dialog" aria-label="设置">
@@ -86,8 +116,19 @@ export function renderSettingsDialog(options: {
         <label>音乐 <input data-setting="music-enabled" type="checkbox" ${options.musicEnabled ? "checked" : ""}></label>
         <label>音乐音量 <input data-setting="music-volume" type="range" min="0" max="100" value="${options.musicVolume}"></label>
         <label>音效音量 <input data-setting="sound-volume" type="range" min="0" max="100" value="${options.soundVolume}"></label>
+        <label>MIDI 音色 <select data-setting="midi-tone"><option value="fm" ${options.tone === "fm" ? "selected" : ""}>TinySynth FM</option><option value="chip" ${options.tone === "chip" ? "selected" : ""}>TinySynth Chip</option></select></label>
+        <label>混响 <input data-setting="midi-reverb" type="range" min="0" max="100" value="${options.reverb}"></label>
         <h3>操作</h3>
         <label>屏幕摇杆 <input data-setting="screen-control" type="checkbox" ${options.screenControlEnabled ? "checked" : ""}></label>
+        <h3>Adventure Save</h3>
+        <p class="settings-save-summary">Bonus Coin ${options.bonusCoins} · Golden Carrot ${options.goldenCarrots} · 已完成 ${options.completedLevels}</p>
+        <div class="settings-save-actions">
+          <button type="button" data-settings-action="export">导出</button>
+          <button type="button" data-settings-action="import">导入</button>
+          <button type="button" data-settings-action="reset">清空</button>
+          <input data-settings-file type="file" accept="application/json,.json" hidden>
+        </div>
+        <p class="settings-feedback" data-settings-feedback aria-live="polite"></p>
       </div>
     </section>`;
 }
