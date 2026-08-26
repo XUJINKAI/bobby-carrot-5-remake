@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import type { MapCollectionMap } from "../../services/catalog/catalog.js";
+import type {
+  MapCollectionCardSize,
+  MapCollectionMap,
+} from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
 
 const props = defineProps<{
   collectionId: string;
   map: MapCollectionMap;
   completed?: boolean;
+  cardSize: MapCollectionCardSize;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
@@ -27,10 +31,13 @@ function secondaryLabel(): string | null {
 <template>
   <a
     class="chapter-level explore-map-card"
-    :class="{
-      completed,
-      'bonus-level': map.kind === 'bonus',
-    }"
+    :class="[
+      `card-size-${cardSize}`,
+      {
+        completed,
+        'bonus-level': map.kind === 'bonus',
+      },
+    ]"
     :data-map-id="map.id"
     :href="explorePlayPath({ collection: collectionId, id: map.id })"
     :title="map.description || map.name"
@@ -45,7 +52,6 @@ function secondaryLabel(): string | null {
 <style scoped>
 .explore-map-card {
   position: relative;
-  min-height: 68px;
   border: 2px solid var(--bc-panel-border);
   border-radius: 4px;
   background: #064b8c;
@@ -56,12 +62,26 @@ function secondaryLabel(): string | null {
   justify-content: center;
   align-items: center;
   gap: 4px;
-  padding: 7px;
   text-align: center;
   transition:
     transform 0.12s ease,
     border-color 0.12s ease,
     background 0.12s ease;
+}
+
+.explore-map-card.card-size-small {
+  min-height: 68px;
+  padding: 7px;
+}
+
+.explore-map-card.card-size-medium {
+  min-height: 96px;
+  padding: 12px;
+}
+
+.explore-map-card.card-size-big {
+  min-height: 148px;
+  padding: 16px;
 }
 
 .explore-map-card:hover,
@@ -91,10 +111,23 @@ function secondaryLabel(): string | null {
   line-height: 1.15;
 }
 
+.card-size-medium .explore-map-card-label {
+  font-size: 1rem;
+}
+
+.card-size-big .explore-map-card-label {
+  font-size: 1.08rem;
+}
+
 .explore-map-card-id {
   color: var(--muted);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
+}
+
+.card-size-medium .explore-map-card-id,
+.card-size-big .explore-map-card-id {
+  font-size: 0.68rem;
 }
 
 .done-mark {
@@ -106,8 +139,16 @@ function secondaryLabel(): string | null {
 }
 
 @media (max-width: 700px) {
-  .explore-map-card {
+  .explore-map-card.card-size-small {
     min-height: 62px;
+  }
+
+  .explore-map-card.card-size-medium {
+    min-height: 88px;
+  }
+
+  .explore-map-card.card-size-big {
+    min-height: 128px;
   }
 }
 </style>

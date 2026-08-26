@@ -43,6 +43,7 @@ assets/
   "id": "original",
   "name": "原版关卡",
   "description": "...",
+  "cardSize": "small",
   "filters": [],
   "chapters": [],
   "maps": []
@@ -50,6 +51,8 @@ assets/
 ```
 
 它只服务 Explore 的浏览、分组、搜索、筛选、随机选择和列表展示。
+
+`cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
 `maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
 

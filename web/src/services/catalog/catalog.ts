@@ -20,6 +20,8 @@ export type MapCollectionIcon =
   | { type: "image"; src: string }
   | { type: "text"; value: string };
 
+export type MapCollectionCardSize = "small" | "medium" | "big";
+
 export interface MapCollectionFilterOption {
   id: string;
   name: string;
@@ -53,6 +55,7 @@ export interface MapCollectionIndex {
   id: string;
   name: string;
   description: string;
+  cardSize: MapCollectionCardSize;
   filters: MapCollectionFilter[];
   chapters: MapCollectionChapter[];
   maps: MapCollectionMap[];

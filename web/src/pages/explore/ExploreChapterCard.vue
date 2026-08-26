@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type {
+  MapCollectionCardSize,
   MapCollectionChapter,
   MapCollectionMap,
 } from "../../services/catalog/catalog.js";
-import ExploreMapCard from "./ExploreMapCard.vue";
+import ExploreMapGrid from "./ExploreMapGrid.vue";
 
 defineProps<{
   collectionId: string;
   chapter: MapCollectionChapter;
   maps: MapCollectionMap[];
   completedIds: Set<string>;
+  cardSize: MapCollectionCardSize;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
@@ -33,16 +35,13 @@ function stars(value: number | undefined): string {
       </div>
       <span class="muted chapter-count">{{ maps.length }} 关</span>
     </header>
-    <div class="explore-map-grid">
-      <ExploreMapCard
-        v-for="map in maps"
-        :key="map.id"
-        :collection-id="collectionId"
-        :map="map"
-        :completed="completedIds.has(map.id)"
-        @navigate="emit('navigate', $event)"
-      />
-    </div>
+    <ExploreMapGrid
+      :collection-id="collectionId"
+      :maps="maps"
+      :completed-ids="completedIds"
+      :card-size="cardSize"
+      @navigate="emit('navigate', $event)"
+    />
   </section>
 </template>
 
@@ -91,12 +90,6 @@ function stars(value: number | undefined): string {
   letter-spacing: 0.04em;
 }
 
-.explore-map-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 7px;
-}
-
 @media (max-width: 700px) {
   .chapter-head {
     align-items: flex-start;
@@ -104,10 +97,6 @@ function stars(value: number | undefined): string {
 
   .chapter-title-line {
     flex-wrap: wrap;
-  }
-
-  .explore-map-grid {
-    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 }
 </style>

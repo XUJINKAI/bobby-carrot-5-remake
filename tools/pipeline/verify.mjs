@@ -17,12 +17,14 @@ assertSchemaV1(collectionsIndex, "assets/maps/index.json");
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
   throw new Error("Runtime collection index 必须包含 original");
 
+const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
   const relative = `assets/maps/${summary.id}/index.json`;
   const collection = readJson(relative);
   assertSchemaV1(collection, relative);
   if (
     collection.id !== summary.id ||
+    !cardSizes.has(collection.cardSize) ||
     !Array.isArray(collection.filters) ||
     !Array.isArray(collection.chapters) ||
     !Array.isArray(collection.maps)
@@ -38,10 +40,18 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
 
 const original = collectionIndexes.find((collection) => collection.id === "original");
 if (!original) throw new Error("缺少 Original collection index");
+if (original.cardSize !== "small")
+  throw new Error("Original collection cardSize 必须为 small");
 if (original.chapters.length !== 40 || original.maps.length !== 480)
   throw new Error("Original collection 必须包含 40 章 / 480 张 Campaign map");
 if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
+const pushbox = collectionIndexes.find((collection) => collection.id === "pushbox");
+if (pushbox?.cardSize !== "medium")
+  throw new Error("Pushbox collection cardSize 必须为 medium");
+const testCollection = collectionIndexes.find((collection) => collection.id === "test");
+if (testCollection?.cardSize !== "big")
+  throw new Error("Test collection cardSize 必须为 big");
 const expectedFirstChapter = [
   "1-1",
   "1-2",
@@ -113,7 +123,7 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1、MapDocument、collection cardSize、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
 
 function assertNext(id, expected) {

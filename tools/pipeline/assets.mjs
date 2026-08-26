@@ -76,6 +76,7 @@ function buildOriginalCollection() {
       id: "original",
       name: "原版关卡",
       description: "Bobby Carrot 5 原版 40 章地图。",
+      cardSize: "small",
       filters: originalFilters(),
       chapters: catalog.chapters.map((chapter) => ({
         id: chapter.id,

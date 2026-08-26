@@ -39,6 +39,7 @@ try {
       'class="level-filter-shell"',
       'data-filter-trigger="carrots"',
       'data-filter-trigger="mechanics"',
+      'data-card-size="small"',
     ],
     ["进入冒险模式"],
   );
@@ -46,10 +47,12 @@ try {
   await smoke(`${origin}/explore/pushbox`, [
     'class="explore-tabs"',
     'class="explore-custom-collection"',
+    'data-card-size="medium"',
     "Pushbox 1",
   ]);
   await smoke(`${origin}/explore/test`, [
     'class="explore-custom-collection"',
+    'data-card-size="big"',
     "Portal Lab",
     "Maximum Moves Lab",
   ]);

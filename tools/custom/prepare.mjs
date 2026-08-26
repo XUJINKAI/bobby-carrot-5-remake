@@ -4,6 +4,7 @@ import { root } from "../lib/fs.mjs";
 
 const sourceRoot = path.join(root, "custom-maps");
 const outputRoot = path.join(root, "assets/maps");
+const cardSizes = new Set(["small", "medium", "big"]);
 const manifest = JSON.parse(
   fs.readFileSync(path.join(sourceRoot, "collections.json"), "utf8"),
 );
@@ -29,7 +30,12 @@ fs.writeFileSync(
         description: "Bobby Carrot 5 原版 40 章地图。",
         order: 0,
       },
-      ...collections.map(({ visible: _visible, maps: _maps, ...entry }) => entry),
+      ...collections.map(({ id, name, description, order }) => ({
+        id,
+        name,
+        description,
+        order,
+      })),
     ],
   }, null, 2)}\n`,
 );
@@ -42,7 +48,7 @@ console.log(
 function buildCollection(entry) {
   if (!entry || typeof entry !== "object")
     throw new Error("collection 定义必须是对象");
-  const { id, name, description, order, visible = true } = entry;
+  const { id, name, description, cardSize, order, visible = true } = entry;
   if (!isSlug(id)) throw new Error(`无效 collection ID：${String(id)}`);
   if (ids.has(id)) throw new Error(`重复 collection ID：${id}`);
   ids.add(id);
@@ -50,6 +56,8 @@ function buildCollection(entry) {
     throw new Error(`${id}: name 不能为空`);
   if (typeof description !== "string")
     throw new Error(`${id}: description 必须是字符串`);
+  if (!cardSizes.has(cardSize))
+    throw new Error(`${id}: cardSize 必须是 small / medium / big`);
   if (!Number.isFinite(order)) throw new Error(`${id}: order 必须是数字`);
   if (typeof visible !== "boolean")
     throw new Error(`${id}: visible 必须是布尔值`);
@@ -61,7 +69,7 @@ function buildCollection(entry) {
     .map((item) => readMap(id, directory, item.name))
     .sort((left, right) => left.id.localeCompare(right.id));
   if (maps.length === 0) throw new Error(`${id}: collection 至少需要一张地图`);
-  return { id, name, description, order, visible, maps };
+  return { id, name, description, cardSize, order, visible, maps };
 }
 
 function readMap(collectionId, directory, filename) {
@@ -113,6 +121,7 @@ function writeCollection(collection) {
       id: collection.id,
       name: collection.name,
       description: collection.description,
+      cardSize: collection.cardSize,
       filters: [],
       chapters: [],
       maps,

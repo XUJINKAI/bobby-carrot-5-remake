@@ -54,6 +54,7 @@ function summary(): string {
         :chapter="chapter"
         :maps="mapsByChapter.get(chapter.id) ?? []"
         :completed-ids="completedIds"
+        :card-size="activeCollection.cardSize"
         @navigate="emit('navigate', $event)"
       />
     </div>
