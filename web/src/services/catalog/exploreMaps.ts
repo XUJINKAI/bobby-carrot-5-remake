@@ -5,11 +5,7 @@ import { mapAssetUrl } from "../../app/routes.js";
 import {
   fetchJson,
   levelMapFromDocument,
-  type CatalogLevel,
-  type CustomMapCatalog,
-  type LevelCatalog,
   type MapDocument,
-  type OfficialLevelData,
 } from "./catalog.js";
 
 export interface ResolvedMapDocument {
@@ -36,38 +32,5 @@ export async function resolveMapDocument(
     ref,
     document,
     level: levelMapFromDocument(document),
-  };
-}
-
-export interface ResolvedExploreMap {
-  ref: ExploreMapRef;
-  title: string;
-  level: LevelMap;
-  official?: CatalogLevel;
-}
-
-export async function resolveExploreMap(
-  catalog: LevelCatalog,
-  customMapCatalog: CustomMapCatalog,
-  ref: ExploreMapRef,
-): Promise<ResolvedExploreMap | undefined> {
-  const resolved = await resolveMapDocument(ref);
-  if (ref.collection === "original") {
-    const official = catalog.levels.find((entry) => entry.publicId === ref.id);
-    return {
-      ref,
-      title: resolved.document.meta.name,
-      level: resolved.level as OfficialLevelData,
-      ...(official ? { official } : {}),
-    };
-  }
-  const collection = customMapCatalog.collections.find(
-    (entry) => entry.id === ref.collection,
-  );
-  const map = collection?.maps.find((entry) => entry.id === ref.id);
-  return {
-    ref,
-    title: resolved.document.meta.name ?? map?.name ?? ref.id,
-    level: resolved.level,
   };
 }
