@@ -8,6 +8,26 @@
     "visible": true
   },
   {
+    "id": "loma-pushbox",
+    "name": "LOMA Pushbox",
+    "description": "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
+    "cardSize": "small",
+    "order": 20,
+    "visible": true,
+    "chapters": [
+      { "id": "01", "name": "Pattern", "description": "" },
+      { "id": "02", "name": "Pattern", "description": "" },
+      { "id": "03", "name": "Pattern", "description": "" },
+      { "id": "04", "name": "Pattern", "description": "" },
+      { "id": "05", "name": "Pattern", "description": "" },
+      { "id": "06", "name": "Pattern", "description": "" },
+      { "id": "07", "name": "Pattern", "description": "" },
+      { "id": "08", "name": "Pattern", "description": "" },
+      { "id": "09", "name": "Pattern", "description": "" },
+      { "id": "10", "name": "Pattern", "description": "" }
+    ]
+  },
+  {
     "id": "test",
     "name": "Test",
     "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",

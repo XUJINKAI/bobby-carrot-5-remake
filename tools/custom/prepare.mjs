@@ -48,7 +48,15 @@ console.log(
 function buildCollection(entry) {
   if (!entry || typeof entry !== "object")
     throw new Error("collection 定义必须是对象");
-  const { id, name, description, cardSize, order, visible = true } = entry;
+  const {
+    id,
+    name,
+    description,
+    cardSize,
+    order,
+    visible = true,
+    chapters: rawChapters = [],
+  } = entry;
   if (!isSlug(id)) throw new Error(`无效 collection ID：${String(id)}`);
   if (ids.has(id)) throw new Error(`重复 collection ID：${id}`);
   ids.add(id);
@@ -61,18 +69,38 @@ function buildCollection(entry) {
   if (!Number.isFinite(order)) throw new Error(`${id}: order 必须是数字`);
   if (typeof visible !== "boolean")
     throw new Error(`${id}: visible 必须是布尔值`);
+  const chapters = validateChapters(id, rawChapters);
+  const chapterIds = new Set(chapters.map((chapter) => chapter.id));
   const directory = path.join(sourceRoot, id);
   if (!fs.existsSync(directory)) throw new Error(`${id}: collection 目录不存在`);
   const maps = fs
     .readdirSync(directory, { withFileTypes: true })
     .filter((item) => item.isFile() && item.name.endsWith(".json"))
-    .map((item) => readMap(id, directory, item.name))
+    .map((item) => readMap(id, directory, item.name, chapterIds))
     .sort((left, right) => left.id.localeCompare(right.id));
   if (maps.length === 0) throw new Error(`${id}: collection 至少需要一张地图`);
-  return { id, name, description, cardSize, order, visible, maps };
+  return { id, name, description, cardSize, order, visible, chapters, maps };
 }
 
-function readMap(collectionId, directory, filename) {
+function validateChapters(collectionId, value) {
+  if (!Array.isArray(value)) throw new Error(`${collectionId}: chapters 必须是数组`);
+  const chapterIds = new Set();
+  return value.map((chapter) => {
+    if (!chapter || typeof chapter !== "object")
+      throw new Error(`${collectionId}: chapter 必须是对象`);
+    const { id, name, description = "" } = chapter;
+    if (!isSlug(id)) throw new Error(`${collectionId}: 无效 chapter ID：${String(id)}`);
+    if (chapterIds.has(id)) throw new Error(`${collectionId}: 重复 chapter ID：${id}`);
+    chapterIds.add(id);
+    if (typeof name !== "string" || !name.trim())
+      throw new Error(`${collectionId}/${id}: chapter name 不能为空`);
+    if (typeof description !== "string")
+      throw new Error(`${collectionId}/${id}: chapter description 必须是字符串`);
+    return { id, name, description };
+  });
+}
+
+function readMap(collectionId, directory, filename, chapterIds) {
   const id = path.basename(filename, ".json");
   if (!isSlug(id)) throw new Error(`${collectionId}: 无效地图 ID：${id}`);
   const level = JSON.parse(fs.readFileSync(path.join(directory, filename), "utf8"));
@@ -80,11 +108,16 @@ function readMap(collectionId, directory, filename) {
     throw new Error(`${collectionId}/${id}: schemaVersion 必须为 1`);
   if (typeof level.name !== "string" || !level.name.trim())
     throw new Error(`${collectionId}/${id}: name 不能为空`);
+  if (level.chapter !== undefined) {
+    if (typeof level.chapter !== "string" || !chapterIds.has(level.chapter))
+      throw new Error(`${collectionId}/${id}: chapter ${String(level.chapter)} 未在 collection 中定义`);
+  }
   return {
     id,
     name: level.name,
     description: typeof level.description === "string" ? level.description : "",
     author: typeof level.author === "string" ? level.author : undefined,
+    chapter: level.chapter,
     level,
   };
 }
@@ -95,8 +128,14 @@ function writeCollection(collection) {
   fs.mkdirSync(target, { recursive: true });
   const maps = collection.maps.map((entry, index) => {
     const next = collection.maps[index + 1]?.id;
-    const { schemaVersion: _schemaVersion, name: _name, author: _author,
-      description: _description, ...levelMap } = entry.level;
+    const {
+      schemaVersion: _schemaVersion,
+      name: _name,
+      author: _author,
+      description: _description,
+      chapter: _chapter,
+      ...levelMap
+    } = entry.level;
     const meta = {
       id: entry.id,
       name: entry.name,
@@ -112,6 +151,7 @@ function writeCollection(collection) {
       id: entry.id,
       name: entry.name,
       description: entry.description,
+      ...(entry.chapter ? { chapter: entry.chapter } : {}),
     };
   });
   fs.writeFileSync(
@@ -123,7 +163,7 @@ function writeCollection(collection) {
       description: collection.description,
       cardSize: collection.cardSize,
       filters: [],
-      chapters: [],
+      chapters: collection.chapters,
       maps,
     }, null, 2)}\n`,
   );

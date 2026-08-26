@@ -18,6 +18,7 @@ run(
   process.execPath,
   [
     "--test",
+    "tools/custom/*.test.mjs",
     "tools/original/dat-tests/*.test.mjs",
     "adventure/tests/*.test.mjs",
     "engine/tests/*.test.mjs",
