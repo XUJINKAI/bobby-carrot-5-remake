@@ -53,9 +53,8 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   if (!value || typeof value !== "object")
     throw new Error("存档必须是 JSON object");
   const raw = value as Record<string, unknown>;
-  if (raw.game !== undefined && raw.game !== "bc5r")
-    throw new Error("这不是 bc5r 存档");
-  if (raw.schemaVersion !== undefined && raw.schemaVersion !== 1)
+  if (raw.game !== "bc5r") throw new Error("这不是 bc5r 存档");
+  if (raw.schemaVersion !== 1)
     throw new Error(`不支持的存档版本：${String(raw.schemaVersion)}`);
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);

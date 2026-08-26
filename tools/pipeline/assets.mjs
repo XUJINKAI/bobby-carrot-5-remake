@@ -19,67 +19,165 @@ export function rebuildAssets() {
     "original/decoded",
     "original/adapted",
     "assets",
-  ]) {
+  ])
     cleanUntracked(directory);
-  }
   prepareAssets();
 }
 
 export function prepareAssets() {
-  // prepare 的合同是保证所有派生层与源码同步，不能用目录存在性替代新鲜度判断。
   run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
   fs.mkdirSync(assets, { recursive: true });
-  for (const obsolete of ["catalog.json", "custom-catalog.json", "filters.json"])
-    fs.rmSync(path.join(assets, "maps", obsolete), { force: true });
   run(process.execPath, ["tools/custom/prepare.mjs"]);
-  const catalog = JSON.parse(
-    fs.readFileSync(path.join(original, "adapted/catalog.json"), "utf8"),
-  );
-  const originalMaps = path.join(assets, "maps/original");
-  fs.rmSync(originalMaps, { recursive: true, force: true });
-  fs.mkdirSync(originalMaps, { recursive: true });
-  const runtimeCatalog = {
-    ...catalog,
-    id: "original",
-    name: "原版关卡",
-    levels: catalog.levels.map((level) => {
-      const map = readAdaptedMap(level);
-      fs.writeFileSync(
-        path.join(originalMaps, `${level.publicId}.json`),
-        `${JSON.stringify(map, null, 2)}\n`,
-      );
-      return {
-        ...level,
-        ...levelFeatures(map),
-        path: `maps/original/${level.publicId}.json`,
-      };
-    }),
-    specialScenes: catalog.specialScenes.map((scene) => ({
-      ...scene,
-      path: `maps/original/${scene.publicId}.json`,
-    })),
-  };
-  for (const scene of catalog.specialScenes) {
-    const map = readAdaptedMap(scene);
-    fs.writeFileSync(
-      path.join(originalMaps, `${scene.publicId}.json`),
-      `${JSON.stringify(map, null, 2)}\n`,
-    );
-  }
+  buildOriginalCollection();
+  buildAdventureIndex();
   for (const target of ["art/hd", "audio/midi"])
     fs.rmSync(path.join(assets, target), { recursive: true, force: true });
   copyTree(path.join(original, "adapted/art"), path.join(assets, "art"));
   copyTree(path.join(original, "adapted/audio"), path.join(assets, "audio"));
+}
+
+function buildOriginalCollection() {
+  const catalog = readJson(path.join(original, "adapted/catalog.json"));
+  const target = path.join(assets, "maps/original");
+  fs.rmSync(target, { recursive: true, force: true });
+  fs.mkdirSync(target, { recursive: true });
+  const maps = catalog.maps.map((entry) => {
+    const document = readJson(path.join(original, "adapted", entry.path));
+    fs.writeFileSync(
+      path.join(target, `${entry.id}.json`),
+      `${JSON.stringify(document, null, 2)}\n`,
+    );
+    const features = levelFeatures(document);
+    return {
+      id: entry.id,
+      name: document.meta.name,
+      description: document.meta.description ?? "",
+      chapter: entry.chapter,
+      kind: entry.kind,
+      filters: {
+        carrots: [carrotBucket(features.carrotCount)],
+        items: features.specialItems,
+        scenes: features.scenes,
+        mechanics: features.mechanics,
+      },
+    };
+  });
+  for (const scene of catalog.specialScenes) {
+    const document = readJson(path.join(original, "adapted", scene.path));
+    fs.writeFileSync(
+      path.join(target, `${scene.id}.json`),
+      `${JSON.stringify(document, null, 2)}\n`,
+    );
+  }
   fs.writeFileSync(
-    path.join(originalMaps, "index.json"),
-    `${JSON.stringify(runtimeCatalog, null, 2)}\n`,
+    path.join(target, "index.json"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      id: "original",
+      name: "原版关卡",
+      description: "Bobby Carrot 5 原版 40 章地图。",
+      cardSize: "small",
+      filters: originalFilters(),
+      chapters: catalog.chapters.map((chapter) => ({
+        id: chapter.id,
+        name: chapter.name,
+        description: chapter.description,
+        difficulty: chapter.difficulty,
+      })),
+      maps,
+    }, null, 2)}\n`,
   );
 }
 
-function readAdaptedMap(item) {
-  return JSON.parse(
-    fs.readFileSync(path.join(original, "adapted", item.path), "utf8"),
-  );
+function buildAdventureIndex() {
+  const source = path.join(original, "adapted/adventure.json");
+  const target = path.join(assets, "adventure/index.json");
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(source, target);
+}
+
+function originalFilters() {
+  return [
+    {
+      id: "carrots",
+      name: "萝卜数",
+      options: ["0", "1-5", "6-10", "11-20", "21+"].map((id) => ({
+        id,
+        name: id,
+        icon: { type: "object", id: "carrot" },
+      })),
+    },
+    {
+      id: "items",
+      name: "特殊道具",
+      options: [
+        ["shovel", "雪铲", "terrain", "shovel-pickup"],
+        ["mower", "割草机", "object", "mower"],
+        ["gas", "汽油", "object", "gas"],
+        ["bean", "魔豆", "object", "bean"],
+        ["kite", "风筝", "object", "kite"],
+        ["golden-carrot", "金胡萝卜", "object", "golden-carrot"],
+        ["bonus-coin", "Bonus Coin", "object", "bonus-coin"],
+      ].map(([id, name, type, iconId]) => ({
+        id,
+        name,
+        icon: { type, id: iconId },
+      })),
+    },
+    {
+      id: "scenes",
+      name: "场景",
+      options: [
+        ["grassland", "草地", "ground-c"],
+        ["water", "水域", "water-animated"],
+        ["snow", "雪地", "snow"],
+        ["ice", "冰面", "ice"],
+        ["high-grass", "高草", "high-grass"],
+        ["shop", "商店", "shop-dream"],
+      ].map(([id, name, iconId]) => ({
+        id,
+        name,
+        icon: { type: "terrain", id: iconId },
+      })),
+    },
+    {
+      id: "mechanics",
+      name: "机关",
+      options: [
+        ["tide", "潮汐", "terrain", "tide-right"],
+        ["speed", "加速带", "terrain", "speed-right"],
+        ["carousel", "旋转通道", "terrain", "carousel-1"],
+        ["wind", "风车 / 云", "object", "windmill-right"],
+        ["mirror", "魔法镜", "terrain", "mirror-1"],
+        ["trap", "陷阱", "terrain", "trap-active"],
+        ["color-switch", "彩色开关", "terrain", "color-yellow-switch-raised"],
+        ["mower", "割草机", "object", "mower"],
+        ["beanstalk", "魔豆藤", "object", "beanstalk-tip"],
+        ["dragon", "龙", "object", "dragon-head"],
+        ["beaver", "海狸 / 锁", "object", "beaver-base"],
+        ["dream", "梦境机关", "object", "dream-machine"],
+        ["plank", "木板", "object", "plank"],
+        ["whirlwind", "龙卷风 / 风筝", "object", "whirlwind"],
+        ["ice-block", "冰块", "object", "ice-block"],
+      ].map(([id, name, type, iconId]) => ({
+        id,
+        name,
+        icon: { type, id: iconId },
+      })),
+    },
+  ];
+}
+
+function carrotBucket(count) {
+  if (count === 0) return "0";
+  if (count <= 5) return "1-5";
+  if (count <= 10) return "6-10";
+  if (count <= 20) return "11-20";
+  return "21+";
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
 function cleanUntracked(directory) {
@@ -92,6 +190,5 @@ function copyTree(source, target) {
   fs.cpSync(source, target, { recursive: true });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
   prepareAssets();
-}

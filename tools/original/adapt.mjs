@@ -2,6 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  campaignLevelId,
+  campaignSequenceForChapter,
+  specialSceneIdForSource,
+} from "./public-ids.mjs";
+import {
   OFFICIAL_RUNTIME_ASSET_SOURCES,
   RELEASES,
   SOURCE_TILE_SIZE,
@@ -11,147 +16,204 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
 const decoded = path.join(root, "original/decoded");
 const adapted = path.join(root, "original/adapted");
-const generated = adapted;
-const levelsRoot = path.join(adapted, "maps");
+const mapsRoot = path.join(adapted, "maps");
+const releaseOrder = new Map(
+  RELEASES.map((release) => [release.id, release.order]),
+);
+const specialLabels = {
+  "beaver-shop": "Beaver Shop",
+  "cloud-9": "Cloud 9",
+  "dream-machine": "Dream Machine",
+  "dreamland-reward": "Dreamland Reward",
+  "campaign-intro": "Adventure Welcome",
+};
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
+
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
+
 function copy(from, to) {
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.copyFileSync(from, to);
 }
-function publicReleaseId(releaseId) {
-  if (releaseId === "base") return "base";
-  const n = Number(releaseId.replace(/^up0?/, ""));
-  return `up${n}`;
-}
-function publicLevelId(source) {
-  const release = publicReleaseId(source.release);
-  return `${release}-${Number(source.packFile)}-${source.levelIndex}`;
-}
 
-fs.rmSync(levelsRoot, { recursive: true, force: true });
-fs.mkdirSync(levelsRoot, { recursive: true });
+fs.rmSync(mapsRoot, { recursive: true, force: true });
+fs.mkdirSync(mapsRoot, { recursive: true });
 
-const byHash = new Map();
-const canonical = [];
-let totalSourceLevels = 0;
+const sourceIndex = readJson(path.join(decoded, "source-index.json"));
+if (sourceIndex.schemaVersion !== 1)
+  throw new Error("Original decoded source-index.json schemaVersion 必须为 1");
 
-/**
- * 内部 canonical 编号只负责去重/存档兼容：
- * 1. Base/00 的 5 个公共教学关为 001~005；
- * 2. 再按 Base、UP1...UP9 的 01.dat~04.dat 顺序导入；
- * 3. 后续 release 重复携带的 00.dat 只追加 source。
- *
- * 玩家可见编号另用 publicId，例如 base-1-1、up3-4-12。
- */
-for (const release of RELEASES) {
-    const dir = path.join(decoded, release.id, "levels");
-  const names = fs
-    .readdirSync(dir)
-    .filter((name) => name.endsWith(".json"))
-    .sort();
-  const ordered =
-    release.id === "base"
-      ? names
-      : [
-          ...names.filter((n) => !n.startsWith("00-")),
-          ...names.filter((n) => n.startsWith("00-")),
-        ];
+const chapters = [];
+const maps = [];
+const documents = new Map();
 
-  for (const name of ordered) {
-    const level = readJson(path.join(dir, name));
-    if (
-      level.schemaVersion !== 2 ||
-      level.terrainEncoding !== "semantic-row-major"
-    ) {
+for (const release of sourceIndex.releases) {
+  const order = releaseOrder.get(release.id);
+  if (order === undefined) throw new Error(`未知 Original release：${release.id}`);
+  for (const pack of release.packs) {
+    if (String(pack.packFile) === "00") continue;
+    if (![1, 2, 3].includes(pack.packType))
       throw new Error(
-        `Source level is not semantic schema v2: ${release.id}/${name}`,
+        `${release.id}/${pack.packFile}: packType 必须为 1~3`,
       );
-    }
-    totalSourceLevels += 1;
-    const sourceRef = {
-      edition: level.source.edition,
-      release: release.id,
-      releaseLabel: release.label,
-      packFile: level.source.packFile,
-      packTitle: level.source.packTitle,
-      packDescription: level.source.packDescription ?? "",
-      levelIndex: level.source.levelIndex,
-      decodedPath: `${release.id}/levels/${name}`,
-    };
-    const existing = byHash.get(level.recordSha256);
-    if (existing) {
-      existing.sources.push(sourceRef);
-      continue;
-    }
-
-    const id = String(canonical.length + 1).padStart(3, "0");
-    const item = {
-      id,
-      canonicalId: id,
-      publicId: publicLevelId(sourceRef),
-      number: canonical.length + 1,
-      release: publicReleaseId(release.id),
-      releaseSourceId: release.id,
-      releaseLabel: release.label,
-      chapter: Number(sourceRef.packFile),
-      chapterTitle: sourceRef.packTitle,
-      chapterDescription: sourceRef.packDescription ?? "",
-      chapterLevel: sourceRef.levelIndex,
-      recordSha256: level.recordSha256,
-      width: level.width,
-      height: level.height,
-      dynamicSlots: level.dynamicSlots,
-      objectCount: level.objects.length,
-      primarySource: sourceRef,
-      sources: [sourceRef],
-      path: `maps/${id}.json`,
-    };
-    byHash.set(level.recordSha256, item);
-    canonical.push(item);
-    writeJson(path.join(levelsRoot, `${id}.json`), {
-      schemaVersion: 3,
-      width: level.width,
-      height: level.height,
-      terrain: level.terrain,
-      objects: adaptObjects(level.objects, id, sourceRef),
-      rules: {
-        win: {
-          type: "all",
-          conditions: [
-            { type: "collect-all", trait: "level-objective" },
-            {
-              type: "fill-all",
-              terrainTrait: "push-goal",
-              objectTrait: "pushable",
-            },
-            { type: "reach-terrain", trait: "exit" },
-          ],
-        },
-      },
+    const chapter = sourceChapterNumber(order, pack.packFile);
+    const mapIds = campaignSequenceForChapter(chapter);
+    chapters.push({
+      id: String(chapter),
+      number: chapter,
+      name: pack.title,
+      description: pack.description ?? "",
+      difficulty: pack.packType,
+      maps: mapIds,
     });
+
+    for (let sourceLevelIndex = 1; sourceLevelIndex <= 12; sourceLevelIndex += 1) {
+      const sourceName = `${pack.packFile}-${String(sourceLevelIndex).padStart(2, "0")}.json`;
+      const source = readJson(
+        path.join(decoded, release.id, "levels", sourceName),
+      );
+      if (
+        source.schemaVersion !== 1 ||
+        source.terrainEncoding !== "semantic-row-major"
+      )
+        throw new Error(`${release.id}/${sourceName}: decoded map 合同无效`);
+      const id = campaignLevelId(chapter, sourceLevelIndex);
+      const bonusOrdinal =
+        sourceLevelIndex === 11 ? 1 : sourceLevelIndex === 12 ? 2 : null;
+      const kind = bonusOrdinal === null ? "level" : "bonus";
+      const sourceRef = sourceReference(release, source, sourceName);
+      const document = createMapDocument(source, {
+        id,
+        name: id.toUpperCase(),
+        music: kind === "bonus" ? "bonus" : "ingame1",
+      });
+      document.objects = adaptObjects(document.objects, id, kind === "bonus");
+      documents.set(id, document);
+      maps.push({
+        id,
+        chapter: String(chapter),
+        kind,
+        bonusOrdinal,
+        sourceLevelIndex,
+        source: sourceRef,
+        path: `maps/${id}.json`,
+      });
+    }
   }
 }
 
-function isOriginalBonus(source) {
-  return source.packFile !== "00" && [11, 12].includes(Number(source.levelIndex));
+chapters.sort((left, right) => left.number - right.number);
+if (chapters.length !== 40)
+  throw new Error(`Original 应包含 40 章，实际 ${chapters.length}`);
+
+const playerOrder = chapters.flatMap((chapter) => chapter.maps);
+if (playerOrder.length !== 480)
+  throw new Error(`Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`);
+const mapById = new Map(maps.map((map) => [map.id, map]));
+const orderedMaps = playerOrder.map((id) => {
+  const map = mapById.get(id);
+  if (!map) throw new Error(`缺少 Original map metadata：${id}`);
+  return map;
+});
+for (let index = 0; index < playerOrder.length; index += 1) {
+  const id = playerOrder[index];
+  const document = documents.get(id);
+  if (!document) throw new Error(`缺少 adapted map：${id}`);
+  const next = playerOrder[index + 1];
+  if (next) document.meta.next = next;
+  writeJson(path.join(mapsRoot, `${id}.json`), document);
 }
 
-function adaptObjects(objects, canonicalId, source) {
+const specialScenes = buildSpecialScenes(sourceIndex, documents);
+for (const scene of specialScenes) {
+  const document = documents.get(scene.id);
+  if (!document) throw new Error(`缺少 Special Scene：${scene.id}`);
+  writeJson(path.join(mapsRoot, `${scene.id}.json`), document);
+}
+
+copyRuntimeAssets();
+writeJson(path.join(adapted, "catalog.json"), {
+  schemaVersion: 1,
+  chapters,
+  maps: orderedMaps,
+  specialScenes,
+  art: {
+    tileSize: SOURCE_TILE_SIZE,
+    basePath: "art/hd",
+  },
+  music: {
+    basePath: "audio/midi",
+    format: "midi",
+  },
+});
+console.log("构建 Original Adapter：40 章 / 480 Campaign map / 5 Special Scene。");
+
+function buildSpecialScenes(index, target) {
+  const base = index.releases.find((release) => release.id === "base");
+  const pack = base?.packs.find((item) => String(item.packFile) === "00");
+  if (!base || !pack || pack.levelCount !== 5)
+    throw new Error("Base/00.dat 必须包含 5 个 Special Scene");
+  const result = [];
+  for (let sourceLevelIndex = 1; sourceLevelIndex <= 5; sourceLevelIndex += 1) {
+    const sourceName = `00-${String(sourceLevelIndex).padStart(2, "0")}.json`;
+    const source = readJson(path.join(decoded, "base", "levels", sourceName));
+    if (source.schemaVersion !== 1)
+      throw new Error(`base/${sourceName}: decoded map schemaVersion 必须为 1`);
+    const id = specialSceneIdForSource(sourceLevelIndex);
+    target.set(
+      id,
+      createMapDocument(source, {
+        id,
+        name: specialLabels[id] ?? id,
+        music: "title",
+      }),
+    );
+    result.push({
+      id,
+      name: specialLabels[id] ?? id,
+      sourceLevelIndex,
+      source: sourceReference(base, source, sourceName),
+      path: `maps/${id}.json`,
+    });
+  }
+  return result;
+}
+
+function createMapDocument(source, meta) {
+  return {
+    schemaVersion: 1,
+    meta,
+    width: source.width,
+    height: source.height,
+    terrain: source.terrain,
+    objects: source.objects,
+    rules: {
+      win: {
+        type: "all",
+        conditions: [
+          { type: "collect-all", trait: "level-objective" },
+          { type: "reach-terrain", trait: "exit" },
+        ],
+      },
+    },
+  };
+}
+
+function adaptObjects(objects, mapId, bonus) {
   return objects.map((object) => {
     const properties = { ...(object.properties ?? {}) };
-    if (isOriginalBonus(source) && object.type === "lock")
+    if (bonus && object.type === "lock")
       properties.timedChallengeMs = properties.timedChallengeMs ?? "60000";
     if (object.type === "sandman")
       properties.dialogId =
         properties.dialogId ??
-        `original.map-${canonicalId}.sandman-${object.x}-${object.y}`;
+        `original.${mapId}.sandman-${object.x}-${object.y}`;
     return {
       ...object,
       ...(Object.keys(properties).length > 0 ? { properties } : {}),
@@ -159,110 +221,39 @@ function adaptObjects(objects, canonicalId, source) {
   });
 }
 
-
-/**
- * 官方运行时资产按语义来源生成，而不是把某个发行包视为整套“主资产”。
- * 完整 hash 证据与选择理由见 docs/reference/official-release-provenance.md。
- */
-const artOut = path.join(generated, "art", "hd");
-const midiOut = path.join(generated, "audio", "midi");
-fs.rmSync(artOut, { recursive: true, force: true });
-fs.rmSync(midiOut, { recursive: true, force: true });
-fs.mkdirSync(artOut, { recursive: true });
-fs.mkdirSync(midiOut, { recursive: true });
-copyRuntimeAssetCategory(
-  OFFICIAL_RUNTIME_ASSET_SOURCES.artwork,
-  artOut,
-);
-copyRuntimeAssetCategory(
-  OFFICIAL_RUNTIME_ASSET_SOURCES.music,
-  midiOut,
-);
-
-const sourceIndex = readJson(path.join(decoded, "source-index.json"));
-const chapters = [];
-for (const release of sourceIndex.releases) {
-  const publicRelease = publicReleaseId(release.id);
-  for (const pack of release.packs) {
-    // 00.dat 是所有发行包都重复携带的公共教学关，只在 Base 展示一次。
-    if (pack.packFile === "00" && release.id !== "base") continue;
-    const chapter = Number(pack.packFile);
-    chapters.push({
-      id: `${publicRelease}-${chapter}`,
-      release: publicRelease,
-      releaseSourceId: release.id,
-      releaseLabel: release.label,
-      chapter,
-      title: pack.title,
-      description: pack.description,
-      levelPublicIds: canonical
-        .filter(
-          (item) =>
-            item.releaseSourceId === release.id && item.chapter === chapter,
-        )
-        .map((item) => item.publicId),
-    });
-  }
+function sourceReference(release, source, sourceName) {
+  return {
+    release: release.id,
+    releaseLabel: release.label,
+    packFile: source.source.packFile,
+    packTitle: source.source.packTitle,
+    packDescription: source.source.packDescription ?? "",
+    levelIndex: source.source.levelIndex,
+    recordSha256: source.recordSha256,
+    decodedPath: `${release.id}/levels/${sourceName}`,
+  };
 }
 
-const browserReleases = RELEASES.map((release) => ({
-  id: publicReleaseId(release.id),
-  sourceId: release.id,
-  order: release.order,
-  label: release.label,
-  中文名: release.中文名,
-  levelCount: release.id === "base" ? 53 : 48,
-  chapters: chapters
-    .filter((chapter) => chapter.releaseSourceId === release.id)
-    .map((chapter) => chapter.id),
-}));
+function sourceChapterNumber(order, packFile) {
+  const local = Number(packFile);
+  if (!Number.isInteger(local) || local < 1 || local > 4)
+    throw new Error(`无效 Original packFile：${String(packFile)}`);
+  const chapter = order * 4 + local;
+  if (chapter < 1 || chapter > 40)
+    throw new Error(`Original chapter 超出 1~40：${chapter}`);
+  return chapter;
+}
 
-const catalog = {
-  schemaVersion: 3,
-  idScheme: {
-    public: "<release>-<chapter>-<level>",
-    examples: ["base-1-1", "up1-2-7", "up9-4-12"],
-    tutorial: "base-0-1...base-0-5",
-    canonical: "001...485（仅内部去重与兼容）",
-  },
-  generatedFrom: sourceIndex.releases.map(
-    ({ id, label, 中文名, levelCount }) => ({ id, label, 中文名, levelCount }),
-  ),
-  totalSourceLevels,
-  uniqueLevels: canonical.length,
-  duplicateSourceRecords: totalSourceLevels - canonical.length,
-  expectedUniqueLevels: 485,
-  art: {
-    tileSize: SOURCE_TILE_SIZE,
-    basePath: "art/hd",
-    provenance: {
-      defaultRelease: OFFICIAL_RUNTIME_ASSET_SOURCES.artwork.defaultRelease,
-      overrides: OFFICIAL_RUNTIME_ASSET_SOURCES.artwork.overrides,
-    },
-  },
-  music: {
-    basePath: "audio/midi",
-    format: "midi",
-    provenance: {
-      defaultRelease: OFFICIAL_RUNTIME_ASSET_SOURCES.music.defaultRelease,
-      overrides: OFFICIAL_RUNTIME_ASSET_SOURCES.music.overrides,
-    },
-    files: fs
-      .readdirSync(midiOut)
-      .filter((n) => n.endsWith(".mid"))
-      .sort(),
-  },
-  releases: browserReleases,
-  chapters,
-  levels: canonical,
-};
-
-if (catalog.uniqueLevels !== 485)
-  throw new Error(`主库应为 485 关，实际 ${catalog.uniqueLevels}`);
-writeJson(path.join(generated, "catalog.json"), catalog);
-console.log(
-  `构建主库：${catalog.uniqueLevels} 个唯一关卡 / ${catalog.totalSourceLevels} 条 source 记录。`,
-);
+function copyRuntimeAssets() {
+  const artOut = path.join(adapted, "art", "hd");
+  const midiOut = path.join(adapted, "audio", "midi");
+  fs.rmSync(artOut, { recursive: true, force: true });
+  fs.rmSync(midiOut, { recursive: true, force: true });
+  fs.mkdirSync(artOut, { recursive: true });
+  fs.mkdirSync(midiOut, { recursive: true });
+  copyRuntimeAssetCategory(OFFICIAL_RUNTIME_ASSET_SOURCES.artwork, artOut);
+  copyRuntimeAssetCategory(OFFICIAL_RUNTIME_ASSET_SOURCES.music, midiOut);
+}
 
 function copyRuntimeAssetCategory(rule, outputDir) {
   const sourceRoot = path.join(
@@ -274,13 +265,11 @@ function copyRuntimeAssetCategory(rule, outputDir) {
     .readdirSync(sourceRoot)
     .filter((name) => name.toLowerCase().endsWith(rule.extension))
     .sort();
-
   for (const name of names) {
     const release = rule.overrides[name] ?? rule.defaultRelease;
     const source = path.join(root, "original/extracted", release, name);
-    if (!fs.existsSync(source)) {
+    if (!fs.existsSync(source))
       throw new Error(`运行时资产来源不存在：${release}/${name}`);
-    }
     copy(source, path.join(outputDir, name));
   }
 }

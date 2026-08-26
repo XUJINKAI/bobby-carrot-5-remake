@@ -1,46 +1,134 @@
 # 关卡与原版 DAT 格式契约
 
-## 纯语义 LevelMap
+## 三层地图合同
 
-`@bobby/model` 的核心关卡合同是：
+Bobby Carrot 5 Remake 把可游玩地图分为三个明确层次：
+
+```text
+Editor JSON / Runtime MapDocument
+              ↓ strip metadata
+          LevelMap
+              ↓
+            Engine
+```
+
+### LevelMap
+
+`@bobby/model` 只定义纯 gameplay semantics：
 
 ```ts
-interface LevelObject {
-  type: ObjectType;
-  x: number;
-  y: number;
-  traits?: string[];
-  properties?: Record<string, string>;
-}
-
 interface LevelMap {
   width: number;
   height: number;
   terrain: TerrainType[][];
   objects: LevelObject[];
-  rules?: {
-    maxMoves?: number;
-    win?: WinCondition;
+  rules?: LevelRules;
+}
+```
+
+Engine 只消费 `LevelMap`。`schemaVersion`、名称、作者、collection、chapter、next、来源、DAT 信息都不是 Engine 字段。
+
+### MapDocument
+
+网站运行时地图位于：
+
+```text
+/assets/maps/<collection>/<map-id>.json
+```
+
+合同为：
+
+```ts
+interface MapDocument extends LevelMap {
+  schemaVersion: 1;
+  meta: {
+    id: string;
+    name: string;
+    description?: string;
+    author?: string;
+    next?: string;
+    music?: string;
   };
 }
 ```
 
-`traits` 是 Definition 白名单允许的实例能力，`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。当前地图显式提供 `rules.win`，Engine 不根据对象或地形推导完成条件。三者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
+`meta` 属于单张地图独立打开时需要的产品信息。Web loader 读取 `MapDocument`，把 gameplay 字段转换成 `LevelMap` 后再交给 Engine。
 
-例如带作者对白的 Sandman：
+`meta.next` 是同一 collection 中的下一张地图 ID。它使 `/explore/play/<collection>/<id>` 可以只请求当前地图文件完成标题、游玩和下一张导航，不依赖 collection `index.json`。
+
+### Editor JSON
+
+Editor 导入、导出和分享使用 `schemaVersion: 1`。Editor JSON 保存 authoring metadata 与同一套语义 gameplay 数据：
 
 ```json
 {
-  "type": "sandman",
-  "x": 8,
-  "y": 12,
-  "properties": {
-    "dialogId": "custom.sandman.greeting"
-  }
+  "schemaVersion": 1,
+  "name": "My Level",
+  "author": "optional",
+  "description": "optional",
+  "width": 20,
+  "height": 16,
+  "terrain": [["ground-c"]],
+  "objects": []
 }
 ```
 
-Engine、Editor 与 Adventure 都围绕同一个 `LevelMap` 合同工作。Engine 不区分官方地图、Adventure 增强地图或 Editor 地图。自定义 Engine 机制与地图规则见 [`../extensions.md`](../extensions.md)。
+当前开发阶段只接受 schema v1，不维护历史 schema 兼容解析。
+
+`BC5R1` 是 JSON 的传输编码版本，不是地图 schemaVersion。
+
+## Collection 与 Campaign metadata
+
+Explore collection metadata 位于：
+
+```text
+assets/maps/<collection>/index.json
+```
+
+它只负责浏览 UI：collection 名称、说明、filter 定义、chapter 分组和 map 列表。直接 Play 不读取该文件。
+
+Adventure Campaign topology 位于：
+
+```text
+assets/adventure/index.json
+```
+
+它定义章节、Campaign node 顺序与节点引用的 map。Adventure 顺序与地图本身分离。
+
+## Original source 与产品 ID
+
+Original 工具链边界：
+
+```text
+JAR / DAT
+  ↓ extract
+original/extracted       原始文件
+  ↓ decode
+original/decoded         release / packFile / levelIndex
+  ↓ adapt
+original/adapted         产品语义 ID 与 MapDocument
+```
+
+`extract` 与 `decoded` 忠实保留 archive/source identity。第一次转换到产品语义时直接得到：
+
+```text
+1-1
+1-2
+1-3
+1-bonus-1
+...
+40-10
+```
+
+普通 chapter DAT 中 source levelIndex 1～10 是普通地图，11/12 是两个 Bonus。玩家顺序为：
+
+```text
+1, 2, 3, bonus-1, 4, 5, 6, bonus-2, 7, 8, 9, 10
+```
+
+Explore 与 Adventure 都使用这套玩家顺序。
+
+Base/UP、DAT package 与 source record slot 只属于 archive provenance。
 
 ## 原始 DAT package
 
@@ -63,20 +151,7 @@ repeat until EOF:
     u8 y
 ```
 
-raw byte 映射唯一存在于 `tools/original/dat/mapping.mjs`。
-
-`tools/original/dat/index.mjs` 提供：
-
-```text
-decode/encodeDatTerrain
-decode/encodeDatObject
-decode/encodeDatLevelRecord
-deriveDatDynamicSlots
-split/joinDatPackage
-replaceDatLevelRecord
-```
-
-官方 DAT 必须满足：
+raw byte ↔ semantic 映射只存在于 Original DAT tooling。官方 DAT 必须满足：
 
 ```text
 original record
@@ -85,76 +160,28 @@ original record
  == original record byte-for-byte
 ```
 
-DAT 本身没有 `LevelObject.properties`。把纯语义地图编码回原版 DAT 时，实例扩展参数不属于原版二进制格式，不能伪装成原版字段。
-
-## DAT 的使用边界
-
-Original DAT tooling 只用于：
-
-- 官方地图解码与生成；
-- 原版格式研究；
-- tools；
-- Original JAR patch / validation；
-- DAT round-trip 与相关测试。
-
-Web 与 Editor 不依赖 Original DAT tooling。用户地图不提供 DAT 导入、DAT 导出或 DAT-backed URL share。
-
-## OfficialLevelData / Catalog identity
-
-构建出的官方 JSON 可以附加档案字段：source、record hash、difficulty、public/canonical ID 等。它们用于 Catalog、逆向证据与内容浏览；不是 Engine 的必需字段。
-
-正式 Campaign public ID 是连续章节身份：
-
-```text
-1-1
-1-bonus-1
-...
-40-10
-```
-
-Base/UP、DAT package 和 source record 只属于 archive provenance。40×12 个正式 map 之外还有 5 个共享 Special Scene；它们同样包含可转换为 `LevelMap` 的地图内容，但不是正式关卡节点。
-
-章节 1～3 星难度来自 DAT metadata `packType`，仍属于 Catalog/Adventure metadata，不进入 `LevelMap`。
+DAT 本身没有 `LevelObject.properties`。语义扩展参数不能伪装成原版二进制字段。
 
 ## Multi-cell Object
 
-DAT Object table 和所有 authoring/persistence 模型只保存 anchor。Dragon、Sandman、Dream Machine、Beaver 的 body/tail 由 Engine Object Layout 在 runtime load 时展开。
+DAT Object table 和 authoring/persistence 模型只保存 anchor。Dragon、Sandman、Dream Machine、Beaver 的 body/tail 由 Engine Object Layout 在 runtime load 时展开。
 
-展开时必须复制 anchor 的 `properties`，因此例如 Sandman body 被触碰时仍能得到 anchor 上的 `dialogue`。折回 authoring anchor 时同样必须保留这些属性。
-
-## Editor JSON
-
-Editor JSON 是 Bobby Carrot 5 Remake 自定义长期编辑格式，`schemaVersion=3`，额外允许 `name / author / description`。它保持 semantic ID、anchor object、显式 `rules.win` 与 `LevelObject.properties`，不保存 raw DAT 或 Adventure state。
-
-用户地图的长期内容是语义 JSON。Web Data Exchange 可以通过以下载体搬运同一内容：
-
-```text
-Plain JSON
-BC5R1 compressed text
-Share URL fragment
-.json / .bc5r text file
-```
-
-JSON round-trip 必须保留已定义对象实例参数。
-
-`BC5R1` 是 JSON 的传输编码版本，不是关卡 schema 版本，也不包含 DAT。协议见 [`../features/data-exchange.md`](../features/data-exchange.md)。
+展开与折回都必须保留 anchor 的 `traits` 与 `properties`。
 
 ## Adventure 地图增强
 
-Adventure 可以在基础地图进入 Engine 前覆盖对象实例参数：
+Adventure 可以在基础 `LevelMap` 进入 Engine 前生成 session instance：
 
 ```text
 base LevelMap
+  ↓ Adventure augmentation
+session LevelMap
   ↓
-Adventure augmentation
-  ↓
-Engine LevelMap
+Engine
 ```
 
-增强操作返回新的 `LevelMap`，不修改原始基础地图。Engine 只看到增强后的通用实例属性，不知道它们来自 Adventure。
+增强不修改基础地图。Engine 不知道 Adventure。
 
 ## Original JAR patch
 
-`npm run original:patch` 把 Editor JSON 的 `LevelMap` 通过 Original DAT tooling 编码成一个 DAT level record，替换指定 Campaign public ID 对应的原版槽位，然后写出独立验证 JAR。原始 JAR 永不修改。
-
-这里的 DAT 编码属于验证工具链，不会让 Editor 产品依赖 DAT。详见 `docs/workflows/validate-original.md`。
+`npm run original:patch` 接受 schema v1 语义地图，按 Campaign ID 从 adapted provenance 找到原版 release / DAT package / source slot，只替换目标 DAT level record，并写出独立验证 JAR。原始 JAR 永不修改。

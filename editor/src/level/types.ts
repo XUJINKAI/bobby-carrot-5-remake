@@ -1,7 +1,7 @@
 import type { LevelMap, LevelObject } from "@bobby/model";
 
 export interface EditorLevel extends LevelMap {
-  schemaVersion: 3;
+  schemaVersion: 1;
   name: string;
   author?: string;
   description?: string;

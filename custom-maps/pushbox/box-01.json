@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 1,
   "name": "Pushbox 1",
   "author": "Bobby Carrot 5 Remake",
   "description": "把两块岩石推到目标位置，然后抵达出口。",

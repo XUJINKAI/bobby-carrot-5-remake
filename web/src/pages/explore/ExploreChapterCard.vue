@@ -1,64 +1,47 @@
 <script setup lang="ts">
-import type { CatalogChapter, CatalogLevel } from "../../services/catalog/catalog.js";
-import { explorePlayPath } from "../../app/routes.js";
+import type {
+  MapCollectionCardSize,
+  MapCollectionChapter,
+  MapCollectionMap,
+} from "../../services/catalog/catalog.js";
+import ExploreMapGrid from "./ExploreMapGrid.vue";
 
 defineProps<{
-  chapter: CatalogChapter;
-  levels: CatalogLevel[];
+  collectionId: string;
+  chapter: MapCollectionChapter;
+  maps: MapCollectionMap[];
   completedIds: Set<string>;
+  cardSize: MapCollectionCardSize;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
-function displayShort(level: CatalogLevel): string {
-  return level.bonusOrdinal
-    ? `BONUS ${level.bonusOrdinal}`
-    : String(level.sourceLevelIndex);
-}
-
-function stars(value: number): string {
-  return `${"★".repeat(value)}${"☆".repeat(Math.max(0, 3 - value))}`;
+function stars(value: number | undefined): string {
+  return value ? "★".repeat(value) : "";
 }
 </script>
 
 <template>
   <section class="chapter-card">
     <header class="chapter-head">
-      <div>
-        <div class="chapter-number">
-          CHAPTER {{ chapter.number }}
-          <span
-            class="chapter-stars"
-            :title="`原版章节难度 ${chapter.difficultyStars} 星`"
-          >
-            {{ stars(chapter.difficultyStars) }}
-          </span>
-        </div>
-        <h3>{{ chapter.title }}</h3>
-      </div>
-      <span class="muted chapter-count">{{ levels.length }} 关</span>
-    </header>
-    <div class="chapter-levels">
-      <a
-        v-for="level in levels"
-        :key="level.publicId"
-        class="chapter-level"
-        :data-level-id="level.publicId"
-        :class="{
-          completed: completedIds.has(level.canonicalId),
-          'bonus-level': level.contentKind === 'bonus',
-        }"
-        :href="explorePlayPath({ collection: 'original', id: level.publicId })"
-        :title="level.publicId"
-        @click.prevent="emit('navigate', explorePlayPath({ collection: 'original', id: level.publicId }))"
-      >
-        <span class="chapter-level-no">{{ displayShort(level) }}</span>
+      <div class="chapter-title-line">
+        <span class="chapter-id">{{ chapter.id }}</span>
+        <span class="chapter-separator">·</span>
+        <span class="chapter-name">{{ chapter.name }}</span>
         <span
-          v-if="completedIds.has(level.canonicalId)"
-          class="done-mark"
-          title="自由浏览中已通关"
-        >✓</span>
-      </a>
-    </div>
+          v-if="chapter.difficulty"
+          class="chapter-stars"
+          :title="`章节难度 ${chapter.difficulty} 星`"
+        >{{ stars(chapter.difficulty) }}</span>
+      </div>
+      <span class="muted chapter-count">{{ maps.length }} 关</span>
+    </header>
+    <ExploreMapGrid
+      :collection-id="collectionId"
+      :maps="maps"
+      :completed-ids="completedIds"
+      :card-size="cardSize"
+      @navigate="emit('navigate', $event)"
+    />
   </section>
 </template>
 
@@ -74,87 +57,46 @@ function stars(value: number): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
-.chapter-head h3 {
-  margin: 3px 0 0;
-  font-size: 1.08rem;
-}
-
-.chapter-number {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  font-weight: 800;
-}
-
-.chapter-levels {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(56px, 1fr));
-  gap: 7px;
-}
-
-.chapter-level {
-  position: relative;
-  min-height: 68px;
-  border: 2px solid var(--bc-panel-border);
-  border-radius: 4px;
-  background: #064b8c;
-  color: inherit;
-  text-decoration: none;
+.chapter-title-line {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-  transition:
-    transform 0.12s ease,
-    border-color 0.12s ease,
-    background 0.12s ease;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
-.chapter-level:hover {
-  transform: translateY(-2px);
-  border-color: var(--bc-panel-border);
-  background: var(--bc-active);
+.chapter-id,
+.chapter-separator,
+.chapter-stars {
+  flex: 0 0 auto;
 }
 
-.chapter-level.completed {
-  border-color: var(--bc-highlight);
-  background: #07518f;
+.chapter-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
 }
 
-.chapter-level.bonus-level {
-  outline: 1px solid rgba(247, 212, 95, 0.2);
-}
-
-.chapter-level-no {
-  font-size: 1.05rem;
-  font-weight: 750;
-}
-
-.done-mark {
-  position: absolute;
-  right: 6px;
-  top: 4px;
-  color: var(--bc-highlight);
-  font-size: 0.72rem;
-}
-
-@media (max-width: 1080px) {
-  .chapter-levels {
-    grid-template-columns: repeat(6, 1fr);
-  }
+.chapter-stars {
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 700px) {
-  .chapter-levels {
-    grid-template-columns: repeat(4, 1fr);
+  .chapter-head {
+    align-items: flex-start;
   }
 
-  .chapter-level {
-    min-height: 62px;
+  .chapter-title-line {
+    flex-wrap: wrap;
   }
 }
 </style>

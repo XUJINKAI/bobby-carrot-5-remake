@@ -1,5 +1,4 @@
 import {
-  campaignSequenceForChapter,
   isAdventureLevelCompleted,
   isAdventureLevelUnlocked,
   parseAdventureLevelId,
@@ -7,21 +6,18 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { createApp, type Component } from "vue";
-import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
+import type {
+  AdventureIndex,
+  AdventureIndexChapter,
+  AdventureIndexLevel,
+} from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
-  type Navigate,
+  type PageContext,
   type PageController,
 } from "../../app/pageContracts.js";
 import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
-import {
-  chapterStars,
-  displayLevelShort,
-} from "../../services/catalog/catalogPresentation.js";
-import type {
-  CatalogLevel,
-  LevelCatalog,
-} from "../../services/catalog/catalog.js";
+import { chapterStars } from "../../services/catalog/catalogPresentation.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
 import AdventureChapterPage from "./AdventureChapterPage.vue";
@@ -32,23 +28,14 @@ import type {
   AdventureLevelRow,
 } from "./types.js";
 
-export interface AdventurePageContext {
-  app: HTMLDivElement;
-  catalog: LevelCatalog;
-  audio: TinySynthAudioBackend;
-  navigate: Navigate;
-}
-
-export function renderAdventureHome(
-  context: AdventurePageContext,
-): PageController {
-  const { app, catalog, audio, navigate } = context;
+export function renderAdventureHome(context: PageContext): PageController {
+  const { app, adventure, audio, navigate } = context;
   const save = loadAdventureSave();
-  const next = nextAdventureLevel(catalog, save);
+  const next = nextAdventureLevel(adventure, save);
   audio.playMusic("title");
   return mountAdventure(app, AdventureHomePage, {
     view: {
-      nextLevelId: next?.publicId ?? null,
+      nextLevelId: next?.id ?? null,
       bonusCoins: save.economy.bonusCoins,
       goldenCarrots: save.economy.goldenCarrots,
       goldenKey: save.upgrades.goldenKey,
@@ -57,25 +44,21 @@ export function renderAdventureHome(
   });
 }
 
-export function renderAdventureChapters(
-  context: AdventurePageContext,
-): PageController {
-  const { app, catalog, audio, navigate } = context;
+export function renderAdventureChapters(context: PageContext): PageController {
+  const { app, adventure, audio, navigate } = context;
   const save = loadAdventureSave();
   audio.playMusic("title");
-  const rows: AdventureChapterRow[] = catalog.chapters.map((chapter) => {
-    const levels = chapter.levelPublicIds
-      .map((id) => catalog.levels.find((level) => level.publicId === id))
-      .filter((value): value is CatalogLevel => Boolean(value));
-    const done = levels.filter((level) =>
-      isAdventureLevelCompleted(save, level.publicId),
+  const rows: AdventureChapterRow[] = adventure.chapters.map((chapter) => {
+    const number = Number(chapter.id);
+    const done = chapter.levels.filter((level) =>
+      isAdventureLevelCompleted(save, level.id),
     ).length;
     return {
-      number: chapter.number,
-      title: chapter.title,
-      stars: chapterStars(chapter.difficultyStars),
-      progress: `${done}/${levels.length}`,
-      unlocked: save.campaign.unlockedChapters.includes(chapter.number),
+      number,
+      title: chapter.name,
+      stars: chapterStars(chapter.difficulty),
+      progress: `${done}/${chapter.levels.length}`,
+      unlocked: save.campaign.unlockedChapters.includes(number),
     };
   });
   return mountAdventure(app, AdventureChaptersPage, {
@@ -85,67 +68,66 @@ export function renderAdventureChapters(
 }
 
 export function renderAdventureChapter(
-  context: AdventurePageContext,
+  context: PageContext,
   chapterNumber: number,
 ): PageController {
-  const { app, catalog, audio, navigate } = context;
+  const { app, adventure, audio, navigate } = context;
   const save = loadAdventureSave();
-  const chapter = catalog.chapters.find(
-    (item) => item.number === chapterNumber,
+  const chapter = adventure.chapters.find(
+    (item) => Number(item.id) === chapterNumber,
   );
   audio.playMusic("title");
   if (!chapter || !save.campaign.unlockedChapters.includes(chapterNumber)) {
     navigate("/adventure/chapters");
     return NOOP_CONTROLLER;
   }
-  const byId = new Map(catalog.levels.map((level) => [level.publicId, level]));
-  const rows = campaignSequenceForChapter(chapterNumber)
-    .map((id): AdventureLevelRow | null => {
-      const level = byId.get(id);
-      if (!level) return null;
-      return {
-        id,
-        label:
-          level.contentKind === "bonus"
-            ? `BONUS ${level.bonusOrdinal}`
-            : `LEVEL ${displayLevelShort(level)}`,
-        completed: isAdventureLevelCompleted(save, id),
-        unlocked: isAdventureLevelUnlocked(save, id),
-        bonus: level.contentKind === "bonus",
-      };
-    })
-    .filter((row): row is AdventureLevelRow => row !== null);
+  const rows: AdventureLevelRow[] = chapter.levels.map((level) => {
+    const parsed = parseAdventureLevelId(level.id);
+    const bonus = parsed?.kind === "bonus";
+    return {
+      id: level.id,
+      label: bonus
+        ? `BONUS ${parsed?.bonus ?? ""}`
+        : `LEVEL ${parsed?.mainLevel ?? level.id}`,
+      completed: isAdventureLevelCompleted(save, level.id),
+      unlocked: isAdventureLevelUnlocked(save, level.id),
+      bonus,
+    };
+  });
   return mountAdventure(app, AdventureChapterPage, {
     chapterNumber,
-    title: chapter.title,
+    title: chapter.name,
     description: chapter.description,
-    stars: chapterStars(chapter.difficultyStars),
+    stars: chapterStars(chapter.difficulty),
     rows,
     onNavigate: navigate,
   });
 }
 
 export function findAdventureLevel(
-  catalog: LevelCatalog,
+  adventure: AdventureIndex,
   id: string,
-): CatalogLevel | undefined {
+): { chapter: AdventureIndexChapter; level: AdventureIndexLevel } | undefined {
   const parsed = parseAdventureLevelId(id);
-  return parsed
-    ? catalog.levels.find((level) => level.publicId === parsed.id)
-    : undefined;
+  if (!parsed) return undefined;
+  for (const chapter of adventure.chapters) {
+    const level = chapter.levels.find((item) => item.id === parsed.id);
+    if (level) return { chapter, level };
+  }
+  return undefined;
 }
 
 function nextAdventureLevel(
-  catalog: LevelCatalog,
+  adventure: AdventureIndex,
   save: AdventureSave,
-): CatalogLevel | undefined {
+): AdventureIndexLevel | undefined {
   const done = new Set<AdventureLevelId>(save.campaign.completedLevels);
   const unlocked = new Set(save.campaign.unlockedChapters);
-  for (const chapter of catalog.chapters) {
-    if (!unlocked.has(chapter.number)) continue;
-    for (const id of chapter.levelPublicIds) {
-      const level = catalog.levels.find((item) => item.publicId === id);
-      if (level && !done.has(id)) return level;
+  for (const chapter of adventure.chapters) {
+    if (!unlocked.has(Number(chapter.id))) continue;
+    for (const level of chapter.levels) {
+      const parsed = parseAdventureLevelId(level.id);
+      if (parsed && !done.has(parsed.id)) return level;
     }
   }
   return undefined;

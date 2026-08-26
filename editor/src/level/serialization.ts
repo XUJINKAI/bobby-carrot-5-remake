@@ -7,9 +7,9 @@ export function serializeEditorLevel(level: EditorLevel): string {
 
 export function parseEditorLevel(text: string): EditorLevel {
   const parsed = JSON.parse(text) as Record<string, unknown>;
-  if (parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3)
+  if (parsed.schemaVersion !== 1)
     throw new Error(
-      `不支持的地图 schemaVersion：${String(parsed.schemaVersion)}；当前接受语义 schema v2/v3`,
+      `不支持的地图 schemaVersion：${String(parsed.schemaVersion)}；当前版本为 1`,
     );
   if (!Array.isArray(parsed.terrain))
     throw new Error("JSON 缺少 terrain 二维数组");

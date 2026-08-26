@@ -1,73 +1,69 @@
 <script setup lang="ts">
-import type { CatalogChapter, CatalogLevel } from "../../services/catalog/catalog.js";
+import type {
+  MapCollectionIndex,
+  MapCollectionMap,
+  MapCollectionSummary,
+} from "../../services/catalog/catalog.js";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
 import ExploreCustomCollection from "./ExploreCustomCollection.vue";
 import ExploreTabs from "./ExploreTabs.vue";
-import type { CustomMapCollection } from "../../services/catalog/catalog.js";
 
-defineProps<{
-  chapters: CatalogChapter[];
-  levelsByChapter: Map<number, CatalogLevel[]>;
+const props = defineProps<{
+  activeCollection: MapCollectionIndex;
+  collections: MapCollectionSummary[];
+  mapsByChapter: Map<string, MapCollectionMap[]>;
   completedIds: Set<string>;
-  levelCount: number;
   lastMapId: string;
   lastMapLabel: string;
-  activeCollection: string;
-  customCollections: CustomMapCollection[];
-  customCollection?: CustomMapCollection;
 }>();
 const emit = defineEmits<{
   navigate: [path: string];
   random: [];
 }>();
+
+function summary(): string {
+  return props.activeCollection.chapters.length > 0
+    ? `${props.activeCollection.chapters.length} 章 · ${props.activeCollection.maps.length} 关`
+    : `${props.activeCollection.maps.length} 张地图`;
+}
 </script>
 
 <template>
   <div class="explore-page">
     <ExploreTabs
-      :active-collection="activeCollection"
-      :collections="customCollections"
+      :active-collection="activeCollection.id"
+      :collections="collections"
       @navigate="emit('navigate', $event)"
     />
-    <template v-if="activeCollection === 'original'">
-      <ExploreHeader
-        collection="original"
-        title="自由选关"
-        description="原版 1～40 章全部开放。这里用于找关、筛选和研究机关。"
-        :summary="`${chapters.length} 章 · ${levelCount} 关`"
-        :last-map-id="lastMapId"
-        :last-map-label="lastMapLabel"
-        @navigate="emit('navigate', $event)"
-        @random="emit('random')"
-      />
-      <div class="chapter-list">
-        <ExploreChapterCard
-          v-for="chapter in chapters"
-          :key="chapter.id"
-          :chapter="chapter"
-          :levels="levelsByChapter.get(chapter.number) ?? []"
-          :completed-ids="completedIds"
-          @navigate="emit('navigate', $event)"
-        />
-      </div>
-    </template>
-    <template v-else-if="customCollection">
-      <ExploreHeader
-        :collection="customCollection.id"
-        :title="customCollection.name"
-        :description="customCollection.description"
-        :summary="`${customCollection.maps.length} 张地图`"
-        :last-map-id="lastMapId"
-        :last-map-label="lastMapLabel"
-        @navigate="emit('navigate', $event)"
-        @random="emit('random')"
-      />
-      <ExploreCustomCollection
-        :collection="customCollection"
+    <ExploreHeader
+      :collection="activeCollection.id"
+      :title="activeCollection.name"
+      :description="activeCollection.description"
+      :summary="summary()"
+      :last-map-id="lastMapId"
+      :last-map-label="lastMapLabel"
+      @navigate="emit('navigate', $event)"
+      @random="emit('random')"
+    />
+    <div v-if="activeCollection.chapters.length > 0" class="chapter-list">
+      <ExploreChapterCard
+        v-for="chapter in activeCollection.chapters"
+        :key="chapter.id"
+        :collection-id="activeCollection.id"
+        :chapter="chapter"
+        :maps="mapsByChapter.get(chapter.id) ?? []"
+        :completed-ids="completedIds"
+        :card-size="activeCollection.cardSize"
         @navigate="emit('navigate', $event)"
       />
-    </template>
+    </div>
+    <ExploreCustomCollection
+      v-else
+      :collection="activeCollection"
+      :completed-ids="completedIds"
+      @navigate="emit('navigate', $event)"
+    />
   </div>
 </template>
 
@@ -79,7 +75,6 @@ const emit = defineEmits<{
 </style>
 
 <style>
-/* 筛选栏由 levelFilters.ts 在 ExplorePage 挂载后生成，因此需要页面级选择器。 */
 .level-filter-shell {
   margin: 0 0 20px;
   border: 3px solid var(--bc-panel-border);
@@ -202,16 +197,6 @@ const emit = defineEmits<{
   background-repeat: no-repeat;
   image-rendering: pixelated;
   box-shadow: 0 0 0 1px #ffffff40;
-}
-
-.level-filter-option .difficulty-dot {
-  width: 10px;
-  height: 10px;
-  margin: 0 7px;
-}
-
-.difficulty-dot.tutorial {
-  background: #7296c8;
 }
 
 .level-filter-status {

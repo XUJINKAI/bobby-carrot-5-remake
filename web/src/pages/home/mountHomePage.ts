@@ -3,14 +3,8 @@ import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
-import type { OfficialLevelData } from "../../services/catalog/catalog.js";
-import { fetchJson } from "../../services/catalog/catalog.js";
-import { displayLevelId } from "../../services/catalog/catalogPresentation.js";
-import {
-  randomCatalogLevel,
-  resolveCatalogLevel,
-} from "../../services/catalog/catalogSelection.js";
-import { lastExploreLevelId } from "../../storage/exploreProgressStorage.js";
+import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
+import { lastExploreMapId } from "../../storage/exploreProgressStorage.js";
 import {
   configureShell,
   loadScreenControlPreference,
@@ -23,8 +17,13 @@ import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 export async function renderHome(
   context: PageContext,
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate } = context;
-  const last = resolveCatalogLevel(catalog, lastExploreLevelId());
+  const { app, collections, audio, navigate } = context;
+  const original = collections.find((collection) => collection.id === "original");
+  if (!original || original.maps.length === 0)
+    throw new Error("Home 需要 original collection");
+  const lastId = lastExploreMapId("original") ?? original.maps[0]!.id;
+  const last = original.maps.find((map) => map.id === lastId) ?? original.maps[0]!;
+
   audio.playMusic("title");
   configureShell({
     topBar: {
@@ -58,31 +57,32 @@ export async function renderHome(
   });
   const homeApp = createApp(HomePage, {
     state: view,
-    lastLevelId: displayLevelId(last),
+    lastLevelId: last.name,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
-    onRandom: () =>
-      navigate(
-        explorePlayPath({
-          collection: "original",
-          id: randomCatalogLevel(catalog).publicId,
-        }),
-      ),
+    onRandom: () => {
+      const chosen = original.maps[
+        Math.floor(Math.random() * original.maps.length)
+      ];
+      if (chosen)
+        navigate(
+          explorePlayPath({ collection: "original", id: chosen.id }),
+        );
+    },
     onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
       importHomeMap(level, view, navigate),
   });
   homeApp.mount(app);
-  const demoMeta =
-    catalog.levels.find((level) => level.publicId === "1-1") ?? last;
-  const [demoLevel, canvas] = await Promise.all([
-    fetchJson<OfficialLevelData>(siteUrl(`assets/maps/original/${demoMeta.publicId}.json`)),
+
+  const [demo, canvas] = await Promise.all([
+    resolveMapDocument({ collection: "original", id: "1-1" }),
     canvasReady,
   ]);
   session = await createGameSession({
     root: app,
     canvas,
-    level: demoLevel,
+    level: demo.level,
     gameOptions: {
       audio,
       profile: { superKey: true },
@@ -144,5 +144,6 @@ function importHomeMap(
     "bc5r:pending-play-level",
     serializeEditorLevel(level),
   );
+  view.importFeedback = "";
   navigate("/explore/play/imported/shared-map");
 }

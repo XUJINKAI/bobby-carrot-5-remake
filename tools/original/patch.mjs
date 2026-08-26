@@ -10,10 +10,7 @@ import {
 import { RELEASES } from "./source-definitions.mjs";
 import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
 
-const root = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
-);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const args = parseArgs(process.argv.slice(2));
 if (!args.map || !args.target) usage();
 
@@ -22,24 +19,15 @@ const map = readSemanticLevelMap(input);
 const catalog = JSON.parse(
   fs.readFileSync(path.join(root, "original/adapted/catalog.json"), "utf8"),
 );
-const meta = catalog.levels.find(
-  (level) => level.publicId === String(args.target).toLowerCase(),
-);
-if (!meta) throw new Error(`Unknown public level target: ${args.target}`);
-const source =
-  (meta.sources ?? []).find(
-    (item) =>
-      item.edition === meta.releaseSourceId ||
-      item.release === meta.releaseSourceId,
-  ) ?? meta.sources?.[0];
+if (catalog.schemaVersion !== 1)
+  throw new Error("Original adapted catalog schemaVersion 必须为 1");
+const targetId = String(args.target).toLowerCase();
+const meta = catalog.maps.find((item) => item.id === targetId);
+if (!meta) throw new Error(`Unknown Campaign map target: ${args.target}`);
+const source = meta.source;
 if (!source) throw new Error(`Target has no original source: ${args.target}`);
-const release = RELEASES.find(
-  (item) => item.id === (source.release ?? source.edition),
-);
-if (!release)
-  throw new Error(
-    `Unknown original release: ${source.release ?? source.edition}`,
-  );
+const release = RELEASES.find((item) => item.id === source.release);
+if (!release) throw new Error(`Unknown original release: ${source.release}`);
 
 const original = path.join(root, "original/official-hd", release.jar);
 const out = path.resolve(
@@ -47,15 +35,14 @@ const out = path.resolve(
     path.join(
       root,
       "tmp/original-validation",
-      `${path.basename(args.map, path.extname(args.map))}-${meta.publicId}.jar`,
+      `${path.basename(args.map, path.extname(args.map))}-${meta.id}.jar`,
     ),
 );
 if (
   out === path.resolve(original) ||
   out.startsWith(path.resolve(path.join(root, "original/official-hd")) + path.sep)
-) {
+)
   throw new Error("Validation output must never overwrite original/official-hd");
-}
 fs.mkdirSync(path.dirname(out), { recursive: true });
 
 const jar = fs.readFileSync(original);
@@ -80,7 +67,7 @@ if (JSON.stringify(decoded) !== JSON.stringify(map))
 
 console.log(`Original validation JAR: ${path.relative(root, out)}`);
 console.log(
-  `Patched ${release.jar} / ${entry} / level ${source.levelIndex} (${meta.publicId})`,
+  `Patched ${release.jar} / ${entry} / level ${source.levelIndex} (${meta.id})`,
 );
 console.log(
   `Semantic round-trip: OK${patched.removedSignatures.length ? ` · removed invalid signatures: ${patched.removedSignatures.join(", ")}` : ""}`,
@@ -89,11 +76,10 @@ console.log(
 function readSemanticLevelMap(value) {
   if (!value || typeof value !== "object")
     throw new Error("Map JSON must be an object");
-  if (value.schemaVersion !== undefined && value.schemaVersion !== 2) {
+  if (value.schemaVersion !== 1)
     throw new Error(
-      `Unsupported Editor schemaVersion: ${String(value.schemaVersion)}; expected semantic v2 or a pure LevelMap`,
+      `Unsupported map schemaVersion: ${String(value.schemaVersion)}; expected 1`,
     );
-  }
   const width = Number(value.width);
   const height = Number(value.height);
   if (
@@ -103,11 +89,10 @@ function readSemanticLevelMap(value) {
     height < 1 ||
     width > 255 ||
     height > 255
-  ) {
+  )
     throw new Error(
       "DAT validation map dimensions must be integer values between 1 and 255",
     );
-  }
   if (!Array.isArray(value.terrain) || value.terrain.length !== height)
     throw new Error("Map terrain height does not match height");
   const terrain = value.terrain.map((row, y) => {
@@ -157,6 +142,6 @@ function parseArgs(values) {
 
 function usage() {
   throw new Error(
-    "Usage: npm run original:patch -- --map <editor-v2-or-level-map.json> --target <public-id> [--out <validation.jar>]",
+    "Usage: npm run original:patch -- --map <map-v1.json> --target <campaign-id> [--out <validation.jar>]",
   );
 }

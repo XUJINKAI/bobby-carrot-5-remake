@@ -8,11 +8,11 @@ function countObject(level, type) {
   return level.objects.filter((object) => object.type === type).length;
 }
 
-test("all 485 original unique maps preserve implicit multi-cell objects as unambiguous anchors", () => {
+test("all 485 original semantic maps preserve implicit multi-cell objects as unambiguous anchors", () => {
   const catalog = JSON.parse(
-    fs.readFileSync("assets/maps/original/index.json", "utf8"),
+    fs.readFileSync("original/adapted/catalog.json", "utf8"),
   );
-  const entries = [...catalog.levels, ...catalog.specialScenes];
+  const entries = [...catalog.maps, ...catalog.specialScenes];
   assert.equal(entries.length, 485);
   const stats = {
     dragon: { anchor: 0, body: 0, tail: 0 },
@@ -23,8 +23,9 @@ test("all 485 original unique maps preserve implicit multi-cell objects as unamb
 
   for (const entry of entries) {
     const level = JSON.parse(
-      fs.readFileSync(path.join("assets", `maps/original/${entry.publicId}.json`), "utf8"),
+      fs.readFileSync(path.join("original/adapted", entry.path), "utf8"),
     );
+    assert.equal(level.schemaVersion, 1, `${entry.id}: map schemaVersion 必须为 1`);
     stats.dragon.anchor += countObject(level, ObjectId.DRAGON_HEAD_BASE);
     stats.dragon.body += countObject(level, ObjectId.DRAGON_BODY);
     stats.dragon.tail += countObject(level, ObjectId.DRAGON_TAIL);
@@ -47,7 +48,7 @@ test("all 485 original unique maps preserve implicit multi-cell objects as unamb
         assert.equal(
           conflict,
           undefined,
-          `${entry.publicId ?? entry.id}: ${anchor.type}@${anchor.x},${anchor.y} footprint overlaps explicit ${conflict?.type ?? "object"}@${x},${y}`,
+          `${entry.id}: ${anchor.type}@${anchor.x},${anchor.y} footprint overlaps explicit ${conflict?.type ?? "object"}@${x},${y}`,
         );
       }
     }

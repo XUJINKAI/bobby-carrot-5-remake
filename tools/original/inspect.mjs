@@ -5,13 +5,14 @@ import { encodeDatTerrain, encodeDatObject } from "./dat/index.mjs";
 
 const showAll = process.argv.includes("--all");
 const previewLimit = 2;
-
 const catalog = JSON.parse(
   fs.readFileSync(path.join(root, "original/adapted/catalog.json"), "utf8"),
 );
+if (catalog.schemaVersion !== 1)
+  throw new Error("Original adapted catalog schemaVersion 必须为 1");
 const byType = new Map();
 
-function add(kind, type, level, x, y) {
+function add(kind, type, map, x, y) {
   if (!/^(?:walkable|background|object)-variant-/.test(type)) return;
   const key = `${kind}:${type}`;
   const item = byType.get(key) ?? {
@@ -19,44 +20,44 @@ function add(kind, type, level, x, y) {
     type,
     dat: kind === "terrain" ? encodeDatTerrain(type) : encodeDatObject(type),
     count: 0,
-    levels: new Map(),
+    maps: new Map(),
     samples: [],
   };
   item.count += 1;
-  item.levels.set(level.publicId, (item.levels.get(level.publicId) ?? 0) + 1);
-  item.samples.push({ level: level.publicId, x, y });
+  item.maps.set(map.id, (item.maps.get(map.id) ?? 0) + 1);
+  item.samples.push({ map: map.id, x, y });
   byType.set(key, item);
 }
 
-for (const meta of catalog.levels) {
-  const level = JSON.parse(
+for (const meta of catalog.maps) {
+  const document = JSON.parse(
     fs.readFileSync(path.join(root, "original/adapted", meta.path), "utf8"),
   );
-  for (let y = 0; y < level.height; y += 1) {
-    for (let x = 0; x < level.width; x += 1)
-      add("terrain", level.terrain[y][x], meta, x, y);
+  for (let y = 0; y < document.height; y += 1) {
+    for (let x = 0; x < document.width; x += 1)
+      add("terrain", document.terrain[y][x], meta, x, y);
   }
-  for (const object of level.objects)
+  for (const object of document.objects)
     add("object", object.type, meta, object.x, object.y);
 }
 
 const result = [...byType.values()]
   .sort((a, b) => a.dat - b.dat)
   .map((item) => {
-    const levels = [...item.levels.entries()]
+    const maps = [...item.maps.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([level, count]) => ({ level, count }));
+      .map(([map, count]) => ({ map, count }));
     return {
       kind: item.kind,
       type: item.type,
       dat: item.dat,
       datHex: `0x${item.dat.toString(16).toUpperCase().padStart(2, "0")}`,
       count: item.count,
-      levelCount: item.levels.size,
-      levels: showAll ? levels : levels.slice(0, previewLimit),
+      mapCount: item.maps.size,
+      maps: showAll ? maps : maps.slice(0, previewLimit),
       samples: showAll ? item.samples : item.samples.slice(0, previewLimit),
       ...(!showAll &&
-      (levels.length > previewLimit || item.samples.length > previewLimit)
+      (maps.length > previewLimit || item.samples.length > previewLimit)
         ? { truncated: true }
         : {}),
     };
@@ -75,8 +76,8 @@ console.log(
       objectTypes: result.filter((item) => item.kind === "object").length,
       output: "tmp/unknown-tiles.json",
       detail: showAll
-        ? "all levels and samples"
-        : `first ${previewLimit} levels and samples per type (use --all for everything)`,
+        ? "all maps and samples"
+        : `first ${previewLimit} maps and samples per type (use --all for everything)`,
     },
     null,
     2,

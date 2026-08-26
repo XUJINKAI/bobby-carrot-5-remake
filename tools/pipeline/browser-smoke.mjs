@@ -39,6 +39,7 @@ try {
       'class="level-filter-shell"',
       'data-filter-trigger="carrots"',
       'data-filter-trigger="mechanics"',
+      'data-card-size="small"',
     ],
     ["进入冒险模式"],
   );
@@ -46,17 +47,19 @@ try {
   await smoke(`${origin}/explore/pushbox`, [
     'class="explore-tabs"',
     'class="explore-custom-collection"',
+    'data-card-size="medium"',
     "Pushbox 1",
   ]);
   await smoke(`${origin}/explore/test`, [
     'class="explore-custom-collection"',
+    'data-card-size="big"',
     "Portal Lab",
     "Maximum Moves Lab",
   ]);
   await smoke(`${origin}/explore/play/test/test-portal`, [
     'class="game-page"',
     'id="game"',
-    "test-portal",
+    "Portal Lab",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
@@ -70,7 +73,7 @@ try {
   await smoke(`${origin}/explore/play/pushbox/box-01`, [
     'class="game-page"',
     'id="game"',
-    "box-01",
+    "Pushbox 1",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',

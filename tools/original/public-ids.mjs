@@ -1,17 +1,4 @@
-const CAMPAIGN_ORDER = [
-  "1",
-  "2",
-  "3",
-  "bonus-1",
-  "4",
-  "5",
-  "6",
-  "bonus-2",
-  "7",
-  "8",
-  "9",
-  "10",
-];
+const PLAY_ORDER = [1, 2, 3, 11, 4, 5, 6, 12, 7, 8, 9, 10];
 
 const SPECIAL_SCENES = [
   "beaver-shop",
@@ -22,13 +9,23 @@ const SPECIAL_SCENES = [
 ];
 
 export function campaignLevelId(chapter, sourceLevelIndex) {
-  const suffix = CAMPAIGN_ORDER[sourceLevelIndex - 1];
-  if (!suffix) throw new Error(`无效的 Campaign source level：${sourceLevelIndex}`);
-  return `${chapter}-${suffix}`;
+  if (!Number.isInteger(chapter) || chapter < 1 || chapter > 40)
+    throw new Error(`无效的 Campaign chapter：${chapter}`);
+  if (
+    !Number.isInteger(sourceLevelIndex) ||
+    sourceLevelIndex < 1 ||
+    sourceLevelIndex > 12
+  )
+    throw new Error(`无效的 Campaign source level：${sourceLevelIndex}`);
+  if (sourceLevelIndex === 11) return `${chapter}-bonus-1`;
+  if (sourceLevelIndex === 12) return `${chapter}-bonus-2`;
+  return `${chapter}-${sourceLevelIndex}`;
 }
 
 export function campaignSequenceForChapter(chapter) {
-  return CAMPAIGN_ORDER.map((suffix) => `${chapter}-${suffix}`);
+  return PLAY_ORDER.map((sourceLevelIndex) =>
+    campaignLevelId(chapter, sourceLevelIndex),
+  );
 }
 
 export function specialSceneIdForSource(sourceLevelIndex) {
