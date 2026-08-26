@@ -17,20 +17,35 @@ Bobby Carrot 5 Remake 是一个非官方的重制、研究与互操作工程。
 
 上述内容的版权、商标及其他权利归其各自权利人所有。本项目的代码许可证不能、也不会替代原权利人对这些内容的授权。
 
+## LOMA Sokoban 关卡
+
+`tools/custom/LOMA.txt` 保存 **LOMA (Levels Of Many Authors)** Sokoban 关卡集的源数据。LOMA 于 2004 年开始，由 Aymeric du Peloux 与多位关卡作者共同维护；本仓库采用的 2021 版本包含 137 张关卡，并保留每张地图原文件中的 `Author`、`Title` 与可选 `Comment` 信息。
+
+LOMA 官方页面：
+
+```text
+https://aymericdupeloux.wixsite.com/sokoban/post/_loma
+```
+
+该页面明确说明 LOMA collection 可以在任何地方自由发布，不需要另行取得作者许可。本仓库据此保存原始文本，并在生成的语义地图中继续保留对应作者信息。
+
+LOMA 关卡文本及由它生成的 `custom-maps/loma-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+
 ## 许可证边界
 
 `LICENSE` 仅授权 Bobby Carrot 5 Remake 项目自身原创的源代码、文档及其他由相应作者有权许可的原创材料。
 
-因此，即使某项行为符合本项目代码许可证，也不代表该行为已经取得原版 Bobby Carrot 内容的使用、复制、修改或分发许可。任何人分发包含第三方内容的构建、压缩包、镜像、网站或其他副本时，都应自行确认并取得所需的第三方授权。
+因此，即使某项行为符合本项目代码许可证，也不代表该行为已经取得原版 Bobby Carrot 内容或其他第三方内容的使用、复制、修改或分发许可。任何人分发包含第三方内容的构建、压缩包、镜像、网站或其他副本时，都应自行确认相应第三方授权条件。
 
 ## 生成目录
 
-以下目录中的内容尤其可能包含原版游戏内容或其派生物：
+以下目录中的内容尤其可能包含第三方游戏内容或其派生物：
 
 ```text
 assets/original/
 assets/extracted/
 assets/generated/
+custom-maps/loma-pushbox/
 dist/
 tmp/original-validation/
 ```
