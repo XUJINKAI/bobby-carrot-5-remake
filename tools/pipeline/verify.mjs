@@ -63,6 +63,11 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
   throw new Error(
     `Original Chapter 1 Explore 顺序错误：${actualFirstChapter.join(",")}`,
   );
+for (const map of original.maps) {
+  const relative = `assets/maps/original/${map.id}.json`;
+  const document = readJson(relative);
+  assertOriginalWinRule(document, relative);
+}
 assertNext("1-3", "1-bonus-1");
 assertNext("1-bonus-1", "1-4");
 assertNext("1-6", "1-bonus-2");
@@ -108,7 +113,7 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1、MapDocument、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
 
 function assertNext(id, expected) {
@@ -132,6 +137,20 @@ function assertMapDocument(document, relative, expectedId) {
     !Array.isArray(document.objects)
   )
     throw new Error(`${relative}: MapDocument 合同不完整`);
+}
+
+function assertOriginalWinRule(document, relative) {
+  const conditions = document.rules?.win?.conditions;
+  if (!Array.isArray(conditions))
+    throw new Error(`${relative}: Original rules.win.conditions 缺失`);
+  const pushGoal = conditions.find(
+    (condition) =>
+      condition?.type === "fill-all" &&
+      (condition.terrainTrait === "push-goal" ||
+        condition.objectTrait === "pushable"),
+  );
+  if (pushGoal)
+    throw new Error(`${relative}: Original 不应包含 Pushbox fill-all 获胜条件`);
 }
 
 function parseMapRef(value) {
