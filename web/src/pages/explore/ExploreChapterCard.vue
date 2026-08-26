@@ -1,21 +1,26 @@
 <script setup lang="ts">
-import type { CatalogChapter, CatalogLevel } from "../../services/catalog/catalog.js";
+import type {
+  MapCollectionChapter,
+  MapCollectionMap,
+} from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
 
 defineProps<{
-  chapter: CatalogChapter;
-  levels: CatalogLevel[];
+  collectionId: string;
+  chapter: MapCollectionChapter;
+  maps: MapCollectionMap[];
   completedIds: Set<string>;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
-function displayShort(level: CatalogLevel): string {
-  return level.bonusOrdinal
-    ? `BONUS ${level.bonusOrdinal}`
-    : String(level.sourceLevelIndex);
+function displayShort(map: MapCollectionMap): string {
+  const bonus = /-bonus-([12])$/.exec(map.id);
+  if (bonus) return `BONUS ${bonus[1]}`;
+  return map.id.split("-").at(-1)?.toUpperCase() ?? map.id.toUpperCase();
 }
 
-function stars(value: number): string {
+function stars(value: number | undefined): string {
+  if (!value) return "";
   return `${"★".repeat(value)}${"☆".repeat(Math.max(0, 3 - value))}`;
 }
 </script>
@@ -25,35 +30,34 @@ function stars(value: number): string {
     <header class="chapter-head">
       <div>
         <div class="chapter-number">
-          CHAPTER {{ chapter.number }}
+          CHAPTER {{ chapter.id }}
           <span
+            v-if="chapter.difficulty"
             class="chapter-stars"
-            :title="`原版章节难度 ${chapter.difficultyStars} 星`"
-          >
-            {{ stars(chapter.difficultyStars) }}
-          </span>
+            :title="`章节难度 ${chapter.difficulty} 星`"
+          >{{ stars(chapter.difficulty) }}</span>
         </div>
-        <h3>{{ chapter.title }}</h3>
+        <h3>{{ chapter.name }}</h3>
       </div>
-      <span class="muted chapter-count">{{ levels.length }} 关</span>
+      <span class="muted chapter-count">{{ maps.length }} 关</span>
     </header>
     <div class="chapter-levels">
       <a
-        v-for="level in levels"
-        :key="level.publicId"
+        v-for="map in maps"
+        :key="map.id"
         class="chapter-level"
-        :data-level-id="level.publicId"
+        :data-map-id="map.id"
         :class="{
-          completed: completedIds.has(level.canonicalId),
-          'bonus-level': level.contentKind === 'bonus',
+          completed: completedIds.has(map.id),
+          'bonus-level': map.kind === 'bonus',
         }"
-        :href="explorePlayPath({ collection: 'original', id: level.publicId })"
-        :title="level.publicId"
-        @click.prevent="emit('navigate', explorePlayPath({ collection: 'original', id: level.publicId }))"
+        :href="explorePlayPath({ collection: collectionId, id: map.id })"
+        :title="map.name"
+        @click.prevent="emit('navigate', explorePlayPath({ collection: collectionId, id: map.id }))"
       >
-        <span class="chapter-level-no">{{ displayShort(level) }}</span>
+        <span class="chapter-level-no">{{ displayShort(map) }}</span>
         <span
-          v-if="completedIds.has(level.canonicalId)"
+          v-if="completedIds.has(map.id)"
           class="done-mark"
           title="自由浏览中已通关"
         >✓</span>

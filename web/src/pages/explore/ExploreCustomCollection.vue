@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { CustomMapCollection } from "../../services/catalog/catalog.js";
+import type { MapCollectionIndex } from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
 
-defineProps<{ collection: CustomMapCollection }>();
+defineProps<{ collection: MapCollectionIndex }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
@@ -13,6 +13,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
         v-for="map in collection.maps"
         :key="map.id"
         class="explore-map-card"
+        :data-map-id="map.id"
         :href="explorePlayPath({ collection: collection.id, id: map.id })"
         @click.prevent="emit('navigate', explorePlayPath({ collection: collection.id, id: map.id }))"
       >
