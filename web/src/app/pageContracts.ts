@@ -1,7 +1,8 @@
 import type { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
 import type {
-  CustomMapCatalog,
-  LevelCatalog,
+  AdventureIndex,
+  MapCollectionIndex,
+  MapCollectionsIndex,
 } from "../services/catalog/catalog.js";
 
 export type Navigate = (path: string) => void;
@@ -16,8 +17,9 @@ export const NOOP_CONTROLLER: PageController = {
 
 export interface PageContext {
   app: HTMLDivElement;
-  catalog: LevelCatalog;
-  customMapCatalog: CustomMapCatalog;
+  collectionsIndex: MapCollectionsIndex;
+  collections: MapCollectionIndex[];
+  adventure: AdventureIndex;
   audio: TinySynthAudioBackend;
   navigate: Navigate;
 }
