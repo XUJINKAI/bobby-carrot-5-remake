@@ -9,7 +9,7 @@
     "bottom";
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  background: #07100b;
+  background: var(--bc-bg);
 }
 .app-shell-fixed-top {
   grid-area: top;
@@ -27,130 +27,13 @@
 .app-topbar {
   min-height: 58px;
   display: grid;
-  grid-template-columns: auto auto auto minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   padding: max(8px, env(safe-area-inset-top)) 14px 8px;
-  border-bottom: 1px solid #26352b;
-  background: #101a14ee;
+  border-bottom: 3px solid var(--bc-panel-border);
+  background: var(--bc-panel);
   z-index: 20;
-}
-.app-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: inherit;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.app-brand img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-.mode-selector,
-.app-actions,
-.app-leading-actions,
-.app-context-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.app-trailing-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.mode-selector summary,
-.mode-selector a,
-.app-actions button,
-.app-leading-actions button,
-.app-context-actions button,
-.app-trailing-actions button,
-.app-bottom-bar button {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #17251b;
-  color: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.mode-selector {
-  position: relative;
-}
-.mode-selector summary {
-  list-style: none;
-  cursor: pointer;
-}
-.mode-selector summary::-webkit-details-marker {
-  display: none;
-}
-.mode-selector summary::after {
-  content: " ▾";
-  color: var(--muted);
-}
-.mode-selector[open] summary::after {
-  content: " ▴";
-}
-.mode-selector nav {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
-  z-index: 30;
-  display: grid;
-  gap: 4px;
-  min-width: 190px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #101a14f7;
-  box-shadow: 0 16px 44px #0009;
-}
-.mode-selector a {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 5px;
-}
-.mode-selector a.active {
-  border-color: #9fc875;
-  background: #293d25;
-  color: #e6f4ce;
-}
-.app-context-actions {
-  justify-content: center;
-  min-width: 0;
-}
-.app-leading-actions {
-  justify-content: flex-start;
-}
-.app-trailing-actions {
-  justify-content: flex-end;
-}
-.app-action-with-badge {
-  position: relative;
-}
-.app-action-badge {
-  position: absolute;
-  right: -8px;
-  top: -8px;
-  z-index: 1;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #17251b;
-  font-size: 10px;
-  line-height: 1;
-  padding: 3px 5px;
-  white-space: nowrap;
-}
-.app-actions {
-  justify-content: flex-end;
-}
-.app-actions button {
-  width: 36px;
-  padding: 0;
 }
 .app-content {
   min-height: 100%;
@@ -188,9 +71,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 6px 14px max(6px, env(safe-area-inset-bottom));
-  border-top: 1px solid #26352b;
-  background: #101a14;
-  color: #aebdb1;
+  border-top: 3px solid var(--bc-panel-border);
+  background: var(--bc-panel);
+  color: var(--bc-text-muted);
   font-size: 0.76rem;
   z-index: 20;
 }
@@ -494,45 +377,6 @@
   }
 }
 @media (max-width: 700px) {
-  .app-topbar {
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "brand brand brand global"
-      "mode leading context trailing";
-    gap: 7px;
-    min-height: 88px;
-  }
-  .app-brand {
-    grid-area: brand;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .app-brand img {
-    flex: 0 0 auto;
-  }
-  .mode-selector {
-    grid-area: mode;
-  }
-  .app-leading-actions {
-    grid-area: leading;
-  }
-  .app-context-actions {
-    grid-area: context;
-    justify-content: flex-end;
-    overflow-x: auto;
-  }
-  .app-actions {
-    grid-area: global;
-    gap: 3px;
-  }
-  .app-trailing-actions {
-    grid-area: trailing;
-  }
-  .app-actions button {
-    width: 31px;
-    min-height: 31px;
-  }
   .app-bottom-bar > span {
     overflow: hidden;
     white-space: nowrap;
@@ -618,6 +462,227 @@
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   color: #e5f5d7;
+}
+
+/* Generic Web Shell：三列 TopBar、配置驱动 BottomBar 与移动端 overflow。 */
+.shell-topbar-left,
+.shell-topbar-center,
+.shell-topbar-right,
+.shell-bottom-leading,
+.shell-bottom-info,
+.shell-bottom-trailing {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.shell-topbar-left {
+  justify-content: flex-start;
+}
+.shell-topbar-center {
+  justify-content: center;
+}
+.shell-topbar-right {
+  justify-content: flex-end;
+}
+.shell-identity,
+.shell-identity summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.shell-identity {
+  position: relative;
+}
+.shell-identity summary {
+  cursor: pointer;
+  list-style: none;
+}
+.shell-identity summary::-webkit-details-marker {
+  display: none;
+}
+.shell-identity.has-menu summary::after {
+  content: "▾";
+  color: var(--bc-text-muted);
+  font-size: 0.7rem;
+}
+.shell-identity img {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+.shell-context-name {
+  padding-left: 8px;
+  border-left: 2px solid #ffffff55;
+  color: var(--bc-text-muted);
+}
+.shell-identity nav,
+.shell-overflow-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  z-index: 40;
+  display: grid;
+  min-width: 190px;
+  gap: 4px;
+  padding: 6px;
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 6px;
+  background: var(--bc-panel);
+  box-shadow: 6px 6px 0 #001b5b88;
+}
+.shell-identity nav {
+  left: 0;
+}
+.shell-identity nav a {
+  padding: 9px 11px;
+  color: #fff;
+  text-decoration: none;
+}
+.shell-identity nav a:hover,
+.shell-identity nav a.active {
+  background: var(--bc-active);
+}
+.shell-action,
+.shell-overflow summary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 2px solid var(--bc-panel-border);
+  border-radius: 5px;
+  background: #07518f;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.shell-action:hover,
+.shell-action[aria-pressed="true"],
+.shell-overflow summary:hover {
+  background: var(--bc-active);
+}
+.shell-action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.shell-action-icon {
+  min-width: 1em;
+  font-size: 1rem;
+  line-height: 1;
+  text-align: center;
+}
+.shell-action-badge {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  z-index: 2;
+  font-size: 0.6rem;
+}
+.shell-overflow {
+  position: relative;
+  display: none;
+}
+.shell-overflow summary {
+  width: 36px;
+  padding: 0;
+  cursor: pointer;
+  list-style: none;
+}
+.shell-overflow summary::-webkit-details-marker {
+  display: none;
+}
+.shell-overflow-menu {
+  right: 0;
+}
+.shell-overflow-menu .shell-action {
+  width: 100%;
+  justify-content: flex-start;
+}
+.app-bottom-bar {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+}
+.shell-bottom-info {
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shell-bottom-info a {
+  color: inherit;
+}
+.shell-bottom-trailing {
+  justify-content: flex-end;
+}
+.global-dialog,
+.game-dialog,
+.result-card {
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
+  box-shadow: 8px 8px 0 #001b5b99;
+}
+
+@media (max-width: 900px) {
+  .shell-product-name {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .app-topbar {
+    grid-template-areas: none;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: 58px;
+  }
+  .shell-context-name {
+    display: none;
+  }
+  .shell-topbar-center {
+    gap: 4px;
+  }
+  .shell-topbar-right > .collapse-overflow,
+  .shell-topbar-center > .collapse-overflow,
+  .shell-topbar-right > .collapse-hide,
+  .shell-topbar-center > .collapse-hide {
+    display: none;
+  }
+  .shell-overflow {
+    display: block;
+  }
+  .shell-action-label {
+    display: none;
+  }
+  .shell-overflow-menu .shell-action-label,
+  .app-bottom-bar .shell-action-label {
+    display: inline;
+  }
+  .shell-overflow-menu .collapse-overflow {
+    display: flex;
+  }
+  .app-bottom-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .shell-bottom-info {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 430px) {
+  .shell-identity.has-menu summary::after {
+    display: none;
+  }
+  .shell-action {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 5px 7px;
+  }
 }
 .debug-inspector {
   flex: 1 1 auto;

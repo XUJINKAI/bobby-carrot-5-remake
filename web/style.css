@@ -7,14 +7,21 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #eef5ef;
-  background: #09120d;
+  color: #fff;
+  background: #143678;
   color-scheme: dark;
-  --panel: #111d15;
-  --panel2: #17251b;
-  --line: #2a3c30;
-  --muted: #96aa9b;
-  --accent: #b9e07e;
+  --bc-bg: #143678;
+  --bc-panel: #005997;
+  --bc-panel-border: #002882;
+  --bc-active: #00a2ba;
+  --bc-text: #fff;
+  --bc-text-muted: #b4eafd;
+  --bc-highlight: #feef05;
+  --panel: var(--bc-panel);
+  --panel2: #064b8c;
+  --line: var(--bc-panel-border);
+  --muted: var(--bc-text-muted);
+  --accent: var(--bc-active);
 }
 * {
   box-sizing: border-box;
@@ -27,12 +34,7 @@ body,
 }
 body {
   min-height: 100vh;
-  background: radial-gradient(
-    circle at 20% 0,
-    #193124 0,
-    #0b1510 34rem,
-    #07100b 70%
-  );
+  background: var(--bc-bg);
 }
 button,
 input,
@@ -77,18 +79,18 @@ button {
 .ghost-btn {
   border: 1px solid var(--line);
   background: var(--panel2);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 0.55rem 0.78rem;
   text-decoration: none;
 }
 .primary-btn {
-  background: #d5f0a1;
-  color: #172014;
-  border-color: #e0f8b4;
+  background: var(--bc-active);
+  color: #fff;
+  border-color: var(--bc-panel-border);
   font-weight: 700;
 }
 .ghost-btn {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bc-panel);
 }
 .content {
   width: min(1180px, calc(100% - 32px));
@@ -416,17 +418,18 @@ button {
 }
 
 .explore-tabs a {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--muted);
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 5px;
+  background: var(--bc-panel);
+  color: #fff;
   flex: 0 0 auto;
   padding: 9px 16px;
   text-decoration: none;
 }
 
 .explore-tabs a.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--bc-active);
+  border-color: var(--bc-panel-border);
   color: #fff;
 }
 
@@ -443,7 +446,8 @@ button {
 .explore-map-card {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-width: 3px;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -543,7 +547,8 @@ button {
 }
 .chapter-card {
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-width: 3px;
+  border-radius: 6px;
   background: var(--panel);
   padding: 16px;
 }
@@ -565,9 +570,9 @@ button {
 .chapter-level {
   position: relative;
   min-height: 68px;
-  border: 1px solid #ffffff13;
-  border-radius: 10px;
-  background: #0f1812;
+  border: 2px solid var(--bc-panel-border);
+  border-radius: 4px;
+  background: #064b8c;
   color: inherit;
   text-decoration: none;
   display: flex;
@@ -582,12 +587,12 @@ button {
 }
 .chapter-level:hover {
   transform: translateY(-2px);
-  border-color: #667b5b;
-  background: #17231a;
+  border-color: var(--bc-panel-border);
+  background: var(--bc-active);
 }
 .chapter-level.completed {
-  border-color: #5c7d4e;
-  background: #152117;
+  border-color: var(--bc-highlight);
+  background: #07518f;
 }
 .chapter-level-no {
   font-size: 1.05rem;
@@ -597,7 +602,7 @@ button {
   position: absolute;
   right: 6px;
   top: 4px;
-  color: var(--accent);
+  color: var(--bc-highlight);
   font-size: 0.72rem;
 }
 .difficulty-badge {

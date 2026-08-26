@@ -1,6 +1,6 @@
 # Web UI 规范
 
-本文定义 Bobby Carrot 5 Remake 的 Web 信息架构、页面骨架、游戏舞台、Overlay、响应式布局和主要交互层级。模块依赖与 gameplay 归属以 [`../architecture.md`](../architecture.md) 为准，Engine API 以 [`../contracts/engine-api.md`](../contracts/engine-api.md) 为准。
+本文定义 Bobby Carrot 5 Remake 的 Web 信息架构、页面视觉、游戏舞台、Overlay、响应式布局和主要交互层级。Shell API 以 [`../contracts/web-shell.md`](../contracts/web-shell.md) 为准，模块依赖与 gameplay 归属以 [`../architecture.md`](../architecture.md) 为准，Engine API 以 [`../contracts/engine-api.md`](../contracts/engine-api.md) 为准。
 
 ## 设计目标
 
@@ -93,7 +93,7 @@ Hero 以下的项目介绍聚焦三类信息：原作重制、原版研究、Edi
 
 ## App Shell
 
-Home 之外的主要工作页面共享三段式 App Shell：
+所有页面共享三段式 App Shell。完整配置接口与所有权边界见 [`../contracts/web-shell.md`](../contracts/web-shell.md)：
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -105,11 +105,11 @@ Home 之外的主要工作页面共享三段式 App Shell：
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Adventure、Explore、Editor 和 Custom 使用同一套壳层结构，通过内容、上下文操作和能力配置表达模式差异。
+页面通过 `ShellConfig` 声明身份、返回、命令、页面操作和底栏信息。Shell 只负责布局、响应式折叠与 action 派发，不识别 Home、Explore、Adventure、Editor 或 Gameplay。
 
 Shell 允许页面分别配置 TopBar 与 BottomBar 是否固定。固定栏位位于页面滚动视口之外，滚轮、触摸滚动与 Page Up / Page Down 只影响中间的 Content 区域；关闭固定能力时，对应栏位进入 Content 滚动视口并随页面内容移动。
 
-当前 Adventure、Explore、Editor、Custom 和所有游戏页面都固定 TopBar 与 BottomBar。页面即使暂时隐藏 BottomBar，也需要保留固定能力配置，使其后续显示状态稳定落在视口底部。
+页面按自身滚动模型分别声明固定状态。暂时隐藏的栏位不参与布局。
 
 ```text
 ┌──────────────────────────────────────────────┐
@@ -136,62 +136,23 @@ topBarFixed = false                 bottomBarFixed = false
 
 ### TopBar
 
-桌面 TopBar：
+TopBar 固定为三列结构：
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 冒险模式 ▾ │ 12-4  ↶  ↻  ✎ │       ♫  ⚙  ? │
+│ Identity + Back        │            Commands            │ Actions / Overflow │
 └──────────────────────────────────────────────────────────────────────────────┘
-  └──────── 产品标题 ─────────┘  └ 当前模式 ┘  └ 当前上下文 ┘  └── 全局 ──┘
 ```
 
-标题前使用 Bobby Carrot 5 Remake 的产品 icon。标题和 icon 共同链接 Home。
+三列使用 `minmax(0, 1fr) auto minmax(0, 1fr)`。`Identity` 可包含产品 icon、产品名、页面上下文和页面提供的导航菜单；页面可在左列追加 Back。游戏页将 Undo、Redo、Restart 放在中间，将 Edit 和产品级操作放在右侧。
 
-TopBar 只显示当前模式名称，不平铺三个模式入口。当前模式名称是一个下拉选择控件：
+Music、Settings、Help 与全局 Dialog 由 App 层持有，以普通 action 配置给 Shell。Help 内容由当前页面提供 `HelpDescriptor`。
 
-```text
-          ┌────────────────────┐
-冒险模式 ▾│ ✓ 冒险模式        │
-          │   自由探索模式     │
-          │   编辑器模式       │
-          └────────────────────┘
-```
-
-三个稳定选项为：
-
-- 冒险模式：Campaign、存档、解锁、经济和受限视野；
-- 自由探索模式：全关开放、筛选、Undo、Debug 和自由视野；
-- 编辑器模式：创建、修改、Play Test 和文件操作。
-
-选择其它模式后导航到该模式的入口页。Editor 存在未保存修改时，选择其它模式先进入统一的未保存确认 Dialog。Custom Map 是内容来源，Custom Play 在模式位置显示“自由探索模式”，上下文区域显示地图名称与 `Custom` 标识。
-
-游戏页把返回动作放在模式选择器右侧，难度作为返回按钮右上角的 badge；Undo、Redo、Restart 位于顶栏中间；Edit 位于全局音乐操作左侧。其它页面的上下文区域可以包含 Editor 历史和 Play Test 等操作。目标、背包、收集数量和地图内 Timer 统一进入 Game HUD。
-
-全局操作固定为：
-
-- Music：直接切换静音状态；
-- Settings：打开全局设置 Overlay；
-- Help：打开与当前页面相关的帮助 Overlay。
-
-移动端复用同一个模式下拉：
-
-```text
-┌────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake   │
-│ 冒险模式 ▾       12-4  ♫ ⚙ ? │
-└────────────────────────────────┘
-       │
-       ▼
-    ┌──────────────────┐
-    │ ✓ 冒险模式       │
-    │   自由探索模式   │
-    │   编辑器模式     │
-    └──────────────────┘
-```
+桌面与移动端复用同一套 DOM。空间收窄时，CSS 依次收敛产品名和上下文名；标记为 `overflow` 的操作自动进入菜单，`keep` 操作保持可见，`hide` 操作隐藏。
 
 ### BottomBar
 
-BottomBar 左侧展示与当前页面相关的一句话信息，右侧展示 Screen Control 开关：
+BottomBar 使用 `Leading | Info | Trailing` 三段结构。页面可配置操作、链接和一句话信息，例如：
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────┐

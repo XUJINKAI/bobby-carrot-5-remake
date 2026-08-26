@@ -120,4 +120,4 @@ Base / UP、DAT package、record index 属于 archive provenance。内部 canoni
 - 游戏世界沿用原版美术与动画素材；
 - 正式关卡保持章节与 Bonus 的原作组织语义。
 
-Web UI 使用同一个产品外壳组织 Adventure、Explore、Editor 和 Custom，同一个 GameStage 承载所有可游玩入口。Engine 在 GameStage 中渲染基础 Gameplay HUD 和可配置 Screen Joystick；TopBar 表达产品位置与操作，BottomBar 表达操作提示，Result Overlay 表达地图结束后的产品流程。完整规范见 [`features/ui.md`](features/ui.md)。
+Web UI 使用同一个配置驱动外壳组织所有页面，同一个 GameStage 承载所有可游玩入口。Engine 在 GameStage 中渲染基础 Gameplay HUD 和可配置 Screen Joystick；TopBar 表达产品位置与操作，BottomBar 表达操作提示，Result Overlay 表达地图结束后的产品流程。Shell 合同见 [`contracts/web-shell.md`](contracts/web-shell.md)，视觉规范见 [`features/ui.md`](features/ui.md)。

@@ -366,7 +366,9 @@ Web 源码按产品职责组织：
 ```text
 web/src
 ├── app/                 Vue 根应用、路由协调与页面生命周期合同
-├── shell/               TopBar、BottomBar、模式选择、全局 Dialog 与 Shell 配置
+├── shell/               通用 TopBar、BottomBar、Identity、Action 与 ShellConfig
+├── app/dialogs/         Settings、Help 等产品级 Dialog
+├── app/settings/        全局设置状态与浏览器适配
 ├── pages/<mode>/        页面组件、页面挂载器与页面私有交互
 ├── runtime/game/        Web 对 Engine session 生命周期的适配
 ├── services/            Audio、Catalog 与产品资产访问
@@ -381,7 +383,7 @@ Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 
 
 ### Product Shell 与 GameStage
 
-Web 使用统一 Product Shell 组织 Home、Adventure、Explore、Editor、Custom、Settings 和 Help。可游玩页面共享同一个 GameStage 组合：
+Web 使用页面无关的 Generic Shell 组织 TopBar、Content 和 BottomBar。页面提交 `ShellConfig`；Music、Settings、Help 与 Dialog 由 App 层解释，Shell 不持有 mode 或业务语义。完整合同见 [`contracts/web-shell.md`](contracts/web-shell.md)。可游玩页面共享同一个 GameStage 组合：
 
 ```text
 GameStage

@@ -16,6 +16,12 @@ const emit = defineEmits<{
 
 <template>
   <div class="home-page">
+    <div class="home-sky-brand" aria-hidden="true">
+      <span class="home-star star-one">★</span>
+      <h1>BOBBY CARROT <strong>5</strong><span>REMAKE</span></h1>
+      <span class="home-moon">☾</span>
+      <span class="home-star star-two">★</span>
+    </div>
     <section class="home-hero" aria-label="开始游戏">
       <HomeDemo
         :state="state"
