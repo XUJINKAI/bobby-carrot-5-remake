@@ -17,6 +17,7 @@ run(
   ],
   { shell: true },
 );
+run(process.execPath, ["--test", "web/tests/*.test.mjs"], { shell: true });
 
 const { deriveDatDynamicSlots, splitDatPackage, decodeDatLevelRecord } =
   await import("../../dat/dist/index.js");
@@ -158,6 +159,7 @@ await verifyCustomMaps();
 
 for (const file of [
   "dist/index.html",
+  "dist/import/v1/index.html",
   "dist/model/index.js",
   "dist/adventure/index.js",
   "dist/engine/index.js",

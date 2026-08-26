@@ -59,6 +59,11 @@ copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));
 copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
 copyTree(generatedAssets, path.join(dist, "assets"));
 
+// Fragment 不会发送给静态服务器，因此分享入口需要真实 HTML 文件。
+const importEntry = path.join(dist, "import/v1/index.html");
+fs.mkdirSync(path.dirname(importEntry), { recursive: true });
+copyFile(path.join(dist, "index.html"), importEntry);
+
 const tinySynthCandidates = [
   path.join(root, "node_modules/webaudio-tinysynth/webaudio-tinysynth.min.js"),
   path.join(root, "node_modules/webaudio-tinysynth/webaudio-tinysynth.js"),

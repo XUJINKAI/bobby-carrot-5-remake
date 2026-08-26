@@ -27,3 +27,5 @@ run(
   ],
   { shell: true },
 );
+run(tscCommand(), ["-b", "web", "--force"]);
+run(process.execPath, ["--test", "web/tests/*.test.mjs"], { shell: true });
