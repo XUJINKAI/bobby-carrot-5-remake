@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createServer } from "vite";
 import { root, run } from "../lib/fs.mjs";
-import { serveDistRequest } from "./static-server.mjs";
+import { serveDistRequest } from "../lib/static-server.mjs";
 const requestedMode = process.argv[2] ?? "web",
   mode = requestedMode === "editor" ? "editor" : "web",
   noBuild = process.argv.includes("--no-build"),
