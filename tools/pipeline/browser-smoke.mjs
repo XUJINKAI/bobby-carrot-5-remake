@@ -56,7 +56,7 @@ try {
   await smoke(`${origin}/explore/play/test/test-portal`, [
     'class="game-page"',
     'id="game"',
-    "test-portal",
+    "Portal Lab",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
@@ -70,7 +70,7 @@ try {
   await smoke(`${origin}/explore/play/pushbox/box-01`, [
     'class="game-page"',
     'id="game"',
-    "box-01",
+    "Pushbox 1",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
