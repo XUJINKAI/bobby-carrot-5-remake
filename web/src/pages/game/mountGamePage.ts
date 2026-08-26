@@ -1,5 +1,4 @@
 import {
-  campaignSequenceForChapter,
   claimPersistentReward,
   completeAdventureLevel,
   isAdventureLevelUnlocked,
@@ -11,10 +10,11 @@ import { ObjectId } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
-import {
-  type CatalogLevel,
-  type LevelCatalog,
-  type MapMeta,
+import type {
+  AdventureIndex,
+  AdventureIndexChapter,
+  AdventureIndexLevel,
+  MapMeta,
 } from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
@@ -32,7 +32,6 @@ import {
 } from "../../storage/exploreProgressStorage.js";
 import { formatTileInspection } from "../../runtime/game/formatTileInspection.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { displayLevelId } from "../../services/catalog/catalogPresentation.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
 import {
@@ -61,13 +60,14 @@ export interface GameIdentity {
 
 export interface GamePageContext {
   app: HTMLDivElement;
-  catalog: LevelCatalog;
+  adventure: AdventureIndex;
   audio: TinySynthAudioBackend;
   navigate: Navigate;
   level: LevelMap;
   identity: GameIdentity;
   mapMeta?: MapMeta;
-  official?: CatalogLevel;
+  adventureChapter?: AdventureIndexChapter;
+  adventureLevel?: AdventureIndexLevel;
   mode: GamePageMode;
 }
 
@@ -76,38 +76,38 @@ export async function renderGamePage(
 ): Promise<PageController> {
   const {
     app,
-    catalog,
     audio,
     navigate,
     level,
     identity,
     mapMeta,
-    official: campaignMeta,
+    adventureChapter,
+    adventureLevel,
     mode,
   } = context;
-  if (mode === "adventure" && !campaignMeta)
-    throw new Error("Adventure GamePage 需要官方 Campaign identity");
+  if (mode === "adventure" && (!adventureChapter || !adventureLevel))
+    throw new Error("Adventure GamePage 需要 Campaign node");
 
   let adventureSave: AdventureSave | null =
     mode === "adventure" ? loadAdventureSave() : null;
   if (
     adventureSave &&
-    !isAdventureLevelUnlocked(adventureSave, campaignMeta!.publicId)
+    !isAdventureLevelUnlocked(adventureSave, adventureLevel!.id)
   ) {
-    navigate(`/adventure/chapter/${campaignMeta!.chapter}`);
+    navigate(`/adventure/chapter/${adventureChapter!.id}`);
     return NOOP_CONTROLLER;
   }
   if (mode === "explore") rememberExploreMap(identity.collection, identity.id);
 
   const plan = adventureSave
-    ? planAdventureSession(campaignMeta!.publicId, adventureSave)
+    ? planAdventureSession(adventureLevel!.id, adventureSave)
     : null;
   const sessionLevel = adventureSave
-    ? createAdventureLevelInstance(campaignMeta!.publicId, level, adventureSave)
+    ? createAdventureLevelInstance(adventureLevel!.id, level, adventureSave)
     : level;
   const screenControlEnabled = loadScreenControlPreference();
   configureShell(
-    gameShellConfig(identity, campaignMeta, mode, screenControlEnabled),
+    gameShellConfig(identity, mode, screenControlEnabled),
     GAME_HELP,
   );
   app.replaceChildren();
@@ -151,11 +151,8 @@ export async function renderGamePage(
     },
   });
   const { game, input } = session;
-  const isBonus = campaignMeta?.contentKind === "bonus";
-  audio.playMusic(
-    mapMeta?.music ??
-      (isBonus ? "bonus" : `ingame${campaignMeta ? campaignMeta.number % 3 : 1}`),
-  );
+  const isBonus = adventureLevel?.id.includes("-bonus-") ?? false;
+  audio.playMusic(mapMeta?.music ?? (isBonus ? "bonus" : "ingame1"));
 
   let levelStartedAt = performance.now();
   let debugInspection: string | null = null;
@@ -175,7 +172,7 @@ export async function renderGamePage(
     window.addEventListener("resize", applyAdventureCamera);
 
   const processAdventureRewards = (): void => {
-    if (!adventureSave) return;
+    if (!adventureSave || !adventureLevel) return;
     const signature = JSON.stringify(game.lastWorldEvents);
     if (signature === rewardsProcessed) return;
     rewardsProcessed = signature;
@@ -185,7 +182,7 @@ export async function renderGamePage(
       if (event.type === "collect-bonus-coin")
         next = claimPersistentReward(
           next,
-          campaignMeta!.publicId,
+          adventureLevel.id,
           ObjectId.BONUS_COIN,
           event.x,
           event.y,
@@ -193,7 +190,7 @@ export async function renderGamePage(
       else if (event.type === "collect-golden-carrot")
         next = claimPersistentReward(
           next,
-          campaignMeta!.publicId,
+          adventureLevel.id,
           ObjectId.GOLDEN_CARROT,
           event.x,
           event.y,
@@ -219,20 +216,16 @@ export async function renderGamePage(
     visibleResult = kind;
     if (kind === "complete") {
       let nextId: string | undefined;
-      let nextLabel: string | undefined;
-      if (adventureSave) {
+      if (adventureSave && adventureLevel && adventureChapter) {
         adventureSave = saveAdventureSave(
-          completeAdventureLevel(adventureSave, campaignMeta!.publicId),
+          completeAdventureLevel(adventureSave, adventureLevel.id),
         );
-        const next = nextCampaignLevel(catalog, campaignMeta!);
-        nextId = next?.publicId;
-        nextLabel = next ? displayLevelId(next) : undefined;
+        nextId = nextAdventureLevel(adventureChapter, adventureLevel.id)?.id;
       } else {
         markExploreMapCompleted(identity.collection, identity.id);
         nextId = mapMeta?.next;
-        nextLabel = nextId?.toUpperCase();
       }
-      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextLabel ?? nextId)}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
     } else {
       resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
@@ -297,7 +290,7 @@ export async function renderGamePage(
     if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
     else if (action === "levels")
-      navigate(backPath(identity, campaignMeta, mode));
+      navigate(backPath(identity, adventureChapter, mode));
     else if (action === "next" && button.dataset.next)
       navigate(
         mode === "adventure"
@@ -312,7 +305,7 @@ export async function renderGamePage(
   const onGameShellAction = (event: Event): void => {
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
-      navigate(backPath(identity, campaignMeta, mode));
+      navigate(backPath(identity, adventureChapter, mode));
     } else if (action === "edit") {
       navigate(
         identity.collection === "imported" ? "/edit" : editorMapPath(identity),
@@ -349,21 +342,16 @@ export async function renderGamePage(
   };
 }
 
-function nextCampaignLevel(
-  catalog: LevelCatalog,
-  meta: CatalogLevel,
-): CatalogLevel | undefined {
-  const sequence = campaignSequenceForChapter(meta.chapter);
-  const index = sequence.indexOf(meta.publicId);
-  const next = sequence[index + 1];
-  return next
-    ? catalog.levels.find((level) => level.publicId === next)
-    : undefined;
+function nextAdventureLevel(
+  chapter: AdventureIndexChapter,
+  currentId: string,
+): AdventureIndexLevel | undefined {
+  const index = chapter.levels.findIndex((level) => level.id === currentId);
+  return index >= 0 ? chapter.levels[index + 1] : undefined;
 }
 
 function gameShellConfig(
   identity: GameIdentity,
-  meta: CatalogLevel | undefined,
   mode: GamePageMode,
   screenControlEnabled: boolean,
 ): ShellConfig {
@@ -431,11 +419,11 @@ function gameShellConfig(
 
 function backPath(
   identity: GameIdentity,
-  meta: CatalogLevel | undefined,
+  chapter: AdventureIndexChapter | undefined,
   mode: GamePageMode,
 ): string {
   return mode === "adventure"
-    ? `/adventure/chapter/${meta!.chapter}`
+    ? `/adventure/chapter/${chapter!.id}`
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
