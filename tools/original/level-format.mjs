@@ -40,7 +40,7 @@ export function parsePackMetadata(record) {
 export function parseLevelRecord(record, source) {
   const decoded = decodeDatLevelRecord(record);
   return {
-    schemaVersion: 2,
+    schemaVersion: 1,
     terrainEncoding: "semantic-row-major",
     source,
     recordLength: record.length,

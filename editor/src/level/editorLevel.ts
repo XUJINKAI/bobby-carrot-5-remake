@@ -27,7 +27,7 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
   terrain[Math.max(0, safeHeight - 3)]![Math.max(0, safeWidth - 3)] =
     Terrain.EXIT;
   return {
-    schemaVersion: 3,
+    schemaVersion: 1,
     name: "Untitled Bobby Level",
     width: safeWidth,
     height: safeHeight,
@@ -43,7 +43,7 @@ export function fromLevelMap(
 ): EditorLevel {
   const anchors = collapseObjectLayouts(level.objects);
   return normalizeEditorLevel({
-    schemaVersion: 3,
+    schemaVersion: 1,
     name,
     width: level.width,
     height: level.height,
@@ -106,7 +106,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     });
   }
   const level: EditorLevel = {
-    schemaVersion: 3,
+    schemaVersion: 1,
     name: String(input.name || "Untitled Bobby Level").slice(0, 120),
     width,
     height,

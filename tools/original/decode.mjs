@@ -20,7 +20,7 @@ function writeJson(file, value) {
 
 fs.rmSync(sourceRoot, { recursive: true, force: true });
 const sourceIndex = {
-  schemaVersion: 2,
+  schemaVersion: 1,
   sourceTileSize: SOURCE_TILE_SIZE,
   releases: [],
   totalSourceLevels: 0,
@@ -75,7 +75,7 @@ for (const release of RELEASES) {
   }
 
   writeJson(path.join(releaseOut, "packs.json"), {
-    schemaVersion: 2,
+    schemaVersion: 1,
     release,
     packs,
     levelCount: count,
@@ -90,5 +90,5 @@ for (const release of RELEASES) {
   console.log(`解码 ${release.id}: ${count} 个 source level`);
 }
 
-  writeJson(path.join(decoded, "source-index.json"), sourceIndex);
+writeJson(path.join(decoded, "source-index.json"), sourceIndex);
 console.log(`共解码 ${sourceIndex.totalSourceLevels} 条 source level 记录。`);
