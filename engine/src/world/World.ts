@@ -21,7 +21,6 @@ import {
 import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
 import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
-export type { PassageResult } from "../mechanics/rules.js";
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
 import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
@@ -440,6 +439,7 @@ export class World {
       objectiveRemaining: objectives.remaining,
       objectiveTotal: objectives.total,
       pushGoalsRemaining: objectives.pushGoalsRemaining,
+      ...(level.rules?.win ? { winCondition: structuredClone(level.rules.win) } : {}),
       forced: null,
       pendingTrap: null,
       pendingCarousel: null,

@@ -116,28 +116,25 @@ for (const release of RELEASES) {
     byHash.set(level.recordSha256, item);
     canonical.push(item);
     writeJson(path.join(levelsRoot, `${id}.json`), {
-      ...level,
       schemaVersion: 3,
-      objects: level.objects.map((object) =>
-        isOriginalBonus(sourceRef) && object.type === "lock"
-          ? {
-              ...object,
-              properties: {
-                ...(object.properties ?? {}),
-                timedChallengeMs: object.properties?.timedChallengeMs ?? "60000",
-              },
-            }
-          : object,
-      ),
-      id,
-      canonicalId: id,
-      publicId: item.publicId,
-      number: item.number,
-      release: item.release,
-      chapter: item.chapter,
-      chapterTitle: item.chapterTitle,
-      chapterLevel: item.chapterLevel,
-      sources: item.sources,
+      width: level.width,
+      height: level.height,
+      terrain: level.terrain,
+      objects: adaptObjects(level.objects, id, sourceRef),
+      rules: {
+        win: {
+          type: "all",
+          conditions: [
+            { type: "collect-all", trait: "level-objective" },
+            {
+              type: "fill-all",
+              terrainTrait: "push-goal",
+              objectTrait: "pushable",
+            },
+            { type: "reach-terrain", trait: "exit" },
+          ],
+        },
+      },
     });
   }
 }
@@ -146,222 +143,22 @@ function isOriginalBonus(source) {
   return source.packFile !== "00" && [11, 12].includes(Number(source.levelIndex));
 }
 
-// 重复教学关出现后，回写完整 source 列表。
-for (const item of canonical) {
-  const file = path.join(levelsRoot, `${item.id}.json`);
-  const level = readJson(file);
-  level.sources = item.sources;
-  writeJson(file, level);
-}
-
-// ---------- 难度：历史 A~F 为真值，其余用历史样本做 KNN 估算 ----------
-const legacy = { collections: [] };
-const labelsByCanonical = new Map();
-const difficultyForCollection = (id) =>
-  ["a", "b", "c"].includes(id)
-    ? "easy"
-    : ["d", "e"].includes(id)
-      ? "medium"
-      : "hard";
-for (const collection of legacy.collections) {
-  const label = difficultyForCollection(collection.id);
-  for (const canonicalId of collection.canonicalLevelIds) {
-    if (Number(canonicalId) <= 5) continue; // 公共教学关不拿来训练难度。
-    const list = labelsByCanonical.get(canonicalId) ?? [];
-    list.push({
-      label,
-      collection: collection.id.toUpperCase(),
-      collectionName: collection.name,
-    });
-    labelsByCanonical.set(canonicalId, list);
-  }
-}
-
-for (const item of canonical) {
-  if (!labelsByCanonical.has(item.id))
-    labelsByCanonical.set(item.id, [
-      {
-        label:
-          Number(item.id) % 3 === 0
-            ? "hard"
-            : Number(item.id) % 2 === 0
-              ? "medium"
-              : "easy",
-        collection: "chapter",
-      },
-    ]);
-}
-
-const COMPLEX_TERRAIN = new Set([
-  "snow",
-  "water-animated",
-  "tide-up",
-  "tide-down",
-  "tide-left",
-  "tide-right",
-  "ice",
-  "shovel-pickup",
-  "mower-parking",
-  "speed-switch-pressed",
-  "speed-switch-raised",
-  "carousel-switch-raised",
-  "carousel-switch-pressed",
-  "tide-switch-raised",
-  "tide-switch-pressed",
-  "wind-switch-0-on",
-  "wind-switch-0-off",
-  "wind-switch-1-on",
-  "wind-switch-1-off",
-  "wind-switch-2-on",
-  "wind-switch-2-off",
-  "wind-switch-3-on",
-  "wind-switch-3-off",
-  "trap-active",
-  "trap-inactive",
-  "mirror-1",
-  "mirror-2",
-  "mirror-3",
-  "mirror-4",
-  "speed-up",
-  "speed-down",
-  "speed-left",
-  "speed-right",
-  "carousel-1",
-  "carousel-2",
-  "carousel-3",
-  "carousel-4",
-  "carousel-vertical",
-  "carousel-horizontal",
-  "color-yellow-switch-raised",
-  "color-yellow-switch-pressed",
-  "color-pink-switch-raised",
-  "color-pink-switch-pressed",
-  "color-yellow-block-raised",
-  "color-yellow-block-lowered",
-  "color-pink-block-raised",
-  "color-pink-block-lowered",
-  "high-grass",
-  "high-grass-objective",
-]);
-const SIMPLE_OBJECT = new Set([
-  "consumed-carrot",
-  "carrot",
-  "egg-nest-empty",
-  "egg-nest-filled",
-]);
-function isComplexObject(type) {
-  return !SIMPLE_OBJECT.has(type);
-}
-
-function featureVector(level) {
-  const terrainFlat = level.terrain.flat();
-  const objectTypes = level.objects.map((o) => o.type);
-  const uniqueTerrain = new Set(terrainFlat);
-  const uniqueObject = new Set(objectTypes);
-  const area = level.width * level.height;
-  const complexCells =
-    terrainFlat.filter((type) => COMPLEX_TERRAIN.has(type)).length +
-    objectTypes.filter(isComplexObject).length;
-  const objectives =
-    terrainFlat.filter((type) => type === "high-grass-objective").length +
-    objectTypes.filter((type) => type === "carrot" || type === "egg-nest-empty")
-      .length;
-  return [
-    Math.log2(Math.max(1, area)),
-    level.objects.length / Math.sqrt(Math.max(1, area)),
-    uniqueTerrain.size,
-    uniqueObject.size,
-    level.dynamicSlots,
-    objectives,
-    complexCells / Math.sqrt(Math.max(1, area)),
-    [...uniqueTerrain].filter((type) => COMPLEX_TERRAIN.has(type)).length +
-      [...uniqueObject].filter(isComplexObject).length,
-  ];
-}
-
-const featureById = new Map();
-for (const item of canonical)
-  featureById.set(
-    item.id,
-    featureVector(readJson(path.join(levelsRoot, `${item.id}.json`))),
-  );
-const training = canonical
-  .filter((item) => labelsByCanonical.has(item.id))
-  .map((item) => ({
-    id: item.id,
-    vector: featureById.get(item.id),
-    label: labelsByCanonical.get(item.id)[0].label,
-  }));
-const dims = training[0]?.vector.length ?? 0;
-const mean = Array.from(
-  { length: dims },
-  (_, d) =>
-    training.reduce((sum, row) => sum + row.vector[d], 0) / training.length,
-);
-const std = Array.from({ length: dims }, (_, d) => {
-  const variance =
-    training.reduce((sum, row) => sum + (row.vector[d] - mean[d]) ** 2, 0) /
-    Math.max(1, training.length - 1);
-  return Math.sqrt(variance) || 1;
-});
-function distance(a, b) {
-  return Math.sqrt(
-    a.reduce((sum, value, d) => sum + ((value - b[d]) / std[d]) ** 2, 0),
-  );
-}
-function estimateDifficulty(vector) {
-  const nearest = training
-    .map((row) => ({ ...row, distance: distance(vector, row.vector) }))
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 11);
-  const score = { easy: 0, medium: 0, hard: 0 };
-  for (const row of nearest)
-    score[row.label] += 1 / Math.max(0.15, row.distance);
-  const ranked = Object.entries(score).sort((a, b) => b[1] - a[1]);
-  const total = ranked.reduce((sum, [, value]) => sum + value, 0) || 1;
-  return {
-    level: ranked[0][0],
-    confidence: Number((ranked[0][1] / total).toFixed(3)),
-  };
-}
-for (const item of canonical) {
-  if (Number(item.id) <= 5) {
-    item.difficulty = {
-      level: "tutorial",
-      source: "historical",
-      label: "教学",
+function adaptObjects(objects, canonicalId, source) {
+  return objects.map((object) => {
+    const properties = { ...(object.properties ?? {}) };
+    if (isOriginalBonus(source) && object.type === "lock")
+      properties.timedChallengeMs = properties.timedChallengeMs ?? "60000";
+    if (object.type === "sandman")
+      properties.dialogId =
+        properties.dialogId ??
+        `original.map-${canonicalId}.sandman-${object.x}-${object.y}`;
+    return {
+      ...object,
+      ...(Object.keys(properties).length > 0 ? { properties } : {}),
     };
-    continue;
-  }
-  const historical = labelsByCanonical.get(item.id);
-  if (historical?.length) {
-    const labels = [...new Set(historical.map((x) => x.label))];
-    item.difficulty = {
-      level: labels[0],
-      source: "historical",
-      label:
-        labels[0] === "easy"
-          ? "简单"
-          : labels[0] === "medium"
-            ? "中等"
-            : "困难",
-      collections: historical.map((x) => x.collection),
-    };
-  } else {
-    const estimated = estimateDifficulty(featureById.get(item.id));
-    item.difficulty = {
-      level: estimated.level,
-      source: "estimated",
-      label: `≈${estimated.level === "easy" ? "简单" : estimated.level === "medium" ? "中等" : "困难"}`,
-      confidence: estimated.confidence,
-    };
-  }
-
-  const file = path.join(levelsRoot, `${item.id}.json`);
-  const level = readJson(file);
-  level.difficulty = item.difficulty;
-  writeJson(file, level);
+  });
 }
+
 
 /**
  * 官方运行时资产按语义来源生成，而不是把某个发行包视为整套“主资产”。
@@ -457,19 +254,6 @@ const catalog = {
   },
   releases: browserReleases,
   chapters,
-  legacyCollections: legacy.collections.map((collection) => ({
-    id: collection.id,
-    name: collection.name,
-    levelCount: collection.levelCount,
-    canonicalLevelIds: collection.canonicalLevelIds,
-  })),
-  difficulty: {
-    historicalNonTutorialLevels: training.length,
-    estimatedLevels: canonical.filter(
-      (item) => item.difficulty?.source === "estimated",
-    ).length,
-    note: "A/B/C=简单，D/E=中等，F=困难；未被 A~F 覆盖的正式关卡使用这些历史样本做 KNN 估算并以 ≈ 标记。",
-  },
   levels: canonical,
 };
 
@@ -477,7 +261,7 @@ if (catalog.uniqueLevels !== 485)
   throw new Error(`主库应为 485 关，实际 ${catalog.uniqueLevels}`);
 writeJson(path.join(generated, "catalog.json"), catalog);
 console.log(
-  `构建主库：${catalog.uniqueLevels} 个唯一关卡 / ${catalog.totalSourceLevels} 条 source 记录；历史难度 ${catalog.difficulty.historicalNonTutorialLevels}，估算 ${catalog.difficulty.estimatedLevels}。`,
+  `构建主库：${catalog.uniqueLevels} 个唯一关卡 / ${catalog.totalSourceLevels} 条 source 记录。`,
 );
 
 function copyRuntimeAssetCategory(rule, outputDir) {

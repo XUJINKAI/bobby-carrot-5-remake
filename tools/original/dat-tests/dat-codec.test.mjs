@@ -10,7 +10,7 @@ import {
   encodeDatLevelRecord,
   replaceDatLevelRecord,
   splitDatPackage,
-} from "../dat/dist/index.js";
+} from "../dat/index.mjs";
 
 test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const dat = fs.readFileSync("original/extracted/base/00.dat");

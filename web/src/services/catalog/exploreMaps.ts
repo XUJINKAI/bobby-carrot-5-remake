@@ -22,15 +22,15 @@ export async function resolveExploreMap(
   customMapCatalog: CustomMapCatalog,
   ref: ExploreMapRef,
 ): Promise<ResolvedExploreMap | undefined> {
+  const level = await fetchJson<LevelMap>(
+    siteUrl(mapAssetUrl(ref.collection, ref.id)),
+  );
   if (ref.collection === "original") {
     const official = catalog.levels.find((entry) => entry.publicId === ref.id);
-    const level = await fetchJson<OfficialLevelData>(
-      siteUrl(mapAssetUrl(ref.collection, ref.id)),
-    );
     return {
       ref,
       title: official?.publicId.toUpperCase() ?? ref.id.toUpperCase(),
-      level,
+      level: level as OfficialLevelData,
       ...(official ? { official } : {}),
     };
   }
@@ -39,6 +39,6 @@ export async function resolveExploreMap(
   return {
     ref,
     title: map?.name ?? ref.id,
-    level: await fetchJson<LevelMap>(siteUrl(mapAssetUrl(ref.collection, ref.id))),
+    level,
   };
 }

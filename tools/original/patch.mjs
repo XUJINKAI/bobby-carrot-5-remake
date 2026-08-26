@@ -6,7 +6,7 @@ import {
   decodeDatLevelRecord,
   replaceDatLevelRecord,
   splitDatPackage,
-} from "./dat/dist/index.js";
+} from "./dat/index.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
 

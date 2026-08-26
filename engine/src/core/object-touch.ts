@@ -12,6 +12,7 @@ export function worldEventForObjectTouch(
     return {
       type: "dialog",
       message: "触发对象对白",
+      ...(touch.messageId !== undefined ? { messageId: touch.messageId } : {}),
       ...(touch.text !== undefined ? { text: touch.text } : {}),
       x: object.x,
       y: object.y,

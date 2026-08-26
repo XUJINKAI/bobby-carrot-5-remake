@@ -14,11 +14,10 @@ if (group === "original") {
   if (action === "extract") run(process.execPath, ["tools/original/extract.mjs"]);
   else if (action === "decode") run(process.execPath, ["tools/original/decode.mjs"]);
   else if (action === "adapt") {
-    run(tscCommand(), ["-b", "model", "tools/original/dat", "adventure", "--force"]);
     run(process.execPath, ["tools/original/adapt.mjs"]);
     run(process.execPath, ["tools/original/adventure-catalog.mjs"]);
   } else if (action === "prepare") {
-    run(tscCommand(), ["-b", "model", "tools/original/dat", "adventure", "--force"]);
+    run(tscCommand(), ["-b", "model", "--force"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "extract"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "decode"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "adapt"]);
@@ -27,9 +26,9 @@ if (group === "original") {
   else if (action === "research") run(process.execPath, ["tools/original/research.mjs", ...process.argv.slice(3)]);
   else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
 } else if (group === "assets") {
-  const { rebuildAssets, prepareRuntimeAssets } = await import("./pipeline/assets.mjs");
+  const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
   if (action === "rebuild") rebuildAssets();
-  else if (action === "prepare") prepareRuntimeAssets();
+  else if (action === "prepare") prepareAssets();
   else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);

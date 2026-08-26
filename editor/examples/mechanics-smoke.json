@@ -1,10 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "name": "Engine Mechanics Smoke Map",
   "author": "bc5r",
   "description": "Editor → Engine / DAT / Original JAR 回归测试夹具；不是正式谜题关。",
   "width": 20,
   "height": 16,
+  "rules": { "win": { "type": "reach-terrain", "trait": "exit" } },
   "terrain": [
     [
       "ground-c",

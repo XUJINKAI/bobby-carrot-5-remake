@@ -43,8 +43,9 @@ export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new TinySynthAudioBackend();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
-  private catalog!: LevelCatalog;
-  private customMapCatalog!: CustomMapCatalog;
+  private catalog: LevelCatalog = EMPTY_LEVEL_CATALOG;
+  private customMapCatalog: CustomMapCatalog = EMPTY_CUSTOM_MAP_CATALOG;
+  private catalogsLoaded = false;
   private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
@@ -55,12 +56,6 @@ export class BobbyApp {
   }
 
   async start(): Promise<void> {
-    this.catalog = await fetchJson<LevelCatalog>(
-      siteUrl("assets/maps/catalog.json"),
-    );
-    this.customMapCatalog = await fetchJson<CustomMapCatalog>(
-      siteUrl("assets/maps/custom-catalog.json"),
-    );
     installShellBridge({
       apply: (config, help) => this.applyShell(config, help),
     });
@@ -121,6 +116,8 @@ export class BobbyApp {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();
+    // 直达 Play 的地图定位只由 URL 决定，Catalog 只为列表和产品元数据服务。
+    if (!path.startsWith("/explore/play/")) await this.ensureCatalogs();
     const context = {
       app: this.content,
       catalog: this.catalog,
@@ -284,7 +281,27 @@ export class BobbyApp {
     }
     this.navigate("/");
   }
+
+  private async ensureCatalogs(): Promise<void> {
+    if (this.catalogsLoaded) return;
+    [this.catalog, this.customMapCatalog] = await Promise.all([
+      fetchJson<LevelCatalog>(siteUrl("assets/maps/catalog.json")),
+      fetchJson<CustomMapCatalog>(siteUrl("assets/maps/custom-catalog.json")),
+    ]);
+    this.catalogsLoaded = true;
+  }
 }
+
+const EMPTY_LEVEL_CATALOG = {
+  levels: [],
+  chapters: [],
+  specialScenes: [],
+} as unknown as LevelCatalog;
+
+const EMPTY_CUSTOM_MAP_CATALOG: CustomMapCatalog = {
+  schemaVersion: 1,
+  collections: [],
+};
 
 function defaultShellState(): ShellViewState {
   return {

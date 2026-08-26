@@ -145,8 +145,20 @@ export interface LevelObject {
   properties?: LevelObjectProperties;
 }
 
+export type WinCondition =
+  | { type: "all"; conditions: WinCondition[] }
+  | { type: "any"; conditions: WinCondition[] }
+  | { type: "collect-all"; trait: string }
+  | {
+      type: "fill-all";
+      terrainTrait: string;
+      objectTrait: string;
+    }
+  | { type: "reach-terrain"; trait: string };
+
 export interface LevelRules {
   maxMoves?: number;
+  win?: WinCondition;
 }
 
 /** Pure playable/authorable map. No release, JAR, hash, catalog or DAT fields belong here. */

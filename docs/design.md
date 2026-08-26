@@ -37,7 +37,7 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
 - 已领取全局奖励按地图位置记忆，每个稳定奖励位置只领取一次；
-- 原版 Bonus 60 秒由 Adventure 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
+- 原版 Bonus 60 秒由 Original Adapter 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
 - Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，倒计时、超时死亡、Undo 和 Restart 等地图内生命周期统一由 Engine 执行。
 
 ## Explore
@@ -96,16 +96,7 @@ Base / UP、DAT package、record index 属于 archive provenance。内部 canoni
 
 ## 难度
 
-这里有两种不同难度数据：
-
-1. **章节难度**：原版章节选择界面的 1～3 星，直接读取 DAT chapter metadata `packType`；
-2. **关卡筛选难度**：历史 A～F 数据及其余 Campaign map 的估算值。
-
-关卡筛选难度的数据覆盖：
-
-- 288 个 Campaign map 能直接获得历史单关难度标签；
-- 192 个 Campaign map 由构建工具使用已标注关卡特征进行估算；
-- 估算结果在 UI 中带 `≈`，明确区分原始数据与推断数据。
+难度使用原版章节选择界面的 1～3 星，直接读取 DAT chapter metadata `packType`。难度属于章节 Catalog metadata，Explore 与 Adventure 使用同一份章节星级。
 
 ## 现代化原则
 

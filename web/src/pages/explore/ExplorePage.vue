@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { CatalogChapter, CatalogLevel } from "../../services/catalog/catalog.js";
-import DifficultyLegend from "./DifficultyLegend.vue";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
 import ExploreCustomCollection from "./ExploreCustomCollection.vue";
@@ -52,7 +51,6 @@ const emit = defineEmits<{
           @navigate="emit('navigate', $event)"
         />
       </div>
-      <DifficultyLegend />
     </template>
     <template v-else-if="customCollection">
       <ExploreHeader

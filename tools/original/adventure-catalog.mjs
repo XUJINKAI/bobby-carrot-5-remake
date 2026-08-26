@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  adventureLevelId,
+  campaignLevelId,
   campaignSequenceForChapter,
   specialSceneIdForSource,
-} from "../../adventure/dist/index.js";
+} from "./public-ids.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -38,9 +38,6 @@ for (const item of catalog.levels) {
   if (order === undefined)
     throw new Error(`Unknown source release for ${item.id}`);
   const sourceLevelIndex = Number(source.levelIndex);
-  const levelFile = path.join(generated, item.path);
-  const level = JSON.parse(fs.readFileSync(levelFile, "utf8"));
-
   if (String(source.packFile) === "00") {
     const sceneId = specialSceneIdForSource(sourceLevelIndex);
     const scene = {
@@ -55,21 +52,11 @@ for (const item of catalog.levels) {
       sources: item.sources,
     };
     specialScenes.push(scene);
-    Object.assign(level, {
-      publicId: sceneId,
-      contentKind: "special-scene",
-      specialSceneId: sceneId,
-      sourceLevelIndex,
-    });
-    delete level.chapter;
-    delete level.chapterLevel;
-    delete level.chapterTitle;
-    fs.writeFileSync(levelFile, `${JSON.stringify(level, null, 2)}\n`);
     continue;
   }
 
   const chapter = sourceChapterNumber(order, source.packFile);
-  const publicId = adventureLevelId(chapter, sourceLevelIndex);
+  const publicId = campaignLevelId(chapter, sourceLevelIndex);
   const bonusOrdinal =
     sourceLevelIndex === 11 ? 1 : sourceLevelIndex === 12 ? 2 : null;
   const normalized = {
@@ -83,15 +70,6 @@ for (const item of catalog.levels) {
   };
   campaignLevels.push(normalized);
   levelByPublicId.set(publicId, normalized);
-  Object.assign(level, {
-    publicId,
-    contentKind: normalized.contentKind,
-    chapter,
-    chapterLevel: sourceLevelIndex,
-    sourceLevelIndex,
-    bonusOrdinal,
-  });
-  fs.writeFileSync(levelFile, `${JSON.stringify(level, null, 2)}\n`);
 }
 
 if (campaignLevels.length !== 480)

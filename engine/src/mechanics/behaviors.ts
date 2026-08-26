@@ -63,6 +63,7 @@ export type ObjectTouchResult =
   | {
       kind: "dialog";
       text?: string;
+      messageId?: string;
     };
 
 export interface BehaviorDescription {

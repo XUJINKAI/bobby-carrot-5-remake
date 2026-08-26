@@ -62,8 +62,8 @@ function buildMap(collectionId, directory, filename) {
   if (!isSlug(id)) throw new Error(`${collectionId}: 无效地图 ID：${id}`);
   const sourcePath = path.join(directory, filename);
   const level = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
-  if (level.schemaVersion !== 2)
-    throw new Error(`${collectionId}/${id}: schemaVersion 必须为 2`);
+  if (level.schemaVersion !== 3)
+    throw new Error(`${collectionId}/${id}: schemaVersion 必须为 3`);
   if (typeof level.name !== "string" || !level.name.trim())
     throw new Error(`${collectionId}/${id}: name 不能为空`);
   const targetDirectory = path.join(outputRoot, collectionId);

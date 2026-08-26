@@ -38,6 +38,7 @@ test("Editor JSON only stores semantic LevelMap plus authoring metadata", () => 
   assert.deepEqual(Object.keys(map).sort(), [
     "height",
     "objects",
+    "rules",
     "terrain",
     "width",
   ]);
@@ -127,12 +128,18 @@ test("authoring visibility and properties are Engine Definition facts", () => {
   assert.equal(isObjectAuthorable(ObjectId.ICE_MELT_2), false);
   assert.deepEqual(inspectObjectDefinition(ObjectId.SANDMAN).authoring?.properties, [
     {
+      key: "dialogId",
+      kind: "string",
+      label: "对白 ID",
+      placeholder: "例如 custom.sandman.greeting",
+    },
+    {
       key: "dialogue",
       kind: "string",
-      label: "对白",
+      label: "自定义对白",
       multiline: true,
       maxLength: 1000,
-      placeholder: "可选；留空时仍会触发空对白框",
+      placeholder: "可选的即时显示文本",
     },
   ]);
 });

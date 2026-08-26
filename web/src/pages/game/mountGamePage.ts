@@ -339,15 +339,6 @@ function gameShellConfig(
         icon: "back",
         label: identity.title,
         title: "返回",
-        ...(meta
-          ? {
-              badge: {
-                label: meta.difficulty.label,
-                title: "关卡难度",
-                className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
-              },
-            }
-          : {}),
       },
       commands: [
         ...(explore

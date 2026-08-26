@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "name": "Maximum Moves Lab",
   "author": "Bobby Carrot 5 Remake",
   "description": "在 8 步限制内到达出口。",
   "width": 6,
   "height": 3,
-  "rules": { "maxMoves": 8 },
+  "rules": { "maxMoves": 8, "win": { "type": "reach-terrain", "trait": "exit" } },
   "terrain": [
     ["ground-c", "ground-c", "ground-c", "ground-c", "ground-c", "ground-c"],
     ["start", "ground-c", "ground-c", "ground-c", "ground-c", "exit"],

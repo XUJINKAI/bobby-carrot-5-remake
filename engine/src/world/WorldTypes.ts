@@ -30,6 +30,7 @@ export interface WorldEvent {
     | "warning";
   message: string;
   text?: string;
+  messageId?: string;
   x?: number;
   y?: number;
   objectType?: ObjectType;

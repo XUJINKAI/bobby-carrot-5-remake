@@ -27,12 +27,13 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
   terrain[Math.max(0, safeHeight - 3)]![Math.max(0, safeWidth - 3)] =
     Terrain.EXIT;
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     name: "Untitled Bobby Level",
     width: safeWidth,
     height: safeHeight,
     terrain,
     objects: [],
+    rules: { win: defaultWinCondition() },
   };
 }
 
@@ -42,13 +43,13 @@ export function fromLevelMap(
 ): EditorLevel {
   const anchors = collapseObjectLayouts(level.objects);
   return normalizeEditorLevel({
-    schemaVersion: 2,
+    schemaVersion: 3,
     name,
     width: level.width,
     height: level.height,
     terrain: level.terrain.map((row) => [...row]),
     objects: anchors.map(cloneObject),
-    ...(level.rules ? { rules: { ...level.rules } } : {}),
+    ...(level.rules ? { rules: structuredClone(level.rules) } : {}),
   });
 }
 
@@ -59,7 +60,7 @@ export function toLevelMap(level: EditorLevel): LevelMap {
     height: normalized.height,
     terrain: normalized.terrain.map((row) => [...row]),
     objects: normalized.objects.map(cloneObject),
-    ...(normalized.rules ? { rules: { ...normalized.rules } } : {}),
+    ...(normalized.rules ? { rules: structuredClone(normalized.rules) } : {}),
   };
 }
 
@@ -105,7 +106,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     });
   }
   const level: EditorLevel = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     name: String(input.name || "Untitled Bobby Level").slice(0, 120),
     width,
     height,
@@ -116,9 +117,28 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
   if (input.description)
     level.description = String(input.description).slice(0, 500);
   const maxMoves = Number(input.rules?.maxMoves);
-  if (Number.isInteger(maxMoves) && maxMoves > 0)
-    level.rules = { maxMoves };
+  level.rules = {
+    ...(Number.isInteger(maxMoves) && maxMoves > 0 ? { maxMoves } : {}),
+    win: input.rules?.win
+      ? structuredClone(input.rules.win)
+      : defaultWinCondition(),
+  };
   return level;
+}
+
+function defaultWinCondition() {
+  return {
+    type: "all" as const,
+    conditions: [
+      { type: "collect-all" as const, trait: "level-objective" },
+      {
+        type: "fill-all" as const,
+        terrainTrait: "push-goal",
+        objectTrait: "pushable",
+      },
+      { type: "reach-terrain" as const, trait: "exit" },
+    ],
+  };
 }
 
 export function resizeEditorLevel(

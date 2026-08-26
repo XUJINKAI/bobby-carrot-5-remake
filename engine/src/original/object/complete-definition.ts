@@ -49,6 +49,9 @@ export function completeOriginalObjectDefinition(
       "触碰 Sandman 时请求展示对象实例对白",
       (object) => ({
         kind: "dialog",
+        ...(object.properties?.dialogId !== undefined
+          ? { messageId: object.properties.dialogId }
+          : {}),
         ...(object.properties?.dialogue !== undefined
           ? { text: object.properties.dialogue }
           : {}),
@@ -73,10 +76,16 @@ export function completeOriginalObjectDefinition(
     };
   const properties = [...(authoring.properties ?? [])];
   if (source.id === ObjectId.SANDMAN)
-    properties.push({
-      key: "dialogue", kind: "string", label: "对白", multiline: true,
-      maxLength: 1000, placeholder: "可选；留空时仍会触发空对白框",
-    });
+    properties.push(
+      {
+        key: "dialogId", kind: "string", label: "对白 ID",
+        placeholder: "例如 custom.sandman.greeting",
+      },
+      {
+        key: "dialogue", kind: "string", label: "自定义对白", multiline: true,
+        maxLength: 1000, placeholder: "可选的即时显示文本",
+      },
+    );
   if (source.id === ObjectId.LOCK)
     properties.push({
       key: "timedChallengeMs", kind: "string", label: "限时挑战（毫秒）",

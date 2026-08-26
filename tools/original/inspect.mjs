@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { root } from "../lib/fs.mjs";
-import { encodeDatTerrain, encodeDatObject } from "./dat/dist/index.js";
+import { encodeDatTerrain, encodeDatObject } from "./dat/index.mjs";
 
 const showAll = process.argv.includes("--all");
 const previewLimit = 2;
