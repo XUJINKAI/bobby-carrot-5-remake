@@ -5,46 +5,37 @@ import {
   type EditorLevel,
 } from "@bobby/editor";
 import { createApp } from "vue";
-import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
-import type { CustomMapCatalog, LevelCatalog } from "../../services/catalog/catalog.js";
-import {
-  NOOP_CONTROLLER,
-  type Navigate,
-  type PageController,
-} from "../../app/pageContracts.js";
+import type { PageContext, PageController } from "../../app/pageContracts.js";
+import { NOOP_CONTROLLER } from "../../app/pageContracts.js";
+import type { ExploreMapRef } from "../../app/routes.js";
+import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import EditorPage from "./EditorPage.vue";
-import type { ExploreMapRef } from "../../app/routes.js";
-import { resolveExploreMap } from "../../services/catalog/exploreMaps.js";
 import {
   EDITOR_HELP,
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
 
-export interface EditorPageContext {
-  app: HTMLDivElement;
-  catalog: LevelCatalog;
-  customMapCatalog: CustomMapCatalog;
-  audio: TinySynthAudioBackend;
-  navigate: Navigate;
+export interface EditorPageContext extends PageContext {
   mapRef?: ExploreMapRef;
 }
 
 export async function renderEditorPage(
   context: EditorPageContext,
 ): Promise<PageController> {
-  const { app, catalog, customMapCatalog, audio, navigate, mapRef } = context;
+  const { app, audio, navigate, mapRef } = context;
   audio.stopMusic();
   let level: EditorLevel;
   if (mapRef) {
-    const resolved = await resolveExploreMap(catalog, customMapCatalog, mapRef);
-    if (!resolved) {
+    try {
+      const resolved = await resolveMapDocument(mapRef);
+      level = fromLevelMap(resolved.level);
+      level.name = `${resolved.document.meta.name} · 副本`;
+    } catch {
       navigate("/edit");
       return NOOP_CONTROLLER;
     }
-    level = fromLevelMap(resolved.level);
-    level.name = `${resolved.title} · 副本`;
   } else {
     const pending = sessionStorage.getItem("bc5r:pending-editor-level");
     if (pending) {

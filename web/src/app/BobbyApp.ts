@@ -32,7 +32,11 @@ import {
   type ShellViewState,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
-import { NOOP_CONTROLLER, type PageController } from "./pageContracts.js";
+import {
+  NOOP_CONTROLLER,
+  type PageContext,
+  type PageController,
+} from "./pageContracts.js";
 import {
   parseMapPlayUrl,
   type ExploreMapRef,
@@ -75,9 +79,7 @@ export class BobbyApp {
       });
       this.vueRoot = this.vueApp.mount(this.mount) as unknown as AppRootHandle;
     });
-    document.addEventListener("pointerdown", this.resumeAudio, {
-      passive: true,
-    });
+    document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
     await contentReady;
@@ -108,20 +110,12 @@ export class BobbyApp {
 
   private readonly navigate = (path: string): void => {
     const target = new URL(path.replace(/^\/+/, ""), document.baseURI);
-    history.pushState(
-      null,
-      "",
-      `${target.pathname}${target.search}${target.hash}`,
-    );
+    history.pushState(null, "", `${target.pathname}${target.search}${target.hash}`);
     void this.renderRoute();
   };
 
-  private async renderRoute(): Promise<void> {
-    this.controller.destroy();
-    this.controller = NOOP_CONTROLLER;
-    const path = localRoutePath();
-    if (!isDirectMapRoute(path)) await this.ensureIndexes();
-    const context = {
+  private pageContext(): PageContext {
+    return {
       app: this.content,
       collectionsIndex: this.collectionsIndex,
       collections: this.collections,
@@ -129,49 +123,21 @@ export class BobbyApp {
       audio: this.audio,
       navigate: this.navigate,
     };
+  }
+
+  private async renderRoute(): Promise<void> {
+    this.controller.destroy();
+    this.controller = NOOP_CONTROLLER;
+    const path = localRoutePath();
+    if (!isDirectMapRoute(path)) await this.ensureIndexes();
+    const context = this.pageContext();
 
     if (path === "/") {
       this.controller = await renderHome(context);
       return;
     }
     if (path === "/import/v1") {
-      const payload = location.hash.slice(1);
-      try {
-        const imported = await decodeImportedData(payload);
-        if (imported.type === "map") {
-          sessionStorage.setItem(
-            "bc5r:pending-editor-level",
-            serializeEditorLevel(imported.value),
-          );
-          this.controller = await renderGamePage({
-            ...context,
-            level: importedLevelMap(imported.value),
-            identity: {
-              collection: "imported",
-              id: "shared-map",
-              title: imported.value.name,
-            },
-            mode: "explore",
-          });
-          return;
-        }
-        this.controller =
-          imported.type === "adventure-profile"
-            ? renderImportMessage(context, {
-                status: "profile",
-                profile: imported.value,
-              })
-            : renderImportMessage(context, {
-                status: "unknown",
-                message: "无法识别这段 BC5R 数据。",
-                rawText: imported.rawText,
-              });
-      } catch (error) {
-        this.controller = renderImportMessage(context, {
-          status: "error",
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
+      await this.renderImport(context);
       return;
     }
     if (path === "/explore" || path === "/explore/original") {
@@ -183,9 +149,7 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/explore/")) {
-      const collection = decodeURIComponent(
-        path.split("/")[2] ?? "",
-      ).toLowerCase();
+      const collection = decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
       this.controller = await renderLevels(context, collection);
       return;
     }
@@ -221,25 +185,60 @@ export class BobbyApp {
     }
     if (path.startsWith("/edit/")) {
       const parts = path.split("/").filter(Boolean);
-      this.controller =
-        parts.length === 3
-          ? await renderEditorPage({
-              ...context,
-              mapRef: {
-                collection: decodeURIComponent(parts[1] ?? "").toLowerCase(),
-                id: decodeURIComponent(parts[2] ?? "").toLowerCase(),
-              },
-            })
-          : await renderEditorPage(context);
+      this.controller = parts.length === 3
+        ? await renderEditorPage({
+            ...context,
+            mapRef: {
+              collection: decodeURIComponent(parts[1] ?? "").toLowerCase(),
+              id: decodeURIComponent(parts[2] ?? "").toLowerCase(),
+            },
+          })
+        : await renderEditorPage(context);
       return;
     }
     this.navigate("/");
   }
 
-  private async renderExplorePlay(
-    path: string,
-    context: Parameters<typeof renderGamePage>[0],
-  ): Promise<void> {
+  private async renderImport(context: PageContext): Promise<void> {
+    const payload = location.hash.slice(1);
+    try {
+      const imported = await decodeImportedData(payload);
+      if (imported.type === "map") {
+        sessionStorage.setItem(
+          "bc5r:pending-editor-level",
+          serializeEditorLevel(imported.value),
+        );
+        this.controller = await renderGamePage({
+          ...context,
+          level: importedLevelMap(imported.value),
+          identity: {
+            collection: "imported",
+            id: "shared-map",
+            title: imported.value.name,
+          },
+          mode: "explore",
+        });
+        return;
+      }
+      this.controller = imported.type === "adventure-profile"
+        ? renderImportMessage(context, {
+            status: "profile",
+            profile: imported.value,
+          })
+        : renderImportMessage(context, {
+            status: "unknown",
+            message: "无法识别这段 BC5R 数据。",
+            rawText: imported.rawText,
+          });
+    } catch (error) {
+      this.controller = renderImportMessage(context, {
+        status: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  private async renderExplorePlay(path: string, context: PageContext): Promise<void> {
     const ref = parseMapPlayUrl(path);
     if (!ref) {
       this.navigate("/explore");
@@ -269,10 +268,7 @@ export class BobbyApp {
         ...context,
         level: resolved.level,
         mapMeta: resolved.document.meta,
-        identity: {
-          ...resolved.ref,
-          title: resolved.document.meta.name,
-        },
+        identity: { ...resolved.ref, title: resolved.document.meta.name },
         mode: "explore",
       });
     } catch {
@@ -280,10 +276,7 @@ export class BobbyApp {
     }
   }
 
-  private async renderAdventurePlay(
-    path: string,
-    context: Parameters<typeof renderGamePage>[0],
-  ): Promise<void> {
+  private async renderAdventurePlay(path: string, context: PageContext): Promise<void> {
     const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
     const found = findAdventureLevel(this.adventure, id);
     if (!found) {
@@ -355,8 +348,7 @@ function parseMapReference(value: string): ExploreMapRef | null {
 }
 
 function isDirectMapRoute(path: string): boolean {
-  if (path.startsWith("/explore/play/")) return true;
-  return /^\/edit\/[^/]+\/[^/]+$/.test(path);
+  return path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
 }
 
 function defaultShellState(): ShellViewState {
