@@ -2,7 +2,10 @@
 import type { MapCollectionIndex } from "../../services/catalog/catalog.js";
 import ExploreMapCard from "./ExploreMapCard.vue";
 
-defineProps<{ collection: MapCollectionIndex }>();
+defineProps<{
+  collection: MapCollectionIndex;
+  completedIds: Set<string>;
+}>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
@@ -14,6 +17,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
         :key="map.id"
         :collection-id="collection.id"
         :map="map"
+        :completed="completedIds.has(map.id)"
         @navigate="emit('navigate', $event)"
       />
     </div>

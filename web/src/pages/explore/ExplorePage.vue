@@ -60,6 +60,7 @@ function summary(): string {
     <ExploreCustomCollection
       v-else
       :collection="activeCollection"
+      :completed-ids="completedIds"
       @navigate="emit('navigate', $event)"
     />
   </div>
