@@ -1,8 +1,6 @@
 import { BobbyApp } from "./app/BobbyApp.js";
 import "../style.css";
 import "../game-ui.css";
-import "../level-filters.css";
-import "../adventure.css";
 import "../../editor/style.css";
 
 const root = document.querySelector<HTMLDivElement>("#app");

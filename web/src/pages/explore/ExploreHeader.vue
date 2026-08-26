@@ -36,3 +36,43 @@ const emit = defineEmits<{
     </div>
   </section>
 </template>
+
+<style scoped>
+.level-browser-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.section-title {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin: 0;
+}
+
+.section-title h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.section-title p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.level-browser-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .level-browser-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+</style>

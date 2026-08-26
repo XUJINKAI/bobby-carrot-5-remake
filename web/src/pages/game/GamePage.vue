@@ -22,3 +22,49 @@ defineProps<{ mode: GamePageMode }>();
     <GameStage :show-product-stats="true" />
   </div>
 </template>
+
+<style>
+.game-page,
+.game-page .game-stage {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.game-page {
+  display: block;
+}
+
+.original-adventure-game {
+  height: 100%;
+  min-height: 0;
+}
+
+.original-adventure-game .game-stage {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.original-adventure-game #game {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.adventure-game-desktop .debug-panel {
+  display: none !important;
+}
+
+.adventure-game-phone {
+  width: min(100vw, calc(100dvh * 0.625));
+  height: 100dvh;
+}
+
+@media (max-width: 680px) {
+  .adventure-game-phone {
+    width: 100vw;
+    height: 100dvh;
+  }
+}
+</style>

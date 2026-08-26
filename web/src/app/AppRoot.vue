@@ -124,3 +124,69 @@ onMounted(() => {
     />
   </div>
 </template>
+
+<style>
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-areas:
+    "top"
+    "scroll"
+    "bottom";
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--bc-bg);
+}
+
+.app-shell-fixed-top {
+  grid-area: top;
+}
+
+.app-shell-fixed-bottom {
+  grid-area: bottom;
+}
+
+.app-scroll-region {
+  grid-area: scroll;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  min-height: 100%;
+  flex: 1 0 auto;
+}
+
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0 60px;
+}
+
+.app-content:has(.bobby-editor) {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.app-content:has(.home-page) {
+  width: 100%;
+  padding: 0;
+}
+
+.app-content > .adventure-desktop {
+  min-height: 100%;
+  height: 100%;
+}
+
+.app-content > .adventure-desktop .adventure-phone {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  aspect-ratio: 5 / 8;
+}
+</style>

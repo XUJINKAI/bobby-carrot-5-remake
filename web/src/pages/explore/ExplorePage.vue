@@ -72,3 +72,10 @@ const emit = defineEmits<{
     </template>
   </div>
 </template>
+
+<style scoped>
+.chapter-list {
+  display: grid;
+  gap: 14px;
+}
+</style>

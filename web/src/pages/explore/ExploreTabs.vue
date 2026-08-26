@@ -25,3 +25,29 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     >{{ collection.name }}</a>
   </nav>
 </template>
+
+<style scoped>
+.explore-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.explore-tabs a {
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 5px;
+  background: var(--bc-panel);
+  color: #fff;
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  text-decoration: none;
+}
+
+.explore-tabs a.active {
+  background: var(--bc-active);
+  border-color: var(--bc-panel-border);
+  color: #fff;
+}
+</style>

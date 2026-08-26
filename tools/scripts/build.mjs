@@ -47,8 +47,6 @@ for (const file of [
   "index.html",
   "style.css",
   "game-ui.css",
-  "level-filters.css",
-  "adventure.css",
 ]) {
   copyFile(path.join(root, "web", file), path.join(dist, file));
 }

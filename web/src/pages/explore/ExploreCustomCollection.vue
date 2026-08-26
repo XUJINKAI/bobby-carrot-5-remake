@@ -25,3 +25,40 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     </div>
   </section>
 </template>
+
+<style scoped>
+.explore-map-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.explore-map-card {
+  background: var(--panel);
+  border: 3px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 210px;
+  padding: 20px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.explore-map-card:hover,
+.explore-map-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.explore-map-card h2 {
+  margin: 6px 0 8px;
+}
+
+.explore-map-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+</style>

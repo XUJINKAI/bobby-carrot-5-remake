@@ -59,3 +59,62 @@ function importFile(event: Event): void {
     <slot />
   </nav>
 </template>
+
+<style scoped>
+.home-mode-panel {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 4px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
+  box-shadow: 8px 8px 0 #001b5b88;
+}
+
+.home-mode-panel > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.home-mode-panel h2 {
+  margin: 3px 0 0;
+}
+
+.home-mode-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 5px;
+  background: #07518f;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.home-mode-card.primary {
+  border-color: var(--bc-panel-border);
+  background: var(--bc-active);
+}
+
+.home-mode-card strong {
+  font-size: 1rem;
+}
+
+.home-mode-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.home-mode-card b {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 1.2rem;
+}
+</style>

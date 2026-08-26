@@ -67,3 +67,100 @@ function stars(value: number): string {
     </div>
   </section>
 </template>
+
+<style scoped>
+.chapter-card {
+  border: 3px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.chapter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.chapter-head h3 {
+  margin: 3px 0 0;
+  font-size: 1.08rem;
+}
+
+.chapter-number {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.chapter-levels {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(56px, 1fr));
+  gap: 7px;
+}
+
+.chapter-level {
+  position: relative;
+  min-height: 68px;
+  border: 2px solid var(--bc-panel-border);
+  border-radius: 4px;
+  background: #064b8c;
+  color: inherit;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.chapter-level:hover {
+  transform: translateY(-2px);
+  border-color: var(--bc-panel-border);
+  background: var(--bc-active);
+}
+
+.chapter-level.completed {
+  border-color: var(--bc-highlight);
+  background: #07518f;
+}
+
+.chapter-level.bonus-level {
+  outline: 1px solid rgba(247, 212, 95, 0.2);
+}
+
+.chapter-level-no {
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.done-mark {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  color: var(--bc-highlight);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 1080px) {
+  .chapter-levels {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .chapter-levels {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .chapter-level {
+    min-height: 62px;
+  }
+}
+</style>

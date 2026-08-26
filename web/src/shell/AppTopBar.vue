@@ -39,3 +39,110 @@ function action(id: string): void {
     </div>
   </header>
 </template>
+
+<style>
+.app-topbar {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: max(8px, env(safe-area-inset-top)) 14px 8px;
+  border-bottom: 3px solid var(--bc-panel-border);
+  background: var(--bc-panel);
+  z-index: 20;
+}
+
+.shell-topbar-left,
+.shell-topbar-center,
+.shell-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.shell-topbar-left {
+  justify-content: flex-start;
+}
+
+.shell-topbar-center {
+  justify-content: center;
+}
+
+.shell-topbar-right {
+  justify-content: flex-end;
+}
+
+.shell-overflow {
+  position: relative;
+  display: none;
+}
+
+.shell-overflow summary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-height: 34px;
+  padding: 0;
+  border: 2px solid var(--bc-panel-border);
+  border-radius: 5px;
+  background: #07518f;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shell-overflow summary::-webkit-details-marker {
+  display: none;
+}
+
+.shell-overflow summary:hover {
+  background: var(--bc-active);
+}
+
+.shell-overflow-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  min-width: 190px;
+  gap: 4px;
+  padding: 6px;
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 6px;
+  background: var(--bc-panel);
+  box-shadow: 6px 6px 0 #001b5b88;
+}
+
+.shell-overflow-menu .shell-action {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+@media (max-width: 700px) {
+  .app-topbar {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: 58px;
+  }
+
+  .shell-topbar-right > .collapse-overflow,
+  .shell-topbar-center > .collapse-overflow,
+  .shell-topbar-right > .collapse-hide,
+  .shell-topbar-center > .collapse-hide {
+    display: none;
+  }
+
+  .shell-overflow {
+    display: block;
+  }
+
+  .shell-overflow-menu .shell-action-label {
+    display: inline;
+  }
+}
+</style>
