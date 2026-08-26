@@ -76,7 +76,7 @@ export async function renderHome(
   const demoMeta =
     catalog.levels.find((level) => level.publicId === "1-1") ?? last;
   const [demoLevel, canvas] = await Promise.all([
-    fetchJson<OfficialLevelData>(siteUrl(`assets/${demoMeta.path}`)),
+    fetchJson<OfficialLevelData>(siteUrl(`assets/maps/original/${demoMeta.publicId}.json`)),
     canvasReady,
   ]);
   session = await createGameSession({

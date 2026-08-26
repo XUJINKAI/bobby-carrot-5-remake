@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     { "path": "./model" },
-    { "path": "./dat" },
+    { "path": "./tools/original/dat" },
     { "path": "./engine" },
     { "path": "./editor" },
     { "path": "./web" }

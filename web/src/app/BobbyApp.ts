@@ -27,6 +27,7 @@ import {
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import { resolveExploreMap } from "../services/catalog/exploreMaps.js";
+import { mapAssetUrl, parseMapPlayUrl } from "./routes.js";
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import {
   decodeImportedData,
@@ -55,10 +56,10 @@ export class BobbyApp {
 
   async start(): Promise<void> {
     this.catalog = await fetchJson<LevelCatalog>(
-      siteUrl("assets/catalog.json"),
+      siteUrl("assets/maps/catalog.json"),
     );
     this.customMapCatalog = await fetchJson<CustomMapCatalog>(
-      siteUrl("assets/custom-maps.json"),
+      siteUrl("assets/maps/custom-catalog.json"),
     );
     installShellBridge({
       apply: (config, help) => this.applyShell(config, help),
@@ -172,11 +173,13 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/explore/play/")) {
-      const parts = path.split("/").filter(Boolean);
-      const ref = {
-        collection: decodeURIComponent(parts[2] ?? "").toLowerCase(),
-        id: decodeURIComponent(parts[3] ?? "").toLowerCase(),
-      };
+      const ref = parseMapPlayUrl(path);
+      if (!ref) {
+        this.navigate("/explore");
+        return;
+      }
+      ref.collection = ref.collection.toLowerCase();
+      ref.id = ref.id.toLowerCase();
       if (ref.collection === "imported") {
         const pending = sessionStorage.getItem("bc5r:pending-play-level");
         if (!pending) {
@@ -246,7 +249,7 @@ export class BobbyApp {
         return;
       }
       const official = await fetchJson<OfficialLevelData>(
-        siteUrl(`assets/${level.path}`),
+        siteUrl(mapAssetUrl("original", level.publicId)),
       );
       this.controller = await renderGamePage({
         ...context,

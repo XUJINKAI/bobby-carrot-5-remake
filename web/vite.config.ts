@@ -26,7 +26,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    developmentDirectory("/assets", path.join(projectRoot, "assets/generated")),
+    developmentDirectory("/assets", path.join(projectRoot, "assets")),
     developmentDirectory(
       "/vendor",
       path.join(projectRoot, "node_modules/webaudio-tinysynth"),

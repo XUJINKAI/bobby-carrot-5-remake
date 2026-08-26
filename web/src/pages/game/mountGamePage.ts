@@ -4,7 +4,7 @@ import {
   completeAdventureLevel,
   isAdventureLevelUnlocked,
   planAdventureSession,
-  prepareAdventureLevel,
+  createAdventureLevelInstance,
   type AdventureSave,
 } from "@bobby/adventure";
 import { ObjectId } from "@bobby/engine";
@@ -82,7 +82,7 @@ export async function renderGamePage(
     ? planAdventureSession(meta!.publicId, adventureSave)
     : null;
   const sessionLevel = adventureSave
-    ? prepareAdventureLevel(meta!.publicId, level, adventureSave)
+    ? createAdventureLevelInstance(meta!.publicId, level, adventureSave)
     : level;
   const screenControlEnabled = loadScreenControlPreference();
   const shellConfig = gameShellConfig(

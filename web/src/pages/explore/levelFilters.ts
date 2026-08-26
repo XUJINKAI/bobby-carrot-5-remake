@@ -163,7 +163,7 @@ async function loadIndex(): Promise<LevelFilterIndex> {
   if (filterIndex) return filterIndex;
   if (!loadPromise)
     loadPromise = fetchJson<LevelFilterIndex>(
-      new URL("assets/level-filters.json", document.baseURI).href,
+      new URL("assets/maps/filters.json", document.baseURI).href,
     );
   return loadPromise;
 }

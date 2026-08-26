@@ -5,14 +5,14 @@ import path from "node:path";
 import {
   encodeLevelRecord,
   parseDatPackage,
-} from "../../tools/src/level-format.mjs";
+} from "../../tools/original/level-format.mjs";
 
 function decodeEdition(edition) {
   const levels = [];
   for (let pack = 0; pack <= 4; pack += 1) {
     const file = pack.toString().padStart(2, "0");
     const buffer = fs.readFileSync(
-      path.resolve(`assets/extracted/${edition}/${file}.dat`),
+      path.resolve(`original/extracted/${edition}/${file}.dat`),
     );
     levels.push(...parseDatPackage(buffer, { edition, packFile: file }).levels);
   }
@@ -26,10 +26,10 @@ test("Base 与 UP9 都能解码为 53 个 source level", () => {
 
 test("base and UP9 share the five 00.dat levels byte-for-byte", () => {
   const base = parseDatPackage(
-    fs.readFileSync("assets/extracted/base/00.dat"),
+    fs.readFileSync("original/extracted/base/00.dat"),
     { edition: "base", packFile: "00" },
   );
-  const hd = parseDatPackage(fs.readFileSync("assets/extracted/up09/00.dat"), {
+  const hd = parseDatPackage(fs.readFileSync("original/extracted/up09/00.dat"), {
     edition: "up09",
     packFile: "00",
   });
@@ -42,7 +42,7 @@ test("base and UP9 share the five 00.dat levels byte-for-byte", () => {
 
 test("level 001 crosses the DAT boundary as semantic schema v2", () => {
   const parsed = parseDatPackage(
-    fs.readFileSync("assets/extracted/base/00.dat"),
+    fs.readFileSync("original/extracted/base/00.dat"),
     { edition: "base", packFile: "00" },
   );
   const level = parsed.levels[0];
@@ -61,7 +61,7 @@ test("level 001 crosses the DAT boundary as semantic schema v2", () => {
 });
 
 test("semantic level can encode back to the exact original DAT record", () => {
-  const dat = fs.readFileSync("assets/extracted/base/00.dat");
+  const dat = fs.readFileSync("original/extracted/base/00.dat");
   const parsed = parseDatPackage(dat, { edition: "base", packFile: "00" });
   const level = parsed.levels[0];
   assert.ok(level);

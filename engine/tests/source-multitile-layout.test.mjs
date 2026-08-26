@@ -10,7 +10,7 @@ function countObject(level, type) {
 
 test("all 485 original unique maps preserve implicit multi-cell objects as unambiguous anchors", () => {
   const catalog = JSON.parse(
-    fs.readFileSync("assets/generated/catalog.json", "utf8"),
+    fs.readFileSync("assets/maps/catalog.json", "utf8"),
   );
   const entries = [...catalog.levels, ...catalog.specialScenes];
   assert.equal(entries.length, 485);
@@ -23,7 +23,7 @@ test("all 485 original unique maps preserve implicit multi-cell objects as unamb
 
   for (const entry of entries) {
     const level = JSON.parse(
-      fs.readFileSync(path.join("assets/generated", entry.path), "utf8"),
+      fs.readFileSync(path.join("assets", `maps/original/${entry.publicId}.json`), "utf8"),
     );
     stats.dragon.anchor += countObject(level, ObjectId.DRAGON_HEAD_BASE);
     stats.dragon.body += countObject(level, ObjectId.DRAGON_BODY);

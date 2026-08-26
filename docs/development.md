@@ -74,13 +74,15 @@ dist/
 node_modules/
 dist/
 model/dist/
-dat/dist/
+tools/original/dat/dist/
 adventure/dist/
 engine/dist/
 editor/dist/
 web/dist-src/
-assets/extracted/
-assets/generated/
+original/extracted/
+original/decoded/
+original/adapted/
+assets/
 tmp/
 ```
 

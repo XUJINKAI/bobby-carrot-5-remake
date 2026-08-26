@@ -4,7 +4,7 @@ import { ObjectId, Terrain } from "../../model/dist/index.js";
 import {
   augmentAdventureLevel,
   createAdventureSave,
-  prepareAdventureLevel,
+  createAdventureLevelInstance,
 } from "../dist/index.js";
 
 function sandmanLevel() {
@@ -35,7 +35,7 @@ test("Adventure can add dialogue without changing the base LevelMap", () => {
 });
 
 test("prepareAdventureLevel applies property patches before Engine", () => {
-  const prepared = prepareAdventureLevel(
+  const prepared = createAdventureLevelInstance(
     "1-1",
     sandmanLevel(),
     createAdventureSave(),
