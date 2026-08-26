@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { EditorLevel } from "@bobby/editor";
-import { reactive, watch } from "vue";
+import { parseEditorLevel, serializeEditorLevel, type EditorLevel } from "@bobby/editor";
+import { computed, reactive, watch } from "vue";
+import { publicBaseUrl } from "../../services/assets/gameAssets.js";
+import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 
 const props = defineProps<{ open: boolean; level: Readonly<EditorLevel> }>();
 const emit = defineEmits<{
   close: [];
-  import: [file: File];
-  export: [metadata: { name: string; author?: string; description?: string }];
+  import: [level: EditorLevel];
+  saved: [metadata: { name: string; author?: string; description?: string }];
 }>();
 const metadata = reactive({ name: "", author: "", description: "" });
 watch(
@@ -18,6 +20,42 @@ watch(
   },
   { immediate: true },
 );
+const exchangeLevel = computed<EditorLevel>(() => {
+  const level: EditorLevel = { ...props.level, name: metadata.name };
+  delete level.author;
+  delete level.description;
+  if (metadata.author) level.author = metadata.author;
+  if (metadata.description) level.description = metadata.description;
+  return level;
+});
+const toolbar = {
+  left: [
+    { type: "importText" as const, label: "应用" },
+    { type: "importFile" as const, label: "导入文件" },
+  ],
+  right: [
+    { type: "status" as const },
+    { type: "compress" as const, label: "压缩" },
+    { type: "copy" as const, label: "复制" },
+    { type: "download" as const, label: "下载" },
+  ],
+};
+
+function parseMap(value: unknown): EditorLevel {
+  return parseEditorLevel(JSON.stringify(value));
+}
+
+function serializeMap(value: unknown): string {
+  return serializeEditorLevel(value as EditorLevel);
+}
+
+function metadataValue(): { name: string; author?: string; description?: string } {
+  return {
+    name: metadata.name,
+    ...(metadata.author ? { author: metadata.author } : {}),
+    ...(metadata.description ? { description: metadata.description } : {}),
+  };
+}
 </script>
 
 <template>
@@ -27,11 +65,18 @@ watch(
       <label class="editor-field"><span>名称</span><input v-model="metadata.name" maxlength="120"></label>
       <label class="editor-field"><span>作者</span><input v-model="metadata.author" maxlength="80" placeholder="可选"></label>
       <label class="editor-field"><span>描述</span><textarea v-model="metadata.description" maxlength="500" rows="3" placeholder="可选" /></label>
-      <p class="editor-muted">用户地图使用语义 JSON，包含地图信息、Terrain、Object 与对象实例属性。</p>
-      <div class="editor-dialog-actions">
-        <label class="editor-btn editor-file-button">导入 JSON<input type="file" accept="application/json,.json" @change="($event.target as HTMLInputElement).files?.[0] && emit('import', ($event.target as HTMLInputElement).files![0]!)"></label>
-        <button class="editor-btn editor-primary" type="button" @click="emit('export', { name: metadata.name, ...(metadata.author ? { author: metadata.author } : {}), ...(metadata.description ? { description: metadata.description } : {}) })">导出 JSON</button>
-      </div>
+      <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
+      <DataExchangePanel
+        :value="exchangeLevel"
+        :serialize="serializeMap"
+        :parse="parseMap"
+        :public-base-url="publicBaseUrl()"
+        :filename="metadata.name || 'bc5r-map'"
+        :toolbar="toolbar"
+        :reset-key="open ? `${level.name}:${level.width}:${level.height}` : 'closed'"
+        @import="emit('import', $event as EditorLevel)"
+        @downloaded="emit('saved', metadataValue())"
+      />
     </section>
   </div>
 </template>

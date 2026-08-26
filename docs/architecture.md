@@ -337,17 +337,17 @@ Editor 持久化 `EditorLevel extends LevelMap`：
 - `LevelObject.properties`；
 - multi-cell 只保存 anchor。
 
-用户地图的唯一长期交换格式是 JSON：
+用户地图的长期内容格式是 JSON，浏览器 Data Exchange 为它提供统一传输表示：
 
 ```text
-JSON Import
-     ↓
+TextBox / Clipboard / File / Share URL
+     ↓ Data Exchange decode
+unknown JSON
+     ↓ Editor parser
 EditorLevel / LevelMap
-     ↓
-JSON Export
 ```
 
-Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。未来如果重新设计分享格式，需要单独定义新的产品协议，不能把原版 DAT 重新带回 Web/Editor 依赖链。
+Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
 Inspector 根据 Engine Definition 的 `authoring.properties` 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `timedChallengeMs` 都通过这条通用路径编辑并由 JSON round-trip 保留。
 
@@ -355,7 +355,7 @@ Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有�
 
 ## Web
 
-Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Settings、localStorage/file adapters 和 Result 流程。
+Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Settings、Data Exchange、localStorage/file adapters 和 Result 流程。
 
 Web 不依赖 `@bobby/dat`，产品 `dist/` 也不发布 `dat/` browser module。
 

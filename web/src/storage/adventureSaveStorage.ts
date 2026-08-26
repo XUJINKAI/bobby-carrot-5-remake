@@ -30,19 +30,18 @@ export function resetAdventureSave(): AdventureSave {
   return save;
 }
 
-export function exportAdventureSave(): void {
-  const blob = new Blob([serializeAdventureSave(loadAdventureSave())], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `bc5r-save-${new Date().toISOString().slice(0, 10)}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+export function parseAdventureProfileExchange(value: unknown): AdventureSave {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    (value as Record<string, unknown>).game !== "bc5r" ||
+    (value as Record<string, unknown>).schemaVersion !== 1 ||
+    typeof (value as Record<string, unknown>).campaign !== "object" ||
+    typeof (value as Record<string, unknown>).economy !== "object"
+  ) {
+    throw new Error("这段数据不是有效 Adventure Profile");
+  }
+  return parseAdventureSave(JSON.stringify(value));
 }
 
-export async function importAdventureSave(file: File): Promise<AdventureSave> {
-  const save = parseAdventureSave(await file.text());
-  return saveAdventureSave(save);
-}
+export { parseAdventureSave, serializeAdventureSave };

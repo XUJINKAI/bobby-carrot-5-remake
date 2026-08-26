@@ -3,11 +3,13 @@ import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import type { HelpDescriptor } from "../../shell/shellBridge.js";
 import HelpDialog from "./HelpDialog.vue";
 import SettingsDialog from "./SettingsDialog.vue";
+import type { AdventureSave } from "@bobby/adventure";
 
 defineProps<{
   kind: "settings" | "help";
   help: HelpDescriptor;
   settings: GlobalSettingsState;
+  profile: AdventureSave;
   feedback: string;
 }>();
 const emit = defineEmits<{
@@ -18,8 +20,7 @@ const emit = defineEmits<{
   tone: [value: "fm" | "chip"];
   reverb: [value: number];
   screenControl: [value: boolean];
-  exportSave: [];
-  importSave: [file: File];
+  importSave: [save: AdventureSave];
   resetSave: [];
   feedback: [message: string];
 }>();
@@ -30,6 +31,7 @@ const emit = defineEmits<{
     <SettingsDialog
       v-if="kind === 'settings'"
       :state="settings"
+      :profile="profile"
       :feedback="feedback"
       @close="emit('close')"
       @music-enabled="emit('musicEnabled', $event)"
@@ -38,7 +40,6 @@ const emit = defineEmits<{
       @tone="emit('tone', $event)"
       @reverb="emit('reverb', $event)"
       @screen-control="emit('screenControl', $event)"
-      @export-save="emit('exportSave')"
       @import-save="emit('importSave', $event)"
       @reset-save="emit('resetSave')"
       @feedback="emit('feedback', $event)"
@@ -68,6 +69,10 @@ const emit = defineEmits<{
   background: var(--bc-panel);
   color: #eef5ef;
   box-shadow: 8px 8px 0 #001b5b99;
+}
+
+.global-dialog.settings-dialog {
+  width: min(660px, 100%);
 }
 
 .global-dialog > header {

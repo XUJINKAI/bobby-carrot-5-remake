@@ -2,6 +2,10 @@ export function siteUrl(path: string): string {
   return new URL(path.replace(/^\/+/, ""), document.baseURI).href;
 }
 
+export function publicBaseUrl(): string {
+  return import.meta.env.VITE_PUBLIC_BASE_URL || new URL(".", document.baseURI).href;
+}
+
 export function gameAssets() {
   return {
     atlasUrl: siteUrl("assets/art/hd/ts.png"),

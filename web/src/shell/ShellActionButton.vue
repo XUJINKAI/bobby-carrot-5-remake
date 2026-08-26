@@ -6,7 +6,7 @@ const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 const icons: Record<string, string> = {
   back: "←", edit: "✎", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
   music: "♫", palette: "▦", play: "▶", redo: "↷", restart: "↻",
-  settings: "⚙", stop: "■", undo: "↶",
+  settings: "⚙", share: "↗", stop: "■", undo: "↶",
 };
 
 function activate(): void {

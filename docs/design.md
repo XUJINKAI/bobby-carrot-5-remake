@@ -9,7 +9,7 @@ Bobby Carrot 5 Remake 是第五代的现代浏览器重制与原版研究工程�
 - **Adventure**：尽量恢复原作 Campaign、存档、经济、章节选择和手机竖屏信息限制；
 - **Explore**：现代化自由浏览，全部普通关与 Bonus 奖励关开放、可筛选、可调试、可自由缩放。
 
-自定义地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。用户地图的长期交换格式是 JSON，不把原版 DAT 暴露成产品格式。
+自定义地图与 Editor Play Test 使用独立的 Engine gameplay 流程；Adventure Campaign 由 `@bobby/adventure` 负责。用户地图的长期内容格式是 JSON；Data Exchange 可以把 JSON 表示为 `BC5R1` 压缩文本、分享 URL 或 `.bc5r` 文本文件，不把原版 DAT 暴露成产品格式。
 
 ## 保留
 
@@ -64,7 +64,7 @@ Editor 编辑的是与 Engine 共用的 semantic `LevelMap`：
 - 对象实例能力放在 `LevelObject.traits`，可选项由 Engine Definition 的 `authoring.traits` 声明；
 - Inspector 根据 Engine Definition 的 authoring metadata 生成当前需要的属性控件；
 - 当前 Sandman 支持可选 `dialogue`；
-- JSON Import / Export 是唯一用户地图交换格式。
+- 语义 JSON 是用户地图的长期内容格式，TextBox、剪贴板、`.json`、`.bc5r` 与分享 URL 使用统一 Data Exchange 流程；
 
 不提供 DAT 导入导出，也不把 DAT 当作 URL 分享编码。DAT 是原版研究与验证格式，不是面向玩家的地图格式。
 
@@ -112,7 +112,7 @@ Base / UP、DAT package、record index 属于 archive provenance。内部 canoni
 现代化集中在浏览器外壳、操作和可访问性，同时保留原版谜题设计依赖的信息边界：
 
 - 键盘、触摸、Swipe / Pinch；
-- JSON 地图与存档导入导出；
+- JSON 地图与存档的文本、文件及分享链接交换；
 - Engine Debug / Tile Inspector；
 - 可替换 AudioBackend；
 - Explore 自由视野；

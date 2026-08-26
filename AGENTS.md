@@ -26,6 +26,31 @@
 7. 可机械验证的质量规则必须进入 `npm run verify`。`AGENTS.md` 负责说明规则，verify 才是强制门禁。
 8. 项目在文档与 Web 用户界面中的正式名称统一为 **Bobby Carrot 5 Remake**；不得使用历史产品名或缩略显示名替代正式名称。包名、仓库名和 `bc5r` 内部代号不受此规则影响。
 
+## 本地 AI 代码修改流程
+
+1. 开始任务前检查当前分支和工作区状态，确认已有修改归属；保留用户已有工作，避免把无关修改带入任务。
+2. 以本地 `main` 为分支基线创建任务分支。工作区干净时使用：
+
+   ```sh
+   git switch main
+   git pull --ff-only
+   git switch -c <task-branch>
+   ```
+
+   如果本地 `main` 已经由用户确认是最新基线，可以跳过同步步骤，直接从该节点创建分支。
+3. 按职责边界和可回滚的工作阶段组织修改。每完成一个逻辑完整阶段，先运行与该阶段相关的检查，再创建一个内容聚焦的 commit；提交信息应准确描述当前阶段的结果。
+4. 阶段 commit 应保持可审查、可回滚，并包含必要的测试、文档和验证规则。构建产物、生成目录和临时文件遵循本文件的生成物规则。
+5. 完成代码后必须运行 `npm run verify` 和 `npm run verify:browser`，检查工作区状态，并确认最终改动已经提交到当前任务分支。
+6. 输出 PR message 前，以 `main` 为比较基线检查：
+
+   ```sh
+   git log --oneline main..HEAD
+   git diff --stat main...HEAD
+   git diff --check main...HEAD
+   ```
+
+   PR message 根据当前分支相对 `main` 的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
+
 ## Engine 总原则
 
 **给 Engine 一个纯语义 `LevelMap`（JSON 地图）和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
