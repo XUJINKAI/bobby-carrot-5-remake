@@ -42,6 +42,7 @@ function stars(value: number): string {
         v-for="level in levels"
         :key="level.publicId"
         class="chapter-level"
+        :data-level-id="level.publicId"
         :class="{
           completed: completedIds.has(level.canonicalId),
           'bonus-level': level.contentKind === 'bonus',
