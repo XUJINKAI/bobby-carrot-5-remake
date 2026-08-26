@@ -14,24 +14,22 @@ defineProps<{
 const emit = defineEmits<{ navigate: [path: string] }>();
 
 function stars(value: number | undefined): string {
-  if (!value) return "";
-  return `${"★".repeat(value)}${"☆".repeat(Math.max(0, 3 - value))}`;
+  return value ? "★".repeat(value) : "";
 }
 </script>
 
 <template>
   <section class="chapter-card">
     <header class="chapter-head">
-      <div>
-        <div class="chapter-number">
-          CHAPTER {{ chapter.id }}
-          <span
-            v-if="chapter.difficulty"
-            class="chapter-stars"
-            :title="`章节难度 ${chapter.difficulty} 星`"
-          >{{ stars(chapter.difficulty) }}</span>
-        </div>
-        <h3>{{ chapter.name }}</h3>
+      <div class="chapter-title-line">
+        <span class="chapter-id">{{ chapter.id }}</span>
+        <span class="chapter-separator">·</span>
+        <span class="chapter-name">{{ chapter.name }}</span>
+        <span
+          v-if="chapter.difficulty"
+          class="chapter-stars"
+          :title="`章节难度 ${chapter.difficulty} 星`"
+        >{{ stars(chapter.difficulty) }}</span>
       </div>
       <span class="muted chapter-count">{{ maps.length }} 关</span>
     </header>
@@ -60,19 +58,37 @@ function stars(value: number | undefined): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
-.chapter-head h3 {
-  margin: 3px 0 0;
-  font-size: 1.08rem;
+.chapter-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
-.chapter-number {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  font-weight: 800;
+.chapter-id,
+.chapter-separator,
+.chapter-stars {
+  flex: 0 0 auto;
+}
+
+.chapter-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.chapter-stars {
+  letter-spacing: 0.04em;
 }
 
 .explore-map-grid {
@@ -82,6 +98,14 @@ function stars(value: number | undefined): string {
 }
 
 @media (max-width: 700px) {
+  .chapter-head {
+    align-items: flex-start;
+  }
+
+  .chapter-title-line {
+    flex-wrap: wrap;
+  }
+
   .explore-map-grid {
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
