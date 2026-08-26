@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import {
   decodeExchangeText,
   detectExchangeFormat,
   encodeExchangeText,
-} from "../../tmp/web-tests/shared/data-exchange/dataExchangeCodec.js";
+} from "../src/shared/data-exchange/dataExchangeCodec.ts";
 import {
   buildImportUrl,
   extractImportPayload,
-} from "../../tmp/web-tests/shared/data-exchange/dataExchangeUrl.js";
+} from "../src/shared/data-exchange/dataExchangeUrl.ts";
 
 test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
   const values = [

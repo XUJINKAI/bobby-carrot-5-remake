@@ -25,6 +25,18 @@ run(
   ],
   { shell: true },
 );
-fs.rmSync(path.join(root, "tmp/web-tests"), { recursive: true, force: true });
-run(tscCommand(), ["-p", "web/tsconfig.test.json"]);
-run(process.execPath, ["--test", "web/tests/*.test.mjs"], { shell: true });
+// Web tests 由 Vitest 通过 Vite 直接加载 TypeScript 源码，不生成 tmp/web-tests。
+run(
+  "npm",
+  [
+    "exec",
+    "--yes",
+    "--package=vitest@4.1.11",
+    "--",
+    "vitest",
+    "run",
+    "--root",
+    "web",
+  ],
+  { shell: process.platform === "win32" },
+);
