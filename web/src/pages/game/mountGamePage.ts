@@ -274,7 +274,9 @@ export async function renderGamePage(
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
       navigate(backPath(identity, meta, mode));
-    } else if (action === "edit") navigate(editorMapPath(identity));
+    } else if (action === "edit") {
+      navigate(identity.collection === "imported" ? "/edit" : editorMapPath(identity));
+    }
     else if (action === "undo") askUndo();
     else if (action === "redo") askRedo();
     else if (action === "restart") askRestart();
@@ -400,7 +402,9 @@ function backPath(
 ): string {
   return mode === "adventure"
     ? `/adventure/chapter/${meta!.chapter}`
-    : exploreCollectionPath(identity.collection);
+    : identity.collection === "imported"
+      ? "/"
+      : exploreCollectionPath(identity.collection);
 }
 function bindGameShell(
   input: {

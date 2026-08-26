@@ -27,6 +27,12 @@ import {
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import { resolveExploreMap } from "../services/catalog/exploreMaps.js";
+import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import {
+  decodeImportedData,
+  importedLevelMap,
+  renderImportMessage,
+} from "../pages/import/mountImportPage.js";
 
 interface AppRootHandle {
   openSettings(feedback?: string): void;
@@ -125,6 +131,42 @@ export class BobbyApp {
       this.controller = await renderHome(context);
       return;
     }
+    if (path === "/import/v1") {
+      const payload = location.hash.slice(1);
+      try {
+        const imported = await decodeImportedData(payload);
+        if (imported.type === "map") {
+          sessionStorage.setItem(
+            "bc5r:pending-editor-level",
+            serializeEditorLevel(imported.value),
+          );
+          this.controller = await renderGamePage({
+            ...context,
+            level: importedLevelMap(imported.value),
+            identity: {
+              collection: "imported",
+              id: "shared-map",
+              title: imported.value.name,
+            },
+            mode: "explore",
+          });
+          return;
+        }
+        this.controller = imported.type === "adventure-profile"
+          ? renderImportMessage(context, { status: "profile", profile: imported.value })
+          : renderImportMessage(context, {
+              status: "unknown",
+              message: "无法识别这段 BC5R 数据。",
+              rawText: imported.rawText,
+            });
+      } catch (error) {
+        this.controller = renderImportMessage(context, {
+          status: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return;
+    }
     if (path === "/explore" || path === "/explore/original") {
       this.controller = await renderLevels(context, "original");
       return;
@@ -135,6 +177,22 @@ export class BobbyApp {
         collection: decodeURIComponent(parts[2] ?? "").toLowerCase(),
         id: decodeURIComponent(parts[3] ?? "").toLowerCase(),
       };
+      if (ref.collection === "imported") {
+        const pending = sessionStorage.getItem("bc5r:pending-play-level");
+        if (!pending) {
+          this.navigate("/");
+          return;
+        }
+        const level = parseEditorLevel(pending);
+        sessionStorage.setItem("bc5r:pending-editor-level", pending);
+        this.controller = await renderGamePage({
+          ...context,
+          level: importedLevelMap(level),
+          identity: { ...ref, title: level.name },
+          mode: "explore",
+        });
+        return;
+      }
       const resolved = await resolveExploreMap(
         this.catalog,
         this.customMapCatalog,

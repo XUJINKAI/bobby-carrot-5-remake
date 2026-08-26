@@ -2,6 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import { gzipSync } from "node:zlib";
 import { root } from "./util.mjs";
 import { serveDistRequest } from "./static-server.mjs";
 const webRoot = path.join(root, "dist");
@@ -101,6 +102,32 @@ try {
     'class="bobby-editor"',
     "Pushbox 1 · 副本",
   ]);
+  const mapPayload = exchangePayload(
+    fs.readFileSync(path.join(root, "editor/examples/mechanics-smoke.json"), "utf8"),
+  );
+  const { createAdventureSave, serializeAdventureSave } = await import(
+    "../../adventure/dist/index.js"
+  );
+  const profilePayload = exchangePayload(
+    serializeAdventureSave(createAdventureSave()),
+  );
+  await smoke(`${origin}/import/v1#${mapPayload}`, [
+    'class="game-page"',
+    'id="game"',
+  ]);
+  await smoke(`${origin}/import/v1#${profilePayload}`, [
+    'class="import-page"',
+    "Adventure Profile",
+    "导入并覆盖",
+  ]);
+  await smoke(`${origin}/import/v1#${exchangePayload("{}")}`, [
+    'class="import-page"',
+    "无法识别这段 BC5R 数据",
+  ]);
+  await smoke(`${origin}/import/v1#INVALID`, [
+    'class="import-page"',
+    "BC5R1",
+  ]);
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");
   await expectStatus(`${origin}/model/missing`, 404, "text/plain");
@@ -110,6 +137,10 @@ try {
   );
 } finally {
   await new Promise((resolve) => server.close(resolve));
+}
+
+function exchangePayload(text) {
+  return gzipSync(Buffer.from(text, "utf8")).toString("base64url");
 }
 async function expectStatus(url, expectedStatus, typePrefix) {
   const response = await fetch(url);

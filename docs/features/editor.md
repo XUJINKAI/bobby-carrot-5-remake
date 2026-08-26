@@ -93,16 +93,17 @@ Web 把 snapshot 转成纯 `LevelMap`，通过 `web/src/runtime/game/createGameS
 
 ## 文件与产品入口
 
-用户地图的长期交换动作是：
+用户地图以语义 JSON 作为长期内容格式，并通过公共 Data Exchange 交换：
 
 ```text
-JSON Import
-JSON Export
+TextBox / Clipboard / File / Share URL
+                 ↓
+        JSON / BC5R1 transport
 ```
 
-Home 的 Import Dialog 读取 JSON 后展示地图摘要，并提供“游玩”和“编辑”两个入口。Custom Play 可以用相同语义地图重新进入 Editor。
+Home 的导入面板接受 JSON、`BC5R1`、分享 URL、`.json` 和 `.bc5r`，解析成功后打开地图。Custom Play 可以用相同语义地图重新进入 Editor。
 
-当前产品没有 URL share 协议。未来增加分享能力时，应为语义 JSON 单独定义版本化产品协议，并保留 `name / author / description` 与 `LevelObject.properties`。
+分享协议只编码语义 JSON，并保留 `name / author / description` 与 `LevelObject.properties`。Transport 与 UI 合同见 [`data-exchange.md`](data-exchange.md)。
 
 Editor 工作区、Play Test 与 Custom Map 的页面结构见 [`ui.md`](ui.md)。
 

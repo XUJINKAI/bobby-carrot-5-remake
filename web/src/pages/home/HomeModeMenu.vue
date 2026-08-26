@@ -1,17 +1,27 @@
 <script setup lang="ts">
+import { parseEditorLevel, serializeEditorLevel, type EditorLevel } from "@bobby/editor";
 import { ref } from "vue";
+import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 
 const emit = defineEmits<{
   navigate: [path: string];
-  importMap: [file: File];
+  importMap: [level: EditorLevel];
 }>();
-const fileInput = ref<HTMLInputElement | null>(null);
+const importOpen = ref(false);
+const toolbar = {
+  left: [],
+  right: [
+    { type: "importText" as const, label: "打开" },
+    { type: "importFile" as const, label: "导入文件" },
+  ],
+};
 
-function importFile(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (file) emit("importMap", file);
-  input.value = "";
+function parseMap(value: unknown): EditorLevel {
+  return parseEditorLevel(JSON.stringify(value));
+}
+
+function serializeMap(value: unknown): string {
+  return serializeEditorLevel(value as EditorLevel);
 }
 </script>
 
@@ -45,17 +55,20 @@ function importFile(event: Event): void {
     <button
       class="home-mode-card"
       type="button"
-      @click="fileInput?.click()"
+      @click="importOpen = !importOpen"
     >
       <strong>导入自定义地图</strong><span>打开语义 JSON Draft</span><b>＋</b>
     </button>
-    <input
-      ref="fileInput"
-      type="file"
-      accept="application/json,.json"
-      hidden
-      @change="importFile"
-    >
+    <DataExchangePanel
+      v-if="importOpen"
+      class="home-data-exchange"
+      :serialize="serializeMap"
+      :parse="parseMap"
+      placeholder="粘贴地图 JSON、BC5R 文本或分享链接……"
+      filename="bc5r-map"
+      :toolbar="toolbar"
+      @import="emit('importMap', $event as EditorLevel)"
+    />
     <slot />
   </nav>
 </template>
@@ -116,5 +129,9 @@ function importFile(event: Event): void {
   grid-row: 1 / span 2;
   align-self: center;
   font-size: 1.2rem;
+}
+
+.home-data-exchange {
+  margin-top: 4px;
 }
 </style>

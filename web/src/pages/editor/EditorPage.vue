@@ -6,7 +6,6 @@ import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.
 import { siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
-import { downloadEditorFile, readEditorFile } from "./editorFiles.js";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
 import { useEditorPage } from "./useEditorPage.js";
@@ -80,24 +79,18 @@ function stopPlay(): void {
   page.playing.value = false;
 }
 
-async function importFile(file: File): Promise<void> {
-  try {
-    page.document.load(await readEditorFile(file));
-    page.fileDialogOpen.value = false;
-  } catch (error) {
-    window.alert(error instanceof Error ? error.message : String(error));
-  }
+function importLevel(level: EditorLevel): void {
+  page.document.load(level);
+  page.fileDialogOpen.value = false;
 }
 
-function exportFile(metadata: {
+function markDownloaded(metadata: {
   name: string;
   author?: string;
   description?: string;
 }): void {
   page.updateMetadata(metadata);
-  downloadEditorFile(page.snapshot.value.level as EditorLevel);
   page.document.markSaved();
-  page.fileDialogOpen.value = false;
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -209,8 +202,8 @@ function isTextInput(target: EventTarget | null): boolean {
       :open="page.fileDialogOpen.value"
       :level="page.snapshot.value.level"
       @close="page.fileDialogOpen.value = false"
-      @import="importFile"
-      @export="exportFile"
+      @import="importLevel"
+      @saved="markDownloaded"
     />
   </div>
 </template>

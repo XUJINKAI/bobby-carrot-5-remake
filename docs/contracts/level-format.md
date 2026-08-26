@@ -125,16 +125,18 @@ DAT Object table 和所有 authoring/persistence 模型只保存 anchor。Dragon
 
 Editor JSON 是 Bobby Carrot 5 Remake 自定义长期编辑格式，`schemaVersion=2`，额外允许 `name / author / description`。它保持 semantic ID、anchor object 与 `LevelObject.properties`，不保存 raw DAT 或 Adventure state。
 
-当前用户地图只有两个文件动作：
+用户地图的长期内容是语义 JSON。Web Data Exchange 可以通过以下载体搬运同一内容：
 
 ```text
-JSON Import
-JSON Export
+Plain JSON
+BC5R1 compressed text
+Share URL fragment
+.json / .bc5r text file
 ```
 
 JSON round-trip 必须保留已定义对象实例参数。
 
-当前没有 URL share 产品协议。未来如果重新加入分享功能，应单独定义新格式；不能以复用原版 DAT 为理由重新建立 Web/Editor → `@bobby/dat` 依赖。
+`BC5R1` 是 JSON 的传输编码版本，不是关卡 schema 版本，也不包含 DAT。协议见 [`../features/data-exchange.md`](../features/data-exchange.md)。
 
 ## Adventure 地图增强
 

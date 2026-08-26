@@ -69,7 +69,8 @@ export async function renderHome(
           id: randomCatalogLevel(catalog).publicId,
         }),
       ),
-    onImportMap: (file: File) => importHomeMap(file, view, navigate),
+    onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
+      importHomeMap(level, view, navigate),
   });
   homeApp.mount(app);
   const demoMeta =
@@ -135,22 +136,13 @@ export async function renderHome(
 }
 
 function importHomeMap(
-  file: File,
+  level: ReturnType<typeof parseEditorLevel>,
   view: HomeViewState,
   navigate: PageContext["navigate"],
 ): void {
-  void file
-    .text()
-    .then((text) => {
-      const level = parseEditorLevel(text);
-      sessionStorage.setItem(
-        "bc5r:pending-editor-level",
-        serializeEditorLevel(level),
-      );
-      navigate("/edit");
-    })
-    .catch((error) => {
-      view.importFeedback =
-        error instanceof Error ? error.message : String(error);
-    });
+  sessionStorage.setItem(
+    "bc5r:pending-play-level",
+    serializeEditorLevel(level),
+  );
+  navigate("/explore/play/imported/shared-map");
 }

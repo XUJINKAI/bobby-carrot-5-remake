@@ -1,10 +1,10 @@
 import { reactive, ref } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
+import type { AdventureSave } from "@bobby/adventure";
 import {
-  exportAdventureSave,
-  importAdventureSave,
   loadAdventureSave,
   resetAdventureSave,
+  saveAdventureSave,
 } from "../../storage/adventureSaveStorage.js";
 import {
   loadScreenControlPreference,
@@ -26,9 +26,11 @@ export interface GlobalSettingsState {
 export function useGlobalSettings(audio: TinySynthAudioBackend) {
   const state = reactive<GlobalSettingsState>(readState(audio));
   const feedback = ref("");
+  const profile = ref(loadAdventureSave());
 
   const refresh = (message = ""): void => {
     Object.assign(state, readState(audio));
+    profile.value = loadAdventureSave();
     feedback.value = message;
   };
   const toggleMusic = (): void => {
@@ -59,9 +61,9 @@ export function useGlobalSettings(audio: TinySynthAudioBackend) {
     state.screenControlEnabled = enabled;
     storeScreenControlPreference(enabled);
   };
-  const importSave = async (file: File): Promise<void> => {
+  const importSave = (save: AdventureSave): void => {
     try {
-      await importAdventureSave(file);
+      saveAdventureSave(save);
       refresh("Adventure 存档已导入。");
     } catch (error) {
       feedback.value = error instanceof Error ? error.message : String(error);
@@ -74,6 +76,7 @@ export function useGlobalSettings(audio: TinySynthAudioBackend) {
 
   return {
     state,
+    profile,
     feedback,
     refresh,
     toggleMusic,
@@ -85,7 +88,6 @@ export function useGlobalSettings(audio: TinySynthAudioBackend) {
     setScreenControl,
     importSave,
     resetSave,
-    exportSave: exportAdventureSave,
   };
 }
 
