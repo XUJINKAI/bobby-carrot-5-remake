@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { levelFeatures } from "./collection-metadata.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const original = path.join(root, "original");
@@ -19,7 +20,7 @@ export function rebuildAssets() {
     "original/adapted",
     "assets",
   ]) {
-    fs.rmSync(path.join(root, directory), { recursive: true, force: true });
+    cleanUntracked(directory);
   }
   prepareAssets();
 }
@@ -28,44 +29,61 @@ export function prepareAssets() {
   // prepare 的合同是保证所有派生层与源码同步，不能用目录存在性替代新鲜度判断。
   run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
   fs.mkdirSync(assets, { recursive: true });
-  copyTree(path.join(root, "project-assets"), assets);
+  for (const obsolete of ["catalog.json", "custom-catalog.json", "filters.json"])
+    fs.rmSync(path.join(assets, "maps", obsolete), { force: true });
   run(process.execPath, ["tools/custom/prepare.mjs"]);
   const catalog = JSON.parse(
     fs.readFileSync(path.join(original, "adapted/catalog.json"), "utf8"),
   );
+  const originalMaps = path.join(assets, "maps/original");
+  fs.rmSync(originalMaps, { recursive: true, force: true });
+  fs.mkdirSync(originalMaps, { recursive: true });
   const runtimeCatalog = {
     ...catalog,
-    levels: catalog.levels.map((level) => ({
-      ...level,
-      path: `maps/original/${level.publicId}.json`,
-    })),
+    id: "original",
+    name: "原版关卡",
+    levels: catalog.levels.map((level) => {
+      const map = readAdaptedMap(level);
+      fs.writeFileSync(
+        path.join(originalMaps, `${level.publicId}.json`),
+        `${JSON.stringify(map, null, 2)}\n`,
+      );
+      return {
+        ...level,
+        ...levelFeatures(map),
+        path: `maps/original/${level.publicId}.json`,
+      };
+    }),
     specialScenes: catalog.specialScenes.map((scene) => ({
       ...scene,
       path: `maps/original/${scene.publicId}.json`,
     })),
   };
-  const originalMaps = path.join(assets, "maps/original");
-  fs.mkdirSync(originalMaps, { recursive: true });
-  for (const level of [...catalog.levels, ...catalog.specialScenes]) {
-    const source = path.join(original, "adapted", level.path);
-    const target = path.join(originalMaps, `${level.publicId}.json`);
-    const map = JSON.parse(fs.readFileSync(source, "utf8"));
-    fs.writeFileSync(target, `${JSON.stringify(map, null, 2)}\n`);
+  for (const scene of catalog.specialScenes) {
+    const map = readAdaptedMap(scene);
+    fs.writeFileSync(
+      path.join(originalMaps, `${scene.publicId}.json`),
+      `${JSON.stringify(map, null, 2)}\n`,
+    );
   }
+  for (const target of ["art/hd", "audio/midi"])
+    fs.rmSync(path.join(assets, target), { recursive: true, force: true });
   copyTree(path.join(original, "adapted/art"), path.join(assets, "art"));
   copyTree(path.join(original, "adapted/audio"), path.join(assets, "audio"));
   fs.writeFileSync(
-    path.join(assets, "maps/catalog.json"),
+    path.join(originalMaps, "index.json"),
     `${JSON.stringify(runtimeCatalog, null, 2)}\n`,
   );
-  run(process.execPath, ["tools/pipeline/level-filters.mjs"]);
-  const filters = JSON.parse(
-    fs.readFileSync(path.join(original, "adapted/level-filters.json"), "utf8"),
+}
+
+function readAdaptedMap(item) {
+  return JSON.parse(
+    fs.readFileSync(path.join(original, "adapted", item.path), "utf8"),
   );
-  fs.writeFileSync(
-    path.join(assets, "maps/filters.json"),
-    `${JSON.stringify(filters, null, 2)}\n`,
-  );
+}
+
+function cleanUntracked(directory) {
+  run("git", ["clean", "-fdX", "--", directory]);
 }
 
 function copyTree(source, target) {

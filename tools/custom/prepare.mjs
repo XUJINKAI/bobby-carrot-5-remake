@@ -10,7 +10,6 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 if (!Array.isArray(manifest))
   throw new Error("custom-maps/collections.json 必须是数组");
 
-fs.rmSync(outputRoot, { recursive: true, force: true });
 fs.mkdirSync(outputRoot, { recursive: true });
 
 const ids = new Set();
@@ -21,14 +20,24 @@ const collections = manifest
 
 const catalog = {
   schemaVersion: 1,
-  collections: collections.map(({ visible: _visible, ...entry }) => entry),
+  collections: [
+    { id: "original", name: "原版关卡", order: 0 },
+    ...collections.map(({ visible: _visible, maps: _maps, ...entry }) => entry),
+  ],
 };
 fs.writeFileSync(
-  path.join(root, "assets/maps/custom-catalog.json"),
+  path.join(outputRoot, "index.json"),
   `${JSON.stringify(catalog, null, 2)}\n`,
 );
+for (const collection of collections) {
+  const { visible: _visible, ...index } = collection;
+  fs.writeFileSync(
+    path.join(outputRoot, collection.id, "index.json"),
+    `${JSON.stringify({ schemaVersion: 1, ...index }, null, 2)}\n`,
+  );
+}
 console.log(
-  `构建 Custom Map Catalog：${catalog.collections.length} 个集合 / ${catalog.collections.reduce((sum, item) => sum + item.maps.length, 0)} 张地图。`,
+  `构建地图 Collection：${catalog.collections.length} 个集合 / ${collections.reduce((sum, item) => sum + item.maps.length, 0)} 张自定义地图。`,
 );
 
 function buildCollection(entry) {
@@ -48,6 +57,7 @@ function buildCollection(entry) {
 
   const directory = path.join(sourceRoot, id);
   if (!fs.existsSync(directory)) throw new Error(`${id}: collection 目录不存在`);
+  fs.rmSync(path.join(outputRoot, id), { recursive: true, force: true });
   const maps = fs
     .readdirSync(directory, { withFileTypes: true })
     .filter((item) => item.isFile() && item.name.endsWith(".json"))

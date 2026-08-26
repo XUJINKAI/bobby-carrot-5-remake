@@ -4,6 +4,7 @@ import {
   fetchJson,
   type CustomMapCatalog,
   type LevelCatalog,
+  type MapCollectionsIndex,
   type OfficialLevelData,
 } from "../services/catalog/catalog.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
@@ -284,10 +285,24 @@ export class BobbyApp {
 
   private async ensureCatalogs(): Promise<void> {
     if (this.catalogsLoaded) return;
-    [this.catalog, this.customMapCatalog] = await Promise.all([
-      fetchJson<LevelCatalog>(siteUrl("assets/maps/catalog.json")),
-      fetchJson<CustomMapCatalog>(siteUrl("assets/maps/custom-catalog.json")),
+    const [catalog, collectionsIndex] = await Promise.all([
+      fetchJson<LevelCatalog>(siteUrl("assets/maps/original/index.json")),
+      fetchJson<MapCollectionsIndex>(siteUrl("assets/maps/index.json")),
     ]);
+    const customCollections = await Promise.all(
+      collectionsIndex.collections
+        .filter((collection) => collection.id !== "original")
+        .map((collection) =>
+          fetchJson<CustomMapCatalog["collections"][number]>(
+            siteUrl(`assets/maps/${collection.id}/index.json`),
+          ),
+        ),
+    );
+    this.catalog = catalog;
+    this.customMapCatalog = {
+      schemaVersion: 1,
+      collections: customCollections,
+    };
     this.catalogsLoaded = true;
   }
 }

@@ -127,7 +127,7 @@ music
 BC5R 自制资产放在：
 
 ```text
-project-assets/
+assets/
 ```
 
 该目录与：
@@ -139,7 +139,7 @@ original/decoded/      DAT 忠实解码数据
 original/adapted/      Engine-native 适配数据
 ```
 
-保持来源边界。未来 Portal 等 BC5R-only 美术应从 `assets/project/` 进入生成链，不得伪装成官方 JAR extracted/generated 资产。
+保持来源边界。未来 Portal 等 Bobby Carrot 5 Remake 自制美术直接作为 Git 托管资源进入 `assets/`，不得伪装成官方 JAR 派生资产。
 
 ## 6. 如何复核
 

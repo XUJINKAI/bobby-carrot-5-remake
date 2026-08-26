@@ -4,12 +4,12 @@ model/dist/
 tools/original/dat/dist/
 engine/dist/
 editor/dist/
-web/dist-src/
-web/dist-vite/
 original/extracted/
 original/decoded/
 original/adapted/
-assets/
+assets/maps/
+assets/art/hd/
+assets/audio/midi/
 tmp/
 *.tmp.md
 *.tsbuildinfo

@@ -10,7 +10,7 @@ function countObject(level, type) {
 
 test("all 485 original unique maps preserve implicit multi-cell objects as unambiguous anchors", () => {
   const catalog = JSON.parse(
-    fs.readFileSync("assets/maps/catalog.json", "utf8"),
+    fs.readFileSync("assets/maps/original/index.json", "utf8"),
   );
   const entries = [...catalog.levels, ...catalog.specialScenes];
   assert.equal(entries.length, 485);

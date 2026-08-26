@@ -1,18 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "../..");
-const generated = path.join(root, "original/adapted");
-const catalogPath = path.join(generated, "catalog.json");
-
-if (!fs.existsSync(catalogPath))
-  throw new Error(
-    "build-level-filters 需要先生成 original/adapted/catalog.json",
-  );
-const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
-
 const WATER = new Set([
   "water",
   "water-animated",
@@ -72,7 +57,7 @@ const OBJECT_MECHANICS = [
   ["ice-block", (type) => type === "ice-block"],
 ];
 
-function levelFeatures(level) {
+export function levelFeatures(level) {
   const terrain = level.terrain.flat();
   const terrainSet = new Set(terrain);
   const objectTypes = level.objects.map((object) => object.type);
@@ -119,22 +104,3 @@ function levelFeatures(level) {
 
   return { carrotCount, specialItems, scenes, mechanics: [...mechanics] };
 }
-
-const levels = {};
-for (const item of catalog.levels ?? []) {
-  const file = path.join(generated, item.path);
-  const level = JSON.parse(fs.readFileSync(file, "utf8"));
-  levels[item.publicId] = levelFeatures(level);
-}
-
-const output = {
-  schemaVersion: 1,
-  generatedFromCatalogSchema: catalog.schemaVersion,
-  levelCount: Object.keys(levels).length,
-  levels,
-};
-fs.writeFileSync(
-  path.join(generated, "level-filters.json"),
-  `${JSON.stringify(output, null, 2)}\n`,
-);
-console.log(`构建关卡筛选索引：${output.levelCount} 关`);

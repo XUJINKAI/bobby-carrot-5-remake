@@ -42,6 +42,10 @@ export interface CatalogLevel {
   objectCount: number;
   sources: LevelSource[];
   path: string;
+  carrotCount: number;
+  specialItems: string[];
+  scenes: string[];
+  mechanics: string[];
 }
 
 export interface CatalogChapter {
@@ -122,6 +126,18 @@ export interface CustomMapCollection {
 export interface CustomMapCatalog {
   schemaVersion: 1;
   collections: CustomMapCollection[];
+}
+
+export interface MapCollectionSummary {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+}
+
+export interface MapCollectionsIndex {
+  schemaVersion: 1;
+  collections: MapCollectionSummary[];
 }
 
 export async function fetchJson<T>(url: string): Promise<T> {
