@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { MapCollectionIndex } from "../../services/catalog/catalog.js";
-import { explorePlayPath } from "../../app/routes.js";
+import ExploreMapCard from "./ExploreMapCard.vue";
 
 defineProps<{ collection: MapCollectionIndex }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -9,20 +9,13 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 <template>
   <section class="explore-custom-collection">
     <div class="explore-map-grid">
-      <a
+      <ExploreMapCard
         v-for="map in collection.maps"
         :key="map.id"
-        class="explore-map-card"
-        :data-map-id="map.id"
-        :href="explorePlayPath({ collection: collection.id, id: map.id })"
-        @click.prevent="emit('navigate', explorePlayPath({ collection: collection.id, id: map.id }))"
-      >
-        <div>
-          <span class="eyebrow">{{ map.id }}</span>
-          <h2>{{ map.name }}</h2>
-          <p>{{ map.description }}</p>
-        </div>
-      </a>
+        :collection-id="collection.id"
+        :map="map"
+        @navigate="emit('navigate', $event)"
+      />
     </div>
   </section>
 </template>
@@ -30,36 +23,13 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 <style scoped>
 .explore-map-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 7px;
 }
 
-.explore-map-card {
-  background: var(--panel);
-  border: 3px solid var(--line);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 210px;
-  padding: 20px;
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 120ms ease, transform 120ms ease;
-}
-
-.explore-map-card:hover,
-.explore-map-card:focus-visible {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
-
-.explore-map-card h2 {
-  margin: 6px 0 8px;
-}
-
-.explore-map-card p {
-  color: var(--muted);
-  line-height: 1.6;
+@media (max-width: 700px) {
+  .explore-map-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
 }
 </style>
