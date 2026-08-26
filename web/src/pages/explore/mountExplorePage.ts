@@ -10,7 +10,7 @@ import {
   lastExploreMapId,
   lastExploreLevelId,
 } from "../../storage/exploreProgressStorage.js";
-import { renderAppShell } from "../../shell/shellBridge.js";
+import { configureShell } from "../../shell/shellBridge.js";
 import ExplorePage from "./ExplorePage.vue";
 import { explorePlayPath } from "../../app/routes.js";
 import {
@@ -18,6 +18,11 @@ import {
   mountLevelFilters,
   randomFilteredLevel,
 } from "./levelFilters.js";
+import {
+  BROWSE_HELP,
+  globalActions,
+  pageIdentity,
+} from "../../app/pageChrome.js";
 
 export async function renderLevels(
   context: PageContext,
@@ -40,17 +45,19 @@ export async function renderLevels(
   ) ?? customCollection?.maps[0];
   const completed = completedExploreLevels();
   audio.playMusic("title");
-  app.innerHTML = renderAppShell({
-    mode: "explore",
-    contextInfo:
-      collectionId === "original"
-        ? "全部关卡开放 · ✓ 表示曾通关"
-        : `${customCollection!.name} · ${customCollection!.maps.length} 张地图`,
-    showScreenControlToggle: false,
-    topBarFixed: true,
-    bottomBarFixed: true,
-    content: "",
-  });
+  configureShell(
+    {
+      topBar: {
+        visible: true,
+        fixed: true,
+        identity: pageIdentity("自由探索模式", "/explore"),
+        actions: globalActions(),
+      },
+      bottomBar: { visible: false },
+    },
+    BROWSE_HELP,
+  );
+  app.replaceChildren();
   const levelsByChapter = new Map(
     catalog.chapters.map((chapter) => [
       chapter.number,

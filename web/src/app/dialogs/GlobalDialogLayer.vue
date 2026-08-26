@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
-import type { AppMode } from "../shellBridge.js";
+import type { HelpDescriptor } from "../../shell/shellBridge.js";
 import HelpDialog from "./HelpDialog.vue";
 import SettingsDialog from "./SettingsDialog.vue";
 
 defineProps<{
   kind: "settings" | "help";
-  mode: AppMode;
+  help: HelpDescriptor;
   settings: GlobalSettingsState;
   feedback: string;
 }>();
@@ -43,6 +43,6 @@ const emit = defineEmits<{
       @reset-save="emit('resetSave')"
       @feedback="emit('feedback', $event)"
     />
-    <HelpDialog v-else :mode="mode" @close="emit('close')" />
+    <HelpDialog v-else :descriptor="help" @close="emit('close')" />
   </div>
 </template>

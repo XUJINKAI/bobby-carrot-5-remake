@@ -9,7 +9,7 @@ import {
 import {
   loadScreenControlPreference,
   storeScreenControlPreference,
-} from "../shellBridge.js";
+} from "../../shell/shellBridge.js";
 
 export interface GlobalSettingsState {
   musicEnabled: boolean;

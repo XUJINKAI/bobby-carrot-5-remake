@@ -1,57 +1,90 @@
-export type AppMode = "home" | "adventure" | "explore" | "editor" | "custom";
+export type ShellIcon = "back" | "edit" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "play" | "redo" | "restart" | "settings" | "stop" | "undo";
 
-export interface ShellContextAction {
-  id?: string;
+export interface ShellMenuItem {
   label: string;
-  title?: string;
-  className?: string;
-  placement?: "leading" | "center" | "trailing";
-  badge?: {
-    label: string;
-    title?: string;
-    className?: string;
-  } | undefined;
+  href: string;
+  active?: boolean;
 }
 
-export interface ShellOptions {
+export interface ShellIdentity {
+  icon: string;
+  productName?: string;
+  contextName?: string;
+  productNameVisible?: boolean;
+  contextNameVisible?: boolean;
+  href?: string;
+  menu?: ShellMenuItem[];
+}
+
+export interface ShellAction {
+  id: string;
+  label?: string;
+  icon?: ShellIcon;
   title?: string;
-  content: string;
-  mode?: AppMode;
-  contextActions?: ShellContextAction[];
-  contextInfo?: string;
-  showBottomBar?: boolean;
-  showScreenControlToggle?: boolean;
-  topBarFixed?: boolean;
-  bottomBarFixed?: boolean;
+  href?: string;
+  collapse?: "keep" | "overflow" | "hide";
+  disabled?: boolean;
+  pressed?: boolean;
+  badge?: { label: string; title?: string; className?: string };
+}
+
+export interface ShellInfo {
+  text: string;
+  href?: string;
+}
+
+export interface ShellConfig {
+  topBar?: {
+    visible?: boolean;
+    fixed?: boolean;
+    identity?: ShellIdentity;
+    back?: ShellAction;
+    commands?: ShellAction[];
+    actions?: ShellAction[];
+  };
+  bottomBar?: {
+    visible?: boolean;
+    fixed?: boolean;
+    leading?: ShellAction[];
+    info?: ShellInfo[];
+    trailing?: ShellAction[];
+  };
+}
+
+export interface HelpDescriptor {
+  title: string;
+  sections: Array<{ title?: string; lines: string[] }>;
 }
 
 export interface ShellViewState {
-  mode: AppMode;
-  contextActions: ShellContextAction[];
-  contextInfo: string;
-  showBottomBar: boolean;
-  showScreenControlToggle: boolean;
-  topBarFixed: boolean;
-  bottomBarFixed: boolean;
+  config: ShellConfig;
+  help: HelpDescriptor;
 }
 
 export interface ShellBridge {
-  apply(options: ShellOptions): void;
+  apply(config: ShellConfig, help: HelpDescriptor): void;
 }
 
 const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
 let activeBridge: ShellBridge | null = null;
 
-/** Vue 根应用安装唯一 Shell bridge，页面适配器只提交内容和上下文状态。 */
 export function installShellBridge(bridge: ShellBridge | null): void {
   activeBridge = bridge;
 }
 
-/** App Shell 由 Vue 渲染；返回值只进入 Vue 提供的页面容器。 */
-export function renderAppShell(options: ShellOptions): string {
-  if (!activeBridge) throw new Error("Vue App Shell 尚未挂载");
-  activeBridge.apply(options);
-  return options.content;
+export function configureShell(
+  config: ShellConfig,
+  help: HelpDescriptor = defaultHelpDescriptor(),
+): void {
+  if (!activeBridge) throw new Error("Web Shell 尚未挂载");
+  activeBridge.apply(config, help);
+}
+
+export function defaultHelpDescriptor(): HelpDescriptor {
+  return {
+    title: "操作帮助",
+    sections: [{ lines: ["WASD / 方向键：移动", "拖动画面：查看地图"] }],
+  };
 }
 
 export function loadScreenControlPreference(): boolean {

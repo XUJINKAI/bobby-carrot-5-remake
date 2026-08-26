@@ -19,8 +19,10 @@ import { renderGamePage } from "../pages/game/mountGamePage.js";
 import { renderHome } from "../pages/home/mountHomePage.js";
 import { renderLevels } from "../pages/explore/mountExplorePage.js";
 import {
+  defaultHelpDescriptor,
   installShellBridge,
-  type ShellOptions,
+  type HelpDescriptor,
+  type ShellConfig,
   type ShellViewState,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
@@ -52,7 +54,9 @@ export class BobbyApp {
     this.customMapCatalog = await fetchJson<CustomMapCatalog>(
       siteUrl("assets/custom-maps.json"),
     );
-    installShellBridge({ apply: (options) => this.applyShell(options) });
+    installShellBridge({
+      apply: (config, help) => this.applyShell(config, help),
+    });
     const contentReady = new Promise<void>((resolve) => {
       this.vueApp = createApp(AppRoot, {
         shell: this.shell,
@@ -85,15 +89,9 @@ export class BobbyApp {
     this.vueRoot = null;
   }
 
-  private applyShell(options: ShellOptions): void {
-    this.shell.mode = options.mode ?? "home";
-    this.shell.contextActions = options.contextActions ?? [];
-    this.shell.contextInfo = options.contextInfo ?? "准备就绪";
-    this.shell.showBottomBar = options.showBottomBar !== false;
-    this.shell.showScreenControlToggle =
-      options.showScreenControlToggle !== false;
-    this.shell.topBarFixed = options.topBarFixed ?? true;
-    this.shell.bottomBarFixed = options.bottomBarFixed ?? true;
+  private applyShell(config: ShellConfig, help: HelpDescriptor): void {
+    this.shell.config = config;
+    this.shell.help = help;
   }
 
   private readonly resumeAudio = (): void => this.audio.resume();
@@ -229,13 +227,8 @@ export class BobbyApp {
 
 function defaultShellState(): ShellViewState {
   return {
-    mode: "home",
-    contextActions: [],
-    contextInfo: "准备就绪",
-    showBottomBar: false,
-    showScreenControlToggle: false,
-    topBarFixed: true,
-    bottomBarFixed: true,
+    config: {},
+    help: defaultHelpDescriptor(),
   };
 }
 

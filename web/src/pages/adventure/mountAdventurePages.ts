@@ -22,7 +22,8 @@ import type {
   CatalogLevel,
   LevelCatalog,
 } from "../../services/catalog/catalog.js";
-import { renderAppShell } from "../../shell/shellBridge.js";
+import { configureShell } from "../../shell/shellBridge.js";
+import { globalActions, pageIdentity } from "../../app/pageChrome.js";
 import AdventureChapterPage from "./AdventureChapterPage.vue";
 import AdventureChaptersPage from "./AdventureChaptersPage.vue";
 import AdventureHomePage from "./AdventureHomePage.vue";
@@ -155,14 +156,20 @@ function mountAdventure(
   component: Component,
   props: Record<string, unknown>,
 ): PageController {
-  root.innerHTML = renderAppShell({
-    mode: "adventure",
-    contextInfo: "原版 Campaign · 章节进度与永久奖励",
-    showScreenControlToggle: false,
-    topBarFixed: true,
-    bottomBarFixed: true,
-    content: "",
+  configureShell({
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: pageIdentity("冒险模式", "/adventure"),
+      actions: globalActions(),
+    },
+    bottomBar: {
+      visible: true,
+      fixed: true,
+      info: [{ text: "原版 Campaign · 章节进度与永久奖励" }],
+    },
   });
+  root.replaceChildren();
   const app = createApp(component, props);
   app.mount(root);
   return {

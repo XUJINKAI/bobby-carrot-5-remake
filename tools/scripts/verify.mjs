@@ -629,16 +629,16 @@ function verifyUnifiedUiShell() {
       path.join(root, "web/src/app/AppRoot.vue"),
       "utf8",
     ),
-    modeSelector = fs.readFileSync(
-      path.join(root, "web/src/shell/ModeSelector.vue"),
+    identity = fs.readFileSync(
+      path.join(root, "web/src/shell/ShellIdentity.vue"),
       "utf8",
     ),
     dialogLayer = fs.readFileSync(
-      path.join(root, "web/src/shell/dialogs/GlobalDialogLayer.vue"),
+      path.join(root, "web/src/app/dialogs/GlobalDialogLayer.vue"),
       "utf8",
     ),
     settingsDialog = fs.readFileSync(
-      path.join(root, "web/src/shell/dialogs/SettingsDialog.vue"),
+      path.join(root, "web/src/app/dialogs/SettingsDialog.vue"),
       "utf8",
     ),
     homePage = ["HomeDemo.vue", "HomeModeMenu.vue", "ProjectIntro.vue"]
@@ -666,7 +666,7 @@ function verifyUnifiedUiShell() {
   if (
     !/createApp\(AppRoot/.test(application) ||
     !/installShellBridge/.test(application) ||
-    !/root\.value\?\.contains\(target\)/.test(modeSelector)
+    !/root\.value\?\.contains\(target\)/.test(identity)
   )
     throw new Error("Vue App Root must own routing shell and outside-dismiss modes");
   if (
@@ -676,17 +676,19 @@ function verifyUnifiedUiShell() {
     throw new Error("Vue global settings dialog must close through its backdrop");
   if (/renderSettingsDialog|settings-card/.test(gamePage))
     throw new Error("Gameplay pages must use the shared application settings dialog");
-  if (!/Vue App Shell/.test(shell) || !/renderAppShell/.test(shell))
-    throw new Error("Web page adapters must submit state to the Vue App Shell");
+  if (
+    !/interface ShellConfig/.test(shell) ||
+    !/configureShell/.test(shell) ||
+    /AppMode|mode\s*:/.test(shell)
+  )
+    throw new Error("Web Shell contract must be configuration-driven and mode agnostic");
   if (/template\s*:/.test(appRoot) || !/AppTopBar/.test(appRoot))
     throw new Error("Vue UI must use responsibility-focused .vue SFC files");
-  for (const fixedOption of ["topBarFixed", "bottomBarFixed"]) {
-    const configuredPages = pageAdapters.match(
-      new RegExp(`${fixedOption}\\s*:\\s*true`, "g"),
-    )?.length;
-    if (!configuredPages || configuredPages < 4)
-      throw new Error(`Internal pages must explicitly configure ${fixedOption}`);
-  }
+  if ((pageAdapters.match(/configureShell\(/g)?.length ?? 0) < 5)
+    throw new Error("All primary pages must provide a ShellConfig");
+  for (const removed of ["HomeTopBar.vue", "ModeSelector.vue"])
+    if (fs.existsSync(path.join(root, "web/src/shell", removed)))
+      throw new Error(`Obsolete mode-aware Shell component remains: ${removed}`);
   if (!/app-scroll-region/.test(appRoot))
     throw new Error("Fixed Shell bars must leave scrolling to the content region");
   for (const component of [

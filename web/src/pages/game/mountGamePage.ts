@@ -33,9 +33,15 @@ import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
 import { editorMapPath, exploreCollectionPath, explorePlayPath } from "../../app/routes.js";
 import {
+  configureShell,
   loadScreenControlPreference,
-  renderAppShell,
+  type ShellConfig,
 } from "../../shell/shellBridge.js";
+import {
+  GAME_HELP,
+  globalActions,
+  pageIdentity,
+} from "../../app/pageChrome.js";
 
 export type GamePageMode = "explore" | "adventure";
 export interface GameIdentity {
@@ -78,17 +84,15 @@ export async function renderGamePage(
   const sessionLevel = adventureSave
     ? prepareAdventureLevel(meta!.publicId, level, adventureSave)
     : level;
-  app.innerHTML = renderAppShell({
+  const screenControlEnabled = loadScreenControlPreference();
+  const shellConfig = gameShellConfig(
+    identity,
+    meta,
     mode,
-    contextActions: gameContextActions(identity, meta, mode),
-    contextInfo:
-      mode === "adventure"
-        ? "WASD / 方向键移动 · 拖动查看地图"
-        : "WASD / 方向键移动 · 拖动查看地图 · 滚轮缩放 · ~ DEBUG",
-    topBarFixed: true,
-    bottomBarFixed: true,
-    content: "",
-  });
+    screenControlEnabled,
+  );
+  configureShell(shellConfig, GAME_HELP);
+  app.replaceChildren();
   const gamePage = createApp(GamePage, { mode });
   gamePage.mount(app);
   const canvas = required<HTMLCanvasElement>(app, "#game"),
@@ -98,7 +102,6 @@ export async function renderGamePage(
     gameResult = required<HTMLDivElement>(app, "[data-result-overlay]"),
     resultCard = required<HTMLElement>(gameResult, "[data-result-card]");
   const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
-  const screenControlEnabled = loadScreenControlPreference();
   const session = await createGameSession({
     root: app,
     canvas,
@@ -313,41 +316,81 @@ function nextCampaignLevel(
     ? catalog.levels.find((level) => level.publicId === next)
     : undefined;
 }
-function gameContextActions(
+function gameShellConfig(
   identity: GameIdentity,
   meta: CatalogLevel | undefined,
   mode: GamePageMode,
-) {
-  return [
-    {
-      id: "back",
-      label: `← ${identity.title}`,
-      title: "返回",
-      placement: "leading" as const,
-      badge: meta
-        ? {
-            label: meta.difficulty.label,
-            title: "关卡难度",
-            className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
-          }
-        : undefined,
+  screenControlEnabled: boolean,
+): ShellConfig {
+  const explore = mode === "explore";
+  return {
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: pageIdentity(
+        explore ? "自由探索模式" : "冒险模式",
+        explore ? "/explore" : "/adventure",
+        false,
+      ),
+      back: {
+        id: "back",
+        icon: "back",
+        label: identity.title,
+        title: "返回",
+        ...(meta
+          ? {
+              badge: {
+                label: meta.difficulty.label,
+                title: "关卡难度",
+                className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+              },
+            }
+          : {}),
+      },
+      commands: [
+        ...(explore
+          ? [
+              { id: "undo", icon: "undo" as const, title: "撤销" },
+              { id: "redo", icon: "redo" as const, title: "重做" },
+            ]
+          : []),
+        { id: "restart", icon: "restart", title: "重新开始" },
+      ],
+      actions: [
+        ...(explore
+          ? [
+              {
+                id: "edit",
+                icon: "edit" as const,
+                label: "编辑地图",
+                title: "在编辑器中打开",
+                collapse: "overflow" as const,
+              },
+            ]
+          : []),
+        ...globalActions(),
+      ],
     },
-    ...(mode === "explore"
-      ? [
-          { id: "undo", label: "↶", title: "撤销" },
-          { id: "redo", label: "↷", title: "重做" },
-        ]
-      : []),
-    { id: "restart", label: "↻", title: "重新开始" },
-    ...(mode === "explore"
-      ? [{
-          id: "edit",
-          label: "✎",
-          title: "在编辑器中打开",
-          placement: "trailing" as const,
-        }]
-      : []),
-  ];
+    bottomBar: {
+      visible: true,
+      fixed: true,
+      info: [
+        { text: identity.title },
+        {
+          text: explore
+            ? "WASD / 方向键移动 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
+            : "WASD / 方向键移动 · 拖动查看地图",
+        },
+      ],
+      trailing: [
+        {
+          id: "screen-control",
+          label: "屏幕摇杆",
+          pressed: screenControlEnabled,
+        },
+      ],
+    },
+  };
 }
 
 function backPath(
