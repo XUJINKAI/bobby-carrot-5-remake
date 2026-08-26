@@ -115,6 +115,12 @@ if (chapters.length !== 40)
 const playerOrder = chapters.flatMap((chapter) => chapter.maps);
 if (playerOrder.length !== 480)
   throw new Error(`Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`);
+const mapById = new Map(maps.map((map) => [map.id, map]));
+const orderedMaps = playerOrder.map((id) => {
+  const map = mapById.get(id);
+  if (!map) throw new Error(`缺少 Original map metadata：${id}`);
+  return map;
+});
 for (let index = 0; index < playerOrder.length; index += 1) {
   const id = playerOrder[index];
   const document = documents.get(id);
@@ -135,7 +141,7 @@ copyRuntimeAssets();
 writeJson(path.join(adapted, "catalog.json"), {
   schemaVersion: 1,
   chapters,
-  maps,
+  maps: orderedMaps,
   specialScenes,
   art: {
     tileSize: SOURCE_TILE_SIZE,
