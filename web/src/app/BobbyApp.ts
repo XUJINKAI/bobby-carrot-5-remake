@@ -27,7 +27,7 @@ import {
   type ShellViewState,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
-import { resolveExploreMap } from "../services/catalog/exploreMaps.js";
+import { resolveMapDocument } from "../services/catalog/exploreMaps.js";
 import { mapAssetUrl, parseMapPlayUrl } from "./routes.js";
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import {
@@ -117,7 +117,6 @@ export class BobbyApp {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();
-    // 直达 Play 的地图定位只由 URL 决定，Catalog 只为列表和产品元数据服务。
     if (!path.startsWith("/explore/play/")) await this.ensureCatalogs();
     const context = {
       app: this.content,
@@ -151,13 +150,17 @@ export class BobbyApp {
           });
           return;
         }
-        this.controller = imported.type === "adventure-profile"
-          ? renderImportMessage(context, { status: "profile", profile: imported.value })
-          : renderImportMessage(context, {
-              status: "unknown",
-              message: "无法识别这段 BC5R 数据。",
-              rawText: imported.rawText,
-            });
+        this.controller =
+          imported.type === "adventure-profile"
+            ? renderImportMessage(context, {
+                status: "profile",
+                profile: imported.value,
+              })
+            : renderImportMessage(context, {
+                status: "unknown",
+                message: "无法识别这段 BC5R 数据。",
+                rawText: imported.rawText,
+              });
       } catch (error) {
         this.controller = renderImportMessage(context, {
           status: "error",
@@ -194,26 +197,27 @@ export class BobbyApp {
         });
         return;
       }
-      const resolved = await resolveExploreMap(
-        this.catalog,
-        this.customMapCatalog,
-        ref,
-      );
-      if (!resolved) {
+      try {
+        const resolved = await resolveMapDocument(ref);
+        this.controller = await renderGamePage({
+          ...context,
+          level: resolved.level,
+          mapMeta: resolved.document.meta,
+          identity: {
+            ...resolved.ref,
+            title: resolved.document.meta.name,
+          },
+          mode: "explore",
+        });
+      } catch {
         this.navigate("/explore");
-        return;
       }
-      this.controller = await renderGamePage({
-        ...context,
-        level: resolved.level,
-        identity: { ...resolved.ref, title: resolved.title },
-        official: resolved.official,
-        mode: "explore",
-      });
       return;
     }
     if (path.startsWith("/explore/")) {
-      const collection = decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
+      const collection = decodeURIComponent(
+        path.split("/")[2] ?? "",
+      ).toLowerCase();
       this.controller = await renderLevels(context, collection);
       return;
     }
