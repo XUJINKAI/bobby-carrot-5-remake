@@ -8,6 +8,7 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
+run("git", ["check-ignore", "--quiet", "custom-maps/loma-pushbox/01-01.json"]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
@@ -52,6 +53,8 @@ if (pushbox?.cardSize !== "medium")
 const testCollection = collectionIndexes.find((collection) => collection.id === "test");
 if (testCollection?.cardSize !== "big")
   throw new Error("Test collection cardSize 必须为 big");
+assertLomaCollection(collectionIndexes);
+
 const expectedFirstChapter = [
   "1-1",
   "1-2",
@@ -111,6 +114,8 @@ for (const file of [
   "dist/assets/maps/original/index.json",
   "dist/assets/maps/original/1-1.json",
   "dist/assets/maps/original/1-bonus-1.json",
+  "dist/assets/maps/loma-pushbox/index.json",
+  "dist/assets/maps/loma-pushbox/01-01.json",
   "dist/assets/adventure/index.json",
 ])
   if (!fs.existsSync(path.join(root, file)))
@@ -123,8 +128,56 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、collection cardSize、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1、MapDocument、collection cardSize、LOMA generation、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
+
+function assertLomaCollection(collections) {
+  const loma = collections.find((collection) => collection.id === "loma-pushbox");
+  if (!loma) throw new Error("缺少 LOMA Pushbox collection");
+  if (loma.cardSize !== "small")
+    throw new Error("LOMA Pushbox collection cardSize 必须为 small");
+  if (loma.chapters.length !== 10 || loma.maps.length !== 137)
+    throw new Error("LOMA Pushbox 必须包含 10 个 Pattern / 137 张地图");
+  const expectedChapters = Array.from({ length: 10 }, (_, index) =>
+    String(index + 1).padStart(2, "0"),
+  );
+  if (
+    JSON.stringify(loma.chapters.map((chapter) => chapter.id)) !==
+    JSON.stringify(expectedChapters)
+  )
+    throw new Error("LOMA Pushbox chapter 必须保持 01~10 Pattern 顺序");
+  if (loma.maps[0]?.id !== "01-01" || loma.maps.at(-1)?.id !== "10-13")
+    throw new Error("LOMA Pushbox map 顺序必须保持源文件编号");
+  for (const map of loma.maps) {
+    if (map.chapter !== map.id.slice(0, 2))
+      throw new Error(`${map.id}: LOMA chapter 与源 Title pattern 不一致`);
+    const relative = `assets/maps/loma-pushbox/${map.id}.json`;
+    const document = readJson(relative);
+    if (typeof document.meta.author !== "string" || !document.meta.author)
+      throw new Error(`${relative}: 必须保留 LOMA Author`);
+    assertLomaWinRule(document, relative);
+  }
+}
+
+function assertLomaWinRule(document, relative) {
+  const expected = {
+    type: "fill-all",
+    terrainTrait: "push-goal",
+    objectTrait: "pushable",
+  };
+  if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
+    throw new Error(`${relative}: LOMA 获胜条件必须只有 fill-all push-goal`);
+  const pushables = document.objects.filter((object) =>
+    object.traits?.includes("pushable"),
+  );
+  const goals = document.terrain
+    .flat()
+    .filter((terrain) => terrain === "custom:push-goal");
+  if (pushables.length !== 3 || goals.length !== 3)
+    throw new Error(`${relative}: LOMA 必须保持 3 箱 / 3 目标`);
+  if (document.terrain.flat().includes("exit"))
+    throw new Error(`${relative}: LOMA 不使用 exit 获胜条件`);
+}
 
 function assertNext(id, expected) {
   const document = readJson(`assets/maps/original/${id}.json`);

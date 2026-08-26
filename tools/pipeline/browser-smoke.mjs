@@ -50,6 +50,14 @@ try {
     'data-card-size="medium"',
     "Pushbox 1",
   ]);
+  await smoke(`${origin}/explore/loma-pushbox`, [
+    'class="explore-tabs"',
+    'class="chapter-card"',
+    'data-card-size="small"',
+    "LOMA Pushbox",
+    "Pattern",
+    'href="/explore/play/loma-pushbox/01-01"',
+  ]);
   await smoke(`${origin}/explore/test`, [
     'class="explore-custom-collection"',
     'data-card-size="big"',
@@ -60,6 +68,11 @@ try {
     'class="game-page"',
     'id="game"',
     "Portal Lab",
+  ]);
+  await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
+    'class="game-page"',
+    'id="game"',
+    "01-01",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
