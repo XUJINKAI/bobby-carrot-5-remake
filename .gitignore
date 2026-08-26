@@ -12,6 +12,7 @@ original/extracted/
 assets/art/hd/
 assets/audio/midi/
 assets/maps/
+assets/adventure/
 
 *.tmp.md
 *.tsbuildinfo

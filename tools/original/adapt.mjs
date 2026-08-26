@@ -198,11 +198,6 @@ function createMapDocument(source, meta) {
         type: "all",
         conditions: [
           { type: "collect-all", trait: "level-objective" },
-          {
-            type: "fill-all",
-            terrainTrait: "push-goal",
-            objectTrait: "pushable",
-          },
           { type: "reach-terrain", trait: "exit" },
         ],
       },
