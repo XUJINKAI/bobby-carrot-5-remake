@@ -54,21 +54,34 @@ function serializeMap(value: unknown): string {
     </a>
     <button
       class="home-mode-card"
+      data-home-import
       type="button"
       @click="importOpen = !importOpen"
     >
       <strong>导入自定义地图</strong><span>打开语义 JSON Draft</span><b>＋</b>
     </button>
-    <DataExchangePanel
+    <div
       v-if="importOpen"
-      class="home-data-exchange"
-      :serialize="serializeMap"
-      :parse="parseMap"
-      placeholder="粘贴地图 JSON、BC5R 文本或分享链接……"
-      filename="bc5r-map"
-      :toolbar="toolbar"
-      @import="emit('importMap', $event as EditorLevel)"
-    />
+      class="home-import-dialog-layer"
+      role="presentation"
+      @click.self="importOpen = false"
+    >
+      <section class="home-import-dialog" role="dialog" aria-modal="true" aria-label="导入自定义地图">
+        <header>
+          <strong>导入自定义地图</strong>
+          <button type="button" aria-label="关闭" @click="importOpen = false">×</button>
+        </header>
+        <DataExchangePanel
+          class="home-data-exchange"
+          :serialize="serializeMap"
+          :parse="parseMap"
+          placeholder="粘贴地图 JSON、BC5R 文本或分享链接……"
+          filename="bc5r-map"
+          :toolbar="toolbar"
+          @import="emit('importMap', $event as EditorLevel)"
+        />
+      </section>
+    </div>
     <slot />
   </nav>
 </template>
@@ -131,7 +144,37 @@ function serializeMap(value: unknown): string {
   font-size: 1.2rem;
 }
 
-.home-data-exchange {
-  margin-top: 4px;
+.home-import-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #02050399;
+  backdrop-filter: blur(4px);
+}
+
+.home-import-dialog {
+  width: min(660px, 100%);
+  padding: 18px;
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
+  box-shadow: 8px 8px 0 #001b5b99;
+}
+
+.home-import-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.home-import-dialog > header button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.4rem;
 }
 </style>

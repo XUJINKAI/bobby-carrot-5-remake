@@ -68,9 +68,10 @@ export async function renderEditorPage(
         ],
         actions: [
           {
-            id: "editor-file",
-            label: "文件",
-            title: "JSON 导入与导出",
+            id: "editor-share",
+            icon: "share",
+            label: "分享",
+            title: "地图数据交换与分享",
             collapse: "overflow",
           },
           ...globalActions(),

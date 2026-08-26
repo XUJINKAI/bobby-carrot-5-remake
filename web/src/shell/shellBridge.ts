@@ -1,4 +1,4 @@
-export type ShellIcon = "back" | "edit" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "play" | "redo" | "restart" | "settings" | "stop" | "undo";
+export type ShellIcon = "back" | "edit" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "play" | "redo" | "restart" | "settings" | "share" | "stop" | "undo";
 
 export interface ShellMenuItem {
   label: string;

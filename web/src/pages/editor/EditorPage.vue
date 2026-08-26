@@ -116,7 +116,7 @@ function onShellAction(event: Event): void {
   if (action === "editor-undo") page.document.undo();
   if (action === "editor-redo") page.document.redo();
   if (action === "editor-play") void togglePlay();
-  if (action === "editor-file") page.fileDialogOpen.value = true;
+  if (action === "editor-share") page.fileDialogOpen.value = true;
   if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
   if (action === "editor-inspector") inspectorOpen.value = !inspectorOpen.value;
   if (action === "editor-level-info") page.fileDialogOpen.value = true;

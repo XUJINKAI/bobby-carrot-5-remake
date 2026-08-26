@@ -142,6 +142,10 @@ function downloadDraft(): void {
   emit("downloaded");
 }
 
+function selectDraft(event: FocusEvent): void {
+  (event.currentTarget as HTMLTextAreaElement).select();
+}
+
 function report(value: unknown): void {
   const error = value instanceof Error ? value : new Error(String(value));
   feedback.value = error.message;
@@ -173,6 +177,7 @@ function label(control: DataExchangeControlConfig): string {
       class="data-exchange-text"
       :placeholder="placeholder"
       spellcheck="false"
+      @focus="selectDraft"
       @input="feedback = ''"
     />
     <div class="data-exchange-toolbar">

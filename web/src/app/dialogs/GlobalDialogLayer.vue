@@ -71,6 +71,10 @@ const emit = defineEmits<{
   box-shadow: 8px 8px 0 #001b5b99;
 }
 
+.global-dialog.settings-dialog {
+  width: min(660px, 100%);
+}
+
 .global-dialog > header {
   display: flex;
   justify-content: space-between;

@@ -30,6 +30,7 @@ try {
     'class="home-mode-panel"',
     'class="home-sky-brand"',
   ]);
+  await interactiveDataExchangeSmoke(`${origin}/`);
   await smoke(
     `${origin}/explore`,
     [
@@ -96,6 +97,7 @@ try {
   await smoke(`${origin}/edit`, [
     'class="bobby-editor"',
     'id="editor-play"',
+    'id="editor-share"',
     'class="editor-palette"',
   ]);
   await smoke(`${origin}/edit/pushbox/box-01`, [
@@ -316,6 +318,48 @@ async function interactiveFilterSmoke(url) {
       throw new Error(
         `Explore filter clear did not restore all levels: before=${before}, restored=${restored}`,
       );
+  } finally {
+    cdp.close();
+    child.kill("SIGKILL");
+  }
+}
+
+async function interactiveDataExchangeSmoke(url) {
+  const child = spawn(
+    browser,
+    [
+      "--headless=new",
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-background-networking",
+      "--remote-debugging-pipe",
+      "about:blank",
+    ],
+    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
+  );
+  const input = child.stdio[3], output = child.stdio[4];
+  if (!input || !output) throw new Error("Chromium CDP pipe failed to open");
+  const cdp = createCdpPipe(input, output);
+  try {
+    const { targetId } = await cdp.send("Target.createTarget", { url });
+    const { sessionId } = await cdp.send("Target.attachToTarget", {
+      targetId,
+      flatten: true,
+    });
+    await waitFor(async () => Boolean(await cdp.evaluate(sessionId, "document.querySelector('[data-home-import]')")));
+    await cdp.evaluate(sessionId, "document.querySelector('[data-home-import]').click(); true");
+    await waitFor(async () => Boolean(await cdp.evaluate(sessionId, "document.querySelector('.home-import-dialog[role=dialog]')")));
+    const selected = await cdp.evaluate(
+      sessionId,
+      "(() => { const area = document.querySelector('.data-exchange-text'); area.value = 'editable'; area.focus(); return area.selectionStart === 0 && area.selectionEnd === area.value.length; })()",
+    );
+    if (!selected) throw new Error("Data Exchange TextBox did not select all on focus");
+    const edited = await cdp.evaluate(
+      sessionId,
+      "(() => { const area = document.querySelector('.data-exchange-text'); area.setRangeText('changed', 0, area.value.length, 'end'); area.dispatchEvent(new Event('input', { bubbles: true })); return area.value; })()",
+    );
+    if (edited !== "changed") throw new Error("Data Exchange TextBox is not editable after selection");
   } finally {
     cdp.close();
     child.kill("SIGKILL");
