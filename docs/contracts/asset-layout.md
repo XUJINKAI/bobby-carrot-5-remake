@@ -103,6 +103,29 @@ Adventure index 只定义 Campaign topology：章节、章节内 level 顺序、
 
 Adventure 不拥有地图内容；它引用 `assets/maps/` 下的 MapDocument。
 
+## Custom map 构建源
+
+`custom-maps/` 是 generic custom collection 的构建输入。人工维护的地图可以直接提交语义 JSON；外部批量关卡集也可以先保留其原始文本，再由专用工具生成这个统一输入格式。
+
+生成型 custom map 目录必须加入 `.gitignore`，每次 `assets prepare` 都从唯一源重新生成，不能手工修改生成文件。
+
+LOMA Pushbox 使用：
+
+```text
+tools/custom/LOMA.txt
+  ↓ tools/custom/loma-pushbox.mjs
+custom-maps/loma-pushbox/*.json      # ignored / generated
+  ↓ tools/custom/prepare.mjs
+assets/maps/loma-pushbox/index.json
+assets/maps/loma-pushbox/<map-id>.json
+```
+
+`LOMA.txt` 是受 Git 管理的第三方源数据；授权与作者信息见根目录 `THIRD_PARTY_ASSETS.md`。
+
+LOMA 原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*` 对应该 collection 的 10 个 source pattern，因此生成 JSON 使用 `chapter: "01"` ～ `"10"` 保留这一分组。这里的顶层 `chapter` 是 **custom build-source metadata**：`tools/custom/prepare.mjs` 把它写入 collection `maps[].chapter`，同时从最终 MapDocument 中剥离。它不是 Engine `LevelMap` 字段，也不是 Editor JSON 的持久化字段。
+
+`custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
+
 ## 生成规则
 
 `npm run assets` 清理未被 Git 跟踪的生成物，并从 `original/` 与 `custom-maps/` 重建 runtime assets。
