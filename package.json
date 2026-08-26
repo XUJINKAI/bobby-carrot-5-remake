@@ -11,7 +11,6 @@
     "preview": "node tools/cli.mjs preview",
     "test": "node tools/cli.mjs test",
     "verify": "node tools/cli.mjs verify",
-    "verify:browser": "node tools/cli.mjs verify browser",
     "clean": "node tools/cli.mjs clean"
   },
   "devDependencies": {

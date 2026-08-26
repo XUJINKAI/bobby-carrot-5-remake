@@ -2,7 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "../tmp/web-tests",
+    "noEmit": true,
     "types": ["vite/client"]
   },
   "include": [
