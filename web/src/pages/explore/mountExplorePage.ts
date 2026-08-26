@@ -7,31 +7,57 @@ import {
 } from "../../services/catalog/catalogSelection.js";
 import {
   completedExploreLevels,
+  lastExploreMapId,
   lastExploreLevelId,
 } from "../../storage/exploreProgressStorage.js";
-import { renderAppShell } from "../../shell/shellBridge.js";
+import { configureShell } from "../../shell/shellBridge.js";
 import ExplorePage from "./ExplorePage.vue";
+import { explorePlayPath } from "../../app/routes.js";
 import {
   hasActiveLevelFilters,
   mountLevelFilters,
   randomFilteredLevel,
 } from "./levelFilters.js";
+import {
+  BROWSE_HELP,
+  globalActions,
+  pageIdentity,
+} from "../../app/pageChrome.js";
 
 export async function renderLevels(
   context: PageContext,
+  collectionId = "original",
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate } = context;
+  const { app, catalog, customMapCatalog, audio, navigate } = context;
+  const customCollection = customMapCatalog.collections.find(
+    (entry) => entry.id === collectionId,
+  );
+  if (collectionId !== "original" && !customCollection) {
+    navigate("/explore");
+    return { destroy() {} };
+  }
   const last = resolveCatalogLevel(catalog, lastExploreLevelId());
+  const customLastId = customCollection
+    ? lastExploreMapId(collectionId) ?? customCollection.maps[0]!.id
+    : null;
+  const customLast = customCollection?.maps.find(
+    (entry) => entry.id === customLastId,
+  ) ?? customCollection?.maps[0];
   const completed = completedExploreLevels();
   audio.playMusic("title");
-  app.innerHTML = renderAppShell({
-    mode: "explore",
-    contextInfo: "全部关卡开放 · ✓ 表示曾通关",
-    showScreenControlToggle: false,
-    topBarFixed: true,
-    bottomBarFixed: true,
-    content: "",
-  });
+  configureShell(
+    {
+      topBar: {
+        visible: true,
+        fixed: true,
+        identity: pageIdentity("自由探索模式", "/explore"),
+        actions: globalActions(),
+      },
+      bottomBar: { visible: false },
+    },
+    BROWSE_HELP,
+  );
+  app.replaceChildren();
   const levelsByChapter = new Map(
     catalog.chapters.map((chapter) => [
       chapter.number,
@@ -47,18 +73,31 @@ export async function renderLevels(
     levelsByChapter,
     completedIds: completed,
     levelCount: catalog.levels.length,
-    lastLevelId: last.publicId,
+    lastMapId: customLast?.id ?? last.publicId,
+    lastMapLabel: customLast?.name ?? last.publicId.toUpperCase(),
+    activeCollection: collectionId,
+    customCollections: customMapCatalog.collections,
+    customCollection,
     onNavigate: navigate,
     onRandom: () => {
+      if (customCollection) {
+        const chosen = customCollection.maps[
+          Math.floor(Math.random() * customCollection.maps.length)
+        ];
+        if (chosen)
+          navigate(explorePlayPath({ collection: collectionId, id: chosen.id }));
+        return;
+      }
       const chosen = hasActiveLevelFilters()
         ? randomFilteredLevel()
         : randomCatalogLevel(catalog);
-      if (chosen) navigate(`/play/${chosen.publicId}`);
+      if (chosen)
+        navigate(explorePlayPath({ collection: "original", id: chosen.publicId }));
     },
   });
   exploreApp.mount(app);
   await nextTick();
-  await mountLevelFilters(catalog);
+  if (collectionId === "original") await mountLevelFilters(catalog);
   return {
     destroy(): void {
       exploreApp.unmount();

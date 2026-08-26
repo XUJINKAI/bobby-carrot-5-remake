@@ -16,7 +16,7 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - 魔豆分段生长与藤蔓攀爬；
 - 荷叶漂流与停靠语义；
 - 风筝、龙火、风车、动态云等已恢复逻辑；
-- 完整 World Snapshot Undo、Restart；
+- 完整 World Snapshot Undo、Redo、Restart；
 - 通用 `onWorldEvent()` 世界事件流；
 - 地图实例参数驱动的 Timed Challenge；
 - 死亡/通关状态与 Web Result 层；

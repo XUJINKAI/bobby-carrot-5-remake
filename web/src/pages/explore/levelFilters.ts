@@ -225,7 +225,7 @@ function applyFilters(): void {
   for (const anchor of document.querySelectorAll<HTMLAnchorElement>(
     ".chapter-level[href]",
   )) {
-    const id = publicIdFromHref(anchor.getAttribute("href") ?? ""),
+    const id = anchor.dataset.levelId,
       level = id ? byId.get(id) : undefined,
       matches = !active || Boolean(level && levelMatchesCurrent(level));
     anchor.classList.toggle("filter-hidden", !matches);
@@ -312,10 +312,6 @@ function carrotRangeMatches(count: number, range: string): boolean {
           : range === "21+"
             ? count >= 21
             : false;
-}
-function publicIdFromHref(href: string): string | null {
-  const match = /(?:^|\/)play\/([^/?#]+)/.exec(href);
-  return match ? decodeURIComponent(match[1]!) : null;
 }
 function filterGroups(): FilterGroup[] {
   return ["difficulty", "carrots", "items", "scenes", "mechanics"];

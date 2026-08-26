@@ -1,269 +1,21 @@
-/* ---------- Play HUD v2 ---------- */
-.app-shell {
-  height: 100vh;
-  height: 100dvh;
-  display: grid;
-  grid-template-areas:
-    "top"
-    "scroll"
-    "bottom";
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
-  background: #07100b;
-}
-.app-shell-fixed-top {
-  grid-area: top;
-}
-.app-shell-fixed-bottom {
-  grid-area: bottom;
-}
-.app-scroll-region {
-  grid-area: scroll;
-  min-height: 0;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-}
-.app-topbar {
-  min-height: 58px;
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  padding: max(8px, env(safe-area-inset-top)) 14px 8px;
-  border-bottom: 1px solid #26352b;
-  background: #101a14ee;
-  z-index: 20;
-}
-.app-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: inherit;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.app-brand img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-.mode-selector,
-.app-actions,
-.app-context-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.mode-selector summary,
-.mode-selector a,
-.app-actions button,
-.app-context-actions button,
-.app-bottom-bar button {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #17251b;
-  color: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.mode-selector {
+/* GameStage 与运行时生成的游戏元素共用的基础布局。 */
+.game-stage {
   position: relative;
-}
-.mode-selector summary {
-  list-style: none;
-  cursor: pointer;
-}
-.mode-selector summary::-webkit-details-marker {
-  display: none;
-}
-.mode-selector summary::after {
-  content: " ▾";
-  color: var(--muted);
-}
-.mode-selector[open] summary::after {
-  content: " ▴";
-}
-.mode-selector nav {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
-  z-index: 30;
-  display: grid;
-  gap: 4px;
-  min-width: 190px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #101a14f7;
-  box-shadow: 0 16px 44px #0009;
-}
-.mode-selector a {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 5px;
-}
-.mode-selector a.active {
-  border-color: #9fc875;
-  background: #293d25;
-  color: #e6f4ce;
-}
-.app-context-actions {
-  justify-content: center;
-  min-width: 0;
-}
-.app-actions {
-  justify-content: flex-end;
-}
-.app-actions button {
-  width: 36px;
-  padding: 0;
-}
-.app-content {
-  min-height: 100%;
-  flex: 1 0 auto;
-}
-.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
-  width: min(1180px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 34px 0 60px;
-}
-.app-content:has(.bobby-editor) {
-  width: 100%;
-  min-height: 0;
-  height: 100%;
-  padding: 0;
-}
-.app-content:has(.home-page) {
-  width: 100%;
-  padding: 0;
-}
-.app-content > .adventure-desktop {
-  min-height: 100%;
-  height: 100%;
-}
-.app-content > .adventure-desktop .adventure-phone {
-  width: auto;
-  max-width: 100%;
-  height: 100%;
-  aspect-ratio: 5 / 8;
-}
-.app-bottom-bar {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 14px max(6px, env(safe-area-inset-bottom));
-  border-top: 1px solid #26352b;
-  background: #101a14;
-  color: #aebdb1;
-  font-size: 0.76rem;
-  z-index: 20;
-}
-.global-dialog-layer {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: #02050399;
-  backdrop-filter: blur(4px);
-  z-index: 50;
-}
-.global-dialog-layer[hidden] {
-  display: none;
-}
-.global-dialog {
-  width: min(430px, 100%);
-  max-height: min(76vh, 620px);
-  overflow: auto;
-  border: 1px solid #ffffff20;
-  border-radius: 16px;
-  background: linear-gradient(160deg, #18261c, #0d1710);
-  box-shadow: 0 25px 80px #000b;
-}
-.global-dialog > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  border-bottom: 1px solid #ffffff12;
-}
-.global-dialog > header button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-size: 1.4rem;
-}
-.global-dialog > div {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-}
-.global-dialog h3,
-.global-dialog p {
-  margin: 0;
-}
-.global-dialog label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-.global-dialog select,
-.settings-save-actions button {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #17251b;
-  color: inherit;
-}
-.settings-save-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.settings-save-summary,
-.settings-feedback {
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-.settings-feedback {
-  min-height: 1.2em;
-}
-.game-page,
-.game-page .game-stage {
-  width: 100%;
-  height: 100%;
   min-height: 0;
 }
-.game-page {
+
+.game-stage canvas {
   display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
+
 .game-canvas-layer {
   position: absolute;
   inset: 0;
 }
-.product-game-statistics {
-  position: absolute;
-  left: 12px;
-  top: 52px;
-  z-index: 6;
-  min-height: 32px;
-  padding: 7px 10px;
-  border: 1px solid #ffffff29;
-  border-radius: 999px;
-  background: #06100abd;
-  color: #dce8de;
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
+
 .result-overlay {
   position: absolute;
   inset: 0;
@@ -274,100 +26,68 @@
   backdrop-filter: blur(5px);
   z-index: 10;
 }
+
 .result-overlay[hidden] {
   display: none;
 }
 
-.game-toolbar-v2 {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 12px;
-  min-height: 54px;
-  overflow: visible;
-}
-.game-toolbar-left,
-.game-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-}
-.game-toolbar-right {
-  justify-content: flex-end;
-}
-.game-toolbar-v2 .icon-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 9px;
-  font-size: 1rem;
-  flex: 0 0 auto;
-}
-.game-toolbar-v2 .level-label {
-  white-space: nowrap;
-}
-.game-hud {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-width: 0;
-}
-.hud-chip,
-.item-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 9px;
-  border: 1px solid #ffffff13;
-  border-radius: 999px;
-  background: #0b140e;
-  color: #dce8de;
-  font-size: 0.76rem;
-  white-space: nowrap;
-}
-.hud-chip strong {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
-}
-.hud-items {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-}
-.item-chip {
-  padding: 0 7px;
-  color: #d9e8c8;
-}
-.item-chip.bonus-time {
-  color: #f0ce83;
-  border-color: #765d2e;
-}
-.step-chip {
-  margin-right: 2px;
+.result-card {
+  width: min(480px, 100%);
+  padding: 28px;
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
+  box-shadow: 8px 8px 0 #001b5b99;
+  text-align: center;
 }
 
+.result-card h2 {
+  font-size: 2rem;
+  margin: 0.25rem 0 0.55rem;
+}
+
+.result-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.result-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.result-kicker.danger {
+  color: #ff9c8f;
+}
+
+.result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1.3rem;
+}
+
+/* Engine 对白由 createGameSession 动态创建，不能依赖 Vue 模板作用域。 */
 .game-dialog {
   width: min(430px, calc(100vw - 28px));
   max-height: min(72vh, 620px);
   overflow: auto;
   padding: 0;
-  border: 1px solid #ffffff20;
-  border-radius: 16px;
-  background: linear-gradient(160deg, #18261c, #0d1710);
+  border: 3px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
   color: #eef5ef;
-  box-shadow: 0 25px 80px #000b;
+  box-shadow: 8px 8px 0 #001b5b99;
 }
+
 .game-dialog::backdrop {
   background: #02050399;
   backdrop-filter: blur(4px);
 }
+
 .game-dialog > header {
   position: sticky;
   top: 0;
@@ -379,218 +99,15 @@
   background: #142018f2;
   z-index: 1;
 }
+
 .game-dialog > header .icon-btn {
   width: 32px;
   height: 32px;
   padding: 0;
 }
-.game-dialog > p,
-.game-dialog > .help-list,
-.game-dialog > .info-grid,
-.game-dialog > .dialog-setting {
-  margin-left: 16px;
-  margin-right: 16px;
-}
-.info-grid {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px 18px;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
-.info-grid dt {
-  color: var(--muted);
-}
-.info-grid dd {
-  margin: 0;
-  text-align: right;
-}
-.dialog-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 13px 0;
-  border-bottom: 1px solid #ffffff0e;
-}
-.dialog-setting:last-child {
-  border-bottom: 0;
-  margin-bottom: 12px;
-}
-.dialog-setting input[type="range"] {
-  width: 180px;
-}
-.dialog-setting select {
-  max-width: 190px;
-  background: #101b14;
-  color: inherit;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-.help-list {
-  padding: 4px 0 14px;
+
+.game-dialog > .engine-dialog-text {
+  padding: 16px;
   line-height: 1.55;
-  color: #c8d5cb;
-}
-.help-list p {
-  margin: 12px 0;
-}
-.help-list kbd {
-  display: inline-block;
-  padding: 1px 6px;
-  border: 1px solid #ffffff24;
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  background: #0b120e;
-  font: inherit;
-  font-size: 0.78em;
-}
-
-@media (max-width: 980px) {
-  .game-toolbar-v2 {
-    grid-template-columns: auto 1fr auto;
-  }
-  .game-toolbar-left .difficulty-badge,
-  .game-toolbar-left .level-label {
-    display: none;
-  }
-  .hud-items {
-    max-width: 180px;
-    overflow: hidden;
-  }
-  .game-toolbar-right .step-chip {
-    display: none;
-  }
-}
-@media (max-width: 700px) {
-  .app-topbar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "brand global"
-      "mode context";
-    gap: 7px;
-    min-height: 88px;
-  }
-  .app-brand {
-    grid-area: brand;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .app-brand img {
-    flex: 0 0 auto;
-  }
-  .mode-selector {
-    grid-area: mode;
-  }
-  .app-context-actions {
-    grid-area: context;
-    justify-content: flex-end;
-    overflow-x: auto;
-  }
-  .app-actions {
-    grid-area: global;
-    gap: 3px;
-  }
-  .app-actions button {
-    width: 31px;
-    min-height: 31px;
-  }
-  .app-bottom-bar > span {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .game-toolbar-v2 {
-    display: flex;
-    overflow-x: auto;
-    gap: 8px;
-  }
-  .game-toolbar-left,
-  .game-toolbar-right {
-    flex: 0 0 auto;
-  }
-  .game-hud {
-    order: 2;
-    flex: 0 0 auto;
-    margin: auto;
-  }
-  .game-toolbar-right {
-    order: 3;
-  }
-  .game-toolbar-left {
-    order: 1;
-  }
-  .hud-items {
-    max-width: 110px;
-  }
-  .game-status {
-    font-size: 0.7rem;
-  }
-  .game-dialog {
-    max-height: 80vh;
-  }
-}
-
-/* DEBUG 检查器。 */
-.debug-panel {
-  z-index: 6;
-  line-height: 1.45;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-}
-@media (max-width: 700px) {
-  .game-page {
-    height: 100dvh;
-  }
-  .game-toolbar #edit-level {
-    display: none !important;
-  }
-  .game-status {
-    right: 190px;
-    max-width: none;
-  }
-  .debug-panel {
-    left: 12px;
-    right: 12px;
-    top: 12px;
-    width: auto;
-    max-height: 46%;
-  }
-}
-
-/* Final DEBUG layout: engine message on top, inspector fills remaining right-side height. */
-.debug-panel {
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
-  width: min(320px, calc(100% - 24px));
-  max-height: none;
-  overflow: hidden;
-  padding: 0;
-  white-space: normal;
-  flex-direction: column;
-}
-.debug-panel.visible {
-  display: flex;
-}
-.debug-engine {
-  flex: 0 0 auto;
-  padding: 10px 12px;
-  border-bottom: 1px solid #ffffff20;
-  background: #0d1811e8;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  color: #e5f5d7;
-}
-.debug-inspector {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  margin: 0;
-  padding: 10px 12px;
-  white-space: pre-wrap;
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  color: inherit;
 }

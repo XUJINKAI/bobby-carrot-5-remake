@@ -42,6 +42,7 @@ await game.loadLevel(levelData);
 game.move("left");
 game.setHeldDirection("up");
 game.undo();
+game.redo();
 game.restart();
 game.setZoom(1.25);
 game.setZoomLimits(0.8, 2.75);
@@ -79,6 +80,7 @@ loadLevel(LevelMap)
 const input = new InputController(game, {
   movement: true,
   undo: false,
+  redo: false,
   restart: true,
   pan: true,
   zoom: true,
@@ -90,6 +92,7 @@ const input = new InputController(game, {
 
 - `movement`
 - `undo`
+- `redo`
 - `restart`
 - `pan`
 - `zoom`

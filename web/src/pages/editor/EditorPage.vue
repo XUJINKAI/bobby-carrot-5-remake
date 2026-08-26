@@ -5,7 +5,7 @@ import { createGameSession } from "../../runtime/game/createGameSession.js";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import { siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
-import { nextTick, onBeforeUnmount, onMounted } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { downloadEditorFile, readEditorFile } from "./editorFiles.js";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
@@ -19,6 +19,8 @@ const props = defineProps<{
 const page = useEditorPage(props.initialLevel);
 const atlasUrl = siteUrl("assets/art/hd/ts.png");
 let session: GameSession | null = null;
+const paletteOpen = ref(false);
+const inspectorOpen = ref(false);
 
 async function togglePlay(): Promise<void> {
   if (page.playing.value) {
@@ -122,6 +124,9 @@ function onShellAction(event: Event): void {
   if (action === "editor-redo") page.document.redo();
   if (action === "editor-play") void togglePlay();
   if (action === "editor-file") page.fileDialogOpen.value = true;
+  if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
+  if (action === "editor-inspector") inspectorOpen.value = !inspectorOpen.value;
+  if (action === "editor-level-info") page.fileDialogOpen.value = true;
 }
 
 function onShellDialogOpen(): void {
@@ -172,7 +177,13 @@ function isTextInput(target: EventTarget | null): boolean {
 </script>
 
 <template>
-  <div class="bobby-editor">
+  <div
+    class="bobby-editor"
+    :class="{
+      'palette-sheet-open': paletteOpen,
+      'inspector-sheet-open': inspectorOpen,
+    }"
+  >
     <EditorWorkspace
       :level="page.snapshot.value.level as EditorLevel"
       :revision="page.snapshot.value.revision"

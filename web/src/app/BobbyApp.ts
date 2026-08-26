@@ -1,6 +1,11 @@
 import { createApp, reactive, type App as VueApp } from "vue";
 import { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
-import { fetchJson, type LevelCatalog } from "../services/catalog/catalog.js";
+import {
+  fetchJson,
+  type CustomMapCatalog,
+  type LevelCatalog,
+  type OfficialLevelData,
+} from "../services/catalog/catalog.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
 import { NOOP_CONTROLLER, type PageController } from "./pageContracts.js";
 import {
@@ -10,15 +15,18 @@ import {
   renderAdventureHome,
 } from "../pages/adventure/mountAdventurePages.js";
 import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
-import { renderOfficialGame } from "../pages/game/mountOfficialGame.js";
+import { renderGamePage } from "../pages/game/mountGamePage.js";
 import { renderHome } from "../pages/home/mountHomePage.js";
 import { renderLevels } from "../pages/explore/mountExplorePage.js";
 import {
+  defaultHelpDescriptor,
   installShellBridge,
-  type ShellOptions,
+  type HelpDescriptor,
+  type ShellConfig,
   type ShellViewState,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
+import { resolveExploreMap } from "../services/catalog/exploreMaps.js";
 
 interface AppRootHandle {
   openSettings(feedback?: string): void;
@@ -29,6 +37,7 @@ export class BobbyApp {
   private readonly audio = new TinySynthAudioBackend();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
   private catalog!: LevelCatalog;
+  private customMapCatalog!: CustomMapCatalog;
   private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
@@ -42,7 +51,12 @@ export class BobbyApp {
     this.catalog = await fetchJson<LevelCatalog>(
       siteUrl("assets/catalog.json"),
     );
-    installShellBridge({ apply: (options) => this.applyShell(options) });
+    this.customMapCatalog = await fetchJson<CustomMapCatalog>(
+      siteUrl("assets/custom-maps.json"),
+    );
+    installShellBridge({
+      apply: (config, help) => this.applyShell(config, help),
+    });
     const contentReady = new Promise<void>((resolve) => {
       this.vueApp = createApp(AppRoot, {
         shell: this.shell,
@@ -75,15 +89,9 @@ export class BobbyApp {
     this.vueRoot = null;
   }
 
-  private applyShell(options: ShellOptions): void {
-    this.shell.mode = options.mode ?? "home";
-    this.shell.contextActions = options.contextActions ?? [];
-    this.shell.contextInfo = options.contextInfo ?? "准备就绪";
-    this.shell.showBottomBar = options.showBottomBar !== false;
-    this.shell.showScreenControlToggle =
-      options.showScreenControlToggle !== false;
-    this.shell.topBarFixed = options.topBarFixed ?? true;
-    this.shell.bottomBarFixed = options.bottomBarFixed ?? true;
+  private applyShell(config: ShellConfig, help: HelpDescriptor): void {
+    this.shell.config = config;
+    this.shell.help = help;
   }
 
   private readonly resumeAudio = (): void => this.audio.resume();
@@ -109,6 +117,7 @@ export class BobbyApp {
     const context = {
       app: this.content,
       catalog: this.catalog,
+      customMapCatalog: this.customMapCatalog,
       audio: this.audio,
       navigate: this.navigate,
     };
@@ -116,8 +125,37 @@ export class BobbyApp {
       this.controller = await renderHome(context);
       return;
     }
-    if (path === "/levels") {
-      this.controller = await renderLevels(context);
+    if (path === "/explore" || path === "/explore/original") {
+      this.controller = await renderLevels(context, "original");
+      return;
+    }
+    if (path.startsWith("/explore/play/")) {
+      const parts = path.split("/").filter(Boolean);
+      const ref = {
+        collection: decodeURIComponent(parts[2] ?? "").toLowerCase(),
+        id: decodeURIComponent(parts[3] ?? "").toLowerCase(),
+      };
+      const resolved = await resolveExploreMap(
+        this.catalog,
+        this.customMapCatalog,
+        ref,
+      );
+      if (!resolved) {
+        this.navigate("/explore");
+        return;
+      }
+      this.controller = await renderGamePage({
+        ...context,
+        level: resolved.level,
+        identity: { ...resolved.ref, title: resolved.title },
+        official: resolved.official,
+        mode: "explore",
+      });
+      return;
+    }
+    if (path.startsWith("/explore/")) {
+      const collection = decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
+      this.controller = await renderLevels(context, collection);
       return;
     }
     if (path === "/settings") {
@@ -149,9 +187,18 @@ export class BobbyApp {
         this.navigate("/adventure/chapters");
         return;
       }
-      this.controller = await renderOfficialGame({
+      const official = await fetchJson<OfficialLevelData>(
+        siteUrl(`assets/${level.path}`),
+      );
+      this.controller = await renderGamePage({
         ...context,
-        level,
+        level: official,
+        identity: {
+          collection: "adventure",
+          id: level.publicId,
+          title: level.publicId.toUpperCase(),
+        },
+        official: level,
         mode: "adventure",
       });
       return;
@@ -161,28 +208,17 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/edit/")) {
-      const publicId = path.split("/").pop();
-      this.controller = publicId
-        ? await renderEditorPage({ ...context, publicId })
-        : await renderEditorPage(context);
-      return;
-    }
-    if (path.startsWith("/play/")) {
-      const publicId = decodeURIComponent(
-        path.split("/").pop() ?? "",
-      ).toLowerCase();
-      const meta = this.catalog.levels.find(
-        (level) => level.publicId === publicId,
-      );
-      if (!meta) {
-        this.navigate("/levels");
-        return;
-      }
-      this.controller = await renderOfficialGame({
-        ...context,
-        level: meta,
-        mode: "explore",
-      });
+      const parts = path.split("/").filter(Boolean);
+      this.controller =
+        parts.length === 3
+          ? await renderEditorPage({
+              ...context,
+              mapRef: {
+                collection: decodeURIComponent(parts[1] ?? "").toLowerCase(),
+                id: decodeURIComponent(parts[2] ?? "").toLowerCase(),
+              },
+            })
+          : await renderEditorPage(context);
       return;
     }
     this.navigate("/");
@@ -191,13 +227,8 @@ export class BobbyApp {
 
 function defaultShellState(): ShellViewState {
   return {
-    mode: "home",
-    contextActions: [],
-    contextInfo: "准备就绪",
-    showBottomBar: false,
-    showScreenControlToggle: false,
-    topBarFixed: true,
-    bottomBarFixed: true,
+    config: {},
+    help: defaultHelpDescriptor(),
   };
 }
 

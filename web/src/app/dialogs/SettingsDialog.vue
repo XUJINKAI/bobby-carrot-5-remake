@@ -62,3 +62,21 @@ function requestReset(): void {
     </div>
   </section>
 </template>
+
+<style scoped>
+.settings-save-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-save-summary,
+.settings-feedback {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.settings-feedback {
+  min-height: 1.2em;
+}
+</style>

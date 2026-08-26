@@ -34,6 +34,7 @@ if (hasGeneratedAssets()) {
   run(process.execPath, ["tools/src/build-adventure-catalog.mjs"]);
   run(process.execPath, ["tools/src/build-level-filters.mjs"]);
 }
+run(process.execPath, ["tools/src/build-custom-map-catalog.mjs"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "--force"]);
@@ -46,8 +47,6 @@ for (const file of [
   "index.html",
   "style.css",
   "game-ui.css",
-  "level-filters.css",
-  "adventure.css",
 ]) {
   copyFile(path.join(root, "web", file), path.join(dist, file));
 }

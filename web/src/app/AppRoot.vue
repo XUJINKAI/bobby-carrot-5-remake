@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import type { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
-import { useGlobalSettings } from "../shell/settings/useGlobalSettings.js";
-import GlobalDialogLayer from "../shell/dialogs/GlobalDialogLayer.vue";
+import { useGlobalSettings } from "./settings/useGlobalSettings.js";
+import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
-import HomeTopBar from "../shell/HomeTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
 
@@ -35,17 +34,35 @@ function openSettings(feedback = ""): void {
   openDialog("settings", feedback);
 }
 
-function dispatchContextAction(action: string): void {
-  window.dispatchEvent(
-    new CustomEvent("game-shell-action", { detail: { action } }),
-  );
+function dispatchAction(action: string): void {
+  if (action === "music") {
+    settings.toggleMusic();
+    updateActionPressed("music", settings.state.musicEnabled);
+  }
+  else if (action === "settings") openSettings();
+  else if (action === "help") openDialog("help");
+  else if (action === "screen-control") {
+    settings.setScreenControl(!settings.state.screenControlEnabled);
+    updateActionPressed("screen-control", settings.state.screenControlEnabled);
+  } else {
+    window.dispatchEvent(
+      new CustomEvent("game-shell-action", { detail: { action } }),
+    );
+  }
 }
 
-function handleDelegatedAction(event: MouseEvent): void {
-  const action = (event.target as HTMLElement)
-    .closest<HTMLElement>("[data-action]")?.dataset.action;
-  if (action === "settings") openSettings();
-  else if (action === "help") openDialog("help");
+function updateActionPressed(id: string, pressed: boolean): void {
+  const topBar = props.shell.config.topBar;
+  const bottomBar = props.shell.config.bottomBar;
+  const actions = [
+    ...(topBar?.back ? [topBar.back] : []),
+    ...(topBar?.commands ?? []),
+    ...(topBar?.actions ?? []),
+    ...(bottomBar?.leading ?? []),
+    ...(bottomBar?.trailing ?? []),
+  ];
+  const target = actions.find((item) => item.id === id);
+  if (target) target.pressed = pressed;
 }
 
 defineExpose({ openSettings });
@@ -55,81 +72,42 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    :class="shell.mode === 'home' ? 'home-root' : 'app-shell'"
-    :data-mode="shell.mode"
-    @click="handleDelegatedAction"
-  >
-    <HomeTopBar
-      v-if="shell.mode === 'home'"
-      key="home-topbar"
-      :music-enabled="settings.state.musicEnabled"
-      @toggle-music="settings.toggleMusic"
-      @settings="openSettings()"
-      @help="openDialog('help')"
-    />
+  <div class="app-shell" data-shell>
     <AppTopBar
-      v-else-if="shell.topBarFixed"
+      v-if="shell.config.topBar?.visible !== false && shell.config.topBar?.fixed !== false"
       key="fixed-topbar"
       class="app-shell-fixed-top"
-      :mode="shell.mode"
-      :context-actions="shell.contextActions"
-      :music-enabled="settings.state.musicEnabled"
+      :config="shell.config.topBar ?? {}"
       @navigate="navigate"
-      @toggle-music="settings.toggleMusic"
-      @settings="openSettings()"
-      @help="openDialog('help')"
-      @context-action="dispatchContextAction"
+      @action="dispatchAction"
     />
-    <div
-      key="scroll-region"
-      :class="shell.mode === 'home' ? 'home-scroll-region' : 'app-scroll-region'"
-    >
+    <div key="scroll-region" class="app-scroll-region">
       <AppTopBar
-        v-if="shell.mode !== 'home' && !shell.topBarFixed"
-        :mode="shell.mode"
-        :context-actions="shell.contextActions"
-        :music-enabled="settings.state.musicEnabled"
+        v-if="shell.config.topBar?.visible !== false && shell.config.topBar?.fixed === false"
+        :config="shell.config.topBar ?? {}"
         @navigate="navigate"
-        @toggle-music="settings.toggleMusic"
-        @settings="openSettings()"
-        @help="openDialog('help')"
-        @context-action="dispatchContextAction"
+        @action="dispatchAction"
       />
       <main ref="content" key="shell-content" class="app-content" />
       <AppBottomBar
-        v-if="
-          shell.mode !== 'home' &&
-          shell.showBottomBar &&
-          !shell.bottomBarFixed
-        "
-        :context-info="shell.contextInfo"
-        :show-screen-control="shell.showScreenControlToggle"
-        :screen-control-enabled="settings.state.screenControlEnabled"
-        @toggle-screen-control="
-          settings.setScreenControl(!settings.state.screenControlEnabled)
-        "
+        v-if="shell.config.bottomBar?.visible && shell.config.bottomBar.fixed === false"
+        :config="shell.config.bottomBar"
+        @navigate="navigate"
+        @action="dispatchAction"
       />
     </div>
     <AppBottomBar
-      v-if="
-        shell.mode !== 'home' &&
-        shell.showBottomBar &&
-        shell.bottomBarFixed
-      "
+      v-if="shell.config.bottomBar?.visible && shell.config.bottomBar.fixed !== false"
       key="fixed-bottombar"
       class="app-shell-fixed-bottom"
-      :context-info="shell.contextInfo"
-      :show-screen-control="shell.showScreenControlToggle"
-      :screen-control-enabled="settings.state.screenControlEnabled"
-      @toggle-screen-control="
-        settings.setScreenControl(!settings.state.screenControlEnabled)
-      "
+      :config="shell.config.bottomBar"
+      @navigate="navigate"
+      @action="dispatchAction"
     />
     <GlobalDialogLayer
       v-if="dialog"
       :kind="dialog"
-      :mode="shell.mode"
+      :help="shell.help"
       :settings="settings.state"
       :feedback="settings.feedback.value"
       @close="closeDialog"
@@ -146,3 +124,69 @@ onMounted(() => {
     />
   </div>
 </template>
+
+<style>
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-areas:
+    "top"
+    "scroll"
+    "bottom";
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--bc-bg);
+}
+
+.app-shell-fixed-top {
+  grid-area: top;
+}
+
+.app-shell-fixed-bottom {
+  grid-area: bottom;
+}
+
+.app-scroll-region {
+  grid-area: scroll;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  min-height: 100%;
+  flex: 1 0 auto;
+}
+
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0 60px;
+}
+
+.app-content:has(.bobby-editor) {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.app-content:has(.home-page) {
+  width: 100%;
+  padding: 0;
+}
+
+.app-content > .adventure-desktop {
+  min-height: 100%;
+  height: 100%;
+}
+
+.app-content > .adventure-desktop .adventure-phone {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  aspect-ratio: 5 / 8;
+}
+</style>

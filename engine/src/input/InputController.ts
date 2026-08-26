@@ -18,6 +18,7 @@ export interface InputControllerOptions {
   pointer?: boolean;
   movement?: boolean;
   undo?: boolean;
+  redo?: boolean;
   restart?: boolean;
   pan?: boolean;
   zoom?: boolean;
@@ -32,6 +33,7 @@ interface InputCapabilities {
   pointer: boolean;
   movement: boolean;
   undo: boolean;
+  redo: boolean;
   restart: boolean;
   pan: boolean;
   zoom: boolean;
@@ -77,6 +79,7 @@ export class InputController {
       pointer: options.pointer ?? true,
       movement: options.movement ?? true,
       undo: options.undo ?? options.allowUndo ?? true,
+      redo: options.redo ?? options.undo ?? options.allowUndo ?? true,
       restart: options.restart ?? true,
       pan: options.pan ?? true,
       zoom: options.zoom ?? true,
@@ -157,6 +160,8 @@ export class InputController {
     }
     if (event.repeat) return;
     if (key === "r" && this.capabilities.restart) this.game.restart();
+    else if (key === "z" && event.shiftKey && this.capabilities.redo)
+      this.game.redo();
     else if ((key === "z" || key === "u") && this.capabilities.undo)
       this.game.undo();
     else if ((key === "=" || key === "+") && this.capabilities.zoom)

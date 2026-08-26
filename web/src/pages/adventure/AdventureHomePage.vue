@@ -28,8 +28,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       >章节选择</a>
       <a
         class="ghost-btn"
-        href="/levels"
-        @click.prevent="emit('navigate', '/levels')"
+        href="/explore"
+        @click.prevent="emit('navigate', '/explore')"
       >自由探索模式</a>
       <button class="ghost-btn" type="button" data-action="settings">存档 / 设置</button>
     </nav>
@@ -40,3 +40,53 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     </section>
   </AdventureFrame>
 </template>
+
+<style scoped>
+.adventure-title {
+  padding: clamp(28px, 7vh, 72px) 28px 20px;
+  text-align: center;
+}
+
+.adventure-title h1 {
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  margin: 0.2em 0;
+}
+
+.adventure-title p {
+  line-height: 1.55;
+  color: #aebbb1;
+}
+
+.adventure-menu {
+  display: grid;
+  gap: 12px;
+  padding: 12px 26px;
+}
+
+.adventure-menu a,
+.adventure-menu button {
+  text-align: center;
+  text-decoration: none;
+}
+
+.adventure-wallet {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.adventure-wallet span {
+  display: grid;
+  gap: 3px;
+  padding: 12px 4px;
+  background: #111d16;
+}
+
+.adventure-wallet strong {
+  font-size: 1.1rem;
+}
+</style>

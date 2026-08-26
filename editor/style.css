@@ -1,12 +1,12 @@
 .bobby-editor {
   height: 100%;
-  background: #09100c;
-  color: #edf5ef;
+  background: var(--bc-bg, #143678);
+  color: #fff;
   overflow: hidden;
-  --editor-panel: #111a14;
-  --editor-line: #2a392e;
-  --editor-muted: #91a397;
-  --editor-accent: #d5f0a1;
+  --editor-panel: var(--bc-panel, #005997);
+  --editor-line: var(--bc-panel-border, #002882);
+  --editor-muted: var(--bc-text-muted, #b4eafd);
+  --editor-accent: var(--bc-active, #00a2ba);
 }
 .editor-toolbar {
   display: flex;
@@ -15,7 +15,7 @@
   min-height: 54px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--editor-line);
-  background: #111a14;
+  background: var(--editor-panel);
   overflow-x: auto;
   z-index: 5;
 }
@@ -28,10 +28,10 @@
 }
 .editor-btn,
 .editor-mini-btn {
-  border: 1px solid #35463b;
-  background: #17231a;
-  color: #e8f0e9;
-  border-radius: 8px;
+  border: 2px solid var(--editor-line);
+  background: #07518f;
+  color: #fff;
+  border-radius: 5px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -46,8 +46,8 @@
 }
 .editor-btn:hover:not(:disabled),
 .editor-mini-btn:hover:not(:disabled) {
-  border-color: #7f9d72;
-  background: #263629;
+  border-color: var(--editor-line);
+  background: var(--bc-active, #00a2ba);
 }
 .editor-btn:disabled,
 .editor-mini-btn:disabled {
@@ -56,9 +56,9 @@
 }
 .editor-play,
 .editor-primary {
-  background: #d5f0a1;
-  color: #142013;
-  border-color: #d5f0a1;
+  background: var(--editor-accent);
+  color: #fff;
+  border-color: var(--editor-line);
   font-weight: 750;
 }
 .editor-stop {
@@ -511,6 +511,9 @@
     box-shadow: 0 15px 40px #0009;
     display: none;
   }
+  .bobby-editor.inspector-sheet-open .editor-inspector {
+    display: block;
+  }
   .editor-palette {
     padding: 9px;
   }
@@ -525,6 +528,18 @@
   }
   .editor-palette {
     display: none;
+  }
+  .bobby-editor.palette-sheet-open .editor-palette {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 52px;
+    z-index: 9;
+    display: block;
+    max-height: min(68vh, 520px);
+    border: 3px solid var(--editor-line);
+    border-radius: 7px;
+    box-shadow: 7px 7px 0 #001b5b99;
   }
   .editor-toolbar {
     min-height: 50px;

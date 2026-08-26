@@ -25,19 +25,51 @@ try {
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
   await smoke(`${origin}/`, [
-    'class="home-root"',
+    "data-shell",
     'class="home-mode-panel"',
+    'class="home-sky-brand"',
   ]);
-  await smoke(`${origin}/levels`, [
-    'class="level-browser-head"',
-    'class="level-filter-shell"',
-    'data-filter-trigger="difficulty"',
-    'data-filter-trigger="mechanics"',
+  await smoke(
+    `${origin}/explore`,
+    [
+      'class="explore-tabs"',
+      'class="level-browser-head"',
+      'class="level-filter-shell"',
+      'data-filter-trigger="difficulty"',
+      'data-filter-trigger="mechanics"',
+    ],
+    ["进入冒险模式"],
+  );
+  await interactiveFilterSmoke(`${origin}/explore`);
+  await smoke(`${origin}/explore/pushbox`, [
+    'class="explore-tabs"',
+    'class="explore-custom-collection"',
+    "Pushbox 1",
   ]);
-  await smoke(`${origin}/play/1-1`, [
+  await smoke(`${origin}/explore/test`, [
+    'class="explore-custom-collection"',
+    "Portal Lab",
+    "Maximum Moves Lab",
+  ]);
+  await smoke(`${origin}/explore/play/test/test-portal`, [
+    'class="game-page"',
+    'id="game"',
+    "Portal Lab",
+  ]);
+  await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',
     'id="undo"',
+    'id="redo"',
+    'class="shell-topbar-left"',
+    'class="shell-topbar-center"',
+    'class="shell-topbar-right"',
+    'class="shell-action-badge difficulty-badge',
+  ]);
+  await smoke(`${origin}/explore/play/pushbox/box-01`, [
+    'class="game-page"',
+    'id="game"',
+    "Pushbox 1",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
@@ -64,6 +96,10 @@ try {
     'class="bobby-editor"',
     'id="editor-play"',
     'class="editor-palette"',
+  ]);
+  await smoke(`${origin}/edit/pushbox/box-01`, [
+    'class="bobby-editor"',
+    "Pushbox 1 · 副本",
   ]);
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");
@@ -170,6 +206,148 @@ function runBrowser(url) {
     });
   });
 }
+
+async function interactiveFilterSmoke(url) {
+  const child = spawn(
+    browser,
+    [
+      "--headless=new",
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-background-networking",
+      "--remote-debugging-pipe",
+      "about:blank",
+    ],
+    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
+  );
+  const input = child.stdio[3],
+    output = child.stdio[4];
+  if (!input || !output) throw new Error("Chromium CDP pipe failed to open");
+  const cdp = createCdpPipe(input, output);
+  try {
+    const { targetId } = await cdp.send("Target.createTarget", { url });
+    const { sessionId } = await cdp.send("Target.attachToTarget", {
+      targetId,
+      flatten: true,
+    });
+    await waitFor(async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('[data-filter-trigger=\"difficulty\"]')",
+        ),
+      ),
+    );
+    const before = await cdp.evaluate(
+      sessionId,
+      "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
+    );
+    await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-filter-trigger=\"difficulty\"]').click(); document.querySelector('[data-filter-group=\"difficulty\"][data-filter-option=\"hard\"]').click(); true",
+    );
+    await waitFor(async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('[data-filter-option=\"hard\"]')?.classList.contains('selected')",
+        ),
+      ),
+    );
+    const filtered = await cdp.evaluate(
+        sessionId,
+        "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
+      ),
+      hidden = await cdp.evaluate(
+        sessionId,
+        "document.querySelectorAll('.chapter-level.filter-hidden').length",
+      );
+    if (!(filtered > 0 && hidden > 0 && filtered < before))
+      throw new Error(
+        `Explore difficulty filter produced invalid counts: before=${before}, visible=${filtered}, hidden=${hidden}`,
+      );
+    await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-filter-clear]').click(); true",
+    );
+    await waitFor(async () =>
+      (await cdp.evaluate(
+        sessionId,
+        "document.querySelectorAll('.chapter-level.filter-hidden').length",
+      )) === 0,
+    );
+    const restored = await cdp.evaluate(
+      sessionId,
+      "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
+    );
+    if (restored !== before)
+      throw new Error(
+        `Explore filter clear did not restore all levels: before=${before}, restored=${restored}`,
+      );
+  } finally {
+    cdp.close();
+    child.kill("SIGKILL");
+  }
+}
+
+function createCdpPipe(input, output) {
+  let nextId = 1,
+    buffer = "";
+  const pending = new Map();
+  output.on("data", (chunk) => {
+    buffer += chunk.toString();
+    let boundary = buffer.indexOf("\0");
+    while (boundary >= 0) {
+      const packet = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 1);
+      if (packet) {
+        const message = JSON.parse(packet),
+          request = message.id ? pending.get(message.id) : undefined;
+        if (request) {
+          pending.delete(message.id);
+          if (message.error) request.reject(new Error(message.error.message));
+          else request.resolve(message.result ?? {});
+        }
+      }
+      boundary = buffer.indexOf("\0");
+    }
+  });
+  return {
+    send(method, params = {}, sessionId) {
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+      });
+    },
+    async evaluate(sessionId, expression) {
+      const response = await this.send(
+        "Runtime.evaluate",
+        { expression, returnByValue: true },
+        sessionId,
+      );
+      if (response.exceptionDetails)
+        throw new Error(`Browser evaluation failed: ${expression}`);
+      return response.result?.value;
+    },
+    close() {
+      input.end();
+      for (const request of pending.values())
+        request.reject(new Error("Chromium CDP pipe closed"));
+      pending.clear();
+    },
+  };
+}
+
+async function waitFor(check, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await check()) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error("Browser interaction timed out");
+}
 function findBrowser() {
   const candidates = [
     process.env.BROWSER_PATH,
@@ -177,6 +355,8 @@ function findBrowser() {
     "google-chrome-stable",
     "chromium",
     "chromium-browser",
+    process.platform === "linux" ? "/usr/bin/chromium" : null,
+    process.platform === "linux" ? "/usr/lib/chromium/chromium" : null,
     process.platform === "darwin"
       ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
       : null,
@@ -188,6 +368,14 @@ function findBrowser() {
       : null,
   ].filter(Boolean);
   for (const candidate of candidates) {
+    if (path.isAbsolute(candidate)) {
+      try {
+        fs.accessSync(candidate, fs.constants.X_OK);
+        return candidate;
+      } catch {
+        continue;
+      }
+    }
     const probe = spawnSync(candidate, ["--version"], {
       encoding: "utf8",
       timeout: 5000,

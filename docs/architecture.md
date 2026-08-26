@@ -151,7 +151,7 @@ Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
                          InputController
                                  │
                                  ▼
-       move / held direction / undo / restart / pan / zoom / debug
+    move / held direction / undo / redo / restart / pan / zoom / debug
                                  │
                                  ▼
                                 Game
@@ -313,6 +313,19 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 `00.dat` 的五张地图分别是 Beaver Shop / Cloud 9 / Dream Machine / Dreamland Reward / Campaign Intro。
 
+## Explore content / Custom Map Catalog
+
+Explore 使用 collection 组织所有自由游玩内容。`original` 由 Web 固定为第一个 collection，内置自定义内容由 `custom_maps/collections.json` 定义展示名称、顺序与说明：
+
+```text
+custom_maps/<collection>/<map>.json
+        ↓ build
+assets/generated/custom-maps.json
+assets/generated/custom-maps/<collection>/<map>.json
+```
+
+源码目录负责内容归类，manifest 负责产品展示。Web 只消费生成后的 Catalog 与地图资产，不直接读取源码目录。列表页面可以按 collection 使用专门布局；游玩和编辑入口统一先解析为纯 `LevelMap`。
+
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。关卡级难度筛选使用现有历史/估算数据，两类数据分别维护。
 
 ## Editor
@@ -353,7 +366,9 @@ Web 源码按产品职责组织：
 ```text
 web/src
 ├── app/                 Vue 根应用、路由协调与页面生命周期合同
-├── shell/               TopBar、BottomBar、模式选择、全局 Dialog 与 Shell 配置
+├── shell/               通用 TopBar、BottomBar、Identity、Action 与 ShellConfig
+├── app/dialogs/         Settings、Help 等产品级 Dialog
+├── app/settings/        全局设置状态与浏览器适配
 ├── pages/<mode>/        页面组件、页面挂载器与页面私有交互
 ├── runtime/game/        Web 对 Engine session 生命周期的适配
 ├── services/            Audio、Catalog 与产品资产访问
@@ -368,7 +383,7 @@ Result 的“下一关 / 重玩 / 返回章节 / 编辑地图”等动作属于 
 
 ### Product Shell 与 GameStage
 
-Web 使用统一 Product Shell 组织 Home、Adventure、Explore、Editor、Custom、Settings 和 Help。可游玩页面共享同一个 GameStage 组合：
+Web 使用页面无关的 Generic Shell 组织 TopBar、Content 和 BottomBar。页面提交 `ShellConfig`；Music、Settings、Help 与 Dialog 由 App 层解释，Shell 不持有 mode 或业务语义。完整合同见 [`contracts/web-shell.md`](contracts/web-shell.md)。可游玩页面共享同一个 GameStage 组合：
 
 ```text
 GameStage
@@ -403,16 +418,25 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 正式 URL：
 
 ```text
-/levels
-/play/1-1
+/explore
+/explore/original
+/explore/pushbox
+/explore/test
+/explore/play/original/1-1
+/explore/play/pushbox/box-01
+/explore/play/test/test-portal
 /adventure
 /adventure/chapters
 /adventure/chapter/1
 /adventure/play/1-1
 /settings
 /edit
-/edit/1-1
+/edit/original/1-1
+/edit/pushbox/box-01
+/edit/test/test-portal
 ```
+
+`/explore` 直接显示 Original Tab。Explore gameplay 使用 `/explore/play/<collection>/<map-id>`，Editor clone 使用 `/edit/<collection>/<map-id>`；路径由 Web 的集中 route builder 生成。
 
 服务器负责 app-route fallback；静态资源路径按真实文件提供。
 

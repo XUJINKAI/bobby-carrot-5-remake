@@ -220,13 +220,30 @@ async function verifyCustomMaps() {
   const { getObjectDefinition, hasObjectDefinition, hasTerrainDefinition } =
     await import("../../engine/dist/index.js");
   const directory = path.join(root, "custom_maps");
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(directory, "collections.json"), "utf8"),
+  );
+  const catalog = JSON.parse(
+    fs.readFileSync(path.join(root, "assets/generated/custom-maps.json"), "utf8"),
+  );
+  if (catalog.schemaVersion !== 1 || !Array.isArray(catalog.collections))
+    throw new Error("Custom Map Catalog 格式无效");
+  if (catalog.collections.length !== manifest.filter((item) => item.visible).length)
+    throw new Error("Custom Map Catalog 与 collection manifest 不一致");
   const files = [];
   walkSource(directory, (file) => {
-    if (file.endsWith(".json")) files.push(file);
+    if (file.endsWith(".json") && file !== path.join(directory, "collections.json"))
+      files.push(file);
   });
-  for (const required of ["portal.json", "pushbox.json", "max-moves.json"])
-    if (!fs.existsSync(path.join(directory, "engine-lab", required)))
+  for (const required of [
+    "test-portal.json",
+    "test-pushable.json",
+    "test-max-moves.json",
+  ])
+    if (!fs.existsSync(path.join(directory, "test", required)))
       throw new Error(`缺少核心 Engine Lab 地图：${required}`);
+  if (!fs.existsSync(path.join(directory, "pushbox", "box-01.json")))
+    throw new Error("缺少核心 Pushbox 地图：box-01.json");
   for (const file of files) {
     const source = fs.readFileSync(file, "utf8");
     const editorLevel = parseEditorLevel(source);
@@ -382,8 +399,8 @@ function verifySourceBoundaries() {
       );
   });
 
-  const officialGame = fs.readFileSync(
-      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
+  const gamePage = fs.readFileSync(
+      path.join(root, "web/src/pages/game/mountGamePage.ts"),
       "utf8",
     ),
     gameSession = fs.readFileSync(
@@ -417,17 +434,17 @@ function verifySourceBoundaries() {
     );
 
   if (
-    !/planAdventureSession\(meta\.publicId/.test(officialGame) ||
-    /meta\.chapterLevel\s*>\s*10/.test(officialGame)
+    !/planAdventureSession\(meta!?\.publicId/.test(gamePage) ||
+    /meta!?\.chapterLevel\s*>\s*10/.test(gamePage)
   )
     throw new Error(
       "Official Adventure identity must come from Adventure session planning, not archive chapterLevel",
     );
-  if (/createAdventureRuntime|adventureRuntime/.test(officialGame))
+  if (/createAdventureRuntime|adventureRuntime/.test(gamePage))
     throw new Error(
       "Web must not host a second Adventure gameplay runtime beside Engine",
     );
-  if (!/prepareAdventureLevel\(meta\.publicId/.test(officialGame))
+  if (!/prepareAdventureLevel\(meta!?\.publicId/.test(gamePage))
     throw new Error(
       "Adventure play must prepare/augment a LevelMap before passing it to Engine",
     );
@@ -612,16 +629,16 @@ function verifyUnifiedUiShell() {
       path.join(root, "web/src/app/AppRoot.vue"),
       "utf8",
     ),
-    modeSelector = fs.readFileSync(
-      path.join(root, "web/src/shell/ModeSelector.vue"),
+    identity = fs.readFileSync(
+      path.join(root, "web/src/shell/ShellIdentity.vue"),
       "utf8",
     ),
     dialogLayer = fs.readFileSync(
-      path.join(root, "web/src/shell/dialogs/GlobalDialogLayer.vue"),
+      path.join(root, "web/src/app/dialogs/GlobalDialogLayer.vue"),
       "utf8",
     ),
     settingsDialog = fs.readFileSync(
-      path.join(root, "web/src/shell/dialogs/SettingsDialog.vue"),
+      path.join(root, "web/src/app/dialogs/SettingsDialog.vue"),
       "utf8",
     ),
     homePage = ["HomeDemo.vue", "HomeModeMenu.vue", "ProjectIntro.vue"]
@@ -629,8 +646,8 @@ function verifyUnifiedUiShell() {
         fs.readFileSync(path.join(root, "web/src/pages/home", file), "utf8"),
       )
       .join("\n"),
-    officialGame = fs.readFileSync(
-      path.join(root, "web/src/pages/game/mountOfficialGame.ts"),
+    gamePage = fs.readFileSync(
+      path.join(root, "web/src/pages/game/mountGamePage.ts"),
       "utf8",
     ),
     pageAdapters = [
@@ -638,7 +655,7 @@ function verifyUnifiedUiShell() {
       "web/src/pages/explore/mountExplorePage.ts",
       "web/src/pages/adventure/mountAdventurePages.ts",
       "web/src/pages/editor/mountEditorPage.ts",
-      "web/src/pages/game/mountOfficialGame.ts",
+      "web/src/pages/game/mountGamePage.ts",
     ]
       .map((file) => fs.readFileSync(path.join(root, file), "utf8"))
       .join("\n");
@@ -649,7 +666,7 @@ function verifyUnifiedUiShell() {
   if (
     !/createApp\(AppRoot/.test(application) ||
     !/installShellBridge/.test(application) ||
-    !/root\.value\?\.contains\(target\)/.test(modeSelector)
+    !/root\.value\?\.contains\(target\)/.test(identity)
   )
     throw new Error("Vue App Root must own routing shell and outside-dismiss modes");
   if (
@@ -657,26 +674,28 @@ function verifyUnifiedUiShell() {
     !/class=["']global-dialog settings-dialog["']/.test(settingsDialog)
   )
     throw new Error("Vue global settings dialog must close through its backdrop");
-  if (/renderSettingsDialog|settings-card/.test(officialGame))
+  if (/renderSettingsDialog|settings-card/.test(gamePage))
     throw new Error("Gameplay pages must use the shared application settings dialog");
-  if (!/Vue App Shell/.test(shell) || !/renderAppShell/.test(shell))
-    throw new Error("Web page adapters must submit state to the Vue App Shell");
+  if (
+    !/interface ShellConfig/.test(shell) ||
+    !/configureShell/.test(shell) ||
+    /AppMode|mode\s*:/.test(shell)
+  )
+    throw new Error("Web Shell contract must be configuration-driven and mode agnostic");
   if (/template\s*:/.test(appRoot) || !/AppTopBar/.test(appRoot))
     throw new Error("Vue UI must use responsibility-focused .vue SFC files");
-  for (const fixedOption of ["topBarFixed", "bottomBarFixed"]) {
-    const configuredPages = pageAdapters.match(
-      new RegExp(`${fixedOption}\\s*:\\s*true`, "g"),
-    )?.length;
-    if (!configuredPages || configuredPages < 4)
-      throw new Error(`Internal pages must explicitly configure ${fixedOption}`);
-  }
+  if ((pageAdapters.match(/configureShell\(/g)?.length ?? 0) < 5)
+    throw new Error("All primary pages must provide a ShellConfig");
+  for (const removed of ["HomeTopBar.vue", "ModeSelector.vue"])
+    if (fs.existsSync(path.join(root, "web/src/shell", removed)))
+      throw new Error(`Obsolete mode-aware Shell component remains: ${removed}`);
   if (!/app-scroll-region/.test(appRoot))
     throw new Error("Fixed Shell bars must leave scrolling to the content region");
   for (const component of [
     "HomePage.vue",
     "ExplorePage.vue",
     "AdventureHomePage.vue",
-    "OfficialGamePage.vue",
+    "GamePage.vue",
     "EditorPage.vue",
   ])
     if (!pageAdapters.includes(component))
@@ -685,13 +704,19 @@ function verifyUnifiedUiShell() {
 
 function verifySpaVsStaticRouting(distRoot) {
   for (const route of [
-    "/levels",
-    "/play/1-1",
+    "/explore",
+    "/explore/original",
+    "/explore/pushbox",
+    "/explore/test",
+    "/explore/play/original/1-1",
+    "/explore/play/pushbox/box-01",
     "/adventure",
     "/adventure/chapters",
     "/adventure/chapter/1",
     "/adventure/play/1-1",
     "/edit",
+    "/edit/original/1-1",
+    "/edit/pushbox/box-01",
   ]) {
     const result = resolveDistRequest(distRoot, route);
     if (

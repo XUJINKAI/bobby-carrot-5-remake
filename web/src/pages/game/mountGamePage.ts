@@ -8,13 +8,12 @@ import {
   type AdventureSave,
 } from "@bobby/adventure";
 import { ObjectId } from "@bobby/engine";
+import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import {
-  fetchJson,
   type CatalogLevel,
   type LevelCatalog,
-  type OfficialLevelData,
 } from "../../services/catalog/catalog.js";
 import {
   NOOP_CONTROLLER,
@@ -24,64 +23,77 @@ import {
 import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadAdventureSave, saveAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
-  rememberExploreLevel,
+  rememberExploreMap,
   markExploreLevelCompleted,
 } from "../../storage/exploreProgressStorage.js";
 import { formatTileInspection } from "../../runtime/game/formatTileInspection.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { displayLevelId } from "../../services/catalog/catalogPresentation.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
-import OfficialGamePage from "./OfficialGamePage.vue";
+import GamePage from "./GamePage.vue";
+import { editorMapPath, exploreCollectionPath, explorePlayPath } from "../../app/routes.js";
 import {
+  configureShell,
   loadScreenControlPreference,
-  renderAppShell,
+  type ShellConfig,
 } from "../../shell/shellBridge.js";
+import {
+  GAME_HELP,
+  globalActions,
+  pageIdentity,
+} from "../../app/pageChrome.js";
 
-export type OfficialGameMode = "explore" | "adventure";
-export interface OfficialGameContext {
+export type GamePageMode = "explore" | "adventure";
+export interface GameIdentity {
+  collection: string;
+  id: string;
+  title: string;
+}
+export interface GamePageContext {
   app: HTMLDivElement;
   catalog: LevelCatalog;
   audio: TinySynthAudioBackend;
   navigate: Navigate;
-  level: CatalogLevel;
-  mode: OfficialGameMode;
+  level: LevelMap;
+  identity: GameIdentity;
+  official?: CatalogLevel | undefined;
+  mode: GamePageMode;
 }
 
-export async function renderOfficialGame(
-  context: OfficialGameContext,
+export async function renderGamePage(
+  context: GamePageContext,
 ): Promise<PageController> {
-  const { app, catalog, audio, navigate, level: meta, mode } = context;
+  const { app, catalog, audio, navigate, level, identity, official: meta, mode } = context;
+  if (mode === "adventure" && !meta)
+    throw new Error("Adventure GamePage 需要官方 Campaign identity");
   let adventureSave: AdventureSave | null =
     mode === "adventure" ? loadAdventureSave() : null;
   if (
     adventureSave &&
-    !isAdventureLevelUnlocked(adventureSave, meta.publicId)
+    !isAdventureLevelUnlocked(adventureSave, meta!.publicId)
   ) {
-    navigate(`/adventure/chapter/${meta.chapter}`);
+    navigate(`/adventure/chapter/${meta!.chapter}`);
     return NOOP_CONTROLLER;
   }
-  if (mode === "explore") rememberExploreLevel(meta.publicId);
-  const official = await fetchJson<OfficialLevelData>(
-    siteUrl(`assets/${meta.path}`),
-  );
+  if (mode === "explore") {
+    rememberExploreMap(identity.collection, identity.id);
+  }
   const plan = adventureSave
-    ? planAdventureSession(meta.publicId, adventureSave)
+    ? planAdventureSession(meta!.publicId, adventureSave)
     : null;
   const sessionLevel = adventureSave
-    ? prepareAdventureLevel(meta.publicId, official, adventureSave)
-    : official;
-  app.innerHTML = renderAppShell({
+    ? prepareAdventureLevel(meta!.publicId, level, adventureSave)
+    : level;
+  const screenControlEnabled = loadScreenControlPreference();
+  const shellConfig = gameShellConfig(
+    identity,
+    meta,
     mode,
-    contextActions: gameContextActions(meta, mode),
-    contextInfo:
-      mode === "adventure"
-        ? "WASD / 方向键移动 · 拖动查看地图"
-        : "WASD / 方向键移动 · 拖动查看地图 · 滚轮缩放 · ~ DEBUG",
-    topBarFixed: true,
-    bottomBarFixed: true,
-    content: "",
-  });
-  const gamePage = createApp(OfficialGamePage, { mode });
+    screenControlEnabled,
+  );
+  configureShell(shellConfig, GAME_HELP);
+  app.replaceChildren();
+  const gamePage = createApp(GamePage, { mode });
   gamePage.mount(app);
   const canvas = required<HTMLCanvasElement>(app, "#game"),
     debugPanel = required<HTMLElement>(app, "[data-debug-panel]"),
@@ -90,7 +102,6 @@ export async function renderOfficialGame(
     gameResult = required<HTMLDivElement>(app, "[data-result-overlay]"),
     resultCard = required<HTMLElement>(gameResult, "[data-result-card]");
   const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
-  const screenControlEnabled = loadScreenControlPreference();
   const session = await createGameSession({
     root: app,
     canvas,
@@ -120,8 +131,8 @@ export async function renderOfficialGame(
     },
   });
   const { game, input } = session,
-    isBonus = meta.contentKind === "bonus";
-  audio.playMusic(isBonus ? "bonus" : `ingame${meta.number % 3}`);
+    isBonus = meta?.contentKind === "bonus";
+  audio.playMusic(isBonus ? "bonus" : `ingame${meta ? meta.number % 3 : 1}`);
   let levelStartedAt = performance.now(),
     debugInspection: string | null = null,
     visibleResult: "death" | "complete" | null = null,
@@ -148,7 +159,7 @@ export async function renderOfficialGame(
       if (event.type === "collect-bonus-coin")
         next = claimPersistentReward(
           next,
-          meta.publicId,
+          meta!.publicId,
           ObjectId.BONUS_COIN,
           event.x,
           event.y,
@@ -156,7 +167,7 @@ export async function renderOfficialGame(
       else if (event.type === "collect-golden-carrot")
         next = claimPersistentReward(
           next,
-          meta.publicId,
+          meta!.publicId,
           ObjectId.GOLDEN_CARROT,
           event.x,
           event.y,
@@ -182,14 +193,14 @@ export async function renderOfficialGame(
       let nextLevel: CatalogLevel | undefined;
       if (adventureSave) {
         adventureSave = saveAdventureSave(
-          completeAdventureLevel(adventureSave, meta.publicId),
+          completeAdventureLevel(adventureSave, meta!.publicId),
         );
-        nextLevel = nextCampaignLevel(catalog, meta);
-      } else {
+        nextLevel = nextCampaignLevel(catalog, meta!);
+      } else if (meta) {
         markExploreLevelCompleted(meta.canonicalId);
         nextLevel = nextCampaignLevel(catalog, meta);
       }
-      resultCard.innerHTML = `<div class="result-kicker">${displayLevelId(meta)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextLevel ? `<button class="primary-btn" data-result="next" data-next="${nextLevel.publicId}">下一关 · ${displayLevelId(nextLevel)}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由选关"}</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextLevel ? `<button class="primary-btn" data-result="next" data-next="${nextLevel.publicId}">下一关 · ${displayLevelId(nextLevel)}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
     } else {
       resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
@@ -228,6 +239,12 @@ export async function renderOfficialGame(
       closeResult();
     }
   };
+  const askRedo = (): void => {
+    if (mode === "explore" && game.canRedo) {
+      game.redo();
+      closeResult();
+    }
+  };
   const askRestart = (): void => {
     game.restart();
     levelStartedAt = performance.now();
@@ -245,24 +262,21 @@ export async function renderOfficialGame(
     if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
     else if (action === "levels")
-      navigate(
-        mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
-      );
+      navigate(backPath(identity, meta, mode));
     else if (action === "next" && button.dataset.next)
       navigate(
         mode === "adventure"
           ? `/adventure/play/${button.dataset.next}`
-          : `/play/${button.dataset.next}`,
+          : explorePlayPath({ collection: "original", id: button.dataset.next }),
       );
   });
   const onGameShellAction = (event: Event): void => {
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
-      navigate(
-        mode === "adventure" ? `/adventure/chapter/${meta.chapter}` : "/levels",
-      );
-    } else if (action === "edit") navigate(`/edit/${meta.publicId}`);
+      navigate(backPath(identity, meta, mode));
+    } else if (action === "edit") navigate(editorMapPath(identity));
     else if (action === "undo") askUndo();
+    else if (action === "redo") askRedo();
     else if (action === "restart") askRestart();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
@@ -302,24 +316,91 @@ function nextCampaignLevel(
     ? catalog.levels.find((level) => level.publicId === next)
     : undefined;
 }
-function gameContextActions(
-  meta: CatalogLevel,
-  mode: OfficialGameMode,
-) {
-  return [
-    { id: "back", label: `← ${displayLevelId(meta)}`, title: "返回" },
-    {
-      label: meta.difficulty.label,
-      className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+function gameShellConfig(
+  identity: GameIdentity,
+  meta: CatalogLevel | undefined,
+  mode: GamePageMode,
+  screenControlEnabled: boolean,
+): ShellConfig {
+  const explore = mode === "explore";
+  return {
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: pageIdentity(
+        explore ? "自由探索模式" : "冒险模式",
+        explore ? "/explore" : "/adventure",
+        false,
+      ),
+      back: {
+        id: "back",
+        icon: "back",
+        label: identity.title,
+        title: "返回",
+        ...(meta
+          ? {
+              badge: {
+                label: meta.difficulty.label,
+                title: "关卡难度",
+                className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
+              },
+            }
+          : {}),
+      },
+      commands: [
+        ...(explore
+          ? [
+              { id: "undo", icon: "undo" as const, title: "撤销" },
+              { id: "redo", icon: "redo" as const, title: "重做" },
+            ]
+          : []),
+        { id: "restart", icon: "restart", title: "重新开始" },
+      ],
+      actions: [
+        ...(explore
+          ? [
+              {
+                id: "edit",
+                icon: "edit" as const,
+                label: "编辑地图",
+                title: "在编辑器中打开",
+                collapse: "overflow" as const,
+              },
+            ]
+          : []),
+        ...globalActions(),
+      ],
     },
-    ...(mode === "explore"
-      ? [{ id: "undo", label: "↶", title: "撤销" }]
-      : []),
-    { id: "restart", label: "↻", title: "重新开始" },
-    ...(mode === "explore"
-      ? [{ id: "edit", label: "✎", title: "在编辑器中打开" }]
-      : []),
-  ];
+    bottomBar: {
+      visible: true,
+      fixed: true,
+      info: [
+        { text: identity.title },
+        {
+          text: explore
+            ? "WASD / 方向键移动 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
+            : "WASD / 方向键移动 · 拖动查看地图",
+        },
+      ],
+      trailing: [
+        {
+          id: "screen-control",
+          label: "屏幕摇杆",
+          pressed: screenControlEnabled,
+        },
+      ],
+    },
+  };
+}
+
+function backPath(
+  identity: GameIdentity,
+  meta: CatalogLevel | undefined,
+  mode: GamePageMode,
+): string {
+  return mode === "adventure"
+    ? `/adventure/chapter/${meta!.chapter}`
+    : exploreCollectionPath(identity.collection);
 }
 function bindGameShell(
   input: {

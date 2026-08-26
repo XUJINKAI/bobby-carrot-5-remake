@@ -30,3 +30,60 @@ const emit = defineEmits<{ random: [] }>();
     </div>
   </section>
 </template>
+
+<style scoped>
+.home-about {
+  min-height: 78vh;
+  display: grid;
+  align-content: center;
+  gap: 24px;
+  padding: 80px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.home-about-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.home-about article {
+  padding: 24px;
+  border: 4px solid var(--bc-panel-border);
+  border-radius: 7px;
+  background: var(--bc-panel);
+  box-shadow: 8px 8px 0 #001b5b88;
+}
+
+.home-about h2 {
+  margin: 3px 0 0;
+}
+
+.home-about h3 {
+  margin: 0 0 10px;
+}
+
+.home-about p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.home-about-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.home-quick-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .home-about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -12,11 +12,13 @@ import {
 } from "../../services/catalog/catalogSelection.js";
 import { lastExploreLevelId } from "../../storage/exploreProgressStorage.js";
 import {
+  configureShell,
   loadScreenControlPreference,
-  renderAppShell,
 } from "../../shell/shellBridge.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
+import { explorePlayPath } from "../../app/routes.js";
+import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 
 export async function renderHome(
   context: PageContext,
@@ -24,12 +26,25 @@ export async function renderHome(
   const { app, catalog, audio, navigate } = context;
   const last = resolveCatalogLevel(catalog, lastExploreLevelId());
   audio.playMusic("title");
-  app.innerHTML = renderAppShell({
-    mode: "home",
-    showBottomBar: false,
-    showScreenControlToggle: false,
-    content: "",
+  configureShell({
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: homeIdentity(),
+      actions: globalActions(),
+    },
+    bottomBar: {
+      visible: true,
+      fixed: true,
+      info: [
+        { text: "Bobby Carrot 5 Remake" },
+        { text: "XUJINKAI" },
+        { text: "License" },
+        { text: "Third-party Assets" },
+      ],
+    },
   });
+  app.replaceChildren();
   const view = reactive<HomeViewState>({
     demoStatus: "方向键 / WASD 移动，体验 Engine 的地图规则。",
     demoResult: null,
@@ -48,7 +63,12 @@ export async function renderHome(
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
     onRandom: () =>
-      navigate(`/play/${randomCatalogLevel(catalog).publicId}`),
+      navigate(
+        explorePlayPath({
+          collection: "original",
+          id: randomCatalogLevel(catalog).publicId,
+        }),
+      ),
     onImportMap: (file: File) => importHomeMap(file, view, navigate),
   });
   homeApp.mount(app);

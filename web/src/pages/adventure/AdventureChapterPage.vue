@@ -50,3 +50,76 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     </main>
   </AdventureFrame>
 </template>
+
+<style scoped>
+.adventure-toolbar {
+  height: 56px;
+  display: grid;
+  grid-template-columns: 52px 1fr 80px;
+  align-items: center;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+
+.adventure-toolbar a {
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.35rem;
+}
+
+.adventure-chapter-title {
+  padding: 18px 22px 8px;
+  text-align: center;
+}
+
+.adventure-chapter-title h2 {
+  margin: 0;
+}
+
+.adventure-chapter-title p {
+  font-size: 0.82rem;
+  color: #96a79b;
+}
+
+.adventure-scroll {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 14px;
+}
+
+.adventure-level-list {
+  display: grid;
+  gap: 8px;
+}
+
+.adventure-level-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 28px;
+  align-items: center;
+  padding: 14px 12px;
+  border-radius: 8px;
+  background: #14231a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  text-decoration: none;
+}
+
+.adventure-level-row.bonus {
+  border-color: rgba(247, 212, 95, 0.4);
+  background: #292718;
+}
+
+.adventure-level-row.completed {
+  opacity: 0.78;
+}
+
+.adventure-level-row.locked {
+  opacity: 0.35;
+}
+
+.adventure-level-row strong {
+  text-align: center;
+}
+</style>
