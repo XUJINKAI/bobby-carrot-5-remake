@@ -7,7 +7,6 @@ const generatedAssets = path.join(root, "assets");
 const generatedTargets = [
   dist,
   "model/dist",
-  "tools/original/dat/dist",
   "adventure/dist",
   "engine/dist",
   "editor/dist",
@@ -22,10 +21,8 @@ for (const target of generatedTargets) {
 const tsc = tscCommand();
 
 // 产品构建只常驻编译纯模型与 Adventure；DAT 仅在确实需要重新生成官方资产时出现。
-run(tsc, ["-b", "model", "tools/original/dat", "adventure", "--force"]);
-
-if (!hasGeneratedAssets())
-  run(process.execPath, ["tools/cli.mjs", "assets", "rebuild"]);
+run(tsc, ["-b", "model", "adventure", "--force"]);
+run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "--force"]);
@@ -75,10 +72,3 @@ if (tinySynthSource) {
 }
 
 console.log("Build complete: dist");
-
-function hasGeneratedAssets() {
-  return (
-    fs.existsSync(generatedAssets) &&
-    fs.readdirSync(generatedAssets).length > 0
-  );
-}

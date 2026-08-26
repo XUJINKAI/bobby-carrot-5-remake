@@ -11,6 +11,7 @@
     "preview": "node tools/cli.mjs preview",
     "test": "node tools/cli.mjs test",
     "verify": "node tools/cli.mjs verify",
+    "verify:browser": "node tools/pipeline/browser-smoke.mjs",
     "clean": "node tools/cli.mjs clean"
   },
   "devDependencies": {

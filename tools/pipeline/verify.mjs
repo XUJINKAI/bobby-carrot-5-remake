@@ -3,8 +3,10 @@ import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
+run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
+run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const catalog = readJson("assets/maps/catalog.json");
 if (catalog.levels.length !== 480 || catalog.specialScenes.length !== 5)

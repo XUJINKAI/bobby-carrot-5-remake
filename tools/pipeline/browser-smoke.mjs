@@ -37,7 +37,7 @@ try {
       'class="explore-tabs"',
       'class="level-browser-head"',
       'class="level-filter-shell"',
-      'data-filter-trigger="difficulty"',
+      'data-filter-trigger="carrots"',
       'data-filter-trigger="mechanics"',
     ],
     ["进入冒险模式"],
@@ -56,7 +56,7 @@ try {
   await smoke(`${origin}/explore/play/test/test-portal`, [
     'class="game-page"',
     'id="game"',
-    "Portal Lab",
+    "test-portal",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
@@ -66,12 +66,11 @@ try {
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
-    'class="shell-action-badge difficulty-badge',
   ]);
   await smoke(`${origin}/explore/play/pushbox/box-01`, [
     'class="game-page"',
     'id="game"',
-    "Pushbox 1",
+    "box-01",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
@@ -268,7 +267,7 @@ async function interactiveFilterSmoke(url) {
       Boolean(
         await cdp.evaluate(
           sessionId,
-          "document.querySelector('[data-filter-trigger=\"difficulty\"]')",
+          "document.querySelector('[data-filter-trigger=\"carrots\"]')",
         ),
       ),
     );
@@ -278,13 +277,13 @@ async function interactiveFilterSmoke(url) {
     );
     await cdp.evaluate(
       sessionId,
-      "document.querySelector('[data-filter-trigger=\"difficulty\"]').click(); document.querySelector('[data-filter-group=\"difficulty\"][data-filter-option=\"hard\"]').click(); true",
+      "document.querySelector('[data-filter-trigger=\"carrots\"]').click(); document.querySelector('[data-filter-group=\"carrots\"][data-filter-option=\"0\"]').click(); true",
     );
     await waitFor(async () =>
       Boolean(
         await cdp.evaluate(
           sessionId,
-          "document.querySelector('[data-filter-option=\"hard\"]')?.classList.contains('selected')",
+          "document.querySelector('[data-filter-option=\"0\"]')?.classList.contains('selected')",
         ),
       ),
     );
@@ -298,7 +297,7 @@ async function interactiveFilterSmoke(url) {
       );
     if (!(filtered > 0 && hidden > 0 && filtered < before))
       throw new Error(
-        `Explore difficulty filter produced invalid counts: before=${before}, visible=${filtered}, hidden=${hidden}`,
+        `Explore carrot filter produced invalid counts: before=${before}, visible=${filtered}, hidden=${hidden}`,
       );
     await cdp.evaluate(
       sessionId,

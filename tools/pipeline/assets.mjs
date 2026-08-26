@@ -21,11 +21,12 @@ export function rebuildAssets() {
   ]) {
     fs.rmSync(path.join(root, directory), { recursive: true, force: true });
   }
-  run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
-  prepareRuntimeAssets();
+  prepareAssets();
 }
 
-export function prepareRuntimeAssets() {
+export function prepareAssets() {
+  // prepare 的合同是保证所有派生层与源码同步，不能用目录存在性替代新鲜度判断。
+  run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
   fs.mkdirSync(assets, { recursive: true });
   copyTree(path.join(root, "project-assets"), assets);
   run(process.execPath, ["tools/custom/prepare.mjs"]);
@@ -74,5 +75,5 @@ function copyTree(source, target) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  prepareRuntimeAssets();
+  prepareAssets();
 }
