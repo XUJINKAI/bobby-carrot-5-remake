@@ -1,14 +1,14 @@
+import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { createApp, reactive, type App as VueApp } from "vue";
 import { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
+import { siteUrl } from "../services/assets/gameAssets.js";
 import {
   fetchJson,
-  type CustomMapCatalog,
-  type LevelCatalog,
+  type AdventureIndex,
+  type MapCollectionIndex,
   type MapCollectionsIndex,
-  type OfficialLevelData,
 } from "../services/catalog/catalog.js";
-import { siteUrl } from "../services/assets/gameAssets.js";
-import { NOOP_CONTROLLER, type PageController } from "./pageContracts.js";
+import { resolveMapDocument } from "../services/catalog/exploreMaps.js";
 import {
   findAdventureLevel,
   renderAdventureChapter,
@@ -16,9 +16,14 @@ import {
   renderAdventureHome,
 } from "../pages/adventure/mountAdventurePages.js";
 import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
+import { renderLevels } from "../pages/explore/mountExplorePage.js";
 import { renderGamePage } from "../pages/game/mountGamePage.js";
 import { renderHome } from "../pages/home/mountHomePage.js";
-import { renderLevels } from "../pages/explore/mountExplorePage.js";
+import {
+  decodeImportedData,
+  importedLevelMap,
+  renderImportMessage,
+} from "../pages/import/mountImportPage.js";
 import {
   defaultHelpDescriptor,
   installShellBridge,
@@ -27,14 +32,11 @@ import {
   type ShellViewState,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
-import { resolveMapDocument } from "../services/catalog/exploreMaps.js";
-import { mapAssetUrl, parseMapPlayUrl } from "./routes.js";
-import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { NOOP_CONTROLLER, type PageController } from "./pageContracts.js";
 import {
-  decodeImportedData,
-  importedLevelMap,
-  renderImportMessage,
-} from "../pages/import/mountImportPage.js";
+  parseMapPlayUrl,
+  type ExploreMapRef,
+} from "./routes.js";
 
 interface AppRootHandle {
   openSettings(feedback?: string): void;
@@ -44,9 +46,10 @@ export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new TinySynthAudioBackend();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
-  private catalog: LevelCatalog = EMPTY_LEVEL_CATALOG;
-  private customMapCatalog: CustomMapCatalog = EMPTY_CUSTOM_MAP_CATALOG;
-  private catalogsLoaded = false;
+  private collectionsIndex: MapCollectionsIndex = EMPTY_COLLECTIONS_INDEX;
+  private collections: MapCollectionIndex[] = [];
+  private adventure: AdventureIndex = EMPTY_ADVENTURE_INDEX;
+  private indexesLoaded = false;
   private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
@@ -117,14 +120,16 @@ export class BobbyApp {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();
-    if (!path.startsWith("/explore/play/")) await this.ensureCatalogs();
+    if (!isDirectMapRoute(path)) await this.ensureIndexes();
     const context = {
       app: this.content,
-      catalog: this.catalog,
-      customMapCatalog: this.customMapCatalog,
+      collectionsIndex: this.collectionsIndex,
+      collections: this.collections,
+      adventure: this.adventure,
       audio: this.audio,
       navigate: this.navigate,
     };
+
     if (path === "/") {
       this.controller = await renderHome(context);
       return;
@@ -174,44 +179,7 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/explore/play/")) {
-      const ref = parseMapPlayUrl(path);
-      if (!ref) {
-        this.navigate("/explore");
-        return;
-      }
-      ref.collection = ref.collection.toLowerCase();
-      ref.id = ref.id.toLowerCase();
-      if (ref.collection === "imported") {
-        const pending = sessionStorage.getItem("bc5r:pending-play-level");
-        if (!pending) {
-          this.navigate("/");
-          return;
-        }
-        const level = parseEditorLevel(pending);
-        sessionStorage.setItem("bc5r:pending-editor-level", pending);
-        this.controller = await renderGamePage({
-          ...context,
-          level: importedLevelMap(level),
-          identity: { ...ref, title: level.name },
-          mode: "explore",
-        });
-        return;
-      }
-      try {
-        const resolved = await resolveMapDocument(ref);
-        this.controller = await renderGamePage({
-          ...context,
-          level: resolved.level,
-          mapMeta: resolved.document.meta,
-          identity: {
-            ...resolved.ref,
-            title: resolved.document.meta.name,
-          },
-          mode: "explore",
-        });
-      } catch {
-        this.navigate("/explore");
-      }
+      await this.renderExplorePlay(path, context);
       return;
     }
     if (path.startsWith("/explore/")) {
@@ -244,26 +212,7 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/adventure/play/")) {
-      const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
-      const level = findAdventureLevel(this.catalog, id);
-      if (!level) {
-        this.navigate("/adventure/chapters");
-        return;
-      }
-      const official = await fetchJson<OfficialLevelData>(
-        siteUrl(mapAssetUrl("original", level.publicId)),
-      );
-      this.controller = await renderGamePage({
-        ...context,
-        level: official,
-        identity: {
-          collection: "adventure",
-          id: level.publicId,
-          title: level.publicId.toUpperCase(),
-        },
-        official: level,
-        mode: "adventure",
-      });
+      await this.renderAdventurePlay(path, context);
       return;
     }
     if (path === "/edit") {
@@ -287,40 +236,128 @@ export class BobbyApp {
     this.navigate("/");
   }
 
-  private async ensureCatalogs(): Promise<void> {
-    if (this.catalogsLoaded) return;
-    const [catalog, collectionsIndex] = await Promise.all([
-      fetchJson<LevelCatalog>(siteUrl("assets/maps/original/index.json")),
-      fetchJson<MapCollectionsIndex>(siteUrl("assets/maps/index.json")),
-    ]);
-    const customCollections = await Promise.all(
-      collectionsIndex.collections
-        .filter((collection) => collection.id !== "original")
-        .map((collection) =>
-          fetchJson<CustomMapCatalog["collections"][number]>(
+  private async renderExplorePlay(
+    path: string,
+    context: Parameters<typeof renderGamePage>[0],
+  ): Promise<void> {
+    const ref = parseMapPlayUrl(path);
+    if (!ref) {
+      this.navigate("/explore");
+      return;
+    }
+    ref.collection = ref.collection.toLowerCase();
+    ref.id = ref.id.toLowerCase();
+    if (ref.collection === "imported") {
+      const pending = sessionStorage.getItem("bc5r:pending-play-level");
+      if (!pending) {
+        this.navigate("/");
+        return;
+      }
+      const level = parseEditorLevel(pending);
+      sessionStorage.setItem("bc5r:pending-editor-level", pending);
+      this.controller = await renderGamePage({
+        ...context,
+        level: importedLevelMap(level),
+        identity: { ...ref, title: level.name },
+        mode: "explore",
+      });
+      return;
+    }
+    try {
+      const resolved = await resolveMapDocument(ref);
+      this.controller = await renderGamePage({
+        ...context,
+        level: resolved.level,
+        mapMeta: resolved.document.meta,
+        identity: {
+          ...resolved.ref,
+          title: resolved.document.meta.name,
+        },
+        mode: "explore",
+      });
+    } catch {
+      this.navigate("/explore");
+    }
+  }
+
+  private async renderAdventurePlay(
+    path: string,
+    context: Parameters<typeof renderGamePage>[0],
+  ): Promise<void> {
+    const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
+    const found = findAdventureLevel(this.adventure, id);
+    if (!found) {
+      this.navigate("/adventure/chapters");
+      return;
+    }
+    const ref = parseMapReference(found.level.map);
+    if (!ref) throw new Error(`无效 Adventure map reference：${found.level.map}`);
+    const resolved = await resolveMapDocument(ref);
+    this.controller = await renderGamePage({
+      ...context,
+      level: resolved.level,
+      mapMeta: resolved.document.meta,
+      identity: {
+        collection: "adventure",
+        id: found.level.id,
+        title: found.level.id.toUpperCase(),
+      },
+      adventureChapter: found.chapter,
+      adventureLevel: found.level,
+      mode: "adventure",
+    });
+  }
+
+  private async ensureIndexes(): Promise<void> {
+    if (this.indexesLoaded) return;
+    const collectionsIndex = await fetchJson<MapCollectionsIndex>(
+      siteUrl("assets/maps/index.json"),
+    );
+    if (collectionsIndex.schemaVersion !== 1)
+      throw new Error("maps/index.json schemaVersion 必须为 1");
+    const [collections, adventure] = await Promise.all([
+      Promise.all(
+        collectionsIndex.collections.map((collection) =>
+          fetchJson<MapCollectionIndex>(
             siteUrl(`assets/maps/${collection.id}/index.json`),
           ),
         ),
-    );
-    this.catalog = catalog;
-    this.customMapCatalog = {
-      schemaVersion: 1,
-      collections: customCollections,
-    };
-    this.catalogsLoaded = true;
+      ),
+      fetchJson<AdventureIndex>(siteUrl("assets/adventure/index.json")),
+    ]);
+    for (const collection of collections)
+      if (collection.schemaVersion !== 1)
+        throw new Error(`${collection.id}: collection schemaVersion 必须为 1`);
+    if (adventure.schemaVersion !== 1)
+      throw new Error("adventure/index.json schemaVersion 必须为 1");
+    this.collectionsIndex = collectionsIndex;
+    this.collections = collections;
+    this.adventure = adventure;
+    this.indexesLoaded = true;
   }
 }
 
-const EMPTY_LEVEL_CATALOG = {
-  levels: [],
-  chapters: [],
-  specialScenes: [],
-} as unknown as LevelCatalog;
-
-const EMPTY_CUSTOM_MAP_CATALOG: CustomMapCatalog = {
+const EMPTY_COLLECTIONS_INDEX: MapCollectionsIndex = {
   schemaVersion: 1,
   collections: [],
 };
+
+const EMPTY_ADVENTURE_INDEX: AdventureIndex = {
+  schemaVersion: 1,
+  name: "Bobby Carrot 5",
+  chapters: [],
+  specialScenes: [],
+};
+
+function parseMapReference(value: string): ExploreMapRef | null {
+  const [collection, id, extra] = value.split("/");
+  return collection && id && extra === undefined ? { collection, id } : null;
+}
+
+function isDirectMapRoute(path: string): boolean {
+  if (path.startsWith("/explore/play/")) return true;
+  return /^\/edit\/[^/]+\/[^/]+$/.test(path);
+}
 
 function defaultShellState(): ShellViewState {
   return {
