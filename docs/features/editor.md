@@ -1,10 +1,8 @@
 # 地图编辑器
 
-Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的首选交互式调试入口。Play Test 统一使用正式 Engine gameplay 实现。
+Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的交互式调试入口。Play Test 使用正式 Engine gameplay 实现。
 
 ## 模块结构
-
-Editor Core 按稳定职责组织：
 
 ```text
 editor/src
@@ -14,71 +12,49 @@ editor/src
 └── canvas/      Renderer、Input、Viewport 与坐标转换
 ```
 
-`@bobby/editor` 不创建页面 DOM，也不访问 File、Blob、URL、Dialog、Router、`localStorage` 或 `sessionStorage`。这些浏览器产品能力由 `web/src/pages/editor/` 的 Vue 页面持有。
+`@bobby/editor` 不创建页面 DOM，也不访问 File、Blob、URL、Dialog、Router、`localStorage` 或 `sessionStorage`。这些产品能力由 Web 页面持有。
 
-地图修改统一进入：
+## Editor JSON
 
-```text
-Palette / Canvas / Inspector / Metadata / Resize
-                    ↓
-            EditorDocument.execute(command)
-                    ↓
-                 EditorLevel
-```
-
-`EditorDocument` 发布只读 snapshot，包含 `revision / canUndo / canRedo / dirty`。History 保存 `EditorLevel` checkpoint；连续 pointer stroke 使用 transaction 合并成一次 Undo。`markSaved()` 记录保存 checkpoint，Undo 回到该 checkpoint 时 `dirty=false`。
-
-## 地图格式
-
-导入/导出 JSON 使用长期稳定的语义 authoring 格式：
+导入/导出使用当前语义 schema v1：
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "name": "My Level",
   "author": "optional",
   "description": "optional",
   "width": 20,
   "height": 16,
   "terrain": [["ground-c"]],
-  "objects": [{"type": "carrot", "x": 4, "y": 8}]
+  "objects": [{ "type": "carrot", "x": 4, "y": 8 }]
 }
 ```
 
-核心内容是 `@bobby/model::LevelMap { width, height, terrain, objects }`，再附加 name/author/description。DAT record length、SHA-256、发行包、chapter、difficulty、dynamic_slots、Adventure progress 等信息由各自的 provenance/Campaign 层持有。
+当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor metadata 不进入 Engine。
 
-Terrain/Object 始终使用 semantic ID；raw DAT byte 的互操作统一由 `@bobby/dat` 负责。
-
-Object 的实例能力保存到 `LevelObject.traits`，Editor 只展示 Definition `authoring.traits` 白名单中的选项。`dialogue`、`channel`、`timedChallengeMs` 等参数继续保存到 `LevelObject.properties`。
+Runtime collection 的 `MapDocument` 使用 `meta` 包装产品 metadata。Web 从 `MapDocument` 打开 Editor 时，只把其中 `LevelMap` gameplay 内容交给 Editor，并以 `meta.name` 生成副本名称。
 
 ## Multi-cell Object
 
-Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存一个 anchor。footprint、cursor、authoring variant 都复用 Engine Object Layout：
+Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存 anchor。footprint、cursor、authoring variant 共用 Engine Object Layout：
 
-- 鼠标指向 Dragon 尾部仍 resolve 到整条 Dragon owner；
+- 鼠标指向 body/tail 仍 resolve 到完整 owner；
 - 右键 / Del 删除完整 owner；
 - 放置新对象时，与 footprint 相交的旧 owner 整体替换；
-- Q/E 或滚轮切换 Engine 定义的 authoring variant；
-- runtime occupancy 在 `Game.loadLevel()` 边界展开，Draft 始终保持 anchor 表示。
-
-Editor Palette 的可见性由 Engine Definition 的 `authoring.palette` 决定。
+- Q/E 或滚轮切换支持的 authoring variant；
+- runtime occupancy 只在 Engine level-load 边界展开。
 
 ## Play Test
-
-点击 Play 时，Editor 从 Draft 构造独立的运行时地图：
 
 ```text
 EditorLevel
   -> normalize / clone
   -> LevelMap
-  -> 正式 Game.loadLevel()
+  -> Game.loadLevel()
 ```
 
-Play Test 使用与 Web 游玩相同的 Engine。Stop 直接销毁临时 Game/Input，因此游戏中的移动、机关状态、收集物等与编辑 Draft 相互隔离。
-
-Web 把 snapshot 转成纯 `LevelMap`，通过 `web/src/runtime/game/createGameSession.ts` 创建 Play Test。Play Test 通过 Runtime Config 启用 Engine Gameplay HUD 和 Screen Joystick，与 Adventure、Explore 和 Custom Play 共用同一套基础呈现与移动输入。
-
-原版 Adventure 的 Campaign 和全局经济由 `@bobby/adventure` 负责。Adventure 把 Bonus 60 秒编码为 Lock 的 `timedChallengeMs` 实例参数；Editor Play Test 中带相同参数的 Lock 由 Engine 执行同一套倒计时、超时死亡、Undo 和 Restart 规则。
+Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport。
 
 ## 编辑交互
 
@@ -91,31 +67,26 @@ Web 把 snapshot 转成纯 `LevelMap`，通过 `web/src/runtime/game/createGameS
 - Ctrl/Cmd+Z、Y：Undo / Redo；
 - 泛蓝高亮：表示本次操作将删除或替换的完整 owner。
 
-## 文件与产品入口
+## Data Exchange
 
-用户地图以语义 JSON 作为长期内容格式，并通过公共 Data Exchange 交换：
+用户地图长期内容是 schema v1 语义 JSON。公共 Data Exchange 可以搬运同一内容：
 
 ```text
-TextBox / Clipboard / File / Share URL
-                 ↓
-        JSON / BC5R1 transport
+Plain JSON
+BC5R1 compressed text
+Share URL fragment
+.json / .bc5r text file
 ```
 
-Home 的导入面板接受 JSON、`BC5R1`、分享 URL、`.json` 和 `.bc5r`，解析成功后打开地图。Custom Play 可以用相同语义地图重新进入 Editor。
+`BC5R1` 是 transport 版本，与 JSON `schemaVersion` 独立。
 
-分享协议只编码语义 JSON，并保留 `name / author / description` 与 `LevelObject.properties`。Transport 与 UI 合同见 [`data-exchange.md`](data-exchange.md)。
+## 原版验证
 
-Editor 工作区、Play Test 与 Custom Map 的页面结构见 [`ui.md`](ui.md)。
-
-Web Editor 页面由 `EditorPage.vue` 协调 `EditorWorkspace.vue`、`EditorPalette.vue`、`EditorCanvas.vue`、`EditorInspector.vue` 与 `EditorFileDialog.vue`。编辑画布和 Engine Play Test Canvas 位于同一个 Stage；进入 Play Test 时暂停 authoring input，Stop 后恢复原 Editor viewport。
-
-## 与原版验证的关系
-
-Editor JSON 是长期编辑/备份格式，原版 JAR patch 是独立验证工具。两条路径围绕同一张 semantic `LevelMap`：
+Editor JSON 与原版 JAR patch 围绕同一套 semantic `LevelMap`：
 
 ```text
 Editor Draft -> Play Test -> bc5r Engine
-            \-> @bobby/dat -> patched JAR -> original Java ME Engine
+            \-> Original DAT tooling -> patched JAR -> original Java ME Engine
 ```
 
-同一张最小测试地图可以用于对比 Dragon、藤蔓、云、荷叶、开关等逆向机制；Engine / Editor authoring 模型保持纯 semantic，原版格式和 Adventure Campaign 由边界层负责。
+原版 source provenance 与 Campaign topology 都由边界层持有，不进入 Editor Draft。
