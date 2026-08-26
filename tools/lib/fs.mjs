@@ -22,13 +22,17 @@ export function run(command, args, options = {}) {
 }
 
 export function tscCommand() {
+  return binCommand("tsc");
+}
+
+export function binCommand(name) {
   const local = path.join(
     root,
     "node_modules",
     ".bin",
-    process.platform === "win32" ? "tsc.cmd" : "tsc",
+    process.platform === "win32" ? `${name}.cmd` : name,
   );
-  return fs.existsSync(local) ? local : "tsc";
+  return fs.existsSync(local) ? local : name;
 }
 
 export function copyTree(from, to) {

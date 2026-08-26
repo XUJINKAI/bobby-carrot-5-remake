@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { copyFile, copyTree, root, run, tscCommand } from "../lib/fs.mjs";
+import {
+  binCommand,
+  copyFile,
+  copyTree,
+  root,
+  run,
+  tscCommand,
+} from "../lib/fs.mjs";
 
 const dist = path.join(root, "dist");
 const generatedAssets = path.join(root, "assets");
@@ -10,8 +17,6 @@ const generatedTargets = [
   "adventure/dist",
   "engine/dist",
   "editor/dist",
-  "web/dist-src",
-  "web/dist-vite",
 ].map((value) => (path.isAbsolute(value) ? value : path.join(root, value)));
 
 for (const target of generatedTargets) {
@@ -26,21 +31,11 @@ run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "--force"]);
-run("npm", ["run", "--workspace", "@bobby/web", "typecheck"]);
-run("npm", ["run", "--workspace", "@bobby/web", "build"]);
+run(binCommand("vue-tsc"), ["-b", "--force"], {
+  cwd: path.join(root, "web"),
+});
+run(binCommand("vite"), ["build"], { cwd: path.join(root, "web") });
 
-fs.mkdirSync(dist, { recursive: true });
-
-for (const file of [
-  "index.html",
-  "style.css",
-  "game-ui.css",
-]) {
-  copyFile(path.join(root, "web", file), path.join(dist, file));
-}
-copyFile(path.join(root, "editor/style.css"), path.join(dist, "editor.css"));
-
-copyTree(path.join(root, "web/dist-vite"), dist);
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));
 copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));

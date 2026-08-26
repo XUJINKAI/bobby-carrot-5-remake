@@ -25,5 +25,6 @@ run(
   ],
   { shell: true },
 );
-run(tscCommand(), ["-b", "web", "--force"]);
+fs.rmSync(path.join(root, "tmp/web-tests"), { recursive: true, force: true });
+run(tscCommand(), ["-p", "web/tsconfig.test.json"]);
 run(process.execPath, ["--test", "web/tests/*.test.mjs"], { shell: true });

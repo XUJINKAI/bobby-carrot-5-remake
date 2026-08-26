@@ -4,11 +4,11 @@ import {
   decodeExchangeText,
   detectExchangeFormat,
   encodeExchangeText,
-} from "../dist-src/shared/data-exchange/dataExchangeCodec.js";
+} from "../../tmp/web-tests/shared/data-exchange/dataExchangeCodec.js";
 import {
   buildImportUrl,
   extractImportPayload,
-} from "../dist-src/shared/data-exchange/dataExchangeUrl.js";
+} from "../../tmp/web-tests/shared/data-exchange/dataExchangeUrl.js";
 
 test("BC5R1 对各类 UTF-8 JSON 文本执行往返", async () => {
   const values = [

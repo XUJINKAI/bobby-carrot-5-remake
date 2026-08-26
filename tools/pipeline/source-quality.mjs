@@ -117,8 +117,6 @@ function walk(directory, visitor) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (
       entry.name === "dist" ||
-      entry.name === "dist-src" ||
-      entry.name === "dist-vite" ||
       entry.name === "node_modules"
     )
       continue;

@@ -34,6 +34,8 @@ if (group === "original") {
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);
 else if (group === "preview") run(process.execPath, ["tools/pipeline/dev.mjs", "web", "--static", "--no-build"]);
 else if (group === "test") run(process.execPath, ["tools/pipeline/test.mjs"]);
+else if (group === "verify" && action === "browser")
+  run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 else if (group === "verify") run(process.execPath, ["tools/pipeline/verify.mjs"]);
 else if (group === "clean") run(process.execPath, ["tools/pipeline/clean.mjs"]);
 else throw new Error("用法：node tools/cli.mjs dev|assets|build|preview|test|verify|clean");

@@ -33,7 +33,8 @@ export default defineConfig({
     ),
   ],
   build: {
-    outDir: "dist-vite",
+    outDir: "../dist",
+    assetsDir: "app",
     emptyOutDir: true,
   },
 });

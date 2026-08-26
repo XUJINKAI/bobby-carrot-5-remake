@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveExploreMap } from "../dist-src/services/catalog/exploreMaps.js";
+import { resolveExploreMap } from "../../tmp/web-tests/services/catalog/exploreMaps.js";
 
 test("直达 Play 使用 URL 映射加载地图，不要求 Catalog 条目存在", async (context) => {
   const requests = [];

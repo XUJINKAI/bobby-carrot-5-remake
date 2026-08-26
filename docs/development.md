@@ -44,12 +44,11 @@ npm run serve
 
 ```text
 model      纯 semantic LevelMap / IDs
-dat        原版 DAT 互操作
 engine     gameplay / runtime
 adventure  Campaign / Save / Adventure runtime rule
 editor     authoring + share boundary
 web        product SPA
-tools      assets / catalog / original JAR validation
+tools      assets / Original DAT / original JAR validation
 ```
 
 TypeScript 使用 project references。依赖顺序由 `tsc -b` 与 package dependencies 表达，不在 `tsconfig` paths 中指向兄弟包的 `dist` 声明文件。
@@ -74,15 +73,15 @@ dist/
 node_modules/
 dist/
 model/dist/
-tools/original/dat/dist/
 adventure/dist/
 engine/dist/
 editor/dist/
-web/dist-src/
 original/extracted/
 original/decoded/
 original/adapted/
-assets/
+assets/maps/
+assets/art/hd/
+assets/audio/midi/
 tmp/
 ```
 
