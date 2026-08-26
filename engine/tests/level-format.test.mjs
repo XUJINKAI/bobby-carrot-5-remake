@@ -40,14 +40,14 @@ test("base and UP9 share the five 00.dat levels byte-for-byte", () => {
   );
 });
 
-test("level 001 crosses the DAT boundary as semantic schema v2", () => {
+test("decoded source level crosses the DAT boundary as semantic schema v1", () => {
   const parsed = parseDatPackage(
     fs.readFileSync("original/extracted/base/00.dat"),
     { edition: "base", packFile: "00" },
   );
   const level = parsed.levels[0];
   assert.ok(level);
-  assert.equal(level.schemaVersion, 2);
+  assert.equal(level.schemaVersion, 1);
   assert.equal(level.terrainEncoding, "semantic-row-major");
   assert.equal(level.width, 25);
   assert.equal(level.height, 20);
