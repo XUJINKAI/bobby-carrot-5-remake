@@ -16,33 +16,8 @@ export interface LevelSource {
   decodedPath?: string;
 }
 
-export interface DifficultyInfo {
-  level: "tutorial" | "easy" | "medium" | "hard";
-  source: "historical" | "estimated";
-  label: string;
-  collections?: string[];
-  confidence?: number;
-}
-
 export interface OfficialLevelData extends LevelMap {
-  schemaVersion: 2;
-  id?: string;
-  canonicalId?: string;
-  publicId?: AdventureLevelId | AdventureSpecialSceneId;
-  contentKind?: "level" | "bonus" | "special-scene";
-  release?: string;
-  chapter?: number;
-  chapterTitle?: string;
-  chapterLevel?: number;
-  sourceLevelIndex?: number;
-  bonusOrdinal?: 1 | 2 | null;
-  difficulty?: DifficultyInfo;
-  source: LevelSource;
-  sources?: LevelSource[];
-  recordLength: number;
-  recordSha256: string;
-  dynamicSlots: number;
-  terrainEncoding: "semantic-row-major";
+  schemaVersion: 3;
 }
 
 export interface CatalogLevel {
@@ -65,9 +40,12 @@ export interface CatalogLevel {
   height: number;
   dynamicSlots: number;
   objectCount: number;
-  difficulty: DifficultyInfo;
   sources: LevelSource[];
   path: string;
+  carrotCount: number;
+  specialItems: string[];
+  scenes: string[];
+  mechanics: string[];
 }
 
 export interface CatalogChapter {
@@ -128,7 +106,6 @@ export interface LevelCatalog {
     specialSceneCount: number;
     order: string;
   };
-  difficulty: { historicalNonTutorialLevels: number; estimatedLevels: number };
 }
 
 export interface CustomMapCatalogEntry {
@@ -149,6 +126,18 @@ export interface CustomMapCollection {
 export interface CustomMapCatalog {
   schemaVersion: 1;
   collections: CustomMapCollection[];
+}
+
+export interface MapCollectionSummary {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+}
+
+export interface MapCollectionsIndex {
+  schemaVersion: 1;
+  collections: MapCollectionSummary[];
 }
 
 export async function fetchJson<T>(url: string): Promise<T> {

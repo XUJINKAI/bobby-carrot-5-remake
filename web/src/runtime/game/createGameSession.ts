@@ -66,7 +66,7 @@ function bindWorldDialog(root: ParentNode, game: Game): () => void {
   root.append(dialog);
   const unsubscribe = game.onWorldEvent((event) => {
     if (event.type !== "dialog") return;
-    text.textContent = event.text ?? "...";
+    text.textContent = event.text ?? event.messageId ?? "...";
     if (!dialog.open) dialog.showModal();
   });
   return () => {

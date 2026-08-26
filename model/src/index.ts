@@ -12,5 +12,6 @@ export type {
   LevelObjectTraits,
   LevelObject,
   LevelRules,
+  WinCondition,
   LevelMap,
 } from "./types.js";

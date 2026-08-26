@@ -5,23 +5,13 @@
   "type": "module",
   "description": "Bobby Carrot 5 Remake：原版 1～40 章、Adventure、自由选关、Engine 与 JSON 地图 Editor。",
   "scripts": {
-    "assets:extract": "node tools/src/extract-jars.mjs",
-    "assets:decode": "node tools/src/decode-levels.mjs",
-    "assets:build": "node tools/src/build-assets.mjs && node tools/src/build-level-filters.mjs",
-    "build": "node tools/scripts/build.mjs",
-    "dev": "node tools/scripts/dev-server.mjs web",
-    "dev:web": "node tools/scripts/dev-server.mjs web",
-    "dev:editor": "node tools/scripts/dev-server.mjs editor",
-    "serve": "node tools/scripts/dev-server.mjs web --no-build",
-    "serve:editor": "node tools/scripts/dev-server.mjs editor --no-build",
-    "test": "node tools/scripts/run-tests.mjs",
-    "test:browser": "npm run build && node tools/scripts/browser-smoke.mjs",
-    "verify:browser": "npm run test:browser",
-    "source:check": "node tools/scripts/source-quality.mjs",
-    "verify": "npm run source:check && node tools/scripts/verify.mjs",
-    "original:patch": "node tools/scripts/original-patch.mjs",
-    "clean": "node tools/scripts/clean.mjs",
-    "clean:generated": "node -e \"const fs=require('fs');for(const p of['assets/extracted','assets/generated','tmp'])fs.rmSync(p,{recursive:true,force:true});console.log('已清理可生成资产')\""
+    "dev": "node tools/cli.mjs dev",
+    "assets": "node tools/cli.mjs assets rebuild",
+    "build": "node tools/cli.mjs build",
+    "preview": "node tools/cli.mjs preview",
+    "test": "node tools/cli.mjs test",
+    "verify": "node tools/cli.mjs verify",
+    "clean": "node tools/cli.mjs clean"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
@@ -31,7 +21,6 @@
   },
   "workspaces": [
     "model",
-    "dat",
     "engine",
     "editor",
     "adventure",

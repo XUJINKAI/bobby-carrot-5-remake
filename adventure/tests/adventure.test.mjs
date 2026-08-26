@@ -9,7 +9,7 @@ import {
   createAdventureSave,
   isAdventureLevelUnlocked,
   planAdventureSession,
-  prepareAdventureLevel,
+  createAdventureLevelInstance,
   specialSceneIdForSource,
 } from "../dist/index.js";
 
@@ -78,14 +78,14 @@ test("persistent global rewards are identified by level and map position", () =>
   let save = createAdventureSave();
   save = claimPersistentReward(save, "1-1", ObjectId.BONUS_COIN, 1, 0);
   assert.equal(save.economy.bonusCoins, 1);
-  assert.deepEqual(prepareAdventureLevel("1-1", level, save).objects, [
+  assert.deepEqual(createAdventureLevelInstance("1-1", level, save).objects, [
     { type: ObjectId.GOLDEN_CARROT, x: 1, y: 1 },
   ]);
   const again = claimPersistentReward(save, "1-1", ObjectId.BONUS_COIN, 1, 0);
   assert.equal(again.economy.bonusCoins, 1);
 });
 
-test("Bonus maps encode the original 60 second challenge into Lock properties", () => {
+test("Adventure session preserves the adapted map instance semantics", () => {
   const level = {
     width: 3,
     height: 1,
@@ -96,14 +96,10 @@ test("Bonus maps encode the original 60 second challenge into Lock properties", 
     ],
   };
   const save = createAdventureSave();
-  const bonus = prepareAdventureLevel("1-bonus-1", level, save);
-  const regular = prepareAdventureLevel("1-1", level, save);
+  const bonus = createAdventureLevelInstance("1-bonus-1", level, save);
+  const regular = createAdventureLevelInstance("1-1", level, save);
 
-  assert.equal(
-    bonus.objects.find((object) => object.type === ObjectId.LOCK)?.properties
-      ?.timedChallengeMs,
-    "60000",
-  );
+  assert.equal(bonus.objects.find((object) => object.type === ObjectId.LOCK)?.properties, undefined);
   assert.equal(
     regular.objects.find((object) => object.type === ObjectId.LOCK)?.properties,
     undefined,

@@ -20,11 +20,12 @@ interface LevelMap {
   objects: LevelObject[];
   rules?: {
     maxMoves?: number;
+    win?: WinCondition;
   };
 }
 ```
 
-`traits` 是 Definition 白名单允许的实例能力，`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。三者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
+`traits` 是 Definition 白名单允许的实例能力，`properties` 是对象实例参数，`rules` 是声明式地图 gameplay semantics。当前地图显式提供 `rules.win`，Engine 不根据对象或地形推导完成条件。三者不表达地图来源，也不能存 DAT byte、source、release、Campaign 或 Editor 专用状态；其执行逻辑只位于 Engine。
 
 例如带作者对白的 Sandman：
 
@@ -34,7 +35,7 @@ interface LevelMap {
   "x": 8,
   "y": 12,
   "properties": {
-    "dialogue": "作者写的话"
+    "dialogId": "custom.sandman.greeting"
   }
 }
 ```
@@ -62,9 +63,9 @@ repeat until EOF:
     u8 y
 ```
 
-raw byte 映射唯一存在于 `dat/src/mapping.ts`。
+raw byte 映射唯一存在于 `tools/original/dat/mapping.mjs`。
 
-`@bobby/dat` 提供：
+`tools/original/dat/index.mjs` 提供：
 
 ```text
 decode/encodeDatTerrain
@@ -88,7 +89,7 @@ DAT 本身没有 `LevelObject.properties`。把纯语义地图编码回原版 DA
 
 ## DAT 的使用边界
 
-`@bobby/dat` 只用于：
+Original DAT tooling 只用于：
 
 - 官方地图解码与生成；
 - 原版格式研究；
@@ -96,7 +97,7 @@ DAT 本身没有 `LevelObject.properties`。把纯语义地图编码回原版 DA
 - Original JAR patch / validation；
 - DAT round-trip 与相关测试。
 
-Web 与 Editor 不依赖 `@bobby/dat`。用户地图不提供 DAT 导入、DAT 导出或 DAT-backed URL share。
+Web 与 Editor 不依赖 Original DAT tooling。用户地图不提供 DAT 导入、DAT 导出或 DAT-backed URL share。
 
 ## OfficialLevelData / Catalog identity
 
@@ -123,7 +124,7 @@ DAT Object table 和所有 authoring/persistence 模型只保存 anchor。Dragon
 
 ## Editor JSON
 
-Editor JSON 是 Bobby Carrot 5 Remake 自定义长期编辑格式，`schemaVersion=2`，额外允许 `name / author / description`。它保持 semantic ID、anchor object 与 `LevelObject.properties`，不保存 raw DAT 或 Adventure state。
+Editor JSON 是 Bobby Carrot 5 Remake 自定义长期编辑格式，`schemaVersion=3`，额外允许 `name / author / description`。它保持 semantic ID、anchor object、显式 `rules.win` 与 `LevelObject.properties`，不保存 raw DAT 或 Adventure state。
 
 用户地图的长期内容是语义 JSON。Web Data Exchange 可以通过以下载体搬运同一内容：
 
@@ -154,6 +155,6 @@ Engine LevelMap
 
 ## Original JAR patch
 
-`npm run original:patch` 把 Editor JSON 的 `LevelMap` 通过 tools / `@bobby/dat` 编码成一个 DAT level record，替换指定 Campaign public ID 对应的原版槽位，然后写出独立验证 JAR。原始 JAR 永不修改。
+`npm run original:patch` 把 Editor JSON 的 `LevelMap` 通过 Original DAT tooling 编码成一个 DAT level record，替换指定 Campaign public ID 对应的原版槽位，然后写出独立验证 JAR。原始 JAR 永不修改。
 
 这里的 DAT 编码属于验证工具链，不会让 Editor 产品依赖 DAT。详见 `docs/workflows/validate-original.md`。

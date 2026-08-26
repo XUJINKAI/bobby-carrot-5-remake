@@ -4,6 +4,7 @@ import {
   fetchJson,
   type CustomMapCatalog,
   type LevelCatalog,
+  type MapCollectionsIndex,
   type OfficialLevelData,
 } from "../services/catalog/catalog.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
@@ -27,6 +28,7 @@ import {
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import { resolveExploreMap } from "../services/catalog/exploreMaps.js";
+import { mapAssetUrl, parseMapPlayUrl } from "./routes.js";
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import {
   decodeImportedData,
@@ -42,8 +44,9 @@ export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new TinySynthAudioBackend();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
-  private catalog!: LevelCatalog;
-  private customMapCatalog!: CustomMapCatalog;
+  private catalog: LevelCatalog = EMPTY_LEVEL_CATALOG;
+  private customMapCatalog: CustomMapCatalog = EMPTY_CUSTOM_MAP_CATALOG;
+  private catalogsLoaded = false;
   private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
@@ -54,12 +57,6 @@ export class BobbyApp {
   }
 
   async start(): Promise<void> {
-    this.catalog = await fetchJson<LevelCatalog>(
-      siteUrl("assets/catalog.json"),
-    );
-    this.customMapCatalog = await fetchJson<CustomMapCatalog>(
-      siteUrl("assets/custom-maps.json"),
-    );
     installShellBridge({
       apply: (config, help) => this.applyShell(config, help),
     });
@@ -120,6 +117,8 @@ export class BobbyApp {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();
+    // 直达 Play 的地图定位只由 URL 决定，Catalog 只为列表和产品元数据服务。
+    if (!path.startsWith("/explore/play/")) await this.ensureCatalogs();
     const context = {
       app: this.content,
       catalog: this.catalog,
@@ -172,11 +171,13 @@ export class BobbyApp {
       return;
     }
     if (path.startsWith("/explore/play/")) {
-      const parts = path.split("/").filter(Boolean);
-      const ref = {
-        collection: decodeURIComponent(parts[2] ?? "").toLowerCase(),
-        id: decodeURIComponent(parts[3] ?? "").toLowerCase(),
-      };
+      const ref = parseMapPlayUrl(path);
+      if (!ref) {
+        this.navigate("/explore");
+        return;
+      }
+      ref.collection = ref.collection.toLowerCase();
+      ref.id = ref.id.toLowerCase();
       if (ref.collection === "imported") {
         const pending = sessionStorage.getItem("bc5r:pending-play-level");
         if (!pending) {
@@ -246,7 +247,7 @@ export class BobbyApp {
         return;
       }
       const official = await fetchJson<OfficialLevelData>(
-        siteUrl(`assets/${level.path}`),
+        siteUrl(mapAssetUrl("original", level.publicId)),
       );
       this.controller = await renderGamePage({
         ...context,
@@ -281,7 +282,41 @@ export class BobbyApp {
     }
     this.navigate("/");
   }
+
+  private async ensureCatalogs(): Promise<void> {
+    if (this.catalogsLoaded) return;
+    const [catalog, collectionsIndex] = await Promise.all([
+      fetchJson<LevelCatalog>(siteUrl("assets/maps/original/index.json")),
+      fetchJson<MapCollectionsIndex>(siteUrl("assets/maps/index.json")),
+    ]);
+    const customCollections = await Promise.all(
+      collectionsIndex.collections
+        .filter((collection) => collection.id !== "original")
+        .map((collection) =>
+          fetchJson<CustomMapCatalog["collections"][number]>(
+            siteUrl(`assets/maps/${collection.id}/index.json`),
+          ),
+        ),
+    );
+    this.catalog = catalog;
+    this.customMapCatalog = {
+      schemaVersion: 1,
+      collections: customCollections,
+    };
+    this.catalogsLoaded = true;
+  }
 }
+
+const EMPTY_LEVEL_CATALOG = {
+  levels: [],
+  chapters: [],
+  specialScenes: [],
+} as unknown as LevelCatalog;
+
+const EMPTY_CUSTOM_MAP_CATALOG: CustomMapCatalog = {
+  schemaVersion: 1,
+  collections: [],
+};
 
 function defaultShellState(): ShellViewState {
   return {

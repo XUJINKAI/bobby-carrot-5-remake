@@ -1,9 +1,9 @@
 # 官方发行包、代码与资产谱系
 
-本文记录 `assets/original/official-hd/` 中 10 个官方 HD JAR 的可复现逆向事实。完整 entry/hash matrix 由：
+本文记录 `original/official-hd/` 中 10 个官方 HD JAR 的可复现逆向事实。完整 entry/hash matrix 由：
 
 ```bash
-node tools/src/research-official-releases.mjs
+node tools/cli.mjs original research
 ```
 
 生成到 `tmp/release-research/release-matrix.json`。工具逐 entry 计算 SHA-256，并在本机存在 JDK 时对 `a.class`、`Bobby.class` 运行 `javap -c -p -s`。
@@ -127,25 +127,26 @@ music
 BC5R 自制资产放在：
 
 ```text
-assets/project/
+assets/
 ```
 
 该目录与：
 
 ```text
-assets/original/   官方原始证据
-assets/extracted/  官方 JAR 解包生成物
-assets/generated/  构建生成物
+original/official-hd/  官方原始证据
+original/extracted/    官方 JAR 解包生成物
+original/decoded/      DAT 忠实解码数据
+original/adapted/      Engine-native 适配数据
 ```
 
-保持来源边界。未来 Portal 等 BC5R-only 美术应从 `assets/project/` 进入生成链，不得伪装成官方 JAR extracted/generated 资产。
+保持来源边界。未来 Portal 等 Bobby Carrot 5 Remake 自制美术直接作为 Git 托管资源进入 `assets/`，不得伪装成官方 JAR 派生资产。
 
 ## 6. 如何复核
 
 完整研究命令：
 
 ```bash
-node tools/src/research-official-releases.mjs --output tmp/release-research
+node tools/cli.mjs original research --output tmp/release-research
 ```
 
 主要输出：

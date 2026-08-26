@@ -5,7 +5,7 @@
 ```text
 Original JAR / DAT
         ⇅
-    @bobby/dat  <------------------- tools / original JAR patcher / tests
+ tools/original/dat <--------------- original JAR patcher / tests
         ⇅
     @bobby/model::LevelMap
       ▲          ▲          ▲
@@ -15,7 +15,7 @@ Original JAR / DAT
       └----------- Web ------┘
 ```
 
-`@bobby/dat` 是原版格式互操作边界，不属于浏览器产品依赖链。Web、Editor、Engine 都不能依赖它。
+Original DAT tooling 是原版格式互操作边界，不属于浏览器产品依赖链。Web、Editor、Engine 都不能依赖它。
 
 项目同时服务三个目标：
 
@@ -49,9 +49,9 @@ interface LevelObject {
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 
-## @bobby/dat
+## Original DAT tooling
 
-`dat/` 是原版格式唯一互操作边界：
+`tools/original/dat/` 是原版格式唯一互操作边界：
 
 ```text
 semantic Terrain/Object <-> original DAT byte
@@ -59,7 +59,7 @@ LevelMap <-> DAT level record
 DAT package <-> metadata + level records
 ```
 
-`dat/src/mapping.ts` 是唯一 raw DAT ID table。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
+`tools/original/dat/mapping.mjs` 是唯一 raw DAT ID table。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
 
 `dynamic_slots` 属于原版 record 的序列化字段，由 `deriveDatDynamicSlots(LevelMap)` 派生。`verify` 对全部 530 条官方 source record 检查派生值与原值一致。
 
@@ -284,7 +284,7 @@ Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 
 
 ### 原版 Bonus 地图增强
 
-Adventure 知道哪些 Campaign ID 是原版 Bonus 关，因此在这些地图进入 Engine 前，把原版 60 秒事实编码成普通地图实例属性：
+Original Adapter 知道哪些 source record 是 Bonus 关，并把原版 60 秒事实编码成普通地图实例属性：
 
 ```text
 Bonus LevelMap
@@ -315,18 +315,19 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 ## Explore content / Custom Map Catalog
 
-Explore 使用 collection 组织所有自由游玩内容。`original` 由 Web 固定为第一个 collection，内置自定义内容由 `custom_maps/collections.json` 定义展示名称、顺序与说明：
+Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序与说明：
 
 ```text
-custom_maps/<collection>/<map>.json
+custom-maps/<collection>/<map>.json
         ↓ build
-assets/generated/custom-maps.json
-assets/generated/custom-maps/<collection>/<map>.json
+assets/maps/index.json
+assets/maps/<collection>/index.json
+assets/maps/<collection>/<map>.json
 ```
 
-源码目录负责内容归类，manifest 负责产品展示。Web 只消费生成后的 Catalog 与地图资产，不直接读取源码目录。列表页面可以按 collection 使用专门布局；游玩和编辑入口统一先解析为纯 `LevelMap`。
+源码目录负责内容归类，manifest 负责 collection discovery。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
-每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。关卡级难度筛选使用现有历史/估算数据，两类数据分别维护。
+每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
 ## Editor
 
@@ -357,7 +358,7 @@ Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有�
 
 Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Settings、Data Exchange、localStorage/file adapters 和 Result 流程。
 
-Web 不依赖 `@bobby/dat`，产品 `dist/` 也不发布 `dat/` browser module。
+Web 不依赖 Original DAT tooling，产品 `dist/` 也不发布 DAT browser module。
 
 Web 的通用 Game Session 负责提供 `LevelMap + Runtime Config`、组合 Engine 生命周期并展示通用 `dialog` WorldEvent；它不实现基础 HUD、Screen Joystick 或地图规则。
 
@@ -459,7 +460,7 @@ Campaign level ID + semantic Object type + x/y
 ```text
 Editor semantic JSON map
       ├──> Bobby Carrot 5 Remake Engine
-      └──> tools -> @bobby/dat encode
+      └──> tools/original/dat encode
                     ↓
                patch one original DAT record
                     ↓

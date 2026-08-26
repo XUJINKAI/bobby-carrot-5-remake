@@ -2,21 +2,19 @@
 
 ```text
 assets/
-├── original/
-│   └── official-hd/
-│       ├── base.jar
-│       ├── up01.jar
-│       └── ... up09.jar
-├── extracted/
-│   ├── base/
-│   └── up01/ ... up09/
-└── generated/
-    ├── catalog.json
-    ├── source-index.json
-    ├── levels/
-    ├── sources/
-    ├── art/hd/
-    └── audio/midi/
+├── maps/
+│   ├── index.json
+│   ├── original/
+│   │   ├── index.json
+│   │   └── <map-id>.json
+│   └── <collection>/
+│       ├── index.json
+│       └── <map-id>.json
+├── i18n/
+├── art/
+└── audio/
 ```
 
-`original` 不可修改；`extracted` 与 `generated` 必须可由工具重新生成。Web/Engine 运行时只读取 `generated`，禁止直接依赖原始 JAR 或 DAT。
+`assets/` 是网站 `/assets/` 的静态资源源树，允许 Git 托管的人工资源与生成资源共存。`assets/maps/index.json` 负责 collection discovery，`assets/maps/<collection>/index.json` 负责展示、搜索和筛选 metadata，`assets/maps/<collection>/<map-id>.json` 是可直接交给 Engine 的地图。
+
+`build` 将该目录原样复制到 `dist/assets/`。`npm run assets` 只清理其中未被 Git 跟踪的生成物，再从 `original/` 与 `custom-maps/` 重建。

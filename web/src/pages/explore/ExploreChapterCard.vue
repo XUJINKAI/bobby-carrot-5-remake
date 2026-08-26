@@ -48,16 +48,10 @@ function stars(value: number): string {
           'bonus-level': level.contentKind === 'bonus',
         }"
         :href="explorePlayPath({ collection: 'original', id: level.publicId })"
-        :title="`${level.publicId} · ${level.difficulty.label}`"
+        :title="level.publicId"
         @click.prevent="emit('navigate', explorePlayPath({ collection: 'original', id: level.publicId }))"
       >
         <span class="chapter-level-no">{{ displayShort(level) }}</span>
-        <span
-          class="difficulty-badge"
-          :class="[level.difficulty.level, level.difficulty.source]"
-        >
-          {{ level.difficulty.label }}
-        </span>
         <span
           v-if="completedIds.has(level.canonicalId)"
           class="done-mark"

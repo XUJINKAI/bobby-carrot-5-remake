@@ -5,7 +5,7 @@
 原始 JAR 中的 MIDI 保留为 `.mid`，构建时复制到：
 
 ```text
-assets/generated/audio/midi/
+assets/audio/midi/
 ```
 
 包括 `title.mid`、`ingame0~2.mid`、`bonus.mid`、`mow.mid`、`fly.mid`、`death.mid`、`cleared.mid` 等。

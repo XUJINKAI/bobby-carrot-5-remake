@@ -3,6 +3,7 @@ import type {
   LevelObjectTraits,
   ObjectType,
   TerrainType,
+  WinCondition,
 } from "../data/types.js";
 import type { Direction } from "../mechanics/ids.js";
 import type {
@@ -52,6 +53,8 @@ export interface RuntimeState extends BobbyActorState {
   objectiveRemaining: number;
   objectiveTotal: number;
   pushGoalsRemaining: number;
+  /** Adapter/Importer 提供的显式胜利条件；缺失时地图不会自动完成。 */
+  winCondition?: WinCondition;
   forced: ForcedMovement | null;
   pendingTrap: Point | null;
   pendingCarousel: Point | null;

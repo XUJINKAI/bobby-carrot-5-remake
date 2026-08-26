@@ -7,22 +7,15 @@ import {
   type TerrainType,
 } from "@bobby/engine";
 import {
-  fetchJson,
   type CatalogLevel,
   type LevelCatalog,
 } from "../../services/catalog/catalog.js";
-type FilterGroup = "difficulty" | "carrots" | "items" | "scenes" | "mechanics";
+type FilterGroup = "carrots" | "items" | "scenes" | "mechanics";
 interface LevelFilterFeatures {
   carrotCount: number;
   specialItems: string[];
   scenes: string[];
   mechanics: string[];
-}
-interface LevelFilterIndex {
-  schemaVersion: 1;
-  generatedFromCatalogSchema: number;
-  levelCount: number;
-  levels: Record<string, LevelFilterFeatures>;
 }
 interface FilterOption {
   id: string;
@@ -30,34 +23,21 @@ interface FilterOption {
   icon?: string;
 }
 const GROUP_LABELS: Record<FilterGroup, string> = {
-  difficulty: "难度",
   carrots: "萝卜数",
   items: "特殊道具",
   scenes: "场景",
   mechanics: "机关",
 };
 const selected: Record<FilterGroup, Set<string>> = {
-  difficulty: new Set(),
   carrots: new Set(),
   items: new Set(),
   scenes: new Set(),
   mechanics: new Set(),
 };
 let activePanel: FilterGroup | null = null,
-  filterIndex: LevelFilterIndex | null = null,
-  loadPromise: Promise<LevelFilterIndex> | null = null,
   currentCatalog: LevelCatalog | null = null;
 const atlasUrl = new URL("assets/art/hd/ts.png", document.baseURI).href;
 const OPTIONS: Record<FilterGroup, FilterOption[]> = {
-  difficulty: [
-    { id: "easy", label: "简单", icon: '<i class="difficulty-dot easy"></i>' },
-    {
-      id: "medium",
-      label: "中等",
-      icon: '<i class="difficulty-dot medium"></i>',
-    },
-    { id: "hard", label: "困难", icon: '<i class="difficulty-dot hard"></i>' },
-  ],
   carrots: [
     { id: "0", label: "0", icon: objectIcon(ObjectId.CARROT) },
     { id: "1-5", label: "1–5", icon: objectIcon(ObjectId.CARROT) },
@@ -138,7 +118,6 @@ const OPTIONS: Record<FilterGroup, FilterOption[]> = {
 };
 export async function mountLevelFilters(catalog: LevelCatalog): Promise<void> {
   currentCatalog = catalog;
-  filterIndex = await loadIndex();
   const head = document.querySelector<HTMLElement>(".level-browser-head"),
     chapterList = document.querySelector<HTMLElement>(".chapter-list");
   if (!head || !chapterList) return;
@@ -158,14 +137,6 @@ export function randomFilteredLevel(): CatalogLevel | undefined {
   if (!currentCatalog) return undefined;
   const candidates = currentCatalog.levels.filter(levelMatchesCurrent);
   return candidates[Math.floor(Math.random() * candidates.length)];
-}
-async function loadIndex(): Promise<LevelFilterIndex> {
-  if (filterIndex) return filterIndex;
-  if (!loadPromise)
-    loadPromise = fetchJson<LevelFilterIndex>(
-      new URL("assets/level-filters.json", document.baseURI).href,
-    );
-  return loadPromise;
 }
 function renderFilterShell(shell: HTMLElement): void {
   const total = filterGroups().reduce((sum, g) => sum + selected[g].size, 0);
@@ -216,7 +187,7 @@ function onFilterClick(event: Event): void {
   }
 }
 function applyFilters(): void {
-  if (!currentCatalog || !filterIndex) return;
+  if (!currentCatalog) return;
   const active = hasActiveLevelFilters(),
     byId = new Map<string, CatalogLevel>(
       currentCatalog.levels.map((level) => [level.publicId, level]),
@@ -272,16 +243,9 @@ function applyFilters(): void {
   } else empty?.remove();
 }
 function levelMatchesCurrent(level: CatalogLevel): boolean {
-  if (!filterIndex) return true;
-  const f = filterIndex.levels[level.publicId];
-  return Boolean(f && levelMatches(level, f));
+  return levelMatches(level, level);
 }
 function levelMatches(level: CatalogLevel, f: LevelFilterFeatures): boolean {
-  if (
-    selected.difficulty.size &&
-    !selected.difficulty.has(level.difficulty.level)
-  )
-    return false;
   if (
     selected.carrots.size &&
     ![...selected.carrots].some((range) =>
@@ -314,7 +278,7 @@ function carrotRangeMatches(count: number, range: string): boolean {
             : false;
 }
 function filterGroups(): FilterGroup[] {
-  return ["difficulty", "carrots", "items", "scenes", "mechanics"];
+  return ["carrots", "items", "scenes", "mechanics"];
 }
 function terrainIcon(type: TerrainType): string {
   return atlasIcon(terrainAtlasCell(type));

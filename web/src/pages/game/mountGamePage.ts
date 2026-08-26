@@ -4,7 +4,7 @@ import {
   completeAdventureLevel,
   isAdventureLevelUnlocked,
   planAdventureSession,
-  prepareAdventureLevel,
+  createAdventureLevelInstance,
   type AdventureSave,
 } from "@bobby/adventure";
 import { ObjectId } from "@bobby/engine";
@@ -82,7 +82,7 @@ export async function renderGamePage(
     ? planAdventureSession(meta!.publicId, adventureSave)
     : null;
   const sessionLevel = adventureSave
-    ? prepareAdventureLevel(meta!.publicId, level, adventureSave)
+    ? createAdventureLevelInstance(meta!.publicId, level, adventureSave)
     : level;
   const screenControlEnabled = loadScreenControlPreference();
   const shellConfig = gameShellConfig(
@@ -339,15 +339,6 @@ function gameShellConfig(
         icon: "back",
         label: identity.title,
         title: "返回",
-        ...(meta
-          ? {
-              badge: {
-                label: meta.difficulty.label,
-                title: "关卡难度",
-                className: `difficulty-badge ${meta.difficulty.level} ${meta.difficulty.source}`,
-              },
-            }
-          : {}),
       },
       commands: [
         ...(explore

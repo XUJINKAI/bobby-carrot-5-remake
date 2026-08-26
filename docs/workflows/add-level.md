@@ -1,6 +1,6 @@
 # 导入新的关卡包 / JAR
 
-1. 将原始 JAR 放进 `assets/original/`，分配稳定 edition ID；
+1. 将原始 JAR 放进 `original/official-hd/`，分配稳定 edition ID；
 2. 在资产工具配置中登记该 edition；
 3. 执行 `npm run assets:extract`；
 4. 执行 `npm run assets:decode`；

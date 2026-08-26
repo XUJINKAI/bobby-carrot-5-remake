@@ -3,10 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build": "vite build",
-    "typecheck": "vue-tsc -b --force"
-  },
   "dependencies": {
     "@bobby/adventure": "0.1.0",
     "@bobby/editor": "0.1.0",

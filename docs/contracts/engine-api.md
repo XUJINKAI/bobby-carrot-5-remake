@@ -197,7 +197,7 @@ Engine TimedChallenge
 
 `game.timedChallengeRemainingMs` 暴露当前剩余时间供 HUD 展示。Undo 会连同 World Snapshot 恢复计时状态，Restart / 新关卡加载会重置计时状态。
 
-Adventure 的职责只是把原版 Bonus 事实转换为普通 `LevelMap` 实例参数；Engine 不认识“Bonus Round”、章节或 Campaign。
+Original Adapter 把原版 Bonus 事实转换为普通 `LevelMap` 实例参数；Engine 不认识“Bonus Round”、章节或 Campaign。
 
 ## Definition-driven 对象属性
 

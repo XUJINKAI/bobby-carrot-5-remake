@@ -35,6 +35,25 @@ test("Sandman touch emits authored dialogue", () => {
   );
 });
 
+test("Sandman touch preserves stable dialog identity", () => {
+  assert.deepEqual(
+    worldEventForObjectTouch({
+      type: ObjectId.SANDMAN,
+      x: 8,
+      y: 12,
+      properties: { dialogId: "original.map-006.sandman-8-12" },
+    }),
+    {
+      type: "dialog",
+      message: "触发对象对白",
+      messageId: "original.map-006.sandman-8-12",
+      x: 8,
+      y: 12,
+      objectType: ObjectId.SANDMAN,
+    },
+  );
+});
+
 test("objects without touch behavior emit no event", () => {
   assert.equal(
     worldEventForObjectTouch({ type: ObjectId.CARROT, x: 1, y: 1 }),

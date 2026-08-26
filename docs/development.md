@@ -22,6 +22,8 @@ npm run dev
 
 默认地址：`http://localhost:5173`。
 
+开发服务器由 Vite 提供源码级热更新。`web/src`、`engine/src`、`editor/src`、`adventure/src` 和 `model/src` 的修改会直接参与下一次模块编译；Vue 组件支持 HMR，游戏运行时模块更新后可能触发整页刷新。
+
 单独启动 Editor 开发入口：
 
 ```bash
@@ -30,16 +32,23 @@ npm run dev:editor
 
 默认地址：`http://localhost:5175/edit`。
 
+如果只需要预览已有 `dist/`：
+
+```bash
+npm run serve
+```
+
+该命令使用静态服务器，不监听源码变化。
+
 ## Workspace
 
 ```text
 model      纯 semantic LevelMap / IDs
-dat        原版 DAT 互操作
 engine     gameplay / runtime
 adventure  Campaign / Save / Adventure runtime rule
 editor     authoring + share boundary
 web        product SPA
-tools      assets / catalog / original JAR validation
+tools      assets / Original DAT / original JAR validation
 ```
 
 TypeScript 使用 project references。依赖顺序由 `tsc -b` 与 package dependencies 表达，不在 `tsconfig` paths 中指向兄弟包的 `dist` 声明文件。
@@ -64,13 +73,15 @@ dist/
 node_modules/
 dist/
 model/dist/
-dat/dist/
 adventure/dist/
 engine/dist/
 editor/dist/
-web/dist-src/
-assets/extracted/
-assets/generated/
+original/extracted/
+original/decoded/
+original/adapted/
+assets/maps/
+assets/art/hd/
+assets/audio/midi/
 tmp/
 ```
 
