@@ -177,6 +177,7 @@ function label(control: DataExchangeControlConfig): string {
       class="data-exchange-text"
       :placeholder="placeholder"
       spellcheck="false"
+      wrap="soft"
       @focus="selectDraft"
       @input="feedback = ''"
     />
@@ -209,7 +210,7 @@ function label(control: DataExchangeControlConfig): string {
 
 <style scoped>
 .data-exchange-panel { display: grid; gap: 8px; min-width: 0; }
-.data-exchange-text { width: 100%; min-height: 150px; resize: vertical; box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: #071710; color: inherit; font: 0.78rem/1.45 ui-monospace, monospace; }
+.data-exchange-text { width: 100%; min-height: 150px; resize: vertical; box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: #071710; color: inherit; font: 0.78rem/1.45 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .data-exchange-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .data-exchange-toolbar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .data-exchange-toolbar-right { margin-left: auto; }

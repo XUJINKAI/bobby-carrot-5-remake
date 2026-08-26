@@ -13,7 +13,7 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Profile 及后�
 
 `.bc5r` 是 UTF-8 文本文件，MIME 为 `text/plain;charset=utf-8`。压缩状态下载的文件内容与 TextBox 当前内容完全一致；正式站点配置 `publicBaseUrl` 后，该内容通常是可点击的完整分享 URL。Plain 状态下载 `.json`。
 
-压缩开关只转换 TextBox 当前 draft：Plain 状态显示格式化 JSON，Compressed 状态显示 Share URL 或 `BC5R1:` raw representation。TextBox 通过点击获得焦点时自动全选，随后仍可直接输入、粘贴、选择局部文本或调整光标。导入会自动识别表示形式，不依赖开关状态。复制与下载均使用 TextBox 的准确文本。
+压缩开关只转换 TextBox 当前 draft：Plain 状态显示格式化 JSON，Compressed 状态显示 Share URL 或 `BC5R1:` raw representation。TextBox 对长串文本使用软折行与任意单词断行，显示折行不会改变 draft 内容；通过点击获得焦点时自动全选，随后仍可直接输入、粘贴、选择局部文本或调整光标。导入会自动识别表示形式，不依赖开关状态。复制与下载均使用 TextBox 的准确文本。
 
 Home 通过独立弹窗导入地图且只接受语义地图；Settings 的 Adventure Profile 导入只接受存档并在写入前要求用户确认覆盖。`/import/v1` 对地图直接创建临时游戏 session，对 Adventure Profile 显示覆盖确认，对未知数据只展示错误和原始文本。
 
