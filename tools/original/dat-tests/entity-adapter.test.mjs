@@ -71,6 +71,49 @@ test("旧单层 Snow/High Grass 精确展开为 surface + cover", () => {
   ]);
 });
 
+test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显式 Entity 时不重复生成", () => {
+  const result = adaptLegacyMap({
+    width: 3,
+    height: 1,
+    terrain: [[
+      LegacyTerrain.START,
+      LegacyTerrain.HIGH_GRASS_OBJECTIVE,
+      LegacyTerrain.HIGH_GRASS_OBJECTIVE,
+    ]],
+    objects: [{ type: LegacyObject.CARROT, x: 2, y: 0 }],
+  });
+  assert.deepEqual(
+    result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
+    [
+      { type: mowedGroundAt(1, 0), x: 1, y: 0 },
+      { type: EntityTypeId.CARROT, x: 1, y: 0 },
+      { type: EntityTypeId.HIGH_GRASS_OBJECTIVE, x: 1, y: 0 },
+    ],
+  );
+  assert.deepEqual(
+    result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
+    [
+      { type: mowedGroundAt(2, 0), x: 2, y: 0 },
+      { type: EntityTypeId.HIGH_GRASS_OBJECTIVE, x: 2, y: 0 },
+      { type: EntityTypeId.CARROT, x: 2, y: 0 },
+    ],
+  );
+});
+
+test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty Nest", () => {
+  const result = adaptLegacyMap({
+    width: 2,
+    height: 1,
+    terrain: [[LegacyTerrain.START, LegacyTerrain.HIGH_GRASS_OBJECTIVE]],
+    objects: [],
+  });
+  assert.ok(
+    result.entities.some(
+      (entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY && entity.x === 1 && entity.y === 0,
+    ),
+  );
+});
+
 test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
   assert.deepEqual(
     adaptLegacyObject({ type: LegacyObject.DRAGON_HEAD_BASE, x: 2, y: 3 }),
