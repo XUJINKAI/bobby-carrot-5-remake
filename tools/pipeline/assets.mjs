@@ -106,24 +106,24 @@ function originalFilters() {
       options: ["0", "1-5", "6-10", "11-20", "21+"].map((id) => ({
         id,
         name: id,
-        icon: { type: "object", id: "carrot" },
+        icon: entityIcon("carrot"),
       })),
     },
     {
       id: "items",
       name: "特殊道具",
       options: [
-        ["shovel", "雪铲", "terrain", "shovel-pickup"],
-        ["mower", "割草机", "object", "mower"],
-        ["gas", "汽油", "object", "gas"],
-        ["bean", "魔豆", "object", "bean"],
-        ["kite", "风筝", "object", "kite"],
-        ["golden-carrot", "金胡萝卜", "object", "golden-carrot"],
-        ["bonus-coin", "Bonus Coin", "object", "bonus-coin"],
-      ].map(([id, name, type, iconId]) => ({
+        ["shovel", "雪铲", "shovel-pickup"],
+        ["mower", "割草机", "mower"],
+        ["gas", "汽油", "gas"],
+        ["bean", "魔豆", "bean"],
+        ["kite", "风筝", "kite"],
+        ["golden-carrot", "金胡萝卜", "golden-carrot"],
+        ["bonus-coin", "Bonus Coin", "bonus-coin"],
+      ].map(([id, name, entityType]) => ({
         id,
         name,
-        icon: { type, id: iconId },
+        icon: entityIcon(entityType),
       })),
     },
     {
@@ -136,38 +136,42 @@ function originalFilters() {
         ["ice", "冰面", "ice"],
         ["high-grass", "高草", "high-grass"],
         ["shop", "商店", "shop-dream"],
-      ].map(([id, name, iconId]) => ({
+      ].map(([id, name, entityType]) => ({
         id,
         name,
-        icon: { type: "terrain", id: iconId },
+        icon: entityIcon(entityType),
       })),
     },
     {
       id: "mechanics",
       name: "机关",
       options: [
-        ["tide", "潮汐", "terrain", "tide-right"],
-        ["speed", "加速带", "terrain", "speed-right"],
-        ["carousel", "旋转通道", "terrain", "carousel-1"],
-        ["wind", "风车 / 云", "object", "windmill-right"],
-        ["mirror", "魔法镜", "terrain", "mirror-1"],
-        ["trap", "陷阱", "terrain", "trap-active"],
-        ["color-switch", "彩色开关", "terrain", "color-yellow-switch-raised"],
-        ["mower", "割草机", "object", "mower"],
-        ["beanstalk", "魔豆藤", "object", "beanstalk-tip"],
-        ["dragon", "龙", "object", "dragon-head"],
-        ["beaver", "海狸 / 锁", "object", "beaver-base"],
-        ["dream", "梦境机关", "object", "dream-machine"],
-        ["plank", "木板", "object", "plank"],
-        ["whirlwind", "龙卷风 / 风筝", "object", "whirlwind"],
-        ["ice-block", "冰块", "object", "ice-block"],
-      ].map(([id, name, type, iconId]) => ({
-        id,
-        name,
-        icon: { type, id: iconId },
-      })),
+        ["tide", "潮汐", entityIcon("tide", { direction: "right" })],
+        ["speed", "加速带", entityIcon("speed", { direction: "right" })],
+        ["carousel", "旋转通道", entityIcon("carousel", { state: { variant: 1 } })],
+        ["wind", "风车 / 云", entityIcon("windmill-right")],
+        ["mirror", "魔法镜", entityIcon("mirror", { state: { variant: 1 } })],
+        ["trap", "陷阱", entityIcon("trap", { state: { active: true } })],
+        [
+          "color-switch",
+          "彩色开关",
+          entityIcon("color-yellow-switch", { state: { pressed: false } }),
+        ],
+        ["mower", "割草机", entityIcon("mower")],
+        ["beanstalk", "魔豆藤", entityIcon("beanstalk-tip")],
+        ["dragon", "龙", entityIcon("dragon")],
+        ["beaver", "海狸 / 锁", entityIcon("beaver")],
+        ["dream", "梦境机关", entityIcon("dream-machine")],
+        ["plank", "木板", entityIcon("plank")],
+        ["whirlwind", "龙卷风 / 风筝", entityIcon("whirlwind")],
+        ["ice-block", "冰块", entityIcon("ice-block")],
+      ].map(([id, name, icon]) => ({ id, name, icon })),
     },
   ];
+}
+
+function entityIcon(type, fields = {}) {
+  return { type: "entity", entity: { type, ...fields } };
 }
 
 function carrotBucket(count) {
@@ -192,5 +196,8 @@ function copyTree(source, target) {
   fs.cpSync(source, target, { recursive: true });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+)
   prepareAssets();
