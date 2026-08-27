@@ -116,8 +116,14 @@ function normalizeEntity(raw: LevelEntity): LevelEntity | null {
   const y = Math.trunc(Number(raw.y));
   if (!type || !Number.isFinite(x) || !Number.isFinite(y)) return null;
   const entity: LevelEntity = { type, x, y };
-  if (["up", "down", "left", "right"].includes(raw.direction ?? ""))
-    entity.direction = raw.direction;
+  const direction = raw.direction;
+  if (
+    direction === "up" ||
+    direction === "down" ||
+    direction === "left" ||
+    direction === "right"
+  )
+    entity.direction = direction;
   const properties = normalizeJsonRecord(raw.properties);
   if (properties) entity.properties = properties;
   const state = normalizeJsonRecord(raw.state);
