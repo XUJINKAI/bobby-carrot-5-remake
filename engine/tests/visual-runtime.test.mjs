@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  EntityStore,
   EntityTypeId,
+  SpatialIndex,
+  SpatialVisualQuery,
   builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
   resolveEntityVisualPreview,
-  WorldPreview,
-  SpatialVisualQuery,
 } from "../dist/index.js";
 
 test("Bobby authoring preview resolves to the same image visual instead of a custom B fallback", () => {
@@ -31,21 +32,16 @@ test("Bobby authoring preview resolves to the same image visual instead of a cus
 test("Bobby walking progress is visual runtime state and does not mutate World", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
-  const level = {
-    schemaVersion: 1,
-    width: 2,
-    height: 1,
-    entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-    ],
-  };
-  const preview = new WorldPreview(level, entities);
-  const bobby = preview.entities.all().find((entity) => entity.type === EntityTypeId.BOBBY);
+  const store = new EntityStore([
+    { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+    { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+  ]);
+  const spatial = new SpatialIndex(store, entities, 2, 1);
+  const bobby = store.all().find((entity) => entity.type === EntityTypeId.BOBBY);
   assert.ok(bobby);
-  const presence = preview.spatial.presencesForEntity(bobby.id)[0];
+  const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
-  const query = new SpatialVisualQuery(preview.entities, preview.spatial);
+  const query = new SpatialVisualQuery(store, spatial);
   const definition = entities.require(EntityTypeId.BOBBY);
   const composition = visuals.resolve(definition, {
     entity: bobby,

@@ -35,7 +35,6 @@ export type {
 export { STACK_BANDS } from "./world/spatial/StackBand.js";
 export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
-export { WorldPreview } from "./world/WorldPreview.js";
 export {
   defineEntityModule,
   type EntityBehaviorBinding,

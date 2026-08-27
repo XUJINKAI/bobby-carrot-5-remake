@@ -82,7 +82,6 @@ export type {
 export { STACK_BANDS } from "./world/spatial/StackBand.js";
 export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
-export { WorldPreview } from "./world/WorldPreview.js";
 export { BehaviorRegistry } from "./world/behavior/BehaviorRegistry.js";
 export { CommandQueue } from "./world/behavior/CommandQueue.js";
 export { WorldQueryApi } from "./world/behavior/WorldQueryApi.js";
@@ -116,17 +115,6 @@ export {
   stableVisualHash,
 } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
-export {
-  CARDINAL_CONNECTION,
-  cardinalConnectionMask,
-  resolveCardinalTopology,
-} from "./visual/AutoConnect.js";
-export type {
-  AutoConnectPredicate,
-  AutoConnectShape,
-  AutoConnectTopology,
-  CardinalConnectionMask,
-} from "./visual/AutoConnect.js";
 export {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,

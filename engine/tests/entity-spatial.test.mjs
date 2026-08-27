@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
-import { WorldPreview } from "../dist/world/WorldPreview.js";
 
 function registry() {
   const registry = new EntityRegistry();
@@ -49,20 +48,41 @@ function registry() {
   return registry;
 }
 
-test("同格 Entity 按 surface/content/cover 形成稳定 Cell Stack", () => {
-  const preview = new WorldPreview(
-    {
-      schemaVersion: 1,
-      width: 3,
-      height: 3,
-      entities: [
-        { type: "water", x: 1, y: 1 },
-        { type: "coin", x: 1, y: 1 },
-        { type: "grass", x: 1, y: 1 },
-      ],
-    },
-    registry(),
+function createSpatialPreview(level, entityRegistry = registry()) {
+  const entities = new EntityStore(level.entities);
+  const spatial = new SpatialIndex(
+    entities,
+    entityRegistry,
+    level.width,
+    level.height,
   );
+  return {
+    entities,
+    spatial,
+    inspectCell(x, y) {
+      const presences = spatial.presencesAt({ x, y }).map((presence) => ({
+        presence,
+        entity: entities.require(presence.entityId),
+      }));
+      return {
+        presences,
+        top: presences.at(-1) ?? null,
+      };
+    },
+  };
+}
+
+test("同格 Entity 按 surface/content/cover 形成稳定 Cell Stack", () => {
+  const preview = createSpatialPreview({
+    schemaVersion: 1,
+    width: 3,
+    height: 3,
+    entities: [
+      { type: "water", x: 1, y: 1 },
+      { type: "coin", x: 1, y: 1 },
+      { type: "grass", x: 1, y: 1 },
+    ],
+  });
   const cell = preview.inspectCell(1, 1);
   assert.deepEqual(
     cell.presences.map(({ entity }) => entity.type),
@@ -72,19 +92,16 @@ test("同格 Entity 按 surface/content/cover 形成稳定 Cell Stack", () => {
 });
 
 test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", () => {
-  const preview = new WorldPreview(
-    {
-      schemaVersion: 1,
-      width: 6,
-      height: 3,
-      entities: [
-        { type: "water", x: 3, y: 1 },
-        { type: "dragon", x: 1, y: 1 },
-        { type: "ice", x: 3, y: 1 },
-      ],
-    },
-    registry(),
-  );
+  const preview = createSpatialPreview({
+    schemaVersion: 1,
+    width: 6,
+    height: 3,
+    entities: [
+      { type: "water", x: 3, y: 1 },
+      { type: "dragon", x: 1, y: 1 },
+      { type: "ice", x: 3, y: 1 },
+    ],
+  });
   const tail = preview.inspectCell(3, 1);
   assert.deepEqual(
     tail.presences.map(({ entity, presence }) => [entity.type, presence.role]),

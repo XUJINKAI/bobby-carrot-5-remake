@@ -29,6 +29,6 @@ test("gameplay package surface does not expose Engine implementation internals",
 
 test("authoring internals are opt-in through the explicit authoring entrypoint", () => {
   assert.equal(typeof authoring.createBuiltinEntityRegistry, "function");
-  assert.equal(typeof authoring.WorldPreview, "function");
   assert.equal(typeof authoring.EntityRegistry, "function");
+  assert.equal(typeof authoring.SpatialIndex, "function");
 });
