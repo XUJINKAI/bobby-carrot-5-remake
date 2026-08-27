@@ -42,6 +42,41 @@ test("直达 Play 只按 URL 加载一个 MapDocument", async () => {
   }
 });
 
+test("直达 Play 保留 MapDocument.playerStart", async () => {
+  const previousFetch = globalThis.fetch;
+  const previousDocument = globalThis.document;
+  globalThis.document = { baseURI: "https://example.test/" };
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    schemaVersion: 1,
+    meta: { id: "01-01", name: "LOMA 01-01" },
+    width: 2,
+    height: 1,
+    playerStart: { x: 0, y: 0 },
+    terrain: [["ground-c", "custom:push-goal"]],
+    objects: [],
+    rules: {
+      win: {
+        type: "fill-all",
+        terrainTrait: "push-goal",
+        objectTrait: "pushable",
+      },
+    },
+  }));
+
+  try {
+    const resolved = await resolveMapDocument({
+      collection: "loma-pushbox",
+      id: "01-01",
+    });
+    assert.deepEqual(resolved.level.playerStart, { x: 0, y: 0 });
+    assert.equal(Object.hasOwn(resolved.level, "meta"), false);
+    assert.equal(Object.hasOwn(resolved.level, "schemaVersion"), false);
+  } finally {
+    globalThis.fetch = previousFetch;
+    globalThis.document = previousDocument;
+  }
+});
+
 test("MapDocument 的 meta.id 必须与 URL map id 一致", async () => {
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
