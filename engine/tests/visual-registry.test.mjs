@@ -14,16 +14,13 @@ function definition(type, extra = {}) {
     type,
     traits: [],
     stackBand: "content",
-    presentation: { name: type },
     ...extra,
   };
 }
 
 test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
   const entities = new EntityRegistry();
-  const sensor = definition("sensor", {
-    presentation: { name: "Sensor", visual: "sensor-visual" },
-  });
+  const sensor = definition("sensor");
   const marker = definition("marker");
   entities.registerAll([sensor, marker]);
 
@@ -38,12 +35,15 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
     id: "sensor-visual",
     resolve(context) {
       const remote = context.query.presencesAt({ x: 2, y: 0 }).at(-1);
-      const remoteEntity = remote ? context.query.entity(remote.entityId) : undefined;
+      const remoteEntity = remote
+        ? context.query.entity(remote.entityId)
+        : undefined;
       return remoteEntity
         ? { layers: [{ kind: "image", asset: `sees:${remoteEntity.type}` }] }
         : null;
     },
   });
+  visuals.bindEntityVisual("sensor", "sensor-visual");
 
   const runtimeSensor = store.all()[0];
   assert.ok(runtimeSensor);
@@ -60,9 +60,7 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
 });
 
 test("persisted visual variant 用 type + x + y + placement sequence 稳定选择并写入 properties", () => {
-  const entityDefinition = definition("flower", {
-    presentation: { name: "Flower", visual: "flower-visual" },
-  });
+  const entityDefinition = definition("flower");
   const visuals = new VisualRegistry();
   visuals.register({
     id: "flower-visual",
@@ -74,12 +72,17 @@ test("persisted visual variant 用 type + x + y + placement sequence 稳定选�
     },
     resolve: () => null,
   });
+  visuals.bindEntityVisual("flower", "flower-visual");
 
   const source = { type: "flower", x: 4, y: 5 };
   const first = visuals.initializeAuthoringEntity(source, entityDefinition, 17);
   const again = visuals.initializeAuthoringEntity(source, entityDefinition, 17);
   assert.deepEqual(first, again);
-  assert.ok(["white", "yellow", "pink", "red"].includes(first.properties.visualVariant));
+  assert.ok(
+    ["white", "yellow", "pink", "red"].includes(
+      first.properties.visualVariant,
+    ),
+  );
 
   const fixed = visuals.initializeAuthoringEntity(
     { ...source, properties: { visualVariant: "pink" } },
