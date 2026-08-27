@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AudioRuntime } from "@bobby/engine";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
@@ -35,10 +35,7 @@ function openSettings(feedback = ""): void {
 }
 
 function dispatchAction(action: string): void {
-  if (action === "music") {
-    settings.toggleMusic();
-    updateActionPressed("music", settings.state.musicEnabled);
-  }
+  if (action === "music") settings.toggleMusic();
   else if (action === "settings") openSettings();
   else if (action === "help") openDialog("help");
   else if (action === "screen-control") {
@@ -64,6 +61,12 @@ function updateActionPressed(id: string, pressed: boolean): void {
   const target = actions.find((item) => item.id === id);
   if (target) target.pressed = pressed;
 }
+
+watch(
+  [() => settings.state.musicEnabled, () => props.shell.config],
+  ([musicEnabled]) => updateActionPressed("music", musicEnabled),
+  { immediate: true },
+);
 
 defineExpose({ openSettings });
 onMounted(() => {

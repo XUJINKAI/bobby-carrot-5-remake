@@ -42,12 +42,6 @@ function numberValue(event: Event): number {
   return Number((event.target as HTMLInputElement).value);
 }
 
-function styleValue(event: Event): MusicStyle {
-  return (event.target as HTMLSelectElement).value === "modern"
-    ? "modern"
-    : "8bit";
-}
-
 function parseProfile(value: unknown): AdventureSave {
   return parseAdventureProfileExchange(value);
 }
@@ -80,7 +74,25 @@ function requestReset(): void {
       <label>音乐 <input type="checkbox" :checked="state.musicEnabled" @change="emit('musicEnabled', ($event.target as HTMLInputElement).checked)"></label>
       <label>音乐增益 {{ state.musicGain }}% <input type="range" min="0" max="200" :value="state.musicGain" @input="emit('musicGain', numberValue($event))"></label>
       <label>音效增益 {{ state.soundGain }}% <input type="range" min="0" max="200" :value="state.soundGain" @input="emit('soundGain', numberValue($event))"></label>
-      <label>音乐风格 <select :value="state.musicStyle" @change="emit('musicStyle', styleValue($event))"><option value="8bit">8bit 风格</option><option value="modern">现代风格</option></select></label>
+      <div class="music-style-setting">
+        <span>音乐风格</span>
+        <div class="music-style-options" role="radiogroup" aria-label="音乐风格">
+          <button
+            type="button"
+            role="radio"
+            :aria-checked="state.musicStyle === 'modern'"
+            :class="{ selected: state.musicStyle === 'modern' }"
+            @click="emit('musicStyle', 'modern')"
+          >现代风格</button>
+          <button
+            type="button"
+            role="radio"
+            :aria-checked="state.musicStyle === '8bit'"
+            :class="{ selected: state.musicStyle === '8bit' }"
+            @click="emit('musicStyle', '8bit')"
+          >8bit 风格</button>
+        </div>
+      </div>
       <h3>操作</h3>
       <label>屏幕摇杆 <input type="checkbox" :checked="state.screenControlEnabled" @change="emit('screenControl', ($event.target as HTMLInputElement).checked)"></label>
       <h3>Adventure Save</h3>
@@ -110,6 +122,34 @@ function requestReset(): void {
 </template>
 
 <style scoped>
+.music-style-setting {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.music-style-options {
+  display: grid;
+  min-width: 132px;
+  gap: 5px;
+}
+
+.music-style-options button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #000;
+  border-radius: 7px;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+}
+
+.music-style-options button.selected {
+  background: #000;
+  color: #fff;
+}
+
 .settings-save-actions {
   display: flex;
   gap: 8px;
