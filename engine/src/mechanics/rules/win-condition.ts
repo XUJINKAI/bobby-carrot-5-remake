@@ -1,4 +1,4 @@
-import type { WinCondition } from "../../data/types.js";
+import type { WinCondition } from "@bobby/model";
 import type { RuntimeState } from "../../world/RuntimeState.js";
 import type { TileTrait } from "../definition-types.js";
 import { terrainHasTrait } from "../definitions.js";
@@ -24,10 +24,10 @@ export function isWinConditionSatisfied(
     case "fill-all":
       return fillAllSatisfied(
         state,
-        condition.terrainTrait as TileTrait,
-        condition.objectTrait as TileTrait,
+        condition.targetTrait as TileTrait,
+        condition.fillerTrait as TileTrait,
       );
-    case "reach-terrain": {
+    case "reach": {
       const terrain = state.terrain[state.player.y]?.[state.player.x];
       return (
         terrain !== undefined &&
@@ -39,20 +39,20 @@ export function isWinConditionSatisfied(
 
 function fillAllSatisfied(
   state: RuntimeState,
-  terrainTrait: TileTrait,
-  objectTrait: TileTrait,
+  targetTrait: TileTrait,
+  fillerTrait: TileTrait,
 ): boolean {
   let targets = 0;
   for (let y = 0; y < state.terrain.length; y += 1)
     for (let x = 0; x < (state.terrain[y]?.length ?? 0); x += 1) {
       const terrain = state.terrain[y]![x]!;
-      if (!terrainHasTrait(terrain, terrainTrait)) continue;
+      if (!terrainHasTrait(terrain, targetTrait)) continue;
       targets += 1;
       if (
         !effectiveObjectHasTrait(
           state.objects[y]![x]!,
           state.objectTraits[y]?.[x],
-          objectTrait,
+          fillerTrait,
         )
       )
         return false;
