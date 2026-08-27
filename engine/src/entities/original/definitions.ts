@@ -62,6 +62,7 @@ const surfaces: EntityDefinition[] = [
   surface(EntityTypeId.GROUND_B, "Ground B"),
   surface(EntityTypeId.GROUND_C, "Ground C"),
   surface(EntityTypeId.GROUND_D, "Ground D"),
+  surface(EntityTypeId.START, "Start"),
   surface(EntityTypeId.SHOVEL_CLEARED_GROUND, "Shovel Cleared Ground"),
   surface(EntityTypeId.EXIT, "Exit", ["walkable", "exit"], {
     presentation: { name: "Exit", category: "目标" },
