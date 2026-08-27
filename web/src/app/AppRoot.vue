@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { AudioRuntime } from "@bobby/engine";
 import { onMounted, ref } from "vue";
-import type { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
@@ -10,7 +10,7 @@ import type { ShellViewState } from "../shell/shellBridge.js";
 
 const props = defineProps<{
   shell: ShellViewState;
-  audio: TinySynthAudioBackend;
+  audio: AudioRuntime;
   navigate: Navigate;
   onContentReady: (element: HTMLDivElement) => void;
 }>();
@@ -113,10 +113,9 @@ onMounted(() => {
       :feedback="settings.feedback.value"
       @close="closeDialog"
       @music-enabled="settings.setMusicEnabled"
-      @music-volume="settings.setMusicVolume"
-      @sound-volume="settings.setSoundVolume"
-      @tone="settings.setTone"
-      @reverb="settings.setReverb"
+      @music-gain="settings.setMusicGain"
+      @sound-gain="settings.setSoundGain"
+      @music-style="settings.setMusicStyle"
       @screen-control="settings.setScreenControl"
       @import-save="settings.importSave"
       @reset-save="settings.resetSave"

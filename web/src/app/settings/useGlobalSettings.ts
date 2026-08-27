@@ -1,6 +1,6 @@
-import { reactive, ref } from "vue";
-import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import type { AdventureSave } from "@bobby/adventure";
+import type { AudioRuntime, MusicStyle } from "@bobby/engine";
+import { reactive, ref } from "vue";
 import {
   loadAdventureSave,
   resetAdventureSave,
@@ -11,19 +11,24 @@ import {
   storeScreenControlPreference,
 } from "../../shell/shellBridge.js";
 
+const MUSIC_ENABLED_KEY = "bobby.musicEnabled";
+const MUSIC_GAIN_KEY = "bobby.musicGain";
+const SOUND_GAIN_KEY = "bobby.soundGain";
+const MUSIC_STYLE_KEY = "bobby.musicStyle";
+
 export interface GlobalSettingsState {
   musicEnabled: boolean;
-  musicVolume: number;
-  soundVolume: number;
-  tone: "fm" | "chip";
-  reverb: number;
+  musicGain: number;
+  soundGain: number;
+  musicStyle: MusicStyle;
   screenControlEnabled: boolean;
   bonusCoins: number;
   goldenCarrots: number;
   completedLevels: number;
 }
 
-export function useGlobalSettings(audio: TinySynthAudioBackend) {
+export function useGlobalSettings(audio: AudioRuntime) {
+  applyStoredAudioSettings(audio);
   const state = reactive<GlobalSettingsState>(readState(audio));
   const feedback = ref("");
   const profile = ref(loadAdventureSave());
@@ -34,28 +39,29 @@ export function useGlobalSettings(audio: TinySynthAudioBackend) {
     feedback.value = message;
   };
   const toggleMusic = (): void => {
-    audio.setEnabled(!audio.isEnabled());
-    state.musicEnabled = audio.isEnabled();
+    setMusicEnabled(!audio.isMusicEnabled());
   };
   const setMusicEnabled = (enabled: boolean): void => {
-    audio.setEnabled(enabled);
+    audio.setMusicEnabled(enabled);
+    localStorage.setItem(MUSIC_ENABLED_KEY, String(enabled));
     state.musicEnabled = enabled;
   };
-  const setMusicVolume = (value: number): void => {
-    audio.setMusicVolume(value / 100);
-    state.musicVolume = value;
+  const setMusicGain = (value: number): void => {
+    const gain = percentageToGain(value);
+    audio.setMusicGain(gain);
+    localStorage.setItem(MUSIC_GAIN_KEY, String(gain));
+    state.musicGain = Math.round(gain * 100);
   };
-  const setSoundVolume = (value: number): void => {
-    audio.setSoundVolume(value / 100);
-    state.soundVolume = value;
+  const setSoundGain = (value: number): void => {
+    const gain = percentageToGain(value);
+    audio.setSoundGain(gain);
+    localStorage.setItem(SOUND_GAIN_KEY, String(gain));
+    state.soundGain = Math.round(gain * 100);
   };
-  const setTone = (tone: "fm" | "chip"): void => {
-    audio.setTone(tone);
-    state.tone = tone;
-  };
-  const setReverb = (value: number): void => {
-    audio.setReverbLevel(value / 100);
-    state.reverb = value;
+  const setMusicStyle = (style: MusicStyle): void => {
+    audio.setMusicStyle(style);
+    localStorage.setItem(MUSIC_STYLE_KEY, style);
+    state.musicStyle = style;
   };
   const setScreenControl = (enabled: boolean): void => {
     state.screenControlEnabled = enabled;
@@ -81,27 +87,44 @@ export function useGlobalSettings(audio: TinySynthAudioBackend) {
     refresh,
     toggleMusic,
     setMusicEnabled,
-    setMusicVolume,
-    setSoundVolume,
-    setTone,
-    setReverb,
+    setMusicGain,
+    setSoundGain,
+    setMusicStyle,
     setScreenControl,
     importSave,
     resetSave,
   };
 }
 
-function readState(audio: TinySynthAudioBackend): GlobalSettingsState {
+function applyStoredAudioSettings(audio: AudioRuntime): void {
+  audio.setMusicEnabled(localStorage.getItem(MUSIC_ENABLED_KEY) !== "false");
+  audio.setMusicGain(storedGain(MUSIC_GAIN_KEY, 0.42));
+  audio.setSoundGain(storedGain(SOUND_GAIN_KEY, 0.45));
+  audio.setMusicStyle(
+    localStorage.getItem(MUSIC_STYLE_KEY) === "modern" ? "modern" : "8bit",
+  );
+}
+
+function readState(audio: AudioRuntime): GlobalSettingsState {
   const save = loadAdventureSave();
   return {
-    musicEnabled: audio.isEnabled(),
-    musicVolume: Math.round(audio.getMusicVolume() * 100),
-    soundVolume: Math.round(audio.getSoundVolume() * 100),
-    tone: audio.getTone(),
-    reverb: Math.round(audio.getReverbLevel() * 100),
+    musicEnabled: audio.isMusicEnabled(),
+    musicGain: Math.round(audio.getMusicGain() * 100),
+    soundGain: Math.round(audio.getSoundGain() * 100),
+    musicStyle: audio.getMusicStyle(),
     screenControlEnabled: loadScreenControlPreference(),
     bonusCoins: save.economy.bonusCoins,
     goldenCarrots: save.economy.goldenCarrots,
     completedLevels: save.campaign.completedLevels.length,
   };
+}
+
+function storedGain(key: string, fallback: number): number {
+  const value = Number(localStorage.getItem(key) ?? fallback);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+function percentageToGain(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.max(0, value) / 100;
 }

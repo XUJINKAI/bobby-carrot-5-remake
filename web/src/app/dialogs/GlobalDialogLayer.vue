@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { AdventureSave } from "@bobby/adventure";
+import type { MusicStyle } from "@bobby/engine";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import type { HelpDescriptor } from "../../shell/shellBridge.js";
 import HelpDialog from "./HelpDialog.vue";
 import SettingsDialog from "./SettingsDialog.vue";
-import type { AdventureSave } from "@bobby/adventure";
 
 defineProps<{
   kind: "settings" | "help";
@@ -15,10 +16,9 @@ defineProps<{
 const emit = defineEmits<{
   close: [];
   musicEnabled: [value: boolean];
-  musicVolume: [value: number];
-  soundVolume: [value: number];
-  tone: [value: "fm" | "chip"];
-  reverb: [value: number];
+  musicGain: [value: number];
+  soundGain: [value: number];
+  musicStyle: [value: MusicStyle];
   screenControl: [value: boolean];
   importSave: [save: AdventureSave];
   resetSave: [];
@@ -35,10 +35,9 @@ const emit = defineEmits<{
       :feedback="feedback"
       @close="emit('close')"
       @music-enabled="emit('musicEnabled', $event)"
-      @music-volume="emit('musicVolume', $event)"
-      @sound-volume="emit('soundVolume', $event)"
-      @tone="emit('tone', $event)"
-      @reverb="emit('reverb', $event)"
+      @music-gain="emit('musicGain', $event)"
+      @sound-gain="emit('soundGain', $event)"
+      @music-style="emit('musicStyle', $event)"
       @screen-control="emit('screenControl', $event)"
       @import-save="emit('importSave', $event)"
       @reset-save="emit('resetSave')"

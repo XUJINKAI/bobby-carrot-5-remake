@@ -1,4 +1,4 @@
-import type { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
+import type { AudioRuntime } from "@bobby/engine";
 import type {
   AdventureIndex,
   MapCollectionIndex,
@@ -20,6 +20,6 @@ export interface PageContext {
   collectionsIndex: MapCollectionsIndex;
   collections: MapCollectionIndex[];
   adventure: AdventureIndex;
-  audio: TinySynthAudioBackend;
+  audio: AudioRuntime;
   navigate: Navigate;
 }
