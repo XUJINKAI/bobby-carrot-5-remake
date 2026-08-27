@@ -35,6 +35,15 @@ const internalObjectParts = new Set([
   LegacyObject.BEAVER_BODY,
 ]);
 
+const legacyFenceTypes = new Set([
+  LegacyObject.FENCE_1,
+  LegacyObject.FENCE_2,
+  LegacyObject.FENCE_3,
+  LegacyObject.FENCE_4,
+  LegacyObject.FENCE_5,
+  LegacyObject.FENCE_6,
+]);
+
 const directObjectTypes = new Set([
   LegacyObject.CONSUMED_CARROT,
   LegacyObject.CARROT,
@@ -71,12 +80,6 @@ const directObjectTypes = new Set([
   LegacyObject.LANDING,
   LegacyObject.GOLDEN_CARROT,
   LegacyObject.BONUS_COIN,
-  LegacyObject.FENCE_1,
-  LegacyObject.FENCE_2,
-  LegacyObject.FENCE_3,
-  LegacyObject.FENCE_4,
-  LegacyObject.FENCE_5,
-  LegacyObject.FENCE_6,
 ]);
 
 export function adaptLegacyMap(map, options = {}) {
@@ -96,8 +99,11 @@ export function adaptLegacyMap(map, options = {}) {
 
   for (let y = 0; y < map.height; y += 1) {
     const row = map.terrain[y];
-    if (!row || row.length !== map.width)
-      throw new Error(`Legacy terrain row ${y} does not match width ${map.width}`);
+    if (!row || row.length !== map.width) {
+      throw new Error(
+        `Legacy terrain row ${y} does not match width ${map.width}`,
+      );
+    }
     for (let x = 0; x < map.width; x += 1) {
       const type = row[x];
       if (type === LegacyTerrain.START) starts.push({ x, y });
@@ -113,8 +119,11 @@ export function adaptLegacyMap(map, options = {}) {
     }
   }
 
-  if (starts.length !== 1)
-    throw new Error(`Original map must contain exactly one Start terrain, got ${starts.length}`);
+  if (starts.length !== 1) {
+    throw new Error(
+      `Original map must contain exactly one Start terrain, got ${starts.length}`,
+    );
+  }
   const start = starts[0];
   entities.push({
     type: EntityTypeId.BOBBY,
@@ -123,8 +132,9 @@ export function adaptLegacyMap(map, options = {}) {
     direction: options.bobbyDirection ?? "down",
   });
 
-  for (const object of sourceObjects)
+  for (const object of sourceObjects) {
     entities.push(...adaptLegacyObject(object));
+  }
 
   return {
     width: map.width,
@@ -134,12 +144,16 @@ export function adaptLegacyMap(map, options = {}) {
 }
 
 export function adaptLegacyTerrain(type, x, y, options = {}) {
-  if (type === LegacyTerrain.SNOW)
-    return [entity(EntityTypeId.GROUND_D, x, y), entity(EntityTypeId.SNOW, x, y)];
+  if (type === LegacyTerrain.SNOW) {
+    return [
+      entity(EntityTypeId.GROUND_D, x, y),
+      entity(EntityTypeId.SNOW, x, y),
+    ];
+  }
   if (
     type === LegacyTerrain.HIGH_GRASS ||
     type === LegacyTerrain.HIGH_GRASS_OBJECTIVE
-  )
+  ) {
     return [
       entity(mowedGroundAt(x, y), x, y),
       ...(options.hiddenObjectiveType
@@ -147,6 +161,7 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
         : []),
       entity(type, x, y),
     ];
+  }
 
   const tide = directionSuffix(type, "tide-");
   if (tide) return [entity(EntityTypeId.TIDE, x, y, { direction: tide })];
@@ -154,40 +169,44 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
   if (speed) return [entity(EntityTypeId.SPEED, x, y, { direction: speed })];
 
   const switchState = foldedPressedSwitch(type);
-  if (switchState)
+  if (switchState) {
     return [
       entity(switchState.type, x, y, {
         state: { pressed: switchState.pressed },
       }),
     ];
+  }
 
   const wind = /^wind-switch-([0-3])-(on|off)$/.exec(type);
-  if (wind)
+  if (wind) {
     return [
       entity(EntityTypeId.WIND_SWITCH, x, y, {
         properties: { channel: Number(wind[1]) },
         state: { active: wind[2] === "on" },
       }),
     ];
+  }
 
   const trap = /^trap-(active|inactive)$/.exec(type);
-  if (trap)
+  if (trap) {
     return [
       entity(EntityTypeId.TRAP, x, y, {
         state: { active: trap[1] === "active" },
       }),
     ];
+  }
 
   const mirror = /^mirror-([1-4])$/.exec(type);
-  if (mirror)
+  if (mirror) {
     return [
       entity(EntityTypeId.MIRROR, x, y, {
         state: { variant: Number(mirror[1]) },
       }),
     ];
+  }
 
   const carousel = /^carousel-(1|2|3|4|vertical|horizontal)$/.exec(type);
-  if (carousel)
+  if (carousel) {
     return [
       entity(EntityTypeId.CAROUSEL, x, y, {
         state: {
@@ -197,17 +216,22 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
         },
       }),
     ];
+  }
 
-  const colorBlock = /^(color-(?:yellow|pink)-block)-(raised|lowered)$/.exec(type);
-  if (colorBlock)
+  const colorBlock = /^(color-(?:yellow|pink)-block)-(raised|lowered)$/.exec(
+    type,
+  );
+  if (colorBlock) {
     return [
       entity(colorBlock[1], x, y, {
         state: { raised: colorBlock[2] === "raised" },
       }),
     ];
+  }
 
-  if (directTerrainTypes.has(type) || isLegacyTerrainVariant(type))
+  if (directTerrainTypes.has(type) || isLegacyTerrainVariant(type)) {
     return [entity(type, x, y)];
+  }
   throw new Error(`Unsupported legacy terrain type: ${type}`);
 }
 
@@ -219,13 +243,18 @@ export function adaptLegacyObject(object) {
     type === LegacyObject.DRAGON_HEAD_BASE ||
     type === LegacyObject.DRAGON_ANIM_1 ||
     type === LegacyObject.DRAGON_ANIM_2
-  )
+  ) {
     return [entity(EntityTypeId.DRAGON, x, y, copiedFields(object))];
-  if (type === LegacyObject.BEAVER_BASE)
+  }
+  if (type === LegacyObject.BEAVER_BASE) {
     return [entity(EntityTypeId.BEAVER, x, y, copiedFields(object))];
+  }
+  if (legacyFenceTypes.has(type)) {
+    return [entity(EntityTypeId.FENCE, x, y, copiedFields(object))];
+  }
 
   const melt = /^ice-melt-([1-3])$/.exec(type);
-  if (type === LegacyObject.ICE_BLOCK || melt)
+  if (type === LegacyObject.ICE_BLOCK || melt) {
     return [
       entity(EntityTypeId.ICE_BLOCK, x, y, {
         ...copiedFields(object),
@@ -239,9 +268,11 @@ export function adaptLegacyObject(object) {
           : {}),
       }),
     ];
+  }
 
-  if (directObjectTypes.has(type) || /^object-variant-\d{3}$/.test(type))
+  if (directObjectTypes.has(type) || /^object-variant-\d{3}$/.test(type)) {
     return [entity(type, x, y, copiedFields(object))];
+  }
   throw new Error(`Unsupported legacy object type: ${type}`);
 }
 

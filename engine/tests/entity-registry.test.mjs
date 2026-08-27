@@ -8,12 +8,13 @@ import {
 
 test("所有 canonical EntityTypeId 恰好注册一次", () => {
   const definitions = builtinEntityDefinitions.map((item) => item.type);
-  for (const type of new Set(Object.values(EntityTypeId)))
+  for (const type of new Set(Object.values(EntityTypeId))) {
     assert.equal(
       definitions.filter((candidate) => candidate === type).length,
       1,
       type,
     );
+  }
   assert.equal(createBuiltinEntityRegistry().all().length, definitions.length);
 });
 
@@ -61,8 +62,10 @@ test("首轮合并类型使用 state/direction/property 而不是拆分 type", (
   assert.equal(registry.require("color-pink-block").state[0].key, "raised");
 });
 
-test("Dragon 是一个 EntityDefinition 并通过 footprint 表达三格", () => {
+test("Dragon 是一个可旋转 EntityDefinition 并通过 footprint 表达三格", () => {
   const dragon = createBuiltinEntityRegistry().require("dragon");
+  assert.equal(dragon.footprint.rotateWithDirection, true);
+  assert.equal(dragon.footprint.baseDirection, "right");
   assert.deepEqual(
     dragon.footprint.parts.map((part) => [part.dx, part.dy, part.role]),
     [
@@ -72,4 +75,21 @@ test("Dragon 是一个 EntityDefinition 并通过 footprint 表达三格", () =>
     ],
   );
   assert.deepEqual(dragon.authoring.cursor, { dx: 1, dy: 0 });
+});
+
+test("Sandman / Dream Machine / Beaver 共享 directional footprint 约定", () => {
+  const registry = createBuiltinEntityRegistry();
+  for (const type of ["sandman", "dream-machine", "beaver"]) {
+    const definition = registry.require(type);
+    assert.equal(definition.footprint.rotateWithDirection, true, type);
+    assert.equal(definition.footprint.baseDirection, "down", type);
+    assert.equal(definition.authoring.defaultDirection, "down", type);
+  }
+});
+
+test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
+  const registry = createBuiltinEntityRegistry();
+  const fence = registry.require(EntityTypeId.FENCE);
+  assert.deepEqual(fence.traits, ["blocking", "fence"]);
+  assert.equal(Object.values(EntityTypeId).some((type) => /^fence-\d$/.test(type)), false);
 });

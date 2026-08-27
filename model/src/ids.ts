@@ -82,12 +82,7 @@ export const EntityTypeId = {
   LANDING: "landing",
   GOLDEN_CARROT: "golden-carrot",
   BONUS_COIN: "bonus-coin",
-  FENCE_1: "fence-1",
-  FENCE_2: "fence-2",
-  FENCE_3: "fence-3",
-  FENCE_4: "fence-4",
-  FENCE_5: "fence-5",
-  FENCE_6: "fence-6",
+  FENCE: "fence",
 
   PORTAL: "portal",
   PUSH_GOAL: "push-goal",

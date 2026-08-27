@@ -6,10 +6,11 @@ export interface AtlasCell {
 }
 
 const cell = (column: number, row: number): AtlasCell => ({ column, row });
-const objectCell = (index: number): AtlasCell => {
+export const originalObjectAtlasCell = (index: number): AtlasCell => {
   const linear = 9 + index;
   return cell(linear % 16, 12 + Math.floor(linear / 16));
 };
+const objectCell = originalObjectAtlasCell;
 
 const DIRECT_ART = new Map<string, AtlasCell>([
   [EntityTypeId.SNOW, cell(13, 4)],
@@ -72,12 +73,6 @@ const DIRECT_ART = new Map<string, AtlasCell>([
   [EntityTypeId.LANDING, objectCell(44)],
   [EntityTypeId.GOLDEN_CARROT, objectCell(45)],
   [EntityTypeId.BONUS_COIN, objectCell(47)],
-  [EntityTypeId.FENCE_1, objectCell(48)],
-  [EntityTypeId.FENCE_2, objectCell(49)],
-  [EntityTypeId.FENCE_3, objectCell(50)],
-  [EntityTypeId.FENCE_4, objectCell(51)],
-  [EntityTypeId.FENCE_5, objectCell(52)],
-  [EntityTypeId.FENCE_6, objectCell(53)],
 ]);
 
 /** Resolve one canonical Entity/Presence into the original HD atlas. */
@@ -88,63 +83,81 @@ export function entityAtlasCell(
   const direct = DIRECT_ART.get(entity.type);
   if (direct) return direct;
 
-  if (entity.type === EntityTypeId.TIDE)
+  if (entity.type === EntityTypeId.TIDE) {
     return directionCell(entity.direction, {
       up: cell(7, 5),
       down: cell(8, 5),
       left: cell(9, 5),
       right: cell(10, 5),
     });
-  if (entity.type === EntityTypeId.SPEED)
+  }
+  if (entity.type === EntityTypeId.SPEED) {
     return directionCell(entity.direction, {
       up: cell(5, 11),
       down: cell(6, 11),
       left: cell(7, 11),
       right: cell(8, 11),
     });
+  }
 
-  if (entity.type === EntityTypeId.SPEED_SWITCH)
+  if (entity.type === EntityTypeId.SPEED_SWITCH) {
     return entity.state?.pressed === true ? cell(1, 10) : cell(2, 10);
-  if (entity.type === EntityTypeId.CAROUSEL_SWITCH)
+  }
+  if (entity.type === EntityTypeId.CAROUSEL_SWITCH) {
     return entity.state?.pressed === true ? cell(4, 10) : cell(3, 10);
-  if (entity.type === EntityTypeId.TIDE_SWITCH)
+  }
+  if (entity.type === EntityTypeId.TIDE_SWITCH) {
     return entity.state?.pressed === true ? cell(6, 10) : cell(5, 10);
+  }
   if (entity.type === EntityTypeId.WIND_SWITCH) {
     const channel = boundedInt(entity.properties?.channel, 0, 3, 0);
-    return cell(7 + channel * 2 + (entity.state?.active === true ? 0 : 1), 10);
+    return cell(
+      7 + channel * 2 + (entity.state?.active === true ? 0 : 1),
+      10,
+    );
   }
-  if (entity.type === EntityTypeId.TRAP)
+  if (entity.type === EntityTypeId.TRAP) {
     return entity.state?.active === false ? cell(0, 11) : cell(15, 10);
-  if (entity.type === EntityTypeId.MIRROR)
+  }
+  if (entity.type === EntityTypeId.MIRROR) {
     return cell(boundedInt(entity.state?.variant, 1, 4, 1), 11);
+  }
   if (entity.type === EntityTypeId.CAROUSEL) {
     const variant = entity.state?.variant ?? 1;
     if (variant === "vertical") return cell(13, 11);
     if (variant === "horizontal") return cell(14, 11);
     return cell(8 + boundedInt(variant, 1, 4, 1), 11);
   }
-  if (entity.type === EntityTypeId.COLOR_YELLOW_SWITCH)
+  if (entity.type === EntityTypeId.COLOR_YELLOW_SWITCH) {
     return entity.state?.pressed === true ? cell(0, 12) : cell(15, 11);
-  if (entity.type === EntityTypeId.COLOR_PINK_SWITCH)
+  }
+  if (entity.type === EntityTypeId.COLOR_PINK_SWITCH) {
     return entity.state?.pressed === true ? cell(2, 12) : cell(1, 12);
-  if (entity.type === EntityTypeId.COLOR_YELLOW_BLOCK)
+  }
+  if (entity.type === EntityTypeId.COLOR_YELLOW_BLOCK) {
     return entity.state?.raised === false ? cell(4, 12) : cell(3, 12);
-  if (entity.type === EntityTypeId.COLOR_PINK_BLOCK)
+  }
+  if (entity.type === EntityTypeId.COLOR_PINK_BLOCK) {
     return entity.state?.raised === false ? cell(6, 12) : cell(5, 12);
+  }
 
   if (entity.type === EntityTypeId.DRAGON) {
     if (role === "body") return objectCell(15);
     if (role === "tail") return objectCell(16);
     return objectCell(14);
   }
-  if (entity.type === EntityTypeId.SANDMAN)
+  if (entity.type === EntityTypeId.SANDMAN) {
     return role === "body" ? objectCell(33) : objectCell(17);
-  if (entity.type === EntityTypeId.DREAM_MACHINE)
+  }
+  if (entity.type === EntityTypeId.DREAM_MACHINE) {
     return role === "body" ? objectCell(34) : objectCell(18);
-  if (entity.type === EntityTypeId.BEAVER)
+  }
+  if (entity.type === EntityTypeId.BEAVER) {
     return role === "body" ? objectCell(46) : objectCell(30);
-  if (entity.type === EntityTypeId.ICE_BLOCK)
+  }
+  if (entity.type === EntityTypeId.ICE_BLOCK) {
     return objectCell(26 + boundedInt(entity.state?.meltStage, 0, 3, 0));
+  }
 
   const walkable = /^walkable-variant-(\d+)$/.exec(entity.type);
   if (walkable) {
@@ -181,7 +194,12 @@ export function drawEntityTile(
     context.fillRect(x, y, size, size);
     context.strokeStyle = "#f2c14e";
     context.lineWidth = Math.max(2, size * 0.08);
-    context.strokeRect(x + size * 0.2, y + size * 0.2, size * 0.6, size * 0.6);
+    context.strokeRect(
+      x + size * 0.2,
+      y + size * 0.2,
+      size * 0.6,
+      size * 0.6,
+    );
     context.restore();
     return true;
   }
@@ -217,7 +235,13 @@ export function drawEntityTile(
     context.save();
     context.fillStyle = "rgba(245,245,245,.92)";
     context.beginPath();
-    context.arc(x + size * 0.5, y + size * 0.55, size * 0.28, 0, Math.PI * 2);
+    context.arc(
+      x + size * 0.5,
+      y + size * 0.55,
+      size * 0.28,
+      0,
+      Math.PI * 2,
+    );
     context.fill();
     context.fillStyle = "#273238";
     context.font = `${Math.max(10, size * 0.3)}px system-ui`;
