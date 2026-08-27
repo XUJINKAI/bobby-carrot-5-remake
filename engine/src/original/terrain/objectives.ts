@@ -1,77 +1,12 @@
-import type { TerrainType } from "../../data/types.js";
-import {
-  EMPTY_OBJECT,
-  ObjectId,
-  Terrain,
-  type Direction,
-} from "../../mechanics/ids.js";
-import {
-  directionalPassage,
-  fireReflectionBehavior,
-  enterBehavior,
-  leaveBehavior,
-  markerBehavior,
-  passageBehavior,
-  preEnterBehavior,
-  rotateOnLeave,
-  type TileBehavior,
-} from "../../mechanics/behaviors.js";
-import {
-  environmentTraits,
-  isWalkableSemantic,
-  isWaterSemantic,
-} from "../../mechanics/definition-semantics.js";
-import {
-  CAROUSEL_NEXT,
-  rotateCarousel,
-  toggleColor,
-  toggleSpeed,
-  toggleTide,
-} from "../../mechanics/terrain-transforms.js";
-import type { TileTrait } from "../../mechanics/definition-types.js";
+import { markerBehavior } from "../../mechanics/behaviors.js";
+import { Terrain } from "../../mechanics/ids.js";
 import type { TerrainRegistration } from "./index.js";
-import type { WinCondition } from "@bobby/model";
-import type { RuntimeState } from "../../world/RuntimeState.js";
 
 export function registerObjectives(ports: TerrainRegistration): void {
-  const { terrainDef } = ports;
-  terrainDef(
+  ports.terrainDef(
     Terrain.EXIT,
     "objective",
     ["walkable", "exit"],
-    [
-      enterBehavior("complete-level", "主要目标清空后进入出口完成关卡", (ctx) => {
-        if (
-          ctx.mode === "normal" &&
-          !ctx.state.ridingMower &&
-          ctx.state.winCondition !== undefined &&
-          winConditionSatisfied(ctx.state.winCondition, ctx)
-        ) {
-          ctx.state.completed = true;
-          ctx.state.forced = null;
-          ctx.api.event("complete", "关卡完成");
-        }
-      }),
-    ],
+    [markerBehavior("level-exit", "由 rules.win 的 reach-terrain 条件判定通关")],
   );
-}
-
-function winConditionSatisfied(
-  condition: WinCondition,
-  ctx: { state: RuntimeState },
-): boolean {
-  switch (condition.type) {
-    case "all":
-      return condition.conditions.every((item) => winConditionSatisfied(item, ctx));
-    case "any":
-      return condition.conditions.some((item) => winConditionSatisfied(item, ctx));
-    case "collect-all":
-      return condition.trait === "level-objective" && ctx.state.objectiveRemaining === 0;
-    case "fill-all":
-      return condition.terrainTrait === "push-goal" &&
-        condition.objectTrait === "pushable" &&
-        ctx.state.pushGoalsRemaining === 0;
-    case "reach-terrain":
-      return condition.trait === "exit";
-  }
 }

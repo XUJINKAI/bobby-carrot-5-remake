@@ -61,6 +61,7 @@ export {
   hasObjectDefinition,
   terrainDefinitions,
   objectDefinitions,
+  terrainHasTrait,
   type TileDefinition,
   type TileDefinitionInspection,
   type TilePresentation,

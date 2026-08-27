@@ -47,6 +47,9 @@ export function fromLevelMap(
     name,
     width: level.width,
     height: level.height,
+    ...(level.playerStart
+      ? { playerStart: { ...level.playerStart } }
+      : {}),
     terrain: level.terrain.map((row) => [...row]),
     objects: anchors.map(cloneObject),
     ...(level.rules ? { rules: structuredClone(level.rules) } : {}),
@@ -58,6 +61,9 @@ export function toLevelMap(level: EditorLevel): LevelMap {
   return {
     width: normalized.width,
     height: normalized.height,
+    ...(normalized.playerStart
+      ? { playerStart: { ...normalized.playerStart } }
+      : {}),
     terrain: normalized.terrain.map((row) => [...row]),
     objects: normalized.objects.map(cloneObject),
     ...(normalized.rules ? { rules: structuredClone(normalized.rules) } : {}),
@@ -113,6 +119,11 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
     terrain,
     objects,
   };
+  if (input.playerStart)
+    level.playerStart = {
+      x: Number(input.playerStart.x),
+      y: Number(input.playerStart.y),
+    };
   if (input.author) level.author = String(input.author).slice(0, 80);
   if (input.description)
     level.description = String(input.description).slice(0, 500);
