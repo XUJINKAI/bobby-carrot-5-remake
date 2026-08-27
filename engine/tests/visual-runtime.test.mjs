@@ -68,6 +68,9 @@ test("VisualRuntime owns motion interpolation lifecycle", () => {
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
   assert.ok(builtinEntityModules.length > 0);
   for (const module of builtinEntityModules) {
-    assert.equal(module.visual?.id, module.definition.presentation.visual ?? module.definition.type);
+    assert.equal(
+      module.visual?.id,
+      module.presentation.visual ?? module.definition.type,
+    );
   }
 });
