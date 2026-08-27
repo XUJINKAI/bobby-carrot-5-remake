@@ -51,12 +51,16 @@ if (original.chapters.length !== 40 || original.maps.length !== 480)
   throw new Error("Original collection 必须包含 40 章 / 480 张 Campaign map");
 if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
-const pushbox = collectionIndexes.find((collection) => collection.id === "pushbox");
-if (pushbox?.cardSize !== "medium")
-  throw new Error("Pushbox collection cardSize 必须为 medium");
-const testCollection = collectionIndexes.find((collection) => collection.id === "test");
-if (testCollection?.cardSize !== "big")
-  throw new Error("Test collection cardSize 必须为 big");
+const novoban = collectionIndexes.find(
+  (collection) => collection.id === "novoban-pushbox",
+);
+if (novoban?.cardSize !== "medium")
+  throw new Error("Novoban collection cardSize 必须为 medium");
+const engineLab = collectionIndexes.find(
+  (collection) => collection.id === "engine-lab",
+);
+if (engineLab?.cardSize !== "big")
+  throw new Error("Engine Lab collection cardSize 必须为 big");
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
 
@@ -173,8 +177,8 @@ function assertNovobanCollection(collections) {
     (collection) => collection.id === "novoban-pushbox",
   );
   if (!novoban) throw new Error("缺少 Novoban collection");
-  if (novoban.cardSize !== "small")
-    throw new Error("Novoban collection cardSize 必须为 small");
+  if (novoban.cardSize !== "medium")
+    throw new Error("Novoban collection cardSize 必须为 medium");
   if (novoban.chapters.length !== 0 || novoban.maps.length !== 50)
     throw new Error("Novoban 必须是无章节的 50 张地图 collection");
   if (novoban.maps[0]?.id !== "01" || novoban.maps.at(-1)?.id !== "50")

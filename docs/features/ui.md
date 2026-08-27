@@ -434,7 +434,7 @@ Level Browser：
 ┌────────────────────────────────────────────────────────────────────────┐
 │ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ 自由选关     ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
-│ [ 原版关卡 ] [ Pushbox ] [ Test ]                                    │
+│ [ 原版关卡 ] [ Novoban ] [ LOMA ] [ Engine Lab ]                    │
 │                                                                        │
 │ [继续 12-4]  [随机一关]                                               │
 │                                                                        │
@@ -451,7 +451,7 @@ Level Browser：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/pushbox` 与 `/explore/test` 分别显示 Pushbox 和 Test 地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
+Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/novoban-pushbox`、`/explore/loma-pushbox` 与 `/explore/engine-lab` 分别显示 Novoban、LOMA 和 Engine Lab 地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
 
 - 最近浏览；
 - 随机一关；

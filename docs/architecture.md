@@ -421,11 +421,12 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 ```text
 /explore
 /explore/original
-/explore/pushbox
-/explore/test
+/explore/novoban-pushbox
+/explore/loma-pushbox
+/explore/engine-lab
 /explore/play/original/1-1
-/explore/play/pushbox/box-01
-/explore/play/test/test-portal
+/explore/play/novoban-pushbox/01
+/explore/play/engine-lab/portal
 /adventure
 /adventure/chapters
 /adventure/chapter/1
@@ -433,8 +434,8 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 /settings
 /edit
 /edit/original/1-1
-/edit/pushbox/box-01
-/edit/test/test-portal
+/edit/novoban-pushbox/01
+/edit/engine-lab/portal
 ```
 
 `/explore` 直接显示 Original Tab。Explore gameplay 使用 `/explore/play/<collection>/<map-id>`，Editor clone 使用 `/edit/<collection>/<map-id>`；路径由 Web 的集中 route builder 生成。

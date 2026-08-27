@@ -37,8 +37,8 @@ Portal 由 Engine 和 Editor 共用 Canvas 绘制入口生成发光圆环素材�
 
 ## 验证地图
 
-- `custom-maps/test/test-portal.json`
-- `custom-maps/test/test-pushable.json`
-- `custom-maps/test/test-max-moves.json`
+- `custom-maps/engine-lab/portal.json`
+- `custom-maps/engine-lab/pushable.json`
+- `custom-maps/engine-lab/max-moves.json`
 
 `npm run verify` 校验这些地图的 Editor JSON round-trip、Definition 注册、实例属性和规则格式。

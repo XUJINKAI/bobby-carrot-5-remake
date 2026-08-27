@@ -91,7 +91,7 @@ test("MapDocument 的 meta.id 必须与 URL map id 一致", async () => {
   }));
   try {
     await assert.rejects(
-      resolveMapDocument({ collection: "test", id: "expected" }),
+      resolveMapDocument({ collection: "engine-lab", id: "expected" }),
       /meta.id/,
     );
   } finally {
