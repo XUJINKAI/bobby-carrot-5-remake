@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EntityTypeId } from "@bobby/model";
 import {
-  EntityTypeId,
   VisualRegistry,
   createBuiltinEntityRegistry,
-} from "../../engine/dist/index.js";
+} from "../../engine/dist/authoring.js";
 import {
   createBlankLevel,
   fromLevelMap,
