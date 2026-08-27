@@ -38,6 +38,7 @@ export {
   type WorldEvent,
 } from "./world/World.js";
 export { World } from "./world/World.js";
+export { resolveLevelPlayerStart } from "./world/level-start.js";
 export {
   Terrain,
   ObjectId,
@@ -60,6 +61,7 @@ export {
   hasObjectDefinition,
   terrainDefinitions,
   objectDefinitions,
+  terrainHasTrait,
   type TileDefinition,
   type TileDefinitionInspection,
   type TilePresentation,

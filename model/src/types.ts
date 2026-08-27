@@ -165,6 +165,7 @@ export interface LevelRules {
 export interface LevelMap {
   width: number;
   height: number;
+  playerStart?: { x: number; y: number };
   terrain: TerrainType[][];
   objects: LevelObject[];
   rules?: LevelRules;

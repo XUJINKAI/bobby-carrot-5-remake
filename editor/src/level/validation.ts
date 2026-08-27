@@ -1,4 +1,8 @@
-import { Terrain } from "@bobby/model";
+import { Terrain, type WinCondition } from "@bobby/model";
+import {
+  resolveLevelPlayerStart,
+  terrainHasTrait,
+} from "@bobby/engine";
 import { normalizeEditorLevel } from "./editorLevel.js";
 import type { EditorLevel, LevelValidationIssue } from "./types.js";
 
@@ -7,27 +11,46 @@ export function validateEditorLevel(
 ): LevelValidationIssue[] {
   const normalized = normalizeEditorLevel(level);
   const issues: LevelValidationIssue[] = [];
-  let starts = 0;
+  try {
+    resolveLevelPlayerStart(normalized);
+  } catch (error) {
+    issues.push({
+      level: "error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   let exits = 0;
   for (const row of normalized.terrain)
-    for (const type of row) {
-      if (type === Terrain.START) starts++;
-      if (type === Terrain.EXIT) exits++;
-    }
-  if (starts === 0)
+    for (const type of row)
+      if (terrainHasTrait(type, "exit")) exits += 1;
+
+  if (requiresTerrainTrait(normalized.rules?.win, "exit") && exits === 0)
     issues.push({
       level: "warning",
-      message: "没有 Bobby 出生点；Engine 会使用第一个可步行格作为回退出生点。",
-    });
-  if (starts > 1)
-    issues.push({
-      level: "warning",
-      message: `存在 ${starts} 个出生点；原版语义只需要一个。`,
-    });
-  if (exits === 0)
-    issues.push({
-      level: "warning",
-      message: "没有出口，因此地图通常无法正常通关。",
+      message: `当前获胜条件需要 ${Terrain.EXIT} terrain，但地图中不存在出口。`,
     });
   return issues;
+}
+
+function requiresTerrainTrait(
+  condition: WinCondition | undefined,
+  trait: string,
+): boolean {
+  if (!condition) return false;
+  switch (condition.type) {
+    case "reach-terrain":
+      return condition.trait === trait;
+    case "all":
+      return condition.conditions.some((item) =>
+        requiresTerrainTrait(item, trait),
+      );
+    case "any":
+      return (
+        condition.conditions.length > 0 &&
+        condition.conditions.every((item) => requiresTerrainTrait(item, trait))
+      );
+    default:
+      return false;
+  }
 }

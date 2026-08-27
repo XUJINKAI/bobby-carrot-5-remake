@@ -1,28 +1,12 @@
 import type { LevelMap, LevelObject, LevelObjectProperties, LevelObjectTraits, ObjectType, TerrainType } from "@bobby/model";
 import { DIRECTIONS, EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
 import { isWaterTerrain, passageFor, type PassageResult } from "../mechanics/rules.js";
-import {
-  cloudGridForObject,
-  inspectObjectDefinition,
-  inspectTerrainDefinition,
-  objectHasTrait,
-  reflectFireForTerrain,
-  runObjectEnter,
-  runObjectLeave,
-  runTerrainEnter,
-  runTerrainLeave,
-  terrainHasTrait,
-  tideDirectionForTerrain,
-  windmillInfoForObject,
-  windSwitchIndexForTerrain,
-  windSwitchPeerForTerrain,
-  type TileDefinitionInspection,
-} from "../mechanics/definitions.js";
+import { cloudGridForObject, inspectObjectDefinition, inspectTerrainDefinition, objectHasTrait, reflectFireForTerrain, runObjectEnter, runObjectLeave, runTerrainEnter, runTerrainLeave, terrainHasTrait, tideDirectionForTerrain, windmillInfoForObject, windSwitchIndexForTerrain, windSwitchPeerForTerrain, type TileDefinitionInspection } from "../mechanics/definitions.js";
 import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
 import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
 import type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
-import { copyPoint, emptyGrid, findFallbackStart, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
+import { copyPoint, emptyGrid, isOppositeDirection, isSameCell, statePoint } from "./world-grid.js";
 import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
 import { canPushObject, commitPushObject } from "../mechanics/movement/pushable.js";
 import { commitActorMovement } from "../mechanics/movement/commit.js";
@@ -32,6 +16,7 @@ import { relocateToMatchingObject } from "../mechanics/interactions/relocation.j
 import { createBobbyState, updateBobbyProfile } from "../actors/bobby-state.js";
 import { effectiveObjectHasTrait } from "../mechanics/traits/effective.js";
 import { runtimeObject } from "./object-instance.js";
+import { resolveLevelPlayerStart } from "./level-start.js";
 export type { MoveResult, TileInspection, WorldEvent } from "./WorldTypes.js";
 const GROUND_AFTER_MOW = [Terrain.GROUND_A, Terrain.GROUND_B, Terrain.GROUND_C, Terrain.GROUND_D] as const;
 export class World {
@@ -371,12 +356,8 @@ export class World {
         level.height,
         undefined,
       ),
-      dynamicEntities: DynamicEntity[] = [];
-    let start: Point | null = null;
-    for (let y = 0; y < level.height; y++)
-      for (let x = 0; x < level.width; x++)
-        if (terrain[y]?.[x] && terrainHasTrait(terrain[y]![x]!, "start"))
-          start = { x, y };
+      dynamicEntities: DynamicEntity[] = [],
+      start = resolveLevelPlayerStart(level);
     for (const sourceObject of level.objects) {
       const { type, x, y } = sourceObject;
       if (objectHasTrait(type, "dynamic")) {
@@ -400,7 +381,6 @@ export class World {
         ? [...sourceObject.traits]
         : undefined;
     }
-    if (!start) start = findFallbackStart(terrain);
     const objectives = deriveInitialObjectives(terrain, objects, objectTraits);
     const windmillsEnabled: [boolean, boolean, boolean, boolean] = [
         false,
@@ -947,19 +927,26 @@ export class World {
     }
   }
   private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
-    if (this.stateValue.completed) return;
-    const reason = evaluateRulesAfterMove(
+    if (this.stateValue.completed || this.stateValue.dead) return;
+    const outcome = evaluateRulesAfterMove(
       this.activeRules,
       this.stateValue,
       forced,
     );
-    if (reason)
+    if (outcome?.type === "death") {
       this.kill(
-        reason,
+        outcome.reason,
         events,
         this.stateValue.player.x,
         this.stateValue.player.y,
       );
+      return;
+    }
+    if (outcome?.type === "complete") {
+      this.stateValue.completed = true;
+      this.stateValue.forced = null;
+      events.push({ type: "complete", message: "关卡完成", ...this.stateValue.player });
+    }
   }
   private kill(
     reason: string,

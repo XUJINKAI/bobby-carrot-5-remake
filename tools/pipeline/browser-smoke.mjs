@@ -44,22 +44,36 @@ try {
     ["进入冒险模式"],
   );
   await interactiveFilterSmoke(`${origin}/explore`);
-  await smoke(`${origin}/explore/pushbox`, [
+  await smoke(`${origin}/explore/novoban-pushbox`, [
     'class="explore-tabs"',
     'class="explore-custom-collection"',
     'data-card-size="medium"',
-    "Pushbox 1",
+    "Novoban",
+    "01 · Be ban 10",
   ]);
-  await smoke(`${origin}/explore/test`, [
+  await smoke(`${origin}/explore/loma-pushbox`, [
+    'class="explore-tabs"',
+    'class="chapter-card"',
+    'data-card-size="small"',
+    "LOMA",
+    "Pattern",
+    'href="/explore/play/loma-pushbox/01-01"',
+  ]);
+  await smoke(`${origin}/explore/engine-lab`, [
     'class="explore-custom-collection"',
     'data-card-size="big"',
     "Portal Lab",
     "Maximum Moves Lab",
   ]);
-  await smoke(`${origin}/explore/play/test/test-portal`, [
+  await smoke(`${origin}/explore/play/engine-lab/portal`, [
     'class="game-page"',
     'id="game"',
     "Portal Lab",
+  ]);
+  await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
+    'class="game-page"',
+    'id="game"',
+    "01-01",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
@@ -70,10 +84,10 @@ try {
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
   ]);
-  await smoke(`${origin}/explore/play/pushbox/box-01`, [
+  await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
     'class="game-page"',
     'id="game"',
-    "Pushbox 1",
+    "01 · Be ban 10",
   ]);
   await smoke(`${origin}/adventure`, [
     'class="adventure-phone"',
@@ -102,9 +116,9 @@ try {
     'id="editor-share"',
     'class="editor-palette"',
   ]);
-  await smoke(`${origin}/edit/pushbox/box-01`, [
+  await smoke(`${origin}/edit/novoban-pushbox/01`, [
     'class="bobby-editor"',
-    "Pushbox 1 · 副本",
+    "01 · Be ban 10 · 副本",
   ]);
   const mapPayload = exchangePayload(
     fs.readFileSync(path.join(root, "editor/examples/mechanics-smoke.json"), "utf8"),

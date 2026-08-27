@@ -66,6 +66,57 @@ test("显式 pushable 对象可推入目标且阻挡连续对象", () => {
   assert.equal(blocked.move("right").moved, false);
 });
 
+test("playerStart 可替代 start terrain 且不能与其并存", () => {
+  const terrain = level().terrain.map((row) => [...row]);
+  terrain[1][0] = CustomTerrain.PUSH_GOAL;
+  const explicit = new World(level({ terrain, playerStart: { x: 0, y: 1 } }));
+  assert.deepEqual(explicit.startPosition, { x: 0, y: 1 });
+  assert.equal(explicit.state.pushGoalsRemaining, 1);
+
+  assert.throws(
+    () => new World(level({ playerStart: { x: 1, y: 1 } })),
+    /必须且只能定义一个 Bobby 初始位置/,
+  );
+});
+
+test("没有任何初始位置时 Engine 拒绝地图而不是 fallback", () => {
+  const terrain = level().terrain.map((row) => [...row]);
+  terrain[1][0] = Terrain.GROUND_C;
+  assert.throws(
+    () => new World(level({ terrain })),
+    /必须且只能定义一个 Bobby 初始位置/,
+  );
+});
+
+test("单独 fill-all 在最后一个目标填满后立即完成", () => {
+  const terrain = [
+    [Terrain.GROUND_C, Terrain.GROUND_C, Terrain.GROUND_C, Terrain.GROUND_C],
+    [Terrain.GROUND_C, Terrain.GROUND_C, CustomTerrain.PUSH_GOAL, Terrain.GROUND_C],
+    [Terrain.GROUND_C, Terrain.GROUND_C, Terrain.GROUND_C, Terrain.GROUND_C],
+  ];
+  const world = new World({
+    width: 4,
+    height: 3,
+    playerStart: { x: 0, y: 1 },
+    terrain,
+    objects: [
+      { type: ObjectId.CRUMBLY_ROCK, x: 1, y: 1, traits: ["pushable"] },
+    ],
+    rules: {
+      win: {
+        type: "fill-all",
+        terrainTrait: "push-goal",
+        objectTrait: "pushable",
+      },
+    },
+  });
+  const result = world.move("right");
+  assert.equal(result.moved, true);
+  assert.equal(result.completed, true);
+  assert.equal(world.completed, true);
+  assert.equal(result.events.some((event) => event.type === "complete"), true);
+});
+
 test("pushable Property 不会赋予对象 Trait 能力", () => {
   const world = new World(level({
     objects: [{
