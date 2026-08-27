@@ -103,6 +103,9 @@ export function levelMapFromDocument(document: MapDocument): LevelMap {
   return {
     width: document.width,
     height: document.height,
+    ...(document.playerStart
+      ? { playerStart: { ...document.playerStart } }
+      : {}),
     terrain: document.terrain,
     objects: document.objects,
     ...(document.rules ? { rules: document.rules } : {}),
