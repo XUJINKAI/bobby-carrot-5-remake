@@ -7,16 +7,29 @@ import {
 } from "../dist/entities/registry.js";
 
 test("所有 canonical EntityTypeId 恰好注册一次", () => {
-  const expected = [...new Set(Object.values(EntityTypeId))].sort();
-  const actual = builtinEntityDefinitions.map((item) => item.type).sort();
-  assert.deepEqual(actual, expected);
-  assert.equal(createBuiltinEntityRegistry().all().length, expected.length);
+  const definitions = builtinEntityDefinitions.map((item) => item.type);
+  for (const type of new Set(Object.values(EntityTypeId)))
+    assert.equal(
+      definitions.filter((candidate) => candidate === type).length,
+      1,
+      type,
+    );
+  assert.equal(createBuiltinEntityRegistry().all().length, definitions.length);
 });
 
 test("Registry 不包含 original/custom identity 前缀", () => {
   for (const definition of createBuiltinEntityRegistry().all()) {
     assert.equal(definition.type.includes(":"), false, definition.type);
   }
+});
+
+test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
+  const registry = createBuiltinEntityRegistry();
+  assert.deepEqual(registry.require("background-variant-001").traits, []);
+  assert.equal(registry.require("background-variant-001").stackBand, "surface");
+  assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
+  assert.equal(registry.require("object-variant-001").stackBand, "content");
+  assert.equal(registry.require("object-variant-001").authoring.palette, false);
 });
 
 test("Start 是普通可步行 surface，不携带出生语义", () => {
