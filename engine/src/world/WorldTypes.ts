@@ -1,73 +1,48 @@
-import type { Direction, EntityType } from "@bobby/model";
-import type { EntityId, EntityInstance } from "./entity/EntityInstance.js";
-import type { EntityPresence } from "./spatial/EntityPresence.js";
+import type { Direction, EntityState, JsonValue } from "@bobby/model";
+import type { EntityId } from "./entity/EntityInstance.js";
+import type { StackBand } from "./spatial/StackBand.js";
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface PassageResult {
-  passable: boolean;
-  reason: string;
-  confidence: "confirmed" | "inferred";
-}
-
+/** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
 export interface WorldEvent {
-  type:
-    | "collect-carrot"
-    | "fill-nest"
-    | "collect-gas"
-    | "collect-kite"
-    | "collect-shovel"
-    | "collect-bean"
-    | "collect-golden-carrot"
-    | "collect-bonus-coin"
-    | "entity-interaction"
-    | "dialog"
-    | "board-mower"
-    | "leave-mower"
-    | "mow"
-    | "break-rock"
-    | "toggle-switch"
-    | "dragon-fire"
-    | "melt-ice"
-    | "plant-bean"
-    | "beanstalk-grow"
-    | "death"
-    | "complete"
-    | "warning";
-  message: string;
-  text?: string;
-  messageId?: string;
+  type: string;
+  entityId?: EntityId;
   x?: number;
   y?: number;
-  entityId?: EntityId;
-  entityType?: EntityType;
+  direction?: Direction;
   action?: string;
+  text?: string;
+  messageId?: string;
+  reason?: string;
+  data?: Record<string, JsonValue>;
+}
+
+export interface PresenceInspection {
+  entityId: EntityId;
+  type: string;
+  role?: string;
+  stackBand: StackBand;
+  traits: readonly string[];
+  state?: EntityState;
+}
+
+export interface CellInspection {
+  cell: { x: number; y: number };
+  presences: readonly PresenceInspection[];
+  topPresence?: PresenceInspection;
+  playerHere: boolean;
+}
+
+export interface PassageInfo {
+  reason: string;
+  confidence: "rule" | "fallback";
 }
 
 export interface MoveResult {
   moved: boolean;
-  from: Point;
-  to: Point;
-  passage: PassageResult;
+  blocked?: boolean;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  direction: Direction;
+  passage: PassageInfo;
   events: WorldEvent[];
-  forcedDirection: Direction | null;
-  forcedKind: string | null;
-  dead: boolean;
-  completed: boolean;
-}
-
-export interface PresenceInspection {
-  presence: EntityPresence;
-  entity: EntityInstance;
-}
-
-export interface TileInspection {
-  x: number;
-  y: number;
-  presences: PresenceInspection[];
-  top: PresenceInspection | null;
-  isPlayer: boolean;
 }
