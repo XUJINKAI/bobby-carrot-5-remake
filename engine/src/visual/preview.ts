@@ -6,7 +6,11 @@ import type {
   JsonValue,
   LevelEntity,
 } from "@bobby/model";
-import { entityRegistry, visualRegistry } from "../entities/registry.js";
+import {
+  entityCatalog,
+  entityRegistry,
+  visualRegistry,
+} from "../entities/registry.js";
 import type { EntityFieldDefinition } from "../world/entity/EntityDefinition.js";
 import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
@@ -30,6 +34,7 @@ export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
 ): VisualComposition | null {
   const definition = entityRegistry.require(source.type);
+  const catalogEntry = entityCatalog.require(source.type);
   const properties = {
     ...defaults(definition.properties),
     ...(source.properties ?? {}),
@@ -43,7 +48,7 @@ export function resolveEntityVisualPreview(
     x: 0,
     y: 0,
   };
-  const direction = source.direction ?? definition.authoring?.defaultDirection;
+  const direction = source.direction ?? catalogEntry.authoring?.defaultDirection;
   if (direction) levelEntity.direction = direction;
   if (Object.keys(properties).length > 0) levelEntity.properties = properties;
   if (Object.keys(state).length > 0) levelEntity.state = state;
