@@ -27,7 +27,6 @@ import { deriveInitialObjectives } from "../mechanics/goals/objectives.js";
 import { canPushObject, commitPushObject } from "../mechanics/movement/pushable.js";
 import { commitActorMovement } from "../mechanics/movement/commit.js";
 import { createActiveLevelRules, evaluateRulesAfterMove } from "../mechanics/rules/runtime.js";
-import { isWinConditionSatisfied } from "../mechanics/rules/win-condition.js";
 import type { ActiveLevelRule } from "../mechanics/rules/types.js";
 import { relocateToMatchingObject } from "../mechanics/interactions/relocation.js";
 import { createBobbyState, updateBobbyProfile } from "../actors/bobby-state.js";
@@ -945,30 +944,24 @@ export class World {
   }
   private applySuccessfulMoveRules(forced: boolean, events: WorldEvent[]): void {
     if (this.stateValue.completed || this.stateValue.dead) return;
-    const reason = evaluateRulesAfterMove(
+    const outcome = evaluateRulesAfterMove(
       this.activeRules,
       this.stateValue,
       forced,
     );
-    if (reason) {
+    if (outcome?.type === "death") {
       this.kill(
-        reason,
+        outcome.reason,
         events,
         this.stateValue.player.x,
         this.stateValue.player.y,
       );
       return;
     }
-    const condition = this.stateValue.winCondition;
-    if (condition && isWinConditionSatisfied(condition, this.stateValue)) {
+    if (outcome?.type === "complete") {
       this.stateValue.completed = true;
       this.stateValue.forced = null;
-      events.push({
-        type: "complete",
-        message: "关卡完成",
-        x: this.stateValue.player.x,
-        y: this.stateValue.player.y,
-      });
+      events.push({ type: "complete", message: "关卡完成", ...this.stateValue.player });
     }
   }
   private kill(
