@@ -47,7 +47,27 @@ interface LevelEntity {
 }
 ```
 
-Behavior 可以把 `pressed` 改为 `true`，Visual Runtime 根据 state 选择对应视觉。类似 `trap-active` / `trap-inactive`、`ice-melt-1` / `ice-melt-2` / `ice-melt-3` 这类纯状态或视觉阶段不应成为持久化 Entity type。
+Behavior 可以把 `pressed` 改为 `true`，Visual Runtime 根据 state 选择对应视觉。纯状态或视觉阶段不应成为持久化 Entity type。
+
+首轮 canonical 合并规则如下；后续可以精调字段名，但不恢复拆分 type：
+
+| 旧表示 | canonical Entity | 实例状态 / 参数 |
+| --- | --- | --- |
+| `color-yellow-block-raised/lowered` | `color-yellow-block` | `state.raised: boolean` |
+| `color-pink-block-raised/lowered` | `color-pink-block` | `state.raised: boolean` |
+| `tide-up/down/left/right` | `tide` | `direction` |
+| `tide-switch-raised/pressed` | `tide-switch` | `state.pressed: boolean` |
+| `speed-switch-raised/pressed` | `speed-switch` | `state.pressed: boolean` |
+| `carousel-switch-raised/pressed` | `carousel-switch` | `state.pressed: boolean` |
+| `wind-switch-{0..3}-on/off` | `wind-switch` | `properties.channel`, `state.active: boolean` |
+| `trap-active/inactive` | `trap` | `state.active: boolean` |
+| `mirror-1/2/3/4` | `mirror` | `state.variant` |
+| `speed-up/down/left/right` | `speed` | `direction` |
+| `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `state.variant` |
+| `color-yellow-switch-raised/pressed` | `color-yellow-switch` | `state.pressed: boolean` |
+| `color-pink-switch-raised/pressed` | `color-pink-switch` | `state.pressed: boolean` |
+| `dragon-head/body/tail/anim-*` | `dragon` | footprint role + visual/runtime state |
+| `ice-block/ice-melt-*` | `ice-block` | melt stage in `state` |
 
 地图中的 `state` 只描述开局状态；运行过程中的 motion progress、animation clock、runtime Entity id、Presence、RenderNode 等都不进入 LevelMap。
 
