@@ -1,24 +1,18 @@
 export { EntityRegistry } from "./world/entity/EntityRegistry.js";
 export type {
-  AudioProfileId,
   BehaviorId,
-  EntityAuthoringDefinition,
   EntityDefinition,
   EntityFieldDefinition,
   EntityFieldKind,
   EntityFieldOption,
-  EntityPresentationDefinition,
   EntityTrait,
   OccupancyDefinition,
   VisualId,
+  AudioProfileId,
 } from "./world/entity/EntityDefinition.js";
 export { EntityStore } from "./world/entity/EntityStore.js";
 export type { EntityStoreSnapshot } from "./world/entity/EntityStore.js";
-export type {
-  CellPosition,
-  EntityId,
-  EntityInstance,
-} from "./world/entity/EntityInstance.js";
+export type { CellPosition, EntityId, EntityInstance } from "./world/entity/EntityInstance.js";
 export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
   footprintCell,
@@ -37,14 +31,22 @@ export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
   defineEntityModule,
+  type EntityAuthoringDefinition,
   type EntityBehaviorBinding,
   type EntityModule,
+  type EntityModuleDefinition,
+  type EntityModuleInput,
+  type EntityPresentationDefinition,
 } from "./entities/EntityModule.js";
+export { EntityCatalog } from "./entities/EntityCatalog.js";
+export type { EntityCatalogEntry } from "./entities/EntityCatalog.js";
 export {
   builtinEntityDefinitions,
   builtinEntityModules,
+  createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  entityCatalog,
   visualRegistry,
 } from "./entities/registry.js";
 export { VisualRegistry } from "./visual/VisualRegistry.js";

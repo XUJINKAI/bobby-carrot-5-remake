@@ -1,46 +1,24 @@
-import type { EntityDefinition, EntityRegistry } from "@bobby/engine/authoring";
+import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine/authoring";
 import type { EntityType } from "@bobby/model";
 
-export interface PaletteItem {
-  type: EntityType;
+export interface PaletteItem { type: EntityType; }
+
+export function paletteItems(catalog: EntityCatalog): PaletteItem[] {
+  return catalog.all().filter((definition) => definition.authoring?.palette !== false).map((definition) => ({ type: definition.type }));
 }
 
-export function paletteItems(registry: EntityRegistry): PaletteItem[] {
-  return registry
-    .all()
-    .filter((definition) => definition.authoring?.palette !== false)
-    .map((definition) => ({ type: definition.type }));
+export function paletteGroups(catalog: EntityCatalog): string[] {
+  return [...new Set(catalog.all().filter((definition) => definition.authoring?.palette !== false).map(groupForDefinition))];
 }
 
-export function paletteGroups(registry: EntityRegistry): string[] {
-  return [
-    ...new Set(
-      registry
-        .all()
-        .filter((definition) => definition.authoring?.palette !== false)
-        .map(groupForDefinition),
-    ),
-  ];
+export function paletteGroup(catalog: EntityCatalog, item: PaletteItem): string {
+  return groupForDefinition(catalog.require(item.type));
 }
 
-export function paletteGroup(
-  registry: EntityRegistry,
-  item: PaletteItem,
-): string {
-  return groupForDefinition(registry.require(item.type));
+export function paletteLabel(catalog: EntityCatalog, item: PaletteItem): string {
+  return catalog.require(item.type).presentation.name;
 }
 
-export function paletteLabel(
-  registry: EntityRegistry,
-  item: PaletteItem,
-): string {
-  return registry.require(item.type).presentation.name;
-}
-
-function groupForDefinition(definition: EntityDefinition): string {
-  return (
-    definition.authoring?.category ??
-    definition.presentation.category ??
-    "其他"
-  );
+function groupForDefinition(definition: EntityCatalogEntry): string {
+  return definition.authoring?.category ?? definition.presentation.category ?? "其他";
 }

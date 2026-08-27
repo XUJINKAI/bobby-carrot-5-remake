@@ -1,13 +1,12 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
 import { BehaviorRegistry } from "../world/behavior/BehaviorRegistry.js";
-import { EntityRegistry } from "../world/entity/EntityRegistry.js";
+import type { EntityRegistry } from "../world/entity/EntityRegistry.js";
+import { EntityCatalog } from "./EntityCatalog.js";
 import type { EntityModule } from "./EntityModule.js";
 import { customEntityModules } from "./custom/modules.js";
 import { originalEntityModules } from "./original/modules.js";
 
-/**
- * Source folders只用于维护；运行时通过同一份 EntityModule 列表同时注册 gameplay、visual 与 behavior。
- */
+/** Source folders只用于维护；运行时通过同一份 EntityModule 列表完成 composition。 */
 export const builtinEntityModules: readonly EntityModule[] = [
   ...originalEntityModules,
   ...customEntityModules,
@@ -17,12 +16,16 @@ export const builtinEntityDefinitions = builtinEntityModules.map(
   (module) => module.definition,
 );
 
+export function createBuiltinEntityCatalog(
+  modules: readonly EntityModule[] = builtinEntityModules,
+): EntityCatalog {
+  return new EntityCatalog(modules);
+}
+
 export function createBuiltinEntityRegistry(
   modules: readonly EntityModule[] = builtinEntityModules,
 ): EntityRegistry {
-  const registry = new EntityRegistry();
-  registry.registerAll(modules.map((module) => module.definition));
-  return registry;
+  return createBuiltinEntityCatalog(modules).entities;
 }
 
 export function createBuiltinVisualRegistry(
@@ -34,6 +37,10 @@ export function createBuiltinVisualRegistry(
     if (!module.visual || seen.has(module.visual.id)) continue;
     seen.add(module.visual.id);
     registry.register(module.visual);
+  }
+  for (const module of modules) {
+    const visualId = module.presentation.visual ?? module.visual?.id;
+    if (visualId) registry.bindEntityVisual(module.definition.type, visualId);
   }
   return registry;
 }
@@ -56,6 +63,7 @@ export function createBuiltinBehaviorRegistry(
   return registry;
 }
 
-export const entityRegistry = createBuiltinEntityRegistry();
+export const entityCatalog = createBuiltinEntityCatalog();
+export const entityRegistry = entityCatalog.entities;
 export const visualRegistry = createBuiltinVisualRegistry();
 export const behaviorRegistry = createBuiltinBehaviorRegistry();

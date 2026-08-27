@@ -1,4 +1,4 @@
-import type { LevelEntity } from "@bobby/model";
+import type { EntityType, LevelEntity } from "@bobby/model";
 import type {
   EntityDefinition,
   VisualId,
@@ -11,6 +11,7 @@ import type {
 
 export class VisualRegistry {
   private readonly definitions = new Map<VisualId, VisualDefinition>();
+  private readonly entityVisuals = new Map<EntityType, VisualId>();
 
   register(definition: VisualDefinition): void {
     if (this.definitions.has(definition.id))
@@ -23,6 +24,10 @@ export class VisualRegistry {
 
   registerAll(definitions: readonly VisualDefinition[]): void {
     for (const definition of definitions) this.register(definition);
+  }
+
+  bindEntityVisual(type: EntityType, visualId: VisualId): void {
+    this.entityVisuals.set(type, visualId);
   }
 
   get(id: VisualId): VisualDefinition | undefined {
@@ -40,7 +45,7 @@ export class VisualRegistry {
   }
 
   visualIdFor(entityDefinition: EntityDefinition): VisualId {
-    return entityDefinition.presentation.visual ?? entityDefinition.type;
+    return this.entityVisuals.get(entityDefinition.type) ?? entityDefinition.type;
   }
 
   resolve(

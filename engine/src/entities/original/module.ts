@@ -9,17 +9,18 @@ import type {
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
 import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
-import { defineEntityModule, type EntityModule } from "../EntityModule.js";
+import {
+  defineEntityModule,
+  type EntityModule,
+  type EntityModuleDefinition,
+} from "../EntityModule.js";
 
 export interface AtlasCell {
   column: number;
   row: number;
 }
 
-export const cell = (column: number, row: number): AtlasCell => ({
-  column,
-  row,
-});
+export const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
 export function objectCell(index: number): AtlasCell {
   const linear = 9 + index;
@@ -30,8 +31,8 @@ export function surfaceDefinition(
   type: EntityType,
   name: string,
   traits: readonly EntityTrait[] = ["walkable"],
-  extra: Partial<EntityDefinition> = {},
-): EntityDefinition {
+  extra: Partial<EntityModuleDefinition> = {},
+): EntityModuleDefinition {
   return {
     type,
     traits,
@@ -47,8 +48,8 @@ export function contentDefinition(
   type: EntityType,
   name: string,
   traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityDefinition> = {},
-): EntityDefinition {
+  extra: Partial<EntityModuleDefinition> = {},
+): EntityModuleDefinition {
   return {
     type,
     traits,
@@ -63,8 +64,8 @@ export function coverDefinition(
   type: EntityType,
   name: string,
   traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityDefinition> = {},
-): EntityDefinition {
+  extra: Partial<EntityModuleDefinition> = {},
+): EntityModuleDefinition {
   return {
     type,
     traits,
@@ -77,7 +78,7 @@ export function coverDefinition(
 }
 
 export function originalModule(
-  definition: EntityDefinition,
+  definition: EntityModuleDefinition,
   visual: VisualDefinition,
 ): EntityModule {
   return defineEntityModule({
@@ -88,27 +89,16 @@ export function originalModule(
 }
 
 export function atlasVisual(
-  definition: EntityDefinition,
-  source:
-    | AtlasCell
-    | ((context: VisualResolveContext) => AtlasCell | null),
+  definition: EntityModuleDefinition,
+  source: AtlasCell | ((context: VisualResolveContext) => AtlasCell | null),
 ): VisualDefinition {
-  const resolveCell =
-    typeof source === "function" ? source : () => source;
+  const resolveCell = typeof source === "function" ? source : () => source;
   return {
     id: definition.presentation.visual ?? definition.type,
     resolve(context) {
       const atlas = resolveCell(context);
       return atlas
-        ? {
-            layers: [
-              {
-                kind: "atlas",
-                column: atlas.column,
-                row: atlas.row,
-              },
-            ],
-          }
+        ? { layers: [{ kind: "atlas", column: atlas.column, row: atlas.row }] }
         : null;
     },
   };
@@ -119,7 +109,7 @@ export function staticSurface(
   name: string,
   atlas: AtlasCell,
   traits: readonly EntityTrait[] = ["walkable"],
-  extra: Partial<EntityDefinition> = {},
+  extra: Partial<EntityModuleDefinition> = {},
 ): EntityModule {
   const definition = surfaceDefinition(type, name, traits, extra);
   return originalModule(definition, atlasVisual(definition, atlas));
@@ -130,7 +120,7 @@ export function staticContent(
   name: string,
   atlas: AtlasCell,
   traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityDefinition> = {},
+  extra: Partial<EntityModuleDefinition> = {},
 ): EntityModule {
   const definition = contentDefinition(type, name, traits, extra);
   return originalModule(definition, atlasVisual(definition, atlas));
@@ -141,35 +131,21 @@ export function staticCover(
   name: string,
   atlas: AtlasCell,
   traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityDefinition> = {},
+  extra: Partial<EntityModuleDefinition> = {},
 ): EntityModule {
   const definition = coverDefinition(type, name, traits, extra);
   return originalModule(definition, atlasVisual(definition, atlas));
 }
 
 export const pressedState: readonly EntityFieldDefinition[] = [
-  {
-    key: "pressed",
-    kind: "boolean",
-    label: "按下",
-    default: false,
-  },
+  { key: "pressed", kind: "boolean", label: "按下", default: false },
 ];
 
 export function activeState(defaultValue = false): readonly EntityFieldDefinition[] {
-  return [
-    {
-      key: "active",
-      kind: "boolean",
-      label: "激活",
-      default: defaultValue,
-    },
-  ];
+  return [{ key: "active", kind: "boolean", label: "激活", default: defaultValue }];
 }
 
-export function variantState(
-  values: readonly (string | number)[],
-): readonly EntityFieldDefinition[] {
+export function variantState(values: readonly (string | number)[]): readonly EntityFieldDefinition[] {
   return [
     {
       key: "variant",

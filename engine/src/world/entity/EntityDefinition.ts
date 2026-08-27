@@ -28,23 +28,10 @@ export interface EntityFieldDefinition {
   options?: readonly EntityFieldOption[];
 }
 
-export interface EntityPresentationDefinition {
-  name: string;
-  category?: string;
-  visual?: VisualId;
-  audio?: AudioProfileId;
-}
-
-export interface EntityAuthoringDefinition {
-  palette?: boolean;
-  category?: string;
-  /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
-  cursor?: { dx: number; dy: number };
-  /** Palette 创建方向型 Entity 时使用的初值。 */
-  defaultDirection?: Direction;
-}
-
-/** 一种 Entity 的共享静态定义。 */
+/**
+ * 一种 Entity 的纯 gameplay/domain 静态定义。
+ * 展示与编辑器元数据属于 EntityModule / EntityCatalog，不进入 World 的 Definition。
+ */
 export interface EntityDefinition {
   type: EntityType;
   traits: readonly EntityTrait[];
@@ -55,6 +42,4 @@ export interface EntityDefinition {
   behaviors?: readonly BehaviorId[];
   properties?: readonly EntityFieldDefinition[];
   state?: readonly EntityFieldDefinition[];
-  presentation: EntityPresentationDefinition;
-  authoring?: EntityAuthoringDefinition;
 }
