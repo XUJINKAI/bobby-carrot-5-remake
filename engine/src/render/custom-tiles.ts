@@ -9,7 +9,7 @@ export function drawCustomTerrain(
   y: number,
   size: number,
 ): boolean {
-  if (type !== CustomTerrain.PUSH_GOAL) return false;
+  if (!isPushGoal(type)) return false;
   context.save();
   context.fillStyle = "#6c543d";
   context.fillRect(x, y, size, size);
@@ -57,10 +57,31 @@ export function drawCustomObject(
 }
 
 /** DOM Palette 使用与 Canvas 相同扩展视觉定义的 CSS 投影。 */
-export function customTileIconStyle(type: TerrainType | ObjectType, size: number): Record<string, string> | null {
+export function customTileIconStyle(
+  type: TerrainType | ObjectType,
+  size: number,
+): Record<string, string> | null {
   if (type === CustomObjectId.PORTAL)
-    return { width: `${size}px`, height: `${size}px`, borderRadius: "50%", background: "radial-gradient(circle, transparent 20%, #7c5cff 42%, #54e8ff 58%, transparent 64%)" };
-  if (type === CustomTerrain.PUSH_GOAL)
-    return { width: `${size}px`, height: `${size}px`, background: "linear-gradient(#6c543d,#6c543d) padding-box", border: `${Math.max(2, size * 0.08)}px solid #f2c14e`, boxSizing: "border-box" };
+    return {
+      width: `${size}px`,
+      height: `${size}px`,
+      borderRadius: "50%",
+      background:
+        "radial-gradient(circle, transparent 20%, #7c5cff 42%, #54e8ff 58%, transparent 64%)",
+    };
+  if (isPushGoal(type))
+    return {
+      width: `${size}px`,
+      height: `${size}px`,
+      background: "linear-gradient(#6c543d,#6c543d) padding-box",
+      border: `${Math.max(2, size * 0.08)}px solid #f2c14e`,
+      boxSizing: "border-box",
+    };
   return null;
+}
+
+function isPushGoal(type: TerrainType | ObjectType): boolean {
+  return (
+    type === CustomTerrain.PUSH_GOAL || type === CustomTerrain.PUSH_GOAL_START
+  );
 }
