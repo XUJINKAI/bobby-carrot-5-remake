@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {
+  createBuiltinEntityCatalog,
   paletteGroup,
   paletteGroups,
   paletteItems,
   paletteLabel,
   type PaletteItem,
 } from "@bobby/editor";
-import { createBuiltinEntityRegistry } from "@bobby/engine/authoring";
 import { computed } from "vue";
 import { entityVisualStyle } from "../../services/assets/entityVisual.js";
 
@@ -18,19 +18,19 @@ const emit = defineEmits<{
   select: [item: PaletteItem];
   resize: [delta: number];
 }>();
-const registry = createBuiltinEntityRegistry();
-const items = paletteItems(registry);
+const catalog = createBuiltinEntityCatalog();
+const items = paletteItems(catalog);
 const groups = computed(() =>
-  paletteGroups(registry)
+  paletteGroups(catalog)
     .map((name) => ({
       name,
-      items: items.filter((item) => paletteGroup(registry, item) === name),
+      items: items.filter((item) => paletteGroup(catalog, item) === name),
     }))
     .filter((group) => group.items.length > 0),
 );
 
 function label(item: PaletteItem): string {
-  return paletteLabel(registry, item);
+  return paletteLabel(catalog, item);
 }
 
 function glyph(item: PaletteItem): string {
