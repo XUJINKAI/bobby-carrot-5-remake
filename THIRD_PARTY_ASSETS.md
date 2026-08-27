@@ -31,6 +31,26 @@ https://aymericdupeloux.wixsite.com/sokoban/post/_loma
 
 LOMA 关卡文本及由它生成的 `custom-maps/loma-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**；各关卡的著作权仍归原作者所有。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
+## Novoban Sokoban 关卡
+
+`tools/custom/NOVOBAN.txt` 保存 **Novoban** Sokoban 关卡集的源数据。该 collection 由 François Marques 创作，原始文本保留以下版权与联系信息：
+
+```text
+Copyright: François Marques
+E-Mail: sokoban@online.fr
+Web Site: http://sokoban.online.fr
+```
+
+原始下载地址：
+
+```text
+http://sokoban.online.fr/levels/novoban/novoban.txt
+```
+
+公开 collection 页面将 Novoban 描述为 50 张面向初学者、难度逐渐增加的关卡，并标明 Copyright 为 François Marques。本仓库未找到像 LOMA 那样明确的额外自由再发布授权文本，因此**不把“公开提供下载”解释为宽松许可证**。
+
+Novoban 原始文本及由它生成的 `custom-maps/novoban-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
+
 ## 许可证边界
 
 `LICENSE` 仅授权 Bobby Carrot 5 Remake 项目自身原创的源代码、文档及其他由相应作者有权许可的原创材料。
@@ -46,6 +66,7 @@ assets/original/
 assets/extracted/
 assets/generated/
 custom-maps/loma-pushbox/
+custom-maps/novoban-pushbox/
 dist/
 tmp/original-validation/
 ```
