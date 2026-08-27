@@ -28,6 +28,7 @@ export function prepareAssets() {
   run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
   fs.mkdirSync(assets, { recursive: true });
   run(process.execPath, ["tools/custom/loma-pushbox.mjs"]);
+  run(process.execPath, ["tools/custom/novoban-pushbox.mjs"]);
   run(process.execPath, ["tools/custom/prepare.mjs"]);
   buildOriginalCollection();
   buildAdventureIndex();

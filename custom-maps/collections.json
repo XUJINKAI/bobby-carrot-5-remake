@@ -28,6 +28,14 @@
     ]
   },
   {
+    "id": "novoban-pushbox",
+    "name": "Novoban",
+    "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
+    "cardSize": "small",
+    "order": 30,
+    "visible": true
+  },
+  {
     "id": "test",
     "name": "Test",
     "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
