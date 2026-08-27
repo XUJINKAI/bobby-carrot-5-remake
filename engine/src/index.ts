@@ -73,3 +73,13 @@ export type {
   CellInspection,
   PresenceInspection,
 } from "./world/WorldPreview.js";
+export {
+  builtinEntityDefinitions,
+  createBuiltinEntityRegistry,
+  entityRegistry,
+} from "./entities/registry.js";
+export {
+  entityAtlasCell,
+  drawEntityTile,
+} from "./render/entity-art.js";
+export type { AtlasCell } from "./render/entity-art.js";
