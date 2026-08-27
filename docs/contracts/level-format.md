@@ -26,7 +26,7 @@ interface LevelEntity {
 }
 ```
 
-地图中不存在 `TerrainType`、`ObjectType`、`playerStart`、`original:*` 或 `custom:*` 这样的运行时分类。地面、水、Bobby、Dragon、Portal、Push Goal 都是普通 Entity。
+地图中不存在 `TerrainType`、`ObjectType`、`playerStart`、`original:*` 或 `custom:*` 这样的运行时分类。地面、水、Start、Bobby、Dragon、Portal、Push Goal 都是普通 Entity。
 
 `original/` 与 `custom/` 只允许作为源码目录组织方式，便于维护和对照原版；两者必须通过同一个 `EntityRegistry`、同一个 Definition 合同和同一套 World / Editor 流程注册和使用。Registry 不知道 Definition 来自哪个源码目录。
 
@@ -71,9 +71,9 @@ Behavior 可以把 `pressed` 改为 `true`，Visual Runtime 根据 state 选择�
 
 地图中的 `state` 只描述开局状态；运行过程中的 motion progress、animation clock、runtime Entity id、Presence、RenderNode 等都不进入 LevelMap。
 
-### Bobby
+### Bobby 与 Start
 
-Bobby 是普通 Entity，不再存在 `playerStart` 或特殊 Start terrain：
+Bobby 是普通 Entity，地图不使用 `playerStart`：
 
 ```json
 {
@@ -83,6 +83,17 @@ Bobby 是普通 Entity，不再存在 `playerStart` 或特殊 Start terrain：
   "direction": "down"
 }
 ```
+
+`start` 也是普通 surface Entity，只表达该地面的玩法与视觉，不承担出生语义，也没有特殊 `start` Trait。Bobby 是否出生在 Start 上，只由两个 Entity 的坐标是否相同决定：
+
+```json
+[
+  { "type": "start", "x": 2, "y": 3 },
+  { "type": "bobby", "x": 2, "y": 3, "direction": "down" }
+]
+```
+
+Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surface，并把 Bobby Entity 的初始坐标设为同一位置。转换完成后 Start 与 Bobby 互不绑定；移动 Bobby 不会改变 Start，移动或替换 Start 也不会定义新的出生点。
 
 一张可游玩地图必须恰好有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。
 
@@ -227,7 +238,7 @@ patched JAR
 
 Original Adapter 负责所有历史表示转换，例如：
 
-- DAT Start terrain -> 普通 surface Entity + Bobby Entity；
+- DAT Start terrain -> `start` surface Entity，并在同一坐标生成 Bobby Entity；
 - Dragon object anchor -> `dragon` Entity；
 - `dragon` Entity -> DAT Dragon anchor；
 - 原版 pressed/raised 或 animation-specific id -> 单一 Entity type + `state`；
