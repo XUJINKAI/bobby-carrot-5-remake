@@ -1,4 +1,5 @@
 import {
+  resolveFootprintCells,
   visualRegistry as builtinVisualRegistry,
   type EntityDefinition,
   type EntityRegistry,
@@ -67,11 +68,16 @@ export function resolvePlacement(
     definition,
     options.placementSequence ?? 0,
   );
-  const parts = definition.footprint?.parts ?? [{ dx: 0, dy: 0 }];
-  const cells = parts.map((part) => ({
-    x: entity.x + part.dx,
-    y: entity.y + part.dy,
-    ...(part.role ? { role: part.role } : {}),
+  const cells = resolveFootprintCells(
+    {
+      anchor: { x: entity.x, y: entity.y },
+      ...(entity.direction ? { direction: entity.direction } : {}),
+    },
+    definition.footprint,
+  ).map((cell) => ({
+    x: cell.x,
+    y: cell.y,
+    ...(cell.role ? { role: cell.role } : {}),
   }));
   if (
     cells.some(
@@ -81,8 +87,9 @@ export function resolvePlacement(
         cell.x >= level.width ||
         cell.y >= level.height,
     )
-  )
+  ) {
     return { entity, cells, replace: [], blockedBy: [], valid: false };
+  }
 
   const preview = new EditorPreview(level, registry);
   const replace = new Map<number, EntityRef>();
@@ -92,9 +99,11 @@ export function resolvePlacement(
     for (const cell of cells) {
       for (const existing of preview.inspectCell(cell.x, cell.y).presences) {
         if (existing.definition.occupancy?.group !== group) continue;
-        if (definition.occupancy?.replaceSameGroup)
+        if (definition.occupancy?.replaceSameGroup) {
           replace.set(existing.ref.index, existing.ref);
-        else blockedBy.set(existing.ref.index, existing.ref);
+        } else {
+          blockedBy.set(existing.ref.index, existing.ref);
+        }
       }
     }
   }
@@ -116,7 +125,14 @@ export function placeEntity(
 ): EditorCommand {
   return {
     apply(level) {
-      const plan = resolvePlacement(level, registry, type, cursor, overrides, options);
+      const plan = resolvePlacement(
+        level,
+        registry,
+        type,
+        cursor,
+        overrides,
+        options,
+      );
       if (!plan.valid) return level;
       const removed = new Set(plan.replace.map((ref) => ref.index));
       return normalizeEditorLevel({
@@ -162,10 +178,16 @@ function createPlacedEntity(
   const direction = overrides.direction ?? definition.authoring?.defaultDirection;
   if (direction) entity.direction = direction;
   const mergedProperties = { ...properties, ...overrides.properties };
-  if (Object.keys(mergedProperties).length > 0) entity.properties = mergedProperties;
+  if (Object.keys(mergedProperties).length > 0) {
+    entity.properties = mergedProperties;
+  }
   const mergedState = { ...state, ...overrides.state };
-  if (Object.keys(mergedState).length > 0) entity.state = mergedState;
-  if (overrides.traits?.length) entity.traits = [...new Set(overrides.traits)];
+  if (Object.keys(mergedState).length > 0) {
+    entity.state = mergedState;
+  }
+  if (overrides.traits?.length) {
+    entity.traits = [...new Set(overrides.traits)];
+  }
   return entity;
 }
 
@@ -173,8 +195,10 @@ function defaults(
   fields: EntityDefinition["properties"] | EntityDefinition["state"],
 ): Record<string, JsonValue> {
   const result: Record<string, JsonValue> = {};
-  for (const field of fields ?? [])
-    if (field.default !== undefined)
+  for (const field of fields ?? []) {
+    if (field.default !== undefined) {
       result[field.key] = structuredClone(field.default);
+    }
+  }
   return result;
 }

@@ -69,11 +69,14 @@ export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
   footprintCell,
   footprintOffset,
+  resolveFootprintCells,
   SINGLE_CELL_FOOTPRINT,
 } from "./world/spatial/Footprint.js";
 export type {
   FootprintDefinition,
+  FootprintEntity,
   FootprintPart,
+  ResolvedFootprintCell,
 } from "./world/spatial/Footprint.js";
 export { STACK_BANDS } from "./world/spatial/StackBand.js";
 export type { StackBand } from "./world/spatial/StackBand.js";
