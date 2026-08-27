@@ -11,6 +11,7 @@ import {
   RELEASES,
   SOURCE_TILE_SIZE,
 } from "./source-definitions.mjs";
+import { adaptLegacyMap } from "./entity-adapter.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
@@ -73,7 +74,11 @@ for (const release of sourceIndex.releases) {
       maps: mapIds,
     });
 
-    for (let sourceLevelIndex = 1; sourceLevelIndex <= 12; sourceLevelIndex += 1) {
+    for (
+      let sourceLevelIndex = 1;
+      sourceLevelIndex <= 12;
+      sourceLevelIndex += 1
+    ) {
       const sourceName = `${pack.packFile}-${String(sourceLevelIndex).padStart(2, "0")}.json`;
       const source = readJson(
         path.join(decoded, release.id, "levels", sourceName),
@@ -88,12 +93,17 @@ for (const release of sourceIndex.releases) {
         sourceLevelIndex === 11 ? 1 : sourceLevelIndex === 12 ? 2 : null;
       const kind = bonusOrdinal === null ? "level" : "bonus";
       const sourceRef = sourceReference(release, source, sourceName);
-      const document = createMapDocument(source, {
-        id,
-        name: id.toUpperCase(),
-        music: kind === "bonus" ? "bonus" : "ingame1",
-      });
-      document.objects = adaptObjects(document.objects, id, kind === "bonus");
+      const document = createMapDocument(
+        {
+          ...source,
+          objects: adaptObjects(source.objects, id, kind === "bonus"),
+        },
+        {
+          id,
+          name: id.toUpperCase(),
+          music: kind === "bonus" ? "bonus" : "ingame1",
+        },
+      );
       documents.set(id, document);
       maps.push({
         id,
@@ -114,7 +124,9 @@ if (chapters.length !== 40)
 
 const playerOrder = chapters.flatMap((chapter) => chapter.maps);
 if (playerOrder.length !== 480)
-  throw new Error(`Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`);
+  throw new Error(
+    `Original 应包含 480 张 Campaign map，实际 ${playerOrder.length}`,
+  );
 const mapById = new Map(maps.map((map) => [map.id, map]));
 const orderedMaps = playerOrder.map((id) => {
   const map = mapById.get(id);
@@ -160,7 +172,11 @@ function buildSpecialScenes(index, target) {
   if (!base || !pack || pack.levelCount !== 5)
     throw new Error("Base/00.dat 必须包含 5 个 Special Scene");
   const result = [];
-  for (let sourceLevelIndex = 1; sourceLevelIndex <= 5; sourceLevelIndex += 1) {
+  for (
+    let sourceLevelIndex = 1;
+    sourceLevelIndex <= 5;
+    sourceLevelIndex += 1
+  ) {
     const sourceName = `00-${String(sourceLevelIndex).padStart(2, "0")}.json`;
     const source = readJson(path.join(decoded, "base", "levels", sourceName));
     if (source.schemaVersion !== 1)
@@ -186,19 +202,17 @@ function buildSpecialScenes(index, target) {
 }
 
 function createMapDocument(source, meta) {
+  const canonical = adaptLegacyMap(source);
   return {
     schemaVersion: 1,
     meta,
-    width: source.width,
-    height: source.height,
-    terrain: source.terrain,
-    objects: source.objects,
+    ...canonical,
     rules: {
       win: {
         type: "all",
         conditions: [
           { type: "collect-all", trait: "level-objective" },
-          { type: "reach-terrain", trait: "exit" },
+          { type: "reach", trait: "exit" },
         ],
       },
     },
