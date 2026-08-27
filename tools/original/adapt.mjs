@@ -159,10 +159,6 @@ writeJson(path.join(adapted, "catalog.json"), {
     tileSize: SOURCE_TILE_SIZE,
     basePath: "art/hd",
   },
-  music: {
-    basePath: "audio/midi",
-    format: "midi",
-  },
 });
 console.log("构建 Original Adapter：40 章 / 480 Campaign map / 5 Special Scene。");
 
@@ -260,13 +256,9 @@ function sourceChapterNumber(order, packFile) {
 
 function copyRuntimeAssets() {
   const artOut = path.join(adapted, "art", "hd");
-  const midiOut = path.join(adapted, "audio", "midi");
   fs.rmSync(artOut, { recursive: true, force: true });
-  fs.rmSync(midiOut, { recursive: true, force: true });
   fs.mkdirSync(artOut, { recursive: true });
-  fs.mkdirSync(midiOut, { recursive: true });
   copyRuntimeAssetCategory(OFFICIAL_RUNTIME_ASSET_SOURCES.artwork, artOut);
-  copyRuntimeAssetCategory(OFFICIAL_RUNTIME_ASSET_SOURCES.music, midiOut);
 }
 
 function copyRuntimeAssetCategory(rule, outputDir) {

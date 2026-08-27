@@ -28,10 +28,10 @@ export const DAT_FILES = ["00", "01", "02", "03", "04"];
 export const SOURCE_TILE_SIZE = 48;
 
 /**
- * 运行时官方资产按语义类别选择来源。
+ * 运行时官方美术资产来源。
  *
- * 证据见 docs/reference/official-release-provenance.md：24 个普通 PNG 与全部
- * MIDI 在十包字节一致；title.png 有两个版本，产品明确采用 Forever/Base 版。
+ * 证据见 docs/reference/official-release-provenance.md：24 个普通 PNG 在十包字节一致；
+ * title.png 有两个版本，产品明确采用 Forever/Base 版。
  */
 export const OFFICIAL_RUNTIME_ASSET_SOURCES = {
   artwork: {
@@ -40,10 +40,5 @@ export const OFFICIAL_RUNTIME_ASSET_SOURCES = {
     overrides: {
       "title.png": "base",
     },
-  },
-  music: {
-    defaultRelease: "base",
-    extension: ".mid",
-    overrides: {},
   },
 };

@@ -26,8 +26,5 @@
     "adventure",
     "web",
     "tools"
-  ],
-  "dependencies": {
-    "webaudio-tinysynth": "1.1.3"
-  }
+  ]
 }
