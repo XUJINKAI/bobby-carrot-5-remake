@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EntityTypeId } from "@bobby/model";
 import {
-  EntityTypeId,
   builtinEntityModules,
   createBuiltinBehaviorRegistry,
-} from "../dist/index.js";
+} from "../dist/entities/registry.js";
 
 function moduleFor(type) {
   const module = builtinEntityModules.find((candidate) => candidate.definition.type === type);

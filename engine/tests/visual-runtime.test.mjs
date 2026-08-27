@@ -1,15 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EntityTypeId } from "@bobby/model";
+import { EntityStore } from "../dist/world/entity/EntityStore.js";
+import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import {
-  EntityStore,
-  EntityTypeId,
-  SpatialIndex,
-  SpatialVisualQuery,
   builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  resolveEntityVisualPreview,
-} from "../dist/index.js";
+} from "../dist/entities/registry.js";
+import { resolveEntityVisualPreview } from "../dist/visual/preview.js";
 
 test("Bobby authoring preview resolves to the same image visual instead of a custom B fallback", () => {
   const composition = resolveEntityVisualPreview({

@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
+import { EntityStore } from "../dist/world/entity/EntityStore.js";
+import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import {
-  EntityRegistry,
-  EntityStore,
-  SpatialIndex,
-  SpatialVisualQuery,
   VisualRegistry,
   deterministicVisualVariantIndex,
-} from "../dist/index.js";
+} from "../dist/visual/VisualRegistry.js";
 
 function definition(type, extra = {}) {
   return {

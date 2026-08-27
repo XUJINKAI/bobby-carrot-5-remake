@@ -1,11 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  EntityTypeId,
-  World,
-  createBuiltinEntityRegistry,
-  resolveEntityVisualPreview,
-} from "../dist/index.js";
+import { EntityTypeId } from "@bobby/model";
+import { World } from "../dist/world/World.js";
+import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
+import { resolveEntityVisualPreview } from "../dist/visual/preview.js";
 
 const BLOCKING_TYPES = [
   EntityTypeId.EGG_NEST_FILLED,

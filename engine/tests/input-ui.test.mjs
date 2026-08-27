@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { directionForJoystickVector } from "../dist/index.js";
+import { directionForJoystickVector } from "../dist/input/ScreenJoystick.js";
 
 test("屏幕摇杆 dead zone 不产生移动方向", () => {
   assert.deepEqual(directionForJoystickVector(3, 4, 8), {

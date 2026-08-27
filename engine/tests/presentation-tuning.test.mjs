@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { applyMotionEasing } from "../dist/visual/tuning/PresentationTuning.js";
 import {
   ORIGINAL_TUNING,
-  applyMotionEasing,
   resolveOriginalTuning,
-} from "../dist/index.js";
+} from "../dist/visual/tuning/original.js";
 
 test("ORIGINAL_TUNING owns visual motion timing instead of Game literals", () => {
   assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);

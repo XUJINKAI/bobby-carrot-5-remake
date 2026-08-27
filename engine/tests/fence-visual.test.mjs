@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EntityTypeId } from "@bobby/model";
+import { EntityStore } from "../dist/world/entity/EntityStore.js";
+import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import {
-  EntityStore,
-  EntityTypeId,
-  SpatialIndex,
-  SpatialVisualQuery,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-} from "../dist/index.js";
+} from "../dist/entities/registry.js";
 
 const EXPECTED = new Map([
   [48, { column: 9, row: 15 }],
