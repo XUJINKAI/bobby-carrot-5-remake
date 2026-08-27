@@ -4,6 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
+import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import {
   builtinEntityModules,
   createBuiltinEntityRegistry,
@@ -52,6 +53,16 @@ test("Bobby walking progress is visual runtime state and does not mutate World",
   assert.equal(composition.layers[0].kind, "image");
   assert.equal(composition.layers[0].frameProgress, 0.5);
   assert.deepEqual(bobby.anchor, { x: 0, y: 0 });
+});
+
+test("VisualRuntime owns motion interpolation lifecycle", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(7, { x: 1, y: 2 }, { x: 2, y: 2 }, 100, 1000);
+  assert.equal(runtime.isAnimating, true);
+  assert.equal(runtime.advanceMotion(1050, "linear"), false);
+  assert.equal(runtime.isAnimating, true);
+  assert.equal(runtime.advanceMotion(1100, "linear"), true);
+  assert.equal(runtime.isAnimating, false);
 });
 
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {

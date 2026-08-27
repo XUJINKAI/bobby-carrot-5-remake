@@ -10,10 +10,9 @@ import { Renderer } from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { VisualAssetSources } from "../visual/VisualDefinition.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
-import {
-  applyMotionEasing,
-  type PresentationTuning,
-  type PresentationTuningOverride,
+import type {
+  PresentationTuning,
+  PresentationTuningOverride,
 } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type {
@@ -54,17 +53,6 @@ type GameEventName =
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
 
-interface Motion {
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-  direction: Direction;
-  startedAt: number;
-  duration: number;
-  forced: boolean;
-}
-
 export class Game {
   readonly audio: AudioBackend;
   readonly inputController: InputController | null;
@@ -80,7 +68,6 @@ export class Game {
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
-  private motion: Motion | null = null;
   private heldDirection: Direction | null = null;
   private animationFrame = 0;
   private destroyed = false;
@@ -166,7 +153,7 @@ export class Game {
   }
 
   get isAnimating(): boolean {
-    return this.motion !== null;
+    return this.visual.isAnimating;
   }
 
   get canUndo(): boolean {
@@ -183,7 +170,6 @@ export class Game {
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
-    this.motion = null;
     this.visual.clear();
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -198,7 +184,7 @@ export class Game {
       !this.worldValue ||
       this.world.dead ||
       this.world.completed ||
-      this.motion
+      this.visual.isAnimating
     )
       return null;
     return this.startLogicalMove(direction, forced);
@@ -209,7 +195,7 @@ export class Game {
     if (
       direction &&
       this.worldValue &&
-      !this.motion &&
+      !this.visual.isAnimating &&
       !this.world.dead &&
       !this.world.completed
     )
@@ -366,22 +352,13 @@ export class Game {
     }
 
     this.visual.camera.recenterPan();
-    this.motion = {
-      fromX: result.from.x,
-      fromY: result.from.y,
-      toX: result.to.x,
-      toY: result.to.y,
-      direction,
-      startedAt: performance.now(),
-      duration: this.motionDuration(this.world.forcedKind as ForcedKind | null),
-      forced,
-    };
-    this.visual.setEntityState(this.world.playerId, {
-      offsetX: result.from.x - result.to.x,
-      offsetY: result.from.y - result.to.y,
-      moving: true,
-      progress: 0,
-    });
+    this.visual.beginMove(
+      this.world.playerId,
+      result.from,
+      result.to,
+      this.motionDuration(this.world.forcedKind as ForcedKind | null),
+      performance.now(),
+    );
     this.render();
     this.emit("move");
     this.emit("change");
@@ -395,26 +372,8 @@ export class Game {
     return duration;
   }
 
-  private updateMotion(timestamp: number): void {
-    if (!this.motion || !this.worldValue) return;
-    const rawProgress = Math.min(
-      1,
-      Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration),
-    );
-    const progress = applyMotionEasing(rawProgress, this.tuning.motion.easing);
-    this.visual.setEntityState(this.world.playerId, {
-      offsetX: (this.motion.fromX - this.motion.toX) * (1 - progress),
-      offsetY: (this.motion.fromY - this.motion.toY) * (1 - progress),
-      moving: true,
-      progress,
-    });
-    if (rawProgress >= 1) this.finishMotion();
-  }
-
   private finishMotion(): void {
-    if (!this.motion || !this.worldValue) return;
-    this.visual.clearEntityState(this.world.playerId);
-    this.motion = null;
+    if (!this.worldValue) return;
     if (this.world.dead || this.world.completed) {
       this.heldDirection = null;
       return;
@@ -428,7 +387,6 @@ export class Game {
   }
 
   private resetVisualMotion(): void {
-    this.motion = null;
     this.visual.clear();
   }
 
@@ -448,7 +406,8 @@ export class Game {
         this.emitTerminalEvents();
         this.emit("change");
       }
-      this.updateMotion(timestamp);
+      if (this.visual.advanceMotion(timestamp, this.tuning.motion.easing))
+        this.finishMotion();
       this.render();
     }
     this.animationFrame = requestAnimationFrame(this.tick);
