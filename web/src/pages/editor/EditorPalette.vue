@@ -1,49 +1,40 @@
 <script setup lang="ts">
 import {
-  GROUP_ORDER,
   paletteGroup,
+  paletteGroups,
   paletteItems,
   paletteLabel,
-  type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
-import { customTileIconStyle, objectAtlasCell, terrainAtlasCell } from "@bobby/engine";
+import { createBuiltinEntityRegistry } from "@bobby/engine";
 import { computed } from "vue";
 
 const props = defineProps<{
-  level: Readonly<EditorLevel>;
   selection: PaletteItem;
   size: number;
-  atlasUrl: string;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
   resize: [delta: number];
 }>();
+const registry = createBuiltinEntityRegistry();
+const items = paletteItems(registry);
 const groups = computed(() =>
-  GROUP_ORDER.map((name) => ({
-    name,
-    items: paletteItems(props.level as EditorLevel).filter(
-      (item) => paletteGroup(item) === name,
-    ),
-  })).filter((group) => group.items.length > 0),
+  paletteGroups(registry)
+    .map((name) => ({
+      name,
+      items: items.filter((item) => paletteGroup(registry, item) === name),
+    }))
+    .filter((group) => group.items.length > 0),
 );
 
-function iconStyle(item: PaletteItem): Record<string, string> {
-  const customStyle = customTileIconStyle(item.type, props.size);
-  if (customStyle) return customStyle;
-  const cell =
-    item.kind === "terrain"
-      ? terrainAtlasCell(item.type)
-      : objectAtlasCell(item.type);
-  const scale = props.size / 48;
-  return {
-    width: `${props.size}px`,
-    height: `${props.size}px`,
-    backgroundImage: `url('${props.atlasUrl}')`,
-    backgroundSize: `${16 * 48 * scale}px ${16 * 48 * scale}px`,
-    backgroundPosition: `${-cell.column * 48 * scale}px ${-cell.row * 48 * scale}px`,
-  };
+function label(item: PaletteItem): string {
+  return paletteLabel(registry, item);
+}
+
+function glyph(item: PaletteItem): string {
+  const name = label(item).trim();
+  return name.slice(0, 2).toUpperCase();
 }
 </script>
 
@@ -58,7 +49,7 @@ function iconStyle(item: PaletteItem): Record<string, string> {
       </div>
     </div>
     <div class="editor-selected-tile">
-      <strong>{{ paletteLabel(selection) }}</strong>
+      <strong>{{ label(selection) }}</strong>
       <span>{{ selection.type }}</span>
     </div>
     <div class="editor-palette-groups">
@@ -67,14 +58,14 @@ function iconStyle(item: PaletteItem): Record<string, string> {
         <div class="editor-palette-grid" :style="{ '--palette-size': `${size}px` }">
           <button
             v-for="item in group.items"
-            :key="`${item.kind}:${item.type}`"
+            :key="item.type"
             type="button"
             class="editor-palette-tile"
-            :class="{ active: selection.kind === item.kind && selection.type === item.type }"
-            :title="paletteLabel(item)"
+            :class="{ active: selection.type === item.type }"
+            :title="label(item)"
             @click="emit('select', item)"
           >
-            <span class="editor-palette-sprite" :style="iconStyle(item)" />
+            <span class="editor-palette-sprite editor-palette-glyph" aria-hidden="true">{{ glyph(item) }}</span>
           </button>
         </div>
       </section>

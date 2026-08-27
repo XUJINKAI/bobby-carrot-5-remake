@@ -7,7 +7,7 @@ import type {
   EntityInstance,
 } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
-import { footprintCell, SINGLE_CELL_FOOTPRINT } from "./Footprint.js";
+import { resolveFootprintCells } from "./Footprint.js";
 import { stackBandOrder } from "./StackBand.js";
 
 export class SpatialIndex {
@@ -71,14 +71,15 @@ export class SpatialIndex {
 
   addEntity(entity: EntityInstance): void {
     const definition = this.registry.require(entity.type);
-    const footprint = definition.footprint ?? SINGLE_CELL_FOOTPRINT;
+    const resolved = resolveFootprintCells(entity, definition.footprint);
     const presences: EntityPresence[] = [];
-    footprint.parts.forEach((part, index) => {
-      const cell = footprintCell(entity, footprint, part);
-      if (!this.inBounds(cell))
+    resolved.forEach((part, index) => {
+      const cell = { x: part.x, y: part.y };
+      if (!this.inBounds(cell)) {
         throw new Error(
           `Entity ${entity.type}#${entity.id} footprint 超出地图：${cell.x},${cell.y}`,
         );
+      }
       const traits = [
         ...new Set([
           ...definition.traits,

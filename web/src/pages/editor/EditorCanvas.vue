@@ -12,6 +12,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 const props = defineProps<{
   level: Readonly<EditorLevel>;
   revision: number;
+  placementSequence: number;
   selection: PaletteItem;
   hover: Cell | null;
   enabled: boolean;
@@ -36,12 +37,19 @@ function render(): void {
     selection: props.selection,
     hover: props.hover,
     replacing,
+    placementSequence: props.placementSequence,
     viewport: viewport.snapshot,
   });
 }
 
 watch(
-  () => [props.revision, props.selection, props.hover, props.enabled],
+  () => [
+    props.revision,
+    props.placementSequence,
+    props.selection,
+    props.hover,
+    props.enabled,
+  ],
   () => {
     input?.setEnabled(props.enabled);
     render();
