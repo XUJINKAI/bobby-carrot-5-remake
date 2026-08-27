@@ -27,7 +27,7 @@ export function entityVisualStyle(
     };
   }
   if (layer.kind === "image") {
-    const url = gameAssets().imageUrls[layer.asset];
+    const url = gameAssets().imageUrls?.[layer.asset];
     if (!url) return null;
     return {
       width: `${size}px`,
