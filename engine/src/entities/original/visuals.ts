@@ -1,6 +1,7 @@
 import { EntityTypeId, type Direction, type LevelEntity } from "@bobby/model";
 import type { EntityDefinition } from "../../world/entity/EntityDefinition.js";
 import type { VisualDefinition } from "../../visual/VisualDefinition.js";
+import { applyOriginalRuntimeSemantics } from "./runtime-semantics.js";
 
 interface AtlasCell {
   column: number;
@@ -126,17 +127,23 @@ function fenceVisualDefinition(): VisualDefinition {
     id: EntityTypeId.FENCE,
     resolve(context) {
       const { x, y } = context.presence.cell;
-      const connectedAt = (dx: number, dy: number): boolean =>
-        context.query.presencesAt({ x: x + dx, y: y + dy }).some(
+      const connectedAt = (dx: number, dy: number): boolean => {
+        const cell = { x: x + dx, y: y + dy };
+
+        if (!context.query.inBounds(cell)) return true;
+
+        return context.query.presencesAt(cell).some(
           (presence) =>
             presence.traits.includes("fence") ||
             presence.traits.includes("gate"),
         );
+      };
 
       // 原版 Fence 视觉只检查左、下、右；上方邻居完全不参与选择。
       const left = connectedAt(-1, 0);
       const down = connectedAt(0, 1);
       const right = connectedAt(1, 0);
+      const up = connectedAt(0, -1);
 
       let artIndex = 48;
       if (!left && down && !right) artIndex = 49;
@@ -144,7 +151,7 @@ function fenceVisualDefinition(): VisualDefinition {
       else if (!left && down && right) artIndex = 51;
       else if (left && down && !right) artIndex = 52;
       else if (!left && !down && right) artIndex = 53;
-      // left+right、孤立、left+down+right 等未单独定义的情况统一使用 48。
+      else if (up && !left && !right) artIndex = 49;
 
       const atlas = objectCell(artIndex);
       return {
