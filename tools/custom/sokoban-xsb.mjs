@@ -1,7 +1,7 @@
 export const SOKOBAN_WIN_RULE = {
   type: "fill-all",
-  terrainTrait: "push-goal",
-  objectTrait: "pushable",
+  targetTrait: "push-goal",
+  fillerTrait: "pushable",
 };
 
 export function convertXsbBoard(board, title = "Sokoban", options = {}) {
@@ -13,11 +13,8 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
 
   const grid = rows.map((row) => row.padEnd(width, " ").split(""));
   const exterior = findExteriorSpaces(grid, width, height);
-  const terrain = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => "background-variant-1"),
-  );
-  const objects = [];
-  let playerStart = null;
+  const entities = [];
+  let player = null;
   let boxes = 0;
   let goals = 0;
 
@@ -26,24 +23,23 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
       const symbol = grid[y][x];
       if (symbol === "#" || (symbol === " " && exterior.has(key(x, y))))
         continue;
-      if (symbol === " ") terrain[y][x] = "ground-c";
+
+      if (symbol === " ") entities.push(floor(x, y));
       else if (symbol === ".") {
-        terrain[y][x] = "custom:push-goal";
+        entities.push(goal(x, y));
         goals += 1;
       } else if (symbol === "@") {
-        terrain[y][x] = "ground-c";
-        playerStart = assignPlayerStart(playerStart, x, y, title);
+        entities.push(floor(x, y));
+        player = assignPlayer(player, x, y, title);
       } else if (symbol === "+") {
-        terrain[y][x] = "custom:push-goal";
-        playerStart = assignPlayerStart(playerStart, x, y, title);
+        entities.push(goal(x, y));
+        player = assignPlayer(player, x, y, title);
         goals += 1;
       } else if (symbol === "$") {
-        terrain[y][x] = "ground-c";
-        objects.push(pushableRock(x, y));
+        entities.push(floor(x, y), pushableRock(x, y));
         boxes += 1;
       } else if (symbol === "*") {
-        terrain[y][x] = "custom:push-goal";
-        objects.push(pushableRock(x, y));
+        entities.push(goal(x, y), pushableRock(x, y));
         boxes += 1;
         goals += 1;
       } else {
@@ -52,19 +48,19 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
     }
   }
 
-  if (!playerStart) throw new Error(`${title}: 缺少玩家起点`);
+  if (!player) throw new Error(`${title}: 缺少玩家起点`);
   if (boxes !== goals)
     throw new Error(`${title}: 箱子与目标数量不一致：${boxes} / ${goals}`);
   if (boxes <= 0) throw new Error(`${title}: 至少需要 1 个箱子和目标`);
   if (options.expectedBoxes !== undefined && boxes !== options.expectedBoxes)
     throw new Error(`${title}: 应有 ${options.expectedBoxes} 个箱子，实际 ${boxes}`);
 
+  entities.push({ type: "bobby", ...player, direction: "down" });
+
   return {
     width,
     height,
-    playerStart,
-    terrain,
-    objects,
+    entities,
     rules: { win: { ...SOKOBAN_WIN_RULE } },
   };
 }
@@ -74,12 +70,10 @@ export function isXsbBoardLine(line) {
 }
 
 export function countPushGoals(level) {
-  return level.terrain
-    .flat()
-    .filter((terrain) => terrain === "custom:push-goal").length;
+  return level.entities.filter((entity) => entity.type === "push-goal").length;
 }
 
-function assignPlayerStart(current, x, y, title) {
+function assignPlayer(current, x, y, title) {
   if (current)
     throw new Error(
       `${title}: 必须恰好有 1 个玩家起点，至少发现 (${current.x}, ${current.y}) 与 (${x}, ${y})`,
@@ -114,6 +108,14 @@ function findExteriorSpaces(grid, width, height) {
     enqueue(x, y + 1);
   }
   return exterior;
+}
+
+function floor(x, y) {
+  return { type: "ground-c", x, y };
+}
+
+function goal(x, y) {
+  return { type: "push-goal", x, y };
 }
 
 function pushableRock(x, y) {
