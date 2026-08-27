@@ -41,6 +41,17 @@ export class SpatialIndex {
     return this.cells.get(cellKey(cell)) ?? [];
   }
 
+  presencesForEntity(entityId: EntityId): readonly EntityPresence[] {
+    const result: EntityPresence[] = [];
+    for (const key of this.entityCells.get(entityId) ?? []) {
+      const presence = (this.cells.get(key) ?? []).find(
+        (candidate) => candidate.entityId === entityId,
+      );
+      if (presence) result.push(presence);
+    }
+    return result;
+  }
+
   topPresenceAt(cell: CellPosition): EntityPresence | undefined {
     return this.presencesAt(cell).at(-1);
   }
