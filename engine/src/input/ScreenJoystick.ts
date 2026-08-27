@@ -95,8 +95,8 @@ export class ScreenJoystick {
     this.element.className = "engine-screen-joystick";
     Object.assign(this.element.style, {
       position: "absolute",
-      left: `${this.activationSize - this.size / 2}px`,
-      top: `${this.activationSize - this.size / 2}px`,
+      left: `${this.activationSize}px`,
+      top: `${this.activationSize}px`,
       width: `${this.size}px`,
       height: `${this.size}px`,
       border: "1px solid rgba(255,255,255,.34)",
@@ -218,8 +218,8 @@ export class ScreenJoystick {
     this.centerX = 0;
     this.centerY = 0;
     this.direction = null;
-    this.element.style.left = `${this.activationSize - this.size / 2}px`;
-    this.element.style.top = `${this.activationSize - this.size / 2}px`;
+    this.element.style.left = `${this.activationSize}px`;
+    this.element.style.top = `${this.activationSize}px`;
     this.knob.style.transform = "translate(-50%, -50%)";
     this.onDirection(null);
   }
