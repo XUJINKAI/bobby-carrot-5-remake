@@ -1,3 +1,4 @@
+import { EntityTypeId, type Direction } from "@bobby/model";
 import type { EntityInstance } from "../world/entity/EntityInstance.js";
 import type { World } from "../world/World.js";
 import { visualRegistry } from "../visual/builtin.js";
@@ -8,11 +9,13 @@ import type {
 import { Camera } from "./Camera.js";
 import { drawEntityTile } from "./entity-art.js";
 
+const DIRECTIONS: readonly Direction[] = ["left", "right", "up", "down"];
+
 export interface RendererAssets {
   atlasUrl: string;
   sourceTileSize?: number;
   bobbyUrl?: string;
-  bobbyUrls?: unknown;
+  bobbyUrls?: Partial<Record<Direction, string>>;
   animationAtlasUrl?: string;
   kiteUrl?: string;
   mowerBobbyUrl?: string;
@@ -23,6 +26,7 @@ export interface RendererAssets {
 export class Renderer {
   readonly camera: Camera;
   private atlas: HTMLImageElement | null = null;
+  private readonly bobby = new Map<Direction, HTMLImageElement>();
   private debug = false;
 
   constructor(
@@ -34,9 +38,18 @@ export class Renderer {
 
   async load(): Promise<void> {
     if (this.atlas) return;
-    const atlas = new Image();
-    atlas.src = this.assets.atlasUrl;
-    await atlas.decode();
+    const atlas = await loadImage(this.assets.atlasUrl);
+    const fallback =
+      this.assets.bobbyUrl ??
+      this.assets.bobbyUrls?.down ??
+      this.assets.bobbyUrls?.right;
+    await Promise.all(
+      DIRECTIONS.map(async (direction) => {
+        const url = this.assets.bobbyUrls?.[direction] ?? fallback;
+        if (!url) return;
+        this.bobby.set(direction, await loadImage(url));
+      }),
+    );
     this.atlas = atlas;
   }
 
@@ -65,6 +78,12 @@ export class Renderer {
         for (const presence of world.presencesAt({ x, y })) {
           const entity = world.entity(presence.entityId);
           if (!entity) continue;
+          if (
+            entity.type === EntityTypeId.BOBBY &&
+            this.drawBobby(context, entity, x, y)
+          ) {
+            continue;
+          }
           const definition = world.registry.require(entity.type);
           const composition = visualRegistry.resolve(definition, {
             entity,
@@ -77,6 +96,37 @@ export class Renderer {
     }
 
     if (this.debug) this.drawDebugGrid(context, world.width, world.height);
+  }
+
+  private drawBobby(
+    context: CanvasRenderingContext2D,
+    entity: Readonly<EntityInstance>,
+    x: number,
+    y: number,
+  ): boolean {
+    const direction = entity.direction ?? "down";
+    const image =
+      this.bobby.get(direction) ??
+      this.bobby.get("down") ??
+      this.bobby.get("right");
+    if (!image) return false;
+    const point = this.camera.worldToScreen(x, y);
+    const size = this.camera.tileScreenSize;
+    const source = this.camera.sourceTileSize;
+    const sourceHeight = image.height;
+    const drawHeight = sourceHeight * (size / source);
+    context.drawImage(
+      image,
+      0,
+      0,
+      Math.min(source, image.width),
+      sourceHeight,
+      point.x,
+      point.y + size - drawHeight,
+      size,
+      drawHeight,
+    );
+    return true;
   }
 
   private drawComposition(
@@ -151,4 +201,10 @@ export class Renderer {
     }
     context.restore();
   }
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  const image = new Image();
+  image.src = url;
+  return image.decode().then(() => image);
 }

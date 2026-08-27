@@ -122,6 +122,10 @@ export {
   createBuiltinVisualRegistry,
   visualRegistry,
 } from "./visual/builtin.js";
+export {
+  resolveEntityVisualPreview,
+  type EntityVisualPreviewSource,
+} from "./visual/preview.js";
 export type {
   AtlasVisualLayer,
   CustomVisualLayer,

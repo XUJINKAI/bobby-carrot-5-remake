@@ -4,6 +4,7 @@ dist/
 model/dist/
 engine/dist/
 editor/dist/
+adventure/dist/
 
 original/adapted/
 original/decoded/

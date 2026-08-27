@@ -8,6 +8,7 @@ import {
 } from "@bobby/editor";
 import { createBuiltinEntityRegistry } from "@bobby/engine";
 import { computed } from "vue";
+import { entityVisualStyle } from "../../services/assets/entityVisual.js";
 
 const props = defineProps<{
   selection: PaletteItem;
@@ -35,6 +36,10 @@ function label(item: PaletteItem): string {
 function glyph(item: PaletteItem): string {
   const name = label(item).trim();
   return name.slice(0, 2).toUpperCase();
+}
+
+function iconStyle(item: PaletteItem): Record<string, string> | null {
+  return entityVisualStyle({ type: item.type }, props.size);
 }
 </script>
 
@@ -65,7 +70,12 @@ function glyph(item: PaletteItem): string {
             :title="label(item)"
             @click="emit('select', item)"
           >
-            <span class="editor-palette-sprite editor-palette-glyph" aria-hidden="true">{{ glyph(item) }}</span>
+            <span
+              class="editor-palette-sprite"
+              :class="{ 'editor-palette-glyph': !iconStyle(item) }"
+              :style="iconStyle(item) ?? undefined"
+              aria-hidden="true"
+            >{{ iconStyle(item) ? '' : glyph(item) }}</span>
           </button>
         </div>
       </section>

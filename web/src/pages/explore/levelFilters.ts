@@ -4,6 +4,10 @@ import type {
   MapCollectionIndex,
   MapCollectionMap,
 } from "../../services/catalog/catalog.js";
+import {
+  entityVisualStyle,
+  styleRecordToText,
+} from "../../services/assets/entityVisual.js";
 
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
@@ -189,14 +193,24 @@ function iconHtml(icon: MapCollectionIcon | undefined): string {
     const src = new URL(icon.src, document.baseURI).href;
     return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(src)}">`;
   }
-  const glyph = icon.id
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return `<span class="level-filter-icon" aria-hidden="true" title="${escapeAttribute(icon.id)}">${escapeHtml(glyph || "·")}</span>`;
+  const style = entityVisualStyle(icon.entity, 24);
+  if (style) {
+    return `<i class="level-filter-icon" aria-hidden="true" style="${escapeAttribute(styleRecordToText(style))}"></i>`;
+  }
+  const glyph = entityGlyph(icon.entity.type);
+  return `<span class="level-filter-icon" aria-hidden="true" title="${escapeAttribute(icon.entity.type)}">${escapeHtml(glyph)}</span>`;
+}
+
+function entityGlyph(type: string): string {
+  return (
+    type
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "·"
+  );
 }
 
 function setText(element: HTMLElement | null, value: string): void {

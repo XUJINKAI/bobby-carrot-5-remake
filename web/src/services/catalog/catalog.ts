@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import type { LevelEntity, LevelMap } from "@bobby/model";
 
 export interface MapMeta {
   id: string;
@@ -14,9 +14,13 @@ export interface MapDocument extends LevelMap {
   meta: MapMeta;
 }
 
+export type MapCollectionEntityIcon = Pick<
+  LevelEntity,
+  "type" | "direction" | "properties" | "state" | "traits"
+>;
+
 export type MapCollectionIcon =
-  | { type: "terrain"; id: string }
-  | { type: "object"; id: string }
+  | { type: "entity"; entity: MapCollectionEntityIcon }
   | { type: "image"; src: string }
   | { type: "text"; value: string };
 
