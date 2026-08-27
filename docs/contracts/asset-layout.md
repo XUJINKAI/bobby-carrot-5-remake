@@ -83,6 +83,8 @@ Collection JSON 不保存 atlas 坐标。
 
 Play route 不需要 collection index。地图的 `meta.next` 提供同 collection 下一张导航。
 
+MapDocument 的 gameplay 部分遵守 LevelMap 的初始位置合同：必须在 `playerStart` 与 `start` terrain 两种来源中恰好选择一种。具体规则见 `docs/contracts/level-format.md`。
+
 ## `adventure/index.json`
 
 Adventure index 只定义 Campaign topology：章节、章节内 level 顺序、Special Scene，以及每个 node 引用的 map。
@@ -137,7 +139,7 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。标准 `+` 表示“玩家起点位于目标格”，转换为 `custom:push-goal-start`；该 terrain 同时具有 `start` 与 `push-goal` trait，因此不会为了记录起点而丢失目标语义。
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。Sokoban 不使用 `start` terrain，而是把玩家位置写入 LevelMap 顶层 `playerStart`：标准 `@` 的底层 terrain 是普通地面，标准 `+` 的底层 terrain 仍是 `custom:push-goal`。这样出生位置与目标语义互不耦合。
 
 `custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
