@@ -1,4 +1,5 @@
 import type { LevelMap } from "@bobby/model";
+import type { AudioBackend } from "../audio/AudioBackend.js";
 import {
   AudioRuntime,
   type AudioRuntimeOptions,
@@ -11,7 +12,7 @@ export type GameplayRuntimeConfig = GameRuntimeOptions;
 export interface CreateGameplayRuntimeOptions
   extends Omit<GameOptions, "runtime" | "audio"> {
   level: LevelMap;
-  audio?: AudioRuntime;
+  audio?: AudioBackend;
   audioOptions?: AudioRuntimeOptions;
   runtime?: GameplayRuntimeConfig;
 }
@@ -19,7 +20,7 @@ export interface CreateGameplayRuntimeOptions
 export interface GameplayRuntime {
   game: Game;
   input: InputController;
-  audio: AudioRuntime;
+  audio: AudioBackend;
   destroy(): void;
 }
 
@@ -34,8 +35,8 @@ export async function createGameplayRuntime(
     audioOptions,
     ...gameOptions
   } = options;
-  const audio = suppliedAudio ?? new AudioRuntime(audioOptions);
-  const audioOwnedByRuntime = suppliedAudio === undefined;
+  const ownedAudio = suppliedAudio ? null : new AudioRuntime(audioOptions);
+  const audio = suppliedAudio ?? ownedAudio!;
   const game = new Game({
     ...gameOptions,
     audio,
@@ -48,7 +49,7 @@ export async function createGameplayRuntime(
   } catch (error) {
     if (!inputOwnedByGame) input.destroy();
     game.destroy();
-    if (audioOwnedByRuntime) audio.destroy();
+    ownedAudio?.destroy();
     throw error;
   }
   return {
@@ -58,7 +59,7 @@ export async function createGameplayRuntime(
     destroy(): void {
       if (!inputOwnedByGame) input.destroy();
       game.destroy();
-      if (audioOwnedByRuntime) audio.destroy();
+      ownedAudio?.destroy();
     },
   };
 }

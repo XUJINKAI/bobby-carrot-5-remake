@@ -47,23 +47,4 @@ const importEntry = path.join(dist, "import/v1/index.html");
 fs.mkdirSync(path.dirname(importEntry), { recursive: true });
 copyFile(path.join(dist, "index.html"), importEntry);
 
-const tinySynthCandidates = [
-  path.join(root, "node_modules/webaudio-tinysynth/webaudio-tinysynth.min.js"),
-  path.join(root, "node_modules/webaudio-tinysynth/webaudio-tinysynth.js"),
-];
-const tinySynthSource = tinySynthCandidates.find((candidate) =>
-  fs.existsSync(candidate),
-);
-
-if (tinySynthSource) {
-  copyFile(
-    tinySynthSource,
-    path.join(dist, "vendor/webaudio-tinysynth.min.js"),
-  );
-} else {
-  console.warn(
-    "提示：当前环境未安装 webaudio-tinysynth；发布包将使用固定版本 CDN fallback。",
-  );
-}
-
 console.log("Build complete: dist");
