@@ -12,12 +12,28 @@ export default defineConfig({
   base: process.env.BC5R_BASE_PATH ?? "/",
   publicDir: false,
   resolve: {
-    alias: {
-      "@bobby/model": path.join(projectRoot, "model/src/index.ts"),
-      "@bobby/adventure": path.join(projectRoot, "adventure/src/index.ts"),
-      "@bobby/engine": path.join(projectRoot, "engine/src/index.ts"),
-      "@bobby/editor": path.join(projectRoot, "editor/src/index.ts"),
-    },
+    alias: [
+      {
+        find: "@bobby/engine/authoring",
+        replacement: path.join(projectRoot, "engine/src/authoring.ts"),
+      },
+      {
+        find: /^@bobby\/engine$/,
+        replacement: path.join(projectRoot, "engine/src/public.ts"),
+      },
+      {
+        find: "@bobby/model",
+        replacement: path.join(projectRoot, "model/src/index.ts"),
+      },
+      {
+        find: "@bobby/adventure",
+        replacement: path.join(projectRoot, "adventure/src/index.ts"),
+      },
+      {
+        find: "@bobby/editor",
+        replacement: path.join(projectRoot, "editor/src/index.ts"),
+      },
+    ],
   },
   server: {
     fs: {

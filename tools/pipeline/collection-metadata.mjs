@@ -4,50 +4,59 @@ const WATER = new Set([
   "water-variant-1",
   "water-variant-2",
   "water-variant-3",
-  "tide-up",
-  "tide-down",
-  "tide-left",
-  "tide-right",
+  "tide",
 ]);
 const GROUND = new Set([
   "ground-a",
   "ground-b",
   "ground-c",
   "ground-d",
+  "start",
   "shovel-cleared-ground",
 ]);
 
-const TERRAIN_MECHANICS = [
-  ["tide", (type) => type.startsWith("tide-")],
-  ["speed", (type) => type.startsWith("speed-")],
-  ["carousel", (type) => type.startsWith("carousel-")],
-  ["wind", (type) => type.startsWith("wind-switch-")],
-  ["mirror", (type) => type.startsWith("mirror-")],
-  ["trap", (type) => type.startsWith("trap-")],
+const MECHANICS = [
+  ["tide", (type) => type === "tide" || type === "tide-switch"],
+  ["speed", (type) => type === "speed" || type === "speed-switch"],
+  [
+    "carousel",
+    (type) => type === "carousel" || type === "carousel-switch",
+  ],
+  [
+    "wind",
+    (type) =>
+      type === "wind-switch" ||
+      type.startsWith("windmill-") ||
+      type.startsWith("cloud-"),
+  ],
+  ["mirror", (type) => type === "mirror"],
+  ["trap", (type) => type === "trap"],
   [
     "color-switch",
     (type) =>
-      type.startsWith("color-yellow-") || type.startsWith("color-pink-"),
+      type === "color-yellow-switch" ||
+      type === "color-pink-switch" ||
+      type === "color-yellow-block" ||
+      type === "color-pink-block",
   ],
   [
     "mower",
     (type) =>
+      type === "mower" ||
+      type === "gas" ||
       type === "mower-parking" ||
       type === "high-grass" ||
       type === "high-grass-objective",
   ],
-];
-
-const OBJECT_MECHANICS = [
-  ["wind", (type) => type.startsWith("windmill-") || type.startsWith("cloud-")],
-  ["mower", (type) => type === "mower" || type === "gas"],
   [
     "beanstalk",
     (type) =>
-      type === "bean" || type === "bean-field" || type.startsWith("beanstalk-"),
+      type === "bean" ||
+      type === "bean-field" ||
+      type.startsWith("beanstalk-"),
   ],
-  ["dragon", (type) => type === "dragon-head"],
-  ["beaver", (type) => type === "beaver-base" || type === "lock"],
+  ["dragon", (type) => type === "dragon"],
+  ["beaver", (type) => type === "beaver" || type === "lock"],
   ["dream", (type) => type === "sandman" || type === "dream-machine"],
   ["plank", (type) => type === "plank"],
   [
@@ -58,49 +67,43 @@ const OBJECT_MECHANICS = [
 ];
 
 export function levelFeatures(level) {
-  const terrain = level.terrain.flat();
-  const terrainSet = new Set(terrain);
-  const objectTypes = level.objects.map((object) => object.type);
-  const objectSet = new Set(objectTypes);
+  const entityTypes = level.entities.map((entity) => entity.type);
+  const entitySet = new Set(entityTypes);
 
-  const explicitCarrots = objectTypes.filter(
-    (type) => type === "carrot",
-  ).length;
-  const hiddenObjectives = terrain.filter(
+  const explicitCarrots = entityTypes.filter((type) => type === "carrot").length;
+  const hiddenObjectives = entityTypes.filter(
     (type) => type === "high-grass-objective",
   ).length;
   const carrotCount =
     explicitCarrots > 0 ? explicitCarrots + hiddenObjectives : 0;
 
   const specialItems = [];
-  if (terrainSet.has("shovel-pickup")) specialItems.push("shovel");
-  if (objectSet.has("mower") || terrainSet.has("mower-parking"))
+  if (entitySet.has("shovel-pickup")) specialItems.push("shovel");
+  if (entitySet.has("mower") || entitySet.has("mower-parking"))
     specialItems.push("mower");
-  if (objectSet.has("gas")) specialItems.push("gas");
-  if (objectSet.has("bean")) specialItems.push("bean");
-  if (objectSet.has("kite")) specialItems.push("kite");
-  if (objectSet.has("golden-carrot")) specialItems.push("golden-carrot");
-  if (objectSet.has("bonus-coin")) specialItems.push("bonus-coin");
+  if (entitySet.has("gas")) specialItems.push("gas");
+  if (entitySet.has("bean")) specialItems.push("bean");
+  if (entitySet.has("kite")) specialItems.push("kite");
+  if (entitySet.has("golden-carrot")) specialItems.push("golden-carrot");
+  if (entitySet.has("bonus-coin")) specialItems.push("bonus-coin");
 
   const scenes = [];
   if (
-    terrain.some(
+    entityTypes.some(
       (type) => GROUND.has(type) || type.startsWith("walkable-variant-"),
     )
   )
     scenes.push("grassland");
-  if (terrain.some((type) => WATER.has(type))) scenes.push("water");
-  if (terrainSet.has("snow")) scenes.push("snow");
-  if (terrainSet.has("ice") || objectSet.has("ice-block")) scenes.push("ice");
-  if (terrainSet.has("high-grass") || terrainSet.has("high-grass-objective"))
+  if (entityTypes.some((type) => WATER.has(type))) scenes.push("water");
+  if (entitySet.has("snow")) scenes.push("snow");
+  if (entitySet.has("ice") || entitySet.has("ice-block")) scenes.push("ice");
+  if (entitySet.has("high-grass") || entitySet.has("high-grass-objective"))
     scenes.push("high-grass");
-  if (terrain.some((type) => type.startsWith("shop-"))) scenes.push("shop");
+  if (entityTypes.some((type) => type.startsWith("shop-"))) scenes.push("shop");
 
   const mechanics = new Set();
-  for (const [id, matches] of TERRAIN_MECHANICS)
-    if (terrain.some(matches)) mechanics.add(id);
-  for (const [id, matches] of OBJECT_MECHANICS)
-    if (objectTypes.some(matches)) mechanics.add(id);
+  for (const [id, matches] of MECHANICS)
+    if (entityTypes.some(matches)) mechanics.add(id);
 
   return { carrotCount, specialItems, scenes, mechanics: [...mechanics] };
 }

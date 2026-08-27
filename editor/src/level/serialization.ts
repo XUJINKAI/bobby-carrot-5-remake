@@ -11,7 +11,7 @@ export function parseEditorLevel(text: string): EditorLevel {
     throw new Error(
       `不支持的地图 schemaVersion：${String(parsed.schemaVersion)}；当前版本为 1`,
     );
-  if (!Array.isArray(parsed.terrain))
-    throw new Error("JSON 缺少 terrain 二维数组");
+  if (!Array.isArray(parsed.entities))
+    throw new Error("JSON 缺少 entities 数组");
   return normalizeEditorLevel(parsed as unknown as EditorLevel);
 }

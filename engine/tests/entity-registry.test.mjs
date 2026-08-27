@@ -1,0 +1,104 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { EntityTypeId } from "@bobby/model";
+import {
+  builtinEntityDefinitions,
+  createBuiltinEntityCatalog,
+  createBuiltinEntityRegistry,
+} from "../dist/entities/registry.js";
+
+test("所有 canonical EntityTypeId 恰好注册一次", () => {
+  const definitions = builtinEntityDefinitions.map((item) => item.type);
+  for (const type of new Set(Object.values(EntityTypeId))) {
+    assert.equal(
+      definitions.filter((candidate) => candidate === type).length,
+      1,
+      type,
+    );
+  }
+  assert.equal(createBuiltinEntityRegistry().all().length, definitions.length);
+});
+
+test("Registry 不包含 original/custom identity 前缀", () => {
+  for (const definition of createBuiltinEntityRegistry().all()) {
+    assert.equal(definition.type.includes(":"), false, definition.type);
+  }
+});
+
+test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  assert.deepEqual(registry.require("background-variant-001").traits, []);
+  assert.equal(registry.require("background-variant-001").stackBand, "surface");
+  assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
+  assert.equal(registry.require("object-variant-001").stackBand, "content");
+  assert.equal(catalog.require("object-variant-001").authoring?.palette, false);
+});
+
+test("Start 是普通可步行 surface，不携带出生语义", () => {
+  const start = createBuiltinEntityRegistry().require("start");
+  assert.equal(start.stackBand, "surface");
+  assert.deepEqual(start.traits, ["walkable"]);
+  assert.equal(start.traits.includes("start"), false);
+});
+
+test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  assert.ok(catalog.require("tide").authoring?.defaultDirection);
+  assert.equal(registry.require("speed-switch").state[0].key, "pressed");
+  assert.equal(registry.require("tide-switch").state[0].key, "pressed");
+  assert.equal(registry.require("carousel-switch").state[0].key, "pressed");
+  assert.deepEqual(
+    registry.require("wind-switch").properties.map((field) => field.key),
+    ["channel"],
+  );
+  assert.deepEqual(
+    registry.require("wind-switch").state.map((field) => field.key),
+    ["active"],
+  );
+  assert.equal(registry.require("trap").state[0].key, "active");
+  assert.equal(registry.require("mirror").state[0].key, "variant");
+  assert.ok(catalog.require("speed").authoring?.defaultDirection);
+  assert.equal(registry.require("carousel").state[0].key, "variant");
+  assert.equal(registry.require("color-yellow-block").state[0].key, "raised");
+  assert.equal(registry.require("color-pink-block").state[0].key, "raised");
+});
+
+test("Dragon 是一个可旋转 EntityDefinition 并通过 footprint 表达三格", () => {
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  const dragon = registry.require("dragon");
+  assert.equal(dragon.footprint.rotateWithDirection, true);
+  assert.equal(dragon.footprint.baseDirection, "right");
+  assert.deepEqual(
+    dragon.footprint.parts.map((part) => [part.dx, part.dy, part.role]),
+    [
+      [0, 0, "head"],
+      [1, 0, "body"],
+      [2, 0, "tail"],
+    ],
+  );
+  assert.deepEqual(catalog.require("dragon").authoring?.cursor, {
+    dx: 1,
+    dy: 0,
+  });
+});
+
+test("Sandman / Dream Machine / Beaver 共享 directional footprint 约定", () => {
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  for (const type of ["sandman", "dream-machine", "beaver"]) {
+    const definition = registry.require(type);
+    assert.equal(definition.footprint.rotateWithDirection, true, type);
+    assert.equal(definition.footprint.baseDirection, "down", type);
+    assert.equal(catalog.require(type).authoring?.defaultDirection, "down", type);
+  }
+});
+
+test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
+  const registry = createBuiltinEntityRegistry();
+  const fence = registry.require(EntityTypeId.FENCE);
+  assert.deepEqual(fence.traits, ["blocking", "fence"]);
+  assert.equal(Object.values(EntityTypeId).some((type) => /^fence-\d$/.test(type)), false);
+});

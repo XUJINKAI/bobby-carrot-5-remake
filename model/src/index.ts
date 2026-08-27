@@ -1,16 +1,13 @@
-export {
-  Terrain,
-  ObjectId,
-  CustomObjectId,
-  CustomTerrain,
-  EMPTY_OBJECT,
-} from "./ids.js";
+export { EntityTypeId } from "./ids.js";
 export type {
-  TerrainType,
-  ObjectType,
-  LevelObjectProperties,
-  LevelObjectTraits,
-  LevelObject,
+  Direction,
+  EntityType,
+  JsonPrimitive,
+  JsonValue,
+  EntityProperties,
+  EntityState,
+  EntityTraits,
+  LevelEntity,
   LevelRules,
   WinCondition,
   LevelMap,

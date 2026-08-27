@@ -1,5 +1,5 @@
+import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
-import type { Direction } from "../mechanics/ids.js";
 import {
   ScreenJoystick,
   type ScreenJoystickOptions,
@@ -24,8 +24,6 @@ export interface InputControllerOptions {
   zoom?: boolean;
   debug?: boolean;
   screenJoystick?: boolean | ScreenJoystickOptions;
-  /** @deprecated 使用 `undo`。保留该字段只为兼容现有调用。 */
-  allowUndo?: boolean;
 }
 
 interface InputCapabilities {
@@ -51,14 +49,7 @@ const KEY_DIRECTION: Record<string, Direction> = {
   d: "right",
 };
 
-/**
- * 通用 Gameplay 输入适配器。
- *
- * Controller 负责把浏览器输入和外部方向控件翻译成 Game 动作；
- * Game 本身只认识移动、撤回、重开、相机等语义动作，不认识键盘或摇杆 DOM。
- */
 export class InputController {
-  private readonly game: Game;
   private readonly canvas: HTMLCanvasElement;
   private readonly capabilities: InputCapabilities;
   private readonly pointers = new Map<number, PointerState>();
@@ -71,15 +62,17 @@ export class InputController {
   private suppressNextClick = false;
   private enabled = true;
 
-  constructor(game: Game, options: InputControllerOptions = {}) {
-    this.game = game;
-    this.canvas = game.renderer.canvas;
+  constructor(
+    private readonly game: Game,
+    options: InputControllerOptions = {},
+  ) {
+    this.canvas = game.canvas;
     this.capabilities = {
       keyboard: options.keyboard ?? true,
       pointer: options.pointer ?? true,
       movement: options.movement ?? true,
-      undo: options.undo ?? options.allowUndo ?? true,
-      redo: options.redo ?? options.undo ?? options.allowUndo ?? true,
+      undo: options.undo ?? true,
+      redo: options.redo ?? options.undo ?? true,
       restart: options.restart ?? true,
       pan: options.pan ?? true,
       zoom: options.zoom ?? true,
@@ -115,7 +108,6 @@ export class InputController {
     this.screenJoystick?.setEnabled(value);
   }
 
-  /** 供 ScreenJoystick 和宿主方向输入复用同一条移动输入路径。 */
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
@@ -205,7 +197,9 @@ export class InputController {
     );
   }
 
-  private readonly setJoystickDirection = (direction: Direction | null): void => {
+  private readonly setJoystickDirection = (
+    direction: Direction | null,
+  ): void => {
     this.joystickDirection = direction;
     this.applyHeldDirection();
   };

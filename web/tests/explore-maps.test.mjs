@@ -2,26 +2,31 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { resolveMapDocument } from "../src/services/catalog/exploreMaps.ts";
 
-test("直达 Play 只按 URL 加载一个 MapDocument", async () => {
+test("直达 Play 只按 URL 加载一个 canonical MapDocument", async () => {
   const requests = [];
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
   globalThis.document = { baseURI: "https://example.test/" };
   globalThis.fetch = async (url) => {
     requests.push(String(url));
-    return new Response(JSON.stringify({
-      schemaVersion: 1,
-      meta: {
-        id: "1-5",
-        name: "1-5",
-        next: "1-6",
-      },
-      width: 1,
-      height: 1,
-      terrain: [["start"]],
-      objects: [],
-      rules: { win: { type: "reach-terrain", trait: "exit" } },
-    }));
+    return new Response(
+      JSON.stringify({
+        schemaVersion: 1,
+        meta: {
+          id: "1-5",
+          name: "1-5",
+          next: "1-6",
+        },
+        width: 2,
+        height: 1,
+        entities: [
+          { type: "start", x: 0, y: 0 },
+          { type: "bobby", x: 0, y: 0, direction: "right" },
+          { type: "exit", x: 1, y: 0 },
+        ],
+        rules: { win: { type: "reach", trait: "exit" } },
+      }),
+    );
   };
 
   try {
@@ -35,42 +40,61 @@ test("直达 Play 只按 URL 加载一个 MapDocument", async () => {
     assert.equal(resolved.document.meta.id, "1-5");
     assert.equal(resolved.document.meta.next, "1-6");
     assert.equal(Object.hasOwn(resolved.level, "meta"), false);
-    assert.equal(Object.hasOwn(resolved.level, "schemaVersion"), false);
+    assert.equal(resolved.level.schemaVersion, 1);
+    assert.deepEqual(resolved.level.entities, [
+      { type: "start", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0, direction: "right" },
+      { type: "exit", x: 1, y: 0 },
+    ]);
   } finally {
     globalThis.fetch = previousFetch;
     globalThis.document = previousDocument;
   }
 });
 
-test("直达 Play 保留 MapDocument.playerStart", async () => {
+test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () => {
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
   globalThis.document = { baseURI: "https://example.test/" };
-  globalThis.fetch = async () => new Response(JSON.stringify({
-    schemaVersion: 1,
-    meta: { id: "01-01", name: "LOMA 01-01" },
-    width: 2,
-    height: 1,
-    playerStart: { x: 0, y: 0 },
-    terrain: [["ground-c", "custom:push-goal"]],
-    objects: [],
-    rules: {
-      win: {
-        type: "fill-all",
-        terrainTrait: "push-goal",
-        objectTrait: "pushable",
-      },
-    },
-  }));
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        schemaVersion: 1,
+        meta: { id: "01-01", name: "LOMA 01-01" },
+        width: 2,
+        height: 1,
+        entities: [
+          { type: "ground-c", x: 0, y: 0 },
+          { type: "bobby", x: 0, y: 0, direction: "right" },
+          { type: "push-goal", x: 1, y: 0 },
+        ],
+        rules: {
+          win: {
+            type: "fill-all",
+            targetTrait: "push-goal",
+            fillerTrait: "pushable",
+          },
+        },
+      }),
+    );
 
   try {
     const resolved = await resolveMapDocument({
       collection: "loma-pushbox",
       id: "01-01",
     });
-    assert.deepEqual(resolved.level.playerStart, { x: 0, y: 0 });
+    assert.ok(
+      resolved.level.entities.some(
+        (entity) => entity.type === "bobby" && entity.x === 0 && entity.y === 0,
+      ),
+    );
+    assert.deepEqual(resolved.level.rules?.win, {
+      type: "fill-all",
+      targetTrait: "push-goal",
+      fillerTrait: "pushable",
+    });
     assert.equal(Object.hasOwn(resolved.level, "meta"), false);
-    assert.equal(Object.hasOwn(resolved.level, "schemaVersion"), false);
+    assert.equal(resolved.level.schemaVersion, 1);
   } finally {
     globalThis.fetch = previousFetch;
     globalThis.document = previousDocument;
@@ -81,14 +105,16 @@ test("MapDocument 的 meta.id 必须与 URL map id 一致", async () => {
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
   globalThis.document = { baseURI: "https://example.test/" };
-  globalThis.fetch = async () => new Response(JSON.stringify({
-    schemaVersion: 1,
-    meta: { id: "other", name: "Other" },
-    width: 1,
-    height: 1,
-    terrain: [["start"]],
-    objects: [],
-  }));
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        schemaVersion: 1,
+        meta: { id: "other", name: "Other" },
+        width: 1,
+        height: 1,
+        entities: [{ type: "bobby", x: 0, y: 0 }],
+      }),
+    );
   try {
     await assert.rejects(
       resolveMapDocument({ collection: "engine-lab", id: "expected" }),

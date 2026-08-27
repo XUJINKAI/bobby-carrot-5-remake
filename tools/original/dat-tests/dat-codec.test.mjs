@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ObjectId, Terrain } from "../../../model/dist/index.js";
 import {
   datSourceForObject,
   datSourceForTerrain,
@@ -11,6 +10,7 @@ import {
   replaceDatLevelRecord,
   splitDatPackage,
 } from "../dat/index.mjs";
+import { LegacyObject, LegacyTerrain } from "../dat/semantic-ids.mjs";
 
 test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const dat = fs.readFileSync("original/extracted/base/00.dat");
@@ -18,7 +18,7 @@ test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const record = parts.levelRecords[0];
   assert.ok(record);
   const decoded = decodeDatLevelRecord(record);
-  assert.equal(decoded.map.terrain[16]?.[7], "start");
+  assert.equal(decoded.map.terrain[16]?.[7], LegacyTerrain.START);
   assert.equal(deriveDatDynamicSlots(decoded.map), decoded.dynamicSlots);
   assert.deepEqual(
     Buffer.from(encodeDatLevelRecord(decoded.map)),
@@ -53,16 +53,25 @@ test("DAT package replacement preserves metadata and untouched records", () => {
 });
 
 test("original DAT provenance belongs to the Original tooling boundary", () => {
-  assert.equal(datSourceForTerrain(Terrain.CAROUSEL_1)?.datHexIds[0], "0xB9");
-  assert.equal(datSourceForTerrain(Terrain.MIRROR_1)?.datHexIds[0], "0xB1");
-  assert.equal(datSourceForObject(ObjectId.LOCK)?.datHexIds[0], "0xCD");
+  assert.equal(
+    datSourceForTerrain(LegacyTerrain.CAROUSEL_1)?.datHexIds[0],
+    "0xB9",
+  );
+  assert.equal(
+    datSourceForTerrain(LegacyTerrain.MIRROR_1)?.datHexIds[0],
+    "0xB1",
+  );
+  assert.equal(
+    datSourceForObject(LegacyObject.LOCK)?.datHexIds[0],
+    "0xCD",
+  );
 
-  for (const id of Object.values(Terrain)) {
+  for (const id of Object.values(LegacyTerrain)) {
     const source = datSourceForTerrain(id);
     assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
     assert.equal(source?.confidence, "confirmed");
   }
-  for (const id of Object.values(ObjectId)) {
+  for (const id of Object.values(LegacyObject)) {
     const source = datSourceForObject(id);
     assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
     assert.equal(source?.confidence, "confirmed");

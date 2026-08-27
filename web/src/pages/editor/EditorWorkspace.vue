@@ -5,6 +5,7 @@ import type {
   InspectorModel,
   PaletteItem,
 } from "@bobby/editor";
+import type { VisualAssetSources } from "@bobby/engine/authoring";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorPalette from "./EditorPalette.vue";
@@ -12,12 +13,13 @@ import EditorPalette from "./EditorPalette.vue";
 defineProps<{
   level: Readonly<EditorLevel>;
   revision: number;
+  placementSequence: number;
   selection: PaletteItem;
   hover: Cell | null;
   inspector: InspectorModel;
   paletteSize: number;
   playing: boolean;
-  atlasUrl: string;
+  visualAssets: VisualAssetSources;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -28,8 +30,7 @@ const emit = defineEmits<{
   endStroke: [];
   transform: [cell: Cell, step: number, result: (changed: boolean) => void];
   resize: [width: number, height: number];
-  property: [x: number, y: number, key: string, value: string];
-  trait: [x: number, y: number, trait: string, enabled: boolean];
+  property: [entityIndex: number, key: string, value: string];
   maxMoves: [value: number | null];
 }>();
 </script>
@@ -38,10 +39,8 @@ const emit = defineEmits<{
   <main class="editor-body" :class="{ playing }">
     <EditorPalette
       v-show="!playing"
-      :level="level"
       :selection="selection"
       :size="paletteSize"
-      :atlas-url="atlasUrl"
       @select="emit('select', $event)"
       @resize="emit('paletteResize', $event)"
     />
@@ -50,10 +49,11 @@ const emit = defineEmits<{
         v-show="!playing"
         :level="level"
         :revision="revision"
+        :placement-sequence="placementSequence"
         :selection="selection"
         :hover="hover"
         :enabled="!playing"
-        :atlas-url="atlasUrl"
+        :visual-assets="visualAssets"
         @hover="emit('hover', $event)"
         @stroke="(cell, button) => emit('stroke', cell, button)"
         @begin-stroke="emit('beginStroke')"
@@ -67,8 +67,7 @@ const emit = defineEmits<{
       v-show="!playing"
       :model="inspector"
       @resize="(width, height) => emit('resize', width, height)"
-      @property="(x, y, key, value) => emit('property', x, y, key, value)"
-      @trait="(x, y, trait, enabled) => emit('trait', x, y, trait, enabled)"
+      @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
       @max-moves="emit('maxMoves', $event)"
     />
   </main>

@@ -1,56 +1,43 @@
-import { Terrain, type WinCondition } from "@bobby/model";
-import {
-  resolveLevelPlayerStart,
-  terrainHasTrait,
-} from "@bobby/engine";
-import { normalizeEditorLevel } from "./editorLevel.js";
+import type { EntityCatalog } from "@bobby/engine/authoring";
+import type { WinCondition } from "@bobby/model";
 import type { EditorLevel, LevelValidationIssue } from "./types.js";
 
-export function validateEditorLevel(
-  level: EditorLevel,
-): LevelValidationIssue[] {
-  const normalized = normalizeEditorLevel(level);
+export function validateEditorLevel(level: EditorLevel, catalog: EntityCatalog): LevelValidationIssue[] {
   const issues: LevelValidationIssue[] = [];
-  try {
-    resolveLevelPlayerStart(normalized);
-  } catch (error) {
-    issues.push({
-      level: "error",
-      message: error instanceof Error ? error.message : String(error),
+  const known = level.entities.filter((entity, index) => {
+    if (catalog.has(entity.type)) return true;
+    issues.push({ level: "error", message: `Entity #${index + 1} 使用未注册 type：${entity.type}` });
+    return false;
+  });
+
+  const players = known.filter((entity) => {
+    const definition = catalog.require(entity.type);
+    return definition.traits.includes("player") || entity.traits?.includes("player") === true;
+  });
+  if (players.length !== 1)
+    issues.push({ level: "error", message: `地图必须且只能包含一个 player Entity，当前为 ${players.length} 个。` });
+
+  for (const trait of requiredReachTraits(level.rules?.win)) {
+    const exists = known.some((entity) => {
+      const definition = catalog.require(entity.type);
+      return definition.traits.includes(trait) || entity.traits?.includes(trait) === true || definition.footprint?.parts.some((part) => part.traits?.includes(trait)) === true;
     });
+    if (!exists) issues.push({ level: "warning", message: `当前获胜条件需要 Trait '${trait}'，地图中没有对应 Entity。` });
   }
-
-  let exits = 0;
-  for (const row of normalized.terrain)
-    for (const type of row)
-      if (terrainHasTrait(type, "exit")) exits += 1;
-
-  if (requiresTerrainTrait(normalized.rules?.win, "exit") && exits === 0)
-    issues.push({
-      level: "warning",
-      message: `当前获胜条件需要 ${Terrain.EXIT} terrain，但地图中不存在出口。`,
-    });
   return issues;
 }
 
-function requiresTerrainTrait(
-  condition: WinCondition | undefined,
-  trait: string,
-): boolean {
-  if (!condition) return false;
+function requiredReachTraits(condition: WinCondition | undefined): Set<string> {
+  const result = new Set<string>();
+  collectRequiredReachTraits(condition, result);
+  return result;
+}
+
+function collectRequiredReachTraits(condition: WinCondition | undefined, result: Set<string>): void {
+  if (!condition) return;
   switch (condition.type) {
-    case "reach-terrain":
-      return condition.trait === trait;
-    case "all":
-      return condition.conditions.some((item) =>
-        requiresTerrainTrait(item, trait),
-      );
-    case "any":
-      return (
-        condition.conditions.length > 0 &&
-        condition.conditions.every((item) => requiresTerrainTrait(item, trait))
-      );
-    default:
-      return false;
+    case "reach": result.add(condition.trait); break;
+    case "all": for (const child of condition.conditions) collectRequiredReachTraits(child, result); break;
+    case "any": if (condition.conditions.length === 1) collectRequiredReachTraits(condition.conditions[0], result); break;
   }
 }

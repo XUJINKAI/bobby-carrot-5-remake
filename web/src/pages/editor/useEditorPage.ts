@@ -1,28 +1,40 @@
 import {
   EditorDocument,
+  EditorPreview,
   buildInspectorModel,
-  paintTerrain,
-  placeObject,
-  removeObject,
+  createBuiltinEntityCatalog,
+  placeEntity,
+  removeEntity,
   resizeDocument,
+  setEntityDirection,
   toLevelMap,
-  transformObject,
+  topEntityRefAt,
+  updateEntityProperties,
+  updateEntityState,
   updateMetadata,
   updateMaxMoves,
-  updateObjectProperty,
-  updateObjectTrait,
   type Cell,
   type EditorLevel,
   type EditorSnapshot,
+  type EntityFieldDefinition,
   type PaletteItem,
 } from "@bobby/editor";
-import { Terrain } from "@bobby/engine";
+import {
+  EntityTypeId,
+  type Direction,
+  type EntityProperties,
+  type EntityState,
+  type JsonValue,
+} from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 
+const DIRECTIONS: Direction[] = ["up", "right", "down", "left"];
+
 export function useEditorPage(initialLevel: EditorLevel) {
+  const catalog = createBuiltinEntityCatalog();
   const document = new EditorDocument(initialLevel);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
-  const selection = ref<PaletteItem>({ kind: "terrain", type: Terrain.GROUND_C });
+  const selection = ref<PaletteItem>({ type: EntityTypeId.GROUND_C });
   const hover = ref<Cell | null>(null);
   const playing = ref(false);
   const fileDialogOpen = ref(false);
@@ -33,25 +45,85 @@ export function useEditorPage(initialLevel: EditorLevel) {
   });
   onUnmounted(unsubscribe);
 
+  const currentLevel = (): EditorLevel => snapshot.value.level as EditorLevel;
+  const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
   const inspector = computed(() =>
     buildInspectorModel(
-      snapshot.value.level as EditorLevel,
+      currentLevel(),
+      catalog,
       hover.value,
       selection.value,
     ),
   );
 
   function stroke(cell: Cell, button: 0 | 2): void {
-    if (button === 2) document.execute(removeObject(cell));
-    else if (selection.value.kind === "terrain")
-      document.execute(paintTerrain(cell, selection.value.type));
-    else document.execute(placeObject(cell, selection.value.type));
+    if (button === 2) {
+      const ref = topEntityRefAt(preview(), cell);
+      if (ref) document.execute(removeEntity(ref));
+      return;
+    }
+    document.executePlacement((placementSequence) =>
+      placeEntity(catalog, selection.value.type, cell, {}, { placementSequence }),
+    );
+  }
+
+  function transform(cell: Cell, step: number): boolean {
+    const inspected = preview().inspectCell(cell.x, cell.y).top;
+    if (!inspected) return false;
+    const definition = inspected.definition;
+    const entity = inspected.entity;
+    if (
+      definition.footprint?.rotateWithDirection ||
+      definition.authoring?.defaultDirection ||
+      entity.direction
+    ) {
+      const current =
+        entity.direction ?? definition.authoring?.defaultDirection ?? "right";
+      const index = DIRECTIONS.indexOf(current);
+      const next =
+        DIRECTIONS[(index + step + DIRECTIONS.length) % DIRECTIONS.length]!;
+      return document.execute(setEntityDirection(inspected.ref, next));
+    }
+    const variant = definition.state?.find(
+      (field) => field.kind === "enum" && (field.options?.length ?? 0) > 1,
+    );
+    if (!variant?.options?.length) return false;
+    const state = { ...(entity.state ?? {}) } as EntityState;
+    const current =
+      state[variant.key] ?? variant.default ?? variant.options[0]!.value;
+    const index = Math.max(
+      0,
+      variant.options.findIndex((option) => option.value === current),
+    );
+    const nextIndex =
+      (index + step + variant.options.length) % variant.options.length;
+    state[variant.key] = structuredClone(variant.options[nextIndex]!.value);
+    return document.execute(updateEntityState(inspected.ref, state));
+  }
+
+  function updateProperty(entityIndex: number, key: string, raw: string): void {
+    const level = currentLevel();
+    const entity = level.entities[entityIndex];
+    if (!entity) return;
+    const definition = catalog.require(entity.type);
+    const field = definition.properties?.find((item) => item.key === key);
+    if (!field) return;
+    const properties = { ...(entity.properties ?? {}) } as EntityProperties;
+    if (raw === "") delete properties[key];
+    else properties[key] = coerceFieldValue(field, raw);
+    document.execute(
+      updateEntityProperties(
+        { index: entityIndex },
+        Object.keys(properties).length ? properties : undefined,
+      ),
+    );
   }
 
   function setPaletteSize(delta: number): void {
     const sizes = [32, 40, 48, 56, 64];
     const index = Math.max(0, sizes.indexOf(paletteSize.value));
-    paletteSize.value = sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
+    paletteSize.value =
+      sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
     localStorage.setItem("bobby.editor.paletteSize", String(paletteSize.value));
   }
 
@@ -65,18 +137,11 @@ export function useEditorPage(initialLevel: EditorLevel) {
     helpDialogOpen,
     paletteSize,
     inspector,
-    levelMap: computed(() => toLevelMap(snapshot.value.level as EditorLevel)),
+    levelMap: computed(() => toLevelMap(currentLevel())),
     stroke,
+    transform,
+    updateProperty,
     setPaletteSize,
-    transform(cell: Cell, step: number): boolean {
-      return document.execute(transformObject(cell, step));
-    },
-    updateProperty(anchor: Cell, key: string, value: string): void {
-      document.execute(updateObjectProperty(anchor, key, value));
-    },
-    updateTrait(anchor: Cell, trait: string, enabled: boolean): void {
-      document.execute(updateObjectTrait(anchor, trait, enabled));
-    },
     resize(width: number, height: number): void {
       document.execute(resizeDocument(width, height));
     },
@@ -91,6 +156,24 @@ export function useEditorPage(initialLevel: EditorLevel) {
       document.execute(updateMetadata(metadata));
     },
   };
+}
+
+function coerceFieldValue(
+  field: EntityFieldDefinition,
+  raw: string,
+): JsonValue {
+  if (field.kind === "number") {
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : raw;
+  }
+  if (field.kind === "boolean") return raw === "true";
+  if (field.kind === "enum") {
+    const option = field.options?.find(
+      (candidate) => String(candidate.value) === raw,
+    );
+    if (option) return structuredClone(option.value);
+  }
+  return raw;
 }
 
 function readPaletteSize(): number {

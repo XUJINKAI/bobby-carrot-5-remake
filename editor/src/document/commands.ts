@@ -1,141 +1,108 @@
-import {
-  objectVariantCycle,
-  transformObjectVariant,
-  type ObjectType,
-  type TerrainType,
-} from "@bobby/engine";
-import type { LevelObjectProperties } from "@bobby/model";
+import type {
+  Direction,
+  EntityProperties,
+  EntityState,
+  EntityTraits,
+  LevelEntity,
+} from "@bobby/model";
 import {
   normalizeEditorLevel,
   resizeEditorLevel,
 } from "../level/editorLevel.js";
-import type { EditorLevel } from "../level/types.js";
-import {
-  intersectingOwners,
-  objectCells,
-  resolveObjectOwner,
-  type Cell,
-} from "../authoring/objectOwners.js";
-import {
-  anchorForCursor,
-  placementCells,
-  placementFits,
-} from "../authoring/objectPlacement.js";
+import type { EditorLevel, EntityRef } from "../level/types.js";
 
 export interface EditorCommand {
   apply(level: EditorLevel): EditorLevel;
 }
 
-export function paintTerrain(
-  cell: Cell,
-  type: TerrainType,
-): EditorCommand {
-  return command((level) => {
-    if (!inside(level, cell) || level.terrain[cell.y]![cell.x] === type)
-      return level;
-    const terrain = level.terrain.map((row) => [...row]);
-    terrain[cell.y]![cell.x] = type;
-    return { ...level, terrain };
-  });
-}
-
-export function placeObject(cell: Cell, type: ObjectType): EditorCommand {
-  return command((level) => {
-    if (!placementFits(level, type, cell)) return level;
-    const cells = placementCells(type, cell);
-    const owners = intersectingOwners(level, cells);
-    const anchor = anchorForCursor(type, cell);
-    if (
-      owners.length === 1 &&
-      owners[0]?.type === type &&
-      owners[0].x === anchor.x &&
-      owners[0].y === anchor.y
-    )
-      return level;
-    const removed = new Set(owners);
-    return normalizeEditorLevel({
+/** Document 原子操作；Authoring placement/occupancy 在上层解析后调用它。 */
+export function addEntity(entity: LevelEntity): EditorCommand {
+  return command((level) =>
+    normalizeEditorLevel({
       ...level,
-      objects: [
-        ...level.objects.filter((object) => !removed.has(object)),
-        { type, x: anchor.x, y: anchor.y },
-      ],
-    });
-  });
+      entities: [...level.entities, structuredClone(entity)],
+    }),
+  );
 }
 
-export function removeObject(cell: Cell): EditorCommand {
+export function removeEntity(ref: EntityRef): EditorCommand {
   return command((level) => {
-    const owner = resolveObjectOwner(level, cell.x, cell.y)?.object;
-    if (!owner) return level;
-    return { ...level, objects: level.objects.filter((item) => item !== owner) };
-  });
-}
-
-export function transformObject(cell: Cell, step: number): EditorCommand {
-  return command((level) => {
-    const owner = resolveObjectOwner(level, cell.x, cell.y)?.object;
-    if (!owner || !objectVariantCycle(owner.type)) return level;
-    const type = transformObjectVariant(owner.type, step);
-    if (!type) return level;
-    const replacement = { ...owner, type };
-    const cells = objectCells(replacement);
-    if (cells.some((part) => !inside(level, part))) return level;
-    const withoutOwner = {
+    if (!hasEntity(level, ref)) return level;
+    return {
       ...level,
-      objects: level.objects.filter((item) => item !== owner),
+      entities: level.entities.filter((_, index) => index !== ref.index),
     };
-    if (intersectingOwners(withoutOwner, cells).length > 0) return level;
-    return normalizeEditorLevel({
-      ...withoutOwner,
-      objects: [...withoutOwner.objects, replacement],
-    });
   });
 }
 
-export function updateObjectProperty(
-  anchor: Cell,
-  key: string,
-  value: string,
+export function moveEntity(
+  ref: EntityRef,
+  x: number,
+  y: number,
 ): EditorCommand {
-  return command((level) => {
-    const index = level.objects.findIndex(
-      (object) => object.x === anchor.x && object.y === anchor.y,
-    );
-    if (index < 0) return level;
-    const object = level.objects[index]!;
-    const properties: LevelObjectProperties = { ...object.properties };
-    if (value) properties[key] = value;
-    else delete properties[key];
-    const objects = [...level.objects];
-    const { properties: _previousProperties, ...base } = object;
-    objects[index] = Object.keys(properties).length > 0
-      ? { ...base, properties }
-      : base;
-    return normalizeEditorLevel({ ...level, objects });
+  return updateEntity(ref, (entity) => ({
+    ...entity,
+    x: Math.trunc(x),
+    y: Math.trunc(y),
+  }));
+}
+
+export function setEntityDirection(
+  ref: EntityRef,
+  direction: Direction | undefined,
+): EditorCommand {
+  return updateEntity(ref, (entity) => {
+    const next = { ...entity };
+    if (direction) next.direction = direction;
+    else delete next.direction;
+    return next;
   });
 }
 
-export function updateObjectTrait(
-  anchor: Cell,
-  trait: string,
-  enabled: boolean,
+export function updateEntityProperties(
+  ref: EntityRef,
+  properties: EntityProperties | undefined,
 ): EditorCommand {
-  return command((level) => {
-    const index = level.objects.findIndex(
-      (object) => object.x === anchor.x && object.y === anchor.y,
-    );
-    if (index < 0) return level;
-    const object = level.objects[index]!;
-    const traits = new Set(object.traits ?? []);
-    if (enabled) traits.add(trait);
-    else traits.delete(trait);
-    const objects = [...level.objects];
-    const { traits: _previousTraits, ...base } = object;
-    objects[index] = traits.size > 0
-      ? { ...base, traits: [...traits] }
-      : base;
-    return normalizeEditorLevel({ ...level, objects });
+  return updateEntity(ref, (entity) => {
+    const next = { ...entity };
+    if (properties && Object.keys(properties).length > 0)
+      next.properties = structuredClone(properties);
+    else delete next.properties;
+    return next;
   });
+}
+
+export function updateEntityState(
+  ref: EntityRef,
+  state: EntityState | undefined,
+): EditorCommand {
+  return updateEntity(ref, (entity) => {
+    const next = { ...entity };
+    if (state && Object.keys(state).length > 0)
+      next.state = structuredClone(state);
+    else delete next.state;
+    return next;
+  });
+}
+
+export function updateEntityTraits(
+  ref: EntityRef,
+  traits: EntityTraits | undefined,
+): EditorCommand {
+  return updateEntity(ref, (entity) => {
+    const next = { ...entity };
+    const unique = traits ? [...new Set(traits)] : [];
+    if (unique.length > 0) next.traits = unique;
+    else delete next.traits;
+    return next;
+  });
+}
+
+export function replaceEntity(
+  ref: EntityRef,
+  replacement: LevelEntity,
+): EditorCommand {
+  return updateEntity(ref, () => structuredClone(replacement));
 }
 
 export function updateMetadata(metadata: {
@@ -144,10 +111,7 @@ export function updateMetadata(metadata: {
   description?: string;
 }): EditorCommand {
   return command((level) => {
-    const next: EditorLevel = {
-      ...level,
-      name: metadata.name,
-    };
+    const next: EditorLevel = { ...level, name: metadata.name };
     if (metadata.author) next.author = metadata.author;
     else delete next.author;
     if (metadata.description) next.description = metadata.description;
@@ -162,23 +126,33 @@ export function resizeDocument(width: number, height: number): EditorCommand {
 
 export function updateMaxMoves(value: number | null): EditorCommand {
   return command((level) => {
-    const next = { ...level };
+    const rules = { ...level.rules };
     if (value !== null && Number.isInteger(value) && value > 0)
-      next.rules = { ...level.rules, maxMoves: value };
+      rules.maxMoves = value;
+    else delete rules.maxMoves;
+    const next = { ...level };
+    if (Object.keys(rules).length > 0) next.rules = rules;
     else delete next.rules;
     return normalizeEditorLevel(next);
   });
 }
 
-function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {
-  return { apply };
+function updateEntity(
+  ref: EntityRef,
+  update: (entity: LevelEntity) => LevelEntity,
+): EditorCommand {
+  return command((level) => {
+    if (!hasEntity(level, ref)) return level;
+    const entities = [...level.entities];
+    entities[ref.index] = update(entities[ref.index]!);
+    return normalizeEditorLevel({ ...level, entities });
+  });
 }
 
-function inside(level: EditorLevel, cell: Cell): boolean {
-  return (
-    cell.x >= 0 &&
-    cell.y >= 0 &&
-    cell.x < level.width &&
-    cell.y < level.height
-  );
+function hasEntity(level: EditorLevel, ref: EntityRef): boolean {
+  return Number.isInteger(ref.index) && ref.index >= 0 && ref.index < level.entities.length;
+}
+
+function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {
+  return { apply };
 }

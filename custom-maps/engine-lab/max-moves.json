@@ -5,11 +5,29 @@
   "description": "在 8 步限制内到达出口。",
   "width": 6,
   "height": 3,
-  "rules": { "maxMoves": 8, "win": { "type": "reach-terrain", "trait": "exit" } },
-  "terrain": [
-    ["ground-c", "ground-c", "ground-c", "ground-c", "ground-c", "ground-c"],
-    ["start", "ground-c", "ground-c", "ground-c", "ground-c", "exit"],
-    ["ground-c", "ground-c", "ground-c", "ground-c", "ground-c", "ground-c"]
-  ],
-  "objects": []
+  "rules": {
+    "maxMoves": 8,
+    "win": { "type": "reach", "trait": "exit" }
+  },
+  "entities": [
+    { "type": "ground-c", "x": 0, "y": 0 },
+    { "type": "ground-c", "x": 1, "y": 0 },
+    { "type": "ground-c", "x": 2, "y": 0 },
+    { "type": "ground-c", "x": 3, "y": 0 },
+    { "type": "ground-c", "x": 4, "y": 0 },
+    { "type": "ground-c", "x": 5, "y": 0 },
+    { "type": "start", "x": 0, "y": 1 },
+    { "type": "bobby", "x": 0, "y": 1, "direction": "right" },
+    { "type": "ground-c", "x": 1, "y": 1 },
+    { "type": "ground-c", "x": 2, "y": 1 },
+    { "type": "ground-c", "x": 3, "y": 1 },
+    { "type": "ground-c", "x": 4, "y": 1 },
+    { "type": "exit", "x": 5, "y": 1 },
+    { "type": "ground-c", "x": 0, "y": 2 },
+    { "type": "ground-c", "x": 1, "y": 2 },
+    { "type": "ground-c", "x": 2, "y": 2 },
+    { "type": "ground-c", "x": 3, "y": 2 },
+    { "type": "ground-c", "x": 4, "y": 2 },
+    { "type": "ground-c", "x": 5, "y": 2 }
+  ]
 }

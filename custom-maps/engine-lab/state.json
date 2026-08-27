@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "State Lab",
+  "author": "Bobby Carrot 5 Remake",
+  "description": "验证同一 Entity type 的不同初始 state。",
+  "width": 8,
+  "height": 3,
+  "rules": { "win": { "type": "reach", "trait": "exit" } },
+  "entities": [
+    { "type": "start", "x": 0, "y": 1 },
+    { "type": "bobby", "x": 0, "y": 1, "direction": "right" },
+    { "type": "ground-c", "x": 1, "y": 1 },
+    { "type": "speed-switch", "x": 2, "y": 1, "state": { "pressed": false } },
+    { "type": "speed-switch", "x": 3, "y": 1, "state": { "pressed": true } },
+    { "type": "trap", "x": 4, "y": 1, "state": { "active": false } },
+    { "type": "color-yellow-block", "x": 5, "y": 1, "state": { "raised": false } },
+    { "type": "ground-c", "x": 6, "y": 1 },
+    { "type": "exit", "x": 7, "y": 1 }
+  ]
+}

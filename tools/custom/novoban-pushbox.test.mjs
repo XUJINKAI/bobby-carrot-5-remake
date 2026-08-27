@@ -28,23 +28,41 @@ test("Novoban keeps variable box counts and only uses fill-all push goals", () =
   const boxCounts = new Set();
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, SOKOBAN_WIN_RULE);
-    const pushables = entry.level.objects.filter((object) =>
-      object.traits?.includes("pushable"),
+    const pushables = entry.level.entities.filter((entity) =>
+      entity.traits?.includes("pushable"),
     );
     const goals = countPushGoals(entry.level);
     assert.equal(pushables.length, goals, entry.id);
     assert.ok(goals > 0, entry.id);
-    assert.ok(entry.level.playerStart, entry.id);
-    assert.equal(entry.level.terrain.flat().includes("start"), false, entry.id);
-    assert.equal(entry.level.terrain.flat().includes("exit"), false, entry.id);
+    assert.equal(
+      entry.level.entities.filter((entity) => entity.type === "bobby").length,
+      1,
+      entry.id,
+    );
+    assert.equal(
+      entry.level.entities.some((entity) => entity.type === "start"),
+      false,
+      entry.id,
+    );
+    assert.equal(
+      entry.level.entities.some((entity) => entity.type === "exit"),
+      false,
+      entry.id,
+    );
     boxCounts.add(pushables.length);
   }
   assert.ok(boxCounts.size > 1, "Novoban 应保留每关不同的箱子数量");
 });
 
-test("Novoban XSB plus keeps push-goal terrain under explicit playerStart", () => {
+test("Novoban XSB plus keeps push-goal surface under Bobby", () => {
   const surrounded = levels.find((level) => level.title === "Surrounded");
   assert.ok(surrounded);
-  assert.deepEqual(surrounded.level.playerStart, { x: 3, y: 3 });
-  assert.equal(surrounded.level.terrain[3]?.[3], "custom:push-goal");
+  const bobby = surrounded.level.entities.find((entity) => entity.type === "bobby");
+  assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3, direction: "down" });
+  assert.equal(
+    surrounded.level.entities.some(
+      (entity) => entity.type === "push-goal" && entity.x === 3 && entity.y === 3,
+    ),
+    true,
+  );
 });

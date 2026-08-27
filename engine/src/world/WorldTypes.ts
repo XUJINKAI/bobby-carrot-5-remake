@@ -1,61 +1,48 @@
-import type { LevelObject, ObjectType, TerrainType } from "@bobby/model";
-import type { Direction } from "../mechanics/ids.js";
-import type { PassageResult } from "../mechanics/rules.js";
-import type { TileDefinitionInspection } from "../mechanics/definitions.js";
-import type { DynamicEntity, Point } from "./RuntimeState.js";
+import type { Direction, EntityState, JsonValue } from "@bobby/model";
+import type { EntityId } from "./entity/EntityInstance.js";
+import type { StackBand } from "./spatial/StackBand.js";
 
+/** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
 export interface WorldEvent {
-  type:
-    | "collect-carrot"
-    | "fill-nest"
-    | "collect-gas"
-    | "collect-kite"
-    | "collect-shovel"
-    | "collect-bean"
-    | "collect-golden-carrot"
-    | "collect-bonus-coin"
-    | "object-interaction"
-    | "dialog"
-    | "board-mower"
-    | "leave-mower"
-    | "mow"
-    | "break-rock"
-    | "toggle-switch"
-    | "dragon-fire"
-    | "melt-ice"
-    | "plant-bean"
-    | "beanstalk-grow"
-    | "death"
-    | "complete"
-    | "warning";
-  message: string;
-  text?: string;
-  messageId?: string;
+  type: string;
+  entityId?: EntityId;
   x?: number;
   y?: number;
-  objectType?: ObjectType;
+  direction?: Direction;
   action?: string;
+  text?: string;
+  messageId?: string;
+  reason?: string;
+  data?: Record<string, JsonValue>;
 }
+
+export interface PresenceInspection {
+  entityId: EntityId;
+  type: string;
+  role?: string;
+  stackBand: StackBand;
+  traits: readonly string[];
+  state?: EntityState;
+}
+
+export interface CellInspection {
+  cell: { x: number; y: number };
+  presences: readonly PresenceInspection[];
+  topPresence?: PresenceInspection;
+  playerHere: boolean;
+}
+
+export interface PassageInfo {
+  reason: string;
+  confidence: "rule" | "fallback";
+}
+
 export interface MoveResult {
   moved: boolean;
-  from: Point;
-  to: Point;
-  passage: PassageResult;
+  blocked?: boolean;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  direction: Direction;
+  passage: PassageInfo;
   events: WorldEvent[];
-  forcedDirection: Direction | null;
-  forcedKind: string | null;
-  dead: boolean;
-  completed: boolean;
-}
-export interface TileInspection {
-  x: number;
-  y: number;
-  terrainType: TerrainType;
-  terrainDefinition: TileDefinitionInspection;
-  object: LevelObject | null;
-  objectType: ObjectType;
-  objectDefinition: TileDefinitionInspection;
-  dynamicEntity: DynamicEntity | null;
-  isPlayer: boolean;
-  isStart: boolean;
 }

@@ -1,4 +1,4 @@
-import type { Cell } from "../authoring/objectOwners.js";
+import type { Cell } from "../authoring/entityPlacement.js";
 
 export function canvasPointToCell(
   canvas: HTMLCanvasElement,

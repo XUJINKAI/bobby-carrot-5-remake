@@ -1,55 +1,35 @@
-import type { Game, TileInspection } from "@bobby/engine";
+import type { CellInspection, Game } from "@bobby/engine";
 
-export function formatTileInspection(tile: TileInspection, game: Game): string {
-  const world = game.world;
-  const dynamic = tile.dynamicEntity;
-  const formatDefinition = (
-    label: string,
-    definition: TileInspection["terrainDefinition"],
-  ): string[] => {
-    const lines = [
-      `${label}: ${definition.id}`,
-      `  presentation: ${definition.presentation.name} / ${definition.presentation.category}`,
-      `  traits: ${definition.traits.length ? definition.traits.join(", ") : "none"}`,
-      "  behaviors:",
-    ];
-    if (!definition.behaviors.length) lines.push("    none");
-    for (const behavior of definition.behaviors) {
-      const config = behavior.config
-        ? ` · ${Object.entries(behavior.config)
-            .map(
-              ([key, value]) =>
-                `${key}=${Array.isArray(value) ? value.join("|") : String(value)}`,
-            )
-            .join(" · ")}`
-        : "";
-      lines.push(`    ${behavior.id}${config}`, `      ${behavior.summary}`);
+export function formatTileInspection(
+  cell: CellInspection,
+  game: Game,
+): string {
+  const state = game.state;
+  const lines = [`Cell (${cell.cell.x}, ${cell.cell.y})`];
+  if (cell.presences.length === 0) {
+    lines.push("Stack: implicit Void");
+  } else {
+    lines.push("Stack:");
+    for (const presence of cell.presences) {
+      lines.push(
+        `  ${presence.stackBand}: ${presence.type}#${presence.entityId}${presence.role ? `:${presence.role}` : ""}`,
+        `    traits: ${presence.traits.length ? presence.traits.join(", ") : "none"}`,
+      );
+      if (presence.state) {
+        lines.push(`    state: ${JSON.stringify(presence.state)}`);
+      }
     }
-    return lines;
-  };
-
-  return [
-    `Tile (${tile.x}, ${tile.y})`,
-    ...formatDefinition("Terrain", tile.terrainDefinition),
+  }
+  lines.push(
+    `Top: ${cell.topPresence ? `${cell.topPresence.type}#${cell.topPresence.entityId}` : "void"}`,
+    `Player here: ${cell.playerHere}`,
     "",
-    ...formatDefinition("Object", tile.objectDefinition),
-    "",
-    tile.object?.properties
-      ? `Object properties: ${JSON.stringify(tile.object.properties)}`
-      : "Object properties: none",
-    dynamic ? `Dynamic: ${dynamic.type}` : "Dynamic: none",
-    dynamic ? `  direction: ${dynamic.direction ?? "none"}` : "",
-    dynamic ? `  rider: ${dynamic.rider} · settled: ${dynamic.settled}` : "",
-    dynamic ? `  offsetPx: ${dynamic.offsetXpx}, ${dynamic.offsetYpx}` : "",
-    `Flags: player=${tile.isPlayer} · start=${tile.isStart}`,
-    "",
-    `Bobby: (${world.player.x}, ${world.player.y}) · facing=${world.facing}`,
-    `Forced: ${world.forcedKind ?? "none"} / ${world.forcedDirection ?? "none"}`,
-    `Mower: ${world.ridingMower}`,
-    `Objectives: ${world.objectiveRemaining}/${world.objectiveTotal}`,
-    `Moves: ${world.state.moves}`,
-    `Inventory: gas=${world.state.inventory.gas} kite=${world.state.inventory.kite} shovel=${world.state.inventory.shovel} beans=${world.state.inventory.beans}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+    `Bobby: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
+    `Forced: ${state.forced?.kind ?? "none"} / ${state.forced?.direction ?? "none"}`,
+    `Mower: ${state.ridingMower}`,
+    `Objectives: ${state.objective.remaining}/${state.objective.total}`,
+    `Moves: ${state.moves}`,
+    `Inventory: gas=${state.inventory.gas} kite=${state.inventory.kite} shovel=${state.inventory.shovel} beans=${state.inventory.beans}`,
+  );
+  return lines.join("\n");
 }

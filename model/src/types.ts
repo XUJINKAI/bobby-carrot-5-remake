@@ -1,148 +1,28 @@
-export type TerrainType =
-  | "snow"
-  | "water"
-  | "water-animated"
-  | "tide-up"
-  | "tide-down"
-  | "tide-left"
-  | "tide-right"
-  | "water-variant-1"
-  | "water-variant-2"
-  | "water-variant-3"
-  | "ground-a"
-  | "ground-b"
-  | "ground-c"
-  | "ground-d"
-  | "shovel-cleared-ground"
-  | "ice"
-  | "start"
-  | "exit"
-  | "shop-dream"
-  | "shop-cloud9"
-  | "shop-super-key"
-  | "shop-stereo"
-  | "shop-music"
-  | "shop-speed-shoes"
-  | "shop-coin-radar"
-  | "shop-unavailable"
-  | "shovel-pickup"
-  | "mower-parking"
-  | "speed-switch-pressed"
-  | "speed-switch-raised"
-  | "carousel-switch-raised"
-  | "carousel-switch-pressed"
-  | "tide-switch-raised"
-  | "tide-switch-pressed"
-  | "wind-switch-0-on"
-  | "wind-switch-0-off"
-  | "wind-switch-1-on"
-  | "wind-switch-1-off"
-  | "wind-switch-2-on"
-  | "wind-switch-2-off"
-  | "wind-switch-3-on"
-  | "wind-switch-3-off"
-  | "trap-active"
-  | "trap-inactive"
-  | "mirror-1"
-  | "mirror-2"
-  | "mirror-3"
-  | "mirror-4"
-  | "speed-up"
-  | "speed-down"
-  | "speed-left"
-  | "speed-right"
-  | "carousel-1"
-  | "carousel-2"
-  | "carousel-3"
-  | "carousel-4"
-  | "carousel-vertical"
-  | "carousel-horizontal"
-  | "color-yellow-switch-raised"
-  | "color-yellow-switch-pressed"
-  | "color-pink-switch-raised"
-  | "color-pink-switch-pressed"
-  | "color-yellow-block-raised"
-  | "color-yellow-block-lowered"
-  | "color-pink-block-raised"
-  | "color-pink-block-lowered"
-  | "high-grass"
-  | "high-grass-objective"
-  | `custom:${string}`
-  | `walkable-variant-${string}`
-  | `background-variant-${string}`;
+export type Direction = "up" | "down" | "left" | "right";
 
-export type ObjectType =
-  | "consumed-carrot"
-  | "carrot"
-  | "egg-nest-empty"
-  | "egg-nest-filled"
-  | "lock"
-  | "beanstalk-tip"
-  | "bean"
-  | "windmill-up"
-  | "windmill-down"
-  | "windmill-left"
-  | "windmill-right"
-  | "plank"
-  | "plank-crumbling"
-  | "plank-fragment"
-  | "dragon-head"
-  | "dragon-body"
-  | "dragon-tail"
-  | "sandman"
-  | "dream-machine"
-  | "mower"
-  | "gas"
-  | "beanstalk-mid"
-  | "bean-field"
-  | "cloud-red"
-  | "cloud-purple"
-  | "cloud-green"
-  | "ice-block"
-  | "ice-melt-1"
-  | "ice-melt-2"
-  | "ice-melt-3"
-  | "beaver-base"
-  | "dragon-anim-1"
-  | "dragon-anim-2"
-  | "sandman-body"
-  | "dream-machine-body"
-  | "leaf"
-  | "crumbly-rock"
-  | "beanstalk-base"
-  | "bean-sprout"
-  | "cloud-grid-red"
-  | "cloud-grid-purple"
-  | "cloud-grid-green"
-  | "kite"
-  | "whirlwind"
-  | "landing"
-  | "golden-carrot"
-  | "beaver-body"
-  | "bonus-coin"
-  | "fence-1"
-  | "fence-2"
-  | "fence-3"
-  | "fence-4"
-  | "fence-5"
-  | "fence-6"
-  | "empty"
-  | `custom:${string}`
-  | `object-variant-${string}`;
+/** Canonical entity type identity. Source folders such as original/custom are not part of this value. */
+export type EntityType = string;
 
-/**
- * 对象实例参数。当前只需要字符串和枚举/频道，因此统一持久化为字符串；
- * 哪些 key 合法以及如何编辑由 Engine Definition 描述，而不是由地图格式硬编码。
- */
-export type LevelObjectProperties = Record<string, string>;
-export type LevelObjectTraits = string[];
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue =
+  | JsonPrimitive
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
-export interface LevelObject {
-  type: ObjectType;
+export type EntityProperties = Record<string, JsonValue>;
+export type EntityState = Record<string, JsonValue>;
+export type EntityTraits = string[];
+
+/** One persisted entity anchor in a canonical BC5R map. */
+export interface LevelEntity {
+  type: EntityType;
   x: number;
   y: number;
-  traits?: LevelObjectTraits;
-  properties?: LevelObjectProperties;
+  direction?: Direction;
+  properties?: EntityProperties;
+  traits?: EntityTraits;
+  /** Initial mutable gameplay state for this entity. */
+  state?: EntityState;
 }
 
 export type WinCondition =
@@ -151,22 +31,21 @@ export type WinCondition =
   | { type: "collect-all"; trait: string }
   | {
       type: "fill-all";
-      terrainTrait: string;
-      objectTrait: string;
+      targetTrait: string;
+      fillerTrait: string;
     }
-  | { type: "reach-terrain"; trait: string };
+  | { type: "reach"; trait: string };
 
 export interface LevelRules {
   maxMoves?: number;
   win?: WinCondition;
 }
 
-/** Pure playable/authorable map. No release, JAR, hash, catalog or DAT fields belong here. */
+/** Canonical playable/authorable BC5R map. */
 export interface LevelMap {
+  schemaVersion: 1;
   width: number;
   height: number;
-  playerStart?: { x: number; y: number };
-  terrain: TerrainType[][];
-  objects: LevelObject[];
+  entities: LevelEntity[];
   rules?: LevelRules;
 }

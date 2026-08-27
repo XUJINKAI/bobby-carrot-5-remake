@@ -1,4 +1,4 @@
-import type { Direction } from "../mechanics/ids.js";
+import type { Direction } from "@bobby/model";
 import { resolveGameplayMount } from "../ui/gameplayMount.js";
 
 export interface ScreenJoystickOptions {
@@ -14,7 +14,6 @@ export interface JoystickVectorState {
   distance: number;
 }
 
-/** 将摇杆向量稳定地折算为四方向格子移动。 */
 export function directionForJoystickVector(
   dx: number,
   dy: number,
@@ -35,22 +34,21 @@ export function directionForJoystickVector(
     return { direction: previous, distance };
   }
   return {
-    direction: horizontal > vertical
-      ? dx < 0
-        ? "left"
-        : "right"
-      : dy < 0
-        ? "up"
-        : "down",
+    direction:
+      horizontal > vertical
+        ? dx < 0
+          ? "left"
+          : "right"
+        : dy < 0
+          ? "up"
+          : "down",
     distance,
   };
 }
 
-/** Engine 自带的半透明圆形屏幕摇杆。 */
 export class ScreenJoystick {
   private readonly element: HTMLDivElement;
   private readonly knob: HTMLDivElement;
-  private readonly onDirection: (direction: Direction | null) => void;
   private readonly radius: number;
   private readonly deadZonePixels: number;
   private pointerId: number | null = null;
@@ -62,14 +60,13 @@ export class ScreenJoystick {
   constructor(
     canvas: HTMLCanvasElement,
     options: ScreenJoystickOptions,
-    onDirection: (direction: Direction | null) => void,
+    private readonly onDirection: (direction: Direction | null) => void,
   ) {
     const root = resolveGameplayMount(canvas, options.root, "ScreenJoystick");
     const size = Math.max(72, options.size ?? 112);
     this.radius = size * 0.34;
     this.deadZonePixels =
       this.radius * Math.min(0.8, Math.max(0.05, options.deadZone ?? 0.2));
-    this.onDirection = onDirection;
     this.element = document.createElement("div");
     this.element.className = "engine-screen-joystick";
     this.element.setAttribute("role", "application");

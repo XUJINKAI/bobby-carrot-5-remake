@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ObjectId, Terrain } from "../../model/dist/index.js";
+import { EntityTypeId } from "../../model/dist/index.js";
 import {
   adventureLevelId,
   campaignSequenceForChapter,
@@ -64,44 +64,64 @@ test("Adventure unlocks each four-chapter group like the original while keeping 
 
 test("persistent global rewards are identified by level and map position", () => {
   const level = {
+    schemaVersion: 1,
     width: 3,
     height: 2,
-    terrain: [
-      [Terrain.START, Terrain.GROUND_C, Terrain.EXIT],
-      [Terrain.GROUND_C, Terrain.GROUND_C, Terrain.GROUND_C],
-    ],
-    objects: [
-      { type: ObjectId.BONUS_COIN, x: 1, y: 0 },
-      { type: ObjectId.GOLDEN_CARROT, x: 1, y: 1 },
+    entities: [
+      { type: EntityTypeId.START, x: 0, y: 0 },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: EntityTypeId.EXIT, x: 2, y: 0 },
+      { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
+      { type: EntityTypeId.GROUND_C, x: 1, y: 1 },
+      { type: EntityTypeId.GROUND_C, x: 2, y: 1 },
+      { type: EntityTypeId.BONUS_COIN, x: 1, y: 0 },
+      { type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 1 },
     ],
   };
   let save = createAdventureSave();
-  save = claimPersistentReward(save, "1-1", ObjectId.BONUS_COIN, 1, 0);
+  save = claimPersistentReward(save, "1-1", EntityTypeId.BONUS_COIN, 1, 0);
   assert.equal(save.economy.bonusCoins, 1);
-  assert.deepEqual(createAdventureLevelInstance("1-1", level, save).objects, [
-    { type: ObjectId.GOLDEN_CARROT, x: 1, y: 1 },
-  ]);
-  const again = claimPersistentReward(save, "1-1", ObjectId.BONUS_COIN, 1, 0);
+  assert.deepEqual(
+    createAdventureLevelInstance("1-1", level, save).entities.filter((entity) =>
+      [EntityTypeId.BONUS_COIN, EntityTypeId.GOLDEN_CARROT].includes(entity.type),
+    ),
+    [{ type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 1 }],
+  );
+  const again = claimPersistentReward(
+    save,
+    "1-1",
+    EntityTypeId.BONUS_COIN,
+    1,
+    0,
+  );
   assert.equal(again.economy.bonusCoins, 1);
 });
 
 test("Adventure session preserves the adapted map instance semantics", () => {
   const level = {
+    schemaVersion: 1,
     width: 3,
     height: 1,
-    terrain: [[Terrain.START, Terrain.GROUND_C, Terrain.EXIT]],
-    objects: [
-      { type: ObjectId.LOCK, x: 1, y: 0 },
-      { type: ObjectId.GOLDEN_CARROT, x: 2, y: 0 },
+    entities: [
+      { type: EntityTypeId.START, x: 0, y: 0 },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: EntityTypeId.EXIT, x: 2, y: 0 },
+      { type: EntityTypeId.LOCK, x: 1, y: 0 },
+      { type: EntityTypeId.GOLDEN_CARROT, x: 2, y: 0 },
     ],
   };
   const save = createAdventureSave();
   const bonus = createAdventureLevelInstance("1-bonus-1", level, save);
   const regular = createAdventureLevelInstance("1-1", level, save);
 
-  assert.equal(bonus.objects.find((object) => object.type === ObjectId.LOCK)?.properties, undefined);
   assert.equal(
-    regular.objects.find((object) => object.type === ObjectId.LOCK)?.properties,
+    bonus.entities.find((entity) => entity.type === EntityTypeId.LOCK)?.properties,
+    undefined,
+  );
+  assert.equal(
+    regular.entities.find((entity) => entity.type === EntityTypeId.LOCK)?.properties,
     undefined,
   );
   assert.equal(planAdventureSession("1-bonus-1", save).viewportPolicy, "original-portrait");

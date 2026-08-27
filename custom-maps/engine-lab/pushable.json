@@ -5,16 +5,33 @@
   "description": "把两块 Crumbly Rock 推到石头目标，再进入出口。",
   "width": 7,
   "height": 5,
-  "rules": { "win": { "type": "all", "conditions": [{ "type": "fill-all", "terrainTrait": "push-goal", "objectTrait": "pushable" }, { "type": "reach-terrain", "trait": "exit" }] } },
-  "terrain": [
-    ["background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1"],
-    ["background-variant-1", "ground-c", "custom:push-goal", "custom:push-goal", "ground-c", "ground-c", "background-variant-1"],
-    ["background-variant-1", "ground-c", "ground-c", "ground-c", "ground-c", "ground-c", "background-variant-1"],
-    ["background-variant-1", "start", "ground-c", "ground-c", "ground-c", "exit", "background-variant-1"],
-    ["background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1", "background-variant-1"]
-  ],
-  "objects": [
+  "rules": {
+    "win": {
+      "type": "all",
+      "conditions": [
+        { "type": "fill-all", "targetTrait": "push-goal", "fillerTrait": "pushable" },
+        { "type": "reach", "trait": "exit" }
+      ]
+    }
+  },
+  "entities": [
+    { "type": "ground-c", "x": 1, "y": 1 },
+    { "type": "push-goal", "x": 2, "y": 1 },
+    { "type": "push-goal", "x": 3, "y": 1 },
+    { "type": "ground-c", "x": 4, "y": 1 },
+    { "type": "ground-c", "x": 5, "y": 1 },
+    { "type": "ground-c", "x": 1, "y": 2 },
+    { "type": "ground-c", "x": 2, "y": 2 },
     { "type": "crumbly-rock", "x": 2, "y": 2, "traits": ["pushable"] },
-    { "type": "crumbly-rock", "x": 3, "y": 2, "traits": ["pushable"] }
+    { "type": "ground-c", "x": 3, "y": 2 },
+    { "type": "crumbly-rock", "x": 3, "y": 2, "traits": ["pushable"] },
+    { "type": "ground-c", "x": 4, "y": 2 },
+    { "type": "ground-c", "x": 5, "y": 2 },
+    { "type": "start", "x": 1, "y": 3 },
+    { "type": "bobby", "x": 1, "y": 3, "direction": "right" },
+    { "type": "ground-c", "x": 2, "y": 3 },
+    { "type": "ground-c", "x": 3, "y": 3 },
+    { "type": "ground-c", "x": 4, "y": 3 },
+    { "type": "exit", "x": 5, "y": 3 }
   ]
 }

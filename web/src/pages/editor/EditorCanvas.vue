@@ -7,15 +7,17 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
+import type { VisualAssetSources } from "@bobby/engine/authoring";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   level: Readonly<EditorLevel>;
   revision: number;
+  placementSequence: number;
   selection: PaletteItem;
   hover: Cell | null;
   enabled: boolean;
-  atlasUrl: string;
+  visualAssets: VisualAssetSources;
 }>();
 const emit = defineEmits<{
   hover: [cell: Cell | null];
@@ -36,12 +38,19 @@ function render(): void {
     selection: props.selection,
     hover: props.hover,
     replacing,
+    placementSequence: props.placementSequence,
     viewport: viewport.snapshot,
   });
 }
 
 watch(
-  () => [props.revision, props.selection, props.hover, props.enabled],
+  () => [
+    props.revision,
+    props.placementSequence,
+    props.selection,
+    props.hover,
+    props.enabled,
+  ],
   () => {
     input?.setEnabled(props.enabled);
     render();
@@ -51,7 +60,7 @@ watch(
 
 onMounted(async () => {
   if (!canvas.value) return;
-  renderer = new EditorCanvasRenderer(canvas.value, props.atlasUrl);
+  renderer = new EditorCanvasRenderer(canvas.value, props.visualAssets);
   input = new EditorCanvasInput(canvas.value, viewport, {
     dimensions: () => ({ width: props.level.width, height: props.level.height }),
     hover: (cell) => emit("hover", cell),

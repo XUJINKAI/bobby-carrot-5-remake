@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import type { LevelEntity, LevelMap } from "@bobby/model";
 
 export interface MapMeta {
   id: string;
@@ -14,9 +14,13 @@ export interface MapDocument extends LevelMap {
   meta: MapMeta;
 }
 
+export type MapCollectionEntityIcon = Pick<
+  LevelEntity,
+  "type" | "direction" | "properties" | "state" | "traits"
+>;
+
 export type MapCollectionIcon =
-  | { type: "terrain"; id: string }
-  | { type: "object"; id: string }
+  | { type: "entity"; entity: MapCollectionEntityIcon }
   | { type: "image"; src: string }
   | { type: "text"; value: string };
 
@@ -101,20 +105,18 @@ export interface AdventureIndex {
 
 export function levelMapFromDocument(document: MapDocument): LevelMap {
   return {
+    schemaVersion: 1,
     width: document.width,
     height: document.height,
-    ...(document.playerStart
-      ? { playerStart: { ...document.playerStart } }
-      : {}),
-    terrain: document.terrain,
-    objects: document.objects,
-    ...(document.rules ? { rules: document.rules } : {}),
+    entities: structuredClone(document.entities),
+    ...(document.rules ? { rules: structuredClone(document.rules) } : {}),
   };
 }
 
 export async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
   return response.json() as Promise<T>;
 }

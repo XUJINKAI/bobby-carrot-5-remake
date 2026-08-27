@@ -8,16 +8,14 @@ export interface GameplayHudOptions {
   goldenCarrotUrl?: string;
   objective?: boolean;
   inventory?: boolean;
-  timedChallenge?: boolean;
 }
 
-/** Engine 基础 HUD：只呈现地图内状态，并统一把已获得道具锚定在右上角。 */
+/** Engine 基础 HUD：只呈现公开 gameplay state，不读取 World。 */
 export class GameplayHud {
   private readonly game: Game;
   private readonly root: HTMLDivElement;
   private readonly objective: HTMLDivElement;
   private readonly items: HTMLDivElement;
-  private readonly timer: HTMLDivElement;
   private readonly options: GameplayHudOptions;
   private readonly unsubscribe: () => void;
   private lastSignature = "";
@@ -65,15 +63,8 @@ export class GameplayHud {
       justifyContent: "flex-start",
       maxWidth: "100%",
     });
-    this.timer = document.createElement("div");
-    this.timer.className = "engine-gameplay-hud-timer";
-    Object.assign(this.timer.style, {
-      position: "absolute",
-      top: "12px",
-      left: "12px",
-    });
     cluster.append(this.objective, this.items);
-    this.root.append(cluster, this.timer);
+    this.root.append(cluster);
     mount.append(this.root);
     this.root.hidden = options.enabled === false;
     this.unsubscribe = game.on("change", () => this.render());
@@ -87,19 +78,13 @@ export class GameplayHud {
 
   render(): void {
     if (!this.game.hasLevel || this.root.hidden) return;
-    const state = this.game.world.state;
-    const remaining = this.game.timedChallengeRemainingMs;
+    const state = this.game.state;
     const signature = JSON.stringify({
-      objectiveMode: state.objectiveMode,
-      objectiveRemaining: this.game.world.objectiveRemaining,
-      superKey: state.profile.superKey,
-      temporaryKey: state.profile.temporaryKey,
-      speedShoes: state.profile.speedShoes,
+      objective: state.objective,
+      profile: state.profile,
       inventory: state.inventory,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
       bonusCoinsInLevel: state.bonusCoinsInLevel,
-      timedChallengeSeconds:
-        remaining === null ? null : Math.ceil(remaining / 1000),
     });
     if (signature === this.lastSignature) return;
     this.lastSignature = signature;
@@ -107,9 +92,9 @@ export class GameplayHud {
     if (this.options.objective !== false) {
       this.objective.append(
         this.chip(
-          state.objectiveMode === "carrot" ? "目标胡萝卜" : "目标巢穴",
-          this.sprite(state.objectiveMode === "carrot" ? "carrot" : "egg"),
-          String(this.game.world.objectiveRemaining),
+          state.objective.mode === "carrot" ? "目标胡萝卜" : "目标巢穴",
+          this.sprite(state.objective.mode === "carrot" ? "carrot" : "egg"),
+          String(state.objective.remaining),
         ),
       );
     }
@@ -147,16 +132,6 @@ export class GameplayHud {
         );
     }
     this.items.replaceChildren(...items);
-    this.timer.replaceChildren();
-    if (this.options.timedChallenge !== false && remaining !== null) {
-      this.timer.append(
-        this.chip(
-          "限时挑战剩余时间",
-          this.textIcon("BONUS"),
-          `${Math.ceil(remaining / 1000)}s`,
-        ),
-      );
-    }
   }
 
   destroy(): void {

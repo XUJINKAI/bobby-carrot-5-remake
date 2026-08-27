@@ -1,35 +1,35 @@
 import type {
+  EntityProperties,
+  EntityType,
   LevelMap,
-  LevelObjectProperties,
-  ObjectType,
 } from "@bobby/model";
 
-export interface AdventureObjectPropertiesPatch {
+export interface AdventureEntityPropertiesPatch {
   x: number;
   y: number;
-  type?: ObjectType;
-  properties: LevelObjectProperties;
+  type?: EntityType;
+  properties: EntityProperties;
 }
 
 /**
- * Adventure 可以在纯 LevelMap 进入 Engine 前覆盖对象实例参数。
- * Engine 不知道这些参数来自 Adventure；Maker JSON 也走同一个 LevelObject.properties。
+ * Adventure 可以在纯 LevelMap 进入 Engine 前覆盖 Entity 实例参数。
+ * Engine 不知道这些参数来自 Adventure；Editor JSON 也走同一个 LevelEntity.properties。
  */
 export function augmentAdventureLevel(
   level: LevelMap,
-  patches: readonly AdventureObjectPropertiesPatch[] = [],
+  patches: readonly AdventureEntityPropertiesPatch[] = [],
 ): LevelMap {
   const result = structuredClone(level);
   for (const patch of patches) {
-    const object = result.objects.find(
+    const entity = result.entities.find(
       (candidate) =>
         candidate.x === patch.x &&
         candidate.y === patch.y &&
         (patch.type === undefined || candidate.type === patch.type),
     );
-    if (!object) continue;
-    object.properties = {
-      ...(object.properties ?? {}),
+    if (!entity) continue;
+    entity.properties = {
+      ...(entity.properties ?? {}),
       ...patch.properties,
     };
   }

@@ -1,53 +1,36 @@
-import {
-  inspectObjectDefinition,
-  inspectTerrainDefinition,
-  type TileDefinitionInspection,
-} from "@bobby/engine";
+import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine/authoring";
 import { validateEditorLevel } from "../level/validation.js";
 import type { EditorLevel, LevelValidationIssue } from "../level/types.js";
+import { EditorPreview, type EditorCellInspection } from "./EditorPreview.js";
+import type { Cell } from "./entityPlacement.js";
 import type { PaletteItem } from "./paletteCatalog.js";
-import {
-  resolveObjectOwner,
-  type Cell,
-  type ResolvedObject,
-} from "./objectOwners.js";
 
 export interface InspectorModel {
-  document: {
-    name: string;
-    width: number;
-    height: number;
-    objectCount: number;
-    maxMoves?: number;
-  };
-  selection: TileDefinitionInspection;
+  document: { name: string; width: number; height: number; entityCount: number; maxMoves?: number; };
+  selection: EntityCatalogEntry;
   hover: Cell | null;
-  owner: ResolvedObject | null;
-  ownerDefinition: TileDefinitionInspection | null;
+  cell: EditorCellInspection | null;
   issues: LevelValidationIssue[];
 }
 
 export function buildInspectorModel(
   level: EditorLevel,
+  catalog: EntityCatalog,
   hover: Cell | null,
   selection: PaletteItem,
 ): InspectorModel {
-  const owner = hover ? resolveObjectOwner(level, hover.x, hover.y) : null;
+  const preview = new EditorPreview(level, catalog);
   return {
     document: {
       name: level.name,
       width: level.width,
       height: level.height,
-      objectCount: level.objects.length,
+      entityCount: level.entities.length,
       ...(level.rules?.maxMoves ? { maxMoves: level.rules.maxMoves } : {}),
     },
-    selection:
-      selection.kind === "terrain"
-        ? inspectTerrainDefinition(selection.type)
-        : inspectObjectDefinition(selection.type),
+    selection: catalog.require(selection.type),
     hover,
-    owner,
-    ownerDefinition: owner ? inspectObjectDefinition(owner.object.type) : null,
-    issues: validateEditorLevel(level),
+    cell: hover ? preview.inspectCell(hover.x, hover.y) : null,
+    issues: validateEditorLevel(level, catalog),
   };
 }

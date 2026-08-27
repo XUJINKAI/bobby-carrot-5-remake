@@ -3,7 +3,7 @@ import { type EditorLevel, type Cell } from "@bobby/editor";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
-import { siteUrl } from "../../services/assets/gameAssets.js";
+import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
@@ -16,7 +16,7 @@ const props = defineProps<{
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
-const atlasUrl = siteUrl("assets/art/hd/ts.png");
+const visualAssets = gameAssets();
 let session: GameSession | null = null;
 const paletteOpen = ref(false);
 const inspectorOpen = ref(false);
@@ -41,19 +41,7 @@ async function togglePlay(): Promise<void> {
       canvas,
       level: page.levelMap.value,
       gameOptions: {
-        assets: {
-          atlasUrl,
-          animationAtlasUrl: siteUrl("assets/art/hd/ta.png"),
-          bobbyUrls: {
-            left: siteUrl("assets/art/hd/b0.png"),
-            right: siteUrl("assets/art/hd/b1.png"),
-            up: siteUrl("assets/art/hd/b2.png"),
-            down: siteUrl("assets/art/hd/b3.png"),
-          },
-          mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
-          kiteUrl: siteUrl("assets/art/hd/b9.png"),
-          sourceTileSize: 48,
-        },
+        assets: visualAssets,
         audio: props.audio,
         debug: false,
       },
@@ -102,12 +90,21 @@ function handleKeydown(event: KeyboardEvent): void {
   } else if (modifier && event.key.toLowerCase() === "y") {
     event.preventDefault();
     page.document.redo();
-  } else if ((event.key === "Delete" || event.key === "Backspace") && page.hover.value) {
+  } else if (
+    (event.key === "Delete" || event.key === "Backspace") &&
+    page.hover.value
+  ) {
     event.preventDefault();
     page.stroke(page.hover.value, 2);
-  } else if ((event.key.toLowerCase() === "q" || event.key.toLowerCase() === "e") && page.hover.value) {
+  } else if (
+    (event.key.toLowerCase() === "q" || event.key.toLowerCase() === "e") &&
+    page.hover.value
+  ) {
     event.preventDefault();
-    page.transform(page.hover.value, event.key.toLowerCase() === "q" ? -1 : 1);
+    page.transform(
+      page.hover.value,
+      event.key.toLowerCase() === "q" ? -1 : 1,
+    );
   }
 }
 
@@ -142,7 +139,11 @@ function onBeforeUnload(event: BeforeUnloadEvent): void {
   event.preventDefault();
 }
 
-function transform(cell: Cell, step: number, result: (changed: boolean) => void): void {
+function transform(
+  cell: Cell,
+  step: number,
+  result: (changed: boolean) => void,
+): void {
   result(page.transform(cell, step));
 }
 
@@ -165,7 +166,11 @@ onBeforeUnmount(() => {
 });
 
 function isTextInput(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
 }
 </script>
 
@@ -180,12 +185,13 @@ function isTextInput(target: EventTarget | null): boolean {
     <EditorWorkspace
       :level="page.snapshot.value.level as EditorLevel"
       :revision="page.snapshot.value.revision"
+      :placement-sequence="page.snapshot.value.placementSequence"
       :selection="page.selection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
       :palette-size="page.paletteSize.value"
       :playing="page.playing.value"
-      :atlas-url="atlasUrl"
+      :visual-assets="visualAssets"
       @select="page.selection.value = $event"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"
@@ -194,8 +200,7 @@ function isTextInput(target: EventTarget | null): boolean {
       @end-stroke="page.document.commitTransaction()"
       @transform="transform"
       @resize="page.resize"
-      @property="(x, y, key, value) => page.updateProperty({ x, y }, key, value)"
-      @trait="(x, y, trait, enabled) => page.updateTrait({ x, y }, trait, enabled)"
+      @property="(entityIndex, key, value) => page.updateProperty(entityIndex, key, value)"
       @max-moves="page.setMaxMoves"
     />
     <EditorFileDialog
