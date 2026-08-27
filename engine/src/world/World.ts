@@ -250,7 +250,7 @@ export class World {
           state.forced = null;
         } else {
           dynamicTarget.settled = false;
-          dynamicTarget.direction = null;
+          dynamicTarget.direction = tideDirection ?? direction;
           state.forced = {
             kind: "leaf",
             direction: tideDirection ?? direction,
