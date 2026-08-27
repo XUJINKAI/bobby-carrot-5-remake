@@ -1,8 +1,7 @@
 import {
-  ObjectId,
+  EntityTypeId,
+  type EntityType,
   type LevelMap,
-  type LevelObject,
-  type ObjectType,
 } from "@bobby/model";
 import {
   parseAdventureLevelId,
@@ -11,12 +10,12 @@ import {
 import { normalizeAdventureSave, type AdventureSave } from "./save.js";
 import {
   augmentAdventureLevel,
-  type AdventureObjectPropertiesPatch,
+  type AdventureEntityPropertiesPatch,
 } from "./augment.js";
 
 export type PersistentRewardType =
-  | typeof ObjectId.BONUS_COIN
-  | typeof ObjectId.GOLDEN_CARROT;
+  | typeof EntityTypeId.BONUS_COIN
+  | typeof EntityTypeId.GOLDEN_CARROT;
 
 export interface PersistentReward {
   id: string;
@@ -32,15 +31,15 @@ export function persistentRewardsForLevel(
 ): PersistentReward[] {
   const parsed = parseAdventureLevelId(levelId);
   if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
-  return level.objects.flatMap((object) => {
-    if (!isPersistentRewardType(object.type)) return [];
+  return level.entities.flatMap((entity) => {
+    if (!isPersistentRewardType(entity.type)) return [];
     return [
       {
-        id: persistentRewardId(parsed.id, object.type, object.x, object.y),
+        id: persistentRewardId(parsed.id, entity.type, entity.x, entity.y),
         levelId: parsed.id,
-        type: object.type,
-        x: object.x,
-        y: object.y,
+        type: entity.type,
+        x: entity.x,
+        y: entity.y,
       },
     ];
   });
@@ -59,7 +58,7 @@ export function createAdventureLevelInstance(
   levelId: string,
   level: LevelMap,
   save: AdventureSave,
-  propertyPatches: readonly AdventureObjectPropertiesPatch[] = [],
+  propertyPatches: readonly AdventureEntityPropertiesPatch[] = [],
 ): LevelMap {
   const augmented = augmentAdventureLevel(structuredClone(level), propertyPatches);
   const claimed = new Set(normalizeAdventureSave(save).claimedRewards);
@@ -71,9 +70,9 @@ export function createAdventureLevelInstance(
   );
   return {
     ...augmented,
-    objects: augmented.objects.filter((object) => {
-      if (!isPersistentRewardType(object.type)) return true;
-      const id = rewards.get(`${object.x},${object.y}:${object.type}`);
+    entities: augmented.entities.filter((entity) => {
+      if (!isPersistentRewardType(entity.type)) return true;
+      const id = rewards.get(`${entity.x},${entity.y}:${entity.type}`);
       return !id || !claimed.has(id);
     }),
   };
@@ -82,7 +81,7 @@ export function createAdventureLevelInstance(
 export function claimPersistentReward(
   save: AdventureSave,
   levelId: string,
-  type: ObjectType,
+  type: EntityType,
   x: number,
   y: number,
 ): AdventureSave {
@@ -93,8 +92,8 @@ export function claimPersistentReward(
   const next = structuredClone(normalizeAdventureSave(save));
   if (next.claimedRewards.includes(id)) return next;
   next.claimedRewards.push(id);
-  if (type === ObjectId.BONUS_COIN) next.economy.bonusCoins += 1;
-  else if (type === ObjectId.GOLDEN_CARROT) next.economy.goldenCarrots += 1;
+  if (type === EntityTypeId.BONUS_COIN) next.economy.bonusCoins += 1;
+  else if (type === EntityTypeId.GOLDEN_CARROT) next.economy.goldenCarrots += 1;
   return normalizeAdventureSave(next);
 }
 
@@ -121,7 +120,7 @@ export function spendGoldenCarrots(
 }
 
 function isPersistentRewardType(
-  type: ObjectType,
+  type: EntityType,
 ): type is PersistentRewardType {
-  return type === ObjectId.BONUS_COIN || type === ObjectId.GOLDEN_CARROT;
+  return type === EntityTypeId.BONUS_COIN || type === EntityTypeId.GOLDEN_CARROT;
 }
