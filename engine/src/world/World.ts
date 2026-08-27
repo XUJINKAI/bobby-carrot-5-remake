@@ -1,23 +1,7 @@
 import type { LevelMap, LevelObject, LevelObjectProperties, LevelObjectTraits, ObjectType, TerrainType } from "@bobby/model";
 import { DIRECTIONS, EMPTY_OBJECT, ObjectId, Terrain, type Direction } from "../mechanics/ids.js";
 import { isWaterTerrain, passageFor, type PassageResult } from "../mechanics/rules.js";
-import {
-  cloudGridForObject,
-  inspectObjectDefinition,
-  inspectTerrainDefinition,
-  objectHasTrait,
-  reflectFireForTerrain,
-  runObjectEnter,
-  runObjectLeave,
-  runTerrainEnter,
-  runTerrainLeave,
-  terrainHasTrait,
-  tideDirectionForTerrain,
-  windmillInfoForObject,
-  windSwitchIndexForTerrain,
-  windSwitchPeerForTerrain,
-  type TileDefinitionInspection,
-} from "../mechanics/definitions.js";
+import { cloudGridForObject, inspectObjectDefinition, inspectTerrainDefinition, objectHasTrait, reflectFireForTerrain, runObjectEnter, runObjectLeave, runTerrainEnter, runTerrainLeave, terrainHasTrait, tideDirectionForTerrain, windmillInfoForObject, windSwitchIndexForTerrain, windSwitchPeerForTerrain, type TileDefinitionInspection } from "../mechanics/definitions.js";
 import type { BehaviorRuntimeContext } from "../mechanics/behaviors.js";
 import type { DynamicEntity, Point, ProfileCapabilities, RuntimeState, WorldSnapshot } from "./RuntimeState.js";
 export type { Point, WorldSnapshot } from "./RuntimeState.js";
@@ -266,7 +250,7 @@ export class World {
           state.forced = null;
         } else {
           dynamicTarget.settled = false;
-          dynamicTarget.direction = tideDirection ?? direction;
+          dynamicTarget.direction = null;
           state.forced = {
             kind: "leaf",
             direction: tideDirection ?? direction,
