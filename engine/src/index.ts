@@ -40,6 +40,7 @@ export type {
   WorldEvent,
 } from "./world/WorldTypes.js";
 export type {
+  ForcedKind,
   GlobalState,
   InventoryState,
   ProfileCapabilities,
@@ -95,7 +96,11 @@ export {
   behaviorRegistry,
   createBuiltinBehaviorRegistry,
 } from "./entities/behaviors.js";
-export type { EntityModule } from "./entities/EntityModule.js";
+export {
+  defineEntityModule,
+  type EntityBehaviorBinding,
+  type EntityModule,
+} from "./entities/EntityModule.js";
 export {
   builtinEntityDefinitions,
   builtinEntityModules,
@@ -141,3 +146,15 @@ export type {
   VisualQuery,
   VisualResolveContext,
 } from "./visual/VisualDefinition.js";
+export {
+  applyMotionEasing,
+  mergePresentationTuning,
+  type MotionEasing,
+  type MotionPresentationTuning,
+  type PresentationTuning,
+  type PresentationTuningOverride,
+} from "./visual/tuning/PresentationTuning.js";
+export {
+  ORIGINAL_TUNING,
+  resolveOriginalTuning,
+} from "./visual/tuning/original.js";

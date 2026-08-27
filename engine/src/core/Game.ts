@@ -12,7 +12,16 @@ import {
 } from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { EntityVisualRuntimeState } from "../visual/VisualDefinition.js";
-import type { ProfileCapabilities } from "../world/GlobalState.js";
+import {
+  applyMotionEasing,
+  type PresentationTuning,
+  type PresentationTuningOverride,
+} from "../visual/tuning/PresentationTuning.js";
+import { resolveOriginalTuning } from "../visual/tuning/original.js";
+import type {
+  ForcedKind,
+  ProfileCapabilities,
+} from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
 import type {
   CellInspection,
@@ -23,6 +32,7 @@ import type {
 export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
+  tuning?: PresentationTuningOverride;
 }
 
 export interface GameOptions {
@@ -62,6 +72,7 @@ export class Game {
   readonly inputController: InputController | null;
   private readonly gameplayHud: GameplayHud | null;
   private readonly profile: Partial<ProfileCapabilities>;
+  private readonly tuning: PresentationTuning;
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
   private readonly history: WorldSnapshot[] = [];
@@ -82,6 +93,7 @@ export class Game {
     this.renderer = new Renderer(options.canvas, options.assets);
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
+    this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.debugValue = options.debug ?? false;
     this.renderer.setDebug(this.debugValue);
     const hud = options.runtime?.hud;
@@ -325,7 +337,7 @@ export class Game {
       toY: result.to.y,
       direction,
       startedAt: performance.now(),
-      duration: this.motionDuration(this.world.forcedKind),
+      duration: this.motionDuration(this.world.forcedKind as ForcedKind | null),
       forced,
     };
     this.visualRuntime.set(this.world.playerId, {
@@ -340,30 +352,27 @@ export class Game {
     return result;
   }
 
-  private motionDuration(forcedKind: string | null): number {
-    let duration = 132;
-    if (forcedKind === "speed") duration = 70;
-    else if (forcedKind === "ice") duration = 88;
-    else if (forcedKind === "flight") duration = 94;
-    else if (forcedKind === "leaf") duration = 115;
-    else if (forcedKind === "mower-exit") duration = 105;
-    if (this.world.state.profile.speedShoes) duration *= 0.76;
+  private motionDuration(forcedKind: ForcedKind | null): number {
+    const motion = this.tuning.motion;
+    let duration = forcedKind ? motion.forcedMs[forcedKind] : motion.normalMs;
+    if (this.world.state.profile.speedShoes) duration *= motion.speedShoesScale;
     return duration;
   }
 
   private updateMotion(timestamp: number): void {
     if (!this.motion || !this.worldValue) return;
-    const progress = Math.min(
+    const rawProgress = Math.min(
       1,
       Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration),
     );
+    const progress = applyMotionEasing(rawProgress, this.tuning.motion.easing);
     this.visualRuntime.set(this.world.playerId, {
       offsetX: (this.motion.fromX - this.motion.toX) * (1 - progress),
       offsetY: (this.motion.fromY - this.motion.toY) * (1 - progress),
       moving: true,
       progress,
     });
-    if (progress >= 1) this.finishMotion();
+    if (rawProgress >= 1) this.finishMotion();
   }
 
   private finishMotion(): void {
