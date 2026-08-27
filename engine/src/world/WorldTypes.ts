@@ -1,8 +1,17 @@
-import type { LevelObject, ObjectType, TerrainType } from "@bobby/model";
-import type { Direction } from "../mechanics/ids.js";
-import type { PassageResult } from "../mechanics/rules.js";
-import type { TileDefinitionInspection } from "../mechanics/definitions.js";
-import type { DynamicEntity, Point } from "./RuntimeState.js";
+import type { Direction, EntityType } from "@bobby/model";
+import type { EntityId, EntityInstance } from "./entity/EntityInstance.js";
+import type { EntityPresence } from "./spatial/EntityPresence.js";
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface PassageResult {
+  passable: boolean;
+  reason: string;
+  confidence: "confirmed" | "inferred";
+}
 
 export interface WorldEvent {
   type:
@@ -14,7 +23,7 @@ export interface WorldEvent {
     | "collect-bean"
     | "collect-golden-carrot"
     | "collect-bonus-coin"
-    | "object-interaction"
+    | "entity-interaction"
     | "dialog"
     | "board-mower"
     | "leave-mower"
@@ -33,9 +42,11 @@ export interface WorldEvent {
   messageId?: string;
   x?: number;
   y?: number;
-  objectType?: ObjectType;
+  entityId?: EntityId;
+  entityType?: EntityType;
   action?: string;
 }
+
 export interface MoveResult {
   moved: boolean;
   from: Point;
@@ -47,15 +58,16 @@ export interface MoveResult {
   dead: boolean;
   completed: boolean;
 }
+
+export interface PresenceInspection {
+  presence: EntityPresence;
+  entity: EntityInstance;
+}
+
 export interface TileInspection {
   x: number;
   y: number;
-  terrainType: TerrainType;
-  terrainDefinition: TileDefinitionInspection;
-  object: LevelObject | null;
-  objectType: ObjectType;
-  objectDefinition: TileDefinitionInspection;
-  dynamicEntity: DynamicEntity | null;
+  presences: PresenceInspection[];
+  top: PresenceInspection | null;
   isPlayer: boolean;
-  isStart: boolean;
 }
