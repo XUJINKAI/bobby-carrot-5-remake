@@ -1,7 +1,8 @@
 import type { Direction, LevelMap, WinCondition } from "@bobby/model";
-import { behaviorRegistry as builtinBehaviors } from "../entities/behaviors.js";
-import { entityRegistry as builtinEntities } from "../entities/registry.js";
-import { SpatialVisualQuery } from "../visual/SpatialVisualQuery.js";
+import {
+  behaviorRegistry as builtinBehaviors,
+  entityRegistry as builtinEntities,
+} from "../entities/registry.js";
 import {
   createGlobalState,
   type GlobalState,
@@ -52,7 +53,6 @@ export class World {
   readonly entities: EntityStore;
   readonly spatial: SpatialIndex;
   readonly query: WorldQueryApi;
-  readonly visualQuery: SpatialVisualQuery;
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
   readonly rules: LevelMap["rules"];
@@ -79,7 +79,6 @@ export class World {
       this.registry,
       () => this.state,
     );
-    this.visualQuery = new SpatialVisualQuery(this.entities, this.spatial);
     const players = this.query.entitiesWithTrait("player");
     if (players.length !== 1)
       throw new Error(

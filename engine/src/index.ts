@@ -92,17 +92,15 @@ export type {
   PassageResult,
 } from "./world/behavior/Behavior.js";
 export {
-  behaviorRegistry,
-  createBuiltinBehaviorRegistry,
-} from "./entities/behaviors.js";
-export {
   defineEntityModule,
   type EntityBehaviorBinding,
   type EntityModule,
 } from "./entities/EntityModule.js";
 export {
+  behaviorRegistry,
   builtinEntityDefinitions,
   builtinEntityModules,
+  createBuiltinBehaviorRegistry,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
   entityRegistry,

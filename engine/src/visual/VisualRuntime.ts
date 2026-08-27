@@ -1,10 +1,8 @@
 import { Camera } from "../render/Camera.js";
-import {
-  buildRenderScene,
-  type RenderScene,
-} from "../render/RenderScene.js";
+import type { RenderScene } from "../render/RenderScene.js";
 import type { World } from "../world/World.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
+import { buildVisualScene } from "./VisualSceneBuilder.js";
 import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
 
@@ -42,6 +40,6 @@ export class VisualRuntime {
       world.width,
       world.height,
     );
-    return buildRenderScene(world, this.visuals, this.entityRuntime);
+    return buildVisualScene(world, this.visuals, this.entityRuntime);
   }
 }
