@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "name": "Footprint Lab",
+  "author": "Bobby Carrot 5 Remake",
+  "description": "验证多格 Entity footprint、Presence role 与 cover 覆盖。",
+  "width": 9,
+  "height": 5,
+  "rules": { "win": { "type": "reach", "trait": "exit" } },
+  "entities": [
+    { "type": "start", "x": 0, "y": 2 },
+    { "type": "bobby", "x": 0, "y": 2, "direction": "right" },
+    { "type": "ground-c", "x": 1, "y": 2 },
+    { "type": "ground-c", "x": 2, "y": 2 },
+    { "type": "ground-c", "x": 3, "y": 2 },
+    { "type": "ground-c", "x": 4, "y": 2 },
+    { "type": "ground-c", "x": 5, "y": 2 },
+    { "type": "ground-c", "x": 6, "y": 2 },
+    { "type": "ground-c", "x": 7, "y": 2 },
+    { "type": "exit", "x": 8, "y": 2 },
+    { "type": "dragon", "x": 3, "y": 1, "direction": "right" },
+    { "type": "ice-block", "x": 5, "y": 1, "state": { "meltStage": 0 } }
+  ]
+}
