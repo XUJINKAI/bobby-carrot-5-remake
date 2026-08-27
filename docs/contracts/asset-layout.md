@@ -56,11 +56,19 @@ assets/
 
 `maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
 
-filter option 的图标使用语义引用：
+filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
 
 ```json
-{ "type": "terrain", "id": "water-animated" }
-{ "type": "object", "id": "carrot" }
+{ "type": "entity", "entity": { "type": "carrot" } }
+{ "type": "entity", "entity": { "type": "tide", "direction": "right" } }
+{ "type": "entity", "entity": { "type": "mirror", "state": { "variant": 1 } } }
+```
+
+`entity` 使用与 `LevelEntity` 相同的 `type / direction / properties / state` 语义，但作为预览描述不包含坐标。Explore 应通过 Engine VisualDefinition/preview 能力绘制它，而不是按 ID 自己维护一套 atlas 或 CSS 映射。
+
+纯 UI 图标仍可使用：
+
+```json
 { "type": "image", "src": "assets/..." }
 { "type": "text", "value": "B" }
 ```
@@ -83,7 +91,7 @@ Collection JSON 不保存 atlas 坐标。
 
 Play route 不需要 collection index。地图的 `meta.next` 提供同 collection 下一张导航。
 
-MapDocument 的 gameplay 部分遵守 LevelMap 的初始位置合同：必须在 `playerStart` 与 `start` terrain 两种来源中恰好选择一种。具体规则见 `docs/contracts/level-format.md`。
+MapDocument 的 gameplay 部分统一是 Entity Map v1。Bobby 是 Entity；Start 如果存在也是普通 surface Entity，不承担出生语义。具体规则见 `docs/contracts/level-format.md`。
 
 ## `adventure/index.json`
 
@@ -139,7 +147,7 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。Sokoban 不使用 `start` terrain，而是把玩家位置写入 LevelMap 顶层 `playerStart`：标准 `@` 的底层 terrain 是普通地面，标准 `+` 的底层 terrain 仍是 `custom:push-goal`。这样出生位置与目标语义互不耦合。
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成 `ground-c` surface，目标生成 `push-goal` surface，箱子生成带 `pushable` Trait 的 Crumbly Rock，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
 `custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
