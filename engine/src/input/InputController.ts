@@ -66,7 +66,7 @@ export class InputController {
     private readonly game: Game,
     options: InputControllerOptions = {},
   ) {
-    this.canvas = game.renderer.canvas;
+    this.canvas = game.canvas;
     this.capabilities = {
       keyboard: options.keyboard ?? true,
       pointer: options.pointer ?? true,

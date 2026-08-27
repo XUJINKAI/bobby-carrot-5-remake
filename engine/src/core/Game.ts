@@ -123,6 +123,10 @@ export class Game {
     return this.worldValue !== null;
   }
 
+  get canvas(): HTMLCanvasElement {
+    return this.renderer.canvas;
+  }
+
   get state(): GameplayState {
     const world = this.world;
     const state = world.state;
@@ -307,7 +311,7 @@ export class Game {
     clientY: number,
   ): CellInspection | null {
     if (!this.worldValue) return null;
-    const rect = this.renderer.canvas.getBoundingClientRect();
+    const rect = this.canvas.getBoundingClientRect();
     const cell = this.visual.camera.screenToTile(
       clientX - rect.left,
       clientY - rect.top,
