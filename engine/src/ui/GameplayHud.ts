@@ -11,7 +11,7 @@ export interface GameplayHudOptions {
   timedChallenge?: boolean;
 }
 
-/** Engine 基础 HUD：只呈现地图内状态，并统一把已获得道具锚定在右上角。 */
+/** Engine 基础 HUD：只呈现公开 gameplay state，不读取 World。 */
 export class GameplayHud {
   private readonly game: Game;
   private readonly root: HTMLDivElement;
@@ -87,14 +87,11 @@ export class GameplayHud {
 
   render(): void {
     if (!this.game.hasLevel || this.root.hidden) return;
-    const state = this.game.world.state;
-    const remaining = this.game.timedChallengeRemainingMs;
+    const state = this.game.state;
+    const remaining = state.timedChallengeRemainingMs;
     const signature = JSON.stringify({
-      objectiveMode: state.objectiveMode,
-      objectiveRemaining: this.game.world.objectiveRemaining,
-      superKey: state.profile.superKey,
-      temporaryKey: state.profile.temporaryKey,
-      speedShoes: state.profile.speedShoes,
+      objective: state.objective,
+      profile: state.profile,
       inventory: state.inventory,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
       bonusCoinsInLevel: state.bonusCoinsInLevel,
@@ -107,9 +104,9 @@ export class GameplayHud {
     if (this.options.objective !== false) {
       this.objective.append(
         this.chip(
-          state.objectiveMode === "carrot" ? "目标胡萝卜" : "目标巢穴",
-          this.sprite(state.objectiveMode === "carrot" ? "carrot" : "egg"),
-          String(this.game.world.objectiveRemaining),
+          state.objective.mode === "carrot" ? "目标胡萝卜" : "目标巢穴",
+          this.sprite(state.objective.mode === "carrot" ? "carrot" : "egg"),
+          String(state.objective.remaining),
         ),
       );
     }

@@ -1,4 +1,7 @@
-import type { EntityDefinition, EntityRegistry } from "@bobby/engine";
+import type {
+  EntityDefinition,
+  EntityRegistry,
+} from "@bobby/engine/authoring";
 import { validateEditorLevel } from "../level/validation.js";
 import type { EditorLevel, LevelValidationIssue } from "../level/types.js";
 import { EditorPreview, type EditorCellInspection } from "./EditorPreview.js";

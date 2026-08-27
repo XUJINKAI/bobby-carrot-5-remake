@@ -1,4 +1,4 @@
-import type { EntityDefinition, EntityRegistry } from "@bobby/engine";
+import type { EntityDefinition, EntityRegistry } from "@bobby/engine/authoring";
 import type { EntityType } from "@bobby/model";
 
 export interface PaletteItem {

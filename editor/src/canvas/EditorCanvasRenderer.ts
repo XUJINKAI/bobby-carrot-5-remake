@@ -8,7 +8,7 @@ import {
   type VisualAssetSources,
   type VisualComposition,
   type VisualRegistry,
-} from "@bobby/engine";
+} from "@bobby/engine/authoring";
 import {
   entityCells,
   resolvePlacement,
@@ -29,7 +29,6 @@ export interface EditorCanvasRenderState {
   selection: PaletteItem;
   hover: Cell | null;
   replacing: boolean;
-  /** 下一次成功放置的会话序号，用于 persisted visual variant 预览。 */
   placementSequence: number;
   viewport: Readonly<EditorViewportState>;
 }

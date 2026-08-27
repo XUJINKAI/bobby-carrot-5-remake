@@ -15,23 +15,24 @@ export interface RenderVisualRuntime {
 export type RenderVisualRuntimeState = ReadonlyMap<EntityId, RenderVisualRuntime>;
 
 export interface RenderItem {
-  entity: Readonly<EntityInstance>;
   presence: Readonly<EntityPresence>;
   composition: VisualComposition;
-  /** 实际绘制位置，而不是 persisted anchor / Presence cell。 */
   visualX: number;
   visualY: number;
 }
 
-/**
- * World -> VisualDefinition -> RenderItem 的唯一组装入口。
- * Renderer 不再边扫描 Cell 边画，因此逻辑格顺序不会影响移动中的遮挡关系。
- */
+export interface RenderScene {
+  worldWidth: number;
+  worldHeight: number;
+  items: readonly RenderItem[];
+}
+
+/** World -> VisualDefinition -> RenderScene 的唯一组装入口。Renderer 只消费结果。 */
 export function buildRenderScene(
   world: World,
   visuals: VisualRegistry,
   runtime: RenderVisualRuntimeState,
-): readonly RenderItem[] {
+): RenderScene {
   const items: RenderItem[] = [];
   for (let y = 0; y < world.height; y += 1) {
     for (let x = 0; x < world.width; x += 1) {
@@ -48,7 +49,6 @@ export function buildRenderScene(
         });
         if (!composition) continue;
         items.push({
-          entity,
           presence,
           composition,
           visualX: x + (visualRuntime?.offsetX ?? 0),
@@ -57,13 +57,13 @@ export function buildRenderScene(
       }
     }
   }
-  return sortRenderItems(items);
+  return {
+    worldWidth: world.width,
+    worldHeight: world.height,
+    items: sortRenderItems(items),
+  };
 }
 
-/**
- * surface 是地板层，必须在所有可移动/可遮挡实体之前完成绘制。
- * 非 surface 按真实视觉脚底 Y 排序；同深度再按 Cell Stack 和稳定 ID 排序。
- */
 export function sortRenderItems(items: readonly RenderItem[]): readonly RenderItem[] {
   return [...items].sort(compareRenderItems);
 }
@@ -78,7 +78,7 @@ export function compareRenderItems(a: RenderItem, b: RenderItem): number {
       a.presence.cell.y - b.presence.cell.y ||
       a.presence.cell.x - b.presence.cell.x ||
       a.presence.stackOrder - b.presence.stackOrder ||
-      a.entity.id - b.entity.id
+      a.presence.entityId - b.presence.entityId
     );
   }
 
@@ -87,6 +87,6 @@ export function compareRenderItems(a: RenderItem, b: RenderItem): number {
     stackBandOrder(a.presence.stackBand) - stackBandOrder(b.presence.stackBand) ||
     a.presence.stackOrder - b.presence.stackOrder ||
     a.visualX - b.visualX ||
-    a.entity.id - b.entity.id
+    a.presence.entityId - b.presence.entityId
   );
 }

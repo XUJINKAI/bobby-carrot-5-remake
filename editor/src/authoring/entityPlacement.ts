@@ -4,7 +4,7 @@ import {
   type EntityDefinition,
   type EntityRegistry,
   type VisualRegistry,
-} from "@bobby/engine";
+} from "@bobby/engine/authoring";
 import type {
   EntityProperties,
   EntityState,
@@ -35,7 +35,6 @@ export interface PlacementOverrides {
 }
 
 export interface PlacementResolveOptions {
-  /** 编辑会话中下一次成功放置的序号，只参与 Visual 确定性初始化。 */
   placementSequence?: number;
   visuals?: VisualRegistry;
 }

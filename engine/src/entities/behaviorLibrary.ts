@@ -83,25 +83,6 @@ const statefulBlock: Behavior = {
   },
 };
 
-const portal: Behavior = {
-  id: "portal",
-  onEnter({ query, actor, self, commands }) {
-    const channel = self.entity.properties?.channel;
-    const target = query.entitiesWithTrait("portal").find(
-      (entity) =>
-        entity.id !== self.entity.id && entity.properties?.channel === channel,
-    );
-    if (!target) return;
-    commands.move(actor.id, target.anchor.x, target.anchor.y);
-    commands.emit({
-      type: "teleport",
-      entityId: self.entity.id,
-      x: target.anchor.x,
-      y: target.anchor.y,
-    });
-  },
-};
-
 const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   collectible: collect,
   hazard,
@@ -109,10 +90,9 @@ const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   shovelable,
   water: waterRequiresOverlay,
   "stateful-block": statefulBlock,
-  portal,
 };
 
-/** EntityModule 组装时把 trait 语义解析为具体 Behavior + trait binding。 */
+/** Shared trait behaviors only. Entity-specific behaviors stay beside their EntityModule. */
 export function behaviorBindingsForDefinition(
   definition: EntityDefinition,
 ): readonly EntityBehaviorBinding[] {

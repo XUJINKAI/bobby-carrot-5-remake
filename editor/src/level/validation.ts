@@ -1,4 +1,4 @@
-import type { EntityRegistry } from "@bobby/engine";
+import type { EntityRegistry } from "@bobby/engine/authoring";
 import type { WinCondition } from "@bobby/model";
 import type { EditorLevel, LevelValidationIssue } from "./types.js";
 

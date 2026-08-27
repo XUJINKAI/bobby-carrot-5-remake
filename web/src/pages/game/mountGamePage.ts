@@ -164,8 +164,7 @@ export async function renderGamePage(
   const applyAdventureCamera = (): void => {
     if (mode !== "adventure") return;
     const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const sourceTile = game.renderer.camera.sourceTileSize;
-    const minZoom = Math.max(0.72, width / (sourceTile * 9));
+    const minZoom = Math.max(0.72, width / (game.sourceTileSize * 9));
     game.setZoomLimits(minZoom, 2.75);
     if (game.zoom < minZoom) game.setZoom(minZoom);
   };
@@ -210,8 +209,8 @@ export async function renderGamePage(
 
   const renderResult = (): void => {
     if (!game.hasLevel || game.isAnimating) return;
-    const world = game.world;
-    const kind = world.dead ? "death" : world.completed ? "complete" : null;
+    const state = game.state;
+    const kind = state.status === "dead" ? "death" : state.status === "won" ? "complete" : null;
     if (!kind) {
       closeResult();
       return;
@@ -229,9 +228,9 @@ export async function renderGamePage(
         markExploreMapCompleted(identity.collection, identity.id);
         nextId = mapMeta?.next;
       }
-      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${world.state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${world.state.goldenCarrotsInLevel}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${state.goldenCarrotsInLevel}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
     } else {
-      resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(world.state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
     gameResult.hidden = false;
   };
@@ -239,7 +238,7 @@ export async function renderGamePage(
   const update = (): void => {
     processAdventureRewards();
     if (productStats && game.hasLevel) {
-      productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.world.state.moves} STEPS`;
+      productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
     }
     debugPanel.classList.toggle("visible", mode === "explore" && game.debug);
     const move = game.lastMove;

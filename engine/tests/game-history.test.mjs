@@ -21,7 +21,7 @@ test("Game undo 与 redo往返恢复 canonical World snapshot", () => {
     },
   ];
   game.future = [];
-  game.visualRuntime = new Map();
+  game.visual = { clear() {} };
   game.render = () => {};
   game.emit = () => {};
 

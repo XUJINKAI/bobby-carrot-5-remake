@@ -20,7 +20,7 @@ import {
 import {
   createBuiltinEntityRegistry,
   type EntityFieldDefinition,
-} from "@bobby/engine";
+} from "@bobby/engine/authoring";
 import {
   EntityTypeId,
   type Direction,

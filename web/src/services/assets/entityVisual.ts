@@ -1,7 +1,7 @@
 import {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
-} from "@bobby/engine";
+} from "@bobby/engine/authoring";
 import { gameAssets, siteUrl } from "./gameAssets.js";
 
 export function entityVisualStyle(

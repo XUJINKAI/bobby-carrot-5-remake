@@ -4,19 +4,16 @@ export function formatTileInspection(
   cell: CellInspection,
   game: Game,
 ): string {
-  const world = game.world;
+  const state = game.state;
   const lines = [`Cell (${cell.cell.x}, ${cell.cell.y})`];
   if (cell.presences.length === 0) {
     lines.push("Stack: implicit Void");
   } else {
     lines.push("Stack:");
     for (const presence of cell.presences) {
-      const definition = world.definition(presence.entityId);
       lines.push(
         `  ${presence.stackBand}: ${presence.type}#${presence.entityId}${presence.role ? `:${presence.role}` : ""}`,
-        `    name: ${definition.presentation.name}`,
         `    traits: ${presence.traits.length ? presence.traits.join(", ") : "none"}`,
-        `    behaviors: ${definition.behaviors?.length ? definition.behaviors.join(", ") : "none"}`,
       );
       if (presence.state) {
         lines.push(`    state: ${JSON.stringify(presence.state)}`);
@@ -27,12 +24,12 @@ export function formatTileInspection(
     `Top: ${cell.topPresence ? `${cell.topPresence.type}#${cell.topPresence.entityId}` : "void"}`,
     `Player here: ${cell.playerHere}`,
     "",
-    `Bobby: (${world.player.x}, ${world.player.y}) · facing=${world.facing}`,
-    `Forced: ${world.forcedKind ?? "none"} / ${world.forcedDirection ?? "none"}`,
-    `Mower: ${world.ridingMower}`,
-    `Objectives: ${world.state.objectiveRemaining}/${world.state.objectiveTotal}`,
-    `Moves: ${world.state.moves}`,
-    `Inventory: gas=${world.state.inventory.gas} kite=${world.state.inventory.kite} shovel=${world.state.inventory.shovel} beans=${world.state.inventory.beans}`,
+    `Bobby: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
+    `Forced: ${state.forced?.kind ?? "none"} / ${state.forced?.direction ?? "none"}`,
+    `Mower: ${state.ridingMower}`,
+    `Objectives: ${state.objective.remaining}/${state.objective.total}`,
+    `Moves: ${state.moves}`,
+    `Inventory: gas=${state.inventory.gas} kite=${state.inventory.kite} shovel=${state.inventory.shovel} beans=${state.inventory.beans}`,
   );
   return lines.join("\n");
 }

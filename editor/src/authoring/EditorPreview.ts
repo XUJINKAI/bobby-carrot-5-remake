@@ -5,7 +5,7 @@ import {
   type EntityId,
   type EntityPresence,
   type EntityRegistry,
-} from "@bobby/engine";
+} from "@bobby/engine/authoring";
 import type { LevelEntity } from "@bobby/model";
 import type { EditorLevel, EntityRef } from "../level/types.js";
 

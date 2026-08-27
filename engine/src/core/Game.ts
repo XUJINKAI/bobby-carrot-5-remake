@@ -1,17 +1,14 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
+import { visualRegistry } from "../entities/registry.js";
 import {
   InputController,
   type InputControllerOptions,
 } from "../input/InputController.js";
-import {
-  Renderer,
-  type RendererAssets,
-  type VisualRuntimeState,
-} from "../render/Renderer.js";
+import { Renderer, type RendererAssets } from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
-import type { EntityVisualRuntimeState } from "../visual/VisualDefinition.js";
+import { VisualRuntime } from "../visual/VisualRuntime.js";
 import {
   applyMotionEasing,
   type PresentationTuning,
@@ -28,6 +25,7 @@ import type {
   MoveResult,
   WorldEvent,
 } from "../world/WorldTypes.js";
+import type { GameplayState } from "./GameplayState.js";
 
 export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
@@ -67,9 +65,10 @@ interface Motion {
 }
 
 export class Game {
-  readonly renderer: Renderer;
   readonly audio: AudioBackend;
   readonly inputController: InputController | null;
+  private readonly renderer: Renderer;
+  private readonly visual: VisualRuntime;
   private readonly gameplayHud: GameplayHud | null;
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly tuning: PresentationTuning;
@@ -79,7 +78,6 @@ export class Game {
   private readonly future: WorldSnapshot[] = [];
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
-  private readonly visualRuntime = new Map<number, EntityVisualRuntimeState>();
   private debugValue = false;
   private motion: Motion | null = null;
   private heldDirection: Direction | null = null;
@@ -91,6 +89,10 @@ export class Game {
 
   constructor(options: GameOptions) {
     this.renderer = new Renderer(options.canvas, options.assets);
+    this.visual = new VisualRuntime(
+      visualRegistry,
+      options.assets.sourceTileSize ?? 48,
+    );
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
@@ -112,7 +114,7 @@ export class Game {
     this.animationFrame = requestAnimationFrame(this.tick);
   }
 
-  get world(): World {
+  private get world(): World {
     if (!this.worldValue) throw new Error("尚未载入关卡");
     return this.worldValue;
   }
@@ -121,12 +123,42 @@ export class Game {
     return this.worldValue !== null;
   }
 
+  get state(): GameplayState {
+    const world = this.world;
+    const state = world.state;
+    return {
+      status: world.dead ? "dead" : world.completed ? "won" : "playing",
+      deathReason: state.deathReason,
+      moves: state.moves,
+      player: world.player,
+      facing: world.facing,
+      inventory: structuredClone(state.inventory),
+      profile: structuredClone(state.profile),
+      ridingMower: state.ridingMower,
+      objective: {
+        mode: state.objectiveMode,
+        remaining: state.objectiveRemaining,
+        total: state.objectiveTotal,
+      },
+      forced: state.forced ? structuredClone(state.forced) : null,
+      bonusCoinsInLevel: state.bonusCoinsInLevel,
+      goldenCarrotsInLevel: state.goldenCarrotsInLevel,
+      canUndo: this.canUndo,
+      canRedo: this.canRedo,
+      timedChallengeRemainingMs: this.timedChallengeRemainingMs,
+    };
+  }
+
   get debug(): boolean {
     return this.debugValue;
   }
 
   get zoom(): number {
-    return this.renderer.camera.zoom;
+    return this.visual.camera.zoom;
+  }
+
+  get sourceTileSize(): number {
+    return this.visual.camera.sourceTileSize;
   }
 
   get isAnimating(): boolean {
@@ -152,7 +184,7 @@ export class Game {
     this.future.length = 0;
     this.heldDirection = null;
     this.motion = null;
-    this.visualRuntime.clear();
+    this.visual.clear();
     this.lastMove = null;
     this.lastWorldEvents = [];
     await this.renderer.load();
@@ -240,12 +272,12 @@ export class Game {
   }
 
   setZoom(value: number): void {
-    this.renderer.camera.setZoom(value);
+    this.visual.camera.setZoom(value);
     this.render();
   }
 
   setZoomLimits(min: number, max?: number): void {
-    this.renderer.camera.setZoomLimits(min, max);
+    this.visual.camera.setZoomLimits(min, max);
     this.render();
   }
 
@@ -254,7 +286,7 @@ export class Game {
   }
 
   panByScreen(dx: number, dy: number): void {
-    this.renderer.camera.panByScreen(dx, dy);
+    this.visual.camera.panByScreen(dx, dy);
     this.render();
   }
 
@@ -276,7 +308,7 @@ export class Game {
   ): CellInspection | null {
     if (!this.worldValue) return null;
     const rect = this.renderer.canvas.getBoundingClientRect();
-    const cell = this.renderer.camera.screenToTile(
+    const cell = this.visual.camera.screenToTile(
       clientX - rect.left,
       clientY - rect.top,
     );
@@ -284,8 +316,12 @@ export class Game {
   }
 
   render(): void {
-    if (this.worldValue)
-      this.renderer.render(this.worldValue, this.visualRuntime as VisualRuntimeState);
+    if (this.worldValue) {
+      const viewport = this.renderer.measureViewport();
+      this.visual.camera.setViewport(viewport.width, viewport.height);
+      const scene = this.visual.update(this.worldValue);
+      this.renderer.render(scene, this.visual.camera, viewport);
+    }
     this.gameplayHud?.render();
   }
 
@@ -329,7 +365,7 @@ export class Game {
       return result;
     }
 
-    this.renderer.camera.recenterPan();
+    this.visual.camera.recenterPan();
     this.motion = {
       fromX: result.from.x,
       fromY: result.from.y,
@@ -340,7 +376,7 @@ export class Game {
       duration: this.motionDuration(this.world.forcedKind as ForcedKind | null),
       forced,
     };
-    this.visualRuntime.set(this.world.playerId, {
+    this.visual.setEntityState(this.world.playerId, {
       offsetX: result.from.x - result.to.x,
       offsetY: result.from.y - result.to.y,
       moving: true,
@@ -366,7 +402,7 @@ export class Game {
       Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration),
     );
     const progress = applyMotionEasing(rawProgress, this.tuning.motion.easing);
-    this.visualRuntime.set(this.world.playerId, {
+    this.visual.setEntityState(this.world.playerId, {
       offsetX: (this.motion.fromX - this.motion.toX) * (1 - progress),
       offsetY: (this.motion.fromY - this.motion.toY) * (1 - progress),
       moving: true,
@@ -377,7 +413,7 @@ export class Game {
 
   private finishMotion(): void {
     if (!this.motion || !this.worldValue) return;
-    this.visualRuntime.delete(this.world.playerId);
+    this.visual.clearEntityState(this.world.playerId);
     this.motion = null;
     if (this.world.dead || this.world.completed) {
       this.heldDirection = null;
@@ -393,7 +429,7 @@ export class Game {
 
   private resetVisualMotion(): void {
     this.motion = null;
-    this.visualRuntime.clear();
+    this.visual.clear();
   }
 
   private readonly onResize = (): void => {
