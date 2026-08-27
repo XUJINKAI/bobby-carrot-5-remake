@@ -1,10 +1,5 @@
 import { EntityTypeId, type Direction, type LevelEntity } from "@bobby/model";
 import type { EntityDefinition } from "../../world/entity/EntityDefinition.js";
-import {
-  cardinalConnectionMask,
-  resolveCardinalTopology,
-  type AutoConnectShape,
-} from "../../visual/AutoConnect.js";
 import type { VisualDefinition } from "../../visual/VisualDefinition.js";
 
 interface AtlasCell {
@@ -23,15 +18,6 @@ export const BOBBY_VISUAL_ASSETS: Readonly<Record<Direction, string>> = {
   right: "bobby-right",
   up: "bobby-up",
   down: "bobby-down",
-};
-
-const FENCE_ART_INDEX: Record<AutoConnectShape, number> = {
-  isolated: 48,
-  end: 49,
-  straight: 50,
-  corner: 51,
-  tee: 52,
-  cross: 53,
 };
 
 const DIRECT_ART = new Map<string, AtlasCell>([
@@ -139,20 +125,34 @@ function fenceVisualDefinition(): VisualDefinition {
   return {
     id: EntityTypeId.FENCE,
     resolve(context) {
-      const mask = cardinalConnectionMask(
-        context,
-        (_entity, presence) =>
-          presence.traits.includes("fence") || presence.traits.includes("gate"),
-      );
-      const topology = resolveCardinalTopology(mask);
-      const atlas = objectCell(FENCE_ART_INDEX[topology.shape]);
+      const { x, y } = context.presence.cell;
+      const connectedAt = (dx: number, dy: number): boolean =>
+        context.query.presencesAt({ x: x + dx, y: y + dy }).some(
+          (presence) =>
+            presence.traits.includes("fence") ||
+            presence.traits.includes("gate"),
+        );
+
+      // 原版 Fence 视觉只检查左、下、右；上方邻居完全不参与选择。
+      const left = connectedAt(-1, 0);
+      const down = connectedAt(0, 1);
+      const right = connectedAt(1, 0);
+
+      let artIndex = 48;
+      if (!left && down && !right) artIndex = 49;
+      else if (left && !down && !right) artIndex = 50;
+      else if (!left && down && right) artIndex = 51;
+      else if (left && down && !right) artIndex = 52;
+      else if (!left && !down && right) artIndex = 53;
+      // left+right、孤立、left+down+right 等未单独定义的情况统一使用 48。
+
+      const atlas = objectCell(artIndex);
       return {
         layers: [
           {
             kind: "atlas",
             column: atlas.column,
             row: atlas.row,
-            rotate: topology.rotation,
           },
         ],
       };
