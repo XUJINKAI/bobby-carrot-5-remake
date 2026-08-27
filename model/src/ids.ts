@@ -14,6 +14,7 @@ export const EntityTypeId = {
   GROUND_B: "ground-b",
   GROUND_C: "ground-c",
   GROUND_D: "ground-d",
+  START: "start",
   SHOVEL_CLEARED_GROUND: "shovel-cleared-ground",
   ICE: "ice",
   EXIT: "exit",
