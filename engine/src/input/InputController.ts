@@ -11,6 +11,8 @@ interface PointerState {
   startX: number;
   startY: number;
   moved: boolean;
+  discreteMoveIssued: boolean;
+  panPointer: boolean;
 }
 
 export interface InputControllerOptions {
@@ -48,6 +50,18 @@ const KEY_DIRECTION: Record<string, Direction> = {
   arrowright: "right",
   d: "right",
 };
+
+const DISCRETE_DRAG_THRESHOLD = 24;
+
+export function directionForDiscreteDrag(
+  dx: number,
+  dy: number,
+  threshold = DISCRETE_DRAG_THRESHOLD,
+): Direction | null {
+  if (Math.hypot(dx, dy) < threshold) return null;
+  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
+  return dy < 0 ? "up" : "down";
+}
 
 export class InputController {
   private readonly canvas: HTMLCanvasElement;
@@ -213,7 +227,9 @@ export class InputController {
     if (
       !this.enabled ||
       !this.capabilities.pointer ||
-      (!this.capabilities.pan && !this.capabilities.zoom)
+      (!this.capabilities.movement &&
+        !this.capabilities.pan &&
+        !this.capabilities.zoom)
     )
       return;
     if (
@@ -222,6 +238,11 @@ export class InputController {
       event.button !== 1
     )
       return;
+
+    const panPointer = event.pointerType === "mouse" && event.button === 1;
+    const discreteMovePointer = !panPointer && this.capabilities.movement;
+    if (!panPointer && !discreteMovePointer && !this.capabilities.zoom) return;
+
     event.preventDefault();
     this.canvas.setPointerCapture(event.pointerId);
     this.pointers.set(event.pointerId, {
@@ -230,10 +251,15 @@ export class InputController {
       startX: event.clientX,
       startY: event.clientY,
       moved: false,
+      discreteMoveIssued: false,
+      panPointer,
     });
     if (this.capabilities.zoom && this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
+      for (const pointer of this.pointers.values()) {
+        pointer.discreteMoveIssued = true;
+      }
     }
   };
 
@@ -258,12 +284,33 @@ export class InputController {
       );
       return;
     }
+
     if (
+      pointer.panPointer &&
       this.capabilities.pan &&
       this.pointers.size === 1 &&
       (dx !== 0 || dy !== 0)
-    )
+    ) {
       this.game.panByScreen(dx, dy);
+      return;
+    }
+
+    if (
+      !pointer.panPointer &&
+      !pointer.discreteMoveIssued &&
+      this.capabilities.movement &&
+      this.pointers.size === 1
+    ) {
+      const direction = directionForDiscreteDrag(
+        pointer.x - pointer.startX,
+        pointer.y - pointer.startY,
+      );
+      if (direction) {
+        pointer.discreteMoveIssued = true;
+        pointer.moved = true;
+        this.game.move(direction);
+      }
+    }
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
@@ -278,6 +325,7 @@ export class InputController {
       remaining.startX = remaining.x;
       remaining.startY = remaining.y;
       remaining.moved = false;
+      remaining.discreteMoveIssued = true;
     }
   };
 
