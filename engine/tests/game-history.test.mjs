@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../dist/core/Game.js";
 
-test("Game undo 与 redo 往返恢复 canonical World snapshot", () => {
+test("Game undo 与 redo往返恢复 canonical World snapshot", () => {
   let worldState = {
     entities: [{ id: 1, type: "bobby", anchor: { x: 2, y: 0 } }],
     globals: { moves: 2 },
@@ -21,6 +21,7 @@ test("Game undo 与 redo 往返恢复 canonical World snapshot", () => {
     },
   ];
   game.future = [];
+  game.visualRuntime = new Map();
   game.render = () => {};
   game.emit = () => {};
 
