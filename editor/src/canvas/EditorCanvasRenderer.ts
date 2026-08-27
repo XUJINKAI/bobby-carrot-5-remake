@@ -1,11 +1,16 @@
 import {
-  objectAtlasCell,
-  terrainAtlasCell,
-  drawCustomObject,
-  drawCustomTerrain,
+  createBuiltinEntityRegistry,
+  drawEntityTile,
+  entityAtlasCell,
+  type EntityRegistry,
+  type LevelEntity,
 } from "@bobby/engine";
-import { intersectingOwners, objectCells, resolveObjectOwner, type Cell } from "../authoring/objectOwners.js";
-import { placementCells, placementFits } from "../authoring/objectPlacement.js";
+import {
+  entityCells,
+  resolvePlacement,
+  type Cell,
+} from "../authoring/entityPlacement.js";
+import { EditorPreview } from "../authoring/EditorPreview.js";
 import type { PaletteItem } from "../authoring/paletteCatalog.js";
 import type { EditorLevel } from "../level/types.js";
 import type { EditorViewportState } from "./EditorViewport.js";
@@ -27,6 +32,7 @@ export class EditorCanvasRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly atlasUrl: string,
+    private readonly registry: EntityRegistry = createBuiltinEntityRegistry(),
   ) {}
 
   async load(): Promise<void> {
@@ -53,34 +59,21 @@ export class EditorCanvasRenderer {
     context.imageSmoothingEnabled = false;
     context.fillStyle = "#09110c";
     context.fillRect(0, 0, cssWidth, cssHeight);
-    if (this.atlas) {
-      for (let y = 0; y < level.height; y++)
-        for (let x = 0; x < level.width; x++)
-          if (
-            !drawCustomTerrain(
-              context,
-              level.terrain[y]![x]!,
-              x * EDITOR_TILE_SIZE,
-              y * EDITOR_TILE_SIZE,
-              EDITOR_TILE_SIZE,
-            )
-          )
-            this.draw(context, terrainAtlasCell(level.terrain[y]![x]!), x, y);
-      for (const object of level.objects)
-        for (const cell of objectCells(object))
-          if (
-            !drawCustomObject(
-              context,
-              cell.type,
-              cell.x * EDITOR_TILE_SIZE,
-              cell.y * EDITOR_TILE_SIZE,
-              EDITOR_TILE_SIZE,
-            )
-          )
-            this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
-    }
+
+    const preview = new EditorPreview(level, this.registry);
+    for (let y = 0; y < level.height; y++)
+      for (let x = 0; x < level.width; x++)
+        for (const inspection of preview.inspectCell(x, y).presences)
+          this.drawEntity(
+            context,
+            inspection.entity,
+            inspection.presence.role,
+            x,
+            y,
+          );
+
     this.drawGrid(context, level.width, level.height);
-    this.drawPreview(context, state);
+    this.drawPreview(context, state, preview);
   }
 
   private drawGrid(
@@ -107,19 +100,27 @@ export class EditorCanvasRenderer {
   private drawPreview(
     context: CanvasRenderingContext2D,
     state: EditorCanvasRenderState,
+    preview: EditorPreview,
   ): void {
     const { level, hover, selection } = state;
     if (!hover) return;
-    const preview =
-      selection.kind === "object" ? placementCells(selection.type, hover) : [];
+
+    const plan = resolvePlacement(
+      level,
+      this.registry,
+      selection.type,
+      hover,
+    );
     const affected = new Map<string, Cell>();
-    const owner = resolveObjectOwner(level, hover.x, hover.y);
-    if (owner)
-      for (const cell of owner.cells) affected.set(`${cell.x},${cell.y}`, cell);
+    const top = preview.inspectCell(hover.x, hover.y).top;
+    if (top)
+      for (const cell of entityCells(preview, top.ref))
+        affected.set(`${cell.x},${cell.y}`, cell);
     if (state.replacing)
-      for (const old of intersectingOwners(level, preview))
-        for (const cell of objectCells(old))
+      for (const ref of plan.replace)
+        for (const cell of entityCells(preview, ref))
           affected.set(`${cell.x},${cell.y}`, cell);
+
     context.fillStyle = "rgba(90,170,255,.26)";
     for (const cell of affected.values())
       context.fillRect(
@@ -128,28 +129,15 @@ export class EditorCanvasRenderer {
         EDITOR_TILE_SIZE,
         EDITOR_TILE_SIZE,
       );
-    if (this.atlas) {
+
+    if (plan.valid) {
       context.globalAlpha = 0.55;
-      if (selection.kind === "terrain")
-        drawCustomTerrain(
-          context,
-          selection.type,
-          hover.x * EDITOR_TILE_SIZE,
-          hover.y * EDITOR_TILE_SIZE,
-          EDITOR_TILE_SIZE,
-        ) || this.draw(context, terrainAtlasCell(selection.type), hover.x, hover.y);
-      else if (placementFits(level, selection.type, hover))
-        for (const cell of preview)
-          drawCustomObject(
-            context,
-            cell.type,
-            cell.x * EDITOR_TILE_SIZE,
-            cell.y * EDITOR_TILE_SIZE,
-            EDITOR_TILE_SIZE,
-          ) || this.draw(context, objectAtlasCell(cell.type), cell.x, cell.y);
+      for (const part of plan.cells)
+        this.drawEntity(context, plan.entity, part.role, part.x, part.y);
       context.globalAlpha = 1;
     }
-    context.strokeStyle = "#99d6ff";
+
+    context.strokeStyle = plan.valid ? "#99d6ff" : "#ff8e8e";
     context.lineWidth = 2;
     context.strokeRect(
       hover.x * EDITOR_TILE_SIZE + 1,
@@ -159,17 +147,40 @@ export class EditorCanvasRenderer {
     );
   }
 
-  private draw(
+  private drawEntity(
     context: CanvasRenderingContext2D,
-    cell: { column: number; row: number },
+    entity: LevelEntity,
+    role: string | undefined,
+    x: number,
+    y: number,
+  ): void {
+    const screenX = x * EDITOR_TILE_SIZE;
+    const screenY = y * EDITOR_TILE_SIZE;
+    if (
+      drawEntityTile(
+        context,
+        entity,
+        screenX,
+        screenY,
+        EDITOR_TILE_SIZE,
+      )
+    )
+      return;
+    const atlasCell = entityAtlasCell(entity, role);
+    if (atlasCell) this.drawAtlasCell(context, atlasCell, x, y);
+  }
+
+  private drawAtlasCell(
+    context: CanvasRenderingContext2D,
+    atlasCell: { column: number; row: number },
     x: number,
     y: number,
   ): void {
     if (!this.atlas) return;
     context.drawImage(
       this.atlas,
-      cell.column * SOURCE_TILE,
-      cell.row * SOURCE_TILE,
+      atlasCell.column * SOURCE_TILE,
+      atlasCell.row * SOURCE_TILE,
       SOURCE_TILE,
       SOURCE_TILE,
       x * EDITOR_TILE_SIZE,
