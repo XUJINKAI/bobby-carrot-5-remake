@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { serializeAdventureSave, type AdventureSave } from "@bobby/adventure";
+import type { MusicStyle } from "@bobby/engine";
 import { ref } from "vue";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { parseAdventureProfileExchange } from "../../storage/adventureSaveStorage.js";
 
-defineProps<{ state: GlobalSettingsState; profile: AdventureSave; feedback: string }>();
+defineProps<{
+  state: GlobalSettingsState;
+  profile: AdventureSave;
+  feedback: string;
+}>();
 const emit = defineEmits<{
   close: [];
   musicEnabled: [value: boolean];
-  musicVolume: [value: number];
-  soundVolume: [value: number];
-  tone: [value: "fm" | "chip"];
-  reverb: [value: number];
+  musicGain: [value: number];
+  soundGain: [value: number];
+  musicStyle: [value: MusicStyle];
   screenControl: [value: boolean];
   importSave: [save: AdventureSave];
   resetSave: [];
@@ -68,10 +72,27 @@ function requestReset(): void {
     <div>
       <h3>音频</h3>
       <label>音乐 <input type="checkbox" :checked="state.musicEnabled" @change="emit('musicEnabled', ($event.target as HTMLInputElement).checked)"></label>
-      <label>音乐音量 <input type="range" min="0" max="100" :value="state.musicVolume" @input="emit('musicVolume', numberValue($event))"></label>
-      <label>音效音量 <input type="range" min="0" max="100" :value="state.soundVolume" @input="emit('soundVolume', numberValue($event))"></label>
-      <label>MIDI 音色 <select :value="state.tone" @change="emit('tone', ($event.target as HTMLSelectElement).value === 'chip' ? 'chip' : 'fm')"><option value="fm">TinySynth FM</option><option value="chip">TinySynth Chip</option></select></label>
-      <label>混响 <input type="range" min="0" max="100" :value="state.reverb" @input="emit('reverb', numberValue($event))"></label>
+      <label>音乐增益 {{ state.musicGain }}% <input type="range" min="0" max="200" :value="state.musicGain" @input="emit('musicGain', numberValue($event))"></label>
+      <label>音效增益 {{ state.soundGain }}% <input type="range" min="0" max="200" :value="state.soundGain" @input="emit('soundGain', numberValue($event))"></label>
+      <div class="music-style-setting">
+        <span>音乐风格</span>
+        <div class="music-style-options" role="radiogroup" aria-label="音乐风格">
+          <button
+            type="button"
+            role="radio"
+            :aria-checked="state.musicStyle === 'modern'"
+            :class="{ selected: state.musicStyle === 'modern' }"
+            @click="emit('musicStyle', 'modern')"
+          >现代风格</button>
+          <button
+            type="button"
+            role="radio"
+            :aria-checked="state.musicStyle === '8bit'"
+            :class="{ selected: state.musicStyle === '8bit' }"
+            @click="emit('musicStyle', '8bit')"
+          >8bit 风格</button>
+        </div>
+      </div>
       <h3>操作</h3>
       <label>屏幕摇杆 <input type="checkbox" :checked="state.screenControlEnabled" @change="emit('screenControl', ($event.target as HTMLInputElement).checked)"></label>
       <h3>Adventure Save</h3>
@@ -101,6 +122,34 @@ function requestReset(): void {
 </template>
 
 <style scoped>
+.music-style-setting {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.music-style-options {
+  display: grid;
+  min-width: 132px;
+  gap: 5px;
+}
+
+.music-style-options button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #000;
+  border-radius: 7px;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+}
+
+.music-style-options button.selected {
+  background: #000;
+  color: #fff;
+}
+
 .settings-save-actions {
   display: flex;
   gap: 8px;

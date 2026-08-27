@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type EditorLevel, type Cell } from "@bobby/editor";
+import type { AudioBackend } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
@@ -12,7 +12,7 @@ import { useEditorPage } from "./useEditorPage.js";
 
 const props = defineProps<{
   initialLevel: EditorLevel;
-  audio: TinySynthAudioBackend;
+  audio: AudioBackend;
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);

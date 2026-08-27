@@ -32,10 +32,8 @@ export function prepareAssets() {
   run(process.execPath, ["tools/custom/prepare.mjs"]);
   buildOriginalCollection();
   buildAdventureIndex();
-  for (const target of ["art/hd", "audio/midi"])
-    fs.rmSync(path.join(assets, target), { recursive: true, force: true });
+  fs.rmSync(path.join(assets, "art/hd"), { recursive: true, force: true });
   copyTree(path.join(original, "adapted/art"), path.join(assets, "art"));
-  copyTree(path.join(original, "adapted/audio"), path.join(assets, "audio"));
 }
 
 function buildOriginalCollection() {

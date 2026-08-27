@@ -1,6 +1,6 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { AudioRuntime } from "@bobby/engine";
 import { createApp, reactive, type App as VueApp } from "vue";
-import { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
 import { siteUrl } from "../services/assets/gameAssets.js";
 import {
   fetchJson,
@@ -48,7 +48,7 @@ interface AppRootHandle {
 
 export class BobbyApp {
   private readonly mount: HTMLDivElement;
-  private readonly audio = new TinySynthAudioBackend();
+  private readonly audio = new AudioRuntime();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
   private collectionsIndex: MapCollectionsIndex = EMPTY_COLLECTIONS_INDEX;
   private collections: MapCollectionIndex[] = [];
@@ -93,6 +93,7 @@ export class BobbyApp {
     window.removeEventListener("popstate", this.onPopState);
     installShellBridge(null);
     this.vueApp?.unmount();
+    this.audio.destroy();
     this.vueApp = null;
     this.vueRoot = null;
   }
@@ -238,7 +239,10 @@ export class BobbyApp {
     }
   }
 
-  private async renderExplorePlay(path: string, context: PageContext): Promise<void> {
+  private async renderExplorePlay(
+    path: string,
+    context: PageContext,
+  ): Promise<void> {
     const ref = parseMapPlayUrl(path);
     if (!ref) {
       this.navigate("/explore");
@@ -276,7 +280,10 @@ export class BobbyApp {
     }
   }
 
-  private async renderAdventurePlay(path: string, context: PageContext): Promise<void> {
+  private async renderAdventurePlay(
+    path: string,
+    context: PageContext,
+  ): Promise<void> {
     const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
     const found = findAdventureLevel(this.adventure, id);
     if (!found) {

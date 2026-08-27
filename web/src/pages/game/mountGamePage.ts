@@ -6,9 +6,9 @@ import {
   createAdventureLevelInstance,
   type AdventureSave,
 } from "@bobby/adventure";
+import type { AudioRuntime } from "@bobby/engine";
 import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
-import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import type {
   AdventureIndex,
   AdventureIndexChapter,
@@ -60,7 +60,7 @@ export interface GameIdentity {
 export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
-  audio: TinySynthAudioBackend;
+  audio: AudioRuntime;
   navigate: Navigate;
   level: LevelMap;
   identity: GameIdentity;
@@ -210,7 +210,12 @@ export async function renderGamePage(
   const renderResult = (): void => {
     if (!game.hasLevel || game.isAnimating) return;
     const state = game.state;
-    const kind = state.status === "dead" ? "death" : state.status === "won" ? "complete" : null;
+    const kind =
+      state.status === "dead"
+        ? "death"
+        : state.status === "won"
+          ? "complete"
+          : null;
     if (!kind) {
       closeResult();
       return;

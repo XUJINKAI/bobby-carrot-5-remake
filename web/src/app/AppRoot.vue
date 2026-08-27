@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import type { TinySynthAudioBackend } from "../services/audio/TinySynthAudio.js";
+import type { AudioRuntime } from "@bobby/engine";
+import { onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
@@ -10,7 +10,7 @@ import type { ShellViewState } from "../shell/shellBridge.js";
 
 const props = defineProps<{
   shell: ShellViewState;
-  audio: TinySynthAudioBackend;
+  audio: AudioRuntime;
   navigate: Navigate;
   onContentReady: (element: HTMLDivElement) => void;
 }>();
@@ -35,10 +35,7 @@ function openSettings(feedback = ""): void {
 }
 
 function dispatchAction(action: string): void {
-  if (action === "music") {
-    settings.toggleMusic();
-    updateActionPressed("music", settings.state.musicEnabled);
-  }
+  if (action === "music") settings.toggleMusic();
   else if (action === "settings") openSettings();
   else if (action === "help") openDialog("help");
   else if (action === "screen-control") {
@@ -64,6 +61,12 @@ function updateActionPressed(id: string, pressed: boolean): void {
   const target = actions.find((item) => item.id === id);
   if (target) target.pressed = pressed;
 }
+
+watch(
+  [() => settings.state.musicEnabled, () => props.shell.config],
+  ([musicEnabled]) => updateActionPressed("music", musicEnabled),
+  { immediate: true },
+);
 
 defineExpose({ openSettings });
 onMounted(() => {
@@ -113,10 +116,9 @@ onMounted(() => {
       :feedback="settings.feedback.value"
       @close="closeDialog"
       @music-enabled="settings.setMusicEnabled"
-      @music-volume="settings.setMusicVolume"
-      @sound-volume="settings.setSoundVolume"
-      @tone="settings.setTone"
-      @reverb="settings.setReverb"
+      @music-gain="settings.setMusicGain"
+      @sound-gain="settings.setSoundGain"
+      @music-style="settings.setMusicStyle"
       @screen-control="settings.setScreenControl"
       @import-save="settings.importSave"
       @reset-save="settings.resetSave"

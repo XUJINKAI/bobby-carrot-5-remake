@@ -43,10 +43,6 @@ export default defineConfig({
   plugins: [
     vue(),
     developmentDirectory("/assets", path.join(projectRoot, "assets")),
-    developmentDirectory(
-      "/vendor",
-      path.join(projectRoot, "node_modules/webaudio-tinysynth"),
-    ),
   ],
   build: {
     outDir: "../dist",
@@ -98,8 +94,8 @@ function contentType(file) {
   switch (path.extname(file).toLowerCase()) {
     case ".json":
       return "application/json; charset=utf-8";
-    case ".mid":
-      return "audio/midi";
+    case ".ogg":
+      return "audio/ogg";
     case ".js":
       return "text/javascript; charset=utf-8";
     case ".png":
