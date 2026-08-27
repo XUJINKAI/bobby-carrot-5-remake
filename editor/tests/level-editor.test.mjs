@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   EntityTypeId,
+  VisualRegistry,
   createBuiltinEntityRegistry,
 } from "../../engine/dist/index.js";
 import {
@@ -174,4 +175,65 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   const preview = new EditorPreview(document.getSnapshot().level, registry);
   assert.equal(preview.inspectCell(1, 1).top?.entity.type, EntityTypeId.GROUND_C);
   assert.equal(preview.inspectCell(2, 1).top?.entity.type, EntityTypeId.GROUND_C);
+});
+
+test("persisted visual variant 使用会话 placement sequence 初始化一次并随 JSON 固定", () => {
+  const customRegistry = createBuiltinEntityRegistry();
+  customRegistry.register({
+    type: "flower",
+    traits: [],
+    stackBand: "content",
+    presentation: { name: "Flower", visual: "flower-visual" },
+    authoring: { palette: true, category: "test" },
+  });
+  const visuals = new VisualRegistry();
+  visuals.register({
+    id: "flower-visual",
+    authoring: {
+      persistedVariant: {
+        property: "visualVariant",
+        values: ["white", "yellow", "pink", "red"],
+      },
+    },
+    resolve: () => null,
+  });
+
+  const document = new EditorDocument(createBlankLevel(8, 8));
+  assert.equal(document.getSnapshot().placementSequence, 0);
+  assert.equal(
+    document.executePlacement((placementSequence) =>
+      placeEntity(
+        customRegistry,
+        "flower",
+        { x: 2, y: 2 },
+        {},
+        { placementSequence, visuals },
+      ),
+    ),
+    true,
+  );
+  assert.equal(document.getSnapshot().placementSequence, 1);
+  const flower = document.getSnapshot().level.entities.find((entity) => entity.type === "flower");
+  assert.ok(flower?.properties?.visualVariant);
+  const variant = flower.properties.visualVariant;
+
+  const parsed = parseEditorLevel(serializeEditorLevel(document.getSnapshot().level));
+  assert.equal(
+    parsed.entities.find((entity) => entity.type === "flower")?.properties?.visualVariant,
+    variant,
+  );
+
+  assert.equal(
+    document.executePlacement((placementSequence) =>
+      placeEntity(
+        customRegistry,
+        "flower",
+        { x: -1, y: 0 },
+        {},
+        { placementSequence, visuals },
+      ),
+    ),
+    false,
+  );
+  assert.equal(document.getSnapshot().placementSequence, 1);
 });

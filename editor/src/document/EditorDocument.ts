@@ -7,6 +7,8 @@ import type { EditorCommand } from "./commands.js";
 export interface EditorSnapshot {
   level: Readonly<EditorLevel>;
   revision: number;
+  /** 下一次成功放置 Entity 时使用；只属于编辑会话，不持久化。 */
+  placementSequence: number;
   canUndo: boolean;
   canRedo: boolean;
   dirty: boolean;
@@ -19,6 +21,7 @@ export class EditorDocument {
   private readonly history = new EditorHistory();
   private readonly listeners = new Set<EditorDocumentListener>();
   private revision = 0;
+  private placementSequence = 0;
   private savedFingerprint: string;
   private transactionStart: EditorLevel | null = null;
 
@@ -31,6 +34,7 @@ export class EditorDocument {
     return {
       level: cloneEditorLevel(this.level),
       revision: this.revision,
+      placementSequence: this.placementSequence,
       canUndo: this.history.canUndo,
       canRedo: this.history.canRedo,
       dirty: fingerprint(this.level) !== this.savedFingerprint,
@@ -44,13 +48,14 @@ export class EditorDocument {
   }
 
   execute(command: EditorCommand): boolean {
-    const next = command.apply(this.level);
-    if (next === this.level || fingerprint(next) === fingerprint(this.level))
-      return false;
-    if (!this.transactionStart) this.history.record(this.level);
-    this.level = normalizeEditorLevel(next);
-    this.changed();
-    return true;
+    return this.applyCommand(command, false);
+  }
+
+  /**
+   * 只在放置真正成功后消费 sequence。失败/越界尝试不会影响之后的伪随机表现。
+   */
+  executePlacement(factory: (placementSequence: number) => EditorCommand): boolean {
+    return this.applyCommand(factory(this.placementSequence), true);
   }
 
   beginTransaction(): void {
@@ -91,6 +96,7 @@ export class EditorDocument {
 
   load(level: EditorLevel): void {
     this.transactionStart = null;
+    this.placementSequence = 0;
     this.level = normalizeEditorLevel(level);
     this.history.clear();
     this.savedFingerprint = fingerprint(this.level);
@@ -100,6 +106,17 @@ export class EditorDocument {
   markSaved(): void {
     this.savedFingerprint = fingerprint(this.level);
     this.emit();
+  }
+
+  private applyCommand(command: EditorCommand, consumePlacementSequence: boolean): boolean {
+    const next = command.apply(this.level);
+    if (next === this.level || fingerprint(next) === fingerprint(this.level))
+      return false;
+    if (!this.transactionStart) this.history.record(this.level);
+    this.level = normalizeEditorLevel(next);
+    if (consumePlacementSequence) this.placementSequence += 1;
+    this.changed();
+    return true;
   }
 
   private changed(): void {

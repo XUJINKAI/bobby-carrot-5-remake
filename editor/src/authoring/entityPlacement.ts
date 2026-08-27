@@ -1,4 +1,9 @@
-import type { EntityDefinition, EntityRegistry } from "@bobby/engine";
+import {
+  visualRegistry as builtinVisualRegistry,
+  type EntityDefinition,
+  type EntityRegistry,
+  type VisualRegistry,
+} from "@bobby/engine";
 import type {
   EntityProperties,
   EntityState,
@@ -28,6 +33,12 @@ export interface PlacementOverrides {
   traits?: EntityTraits;
 }
 
+export interface PlacementResolveOptions {
+  /** 编辑会话中下一次成功放置的序号，只参与 Visual 确定性初始化。 */
+  placementSequence?: number;
+  visuals?: VisualRegistry;
+}
+
 export interface EntityPlacementPlan {
   entity: LevelEntity;
   cells: readonly PlacementCell[];
@@ -42,13 +53,20 @@ export function resolvePlacement(
   type: EntityType,
   cursor: Cell,
   overrides: PlacementOverrides = {},
+  options: PlacementResolveOptions = {},
 ): EntityPlacementPlan {
   const definition = registry.require(type);
   const cursorOffset = definition.authoring?.cursor ?? { dx: 0, dy: 0 };
-  const entity = createPlacedEntity(definition, {
+  const anchor = {
     x: cursor.x - cursorOffset.dx,
     y: cursor.y - cursorOffset.dy,
-  }, overrides);
+  };
+  const visuals = options.visuals ?? builtinVisualRegistry;
+  const entity = visuals.initializeAuthoringEntity(
+    createPlacedEntity(definition, anchor, overrides),
+    definition,
+    options.placementSequence ?? 0,
+  );
   const parts = definition.footprint?.parts ?? [{ dx: 0, dy: 0 }];
   const cells = parts.map((part) => ({
     x: entity.x + part.dx,
@@ -94,10 +112,11 @@ export function placeEntity(
   type: EntityType,
   cursor: Cell,
   overrides: PlacementOverrides = {},
+  options: PlacementResolveOptions = {},
 ): EditorCommand {
   return {
     apply(level) {
-      const plan = resolvePlacement(level, registry, type, cursor, overrides);
+      const plan = resolvePlacement(level, registry, type, cursor, overrides, options);
       if (!plan.valid) return level;
       const removed = new Set(plan.replace.map((ref) => ref.index));
       return normalizeEditorLevel({
