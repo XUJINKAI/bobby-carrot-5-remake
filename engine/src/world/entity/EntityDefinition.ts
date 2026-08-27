@@ -1,4 +1,4 @@
-import type { EntityType, JsonValue } from "@bobby/model";
+import type { Direction, EntityType, JsonValue } from "@bobby/model";
 import type { FootprintDefinition } from "../spatial/Footprint.js";
 import type { StackBand } from "../spatial/StackBand.js";
 
@@ -40,6 +40,8 @@ export interface EntityAuthoringDefinition {
   category?: string;
   /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
   cursor?: { dx: number; dy: number };
+  /** Palette 创建方向型 Entity 时使用的初值。 */
+  defaultDirection?: Direction;
 }
 
 /** 一种 Entity 的共享静态定义。 */

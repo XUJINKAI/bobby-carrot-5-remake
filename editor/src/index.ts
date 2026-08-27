@@ -36,6 +36,32 @@ export {
   updateMaxMoves,
 } from "./document/commands.js";
 export type { EditorCommand } from "./document/commands.js";
+export { EditorPreview } from "./authoring/EditorPreview.js";
+export type {
+  EditorCellInspection,
+  EditorPresenceInspection,
+} from "./authoring/EditorPreview.js";
+export {
+  entityCells,
+  placeEntity,
+  resolvePlacement,
+  topEntityRefAt,
+} from "./authoring/entityPlacement.js";
+export type {
+  Cell,
+  EntityPlacementPlan,
+  PlacementCell,
+  PlacementOverrides,
+} from "./authoring/entityPlacement.js";
+export {
+  paletteItems,
+  paletteGroups,
+  paletteGroup,
+  paletteLabel,
+} from "./authoring/paletteCatalog.js";
+export type { PaletteItem } from "./authoring/paletteCatalog.js";
+export { buildInspectorModel } from "./authoring/inspectorModel.js";
+export type { InspectorModel } from "./authoring/inspectorModel.js";
 
 export { EditorViewport } from "./canvas/EditorViewport.js";
 export type { EditorViewportState } from "./canvas/EditorViewport.js";
