@@ -6,7 +6,7 @@ import {
   paletteLabel,
   type PaletteItem,
 } from "@bobby/editor";
-import { createBuiltinEntityRegistry } from "@bobby/engine";
+import { createBuiltinEntityRegistry } from "@bobby/engine/authoring";
 import { computed } from "vue";
 import { entityVisualStyle } from "../../services/assets/entityVisual.js";
 

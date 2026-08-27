@@ -5,7 +5,7 @@ import type {
   InspectorModel,
   PaletteItem,
 } from "@bobby/editor";
-import type { VisualAssetSources } from "@bobby/engine";
+import type { VisualAssetSources } from "@bobby/engine/authoring";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorPalette from "./EditorPalette.vue";

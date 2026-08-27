@@ -18,6 +18,7 @@ export {
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export { NullAudioBackend, type AudioBackend } from "./audio/AudioBackend.js";
+export type { VisualAssetSources } from "./visual/VisualDefinition.js";
 export type {
   Direction,
   EntityProperties,

@@ -7,7 +7,7 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
-import type { VisualAssetSources } from "@bobby/engine";
+import type { VisualAssetSources } from "@bobby/engine/authoring";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
