@@ -1,10 +1,14 @@
 import type { EntityTrait } from "../entity/EntityDefinition.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityStore } from "../entity/EntityStore.js";
-import type { CellPosition, EntityId, EntityInstance } from "../entity/EntityInstance.js";
+import type {
+  CellPosition,
+  EntityId,
+  EntityInstance,
+} from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
 import { footprintCell, SINGLE_CELL_FOOTPRINT } from "./Footprint.js";
-import { stackBandRank } from "./StackBand.js";
+import { stackBandOrder } from "./StackBand.js";
 
 export class SpatialIndex {
   private readonly cells = new Map<string, EntityPresence[]>();
@@ -20,7 +24,12 @@ export class SpatialIndex {
   }
 
   inBounds(cell: CellPosition): boolean {
-    return cell.x >= 0 && cell.y >= 0 && cell.x < this.width && cell.y < this.height;
+    return (
+      cell.x >= 0 &&
+      cell.y >= 0 &&
+      cell.x < this.width &&
+      cell.y < this.height
+    );
   }
 
   presencesAt(cell: CellPosition): readonly EntityPresence[] {
@@ -36,7 +45,9 @@ export class SpatialIndex {
   }
 
   hasTraitAt(cell: CellPosition, trait: EntityTrait): boolean {
-    return this.presencesAt(cell).some((presence) => presence.traits.includes(trait));
+    return this.presencesAt(cell).some((presence) =>
+      presence.traits.includes(trait),
+    );
   }
 
   moveEntity(entityId: EntityId, anchor: CellPosition): void {
@@ -65,12 +76,16 @@ export class SpatialIndex {
     footprint.parts.forEach((part, index) => {
       const cell = footprintCell(entity, footprint, part);
       if (!this.inBounds(cell))
-        throw new Error(`Entity ${entity.type}#${entity.id} footprint 超出地图：${cell.x},${cell.y}`);
-      const traits = [...new Set([
-        ...definition.traits,
-        ...(entity.instanceTraits ?? []),
-        ...(part.traits ?? []),
-      ])];
+        throw new Error(
+          `Entity ${entity.type}#${entity.id} footprint 超出地图：${cell.x},${cell.y}`,
+        );
+      const traits = [
+        ...new Set([
+          ...definition.traits,
+          ...(entity.instanceTraits ?? []),
+          ...(part.traits ?? []),
+        ]),
+      ];
       const presence: EntityPresence = {
         entityId: entity.id,
         cell,
@@ -92,8 +107,10 @@ export class SpatialIndex {
     const presences = this.byEntity.get(entityId) ?? [];
     for (const presence of presences) {
       const cellKey = key(presence.cell);
-      const next = (this.cells.get(cellKey) ?? []).filter((item) => item.entityId !== entityId);
-      if (next.length) this.cells.set(cellKey, next);
+      const next = (this.cells.get(cellKey) ?? []).filter(
+        (item) => item.entityId !== entityId,
+      );
+      if (next.length > 0) this.cells.set(cellKey, next);
       else this.cells.delete(cellKey);
     }
     this.byEntity.delete(entityId);
@@ -106,7 +123,7 @@ function key(cell: CellPosition): string {
 
 function comparePresence(a: EntityPresence, b: EntityPresence): number {
   return (
-    stackBandRank(a.stackBand) - stackBandRank(b.stackBand) ||
+    stackBandOrder(a.stackBand) - stackBandOrder(b.stackBand) ||
     a.stackOrder - b.stackOrder ||
     a.entityId - b.entityId
   );

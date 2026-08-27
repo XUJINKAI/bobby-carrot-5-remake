@@ -2,30 +2,27 @@ import type { Direction, EntityState, LevelEntity } from "@bobby/model";
 import type { GlobalState } from "../GlobalState.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
-import type { PassageResult, WorldEvent } from "../WorldTypes.js";
+import type { WorldEvent } from "../WorldTypes.js";
 import type { WorldCommandApi } from "./CommandQueue.js";
 import type { WorldQueryApi } from "./WorldQueryApi.js";
 
 export interface BehaviorSubject {
-  entity: EntityInstance;
-  presence: EntityPresence;
+  readonly entity: Readonly<EntityInstance>;
+  readonly presence: Readonly<EntityPresence>;
+}
+
+export interface PassageResult {
+  passable: boolean;
+  reason?: string;
 }
 
 export interface BehaviorContext {
-  readonly actor: EntityInstance;
+  readonly actor: Readonly<EntityInstance>;
   readonly self: BehaviorSubject;
-  readonly direction: Direction;
-  readonly globals: Readonly<GlobalState>;
   readonly query: WorldQueryApi;
-  readonly command: WorldCommandApi;
-}
-
-export interface TickBehaviorContext {
-  readonly self: BehaviorSubject;
-  readonly deltaMs: number;
-  readonly globals: Readonly<GlobalState>;
-  readonly query: WorldQueryApi;
-  readonly command: WorldCommandApi;
+  readonly commands: WorldCommandApi;
+  readonly direction?: Direction;
+  readonly deltaMs?: number;
 }
 
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
@@ -36,8 +33,8 @@ export interface Behavior {
   onTouch?(context: BehaviorContext): void;
   onEnter?(context: BehaviorContext): void;
   onLeave?(context: BehaviorContext): void;
-  onTick?(context: TickBehaviorContext): void;
-  onDestroy?(context: TickBehaviorContext): void;
+  onTick?(context: BehaviorContext): void;
+  onDestroy?(context: BehaviorContext): void;
 }
 
 export interface SetStateCommand {
@@ -52,5 +49,9 @@ export type BehaviorCommand =
   | { type: "move"; entityId: EntityId; x: number; y: number }
   | { type: "set-direction"; entityId: EntityId; direction: Direction }
   | SetStateCommand
-  | { type: "set-global"; key: keyof GlobalState; value: GlobalState[keyof GlobalState] }
+  | {
+      type: "set-global";
+      key: keyof GlobalState;
+      value: GlobalState[keyof GlobalState];
+    }
   | { type: "emit"; event: WorldEvent };
