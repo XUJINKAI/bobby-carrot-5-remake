@@ -29,5 +29,4 @@ export interface GameplayState {
   goldenCarrotsInLevel: number;
   canUndo: boolean;
   canRedo: boolean;
-  timedChallengeRemainingMs: number | null;
 }

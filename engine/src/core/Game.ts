@@ -6,8 +6,9 @@ import {
   InputController,
   type InputControllerOptions,
 } from "../input/InputController.js";
-import { Renderer, type RendererAssets } from "../render/Renderer.js";
+import { Renderer } from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
+import type { VisualAssetSources } from "../visual/VisualDefinition.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
 import {
   applyMotionEasing,
@@ -35,7 +36,7 @@ export interface GameRuntimeOptions {
 
 export interface GameOptions {
   canvas: HTMLCanvasElement;
-  assets: RendererAssets;
+  assets: VisualAssetSources;
   audio?: AudioBackend;
   debug?: boolean;
   profile?: Partial<ProfileCapabilities>;
@@ -149,7 +150,6 @@ export class Game {
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
       canUndo: this.canUndo,
       canRedo: this.canRedo,
-      timedChallengeRemainingMs: this.timedChallengeRemainingMs,
     };
   }
 
@@ -175,10 +175,6 @@ export class Game {
 
   get canRedo(): boolean {
     return this.future.length > 0;
-  }
-
-  get timedChallengeRemainingMs(): number | null {
-    return null;
   }
 
   async loadLevel(level: LevelMap): Promise<void> {
