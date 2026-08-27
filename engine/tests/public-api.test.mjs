@@ -24,6 +24,7 @@ test("gameplay package surface does not expose Engine implementation internals",
 
   assert.equal(typeof runtime.Game, "function");
   assert.equal(typeof runtime.createGameplayRuntime, "function");
+  assert.equal(typeof runtime.AudioRuntime, "function");
   assert.equal(typeof runtime.InputController, "function");
 });
 

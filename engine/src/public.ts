@@ -7,6 +7,16 @@ export {
   type CreateGameplayRuntimeOptions,
 } from "./core/GameplayRuntime.js";
 export {
+  AudioRuntime,
+  resolveOriginalMusicUrl,
+  type AudioRuntimeOptions,
+} from "./audio/AudioRuntime.js";
+export {
+  NullAudioBackend,
+  type AudioBackend,
+  type MusicStyle,
+} from "./audio/AudioBackend.js";
+export {
   InputController,
   type InputControllerOptions,
 } from "./input/InputController.js";
@@ -17,7 +27,6 @@ export {
   type JoystickVectorState,
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
-export { NullAudioBackend, type AudioBackend } from "./audio/AudioBackend.js";
 export type { VisualAssetSources } from "./visual/VisualDefinition.js";
 export type {
   Direction,
