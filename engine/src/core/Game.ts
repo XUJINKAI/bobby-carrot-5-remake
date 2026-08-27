@@ -1,14 +1,25 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
-import { InputController, type InputControllerOptions } from "../input/InputController.js";
+import {
+  InputController,
+  type InputControllerOptions,
+} from "../input/InputController.js";
 import { Renderer, type RendererAssets } from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { ProfileCapabilities } from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
-import type { CellInspection, MoveResult, WorldEvent } from "../world/WorldTypes.js";
+import type {
+  CellInspection,
+  MoveResult,
+  WorldEvent,
+} from "../world/WorldTypes.js";
 
-export interface GameRuntimeOptions { hud?: boolean | GameplayHudOptions; input?: InputControllerOptions; }
+export interface GameRuntimeOptions {
+  hud?: boolean | GameplayHudOptions;
+  input?: InputControllerOptions;
+}
+
 export interface GameOptions {
   canvas: HTMLCanvasElement;
   assets: RendererAssets;
@@ -18,7 +29,14 @@ export interface GameOptions {
   runtime?: GameRuntimeOptions;
 }
 
-type GameEventName = "change" | "move" | "blocked" | "level-loaded" | "debug-change" | "death" | "level-complete";
+type GameEventName =
+  | "change"
+  | "move"
+  | "blocked"
+  | "level-loaded"
+  | "debug-change"
+  | "death"
+  | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
 
@@ -50,20 +68,53 @@ export class Game {
     this.debugValue = options.debug ?? false;
     this.renderer.setDebug(this.debugValue);
     const hud = options.runtime?.hud;
-    this.gameplayHud = hud === undefined || hud === false ? null : new GameplayHud(this, options.canvas, hud === true ? {} : hud);
-    this.inputController = options.runtime?.input ? new InputController(this, options.runtime.input) : null;
+    this.gameplayHud =
+      hud === undefined || hud === false
+        ? null
+        : new GameplayHud(
+            this,
+            options.canvas,
+            hud === true ? {} : hud,
+          );
+    this.inputController = options.runtime?.input
+      ? new InputController(this, options.runtime.input)
+      : null;
     window.addEventListener("resize", this.onResize);
     this.animationFrame = requestAnimationFrame(this.tick);
   }
 
-  get world(): World { if (!this.worldValue) throw new Error("尚未载入关卡"); return this.worldValue; }
-  get hasLevel(): boolean { return this.worldValue !== null; }
-  get debug(): boolean { return this.debugValue; }
-  get zoom(): number { return this.renderer.camera.zoom; }
-  get isAnimating(): boolean { return false; }
-  get canUndo(): boolean { return this.history.length > 0; }
-  get canRedo(): boolean { return this.future.length > 0; }
-  get timedChallengeRemainingMs(): number | null { return null; }
+  get world(): World {
+    if (!this.worldValue) throw new Error("尚未载入关卡");
+    return this.worldValue;
+  }
+
+  get hasLevel(): boolean {
+    return this.worldValue !== null;
+  }
+
+  get debug(): boolean {
+    return this.debugValue;
+  }
+
+  get zoom(): number {
+    return this.renderer.camera.zoom;
+  }
+
+  get isAnimating(): boolean {
+    return false;
+  }
+
+  get canUndo(): boolean {
+    return this.history.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  get timedChallengeRemainingMs(): number | null {
+    return null;
+  }
 
   async loadLevel(level: LevelMap): Promise<void> {
     this.initialLevel = structuredClone(level);
@@ -99,7 +150,9 @@ export class Game {
 
   setHeldDirection(direction: Direction | null): void {
     this.heldDirection = direction;
-    if (direction) { this.lastHeldMoveAt = performance.now(); this.move(direction); }
+    if (!direction) return;
+    this.lastHeldMoveAt = performance.now();
+    this.move(direction);
   }
 
   undo(): void {
@@ -110,7 +163,8 @@ export class Game {
     this.world.restore(snapshot);
     this.lastMove = null;
     this.lastWorldEvents = [];
-    this.render(); this.emit("change");
+    this.render();
+    this.emit("change");
   }
 
   redo(): void {
@@ -121,15 +175,19 @@ export class Game {
     this.world.restore(snapshot);
     this.lastMove = null;
     this.lastWorldEvents = [];
-    this.render(); this.emit("change");
+    this.render();
+    this.emit("change");
   }
 
   restart(): void {
     if (!this.initialLevel) return;
     this.worldValue = new World(this.initialLevel, { profile: this.profile });
-    this.history.length = 0; this.future.length = 0;
-    this.lastMove = null; this.lastWorldEvents = [];
-    this.render(); this.emit("change");
+    this.history.length = 0;
+    this.future.length = 0;
+    this.lastMove = null;
+    this.lastWorldEvents = [];
+    this.render();
+    this.emit("change");
   }
 
   killPlayer(reason?: string): void {
@@ -137,33 +195,74 @@ export class Game {
     const events = this.world.killPlayer(reason);
     this.lastWorldEvents = events;
     this.publishWorldEvents(events);
-    this.render(); this.emitTerminalEvents(); this.emit("change");
+    this.render();
+    this.emitTerminalEvents();
+    this.emit("change");
   }
 
-  setProfile(profile: Partial<ProfileCapabilities>): void { if (this.worldValue) this.world.setProfile(profile); }
-  setZoom(value: number): void { this.renderer.camera.setZoom(value); this.render(); }
-  setZoomLimits(min: number, max?: number): void { this.renderer.camera.setZoomLimits(min, max); this.render(); }
-  zoomBy(factor: number): void { this.setZoom(this.zoom * factor); }
-  panByScreen(dx: number, dy: number): void { this.renderer.camera.panByScreen(dx, dy); this.render(); }
-  setDebug(value: boolean): void { if (value === this.debugValue) return; this.debugValue = value; this.renderer.setDebug(value); this.render(); this.emit("debug-change"); }
-  toggleDebug(): void { this.setDebug(!this.debugValue); }
+  setProfile(profile: Partial<ProfileCapabilities>): void {
+    if (this.worldValue) this.world.setProfile(profile);
+  }
 
-  inspectCanvasPoint(clientX: number, clientY: number): CellInspection | null {
+  setZoom(value: number): void {
+    this.renderer.camera.setZoom(value);
+    this.render();
+  }
+
+  setZoomLimits(min: number, max?: number): void {
+    this.renderer.camera.setZoomLimits(min, max);
+    this.render();
+  }
+
+  zoomBy(factor: number): void {
+    this.setZoom(this.zoom * factor);
+  }
+
+  panByScreen(dx: number, dy: number): void {
+    this.renderer.camera.panByScreen(dx, dy);
+    this.render();
+  }
+
+  setDebug(value: boolean): void {
+    if (value === this.debugValue) return;
+    this.debugValue = value;
+    this.renderer.setDebug(value);
+    this.render();
+    this.emit("debug-change");
+  }
+
+  toggleDebug(): void {
+    this.setDebug(!this.debugValue);
+  }
+
+  inspectCanvasPoint(
+    clientX: number,
+    clientY: number,
+  ): CellInspection | null {
     if (!this.worldValue) return null;
     const rect = this.renderer.canvas.getBoundingClientRect();
-    const cell = this.renderer.camera.screenToTile(clientX - rect.left, clientY - rect.top);
+    const cell = this.renderer.camera.screenToTile(
+      clientX - rect.left,
+      clientY - rect.top,
+    );
     return this.world.inspect(cell.x, cell.y);
   }
 
-  render(): void { if (this.worldValue) this.renderer.render(this.worldValue); }
-
-  on(event: GameEventName, listener: Listener): () => void {
-    const set = this.listeners.get(event) ?? new Set<Listener>();
-    set.add(listener); this.listeners.set(event, set);
-    return () => set.delete(listener);
+  render(): void {
+    if (this.worldValue) this.renderer.render(this.worldValue);
   }
 
-  onWorldEvent(listener: WorldEventListener): () => void { this.worldEventListeners.add(listener); return () => this.worldEventListeners.delete(listener); }
+  on(event: GameEventName, listener: Listener): () => void {
+    const listeners = this.listeners.get(event) ?? new Set<Listener>();
+    listeners.add(listener);
+    this.listeners.set(event, listeners);
+    return () => listeners.delete(listener);
+  }
+
+  onWorldEvent(listener: WorldEventListener): () => void {
+    this.worldEventListeners.add(listener);
+    return () => this.worldEventListeners.delete(listener);
+  }
 
   destroy(): void {
     if (this.destroyed) return;
@@ -174,29 +273,47 @@ export class Game {
     this.gameplayHud?.destroy();
   }
 
-  private readonly onResize = (): void => this.render();
+  private readonly onResize = (): void => {
+    this.render();
+  };
+
   private readonly tick = (timestamp: number): void => {
     if (this.destroyed) return;
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
     if (this.worldValue && delta > 0) {
       const events = this.world.advanceTime(delta);
-      if (events.length) { this.lastWorldEvents = events; this.publishWorldEvents(events); this.emitTerminalEvents(); this.emit("change"); }
-      if (this.heldDirection && timestamp - this.lastHeldMoveAt >= 120) {
+      if (events.length > 0) {
+        this.lastWorldEvents = events;
+        this.publishWorldEvents(events);
+        this.emitTerminalEvents();
+        this.emit("change");
+      }
+      if (
+        this.heldDirection &&
+        timestamp - this.lastHeldMoveAt >= 120
+      ) {
         this.lastHeldMoveAt = timestamp;
         this.move(this.heldDirection);
-      } else this.render();
+      } else {
+        this.render();
+      }
     }
     this.animationFrame = requestAnimationFrame(this.tick);
   };
 
   private publishWorldEvents(events: readonly WorldEvent[]): void {
-    for (const event of events) for (const listener of this.worldEventListeners) listener(event);
+    for (const event of events)
+      for (const listener of this.worldEventListeners) listener(event);
   }
+
   private emitTerminalEvents(): void {
     if (!this.worldValue) return;
     if (this.world.dead) this.emit("death");
     if (this.world.completed) this.emit("level-complete");
   }
-  private emit(event: GameEventName): void { for (const listener of this.listeners.get(event) ?? []) listener(this); }
+
+  private emit(event: GameEventName): void {
+    for (const listener of this.listeners.get(event) ?? []) listener(this);
+  }
 }

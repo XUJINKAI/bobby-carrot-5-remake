@@ -2,18 +2,38 @@ import type { Direction, LevelMap, WinCondition } from "@bobby/model";
 import { behaviorRegistry as builtinBehaviors } from "../entities/behaviors.js";
 import { entityRegistry as builtinEntities } from "../entities/registry.js";
 import { SpatialVisualQuery } from "../visual/SpatialVisualQuery.js";
-import { createGlobalState, type GlobalState, type ProfileCapabilities } from "./GlobalState.js";
+import {
+  createGlobalState,
+  type GlobalState,
+  type ProfileCapabilities,
+} from "./GlobalState.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
-import type { Behavior, BehaviorContext, PassageResult } from "./behavior/Behavior.js";
+import type {
+  Behavior,
+  BehaviorContext,
+  PassageResult,
+} from "./behavior/Behavior.js";
 import type { BehaviorRegistry } from "./behavior/BehaviorRegistry.js";
 import { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityDefinition } from "./entity/EntityDefinition.js";
-import type { CellPosition, EntityId, EntityInstance } from "./entity/EntityInstance.js";
+import type {
+  CellPosition,
+  EntityId,
+  EntityInstance,
+} from "./entity/EntityInstance.js";
 import type { EntityRegistry } from "./entity/EntityRegistry.js";
-import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
+import {
+  EntityStore,
+  type EntityStoreSnapshot,
+} from "./entity/EntityStore.js";
 import type { EntityPresence } from "./spatial/EntityPresence.js";
 import { SpatialIndex } from "./spatial/SpatialIndex.js";
-import type { CellInspection, MoveResult, PresenceInspection, WorldEvent } from "./WorldTypes.js";
+import type {
+  CellInspection,
+  MoveResult,
+  PresenceInspection,
+  WorldEvent,
+} from "./WorldTypes.js";
 
 export interface WorldSnapshot {
   entities: EntityStoreSnapshot;
@@ -46,30 +66,77 @@ export class World {
     this.registry = options.entities ?? builtinEntities;
     this.behaviors = options.behaviors ?? builtinBehaviors;
     this.entities = new EntityStore(level.entities);
-    this.spatial = new SpatialIndex(this.entities, this.registry, level.width, level.height);
+    this.spatial = new SpatialIndex(
+      this.entities,
+      this.registry,
+      level.width,
+      level.height,
+    );
     this.state = createGlobalState(options.profile, level.rules?.win);
-    this.query = new WorldQueryApi(this.entities, this.spatial, this.registry, () => this.state);
+    this.query = new WorldQueryApi(
+      this.entities,
+      this.spatial,
+      this.registry,
+      () => this.state,
+    );
     this.visualQuery = new SpatialVisualQuery(this.entities, this.spatial);
     const players = this.query.entitiesWithTrait("player");
-    if (players.length !== 1) throw new Error(`LevelMap 必须恰好包含一个 player Entity，当前 ${players.length}`);
+    if (players.length !== 1)
+      throw new Error(
+        `LevelMap 必须恰好包含一个 player Entity，当前 ${players.length}`,
+      );
     this.playerId = players[0]!.id;
     this.refreshDerivedState();
     this.evaluateCompletion([]);
   }
 
-  get player(): CellPosition { return { ...this.entities.require(this.playerId).anchor }; }
-  get facing(): Direction { return this.entities.require(this.playerId).direction ?? "down"; }
-  get dead(): boolean { return this.state.dead; }
-  get completed(): boolean { return this.state.completed; }
-  get forcedKind(): GlobalState["forced"] extends infer T ? T extends { kind: infer K } ? K | null : never : never { return this.state.forced?.kind ?? null; }
-  get forcedDirection(): Direction | null { return this.state.forced?.direction ?? null; }
-  get ridingMower(): boolean { return this.state.ridingMower; }
-  get objectiveRemaining(): number { return this.state.objectiveRemaining; }
-  get isPlayerClimbing(): boolean { return this.spatial.hasTraitAt(this.player, "climbable"); }
+  get player(): CellPosition {
+    return { ...this.entities.require(this.playerId).anchor };
+  }
 
-  entity(id: EntityId): Readonly<EntityInstance> | undefined { return this.entities.get(id); }
-  definition(id: EntityId): EntityDefinition { return this.registry.require(this.entities.require(id).type); }
-  presencesAt(cell: CellPosition): readonly EntityPresence[] { return this.spatial.presencesAt(cell); }
+  get facing(): Direction {
+    return this.entities.require(this.playerId).direction ?? "down";
+  }
+
+  get dead(): boolean {
+    return this.state.dead;
+  }
+
+  get completed(): boolean {
+    return this.state.completed;
+  }
+
+  get forcedKind(): string | null {
+    return this.state.forced?.kind ?? null;
+  }
+
+  get forcedDirection(): Direction | null {
+    return this.state.forced?.direction ?? null;
+  }
+
+  get ridingMower(): boolean {
+    return this.state.ridingMower;
+  }
+
+  get objectiveRemaining(): number {
+    return this.state.objectiveRemaining;
+  }
+
+  get isPlayerClimbing(): boolean {
+    return this.spatial.hasTraitAt(this.player, "climbable");
+  }
+
+  entity(id: EntityId): Readonly<EntityInstance> | undefined {
+    return this.entities.get(id);
+  }
+
+  definition(id: EntityId): EntityDefinition {
+    return this.registry.require(this.entities.require(id).type);
+  }
+
+  presencesAt(cell: CellPosition): readonly EntityPresence[] {
+    return this.spatial.presencesAt(cell);
+  }
 
   setProfile(profile: Partial<ProfileCapabilities>): void {
     this.state.profile = { ...this.state.profile, ...profile };
@@ -87,7 +154,10 @@ export class World {
   }
 
   snapshot(): WorldSnapshot {
-    return { entities: this.entities.snapshot(), state: structuredClone(this.state) };
+    return {
+      entities: this.entities.snapshot(),
+      state: structuredClone(this.state),
+    };
   }
 
   restore(snapshot: WorldSnapshot): void {
@@ -99,11 +169,14 @@ export class World {
   inspect(x: number, y: number): CellInspection | null {
     const cell = { x, y };
     if (!this.spatial.inBounds(cell)) return null;
-    const presences = this.spatial.presencesAt(cell).map((presence) => this.inspectPresence(presence));
+    const presences = this.spatial
+      .presencesAt(cell)
+      .map((presence) => this.inspectPresence(presence));
+    const topPresence = presences.at(-1);
     return {
       cell,
       presences,
-      ...(presences.at(-1) ? { topPresence: presences.at(-1)! } : {}),
+      ...(topPresence ? { topPresence } : {}),
       playerHere: this.player.x === x && this.player.y === y,
     };
   }
@@ -114,21 +187,40 @@ export class World {
     const to = addDirection(from, direction);
     if (this.state.dead || this.state.completed)
       return blockedResult(from, to, direction, "world-finished");
-    if (!this.spatial.inBounds(to)) return blockedResult(from, to, direction, "void");
+    if (!this.spatial.inBounds(to))
+      return blockedResult(from, to, direction, "void");
 
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
     const targetStack = [...this.spatial.presencesAt(to)].reverse();
     const queue = new CommandQueue();
-    const leave = this.runPassage(sourceStack, actor, direction, queue, "canLeave");
-    if (!leave.passable) return blockedResult(from, to, direction, leave.reason ?? "leave-blocked");
+    const leave = this.runPassage(
+      sourceStack,
+      actor,
+      direction,
+      queue,
+      "canLeave",
+    );
+    if (!leave.passable)
+      return blockedResult(
+        from,
+        to,
+        direction,
+        leave.reason ?? "leave-blocked",
+      );
 
     let ignoredEntity: EntityId | null = null;
-    const pushable = targetStack.find((presence) => presence.entityId !== actor.id && presence.traits.includes("pushable"));
+    const pushable = targetStack.find(
+      (presence) =>
+        presence.entityId !== actor.id && presence.traits.includes("pushable"),
+    );
     if (pushable) {
       const pushTo = addDirection(to, direction);
       if (!this.canOccupy(pushTo, pushable.entityId)) {
         const touchEvents = this.runTouch(targetStack, actor, direction);
-        return { ...blockedResult(from, to, direction, "push-blocked"), events: touchEvents };
+        return {
+          ...blockedResult(from, to, direction, "push-blocked"),
+          events: touchEvents,
+        };
       }
       queue.move(pushable.entityId, pushTo.x, pushTo.y);
       ignoredEntity = pushable.entityId;
@@ -136,25 +228,45 @@ export class World {
 
     if (!this.hasSupport(to)) {
       const touchEvents = this.runTouch(targetStack, actor, direction);
-      return { ...blockedResult(from, to, direction, "void"), events: touchEvents };
+      return {
+        ...blockedResult(from, to, direction, "void"),
+        events: touchEvents,
+      };
     }
 
-    const enter = this.runPassage(targetStack, actor, direction, queue, "canEnter", ignoredEntity);
+    const enter = this.runPassage(
+      targetStack,
+      actor,
+      direction,
+      queue,
+      "canEnter",
+      ignoredEntity,
+    );
     if (!enter.passable) {
       const touchEvents = this.runTouch(targetStack, actor, direction);
-      return { ...blockedResult(from, to, direction, enter.reason ?? "blocked"), events: touchEvents };
+      return {
+        ...blockedResult(from, to, direction, enter.reason ?? "blocked"),
+        events: touchEvents,
+      };
     }
 
-    for (const presence of sourceStack) this.runHook("onLeave", presence, actor, direction, queue);
+    for (const presence of sourceStack)
+      this.runHook("onLeave", presence, actor, direction, queue);
     queue.move(actor.id, to.x, to.y);
     queue.setDirection(actor.id, direction);
-    for (const presence of targetStack)
-      if (presence.entityId !== ignoredEntity) this.runHook("onEnter", presence, actor, direction, queue);
+    for (const presence of targetStack) {
+      if (presence.entityId !== ignoredEntity)
+        this.runHook("onEnter", presence, actor, direction, queue);
+    }
     if (!forced) queue.setGlobal("moves", this.state.moves + 1);
     const events = this.commit(queue);
     this.refreshDerivedState();
     this.evaluateCompletion(events);
-    if (this.rules?.maxMoves !== undefined && this.state.moves > this.rules.maxMoves && !this.state.completed)
+    if (
+      this.rules?.maxMoves !== undefined &&
+      this.state.moves > this.rules.maxMoves &&
+      !this.state.completed
+    )
       events.push(...this.killPlayer(`Move limit exceeded: ${this.rules.maxMoves}`));
     return {
       moved: true,
@@ -167,15 +279,29 @@ export class World {
   }
 
   advanceTime(deltaMs: number): WorldEvent[] {
-    if (!Number.isFinite(deltaMs) || deltaMs <= 0 || this.state.dead || this.state.completed) return [];
+    if (
+      !Number.isFinite(deltaMs) ||
+      deltaMs <= 0 ||
+      this.state.dead ||
+      this.state.completed
+    )
+      return [];
     const queue = new CommandQueue();
     const snapshot = this.entities.all().map((entity) => entity.id);
     for (const entityId of snapshot) {
       const entity = this.entities.get(entityId);
       const presence = this.spatial.presencesForEntity(entityId)[0];
       if (!entity || !presence) continue;
-      const context = this.context(entity, presence, entity, undefined, queue, deltaMs);
-      for (const behavior of this.resolveBehaviors(entity, presence)) behavior.onTick?.(context);
+      const context = this.context(
+        entity,
+        presence,
+        entity,
+        undefined,
+        queue,
+        deltaMs,
+      );
+      for (const behavior of this.resolveBehaviors(entity, presence))
+        behavior.onTick?.(context);
     }
     const events = this.commit(queue);
     this.refreshDerivedState();
@@ -183,48 +309,70 @@ export class World {
     return events;
   }
 
-  private canOccupy(cell: CellPosition, movingEntityId: EntityId): boolean {
+  private canOccupy(
+    cell: CellPosition,
+    movingEntityId: EntityId,
+  ): boolean {
     if (!this.spatial.inBounds(cell) || !this.hasSupport(cell)) return false;
-    return !this.spatial.presencesAt(cell).some((presence) =>
-      presence.entityId !== movingEntityId &&
-      (presence.traits.includes("blocking") || presence.traits.includes("pushable")),
+    return !this.spatial.presencesAt(cell).some(
+      (presence) =>
+        presence.entityId !== movingEntityId &&
+        (presence.traits.includes("blocking") ||
+          presence.traits.includes("pushable")),
     );
   }
 
   private hasSupport(cell: CellPosition): boolean {
-    return this.spatial.presencesAt(cell).some((presence) =>
-      presence.stackBand === "surface" &&
-      (presence.traits.includes("walkable") ||
-        presence.traits.includes("water") ||
-        presence.traits.includes("forced-movement") ||
-        presence.traits.includes("push-goal")),
+    return this.spatial.presencesAt(cell).some(
+      (presence) =>
+        presence.stackBand === "surface" &&
+        (presence.traits.includes("walkable") ||
+          presence.traits.includes("water") ||
+          presence.traits.includes("forced-movement") ||
+          presence.traits.includes("push-goal")),
     );
   }
 
   private runPassage(
-    stack: readonly EntityPresence[], actor: EntityInstance, direction: Direction,
-    queue: CommandQueue, hook: "canEnter" | "canLeave", ignoredEntity: EntityId | null = null,
+    stack: readonly EntityPresence[],
+    actor: EntityInstance,
+    direction: Direction,
+    queue: CommandQueue,
+    hook: "canEnter" | "canLeave",
+    ignoredEntity: EntityId | null = null,
   ): PassageResult {
     for (const presence of stack) {
-      if (presence.entityId === actor.id || presence.entityId === ignoredEntity) continue;
+      if (
+        presence.entityId === actor.id ||
+        presence.entityId === ignoredEntity
+      )
+        continue;
       const entity = this.entities.require(presence.entityId);
       let explicitPass = false;
       for (const behavior of this.resolveBehaviors(entity, presence)) {
-        const result = behavior[hook]?.(this.context(actor, presence, entity, direction, queue));
+        const result = behavior[hook]?.(
+          this.context(actor, presence, entity, direction, queue),
+        );
         if (result?.passable === false) return result;
         if (result?.passable === true) explicitPass = true;
       }
       if (!explicitPass && presence.traits.includes("blocking"))
-        return { passable: false, reason: `blocking:${entity.type}` };
+        return {
+          passable: false,
+          reason: `blocking:${entity.type}`,
+        };
     }
     return { passable: true };
   }
 
-  private runTouch(stack: readonly EntityPresence[], actor: EntityInstance, direction: Direction): WorldEvent[] {
+  private runTouch(
+    stack: readonly EntityPresence[],
+    actor: EntityInstance,
+    direction: Direction,
+  ): WorldEvent[] {
     const queue = new CommandQueue();
     for (const presence of stack) {
       if (presence.entityId === actor.id) continue;
-      const entity = this.entities.require(presence.entityId);
       this.runHook("onTouch", presence, actor, direction, queue);
     }
     const events = this.commit(queue);
@@ -233,19 +381,42 @@ export class World {
     return events;
   }
 
-  private runHook(hook: "onEnter" | "onLeave" | "onTouch", presence: EntityPresence, actor: EntityInstance, direction: Direction, queue: CommandQueue): void {
+  private runHook(
+    hook: "onEnter" | "onLeave" | "onTouch",
+    presence: EntityPresence,
+    actor: EntityInstance,
+    direction: Direction,
+    queue: CommandQueue,
+  ): void {
     const entity = this.entities.get(presence.entityId);
     if (!entity) return;
-    const context = this.context(actor, presence, entity, direction, queue);
-    for (const behavior of this.resolveBehaviors(entity, presence)) behavior[hook]?.(context);
+    const context = this.context(
+      actor,
+      presence,
+      entity,
+      direction,
+      queue,
+    );
+    for (const behavior of this.resolveBehaviors(entity, presence))
+      behavior[hook]?.(context);
   }
 
-  private resolveBehaviors(entity: EntityInstance, presence: EntityPresence): readonly Behavior[] {
+  private resolveBehaviors(
+    entity: EntityInstance,
+    presence: EntityPresence,
+  ): readonly Behavior[] {
     const definition = this.registry.require(entity.type);
     return this.behaviors.resolve(definition.behaviors, presence.traits);
   }
 
-  private context(actor: EntityInstance, presence: EntityPresence, self: EntityInstance, direction: Direction | undefined, queue: CommandQueue, deltaMs?: number): BehaviorContext {
+  private context(
+    actor: EntityInstance,
+    presence: EntityPresence,
+    self: EntityInstance,
+    direction: Direction | undefined,
+    queue: CommandQueue,
+    deltaMs?: number,
+  ): BehaviorContext {
     return {
       query: this.query,
       commands: queue,
@@ -270,11 +441,18 @@ export class World {
           this.entities.destroy(command.entityId);
           break;
         case "move":
-          if (this.entities.get(command.entityId)) this.spatial.moveEntity(command.entityId, { x: command.x, y: command.y });
+          if (this.entities.get(command.entityId))
+            this.spatial.moveEntity(command.entityId, {
+              x: command.x,
+              y: command.y,
+            });
           break;
         case "set-direction": {
           const entity = this.entities.get(command.entityId);
-          if (entity) { entity.direction = command.direction; this.spatial.rebuildEntity(entity.id); }
+          if (entity) {
+            entity.direction = command.direction;
+            this.spatial.rebuildEntity(entity.id);
+          }
           break;
         }
         case "set-state": {
@@ -283,9 +461,12 @@ export class World {
           break;
         }
         case "set-global":
-          (this.state as unknown as Record<string, unknown>)[command.key] = structuredClone(command.value);
+          (this.state as unknown as Record<string, unknown>)[command.key] =
+            structuredClone(command.value);
           break;
-        case "emit": events.push(command.event); break;
+        case "emit":
+          events.push(command.event);
+          break;
       }
     }
     return events;
@@ -294,16 +475,28 @@ export class World {
   private refreshDerivedState(): void {
     const objectives = this.query.entitiesWithTrait("level-objective");
     this.state.objectiveRemaining = objectives.length;
-    this.state.objectiveTotal = Math.max(this.state.objectiveTotal, objectives.length);
-    this.state.objectiveMode = this.query.entitiesWithTrait("objective-carrot").length > 0
-      ? "carrot"
-      : this.query.entitiesWithTrait("objective-nest").length > 0 ? "nest" : "generic";
-    this.state.goldenCarrotsInLevel = this.query.entitiesWithTrait("golden-carrot").length;
-    this.state.bonusCoinsInLevel = this.query.entitiesWithTrait("bonus-coin").length;
+    this.state.objectiveTotal = Math.max(
+      this.state.objectiveTotal,
+      objectives.length,
+    );
+    if (this.query.entitiesWithTrait("objective-carrot").length > 0)
+      this.state.objectiveMode = "carrot";
+    else if (this.query.entitiesWithTrait("objective-nest").length > 0)
+      this.state.objectiveMode = "nest";
+    else this.state.objectiveMode = "generic";
+    this.state.goldenCarrotsInLevel =
+      this.query.entitiesWithTrait("golden-carrot").length;
+    this.state.bonusCoinsInLevel =
+      this.query.entitiesWithTrait("bonus-coin").length;
   }
 
   private evaluateCompletion(events: WorldEvent[]): void {
-    if (this.state.completed || this.state.dead || !this.state.winCondition) return;
+    if (
+      this.state.completed ||
+      this.state.dead ||
+      !this.state.winCondition
+    )
+      return;
     if (!this.evaluateWin(this.state.winCondition)) return;
     this.state.completed = true;
     events.push({ type: "complete" });
@@ -311,26 +504,43 @@ export class World {
 
   private evaluateWin(condition: WinCondition): boolean {
     switch (condition.type) {
-      case "all": return condition.conditions.every((item) => this.evaluateWin(item));
-      case "any": return condition.conditions.some((item) => this.evaluateWin(item));
-      case "collect-all": return this.query.entitiesWithTrait(condition.trait).length === 0;
-      case "reach": return this.spatial.hasTraitAt(this.player, condition.trait);
+      case "all":
+        return condition.conditions.every((item) => this.evaluateWin(item));
+      case "any":
+        return condition.conditions.some((item) => this.evaluateWin(item));
+      case "collect-all":
+        return this.query.entitiesWithTrait(condition.trait).length === 0;
+      case "reach":
+        return this.spatial.hasTraitAt(this.player, condition.trait);
       case "fill-all": {
         const targets = this.spatialCellsWithTrait(condition.targetTrait);
-        return targets.length > 0 && targets.every((cell) => this.spatial.hasTraitAt(cell, condition.fillerTrait));
+        return (
+          targets.length > 0 &&
+          targets.every((cell) =>
+            this.spatial.hasTraitAt(cell, condition.fillerTrait),
+          )
+        );
       }
     }
   }
 
   private spatialCellsWithTrait(trait: string): CellPosition[] {
     const result = new Map<string, CellPosition>();
-    for (const entity of this.query.entitiesWithTrait(trait))
-      for (const presence of this.spatial.presencesForEntity(entity.id))
-        if (presence.traits.includes(trait)) result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
+    for (const entity of this.query.entitiesWithTrait(trait)) {
+      for (const presence of this.spatial.presencesForEntity(entity.id)) {
+        if (presence.traits.includes(trait))
+          result.set(
+            `${presence.cell.x},${presence.cell.y}`,
+            presence.cell,
+          );
+      }
+    }
     return [...result.values()];
   }
 
-  private inspectPresence(presence: EntityPresence): PresenceInspection {
+  private inspectPresence(
+    presence: EntityPresence,
+  ): PresenceInspection {
     const entity = this.entities.require(presence.entityId);
     return {
       entityId: entity.id,
@@ -343,13 +553,29 @@ export class World {
   }
 }
 
-function addDirection(cell: CellPosition, direction: Direction): CellPosition {
+function addDirection(
+  cell: CellPosition,
+  direction: Direction,
+): CellPosition {
   if (direction === "up") return { x: cell.x, y: cell.y - 1 };
   if (direction === "down") return { x: cell.x, y: cell.y + 1 };
   if (direction === "left") return { x: cell.x - 1, y: cell.y };
   return { x: cell.x + 1, y: cell.y };
 }
 
-function blockedResult(from: CellPosition, to: CellPosition, direction: Direction, reason: string): MoveResult {
-  return { moved: false, blocked: true, from, to, direction, passage: { reason, confidence: "rule" }, events: [] };
+function blockedResult(
+  from: CellPosition,
+  to: CellPosition,
+  direction: Direction,
+  reason: string,
+): MoveResult {
+  return {
+    moved: false,
+    blocked: true,
+    from,
+    to,
+    direction,
+    passage: { reason, confidence: "rule" },
+    events: [],
+  };
 }
