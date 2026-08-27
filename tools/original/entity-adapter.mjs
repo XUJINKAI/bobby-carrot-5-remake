@@ -82,6 +82,17 @@ const directObjectTypes = new Set([
 export function adaptLegacyMap(map, options = {}) {
   const entities = [];
   const starts = [];
+  const sourceObjects = map.objects ?? [];
+  const explicitObjectCells = new Set(
+    sourceObjects
+      .filter((object) => object.type !== LegacyObject.EMPTY)
+      .map((object) => `${object.x},${object.y}`),
+  );
+  const objectiveType = sourceObjects.some(
+    (object) => object.type === LegacyObject.CARROT,
+  )
+    ? EntityTypeId.CARROT
+    : EntityTypeId.EGG_NEST_EMPTY;
 
   for (let y = 0; y < map.height; y += 1) {
     const row = map.terrain[y];
@@ -90,7 +101,15 @@ export function adaptLegacyMap(map, options = {}) {
     for (let x = 0; x < map.width; x += 1) {
       const type = row[x];
       if (type === LegacyTerrain.START) starts.push({ x, y });
-      entities.push(...adaptLegacyTerrain(type, x, y));
+      entities.push(
+        ...adaptLegacyTerrain(type, x, y, {
+          hiddenObjectiveType:
+            type === LegacyTerrain.HIGH_GRASS_OBJECTIVE &&
+            !explicitObjectCells.has(`${x},${y}`)
+              ? objectiveType
+              : null,
+        }),
+      );
     }
   }
 
@@ -104,7 +123,7 @@ export function adaptLegacyMap(map, options = {}) {
     direction: options.bobbyDirection ?? "down",
   });
 
-  for (const object of map.objects ?? [])
+  for (const object of sourceObjects)
     entities.push(...adaptLegacyObject(object));
 
   return {
@@ -114,7 +133,7 @@ export function adaptLegacyMap(map, options = {}) {
   };
 }
 
-export function adaptLegacyTerrain(type, x, y) {
+export function adaptLegacyTerrain(type, x, y, options = {}) {
   if (type === LegacyTerrain.SNOW)
     return [entity(EntityTypeId.GROUND_D, x, y), entity(EntityTypeId.SNOW, x, y)];
   if (
@@ -123,6 +142,9 @@ export function adaptLegacyTerrain(type, x, y) {
   )
     return [
       entity(mowedGroundAt(x, y), x, y),
+      ...(options.hiddenObjectiveType
+        ? [entity(options.hiddenObjectiveType, x, y)]
+        : []),
       entity(type, x, y),
     ];
 
