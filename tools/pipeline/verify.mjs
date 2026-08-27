@@ -88,6 +88,7 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
 for (const map of original.maps) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
+  assertOriginalStartContract(document, relative);
   assertOriginalWinRule(document, relative);
 }
 assertNext("1-3", "1-bonus-1");
@@ -115,7 +116,9 @@ for (const scene of adventure.specialScenes) {
   const ref = parseMapRef(scene.map);
   if (!ref) throw new Error(`无效 Adventure Special Scene map ref：${scene.map}`);
   const relative = `assets/maps/${ref.collection}/${ref.id}.json`;
-  assertMapDocument(readJson(relative), relative, ref.id);
+  const document = readJson(relative);
+  assertMapDocument(document, relative, ref.id);
+  if (ref.collection === "original") assertOriginalStartContract(document, relative);
 }
 
 for (const file of [
@@ -139,7 +142,7 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、player start contract、collection cardSize、LOMA/Novoban generation、win rules、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1 Entity Map、MapDocument、Bobby/Start、collection cardSize、LOMA/Novoban generation、win rules、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
 
 function assertLomaCollection(collections) {
@@ -200,28 +203,35 @@ function assertNovobanCollection(collections) {
     throw new Error("Novoban 应保留不同关卡的可变箱子数量");
 
   const surrounded = readJson("assets/maps/novoban-pushbox/07.json");
-  const start = surrounded.playerStart;
-  if (!start || surrounded.terrain[start.y]?.[start.x] !== "custom:push-goal")
-    throw new Error("Novoban 07 必须把 XSB + 保留为 playerStart 位于 push-goal 上");
+  const bobby = surrounded.entities.find((entity) => entity.type === "bobby");
+  if (
+    !bobby ||
+    !surrounded.entities.some(
+      (entity) =>
+        entity.type === "push-goal" && entity.x === bobby.x && entity.y === bobby.y,
+    )
+  )
+    throw new Error("Novoban 07 必须把 XSB + 保留为 Bobby 位于 push-goal 上");
 }
 
 function assertPushboxWinRule(document, relative) {
   const expected = {
     type: "fill-all",
-    terrainTrait: "push-goal",
-    objectTrait: "pushable",
+    targetTrait: "push-goal",
+    fillerTrait: "pushable",
   };
   if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
     throw new Error(`${relative}: 获胜条件必须只有 fill-all push-goal`);
-  if (!document.playerStart || document.terrain.flat().includes("start"))
-    throw new Error(`${relative}: Sokoban 必须使用 playerStart 而不是 start terrain`);
-  const pushables = document.objects.filter((object) =>
-    object.traits?.includes("pushable"),
+  const bobbies = document.entities.filter((entity) => entity.type === "bobby");
+  if (bobbies.length !== 1)
+    throw new Error(`${relative}: Sokoban 必须恰好包含一个 Bobby Entity`);
+  if (document.entities.some((entity) => entity.type === "start"))
+    throw new Error(`${relative}: Sokoban 不使用 Start surface`);
+  const pushables = document.entities.filter((entity) =>
+    entity.traits?.includes("pushable"),
   ).length;
-  const goals = document.terrain
-    .flat()
-    .filter((terrain) => terrain === "custom:push-goal").length;
-  if (document.terrain.flat().includes("exit"))
+  const goals = document.entities.filter((entity) => entity.type === "push-goal").length;
+  if (document.entities.some((entity) => entity.type === "exit"))
     throw new Error(`${relative}: Sokoban collection 不使用 exit 获胜条件`);
   return { pushables, goals };
 }
@@ -243,46 +253,65 @@ function assertMapDocument(document, relative, expectedId) {
     !document.meta ||
     document.meta.id !== expectedId ||
     typeof document.meta.name !== "string" ||
-    !Array.isArray(document.terrain) ||
-    !Array.isArray(document.objects)
+    !Number.isInteger(document.width) ||
+    !Number.isInteger(document.height) ||
+    document.width <= 0 ||
+    document.height <= 0 ||
+    !Array.isArray(document.entities)
   )
-    throw new Error(`${relative}: MapDocument 合同不完整`);
-  assertPlayerStartContract(document, relative);
+    throw new Error(`${relative}: MapDocument Entity 合同不完整`);
+  for (const obsolete of ["terrain", "objects", "playerStart"])
+    if (Object.hasOwn(document, obsolete))
+      throw new Error(`${relative}: 不允许持久化旧字段 ${obsolete}`);
+  assertEntityBounds(document, relative);
 }
 
-function assertPlayerStartContract(document, relative) {
-  const terrainStarts = document.terrain
-    .flat()
-    .filter((terrain) => terrain === "start").length;
-  const explicit = document.playerStart;
-  if (terrainStarts + (explicit ? 1 : 0) !== 1)
-    throw new Error(
-      `${relative}: playerStart 与 start terrain 合计必须且只能有一个`,
-    );
-  if (!explicit) return;
-  if (
-    !Number.isInteger(explicit.x) ||
-    !Number.isInteger(explicit.y) ||
-    explicit.x < 0 ||
-    explicit.y < 0 ||
-    explicit.x >= document.width ||
-    explicit.y >= document.height
-  )
-    throw new Error(`${relative}: playerStart 必须是地图范围内的整数坐标`);
+function assertEntityBounds(document, relative) {
+  for (const [index, entity] of document.entities.entries()) {
+    if (
+      !entity ||
+      typeof entity !== "object" ||
+      typeof entity.type !== "string" ||
+      !entity.type ||
+      !Number.isInteger(entity.x) ||
+      !Number.isInteger(entity.y) ||
+      entity.x < 0 ||
+      entity.y < 0 ||
+      entity.x >= document.width ||
+      entity.y >= document.height
+    )
+      throw new Error(`${relative}: entities[${index}] identity/坐标无效`);
+  }
+}
+
+function assertOriginalStartContract(document, relative) {
+  const starts = document.entities.filter((entity) => entity.type === "start");
+  const bobbies = document.entities.filter((entity) => entity.type === "bobby");
+  if (starts.length !== 1 || bobbies.length !== 1)
+    throw new Error(`${relative}: Original 必须恰好包含一个 Start surface 与一个 Bobby`);
+  if (starts[0].x !== bobbies[0].x || starts[0].y !== bobbies[0].y)
+    throw new Error(`${relative}: Original 初始 Bobby 必须与 Start surface 同格`);
 }
 
 function assertOriginalWinRule(document, relative) {
   const conditions = document.rules?.win?.conditions;
   if (!Array.isArray(conditions))
     throw new Error(`${relative}: Original rules.win.conditions 缺失`);
-  const pushGoal = conditions.find(
-    (condition) =>
-      condition?.type === "fill-all" &&
-      (condition.terrainTrait === "push-goal" ||
-        condition.objectTrait === "pushable"),
-  );
-  if (pushGoal)
+  if (
+    conditions.some(
+      (condition) =>
+        condition?.type === "fill-all" &&
+        (condition.targetTrait === "push-goal" ||
+          condition.fillerTrait === "pushable"),
+    )
+  )
     throw new Error(`${relative}: Original 不应包含 Pushbox fill-all 获胜条件`);
+  if (
+    !conditions.some(
+      (condition) => condition?.type === "reach" && condition.trait === "exit",
+    )
+  )
+    throw new Error(`${relative}: Original 必须包含 reach exit 获胜条件`);
 }
 
 function parseMapRef(value) {
@@ -302,17 +331,22 @@ function assertSameTree(source, target) {
   if (JSON.stringify(sourceFiles) !== JSON.stringify(targetFiles))
     throw new Error("dist/assets 文件列表必须与 assets 完全一致");
   for (const relative of sourceFiles)
-    if (!fs.readFileSync(path.join(source, relative)).equals(
-      fs.readFileSync(path.join(target, relative)),
-    ))
+    if (
+      !fs
+        .readFileSync(path.join(source, relative))
+        .equals(fs.readFileSync(path.join(target, relative)))
+    )
       throw new Error(`dist/assets 文件内容不一致：${relative}`);
 }
 
 function listFiles(directory, prefix = "") {
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const relative = path.join(prefix, entry.name);
-    return entry.isDirectory()
-      ? listFiles(path.join(directory, entry.name), relative)
-      : [relative];
-  }).sort();
+  return fs
+    .readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const relative = path.join(prefix, entry.name);
+      return entry.isDirectory()
+        ? listFiles(path.join(directory, entry.name), relative)
+        : [relative];
+    })
+    .sort();
 }
