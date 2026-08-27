@@ -24,84 +24,52 @@ export {
   type GameplayHudOptions,
 } from "./ui/GameplayHud.js";
 export { NullAudioBackend, type AudioBackend } from "./audio/AudioBackend.js";
+
+export { EntityTypeId } from "@bobby/model";
 export type {
+  Direction,
+  EntityProperties,
+  EntityState,
+  EntityTraits,
+  EntityType,
+  JsonValue,
+  LevelEntity,
   LevelMap,
-  LevelObject,
-  LevelObjectProperties,
-  TerrainType,
-  ObjectType,
+  LevelRules,
+  WinCondition,
 } from "@bobby/model";
-export {
-  type TileInspection,
-  type MoveResult,
-  type Point,
-  type WorldEvent,
-} from "./world/World.js";
-export { World } from "./world/World.js";
-export { resolveLevelPlayerStart } from "./world/level-start.js";
-export {
-  Terrain,
-  ObjectId,
-  CustomObjectId,
-  CustomTerrain,
-  EMPTY_OBJECT,
-  DIRECTIONS,
-  DYNAMIC_OBJECT_IDS,
-  CLOUD_OBJECT_IDS,
-  CLOUD_GRID_FOR_OBJECT,
-  type Direction,
-} from "./mechanics/ids.js";
-export {
-  getTerrainDefinition,
-  getObjectDefinition,
-  inspectTerrainDefinition,
-  inspectObjectDefinition,
-  isObjectAuthorable,
-  hasTerrainDefinition,
-  hasObjectDefinition,
-  terrainDefinitions,
-  objectDefinitions,
-  terrainHasTrait,
-  type TileDefinition,
-  type TileDefinitionInspection,
-  type TilePresentation,
-  type TileAuthoring,
-  type TileTrait,
-} from "./mechanics/definitions.js";
+
+export { EntityRegistry } from "./world/entity/EntityRegistry.js";
 export type {
-  ObjectPropertyDefinition,
-  StringPropertyDefinition,
-  EnumPropertyDefinition,
-  EnumPropertyOption,
-} from "./mechanics/definition-types.js";
-export {
-  objectLayoutFor,
-  isMultiCellObject,
-  isObjectLayoutPart,
-  objectVariantCycle,
-  transformObjectVariant,
-  expandObjectLayouts,
-  collapseObjectLayouts,
-  type ObjectLayout,
-  type ObjectLayoutCell,
-} from "./mechanics/object-layouts.js";
-export {
-  directionalPassage,
-  rotateOnLeave,
-  passageBehavior,
-  touchBehavior,
-  enterBehavior,
-  preEnterBehavior,
-  leaveBehavior,
-  fireReflectionBehavior,
-  markerBehavior,
-  type TileBehavior,
-  type BehaviorDescription,
-  type ObjectTouchResult,
-} from "./mechanics/behaviors.js";
-export {
-  terrainAtlasCell,
-  objectAtlasCell,
-  type AtlasCell,
-} from "./render/atlas.js";
-export { drawCustomObject, drawCustomTerrain, customTileIconStyle } from "./render/custom-tiles.js";
+  AudioProfileId,
+  BehaviorId,
+  EntityAuthoringDefinition,
+  EntityDefinition,
+  EntityFieldDefinition,
+  EntityFieldKind,
+  EntityFieldOption,
+  EntityPresentationDefinition,
+  EntityTrait,
+  OccupancyDefinition,
+  VisualId,
+} from "./world/entity/EntityDefinition.js";
+export type {
+  CellPosition,
+  EntityId,
+  EntityInstance,
+} from "./world/entity/EntityInstance.js";
+export { EntityStore } from "./world/entity/EntityStore.js";
+export type { EntityStoreSnapshot } from "./world/entity/EntityStore.js";
+export type { EntityPresence } from "./world/spatial/EntityPresence.js";
+export type {
+  FootprintDefinition,
+  FootprintPart,
+} from "./world/spatial/Footprint.js";
+export { STACK_BANDS } from "./world/spatial/StackBand.js";
+export type { StackBand } from "./world/spatial/StackBand.js";
+export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
+export { WorldPreview } from "./world/WorldPreview.js";
+export type {
+  CellInspection,
+  PresenceInspection,
+} from "./world/WorldPreview.js";
