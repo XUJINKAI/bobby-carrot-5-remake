@@ -1,0 +1,27 @@
+import { EntityTypeId } from "@bobby/model";
+import type { EntityModule } from "../EntityModule.js";
+import {
+  atlasVisual,
+  boundedInt,
+  cell,
+  originalModule,
+  surfaceDefinition,
+  variantState,
+} from "./module.js";
+
+const definition = surfaceDefinition(
+  EntityTypeId.CAROUSEL,
+  "Carousel",
+  ["walkable", "carousel", "directional-passage", "rotatable"],
+  { state: variantState([1, 2, 3, 4, "vertical", "horizontal"]) },
+);
+
+export const carousel: EntityModule = originalModule(
+  definition,
+  atlasVisual(definition, (context) => {
+    const variant = context.entity.state?.variant ?? 1;
+    if (variant === "vertical") return cell(13, 11);
+    if (variant === "horizontal") return cell(14, 11);
+    return cell(8 + boundedInt(variant, 1, 4, 1), 11);
+  }),
+);

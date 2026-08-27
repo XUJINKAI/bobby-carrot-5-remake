@@ -1,0 +1,207 @@
+import type { Direction, EntityType, JsonValue } from "@bobby/model";
+import type {
+  EntityDefinition,
+  EntityFieldDefinition,
+  EntityTrait,
+} from "../../world/entity/EntityDefinition.js";
+import type {
+  VisualDefinition,
+  VisualResolveContext,
+} from "../../visual/VisualDefinition.js";
+import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
+import { defineEntityModule, type EntityModule } from "../EntityModule.js";
+
+export interface AtlasCell {
+  column: number;
+  row: number;
+}
+
+export const cell = (column: number, row: number): AtlasCell => ({
+  column,
+  row,
+});
+
+export function objectCell(index: number): AtlasCell {
+  const linear = 9 + index;
+  return cell(linear % 16, 12 + Math.floor(linear / 16));
+}
+
+export function surfaceDefinition(
+  type: EntityType,
+  name: string,
+  traits: readonly EntityTrait[] = ["walkable"],
+  extra: Partial<EntityDefinition> = {},
+): EntityDefinition {
+  return {
+    type,
+    traits,
+    stackBand: "surface",
+    occupancy: { group: "surface", replaceSameGroup: true },
+    presentation: { name, category: "地表" },
+    authoring: { palette: true, category: "地表" },
+    ...extra,
+  };
+}
+
+export function contentDefinition(
+  type: EntityType,
+  name: string,
+  traits: readonly EntityTrait[] = [],
+  extra: Partial<EntityDefinition> = {},
+): EntityDefinition {
+  return {
+    type,
+    traits,
+    stackBand: "content",
+    presentation: { name, category: "实体" },
+    authoring: { palette: true, category: "实体" },
+    ...extra,
+  };
+}
+
+export function coverDefinition(
+  type: EntityType,
+  name: string,
+  traits: readonly EntityTrait[] = [],
+  extra: Partial<EntityDefinition> = {},
+): EntityDefinition {
+  return {
+    type,
+    traits,
+    stackBand: "cover",
+    occupancy: { group: "cover", replaceSameGroup: true },
+    presentation: { name, category: "覆盖" },
+    authoring: { palette: true, category: "覆盖" },
+    ...extra,
+  };
+}
+
+export function originalModule(
+  definition: EntityDefinition,
+  visual: VisualDefinition,
+): EntityModule {
+  return defineEntityModule({
+    definition,
+    visual,
+    behaviorBindings: behaviorBindingsForDefinition(definition),
+  });
+}
+
+export function atlasVisual(
+  definition: EntityDefinition,
+  source:
+    | AtlasCell
+    | ((context: VisualResolveContext) => AtlasCell | null),
+): VisualDefinition {
+  const resolveCell =
+    typeof source === "function" ? source : () => source;
+  return {
+    id: definition.presentation.visual ?? definition.type,
+    resolve(context) {
+      const atlas = resolveCell(context);
+      return atlas
+        ? {
+            layers: [
+              {
+                kind: "atlas",
+                column: atlas.column,
+                row: atlas.row,
+              },
+            ],
+          }
+        : null;
+    },
+  };
+}
+
+export function staticSurface(
+  type: EntityType,
+  name: string,
+  atlas: AtlasCell,
+  traits: readonly EntityTrait[] = ["walkable"],
+  extra: Partial<EntityDefinition> = {},
+): EntityModule {
+  const definition = surfaceDefinition(type, name, traits, extra);
+  return originalModule(definition, atlasVisual(definition, atlas));
+}
+
+export function staticContent(
+  type: EntityType,
+  name: string,
+  atlas: AtlasCell,
+  traits: readonly EntityTrait[] = [],
+  extra: Partial<EntityDefinition> = {},
+): EntityModule {
+  const definition = contentDefinition(type, name, traits, extra);
+  return originalModule(definition, atlasVisual(definition, atlas));
+}
+
+export function staticCover(
+  type: EntityType,
+  name: string,
+  atlas: AtlasCell,
+  traits: readonly EntityTrait[] = [],
+  extra: Partial<EntityDefinition> = {},
+): EntityModule {
+  const definition = coverDefinition(type, name, traits, extra);
+  return originalModule(definition, atlasVisual(definition, atlas));
+}
+
+export const pressedState: readonly EntityFieldDefinition[] = [
+  {
+    key: "pressed",
+    kind: "boolean",
+    label: "按下",
+    default: false,
+  },
+];
+
+export function activeState(defaultValue = false): readonly EntityFieldDefinition[] {
+  return [
+    {
+      key: "active",
+      kind: "boolean",
+      label: "激活",
+      default: defaultValue,
+    },
+  ];
+}
+
+export function variantState(
+  values: readonly (string | number)[],
+): readonly EntityFieldDefinition[] {
+  return [
+    {
+      key: "variant",
+      kind: "enum",
+      label: "形态",
+      default: values[0]!,
+      options: values.map((value) => ({ value })),
+    },
+  ];
+}
+
+export function directionCell(
+  direction: Direction | undefined,
+  up: AtlasCell,
+  down: AtlasCell,
+  left: AtlasCell,
+  right: AtlasCell,
+): AtlasCell {
+  return { up, down, left, right }[direction ?? "right"];
+}
+
+export function boundedInt(
+  value: JsonValue | undefined,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  const number = Number(value);
+  if (!Number.isInteger(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
+}
+
+export function clampProgress(value: number): number {
+  return Math.max(0, Math.min(0.999999, value));
+}
