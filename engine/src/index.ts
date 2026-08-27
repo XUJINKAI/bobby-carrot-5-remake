@@ -78,6 +78,31 @@ export {
   createBuiltinEntityRegistry,
   entityRegistry,
 } from "./entities/registry.js";
+
+export { VisualRegistry } from "./visual/VisualRegistry.js";
+export {
+  deterministicVisualVariantIndex,
+  stableVisualHash,
+} from "./visual/VisualRegistry.js";
+export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
+export {
+  createBuiltinVisualRegistry,
+  visualRegistry,
+} from "./visual/builtin.js";
+export type {
+  AtlasVisualLayer,
+  CustomVisualLayer,
+  PersistedVisualVariantDefinition,
+  QuarterTurn,
+  VisualAuthoringDefinition,
+  VisualComposition,
+  VisualDefinition,
+  VisualLayer,
+  VisualQuery,
+  VisualResolveContext,
+} from "./visual/VisualDefinition.js";
+
+/** Transitional atlas source used by the built-in Visual Definitions. */
 export {
   entityAtlasCell,
   drawEntityTile,
