@@ -1,18 +1,21 @@
-import type { EntityId, EntityInstance } from "../world/entity/EntityInstance.js";
+import type { EntityInstance } from "../world/entity/EntityInstance.js";
 import type { World } from "../world/World.js";
 import { visualRegistry } from "../visual/builtin.js";
 import type {
   AtlasVisualLayer,
-  EntityVisualRuntimeState,
   ImageVisualLayer,
   VisualAssetSources,
   VisualComposition,
 } from "../visual/VisualDefinition.js";
 import { Camera } from "./Camera.js";
 import { drawEntityTile } from "./entity-art.js";
+import {
+  buildRenderScene,
+  type RenderVisualRuntimeState,
+} from "./RenderScene.js";
 
 export type RendererAssets = VisualAssetSources;
-export type VisualRuntimeState = ReadonlyMap<EntityId, EntityVisualRuntimeState>;
+export type VisualRuntimeState = RenderVisualRuntimeState;
 
 const EMPTY_VISUAL_RUNTIME: VisualRuntimeState = new Map();
 
@@ -62,6 +65,7 @@ export class Renderer {
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, width, height);
     this.camera.setViewport(width, height);
+
     const playerRuntime = runtime.get(world.playerId);
     this.camera.follow(
       {
@@ -72,28 +76,14 @@ export class Renderer {
       world.height,
     );
 
-    for (let y = 0; y < world.height; y += 1) {
-      for (let x = 0; x < world.width; x += 1) {
-        for (const presence of world.presencesAt({ x, y })) {
-          const entity = world.entity(presence.entityId);
-          if (!entity) continue;
-          const visualRuntime = runtime.get(entity.id);
-          const definition = world.registry.require(entity.type);
-          const composition = visualRegistry.resolve(definition, {
-            entity,
-            presence,
-            query: world.visualQuery,
-            ...(visualRuntime ? { runtime: visualRuntime } : {}),
-          });
-          this.drawComposition(
-            context,
-            entity,
-            composition,
-            x + (visualRuntime?.offsetX ?? 0),
-            y + (visualRuntime?.offsetY ?? 0),
-          );
-        }
-      }
+    for (const item of buildRenderScene(world, visualRegistry, runtime)) {
+      this.drawComposition(
+        context,
+        item.entity,
+        item.composition,
+        item.visualX,
+        item.visualY,
+      );
     }
 
     if (this.debug) this.drawDebugGrid(context, world.width, world.height);
@@ -102,11 +92,10 @@ export class Renderer {
   private drawComposition(
     context: CanvasRenderingContext2D,
     entity: Readonly<EntityInstance>,
-    composition: VisualComposition | null,
+    composition: VisualComposition,
     x: number,
     y: number,
   ): void {
-    if (!composition) return;
     const point = this.camera.worldToScreen(x, y);
     const size = this.camera.tileScreenSize;
     for (const layer of composition.layers) {
