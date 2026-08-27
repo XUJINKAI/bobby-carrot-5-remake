@@ -5,14 +5,17 @@
 当前通用映射：
 
 ```text
-WASD / 方向键 -> held direction
-R              -> Restart
-Z / U          -> Undo
-+ / -          -> Zoom
-~              -> Debug
-鼠标/单指拖动 -> Pan
-Pinch / 滚轮   -> Zoom
+WASD / 方向键       -> held direction
+R                    -> Restart
+Z / U                -> Undo
++ / -                -> Zoom
+~                    -> Debug
+鼠标左键 / 单指拖动 -> 沿主轴移动一格
+鼠标中键拖动        -> Pan
+Pinch / 滚轮         -> Zoom
 ```
+
+鼠标左键或单指从落点开始累计位移。位移达到离散拖动阈值后，Engine 取水平/垂直主轴方向并只提交一次 `Game.move()`；本次 pointer 生命周期内继续拖动不会连续追加格数。进入双指 Pinch 后，两根 pointer 都退出单指移动判定，松开其中一根也不会产生残留的单格移动。
 
 调用方可以按场景逐项开关：
 
@@ -27,22 +30,30 @@ debug
 
 例如 Adventure 可以关闭 Undo / Debug，Explore 可以开启；这种差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
 
-`ScreenJoystick` 属于 Engine Gameplay Input。它使用半透明圆形底座和可拖动球头，由 Engine 把拖动向量按 dead zone、主轴方向和方向迟滞转换为 `up/down/left/right/null`，再进入与键盘相同的 held-direction 路径。
+`ScreenJoystick` 属于 Engine Gameplay Input。它由较大的透明识别区域和半透明圆形摇杆组成。手指在识别区域内按下时，以落指坐标作为本次摇杆中心，并把可见底座移动到该坐标；随后由 Engine 把相对这个中心的拖动向量按 dead zone、主轴方向和方向迟滞转换为 `up/down/left/right/null`，再进入与键盘相同的 held-direction 路径。
 
 ```text
-拖动球头 (dx, dy)
+识别区域内 pointerdown
         │
-        ├─ dead zone ─────────────> null
-        │
-        └─ 主轴 + 方向迟滞 ───────> up / down / left / right
-                                            │
-                                            ▼
-                              InputController.setHeldDirection()
+        └─ 当前触点成为摇杆中心，底座移动到触点
+                              │
+                              ▼
+                     拖动向量 (dx, dy)
+                              │
+        ┌─────────────────────┴─────────────────────┐
+        │                                           │
+     dead zone                                  主轴 + 方向迟滞
+        │                                           │
+        ▼                                           ▼
+       null                              up / down / left / right
+                                                     │
+                                                     ▼
+                                       InputController.setHeldDirection()
 ```
 
-`pointerup`、`pointercancel`、失去 pointer capture 或窗口失焦时，Engine 让球头回中并清空 held direction。全局 Dialog 或 Result 决策层取得交互焦点时，宿主暂停 Engine Input，Engine 执行相同清理。
+`pointerup`、`pointercancel`、失去 pointer capture 或窗口失焦时，Engine 让球头回中、底座回到默认锚点并清空 held direction。全局 Dialog 或 Result 决策层取得交互焦点时，宿主暂停 Engine Input，Engine 执行相同清理。
 
-调用方通过 Runtime Config 开关 Screen Joystick，并可以配置透明度、dead zone 和安全区域。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入。
+调用方通过 Runtime Config 开关 Screen Joystick，并可以配置透明度、dead zone、摇杆尺寸和识别区域尺寸 `activationSize`。默认识别区域边长约为摇杆尺寸的 2.4 倍，并继续避开设备 safe area。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入。
 
 Screen Control 的布局、默认开关和响应式行为见 [`ui.md`](ui.md)。
 
