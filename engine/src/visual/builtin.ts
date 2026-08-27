@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, type Direction } from "@bobby/model";
 import {
   entityAtlasCell,
   originalObjectAtlasCell,
@@ -16,8 +16,14 @@ import { VisualRegistry } from "./VisualRegistry.js";
 const CUSTOM_VISUAL_TYPES = new Set<string>([
   EntityTypeId.PUSH_GOAL,
   EntityTypeId.PORTAL,
-  EntityTypeId.BOBBY,
 ]);
+
+export const BOBBY_VISUAL_ASSETS: Readonly<Record<Direction, string>> = {
+  left: "bobby-left",
+  right: "bobby-right",
+  up: "bobby-up",
+  down: "bobby-down",
+};
 
 const FENCE_ART_INDEX: Record<AutoConnectShape, number> = {
   isolated: 48,
@@ -27,6 +33,29 @@ const FENCE_ART_INDEX: Record<AutoConnectShape, number> = {
   tee: 52,
   cross: 53,
 };
+
+function bobbyVisualDefinition(): VisualDefinition {
+  return {
+    id: EntityTypeId.BOBBY,
+    resolve(context) {
+      const direction = context.entity.direction ?? "down";
+      const progress = context.runtime?.moving
+        ? clampProgress(context.runtime.progress ?? 0)
+        : 0;
+      return {
+        layers: [
+          {
+            kind: "image",
+            asset: BOBBY_VISUAL_ASSETS[direction],
+            frameWidth: 48,
+            frameProgress: progress,
+            anchor: "bottom",
+          },
+        ],
+      };
+    },
+  };
+}
 
 function fenceVisualDefinition(): VisualDefinition {
   return {
@@ -88,12 +117,18 @@ export function createBuiltinVisualRegistry(
     if (seen.has(id)) continue;
     seen.add(id);
     visuals.register(
-      definition.type === EntityTypeId.FENCE
-        ? fenceVisualDefinition()
-        : defaultVisualDefinition(id),
+      definition.type === EntityTypeId.BOBBY
+        ? bobbyVisualDefinition()
+        : definition.type === EntityTypeId.FENCE
+          ? fenceVisualDefinition()
+          : defaultVisualDefinition(id),
     );
   }
   return visuals;
 }
 
 export const visualRegistry = createBuiltinVisualRegistry();
+
+function clampProgress(value: number): number {
+  return Math.max(0, Math.min(0.999999, value));
+}

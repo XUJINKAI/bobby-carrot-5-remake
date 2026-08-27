@@ -9,17 +9,16 @@ export function publicBaseUrl(): string {
 export function gameAssets() {
   return {
     atlasUrl: siteUrl("assets/art/hd/ts.png"),
-    animationAtlasUrl: siteUrl("assets/art/hd/ta.png"),
-    bobbyUrls: {
-      left: siteUrl("assets/art/hd/b0.png"),
-      right: siteUrl("assets/art/hd/b1.png"),
-      up: siteUrl("assets/art/hd/b2.png"),
-      down: siteUrl("assets/art/hd/b3.png"),
+    imageUrls: {
+      "bobby-left": siteUrl("assets/art/hd/b0.png"),
+      "bobby-right": siteUrl("assets/art/hd/b1.png"),
+      "bobby-up": siteUrl("assets/art/hd/b2.png"),
+      "bobby-down": siteUrl("assets/art/hd/b3.png"),
+      "bobby-idle": siteUrl("assets/art/hd/b4.png"),
+      "bobby-death": siteUrl("assets/art/hd/b5.png"),
+      "bobby-mower": siteUrl("assets/art/hd/b7.png"),
+      "bobby-kite": siteUrl("assets/art/hd/b9.png"),
     },
-    mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
-    idleBobbyUrl: siteUrl("assets/art/hd/b4.png"),
-    deathBobbyUrl: siteUrl("assets/art/hd/b5.png"),
-    kiteUrl: siteUrl("assets/art/hd/b9.png"),
     sourceTileSize: 48,
   };
 }

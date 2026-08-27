@@ -5,8 +5,13 @@ import {
   InputController,
   type InputControllerOptions,
 } from "../input/InputController.js";
-import { Renderer, type RendererAssets } from "../render/Renderer.js";
+import {
+  Renderer,
+  type RendererAssets,
+  type VisualRuntimeState,
+} from "../render/Renderer.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
+import type { EntityVisualRuntimeState } from "../visual/VisualDefinition.js";
 import type { ProfileCapabilities } from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
 import type {
@@ -40,6 +45,17 @@ type GameEventName =
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
 
+interface Motion {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  direction: Direction;
+  startedAt: number;
+  duration: number;
+  forced: boolean;
+}
+
 export class Game {
   readonly renderer: Renderer;
   readonly audio: AudioBackend;
@@ -52,12 +68,13 @@ export class Game {
   private readonly future: WorldSnapshot[] = [];
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
+  private readonly visualRuntime = new Map<number, EntityVisualRuntimeState>();
   private debugValue = false;
+  private motion: Motion | null = null;
   private heldDirection: Direction | null = null;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
-  private lastHeldMoveAt = 0;
   lastMove: MoveResult | null = null;
   lastWorldEvents: WorldEvent[] = [];
 
@@ -101,7 +118,7 @@ export class Game {
   }
 
   get isAnimating(): boolean {
-    return false;
+    return this.motion !== null;
   }
 
   get canUndo(): boolean {
@@ -121,6 +138,9 @@ export class Game {
     this.worldValue = new World(level, { profile: this.profile });
     this.history.length = 0;
     this.future.length = 0;
+    this.heldDirection = null;
+    this.motion = null;
+    this.visualRuntime.clear();
     this.lastMove = null;
     this.lastWorldEvents = [];
     await this.renderer.load();
@@ -130,29 +150,26 @@ export class Game {
   }
 
   move(direction: Direction, forced = false): MoveResult | null {
-    if (!this.worldValue) return null;
-    const before = this.world.snapshot();
-    const result = this.world.move(direction, forced);
-    this.lastMove = result;
-    this.lastWorldEvents = result.events;
-    if (result.moved || result.events.length > 0) {
-      this.history.push(before);
-      this.future.length = 0;
-    }
-    this.publishWorldEvents(result.events);
-    this.renderer.camera.recenterPan();
-    this.render();
-    this.emit(result.moved ? "move" : "blocked");
-    this.emitTerminalEvents();
-    this.emit("change");
-    return result;
+    if (
+      !this.worldValue ||
+      this.world.dead ||
+      this.world.completed ||
+      this.motion
+    )
+      return null;
+    return this.startLogicalMove(direction, forced);
   }
 
   setHeldDirection(direction: Direction | null): void {
     this.heldDirection = direction;
-    if (!direction) return;
-    this.lastHeldMoveAt = performance.now();
-    this.move(direction);
+    if (
+      direction &&
+      this.worldValue &&
+      !this.motion &&
+      !this.world.dead &&
+      !this.world.completed
+    )
+      this.startLogicalMove(direction, false);
   }
 
   undo(): void {
@@ -161,6 +178,7 @@ export class Game {
     if (!snapshot) return;
     this.future.push(this.world.snapshot());
     this.world.restore(snapshot);
+    this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -173,6 +191,7 @@ export class Game {
     if (!snapshot) return;
     this.history.push(this.world.snapshot());
     this.world.restore(snapshot);
+    this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -184,6 +203,8 @@ export class Game {
     this.worldValue = new World(this.initialLevel, { profile: this.profile });
     this.history.length = 0;
     this.future.length = 0;
+    this.heldDirection = null;
+    this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -193,6 +214,8 @@ export class Game {
   killPlayer(reason?: string): void {
     if (!this.worldValue) return;
     const events = this.world.killPlayer(reason);
+    this.heldDirection = null;
+    this.resetVisualMotion();
     this.lastWorldEvents = events;
     this.publishWorldEvents(events);
     this.render();
@@ -249,7 +272,9 @@ export class Game {
   }
 
   render(): void {
-    if (this.worldValue) this.renderer.render(this.worldValue);
+    if (this.worldValue)
+      this.renderer.render(this.worldValue, this.visualRuntime as VisualRuntimeState);
+    this.gameplayHud?.render();
   }
 
   on(event: GameEventName, listener: Listener): () => void {
@@ -273,6 +298,95 @@ export class Game {
     this.gameplayHud?.destroy();
   }
 
+  private startLogicalMove(direction: Direction, forced: boolean): MoveResult {
+    const before = this.world.snapshot();
+    const result = this.world.move(direction, forced);
+    this.lastMove = result;
+    this.lastWorldEvents = result.events;
+    if (result.moved || result.events.length > 0) {
+      this.history.push(before);
+      this.future.length = 0;
+    }
+    this.publishWorldEvents(result.events);
+    this.emitTerminalEvents();
+
+    if (!result.moved) {
+      this.render();
+      this.emit("blocked");
+      this.emit("change");
+      return result;
+    }
+
+    this.renderer.camera.recenterPan();
+    this.motion = {
+      fromX: result.from.x,
+      fromY: result.from.y,
+      toX: result.to.x,
+      toY: result.to.y,
+      direction,
+      startedAt: performance.now(),
+      duration: this.motionDuration(this.world.forcedKind),
+      forced,
+    };
+    this.visualRuntime.set(this.world.playerId, {
+      offsetX: result.from.x - result.to.x,
+      offsetY: result.from.y - result.to.y,
+      moving: true,
+      progress: 0,
+    });
+    this.render();
+    this.emit("move");
+    this.emit("change");
+    return result;
+  }
+
+  private motionDuration(forcedKind: string | null): number {
+    let duration = 132;
+    if (forcedKind === "speed") duration = 70;
+    else if (forcedKind === "ice") duration = 88;
+    else if (forcedKind === "flight") duration = 94;
+    else if (forcedKind === "leaf") duration = 115;
+    else if (forcedKind === "mower-exit") duration = 105;
+    if (this.world.state.profile.speedShoes) duration *= 0.76;
+    return duration;
+  }
+
+  private updateMotion(timestamp: number): void {
+    if (!this.motion || !this.worldValue) return;
+    const progress = Math.min(
+      1,
+      Math.max(0, (timestamp - this.motion.startedAt) / this.motion.duration),
+    );
+    this.visualRuntime.set(this.world.playerId, {
+      offsetX: (this.motion.fromX - this.motion.toX) * (1 - progress),
+      offsetY: (this.motion.fromY - this.motion.toY) * (1 - progress),
+      moving: true,
+      progress,
+    });
+    if (progress >= 1) this.finishMotion();
+  }
+
+  private finishMotion(): void {
+    if (!this.motion || !this.worldValue) return;
+    this.visualRuntime.delete(this.world.playerId);
+    this.motion = null;
+    if (this.world.dead || this.world.completed) {
+      this.heldDirection = null;
+      return;
+    }
+    const forcedDirection = this.world.forcedDirection;
+    if (forcedDirection) {
+      this.startLogicalMove(forcedDirection, true);
+      return;
+    }
+    if (this.heldDirection) this.startLogicalMove(this.heldDirection, false);
+  }
+
+  private resetVisualMotion(): void {
+    this.motion = null;
+    this.visualRuntime.clear();
+  }
+
   private readonly onResize = (): void => {
     this.render();
   };
@@ -289,15 +403,8 @@ export class Game {
         this.emitTerminalEvents();
         this.emit("change");
       }
-      if (
-        this.heldDirection &&
-        timestamp - this.lastHeldMoveAt >= 120
-      ) {
-        this.lastHeldMoveAt = timestamp;
-        this.move(this.heldDirection);
-      } else {
-        this.render();
-      }
+      this.updateMotion(timestamp);
+      this.render();
     }
     this.animationFrame = requestAnimationFrame(this.tick);
   };

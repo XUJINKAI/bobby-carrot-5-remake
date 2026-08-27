@@ -5,6 +5,7 @@ import type {
   InspectorModel,
   PaletteItem,
 } from "@bobby/editor";
+import type { VisualAssetSources } from "@bobby/engine";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorPalette from "./EditorPalette.vue";
@@ -18,7 +19,7 @@ defineProps<{
   inspector: InspectorModel;
   paletteSize: number;
   playing: boolean;
-  atlasUrl: string;
+  visualAssets: VisualAssetSources;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -52,7 +53,7 @@ const emit = defineEmits<{
         :selection="selection"
         :hover="hover"
         :enabled="!playing"
-        :atlas-url="atlasUrl"
+        :visual-assets="visualAssets"
         @hover="emit('hover', $event)"
         @stroke="(cell, button) => emit('stroke', cell, button)"
         @begin-stroke="emit('beginStroke')"

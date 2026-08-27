@@ -5,6 +5,8 @@ import {
   visualRegistry as builtinVisualRegistry,
   type AtlasVisualLayer,
   type EntityRegistry,
+  type ImageVisualLayer,
+  type VisualAssetSources,
   type VisualComposition,
   type VisualRegistry,
 } from "@bobby/engine";
@@ -21,7 +23,6 @@ import type { PaletteItem } from "../authoring/paletteCatalog.js";
 import type { EditorLevel } from "../level/types.js";
 import type { EditorViewportState } from "./EditorViewport.js";
 
-const SOURCE_TILE = 48;
 export const EDITOR_TILE_SIZE = 38;
 
 export interface EditorCanvasRenderState {
@@ -36,19 +37,29 @@ export interface EditorCanvasRenderState {
 
 export class EditorCanvasRenderer {
   private atlas: HTMLImageElement | null = null;
+  private readonly images = new Map<string, HTMLImageElement>();
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    private readonly atlasUrl: string,
+    private readonly assets: VisualAssetSources,
     private readonly registry: EntityRegistry = createBuiltinEntityRegistry(),
     private readonly visuals: VisualRegistry = builtinVisualRegistry,
   ) {}
 
   async load(): Promise<void> {
-    const image = new Image();
-    image.src = this.atlasUrl;
-    await image.decode();
-    this.atlas = image;
+    const atlas = new Image();
+    atlas.src = this.assets.atlasUrl;
+    const imageEntries = await Promise.all(
+      Object.entries(this.assets.imageUrls ?? {}).map(async ([id, url]) => {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        return [id, image] as const;
+      }),
+    );
+    await atlas.decode();
+    this.atlas = atlas;
+    for (const [id, image] of imageEntries) this.images.set(id, image);
   }
 
   render(state: EditorCanvasRenderState): void {
@@ -208,8 +219,50 @@ export class EditorCanvasRenderer {
           y * EDITOR_TILE_SIZE,
           EDITOR_TILE_SIZE,
         );
+      } else if (layer.kind === "image") {
+        this.drawImageLayer(context, layer, x, y);
       } else this.drawAtlasLayer(context, layer, x, y);
     }
+  }
+
+  private drawImageLayer(
+    context: CanvasRenderingContext2D,
+    layer: ImageVisualLayer,
+    x: number,
+    y: number,
+  ): void {
+    const image = this.images.get(layer.asset);
+    if (!image) return;
+    const left = x * EDITOR_TILE_SIZE;
+    const top = y * EDITOR_TILE_SIZE;
+    if (layer.anchor === "fill") {
+      context.drawImage(image, left, top, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
+      return;
+    }
+    const sourceTile = this.assets.sourceTileSize ?? 48;
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
+    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+    const scale = EDITOR_TILE_SIZE / sourceTile;
+    const drawWidth = frameWidth * scale;
+    const drawHeight = image.height * scale;
+    const drawX = left + EDITOR_TILE_SIZE / 2 - drawWidth / 2;
+    const drawY =
+      layer.anchor === "center"
+        ? top + EDITOR_TILE_SIZE / 2 - drawHeight / 2
+        : top + EDITOR_TILE_SIZE - drawHeight;
+    context.drawImage(
+      image,
+      frame * frameWidth,
+      0,
+      frameWidth,
+      image.height,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight,
+    );
   }
 
   private drawAtlasLayer(
@@ -219,6 +272,7 @@ export class EditorCanvasRenderer {
     y: number,
   ): void {
     if (!this.atlas) return;
+    const sourceTile = this.assets.sourceTileSize ?? 48;
     const centerX = x * EDITOR_TILE_SIZE + EDITOR_TILE_SIZE / 2;
     const centerY = y * EDITOR_TILE_SIZE + EDITOR_TILE_SIZE / 2;
     context.save();
@@ -227,10 +281,10 @@ export class EditorCanvasRenderer {
     context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
     context.drawImage(
       this.atlas,
-      layer.column * SOURCE_TILE,
-      layer.row * SOURCE_TILE,
-      SOURCE_TILE,
-      SOURCE_TILE,
+      layer.column * sourceTile,
+      layer.row * sourceTile,
+      sourceTile,
+      sourceTile,
       -EDITOR_TILE_SIZE / 2,
       -EDITOR_TILE_SIZE / 2,
       EDITOR_TILE_SIZE,

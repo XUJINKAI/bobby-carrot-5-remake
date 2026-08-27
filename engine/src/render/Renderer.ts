@@ -1,32 +1,25 @@
-import { EntityTypeId, type Direction } from "@bobby/model";
-import type { EntityInstance } from "../world/entity/EntityInstance.js";
+import type { EntityId, EntityInstance } from "../world/entity/EntityInstance.js";
 import type { World } from "../world/World.js";
 import { visualRegistry } from "../visual/builtin.js";
 import type {
   AtlasVisualLayer,
+  EntityVisualRuntimeState,
+  ImageVisualLayer,
+  VisualAssetSources,
   VisualComposition,
 } from "../visual/VisualDefinition.js";
 import { Camera } from "./Camera.js";
 import { drawEntityTile } from "./entity-art.js";
 
-const DIRECTIONS: readonly Direction[] = ["left", "right", "up", "down"];
+export type RendererAssets = VisualAssetSources;
+export type VisualRuntimeState = ReadonlyMap<EntityId, EntityVisualRuntimeState>;
 
-export interface RendererAssets {
-  atlasUrl: string;
-  sourceTileSize?: number;
-  bobbyUrl?: string;
-  bobbyUrls?: Partial<Record<Direction, string>>;
-  animationAtlasUrl?: string;
-  kiteUrl?: string;
-  mowerBobbyUrl?: string;
-  idleBobbyUrl?: string;
-  deathBobbyUrl?: string;
-}
+const EMPTY_VISUAL_RUNTIME: VisualRuntimeState = new Map();
 
 export class Renderer {
   readonly camera: Camera;
   private atlas: HTMLImageElement | null = null;
-  private readonly bobby = new Map<Direction, HTMLImageElement>();
+  private readonly images = new Map<string, HTMLImageElement>();
   private debug = false;
 
   constructor(
@@ -38,26 +31,24 @@ export class Renderer {
 
   async load(): Promise<void> {
     if (this.atlas) return;
-    const atlas = await loadImage(this.assets.atlasUrl);
-    const fallback =
-      this.assets.bobbyUrl ??
-      this.assets.bobbyUrls?.down ??
-      this.assets.bobbyUrls?.right;
-    await Promise.all(
-      DIRECTIONS.map(async (direction) => {
-        const url = this.assets.bobbyUrls?.[direction] ?? fallback;
-        if (!url) return;
-        this.bobby.set(direction, await loadImage(url));
-      }),
-    );
+    const [atlas, images] = await Promise.all([
+      loadImage(this.assets.atlasUrl),
+      Promise.all(
+        Object.entries(this.assets.imageUrls ?? {}).map(async ([id, url]) => [
+          id,
+          await loadImage(url),
+        ] as const),
+      ),
+    ]);
     this.atlas = atlas;
+    for (const [id, image] of images) this.images.set(id, image);
   }
 
   setDebug(value: boolean): void {
     this.debug = value;
   }
 
-  render(world: World): void {
+  render(world: World, runtime: VisualRuntimeState = EMPTY_VISUAL_RUNTIME): void {
     const rect = this.canvas.getBoundingClientRect();
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     const width = Math.max(1, rect.width || this.canvas.clientWidth || 640);
@@ -71,62 +62,41 @@ export class Renderer {
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, width, height);
     this.camera.setViewport(width, height);
-    this.camera.follow(world.player, world.width, world.height);
+    const playerRuntime = runtime.get(world.playerId);
+    this.camera.follow(
+      {
+        x: world.player.x + (playerRuntime?.offsetX ?? 0),
+        y: world.player.y + (playerRuntime?.offsetY ?? 0),
+      },
+      world.width,
+      world.height,
+    );
 
     for (let y = 0; y < world.height; y += 1) {
       for (let x = 0; x < world.width; x += 1) {
         for (const presence of world.presencesAt({ x, y })) {
           const entity = world.entity(presence.entityId);
           if (!entity) continue;
-          if (
-            entity.type === EntityTypeId.BOBBY &&
-            this.drawBobby(context, entity, x, y)
-          ) {
-            continue;
-          }
+          const visualRuntime = runtime.get(entity.id);
           const definition = world.registry.require(entity.type);
           const composition = visualRegistry.resolve(definition, {
             entity,
             presence,
             query: world.visualQuery,
+            ...(visualRuntime ? { runtime: visualRuntime } : {}),
           });
-          this.drawComposition(context, entity, composition, x, y);
+          this.drawComposition(
+            context,
+            entity,
+            composition,
+            x + (visualRuntime?.offsetX ?? 0),
+            y + (visualRuntime?.offsetY ?? 0),
+          );
         }
       }
     }
 
     if (this.debug) this.drawDebugGrid(context, world.width, world.height);
-  }
-
-  private drawBobby(
-    context: CanvasRenderingContext2D,
-    entity: Readonly<EntityInstance>,
-    x: number,
-    y: number,
-  ): boolean {
-    const direction = entity.direction ?? "down";
-    const image =
-      this.bobby.get(direction) ??
-      this.bobby.get("down") ??
-      this.bobby.get("right");
-    if (!image) return false;
-    const point = this.camera.worldToScreen(x, y);
-    const size = this.camera.tileScreenSize;
-    const source = this.camera.sourceTileSize;
-    const sourceHeight = image.height;
-    const drawHeight = sourceHeight * (size / source);
-    context.drawImage(
-      image,
-      0,
-      0,
-      Math.min(source, image.width),
-      sourceHeight,
-      point.x,
-      point.y + size - drawHeight,
-      size,
-      drawHeight,
-    );
-    return true;
   }
 
   private drawComposition(
@@ -142,10 +112,50 @@ export class Renderer {
     for (const layer of composition.layers) {
       if (layer.kind === "custom") {
         drawEntityTile(context, entity, point.x, point.y, size);
+      } else if (layer.kind === "image") {
+        this.drawImageLayer(context, layer, point.x, point.y, size);
       } else {
         this.drawAtlasLayer(context, layer, point.x, point.y, size);
       }
     }
+  }
+
+  private drawImageLayer(
+    context: CanvasRenderingContext2D,
+    layer: ImageVisualLayer,
+    x: number,
+    y: number,
+    size: number,
+  ): void {
+    const image = this.images.get(layer.asset);
+    if (!image) return;
+    if (layer.anchor === "fill") {
+      context.drawImage(image, x, y, size, size);
+      return;
+    }
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
+    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+    const scale = size / this.camera.sourceTileSize;
+    const drawWidth = frameWidth * scale;
+    const drawHeight = image.height * scale;
+    const drawX = x + size / 2 - drawWidth / 2;
+    const drawY =
+      layer.anchor === "center"
+        ? y + size / 2 - drawHeight / 2
+        : y + size - drawHeight;
+    context.drawImage(
+      image,
+      frame * frameWidth,
+      0,
+      frameWidth,
+      image.height,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight,
+    );
   }
 
   private drawAtlasLayer(

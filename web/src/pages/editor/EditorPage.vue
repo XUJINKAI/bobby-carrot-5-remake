@@ -3,7 +3,7 @@ import { type EditorLevel, type Cell } from "@bobby/editor";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
-import { siteUrl } from "../../services/assets/gameAssets.js";
+import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
@@ -16,7 +16,7 @@ const props = defineProps<{
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
-const atlasUrl = siteUrl("assets/art/hd/ts.png");
+const visualAssets = gameAssets();
 let session: GameSession | null = null;
 const paletteOpen = ref(false);
 const inspectorOpen = ref(false);
@@ -41,19 +41,7 @@ async function togglePlay(): Promise<void> {
       canvas,
       level: page.levelMap.value,
       gameOptions: {
-        assets: {
-          atlasUrl,
-          animationAtlasUrl: siteUrl("assets/art/hd/ta.png"),
-          bobbyUrls: {
-            left: siteUrl("assets/art/hd/b0.png"),
-            right: siteUrl("assets/art/hd/b1.png"),
-            up: siteUrl("assets/art/hd/b2.png"),
-            down: siteUrl("assets/art/hd/b3.png"),
-          },
-          mowerBobbyUrl: siteUrl("assets/art/hd/b7.png"),
-          kiteUrl: siteUrl("assets/art/hd/b9.png"),
-          sourceTileSize: 48,
-        },
+        assets: visualAssets,
         audio: props.audio,
         debug: false,
       },
@@ -203,7 +191,7 @@ function isTextInput(target: EventTarget | null): boolean {
       :inspector="page.inspector.value"
       :palette-size="page.paletteSize.value"
       :playing="page.playing.value"
-      :atlas-url="atlasUrl"
+      :visual-assets="visualAssets"
       @select="page.selection.value = $event"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"

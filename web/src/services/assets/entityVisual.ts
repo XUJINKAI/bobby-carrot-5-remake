@@ -3,23 +3,12 @@ import {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
 } from "@bobby/engine";
-import { siteUrl } from "./gameAssets.js";
+import { gameAssets, siteUrl } from "./gameAssets.js";
 
 export function entityVisualStyle(
   entity: EntityVisualPreviewSource,
   size: number,
 ): Record<string, string> | null {
-  if (entity.type === EntityTypeId.BOBBY) {
-    return {
-      width: `${size}px`,
-      height: `${size}px`,
-      backgroundImage: `url('${siteUrl("assets/art/hd/b3.png")}')`,
-      backgroundRepeat: "no-repeat",
-      backgroundPosition: "left bottom",
-      backgroundSize: "auto 100%",
-    };
-  }
-
   const layer = resolveEntityVisualPreview(entity)?.layers[0];
   if (!layer) return null;
   if (layer.kind === "atlas") {
@@ -35,6 +24,18 @@ export function entityVisualStyle(
       backgroundSize: `${16 * size}px auto`,
       backgroundPosition: `${-layer.column * size}px ${-layer.row * size}px`,
       ...(transforms.length ? { transform: transforms.join(" ") } : {}),
+    };
+  }
+  if (layer.kind === "image") {
+    const url = gameAssets().imageUrls[layer.asset];
+    if (!url) return null;
+    return {
+      width: `${size}px`,
+      height: `${size}px`,
+      backgroundImage: `url('${url}')`,
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "left bottom",
+      backgroundSize: "auto 100%",
     };
   }
   if (layer.id === EntityTypeId.PUSH_GOAL) {

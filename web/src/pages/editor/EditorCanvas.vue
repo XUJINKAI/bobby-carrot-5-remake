@@ -7,6 +7,7 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
+import type { VisualAssetSources } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -16,7 +17,7 @@ const props = defineProps<{
   selection: PaletteItem;
   hover: Cell | null;
   enabled: boolean;
-  atlasUrl: string;
+  visualAssets: VisualAssetSources;
 }>();
 const emit = defineEmits<{
   hover: [cell: Cell | null];
@@ -59,7 +60,7 @@ watch(
 
 onMounted(async () => {
   if (!canvas.value) return;
-  renderer = new EditorCanvasRenderer(canvas.value, props.atlasUrl);
+  renderer = new EditorCanvasRenderer(canvas.value, props.visualAssets);
   input = new EditorCanvasInput(canvas.value, viewport, {
     dimensions: () => ({ width: props.level.width, height: props.level.height }),
     hover: (cell) => emit("hover", cell),

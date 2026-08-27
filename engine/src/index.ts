@@ -119,6 +119,7 @@ export type {
   CardinalConnectionMask,
 } from "./visual/AutoConnect.js";
 export {
+  BOBBY_VISUAL_ASSETS,
   createBuiltinVisualRegistry,
   visualRegistry,
 } from "./visual/builtin.js";
@@ -129,8 +130,11 @@ export {
 export type {
   AtlasVisualLayer,
   CustomVisualLayer,
+  EntityVisualRuntimeState,
+  ImageVisualLayer,
   PersistedVisualVariantDefinition,
   QuarterTurn,
+  VisualAssetSources,
   VisualAuthoringDefinition,
   VisualComposition,
   VisualDefinition,
