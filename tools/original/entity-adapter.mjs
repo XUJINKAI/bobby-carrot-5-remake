@@ -59,6 +59,7 @@ const directObjectTypes = new Set([
   LegacyObject.CLOUD_RED,
   LegacyObject.CLOUD_PURPLE,
   LegacyObject.CLOUD_GREEN,
+  LegacyObject.LEAF,
   LegacyObject.CRUMBLY_ROCK,
   LegacyObject.BEANSTALK_BASE,
   LegacyObject.BEAN_SPROUT,
