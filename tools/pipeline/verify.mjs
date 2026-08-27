@@ -8,7 +8,11 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
-run("git", ["check-ignore", "--quiet", "custom-maps/loma-pushbox/01-01.json"]);
+for (const file of [
+  "custom-maps/loma-pushbox/01-01.json",
+  "custom-maps/novoban-pushbox/01.json",
+])
+  run("git", ["check-ignore", "--quiet", file]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
@@ -54,6 +58,7 @@ const testCollection = collectionIndexes.find((collection) => collection.id === 
 if (testCollection?.cardSize !== "big")
   throw new Error("Test collection cardSize 必须为 big");
 assertLomaCollection(collectionIndexes);
+assertNovobanCollection(collectionIndexes);
 
 const expectedFirstChapter = [
   "1-1",
@@ -116,6 +121,8 @@ for (const file of [
   "dist/assets/maps/original/1-bonus-1.json",
   "dist/assets/maps/loma-pushbox/index.json",
   "dist/assets/maps/loma-pushbox/01-01.json",
+  "dist/assets/maps/novoban-pushbox/index.json",
+  "dist/assets/maps/novoban-pushbox/01.json",
   "dist/assets/adventure/index.json",
 ])
   if (!fs.existsSync(path.join(root, file)))
@@ -128,7 +135,7 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、collection cardSize、LOMA generation、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1、MapDocument、collection cardSize、LOMA/Novoban generation、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
 
 function assertLomaCollection(collections) {
@@ -155,28 +162,63 @@ function assertLomaCollection(collections) {
     const document = readJson(relative);
     if (typeof document.meta.author !== "string" || !document.meta.author)
       throw new Error(`${relative}: 必须保留 LOMA Author`);
-    assertLomaWinRule(document, relative);
+    const { pushables, goals } = assertPushboxWinRule(document, relative);
+    if (pushables !== 3 || goals !== 3)
+      throw new Error(`${relative}: LOMA 必须保持 3 箱 / 3 目标`);
   }
 }
 
-function assertLomaWinRule(document, relative) {
+function assertNovobanCollection(collections) {
+  const novoban = collections.find(
+    (collection) => collection.id === "novoban-pushbox",
+  );
+  if (!novoban) throw new Error("缺少 Novoban collection");
+  if (novoban.cardSize !== "small")
+    throw new Error("Novoban collection cardSize 必须为 small");
+  if (novoban.chapters.length !== 0 || novoban.maps.length !== 50)
+    throw new Error("Novoban 必须是无章节的 50 张地图 collection");
+  if (novoban.maps[0]?.id !== "01" || novoban.maps.at(-1)?.id !== "50")
+    throw new Error("Novoban map 顺序必须保持源文件 01~50");
+  let hasGoalStart = false;
+  const boxCounts = new Set();
+  for (const map of novoban.maps) {
+    if (map.chapter !== undefined)
+      throw new Error(`${map.id}: Novoban 不应生成 chapter`);
+    const relative = `assets/maps/novoban-pushbox/${map.id}.json`;
+    const document = readJson(relative);
+    if (document.meta.author !== "François Marques")
+      throw new Error(`${relative}: 必须保留 François Marques 作者信息`);
+    const { pushables, goals } = assertPushboxWinRule(document, relative);
+    if (pushables !== goals || goals <= 0)
+      throw new Error(`${relative}: Novoban 箱子数必须与目标数一致`);
+    boxCounts.add(pushables);
+    if (document.terrain.flat().includes("custom:push-goal-start"))
+      hasGoalStart = true;
+  }
+  if (boxCounts.size <= 1)
+    throw new Error("Novoban 应保留不同关卡的可变箱子数量");
+  if (!hasGoalStart)
+    throw new Error("Novoban 应保留 XSB + 的 push-goal-start 语义");
+}
+
+function assertPushboxWinRule(document, relative) {
   const expected = {
     type: "fill-all",
     terrainTrait: "push-goal",
     objectTrait: "pushable",
   };
   if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
-    throw new Error(`${relative}: LOMA 获胜条件必须只有 fill-all push-goal`);
+    throw new Error(`${relative}: 获胜条件必须只有 fill-all push-goal`);
   const pushables = document.objects.filter((object) =>
     object.traits?.includes("pushable"),
-  );
-  const goals = document.terrain
-    .flat()
-    .filter((terrain) => terrain === "custom:push-goal");
-  if (pushables.length !== 3 || goals.length !== 3)
-    throw new Error(`${relative}: LOMA 必须保持 3 箱 / 3 目标`);
+  ).length;
+  const goals = document.terrain.flat().filter(
+    (terrain) =>
+      terrain === "custom:push-goal" || terrain === "custom:push-goal-start",
+  ).length;
   if (document.terrain.flat().includes("exit"))
-    throw new Error(`${relative}: LOMA 不使用 exit 获胜条件`);
+    throw new Error(`${relative}: Sokoban collection 不使用 exit 获胜条件`);
+  return { pushables, goals };
 }
 
 function assertNext(id, expected) {

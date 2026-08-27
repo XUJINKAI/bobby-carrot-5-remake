@@ -66,6 +66,15 @@ test("显式 pushable 对象可推入目标且阻挡连续对象", () => {
   assert.equal(blocked.move("right").moved, false);
 });
 
+test("Push Goal Start 同时保留起点和目标语义", () => {
+  const terrain = level().terrain.map((row) => [...row]);
+  terrain[1][0] = CustomTerrain.PUSH_GOAL_START;
+  const world = new World(level({ terrain }));
+  assert.deepEqual(world.startPosition, { x: 0, y: 1 });
+  assert.equal(world.objectiveTotal, 1);
+  assert.equal(world.objectiveRemaining, 1);
+});
+
 test("pushable Property 不会赋予对象 Trait 能力", () => {
   const world = new World(level({
     objects: [{
