@@ -17,7 +17,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
     Array.from({ length: width }, () => "background-variant-1"),
   );
   const objects = [];
-  let starts = 0;
+  let playerStart = null;
   let boxes = 0;
   let goals = 0;
 
@@ -31,11 +31,11 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
         terrain[y][x] = "custom:push-goal";
         goals += 1;
       } else if (symbol === "@") {
-        terrain[y][x] = "start";
-        starts += 1;
+        terrain[y][x] = "ground-c";
+        playerStart = assignPlayerStart(playerStart, x, y, title);
       } else if (symbol === "+") {
-        terrain[y][x] = "custom:push-goal-start";
-        starts += 1;
+        terrain[y][x] = "custom:push-goal";
+        playerStart = assignPlayerStart(playerStart, x, y, title);
         goals += 1;
       } else if (symbol === "$") {
         terrain[y][x] = "ground-c";
@@ -52,7 +52,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
     }
   }
 
-  if (starts !== 1) throw new Error(`${title}: 必须恰好有 1 个起点，实际 ${starts}`);
+  if (!playerStart) throw new Error(`${title}: 缺少玩家起点`);
   if (boxes !== goals)
     throw new Error(`${title}: 箱子与目标数量不一致：${boxes} / ${goals}`);
   if (boxes <= 0) throw new Error(`${title}: 至少需要 1 个箱子和目标`);
@@ -62,6 +62,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
   return {
     width,
     height,
+    playerStart,
     terrain,
     objects,
     rules: { win: { ...SOKOBAN_WIN_RULE } },
@@ -73,10 +74,17 @@ export function isXsbBoardLine(line) {
 }
 
 export function countPushGoals(level) {
-  return level.terrain.flat().filter(
-    (terrain) =>
-      terrain === "custom:push-goal" || terrain === "custom:push-goal-start",
-  ).length;
+  return level.terrain
+    .flat()
+    .filter((terrain) => terrain === "custom:push-goal").length;
+}
+
+function assignPlayerStart(current, x, y, title) {
+  if (current)
+    throw new Error(
+      `${title}: 必须恰好有 1 个玩家起点，至少发现 (${current.x}, ${current.y}) 与 (${x}, ${y})`,
+    );
+  return { x, y };
 }
 
 function findExteriorSpaces(grid, width, height) {

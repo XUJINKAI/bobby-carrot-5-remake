@@ -34,17 +34,17 @@ test("Novoban keeps variable box counts and only uses fill-all push goals", () =
     const goals = countPushGoals(entry.level);
     assert.equal(pushables.length, goals, entry.id);
     assert.ok(goals > 0, entry.id);
+    assert.ok(entry.level.playerStart, entry.id);
+    assert.equal(entry.level.terrain.flat().includes("start"), false, entry.id);
     assert.equal(entry.level.terrain.flat().includes("exit"), false, entry.id);
     boxCounts.add(pushables.length);
   }
   assert.ok(boxCounts.size > 1, "Novoban 应保留每关不同的箱子数量");
 });
 
-test("Novoban XSB plus keeps both player start and push-goal semantics", () => {
+test("Novoban XSB plus keeps push-goal terrain under explicit playerStart", () => {
   const surrounded = levels.find((level) => level.title === "Surrounded");
   assert.ok(surrounded);
-  assert.equal(
-    surrounded.level.terrain.flat().includes("custom:push-goal-start"),
-    true,
-  );
+  assert.deepEqual(surrounded.level.playerStart, { x: 3, y: 3 });
+  assert.equal(surrounded.level.terrain[3]?.[3], "custom:push-goal");
 });

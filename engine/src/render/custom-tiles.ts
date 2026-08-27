@@ -9,7 +9,7 @@ export function drawCustomTerrain(
   y: number,
   size: number,
 ): boolean {
-  if (!isPushGoal(type)) return false;
+  if (type !== CustomTerrain.PUSH_GOAL) return false;
   context.save();
   context.fillStyle = "#6c543d";
   context.fillRect(x, y, size, size);
@@ -69,7 +69,7 @@ export function customTileIconStyle(
       background:
         "radial-gradient(circle, transparent 20%, #7c5cff 42%, #54e8ff 58%, transparent 64%)",
     };
-  if (isPushGoal(type))
+  if (type === CustomTerrain.PUSH_GOAL)
     return {
       width: `${size}px`,
       height: `${size}px`,
@@ -78,10 +78,4 @@ export function customTileIconStyle(
       boxSizing: "border-box",
     };
   return null;
-}
-
-function isPushGoal(type: TerrainType | ObjectType): boolean {
-  return (
-    type === CustomTerrain.PUSH_GOAL || type === CustomTerrain.PUSH_GOAL_START
-  );
 }

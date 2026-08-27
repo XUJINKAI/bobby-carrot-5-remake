@@ -48,6 +48,8 @@ test("LOMA XSB conversion preserves geometry and uses only fill-all push goals",
       3,
       entry.id,
     );
+    assert.ok(entry.level.playerStart, entry.id);
+    assert.equal(entry.level.terrain.flat().includes("start"), false, entry.id);
     assert.equal(entry.level.terrain.flat().includes("exit"), false, entry.id);
   }
 });

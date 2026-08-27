@@ -38,6 +38,7 @@ export {
   type WorldEvent,
 } from "./world/World.js";
 export { World } from "./world/World.js";
+export { resolveLevelPlayerStart } from "./world/level-start.js";
 export {
   Terrain,
   ObjectId,
