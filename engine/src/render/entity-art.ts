@@ -180,7 +180,7 @@ export function entityAtlasCell(
   return null;
 }
 
-/** Canvas fallback for canonical entities that are not sourced from the original atlas. */
+/** Canvas fallback for canonical entities that are not sourced from an image/atlas Visual. */
 export function drawEntityTile(
   context: CanvasRenderingContext2D,
   entity: Pick<LevelEntity, "type" | "direction" | "properties" | "state">,
@@ -228,26 +228,6 @@ export function drawEntityTile(
     context.beginPath();
     context.arc(centerX, centerY, size * 0.29, 0, Math.PI * 2);
     context.stroke();
-    context.restore();
-    return true;
-  }
-  if (entity.type === EntityTypeId.BOBBY) {
-    context.save();
-    context.fillStyle = "rgba(245,245,245,.92)";
-    context.beginPath();
-    context.arc(
-      x + size * 0.5,
-      y + size * 0.55,
-      size * 0.28,
-      0,
-      Math.PI * 2,
-    );
-    context.fill();
-    context.fillStyle = "#273238";
-    context.font = `${Math.max(10, size * 0.3)}px system-ui`;
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.fillText("B", x + size * 0.5, y + size * 0.55);
     context.restore();
     return true;
   }
