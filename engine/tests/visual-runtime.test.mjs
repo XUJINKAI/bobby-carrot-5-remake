@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   EntityTypeId,
+  builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
   resolveEntityVisualPreview,
@@ -29,7 +30,7 @@ test("Bobby authoring preview resolves to the same image visual instead of a cus
 
 test("Bobby walking progress is visual runtime state and does not mutate World", () => {
   const entities = createBuiltinEntityRegistry();
-  const visuals = createBuiltinVisualRegistry(entities);
+  const visuals = createBuiltinVisualRegistry();
   const level = {
     schemaVersion: 1,
     width: 2,
@@ -55,4 +56,11 @@ test("Bobby walking progress is visual runtime state and does not mutate World",
   assert.equal(composition.layers[0].kind, "image");
   assert.equal(composition.layers[0].frameProgress, 0.5);
   assert.deepEqual(bobby.anchor, { x: 0, y: 0 });
+});
+
+test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
+  assert.ok(builtinEntityModules.length > 0);
+  for (const module of builtinEntityModules) {
+    assert.equal(module.visual?.id, module.definition.presentation.visual ?? module.definition.type);
+  }
 });

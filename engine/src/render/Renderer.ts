@@ -1,6 +1,6 @@
 import type { EntityInstance } from "../world/entity/EntityInstance.js";
 import type { World } from "../world/World.js";
-import { visualRegistry } from "../visual/builtin.js";
+import { visualRegistry } from "../entities/registry.js";
 import type {
   AtlasVisualLayer,
   ImageVisualLayer,
@@ -8,7 +8,6 @@ import type {
   VisualComposition,
 } from "../visual/VisualDefinition.js";
 import { Camera } from "./Camera.js";
-import { drawEntityTile } from "./entity-art.js";
 import {
   buildRenderScene,
   type RenderVisualRuntimeState,
@@ -91,7 +90,7 @@ export class Renderer {
 
   private drawComposition(
     context: CanvasRenderingContext2D,
-    entity: Readonly<EntityInstance>,
+    _entity: Readonly<EntityInstance>,
     composition: VisualComposition,
     x: number,
     y: number,
@@ -99,8 +98,8 @@ export class Renderer {
     const point = this.camera.worldToScreen(x, y);
     const size = this.camera.tileScreenSize;
     for (const layer of composition.layers) {
-      if (layer.kind === "custom") {
-        drawEntityTile(context, entity, point.x, point.y, size);
+      if (layer.kind === "canvas") {
+        layer.draw(context, point.x, point.y, size);
       } else if (layer.kind === "image") {
         this.drawImageLayer(context, layer, point.x, point.y, size);
       } else {

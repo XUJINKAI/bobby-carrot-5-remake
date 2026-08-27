@@ -29,12 +29,22 @@ export interface ImageVisualLayer {
   anchor?: "center" | "bottom" | "fill";
 }
 
-export interface CustomVisualLayer {
-  kind: "custom";
-  id: string;
+/**
+ * 少量程序化视觉使用的通用 Canvas layer。
+ * 绘制函数和可选 CSS 预览都由 Entity Module 提供；Renderer/Web 只消费结果。
+ */
+export interface CanvasVisualLayer {
+  kind: "canvas";
+  draw(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    size: number,
+  ): void;
+  previewStyle?: Readonly<Record<string, string>>;
 }
 
-export type VisualLayer = AtlasVisualLayer | ImageVisualLayer | CustomVisualLayer;
+export type VisualLayer = AtlasVisualLayer | ImageVisualLayer | CanvasVisualLayer;
 
 export interface VisualComposition {
   layers: readonly VisualLayer[];

@@ -6,13 +6,12 @@ import type {
   JsonValue,
   LevelEntity,
 } from "@bobby/model";
-import { entityRegistry } from "../entities/registry.js";
+import { entityRegistry, visualRegistry } from "../entities/registry.js";
 import type { EntityFieldDefinition } from "../world/entity/EntityDefinition.js";
 import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import type { VisualComposition, VisualQuery } from "./VisualDefinition.js";
-import { visualRegistry } from "./builtin.js";
 
 export interface EntityVisualPreviewSource {
   type: EntityType;

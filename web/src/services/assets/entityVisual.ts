@@ -1,5 +1,4 @@
 import {
-  EntityTypeId,
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
 } from "@bobby/engine";
@@ -38,21 +37,11 @@ export function entityVisualStyle(
       backgroundSize: "auto 100%",
     };
   }
-  if (layer.id === EntityTypeId.PUSH_GOAL) {
+  if (layer.previewStyle) {
     return {
       width: `${size}px`,
       height: `${size}px`,
-      background: "#6c543d",
-      boxShadow: `inset 0 0 0 ${Math.max(2, Math.round(size * 0.08))}px #f2c14e`,
-    };
-  }
-  if (layer.id === EntityTypeId.PORTAL) {
-    return {
-      width: `${size}px`,
-      height: `${size}px`,
-      background:
-        "radial-gradient(circle, rgba(130,238,255,.18) 10%, #7c5cff 48%, #54e8ff 68%, rgba(84,232,255,0) 72%)",
-      borderRadius: "50%",
+      ...layer.previewStyle,
     };
   }
   return null;

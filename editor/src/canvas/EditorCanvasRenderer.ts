@@ -1,6 +1,5 @@
 import {
   createBuiltinEntityRegistry,
-  drawEntityTile,
   SpatialVisualQuery,
   visualRegistry as builtinVisualRegistry,
   type AtlasVisualLayer,
@@ -199,29 +198,26 @@ export class EditorCanvasRenderer {
       presence: inspection.presence,
       query,
     });
-    this.drawComposition(context, entity, composition, x, y);
+    this.drawComposition(context, composition, x, y);
   }
 
   private drawComposition(
     context: CanvasRenderingContext2D,
-    entity: Parameters<typeof drawEntityTile>[1],
     composition: VisualComposition | null,
     x: number,
     y: number,
   ): void {
     if (!composition) return;
+    const left = x * EDITOR_TILE_SIZE;
+    const top = y * EDITOR_TILE_SIZE;
     for (const layer of composition.layers) {
-      if (layer.kind === "custom") {
-        drawEntityTile(
-          context,
-          entity,
-          x * EDITOR_TILE_SIZE,
-          y * EDITOR_TILE_SIZE,
-          EDITOR_TILE_SIZE,
-        );
+      if (layer.kind === "canvas") {
+        layer.draw(context, left, top, EDITOR_TILE_SIZE);
       } else if (layer.kind === "image") {
         this.drawImageLayer(context, layer, x, y);
-      } else this.drawAtlasLayer(context, layer, x, y);
+      } else {
+        this.drawAtlasLayer(context, layer, x, y);
+      }
     }
   }
 

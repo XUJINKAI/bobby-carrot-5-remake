@@ -40,7 +40,7 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
       const remote = context.query.presencesAt({ x: 2, y: 0 }).at(-1);
       const remoteEntity = remote ? context.query.entity(remote.entityId) : undefined;
       return remoteEntity
-        ? { layers: [{ kind: "custom", id: `sees:${remoteEntity.type}` }] }
+        ? { layers: [{ kind: "image", asset: `sees:${remoteEntity.type}` }] }
         : null;
     },
   });
@@ -55,7 +55,7 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
       presence,
       query,
     }),
-    { layers: [{ kind: "custom", id: "sees:marker" }] },
+    { layers: [{ kind: "image", asset: "sees:marker" }] },
   );
 });
 

@@ -95,10 +95,14 @@ export {
   behaviorRegistry,
   createBuiltinBehaviorRegistry,
 } from "./entities/behaviors.js";
+export type { EntityModule } from "./entities/EntityModule.js";
 export {
   builtinEntityDefinitions,
+  builtinEntityModules,
   createBuiltinEntityRegistry,
+  createBuiltinVisualRegistry,
   entityRegistry,
+  visualRegistry,
 } from "./entities/registry.js";
 
 export {
@@ -119,17 +123,12 @@ export type {
   CardinalConnectionMask,
 } from "./visual/AutoConnect.js";
 export {
-  BOBBY_VISUAL_ASSETS,
-  createBuiltinVisualRegistry,
-  visualRegistry,
-} from "./visual/builtin.js";
-export {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
 } from "./visual/preview.js";
 export type {
   AtlasVisualLayer,
-  CustomVisualLayer,
+  CanvasVisualLayer,
   EntityVisualRuntimeState,
   ImageVisualLayer,
   PersistedVisualVariantDefinition,
@@ -142,6 +141,3 @@ export type {
   VisualQuery,
   VisualResolveContext,
 } from "./visual/VisualDefinition.js";
-
-/** Authoring renderer uses the same canonical custom visual fallback as runtime. */
-export { drawEntityTile } from "./render/entity-art.js";
