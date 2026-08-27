@@ -249,8 +249,45 @@ const contents: EntityDefinition[] = [
   ),
 ];
 
+const unnamedOriginalDefinitions: EntityDefinition[] = [
+  ...Array.from({ length: 256 }, (_, index) =>
+    surface(
+      `background-variant-${String(index + 1).padStart(3, "0")}`,
+      `Background Variant ${index + 1}`,
+      [],
+      {
+        presentation: { name: `Background Variant ${index + 1}`, category: "原版背景" },
+        authoring: { palette: false, category: "原版背景" },
+      },
+    ),
+  ),
+  ...Array.from({ length: 52 }, (_, index) =>
+    surface(
+      `walkable-variant-${String(index + 1).padStart(2, "0")}`,
+      `Walkable Variant ${index + 1}`,
+      ["walkable"],
+      {
+        presentation: { name: `Walkable Variant ${index + 1}`, category: "原版地表" },
+        authoring: { palette: false, category: "原版地表" },
+      },
+    ),
+  ),
+  ...Array.from({ length: 256 }, (_, index) =>
+    content(
+      `object-variant-${String(index + 1).padStart(3, "0")}`,
+      `Object Variant ${index + 1}`,
+      [],
+      {
+        presentation: { name: `Object Variant ${index + 1}`, category: "原版实体" },
+        authoring: { palette: false, category: "原版实体" },
+      },
+    ),
+  ),
+];
+
 export const originalEntityDefinitions: readonly EntityDefinition[] = [
   ...surfaces,
   ...covers,
   ...contents,
+  ...unnamedOriginalDefinitions,
 ];
