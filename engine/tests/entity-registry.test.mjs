@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import {
   builtinEntityDefinitions,
+  createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
 } from "../dist/entities/registry.js";
 
@@ -26,11 +27,12 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 
 test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
   assert.deepEqual(registry.require("background-variant-001").traits, []);
   assert.equal(registry.require("background-variant-001").stackBand, "surface");
   assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
   assert.equal(registry.require("object-variant-001").stackBand, "content");
-  assert.equal(registry.require("object-variant-001").authoring.palette, false);
+  assert.equal(catalog.require("object-variant-001").authoring?.palette, false);
 });
 
 test("Start 是普通可步行 surface，不携带出生语义", () => {
@@ -42,7 +44,8 @@ test("Start 是普通可步行 surface，不携带出生语义", () => {
 
 test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.ok(registry.require("tide").authoring.defaultDirection);
+  const catalog = createBuiltinEntityCatalog();
+  assert.ok(catalog.require("tide").authoring?.defaultDirection);
   assert.equal(registry.require("speed-switch").state[0].key, "pressed");
   assert.equal(registry.require("tide-switch").state[0].key, "pressed");
   assert.equal(registry.require("carousel-switch").state[0].key, "pressed");
@@ -56,14 +59,16 @@ test("首轮合并类型使用 state/direction/property 而不是拆分 type", (
   );
   assert.equal(registry.require("trap").state[0].key, "active");
   assert.equal(registry.require("mirror").state[0].key, "variant");
-  assert.ok(registry.require("speed").authoring.defaultDirection);
+  assert.ok(catalog.require("speed").authoring?.defaultDirection);
   assert.equal(registry.require("carousel").state[0].key, "variant");
   assert.equal(registry.require("color-yellow-block").state[0].key, "raised");
   assert.equal(registry.require("color-pink-block").state[0].key, "raised");
 });
 
 test("Dragon 是一个可旋转 EntityDefinition 并通过 footprint 表达三格", () => {
-  const dragon = createBuiltinEntityRegistry().require("dragon");
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  const dragon = registry.require("dragon");
   assert.equal(dragon.footprint.rotateWithDirection, true);
   assert.equal(dragon.footprint.baseDirection, "right");
   assert.deepEqual(
@@ -74,16 +79,20 @@ test("Dragon 是一个可旋转 EntityDefinition 并通过 footprint 表达三�
       [2, 0, "tail"],
     ],
   );
-  assert.deepEqual(dragon.authoring.cursor, { dx: 1, dy: 0 });
+  assert.deepEqual(catalog.require("dragon").authoring?.cursor, {
+    dx: 1,
+    dy: 0,
+  });
 });
 
 test("Sandman / Dream Machine / Beaver 共享 directional footprint 约定", () => {
   const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
     const definition = registry.require(type);
     assert.equal(definition.footprint.rotateWithDirection, true, type);
     assert.equal(definition.footprint.baseDirection, "down", type);
-    assert.equal(definition.authoring.defaultDirection, "down", type);
+    assert.equal(catalog.require(type).authoring?.defaultDirection, "down", type);
   }
 });
 
