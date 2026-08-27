@@ -1,9 +1,3 @@
-import {
-  objectAtlasCell,
-  terrainAtlasCell,
-  type ObjectType,
-  type TerrainType,
-} from "@bobby/engine";
 import type {
   MapCollectionFilter,
   MapCollectionIcon,
@@ -14,15 +8,16 @@ import type {
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
 let currentCollection: MapCollectionIndex | null = null;
-const atlasUrl = new URL("assets/art/hd/ts.png", document.baseURI).href;
 
 export function mountLevelFilters(collection: MapCollectionIndex): void {
   currentCollection = collection;
   const validGroups = new Set(collection.filters.map((filter) => filter.id));
-  for (const group of [...selected.keys()])
+  for (const group of [...selected.keys()]) {
     if (!validGroups.has(group)) selected.delete(group);
-  for (const filter of collection.filters)
+  }
+  for (const filter of collection.filters) {
     if (!selected.has(filter.id)) selected.set(filter.id, new Set());
+  }
   if (activePanel && !validGroups.has(activePanel)) activePanel = null;
 
   const head = document.querySelector<HTMLElement>(".level-browser-head");
@@ -49,7 +44,10 @@ export function randomFilteredMap(): MapCollectionMap | undefined {
 
 function renderFilterShell(shell: HTMLElement): void {
   if (!currentCollection) return;
-  const total = [...selected.values()].reduce((sum, values) => sum + values.size, 0);
+  const total = [...selected.values()].reduce(
+    (sum, values) => sum + values.size,
+    0,
+  );
   const toolbar = currentCollection.filters
     .map((filter) => filterTrigger(filter))
     .join("");
@@ -65,16 +63,20 @@ function filterTrigger(filter: MapCollectionFilter): string {
     "level-filter-trigger",
     activePanel === filter.id ? "open" : "",
     count ? "active" : "",
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
   return `<button class="${classes}" data-filter-trigger="${escapeAttribute(filter.id)}" aria-expanded="${activePanel === filter.id}">${escapeHtml(filter.name)}${count ? `<span class="level-filter-count">${count}</span>` : ""}</button>`;
 }
 
 function filterPanel(filter: MapCollectionFilter): string {
   const values = selected.get(filter.id) ?? new Set<string>();
-  const options = filter.options.map((option) => {
-    const selectedClass = values.has(option.id) ? " selected" : "";
-    return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
-  }).join("");
+  const options = filter.options
+    .map((option) => {
+      const selectedClass = values.has(option.id) ? " selected" : "";
+      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
+    })
+    .join("");
   return `<div class="level-filter-panel" data-filter-panel="${escapeAttribute(filter.id)}" ${activePanel === filter.id ? "" : "hidden"}>${options}</div>`;
 }
 
@@ -128,7 +130,9 @@ function applyFilters(): void {
   let visibleChapters = 0;
   for (const chapter of document.querySelectorAll<HTMLElement>(".chapter-card")) {
     const maps = [...chapter.querySelectorAll<HTMLElement>("[data-map-id]")];
-    const count = maps.filter((map) => !map.classList.contains("filter-hidden")).length;
+    const count = maps.filter(
+      (map) => !map.classList.contains("filter-hidden"),
+    ).length;
     const hidden = active && count === 0;
     chapter.classList.toggle("filter-hidden", hidden);
     if (!hidden) visibleChapters++;
@@ -162,7 +166,9 @@ function applyFilters(): void {
       empty.textContent = "没有符合这些条件的地图。";
       document.querySelector(".explore-page")?.append(empty);
     }
-  } else empty?.remove();
+  } else {
+    empty?.remove();
+  }
 }
 
 function mapMatchesCurrent(map: MapCollectionMap): boolean {
@@ -176,23 +182,21 @@ function mapMatchesCurrent(map: MapCollectionMap): boolean {
 
 function iconHtml(icon: MapCollectionIcon | undefined): string {
   if (!icon) return "";
-  if (icon.type === "text")
+  if (icon.type === "text") {
     return `<span class="level-filter-icon" aria-hidden="true">${escapeHtml(icon.value)}</span>`;
-  if (icon.type === "image")
-    return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(new URL(icon.src, document.baseURI).href)}">`;
-  try {
-    const cell = icon.type === "terrain"
-      ? terrainAtlasCell(icon.id as TerrainType)
-      : objectAtlasCell(icon.id as ObjectType);
-    return atlasIcon(cell);
-  } catch {
-    return "";
   }
-}
-
-function atlasIcon(cell: { column: number; row: number }): string {
-  const size = 24;
-  return `<i class="level-filter-icon" aria-hidden="true" style="background-image:url('${escapeAttribute(atlasUrl)}');background-size:${16 * size}px ${16 * size}px;background-position:${-cell.column * size}px ${-cell.row * size}px"></i>`;
+  if (icon.type === "image") {
+    const src = new URL(icon.src, document.baseURI).href;
+    return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(src)}">`;
+  }
+  const glyph = icon.id
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return `<span class="level-filter-icon" aria-hidden="true" title="${escapeAttribute(icon.id)}">${escapeHtml(glyph || "·")}</span>`;
 }
 
 function setText(element: HTMLElement | null, value: string): void {
@@ -203,7 +207,8 @@ function escapeHtml(value: string): string {
   return value.replace(
     /[&<>\"]/g,
     (char) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[char] ?? char,
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[char] ??
+      char,
   );
 }
 

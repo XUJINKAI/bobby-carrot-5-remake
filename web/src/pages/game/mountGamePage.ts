@@ -6,8 +6,7 @@ import {
   createAdventureLevelInstance,
   type AdventureSave,
 } from "@bobby/adventure";
-import { ObjectId } from "@bobby/engine";
-import type { LevelMap } from "@bobby/model";
+import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type { TinySynthAudioBackend } from "../../services/audio/TinySynthAudio.js";
 import type {
@@ -85,8 +84,9 @@ export async function renderGamePage(
     adventureLevel,
     mode,
   } = context;
-  if (mode === "adventure" && (!adventureChapter || !adventureLevel))
+  if (mode === "adventure" && (!adventureChapter || !adventureLevel)) {
     throw new Error("Adventure GamePage 需要 Campaign node");
+  }
 
   let adventureSave: AdventureSave | null =
     mode === "adventure" ? loadAdventureSave() : null;
@@ -97,7 +97,9 @@ export async function renderGamePage(
     navigate(`/adventure/chapter/${adventureChapter!.id}`);
     return NOOP_CONTROLLER;
   }
-  if (mode === "explore") rememberExploreMap(identity.collection, identity.id);
+  if (mode === "explore") {
+    rememberExploreMap(identity.collection, identity.id);
+  }
 
   const plan = adventureSave
     ? planAdventureSession(adventureLevel!.id, adventureSave)
@@ -168,8 +170,9 @@ export async function renderGamePage(
     if (game.zoom < minZoom) game.setZoom(minZoom);
   };
   applyAdventureCamera();
-  if (mode === "adventure")
+  if (mode === "adventure") {
     window.addEventListener("resize", applyAdventureCamera);
+  }
 
   const processAdventureRewards = (): void => {
     if (!adventureSave || !adventureLevel) return;
@@ -179,22 +182,23 @@ export async function renderGamePage(
     let next = adventureSave;
     for (const event of game.lastWorldEvents) {
       if (event.x === undefined || event.y === undefined) continue;
-      if (event.type === "collect-bonus-coin")
+      if (event.type === "collect-bonus-coin") {
         next = claimPersistentReward(
           next,
           adventureLevel.id,
-          ObjectId.BONUS_COIN,
+          EntityTypeId.BONUS_COIN,
           event.x,
           event.y,
         );
-      else if (event.type === "collect-golden-carrot")
+      } else if (event.type === "collect-golden-carrot") {
         next = claimPersistentReward(
           next,
           adventureLevel.id,
-          ObjectId.GOLDEN_CARROT,
+          EntityTypeId.GOLDEN_CARROT,
           event.x,
           event.y,
         );
+      }
     }
     if (next !== adventureSave) adventureSave = saveAdventureSave(next);
   };
@@ -289,9 +293,9 @@ export async function renderGamePage(
     const action = button.dataset.result;
     if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
-    else if (action === "levels")
+    else if (action === "levels") {
       navigate(backPath(identity, adventureChapter, mode));
-    else if (action === "next" && button.dataset.next)
+    } else if (action === "next" && button.dataset.next) {
       navigate(
         mode === "adventure"
           ? `/adventure/play/${button.dataset.next}`
@@ -300,6 +304,7 @@ export async function renderGamePage(
               id: button.dataset.next,
             }),
       );
+    }
   });
 
   const onGameShellAction = (event: Event): void => {
@@ -322,8 +327,9 @@ export async function renderGamePage(
       mode !== "explore" ||
       !game.debug ||
       input.consumePointerClickSuppression()
-    )
+    ) {
       return;
+    }
     const tile = game.inspectCanvasPoint(event.clientX, event.clientY);
     debugInspection = tile ? formatTileInspection(tile, game) : "DEBUG\n地图外";
     update();
@@ -332,8 +338,9 @@ export async function renderGamePage(
   return {
     destroy(): void {
       window.clearInterval(statisticsTimer);
-      if (mode === "adventure")
+      if (mode === "adventure") {
         window.removeEventListener("resize", applyAdventureCamera);
+      }
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       session.destroy();
