@@ -124,6 +124,21 @@ assets/maps/loma-pushbox/<map-id>.json
 
 LOMA 原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*` 对应该 collection 的 10 个 source pattern，因此生成 JSON 使用 `chapter: "01"` ～ `"10"` 保留这一分组。这里的顶层 `chapter` 是 **custom build-source metadata**：`tools/custom/prepare.mjs` 把它写入 collection `maps[].chapter`，同时从最终 MapDocument 中剥离。它不是 Engine `LevelMap` 字段，也不是 Editor JSON 的持久化字段。
 
+Novoban 使用同一生成边界，但源文件没有自然 chapter，因此保持平铺 collection：
+
+```text
+tools/custom/NOVOBAN.txt
+  ↓ tools/custom/novoban-pushbox.mjs
+custom-maps/novoban-pushbox/*.json   # ignored / generated
+  ↓ tools/custom/prepare.mjs
+assets/maps/novoban-pushbox/index.json
+assets/maps/novoban-pushbox/<map-id>.json
+```
+
+Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
+
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。标准 `+` 表示“玩家起点位于目标格”，转换为 `custom:push-goal-start`；该 terrain 同时具有 `start` 与 `push-goal` trait，因此不会为了记录起点而丢失目标语义。
+
 `custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
 ## 生成规则
