@@ -7,6 +7,7 @@ export interface ScreenJoystickOptions {
   opacity?: number;
   deadZone?: number;
   size?: number;
+  activationSize?: number;
 }
 
 export interface JoystickVectorState {
@@ -47,8 +48,11 @@ export function directionForJoystickVector(
 }
 
 export class ScreenJoystick {
+  private readonly activationArea: HTMLDivElement;
   private readonly element: HTMLDivElement;
   private readonly knob: HTMLDivElement;
+  private readonly size: number;
+  private readonly activationSize: number;
   private readonly radius: number;
   private readonly deadZonePixels: number;
   private pointerId: number | null = null;
@@ -63,37 +67,55 @@ export class ScreenJoystick {
     private readonly onDirection: (direction: Direction | null) => void,
   ) {
     const root = resolveGameplayMount(canvas, options.root, "ScreenJoystick");
-    const size = Math.max(72, options.size ?? 112);
-    this.radius = size * 0.34;
+    this.size = Math.max(72, options.size ?? 112);
+    this.activationSize = Math.max(
+      this.size,
+      options.activationSize ?? this.size * 2.4,
+    );
+    this.radius = this.size * 0.34;
     this.deadZonePixels =
       this.radius * Math.min(0.8, Math.max(0.05, options.deadZone ?? 0.2));
+
+    this.activationArea = document.createElement("div");
+    this.activationArea.className = "engine-screen-joystick-activation";
+    this.activationArea.setAttribute("role", "application");
+    this.activationArea.setAttribute("aria-label", "屏幕摇杆识别区域");
+    Object.assign(this.activationArea.style, {
+      position: "absolute",
+      right: `calc(max(16px, env(safe-area-inset-right)) + ${this.size / 2}px)`,
+      bottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${this.size / 2}px)`,
+      width: `${this.activationSize}px`,
+      height: `${this.activationSize}px`,
+      touchAction: "none",
+      userSelect: "none",
+      zIndex: "7",
+    });
+
     this.element = document.createElement("div");
     this.element.className = "engine-screen-joystick";
-    this.element.setAttribute("role", "application");
-    this.element.setAttribute("aria-label", "屏幕摇杆");
     Object.assign(this.element.style, {
       position: "absolute",
-      right: "max(16px, env(safe-area-inset-right))",
-      bottom: "max(16px, env(safe-area-inset-bottom))",
-      width: `${size}px`,
-      height: `${size}px`,
+      left: `${this.activationSize - this.size / 2}px`,
+      top: `${this.activationSize - this.size / 2}px`,
+      width: `${this.size}px`,
+      height: `${this.size}px`,
       border: "1px solid rgba(255,255,255,.34)",
       borderRadius: "50%",
       background: "rgba(8,20,14,.34)",
       boxShadow: "inset 0 0 24px rgba(255,255,255,.07)",
       opacity: String(Math.min(0.9, Math.max(0.2, options.opacity ?? 0.45))),
-      touchAction: "none",
-      userSelect: "none",
-      zIndex: "7",
+      transform: "translate(-50%, -50%)",
+      pointerEvents: "none",
     });
+
     this.knob = document.createElement("div");
     this.knob.className = "engine-screen-joystick-knob";
     Object.assign(this.knob.style, {
       position: "absolute",
       left: "50%",
       top: "50%",
-      width: `${size * 0.42}px`,
-      height: `${size * 0.42}px`,
+      width: `${this.size * 0.42}px`,
+      height: `${this.size * 0.42}px`,
       border: "1px solid rgba(255,255,255,.5)",
       borderRadius: "50%",
       background: "rgba(230,245,232,.5)",
@@ -102,21 +124,25 @@ export class ScreenJoystick {
       pointerEvents: "none",
     });
     this.element.append(this.knob);
-    root.append(this.element);
-    this.element.hidden = options.enabled === false;
-    this.element.addEventListener("pointerdown", this.onPointerDown);
-    this.element.addEventListener("pointermove", this.onPointerMove);
-    this.element.addEventListener("pointerup", this.onPointerEnd);
-    this.element.addEventListener("pointercancel", this.onPointerEnd);
-    this.element.addEventListener("lostpointercapture", this.onLostCapture);
+    this.activationArea.append(this.element);
+    root.append(this.activationArea);
+    this.activationArea.hidden = options.enabled === false;
+    this.activationArea.addEventListener("pointerdown", this.onPointerDown);
+    this.activationArea.addEventListener("pointermove", this.onPointerMove);
+    this.activationArea.addEventListener("pointerup", this.onPointerEnd);
+    this.activationArea.addEventListener("pointercancel", this.onPointerEnd);
+    this.activationArea.addEventListener(
+      "lostpointercapture",
+      this.onLostCapture,
+    );
   }
 
   get enabled(): boolean {
-    return !this.element.hidden;
+    return !this.activationArea.hidden;
   }
 
   setEnabled(enabled: boolean): void {
-    this.element.hidden = !enabled;
+    this.activationArea.hidden = !enabled;
     if (!enabled) this.reset();
   }
 
@@ -127,22 +153,25 @@ export class ScreenJoystick {
 
   destroy(): void {
     this.reset();
-    this.element.removeEventListener("pointerdown", this.onPointerDown);
-    this.element.removeEventListener("pointermove", this.onPointerMove);
-    this.element.removeEventListener("pointerup", this.onPointerEnd);
-    this.element.removeEventListener("pointercancel", this.onPointerEnd);
-    this.element.removeEventListener("lostpointercapture", this.onLostCapture);
-    this.element.remove();
+    this.activationArea.removeEventListener("pointerdown", this.onPointerDown);
+    this.activationArea.removeEventListener("pointermove", this.onPointerMove);
+    this.activationArea.removeEventListener("pointerup", this.onPointerEnd);
+    this.activationArea.removeEventListener("pointercancel", this.onPointerEnd);
+    this.activationArea.removeEventListener(
+      "lostpointercapture",
+      this.onLostCapture,
+    );
+    this.activationArea.remove();
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     if (!this.interactionEnabled || this.pointerId !== null) return;
     event.preventDefault();
     this.pointerId = event.pointerId;
-    const rect = this.element.getBoundingClientRect();
-    this.centerX = rect.left + rect.width / 2;
-    this.centerY = rect.top + rect.height / 2;
-    this.element.setPointerCapture(event.pointerId);
+    this.centerX = event.clientX;
+    this.centerY = event.clientY;
+    this.moveBaseToPointer(event.clientX, event.clientY);
+    this.activationArea.setPointerCapture(event.pointerId);
     this.update(event.clientX, event.clientY);
   };
 
@@ -162,6 +191,12 @@ export class ScreenJoystick {
     if (event.pointerId === this.pointerId) this.reset();
   };
 
+  private moveBaseToPointer(clientX: number, clientY: number): void {
+    const rect = this.activationArea.getBoundingClientRect();
+    this.element.style.left = `${clientX - rect.left}px`;
+    this.element.style.top = `${clientY - rect.top}px`;
+  }
+
   private update(clientX: number, clientY: number): void {
     const dx = clientX - this.centerX;
     const dy = clientY - this.centerY;
@@ -180,7 +215,11 @@ export class ScreenJoystick {
 
   reset(): void {
     this.pointerId = null;
+    this.centerX = 0;
+    this.centerY = 0;
     this.direction = null;
+    this.element.style.left = `${this.activationSize - this.size / 2}px`;
+    this.element.style.top = `${this.activationSize - this.size / 2}px`;
     this.knob.style.transform = "translate(-50%, -50%)";
     this.onDirection(null);
   }
