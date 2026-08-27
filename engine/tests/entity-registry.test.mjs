@@ -19,6 +19,13 @@ test("Registry 不包含 original/custom identity 前缀", () => {
   }
 });
 
+test("Start 是普通可步行 surface，不携带出生语义", () => {
+  const start = createBuiltinEntityRegistry().require("start");
+  assert.equal(start.stackBand, "surface");
+  assert.deepEqual(start.traits, ["walkable"]);
+  assert.equal(start.traits.includes("start"), false);
+});
+
 test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {
   const registry = createBuiltinEntityRegistry();
   assert.ok(registry.require("tide").authoring.defaultDirection);
