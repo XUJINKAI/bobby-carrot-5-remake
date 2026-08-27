@@ -38,6 +38,8 @@ export interface EntityPresentationDefinition {
 export interface EntityAuthoringDefinition {
   palette?: boolean;
   category?: string;
+  /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
+  cursor?: { dx: number; dy: number };
 }
 
 /** 一种 Entity 的共享静态定义。 */
