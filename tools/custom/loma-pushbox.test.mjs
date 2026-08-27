@@ -30,7 +30,7 @@ test("LOMA source parses into 137 maps grouped by the ten source patterns", () =
   assert.equal(levels.at(-1)?.id, "10-13");
 });
 
-test("LOMA XSB conversion preserves geometry and uses only fill-all push goals", () => {
+test("LOMA XSB conversion preserves geometry and uses only entity fill-all push goals", () => {
   const map0103 = levels.find((level) => level.id === "01-03");
   assert.ok(map0103);
   assert.equal(map0103.level.width, 8);
@@ -39,17 +39,34 @@ test("LOMA XSB conversion preserves geometry and uses only fill-all push goals",
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, {
       type: "fill-all",
-      terrainTrait: "push-goal",
-      objectTrait: "pushable",
+      targetTrait: "push-goal",
+      fillerTrait: "pushable",
     });
-    assert.equal(entry.level.objects.length, 3, entry.id);
     assert.equal(
-      entry.level.terrain.flat().filter((terrain) => terrain === "custom:push-goal").length,
+      entry.level.entities.filter((entity) => entity.traits?.includes("pushable"))
+        .length,
       3,
       entry.id,
     );
-    assert.ok(entry.level.playerStart, entry.id);
-    assert.equal(entry.level.terrain.flat().includes("start"), false, entry.id);
-    assert.equal(entry.level.terrain.flat().includes("exit"), false, entry.id);
+    assert.equal(
+      entry.level.entities.filter((entity) => entity.type === "push-goal").length,
+      3,
+      entry.id,
+    );
+    assert.equal(
+      entry.level.entities.filter((entity) => entity.type === "bobby").length,
+      1,
+      entry.id,
+    );
+    assert.equal(
+      entry.level.entities.some((entity) => entity.type === "start"),
+      false,
+      entry.id,
+    );
+    assert.equal(
+      entry.level.entities.some((entity) => entity.type === "exit"),
+      false,
+      entry.id,
+    );
   }
 });
