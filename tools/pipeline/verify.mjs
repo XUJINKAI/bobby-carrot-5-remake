@@ -135,7 +135,7 @@ for (const obsolete of ["web/dist-src", "web/dist-vite"])
 assertSameTree(path.join(root, "assets"), path.join(root, "dist/assets"));
 
 console.log(
-  "verify: OK — schema v1、MapDocument、collection cardSize、LOMA/Novoban generation、Original win rule、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
+  "verify: OK — schema v1、MapDocument、player start contract、collection cardSize、LOMA/Novoban generation、win rules、Explore/Adventure 顺序、测试、构建与 DAT-free runtime 检查通过。",
 );
 
 function assertLomaCollection(collections) {
@@ -179,7 +179,6 @@ function assertNovobanCollection(collections) {
     throw new Error("Novoban 必须是无章节的 50 张地图 collection");
   if (novoban.maps[0]?.id !== "01" || novoban.maps.at(-1)?.id !== "50")
     throw new Error("Novoban map 顺序必须保持源文件 01~50");
-  let hasGoalStart = false;
   const boxCounts = new Set();
   for (const map of novoban.maps) {
     if (map.chapter !== undefined)
@@ -192,13 +191,14 @@ function assertNovobanCollection(collections) {
     if (pushables !== goals || goals <= 0)
       throw new Error(`${relative}: Novoban 箱子数必须与目标数一致`);
     boxCounts.add(pushables);
-    if (document.terrain.flat().includes("custom:push-goal-start"))
-      hasGoalStart = true;
   }
   if (boxCounts.size <= 1)
     throw new Error("Novoban 应保留不同关卡的可变箱子数量");
-  if (!hasGoalStart)
-    throw new Error("Novoban 应保留 XSB + 的 push-goal-start 语义");
+
+  const surrounded = readJson("assets/maps/novoban-pushbox/07.json");
+  const start = surrounded.playerStart;
+  if (!start || surrounded.terrain[start.y]?.[start.x] !== "custom:push-goal")
+    throw new Error("Novoban 07 必须把 XSB + 保留为 playerStart 位于 push-goal 上");
 }
 
 function assertPushboxWinRule(document, relative) {
@@ -209,13 +209,14 @@ function assertPushboxWinRule(document, relative) {
   };
   if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
     throw new Error(`${relative}: 获胜条件必须只有 fill-all push-goal`);
+  if (!document.playerStart || document.terrain.flat().includes("start"))
+    throw new Error(`${relative}: Sokoban 必须使用 playerStart 而不是 start terrain`);
   const pushables = document.objects.filter((object) =>
     object.traits?.includes("pushable"),
   ).length;
-  const goals = document.terrain.flat().filter(
-    (terrain) =>
-      terrain === "custom:push-goal" || terrain === "custom:push-goal-start",
-  ).length;
+  const goals = document.terrain
+    .flat()
+    .filter((terrain) => terrain === "custom:push-goal").length;
   if (document.terrain.flat().includes("exit"))
     throw new Error(`${relative}: Sokoban collection 不使用 exit 获胜条件`);
   return { pushables, goals };
@@ -242,6 +243,28 @@ function assertMapDocument(document, relative, expectedId) {
     !Array.isArray(document.objects)
   )
     throw new Error(`${relative}: MapDocument 合同不完整`);
+  assertPlayerStartContract(document, relative);
+}
+
+function assertPlayerStartContract(document, relative) {
+  const terrainStarts = document.terrain
+    .flat()
+    .filter((terrain) => terrain === "start").length;
+  const explicit = document.playerStart;
+  if (terrainStarts + (explicit ? 1 : 0) !== 1)
+    throw new Error(
+      `${relative}: playerStart 与 start terrain 合计必须且只能有一个`,
+    );
+  if (!explicit) return;
+  if (
+    !Number.isInteger(explicit.x) ||
+    !Number.isInteger(explicit.y) ||
+    explicit.x < 0 ||
+    explicit.y < 0 ||
+    explicit.x >= document.width ||
+    explicit.y >= document.height
+  )
+    throw new Error(`${relative}: playerStart 必须是地图范围内的整数坐标`);
 }
 
 function assertOriginalWinRule(document, relative) {
