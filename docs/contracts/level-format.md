@@ -20,6 +20,7 @@ Editor JSON / Runtime MapDocument
 interface LevelMap {
   width: number;
   height: number;
+  playerStart?: { x: number; y: number };
   terrain: TerrainType[][];
   objects: LevelObject[];
   rules?: LevelRules;
@@ -27,6 +28,29 @@ interface LevelMap {
 ```
 
 Engine 只消费 `LevelMap`。`schemaVersion`、名称、作者、collection、chapter、next、来源、DAT 信息都不是 Engine 字段。
+
+#### Bobby 初始位置
+
+地图必须且只能定义一个 Bobby 初始位置，支持两种互斥表达：
+
+1. terrain 中恰好一个具有 `start` trait 的格子；原版地图继续使用这种表达。
+2. 顶层 `playerStart: { x, y }`；适合出生位置与 terrain 本身无关的地图。
+
+两种表达不能同时存在，也不能都不存在。存在多个 `start` terrain 同样非法。`playerStart` 必须是地图范围内的整数坐标，并且落在可步行 terrain 上。Engine 不再为缺少起点的地图寻找“第一个可步行格”作为 fallback。
+
+Sokoban 使用 `playerStart`，因此 XSB 的 `@` 只表示玩家坐标，其底层 terrain 是普通地面；`+` 表示玩家坐标位于目标上，其底层 terrain 仍是普通 `custom:push-goal`。出生位置与目标 terrain 保持正交，不需要 `custom:push-goal-start` 之类的复合 terrain。
+
+#### 获胜条件
+
+`rules.win` 是独立于 Exit terrain 的通用条件树。Engine 在每次成功移动后统一求值：
+
+- `all`：全部子条件成立；
+- `any`：任意子条件成立；
+- `collect-all`：指定目标全部收集；
+- `fill-all`：所有具有 `terrainTrait` 的格子都被具有 `objectTrait` 的对象填满；
+- `reach-terrain`：玩家当前所在 terrain 具有指定 trait。
+
+因此纯 `fill-all` 的 Sokoban 不需要 Exit；最后一个箱子推入目标后应立即完成关卡。原版地图仍可通过 `reach-terrain: exit` 表达“完成其他目标后到出口”的规则。
 
 ### MapDocument
 
@@ -68,10 +92,13 @@ Editor 导入、导出和分享使用 `schemaVersion: 1`。Editor JSON 保存 au
   "description": "optional",
   "width": 20,
   "height": 16,
+  "playerStart": { "x": 2, "y": 2 },
   "terrain": [["ground-c"]],
   "objects": []
 }
 ```
+
+如果地图使用 `start` terrain，则不写 `playerStart`。Editor 校验遵守与 Engine 相同的“恰好一个初始位置”规则。
 
 当前开发阶段只接受 schema v1，不维护历史 schema 兼容解析。
 
