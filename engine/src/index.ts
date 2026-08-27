@@ -86,6 +86,17 @@ export {
 } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
 export {
+  CARDINAL_CONNECTION,
+  cardinalConnectionMask,
+  resolveCardinalTopology,
+} from "./visual/AutoConnect.js";
+export type {
+  AutoConnectPredicate,
+  AutoConnectShape,
+  AutoConnectTopology,
+  CardinalConnectionMask,
+} from "./visual/AutoConnect.js";
+export {
   createBuiltinVisualRegistry,
   visualRegistry,
 } from "./visual/builtin.js";
