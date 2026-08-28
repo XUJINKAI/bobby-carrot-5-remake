@@ -87,6 +87,7 @@ export class Game {
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
+  private debugInputEnabledBeforePause: boolean | null = null;
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private animationFrame = 0;
@@ -214,6 +215,7 @@ export class Game {
     this.initialLevel = structuredClone(level);
     this.worldValue = new World(level, { profile: this.profile });
     this.worldClock.reset();
+    this.restoreDebugPausedInput();
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
@@ -336,8 +338,8 @@ export class Game {
 
   setDebug(value: boolean): void {
     if (value === this.debugValue) return;
+    if (!value && this.worldClock.paused) this.resumeDebugClock();
     this.debugValue = value;
-    if (!value) this.worldClock.resume();
     this.renderer.setDebug(value);
     this.debugRuntime.setEnabled(value);
     this.render();
@@ -498,13 +500,31 @@ export class Game {
   }
 
   private pauseDebugClock(): void {
+    if (this.worldClock.paused) return;
+    this.debugInputEnabledBeforePause = this.inputController?.isEnabled ?? null;
+    this.inputController?.setEnabled(false);
+    this.heldDirection = null;
+    this.heldDirectionBlocked = false;
     this.worldClock.pause();
     this.render();
   }
 
   private resumeDebugClock(): void {
+    if (!this.worldClock.paused) return;
     this.worldClock.resume();
+    this.restoreDebugPausedInput();
+    this.heldDirection = null;
+    this.heldDirectionBlocked = false;
     this.render();
+  }
+
+  private restoreDebugPausedInput(): void {
+    if (
+      this.inputController &&
+      this.debugInputEnabledBeforePause !== null
+    )
+      this.inputController.setEnabled(this.debugInputEnabledBeforePause);
+    this.debugInputEnabledBeforePause = null;
   }
 
   private stepDebugClock(count: number): void {
