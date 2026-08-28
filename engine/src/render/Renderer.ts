@@ -122,17 +122,36 @@ export class Renderer {
   ): void {
     const image = this.images.get(layer.asset);
     if (!image) return;
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
+    const frameHeight = Math.max(1, layer.frameHeight ?? image.height);
+    const columns = Math.max(1, Math.floor(image.width / frameWidth));
+    const rows = Math.max(1, Math.floor(image.height / frameHeight));
+    const frameCount = Math.max(1, columns * rows);
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const requestedFrame =
+      layer.frameIndex ?? Math.floor(progress * frameCount);
+    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
+    const sourceX = (frame % columns) * frameWidth;
+    const sourceY = Math.floor(frame / columns) * frameHeight;
+
     if (layer.anchor === "fill") {
-      context.drawImage(image, x, y, size, size);
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        frameWidth,
+        frameHeight,
+        x,
+        y,
+        size,
+        size,
+      );
       return;
     }
-    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
-    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+
     const scale = size / camera.sourceTileSize;
     const drawWidth = frameWidth * scale;
-    const drawHeight = image.height * scale;
+    const drawHeight = frameHeight * scale;
     const drawX = x + size / 2 - drawWidth / 2;
     const drawY =
       layer.anchor === "center"
@@ -140,10 +159,10 @@ export class Renderer {
         : y + size - drawHeight;
     context.drawImage(
       image,
-      frame * frameWidth,
-      0,
+      sourceX,
+      sourceY,
       frameWidth,
-      image.height,
+      frameHeight,
       drawX,
       drawY,
       drawWidth,

@@ -19,13 +19,17 @@ export interface AtlasVisualLayer {
   flipY?: boolean;
 }
 
-/** 独立图片或横向 sprite strip。asset 是语义资源 ID，不是 URL。 */
+/** 独立图片、横向 sprite strip 或规则网格 sprite sheet。asset 是语义资源 ID，不是 URL。 */
 export interface ImageVisualLayer {
   kind: "image";
   asset: string;
-  /** sprite strip 单帧源宽度；省略时整张图作为一帧。 */
+  /** sprite 单帧源宽度；省略时整张图宽作为一帧。 */
   frameWidth?: number;
-  /** 0..1 的 strip 进度；Renderer 根据图片实际宽度选择帧。 */
+  /** 规则网格 sprite sheet 的单帧源高度；省略时整张图高作为一行。 */
+  frameHeight?: number;
+  /** 规则网格中的绝对帧序号，按从左到右、从上到下计算。 */
+  frameIndex?: number;
+  /** 0..1 的 strip / sheet 进度；frameIndex 存在时优先使用 frameIndex。 */
   frameProgress?: number;
   anchor?: "center" | "bottom" | "fill";
 }

@@ -1,10 +1,16 @@
-import type { Direction, EntityType, JsonValue } from "@bobby/model";
+import {
+  EntityTypeId,
+  type Direction,
+  type EntityType,
+  type JsonValue,
+} from "@bobby/model";
 import type {
   EntityDefinition,
   EntityFieldDefinition,
   EntityTrait,
 } from "../../world/entity/EntityDefinition.js";
 import type {
+  ImageVisualLayer,
   VisualDefinition,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
@@ -19,6 +25,15 @@ export interface AtlasCell {
   column: number;
   row: number;
 }
+
+interface OriginalAmbientSequence {
+  baseIndex: number;
+  cycleLength: number;
+}
+
+const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
+const ORIGINAL_AMBIENT_FRAME_MS = 248;
+const ORIGINAL_TILE_SIZE = 48;
 
 export const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
@@ -97,9 +112,17 @@ export function atlasVisual(
     id: definition.presentation.visual ?? definition.type,
     resolve(context) {
       const atlas = resolveCell(context);
-      return atlas
-        ? { layers: [{ kind: "atlas", column: atlas.column, row: atlas.row }] }
-        : null;
+      if (!atlas) return null;
+      const animated = originalAmbientLayer(context);
+      return {
+        layers: [
+          animated ?? {
+            kind: "atlas",
+            column: atlas.column,
+            row: atlas.row,
+          },
+        ],
+      };
     },
   };
 }
@@ -180,4 +203,67 @@ export function boundedInt(
 
 export function clampProgress(value: number): number {
   return Math.max(0, Math.min(0.999999, value));
+}
+
+function originalAmbientLayer(
+  context: VisualResolveContext,
+): ImageVisualLayer | null {
+  if (!context.time) return null;
+  const sequence = originalAmbientSequence(
+    context.entity.type,
+    context.entity.direction,
+  );
+  if (!sequence) return null;
+  const phase =
+    Math.floor(Math.max(0, context.time.nowMs) / ORIGINAL_AMBIENT_FRAME_MS) %
+    sequence.cycleLength;
+  if (phase === 0) return null;
+  return {
+    kind: "image",
+    asset: ORIGINAL_ANIMATED_TILES_ASSET,
+    frameWidth: ORIGINAL_TILE_SIZE,
+    frameHeight: ORIGINAL_TILE_SIZE,
+    frameIndex: sequence.baseIndex + phase - 1,
+    anchor: "fill",
+  };
+}
+
+function originalAmbientSequence(
+  type: EntityType,
+  direction: Direction | undefined,
+): OriginalAmbientSequence | null {
+  if (type === EntityTypeId.EXIT) return { baseIndex: 0, cycleLength: 4 };
+  if (type === EntityTypeId.BONUS_COIN)
+    return { baseIndex: 15, cycleLength: 4 };
+  if (type === EntityTypeId.WINDMILL_UP)
+    return { baseIndex: 18, cycleLength: 3 };
+  if (type === EntityTypeId.WINDMILL_DOWN)
+    return { baseIndex: 20, cycleLength: 3 };
+  if (type === EntityTypeId.WINDMILL_LEFT)
+    return { baseIndex: 22, cycleLength: 3 };
+  if (type === EntityTypeId.WINDMILL_RIGHT)
+    return { baseIndex: 24, cycleLength: 3 };
+  if (type === EntityTypeId.WHIRLWIND)
+    return { baseIndex: 26, cycleLength: 6 };
+  if (type === EntityTypeId.WATER_ANIMATED)
+    return { baseIndex: 39, cycleLength: 8 };
+  if (type === EntityTypeId.WATER_VARIANT_1)
+    return { baseIndex: 46, cycleLength: 3 };
+  if (type === EntityTypeId.WATER_VARIANT_2)
+    return { baseIndex: 48, cycleLength: 3 };
+  if (type === EntityTypeId.WATER_VARIANT_3)
+    return { baseIndex: 50, cycleLength: 3 };
+  if (type === EntityTypeId.SPEED) {
+    const baseIndex = { up: 3, down: 6, left: 9, right: 12 }[
+      direction ?? "right"
+    ];
+    return { baseIndex, cycleLength: 4 };
+  }
+  if (type === EntityTypeId.TIDE) {
+    const baseIndex = { up: 33, down: 31, left: 37, right: 35 }[
+      direction ?? "right"
+    ];
+    return { baseIndex, cycleLength: 3 };
+  }
+  return null;
 }
