@@ -106,9 +106,9 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 - `bE`: 0..3，4 相循环；
 - `bF`: 0..2，3 相循环。
 
-按原版约 62ms 主循环计算，动态格约每 **248ms** 换一帧。Web Engine 对纯表现动画应把这个事实表达成约 248/250ms 的 Presentation 周期，而不是写成 `time.tick % 4`。这样即使未来 `worldHz` 调整，环境动画速度仍保持原版时长。
+按原版约 62ms 主循环计算，动态格约每 **248ms** 换一帧。Web Engine 把这个逆向事实表达为 Presentation 时间，而不是 `time.tick % 4`；因此未来调整 `worldHz` 不会改变环境动画速度。
 
-已经确认的映射包括：
+已经确认并接入的映射包括：
 
 | 对象/地形 | `ta.png` 基础线性序号 | 原版计数器 |
 |---|---:|---|
@@ -121,7 +121,17 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 | 潮汐 `0x57..0x5A` | 33 / 31 / 37 / 35 | `bF` |
 | 水域边缘 `0x5B..0x5D` | 46 / 48 / 50 | `bF` |
 
-原版 Bonus Coin 还存在随机闪烁门控。具体接入 `ta.png` 时继续保持这些逆向事实，但不要为每种纯视觉动画建立独立 gameplay timer。
+Web Runtime 的 Original Visual resolver 使用 `PresentationFrame.nowMs` 计算 phase：
+
+```text
+phase = floor(nowMs / 248ms) % cycleLength
+```
+
+`phase == 0` 时继续绘制 `ts.png` 的静态格；其余 phase 把 `ta.png` 当作 4×15 的规则网格 sprite sheet，并按 `baseIndex + phase - 1` 取帧。Renderer 的 image layer 因此支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
+
+这些环境动画不创建 RuntimeAction、不写 Entity state，也不读取 WorldTick。Debug Pause 使 WorldClock 停止后，它们仍随 PresentationClock 正常播放，这正是混合时钟的预期语义。
+
+原版 Bonus Coin 还存在随机闪烁门控；当前已恢复确认的基础相位动画，随机门控仍作为后续 fidelity 项处理。
 
 ## 7. Bobby 四方向人物图
 

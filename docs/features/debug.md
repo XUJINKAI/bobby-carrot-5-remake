@@ -58,13 +58,16 @@ Selection 显示 Cell Stack，并允许在同格多个 Presence 中切换具体 
 
 ## WorldClock controls
 
-Debug Sidebar 提供：
+Debug Sidebar 使用一个状态切换按钮，加两个单步按钮：
 
 ```text
-[ Pause ] [ +1 Tick ] [ +4 Ticks ] [ Resume ]
+running: [ ⏸ Pause ]  [ +1 Tick ] [ +4 Ticks ]
+paused:  [ ▶ Resume ] [ +1 Tick ] [ +4 Ticks ]
 ```
 
-这些按钮只控制 gameplay WorldClock：
+Pause / Resume 是同一个常驻 DOM 控件，只更新图标、文字和 accessibility label；Presentation render 不得销毁并重建该按钮。`+1 / +4` 只在 WorldClock 暂停时可用。
+
+这些控件只控制 gameplay WorldClock：
 
 ```ts
 worldClock.pause();
@@ -75,12 +78,14 @@ worldClock.resume();
 
 暂停期间：
 
-- `InputController.update()` 不运行；
+- `InputController` 临时禁用并清空 held / queued movement；
 - `World.update()` / Behavior / RuntimeAction 不推进；
 - `Game.move()` 也不得作为旁路直接修改 World；
 - PresentationClock 仍由 RAF 运行；
 - Camera、Bobby tween、环境动画、UI 表现可以继续完成；
 - AudioRuntime 独立运行。
+
+Resume 或关闭 Debug 时恢复 Pause 前的 Input enabled 状态，不擅自打开原本由宿主禁用的输入。
 
 因此 Debug Pause 的正确判断标准是 **World Tick 是否停止增长**，而不是“画面是否完全静止”。
 
