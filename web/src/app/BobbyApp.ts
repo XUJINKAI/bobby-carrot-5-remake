@@ -19,6 +19,7 @@ import {
   renderAdventureHome,
 } from "../pages/adventure/mountAdventurePages.js";
 import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
+import { renderEmbedPage } from "../pages/embed/mountEmbedPage.js";
 import { renderLevels } from "../pages/explore/mountExplorePage.js";
 import { renderGamePage } from "../pages/game/mountGamePage.js";
 import { renderHome } from "../pages/home/mountHomePage.js";
@@ -141,6 +142,10 @@ export class BobbyApp {
 
     if (path === "/") {
       this.controller = await renderHome(context);
+      return;
+    }
+    if (path === "/embed") {
+      this.controller = renderEmbedPage(context);
       return;
     }
     if (path === "/import/v1") {
@@ -361,7 +366,7 @@ function parseMapReference(value: string): ExploreMapRef | null {
 }
 
 function isDirectMapRoute(path: string): boolean {
-  return path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
+  return path === "/embed" || path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
 }
 
 function defaultShellState(): ShellViewState {

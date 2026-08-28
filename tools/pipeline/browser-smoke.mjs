@@ -31,6 +31,8 @@ try {
     'class="home-sky-brand"',
   ]);
   await interactiveDataExchangeSmoke(`${origin}/`);
+  await smoke(`${origin}/embed`, ['class="embed-page"', "BC5R Embed v1"]);
+  await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
   await smoke(
     `${origin}/explore`,
     [

@@ -1,0 +1,24 @@
+{
+  "name": "@bobby/embed",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/public.js",
+  "types": "dist/public.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
+    }
+  },
+  "scripts": {
+    "build:standalone": "vite build"
+  },
+  "dependencies": {
+    "@bobby/engine": "0.1.0",
+    "@bobby/model": "0.1.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6"
+  }
+}

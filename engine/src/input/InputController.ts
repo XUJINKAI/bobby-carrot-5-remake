@@ -202,6 +202,11 @@ export class InputController {
     this.screenJoystick?.setInteractionEnabled(value);
     if (!value) this.clearHeldMovement();
   }
+  setKeyboardEnabled(value: boolean): void {
+    this.capabilities.keyboard = value;
+    if (!value) this.heldMovementKeys.length = 0;
+    this.syncContinuousInput();
+  }
 
   setScreenJoystickEnabled(value: boolean): void {
     this.screenJoystick?.setEnabled(value);

@@ -16,7 +16,7 @@ export function homeIdentity(): ShellIdentity {
 
 export function pageIdentity(
   contextName: string,
-  activeHref: "/adventure" | "/explore" | "/edit",
+  activeHref: "/adventure" | "/explore" | "/edit" | "/embed",
   productNameVisible = true,
 ): ShellIdentity {
   return {

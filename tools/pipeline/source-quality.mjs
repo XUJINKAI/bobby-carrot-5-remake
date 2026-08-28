@@ -9,6 +9,7 @@ const SOURCE_ROOTS = [
   "engine",
   "adventure",
   "editor",
+  "embed",
   "web",
   "tools",
 ];
