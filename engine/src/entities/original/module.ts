@@ -17,6 +17,7 @@ import type {
 import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
 import {
   defineEntityModule,
+  type EntityBehaviorBinding,
   type EntityModule,
   type EntityModuleDefinition,
 } from "../EntityModule.js";
@@ -95,11 +96,15 @@ export function coverDefinition(
 export function originalModule(
   definition: EntityModuleDefinition,
   visual: VisualDefinition,
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return defineEntityModule({
     definition,
     visual,
-    behaviorBindings: behaviorBindingsForDefinition(definition),
+    behaviorBindings: [
+      ...behaviorBindingsForDefinition(definition),
+      ...behaviorBindings,
+    ],
   });
 }
 
@@ -144,9 +149,14 @@ export function staticContent(
   atlas: AtlasCell,
   traits: readonly EntityTrait[] = [],
   extra: Partial<EntityModuleDefinition> = {},
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   const definition = contentDefinition(type, name, traits, extra);
-  return originalModule(definition, atlasVisual(definition, atlas));
+  return originalModule(
+    definition,
+    atlasVisual(definition, atlas),
+    behaviorBindings,
+  );
 }
 
 export function staticCover(
