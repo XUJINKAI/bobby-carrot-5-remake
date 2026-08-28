@@ -16,11 +16,11 @@ type BC5RGlobal = { mount?: EmbedMount };
 const mapMode = ref<"map" | "mapUrl">("map");
 const map = ref(location.hash.slice(1));
 const mapUrl = ref("");
-const lang = ref("auto");
-const theme = ref("default");
+const lang = ref("zh-CN");
+const theme = ref("retro");
 const audioEnabled = ref(true);
-const audioVolume = ref(1);
-const musicStyle = ref<EmbedMusicStyle>("8bit");
+const audioVolumePercent = ref(100);
+const musicStyle = ref<EmbedMusicStyle>("modern");
 const keyboard = ref<EmbedKeyboardMode>("focus");
 const joystick = ref<EmbedJoystickMode>("auto");
 const zoom = ref(1);
@@ -41,7 +41,7 @@ const options = computed(() => ({
   ...(mapMode.value === "map" ? { map: map.value.trim() } : { mapUrl: mapUrl.value.trim() }),
   lang: lang.value,
   theme: theme.value,
-  audio: audioEnabled.value ? audioVolume.value : false,
+  audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
   musicStyle: musicStyle.value,
   input: {
     keyboard: keyboard.value,
@@ -151,7 +151,7 @@ onBeforeUnmount(() => handle?.destroy());
       <div>
         <p class="eyebrow">BC5R Embed v1</p>
         <h1>内嵌到其他网页</h1>
-        <p>粘贴 Editor 分享数据或填写你自己托管的地图 URL，调整参数后复制代码。</p>
+        <p>粘贴 Editor 分享数据或填写你自己托管的地图链接，调整参数后复制代码。</p>
       </div>
     </header>
 
@@ -159,49 +159,77 @@ onBeforeUnmount(() => handle?.destroy());
       <section class="embed-config">
         <div class="field-group">
           <div class="segmented">
-            <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">分享数据</button>
-            <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">Map URL</button>
+            <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">地图数据</button>
+            <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">地图链接</button>
           </div>
           <textarea v-if="mapMode === 'map'" v-model="map" rows="5" placeholder="BC5R1:... 或 https://bc5r.com/import/v1#..."></textarea>
           <input v-else v-model="mapUrl" type="url" placeholder="https://example.com/map.txt" />
         </div>
 
-        <div class="settings-grid">
-          <label>语言<input v-model="lang" /></label>
-          <label>主题<input v-model="theme" /></label>
-          <label>音量<input v-model.number="audioVolume" type="number" min="0" step="0.1" :disabled="!audioEnabled" /></label>
+        <fieldset class="config-group">
+          <legend>通用</legend>
+          <div class="settings-grid">
+            <label>语言
+              <select v-model="lang">
+                <option value="zh-CN">中文</option>
+              </select>
+            </label>
+            <label>主题
+              <select v-model="theme">
+                <option value="retro">retro</option>
+              </select>
+            </label>
+          </div>
+          <label class="field-group">自定义信息<input v-model="info" placeholder="Powered by Bobby Carrot 5 Remake" /></label>
+        </fieldset>
+
+        <fieldset class="config-group">
+          <legend>声音</legend>
+          <label class="check-line"><input v-model="audioEnabled" type="checkbox" /> 声音</label>
+          <label class="range-field">
+            <span>音量 <strong>{{ audioVolumePercent }}%</strong></span>
+            <input v-model.number="audioVolumePercent" type="range" min="0" max="200" step="1" :disabled="!audioEnabled" />
+          </label>
           <label>音乐风格
             <select v-model="musicStyle">
+              <option value="modern">modern</option>
               <option value="8bit">8bit</option>
-              <option value="modern">Modern</option>
             </select>
           </label>
-          <label>键盘
-            <select v-model="keyboard">
-              <option value="focus">Focus</option>
-              <option value="global">Global</option>
-              <option :value="false">关闭</option>
-            </select>
-          </label>
-          <label>摇杆
-            <select v-model="joystick">
-              <option value="auto">Auto</option>
-              <option :value="true">显示</option>
-              <option :value="false">隐藏</option>
-            </select>
-          </label>
-          <label>初始 Zoom<input v-model.number="zoom" type="number" min="0.1" step="0.1" /></label>
-          <label>最小 Zoom<input v-model.number="minZoom" type="number" min="0.1" step="0.1" /></label>
-          <label>最大 Zoom<input v-model.number="maxZoom" type="number" min="0.1" step="0.1" /></label>
-        </div>
+        </fieldset>
 
-        <div class="checks">
-          <label><input v-model="audioEnabled" type="checkbox" /> Audio</label>
-          <label><input v-model="pinchZoom" type="checkbox" /> Pinch 缩放</label>
-          <label><input v-model="wheelZoom" type="checkbox" /> 滚轮缩放</label>
-        </div>
+        <fieldset class="config-group">
+          <legend>控制</legend>
+          <div class="settings-grid">
+            <label>键盘
+              <select v-model="keyboard">
+                <option value="focus">Focus</option>
+                <option value="global">Global</option>
+                <option :value="false">关闭</option>
+              </select>
+            </label>
+            <label>摇杆
+              <select v-model="joystick">
+                <option value="auto">Auto</option>
+                <option :value="true">显示</option>
+                <option :value="false">隐藏</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
 
-        <label class="field-group">自定义信息<input v-model="info" placeholder="Created by Alice" /></label>
+        <fieldset class="config-group">
+          <legend>镜头</legend>
+          <div class="settings-grid">
+            <label>初始 Zoom<input v-model.number="zoom" type="number" min="0.1" step="0.1" /></label>
+            <label>最小 Zoom<input v-model.number="minZoom" type="number" min="0.1" step="0.1" /></label>
+            <label>最大 Zoom<input v-model.number="maxZoom" type="number" min="0.1" step="0.1" /></label>
+          </div>
+          <div class="checks">
+            <label><input v-model="pinchZoom" type="checkbox" /> Pinch 缩放</label>
+            <label><input v-model="wheelZoom" type="checkbox" /> 滚轮缩放</label>
+          </div>
+        </fieldset>
       </section>
 
       <section class="embed-output">
@@ -226,22 +254,27 @@ onBeforeUnmount(() => handle?.destroy());
 .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--bc-highlight); }
 .embed-layout { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 28px; margin-top: 28px; }
 .embed-config, .embed-output { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-.field-group { display: grid; gap: 8px; margin-bottom: 18px; }
+.field-group { display: grid; gap: 8px; margin: 0 0 18px; }
+.config-group { display: grid; gap: 14px; margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: 9px; }
+.config-group legend { padding: 0 6px; font-weight: 800; color: var(--bc-highlight); }
 textarea, input, select { box-sizing: border-box; width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); color: var(--bc-text); }
 textarea::placeholder, input::placeholder { color: var(--muted); opacity: .75; }
 input:disabled { opacity: .55; }
-textarea { resize: vertical; font: 12px/1.5 ui-monospace, monospace; }
+textarea { resize: vertical; font: 12px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; word-break: break-all; white-space: pre-wrap; }
+input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .segmented { display: flex; gap: 8px; }
 .segmented button, .code-heading button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); color: var(--bc-text); cursor: pointer; }
 .segmented button.active { background: var(--bc-active); border-color: var(--bc-active); }
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.settings-grid label { display: grid; gap: 6px; font-size: 13px; }
-.checks { display: flex; flex-wrap: wrap; gap: 18px; margin: 18px 0; }
-.checks label { display: flex; align-items: center; gap: 6px; }
-.checks input { width: auto; }
+.settings-grid label, .config-group > label:not(.check-line) { display: grid; gap: 6px; font-size: 13px; }
+.checks { display: flex; flex-wrap: wrap; gap: 18px; }
+.checks label, .check-line { display: flex; align-items: center; gap: 6px; }
+.checks input, .check-line input { width: auto; }
+.range-field span { display: flex; justify-content: space-between; gap: 12px; }
 .preview { width: 100%; height: 520px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #061632; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
 .error { color: #ffb4ab; }
 .code-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
-pre { overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; }
+pre { overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
 @media (max-width: 900px) { .embed-layout { grid-template-columns: 1fr; } .settings-grid { grid-template-columns: 1fr; } }
 </style>
