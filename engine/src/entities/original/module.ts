@@ -56,12 +56,13 @@ export function surfaceDefinition(
     traits,
     stackOrder: SURFACE_STACK_ORDER,
     presentation: { name, category: "地表" },
+    ...extra,
     authoring: {
       palette: true,
       category: "地表",
       replaceGroup: "surface",
+      ...extra.authoring,
     },
-    ...extra,
   };
 }
 
@@ -92,12 +93,13 @@ export function coverDefinition(
     traits,
     stackOrder: COVER_STACK_ORDER,
     presentation: { name, category: "覆盖", renderPass: "overlay" },
+    ...extra,
     authoring: {
       palette: true,
       category: "覆盖",
       replaceGroup: "cover",
+      ...extra.authoring,
     },
-    ...extra,
   };
 }
 

@@ -8,7 +8,6 @@ import {
 } from "./module.js";
 
 const definition = contentDefinition(EntityTypeId.DRAGON, "Dragon", ["dragon"], {
-  occupancy: { group: "actor" },
   footprint: {
     rotateWithDirection: true,
     baseDirection: "right",

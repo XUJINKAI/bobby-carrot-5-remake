@@ -14,7 +14,6 @@ const BOBBY_VISUAL_ASSETS: Readonly<Record<Direction, string>> = {
 };
 
 const definition = contentDefinition(EntityTypeId.BOBBY, "Bobby", ["player"], {
-  occupancy: { group: "actor" },
   authoring: {
     palette: true,
     category: "角色",

@@ -6,7 +6,6 @@ export type {
   EntityFieldKind,
   EntityFieldOption,
   EntityTrait,
-  OccupancyDefinition,
   VisualId,
   AudioProfileId,
 } from "./world/entity/EntityDefinition.js";
