@@ -1,6 +1,5 @@
 import type { Direction, EntityState, JsonValue } from "@bobby/model";
 import type { EntityId } from "./entity/EntityInstance.js";
-import type { StackBand } from "./spatial/StackBand.js";
 
 /** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
 export interface WorldEvent {
@@ -51,7 +50,7 @@ export interface PresenceInspection {
   entityId: EntityId;
   type: string;
   role?: string;
-  stackBand: StackBand;
+  stackOrder: number;
   traits: readonly string[];
   state?: EntityState;
 }

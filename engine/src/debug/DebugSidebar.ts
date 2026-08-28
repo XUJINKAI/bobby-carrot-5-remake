@@ -142,7 +142,7 @@ export class DebugSidebar {
       ["entity", "Entity"],
       ["anchor", "Anchor"],
       ["direction", "Direction"],
-      ["stack", "Stack"],
+      ["stack", "Stack order"],
       ["behaviors", "Behaviors"],
       ["visual", "Visual"],
     ] as const)
@@ -239,7 +239,8 @@ export class DebugSidebar {
       this.presentationPauseResumeButton.title,
     );
 
-    this.frameBackButton.disabled = !runtime.presentationPaused || runtime.presentationFrame <= 0;
+    this.frameBackButton.disabled =
+      !runtime.presentationPaused || runtime.presentationFrame <= 0;
     this.frameForwardButton.disabled = !runtime.presentationPaused;
   }
 
@@ -250,21 +251,29 @@ export class DebugSidebar {
     this.entitySection.hidden = !selection?.entity;
     if (!selection) return;
 
-    this.setValue(this.selectionValues, "cell", `${selection.cell.x}, ${selection.cell.y}`);
-    this.setValue(this.selectionValues, "playerHere", String(selection.playerHere));
+    this.setValue(
+      this.selectionValues,
+      "cell",
+      `${selection.cell.x}, ${selection.cell.y}`,
+    );
+    this.setValue(
+      this.selectionValues,
+      "playerHere",
+      String(selection.playerHere),
+    );
     const signature = JSON.stringify(
       selection.presences.map((presence) => [
         presence.entityId,
         presence.type,
         presence.role,
-        presence.stackBand,
+        presence.stackOrder,
       ]),
     );
     if (signature !== this.selectionStackSignature) {
       this.selectionStackSignature = signature;
       const buttons = [...selection.presences].reverse().map((presence) => {
         const label = [
-          `[${presence.stackBand}]`,
+          `[${presence.stackOrder}]`,
           `#${presence.entityId}`,
           presence.type,
           presence.role ? `(${presence.role})` : "",
@@ -279,7 +288,9 @@ export class DebugSidebar {
         return button;
       });
       this.selectionStack.replaceChildren(
-        ...(buttons.length > 0 ? buttons : [document.createTextNode("Empty cell")]),
+        ...(buttons.length > 0
+          ? buttons
+          : [document.createTextNode("Empty cell")]),
       );
     }
     if (selection.entity) this.updateEntity(selection.entity);
@@ -287,10 +298,28 @@ export class DebugSidebar {
 
   private updateEntity(entity: DebugEntitySnapshot): void {
     this.setValue(this.entityValues, "entity", `#${entity.id} ${entity.type}`);
-    this.setValue(this.entityValues, "anchor", `${entity.anchor.x}, ${entity.anchor.y}`);
-    this.setValue(this.entityValues, "direction", entity.direction ?? "-");
-    this.setValue(this.entityValues, "stack", entity.definition.stackBand);
-    this.setValue(this.entityValues, "behaviors", entity.behaviors.join(", ") || "-");
+    this.setValue(
+      this.entityValues,
+      "anchor",
+      `${entity.anchor.x}, ${entity.anchor.y}`,
+    );
+    this.setValue(
+      this.entityValues,
+      "direction",
+      entity.direction ?? "-",
+    );
+    this.setValue(
+      this.entityValues,
+      "stack",
+      entity.definition.stackOrder === null
+        ? "-"
+        : String(entity.definition.stackOrder),
+    );
+    this.setValue(
+      this.entityValues,
+      "behaviors",
+      entity.behaviors.join(", ") || "-",
+    );
     this.setValue(this.entityValues, "visual", entity.visual.visualId);
     this.setJson("Traits", entity.definition.traits);
     this.setJson("Instance traits", entity.instanceTraits);
@@ -313,7 +342,11 @@ export class DebugSidebar {
     if (target && target.textContent !== text) target.textContent = text;
   }
 
-  private valueRow(labelText: string, key: string, values: ValueMap): HTMLElement {
+  private valueRow(
+    labelText: string,
+    key: string,
+    values: ValueMap,
+  ): HTMLElement {
     const row = document.createElement("div");
     Object.assign(row.style, {
       display: "grid",
@@ -396,5 +429,7 @@ function formatJson(value: unknown): string {
 }
 
 function formatMs(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }

@@ -3,6 +3,7 @@ import type { EngineTiming } from "../time/EngineTiming.js";
 import type { PresentationClock } from "../time/PresentationClock.js";
 import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
+import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
 import type {
   CellPosition,
@@ -44,7 +45,6 @@ export interface DebugPresenceSnapshot {
   entityId: EntityId;
   type: string;
   role?: string;
-  stackBand: string;
   stackOrder: number;
   traits: readonly string[];
 }
@@ -59,7 +59,6 @@ export interface DebugEntitySnapshot {
   instanceTraits: readonly string[];
   definition: {
     traits: readonly string[];
-    stackBand: string;
     stackOrder: number | null;
     occupancy: unknown;
     footprint: unknown;
@@ -77,6 +76,7 @@ export interface DebugEntitySnapshot {
 }
 
 export interface DebugRenderItemSnapshot {
+  pass: VisualRenderPass;
   cell: CellPosition;
   role: string | null;
   visualX: number;
@@ -159,9 +159,10 @@ function buildEntitySnapshot(
     .resolve(definition.behaviors ?? [], traits)
     .map((behavior) => behavior.id);
   const visualInspection = visual.inspectEntity(world, entityId);
-  const renderItems = (scene?.items ?? [])
-    .filter((item) => item.presence.entityId === entityId)
-    .map((item) => ({
+  const renderItems = renderSceneItems(scene)
+    .filter(({ item }) => item.presence.entityId === entityId)
+    .map(({ pass, item }) => ({
+      pass,
       cell: { ...item.presence.cell },
       role: item.presence.role ?? null,
       visualX: item.visualX,
@@ -179,7 +180,6 @@ function buildEntitySnapshot(
     instanceTraits: [...(entity.instanceTraits ?? [])],
     definition: {
       traits: [...definition.traits],
-      stackBand: definition.stackBand,
       stackOrder: definition.stackOrder ?? null,
       occupancy: definition.occupancy ? structuredClone(definition.occupancy) : null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
@@ -199,6 +199,18 @@ function buildEntitySnapshot(
   };
 }
 
+function renderSceneItems(scene: RenderScene | null): Array<{
+  pass: VisualRenderPass;
+  item: RenderScene["world"][number];
+}> {
+  if (!scene) return [];
+  return [
+    ...scene.world.map((item) => ({ pass: "world" as const, item })),
+    ...scene.player.map((item) => ({ pass: "player" as const, item })),
+    ...scene.overlay.map((item) => ({ pass: "overlay" as const, item })),
+  ];
+}
+
 function debugPresence(
   world: World,
   presence: Readonly<EntityPresence>,
@@ -207,7 +219,6 @@ function debugPresence(
     entityId: presence.entityId,
     type: world.entity(presence.entityId)?.type ?? "unknown",
     ...(presence.role ? { role: presence.role } : {}),
-    stackBand: presence.stackBand,
     stackOrder: presence.stackOrder,
     traits: [...presence.traits],
   };
