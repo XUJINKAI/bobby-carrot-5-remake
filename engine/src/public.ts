@@ -17,10 +17,12 @@ export {
   type MusicStyle,
 } from "./audio/AudioBackend.js";
 export {
+  DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,
 } from "./input/InputController.js";
 export {
+  DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   ScreenJoystick,
   directionForJoystickVector,
   type ScreenJoystickOptions,
