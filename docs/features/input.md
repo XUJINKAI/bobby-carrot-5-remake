@@ -73,34 +73,66 @@ Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格
 默认值集中在 Engine 内：
 
 - `DEFAULT_INPUT_CONTROLLER_OPTIONS`：Input 能力默认值、Keyboard / External repeat delay、临时 update interval 与 `autoUpdate`。
-- `DEFAULT_SCREEN_JOYSTICK_OPTIONS`：Screen Joystick 尺寸、透明度、dead zone、activation scale 与 Joystick repeat delay。
+- `DEFAULT_SCREEN_JOYSTICK_OPTIONS`：Screen Joystick 尺寸、透明度、dead zone、右下识别区、默认圆盘位置与 Joystick repeat delay。
 
 ## Screen Joystick
 
-`ScreenJoystick` 属于 Engine Gameplay Input。它由较大的透明识别区域和半透明圆形摇杆组成。手指在识别区域内按下时，以落指坐标作为本次摇杆中心，并把可见底座移动到该坐标；随后由 Engine 把相对这个中心的拖动向量按 dead zone、主轴方向和方向迟滞转换为 `up/down/left/right/null`，再进入 Continuous Input 路径。
+`ScreenJoystick` 属于 Engine Gameplay Input。它把“右下角可以落指的识别区”和“圆盘平时显示在哪里”拆成两套独立几何参数。识别区只负责决定哪里可以启动摇杆；手指在识别区内按下后，仍以落指坐标作为本次摇杆中心，并把可见底座移动到该坐标。
+
+默认布局面向手机：
+
+| 参数 | 默认值 | 含义 |
+| --- | ---: | --- |
+| `size` | 128 px | 可见圆盘直径 |
+| `activationWidth` | 180 px | 右下识别区宽度 |
+| `activationHeight` | 180 px | 右下识别区高度 |
+| `activationInsetRight` | 0 px | 识别区离右侧 safe area 的额外距离 |
+| `activationInsetBottom` | 0 px | 识别区离底部 safe area 的额外距离 |
+| `defaultInsetRight` | 28 px | 默认圆盘右边缘离识别区右边的距离 |
+| `defaultInsetBottom` | 28 px | 默认圆盘下边缘离识别区底边的距离 |
+| `deadZone` | 0.2 | dead zone 比例 |
+| `opacity` | 0.45 | 圆盘透明度 |
+| `initialRepeatDelayMs` | 375 ms | 连续移动前的初始 repeat delay |
+
+识别区直接贴住右下 safe area，不再因为圆盘半径额外向左上偏移。默认圆盘完整位于识别区内部，因此圆盘自身的任何位置都属于可启动区域；不会再出现“看得到摇杆，但按它右下半边没有响应”的情况。
 
 ```text
-识别区域内 pointerdown
-        │
-        └─ 当前触点成为摇杆中心，底座移动到触点
-                              │
-                              ▼
-                     拖动向量 (dx, dy)
-                              │
-        ┌─────────────────────┴─────────────────────┐
-        │                                           │
-     dead zone                                  主轴 + 方向迟滞
-        │                                           │
-        ▼                                           ▼
-       null                              up / down / left / right
-                                                     │
-                                                     ▼
-                                      Continuous Input State
+右下 activation area
+┌────────────────────────┐
+│                        │
+│       pointerdown      │
+│            │           │
+│            ▼           │
+│       以落点为圆心     │
+│            │           │
+│            ▼           │
+│     dead zone / 主轴    │
+│            │           │
+│            ▼           │
+│    Continuous Input    │
+└────────────────────────┘
 ```
 
 `pointerup`、`pointercancel`、失去 pointer capture 或窗口失焦时，Engine 让球头回中、底座回到默认锚点并清空 held direction。全局 Dialog 或 Result 决策层取得交互焦点时，宿主暂停 Engine Input，Engine 执行相同清理。
 
-调用方通过 Runtime Config 开关 Screen Joystick，并可以配置透明度、dead zone、摇杆尺寸、识别区域尺寸 `activationSize` 和 `initialRepeatDelayMs`。默认识别区域边长约为摇杆尺寸的 2.4 倍，并继续避开设备 safe area。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入，同样经过 Continuous Input repeat 状态机。
+调用方可以通过 Runtime Config 分别调整：
+
+```ts
+screenJoystick: {
+  size: 128,
+  activationWidth: 180,
+  activationHeight: 180,
+  activationInsetRight: 0,
+  activationInsetBottom: 0,
+  defaultInsetRight: 28,
+  defaultInsetBottom: 28,
+  deadZone: 0.2,
+  opacity: 0.45,
+  initialRepeatDelayMs: 375,
+}
+```
+
+其中 `activationWidth / activationHeight / activationInset*` 只改变识别区；`size / defaultInset*` 只改变摇杆默认显示尺寸和位置。二者不再互相推导。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入，同样经过 Continuous Input repeat 状态机。
 
 Screen Control 的布局、默认开关和响应式行为见 [`ui.md`](ui.md)。
 
