@@ -255,7 +255,7 @@ export class World {
       ignoredEntity = pushable.entityId;
     }
 
-    if (!this.hasSupport(to)) {
+    if (!this.hasWalkable(to)) {
       const touchEvents = this.runTouch(targetStack, actor, direction);
       return {
         ...blockedResult(from, to, direction, "void"),
@@ -341,7 +341,7 @@ export class World {
     cell: CellPosition,
     movingEntityId: EntityId,
   ): boolean {
-    if (!this.spatial.inBounds(cell) || !this.hasSupport(cell)) return false;
+    if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
     return !this.spatial.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
@@ -350,8 +350,8 @@ export class World {
     );
   }
 
-  private hasSupport(cell: CellPosition): boolean {
-    return this.spatial.hasTraitAt(cell, "support");
+  private hasWalkable(cell: CellPosition): boolean {
+    return this.spatial.hasTraitAt(cell, "walkable");
   }
 
   private runPassage(

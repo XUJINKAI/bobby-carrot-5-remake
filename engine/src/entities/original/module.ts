@@ -53,11 +53,14 @@ export function surfaceDefinition(
 ): EntityModuleDefinition {
   return {
     type,
-    traits: [...new Set([...traits, "support"])],
+    traits,
     stackOrder: SURFACE_STACK_ORDER,
-    occupancy: { group: "surface", replaceSameGroup: true },
     presentation: { name, category: "地表" },
-    authoring: { palette: true, category: "地表" },
+    authoring: {
+      palette: true,
+      category: "地表",
+      replaceGroup: "surface",
+    },
     ...extra,
   };
 }
@@ -88,9 +91,12 @@ export function coverDefinition(
     type,
     traits,
     stackOrder: COVER_STACK_ORDER,
-    occupancy: { group: "cover", replaceSameGroup: true },
     presentation: { name, category: "覆盖", renderPass: "overlay" },
-    authoring: { palette: true, category: "覆盖" },
+    authoring: {
+      palette: true,
+      category: "覆盖",
+      replaceGroup: "cover",
+    },
     ...extra,
   };
 }

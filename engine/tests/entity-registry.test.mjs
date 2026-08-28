@@ -29,17 +29,28 @@ test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () =>
   const registry = createBuiltinEntityRegistry();
   const catalog = createBuiltinEntityCatalog();
   assert.deepEqual(registry.require("background-variant-001").traits, []);
-  assert.equal(registry.require("background-variant-001").stackBand, "surface");
+  assert.equal(registry.require("background-variant-001").stackOrder, 0);
+  assert.equal(
+    catalog.require("background-variant-001").authoring?.replaceGroup,
+    "surface",
+  );
   assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
-  assert.equal(registry.require("object-variant-001").stackBand, "content");
+  assert.equal(registry.require("object-variant-001").stackOrder, 100);
+  assert.equal(
+    catalog.require("object-variant-001").authoring?.replaceGroup,
+    undefined,
+  );
   assert.equal(catalog.require("object-variant-001").authoring?.palette, false);
 });
 
-test("Start 是普通可步行 surface，不携带出生语义", () => {
-  const start = createBuiltinEntityRegistry().require("start");
-  assert.equal(start.stackBand, "surface");
+test("Start 是普通可步行 surface authoring replacement，不携带出生语义", () => {
+  const registry = createBuiltinEntityRegistry();
+  const catalog = createBuiltinEntityCatalog();
+  const start = registry.require("start");
+  assert.equal(start.stackOrder, 0);
   assert.deepEqual(start.traits, ["walkable"]);
   assert.equal(start.traits.includes("start"), false);
+  assert.equal(catalog.require("start").authoring?.replaceGroup, "surface");
 });
 
 test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {

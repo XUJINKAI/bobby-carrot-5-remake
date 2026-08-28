@@ -4,11 +4,14 @@ import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 export const pushGoal: EntityModule = defineEntityModule({
   definition: {
     type: EntityTypeId.PUSH_GOAL,
-    traits: ["walkable", "push-goal", "support"],
+    traits: ["walkable", "push-goal"],
     stackOrder: 0,
-    occupancy: { group: "surface", replaceSameGroup: true },
     presentation: { name: "Push Goal", category: "目标" },
-    authoring: { palette: true, category: "目标" },
+    authoring: {
+      palette: true,
+      category: "目标",
+      replaceGroup: "surface",
+    },
   },
   visual: {
     id: EntityTypeId.PUSH_GOAL,

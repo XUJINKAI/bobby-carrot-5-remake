@@ -6,11 +6,6 @@ export type BehaviorId = string;
 export type VisualId = string;
 export type AudioProfileId = string;
 
-export interface OccupancyDefinition {
-  group?: string;
-  replaceSameGroup?: boolean;
-}
-
 export type EntityFieldKind = "string" | "number" | "boolean" | "enum";
 
 export interface EntityFieldOption {
@@ -36,7 +31,6 @@ export interface EntityDefinition {
   type: EntityType;
   traits: readonly EntityTrait[];
   stackOrder?: number;
-  occupancy?: OccupancyDefinition;
   footprint?: FootprintDefinition;
   behaviors?: readonly BehaviorId[];
   properties?: readonly EntityFieldDefinition[];

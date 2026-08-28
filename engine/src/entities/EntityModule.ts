@@ -22,6 +22,8 @@ export interface EntityPresentationDefinition {
 export interface EntityAuthoringDefinition {
   palette?: boolean;
   category?: string;
+  /** Editor 放置时，目标格已有相同 replaceGroup 的 Entity 会被替换。 */
+  replaceGroup?: string;
   /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
   cursor?: { dx: number; dy: number };
   /** Palette 创建方向型 Entity 时使用的初值。 */
