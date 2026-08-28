@@ -138,28 +138,58 @@ LevelMap v1 不持久化 runtime Entity id 或 UUID。Editor 可以使用文档�
 
 ## Rules
 
-规则只依赖 Entity / Presence / Trait，不再出现 Terrain/Object 分类：
+规则只依赖 Entity / Presence 的语义 selector，不出现 Terrain/Object 分类：
 
 ```ts
 type WinCondition =
   | { type: "all"; conditions: WinCondition[] }
   | { type: "any"; conditions: WinCondition[] }
-  | { type: "collect-all"; trait: string }
-  | { type: "fill-all"; targetTrait: string; fillerTrait: string }
-  | { type: "reach"; trait: string };
+  | { type: "collect-all"; target: string }
+  | { type: "fill-all"; target: string; filler: string }
+  | { type: "reach"; target: string };
 ```
 
-Sokoban 可以使用：
+`target` 与 `filler` 都是 semantic selector：可以直接匹配 Entity type，也可以匹配 Presence Trait。这样稳定的具体目标可以直接写 Entity type，抽象机制则可以继续通过 Trait 组合。
+
+原版三类完成条件分别表达为：
+
+```json
+{ "type": "collect-all", "target": "carrot" }
+```
+
+```json
+{ "type": "fill-all", "target": "egg-nest", "filler": "egg" }
+```
+
+```json
+{ "type": "reach", "target": "exit" }
+```
+
+Sokoban 可以使用 Trait selector：
 
 ```json
 {
   "type": "fill-all",
-  "targetTrait": "push-goal",
-  "fillerTrait": "pushable"
+  "target": "push-goal",
+  "filler": "pushable"
 }
 ```
 
-原版出口可以使用 `{ "type": "reach", "trait": "exit" }`。
+`all` / `any` 可以递归组合任意条件。例如自定义地图可以同时要求收集胡萝卜、填满彩蛋、完成推箱子并到达出口：
+
+```json
+{
+  "type": "all",
+  "conditions": [
+    { "type": "collect-all", "target": "carrot" },
+    { "type": "fill-all", "target": "egg-nest", "filler": "egg" },
+    { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
+    { "type": "reach", "target": "exit" }
+  ]
+}
+```
+
+Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remaining` progress；HUD 等展示层只能消费这个结果，不复制胜利条件查询逻辑。
 
 ## MapDocument
 

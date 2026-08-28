@@ -178,11 +178,6 @@ export class Game {
       inventory: structuredClone(state.inventory),
       profile: structuredClone(state.profile),
       ridingMower: state.ridingMower,
-      objective: {
-        mode: state.objectiveMode,
-        remaining: state.objectiveRemaining,
-        total: state.objectiveTotal,
-      },
       forced: state.forced ? structuredClone(state.forced) : null,
       bonusCoinsInLevel: state.bonusCoinsInLevel,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,

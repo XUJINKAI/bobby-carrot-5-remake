@@ -88,7 +88,7 @@ export class World {
       level.width,
       level.height,
     );
-    this.state = createGlobalState(options.profile, level.rules?.win);
+    this.state = createGlobalState(options.profile);
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
@@ -122,9 +122,7 @@ export class World {
   }
 
   get winState(): WinConditionState | null {
-    return this.state.winCondition
-      ? this.evaluateWin(this.state.winCondition)
-      : null;
+    return this.rules?.win ? this.evaluateWin(this.rules.win) : null;
   }
 
   get forcedKind(): string | null {
@@ -137,10 +135,6 @@ export class World {
 
   get ridingMower(): boolean {
     return this.state.ridingMower;
-  }
-
-  get objectiveRemaining(): number {
-    return this.state.objectiveRemaining;
   }
 
   get isPlayerClimbing(): boolean {
@@ -514,17 +508,6 @@ export class World {
   }
 
   private refreshDerivedState(): void {
-    const objectives = this.query.entitiesWithTrait("level-objective");
-    this.state.objectiveRemaining = objectives.length;
-    this.state.objectiveTotal = Math.max(
-      this.state.objectiveTotal,
-      objectives.length,
-    );
-    if (this.query.entitiesWithTrait("objective-carrot").length > 0)
-      this.state.objectiveMode = "carrot";
-    else if (this.query.entitiesWithTrait("objective-nest").length > 0)
-      this.state.objectiveMode = "nest";
-    else this.state.objectiveMode = "generic";
     this.state.goldenCarrotsInLevel =
       this.query.entitiesWithTrait("golden-carrot").length;
     this.state.bonusCoinsInLevel =
