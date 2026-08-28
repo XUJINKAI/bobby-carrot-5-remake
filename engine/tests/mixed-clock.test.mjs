@@ -65,3 +65,29 @@ test("PresentationClock keeps the requested average rate on a 144Hz RAF source",
   }
   assert.ok(samples >= 60 && samples <= 62, `expected ~60Hz, got ${samples}`);
 });
+
+test("PresentationClock pause ignores real elapsed time and steps both directions", () => {
+  const clock = new PresentationClock(60);
+  clock.advance(1000);
+  const sampled = clock.advance(1017);
+  assert.equal(sampled?.frame, 1);
+  const beforePause = clock.current;
+
+  clock.pause();
+  assert.equal(clock.paused, true);
+  assert.equal(clock.advance(5000), null);
+  assert.equal(clock.current.frame, beforePause.frame);
+  assert.equal(clock.current.nowMs, beforePause.nowMs);
+
+  const back = clock.step(-1);
+  assert.equal(back?.frame, 0);
+  assert.ok((back?.deltaMs ?? 0) < 0);
+  const forward = clock.step(1);
+  assert.equal(forward?.frame, 1);
+  assert.ok((forward?.deltaMs ?? 0) > 0);
+
+  clock.resume();
+  assert.equal(clock.paused, false);
+  assert.equal(clock.advance(5010), null);
+  assert.ok(clock.current.nowMs < 1030);
+});
