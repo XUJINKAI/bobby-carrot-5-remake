@@ -5,7 +5,7 @@
 当前通用映射：
 
 ```text
-WASD / 方向键       -> held direction
+WASD / 方向键       -> continuous direction
 R                    -> Restart
 Z / U                -> Undo
 + / -                -> Zoom
@@ -30,7 +30,54 @@ debug
 
 例如 Adventure 可以关闭 Undo / Debug，Explore 可以开启；这种差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
 
-`ScreenJoystick` 属于 Engine Gameplay Input。它由较大的透明识别区域和半透明圆形摇杆组成。手指在识别区域内按下时，以落指坐标作为本次摇杆中心，并把可见底座移动到该坐标；随后由 Engine 把相对这个中心的拖动向量按 dead zone、主轴方向和方向迟滞转换为 `up/down/left/right/null`，再进入与键盘相同的 held-direction 路径。
+## Continuous Input 与 update
+
+键盘、Screen Joystick 和 `InputController.setHeldDirection()` 接入的外部方向控制器都属于 Continuous Input。DOM 事件或摇杆回调只更新当前 held state，不直接连续调用 `Game.move()`；真正的移动请求由公开的 `InputController.update(deltaMs)` 统一推进。
+
+```text
+Keyboard / Joystick / External Controller
+                  │
+                  └─ 更新 held direction
+                             │
+                             ▼
+                    InputController.update()
+                             │
+                             ▼
+                   HeldDirectionRepeater
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+          首格立即尝试                 initial delay
+                                            │
+                                            ▼
+                                      continuous repeat
+                                            │
+                                            ▼
+                                         Game.move()
+```
+
+Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。之后不额外设置 repeat interval，而由 `Game.move()` 的 animation busy 状态限制连续步频。如果一次移动已经被地图规则明确阻挡，本次 held direction 会停止 repeat，直到松开或改变方向，避免按 16Hz 不断产生重复 blocked 事件。
+
+当前默认手感：
+
+| Input Source | Initial Repeat Delay |
+| --- | ---: |
+| Keyboard | 250 ms |
+| External held direction | 250 ms |
+| Screen Joystick | 375 ms |
+
+方向变化被视为新的 Continuous Input edge：新方向的第一格重新立即尝试，并重新计算 initial repeat delay。Screen Joystick 回到 dead zone 时方向变为 `null`，repeat state 随即重置；再次推出 dead zone 时按新的第一格处理。
+
+目前世界时钟尚未接入，因此 `InputController` 默认用一个 **16Hz（62.5ms）临时 timer** 调用自己的 `update()`，方便验证输入手感。这个 timer 只是过渡适配层：世界时钟接管后，将 `autoUpdate` 设为 `false`，由 Engine Clock 每 tick 调用 `input.update(deltaMs)`，Continuous Input 状态机本身无需改动。
+
+默认值集中在 Engine 内：
+
+- `DEFAULT_INPUT_CONTROLLER_OPTIONS`：Input 能力默认值、Keyboard / External repeat delay、临时 update interval 与 `autoUpdate`。
+- `DEFAULT_SCREEN_JOYSTICK_OPTIONS`：Screen Joystick 尺寸、透明度、dead zone、activation scale 与 Joystick repeat delay。
+
+## Screen Joystick
+
+`ScreenJoystick` 属于 Engine Gameplay Input。它由较大的透明识别区域和半透明圆形摇杆组成。手指在识别区域内按下时，以落指坐标作为本次摇杆中心，并把可见底座移动到该坐标；随后由 Engine 把相对这个中心的拖动向量按 dead zone、主轴方向和方向迟滞转换为 `up/down/left/right/null`，再进入 Continuous Input 路径。
 
 ```text
 识别区域内 pointerdown
@@ -48,12 +95,12 @@ debug
        null                              up / down / left / right
                                                      │
                                                      ▼
-                                       InputController.setHeldDirection()
+                                      Continuous Input State
 ```
 
 `pointerup`、`pointercancel`、失去 pointer capture 或窗口失焦时，Engine 让球头回中、底座回到默认锚点并清空 held direction。全局 Dialog 或 Result 决策层取得交互焦点时，宿主暂停 Engine Input，Engine 执行相同清理。
 
-调用方通过 Runtime Config 开关 Screen Joystick，并可以配置透明度、dead zone、摇杆尺寸和识别区域尺寸 `activationSize`。默认识别区域边长约为摇杆尺寸的 2.4 倍，并继续避开设备 safe area。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入。
+调用方通过 Runtime Config 开关 Screen Joystick，并可以配置透明度、dead zone、摇杆尺寸、识别区域尺寸 `activationSize` 和 `initialRepeatDelayMs`。默认识别区域边长约为摇杆尺寸的 2.4 倍，并继续避开设备 safe area。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入，同样经过 Continuous Input repeat 状态机。
 
 Screen Control 的布局、默认开关和响应式行为见 [`ui.md`](ui.md)。
 
