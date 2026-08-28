@@ -21,7 +21,7 @@ interface PointerStart {
 
 /** Debug Sidebar、Cell selection 与 Clock controls 的 Engine 内部协调器。 */
 export class DebugRuntime {
-  private readonly sidebar: DebugSidebar;
+  private sidebar: DebugSidebar | null = null;
   private readonly pointerStarts = new Map<number, PointerStart>();
   private selection: DebugSelection | null = null;
   private enabled = false;
@@ -30,13 +30,6 @@ export class DebugRuntime {
     private readonly canvas: HTMLCanvasElement,
     private readonly host: DebugRuntimeHost,
   ) {
-    this.sidebar = new DebugSidebar(canvas, {
-      pause: () => this.host.pause(),
-      resume: () => this.host.resume(),
-      step: (count) => this.host.step(count),
-      close: () => this.host.close(),
-      selectEntity: (entityId) => this.selectEntity(entityId),
-    });
     canvas.addEventListener("pointerdown", this.onPointerDown);
     canvas.addEventListener("pointerup", this.onPointerUp);
     canvas.addEventListener("pointercancel", this.onPointerCancel);
@@ -44,7 +37,8 @@ export class DebugRuntime {
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    this.sidebar.setEnabled(enabled);
+    if (enabled) this.ensureSidebar().setEnabled(true);
+    else this.sidebar?.setEnabled(false);
     this.host.selectionChanged(enabled ? (this.selection?.cell ?? null) : null);
   }
 
@@ -55,14 +49,28 @@ export class DebugRuntime {
 
   render(): void {
     if (!this.enabled) return;
-    this.sidebar.render(this.host.snapshot(this.selection));
+    this.ensureSidebar().render(this.host.snapshot(this.selection));
   }
 
   destroy(): void {
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
     this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
-    this.sidebar.destroy();
+    this.sidebar?.destroy();
+    this.sidebar = null;
+  }
+
+  private ensureSidebar(): DebugSidebar {
+    if (!this.sidebar) {
+      this.sidebar = new DebugSidebar(this.canvas, {
+        pause: () => this.host.pause(),
+        resume: () => this.host.resume(),
+        step: (count) => this.host.step(count),
+        close: () => this.host.close(),
+        selectEntity: (entityId) => this.selectEntity(entityId),
+      });
+    }
+    return this.sidebar;
   }
 
   private selectEntity(entityId: EntityId): void {
