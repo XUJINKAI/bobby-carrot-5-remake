@@ -56,7 +56,7 @@ Keyboard / Joystick / External Controller
                                          Game.move()
 ```
 
-Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。之后不额外设置 repeat interval，而由 `Game.move()` 的 animation busy 状态限制连续步频。如果一次移动已经被地图规则明确阻挡，本次 held direction 会停止 repeat，直到松开或改变方向，避免按 16Hz 不断产生重复 blocked 事件。
+Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。首次方向 edge 会被缓冲到下一次 `update()`：即使用户在同一个 62.5ms tick 内完成按下并松开，仍会保留一次单格移动，但因为 held state 已经清空，不会进入 repeat。之后不额外设置 repeat interval，而由 `Game.move()` 的 animation busy 状态限制连续步频。如果一次移动已经被地图规则明确阻挡，本次 held direction 会停止 repeat，直到松开或改变方向，避免按 16Hz 不断产生重复 blocked 事件。
 
 当前默认手感：
 
