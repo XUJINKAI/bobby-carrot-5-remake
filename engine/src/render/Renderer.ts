@@ -4,6 +4,7 @@ import type {
   VisualAssetSources,
   VisualComposition,
 } from "../visual/VisualDefinition.js";
+import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type { Camera } from "./Camera.js";
 import type { RenderScene } from "./RenderScene.js";
 
@@ -20,6 +21,7 @@ export class Renderer {
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly context: CanvasRenderingContext2D | null;
   private debug = false;
+  private debugSelection: CellPosition | null = null;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -55,6 +57,10 @@ export class Renderer {
     this.debug = value;
   }
 
+  setDebugSelection(cell: CellPosition | null): void {
+    this.debugSelection = cell ? { ...cell } : null;
+  }
+
   render(scene: RenderScene, camera: Camera, viewport = this.measureViewport()): void {
     const context = this.context;
     if (!context) return;
@@ -80,8 +86,10 @@ export class Renderer {
       );
     }
 
-    if (this.debug)
+    if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
+      this.drawDebugSelection(context, camera);
+    }
   }
 
   private drawComposition(
@@ -196,6 +204,23 @@ export class Renderer {
       context.lineTo(b.x, b.y);
       context.stroke();
     }
+    context.restore();
+  }
+
+  private drawDebugSelection(
+    context: CanvasRenderingContext2D,
+    camera: Camera,
+  ): void {
+    const cell = this.debugSelection;
+    if (!cell) return;
+    const point = camera.worldToScreen(cell.x, cell.y);
+    const size = camera.tileScreenSize;
+    context.save();
+    context.fillStyle = "rgba(74, 168, 255, .16)";
+    context.strokeStyle = "rgba(118, 196, 255, .95)";
+    context.lineWidth = 2;
+    context.fillRect(point.x, point.y, size, size);
+    context.strokeRect(point.x + 1, point.y + 1, size - 2, size - 2);
     context.restore();
   }
 }

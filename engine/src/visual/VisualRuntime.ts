@@ -22,6 +22,11 @@ interface VisualMotion {
   durationTicks: number;
 }
 
+export interface VisualRuntimeInspection {
+  visualId: string;
+  runtime: Readonly<EntityVisualRuntimeState> | null;
+}
+
 /** World 与 Renderer 之间唯一有业务感知的视觉运行时。 */
 export class VisualRuntime {
   readonly camera: Camera;
@@ -94,6 +99,16 @@ export class VisualRuntime {
       world.height,
     );
     return buildVisualScene(world, this.visuals, this.entityRuntime, this.time);
+  }
+
+  /** Engine Debug Runtime 使用的只读视觉诊断信息。 */
+  inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {
+    const definition = world.definition(entityId);
+    const runtime = this.entityRuntime.get(entityId);
+    return {
+      visualId: this.visuals.visualIdFor(definition),
+      runtime: runtime ? structuredClone(runtime) : null,
+    };
   }
 
   private advanceMotion(time: EngineTick, easing: MotionEasing): boolean {

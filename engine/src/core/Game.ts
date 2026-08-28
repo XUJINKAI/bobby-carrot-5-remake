@@ -1,12 +1,15 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
+import { DebugRuntime } from "../debug/DebugRuntime.js";
+import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
 import { visualRegistry } from "../entities/registry.js";
 import {
   InputController,
   type InputControllerOptions,
   type InputState,
 } from "../input/InputController.js";
+import type { RenderScene } from "../render/RenderScene.js";
 import { Renderer } from "../render/Renderer.js";
 import {
   EngineClock,
@@ -65,11 +68,13 @@ export class Game {
   private readonly renderer: Renderer;
   private readonly visual: VisualRuntime;
   private readonly gameplayHud: GameplayHud | null;
+  private readonly debugRuntime: DebugRuntime;
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly tuning: PresentationTuning;
   private readonly clock = new EngineClock();
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
+  private lastScene: RenderScene | null = null;
   private readonly history: WorldSnapshot[] = [];
   private readonly future: WorldSnapshot[] = [];
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
@@ -106,6 +111,25 @@ export class Game {
     this.inputController = options.runtime?.input
       ? new InputController(this, options.runtime.input)
       : null;
+    this.debugRuntime = new DebugRuntime(options.canvas, {
+      snapshot: (selection) =>
+        buildDebugSnapshot({
+          world: this.worldValue,
+          scene: this.lastScene,
+          visual: this.visual,
+          clock: this.clock,
+          selection,
+        }),
+      inspectPoint: (clientX, clientY) =>
+        this.inspectCanvasPoint(clientX, clientY),
+      pause: () => this.pauseDebugClock(),
+      resume: () => this.resumeDebugClock(),
+      step: (count) => this.stepDebugClock(count),
+      close: () => this.setDebug(false),
+      selectionChanged: (cell) => this.renderer.setDebugSelection(cell),
+      requestRender: () => this.render(),
+    });
+    this.debugRuntime.setEnabled(this.debugValue);
     window.addEventListener("resize", this.onResize);
     this.animationFrame = requestAnimationFrame(this.tick);
   }
@@ -180,6 +204,8 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.visual.clear();
+    this.debugRuntime.clearSelection();
+    this.lastScene = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
     await this.renderer.load();
@@ -245,6 +271,8 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.resetVisualMotion();
+    this.debugRuntime.clearSelection();
+    this.lastScene = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -290,7 +318,9 @@ export class Game {
   setDebug(value: boolean): void {
     if (value === this.debugValue) return;
     this.debugValue = value;
+    if (!value) this.clock.resume();
     this.renderer.setDebug(value);
+    this.debugRuntime.setEnabled(value);
     this.render();
     this.emit("debug-change");
   }
@@ -317,9 +347,13 @@ export class Game {
       const viewport = this.renderer.measureViewport();
       this.visual.camera.setViewport(viewport.width, viewport.height);
       const scene = this.visual.scene(this.worldValue);
+      this.lastScene = scene;
       this.renderer.render(scene, this.visual.camera, viewport);
+    } else {
+      this.lastScene = null;
     }
     this.gameplayHud?.render();
+    this.debugRuntime.render();
   }
 
   on(event: GameEventName, listener: Listener): () => void {
@@ -341,6 +375,7 @@ export class Game {
     window.removeEventListener("resize", this.onResize);
     this.inputController?.destroy();
     this.gameplayHud?.destroy();
+    this.debugRuntime.destroy();
   }
 
   private startLogicalMove(
@@ -444,6 +479,21 @@ export class Game {
 
   private resetVisualMotion(): void {
     this.visual.clear();
+  }
+
+  private pauseDebugClock(): void {
+    this.clock.pause();
+    this.render();
+  }
+
+  private resumeDebugClock(): void {
+    this.clock.resume();
+    this.render();
+  }
+
+  private stepDebugClock(count: number): void {
+    this.clock.step(count, (time) => this.update(time));
+    this.render();
   }
 
   private readonly onResize = (): void => {
