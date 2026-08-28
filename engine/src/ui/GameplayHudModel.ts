@@ -49,7 +49,8 @@ export function buildGameplayHudModel(
       ),
     },
     items: {
-      key: state.profile.superKey || state.profile.temporaryKey,
+      // superKey is a capability (for example Explore mode), not an owned HUD item.
+      key: state.profile.temporaryKey,
       speedShoes: state.profile.speedShoes,
       gas: state.inventory.gas,
       shovel: state.inventory.shovel,
