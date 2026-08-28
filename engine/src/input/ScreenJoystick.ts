@@ -144,6 +144,7 @@ export function directionForJoystickVector(
 }
 
 export class ScreenJoystick {
+  private readonly layer: HTMLDivElement;
   private readonly activationArea: HTMLDivElement;
   private readonly element: HTMLDivElement;
   private readonly knob: HTMLDivElement;
@@ -174,6 +175,19 @@ export class ScreenJoystick {
         ),
       );
 
+    // Visual layer covers the gameplay mount and clips floating controls at its
+    // boundary. A joystick centered near the screen edge therefore cannot grow
+    // the document scroll area, while the hit area remains independently sized.
+    this.layer = document.createElement("div");
+    this.layer.className = "engine-screen-joystick-layer";
+    Object.assign(this.layer.style, {
+      position: "absolute",
+      inset: "0",
+      overflow: "hidden",
+      pointerEvents: "none",
+      zIndex: "7",
+    });
+
     this.activationArea = document.createElement("div");
     this.activationArea.className = "engine-screen-joystick-activation";
     this.activationArea.setAttribute("role", "application");
@@ -186,15 +200,13 @@ export class ScreenJoystick {
       height: `${this.layout.activationHeight}px`,
       touchAction: "none",
       userSelect: "none",
-      zIndex: "7",
+      pointerEvents: "auto",
     });
 
     this.element = document.createElement("div");
     this.element.className = "engine-screen-joystick";
     Object.assign(this.element.style, {
       position: "absolute",
-      left: `${this.layout.defaultBaseX}px`,
-      top: `${this.layout.defaultBaseY}px`,
       width: `${this.layout.size}px`,
       height: `${this.layout.size}px`,
       border: "1px solid rgba(255,255,255,.34)",
@@ -230,9 +242,10 @@ export class ScreenJoystick {
       pointerEvents: "none",
     });
     this.element.append(this.knob);
-    this.activationArea.append(this.element);
-    root.append(this.activationArea);
-    this.activationArea.hidden = !(
+    this.layer.append(this.activationArea, this.element);
+    root.append(this.layer);
+    this.moveBaseToDefault();
+    this.layer.hidden = !(
       options.enabled ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.enabled
     );
     this.activationArea.addEventListener("pointerdown", this.onPointerDown);
@@ -246,11 +259,11 @@ export class ScreenJoystick {
   }
 
   get enabled(): boolean {
-    return !this.activationArea.hidden;
+    return !this.layer.hidden;
   }
 
   setEnabled(enabled: boolean): void {
-    this.activationArea.hidden = !enabled;
+    this.layer.hidden = !enabled;
     if (!enabled) this.reset();
   }
 
@@ -269,7 +282,7 @@ export class ScreenJoystick {
       "lostpointercapture",
       this.onLostCapture,
     );
-    this.activationArea.remove();
+    this.layer.remove();
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
@@ -300,9 +313,22 @@ export class ScreenJoystick {
   };
 
   private moveBaseToPointer(clientX: number, clientY: number): void {
-    const rect = this.activationArea.getBoundingClientRect();
+    const rect = this.layer.getBoundingClientRect();
     this.element.style.left = `${clientX - rect.left}px`;
     this.element.style.top = `${clientY - rect.top}px`;
+  }
+
+  private moveBaseToDefault(): void {
+    const rightFromLayer =
+      this.layout.activationInsetRight +
+      this.layout.activationWidth -
+      this.layout.defaultBaseX;
+    const bottomFromLayer =
+      this.layout.activationInsetBottom +
+      this.layout.activationHeight -
+      this.layout.defaultBaseY;
+    this.element.style.left = `calc(100% - env(safe-area-inset-right) - ${rightFromLayer}px)`;
+    this.element.style.top = `calc(100% - env(safe-area-inset-bottom) - ${bottomFromLayer}px)`;
   }
 
   private update(clientX: number, clientY: number): void {
@@ -326,8 +352,7 @@ export class ScreenJoystick {
     this.centerX = 0;
     this.centerY = 0;
     this.direction = null;
-    this.element.style.left = `${this.layout.defaultBaseX}px`;
-    this.element.style.top = `${this.layout.defaultBaseY}px`;
+    this.moveBaseToDefault();
     this.knob.style.transform = "translate(-50%, -50%)";
     this.onDirection(null);
   }
