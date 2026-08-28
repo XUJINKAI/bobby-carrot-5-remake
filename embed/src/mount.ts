@@ -3,6 +3,7 @@ import {
   ImageManager,
   type GameplayRuntime,
 } from "@bobby/engine";
+import type { LevelMap } from "@bobby/model";
 import { loadEmbedMap } from "./mapInput.js";
 import type { BC5RHandle, BC5RMountOptions } from "./types.js";
 
@@ -39,22 +40,27 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   shadow.replaceChildren();
   const root = document.createElement("div");
   root.className = "bc5r-embed";
-  root.dataset.lang = options.lang ?? "auto";
-  root.dataset.theme = options.theme ?? "default";
+  root.dataset.lang = options.lang ?? "zh-CN";
+  root.dataset.theme = options.theme ?? "retro";
+  const frame = document.createElement("div");
+  frame.className = "bc5r-frame";
+  const frameLink = document.createElement("a");
+  frameLink.href = publicBaseUrl.href;
+  frameLink.target = "_blank";
+  frameLink.rel = "noopener noreferrer";
+  frameLink.textContent = "Bobby Carrot 5 Remake";
+  frame.append(frameLink);
   const canvasWrap = document.createElement("div");
   canvasWrap.className = "bc5r-canvas-wrap";
   canvasWrap.tabIndex = 0;
   const canvas = document.createElement("canvas");
   canvas.className = "bc5r-canvas";
-  const terminal = createTerminalOverlay(options.lang);
+  const terminal = createTerminalOverlay(options.lang ?? "zh-CN");
   canvasWrap.append(canvas, terminal.root);
-  root.append(styleElement(), canvasWrap);
-  if (options.info) {
-    const info = document.createElement("div");
-    info.className = "bc5r-info";
-    info.textContent = options.info;
-    root.append(info);
-  }
+  const info = document.createElement("div");
+  info.className = "bc5r-info";
+  info.textContent = options.info?.trim() || "Powered by Bobby Carrot 5 Remake";
+  root.append(styleElement(), frame, canvasWrap, info);
   shadow.append(root);
 
   const keyboard = options.input?.keyboard ?? "focus";
@@ -89,6 +95,9 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const ready = (async (): Promise<void> => {
     const level = await loadEmbedMap({ map: options.map, mapUrl: options.mapUrl });
     if (destroyed) return;
+    const playUrl = await officialPlayUrl(level);
+    frameLink.href = playUrl;
+    terminal.official.href = playUrl;
     const audio = resolveAudio(options.audio);
     const imageManager = createEmbedImageManager();
     images = imageManager;
@@ -100,7 +109,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
         audioOptions: {
           baseUrl: new URL("assets/audio/original/", publicBaseUrl),
           musicEnabled: audio.enabled,
-          musicStyle: options.musicStyle ?? "8bit",
+          musicStyle: options.musicStyle ?? "modern",
         },
         runtime: {
           hud: true,
@@ -289,6 +298,22 @@ function terminalCopy(lang: string | undefined): {
       };
 }
 
+async function officialPlayUrl(level: LevelMap): Promise<string> {
+  const stream = new Blob([JSON.stringify(level)])
+    .stream()
+    .pipeThrough(new CompressionStream("gzip"));
+  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const payload = btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  const url = new URL("import/v1", publicBaseUrl);
+  url.hash = payload;
+  return url.href;
+}
+
 interface ZoomPointer {
   x: number;
   y: number;
@@ -404,7 +429,9 @@ function styleElement(): HTMLStyleElement {
   style.textContent = `
     :host { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .bc5r-embed { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #254868; border-radius: 10px; font: 14px/1.4 system-ui, sans-serif; color: #eef5ff; background: #071522; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
-    .bc5r-embed::before { content: "Bobby Carrot 5 Remake · Embed"; flex: 0 0 auto; padding: 7px 10px; border-bottom: 1px solid #254868; background: #0d2b46; color: #d8efff; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+    .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+    .bc5r-frame a { color: #d8efff; text-decoration: none; }
+    .bc5r-frame a:hover { text-decoration: underline; }
     .bc5r-canvas-wrap { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; outline: none; }
     .bc5r-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     .bc5r-info { flex: 0 0 auto; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; }
