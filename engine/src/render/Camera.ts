@@ -1,3 +1,5 @@
+import type { EngineTick } from "../time/EngineClock.js";
+
 export interface CameraPoint {
   x: number;
   y: number;
@@ -6,8 +8,8 @@ export interface CameraPoint {
 interface PanReturn {
   fromX: number;
   fromY: number;
-  startedAt: number;
-  durationMs: number;
+  startedTick: number;
+  durationTicks: number;
 }
 
 export class Camera {
@@ -30,6 +32,7 @@ export class Camera {
   get tileScreenSize(): number {
     return this.sourceTileSize * this.zoom;
   }
+
   get hasPanOffset(): boolean {
     return (
       Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001
@@ -67,8 +70,8 @@ export class Camera {
     this.panOffsetY -= dy / size;
   }
 
-  /** 下一次移动时调用：把用户拖动产生的偏移用 ease-out 平滑收回，而不是瞬移归零。 */
-  recenterPan(durationMs = 260): void {
+  /** 下一次移动时调用：把用户拖动产生的偏移按世界 Tick 平滑收回。 */
+  recenterPan(time: EngineTick, durationMs = 260): void {
     if (this.panReturn) return;
     if (!this.hasPanOffset) {
       this.resetPan();
@@ -77,13 +80,24 @@ export class Camera {
     this.panReturn = {
       fromX: this.panOffsetX,
       fromY: this.panOffsetY,
-      startedAt: performance.now(),
-      durationMs: Math.max(80, durationMs),
+      startedTick: time.tick,
+      durationTicks: durationToTicks(durationMs, time.stepMs),
     };
   }
 
+  update(time: EngineTick): void {
+    const returning = this.panReturn;
+    if (!returning) return;
+    const elapsedTicks = Math.max(0, time.tick - returning.startedTick);
+    const raw = Math.min(1, elapsedTicks / returning.durationTicks);
+    const eased = 1 - (1 - raw) ** 3;
+    const remaining = 1 - eased;
+    this.panOffsetX = returning.fromX * remaining;
+    this.panOffsetY = returning.fromY * remaining;
+    if (raw >= 1) this.resetPan();
+  }
+
   follow(point: CameraPoint, worldWidth: number, worldHeight: number): void {
-    this.updatePanReturn(performance.now());
     const baseX = point.x + 0.5;
     const baseY = point.y + 0.5;
     this.centerX = baseX + this.panOffsetX;
@@ -109,20 +123,6 @@ export class Camera {
     };
   }
 
-  private updatePanReturn(now: number): void {
-    const returning = this.panReturn;
-    if (!returning) return;
-    const raw = Math.min(
-      1,
-      Math.max(0, (now - returning.startedAt) / returning.durationMs),
-    );
-    const eased = 1 - (1 - raw) ** 3;
-    const remaining = 1 - eased;
-    this.panOffsetX = returning.fromX * remaining;
-    this.panOffsetY = returning.fromY * remaining;
-    if (raw >= 1) this.resetPan();
-  }
-
   private clamp(worldWidth: number, worldHeight: number): void {
     const visibleWidth = this.viewportWidth / this.tileScreenSize;
     const visibleHeight = this.viewportHeight / this.tileScreenSize;
@@ -139,4 +139,8 @@ export class Camera {
         Math.max(visibleHeight / 2, this.centerY),
       );
   }
+}
+
+function durationToTicks(durationMs: number, stepMs: number): number {
+  return Math.max(1, Math.round(Math.max(0, durationMs) / stepMs));
 }

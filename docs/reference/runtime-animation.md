@@ -1,10 +1,40 @@
 # 原版运行时动画与动态对象
 
-本文记录从 Bobby Carrot 5 UP9 高清版 `a.class` 字节码中已经确认的运行时行为。这里是逆向事实记录，不是 UI 设计文档。
+本文记录从 Bobby Carrot 5 UP9 高清版 `a.class` 字节码中已经确认的运行时行为，并说明 Web Engine 如何承接这些节拍。这里优先记录逆向事实；实现部分只定义时间边界，不把 presentation state 写入地图。
 
-## 1. 原版主循环节拍
+## 1. 原版主循环节拍与 EngineClock
 
-原版游戏主循环目标间隔约为 **62ms**。部分机制不是按浏览器帧率运行，而是按这个逻辑 Tick 计数。Web 引擎使用真实时间累积并还原这些逻辑 Tick，渲染仍使用 `requestAnimationFrame`。
+原版游戏主循环目标间隔约为 **62ms**。部分机制不是按显示器刷新率运行，而是按这个逻辑 Tick 计数。
+
+Web Engine 统一使用固定世界时钟：
+
+```ts
+interface EngineTick {
+  tick: number;
+  stepMs: number;
+}
+```
+
+默认 `16Hz`，即 `stepMs = 62.5ms`。浏览器 `requestAnimationFrame` 只负责提供真实经过时间给 accumulator，不直接代表 gameplay frame。一个浏览器帧如果需要追赶多个固定 Tick，会依次推进 Input、World 和 Visual，但只绘制最终状态一次。
+
+```text
+requestAnimationFrame
+        │ elapsed real time
+        ▼
+    EngineClock
+      16 Hz
+        │
+        ├─ InputController.update(time)
+        ├─ World.update(time)
+        └─ VisualRuntime.update(time)
+                    │
+                    ▼
+               render once
+```
+
+页面长时间处于后台时不会无限追赶历史 Tick；单次追赶有上限，超出的停顿按游戏暂停处理，避免恢复页面时形成更新风暴。
+
+Bobby 的移动插值、Camera 回中和 Behavior `onTick` 都使用同一个 `EngineTick`，不再各自读取 `performance.now()` 或维护独立 timer。Visual resolver 也能读取 `context.time`，因此纯表现动画可以直接由 `tick` 推导帧，不需要写入 World state。
 
 ## 2. `ta.png` 动态格图集
 
@@ -15,7 +45,15 @@
 - `bE`: 0..3，4 相循环；
 - `bF`: 0..2，3 相循环。
 
-因此动态格大约每 **248ms** 换一帧。计数器为 0 时画 `ts.png` 静态格，非 0 时从 `ta.png` 取帧。
+因此动态格大约每 **248ms** 换一帧。Web Engine 可以直接用统一时钟分频：
+
+```ts
+const ambientTick = Math.floor(time.tick / 4);
+```
+
+然后不同 Visual 根据自己的周期取模，例如 8/6/4/3 相循环。环境动画不会启动额外渲染循环，也不需要独立 timer；它只决定当前世界 Tick 绘制哪个 sprite frame。
+
+计数器为 0 时原版画 `ts.png` 静态格，非 0 时从 `ta.png` 取帧。
 
 已经从原版渲染分支确认的映射包括：
 
@@ -30,7 +68,7 @@
 | 潮汐 `0x57..0x5A` | 33 / 31 / 37 / 35 | `bF` |
 | 水域边缘 `0x5B..0x5D` | 46 / 48 / 50 | `bF` |
 
-原版 Bonus Coin 还存在随机闪烁门控。当前 Web 版保留确定的帧序列，但暂时持续循环，避免随机行为影响测试。
+原版 Bonus Coin 还存在随机闪烁门控。具体动态格接入 `ta.png` 时应继续保持这些逆向事实；不要为每种动画创建独立时钟。
 
 ## 3. Bobby 四方向人物图
 
@@ -42,6 +80,8 @@
 - `aw=3`：下/正面，`b3.png`。
 
 藤蔓攀爬状态下原版会设置攀爬标志并强制使用 `b2.png`。
+
+Web 版 Bobby motion 的插值进度由 `EngineTick` 推进。它与 World 逻辑位置分离：World 可以先完成一格语义移动，VisualRuntime 再按照固定 Tick 在旧格与新格之间插值；显示器刷新率不会改变这段动画的 gameplay 节奏。
 
 ## 4. 魔豆与藤蔓
 
@@ -55,8 +95,10 @@
 
 `0xCE / 0xDE / 0xEE` 都是可攀爬段，能够覆盖本来不可普通步行的背景格。
 
+这类倒计时应直接使用 `EngineTick.tick` 或固定 `stepMs`，不要另开 wall-clock timer。
+
 ## 5. 荷叶
 
 原版帮助文本明确说明：荷叶沿 Bobby 进入时的方向漂流，**一旦停住就不能直接再次启动，必须先下叶再重新登上**。
 
-原版动态实体更新函数在 Bobby 搭乘荷叶时，会给荷叶和 Bobby 的像素坐标施加完全相同的增量。因此 Web 渲染层不能让逻辑荷叶先跳到目标格、人物再慢慢追过去；两者在漂流动画中必须共用同一条插值轨迹。
+原版动态实体更新函数在 Bobby 搭乘荷叶时，会给荷叶和 Bobby 的像素坐标施加完全相同的增量。因此 Web 渲染层不能让逻辑荷叶先跳到目标格、人物再慢慢追过去；两者在漂流动画中必须共用同一条由 `EngineTick` 推进的插值轨迹。

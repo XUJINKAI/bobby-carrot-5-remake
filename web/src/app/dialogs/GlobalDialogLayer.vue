@@ -54,8 +54,7 @@ const emit = defineEmits<{
   display: grid;
   place-items: center;
   padding: 20px;
-  background: #02050399;
-  backdrop-filter: blur(4px);
+  background: rgb(2 5 3 / 72%);
   z-index: 50;
 }
 
@@ -67,7 +66,9 @@ const emit = defineEmits<{
   border-radius: 7px;
   background: var(--bc-panel);
   color: #eef5ef;
-  box-shadow: 8px 8px 0 #001b5b99;
+  box-shadow:
+    0 20px 52px rgb(0 0 0 / 52%),
+    8px 8px 0 #001b5b99;
 }
 
 .global-dialog.settings-dialog {

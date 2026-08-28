@@ -239,8 +239,7 @@
   display: grid;
   place-items: center;
   padding: 14px;
-  background: #020604aa;
-  backdrop-filter: blur(2px);
+  background: rgb(2 6 4 / 76%);
 }
 .editor-play-status {
   position: sticky;
@@ -432,15 +431,16 @@
   background: #111a14;
   color: #edf5ef;
   padding: 16px;
-  box-shadow: 0 22px 70px #000b;
+  box-shadow:
+    0 22px 70px #000b,
+    0 0 0 1px rgb(255 255 255 / 5%);
 }
 .editor-dialog-layer .editor-dialog {
   display: block;
   position: static;
 }
 .editor-dialog::backdrop {
-  background: #020604aa;
-  backdrop-filter: blur(2px);
+  background: rgb(2 6 4 / 76%);
 }
 .editor-dialog > header {
   display: flex;
