@@ -1,6 +1,11 @@
 import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
 import {
+  HeldDirectionRepeater,
+  type HeldDirectionInput,
+} from "./HeldDirectionRepeater.js";
+import {
+  DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   ScreenJoystick,
   type ScreenJoystickOptions,
 } from "./ScreenJoystick.js";
@@ -26,6 +31,10 @@ export interface InputControllerOptions {
   zoom?: boolean;
   debug?: boolean;
   screenJoystick?: boolean | ScreenJoystickOptions;
+  keyboardRepeatDelayMs?: number;
+  externalRepeatDelayMs?: number;
+  updateIntervalMs?: number;
+  autoUpdate?: boolean;
 }
 
 interface InputCapabilities {
@@ -39,6 +48,21 @@ interface InputCapabilities {
   zoom: boolean;
   debug: boolean;
 }
+
+export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
+  keyboard: true,
+  pointer: true,
+  movement: true,
+  undo: true,
+  restart: true,
+  pan: true,
+  zoom: true,
+  debug: true,
+  keyboardRepeatDelayMs: 250,
+  externalRepeatDelayMs: 250,
+  updateIntervalMs: 1000 / 16,
+  autoUpdate: true,
+} as const;
 
 const KEY_DIRECTION: Record<string, Direction> = {
   arrowup: "up",
@@ -69,6 +93,12 @@ export class InputController {
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
   private readonly screenJoystick: ScreenJoystick | null;
+  private readonly repeater = new HeldDirectionRepeater();
+  private readonly keyboardRepeatDelayMs: number;
+  private readonly joystickRepeatDelayMs: number;
+  private readonly externalRepeatDelayMs: number;
+  private readonly updateIntervalMs: number;
+  private updateTimer: number | null = null;
   private externalDirection: Direction | null = null;
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
@@ -82,16 +112,40 @@ export class InputController {
   ) {
     this.canvas = game.canvas;
     this.capabilities = {
-      keyboard: options.keyboard ?? true,
-      pointer: options.pointer ?? true,
-      movement: options.movement ?? true,
-      undo: options.undo ?? true,
-      redo: options.redo ?? options.undo ?? true,
-      restart: options.restart ?? true,
-      pan: options.pan ?? true,
-      zoom: options.zoom ?? true,
-      debug: options.debug ?? true,
+      keyboard: options.keyboard ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboard,
+      pointer: options.pointer ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pointer,
+      movement: options.movement ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.movement,
+      undo: options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
+      redo: options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
+      restart: options.restart ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.restart,
+      pan: options.pan ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pan,
+      zoom: options.zoom ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.zoom,
+      debug: options.debug ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.debug,
     };
+    this.keyboardRepeatDelayMs = Math.max(
+      0,
+      options.keyboardRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
+    );
+    this.externalRepeatDelayMs = Math.max(
+      0,
+      options.externalRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs,
+    );
+    this.updateIntervalMs = Math.max(
+      1,
+      options.updateIntervalMs ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.updateIntervalMs,
+    );
+
+    const joystick = options.screenJoystick;
+    const joystickOptions =
+      joystick && joystick !== true ? joystick : undefined;
+    this.joystickRepeatDelayMs = Math.max(
+      0,
+      joystickOptions?.initialRepeatDelayMs ??
+        DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs,
+    );
+
     window.addEventListener("keydown", this.onKeyDown, { passive: false });
     window.addEventListener("keyup", this.onKeyUp, { passive: false });
     window.addEventListener("blur", this.onBlur);
@@ -101,7 +155,6 @@ export class InputController {
     this.canvas.addEventListener("pointercancel", this.onPointerUp);
     this.canvas.addEventListener("wheel", this.onWheel, { passive: false });
     this.canvas.addEventListener("auxclick", this.onAuxClick);
-    const joystick = options.screenJoystick;
     this.screenJoystick =
       joystick === undefined || joystick === false
         ? null
@@ -110,6 +163,31 @@ export class InputController {
             joystick === true ? {} : joystick,
             this.setJoystickDirection,
           );
+
+    if (options.autoUpdate ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.autoUpdate) {
+      this.updateTimer = window.setInterval(
+        () => this.update(this.updateIntervalMs),
+        this.updateIntervalMs,
+      );
+    }
+  }
+
+  /**
+   * 推进 Input 状态。当前由临时 16Hz timer 调用；接入 Engine 世界时钟后，
+   * 将 autoUpdate 关闭并由世界时钟调用本方法即可。
+   */
+  update(deltaMs = this.updateIntervalMs): void {
+    if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
+      this.repeater.reset();
+      return;
+    }
+
+    this.repeater.setInput(this.currentContinuousInput());
+    this.repeater.update(deltaMs, (direction) => {
+      const result = this.game.move(direction);
+      if (!result) return "busy";
+      return result.moved ? "moved" : "blocked";
+    });
   }
 
   setEnabled(value: boolean): void {
@@ -125,11 +203,10 @@ export class InputController {
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
-      this.applyHeldDirection();
+      this.repeater.reset();
       return;
     }
     this.externalDirection = direction;
-    this.applyHeldDirection();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -140,6 +217,10 @@ export class InputController {
 
   destroy(): void {
     this.clearHeldMovement();
+    if (this.updateTimer !== null) {
+      window.clearInterval(this.updateTimer);
+      this.updateTimer = null;
+    }
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onBlur);
@@ -161,7 +242,6 @@ export class InputController {
       event.preventDefault();
       if (!event.repeat && !this.heldMovementKeys.includes(key))
         this.heldMovementKeys.push(key);
-      this.applyHeldDirection();
       return;
     }
     if (event.repeat) return;
@@ -188,7 +268,6 @@ export class InputController {
     event.preventDefault();
     const index = this.heldMovementKeys.lastIndexOf(key);
     if (index >= 0) this.heldMovementKeys.splice(index, 1);
-    this.applyHeldDirection();
   };
 
   private readonly onBlur = (): void => {
@@ -200,23 +279,40 @@ export class InputController {
     this.heldMovementKeys.length = 0;
     this.externalDirection = null;
     this.joystickDirection = null;
+    this.repeater.reset();
     this.game.setHeldDirection(null);
-  }
-
-  private applyHeldDirection(): void {
-    this.game.setHeldDirection(
-      this.joystickDirection ??
-        this.externalDirection ??
-        this.currentKeyboardDirection(),
-    );
   }
 
   private readonly setJoystickDirection = (
     direction: Direction | null,
   ): void => {
     this.joystickDirection = direction;
-    this.applyHeldDirection();
   };
+
+  private currentContinuousInput(): HeldDirectionInput | null {
+    if (this.joystickDirection) {
+      return {
+        source: "joystick",
+        direction: this.joystickDirection,
+        initialRepeatDelayMs: this.joystickRepeatDelayMs,
+      };
+    }
+    if (this.externalDirection) {
+      return {
+        source: "external",
+        direction: this.externalDirection,
+        initialRepeatDelayMs: this.externalRepeatDelayMs,
+      };
+    }
+    const keyboardDirection = this.currentKeyboardDirection();
+    return keyboardDirection
+      ? {
+          source: "keyboard",
+          direction: keyboardDirection,
+          initialRepeatDelayMs: this.keyboardRepeatDelayMs,
+        }
+      : null;
+  }
 
   private currentKeyboardDirection(): Direction | null {
     const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
