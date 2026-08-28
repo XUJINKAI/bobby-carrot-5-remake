@@ -7,6 +7,13 @@ export {
   type CreateGameplayRuntimeOptions,
 } from "./core/GameplayRuntime.js";
 export {
+  EngineClock,
+  ENGINE_TICK_RATE,
+  ENGINE_TICK_STEP_MS,
+  type EngineTick,
+  type EngineTickListener,
+} from "./time/EngineClock.js";
+export {
   AudioRuntime,
   resolveOriginalMusicUrl,
   type AudioRuntimeOptions,
@@ -20,6 +27,7 @@ export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,
+  type InputState,
 } from "./input/InputController.js";
 export {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,

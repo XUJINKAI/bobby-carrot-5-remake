@@ -55,13 +55,19 @@ test("Bobby walking progress is visual runtime state and does not mutate World",
   assert.deepEqual(bobby.anchor, { x: 0, y: 0 });
 });
 
-test("VisualRuntime owns motion interpolation lifecycle", () => {
+test("VisualRuntime motion interpolation follows EngineTick instead of wall clock", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
-  runtime.beginMove(7, { x: 1, y: 2 }, { x: 2, y: 2 }, 100, 1000);
+  runtime.beginMove(
+    7,
+    { x: 1, y: 2 },
+    { x: 2, y: 2 },
+    100,
+    { tick: 10, stepMs: 50 },
+  );
   assert.equal(runtime.isAnimating, true);
-  assert.equal(runtime.advanceMotion(1050, "linear"), false);
+  assert.equal(runtime.update({ tick: 11, stepMs: 50 }, "linear"), false);
   assert.equal(runtime.isAnimating, true);
-  assert.equal(runtime.advanceMotion(1100, "linear"), true);
+  assert.equal(runtime.update({ tick: 12, stepMs: 50 }, "linear"), true);
   assert.equal(runtime.isAnimating, false);
 });
 

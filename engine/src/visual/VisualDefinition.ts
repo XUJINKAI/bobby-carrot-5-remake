@@ -1,4 +1,5 @@
 import type { JsonValue } from "@bobby/model";
+import type { EngineTick } from "../time/EngineClock.js";
 import type { VisualId } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
@@ -80,6 +81,8 @@ export interface VisualResolveContext {
   presence: Readonly<EntityPresence>;
   query: VisualQuery;
   runtime?: Readonly<EntityVisualRuntimeState>;
+  /** Runtime 中当前统一世界 Tick；Editor preview 可省略。 */
+  time?: EngineTick;
 }
 
 /**

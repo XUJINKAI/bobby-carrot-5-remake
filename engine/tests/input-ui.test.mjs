@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { ENGINE_TICK_STEP_MS } from "../dist/time/EngineClock.js";
 import {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   directionForDiscreteDrag,
@@ -10,6 +11,12 @@ import {
   directionForJoystickVector,
   resolveScreenJoystickLayout,
 } from "../dist/input/ScreenJoystick.js";
+
+function advance(repeater, deltaMs, result = "moved") {
+  const direction = repeater.update(deltaMs);
+  if (direction) repeater.resolveAttempt(result);
+  return direction;
+}
 
 test("单指或鼠标左键的小范围拖动不触发移动", () => {
   assert.equal(directionForDiscreteDrag(12, 8), null);
@@ -22,30 +29,22 @@ test("单指或鼠标左键拖动按主轴折算为单格移动方向", () => {
   assert.equal(directionForDiscreteDrag(3, 30), "down");
 });
 
-test("持续输入第一格立即执行，第二格等待 initial repeat delay", () => {
+test("持续输入第一格立即产出，第二格等待 initial repeat delay", () => {
   const repeater = new HeldDirectionRepeater();
-  const attempts = [];
   repeater.setInput({
     source: "keyboard",
     direction: "right",
     initialRepeatDelayMs: 250,
   });
-  const move = (direction) => {
-    attempts.push(direction);
-    return "moved";
-  };
 
-  repeater.update(62.5, move);
-  assert.deepEqual(attempts, ["right"]);
-  for (let i = 0; i < 3; i += 1) repeater.update(62.5, move);
-  assert.deepEqual(attempts, ["right"]);
-  repeater.update(62.5, move);
-  assert.deepEqual(attempts, ["right", "right"]);
+  assert.equal(advance(repeater, 62.5), "right");
+  for (let i = 0; i < 3; i += 1)
+    assert.equal(advance(repeater, 62.5), null);
+  assert.equal(advance(repeater, 62.5), "right");
 });
 
 test("一个 tick 内按下再松开仍保留一次单格输入", () => {
   const repeater = new HeldDirectionRepeater();
-  const attempts = [];
   repeater.setInput({
     source: "keyboard",
     direction: "up",
@@ -53,65 +52,53 @@ test("一个 tick 内按下再松开仍保留一次单格输入", () => {
   });
   repeater.setInput(null);
 
-  repeater.update(62.5, (direction) => {
-    attempts.push(direction);
-    return "moved";
-  });
-  for (let i = 0; i < 8; i += 1) {
-    repeater.update(62.5, (direction) => {
-      attempts.push(direction);
-      return "moved";
-    });
-  }
-
-  assert.deepEqual(attempts, ["up"]);
+  assert.equal(advance(repeater, 62.5), "up");
+  for (let i = 0; i < 8; i += 1)
+    assert.equal(advance(repeater, 62.5), null);
 });
 
 test("持续输入换方向后重新作为新的第一格处理", () => {
   const repeater = new HeldDirectionRepeater();
-  const attempts = [];
-  const move = (direction) => {
-    attempts.push(direction);
-    return "moved";
-  };
-
   repeater.setInput({
     source: "keyboard",
     direction: "right",
     initialRepeatDelayMs: 250,
   });
-  repeater.update(62.5, move);
+  assert.equal(advance(repeater, 62.5), "right");
   repeater.setInput({
     source: "keyboard",
     direction: "down",
     initialRepeatDelayMs: 250,
   });
-  repeater.update(62.5, move);
-
-  assert.deepEqual(attempts, ["right", "down"]);
+  assert.equal(advance(repeater, 62.5), "down");
 });
 
-test("持续输入被阻挡后等待方向改变，不按更新频率重复 blocked", () => {
+test("持续输入 busy 时下一世界 tick 重试同一方向", () => {
   const repeater = new HeldDirectionRepeater();
-  let attempts = 0;
+  repeater.setInput({
+    source: "keyboard",
+    direction: "left",
+    initialRepeatDelayMs: 250,
+  });
+  assert.equal(advance(repeater, 62.5, "busy"), "left");
+  assert.equal(advance(repeater, 62.5, "moved"), "left");
+});
+
+test("持续输入被阻挡后等待方向改变，不按世界 Tick 重复 blocked", () => {
+  const repeater = new HeldDirectionRepeater();
   repeater.setInput({
     source: "joystick",
     direction: "left",
     initialRepeatDelayMs: 375,
   });
-  const blocked = () => {
-    attempts += 1;
-    return "blocked";
-  };
-
-  repeater.update(62.5, blocked);
-  for (let i = 0; i < 10; i += 1) repeater.update(62.5, blocked);
-  assert.equal(attempts, 1);
+  assert.equal(advance(repeater, 62.5, "blocked"), "left");
+  for (let i = 0; i < 10; i += 1)
+    assert.equal(advance(repeater, 62.5, "blocked"), null);
 });
 
-test("默认持续输入手感：键盘 250ms，屏幕摇杆 375ms", () => {
+test("默认持续输入手感与 Engine 16Hz 世界时钟分离", () => {
   assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs, 250);
-  assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.updateIntervalMs, 62.5);
+  assert.equal(ENGINE_TICK_STEP_MS, 62.5);
   assert.equal(DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs, 375);
   assert.ok(
     DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs >

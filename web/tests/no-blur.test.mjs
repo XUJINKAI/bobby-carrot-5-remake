@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { test } from "vitest";
 
 const roots = [
   new URL("../src/", import.meta.url),

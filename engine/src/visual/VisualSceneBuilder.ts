@@ -1,3 +1,4 @@
+import type { EngineTick } from "../time/EngineClock.js";
 import type { RenderItem, RenderScene } from "../render/RenderScene.js";
 import { sortRenderItems } from "../render/RenderScene.js";
 import type { World } from "../world/World.js";
@@ -13,6 +14,7 @@ export function buildVisualScene(
   world: World,
   visuals: VisualRegistry,
   runtime: VisualRuntimeState,
+  time?: EngineTick,
 ): RenderScene {
   const items: RenderItem[] = [];
   const query = new SpatialVisualQuery(world.entities, world.spatial);
@@ -29,6 +31,7 @@ export function buildVisualScene(
           presence,
           query,
           ...(visualRuntime ? { runtime: visualRuntime } : {}),
+          ...(time ? { time } : {}),
         });
         if (!composition) continue;
         items.push({

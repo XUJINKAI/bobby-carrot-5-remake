@@ -1,8 +1,10 @@
 import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
+import type { EngineTick } from "../time/EngineClock.js";
 import {
   HeldDirectionRepeater,
   type HeldDirectionInput,
+  type HeldMoveAttempt,
 } from "./HeldDirectionRepeater.js";
 import {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
@@ -33,8 +35,10 @@ export interface InputControllerOptions {
   screenJoystick?: boolean | ScreenJoystickOptions;
   keyboardRepeatDelayMs?: number;
   externalRepeatDelayMs?: number;
-  updateIntervalMs?: number;
-  autoUpdate?: boolean;
+}
+
+export interface InputState {
+  move: Direction | null;
 }
 
 interface InputCapabilities {
@@ -61,8 +65,6 @@ export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
   debug: true,
   keyboardRepeatDelayMs: 250,
   externalRepeatDelayMs: 250,
-  updateIntervalMs: 1000 / 16,
-  autoUpdate: true,
 } as const;
 
 const KEY_DIRECTION: Record<string, Direction> = {
@@ -93,13 +95,13 @@ export class InputController {
   private readonly capabilities: InputCapabilities;
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
+  private readonly discreteMoves: Direction[] = [];
   private readonly screenJoystick: ScreenJoystick | null;
   private readonly repeater = new HeldDirectionRepeater();
   private readonly keyboardRepeatDelayMs: number;
   private readonly joystickRepeatDelayMs: number;
   private readonly externalRepeatDelayMs: number;
-  private readonly updateIntervalMs: number;
-  private updateTimer: number | null = null;
+  private pendingMoveSource: "continuous" | "discrete" | null = null;
   private externalDirection: Direction | null = null;
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
@@ -134,14 +136,9 @@ export class InputController {
       options.externalRepeatDelayMs ??
         DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs,
     );
-    this.updateIntervalMs = Math.max(
-      1,
-      options.updateIntervalMs ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.updateIntervalMs,
-    );
 
     const joystick = options.screenJoystick;
-    const joystickOptions =
-      joystick && joystick !== true ? joystick : undefined;
+    const joystickOptions = joystick && joystick !== true ? joystick : undefined;
     this.joystickRepeatDelayMs = Math.max(
       0,
       joystickOptions?.initialRepeatDelayMs ??
@@ -165,30 +162,35 @@ export class InputController {
             joystick === true ? {} : joystick,
             this.setJoystickDirection,
           );
-
-    if (options.autoUpdate ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.autoUpdate) {
-      this.updateTimer = window.setInterval(
-        () => this.update(this.updateIntervalMs),
-        this.updateIntervalMs,
-      );
-    }
   }
 
-  /**
-   * 推进 Input 状态。当前由临时 16Hz timer 调用；接入 Engine 世界时钟后，
-   * 将 autoUpdate 关闭并由世界时钟调用本方法即可。
-   */
-  update(deltaMs = this.updateIntervalMs): void {
+  /** 浏览器事件只维护状态；真正的 movement 每个 EngineTick 最多产出一次。 */
+  update(time: EngineTick): InputState {
     if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
-      this.repeater.reset();
-      return;
+      this.clearMovementState();
+      return { move: null };
+    }
+    if (this.pendingMoveSource) return { move: null };
+
+    const discrete = this.discreteMoves.shift();
+    if (discrete) {
+      this.pendingMoveSource = "discrete";
+      return { move: discrete };
     }
 
-    this.repeater.update(deltaMs, (direction) => {
-      const result = this.game.move(direction);
-      if (!result) return "busy";
-      return result.moved ? "moved" : "blocked";
-    });
+    const continuous = this.repeater.update(time.stepMs);
+    if (continuous) {
+      this.pendingMoveSource = "continuous";
+      return { move: continuous };
+    }
+    return { move: null };
+  }
+
+  /** Game 处理本 Tick 的 movement 后回填结果，以维持 blocked / repeat 语义。 */
+  resolveMoveAttempt(result: HeldMoveAttempt): void {
+    if (this.pendingMoveSource === "continuous")
+      this.repeater.resolveAttempt(result);
+    this.pendingMoveSource = null;
   }
 
   setEnabled(value: boolean): void {
@@ -219,10 +221,6 @@ export class InputController {
 
   destroy(): void {
     this.clearHeldMovement();
-    if (this.updateTimer !== null) {
-      window.clearInterval(this.updateTimer);
-      this.updateTimer = null;
-    }
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onBlur);
@@ -286,6 +284,12 @@ export class InputController {
     this.heldMovementKeys.length = 0;
     this.externalDirection = null;
     this.joystickDirection = null;
+    this.clearMovementState();
+  }
+
+  private clearMovementState(): void {
+    this.discreteMoves.length = 0;
+    this.pendingMoveSource = null;
     this.repeater.reset();
   }
 
@@ -364,9 +368,8 @@ export class InputController {
     if (this.capabilities.zoom && this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
-      for (const pointer of this.pointers.values()) {
+      for (const pointer of this.pointers.values())
         pointer.discreteMoveIssued = true;
-      }
     }
   };
 
@@ -415,7 +418,7 @@ export class InputController {
       if (direction) {
         pointer.discreteMoveIssued = true;
         pointer.moved = true;
-        this.game.move(direction);
+        this.discreteMoves.push(direction);
       }
     }
   };

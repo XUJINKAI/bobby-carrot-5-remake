@@ -3,6 +3,7 @@ import {
   behaviorRegistry as builtinBehaviors,
   entityRegistry as builtinEntities,
 } from "../entities/registry.js";
+import type { EngineTick } from "../time/EngineClock.js";
 import {
   createGlobalState,
   type GlobalState,
@@ -277,14 +278,9 @@ export class World {
     };
   }
 
-  advanceTime(deltaMs: number): WorldEvent[] {
-    if (
-      !Number.isFinite(deltaMs) ||
-      deltaMs <= 0 ||
-      this.state.dead ||
-      this.state.completed
-    )
-      return [];
+  /** 在统一 EngineTick 上推进所有 gameplay onTick 行为。 */
+  update(time: EngineTick): WorldEvent[] {
+    if (time.stepMs <= 0 || this.state.dead || this.state.completed) return [];
     const queue = new CommandQueue();
     const snapshot = this.entities.all().map((entity) => entity.id);
     for (const entityId of snapshot) {
@@ -297,7 +293,7 @@ export class World {
         entity,
         undefined,
         queue,
-        deltaMs,
+        time,
       );
       for (const behavior of this.resolveBehaviors(entity, presence))
         behavior.onTick?.(context);
@@ -414,7 +410,7 @@ export class World {
     self: EntityInstance,
     direction: Direction | undefined,
     queue: CommandQueue,
-    deltaMs?: number,
+    time?: EngineTick,
   ): BehaviorContext {
     return {
       query: this.query,
@@ -422,7 +418,7 @@ export class World {
       actor,
       self: { entity: self, presence },
       ...(direction ? { direction } : {}),
-      ...(deltaMs !== undefined ? { deltaMs } : {}),
+      ...(time ? { time } : {}),
     };
   }
 

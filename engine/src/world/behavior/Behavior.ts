@@ -1,4 +1,5 @@
 import type { Direction, EntityState, LevelEntity } from "@bobby/model";
+import type { EngineTick } from "../../time/EngineClock.js";
 import type { GlobalState } from "../GlobalState.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
@@ -22,7 +23,8 @@ export interface BehaviorContext {
   readonly query: WorldQueryApi;
   readonly commands: WorldCommandApi;
   readonly direction?: Direction;
-  readonly deltaMs?: number;
+  /** 仅 onTick 提供，由 EngineClock 统一产生。 */
+  readonly time?: EngineTick;
 }
 
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */

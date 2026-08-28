@@ -1,5 +1,6 @@
 import { Camera } from "../render/Camera.js";
 import type { RenderScene } from "../render/RenderScene.js";
+import type { EngineTick } from "../time/EngineClock.js";
 import type { World } from "../world/World.js";
 import type {
   CellPosition,
@@ -17,7 +18,7 @@ interface VisualMotion {
   entityId: EntityId;
   from: CellPosition;
   to: CellPosition;
-  startedAt: number;
+  startedTick: number;
   duration: number;
 }
 
@@ -26,6 +27,7 @@ export class VisualRuntime {
   readonly camera: Camera;
   private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
   private motion: VisualMotion | null = null;
+  private time: EngineTick | undefined;
 
   constructor(
     private readonly visuals: VisualRegistry,
@@ -51,14 +53,14 @@ export class VisualRuntime {
     from: CellPosition,
     to: CellPosition,
     duration: number,
-    startedAt: number,
+    time: EngineTick,
   ): void {
     this.motion = {
       entityId,
       from: { ...from },
       to: { ...to },
-      startedAt,
-      duration,
+      startedTick: time.tick,
+      duration: Math.max(1, duration),
     };
     this.setEntityState(entityId, {
       offsetX: from.x - to.x,
@@ -68,14 +70,37 @@ export class VisualRuntime {
     });
   }
 
-  /** 推进当前 motion；返回 true 表示本次调用刚刚结束了一段动画。 */
-  advanceMotion(timestamp: number, easing: MotionEasing): boolean {
+  /** 推进所有由世界时钟驱动的视觉状态；返回 true 表示本 Tick 刚结束 motion。 */
+  update(time: EngineTick, easing: MotionEasing): boolean {
+    this.time = time;
+    this.camera.update(time);
+    return this.advanceMotion(time, easing);
+  }
+
+  clear(): void {
+    this.motion = null;
+    this.entityRuntime.clear();
+  }
+
+  /** 只组装当前视觉快照，不推进任何时间。 */
+  scene(world: World): RenderScene {
+    const playerRuntime = this.entityRuntime.get(world.playerId);
+    this.camera.follow(
+      {
+        x: world.player.x + (playerRuntime?.offsetX ?? 0),
+        y: world.player.y + (playerRuntime?.offsetY ?? 0),
+      },
+      world.width,
+      world.height,
+    );
+    return buildVisualScene(world, this.visuals, this.entityRuntime, this.time);
+  }
+
+  private advanceMotion(time: EngineTick, easing: MotionEasing): boolean {
     const motion = this.motion;
     if (!motion) return false;
-    const rawProgress = Math.min(
-      1,
-      Math.max(0, (timestamp - motion.startedAt) / motion.duration),
-    );
+    const elapsedMs = Math.max(0, time.tick - motion.startedTick) * time.stepMs;
+    const rawProgress = Math.min(1, elapsedMs / motion.duration);
     const progress = applyMotionEasing(rawProgress, easing);
     this.setEntityState(motion.entityId, {
       offsetX: (motion.from.x - motion.to.x) * (1 - progress),
@@ -87,23 +112,5 @@ export class VisualRuntime {
     this.clearEntityState(motion.entityId);
     this.motion = null;
     return true;
-  }
-
-  clear(): void {
-    this.motion = null;
-    this.entityRuntime.clear();
-  }
-
-  update(world: World): RenderScene {
-    const playerRuntime = this.entityRuntime.get(world.playerId);
-    this.camera.follow(
-      {
-        x: world.player.x + (playerRuntime?.offsetX ?? 0),
-        y: world.player.y + (playerRuntime?.offsetY ?? 0),
-      },
-      world.width,
-      world.height,
-    );
-    return buildVisualScene(world, this.visuals, this.entityRuntime);
   }
 }

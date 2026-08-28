@@ -5,8 +5,13 @@ import { visualRegistry } from "../entities/registry.js";
 import {
   InputController,
   type InputControllerOptions,
+  type InputState,
 } from "../input/InputController.js";
 import { Renderer } from "../render/Renderer.js";
+import {
+  EngineClock,
+  type EngineTick,
+} from "../time/EngineClock.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { VisualAssetSources } from "../visual/VisualDefinition.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
@@ -52,6 +57,7 @@ type GameEventName =
   | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
+type MoveAttempt = "moved" | "blocked" | "busy";
 
 export class Game {
   readonly audio: AudioBackend;
@@ -61,6 +67,7 @@ export class Game {
   private readonly gameplayHud: GameplayHud | null;
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly tuning: PresentationTuning;
+  private readonly clock = new EngineClock();
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
   private readonly history: WorldSnapshot[] = [];
@@ -69,6 +76,7 @@ export class Game {
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
   private heldDirection: Direction | null = null;
+  private heldDirectionBlocked = false;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -170,6 +178,7 @@ export class Game {
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
+    this.heldDirectionBlocked = false;
     this.visual.clear();
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -187,19 +196,19 @@ export class Game {
       this.visual.isAnimating
     )
       return null;
-    return this.startLogicalMove(direction, forced);
+    const result = this.startLogicalMove(direction, forced, this.clock.nextTick);
+    this.render();
+    return result;
   }
 
   setHeldDirection(direction: Direction | null): void {
+    if (this.inputController) {
+      this.inputController.setHeldDirection(direction);
+      return;
+    }
+    if (direction === this.heldDirection) return;
     this.heldDirection = direction;
-    if (
-      direction &&
-      this.worldValue &&
-      !this.visual.isAnimating &&
-      !this.world.dead &&
-      !this.world.completed
-    )
-      this.startLogicalMove(direction, false);
+    this.heldDirectionBlocked = false;
   }
 
   undo(): void {
@@ -234,6 +243,7 @@ export class Game {
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
+    this.heldDirectionBlocked = false;
     this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -245,6 +255,7 @@ export class Game {
     if (!this.worldValue) return;
     const events = this.world.killPlayer(reason);
     this.heldDirection = null;
+    this.heldDirectionBlocked = false;
     this.resetVisualMotion();
     this.lastWorldEvents = events;
     this.publishWorldEvents(events);
@@ -305,7 +316,7 @@ export class Game {
     if (this.worldValue) {
       const viewport = this.renderer.measureViewport();
       this.visual.camera.setViewport(viewport.width, viewport.height);
-      const scene = this.visual.update(this.worldValue);
+      const scene = this.visual.scene(this.worldValue);
       this.renderer.render(scene, this.visual.camera, viewport);
     }
     this.gameplayHud?.render();
@@ -332,7 +343,11 @@ export class Game {
     this.gameplayHud?.destroy();
   }
 
-  private startLogicalMove(direction: Direction, forced: boolean): MoveResult {
+  private startLogicalMove(
+    direction: Direction,
+    forced: boolean,
+    time: EngineTick,
+  ): MoveResult {
     const before = this.world.snapshot();
     const result = this.world.move(direction, forced);
     this.lastMove = result;
@@ -345,21 +360,19 @@ export class Game {
     this.emitTerminalEvents();
 
     if (!result.moved) {
-      this.render();
       this.emit("blocked");
       this.emit("change");
       return result;
     }
 
-    this.visual.camera.recenterPan();
+    this.visual.camera.recenterPan(time);
     this.visual.beginMove(
       this.world.playerId,
       result.from,
       result.to,
       this.motionDuration(this.world.forcedKind as ForcedKind | null),
-      performance.now(),
+      time,
     );
-    this.render();
     this.emit("move");
     this.emit("change");
     return result;
@@ -372,18 +385,61 @@ export class Game {
     return duration;
   }
 
-  private finishMotion(): void {
+  private update(time: EngineTick): void {
+    if (!this.worldValue) return;
+
+    const input = this.inputController?.update(time) ?? null;
+    if (input) this.applyInput(input, time);
+    else this.applyDirectHeldInput(time);
+
+    const events = this.world.update(time);
+    if (events.length > 0) {
+      this.lastWorldEvents = events;
+      this.publishWorldEvents(events);
+      this.emitTerminalEvents();
+      this.emit("change");
+    }
+
+    if (this.visual.update(time, this.tuning.motion.easing))
+      this.finishMotion(time);
+  }
+
+  private applyInput(input: InputState, time: EngineTick): void {
+    if (!input.move || !this.inputController) return;
+    const result = this.attemptInputMove(input.move, time);
+    this.inputController.resolveMoveAttempt(result);
+  }
+
+  private attemptInputMove(direction: Direction, time: EngineTick): MoveAttempt {
+    if (!this.worldValue || this.world.dead || this.world.completed)
+      return "blocked";
+    if (this.visual.isAnimating) return "busy";
+    const result = this.startLogicalMove(direction, false, time);
+    return result.moved ? "moved" : "blocked";
+  }
+
+  private applyDirectHeldInput(time: EngineTick): void {
+    if (
+      !this.heldDirection ||
+      this.heldDirectionBlocked ||
+      !this.worldValue ||
+      this.world.dead ||
+      this.world.completed ||
+      this.visual.isAnimating
+    )
+      return;
+    const result = this.startLogicalMove(this.heldDirection, false, time);
+    if (!result.moved) this.heldDirectionBlocked = true;
+  }
+
+  private finishMotion(time: EngineTick): void {
     if (!this.worldValue) return;
     if (this.world.dead || this.world.completed) {
       this.heldDirection = null;
       return;
     }
     const forcedDirection = this.world.forcedDirection;
-    if (forcedDirection) {
-      this.startLogicalMove(forcedDirection, true);
-      return;
-    }
-    if (this.heldDirection) this.startLogicalMove(this.heldDirection, false);
+    if (forcedDirection) this.startLogicalMove(forcedDirection, true, time);
   }
 
   private resetVisualMotion(): void {
@@ -399,16 +455,8 @@ export class Game {
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
     if (this.worldValue && delta > 0) {
-      const events = this.world.advanceTime(delta);
-      if (events.length > 0) {
-        this.lastWorldEvents = events;
-        this.publishWorldEvents(events);
-        this.emitTerminalEvents();
-        this.emit("change");
-      }
-      if (this.visual.advanceMotion(timestamp, this.tuning.motion.easing))
-        this.finishMotion();
-      this.render();
+      const updated = this.clock.advance(delta, (time) => this.update(time));
+      if (updated > 0) this.render();
     }
     this.animationFrame = requestAnimationFrame(this.tick);
   };
