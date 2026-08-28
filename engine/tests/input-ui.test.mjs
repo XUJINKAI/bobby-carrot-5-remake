@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ENGINE_TICK_STEP_MS } from "../dist/time/EngineClock.js";
+import { resolveEngineTiming } from "../dist/time/EngineTiming.js";
 import {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   directionForDiscreteDrag,
@@ -96,9 +96,9 @@ test("持续输入被阻挡后等待方向改变，不按世界 Tick 重复 bloc
     assert.equal(advance(repeater, 62.5, "blocked"), null);
 });
 
-test("默认持续输入手感与 Engine 16Hz 世界时钟分离", () => {
+test("默认持续输入手感与可配置 WorldClock 分离", () => {
   assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs, 250);
-  assert.equal(ENGINE_TICK_STEP_MS, 62.5);
+  assert.equal(resolveEngineTiming().worldStepMs, 62.5);
   assert.equal(DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs, 375);
   assert.ok(
     DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs >

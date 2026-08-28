@@ -3,12 +3,20 @@ import {
   behaviorRegistry as builtinBehaviors,
   entityRegistry as builtinEntities,
 } from "../entities/registry.js";
-import type { EngineTick } from "../time/EngineClock.js";
+import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
   type GlobalState,
   type ProfileCapabilities,
 } from "./GlobalState.js";
+import type {
+  RuntimeActionId,
+  RuntimeActionSchedulerSnapshot,
+  RuntimeActionSpec,
+} from "./action/RuntimeAction.js";
+import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
+import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
+import { createBuiltinRuntimeActionRegistry } from "./action/builtinActions.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
 import type {
   Behavior,
@@ -40,12 +48,14 @@ import type {
 export interface WorldSnapshot {
   entities: EntityStoreSnapshot;
   state: GlobalState;
+  actions: RuntimeActionSchedulerSnapshot;
 }
 
 export interface WorldOptions {
   profile?: Partial<ProfileCapabilities>;
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
+  actions?: RuntimeActionRegistry;
 }
 
 export class World {
@@ -56,6 +66,7 @@ export class World {
   readonly query: WorldQueryApi;
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
+  readonly actions: RuntimeActionScheduler;
   readonly rules: LevelMap["rules"];
   readonly playerId: EntityId;
   state: GlobalState;
@@ -66,6 +77,9 @@ export class World {
     this.rules = structuredClone(level.rules ?? {});
     this.registry = options.entities ?? builtinEntities;
     this.behaviors = options.behaviors ?? builtinBehaviors;
+    this.actions = new RuntimeActionScheduler(
+      options.actions ?? createBuiltinRuntimeActionRegistry(),
+    );
     this.entities = new EntityStore(level.entities);
     this.spatial = new SpatialIndex(
       this.entities,
@@ -126,6 +140,14 @@ export class World {
     return this.spatial.hasTraitAt(this.player, "climbable");
   }
 
+  get inputBlocked(): boolean {
+    return this.actions.inputBlocked;
+  }
+
+  get cameraTarget(): EntityId | null {
+    return this.actions.cameraTarget;
+  }
+
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
     return this.entities.get(id);
   }
@@ -140,6 +162,10 @@ export class World {
 
   setProfile(profile: Partial<ProfileCapabilities>): void {
     this.state.profile = { ...this.state.profile, ...profile };
+  }
+
+  startAction(spec: RuntimeActionSpec): RuntimeActionId {
+    return this.actions.start(spec);
   }
 
   killPlayer(reason = "Bobby could not continue."): WorldEvent[] {
@@ -157,12 +183,14 @@ export class World {
     return {
       entities: this.entities.snapshot(),
       state: structuredClone(this.state),
+      actions: this.actions.snapshot(),
     };
   }
 
   restore(snapshot: WorldSnapshot): void {
     this.entities.restore(snapshot.entities);
     this.state = structuredClone(snapshot.state);
+    this.actions.restore(snapshot.actions);
     this.spatial.rebuild();
   }
 
@@ -278,10 +306,14 @@ export class World {
     };
   }
 
-  /** 在统一 EngineTick 上推进所有 gameplay onTick 行为。 */
-  update(time: EngineTick): WorldEvent[] {
+  /** RuntimeAction 与 Behavior 都只在统一 WorldTick 上推进。 */
+  update(time: WorldTick): WorldEvent[] {
     if (time.stepMs <= 0 || this.state.dead || this.state.completed) return [];
     const queue = new CommandQueue();
+
+    // 先推进上一 Tick 已经存在的跨时过程；本 Tick 新建 Action 从下一 Tick 才开始计时。
+    this.actions.update(time, this.query, queue);
+
     const snapshot = this.entities.all().map((entity) => entity.id);
     for (const entityId of snapshot) {
       const entity = this.entities.get(entityId);
@@ -410,7 +442,7 @@ export class World {
     self: EntityInstance,
     direction: Direction | undefined,
     queue: CommandQueue,
-    time?: EngineTick,
+    time?: WorldTick,
   ): BehaviorContext {
     return {
       query: this.query,
@@ -432,6 +464,7 @@ export class World {
           break;
         }
         case "destroy":
+          this.actions.cancelOwnedBy(command.entityId);
           this.spatial.removeEntity(command.entityId);
           this.entities.destroy(command.entityId);
           break;
@@ -458,6 +491,12 @@ export class World {
         case "set-global":
           (this.state as unknown as Record<string, unknown>)[command.key] =
             structuredClone(command.value);
+          break;
+        case "start-action":
+          this.actions.start(command.action);
+          break;
+        case "cancel-action":
+          this.actions.cancel(command.actionId);
           break;
         case "emit":
           events.push(command.event);

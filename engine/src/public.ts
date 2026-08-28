@@ -7,12 +7,21 @@ export {
   type CreateGameplayRuntimeOptions,
 } from "./core/GameplayRuntime.js";
 export {
-  EngineClock,
-  ENGINE_TICK_RATE,
-  ENGINE_TICK_STEP_MS,
-  type EngineTick,
-  type EngineTickListener,
-} from "./time/EngineClock.js";
+  DEFAULT_PRESENTATION_HZ,
+  DEFAULT_WORLD_HZ,
+  resolveEngineTiming,
+  type EngineTiming,
+  type EngineTimingOptions,
+} from "./time/EngineTiming.js";
+export {
+  PresentationClock,
+  type PresentationFrame,
+} from "./time/PresentationClock.js";
+export {
+  WorldClock,
+  type WorldTick,
+  type WorldTickListener,
+} from "./time/WorldClock.js";
 export {
   AudioRuntime,
   resolveOriginalMusicUrl,

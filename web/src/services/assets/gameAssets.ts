@@ -12,6 +12,7 @@ export function gameAssets(): VisualAssetSources {
   return {
     atlasUrl: siteUrl("assets/art/hd/ts.png"),
     imageUrls: {
+      "original-animated-tiles": siteUrl("assets/art/hd/ta.png"),
       "bobby-left": siteUrl("assets/art/hd/b0.png"),
       "bobby-right": siteUrl("assets/art/hd/b1.png"),
       "bobby-up": siteUrl("assets/art/hd/b2.png"),

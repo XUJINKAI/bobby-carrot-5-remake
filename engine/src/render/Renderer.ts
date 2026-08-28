@@ -4,6 +4,7 @@ import type {
   VisualAssetSources,
   VisualComposition,
 } from "../visual/VisualDefinition.js";
+import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type { Camera } from "./Camera.js";
 import type { RenderScene } from "./RenderScene.js";
 
@@ -20,6 +21,7 @@ export class Renderer {
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly context: CanvasRenderingContext2D | null;
   private debug = false;
+  private debugSelection: CellPosition | null = null;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -55,6 +57,10 @@ export class Renderer {
     this.debug = value;
   }
 
+  setDebugSelection(cell: CellPosition | null): void {
+    this.debugSelection = cell ? { ...cell } : null;
+  }
+
   render(scene: RenderScene, camera: Camera, viewport = this.measureViewport()): void {
     const context = this.context;
     if (!context) return;
@@ -80,8 +86,10 @@ export class Renderer {
       );
     }
 
-    if (this.debug)
+    if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
+      this.drawDebugSelection(context, camera);
+    }
   }
 
   private drawComposition(
@@ -114,17 +122,36 @@ export class Renderer {
   ): void {
     const image = this.images.get(layer.asset);
     if (!image) return;
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
+    const frameHeight = Math.max(1, layer.frameHeight ?? image.height);
+    const columns = Math.max(1, Math.floor(image.width / frameWidth));
+    const rows = Math.max(1, Math.floor(image.height / frameHeight));
+    const frameCount = Math.max(1, columns * rows);
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const requestedFrame =
+      layer.frameIndex ?? Math.floor(progress * frameCount);
+    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
+    const sourceX = (frame % columns) * frameWidth;
+    const sourceY = Math.floor(frame / columns) * frameHeight;
+
     if (layer.anchor === "fill") {
-      context.drawImage(image, x, y, size, size);
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        frameWidth,
+        frameHeight,
+        x,
+        y,
+        size,
+        size,
+      );
       return;
     }
-    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
-    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+
     const scale = size / camera.sourceTileSize;
     const drawWidth = frameWidth * scale;
-    const drawHeight = image.height * scale;
+    const drawHeight = frameHeight * scale;
     const drawX = x + size / 2 - drawWidth / 2;
     const drawY =
       layer.anchor === "center"
@@ -132,10 +159,10 @@ export class Renderer {
         : y + size - drawHeight;
     context.drawImage(
       image,
-      frame * frameWidth,
-      0,
+      sourceX,
+      sourceY,
       frameWidth,
-      image.height,
+      frameHeight,
       drawX,
       drawY,
       drawWidth,
@@ -196,6 +223,23 @@ export class Renderer {
       context.lineTo(b.x, b.y);
       context.stroke();
     }
+    context.restore();
+  }
+
+  private drawDebugSelection(
+    context: CanvasRenderingContext2D,
+    camera: Camera,
+  ): void {
+    const cell = this.debugSelection;
+    if (!cell) return;
+    const point = camera.worldToScreen(cell.x, cell.y);
+    const size = camera.tileScreenSize;
+    context.save();
+    context.fillStyle = "rgba(74, 168, 255, .16)";
+    context.strokeStyle = "rgba(118, 196, 255, .95)";
+    context.lineWidth = 2;
+    context.fillRect(point.x, point.y, size, size);
+    context.strokeRect(point.x + 1, point.y + 1, size - 2, size - 2);
     context.restore();
   }
 }

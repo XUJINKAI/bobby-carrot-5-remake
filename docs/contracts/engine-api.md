@@ -7,7 +7,7 @@ Engine 的公开边界分成两个明确入口：
 @bobby/engine/authoring   Editor / tooling authoring API
 ```
 
-`@bobby/engine` 是稳定的产品运行时合同。Web、Adventure、Embed 等宿主只能通过这个入口控制一张地图的 gameplay，不得读取 `World`、`Renderer`、`Camera`、`EntityStore`、`SpatialIndex`、Registry 或其他实现对象。
+`@bobby/engine` 是稳定的产品运行时合同。Web、Adventure、Embed 等宿主只能通过这个入口控制一张地图的 gameplay，不得读取 `World`、`Renderer`、`Camera`、`EntityStore`、`SpatialIndex`、Registry、RuntimeActionScheduler 或其他实现对象。
 
 `@bobby/engine/authoring` 是显式 opt-in 的编辑/工具入口。Editor 可以复用 Entity Definition、footprint、Presence、SpatialIndex 与 Visual authoring 能力，但这些类型不会因此成为 gameplay runtime API。
 
@@ -34,7 +34,10 @@ const runtime = await createGameplayRuntime({
     hud: {
       objective: true,
       inventory: true,
-      timedChallenge: true,
+    },
+    timing: {
+      worldHz: 16,
+      presentationHz: 60,
     },
   },
 });
@@ -42,33 +45,104 @@ const runtime = await createGameplayRuntime({
 const { game, input } = runtime;
 ```
 
-宿主销毁 session 时只需要：
+宿主销毁 session 时只需要 `runtime.destroy()`。也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致。
+
+## 混合时钟
+
+Engine 明确区分 gameplay 与 presentation 两套时间。
+
+### WorldClock
+
+`WorldClock` 是 gameplay 的固定步长时钟：
 
 ```ts
-runtime.destroy();
-```
-
-也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致：
-
-```ts
-const game = new Game({ canvas, assets, audio, profile, runtime });
-await game.loadLevel(level);
-```
-
-## EngineClock
-
-Engine gameplay 使用固定世界时钟，默认 `16Hz`：
-
-```ts
-interface EngineTick {
+interface WorldTick {
   tick: number;
-  stepMs: number; // 默认 62.5
+  stepMs: number;
 }
 ```
 
-浏览器 `requestAnimationFrame` 只是调度来源；Game 内部的 `EngineClock` 用 accumulator 把真实经过时间转换为固定 Tick。Input、World behavior 和 Visual motion 都消费同一个 `EngineTick`，显示器 60/120/144Hz 不会改变 gameplay 节奏。
+默认 `worldHz = 16`，即 `stepMs = 62.5ms`。它只驱动：
 
-正常使用 `Game` / `createGameplayRuntime()` 时宿主不需要自己推进时钟。`EngineClock`、`ENGINE_TICK_RATE`、`ENGINE_TICK_STEP_MS` 与 `EngineTick` 作为公开基础类型提供给显式输入适配、测试或 Embed 组合使用。
+- Input gameplay sampling；
+- World / Behavior；
+- RuntimeActionScheduler；
+- forced movement 与其他 gameplay rule。
+
+### PresentationClock
+
+`PresentationClock` 由 `requestAnimationFrame` 提供真实时间并按独立采样频率产生：
+
+```ts
+interface PresentationFrame {
+  frame: number;
+  nowMs: number;
+  deltaMs: number;
+}
+```
+
+默认 `presentationHz = 60`。它只驱动：
+
+- VisualRuntime tween；
+- Camera interpolation；
+- sprite / ambient animation；
+- 其他纯表现状态。
+
+WorldClock pause 不会暂停 PresentationClock。动画完成也不得反向触发 gameplay mutation。
+
+统一配置入口为：
+
+```ts
+runtime: {
+  timing: {
+    worldHz: 16,
+    presentationHz: 60,
+  },
+}
+```
+
+任何 gameplay 或 animation duration 都应以毫秒表达。改变 `worldHz` 或 `presentationHz` 只改变采样粒度，不应让一个 `250ms` 的动作凭空变快或变慢。
+
+未来 modern / retro 若需要不同帧感，应优先改变 `presentationHz`（例如 modern 60、retro 16），而不是改变 World gameplay 规则。
+
+## Entity / Behavior / RuntimeAction
+
+持续跨多个 WorldTick 的 gameplay 过程使用 RuntimeAction，而不是 Promise、wall-clock timer 或第二套 Actor 模型：
+
+```text
+Entity          这个东西是什么 / 当前 gameplay state
+Behavior        事件发生时如何响应
+RuntimeAction   一个正在持续进行的 gameplay 过程
+```
+
+RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 CommandQueue 修改 World。Action 可以声明：
+
+```ts
+{
+  blocksInput?: boolean;
+  cameraTarget?: EntityId;
+}
+```
+
+`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`cameraTarget` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
+
+RuntimeAction 是 gameplay state，因此可进入 World snapshot。Presentation tween / Camera transition 不进入 snapshot。
+
+## Undo / Redo
+
+Game 在玩家语义 move 前保存 gameplay snapshot。Snapshot 包含 Entity / GlobalState / RuntimeAction gameplay state，但不包含视觉插值。
+
+Undo 后：
+
+```text
+restore gameplay snapshot
+        ↓
+丢弃当前 Visual transition
+        ↓
+从恢复后的 Grid Truth 重新 render
+```
+
+强制移动链不会额外创建用户 Undo 点。因此例如踩龙尾触发阻塞火球后，Undo 的目标是踩龙尾之前的玩家状态，而不是“火球飞到一半”的 Presentation 状态。
 
 ## Game façade
 
@@ -92,7 +166,7 @@ game.toggleDebug();
 game.inspectCanvasPoint(clientX, clientY);
 ```
 
-`setHeldDirection()` 只更新 continuous input state；真正的 movement 在后续 `EngineTick` 采样执行。`move()` 是显式一次性语义动作，仍可由宿主直接调用。
+`setHeldDirection()` 只更新 continuous input state；真正 movement 在后续 `WorldTick` 采样执行。`move()` 是显式一次性语义动作，但同样必须遵守 WorldClock pause 与 gameplay `inputBlocked`，不能作为旁路推进暂停中的 World。
 
 常用只读状态：
 
@@ -112,58 +186,19 @@ game.lastWorldEvents;
 以下写法属于架构违规：
 
 ```ts
-// 禁止：World 是实现细节
+// 禁止：World / Scheduler 是实现细节
 game.world.state;
-game.world.completed;
+game.world.actions;
 
 // 禁止：Renderer / Camera 是实现细节
 game.renderer.camera.zoom;
-game.renderer.camera.sourceTileSize;
 ```
 
-对应能力必须使用 `game.state`、`game.zoom`、`game.sourceTileSize` 或语义方法。
-
-## GameplayState
-
-`game.state` 是宿主 UI 的稳定只读快照：
-
-```ts
-interface GameplayState {
-  status: "playing" | "won" | "dead";
-  deathReason: string | null;
-  moves: number;
-
-  player: { x: number; y: number };
-  facing: Direction;
-
-  inventory: Readonly<InventoryState>;
-  profile: Readonly<ProfileCapabilities>;
-  ridingMower: boolean;
-
-  objective: {
-    mode: ObjectiveMode;
-    remaining: number;
-    total: number;
-  };
-
-  forced: {
-    kind: ForcedKind;
-    direction: Direction;
-  } | null;
-
-  bonusCoinsInLevel: number;
-  goldenCarrotsInLevel: number;
-  canUndo: boolean;
-  canRedo: boolean;
-  timedChallengeRemainingMs: number | null;
-}
-```
-
-宿主页面可以据此展示产品 UI，但不能为了读取更多状态而取得 `World`。
+对应能力必须使用稳定 façade 或 DebugRuntime。
 
 ## Runtime Config
 
-基础运行配置覆盖输入、Gameplay HUD、Screen Joystick 与 presentation tuning：
+基础运行配置覆盖输入、Gameplay HUD、timing 与 presentation tuning：
 
 ```ts
 runtime: {
@@ -186,7 +221,10 @@ runtime: {
   hud: {
     objective: true,
     inventory: true,
-    timedChallenge: true,
+  },
+  timing: {
+    worldHz: 16,
+    presentationHz: 60,
   },
   tuning: {},
 }
@@ -194,58 +232,15 @@ runtime: {
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
 
-`GameOptions.assets` 使用公开的 `VisualAssetSources`：
-
-```ts
-interface VisualAssetSources {
-  atlasUrl: string;
-  imageUrls?: Readonly<Record<string, string>>;
-  sourceTileSize?: number;
-}
-```
-
-资源 ID 如何映射到 Entity Visual 是 Engine 内部 EntityModule 的职责；宿主只提供资源地址。
-
 ## InputController
 
-`InputController` 把浏览器输入翻译成固定世界 Tick 上的语义输入。它可以由 `createGameplayRuntime()` 自动管理，也可以显式创建。
+`InputController` 把浏览器输入翻译成固定 `WorldTick` 上的语义输入。浏览器事件只维护 held / queued state：
 
 ```ts
-const input = new InputController(game, {
-  movement: true,
-  undo: false,
-  redo: false,
-  restart: true,
-  pan: true,
-  zoom: true,
-  debug: false,
-});
+const state = input.update(time); // WorldTick
 ```
 
-浏览器事件只维护内部 held / queued state。Game 的统一世界时钟每 Tick 调用：
-
-```ts
-const state = input.update(time); // time: EngineTick
-```
-
-当前语义状态为：
-
-```ts
-interface InputState {
-  move: Direction | null;
-}
-```
-
-Game 尝试该 movement 后会把 `moved / blocked / busy` 结果回填给 Input repeat 状态机。普通 runtime 宿主不需要手动执行这套循环，因为 `Game` 已经持有并推进 EngineClock。
-
-外部方向控制器统一通过：
-
-```ts
-input.setHeldDirection("left");
-input.setHeldDirection(null);
-```
-
-键盘、Screen Joystick、Pointer 离散 movement 都走同一个 Tick 边界。Pointer pan/pinch/wheel zoom 仍是 presentation 操作，可以即时调用 Game façade。Input 层不得访问 Renderer 或 Camera 实例。
+Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
 
 ## Events
 
@@ -261,12 +256,4 @@ game.on("death", ...);
 game.on("level-complete", ...);
 ```
 
-细粒度地图事实通过 `WorldEvent`：
-
-```ts
-const unsubscribe = game.onWorldEvent((event) => {
-  // event.type / entityId / x / y / direction / action / text / data
-});
-```
-
-事件只描述语义事实，不泄漏 EntityStore、CommandQueue 或 Behavior 实例。
+细粒度地图事实通过 `WorldEvent` 暴露。事件只描述语义事实，不泄漏 EntityStore、CommandQueue、Behavior 或 RuntimeAction 实例。

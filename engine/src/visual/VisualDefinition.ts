@@ -1,5 +1,5 @@
 import type { JsonValue } from "@bobby/model";
-import type { EngineTick } from "../time/EngineClock.js";
+import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { VisualId } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
@@ -19,21 +19,22 @@ export interface AtlasVisualLayer {
   flipY?: boolean;
 }
 
-/** 独立图片或横向 sprite strip。asset 是语义资源 ID，不是 URL。 */
+/** 独立图片、横向 sprite strip 或规则网格 sprite sheet。asset 是语义资源 ID，不是 URL。 */
 export interface ImageVisualLayer {
   kind: "image";
   asset: string;
-  /** sprite strip 单帧源宽度；省略时整张图作为一帧。 */
+  /** sprite 单帧源宽度；省略时整张图宽作为一帧。 */
   frameWidth?: number;
-  /** 0..1 的 strip 进度；Renderer 根据图片实际宽度选择帧。 */
+  /** 规则网格 sprite sheet 的单帧源高度；省略时整张图高作为一行。 */
+  frameHeight?: number;
+  /** 规则网格中的绝对帧序号，按从左到右、从上到下计算。 */
+  frameIndex?: number;
+  /** 0..1 的 strip / sheet 进度；frameIndex 存在时优先使用 frameIndex。 */
   frameProgress?: number;
   anchor?: "center" | "bottom" | "fill";
 }
 
-/**
- * 少量程序化视觉使用的通用 Canvas layer。
- * 绘制函数和可选 CSS 预览都由 Entity Module 提供；Renderer/Web 只消费结果。
- */
+/** 少量程序化视觉使用的通用 Canvas layer。 */
 export interface CanvasVisualLayer {
   kind: "canvas";
   draw(
@@ -58,10 +59,7 @@ export interface VisualAssetSources {
   sourceTileSize?: number;
 }
 
-/**
- * 纯视觉瞬态状态，不进入 World snapshot / LevelMap。
- * offset 相对当前 Presence Cell，因此同样适用于多格 Entity 整体移动。
- */
+/** 纯视觉瞬态状态，不进入 World snapshot / LevelMap。 */
 export interface EntityVisualRuntimeState {
   offsetX?: number;
   offsetY?: number;
@@ -81,14 +79,10 @@ export interface VisualResolveContext {
   presence: Readonly<EntityPresence>;
   query: VisualQuery;
   runtime?: Readonly<EntityVisualRuntimeState>;
-  /** Runtime 中当前统一世界 Tick；Editor preview 可省略。 */
-  time?: EngineTick;
+  /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
+  time?: PresentationFrame;
 }
 
-/**
- * 创建 Entity 时选择一次并写入 properties；之后只是普通持久化实例参数。
- * placement sequence 只参与确定性选择，不写进地图 JSON。
- */
 export interface PersistedVisualVariantDefinition {
   property: string;
   values: readonly JsonValue[];

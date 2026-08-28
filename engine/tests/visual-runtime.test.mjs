@@ -55,33 +55,52 @@ test("Bobby walking progress is visual runtime state and does not mutate World",
   assert.deepEqual(bobby.anchor, { x: 0, y: 0 });
 });
 
-test("VisualRuntime motion interpolation follows EngineTick instead of wall clock", () => {
+test("VisualRuntime motion interpolation follows PresentationFrame milliseconds", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(
     7,
     { x: 1, y: 2 },
     { x: 2, y: 2 },
     100,
-    { tick: 10, stepMs: 50 },
+    { frame: 10, nowMs: 1000, deltaMs: 16 },
   );
   assert.equal(runtime.isAnimating, true);
-  assert.equal(runtime.update({ tick: 11, stepMs: 50 }, "linear"), false);
+  runtime.update({ frame: 11, nowMs: 1050, deltaMs: 50 }, "linear");
   assert.equal(runtime.isAnimating, true);
-  assert.equal(runtime.update({ tick: 12, stepMs: 50 }, "linear"), true);
+  runtime.update({ frame: 12, nowMs: 1100, deltaMs: 50 }, "linear");
   assert.equal(runtime.isAnimating, false);
 });
 
-test("motion duration is quantized to the nearest fixed world Tick", () => {
+test("completed presentation motion can be rewound and replayed without changing World", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+  runtime.update({ frame: 3, nowMs: 1050, deltaMs: -50 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 50 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+});
+
+test("motion duration remains 132ms and is independent from WorldClock rate", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(
     7,
     { x: 0, y: 0 },
     { x: 1, y: 0 },
     132,
-    { tick: 20, stepMs: 62.5 },
+    { frame: 0, nowMs: 2000, deltaMs: 0 },
   );
-  assert.equal(runtime.update({ tick: 21, stepMs: 62.5 }, "linear"), false);
-  assert.equal(runtime.update({ tick: 22, stepMs: 62.5 }, "linear"), true);
+  runtime.update({ frame: 1, nowMs: 2125, deltaMs: 125 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 2, nowMs: 2132, deltaMs: 7 }, "linear");
+  assert.equal(runtime.isAnimating, false);
 });
 
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
