@@ -55,6 +55,21 @@ const game = new Game({ canvas, assets, audio, profile, runtime });
 await game.loadLevel(level);
 ```
 
+## EngineClock
+
+Engine gameplay 使用固定世界时钟，默认 `16Hz`：
+
+```ts
+interface EngineTick {
+  tick: number;
+  stepMs: number; // 默认 62.5
+}
+```
+
+浏览器 `requestAnimationFrame` 只是调度来源；Game 内部的 `EngineClock` 用 accumulator 把真实经过时间转换为固定 Tick。Input、World behavior 和 Visual motion 都消费同一个 `EngineTick`，显示器 60/120/144Hz 不会改变 gameplay 节奏。
+
+正常使用 `Game` / `createGameplayRuntime()` 时宿主不需要自己推进时钟。`EngineClock`、`ENGINE_TICK_RATE`、`ENGINE_TICK_STEP_MS` 与 `EngineTick` 作为公开基础类型提供给显式输入适配、测试或 Embed 组合使用。
+
 ## Game façade
 
 `Game` 对外暴露语义动作与只读 gameplay state：
@@ -76,6 +91,8 @@ game.panByScreen(dx, dy);
 game.toggleDebug();
 game.inspectCanvasPoint(clientX, clientY);
 ```
+
+`setHeldDirection()` 只更新 continuous input state；真正的 movement 在后续 `EngineTick` 采样执行。`move()` 是显式一次性语义动作，仍可由宿主直接调用。
 
 常用只读状态：
 
@@ -191,7 +208,7 @@ interface VisualAssetSources {
 
 ## InputController
 
-`InputController` 把浏览器输入翻译成 Game 的语义动作。它可以由 `createGameplayRuntime()` 自动管理，也可以显式创建。
+`InputController` 把浏览器输入翻译成固定世界 Tick 上的语义输入。它可以由 `createGameplayRuntime()` 自动管理，也可以显式创建。
 
 ```ts
 const input = new InputController(game, {
@@ -205,14 +222,30 @@ const input = new InputController(game, {
 });
 ```
 
-外部控制器统一通过：
+浏览器事件只维护内部 held / queued state。Game 的统一世界时钟每 Tick 调用：
+
+```ts
+const state = input.update(time); // time: EngineTick
+```
+
+当前语义状态为：
+
+```ts
+interface InputState {
+  move: Direction | null;
+}
+```
+
+Game 尝试该 movement 后会把 `moved / blocked / busy` 结果回填给 Input repeat 状态机。普通 runtime 宿主不需要手动执行这套循环，因为 `Game` 已经持有并推进 EngineClock。
+
+外部方向控制器统一通过：
 
 ```ts
 input.setHeldDirection("left");
 input.setHeldDirection(null);
 ```
 
-键盘、Screen Joystick、Pointer pan/pinch/wheel zoom 都只能调用 Game façade，Input 层不得访问 Renderer 或 Camera 实例。
+键盘、Screen Joystick、Pointer 离散 movement 都走同一个 Tick 边界。Pointer pan/pinch/wheel zoom 仍是 presentation 操作，可以即时调用 Game façade。Input 层不得访问 Renderer 或 Camera 实例。
 
 ## Events
 
@@ -237,153 +270,3 @@ const unsubscribe = game.onWorldEvent((event) => {
 ```
 
 事件只描述语义事实，不泄漏 EntityStore、CommandQueue 或 Behavior 实例。
-
-## Visual boundary
-
-Gameplay 与绘制之间的固定依赖链是：
-
-```text
-World
-  ↓ readonly query + visual runtime state
-VisualRuntime
-  ↓ resolve Entity VisualDefinition
-  ↓ camera / interpolation / sorting
-RenderScene
-  ↓
-Renderer
-  ↓
-Canvas
-```
-
-职责约束：
-
-- `World` 不知道 sprite、atlas、frame、camera；
-- `VisualRuntime` 可以只读查询 World 空间信息，但不能修改 gameplay；
-- `RenderScene` 是已经解析完成的绘制描述；
-- `Renderer` 只绘制 `RenderScene`，不能读取 World、Registry 或 EntityDefinition；
-- Camera 属于 VisualRuntime，不属于 World；
-- motion progress、visual offset、animation progress 不进入 LevelMap 或 World snapshot。
-
-因此 Renderer 的接口不能重新演变成：
-
-```ts
-renderer.render(world);
-```
-
-正确方向始终是：
-
-```ts
-renderer.render(scene, camera);
-```
-
-## Authoring boundary
-
-Editor 明确从独立入口取得 authoring 能力：
-
-```ts
-import {
-  createBuiltinEntityRegistry,
-  WorldPreview,
-  resolveFootprintCells,
-  resolveEntityVisualPreview,
-} from "@bobby/engine/authoring";
-```
-
-Gameplay 页面不得为了方便改从 `/authoring` 读取 World internals。
-
-Editor 的目标是复用 Engine 的空间与视觉语义，而不是重新实现一套 Terrain/Object 逻辑：
-
-```text
-LevelMap Entity[]
-      ↓
-WorldPreview
-      ↓
-Presence / Cell Stack / Footprint
-      ↓
-Editor inspect / placement / preview
-```
-
-## EntityModule 与源码组织
-
-一个 Entity 的静态 gameplay Definition、专属 Behavior 和 Visual 应当在源码中尽量同址。
-
-复杂 Entity 使用一实体一文件：
-
-```text
-engine/src/entities/custom/
-  portal.ts
-  push-goal.ts
-
-engine/src/entities/original/
-  bobby.ts
-  dragon.ts
-  fence.ts
-  speed-switch.ts
-  trap.ts
-  ice-block.ts
-  ...
-```
-
-例如 `portal.ts` 自己拥有：
-
-```text
-Portal EntityModule
-├─ EntityDefinition
-├─ Portal Behavior
-├─ VisualDefinition
-└─ drawPortal()
-```
-
-不得重新形成：
-
-```text
-definitions.ts   // 所有实体 Definition
-behaviors.ts     // 所有实体 Behavior
-visuals.ts       // 所有实体 Visual
-```
-
-这种按技术层切碎 Entity 的结构。
-
-只有真正跨多个 Entity 共用的机制才能进入共享基础设施，例如：
-
-- `collectible` / `hazard` / `water` 等通用 Trait Behavior；
-- atlas cell / Definition factory；
-- footprint / registry / visual runtime 等 Engine 基础设施。
-
-完全静态、没有独立 state / behavior / footprint / visual resolver 的 atlas Entity 可以进入 declarative static catalog，但 **Definition 与 Visual cell 必须在同一条声明中**，不能再次拆成两个注册表。
-
-`original/` 与 `custom/` 只表示源码维护目录。两者产生完全相同的 `EntityModule`，进入同一份 registry：
-
-```text
-original EntityModule ─┐
-                       ├─ builtinEntityModules
-custom EntityModule ───┘
-                       ↓
-        EntityRegistry / VisualRegistry / BehaviorRegistry
-```
-
-Registry 不知道 Entity 来自 original 还是 custom。
-
-## Dependency rule
-
-最终依赖方向：
-
-```text
-Web / Adventure / Embed
-          ↓
-    @bobby/engine
-          ↓
-      Game façade
-          ↓
-  World + VisualRuntime
-          ↓
-       Renderer
-
-Editor
-  ↓
-@bobby/engine/authoring
-  ↓
-Definition / Preview / Spatial / Visual authoring
-```
-
-公开 API 可以增加，但只能增加稳定、通用的 gameplay 或 authoring 能力。**不能因为某个调用方临时需要内部数据，就把 World/Renderer/Registry 实现对象重新导出到 gameplay root。**

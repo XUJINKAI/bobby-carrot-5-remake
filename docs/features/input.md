@@ -1,6 +1,6 @@
 # 输入
 
-`InputController` 是 `@bobby/engine` 提供的通用 gameplay 输入适配器。它只负责把键盘、指针、滚轮、Pinch 或外部方向控件翻译成 Game Action，**不得判断某一格能不能走**；合法性必须由 Engine Mechanics 决定。
+`InputController` 是 `@bobby/engine` 提供的通用 gameplay 输入适配器。它只负责把键盘、指针、滚轮、Pinch 或外部方向控件翻译成语义输入，**不得判断某一格能不能走**；合法性必须由 Engine Mechanics 决定。
 
 当前通用映射：
 
@@ -10,12 +10,12 @@ R                    -> Restart
 Z / U                -> Undo
 + / -                -> Zoom
 ~                    -> Debug
-鼠标左键 / 单指拖动 -> 沿主轴移动一格
+鼠标左键 / 单指拖动 -> 沿主轴排队移动一格
 鼠标中键拖动        -> Pan
 Pinch / 滚轮         -> Zoom
 ```
 
-鼠标左键或单指从落点开始累计位移。位移达到离散拖动阈值后，Engine 取水平/垂直主轴方向并只提交一次 `Game.move()`；本次 pointer 生命周期内继续拖动不会连续追加格数。进入双指 Pinch 后，两根 pointer 都退出单指移动判定，松开其中一根也不会产生残留的单格移动。
+鼠标左键或单指从落点开始累计位移。位移达到离散拖动阈值后，Engine 取水平/垂直主轴方向并只排队一次 movement；本次 pointer 生命周期内继续拖动不会连续追加格数。这个 movement 与键盘、Screen Joystick 一样，要等下一次 `EngineTick` 才由 Game 处理，不从 DOM event 直接修改 World。进入双指 Pinch 后，两根 pointer 都退出单指移动判定，松开其中一根也不会产生残留的单格移动。
 
 调用方可以按场景逐项开关：
 
@@ -30,33 +30,54 @@ debug
 
 例如 Adventure 可以关闭 Undo / Debug，Explore 可以开启；这种差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
 
-## Continuous Input 与 update
+## EngineClock 与 Input update
 
-键盘、Screen Joystick 和 `InputController.setHeldDirection()` 接入的外部方向控制器都属于 Continuous Input。DOM 事件或摇杆回调只更新当前 held state，不直接连续调用 `Game.move()`；真正的移动请求由公开的 `InputController.update(deltaMs)` 统一推进。
+Engine 使用统一的固定世界时钟：
 
-```text
-Keyboard / Joystick / External Controller
-                  │
-                  └─ 更新 held direction
-                             │
-                             ▼
-                    InputController.update()
-                             │
-                             ▼
-                   HeldDirectionRepeater
-                             │
-              ┌──────────────┴──────────────┐
-              │                             │
-          首格立即尝试                 initial delay
-                                            │
-                                            ▼
-                                      continuous repeat
-                                            │
-                                            ▼
-                                         Game.move()
+```ts
+interface EngineTick {
+  tick: number;
+  stepMs: number;
+}
 ```
 
-Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。首次方向 edge 会被缓冲到下一次 `update()`：即使用户在同一个 62.5ms tick 内完成按下并松开，仍会保留一次单格移动，但因为 held state 已经清空，不会进入 repeat。之后不额外设置 repeat interval，而由 `Game.move()` 的 animation busy 状态限制连续步频。如果一次移动已经被地图规则明确阻挡，本次 held direction 会停止 repeat，直到松开或改变方向，避免按 16Hz 不断产生重复 blocked 事件。
+默认 `16Hz`，因此 `stepMs = 62.5`。浏览器事件只记录 input state；真正的 gameplay movement 统一在世界 Tick 中产生：
+
+```ts
+const input = inputController.update(time);
+world.update(time);
+visual.update(time);
+```
+
+Game 会读取 `input.move`，尝试语义移动，再把 `moved / blocked / busy` 结果回填给 Input repeat 状态机。这样 Keyboard、Joystick、外部 held direction 和 Pointer 离散移动不会因为 DOM event 到达时机、显示器 60/120/144Hz 或浏览器键盘 repeat 频率而改变 gameplay 节奏。
+
+```text
+DOM / Joystick events
+        │
+        └─ 只更新 held / queued state
+                    │
+                    ▼
+            EngineClock 16Hz
+                    │
+                    ▼
+       InputController.update(time)
+                    │
+                    ▼
+              InputState.move
+                    │
+                    ▼
+              Game / World
+                    │
+                    └─ resolve moved / blocked / busy
+```
+
+`R / Undo / Redo / Zoom / Pan / Debug` 不是格子 gameplay movement，不强制等待世界 Tick；这些显式产品/表现动作仍可即时调用 Game façade。
+
+## Continuous Input
+
+键盘、Screen Joystick 和 `InputController.setHeldDirection()` 接入的外部方向控制器都属于 Continuous Input。事件只更新 held state，不直接调用 `Game.move()`。
+
+Continuous Input 的第一格在下一次 `EngineTick` 立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。首次方向 edge 会被缓冲到下一 Tick：即使用户在同一个 62.5ms Tick 内完成按下并松开，仍会保留一次单格移动，但因为 held state 已经清空，不会进入 repeat。
 
 当前默认手感：
 
@@ -68,12 +89,13 @@ Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格
 
 方向变化被视为新的 Continuous Input edge：新方向的第一格重新立即尝试，并重新计算 initial repeat delay。Screen Joystick 回到 dead zone 时方向变为 `null`，repeat state 随即重置；再次推出 dead zone 时按新的第一格处理。
 
-目前世界时钟尚未接入，因此 `InputController` 默认用一个 **16Hz（62.5ms）临时 timer** 调用自己的 `update()`，方便验证输入手感。这个 timer 只是过渡适配层：世界时钟接管后，将 `autoUpdate` 设为 `false`，由 Engine Clock 每 tick 调用 `input.update(deltaMs)`，Continuous Input 状态机本身无需改动。
+如果 World 当前 motion 尚未结束，移动结果为 `busy`，Input 在之后的世界 Tick 重试；如果地图规则明确返回 `blocked`，当前 held direction 停止 repeat，直到松开或改变方向，避免按 16Hz 重复产生 blocked 事件。
 
 默认值集中在 Engine 内：
 
-- `DEFAULT_INPUT_CONTROLLER_OPTIONS`：Input 能力默认值、Keyboard / External repeat delay、临时 update interval 与 `autoUpdate`。
-- `DEFAULT_SCREEN_JOYSTICK_OPTIONS`：Screen Joystick 尺寸、透明度、dead zone、右下识别区、默认圆盘位置与 Joystick repeat delay。
+- `DEFAULT_INPUT_CONTROLLER_OPTIONS`：Input 能力默认值、Keyboard / External repeat delay；
+- `DEFAULT_SCREEN_JOYSTICK_OPTIONS`：Screen Joystick 尺寸、透明度、dead zone、右下识别区、默认圆盘位置与 Joystick repeat delay；
+- `ENGINE_TICK_STEP_MS`：统一世界 Tick 步长，默认 62.5ms。
 
 ## Screen Joystick
 
@@ -94,7 +116,7 @@ Continuous Input 的第一格在下一次 `update()` 时立即尝试；第二格
 | `opacity` | 0.45 | 圆盘透明度 |
 | `initialRepeatDelayMs` | 375 ms | 连续移动前的初始 repeat delay |
 
-识别区的 CSS 右/下定位为 `safe-area-inset + activationInset*`，因此默认值 `0` 表示紧贴设备可交互的右下 safe area，而不是物理屏幕缺口区域。识别区不再因为圆盘半径额外向左上偏移。默认圆盘完整位于识别区内部，因此圆盘自身的任何位置都属于可启动区域；不会再出现“看得到摇杆，但按它右下半边没有响应”的情况。
+识别区的 CSS 右/下定位为 `safe-area-inset + activationInset*`，因此默认值 `0` 表示紧贴设备可交互的右下 safe area。默认圆盘完整位于识别区内部；圆盘自身的任何位置都属于可启动区域。
 
 ```text
 右下 activation area
@@ -132,7 +154,7 @@ screenJoystick: {
 }
 ```
 
-其中 `activationWidth / activationHeight / activationInset*` 只改变识别区；`size / defaultInset*` 只改变摇杆默认显示尺寸和位置。二者不再互相推导。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入，同样经过 Continuous Input repeat 状态机。
+其中 `activationWidth / activationHeight / activationInset*` 只改变识别区；`size / defaultInset*` 只改变摇杆默认显示尺寸和位置。`InputController.setHeldDirection()` 仍允许外部无障碍控制器或宿主自定义输入接入，同样经过世界时钟采样和 Continuous Input repeat 状态机。
 
 Screen Control 的布局、默认开关和响应式行为见 [`ui.md`](ui.md)。
 
