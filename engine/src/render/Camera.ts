@@ -9,7 +9,7 @@ interface PanReturn {
   fromX: number;
   fromY: number;
   startedTick: number;
-  durationMs: number;
+  durationTicks: number;
 }
 
 export class Camera {
@@ -81,15 +81,15 @@ export class Camera {
       fromX: this.panOffsetX,
       fromY: this.panOffsetY,
       startedTick: time.tick,
-      durationMs: Math.max(80, durationMs),
+      durationTicks: durationToTicks(durationMs, time.stepMs),
     };
   }
 
   update(time: EngineTick): void {
     const returning = this.panReturn;
     if (!returning) return;
-    const elapsedMs = Math.max(0, time.tick - returning.startedTick) * time.stepMs;
-    const raw = Math.min(1, elapsedMs / returning.durationMs);
+    const elapsedTicks = Math.max(0, time.tick - returning.startedTick);
+    const raw = Math.min(1, elapsedTicks / returning.durationTicks);
     const eased = 1 - (1 - raw) ** 3;
     const remaining = 1 - eased;
     this.panOffsetX = returning.fromX * remaining;
@@ -139,4 +139,8 @@ export class Camera {
         Math.max(visibleHeight / 2, this.centerY),
       );
   }
+}
+
+function durationToTicks(durationMs: number, stepMs: number): number {
+  return Math.max(1, Math.round(Math.max(0, durationMs) / stepMs));
 }

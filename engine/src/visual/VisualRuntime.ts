@@ -19,7 +19,7 @@ interface VisualMotion {
   from: CellPosition;
   to: CellPosition;
   startedTick: number;
-  duration: number;
+  durationTicks: number;
 }
 
 /** World 与 Renderer 之间唯一有业务感知的视觉运行时。 */
@@ -52,7 +52,7 @@ export class VisualRuntime {
     entityId: EntityId,
     from: CellPosition,
     to: CellPosition,
-    duration: number,
+    durationMs: number,
     time: EngineTick,
   ): void {
     this.motion = {
@@ -60,7 +60,7 @@ export class VisualRuntime {
       from: { ...from },
       to: { ...to },
       startedTick: time.tick,
-      duration: Math.max(1, duration),
+      durationTicks: durationToTicks(durationMs, time.stepMs),
     };
     this.setEntityState(entityId, {
       offsetX: from.x - to.x,
@@ -99,8 +99,8 @@ export class VisualRuntime {
   private advanceMotion(time: EngineTick, easing: MotionEasing): boolean {
     const motion = this.motion;
     if (!motion) return false;
-    const elapsedMs = Math.max(0, time.tick - motion.startedTick) * time.stepMs;
-    const rawProgress = Math.min(1, elapsedMs / motion.duration);
+    const elapsedTicks = Math.max(0, time.tick - motion.startedTick);
+    const rawProgress = Math.min(1, elapsedTicks / motion.durationTicks);
     const progress = applyMotionEasing(rawProgress, easing);
     this.setEntityState(motion.entityId, {
       offsetX: (motion.from.x - motion.to.x) * (1 - progress),
@@ -113,4 +113,8 @@ export class VisualRuntime {
     this.motion = null;
     return true;
   }
+}
+
+function durationToTicks(durationMs: number, stepMs: number): number {
+  return Math.max(1, Math.round(Math.max(0, durationMs) / stepMs));
 }

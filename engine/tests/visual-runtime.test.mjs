@@ -71,6 +71,19 @@ test("VisualRuntime motion interpolation follows EngineTick instead of wall cloc
   assert.equal(runtime.isAnimating, false);
 });
 
+test("motion duration is quantized to the nearest fixed world Tick", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    132,
+    { tick: 20, stepMs: 62.5 },
+  );
+  assert.equal(runtime.update({ tick: 21, stepMs: 62.5 }, "linear"), false);
+  assert.equal(runtime.update({ tick: 22, stepMs: 62.5 }, "linear"), true);
+});
+
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
   assert.ok(builtinEntityModules.length > 0);
   for (const module of builtinEntityModules) {
