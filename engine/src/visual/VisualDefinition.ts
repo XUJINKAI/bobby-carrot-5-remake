@@ -52,13 +52,6 @@ export interface VisualComposition {
   layers: readonly VisualLayer[];
 }
 
-/** Runtime / Editor 共用的视觉资源地址表。 */
-export interface VisualAssetSources {
-  atlasUrl: string;
-  imageUrls?: Readonly<Record<string, string>>;
-  sourceTileSize?: number;
-}
-
 /** 纯视觉瞬态状态，不进入 World snapshot / LevelMap。 */
 export interface EntityVisualRuntimeState {
   offsetX?: number;

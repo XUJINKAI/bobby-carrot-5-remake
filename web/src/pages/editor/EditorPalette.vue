@@ -7,12 +7,14 @@ import {
   paletteLabel,
   type PaletteItem,
 } from "@bobby/editor";
+import type { ImageManager } from "@bobby/engine";
 import { computed } from "vue";
 import { entityVisualStyle } from "../../services/assets/entityVisual.js";
 
 const props = defineProps<{
   selection: PaletteItem;
   size: number;
+  images: ImageManager;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -39,7 +41,7 @@ function glyph(item: PaletteItem): string {
 }
 
 function iconStyle(item: PaletteItem): Record<string, string> | null {
-  return entityVisualStyle({ type: item.type }, props.size);
+  return entityVisualStyle(props.images, { type: item.type }, props.size);
 }
 </script>
 

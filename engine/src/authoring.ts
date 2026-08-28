@@ -30,6 +30,12 @@ export { STACK_BANDS } from "./world/spatial/StackBand.js";
 export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
+  ImageManager,
+  type ImageManagerOptions,
+  type ImageSliceDefinition,
+  type LoadedImageSlice,
+} from "./image/ImageManager.js";
+export {
   defineEntityModule,
   type EntityAuthoringDefinition,
   type EntityBehaviorBinding,
@@ -59,7 +65,6 @@ export type {
   AtlasVisualLayer,
   EntityVisualRuntimeState,
   ImageVisualLayer,
-  VisualAssetSources,
   VisualComposition,
   VisualDefinition,
   VisualLayer,

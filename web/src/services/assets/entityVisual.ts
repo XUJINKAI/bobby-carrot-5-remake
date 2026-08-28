@@ -1,16 +1,19 @@
+import type { ImageManager } from "@bobby/engine";
 import {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
 } from "@bobby/engine/authoring";
-import { gameAssets, siteUrl } from "./gameAssets.js";
 
 export function entityVisualStyle(
+  images: ImageManager,
   entity: EntityVisualPreviewSource,
   size: number,
 ): Record<string, string> | null {
   const layer = resolveEntityVisualPreview(entity)?.layers[0];
   if (!layer) return null;
   if (layer.kind === "atlas") {
+    const url = images.source(images.atlasId);
+    if (!url) return null;
     const transforms = [];
     if (layer.rotate) transforms.push(`rotate(${layer.rotate * 90}deg)`);
     if (layer.flipX) transforms.push("scaleX(-1)");
@@ -18,7 +21,7 @@ export function entityVisualStyle(
     return {
       width: `${size}px`,
       height: `${size}px`,
-      backgroundImage: `url('${siteUrl("assets/art/hd/ts.png")}')`,
+      backgroundImage: `url('${url}')`,
       backgroundRepeat: "no-repeat",
       backgroundSize: `${16 * size}px auto`,
       backgroundPosition: `${-layer.column * size}px ${-layer.row * size}px`,
@@ -26,7 +29,7 @@ export function entityVisualStyle(
     };
   }
   if (layer.kind === "image") {
-    const url = gameAssets().imageUrls?.[layer.asset];
+    const url = images.source(layer.asset);
     if (!url) return null;
     return {
       width: `${size}px`,

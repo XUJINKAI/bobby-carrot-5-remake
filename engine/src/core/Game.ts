@@ -4,6 +4,7 @@ import { NullAudioBackend } from "../audio/AudioBackend.js";
 import { DebugRuntime } from "../debug/DebugRuntime.js";
 import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
 import { visualRegistry } from "../entities/registry.js";
+import type { ImageManager } from "../image/ImageManager.js";
 import {
   InputController,
   type InputControllerOptions,
@@ -19,7 +20,6 @@ import {
 import { PresentationClock } from "../time/PresentationClock.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
-import type { VisualAssetSources } from "../visual/VisualDefinition.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
 import type {
   PresentationTuning,
@@ -49,7 +49,7 @@ export interface GameRuntimeOptions {
 
 export interface GameOptions {
   canvas: HTMLCanvasElement;
-  assets: VisualAssetSources;
+  images: ImageManager;
   audio?: AudioBackend;
   debug?: boolean;
   profile?: Partial<ProfileCapabilities>;
@@ -98,10 +98,10 @@ export class Game {
   lastWorldEvents: WorldEvent[] = [];
 
   constructor(options: GameOptions) {
-    this.renderer = new Renderer(options.canvas, options.assets);
+    this.renderer = new Renderer(options.canvas, options.images);
     this.visual = new VisualRuntime(
       visualRegistry,
-      options.assets.sourceTileSize ?? 48,
+      options.images.sourceTileSize,
     );
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
@@ -119,6 +119,7 @@ export class Game {
         ? null
         : new GameplayHud(
             this,
+            options.images,
             options.canvas,
             hud === true ? {} : hud,
           );

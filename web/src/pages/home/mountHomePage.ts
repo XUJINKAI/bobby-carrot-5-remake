@@ -2,7 +2,6 @@ import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { lastExploreMapId } from "../../storage/exploreProgressStorage.js";
 import {
@@ -17,7 +16,7 @@ import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 export async function renderHome(
   context: PageContext,
 ): Promise<PageController> {
-  const { app, collections, audio, navigate } = context;
+  const { app, collections, audio, images, navigate } = context;
   const original = collections.find((collection) => collection.id === "original");
   if (!original || original.maps.length === 0)
     throw new Error("Home 需要 original collection");
@@ -85,14 +84,11 @@ export async function renderHome(
     level: demo.level,
     gameOptions: {
       audio,
+      images,
       profile: { superKey: true },
-      assets: gameAssets(),
     },
     runtime: {
-      hud: {
-        hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
-        goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
-      },
+      hud: true,
       input: {
         undo: false,
         debug: false,

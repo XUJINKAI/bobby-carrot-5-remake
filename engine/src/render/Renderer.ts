@@ -1,48 +1,33 @@
+import type { ImageManager } from "../image/ImageManager.js";
 import type {
   AtlasVisualLayer,
   ImageVisualLayer,
-  VisualAssetSources,
   VisualComposition,
 } from "../visual/VisualDefinition.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type { Camera } from "./Camera.js";
 import type { RenderScene } from "./RenderScene.js";
 
-export type RendererAssets = VisualAssetSources;
-
 export interface RenderViewport {
   width: number;
   height: number;
 }
 
-/** 纯绘制器：不读取 World、不解析 EntityDefinition、不选择视觉。 */
+/** 纯绘制器：不读取 World、不解析 EntityDefinition、不选择视觉、不加载图片。 */
 export class Renderer {
-  private atlas: HTMLImageElement | null = null;
-  private readonly images = new Map<string, HTMLImageElement>();
   private readonly context: CanvasRenderingContext2D | null;
   private debug = false;
   private debugSelection: CellPosition | null = null;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
-    private readonly assets: RendererAssets,
+    private readonly images: ImageManager,
   ) {
     this.context = canvas.getContext("2d");
   }
 
   async load(): Promise<void> {
-    if (this.atlas) return;
-    const [atlas, images] = await Promise.all([
-      loadImage(this.assets.atlasUrl),
-      Promise.all(
-        Object.entries(this.assets.imageUrls ?? {}).map(async ([id, url]) => [
-          id,
-          await loadImage(url),
-        ] as const),
-      ),
-    ]);
-    this.atlas = atlas;
-    for (const [id, image] of images) this.images.set(id, image);
+    await this.images.preload();
   }
 
   measureViewport(): RenderViewport {
@@ -120,7 +105,7 @@ export class Renderer {
     size: number,
     camera: Camera,
   ): void {
-    const image = this.images.get(layer.asset);
+    const image = this.images.image(layer.asset);
     if (!image) return;
     const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
     const frameHeight = Math.max(1, layer.frameHeight ?? image.height);
@@ -178,14 +163,15 @@ export class Renderer {
     size: number,
     camera: Camera,
   ): void {
-    if (!this.atlas) return;
+    const atlas = this.images.image(this.images.atlasId);
+    if (!atlas) return;
     context.save();
     context.translate(x + size / 2, y + size / 2);
     context.rotate((layer.rotate ?? 0) * Math.PI / 2);
     context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
     const source = camera.sourceTileSize;
     context.drawImage(
-      this.atlas,
+      atlas,
       layer.column * source,
       layer.row * source,
       source,
@@ -242,10 +228,4 @@ export class Renderer {
     context.strokeRect(point.x + 1, point.y + 1, size - 2, size - 2);
     context.restore();
   }
-}
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  const image = new Image();
-  image.src = url;
-  return image.decode().then(() => image);
 }

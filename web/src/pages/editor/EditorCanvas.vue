@@ -7,7 +7,7 @@ import {
   type EditorLevel,
   type PaletteItem,
 } from "@bobby/editor";
-import type { VisualAssetSources } from "@bobby/engine/authoring";
+import type { ImageManager } from "@bobby/engine/authoring";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -17,7 +17,7 @@ const props = defineProps<{
   selection: PaletteItem;
   hover: Cell | null;
   enabled: boolean;
-  visualAssets: VisualAssetSources;
+  images: ImageManager;
 }>();
 const emit = defineEmits<{
   hover: [cell: Cell | null];
@@ -60,7 +60,7 @@ watch(
 
 onMounted(async () => {
   if (!canvas.value) return;
-  renderer = new EditorCanvasRenderer(canvas.value, props.visualAssets);
+  renderer = new EditorCanvasRenderer(canvas.value, props.images);
   input = new EditorCanvasInput(canvas.value, viewport, {
     dimensions: () => ({ width: props.level.width, height: props.level.height }),
     hover: (cell) => emit("hover", cell),
