@@ -42,6 +42,30 @@ test("持续输入第一格立即执行，第二格等待 initial repeat delay",
   assert.deepEqual(attempts, ["right", "right"]);
 });
 
+test("一个 tick 内按下再松开仍保留一次单格输入", () => {
+  const repeater = new HeldDirectionRepeater();
+  const attempts = [];
+  repeater.setInput({
+    source: "keyboard",
+    direction: "up",
+    initialRepeatDelayMs: 250,
+  });
+  repeater.setInput(null);
+
+  repeater.update(62.5, (direction) => {
+    attempts.push(direction);
+    return "moved";
+  });
+  for (let i = 0; i < 8; i += 1) {
+    repeater.update(62.5, (direction) => {
+      attempts.push(direction);
+      return "moved";
+    });
+  }
+
+  assert.deepEqual(attempts, ["up"]);
+});
+
 test("持续输入换方向后重新作为新的第一格处理", () => {
   const repeater = new HeldDirectionRepeater();
   const attempts = [];
