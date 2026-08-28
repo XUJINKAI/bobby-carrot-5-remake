@@ -30,6 +30,7 @@ const pinchZoom = ref(true);
 const wheelZoom = ref(false);
 const info = ref("");
 const preview = ref<HTMLElement | null>(null);
+const codeBlock = ref<HTMLElement | null>(null);
 const previewError = ref("");
 const previewReady = ref(false);
 const apiReady = ref(false);
@@ -60,7 +61,25 @@ const options = computed(() => ({
 const embedCode = computed(() => {
   const config = {
     target: "#bc5r",
-    ...options.value,
+    lang: lang.value,
+    theme: theme.value,
+    audio: audioEnabled.value ? audioVolumePercent.value / 100 : false,
+    musicStyle: musicStyle.value,
+    input: {
+      keyboard: keyboard.value,
+      joystick: joystick.value,
+    },
+    camera: {
+      zoom: zoom.value,
+      minZoom: minZoom.value,
+      maxZoom: maxZoom.value,
+      pinchZoom: pinchZoom.value,
+      wheelZoom: wheelZoom.value,
+    },
+    ...(info.value.trim() ? { info: info.value.trim() } : {}),
+    ...(mapMode.value === "map"
+      ? { map: map.value.trim() }
+      : { mapUrl: mapUrl.value.trim() }),
   };
   return `<div id="bc5r" style="width:100%;height:520px"></div>\n<script src="${standaloneUrl()}"><\/script>\n<script>\nBC5R.mount(${JSON.stringify(config, null, 2)});\n<\/script>`;
 });
@@ -138,6 +157,16 @@ async function copyCode(): Promise<void> {
   await navigator.clipboard.writeText(embedCode.value);
 }
 
+function selectAllCode(): void {
+  const element = codeBlock.value;
+  const selection = window.getSelection();
+  if (!element || !selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 onBeforeUnmount(() => handle?.destroy());
 </script>
 
@@ -162,7 +191,7 @@ onBeforeUnmount(() => handle?.destroy());
             <button :class="{ active: mapMode === 'map' }" @click="mapMode = 'map'">地图数据</button>
             <button :class="{ active: mapMode === 'mapUrl' }" @click="mapMode = 'mapUrl'">地图链接</button>
           </div>
-          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" placeholder="BC5R1:... 或 https://bc5r.com/import/v1#..."></textarea>
+          <textarea v-if="mapMode === 'map'" v-model="map" rows="5" wrap="soft" placeholder="BC5R1:... 或 https://bc5r.com/import/v1#..."></textarea>
           <input v-else v-model="mapUrl" type="url" placeholder="https://example.com/map.txt" />
         </div>
 
@@ -241,7 +270,7 @@ onBeforeUnmount(() => handle?.destroy());
           <h2>代码</h2>
           <button @click="copyCode">复制</button>
         </div>
-        <pre><code>{{ embedCode }}</code></pre>
+        <pre ref="codeBlock" class="code-block" @click="selectAllCode"><code>{{ embedCode }}</code></pre>
       </section>
     </div>
   </main>
@@ -260,7 +289,7 @@ onBeforeUnmount(() => handle?.destroy());
 textarea, input, select { box-sizing: border-box; width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); color: var(--bc-text); }
 textarea::placeholder, input::placeholder { color: var(--muted); opacity: .75; }
 input:disabled { opacity: .55; }
-textarea { resize: vertical; font: 12px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; word-break: break-all; white-space: pre-wrap; }
+textarea { resize: vertical; font: 12px/1.5 ui-monospace, monospace; overflow-x: hidden; overflow-wrap: anywhere; word-break: break-all; white-space: pre-wrap; }
 input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .segmented { display: flex; gap: 8px; }
 .segmented button, .code-heading button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); color: var(--bc-text); cursor: pointer; }
@@ -274,7 +303,7 @@ input[type="range"] { padding: 0; accent-color: var(--bc-active); }
 .preview { width: 100%; height: 520px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #061632; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
 .error { color: #ffb4ab; }
 .code-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
-pre { overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
-pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
+.code-block { overflow-x: hidden; overflow-y: auto; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #061632; color: var(--bc-text); font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; cursor: text; }
+.code-block code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; }
 @media (max-width: 900px) { .embed-layout { grid-template-columns: 1fr; } .settings-grid { grid-template-columns: 1fr; } }
 </style>
