@@ -27,7 +27,7 @@ export function formatTileInspection(
     `Bobby: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
     `Forced: ${state.forced?.kind ?? "none"} / ${state.forced?.direction ?? "none"}`,
     `Mower: ${state.ridingMower}`,
-    `Objectives: ${state.objective.remaining}/${state.objective.total}`,
+    `Win: ${JSON.stringify(game.winState)}`,
     `Moves: ${state.moves}`,
     `Inventory: gas=${state.inventory.gas} kite=${state.inventory.kite} shovel=${state.inventory.shovel} beans=${state.inventory.beans}`,
   );

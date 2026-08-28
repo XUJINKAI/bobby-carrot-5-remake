@@ -103,12 +103,23 @@ export async function renderHome(
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
     const state = session.game.state;
-    view.demoStatus = state.status === "won"
-      ? "Demo 完成，可以进入冒险模式。"
-      : state.status === "dead"
-        ? "Bobby 遇到了危险，可以重新开始。"
-        : `方向键 / WASD 移动 · ${state.moves} 步 · 剩余目标 ${state.objective.remaining}`;
-    view.demoResult = state.status === "won" ? "complete" : state.status === "dead" ? "death" : null;
+    const win = session.game.winState;
+    const remaining =
+      win?.type === "collect-all" || win?.type === "fill-all"
+        ? win.remaining
+        : null;
+    view.demoStatus =
+      state.status === "won"
+        ? "Demo 完成，可以进入冒险模式。"
+        : state.status === "dead"
+          ? "Bobby 遇到了危险，可以重新开始。"
+          : `方向键 / WASD 移动 · ${state.moves} 步${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
+    view.demoResult =
+      state.status === "won"
+        ? "complete"
+        : state.status === "dead"
+          ? "death"
+          : null;
     view.deathReason = state.deathReason ?? "Bobby 没能继续前进。";
   };
   session.game.on("change", updateDemo);
