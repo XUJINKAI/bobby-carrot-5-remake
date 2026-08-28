@@ -8,6 +8,7 @@ import { HeldDirectionRepeater } from "../dist/input/HeldDirectionRepeater.js";
 import {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   directionForJoystickVector,
+  resolveScreenJoystickLayout,
 } from "../dist/input/ScreenJoystick.js";
 
 test("单指或鼠标左键的小范围拖动不触发移动", () => {
@@ -116,6 +117,45 @@ test("默认持续输入手感：键盘 250ms，屏幕摇杆 375ms", () => {
     DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs >
       DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
   );
+});
+
+test("屏幕摇杆默认识别区紧贴右下角，默认圆盘完整落在识别区内", () => {
+  const layout = resolveScreenJoystickLayout();
+  const half = layout.size / 2;
+
+  assert.equal(layout.size, 128);
+  assert.equal(layout.activationWidth, 180);
+  assert.equal(layout.activationHeight, 180);
+  assert.equal(layout.activationInsetRight, 0);
+  assert.equal(layout.activationInsetBottom, 0);
+  assert.equal(layout.defaultInsetRight, 28);
+  assert.equal(layout.defaultInsetBottom, 28);
+  assert.ok(layout.defaultBaseX - half >= 0);
+  assert.ok(layout.defaultBaseY - half >= 0);
+  assert.ok(layout.defaultBaseX + half <= layout.activationWidth);
+  assert.ok(layout.defaultBaseY + half <= layout.activationHeight);
+});
+
+test("屏幕摇杆识别区和默认位置可以独立配置", () => {
+  const layout = resolveScreenJoystickLayout({
+    size: 144,
+    activationWidth: 220,
+    activationHeight: 190,
+    activationInsetRight: 6,
+    activationInsetBottom: 10,
+    defaultInsetRight: 36,
+    defaultInsetBottom: 32,
+  });
+
+  assert.equal(layout.size, 144);
+  assert.equal(layout.activationWidth, 220);
+  assert.equal(layout.activationHeight, 190);
+  assert.equal(layout.activationInsetRight, 6);
+  assert.equal(layout.activationInsetBottom, 10);
+  assert.equal(layout.defaultInsetRight, 36);
+  assert.equal(layout.defaultInsetBottom, 32);
+  assert.equal(layout.defaultBaseX, 112);
+  assert.equal(layout.defaultBaseY, 86);
 });
 
 test("屏幕摇杆 dead zone 不产生移动方向", () => {
