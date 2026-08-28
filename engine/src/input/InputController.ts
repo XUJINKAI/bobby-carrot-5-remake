@@ -1,6 +1,11 @@
 import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
 import {
+  HeldDirectionRepeater,
+  type HeldDirectionInput,
+} from "./HeldDirectionRepeater.js";
+import {
+  DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   ScreenJoystick,
   type ScreenJoystickOptions,
 } from "./ScreenJoystick.js";
@@ -11,6 +16,8 @@ interface PointerState {
   startX: number;
   startY: number;
   moved: boolean;
+  discreteMoveIssued: boolean;
+  panPointer: boolean;
 }
 
 export interface InputControllerOptions {
@@ -24,6 +31,10 @@ export interface InputControllerOptions {
   zoom?: boolean;
   debug?: boolean;
   screenJoystick?: boolean | ScreenJoystickOptions;
+  keyboardRepeatDelayMs?: number;
+  externalRepeatDelayMs?: number;
+  updateIntervalMs?: number;
+  autoUpdate?: boolean;
 }
 
 interface InputCapabilities {
@@ -38,6 +49,22 @@ interface InputCapabilities {
   debug: boolean;
 }
 
+export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
+  keyboard: true,
+  pointer: true,
+  movement: true,
+  undo: true,
+  redo: true,
+  restart: true,
+  pan: true,
+  zoom: true,
+  debug: true,
+  keyboardRepeatDelayMs: 250,
+  externalRepeatDelayMs: 250,
+  updateIntervalMs: 1000 / 16,
+  autoUpdate: true,
+} as const;
+
 const KEY_DIRECTION: Record<string, Direction> = {
   arrowup: "up",
   w: "up",
@@ -49,12 +76,30 @@ const KEY_DIRECTION: Record<string, Direction> = {
   d: "right",
 };
 
+const DISCRETE_DRAG_THRESHOLD = 24;
+
+export function directionForDiscreteDrag(
+  dx: number,
+  dy: number,
+  threshold = DISCRETE_DRAG_THRESHOLD,
+): Direction | null {
+  if (Math.hypot(dx, dy) < threshold) return null;
+  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
+  return dy < 0 ? "up" : "down";
+}
+
 export class InputController {
   private readonly canvas: HTMLCanvasElement;
   private readonly capabilities: InputCapabilities;
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
   private readonly screenJoystick: ScreenJoystick | null;
+  private readonly repeater = new HeldDirectionRepeater();
+  private readonly keyboardRepeatDelayMs: number;
+  private readonly joystickRepeatDelayMs: number;
+  private readonly externalRepeatDelayMs: number;
+  private readonly updateIntervalMs: number;
+  private updateTimer: number | null = null;
   private externalDirection: Direction | null = null;
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
@@ -68,16 +113,41 @@ export class InputController {
   ) {
     this.canvas = game.canvas;
     this.capabilities = {
-      keyboard: options.keyboard ?? true,
-      pointer: options.pointer ?? true,
-      movement: options.movement ?? true,
-      undo: options.undo ?? true,
-      redo: options.redo ?? options.undo ?? true,
-      restart: options.restart ?? true,
-      pan: options.pan ?? true,
-      zoom: options.zoom ?? true,
-      debug: options.debug ?? true,
+      keyboard: options.keyboard ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboard,
+      pointer: options.pointer ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pointer,
+      movement: options.movement ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.movement,
+      undo: options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
+      redo:
+        options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.redo,
+      restart: options.restart ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.restart,
+      pan: options.pan ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pan,
+      zoom: options.zoom ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.zoom,
+      debug: options.debug ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.debug,
     };
+    this.keyboardRepeatDelayMs = Math.max(
+      0,
+      options.keyboardRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
+    );
+    this.externalRepeatDelayMs = Math.max(
+      0,
+      options.externalRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs,
+    );
+    this.updateIntervalMs = Math.max(
+      1,
+      options.updateIntervalMs ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.updateIntervalMs,
+    );
+
+    const joystick = options.screenJoystick;
+    const joystickOptions =
+      joystick && joystick !== true ? joystick : undefined;
+    this.joystickRepeatDelayMs = Math.max(
+      0,
+      joystickOptions?.initialRepeatDelayMs ??
+        DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs,
+    );
+
     window.addEventListener("keydown", this.onKeyDown, { passive: false });
     window.addEventListener("keyup", this.onKeyUp, { passive: false });
     window.addEventListener("blur", this.onBlur);
@@ -87,7 +157,6 @@ export class InputController {
     this.canvas.addEventListener("pointercancel", this.onPointerUp);
     this.canvas.addEventListener("wheel", this.onWheel, { passive: false });
     this.canvas.addEventListener("auxclick", this.onAuxClick);
-    const joystick = options.screenJoystick;
     this.screenJoystick =
       joystick === undefined || joystick === false
         ? null
@@ -96,6 +165,30 @@ export class InputController {
             joystick === true ? {} : joystick,
             this.setJoystickDirection,
           );
+
+    if (options.autoUpdate ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.autoUpdate) {
+      this.updateTimer = window.setInterval(
+        () => this.update(this.updateIntervalMs),
+        this.updateIntervalMs,
+      );
+    }
+  }
+
+  /**
+   * 推进 Input 状态。当前由临时 16Hz timer 调用；接入 Engine 世界时钟后，
+   * 将 autoUpdate 关闭并由世界时钟调用本方法即可。
+   */
+  update(deltaMs = this.updateIntervalMs): void {
+    if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
+      this.repeater.reset();
+      return;
+    }
+
+    this.repeater.update(deltaMs, (direction) => {
+      const result = this.game.move(direction);
+      if (!result) return "busy";
+      return result.moved ? "moved" : "blocked";
+    });
   }
 
   setEnabled(value: boolean): void {
@@ -111,11 +204,11 @@ export class InputController {
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
-      this.applyHeldDirection();
+      this.syncContinuousInput();
       return;
     }
     this.externalDirection = direction;
-    this.applyHeldDirection();
+    this.syncContinuousInput();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -126,6 +219,10 @@ export class InputController {
 
   destroy(): void {
     this.clearHeldMovement();
+    if (this.updateTimer !== null) {
+      window.clearInterval(this.updateTimer);
+      this.updateTimer = null;
+    }
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onBlur);
@@ -145,9 +242,10 @@ export class InputController {
     const direction = KEY_DIRECTION[key];
     if (direction && this.capabilities.movement) {
       event.preventDefault();
-      if (!event.repeat && !this.heldMovementKeys.includes(key))
+      if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
-      this.applyHeldDirection();
+        this.syncContinuousInput();
+      }
       return;
     }
     if (event.repeat) return;
@@ -173,8 +271,10 @@ export class InputController {
     if (!KEY_DIRECTION[key] || !this.capabilities.movement) return;
     event.preventDefault();
     const index = this.heldMovementKeys.lastIndexOf(key);
-    if (index >= 0) this.heldMovementKeys.splice(index, 1);
-    this.applyHeldDirection();
+    if (index >= 0) {
+      this.heldMovementKeys.splice(index, 1);
+      this.syncContinuousInput();
+    }
   };
 
   private readonly onBlur = (): void => {
@@ -186,23 +286,44 @@ export class InputController {
     this.heldMovementKeys.length = 0;
     this.externalDirection = null;
     this.joystickDirection = null;
-    this.game.setHeldDirection(null);
-  }
-
-  private applyHeldDirection(): void {
-    this.game.setHeldDirection(
-      this.joystickDirection ??
-        this.externalDirection ??
-        this.currentKeyboardDirection(),
-    );
+    this.repeater.reset();
   }
 
   private readonly setJoystickDirection = (
     direction: Direction | null,
   ): void => {
     this.joystickDirection = direction;
-    this.applyHeldDirection();
+    this.syncContinuousInput();
   };
+
+  private syncContinuousInput(): void {
+    this.repeater.setInput(this.currentContinuousInput());
+  }
+
+  private currentContinuousInput(): HeldDirectionInput | null {
+    if (this.joystickDirection) {
+      return {
+        source: "joystick",
+        direction: this.joystickDirection,
+        initialRepeatDelayMs: this.joystickRepeatDelayMs,
+      };
+    }
+    if (this.externalDirection) {
+      return {
+        source: "external",
+        direction: this.externalDirection,
+        initialRepeatDelayMs: this.externalRepeatDelayMs,
+      };
+    }
+    const keyboardDirection = this.currentKeyboardDirection();
+    return keyboardDirection
+      ? {
+          source: "keyboard",
+          direction: keyboardDirection,
+          initialRepeatDelayMs: this.keyboardRepeatDelayMs,
+        }
+      : null;
+  }
 
   private currentKeyboardDirection(): Direction | null {
     const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
@@ -213,7 +334,9 @@ export class InputController {
     if (
       !this.enabled ||
       !this.capabilities.pointer ||
-      (!this.capabilities.pan && !this.capabilities.zoom)
+      (!this.capabilities.movement &&
+        !this.capabilities.pan &&
+        !this.capabilities.zoom)
     )
       return;
     if (
@@ -222,6 +345,11 @@ export class InputController {
       event.button !== 1
     )
       return;
+
+    const panPointer = event.pointerType === "mouse" && event.button === 1;
+    const discreteMovePointer = !panPointer && this.capabilities.movement;
+    if (!panPointer && !discreteMovePointer && !this.capabilities.zoom) return;
+
     event.preventDefault();
     this.canvas.setPointerCapture(event.pointerId);
     this.pointers.set(event.pointerId, {
@@ -230,10 +358,15 @@ export class InputController {
       startX: event.clientX,
       startY: event.clientY,
       moved: false,
+      discreteMoveIssued: false,
+      panPointer,
     });
     if (this.capabilities.zoom && this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
+      for (const pointer of this.pointers.values()) {
+        pointer.discreteMoveIssued = true;
+      }
     }
   };
 
@@ -258,12 +391,33 @@ export class InputController {
       );
       return;
     }
+
     if (
+      pointer.panPointer &&
       this.capabilities.pan &&
       this.pointers.size === 1 &&
       (dx !== 0 || dy !== 0)
-    )
+    ) {
       this.game.panByScreen(dx, dy);
+      return;
+    }
+
+    if (
+      !pointer.panPointer &&
+      !pointer.discreteMoveIssued &&
+      this.capabilities.movement &&
+      this.pointers.size === 1
+    ) {
+      const direction = directionForDiscreteDrag(
+        pointer.x - pointer.startX,
+        pointer.y - pointer.startY,
+      );
+      if (direction) {
+        pointer.discreteMoveIssued = true;
+        pointer.moved = true;
+        this.game.move(direction);
+      }
+    }
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
@@ -278,6 +432,7 @@ export class InputController {
       remaining.startX = remaining.x;
       remaining.startY = remaining.y;
       remaining.moved = false;
+      remaining.discreteMoveIssued = true;
     }
   };
 
