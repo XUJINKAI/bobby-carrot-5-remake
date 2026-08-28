@@ -14,7 +14,7 @@ test("Gameplay HUD keeps chip nodes mounted across gameplay state changes", () =
   assert.match(source, /chip\.root\.hidden = !visible/);
 });
 
-test("Gameplay HUD stays scoped to its own overlay area and keeps egg-nest semantics", () => {
+test("Gameplay HUD derives carrot and egg counters from semantic win progress", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayHud.ts", import.meta.url),
     "utf8",
@@ -23,7 +23,13 @@ test("Gameplay HUD stays scoped to its own overlay area and keeps egg-nest seman
   assert.match(source, /top:\s*"12px"/);
   assert.match(source, /right:\s*"12px"/);
   assert.match(source, /this\.sprite\("egg"\)/);
-  assert.match(source, /state\.objective\.mode === "nest"/);
+  assert.match(source, /const winState = this\.game\.winState/);
+  assert.match(source, /item\.type === "collect-all"/);
+  assert.match(source, /item\.target === EntityTypeId\.CARROT/);
+  assert.match(source, /item\.type === "fill-all"/);
+  assert.match(source, /item\.target === EGG_NEST_TARGET/);
+  assert.match(source, /item\.filler === EGG_FILLER/);
+  assert.doesNotMatch(source, /push-goal|pushable/);
 });
 
 test("Item HUD only shows owned or collected items and reuses the Bonus Coin Entity visual", () => {

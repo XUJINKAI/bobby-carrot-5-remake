@@ -1,6 +1,7 @@
 import { EntityTypeId } from "@bobby/model";
 import type { Game } from "../core/Game.js";
 import { resolveEntityVisualPreview } from "../visual/preview.js";
+import type { WinConditionState } from "../world/WorldTypes.js";
 import { resolveGameplayMount } from "./gameplayMount.js";
 
 export interface GameplayHudOptions {
@@ -17,6 +18,9 @@ interface HudChip {
   root: HTMLSpanElement;
   value: HTMLElement | null;
 }
+
+const EGG_NEST_TARGET = "egg-nest";
+const EGG_FILLER = "egg";
 
 /** Engine 基础 HUD：只呈现公开 gameplay state，不读取 World。 */
 export class GameplayHud {
@@ -134,8 +138,9 @@ export class GameplayHud {
   render(): void {
     if (!this.game.hasLevel || this.root.hidden) return;
     const state = this.game.state;
+    const winState = this.game.winState;
     const signature = JSON.stringify({
-      objective: state.objective,
+      winState,
       profile: state.profile,
       inventory: state.inventory,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
@@ -158,16 +163,28 @@ export class GameplayHud {
       this.bonusCoinTotal - state.bonusCoinsInLevel,
     );
 
+    const carrotRemaining = remainingForCondition(
+      winState,
+      (item) =>
+        item.type === "collect-all" && item.target === EntityTypeId.CARROT,
+    );
+    const eggRemaining = remainingForCondition(
+      winState,
+      (item) =>
+        item.type === "fill-all" &&
+        item.target === EGG_NEST_TARGET &&
+        item.filler === EGG_FILLER,
+    );
     const showObjective = this.options.objective !== false;
     this.setChip(
       this.objectiveCarrot,
-      showObjective && state.objective.mode === "carrot",
-      state.objective.remaining,
+      showObjective && carrotRemaining !== null,
+      carrotRemaining ?? undefined,
     );
     this.setChip(
       this.objectiveEgg,
-      showObjective && state.objective.mode === "nest",
-      state.objective.remaining,
+      showObjective && eggRemaining !== null,
+      eggRemaining ?? undefined,
     );
 
     const showInventory = this.options.inventory !== false;
@@ -324,4 +341,22 @@ export class GameplayHud {
     icon.style.fontSize = text.length > 2 ? "9px" : "16px";
     return icon;
   }
+}
+
+function remainingForCondition(
+  state: WinConditionState | null,
+  predicate: (state: WinConditionState) => boolean,
+): number | null {
+  if (!state) return null;
+  if (state.type === "all" || state.type === "any") {
+    for (const child of state.conditions) {
+      const remaining = remainingForCondition(child, predicate);
+      if (remaining !== null) return remaining;
+    }
+    return null;
+  }
+  if (!predicate(state)) return null;
+  if (state.type === "collect-all" || state.type === "fill-all")
+    return state.remaining;
+  return null;
 }
