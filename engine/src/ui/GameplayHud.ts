@@ -1,10 +1,13 @@
+import { EntityTypeId } from "@bobby/model";
 import type { Game } from "../core/Game.js";
+import { resolveEntityVisualPreview } from "../visual/preview.js";
 import { resolveGameplayMount } from "./gameplayMount.js";
 
 export interface GameplayHudOptions {
   enabled?: boolean;
   root?: HTMLElement;
   hudAtlasUrl?: string;
+  entityAtlasUrl?: string;
   goldenCarrotUrl?: string;
   objective?: boolean;
   inventory?: boolean;
@@ -20,7 +23,7 @@ export class GameplayHud {
   private readonly game: Game;
   private readonly root: HTMLDivElement;
   private readonly objectiveCarrot: HudChip;
-  private readonly objectiveNest: HudChip;
+  private readonly objectiveEgg: HudChip;
   private readonly keyChip: HudChip;
   private readonly speedShoesChip: HudChip;
   private readonly gasChip: HudChip;
@@ -30,8 +33,10 @@ export class GameplayHud {
   private readonly goldenCarrotChip: HudChip;
   private readonly bonusCoinChip: HudChip;
   private readonly options: GameplayHudOptions;
-  private readonly unsubscribe: () => void;
+  private readonly unsubscribes: (() => void)[];
   private lastSignature = "";
+  private goldenCarrotTotal = 0;
+  private bonusCoinTotal = 0;
 
   constructor(
     game: Game,
@@ -46,24 +51,17 @@ export class GameplayHud {
     this.root.setAttribute("aria-label", "游戏状态");
     Object.assign(this.root.style, {
       position: "absolute",
-      inset: "0",
-      zIndex: "5",
-      pointerEvents: "none",
-      color: "#eef5ef",
-      fontFamily: "system-ui, sans-serif",
-      fontSize: "12px",
-    });
-
-    const cluster = document.createElement("div");
-    cluster.className = "engine-gameplay-hud-cluster";
-    Object.assign(cluster.style, {
-      position: "absolute",
       top: "12px",
       right: "12px",
+      zIndex: "5",
       display: "grid",
       justifyItems: "end",
       gap: "6px",
       maxWidth: "calc(100% - 24px)",
+      pointerEvents: "none",
+      color: "#eef5ef",
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "12px",
     });
 
     const objective = document.createElement("div");
@@ -73,8 +71,8 @@ export class GameplayHud {
       this.sprite("carrot"),
       true,
     );
-    this.objectiveNest = this.chip("目标巢穴", this.sprite("egg"), true);
-    objective.append(this.objectiveCarrot.root, this.objectiveNest.root);
+    this.objectiveEgg = this.chip("目标彩蛋", this.sprite("egg"), true);
+    objective.append(this.objectiveCarrot.root, this.objectiveEgg.root);
 
     const items = document.createElement("div");
     items.className = "engine-gameplay-hud-items";
@@ -93,13 +91,13 @@ export class GameplayHud {
     this.kiteChip = this.chip("风筝", this.sprite("kite"));
     this.beanChip = this.chip("魔豆", this.sprite("bean"), true);
     this.goldenCarrotChip = this.chip(
-      "本关 Golden Carrot",
+      "本关已收集 Golden Carrot",
       this.goldenCarrotIcon(),
       true,
     );
     this.bonusCoinChip = this.chip(
-      "本关 Bonus Coin",
-      this.textIcon("BONUS"),
+      "本关已收集 Bonus Coin",
+      this.entityVisualIcon(EntityTypeId.BONUS_COIN),
       true,
     );
     items.append(
@@ -113,11 +111,18 @@ export class GameplayHud {
       this.bonusCoinChip.root,
     );
 
-    cluster.append(objective, items);
-    this.root.append(cluster);
+    this.root.append(objective, items);
     mount.append(this.root);
     this.root.hidden = options.enabled === false;
-    this.unsubscribe = game.on("change", () => this.render());
+    this.unsubscribes = [
+      game.on("change", () => this.render()),
+      game.on("level-loaded", () => {
+        this.goldenCarrotTotal = 0;
+        this.bonusCoinTotal = 0;
+        this.lastSignature = "";
+        this.render();
+      }),
+    ];
     this.render();
   }
 
@@ -139,6 +144,20 @@ export class GameplayHud {
     if (signature === this.lastSignature) return;
     this.lastSignature = signature;
 
+    this.goldenCarrotTotal = Math.max(
+      this.goldenCarrotTotal,
+      state.goldenCarrotsInLevel,
+    );
+    this.bonusCoinTotal = Math.max(this.bonusCoinTotal, state.bonusCoinsInLevel);
+    const goldenCarrotsCollected = Math.max(
+      0,
+      this.goldenCarrotTotal - state.goldenCarrotsInLevel,
+    );
+    const bonusCoinsCollected = Math.max(
+      0,
+      this.bonusCoinTotal - state.bonusCoinsInLevel,
+    );
+
     const showObjective = this.options.objective !== false;
     this.setChip(
       this.objectiveCarrot,
@@ -146,8 +165,8 @@ export class GameplayHud {
       state.objective.remaining,
     );
     this.setChip(
-      this.objectiveNest,
-      showObjective && state.objective.mode !== "carrot",
+      this.objectiveEgg,
+      showObjective && state.objective.mode === "nest",
       state.objective.remaining,
     );
 
@@ -170,18 +189,18 @@ export class GameplayHud {
     );
     this.setChip(
       this.goldenCarrotChip,
-      showInventory && state.goldenCarrotsInLevel > 0,
-      state.goldenCarrotsInLevel,
+      showInventory && goldenCarrotsCollected > 0,
+      goldenCarrotsCollected,
     );
     this.setChip(
       this.bonusCoinChip,
-      showInventory && state.bonusCoinsInLevel > 0,
-      state.bonusCoinsInLevel,
+      showInventory && bonusCoinsCollected > 0,
+      bonusCoinsCollected,
     );
   }
 
   destroy(): void {
-    this.unsubscribe();
+    for (const unsubscribe of this.unsubscribes) unsubscribe();
     this.root.remove();
   }
 
@@ -254,6 +273,39 @@ export class GameplayHud {
       backgroundPosition: `${cell.x}px 0`,
     });
     return icon;
+  }
+
+  private entityVisualIcon(type: string): HTMLElement {
+    const composition = resolveEntityVisualPreview({ type });
+    const layer = composition?.layers.find((item) => item.kind === "atlas");
+    if (!layer || layer.kind !== "atlas" || !this.options.entityAtlasUrl)
+      return this.textIcon("●");
+
+    const tileSize = 48;
+    const canvas = document.createElement("canvas");
+    canvas.width = tileSize;
+    canvas.height = tileSize;
+    canvas.style.width = "28px";
+    canvas.style.height = "28px";
+    const image = new Image();
+    image.decoding = "async";
+    image.addEventListener("load", () => {
+      canvas
+        .getContext("2d")
+        ?.drawImage(
+          image,
+          layer.column * tileSize,
+          layer.row * tileSize,
+          tileSize,
+          tileSize,
+          0,
+          0,
+          tileSize,
+          tileSize,
+        );
+    });
+    image.src = this.options.entityAtlasUrl;
+    return canvas;
   }
 
   private goldenCarrotIcon(): HTMLElement {
