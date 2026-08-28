@@ -129,7 +129,7 @@ phase = floor(nowMs / 248ms) % cycleLength
 
 `phase == 0` 时继续绘制 `ts.png` 的静态格；其余 phase 把 `ta.png` 当作 4×15 的规则网格 sprite sheet，并按 `baseIndex + phase - 1` 取帧。Renderer 的 image layer 因此支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
 
-这些环境动画不创建 RuntimeAction、不写 Entity state，也不读取 WorldTick。Debug Pause 使 WorldClock 停止后，它们仍随 PresentationClock 正常播放，这正是混合时钟的预期语义。
+这些环境动画不创建 RuntimeAction、不写 Entity state，也不读取 WorldTick。WorldClock 停止后，只要 PresentationClock 仍运行，它们就继续播放。
 
 原版 Bonus Coin 还存在随机闪烁门控；当前已恢复确认的基础相位动画，随机门控仍作为后续 fidelity 项处理。
 
@@ -166,13 +166,16 @@ Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 Prese
 
 原版动态实体更新时 Bobby 与荷叶的像素坐标使用相同增量。Web 版应让 World / RuntimeAction 决定荷叶和 Bobby 的逻辑格变化，而 Presentation 为两者建立共享时长/轨迹的视觉过渡；不能让两者以互不相关的 Tween 漂移。
 
-## 10. Pause 语义
+## 10. Pause 与逐帧调试语义
 
-Gameplay pause 与视觉 freeze 是不同概念：
+World 与 Presentation 可以独立暂停：
 
 ```text
-WorldClock paused       -> gameplay / RuntimeAction / input 停止
-Presentation running    -> 环境与已经开始的纯视觉过渡可以继续
+World paused, Present running  -> gameplay 停止，环境与视觉过渡继续
+World running, Present paused  -> gameplay 可推进，视觉冻结在当前表现帧
+World paused, Present paused   -> 适合逐帧检查某个 gameplay 触发出的视觉过程
 ```
 
-Debug 的 `+1 Tick` 只推进 World，不逐帧推进 Presentation。若后续需要研究某个 sprite 的具体动画帧，再增加独立 Presentation 调试控制。
+Debug 提供独立的 World / Present pause-resume，以及 Presentation `◀ 1 Frame` / `1 Frame ▶`。VisualRuntime 与 Camera 会保留最近一次过渡参数，因此已经刚刚完成的 tween 仍可向后逐帧检查。
+
+Presentation 倒帧不回滚 World 或 RuntimeAction gameplay state。若需要倒退 Action 自身的 gameplay phase，应使用 World snapshot / rewind 机制，而不是让动画时钟承担逻辑回溯。
