@@ -9,6 +9,9 @@ export interface DebugRuntimeHost {
   pause(): void;
   resume(): void;
   step(count: number): void;
+  pausePresentation(): void;
+  resumePresentation(): void;
+  stepPresentation(frames: number): void;
   close(): void;
   selectionChanged(cell: CellPosition | null): void;
   requestRender(): void;
@@ -19,7 +22,7 @@ interface PointerStart {
   y: number;
 }
 
-/** Debug Sidebar、Cell selection 与 Clock controls 的 Engine 内部协调器。 */
+/** Debug Sidebar、Cell selection 与两套 Clock controls 的 Engine 内部协调器。 */
 export class DebugRuntime {
   private sidebar: DebugSidebar | null = null;
   private readonly pointerStarts = new Map<number, PointerStart>();
@@ -63,9 +66,11 @@ export class DebugRuntime {
   private ensureSidebar(): DebugSidebar {
     if (!this.sidebar) {
       this.sidebar = new DebugSidebar(this.canvas, {
-        pause: () => this.host.pause(),
-        resume: () => this.host.resume(),
-        step: (count) => this.host.step(count),
+        pauseWorld: () => this.host.pause(),
+        resumeWorld: () => this.host.resume(),
+        pausePresentation: () => this.host.pausePresentation(),
+        resumePresentation: () => this.host.resumePresentation(),
+        stepPresentation: (frames) => this.host.stepPresentation(frames),
         close: () => this.host.close(),
         selectEntity: (entityId) => this.selectEntity(entityId),
       });

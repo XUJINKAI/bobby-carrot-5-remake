@@ -6,9 +6,11 @@ import type {
 } from "./DebugSnapshot.js";
 
 export interface DebugSidebarActions {
-  pause(): void;
-  resume(): void;
-  step(count: number): void;
+  pauseWorld(): void;
+  resumeWorld(): void;
+  pausePresentation(): void;
+  resumePresentation(): void;
+  stepPresentation(frames: number): void;
   close(): void;
   selectEntity(entityId: EntityId): void;
 }
@@ -22,18 +24,17 @@ export class DebugSidebar {
   private readonly selectionValues: ValueMap = new Map();
   private readonly entityValues: ValueMap = new Map();
   private readonly entityJson = new Map<string, HTMLPreElement>();
-  private readonly forcedDetails: HTMLDetailsElement;
-  private readonly forcedPre: HTMLPreElement;
-  private readonly selectionSection: HTMLElement;
   private readonly selectionMessage: HTMLDivElement;
   private readonly selectionData: HTMLDivElement;
   private readonly selectionStack: HTMLDivElement;
   private readonly entitySection: HTMLElement;
-  private readonly pauseResumeButton: HTMLButtonElement;
-  private readonly step1Button: HTMLButtonElement;
-  private readonly step4Button: HTMLButtonElement;
+  private readonly worldPauseResumeButton: HTMLButtonElement;
+  private readonly presentationPauseResumeButton: HTMLButtonElement;
+  private readonly frameBackButton: HTMLButtonElement;
+  private readonly frameForwardButton: HTMLButtonElement;
   private selectionStackSignature = "";
   private worldPaused = false;
+  private presentationPaused = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -82,45 +83,40 @@ export class DebugSidebar {
 
     const runtimeBody = document.createElement("div");
     for (const [key, label] of [
-      ["worldTick", "World Tick"],
-      ["worldHz", "World Hz"],
-      ["worldStep", "World Step"],
-      ["worldClock", "World Clock"],
-      ["presentationFrame", "Present Frame"],
-      ["presentationHz", "Present Hz"],
-      ["status", "Status"],
-      ["moves", "Moves"],
-      ["player", "Player"],
-      ["facing", "Facing"],
+      ["world", "World"],
+      ["presentation", "Present"],
       ["actions", "Actions"],
-      ["inputBlocked", "Input Blocked"],
-      ["cameraTarget", "Camera Target"],
-      ["animating", "Animating"],
+      ["cameraTarget", "Camera"],
+      ["animating", "Motion"],
     ] as const)
       runtimeBody.append(this.valueRow(label, key, this.runtimeValues));
-    const forced = this.jsonDetails("Forced");
-    this.forcedDetails = forced.details;
-    this.forcedPre = forced.pre;
-    runtimeBody.append(this.forcedDetails);
 
     const controls = document.createElement("div");
     Object.assign(controls.style, {
-      display: "flex",
-      flexWrap: "wrap",
+      display: "grid",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
       gap: "6px",
       marginTop: "8px",
     });
-    this.pauseResumeButton = this.button("⏸ Pause", () => {
-      if (this.worldPaused) this.actions.resume();
-      else this.actions.pause();
+    this.worldPauseResumeButton = this.button("⏸ World", () => {
+      if (this.worldPaused) this.actions.resumeWorld();
+      else this.actions.pauseWorld();
     });
-    this.pauseResumeButton.setAttribute("aria-label", "Pause World Clock");
-    this.step1Button = this.button("+1 Tick", () => this.actions.step(1));
-    this.step4Button = this.button("+4 Ticks", () => this.actions.step(4));
+    this.presentationPauseResumeButton = this.button("⏸ Present", () => {
+      if (this.presentationPaused) this.actions.resumePresentation();
+      else this.actions.pausePresentation();
+    });
+    this.frameBackButton = this.button("◀ 1 Frame", () =>
+      this.actions.stepPresentation(-1),
+    );
+    this.frameForwardButton = this.button("1 Frame ▶", () =>
+      this.actions.stepPresentation(1),
+    );
     controls.append(
-      this.pauseResumeButton,
-      this.step1Button,
-      this.step4Button,
+      this.worldPauseResumeButton,
+      this.presentationPauseResumeButton,
+      this.frameBackButton,
+      this.frameForwardButton,
     );
     runtimeBody.append(controls);
 
@@ -140,7 +136,6 @@ export class DebugSidebar {
     });
     this.selectionData.append(this.selectionStack);
     selectionBody.append(this.selectionMessage, this.selectionData);
-    this.selectionSection = this.section("Selection", selectionBody);
 
     const entityBody = document.createElement("div");
     for (const [key, label] of [
@@ -170,7 +165,7 @@ export class DebugSidebar {
 
     content.append(
       this.section("Runtime", runtimeBody),
-      this.selectionSection,
+      this.section("Selection", selectionBody),
       this.entitySection,
     );
     this.root.append(header, content);
@@ -195,49 +190,57 @@ export class DebugSidebar {
   private updateRuntime(snapshot: DebugSnapshot): void {
     const runtime = snapshot.runtime;
     this.worldPaused = runtime.worldPaused;
-    this.setValue(this.runtimeValues, "worldTick", String(runtime.worldTickCount));
-    this.setValue(this.runtimeValues, "worldHz", String(runtime.worldHz));
-    this.setValue(this.runtimeValues, "worldStep", `${runtime.worldStepMs} ms`);
+    this.presentationPaused = runtime.presentationPaused;
     this.setValue(
       this.runtimeValues,
-      "worldClock",
-      runtime.worldPaused ? "paused" : "running",
+      "world",
+      `${runtime.worldHz}Hz (${formatMs(runtime.worldStepMs)}ms), ${runtime.worldTickCount} ticks`,
     );
     this.setValue(
       this.runtimeValues,
-      "presentationFrame",
-      String(runtime.presentationFrame),
+      "presentation",
+      `${runtime.presentationHz}Hz (${formatMs(runtime.presentationStepMs)}ms), ${runtime.presentationFrame} frames`,
     );
-    this.setValue(this.runtimeValues, "presentationHz", String(runtime.presentationHz));
-    this.setValue(this.runtimeValues, "status", runtime.status);
-    this.setValue(this.runtimeValues, "moves", String(runtime.moves));
     this.setValue(
       this.runtimeValues,
-      "player",
-      runtime.player ? `${runtime.player.x}, ${runtime.player.y}` : "-",
+      "actions",
+      `${runtime.actionCount} active · input ${runtime.inputBlocked ? "blocked" : "ready"}`,
     );
-    this.setValue(this.runtimeValues, "facing", runtime.facing ?? "-");
-    this.setValue(this.runtimeValues, "actions", String(runtime.actionCount));
-    this.setValue(this.runtimeValues, "inputBlocked", String(runtime.inputBlocked));
     this.setValue(
       this.runtimeValues,
       "cameraTarget",
-      runtime.cameraTarget === null ? "Bobby" : `#${runtime.cameraTarget}`,
+      runtime.cameraTarget === null ? "default" : `#${runtime.cameraTarget}`,
     );
-    this.setValue(this.runtimeValues, "animating", String(runtime.animating));
-    this.forcedDetails.hidden = runtime.forced === null;
-    if (runtime.forced !== null) this.forcedPre.textContent = formatJson(runtime.forced);
-    this.pauseResumeButton.textContent = runtime.worldPaused
-      ? "▶ Resume"
-      : "⏸ Pause";
-    const clockAction = runtime.worldPaused ? "Resume" : "Pause";
-    this.pauseResumeButton.title = `${clockAction} World Clock`;
-    this.pauseResumeButton.setAttribute(
+    this.setValue(
+      this.runtimeValues,
+      "animating",
+      runtime.animating ? "active" : "idle",
+    );
+
+    this.worldPauseResumeButton.textContent = runtime.worldPaused
+      ? "▶ World"
+      : "⏸ World";
+    this.worldPauseResumeButton.title = runtime.worldPaused
+      ? "Resume World Clock"
+      : "Pause World Clock";
+    this.worldPauseResumeButton.setAttribute(
       "aria-label",
-      `${clockAction} World Clock`,
+      this.worldPauseResumeButton.title,
     );
-    this.step1Button.disabled = !runtime.worldPaused;
-    this.step4Button.disabled = !runtime.worldPaused;
+
+    this.presentationPauseResumeButton.textContent = runtime.presentationPaused
+      ? "▶ Present"
+      : "⏸ Present";
+    this.presentationPauseResumeButton.title = runtime.presentationPaused
+      ? "Resume Presentation Clock"
+      : "Pause Presentation Clock";
+    this.presentationPauseResumeButton.setAttribute(
+      "aria-label",
+      this.presentationPauseResumeButton.title,
+    );
+
+    this.frameBackButton.disabled = !runtime.presentationPaused || runtime.presentationFrame <= 0;
+    this.frameForwardButton.disabled = !runtime.presentationPaused;
   }
 
   private updateSelection(snapshot: DebugSnapshot): void {
@@ -314,7 +317,7 @@ export class DebugSidebar {
     const row = document.createElement("div");
     Object.assign(row.style, {
       display: "grid",
-      gridTemplateColumns: "100px minmax(0, 1fr)",
+      gridTemplateColumns: "78px minmax(0, 1fr)",
       gap: "7px",
     });
     const label = document.createElement("span");
@@ -390,4 +393,8 @@ export class DebugSidebar {
 
 function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2) ?? String(value);
+}
+
+function formatMs(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }

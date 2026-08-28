@@ -31,7 +31,9 @@ export interface VisualRuntimeInspection {
 export class VisualRuntime {
   readonly camera: Camera;
   private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
+  /** 每个 Entity 保留最近一次 motion，便于 Debug 在刚结束后仍可倒一帧检查。 */
   private readonly motions = new Map<EntityId, VisualMotion>();
+  private readonly activeMotionIds = new Set<EntityId>();
   private frame: PresentationFrame | undefined;
 
   constructor(
@@ -42,7 +44,7 @@ export class VisualRuntime {
   }
 
   get isAnimating(): boolean {
-    return this.motions.size > 0;
+    return this.activeMotionIds.size > 0;
   }
 
   setEntityState(entityId: EntityId, state: EntityVisualRuntimeState): void {
@@ -67,6 +69,7 @@ export class VisualRuntime {
       startedAtMs: frame.nowMs,
       durationMs: Math.max(0, durationMs),
     });
+    this.activeMotionIds.add(entityId);
     this.setEntityState(entityId, {
       offsetX: from.x - to.x,
       offsetY: from.y - to.y,
@@ -75,16 +78,17 @@ export class VisualRuntime {
     });
   }
 
-  /** 只推进表现状态；绝不触发 gameplay mutation。 */
+  /** 只推进表现状态；绝不触发 gameplay mutation。可接受 Debug 的负 delta frame。 */
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
     this.camera.update(frame);
-    for (const motion of [...this.motions.values()])
+    for (const motion of this.motions.values())
       this.advanceMotion(motion, frame, easing);
   }
 
   clear(): void {
     this.motions.clear();
+    this.activeMotionIds.clear();
     this.entityRuntime.clear();
   }
 
@@ -125,14 +129,17 @@ export class VisualRuntime {
     const rawProgress =
       motion.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / motion.durationMs);
     const progress = applyMotionEasing(rawProgress, easing);
+    if (rawProgress >= 1) {
+      this.clearEntityState(motion.entityId);
+      this.activeMotionIds.delete(motion.entityId);
+      return;
+    }
+    this.activeMotionIds.add(motion.entityId);
     this.setEntityState(motion.entityId, {
       offsetX: (motion.from.x - motion.to.x) * (1 - progress),
       offsetY: (motion.from.y - motion.to.y) * (1 - progress),
       moving: true,
       progress,
     });
-    if (rawProgress < 1) return;
-    this.clearEntityState(motion.entityId);
-    this.motions.delete(motion.entityId);
   }
 }

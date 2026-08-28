@@ -24,12 +24,7 @@ export interface DebugSnapshot {
     presentationFrame: number;
     presentationHz: number;
     presentationStepMs: number;
-    hasLevel: boolean;
-    status: "unloaded" | "playing" | "won" | "dead";
-    moves: number;
-    player: CellPosition | null;
-    facing: string | null;
-    forced: unknown;
+    presentationPaused: boolean;
     animating: boolean;
     actionCount: number;
     inputBlocked: boolean;
@@ -115,18 +110,7 @@ export function buildDebugSnapshot(options: {
     presentationFrame: presentationClock.current.frame,
     presentationHz: timing.presentationHz,
     presentationStepMs: timing.presentationStepMs,
-    hasLevel: world !== null,
-    status: world
-      ? world.dead
-        ? ("dead" as const)
-        : world.completed
-          ? ("won" as const)
-          : ("playing" as const)
-      : ("unloaded" as const),
-    moves: world?.state.moves ?? 0,
-    player: world ? world.player : null,
-    facing: world?.facing ?? null,
-    forced: world?.state.forced ? structuredClone(world.state.forced) : null,
+    presentationPaused: presentationClock.paused,
     animating: visual.isAnimating,
     actionCount: world?.actions.active.length ?? 0,
     inputBlocked: world?.inputBlocked ?? false,

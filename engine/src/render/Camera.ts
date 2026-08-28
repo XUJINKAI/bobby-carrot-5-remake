@@ -23,6 +23,7 @@ export class Camera {
   private maxZoom = 2.75;
   private panOffsetX = 0;
   private panOffsetY = 0;
+  /** 保留最近一次回中 tween，便于 Debug Presentation 倒一帧。 */
   private panReturn: PanReturn | null = null;
 
   constructor(sourceTileSize = 48) {
@@ -72,7 +73,11 @@ export class Camera {
 
   /** 下一次 gameplay movement 时调用；Pan 回中只使用 Presentation 时间。 */
   recenterPan(frame: PresentationFrame, durationMs = 260): void {
-    if (this.panReturn) return;
+    if (this.panReturn) {
+      const endMs = this.panReturn.startedAtMs + this.panReturn.durationMs;
+      if (frame.nowMs < endMs) return;
+      this.panReturn = null;
+    }
     if (!this.hasPanOffset) {
       this.resetPan();
       return;
@@ -95,7 +100,10 @@ export class Camera {
     const remaining = 1 - eased;
     this.panOffsetX = returning.fromX * remaining;
     this.panOffsetY = returning.fromY * remaining;
-    if (raw >= 1) this.resetPan();
+    if (raw >= 1) {
+      this.panOffsetX = 0;
+      this.panOffsetY = 0;
+    }
   }
 
   follow(point: CameraPoint, worldWidth: number, worldHeight: number): void {

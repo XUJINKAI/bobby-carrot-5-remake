@@ -140,6 +140,9 @@ export class Game {
       pause: () => this.pauseDebugClock(),
       resume: () => this.resumeDebugClock(),
       step: (count) => this.stepDebugClock(count),
+      pausePresentation: () => this.pauseDebugPresentationClock(),
+      resumePresentation: () => this.resumeDebugPresentationClock(),
+      stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
       close: () => this.setDebug(false),
       selectionChanged: (cell) => this.renderer.setDebugSelection(cell),
       requestRender: () => this.render(),
@@ -339,6 +342,8 @@ export class Game {
   setDebug(value: boolean): void {
     if (value === this.debugValue) return;
     if (!value && this.worldClock.paused) this.resumeDebugClock();
+    if (!value && this.presentationClock.paused)
+      this.resumeDebugPresentationClock();
     this.debugValue = value;
     this.renderer.setDebug(value);
     this.debugRuntime.setEnabled(value);
@@ -529,6 +534,25 @@ export class Game {
 
   private stepDebugClock(count: number): void {
     this.worldClock.step(count, (time) => this.updateWorld(time));
+    this.render();
+  }
+
+  private pauseDebugPresentationClock(): void {
+    if (this.presentationClock.paused) return;
+    this.presentationClock.pause();
+    this.render();
+  }
+
+  private resumeDebugPresentationClock(): void {
+    if (!this.presentationClock.paused) return;
+    this.presentationClock.resume();
+    this.render();
+  }
+
+  private stepDebugPresentationClock(frames: number): void {
+    const frame = this.presentationClock.step(frames);
+    if (frame && this.worldValue)
+      this.visual.update(frame, this.tuning.motion.easing);
     this.render();
   }
 
