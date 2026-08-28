@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
@@ -91,4 +92,14 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
+});
+
+test("Debug Sidebar keeps interactive controls mounted across presentation renders", () => {
+  const source = fs.readFileSync(
+    new URL("../src/debug/DebugSidebar.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /content\.replaceChildren\(/);
+  assert.match(source, /private readonly pauseButton/);
+  assert.match(source, /private readonly selectionStack/);
 });
