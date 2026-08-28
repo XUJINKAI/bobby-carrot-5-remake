@@ -42,6 +42,7 @@ import type {
   CellInspection,
   MoveResult,
   PresenceInspection,
+  WinConditionState,
   WorldEvent,
 } from "./WorldTypes.js";
 
@@ -118,6 +119,12 @@ export class World {
 
   get completed(): boolean {
     return this.state.completed;
+  }
+
+  get winState(): WinConditionState | null {
+    return this.state.winCondition
+      ? this.evaluateWin(this.state.winCondition)
+      : null;
   }
 
   get forcedKind(): string | null {
@@ -525,33 +532,62 @@ export class World {
   }
 
   private evaluateCompletion(events: WorldEvent[]): void {
-    if (
-      this.state.completed ||
-      this.state.dead ||
-      !this.state.winCondition
-    )
-      return;
-    if (!this.evaluateWin(this.state.winCondition)) return;
+    if (this.state.completed || this.state.dead) return;
+    const win = this.winState;
+    if (!win?.completed) return;
     this.state.completed = true;
     events.push({ type: "complete" });
   }
 
-  private evaluateWin(condition: WinCondition): boolean {
+  private evaluateWin(condition: WinCondition): WinConditionState {
     switch (condition.type) {
-      case "all":
-        return condition.conditions.every((item) => this.evaluateWin(item));
-      case "any":
-        return condition.conditions.some((item) => this.evaluateWin(item));
-      case "collect-all":
-        return this.matchingEntityCount(condition.target) === 0;
+      case "all": {
+        const conditions = condition.conditions.map((item) =>
+          this.evaluateWin(item),
+        );
+        return {
+          type: "all",
+          completed: conditions.every((item) => item.completed),
+          conditions,
+        };
+      }
+      case "any": {
+        const conditions = condition.conditions.map((item) =>
+          this.evaluateWin(item),
+        );
+        return {
+          type: "any",
+          completed: conditions.some((item) => item.completed),
+          conditions,
+        };
+      }
+      case "collect-all": {
+        const remaining = this.matchingEntityCount(condition.target);
+        return {
+          type: "collect-all",
+          target: condition.target,
+          completed: remaining === 0,
+          remaining,
+        };
+      }
       case "reach":
-        return this.hasSelectorAt(this.player, condition.target);
+        return {
+          type: "reach",
+          target: condition.target,
+          completed: this.hasSelectorAt(this.player, condition.target),
+        };
       case "fill-all": {
         const targets = this.spatialCellsMatching(condition.target);
-        return (
-          targets.length > 0 &&
-          targets.every((cell) => this.hasSelectorAt(cell, condition.filler))
-        );
+        const remaining = targets.filter(
+          (cell) => !this.hasSelectorAt(cell, condition.filler),
+        ).length;
+        return {
+          type: "fill-all",
+          target: condition.target,
+          filler: condition.filler,
+          completed: targets.length > 0 && remaining === 0,
+          remaining,
+        };
       }
     }
   }

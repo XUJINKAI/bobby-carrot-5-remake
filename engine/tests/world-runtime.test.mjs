@@ -50,6 +50,13 @@ function registry() {
       authoring: { palette: true },
     },
     {
+      type: "carrot",
+      traits: [],
+      stackBand: "content",
+      presentation: { name: "Carrot", category: "test" },
+      authoring: { palette: true },
+    },
+    {
       type: "grass",
       traits: ["blocking", "mowable"],
       stackBand: "cover",
@@ -125,8 +132,22 @@ test("pushable movement and fill-all rule use Presence traits", () => {
     },
     { entities, behaviors: new BehaviorRegistry() },
   );
+  assert.deepEqual(world.winState, {
+    type: "fill-all",
+    target: "goal",
+    filler: "pushable",
+    completed: false,
+    remaining: 1,
+  });
   const move = world.move("right");
   assert.equal(move.moved, true);
+  assert.deepEqual(world.winState, {
+    type: "fill-all",
+    target: "goal",
+    filler: "pushable",
+    completed: true,
+    remaining: 0,
+  });
   assert.equal(world.completed, true);
   assert.equal(world.query.entitiesWithTrait("pushable")[0].anchor.x, 2);
 });
@@ -150,6 +171,51 @@ test("win selector can address an Entity type without a matching Trait", () => {
   assert.equal(world.completed, false);
   assert.equal(world.move("right").moved, true);
   assert.equal(world.completed, true);
+});
+
+test("combined win state keeps objective progress independent", () => {
+  const entities = registry();
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 1,
+      entities: [
+        floor(0, 0),
+        floor(1, 0),
+        floor(2, 0, "exit-cell"),
+        { type: "player", x: 0, y: 0 },
+        { type: "carrot", x: 1, y: 0 },
+      ],
+      rules: {
+        win: {
+          type: "all",
+          conditions: [
+            { type: "collect-all", target: "carrot" },
+            { type: "reach", target: "exit-cell" },
+          ],
+        },
+      },
+    },
+    { entities, behaviors: new BehaviorRegistry() },
+  );
+  assert.deepEqual(world.winState, {
+    type: "all",
+    completed: false,
+    conditions: [
+      {
+        type: "collect-all",
+        target: "carrot",
+        completed: false,
+        remaining: 1,
+      },
+      {
+        type: "reach",
+        target: "exit-cell",
+        completed: false,
+      },
+    ],
+  });
 });
 
 test("blocked touch commits after snapshot without auto-triggering revealed content", () => {

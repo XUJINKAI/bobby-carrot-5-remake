@@ -16,6 +16,37 @@ export interface WorldEvent {
   data?: Record<string, JsonValue>;
 }
 
+/** 当前 World 对一棵通关条件树的统一求值结果。 */
+export type WinConditionState =
+  | {
+      type: "all";
+      completed: boolean;
+      conditions: WinConditionState[];
+    }
+  | {
+      type: "any";
+      completed: boolean;
+      conditions: WinConditionState[];
+    }
+  | {
+      type: "collect-all";
+      target: string;
+      completed: boolean;
+      remaining: number;
+    }
+  | {
+      type: "fill-all";
+      target: string;
+      filler: string;
+      completed: boolean;
+      remaining: number;
+    }
+  | {
+      type: "reach";
+      target: string;
+      completed: boolean;
+    };
+
 export interface PresenceInspection {
   entityId: EntityId;
   type: string;
