@@ -7,7 +7,12 @@ export interface ScreenJoystickOptions {
   opacity?: number;
   deadZone?: number;
   size?: number;
-  activationSize?: number;
+  activationWidth?: number;
+  activationHeight?: number;
+  activationInsetRight?: number;
+  activationInsetBottom?: number;
+  defaultInsetRight?: number;
+  defaultInsetBottom?: number;
   initialRepeatDelayMs?: number;
 }
 
@@ -15,14 +20,95 @@ export const DEFAULT_SCREEN_JOYSTICK_OPTIONS = {
   enabled: true,
   opacity: 0.45,
   deadZone: 0.2,
-  size: 112,
-  activationScale: 2.4,
+  size: 128,
+  activationWidth: 180,
+  activationHeight: 180,
+  activationInsetRight: 0,
+  activationInsetBottom: 0,
+  defaultInsetRight: 28,
+  defaultInsetBottom: 28,
   initialRepeatDelayMs: 375,
 } as const;
+
+export interface ScreenJoystickLayout {
+  size: number;
+  activationWidth: number;
+  activationHeight: number;
+  activationInsetRight: number;
+  activationInsetBottom: number;
+  defaultInsetRight: number;
+  defaultInsetBottom: number;
+  defaultBaseX: number;
+  defaultBaseY: number;
+}
 
 export interface JoystickVectorState {
   direction: Direction | null;
   distance: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/** 解析屏幕摇杆几何参数；识别区与默认圆盘位置彼此独立。 */
+export function resolveScreenJoystickLayout(
+  options: ScreenJoystickOptions = {},
+): ScreenJoystickLayout {
+  const size = Math.max(
+    72,
+    options.size ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.size,
+  );
+  const activationWidth = Math.max(
+    size,
+    options.activationWidth ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationWidth,
+  );
+  const activationHeight = Math.max(
+    size,
+    options.activationHeight ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationHeight,
+  );
+  const activationInsetRight = Math.max(
+    0,
+    options.activationInsetRight ??
+      DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationInsetRight,
+  );
+  const activationInsetBottom = Math.max(
+    0,
+    options.activationInsetBottom ??
+      DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationInsetBottom,
+  );
+  const defaultInsetRight = Math.max(
+    0,
+    options.defaultInsetRight ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.defaultInsetRight,
+  );
+  const defaultInsetBottom = Math.max(
+    0,
+    options.defaultInsetBottom ??
+      DEFAULT_SCREEN_JOYSTICK_OPTIONS.defaultInsetBottom,
+  );
+  const halfSize = size / 2;
+  const defaultBaseX = clamp(
+    activationWidth - defaultInsetRight - halfSize,
+    halfSize,
+    activationWidth - halfSize,
+  );
+  const defaultBaseY = clamp(
+    activationHeight - defaultInsetBottom - halfSize,
+    halfSize,
+    activationHeight - halfSize,
+  );
+
+  return {
+    size,
+    activationWidth,
+    activationHeight,
+    activationInsetRight,
+    activationInsetBottom,
+    defaultInsetRight,
+    defaultInsetBottom,
+    defaultBaseX,
+    defaultBaseY,
+  };
 }
 
 export function directionForJoystickVector(
@@ -61,8 +147,7 @@ export class ScreenJoystick {
   private readonly activationArea: HTMLDivElement;
   private readonly element: HTMLDivElement;
   private readonly knob: HTMLDivElement;
-  private readonly size: number;
-  private readonly activationSize: number;
+  private readonly layout: ScreenJoystickLayout;
   private readonly radius: number;
   private readonly deadZonePixels: number;
   private pointerId: number | null = null;
@@ -77,16 +162,8 @@ export class ScreenJoystick {
     private readonly onDirection: (direction: Direction | null) => void,
   ) {
     const root = resolveGameplayMount(canvas, options.root, "ScreenJoystick");
-    this.size = Math.max(
-      72,
-      options.size ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.size,
-    );
-    this.activationSize = Math.max(
-      this.size,
-      options.activationSize ??
-        this.size * DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationScale,
-    );
-    this.radius = this.size * 0.34;
+    this.layout = resolveScreenJoystickLayout(options);
+    this.radius = this.layout.size * 0.34;
     this.deadZonePixels =
       this.radius *
       Math.min(
@@ -103,10 +180,10 @@ export class ScreenJoystick {
     this.activationArea.setAttribute("aria-label", "屏幕摇杆识别区域");
     Object.assign(this.activationArea.style, {
       position: "absolute",
-      right: `calc(max(16px, env(safe-area-inset-right)) + ${this.size / 2}px)`,
-      bottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${this.size / 2}px)`,
-      width: `${this.activationSize}px`,
-      height: `${this.activationSize}px`,
+      right: `calc(env(safe-area-inset-right) + ${this.layout.activationInsetRight}px)`,
+      bottom: `calc(env(safe-area-inset-bottom) + ${this.layout.activationInsetBottom}px)`,
+      width: `${this.layout.activationWidth}px`,
+      height: `${this.layout.activationHeight}px`,
       touchAction: "none",
       userSelect: "none",
       zIndex: "7",
@@ -116,10 +193,10 @@ export class ScreenJoystick {
     this.element.className = "engine-screen-joystick";
     Object.assign(this.element.style, {
       position: "absolute",
-      left: `${this.activationSize}px`,
-      top: `${this.activationSize}px`,
-      width: `${this.size}px`,
-      height: `${this.size}px`,
+      left: `${this.layout.defaultBaseX}px`,
+      top: `${this.layout.defaultBaseY}px`,
+      width: `${this.layout.size}px`,
+      height: `${this.layout.size}px`,
       border: "1px solid rgba(255,255,255,.34)",
       borderRadius: "50%",
       background: "rgba(8,20,14,.34)",
@@ -143,8 +220,8 @@ export class ScreenJoystick {
       position: "absolute",
       left: "50%",
       top: "50%",
-      width: `${this.size * 0.42}px`,
-      height: `${this.size * 0.42}px`,
+      width: `${this.layout.size * 0.42}px`,
+      height: `${this.layout.size * 0.42}px`,
       border: "1px solid rgba(255,255,255,.5)",
       borderRadius: "50%",
       background: "rgba(230,245,232,.5)",
@@ -249,8 +326,8 @@ export class ScreenJoystick {
     this.centerX = 0;
     this.centerY = 0;
     this.direction = null;
-    this.element.style.left = `${this.activationSize}px`;
-    this.element.style.top = `${this.activationSize}px`;
+    this.element.style.left = `${this.layout.defaultBaseX}px`;
+    this.element.style.top = `${this.layout.defaultBaseY}px`;
     this.knob.style.transform = "translate(-50%, -50%)";
     this.onDirection(null);
   }
