@@ -56,3 +56,79 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   assert.equal(game.move("right"), null);
   assert.equal(moved, false);
 });
+
+test("Debug pause freezes WorldClock and restores prior InputController state", () => {
+  const game = Object.create(Game.prototype);
+  let paused = false;
+  let inputEnabled = true;
+  const inputTransitions = [];
+  game.worldClock = {
+    get paused() {
+      return paused;
+    },
+    pause() {
+      paused = true;
+    },
+    resume() {
+      paused = false;
+    },
+  };
+  game.inputController = {
+    get isEnabled() {
+      return inputEnabled;
+    },
+    setEnabled(value) {
+      inputEnabled = value;
+      inputTransitions.push(value);
+    },
+  };
+  game.debugInputEnabledBeforePause = null;
+  game.heldDirection = "right";
+  game.heldDirectionBlocked = true;
+  game.render = () => {};
+
+  game.pauseDebugClock();
+  assert.equal(paused, true);
+  assert.equal(inputEnabled, false);
+  assert.equal(game.heldDirection, null);
+  assert.equal(game.heldDirectionBlocked, false);
+
+  game.resumeDebugClock();
+  assert.equal(paused, false);
+  assert.equal(inputEnabled, true);
+  assert.deepEqual(inputTransitions, [false, true]);
+  assert.equal(game.debugInputEnabledBeforePause, null);
+});
+
+test("Debug pause does not enable input that was already disabled by the host", () => {
+  const game = Object.create(Game.prototype);
+  let paused = false;
+  let inputEnabled = false;
+  game.worldClock = {
+    get paused() {
+      return paused;
+    },
+    pause() {
+      paused = true;
+    },
+    resume() {
+      paused = false;
+    },
+  };
+  game.inputController = {
+    get isEnabled() {
+      return inputEnabled;
+    },
+    setEnabled(value) {
+      inputEnabled = value;
+    },
+  };
+  game.debugInputEnabledBeforePause = null;
+  game.heldDirection = null;
+  game.heldDirectionBlocked = false;
+  game.render = () => {};
+
+  game.pauseDebugClock();
+  game.resumeDebugClock();
+  assert.equal(inputEnabled, false);
+});
