@@ -1,6 +1,10 @@
 import type { Direction, EntityState, LevelEntity } from "@bobby/model";
-import type { EngineTick } from "../../time/EngineClock.js";
+import type { WorldTick } from "../../time/WorldClock.js";
 import type { GlobalState } from "../GlobalState.js";
+import type {
+  RuntimeActionId,
+  RuntimeActionSpec,
+} from "../action/RuntimeAction.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { WorldEvent } from "../WorldTypes.js";
@@ -23,8 +27,8 @@ export interface BehaviorContext {
   readonly query: WorldQueryApi;
   readonly commands: WorldCommandApi;
   readonly direction?: Direction;
-  /** 仅 onTick 提供，由 EngineClock 统一产生。 */
-  readonly time?: EngineTick;
+  /** 仅 onTick 提供，由 WorldClock 统一产生。 */
+  readonly time?: WorldTick;
 }
 
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
@@ -56,4 +60,6 @@ export type BehaviorCommand =
       key: keyof GlobalState;
       value: GlobalState[keyof GlobalState];
     }
+  | { type: "start-action"; action: RuntimeActionSpec }
+  | { type: "cancel-action"; actionId: RuntimeActionId }
   | { type: "emit"; event: WorldEvent };

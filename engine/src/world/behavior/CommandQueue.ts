@@ -1,5 +1,9 @@
 import type { Direction, EntityState, LevelEntity } from "@bobby/model";
 import type { GlobalState } from "../GlobalState.js";
+import type {
+  RuntimeActionId,
+  RuntimeActionSpec,
+} from "../action/RuntimeAction.js";
 import type { EntityId } from "../entity/EntityInstance.js";
 import type { WorldEvent } from "../WorldTypes.js";
 import type { BehaviorCommand } from "./Behavior.js";
@@ -11,6 +15,8 @@ export interface WorldCommandApi {
   setDirection(entityId: EntityId, direction: Direction): void;
   setState(entityId: EntityId, state: EntityState): void;
   setGlobal<K extends keyof GlobalState>(key: K, value: GlobalState[K]): void;
+  startAction(action: RuntimeActionSpec): void;
+  cancelAction(actionId: RuntimeActionId): void;
   emit(event: WorldEvent): void;
 }
 
@@ -48,6 +54,14 @@ export class CommandQueue implements WorldCommandApi {
       key,
       value: structuredClone(value) as GlobalState[keyof GlobalState],
     });
+  }
+
+  startAction(action: RuntimeActionSpec): void {
+    this.commands.push({ type: "start-action", action: structuredClone(action) });
+  }
+
+  cancelAction(actionId: RuntimeActionId): void {
+    this.commands.push({ type: "cancel-action", actionId });
   }
 
   emit(event: WorldEvent): void {
