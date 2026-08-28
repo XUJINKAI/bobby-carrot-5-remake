@@ -50,8 +50,18 @@ test("PresentationClock samples real time independently from world rate", () => 
   const clock = new PresentationClock(60);
   assert.deepEqual(clock.advance(1000), { frame: 0, nowMs: 1000, deltaMs: 0 });
   assert.equal(clock.advance(1008), null);
+  assert.equal(clock.current.nowMs, 1008);
   const frame = clock.advance(1017);
   assert.equal(frame?.frame, 1);
   assert.equal(frame?.nowMs, 1017);
   assert.equal(frame?.deltaMs, 17);
+});
+
+test("PresentationClock keeps the requested average rate on a 144Hz RAF source", () => {
+  const clock = new PresentationClock(60);
+  let samples = 0;
+  for (let index = 0; index <= 144; index += 1) {
+    if (clock.advance(index * (1000 / 144))) samples += 1;
+  }
+  assert.ok(samples >= 60 && samples <= 62, `expected ~60Hz, got ${samples}`);
 });
