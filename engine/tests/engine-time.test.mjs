@@ -4,7 +4,7 @@ import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "../dist/world/World.js";
 
-test("World onTick receives the shared EngineTick", () => {
+test("World onTick receives the shared WorldTick", () => {
   const entities = new EntityRegistry();
   entities.registerAll([
     {
@@ -52,7 +52,7 @@ test("World onTick receives the shared EngineTick", () => {
     },
     { entities, behaviors },
   );
-  const time = { tick: 7, stepMs: 62.5 };
+  const time = { tick: 7, stepMs: 50 };
   world.update(time);
   assert.deepEqual(seen, [time]);
 });

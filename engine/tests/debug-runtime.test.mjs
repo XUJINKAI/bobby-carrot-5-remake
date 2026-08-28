@@ -3,13 +3,23 @@ import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import { buildDebugSnapshot } from "../dist/debug/DebugSnapshot.js";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
-import { EngineClock } from "../dist/time/EngineClock.js";
+import { resolveEngineTiming } from "../dist/time/EngineTiming.js";
+import { PresentationClock } from "../dist/time/PresentationClock.js";
+import { WorldClock } from "../dist/time/WorldClock.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
 
-test("Debug snapshot exposes runtime, cell, Entity, Behavior and Visual facts", () => {
+function debugTime() {
+  const timing = resolveEngineTiming();
+  const worldClock = new WorldClock(timing.worldHz);
+  const presentationClock = new PresentationClock(timing.presentationHz);
+  presentationClock.advance(1000);
+  return { timing, worldClock, presentationClock };
+}
+
+test("Debug snapshot exposes both clocks, actions, Entity, Behavior and Visual facts", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -17,21 +27,16 @@ test("Debug snapshot exposes runtime, cell, Entity, Behavior and Visual facts", 
     entities: [
       ground(0, 0),
       ground(1, 0),
-      {
-        type: EntityTypeId.BOBBY,
-        x: 0,
-        y: 0,
-        direction: "right",
-      },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
-  const clock = new EngineClock();
-  clock.pause();
-  clock.step(4, (time) => {
-    world.update(time);
-    visual.update(time, "linear");
-  });
+  const { timing, worldClock, presentationClock } = debugTime();
+  worldClock.pause();
+  worldClock.step(4, (time) => world.update(time));
+  const frame = presentationClock.advance(1017);
+  assert.ok(frame);
+  visual.update(frame, "linear");
   const bobby = world.entities
     .all()
     .find((entity) => entity.type === EntityTypeId.BOBBY);
@@ -42,13 +47,18 @@ test("Debug snapshot exposes runtime, cell, Entity, Behavior and Visual facts", 
     world,
     scene,
     visual,
-    clock,
+    worldClock,
+    presentationClock,
+    timing,
     selection: { cell: { x: 0, y: 0 }, entityId: bobby.id },
   });
 
-  assert.equal(snapshot.runtime.tickCount, 4);
-  assert.equal(snapshot.runtime.paused, true);
+  assert.equal(snapshot.runtime.worldTickCount, 4);
+  assert.equal(snapshot.runtime.worldPaused, true);
+  assert.equal(snapshot.runtime.worldHz, 16);
+  assert.equal(snapshot.runtime.presentationHz, 60);
   assert.equal(snapshot.runtime.status, "playing");
+  assert.equal(snapshot.runtime.actionCount, 0);
   assert.deepEqual(snapshot.runtime.player, { x: 0, y: 0 });
   assert.deepEqual(snapshot.selection?.cell, { x: 0, y: 0 });
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
@@ -66,20 +76,18 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      {
-        type: EntityTypeId.BOBBY,
-        x: 0,
-        y: 0,
-        direction: "down",
-      },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
+  const { timing, worldClock, presentationClock } = debugTime();
   const snapshot = buildDebugSnapshot({
     world,
     scene: visual.scene(world),
     visual,
-    clock: new EngineClock(),
+    worldClock,
+    presentationClock,
+    timing,
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
