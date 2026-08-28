@@ -54,6 +54,7 @@ export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
   pointer: true,
   movement: true,
   undo: true,
+  redo: true,
   restart: true,
   pan: true,
   zoom: true,
@@ -116,7 +117,8 @@ export class InputController {
       pointer: options.pointer ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pointer,
       movement: options.movement ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.movement,
       undo: options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
-      redo: options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
+      redo:
+        options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.redo,
       restart: options.restart ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.restart,
       pan: options.pan ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pan,
       zoom: options.zoom ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.zoom,
@@ -182,7 +184,6 @@ export class InputController {
       return;
     }
 
-    this.repeater.setInput(this.currentContinuousInput());
     this.repeater.update(deltaMs, (direction) => {
       const result = this.game.move(direction);
       if (!result) return "busy";
@@ -203,10 +204,11 @@ export class InputController {
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
-      this.repeater.reset();
+      this.syncContinuousInput();
       return;
     }
     this.externalDirection = direction;
+    this.syncContinuousInput();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -240,8 +242,10 @@ export class InputController {
     const direction = KEY_DIRECTION[key];
     if (direction && this.capabilities.movement) {
       event.preventDefault();
-      if (!event.repeat && !this.heldMovementKeys.includes(key))
+      if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
+        this.syncContinuousInput();
+      }
       return;
     }
     if (event.repeat) return;
@@ -267,7 +271,10 @@ export class InputController {
     if (!KEY_DIRECTION[key] || !this.capabilities.movement) return;
     event.preventDefault();
     const index = this.heldMovementKeys.lastIndexOf(key);
-    if (index >= 0) this.heldMovementKeys.splice(index, 1);
+    if (index >= 0) {
+      this.heldMovementKeys.splice(index, 1);
+      this.syncContinuousInput();
+    }
   };
 
   private readonly onBlur = (): void => {
@@ -280,14 +287,18 @@ export class InputController {
     this.externalDirection = null;
     this.joystickDirection = null;
     this.repeater.reset();
-    this.game.setHeldDirection(null);
   }
 
   private readonly setJoystickDirection = (
     direction: Direction | null,
   ): void => {
     this.joystickDirection = direction;
+    this.syncContinuousInput();
   };
+
+  private syncContinuousInput(): void {
+    this.repeater.setInput(this.currentContinuousInput());
+  }
 
   private currentContinuousInput(): HeldDirectionInput | null {
     if (this.joystickDirection) {
