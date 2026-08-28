@@ -12,6 +12,7 @@ import {
   SOURCE_TILE_SIZE,
 } from "./source-definitions.mjs";
 import { adaptLegacyMap } from "./entity-adapter.mjs";
+import { deriveOriginalWinCondition } from "./win-condition.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
@@ -199,19 +200,12 @@ function buildSpecialScenes(index, target) {
 
 function createMapDocument(source, meta) {
   const canonical = adaptLegacyMap(source);
+  const win = deriveOriginalWinCondition(canonical);
   return {
     schemaVersion: 1,
     meta,
     ...canonical,
-    rules: {
-      win: {
-        type: "all",
-        conditions: [
-          { type: "collect-all", trait: "level-objective" },
-          { type: "reach", trait: "exit" },
-        ],
-      },
-    },
+    ...(win ? { rules: { win } } : {}),
   };
 }
 

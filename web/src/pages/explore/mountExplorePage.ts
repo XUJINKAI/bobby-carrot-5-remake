@@ -1,8 +1,6 @@
 import { createApp, nextTick } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
-import type {
-  MapCollectionMap,
-} from "../../services/catalog/catalog.js";
+import type { MapCollectionMap } from "../../services/catalog/catalog.js";
 import {
   completedExploreMapIds,
   lastExploreMapId,
@@ -25,7 +23,7 @@ export async function renderLevels(
   context: PageContext,
   collectionId = "original",
 ): Promise<PageController> {
-  const { app, collections, collectionsIndex, audio, navigate } = context;
+  const { app, collections, collectionsIndex, audio, images, navigate } = context;
   const collection = collections.find((entry) => entry.id === collectionId);
   if (!collection || collection.maps.length === 0) {
     navigate("/explore");
@@ -76,7 +74,7 @@ export async function renderLevels(
   });
   exploreApp.mount(app);
   await nextTick();
-  if (collection.filters.length > 0) mountLevelFilters(collection);
+  if (collection.filters.length > 0) mountLevelFilters(collection, images);
   return {
     destroy(): void {
       exploreApp.unmount();

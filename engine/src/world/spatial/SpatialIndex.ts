@@ -8,7 +8,6 @@ import type {
 } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
 import { resolveFootprintCells } from "./Footprint.js";
-import { stackBandOrder } from "./StackBand.js";
 
 export class SpatialIndex {
   private readonly cells = new Map<string, EntityPresence[]>();
@@ -92,8 +91,8 @@ export class SpatialIndex {
         cell,
         ...(part.role ? { role: part.role } : {}),
         traits,
-        stackBand: part.stackBand ?? definition.stackBand,
-        stackOrder: part.stackOrder ?? index,
+        stackOrder:
+          part.stackOrder ?? (definition.stackOrder ?? 0) + index,
       };
       presences.push(presence);
       const list = this.cells.get(key(cell)) ?? [];
@@ -123,9 +122,5 @@ function key(cell: CellPosition): string {
 }
 
 function comparePresence(a: EntityPresence, b: EntityPresence): number {
-  return (
-    stackBandOrder(a.stackBand) - stackBandOrder(b.stackBand) ||
-    a.stackOrder - b.stackOrder ||
-    a.entityId - b.entityId
-  );
+  return a.stackOrder - b.stackOrder || a.entityId - b.entityId;
 }

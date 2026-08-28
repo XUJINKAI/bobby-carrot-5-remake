@@ -24,7 +24,7 @@ export interface EditorPageContext extends PageContext {
 export async function renderEditorPage(
   context: EditorPageContext,
 ): Promise<PageController> {
-  const { app, audio, navigate, mapRef } = context;
+  const { app, audio, images, navigate, mapRef } = context;
   audio.stopMusic();
   let level: EditorLevel;
   if (mapRef) {
@@ -85,6 +85,7 @@ export async function renderEditorPage(
   const editorPage = createApp(EditorPage, {
     initialLevel: level,
     audio,
+    images,
     navigate,
   });
   editorPage.mount(app);

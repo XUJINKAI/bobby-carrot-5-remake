@@ -9,6 +9,7 @@ import type {
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
+export type VisualRenderPass = "world" | "player" | "overlay";
 
 export interface AtlasVisualLayer {
   kind: "atlas";
@@ -52,13 +53,6 @@ export interface VisualComposition {
   layers: readonly VisualLayer[];
 }
 
-/** Runtime / Editor 共用的视觉资源地址表。 */
-export interface VisualAssetSources {
-  atlasUrl: string;
-  imageUrls?: Readonly<Record<string, string>>;
-  sourceTileSize?: number;
-}
-
 /** 纯视觉瞬态状态，不进入 World snapshot / LevelMap。 */
 export interface EntityVisualRuntimeState {
   offsetX?: number;
@@ -95,6 +89,8 @@ export interface VisualAuthoringDefinition {
 /** 一种 Entity 的表现解析逻辑。Visual 可以读取任意格的只读 World 信息。 */
 export interface VisualDefinition {
   id: VisualId;
+  /** 固定渲染 pass；默认 world。它只影响表现，不进入 World/Spatial。 */
+  renderPass?: VisualRenderPass;
   authoring?: VisualAuthoringDefinition;
   resolve(context: VisualResolveContext): VisualComposition | null;
 }

@@ -1,7 +1,10 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { AudioRuntime } from "@bobby/engine";
 import { createApp, reactive, type App as VueApp } from "vue";
-import { siteUrl } from "../services/assets/gameAssets.js";
+import {
+  createImageManager,
+  siteUrl,
+} from "../services/assets/gameAssets.js";
 import {
   fetchJson,
   type AdventureIndex,
@@ -49,6 +52,7 @@ interface AppRootHandle {
 export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new AudioRuntime();
+  private readonly images = createImageManager();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
   private collectionsIndex: MapCollectionsIndex = EMPTY_COLLECTIONS_INDEX;
   private collections: MapCollectionIndex[] = [];
@@ -82,7 +86,7 @@ export class BobbyApp {
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
-    await contentReady;
+    await Promise.all([contentReady, this.images.preload()]);
     await this.renderRoute();
   }
 
@@ -94,6 +98,7 @@ export class BobbyApp {
     installShellBridge(null);
     this.vueApp?.unmount();
     this.audio.destroy();
+    this.images.destroy();
     this.vueApp = null;
     this.vueRoot = null;
   }
@@ -122,6 +127,7 @@ export class BobbyApp {
       collections: this.collections,
       adventure: this.adventure,
       audio: this.audio,
+      images: this.images,
       navigate: this.navigate,
     };
   }

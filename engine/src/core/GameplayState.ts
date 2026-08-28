@@ -2,7 +2,6 @@ import type { Direction } from "@bobby/model";
 import type {
   ForcedKind,
   InventoryState,
-  ObjectiveMode,
   ProfileCapabilities,
 } from "../world/GlobalState.js";
 
@@ -16,11 +15,6 @@ export interface GameplayState {
   inventory: Readonly<InventoryState>;
   profile: Readonly<ProfileCapabilities>;
   ridingMower: boolean;
-  objective: {
-    mode: ObjectiveMode;
-    remaining: number;
-    total: number;
-  };
   forced: {
     kind: ForcedKind;
     direction: Direction;

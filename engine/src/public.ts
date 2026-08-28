@@ -33,6 +33,12 @@ export {
   type MusicStyle,
 } from "./audio/AudioBackend.js";
 export {
+  ImageManager,
+  type ImageManagerOptions,
+  type ImageSliceDefinition,
+  type LoadedImageSlice,
+} from "./image/ImageManager.js";
+export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,
@@ -48,7 +54,6 @@ export {
   type JoystickVectorState,
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
-export type { VisualAssetSources } from "./visual/VisualDefinition.js";
 export type {
   Direction,
   EntityProperties,

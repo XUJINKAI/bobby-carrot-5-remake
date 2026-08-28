@@ -25,7 +25,7 @@ export const portal: EntityModule = defineEntityModule({
   definition: {
     type: EntityTypeId.PORTAL,
     traits: ["portal"],
-    stackBand: "content",
+    stackOrder: 100,
     properties: [
       {
         key: "channel",

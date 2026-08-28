@@ -5,7 +5,6 @@ import {
   type JsonValue,
 } from "@bobby/model";
 import type {
-  EntityDefinition,
   EntityFieldDefinition,
   EntityTrait,
 } from "../../world/entity/EntityDefinition.js";
@@ -17,6 +16,7 @@ import type {
 import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
 import {
   defineEntityModule,
+  type EntityBehaviorBinding,
   type EntityModule,
   type EntityModuleDefinition,
 } from "../EntityModule.js";
@@ -34,6 +34,9 @@ interface OriginalAmbientSequence {
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
 const ORIGINAL_AMBIENT_FRAME_MS = 248;
 const ORIGINAL_TILE_SIZE = 48;
+const SURFACE_STACK_ORDER = 0;
+const CONTENT_STACK_ORDER = 100;
+const COVER_STACK_ORDER = 200;
 
 export const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
@@ -51,11 +54,15 @@ export function surfaceDefinition(
   return {
     type,
     traits,
-    stackBand: "surface",
-    occupancy: { group: "surface", replaceSameGroup: true },
+    stackOrder: SURFACE_STACK_ORDER,
     presentation: { name, category: "地表" },
-    authoring: { palette: true, category: "地表" },
     ...extra,
+    authoring: {
+      palette: true,
+      category: "地表",
+      replaceGroup: "surface",
+      ...extra.authoring,
+    },
   };
 }
 
@@ -68,7 +75,7 @@ export function contentDefinition(
   return {
     type,
     traits,
-    stackBand: "content",
+    stackOrder: CONTENT_STACK_ORDER,
     presentation: { name, category: "实体" },
     authoring: { palette: true, category: "实体" },
     ...extra,
@@ -84,22 +91,30 @@ export function coverDefinition(
   return {
     type,
     traits,
-    stackBand: "cover",
-    occupancy: { group: "cover", replaceSameGroup: true },
-    presentation: { name, category: "覆盖" },
-    authoring: { palette: true, category: "覆盖" },
+    stackOrder: COVER_STACK_ORDER,
+    presentation: { name, category: "覆盖", renderPass: "overlay" },
     ...extra,
+    authoring: {
+      palette: true,
+      category: "覆盖",
+      replaceGroup: "cover",
+      ...extra.authoring,
+    },
   };
 }
 
 export function originalModule(
   definition: EntityModuleDefinition,
   visual: VisualDefinition,
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return defineEntityModule({
     definition,
     visual,
-    behaviorBindings: behaviorBindingsForDefinition(definition),
+    behaviorBindings: [
+      ...behaviorBindingsForDefinition(definition),
+      ...behaviorBindings,
+    ],
   });
 }
 
@@ -144,9 +159,14 @@ export function staticContent(
   atlas: AtlasCell,
   traits: readonly EntityTrait[] = [],
   extra: Partial<EntityModuleDefinition> = {},
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   const definition = contentDefinition(type, name, traits, extra);
-  return originalModule(definition, atlasVisual(definition, atlas));
+  return originalModule(
+    definition,
+    atlasVisual(definition, atlas),
+    behaviorBindings,
+  );
 }
 
 export function staticCover(

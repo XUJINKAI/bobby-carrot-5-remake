@@ -1,7 +1,7 @@
 export const SOKOBAN_WIN_RULE = {
   type: "fill-all",
-  targetTrait: "push-goal",
-  fillerTrait: "pushable",
+  target: "push-goal",
+  filler: "pushable",
 };
 
 export function convertXsbBoard(board, title = "Sokoban", options = {}) {

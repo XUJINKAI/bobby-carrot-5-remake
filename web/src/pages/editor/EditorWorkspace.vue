@@ -5,7 +5,7 @@ import type {
   InspectorModel,
   PaletteItem,
 } from "@bobby/editor";
-import type { VisualAssetSources } from "@bobby/engine/authoring";
+import type { ImageManager } from "@bobby/engine";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorPalette from "./EditorPalette.vue";
@@ -19,7 +19,7 @@ defineProps<{
   inspector: InspectorModel;
   paletteSize: number;
   playing: boolean;
-  visualAssets: VisualAssetSources;
+  images: ImageManager;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -41,6 +41,7 @@ const emit = defineEmits<{
       v-show="!playing"
       :selection="selection"
       :size="paletteSize"
+      :images="images"
       @select="emit('select', $event)"
       @resize="emit('paletteResize', $event)"
     />
@@ -53,7 +54,7 @@ const emit = defineEmits<{
         :selection="selection"
         :hover="hover"
         :enabled="!playing"
-        :visual-assets="visualAssets"
+        :images="images"
         @hover="emit('hover', $event)"
         @stroke="(cell, button) => emit('stroke', cell, button)"
         @begin-stroke="emit('beginStroke')"

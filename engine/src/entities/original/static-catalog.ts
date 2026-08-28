@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { EntityModule } from "../EntityModule.js";
 import {
   cell,
@@ -7,6 +8,31 @@ import {
   staticCover,
   staticSurface,
 } from "./module.js";
+
+const fillEggNestOnLeave: Behavior = {
+  id: "fill-egg-nest-on-leave",
+  onLeave({ self, commands }) {
+    const source = self.entity;
+    commands.destroy(source.id);
+    commands.spawn({
+      type: EntityTypeId.EGG_NEST_FILLED,
+      x: source.anchor.x,
+      y: source.anchor.y,
+      ...(source.direction ? { direction: source.direction } : {}),
+      ...(source.properties
+        ? { properties: structuredClone(source.properties) }
+        : {}),
+      ...(source.state ? { state: structuredClone(source.state) } : {}),
+      ...(source.instanceTraits ? { traits: [...source.instanceTraits] } : {}),
+    });
+    commands.emit({
+      type: "fill-egg-nest",
+      entityId: source.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+    });
+  },
+};
 
 export const staticSurfaceModules: readonly EntityModule[] = [
   staticSurface(EntityTypeId.GROUND_A, "Ground A", cell(14, 5)),
@@ -143,37 +169,50 @@ export const staticContentModules: readonly EntityModule[] = [
     EntityTypeId.CARROT,
     "Carrot",
     objectCell(1),
-    ["collectible", "objective-carrot", "level-objective"],
+    ["collectible"],
     {
-      occupancy: { group: "item", replaceSameGroup: true },
       presentation: { name: "Carrot", category: "目标" },
-      authoring: { palette: true, category: "目标" },
+      authoring: {
+        palette: true,
+        category: "目标",
+        replaceGroup: "item",
+      },
     },
   ),
   staticContent(
     EntityTypeId.EGG_NEST_EMPTY,
     "Empty Egg Nest",
     objectCell(2),
-    ["objective-nest", "level-objective"],
+    ["egg-nest"],
     {
-      occupancy: { group: "item", replaceSameGroup: true },
       presentation: { name: "Empty Egg Nest", category: "目标" },
-      authoring: { palette: true, category: "目标" },
+      authoring: {
+        palette: true,
+        category: "目标",
+        replaceGroup: "item",
+      },
     },
+    [{ behavior: fillEggNestOnLeave }],
   ),
   staticContent(
     EntityTypeId.EGG_NEST_FILLED,
     "Filled Egg Nest",
     objectCell(3),
-    ["blocking"],
-    { occupancy: { group: "item", replaceSameGroup: true } },
+    ["egg-nest", "egg", "blocking"],
+    {
+      authoring: {
+        palette: true,
+        category: "实体",
+        replaceGroup: "item",
+      },
+    },
   ),
   staticContent(EntityTypeId.LOCK, "Lock", objectCell(4), ["blocking", "gate"]),
   staticContent(
     EntityTypeId.BEANSTALK_TIP,
     "Beanstalk Tip",
     objectCell(5),
-    ["terrain-overlay", "climbable"],
+    ["terrain-overlay", "climbable", "walkable"],
   ),
   staticContent(EntityTypeId.BEAN, "Bean", objectCell(6), ["pickup"]),
   staticContent(
@@ -204,13 +243,13 @@ export const staticContentModules: readonly EntityModule[] = [
     EntityTypeId.PLANK,
     "Plank",
     objectCell(11),
-    ["terrain-overlay"],
+    ["terrain-overlay", "walkable"],
   ),
   staticContent(
     EntityTypeId.PLANK_CRUMBLING,
     "Crumbling Plank",
     objectCell(12),
-    ["terrain-overlay", "blocking"],
+    ["terrain-overlay", "walkable", "blocking"],
     { authoring: { palette: false, category: "内部" } },
   ),
   staticContent(
@@ -226,7 +265,7 @@ export const staticContentModules: readonly EntityModule[] = [
     EntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     objectCell(21),
-    ["terrain-overlay", "climbable"],
+    ["terrain-overlay", "climbable", "walkable"],
   ),
   staticContent(EntityTypeId.BEAN_FIELD, "Bean Field", objectCell(22)),
   staticContent(
@@ -258,7 +297,7 @@ export const staticContentModules: readonly EntityModule[] = [
     EntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
     objectCell(37),
-    ["terrain-overlay", "climbable"],
+    ["terrain-overlay", "climbable", "walkable"],
   ),
   staticContent(
     EntityTypeId.BEAN_SPROUT,

@@ -4,10 +4,11 @@ import {
   visualRegistry as builtinVisualRegistry,
   type AtlasVisualLayer,
   type EntityCatalog,
+  type ImageManager,
   type ImageVisualLayer,
-  type VisualAssetSources,
   type VisualComposition,
   type VisualRegistry,
+  type VisualRenderPass,
 } from "@bobby/engine/authoring";
 import {
   entityCells,
@@ -33,31 +34,22 @@ export interface EditorCanvasRenderState {
   viewport: Readonly<EditorViewportState>;
 }
 
-export class EditorCanvasRenderer {
-  private atlas: HTMLImageElement | null = null;
-  private readonly images = new Map<string, HTMLImageElement>();
+interface EditorRenderItem {
+  inspection: EditorPresenceInspection;
+  x: number;
+  y: number;
+}
 
+export class EditorCanvasRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    private readonly assets: VisualAssetSources,
+    private readonly images: ImageManager,
     private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
     private readonly visuals: VisualRegistry = builtinVisualRegistry,
   ) {}
 
   async load(): Promise<void> {
-    const atlas = new Image();
-    atlas.src = this.assets.atlasUrl;
-    const imageEntries = await Promise.all(
-      Object.entries(this.assets.imageUrls ?? {}).map(async ([id, url]) => {
-        const image = new Image();
-        image.src = url;
-        await image.decode();
-        return [id, image] as const;
-      }),
-    );
-    await atlas.decode();
-    this.atlas = atlas;
-    for (const [id, image] of imageEntries) this.images.set(id, image);
+    await this.images.preload();
   }
 
   render(state: EditorCanvasRenderState): void {
@@ -80,10 +72,33 @@ export class EditorCanvasRenderer {
 
     const preview = new EditorPreview(level, this.catalog);
     const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
-    for (let y = 0; y < level.height; y++)
-      for (let x = 0; x < level.width; x++)
-        for (const inspection of preview.inspectCell(x, y).presences)
-          this.drawPresence(context, preview, visualQuery, inspection, x, y);
+    const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
+      world: [],
+      player: [],
+      overlay: [],
+    };
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        for (const inspection of preview.inspectCell(x, y).presences) {
+          passes[this.visuals.renderPassFor(inspection.definition)].push({
+            inspection,
+            x,
+            y,
+          });
+        }
+      }
+    }
+    for (const pass of ["world", "player", "overlay"] as const) {
+      for (const item of passes[pass])
+        this.drawPresence(
+          context,
+          preview,
+          visualQuery,
+          item.inspection,
+          item.x,
+          item.y,
+        );
+    }
 
     this.drawGrid(context, level.width, level.height);
     this.drawPreview(context, state, preview);
@@ -226,7 +241,7 @@ export class EditorCanvasRenderer {
     x: number,
     y: number,
   ): void {
-    const image = this.images.get(layer.asset);
+    const image = this.images.image(layer.asset);
     if (!image) return;
     const left = x * EDITOR_TILE_SIZE;
     const top = y * EDITOR_TILE_SIZE;
@@ -234,7 +249,7 @@ export class EditorCanvasRenderer {
       context.drawImage(image, left, top, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
       return;
     }
-    const sourceTile = this.assets.sourceTileSize ?? 48;
+    const sourceTile = this.images.sourceTileSize;
     const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
     const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
     const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
@@ -266,8 +281,9 @@ export class EditorCanvasRenderer {
     x: number,
     y: number,
   ): void {
-    if (!this.atlas) return;
-    const sourceTile = this.assets.sourceTileSize ?? 48;
+    const atlas = this.images.image(this.images.atlasId);
+    if (!atlas) return;
+    const sourceTile = this.images.sourceTileSize;
     const centerX = x * EDITOR_TILE_SIZE + EDITOR_TILE_SIZE / 2;
     const centerY = y * EDITOR_TILE_SIZE + EDITOR_TILE_SIZE / 2;
     context.save();
@@ -275,7 +291,7 @@ export class EditorCanvasRenderer {
     context.rotate((layer.rotate ?? 0) * (Math.PI / 2));
     context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
     context.drawImage(
-      this.atlas,
+      atlas,
       layer.column * sourceTile,
       layer.row * sourceTile,
       sourceTile,

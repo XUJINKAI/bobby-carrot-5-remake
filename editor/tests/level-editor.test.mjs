@@ -74,19 +74,22 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
   ]);
 
   const preview = new EditorPreview(level, catalog);
-  const ref = { index: level.entities.findIndex((entity) => entity.type === EntityTypeId.DRAGON) };
+  const ref = {
+    index: level.entities.findIndex((entity) => entity.type === EntityTypeId.DRAGON),
+  };
   assert.deepEqual(entityCells(preview, ref), [
     { x: 3, y: 3, role: "head" },
     { x: 4, y: 3, role: "body" },
     { x: 5, y: 3, role: "tail" },
   ]);
   assert.equal(
-    fromLevelMap(map).entities.filter((entity) => entity.type === EntityTypeId.DRAGON).length,
+    fromLevelMap(map).entities.filter((entity) => entity.type === EntityTypeId.DRAGON)
+      .length,
     1,
   );
 });
 
-test("placement derives footprint, cursor and same-group replacement from Definition", () => {
+test("placement derives footprint cursor and replacement from authoring replaceGroup", () => {
   const level = createBlankLevel(12, 8);
   const dragon = resolvePlacement(
     level,
@@ -109,15 +112,34 @@ test("placement derives footprint, cursor and same-group replacement from Defini
   ]);
 
   const before = new EditorPreview(level, catalog).inspectCell(1, 1);
-  assert.deepEqual(before.presences.map((item) => item.entity.type), [EntityTypeId.GROUND_C]);
+  assert.deepEqual(before.presences.map((item) => item.entity.type), [
+    EntityTypeId.GROUND_C,
+  ]);
   const after = placeEntity(
     catalog,
     EntityTypeId.WATER,
     { x: 1, y: 1 },
   ).apply(level);
   assert.deepEqual(
-    new EditorPreview(after, catalog).inspectCell(1, 1).presences.map((item) => item.entity.type),
+    new EditorPreview(after, catalog)
+      .inspectCell(1, 1)
+      .presences.map((item) => item.entity.type),
     [EntityTypeId.WATER],
+  );
+});
+
+test("placement without replaceGroup stacks instead of replacing", () => {
+  const level = createBlankLevel(8, 8);
+  const after = placeEntity(
+    catalog,
+    EntityTypeId.CARROT,
+    { x: 1, y: 1 },
+  ).apply(level);
+  assert.deepEqual(
+    new EditorPreview(after, catalog)
+      .inspectCell(1, 1)
+      .presences.map((item) => item.entity.type),
+    [EntityTypeId.GROUND_C, EntityTypeId.CARROT],
   );
 });
 
@@ -185,7 +207,7 @@ test("persisted visual variant 使用会话 placement sequence 初始化一次�
       definition: {
         type: "flower",
         traits: [],
-        stackBand: "content",
+        stackOrder: 100,
         presentation: { name: "Flower", visual: "flower-visual" },
         authoring: { palette: true, category: "test" },
       },
@@ -219,13 +241,18 @@ test("persisted visual variant 使用会话 placement sequence 初始化一次�
     true,
   );
   assert.equal(document.getSnapshot().placementSequence, 1);
-  const flower = document.getSnapshot().level.entities.find((entity) => entity.type === "flower");
+  const flower = document
+    .getSnapshot()
+    .level.entities.find((entity) => entity.type === "flower");
   assert.ok(flower?.properties?.visualVariant);
   const variant = flower.properties.visualVariant;
 
-  const parsed = parseEditorLevel(serializeEditorLevel(document.getSnapshot().level));
+  const parsed = parseEditorLevel(
+    serializeEditorLevel(document.getSnapshot().level),
+  );
   assert.equal(
-    parsed.entities.find((entity) => entity.type === "flower")?.properties?.visualVariant,
+    parsed.entities.find((entity) => entity.type === "flower")?.properties
+      ?.visualVariant,
     variant,
   );
 

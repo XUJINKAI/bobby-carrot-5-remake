@@ -6,7 +6,6 @@ export type {
   EntityFieldKind,
   EntityFieldOption,
   EntityTrait,
-  OccupancyDefinition,
   VisualId,
   AudioProfileId,
 } from "./world/entity/EntityDefinition.js";
@@ -26,9 +25,13 @@ export type {
   FootprintPart,
   ResolvedFootprintCell,
 } from "./world/spatial/Footprint.js";
-export { STACK_BANDS } from "./world/spatial/StackBand.js";
-export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
+export {
+  ImageManager,
+  type ImageManagerOptions,
+  type ImageSliceDefinition,
+  type LoadedImageSlice,
+} from "./image/ImageManager.js";
 export {
   defineEntityModule,
   type EntityAuthoringDefinition,
@@ -59,10 +62,10 @@ export type {
   AtlasVisualLayer,
   EntityVisualRuntimeState,
   ImageVisualLayer,
-  VisualAssetSources,
   VisualComposition,
   VisualDefinition,
   VisualLayer,
   VisualQuery,
+  VisualRenderPass,
   VisualResolveContext,
 } from "./visual/VisualDefinition.js";

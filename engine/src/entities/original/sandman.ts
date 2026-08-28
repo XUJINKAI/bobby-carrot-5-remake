@@ -12,7 +12,6 @@ const definition = contentDefinition(
   "Sandman",
   ["blocking"],
   {
-    occupancy: { group: "actor" },
     footprint: {
       rotateWithDirection: true,
       baseDirection: "down",

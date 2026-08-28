@@ -10,56 +10,70 @@ function registry() {
     {
       type: "floor",
       traits: ["walkable"],
-      stackBand: "surface",
+      stackOrder: 0,
       presentation: { name: "Floor", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "player",
       traits: ["player"],
-      stackBand: "content",
+      stackOrder: 100,
       presentation: { name: "Player", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "wall",
       traits: ["blocking"],
-      stackBand: "content",
+      stackOrder: 100,
       presentation: { name: "Wall", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "box",
       traits: ["blocking", "pushable"],
-      stackBand: "content",
+      stackOrder: 100,
       presentation: { name: "Box", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "goal",
       traits: ["walkable", "goal"],
-      stackBand: "surface",
+      stackOrder: 0,
       presentation: { name: "Goal", category: "test" },
+      authoring: { palette: true },
+    },
+    {
+      type: "exit-cell",
+      traits: ["walkable"],
+      stackOrder: 0,
+      presentation: { name: "Exit", category: "test" },
+      authoring: { palette: true },
+    },
+    {
+      type: "carrot",
+      traits: [],
+      stackOrder: 100,
+      presentation: { name: "Carrot", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "grass",
       traits: ["blocking", "mowable"],
-      stackBand: "cover",
+      stackOrder: 200,
       presentation: { name: "Grass", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "item",
       traits: ["item"],
-      stackBand: "content",
+      stackOrder: 100,
       presentation: { name: "Item", category: "test" },
       authoring: { palette: true },
     },
     {
       type: "long",
       traits: [],
-      stackBand: "content",
+      stackOrder: 100,
       footprint: {
         rotateWithDirection: true,
         baseDirection: "right",
@@ -111,17 +125,97 @@ test("pushable movement and fill-all rule use Presence traits", () => {
       rules: {
         win: {
           type: "fill-all",
-          targetTrait: "goal",
-          fillerTrait: "pushable",
+          target: "goal",
+          filler: "pushable",
         },
       },
     },
     { entities, behaviors: new BehaviorRegistry() },
   );
+  assert.deepEqual(world.winState, {
+    type: "fill-all",
+    target: "goal",
+    filler: "pushable",
+    completed: false,
+    remaining: 1,
+  });
   const move = world.move("right");
   assert.equal(move.moved, true);
+  assert.deepEqual(world.winState, {
+    type: "fill-all",
+    target: "goal",
+    filler: "pushable",
+    completed: true,
+    remaining: 0,
+  });
   assert.equal(world.completed, true);
   assert.equal(world.query.entitiesWithTrait("pushable")[0].anchor.x, 2);
+});
+
+test("win selector can address an Entity type without a matching Trait", () => {
+  const entities = registry();
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      entities: [
+        floor(0, 0),
+        floor(1, 0, "exit-cell"),
+        { type: "player", x: 0, y: 0 },
+      ],
+      rules: { win: { type: "reach", target: "exit-cell" } },
+    },
+    { entities, behaviors: new BehaviorRegistry() },
+  );
+  assert.equal(world.completed, false);
+  assert.equal(world.move("right").moved, true);
+  assert.equal(world.completed, true);
+});
+
+test("combined win state keeps objective progress independent", () => {
+  const entities = registry();
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 1,
+      entities: [
+        floor(0, 0),
+        floor(1, 0),
+        floor(2, 0, "exit-cell"),
+        { type: "player", x: 0, y: 0 },
+        { type: "carrot", x: 1, y: 0 },
+      ],
+      rules: {
+        win: {
+          type: "all",
+          conditions: [
+            { type: "collect-all", target: "carrot" },
+            { type: "reach", target: "exit-cell" },
+          ],
+        },
+      },
+    },
+    { entities, behaviors: new BehaviorRegistry() },
+  );
+  assert.deepEqual(world.winState, {
+    type: "all",
+    completed: false,
+    conditions: [
+      {
+        type: "collect-all",
+        target: "carrot",
+        completed: false,
+        remaining: 1,
+      },
+      {
+        type: "reach",
+        target: "exit-cell",
+        completed: false,
+      },
+    ],
+  });
 });
 
 test("blocked touch commits after snapshot without auto-triggering revealed content", () => {

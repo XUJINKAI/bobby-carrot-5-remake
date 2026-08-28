@@ -65,10 +65,12 @@ test("Debug snapshot exposes runtime clocks, actions, Entity, Behavior and Visua
   assert.equal("player" in snapshot.runtime, false);
   assert.equal("facing" in snapshot.runtime, false);
   assert.deepEqual(snapshot.selection?.cell, { x: 0, y: 0 });
+  assert.equal("playerHere" in snapshot.selection, false);
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.entity?.direction, "right");
   assert.ok(snapshot.selection?.entity?.definition.traits.includes("player"));
+  assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
 });
@@ -95,9 +97,10 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
+  assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
 });
 
-test("Debug Sidebar keeps four clock controls mounted across presentation renders", () => {
+test("Debug Sidebar keeps the requested compact Selection and Entity details", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
@@ -113,4 +116,11 @@ test("Debug Sidebar keeps four clock controls mounted across presentation render
   assert.doesNotMatch(source, /\["status", "Status"\]/);
   assert.doesNotMatch(source, /\["player", "Player"\]/);
   assert.doesNotMatch(source, /\["facing", "Facing"\]/);
+  assert.doesNotMatch(source, /Player here/);
+  assert.doesNotMatch(source, /\["anchor", "Anchor"\]/);
+  assert.doesNotMatch(source, /\["stack", "Stack order"\]/);
+  assert.match(source, /presence\.stackOrder/);
+  assert.match(source, /"Traits",\s*"Behaviors"/);
+  assert.match(source, /label === "Traits" \|\| label === "Behaviors"/);
+  assert.match(source, /details\.open = open/);
 });

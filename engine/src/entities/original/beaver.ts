@@ -12,7 +12,6 @@ const definition = contentDefinition(
   "Beaver",
   ["blocking"],
   {
-    occupancy: { group: "actor" },
     footprint: {
       rotateWithDirection: true,
       baseDirection: "down",

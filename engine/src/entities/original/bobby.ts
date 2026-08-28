@@ -14,13 +14,12 @@ const BOBBY_VISUAL_ASSETS: Readonly<Record<Direction, string>> = {
 };
 
 const definition = contentDefinition(EntityTypeId.BOBBY, "Bobby", ["player"], {
-  occupancy: { group: "actor" },
   authoring: {
     palette: true,
     category: "角色",
     defaultDirection: "down",
   },
-  presentation: { name: "Bobby", category: "角色" },
+  presentation: { name: "Bobby", category: "角色", renderPass: "player" },
 });
 
 export const bobby: EntityModule = originalModule(definition, {

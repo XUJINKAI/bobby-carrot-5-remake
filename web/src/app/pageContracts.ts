@@ -1,4 +1,4 @@
-import type { AudioRuntime } from "@bobby/engine";
+import type { AudioRuntime, ImageManager } from "@bobby/engine";
 import type {
   AdventureIndex,
   MapCollectionIndex,
@@ -21,5 +21,6 @@ export interface PageContext {
   collections: MapCollectionIndex[];
   adventure: AdventureIndex;
   audio: AudioRuntime;
+  images: ImageManager;
   navigate: Navigate;
 }

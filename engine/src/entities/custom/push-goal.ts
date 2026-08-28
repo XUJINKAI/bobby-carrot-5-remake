@@ -5,10 +5,13 @@ export const pushGoal: EntityModule = defineEntityModule({
   definition: {
     type: EntityTypeId.PUSH_GOAL,
     traits: ["walkable", "push-goal"],
-    stackBand: "surface",
-    occupancy: { group: "surface", replaceSameGroup: true },
+    stackOrder: 0,
     presentation: { name: "Push Goal", category: "目标" },
-    authoring: { palette: true, category: "目标" },
+    authoring: {
+      palette: true,
+      category: "目标",
+      replaceGroup: "surface",
+    },
   },
   visual: {
     id: EntityTypeId.PUSH_GOAL,

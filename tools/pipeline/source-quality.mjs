@@ -23,6 +23,7 @@ const SOURCE_EXTENSIONS = new Set([
 const SCRIPT_EXTENSIONS = new Set([".ts", ".js", ".mjs"]);
 const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
+const IMAGE_MANAGER = path.normalize("engine/src/image/ImageManager.ts");
 
 const errors = [];
 const warnings = [];
@@ -34,6 +35,7 @@ for (const sourceRoot of SOURCE_ROOTS) {
     const text = fs.readFileSync(file, "utf8");
     const lineCount = countLines(text);
     const relative = path.relative(root, file);
+    const normalized = path.normalize(relative);
 
     if (lineCount > MAX_SOURCE_LINES) {
       errors.push(
@@ -41,6 +43,16 @@ for (const sourceRoot of SOURCE_ROOTS) {
       );
     } else if (lineCount >= REVIEW_SOURCE_LINES) {
       warnings.push(`${relative}: ${lineCount} 行，建议检查是否需要按职责拆分`);
+    }
+
+    if (normalized !== IMAGE_MANAGER && /\bnew\s+Image\s*\(/.test(text)) {
+      errors.push(`${relative}: 图片加载必须统一经过 ImageManager`);
+    }
+    if (normalized.startsWith(path.normalize("engine/src/")) && /\bstackBand\b/.test(text)) {
+      errors.push(`${relative}: stackBand 已移除；空间层序只能使用 stackOrder`);
+    }
+    if (normalized.startsWith(path.normalize("engine/src/")) && /\bVisualAssetSources\b/.test(text)) {
+      errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);
     }
 
     if (SCRIPT_EXTENSIONS.has(path.extname(file))) {
@@ -57,7 +69,7 @@ if (errors.length > 0) {
   throw new Error(`源码质量检查失败：\n- ${errors.join("\n- ")}`);
 }
 
-console.log("source-quality: OK — 源文件行数与代码排版检查通过。");
+console.log("source-quality: OK — 源文件行数、代码排版与 Engine 资源边界检查通过。");
 
 function countLines(text) {
   if (text.length === 0) return 0;

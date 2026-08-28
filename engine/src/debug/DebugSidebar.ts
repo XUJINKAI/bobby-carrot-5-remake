@@ -126,7 +126,6 @@ export class DebugSidebar {
     this.selectionData = document.createElement("div");
     this.selectionData.append(
       this.valueRow("Cell", "cell", this.selectionValues),
-      this.valueRow("Player here", "playerHere", this.selectionValues),
     );
     this.selectionStack = document.createElement("div");
     Object.assign(this.selectionStack.style, {
@@ -140,15 +139,13 @@ export class DebugSidebar {
     const entityBody = document.createElement("div");
     for (const [key, label] of [
       ["entity", "Entity"],
-      ["anchor", "Anchor"],
       ["direction", "Direction"],
-      ["stack", "Stack"],
-      ["behaviors", "Behaviors"],
       ["visual", "Visual"],
     ] as const)
       entityBody.append(this.valueRow(label, key, this.entityValues));
     for (const label of [
       "Traits",
+      "Behaviors",
       "Instance traits",
       "Properties",
       "State",
@@ -157,7 +154,10 @@ export class DebugSidebar {
       "Visual runtime",
       "Resolved layers",
     ]) {
-      const block = this.jsonDetails(label);
+      const block = this.jsonDetails(
+        label,
+        label === "Traits" || label === "Behaviors",
+      );
       this.entityJson.set(label, block.pre);
       entityBody.append(block.details);
     }
@@ -239,7 +239,8 @@ export class DebugSidebar {
       this.presentationPauseResumeButton.title,
     );
 
-    this.frameBackButton.disabled = !runtime.presentationPaused || runtime.presentationFrame <= 0;
+    this.frameBackButton.disabled =
+      !runtime.presentationPaused || runtime.presentationFrame <= 0;
     this.frameForwardButton.disabled = !runtime.presentationPaused;
   }
 
@@ -250,21 +251,24 @@ export class DebugSidebar {
     this.entitySection.hidden = !selection?.entity;
     if (!selection) return;
 
-    this.setValue(this.selectionValues, "cell", `${selection.cell.x}, ${selection.cell.y}`);
-    this.setValue(this.selectionValues, "playerHere", String(selection.playerHere));
+    this.setValue(
+      this.selectionValues,
+      "cell",
+      `${selection.cell.x}, ${selection.cell.y}`,
+    );
     const signature = JSON.stringify(
       selection.presences.map((presence) => [
         presence.entityId,
         presence.type,
         presence.role,
-        presence.stackBand,
+        presence.stackOrder,
       ]),
     );
     if (signature !== this.selectionStackSignature) {
       this.selectionStackSignature = signature;
       const buttons = [...selection.presences].reverse().map((presence) => {
         const label = [
-          `[${presence.stackBand}]`,
+          `[${presence.stackOrder}]`,
           `#${presence.entityId}`,
           presence.type,
           presence.role ? `(${presence.role})` : "",
@@ -279,7 +283,9 @@ export class DebugSidebar {
         return button;
       });
       this.selectionStack.replaceChildren(
-        ...(buttons.length > 0 ? buttons : [document.createTextNode("Empty cell")]),
+        ...(buttons.length > 0
+          ? buttons
+          : [document.createTextNode("Empty cell")]),
       );
     }
     if (selection.entity) this.updateEntity(selection.entity);
@@ -287,12 +293,14 @@ export class DebugSidebar {
 
   private updateEntity(entity: DebugEntitySnapshot): void {
     this.setValue(this.entityValues, "entity", `#${entity.id} ${entity.type}`);
-    this.setValue(this.entityValues, "anchor", `${entity.anchor.x}, ${entity.anchor.y}`);
-    this.setValue(this.entityValues, "direction", entity.direction ?? "-");
-    this.setValue(this.entityValues, "stack", entity.definition.stackBand);
-    this.setValue(this.entityValues, "behaviors", entity.behaviors.join(", ") || "-");
+    this.setValue(
+      this.entityValues,
+      "direction",
+      entity.direction ?? "-",
+    );
     this.setValue(this.entityValues, "visual", entity.visual.visualId);
     this.setJson("Traits", entity.definition.traits);
+    this.setJson("Behaviors", entity.behaviors);
     this.setJson("Instance traits", entity.instanceTraits);
     this.setJson("Properties", entity.properties);
     this.setJson("State", entity.state);
@@ -313,7 +321,11 @@ export class DebugSidebar {
     if (target && target.textContent !== text) target.textContent = text;
   }
 
-  private valueRow(labelText: string, key: string, values: ValueMap): HTMLElement {
+  private valueRow(
+    labelText: string,
+    key: string,
+    values: ValueMap,
+  ): HTMLElement {
     const row = document.createElement("div");
     Object.assign(row.style, {
       display: "grid",
@@ -350,11 +362,15 @@ export class DebugSidebar {
     return section;
   }
 
-  private jsonDetails(label: string): {
+  private jsonDetails(
+    label: string,
+    open = false,
+  ): {
     details: HTMLDetailsElement;
     pre: HTMLPreElement;
   } {
     const details = document.createElement("details");
+    details.open = open;
     details.style.marginTop = "6px";
     const summary = document.createElement("summary");
     summary.textContent = label;
@@ -396,5 +412,7 @@ function formatJson(value: unknown): string {
 }
 
 function formatMs(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }

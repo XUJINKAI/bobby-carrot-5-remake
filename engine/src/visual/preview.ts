@@ -68,8 +68,7 @@ export function resolveEntityVisualPreview(
         ...(part.traits ?? []),
       ]),
     ],
-    stackBand: part.stackBand ?? definition.stackBand,
-    stackOrder: part.stackOrder ?? 0,
+    stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,
   };
   const query: VisualQuery = {
     inBounds: () => true,

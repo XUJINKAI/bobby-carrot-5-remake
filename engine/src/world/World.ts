@@ -42,6 +42,7 @@ import type {
   CellInspection,
   MoveResult,
   PresenceInspection,
+  WinConditionState,
   WorldEvent,
 } from "./WorldTypes.js";
 
@@ -87,7 +88,7 @@ export class World {
       level.width,
       level.height,
     );
-    this.state = createGlobalState(options.profile, level.rules?.win);
+    this.state = createGlobalState(options.profile);
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
@@ -120,6 +121,10 @@ export class World {
     return this.state.completed;
   }
 
+  get winState(): WinConditionState | null {
+    return this.rules?.win ? this.evaluateWin(this.rules.win) : null;
+  }
+
   get forcedKind(): string | null {
     return this.state.forced?.kind ?? null;
   }
@@ -130,10 +135,6 @@ export class World {
 
   get ridingMower(): boolean {
     return this.state.ridingMower;
-  }
-
-  get objectiveRemaining(): number {
-    return this.state.objectiveRemaining;
   }
 
   get isPlayerClimbing(): boolean {
@@ -254,7 +255,7 @@ export class World {
       ignoredEntity = pushable.entityId;
     }
 
-    if (!this.hasSupport(to)) {
+    if (!this.hasWalkable(to)) {
       const touchEvents = this.runTouch(targetStack, actor, direction);
       return {
         ...blockedResult(from, to, direction, "void"),
@@ -340,7 +341,7 @@ export class World {
     cell: CellPosition,
     movingEntityId: EntityId,
   ): boolean {
-    if (!this.spatial.inBounds(cell) || !this.hasSupport(cell)) return false;
+    if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
     return !this.spatial.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
@@ -349,15 +350,8 @@ export class World {
     );
   }
 
-  private hasSupport(cell: CellPosition): boolean {
-    return this.spatial.presencesAt(cell).some(
-      (presence) =>
-        presence.stackBand === "surface" &&
-        (presence.traits.includes("walkable") ||
-          presence.traits.includes("water") ||
-          presence.traits.includes("forced-movement") ||
-          presence.traits.includes("push-goal")),
-    );
+  private hasWalkable(cell: CellPosition): boolean {
+    return this.spatial.hasTraitAt(cell, "walkable");
   }
 
   private runPassage(
@@ -507,17 +501,6 @@ export class World {
   }
 
   private refreshDerivedState(): void {
-    const objectives = this.query.entitiesWithTrait("level-objective");
-    this.state.objectiveRemaining = objectives.length;
-    this.state.objectiveTotal = Math.max(
-      this.state.objectiveTotal,
-      objectives.length,
-    );
-    if (this.query.entitiesWithTrait("objective-carrot").length > 0)
-      this.state.objectiveMode = "carrot";
-    else if (this.query.entitiesWithTrait("objective-nest").length > 0)
-      this.state.objectiveMode = "nest";
-    else this.state.objectiveMode = "generic";
     this.state.goldenCarrotsInLevel =
       this.query.entitiesWithTrait("golden-carrot").length;
     this.state.bonusCoinsInLevel =
@@ -525,48 +508,90 @@ export class World {
   }
 
   private evaluateCompletion(events: WorldEvent[]): void {
-    if (
-      this.state.completed ||
-      this.state.dead ||
-      !this.state.winCondition
-    )
-      return;
-    if (!this.evaluateWin(this.state.winCondition)) return;
+    if (this.state.completed || this.state.dead) return;
+    const win = this.winState;
+    if (!win?.completed) return;
     this.state.completed = true;
     events.push({ type: "complete" });
   }
 
-  private evaluateWin(condition: WinCondition): boolean {
+  private evaluateWin(condition: WinCondition): WinConditionState {
     switch (condition.type) {
-      case "all":
-        return condition.conditions.every((item) => this.evaluateWin(item));
-      case "any":
-        return condition.conditions.some((item) => this.evaluateWin(item));
-      case "collect-all":
-        return this.query.entitiesWithTrait(condition.trait).length === 0;
-      case "reach":
-        return this.spatial.hasTraitAt(this.player, condition.trait);
-      case "fill-all": {
-        const targets = this.spatialCellsWithTrait(condition.targetTrait);
-        return (
-          targets.length > 0 &&
-          targets.every((cell) =>
-            this.spatial.hasTraitAt(cell, condition.fillerTrait),
-          )
+      case "all": {
+        const conditions = condition.conditions.map((item) =>
+          this.evaluateWin(item),
         );
+        return {
+          type: "all",
+          completed: conditions.every((item) => item.completed),
+          conditions,
+        };
+      }
+      case "any": {
+        const conditions = condition.conditions.map((item) =>
+          this.evaluateWin(item),
+        );
+        return {
+          type: "any",
+          completed: conditions.some((item) => item.completed),
+          conditions,
+        };
+      }
+      case "collect-all": {
+        const remaining = this.matchingEntityCount(condition.target);
+        return {
+          type: "collect-all",
+          target: condition.target,
+          completed: remaining === 0,
+          remaining,
+        };
+      }
+      case "reach":
+        return {
+          type: "reach",
+          target: condition.target,
+          completed: this.hasSelectorAt(this.player, condition.target),
+        };
+      case "fill-all": {
+        const targets = this.spatialCellsMatching(condition.target);
+        const remaining = targets.filter(
+          (cell) => !this.hasSelectorAt(cell, condition.filler),
+        ).length;
+        return {
+          type: "fill-all",
+          target: condition.target,
+          filler: condition.filler,
+          completed: targets.length > 0 && remaining === 0,
+          remaining,
+        };
       }
     }
   }
 
-  private spatialCellsWithTrait(trait: string): CellPosition[] {
+  private matchingEntityCount(selector: string): number {
+    return this.entities
+      .all()
+      .filter(
+        (entity) =>
+          entity.type === selector ||
+          this.query.entityHasTrait(entity.id, selector),
+      ).length;
+  }
+
+  private hasSelectorAt(cell: CellPosition, selector: string): boolean {
+    return this.spatial.presencesAt(cell).some((presence) => {
+      const entity = this.entities.require(presence.entityId);
+      return entity.type === selector || presence.traits.includes(selector);
+    });
+  }
+
+  private spatialCellsMatching(selector: string): CellPosition[] {
     const result = new Map<string, CellPosition>();
-    for (const entity of this.query.entitiesWithTrait(trait)) {
+    for (const entity of this.entities.all()) {
+      const typeMatches = entity.type === selector;
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (presence.traits.includes(trait))
-          result.set(
-            `${presence.cell.x},${presence.cell.y}`,
-            presence.cell,
-          );
+        if (!typeMatches && !presence.traits.includes(selector)) continue;
+        result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
       }
     }
     return [...result.values()];
@@ -580,7 +605,7 @@ export class World {
       entityId: entity.id,
       type: entity.type,
       ...(presence.role ? { role: presence.role } : {}),
-      stackBand: presence.stackBand,
+      stackOrder: presence.stackOrder,
       traits: presence.traits,
       ...(entity.state ? { state: structuredClone(entity.state) } : {}),
     };

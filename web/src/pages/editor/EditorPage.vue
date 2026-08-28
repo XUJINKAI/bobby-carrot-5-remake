@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { type EditorLevel, type Cell } from "@bobby/editor";
-import type { AudioBackend } from "@bobby/engine";
+import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
@@ -13,10 +12,10 @@ import { useEditorPage } from "./useEditorPage.js";
 const props = defineProps<{
   initialLevel: EditorLevel;
   audio: AudioBackend;
+  images: ImageManager;
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
-const visualAssets = gameAssets();
 let session: GameSession | null = null;
 const paletteOpen = ref(false);
 const inspectorOpen = ref(false);
@@ -41,15 +40,12 @@ async function togglePlay(): Promise<void> {
       canvas,
       level: page.levelMap.value,
       gameOptions: {
-        assets: visualAssets,
+        images: props.images,
         audio: props.audio,
         debug: false,
       },
       runtime: {
-        hud: {
-          hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
-          goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
-        },
+        hud: true,
         input: {
           screenJoystick: { enabled: loadScreenControlPreference() },
         },
@@ -191,7 +187,7 @@ function isTextInput(target: EventTarget | null): boolean {
       :inspector="page.inspector.value"
       :palette-size="page.paletteSize.value"
       :playing="page.playing.value"
-      :visual-assets="visualAssets"
+      :images="props.images"
       @select="page.selection.value = $event"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"

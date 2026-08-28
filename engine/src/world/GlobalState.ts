@@ -1,9 +1,8 @@
-import type { Direction, WinCondition } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type { CellPosition } from "./entity/EntityInstance.js";
 
 export interface InventoryState { gas: boolean; kite: boolean; shovel: boolean; beans: number; }
 export interface ProfileCapabilities { superKey: boolean; temporaryKey: boolean; speedShoes: boolean; }
-export type ObjectiveMode = "carrot" | "nest" | "generic";
 export type ForcedKind = "speed" | "ice" | "tide" | "flight" | "leaf" | "mower-exit";
 export interface ForcedMovement { kind: ForcedKind; direction: Direction; }
 
@@ -16,10 +15,6 @@ export interface GlobalState {
   inventory: InventoryState;
   profile: ProfileCapabilities;
   ridingMower: boolean;
-  objectiveMode: ObjectiveMode;
-  objectiveRemaining: number;
-  objectiveTotal: number;
-  winCondition?: WinCondition;
   forced: ForcedMovement | null;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
@@ -28,7 +23,7 @@ export interface GlobalState {
   logicRemainderMs: number;
 }
 
-export function createGlobalState(profile: Partial<ProfileCapabilities> = {}, winCondition?: WinCondition): GlobalState {
+export function createGlobalState(profile: Partial<ProfileCapabilities> = {}): GlobalState {
   return {
     dead: false,
     completed: false,
@@ -41,10 +36,6 @@ export function createGlobalState(profile: Partial<ProfileCapabilities> = {}, wi
       speedShoes: profile.speedShoes ?? false,
     },
     ridingMower: false,
-    objectiveMode: "generic",
-    objectiveRemaining: 0,
-    objectiveTotal: 0,
-    ...(winCondition ? { winCondition: structuredClone(winCondition) } : {}),
     forced: null,
     bonusCoinsInLevel: 0,
     goldenCarrotsInLevel: 0,

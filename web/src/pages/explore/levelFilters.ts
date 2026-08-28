@@ -1,3 +1,4 @@
+import type { ImageManager } from "@bobby/engine";
 import type {
   MapCollectionFilter,
   MapCollectionIcon,
@@ -12,9 +13,14 @@ import {
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
 let currentCollection: MapCollectionIndex | null = null;
+let currentImages: ImageManager | null = null;
 
-export function mountLevelFilters(collection: MapCollectionIndex): void {
+export function mountLevelFilters(
+  collection: MapCollectionIndex,
+  images: ImageManager,
+): void {
   currentCollection = collection;
+  currentImages = images;
   const validGroups = new Set(collection.filters.map((filter) => filter.id));
   for (const group of [...selected.keys()]) {
     if (!validGroups.has(group)) selected.delete(group);
@@ -190,10 +196,14 @@ function iconHtml(icon: MapCollectionIcon | undefined): string {
     return `<span class="level-filter-icon" aria-hidden="true">${escapeHtml(icon.value)}</span>`;
   }
   if (icon.type === "image") {
-    const src = new URL(icon.src, document.baseURI).href;
-    return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(src)}">`;
+    if (!currentImages) return "";
+    const id = `collection-icon:${icon.src}`;
+    currentImages.registerSource(id, new URL(icon.src, document.baseURI).href);
+    return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(currentImages.url(id))}">`;
   }
-  const style = entityVisualStyle(icon.entity, 24);
+  const style = currentImages
+    ? entityVisualStyle(currentImages, icon.entity, 24)
+    : null;
   if (style) {
     return `<i class="level-filter-icon" aria-hidden="true" style="${escapeAttribute(styleRecordToText(style))}"></i>`;
   }

@@ -39,8 +39,8 @@ test("LOMA XSB conversion preserves geometry and uses only entity fill-all push 
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, {
       type: "fill-all",
-      targetTrait: "push-goal",
-      fillerTrait: "pushable",
+      target: "push-goal",
+      filler: "pushable",
     });
     assert.equal(
       entry.level.entities.filter((entity) => entity.traits?.includes("pushable"))

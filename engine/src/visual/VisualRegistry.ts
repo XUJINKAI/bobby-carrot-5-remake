@@ -6,6 +6,7 @@ import type {
 import type {
   VisualComposition,
   VisualDefinition,
+  VisualRenderPass,
   VisualResolveContext,
 } from "./VisualDefinition.js";
 
@@ -46,6 +47,10 @@ export class VisualRegistry {
 
   visualIdFor(entityDefinition: EntityDefinition): VisualId {
     return this.entityVisuals.get(entityDefinition.type) ?? entityDefinition.type;
+  }
+
+  renderPassFor(entityDefinition: EntityDefinition): VisualRenderPass {
+    return this.get(this.visualIdFor(entityDefinition))?.renderPass ?? "world";
   }
 
   resolve(

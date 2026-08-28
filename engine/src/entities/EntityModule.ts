@@ -6,18 +6,24 @@ import type {
   EntityTrait,
   VisualId,
 } from "../world/entity/EntityDefinition.js";
-import type { VisualDefinition } from "../visual/VisualDefinition.js";
+import type {
+  VisualDefinition,
+  VisualRenderPass,
+} from "../visual/VisualDefinition.js";
 
 export interface EntityPresentationDefinition {
   name: string;
   category?: string;
   visual?: VisualId;
   audio?: AudioProfileId;
+  renderPass?: VisualRenderPass;
 }
 
 export interface EntityAuthoringDefinition {
   palette?: boolean;
   category?: string;
+  /** Editor 放置时，目标格已有相同 replaceGroup 的 Entity 会被替换。 */
+  replaceGroup?: string;
   /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
   cursor?: { dx: number; dy: number };
   /** Palette 创建方向型 Entity 时使用的初值。 */
@@ -66,11 +72,21 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
             ...new Set([...(gameplayDefinition.behaviors ?? []), ...behaviorIds]),
           ],
         };
+  const visual = input.visual
+    ? {
+        ...input.visual,
+        ...(input.visual.renderPass
+          ? {}
+          : presentation.renderPass
+            ? { renderPass: presentation.renderPass }
+            : {}),
+      }
+    : undefined;
   return {
     definition,
     presentation,
     ...(authoring ? { authoring } : {}),
-    ...(input.visual ? { visual: input.visual } : {}),
+    ...(visual ? { visual } : {}),
     ...(input.behaviorBindings
       ? { behaviorBindings: input.behaviorBindings }
       : {}),

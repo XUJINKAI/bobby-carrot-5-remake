@@ -6,7 +6,7 @@ import {
   createAdventureLevelInstance,
   type AdventureSave,
 } from "@bobby/adventure";
-import type { AudioRuntime } from "@bobby/engine";
+import type { AudioRuntime, ImageManager } from "@bobby/engine";
 import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
@@ -20,7 +20,6 @@ import {
   type Navigate,
   type PageController,
 } from "../../app/pageContracts.js";
-import { gameAssets, siteUrl } from "../../services/assets/gameAssets.js";
 import {
   loadAdventureSave,
   saveAdventureSave,
@@ -61,6 +60,7 @@ export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
   audio: AudioRuntime;
+  images: ImageManager;
   navigate: Navigate;
   level: LevelMap;
   identity: GameIdentity;
@@ -76,6 +76,7 @@ export async function renderGamePage(
   const {
     app,
     audio,
+    images,
     navigate,
     level,
     identity,
@@ -130,19 +131,16 @@ export async function renderGamePage(
     level: sessionLevel,
     gameOptions: {
       audio,
+      images,
       profile: adventureSave
         ? {
             superKey: plan!.capabilities.goldenKey,
             speedShoes: plan!.capabilities.speedShoes,
           }
         : { superKey: true },
-      assets: gameAssets(),
     },
     runtime: {
-      hud: {
-        hudAtlasUrl: siteUrl("assets/art/hd/hud.png"),
-        goldenCarrotUrl: siteUrl("assets/art/hd/icon.png"),
-      },
+      hud: true,
       input: {
         undo: mode === "explore",
         debug: mode === "explore",

@@ -31,6 +31,53 @@ test("canonical original obstacle semantics keep known blockers blocking", () =>
   }
 });
 
+test("Egg Nest fills only when Bobby leaves the empty nest", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    rules: {
+      win: { type: "fill-all", target: "egg-nest", filler: "egg" },
+    },
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      ground(2, 0),
+      bobby(0, 0),
+      { type: EntityTypeId.EGG_NEST_EMPTY, x: 1, y: 0 },
+    ],
+  });
+
+  assert.equal(world.winState?.remaining, 1);
+  const enter = world.move("right");
+  assert.equal(enter.moved, true);
+  assert.equal(world.winState?.remaining, 1);
+  assert.equal(
+    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+    true,
+  );
+
+  const leave = world.move("right");
+  assert.equal(leave.moved, true);
+  assert.equal(leave.events.some((event) => event.type === "fill-egg-nest"), true);
+  assert.equal(
+    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+    false,
+  );
+  assert.equal(
+    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_FILLED),
+    true,
+  );
+  assert.deepEqual(world.winState, {
+    type: "fill-all",
+    target: "egg-nest",
+    filler: "egg",
+    completed: true,
+    remaining: 0,
+  });
+  assert.equal(world.completed, true);
+});
+
 test("Ice Block cover blocks Bobby instead of becoming pass-through scenery", () => {
   const world = new World({
     schemaVersion: 1,
