@@ -8,7 +8,17 @@ export interface ScreenJoystickOptions {
   deadZone?: number;
   size?: number;
   activationSize?: number;
+  initialRepeatDelayMs?: number;
 }
+
+export const DEFAULT_SCREEN_JOYSTICK_OPTIONS = {
+  enabled: true,
+  opacity: 0.45,
+  deadZone: 0.2,
+  size: 112,
+  activationScale: 2.4,
+  initialRepeatDelayMs: 375,
+} as const;
 
 export interface JoystickVectorState {
   direction: Direction | null;
@@ -67,14 +77,25 @@ export class ScreenJoystick {
     private readonly onDirection: (direction: Direction | null) => void,
   ) {
     const root = resolveGameplayMount(canvas, options.root, "ScreenJoystick");
-    this.size = Math.max(72, options.size ?? 112);
+    this.size = Math.max(
+      72,
+      options.size ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.size,
+    );
     this.activationSize = Math.max(
       this.size,
-      options.activationSize ?? this.size * 2.4,
+      options.activationSize ??
+        this.size * DEFAULT_SCREEN_JOYSTICK_OPTIONS.activationScale,
     );
     this.radius = this.size * 0.34;
     this.deadZonePixels =
-      this.radius * Math.min(0.8, Math.max(0.05, options.deadZone ?? 0.2));
+      this.radius *
+      Math.min(
+        0.8,
+        Math.max(
+          0.05,
+          options.deadZone ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.deadZone,
+        ),
+      );
 
     this.activationArea = document.createElement("div");
     this.activationArea.className = "engine-screen-joystick-activation";
@@ -103,7 +124,15 @@ export class ScreenJoystick {
       borderRadius: "50%",
       background: "rgba(8,20,14,.34)",
       boxShadow: "inset 0 0 24px rgba(255,255,255,.07)",
-      opacity: String(Math.min(0.9, Math.max(0.2, options.opacity ?? 0.45))),
+      opacity: String(
+        Math.min(
+          0.9,
+          Math.max(
+            0.2,
+            options.opacity ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.opacity,
+          ),
+        ),
+      ),
       transform: "translate(-50%, -50%)",
       pointerEvents: "none",
     });
@@ -126,7 +155,9 @@ export class ScreenJoystick {
     this.element.append(this.knob);
     this.activationArea.append(this.element);
     root.append(this.activationArea);
-    this.activationArea.hidden = options.enabled === false;
+    this.activationArea.hidden = !(
+      options.enabled ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.enabled
+    );
     this.activationArea.addEventListener("pointerdown", this.onPointerDown);
     this.activationArea.addEventListener("pointermove", this.onPointerMove);
     this.activationArea.addEventListener("pointerup", this.onPointerEnd);
