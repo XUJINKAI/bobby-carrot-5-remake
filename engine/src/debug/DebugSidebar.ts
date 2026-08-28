@@ -13,10 +13,27 @@ export interface DebugSidebarActions {
   selectEntity(entityId: EntityId): void;
 }
 
+type ValueMap = Map<string, HTMLSpanElement>;
+
 /** Engine 自带的只读调试侧栏，不依赖 Web / Editor 页面组件。 */
 export class DebugSidebar {
   private readonly root: HTMLDivElement;
-  private readonly content: HTMLDivElement;
+  private readonly runtimeValues: ValueMap = new Map();
+  private readonly selectionValues: ValueMap = new Map();
+  private readonly entityValues: ValueMap = new Map();
+  private readonly entityJson = new Map<string, HTMLPreElement>();
+  private readonly forcedDetails: HTMLDetailsElement;
+  private readonly forcedPre: HTMLPreElement;
+  private readonly selectionSection: HTMLElement;
+  private readonly selectionMessage: HTMLDivElement;
+  private readonly selectionData: HTMLDivElement;
+  private readonly selectionStack: HTMLDivElement;
+  private readonly entitySection: HTMLElement;
+  private readonly pauseButton: HTMLButtonElement;
+  private readonly step1Button: HTMLButtonElement;
+  private readonly step4Button: HTMLButtonElement;
+  private readonly resumeButton: HTMLButtonElement;
+  private selectionStackSignature = "";
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -59,10 +76,102 @@ export class DebugSidebar {
     close.setAttribute("aria-label", "Close Engine Debug");
     header.append(title, close);
 
-    this.content = document.createElement("div");
-    this.content.style.display = "grid";
-    this.content.style.gap = "10px";
-    this.root.append(header, this.content);
+    const content = document.createElement("div");
+    content.style.display = "grid";
+    content.style.gap = "10px";
+
+    const runtimeBody = document.createElement("div");
+    for (const [key, label] of [
+      ["worldTick", "World Tick"],
+      ["worldHz", "World Hz"],
+      ["worldStep", "World Step"],
+      ["worldClock", "World Clock"],
+      ["presentationFrame", "Present Frame"],
+      ["presentationHz", "Present Hz"],
+      ["status", "Status"],
+      ["moves", "Moves"],
+      ["player", "Player"],
+      ["facing", "Facing"],
+      ["actions", "Actions"],
+      ["inputBlocked", "Input Blocked"],
+      ["cameraTarget", "Camera Target"],
+      ["animating", "Animating"],
+    ] as const)
+      runtimeBody.append(this.valueRow(label, key, this.runtimeValues));
+    const forced = this.jsonDetails("Forced");
+    this.forcedDetails = forced.details;
+    this.forcedPre = forced.pre;
+    runtimeBody.append(this.forcedDetails);
+
+    const controls = document.createElement("div");
+    Object.assign(controls.style, {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "6px",
+      marginTop: "8px",
+    });
+    this.pauseButton = this.button("Pause", () => this.actions.pause());
+    this.step1Button = this.button("+1 Tick", () => this.actions.step(1));
+    this.step4Button = this.button("+4 Ticks", () => this.actions.step(4));
+    this.resumeButton = this.button("Resume", () => this.actions.resume());
+    controls.append(
+      this.pauseButton,
+      this.step1Button,
+      this.step4Button,
+      this.resumeButton,
+    );
+    runtimeBody.append(controls);
+
+    const selectionBody = document.createElement("div");
+    this.selectionMessage = document.createElement("div");
+    this.selectionMessage.textContent = "Click a cell to inspect it.";
+    this.selectionData = document.createElement("div");
+    this.selectionData.append(
+      this.valueRow("Cell", "cell", this.selectionValues),
+      this.valueRow("Player here", "playerHere", this.selectionValues),
+    );
+    this.selectionStack = document.createElement("div");
+    Object.assign(this.selectionStack.style, {
+      display: "grid",
+      gap: "4px",
+      marginTop: "7px",
+    });
+    this.selectionData.append(this.selectionStack);
+    selectionBody.append(this.selectionMessage, this.selectionData);
+    this.selectionSection = this.section("Selection", selectionBody);
+
+    const entityBody = document.createElement("div");
+    for (const [key, label] of [
+      ["entity", "Entity"],
+      ["anchor", "Anchor"],
+      ["direction", "Direction"],
+      ["stack", "Stack"],
+      ["behaviors", "Behaviors"],
+      ["visual", "Visual"],
+    ] as const)
+      entityBody.append(this.valueRow(label, key, this.entityValues));
+    for (const label of [
+      "Traits",
+      "Instance traits",
+      "Properties",
+      "State",
+      "Footprint",
+      "Presence",
+      "Visual runtime",
+      "Resolved layers",
+    ]) {
+      const block = this.jsonDetails(label);
+      this.entityJson.set(label, block.pre);
+      entityBody.append(block.details);
+    }
+    this.entitySection = this.section("Entity", entityBody);
+
+    content.append(
+      this.section("Runtime", runtimeBody),
+      this.selectionSection,
+      this.entitySection,
+    );
+    this.root.append(header, content);
     mount.append(this.root);
     this.root.hidden = true;
   }
@@ -73,117 +182,139 @@ export class DebugSidebar {
 
   render(snapshot: DebugSnapshot): void {
     if (this.root.hidden) return;
-    this.content.replaceChildren(this.runtimeSection(snapshot));
-    const selection = snapshot.selection;
-    if (!selection) {
-      this.content.append(
-        this.section("Selection", this.text("Click a cell to inspect it.")),
-      );
-      return;
-    }
-    this.content.append(this.selectionSection(snapshot));
-    if (selection.entity) this.content.append(this.entitySection(selection.entity));
+    this.updateRuntime(snapshot);
+    this.updateSelection(snapshot);
   }
 
   destroy(): void {
     this.root.remove();
   }
 
-  private runtimeSection(snapshot: DebugSnapshot): HTMLElement {
+  private updateRuntime(snapshot: DebugSnapshot): void {
     const runtime = snapshot.runtime;
-    const rows = document.createElement("div");
-    rows.append(
-      this.kv("World Tick", String(runtime.worldTickCount)),
-      this.kv("World Hz", String(runtime.worldHz)),
-      this.kv("World Step", `${runtime.worldStepMs} ms`),
-      this.kv("World Clock", runtime.worldPaused ? "paused" : "running"),
-      this.kv("Present Frame", String(runtime.presentationFrame)),
-      this.kv("Present Hz", String(runtime.presentationHz)),
-      this.kv("Status", runtime.status),
-      this.kv("Moves", String(runtime.moves)),
-      this.kv(
-        "Player",
-        runtime.player ? `${runtime.player.x}, ${runtime.player.y}` : "-",
-      ),
-      this.kv("Facing", runtime.facing ?? "-"),
-      this.kv("Actions", String(runtime.actionCount)),
-      this.kv("Input Blocked", String(runtime.inputBlocked)),
-      this.kv("Camera Target", runtime.cameraTarget === null ? "Bobby" : `#${runtime.cameraTarget}`),
-      this.kv("Animating", String(runtime.animating)),
+    this.setValue(this.runtimeValues, "worldTick", String(runtime.worldTickCount));
+    this.setValue(this.runtimeValues, "worldHz", String(runtime.worldHz));
+    this.setValue(this.runtimeValues, "worldStep", `${runtime.worldStepMs} ms`);
+    this.setValue(
+      this.runtimeValues,
+      "worldClock",
+      runtime.worldPaused ? "paused" : "running",
     );
-    if (runtime.forced) rows.append(this.jsonBlock("Forced", runtime.forced));
-
-    const controls = document.createElement("div");
-    Object.assign(controls.style, {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "6px",
-      marginTop: "8px",
-    });
-    const pause = this.button("Pause", () => this.actions.pause());
-    const step1 = this.button("+1 Tick", () => this.actions.step(1));
-    const step4 = this.button("+4 Ticks", () => this.actions.step(4));
-    const resume = this.button("Resume", () => this.actions.resume());
-    pause.disabled = runtime.worldPaused;
-    step1.disabled = !runtime.worldPaused;
-    step4.disabled = !runtime.worldPaused;
-    resume.disabled = !runtime.worldPaused;
-    controls.append(pause, step1, step4, resume);
-    rows.append(controls);
-    return this.section("Runtime", rows);
+    this.setValue(
+      this.runtimeValues,
+      "presentationFrame",
+      String(runtime.presentationFrame),
+    );
+    this.setValue(this.runtimeValues, "presentationHz", String(runtime.presentationHz));
+    this.setValue(this.runtimeValues, "status", runtime.status);
+    this.setValue(this.runtimeValues, "moves", String(runtime.moves));
+    this.setValue(
+      this.runtimeValues,
+      "player",
+      runtime.player ? `${runtime.player.x}, ${runtime.player.y}` : "-",
+    );
+    this.setValue(this.runtimeValues, "facing", runtime.facing ?? "-");
+    this.setValue(this.runtimeValues, "actions", String(runtime.actionCount));
+    this.setValue(this.runtimeValues, "inputBlocked", String(runtime.inputBlocked));
+    this.setValue(
+      this.runtimeValues,
+      "cameraTarget",
+      runtime.cameraTarget === null ? "Bobby" : `#${runtime.cameraTarget}`,
+    );
+    this.setValue(this.runtimeValues, "animating", String(runtime.animating));
+    this.forcedDetails.hidden = runtime.forced === null;
+    if (runtime.forced !== null) this.forcedPre.textContent = formatJson(runtime.forced);
+    this.pauseButton.disabled = runtime.worldPaused;
+    this.step1Button.disabled = !runtime.worldPaused;
+    this.step4Button.disabled = !runtime.worldPaused;
+    this.resumeButton.disabled = !runtime.worldPaused;
   }
 
-  private selectionSection(snapshot: DebugSnapshot): HTMLElement {
-    const selection = snapshot.selection!;
-    const body = document.createElement("div");
-    body.append(
-      this.kv("Cell", `${selection.cell.x}, ${selection.cell.y}`),
-      this.kv("Player here", String(selection.playerHere)),
-    );
-    const stack = document.createElement("div");
-    stack.style.display = "grid";
-    stack.style.gap = "4px";
-    stack.style.marginTop = "7px";
-    for (const presence of [...selection.presences].reverse()) {
-      const label = [
-        `[${presence.stackBand}]`,
-        `#${presence.entityId}`,
+  private updateSelection(snapshot: DebugSnapshot): void {
+    const selection = snapshot.selection;
+    this.selectionMessage.hidden = selection !== null;
+    this.selectionData.hidden = selection === null;
+    this.entitySection.hidden = !selection?.entity;
+    if (!selection) return;
+
+    this.setValue(this.selectionValues, "cell", `${selection.cell.x}, ${selection.cell.y}`);
+    this.setValue(this.selectionValues, "playerHere", String(selection.playerHere));
+    const signature = JSON.stringify(
+      selection.presences.map((presence) => [
+        presence.entityId,
         presence.type,
-        presence.role ? `(${presence.role})` : "",
-      ]
-        .filter(Boolean)
-        .join(" ");
-      const button = this.button(label, () =>
-        this.actions.selectEntity(presence.entityId),
+        presence.role,
+        presence.stackBand,
+      ]),
+    );
+    if (signature !== this.selectionStackSignature) {
+      this.selectionStackSignature = signature;
+      const buttons = [...selection.presences].reverse().map((presence) => {
+        const label = [
+          `[${presence.stackBand}]`,
+          `#${presence.entityId}`,
+          presence.type,
+          presence.role ? `(${presence.role})` : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        const button = this.button(label, () =>
+          this.actions.selectEntity(presence.entityId),
+        );
+        button.style.textAlign = "left";
+        button.style.width = "100%";
+        return button;
+      });
+      this.selectionStack.replaceChildren(
+        ...(buttons.length > 0 ? buttons : [document.createTextNode("Empty cell")]),
       );
-      button.style.textAlign = "left";
-      button.style.width = "100%";
-      stack.append(button);
     }
-    if (selection.presences.length === 0) stack.append(this.text("Empty cell"));
-    body.append(stack);
-    return this.section("Selection", body);
+    if (selection.entity) this.updateEntity(selection.entity);
   }
 
-  private entitySection(entity: DebugEntitySnapshot): HTMLElement {
-    const body = document.createElement("div");
-    body.append(
-      this.kv("Entity", `#${entity.id} ${entity.type}`),
-      this.kv("Anchor", `${entity.anchor.x}, ${entity.anchor.y}`),
-      this.kv("Direction", entity.direction ?? "-"),
-      this.kv("Stack", entity.definition.stackBand),
-      this.kv("Behaviors", entity.behaviors.join(", ") || "-"),
-      this.kv("Visual", entity.visual.visualId),
-      this.jsonBlock("Traits", entity.definition.traits),
-      this.jsonBlock("Instance traits", entity.instanceTraits),
-      this.jsonBlock("Properties", entity.properties),
-      this.jsonBlock("State", entity.state),
-      this.jsonBlock("Footprint", entity.definition.footprint),
-      this.jsonBlock("Presence", entity.presences),
-      this.jsonBlock("Visual runtime", entity.visual.runtime),
-      this.jsonBlock("Resolved layers", entity.visual.renderItems),
-    );
-    return this.section("Entity", body);
+  private updateEntity(entity: DebugEntitySnapshot): void {
+    this.setValue(this.entityValues, "entity", `#${entity.id} ${entity.type}`);
+    this.setValue(this.entityValues, "anchor", `${entity.anchor.x}, ${entity.anchor.y}`);
+    this.setValue(this.entityValues, "direction", entity.direction ?? "-");
+    this.setValue(this.entityValues, "stack", entity.definition.stackBand);
+    this.setValue(this.entityValues, "behaviors", entity.behaviors.join(", ") || "-");
+    this.setValue(this.entityValues, "visual", entity.visual.visualId);
+    this.setJson("Traits", entity.definition.traits);
+    this.setJson("Instance traits", entity.instanceTraits);
+    this.setJson("Properties", entity.properties);
+    this.setJson("State", entity.state);
+    this.setJson("Footprint", entity.definition.footprint);
+    this.setJson("Presence", entity.presences);
+    this.setJson("Visual runtime", entity.visual.runtime);
+    this.setJson("Resolved layers", entity.visual.renderItems);
+  }
+
+  private setValue(values: ValueMap, key: string, value: string): void {
+    const target = values.get(key);
+    if (target && target.textContent !== value) target.textContent = value;
+  }
+
+  private setJson(label: string, value: unknown): void {
+    const target = this.entityJson.get(label);
+    const text = formatJson(value);
+    if (target && target.textContent !== text) target.textContent = text;
+  }
+
+  private valueRow(labelText: string, key: string, values: ValueMap): HTMLElement {
+    const row = document.createElement("div");
+    Object.assign(row.style, {
+      display: "grid",
+      gridTemplateColumns: "100px minmax(0, 1fr)",
+      gap: "7px",
+    });
+    const label = document.createElement("span");
+    label.textContent = labelText;
+    label.style.color = "#8da495";
+    const data = document.createElement("span");
+    data.style.overflowWrap = "anywhere";
+    values.set(key, data);
+    row.append(label, data);
+    return row;
   }
 
   private section(titleText: string, body: Node): HTMLElement {
@@ -206,29 +337,16 @@ export class DebugSidebar {
     return section;
   }
 
-  private kv(key: string, value: string): HTMLElement {
-    const row = document.createElement("div");
-    row.style.display = "grid";
-    row.style.gridTemplateColumns = "100px minmax(0, 1fr)";
-    row.style.gap = "7px";
-    const label = document.createElement("span");
-    label.textContent = key;
-    label.style.color = "#8da495";
-    const data = document.createElement("span");
-    data.textContent = value;
-    data.style.overflowWrap = "anywhere";
-    row.append(label, data);
-    return row;
-  }
-
-  private jsonBlock(label: string, value: unknown): HTMLElement {
+  private jsonDetails(label: string): {
+    details: HTMLDetailsElement;
+    pre: HTMLPreElement;
+  } {
     const details = document.createElement("details");
     details.style.marginTop = "6px";
     const summary = document.createElement("summary");
     summary.textContent = label;
     summary.style.cursor = "pointer";
     const pre = document.createElement("pre");
-    pre.textContent = JSON.stringify(value, null, 2) ?? String(value);
     Object.assign(pre.style, {
       margin: "6px 0 0",
       padding: "7px",
@@ -239,11 +357,7 @@ export class DebugSidebar {
       overflowWrap: "anywhere",
     });
     details.append(summary, pre);
-    return details;
-  }
-
-  private text(value: string): Text {
-    return document.createTextNode(value);
+    return { details, pre };
   }
 
   private button(label: string, action: () => void): HTMLButtonElement {
@@ -262,4 +376,8 @@ export class DebugSidebar {
     button.addEventListener("click", action);
     return button;
   }
+}
+
+function formatJson(value: unknown): string {
+  return JSON.stringify(value, null, 2) ?? String(value);
 }
