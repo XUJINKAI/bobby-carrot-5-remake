@@ -73,8 +73,7 @@ export class DebugSidebar {
 
   render(snapshot: DebugSnapshot): void {
     if (this.root.hidden) return;
-    this.content.replaceChildren();
-    this.content.append(this.runtimeSection(snapshot));
+    this.content.replaceChildren(this.runtimeSection(snapshot));
     const selection = snapshot.selection;
     if (!selection) {
       this.content.append(
@@ -82,7 +81,6 @@ export class DebugSidebar {
       );
       return;
     }
-
     this.content.append(this.selectionSection(snapshot));
     if (selection.entity) this.content.append(this.entitySection(selection.entity));
   }
@@ -95,9 +93,12 @@ export class DebugSidebar {
     const runtime = snapshot.runtime;
     const rows = document.createElement("div");
     rows.append(
-      this.kv("Tick", String(runtime.tickCount)),
-      this.kv("Step", `${runtime.stepMs} ms`),
-      this.kv("Clock", runtime.paused ? "paused" : "running"),
+      this.kv("World Tick", String(runtime.worldTickCount)),
+      this.kv("World Hz", String(runtime.worldHz)),
+      this.kv("World Step", `${runtime.worldStepMs} ms`),
+      this.kv("World Clock", runtime.worldPaused ? "paused" : "running"),
+      this.kv("Present Frame", String(runtime.presentationFrame)),
+      this.kv("Present Hz", String(runtime.presentationHz)),
       this.kv("Status", runtime.status),
       this.kv("Moves", String(runtime.moves)),
       this.kv(
@@ -105,6 +106,9 @@ export class DebugSidebar {
         runtime.player ? `${runtime.player.x}, ${runtime.player.y}` : "-",
       ),
       this.kv("Facing", runtime.facing ?? "-"),
+      this.kv("Actions", String(runtime.actionCount)),
+      this.kv("Input Blocked", String(runtime.inputBlocked)),
+      this.kv("Camera Target", runtime.cameraTarget === null ? "Bobby" : `#${runtime.cameraTarget}`),
       this.kv("Animating", String(runtime.animating)),
     );
     if (runtime.forced) rows.append(this.jsonBlock("Forced", runtime.forced));
@@ -120,10 +124,10 @@ export class DebugSidebar {
     const step1 = this.button("+1 Tick", () => this.actions.step(1));
     const step4 = this.button("+4 Ticks", () => this.actions.step(4));
     const resume = this.button("Resume", () => this.actions.resume());
-    pause.disabled = runtime.paused;
-    step1.disabled = !runtime.paused;
-    step4.disabled = !runtime.paused;
-    resume.disabled = !runtime.paused;
+    pause.disabled = runtime.worldPaused;
+    step1.disabled = !runtime.worldPaused;
+    step4.disabled = !runtime.worldPaused;
+    resume.disabled = !runtime.worldPaused;
     controls.append(pause, step1, step4, resume);
     rows.append(controls);
     return this.section("Runtime", rows);
@@ -205,7 +209,7 @@ export class DebugSidebar {
   private kv(key: string, value: string): HTMLElement {
     const row = document.createElement("div");
     row.style.display = "grid";
-    row.style.gridTemplateColumns = "90px minmax(0, 1fr)";
+    row.style.gridTemplateColumns = "100px minmax(0, 1fr)";
     row.style.gap = "7px";
     const label = document.createElement("span");
     label.textContent = key;

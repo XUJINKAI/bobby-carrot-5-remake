@@ -1,4 +1,4 @@
-import type { EngineTick } from "../time/EngineClock.js";
+import type { PresentationFrame } from "../time/PresentationClock.js";
 
 export interface CameraPoint {
   x: number;
@@ -8,8 +8,8 @@ export interface CameraPoint {
 interface PanReturn {
   fromX: number;
   fromY: number;
-  startedTick: number;
-  durationTicks: number;
+  startedAtMs: number;
+  durationMs: number;
 }
 
 export class Camera {
@@ -70,8 +70,8 @@ export class Camera {
     this.panOffsetY -= dy / size;
   }
 
-  /** 下一次移动时调用：把用户拖动产生的偏移按世界 Tick 平滑收回。 */
-  recenterPan(time: EngineTick, durationMs = 260): void {
+  /** 下一次 gameplay movement 时调用；Pan 回中只使用 Presentation 时间。 */
+  recenterPan(frame: PresentationFrame, durationMs = 260): void {
     if (this.panReturn) return;
     if (!this.hasPanOffset) {
       this.resetPan();
@@ -80,16 +80,17 @@ export class Camera {
     this.panReturn = {
       fromX: this.panOffsetX,
       fromY: this.panOffsetY,
-      startedTick: time.tick,
-      durationTicks: durationToTicks(durationMs, time.stepMs),
+      startedAtMs: frame.nowMs,
+      durationMs: Math.max(0, durationMs),
     };
   }
 
-  update(time: EngineTick): void {
+  update(frame: PresentationFrame): void {
     const returning = this.panReturn;
     if (!returning) return;
-    const elapsedTicks = Math.max(0, time.tick - returning.startedTick);
-    const raw = Math.min(1, elapsedTicks / returning.durationTicks);
+    const elapsedMs = Math.max(0, frame.nowMs - returning.startedAtMs);
+    const raw =
+      returning.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / returning.durationMs);
     const eased = 1 - (1 - raw) ** 3;
     const remaining = 1 - eased;
     this.panOffsetX = returning.fromX * remaining;
@@ -139,8 +140,4 @@ export class Camera {
         Math.max(visibleHeight / 2, this.centerY),
       );
   }
-}
-
-function durationToTicks(durationMs: number, stepMs: number): number {
-  return Math.max(1, Math.round(Math.max(0, durationMs) / stepMs));
 }

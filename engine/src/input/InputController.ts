@@ -1,6 +1,6 @@
 import type { Direction } from "@bobby/model";
 import type { Game } from "../core/Game.js";
-import type { EngineTick } from "../time/EngineClock.js";
+import type { WorldTick } from "../time/WorldClock.js";
 import {
   HeldDirectionRepeater,
   type HeldDirectionInput,
@@ -164,8 +164,8 @@ export class InputController {
           );
   }
 
-  /** 浏览器事件只维护状态；真正的 movement 每个 EngineTick 最多产出一次。 */
-  update(time: EngineTick): InputState {
+  /** 浏览器事件只维护状态；真正的 movement 每个 WorldTick 最多产出一次。 */
+  update(time: WorldTick): InputState {
     if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
       this.clearMovementState();
       return { move: null };

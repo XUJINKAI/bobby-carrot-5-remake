@@ -12,9 +12,12 @@ import {
 import type { RenderScene } from "../render/RenderScene.js";
 import { Renderer } from "../render/Renderer.js";
 import {
-  EngineClock,
-  type EngineTick,
-} from "../time/EngineClock.js";
+  resolveEngineTiming,
+  type EngineTiming,
+  type EngineTimingOptions,
+} from "../time/EngineTiming.js";
+import { PresentationClock } from "../time/PresentationClock.js";
+import { WorldClock, type WorldTick } from "../time/WorldClock.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { VisualAssetSources } from "../visual/VisualDefinition.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
@@ -33,12 +36,14 @@ import type {
   MoveResult,
   WorldEvent,
 } from "../world/WorldTypes.js";
+import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
 import type { GameplayState } from "./GameplayState.js";
 
 export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
   tuning?: PresentationTuningOverride;
+  timing?: EngineTimingOptions;
 }
 
 export interface GameOptions {
@@ -71,7 +76,9 @@ export class Game {
   private readonly debugRuntime: DebugRuntime;
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly tuning: PresentationTuning;
-  private readonly clock = new EngineClock();
+  private readonly timing: EngineTiming;
+  private readonly worldClock: WorldClock;
+  private readonly presentationClock: PresentationClock;
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
   private lastScene: RenderScene | null = null;
@@ -97,6 +104,11 @@ export class Game {
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
+    this.timing = resolveEngineTiming(options.runtime?.timing);
+    this.worldClock = new WorldClock(this.timing.worldHz);
+    this.presentationClock = new PresentationClock(this.timing.presentationHz);
+    if (typeof performance !== "undefined")
+      this.presentationClock.advance(performance.now());
     this.debugValue = options.debug ?? false;
     this.renderer.setDebug(this.debugValue);
     const hud = options.runtime?.hud;
@@ -117,7 +129,9 @@ export class Game {
           world: this.worldValue,
           scene: this.lastScene,
           visual: this.visual,
-          clock: this.clock,
+          worldClock: this.worldClock,
+          presentationClock: this.presentationClock,
+          timing: this.timing,
           selection,
         }),
       inspectPoint: (clientX, clientY) =>
@@ -199,6 +213,7 @@ export class Game {
   async loadLevel(level: LevelMap): Promise<void> {
     this.initialLevel = structuredClone(level);
     this.worldValue = new World(level, { profile: this.profile });
+    this.worldClock.reset();
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
@@ -217,12 +232,13 @@ export class Game {
   move(direction: Direction, forced = false): MoveResult | null {
     if (
       !this.worldValue ||
+      this.worldClock.paused ||
       this.world.dead ||
       this.world.completed ||
-      this.visual.isAnimating
+      this.world.inputBlocked
     )
       return null;
-    const result = this.startLogicalMove(direction, forced, this.clock.nextTick);
+    const result = this.startLogicalMove(direction, forced, this.worldClock.nextTick);
     this.render();
     return result;
   }
@@ -265,7 +281,10 @@ export class Game {
 
   restart(): void {
     if (!this.initialLevel) return;
+    const wasPaused = this.worldClock.paused;
     this.worldValue = new World(this.initialLevel, { profile: this.profile });
+    this.worldClock.reset();
+    if (wasPaused) this.worldClock.pause();
     this.history.length = 0;
     this.future.length = 0;
     this.heldDirection = null;
@@ -318,7 +337,7 @@ export class Game {
   setDebug(value: boolean): void {
     if (value === this.debugValue) return;
     this.debugValue = value;
-    if (!value) this.clock.resume();
+    if (!value) this.worldClock.resume();
     this.renderer.setDebug(value);
     this.debugRuntime.setEnabled(value);
     this.render();
@@ -343,15 +362,7 @@ export class Game {
   }
 
   render(): void {
-    if (this.worldValue) {
-      const viewport = this.renderer.measureViewport();
-      this.visual.camera.setViewport(viewport.width, viewport.height);
-      const scene = this.visual.scene(this.worldValue);
-      this.lastScene = scene;
-      this.renderer.render(scene, this.visual.camera, viewport);
-    } else {
-      this.lastScene = null;
-    }
+    this.renderScene();
     this.gameplayHud?.render();
     this.debugRuntime.render();
   }
@@ -381,13 +392,13 @@ export class Game {
   private startLogicalMove(
     direction: Direction,
     forced: boolean,
-    time: EngineTick,
+    time: WorldTick,
   ): MoveResult {
-    const before = this.world.snapshot();
+    const before = forced ? null : this.world.snapshot();
     const result = this.world.move(direction, forced);
     this.lastMove = result;
     this.lastWorldEvents = result.events;
-    if (result.moved || result.events.length > 0) {
+    if (before && (result.moved || result.events.length > 0)) {
       this.history.push(before);
       this.future.length = 0;
     }
@@ -400,13 +411,22 @@ export class Game {
       return result;
     }
 
-    this.visual.camera.recenterPan(time);
+    const durationMs = this.motionDuration(this.world.forcedKind as ForcedKind | null);
+    this.world.startAction(
+      createDelayRuntimeAction(durationMs, {
+        ownerEntityId: this.world.playerId,
+        blocksInput: true,
+        reason: forced ? "forced-player-motion" : "player-motion",
+      }),
+    );
+    const frame = this.presentationClock.current;
+    this.visual.camera.recenterPan(frame);
     this.visual.beginMove(
       this.world.playerId,
       result.from,
       result.to,
-      this.motionDuration(this.world.forcedKind as ForcedKind | null),
-      time,
+      durationMs,
+      frame,
     );
     this.emit("move");
     this.emit("change");
@@ -420,12 +440,8 @@ export class Game {
     return duration;
   }
 
-  private update(time: EngineTick): void {
+  private updateWorld(time: WorldTick): void {
     if (!this.worldValue) return;
-
-    const input = this.inputController?.update(time) ?? null;
-    if (input) this.applyInput(input, time);
-    else this.applyDirectHeldInput(time);
 
     const events = this.world.update(time);
     if (events.length > 0) {
@@ -434,47 +450,47 @@ export class Game {
       this.emitTerminalEvents();
       this.emit("change");
     }
+    if (this.world.dead || this.world.completed) {
+      this.heldDirection = null;
+      return;
+    }
 
-    if (this.visual.update(time, this.tuning.motion.easing))
-      this.finishMotion(time);
+    if (!this.world.inputBlocked && this.world.forcedDirection) {
+      this.startLogicalMove(this.world.forcedDirection, true, time);
+      return;
+    }
+
+    const input = this.inputController?.update(time) ?? null;
+    if (input) this.applyInput(input, time);
+    else this.applyDirectHeldInput(time);
   }
 
-  private applyInput(input: InputState, time: EngineTick): void {
+  private applyInput(input: InputState, time: WorldTick): void {
     if (!input.move || !this.inputController) return;
     const result = this.attemptInputMove(input.move, time);
     this.inputController.resolveMoveAttempt(result);
   }
 
-  private attemptInputMove(direction: Direction, time: EngineTick): MoveAttempt {
+  private attemptInputMove(direction: Direction, time: WorldTick): MoveAttempt {
     if (!this.worldValue || this.world.dead || this.world.completed)
       return "blocked";
-    if (this.visual.isAnimating) return "busy";
+    if (this.world.inputBlocked) return "busy";
     const result = this.startLogicalMove(direction, false, time);
     return result.moved ? "moved" : "blocked";
   }
 
-  private applyDirectHeldInput(time: EngineTick): void {
+  private applyDirectHeldInput(time: WorldTick): void {
     if (
       !this.heldDirection ||
       this.heldDirectionBlocked ||
       !this.worldValue ||
       this.world.dead ||
       this.world.completed ||
-      this.visual.isAnimating
+      this.world.inputBlocked
     )
       return;
     const result = this.startLogicalMove(this.heldDirection, false, time);
     if (!result.moved) this.heldDirectionBlocked = true;
-  }
-
-  private finishMotion(time: EngineTick): void {
-    if (!this.worldValue) return;
-    if (this.world.dead || this.world.completed) {
-      this.heldDirection = null;
-      return;
-    }
-    const forcedDirection = this.world.forcedDirection;
-    if (forcedDirection) this.startLogicalMove(forcedDirection, true, time);
   }
 
   private resetVisualMotion(): void {
@@ -482,18 +498,30 @@ export class Game {
   }
 
   private pauseDebugClock(): void {
-    this.clock.pause();
+    this.worldClock.pause();
     this.render();
   }
 
   private resumeDebugClock(): void {
-    this.clock.resume();
+    this.worldClock.resume();
     this.render();
   }
 
   private stepDebugClock(count: number): void {
-    this.clock.step(count, (time) => this.update(time));
+    this.worldClock.step(count, (time) => this.updateWorld(time));
     this.render();
+  }
+
+  private renderScene(): void {
+    if (!this.worldValue) {
+      this.lastScene = null;
+      return;
+    }
+    const viewport = this.renderer.measureViewport();
+    this.visual.camera.setViewport(viewport.width, viewport.height);
+    const scene = this.visual.scene(this.worldValue, this.world.cameraTarget);
+    this.lastScene = scene;
+    this.renderer.render(scene, this.visual.camera, viewport);
   }
 
   private readonly onResize = (): void => {
@@ -504,9 +532,18 @@ export class Game {
     if (this.destroyed) return;
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
-    if (this.worldValue && delta > 0) {
-      const updated = this.clock.advance(delta, (time) => this.update(time));
-      if (updated > 0) this.render();
+
+    let worldUpdated = 0;
+    if (this.worldValue && delta > 0)
+      worldUpdated = this.worldClock.advance(delta, (time) => this.updateWorld(time));
+
+    const frame = this.presentationClock.advance(timestamp);
+    if (this.worldValue && frame) {
+      this.visual.update(frame, this.tuning.motion.easing);
+      this.renderScene();
+      if (this.debugValue) this.debugRuntime.render();
+    } else if (worldUpdated > 0) {
+      this.render();
     }
     this.animationFrame = requestAnimationFrame(this.tick);
   };

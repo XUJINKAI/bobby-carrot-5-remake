@@ -1,5 +1,5 @@
 import type { JsonValue } from "@bobby/model";
-import type { EngineTick } from "../time/EngineClock.js";
+import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { VisualId } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
@@ -30,10 +30,7 @@ export interface ImageVisualLayer {
   anchor?: "center" | "bottom" | "fill";
 }
 
-/**
- * 少量程序化视觉使用的通用 Canvas layer。
- * 绘制函数和可选 CSS 预览都由 Entity Module 提供；Renderer/Web 只消费结果。
- */
+/** 少量程序化视觉使用的通用 Canvas layer。 */
 export interface CanvasVisualLayer {
   kind: "canvas";
   draw(
@@ -58,10 +55,7 @@ export interface VisualAssetSources {
   sourceTileSize?: number;
 }
 
-/**
- * 纯视觉瞬态状态，不进入 World snapshot / LevelMap。
- * offset 相对当前 Presence Cell，因此同样适用于多格 Entity 整体移动。
- */
+/** 纯视觉瞬态状态，不进入 World snapshot / LevelMap。 */
 export interface EntityVisualRuntimeState {
   offsetX?: number;
   offsetY?: number;
@@ -81,14 +75,10 @@ export interface VisualResolveContext {
   presence: Readonly<EntityPresence>;
   query: VisualQuery;
   runtime?: Readonly<EntityVisualRuntimeState>;
-  /** Runtime 中当前统一世界 Tick；Editor preview 可省略。 */
-  time?: EngineTick;
+  /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
+  time?: PresentationFrame;
 }
 
-/**
- * 创建 Entity 时选择一次并写入 properties；之后只是普通持久化实例参数。
- * placement sequence 只参与确定性选择，不写进地图 JSON。
- */
 export interface PersistedVisualVariantDefinition {
   property: string;
   values: readonly JsonValue[];

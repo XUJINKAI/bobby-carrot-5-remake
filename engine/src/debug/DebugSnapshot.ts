@@ -1,5 +1,7 @@
 import type { RenderScene } from "../render/RenderScene.js";
-import type { EngineClock } from "../time/EngineClock.js";
+import type { EngineTiming } from "../time/EngineTiming.js";
+import type { PresentationClock } from "../time/PresentationClock.js";
+import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { World } from "../world/World.js";
 import type {
@@ -15,9 +17,13 @@ export interface DebugSelection {
 
 export interface DebugSnapshot {
   runtime: {
-    tickCount: number;
-    stepMs: number;
-    paused: boolean;
+    worldTickCount: number;
+    worldHz: number;
+    worldStepMs: number;
+    worldPaused: boolean;
+    presentationFrame: number;
+    presentationHz: number;
+    presentationStepMs: number;
     hasLevel: boolean;
     status: "unloaded" | "playing" | "won" | "dead";
     moves: number;
@@ -25,6 +31,9 @@ export interface DebugSnapshot {
     facing: string | null;
     forced: unknown;
     animating: boolean;
+    actionCount: number;
+    inputBlocked: boolean;
+    cameraTarget: EntityId | null;
   };
   selection: DebugSelectionSnapshot | null;
 }
@@ -84,14 +93,28 @@ export function buildDebugSnapshot(options: {
   world: World | null;
   scene: RenderScene | null;
   visual: VisualRuntime;
-  clock: EngineClock;
+  worldClock: WorldClock;
+  presentationClock: PresentationClock;
+  timing: EngineTiming;
   selection: DebugSelection | null;
 }): DebugSnapshot {
-  const { world, scene, visual, clock, selection } = options;
+  const {
+    world,
+    scene,
+    visual,
+    worldClock,
+    presentationClock,
+    timing,
+    selection,
+  } = options;
   const runtime = {
-    tickCount: clock.tickCount,
-    stepMs: clock.stepMs,
-    paused: clock.paused,
+    worldTickCount: worldClock.tickCount,
+    worldHz: timing.worldHz,
+    worldStepMs: worldClock.stepMs,
+    worldPaused: worldClock.paused,
+    presentationFrame: presentationClock.current.frame,
+    presentationHz: timing.presentationHz,
+    presentationStepMs: timing.presentationStepMs,
     hasLevel: world !== null,
     status: world
       ? world.dead
@@ -105,6 +128,9 @@ export function buildDebugSnapshot(options: {
     facing: world?.facing ?? null,
     forced: world?.state.forced ? structuredClone(world.state.forced) : null,
     animating: visual.isAnimating,
+    actionCount: world?.actions.active.length ?? 0,
+    inputBlocked: world?.inputBlocked ?? false,
+    cameraTarget: world?.cameraTarget ?? null,
   };
 
   if (!world || !selection) return { runtime, selection: null };
