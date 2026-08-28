@@ -126,7 +126,6 @@ export class DebugSidebar {
     this.selectionData = document.createElement("div");
     this.selectionData.append(
       this.valueRow("Cell", "cell", this.selectionValues),
-      this.valueRow("Player here", "playerHere", this.selectionValues),
     );
     this.selectionStack = document.createElement("div");
     Object.assign(this.selectionStack.style, {
@@ -140,15 +139,13 @@ export class DebugSidebar {
     const entityBody = document.createElement("div");
     for (const [key, label] of [
       ["entity", "Entity"],
-      ["anchor", "Anchor"],
       ["direction", "Direction"],
-      ["stack", "Stack order"],
-      ["behaviors", "Behaviors"],
       ["visual", "Visual"],
     ] as const)
       entityBody.append(this.valueRow(label, key, this.entityValues));
     for (const label of [
       "Traits",
+      "Behaviors",
       "Instance traits",
       "Properties",
       "State",
@@ -157,7 +154,10 @@ export class DebugSidebar {
       "Visual runtime",
       "Resolved layers",
     ]) {
-      const block = this.jsonDetails(label);
+      const block = this.jsonDetails(
+        label,
+        label === "Traits" || label === "Behaviors",
+      );
       this.entityJson.set(label, block.pre);
       entityBody.append(block.details);
     }
@@ -256,11 +256,6 @@ export class DebugSidebar {
       "cell",
       `${selection.cell.x}, ${selection.cell.y}`,
     );
-    this.setValue(
-      this.selectionValues,
-      "playerHere",
-      String(selection.playerHere),
-    );
     const signature = JSON.stringify(
       selection.presences.map((presence) => [
         presence.entityId,
@@ -300,28 +295,12 @@ export class DebugSidebar {
     this.setValue(this.entityValues, "entity", `#${entity.id} ${entity.type}`);
     this.setValue(
       this.entityValues,
-      "anchor",
-      `${entity.anchor.x}, ${entity.anchor.y}`,
-    );
-    this.setValue(
-      this.entityValues,
       "direction",
       entity.direction ?? "-",
     );
-    this.setValue(
-      this.entityValues,
-      "stack",
-      entity.definition.stackOrder === null
-        ? "-"
-        : String(entity.definition.stackOrder),
-    );
-    this.setValue(
-      this.entityValues,
-      "behaviors",
-      entity.behaviors.join(", ") || "-",
-    );
     this.setValue(this.entityValues, "visual", entity.visual.visualId);
     this.setJson("Traits", entity.definition.traits);
+    this.setJson("Behaviors", entity.behaviors);
     this.setJson("Instance traits", entity.instanceTraits);
     this.setJson("Properties", entity.properties);
     this.setJson("State", entity.state);
@@ -383,11 +362,15 @@ export class DebugSidebar {
     return section;
   }
 
-  private jsonDetails(label: string): {
+  private jsonDetails(
+    label: string,
+    open = false,
+  ): {
     details: HTMLDetailsElement;
     pre: HTMLPreElement;
   } {
     const details = document.createElement("details");
+    details.open = open;
     details.style.marginTop = "6px";
     const summary = document.createElement("summary");
     summary.textContent = label;

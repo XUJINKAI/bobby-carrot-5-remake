@@ -36,7 +36,6 @@ export interface DebugSnapshot {
 
 export interface DebugSelectionSnapshot {
   cell: CellPosition;
-  playerHere: boolean;
   presences: readonly DebugPresenceSnapshot[];
   entity: DebugEntitySnapshot | null;
 }
@@ -60,7 +59,6 @@ export interface DebugEntitySnapshot {
   definition: {
     traits: readonly string[];
     stackOrder: number | null;
-    occupancy: unknown;
     footprint: unknown;
     propertyFields: unknown;
     stateFields: unknown;
@@ -135,7 +133,6 @@ export function buildDebugSnapshot(options: {
     runtime,
     selection: {
       cell: { ...inspection.cell },
-      playerHere: inspection.playerHere,
       presences,
       entity,
     },
@@ -181,7 +178,6 @@ function buildEntitySnapshot(
     definition: {
       traits: [...definition.traits],
       stackOrder: definition.stackOrder ?? null,
-      occupancy: definition.occupancy ? structuredClone(definition.occupancy) : null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
       propertyFields: definition.properties
         ? structuredClone(definition.properties)
