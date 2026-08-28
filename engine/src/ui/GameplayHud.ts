@@ -12,7 +12,7 @@ export interface GameplayHudOptions {
 
 interface HudChip {
   root: HTMLSpanElement;
-  value: HTMLStrongElement | null;
+  value: HTMLElement | null;
 }
 
 /** Engine 基础 HUD：只呈现公开 gameplay state，不读取 World。 */
