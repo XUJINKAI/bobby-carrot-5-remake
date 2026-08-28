@@ -46,8 +46,8 @@ export const EntityTypeId = {
 
   CONSUMED_CARROT: "consumed-carrot",
   CARROT: "carrot",
-  EGG_NEST_EMPTY: "egg-nest-empty",
-  EGG_NEST_FILLED: "egg-nest-filled",
+  EGG_EMPTY: "egg-empty",
+  EGG_FILLED: "egg-filled",
   LOCK: "lock",
   BEANSTALK_TIP: "beanstalk-tip",
   BEAN: "bean",
