@@ -18,12 +18,15 @@ export interface RenderViewport {
 export class Renderer {
   private atlas: HTMLImageElement | null = null;
   private readonly images = new Map<string, HTMLImageElement>();
+  private readonly context: CanvasRenderingContext2D | null;
   private debug = false;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
     private readonly assets: RendererAssets,
-  ) {}
+  ) {
+    this.context = canvas.getContext("2d");
+  }
 
   async load(): Promise<void> {
     if (this.atlas) return;
@@ -53,11 +56,15 @@ export class Renderer {
   }
 
   render(scene: RenderScene, camera: Camera, viewport = this.measureViewport()): void {
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    this.canvas.width = Math.round(viewport.width * dpr);
-    this.canvas.height = Math.round(viewport.height * dpr);
-    const context = this.canvas.getContext("2d");
+    const context = this.context;
     if (!context) return;
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const pixelWidth = Math.round(viewport.width * dpr);
+    const pixelHeight = Math.round(viewport.height * dpr);
+    if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
+      this.canvas.width = pixelWidth;
+      this.canvas.height = pixelHeight;
+    }
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.imageSmoothingEnabled = false;
     context.fillStyle = "#07100b";
