@@ -13,6 +13,7 @@ const publicBaseUrl =
     : document.currentScript instanceof HTMLScriptElement && document.currentScript.src
       ? new URL("../../", document.currentScript.src)
       : new URL(".", document.baseURI);
+const repositoryUrl = "https://github.com/XUJINKAI/bobby-carrot-5-remake";
 
 interface ActiveFocusEmbed {
   token: symbol;
@@ -26,6 +27,11 @@ interface TerminalOverlay {
   official: HTMLAnchorElement;
 }
 
+interface AudioLevels {
+  musicGain: number;
+  soundGain: number;
+}
+
 let activeFocusEmbed: ActiveFocusEmbed | null = null;
 
 export function mount(options: BC5RMountOptions): BC5RHandle {
@@ -35,6 +41,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   let images: ImageManager | null = null;
   let destroyed = false;
   const cleanup: Array<() => void> = [];
+  const audio = resolveAudio(options.audio);
 
   const shadow = target.shadowRoot ?? target.attachShadow({ mode: "open" });
   shadow.replaceChildren();
@@ -49,7 +56,8 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   frameLink.target = "_blank";
   frameLink.rel = "noopener noreferrer";
   frameLink.textContent = "Bobby Carrot 5 Remake";
-  frame.append(frameLink);
+  const soundButton = createSoundButton(audio.enabled);
+  frame.append(frameLink, soundButton);
   const canvasWrap = document.createElement("div");
   canvasWrap.className = "bc5r-canvas-wrap";
   canvasWrap.tabIndex = 0;
@@ -57,9 +65,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   canvas.className = "bc5r-canvas";
   const terminal = createTerminalOverlay(options.lang ?? "zh-CN");
   canvasWrap.append(canvas, terminal.root);
-  const info = document.createElement("div");
-  info.className = "bc5r-info";
-  info.textContent = options.info?.trim() || "Powered by Bobby Carrot 5 Remake";
+  const info = createInfoFooter(options.info);
   root.append(styleElement(), frame, canvasWrap, info);
   shadow.append(root);
 
@@ -98,7 +104,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     const playUrl = await officialPlayUrl(level);
     frameLink.href = playUrl;
     terminal.official.href = playUrl;
-    const audio = resolveAudio(options.audio);
     const imageManager = createEmbedImageManager();
     images = imageManager;
     try {
@@ -138,8 +143,9 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     }
     if (keyboard === "focus" && activeFocusEmbed?.token !== token)
       runtime.input.setKeyboardEnabled(false);
-    applyAudio(runtime, audio);
-    if (audio.enabled) runtime.audio.playMusic("ingame1");
+    const audioLevels = applyAudio(runtime, audio);
+    runtime.audio.playMusic("ingame1");
+    installSoundToggle(runtime, soundButton, audio.enabled, audioLevels, cleanup);
     applyCamera(runtime, options);
     installZoomPolicy(runtime, canvas, pinchZoom, wheelZoom, cleanup);
     installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
@@ -173,6 +179,39 @@ function resolveTarget(target: string | HTMLElement): HTMLElement {
   return element;
 }
 
+function createSoundButton(enabled: boolean): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "bc5r-sound";
+  button.disabled = true;
+  renderSoundButton(button, enabled);
+  return button;
+}
+
+function renderSoundButton(button: HTMLButtonElement, enabled: boolean): void {
+  button.textContent = enabled ? "🔊" : "🔇";
+  button.title = enabled ? "关闭声音" : "打开声音";
+  button.setAttribute("aria-label", button.title);
+  button.setAttribute("aria-pressed", String(enabled));
+}
+
+function createInfoFooter(value: string | undefined): HTMLDivElement {
+  const footer = document.createElement("div");
+  footer.className = "bc5r-info";
+  const custom = value?.trim();
+  if (custom) {
+    footer.textContent = custom;
+    return footer;
+  }
+  const link = document.createElement("a");
+  link.href = repositoryUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "Powered by xujinkai/bobby-carrot-5-remake";
+  footer.append(link);
+  return footer;
+}
+
 function resolveJoystick(value: boolean | "auto"): boolean {
   if (value !== "auto") return value;
   return (
@@ -186,7 +225,7 @@ interface ResolvedAudio {
 }
 
 function resolveAudio(value: boolean | number | undefined): ResolvedAudio {
-  if (value === false) return { enabled: false, multiplier: 0 };
+  if (value === false) return { enabled: false, multiplier: null };
   if (typeof value === "number") {
     if (!Number.isFinite(value) || value < 0)
       throw new Error("BC5R audio volume must be a non-negative number");
@@ -195,16 +234,44 @@ function resolveAudio(value: boolean | number | undefined): ResolvedAudio {
   return { enabled: true, multiplier: null };
 }
 
-function applyAudio(runtime: GameplayRuntime, audio: ResolvedAudio): void {
-  if (!audio.enabled) {
-    runtime.audio.setMusicEnabled(false);
-    runtime.audio.setMusicGain(0);
-    runtime.audio.setSoundGain(0);
-    return;
-  }
-  if (audio.multiplier === null) return;
-  runtime.audio.setMusicGain(runtime.audio.getMusicGain() * audio.multiplier);
-  runtime.audio.setSoundGain(runtime.audio.getSoundGain() * audio.multiplier);
+function applyAudio(runtime: GameplayRuntime, audio: ResolvedAudio): AudioLevels {
+  const multiplier = audio.multiplier ?? 1;
+  const levels = {
+    musicGain: runtime.audio.getMusicGain() * multiplier,
+    soundGain: runtime.audio.getSoundGain() * multiplier,
+  };
+  runtime.audio.setMusicGain(audio.enabled ? levels.musicGain : 0);
+  runtime.audio.setSoundGain(audio.enabled ? levels.soundGain : 0);
+  runtime.audio.setMusicEnabled(audio.enabled);
+  return levels;
+}
+
+function installSoundToggle(
+  runtime: GameplayRuntime,
+  button: HTMLButtonElement,
+  initialEnabled: boolean,
+  levels: AudioLevels,
+  cleanup: Array<() => void>,
+): void {
+  let enabled = initialEnabled;
+  const toggle = (): void => {
+    enabled = !enabled;
+    if (enabled) {
+      runtime.audio.setMusicGain(levels.musicGain);
+      runtime.audio.setSoundGain(levels.soundGain);
+      runtime.audio.setMusicEnabled(true);
+      runtime.audio.resume();
+    } else {
+      runtime.audio.setMusicEnabled(false);
+      runtime.audio.setMusicGain(0);
+      runtime.audio.setSoundGain(0);
+    }
+    renderSoundButton(button, enabled);
+  };
+  button.disabled = false;
+  renderSoundButton(button, enabled);
+  button.addEventListener("click", toggle);
+  cleanup.push(() => button.removeEventListener("click", toggle));
 }
 
 function applyCamera(runtime: GameplayRuntime, options: BC5RMountOptions): void {
@@ -429,12 +496,16 @@ function styleElement(): HTMLStyleElement {
   style.textContent = `
     :host { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .bc5r-embed { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #254868; border-radius: 10px; font: 14px/1.4 system-ui, sans-serif; color: #eef5ff; background: #071522; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
-    .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
-    .bc5r-frame a { color: #d8efff; text-decoration: none; }
+    .bc5r-frame { flex: 0 0 auto; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #254868; background: #0d2b46; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+    .bc5r-frame a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d8efff; text-decoration: none; }
     .bc5r-frame a:hover { text-decoration: underline; }
+    .bc5r-sound { flex: 0 0 auto; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; line-height: 1; }
+    .bc5r-sound:disabled { cursor: default; opacity: .55; }
     .bc5r-canvas-wrap { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; outline: none; }
     .bc5r-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    .bc5r-info { flex: 0 0 auto; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; }
+    .bc5r-info { flex: 0 0 auto; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c9e6f7; background: #0d2b46; border-top: 1px solid #254868; font-size: 12px; }
+    .bc5r-info a { color: inherit; text-decoration: none; }
+    .bc5r-info a:hover { text-decoration: underline; }
     .bc5r-terminal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(0,0,0,.36); }
     .bc5r-terminal[hidden] { display: none; }
     .bc5r-terminal-card { min-width: 150px; padding: 18px; display: grid; gap: 12px; text-align: center; border-radius: 12px; background: rgba(255,255,255,.95); color: #222; box-shadow: 0 8px 30px rgba(0,0,0,.28); }
