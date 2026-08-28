@@ -29,11 +29,11 @@ export class DebugSidebar {
   private readonly selectionData: HTMLDivElement;
   private readonly selectionStack: HTMLDivElement;
   private readonly entitySection: HTMLElement;
-  private readonly pauseButton: HTMLButtonElement;
+  private readonly pauseResumeButton: HTMLButtonElement;
   private readonly step1Button: HTMLButtonElement;
   private readonly step4Button: HTMLButtonElement;
-  private readonly resumeButton: HTMLButtonElement;
   private selectionStackSignature = "";
+  private worldPaused = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -110,15 +110,17 @@ export class DebugSidebar {
       gap: "6px",
       marginTop: "8px",
     });
-    this.pauseButton = this.button("Pause", () => this.actions.pause());
+    this.pauseResumeButton = this.button("⏸ Pause", () => {
+      if (this.worldPaused) this.actions.resume();
+      else this.actions.pause();
+    });
+    this.pauseResumeButton.setAttribute("aria-label", "Pause World Clock");
     this.step1Button = this.button("+1 Tick", () => this.actions.step(1));
     this.step4Button = this.button("+4 Ticks", () => this.actions.step(4));
-    this.resumeButton = this.button("Resume", () => this.actions.resume());
     controls.append(
-      this.pauseButton,
+      this.pauseResumeButton,
       this.step1Button,
       this.step4Button,
-      this.resumeButton,
     );
     runtimeBody.append(controls);
 
@@ -192,6 +194,7 @@ export class DebugSidebar {
 
   private updateRuntime(snapshot: DebugSnapshot): void {
     const runtime = snapshot.runtime;
+    this.worldPaused = runtime.worldPaused;
     this.setValue(this.runtimeValues, "worldTick", String(runtime.worldTickCount));
     this.setValue(this.runtimeValues, "worldHz", String(runtime.worldHz));
     this.setValue(this.runtimeValues, "worldStep", `${runtime.worldStepMs} ms`);
@@ -224,10 +227,17 @@ export class DebugSidebar {
     this.setValue(this.runtimeValues, "animating", String(runtime.animating));
     this.forcedDetails.hidden = runtime.forced === null;
     if (runtime.forced !== null) this.forcedPre.textContent = formatJson(runtime.forced);
-    this.pauseButton.disabled = runtime.worldPaused;
+    this.pauseResumeButton.textContent = runtime.worldPaused
+      ? "▶ Resume"
+      : "⏸ Pause";
+    const clockAction = runtime.worldPaused ? "Resume" : "Pause";
+    this.pauseResumeButton.title = `${clockAction} World Clock`;
+    this.pauseResumeButton.setAttribute(
+      "aria-label",
+      `${clockAction} World Clock`,
+    );
     this.step1Button.disabled = !runtime.worldPaused;
     this.step4Button.disabled = !runtime.worldPaused;
-    this.resumeButton.disabled = !runtime.worldPaused;
   }
 
   private updateSelection(snapshot: DebugSnapshot): void {
