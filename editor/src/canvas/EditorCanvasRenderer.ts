@@ -1,13 +1,14 @@
 import {
   createBuiltinEntityCatalog,
-  ImageManager,
   SpatialVisualQuery,
   visualRegistry as builtinVisualRegistry,
   type AtlasVisualLayer,
   type EntityCatalog,
+  type ImageManager,
   type ImageVisualLayer,
   type VisualComposition,
   type VisualRegistry,
+  type VisualRenderPass,
 } from "@bobby/engine/authoring";
 import {
   entityCells,
@@ -31,6 +32,12 @@ export interface EditorCanvasRenderState {
   replacing: boolean;
   placementSequence: number;
   viewport: Readonly<EditorViewportState>;
+}
+
+interface EditorRenderItem {
+  inspection: EditorPresenceInspection;
+  x: number;
+  y: number;
 }
 
 export class EditorCanvasRenderer {
@@ -65,10 +72,33 @@ export class EditorCanvasRenderer {
 
     const preview = new EditorPreview(level, this.catalog);
     const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
-    for (let y = 0; y < level.height; y++)
-      for (let x = 0; x < level.width; x++)
-        for (const inspection of preview.inspectCell(x, y).presences)
-          this.drawPresence(context, preview, visualQuery, inspection, x, y);
+    const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
+      world: [],
+      player: [],
+      overlay: [],
+    };
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        for (const inspection of preview.inspectCell(x, y).presences) {
+          passes[this.visuals.renderPassFor(inspection.definition)].push({
+            inspection,
+            x,
+            y,
+          });
+        }
+      }
+    }
+    for (const pass of ["world", "player", "overlay"] as const) {
+      for (const item of passes[pass])
+        this.drawPresence(
+          context,
+          preview,
+          visualQuery,
+          item.inspection,
+          item.x,
+          item.y,
+        );
+    }
 
     this.drawGrid(context, level.width, level.height);
     this.drawPreview(context, state, preview);
@@ -215,33 +245,18 @@ export class EditorCanvasRenderer {
     if (!image) return;
     const left = x * EDITOR_TILE_SIZE;
     const top = y * EDITOR_TILE_SIZE;
-    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
-    const frameHeight = Math.max(1, layer.frameHeight ?? image.height);
-    const columns = Math.max(1, Math.floor(image.width / frameWidth));
-    const rows = Math.max(1, Math.floor(image.height / frameHeight));
-    const frameCount = Math.max(1, columns * rows);
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
-    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
-    const sourceX = (frame % columns) * frameWidth;
-    const sourceY = Math.floor(frame / columns) * frameHeight;
     if (layer.anchor === "fill") {
-      context.drawImage(
-        image,
-        sourceX,
-        sourceY,
-        frameWidth,
-        frameHeight,
-        left,
-        top,
-        EDITOR_TILE_SIZE,
-        EDITOR_TILE_SIZE,
-      );
+      context.drawImage(image, left, top, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
       return;
     }
-    const scale = EDITOR_TILE_SIZE / this.images.sourceTileSize;
+    const sourceTile = this.images.sourceTileSize;
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
+    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+    const scale = EDITOR_TILE_SIZE / sourceTile;
     const drawWidth = frameWidth * scale;
-    const drawHeight = frameHeight * scale;
+    const drawHeight = image.height * scale;
     const drawX = left + EDITOR_TILE_SIZE / 2 - drawWidth / 2;
     const drawY =
       layer.anchor === "center"
@@ -249,10 +264,10 @@ export class EditorCanvasRenderer {
         : top + EDITOR_TILE_SIZE - drawHeight;
     context.drawImage(
       image,
-      sourceX,
-      sourceY,
+      frame * frameWidth,
+      0,
       frameWidth,
-      frameHeight,
+      image.height,
       drawX,
       drawY,
       drawWidth,

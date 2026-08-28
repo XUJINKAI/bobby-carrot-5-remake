@@ -6,7 +6,7 @@ import type {
 } from "../visual/VisualDefinition.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type { Camera } from "./Camera.js";
-import type { RenderScene } from "./RenderScene.js";
+import type { RenderItem, RenderScene } from "./RenderScene.js";
 
 export interface RenderViewport {
   width: number;
@@ -61,7 +61,22 @@ export class Renderer {
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, viewport.width, viewport.height);
 
-    for (const item of scene.items) {
+    this.drawPass(context, scene.world, camera);
+    this.drawPass(context, scene.player, camera);
+    this.drawPass(context, scene.overlay, camera);
+
+    if (this.debug) {
+      this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
+      this.drawDebugSelection(context, camera);
+    }
+  }
+
+  private drawPass(
+    context: CanvasRenderingContext2D,
+    items: readonly RenderItem[],
+    camera: Camera,
+  ): void {
+    for (const item of items)
       this.drawComposition(
         context,
         item.composition,
@@ -69,12 +84,6 @@ export class Renderer {
         item.visualY,
         camera,
       );
-    }
-
-    if (this.debug) {
-      this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
-      this.drawDebugSelection(context, camera);
-    }
   }
 
   private drawComposition(
@@ -113,8 +122,7 @@ export class Renderer {
     const rows = Math.max(1, Math.floor(image.height / frameHeight));
     const frameCount = Math.max(1, columns * rows);
     const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const requestedFrame =
-      layer.frameIndex ?? Math.floor(progress * frameCount);
+    const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
     const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
     const sourceX = (frame % columns) * frameWidth;
     const sourceY = Math.floor(frame / columns) * frameHeight;

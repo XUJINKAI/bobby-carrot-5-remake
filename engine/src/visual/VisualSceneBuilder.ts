@@ -4,7 +4,10 @@ import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import { SpatialVisualQuery } from "./SpatialVisualQuery.js";
-import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
+import type {
+  EntityVisualRuntimeState,
+  VisualRenderPass,
+} from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
 
 export type VisualRuntimeState = ReadonlyMap<EntityId, EntityVisualRuntimeState>;
@@ -16,7 +19,11 @@ export function buildVisualScene(
   runtime: VisualRuntimeState,
   time?: PresentationFrame,
 ): RenderScene {
-  const items: RenderItem[] = [];
+  const passes: Record<VisualRenderPass, RenderItem[]> = {
+    world: [],
+    player: [],
+    overlay: [],
+  };
   const query = new SpatialVisualQuery(world.entities, world.spatial);
 
   for (let y = 0; y < world.height; y += 1) {
@@ -34,7 +41,7 @@ export function buildVisualScene(
           ...(time ? { time } : {}),
         });
         if (!composition) continue;
-        items.push({
+        passes[visuals.renderPassFor(definition)].push({
           presence,
           composition,
           visualX: x + (visualRuntime?.offsetX ?? 0),
@@ -47,6 +54,8 @@ export function buildVisualScene(
   return {
     worldWidth: world.width,
     worldHeight: world.height,
-    items: sortRenderItems(items),
+    world: sortRenderItems(passes.world),
+    player: sortRenderItems(passes.player),
+    overlay: sortRenderItems(passes.overlay),
   };
 }

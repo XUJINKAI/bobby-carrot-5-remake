@@ -1,13 +1,11 @@
 import type { Direction } from "@bobby/model";
 import type { EntityTrait } from "../entity/EntityDefinition.js";
 import type { CellPosition } from "../entity/EntityInstance.js";
-import type { StackBand } from "./StackBand.js";
 
 export interface FootprintPart {
   dx: number;
   dy: number;
   role?: string;
-  stackBand?: StackBand;
   stackOrder?: number;
   traits?: readonly EntityTrait[];
 }
@@ -27,7 +25,6 @@ export interface FootprintEntity {
 
 export interface ResolvedFootprintCell extends CellPosition {
   role?: string;
-  stackBand?: StackBand;
   stackOrder?: number;
   traits?: readonly EntityTrait[];
 }
@@ -45,7 +42,6 @@ export function resolveFootprintCells(
     return {
       ...cell,
       ...(part.role ? { role: part.role } : {}),
-      ...(part.stackBand ? { stackBand: part.stackBand } : {}),
       ...(part.stackOrder !== undefined ? { stackOrder: part.stackOrder } : {}),
       ...(part.traits ? { traits: part.traits } : {}),
     };

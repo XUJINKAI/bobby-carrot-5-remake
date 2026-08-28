@@ -5,7 +5,6 @@ import {
   type JsonValue,
 } from "@bobby/model";
 import type {
-  EntityDefinition,
   EntityFieldDefinition,
   EntityTrait,
 } from "../../world/entity/EntityDefinition.js";
@@ -35,6 +34,9 @@ interface OriginalAmbientSequence {
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
 const ORIGINAL_AMBIENT_FRAME_MS = 248;
 const ORIGINAL_TILE_SIZE = 48;
+const SURFACE_STACK_ORDER = 0;
+const CONTENT_STACK_ORDER = 100;
+const COVER_STACK_ORDER = 200;
 
 export const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
@@ -52,7 +54,7 @@ export function surfaceDefinition(
   return {
     type,
     traits,
-    stackBand: "surface",
+    stackOrder: SURFACE_STACK_ORDER,
     occupancy: { group: "surface", replaceSameGroup: true },
     presentation: { name, category: "地表" },
     authoring: { palette: true, category: "地表" },
@@ -69,7 +71,7 @@ export function contentDefinition(
   return {
     type,
     traits,
-    stackBand: "content",
+    stackOrder: CONTENT_STACK_ORDER,
     presentation: { name, category: "实体" },
     authoring: { palette: true, category: "实体" },
     ...extra,
@@ -85,9 +87,9 @@ export function coverDefinition(
   return {
     type,
     traits,
-    stackBand: "cover",
+    stackOrder: COVER_STACK_ORDER,
     occupancy: { group: "cover", replaceSameGroup: true },
-    presentation: { name, category: "覆盖" },
+    presentation: { name, category: "覆盖", renderPass: "overlay" },
     authoring: { palette: true, category: "覆盖" },
     ...extra,
   };

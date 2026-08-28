@@ -10,25 +10,25 @@ function registry() {
     {
       type: "water",
       traits: ["water"],
-      stackBand: "surface",
+      stackOrder: 0,
       presentation: { name: "Water" },
     },
     {
       type: "coin",
       traits: ["collectible"],
-      stackBand: "content",
+      stackOrder: 100,
       presentation: { name: "Coin" },
     },
     {
       type: "grass",
       traits: ["mowable"],
-      stackBand: "cover",
+      stackOrder: 200,
       presentation: { name: "Grass" },
     },
     {
       type: "dragon",
       traits: ["dragon"],
-      stackBand: "content",
+      stackOrder: 100,
       footprint: {
         parts: [
           { dx: 0, dy: 0, role: "head", traits: ["blocking"] },
@@ -41,7 +41,7 @@ function registry() {
     {
       type: "ice",
       traits: ["meltable"],
-      stackBand: "cover",
+      stackOrder: 200,
       presentation: { name: "Ice" },
     },
   ]);
@@ -72,15 +72,15 @@ function createSpatialPreview(level, entityRegistry = registry()) {
   };
 }
 
-test("同格 Entity 按 surface/content/cover 形成稳定 Cell Stack", () => {
+test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
   const preview = createSpatialPreview({
     schemaVersion: 1,
     width: 3,
     height: 3,
     entities: [
-      { type: "water", x: 1, y: 1 },
-      { type: "coin", x: 1, y: 1 },
       { type: "grass", x: 1, y: 1 },
+      { type: "coin", x: 1, y: 1 },
+      { type: "water", x: 1, y: 1 },
     ],
   });
   const cell = preview.inspectCell(1, 1);
@@ -88,7 +88,25 @@ test("同格 Entity 按 surface/content/cover 形成稳定 Cell Stack", () => {
     cell.presences.map(({ entity }) => entity.type),
     ["water", "coin", "grass"],
   );
+  assert.deepEqual(
+    cell.presences.map(({ presence }) => presence.stackOrder),
+    [0, 100, 200],
+  );
   assert.equal(cell.top?.entity.type, "grass");
+});
+
+test("definition stackOrder 为 footprint 提供基准并保留 part 顺序", () => {
+  const preview = createSpatialPreview({
+    schemaVersion: 1,
+    width: 6,
+    height: 3,
+    entities: [{ type: "dragon", x: 1, y: 1 }],
+  });
+  const presences = preview.spatial.presencesForEntity(1);
+  assert.deepEqual(
+    presences.map((presence) => presence.stackOrder),
+    [100, 101, 102],
+  );
 });
 
 test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", () => {
@@ -121,7 +139,7 @@ test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", ()
   );
 });
 
-test("销毁覆盖 Entity 后 Dragon tail Presence 自动重新暴露", () => {
+test("销毁高 stackOrder Entity 后 Dragon tail Presence 自动重新暴露", () => {
   const store = new EntityStore([
     { type: "water", x: 3, y: 1 },
     { type: "dragon", x: 1, y: 1 },

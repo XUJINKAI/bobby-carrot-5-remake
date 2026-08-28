@@ -1,36 +1,57 @@
-# 原版运行时层次：Terrain / Object / Dynamic
+# Engine 运行时层序
 
-> 工作记录。只记录已经由原版数据格式、Loader 或已确认运行时行为支持的结构事实；具体机关行为仍需逐项对照 `a.class`。
+> Engine 已统一为 Entity / Presence 模型。原 DAT 的 Terrain / Object 只是导入语义，不再对应运行时类型或固定渲染层。
 
-## 结论
+## 两套职责必须分开
 
-Bobby Carrot 5 的关卡不是“每格一个最终 Tile”。运行时至少同时存在：
+### Spatial：`stackOrder`
 
-1. **Terrain layer**：底层地形，始终保留；
-2. **Object layer**：静态覆盖对象，可被取得、破坏、替换或移除；
-3. **Dynamic entities**：云、荷叶等从 object grid 抽出的移动实体；
-4. **Runtime state**：按钮状态、陷阱状态、临时动画/生长任务等。
+`SpatialIndex` 只管理同格 Presence 的逻辑顺序：
 
-因此机关变化通常只修改其中一层，不应把格子压扁成单一视觉/碰撞状态。
+```text
+stackOrder ASC
+→ entityId 仅作为 deterministic fallback
+```
 
-## 典型叠加
+- `EntityDefinition.stackOrder` 是单格 Entity 与 footprint 的默认基准；
+- `FootprintPart.stackOrder` 可以覆盖单个 part；
+- 没有 `surface/content/cover`、`stackBand` 或其他类别层；
+- `topPresenceAt()` 只表达同格逻辑栈顶部，不承担视觉遮挡语义。
 
-### 水面 + 木板
+原版 helper 当前使用约定值：地表 `0`、普通实体 `100`、前景覆盖对象 `200`。这些只是 stackOrder 默认值，不形成新的枚举类型。
 
-水属于 Terrain；木板 `0xD4` 属于 Object。木板存在时对象规则覆盖底层水面的普通不可步行规则；木板坍塌并最终从 Object layer 删除后，底层水面仍然存在，因此该格自然恢复为不可步行水面。
+## Presentation：固定 render pass
 
-### 高草 + 可收集对象
+视觉层序属于 Presentation。`VisualDefinition.renderPass` 只有三个 pass：
 
-高草 `0xC7/0xC8` 属于 Terrain；金币、金胡萝卜等仍可同时存在于 Object layer。高草未割除时视觉层应遮挡被草覆盖的对象；割草只替换 Terrain，不应顺手删除或覆盖已有 Object。随后 Object 才按自身规则继续存在/被收集。
+```text
+world
+→ player
+→ overlay
+→ HUD（DOM，canvas 外）
+```
 
-`0xC8` 自身还承担“草中隐藏主要目标”的历史语义。Engine 在把这种隐式目标显式化时，只有目标格原本没有对象时才能生成胡萝卜/蛋巢；绝不能覆盖原 DAT 已存在的对象。
+- `world`：绝大多数 Entity，包括地面、目标、道具、机关、障碍；
+- `player`：Bobby；
+- `overlay`：明确需要压在 Bobby 上方的前景视觉，例如高草、雪；
+- HUD 由 `GameplayHud` 在 DOM 中呈现，不进入 World/Spatial/RenderScene。
+
+同一个 pass 内只按 `stackOrder` 排序。`visualX` / `visualY` 只决定动画中的绘制坐标，绝不参与层序。
+
+因此 Bobby 站在 Empty Egg Nest 上时，Nest 属于 `world`，Bobby 属于 `player`，绘制顺序天然是 Nest → Bobby，不再依赖 Entity id、移动方向或视觉 Y。
+
+## 原版数据映射
+
+原 DAT 可以同时提供 terrain/object/dynamic 信息，但 Adapter 会把它们 materialize 为独立 Entity。底层 Entity 不会因为上层 Entity 存在而被跳过：同一格的所有 Presence 都会进入对应 render pass。
+
+例如：
+
+- 水 + 木板：水和木板都是 `world`，通过各自 `stackOrder` 保持水在下、木板在上；木板消失后水自然暴露。
+- 高草 + 收集物：收集物属于 `world`，高草 visual 属于 `overlay`，所以高草可以遮挡 Bobby 与收集物，而 gameplay 仍由各 Entity 独立处理。
+- Bobby + 蛋巢：蛋巢属于 `world`，Bobby 属于 `player`，不会发生蛋巢盖住 Bobby。
+
+不要为了新视觉效果继续增加 Spatial band。若未来需要新的视觉层次，应首先判断是否属于 Presentation pass 或 VisualComposition，而不是污染 World 的空间模型。
 
 ## Editor
 
-Editor 当前的 `terrain[][] + objects[]` 数据结构本身已经能表示叠加，问题不在存储格式，而在：
-
-- 画布总把 Object 画在 Terrain 上方，导致本应被高草遮住的对象提前可见；
-- Inspector / 交互没有把一格明确展示为“Terrain + Object”的组合；
-- Runtime 机关逻辑有少量代码把 Terrain 变化和 Object 生成混在一起，可能破坏已有叠加。
-
-因此不应新增第三个“overlay JSON layer”去复制原版模型；应恢复每层独立的可见性、碰撞与生命周期语义。
+Editor Canvas 使用与 Runtime 相同的 VisualRegistry 与 `world → player → overlay` pass，因此编辑器预览和实际游戏保持同一层序语义。Editor 的删除、Inspector、occupancy 等逻辑继续通过 Spatial `stackOrder` 工作，不从 render pass 推导 gameplay 行为。

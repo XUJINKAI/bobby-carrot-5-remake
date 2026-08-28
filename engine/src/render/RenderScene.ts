@@ -1,5 +1,4 @@
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
-import { stackBandOrder } from "../world/spatial/StackBand.js";
 import type { VisualComposition } from "../visual/VisualDefinition.js";
 
 export interface RenderItem {
@@ -12,32 +11,24 @@ export interface RenderItem {
 export interface RenderScene {
   worldWidth: number;
   worldHeight: number;
-  items: readonly RenderItem[];
+  world: readonly RenderItem[];
+  player: readonly RenderItem[];
+  overlay: readonly RenderItem[];
 }
 
+/**
+ * 同一个 render pass 内只服从逻辑 stackOrder。
+ * visualX/visualY 只决定绘制位置，绝不参与层序。
+ */
 export function sortRenderItems(items: readonly RenderItem[]): readonly RenderItem[] {
   return [...items].sort(compareRenderItems);
 }
 
 export function compareRenderItems(a: RenderItem, b: RenderItem): number {
-  const aSurface = a.presence.stackBand === "surface";
-  const bSurface = b.presence.stackBand === "surface";
-  if (aSurface !== bSurface) return aSurface ? -1 : 1;
-
-  if (aSurface && bSurface) {
-    return (
-      a.presence.cell.y - b.presence.cell.y ||
-      a.presence.cell.x - b.presence.cell.x ||
-      a.presence.stackOrder - b.presence.stackOrder ||
-      a.presence.entityId - b.presence.entityId
-    );
-  }
-
   return (
-    a.visualY - b.visualY ||
-    stackBandOrder(a.presence.stackBand) - stackBandOrder(b.presence.stackBand) ||
     a.presence.stackOrder - b.presence.stackOrder ||
-    a.visualX - b.visualX ||
-    a.presence.entityId - b.presence.entityId
+    a.presence.entityId - b.presence.entityId ||
+    a.presence.cell.y - b.presence.cell.y ||
+    a.presence.cell.x - b.presence.cell.x
   );
 }

@@ -26,8 +26,6 @@ export type {
   FootprintPart,
   ResolvedFootprintCell,
 } from "./world/spatial/Footprint.js";
-export { STACK_BANDS } from "./world/spatial/StackBand.js";
-export type { StackBand } from "./world/spatial/StackBand.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
   ImageManager,
@@ -69,5 +67,6 @@ export type {
   VisualDefinition,
   VisualLayer,
   VisualQuery,
+  VisualRenderPass,
   VisualResolveContext,
 } from "./visual/VisualDefinition.js";

@@ -6,13 +6,17 @@ import type {
   EntityTrait,
   VisualId,
 } from "../world/entity/EntityDefinition.js";
-import type { VisualDefinition } from "../visual/VisualDefinition.js";
+import type {
+  VisualDefinition,
+  VisualRenderPass,
+} from "../visual/VisualDefinition.js";
 
 export interface EntityPresentationDefinition {
   name: string;
   category?: string;
   visual?: VisualId;
   audio?: AudioProfileId;
+  renderPass?: VisualRenderPass;
 }
 
 export interface EntityAuthoringDefinition {
@@ -66,11 +70,21 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
             ...new Set([...(gameplayDefinition.behaviors ?? []), ...behaviorIds]),
           ],
         };
+  const visual = input.visual
+    ? {
+        ...input.visual,
+        ...(input.visual.renderPass
+          ? {}
+          : presentation.renderPass
+            ? { renderPass: presentation.renderPass }
+            : {}),
+      }
+    : undefined;
   return {
     definition,
     presentation,
     ...(authoring ? { authoring } : {}),
-    ...(input.visual ? { visual: input.visual } : {}),
+    ...(visual ? { visual } : {}),
     ...(input.behaviorBindings
       ? { behaviorBindings: input.behaviorBindings }
       : {}),

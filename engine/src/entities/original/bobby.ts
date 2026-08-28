@@ -20,7 +20,7 @@ const definition = contentDefinition(EntityTypeId.BOBBY, "Bobby", ["player"], {
     category: "角色",
     defaultDirection: "down",
   },
-  presentation: { name: "Bobby", category: "角色" },
+  presentation: { name: "Bobby", category: "角色", renderPass: "player" },
 });
 
 export const bobby: EntityModule = originalModule(definition, {
