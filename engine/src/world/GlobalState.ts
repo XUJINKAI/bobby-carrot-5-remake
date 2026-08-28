@@ -3,7 +3,7 @@ import type { CellPosition } from "./entity/EntityInstance.js";
 
 export interface InventoryState { gas: boolean; kite: boolean; shovel: boolean; beans: number; }
 export interface ProfileCapabilities { superKey: boolean; temporaryKey: boolean; speedShoes: boolean; }
-export type ObjectiveMode = "carrot" | "nest" | "generic";
+export type ObjectiveMode = "carrot" | "egg" | "generic";
 export type ForcedKind = "speed" | "ice" | "tide" | "flight" | "leaf" | "mower-exit";
 export interface ForcedMovement { kind: ForcedKind; direction: Direction; }
 
