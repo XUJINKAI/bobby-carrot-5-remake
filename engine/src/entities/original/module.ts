@@ -53,7 +53,7 @@ export function surfaceDefinition(
 ): EntityModuleDefinition {
   return {
     type,
-    traits,
+    traits: [...new Set([...traits, "support"])],
     stackOrder: SURFACE_STACK_ORDER,
     occupancy: { group: "surface", replaceSameGroup: true },
     presentation: { name, category: "地表" },

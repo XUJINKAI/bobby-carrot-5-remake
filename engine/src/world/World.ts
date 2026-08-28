@@ -351,14 +351,7 @@ export class World {
   }
 
   private hasSupport(cell: CellPosition): boolean {
-    return this.spatial.presencesAt(cell).some(
-      (presence) =>
-        presence.stackBand === "surface" &&
-        (presence.traits.includes("walkable") ||
-          presence.traits.includes("water") ||
-          presence.traits.includes("forced-movement") ||
-          presence.traits.includes("push-goal")),
-    );
+    return this.spatial.hasTraitAt(cell, "support");
   }
 
   private runPassage(
@@ -612,7 +605,7 @@ export class World {
       entityId: entity.id,
       type: entity.type,
       ...(presence.role ? { role: presence.role } : {}),
-      stackBand: presence.stackBand,
+      stackOrder: presence.stackOrder,
       traits: presence.traits,
       ...(entity.state ? { state: structuredClone(entity.state) } : {}),
     };
