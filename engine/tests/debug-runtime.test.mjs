@@ -100,6 +100,9 @@ test("Debug Sidebar keeps interactive controls mounted across presentation rende
     "utf8",
   );
   assert.doesNotMatch(source, /content\.replaceChildren\(/);
-  assert.match(source, /private readonly pauseButton/);
+  assert.match(source, /private readonly pauseResumeButton/);
+  assert.doesNotMatch(source, /private readonly resumeButton/);
   assert.match(source, /private readonly selectionStack/);
+  assert.match(source, /⏸ Pause/);
+  assert.match(source, /▶ Resume/);
 });
