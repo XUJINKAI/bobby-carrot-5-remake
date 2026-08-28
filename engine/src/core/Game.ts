@@ -34,6 +34,7 @@ import { World, type WorldSnapshot } from "../world/World.js";
 import type {
   CellInspection,
   MoveResult,
+  WinConditionState,
   WorldEvent,
 } from "../world/WorldTypes.js";
 import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
@@ -188,6 +189,12 @@ export class Game {
       canUndo: this.canUndo,
       canRedo: this.canRedo,
     };
+  }
+
+  get winState(): WinConditionState | null {
+    if (!this.worldValue) return null;
+    const win = this.world.winState;
+    return win ? structuredClone(win) : null;
   }
 
   get debug(): boolean {
