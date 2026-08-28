@@ -193,6 +193,10 @@ export class InputController {
     this.pendingMoveSource = null;
   }
 
+  get isEnabled(): boolean {
+    return this.enabled;
+  }
+
   setEnabled(value: boolean): void {
     this.enabled = value;
     this.screenJoystick?.setInteractionEnabled(value);
