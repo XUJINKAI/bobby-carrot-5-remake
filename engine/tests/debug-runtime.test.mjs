@@ -20,7 +20,7 @@ function debugTime() {
   return { timing, worldClock, presentationClock };
 }
 
-test("Debug snapshot exposes both clocks, actions, Entity, Behavior and Visual facts", () => {
+test("Debug snapshot exposes runtime clocks, actions, Entity, Behavior and Visual facts", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -58,9 +58,12 @@ test("Debug snapshot exposes both clocks, actions, Entity, Behavior and Visual f
   assert.equal(snapshot.runtime.worldPaused, true);
   assert.equal(snapshot.runtime.worldHz, 16);
   assert.equal(snapshot.runtime.presentationHz, 60);
-  assert.equal(snapshot.runtime.status, "playing");
+  assert.equal(snapshot.runtime.presentationFrame, 1);
+  assert.equal(snapshot.runtime.presentationPaused, false);
   assert.equal(snapshot.runtime.actionCount, 0);
-  assert.deepEqual(snapshot.runtime.player, { x: 0, y: 0 });
+  assert.equal("status" in snapshot.runtime, false);
+  assert.equal("player" in snapshot.runtime, false);
+  assert.equal("facing" in snapshot.runtime, false);
   assert.deepEqual(snapshot.selection?.cell, { x: 0, y: 0 });
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
@@ -94,15 +97,20 @@ test("Debug snapshot defaults selection to the top Presence", () => {
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
 });
 
-test("Debug Sidebar keeps interactive controls mounted across presentation renders", () => {
+test("Debug Sidebar keeps four clock controls mounted across presentation renders", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
   assert.doesNotMatch(source, /content\.replaceChildren\(/);
-  assert.match(source, /private readonly pauseResumeButton/);
-  assert.doesNotMatch(source, /private readonly resumeButton/);
+  assert.match(source, /private readonly worldPauseResumeButton/);
+  assert.match(source, /private readonly presentationPauseResumeButton/);
+  assert.match(source, /private readonly frameBackButton/);
+  assert.match(source, /private readonly frameForwardButton/);
+  assert.match(source, /◀ 1 Frame/);
+  assert.match(source, /1 Frame ▶/);
   assert.match(source, /private readonly selectionStack/);
-  assert.match(source, /⏸ Pause/);
-  assert.match(source, /▶ Resume/);
+  assert.doesNotMatch(source, /\["status", "Status"\]/);
+  assert.doesNotMatch(source, /\["player", "Player"\]/);
+  assert.doesNotMatch(source, /\["facing", "Facing"\]/);
 });
