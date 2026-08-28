@@ -6,6 +6,7 @@
   "dependencies": {
     "@bobby/adventure": "0.1.0",
     "@bobby/editor": "0.1.0",
+    "@bobby/embed": "0.1.0",
     "@bobby/engine": "0.1.0",
     "@bobby/model": "0.1.0",
     "vue": "^3.5.41"

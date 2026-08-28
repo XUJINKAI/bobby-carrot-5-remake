@@ -3,6 +3,7 @@ import { parseEditorLevel, serializeEditorLevel, type EditorLevel } from "@bobby
 import { computed, reactive, watch } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
+import { encodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
 
 const props = defineProps<{ open: boolean; level: Readonly<EditorLevel> }>();
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ const exchangeLevel = computed<EditorLevel>(() => {
   if (metadata.description) level.description = metadata.description;
   return level;
 });
+const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
   left: [
     { type: "importText" as const, label: "应用" },
@@ -49,6 +51,12 @@ function serializeMap(value: unknown): string {
   return serializeEditorLevel(value as EditorLevel);
 }
 
+async function openEmbed(): Promise<void> {
+  const url = new URL(embedUrl.value);
+  url.hash = await encodeBc5rV1(serializeMap(exchangeLevel.value));
+  window.location.assign(url.href);
+}
+
 function metadataValue(): { name: string; author?: string; description?: string } {
   return {
     name: metadata.name,
@@ -66,6 +74,7 @@ function metadataValue(): { name: string; author?: string; description?: string 
       <label class="editor-field"><span>作者</span><input v-model="metadata.author" maxlength="80" placeholder="可选"></label>
       <label class="editor-field"><span>描述</span><textarea v-model="metadata.description" maxlength="500" rows="3" placeholder="可选" /></label>
       <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
+      <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
       <DataExchangePanel
         :value="exchangeLevel"
         :serialize="serializeMap"

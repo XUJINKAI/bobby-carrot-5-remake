@@ -17,6 +17,7 @@ const generatedTargets = [
   "adventure/dist",
   "engine/dist",
   "editor/dist",
+  "embed/dist",
 ].map((value) => (path.isAbsolute(value) ? value : path.join(root, value)));
 
 for (const target of generatedTargets) {
@@ -30,11 +31,12 @@ run(tsc, ["-b", "model", "adventure", "--force"]);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
-run(tsc, ["-b", "engine", "editor", "--force"]);
+run(tsc, ["-b", "engine", "editor", "embed", "--force"]);
 run(binCommand("vue-tsc"), ["-b", "--force"], {
   cwd: path.join(root, "web"),
 });
 run(binCommand("vite"), ["build"], { cwd: path.join(root, "web") });
+run(binCommand("vite"), ["build"], { cwd: path.join(root, "embed") });
 
 copyTree(path.join(root, "model/dist"), path.join(dist, "model"));
 copyTree(path.join(root, "adventure/dist"), path.join(dist, "adventure"));

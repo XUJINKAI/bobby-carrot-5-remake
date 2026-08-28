@@ -4,6 +4,7 @@
     { "path": "./model" },
     { "path": "./engine" },
     { "path": "./editor" },
+    { "path": "./embed" },
     { "path": "./web" }
   ]
 }

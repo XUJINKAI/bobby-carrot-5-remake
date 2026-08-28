@@ -9,7 +9,8 @@
     { "path": "../model" },
     { "path": "../engine" },
     { "path": "../editor" },
-    { "path": "../adventure" }
+    { "path": "../adventure" },
+    { "path": "../embed" }
   ],
   "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"]
 }

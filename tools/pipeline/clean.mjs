@@ -8,6 +8,7 @@ const generatedDirectories = [
   "engine/dist",
   "editor/dist",
   "adventure/dist",
+  "embed/dist",
   "original/extracted",
   "original/decoded",
   "original/adapted",
