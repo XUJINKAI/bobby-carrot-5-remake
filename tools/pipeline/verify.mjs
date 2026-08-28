@@ -217,8 +217,8 @@ function assertNovobanCollection(collections) {
 function assertPushboxWinRule(document, relative) {
   const expected = {
     type: "fill-all",
-    targetTrait: "push-goal",
-    fillerTrait: "pushable",
+    target: "push-goal",
+    filler: "pushable",
   };
   if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
     throw new Error(`${relative}: 获胜条件必须只有 fill-all push-goal`);
@@ -294,24 +294,23 @@ function assertOriginalStartContract(document, relative) {
 }
 
 function assertOriginalWinRule(document, relative) {
-  const conditions = document.rules?.win?.conditions;
-  if (!Array.isArray(conditions))
-    throw new Error(`${relative}: Original rules.win.conditions 缺失`);
-  if (
-    conditions.some(
-      (condition) =>
-        condition?.type === "fill-all" &&
-        (condition.targetTrait === "push-goal" ||
-          condition.fillerTrait === "pushable"),
-    )
-  )
-    throw new Error(`${relative}: Original 不应包含 Pushbox fill-all 获胜条件`);
-  if (
-    !conditions.some(
-      (condition) => condition?.type === "reach" && condition.trait === "exit",
-    )
-  )
-    throw new Error(`${relative}: Original 必须包含 reach exit 获胜条件`);
+  const types = new Set(document.entities.map((entity) => entity.type));
+  let expected;
+  if (types.has("carrot")) {
+    expected = { type: "collect-all", target: "carrot" };
+  } else if (types.has("egg-nest-empty") || types.has("egg-nest-filled")) {
+    expected = {
+      type: "fill-all",
+      target: "egg-nest",
+      filler: "egg",
+    };
+  } else if (types.has("exit")) {
+    expected = { type: "reach", target: "exit" };
+  } else {
+    throw new Error(`${relative}: Original Campaign map 缺少可识别获胜目标`);
+  }
+  if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
+    throw new Error(`${relative}: Original rules.win 与 canonical Entity 目标不一致`);
 }
 
 function parseMapRef(value) {
