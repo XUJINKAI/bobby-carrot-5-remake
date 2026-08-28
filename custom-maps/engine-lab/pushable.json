@@ -9,8 +9,8 @@
     "win": {
       "type": "all",
       "conditions": [
-        { "type": "fill-all", "targetTrait": "push-goal", "fillerTrait": "pushable" },
-        { "type": "reach", "trait": "exit" }
+        { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
+        { "type": "reach", "target": "exit" }
       ]
     }
   },

@@ -43,6 +43,13 @@ function registry() {
       authoring: { palette: true },
     },
     {
+      type: "exit-cell",
+      traits: ["walkable"],
+      stackBand: "surface",
+      presentation: { name: "Exit", category: "test" },
+      authoring: { palette: true },
+    },
+    {
       type: "grass",
       traits: ["blocking", "mowable"],
       stackBand: "cover",
@@ -111,8 +118,8 @@ test("pushable movement and fill-all rule use Presence traits", () => {
       rules: {
         win: {
           type: "fill-all",
-          targetTrait: "goal",
-          fillerTrait: "pushable",
+          target: "goal",
+          filler: "pushable",
         },
       },
     },
@@ -122,6 +129,27 @@ test("pushable movement and fill-all rule use Presence traits", () => {
   assert.equal(move.moved, true);
   assert.equal(world.completed, true);
   assert.equal(world.query.entitiesWithTrait("pushable")[0].anchor.x, 2);
+});
+
+test("win selector can address an Entity type without a matching Trait", () => {
+  const entities = registry();
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      entities: [
+        floor(0, 0),
+        floor(1, 0, "exit-cell"),
+        { type: "player", x: 0, y: 0 },
+      ],
+      rules: { win: { type: "reach", target: "exit-cell" } },
+    },
+    { entities, behaviors: new BehaviorRegistry() },
+  );
+  assert.equal(world.completed, false);
+  assert.equal(world.move("right").moved, true);
+  assert.equal(world.completed, true);
 });
 
 test("blocked touch commits after snapshot without auto-triggering revealed content", () => {

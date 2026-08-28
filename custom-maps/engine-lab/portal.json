@@ -6,7 +6,7 @@
   "width": 7,
   "height": 3,
   "rules": {
-    "win": { "type": "reach", "trait": "exit" }
+    "win": { "type": "reach", "target": "exit" }
   },
   "entities": [
     { "type": "ground-c", "x": 0, "y": 0 },

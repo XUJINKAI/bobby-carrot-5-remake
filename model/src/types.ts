@@ -28,13 +28,13 @@ export interface LevelEntity {
 export type WinCondition =
   | { type: "all"; conditions: WinCondition[] }
   | { type: "any"; conditions: WinCondition[] }
-  | { type: "collect-all"; trait: string }
+  | { type: "collect-all"; target: string }
   | {
       type: "fill-all";
-      targetTrait: string;
-      fillerTrait: string;
+      target: string;
+      filler: string;
     }
-  | { type: "reach"; trait: string };
+  | { type: "reach"; target: string };
 
 export interface LevelRules {
   maxMoves?: number;

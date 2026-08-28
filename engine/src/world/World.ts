@@ -543,30 +543,43 @@ export class World {
       case "any":
         return condition.conditions.some((item) => this.evaluateWin(item));
       case "collect-all":
-        return this.query.entitiesWithTrait(condition.trait).length === 0;
+        return this.matchingEntityCount(condition.target) === 0;
       case "reach":
-        return this.spatial.hasTraitAt(this.player, condition.trait);
+        return this.hasSelectorAt(this.player, condition.target);
       case "fill-all": {
-        const targets = this.spatialCellsWithTrait(condition.targetTrait);
+        const targets = this.spatialCellsMatching(condition.target);
         return (
           targets.length > 0 &&
-          targets.every((cell) =>
-            this.spatial.hasTraitAt(cell, condition.fillerTrait),
-          )
+          targets.every((cell) => this.hasSelectorAt(cell, condition.filler))
         );
       }
     }
   }
 
-  private spatialCellsWithTrait(trait: string): CellPosition[] {
+  private matchingEntityCount(selector: string): number {
+    return this.entities
+      .all()
+      .filter(
+        (entity) =>
+          entity.type === selector ||
+          this.query.entityHasTrait(entity.id, selector),
+      ).length;
+  }
+
+  private hasSelectorAt(cell: CellPosition, selector: string): boolean {
+    return this.spatial.presencesAt(cell).some((presence) => {
+      const entity = this.entities.require(presence.entityId);
+      return entity.type === selector || presence.traits.includes(selector);
+    });
+  }
+
+  private spatialCellsMatching(selector: string): CellPosition[] {
     const result = new Map<string, CellPosition>();
-    for (const entity of this.query.entitiesWithTrait(trait)) {
+    for (const entity of this.entities.all()) {
+      const typeMatches = entity.type === selector;
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (presence.traits.includes(trait))
-          result.set(
-            `${presence.cell.x},${presence.cell.y}`,
-            presence.cell,
-          );
+        if (!typeMatches && !presence.traits.includes(selector)) continue;
+        result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
       }
     }
     return [...result.values()];
