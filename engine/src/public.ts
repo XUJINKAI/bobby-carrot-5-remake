@@ -25,6 +25,8 @@ export {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   ScreenJoystick,
   directionForJoystickVector,
+  resolveScreenJoystickLayout,
+  type ScreenJoystickLayout,
   type ScreenJoystickOptions,
   type JoystickVectorState,
 } from "./input/ScreenJoystick.js";
