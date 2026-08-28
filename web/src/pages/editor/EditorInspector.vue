@@ -65,7 +65,7 @@ watch(
           v-for="presence in model.cell.presences"
           :key="`${presence.ref.index}:${presence.presence.role ?? ''}`"
         >
-          {{ presence.presence.stackBand }} · {{ presence.entity.type }}{{ presence.presence.role ? `:${presence.presence.role}` : '' }}
+          [{{ presence.presence.stackOrder }}] · {{ presence.entity.type }}{{ presence.presence.role ? `:${presence.presence.role}` : '' }}
         </code>
       </div>
       <div v-else class="editor-muted">Implicit Void</div>
@@ -76,7 +76,7 @@ watch(
       </strong>
       <div class="editor-muted">
         anchor {{ model.cell.top.entity.x }},{{ model.cell.top.entity.y }} ·
-        {{ model.cell.top.presence.stackBand }}{{ model.cell.top.presence.role ? ` · ${model.cell.top.presence.role}` : '' }}
+        stack {{ model.cell.top.presence.stackOrder }}{{ model.cell.top.presence.role ? ` · ${model.cell.top.presence.role}` : '' }}
       </div>
       <code>{{ model.cell.top.entity.type }}</code>
       <div class="editor-traits">

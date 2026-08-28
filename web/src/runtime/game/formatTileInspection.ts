@@ -12,7 +12,7 @@ export function formatTileInspection(
     lines.push("Stack:");
     for (const presence of cell.presences) {
       lines.push(
-        `  ${presence.stackBand}: ${presence.type}#${presence.entityId}${presence.role ? `:${presence.role}` : ""}`,
+        `  [${presence.stackOrder}]: ${presence.type}#${presence.entityId}${presence.role ? `:${presence.role}` : ""}`,
         `    traits: ${presence.traits.length ? presence.traits.join(", ") : "none"}`,
       );
       if (presence.state) {
