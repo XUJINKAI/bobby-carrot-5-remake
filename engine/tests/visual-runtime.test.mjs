@@ -71,6 +71,23 @@ test("VisualRuntime motion interpolation follows PresentationFrame milliseconds"
   assert.equal(runtime.isAnimating, false);
 });
 
+test("completed presentation motion can be rewound and replayed without changing World", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+  runtime.update({ frame: 3, nowMs: 1050, deltaMs: -50 }, "linear");
+  assert.equal(runtime.isAnimating, true);
+  runtime.update({ frame: 6, nowMs: 1100, deltaMs: 50 }, "linear");
+  assert.equal(runtime.isAnimating, false);
+});
+
 test("motion duration remains 132ms and is independent from WorldClock rate", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(
