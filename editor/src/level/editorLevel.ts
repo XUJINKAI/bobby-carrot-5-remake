@@ -6,6 +6,7 @@ import {
   type JsonValue,
   type LevelEntity,
   type LevelMap,
+  type WinCondition,
 } from "@bobby/model";
 import type { EditorLevel } from "./types.js";
 
@@ -148,7 +149,9 @@ function normalizeJsonRecord(
 
 function normalizeTraits(value: EntityTraits | undefined): EntityTraits | undefined {
   if (!Array.isArray(value)) return undefined;
-  const traits = [...new Set(value.filter((item) => typeof item === "string" && item))];
+  const traits = [
+    ...new Set(value.filter((item) => typeof item === "string" && item)),
+  ];
   return traits.length > 0 ? traits : undefined;
 }
 
@@ -165,19 +168,8 @@ function isJsonValue(value: unknown): value is JsonValue {
   return Object.values(value).every(isJsonValue);
 }
 
-function defaultWinCondition() {
-  return {
-    type: "all" as const,
-    conditions: [
-      { type: "collect-all" as const, trait: "level-objective" },
-      {
-        type: "fill-all" as const,
-        targetTrait: "push-goal",
-        fillerTrait: "pushable",
-      },
-      { type: "reach" as const, trait: "exit" },
-    ],
-  };
+function defaultWinCondition(): WinCondition {
+  return { type: "reach", target: EntityTypeId.EXIT };
 }
 
 function cloneEntity(entity: LevelEntity): LevelEntity {
