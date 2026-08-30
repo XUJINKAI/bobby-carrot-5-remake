@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import type { PaletteItem, ResolvedPaletteGroup } from "@bobby/editor";
+import type {
+  EditorDefinition,
+  PaletteItem,
+  ResolvedPaletteGroup,
+} from "@bobby/editor";
 import type { EntityCatalog, ImageManager } from "@bobby/engine";
 import { ref } from "vue";
-import { entityVisualStyle } from "../../services/assets/entityVisual.js";
+import EditorEntityPreview from "./EditorEntityPreview.vue";
 
 const props = defineProps<{
   groups: readonly ResolvedPaletteGroup[];
@@ -10,6 +14,7 @@ const props = defineProps<{
   size: number;
   images: ImageManager;
   catalog: EntityCatalog;
+  editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -27,13 +32,11 @@ const tooltip = ref<null | {
 function glyph(item: PaletteItem): string {
   return item.label.trim().slice(0, 2).toUpperCase();
 }
-function iconStyle(item: PaletteItem): Record<string, string> | null {
-  return entityVisualStyle(props.images, {
-    type: item.type,
-    ...(item.direction ? { direction: item.direction } : {}),
-    ...(item.properties ? { properties: item.properties } : {}),
-    ...(item.state ? { state: item.state } : {}),
-  }, props.size);
+function tileStyle(item: PaletteItem): Record<string, string> {
+  return {
+    gridColumn: `span ${item.previewWidth}`,
+    gridRow: `span ${item.previewHeight}`,
+  };
 }
 function showTooltip(item: PaletteItem, event: MouseEvent): void {
   const definition = props.catalog.require(item.type);
@@ -48,7 +51,11 @@ function showTooltip(item: PaletteItem, event: MouseEvent): void {
 }
 function moveTooltip(event: MouseEvent): void {
   if (!tooltip.value) return;
-  tooltip.value = { ...tooltip.value, x: event.clientX + 14, y: event.clientY + 14 };
+  tooltip.value = {
+    ...tooltip.value,
+    x: event.clientX + 14,
+    y: event.clientY + 14,
+  };
 }
 </script>
 
@@ -65,37 +72,90 @@ function moveTooltip(event: MouseEvent): void {
     <div class="editor-palette-groups">
       <section v-for="group in groups" :key="group.id" class="editor-palette-group">
         <h3>{{ group.label }}</h3>
-        <div v-for="(row, rowIndex) in group.rows" :key="`${group.id}:${rowIndex}`" class="editor-palette-grid" :style="{ '--palette-size': `${size}px` }">
+        <div
+          v-for="(row, rowIndex) in group.rows"
+          :key="`${group.id}:${rowIndex}`"
+          class="editor-palette-grid"
+          :style="{ '--palette-size': `${size}px` }"
+        >
           <button
             v-for="item in row"
             :key="item.key"
             type="button"
             class="editor-palette-tile"
             :class="{ active: placement.key === item.key }"
+            :style="tileStyle(item)"
             @click="emit('select', item)"
             @mouseenter="showTooltip(item, $event)"
             @mousemove="moveTooltip"
             @mouseleave="tooltip = null"
           >
-            <span class="editor-palette-sprite" :class="{ 'editor-palette-glyph': !iconStyle(item) }" :style="iconStyle(item) ?? undefined" aria-hidden="true">{{ iconStyle(item) ? '' : glyph(item) }}</span>
+            <EditorEntityPreview
+              :source="item.previewPreset"
+              :cell-size="size"
+              :images="images"
+              :catalog="catalog"
+              :editor="editor"
+              :fallback-text="glyph(item)"
+            />
           </button>
         </div>
       </section>
     </div>
     <Teleport to="body">
-      <div v-if="tooltip" class="editor-palette-tooltip" :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }">
+      <div
+        v-if="tooltip"
+        class="editor-palette-tooltip"
+        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+      >
         <strong>{{ tooltip.name }}</strong>
         <code>{{ tooltip.type }}</code>
-        <div v-if="tooltip.traits.length"><span>traits</span> {{ tooltip.traits.join(', ') }}</div>
-        <div v-if="tooltip.behaviors.length"><span>behaviors</span> {{ tooltip.behaviors.join(', ') }}</div>
+        <div v-if="tooltip.traits.length">
+          <span>traits</span> {{ tooltip.traits.join(', ') }}
+        </div>
+        <div v-if="tooltip.behaviors.length">
+          <span>behaviors</span> {{ tooltip.behaviors.join(', ') }}
+        </div>
       </div>
     </Teleport>
   </aside>
 </template>
 
 <style scoped>
-.editor-palette-grid { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px; overflow-x:hidden; }
-.editor-palette-tooltip { position:fixed; z-index:10000; max-width:320px; pointer-events:none; padding:8px 10px; border:1px solid #3d88bb; border-radius:6px; background:#082f59; color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.35); font-size:12px; }
-.editor-palette-tooltip strong, .editor-palette-tooltip code { display:block; margin-bottom:3px; }
-.editor-palette-tooltip span { color:var(--bc-text-muted); }
+.editor-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--palette-size));
+  grid-auto-rows: var(--palette-size);
+  grid-auto-flow: row dense;
+  gap: 4px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+.editor-palette-tile {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+}
+.editor-palette-tooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: 320px;
+  pointer-events: none;
+  padding: 8px 10px;
+  border: 1px solid #3d88bb;
+  border-radius: 6px;
+  background: #082f59;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+.editor-palette-tooltip strong,
+.editor-palette-tooltip code {
+  display: block;
+  margin-bottom: 3px;
+}
+.editor-palette-tooltip span {
+  color: var(--bc-text-muted);
+}
 </style>
