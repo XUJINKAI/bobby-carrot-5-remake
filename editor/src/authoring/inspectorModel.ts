@@ -6,7 +6,7 @@ import type {
   EditorEntityDefinition,
   EditorSelection,
 } from "../definitions/types.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 import {
   selectedEntityRefs,
@@ -29,7 +29,7 @@ export interface InspectorModel {
 }
 
 export function buildInspectorModel(
-  level: EditorLevel,
+  level: EditorMap,
   catalog: EntityCatalog,
   selection: EditorSelection | null,
   editor: EditorDefinition = builtinEditorDefinition,
