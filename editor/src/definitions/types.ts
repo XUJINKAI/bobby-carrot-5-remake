@@ -53,6 +53,18 @@ export interface EditorQuickAction {
   apply(entity: Readonly<LevelEntity>): LevelEntity;
 }
 
+/**
+ * Optional authoring-preview extent in map-cell coordinates relative to the Entity anchor.
+ * Normal multi-cell Entities need no configuration because their runtime footprint is used.
+ * This only extends preview layout for visuals that intentionally overhang their gameplay footprint.
+ */
+export interface EditorPreviewBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
 /** Entity-specific authoring policy. This belongs to Editor, never Engine. */
 export interface EditorEntityDefinition {
   placementPoint?: EditorPlacementPoint;
@@ -60,6 +72,7 @@ export interface EditorEntityDefinition {
   replaceGroup?: string;
   variants?: readonly EditorEntityVariant[];
   quickActions?: readonly EditorQuickAction[];
+  previewBounds?: EditorPreviewBounds;
   editorVisual?: VisualDefinition["resolve"];
 }
 
