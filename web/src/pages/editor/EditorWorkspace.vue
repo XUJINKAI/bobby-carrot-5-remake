@@ -37,7 +37,6 @@ defineProps<{
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
-  tool: [tool: EditorTool];
   paletteResize: [delta: number];
   hover: [cell: Cell | null];
   primaryStart: [cell: Cell];
@@ -63,12 +62,10 @@ const emit = defineEmits<{
       v-show="!playing && paletteOpen"
       :groups="palette"
       :placement="placement"
-      :tool="tool"
       :size="paletteSize"
       :images="images"
       :catalog="catalog"
       @select="emit('select', $event)"
-      @tool="emit('tool', $event)"
       @resize="emit('paletteResize', $event)"
     />
     <section class="editor-map-shell" :class="{ playing }">
@@ -112,3 +109,42 @@ const emit = defineEmits<{
     />
   </main>
 </template>
+
+<style scoped>
+.editor-body.palette-hidden {
+  grid-template-columns: minmax(0, 1fr) 350px;
+}
+.editor-body.right-hidden {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+.editor-body.palette-hidden.right-hidden,
+.editor-body.playing {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 1100px) and (min-width: 821px) {
+  .editor-body.palette-hidden {
+    grid-template-columns: minmax(0, 1fr) 310px;
+  }
+  .editor-body.right-hidden {
+    grid-template-columns: 270px minmax(0, 1fr);
+  }
+}
+@media (max-width: 820px) and (min-width: 621px) {
+  .editor-body,
+  .editor-body.right-hidden {
+    grid-template-columns: 235px minmax(0, 1fr);
+  }
+  .editor-body.palette-hidden,
+  .editor-body.palette-hidden.right-hidden {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 620px) {
+  .editor-body,
+  .editor-body.palette-hidden,
+  .editor-body.right-hidden,
+  .editor-body.palette-hidden.right-hidden {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>
