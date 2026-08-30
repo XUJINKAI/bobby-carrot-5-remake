@@ -34,6 +34,7 @@ defineProps<{
   paletteOpen: boolean;
   rightPanel: "inspector" | "level" | null;
   playing: boolean;
+  playComplete: boolean;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
@@ -61,6 +62,8 @@ const emit = defineEmits<{
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   metadata: [value: { name: string; author?: string; description?: string }];
+  playRestart: [];
+  playStop: [];
 }>();
 </script>
 
@@ -106,6 +109,17 @@ const emit = defineEmits<{
       />
       <canvas v-show="playing" data-editor-game-canvas />
       <div data-editor-game-dialog-root />
+      <div v-if="playing && playComplete" class="result-overlay editor-play-result">
+        <div class="result-card">
+          <div class="result-kicker">PLAY TEST</div>
+          <h2>通关</h2>
+          <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
+          <div class="result-actions">
+            <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
+            <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+          </div>
+        </div>
+      </div>
     </section>
     <EditorInspector
       v-show="!playing && rightPanel === 'inspector'"
