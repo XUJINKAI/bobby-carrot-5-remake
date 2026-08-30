@@ -23,10 +23,10 @@ export function validateEditorLevel(
       entity.traits?.includes("player") === true
     );
   });
-  if (players.length !== 1)
+  if (players.length === 0)
     issues.push({
-      level: "error",
-      message: `地图必须且只能包含一个 player Entity，当前为 ${players.length} 个。`,
+      level: "warning",
+      message: "地图当前没有 player Entity；仍可继续编辑和保存。",
     });
 
   for (const selector of requiredReachSelectors(level.rules?.win)) {

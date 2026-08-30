@@ -47,6 +47,13 @@ const definition: EntityModuleDefinition = {
     palette: true,
     category: "角色",
     defaultDirection: "down",
+    editorVisual: () =>
+      composition({
+        asset: BOBBY_VISUAL_ASSETS.move.down,
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: 7,
+      }),
   },
 };
 

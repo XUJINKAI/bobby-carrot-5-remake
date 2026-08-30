@@ -15,7 +15,11 @@ import type { EntityFieldDefinition } from "../world/entity/EntityDefinition.js"
 import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
-import type { VisualComposition, VisualQuery } from "./VisualDefinition.js";
+import type {
+  VisualComposition,
+  VisualQuery,
+  VisualResolveContext,
+} from "./VisualDefinition.js";
 
 export interface EntityVisualPreviewSource {
   type: EntityType;
@@ -26,9 +30,8 @@ export interface EntityVisualPreviewSource {
 }
 
 /**
- * Resolve one isolated authoring/icon preview through the same Entity + Visual definitions as
- * runtime. Spatial visuals (for example Fence AutoConnect) naturally resolve to their isolated
- * form because the preview query has no neighboring entities.
+ * Resolve one isolated authoring/icon preview. Entity authoring.editorVisual may override the
+ * runtime visual; otherwise the normal VisualDefinition remains the single fallback.
  */
 export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
@@ -75,7 +78,11 @@ export function resolveEntityVisualPreview(
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
   };
-  return visualRegistry.resolve(definition, { entity, presence, query });
+  const context: VisualResolveContext = { entity, presence, query };
+  return (
+    catalogEntry.authoring?.editorVisual?.(context) ??
+    visualRegistry.resolve(definition, context)
+  );
 }
 
 function defaults(

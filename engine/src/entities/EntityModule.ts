@@ -28,6 +28,8 @@ export interface EntityAuthoringDefinition {
   cursor?: { dx: number; dy: number };
   /** Palette 创建方向型 Entity 时使用的初值。 */
   defaultDirection?: Direction;
+  /** Editor / Palette 专用视觉；省略时复用正常 Entity Visual。 */
+  editorVisual?: VisualDefinition["resolve"];
 }
 
 /**
