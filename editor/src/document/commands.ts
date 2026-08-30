@@ -5,6 +5,7 @@ import type {
   EntityTraits,
   LevelEntity,
   LevelLimit,
+  WinCondition,
 } from "@bobby/model";
 import {
   normalizeEditorLevel,
@@ -16,161 +17,90 @@ export interface EditorCommand {
   apply(level: EditorLevel): EditorLevel;
 }
 
-/** Document 原子操作；Authoring placement/occupancy 在上层解析后调用它。 */
-export function addEntity(entity: LevelEntity): EditorCommand {
-  return addEntities([entity]);
-}
-
+export function addEntity(entity: LevelEntity): EditorCommand { return addEntities([entity]); }
 export function addEntities(entities: readonly LevelEntity[]): EditorCommand {
-  return command((level) =>
-    normalizeEditorLevel({
-      ...level,
-      entities: [...level.entities, ...entities.map((entity) => structuredClone(entity))],
-    }),
-  );
-}
-
-export function removeEntity(ref: EntityRef): EditorCommand {
-  return removeEntities([ref]);
-}
-
-export function removeEntities(refs: readonly EntityRef[]): EditorCommand {
-  return command((level) => {
-    const removed = new Set(
-      refs
-        .map((ref) => ref.index)
-        .filter((index) => Number.isInteger(index) && index >= 0 && index < level.entities.length),
-    );
-    if (removed.size === 0) return level;
-    return {
-      ...level,
-      entities: level.entities.filter((_, index) => !removed.has(index)),
-    };
-  });
-}
-
-export function moveEntity(
-  ref: EntityRef,
-  x: number,
-  y: number,
-): EditorCommand {
-  return updateEntity(ref, (entity) => ({
-    ...entity,
-    x: Math.trunc(x),
-    y: Math.trunc(y),
+  return command((level) => normalizeEditorLevel({
+    ...level,
+    entities: [...level.entities, ...entities.map((entity) => structuredClone(entity))],
   }));
 }
-
-export function setEntityDirection(
-  ref: EntityRef,
-  direction: Direction | undefined,
-): EditorCommand {
+export function removeEntity(ref: EntityRef): EditorCommand { return removeEntities([ref]); }
+export function removeEntities(refs: readonly EntityRef[]): EditorCommand {
+  return command((level) => {
+    const removed = new Set(refs.map((ref) => ref.index).filter((index) => Number.isInteger(index) && index >= 0 && index < level.entities.length));
+    if (removed.size === 0) return level;
+    return { ...level, entities: level.entities.filter((_, index) => !removed.has(index)) };
+  });
+}
+export function moveEntity(ref: EntityRef, x: number, y: number): EditorCommand {
+  return updateEntity(ref, (entity) => ({ ...entity, x: Math.trunc(x), y: Math.trunc(y) }));
+}
+export function setEntityDirection(ref: EntityRef, direction: Direction | undefined): EditorCommand {
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
-    if (direction) next.direction = direction;
-    else delete next.direction;
+    if (direction) next.direction = direction; else delete next.direction;
     return next;
   });
 }
-
-export function updateEntityProperties(
-  ref: EntityRef,
-  properties: EntityProperties | undefined,
-): EditorCommand {
+export function updateEntityProperties(ref: EntityRef, properties: EntityProperties | undefined): EditorCommand {
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
-    if (properties && Object.keys(properties).length > 0)
-      next.properties = structuredClone(properties);
-    else delete next.properties;
+    if (properties && Object.keys(properties).length > 0) next.properties = structuredClone(properties); else delete next.properties;
     return next;
   });
 }
-
-export function updateEntityState(
-  ref: EntityRef,
-  state: EntityState | undefined,
-): EditorCommand {
+export function updateEntityState(ref: EntityRef, state: EntityState | undefined): EditorCommand {
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
-    if (state && Object.keys(state).length > 0)
-      next.state = structuredClone(state);
-    else delete next.state;
+    if (state && Object.keys(state).length > 0) next.state = structuredClone(state); else delete next.state;
     return next;
   });
 }
-
-export function updateEntityTraits(
-  ref: EntityRef,
-  traits: EntityTraits | undefined,
-): EditorCommand {
+export function updateEntityTraits(ref: EntityRef, traits: EntityTraits | undefined): EditorCommand {
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
     const unique = traits ? [...new Set(traits)] : [];
-    if (unique.length > 0) next.traits = unique;
-    else delete next.traits;
+    if (unique.length > 0) next.traits = unique; else delete next.traits;
     return next;
   });
 }
-
-export function replaceEntity(
-  ref: EntityRef,
-  replacement: LevelEntity,
-): EditorCommand {
+export function replaceEntity(ref: EntityRef, replacement: LevelEntity): EditorCommand {
   return updateEntity(ref, () => structuredClone(replacement));
 }
-
-export function updateMetadata(metadata: {
-  name: string;
-  author?: string;
-  description?: string;
-}): EditorCommand {
+export function updateMetadata(metadata: { name: string; author?: string; description?: string }): EditorCommand {
   return command((level) => {
     const next: EditorLevel = { ...level, name: metadata.name };
-    if (metadata.author) next.author = metadata.author;
-    else delete next.author;
-    if (metadata.description) next.description = metadata.description;
-    else delete next.description;
+    if (metadata.author) next.author = metadata.author; else delete next.author;
+    if (metadata.description) next.description = metadata.description; else delete next.description;
     return normalizeEditorLevel(next);
   });
 }
-
 export function resizeDocument(width: number, height: number): EditorCommand {
   return command((level) => resizeEditorLevel(level, width, height));
 }
-
+export function updateWinCondition(value: WinCondition | null): EditorCommand {
+  return command((level) => {
+    const rules = { ...(level.rules ?? {}) };
+    if (value) rules.win = structuredClone(value); else delete rules.win;
+    return normalizeEditorLevel({ ...level, rules });
+  });
+}
 export function updateMaxMoves(value: number | null): EditorCommand {
-  return updateLimit(
-    "max-moves",
-    value !== null && Number.isInteger(value) && value > 0
-      ? { type: "max-moves", moves: value }
-      : null,
-  );
+  return updateLimit("max-moves", value !== null && Number.isInteger(value) && value > 0 ? { type: "max-moves", moves: value } : null);
 }
-
 export function updateMaxTimeSeconds(value: number | null): EditorCommand {
-  return updateLimit(
-    "max-time-seconds",
-    value !== null && Number.isInteger(value) && value > 0
-      ? { type: "max-time-seconds", seconds: value }
-      : null,
-  );
+  return updateLimit("max-time-seconds", value !== null && Number.isInteger(value) && value > 0 ? { type: "max-time-seconds", seconds: value } : null);
 }
-
 function updateLimit(type: LevelLimit["type"], value: LevelLimit | null): EditorCommand {
   return command((level) => {
     const limits = (level.rules?.limits ?? []).filter((limit) => limit.type !== type);
     if (value) limits.push(value);
     const rules = { ...(level.rules ?? {}) };
-    if (limits.length > 0) rules.limits = limits;
-    else delete rules.limits;
+    if (limits.length > 0) rules.limits = limits; else delete rules.limits;
     return normalizeEditorLevel({ ...level, rules });
   });
 }
-
-function updateEntity(
-  ref: EntityRef,
-  update: (entity: LevelEntity) => LevelEntity,
-): EditorCommand {
+function updateEntity(ref: EntityRef, update: (entity: LevelEntity) => LevelEntity): EditorCommand {
   return command((level) => {
     if (!hasEntity(level, ref)) return level;
     const entities = [...level.entities];
@@ -178,11 +108,7 @@ function updateEntity(
     return normalizeEditorLevel({ ...level, entities });
   });
 }
-
 function hasEntity(level: EditorLevel, ref: EntityRef): boolean {
   return Number.isInteger(ref.index) && ref.index >= 0 && ref.index < level.entities.length;
 }
-
-function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {
-  return { apply };
-}
+function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand { return { apply }; }

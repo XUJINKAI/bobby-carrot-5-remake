@@ -1,46 +1,50 @@
 import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine/authoring";
-import { validateEditorLevel } from "../level/validation.js";
-import type { EditorLevel, LevelValidationIssue } from "../level/types.js";
-import { EditorPreview, type EditorCellInspection } from "./EditorPreview.js";
-import type { Cell } from "./entityPlacement.js";
-import type { PaletteItem } from "./paletteCatalog.js";
+import { selectedEntityRefs, selectionRect, type SelectionRect } from "./selection.js";
+import { EditorPreview } from "./EditorPreview.js";
+import { builtinEditorDefinition } from "../definitions/builtin.js";
+import type { EditorDefinition, EditorEntityDefinition, EditorSelection } from "../definitions/types.js";
+import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { LevelEntity } from "@bobby/model";
+
+export interface InspectorEntityModel {
+  ref: EntityRef;
+  entity: LevelEntity;
+  definition: EntityCatalogEntry;
+  editor?: EditorEntityDefinition;
+}
 
 export interface InspectorModel {
-  document: {
-    name: string;
-    width: number;
-    height: number;
-    entityCount: number;
-    maxMoves?: number;
-    maxTimeSeconds?: number;
-  };
-  selection: EntityCatalogEntry;
-  hover: Cell | null;
-  cell: EditorCellInspection | null;
-  issues: LevelValidationIssue[];
+  selection: EditorSelection | null;
+  rect: SelectionRect | null;
+  entityCount: number;
+  entity: InspectorEntityModel | null;
 }
 
 export function buildInspectorModel(
   level: EditorLevel,
   catalog: EntityCatalog,
-  hover: Cell | null,
-  selection: PaletteItem,
+  selection: EditorSelection | null,
+  editor: EditorDefinition = builtinEditorDefinition,
 ): InspectorModel {
+  if (!selection)
+    return { selection: null, rect: null, entityCount: 0, entity: null };
   const preview = new EditorPreview(level, catalog);
-  const maxMoves = level.rules?.limits?.find((limit) => limit.type === "max-moves");
-  const maxTime = level.rules?.limits?.find((limit) => limit.type === "max-time-seconds");
+  const refs = selectedEntityRefs(level, preview, selection);
+  const ref = refs.length === 1 ? refs[0]! : null;
+  const entity = ref ? level.entities[ref.index] : null;
   return {
-    document: {
-      name: level.name,
-      width: level.width,
-      height: level.height,
-      entityCount: level.entities.length,
-      ...(maxMoves?.type === "max-moves" ? { maxMoves: maxMoves.moves } : {}),
-      ...(maxTime?.type === "max-time-seconds" ? { maxTimeSeconds: maxTime.seconds } : {}),
-    },
-    selection: catalog.require(selection.type),
-    hover,
-    cell: hover ? preview.inspectCell(hover.x, hover.y) : null,
-    issues: validateEditorLevel(level, catalog),
+    selection,
+    rect: selectionRect(selection),
+    entityCount: refs.length,
+    entity: entity
+      ? {
+          ref: ref!,
+          entity,
+          definition: catalog.require(entity.type),
+          ...(editor.entities?.[entity.type]
+            ? { editor: editor.entities[entity.type] }
+            : {}),
+        }
+      : null,
   };
 }

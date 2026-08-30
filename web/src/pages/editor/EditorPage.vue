@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { type EditorLevel, type Cell } from "@bobby/editor";
+import {
+  validateEditorLevel,
+  type Cell,
+  type EditorCanvasContextMenuRequest,
+  type EditorLevel,
+} from "@bobby/editor";
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import EditorContextMenu from "./EditorContextMenu.vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
 import { configureEditorShell } from "./editorShell.js";
@@ -18,40 +24,25 @@ const props = defineProps<{
 }>();
 const page = useEditorPage(props.initialLevel);
 let session: GameSession | null = null;
-const paletteOpen = ref(false);
-const inspectorOpen = ref(false);
+const paletteOpen = ref(true);
+const rightPanel = ref<"inspector" | "level" | null>("inspector");
+const contextMenu = ref<null | { x: number; y: number; cell: Cell }>(null);
+const issues = computed(() => validateEditorLevel(page.snapshot.value.level as EditorLevel, page.catalog));
 
 async function togglePlay(): Promise<void> {
-  if (page.playing.value) {
-    stopPlay();
-    return;
-  }
+  closeContextMenu();
+  if (page.playing.value) { stopPlay(); return; }
   page.playing.value = true;
   configureEditorShell(true);
   await nextTick();
-  const canvas = document.querySelector<HTMLCanvasElement>(
-    "[data-editor-game-canvas]",
-  );
-  const root = document.querySelector<HTMLElement>(
-    "[data-editor-game-dialog-root]",
-  );
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-editor-game-canvas]");
+  const root = document.querySelector<HTMLElement>("[data-editor-game-dialog-root]");
   if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
   try {
     session = await createGameSession({
-      root,
-      canvas,
-      level: page.levelMap.value,
-      gameOptions: {
-        images: props.images,
-        audio: props.audio,
-        debug: false,
-      },
-      runtime: {
-        hud: true,
-        input: {
-          screenJoystick: { enabled: loadScreenControlPreference() },
-        },
-      },
+      root, canvas, level: page.levelMap.value,
+      gameOptions: { images: props.images, audio: props.audio, debug: false },
+      runtime: { hud: true, input: { screenJoystick: { enabled: loadScreenControlPreference() } } },
     });
   } catch (error) {
     page.playing.value = false;
@@ -59,57 +50,34 @@ async function togglePlay(): Promise<void> {
     window.alert(error instanceof Error ? error.message : String(error));
   }
 }
+function stopPlay(): void { session?.destroy(); session = null; page.playing.value = false; configureEditorShell(false); }
+function restartPlay(): void { session?.game.restart(); }
+function importLevel(level: EditorLevel): void { page.document.load(level); page.fileDialogOpen.value = false; }
+function markDownloaded(metadata: { name: string; author?: string; description?: string }): void { page.updateMetadata(metadata); page.document.markSaved(); }
 
-function stopPlay(): void {
-  session?.destroy();
-  session = null;
-  page.playing.value = false;
-  configureEditorShell(false);
+function openContextMenu(request: EditorCanvasContextMenuRequest): void {
+  page.ensureSelectionAt(request.cell);
+  contextMenu.value = { x: request.clientX, y: request.clientY, cell: request.cell };
 }
-
-function restartPlay(): void {
-  session?.game.restart();
-}
-
-function importLevel(level: EditorLevel): void {
-  page.document.load(level);
-  page.fileDialogOpen.value = false;
-}
-
-function markDownloaded(metadata: {
-  name: string;
-  author?: string;
-  description?: string;
-}): void {
-  page.updateMetadata(metadata);
-  page.document.markSaved();
-}
+function closeContextMenu(): void { contextMenu.value = null; }
+function pasteFromMenu(): void { const cell = contextMenu.value?.cell; if (cell) page.paste(cell); }
+function transform(cell: Cell, step: number, result: (changed: boolean) => void): void { result(page.transform(cell, step)); }
 
 function handleKeydown(event: KeyboardEvent): void {
   if (page.playing.value || isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
-  if (modifier && event.key.toLowerCase() === "z") {
-    event.preventDefault();
-    event.shiftKey ? page.document.redo() : page.document.undo();
-  } else if (modifier && event.key.toLowerCase() === "y") {
-    event.preventDefault();
-    page.document.redo();
-  } else if (
-    (event.key === "Delete" || event.key === "Backspace") &&
-    page.hover.value
-  ) {
-    event.preventDefault();
-    page.stroke(page.hover.value, 2);
-  } else if (
-    (event.key.toLowerCase() === "q" || event.key.toLowerCase() === "e") &&
-    page.hover.value
-  ) {
-    event.preventDefault();
-    page.transform(
-      page.hover.value,
-      event.key.toLowerCase() === "q" ? -1 : 1,
-    );
-  }
+  const key = event.key.toLowerCase();
+  if (event.key === "Escape") { closeContextMenu(); return; }
+  if (modifier && key === "z") { event.preventDefault(); event.shiftKey ? page.document.redo() : page.document.undo(); }
+  else if (modifier && key === "y") { event.preventDefault(); page.document.redo(); }
+  else if (modifier && key === "c") { event.preventDefault(); page.copy(); }
+  else if (modifier && key === "x") { event.preventDefault(); page.cut(); }
+  else if (modifier && key === "v") { event.preventDefault(); const origin = page.hover.value ?? page.mapSelection.value?.anchor; if (origin) page.paste(origin); }
+  else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); page.deleteSelection(); }
+  else if ((key === "q" || key === "e") && page.hover.value) { event.preventDefault(); page.transform(page.hover.value, key === "q" ? -1 : 1); }
+  else if (key === "v") page.setTool("select");
+  else if (key === "p") page.setTool("place");
+  else if (key === "e") page.setTool("erase");
 }
 
 function onShellAction(event: Event): void {
@@ -120,40 +88,17 @@ function onShellAction(event: Event): void {
   if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
   if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
-  if (action === "editor-inspector") inspectorOpen.value = !inspectorOpen.value;
-  if (action === "editor-level-info") page.fileDialogOpen.value = true;
+  if (action === "editor-inspector") rightPanel.value = rightPanel.value === "inspector" ? null : "inspector";
+  if (action === "editor-level-info") rightPanel.value = rightPanel.value === "level" ? null : "level";
 }
-
-function onShellDialogOpen(): void {
-  session?.input.setEnabled(false);
-}
-
-function onShellDialogClose(): void {
-  session?.input.setEnabled(true);
-}
-
-function onScreenControlChange(event: Event): void {
-  const enabled = Boolean(
-    (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
-  );
-  session?.input.setScreenJoystickEnabled(enabled);
-}
-
-function onBeforeUnload(event: BeforeUnloadEvent): void {
-  if (!page.snapshot.value.dirty) return;
-  event.preventDefault();
-}
-
-function transform(
-  cell: Cell,
-  step: number,
-  result: (changed: boolean) => void,
-): void {
-  result(page.transform(cell, step));
-}
+function onShellDialogOpen(): void { session?.input.setEnabled(false); }
+function onShellDialogClose(): void { session?.input.setEnabled(true); }
+function onScreenControlChange(event: Event): void { session?.input.setScreenJoystickEnabled(Boolean((event as CustomEvent<{ enabled: boolean }>).detail.enabled)); }
+function onBeforeUnload(event: BeforeUnloadEvent): void { if (page.snapshot.value.dirty) event.preventDefault(); }
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("pointerdown", closeContextMenu);
   window.addEventListener("game-shell-action", onShellAction);
   window.addEventListener("shell-dialog-open", onShellDialogOpen);
   window.addEventListener("shell-dialog-close", onShellDialogClose);
@@ -163,50 +108,67 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
+  window.removeEventListener("pointerdown", closeContextMenu);
   window.removeEventListener("game-shell-action", onShellAction);
   window.removeEventListener("shell-dialog-open", onShellDialogOpen);
   window.removeEventListener("shell-dialog-close", onShellDialogClose);
   window.removeEventListener("screen-control-change", onScreenControlChange);
   window.removeEventListener("beforeunload", onBeforeUnload);
 });
-
-function isTextInput(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  );
-}
+function isTextInput(target: EventTarget | null): boolean { return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement; }
 </script>
 
 <template>
-  <div
-    class="bobby-editor"
-    :class="{
-      'palette-sheet-open': paletteOpen,
-      'inspector-sheet-open': inspectorOpen,
-    }"
-  >
+  <div class="bobby-editor" :class="{ 'palette-sheet-open': paletteOpen, 'inspector-sheet-open': rightPanel !== null }">
     <EditorWorkspace
       :level="page.snapshot.value.level as EditorLevel"
       :revision="page.snapshot.value.revision"
-      :placement-sequence="page.snapshot.value.placementSequence"
-      :selection="page.selection.value"
+      :tool="page.tool.value"
+      :placement="page.placement.value"
+      :selection="page.mapSelection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
+      :palette="page.palette"
       :palette-size="page.paletteSize.value"
+      :palette-open="paletteOpen"
+      :right-panel="rightPanel"
+      :issues="issues"
       :playing="page.playing.value"
       :images="props.images"
-      @select="page.selection.value = $event"
+      :catalog="page.catalog"
+      @select="page.selectPalette"
+      @tool="page.setTool"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"
-      @stroke="page.stroke"
-      @begin-stroke="page.document.beginTransaction()"
-      @end-stroke="page.document.commitTransaction()"
+      @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
+      @primary-move="page.primaryMove"
+      @primary-end="page.primaryEnd"
+      @context-menu="openContextMenu"
       @transform="transform"
       @resize="page.resize"
-      @property="(entityIndex, key, value) => page.updateProperty(entityIndex, key, value)"
+      @property="page.updateProperty"
+      @state="page.updateState"
+      @direction="page.setDirection"
+      @variant="page.applyVariant"
       @max-moves="page.setMaxMoves"
+      @max-time="page.setMaxTimeSeconds"
+      @metadata="page.updateMetadata"
+      @win="page.setWin"
+    />
+    <EditorContextMenu
+      :open="Boolean(contextMenu)"
+      :x="contextMenu?.x ?? 0"
+      :y="contextMenu?.y ?? 0"
+      :can-paste="Boolean(page.clipboard.value?.entities.length)"
+      :entity-selected="page.selectedRefs.value.length > 0"
+      :variants="page.variants.value"
+      @close="closeContextMenu"
+      @copy="page.copy"
+      @cut="page.cut"
+      @paste="pasteFromMenu"
+      @delete="page.deleteSelection"
+      @direction="page.setDirection"
+      @variant="page.applyVariant"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"
