@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import type { EditorLevel, LevelValidationIssue } from "@bobby/editor";
+import type { EditorMap, LevelValidationIssue } from "@bobby/editor";
 import type { WinCondition } from "@bobby/model";
 import { ref, watch } from "vue";
 
-const props = defineProps<{ level: Readonly<EditorLevel>; issues: readonly LevelValidationIssue[] }>();
+const props = defineProps<{
+  level: Readonly<EditorMap>;
+  issues: readonly LevelValidationIssue[];
+}>();
 const emit = defineEmits<{
   resize: [width: number, height: number];
   metadata: [value: { name: string; author?: string; description?: string }];
@@ -11,21 +14,55 @@ const emit = defineEmits<{
   maxTime: [value: number | null];
   win: [value: WinCondition];
 }>();
-const name = ref(""); const author = ref(""); const description = ref("");
-const width = ref(16); const height = ref(16); const winText = ref(""); const winError = ref("");
-watch(() => props.level, (level) => {
-  name.value = level.name; author.value = level.author ?? ""; description.value = level.description ?? "";
-  width.value = level.width; height.value = level.height;
-  winText.value = JSON.stringify(level.rules?.win ?? { type: "reach", target: "exit" }, null, 2);
-}, { immediate: true, deep: true });
+const name = ref("");
+const author = ref("");
+const description = ref("");
+const width = ref(16);
+const height = ref(16);
+const winText = ref("");
+const winError = ref("");
+watch(
+  () => props.level,
+  (level) => {
+    name.value = level.name;
+    author.value = level.author ?? "";
+    description.value = level.description ?? "";
+    width.value = level.width;
+    height.value = level.height;
+    winText.value = JSON.stringify(
+      level.rules?.win ?? { type: "reach", target: "exit" },
+      null,
+      2,
+    );
+  },
+  { immediate: true, deep: true },
+);
 function limit(type: "max-moves" | "max-time-seconds"): number | null {
-  const item = props.level.rules?.limits?.find((candidate) => candidate.type === type);
-  return item?.type === "max-moves" ? item.moves : item?.type === "max-time-seconds" ? item.seconds : null;
+  const item = props.level.rules?.limits?.find(
+    (candidate) => candidate.type === type,
+  );
+  return item?.type === "max-moves"
+    ? item.moves
+    : item?.type === "max-time-seconds"
+      ? item.seconds
+      : null;
 }
-function applyMetadata(): void { emit("metadata", { name: name.value, ...(author.value ? { author: author.value } : {}), ...(description.value ? { description: description.value } : {}) }); }
+function applyMetadata(): void {
+  emit("metadata", {
+    name: name.value,
+    ...(author.value ? { author: author.value } : {}),
+    ...(description.value ? { description: description.value } : {}),
+  });
+}
 function applyWin(): void {
-  try { const value = JSON.parse(winText.value) as WinCondition; if (!value || typeof value.type !== "string") throw new Error("invalid"); winError.value = ""; emit("win", value); }
-  catch { winError.value = "获胜规则不是有效 JSON"; }
+  try {
+    const value = JSON.parse(winText.value) as WinCondition;
+    if (!value || typeof value.type !== "string") throw new Error("invalid");
+    winError.value = "";
+    emit("win", value);
+  } catch {
+    winError.value = "获胜规则不是有效 JSON";
+  }
 }
 </script>
 
