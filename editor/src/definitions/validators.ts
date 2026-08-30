@@ -1,4 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine/authoring";
+import type { EntityCatalog } from "@bobby/engine";
 import type { WinCondition } from "@bobby/model";
 import type { LevelValidationIssue } from "../level/types.js";
 import type { EditorMapValidator } from "./types.js";
