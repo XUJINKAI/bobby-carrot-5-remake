@@ -15,13 +15,7 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.SPEED,
   traits: ["walkable", "forced-movement"],
   stackOrder: SURFACE_STACK_ORDER,
-  presentation: { name: "Speed", category: "机关" },
-  authoring: {
-    palette: true,
-    category: "机关",
-    replaceGroup: "surface",
-    defaultDirection: "right",
-  },
+  presentation: { name: "Speed" },
 };
 
 export const speed: EntityModule = originalModule(
