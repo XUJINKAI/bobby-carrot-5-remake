@@ -131,6 +131,10 @@ export {
 } from "./entities/registry.js";
 export { VisualRegistry } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
+export {
+  resolveEntityVisualPreview,
+  type EntityVisualPreviewSource,
+} from "./visual/preview.js";
 export type {
   AtlasVisualLayer,
   CanvasVisualLayer,
