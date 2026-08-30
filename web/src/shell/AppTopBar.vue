@@ -26,7 +26,10 @@ function action(id: string): void {
       <ShellActionButton v-if="config.back" :action="config.back" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
     </div>
     <div class="shell-topbar-center">
-      <ShellActionButton v-for="item in config.commands ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
+      <template v-for="item in config.commands ?? []" :key="item.id">
+        <span v-if="item.separatorBefore" class="shell-command-separator" aria-hidden="true" />
+        <ShellActionButton :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
+      </template>
     </div>
     <div class="shell-topbar-right">
       <ShellActionButton v-for="item in config.actions ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
@@ -72,6 +75,13 @@ function action(id: string): void {
 
 .shell-topbar-right {
   justify-content: flex-end;
+}
+
+.shell-command-separator {
+  width: 1px;
+  height: 24px;
+  margin: 0 3px;
+  background: color-mix(in srgb, var(--bc-panel-border) 72%, #fff 28%);
 }
 
 .shell-overflow {
