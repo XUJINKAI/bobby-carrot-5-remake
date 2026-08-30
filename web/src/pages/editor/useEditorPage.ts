@@ -22,14 +22,13 @@ import {
   selectionRect,
   toLevelMap,
   updateEditorRule,
-  updateEntityProperties,
-  updateEntityState,
   updateMaxMoves,
   updateMaxTimeSeconds,
   updateMetadata,
   type Cell,
   type EditorClipboard,
   type EditorMap,
+  type EditorPlacementPreset,
   type EditorResizeEdges,
   type EditorRuleKind,
   type EditorSelection,
@@ -247,7 +246,9 @@ export function useEditorPage(initialLevel: EditorMap) {
         (replacement): replacement is { ref: EntityRef; entity: LevelEntity } =>
           replacement !== null,
       );
-    return replacements.length > 0 && document.execute(replaceEntities(replacements));
+    return (
+      replacements.length > 0 && document.execute(replaceEntities(replacements))
+    );
   }
 
   function cycleVariant(step: number, cell?: Cell): boolean {
@@ -263,11 +264,8 @@ export function useEditorPage(initialLevel: EditorMap) {
       if (!next) return false;
       placement.value = {
         ...placement.value,
-        ...next,
-        previewPreset: {
-          ...placement.value.previewPreset,
-          ...next,
-        },
+        ...cleanPlacementPreset(next),
+        previewPreset: cleanPlacementPreset(next),
       };
       return true;
     }
@@ -445,6 +443,17 @@ export function useEditorPage(initialLevel: EditorMap) {
     }): void {
       document.execute(updateMetadata(metadata));
     },
+  };
+}
+
+function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {
+  return {
+    type: source.type,
+    ...(source.direction ? { direction: source.direction } : {}),
+    ...(source.properties
+      ? { properties: structuredClone(source.properties) }
+      : {}),
+    ...(source.state ? { state: structuredClone(source.state) } : {}),
   };
 }
 
