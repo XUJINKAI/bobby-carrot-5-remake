@@ -2,7 +2,7 @@
 import type {
   Cell,
   EditorCanvasContextMenuRequest,
-  EditorLevel,
+  EditorMap,
   EditorSelection,
   EditorTool,
   InspectorModel,
@@ -19,7 +19,7 @@ import EditorLevelInfo from "./EditorLevelInfo.vue";
 import EditorPalette from "./EditorPalette.vue";
 
 defineProps<{
-  level: Readonly<EditorLevel>;
+  level: Readonly<EditorMap>;
   revision: number;
   tool: EditorTool;
   placement: PaletteItem;
