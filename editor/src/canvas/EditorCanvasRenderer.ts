@@ -62,15 +62,13 @@ export class EditorCanvasRenderer {
   }
 
   render(state: EditorCanvasRenderState): void {
-    const { level, viewport } = state;
+    const { level } = state;
     const cssWidth = level.width * EDITOR_TILE_SIZE;
     const cssHeight = level.height * EDITOR_TILE_SIZE;
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
     this.canvas.style.cursor = state.tool === "select" ? "default" : state.tool === "erase" ? "crosshair" : "copy";
-    this.canvas.style.transformOrigin = "0 0";
-    this.canvas.style.transform = `translate(${viewport.panX}px, ${viewport.panY}px) scale(${viewport.zoom})`;
     this.canvas.width = Math.round(cssWidth * dpr);
     this.canvas.height = Math.round(cssHeight * dpr);
     const context = this.canvas.getContext("2d");
