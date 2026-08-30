@@ -50,9 +50,15 @@ export async function renderEditorPage(
     images,
     navigate,
   });
+  editorPage.config.errorHandler = (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    document.documentElement.dataset.editorMountError = message;
+    console.error("EditorPage runtime error", error);
+  };
   editorPage.mount(app);
   return {
     destroy(): void {
+      delete document.documentElement.dataset.editorMountError;
       editorPage.unmount();
     },
   };
