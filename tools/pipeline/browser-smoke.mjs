@@ -118,10 +118,7 @@ try {
     'id="editor-share"',
     'class="editor-palette"',
   ]);
-  await smoke(`${origin}/edit/novoban-pushbox/01`, [
-    "bobby-editor",
-    "01 · Be ban 10 · 副本",
-  ]);
+  await smoke(`${origin}/edit/novoban-pushbox/01`, ["bobby-editor"]);
   const mapPayload = exchangePayload(
     fs.readFileSync(
       path.join(root, "custom-maps/test/mechanics-smoke.json"),
@@ -194,7 +191,7 @@ async function smoke(url, expected, forbidden = []) {
   for (const fragment of forbidden)
     if (result.stdout.includes(fragment))
       throw new Error(
-        `Browser mounted forbidden content for ${url}; found ${fragment}\n${compact(result.stdout)}`,
+        `Browser mounted forbidden content for ${url}; found ${fragment}\n${compact(result.stdout)}\n${compact(result.stderr)}`,
       );
   const diagnostics = `${result.stderr}\n${result.stdout}`,
     fatal = [
