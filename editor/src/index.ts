@@ -9,6 +9,11 @@ export {
 export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js";
 export { validateEditorLevel } from "./level/validation.js";
 export type { EditorMap, EditorLevel, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
+export {
+  builtinEditorDefinition,
+  EDITOR_DIRECTIONS,
+  applyEditorVariant,
+} from "./definitions/builtin.js";
 export type {
   EditorTool,
   EditorPlacementPreset,
@@ -50,8 +55,18 @@ export { EditorPreview } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
 export { entityCells, placeEntity, resolvePlacement, topEntityRefAt } from "./authoring/entityPlacement.js";
 export type { Cell, EntityPlacementPlan, PlacementCell, PlacementOverrides } from "./authoring/entityPlacement.js";
-export { paletteItems, paletteGroups, paletteGroup, paletteLabel } from "./authoring/paletteCatalog.js";
-export type { PaletteItem } from "./authoring/paletteCatalog.js";
+export {
+  resolveEditorPalette,
+  paletteItems,
+  paletteGroups,
+  paletteGroup,
+  paletteLabel,
+} from "./authoring/paletteCatalog.js";
+export type { PaletteItem, ResolvedPaletteGroup } from "./authoring/paletteCatalog.js";
+export { resolveDeletionTarget } from "./authoring/deletion.js";
+export { selectionRect, selectedEntityRefs } from "./authoring/selection.js";
+export type { SelectionRect } from "./authoring/selection.js";
+export { copySelection, pasteClipboard } from "./authoring/clipboard.js";
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel } from "./authoring/inspectorModel.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
@@ -62,6 +77,6 @@ export { EditorCanvasInput } from "./canvas/EditorCanvasInput.js";
 export type { EditorCanvasInputHandlers } from "./canvas/EditorCanvasInput.js";
 export { canvasPointToCell } from "./canvas/coordinates.js";
 
-/** Web editor 的 composition API；Web 不需要越过 @bobby/editor 依赖 Engine authoring。 */
+/** Web editor composition API; Engine authoring metadata will be removed by this PR. */
 export { createBuiltinEntityCatalog } from "@bobby/engine/authoring";
 export type { EntityCatalog, EntityCatalogEntry, EntityFieldDefinition } from "@bobby/engine/authoring";
