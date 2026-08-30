@@ -26,12 +26,7 @@ const definition: EntityModuleDefinition = {
     },
   ],
   state: activeState(false),
-  presentation: { name: "Wind Switch", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Wind Switch" },
 };
 
 export const windSwitch: EntityModule = originalModule(
