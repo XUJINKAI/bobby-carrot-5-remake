@@ -8,6 +8,7 @@ import {
 import {
   EditorDocument,
   EditorPreview,
+  buildInspectorModel,
   builtinEditorDefinition,
   createBlankLevel,
   entityCells,
@@ -15,6 +16,8 @@ import {
   isEditorEntityCreatable,
   parseEditorLevel,
   placeEntity,
+  reorderEntityStack,
+  resolveEditorEntityPreviewLayout,
   resolveEditorPalette,
   resolvePlacement,
   serializeEditorLevel,
@@ -67,14 +70,14 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
     type: EntityTypeId.DRAGON,
     x: 3,
     y: 3,
-    direction: "right",
+    direction: "left",
   });
   const map = toLevelMap(level);
   const dragons = map.entities.filter(
     (entity) => entity.type === EntityTypeId.DRAGON,
   );
   assert.deepEqual(dragons, [
-    { type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "right" },
+    { type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" },
   ]);
 
   const preview = new EditorPreview(level, catalog);
@@ -96,7 +99,7 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
   );
 });
 
-test("placement derives persisted anchor from Editor role placementPoint", () => {
+test("Dragon right-facing footprint mirrors around the placement body", () => {
   const level = createBlankLevel(12, 8);
   const dragon = resolvePlacement(
     level,
@@ -108,9 +111,32 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
     type: EntityTypeId.DRAGON,
-    x: 4,
+    x: 6,
     y: 3,
     direction: "right",
+  });
+  assert.deepEqual(dragon.cells, [
+    { x: 6, y: 3, role: "head" },
+    { x: 5, y: 3, role: "body" },
+    { x: 4, y: 3, role: "tail" },
+  ]);
+});
+
+test("placement derives persisted anchor from Editor role placementPoint", () => {
+  const level = createBlankLevel(12, 8);
+  const dragon = resolvePlacement(
+    level,
+    catalog,
+    { type: EntityTypeId.DRAGON, direction: "left" },
+    { x: 5, y: 3 },
+    builtinEditorDefinition,
+  );
+  assert.equal(dragon.valid, true);
+  assert.deepEqual(dragon.entity, {
+    type: EntityTypeId.DRAGON,
+    x: 4,
+    y: 3,
+    direction: "left",
   });
   assert.deepEqual(dragon.cells, [
     { x: 4, y: 3, role: "head" },
@@ -150,13 +176,14 @@ test("Editor replaceGroup replaces only matching authoring layers", () => {
   );
 });
 
-test("Entity state and instance traits round-trip without splitting type", () => {
+test("Entity state traits and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
     {
       type: EntityTypeId.SPEED_SWITCH,
       x: 3,
       y: 3,
+      stackOrder: 2300,
       state: { pressed: true },
     },
     {
@@ -167,12 +194,11 @@ test("Entity state and instance traits round-trip without splitting type", () =>
     },
   );
   const parsed = parseEditorLevel(serializeEditorLevel(level));
-  assert.deepEqual(
-    parsed.entities.find(
-      (entity) => entity.type === EntityTypeId.SPEED_SWITCH,
-    )?.state,
-    { pressed: true },
+  const speedSwitch = parsed.entities.find(
+    (entity) => entity.type === EntityTypeId.SPEED_SWITCH,
   );
+  assert.deepEqual(speedSwitch?.state, { pressed: true });
+  assert.equal(speedSwitch?.stackOrder, 2300);
   assert.deepEqual(
     parsed.entities.find(
       (entity) => entity.type === EntityTypeId.CRUMBLY_ROCK,
@@ -275,6 +301,74 @@ test("Palette keeps explicit directional presets and appends new creatable types
       .some((entry) => entry.type === "background-variant-001"),
     false,
   );
+});
+
+test("Palette preview layout derives full multi-cell footprint generically", () => {
+  const layout = resolveEditorEntityPreviewLayout(
+    catalog,
+    { type: EntityTypeId.DRAGON, direction: "left" },
+    builtinEditorDefinition,
+  );
+  assert.equal(layout.width, 3);
+  assert.equal(layout.height, 1);
+  assert.equal(layout.entity.type, EntityTypeId.DRAGON);
+});
+
+test("single-cell Inspector exposes every layer top-first", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
+    { type: EntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
+  );
+  const model = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 3, y: 3 }, focus: { x: 3, y: 3 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(model.mode, "cell");
+  assert.deepEqual(
+    model.layers.slice(0, 2).map((layer) => layer.entity.type),
+    [EntityTypeId.CARROT, EntityTypeId.PORTAL],
+  );
+});
+
+test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
+    { type: EntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
+    { type: EntityTypeId.CARROT, x: 1, y: 2 },
+  );
+  const model = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 2 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(model.mode, "multi");
+  assert.equal(model.groups[0].type, EntityTypeId.SPEED_SWITCH);
+  assert.equal(model.groups[0].count, 2);
+  assert.equal(
+    model.groups.find((group) => group.type === EntityTypeId.GROUND_C)?.count,
+    4,
+  );
+});
+
+test("reordering a cell stack changes actual Spatial top Presence", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.PORTAL, x: 3, y: 3 },
+    { type: EntityTypeId.CARROT, x: 3, y: 3 },
+  );
+  const portalIndex = level.entities.length - 2;
+  const carrotIndex = level.entities.length - 1;
+  const reordered = reorderEntityStack([
+    { index: portalIndex },
+    { index: carrotIndex },
+  ]).apply(level);
+  const preview = new EditorPreview(reordered, catalog);
+  assert.equal(preview.inspectCell(3, 3).top?.entity.type, EntityTypeId.PORTAL);
 });
 
 test("Bobby Editor visual is fixed to the final down frame", () => {
