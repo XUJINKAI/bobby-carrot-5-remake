@@ -1,6 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
 import type { VisualDefinition } from "../../visual/VisualDefinition.js";
-import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -64,12 +63,4 @@ const visual: VisualDefinition = {
   },
 };
 
-const dragonBehavior: Behavior = {
-  id: "dragon-placeholder",
-};
-
-export const dragon: EntityModule = originalModule(
-  definition,
-  visual,
-  [{ trait: "dragon", behavior: dragonBehavior }],
-);
+export const dragon: EntityModule = originalModule(definition, visual);
