@@ -27,5 +27,5 @@ export type { EditorCanvasRenderState } from "./canvas/EditorCanvasRenderer.js";
 export { EditorCanvasInput } from "./canvas/EditorCanvasInput.js";
 export type { EditorCanvasInputHandlers, EditorCanvasContextMenuRequest } from "./canvas/EditorCanvasInput.js";
 export { canvasPointToCell } from "./canvas/coordinates.js";
-export { createBuiltinEntityCatalog } from "@bobby/engine/authoring";
-export type { EntityCatalog, EntityCatalogEntry, EntityFieldDefinition } from "@bobby/engine/authoring";
+export { createBuiltinEntityCatalog } from "@bobby/engine";
+export type { EntityCatalog, EntityCatalogEntry, EntityFieldDefinition } from "@bobby/engine";
