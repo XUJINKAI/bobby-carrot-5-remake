@@ -1,4 +1,4 @@
-export type ShellIcon = "back" | "edit" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "play" | "redo" | "restart" | "settings" | "share" | "stop" | "undo";
+export type ShellIcon = "back" | "edit" | "erase" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "place" | "play" | "redo" | "restart" | "select" | "settings" | "share" | "stop" | "undo";
 
 export interface ShellMenuItem {
   label: string;
@@ -25,6 +25,7 @@ export interface ShellAction {
   collapse?: "keep" | "overflow" | "hide";
   disabled?: boolean;
   pressed?: boolean;
+  separatorBefore?: boolean;
   badge?: { label: string; title?: string; className?: string };
 }
 
