@@ -19,6 +19,8 @@ export interface LevelEntity {
   x: number;
   y: number;
   direction?: Direction;
+  /** Optional instance-level Spatial ordering override. */
+  stackOrder?: number;
   properties?: EntityProperties;
   traits?: EntityTraits;
   /** Initial mutable gameplay state for this entity. */
