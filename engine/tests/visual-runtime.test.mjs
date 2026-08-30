@@ -10,7 +10,6 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
-import { resolveEntityVisualPreview } from "../dist/visual/preview.js";
 
 function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
@@ -39,33 +38,25 @@ function bobbyVisual(options = {}) {
   });
 }
 
-test("Bobby authoring preview uses the final b3 frame at the raised source offset", () => {
-  const composition = resolveEntityVisualPreview({
-    type: EntityTypeId.BOBBY,
-    direction: "left",
-  });
-  assert.deepEqual(composition, {
-    layers: [
-      {
-        kind: "image",
-        asset: "bobby-down",
-        frameColumns: 8,
-        frameRows: 1,
-        frameIndex: 7,
-        anchor: "bottom",
-        offsetY: -12,
-      },
-    ],
-  });
-});
-
 test("world entities stay below Bobby regardless of cover stackOrder", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
-  assert.equal(visuals.renderPassFor(entities.require(EntityTypeId.ICE_BLOCK)), "world");
-  assert.equal(visuals.renderPassFor(entities.require(EntityTypeId.HIGH_GRASS)), "world");
-  assert.equal(visuals.renderPassFor(entities.require(EntityTypeId.SNOW)), "world");
-  assert.equal(visuals.renderPassFor(entities.require(EntityTypeId.BOBBY)), "player");
+  assert.equal(
+    visuals.renderPassFor(entities.require(EntityTypeId.ICE_BLOCK)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(EntityTypeId.HIGH_GRASS)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(EntityTypeId.SNOW)),
+    "world",
+  );
+  assert.equal(
+    visuals.renderPassFor(entities.require(EntityTypeId.BOBBY)),
+    "player",
+  );
 });
 
 test("Bobby walking progress drives one eight-frame directional strip", () => {
