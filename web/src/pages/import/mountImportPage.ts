@@ -1,5 +1,5 @@
 import type { AdventureSave } from "@bobby/adventure";
-import { parseEditorLevel, toLevelMap, type EditorLevel } from "@bobby/editor";
+import { parseEditorLevel, toLevelMap, type EditorMap } from "@bobby/editor";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { decodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
@@ -11,7 +11,7 @@ import { configureShell } from "../../shell/shellBridge.js";
 import ImportPage from "./ImportPage.vue";
 
 export type ImportedData =
-  | { type: "map"; value: EditorLevel }
+  | { type: "map"; value: EditorMap }
   | { type: "adventure-profile"; value: AdventureSave }
   | { type: "unknown"; rawText: string };
 
@@ -31,7 +31,7 @@ export async function decodeImportedData(payload: string): Promise<ImportedData>
   }
 }
 
-export function importedLevelMap(level: EditorLevel) {
+export function importedLevelMap(level: EditorMap) {
   return toLevelMap(level);
 }
 
