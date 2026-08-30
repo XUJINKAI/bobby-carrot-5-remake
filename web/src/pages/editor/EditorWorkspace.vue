@@ -50,7 +50,13 @@ const emit = defineEmits<{
   resize: [edges: EditorResizeEdges];
   property: [entityIndex: number, key: string, value: string];
   state: [entityIndex: number, key: string, value: string];
-  variant: [index: number];
+  variant: [entityIndex: number, index: number];
+  deleteLayer: [entityIndex: number];
+  reorderLayers: [refsTopToBottom: number[]];
+  batchProperty: [type: string, key: string, value: string];
+  batchState: [type: string, key: string, value: string];
+  batchVariant: [type: string, index: number];
+  batchDelete: [type: string];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
@@ -109,7 +115,13 @@ const emit = defineEmits<{
       :editor="editor"
       @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
       @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
-      @variant="emit('variant', $event)"
+      @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
+      @delete-layer="emit('deleteLayer', $event)"
+      @reorder="emit('reorderLayers', $event)"
+      @batch-property="(type, key, value) => emit('batchProperty', type, key, value)"
+      @batch-state="(type, key, value) => emit('batchState', type, key, value)"
+      @batch-variant="(type, index) => emit('batchVariant', type, index)"
+      @batch-delete="emit('batchDelete', $event)"
     />
     <EditorLevelInfo
       v-show="!playing && rightPanel === 'level'"
