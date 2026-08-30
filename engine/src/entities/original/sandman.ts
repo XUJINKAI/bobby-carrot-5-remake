@@ -22,12 +22,7 @@ const definition: EntityModuleDefinition = {
       { dx: 0, dy: 1, role: "body" },
     ],
   },
-  presentation: { name: "Sandman", category: "角色" },
-  authoring: {
-    palette: true,
-    category: "角色",
-    defaultDirection: "down",
-  },
+  presentation: { name: "Sandman" },
 };
 
 export const sandman: EntityModule = originalModule(
