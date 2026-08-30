@@ -16,7 +16,7 @@ import EditorEntityPreview from "./EditorEntityPreview.vue";
 const props = defineProps<{
   targets: readonly LevelEntity[];
   definition: EntityCatalogEntry;
-  entityPolicy?: EditorEntityDefinition;
+  entityPolicy?: EditorEntityDefinition | undefined;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
@@ -185,8 +185,13 @@ function fieldMixed(
           :value="fieldValue('properties', property.key, property.default)"
           @change="emit('property', property.key, ($event.target as HTMLSelectElement).value)"
         >
-          <option v-if="fieldMixed('properties', property.key, property.default)" value="">— 多种值 —</option>
-          <option v-else value="">未设置</option>
+          <option
+            v-if="fieldMixed('properties', property.key, property.default)"
+            value=""
+            disabled
+          >
+            多种值
+          </option>
           <option
             v-for="option in property.options ?? []"
             :key="String(option.value)"
@@ -196,27 +201,41 @@ function fieldMixed(
           </option>
         </select>
         <input
+          v-else-if="property.kind === 'boolean'"
+          type="checkbox"
+          :checked="fieldValue('properties', property.key, property.default) === 'true'"
+          @change="emit('property', property.key, String(($event.target as HTMLInputElement).checked))"
+        />
+        <input
           v-else
-          type="text"
+          :type="property.kind === 'number' ? 'number' : 'text'"
           :value="fieldValue('properties', property.key, property.default)"
           :placeholder="fieldMixed('properties', property.key, property.default) ? '多种值' : ''"
           @change="emit('property', property.key, ($event.target as HTMLInputElement).value)"
-        >
+        />
       </label>
     </section>
 
     <section v-if="editableState.length" class="editor-fields-block">
-      <strong>初始状态</strong>
-      <label v-for="field in editableState" :key="field.key" class="editor-field">
+      <strong>状态</strong>
+      <label
+        v-for="field in editableState"
+        :key="field.key"
+        class="editor-field"
+      >
         <span>{{ field.label ?? field.key }}</span>
         <select
-          v-if="field.kind === 'enum' || field.kind === 'boolean'"
+          v-if="field.kind === 'enum'"
           :value="fieldValue('state', field.key, field.default)"
           @change="emit('state', field.key, ($event.target as HTMLSelectElement).value)"
         >
-          <option v-if="fieldMixed('state', field.key, field.default)" value="">— 多种值 —</option>
-          <option v-if="field.kind === 'boolean'" value="true">true</option>
-          <option v-if="field.kind === 'boolean'" value="false">false</option>
+          <option
+            v-if="fieldMixed('state', field.key, field.default)"
+            value=""
+            disabled
+          >
+            多种值
+          </option>
           <option
             v-for="option in field.options ?? []"
             :key="String(option.value)"
@@ -226,55 +245,64 @@ function fieldMixed(
           </option>
         </select>
         <input
+          v-else-if="field.kind === 'boolean'"
+          type="checkbox"
+          :checked="fieldValue('state', field.key, field.default) === 'true'"
+          @change="emit('state', field.key, String(($event.target as HTMLInputElement).checked))"
+        />
+        <input
           v-else
-          type="text"
+          :type="field.kind === 'number' ? 'number' : 'text'"
           :value="fieldValue('state', field.key, field.default)"
           :placeholder="fieldMixed('state', field.key, field.default) ? '多种值' : ''"
           @change="emit('state', field.key, ($event.target as HTMLInputElement).value)"
-        >
+        />
       </label>
     </section>
 
-    <div v-if="!hasFields" class="editor-muted">没有额外可编辑属性。</div>
+    <p v-if="!hasFields" class="editor-muted">该素材没有可编辑属性。</p>
   </div>
 </template>
 
 <style scoped>
-.editor-entity-fields,
+.editor-entity-fields {
+  display: grid;
+  gap: 12px;
+}
 .editor-fields-block {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
-.editor-fields-block + .editor-fields-block {
-  padding-top: 10px;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+.editor-fields-block > strong {
+  font-size: 0.7rem;
+  color: var(--editor-muted);
 }
 .editor-variant-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px;
 }
 .editor-variant-btn {
+  min-width: 0;
   display: grid;
   place-items: center;
-  gap: 4px;
-  min-width: 0;
-  min-height: 70px;
-  padding: 6px;
-  overflow: hidden;
-  border: 2px solid var(--line);
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid #ffffff18;
   border-radius: 7px;
-  background: var(--panel2);
-  color: inherit;
+  background: #0b130e;
+  color: #fff;
 }
 .editor-variant-btn.active {
-  border-color: #8ee7ff;
-  background: var(--bc-active);
+  outline: 2px solid var(--editor-accent);
+  outline-offset: 1px;
 }
 .editor-variant-btn small {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--editor-muted);
+  font-size: 0.62rem;
 }
 </style>
