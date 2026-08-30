@@ -5,6 +5,10 @@ import { spawn, spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
+const browserEnvironment = { ...process.env };
+delete browserEnvironment.DISPLAY;
+delete browserEnvironment.WAYLAND_DISPLAY;
+delete browserEnvironment.XAUTHORITY;
 const webRoot = path.join(root, "dist");
 if (!fs.existsSync(path.join(webRoot, "index.html")))
   throw new Error("dist is missing; run npm run build first");
@@ -219,7 +223,7 @@ function runBrowser(url) {
         "--dump-dom",
         url,
       ],
-      { stdio: ["ignore", "pipe", "pipe"] },
+      { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
     );
     let stdout = "",
       stderr = "";
@@ -270,7 +274,10 @@ async function interactiveFilterSmoke(url) {
       "--remote-debugging-pipe",
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
+    {
+      env: browserEnvironment,
+      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
+    },
   );
   const input = child.stdio[3],
     output = child.stdio[4];
@@ -354,7 +361,10 @@ async function interactiveDataExchangeSmoke(url) {
       "--remote-debugging-pipe",
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
+    {
+      env: browserEnvironment,
+      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
+    },
   );
   const input = child.stdio[3], output = child.stdio[4];
   if (!input || !output) throw new Error("Chromium CDP pipe failed to open");
@@ -471,6 +481,7 @@ function findBrowser() {
     }
     const probe = spawnSync(candidate, ["--version"], {
       encoding: "utf8",
+      env: browserEnvironment,
       timeout: 5000,
     });
     if (!probe.error && probe.status === 0) return candidate;
