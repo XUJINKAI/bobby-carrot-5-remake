@@ -2,18 +2,30 @@ import type { EditorTool, LevelValidationIssue } from "@bobby/editor";
 import { EDITOR_HELP, globalActions, pageIdentity } from "../../app/pageChrome.js";
 import { configureShell, type ShellConfig } from "../../shell/shellBridge.js";
 
+export interface EditorPlayShellState {
+  canUndo: boolean;
+  canRedo: boolean;
+}
+
+const EMPTY_PLAY_STATE: EditorPlayShellState = {
+  canUndo: false,
+  canRedo: false,
+};
+
 export function configureEditorShell(
   playing: boolean,
   tool: EditorTool = "place",
   issues: readonly LevelValidationIssue[] = [],
+  playState: EditorPlayShellState = EMPTY_PLAY_STATE,
 ): void {
-  configureShell(editorShellConfig(playing, tool, issues), EDITOR_HELP);
+  configureShell(editorShellConfig(playing, tool, issues, playState), EDITOR_HELP);
 }
 
 export function editorShellConfig(
   playing: boolean,
   tool: EditorTool = "place",
   issues: readonly LevelValidationIssue[] = [],
+  playState: EditorPlayShellState = EMPTY_PLAY_STATE,
 ): ShellConfig {
   return {
     topBar: {
@@ -22,8 +34,10 @@ export function editorShellConfig(
       identity: pageIdentity("编辑器模式", "/edit"),
       commands: playing
         ? [
-            { id: "editor-play", icon: "stop", title: "Stop Play Test" },
+            { id: "editor-undo", icon: "undo", title: "Undo Play Test", disabled: !playState.canUndo },
+            { id: "editor-redo", icon: "redo", title: "Redo Play Test", disabled: !playState.canRedo },
             { id: "editor-restart", icon: "restart", title: "Restart Play Test" },
+            { id: "editor-play", icon: "stop", title: "Stop Play Test", separatorBefore: true },
           ]
         : [
             { id: "editor-tool-select", icon: "select", title: "选择 (1)", pressed: tool === "select" },
