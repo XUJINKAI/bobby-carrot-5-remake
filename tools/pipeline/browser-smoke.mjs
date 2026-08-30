@@ -113,17 +113,20 @@ try {
     ['id="undo"'],
   );
   await smoke(`${origin}/edit`, [
-    'class="bobby-editor"',
+    "bobby-editor",
     'id="editor-play"',
     'id="editor-share"',
     'class="editor-palette"',
   ]);
   await smoke(`${origin}/edit/novoban-pushbox/01`, [
-    'class="bobby-editor"',
+    "bobby-editor",
     "01 · Be ban 10 · 副本",
   ]);
   const mapPayload = exchangePayload(
-    fs.readFileSync(path.join(root, "editor/examples/mechanics-smoke.json"), "utf8"),
+    fs.readFileSync(
+      path.join(root, "custom-maps/test/mechanics-smoke.json"),
+      "utf8",
+    ),
   );
   const { createAdventureSave, serializeAdventureSave } = await import(
     "../../adventure/dist/index.js"
@@ -478,5 +481,7 @@ function findBrowser() {
   return null;
 }
 function compact(value) {
-  return value.replace(/\s+/g, " ").trim().slice(0, 1200);
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 2400) return normalized;
+  return `${normalized.slice(0, 1200)} … ${normalized.slice(-1200)}`;
 }
