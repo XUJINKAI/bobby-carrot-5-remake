@@ -1,4 +1,3 @@
-import type { Direction } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
 import type {
   AudioProfileId,
@@ -13,32 +12,14 @@ import type {
 
 export interface EntityPresentationDefinition {
   name: string;
-  category?: string;
   visual?: VisualId;
   audio?: AudioProfileId;
   renderPass?: VisualRenderPass;
 }
 
-export interface EntityAuthoringDefinition {
-  palette?: boolean;
-  category?: string;
-  /** Editor 放置时，目标格已有相同 replaceGroup 的 Entity 会被替换。 */
-  replaceGroup?: string;
-  /** 鼠标放置点相对 persisted anchor 的偏移，只影响 Editor。 */
-  cursor?: { dx: number; dy: number };
-  /** Palette 创建方向型 Entity 时使用的初值。 */
-  defaultDirection?: Direction;
-  /** Editor / Palette 专用视觉；省略时复用正常 Entity Visual。 */
-  editorVisual?: VisualDefinition["resolve"];
-}
-
-/**
- * Entity module 源码声明使用的完整定义。defineEntityModule 会把产品/编辑器元数据
- * 从 gameplay Definition 中拆出，因此 World/EntityRegistry 永远只看到 EntityDefinition。
- */
+/** Full definition used by an Entity module. Editor policy belongs to @bobby/editor. */
 export interface EntityModuleDefinition extends EntityDefinition {
   presentation: EntityPresentationDefinition;
-  authoring?: EntityAuthoringDefinition;
 }
 
 export interface EntityBehaviorBinding {
@@ -47,11 +28,10 @@ export interface EntityBehaviorBinding {
   trait?: EntityTrait;
 }
 
-/** 一种 Entity 的完整产品模块；它是 gameplay、presentation、authoring 的组合边界。 */
+/** 一种 Entity 的完整 Engine 模块：gameplay + generic presentation。 */
 export interface EntityModule {
   definition: EntityDefinition;
   presentation: EntityPresentationDefinition;
-  authoring?: EntityAuthoringDefinition;
   visual?: VisualDefinition;
   behaviorBindings?: readonly EntityBehaviorBinding[];
 }
@@ -63,15 +43,19 @@ export interface EntityModuleInput {
 }
 
 export function defineEntityModule(input: EntityModuleInput): EntityModule {
-  const { presentation, authoring, ...gameplayDefinition } = input.definition;
-  const behaviorIds = input.behaviorBindings?.map(({ behavior }) => behavior.id) ?? [];
+  const { presentation, ...gameplayDefinition } = input.definition;
+  const behaviorIds =
+    input.behaviorBindings?.map(({ behavior }) => behavior.id) ?? [];
   const definition: EntityDefinition =
     behaviorIds.length === 0
       ? gameplayDefinition
       : {
           ...gameplayDefinition,
           behaviors: [
-            ...new Set([...(gameplayDefinition.behaviors ?? []), ...behaviorIds]),
+            ...new Set([
+              ...(gameplayDefinition.behaviors ?? []),
+              ...behaviorIds,
+            ]),
           ],
         };
   const visual = input.visual
@@ -87,7 +71,6 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
   return {
     definition,
     presentation,
-    ...(authoring ? { authoring } : {}),
     ...(visual ? { visual } : {}),
     ...(input.behaviorBindings
       ? { behaviorBindings: input.behaviorBindings }
