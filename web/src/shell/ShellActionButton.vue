@@ -4,7 +4,7 @@ import type { ShellAction } from "./shellBridge.js";
 const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 const icons: Record<string, string> = {
-  back: "←", edit: "✎", erase: "⌫", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
+  back: "←", edit: "✎", erase: "✕", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
   music: "♫", palette: "▦", place: "＋", play: "▶", redo: "↷", restart: "↻",
   select: "↖", settings: "⚙", share: "↗", stop: "■", undo: "↶",
 };
@@ -21,7 +21,10 @@ function activate(): void {
     :id="action.id"
     type="button"
     class="shell-action"
-    :class="[`collapse-${action.collapse ?? 'keep'}`, { 'in-overflow': overflow }]"
+    :class="[
+      `collapse-${action.collapse ?? 'keep'}`,
+      { 'in-overflow': overflow, 'separator-before': action.separatorBefore },
+    ]"
     :title="action.title ?? action.label"
     :aria-label="action.title ?? action.label ?? action.id"
     :aria-pressed="action.pressed"
@@ -49,6 +52,20 @@ function activate(): void {
   color: #fff;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.shell-action.separator-before {
+  margin-left: 12px;
+}
+
+.shell-action.separator-before::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: rgb(255 255 255 / 28%);
 }
 
 .shell-action:hover,
