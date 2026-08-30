@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import { test } from "vitest";
 import { EntityTypeId } from "@bobby/model";
 import { createBlankLevel } from "../../editor/dist/index.js";
 import {
