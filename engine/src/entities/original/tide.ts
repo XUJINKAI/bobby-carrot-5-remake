@@ -15,13 +15,7 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.TIDE,
   traits: ["water", "forced-movement"],
   stackOrder: SURFACE_STACK_ORDER,
-  presentation: { name: "Tide", category: "水域" },
-  authoring: {
-    palette: true,
-    category: "水域",
-    replaceGroup: "surface",
-    defaultDirection: "right",
-  },
+  presentation: { name: "Tide" },
 };
 
 export const tide: EntityModule = originalModule(
