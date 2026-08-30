@@ -10,7 +10,7 @@ import {
   type EditorSelection,
   type EditorTool,
 } from "@bobby/editor";
-import type { ImageManager } from "@bobby/engine/authoring";
+import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
