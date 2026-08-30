@@ -1,4 +1,4 @@
-import type { Direction, JsonValue } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { GlobalState } from "../world/GlobalState.js";
 import type { VisualId } from "../world/entity/EntityDefinition.js";
@@ -53,7 +53,6 @@ export interface CanvasVisualLayer {
     y: number,
     size: number,
   ): void;
-  previewStyle?: Readonly<Record<string, string>>;
 }
 
 export type VisualLayer = AtlasVisualLayer | ImageVisualLayer | CanvasVisualLayer;
@@ -94,20 +93,10 @@ export interface VisualResolveContext {
   time?: PresentationFrame;
 }
 
-export interface PersistedVisualVariantDefinition {
-  property: string;
-  values: readonly JsonValue[];
-}
-
-export interface VisualAuthoringDefinition {
-  persistedVariant?: PersistedVisualVariantDefinition;
-}
-
 /** 一种 Entity 的表现解析逻辑。Visual 可以读取任意格的只读 World 信息。 */
 export interface VisualDefinition {
   id: VisualId;
   /** 固定渲染 pass；默认 world。它只影响表现，不进入 World/Spatial。 */
   renderPass?: VisualRenderPass;
-  authoring?: VisualAuthoringDefinition;
   resolve(context: VisualResolveContext): VisualComposition | null;
 }
