@@ -102,7 +102,6 @@ async function togglePlay(): Promise<void> {
     });
     bindPlaySession();
   } catch (error) {
-    page.playing.value = false;
     runtimeIssue.value = {
       level: "error",
       message: `Play Test：${error instanceof Error ? error.message : String(error)}`,
