@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import {
+  builtinEditorDefinition,
   createBlankLevel,
   validateEditorLevel,
 } from "../dist/index.js";
-import { createBuiltinEntityCatalog } from "../../engine/dist/authoring.js";
+import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 
 const catalog = createBuiltinEntityCatalog();
 
@@ -14,7 +15,7 @@ test("zero players is an authoring warning instead of an error", () => {
   level.entities = level.entities.filter(
     (entity) => entity.type !== EntityTypeId.BOBBY,
   );
-  const issues = validateEditorLevel(level, catalog);
+  const issues = validateEditorLevel(level, catalog, builtinEditorDefinition);
   assert.equal(issues.some((issue) => issue.level === "error"), false);
   assert.equal(
     issues.some(
@@ -27,6 +28,6 @@ test("zero players is an authoring warning instead of an error", () => {
 test("multiple players are valid authoring content", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push({ type: EntityTypeId.BOBBY, x: 2, y: 2 });
-  const issues = validateEditorLevel(level, catalog);
+  const issues = validateEditorLevel(level, catalog, builtinEditorDefinition);
   assert.equal(issues.some((issue) => issue.message.includes("player")), false);
 });
