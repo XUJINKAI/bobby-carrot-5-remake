@@ -1,7 +1,7 @@
 import type {
   EntityCatalog,
   VisualDefinition,
-} from "@bobby/engine/authoring";
+} from "@bobby/engine";
 import type {
   Direction,
   EntityProperties,
@@ -54,7 +54,6 @@ export interface EditorQuickAction {
 
 /** Entity-specific authoring policy. This belongs to Editor, never Engine. */
 export interface EditorEntityDefinition {
-  creatable?: boolean;
   placementPoint?: EditorPlacementPoint;
   defaultDirection?: Direction;
   replaceGroup?: string;
@@ -62,6 +61,10 @@ export interface EditorEntityDefinition {
   quickActions?: readonly EditorQuickAction[];
   editorVisual?: VisualDefinition["resolve"];
 }
+
+export type EditorEntityExclusion =
+  | EntityType
+  | { prefix: string };
 
 export interface EditorPalettePreview {
   direction?: Direction;
@@ -118,6 +121,8 @@ export type EditorMapValidator = (
  * can evolve without changing selection/history/canvas/clipboard algorithms.
  */
 export interface EditorDefinition {
+  /** Engine-known types matching these selectors cannot be created through normal Editor tools. */
+  exclude?: readonly EditorEntityExclusion[];
   entities?: Partial<Record<EntityType, EditorEntityDefinition>>;
   palette: EditorPaletteDefinition;
   validators?: readonly EditorMapValidator[];
