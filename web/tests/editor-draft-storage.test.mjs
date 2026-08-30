@@ -6,7 +6,7 @@ import {
   EDITOR_DRAFT_STORAGE_KEY,
   loadEditorDraft,
   storeEditorDraft,
-} from "../dist/storage/editorDraftStorage.js";
+} from "../src/storage/editorDraftStorage.ts";
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
