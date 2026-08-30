@@ -185,10 +185,28 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.GROUND_B },
             { type: EntityTypeId.GROUND_C },
             { type: EntityTypeId.GROUND_D },
+            { type: EntityTypeId.FENCE },
+            { type: EntityTypeId.CRUMBLY_ROCK },
+            { type: EntityTypeId.HIGH_GRASS },
+            { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
             { type: EntityTypeId.ICE },
             { type: EntityTypeId.SNOW },
             { type: EntityTypeId.WATER },
             { type: EntityTypeId.WATER_ANIMATED },
+            { type: EntityTypeId.PLANK },
+            { type: EntityTypeId.LEAF },
+          ],
+        ],
+      },
+      {
+        id: "actors",
+        label: "玩家与人物",
+        rows: [
+          [
+            { type: EntityTypeId.BOBBY },
+            { type: EntityTypeId.SANDMAN },
+            { type: EntityTypeId.DREAM_MACHINE },
+            { type: EntityTypeId.BEAVER },
           ],
         ],
       },
@@ -197,59 +215,28 @@ export const builtinEditorDefinition: EditorDefinition = {
         label: "目标与收集",
         rows: [
           [
-            { type: EntityTypeId.BOBBY },
+            { type: EntityTypeId.START },
             { type: EntityTypeId.EXIT },
             { type: EntityTypeId.CARROT },
             { type: EntityTypeId.EGG_NEST_EMPTY },
-            { type: EntityTypeId.GOLDEN_CARROT },
-            { type: EntityTypeId.BONUS_COIN },
+            { type: EntityTypeId.EGG_NEST_FILLED },
             { type: EntityTypeId.PUSH_GOAL },
           ],
-        ],
-      },
-      {
-        id: "mechanism",
-        label: "机关",
-        rows: [
-          directions.map((variant) => ({
-            type: EntityTypeId.SPEED,
-            direction: variant.direction!,
-          })),
-          directions.map((variant) => ({
-            type: EntityTypeId.TIDE,
-            direction: variant.direction!,
-          })),
           [
-            { type: EntityTypeId.TRAP },
-            { type: EntityTypeId.MIRROR },
-            { type: EntityTypeId.CAROUSEL },
-            { type: EntityTypeId.TIDE_SWITCH },
-            { type: EntityTypeId.SPEED_SWITCH },
-            { type: EntityTypeId.CAROUSEL_SWITCH },
+            { type: EntityTypeId.GOLDEN_CARROT },
+            { type: EntityTypeId.BONUS_COIN },
           ],
           [
-            { type: EntityTypeId.COLOR_YELLOW_SWITCH },
-            { type: EntityTypeId.COLOR_PINK_SWITCH },
-            { type: EntityTypeId.COLOR_YELLOW_BLOCK },
-            { type: EntityTypeId.COLOR_PINK_BLOCK },
-            { type: EntityTypeId.WIND_SWITCH },
-          ],
-        ],
-      },
-      {
-        id: "actors",
-        label: "角色与对象",
-        rows: [
-          [
-            { type: EntityTypeId.DRAGON },
-            { type: EntityTypeId.SANDMAN },
-            { type: EntityTypeId.DREAM_MACHINE },
-            { type: EntityTypeId.BEAVER },
-            { type: EntityTypeId.FENCE },
-            { type: EntityTypeId.ICE_BLOCK },
-            { type: EntityTypeId.HIGH_GRASS },
-            { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
-          ],
+            { type: EntityTypeId.SHOP_CLOUD9, },
+            { type: EntityTypeId.SHOP_COIN_RADAR, },
+            { type: EntityTypeId.SHOP_DREAM, },
+            { type: EntityTypeId.SHOP_MUSIC, },
+            { type: EntityTypeId.SHOP_SPEED_SHOES, },
+            { type: EntityTypeId.SHOP_STEREO, },
+            { type: EntityTypeId.SHOP_SUPER_KEY, },
+            { type: EntityTypeId.SHOP_UNAVAILABLE, },
+            { type: EntityTypeId.LOCK, },
+          ]
         ],
       },
       {
@@ -259,12 +246,63 @@ export const builtinEditorDefinition: EditorDefinition = {
           [
             { type: EntityTypeId.BEAN },
             { type: EntityTypeId.BEAN_FIELD },
-            { type: EntityTypeId.SHOVEL_PICKUP },
-            { type: EntityTypeId.MOWER },
             { type: EntityTypeId.GAS },
+            { type: EntityTypeId.MOWER },
+            { type: EntityTypeId.MOWER_PARKING },
+            { type: EntityTypeId.SHOVEL_PICKUP },
             { type: EntityTypeId.KITE },
-            { type: EntityTypeId.LEAF },
             { type: EntityTypeId.WHIRLWIND },
+            { type: EntityTypeId.LANDING },
+          ],
+        ],
+      },
+      {
+        id: "mechanism",
+        label: "机关",
+        rows: [
+          [
+            ...directions.map((variant) => ({
+              type: EntityTypeId.SPEED,
+              direction: variant.direction!,
+            })),
+            { type: EntityTypeId.SPEED_SWITCH },
+          ],
+          [
+            ...directions.map((variant) => ({
+              type: EntityTypeId.TIDE,
+              direction: variant.direction!,
+            })),
+            { type: EntityTypeId.TIDE_SWITCH },
+          ],
+          [
+            { type: EntityTypeId.COLOR_YELLOW_SWITCH },
+            { type: EntityTypeId.COLOR_PINK_SWITCH },
+            { type: EntityTypeId.COLOR_YELLOW_BLOCK },
+            { type: EntityTypeId.COLOR_PINK_BLOCK },
+            { type: EntityTypeId.TRAP },
+          ],
+          [
+            { type: EntityTypeId.MIRROR },
+            { type: EntityTypeId.CAROUSEL },
+            { type: EntityTypeId.CAROUSEL_SWITCH },
+          ],
+          [
+            { type: EntityTypeId.DRAGON },
+            { type: EntityTypeId.ICE_BLOCK },
+            { type: EntityTypeId.PORTAL },
+          ],
+          [
+            { type: EntityTypeId.WINDMILL_DOWN, },
+            { type: EntityTypeId.WINDMILL_UP, },
+            { type: EntityTypeId.WINDMILL_LEFT, },
+            { type: EntityTypeId.WINDMILL_RIGHT, },
+            { type: EntityTypeId.WIND_SWITCH },
+            { type: EntityTypeId.CLOUD_GREEN },
+            { type: EntityTypeId.CLOUD_PURPLE },
+            { type: EntityTypeId.CLOUD_RED },
+            { type: EntityTypeId.CLOUD_GRID_GREEN },
+            { type: EntityTypeId.CLOUD_GRID_PURPLE },
+            { type: EntityTypeId.CLOUD_GRID_RED },
           ],
         ],
       },
@@ -298,19 +336,19 @@ export function applyEditorVariant(
     ...(variant.direction ? { direction: variant.direction } : {}),
     ...(variant.properties
       ? {
-          properties: {
-            ...(entity.properties ?? {}),
-            ...structuredClone(variant.properties),
-          },
-        }
+        properties: {
+          ...(entity.properties ?? {}),
+          ...structuredClone(variant.properties),
+        },
+      }
       : {}),
     ...(variant.state
       ? {
-          state: {
-            ...(entity.state ?? {}),
-            ...structuredClone(variant.state),
-          },
-        }
+        state: {
+          ...(entity.state ?? {}),
+          ...structuredClone(variant.state),
+        },
+      }
       : {}),
   };
 }
