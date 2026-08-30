@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import type { EditorEntityVariant } from "@bobby/editor";
-import type { Direction } from "@bobby/model";
-
-defineProps<{ open: boolean; x: number; y: number; canPaste: boolean; entitySelected: boolean; variants: readonly EditorEntityVariant[] }>();
+defineProps<{ open: boolean; x: number; y: number; canPaste: boolean; entitySelected: boolean }>();
 const emit = defineEmits<{
   close: [];
   copy: [];
   cut: [];
   paste: [];
   delete: [];
-  direction: [value: Direction];
-  variant: [index: number];
 }>();
-const directions: readonly Direction[] = ["up", "right", "down", "left"];
 </script>
 
 <template>
@@ -21,15 +15,8 @@ const directions: readonly Direction[] = ["up", "right", "down", "left"];
       <button type="button" :disabled="!entitySelected" @click="emit('cut'); emit('close')">剪切</button>
       <button type="button" :disabled="!entitySelected" @click="emit('copy'); emit('close')">复制</button>
       <button type="button" :disabled="!canPaste" @click="emit('paste'); emit('close')">粘贴</button>
+      <div class="editor-context-separator" />
       <button type="button" :disabled="!entitySelected" @click="emit('delete'); emit('close')">删除</button>
-      <template v-if="entitySelected">
-        <div class="editor-context-separator" />
-        <button v-for="direction in directions" :key="direction" type="button" @click="emit('direction', direction); emit('close')">朝向 {{ direction }}</button>
-        <template v-if="variants.length">
-          <div class="editor-context-separator" />
-          <button v-for="(_, index) in variants" :key="index" type="button" @click="emit('variant', index); emit('close')">Variant {{ index + 1 }}</button>
-        </template>
-      </template>
     </div>
   </Teleport>
 </template>
