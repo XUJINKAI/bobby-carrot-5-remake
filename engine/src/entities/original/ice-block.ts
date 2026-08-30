@@ -24,12 +24,7 @@ const definition: EntityModuleDefinition = {
       options: [0, 1, 2, 3].map((value) => ({ value })),
     },
   ],
-  presentation: { name: "Ice Block", category: "覆盖" },
-  authoring: {
-    palette: true,
-    category: "覆盖",
-    replaceGroup: "cover",
-  },
+  presentation: { name: "Ice Block" },
 };
 
 export const iceBlock: EntityModule = originalModule(
