@@ -39,7 +39,7 @@ function bobbyVisual(options = {}) {
   });
 }
 
-test("Bobby stopped preview uses the eighth directional frame at the raised source offset", () => {
+test("Bobby authoring preview uses the final b3 frame at the raised source offset", () => {
   const composition = resolveEntityVisualPreview({
     type: EntityTypeId.BOBBY,
     direction: "left",
@@ -48,7 +48,7 @@ test("Bobby stopped preview uses the eighth directional frame at the raised sour
     layers: [
       {
         kind: "image",
-        asset: "bobby-left",
+        asset: "bobby-down",
         frameColumns: 8,
         frameRows: 1,
         frameIndex: 7,
