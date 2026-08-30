@@ -40,20 +40,7 @@ const definition: EntityModuleDefinition = {
   stackOrder: CONTENT_STACK_ORDER,
   presentation: {
     name: "Bobby",
-    category: "角色",
     renderPass: "player",
-  },
-  authoring: {
-    palette: true,
-    category: "角色",
-    defaultDirection: "down",
-    editorVisual: () =>
-      composition({
-        asset: BOBBY_VISUAL_ASSETS.move.down,
-        frameColumns: 8,
-        frameRows: 1,
-        frameIndex: 7,
-      }),
   },
 };
 
@@ -105,7 +92,10 @@ export const bobby: EntityModule = originalModule(definition, {
     }
 
     if (!context.runtime?.moving) {
-      const idleFrame = resolveIdleFrame(context.runtime?.stationarySinceMs, context.time?.nowMs);
+      const idleFrame = resolveIdleFrame(
+        context.runtime?.stationarySinceMs,
+        context.time?.nowMs,
+      );
       if (idleFrame !== null) {
         return composition({
           asset: BOBBY_VISUAL_ASSETS.idle,
