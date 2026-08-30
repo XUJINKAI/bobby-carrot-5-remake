@@ -19,6 +19,8 @@ export { resolveDeletionTarget } from "./authoring/deletion.js";
 export { selectionRect, selectedEntityRefs } from "./authoring/selection.js";
 export type { SelectionRect } from "./authoring/selection.js";
 export { copySelection, pasteClipboard } from "./authoring/clipboard.js";
+export { previewEditorResize, resizeMapEdges } from "./authoring/resize.js";
+export type { EditorResizeEdges, EditorResizeResult } from "./authoring/resize.js";
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorEntityModel } from "./authoring/inspectorModel.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
