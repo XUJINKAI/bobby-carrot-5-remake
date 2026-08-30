@@ -14,7 +14,7 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
-  fallbackText?: string;
+  fallbackText?: string | undefined;
 }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
 const rendered = ref(true);
