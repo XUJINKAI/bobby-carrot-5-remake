@@ -27,8 +27,8 @@ export class EditorEntityPreviewRenderer {
   constructor(
     private readonly images: ImageManager,
     private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
-    private readonly visuals: VisualRegistry = builtinVisualRegistry,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
+    private readonly visuals: VisualRegistry = builtinVisualRegistry,
   ) {}
 
   render(
@@ -65,8 +65,7 @@ export class EditorEntityPreviewRenderer {
     };
     const preview = new EditorPreview(level, this.catalog);
     const query = new SpatialVisualQuery(preview.entities, preview.spatial);
-    const ref = { index: 0 };
-    const inspections = [...preview.presencesFor(ref)].sort(
+    const inspections = [...preview.presencesFor({ index: 0 })].sort(
       (a, b) => a.presence.stackOrder - b.presence.stackOrder,
     );
     for (const inspection of inspections) {
