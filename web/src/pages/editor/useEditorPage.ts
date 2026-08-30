@@ -6,6 +6,7 @@ import {
   builtinEditorDefinition,
   copySelection,
   createBuiltinEntityCatalog,
+  pasteClipboard,
   placeEntity,
   removeEntities,
   replaceEntity,
@@ -25,7 +26,7 @@ import {
   type Cell,
   type EditorClipboard,
   type EditorEntityVariant,
-  type EditorLevel,
+  type EditorMap,
   type EditorSelection,
   type EditorSnapshot,
   type EditorTool,
@@ -44,7 +45,7 @@ import {
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
 
-export function useEditorPage(initialLevel: EditorLevel) {
+export function useEditorPage(initialLevel: EditorMap) {
   const catalog = createBuiltinEntityCatalog();
   const editor = builtinEditorDefinition;
   const palette = resolveEditorPalette(catalog, editor);
@@ -67,11 +68,11 @@ export function useEditorPage(initialLevel: EditorLevel) {
   let transactionActive = false;
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
-    storeEditorDraft(next.level as EditorLevel);
+    storeEditorDraft(next.level as EditorMap);
   });
   onUnmounted(unsubscribe);
 
-  const currentLevel = (): EditorLevel => snapshot.value.level as EditorLevel;
+  const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
   const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
   const selectedRefs = computed(() =>
     mapSelection.value
@@ -194,29 +195,11 @@ export function useEditorPage(initialLevel: EditorLevel) {
   function paste(origin: Cell): boolean {
     const source = clipboard.value;
     if (!source || source.entities.length === 0) return false;
-    const additions = source.entities
-      .map((entity) => ({
-        ...structuredClone(entity),
-        x: origin.x + entity.x,
-        y: origin.y + entity.y,
-      }))
-      .filter(
-        (entity) =>
-          entity.x >= 0 &&
-          entity.y >= 0 &&
-          entity.x < currentLevel().width &&
-          entity.y < currentLevel().height,
-      );
-    if (additions.length === 0) return false;
-    const command = {
-      apply(level: EditorLevel): EditorLevel {
-        return {
-          ...level,
-          entities: [...level.entities, ...additions],
-        };
+    const changed = document.execute({
+      apply(level) {
+        return pasteClipboard(level, source, origin);
       },
-    };
-    const changed = document.execute(command);
+    });
     if (changed) {
       mapSelection.value = {
         anchor: origin,
