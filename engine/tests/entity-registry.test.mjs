@@ -69,10 +69,10 @@ test("首轮合并类型使用 state/direction/property 而不是拆分 type", (
   assert.equal(registry.require("color-pink-block").state[0].key, "raised");
 });
 
-test("Dragon 是一个可旋转 EntityDefinition 并通过 footprint 表达三格", () => {
+test("Dragon 的 direction 表示龙头实际朝向并通过 footprint 表达三格", () => {
   const dragon = createBuiltinEntityRegistry().require("dragon");
   assert.equal(dragon.footprint.rotateWithDirection, true);
-  assert.equal(dragon.footprint.baseDirection, "right");
+  assert.equal(dragon.footprint.baseDirection, "left");
   assert.deepEqual(
     dragon.footprint.parts.map((part) => [part.dx, part.dy, part.role]),
     [
