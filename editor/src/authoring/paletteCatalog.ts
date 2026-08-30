@@ -6,11 +6,16 @@ import type {
   EditorDefinition,
   EditorPaletteEntry,
   EditorPaletteGroup,
+  EditorPlacementPreset,
 } from "../definitions/types.js";
+import { resolveEditorEntityPreviewLayout } from "./entityPreview.js";
 
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
   label: string;
+  previewPreset: EditorPlacementPreset;
+  previewWidth: number;
+  previewHeight: number;
 }
 
 export interface ResolvedPaletteGroup {
@@ -25,7 +30,7 @@ export function resolveEditorPalette(
 ): ResolvedPaletteGroup[] {
   const used = new Set<EntityType>();
   const groups = editor.palette.groups.map((group) =>
-    resolveGroup(group, catalog, used),
+    resolveGroup(group, catalog, editor, used),
   );
   const ungrouped = catalog
     .all()
@@ -38,7 +43,12 @@ export function resolveEditorPalette(
       label: "未分组",
       rows: [
         ungrouped.map((type, index) =>
-          resolveEntry({ type }, catalog, `ungrouped/0/${index}`),
+          resolveEntry(
+            { type },
+            catalog,
+            editor,
+            `ungrouped/0/${index}`,
+          ),
         ),
       ],
     });
@@ -77,6 +87,7 @@ export function paletteLabel(
 function resolveGroup(
   group: EditorPaletteGroup,
   catalog: EntityCatalog,
+  editor: EditorDefinition,
   used: Set<EntityType>,
 ): ResolvedPaletteGroup {
   return {
@@ -88,6 +99,7 @@ function resolveGroup(
         return resolveEntry(
           entry,
           catalog,
+          editor,
           `${group.id}/${rowIndex}/${columnIndex}`,
         );
       }),
@@ -98,12 +110,48 @@ function resolveGroup(
 function resolveEntry(
   entry: EditorPaletteEntry,
   catalog: EntityCatalog,
+  editor: EditorDefinition,
   key: string,
 ): PaletteItem {
+  const previewPreset = previewPresetFor(entry);
+  const layout = resolveEditorEntityPreviewLayout(
+    catalog,
+    previewPreset,
+    editor,
+  );
   return {
     ...entry,
     key,
     label:
       entry.label ?? catalog.require(entry.type).presentation.name ?? entry.type,
+    previewPreset,
+    previewWidth: layout.width,
+    previewHeight: layout.height,
   };
+}
+
+function previewPresetFor(entry: EditorPaletteEntry): EditorPlacementPreset {
+  const preview = entry.preview;
+  return {
+    type: entry.type,
+    ...(preview?.direction ?? entry.direction
+      ? { direction: preview?.direction ?? entry.direction }
+      : {}),
+    ...mergeRecord("properties", entry.properties, preview?.properties),
+    ...mergeRecord("state", entry.state, preview?.state),
+  };
+}
+
+function mergeRecord<Key extends "properties" | "state">(
+  key: Key,
+  base: EditorPlacementPreset[Key],
+  override: EditorPlacementPreset[Key],
+): Pick<EditorPlacementPreset, Key> | {} {
+  if (!base && !override) return {};
+  return {
+    [key]: {
+      ...(base ?? {}),
+      ...(override ?? {}),
+    },
+  } as Pick<EditorPlacementPreset, Key>;
 }
