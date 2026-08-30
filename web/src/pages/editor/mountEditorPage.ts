@@ -9,6 +9,7 @@ import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { NOOP_CONTROLLER } from "../../app/pageContracts.js";
 import type { ExploreMapRef } from "../../app/routes.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
+import { loadEditorDraft } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
 import { configureEditorShell } from "./editorShell.js";
 
@@ -37,7 +38,7 @@ export async function renderEditorPage(
       sessionStorage.removeItem("bc5r:pending-editor-level");
       level = parseEditorLevel(pending);
     } else {
-      level = createBlankLevel(16, 16);
+      level = loadEditorDraft() ?? createBlankLevel(16, 16);
     }
   }
 

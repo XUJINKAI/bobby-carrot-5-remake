@@ -27,6 +27,7 @@ import {
   type JsonValue,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
+import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
 
 const DIRECTIONS: Direction[] = ["up", "right", "down", "left"];
 
@@ -42,6 +43,7 @@ export function useEditorPage(initialLevel: EditorLevel) {
   const paletteSize = ref(readPaletteSize());
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
+    storeEditorDraft(next.level as EditorLevel);
   });
   onUnmounted(unsubscribe);
 
