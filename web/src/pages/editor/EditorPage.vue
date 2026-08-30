@@ -3,7 +3,7 @@ import {
   validateEditorLevel,
   type Cell,
   type EditorCanvasContextMenuRequest,
-  type EditorLevel,
+  type EditorMap,
 } from "@bobby/editor";
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
@@ -17,7 +17,7 @@ import { configureEditorShell } from "./editorShell.js";
 import { useEditorPage } from "./useEditorPage.js";
 
 const props = defineProps<{
-  initialLevel: EditorLevel;
+  initialLevel: EditorMap;
   audio: AudioBackend;
   images: ImageManager;
   navigate: (path: string) => void;
@@ -27,11 +27,16 @@ let session: GameSession | null = null;
 const paletteOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>("inspector");
 const contextMenu = ref<null | { x: number; y: number; cell: Cell }>(null);
-const issues = computed(() => validateEditorLevel(page.snapshot.value.level as EditorLevel, page.catalog));
+const issues = computed(() =>
+  validateEditorLevel(page.snapshot.value.level as EditorMap, page.catalog, page.editor),
+);
 
 async function togglePlay(): Promise<void> {
   closeContextMenu();
-  if (page.playing.value) { stopPlay(); return; }
+  if (page.playing.value) {
+    stopPlay();
+    return;
+  }
   page.playing.value = true;
   configureEditorShell(true);
   await nextTick();
@@ -40,9 +45,16 @@ async function togglePlay(): Promise<void> {
   if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
   try {
     session = await createGameSession({
-      root, canvas, level: page.levelMap.value,
+      root,
+      canvas,
+      level: page.levelMap.value,
       gameOptions: { images: props.images, audio: props.audio, debug: false },
-      runtime: { hud: true, input: { screenJoystick: { enabled: loadScreenControlPreference() } } },
+      runtime: {
+        hud: true,
+        input: {
+          screenJoystick: { enabled: loadScreenControlPreference() },
+        },
+      },
     });
   } catch (error) {
     page.playing.value = false;
@@ -50,34 +62,93 @@ async function togglePlay(): Promise<void> {
     window.alert(error instanceof Error ? error.message : String(error));
   }
 }
-function stopPlay(): void { session?.destroy(); session = null; page.playing.value = false; configureEditorShell(false); }
-function restartPlay(): void { session?.game.restart(); }
-function importLevel(level: EditorLevel): void { page.document.load(level); page.fileDialogOpen.value = false; }
-function markDownloaded(metadata: { name: string; author?: string; description?: string }): void { page.updateMetadata(metadata); page.document.markSaved(); }
+
+function stopPlay(): void {
+  session?.destroy();
+  session = null;
+  page.playing.value = false;
+  configureEditorShell(false);
+}
+
+function restartPlay(): void {
+  session?.game.restart();
+}
+
+function importLevel(level: EditorMap): void {
+  page.document.load(level);
+  page.fileDialogOpen.value = false;
+}
+
+function markDownloaded(metadata: {
+  name: string;
+  author?: string;
+  description?: string;
+}): void {
+  page.updateMetadata(metadata);
+  page.document.markSaved();
+}
 
 function openContextMenu(request: EditorCanvasContextMenuRequest): void {
   page.ensureSelectionAt(request.cell);
-  contextMenu.value = { x: request.clientX, y: request.clientY, cell: request.cell };
+  contextMenu.value = {
+    x: request.clientX,
+    y: request.clientY,
+    cell: request.cell,
+  };
 }
-function closeContextMenu(): void { contextMenu.value = null; }
-function pasteFromMenu(): void { const cell = contextMenu.value?.cell; if (cell) page.paste(cell); }
-function transform(cell: Cell, step: number, result: (changed: boolean) => void): void { result(page.transform(cell, step)); }
+
+function closeContextMenu(): void {
+  contextMenu.value = null;
+}
+
+function pasteFromMenu(): void {
+  const cell = contextMenu.value?.cell;
+  if (cell) page.paste(cell);
+}
+
+function transform(
+  cell: Cell,
+  step: number,
+  result: (changed: boolean) => void,
+): void {
+  result(page.transform(cell, step));
+}
 
 function handleKeydown(event: KeyboardEvent): void {
   if (page.playing.value || isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
   const key = event.key.toLowerCase();
-  if (event.key === "Escape") { closeContextMenu(); return; }
-  if (modifier && key === "z") { event.preventDefault(); event.shiftKey ? page.document.redo() : page.document.undo(); }
-  else if (modifier && key === "y") { event.preventDefault(); page.document.redo(); }
-  else if (modifier && key === "c") { event.preventDefault(); page.copy(); }
-  else if (modifier && key === "x") { event.preventDefault(); page.cut(); }
-  else if (modifier && key === "v") { event.preventDefault(); const origin = page.hover.value ?? page.mapSelection.value?.anchor; if (origin) page.paste(origin); }
-  else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); page.deleteSelection(); }
-  else if ((key === "q" || key === "e") && page.hover.value) { event.preventDefault(); page.transform(page.hover.value, key === "q" ? -1 : 1); }
-  else if (key === "v") page.setTool("select");
-  else if (key === "p") page.setTool("place");
-  else if (key === "e") page.setTool("erase");
+  if (event.key === "Escape") {
+    closeContextMenu();
+    return;
+  }
+  if (modifier && key === "z") {
+    event.preventDefault();
+    event.shiftKey ? page.document.redo() : page.document.undo();
+  } else if (modifier && key === "y") {
+    event.preventDefault();
+    page.document.redo();
+  } else if (modifier && key === "c") {
+    event.preventDefault();
+    page.copy();
+  } else if (modifier && key === "x") {
+    event.preventDefault();
+    page.cut();
+  } else if (modifier && key === "v") {
+    event.preventDefault();
+    const origin = page.hover.value ?? page.mapSelection.value?.anchor;
+    if (origin) page.paste(origin);
+  } else if (event.key === "Delete" || event.key === "Backspace") {
+    event.preventDefault();
+    page.deleteSelection();
+  } else if ((key === "q" || key === "e") && page.hover.value) {
+    event.preventDefault();
+    page.transform(page.hover.value, key === "q" ? -1 : 1);
+  } else if (key === "v") {
+    page.setTool("select");
+  } else if (key === "p") {
+    page.setTool("place");
+  }
 }
 
 function onShellAction(event: Event): void {
@@ -88,13 +159,29 @@ function onShellAction(event: Event): void {
   if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
   if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
-  if (action === "editor-inspector") rightPanel.value = rightPanel.value === "inspector" ? null : "inspector";
-  if (action === "editor-level-info") rightPanel.value = rightPanel.value === "level" ? null : "level";
+  if (action === "editor-inspector")
+    rightPanel.value = rightPanel.value === "inspector" ? null : "inspector";
+  if (action === "editor-level-info")
+    rightPanel.value = rightPanel.value === "level" ? null : "level";
 }
-function onShellDialogOpen(): void { session?.input.setEnabled(false); }
-function onShellDialogClose(): void { session?.input.setEnabled(true); }
-function onScreenControlChange(event: Event): void { session?.input.setScreenJoystickEnabled(Boolean((event as CustomEvent<{ enabled: boolean }>).detail.enabled)); }
-function onBeforeUnload(event: BeforeUnloadEvent): void { if (page.snapshot.value.dirty) event.preventDefault(); }
+
+function onShellDialogOpen(): void {
+  session?.input.setEnabled(false);
+}
+
+function onShellDialogClose(): void {
+  session?.input.setEnabled(true);
+}
+
+function onScreenControlChange(event: Event): void {
+  session?.input.setScreenJoystickEnabled(
+    Boolean((event as CustomEvent<{ enabled: boolean }>).detail.enabled),
+  );
+}
+
+function onBeforeUnload(event: BeforeUnloadEvent): void {
+  if (page.snapshot.value.dirty) event.preventDefault();
+}
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
@@ -105,6 +192,7 @@ onMounted(() => {
   window.addEventListener("screen-control-change", onScreenControlChange);
   window.addEventListener("beforeunload", onBeforeUnload);
 });
+
 onBeforeUnmount(() => {
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
@@ -115,13 +203,20 @@ onBeforeUnmount(() => {
   window.removeEventListener("screen-control-change", onScreenControlChange);
   window.removeEventListener("beforeunload", onBeforeUnload);
 });
-function isTextInput(target: EventTarget | null): boolean { return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement; }
+
+function isTextInput(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
 </script>
 
 <template>
   <div class="bobby-editor" :class="{ 'palette-sheet-open': paletteOpen, 'inspector-sheet-open': rightPanel !== null }">
     <EditorWorkspace
-      :level="page.snapshot.value.level as EditorLevel"
+      :level="page.snapshot.value.level as EditorMap"
       :revision="page.snapshot.value.revision"
       :tool="page.tool.value"
       :placement="page.placement.value"
