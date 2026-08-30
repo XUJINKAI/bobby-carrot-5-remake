@@ -35,7 +35,7 @@ export class EditorEntityPreviewRenderer {
     canvas: HTMLCanvasElement,
     source: EditorPlacementPreset,
     cellSize: number,
-  ): void {
+  ): boolean {
     const layout = resolveEditorEntityPreviewLayout(
       this.catalog,
       source,
@@ -47,7 +47,7 @@ export class EditorEntityPreviewRenderer {
     offscreen.width = layout.width * naturalTile + margin * 2;
     offscreen.height = layout.height * naturalTile + margin * 2;
     const context = offscreen.getContext("2d");
-    if (!context) return;
+    if (!context) return false;
     context.imageSmoothingEnabled = false;
 
     const level: EditorMap = {
@@ -68,12 +68,14 @@ export class EditorEntityPreviewRenderer {
     const inspections = [...preview.presencesFor({ index: 0 })].sort(
       (a, b) => a.presence.stackOrder - b.presence.stackOrder,
     );
+    let rendered = false;
     for (const inspection of inspections) {
       const entity = preview.entities.require(inspection.presence.entityId);
       const resolveContext = { entity, presence: inspection.presence, query };
       const composition =
         this.editor.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
         this.visuals.resolve(inspection.definition, resolveContext);
+      rendered ||= Boolean(composition?.layers.length);
       drawEditorVisualComposition(
         context,
         this.images,
@@ -92,6 +94,7 @@ export class EditorEntityPreviewRenderer {
     };
     const bounds = opaqueBounds(context, offscreen, fallback);
     drawFitted(canvas, offscreen, bounds, layout.width, layout.height, cellSize);
+    return rendered;
   }
 }
 
