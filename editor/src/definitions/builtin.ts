@@ -1,6 +1,7 @@
 import {
   EntityTypeId,
   type Direction,
+  type EntityType,
   type LevelEntity,
 } from "@bobby/model";
 import type {
@@ -28,17 +29,90 @@ const activeVariants: readonly EditorEntityVariant[] = [
   { state: { active: false } },
 ];
 
+const raisedVariants: readonly EditorEntityVariant[] = [
+  { state: { raised: true } },
+  { state: { raised: false } },
+];
+
 const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
   (variant) => ({ state: { variant } }),
 );
 
-const directional: EditorEntityDefinition = {
+const carouselVariants: readonly EditorEntityVariant[] = [
+  ...fourVariants,
+  { state: { variant: "vertical" } },
+  { state: { variant: "horizontal" } },
+];
+
+const surface: EditorEntityDefinition = { replaceGroup: "surface" };
+const cover: EditorEntityDefinition = { replaceGroup: "cover" };
+const item: EditorEntityDefinition = { replaceGroup: "item" };
+const directionalSurface: EditorEntityDefinition = {
+  ...surface,
   defaultDirection: "right",
   variants: directions,
 };
 
+const surfaceTypes: readonly EntityType[] = [
+  EntityTypeId.GROUND_A,
+  EntityTypeId.GROUND_B,
+  EntityTypeId.GROUND_C,
+  EntityTypeId.GROUND_D,
+  EntityTypeId.START,
+  EntityTypeId.SHOVEL_CLEARED_GROUND,
+  EntityTypeId.EXIT,
+  EntityTypeId.ICE,
+  EntityTypeId.SHOP_DREAM,
+  EntityTypeId.SHOP_CLOUD9,
+  EntityTypeId.SHOP_SUPER_KEY,
+  EntityTypeId.SHOP_STEREO,
+  EntityTypeId.SHOP_MUSIC,
+  EntityTypeId.SHOP_SPEED_SHOES,
+  EntityTypeId.SHOP_COIN_RADAR,
+  EntityTypeId.SHOP_UNAVAILABLE,
+  EntityTypeId.SHOVEL_PICKUP,
+  EntityTypeId.MOWER_PARKING,
+  EntityTypeId.WATER,
+  EntityTypeId.WATER_ANIMATED,
+  EntityTypeId.WATER_VARIANT_1,
+  EntityTypeId.WATER_VARIANT_2,
+  EntityTypeId.WATER_VARIANT_3,
+  EntityTypeId.SPEED,
+  EntityTypeId.TIDE,
+  EntityTypeId.TIDE_SWITCH,
+  EntityTypeId.SPEED_SWITCH,
+  EntityTypeId.CAROUSEL_SWITCH,
+  EntityTypeId.COLOR_YELLOW_SWITCH,
+  EntityTypeId.COLOR_PINK_SWITCH,
+  EntityTypeId.COLOR_YELLOW_BLOCK,
+  EntityTypeId.COLOR_PINK_BLOCK,
+  EntityTypeId.TRAP,
+  EntityTypeId.MIRROR,
+  EntityTypeId.CAROUSEL,
+  EntityTypeId.WIND_SWITCH,
+  EntityTypeId.PUSH_GOAL,
+];
+
 export const builtinEditorDefinition: EditorDefinition = {
+  exclude: [
+    EntityTypeId.CONSUMED_CARROT,
+    EntityTypeId.PLANK_CRUMBLING,
+    EntityTypeId.PLANK_FRAGMENT,
+    EntityTypeId.BEAN_SPROUT,
+    { prefix: "background-variant-" },
+    { prefix: "walkable-variant-" },
+    { prefix: "object-variant-" },
+  ],
   entities: {
+    ...withPolicy(surfaceTypes, surface),
+    ...withPolicy(
+      [EntityTypeId.SNOW, EntityTypeId.HIGH_GRASS, EntityTypeId.HIGH_GRASS_OBJECTIVE, EntityTypeId.ICE_BLOCK],
+      cover,
+    ),
+    ...withPolicy(
+      [EntityTypeId.CARROT, EntityTypeId.EGG_NEST_EMPTY, EntityTypeId.EGG_NEST_FILLED],
+      item,
+    ),
     [EntityTypeId.BOBBY]: {
       defaultDirection: "down",
       variants: directions,
@@ -76,20 +150,19 @@ export const builtinEditorDefinition: EditorDefinition = {
       defaultDirection: "down",
       variants: directions,
     },
-    [EntityTypeId.SPEED]: directional,
-    [EntityTypeId.TIDE]: directional,
-    [EntityTypeId.TIDE_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.SPEED_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_PINK_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.TRAP]: { variants: activeVariants },
-    [EntityTypeId.MIRROR]: { variants: fourVariants },
-    [EntityTypeId.CAROUSEL]: { variants: fourVariants },
-    [EntityTypeId.CONSUMED_CARROT]: { creatable: false },
-    [EntityTypeId.PLANK_CRUMBLING]: { creatable: false },
-    [EntityTypeId.PLANK_FRAGMENT]: { creatable: false },
-    [EntityTypeId.BEAN_SPROUT]: { creatable: false },
+    [EntityTypeId.SPEED]: directionalSurface,
+    [EntityTypeId.TIDE]: directionalSurface,
+    [EntityTypeId.TIDE_SWITCH]: { ...surface, variants: pressedVariants },
+    [EntityTypeId.SPEED_SWITCH]: { ...surface, variants: pressedVariants },
+    [EntityTypeId.CAROUSEL_SWITCH]: { ...surface, variants: pressedVariants },
+    [EntityTypeId.COLOR_YELLOW_SWITCH]: { ...surface, variants: pressedVariants },
+    [EntityTypeId.COLOR_PINK_SWITCH]: { ...surface, variants: pressedVariants },
+    [EntityTypeId.COLOR_YELLOW_BLOCK]: { ...surface, variants: raisedVariants },
+    [EntityTypeId.COLOR_PINK_BLOCK]: { ...surface, variants: raisedVariants },
+    [EntityTypeId.WIND_SWITCH]: { ...surface, variants: activeVariants },
+    [EntityTypeId.TRAP]: { ...surface, variants: activeVariants },
+    [EntityTypeId.MIRROR]: { ...surface, variants: fourVariants },
+    [EntityTypeId.CAROUSEL]: { ...surface, variants: carouselVariants },
   },
   palette: {
     groups: [
@@ -143,6 +216,13 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.TIDE_SWITCH },
             { type: EntityTypeId.SPEED_SWITCH },
             { type: EntityTypeId.CAROUSEL_SWITCH },
+          ],
+          [
+            { type: EntityTypeId.COLOR_YELLOW_SWITCH },
+            { type: EntityTypeId.COLOR_PINK_SWITCH },
+            { type: EntityTypeId.COLOR_YELLOW_BLOCK },
+            { type: EntityTypeId.COLOR_PINK_BLOCK },
+            { type: EntityTypeId.WIND_SWITCH },
           ],
         ],
       },
@@ -223,4 +303,11 @@ export function applyEditorVariant(
         }
       : {}),
   };
+}
+
+function withPolicy(
+  types: readonly EntityType[],
+  policy: EditorEntityDefinition,
+): Partial<Record<EntityType, EditorEntityDefinition>> {
+  return Object.fromEntries(types.map((type) => [type, policy]));
 }
