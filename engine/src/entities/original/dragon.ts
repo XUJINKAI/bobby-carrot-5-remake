@@ -1,10 +1,11 @@
 import { EntityTypeId } from "@bobby/model";
+import type { VisualDefinition } from "../../visual/VisualDefinition.js";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  atlasVisual,
   CONTENT_STACK_ORDER,
   objectCell,
   originalModule,
@@ -16,7 +17,7 @@ const definition: EntityModuleDefinition = {
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     rotateWithDirection: true,
-    baseDirection: "right",
+    baseDirection: "left",
     parts: [
       {
         dx: 0,
@@ -41,11 +42,34 @@ const definition: EntityModuleDefinition = {
   presentation: { name: "Dragon" },
 };
 
+const visual: VisualDefinition = {
+  id: EntityTypeId.DRAGON,
+  resolve(context) {
+    const atlas =
+      context.presence.role === "body"
+        ? objectCell(15)
+        : context.presence.role === "tail"
+          ? objectCell(16)
+          : objectCell(14);
+    return {
+      layers: [
+        {
+          kind: "atlas",
+          column: atlas.column,
+          row: atlas.row,
+          ...(context.entity.direction === "right" ? { flipX: true } : {}),
+        },
+      ],
+    };
+  },
+};
+
+const dragonBehavior: Behavior = {
+  id: "dragon-placeholder",
+};
+
 export const dragon: EntityModule = originalModule(
   definition,
-  atlasVisual(definition, (context) => {
-    if (context.presence.role === "body") return objectCell(15);
-    if (context.presence.role === "tail") return objectCell(16);
-    return objectCell(14);
-  }),
+  visual,
+  [{ trait: "dragon", behavior: dragonBehavior }],
 );
