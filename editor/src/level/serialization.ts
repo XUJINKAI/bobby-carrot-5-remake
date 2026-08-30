@@ -1,11 +1,11 @@
 import { normalizeEditorLevel } from "./editorLevel.js";
-import type { EditorLevel } from "./types.js";
+import type { EditorMap } from "./types.js";
 
-export function serializeEditorLevel(level: EditorLevel): string {
+export function serializeEditorLevel(level: EditorMap): string {
   return `${JSON.stringify(normalizeEditorLevel(level), null, 2)}\n`;
 }
 
-export function parseEditorLevel(text: string): EditorLevel {
+export function parseEditorLevel(text: string): EditorMap {
   const parsed = JSON.parse(text) as Record<string, unknown>;
   if (parsed.schemaVersion !== 1)
     throw new Error(
@@ -13,5 +13,5 @@ export function parseEditorLevel(text: string): EditorLevel {
     );
   if (!Array.isArray(parsed.entities))
     throw new Error("JSON 缺少 entities 数组");
-  return normalizeEditorLevel(parsed as unknown as EditorLevel);
+  return normalizeEditorLevel(parsed as unknown as EditorMap);
 }
