@@ -196,14 +196,11 @@ function isMobileEditor(): boolean { return window.matchMedia("(max-width: 620px
       :y="contextMenu?.y ?? 0"
       :can-paste="Boolean(page.clipboard.value?.entities.length)"
       :entity-selected="page.selectedRefs.value.length > 0"
-      :variants="page.variants.value"
       @close="closeContextMenu"
       @copy="page.copy"
       @cut="page.cut"
       @paste="pasteFromMenu"
       @delete="page.deleteSelection"
-      @direction="page.setDirection"
-      @variant="page.applyVariant"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"
