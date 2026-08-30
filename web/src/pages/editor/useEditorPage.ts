@@ -6,27 +6,30 @@ import {
   builtinEditorDefinition,
   copySelection,
   createBuiltinEntityCatalog,
+  cycleEntityVariant,
+  cyclePlacementVariant,
+  inspectEditorRules,
   pasteClipboard,
   placeEntity,
   removeEntities,
   replaceEntity,
   resolveDeletionTarget,
   resolveEditorPalette,
-  resizeDocument,
+  resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
-  setEntityDirection,
   toLevelMap,
+  updateEditorRule,
   updateEntityProperties,
   updateEntityState,
   updateMaxMoves,
   updateMaxTimeSeconds,
   updateMetadata,
-  updateWinCondition,
   type Cell,
   type EditorClipboard,
-  type EditorEntityVariant,
   type EditorMap,
+  type EditorResizeEdges,
+  type EditorRuleKind,
   type EditorSelection,
   type EditorSnapshot,
   type EditorTool,
@@ -35,12 +38,9 @@ import {
 } from "@bobby/editor";
 import {
   EntityTypeId,
-  type Direction,
   type EntityProperties,
   type EntityState,
   type JsonValue,
-  type LevelEntity,
-  type WinCondition,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
@@ -100,7 +100,7 @@ export function useEditorPage(initialLevel: EditorMap) {
         }
       : null;
   });
-  const variants = computed(() => selectedEntity.value?.editor?.variants ?? []);
+  const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
 
   function setTool(next: EditorTool): void {
     tool.value = next;
@@ -214,7 +214,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function applyVariant(index: number): boolean {
     const selected = selectedEntity.value;
-    const variant = variants.value[index];
+    const variant = selected?.editor?.variants?.[index];
     if (!selected || !variant) return false;
     return document.execute(
       replaceEntity(
@@ -224,29 +224,33 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
-  function setDirection(direction: Direction): boolean {
-    const selected = selectedEntity.value;
-    if (!selected) return false;
-    return document.execute(setEntityDirection(selected.ref, direction));
-  }
-
-  function transform(cell: Cell, step: number): boolean {
-    ensureSelectionAt(cell);
-    const selected = selectedEntity.value;
-    if (!selected) return false;
-    const options = selected.editor?.variants ?? [];
-    if (options.length === 0) return false;
-    const current = options.findIndex((variant) =>
-      variantMatches(selected.entity, variant),
+  function cycleVariant(step: number, cell?: Cell): boolean {
+    if (tool.value === "erase") return false;
+    if (tool.value === "place") {
+      const definition = editor.entities?.[placement.value.type];
+      const next = cyclePlacementVariant(
+        placement.value,
+        catalog,
+        definition,
+        step,
+      );
+      if (!next) return false;
+      placement.value = next;
+      return true;
+    }
+    const targetCell = cell ?? mapSelection.value?.focus;
+    if (!targetCell) return false;
+    if (cell) ensureSelectionAt(cell);
+    const inspection = preview().inspectCell(targetCell.x, targetCell.y).top;
+    if (!inspection) return false;
+    const next = cycleEntityVariant(
+      inspection.entity,
+      catalog,
+      editor.entities?.[inspection.entity.type],
+      step,
     );
-    const index =
-      (Math.max(0, current) + step + options.length) % options.length;
-    return document.execute(
-      replaceEntity(
-        selected.ref,
-        applyEditorVariant(selected.entity, options[index]!),
-      ),
-    );
+    if (!next) return false;
+    return document.execute(replaceEntity(inspection.ref, next));
   }
 
   function updateProperty(
@@ -293,6 +297,20 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
+  function resize(edges: EditorResizeEdges): void {
+    const changed = document.execute(resizeMapEdges(catalog, edges));
+    if (!changed || !mapSelection.value) return;
+    const map = currentLevel();
+    mapSelection.value = {
+      anchor: shiftedCell(mapSelection.value.anchor, edges, map),
+      focus: shiftedCell(mapSelection.value.focus, edges, map),
+    };
+  }
+
+  function setRule(kind: EditorRuleKind, enabled: boolean): void {
+    document.execute(updateEditorRule(catalog, kind, enabled));
+  }
+
   function setPaletteSize(delta: number): void {
     const sizes = [32, 40, 48, 56, 64];
     const index = Math.max(0, sizes.indexOf(paletteSize.value));
@@ -322,7 +340,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     inspector,
     selectedRefs,
     selectedEntity,
-    variants,
+    rules,
     levelMap: computed(() => toLevelMap(currentLevel())),
     setTool,
     selectPalette,
@@ -335,22 +353,18 @@ export function useEditorPage(initialLevel: EditorMap) {
     paste,
     deleteSelection,
     applyVariant,
-    setDirection,
-    transform,
+    cycleVariant,
+    transform: (cell: Cell, step: number) => cycleVariant(step, cell),
     updateProperty,
     updateState,
     setPaletteSize,
-    resize(width: number, height: number): void {
-      document.execute(resizeDocument(width, height));
-    },
+    resize,
+    setRule,
     setMaxMoves(value: number | null): void {
       document.execute(updateMaxMoves(value));
     },
     setMaxTimeSeconds(value: number | null): void {
       document.execute(updateMaxTimeSeconds(value));
-    },
-    setWin(value: WinCondition): void {
-      document.execute(updateWinCondition(value));
     },
     updateMetadata(metadata: {
       name: string;
@@ -362,18 +376,15 @@ export function useEditorPage(initialLevel: EditorMap) {
   };
 }
 
-function variantMatches(
-  entity: Readonly<LevelEntity>,
-  variant: EditorEntityVariant,
-): boolean {
-  if (variant.direction && entity.direction !== variant.direction) return false;
-  for (const [key, value] of Object.entries(variant.properties ?? {}))
-    if (JSON.stringify(entity.properties?.[key]) !== JSON.stringify(value))
-      return false;
-  for (const [key, value] of Object.entries(variant.state ?? {}))
-    if (JSON.stringify(entity.state?.[key]) !== JSON.stringify(value))
-      return false;
-  return true;
+function shiftedCell(
+  cell: Cell,
+  edges: EditorResizeEdges,
+  map: EditorMap,
+): Cell {
+  return {
+    x: Math.max(0, Math.min(map.width - 1, cell.x + edges.left)),
+    y: Math.max(0, Math.min(map.height - 1, cell.y + edges.top)),
+  };
 }
 
 function coerceFieldValue(
