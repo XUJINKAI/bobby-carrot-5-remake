@@ -6,9 +6,6 @@ export interface EditorMap extends LevelMap {
   description?: string;
 }
 
-/** Transitional alias while the Web/editor call sites are renamed in this PR. */
-export type EditorLevel = EditorMap;
-
 /** 仅在一个 Editor snapshot 内有效，不进入持久化 JSON。 */
 export interface EntityRef {
   index: number;
