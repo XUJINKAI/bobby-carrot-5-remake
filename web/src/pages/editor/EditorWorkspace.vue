@@ -2,6 +2,7 @@
 import type {
   Cell,
   EditorCanvasContextMenuRequest,
+  EditorDefinition,
   EditorMap,
   EditorResizeEdges,
   EditorRuleCapability,
@@ -35,6 +36,7 @@ defineProps<{
   playing: boolean;
   images: ImageManager;
   catalog: EntityCatalog;
+  editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
   select: [item: PaletteItem];
@@ -72,6 +74,7 @@ const emit = defineEmits<{
       :size="paletteSize"
       :images="images"
       :catalog="catalog"
+      :editor="editor"
       @select="emit('select', $event)"
       @resize="emit('paletteResize', $event)"
     />
@@ -103,6 +106,7 @@ const emit = defineEmits<{
       :model="inspector"
       :images="images"
       :catalog="catalog"
+      :editor="editor"
       @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
       @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
       @variant="emit('variant', $event)"
