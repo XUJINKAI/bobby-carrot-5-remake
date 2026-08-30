@@ -17,12 +17,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "carousel", "directional-passage", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([1, 2, 3, 4, "vertical", "horizontal"]),
-  presentation: { name: "Carousel", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Carousel" },
 };
 
 export const carousel: EntityModule = originalModule(
