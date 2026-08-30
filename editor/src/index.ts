@@ -23,6 +23,7 @@ export { previewEditorResize, resizeMapEdges } from "./authoring/resize.js";
 export type { EditorResizeEdges, EditorResizeResult } from "./authoring/resize.js";
 export { inspectEditorRules, updateEditorRule } from "./authoring/rules.js";
 export type { EditorRuleCapability, EditorRuleKind } from "./authoring/rules.js";
+export { editorVariantIndex, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorEntityModel } from "./authoring/inspectorModel.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
