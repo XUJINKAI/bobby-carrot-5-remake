@@ -5,7 +5,7 @@ import {
   EditorViewport,
   type Cell,
   type EditorCanvasContextMenuRequest,
-  type EditorLevel,
+  type EditorMap,
   type EditorPlacementPreset,
   type EditorSelection,
   type EditorTool,
@@ -14,7 +14,7 @@ import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
-  level: Readonly<EditorLevel>;
+  level: Readonly<EditorMap>;
   revision: number;
   tool: EditorTool;
   placement: EditorPlacementPreset | null;
@@ -38,7 +38,7 @@ let input: EditorCanvasInput | null = null;
 
 function render(): void {
   renderer?.render({
-    level: props.level as EditorLevel,
+    level: props.level as EditorMap,
     tool: props.tool,
     placement: props.placement,
     selection: props.selection,
