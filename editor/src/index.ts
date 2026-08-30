@@ -1,9 +1,10 @@
 export { createBlankLevel, fromLevelMap, toLevelMap, cloneEditorLevel, normalizeEditorLevel, resizeEditorLevel } from "./level/editorLevel.js";
 export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js";
 export { validateEditorLevel } from "./level/validation.js";
-export type { EditorMap, EditorLevel, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
+export type { EditorMap, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
 export { builtinEditorDefinition, EDITOR_DIRECTIONS, applyEditorVariant } from "./definitions/builtin.js";
-export type { EditorTool, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
+export { isEditorEntityCreatable } from "./definitions/entities.js";
+export type { EditorTool, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
 export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, setEntityDirection, updateEntityProperties, updateEntityState, updateEntityTraits, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
