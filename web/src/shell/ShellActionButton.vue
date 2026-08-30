@@ -4,9 +4,9 @@ import type { ShellAction } from "./shellBridge.js";
 const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 const icons: Record<string, string> = {
-  back: "←", edit: "✎", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
-  music: "♫", palette: "▦", play: "▶", redo: "↷", restart: "↻",
-  settings: "⚙", share: "↗", stop: "■", undo: "↶",
+  back: "←", edit: "✎", erase: "⌫", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
+  music: "♫", palette: "▦", place: "＋", play: "▶", redo: "↷", restart: "↻",
+  select: "↖", settings: "⚙", share: "↗", stop: "■", undo: "↶",
 };
 
 function activate(): void {
