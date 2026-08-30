@@ -2,13 +2,13 @@ import type { EntityCatalog } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
 import type { EditorClipboard, EditorSelection } from "../definitions/types.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
-import type { EditorLevel } from "../level/types.js";
+import type { EditorMap } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 import type { Cell } from "./entityPlacement.js";
 import { selectedEntityRefs, selectionRect } from "./selection.js";
 
 export function copySelection(
-  level: EditorLevel,
+  level: EditorMap,
   catalog: EntityCatalog,
   selection: EditorSelection,
 ): EditorClipboard {
@@ -31,10 +31,10 @@ export function copySelection(
 }
 
 export function pasteClipboard(
-  level: EditorLevel,
+  level: EditorMap,
   clipboard: EditorClipboard,
   origin: Cell,
-): EditorLevel {
+): EditorMap {
   const additions: LevelEntity[] = clipboard.entities
     .map((source) => ({
       ...structuredClone(source),
