@@ -38,13 +38,7 @@ const definition: EntityModuleDefinition = {
       },
     ],
   },
-  presentation: { name: "Dragon", category: "角色" },
-  authoring: {
-    palette: true,
-    category: "角色",
-    cursor: { dx: 1, dy: 0 },
-    defaultDirection: "right",
-  },
+  presentation: { name: "Dragon" },
 };
 
 export const dragon: EntityModule = originalModule(
