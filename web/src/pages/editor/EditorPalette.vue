@@ -4,7 +4,7 @@ import type {
   PaletteItem,
   ResolvedPaletteGroup,
 } from "@bobby/editor";
-import type { EntityCatalog, ImageManager } from "@bobby/engine/authoring";
+import type { EntityCatalog, ImageManager } from "@bobby/engine";
 import { ref } from "vue";
 import { entityVisualStyle } from "../../services/assets/entityVisual.js";
 
