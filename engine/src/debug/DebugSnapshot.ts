@@ -203,7 +203,7 @@ function renderSceneItems(scene: RenderScene | null): Array<{
   return [
     ...scene.world.map((item) => ({ pass: "world" as const, item })),
     ...scene.player.map((item) => ({ pass: "player" as const, item })),
-    ...scene.overlay.map((item) => ({ pass: "overlay" as const, item })),
+    ...scene.effect.map((item) => ({ pass: "effect" as const, item })),
   ];
 }
 

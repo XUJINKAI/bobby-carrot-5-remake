@@ -1,8 +1,8 @@
-import type { ImageManager } from "@bobby/engine";
 import {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
-} from "@bobby/engine/authoring";
+  type ImageManager,
+} from "@bobby/engine";
 
 export function entityVisualStyle(
   images: ImageManager,
@@ -31,20 +31,45 @@ export function entityVisualStyle(
   if (layer.kind === "image") {
     const url = images.source(layer.asset);
     if (!url) return null;
+    const columns = positiveInteger(layer.frameColumns) ?? 1;
+    const rows = positiveInteger(layer.frameRows) ?? 1;
+    const frameCount = columns * rows;
+    const progress = Math.max(
+      0,
+      Math.min(0.999999, layer.frameProgress ?? 0),
+    );
+    const requestedFrame =
+      layer.frameIndex ?? Math.floor(progress * frameCount);
+    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
+    const column = frame % columns;
+    const row = Math.floor(frame / columns);
+    const image = images.image(layer.asset);
+    if (!image) {
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        backgroundImage: `url('${url}')`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: `${columns * size}px ${rows * size}px`,
+        backgroundPosition: `${-column * size}px ${-row * size}px`,
+      };
+    }
+    const frameWidth = image.width / columns;
+    const frameHeight = image.height / rows;
+    const scale = Math.min(size / frameWidth, size / frameHeight);
+    const drawWidth = frameWidth * scale;
+    const drawHeight = frameHeight * scale;
+    const backgroundWidth = image.width * scale;
+    const backgroundHeight = image.height * scale;
+    const left = (size - drawWidth) / 2 - column * drawWidth;
+    const top = (size - drawHeight) / 2 - row * drawHeight;
     return {
       width: `${size}px`,
       height: `${size}px`,
       backgroundImage: `url('${url}')`,
       backgroundRepeat: "no-repeat",
-      backgroundPosition: "left bottom",
-      backgroundSize: "auto 100%",
-    };
-  }
-  if (layer.previewStyle) {
-    return {
-      width: `${size}px`,
-      height: `${size}px`,
-      ...layer.previewStyle,
+      backgroundSize: `${backgroundWidth}px ${backgroundHeight}px`,
+      backgroundPosition: `${left}px ${top}px`,
     };
   }
   return null;
@@ -54,6 +79,11 @@ export function styleRecordToText(style: Record<string, string>): string {
   return Object.entries(style)
     .map(([key, value]) => `${toCssProperty(key)}:${value}`)
     .join(";");
+}
+
+function positiveInteger(value: number | undefined): number | null {
+  if (!Number.isFinite(value) || (value ?? 0) < 1) return null;
+  return Math.max(1, Math.floor(value!));
 }
 
 function toCssProperty(value: string): string {

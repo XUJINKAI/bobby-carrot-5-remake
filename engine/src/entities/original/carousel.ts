@@ -1,20 +1,24 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   boundedInt,
   cell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.CAROUSEL,
-  "Carousel",
-  ["walkable", "carousel", "directional-passage", "rotatable"],
-  { state: variantState([1, 2, 3, 4, "vertical", "horizontal"]) },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.CAROUSEL,
+  traits: ["walkable", "carousel", "directional-passage", "rotatable"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: variantState([1, 2, 3, 4, "vertical", "horizontal"]),
+  presentation: { name: "Carousel" },
+};
 
 export const carousel: EntityModule = originalModule(
   definition,

@@ -1,6 +1,6 @@
 import type { LevelEntity, LevelMap } from "@bobby/model";
 
-export interface EditorLevel extends LevelMap {
+export interface EditorMap extends LevelMap {
   name: string;
   author?: string;
   description?: string;

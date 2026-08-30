@@ -1,27 +1,29 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   cell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.COLOR_YELLOW_BLOCK,
-  "Yellow Block",
-  ["stateful-block", "walkable"],
-  {
-    state: [
-      {
-        key: "raised",
-        kind: "boolean",
-        label: "升起",
-        default: true,
-      },
-    ],
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.COLOR_YELLOW_BLOCK,
+  traits: ["stateful-block", "walkable"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: [
+    {
+      key: "raised",
+      kind: "boolean",
+      label: "升起",
+      default: true,
+    },
+  ],
+  presentation: { name: "Yellow Block" },
+};
 
 export const colorYellowBlock: EntityModule = originalModule(
   definition,

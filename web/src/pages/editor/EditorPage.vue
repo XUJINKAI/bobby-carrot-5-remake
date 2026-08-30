@@ -1,40 +1,89 @@
 <script setup lang="ts">
-import { type EditorLevel, type Cell } from "@bobby/editor";
+import {
+  validateEditorLevel,
+  type Cell,
+  type EditorCanvasContextMenuRequest,
+  type EditorMap,
+  type LevelValidationIssue,
+} from "@bobby/editor";
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import EditorContextMenu from "./EditorContextMenu.vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
+import { configureEditorShell } from "./editorShell.js";
 import { useEditorPage } from "./useEditorPage.js";
 
 const props = defineProps<{
-  initialLevel: EditorLevel;
+  initialLevel: EditorMap;
   audio: AudioBackend;
   images: ImageManager;
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
 let session: GameSession | null = null;
-const paletteOpen = ref(false);
-const inspectorOpen = ref(false);
+let disposePlayChange = (): void => {};
+const startsMobile = window.matchMedia("(max-width: 620px)").matches;
+const paletteOpen = ref(true);
+const rightPanel = ref<"inspector" | "level" | null>(
+  startsMobile ? null : "inspector",
+);
+const contextMenu = ref<null | { x: number; y: number; cell: Cell }>(null);
+const playComplete = ref(false);
+const runtimeIssue = ref<LevelValidationIssue | null>(null);
+const issues = computed(() =>
+  validateEditorLevel(
+    page.snapshot.value.level as EditorMap,
+    page.catalog,
+    page.editor,
+  ),
+);
+const shellIssues = computed<readonly LevelValidationIssue[]>(() =>
+  runtimeIssue.value ? [...issues.value, runtimeIssue.value] : issues.value,
+);
+
+function syncShell(): void {
+  configureEditorShell(
+    page.playing.value,
+    page.tool.value,
+    shellIssues.value,
+    {
+      canUndo: session?.game.canUndo ?? false,
+      canRedo: session?.game.canRedo ?? false,
+    },
+  );
+}
+watch(
+  () => [
+    page.playing.value,
+    page.tool.value,
+    shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
+  ],
+  syncShell,
+);
 
 async function togglePlay(): Promise<void> {
+  closeContextMenu();
   if (page.playing.value) {
     stopPlay();
     return;
   }
+  runtimeIssue.value = null;
+  playComplete.value = false;
   page.playing.value = true;
+  syncShell();
   await nextTick();
-  const canvas = document.querySelector<HTMLCanvasElement>(
-    "[data-editor-game-canvas]",
-  );
-  const root = document.querySelector<HTMLElement>(
-    "[data-editor-game-dialog-root]",
-  );
-  if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
   try {
+    const canvas = document.querySelector<HTMLCanvasElement>(
+      "[data-editor-game-canvas]",
+    );
+    const root = document.querySelector<HTMLElement>(
+      "[data-editor-game-dialog-root]",
+    );
+    if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
     session = await createGameSession({
       root,
       canvas,
@@ -51,23 +100,58 @@ async function togglePlay(): Promise<void> {
         },
       },
     });
+    bindPlaySession();
   } catch (error) {
-    page.playing.value = false;
-    window.alert(error instanceof Error ? error.message : String(error));
+    runtimeIssue.value = {
+      level: "error",
+      message: `Play Test：${error instanceof Error ? error.message : String(error)}`,
+    };
+    syncShell();
   }
 }
 
+function bindPlaySession(): void {
+  disposePlayChange();
+  disposePlayChange = session?.game.on("change", syncPlayState) ?? (() => {});
+  syncPlayState();
+}
+function syncPlayState(): void {
+  if (!session) return;
+  const won = session.game.state.status === "won";
+  const wasComplete = playComplete.value;
+  playComplete.value = won;
+  if (won) session.input.setEnabled(false);
+  else if (wasComplete) session.input.setEnabled(true);
+  syncShell();
+}
 function stopPlay(): void {
+  disposePlayChange();
+  disposePlayChange = (): void => {};
+  playComplete.value = false;
   session?.destroy();
   session = null;
   page.playing.value = false;
+  syncShell();
 }
-
-function importLevel(level: EditorLevel): void {
+function restartPlay(): void {
+  if (!session) return;
+  playComplete.value = false;
+  session.input.setEnabled(true);
+  session.game.restart();
+  syncShell();
+}
+function undo(): void {
+  if (page.playing.value) session?.game.undo();
+  else page.document.undo();
+}
+function redo(): void {
+  if (page.playing.value) session?.game.redo();
+  else page.document.redo();
+}
+function importLevel(level: EditorMap): void {
   page.document.load(level);
   page.fileDialogOpen.value = false;
 }
-
 function markDownloaded(metadata: {
   name: string;
   author?: string;
@@ -77,64 +161,21 @@ function markDownloaded(metadata: {
   page.document.markSaved();
 }
 
-function handleKeydown(event: KeyboardEvent): void {
-  if (page.playing.value || isTextInput(event.target)) return;
-  const modifier = event.ctrlKey || event.metaKey;
-  if (modifier && event.key.toLowerCase() === "z") {
-    event.preventDefault();
-    event.shiftKey ? page.document.redo() : page.document.undo();
-  } else if (modifier && event.key.toLowerCase() === "y") {
-    event.preventDefault();
-    page.document.redo();
-  } else if (
-    (event.key === "Delete" || event.key === "Backspace") &&
-    page.hover.value
-  ) {
-    event.preventDefault();
-    page.stroke(page.hover.value, 2);
-  } else if (
-    (event.key.toLowerCase() === "q" || event.key.toLowerCase() === "e") &&
-    page.hover.value
-  ) {
-    event.preventDefault();
-    page.transform(
-      page.hover.value,
-      event.key.toLowerCase() === "q" ? -1 : 1,
-    );
-  }
+function openContextMenu(request: EditorCanvasContextMenuRequest): void {
+  page.ensureSelectionAt(request.cell);
+  contextMenu.value = {
+    x: request.clientX,
+    y: request.clientY,
+    cell: request.cell,
+  };
 }
-
-function onShellAction(event: Event): void {
-  const action = (event as CustomEvent<{ action: string }>).detail.action;
-  if (action === "editor-undo") page.document.undo();
-  if (action === "editor-redo") page.document.redo();
-  if (action === "editor-play") void togglePlay();
-  if (action === "editor-share") page.fileDialogOpen.value = true;
-  if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
-  if (action === "editor-inspector") inspectorOpen.value = !inspectorOpen.value;
-  if (action === "editor-level-info") page.fileDialogOpen.value = true;
+function closeContextMenu(): void {
+  contextMenu.value = null;
 }
-
-function onShellDialogOpen(): void {
-  session?.input.setEnabled(false);
+function pasteFromMenu(): void {
+  const cell = contextMenu.value?.cell;
+  if (cell) page.paste(cell);
 }
-
-function onShellDialogClose(): void {
-  session?.input.setEnabled(true);
-}
-
-function onScreenControlChange(event: Event): void {
-  const enabled = Boolean(
-    (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
-  );
-  session?.input.setScreenJoystickEnabled(enabled);
-}
-
-function onBeforeUnload(event: BeforeUnloadEvent): void {
-  if (!page.snapshot.value.dirty) return;
-  event.preventDefault();
-}
-
 function transform(
   cell: Cell,
   step: number,
@@ -143,8 +184,109 @@ function transform(
   result(page.transform(cell, step));
 }
 
+function handleKeydown(event: KeyboardEvent): void {
+  if (isTextInput(event.target)) return;
+  const modifier = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+  if (page.playing.value) {
+    if (modifier && key === "z") {
+      event.preventDefault();
+      event.shiftKey ? session?.game.redo() : session?.game.undo();
+    } else if (modifier && key === "y") {
+      event.preventDefault();
+      session?.game.redo();
+    }
+    return;
+  }
+  if (event.key === "Escape") {
+    closeContextMenu();
+    return;
+  }
+  if (modifier && key === "z") {
+    event.preventDefault();
+    event.shiftKey ? page.document.redo() : page.document.undo();
+  } else if (modifier && key === "y") {
+    event.preventDefault();
+    page.document.redo();
+  } else if (modifier && key === "c") {
+    event.preventDefault();
+    page.copy();
+  } else if (modifier && key === "x") {
+    event.preventDefault();
+    page.cut();
+  } else if (modifier && key === "v") {
+    event.preventDefault();
+    const origin = page.hover.value ?? page.mapSelection.value?.anchor;
+    if (origin) page.paste(origin);
+  } else if (event.key === "Delete" || event.key === "Backspace") {
+    event.preventDefault();
+    page.deleteSelection();
+  } else if (key === "1") {
+    event.preventDefault();
+    page.setTool("select");
+  } else if (key === "2") {
+    event.preventDefault();
+    page.setTool("place");
+  } else if (key === "3") {
+    event.preventDefault();
+    page.setTool("erase");
+  } else if (key === "q" || key === "e") {
+    event.preventDefault();
+    page.cycleVariant(key === "q" ? -1 : 1);
+  }
+}
+
+function onShellAction(event: Event): void {
+  const action = (event as CustomEvent<{ action: string }>).detail.action;
+  if (action === "editor-tool-select") page.setTool("select");
+  if (action === "editor-tool-place") page.setTool("place");
+  if (action === "editor-tool-erase") page.setTool("erase");
+  if (action === "editor-undo") undo();
+  if (action === "editor-redo") redo();
+  if (action === "editor-play") void togglePlay();
+  if (action === "editor-restart") restartPlay();
+  if (action === "editor-share") page.fileDialogOpen.value = true;
+  if (action === "editor-palette") togglePanel("palette");
+  if (action === "editor-inspector") togglePanel("inspector");
+  if (action === "editor-level-info") togglePanel("level");
+}
+
+function togglePanel(panel: "palette" | "inspector" | "level"): void {
+  if (isMobileEditor()) {
+    if (panel === "palette") {
+      const opening = !paletteOpen.value;
+      paletteOpen.value = opening;
+      rightPanel.value = null;
+      return;
+    }
+    const opening = rightPanel.value !== panel;
+    paletteOpen.value = false;
+    rightPanel.value = opening ? panel : null;
+    return;
+  }
+  if (panel === "palette") paletteOpen.value = !paletteOpen.value;
+  else rightPanel.value = rightPanel.value === panel ? null : panel;
+}
+
+function onShellDialogOpen(): void {
+  session?.input.setEnabled(false);
+}
+function onShellDialogClose(): void {
+  if (!playComplete.value) session?.input.setEnabled(true);
+}
+function onScreenControlChange(event: Event): void {
+  session?.input.setScreenJoystickEnabled(
+    Boolean((event as CustomEvent<{ enabled: boolean }>).detail.enabled),
+  );
+}
+function onBeforeUnload(event: BeforeUnloadEvent): void {
+  if (page.snapshot.value.dirty) event.preventDefault();
+}
+
 onMounted(() => {
+  syncShell();
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("pointerdown", closeContextMenu);
   window.addEventListener("game-shell-action", onShellAction);
   window.addEventListener("shell-dialog-open", onShellDialogOpen);
   window.addEventListener("shell-dialog-close", onShellDialogClose);
@@ -154,6 +296,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
+  window.removeEventListener("pointerdown", closeContextMenu);
   window.removeEventListener("game-shell-action", onShellAction);
   window.removeEventListener("shell-dialog-open", onShellDialogOpen);
   window.removeEventListener("shell-dialog-close", onShellDialogClose);
@@ -168,6 +311,9 @@ function isTextInput(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement
   );
 }
+function isMobileEditor(): boolean {
+  return window.matchMedia("(max-width: 620px)").matches;
+}
 </script>
 
 <template>
@@ -175,29 +321,63 @@ function isTextInput(target: EventTarget | null): boolean {
     class="bobby-editor"
     :class="{
       'palette-sheet-open': paletteOpen,
-      'inspector-sheet-open': inspectorOpen,
+      'inspector-sheet-open': rightPanel !== null,
     }"
   >
     <EditorWorkspace
-      :level="page.snapshot.value.level as EditorLevel"
+      :level="page.snapshot.value.level as EditorMap"
       :revision="page.snapshot.value.revision"
-      :placement-sequence="page.snapshot.value.placementSequence"
-      :selection="page.selection.value"
+      :tool="page.tool.value"
+      :placement="page.placement.value"
+      :selection="page.mapSelection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
+      :rules="page.rules.value"
+      :palette="page.palette"
       :palette-size="page.paletteSize.value"
+      :palette-open="paletteOpen"
+      :right-panel="rightPanel"
       :playing="page.playing.value"
+      :play-complete="playComplete"
       :images="props.images"
-      @select="page.selection.value = $event"
+      :catalog="page.catalog"
+      :editor="page.editor"
+      @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"
-      @stroke="page.stroke"
-      @begin-stroke="page.document.beginTransaction()"
-      @end-stroke="page.document.commitTransaction()"
+      @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
+      @primary-move="page.primaryMove"
+      @primary-end="page.primaryEnd"
+      @context-menu="openContextMenu"
       @transform="transform"
       @resize="page.resize"
-      @property="(entityIndex, key, value) => page.updateProperty(entityIndex, key, value)"
+      @property="page.updateProperty"
+      @state="page.updateState"
+      @variant="page.applyVariant"
+      @delete-layer="page.deleteLayer"
+      @reorder-layers="page.reorderLayers"
+      @batch-property="page.updateBatchProperty"
+      @batch-state="page.updateBatchState"
+      @batch-variant="page.applyBatchVariant"
+      @batch-delete="page.deleteSelectedType"
+      @rule="page.setRule"
       @max-moves="page.setMaxMoves"
+      @max-time="page.setMaxTimeSeconds"
+      @metadata="page.updateMetadata"
+      @play-restart="restartPlay"
+      @play-stop="stopPlay"
+    />
+    <EditorContextMenu
+      :open="Boolean(contextMenu)"
+      :x="contextMenu?.x ?? 0"
+      :y="contextMenu?.y ?? 0"
+      :can-paste="Boolean(page.clipboard.value?.entities.length)"
+      :entity-selected="page.selectedRefs.value.length > 0"
+      @close="closeContextMenu"
+      @copy="page.copy"
+      @cut="page.cut"
+      @paste="pasteFromMenu"
+      @delete="page.deleteSelection"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"

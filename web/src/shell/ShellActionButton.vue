@@ -4,9 +4,9 @@ import type { ShellAction } from "./shellBridge.js";
 const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
 const icons: Record<string, string> = {
-  back: "←", edit: "✎", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
-  music: "♫", palette: "▦", play: "▶", redo: "↷", restart: "↻",
-  settings: "⚙", share: "↗", stop: "■", undo: "↶",
+  back: "←", edit: "✎", erase: "✕", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
+  music: "♫", palette: "▦", place: "＋", play: "▶", redo: "↷", restart: "↻",
+  select: "↖", settings: "⚙", share: "↗", stop: "■", undo: "↶",
 };
 
 function activate(): void {
@@ -21,7 +21,10 @@ function activate(): void {
     :id="action.id"
     type="button"
     class="shell-action"
-    :class="[`collapse-${action.collapse ?? 'keep'}`, { 'in-overflow': overflow }]"
+    :class="[
+      `collapse-${action.collapse ?? 'keep'}`,
+      { 'in-overflow': overflow },
+    ]"
     :title="action.title ?? action.label"
     :aria-label="action.title ?? action.label ?? action.id"
     :aria-pressed="action.pressed"

@@ -19,6 +19,8 @@ export interface LevelEntity {
   x: number;
   y: number;
   direction?: Direction;
+  /** Optional instance-level Spatial ordering override. */
+  stackOrder?: number;
   properties?: EntityProperties;
   traits?: EntityTraits;
   /** Initial mutable gameplay state for this entity. */
@@ -36,9 +38,14 @@ export type WinCondition =
     }
   | { type: "reach"; target: string };
 
+/** Global failure/constraint rules. These are not recursive win conditions. */
+export type LevelLimit =
+  | { type: "max-moves"; moves: number }
+  | { type: "max-time-seconds"; seconds: number };
+
 export interface LevelRules {
-  maxMoves?: number;
   win?: WinCondition;
+  limits?: LevelLimit[];
 }
 
 /** Canonical playable/authorable BC5R map. */

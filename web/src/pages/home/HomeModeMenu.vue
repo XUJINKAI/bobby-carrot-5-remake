@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { parseEditorLevel, serializeEditorLevel, type EditorLevel } from "@bobby/editor";
+import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/editor";
 import { ref } from "vue";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 
 const emit = defineEmits<{
   navigate: [path: string];
-  importMap: [level: EditorLevel];
+  importMap: [level: EditorMap];
 }>();
 const importOpen = ref(false);
 const toolbar = {
@@ -16,12 +16,12 @@ const toolbar = {
   ],
 };
 
-function parseMap(value: unknown): EditorLevel {
+function parseMap(value: unknown): EditorMap {
   return parseEditorLevel(JSON.stringify(value));
 }
 
 function serializeMap(value: unknown): string {
-  return serializeEditorLevel(value as EditorLevel);
+  return serializeEditorLevel(value as EditorMap);
 }
 </script>
 
@@ -78,7 +78,7 @@ function serializeMap(value: unknown): string {
           placeholder="粘贴地图 JSON、BC5R 文本或分享链接……"
           filename="bc5r-map"
           :toolbar="toolbar"
-          @import="emit('importMap', $event as EditorLevel)"
+          @import="emit('importMap', $event as EditorMap)"
         />
       </section>
     </div>

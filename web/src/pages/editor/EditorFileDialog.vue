@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { parseEditorLevel, serializeEditorLevel, type EditorLevel } from "@bobby/editor";
+import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/editor";
 import { computed, reactive, watch } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { encodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
 
-const props = defineProps<{ open: boolean; level: Readonly<EditorLevel> }>();
+const props = defineProps<{ open: boolean; level: Readonly<EditorMap> }>();
 const emit = defineEmits<{
   close: [];
-  import: [level: EditorLevel];
+  import: [level: EditorMap];
   saved: [metadata: { name: string; author?: string; description?: string }];
 }>();
 const metadata = reactive({ name: "", author: "", description: "" });
@@ -21,8 +21,8 @@ watch(
   },
   { immediate: true },
 );
-const exchangeLevel = computed<EditorLevel>(() => {
-  const level: EditorLevel = { ...props.level, name: metadata.name };
+const exchangeLevel = computed<EditorMap>(() => {
+  const level: EditorMap = { ...props.level, name: metadata.name };
   delete level.author;
   delete level.description;
   if (metadata.author) level.author = metadata.author;
@@ -43,12 +43,12 @@ const toolbar = {
   ],
 };
 
-function parseMap(value: unknown): EditorLevel {
+function parseMap(value: unknown): EditorMap {
   return parseEditorLevel(JSON.stringify(value));
 }
 
 function serializeMap(value: unknown): string {
-  return serializeEditorLevel(value as EditorLevel);
+  return serializeEditorLevel(value as EditorMap);
 }
 
 async function openEmbed(): Promise<void> {
@@ -83,7 +83,7 @@ function metadataValue(): { name: string; author?: string; description?: string 
         :filename="metadata.name || 'bc5r-map'"
         :toolbar="toolbar"
         :reset-key="open ? `${level.name}:${level.width}:${level.height}` : 'closed'"
-        @import="emit('import', $event as EditorLevel)"
+        @import="emit('import', $event as EditorMap)"
         @downloaded="emit('saved', metadataValue())"
       />
     </section>

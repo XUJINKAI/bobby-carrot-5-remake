@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EditorLevel } from "@bobby/editor";
+import type { EditorMap } from "@bobby/editor";
 import type { HomeViewState } from "./types.js";
 import HomeDemo from "./HomeDemo.vue";
 import HomeModeMenu from "./HomeModeMenu.vue";
@@ -11,7 +11,7 @@ const emit = defineEmits<{
   navigate: [path: string];
   restart: [];
   random: [];
-  importMap: [level: EditorLevel];
+  importMap: [level: EditorMap];
 }>();
 </script>
 

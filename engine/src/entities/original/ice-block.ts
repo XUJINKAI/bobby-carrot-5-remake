@@ -1,29 +1,31 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   boundedInt,
-  coverDefinition,
+  COVER_STACK_ORDER,
   objectCell,
   originalModule,
 } from "./module.js";
 
-const definition = coverDefinition(
-  EntityTypeId.ICE_BLOCK,
-  "Ice Block",
-  ["meltable", "blocking"],
-  {
-    state: [
-      {
-        key: "meltStage",
-        kind: "enum",
-        label: "融化阶段",
-        default: 0,
-        options: [0, 1, 2, 3].map((value) => ({ value })),
-      },
-    ],
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.ICE_BLOCK,
+  traits: ["meltable", "blocking"],
+  stackOrder: COVER_STACK_ORDER,
+  state: [
+    {
+      key: "meltStage",
+      kind: "enum",
+      label: "融化阶段",
+      default: 0,
+      options: [0, 1, 2, 3].map((value) => ({ value })),
+    },
+  ],
+  presentation: { name: "Ice Block" },
+};
 
 export const iceBlock: EntityModule = originalModule(
   definition,

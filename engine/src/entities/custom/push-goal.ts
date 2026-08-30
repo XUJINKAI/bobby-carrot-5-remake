@@ -6,26 +6,12 @@ export const pushGoal: EntityModule = defineEntityModule({
     type: EntityTypeId.PUSH_GOAL,
     traits: ["walkable", "push-goal"],
     stackOrder: 0,
-    presentation: { name: "Push Goal", category: "目标" },
-    authoring: {
-      palette: true,
-      category: "目标",
-      replaceGroup: "surface",
-    },
+    presentation: { name: "Push Goal" },
   },
   visual: {
     id: EntityTypeId.PUSH_GOAL,
     resolve: () => ({
-      layers: [
-        {
-          kind: "canvas",
-          draw: drawPushGoal,
-          previewStyle: {
-            background: "#6c543d",
-            boxShadow: "inset 0 0 0 3px #f2c14e",
-          },
-        },
-      ],
+      layers: [{ kind: "canvas", draw: drawPushGoal }],
     }),
   },
 });

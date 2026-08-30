@@ -7,7 +7,6 @@ import type {
   LevelEntity,
 } from "@bobby/model";
 import {
-  entityCatalog,
   entityRegistry,
   visualRegistry,
 } from "../entities/registry.js";
@@ -15,7 +14,11 @@ import type { EntityFieldDefinition } from "../world/entity/EntityDefinition.js"
 import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
-import type { VisualComposition, VisualQuery } from "./VisualDefinition.js";
+import type {
+  VisualComposition,
+  VisualQuery,
+  VisualResolveContext,
+} from "./VisualDefinition.js";
 
 export interface EntityVisualPreviewSource {
   type: EntityType;
@@ -25,16 +28,11 @@ export interface EntityVisualPreviewSource {
   traits?: EntityTraits;
 }
 
-/**
- * Resolve one isolated authoring/icon preview through the same Entity + Visual definitions as
- * runtime. Spatial visuals (for example Fence AutoConnect) naturally resolve to their isolated
- * form because the preview query has no neighboring entities.
- */
+/** Resolve the normal runtime visual for one isolated Entity presence. */
 export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
 ): VisualComposition | null {
   const definition = entityRegistry.require(source.type);
-  const catalogEntry = entityCatalog.require(source.type);
   const properties = {
     ...defaults(definition.properties),
     ...(source.properties ?? {}),
@@ -48,11 +46,11 @@ export function resolveEntityVisualPreview(
     x: 0,
     y: 0,
   };
-  const direction = source.direction ?? catalogEntry.authoring?.defaultDirection;
-  if (direction) levelEntity.direction = direction;
+  if (source.direction) levelEntity.direction = source.direction;
   if (Object.keys(properties).length > 0) levelEntity.properties = properties;
   if (Object.keys(state).length > 0) levelEntity.state = state;
-  if (source.traits?.length) levelEntity.traits = [...new Set(source.traits)];
+  if (source.traits?.length)
+    levelEntity.traits = [...new Set(source.traits)];
 
   const entity = instantiateLevelEntity(1, levelEntity);
   const part = resolveFootprintCells(entity, definition.footprint)[0];
@@ -75,7 +73,8 @@ export function resolveEntityVisualPreview(
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
   };
-  return visualRegistry.resolve(definition, { entity, presence, query });
+  const context: VisualResolveContext = { entity, presence, query };
+  return visualRegistry.resolve(definition, context);
 }
 
 function defaults(
@@ -83,9 +82,8 @@ function defaults(
 ): Record<string, JsonValue> {
   const result: Record<string, JsonValue> = {};
   for (const field of fields ?? []) {
-    if (field.default !== undefined) {
+    if (field.default !== undefined)
       result[field.key] = structuredClone(field.default);
-    }
   }
   return result;
 }

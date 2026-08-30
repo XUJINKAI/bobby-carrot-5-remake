@@ -2,27 +2,31 @@ import type { Cell } from "../authoring/entityPlacement.js";
 import { canvasPointToCell } from "./coordinates.js";
 import { EditorViewport } from "./EditorViewport.js";
 
+export interface EditorCanvasContextMenuRequest {
+  cell: Cell;
+  clientX: number;
+  clientY: number;
+}
+
 export interface EditorCanvasInputHandlers {
   dimensions(): { width: number; height: number };
   hover(cell: Cell | null): void;
-  stroke(cell: Cell, button: 0 | 2): void;
-  beginStroke(): void;
-  endStroke(): void;
+  primaryStart(cell: Cell): void;
+  primaryMove(cell: Cell): void;
+  primaryEnd(cell: Cell | null): void;
+  contextMenu(request: EditorCanvasContextMenuRequest): void;
   transform(cell: Cell, step: number): boolean;
   viewportChanged(): void;
 }
 
-interface PointerPosition {
-  x: number;
-  y: number;
-}
+interface PointerPosition { x: number; y: number; }
 
 export class EditorCanvasInput {
   private enabled = true;
-  private strokeButton: 0 | 2 | null = null;
+  private primaryPointer: number | null = null;
   private middlePointer: number | null = null;
   private lastMiddle: PointerPosition | null = null;
-  private lastStroke = "";
+  private lastPrimaryCell = "";
   private readonly pointers = new Map<number, PointerPosition>();
   private pinchDistance = 0;
 
@@ -38,12 +42,12 @@ export class EditorCanvasInput {
     canvas.addEventListener("lostpointercapture", this.onPointerUp);
     canvas.addEventListener("pointerleave", this.onPointerLeave);
     canvas.addEventListener("wheel", this.onWheel, { passive: false });
-    canvas.addEventListener("contextmenu", preventDefault);
+    canvas.addEventListener("contextmenu", this.onContextMenu);
   }
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    if (!enabled) this.finishStroke();
+    if (!enabled) this.finishPrimary(null);
   }
 
   destroy(): void {
@@ -54,15 +58,16 @@ export class EditorCanvasInput {
     this.canvas.removeEventListener("lostpointercapture", this.onPointerUp);
     this.canvas.removeEventListener("pointerleave", this.onPointerLeave);
     this.canvas.removeEventListener("wheel", this.onWheel);
-    this.canvas.removeEventListener("contextmenu", preventDefault);
+    this.canvas.removeEventListener("contextmenu", this.onContextMenu);
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     if (!this.enabled) return;
     this.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    this.canvas.setPointerCapture(event.pointerId);
+    if (event.button === 0 || event.button === 1)
+      this.canvas.setPointerCapture(event.pointerId);
     if (this.pointers.size >= 2) {
-      this.finishStroke();
+      this.finishPrimary(null);
       this.pinchDistance = pointerDistance([...this.pointers.values()]);
       return;
     }
@@ -72,12 +77,14 @@ export class EditorCanvasInput {
       this.lastMiddle = { x: event.clientX, y: event.clientY };
       return;
     }
-    if (event.button !== 0 && event.button !== 2) return;
+    if (event.button !== 0) return;
     event.preventDefault();
-    this.strokeButton = event.button as 0 | 2;
-    this.lastStroke = "";
-    this.handlers.beginStroke();
-    this.applyStroke(event);
+    const cell = this.cell(event);
+    if (!cell) return;
+    this.primaryPointer = event.pointerId;
+    this.lastPrimaryCell = `${cell.x},${cell.y}`;
+    this.handlers.hover(cell);
+    this.handlers.primaryStart(cell);
   };
 
   private readonly onPointerMove = (event: PointerEvent): void => {
@@ -89,50 +96,55 @@ export class EditorCanvasInput {
       const distance = pointerDistance(points);
       const center = pointerCenter(points);
       if (this.pinchDistance > 0)
-        this.viewport.zoomAt(
-          distance / this.pinchDistance,
-          center.x,
-          center.y,
-        );
+        this.viewport.zoomAt(distance / this.pinchDistance, center.x, center.y);
       this.pinchDistance = distance;
       this.handlers.viewportChanged();
       return;
     }
     if (this.middlePointer === event.pointerId && this.lastMiddle) {
-      this.viewport.panBy(
-        event.clientX - this.lastMiddle.x,
-        event.clientY - this.lastMiddle.y,
-      );
+      this.viewport.panBy(event.clientX - this.lastMiddle.x, event.clientY - this.lastMiddle.y);
       this.lastMiddle = { x: event.clientX, y: event.clientY };
       this.handlers.viewportChanged();
       return;
     }
     const cell = this.cell(event);
     this.handlers.hover(cell);
-    if (cell && this.strokeButton !== null) this.applyCell(cell);
+    if (!cell || this.primaryPointer !== event.pointerId) return;
+    const key = `${cell.x},${cell.y}`;
+    if (key === this.lastPrimaryCell) return;
+    this.lastPrimaryCell = key;
+    this.handlers.primaryMove(cell);
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
+    const cell = this.cell(event);
     this.pointers.delete(event.pointerId);
     if (this.middlePointer === event.pointerId) {
       this.middlePointer = null;
       this.lastMiddle = null;
     }
-    if (this.strokeButton !== null) this.finishStroke();
+    if (this.primaryPointer === event.pointerId) this.finishPrimary(cell);
     if (this.pointers.size < 2) this.pinchDistance = 0;
   };
 
   private readonly onPointerLeave = (): void => {
-    if (this.strokeButton === null && this.middlePointer === null)
+    if (this.primaryPointer === null && this.middlePointer === null)
       this.handlers.hover(null);
+  };
+
+  private readonly onContextMenu = (event: MouseEvent): void => {
+    if (!this.enabled) return;
+    event.preventDefault();
+    const cell = this.cell(event);
+    if (!cell) return;
+    this.handlers.contextMenu({ cell, clientX: event.clientX, clientY: event.clientY });
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
     if (!this.enabled) return;
     event.preventDefault();
     const cell = this.cell(event);
-    if (cell && this.handlers.transform(cell, event.deltaY > 0 ? 1 : -1))
-      return;
+    if (cell && this.handlers.transform(cell, event.deltaY > 0 ? 1 : -1)) return;
     const rect = this.canvas.getBoundingClientRect();
     this.viewport.zoomAt(
       event.deltaY < 0 ? 1.08 : 1 / 1.08,
@@ -142,26 +154,10 @@ export class EditorCanvasInput {
     this.handlers.viewportChanged();
   };
 
-  private applyStroke(event: PointerEvent): void {
-    const cell = this.cell(event);
-    if (cell) {
-      this.handlers.hover(cell);
-      this.applyCell(cell);
-    }
-  }
-
-  private applyCell(cell: Cell): void {
-    if (this.strokeButton === null) return;
-    const key = `${cell.x},${cell.y}:${this.strokeButton}`;
-    if (key === this.lastStroke) return;
-    this.lastStroke = key;
-    this.handlers.stroke(cell, this.strokeButton);
-  }
-
-  private finishStroke(): void {
-    if (this.strokeButton !== null) this.handlers.endStroke();
-    this.strokeButton = null;
-    this.lastStroke = "";
+  private finishPrimary(cell: Cell | null): void {
+    if (this.primaryPointer !== null) this.handlers.primaryEnd(cell);
+    this.primaryPointer = null;
+    this.lastPrimaryCell = "";
   }
 
   private cell(event: { clientX: number; clientY: number }): Cell | null {
@@ -174,10 +170,6 @@ export class EditorCanvasInput {
       event.clientY,
     );
   }
-}
-
-function preventDefault(event: Event): void {
-  event.preventDefault();
 }
 
 function pointerDistance(points: PointerPosition[]): number {

@@ -1,19 +1,23 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   cell,
   originalModule,
   pressedState,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.COLOR_PINK_SWITCH,
-  "Pink Switch",
-  ["walkable", "switch"],
-  { state: pressedState },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.COLOR_PINK_SWITCH,
+  traits: ["walkable", "switch"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: pressedState,
+  presentation: { name: "Pink Switch" },
+};
 
 export const colorPinkSwitch: EntityModule = originalModule(
   definition,

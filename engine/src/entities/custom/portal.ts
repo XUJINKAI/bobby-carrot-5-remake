@@ -39,24 +39,13 @@ export const portal: EntityModule = defineEntityModule({
         ],
       },
     ],
-    presentation: { name: "Portal", category: "机关" },
-    authoring: { palette: true, category: "机关" },
+    presentation: { name: "Portal" },
   },
   behaviorBindings: [{ trait: "portal", behavior: portalBehavior }],
   visual: {
     id: EntityTypeId.PORTAL,
     resolve: () => ({
-      layers: [
-        {
-          kind: "canvas",
-          draw: drawPortal,
-          previewStyle: {
-            background:
-              "radial-gradient(circle, rgba(130,238,255,.18) 10%, #7c5cff 48%, #54e8ff 68%, rgba(84,232,255,0) 72%)",
-            borderRadius: "50%",
-          },
-        },
-      ],
+      layers: [{ kind: "canvas", draw: drawPortal }],
     }),
   },
 });

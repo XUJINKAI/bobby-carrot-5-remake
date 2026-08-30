@@ -4,33 +4,60 @@ import type {
   EntityState,
   EntityTraits,
   LevelEntity,
+  LevelLimit,
+  WinCondition,
 } from "@bobby/model";
 import {
   normalizeEditorLevel,
   resizeEditorLevel,
 } from "../level/editorLevel.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 
 export interface EditorCommand {
-  apply(level: EditorLevel): EditorLevel;
+  apply(level: EditorMap): EditorMap;
 }
 
-/** Document 原子操作；Authoring placement/occupancy 在上层解析后调用它。 */
+export interface EditorEntityReplacement {
+  ref: EntityRef;
+  entity: LevelEntity;
+}
+
 export function addEntity(entity: LevelEntity): EditorCommand {
+  return addEntities([entity]);
+}
+
+export function addEntities(entities: readonly LevelEntity[]): EditorCommand {
   return command((level) =>
     normalizeEditorLevel({
       ...level,
-      entities: [...level.entities, structuredClone(entity)],
+      entities: [
+        ...level.entities,
+        ...entities.map((entity) => structuredClone(entity)),
+      ],
     }),
   );
 }
 
 export function removeEntity(ref: EntityRef): EditorCommand {
+  return removeEntities([ref]);
+}
+
+export function removeEntities(refs: readonly EntityRef[]): EditorCommand {
   return command((level) => {
-    if (!hasEntity(level, ref)) return level;
+    const removed = new Set(
+      refs
+        .map((ref) => ref.index)
+        .filter(
+          (index) =>
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < level.entities.length,
+        ),
+    );
+    if (removed.size === 0) return level;
     return {
       ...level,
-      entities: level.entities.filter((_, index) => index !== ref.index),
+      entities: level.entities.filter((_, index) => !removed.has(index)),
     };
   });
 }
@@ -102,7 +129,45 @@ export function replaceEntity(
   ref: EntityRef,
   replacement: LevelEntity,
 ): EditorCommand {
-  return updateEntity(ref, () => structuredClone(replacement));
+  return replaceEntities([{ ref, entity: replacement }]);
+}
+
+export function replaceEntities(
+  replacements: readonly EditorEntityReplacement[],
+): EditorCommand {
+  return command((level) => {
+    if (replacements.length === 0) return level;
+    const entities = [...level.entities];
+    let changed = false;
+    for (const replacement of replacements) {
+      if (!hasEntity(level, replacement.ref)) continue;
+      entities[replacement.ref.index] = structuredClone(replacement.entity);
+      changed = true;
+    }
+    return changed
+      ? normalizeEditorLevel({ ...level, entities })
+      : level;
+  });
+}
+
+/** Reorder one cell's Entity stack. Input order is top-most first. */
+export function reorderEntityStack(
+  refsTopToBottom: readonly EntityRef[],
+): EditorCommand {
+  return command((level) => {
+    const unique = [
+      ...new Map(refsTopToBottom.map((ref) => [ref.index, ref])).values(),
+    ].filter((ref) => hasEntity(level, ref));
+    if (unique.length < 2) return level;
+    const entities = [...level.entities];
+    unique.forEach((ref, index) => {
+      entities[ref.index] = {
+        ...entities[ref.index]!,
+        stackOrder: (unique.length - index - 1) * 1000,
+      };
+    });
+    return normalizeEditorLevel({ ...level, entities });
+  });
 }
 
 export function updateMetadata(metadata: {
@@ -111,7 +176,7 @@ export function updateMetadata(metadata: {
   description?: string;
 }): EditorCommand {
   return command((level) => {
-    const next: EditorLevel = { ...level, name: metadata.name };
+    const next: EditorMap = { ...level, name: metadata.name };
     if (metadata.author) next.author = metadata.author;
     else delete next.author;
     if (metadata.description) next.description = metadata.description;
@@ -124,16 +189,46 @@ export function resizeDocument(width: number, height: number): EditorCommand {
   return command((level) => resizeEditorLevel(level, width, height));
 }
 
-export function updateMaxMoves(value: number | null): EditorCommand {
+export function updateWinCondition(value: WinCondition | null): EditorCommand {
   return command((level) => {
-    const rules = { ...level.rules };
-    if (value !== null && Number.isInteger(value) && value > 0)
-      rules.maxMoves = value;
-    else delete rules.maxMoves;
-    const next = { ...level };
-    if (Object.keys(rules).length > 0) next.rules = rules;
-    else delete next.rules;
-    return normalizeEditorLevel(next);
+    const rules = { ...(level.rules ?? {}) };
+    if (value) rules.win = structuredClone(value);
+    else delete rules.win;
+    return normalizeEditorLevel({ ...level, rules });
+  });
+}
+
+export function updateMaxMoves(value: number | null): EditorCommand {
+  return updateLimit(
+    "max-moves",
+    value !== null && Number.isInteger(value) && value > 0
+      ? { type: "max-moves", moves: value }
+      : null,
+  );
+}
+
+export function updateMaxTimeSeconds(value: number | null): EditorCommand {
+  return updateLimit(
+    "max-time-seconds",
+    value !== null && Number.isInteger(value) && value > 0
+      ? { type: "max-time-seconds", seconds: value }
+      : null,
+  );
+}
+
+function updateLimit(
+  type: LevelLimit["type"],
+  value: LevelLimit | null,
+): EditorCommand {
+  return command((level) => {
+    const limits = (level.rules?.limits ?? []).filter(
+      (limit) => limit.type !== type,
+    );
+    if (value) limits.push(value);
+    const rules = { ...(level.rules ?? {}) };
+    if (limits.length > 0) rules.limits = limits;
+    else delete rules.limits;
+    return normalizeEditorLevel({ ...level, rules });
   });
 }
 
@@ -149,10 +244,16 @@ function updateEntity(
   });
 }
 
-function hasEntity(level: EditorLevel, ref: EntityRef): boolean {
-  return Number.isInteger(ref.index) && ref.index >= 0 && ref.index < level.entities.length;
+function hasEntity(level: EditorMap, ref: EntityRef): boolean {
+  return (
+    Number.isInteger(ref.index) &&
+    ref.index >= 0 &&
+    ref.index < level.entities.length
+  );
 }
 
-function command(apply: (level: EditorLevel) => EditorLevel): EditorCommand {
+function command(
+  apply: (level: EditorMap) => EditorMap,
+): EditorCommand {
   return { apply };
 }

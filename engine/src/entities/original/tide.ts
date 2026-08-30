@@ -1,26 +1,22 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   cell,
   directionCell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.TIDE,
-  "Tide",
-  ["water", "forced-movement"],
-  {
-    authoring: {
-      palette: true,
-      category: "水域",
-      defaultDirection: "right",
-    },
-    presentation: { name: "Tide", category: "水域" },
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.TIDE,
+  traits: ["water", "forced-movement"],
+  stackOrder: SURFACE_STACK_ORDER,
+  presentation: { name: "Tide" },
+};
 
 export const tide: EntityModule = originalModule(
   definition,

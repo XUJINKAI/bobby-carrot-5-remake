@@ -308,10 +308,20 @@ export class Game {
 
   killPlayer(reason?: string): void {
     if (!this.worldValue) return;
+    const player = this.world.player;
     const events = this.world.killPlayer(reason);
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.resetVisualMotion();
+    if (events.length > 0)
+      this.visual.beginDeath(
+        this.world.playerId,
+        player,
+        player,
+        this.tuning.motion.normalMs,
+        this.presentationClock.current,
+        0,
+      );
     this.lastWorldEvents = events;
     this.publishWorldEvents(events);
     this.render();
@@ -415,29 +425,55 @@ export class Game {
     this.publishWorldEvents(result.events);
     this.emitTerminalEvents();
 
+    const frame = this.presentationClock.current;
+    const shovel = result.events.some((event) => event.type === "shovel");
     if (!result.moved) {
+      if (shovel) {
+        this.visual.camera.recenterPan(frame);
+        this.visual.beginAction(
+          this.world.playerId,
+          "shovel",
+          direction,
+          this.tuning.motion.normalMs,
+          frame,
+        );
+      }
       this.emit("blocked");
       this.emit("change");
       return result;
     }
 
     const durationMs = this.motionDuration(this.world.forcedKind as ForcedKind | null);
-    this.world.startAction(
-      createDelayRuntimeAction(durationMs, {
-        ownerEntityId: this.world.playerId,
-        blocksInput: true,
-        reason: forced ? "forced-player-motion" : "player-motion",
-      }),
+    const hazardDeath = result.events.some(
+      (event) => event.type === "death" && event.entityId !== undefined,
     );
-    const frame = this.presentationClock.current;
     this.visual.camera.recenterPan(frame);
-    this.visual.beginMove(
-      this.world.playerId,
-      result.from,
-      result.to,
-      durationMs,
-      frame,
-    );
+    if (this.world.dead) {
+      this.visual.beginDeath(
+        this.world.playerId,
+        result.from,
+        result.to,
+        durationMs,
+        frame,
+        hazardDeath ? 0.4 : 1,
+      );
+    } else {
+      if (!this.world.completed)
+        this.world.startAction(
+          createDelayRuntimeAction(durationMs, {
+            ownerEntityId: this.world.playerId,
+            blocksInput: true,
+            reason: forced ? "forced-player-motion" : "player-motion",
+          }),
+        );
+      this.visual.beginMove(
+        this.world.playerId,
+        result.from,
+        result.to,
+        durationMs,
+        frame,
+      );
+    }
     this.emit("move");
     this.emit("change");
     return result;
@@ -586,9 +622,11 @@ export class Game {
 
     const frame = this.presentationClock.advance(timestamp);
     if (this.worldValue && frame) {
+      const wasAnimating = this.visual.isAnimating;
       this.visual.update(frame, this.tuning.motion.easing);
       this.renderScene();
       if (this.debugValue) this.debugRuntime.render();
+      if (wasAnimating && !this.visual.isAnimating) this.emit("change");
     } else if (worldUpdated > 0) {
       this.render();
     }

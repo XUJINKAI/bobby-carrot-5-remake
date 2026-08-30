@@ -72,6 +72,7 @@ export class SpatialIndex {
     const definition = this.registry.require(entity.type);
     const resolved = resolveFootprintCells(entity, definition.footprint);
     const presences: EntityPresence[] = [];
+    const baseStackOrder = entity.stackOrder ?? definition.stackOrder ?? 0;
     resolved.forEach((part, index) => {
       const cell = { x: part.x, y: part.y };
       if (!this.inBounds(cell)) {
@@ -91,8 +92,7 @@ export class SpatialIndex {
         cell,
         ...(part.role ? { role: part.role } : {}),
         traits,
-        stackOrder:
-          part.stackOrder ?? (definition.stackOrder ?? 0) + index,
+        stackOrder: part.stackOrder ?? baseStackOrder + index,
       };
       presences.push(presence);
       const list = this.cells.get(key(cell)) ?? [];

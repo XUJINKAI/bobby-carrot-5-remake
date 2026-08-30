@@ -1,16 +1,22 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type { VisualDefinition } from "../../visual/VisualDefinition.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
-  atlasVisual,
-  contentDefinition,
+  CONTENT_STACK_ORDER,
   objectCell,
   originalModule,
 } from "./module.js";
 
-const definition = contentDefinition(EntityTypeId.DRAGON, "Dragon", ["dragon"], {
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.DRAGON,
+  traits: ["dragon"],
+  stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     rotateWithDirection: true,
-    baseDirection: "right",
+    baseDirection: "left",
     parts: [
       {
         dx: 0,
@@ -32,20 +38,29 @@ const definition = contentDefinition(EntityTypeId.DRAGON, "Dragon", ["dragon"], 
       },
     ],
   },
-  presentation: { name: "Dragon", category: "角色" },
-  authoring: {
-    palette: true,
-    category: "角色",
-    cursor: { dx: 1, dy: 0 },
-    defaultDirection: "right",
-  },
-});
+  presentation: { name: "Dragon" },
+};
 
-export const dragon: EntityModule = originalModule(
-  definition,
-  atlasVisual(definition, (context) => {
-    if (context.presence.role === "body") return objectCell(15);
-    if (context.presence.role === "tail") return objectCell(16);
-    return objectCell(14);
-  }),
-);
+const visual: VisualDefinition = {
+  id: EntityTypeId.DRAGON,
+  resolve(context) {
+    const atlas =
+      context.presence.role === "body"
+        ? objectCell(15)
+        : context.presence.role === "tail"
+          ? objectCell(16)
+          : objectCell(14);
+    return {
+      layers: [
+        {
+          kind: "atlas",
+          column: atlas.column,
+          row: atlas.row,
+          ...(context.entity.direction === "right" ? { flipX: true } : {}),
+        },
+      ],
+    };
+  },
+};
+
+export const dragon: EntityModule = originalModule(definition, visual);

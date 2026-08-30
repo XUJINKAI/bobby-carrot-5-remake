@@ -1,26 +1,22 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   cell,
   directionCell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.SPEED,
-  "Speed",
-  ["walkable", "forced-movement"],
-  {
-    authoring: {
-      palette: true,
-      category: "机关",
-      defaultDirection: "right",
-    },
-    presentation: { name: "Speed", category: "机关" },
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.SPEED,
+  traits: ["walkable", "forced-movement"],
+  stackOrder: SURFACE_STACK_ORDER,
+  presentation: { name: "Speed" },
+};
 
 export const speed: EntityModule = originalModule(
   definition,

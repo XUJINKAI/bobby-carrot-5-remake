@@ -2,27 +2,32 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import {
-  VisualRegistry,
   createBuiltinEntityCatalog,
   defineEntityModule,
-} from "../../engine/dist/authoring.js";
+} from "../../engine/dist/public.js";
 import {
-  createBlankLevel,
-  fromLevelMap,
-  parseEditorLevel,
-  serializeEditorLevel,
-  toLevelMap,
   EditorDocument,
   EditorPreview,
+  buildInspectorModel,
+  builtinEditorDefinition,
+  createBlankLevel,
   entityCells,
+  fromLevelMap,
+  isEditorEntityCreatable,
+  parseEditorLevel,
   placeEntity,
+  reorderEntityStack,
+  resolveEditorEntityPreviewLayout,
+  resolveEditorPalette,
   resolvePlacement,
+  serializeEditorLevel,
+  toLevelMap,
   validateEditorLevel,
 } from "../dist/index.js";
 
 const catalog = createBuiltinEntityCatalog();
 
-test("Editor JSON only stores canonical Entity Map plus authoring metadata", () => {
+test("Editor JSON only stores canonical Entity Map plus document metadata", () => {
   const level = createBlankLevel(10, 8);
   level.name = "Test Map";
   level.author = "xjk";
@@ -65,17 +70,21 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
     type: EntityTypeId.DRAGON,
     x: 3,
     y: 3,
-    direction: "right",
+    direction: "left",
   });
   const map = toLevelMap(level);
-  const dragons = map.entities.filter((entity) => entity.type === EntityTypeId.DRAGON);
+  const dragons = map.entities.filter(
+    (entity) => entity.type === EntityTypeId.DRAGON,
+  );
   assert.deepEqual(dragons, [
-    { type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "right" },
+    { type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" },
   ]);
 
   const preview = new EditorPreview(level, catalog);
   const ref = {
-    index: level.entities.findIndex((entity) => entity.type === EntityTypeId.DRAGON),
+    index: level.entities.findIndex(
+      (entity) => entity.type === EntityTypeId.DRAGON,
+    ),
   };
   assert.deepEqual(entityCells(preview, ref), [
     { x: 3, y: 3, role: "head" },
@@ -83,34 +92,61 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
     { x: 5, y: 3, role: "tail" },
   ]);
   assert.equal(
-    fromLevelMap(map).entities.filter((entity) => entity.type === EntityTypeId.DRAGON)
-      .length,
+    fromLevelMap(map).entities.filter(
+      (entity) => entity.type === EntityTypeId.DRAGON,
+    ).length,
     1,
   );
 });
 
-test("placement derives footprint cursor and replacement from authoring replaceGroup", () => {
+test("Dragon right-facing footprint mirrors around the placement body", () => {
   const level = createBlankLevel(12, 8);
   const dragon = resolvePlacement(
     level,
     catalog,
-    EntityTypeId.DRAGON,
+    { type: EntityTypeId.DRAGON, direction: "right" },
     { x: 5, y: 3 },
-    { direction: "right" },
+    builtinEditorDefinition,
+  );
+  assert.equal(dragon.valid, true);
+  assert.deepEqual(dragon.entity, {
+    type: EntityTypeId.DRAGON,
+    x: 6,
+    y: 3,
+    direction: "right",
+  });
+  assert.deepEqual(dragon.cells, [
+    { x: 6, y: 3, role: "head" },
+    { x: 5, y: 3, role: "body" },
+    { x: 4, y: 3, role: "tail" },
+  ]);
+});
+
+test("placement derives persisted anchor from Editor role placementPoint", () => {
+  const level = createBlankLevel(12, 8);
+  const dragon = resolvePlacement(
+    level,
+    catalog,
+    { type: EntityTypeId.DRAGON, direction: "left" },
+    { x: 5, y: 3 },
+    builtinEditorDefinition,
   );
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
     type: EntityTypeId.DRAGON,
     x: 4,
     y: 3,
-    direction: "right",
+    direction: "left",
   });
   assert.deepEqual(dragon.cells, [
     { x: 4, y: 3, role: "head" },
     { x: 5, y: 3, role: "body" },
     { x: 6, y: 3, role: "tail" },
   ]);
+});
 
+test("Editor replaceGroup replaces only matching authoring layers", () => {
+  const level = createBlankLevel(8, 8);
   const before = new EditorPreview(level, catalog).inspectCell(1, 1);
   assert.deepEqual(before.presences.map((item) => item.entity.type), [
     EntityTypeId.GROUND_C,
@@ -126,30 +162,28 @@ test("placement derives footprint cursor and replacement from authoring replaceG
       .presences.map((item) => item.entity.type),
     [EntityTypeId.WATER],
   );
-});
 
-test("placement without replaceGroup stacks instead of replacing", () => {
-  const level = createBlankLevel(8, 8);
-  const after = placeEntity(
+  const withCarrot = placeEntity(
     catalog,
     EntityTypeId.CARROT,
     { x: 1, y: 1 },
-  ).apply(level);
+  ).apply(after);
   assert.deepEqual(
-    new EditorPreview(after, catalog)
+    new EditorPreview(withCarrot, catalog)
       .inspectCell(1, 1)
       .presences.map((item) => item.entity.type),
-    [EntityTypeId.GROUND_C, EntityTypeId.CARROT],
+    [EntityTypeId.WATER, EntityTypeId.CARROT],
   );
 });
 
-test("Entity state and instance traits round-trip without splitting type", () => {
+test("Entity state traits and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
     {
       type: EntityTypeId.SPEED_SWITCH,
       x: 3,
       y: 3,
+      stackOrder: 2300,
       state: { pressed: true },
     },
     {
@@ -160,27 +194,37 @@ test("Entity state and instance traits round-trip without splitting type", () =>
     },
   );
   const parsed = parseEditorLevel(serializeEditorLevel(level));
-  assert.deepEqual(
-    parsed.entities.find((entity) => entity.type === EntityTypeId.SPEED_SWITCH)?.state,
-    { pressed: true },
+  const speedSwitch = parsed.entities.find(
+    (entity) => entity.type === EntityTypeId.SPEED_SWITCH,
   );
+  assert.deepEqual(speedSwitch?.state, { pressed: true });
+  assert.equal(speedSwitch?.stackOrder, 2300);
   assert.deepEqual(
-    parsed.entities.find((entity) => entity.type === EntityTypeId.CRUMBLY_ROCK)?.traits,
+    parsed.entities.find(
+      (entity) => entity.type === EntityTypeId.CRUMBLY_ROCK,
+    )?.traits,
     ["pushable"],
   );
 });
 
-test("validation resolves player and win traits from Entity Definitions", () => {
+test("validation is executed through Editor definitions", () => {
   const level = createBlankLevel(8, 8);
-  assert.deepEqual(validateEditorLevel(level, catalog), []);
+  assert.deepEqual(
+    validateEditorLevel(level, catalog, builtinEditorDefinition),
+    [],
+  );
   const withoutPlayer = {
     ...level,
-    entities: level.entities.filter((entity) => entity.type !== EntityTypeId.BOBBY),
+    entities: level.entities.filter(
+      (entity) => entity.type !== EntityTypeId.BOBBY,
+    ),
   };
   assert.ok(
-    validateEditorLevel(withoutPlayer, catalog).some((issue) =>
-      issue.message.includes("一个 player Entity"),
-    ),
+    validateEditorLevel(
+      withoutPlayer,
+      catalog,
+      builtinEditorDefinition,
+    ).some((issue) => issue.message.includes("一个 player Entity")),
   );
 });
 
@@ -196,11 +240,38 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   assert.equal(document.getSnapshot().canUndo, false);
   assert.equal(document.getSnapshot().dirty, false);
   const preview = new EditorPreview(document.getSnapshot().level, catalog);
-  assert.equal(preview.inspectCell(1, 1).top?.entity.type, EntityTypeId.GROUND_C);
-  assert.equal(preview.inspectCell(2, 1).top?.entity.type, EntityTypeId.GROUND_C);
+  assert.equal(
+    preview.inspectCell(1, 1).top?.entity.type,
+    EntityTypeId.GROUND_C,
+  );
+  assert.equal(
+    preview.inspectCell(2, 1).top?.entity.type,
+    EntityTypeId.GROUND_C,
+  );
 });
 
-test("persisted visual variant 使用会话 placement sequence 初始化一次并随 JSON 固定", () => {
+test("Editor exclusions hide internal and raw Original variants from creation", () => {
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      EntityTypeId.CONSUMED_CARROT,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      "background-variant-001",
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(builtinEditorDefinition, EntityTypeId.GROUND_C),
+    true,
+  );
+});
+
+test("Palette keeps explicit directional presets and appends new creatable types ungrouped", () => {
   const customCatalog = createBuiltinEntityCatalog();
   customCatalog.register(
     defineEntityModule({
@@ -208,65 +279,109 @@ test("persisted visual variant 使用会话 placement sequence 初始化一次�
         type: "flower",
         traits: [],
         stackOrder: 100,
-        presentation: { name: "Flower", visual: "flower-visual" },
-        authoring: { palette: true, category: "test" },
+        presentation: { name: "Flower" },
       },
     }),
   );
-  const visuals = new VisualRegistry();
-  visuals.register({
-    id: "flower-visual",
-    authoring: {
-      persistedVariant: {
-        property: "visualVariant",
-        values: ["white", "yellow", "pink", "red"],
-      },
-    },
-    resolve: () => null,
-  });
-  visuals.bindEntityVisual("flower", "flower-visual");
-
-  const document = new EditorDocument(createBlankLevel(8, 8));
-  assert.equal(document.getSnapshot().placementSequence, 0);
+  const palette = resolveEditorPalette(customCatalog, builtinEditorDefinition);
+  const speed = palette
+    .flatMap((group) => group.rows.flat())
+    .filter((entry) => entry.type === EntityTypeId.SPEED);
+  assert.deepEqual(
+    speed.map((entry) => entry.direction),
+    ["up", "right", "down", "left"],
+  );
   assert.equal(
-    document.executePlacement((placementSequence) =>
-      placeEntity(
-        customCatalog,
-        "flower",
-        { x: 2, y: 2 },
-        {},
-        { placementSequence, visuals },
-      ),
-    ),
+    palette.find((group) => group.id === "ungrouped")?.rows[0]
+      .some((entry) => entry.type === "flower"),
     true,
   );
-  assert.equal(document.getSnapshot().placementSequence, 1);
-  const flower = document
-    .getSnapshot()
-    .level.entities.find((entity) => entity.type === "flower");
-  assert.ok(flower?.properties?.visualVariant);
-  const variant = flower.properties.visualVariant;
-
-  const parsed = parseEditorLevel(
-    serializeEditorLevel(document.getSnapshot().level),
-  );
   assert.equal(
-    parsed.entities.find((entity) => entity.type === "flower")?.properties
-      ?.visualVariant,
-    variant,
-  );
-
-  assert.equal(
-    document.executePlacement((placementSequence) =>
-      placeEntity(
-        customCatalog,
-        "flower",
-        { x: -1, y: 0 },
-        {},
-        { placementSequence, visuals },
-      ),
-    ),
+    palette.flatMap((group) => group.rows.flat())
+      .some((entry) => entry.type === "background-variant-001"),
     false,
   );
-  assert.equal(document.getSnapshot().placementSequence, 1);
+});
+
+test("Palette preview layout derives full multi-cell footprint generically", () => {
+  const layout = resolveEditorEntityPreviewLayout(
+    catalog,
+    { type: EntityTypeId.DRAGON, direction: "left" },
+    builtinEditorDefinition,
+  );
+  assert.equal(layout.width, 3);
+  assert.equal(layout.height, 1);
+  assert.equal(layout.entity.type, EntityTypeId.DRAGON);
+});
+
+test("single-cell Inspector exposes every layer top-first", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
+    { type: EntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
+  );
+  const model = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 3, y: 3 }, focus: { x: 3, y: 3 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(model.mode, "cell");
+  assert.deepEqual(
+    model.layers.slice(0, 2).map((layer) => layer.entity.type),
+    [EntityTypeId.CARROT, EntityTypeId.PORTAL],
+  );
+});
+
+test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
+    { type: EntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
+    { type: EntityTypeId.CARROT, x: 1, y: 2 },
+  );
+  const model = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 2 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(model.mode, "multi");
+  assert.equal(model.groups[0].type, EntityTypeId.SPEED_SWITCH);
+  assert.equal(model.groups[0].count, 2);
+  assert.equal(
+    model.groups.find((group) => group.type === EntityTypeId.GROUND_C)?.count,
+    4,
+  );
+});
+
+test("reordering a cell stack changes actual Spatial top Presence", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: EntityTypeId.PORTAL, x: 3, y: 3 },
+    { type: EntityTypeId.CARROT, x: 3, y: 3 },
+  );
+  const portalIndex = level.entities.length - 2;
+  const carrotIndex = level.entities.length - 1;
+  const reordered = reorderEntityStack([
+    { index: portalIndex },
+    { index: carrotIndex },
+  ]).apply(level);
+  const preview = new EditorPreview(reordered, catalog);
+  assert.equal(preview.inspectCell(3, 3).top?.entity.type, EntityTypeId.PORTAL);
+});
+
+test("Bobby Editor visual is fixed to the final down frame", () => {
+  const resolve =
+    builtinEditorDefinition.entities?.[EntityTypeId.BOBBY]?.editorVisual;
+  assert.ok(resolve);
+  assert.deepEqual(resolve({}).layers[0], {
+    kind: "image",
+    asset: "bobby-down",
+    frameColumns: 8,
+    frameRows: 1,
+    frameIndex: 7,
+    anchor: "bottom",
+    offsetY: -12,
+  });
 });

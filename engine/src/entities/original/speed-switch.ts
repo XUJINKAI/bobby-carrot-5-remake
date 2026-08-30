@@ -1,19 +1,23 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   cell,
   originalModule,
   pressedState,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.SPEED_SWITCH,
-  "Speed Switch",
-  ["walkable", "switch"],
-  { state: pressedState },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.SPEED_SWITCH,
+  traits: ["walkable", "switch"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: pressedState,
+  presentation: { name: "Speed Switch" },
+};
 
 export const speedSwitch: EntityModule = originalModule(
   definition,

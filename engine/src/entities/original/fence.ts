@@ -1,20 +1,20 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
-  contentDefinition,
+  CONTENT_STACK_ORDER,
   objectCell,
   originalModule,
 } from "./module.js";
 
-const definition = contentDefinition(
-  EntityTypeId.FENCE,
-  "Fence",
-  ["blocking", "fence"],
-  {
-    presentation: { name: "Fence", category: "障碍" },
-    authoring: { palette: true, category: "障碍" },
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.FENCE,
+  traits: ["blocking", "fence"],
+  stackOrder: CONTENT_STACK_ORDER,
+  presentation: { name: "Fence" },
+};
 
 export const fence: EntityModule = originalModule(definition, {
   id: EntityTypeId.FENCE,

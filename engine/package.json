@@ -9,10 +9,6 @@
     ".": {
       "types": "./dist/public.d.ts",
       "default": "./dist/public.js"
-    },
-    "./authoring": {
-      "types": "./dist/authoring.d.ts",
-      "default": "./dist/authoring.js"
     }
   },
   "dependencies": {

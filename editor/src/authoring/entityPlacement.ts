@@ -1,21 +1,19 @@
 import {
   resolveFootprintCells,
-  visualRegistry as builtinVisualRegistry,
   type EntityCatalog,
   type EntityCatalogEntry,
-  type VisualRegistry,
-} from "@bobby/engine/authoring";
+} from "@bobby/engine";
+import type { JsonValue, LevelEntity } from "@bobby/model";
+import { builtinEditorDefinition } from "../definitions/builtin.js";
+import { isEditorEntityCreatable } from "../definitions/entities.js";
 import type {
-  EntityProperties,
-  EntityState,
-  EntityTraits,
-  EntityType,
-  JsonValue,
-  LevelEntity,
-} from "@bobby/model";
+  EditorDefinition,
+  EditorPlacementPoint,
+  EditorPlacementPreset,
+} from "../definitions/types.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 
 export interface Cell {
@@ -27,17 +25,7 @@ export interface PlacementCell extends Cell {
   role?: string;
 }
 
-export interface PlacementOverrides {
-  direction?: LevelEntity["direction"];
-  properties?: EntityProperties;
-  state?: EntityState;
-  traits?: EntityTraits;
-}
-
-export interface PlacementResolveOptions {
-  placementSequence?: number;
-  visuals?: VisualRegistry;
-}
+export type PlacementOverrides = Omit<EditorPlacementPreset, "type">;
 
 export interface EntityPlacementPlan {
   entity: LevelEntity;
@@ -47,36 +35,32 @@ export interface EntityPlacementPlan {
 }
 
 export function resolvePlacement(
-  level: EditorLevel,
+  level: EditorMap,
   catalog: EntityCatalog,
-  type: EntityType,
+  preset: EditorPlacementPreset,
   cursor: Cell,
-  overrides: PlacementOverrides = {},
-  options: PlacementResolveOptions = {},
+  editor: EditorDefinition = builtinEditorDefinition,
 ): EntityPlacementPlan {
-  const definition = catalog.require(type);
-  const cursorOffset = definition.authoring?.cursor ?? { dx: 0, dy: 0 };
-  const anchor = {
-    x: cursor.x - cursorOffset.dx,
-    y: cursor.y - cursorOffset.dy,
-  };
-  const visuals = options.visuals ?? builtinVisualRegistry;
-  const entity = visuals.initializeAuthoringEntity(
-    createPlacedEntity(definition, anchor, overrides),
+  const definition = catalog.require(preset.type);
+  const authoring = editor.entities?.[preset.type];
+  if (!isEditorEntityCreatable(editor, preset.type)) {
+    return {
+      entity: { type: preset.type, x: cursor.x, y: cursor.y },
+      cells: [],
+      replace: [],
+      valid: false,
+    };
+  }
+
+  const direction = preset.direction ?? authoring?.defaultDirection;
+  const anchor = resolveAnchor(
+    cursor,
     definition,
-    options.placementSequence ?? 0,
+    authoring?.placementPoint,
+    direction,
   );
-  const cells = resolveFootprintCells(
-    {
-      anchor: { x: entity.x, y: entity.y },
-      ...(entity.direction ? { direction: entity.direction } : {}),
-    },
-    definition.footprint,
-  ).map((cell) => ({
-    x: cell.x,
-    y: cell.y,
-    ...(cell.role ? { role: cell.role } : {}),
-  }));
+  const entity = createPlacedEntity(definition, anchor, preset, direction);
+  const cells = footprintCells(entity, definition);
   if (
     cells.some(
       (cell) =>
@@ -85,17 +69,18 @@ export function resolvePlacement(
         cell.x >= level.width ||
         cell.y >= level.height,
     )
-  )
+  ) {
     return { entity, cells, replace: [], valid: false };
+  }
 
-  const replaceGroup = definition.authoring?.replaceGroup;
+  const replaceGroup = authoring?.replaceGroup;
   if (!replaceGroup) return { entity, cells, replace: [], valid: true };
-
   const preview = new EditorPreview(level, catalog);
   const replace = new Map<number, EntityRef>();
   for (const cell of cells) {
     for (const existing of preview.inspectCell(cell.x, cell.y).presences) {
-      if (existing.definition.authoring?.replaceGroup !== replaceGroup) continue;
+      if (editor.entities?.[existing.entity.type]?.replaceGroup !== replaceGroup)
+        continue;
       replace.set(existing.ref.index, existing.ref);
     }
   }
@@ -104,21 +89,18 @@ export function resolvePlacement(
 
 export function placeEntity(
   catalog: EntityCatalog,
-  type: EntityType,
+  presetOrType: EditorPlacementPreset | string,
   cursor: Cell,
   overrides: PlacementOverrides = {},
-  options: PlacementResolveOptions = {},
+  editor: EditorDefinition = builtinEditorDefinition,
 ): EditorCommand {
+  const preset: EditorPlacementPreset =
+    typeof presetOrType === "string"
+      ? { type: presetOrType, ...overrides }
+      : presetOrType;
   return {
     apply(level) {
-      const plan = resolvePlacement(
-        level,
-        catalog,
-        type,
-        cursor,
-        overrides,
-        options,
-      );
+      const plan = resolvePlacement(level, catalog, preset, cursor, editor);
       if (!plan.valid) return level;
       const removed = new Set(plan.replace.map((ref) => ref.index));
       return normalizeEditorLevel({
@@ -149,10 +131,51 @@ export function entityCells(
   }));
 }
 
+function resolveAnchor(
+  cursor: Cell,
+  definition: EntityCatalogEntry,
+  placementPoint: EditorPlacementPoint | undefined,
+  direction: LevelEntity["direction"],
+): Cell {
+  if (!placementPoint) return cursor;
+  if ("offset" in placementPoint) {
+    return {
+      x: cursor.x + placementPoint.offset.dx,
+      y: cursor.y + placementPoint.offset.dy,
+    };
+  }
+  const cells = resolveFootprintCells(
+    { anchor: { x: 0, y: 0 }, ...(direction ? { direction } : {}) },
+    definition.footprint,
+  );
+  const target = cells.find((cell) => cell.role === placementPoint.role);
+  return target
+    ? { x: cursor.x - target.x, y: cursor.y - target.y }
+    : cursor;
+}
+
+function footprintCells(
+  entity: LevelEntity,
+  definition: EntityCatalogEntry,
+): PlacementCell[] {
+  return resolveFootprintCells(
+    {
+      anchor: { x: entity.x, y: entity.y },
+      ...(entity.direction ? { direction: entity.direction } : {}),
+    },
+    definition.footprint,
+  ).map((cell) => ({
+    x: cell.x,
+    y: cell.y,
+    ...(cell.role ? { role: cell.role } : {}),
+  }));
+}
+
 function createPlacedEntity(
   definition: EntityCatalogEntry,
   anchor: Cell,
-  overrides: PlacementOverrides,
+  preset: EditorPlacementPreset,
+  direction: LevelEntity["direction"],
 ): LevelEntity {
   const properties = defaults(definition.properties);
   const state = defaults(definition.state);
@@ -161,15 +184,12 @@ function createPlacedEntity(
     x: anchor.x,
     y: anchor.y,
   };
-  const direction = overrides.direction ?? definition.authoring?.defaultDirection;
   if (direction) entity.direction = direction;
-  const mergedProperties = { ...properties, ...overrides.properties };
+  const mergedProperties = { ...properties, ...preset.properties };
   if (Object.keys(mergedProperties).length > 0)
     entity.properties = mergedProperties;
-  const mergedState = { ...state, ...overrides.state };
+  const mergedState = { ...state, ...preset.state };
   if (Object.keys(mergedState).length > 0) entity.state = mergedState;
-  if (overrides.traits?.length)
-    entity.traits = [...new Set(overrides.traits)];
   return entity;
 }
 
@@ -177,8 +197,9 @@ function defaults(
   fields: EntityCatalogEntry["properties"] | EntityCatalogEntry["state"],
 ): Record<string, JsonValue> {
   const result: Record<string, JsonValue> = {};
-  for (const field of fields ?? [])
+  for (const field of fields ?? []) {
     if (field.default !== undefined)
       result[field.key] = structuredClone(field.default);
+  }
   return result;
 }

@@ -5,12 +5,13 @@ import {
   type EntityTraits,
   type JsonValue,
   type LevelEntity,
+  type LevelLimit,
   type LevelMap,
   type WinCondition,
 } from "@bobby/model";
-import type { EditorLevel } from "./types.js";
+import type { EditorMap } from "./types.js";
 
-export function createBlankLevel(width = 16, height = 16): EditorLevel {
+export function createBlankLevel(width = 16, height = 16): EditorMap {
   const safeWidth = clampDimension(width);
   const safeHeight = clampDimension(height);
   const exit = {
@@ -47,14 +48,14 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
 export function fromLevelMap(
   level: LevelMap,
   name = "Bobby Level",
-): EditorLevel {
+): EditorMap {
   return normalizeEditorLevel({
     ...structuredClone(level),
     name,
   });
 }
 
-export function toLevelMap(level: EditorLevel): LevelMap {
+export function toLevelMap(level: EditorMap): LevelMap {
   const normalized = normalizeEditorLevel(level);
   return {
     schemaVersion: 1,
@@ -65,11 +66,11 @@ export function toLevelMap(level: EditorLevel): LevelMap {
   };
 }
 
-export function cloneEditorLevel(level: EditorLevel): EditorLevel {
+export function cloneEditorLevel(level: EditorMap): EditorMap {
   return normalizeEditorLevel(structuredClone(level));
 }
 
-export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
+export function normalizeEditorLevel(input: EditorMap): EditorMap {
   const width = clampDimension(Number(input.width));
   const height = clampDimension(Number(input.height));
   const entities = (input.entities ?? [])
@@ -82,7 +83,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
         entity.x < width &&
         entity.y < height,
     );
-  const level: EditorLevel = {
+  const level: EditorMap = {
     schemaVersion: 1,
     name: String(input.name || "Untitled Bobby Level").slice(0, 120),
     width,
@@ -92,9 +93,9 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
   if (input.author) level.author = String(input.author).slice(0, 80);
   if (input.description)
     level.description = String(input.description).slice(0, 500);
-  const maxMoves = Number(input.rules?.maxMoves);
+  const limits = normalizeLimits(input.rules?.limits);
   level.rules = {
-    ...(Number.isInteger(maxMoves) && maxMoves > 0 ? { maxMoves } : {}),
+    ...(limits.length > 0 ? { limits } : {}),
     win: input.rules?.win
       ? structuredClone(input.rules.win)
       : defaultWinCondition(),
@@ -103,11 +104,28 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
 }
 
 export function resizeEditorLevel(
-  level: EditorLevel,
+  level: EditorMap,
   width: number,
   height: number,
-): EditorLevel {
+): EditorMap {
   return normalizeEditorLevel({ ...level, width, height });
+}
+
+function normalizeLimits(value: readonly LevelLimit[] | undefined): LevelLimit[] {
+  if (!Array.isArray(value)) return [];
+  const result: LevelLimit[] = [];
+  for (const limit of value) {
+    if (limit?.type === "max-moves") {
+      const moves = Math.trunc(Number(limit.moves));
+      if (Number.isFinite(moves) && moves > 0)
+        result.push({ type: "max-moves", moves });
+    } else if (limit?.type === "max-time-seconds") {
+      const seconds = Math.trunc(Number(limit.seconds));
+      if (Number.isFinite(seconds) && seconds > 0)
+        result.push({ type: "max-time-seconds", seconds });
+    }
+  }
+  return result;
 }
 
 function normalizeEntity(raw: LevelEntity): LevelEntity | null {
@@ -125,6 +143,8 @@ function normalizeEntity(raw: LevelEntity): LevelEntity | null {
     direction === "right"
   )
     entity.direction = direction;
+  if (Number.isFinite(raw.stackOrder))
+    entity.stackOrder = Math.trunc(raw.stackOrder!);
   const properties = normalizeJsonRecord(raw.properties);
   if (properties) entity.properties = properties;
   const state = normalizeJsonRecord(raw.state);

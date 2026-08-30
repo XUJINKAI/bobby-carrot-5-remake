@@ -20,6 +20,7 @@ export interface EntityInstance {
   type: EntityType;
   anchor: CellPosition;
   direction?: Direction;
+  stackOrder?: number;
   properties?: EntityProperties;
   state?: EntityState;
   instanceTraits?: EntityTraits;
@@ -34,6 +35,9 @@ export function instantiateLevelEntity(
     type: source.type,
     anchor: { x: source.x, y: source.y },
     ...(source.direction ? { direction: source.direction } : {}),
+    ...(Number.isFinite(source.stackOrder)
+      ? { stackOrder: source.stackOrder }
+      : {}),
     ...(source.properties
       ? { properties: structuredClone(source.properties) }
       : {}),

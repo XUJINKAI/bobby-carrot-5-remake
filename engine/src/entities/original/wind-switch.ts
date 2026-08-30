@@ -1,31 +1,33 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   activeState,
   atlasVisual,
   boundedInt,
   cell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.WIND_SWITCH,
-  "Wind Switch",
-  ["walkable", "switch"],
-  {
-    properties: [
-      {
-        key: "channel",
-        kind: "enum",
-        label: "频道",
-        default: 0,
-        options: [0, 1, 2, 3].map((value) => ({ value })),
-      },
-    ],
-    state: activeState(false),
-  },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.WIND_SWITCH,
+  traits: ["walkable", "switch"],
+  stackOrder: SURFACE_STACK_ORDER,
+  properties: [
+    {
+      key: "channel",
+      kind: "enum",
+      label: "频道",
+      default: 0,
+      options: [0, 1, 2, 3].map((value) => ({ value })),
+    },
+  ],
+  state: activeState(false),
+  presentation: { name: "Wind Switch" },
+};
 
 export const windSwitch: EntityModule = originalModule(
   definition,

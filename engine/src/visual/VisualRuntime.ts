@@ -1,3 +1,4 @@
+import type { Direction } from "@bobby/model";
 import { Camera } from "../render/Camera.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
@@ -16,10 +17,14 @@ import {
 
 interface VisualMotion {
   entityId: EntityId;
-  from: CellPosition;
-  to: CellPosition;
+  startOffsetX: number;
+  startOffsetY: number;
+  endOffsetX: number;
+  endOffsetY: number;
   startedAtMs: number;
   durationMs: number;
+  animation?: string;
+  direction?: Direction;
 }
 
 export interface VisualRuntimeInspection {
@@ -62,20 +67,53 @@ export class VisualRuntime {
     durationMs: number,
     frame: PresentationFrame,
   ): void {
-    this.motions.set(entityId, {
+    this.beginMotion(
       entityId,
-      from: { ...from },
-      to: { ...to },
-      startedAtMs: frame.nowMs,
-      durationMs: Math.max(0, durationMs),
-    });
-    this.activeMotionIds.add(entityId);
-    this.setEntityState(entityId, {
-      offsetX: from.x - to.x,
-      offsetY: from.y - to.y,
-      moving: true,
-      progress: 0,
-    });
+      { x: from.x - to.x, y: from.y - to.y },
+      { x: 0, y: 0 },
+      durationMs,
+      frame,
+    );
+  }
+
+  /** Hazard death 只向目标格推进一部分；World 仍保持已经判定死亡后的 canonical 状态。 */
+  beginDeath(
+    entityId: EntityId,
+    from: CellPosition,
+    to: CellPosition,
+    durationMs: number,
+    frame: PresentationFrame,
+    travelFraction = 0.4,
+  ): void {
+    const fraction = Math.max(0, Math.min(1, travelFraction));
+    const start = { x: from.x - to.x, y: from.y - to.y };
+    this.beginMotion(
+      entityId,
+      start,
+      { x: start.x * (1 - fraction), y: start.y * (1 - fraction) },
+      durationMs,
+      frame,
+      "death",
+    );
+  }
+
+  /** 原地的纯表现动作，例如铲雪；不修改 World anchor。 */
+  beginAction(
+    entityId: EntityId,
+    animation: string,
+    direction: Direction,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginMotion(
+      entityId,
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+      durationMs,
+      frame,
+      animation,
+      direction,
+    );
   }
 
   /** 只推进表现状态；绝不触发 gameplay mutation。可接受 Debug 的负 delta frame。 */
@@ -94,6 +132,7 @@ export class VisualRuntime {
 
   /** 组装当前视觉快照，并让 Camera 跟随 gameplay 指定目标；默认跟随 Bobby。 */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
+    this.ensureStationaryPlayerState(world);
     const targetId = cameraTarget ?? world.playerId;
     const target = world.entity(targetId) ?? world.entity(world.playerId);
     if (target) {
@@ -120,6 +159,31 @@ export class VisualRuntime {
     };
   }
 
+  private beginMotion(
+    entityId: EntityId,
+    startOffset: { x: number; y: number },
+    endOffset: { x: number; y: number },
+    durationMs: number,
+    frame: PresentationFrame,
+    animation?: string,
+    direction?: Direction,
+  ): void {
+    const motion: VisualMotion = {
+      entityId,
+      startOffsetX: startOffset.x,
+      startOffsetY: startOffset.y,
+      endOffsetX: endOffset.x,
+      endOffsetY: endOffset.y,
+      startedAtMs: frame.nowMs,
+      durationMs: Math.max(0, durationMs),
+      ...(animation ? { animation } : {}),
+      ...(direction ? { direction } : {}),
+    };
+    this.motions.set(entityId, motion);
+    this.activeMotionIds.add(entityId);
+    this.setMotionState(motion, 0, 0);
+  }
+
   private advanceMotion(
     motion: VisualMotion,
     frame: PresentationFrame,
@@ -130,16 +194,53 @@ export class VisualRuntime {
       motion.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / motion.durationMs);
     const progress = applyMotionEasing(rawProgress, easing);
     if (rawProgress >= 1) {
-      this.clearEntityState(motion.entityId);
       this.activeMotionIds.delete(motion.entityId);
+      this.finishMotion(motion, frame);
       return;
     }
     this.activeMotionIds.add(motion.entityId);
+    this.setMotionState(motion, progress, rawProgress);
+  }
+
+  private setMotionState(
+    motion: VisualMotion,
+    positionProgress: number,
+    animationProgress: number,
+  ): void {
     this.setEntityState(motion.entityId, {
-      offsetX: (motion.from.x - motion.to.x) * (1 - progress),
-      offsetY: (motion.from.y - motion.to.y) * (1 - progress),
-      moving: true,
-      progress,
+      offsetX:
+        motion.startOffsetX +
+        (motion.endOffsetX - motion.startOffsetX) * positionProgress,
+      offsetY:
+        motion.startOffsetY +
+        (motion.endOffsetY - motion.startOffsetY) * positionProgress,
+      moving: motion.animation === undefined,
+      progress: animationProgress,
+      ...(motion.animation ? { animation: motion.animation } : {}),
+      ...(motion.direction ? { direction: motion.direction } : {}),
+    });
+  }
+
+  private finishMotion(motion: VisualMotion, frame: PresentationFrame): void {
+    const keepAnimation = motion.animation === "death";
+    this.setEntityState(motion.entityId, {
+      offsetX: motion.endOffsetX,
+      offsetY: motion.endOffsetY,
+      moving: false,
+      progress: 1,
+      stationarySinceMs: frame.nowMs,
+      ...(keepAnimation ? { animation: motion.animation } : {}),
+      ...(motion.direction ? { direction: motion.direction } : {}),
+    });
+  }
+
+  private ensureStationaryPlayerState(world: World): void {
+    if (!this.frame || this.activeMotionIds.has(world.playerId)) return;
+    if (this.entityRuntime.has(world.playerId)) return;
+    this.setEntityState(world.playerId, {
+      moving: false,
+      progress: 1,
+      stationarySinceMs: this.frame.nowMs,
     });
   }
 }

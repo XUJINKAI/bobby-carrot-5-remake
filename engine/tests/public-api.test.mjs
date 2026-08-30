@@ -1,35 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import * as runtime from "../dist/public.js";
-import * as authoring from "../dist/authoring.js";
+import * as engine from "../dist/public.js";
 
-test("gameplay package surface does not expose Engine implementation internals", () => {
+test("public Engine API exposes gameplay plus generic Entity and Visual structures", () => {
   for (const name of [
-    "World",
-    "Renderer",
-    "Camera",
+    "Game",
+    "createGameplayRuntime",
+    "AudioRuntime",
+    "InputController",
     "EntityStore",
     "SpatialIndex",
     "EntityRegistry",
     "VisualRegistry",
-    "WorldPreview",
-    "CommandQueue",
-    "BehaviorRegistry",
-    "builtinEntityModules",
-    "entityRegistry",
-    "visualRegistry",
+    "EntityCatalog",
+    "createBuiltinEntityCatalog",
   ]) {
-    assert.equal(name in runtime, false, `@bobby/engine must not export ${name}`);
+    assert.equal(typeof engine[name], "function", name);
   }
-
-  assert.equal(typeof runtime.Game, "function");
-  assert.equal(typeof runtime.createGameplayRuntime, "function");
-  assert.equal(typeof runtime.AudioRuntime, "function");
-  assert.equal(typeof runtime.InputController, "function");
 });
 
-test("authoring internals are opt-in through the explicit authoring entrypoint", () => {
-  assert.equal(typeof authoring.createBuiltinEntityRegistry, "function");
-  assert.equal(typeof authoring.EntityRegistry, "function");
-  assert.equal(typeof authoring.SpatialIndex, "function");
+test("public Engine API does not expose Editor authoring operations", () => {
+  assert.equal("initializeAuthoringEntity" in engine.VisualRegistry.prototype, false);
+  assert.equal("deterministicVisualVariantIndex" in engine, false);
+  assert.equal("EditorDocument" in engine, false);
+  assert.equal("resolveEditorPalette" in engine, false);
 });
