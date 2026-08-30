@@ -23,7 +23,7 @@ function activate(): void {
     class="shell-action"
     :class="[
       `collapse-${action.collapse ?? 'keep'}`,
-      { 'in-overflow': overflow, 'separator-before': action.separatorBefore },
+      { 'in-overflow': overflow },
     ]"
     :title="action.title ?? action.label"
     :aria-label="action.title ?? action.label ?? action.id"
@@ -52,20 +52,6 @@ function activate(): void {
   color: #fff;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.shell-action.separator-before {
-  margin-left: 12px;
-}
-
-.shell-action.separator-before::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 4px;
-  bottom: 4px;
-  width: 1px;
-  background: rgb(255 255 255 / 28%);
 }
 
 .shell-action:hover,
