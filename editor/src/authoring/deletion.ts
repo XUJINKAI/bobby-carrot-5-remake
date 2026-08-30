@@ -1,12 +1,12 @@
 import type { EntityCatalog } from "@bobby/engine";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type { EditorDefinition } from "../definitions/types.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 import type { Cell } from "./entityPlacement.js";
 
 export function resolveDeletionTarget(
-  level: EditorLevel,
+  level: EditorMap,
   catalog: EntityCatalog,
   cell: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
