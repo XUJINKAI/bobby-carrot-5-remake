@@ -1,4 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine/authoring";
+import type { EntityCatalog } from "@bobby/engine";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type { EditorDefinition } from "../definitions/types.js";
 import type { EditorLevel, EntityRef } from "../level/types.js";
@@ -19,7 +19,9 @@ export function resolveDeletionTarget(
     stackOrder: item.presence.stackOrder,
     traits: item.presence.traits,
   }));
-  return editor.deletion?.resolveTarget({ map: level, cell, candidates })
-    ?? candidates.at(-1)?.ref
-    ?? null;
+  return (
+    editor.deletion?.resolveTarget({ map: level, cell, candidates }) ??
+    candidates.at(-1)?.ref ??
+    null
+  );
 }
