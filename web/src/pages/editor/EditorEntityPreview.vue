@@ -19,9 +19,12 @@ const props = defineProps<{
 const canvas = ref<HTMLCanvasElement | null>(null);
 const rendered = ref(true);
 let renderer: EditorEntityPreviewRenderer | null = null;
+let drawGeneration = 0;
 
-function draw(): void {
-  if (!canvas.value) return;
+async function draw(): Promise<void> {
+  const generation = ++drawGeneration;
+  await props.images.preload();
+  if (generation !== drawGeneration || !canvas.value) return;
   renderer ??= new EditorEntityPreviewRenderer(
     props.images,
     props.catalog,
@@ -32,10 +35,10 @@ function draw(): void {
 
 watch(
   () => [props.source, props.cellSize, props.images, props.catalog, props.editor],
-  draw,
+  () => { void draw(); },
   { deep: true },
 );
-onMounted(draw);
+onMounted(() => { void draw(); });
 </script>
 
 <template>
