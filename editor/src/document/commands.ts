@@ -11,10 +11,10 @@ import {
   normalizeEditorLevel,
   resizeEditorLevel,
 } from "../level/editorLevel.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 
 export interface EditorCommand {
-  apply(level: EditorLevel): EditorLevel;
+  apply(level: EditorMap): EditorMap;
 }
 
 export function addEntity(entity: LevelEntity): EditorCommand {
@@ -133,7 +133,7 @@ export function updateMetadata(metadata: {
   description?: string;
 }): EditorCommand {
   return command((level) => {
-    const next: EditorLevel = { ...level, name: metadata.name };
+    const next: EditorMap = { ...level, name: metadata.name };
     if (metadata.author) next.author = metadata.author;
     else delete next.author;
     if (metadata.description) next.description = metadata.description;
@@ -201,7 +201,7 @@ function updateEntity(
   });
 }
 
-function hasEntity(level: EditorLevel, ref: EntityRef): boolean {
+function hasEntity(level: EditorMap, ref: EntityRef): boolean {
   return (
     Number.isInteger(ref.index) &&
     ref.index >= 0 &&
@@ -210,7 +210,7 @@ function hasEntity(level: EditorLevel, ref: EntityRef): boolean {
 }
 
 function command(
-  apply: (level: EditorLevel) => EditorLevel,
+  apply: (level: EditorMap) => EditorMap,
 ): EditorCommand {
   return { apply };
 }
