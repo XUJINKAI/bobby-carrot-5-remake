@@ -4,6 +4,7 @@ import {
   type Cell,
   type EditorCanvasContextMenuRequest,
   type EditorMap,
+  type LevelValidationIssue,
 } from "@bobby/editor";
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
@@ -24,12 +25,15 @@ const props = defineProps<{
 }>();
 const page = useEditorPage(props.initialLevel);
 let session: GameSession | null = null;
+let disposePlayChange = (): void => {};
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const paletteOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
 const contextMenu = ref<null | { x: number; y: number; cell: Cell }>(null);
+const playComplete = ref(false);
+const runtimeIssue = ref<LevelValidationIssue | null>(null);
 const issues = computed(() =>
   validateEditorLevel(
     page.snapshot.value.level as EditorMap,
@@ -37,15 +41,26 @@ const issues = computed(() =>
     page.editor,
   ),
 );
+const shellIssues = computed<readonly LevelValidationIssue[]>(() =>
+  runtimeIssue.value ? [...issues.value, runtimeIssue.value] : issues.value,
+);
 
 function syncShell(): void {
-  configureEditorShell(page.playing.value, page.tool.value, issues.value);
+  configureEditorShell(
+    page.playing.value,
+    page.tool.value,
+    shellIssues.value,
+    {
+      canUndo: session?.game.canUndo ?? false,
+      canRedo: session?.game.canRedo ?? false,
+    },
+  );
 }
 watch(
   () => [
     page.playing.value,
     page.tool.value,
-    issues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
+    shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
   syncShell,
 );
@@ -56,17 +71,19 @@ async function togglePlay(): Promise<void> {
     stopPlay();
     return;
   }
+  runtimeIssue.value = null;
+  playComplete.value = false;
   page.playing.value = true;
   syncShell();
   await nextTick();
-  const canvas = document.querySelector<HTMLCanvasElement>(
-    "[data-editor-game-canvas]",
-  );
-  const root = document.querySelector<HTMLElement>(
-    "[data-editor-game-dialog-root]",
-  );
-  if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
   try {
+    const canvas = document.querySelector<HTMLCanvasElement>(
+      "[data-editor-game-canvas]",
+    );
+    const root = document.querySelector<HTMLElement>(
+      "[data-editor-game-dialog-root]",
+    );
+    if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
     session = await createGameSession({
       root,
       canvas,
@@ -83,21 +100,54 @@ async function togglePlay(): Promise<void> {
         },
       },
     });
+    bindPlaySession();
   } catch (error) {
     page.playing.value = false;
+    runtimeIssue.value = {
+      level: "error",
+      message: `Play Test：${error instanceof Error ? error.message : String(error)}`,
+    };
     syncShell();
-    window.alert(error instanceof Error ? error.message : String(error));
   }
 }
 
+function bindPlaySession(): void {
+  disposePlayChange();
+  disposePlayChange = session?.game.on("change", syncPlayState) ?? (() => {});
+  syncPlayState();
+}
+function syncPlayState(): void {
+  if (!session) return;
+  const won = session.game.state.status === "won";
+  const wasComplete = playComplete.value;
+  playComplete.value = won;
+  if (won) session.input.setEnabled(false);
+  else if (wasComplete) session.input.setEnabled(true);
+  syncShell();
+}
 function stopPlay(): void {
+  disposePlayChange();
+  disposePlayChange = (): void => {};
+  playComplete.value = false;
   session?.destroy();
   session = null;
   page.playing.value = false;
   syncShell();
 }
 function restartPlay(): void {
-  session?.game.restart();
+  if (!session) return;
+  playComplete.value = false;
+  session.input.setEnabled(true);
+  session.game.restart();
+  syncShell();
+}
+function undo(): void {
+  if (page.playing.value) session?.game.undo();
+  else page.document.undo();
+}
+function redo(): void {
+  if (page.playing.value) session?.game.redo();
+  else page.document.redo();
 }
 function importLevel(level: EditorMap): void {
   page.document.load(level);
@@ -136,9 +186,19 @@ function transform(
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (page.playing.value || isTextInput(event.target)) return;
+  if (isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
   const key = event.key.toLowerCase();
+  if (page.playing.value) {
+    if (modifier && key === "z") {
+      event.preventDefault();
+      event.shiftKey ? session?.game.redo() : session?.game.undo();
+    } else if (modifier && key === "y") {
+      event.preventDefault();
+      session?.game.redo();
+    }
+    return;
+  }
   if (event.key === "Escape") {
     closeContextMenu();
     return;
@@ -182,8 +242,8 @@ function onShellAction(event: Event): void {
   if (action === "editor-tool-select") page.setTool("select");
   if (action === "editor-tool-place") page.setTool("place");
   if (action === "editor-tool-erase") page.setTool("erase");
-  if (action === "editor-undo") page.document.undo();
-  if (action === "editor-redo") page.document.redo();
+  if (action === "editor-undo") undo();
+  if (action === "editor-redo") redo();
   if (action === "editor-play") void togglePlay();
   if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
@@ -213,7 +273,7 @@ function onShellDialogOpen(): void {
   session?.input.setEnabled(false);
 }
 function onShellDialogClose(): void {
-  session?.input.setEnabled(true);
+  if (!playComplete.value) session?.input.setEnabled(true);
 }
 function onScreenControlChange(event: Event): void {
   session?.input.setScreenJoystickEnabled(
@@ -279,6 +339,7 @@ function isMobileEditor(): boolean {
       :palette-open="paletteOpen"
       :right-panel="rightPanel"
       :playing="page.playing.value"
+      :play-complete="playComplete"
       :images="props.images"
       :catalog="page.catalog"
       :editor="page.editor"
@@ -304,6 +365,8 @@ function isMobileEditor(): boolean {
       @max-moves="page.setMaxMoves"
       @max-time="page.setMaxTimeSeconds"
       @metadata="page.updateMetadata"
+      @play-restart="restartPlay"
+      @play-stop="stopPlay"
     />
     <EditorContextMenu
       :open="Boolean(contextMenu)"
