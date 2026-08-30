@@ -17,31 +17,41 @@ import {
 
 const directions: readonly EditorEntityVariant[] = (
   ["up", "right", "down", "left"] as const
-).map((direction) => ({ direction }));
+).map((direction) => ({ direction, label: direction }));
+
+const horizontalDirections: readonly EditorEntityVariant[] = [
+  { direction: "left", label: "left" },
+  { direction: "right", label: "right" },
+];
 
 const pressedVariants: readonly EditorEntityVariant[] = [
-  { state: { pressed: false } },
-  { state: { pressed: true } },
+  { label: "Raised", state: { pressed: false } },
+  { label: "Pressed", state: { pressed: true } },
 ];
 
 const activeVariants: readonly EditorEntityVariant[] = [
-  { state: { active: true } },
-  { state: { active: false } },
+  { label: "Active", state: { active: true } },
+  { label: "Inactive", state: { active: false } },
+];
+
+const windSwitchVariants: readonly EditorEntityVariant[] = [
+  { label: "On", state: { active: true } },
+  { label: "Off", state: { active: false } },
 ];
 
 const raisedVariants: readonly EditorEntityVariant[] = [
-  { state: { raised: true } },
-  { state: { raised: false } },
+  { label: "Raised", state: { raised: true } },
+  { label: "Lowered", state: { raised: false } },
 ];
 
 const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
-  (variant) => ({ state: { variant } }),
+  (variant) => ({ label: String(variant), state: { variant } }),
 );
 
 const carouselVariants: readonly EditorEntityVariant[] = [
   ...fourVariants,
-  { state: { variant: "vertical" } },
-  { state: { variant: "horizontal" } },
+  { label: "Vertical", state: { variant: "vertical" } },
+  { label: "Horizontal", state: { variant: "horizontal" } },
 ];
 
 const surface: EditorEntityDefinition = { replaceGroup: "surface" };
@@ -132,8 +142,8 @@ export const builtinEditorDefinition: EditorDefinition = {
     },
     [EntityTypeId.DRAGON]: {
       placementPoint: { role: "body" },
-      defaultDirection: "right",
-      variants: directions,
+      defaultDirection: "left",
+      variants: horizontalDirections,
     },
     [EntityTypeId.SANDMAN]: {
       placementPoint: { role: "body" },
@@ -159,7 +169,7 @@ export const builtinEditorDefinition: EditorDefinition = {
     [EntityTypeId.COLOR_PINK_SWITCH]: { ...surface, variants: pressedVariants },
     [EntityTypeId.COLOR_YELLOW_BLOCK]: { ...surface, variants: raisedVariants },
     [EntityTypeId.COLOR_PINK_BLOCK]: { ...surface, variants: raisedVariants },
-    [EntityTypeId.WIND_SWITCH]: { ...surface, variants: activeVariants },
+    [EntityTypeId.WIND_SWITCH]: { ...surface, variants: windSwitchVariants },
     [EntityTypeId.TRAP]: { ...surface, variants: activeVariants },
     [EntityTypeId.MIRROR]: { ...surface, variants: fourVariants },
     [EntityTypeId.CAROUSEL]: { ...surface, variants: carouselVariants },
