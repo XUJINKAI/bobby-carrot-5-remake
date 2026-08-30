@@ -1,19 +1,28 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   activeState,
   atlasVisual,
   cell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.TRAP,
-  "Trap",
-  ["walkable", "hazard"],
-  { state: activeState(true) },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.TRAP,
+  traits: ["walkable", "hazard"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: activeState(true),
+  presentation: { name: "Trap", category: "地表" },
+  authoring: {
+    palette: true,
+    category: "地表",
+    replaceGroup: "surface",
+  },
+};
 
 export const trap: EntityModule = originalModule(
   definition,

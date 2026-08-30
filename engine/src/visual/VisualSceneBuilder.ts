@@ -22,7 +22,7 @@ export function buildVisualScene(
   const passes: Record<VisualRenderPass, RenderItem[]> = {
     world: [],
     player: [],
-    overlay: [],
+    effect: [],
   };
   const query = new SpatialVisualQuery(world.entities, world.spatial);
 
@@ -37,6 +37,7 @@ export function buildVisualScene(
           entity,
           presence,
           query,
+          global: world.state,
           ...(visualRuntime ? { runtime: visualRuntime } : {}),
           ...(time ? { time } : {}),
         });
@@ -56,6 +57,6 @@ export function buildVisualScene(
     worldHeight: world.height,
     world: sortRenderItems(passes.world),
     player: sortRenderItems(passes.player),
-    overlay: sortRenderItems(passes.overlay),
+    effect: sortRenderItems(passes.effect),
   };
 }

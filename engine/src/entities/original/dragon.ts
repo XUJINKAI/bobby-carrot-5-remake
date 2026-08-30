@@ -1,13 +1,19 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
-  contentDefinition,
+  CONTENT_STACK_ORDER,
   objectCell,
   originalModule,
 } from "./module.js";
 
-const definition = contentDefinition(EntityTypeId.DRAGON, "Dragon", ["dragon"], {
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.DRAGON,
+  traits: ["dragon"],
+  stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     rotateWithDirection: true,
     baseDirection: "right",
@@ -39,7 +45,7 @@ const definition = contentDefinition(EntityTypeId.DRAGON, "Dragon", ["dragon"], 
     cursor: { dx: 1, dy: 0 },
     defaultDirection: "right",
   },
-});
+};
 
 export const dragon: EntityModule = originalModule(
   definition,

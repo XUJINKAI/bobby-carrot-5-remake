@@ -13,7 +13,7 @@ export interface RenderScene {
   worldHeight: number;
   world: readonly RenderItem[];
   player: readonly RenderItem[];
-  overlay: readonly RenderItem[];
+  effect: readonly RenderItem[];
 }
 
 /**

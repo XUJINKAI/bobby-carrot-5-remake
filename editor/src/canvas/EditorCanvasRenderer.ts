@@ -75,7 +75,7 @@ export class EditorCanvasRenderer {
     const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
       world: [],
       player: [],
-      overlay: [],
+      effect: [],
     };
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
@@ -88,7 +88,7 @@ export class EditorCanvasRenderer {
         }
       }
     }
-    for (const pass of ["world", "player", "overlay"] as const) {
+    for (const pass of ["world", "player", "effect"] as const) {
       for (const item of passes[pass])
         this.drawPresence(
           context,
@@ -245,29 +245,62 @@ export class EditorCanvasRenderer {
     if (!image) return;
     const left = x * EDITOR_TILE_SIZE;
     const top = y * EDITOR_TILE_SIZE;
+    const requestedColumns = positiveInteger(layer.frameColumns);
+    const requestedRows = positiveInteger(layer.frameRows);
+    const frameWidth = Math.max(
+      1,
+      layer.frameWidth ?? image.width / (requestedColumns ?? 1),
+    );
+    const frameHeight = Math.max(
+      1,
+      layer.frameHeight ?? image.height / (requestedRows ?? 1),
+    );
+    const columns =
+      requestedColumns ?? Math.max(1, Math.floor(image.width / frameWidth));
+    const rows =
+      requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
+    const frameCount = Math.max(1, columns * rows);
+    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
+    const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
+    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
+    const sourceX = (frame % columns) * frameWidth;
+    const sourceY = Math.floor(frame / columns) * frameHeight;
+
     if (layer.anchor === "fill") {
-      context.drawImage(image, left, top, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        frameWidth,
+        frameHeight,
+        left,
+        top,
+        EDITOR_TILE_SIZE,
+        EDITOR_TILE_SIZE,
+      );
       return;
     }
+
     const sourceTile = this.images.sourceTileSize;
-    const frameWidth = Math.max(1, layer.frameWidth ?? image.width);
-    const frameCount = Math.max(1, Math.floor(image.width / frameWidth));
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const frame = Math.min(frameCount - 1, Math.floor(progress * frameCount));
     const scale = EDITOR_TILE_SIZE / sourceTile;
     const drawWidth = frameWidth * scale;
-    const drawHeight = image.height * scale;
-    const drawX = left + EDITOR_TILE_SIZE / 2 - drawWidth / 2;
+    const drawHeight = frameHeight * scale;
+    const drawX =
+      left +
+      EDITOR_TILE_SIZE / 2 -
+      drawWidth / 2 +
+      (layer.offsetX ?? 0) * scale;
     const drawY =
-      layer.anchor === "center"
+      (layer.anchor === "center"
         ? top + EDITOR_TILE_SIZE / 2 - drawHeight / 2
-        : top + EDITOR_TILE_SIZE - drawHeight;
+        : top + EDITOR_TILE_SIZE - drawHeight) +
+      (layer.offsetY ?? 0) * scale;
     context.drawImage(
       image,
-      frame * frameWidth,
-      0,
+      sourceX,
+      sourceY,
       frameWidth,
-      image.height,
+      frameHeight,
       drawX,
       drawY,
       drawWidth,
@@ -303,4 +336,9 @@ export class EditorCanvasRenderer {
     );
     context.restore();
   }
+}
+
+function positiveInteger(value: number | undefined): number | null {
+  if (!Number.isFinite(value) || (value ?? 0) < 1) return null;
+  return Math.max(1, Math.floor(value!));
 }

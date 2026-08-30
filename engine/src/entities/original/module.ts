@@ -4,10 +4,7 @@ import {
   type EntityType,
   type JsonValue,
 } from "@bobby/model";
-import type {
-  EntityFieldDefinition,
-  EntityTrait,
-} from "../../world/entity/EntityDefinition.js";
+import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
 import type {
   ImageVisualLayer,
   VisualDefinition,
@@ -34,73 +31,16 @@ interface OriginalAmbientSequence {
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
 const ORIGINAL_AMBIENT_FRAME_MS = 248;
 const ORIGINAL_TILE_SIZE = 48;
-const SURFACE_STACK_ORDER = 0;
-const CONTENT_STACK_ORDER = 100;
-const COVER_STACK_ORDER = 200;
+
+export const SURFACE_STACK_ORDER = 0;
+export const CONTENT_STACK_ORDER = 100;
+export const COVER_STACK_ORDER = 200;
 
 export const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
 export function objectCell(index: number): AtlasCell {
   const linear = 9 + index;
   return cell(linear % 16, 12 + Math.floor(linear / 16));
-}
-
-export function surfaceDefinition(
-  type: EntityType,
-  name: string,
-  traits: readonly EntityTrait[] = ["walkable"],
-  extra: Partial<EntityModuleDefinition> = {},
-): EntityModuleDefinition {
-  return {
-    type,
-    traits,
-    stackOrder: SURFACE_STACK_ORDER,
-    presentation: { name, category: "地表" },
-    ...extra,
-    authoring: {
-      palette: true,
-      category: "地表",
-      replaceGroup: "surface",
-      ...extra.authoring,
-    },
-  };
-}
-
-export function contentDefinition(
-  type: EntityType,
-  name: string,
-  traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityModuleDefinition> = {},
-): EntityModuleDefinition {
-  return {
-    type,
-    traits,
-    stackOrder: CONTENT_STACK_ORDER,
-    presentation: { name, category: "实体" },
-    authoring: { palette: true, category: "实体" },
-    ...extra,
-  };
-}
-
-export function coverDefinition(
-  type: EntityType,
-  name: string,
-  traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityModuleDefinition> = {},
-): EntityModuleDefinition {
-  return {
-    type,
-    traits,
-    stackOrder: COVER_STACK_ORDER,
-    presentation: { name, category: "覆盖", renderPass: "overlay" },
-    ...extra,
-    authoring: {
-      palette: true,
-      category: "覆盖",
-      replaceGroup: "cover",
-      ...extra.authoring,
-    },
-  };
 }
 
 export function originalModule(
@@ -142,42 +82,16 @@ export function atlasVisual(
   };
 }
 
-export function staticSurface(
-  type: EntityType,
-  name: string,
+export function staticEntity(
+  definition: EntityModuleDefinition,
   atlas: AtlasCell,
-  traits: readonly EntityTrait[] = ["walkable"],
-  extra: Partial<EntityModuleDefinition> = {},
-): EntityModule {
-  const definition = surfaceDefinition(type, name, traits, extra);
-  return originalModule(definition, atlasVisual(definition, atlas));
-}
-
-export function staticContent(
-  type: EntityType,
-  name: string,
-  atlas: AtlasCell,
-  traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityModuleDefinition> = {},
   behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
-  const definition = contentDefinition(type, name, traits, extra);
   return originalModule(
     definition,
     atlasVisual(definition, atlas),
     behaviorBindings,
   );
-}
-
-export function staticCover(
-  type: EntityType,
-  name: string,
-  atlas: AtlasCell,
-  traits: readonly EntityTrait[] = [],
-  extra: Partial<EntityModuleDefinition> = {},
-): EntityModule {
-  const definition = coverDefinition(type, name, traits, extra);
-  return originalModule(definition, atlasVisual(definition, atlas));
 }
 
 export const pressedState: readonly EntityFieldDefinition[] = [

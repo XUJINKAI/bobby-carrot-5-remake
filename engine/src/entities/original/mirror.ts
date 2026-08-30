@@ -1,20 +1,29 @@
 import { EntityTypeId } from "@bobby/model";
-import type { EntityModule } from "../EntityModule.js";
+import type {
+  EntityModule,
+  EntityModuleDefinition,
+} from "../EntityModule.js";
 import {
   atlasVisual,
   boundedInt,
   cell,
   originalModule,
-  surfaceDefinition,
+  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
-const definition = surfaceDefinition(
-  EntityTypeId.MIRROR,
-  "Mirror",
-  ["walkable", "mirror", "rotatable"],
-  { state: variantState([1, 2, 3, 4]) },
-);
+const definition: EntityModuleDefinition = {
+  type: EntityTypeId.MIRROR,
+  traits: ["walkable", "mirror", "rotatable"],
+  stackOrder: SURFACE_STACK_ORDER,
+  state: variantState([1, 2, 3, 4]),
+  presentation: { name: "Mirror", category: "地表" },
+  authoring: {
+    palette: true,
+    category: "地表",
+    replaceGroup: "surface",
+  },
+};
 
 export const mirror: EntityModule = originalModule(
   definition,
