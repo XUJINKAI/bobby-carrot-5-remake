@@ -7,7 +7,7 @@ import {
   type EntityPresence,
 } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 
 export interface EditorPresenceInspection {
   ref: EntityRef;
@@ -31,7 +31,7 @@ export class EditorPreview {
   private readonly entityIdByRef = new Map<number, EntityId>();
 
   constructor(
-    readonly level: EditorLevel,
+    readonly level: EditorMap,
     readonly catalog: EntityCatalog,
   ) {
     level.entities.forEach((source, index) => {
