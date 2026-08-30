@@ -31,8 +31,7 @@ export const playerPresenceValidator: EditorMapValidator = ({
   return [
     {
       level: "warning",
-      message:
-        "地图至少需要一个 player Entity 才能 Play Test；当前为 0 个。仍可继续编辑和保存。",
+      message: "地图没有 player Entity。",
     },
   ];
 };
