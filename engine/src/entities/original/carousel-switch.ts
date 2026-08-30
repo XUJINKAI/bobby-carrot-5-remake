@@ -16,12 +16,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
-  presentation: { name: "Carousel Switch", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Carousel Switch" },
 };
 
 export const carouselSwitch: EntityModule = originalModule(
