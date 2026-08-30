@@ -16,12 +16,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
-  presentation: { name: "Tide Switch", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Tide Switch" },
 };
 
 export const tideSwitch: EntityModule = originalModule(
