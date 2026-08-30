@@ -16,12 +16,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
-  presentation: { name: "Yellow Switch", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Yellow Switch" },
 };
 
 export const colorYellowSwitch: EntityModule = originalModule(
