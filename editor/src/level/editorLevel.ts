@@ -143,6 +143,8 @@ function normalizeEntity(raw: LevelEntity): LevelEntity | null {
     direction === "right"
   )
     entity.direction = direction;
+  if (Number.isFinite(raw.stackOrder))
+    entity.stackOrder = Math.trunc(raw.stackOrder!);
   const properties = normalizeJsonRecord(raw.properties);
   if (properties) entity.properties = properties;
   const state = normalizeJsonRecord(raw.state);
