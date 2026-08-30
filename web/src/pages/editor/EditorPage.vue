@@ -34,6 +34,7 @@ const issues = computed(() =>
   validateEditorLevel(
     page.snapshot.value.level as EditorMap,
     page.catalog,
+    page.editor,
   ),
 );
 
@@ -280,6 +281,7 @@ function isMobileEditor(): boolean {
       :playing="page.playing.value"
       :images="props.images"
       :catalog="page.catalog"
+      :editor="page.editor"
       @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
       @hover="page.hover.value = $event"
@@ -292,6 +294,12 @@ function isMobileEditor(): boolean {
       @property="page.updateProperty"
       @state="page.updateState"
       @variant="page.applyVariant"
+      @delete-layer="page.deleteLayer"
+      @reorder-layers="page.reorderLayers"
+      @batch-property="page.updateBatchProperty"
+      @batch-state="page.updateBatchState"
+      @batch-variant="page.applyBatchVariant"
+      @batch-delete="page.deleteSelectedType"
       @rule="page.setRule"
       @max-moves="page.setMaxMoves"
       @max-time="page.setMaxTimeSeconds"
