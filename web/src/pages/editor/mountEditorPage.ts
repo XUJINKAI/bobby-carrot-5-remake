@@ -2,7 +2,7 @@ import {
   createBlankLevel,
   fromLevelMap,
   parseEditorLevel,
-  type EditorLevel,
+  type EditorMap,
 } from "@bobby/editor";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
@@ -22,7 +22,7 @@ export async function renderEditorPage(
 ): Promise<PageController> {
   const { app, audio, images, navigate, mapRef } = context;
   audio.stopMusic();
-  let level: EditorLevel;
+  let level: EditorMap;
   if (mapRef) {
     try {
       const resolved = await resolveMapDocument(mapRef);
