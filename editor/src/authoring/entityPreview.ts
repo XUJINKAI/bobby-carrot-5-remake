@@ -21,8 +21,8 @@ export function resolveEditorEntityPreviewLayout(
   editor: EditorDefinition = builtinEditorDefinition,
 ): EditorEntityPreviewLayout {
   const definition = catalog.require(source.type);
-  const direction =
-    source.direction ?? editor.entities?.[source.type]?.defaultDirection;
+  const policy = editor.entities?.[source.type];
+  const direction = source.direction ?? policy?.defaultDirection;
   const prototype: LevelEntity = {
     type: source.type,
     x: 0,
@@ -40,10 +40,17 @@ export function resolveEditorEntityPreviewLayout(
     },
     definition.footprint,
   );
-  const minX = Math.min(...cells.map((cell) => cell.x));
-  const minY = Math.min(...cells.map((cell) => cell.y));
-  const maxX = Math.max(...cells.map((cell) => cell.x));
-  const maxY = Math.max(...cells.map((cell) => cell.y));
+  let minX = Math.min(...cells.map((cell) => cell.x));
+  let minY = Math.min(...cells.map((cell) => cell.y));
+  let maxX = Math.max(...cells.map((cell) => cell.x));
+  let maxY = Math.max(...cells.map((cell) => cell.y));
+  const previewBounds = policy?.previewBounds;
+  if (previewBounds) {
+    minX = Math.min(minX, Math.trunc(previewBounds.left));
+    minY = Math.min(minY, Math.trunc(previewBounds.top));
+    maxX = Math.max(maxX, Math.trunc(previewBounds.right));
+    maxY = Math.max(maxY, Math.trunc(previewBounds.bottom));
+  }
   prototype.x = -minX;
   prototype.y = -minY;
   return {
