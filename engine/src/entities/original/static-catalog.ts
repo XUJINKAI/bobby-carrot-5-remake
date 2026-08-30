@@ -43,20 +43,16 @@ function surface(
   name: string,
   atlas: ReturnType<typeof cell>,
   traits: EntityModuleDefinition["traits"] = ["walkable"],
-  category = "地表",
 ): EntityModule {
-  const definition: EntityModuleDefinition = {
-    type,
-    traits,
-    stackOrder: SURFACE_STACK_ORDER,
-    presentation: { name, category },
-    authoring: {
-      palette: true,
-      category,
-      replaceGroup: "surface",
+  return staticEntity(
+    {
+      type,
+      traits,
+      stackOrder: SURFACE_STACK_ORDER,
+      presentation: { name },
     },
-  };
-  return staticEntity(definition, atlas);
+    atlas,
+  );
 }
 
 function content(
@@ -64,19 +60,16 @@ function content(
   name: string,
   atlas: ReturnType<typeof objectCell>,
   traits: EntityModuleDefinition["traits"] = [],
-  authoring: EntityModuleDefinition["authoring"] = {
-    palette: true,
-    category: "实体",
-  },
 ): EntityModule {
-  const definition: EntityModuleDefinition = {
-    type,
-    traits,
-    stackOrder: CONTENT_STACK_ORDER,
-    presentation: { name, category: "实体" },
-    authoring,
-  };
-  return staticEntity(definition, atlas);
+  return staticEntity(
+    {
+      type,
+      traits,
+      stackOrder: CONTENT_STACK_ORDER,
+      presentation: { name },
+    },
+    atlas,
+  );
 }
 
 export const staticSurfaceModules: readonly EntityModule[] = [
@@ -90,7 +83,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Shovel Cleared Ground",
     cell(12, 7),
   ),
-  surface(EntityTypeId.EXIT, "Exit", cell(6, 9), ["walkable", "exit"], "目标"),
+  surface(EntityTypeId.EXIT, "Exit", cell(6, 9), ["walkable", "exit"]),
   surface(
     EntityTypeId.ICE,
     "Ice",
@@ -112,71 +105,32 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     ["walkable", "pickup"],
   ),
   surface(EntityTypeId.MOWER_PARKING, "Mower Parking", cell(0, 10)),
-  surface(EntityTypeId.WATER, "Water", cell(5, 5), ["water"], "水域"),
-  surface(
-    EntityTypeId.WATER_ANIMATED,
-    "Animated Water",
-    cell(6, 5),
-    ["water"],
-    "水域",
-  ),
-  surface(
-    EntityTypeId.WATER_VARIANT_1,
-    "Water Variant 1",
-    cell(11, 5),
-    ["water"],
-    "水域",
-  ),
-  surface(
-    EntityTypeId.WATER_VARIANT_2,
-    "Water Variant 2",
-    cell(12, 5),
-    ["water"],
-    "水域",
-  ),
-  surface(
-    EntityTypeId.WATER_VARIANT_3,
-    "Water Variant 3",
-    cell(13, 5),
-    ["water"],
-    "水域",
-  ),
+  surface(EntityTypeId.WATER, "Water", cell(5, 5), ["water"]),
+  surface(EntityTypeId.WATER_ANIMATED, "Animated Water", cell(6, 5), ["water"]),
+  surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water"]),
+  surface(EntityTypeId.WATER_VARIANT_2, "Water Variant 2", cell(12, 5), ["water"]),
+  surface(EntityTypeId.WATER_VARIANT_3, "Water Variant 3", cell(13, 5), ["water"]),
 ];
 
 const snowDefinition: EntityModuleDefinition = {
   type: EntityTypeId.SNOW,
   traits: ["snow", "shovelable", "blocking"],
   stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "Snow", category: "覆盖" },
-  authoring: {
-    palette: true,
-    category: "覆盖",
-    replaceGroup: "cover",
-  },
+  presentation: { name: "Snow" },
 };
 
 const highGrassDefinition: EntityModuleDefinition = {
   type: EntityTypeId.HIGH_GRASS,
   traits: ["mowable", "blocking"],
   stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "High Grass", category: "覆盖" },
-  authoring: {
-    palette: true,
-    category: "覆盖",
-    replaceGroup: "cover",
-  },
+  presentation: { name: "High Grass" },
 };
 
 const highGrassObjectiveDefinition: EntityModuleDefinition = {
   type: EntityTypeId.HIGH_GRASS_OBJECTIVE,
   traits: ["mowable", "blocking", "hidden-objective"],
   stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "High Grass Objective", category: "覆盖" },
-  authoring: {
-    palette: true,
-    category: "覆盖",
-    replaceGroup: "cover",
-  },
+  presentation: { name: "High Grass Objective" },
 };
 
 export const staticCoverModules: readonly EntityModule[] = [
@@ -189,29 +143,25 @@ const consumedCarrotDefinition: EntityModuleDefinition = {
   type: EntityTypeId.CONSUMED_CARROT,
   traits: [],
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Consumed Carrot", category: "实体" },
-  authoring: { palette: false, category: "内部" },
+  presentation: { name: "Consumed Carrot" },
 };
 const carrotDefinition: EntityModuleDefinition = {
   type: EntityTypeId.CARROT,
   traits: ["collectible"],
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Carrot", category: "目标" },
-  authoring: { palette: true, category: "目标", replaceGroup: "item" },
+  presentation: { name: "Carrot" },
 };
 const emptyEggNestDefinition: EntityModuleDefinition = {
   type: EntityTypeId.EGG_NEST_EMPTY,
   traits: ["egg-nest"],
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Empty Egg Nest", category: "目标" },
-  authoring: { palette: true, category: "目标", replaceGroup: "item" },
+  presentation: { name: "Empty Egg Nest" },
 };
 const filledEggNestDefinition: EntityModuleDefinition = {
   type: EntityTypeId.EGG_NEST_FILLED,
   traits: ["egg-nest", "egg", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Filled Egg Nest", category: "实体" },
-  authoring: { palette: true, category: "实体", replaceGroup: "item" },
+  presentation: { name: "Filled Egg Nest" },
 };
 
 export const staticContentModules: readonly EntityModule[] = [
@@ -239,15 +189,8 @@ export const staticContentModules: readonly EntityModule[] = [
     "Crumbling Plank",
     objectCell(12),
     ["terrain-overlay", "walkable", "blocking"],
-    { palette: false, category: "内部" },
   ),
-  content(
-    EntityTypeId.PLANK_FRAGMENT,
-    "Plank Fragment",
-    objectCell(13),
-    ["blocking"],
-    { palette: false, category: "内部" },
-  ),
+  content(EntityTypeId.PLANK_FRAGMENT, "Plank Fragment", objectCell(13), ["blocking"]),
   content(EntityTypeId.MOWER, "Mower", objectCell(19), ["vehicle"]),
   content(EntityTypeId.GAS, "Gas", objectCell(20), ["pickup"]),
   content(
@@ -258,33 +201,17 @@ export const staticContentModules: readonly EntityModule[] = [
   ),
   content(EntityTypeId.BEAN_FIELD, "Bean Field", objectCell(22)),
   content(EntityTypeId.CLOUD_RED, "Red Cloud", objectCell(23), ["vehicle", "cloud"]),
-  content(
-    EntityTypeId.CLOUD_PURPLE,
-    "Purple Cloud",
-    objectCell(24),
-    ["vehicle", "cloud"],
-  ),
+  content(EntityTypeId.CLOUD_PURPLE, "Purple Cloud", objectCell(24), ["vehicle", "cloud"]),
   content(EntityTypeId.CLOUD_GREEN, "Green Cloud", objectCell(25), ["vehicle", "cloud"]),
   content(EntityTypeId.LEAF, "Leaf", objectCell(35), ["vehicle", "leaf"]),
-  content(
-    EntityTypeId.CRUMBLY_ROCK,
-    "Crumbly Rock",
-    objectCell(36),
-    ["dragon-fire-blocking"],
-  ),
+  content(EntityTypeId.CRUMBLY_ROCK, "Crumbly Rock", objectCell(36), ["dragon-fire-blocking"]),
   content(
     EntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
     objectCell(37),
     ["terrain-overlay", "climbable", "walkable"],
   ),
-  content(
-    EntityTypeId.BEAN_SPROUT,
-    "Bean Sprout",
-    objectCell(38),
-    [],
-    { palette: false, category: "内部" },
-  ),
+  content(EntityTypeId.BEAN_SPROUT, "Bean Sprout", objectCell(38)),
   content(EntityTypeId.CLOUD_GRID_RED, "Red Cloud Grid", objectCell(39)),
   content(EntityTypeId.CLOUD_GRID_PURPLE, "Purple Cloud Grid", objectCell(40)),
   content(EntityTypeId.CLOUD_GRID_GREEN, "Green Cloud Grid", objectCell(41)),
