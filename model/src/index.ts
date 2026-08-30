@@ -9,6 +9,7 @@ export type {
   EntityTraits,
   LevelEntity,
   LevelRules,
+  LevelLimit,
   WinCondition,
   LevelMap,
 } from "./types.js";

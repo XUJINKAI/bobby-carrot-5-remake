@@ -5,6 +5,7 @@ import {
   type EntityTraits,
   type JsonValue,
   type LevelEntity,
+  type LevelLimit,
   type LevelMap,
   type WinCondition,
 } from "@bobby/model";
@@ -92,9 +93,9 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
   if (input.author) level.author = String(input.author).slice(0, 80);
   if (input.description)
     level.description = String(input.description).slice(0, 500);
-  const maxMoves = Number(input.rules?.maxMoves);
+  const limits = normalizeLimits(input.rules?.limits);
   level.rules = {
-    ...(Number.isInteger(maxMoves) && maxMoves > 0 ? { maxMoves } : {}),
+    ...(limits.length > 0 ? { limits } : {}),
     win: input.rules?.win
       ? structuredClone(input.rules.win)
       : defaultWinCondition(),
@@ -108,6 +109,23 @@ export function resizeEditorLevel(
   height: number,
 ): EditorLevel {
   return normalizeEditorLevel({ ...level, width, height });
+}
+
+function normalizeLimits(value: readonly LevelLimit[] | undefined): LevelLimit[] {
+  if (!Array.isArray(value)) return [];
+  const result: LevelLimit[] = [];
+  for (const limit of value) {
+    if (limit?.type === "max-moves") {
+      const moves = Math.trunc(Number(limit.moves));
+      if (Number.isFinite(moves) && moves > 0)
+        result.push({ type: "max-moves", moves });
+    } else if (limit?.type === "max-time-seconds") {
+      const seconds = Math.trunc(Number(limit.seconds));
+      if (Number.isFinite(seconds) && seconds > 0)
+        result.push({ type: "max-time-seconds", seconds });
+    }
+  }
+  return result;
 }
 
 function normalizeEntity(raw: LevelEntity): LevelEntity | null {

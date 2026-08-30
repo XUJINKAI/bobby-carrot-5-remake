@@ -12,6 +12,7 @@ export interface GlobalState {
   completed: boolean;
   deathReason: string | null;
   moves: number;
+  elapsedMs: number;
   inventory: InventoryState;
   profile: ProfileCapabilities;
   ridingMower: boolean;
@@ -29,6 +30,7 @@ export function createGlobalState(profile: Partial<ProfileCapabilities> = {}): G
     completed: false,
     deathReason: null,
     moves: 0,
+    elapsedMs: 0,
     inventory: { gas: false, kite: false, shovel: false, beans: 0 },
     profile: {
       superKey: profile.superKey ?? false,

@@ -4,6 +4,7 @@ import type {
   EntityState,
   EntityTraits,
   LevelEntity,
+  LevelLimit,
 } from "@bobby/model";
 import {
   normalizeEditorLevel,
@@ -125,15 +126,34 @@ export function resizeDocument(width: number, height: number): EditorCommand {
 }
 
 export function updateMaxMoves(value: number | null): EditorCommand {
+  return updateLimit(
+    "max-moves",
+    value !== null && Number.isInteger(value) && value > 0
+      ? { type: "max-moves", moves: value }
+      : null,
+  );
+}
+
+export function updateMaxTimeSeconds(value: number | null): EditorCommand {
+  return updateLimit(
+    "max-time-seconds",
+    value !== null && Number.isInteger(value) && value > 0
+      ? { type: "max-time-seconds", seconds: value }
+      : null,
+  );
+}
+
+function updateLimit(type: LevelLimit["type"], value: LevelLimit | null): EditorCommand {
   return command((level) => {
-    const rules = { ...level.rules };
-    if (value !== null && Number.isInteger(value) && value > 0)
-      rules.maxMoves = value;
-    else delete rules.maxMoves;
-    const next = { ...level };
-    if (Object.keys(rules).length > 0) next.rules = rules;
-    else delete next.rules;
-    return normalizeEditorLevel(next);
+    const limits = (level.rules?.limits ?? []).filter((limit) => limit.type !== type);
+    if (value) limits.push(value);
+    return normalizeEditorLevel({
+      ...level,
+      rules: {
+        ...(level.rules ?? {}),
+        ...(limits.length > 0 ? { limits } : { limits: undefined }),
+      },
+    });
   });
 }
 

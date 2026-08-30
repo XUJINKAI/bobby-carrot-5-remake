@@ -36,9 +36,14 @@ export type WinCondition =
     }
   | { type: "reach"; target: string };
 
+/** Global failure/constraint rules. These are not recursive win conditions. */
+export type LevelLimit =
+  | { type: "max-moves"; moves: number }
+  | { type: "max-time-seconds"; seconds: number };
+
 export interface LevelRules {
-  maxMoves?: number;
   win?: WinCondition;
+  limits?: LevelLimit[];
 }
 
 /** Canonical playable/authorable BC5R map. */

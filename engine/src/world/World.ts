@@ -1,4 +1,4 @@
-import type { Direction, LevelMap, WinCondition } from "@bobby/model";
+import type { Direction, LevelLimit, LevelMap, WinCondition } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   entityRegistry as builtinEntities,
@@ -291,12 +291,7 @@ export class World {
     const events = this.commit(queue);
     this.refreshDerivedState();
     this.evaluateCompletion(events);
-    if (
-      this.rules?.maxMoves !== undefined &&
-      this.state.moves > this.rules.maxMoves &&
-      !this.state.completed
-    )
-      events.push(...this.killPlayer(`Move limit exceeded: ${this.rules.maxMoves}`));
+    this.evaluateLimits(events);
     return {
       moved: true,
       from,
@@ -310,6 +305,7 @@ export class World {
   /** RuntimeAction 与 Behavior 都只在统一 WorldTick 上推进。 */
   update(time: WorldTick): WorldEvent[] {
     if (time.stepMs <= 0 || this.state.dead || this.state.completed) return [];
+    this.state.elapsedMs += time.stepMs;
     const queue = new CommandQueue();
 
     // 先推进上一 Tick 已经存在的跨时过程；本 Tick 新建 Action 从下一 Tick 才开始计时。
@@ -334,6 +330,7 @@ export class World {
     const events = this.commit(queue);
     this.refreshDerivedState();
     this.evaluateCompletion(events);
+    this.evaluateLimits(events);
     return events;
   }
 
@@ -399,6 +396,7 @@ export class World {
     const events = this.commit(queue);
     this.refreshDerivedState();
     this.evaluateCompletion(events);
+    this.evaluateLimits(events);
     return events;
   }
 
@@ -513,6 +511,24 @@ export class World {
     if (!win?.completed) return;
     this.state.completed = true;
     events.push({ type: "complete" });
+  }
+
+  private evaluateLimits(events: WorldEvent[]): void {
+    if (this.state.completed || this.state.dead) return;
+    for (const limit of this.rules?.limits ?? []) {
+      const exceeded = this.limitExceeded(limit);
+      if (!exceeded) continue;
+      const reason = limit.type === "max-moves"
+        ? `Move limit exceeded: ${limit.moves}`
+        : `Time limit exceeded: ${limit.seconds}s`;
+      events.push(...this.killPlayer(reason));
+      return;
+    }
+  }
+
+  private limitExceeded(limit: LevelLimit): boolean {
+    if (limit.type === "max-moves") return this.state.moves > limit.moves;
+    return this.state.elapsedMs > limit.seconds * 1000;
   }
 
   private evaluateWin(condition: WinCondition): WinConditionState {

@@ -8,7 +8,27 @@ export {
 } from "./level/editorLevel.js";
 export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js";
 export { validateEditorLevel } from "./level/validation.js";
-export type { EditorLevel, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
+export type { EditorMap, EditorLevel, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
+export type {
+  EditorTool,
+  EditorPlacementPreset,
+  EditorSelection,
+  EditorClipboard,
+  EditorPlacementPoint,
+  EditorEntityVariant,
+  EditorQuickAction,
+  EditorEntityDefinition,
+  EditorPalettePreview,
+  EditorPaletteEntry,
+  EditorPaletteGroup,
+  EditorPaletteDefinition,
+  EditorDeletionCandidate,
+  EditorDeleteContext,
+  EditorDeletionDefinition,
+  EditorValidationContext,
+  EditorMapValidator,
+  EditorDefinition,
+} from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
 export {
@@ -23,6 +43,7 @@ export {
   updateMetadata,
   resizeDocument,
   updateMaxMoves,
+  updateMaxTimeSeconds,
 } from "./document/commands.js";
 export type { EditorCommand } from "./document/commands.js";
 export { EditorPreview } from "./authoring/EditorPreview.js";

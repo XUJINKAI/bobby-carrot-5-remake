@@ -6,7 +6,14 @@ import type { Cell } from "./entityPlacement.js";
 import type { PaletteItem } from "./paletteCatalog.js";
 
 export interface InspectorModel {
-  document: { name: string; width: number; height: number; entityCount: number; maxMoves?: number; };
+  document: {
+    name: string;
+    width: number;
+    height: number;
+    entityCount: number;
+    maxMoves?: number;
+    maxTimeSeconds?: number;
+  };
   selection: EntityCatalogEntry;
   hover: Cell | null;
   cell: EditorCellInspection | null;
@@ -20,13 +27,16 @@ export function buildInspectorModel(
   selection: PaletteItem,
 ): InspectorModel {
   const preview = new EditorPreview(level, catalog);
+  const maxMoves = level.rules?.limits?.find((limit) => limit.type === "max-moves");
+  const maxTime = level.rules?.limits?.find((limit) => limit.type === "max-time-seconds");
   return {
     document: {
       name: level.name,
       width: level.width,
       height: level.height,
       entityCount: level.entities.length,
-      ...(level.rules?.maxMoves ? { maxMoves: level.rules.maxMoves } : {}),
+      ...(maxMoves?.type === "max-moves" ? { maxMoves: maxMoves.moves } : {}),
+      ...(maxTime?.type === "max-time-seconds" ? { maxTimeSeconds: maxTime.seconds } : {}),
     },
     selection: catalog.require(selection.type),
     hover,
