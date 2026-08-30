@@ -16,12 +16,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "hazard"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(true),
-  presentation: { name: "Trap", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Trap" },
 };
 
 export const trap: EntityModule = originalModule(
