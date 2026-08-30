@@ -22,12 +22,7 @@ const definition: EntityModuleDefinition = {
       { dx: 0, dy: 1, role: "body" },
     ],
   },
-  presentation: { name: "Beaver", category: "角色" },
-  authoring: {
-    palette: true,
-    category: "角色",
-    defaultDirection: "down",
-  },
+  presentation: { name: "Beaver" },
 };
 
 export const beaver: EntityModule = originalModule(
