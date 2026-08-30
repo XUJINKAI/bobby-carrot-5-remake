@@ -1,10 +1,18 @@
-import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine/authoring";
-import { selectedEntityRefs, selectionRect, type SelectionRect } from "./selection.js";
-import { EditorPreview } from "./EditorPreview.js";
-import { builtinEditorDefinition } from "../definitions/builtin.js";
-import type { EditorDefinition, EditorEntityDefinition, EditorSelection } from "../definitions/types.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
+import { builtinEditorDefinition } from "../definitions/builtin.js";
+import type {
+  EditorDefinition,
+  EditorEntityDefinition,
+  EditorSelection,
+} from "../definitions/types.js";
+import type { EditorLevel, EntityRef } from "../level/types.js";
+import { EditorPreview } from "./EditorPreview.js";
+import {
+  selectedEntityRefs,
+  selectionRect,
+  type SelectionRect,
+} from "./selection.js";
 
 export interface InspectorEntityModel {
   ref: EntityRef;
