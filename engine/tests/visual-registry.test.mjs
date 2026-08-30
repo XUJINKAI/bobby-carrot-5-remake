@@ -4,16 +4,12 @@ import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
-import {
-  VisualRegistry,
-  deterministicVisualVariantIndex,
-} from "../dist/visual/VisualRegistry.js";
+import { VisualRegistry } from "../dist/visual/VisualRegistry.js";
 
 function definition(type, extra = {}) {
   return {
     type,
     traits: [],
-    stackBand: "content",
     ...extra,
   };
 }
@@ -59,42 +55,9 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
   );
 });
 
-test("persisted visual variant 用 type + x + y + placement sequence 稳定选择并写入 properties", () => {
-  const entityDefinition = definition("flower");
+test("VisualRegistry only registers and resolves presentation definitions", () => {
   const visuals = new VisualRegistry();
-  visuals.register({
-    id: "flower-visual",
-    authoring: {
-      persistedVariant: {
-        property: "visualVariant",
-        values: ["white", "yellow", "pink", "red"],
-      },
-    },
-    resolve: () => null,
-  });
-  visuals.bindEntityVisual("flower", "flower-visual");
-
-  const source = { type: "flower", x: 4, y: 5 };
-  const first = visuals.initializeAuthoringEntity(source, entityDefinition, 17);
-  const again = visuals.initializeAuthoringEntity(source, entityDefinition, 17);
-  assert.deepEqual(first, again);
-  assert.ok(
-    ["white", "yellow", "pink", "red"].includes(
-      first.properties.visualVariant,
-    ),
-  );
-
-  const fixed = visuals.initializeAuthoringEntity(
-    { ...source, properties: { visualVariant: "pink" } },
-    entityDefinition,
-    999,
-  );
-  assert.equal(fixed.properties.visualVariant, "pink");
-
-  const variants = new Set(
-    Array.from({ length: 32 }, (_, sequence) =>
-      deterministicVisualVariantIndex("flower", 4, 5, sequence, 4),
-    ),
-  );
-  assert.equal(variants.size, 4);
+  visuals.register({ id: "plain", resolve: () => null });
+  assert.equal(visuals.require("plain").id, "plain");
+  assert.equal("initializeAuthoringEntity" in visuals, false);
 });
