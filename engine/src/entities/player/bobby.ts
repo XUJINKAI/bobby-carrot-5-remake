@@ -41,6 +41,7 @@ const definition: EntityModuleDefinition = {
   presentation: {
     name: "Bobby",
     renderPass: "player",
+    visualBounds: { left: 0, top: -1, right: 0, bottom: 0 },
   },
 };
 
