@@ -10,24 +10,11 @@ import type {
   VisualRenderPass,
 } from "../visual/VisualDefinition.js";
 
-/** Presentation extent in map-cell coordinates relative to the Entity anchor. */
-export interface EntityVisualBounds {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}
-
 export interface EntityPresentationDefinition {
   name: string;
   visual?: VisualId;
   audio?: AudioProfileId;
   renderPass?: VisualRenderPass;
-  /**
-   * Visual-only extent for sprites that overhang their gameplay footprint.
-   * It never creates Spatial Presences or affects collision/gameplay queries.
-   */
-  visualBounds?: EntityVisualBounds;
 }
 
 /** Full definition used by an Entity module. Editor policy belongs to @bobby/editor. */
