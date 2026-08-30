@@ -207,11 +207,14 @@ export class EditorCanvasRenderer {
     y: number,
   ): void {
     const entity = preview.entities.require(inspection.presence.entityId);
-    const composition = this.visuals.resolve(inspection.definition, {
+    const resolveContext = {
       entity,
       presence: inspection.presence,
       query,
-    });
+    };
+    const composition =
+      inspection.definition.authoring?.editorVisual?.(resolveContext) ??
+      this.visuals.resolve(inspection.definition, resolveContext);
     this.drawComposition(context, composition, x, y);
   }
 
