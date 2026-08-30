@@ -17,6 +17,11 @@ export interface EditorCommand {
   apply(level: EditorMap): EditorMap;
 }
 
+export interface EditorEntityReplacement {
+  ref: EntityRef;
+  entity: LevelEntity;
+}
+
 export function addEntity(entity: LevelEntity): EditorCommand {
   return addEntities([entity]);
 }
@@ -124,7 +129,45 @@ export function replaceEntity(
   ref: EntityRef,
   replacement: LevelEntity,
 ): EditorCommand {
-  return updateEntity(ref, () => structuredClone(replacement));
+  return replaceEntities([{ ref, entity: replacement }]);
+}
+
+export function replaceEntities(
+  replacements: readonly EditorEntityReplacement[],
+): EditorCommand {
+  return command((level) => {
+    if (replacements.length === 0) return level;
+    const entities = [...level.entities];
+    let changed = false;
+    for (const replacement of replacements) {
+      if (!hasEntity(level, replacement.ref)) continue;
+      entities[replacement.ref.index] = structuredClone(replacement.entity);
+      changed = true;
+    }
+    return changed
+      ? normalizeEditorLevel({ ...level, entities })
+      : level;
+  });
+}
+
+/** Reorder one cell's Entity stack. Input order is top-most first. */
+export function reorderEntityStack(
+  refsTopToBottom: readonly EntityRef[],
+): EditorCommand {
+  return command((level) => {
+    const unique = [
+      ...new Map(refsTopToBottom.map((ref) => [ref.index, ref])).values(),
+    ].filter((ref) => hasEntity(level, ref));
+    if (unique.length < 2) return level;
+    const entities = [...level.entities];
+    unique.forEach((ref, index) => {
+      entities[ref.index] = {
+        ...entities[ref.index]!,
+        stackOrder: (unique.length - index - 1) * 1000,
+      };
+    });
+    return normalizeEditorLevel({ ...level, entities });
+  });
 }
 
 export function updateMetadata(metadata: {
