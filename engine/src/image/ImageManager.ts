@@ -116,8 +116,15 @@ export class ImageManager {
 }
 
 function loadBrowserImage(url: string): Promise<HTMLImageElement> {
-  const image = new Image();
-  image.decoding = "async";
-  image.src = url;
-  return image.decode().then(() => image);
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.addEventListener("load", () => resolve(image), { once: true });
+    image.addEventListener(
+      "error",
+      () => reject(new Error(`图片资源加载失败：${url}`)),
+      { once: true },
+    );
+    image.src = url;
+  });
 }
