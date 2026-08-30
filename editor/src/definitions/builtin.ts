@@ -1,12 +1,22 @@
-import { EntityTypeId, type Direction, type LevelEntity } from "@bobby/model";
+import {
+  EntityTypeId,
+  type Direction,
+  type LevelEntity,
+} from "@bobby/model";
 import type {
   EditorDefinition,
   EditorEntityDefinition,
   EditorEntityVariant,
 } from "./types.js";
+import {
+  playerPresenceValidator,
+  reachTargetValidator,
+  registeredEntityTypesValidator,
+} from "./validators.js";
 
-const directions: readonly EditorEntityVariant[] = (["up", "right", "down", "left"] as const)
-  .map((direction) => ({ direction }));
+const directions: readonly EditorEntityVariant[] = (
+  ["up", "right", "down", "left"] as const
+).map((direction) => ({ direction }));
 
 const pressedVariants: readonly EditorEntityVariant[] = [
   { state: { pressed: false } },
@@ -18,8 +28,9 @@ const activeVariants: readonly EditorEntityVariant[] = [
   { state: { active: false } },
 ];
 
-const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4]
-  .map((variant) => ({ state: { variant } }));
+const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
+  (variant) => ({ state: { variant } }),
+);
 
 const directional: EditorEntityDefinition = {
   defaultDirection: "right",
@@ -32,15 +43,17 @@ export const builtinEditorDefinition: EditorDefinition = {
       defaultDirection: "down",
       variants: directions,
       editorVisual: () => ({
-        layers: [{
-          kind: "image",
-          asset: "bobby-down",
-          frameColumns: 8,
-          frameRows: 1,
-          frameIndex: 7,
-          anchor: "bottom",
-          offsetY: -12,
-        }],
+        layers: [
+          {
+            kind: "image",
+            asset: "bobby-down",
+            frameColumns: 8,
+            frameRows: 1,
+            frameIndex: 7,
+            anchor: "bottom",
+            offsetY: -12,
+          },
+        ],
       }),
     },
     [EntityTypeId.DRAGON]: {
@@ -83,55 +96,95 @@ export const builtinEditorDefinition: EditorDefinition = {
       {
         id: "terrain",
         label: "地形",
-        rows: [[
-          { type: EntityTypeId.GROUND_A }, { type: EntityTypeId.GROUND_B },
-          { type: EntityTypeId.GROUND_C }, { type: EntityTypeId.GROUND_D },
-          { type: EntityTypeId.ICE }, { type: EntityTypeId.SNOW },
-          { type: EntityTypeId.WATER }, { type: EntityTypeId.WATER_ANIMATED },
-        ]],
+        rows: [
+          [
+            { type: EntityTypeId.GROUND_A },
+            { type: EntityTypeId.GROUND_B },
+            { type: EntityTypeId.GROUND_C },
+            { type: EntityTypeId.GROUND_D },
+            { type: EntityTypeId.ICE },
+            { type: EntityTypeId.SNOW },
+            { type: EntityTypeId.WATER },
+            { type: EntityTypeId.WATER_ANIMATED },
+          ],
+        ],
       },
       {
         id: "objective",
         label: "目标与收集",
-        rows: [[
-          { type: EntityTypeId.BOBBY }, { type: EntityTypeId.EXIT },
-          { type: EntityTypeId.CARROT }, { type: EntityTypeId.EGG_NEST_EMPTY },
-          { type: EntityTypeId.GOLDEN_CARROT }, { type: EntityTypeId.BONUS_COIN },
-          { type: EntityTypeId.PUSH_GOAL },
-        ]],
+        rows: [
+          [
+            { type: EntityTypeId.BOBBY },
+            { type: EntityTypeId.EXIT },
+            { type: EntityTypeId.CARROT },
+            { type: EntityTypeId.EGG_NEST_EMPTY },
+            { type: EntityTypeId.GOLDEN_CARROT },
+            { type: EntityTypeId.BONUS_COIN },
+            { type: EntityTypeId.PUSH_GOAL },
+          ],
+        ],
       },
       {
         id: "mechanism",
         label: "机关",
         rows: [
-          directions.map((variant) => ({ type: EntityTypeId.SPEED, direction: variant.direction! })),
-          directions.map((variant) => ({ type: EntityTypeId.TIDE, direction: variant.direction! })),
-          [{ type: EntityTypeId.TRAP }, { type: EntityTypeId.MIRROR }, { type: EntityTypeId.CAROUSEL },
-           { type: EntityTypeId.TIDE_SWITCH }, { type: EntityTypeId.SPEED_SWITCH }, { type: EntityTypeId.CAROUSEL_SWITCH }],
+          directions.map((variant) => ({
+            type: EntityTypeId.SPEED,
+            direction: variant.direction!,
+          })),
+          directions.map((variant) => ({
+            type: EntityTypeId.TIDE,
+            direction: variant.direction!,
+          })),
+          [
+            { type: EntityTypeId.TRAP },
+            { type: EntityTypeId.MIRROR },
+            { type: EntityTypeId.CAROUSEL },
+            { type: EntityTypeId.TIDE_SWITCH },
+            { type: EntityTypeId.SPEED_SWITCH },
+            { type: EntityTypeId.CAROUSEL_SWITCH },
+          ],
         ],
       },
       {
         id: "actors",
         label: "角色与对象",
-        rows: [[
-          { type: EntityTypeId.DRAGON }, { type: EntityTypeId.SANDMAN },
-          { type: EntityTypeId.DREAM_MACHINE }, { type: EntityTypeId.BEAVER },
-          { type: EntityTypeId.FENCE }, { type: EntityTypeId.ICE_BLOCK },
-          { type: EntityTypeId.HIGH_GRASS }, { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
-        ]],
+        rows: [
+          [
+            { type: EntityTypeId.DRAGON },
+            { type: EntityTypeId.SANDMAN },
+            { type: EntityTypeId.DREAM_MACHINE },
+            { type: EntityTypeId.BEAVER },
+            { type: EntityTypeId.FENCE },
+            { type: EntityTypeId.ICE_BLOCK },
+            { type: EntityTypeId.HIGH_GRASS },
+            { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
+          ],
+        ],
       },
       {
         id: "items",
         label: "道具",
-        rows: [[
-          { type: EntityTypeId.BEAN }, { type: EntityTypeId.BEAN_FIELD },
-          { type: EntityTypeId.SHOVEL_PICKUP }, { type: EntityTypeId.MOWER },
-          { type: EntityTypeId.GAS }, { type: EntityTypeId.KITE },
-          { type: EntityTypeId.LEAF }, { type: EntityTypeId.WHIRLWIND },
-        ]],
+        rows: [
+          [
+            { type: EntityTypeId.BEAN },
+            { type: EntityTypeId.BEAN_FIELD },
+            { type: EntityTypeId.SHOVEL_PICKUP },
+            { type: EntityTypeId.MOWER },
+            { type: EntityTypeId.GAS },
+            { type: EntityTypeId.KITE },
+            { type: EntityTypeId.LEAF },
+            { type: EntityTypeId.WHIRLWIND },
+          ],
+        ],
       },
     ],
   },
+  validators: [
+    registeredEntityTypesValidator,
+    playerPresenceValidator,
+    reachTargetValidator,
+  ],
   deletion: {
     resolveTarget({ candidates }) {
       return candidates.at(-1)?.ref ?? null;
@@ -139,7 +192,12 @@ export const builtinEditorDefinition: EditorDefinition = {
   },
 };
 
-export const EDITOR_DIRECTIONS: readonly Direction[] = ["up", "right", "down", "left"];
+export const EDITOR_DIRECTIONS: readonly Direction[] = [
+  "up",
+  "right",
+  "down",
+  "left",
+];
 
 export function applyEditorVariant(
   entity: Readonly<LevelEntity>,
@@ -149,10 +207,20 @@ export function applyEditorVariant(
     ...structuredClone(entity),
     ...(variant.direction ? { direction: variant.direction } : {}),
     ...(variant.properties
-      ? { properties: { ...(entity.properties ?? {}), ...structuredClone(variant.properties) } }
+      ? {
+          properties: {
+            ...(entity.properties ?? {}),
+            ...structuredClone(variant.properties),
+          },
+        }
       : {}),
     ...(variant.state
-      ? { state: { ...(entity.state ?? {}), ...structuredClone(variant.state) } }
+      ? {
+          state: {
+            ...(entity.state ?? {}),
+            ...structuredClone(variant.state),
+          },
+        }
       : {}),
   };
 }
