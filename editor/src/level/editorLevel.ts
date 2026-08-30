@@ -9,9 +9,9 @@ import {
   type LevelMap,
   type WinCondition,
 } from "@bobby/model";
-import type { EditorLevel } from "./types.js";
+import type { EditorMap } from "./types.js";
 
-export function createBlankLevel(width = 16, height = 16): EditorLevel {
+export function createBlankLevel(width = 16, height = 16): EditorMap {
   const safeWidth = clampDimension(width);
   const safeHeight = clampDimension(height);
   const exit = {
@@ -48,14 +48,14 @@ export function createBlankLevel(width = 16, height = 16): EditorLevel {
 export function fromLevelMap(
   level: LevelMap,
   name = "Bobby Level",
-): EditorLevel {
+): EditorMap {
   return normalizeEditorLevel({
     ...structuredClone(level),
     name,
   });
 }
 
-export function toLevelMap(level: EditorLevel): LevelMap {
+export function toLevelMap(level: EditorMap): LevelMap {
   const normalized = normalizeEditorLevel(level);
   return {
     schemaVersion: 1,
@@ -66,11 +66,11 @@ export function toLevelMap(level: EditorLevel): LevelMap {
   };
 }
 
-export function cloneEditorLevel(level: EditorLevel): EditorLevel {
+export function cloneEditorLevel(level: EditorMap): EditorMap {
   return normalizeEditorLevel(structuredClone(level));
 }
 
-export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
+export function normalizeEditorLevel(input: EditorMap): EditorMap {
   const width = clampDimension(Number(input.width));
   const height = clampDimension(Number(input.height));
   const entities = (input.entities ?? [])
@@ -83,7 +83,7 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
         entity.x < width &&
         entity.y < height,
     );
-  const level: EditorLevel = {
+  const level: EditorMap = {
     schemaVersion: 1,
     name: String(input.name || "Untitled Bobby Level").slice(0, 120),
     width,
@@ -104,10 +104,10 @@ export function normalizeEditorLevel(input: EditorLevel): EditorLevel {
 }
 
 export function resizeEditorLevel(
-  level: EditorLevel,
+  level: EditorMap,
   width: number,
   height: number,
-): EditorLevel {
+): EditorMap {
   return normalizeEditorLevel({ ...level, width, height });
 }
 
