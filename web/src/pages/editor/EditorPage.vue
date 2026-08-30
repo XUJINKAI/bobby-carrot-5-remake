@@ -7,6 +7,7 @@ import { loadScreenControlPreference } from "../../shell/shellBridge.js";
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
+import { configureEditorShell } from "./editorShell.js";
 import { useEditorPage } from "./useEditorPage.js";
 
 const props = defineProps<{
@@ -26,6 +27,7 @@ async function togglePlay(): Promise<void> {
     return;
   }
   page.playing.value = true;
+  configureEditorShell(true);
   await nextTick();
   const canvas = document.querySelector<HTMLCanvasElement>(
     "[data-editor-game-canvas]",
@@ -53,6 +55,7 @@ async function togglePlay(): Promise<void> {
     });
   } catch (error) {
     page.playing.value = false;
+    configureEditorShell(false);
     window.alert(error instanceof Error ? error.message : String(error));
   }
 }
@@ -61,6 +64,11 @@ function stopPlay(): void {
   session?.destroy();
   session = null;
   page.playing.value = false;
+  configureEditorShell(false);
+}
+
+function restartPlay(): void {
+  session?.game.restart();
 }
 
 function importLevel(level: EditorLevel): void {
@@ -109,6 +117,7 @@ function onShellAction(event: Event): void {
   if (action === "editor-undo") page.document.undo();
   if (action === "editor-redo") page.document.redo();
   if (action === "editor-play") void togglePlay();
+  if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
   if (action === "editor-palette") paletteOpen.value = !paletteOpen.value;
   if (action === "editor-inspector") inspectorOpen.value = !inspectorOpen.value;
