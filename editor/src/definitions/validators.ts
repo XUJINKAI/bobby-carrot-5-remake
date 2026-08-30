@@ -1,28 +1,31 @@
+import type { EntityCatalog } from "@bobby/engine/authoring";
 import type { WinCondition } from "@bobby/model";
-import type {
-  EditorMapValidator,
-  EditorValidationContext,
-} from "./types.js";
+import type { LevelValidationIssue } from "../level/types.js";
+import type { EditorMapValidator } from "./types.js";
 
 export const registeredEntityTypesValidator: EditorMapValidator = ({
   map,
   catalog,
 }) => {
-  const issues = [];
+  const issues: LevelValidationIssue[] = [];
   map.entities.forEach((entity, index) => {
     if (catalog.has(entity.type)) return;
     issues.push({
-      level: "error" as const,
+      level: "error",
       message: `Entity #${index + 1} 使用未注册 type：${entity.type}`,
     });
   });
   return issues;
 };
 
-export const playerPresenceValidator: EditorMapValidator = ({ map, catalog }) => {
-  const players = knownEntities({ map, catalog }).filter(({ entity, definition }) =>
-    definition.traits.includes("player") ||
-    entity.traits?.includes("player") === true,
+export const playerPresenceValidator: EditorMapValidator = ({
+  map,
+  catalog,
+}) => {
+  const players = knownEntities(map.entities, catalog).filter(
+    ({ entity, definition }) =>
+      definition.traits.includes("player") ||
+      entity.traits?.includes("player") === true,
   );
   if (players.length > 0) return [];
   return [
@@ -35,20 +38,21 @@ export const playerPresenceValidator: EditorMapValidator = ({ map, catalog }) =>
 };
 
 export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) => {
-  const known = knownEntities({ map, catalog });
-  const issues = [];
+  const known = knownEntities(map.entities, catalog);
+  const issues: LevelValidationIssue[] = [];
   for (const selector of requiredReachSelectors(map.rules?.win)) {
-    const exists = known.some(({ entity, definition }) =>
-      entity.type === selector ||
-      definition.traits.includes(selector) ||
-      entity.traits?.includes(selector) === true ||
-      definition.footprint?.parts.some((part) =>
-        part.traits?.includes(selector),
-      ) === true,
+    const exists = known.some(
+      ({ entity, definition }) =>
+        entity.type === selector ||
+        definition.traits.includes(selector) ||
+        entity.traits?.includes(selector) === true ||
+        definition.footprint?.parts.some((part) =>
+          part.traits?.includes(selector),
+        ) === true,
     );
     if (!exists) {
       issues.push({
-        level: "warning" as const,
+        level: "warning",
         message: `当前获胜条件需要 selector '${selector}'，地图中没有对应 Entity。`,
       });
     }
@@ -56,8 +60,11 @@ export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) => {
   return issues;
 };
 
-function knownEntities({ map, catalog }: EditorValidationContext) {
-  return map.entities.flatMap((entity) =>
+function knownEntities(
+  entities: readonly import("@bobby/model").LevelEntity[],
+  catalog: EntityCatalog,
+) {
+  return entities.flatMap((entity) =>
     catalog.has(entity.type)
       ? [{ entity, definition: catalog.require(entity.type) }]
       : [],
