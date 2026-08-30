@@ -23,17 +23,18 @@ import {
 import { selectionRect } from "../authoring/selection.js";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
+  EditorDefinition,
   EditorPlacementPreset,
   EditorSelection,
   EditorTool,
 } from "../definitions/types.js";
-import type { EditorLevel } from "../level/types.js";
+import type { EditorMap } from "../level/types.js";
 import type { EditorViewportState } from "./EditorViewport.js";
 
 export const EDITOR_TILE_SIZE = 38;
 
 export interface EditorCanvasRenderState {
-  level: EditorLevel;
+  level: EditorMap;
   tool: EditorTool;
   placement: EditorPlacementPreset | null;
   selection: EditorSelection | null;
@@ -53,6 +54,7 @@ export class EditorCanvasRenderer {
     private readonly images: ImageManager,
     private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
     private readonly visuals: VisualRegistry = builtinVisualRegistry,
+    private readonly editor: EditorDefinition = builtinEditorDefinition,
   ) {}
 
   async load(): Promise<void> {
@@ -133,7 +135,7 @@ export class EditorCanvasRenderer {
       return;
     }
     if (state.tool === "erase") {
-      const ref = resolveDeletionTarget(state.level, this.catalog, hover);
+      const ref = resolveDeletionTarget(state.level, this.catalog, hover, this.editor);
       if (ref) {
         context.fillStyle = "rgba(90,170,255,.26)";
         for (const cell of entityCells(preview, ref))
@@ -153,7 +155,7 @@ export class EditorCanvasRenderer {
     const hover = state.hover;
     const placement = state.placement;
     if (!hover || !placement) return;
-    const plan = resolvePlacement(state.level, this.catalog, placement, hover);
+    const plan = resolvePlacement(state.level, this.catalog, placement, hover, this.editor);
     if (plan.replace.length > 0) {
       context.fillStyle = "rgba(90,170,255,.26)";
       for (const ref of plan.replace)
@@ -162,7 +164,7 @@ export class EditorCanvasRenderer {
     }
     if (plan.valid) {
       const removed = new Set(plan.replace.map((ref) => ref.index));
-      const ghostLevel: EditorLevel = {
+      const ghostLevel: EditorMap = {
         ...state.level,
         entities: [...state.level.entities.filter((_, index) => !removed.has(index)), plan.entity],
       };
@@ -190,7 +192,7 @@ export class EditorCanvasRenderer {
     const entity = preview.entities.require(inspection.presence.entityId);
     const resolveContext = { entity, presence: inspection.presence, query };
     const composition =
-      builtinEditorDefinition.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
+      this.editor.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
       this.visuals.resolve(inspection.definition, resolveContext);
     this.drawComposition(context, composition, x, y);
   }
