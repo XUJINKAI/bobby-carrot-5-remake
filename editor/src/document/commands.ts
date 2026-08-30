@@ -18,20 +18,33 @@ export interface EditorCommand {
 
 /** Document 原子操作；Authoring placement/occupancy 在上层解析后调用它。 */
 export function addEntity(entity: LevelEntity): EditorCommand {
+  return addEntities([entity]);
+}
+
+export function addEntities(entities: readonly LevelEntity[]): EditorCommand {
   return command((level) =>
     normalizeEditorLevel({
       ...level,
-      entities: [...level.entities, structuredClone(entity)],
+      entities: [...level.entities, ...entities.map((entity) => structuredClone(entity))],
     }),
   );
 }
 
 export function removeEntity(ref: EntityRef): EditorCommand {
+  return removeEntities([ref]);
+}
+
+export function removeEntities(refs: readonly EntityRef[]): EditorCommand {
   return command((level) => {
-    if (!hasEntity(level, ref)) return level;
+    const removed = new Set(
+      refs
+        .map((ref) => ref.index)
+        .filter((index) => Number.isInteger(index) && index >= 0 && index < level.entities.length),
+    );
+    if (removed.size === 0) return level;
     return {
       ...level,
-      entities: level.entities.filter((_, index) => index !== ref.index),
+      entities: level.entities.filter((_, index) => !removed.has(index)),
     };
   });
 }
@@ -147,13 +160,10 @@ function updateLimit(type: LevelLimit["type"], value: LevelLimit | null): Editor
   return command((level) => {
     const limits = (level.rules?.limits ?? []).filter((limit) => limit.type !== type);
     if (value) limits.push(value);
-    return normalizeEditorLevel({
-      ...level,
-      rules: {
-        ...(level.rules ?? {}),
-        ...(limits.length > 0 ? { limits } : { limits: undefined }),
-      },
-    });
+    const rules = { ...(level.rules ?? {}) };
+    if (limits.length > 0) rules.limits = limits;
+    else delete rules.limits;
+    return normalizeEditorLevel({ ...level, rules });
   });
 }
 

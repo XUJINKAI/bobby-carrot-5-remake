@@ -10,6 +10,7 @@ import {
   type VisualRegistry,
   type VisualRenderPass,
 } from "@bobby/engine/authoring";
+import { resolveDeletionTarget } from "../authoring/deletion.js";
 import {
   entityCells,
   resolvePlacement,
@@ -19,7 +20,13 @@ import {
   EditorPreview,
   type EditorPresenceInspection,
 } from "../authoring/EditorPreview.js";
-import type { PaletteItem } from "../authoring/paletteCatalog.js";
+import { selectionRect } from "../authoring/selection.js";
+import { builtinEditorDefinition } from "../definitions/builtin.js";
+import type {
+  EditorPlacementPreset,
+  EditorSelection,
+  EditorTool,
+} from "../definitions/types.js";
 import type { EditorLevel } from "../level/types.js";
 import type { EditorViewportState } from "./EditorViewport.js";
 
@@ -27,10 +34,10 @@ export const EDITOR_TILE_SIZE = 38;
 
 export interface EditorCanvasRenderState {
   level: EditorLevel;
-  selection: PaletteItem;
+  tool: EditorTool;
+  placement: EditorPlacementPreset | null;
+  selection: EditorSelection | null;
   hover: Cell | null;
-  replacing: boolean;
-  placementSequence: number;
   viewport: Readonly<EditorViewportState>;
 }
 
@@ -59,6 +66,7 @@ export class EditorCanvasRenderer {
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
+    this.canvas.style.cursor = state.tool === "select" ? "default" : state.tool === "erase" ? "crosshair" : "copy";
     this.canvas.style.transformOrigin = "0 0";
     this.canvas.style.transform = `translate(${viewport.panX}px, ${viewport.panY}px) scale(${viewport.zoom})`;
     this.canvas.width = Math.round(cssWidth * dpr);
@@ -72,43 +80,23 @@ export class EditorCanvasRenderer {
 
     const preview = new EditorPreview(level, this.catalog);
     const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
-    const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
-      world: [],
-      player: [],
-      effect: [],
-    };
+    const passes: Record<VisualRenderPass, EditorRenderItem[]> = { world: [], player: [], effect: [] };
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
         for (const inspection of preview.inspectCell(x, y).presences) {
-          passes[this.visuals.renderPassFor(inspection.definition)].push({
-            inspection,
-            x,
-            y,
-          });
+          passes[this.visuals.renderPassFor(inspection.definition)].push({ inspection, x, y });
         }
       }
     }
-    for (const pass of ["world", "player", "effect"] as const) {
+    for (const pass of ["world", "player", "effect"] as const)
       for (const item of passes[pass])
-        this.drawPresence(
-          context,
-          preview,
-          visualQuery,
-          item.inspection,
-          item.x,
-          item.y,
-        );
-    }
+        this.drawPresence(context, preview, visualQuery, item.inspection, item.x, item.y);
 
     this.drawGrid(context, level.width, level.height);
-    this.drawPreview(context, state, preview);
+    this.drawInteraction(context, state, preview);
   }
 
-  private drawGrid(
-    context: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-  ): void {
+  private drawGrid(context: CanvasRenderingContext2D, width: number, height: number): void {
     context.strokeStyle = "rgba(255,255,255,.08)";
     context.lineWidth = 1;
     for (let x = 0; x <= width; x++) {
@@ -125,77 +113,70 @@ export class EditorCanvasRenderer {
     }
   }
 
-  private drawPreview(
+  private drawInteraction(
     context: CanvasRenderingContext2D,
     state: EditorCanvasRenderState,
     preview: EditorPreview,
   ): void {
-    const { level, hover, selection } = state;
+    if (state.selection) {
+      const rect = selectionRect(state.selection);
+      context.fillStyle = "rgba(90,170,255,.12)";
+      context.fillRect(rect.left * EDITOR_TILE_SIZE, rect.top * EDITOR_TILE_SIZE, rect.width * EDITOR_TILE_SIZE, rect.height * EDITOR_TILE_SIZE);
+      context.strokeStyle = "#83cfff";
+      context.lineWidth = 2;
+      context.strokeRect(rect.left * EDITOR_TILE_SIZE + 1, rect.top * EDITOR_TILE_SIZE + 1, rect.width * EDITOR_TILE_SIZE - 2, rect.height * EDITOR_TILE_SIZE - 2);
+    }
+    const hover = state.hover;
     if (!hover) return;
+    if (state.tool === "place" && state.placement) {
+      this.drawPlacementGhost(context, state, preview);
+      return;
+    }
+    if (state.tool === "erase") {
+      const ref = resolveDeletionTarget(state.level, this.catalog, hover);
+      if (ref) {
+        context.fillStyle = "rgba(90,170,255,.26)";
+        for (const cell of entityCells(preview, ref))
+          context.fillRect(cell.x * EDITOR_TILE_SIZE, cell.y * EDITOR_TILE_SIZE, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
+      }
+    }
+    context.strokeStyle = "#99d6ff";
+    context.lineWidth = 2;
+    context.strokeRect(hover.x * EDITOR_TILE_SIZE + 1, hover.y * EDITOR_TILE_SIZE + 1, EDITOR_TILE_SIZE - 2, EDITOR_TILE_SIZE - 2);
+  }
 
-    const plan = resolvePlacement(
-      level,
-      this.catalog,
-      selection.type,
-      hover,
-      {},
-      {
-        placementSequence: state.placementSequence,
-        visuals: this.visuals,
-      },
-    );
-    const affected = new Map<string, Cell>();
-    const top = preview.inspectCell(hover.x, hover.y).top;
-    if (top)
-      for (const cell of entityCells(preview, top.ref))
-        affected.set(`${cell.x},${cell.y}`, cell);
-    if (state.replacing)
+  private drawPlacementGhost(
+    context: CanvasRenderingContext2D,
+    state: EditorCanvasRenderState,
+    preview: EditorPreview,
+  ): void {
+    const hover = state.hover;
+    const placement = state.placement;
+    if (!hover || !placement) return;
+    const plan = resolvePlacement(state.level, this.catalog, placement, hover);
+    if (plan.replace.length > 0) {
+      context.fillStyle = "rgba(90,170,255,.26)";
       for (const ref of plan.replace)
         for (const cell of entityCells(preview, ref))
-          affected.set(`${cell.x},${cell.y}`, cell);
-
-    context.fillStyle = "rgba(90,170,255,.26)";
-    for (const cell of affected.values())
-      context.fillRect(
-        cell.x * EDITOR_TILE_SIZE,
-        cell.y * EDITOR_TILE_SIZE,
-        EDITOR_TILE_SIZE,
-        EDITOR_TILE_SIZE,
-      );
-
+          context.fillRect(cell.x * EDITOR_TILE_SIZE, cell.y * EDITOR_TILE_SIZE, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
+    }
     if (plan.valid) {
       const removed = new Set(plan.replace.map((ref) => ref.index));
       const ghostLevel: EditorLevel = {
-        ...level,
-        entities: [
-          ...level.entities.filter((_, index) => !removed.has(index)),
-          plan.entity,
-        ],
+        ...state.level,
+        entities: [...state.level.entities.filter((_, index) => !removed.has(index)), plan.entity],
       };
       const ghost = new EditorPreview(ghostLevel, this.catalog);
       const ghostQuery = new SpatialVisualQuery(ghost.entities, ghost.spatial);
       const ghostRef = { index: ghostLevel.entities.length - 1 };
       context.globalAlpha = 0.55;
       for (const inspection of ghost.presencesFor(ghostRef))
-        this.drawPresence(
-          context,
-          ghost,
-          ghostQuery,
-          inspection,
-          inspection.presence.cell.x,
-          inspection.presence.cell.y,
-        );
+        this.drawPresence(context, ghost, ghostQuery, inspection, inspection.presence.cell.x, inspection.presence.cell.y);
       context.globalAlpha = 1;
     }
-
     context.strokeStyle = plan.valid ? "#99d6ff" : "#ff8e8e";
     context.lineWidth = 2;
-    context.strokeRect(
-      hover.x * EDITOR_TILE_SIZE + 1,
-      hover.y * EDITOR_TILE_SIZE + 1,
-      EDITOR_TILE_SIZE - 2,
-      EDITOR_TILE_SIZE - 2,
-    );
+    context.strokeRect(hover.x * EDITOR_TILE_SIZE + 1, hover.y * EDITOR_TILE_SIZE + 1, EDITOR_TILE_SIZE - 2, EDITOR_TILE_SIZE - 2);
   }
 
   private drawPresence(
@@ -207,116 +188,55 @@ export class EditorCanvasRenderer {
     y: number,
   ): void {
     const entity = preview.entities.require(inspection.presence.entityId);
-    const resolveContext = {
-      entity,
-      presence: inspection.presence,
-      query,
-    };
+    const resolveContext = { entity, presence: inspection.presence, query };
     const composition =
-      inspection.definition.authoring?.editorVisual?.(resolveContext) ??
+      builtinEditorDefinition.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
       this.visuals.resolve(inspection.definition, resolveContext);
     this.drawComposition(context, composition, x, y);
   }
 
-  private drawComposition(
-    context: CanvasRenderingContext2D,
-    composition: VisualComposition | null,
-    x: number,
-    y: number,
-  ): void {
+  private drawComposition(context: CanvasRenderingContext2D, composition: VisualComposition | null, x: number, y: number): void {
     if (!composition) return;
     const left = x * EDITOR_TILE_SIZE;
     const top = y * EDITOR_TILE_SIZE;
     for (const layer of composition.layers) {
-      if (layer.kind === "canvas") {
-        layer.draw(context, left, top, EDITOR_TILE_SIZE);
-      } else if (layer.kind === "image") {
-        this.drawImageLayer(context, layer, x, y);
-      } else {
-        this.drawAtlasLayer(context, layer, x, y);
-      }
+      if (layer.kind === "canvas") layer.draw(context, left, top, EDITOR_TILE_SIZE);
+      else if (layer.kind === "image") this.drawImageLayer(context, layer, x, y);
+      else this.drawAtlasLayer(context, layer, x, y);
     }
   }
 
-  private drawImageLayer(
-    context: CanvasRenderingContext2D,
-    layer: ImageVisualLayer,
-    x: number,
-    y: number,
-  ): void {
+  private drawImageLayer(context: CanvasRenderingContext2D, layer: ImageVisualLayer, x: number, y: number): void {
     const image = this.images.image(layer.asset);
     if (!image) return;
     const left = x * EDITOR_TILE_SIZE;
     const top = y * EDITOR_TILE_SIZE;
     const requestedColumns = positiveInteger(layer.frameColumns);
     const requestedRows = positiveInteger(layer.frameRows);
-    const frameWidth = Math.max(
-      1,
-      layer.frameWidth ?? image.width / (requestedColumns ?? 1),
-    );
-    const frameHeight = Math.max(
-      1,
-      layer.frameHeight ?? image.height / (requestedRows ?? 1),
-    );
-    const columns =
-      requestedColumns ?? Math.max(1, Math.floor(image.width / frameWidth));
-    const rows =
-      requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
+    const frameWidth = Math.max(1, layer.frameWidth ?? image.width / (requestedColumns ?? 1));
+    const frameHeight = Math.max(1, layer.frameHeight ?? image.height / (requestedRows ?? 1));
+    const columns = requestedColumns ?? Math.max(1, Math.floor(image.width / frameWidth));
+    const rows = requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
     const frameCount = Math.max(1, columns * rows);
     const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
     const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
     const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
     const sourceX = (frame % columns) * frameWidth;
     const sourceY = Math.floor(frame / columns) * frameHeight;
-
     if (layer.anchor === "fill") {
-      context.drawImage(
-        image,
-        sourceX,
-        sourceY,
-        frameWidth,
-        frameHeight,
-        left,
-        top,
-        EDITOR_TILE_SIZE,
-        EDITOR_TILE_SIZE,
-      );
+      context.drawImage(image, sourceX, sourceY, frameWidth, frameHeight, left, top, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
       return;
     }
-
     const sourceTile = this.images.sourceTileSize;
     const scale = EDITOR_TILE_SIZE / sourceTile;
     const drawWidth = frameWidth * scale;
     const drawHeight = frameHeight * scale;
-    const drawX =
-      left +
-      EDITOR_TILE_SIZE / 2 -
-      drawWidth / 2 +
-      (layer.offsetX ?? 0) * scale;
-    const drawY =
-      (layer.anchor === "center"
-        ? top + EDITOR_TILE_SIZE / 2 - drawHeight / 2
-        : top + EDITOR_TILE_SIZE - drawHeight) +
-      (layer.offsetY ?? 0) * scale;
-    context.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      frameWidth,
-      frameHeight,
-      drawX,
-      drawY,
-      drawWidth,
-      drawHeight,
-    );
+    const drawX = left + EDITOR_TILE_SIZE / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
+    const drawY = (layer.anchor === "center" ? top + EDITOR_TILE_SIZE / 2 - drawHeight / 2 : top + EDITOR_TILE_SIZE - drawHeight) + (layer.offsetY ?? 0) * scale;
+    context.drawImage(image, sourceX, sourceY, frameWidth, frameHeight, drawX, drawY, drawWidth, drawHeight);
   }
 
-  private drawAtlasLayer(
-    context: CanvasRenderingContext2D,
-    layer: AtlasVisualLayer,
-    x: number,
-    y: number,
-  ): void {
+  private drawAtlasLayer(context: CanvasRenderingContext2D, layer: AtlasVisualLayer, x: number, y: number): void {
     const atlas = this.images.image(this.images.atlasId);
     if (!atlas) return;
     const sourceTile = this.images.sourceTileSize;
@@ -326,17 +246,7 @@ export class EditorCanvasRenderer {
     context.translate(centerX, centerY);
     context.rotate((layer.rotate ?? 0) * (Math.PI / 2));
     context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
-    context.drawImage(
-      atlas,
-      layer.column * sourceTile,
-      layer.row * sourceTile,
-      sourceTile,
-      sourceTile,
-      -EDITOR_TILE_SIZE / 2,
-      -EDITOR_TILE_SIZE / 2,
-      EDITOR_TILE_SIZE,
-      EDITOR_TILE_SIZE,
-    );
+    context.drawImage(atlas, layer.column * sourceTile, layer.row * sourceTile, sourceTile, sourceTile, -EDITOR_TILE_SIZE / 2, -EDITOR_TILE_SIZE / 2, EDITOR_TILE_SIZE, EDITOR_TILE_SIZE);
     context.restore();
   }
 }
