@@ -13,8 +13,7 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.FENCE,
   traits: ["blocking", "fence"],
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Fence", category: "障碍" },
-  authoring: { palette: true, category: "障碍" },
+  presentation: { name: "Fence" },
 };
 
 export const fence: EntityModule = originalModule(definition, {
