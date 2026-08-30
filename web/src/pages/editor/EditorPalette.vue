@@ -136,6 +136,8 @@ function moveTooltip(event: MouseEvent): void {
   height: auto;
   min-width: 0;
   min-height: 0;
+  border: 0;
+  box-shadow: none;
 }
 .editor-palette-tooltip {
   position: fixed;
