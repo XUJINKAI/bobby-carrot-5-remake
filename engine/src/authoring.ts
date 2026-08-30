@@ -34,7 +34,6 @@ export {
 } from "./image/ImageManager.js";
 export {
   defineEntityModule,
-  type EntityAuthoringDefinition,
   type EntityBehaviorBinding,
   type EntityModule,
   type EntityModuleDefinition,
@@ -60,6 +59,7 @@ export {
 } from "./visual/preview.js";
 export type {
   AtlasVisualLayer,
+  CanvasVisualLayer,
   EntityVisualRuntimeState,
   ImageVisualLayer,
   VisualComposition,
