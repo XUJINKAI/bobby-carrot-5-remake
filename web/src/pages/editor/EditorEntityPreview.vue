@@ -14,8 +14,10 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
+  fallbackText?: string;
 }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
+const rendered = ref(true);
 let renderer: EditorEntityPreviewRenderer | null = null;
 
 function draw(): void {
@@ -25,7 +27,7 @@ function draw(): void {
     props.catalog,
     props.editor,
   );
-  renderer.render(canvas.value, props.source, props.cellSize);
+  rendered.value = renderer.render(canvas.value, props.source, props.cellSize);
 }
 
 watch(
@@ -37,12 +39,38 @@ onMounted(draw);
 </script>
 
 <template>
-  <canvas ref="canvas" class="editor-entity-preview" aria-hidden="true" />
+  <span class="editor-entity-preview-shell">
+    <canvas
+      ref="canvas"
+      class="editor-entity-preview"
+      :class="{ hidden: !rendered }"
+      aria-hidden="true"
+    />
+    <span v-if="!rendered" class="editor-entity-preview-fallback" aria-hidden="true">
+      {{ fallbackText ?? source.type.slice(0, 2).toUpperCase() }}
+    </span>
+  </span>
 </template>
 
 <style scoped>
+.editor-entity-preview-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
 .editor-entity-preview {
   display: block;
   image-rendering: pixelated;
+}
+.editor-entity-preview.hidden {
+  visibility: hidden;
+}
+.editor-entity-preview-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.72rem;
 }
 </style>
