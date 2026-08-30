@@ -13,7 +13,7 @@ import type {
 } from "../definitions/types.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
-import type { EditorLevel, EntityRef } from "../level/types.js";
+import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 
 export interface Cell {
@@ -35,7 +35,7 @@ export interface EntityPlacementPlan {
 }
 
 export function resolvePlacement(
-  level: EditorLevel,
+  level: EditorMap,
   catalog: EntityCatalog,
   preset: EditorPlacementPreset,
   cursor: Cell,
