@@ -9,7 +9,7 @@ import {
   type VisualComposition,
   type VisualRegistry,
   type VisualRenderPass,
-} from "@bobby/engine/authoring";
+} from "@bobby/engine";
 import { resolveDeletionTarget } from "../authoring/deletion.js";
 import {
   entityCells,
