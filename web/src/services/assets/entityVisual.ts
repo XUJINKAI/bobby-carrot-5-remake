@@ -1,8 +1,8 @@
-import type { ImageManager } from "@bobby/engine";
 import {
   resolveEntityVisualPreview,
   type EntityVisualPreviewSource,
-} from "@bobby/engine/authoring";
+  type ImageManager,
+} from "@bobby/engine";
 
 export function entityVisualStyle(
   images: ImageManager,
@@ -34,8 +34,12 @@ export function entityVisualStyle(
     const columns = positiveInteger(layer.frameColumns) ?? 1;
     const rows = positiveInteger(layer.frameRows) ?? 1;
     const frameCount = columns * rows;
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
+    const progress = Math.max(
+      0,
+      Math.min(0.999999, layer.frameProgress ?? 0),
+    );
+    const requestedFrame =
+      layer.frameIndex ?? Math.floor(progress * frameCount);
     const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
     const column = frame % columns;
     const row = Math.floor(frame / columns);
@@ -66,13 +70,6 @@ export function entityVisualStyle(
       backgroundRepeat: "no-repeat",
       backgroundSize: `${backgroundWidth}px ${backgroundHeight}px`,
       backgroundPosition: `${left}px ${top}px`,
-    };
-  }
-  if (layer.previewStyle) {
-    return {
-      width: `${size}px`,
-      height: `${size}px`,
-      ...layer.previewStyle,
     };
   }
   return null;
