@@ -40,17 +40,10 @@ export function resolveEditorEntityPreviewLayout(
     },
     definition.footprint,
   );
-  let minX = Math.min(...cells.map((cell) => cell.x));
-  let minY = Math.min(...cells.map((cell) => cell.y));
-  let maxX = Math.max(...cells.map((cell) => cell.x));
-  let maxY = Math.max(...cells.map((cell) => cell.y));
-  const visualBounds = definition.presentation.visualBounds;
-  if (visualBounds) {
-    minX = Math.min(minX, Math.trunc(visualBounds.left));
-    minY = Math.min(minY, Math.trunc(visualBounds.top));
-    maxX = Math.max(maxX, Math.trunc(visualBounds.right));
-    maxY = Math.max(maxY, Math.trunc(visualBounds.bottom));
-  }
+  const minX = Math.min(...cells.map((cell) => cell.x));
+  const minY = Math.min(...cells.map((cell) => cell.y));
+  const maxX = Math.max(...cells.map((cell) => cell.x));
+  const maxY = Math.max(...cells.map((cell) => cell.y));
   prototype.x = -minX;
   prototype.y = -minY;
   return {
