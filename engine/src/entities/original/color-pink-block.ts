@@ -22,12 +22,7 @@ const definition: EntityModuleDefinition = {
       default: true,
     },
   ],
-  presentation: { name: "Pink Block", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Pink Block" },
 };
 
 export const colorPinkBlock: EntityModule = originalModule(
