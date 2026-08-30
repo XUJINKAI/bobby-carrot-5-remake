@@ -41,6 +41,7 @@ export type EditorPlacementPoint =
   | { offset: { dx: number; dy: number } };
 
 export interface EditorEntityVariant {
+  label?: string;
   direction?: Direction;
   properties?: EntityProperties;
   state?: EntityState;
