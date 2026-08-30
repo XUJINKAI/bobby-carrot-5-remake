@@ -12,6 +12,8 @@ import {
   pasteClipboard,
   placeEntity,
   removeEntities,
+  reorderEntityStack,
+  replaceEntities,
   replaceEntity,
   resolveDeletionTarget,
   resolveEditorPalette,
@@ -34,13 +36,16 @@ import {
   type EditorSnapshot,
   type EditorTool,
   type EntityFieldDefinition,
+  type EntityRef,
   type PaletteItem,
 } from "@bobby/editor";
 import {
   EntityTypeId,
   type EntityProperties,
   type EntityState,
+  type EntityType,
   type JsonValue,
+  type LevelEntity,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
@@ -52,8 +57,9 @@ export function useEditorPage(initialLevel: EditorMap) {
   const flatPalette = palette.flatMap((group) => group.rows.flat());
   const first =
     flatPalette.find((item) => item.type === EntityTypeId.GROUND_C) ??
-    flatPalette[0] ??
-    { type: EntityTypeId.GROUND_C, key: "fallback", label: "Ground" };
+    flatPalette[0];
+  if (!first) throw new Error("Editor Palette 不能为空");
+
   const document = new EditorDocument(initialLevel);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const tool = ref<EditorTool>("place");
@@ -87,19 +93,6 @@ export function useEditorPage(initialLevel: EditorMap) {
       editor,
     ),
   );
-  const selectedEntity = computed(() => {
-    if (selectedRefs.value.length !== 1) return null;
-    const ref = selectedRefs.value[0]!;
-    const entity = currentLevel().entities[ref.index];
-    return entity
-      ? {
-          ref,
-          entity,
-          definition: catalog.require(entity.type),
-          editor: editor.entities?.[entity.type],
-        }
-      : null;
-  });
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
 
   function setTool(next: EditorTool): void {
@@ -192,6 +185,21 @@ export function useEditorPage(initialLevel: EditorMap) {
     return changed;
   }
 
+  function deleteLayer(entityIndex: number): boolean {
+    return document.execute(removeEntities([{ index: entityIndex }]));
+  }
+
+  function deleteSelectedType(type: EntityType): boolean {
+    const refs = selectedRefsOfType(type);
+    return refs.length > 0 && document.execute(removeEntities(refs));
+  }
+
+  function reorderLayers(refsTopToBottom: readonly number[]): boolean {
+    return document.execute(
+      reorderEntityStack(refsTopToBottom.map((index) => ({ index }))),
+    );
+  }
+
   function paste(origin: Cell): boolean {
     const source = clipboard.value;
     if (!source || source.entities.length === 0) return false;
@@ -212,16 +220,34 @@ export function useEditorPage(initialLevel: EditorMap) {
     return changed;
   }
 
-  function applyVariant(index: number): boolean {
-    const selected = selectedEntity.value;
-    const variant = selected?.editor?.variants?.[index];
-    if (!selected || !variant) return false;
+  function applyVariant(entityIndex: number, index: number): boolean {
+    const entity = currentLevel().entities[entityIndex];
+    if (!entity) return false;
+    const variant = editor.entities?.[entity.type]?.variants?.[index];
+    if (!variant) return false;
     return document.execute(
       replaceEntity(
-        selected.ref,
-        applyEditorVariant(selected.entity, variant),
+        { index: entityIndex },
+        applyEditorVariant(entity, variant),
       ),
     );
+  }
+
+  function applyBatchVariant(type: EntityType, index: number): boolean {
+    const variant = editor.entities?.[type]?.variants?.[index];
+    if (!variant) return false;
+    const replacements = selectedRefsOfType(type)
+      .map((ref) => {
+        const entity = currentLevel().entities[ref.index];
+        return entity
+          ? { ref, entity: applyEditorVariant(entity, variant) }
+          : null;
+      })
+      .filter(
+        (replacement): replacement is { ref: EntityRef; entity: LevelEntity } =>
+          replacement !== null,
+      );
+    return replacements.length > 0 && document.execute(replaceEntities(replacements));
   }
 
   function cycleVariant(step: number, cell?: Cell): boolean {
@@ -235,13 +261,25 @@ export function useEditorPage(initialLevel: EditorMap) {
         step,
       );
       if (!next) return false;
-      placement.value = next;
+      placement.value = {
+        ...placement.value,
+        ...next,
+        previewPreset: {
+          ...placement.value.previewPreset,
+          ...next,
+        },
+      };
       return true;
     }
     const targetCell = cell ?? mapSelection.value?.focus;
     if (!targetCell) return false;
     if (cell) ensureSelectionAt(cell);
-    const inspection = preview().inspectCell(targetCell.x, targetCell.y).top;
+    const inspection = [...preview().inspectCell(targetCell.x, targetCell.y).presences]
+      .reverse()
+      .find(
+        (candidate) =>
+          (editor.entities?.[candidate.entity.type]?.variants?.length ?? 0) > 0,
+      );
     if (!inspection) return false;
     const next = cycleEntityVariant(
       inspection.entity,
@@ -258,42 +296,71 @@ export function useEditorPage(initialLevel: EditorMap) {
     key: string,
     raw: string,
   ): void {
-    const entity = currentLevel().entities[entityIndex];
-    if (!entity) return;
-    const field = catalog
-      .require(entity.type)
-      .properties?.find((item) => item.key === key);
-    if (!field) return;
-    const properties = { ...(entity.properties ?? {}) } as EntityProperties;
-    if (raw === "") delete properties[key];
-    else properties[key] = coerceFieldValue(field, raw);
-    document.execute(
-      updateEntityProperties(
-        { index: entityIndex },
-        Object.keys(properties).length ? properties : undefined,
-      ),
-    );
+    updatePropertiesForRefs([{ index: entityIndex }], key, raw);
   }
 
-  function updateState(
-    entityIndex: number,
+  function updateBatchProperty(type: EntityType, key: string, raw: string): void {
+    updatePropertiesForRefs(selectedRefsOfType(type), key, raw);
+  }
+
+  function updateState(entityIndex: number, key: string, raw: string): void {
+    updateStateForRefs([{ index: entityIndex }], key, raw);
+  }
+
+  function updateBatchState(type: EntityType, key: string, raw: string): void {
+    updateStateForRefs(selectedRefsOfType(type), key, raw);
+  }
+
+  function updatePropertiesForRefs(
+    refs: readonly EntityRef[],
     key: string,
     raw: string,
   ): void {
-    const entity = currentLevel().entities[entityIndex];
-    if (!entity) return;
-    const field = catalog
-      .require(entity.type)
-      .state?.find((item) => item.key === key);
-    if (!field) return;
-    const state = { ...(entity.state ?? {}) } as EntityState;
-    if (raw === "") delete state[key];
-    else state[key] = coerceFieldValue(field, raw);
-    document.execute(
-      updateEntityState(
-        { index: entityIndex },
-        Object.keys(state).length ? state : undefined,
-      ),
+    const replacements = refs.flatMap((ref) => {
+      const entity = currentLevel().entities[ref.index];
+      if (!entity) return [];
+      const field = catalog
+        .require(entity.type)
+        .properties?.find((item) => item.key === key);
+      if (!field) return [];
+      const properties = { ...(entity.properties ?? {}) } as EntityProperties;
+      if (raw === "") delete properties[key];
+      else properties[key] = coerceFieldValue(field, raw);
+      const next = { ...entity };
+      if (Object.keys(properties).length > 0) next.properties = properties;
+      else delete next.properties;
+      return [{ ref, entity: next }];
+    });
+    if (replacements.length > 0) document.execute(replaceEntities(replacements));
+  }
+
+  function updateStateForRefs(
+    refs: readonly EntityRef[],
+    key: string,
+    raw: string,
+  ): void {
+    const replacements = refs.flatMap((ref) => {
+      const entity = currentLevel().entities[ref.index];
+      if (!entity) return [];
+      const field = catalog
+        .require(entity.type)
+        .state?.find((item) => item.key === key);
+      if (!field) return [];
+      const state = { ...(entity.state ?? {}) } as EntityState;
+      if (raw === "") delete state[key];
+      else state[key] = coerceFieldValue(field, raw);
+      const next = { ...entity };
+      if (Object.keys(state).length > 0) next.state = state;
+      else delete next.state;
+      return [{ ref, entity: next }];
+    });
+    if (replacements.length > 0) document.execute(replaceEntities(replacements));
+  }
+
+  function selectedRefsOfType(type: EntityType): EntityRef[] {
+    const level = currentLevel();
+    return selectedRefs.value.filter(
+      (ref) => level.entities[ref.index]?.type === type,
     );
   }
 
@@ -339,7 +406,6 @@ export function useEditorPage(initialLevel: EditorMap) {
     paletteSize,
     inspector,
     selectedRefs,
-    selectedEntity,
     rules,
     levelMap: computed(() => toLevelMap(currentLevel())),
     setTool,
@@ -352,11 +418,17 @@ export function useEditorPage(initialLevel: EditorMap) {
     cut,
     paste,
     deleteSelection,
+    deleteLayer,
+    deleteSelectedType,
+    reorderLayers,
     applyVariant,
+    applyBatchVariant,
     cycleVariant,
     transform: (cell: Cell, step: number) => cycleVariant(step, cell),
     updateProperty,
+    updateBatchProperty,
     updateState,
+    updateBatchState,
     setPaletteSize,
     resize,
     setRule,
