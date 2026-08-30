@@ -15,15 +15,7 @@ const backgroundVariants = Array.from({ length: 256 }, (_, index) => {
     type: `background-variant-${String(number).padStart(3, "0")}`,
     traits: [],
     stackOrder: SURFACE_STACK_ORDER,
-    presentation: {
-      name: `Background Variant ${number}`,
-      category: "原版背景",
-    },
-    authoring: {
-      palette: false,
-      category: "原版背景",
-      replaceGroup: "surface",
-    },
+    presentation: { name: `Background Variant ${number}` },
   };
   return staticEntity(definition, cell(index % 16, Math.floor(index / 16)));
 });
@@ -35,15 +27,7 @@ const walkableVariants = Array.from({ length: 52 }, (_, index) => {
     type: `walkable-variant-${String(number).padStart(2, "0")}`,
     traits: ["walkable"],
     stackOrder: SURFACE_STACK_ORDER,
-    presentation: {
-      name: `Walkable Variant ${number}`,
-      category: "原版地表",
-    },
-    authoring: {
-      palette: false,
-      category: "原版地表",
-      replaceGroup: "surface",
-    },
+    presentation: { name: `Walkable Variant ${number}` },
   };
   return staticEntity(definition, cell(linear % 16, Math.floor(linear / 16)));
 });
@@ -54,11 +38,7 @@ const objectVariants = Array.from({ length: 256 }, (_, index) => {
     type: `object-variant-${String(number).padStart(3, "0")}`,
     traits: [],
     stackOrder: CONTENT_STACK_ORDER,
-    presentation: {
-      name: `Object Variant ${number}`,
-      category: "原版实体",
-    },
-    authoring: { palette: false, category: "原版实体" },
+    presentation: { name: `Object Variant ${number}` },
   };
   return staticEntity(definition, cell(index % 16, Math.floor(index / 16)));
 });
