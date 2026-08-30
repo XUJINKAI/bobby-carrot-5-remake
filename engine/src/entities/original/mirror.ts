@@ -17,12 +17,7 @@ const definition: EntityModuleDefinition = {
   traits: ["walkable", "mirror", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([1, 2, 3, 4]),
-  presentation: { name: "Mirror", category: "地表" },
-  authoring: {
-    palette: true,
-    category: "地表",
-    replaceGroup: "surface",
-  },
+  presentation: { name: "Mirror" },
 };
 
 export const mirror: EntityModule = originalModule(
