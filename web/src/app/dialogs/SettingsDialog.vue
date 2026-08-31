@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { serializeAdventureSave, type AdventureSave } from "@bobby/adventure";
 import type { MusicStyle } from "@bobby/engine";
+import type { Locale } from "@bobby/i18n";
 import { ref } from "vue";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
@@ -14,6 +15,7 @@ defineProps<{
 }>();
 const emit = defineEmits<{
   close: [];
+  locale: [value: Locale];
   musicEnabled: [value: boolean];
   musicGain: [value: number];
   soundGain: [value: number];
@@ -70,6 +72,23 @@ function requestReset(): void {
   <section class="global-dialog settings-dialog" role="dialog" aria-label="设置">
     <header>设置 <button type="button" aria-label="关闭" @click="emit('close')">×</button></header>
     <div>
+      <h3>语言</h3>
+      <div class="button-group language-options" role="radiogroup" aria-label="语言">
+        <button
+          type="button"
+          role="radio"
+          :aria-checked="state.locale === 'zh-CN'"
+          :class="{ selected: state.locale === 'zh-CN' }"
+          @click="emit('locale', 'zh-CN')"
+        >中文</button>
+        <button
+          type="button"
+          role="radio"
+          :aria-checked="state.locale === 'en'"
+          :class="{ selected: state.locale === 'en' }"
+          @click="emit('locale', 'en')"
+        >English</button>
+      </div>
       <h3>音频</h3>
       <label>音乐 <input type="checkbox" :checked="state.musicEnabled" @change="emit('musicEnabled', ($event.target as HTMLInputElement).checked)"></label>
       <label>音乐增益 {{ state.musicGain }}% <input type="range" min="0" max="200" :value="state.musicGain" @input="emit('musicGain', numberValue($event))"></label>
@@ -122,6 +141,33 @@ function requestReset(): void {
 </template>
 
 <style scoped>
+.button-group {
+  display: inline-flex;
+  justify-self: start;
+  overflow: hidden;
+  border: 1px solid #000;
+  border-radius: 7px;
+}
+
+.button-group button {
+  min-height: 34px;
+  min-width: 88px;
+  padding: 6px 14px;
+  border: 0;
+  border-right: 1px solid #000;
+  background: #fff;
+  color: #000;
+}
+
+.button-group button:last-child {
+  border-right: 0;
+}
+
+.button-group button.selected {
+  background: #000;
+  color: #fff;
+}
+
 .music-style-setting {
   display: flex;
   align-items: flex-start;

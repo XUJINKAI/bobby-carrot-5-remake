@@ -1,5 +1,6 @@
 import type { AdventureSave } from "@bobby/adventure";
 import type { AudioRuntime, MusicStyle } from "@bobby/engine";
+import type { Locale } from "@bobby/i18n";
 import { reactive, ref } from "vue";
 import {
   loadAdventureSave,
@@ -10,6 +11,7 @@ import {
   loadScreenControlPreference,
   storeScreenControlPreference,
 } from "../../shell/shellBridge.js";
+import { getWebLocale, setWebLocale } from "../../i18n/webI18n.js";
 
 const MUSIC_ENABLED_KEY = "bobby.musicEnabled";
 const MUSIC_GAIN_KEY = "bobby.musicGain";
@@ -17,6 +19,7 @@ const SOUND_GAIN_KEY = "bobby.soundGain";
 const MUSIC_STYLE_KEY = "bobby.musicStyle";
 
 export interface GlobalSettingsState {
+  locale: Locale;
   musicEnabled: boolean;
   musicGain: number;
   soundGain: number;
@@ -37,6 +40,10 @@ export function useGlobalSettings(audio: AudioRuntime) {
     Object.assign(state, readState(audio));
     profile.value = loadAdventureSave();
     feedback.value = message;
+  };
+  const setLocale = (locale: Locale): void => {
+    setWebLocale(locale);
+    state.locale = locale;
   };
   const toggleMusic = (): void => {
     setMusicEnabled(!audio.isMusicEnabled());
@@ -85,6 +92,7 @@ export function useGlobalSettings(audio: AudioRuntime) {
     profile,
     feedback,
     refresh,
+    setLocale,
     toggleMusic,
     setMusicEnabled,
     setMusicGain,
@@ -108,6 +116,7 @@ function applyStoredAudioSettings(audio: AudioRuntime): void {
 function readState(audio: AudioRuntime): GlobalSettingsState {
   const save = loadAdventureSave();
   return {
+    locale: getWebLocale(),
     musicEnabled: audio.isMusicEnabled(),
     musicGain: Math.round(audio.getMusicGain() * 100),
     soundGain: Math.round(audio.getSoundGain() * 100),

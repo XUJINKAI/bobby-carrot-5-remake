@@ -2,6 +2,7 @@
 import type { AudioRuntime } from "@bobby/engine";
 import { onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
+import { localizeGlobalActions } from "./pageChrome.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
@@ -48,23 +49,32 @@ function dispatchAction(action: string): void {
   }
 }
 
-function updateActionPressed(id: string, pressed: boolean): void {
+function shellActions() {
   const topBar = props.shell.config.topBar;
   const bottomBar = props.shell.config.bottomBar;
-  const actions = [
+  return [
     ...(topBar?.back ? [topBar.back] : []),
     ...(topBar?.commands ?? []),
     ...(topBar?.actions ?? []),
     ...(bottomBar?.leading ?? []),
     ...(bottomBar?.trailing ?? []),
   ];
-  const target = actions.find((item) => item.id === id);
+}
+
+function updateActionPressed(id: string, pressed: boolean): void {
+  const target = shellActions().find((item) => item.id === id);
   if (target) target.pressed = pressed;
 }
 
 watch(
   [() => settings.state.musicEnabled, () => props.shell.config],
   ([musicEnabled]) => updateActionPressed("music", musicEnabled),
+  { immediate: true },
+);
+
+watch(
+  [() => settings.state.locale, () => props.shell.config],
+  () => localizeGlobalActions(shellActions()),
   { immediate: true },
 );
 
@@ -115,6 +125,7 @@ onMounted(() => {
       :profile="settings.profile.value"
       :feedback="settings.feedback.value"
       @close="closeDialog"
+      @locale="settings.setLocale"
       @music-enabled="settings.setMusicEnabled"
       @music-gain="settings.setMusicGain"
       @sound-gain="settings.setSoundGain"

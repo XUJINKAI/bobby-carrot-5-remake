@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AdventureSave } from "@bobby/adventure";
 import type { MusicStyle } from "@bobby/engine";
+import type { Locale } from "@bobby/i18n";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
 import type { HelpDescriptor } from "../../shell/shellBridge.js";
 import HelpDialog from "./HelpDialog.vue";
@@ -15,6 +16,7 @@ defineProps<{
 }>();
 const emit = defineEmits<{
   close: [];
+  locale: [value: Locale];
   musicEnabled: [value: boolean];
   musicGain: [value: number];
   soundGain: [value: number];
@@ -34,6 +36,7 @@ const emit = defineEmits<{
       :profile="profile"
       :feedback="feedback"
       @close="emit('close')"
+      @locale="emit('locale', $event)"
       @music-enabled="emit('musicEnabled', $event)"
       @music-gain="emit('musicGain', $event)"
       @sound-gain="emit('soundGain', $event)"
