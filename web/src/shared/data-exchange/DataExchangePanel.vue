@@ -209,13 +209,66 @@ function label(control: DataExchangeControlConfig): string {
 </template>
 
 <style scoped>
-.data-exchange-panel { display: grid; gap: 8px; min-width: 0; }
-.data-exchange-text { width: 100%; min-height: 150px; resize: vertical; box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: #071710; color: inherit; font: 0.78rem/1.45 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
-.data-exchange-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.data-exchange-toolbar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.data-exchange-toolbar-right { margin-left: auto; }
-.data-exchange-toolbar button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: #173b29; color: inherit; }
-.data-exchange-status, .data-exchange-feedback { color: var(--muted); font-size: 0.75rem; }
-.data-exchange-check { display: inline-flex; align-items: center; gap: 5px; }
-.data-exchange-feedback { margin: 0; min-height: 1em; }
+.data-exchange-panel {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.data-exchange-text {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-control-radius);
+  background: color-mix(in srgb, var(--bc-bg) 82%, #000 18%);
+  color: var(--bc-text);
+  font: 0.78rem/1.45 ui-monospace, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.data-exchange-toolbar,
+.data-exchange-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.data-exchange-toolbar-right {
+  margin-left: auto;
+}
+
+.data-exchange-toolbar button {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
+}
+
+.data-exchange-toolbar button:hover {
+  background: var(--bc-control-hover);
+}
+
+.data-exchange-status,
+.data-exchange-feedback {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.data-exchange-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.data-exchange-feedback {
+  margin: 0;
+  min-height: 1em;
+}
 </style>
