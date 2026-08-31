@@ -1,4 +1,5 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { createDialogBehavior } from "@bobby/engine";
 import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
@@ -13,7 +14,7 @@ import {
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
 
-const HOME_DEMO_DIALOG_ID = "web.home.demo.sandman";
+const HOME_DEMO_DIALOG_REF = "sandman-dialog-1";
 
 export async function renderHome(
   context: PageContext,
@@ -61,31 +62,54 @@ export async function renderHome(
   });
   homeApp.mount(app);
 
+  const disposeHomeDialog = createDialogBehavior(
+    HOME_DEMO_DIALOG_REF,
+    ({ self, commands }) => {
+      const storedCount = self.entity.state?.dialogCount;
+      const count =
+        typeof storedCount === "number" && Number.isFinite(storedCount)
+          ? storedCount
+          : 0;
+      commands.setState(self.entity.id, {
+        ...(self.entity.state ?? {}),
+        dialogCount: count + 1,
+      });
+      return webT(
+        count === 0 ? "home.demo.sandmanFirst" : "home.demo.sandmanAgain",
+      );
+    },
+  );
+
   const [demo, canvas] = await Promise.all([
     resolveMapDocument({ collection: "original", id: "campaign-intro" }),
     canvasReady,
   ]);
-  session = await createGameSession({
-    root: app,
-    canvas,
-    level: prepareHomeDemoLevel(demo.level),
-    gameOptions: {
-      audio,
-      images,
-      profile: { superKey: true },
-    },
-    runtime: {
-      hud: true,
-      input: {
-        undo: false,
-        zoom: false,
-        debug: false,
-        screenJoystick: { enabled: loadScreenControlPreference() },
+  try {
+    session = await createGameSession({
+      root: app,
+      canvas,
+      level: prepareHomeDemoLevel(demo.level),
+      gameOptions: {
+        audio,
+        images,
+        profile: { superKey: true },
       },
-    },
-    resolveDialogMessage: (messageId) =>
-      messageId === HOME_DEMO_DIALOG_ID ? webT("home.demo.sandman") : undefined,
-  });
+      runtime: {
+        hud: true,
+        input: {
+          undo: false,
+          zoom: false,
+          debug: false,
+          screenJoystick: { enabled: loadScreenControlPreference() },
+        },
+      },
+    });
+  } catch (error) {
+    disposeHomeDialog();
+    homeApp.unmount();
+    throw error;
+  }
+
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
     const state = session.game.state;
@@ -126,6 +150,7 @@ export async function renderHome(
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
+      disposeHomeDialog();
       session?.destroy();
       homeApp.unmount();
     },
@@ -138,7 +163,7 @@ function prepareHomeDemoLevel(level: LevelMap): LevelMap {
     if (entity.type !== EntityTypeId.SANDMAN) continue;
     entity.properties = {
       ...(entity.properties ?? {}),
-      dialogId: HOME_DEMO_DIALOG_ID,
+      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },
     };
   }
   return result;
