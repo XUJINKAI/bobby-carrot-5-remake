@@ -15,6 +15,8 @@ export function createImageManager(): ImageManager {
     sources: {
       "entity-atlas": siteUrl("assets/art/hd/ts.png"),
       "original-animated-tiles": siteUrl("assets/art/hd/ta.png"),
+      "original-title": siteUrl("assets/art/hd/title.png"),
+      "original-train": siteUrl("assets/art/hd/train.png"),
       "bobby-left": siteUrl("assets/art/hd/b0.png"),
       "bobby-right": siteUrl("assets/art/hd/b1.png"),
       "bobby-up": siteUrl("assets/art/hd/b2.png"),
