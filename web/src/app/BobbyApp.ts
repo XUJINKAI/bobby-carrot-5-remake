@@ -28,6 +28,7 @@ import {
   importedLevelMap,
   renderImportMessage,
 } from "../pages/import/mountImportPage.js";
+import { renderSettingsPage } from "../pages/settings/mountSettingsPage.js";
 import {
   defaultHelpDescriptor,
   installShellBridge,
@@ -47,7 +48,7 @@ import {
 } from "./routes.js";
 
 interface AppRootHandle {
-  openSettings(feedback?: string): void;
+  openSettings(): void;
 }
 
 export class BobbyApp {
@@ -166,8 +167,7 @@ export class BobbyApp {
       return;
     }
     if (path === "/settings") {
-      this.controller = await renderHome(context);
-      this.vueRoot?.openSettings();
+      this.controller = renderSettingsPage(context);
       return;
     }
     if (path === "/adventure") {
@@ -366,7 +366,7 @@ function parseMapReference(value: string): ExploreMapRef | null {
 }
 
 function isDirectMapRoute(path: string): boolean {
-  return path === "/embed" || path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
+  return path === "/embed" || path === "/settings" || path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
 }
 
 function defaultShellState(): ShellViewState {
