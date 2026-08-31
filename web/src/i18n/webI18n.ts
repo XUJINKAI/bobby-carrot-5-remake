@@ -23,6 +23,7 @@ const WEB_CATALOGS = {
     "settings.musicModern": "现代",
     "settings.volume": "音量",
     "settings.more": "更多设置",
+    "home.demo.sandman": "欢迎来到 Bobby Carrot 5 Remake！这里运行的就是完整 Engine。试试方向键或 WASD，然后继续探索这个浏览器里的经典世界。",
   },
   en: {
     "shell.music": "Music",
@@ -38,6 +39,7 @@ const WEB_CATALOGS = {
     "settings.musicModern": "Modern",
     "settings.volume": "Volume",
     "settings.more": "More settings",
+    "home.demo.sandman": "Welcome to Bobby Carrot 5 Remake! This is the full Engine running right here. Try the arrow keys or WASD, then explore the classic world rebuilt for the browser.",
   },
 } satisfies Readonly<Record<Locale, TranslationCatalog>>;
 

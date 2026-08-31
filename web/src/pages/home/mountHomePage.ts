@@ -1,6 +1,10 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
+import { explorePlayPath } from "../../app/routes.js";
+import { globalActions, homeIdentity } from "../../app/pageChrome.js";
+import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { lastExploreMapId } from "../../storage/exploreProgressStorage.js";
@@ -10,8 +14,8 @@ import {
 } from "../../shell/shellBridge.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
-import { explorePlayPath } from "../../app/routes.js";
-import { globalActions, homeIdentity } from "../../app/pageChrome.js";
+
+const HOME_DEMO_DIALOG_ID = "web.home.demo.sandman";
 
 export async function renderHome(
   context: PageContext,
@@ -33,7 +37,7 @@ export async function renderHome(
     },
     bottomBar: {
       visible: true,
-      fixed: true,
+      fixed: false,
       info: [
         { text: "Bobby Carrot 5 Remake" },
         { text: "XUJINKAI" },
@@ -44,7 +48,7 @@ export async function renderHome(
   });
   app.replaceChildren();
   const view = reactive<HomeViewState>({
-    demoStatus: "方向键 / WASD 移动，体验 Engine 的地图规则。",
+    demoStatus: "方向键 / WASD 移动。Demo 视野固定，不响应滚轮缩放。",
     demoResult: null,
     deathReason: "",
     importFeedback: "",
@@ -75,13 +79,13 @@ export async function renderHome(
   homeApp.mount(app);
 
   const [demo, canvas] = await Promise.all([
-    resolveMapDocument({ collection: "original", id: "1-1" }),
+    resolveMapDocument({ collection: "original", id: "campaign-intro" }),
     canvasReady,
   ]);
   session = await createGameSession({
     root: app,
     canvas,
-    level: demo.level,
+    level: prepareHomeDemoLevel(demo.level),
     gameOptions: {
       audio,
       images,
@@ -91,10 +95,13 @@ export async function renderHome(
       hud: true,
       input: {
         undo: false,
+        zoom: false,
         debug: false,
         screenJoystick: { enabled: loadScreenControlPreference() },
       },
     },
+    resolveDialogMessage: (messageId) =>
+      messageId === HOME_DEMO_DIALOG_ID ? webT("home.demo.sandman") : undefined,
   });
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
@@ -140,6 +147,18 @@ export async function renderHome(
       homeApp.unmount();
     },
   };
+}
+
+function prepareHomeDemoLevel(level: LevelMap): LevelMap {
+  const result = structuredClone(level);
+  for (const entity of result.entities) {
+    if (entity.type !== EntityTypeId.SANDMAN) continue;
+    entity.properties = {
+      ...(entity.properties ?? {}),
+      dialogId: HOME_DEMO_DIALOG_ID,
+    };
+  }
+  return result;
 }
 
 function importHomeMap(

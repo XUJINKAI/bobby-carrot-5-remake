@@ -19,6 +19,7 @@ export interface CreateGameSessionOptions {
   level: LevelMap;
   gameOptions: Omit<GameOptions, "canvas" | "runtime">;
   runtime?: GameplayRuntimeConfig;
+  resolveDialogMessage?: (messageId: string) => string | undefined;
 }
 
 /** 页面决定关卡与 session 语义；这里统一管理浏览器侧 Engine 生命周期和屏幕控件。 */
@@ -34,7 +35,11 @@ export async function createGameSession(
   const { game, input } = runtime;
   let disposeDialog = (): void => {};
   try {
-    disposeDialog = bindWorldDialog(options.root, game);
+    disposeDialog = bindWorldDialog(
+      options.root,
+      game,
+      options.resolveDialogMessage,
+    );
   } catch (error) {
     runtime.destroy();
     throw error;
@@ -50,7 +55,11 @@ export async function createGameSession(
 }
 
 /** Web 只负责展示通用 dialog 事件；不知道事件来自 Sandman、Adventure 还是 Maker。 */
-function bindWorldDialog(root: ParentNode, game: Game): () => void {
+function bindWorldDialog(
+  root: ParentNode,
+  game: Game,
+  resolveMessage?: (messageId: string) => string | undefined,
+): () => void {
   if (!(root instanceof HTMLElement)) return () => {};
   const dialog = document.createElement("dialog");
   dialog.className = "game-dialog engine-dialog";
@@ -66,7 +75,10 @@ function bindWorldDialog(root: ParentNode, game: Game): () => void {
   root.append(dialog);
   const unsubscribe = game.onWorldEvent((event) => {
     if (event.type !== "dialog") return;
-    text.textContent = event.text ?? event.messageId ?? "...";
+    const localized = event.messageId
+      ? resolveMessage?.(event.messageId)
+      : undefined;
+    text.textContent = event.text ?? localized ?? event.messageId ?? "...";
     if (!dialog.open) dialog.showModal();
   });
   return () => {
