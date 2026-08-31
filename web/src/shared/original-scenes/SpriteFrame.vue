@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { spriteFrameRect } from "./originalSceneSprites.js";
 
 const props = withDefaults(
   defineProps<{
-    src: string;
+    images: ImageManager;
+    asset: string;
     columns?: number;
     rows?: number;
     frame?: number;
@@ -20,16 +22,16 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 let image: HTMLImageElement | null = null;
 let loadToken = 0;
 
-function load(): void {
+async function load(): Promise<void> {
   const token = ++loadToken;
-  const next = new Image();
-  next.decoding = "async";
-  next.onload = () => {
+  try {
+    const next = await props.images.load(props.asset);
     if (token !== loadToken) return;
     image = next;
     draw();
-  };
-  next.src = props.src;
+  } catch (error) {
+    console.warn(error);
+  }
 }
 
 function draw(): void {
@@ -60,12 +62,12 @@ function draw(): void {
   );
 }
 
-onMounted(load);
+onMounted(() => void load());
 onBeforeUnmount(() => {
   loadToken += 1;
   image = null;
 });
-watch(() => props.src, load);
+watch(() => props.asset, () => void load());
 watch(() => [props.columns, props.rows, props.frame], draw);
 </script>
 
