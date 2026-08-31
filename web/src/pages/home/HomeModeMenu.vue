@@ -195,17 +195,6 @@ function serializeMap(value: unknown): string {
   font-size: 1.4rem;
 }
 
-:global(html[data-theme="retro"]) .home-mode-card {
-  border-radius: 5px;
-  border-color: var(--bc-panel-border);
-  background: var(--bc-control);
-  box-shadow: none;
-}
-
-:global(html[data-theme="retro"]) .home-mode-card.primary {
-  background: var(--bc-active);
-}
-
 @media (max-width: 520px) {
   .home-mode-grid {
     grid-template-columns: 1fr;
