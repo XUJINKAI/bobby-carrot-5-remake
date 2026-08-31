@@ -119,19 +119,6 @@ function reportCanvas(element: unknown): void {
   border-radius: 14px;
 }
 
-:global(html[data-theme="retro"]) .home-demo-panel {
-  border-radius: 7px;
-  border-width: 3px;
-  border-color: var(--bc-panel-border);
-  background: var(--bc-panel);
-  box-shadow: var(--bc-panel-shadow);
-}
-
-:global(html[data-theme="retro"]) .home-demo-toolbar button {
-  border-radius: 5px;
-  background: var(--bc-control);
-}
-
 @media (max-width: 900px) {
   .home-demo-panel {
     width: min(88vw, 410px);
