@@ -5,6 +5,7 @@ import { root } from "../lib/fs.mjs";
 const generatedDirectories = [
   "dist",
   "model/dist",
+  "i18n/dist",
   "engine/dist",
   "editor/dist",
   "adventure/dist",
