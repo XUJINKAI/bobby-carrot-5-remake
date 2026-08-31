@@ -158,22 +158,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   font-size: 0.9rem;
 }
 
-:global(html[data-theme="retro"]) .adventure-menu-primary,
-:global(html[data-theme="retro"]) .adventure-menu-secondary a,
-:global(html[data-theme="retro"]) .adventure-menu-secondary button {
-  border-radius: 5px;
-}
-
-:global(html[data-theme="retro"]) .adventure-menu-primary {
-  border-color: var(--bc-panel-border);
-  background: var(--bc-active);
-}
-
-:global(html[data-theme="retro"]) .adventure-menu-secondary a,
-:global(html[data-theme="retro"]) .adventure-menu-secondary button {
-  background: var(--bc-control);
-}
-
 @media (max-height: 650px) {
   .adventure-flight :deep(.flight-title) {
     width: 78%;
