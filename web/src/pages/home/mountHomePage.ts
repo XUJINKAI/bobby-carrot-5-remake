@@ -2,12 +2,10 @@ import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
-import { explorePlayPath } from "../../app/routes.js";
 import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import { lastExploreMapId } from "../../storage/exploreProgressStorage.js";
 import {
   configureShell,
   loadScreenControlPreference,
@@ -20,12 +18,7 @@ const HOME_DEMO_DIALOG_ID = "web.home.demo.sandman";
 export async function renderHome(
   context: PageContext,
 ): Promise<PageController> {
-  const { app, collections, audio, images, navigate } = context;
-  const original = collections.find((collection) => collection.id === "original");
-  if (!original || original.maps.length === 0)
-    throw new Error("Home 需要 original collection");
-  const lastId = lastExploreMapId("original") ?? original.maps[0]!.id;
-  const last = original.maps.find((map) => map.id === lastId) ?? original.maps[0]!;
+  const { app, audio, images, navigate } = context;
 
   audio.playMusic("title");
   configureShell({
@@ -60,19 +53,9 @@ export async function renderHome(
   });
   const homeApp = createApp(HomePage, {
     state: view,
-    lastLevelId: last.name,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
-    onRandom: () => {
-      const chosen = original.maps[
-        Math.floor(Math.random() * original.maps.length)
-      ];
-      if (chosen)
-        navigate(
-          explorePlayPath({ collection: "original", id: chosen.id }),
-        );
-    },
     onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
       importHomeMap(level, view, navigate),
   });

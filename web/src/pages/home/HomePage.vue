@@ -6,12 +6,11 @@ import HomeDemo from "./HomeDemo.vue";
 import HomeModeMenu from "./HomeModeMenu.vue";
 import ProjectIntro from "./ProjectIntro.vue";
 
-defineProps<{ state: HomeViewState; lastLevelId: string }>();
+defineProps<{ state: HomeViewState }>();
 const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   navigate: [path: string];
   restart: [];
-  random: [];
   importMap: [level: EditorMap];
 }>();
 </script>
@@ -20,7 +19,9 @@ const emit = defineEmits<{
   <div class="home-page">
     <section class="home-hero" aria-label="开始游戏">
       <div class="home-hero-left">
-        <OriginalFlightScene class="home-sky-brand" />
+        <div class="home-sky-brand">
+          <OriginalFlightScene />
+        </div>
         <HomeModeMenu
           @navigate="emit('navigate', $event)"
           @import-map="emit('importMap', $event)"
@@ -39,7 +40,7 @@ const emit = defineEmits<{
         />
       </div>
     </section>
-    <ProjectIntro :last-level-id="lastLevelId" @random="emit('random')" />
+    <ProjectIntro />
   </div>
 </template>
 
@@ -69,6 +70,9 @@ const emit = defineEmits<{
 
 .home-sky-brand {
   width: 100%;
+}
+
+.home-sky-brand :deep(.original-flight-scene) {
   min-height: clamp(300px, 39vh, 390px);
 }
 
@@ -94,12 +98,8 @@ const emit = defineEmits<{
     padding: 24px 0 54px;
   }
 
-  .home-sky-brand {
+  .home-sky-brand :deep(.original-flight-scene) {
     min-height: 330px;
-  }
-
-  .home-demo-column {
-    order: 2;
   }
 }
 
@@ -108,7 +108,7 @@ const emit = defineEmits<{
     width: min(100% - 18px, 720px);
   }
 
-  .home-sky-brand {
+  .home-sky-brand :deep(.original-flight-scene) {
     min-height: 285px;
   }
 }
