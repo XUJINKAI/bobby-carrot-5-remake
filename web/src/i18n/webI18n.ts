@@ -23,7 +23,8 @@ const WEB_CATALOGS = {
     "settings.musicModern": "现代",
     "settings.volume": "音量",
     "settings.more": "更多设置",
-    "home.demo.sandman": "欢迎来到 Bobby Carrot 5 Remake！这里运行的就是完整 Engine。试试方向键或 WASD，然后继续探索这个浏览器里的经典世界。",
+    "home.demo.sandmanFirst": "欢迎来到 Bobby Carrot 5 Remake！试试方向键或 WASD，在浏览器里走走看。",
+    "home.demo.sandmanAgain": "这里运行的就是完整 Engine。想继续的话，可以从左侧选择冒险、探索或编辑器。",
   },
   en: {
     "shell.music": "Music",
@@ -39,7 +40,8 @@ const WEB_CATALOGS = {
     "settings.musicModern": "Modern",
     "settings.volume": "Volume",
     "settings.more": "More settings",
-    "home.demo.sandman": "Welcome to Bobby Carrot 5 Remake! This is the full Engine running right here. Try the arrow keys or WASD, then explore the classic world rebuilt for the browser.",
+    "home.demo.sandmanFirst": "Welcome to Bobby Carrot 5 Remake! Try the arrow keys or WASD and take a few steps in the browser.",
+    "home.demo.sandmanAgain": "This is the full Engine running here. Continue with Adventure, Explore, or the Editor from the left.",
   },
 } satisfies Readonly<Record<Locale, TranslationCatalog>>;
 
