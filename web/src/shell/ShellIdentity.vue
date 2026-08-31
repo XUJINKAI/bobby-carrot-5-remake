@@ -46,7 +46,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   align-items: center;
   gap: 8px;
   min-width: 0;
-  color: #fff;
+  color: var(--bc-text);
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
@@ -80,7 +80,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 
 .shell-context-name {
   padding-left: 8px;
-  border-left: 2px solid #ffffff55;
+  border-left: 1px solid var(--bc-panel-border);
   color: var(--bc-text-muted);
 }
 
@@ -93,21 +93,26 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   min-width: 190px;
   gap: 4px;
   padding: 6px;
-  border: 3px solid var(--bc-panel-border);
-  border-radius: 6px;
+  border: var(--bc-panel-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-panel-radius);
   background: var(--bc-panel);
-  box-shadow: 6px 6px 0 #001b5b88;
+  box-shadow: var(--bc-panel-shadow);
 }
 
 .shell-identity nav a {
   padding: 9px 11px;
-  color: #fff;
+  border-radius: var(--bc-control-radius);
+  color: var(--bc-text);
   text-decoration: none;
 }
 
-.shell-identity nav a:hover,
+.shell-identity nav a:hover {
+  background: var(--bc-control-hover);
+}
+
 .shell-identity nav a.active {
-  background: var(--bc-active);
+  background: var(--bc-control-selected);
+  color: var(--bc-control-selected-text);
 }
 
 @media (max-width: 900px) {
