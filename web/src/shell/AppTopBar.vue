@@ -51,8 +51,9 @@ function action(id: string): void {
   align-items: center;
   gap: 14px;
   padding: max(8px, env(safe-area-inset-top)) 14px 8px;
-  border-bottom: 3px solid var(--bc-panel-border);
+  border-bottom: var(--bc-shell-border-width) solid var(--bc-panel-border);
   background: var(--bc-panel);
+  color: var(--bc-text);
   z-index: 20;
 }
 
@@ -81,7 +82,7 @@ function action(id: string): void {
   width: 1px;
   height: 24px;
   margin: 0 3px;
-  background: color-mix(in srgb, var(--bc-panel-border) 72%, #fff 28%);
+  background: color-mix(in srgb, var(--bc-panel-border) 72%, var(--bc-text) 28%);
 }
 
 .shell-overflow {
@@ -97,10 +98,10 @@ function action(id: string): void {
   width: 36px;
   min-height: 34px;
   padding: 0;
-  border: 2px solid var(--bc-panel-border);
-  border-radius: 5px;
-  background: #07518f;
-  color: #fff;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
   font-weight: 700;
   cursor: pointer;
   list-style: none;
@@ -111,7 +112,7 @@ function action(id: string): void {
 }
 
 .shell-overflow summary:hover {
-  background: var(--bc-active);
+  background: var(--bc-control-hover);
 }
 
 .shell-overflow-menu {
@@ -123,10 +124,10 @@ function action(id: string): void {
   min-width: 190px;
   gap: 4px;
   padding: 6px;
-  border: 3px solid var(--bc-panel-border);
-  border-radius: 6px;
+  border: var(--bc-panel-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-panel-radius);
   background: var(--bc-panel);
-  box-shadow: 6px 6px 0 #001b5b88;
+  box-shadow: var(--bc-panel-shadow);
 }
 
 .shell-overflow-menu .shell-action {
