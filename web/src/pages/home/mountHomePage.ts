@@ -62,6 +62,10 @@ export async function renderHome(
   });
   homeApp.mount(app);
 
+  const [demo, canvas] = await Promise.all([
+    resolveMapDocument({ collection: "original", id: "campaign-intro" }),
+    canvasReady,
+  ]);
   const disposeHomeDialog = createDialogBehavior(
     HOME_DEMO_DIALOG_REF,
     ({ self, commands }) => {
@@ -79,11 +83,6 @@ export async function renderHome(
       );
     },
   );
-
-  const [demo, canvas] = await Promise.all([
-    resolveMapDocument({ collection: "original", id: "campaign-intro" }),
-    canvasReady,
-  ]);
   try {
     session = await createGameSession({
       root: app,
