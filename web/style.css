@@ -1,4 +1,5 @@
-:root {
+:root,
+html[data-theme="modern"] {
   font-family:
     Inter,
     ui-sans-serif,
@@ -7,18 +8,57 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  color: #f2f5f7;
+  background: #0f141a;
+  color-scheme: dark;
+  --bc-bg: #0f141a;
+  --bc-panel: #171e26;
+  --bc-panel2: #202a35;
+  --bc-panel-border: #32404d;
+  --bc-active: #2f8f83;
+  --bc-text: #f2f5f7;
+  --bc-text-muted: #9eacb9;
+  --bc-highlight: #d8e96c;
+  --bc-control: #222d38;
+  --bc-control-hover: #2b3946;
+  --bc-control-selected: #e8edf1;
+  --bc-control-selected-text: #11171d;
+  --bc-control-border-width: 1px;
+  --bc-panel-border-width: 1px;
+  --bc-shell-border-width: 1px;
+  --bc-control-radius: 10px;
+  --bc-panel-radius: 14px;
+  --bc-panel-shadow: 0 18px 48px rgb(0 0 0 / 34%);
+  --panel: var(--bc-panel);
+  --panel2: var(--bc-panel2);
+  --line: var(--bc-panel-border);
+  --muted: var(--bc-text-muted);
+  --accent: var(--bc-active);
+}
+
+html[data-theme="retro"] {
   color: #fff;
   background: #143678;
-  color-scheme: dark;
   --bc-bg: #143678;
   --bc-panel: #005997;
+  --bc-panel2: #064b8c;
   --bc-panel-border: #002882;
   --bc-active: #00a2ba;
   --bc-text: #fff;
   --bc-text-muted: #b4eafd;
   --bc-highlight: #feef05;
+  --bc-control: #07518f;
+  --bc-control-hover: #00a2ba;
+  --bc-control-selected: #00a2ba;
+  --bc-control-selected-text: #fff;
+  --bc-control-border-width: 2px;
+  --bc-panel-border-width: 3px;
+  --bc-shell-border-width: 3px;
+  --bc-control-radius: 5px;
+  --bc-panel-radius: 7px;
+  --bc-panel-shadow: 8px 8px 0 #001b5b99, 0 20px 52px rgb(0 0 0 / 40%);
   --panel: var(--bc-panel);
-  --panel2: #064b8c;
+  --panel2: var(--bc-panel2);
   --line: var(--bc-panel-border);
   --muted: var(--bc-text-muted);
   --accent: var(--bc-active);
@@ -40,6 +80,7 @@ body,
 body {
   min-height: 100vh;
   background: var(--bc-bg);
+  color: var(--bc-text);
 }
 
 button,
@@ -63,7 +104,7 @@ button {
 .icon-btn {
   border: 1px solid var(--line);
   background: var(--panel2);
-  border-radius: 6px;
+  border-radius: var(--bc-control-radius);
   padding: 0.55rem 0.78rem;
   text-decoration: none;
 }
