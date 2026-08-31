@@ -1,17 +1,17 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { siteUrl } from "../../services/assets/gameAssets.js";
 import SpriteFrame from "./SpriteFrame.vue";
 import {
-  ORIGINAL_SCENE_ASSETS,
   ORIGINAL_TILE_SIZE,
   STAR_ATLAS_CELLS,
   STAR_SPARKLE_SHEET,
   sparkleFrameRect,
 } from "./originalSceneSprites.js";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    images: ImageManager;
     compact?: boolean;
     showTitle?: boolean;
   }>(),
@@ -33,10 +33,6 @@ interface StarColumn {
 }
 
 const skyCanvas = ref<HTMLCanvasElement | null>(null);
-const titleUrl = siteUrl(ORIGINAL_SCENE_ASSETS.title);
-const kiteUrl = siteUrl(ORIGINAL_SCENE_ASSETS.bobbyKite);
-const staticTilesUrl = siteUrl(ORIGINAL_SCENE_ASSETS.staticTiles);
-const animatedTilesUrl = siteUrl(ORIGINAL_SCENE_ASSETS.animatedTiles);
 const columns: StarColumn[] = [];
 const STAR_SPEED_PX_PER_SECOND = 42;
 const STAR_SIZE = 48;
@@ -49,16 +45,6 @@ let nextSparkleAt = 0;
 let lastWidth = 0;
 let lastHeight = 0;
 let reducedMotion = false;
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = "async";
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`无法加载原版场景资源：${src}`));
-    image.src = src;
-  });
-}
 
 function randomStar(height: number): SkyStar {
   return {
@@ -99,7 +85,7 @@ function scheduleSparkle(now: number, width: number): void {
   if (reducedMotion || now < nextSparkleAt) return;
   const visible = columns.flatMap((column) =>
     column.x >= -STAR_SIZE && column.x <= width + STAR_SIZE
-      ? column.stars.map((star) => ({ column, star }))
+      ? column.stars.map((star) => ({ star }))
       : [],
   );
   const target = visible[Math.floor(Math.random() * visible.length)];
@@ -178,8 +164,8 @@ onMounted(async () => {
   reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   try {
     [staticTiles, animatedTiles] = await Promise.all([
-      loadImage(staticTilesUrl),
-      loadImage(animatedTilesUrl),
+      props.images.load("entity-atlas"),
+      props.images.load("original-animated-tiles"),
     ]);
     animationFrame = requestAnimationFrame(draw);
   } catch (error) {
@@ -198,14 +184,11 @@ onBeforeUnmount(() => {
 <template>
   <section class="original-flight-scene" :class="{ compact }">
     <canvas ref="skyCanvas" class="flight-stars" aria-hidden="true" />
-    <img
-      v-if="showTitle"
-      class="flight-title"
-      :src="titleUrl"
-      alt="Bobby Carrot 5 Forever"
-    />
+    <div v-if="showTitle" class="flight-title">
+      <SpriteFrame :images="images" asset="original-title" />
+    </div>
     <div class="flight-bobby" aria-hidden="true">
-      <SpriteFrame :src="kiteUrl" :columns="4" :frame="1" />
+      <SpriteFrame :images="images" asset="bobby-kite" :columns="4" :frame="1" />
     </div>
   </section>
 </template>
@@ -233,8 +216,6 @@ onBeforeUnmount(() => {
   left: 50%;
   width: min(88%, 560px);
   max-height: 56%;
-  object-fit: contain;
-  image-rendering: pixelated;
   transform: translateX(-50%);
 }
 
