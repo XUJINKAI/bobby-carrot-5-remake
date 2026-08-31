@@ -46,17 +46,21 @@ function activate(): void {
   gap: 6px;
   min-height: 34px;
   padding: 6px 10px;
-  border: 2px solid var(--bc-panel-border);
-  border-radius: 5px;
-  background: #07518f;
-  color: #fff;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
   font-weight: 700;
   white-space: nowrap;
 }
 
-.shell-action:hover,
+.shell-action:hover {
+  background: var(--bc-control-hover);
+}
+
 .shell-action[aria-pressed="true"] {
-  background: var(--bc-active);
+  background: var(--bc-control-selected);
+  color: var(--bc-control-selected-text);
 }
 
 .shell-action:disabled {
