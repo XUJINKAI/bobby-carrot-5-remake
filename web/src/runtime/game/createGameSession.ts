@@ -21,10 +21,11 @@ export interface CreateGameSessionOptions {
   runtime?: GameplayRuntimeConfig;
 }
 
-/** 页面决定关卡与 session 语义；这里统一管理浏览器侧 Engine 生命周期和屏幕控件。 */
+/** 页面决定关卡与 session 语义；Engine runtime 持有地图内 HUD、Dialog 与输入生命周期。 */
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {
+  void options.root;
   const runtime = await createGameplayRuntime({
     canvas: options.canvas,
     level: options.level,
@@ -32,45 +33,11 @@ export async function createGameSession(
     ...(options.runtime ? { runtime: options.runtime } : {}),
   });
   const { game, input } = runtime;
-  let disposeDialog = (): void => {};
-  try {
-    disposeDialog = bindWorldDialog(options.root, game);
-  } catch (error) {
-    runtime.destroy();
-    throw error;
-  }
   return {
     game,
     input,
     destroy(): void {
-      disposeDialog();
       runtime.destroy();
     },
-  };
-}
-
-/** Web 只负责展示通用 dialog 事件；消息内容已经由 Engine runtime 行为确定。 */
-function bindWorldDialog(root: ParentNode, game: Game): () => void {
-  if (!(root instanceof HTMLElement)) return () => {};
-  const dialog = document.createElement("dialog");
-  dialog.className = "game-dialog engine-dialog";
-  dialog.setAttribute("aria-label", "对象对白");
-  dialog.innerHTML = `<header><strong>对话</strong><button class="dialog-close icon-btn" type="button" aria-label="关闭">×</button></header><div class="engine-dialog-text" aria-live="polite"></div>`;
-  const text = dialog.querySelector<HTMLElement>(".engine-dialog-text");
-  const close = dialog.querySelector<HTMLButtonElement>(".dialog-close");
-  if (!text || !close) throw new Error("Web dialog failed to mount");
-  close.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
-  });
-  root.append(dialog);
-  const unsubscribe = game.onWorldEvent((event) => {
-    if (event.type !== "dialog") return;
-    text.textContent = event.text ?? "...";
-    if (!dialog.open) dialog.showModal();
-  });
-  return () => {
-    unsubscribe();
-    dialog.remove();
   };
 }
