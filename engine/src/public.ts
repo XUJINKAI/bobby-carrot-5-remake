@@ -54,6 +54,10 @@ export {
   type JoystickVectorState,
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
+export {
+  GameplayDialog,
+  type GameplayDialogOptions,
+} from "./ui/GameplayDialog.js";
 export type {
   Direction,
   EntityProperties,
