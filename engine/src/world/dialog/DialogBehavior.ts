@@ -25,21 +25,24 @@ export function createDialogBehavior(
 
 export const dialogTraitBehavior: Behavior = {
   id: "dialog",
-  onTouch(context) {
-    const message = resolveDialogMessage(
-      context.self.entity.properties?.dialog,
-      context,
-    );
-    if (message === undefined || message === null) return;
-    context.commands.emit({
-      type: "dialog",
-      entityId: context.self.entity.id,
-      x: context.self.presence.cell.x,
-      y: context.self.presence.cell.y,
-      text: message,
-    });
-  },
+  onTouch: emitDialog,
+  onEnter: emitDialog,
 };
+
+function emitDialog(context: BehaviorContext): void {
+  const message = resolveDialogMessage(
+    context.self.entity.properties?.dialog,
+    context,
+  );
+  if (message === undefined || message === null) return;
+  context.commands.emit({
+    type: "dialog",
+    entityId: context.self.entity.id,
+    x: context.self.presence.cell.x,
+    y: context.self.presence.cell.y,
+    text: message,
+  });
+}
 
 function resolveDialogMessage(
   value: JsonValue | undefined,
