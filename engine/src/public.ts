@@ -77,6 +77,10 @@ export type {
   InventoryState,
   ProfileCapabilities,
 } from "./world/GlobalState.js";
+export {
+  createDialogBehavior,
+  type DialogInitializer,
+} from "./world/dialog/DialogBehavior.js";
 
 export { EntityRegistry } from "./world/entity/EntityRegistry.js";
 export type {
