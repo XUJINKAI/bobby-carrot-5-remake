@@ -5,7 +5,7 @@ export type MusicMode = "follow-theme" | MusicStyle;
 
 export function resolveMusicStyle(theme: WebTheme, mode: MusicMode): MusicStyle {
   if (mode === "modern" || mode === "8bit") return mode;
-  return theme === "retro" ? "8bit" : "modern";
+  return theme === "fc" ? "8bit" : "modern";
 }
 
 export function resolveMusicMode(value: string | null | undefined): MusicMode {
