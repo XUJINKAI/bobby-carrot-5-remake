@@ -21,6 +21,7 @@
   },
   "workspaces": [
     "model",
+    "i18n",
     "engine",
     "editor",
     "adventure",
