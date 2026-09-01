@@ -38,6 +38,7 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
   const ids = registry.all().map((behavior) => behavior.id).sort();
   assert.deepEqual(ids, [
     "collectible",
+    "dialog",
     "fill-egg-nest-on-leave",
     "hazard",
     "mowable",
