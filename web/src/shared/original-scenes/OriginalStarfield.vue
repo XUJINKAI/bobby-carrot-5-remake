@@ -16,15 +16,19 @@ const props = withDefaults(
     scrollSpeed?: number;
     sparkleMinDelayMs?: number;
     sparkleMaxDelayMs?: number;
+    sparkleBurstMin?: number;
+    sparkleBurstMax?: number;
     sparkleFrameMs?: number;
     animated?: boolean;
   }>(),
   {
-    bigStarProbability: 0.08,
-    smallStarProbability: 0.16,
-    scrollSpeed: 42,
-    sparkleMinDelayMs: 650,
-    sparkleMaxDelayMs: 1600,
+    bigStarProbability: 0.05,
+    smallStarProbability: 0.1,
+    scrollSpeed: 25,
+    sparkleMinDelayMs: 350,
+    sparkleMaxDelayMs: 400,
+    sparkleBurstMin: 2,
+    sparkleBurstMax: 3,
     sparkleFrameMs: 72,
     animated: true,
   },
@@ -54,6 +58,11 @@ let destroyed = false;
 function clampProbability(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
+}
+
+function clampInteger(value: number, minimum: number): number {
+  if (!Number.isFinite(value)) return minimum;
+  return Math.max(minimum, Math.floor(value));
 }
 
 function createTile(): SkyTile {
@@ -107,15 +116,26 @@ function nextSparkleDelay(): number {
   return min + Math.random() * (max - min);
 }
 
-function scheduleSparkle(now: number, width: number): void {
+function nextSparkleBurstSize(): number {
+  const min = clampInteger(props.sparkleBurstMin, 0);
+  const max = Math.max(min, clampInteger(props.sparkleBurstMax, min));
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function scheduleSparkles(now: number, width: number): void {
   if (!props.animated || !animatedTiles || now < nextSparkleAt) return;
   const candidates = columns.flatMap((column) =>
     column.x >= -ORIGINAL_TILE_SIZE && column.x <= width
-      ? column.tiles.filter((tile) => tile.variant !== 2)
+      ? column.tiles.filter((tile) => tile.sparkleStartedAt === null)
       : [],
   );
-  const target = candidates[Math.floor(Math.random() * candidates.length)];
-  if (target) target.sparkleStartedAt = now;
+
+  const burstSize = Math.min(nextSparkleBurstSize(), candidates.length);
+  for (let index = 0; index < burstSize; index += 1) {
+    const choice = Math.floor(Math.random() * candidates.length);
+    const target = candidates.splice(choice, 1)[0];
+    if (target) target.sparkleStartedAt = now;
+  }
   nextSparkleAt = now + nextSparkleDelay();
 }
 
@@ -141,7 +161,7 @@ function draw(now: number): void {
   const elapsed = lastTime === 0 ? 0 : Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
   updateColumns(height, elapsed);
-  scheduleSparkle(now, width);
+  scheduleSparkles(now, width);
 
   const context = target.getContext("2d");
   if (!context) return;
