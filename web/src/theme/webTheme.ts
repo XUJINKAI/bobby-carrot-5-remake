@@ -25,6 +25,7 @@ export function setWebTheme(theme: WebTheme): void {
   activeTheme = theme;
   localStorage.setItem(THEME_STORAGE_KEY, theme);
   applyTheme(theme);
+  window.dispatchEvent(new CustomEvent<WebTheme>("web-theme-change", { detail: theme }));
 }
 
 function applyTheme(theme: WebTheme): void {

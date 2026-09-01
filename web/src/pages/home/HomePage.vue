@@ -2,6 +2,7 @@
 import type { EditorMap } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { getWebTheme, type WebTheme } from "../../theme/webTheme.js";
 import type { HomeViewState } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
 import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
@@ -18,8 +19,13 @@ const emit = defineEmits<{
 }>();
 
 const page = ref<HTMLElement | null>(null);
+const theme = ref<WebTheme>(getWebTheme());
 let scrollRegion: HTMLElement | null = null;
 let fadeFrame = 0;
+
+function updateTheme(event: Event): void {
+  theme.value = (event as CustomEvent<WebTheme>).detail;
+}
 
 function updateStarfieldFade(): void {
   fadeFrame = 0;
@@ -38,12 +44,14 @@ onMounted(() => {
   scrollRegion = page.value?.closest<HTMLElement>(".app-scroll-region") ?? null;
   scrollRegion?.addEventListener("scroll", scheduleStarfieldFade, { passive: true });
   window.addEventListener("resize", scheduleStarfieldFade, { passive: true });
+  window.addEventListener("web-theme-change", updateTheme);
   updateStarfieldFade();
 });
 
 onBeforeUnmount(() => {
   scrollRegion?.removeEventListener("scroll", scheduleStarfieldFade);
   window.removeEventListener("resize", scheduleStarfieldFade);
+  window.removeEventListener("web-theme-change", updateTheme);
   cancelAnimationFrame(fadeFrame);
   scrollRegion = null;
 });
@@ -51,7 +59,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="page" class="home-page">
-    <OriginalStarfield class="home-page-starfield" :images="images" />
+    <OriginalStarfield
+      v-if="theme !== 'fc'"
+      class="home-page-starfield"
+      :images="images"
+    />
     <div class="home-page-content">
       <section class="home-hero" aria-label="开始游戏">
         <div class="home-hero-left">
@@ -107,14 +119,6 @@ onBeforeUnmount(() => {
 .home-page-content {
   position: relative;
   z-index: 1;
-}
-
-:global(html[data-theme="fc"]) .home-page {
-  background: #000;
-}
-
-:global(html[data-theme="fc"]) .home-page-starfield {
-  display: none;
 }
 
 .home-hero {

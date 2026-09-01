@@ -38,23 +38,23 @@ html[data-theme="bobby"] {
 
 html[data-theme="fc"] {
   color: #fff;
-  background: #000;
+  background: #07155e;
   color-scheme: dark;
-  --bc-bg: #000;
-  --bc-panel: #000;
-  --bc-panel2: #000;
-  --bc-panel-border: #d0d0d0;
-  --bc-active: #333;
+  --bc-bg: #07155e;
+  --bc-panel: #142a8a;
+  --bc-panel2: #1d3aa3;
+  --bc-panel-border: #a9d7ff;
+  --bc-active: #c83232;
   --bc-text: #fff;
-  --bc-text-muted: #bdbdbd;
-  --bc-highlight: #fff;
-  --bc-control: #000;
-  --bc-control-hover: #1a1a1a;
-  --bc-control-selected: #fff;
-  --bc-control-selected-text: #000;
-  --bc-control-border-width: 1px;
-  --bc-panel-border-width: 1px;
-  --bc-shell-border-width: 1px;
+  --bc-text-muted: #b9d7ff;
+  --bc-highlight: #dcecff;
+  --bc-control: #17339b;
+  --bc-control-hover: #2850c4;
+  --bc-control-selected: #dcecff;
+  --bc-control-selected-text: #07155e;
+  --bc-control-border-width: 2px;
+  --bc-panel-border-width: 2px;
+  --bc-shell-border-width: 2px;
   --bc-control-radius: 0;
   --bc-panel-radius: 0;
   --bc-panel-shadow: none;
@@ -62,7 +62,7 @@ html[data-theme="fc"] {
   --panel2: var(--bc-panel2);
   --line: var(--bc-panel-border);
   --muted: var(--bc-text-muted);
-  --accent: var(--bc-text);
+  --accent: var(--bc-highlight);
 }
 
 *,
