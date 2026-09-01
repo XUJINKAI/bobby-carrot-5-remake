@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
 import EmbedFeaturePreview from "./EmbedFeaturePreview.vue";
 import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
+
+defineProps<{ images: ImageManager }>();
 </script>
 
 <template>
@@ -14,7 +17,7 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
 
     <article class="feature-story feature-story-train">
       <div class="feature-visual">
-        <NightTrainScene />
+        <NightTrainScene :images="images" />
       </div>
       <div class="feature-copy">
         <span>01 · CLASSIC REMAKE</span>
@@ -64,7 +67,7 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
   display: grid;
   gap: clamp(64px, 10vw, 120px);
   padding: clamp(90px, 12vw, 150px) 0 96px;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid rgb(255 255 255 / 18%);
 }
 
 .home-about-heading {
@@ -84,7 +87,7 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
 .home-about-heading p,
 .feature-copy p {
   margin: 0;
-  color: #bcc9dc;
+  color: #d6e5f8;
   line-height: 1.75;
 }
 
@@ -114,7 +117,7 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
 .feature-story-train .feature-visual {
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 14%);
+  border: 1px solid rgb(255 255 255 / 20%);
   box-shadow: 0 22px 60px rgb(0 11 38 / 34%);
 }
 
@@ -124,7 +127,7 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
 }
 
 .feature-copy > span {
-  color: #77c7bc;
+  color: #7bd7e5;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -140,8 +143,8 @@ import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
 .home-about-note {
   margin: 0;
   padding-top: 12px;
-  border-top: 1px solid rgb(255 255 255 / 8%);
-  color: #93a6c0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  color: #b9cbe3;
   font-size: 0.7rem;
   line-height: 1.6;
 }
