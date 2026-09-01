@@ -54,6 +54,7 @@ export async function renderHome(
   });
   const homeApp = createApp(HomePage, {
     state: view,
+    images,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
