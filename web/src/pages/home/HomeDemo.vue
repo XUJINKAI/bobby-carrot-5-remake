@@ -55,7 +55,7 @@ function reportCanvas(element: unknown): void {
 <style scoped>
 .home-demo-panel {
   position: relative;
-  width: min(100%, 420px);
+  width: min(100%, 378px);
   aspect-ratio: 5 / 8;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -125,7 +125,7 @@ function reportCanvas(element: unknown): void {
 
 @media (max-width: 900px) {
   .home-demo-panel {
-    width: min(88vw, 410px);
+    width: min(88vw, 378px);
   }
 }
 </style>
