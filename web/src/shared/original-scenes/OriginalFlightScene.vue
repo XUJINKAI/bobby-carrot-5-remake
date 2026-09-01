@@ -14,6 +14,8 @@ withDefaults(
     starScrollSpeed?: number;
     starSparkleMinDelayMs?: number;
     starSparkleMaxDelayMs?: number;
+    starSparkleBurstMin?: number;
+    starSparkleBurstMax?: number;
     starSparkleFrameMs?: number;
     starAnimated?: boolean;
   }>(),
@@ -21,13 +23,6 @@ withDefaults(
     compact: false,
     showTitle: true,
     showStars: true,
-    starBigProbability: 0.08,
-    starSmallProbability: 0.16,
-    starScrollSpeed: 42,
-    starSparkleMinDelayMs: 650,
-    starSparkleMaxDelayMs: 1600,
-    starSparkleFrameMs: 72,
-    starAnimated: true,
   },
 );
 </script>
@@ -43,6 +38,8 @@ withDefaults(
       :scroll-speed="starScrollSpeed"
       :sparkle-min-delay-ms="starSparkleMinDelayMs"
       :sparkle-max-delay-ms="starSparkleMaxDelayMs"
+      :sparkle-burst-min="starSparkleBurstMin"
+      :sparkle-burst-max="starSparkleBurstMax"
       :sparkle-frame-ms="starSparkleFrameMs"
       :animated="starAnimated"
     />
