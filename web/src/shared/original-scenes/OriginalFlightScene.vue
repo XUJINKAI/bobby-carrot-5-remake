@@ -125,11 +125,4 @@ withDefaults(
     transform: translate(-50%, -7px);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .flight-bobby {
-    animation: none;
-    transform: translateX(-50%);
-  }
-}
 </style>
