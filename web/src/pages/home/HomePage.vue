@@ -98,12 +98,12 @@ const emit = defineEmits<{
   --home-mode-top: 310px;
 
   width: min(1280px, calc(100% - 48px));
-  min-height: 100%;
+  min-height: calc(100dvh - 58px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
   gap: clamp(30px, 5vw, 72px);
-  align-items: start;
+  align-items: stretch;
   padding: 0;
 }
 
@@ -177,8 +177,13 @@ const emit = defineEmits<{
     --home-mode-top: 300px;
 
     width: min(100% - 28px, 720px);
+    min-height: auto;
     grid-template-columns: 1fr;
     gap: 44px;
+  }
+
+  .home-hero-left {
+    min-height: 620px;
   }
 
   .home-mode-layer {
@@ -196,6 +201,10 @@ const emit = defineEmits<{
     --home-mode-top: 270px;
 
     width: min(100% - 18px, 720px);
+  }
+
+  .home-hero-left {
+    min-height: 570px;
   }
 }
 </style>
