@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { test } from "vitest";
 import {
   ORIGINAL_TILE_SIZE,
@@ -42,4 +43,16 @@ test("sprite frames divide b9 style strips without fixed pixel assumptions", () 
     width: 96,
     height: 96,
   });
+});
+
+test("starfield animation is explicit rather than disabled by OS reduced-motion", () => {
+  const source = fs.readFileSync(
+    new URL("../src/shared/original-scenes/OriginalStarfield.vue", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /animated\?: boolean/);
+  assert.match(source, /scrollSpeed\?: number/);
+  assert.match(source, /bigStarProbability\?: number/);
+  assert.match(source, /smallStarProbability\?: number/);
+  assert.doesNotMatch(source, /prefers-reduced-motion/);
 });
