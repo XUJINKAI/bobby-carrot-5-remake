@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorMap } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import type { HomeViewState } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
 import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
@@ -15,20 +16,42 @@ const emit = defineEmits<{
   restart: [];
   importMap: [level: EditorMap];
 }>();
+
+const page = ref<HTMLElement | null>(null);
+let scrollRegion: HTMLElement | null = null;
+let fadeFrame = 0;
+
+function updateStarfieldFade(): void {
+  fadeFrame = 0;
+  if (!page.value || !scrollRegion) return;
+  const fadeDistance = Math.max(1, scrollRegion.clientHeight * 0.72);
+  const progress = Math.min(1, Math.max(0, scrollRegion.scrollTop / fadeDistance));
+  page.value.style.setProperty("--home-starfield-opacity", String(1 - progress));
+}
+
+function scheduleStarfieldFade(): void {
+  if (fadeFrame !== 0) return;
+  fadeFrame = requestAnimationFrame(updateStarfieldFade);
+}
+
+onMounted(() => {
+  scrollRegion = page.value?.closest<HTMLElement>(".app-scroll-region") ?? null;
+  scrollRegion?.addEventListener("scroll", scheduleStarfieldFade, { passive: true });
+  window.addEventListener("resize", scheduleStarfieldFade, { passive: true });
+  updateStarfieldFade();
+});
+
+onBeforeUnmount(() => {
+  scrollRegion?.removeEventListener("scroll", scheduleStarfieldFade);
+  window.removeEventListener("resize", scheduleStarfieldFade);
+  cancelAnimationFrame(fadeFrame);
+  scrollRegion = null;
+});
 </script>
 
 <template>
-  <div class="home-page">
-    <OriginalStarfield
-      class="home-page-starfield"
-      :images="images"
-      :big-star-probability="0.08"
-      :small-star-probability="0.16"
-      :scroll-speed="42"
-      :sparkle-min-delay-ms="650"
-      :sparkle-max-delay-ms="1600"
-      :sparkle-frame-ms="72"
-    />
+  <div ref="page" class="home-page">
+    <OriginalStarfield class="home-page-starfield" :images="images" />
     <div class="home-page-content">
       <section class="home-hero" aria-label="开始游戏">
         <div class="home-hero-left">
@@ -62,10 +85,12 @@ const emit = defineEmits<{
 
 <style scoped>
 .home-page {
+  --home-starfield-opacity: 1;
+
   position: relative;
   min-height: 100%;
   overflow: clip;
-  background: var(--bc-bg);
+  background: #143778;
   color: var(--bc-text);
 }
 
@@ -75,11 +100,17 @@ const emit = defineEmits<{
   z-index: 0;
   width: 100vw;
   height: 100vh;
+  opacity: var(--home-starfield-opacity);
+  will-change: opacity;
 }
 
 .home-page-content {
   position: relative;
   z-index: 1;
+}
+
+:global(html[data-theme="fc"]) .home-page {
+  background: #000;
 }
 
 :global(html[data-theme="fc"]) .home-page-starfield {
@@ -88,21 +119,21 @@ const emit = defineEmits<{
 
 .home-hero {
   --home-hero-left-top: 12px;
-  --home-hero-right-top: 20px;
-  --home-title-top: 8px;
-  --home-title-left: 32%;
-  --home-title-width: min(50%, 350px);
-  --home-bobby-top: 150px;
-  --home-bobby-left: 63%;
-  --home-bobby-width: min(22%, 145px);
-  --home-mode-top: 310px;
+  --home-hero-right-top: 70px;
+  --home-title-top: 16px;
+  --home-title-left: 35%;
+  --home-title-width: min(56%, 270px);
+  --home-bobby-top: 152px;
+  --home-bobby-left: 68%;
+  --home-bobby-width: min(24%, 118px);
+  --home-mode-top: 300px;
 
-  width: min(1280px, calc(100% - 48px));
+  width: min(900px, calc(100% - 48px));
   min-height: calc(100dvh - 58px);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
-  gap: clamp(30px, 5vw, 72px);
+  grid-template-columns: minmax(0, 1fr) 378px;
+  gap: 34px;
   align-items: stretch;
   padding: 0;
 }
@@ -147,7 +178,7 @@ const emit = defineEmits<{
 .home-mode-layer {
   position: relative;
   z-index: 1;
-  width: min(520px, 100%);
+  width: min(430px, 100%);
   padding-top: calc(var(--home-hero-left-top) + var(--home-mode-top));
 }
 
@@ -170,10 +201,10 @@ const emit = defineEmits<{
     --home-hero-left-top: 10px;
     --home-hero-right-top: 0px;
     --home-title-left: 42%;
-    --home-title-width: min(56%, 340px);
+    --home-title-width: min(54%, 300px);
     --home-bobby-top: 145px;
     --home-bobby-left: 67%;
-    --home-bobby-width: min(25%, 140px);
+    --home-bobby-width: min(23%, 130px);
     --home-mode-top: 300px;
 
     width: min(100% - 28px, 720px);
@@ -187,17 +218,17 @@ const emit = defineEmits<{
   }
 
   .home-mode-layer {
-    width: min(520px, 100%);
+    width: min(430px, 100%);
   }
 }
 
 @media (max-width: 520px) {
   .home-hero {
     --home-title-left: 45%;
-    --home-title-width: min(62%, 300px);
+    --home-title-width: min(58%, 280px);
     --home-bobby-top: 132px;
     --home-bobby-left: 70%;
-    --home-bobby-width: min(28%, 125px);
+    --home-bobby-width: min(26%, 118px);
     --home-mode-top: 270px;
 
     width: min(100% - 18px, 720px);
