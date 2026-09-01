@@ -14,7 +14,6 @@ export interface GameSession {
 }
 
 export interface CreateGameSessionOptions {
-  root: ParentNode;
   canvas: HTMLCanvasElement;
   level: LevelMap;
   gameOptions: Omit<GameOptions, "canvas" | "runtime">;
@@ -25,7 +24,6 @@ export interface CreateGameSessionOptions {
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {
-  void options.root;
   const runtime = await createGameplayRuntime({
     canvas: options.canvas,
     level: options.level,

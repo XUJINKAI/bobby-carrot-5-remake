@@ -2,7 +2,10 @@
 import type { ImageManager } from "@bobby/engine";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+type TrainLayerId = "background" | "distant" | "foreground" | "train";
+
 interface TrainLayer {
+  id: TrainLayerId;
   from: number;
   to: number;
   speed: number;
@@ -11,18 +14,25 @@ interface TrainLayer {
   zIndex: number;
 }
 
+type TrainLayerOverride = Partial<Omit<TrainLayer, "id">>;
+
 const DEFAULT_LAYERS: readonly TrainLayer[] = [
-  { from: 0, to: 0.46, speed: 0, offsetY: 0, zIndex: 0 },
-  { from: 0.46, to: 0.64, speed: 30, offsetY: 0, zIndex: 1 },
-  { from: 0.64, to: 0.74, speed: 70, offsetY: 0, zIndex: 3 },
-  { from: 0.74, to: 1, speed: 0, offsetY: 0, zIndex: 2 },
+  { id: "background", from: 0, to: 0.46, speed: 0, offsetY: 0, zIndex: 0 },
+  { id: "distant", from: 0.46, to: 0.64, speed: 30, offsetY: 0, zIndex: 1 },
+  { id: "foreground", from: 0.64, to: 0.74, speed: 70, offsetY: 0, zIndex: 3 },
+  { id: "train", from: 0.74, to: 1, speed: 0, offsetY: 0, zIndex: 2 },
 ];
 
 const props = defineProps<{
   images: ImageManager;
-  layers?: readonly TrainLayer[];
+  layerOverrides?: Partial<Record<TrainLayerId, TrainLayerOverride>>;
 }>();
-const effectiveLayers = computed(() => props.layers ?? DEFAULT_LAYERS);
+const effectiveLayers = computed(() =>
+  DEFAULT_LAYERS.map((layer) => ({
+    ...layer,
+    ...(props.layerOverrides?.[layer.id] ?? {}),
+  })),
+);
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const sceneAspectRatio = ref("4 / 1");

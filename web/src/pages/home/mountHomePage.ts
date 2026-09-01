@@ -86,7 +86,6 @@ export async function renderHome(
   );
   try {
     session = await createGameSession({
-      root: app,
       canvas,
       level: prepareHomeDemoLevel(demo.level),
       gameOptions: {

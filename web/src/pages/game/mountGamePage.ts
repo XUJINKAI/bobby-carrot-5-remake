@@ -126,7 +126,6 @@ export async function renderGamePage(
   const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
 
   const session = await createGameSession({
-    root: app,
     canvas,
     level: sessionLevel,
     gameOptions: {
