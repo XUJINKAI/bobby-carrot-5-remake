@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { siteUrl } from "../../services/assets/gameAssets.js";
-import { ORIGINAL_SCENE_ASSETS } from "./originalSceneSprites.js";
 
 interface TrainBand {
   from: number;
@@ -9,8 +8,8 @@ interface TrainBand {
   speed: number;
 }
 
+const props = defineProps<{ images: ImageManager }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
-const trainUrl = siteUrl(ORIGINAL_SCENE_ASSETS.train);
 const bands: readonly TrainBand[] = [
   { from: 0, to: 0.43, speed: 5 },
   { from: 0.43, to: 0.64, speed: 12 },
@@ -88,16 +87,14 @@ function draw(now: number): void {
   animationFrame = requestAnimationFrame(draw);
 }
 
-onMounted(() => {
+onMounted(async () => {
   reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const next = new Image();
-  next.decoding = "async";
-  next.onload = () => {
-    image = next;
+  try {
+    image = await props.images.load("original-train");
     animationFrame = requestAnimationFrame(draw);
-  };
-  next.onerror = () => console.warn(`无法加载原版场景资源：${trainUrl}`);
-  next.src = trainUrl;
+  } catch (error) {
+    console.warn(error);
+  }
 });
 
 onBeforeUnmount(() => {
