@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import type { AdventureHomeView } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
 import AdventureFrame from "./AdventureFrame.vue";
 
-defineProps<{ view: AdventureHomeView }>();
+defineProps<{ view: AdventureHomeView; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
 <template>
   <AdventureFrame>
     <div class="adventure-home">
-      <OriginalFlightScene compact class="adventure-flight" />
+      <OriginalFlightScene :images="images" compact class="adventure-flight" />
       <nav class="adventure-menu">
         <a
           class="adventure-menu-primary"
