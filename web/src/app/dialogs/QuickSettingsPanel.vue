@@ -48,17 +48,17 @@ function numberValue(event: Event): number {
         <button
           type="button"
           role="radio"
-          :aria-checked="state.theme === 'modern'"
-          :class="{ selected: state.theme === 'modern' }"
-          @click="emit('theme', 'modern')"
-        >{{ webT('settings.themeModern') }}</button>
+          :aria-checked="state.theme === 'bobby'"
+          :class="{ selected: state.theme === 'bobby' }"
+          @click="emit('theme', 'bobby')"
+        >{{ webT('settings.themeBobby') }}</button>
         <button
           type="button"
           role="radio"
-          :aria-checked="state.theme === 'retro'"
-          :class="{ selected: state.theme === 'retro' }"
-          @click="emit('theme', 'retro')"
-        >{{ webT('settings.themeRetro') }}</button>
+          :aria-checked="state.theme === 'fc'"
+          :class="{ selected: state.theme === 'fc' }"
+          @click="emit('theme', 'fc')"
+        >{{ webT('settings.themeFc') }}</button>
       </div>
     </div>
 
