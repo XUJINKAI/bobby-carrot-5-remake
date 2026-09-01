@@ -62,7 +62,7 @@ defineProps<{ images: ImageManager }>();
 
 <style scoped>
 .home-about {
-  width: min(1180px, calc(100% - 48px));
+  width: min(900px, calc(100% - 48px));
   margin: 0 auto;
   display: grid;
   gap: clamp(64px, 10vw, 120px);
