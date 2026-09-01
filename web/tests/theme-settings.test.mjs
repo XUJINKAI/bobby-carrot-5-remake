@@ -7,17 +7,19 @@ import {
 } from "../src/app/settings/globalPreferences.ts";
 import { resolveWebTheme } from "../src/theme/webTheme.ts";
 
-test("modern is the default web theme", () => {
-  assert.equal(resolveWebTheme(null), "modern");
-  assert.equal(resolveWebTheme("modern"), "modern");
-  assert.equal(resolveWebTheme("retro"), "retro");
+test("Bobby is the default web theme", () => {
+  assert.equal(resolveWebTheme(null), "bobby");
+  assert.equal(resolveWebTheme("bobby"), "bobby");
+  assert.equal(resolveWebTheme("fc"), "fc");
+  assert.equal(resolveWebTheme("modern"), "bobby");
+  assert.equal(resolveWebTheme("retro"), "bobby");
 });
 
-test("follow-theme music maps modern to modern and retro to 8bit", () => {
-  assert.equal(resolveMusicStyle("modern", "follow-theme"), "modern");
-  assert.equal(resolveMusicStyle("retro", "follow-theme"), "8bit");
-  assert.equal(resolveMusicStyle("retro", "modern"), "modern");
-  assert.equal(resolveMusicStyle("modern", "8bit"), "8bit");
+test("follow-theme music maps Bobby to modern audio and FC to 8bit", () => {
+  assert.equal(resolveMusicStyle("bobby", "follow-theme"), "modern");
+  assert.equal(resolveMusicStyle("fc", "follow-theme"), "8bit");
+  assert.equal(resolveMusicStyle("fc", "modern"), "modern");
+  assert.equal(resolveMusicStyle("bobby", "8bit"), "8bit");
 });
 
 test("music mode and volume use stable defaults", () => {
