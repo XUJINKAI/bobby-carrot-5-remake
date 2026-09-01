@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ImageManager } from "@bobby/engine";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface TrainLayer {
   from: number;
@@ -18,15 +18,11 @@ const DEFAULT_LAYERS: readonly TrainLayer[] = [
   { from: 0.73, to: 1, speed: 0, offsetY: 0, zIndex: 2 },
 ];
 
-const props = withDefaults(
-  defineProps<{
-    images: ImageManager;
-    layers?: readonly TrainLayer[];
-  }>(),
-  {
-    layers: () => DEFAULT_LAYERS,
-  },
-);
+const props = defineProps<{
+  images: ImageManager;
+  layers?: readonly TrainLayer[];
+}>();
+const effectiveLayers = computed(() => props.layers ?? DEFAULT_LAYERS);
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const sceneAspectRatio = ref("4 / 1");
@@ -35,7 +31,7 @@ let animationFrame = 0;
 let startedAt = 0;
 
 function normalizedLayers(): TrainLayer[] {
-  return props.layers
+  return effectiveLayers.value
     .map((layer) => ({
       ...layer,
       from: Math.max(0, Math.min(1, layer.from)),
@@ -146,7 +142,7 @@ onMounted(async () => {
 });
 
 watch(
-  () => props.layers,
+  effectiveLayers,
   () => {
     startedAt = 0;
     updateAspectRatio();
