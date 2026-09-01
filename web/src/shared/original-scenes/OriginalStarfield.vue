@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ImageManager } from "@bobby/engine";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   ORIGINAL_TILE_SIZE,
   STAR_ATLAS_CELLS,
@@ -8,7 +8,27 @@ import {
   sparkleFrameRect,
 } from "./originalSceneSprites.js";
 
-const props = defineProps<{ images: ImageManager }>();
+const props = withDefaults(
+  defineProps<{
+    images: ImageManager;
+    bigStarProbability?: number;
+    smallStarProbability?: number;
+    scrollSpeed?: number;
+    sparkleMinDelayMs?: number;
+    sparkleMaxDelayMs?: number;
+    sparkleFrameMs?: number;
+    animated?: boolean;
+  }>(),
+  {
+    bigStarProbability: 0.08,
+    smallStarProbability: 0.16,
+    scrollSpeed: 42,
+    sparkleMinDelayMs: 650,
+    sparkleMaxDelayMs: 1600,
+    sparkleFrameMs: 72,
+    animated: true,
+  },
+);
 
 interface SkyTile {
   variant: number;
@@ -22,8 +42,6 @@ interface StarColumn {
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const columns: StarColumn[] = [];
-const SPEED_PX_PER_SECOND = 42;
-const SPARKLE_FRAME_MS = 72;
 let staticTiles: HTMLImageElement | null = null;
 let animatedTiles: HTMLImageElement | null = null;
 let animationFrame = 0;
@@ -31,13 +49,27 @@ let lastTime = 0;
 let nextSparkleAt = 0;
 let lastWidth = 0;
 let lastHeight = 0;
-let reducedMotion = false;
+let destroyed = false;
+
+function clampProbability(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
 
 function createTile(): SkyTile {
-  return {
-    variant: Math.floor(Math.random() * STAR_ATLAS_CELLS.length),
-    sparkleStartedAt: null,
-  };
+  const bigProbability = clampProbability(props.bigStarProbability);
+  const smallProbability = Math.min(
+    1 - bigProbability,
+    clampProbability(props.smallStarProbability),
+  );
+  const roll = Math.random();
+  const variant =
+    roll < bigProbability
+      ? 0
+      : roll < bigProbability + smallProbability
+        ? 1
+        : 2;
+  return { variant, sparkleStartedAt: null };
 }
 
 function createColumn(x: number, rowCount: number): StarColumn {
@@ -52,16 +84,14 @@ function resetColumns(width: number, height: number): void {
   const rowCount = Math.ceil(height / ORIGINAL_TILE_SIZE) + 1;
   const columnCount = Math.ceil(width / ORIGINAL_TILE_SIZE) + 3;
   for (let index = 0; index < columnCount; index += 1) {
-    columns.push(
-      createColumn((index - 1) * ORIGINAL_TILE_SIZE, rowCount),
-    );
+    columns.push(createColumn((index - 1) * ORIGINAL_TILE_SIZE, rowCount));
   }
 }
 
 function updateColumns(height: number, elapsedSeconds: number): void {
-  if (reducedMotion) return;
-  for (const column of columns)
-    column.x -= SPEED_PX_PER_SECOND * elapsedSeconds;
+  if (!props.animated) return;
+  const speed = Math.max(0, props.scrollSpeed);
+  for (const column of columns) column.x -= speed * elapsedSeconds;
 
   const rowCount = Math.ceil(height / ORIGINAL_TILE_SIZE) + 1;
   while (columns.length > 0 && columns[0]!.x <= -ORIGINAL_TILE_SIZE * 2) {
@@ -71,21 +101,27 @@ function updateColumns(height: number, elapsedSeconds: number): void {
   }
 }
 
+function nextSparkleDelay(): number {
+  const min = Math.max(0, props.sparkleMinDelayMs);
+  const max = Math.max(min, props.sparkleMaxDelayMs);
+  return min + Math.random() * (max - min);
+}
+
 function scheduleSparkle(now: number, width: number): void {
-  if (reducedMotion || now < nextSparkleAt) return;
+  if (!props.animated || !animatedTiles || now < nextSparkleAt) return;
   const candidates = columns.flatMap((column) =>
     column.x >= -ORIGINAL_TILE_SIZE && column.x <= width
-      ? column.tiles.map((tile) => tile)
+      ? column.tiles.filter((tile) => tile.variant !== 2)
       : [],
   );
   const target = candidates[Math.floor(Math.random() * candidates.length)];
   if (target) target.sparkleStartedAt = now;
-  nextSparkleAt = now + 420 + Math.random() * 900;
+  nextSparkleAt = now + nextSparkleDelay();
 }
 
 function draw(now: number): void {
   const target = canvas.value;
-  if (!target || !staticTiles || !animatedTiles) return;
+  if (destroyed || !target || !staticTiles) return;
   const bounds = target.getBoundingClientRect();
   const width = Math.max(1, bounds.width);
   const height = Math.max(1, bounds.height);
@@ -130,8 +166,10 @@ function draw(now: number): void {
         ORIGINAL_TILE_SIZE,
       );
 
-      if (tile.sparkleStartedAt === null) continue;
-      const frame = Math.floor((now - tile.sparkleStartedAt) / SPARKLE_FRAME_MS);
+      if (!animatedTiles || tile.sparkleStartedAt === null) continue;
+      const frame = Math.floor(
+        (now - tile.sparkleStartedAt) / Math.max(1, props.sparkleFrameMs),
+      );
       if (frame >= STAR_SPARKLE_SHEET.frameCount) {
         tile.sparkleStartedAt = null;
         continue;
@@ -155,19 +193,37 @@ function draw(now: number): void {
 }
 
 onMounted(async () => {
-  reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   try {
-    [staticTiles, animatedTiles] = await Promise.all([
-      props.images.load("entity-atlas"),
-      props.images.load("original-animated-tiles"),
-    ]);
+    staticTiles = await props.images.load("entity-atlas");
+    if (destroyed) return;
     animationFrame = requestAnimationFrame(draw);
+    void props.images
+      .load("original-animated-tiles")
+      .then((image) => {
+        if (!destroyed) animatedTiles = image;
+      })
+      .catch((error) => console.warn(error));
   } catch (error) {
     console.warn(error);
   }
 });
 
+watch(
+  () => [props.bigStarProbability, props.smallStarProbability],
+  () => {
+    if (lastWidth > 0 && lastHeight > 0) resetColumns(lastWidth, lastHeight);
+  },
+);
+watch(
+  () => props.animated,
+  () => {
+    lastTime = 0;
+    nextSparkleAt = 0;
+  },
+);
+
 onBeforeUnmount(() => {
+  destroyed = true;
   cancelAnimationFrame(animationFrame);
   columns.length = 0;
   staticTiles = null;
@@ -184,6 +240,7 @@ onBeforeUnmount(() => {
   display: block;
   width: 100%;
   height: 100%;
+  pointer-events: none;
   background: #143678;
   image-rendering: pixelated;
 }
