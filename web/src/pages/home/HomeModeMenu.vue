@@ -106,38 +106,38 @@ function serializeMap(value: unknown): string {
 
 .home-mode-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 9px;
 }
 
 .home-mode-card {
   position: relative;
-  min-height: 82px;
+  min-height: 72px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px 12px;
   align-content: center;
   width: 100%;
-  padding: 14px 16px;
-  border: var(--bc-control-border-width) solid rgb(255 255 255 / 30%);
+  padding: 12px 16px;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
   border-radius: var(--bc-control-radius);
-  background: rgb(7 81 143 / 88%);
+  background: color-mix(in srgb, var(--bc-panel) 92%, transparent);
   color: var(--bc-text);
   text-align: left;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgb(0 18 74 / 24%);
+  box-shadow: var(--bc-panel-shadow);
   transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .home-mode-card:hover {
   transform: translateY(-1px);
-  border-color: rgb(255 255 255 / 54%);
-  background: rgb(0 111 170 / 94%);
+  border-color: var(--bc-text-muted);
+  background: var(--bc-control-hover);
 }
 
 .home-mode-card.primary {
-  border-color: #7ee9f5;
-  background: rgb(0 162 186 / 92%);
+  border-color: var(--bc-highlight);
+  background: var(--bc-active);
 }
 
 .home-mode-card strong {
@@ -145,13 +145,13 @@ function serializeMap(value: unknown): string {
 }
 
 .home-mode-card span {
-  color: #d5ebff;
+  color: var(--bc-text-muted);
   font-size: 0.71rem;
   line-height: 1.35;
 }
 
 .home-mode-card.primary span {
-  color: #efffff;
+  color: var(--bc-text);
 }
 
 .home-mode-card b {
@@ -169,7 +169,7 @@ function serializeMap(value: unknown): string {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(0 15 60 / 78%);
+  background: rgb(0 0 0 / 78%);
 }
 
 .home-import-dialog {
@@ -193,11 +193,5 @@ function serializeMap(value: unknown): string {
   background: transparent;
   color: inherit;
   font-size: 1.4rem;
-}
-
-@media (max-width: 520px) {
-  .home-mode-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
