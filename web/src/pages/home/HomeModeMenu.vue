@@ -37,7 +37,7 @@ function serializeMap(value: unknown): string {
         href="/adventure"
         @click.prevent="emit('navigate', '/adventure')"
       >
-        <strong>冒险模式</strong><span>按章节推进原版 Campaign</span><b>→</b>
+        <strong>冒险模式</strong><span>还原原版关卡体验</span><b>→</b>
       </a>
       <a
         class="home-mode-card"
@@ -51,7 +51,7 @@ function serializeMap(value: unknown): string {
         href="/edit"
         @click.prevent="emit('navigate', '/edit')"
       >
-        <strong>地图编辑器</strong><span>创建地图并随时 Play Test</span><b>→</b>
+        <strong>地图编辑器</strong><span>创建或编辑已有地图，并分享给他人</span><b>→</b>
       </a>
       <button
         class="home-mode-card"
@@ -59,7 +59,7 @@ function serializeMap(value: unknown): string {
         type="button"
         @click="importOpen = !importOpen"
       >
-        <strong>导入地图</strong><span>打开 JSON、BC5R 文本或分享链接</span><b>＋</b>
+        <strong>导入地图</strong><span>导入已有的地图数据</span><b>＋</b>
       </button>
     </div>
     <a
@@ -97,6 +97,8 @@ function serializeMap(value: unknown): string {
 
 <style scoped>
 .home-mode-panel {
+  width: min(100%, 378px);
+  margin-inline: auto;
   display: grid;
   gap: 10px;
 }

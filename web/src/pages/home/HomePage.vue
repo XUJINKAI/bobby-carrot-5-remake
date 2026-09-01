@@ -120,13 +120,11 @@ onBeforeUnmount(() => {
 .home-hero {
   --home-hero-left-top: 12px;
   --home-hero-right-top: 70px;
-  --home-title-top: 16px;
-  --home-title-left: 35%;
-  --home-title-width: min(56%, 270px);
-  --home-bobby-top: 152px;
-  --home-bobby-left: 68%;
-  --home-bobby-width: min(24%, 118px);
-  --home-mode-top: 300px;
+  --home-title-top: 40px;
+  --home-title-width: min(60%, 300px);
+  --home-bobby-top: 180px;
+  --home-bobby-width: min(30%, 140px);
+  --home-mode-top: 310px;
 
   width: min(900px, calc(100% - 48px));
   min-height: calc(100dvh - 58px);
@@ -163,7 +161,7 @@ onBeforeUnmount(() => {
 
 .home-sky-brand :deep(.flight-title) {
   top: var(--home-title-top);
-  left: var(--home-title-left);
+  left: 50%;
   width: var(--home-title-width);
   max-height: none;
 }
@@ -171,7 +169,7 @@ onBeforeUnmount(() => {
 .home-sky-brand :deep(.flight-bobby) {
   top: var(--home-bobby-top);
   bottom: auto;
-  left: var(--home-bobby-left);
+  left: 50%;
   width: var(--home-bobby-width);
 }
 
@@ -179,6 +177,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   width: min(430px, 100%);
+  margin-inline: auto;
   padding-top: calc(var(--home-hero-left-top) + var(--home-mode-top));
 }
 
@@ -198,14 +197,12 @@ onBeforeUnmount(() => {
 
 @media (max-width: 900px) {
   .home-hero {
-    --home-hero-left-top: 10px;
+    --home-hero-left-top: 0px;
     --home-hero-right-top: 0px;
-    --home-title-left: 42%;
-    --home-title-width: min(54%, 300px);
-    --home-bobby-top: 145px;
-    --home-bobby-left: 67%;
-    --home-bobby-width: min(23%, 130px);
-    --home-mode-top: 300px;
+    --home-title-width: min(60%, 350px);
+    --home-bobby-top: 220px;
+    --home-bobby-width: min(30%, 140px);
+    --home-mode-top: 320px;
 
     width: min(100% - 28px, 720px);
     min-height: auto;
@@ -224,11 +221,9 @@ onBeforeUnmount(() => {
 
 @media (max-width: 520px) {
   .home-hero {
-    --home-title-left: 45%;
     --home-title-width: min(58%, 280px);
-    --home-bobby-top: 132px;
-    --home-bobby-left: 70%;
-    --home-bobby-width: min(26%, 118px);
+    --home-bobby-top: 170px;
+    --home-bobby-width: min(30%, 120px);
     --home-mode-top: 270px;
 
     width: min(100% - 18px, 720px);

@@ -16,7 +16,7 @@ function reportCanvas(element: unknown): void {
 <template>
   <article class="home-demo-panel">
     <div class="home-demo-toolbar">
-      <span>PLAYABLE DEMO</span>
+      <span>欢迎来到兔子波比的世界</span>
       <button type="button" @click="emit('restart')">重新开始</button>
     </div>
     <div class="home-demo-stage">

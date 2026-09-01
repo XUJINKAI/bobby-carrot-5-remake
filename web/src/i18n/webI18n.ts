@@ -23,8 +23,8 @@ const WEB_CATALOGS = {
     "settings.musicModern": "现代",
     "settings.volume": "音量",
     "settings.more": "更多设置",
-    "home.demo.sandmanFirst": "欢迎来到 Bobby Carrot 5 Remake！试试方向键或 WASD，在浏览器里走走看。",
-    "home.demo.sandmanAgain": "这里运行的就是完整 Engine。想继续的话，可以从左侧选择冒险、探索或编辑器。",
+    "home.demo.sandmanFirst": "欢迎你，朋友，这是兔子波比5的复刻项目，走到终点继续冒险吧。",
+    "home.demo.sandmanAgain": "去吧...",
   },
   en: {
     "shell.music": "Music",

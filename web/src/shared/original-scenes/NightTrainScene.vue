@@ -13,9 +13,9 @@ interface TrainLayer {
 
 const DEFAULT_LAYERS: readonly TrainLayer[] = [
   { from: 0, to: 0.46, speed: 0, offsetY: 0, zIndex: 0 },
-  { from: 0.46, to: 0.64, speed: 25, offsetY: 0, zIndex: 1 },
-  { from: 0.64, to: 0.73, speed: 50, offsetY: 0, zIndex: 3 },
-  { from: 0.73, to: 1, speed: 0, offsetY: 0, zIndex: 2 },
+  { from: 0.46, to: 0.64, speed: 30, offsetY: 0, zIndex: 1 },
+  { from: 0.64, to: 0.74, speed: 70, offsetY: 0, zIndex: 3 },
+  { from: 0.74, to: 1, speed: 0, offsetY: 0, zIndex: 2 },
 ];
 
 const props = defineProps<{

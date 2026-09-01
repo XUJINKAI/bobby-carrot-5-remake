@@ -11,7 +11,7 @@ defineProps<{ images: ImageManager }>();
   <section class="home-about" aria-labelledby="home-about-title">
     <header class="home-about-heading">
       <span class="eyebrow">BOBBY CARROT 5 REMAKE</span>
-      <h2 id="home-about-title">经典世界，在浏览器中重新出发</h2>
+      <h2 id="home-about-title">《兔子波比5》重制版</h2>
       <p>从原版关卡、美术与机关出发，把兔子波比 5 重新带到现代 Web。</p>
     </header>
 
@@ -20,10 +20,10 @@ defineProps<{ images: ImageManager }>();
         <NightTrainScene :images="images" />
       </div>
       <div class="feature-copy">
-        <span>01 · CLASSIC REMAKE</span>
-        <h3>在浏览器里复刻经典</h3>
+        <span>CLASSIC REMAKE</span>
+        <h3>复刻经典</h3>
         <p>
-          原版 Campaign、机关、美术与音乐重新运行在浏览器中，同时保持地图与运行规则可验证、可继续精修。
+          还原原版冒险体验，复刻400个关卡+80个奖励关，海狸商店等机制也悉数还原。
         </p>
       </div>
     </article>
@@ -33,10 +33,10 @@ defineProps<{ images: ImageManager }>();
         <PushboxFeaturePreview />
       </div>
       <div class="feature-copy">
-        <span>02 · MAP EDITOR</span>
-        <h3>创建属于自己的关卡</h3>
+        <span>MAP EDITOR</span>
+        <h3>地图编辑器</h3>
         <p>
-          内置地图编辑器直接使用同一套 Engine。除了原版元素，还可以组合更丰富的玩法，例如完整的推箱子地图。
+          增强的地图编辑器不仅可以创建原版机制的地图，还有很多新的机制提供，例如推箱子和传送门。
         </p>
       </div>
     </article>
@@ -46,10 +46,10 @@ defineProps<{ images: ImageManager }>();
         <EmbedFeaturePreview />
       </div>
       <div class="feature-copy">
-        <span>03 · SHARE &amp; EMBED</span>
-        <h3>把地图分享出去</h3>
+        <span>SHARE &amp; EMBED</span>
+        <h3>尽情分享</h3>
         <p>
-          自制地图可以压缩成链接直接分享，也可以作为可玩的小游戏嵌入自己的网页，让地图真正离开编辑器继续传播。
+          提供多种分享方式，例如链接、文件、网页内嵌，你可以将自己创建的地图嵌入自己的网页中。
         </p>
       </div>
     </article>
