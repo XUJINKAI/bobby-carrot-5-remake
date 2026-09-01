@@ -60,10 +60,10 @@ function reportCanvas(element: unknown): void {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 2px solid rgb(255 255 255 / 34%);
+  border: var(--bc-panel-border-width) solid var(--bc-panel-border);
   border-radius: var(--bc-panel-radius);
-  background: rgb(7 81 143 / 94%);
-  box-shadow: 0 24px 72px rgb(0 16 66 / 44%);
+  background: var(--bc-panel);
+  box-shadow: var(--bc-panel-shadow);
 }
 
 .home-demo-toolbar {
@@ -73,7 +73,7 @@ function reportCanvas(element: unknown): void {
   justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
-  border-bottom: 1px solid rgb(255 255 255 / 18%);
+  border-bottom: 1px solid var(--bc-panel-border);
   color: var(--bc-text-muted);
   font-size: 0.66rem;
   font-weight: 800;
@@ -82,7 +82,7 @@ function reportCanvas(element: unknown): void {
 
 .home-demo-toolbar button {
   padding: 5px 8px;
-  border: 1px solid rgb(255 255 255 / 24%);
+  border: 1px solid var(--bc-panel-border);
   border-radius: var(--bc-control-radius);
   background: var(--bc-control);
   color: var(--bc-text);
@@ -98,7 +98,7 @@ function reportCanvas(element: unknown): void {
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background: #071e53;
+  background: var(--bc-bg);
 }
 
 .home-demo-stage .game-stage,
@@ -113,7 +113,7 @@ function reportCanvas(element: unknown): void {
   display: flex;
   align-items: center;
   padding: 8px 14px;
-  border-top: 1px solid rgb(255 255 255 / 18%);
+  border-top: 1px solid var(--bc-panel-border);
   color: var(--bc-text-muted);
   font-size: 0.72rem;
   line-height: 1.35;
