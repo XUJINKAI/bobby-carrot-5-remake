@@ -62,6 +62,13 @@ function serializeMap(value: unknown): string {
         <strong>导入地图</strong><span>打开 JSON、BC5R 文本或分享链接</span><b>＋</b>
       </button>
     </div>
+    <a
+      class="home-embed-link"
+      href="/embed"
+      @click.prevent="emit('navigate', '/embed')"
+    >
+      将自制地图内嵌到其他网页 →
+    </a>
     <div
       v-if="importOpen"
       class="home-import-dialog-layer"
@@ -160,6 +167,19 @@ function serializeMap(value: unknown): string {
   align-self: center;
   color: var(--bc-highlight);
   font-size: 1.15rem;
+}
+
+.home-embed-link {
+  justify-self: start;
+  margin: 2px 2px 0;
+  color: var(--bc-text-muted);
+  font-size: 0.76rem;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.home-embed-link:hover {
+  color: var(--bc-text);
 }
 
 .home-import-dialog-layer {
