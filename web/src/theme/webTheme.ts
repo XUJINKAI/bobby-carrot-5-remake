@@ -1,14 +1,14 @@
-export type WebTheme = "modern" | "retro";
+export type WebTheme = "bobby" | "fc";
 
 const THEME_STORAGE_KEY = "bobby.theme";
 const THEME_COLORS: Record<WebTheme, string> = {
-  modern: "#0f141a",
-  retro: "#143678",
+  bobby: "#143678",
+  fc: "#000000",
 };
-let activeTheme: WebTheme = "modern";
+let activeTheme: WebTheme = "bobby";
 
 export function resolveWebTheme(value: string | null | undefined): WebTheme {
-  return value === "retro" ? "retro" : "modern";
+  return value === "fc" ? "fc" : "bobby";
 }
 
 export function initializeWebTheme(): WebTheme {
