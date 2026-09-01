@@ -9,11 +9,25 @@ withDefaults(
     compact?: boolean;
     showTitle?: boolean;
     showStars?: boolean;
+    starBigProbability?: number;
+    starSmallProbability?: number;
+    starScrollSpeed?: number;
+    starSparkleMinDelayMs?: number;
+    starSparkleMaxDelayMs?: number;
+    starSparkleFrameMs?: number;
+    starAnimated?: boolean;
   }>(),
   {
     compact: false,
     showTitle: true,
     showStars: true,
+    starBigProbability: 0.08,
+    starSmallProbability: 0.16,
+    starScrollSpeed: 42,
+    starSparkleMinDelayMs: 650,
+    starSparkleMaxDelayMs: 1600,
+    starSparkleFrameMs: 72,
+    starAnimated: true,
   },
 );
 </script>
@@ -24,6 +38,13 @@ withDefaults(
       v-if="showStars"
       class="flight-stars"
       :images="images"
+      :big-star-probability="starBigProbability"
+      :small-star-probability="starSmallProbability"
+      :scroll-speed="starScrollSpeed"
+      :sparkle-min-delay-ms="starSparkleMinDelayMs"
+      :sparkle-max-delay-ms="starSparkleMaxDelayMs"
+      :sparkle-frame-ms="starSparkleFrameMs"
+      :animated="starAnimated"
     />
     <div v-if="showTitle" class="flight-title">
       <SpriteFrame :images="images" asset="original-title" />
