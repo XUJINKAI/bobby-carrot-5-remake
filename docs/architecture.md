@@ -471,13 +471,12 @@ Editor semantic JSON map
 CLI：
 
 ```bash
-npm run original:patch -- \
-  --map editor/examples/mechanics-smoke.json \
-  --target 40-10 \
-  --out tmp/original-validation/mechanics.jar
+node tools/cli.mjs original patch \
+  --in custom-maps/original-patch \
+  --out tmp/original-patch
 ```
 
-目标 public ID 用于通过 Catalog provenance 找回原始 JAR / DAT / slot。
+输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。
 
 ## Tools / Assets
 
