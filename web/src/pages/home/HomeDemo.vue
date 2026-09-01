@@ -60,10 +60,10 @@ function reportCanvas(element: unknown): void {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 20%);
-  border-radius: 18px;
-  background: #0f141a;
-  box-shadow: 0 24px 72px rgb(0 10 40 / 42%);
+  border: 2px solid rgb(255 255 255 / 34%);
+  border-radius: var(--bc-panel-radius);
+  background: rgb(7 81 143 / 94%);
+  box-shadow: 0 24px 72px rgb(0 16 66 / 44%);
 }
 
 .home-demo-toolbar {
@@ -73,8 +73,8 @@ function reportCanvas(element: unknown): void {
   justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
-  border-bottom: 1px solid rgb(255 255 255 / 9%);
-  color: #9eacb9;
+  border-bottom: 1px solid rgb(255 255 255 / 18%);
+  color: var(--bc-text-muted);
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -82,12 +82,16 @@ function reportCanvas(element: unknown): void {
 
 .home-demo-toolbar button {
   padding: 5px 8px;
-  border: 0;
-  border-radius: 8px;
-  background: #202a35;
-  color: #e8edf1;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
   font-size: 0.7rem;
   letter-spacing: 0;
+}
+
+.home-demo-toolbar button:hover {
+  background: var(--bc-control-hover);
 }
 
 .home-demo-stage {
@@ -109,14 +113,14 @@ function reportCanvas(element: unknown): void {
   display: flex;
   align-items: center;
   padding: 8px 14px;
-  border-top: 1px solid rgb(255 255 255 / 9%);
-  color: #9eacb9;
+  border-top: 1px solid rgb(255 255 255 / 18%);
+  color: var(--bc-text-muted);
   font-size: 0.72rem;
   line-height: 1.35;
 }
 
 .result-card {
-  border-radius: 14px;
+  border-radius: var(--bc-panel-radius);
 }
 
 @media (max-width: 900px) {
