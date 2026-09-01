@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ImageManager } from "@bobby/engine";
+import { computed } from "vue";
 import OriginalStarfield from "./OriginalStarfield.vue";
 import SpriteFrame from "./SpriteFrame.vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     images: ImageManager;
     compact?: boolean;
@@ -25,23 +26,43 @@ withDefaults(
     showStars: true,
   },
 );
+
+const starfieldOverrides = computed(() => ({
+  ...(props.starBigProbability === undefined
+    ? {}
+    : { bigStarProbability: props.starBigProbability }),
+  ...(props.starSmallProbability === undefined
+    ? {}
+    : { smallStarProbability: props.starSmallProbability }),
+  ...(props.starScrollSpeed === undefined
+    ? {}
+    : { scrollSpeed: props.starScrollSpeed }),
+  ...(props.starSparkleMinDelayMs === undefined
+    ? {}
+    : { sparkleMinDelayMs: props.starSparkleMinDelayMs }),
+  ...(props.starSparkleMaxDelayMs === undefined
+    ? {}
+    : { sparkleMaxDelayMs: props.starSparkleMaxDelayMs }),
+  ...(props.starSparkleBurstMin === undefined
+    ? {}
+    : { sparkleBurstMin: props.starSparkleBurstMin }),
+  ...(props.starSparkleBurstMax === undefined
+    ? {}
+    : { sparkleBurstMax: props.starSparkleBurstMax }),
+  ...(props.starSparkleFrameMs === undefined
+    ? {}
+    : { sparkleFrameMs: props.starSparkleFrameMs }),
+  ...(props.starAnimated === undefined ? {} : { animated: props.starAnimated }),
+}));
 </script>
 
 <template>
   <section class="original-flight-scene" :class="{ compact }">
     <OriginalStarfield
       v-if="showStars"
+      v-bind="starfieldOverrides"
       class="flight-stars"
       :images="images"
-      :big-star-probability="starBigProbability"
-      :small-star-probability="starSmallProbability"
-      :scroll-speed="starScrollSpeed"
-      :sparkle-min-delay-ms="starSparkleMinDelayMs"
-      :sparkle-max-delay-ms="starSparkleMaxDelayMs"
-      :sparkle-burst-min="starSparkleBurstMin"
-      :sparkle-burst-max="starSparkleBurstMax"
-      :sparkle-frame-ms="starSparkleFrameMs"
-      :animated="starAnimated"
     />
     <div v-if="showTitle" class="flight-title">
       <SpriteFrame :images="images" asset="original-title" />
