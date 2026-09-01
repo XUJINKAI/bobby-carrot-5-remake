@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  ORIGINAL_TILE_SIZE,
   STAR_ATLAS_CELLS,
   STAR_SPARKLE_SHEET,
   sparkleFrameRect,
   spriteFrameRect,
 } from "../src/shared/original-scenes/originalSceneSprites.ts";
 
-test("title stars use the three requested ts atlas cells", () => {
+test("Bobby starfield tiles the three requested ts atlas cells", () => {
+  assert.equal(ORIGINAL_TILE_SIZE, 48);
   assert.deepEqual(STAR_ATLAS_CELLS, [
     { column: 7, row: 4 },
     { column: 8, row: 4 },
