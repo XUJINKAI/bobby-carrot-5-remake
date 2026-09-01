@@ -33,7 +33,7 @@ const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
   justify-content: space-between;
   gap: 12px;
   padding: 6px 14px max(6px, env(safe-area-inset-bottom));
-  border-top: 3px solid var(--bc-panel-border);
+  border-top: var(--bc-shell-border-width) solid var(--bc-panel-border);
   background: var(--bc-panel);
   color: var(--bc-text-muted);
   font-size: 0.76rem;

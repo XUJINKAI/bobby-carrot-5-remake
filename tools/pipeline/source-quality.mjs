@@ -5,6 +5,7 @@ import { root } from "../lib/fs.mjs";
 
 const SOURCE_ROOTS = [
   "model",
+  "i18n",
   "dat",
   "engine",
   "adventure",

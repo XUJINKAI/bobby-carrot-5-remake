@@ -10,7 +10,6 @@ export interface WorldEvent {
   direction?: Direction;
   action?: string;
   text?: string;
-  messageId?: string;
   reason?: string;
   data?: Record<string, JsonValue>;
 }

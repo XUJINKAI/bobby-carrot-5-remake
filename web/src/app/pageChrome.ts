@@ -1,4 +1,5 @@
 import { siteUrl } from "../services/assets/gameAssets.js";
+import { webT, type WebTranslationKey } from "../i18n/webI18n.js";
 import type {
   HelpDescriptor,
   ShellAction,
@@ -47,28 +48,20 @@ export function pageIdentity(
 
 export function globalActions(): ShellAction[] {
   return [
-    {
-      id: "music",
-      icon: "music",
-      label: "音乐",
-      title: "音乐",
-      collapse: "overflow",
-    },
-    {
-      id: "settings",
-      icon: "settings",
-      label: "设置",
-      title: "设置",
-      collapse: "overflow",
-    },
-    {
-      id: "help",
-      icon: "help",
-      label: "帮助",
-      title: "帮助",
-      collapse: "overflow",
-    },
+    translatedGlobalAction("music", "music", "shell.music"),
+    translatedGlobalAction("settings", "settings", "shell.settings"),
+    translatedGlobalAction("help", "help", "shell.help"),
   ];
+}
+
+export function localizeGlobalActions(actions: readonly ShellAction[]): void {
+  for (const action of actions) {
+    const key = globalActionTranslationKey(action.id);
+    if (!key) continue;
+    const label = webT(key);
+    action.label = label;
+    action.title = label;
+  }
 }
 
 export const BROWSE_HELP: HelpDescriptor = {
@@ -106,3 +99,25 @@ export const EDITOR_HELP: HelpDescriptor = {
     },
   ],
 };
+
+function translatedGlobalAction(
+  id: "music" | "settings" | "help",
+  icon: "music" | "settings" | "help",
+  key: WebTranslationKey,
+): ShellAction {
+  const label = webT(key);
+  return {
+    id,
+    icon,
+    label,
+    title: label,
+    collapse: "overflow",
+  };
+}
+
+function globalActionTranslationKey(id: string): WebTranslationKey | null {
+  if (id === "music") return "shell.music";
+  if (id === "settings") return "shell.settings";
+  if (id === "help") return "shell.help";
+  return null;
+}

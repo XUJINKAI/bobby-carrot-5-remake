@@ -3,10 +3,14 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@bobby/i18n": ["../i18n/src/index.ts"]
+    }
   },
   "references": [
     { "path": "../model" },
+    { "path": "../i18n" },
     { "path": "../engine" },
     { "path": "../editor" },
     { "path": "../adventure" },

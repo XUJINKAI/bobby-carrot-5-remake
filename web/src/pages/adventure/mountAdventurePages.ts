@@ -29,7 +29,7 @@ import type {
 } from "./types.js";
 
 export function renderAdventureHome(context: PageContext): PageController {
-  const { app, adventure, audio, navigate } = context;
+  const { app, adventure, audio, images, navigate } = context;
   const save = loadAdventureSave();
   const next = nextAdventureLevel(adventure, save);
   audio.playMusic("title");
@@ -40,6 +40,7 @@ export function renderAdventureHome(context: PageContext): PageController {
       goldenCarrots: save.economy.goldenCarrots,
       goldenKey: save.upgrades.goldenKey,
     },
+    images,
     onNavigate: navigate,
   });
 }

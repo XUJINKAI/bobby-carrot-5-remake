@@ -1,171 +1,240 @@
 <script setup lang="ts">
 import type { EditorMap } from "@bobby/editor";
+import type { ImageManager } from "@bobby/engine";
+import { onBeforeUnmount, onMounted, ref } from "vue";
+import { getWebTheme, type WebTheme } from "../../theme/webTheme.js";
 import type { HomeViewState } from "./types.js";
+import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
+import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
 import HomeDemo from "./HomeDemo.vue";
 import HomeModeMenu from "./HomeModeMenu.vue";
 import ProjectIntro from "./ProjectIntro.vue";
 
-defineProps<{ state: HomeViewState; lastLevelId: string }>();
+defineProps<{ state: HomeViewState; images: ImageManager }>();
 const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   navigate: [path: string];
   restart: [];
-  random: [];
   importMap: [level: EditorMap];
 }>();
+
+const page = ref<HTMLElement | null>(null);
+const theme = ref<WebTheme>(getWebTheme());
+let scrollRegion: HTMLElement | null = null;
+let fadeFrame = 0;
+
+function updateTheme(event: Event): void {
+  theme.value = (event as CustomEvent<WebTheme>).detail;
+}
+
+function updateStarfieldFade(): void {
+  fadeFrame = 0;
+  if (!page.value || !scrollRegion) return;
+  const fadeDistance = Math.max(1, scrollRegion.clientHeight * 0.72);
+  const progress = Math.min(1, Math.max(0, scrollRegion.scrollTop / fadeDistance));
+  page.value.style.setProperty("--home-starfield-opacity", String(1 - progress));
+}
+
+function scheduleStarfieldFade(): void {
+  if (fadeFrame !== 0) return;
+  fadeFrame = requestAnimationFrame(updateStarfieldFade);
+}
+
+onMounted(() => {
+  scrollRegion = page.value?.closest<HTMLElement>(".app-scroll-region") ?? null;
+  scrollRegion?.addEventListener("scroll", scheduleStarfieldFade, { passive: true });
+  window.addEventListener("resize", scheduleStarfieldFade, { passive: true });
+  window.addEventListener("web-theme-change", updateTheme);
+  updateStarfieldFade();
+});
+
+onBeforeUnmount(() => {
+  scrollRegion?.removeEventListener("scroll", scheduleStarfieldFade);
+  window.removeEventListener("resize", scheduleStarfieldFade);
+  window.removeEventListener("web-theme-change", updateTheme);
+  cancelAnimationFrame(fadeFrame);
+  scrollRegion = null;
+});
 </script>
 
 <template>
-  <div class="home-page">
-    <div class="home-sky-brand" aria-hidden="true">
-      <span class="home-star star-one">★</span>
-      <h1>BOBBY CARROT <strong>5</strong><span>REMAKE</span></h1>
-      <span class="home-moon">☾</span>
-      <span class="home-star star-two">★</span>
+  <div ref="page" class="home-page">
+    <OriginalStarfield
+      v-if="theme !== 'fc'"
+      class="home-page-starfield"
+      :images="images"
+    />
+    <div class="home-page-content">
+      <section class="home-hero" aria-label="开始游戏">
+        <div class="home-hero-left">
+          <div class="home-sky-brand" aria-hidden="true">
+            <OriginalFlightScene :images="images" :show-stars="false" />
+          </div>
+          <div class="home-mode-layer">
+            <HomeModeMenu
+              @navigate="emit('navigate', $event)"
+              @import-map="emit('importMap', $event)"
+            >
+              <p class="home-import-feedback" aria-live="polite">
+                {{ state.importFeedback }}
+              </p>
+            </HomeModeMenu>
+          </div>
+        </div>
+        <div class="home-demo-column">
+          <HomeDemo
+            :state="state"
+            @ready="emit('ready', $event)"
+            @restart="emit('restart')"
+            @adventure="emit('navigate', '/adventure')"
+          />
+        </div>
+      </section>
+      <ProjectIntro :images="images" />
     </div>
-    <section class="home-hero" aria-label="开始游戏">
-      <HomeDemo
-        :state="state"
-        @ready="emit('ready', $event)"
-        @restart="emit('restart')"
-        @adventure="emit('navigate', '/adventure')"
-      />
-      <HomeModeMenu
-        @navigate="emit('navigate', $event)"
-        @import-map="emit('importMap', $event)"
-      >
-        <p class="home-import-feedback" aria-live="polite">
-          {{ state.importFeedback }}
-        </p>
-      </HomeModeMenu>
-    </section>
-    <ProjectIntro :last-level-id="lastLevelId" @random="emit('random')" />
   </div>
 </template>
 
 <style scoped>
 .home-page {
-  width: min(1180px, calc(100% - 32px));
-  margin: 0 auto;
-}
+  --home-starfield-opacity: 1;
 
-.home-sky-brand {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 150px;
-  overflow: hidden;
-  padding-top: 20px;
+  min-height: 100%;
+  overflow: clip;
+  background: #143778;
+  color: var(--bc-text);
 }
 
-.home-sky-brand::before,
-.home-sky-brand::after {
-  content: "";
-  position: absolute;
-  width: 180px;
-  height: 45px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 42px 2px 0 #fff, 84px -5px 0 #dff8ff;
-  opacity: 0.9;
+.home-page-starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  opacity: var(--home-starfield-opacity);
+  will-change: opacity;
 }
 
-.home-sky-brand::before {
-  left: -100px;
-  bottom: 12px;
-}
-
-.home-sky-brand::after {
-  right: -80px;
-  top: 34px;
-}
-
-.home-sky-brand h1 {
+.home-page-content {
   position: relative;
   z-index: 1;
-  margin: 0;
-  color: #ff7a00;
-  font-size: clamp(2rem, 5vw, 4.6rem);
-  font-style: italic;
-  letter-spacing: -0.07em;
-  line-height: 0.78;
-  text-align: center;
-  text-shadow:
-    -3px -3px 0 #fff,
-    3px -3px 0 #fff,
-    -3px 3px 0 #fff,
-    3px 3px 0 #fff,
-    7px 7px 0 #002882;
-}
-
-.home-sky-brand h1 strong {
-  color: var(--bc-highlight);
-  font-size: 1.45em;
-}
-
-.home-sky-brand h1 span {
-  display: block;
-  margin-top: 0.28em;
-  color: #fff;
-  font-size: 0.34em;
-  letter-spacing: 0.28em;
-  text-shadow: 3px 3px 0 #002882;
-}
-
-.home-star,
-.home-moon {
-  position: absolute;
-  z-index: 1;
-  color: var(--bc-highlight);
-  text-shadow: 3px 3px 0 #002882;
-}
-
-.home-star {
-  font-size: 1.7rem;
-}
-
-.star-one {
-  left: 12%;
-  top: 28px;
-}
-
-.star-two {
-  right: 16%;
-  bottom: 20px;
-}
-
-.home-moon {
-  right: 8%;
-  top: 8px;
-  font-size: 3.6rem;
 }
 
 .home-hero {
-  min-height: calc(100dvh - 252px);
+  --home-hero-left-top: 12px;
+  --home-hero-right-top: 70px;
+  --home-title-top: 40px;
+  --home-title-width: min(60%, 300px);
+  --home-bobby-top: 180px;
+  --home-bobby-width: min(30%, 140px);
+  --home-mode-top: 310px;
+
+  width: min(900px, calc(100% - 48px));
+  min-height: calc(100dvh - 58px);
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
-  gap: clamp(24px, 4vw, 54px);
-  align-items: center;
-  padding: 42px 0;
+  grid-template-columns: minmax(0, 1fr) 378px;
+  gap: 34px;
+  align-items: stretch;
+  padding: 0;
+}
+
+.home-hero-left {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+}
+
+.home-sky-brand {
+  position: absolute;
+  inset: var(--home-hero-left-top) 0 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-sky-brand :deep(.original-flight-scene) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.home-sky-brand :deep(.flight-title) {
+  top: var(--home-title-top);
+  left: 50%;
+  width: var(--home-title-width);
+  max-height: none;
+}
+
+.home-sky-brand :deep(.flight-bobby) {
+  top: var(--home-bobby-top);
+  bottom: auto;
+  left: 50%;
+  width: var(--home-bobby-width);
+}
+
+.home-mode-layer {
+  position: relative;
+  z-index: 1;
+  width: min(430px, 100%);
+  margin-inline: auto;
+  padding-top: calc(var(--home-hero-left-top) + var(--home-mode-top));
+}
+
+.home-demo-column {
+  min-width: 0;
+  display: grid;
+  place-items: start center;
+  padding-top: var(--home-hero-right-top);
 }
 
 .home-import-feedback {
-  min-height: 1.4em;
-  margin: 12px 2px 0;
-  color: var(--muted);
-  font-size: 0.8rem;
+  min-height: 1.3em;
+  margin: 8px 2px 0;
+  color: var(--bc-text-muted);
+  font-size: 0.78rem;
 }
 
-@media (max-width: 760px) {
-  .home-page {
-    width: min(100% - 20px, 1180px);
+@media (max-width: 900px) {
+  .home-hero {
+    --home-hero-left-top: 0px;
+    --home-hero-right-top: 0px;
+    --home-title-width: min(60%, 350px);
+    --home-bobby-top: 220px;
+    --home-bobby-width: min(30%, 140px);
+    --home-mode-top: 320px;
+
+    width: min(100% - 28px, 720px);
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 44px;
   }
 
+  .home-hero-left {
+    min-height: 620px;
+  }
+
+  .home-mode-layer {
+    width: min(430px, 100%);
+  }
+}
+
+@media (max-width: 520px) {
   .home-hero {
-    grid-template-columns: 1fr;
-    align-content: start;
-    padding: 24px 0 42px;
+    --home-title-width: min(58%, 280px);
+    --home-bobby-top: 170px;
+    --home-bobby-width: min(30%, 120px);
+    --home-mode-top: 270px;
+
+    width: min(100% - 18px, 720px);
+  }
+
+  .home-hero-left {
+    min-height: 570px;
   }
 }
 </style>

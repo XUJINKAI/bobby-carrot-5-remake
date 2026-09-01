@@ -1,27 +1,25 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { createDialogBehavior } from "@bobby/engine";
+import { EntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
+import { globalActions, homeIdentity } from "../../app/pageChrome.js";
+import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import { lastExploreMapId } from "../../storage/exploreProgressStorage.js";
 import {
   configureShell,
   loadScreenControlPreference,
 } from "../../shell/shellBridge.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
-import { explorePlayPath } from "../../app/routes.js";
-import { globalActions, homeIdentity } from "../../app/pageChrome.js";
+
+const HOME_DEMO_DIALOG_REF = "sandman-dialog-1";
 
 export async function renderHome(
   context: PageContext,
 ): Promise<PageController> {
-  const { app, collections, audio, images, navigate } = context;
-  const original = collections.find((collection) => collection.id === "original");
-  if (!original || original.maps.length === 0)
-    throw new Error("Home 需要 original collection");
-  const lastId = lastExploreMapId("original") ?? original.maps[0]!.id;
-  const last = original.maps.find((map) => map.id === lastId) ?? original.maps[0]!;
+  const { app, audio, images, navigate } = context;
 
   audio.playMusic("title");
   configureShell({
@@ -33,7 +31,7 @@ export async function renderHome(
     },
     bottomBar: {
       visible: true,
-      fixed: true,
+      fixed: false,
       info: [
         { text: "Bobby Carrot 5 Remake" },
         { text: "XUJINKAI" },
@@ -44,7 +42,7 @@ export async function renderHome(
   });
   app.replaceChildren();
   const view = reactive<HomeViewState>({
-    demoStatus: "方向键 / WASD 移动，体验 Engine 的地图规则。",
+    demoStatus: "方向键 / WASD 移动。Demo 视野固定，不响应滚轮缩放。",
     demoResult: null,
     deathReason: "",
     importFeedback: "",
@@ -56,46 +54,61 @@ export async function renderHome(
   });
   const homeApp = createApp(HomePage, {
     state: view,
-    lastLevelId: last.name,
+    images,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
-    onRandom: () => {
-      const chosen = original.maps[
-        Math.floor(Math.random() * original.maps.length)
-      ];
-      if (chosen)
-        navigate(
-          explorePlayPath({ collection: "original", id: chosen.id }),
-        );
-    },
     onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
       importHomeMap(level, view, navigate),
   });
   homeApp.mount(app);
 
   const [demo, canvas] = await Promise.all([
-    resolveMapDocument({ collection: "original", id: "1-1" }),
+    resolveMapDocument({ collection: "original", id: "campaign-intro" }),
     canvasReady,
   ]);
-  session = await createGameSession({
-    root: app,
-    canvas,
-    level: demo.level,
-    gameOptions: {
-      audio,
-      images,
-      profile: { superKey: true },
+  const disposeHomeDialog = createDialogBehavior(
+    HOME_DEMO_DIALOG_REF,
+    ({ self, commands }) => {
+      const storedCount = self.entity.state?.dialogCount;
+      const count =
+        typeof storedCount === "number" && Number.isFinite(storedCount)
+          ? storedCount
+          : 0;
+      commands.setState(self.entity.id, {
+        ...(self.entity.state ?? {}),
+        dialogCount: count + 1,
+      });
+      return webT(
+        count === 0 ? "home.demo.sandmanFirst" : "home.demo.sandmanAgain",
+      );
     },
-    runtime: {
-      hud: true,
-      input: {
-        undo: false,
-        debug: false,
-        screenJoystick: { enabled: loadScreenControlPreference() },
+  );
+  try {
+    session = await createGameSession({
+      canvas,
+      level: prepareHomeDemoLevel(demo.level),
+      gameOptions: {
+        audio,
+        images,
+        profile: { superKey: true },
       },
-    },
-  });
+      runtime: {
+        hud: true,
+        input: {
+          undo: false,
+          zoom: false,
+          debug: false,
+          screenJoystick: { enabled: loadScreenControlPreference() },
+        },
+      },
+    });
+  } catch (error) {
+    disposeHomeDialog();
+    homeApp.unmount();
+    throw error;
+  }
+
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
     const state = session.game.state;
@@ -136,10 +149,23 @@ export async function renderHome(
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
+      disposeHomeDialog();
       session?.destroy();
       homeApp.unmount();
     },
   };
+}
+
+function prepareHomeDemoLevel(level: LevelMap): LevelMap {
+  const result = structuredClone(level);
+  for (const entity of result.entities) {
+    if (entity.type !== EntityTypeId.SANDMAN) continue;
+    entity.properties = {
+      ...(entity.properties ?? {}),
+      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },
+    };
+  }
+  return result;
 }
 
 function importHomeMap(

@@ -80,12 +80,8 @@ async function togglePlay(): Promise<void> {
     const canvas = document.querySelector<HTMLCanvasElement>(
       "[data-editor-game-canvas]",
     );
-    const root = document.querySelector<HTMLElement>(
-      "[data-editor-game-dialog-root]",
-    );
-    if (!canvas || !root) throw new Error("Editor Play Test 舞台挂载失败");
+    if (!canvas) throw new Error("Editor Play Test 舞台挂载失败");
     session = await createGameSession({
-      root,
       canvas,
       level: page.levelMap.value,
       gameOptions: {

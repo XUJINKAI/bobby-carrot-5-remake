@@ -2,7 +2,9 @@
 import type { AudioRuntime } from "@bobby/engine";
 import { onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
+import { localizeGlobalActions } from "./pageChrome.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
+import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
@@ -15,29 +17,52 @@ const props = defineProps<{
   onContentReady: (element: HTMLDivElement) => void;
 }>();
 const content = ref<HTMLDivElement | null>(null);
-const dialog = ref<"settings" | "help" | null>(null);
+const quickSettingsOpen = ref(false);
+const helpOpen = ref(false);
 const settings = useGlobalSettings(props.audio);
 
-function openDialog(kind: "settings" | "help", feedback = ""): void {
-  if (kind === "settings") settings.refresh(feedback);
-  dialog.value = kind;
+function openSettings(): void {
+  settings.refresh();
+  if (!quickSettingsOpen.value && !helpOpen.value) notifySurfaceOpen();
+  helpOpen.value = false;
+  quickSettingsOpen.value = true;
+}
+
+function closeSettings(): void {
+  if (!quickSettingsOpen.value) return;
+  quickSettingsOpen.value = false;
+  notifySurfaceClose();
+}
+
+function openHelp(): void {
+  if (!helpOpen.value && !quickSettingsOpen.value) notifySurfaceOpen();
+  quickSettingsOpen.value = false;
+  helpOpen.value = true;
+}
+
+function closeHelp(): void {
+  if (!helpOpen.value) return;
+  helpOpen.value = false;
+  notifySurfaceClose();
+}
+
+function notifySurfaceOpen(): void {
   window.dispatchEvent(new CustomEvent("shell-dialog-open"));
 }
 
-function closeDialog(): void {
-  if (!dialog.value) return;
-  dialog.value = null;
+function notifySurfaceClose(): void {
   window.dispatchEvent(new CustomEvent("shell-dialog-close"));
 }
 
-function openSettings(feedback = ""): void {
-  openDialog("settings", feedback);
+function openSettingsPage(): void {
+  closeSettings();
+  props.navigate("/settings");
 }
 
 function dispatchAction(action: string): void {
   if (action === "music") settings.toggleMusic();
   else if (action === "settings") openSettings();
-  else if (action === "help") openDialog("help");
+  else if (action === "help") openHelp();
   else if (action === "screen-control") {
     settings.setScreenControl(!settings.state.screenControlEnabled);
     updateActionPressed("screen-control", settings.state.screenControlEnabled);
@@ -48,23 +73,32 @@ function dispatchAction(action: string): void {
   }
 }
 
-function updateActionPressed(id: string, pressed: boolean): void {
+function shellActions() {
   const topBar = props.shell.config.topBar;
   const bottomBar = props.shell.config.bottomBar;
-  const actions = [
+  return [
     ...(topBar?.back ? [topBar.back] : []),
     ...(topBar?.commands ?? []),
     ...(topBar?.actions ?? []),
     ...(bottomBar?.leading ?? []),
     ...(bottomBar?.trailing ?? []),
   ];
-  const target = actions.find((item) => item.id === id);
+}
+
+function updateActionPressed(id: string, pressed: boolean): void {
+  const target = shellActions().find((item) => item.id === id);
   if (target) target.pressed = pressed;
 }
 
 watch(
   [() => settings.state.musicEnabled, () => props.shell.config],
   ([musicEnabled]) => updateActionPressed("music", musicEnabled),
+  { immediate: true },
+);
+
+watch(
+  [() => settings.state.locale, () => props.shell.config],
+  () => localizeGlobalActions(shellActions()),
   { immediate: true },
 );
 
@@ -107,22 +141,28 @@ onMounted(() => {
       @navigate="navigate"
       @action="dispatchAction"
     />
+
+    <div
+      v-if="quickSettingsOpen"
+      class="quick-settings-layer"
+      data-quick-settings-layer
+      @pointerdown.self="closeSettings"
+    >
+      <QuickSettingsPanel
+        :state="settings.state"
+        @close="closeSettings"
+        @locale="settings.setLocale"
+        @theme="settings.setTheme"
+        @music-mode="settings.setMusicMode"
+        @volume="settings.setVolume"
+        @more-settings="openSettingsPage"
+      />
+    </div>
+
     <GlobalDialogLayer
-      v-if="dialog"
-      :kind="dialog"
+      v-if="helpOpen"
       :help="shell.help"
-      :settings="settings.state"
-      :profile="settings.profile.value"
-      :feedback="settings.feedback.value"
-      @close="closeDialog"
-      @music-enabled="settings.setMusicEnabled"
-      @music-gain="settings.setMusicGain"
-      @sound-gain="settings.setSoundGain"
-      @music-style="settings.setMusicStyle"
-      @screen-control="settings.setScreenControl"
-      @import-save="settings.importSave"
-      @reset-save="settings.resetSave"
-      @feedback="settings.feedback.value = $event"
+      @close="closeHelp"
     />
   </div>
 </template>
@@ -139,6 +179,7 @@ onMounted(() => {
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
   background: var(--bc-bg);
+  color: var(--bc-text);
 }
 
 .app-shell-fixed-top {
@@ -162,7 +203,7 @@ onMounted(() => {
   flex: 1 0 auto;
 }
 
-.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)):not(:has(.home-page)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
@@ -177,6 +218,8 @@ onMounted(() => {
 
 .app-content:has(.home-page) {
   width: 100%;
+  min-height: 100%;
+  margin: 0;
   padding: 0;
 }
 
@@ -190,5 +233,22 @@ onMounted(() => {
   max-width: 100%;
   height: 100%;
   aspect-ratio: 5 / 8;
+}
+
+.quick-settings-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: calc(58px + max(8px, env(safe-area-inset-top))) 12px 12px;
+  background: transparent;
+}
+
+@media (max-width: 480px) {
+  .quick-settings-layer {
+    padding-inline: 8px;
+  }
 }
 </style>

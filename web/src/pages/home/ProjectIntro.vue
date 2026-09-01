@@ -1,89 +1,169 @@
 <script setup lang="ts">
-defineProps<{ lastLevelId: string }>();
-const emit = defineEmits<{ random: [] }>();
+import type { ImageManager } from "@bobby/engine";
+import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
+import EmbedFeaturePreview from "./EmbedFeaturePreview.vue";
+import PushboxFeaturePreview from "./PushboxFeaturePreview.vue";
+
+defineProps<{ images: ImageManager }>();
 </script>
 
 <template>
   <section class="home-about" aria-labelledby="home-about-title">
-    <header>
-      <span class="eyebrow">ABOUT THE PROJECT</span>
-      <h2 id="home-about-title">从原作到现代 Web 游戏</h2>
+    <header class="home-about-heading">
+      <span class="eyebrow">BOBBY CARROT 5 REMAKE</span>
+      <h2 id="home-about-title">《兔子波比5》重制版</h2>
+      <p>从原版关卡、美术与机关出发，把兔子波比 5 重新带到现代 Web。</p>
     </header>
-    <div class="home-about-grid">
-      <article>
-        <h3>原作重制</h3>
-        <p>保留 Bobby Carrot 5 的地图、机关、美术与 MIDI，并以现代浏览器运行。</p>
-      </article>
-      <article>
-        <h3>可验证研究</h3>
-        <p>语义地图与原版 DAT 维持可验证的格式互操作链路，让机制结论能够回到原作验证。</p>
-      </article>
-      <article>
+
+    <article class="feature-story feature-story-train">
+      <div class="feature-visual">
+        <NightTrainScene :images="images" />
+      </div>
+      <div class="feature-copy">
+        <span>CLASSIC REMAKE</span>
+        <h3>复刻经典</h3>
+        <p>
+          还原原版冒险体验，复刻400个关卡+80个奖励关，海狸商店等机制也悉数还原。
+        </p>
+      </div>
+    </article>
+
+    <article class="feature-story reverse">
+      <div class="feature-visual">
+        <PushboxFeaturePreview />
+      </div>
+      <div class="feature-copy">
+        <span>MAP EDITOR</span>
         <h3>地图编辑器</h3>
-        <p>使用语义 JSON 创建和交换自定义地图，并通过同一套 Engine 直接 Play Test。</p>
-      </article>
-    </div>
-    <p class="home-about-note">项目代码与原创文档遵循仓库许可证；原版资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。</p>
-    <div class="home-quick-row">
-      <span>最近浏览：{{ lastLevelId }}</span>
-      <button class="ghost-btn" @click="emit('random')">随机一关</button>
-    </div>
+        <p>
+          增强的地图编辑器不仅可以创建原版机制的地图，还有很多新的机制提供，例如推箱子和传送门。
+        </p>
+      </div>
+    </article>
+
+    <article class="feature-story">
+      <div class="feature-visual">
+        <EmbedFeaturePreview />
+      </div>
+      <div class="feature-copy">
+        <span>SHARE &amp; EMBED</span>
+        <h3>尽情分享</h3>
+        <p>
+          提供多种分享方式，例如链接、文件、网页内嵌，你可以将自己创建的地图嵌入自己的网页中。
+        </p>
+      </div>
+    </article>
+
+    <p class="home-about-note">
+      项目代码与原创文档遵循仓库许可证；原版 Bobby Carrot 资产的权利边界以 THIRD_PARTY_ASSETS.md 为准。
+    </p>
   </section>
 </template>
 
 <style scoped>
 .home-about {
-  min-height: 78vh;
+  width: min(900px, calc(100% - 48px));
+  margin: 0 auto;
   display: grid;
-  align-content: center;
-  gap: 24px;
-  padding: 80px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: clamp(64px, 10vw, 120px);
+  padding: clamp(90px, 12vw, 150px) 0 96px;
+  border-top: 1px solid var(--bc-panel-border);
 }
 
-.home-about-grid {
+.home-about-heading {
+  width: min(720px, 100%);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
-.home-about article {
-  padding: 24px;
-  border: 4px solid var(--bc-panel-border);
-  border-radius: 7px;
-  background: var(--bc-panel);
-  box-shadow: 8px 8px 0 #001b5b88;
+.home-about-heading h2 {
+  margin: 0;
+  max-width: 680px;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
 }
 
-.home-about h2 {
-  margin: 3px 0 0;
+.home-about-heading p,
+.feature-copy p {
+  margin: 0;
+  color: var(--bc-text-muted);
+  line-height: 1.75;
 }
 
-.home-about h3 {
-  margin: 0 0 10px;
+.home-about-heading p {
+  font-size: clamp(1rem, 1.7vw, 1.22rem);
 }
 
-.home-about p {
-  color: var(--muted);
-  line-height: 1.7;
+.feature-story {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: clamp(36px, 6vw, 78px);
+  align-items: center;
+}
+
+.feature-story.reverse .feature-visual {
+  order: 2;
+}
+
+.feature-story.reverse .feature-copy {
+  order: 1;
+}
+
+.feature-visual {
+  min-width: 0;
+}
+
+.feature-story-train .feature-visual {
+  border-radius: var(--bc-panel-radius);
+  overflow: hidden;
+  border: 1px solid var(--bc-panel-border);
+  box-shadow: var(--bc-panel-shadow);
+}
+
+.feature-copy {
+  display: grid;
+  gap: 13px;
+}
+
+.feature-copy > span {
+  color: var(--bc-highlight);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.feature-copy h3 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.7rem);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
 }
 
 .home-about-note {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.78rem;
+  padding-top: 12px;
+  border-top: 1px solid var(--bc-panel-border);
+  color: var(--bc-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.6;
 }
 
-.home-quick-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
+@media (max-width: 820px) {
+  .home-about {
+    width: min(100% - 28px, 680px);
+    gap: 76px;
+    padding-top: 90px;
+  }
 
-@media (max-width: 760px) {
-  .home-about-grid {
+  .feature-story {
     grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .feature-story.reverse .feature-visual,
+  .feature-story.reverse .feature-copy {
+    order: initial;
   }
 }
 </style>

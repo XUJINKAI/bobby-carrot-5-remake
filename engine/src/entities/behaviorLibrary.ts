@@ -1,4 +1,5 @@
 import type { Behavior } from "../world/behavior/Behavior.js";
+import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
 
@@ -85,6 +86,7 @@ const statefulBlock: Behavior = {
 
 const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   collectible: collect,
+  dialog: dialogTraitBehavior,
   hazard,
   mowable,
   shovelable,

@@ -12,7 +12,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: EntityTypeId.SANDMAN,
-  traits: ["blocking"],
+  traits: ["blocking", "dialog"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     rotateWithDirection: true,

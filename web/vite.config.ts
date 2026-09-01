@@ -14,6 +14,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@bobby/i18n",
+        replacement: path.join(projectRoot, "i18n/src/index.ts"),
+      },
+      {
         find: "@bobby/embed",
         replacement: path.join(projectRoot, "embed/src/public.ts"),
       },
