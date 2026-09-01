@@ -203,7 +203,7 @@ onMounted(() => {
   flex: 1 0 auto;
 }
 
-.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)):not(:has(.home-page)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
@@ -218,6 +218,8 @@ onMounted(() => {
 
 .app-content:has(.home-page) {
   width: 100%;
+  min-height: 100%;
+  margin: 0;
   padding: 0;
 }
 
