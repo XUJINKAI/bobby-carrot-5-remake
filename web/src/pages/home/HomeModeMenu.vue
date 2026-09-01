@@ -100,7 +100,7 @@ function serializeMap(value: unknown): string {
   justify-content: space-between;
   gap: 12px;
   padding: 0 2px 6px;
-  color: #d8e2f1;
+  color: var(--bc-text-muted);
   font-size: 0.78rem;
 }
 
@@ -119,25 +119,25 @@ function serializeMap(value: unknown): string {
   align-content: center;
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 12px;
-  background: #172231;
-  color: #f5f8ff;
+  border: var(--bc-control-border-width) solid rgb(255 255 255 / 30%);
+  border-radius: var(--bc-control-radius);
+  background: rgb(7 81 143 / 88%);
+  color: var(--bc-text);
   text-align: left;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgb(0 15 52 / 18%);
+  box-shadow: 0 8px 24px rgb(0 18 74 / 24%);
   transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .home-mode-card:hover {
   transform: translateY(-1px);
-  border-color: rgb(255 255 255 / 28%);
-  background: #1d2b3d;
+  border-color: rgb(255 255 255 / 54%);
+  background: rgb(0 111 170 / 94%);
 }
 
 .home-mode-card.primary {
-  border-color: #60b8ad;
-  background: #20786f;
+  border-color: #7ee9f5;
+  background: rgb(0 162 186 / 92%);
 }
 
 .home-mode-card strong {
@@ -145,20 +145,20 @@ function serializeMap(value: unknown): string {
 }
 
 .home-mode-card span {
-  color: #aebdd1;
+  color: #d5ebff;
   font-size: 0.71rem;
   line-height: 1.35;
 }
 
 .home-mode-card.primary span {
-  color: #d6eeea;
+  color: #efffff;
 }
 
 .home-mode-card b {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: center;
-  color: #e8edf1;
+  color: var(--bc-highlight);
   font-size: 1.15rem;
 }
 
@@ -169,7 +169,7 @@ function serializeMap(value: unknown): string {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(2 5 12 / 78%);
+  background: rgb(0 15 60 / 78%);
 }
 
 .home-import-dialog {
