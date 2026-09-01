@@ -1,5 +1,5 @@
 :root,
-html[data-theme="modern"] {
+html[data-theme="bobby"] {
   font-family:
     Inter,
     ui-sans-serif,
@@ -8,39 +8,11 @@ html[data-theme="modern"] {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #f2f5f7;
-  background: #0f141a;
-  color-scheme: dark;
-  --bc-bg: #0f141a;
-  --bc-panel: #171e26;
-  --bc-panel2: #202a35;
-  --bc-panel-border: #32404d;
-  --bc-active: #2f8f83;
-  --bc-text: #f2f5f7;
-  --bc-text-muted: #9eacb9;
-  --bc-highlight: #d8e96c;
-  --bc-control: #222d38;
-  --bc-control-hover: #2b3946;
-  --bc-control-selected: #e8edf1;
-  --bc-control-selected-text: #11171d;
-  --bc-control-border-width: 1px;
-  --bc-panel-border-width: 1px;
-  --bc-shell-border-width: 1px;
-  --bc-control-radius: 10px;
-  --bc-panel-radius: 14px;
-  --bc-panel-shadow: 0 18px 48px rgb(0 0 0 / 34%);
-  --panel: var(--bc-panel);
-  --panel2: var(--bc-panel2);
-  --line: var(--bc-panel-border);
-  --muted: var(--bc-text-muted);
-  --accent: var(--bc-active);
-}
-
-html[data-theme="retro"] {
   color: #fff;
   background: #143678;
+  color-scheme: dark;
   --bc-bg: #143678;
-  --bc-panel: #005997;
+  --bc-panel: #07518f;
   --bc-panel2: #064b8c;
   --bc-panel-border: #002882;
   --bc-active: #00a2ba;
@@ -48,15 +20,44 @@ html[data-theme="retro"] {
   --bc-text-muted: #b4eafd;
   --bc-highlight: #feef05;
   --bc-control: #07518f;
-  --bc-control-hover: #00a2ba;
+  --bc-control-hover: #006faa;
   --bc-control-selected: #00a2ba;
   --bc-control-selected-text: #fff;
+  --bc-control-border-width: 1px;
+  --bc-panel-border-width: 2px;
+  --bc-shell-border-width: 2px;
+  --bc-control-radius: 8px;
+  --bc-panel-radius: 10px;
+  --bc-panel-shadow: 0 16px 42px rgb(0 19 73 / 34%);
+  --panel: var(--bc-panel);
+  --panel2: var(--bc-panel2);
+  --line: var(--bc-panel-border);
+  --muted: var(--bc-text-muted);
+  --accent: var(--bc-active);
+}
+
+html[data-theme="fc"] {
+  color: #fff;
+  background: #000;
+  color-scheme: dark;
+  --bc-bg: #000;
+  --bc-panel: #080808;
+  --bc-panel2: #111;
+  --bc-panel-border: #777;
+  --bc-active: #444;
+  --bc-text: #fff;
+  --bc-text-muted: #aaa;
+  --bc-highlight: #fff;
+  --bc-control: #111;
+  --bc-control-hover: #222;
+  --bc-control-selected: #fff;
+  --bc-control-selected-text: #000;
   --bc-control-border-width: 2px;
-  --bc-panel-border-width: 3px;
-  --bc-shell-border-width: 3px;
-  --bc-control-radius: 5px;
-  --bc-panel-radius: 7px;
-  --bc-panel-shadow: 8px 8px 0 #001b5b99, 0 20px 52px rgb(0 0 0 / 40%);
+  --bc-panel-border-width: 2px;
+  --bc-shell-border-width: 2px;
+  --bc-control-radius: 0;
+  --bc-panel-radius: 0;
+  --bc-panel-shadow: none;
   --panel: var(--bc-panel);
   --panel2: var(--bc-panel2);
   --line: var(--bc-panel-border);
