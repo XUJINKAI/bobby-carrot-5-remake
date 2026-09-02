@@ -38,13 +38,13 @@ function move(world, direction) {
         cause: { type: "player-input", source: "test" },
       },
     ],
-  }).moves[0];
+  });
 }
 
 test("dialog trait emits a raw message directly from JSON", () => {
   const world = new World(dialogLevel({ message: "hello world!" }));
   const result = move(world, "right");
-  assert.equal(result.moved, false);
+  assert.equal(result.moves[0].moved, false);
   assert.equal(
     result.events.find((event) => event.type === "dialog")?.text,
     "hello world!",
