@@ -26,9 +26,24 @@ function dialogLevel(dialog) {
   };
 }
 
+function move(world, direction) {
+  const actor = world.query.entitiesWithTrait("player")[0];
+  assert.ok(actor, "test map must contain a player actor");
+  return world.step({
+    intents: [
+      {
+        type: "move",
+        actorId: actor.id,
+        direction,
+        cause: { type: "player-input", source: "test" },
+      },
+    ],
+  }).moves[0];
+}
+
 test("dialog trait emits a raw message directly from JSON", () => {
   const world = new World(dialogLevel({ message: "hello world!" }));
-  const result = world.move("right");
+  const result = move(world, "right");
   assert.equal(result.moved, false);
   assert.equal(
     result.events.find((event) => event.type === "dialog")?.text,
@@ -37,24 +52,29 @@ test("dialog trait emits a raw message directly from JSON", () => {
 });
 
 test("dialog message-ref invokes its registered runtime initializer each time", () => {
-  const dispose = createDialogBehavior("sandman-dialog-test", ({ self, commands }) => {
-    const count = Number(self.entity.state?.dialogCount ?? 0);
-    commands.setState(self.entity.id, {
-      ...(self.entity.state ?? {}),
-      dialogCount: count + 1,
-    });
-    return count === 0 ? "first" : "again";
-  });
+  const dispose = createDialogBehavior(
+    "sandman-dialog-test",
+    ({ self, commands }) => {
+      const count = Number(self.entity.state?.dialogCount ?? 0);
+      commands.setState(self.entity.id, {
+        ...(self.entity.state ?? {}),
+        dialogCount: count + 1,
+      });
+      return count === 0 ? "first" : "again";
+    },
+  );
   try {
     const world = new World(
       dialogLevel({ "message-ref": "sandman-dialog-test" }),
     );
     assert.equal(
-      world.move("right").events.find((event) => event.type === "dialog")?.text,
+      move(world, "right").events.find((event) => event.type === "dialog")
+        ?.text,
       "first",
     );
     assert.equal(
-      world.move("right").events.find((event) => event.type === "dialog")?.text,
+      move(world, "right").events.find((event) => event.type === "dialog")
+        ?.text,
       "again",
     );
   } finally {
