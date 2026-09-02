@@ -1,21 +1,15 @@
 import type { ImageManager } from "../image/ImageManager.js";
-import type {
-  AtlasVisualLayer,
-  ImageVisualLayer,
-  VisualComposition,
-} from "../visual/VisualDefinition.js";
+import type { VisualComposition } from "../visual/VisualDefinition.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type { Camera } from "./Camera.js";
+import {
+  prepareCanvas,
+  resolveDevicePixelRatio,
+} from "./CanvasPixelGeometry.js";
 import type { RenderItem, RenderScene } from "./RenderScene.js";
+import { drawVisualComposition } from "./VisualPainter.js";
 
 export interface RenderViewport {
-  width: number;
-  height: number;
-}
-
-interface PixelRect {
-  x: number;
-  y: number;
   width: number;
   height: number;
 }
@@ -56,21 +50,20 @@ export class Renderer {
   render(scene: RenderScene, camera: Camera, viewport = this.measureViewport()): void {
     const context = this.context;
     if (!context) return;
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    const pixelWidth = Math.round(viewport.width * dpr);
-    const pixelHeight = Math.round(viewport.height * dpr);
-    if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
-      this.canvas.width = pixelWidth;
-      this.canvas.height = pixelHeight;
-    }
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.imageSmoothingEnabled = false;
+    const deviceScale = resolveDevicePixelRatio();
+    prepareCanvas(
+      this.canvas,
+      context,
+      viewport.width,
+      viewport.height,
+      deviceScale,
+    );
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, viewport.width, viewport.height);
 
-    this.drawPass(context, scene.world, camera, dpr);
-    this.drawPass(context, scene.player, camera, dpr);
-    this.drawPass(context, scene.effect, camera, dpr);
+    this.drawPass(context, scene.world, camera, deviceScale);
+    this.drawPass(context, scene.player, camera, deviceScale);
+    this.drawPass(context, scene.effect, camera, deviceScale);
 
     if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
@@ -82,7 +75,7 @@ export class Renderer {
     context: CanvasRenderingContext2D,
     items: readonly RenderItem[],
     camera: Camera,
-    dpr: number,
+    deviceScale: number,
   ): void {
     for (const item of items)
       this.drawComposition(
@@ -91,7 +84,7 @@ export class Renderer {
         item.visualX,
         item.visualY,
         camera,
-        dpr,
+        deviceScale,
       );
   }
 
@@ -101,128 +94,18 @@ export class Renderer {
     x: number,
     y: number,
     camera: Camera,
-    dpr: number,
+    deviceScale: number,
   ): void {
     const point = camera.worldToScreen(x, y);
-    const size = camera.tileScreenSize;
-    const cell = snapRectToDevicePixels(
+    drawVisualComposition(
+      context,
+      this.images,
+      composition,
       point.x,
       point.y,
-      point.x + size,
-      point.y + size,
-      dpr,
+      camera.tileScreenSize,
+      deviceScale,
     );
-    for (const layer of composition.layers) {
-      if (layer.kind === "canvas") {
-        layer.draw(context, cell.x, cell.y, Math.min(cell.width, cell.height));
-      } else if (layer.kind === "image") {
-        this.drawImageLayer(context, layer, cell, size, camera, dpr);
-      } else {
-        this.drawAtlasLayer(context, layer, cell, camera);
-      }
-    }
-  }
-
-  private drawImageLayer(
-    context: CanvasRenderingContext2D,
-    layer: ImageVisualLayer,
-    cell: PixelRect,
-    size: number,
-    camera: Camera,
-    dpr: number,
-  ): void {
-    const image = this.images.image(layer.asset);
-    if (!image) return;
-    const requestedColumns = positiveInteger(layer.frameColumns);
-    const requestedRows = positiveInteger(layer.frameRows);
-    const frameWidth = Math.max(
-      1,
-      layer.frameWidth ?? image.width / (requestedColumns ?? 1),
-    );
-    const frameHeight = Math.max(
-      1,
-      layer.frameHeight ?? image.height / (requestedRows ?? 1),
-    );
-    const columns =
-      requestedColumns ?? Math.max(1, Math.floor(image.width / frameWidth));
-    const rows =
-      requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
-    const frameCount = Math.max(1, columns * rows);
-    const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
-    const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
-    const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
-    const sourceX = (frame % columns) * frameWidth;
-    const sourceY = Math.floor(frame / columns) * frameHeight;
-
-    if (layer.anchor === "fill") {
-      context.drawImage(
-        image,
-        sourceX,
-        sourceY,
-        frameWidth,
-        frameHeight,
-        cell.x,
-        cell.y,
-        cell.width,
-        cell.height,
-      );
-      return;
-    }
-
-    const scale = size / camera.sourceTileSize;
-    const drawWidth = frameWidth * scale;
-    const drawHeight = frameHeight * scale;
-    const drawX =
-      cell.x + cell.width / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
-    const drawY =
-      (layer.anchor === "center"
-        ? cell.y + cell.height / 2 - drawHeight / 2
-        : cell.y + cell.height - drawHeight) + (layer.offsetY ?? 0) * scale;
-    const drawRect = snapRectToDevicePixels(
-      drawX,
-      drawY,
-      drawX + drawWidth,
-      drawY + drawHeight,
-      dpr,
-    );
-    context.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      frameWidth,
-      frameHeight,
-      drawRect.x,
-      drawRect.y,
-      drawRect.width,
-      drawRect.height,
-    );
-  }
-
-  private drawAtlasLayer(
-    context: CanvasRenderingContext2D,
-    layer: AtlasVisualLayer,
-    cell: PixelRect,
-    camera: Camera,
-  ): void {
-    const atlas = this.images.image(this.images.atlasId);
-    if (!atlas) return;
-    context.save();
-    context.translate(cell.x + cell.width / 2, cell.y + cell.height / 2);
-    context.rotate((layer.rotate ?? 0) * Math.PI / 2);
-    context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
-    const source = camera.sourceTileSize;
-    context.drawImage(
-      atlas,
-      layer.column * source,
-      layer.row * source,
-      source,
-      source,
-      -cell.width / 2,
-      -cell.height / 2,
-      cell.width,
-      cell.height,
-    );
-    context.restore();
   }
 
   private drawDebugGrid(
@@ -269,28 +152,4 @@ export class Renderer {
     context.strokeRect(point.x + 1, point.y + 1, size - 2, size - 2);
     context.restore();
   }
-}
-
-function snapRectToDevicePixels(
-  left: number,
-  top: number,
-  right: number,
-  bottom: number,
-  dpr: number,
-): PixelRect {
-  const snappedLeft = Math.round(left * dpr) / dpr;
-  const snappedTop = Math.round(top * dpr) / dpr;
-  const snappedRight = Math.round(right * dpr) / dpr;
-  const snappedBottom = Math.round(bottom * dpr) / dpr;
-  return {
-    x: snappedLeft,
-    y: snappedTop,
-    width: snappedRight - snappedLeft,
-    height: snappedBottom - snappedTop,
-  };
-}
-
-function positiveInteger(value: number | undefined): number | null {
-  if (!Number.isFinite(value) || (value ?? 0) < 1) return null;
-  return Math.max(1, Math.floor(value!));
 }

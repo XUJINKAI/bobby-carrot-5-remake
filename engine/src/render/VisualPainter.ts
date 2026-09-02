@@ -1,25 +1,22 @@
+import type { ImageManager } from "../image/ImageManager.js";
 import type {
   AtlasVisualLayer,
-  ImageManager,
   ImageVisualLayer,
   VisualComposition,
-} from "@bobby/engine";
+} from "../visual/VisualDefinition.js";
+import {
+  snapRectToDevicePixels,
+  type PixelRect,
+} from "./CanvasPixelGeometry.js";
 
-interface PixelRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export function drawEditorVisualComposition(
+export function drawVisualComposition(
   context: CanvasRenderingContext2D,
   images: ImageManager,
   composition: VisualComposition | null,
   left: number,
   top: number,
   tileSize: number,
-  dpr: number,
+  deviceScale = 1,
 ): void {
   if (!composition) return;
   const cell = snapRectToDevicePixels(
@@ -27,14 +24,23 @@ export function drawEditorVisualComposition(
     top,
     left + tileSize,
     top + tileSize,
-    dpr,
+    deviceScale,
   );
   for (const layer of composition.layers) {
-    if (layer.kind === "canvas")
+    if (layer.kind === "canvas") {
       layer.draw(context, cell.x, cell.y, Math.min(cell.width, cell.height));
-    else if (layer.kind === "image")
-      drawImageLayer(context, images, layer, cell, tileSize, dpr);
-    else drawAtlasLayer(context, images, layer, cell);
+    } else if (layer.kind === "image") {
+      drawImageLayer(
+        context,
+        images,
+        layer,
+        cell,
+        tileSize,
+        deviceScale,
+      );
+    } else {
+      drawAtlasLayer(context, images, layer, cell);
+    }
   }
 }
 
@@ -44,7 +50,7 @@ function drawImageLayer(
   layer: ImageVisualLayer,
   cell: PixelRect,
   tileSize: number,
-  dpr: number,
+  deviceScale: number,
 ): void {
   const image = images.image(layer.asset);
   if (!image) return;
@@ -60,13 +66,15 @@ function drawImageLayer(
   );
   const columns =
     requestedColumns ?? Math.max(1, Math.floor(image.width / frameWidth));
-  const rows = requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
+  const rows =
+    requestedRows ?? Math.max(1, Math.floor(image.height / frameHeight));
   const frameCount = Math.max(1, columns * rows);
   const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
   const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
   const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
   const sourceX = (frame % columns) * frameWidth;
   const sourceY = Math.floor(frame / columns) * frameHeight;
+
   if (layer.anchor === "fill") {
     context.drawImage(
       image,
@@ -81,6 +89,7 @@ function drawImageLayer(
     );
     return;
   }
+
   const scale = tileSize / images.sourceTileSize;
   const drawWidth = frameWidth * scale;
   const drawHeight = frameHeight * scale;
@@ -96,7 +105,7 @@ function drawImageLayer(
     drawY,
     drawX + drawWidth,
     drawY + drawHeight,
-    dpr,
+    deviceScale,
   );
   context.drawImage(
     image,
@@ -120,10 +129,8 @@ function drawAtlasLayer(
   const atlas = images.image(images.atlasId);
   if (!atlas) return;
   const sourceTile = images.sourceTileSize;
-  const centerX = cell.x + cell.width / 2;
-  const centerY = cell.y + cell.height / 2;
   context.save();
-  context.translate(centerX, centerY);
+  context.translate(cell.x + cell.width / 2, cell.y + cell.height / 2);
   context.rotate((layer.rotate ?? 0) * (Math.PI / 2));
   context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
   context.drawImage(
@@ -138,25 +145,6 @@ function drawAtlasLayer(
     cell.height,
   );
   context.restore();
-}
-
-function snapRectToDevicePixels(
-  left: number,
-  top: number,
-  right: number,
-  bottom: number,
-  dpr: number,
-): PixelRect {
-  const snappedLeft = Math.round(left * dpr) / dpr;
-  const snappedTop = Math.round(top * dpr) / dpr;
-  const snappedRight = Math.round(right * dpr) / dpr;
-  const snappedBottom = Math.round(bottom * dpr) / dpr;
-  return {
-    x: snappedLeft,
-    y: snappedTop,
-    width: snappedRight - snappedLeft,
-    height: snappedBottom - snappedTop,
-  };
 }
 
 function positiveInteger(value: number | undefined): number | null {

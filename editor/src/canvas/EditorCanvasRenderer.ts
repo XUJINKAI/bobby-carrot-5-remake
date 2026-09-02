@@ -1,5 +1,8 @@
 import {
   createBuiltinEntityCatalog,
+  drawVisualComposition,
+  prepareCanvas,
+  resolveDevicePixelRatio,
   SpatialVisualQuery,
   visualRegistry as builtinVisualRegistry,
   type EntityCatalog,
@@ -27,7 +30,6 @@ import type {
 } from "../definitions/types.js";
 import type { EditorMap } from "../level/types.js";
 import type { EditorViewportState } from "./EditorViewport.js";
-import { drawEditorVisualComposition } from "./visualPainter.js";
 
 export const EDITOR_TILE_SIZE = 38;
 
@@ -63,7 +65,7 @@ export class EditorCanvasRenderer {
     const { level } = state;
     const cssWidth = level.width * EDITOR_TILE_SIZE;
     const cssHeight = level.height * EDITOR_TILE_SIZE;
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const deviceScale = resolveDevicePixelRatio();
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
     this.canvas.style.cursor =
@@ -72,12 +74,15 @@ export class EditorCanvasRenderer {
         : state.tool === "erase"
           ? "crosshair"
           : "copy";
-    this.canvas.width = Math.round(cssWidth * dpr);
-    this.canvas.height = Math.round(cssHeight * dpr);
     const context = this.canvas.getContext("2d");
     if (!context) return;
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.imageSmoothingEnabled = false;
+    prepareCanvas(
+      this.canvas,
+      context,
+      cssWidth,
+      cssHeight,
+      deviceScale,
+    );
     context.fillStyle = "#09110c";
     context.fillRect(0, 0, cssWidth, cssHeight);
 
@@ -108,15 +113,17 @@ export class EditorCanvasRenderer {
           item.inspection,
           item.x,
           item.y,
+          deviceScale,
         );
 
-    this.drawInteraction(context, state, preview);
+    this.drawInteraction(context, state, preview, deviceScale);
   }
 
   private drawInteraction(
     context: CanvasRenderingContext2D,
     state: EditorCanvasRenderState,
     preview: EditorPreview,
+    deviceScale: number,
   ): void {
     if (state.selection) {
       const rect = selectionRect(state.selection);
@@ -139,7 +146,7 @@ export class EditorCanvasRenderer {
     const hover = state.hover;
     if (!hover) return;
     if (state.tool === "place" && state.placement) {
-      this.drawPlacementGhost(context, state, preview);
+      this.drawPlacementGhost(context, state, preview, deviceScale);
       return;
     }
     if (state.tool === "erase") {
@@ -174,6 +181,7 @@ export class EditorCanvasRenderer {
     context: CanvasRenderingContext2D,
     state: EditorCanvasRenderState,
     preview: EditorPreview,
+    deviceScale: number,
   ): void {
     const hover = state.hover;
     const placement = state.placement;
@@ -217,6 +225,7 @@ export class EditorCanvasRenderer {
           inspection,
           inspection.presence.cell.x,
           inspection.presence.cell.y,
+          deviceScale,
         );
       context.globalAlpha = 1;
     }
@@ -237,20 +246,21 @@ export class EditorCanvasRenderer {
     inspection: EditorPresenceInspection,
     x: number,
     y: number,
+    deviceScale: number,
   ): void {
     const entity = preview.entities.require(inspection.presence.entityId);
     const resolveContext = { entity, presence: inspection.presence, query };
     const composition =
       this.editor.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
       this.visuals.resolve(inspection.definition, resolveContext);
-    drawEditorVisualComposition(
+    drawVisualComposition(
       context,
       this.images,
       composition,
       x * EDITOR_TILE_SIZE,
       y * EDITOR_TILE_SIZE,
       EDITOR_TILE_SIZE,
-      Math.max(1, window.devicePixelRatio || 1),
+      deviceScale,
     );
   }
 }
