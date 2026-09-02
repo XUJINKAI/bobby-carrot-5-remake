@@ -5,6 +5,9 @@ export function formatTileInspection(
   game: Game,
 ): string {
   const state = game.state;
+  const primary = state.actors.find(
+    (actor) => actor.id === state.primaryActorId,
+  );
   const lines = [`Cell (${cell.cell.x}, ${cell.cell.y})`];
   if (cell.presences.length === 0) {
     lines.push("Stack: implicit Void");
@@ -24,12 +27,11 @@ export function formatTileInspection(
     `Top: ${cell.topPresence ? `${cell.topPresence.type}#${cell.topPresence.entityId}` : "void"}`,
     `Actors here: ${cell.actorIds.length ? cell.actorIds.join(", ") : "none"}`,
     "",
-    `Bobby: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
-    `Forced: ${state.forced?.kind ?? "none"} / ${state.forced?.direction ?? "none"}`,
-    `Mower: ${state.ridingMower}`,
+    `Primary Bobby #${state.primaryActorId}: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
+    `Bobby state: ${JSON.stringify(primary?.state ?? {})}`,
     `Win: ${JSON.stringify(game.winState)}`,
     `Moves: ${state.moves}`,
-    `Inventory: gas=${state.inventory.gas} kite=${state.inventory.kite} shovel=${state.inventory.shovel} beans=${state.inventory.beans}`,
+    `Inventory: gas=${state.inventory.gas} kite=${state.inventory.kite} shovel=${state.inventory.shovel} beans=${state.inventory.beans} temporaryKey=${state.inventory.temporaryKey}`,
   );
   return lines.join("\n");
 }
