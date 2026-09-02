@@ -1,3 +1,6 @@
+import {
+  ORIGINAL_BOBBY_LOCOMOTION_TIMING,
+} from "../entities/player/BobbyLocomotion.js";
 import type { ForcedKind } from "../world/GlobalState.js";
 
 export interface GameplayMotionTiming {
@@ -18,10 +21,14 @@ export interface GameplayTimingOverride {
   };
 }
 
-/** Canonical original gameplay cadence. Presentation defaults to these values but may override them. */
+/**
+ * Transitional aggregate used by Game while automatic mechanics are migrated.
+ * Bobby's canonical cadence is owned by entities/player; forced durations will
+ * move to their individual RuntimeActions rather than remain in time/.
+ */
 export const ORIGINAL_GAMEPLAY_TIMING: GameplayTiming = {
   motion: {
-    normalMs: 180,
+    normalMs: ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
     forcedMs: {
       speed: 70,
       ice: 88,
@@ -30,7 +37,7 @@ export const ORIGINAL_GAMEPLAY_TIMING: GameplayTiming = {
       leaf: 115,
       "mower-exit": 105,
     },
-    speedShoesScale: 0.76,
+    speedShoesScale: ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
   },
 };
 
