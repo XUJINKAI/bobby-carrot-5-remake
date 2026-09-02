@@ -79,6 +79,16 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
+    // 原版 Ice 滑行固定停在普通移动 strip 的第 7 帧；离开 Ice 后回第 8 帧。
+    if (context.runtime?.animation === "ice") {
+      return composition({
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: 6,
+      });
+    }
+
     if (bobbyMountId(context.entity.state) !== null) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition({
