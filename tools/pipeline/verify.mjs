@@ -296,7 +296,15 @@ function assertOriginalStartContract(document, relative) {
 function assertOriginalWinRule(document, relative) {
   const types = new Set(document.entities.map((entity) => entity.type));
   let expected;
-  if (types.has("carrot")) {
+  if (types.has("golden-carrot")) {
+    const goldenCarrot = { type: "reach", target: "golden-carrot" };
+    expected = types.has("exit")
+      ? {
+          type: "any",
+          conditions: [goldenCarrot, { type: "reach", target: "exit" }],
+        }
+      : goldenCarrot;
+  } else if (types.has("carrot")) {
     expected = { type: "collect-all", target: "carrot" };
   } else if (types.has("egg-nest-empty") || types.has("egg-nest-filled")) {
     expected = {
