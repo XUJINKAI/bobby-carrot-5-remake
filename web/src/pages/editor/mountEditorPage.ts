@@ -7,7 +7,10 @@ import {
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { NOOP_CONTROLLER } from "../../app/pageContracts.js";
-import type { ExploreMapRef } from "../../app/routes.js";
+import {
+  parseEditorMapHash,
+  type ExploreMapRef,
+} from "../../app/routes.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { loadEditorDraft } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
@@ -20,7 +23,8 @@ export interface EditorPageContext extends PageContext {
 export async function renderEditorPage(
   context: EditorPageContext,
 ): Promise<PageController> {
-  const { app, audio, images, navigate, mapRef } = context;
+  const { app, audio, images, navigate } = context;
+  const mapRef = context.mapRef ?? parseEditorMapHash(location.hash) ?? undefined;
   audio.stopMusic();
   let level: EditorMap;
   if (mapRef) {
