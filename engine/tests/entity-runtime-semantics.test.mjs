@@ -41,7 +41,7 @@ function move(world, direction) {
         cause: { type: "player-input", source: "test" },
       },
     ],
-  }).moves[0];
+  });
 }
 
 test("canonical original obstacle semantics keep known blockers blocking", () => {
@@ -70,7 +70,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
 
   assert.equal(world.winState?.remaining, 1);
   const enter = move(world, "right");
-  assert.equal(enter.moved, true);
+  assert.equal(enter.moves[0].moved, true);
   assert.equal(world.winState?.remaining, 1);
   assert.equal(
     world.entities
@@ -80,7 +80,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   );
 
   const leave = move(world, "right");
-  assert.equal(leave.moved, true);
+  assert.equal(leave.moves[0].moved, true);
   assert.equal(
     leave.events.some((event) => event.type === "fill-egg-nest"),
     true,
@@ -119,7 +119,7 @@ test("Ice Block cover blocks Bobby instead of becoming pass-through scenery", ()
       { type: EntityTypeId.ICE_BLOCK, x: 1, y: 0 },
     ],
   });
-  assert.equal(move(world, "right").moved, false);
+  assert.equal(move(world, "right").moves[0].moved, false);
   assert.deepEqual(actor(world).anchor, { x: 0, y: 0 });
 });
 
@@ -134,7 +134,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
       bobby(0, 0),
     ],
   });
-  assert.equal(move(direct, "right").moved, false);
+  assert.equal(move(direct, "right").moves[0].moved, false);
 
   const withPlank = new World({
     schemaVersion: 1,
@@ -147,7 +147,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
       bobby(0, 0),
     ],
   });
-  assert.equal(move(withPlank, "right").moved, true);
+  assert.equal(move(withPlank, "right").moves[0].moved, true);
 });
 
 test("Unified color block uses state instead of split types for passage", () => {
@@ -166,7 +166,7 @@ test("Unified color block uses state instead of split types for passage", () => 
       bobby(0, 0),
     ],
   });
-  assert.equal(move(raised, "right").moved, false);
+  assert.equal(move(raised, "right").moves[0].moved, false);
 
   const lowered = new World({
     schemaVersion: 1,
@@ -183,7 +183,7 @@ test("Unified color block uses state instead of split types for passage", () => 
       bobby(0, 0),
     ],
   });
-  assert.equal(move(lowered, "right").moved, true);
+  assert.equal(move(lowered, "right").moves[0].moved, true);
 });
 
 test("authoring visual preview resolves through canonical Visual definitions", () => {
