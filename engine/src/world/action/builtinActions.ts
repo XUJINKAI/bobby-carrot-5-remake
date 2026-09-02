@@ -30,7 +30,7 @@ export function createDelayRuntimeAction(
   options: {
     ownerEntityId?: EntityId;
     blocksInput?: boolean;
-    cameraTarget?: EntityId;
+    focus?: { entityId: EntityId };
     reason?: string;
   } = {},
 ): RuntimeActionSpec {
@@ -47,9 +47,7 @@ export function createDelayRuntimeAction(
     ...(options.blocksInput !== undefined
       ? { blocksInput: options.blocksInput }
       : {}),
-    ...(options.cameraTarget !== undefined
-      ? { cameraTarget: options.cameraTarget }
-      : {}),
+    ...(options.focus ? { focus: structuredClone(options.focus) } : {}),
     state,
   };
 }
