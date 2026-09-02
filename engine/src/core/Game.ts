@@ -6,6 +6,10 @@ import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
 import { visualRegistry } from "../entities/registry.js";
 import type { ImageManager } from "../image/ImageManager.js";
 import {
+  type ControlBinding,
+  resolveControlInput,
+} from "../input/ControlBindings.js";
+import {
   InputController,
   type InputControllerOptions,
   type InputState,
@@ -17,6 +21,11 @@ import {
   type EngineTiming,
   type EngineTimingOptions,
 } from "../time/EngineTiming.js";
+import {
+  resolveGameplayTiming,
+  type GameplayTiming,
+  type GameplayTimingOverride,
+} from "../time/GameplayTiming.js";
 import { PresentationClock } from "../time/PresentationClock.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
@@ -39,13 +48,25 @@ import type {
   WorldEvent,
 } from "../world/WorldTypes.js";
 import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
+import type { EntityId } from "../world/entity/EntityInstance.js";
+import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
+import type { WorldStepResult } from "../world/movement/WorldStepResult.js";
+import {
+  DEFAULT_HISTORY_POLICY,
+  shouldCheckpoint,
+  type HistoryPolicy,
+} from "./HistoryPolicy.js";
 import type { GameplayState } from "./GameplayState.js";
 
 export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
   tuning?: PresentationTuningOverride;
+  gameplayTiming?: GameplayTimingOverride;
   timing?: EngineTimingOptions;
+  history?: HistoryPolicy;
+  /** Concrete runtime bindings; callers may also call setControlBindings after load. */
+  controls?: readonly ControlBinding[];
 }
 
 export interface GameOptions {
@@ -80,7 +101,12 @@ export class Game {
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly initialEconomy: Partial<EconomyState>;
   private readonly tuning: PresentationTuning;
+  private readonly gameplayTiming: GameplayTiming;
   private readonly timing: EngineTiming;
+  private readonly historyPolicy: HistoryPolicy;
+  private readonly configuredControls: readonly ControlBinding[] | null;
+  private controlBindings: ControlBinding[] = [];
+  private primaryActorIdValue: EntityId | null = null;
   private readonly worldClock: WorldClock;
   private readonly presentationClock: PresentationClock;
   private worldValue: World | null = null;
@@ -88,6 +114,7 @@ export class Game {
   private lastScene: RenderScene | null = null;
   private readonly history: WorldSnapshot[] = [];
   private readonly future: WorldSnapshot[] = [];
+  private pendingHistorySnapshot: WorldSnapshot | null = null;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
@@ -102,31 +129,27 @@ export class Game {
 
   constructor(options: GameOptions) {
     this.renderer = new Renderer(options.canvas, options.images);
-    this.visual = new VisualRuntime(
-      visualRegistry,
-      options.images.sourceTileSize,
-    );
+    this.visual = new VisualRuntime(visualRegistry, options.images.sourceTileSize);
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
     this.initialEconomy = options.economy ?? {};
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
+    this.gameplayTiming = resolveGameplayTiming(options.runtime?.gameplayTiming);
     this.timing = resolveEngineTiming(options.runtime?.timing);
+    this.historyPolicy = structuredClone(options.runtime?.history ?? DEFAULT_HISTORY_POLICY);
+    this.configuredControls = options.runtime?.controls
+      ? structuredClone(options.runtime.controls)
+      : null;
     this.worldClock = new WorldClock(this.timing.worldHz);
     this.presentationClock = new PresentationClock(this.timing.presentationHz);
-    if (typeof performance !== "undefined")
-      this.presentationClock.advance(performance.now());
+    if (typeof performance !== "undefined") this.presentationClock.advance(performance.now());
     this.debugValue = options.debug ?? false;
     this.renderer.setDebug(this.debugValue);
     const hud = options.runtime?.hud;
     this.gameplayHud =
       hud === undefined || hud === false
         ? null
-        : new GameplayHud(
-            this,
-            options.images,
-            options.canvas,
-            hud === true ? {} : hud,
-          );
+        : new GameplayHud(this, options.images, options.canvas, hud === true ? {} : hud);
     this.inputController = options.runtime?.input
       ? new InputController(this, options.runtime.input)
       : null;
@@ -141,8 +164,7 @@ export class Game {
           timing: this.timing,
           selection,
         }),
-      inspectPoint: (clientX, clientY) =>
-        this.inspectCanvasPoint(clientX, clientY),
+      inspectPoint: (clientX, clientY) => this.inspectCanvasPoint(clientX, clientY),
       pause: () => this.pauseDebugClock(),
       resume: () => this.resumeDebugClock(),
       step: (count) => this.stepDebugClock(count),
@@ -163,6 +185,20 @@ export class Game {
     return this.worldValue;
   }
 
+  private get primaryActorId(): EntityId {
+    if (this.primaryActorIdValue === null) throw new Error("关卡没有可控制 actor");
+    return this.primaryActorIdValue;
+  }
+
+  get actorIds(): readonly EntityId[] {
+    if (!this.worldValue) return [];
+    return this.world.query.entitiesWithTrait("player").map((entity) => entity.id);
+  }
+
+  get controls(): readonly ControlBinding[] {
+    return structuredClone(this.controlBindings);
+  }
+
   get hasLevel(): boolean {
     return this.worldValue !== null;
   }
@@ -174,12 +210,24 @@ export class Game {
   get state(): GameplayState {
     const world = this.world;
     const state = world.state;
+    const actors = this.actorIds.map((id) => {
+      const entity = world.entities.require(id);
+      return {
+        id,
+        position: { ...entity.anchor },
+        facing: entity.direction ?? "down" as Direction,
+        ...(entity.state ? { state: structuredClone(entity.state) } : {}),
+      };
+    });
+    const primary = world.entities.require(this.primaryActorId);
     return {
       status: world.dead ? "dead" : world.completed ? "won" : "playing",
       deathReason: state.deathReason,
       moves: state.moves,
-      player: world.player,
-      facing: world.facing,
+      primaryActorId: this.primaryActorId,
+      actors,
+      player: { ...primary.anchor },
+      facing: primary.direction ?? "down",
       inventory: structuredClone(state.inventory),
       economy: structuredClone(state.economy),
       profile: structuredClone(state.profile),
@@ -228,10 +276,12 @@ export class Game {
       profile: this.profile,
       economy: this.initialEconomy,
     });
+    this.configureActorsAndControls();
     this.worldClock.reset();
     this.restoreDebugPausedInput();
     this.history.length = 0;
     this.future.length = 0;
+    this.pendingHistorySnapshot = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.visual.clear();
@@ -245,7 +295,11 @@ export class Game {
     this.emit("change");
   }
 
-  move(direction: Direction, forced = false): MoveResult | null {
+  setControlBindings(bindings: readonly ControlBinding[]): void {
+    this.controlBindings = structuredClone(bindings);
+  }
+
+  move(direction: Direction, source = "external"): MoveResult | null {
     if (
       !this.worldValue ||
       this.worldClock.paused ||
@@ -254,9 +308,10 @@ export class Game {
       this.world.inputBlocked
     )
       return null;
-    const result = this.startLogicalMove(direction, forced, this.worldClock.nextTick);
+    const group = resolveControlInput(this.controlBindings, source, direction);
+    const result = this.startLogicalStep(group, this.worldClock.nextTick);
     this.render();
-    return result;
+    return result?.moves[0] ?? null;
   }
 
   setHeldDirection(direction: Direction | null): void {
@@ -275,6 +330,7 @@ export class Game {
     if (!snapshot) return;
     this.future.push(this.world.snapshot());
     this.world.restore(snapshot);
+    this.pendingHistorySnapshot = null;
     this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -288,6 +344,7 @@ export class Game {
     if (!snapshot) return;
     this.history.push(this.world.snapshot());
     this.world.restore(snapshot);
+    this.pendingHistorySnapshot = null;
     this.resetVisualMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
@@ -298,18 +355,16 @@ export class Game {
   restart(): void {
     if (!this.initialLevel) return;
     const wasPaused = this.worldClock.paused;
-    const profile = this.worldValue
-      ? structuredClone(this.world.state.profile)
-      : this.profile;
-    const economy = this.worldValue
-      ? structuredClone(this.world.state.economy)
-      : this.initialEconomy;
+    const profile = this.worldValue ? structuredClone(this.world.state.profile) : this.profile;
+    const economy = this.worldValue ? structuredClone(this.world.state.economy) : this.initialEconomy;
     Object.assign(this.profile, profile);
     this.worldValue = new World(this.initialLevel, { profile, economy });
+    this.configureActorsAndControls();
     this.worldClock.reset();
     if (wasPaused) this.worldClock.pause();
     this.history.length = 0;
     this.future.length = 0;
+    this.pendingHistorySnapshot = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.resetVisualMotion();
@@ -323,17 +378,24 @@ export class Game {
 
   killPlayer(reason?: string): void {
     if (!this.worldValue) return;
-    const player = this.world.player;
-    const events = this.world.killPlayer(reason);
+    this.killActor(this.primaryActorId, reason);
+  }
+
+  killActor(actorId: EntityId, reason?: string): void {
+    if (!this.worldValue) return;
+    const actor = this.world.entities.get(actorId);
+    if (!actor) return;
+    const position = { ...actor.anchor };
+    const events = this.world.killActor(actorId, reason);
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.resetVisualMotion();
     if (events.length > 0)
       this.visual.beginDeath(
-        this.world.playerId,
-        player,
-        player,
-        this.tuning.motion.normalMs,
+        actorId,
+        position,
+        position,
+        this.presentationMotionDuration(null),
         this.presentationClock.current,
         0,
       );
@@ -375,8 +437,7 @@ export class Game {
   setDebug(value: boolean): void {
     if (value === this.debugValue) return;
     if (!value && this.worldClock.paused) this.resumeDebugClock();
-    if (!value && this.presentationClock.paused)
-      this.resumeDebugPresentationClock();
+    if (!value && this.presentationClock.paused) this.resumeDebugPresentationClock();
     this.debugValue = value;
     this.renderer.setDebug(value);
     this.debugRuntime.setEnabled(value);
@@ -388,16 +449,10 @@ export class Game {
     this.setDebug(!this.debugValue);
   }
 
-  inspectCanvasPoint(
-    clientX: number,
-    clientY: number,
-  ): CellInspection | null {
+  inspectCanvasPoint(clientX: number, clientY: number): CellInspection | null {
     if (!this.worldValue) return null;
     const rect = this.canvas.getBoundingClientRect();
-    const cell = this.visual.camera.screenToTile(
-      clientX - rect.left,
-      clientY - rect.top,
-    );
+    const cell = this.visual.camera.screenToTile(clientX - rect.left, clientY - rect.top);
     return this.world.inspect(cell.x, cell.y);
   }
 
@@ -429,68 +484,96 @@ export class Game {
     this.debugRuntime.destroy();
   }
 
-  private startLogicalMove(
-    direction: Direction,
-    forced: boolean,
-    time: WorldTick,
-  ): MoveResult {
-    const before = forced ? null : this.world.snapshot();
-    const result = this.world.move(direction, forced);
-    this.lastMove = result;
-    this.lastWorldEvents = result.events;
-    if (before && (result.moved || result.events.length > 0)) {
-      this.history.push(before);
-      this.future.length = 0;
+  private configureActorsAndControls(): void {
+    const actorIds = this.actorIds;
+    if (actorIds.length === 0) throw new Error("Gameplay Game 至少需要一个带 player trait 的 actor");
+    this.primaryActorIdValue = actorIds[0]!;
+    if (this.configuredControls) {
+      this.controlBindings = structuredClone(this.configuredControls);
+      return;
     }
+    const primary = actorIds[0]!;
+    const secondary = actorIds[1];
+    this.controlBindings = secondary
+      ? [
+          { input: "arrows", targets: [{ entityId: primary }] },
+          { input: "wasd", targets: [{ entityId: secondary }] },
+          { input: "pointer", targets: [{ entityId: primary }] },
+          { input: "joystick", targets: [{ entityId: primary }] },
+          { input: "external", targets: [{ entityId: primary }] },
+        ]
+      : [
+          { input: "arrows", targets: [{ entityId: primary }] },
+          { input: "wasd", targets: [{ entityId: primary }] },
+          { input: "pointer", targets: [{ entityId: primary }] },
+          { input: "joystick", targets: [{ entityId: primary }] },
+          { input: "external", targets: [{ entityId: primary }] },
+        ];
+  }
+
+  private startLogicalStep(
+    group: WorldIntentGroup,
+    time: WorldTick,
+    forcedKind: ForcedKind | null = null,
+  ): WorldStepResult | null {
+    if (group.intents.length === 0) return null;
+    const before = this.world.snapshot();
+    if (group.historyBoundary !== false) this.pendingHistorySnapshot = before;
+
+    const result = this.world.step(group);
+    this.lastMove = result.moves[0] ?? null;
+    this.lastWorldEvents = result.events;
+
+    const controlledIds = group.intents.map((intent) => intent.actorId);
+    if (
+      this.pendingHistorySnapshot &&
+      shouldCheckpoint(this.historyPolicy, result, controlledIds)
+    ) {
+      this.history.push(this.pendingHistorySnapshot);
+      this.future.length = 0;
+      this.pendingHistorySnapshot = null;
+    }
+
     this.publishWorldEvents(result.events);
     this.emitTerminalEvents();
 
-    const frame = this.presentationClock.current;
-    const shovel = result.events.some((event) => event.type === "shovel");
-    if (!result.moved) {
-      if (shovel) {
-        this.visual.camera.recenterPan(frame);
-        this.visual.beginAction(
-          this.world.playerId,
-          "shovel",
-          direction,
-          this.tuning.motion.normalMs,
-          frame,
-        );
-      }
+    const moved = result.motions.length > 0;
+    if (!moved) {
       this.emit("blocked");
       this.emit("change");
       return result;
     }
 
-    const durationMs = this.motionDuration(this.world.forcedKind as ForcedKind | null);
-    const hazardDeath = result.events.some(
-      (event) => event.type === "death" && event.entityId !== undefined,
-    );
+    const frame = this.presentationClock.current;
+    const gameplayDuration = this.gameplayMotionDuration(forcedKind);
+    const visualDuration = this.presentationMotionDuration(forcedKind);
+    const deathEvent = result.events.find((event) => event.type === "death");
     this.visual.camera.recenterPan(frame);
-    if (this.world.dead) {
-      this.visual.beginDeath(
-        this.world.playerId,
-        result.from,
-        result.to,
-        durationMs,
-        frame,
-        hazardDeath ? 0.4 : 1,
-      );
-    } else {
+    for (const motion of result.motions) {
+      if (this.world.dead && deathEvent?.entityId === motion.entityId) {
+        this.visual.beginDeath(
+          motion.entityId,
+          motion.from,
+          motion.to,
+          visualDuration,
+          frame,
+          0.4,
+        );
+        continue;
+      }
       if (!this.world.completed)
         this.world.startAction(
-          createDelayRuntimeAction(durationMs, {
-            ownerEntityId: this.world.playerId,
+          createDelayRuntimeAction(gameplayDuration, {
+            ownerEntityId: motion.entityId,
             blocksInput: true,
-            reason: forced ? "forced-player-motion" : "player-motion",
+            reason: forcedKind ? "forced-actor-motion" : "actor-motion",
           }),
         );
       this.visual.beginMove(
-        this.world.playerId,
-        result.from,
-        result.to,
-        durationMs,
+        motion.entityId,
+        motion.from,
+        motion.to,
+        visualDuration,
         frame,
       );
     }
@@ -499,7 +582,14 @@ export class Game {
     return result;
   }
 
-  private motionDuration(forcedKind: ForcedKind | null): number {
+  private gameplayMotionDuration(forcedKind: ForcedKind | null): number {
+    const motion = this.gameplayTiming.motion;
+    let duration = forcedKind ? motion.forcedMs[forcedKind] : motion.normalMs;
+    if (this.world.state.profile.speedShoes) duration *= motion.speedShoesScale;
+    return duration;
+  }
+
+  private presentationMotionDuration(forcedKind: ForcedKind | null): number {
     const motion = this.tuning.motion;
     let duration = forcedKind ? motion.forcedMs[forcedKind] : motion.normalMs;
     if (this.world.state.profile.speedShoes) duration *= motion.speedShoesScale;
@@ -521,8 +611,23 @@ export class Game {
       return;
     }
 
-    if (!this.world.inputBlocked && this.world.forcedDirection) {
-      this.startLogicalMove(this.world.forcedDirection, true, time);
+    const forced = this.world.state.forced;
+    if (!this.world.inputBlocked && forced) {
+      this.startLogicalStep(
+        {
+          intents: [
+            {
+              type: "move",
+              actorId: this.primaryActorId,
+              direction: forced.direction,
+              cause: { type: "forced" },
+            },
+          ],
+          historyBoundary: false,
+        },
+        time,
+        forced.kind,
+      );
       return;
     }
 
@@ -533,16 +638,17 @@ export class Game {
 
   private applyInput(input: InputState, time: WorldTick): void {
     if (!input.move || !this.inputController) return;
-    const result = this.attemptInputMove(input.move, time);
+    const result = this.attemptInputMove(input.move.source, input.move.direction, time);
     this.inputController.resolveMoveAttempt(result);
   }
 
-  private attemptInputMove(direction: Direction, time: WorldTick): MoveAttempt {
-    if (!this.worldValue || this.world.dead || this.world.completed)
-      return "blocked";
+  private attemptInputMove(source: string, direction: Direction, time: WorldTick): MoveAttempt {
+    if (!this.worldValue || this.world.dead || this.world.completed) return "blocked";
     if (this.world.inputBlocked) return "busy";
-    const result = this.startLogicalMove(direction, false, time);
-    return result.moved ? "moved" : "blocked";
+    const group = resolveControlInput(this.controlBindings, source, direction);
+    if (group.intents.length === 0) return "blocked";
+    const result = this.startLogicalStep(group, time);
+    return result?.moves.some((move) => move.moved) ? "moved" : "blocked";
   }
 
   private applyDirectHeldInput(time: WorldTick): void {
@@ -555,8 +661,9 @@ export class Game {
       this.world.inputBlocked
     )
       return;
-    const result = this.startLogicalMove(this.heldDirection, false, time);
-    if (!result.moved) this.heldDirectionBlocked = true;
+    const group = resolveControlInput(this.controlBindings, "external", this.heldDirection);
+    const result = this.startLogicalStep(group, time);
+    if (!result?.moves.some((move) => move.moved)) this.heldDirectionBlocked = true;
   }
 
   private resetVisualMotion(): void {
@@ -583,10 +690,7 @@ export class Game {
   }
 
   private restoreDebugPausedInput(): void {
-    if (
-      this.inputController &&
-      this.debugInputEnabledBeforePause !== null
-    )
+    if (this.inputController && this.debugInputEnabledBeforePause !== null)
       this.inputController.setEnabled(this.debugInputEnabledBeforePause);
     this.debugInputEnabledBeforePause = null;
   }
@@ -610,8 +714,7 @@ export class Game {
 
   private stepDebugPresentationClock(frames: number): void {
     const frame = this.presentationClock.step(frames);
-    if (frame && this.worldValue)
-      this.visual.update(frame, this.tuning.motion.easing);
+    if (frame && this.worldValue) this.visual.update(frame, this.tuning.motion.easing);
     this.render();
   }
 

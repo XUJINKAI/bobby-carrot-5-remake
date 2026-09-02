@@ -1,4 +1,5 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, EntityState } from "@bobby/model";
+import type { EntityId } from "../world/entity/EntityInstance.js";
 import type {
   EconomyState,
   ForcedKind,
@@ -6,11 +7,20 @@ import type {
   ProfileCapabilities,
 } from "../world/GlobalState.js";
 
-/** 外层 UI 可读取的稳定 gameplay 状态；不暴露 World 容器与索引实现。 */
+export interface GameplayActorState {
+  id: EntityId;
+  position: { x: number; y: number };
+  facing: Direction;
+  state?: EntityState;
+}
+
+/** 外层 UI 可读取的 gameplay 状态。player/facing 是 primary actor 的便利视图。 */
 export interface GameplayState {
   status: "playing" | "won" | "dead";
   deathReason: string | null;
   moves: number;
+  primaryActorId: EntityId;
+  actors: readonly GameplayActorState[];
   player: { x: number; y: number };
   facing: Direction;
   inventory: Readonly<InventoryState>;

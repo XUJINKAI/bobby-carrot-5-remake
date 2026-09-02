@@ -1,5 +1,11 @@
 export { Game, type GameOptions, type GameRuntimeOptions } from "./core/Game.js";
-export type { GameplayState } from "./core/GameplayState.js";
+export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
+export {
+  DEFAULT_HISTORY_POLICY,
+  shouldCheckpoint,
+  type HistoryMode,
+  type HistoryPolicy,
+} from "./core/HistoryPolicy.js";
 export {
   createGameplayRuntime,
   type GameplayRuntime,
@@ -13,6 +19,13 @@ export {
   type EngineTiming,
   type EngineTimingOptions,
 } from "./time/EngineTiming.js";
+export {
+  ORIGINAL_GAMEPLAY_TIMING,
+  resolveGameplayTiming,
+  type GameplayMotionTiming,
+  type GameplayTiming,
+  type GameplayTimingOverride,
+} from "./time/GameplayTiming.js";
 export {
   PresentationClock,
   type PresentationFrame,
@@ -51,7 +64,15 @@ export {
   InputController,
   type InputControllerOptions,
   type InputState,
+  type LogicalMoveInput,
 } from "./input/InputController.js";
+export {
+  resolveControlInput,
+  transformDirection,
+  type ControlBinding,
+  type ControlTarget,
+  type DirectionTransform,
+} from "./input/ControlBindings.js";
 export {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
   ScreenJoystick,
@@ -86,6 +107,17 @@ export type {
   WorldEvent,
 } from "./world/WorldTypes.js";
 export type {
+  MoveCause,
+  MoveIntent,
+  WorldIntent,
+  WorldIntentGroup,
+} from "./world/movement/WorldIntent.js";
+export type {
+  EntityMotion,
+  WorldMutationSummary,
+  WorldStepResult,
+} from "./world/movement/WorldStepResult.js";
+export type {
   EconomyState,
   InventoryState,
   ProfileCapabilities,
@@ -102,6 +134,7 @@ export type {
   EntityFieldDefinition,
   EntityFieldKind,
   EntityFieldOption,
+  EntityLayer,
   EntityTrait,
   VisualId,
   AudioProfileId,
