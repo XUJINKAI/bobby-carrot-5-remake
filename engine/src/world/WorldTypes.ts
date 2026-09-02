@@ -1,4 +1,5 @@
 import type { Direction, EntityState, JsonValue } from "@bobby/model";
+import type { EntityLayer } from "./entity/EntityDefinition.js";
 import type { EntityId } from "./entity/EntityInstance.js";
 
 /** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
@@ -48,6 +49,7 @@ export type WinConditionState =
 export interface PresenceInspection {
   entityId: EntityId;
   type: string;
+  layer: EntityLayer;
   role?: string;
   stackOrder: number;
   traits: readonly string[];
@@ -58,7 +60,8 @@ export interface CellInspection {
   cell: { x: number; y: number };
   presences: readonly PresenceInspection[];
   topPresence?: PresenceInspection;
-  playerHere: boolean;
+  /** IDs of controllable/player entities currently projected into this cell. */
+  actorIds: readonly EntityId[];
 }
 
 export interface PassageInfo {
@@ -67,6 +70,7 @@ export interface PassageInfo {
 }
 
 export interface MoveResult {
+  actorId?: EntityId;
   moved: boolean;
   blocked?: boolean;
   from: { x: number; y: number };
