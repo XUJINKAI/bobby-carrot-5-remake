@@ -83,6 +83,7 @@ export class EditorEntityPreviewRenderer {
         inspection.presence.cell.x * naturalTile,
         inspection.presence.cell.y * naturalTile,
         naturalTile,
+        1,
       );
     }
 
