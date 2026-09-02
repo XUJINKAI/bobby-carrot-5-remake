@@ -145,6 +145,9 @@ function validateDirectories(input, output) {
     input.startsWith(`${output}${path.sep}`)
   )
     throw new Error("Patch 输出目录不能是输入目录或其子目录");
+  const tmp = path.join(root, "tmp");
+  if (output === tmp || !output.startsWith(`${tmp}${path.sep}`))
+    throw new Error("Patch 输出目录必须位于 tmp 的子目录中");
   const official = path.join(root, "original/official-hd");
   if (
     [path.parse(output).root, root, official].includes(output) ||
