@@ -10,7 +10,7 @@ function corridor(extra, rules) {
   return {
     schemaVersion: 1,
     width: 4,
-    height: 1,
+    height: 2,
     ...(rules ? { rules } : {}),
     entities: [ground(0, 0), ground(1, 0), ground(2, 0), ground(3, 0), bobby(0, 0), ...extra],
   };
@@ -74,7 +74,7 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
   assert.equal(unlock.moved, true);
   assert.equal(world.state.inventory.temporaryKey, false);
   assert.equal(unlock.events.some((e) => e.type === "death-countdown-started"), true);
-  world.update({ nowMs: 1000, stepMs: 1000, tick: 1 });
+  world.update({ stepMs: 1000, tick: 1 });
   assert.equal(world.dead, true);
 });
 
