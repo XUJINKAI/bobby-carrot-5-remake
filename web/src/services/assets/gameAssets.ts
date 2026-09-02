@@ -17,6 +17,7 @@ export function createImageManager(): ImageManager {
       "original-animated-tiles": siteUrl("assets/art/hd/ta.png"),
       "original-title": siteUrl("assets/art/hd/title.png"),
       "original-train": siteUrl("assets/art/hd/train.png"),
+      "original-misc": siteUrl("assets/art/hd/misc.png"),
       "bobby-left": siteUrl("assets/art/hd/b0.png"),
       "bobby-right": siteUrl("assets/art/hd/b1.png"),
       "bobby-up": siteUrl("assets/art/hd/b2.png"),

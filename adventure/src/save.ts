@@ -1,10 +1,19 @@
 import {
   CHAPTER_COUNT,
   campaignSequenceForChapter,
-  chapterGroup,
   parseAdventureLevelId,
   type AdventureLevelId,
 } from "./campaign.js";
+
+export const ADVENTURE_ITEM_IDS = [
+  "golden-key",
+  "speed-shoes",
+  "coin-radar",
+  "stereo",
+  "night-train-map-1",
+  "night-train-map-2",
+] as const;
+export type AdventureItemId = (typeof ADVENTURE_ITEM_IDS)[number];
 
 export interface AdventureSave {
   schemaVersion: 1;
@@ -12,18 +21,13 @@ export interface AdventureSave {
   campaign: {
     completedLevels: AdventureLevelId[];
     completedEvents: string[];
-    unlockedChapters: number[];
+    resumeLevelId: AdventureLevelId;
   };
   economy: {
     bonusCoins: number;
     goldenCarrots: number;
   };
-  upgrades: {
-    speedShoes: boolean;
-    magnifyingGlass: boolean;
-    goldenKey: boolean;
-  };
-  claimedRewards: string[];
+  items: AdventureItemId[];
 }
 
 export function createAdventureSave(): AdventureSave {
@@ -33,11 +37,10 @@ export function createAdventureSave(): AdventureSave {
     campaign: {
       completedLevels: [],
       completedEvents: [],
-      unlockedChapters: initialUnlockedChapters(),
+      resumeLevelId: "1-1",
     },
     economy: { bonusCoins: 0, goldenCarrots: 0 },
-    upgrades: { speedShoes: false, magnifyingGlass: false, goldenKey: false },
-    claimedRewards: [],
+    items: [],
   };
 }
 
@@ -58,33 +61,24 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
     throw new Error(`不支持的存档版本：${String(raw.schemaVersion)}`);
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);
-  const upgrades = objectValue(raw.upgrades);
   const completedLevels = stringArray(campaign.completedLevels)
     .map((id) => parseAdventureLevelId(id)?.id)
     .filter((id): id is AdventureLevelId => Boolean(id));
-  const unlockedChapters = numberArray(campaign.unlockedChapters).filter(
-    (chapter) => chapter >= 1 && chapter <= CHAPTER_COUNT,
-  );
-  for (const chapter of initialUnlockedChapters())
-    if (!unlockedChapters.includes(chapter)) unlockedChapters.push(chapter);
+  const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
+  const items = stringArray(raw.items).filter(isAdventureItemId);
   return {
     schemaVersion: 1,
     game: "bc5r",
     campaign: {
       completedLevels: unique(completedLevels).sort(compareLevelIds),
       completedEvents: unique(stringArray(campaign.completedEvents)).sort(),
-      unlockedChapters: unique(unlockedChapters).sort((a, b) => a - b),
+      resumeLevelId: parsedResume?.id ?? "1-1",
     },
     economy: {
       bonusCoins: nonNegativeInteger(economy.bonusCoins),
       goldenCarrots: nonNegativeInteger(economy.goldenCarrots),
     },
-    upgrades: {
-      speedShoes: upgrades.speedShoes === true,
-      magnifyingGlass: upgrades.magnifyingGlass === true,
-      goldenKey: upgrades.goldenKey === true,
-    },
-    claimedRewards: unique(stringArray(raw.claimedRewards)).sort(),
+    items: unique(items).sort(),
   };
 }
 
@@ -101,12 +95,34 @@ export function isAdventureLevelUnlocked(
   levelId: string,
 ): boolean {
   const parsed = parseAdventureLevelId(levelId);
-  if (!parsed || !save.campaign.unlockedChapters.includes(parsed.chapter))
-    return false;
+  if (!parsed) return false;
   const sequence = campaignSequenceForChapter(parsed.chapter);
   const index = sequence.indexOf(parsed.id);
   if (index <= 0) return index === 0;
   return save.campaign.completedLevels.includes(sequence[index - 1]!);
+}
+
+export function isAdventureChapterCompleted(
+  save: AdventureSave,
+  chapter: number,
+): boolean {
+  if (!Number.isInteger(chapter) || chapter < 1 || chapter > CHAPTER_COUNT)
+    return false;
+  return campaignSequenceForChapter(chapter).every((id) =>
+    save.campaign.completedLevels.includes(id),
+  );
+}
+
+export function setAdventureResumeLevel(
+  save: AdventureSave,
+  levelId: string,
+): AdventureSave {
+  const parsed = parseAdventureLevelId(levelId);
+  if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
+  const next = structuredClone(normalizeAdventureSave(save));
+  if (!next.campaign.completedLevels.includes(parsed.id))
+    next.campaign.resumeLevelId = parsed.id;
+  return normalizeAdventureSave(next);
 }
 
 export function completeAdventureLevel(
@@ -116,28 +132,12 @@ export function completeAdventureLevel(
   const parsed = parseAdventureLevelId(levelId);
   if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
   const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.completedLevels.includes(parsed.id))
-    next.campaign.completedLevels.push(parsed.id);
-  const sequence = campaignSequenceForChapter(parsed.chapter);
-  if (sequence.at(-1) === parsed.id) {
-    const group = chapterGroup(parsed.chapter);
-    if (parsed.chapter === group[0])
-      for (const chapter of group)
-        if (!next.campaign.unlockedChapters.includes(chapter))
-          next.campaign.unlockedChapters.push(chapter);
+  const alreadyCompleted = next.campaign.completedLevels.includes(parsed.id);
+  if (!alreadyCompleted) next.campaign.completedLevels.push(parsed.id);
+  if (!alreadyCompleted && next.campaign.resumeLevelId === parsed.id) {
+    const following = nextAdventureLevelId(parsed.id);
+    if (following) next.campaign.resumeLevelId = following;
   }
-  return normalizeAdventureSave(next);
-}
-
-export function unlockAdventureChapter(
-  save: AdventureSave,
-  chapter: number,
-): AdventureSave {
-  if (!Number.isInteger(chapter) || chapter < 1 || chapter > CHAPTER_COUNT)
-    throw new Error(`无效章节：${chapter}`);
-  const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.unlockedChapters.includes(chapter))
-    next.campaign.unlockedChapters.push(chapter);
   return normalizeAdventureSave(next);
 }
 
@@ -153,12 +153,36 @@ export function completeAdventureEvent(
   return normalizeAdventureSave(next);
 }
 
-function initialUnlockedChapters(): number[] {
-  const chapters: number[] = [];
-  for (let chapter = 1; chapter <= CHAPTER_COUNT; chapter += 4)
-    chapters.push(chapter);
-  return chapters;
+export function hasAdventureItem(
+  save: AdventureSave,
+  item: AdventureItemId,
+): boolean {
+  return normalizeAdventureSave(save).items.includes(item);
 }
+
+export function grantAdventureItem(
+  save: AdventureSave,
+  item: AdventureItemId,
+): AdventureSave {
+  const next = structuredClone(normalizeAdventureSave(save));
+  if (!next.items.includes(item)) next.items.push(item);
+  return normalizeAdventureSave(next);
+}
+
+function nextAdventureLevelId(current: AdventureLevelId): AdventureLevelId | null {
+  const parsed = parseAdventureLevelId(current)!;
+  const sequence = campaignSequenceForChapter(parsed.chapter);
+  const index = sequence.indexOf(parsed.id);
+  const sameChapter = sequence[index + 1];
+  if (sameChapter) return sameChapter;
+  if (parsed.chapter >= CHAPTER_COUNT) return null;
+  return campaignSequenceForChapter(parsed.chapter + 1)[0] ?? null;
+}
+
+function isAdventureItemId(value: string): value is AdventureItemId {
+  return (ADVENTURE_ITEM_IDS as readonly string[]).includes(value);
+}
+
 function objectValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -171,9 +195,6 @@ function stringArray(value: unknown): string[] {
         .map((item) => item.trim())
         .filter(Boolean)
     : [];
-}
-function numberArray(value: unknown): number[] {
-  return Array.isArray(value) ? value.map(Number).filter(Number.isInteger) : [];
 }
 function nonNegativeInteger(value: unknown): number {
   const number = Number(value ?? 0);

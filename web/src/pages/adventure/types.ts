@@ -1,22 +1,19 @@
 export interface AdventureHomeView {
-  nextLevelId: string | null;
+  resumeLevelId: string;
+  resumeChapterTitle: string;
   bonusCoins: number;
   goldenCarrots: number;
-  goldenKey: boolean;
 }
 
 export interface AdventureChapterRow {
   number: number;
   title: string;
   stars: string;
-  progress: string;
-  unlocked: boolean;
+  completed: boolean;
 }
 
 export interface AdventureLevelRow {
   id: string;
-  label: string;
   completed: boolean;
   unlocked: boolean;
-  bonus: boolean;
 }

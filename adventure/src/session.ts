@@ -2,20 +2,28 @@ import {
   parseAdventureLevelId,
   type AdventureLevelId,
 } from "./campaign.js";
-import { normalizeAdventureSave, type AdventureSave } from "./save.js";
+import {
+  hasAdventureItem,
+  normalizeAdventureSave,
+  type AdventureSave,
+} from "./save.js";
 
-export type AdventureViewportPolicy = "original-portrait";
+export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
 
 export interface AdventureCapabilities {
   speedShoes: boolean;
-  magnifyingGlass: boolean;
+  coinRadar: boolean;
   goldenKey: boolean;
+  bonusKeyTrialUsed: boolean;
 }
 
 export interface AdventureSessionPlan {
   levelId: AdventureLevelId;
-  viewportPolicy: AdventureViewportPolicy;
   capabilities: AdventureCapabilities;
+  economy: {
+    bonusCoins: number;
+    goldenCarrots: number;
+  };
 }
 
 export function planAdventureSession(
@@ -27,11 +35,14 @@ export function planAdventureSession(
   const normalized = normalizeAdventureSave(save);
   return {
     levelId: parsed.id,
-    viewportPolicy: "original-portrait",
     capabilities: {
-      speedShoes: normalized.upgrades.speedShoes,
-      magnifyingGlass: normalized.upgrades.magnifyingGlass,
-      goldenKey: normalized.upgrades.goldenKey,
+      speedShoes: hasAdventureItem(normalized, "speed-shoes"),
+      coinRadar: hasAdventureItem(normalized, "coin-radar"),
+      goldenKey: hasAdventureItem(normalized, "golden-key"),
+      bonusKeyTrialUsed: normalized.campaign.completedEvents.includes(
+        BONUS_KEY_TRIAL_EVENT,
+      ),
     },
+    economy: { ...normalized.economy },
   };
 }

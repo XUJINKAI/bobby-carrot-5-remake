@@ -1,8 +1,9 @@
 import {
+  hasAdventureItem,
+  isAdventureChapterCompleted,
   isAdventureLevelCompleted,
   isAdventureLevelUnlocked,
   parseAdventureLevelId,
-  type AdventureLevelId,
   type AdventureSave,
 } from "@bobby/adventure";
 import { createApp, type Component } from "vue";
@@ -18,7 +19,7 @@ import {
 } from "../../app/pageContracts.js";
 import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
 import { chapterStars } from "../../services/catalog/catalogPresentation.js";
-import { configureShell } from "../../shell/shellBridge.js";
+import { configureShell, type ShellConfig } from "../../shell/shellBridge.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
 import AdventureChapterPage from "./AdventureChapterPage.vue";
 import AdventureChaptersPage from "./AdventureChaptersPage.vue";
@@ -31,41 +32,44 @@ import type {
 export function renderAdventureHome(context: PageContext): PageController {
   const { app, adventure, audio, images, navigate } = context;
   const save = loadAdventureSave();
-  const next = nextAdventureLevel(adventure, save);
+  const resume = findAdventureLevel(adventure, save.campaign.resumeLevelId);
   audio.playMusic("title");
-  return mountAdventure(app, AdventureHomePage, {
-    view: {
-      nextLevelId: next?.id ?? null,
-      bonusCoins: save.economy.bonusCoins,
-      goldenCarrots: save.economy.goldenCarrots,
-      goldenKey: save.upgrades.goldenKey,
+  return mountAdventure(
+    app,
+    AdventureHomePage,
+    {
+      view: {
+        resumeLevelId: resume?.level.id ?? "1-1",
+        resumeChapterTitle: resume?.chapter.name ?? "FAIRY MAGIC",
+        bonusCoins: save.economy.bonusCoins,
+        goldenCarrots: save.economy.goldenCarrots,
+      },
+      images,
+      onNavigate: navigate,
     },
-    images,
-    onNavigate: navigate,
-  });
+    adventureShell("冒险模式"),
+  );
 }
 
 export function renderAdventureChapters(context: PageContext): PageController {
-  const { app, adventure, audio, navigate } = context;
+  const { app, adventure, audio, images, navigate } = context;
   const save = loadAdventureSave();
   audio.playMusic("title");
   const rows: AdventureChapterRow[] = adventure.chapters.map((chapter) => {
     const number = Number(chapter.id);
-    const done = chapter.levels.filter((level) =>
-      isAdventureLevelCompleted(save, level.id),
-    ).length;
     return {
       number,
       title: chapter.name,
       stars: chapterStars(chapter.difficulty),
-      progress: `${done}/${chapter.levels.length}`,
-      unlocked: save.campaign.unlockedChapters.includes(number),
+      completed: isAdventureChapterCompleted(save, number),
     };
   });
-  return mountAdventure(app, AdventureChaptersPage, {
-    rows,
-    onNavigate: navigate,
-  });
+  return mountAdventure(
+    app,
+    AdventureChaptersPage,
+    { rows, images, onNavigate: navigate },
+    adventureShell("章节选择", "/adventure"),
+  );
 }
 
 export function renderAdventureChapter(
@@ -78,31 +82,31 @@ export function renderAdventureChapter(
     (item) => Number(item.id) === chapterNumber,
   );
   audio.playMusic("title");
-  if (!chapter || !save.campaign.unlockedChapters.includes(chapterNumber)) {
+  if (!chapter) {
     navigate("/adventure/chapters");
     return NOOP_CONTROLLER;
   }
-  const rows: AdventureLevelRow[] = chapter.levels.map((level) => {
-    const parsed = parseAdventureLevelId(level.id);
-    const bonus = parsed?.kind === "bonus";
-    return {
-      id: level.id,
-      label: bonus
-        ? `BONUS ${parsed?.bonus ?? ""}`
-        : `LEVEL ${parsed?.mainLevel ?? level.id}`,
-      completed: isAdventureLevelCompleted(save, level.id),
-      unlocked: isAdventureLevelUnlocked(save, level.id),
-      bonus,
-    };
-  });
-  return mountAdventure(app, AdventureChapterPage, {
-    chapterNumber,
-    title: chapter.name,
-    description: chapter.description,
-    stars: chapterStars(chapter.difficulty),
-    rows,
-    onNavigate: navigate,
-  });
+  const rows: AdventureLevelRow[] = chapter.levels.map((level) => ({
+    id: level.id,
+    completed: isAdventureLevelCompleted(save, level.id),
+    unlocked: isAdventureLevelUnlocked(save, level.id),
+  }));
+  return mountAdventure(
+    app,
+    AdventureChapterPage,
+    {
+      chapterNumber,
+      title: chapter.name,
+      description: chapter.description,
+      stars: chapterStars(chapter.difficulty),
+      rows,
+      onNavigate: navigate,
+    },
+    adventureShell(
+      `${String(chapterNumber).padStart(2, "0")} · ${chapter.name}`,
+      "/adventure/chapters",
+    ),
+  );
 }
 
 export function findAdventureLevel(
@@ -118,46 +122,50 @@ export function findAdventureLevel(
   return undefined;
 }
 
-function nextAdventureLevel(
-  adventure: AdventureIndex,
-  save: AdventureSave,
-): AdventureIndexLevel | undefined {
-  const done = new Set<AdventureLevelId>(save.campaign.completedLevels);
-  const unlocked = new Set(save.campaign.unlockedChapters);
-  for (const chapter of adventure.chapters) {
-    if (!unlocked.has(Number(chapter.id))) continue;
-    for (const level of chapter.levels) {
-      const parsed = parseAdventureLevelId(level.id);
-      if (parsed && !done.has(parsed.id)) return level;
-    }
-  }
-  return undefined;
+export function adventureHasItem(save: AdventureSave, item: "golden-key"): boolean {
+  return hasAdventureItem(save, item);
 }
 
 function mountAdventure(
   root: HTMLDivElement,
   component: Component,
   props: Record<string, unknown>,
+  shell: ShellConfig,
 ): PageController {
-  configureShell({
-    topBar: {
-      visible: true,
-      fixed: true,
-      identity: pageIdentity("冒险模式", "/adventure"),
-      actions: globalActions(),
-    },
-    bottomBar: {
-      visible: true,
-      fixed: true,
-      info: [{ text: "原版 Campaign · 章节进度与永久奖励" }],
-    },
-  });
+  configureShell(shell);
   root.replaceChildren();
   const app = createApp(component, props);
   app.mount(root);
   return {
     destroy(): void {
       app.unmount();
+    },
+  };
+}
+
+function adventureShell(title: string, backPath?: string): ShellConfig {
+  return {
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: pageIdentity(title, "/adventure"),
+      ...(backPath
+        ? {
+            back: {
+              id: "back",
+              icon: "back",
+              label: title,
+              title: "返回",
+              href: backPath,
+            },
+          }
+        : {}),
+      actions: globalActions(),
+    },
+    bottomBar: {
+      visible: true,
+      fixed: true,
+      info: [{ text: "Bobby Carrot 5 · Adventure" }],
     },
   };
 }
