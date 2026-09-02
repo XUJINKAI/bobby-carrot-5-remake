@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { spriteFrameRect } from "../../shared/original-scenes/originalSceneSprites.js";
 
 const props = defineProps<{ images: ImageManager; completed: boolean }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -11,21 +12,28 @@ function draw(): void {
   const target = canvas.value;
   const context = target.getContext("2d");
   if (!context) return;
-  const frameHeight = image.naturalHeight / 9;
-  target.width = image.naturalWidth;
-  target.height = frameHeight;
+  const horizontal = image.naturalWidth >= image.naturalHeight;
+  const frame = spriteFrameRect(
+    image.naturalWidth,
+    image.naturalHeight,
+    horizontal ? 9 : 1,
+    horizontal ? 1 : 9,
+    props.completed ? 1 : 0,
+  );
+  target.width = Math.round(frame.width);
+  target.height = Math.round(frame.height);
   context.imageSmoothingEnabled = false;
   context.clearRect(0, 0, target.width, target.height);
   context.drawImage(
     image,
+    frame.x,
+    frame.y,
+    frame.width,
+    frame.height,
     0,
-    props.completed ? frameHeight : 0,
-    image.naturalWidth,
-    frameHeight,
     0,
-    0,
-    image.naturalWidth,
-    frameHeight,
+    target.width,
+    target.height,
   );
 }
 

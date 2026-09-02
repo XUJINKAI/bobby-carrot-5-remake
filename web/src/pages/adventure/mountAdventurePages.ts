@@ -47,7 +47,7 @@ export function renderAdventureHome(context: PageContext): PageController {
       images,
       onNavigate: navigate,
     },
-    adventureShell("冒险模式"),
+    adventureShell(),
   );
 }
 
@@ -156,18 +156,18 @@ function mountAdventure(
   };
 }
 
-function adventureShell(title: string, backPath?: string): ShellConfig {
+function adventureShell(backLabel?: string, backPath?: string): ShellConfig {
   return {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity(title, "/adventure"),
-      ...(backPath
+      identity: pageIdentity("冒险模式", "/adventure"),
+      ...(backPath && backLabel
         ? {
             back: {
               id: "back",
               icon: "back",
-              label: title,
+              label: backLabel,
               title: "返回",
               href: backPath,
             },
