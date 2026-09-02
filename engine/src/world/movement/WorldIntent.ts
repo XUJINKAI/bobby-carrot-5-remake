@@ -3,7 +3,14 @@ import type { EntityId } from "../entity/EntityInstance.js";
 
 export type MoveCause =
   | { type: "player-input"; source?: string }
-  | { type: "forced"; sourceEntityId?: EntityId }
+  | {
+      type: "forced";
+      sourceEntityId?: EntityId;
+      /** Mechanism identity such as ice / leaf / flight. */
+      mechanism?: string;
+      /** Gameplay cadence owned by that mechanism, in milliseconds. */
+      cadenceMs?: number;
+    }
   | { type: "push"; sourceEntityId: EntityId }
   | { type: "carry"; carrierId: EntityId }
   | { type: "actor" }
