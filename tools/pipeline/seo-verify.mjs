@@ -45,6 +45,8 @@ export function verifySeoArtifacts() {
     throw new Error("404.html 必须显示 sleep.png");
   if (!notFound.includes('<a href="/">返回首页</a>'))
     throw new Error("404.html 必须提供返回首页链接");
+  if (!fs.existsSync(path.join(dist, "assets/art/hd/sleep.png")))
+    throw new Error("404.html 使用的 sleep.png 必须发布到 dist");
 
   const robots = read("robots.txt");
   if (!robots.includes(`Sitemap: ${siteOrigin}/sitemap.xml`))
