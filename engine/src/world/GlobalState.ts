@@ -1,14 +1,4 @@
-import type { Direction } from "@bobby/model";
 import type { CellPosition } from "./entity/EntityInstance.js";
-import type { ForcedMotionKind } from "./movement/ForcedMotionTiming.js";
-
-export interface InventoryState {
-  gas: boolean;
-  kite: boolean;
-  shovel: boolean;
-  beans: number;
-  temporaryKey: boolean;
-}
 
 export interface EconomyState {
   bonusCoins: number;
@@ -22,25 +12,15 @@ export interface ProfileCapabilities {
   bonusKeyTrialUsed: boolean;
 }
 
-/** Temporary alias while the old global forced driver is removed from Game. */
-export type ForcedKind = ForcedMotionKind;
-export interface ForcedMovement {
-  kind: ForcedMotionKind;
-  direction: Direction;
-}
-
-/** 非空间 gameplay 状态。空间身份与实例 state 只存在于 EntityStore。 */
+/** 非空间、非 actor-local 的 gameplay 状态。 */
 export interface GlobalState {
   dead: boolean;
   completed: boolean;
   deathReason: string | null;
   moves: number;
   elapsedMs: number;
-  inventory: InventoryState;
   economy: EconomyState;
   profile: ProfileCapabilities;
-  ridingMower: boolean;
-  forced: ForcedMovement | null;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
   /** 本次成功移动进入格子的 selector 快照；允许 reach 匹配 onEnter 中被消费的实体。 */
@@ -60,13 +40,6 @@ export function createGlobalState(
     deathReason: null,
     moves: 0,
     elapsedMs: 0,
-    inventory: {
-      gas: false,
-      kite: false,
-      shovel: false,
-      beans: 0,
-      temporaryKey: false,
-    },
     economy: {
       bonusCoins: Math.max(0, Math.floor(economy.bonusCoins ?? 0)),
       goldenCarrots: Math.max(0, Math.floor(economy.goldenCarrots ?? 0)),
@@ -77,8 +50,6 @@ export function createGlobalState(
       coinRadar: profile.coinRadar ?? false,
       bonusKeyTrialUsed: profile.bonusKeyTrialUsed ?? false,
     },
-    ridingMower: false,
-    forced: null,
     bonusCoinsInLevel: 0,
     goldenCarrotsInLevel: 0,
     lastReachedSelectors: [],
