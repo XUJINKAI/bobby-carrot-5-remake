@@ -3,6 +3,7 @@ import type { WorldTick } from "../../time/WorldClock.js";
 import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
+import type { WorldIntent } from "../movement/WorldIntent.js";
 
 export type RuntimeActionId = number;
 export type RuntimeActionState = Record<string, JsonValue>;
@@ -35,7 +36,18 @@ export interface RuntimeActionContext {
   readonly commands: WorldCommandApi;
 }
 
-export type RuntimeActionResult = "running" | "complete";
+export type RuntimeActionStatus = "running" | "complete";
+
+/**
+ * Action 可以在 WorldTick 中请求 semantic intent；真正的 passage / collision /
+ * enter-leave hooks 仍由 World resolver 执行，Action 不能用 commands.move 绕过规则。
+ */
+export interface RuntimeActionUpdate {
+  status: RuntimeActionStatus;
+  intents?: WorldIntent[];
+}
+
+export type RuntimeActionResult = RuntimeActionStatus | RuntimeActionUpdate;
 
 export interface RuntimeActionDefinition {
   kind: string;
