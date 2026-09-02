@@ -1,5 +1,8 @@
 import {
   createBuiltinEntityCatalog,
+  drawVisualComposition,
+  prepareCanvas,
+  resolveDevicePixelRatio,
   SpatialVisualQuery,
   visualRegistry as builtinVisualRegistry,
   type EntityCatalog,
@@ -14,7 +17,6 @@ import type {
   EditorPlacementPreset,
 } from "../definitions/types.js";
 import type { EditorMap } from "../level/types.js";
-import { drawEditorVisualComposition } from "./visualPainter.js";
 
 interface PixelBounds {
   left: number;
@@ -76,7 +78,7 @@ export class EditorEntityPreviewRenderer {
         this.editor.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
         this.visuals.resolve(inspection.definition, resolveContext);
       rendered ||= Boolean(composition?.layers.length);
-      drawEditorVisualComposition(
+      drawVisualComposition(
         context,
         this.images,
         composition,
@@ -140,16 +142,13 @@ function drawFitted(
 ): void {
   const cssWidth = Math.max(1, widthCells * cellSize);
   const cssHeight = Math.max(1, heightCells * cellSize);
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const deviceScale = resolveDevicePixelRatio();
   canvas.style.width = `${cssWidth}px`;
   canvas.style.height = `${cssHeight}px`;
-  canvas.width = Math.round(cssWidth * dpr);
-  canvas.height = Math.round(cssHeight * dpr);
   const context = canvas.getContext("2d");
   if (!context) return;
-  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  prepareCanvas(canvas, context, cssWidth, cssHeight, deviceScale);
   context.clearRect(0, 0, cssWidth, cssHeight);
-  context.imageSmoothingEnabled = false;
   const padding = Math.max(2, Math.min(cellSize * 0.08, 5));
   const scale = Math.min(
     (cssWidth - padding * 2) / bounds.width,

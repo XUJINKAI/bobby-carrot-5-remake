@@ -39,6 +39,14 @@ export {
   type LoadedImageSlice,
 } from "./image/ImageManager.js";
 export {
+  prepareCanvas,
+  resolveDevicePixelRatio,
+  snapRectToDevicePixels,
+  snapToDevicePixel,
+  type PixelRect,
+} from "./render/CanvasPixelGeometry.js";
+export { drawVisualComposition } from "./render/VisualPainter.js";
+export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,

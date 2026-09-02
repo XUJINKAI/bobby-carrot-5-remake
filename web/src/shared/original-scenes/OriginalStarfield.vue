@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { ImageManager } from "@bobby/engine";
+import {
+  prepareCanvas,
+  resolveDevicePixelRatio,
+  snapRectToDevicePixels,
+  type ImageManager,
+} from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   ORIGINAL_TILE_SIZE,
@@ -145,13 +150,6 @@ function draw(now: number): void {
   const bounds = target.getBoundingClientRect();
   const width = Math.max(1, bounds.width);
   const height = Math.max(1, bounds.height);
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const pixelWidth = Math.round(width * dpr);
-  const pixelHeight = Math.round(height * dpr);
-  if (target.width !== pixelWidth || target.height !== pixelHeight) {
-    target.width = pixelWidth;
-    target.height = pixelHeight;
-  }
   if (Math.abs(width - lastWidth) > 2 || Math.abs(height - lastHeight) > 2) {
     lastWidth = width;
     lastHeight = height;
@@ -165,25 +163,32 @@ function draw(now: number): void {
 
   const context = target.getContext("2d");
   if (!context) return;
-  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const deviceScale = resolveDevicePixelRatio();
+  prepareCanvas(target, context, width, height, deviceScale);
   context.clearRect(0, 0, width, height);
-  context.imageSmoothingEnabled = false;
 
   for (const column of columns) {
     for (let row = 0; row < column.tiles.length; row += 1) {
       const tile = column.tiles[row]!;
       const cell = STAR_ATLAS_CELLS[tile.variant]!;
       const y = row * ORIGINAL_TILE_SIZE;
+      const tileRect = snapRectToDevicePixels(
+        column.x,
+        y,
+        column.x + ORIGINAL_TILE_SIZE,
+        y + ORIGINAL_TILE_SIZE,
+        deviceScale,
+      );
       context.drawImage(
         staticTiles,
         cell.column * ORIGINAL_TILE_SIZE,
         cell.row * ORIGINAL_TILE_SIZE,
         ORIGINAL_TILE_SIZE,
         ORIGINAL_TILE_SIZE,
-        column.x,
-        y,
-        ORIGINAL_TILE_SIZE,
-        ORIGINAL_TILE_SIZE,
+        tileRect.x,
+        tileRect.y,
+        tileRect.width,
+        tileRect.height,
       );
 
       if (!animatedTiles || tile.sparkleStartedAt === null) continue;
@@ -195,16 +200,23 @@ function draw(now: number): void {
         continue;
       }
       const sparkle = sparkleFrameRect(frame);
+      const sparkleRect = snapRectToDevicePixels(
+        column.x + 16,
+        y + 16,
+        column.x + 32,
+        y + 32,
+        deviceScale,
+      );
       context.drawImage(
         animatedTiles,
         sparkle.x,
         sparkle.y,
         sparkle.width,
         sparkle.height,
-        column.x + 16,
-        y + 16,
-        16,
-        16,
+        sparkleRect.x,
+        sparkleRect.y,
+        sparkleRect.width,
+        sparkleRect.height,
       );
     }
   }
