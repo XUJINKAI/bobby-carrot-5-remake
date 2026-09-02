@@ -11,9 +11,15 @@ import {
 } from "../dist/visual/tuning/original.js";
 
 test("original presentation defaults to canonical gameplay cadence", () => {
-  assert.equal(ORIGINAL_GAMEPLAY_TIMING.motion.normalMs, 132);
-  assert.equal(ORIGINAL_TUNING.motion.normalMs, ORIGINAL_GAMEPLAY_TIMING.motion.normalMs);
-  assert.deepEqual(ORIGINAL_TUNING.motion.forcedMs, ORIGINAL_GAMEPLAY_TIMING.motion.forcedMs);
+  assert.equal(ORIGINAL_GAMEPLAY_TIMING.motion.normalMs, 180);
+  assert.equal(
+    ORIGINAL_TUNING.motion.normalMs,
+    ORIGINAL_GAMEPLAY_TIMING.motion.normalMs,
+  );
+  assert.deepEqual(
+    ORIGINAL_TUNING.motion.forcedMs,
+    ORIGINAL_GAMEPLAY_TIMING.motion.forcedMs,
+  );
   assert.equal(
     ORIGINAL_TUNING.motion.speedShoesScale,
     ORIGINAL_GAMEPLAY_TIMING.motion.speedShoesScale,
@@ -33,7 +39,7 @@ test("presentation override does not mutate canonical gameplay timing", () => {
 
   assert.equal(presentation.motion.normalMs, 20);
   assert.equal(presentation.motion.forcedMs.ice, 10);
-  assert.equal(gameplay.motion.normalMs, 132);
+  assert.equal(gameplay.motion.normalMs, 180);
   assert.equal(gameplay.motion.forcedMs.ice, 88);
 });
 
@@ -44,7 +50,7 @@ test("gameplay timing can be overridden independently from presentation", () => 
   assert.equal(gameplay.motion.normalMs, 150);
   assert.equal(gameplay.motion.forcedMs.speed, 90);
   assert.equal(gameplay.motion.forcedMs.ice, 88);
-  assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);
+  assert.equal(ORIGINAL_TUNING.motion.normalMs, 180);
 });
 
 test("motion easing remains pure presentation math", () => {
