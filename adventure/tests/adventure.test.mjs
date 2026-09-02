@@ -105,3 +105,41 @@ test("Adventure session projects inventory capabilities and wallet into Engine i
   assert.deepEqual(plan.economy, { bonusCoins: 7, goldenCarrots: 2 });
   assert.equal(Object.hasOwn(plan, "viewportPolicy"), false);
 });
+
+test("Bonus runtime parameters are injected by Adventure policy, not Original maps", () => {
+  const save = createAdventureSave();
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 4,
+    entities: [
+      { type: EntityTypeId.BEAVER, x: 0, y: 0, direction: "right" },
+      { type: EntityTypeId.LOCK, x: 2, y: 2 },
+    ],
+  };
+  const regularPlan = planAdventureSession("1-1", save);
+  assert.deepEqual(regularPlan.entityPatches, []);
+
+  const bonusPlan = planAdventureSession("1-bonus-1", save, {
+    bonus: {
+      temporaryKeyVendor: {
+        interaction: "bonus-key-vendor",
+        priceBonusCoins: 8,
+      },
+      lock: { deathCountdownSeconds: 45 },
+    },
+  });
+  const prepared = createAdventureLevelInstance(
+    "1-bonus-1",
+    level,
+    save,
+    bonusPlan.entityPatches,
+  );
+  assert.deepEqual(prepared.entities[0].properties, {
+    interaction: "bonus-key-vendor",
+    temporaryKeyPriceBonusCoins: 8,
+  });
+  assert.deepEqual(prepared.entities[1].properties, {
+    deathCountdownSeconds: 45,
+  });
+});
