@@ -44,7 +44,7 @@ https://bc5r.xujinkai.net
 
 Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构建通过 `BC5R_BASE_PATH` 配置前者，通过 `VITE_PUBLIC_BASE_URL` 配置后者；未配置分享根地址时使用 `document.baseURI`。
 
-静态构建生成 `dist/import/v1/index.html`，保证 fragment 分享 URL 的 pathname 可以从新导航直接加载应用。
+正式构建会为 `/import/v1` 生成独立 route shell，保证 fragment 分享 URL 的 pathname 可以从新导航直接加载应用。
 
 ## 公共层职责
 
