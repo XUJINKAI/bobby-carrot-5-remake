@@ -41,18 +41,17 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #143678;
+  background: #13367a;
   color: #f4f7ff;
 }
 
 .night-train-hero {
   flex: 0 0 auto;
-  margin-top: 9%;
 }
 
 .night-train-menu {
   width: min(430px, calc(100% - 28px));
-  margin: 22px auto 0;
+  margin: 40px auto 0;
   display: grid;
   gap: 9px;
 }

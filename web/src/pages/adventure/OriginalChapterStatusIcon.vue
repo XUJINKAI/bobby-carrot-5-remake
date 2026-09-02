@@ -6,6 +6,10 @@ import { spriteFrameRect } from "../../shared/original-scenes/originalSceneSprit
 const props = defineProps<{ images: ImageManager; completed: boolean }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
 let image: HTMLImageElement | null = null;
+const CHAPTER_STATUS_FRAMES = {
+    pending: { x: 0, y: 0, width: 18, height: 18 },
+    completed: { x: 18, y: 0, width: 31, height: 18 },
+  } as const;
 
 function draw(): void {
   if (!image || !canvas.value) return;
@@ -13,13 +17,9 @@ function draw(): void {
   const context = target.getContext("2d");
   if (!context) return;
   const horizontal = image.naturalWidth >= image.naturalHeight;
-  const frame = spriteFrameRect(
-    image.naturalWidth,
-    image.naturalHeight,
-    horizontal ? 9 : 1,
-    horizontal ? 1 : 9,
-    props.completed ? 1 : 0,
-  );
+  const frame = props.completed
+    ? CHAPTER_STATUS_FRAMES.completed
+    : CHAPTER_STATUS_FRAMES.pending;
   target.width = Math.round(frame.width);
   target.height = Math.round(frame.height);
   context.imageSmoothingEnabled = false;
@@ -51,8 +51,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .chapter-status-icon {
-  width: 34px;
-  height: 34px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
   image-rendering: pixelated;
 }
