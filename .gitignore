@@ -18,6 +18,7 @@ assets/audio/midi/
 assets/maps/
 assets/adventure/
 
+tmp/
 *.tmp.md
 *.tsbuildinfo
 .DS_Store

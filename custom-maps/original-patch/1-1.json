@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "name": "1-1",
+  "width": 7,
+  "height": 7,
+  "entities": [
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "type": "start",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "type": "exit",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "type": "high-grass-objective",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "type": "high-grass",
+      "x": 5,
+      "y": 5
+    },
+    {
+      "type": "mower-parking",
+      "x": 3,
+      "y": 4
+    },
+    {
+      "type": "mower",
+      "x": 3,
+      "y": 4
+    },
+    {
+      "type": "gas",
+      "x": 2,
+      "y": 4
+    },
+    {
+      "type": "high-grass-objective",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "bobby",
+      "x": 2,
+      "y": 2,
+      "direction": "down"
+    },
+    {
+      "type": "carrot",
+      "x": 5,
+      "y": 2
+    }
+  ],
+  "description": "当场上有一个胡萝卜时，high-grass-objective自动变出胡萝卜",
+  "rules": {
+    "win": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "reach",
+          "target": "exit"
+        }
+      ]
+    }
+  }
+}

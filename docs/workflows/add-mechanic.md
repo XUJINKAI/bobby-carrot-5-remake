@@ -6,7 +6,7 @@
 4. 在 Engine 唯一实现规则，不在 Web/Editor 复制。
 5. 增加最小 Node 回归测试。
 6. 在 Editor 建最小测试地图并 Play Test。
-7. 如果行为仍有疑问，导出该地图并执行 `npm run original:patch -- --map <json> --target <public-id>`，在原版模拟器跑同一输入。
+7. 如果行为仍有疑问，将地图导出为 `custom-maps/original-patch/<public-id>.json`，执行 `node tools/cli.mjs original patch`，在原版模拟器跑同一输入。
 8. 对比原版与 Bobby Carrot 5 Remake，再回到字节码解释差异。
 9. `npm run verify` 全量验证后再完成任务。
 

@@ -9,39 +9,38 @@
 ## 2. 生成验证 JAR
 
 ```bash
-npm run original:patch -- \
-  --map ./dragon-test.json \
-  --target 40-10
+node tools/cli.mjs original patch \
+  --in custom-maps/original-patch \
+  --out tmp/original-patch
 ```
 
-默认输出到：
+省略参数时，默认输入与输出目录也是这两个路径。输入目录中的每个 `.json` 文件使用文件名作为 Campaign public ID，例如 `1-1.json`、`1-bonus-1.json`、`40-10.json`。工具按照 Catalog provenance 自动定位原始 JAR、DAT 包和 record slot，并将同一 JAR 的全部替换合并到一个输出文件：
 
 ```text
-tmp/original-validation/
+tmp/original-patch/base-patched-20260831-114500.jar
+tmp/original-patch/up01-patched-20260831-114500.jar
+...
 ```
 
-也可指定：
+输入目录内只放入需要验证的地图。每次执行都会清空输出目录后重建；`assets/original/official-hd/` 永远不会被写入。
+
+例如只验证 `1-1.json`：
 
 ```bash
-npm run original:patch -- \
-  --map ./dragon-test.json \
-  --target 40-10 \
-  --out ./tmp/original-validation/dragon.jar
+node tools/cli.mjs original patch
 ```
 
-`--target` 使用玩家 Campaign public ID（例如 `1-1`、`1-bonus-1`、`40-10`）。工具通过 Catalog provenance 找回真正的 Base/UP JAR、DAT 包与原始 level slot；不会要求自定义地图与目标官方关尺寸相同。
-
-Base/UP、`00.dat`～`04.dat`、record index 都只属于 archive identity，不再作为公开 target ID。
+当前 Entity Map 会经 Original Adapter 还原为 DAT 可表达的地图；覆盖地形下的默认地面、隐藏目标和原版对象内部形态遵循 Adapter 的规范化规则。
 
 ## 3. 工具自动验证的内容
 
 生成前后会保证：
 - `assets/original` 从不被写入；
-- 只替换目标 DAT record；
+- 只替换输入目录中目标地图的 DAT record；
 - DAT metadata 与其它关卡 record 原字节保留；
 - JAR 其它 entry 尽可能原 local ZIP block 保留；
 - 失效签名 entry 被移除；
-- 输出 JAR 再读取后得到的 LevelMap 与输入 JSON 完全一致。
+- 输出 JAR 再读取后得到的 Entity Map 与输入地图的 Adapter 规范化结果一致。
 
 ## 4. 在原版模拟器运行
 

@@ -29,8 +29,8 @@ test("分享 URL 保留完整站点根路径", () => {
     ["https://bc5r.com", "https://bc5r.com/import/v1#PAYLOAD"],
     ["https://bc5r.com/", "https://bc5r.com/import/v1#PAYLOAD"],
     [
-      "https://xujinkai.github.io/bobby-carrot-5-remake",
-      "https://xujinkai.github.io/bobby-carrot-5-remake/import/v1#PAYLOAD",
+      "https://bc5r.xujinkai.net",
+      "https://bc5r.xujinkai.net/import/v1#PAYLOAD",
     ],
     ["https://example.com/a/b/c/", "https://example.com/a/b/c/import/v1#PAYLOAD"],
   ];
