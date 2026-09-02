@@ -370,6 +370,7 @@ export class BobbyApp {
       },
       adventureScene: scene,
       adventureBackPath: backPath,
+      adventureCompletionPath: "/adventure",
       adventureHudEconomy: economyHud,
       mode: "adventure",
     });
