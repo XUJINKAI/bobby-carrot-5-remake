@@ -21,6 +21,25 @@ export interface ControlBinding {
   targets: readonly ControlTarget[];
 }
 
+const REVERSE_DIRECTION: Readonly<Record<Direction, Direction>> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
+const ROTATE_CW_DIRECTION: Readonly<Record<Direction, Direction>> = {
+  up: "right",
+  right: "down",
+  down: "left",
+  left: "up",
+};
+const ROTATE_CCW_DIRECTION: Readonly<Record<Direction, Direction>> = {
+  up: "left",
+  left: "down",
+  down: "right",
+  right: "up",
+};
+
 export function transformDirection(
   direction: Direction,
   transform: DirectionTransform = "identity",
@@ -36,13 +55,9 @@ export function transformDirection(
     if (direction === "down") return "up";
     return direction;
   }
-  if (transform === "reverse") {
-    return { up: "down", down: "up", left: "right", right: "left" }[direction];
-  }
-  if (transform === "rotate-cw") {
-    return { up: "right", right: "down", down: "left", left: "up" }[direction];
-  }
-  return { up: "left", left: "down", down: "right", right: "up" }[direction];
+  if (transform === "reverse") return REVERSE_DIRECTION[direction];
+  if (transform === "rotate-cw") return ROTATE_CW_DIRECTION[direction];
+  return ROTATE_CCW_DIRECTION[direction];
 }
 
 export function resolveControlInput(
