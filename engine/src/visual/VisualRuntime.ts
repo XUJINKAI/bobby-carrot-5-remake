@@ -1,10 +1,10 @@
 import type { Direction } from "@bobby/model";
+import { Camera } from "../render/Camera.js";
+import type { RenderScene } from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
-import { buildVisualScene } from "../render/RenderSceneBuilder.js";
-import type { RenderScene } from "../render/RenderScene.js";
-import { Camera } from "./Camera.js";
+import { buildVisualScene } from "./VisualSceneBuilder.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
@@ -50,8 +50,20 @@ export class VisualRuntime {
     return this.entityRuntime;
   }
 
-  beginMove(entityId: EntityId, from: CellPosition, to: CellPosition, durationMs: number, frame: PresentationFrame): void {
-    this.beginMotion(entityId, { x: from.x - to.x, y: from.y - to.y }, { x: 0, y: 0 }, durationMs, frame);
+  beginMove(
+    entityId: EntityId,
+    from: CellPosition,
+    to: CellPosition,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginMotion(
+      entityId,
+      { x: from.x - to.x, y: from.y - to.y },
+      { x: 0, y: 0 },
+      durationMs,
+      frame,
+    );
   }
 
   beginDeath(
@@ -75,14 +87,6 @@ export class VisualRuntime {
     );
   }
 
-  setEffect(entityId: EntityId, effect: string | null): void {
-    const current = this.entityRuntime.get(entityId) ?? {};
-    const next = { ...current };
-    if (effect) next.effect = effect;
-    else delete next.effect;
-    this.setEntityState(entityId, next);
-  }
-
   beginAction(
     entityId: EntityId,
     animation: string,
@@ -90,13 +94,22 @@ export class VisualRuntime {
     durationMs: number,
     frame: PresentationFrame,
   ): void {
-    this.beginMotion(entityId, { x: 0, y: 0 }, { x: 0, y: 0 }, durationMs, frame, animation, direction);
+    this.beginMotion(
+      entityId,
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+      durationMs,
+      frame,
+      animation,
+      direction,
+    );
   }
 
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
     this.camera.update(frame);
-    for (const motion of this.motions.values()) this.advanceMotion(motion, frame, easing);
+    for (const motion of this.motions.values())
+      this.advanceMotion(motion, frame, easing);
   }
 
   clear(): void {
@@ -107,12 +120,16 @@ export class VisualRuntime {
 
   /** Camera focus wins; otherwise follow the first player-trait actor. */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
-    const actorIds = world.query.entitiesWithTrait("player").map((entity) => entity.id);
+    const actorIds = world.query
+      .entitiesWithTrait("player")
+      .map((entity) => entity.id);
     this.ensureStationaryActorStates(actorIds);
     const defaultTargetId = actorIds[0];
     const target =
       (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
-      (defaultTargetId !== undefined ? world.entity(defaultTargetId) : undefined);
+      (defaultTargetId !== undefined
+        ? world.entity(defaultTargetId)
+        : undefined);
     if (target) {
       const runtime = this.entityRuntime.get(target.id);
       this.camera.follow(
@@ -124,7 +141,12 @@ export class VisualRuntime {
         world.height,
       );
     }
-    return buildVisualScene(world, this.visuals, this.entityRuntime, this.frame);
+    return buildVisualScene(
+      world,
+      this.visuals,
+      this.entityRuntime,
+      this.frame ?? undefined,
+    );
   }
 
   inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {
@@ -161,9 +183,16 @@ export class VisualRuntime {
     this.setMotionState(motion, 0, 0);
   }
 
-  private advanceMotion(motion: VisualMotion, frame: PresentationFrame, easing: MotionEasing): void {
+  private advanceMotion(
+    motion: VisualMotion,
+    frame: PresentationFrame,
+    easing: MotionEasing,
+  ): void {
     const elapsedMs = Math.max(0, frame.nowMs - motion.startedAtMs);
-    const rawProgress = motion.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / motion.durationMs);
+    const rawProgress =
+      motion.durationMs <= 0
+        ? 1
+        : Math.min(1, elapsedMs / motion.durationMs);
     const progress = applyMotionEasing(rawProgress, easing);
     if (rawProgress >= 1) {
       this.activeMotionIds.delete(motion.entityId);
@@ -174,10 +203,18 @@ export class VisualRuntime {
     this.setMotionState(motion, progress, rawProgress);
   }
 
-  private setMotionState(motion: VisualMotion, positionProgress: number, animationProgress: number): void {
+  private setMotionState(
+    motion: VisualMotion,
+    positionProgress: number,
+    animationProgress: number,
+  ): void {
     this.setEntityState(motion.entityId, {
-      offsetX: motion.startOffsetX + (motion.endOffsetX - motion.startOffsetX) * positionProgress,
-      offsetY: motion.startOffsetY + (motion.endOffsetY - motion.startOffsetY) * positionProgress,
+      offsetX:
+        motion.startOffsetX +
+        (motion.endOffsetX - motion.startOffsetX) * positionProgress,
+      offsetY:
+        motion.startOffsetY +
+        (motion.endOffsetY - motion.startOffsetY) * positionProgress,
       moving: motion.animation === undefined,
       progress: animationProgress,
       ...(motion.animation ? { animation: motion.animation } : {}),
@@ -185,7 +222,10 @@ export class VisualRuntime {
     });
   }
 
-  private finishMotion(motion: VisualMotion, frame: PresentationFrame): void {
+  private finishMotion(
+    motion: VisualMotion,
+    frame: PresentationFrame,
+  ): void {
     const keepAnimation = motion.animation === "death";
     this.setEntityState(motion.entityId, {
       offsetX: motion.endOffsetX,
@@ -198,10 +238,16 @@ export class VisualRuntime {
     });
   }
 
-  private ensureStationaryActorStates(actorIds: readonly EntityId[]): void {
+  private ensureStationaryActorStates(
+    actorIds: readonly EntityId[],
+  ): void {
     if (!this.frame) return;
     for (const entityId of actorIds) {
-      if (this.activeMotionIds.has(entityId) || this.entityRuntime.has(entityId)) continue;
+      if (
+        this.activeMotionIds.has(entityId) ||
+        this.entityRuntime.has(entityId)
+      )
+        continue;
       this.setEntityState(entityId, {
         moving: false,
         progress: 1,
@@ -210,7 +256,10 @@ export class VisualRuntime {
     }
   }
 
-  private setEntityState(entityId: EntityId, state: EntityVisualRuntimeState): void {
+  private setEntityState(
+    entityId: EntityId,
+    state: EntityVisualRuntimeState,
+  ): void {
     this.entityRuntime.set(entityId, state);
   }
 }
