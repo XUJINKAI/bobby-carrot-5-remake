@@ -5,6 +5,7 @@ import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
 import {
   bobbyMountId,
+  patchBobbyInventory,
   readBobbyInventory,
 } from "./player/BobbyState.js";
 
@@ -22,6 +23,60 @@ const collect: Behavior = {
         ...economy,
         goldenCarrots: economy.goldenCarrots + 1,
       });
+    }
+    commands.destroy(self.entity.id);
+    commands.emit({
+      type: `collect-${self.entity.type}`,
+      entityId: self.entity.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+    });
+  },
+};
+
+const pickup: Behavior = {
+  id: "pickup",
+  onEnter({ actor, self, commands }) {
+    const inventory = readBobbyInventory(actor.state);
+    switch (self.entity.type) {
+      case EntityTypeId.GAS:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { gas: true }),
+        );
+        break;
+      case EntityTypeId.KITE:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { kite: true }),
+        );
+        break;
+      case EntityTypeId.BEAN:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { beans: inventory.beans + 1 }),
+        );
+        break;
+      case EntityTypeId.SHOVEL_PICKUP:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { shovel: true }),
+        );
+        commands.destroy(self.entity.id);
+        commands.spawn({
+          type: EntityTypeId.SHOVEL_CLEARED_GROUND,
+          x: self.entity.anchor.x,
+          y: self.entity.anchor.y,
+        });
+        commands.emit({
+          type: `collect-${self.entity.type}`,
+          entityId: self.entity.id,
+          x: self.presence.cell.x,
+          y: self.presence.cell.y,
+        });
+        return;
+      default:
+        return;
     }
     commands.destroy(self.entity.id);
     commands.emit({
@@ -108,6 +163,7 @@ const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   dialog: dialogTraitBehavior,
   hazard,
   mowable,
+  pickup,
   shovelable,
   water: waterRequiresOverlay,
   "stateful-block": statefulBlock,
