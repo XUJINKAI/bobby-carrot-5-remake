@@ -22,7 +22,7 @@ export function formatTileInspection(
   }
   lines.push(
     `Top: ${cell.topPresence ? `${cell.topPresence.type}#${cell.topPresence.entityId}` : "void"}`,
-    `Player here: ${cell.playerHere}`,
+    `Actors here: ${cell.actorIds.length ? cell.actorIds.join(", ") : "none"}`,
     "",
     `Bobby: (${state.player.x}, ${state.player.y}) · facing=${state.facing}`,
     `Forced: ${state.forced?.kind ?? "none"} / ${state.forced?.direction ?? "none"}`,
