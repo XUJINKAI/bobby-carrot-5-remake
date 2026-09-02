@@ -35,7 +35,7 @@ function move(world, direction) {
         cause: { type: "player-input", source: "test" },
       },
     ],
-  }).moves[0];
+  });
 }
 
 test("reach can complete on a collectible removed by onEnter", () => {
@@ -46,7 +46,7 @@ test("reach can complete on a collectible removed by onEnter", () => {
     ),
   );
   const result = move(world, "right");
-  assert.equal(result.moved, true);
+  assert.equal(result.moves[0].moved, true);
   assert.equal(world.state.economy.goldenCarrots, 1);
   assert.equal(world.completed, true);
   assert.equal(
@@ -68,7 +68,7 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
   ]);
   const first = new World(map, { economy: { bonusCoins: 3 } });
   const firstTouch = move(first, "right");
-  assert.equal(firstTouch.moved, false);
+  assert.equal(firstTouch.moves[0].moved, false);
   assert.equal(first.state.inventory.temporaryKey, true);
   assert.equal(first.state.economy.bonusCoins, 3);
   assert.equal(first.state.profile.bonusKeyTrialUsed, true);
@@ -82,7 +82,7 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
     economy: { bonusCoins: 3 },
   });
   const laterTouch = move(later, "right");
-  assert.equal(laterTouch.moved, false);
+  assert.equal(laterTouch.moves[0].moved, false);
   assert.equal(later.state.inventory.temporaryKey, true);
   assert.equal(later.state.economy.bonusCoins, 0);
   assert.equal(
@@ -104,7 +104,7 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
   );
   world.state.inventory.temporaryKey = true;
   const unlock = move(world, "right");
-  assert.equal(unlock.moved, true);
+  assert.equal(unlock.moves[0].moved, true);
   assert.equal(world.state.inventory.temporaryKey, false);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
@@ -119,6 +119,6 @@ test("permanent key opens the lock without being consumed", () => {
     corridor([{ type: EntityTypeId.LOCK, x: 1, y: 0 }]),
     { profile: { superKey: true } },
   );
-  assert.equal(move(world, "right").moved, true);
+  assert.equal(move(world, "right").moves[0].moved, true);
   assert.equal(world.state.profile.superKey, true);
 });
