@@ -272,6 +272,7 @@ export class EditorCanvasRenderer {
       x * EDITOR_TILE_SIZE,
       y * EDITOR_TILE_SIZE,
       EDITOR_TILE_SIZE,
+      Math.max(1, window.devicePixelRatio || 1),
     );
   }
 }
