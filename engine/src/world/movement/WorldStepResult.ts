@@ -1,6 +1,7 @@
 import type { Direction } from "@bobby/model";
 import type { RuntimeActionId } from "../action/RuntimeAction.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
+import type { MoveCause } from "./WorldIntent.js";
 import type { MoveResult, WorldEvent } from "../WorldTypes.js";
 
 export interface EntityMotion {
@@ -8,6 +9,7 @@ export interface EntityMotion {
   from: CellPosition;
   to: CellPosition;
   direction: Direction;
+  cause: MoveCause;
 }
 
 export interface WorldMutationSummary {
@@ -36,6 +38,15 @@ export function emptyMutationSummary(): WorldMutationSummary {
     globalsChanged: [],
     actionsStarted: [],
     actionsCancelled: [],
+  };
+}
+
+export function emptyWorldStepResult(): WorldStepResult {
+  return {
+    moves: [],
+    motions: [],
+    events: [],
+    mutations: emptyMutationSummary(),
   };
 }
 
