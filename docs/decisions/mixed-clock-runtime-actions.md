@@ -72,6 +72,38 @@ focus?: {
 
 自动移动不能再通过 `GlobalState.forced` 驱动某个默认 Bobby。Ice / Leaf / Fireball 等机制应由 RuntimeAction 明确持有 owner / target Entity，并产生对应 actor/entity 的 movement intent。
 
+RuntimeAction 不得用 `commands.move()` 实现规则意义上的移动。需要经过 passage / collision / onLeave / onEnter 的移动必须产生 semantic `WorldIntent`，再交回 World resolver。低层 `move` command 只用于 resolver 已经批准后的 transaction commit。
+
+例如 Ice：
+
+```text
+Ice.onEnter
+  -> delayed-move RuntimeAction(owner = Bobby)
+  -> forced MoveIntent(mechanism = ice)
+  -> World.step
+  -> canLeave / collision / canEnter / onLeave / onEnter
+  -> EntityMotion
+```
+
+这样撞墙会自然终止，滑入下一块 Ice 会由新的 `onEnter` 建立下一段 Action，且多 Bobby 时 Action 只驱动自己的 owner。
+
+## WorldTick phase barriers
+
+一个 WorldTick 使用稳定的 phase barrier：
+
+```text
+RuntimeAction update
+  -> commit Action commands
+  -> resolve + commit Action semantic intents
+  -> Behavior onTick
+  -> commit Behavior commands
+  -> terminal evaluation / events
+```
+
+后一个 phase 必须读取前一个 phase 已 commit 的 World。RuntimeAction 产生的 semantic movement 因此会在同一 tick 内完整经过 World resolver；随后执行的 `Behavior.onTick` 看到的是移动后的坐标和状态，而不是 tick 开始时的旧 snapshot。
+
+Action scheduler 内部仍按稳定 action id 顺序更新。多个 Action 可以在同一 phase 产生 intents，但不能通过 Promise、callback 或 presentation completion 隐式改变 phase 顺序。
+
 ## WorldStep / multi-actor
 
 外部控制统一转换成 `WorldIntentGroup`。一个 group 可以包含多只 actor 的 intent，并在一个 `MovementTransaction` 中解析和 commit。
@@ -106,10 +138,11 @@ Undo 边界属于玩家发起的 semantic intent group，而不是 `forced: bool
 ## Hard rules
 
 1. Animation complete callback 不得推进 World。
-2. RuntimeAction 不得直接修改 EntityStore，必须走 CommandQueue。
+2. RuntimeAction 不得直接修改 EntityStore；普通 mutation 走 CommandQueue，需要规则解析的 movement 必须走 semantic WorldIntent。
 3. WorldClock pause 时任何普通 movement API 都不得绕过时钟推进 gameplay。
 4. PresentationClock 可以在 gameplay pause 时继续运行。
 5. Pure cosmetic animation 不进入 World state。
 6. 跨时间且影响规则的过程必须成为可检查、可快照的 gameplay state，而不是隐藏 timer。
 7. Actor-local state 不得通过 GlobalState 模拟；多 actor 时同一物品或载具能力不能串到另一只 actor。
 8. Entity-specific cadence 不属于 `time/`；clock sampling 与 gameplay policy 必须分离。
+9. WorldTick phase 之间必须 commit；后续 phase 不得继续读取前一 phase 的旧世界。
