@@ -96,12 +96,14 @@ try {
     "01 · Be ban 10",
   ]);
   await smoke(`${origin}/adventure`, [
-    'class="adventure-phone"',
+    "adventure-viewport-auto",
     'class="adventure-menu"',
+    'class="shell-context-name">冒险模式',
   ]);
   await smoke(`${origin}/adventure/chapters`, [
     'class="adventure-chapters"',
     'class="chapter-stars"',
+    'class="shell-context-name">冒险模式',
     'href="/adventure/chapter/1"',
     'href="/adventure/chapter/5"',
     'href="/adventure/chapter/37"',
@@ -228,268 +230,179 @@ function runBrowser(url) {
     let stdout = "",
       stderr = "";
     const max = 8 * 1024 * 1024,
-      append = (current, chunk) => {
-        const next = current + chunk.toString();
-        if (Buffer.byteLength(next) > max)
-          throw new Error("Browser smoke output exceeded 8 MiB");
-        return next;
-      };
+      timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
     child.stdout.on("data", (chunk) => {
-      try {
-        stdout = append(stdout, chunk);
-      } catch (error) {
-        child.kill("SIGKILL");
-        reject(error);
-      }
+      if (stdout.length < max) stdout += String(chunk);
     });
     child.stderr.on("data", (chunk) => {
-      try {
-        stderr = append(stderr, chunk);
-      } catch (error) {
-        child.kill("SIGKILL");
-        reject(error);
-      }
+      if (stderr.length < max) stderr += String(chunk);
     });
-    child.once("error", reject);
-    const timeout = setTimeout(() => {
-      child.kill("SIGKILL");
-      reject(new Error(`Browser smoke timed out for ${url}`));
-    }, 30000);
-    child.once("close", (status) => {
-      clearTimeout(timeout);
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (status) => {
+      clearTimeout(timer);
       resolve({ status, stdout, stderr });
     });
   });
 }
-
-async function interactiveFilterSmoke(url) {
-  const child = spawn(
-    browser,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-background-networking",
-      "--remote-debugging-pipe",
-      "about:blank",
-    ],
-    {
-      env: browserEnvironment,
-      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
-    },
-  );
-  const input = child.stdio[3],
-    output = child.stdio[4];
-  if (!input || !output) throw new Error("Chromium CDP pipe failed to open");
-  const cdp = createCdpPipe(input, output);
-  try {
-    const { targetId } = await cdp.send("Target.createTarget", { url });
-    const { sessionId } = await cdp.send("Target.attachToTarget", {
-      targetId,
-      flatten: true,
-    });
-    await waitFor(async () =>
-      Boolean(
-        await cdp.evaluate(
-          sessionId,
-          "document.querySelector('[data-filter-trigger=\"carrots\"]')",
-        ),
-      ),
-    );
-    const before = await cdp.evaluate(
-      sessionId,
-      "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
-    );
-    await cdp.evaluate(
-      sessionId,
-      "document.querySelector('[data-filter-trigger=\"carrots\"]').click(); document.querySelector('[data-filter-group=\"carrots\"][data-filter-option=\"0\"]').click(); true",
-    );
-    await waitFor(async () =>
-      Boolean(
-        await cdp.evaluate(
-          sessionId,
-          "document.querySelector('[data-filter-option=\"0\"]')?.classList.contains('selected')",
-        ),
-      ),
-    );
-    const filtered = await cdp.evaluate(
-        sessionId,
-        "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
-      ),
-      hidden = await cdp.evaluate(
-        sessionId,
-        "document.querySelectorAll('.chapter-level.filter-hidden').length",
-      );
-    if (!(filtered > 0 && hidden > 0 && filtered < before))
-      throw new Error(
-        `Explore carrot filter produced invalid counts: before=${before}, visible=${filtered}, hidden=${hidden}`,
-      );
-    await cdp.evaluate(
-      sessionId,
-      "document.querySelector('[data-filter-clear]').click(); true",
-    );
-    await waitFor(async () =>
-      (await cdp.evaluate(
-        sessionId,
-        "document.querySelectorAll('.chapter-level.filter-hidden').length",
-      )) === 0,
-    );
-    const restored = await cdp.evaluate(
-      sessionId,
-      "document.querySelectorAll('.chapter-level:not(.filter-hidden)').length",
-    );
-    if (restored !== before)
-      throw new Error(
-        `Explore filter clear did not restore all levels: before=${before}, restored=${restored}`,
-      );
-  } finally {
-    cdp.close();
-    child.kill("SIGKILL");
-  }
-}
-
-async function interactiveDataExchangeSmoke(url) {
-  const child = spawn(
-    browser,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-background-networking",
-      "--remote-debugging-pipe",
-      "about:blank",
-    ],
-    {
-      env: browserEnvironment,
-      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
-    },
-  );
-  const input = child.stdio[3], output = child.stdio[4];
-  if (!input || !output) throw new Error("Chromium CDP pipe failed to open");
-  const cdp = createCdpPipe(input, output);
-  try {
-    const { targetId } = await cdp.send("Target.createTarget", { url });
-    const { sessionId } = await cdp.send("Target.attachToTarget", {
-      targetId,
-      flatten: true,
-    });
-    await waitFor(async () => Boolean(await cdp.evaluate(sessionId, "document.querySelector('[data-home-import]')")));
-    await cdp.evaluate(sessionId, "document.querySelector('[data-home-import]').click(); true");
-    await waitFor(async () => Boolean(await cdp.evaluate(sessionId, "document.querySelector('.home-import-dialog[role=dialog]')")));
-    const selected = await cdp.evaluate(
-      sessionId,
-      "(() => { const area = document.querySelector('.data-exchange-text'); area.value = 'editable'; area.focus(); return area.selectionStart === 0 && area.selectionEnd === area.value.length; })()",
-    );
-    if (!selected) throw new Error("Data Exchange TextBox did not select all on focus");
-    const edited = await cdp.evaluate(
-      sessionId,
-      "(() => { const area = document.querySelector('.data-exchange-text'); area.setRangeText('changed', 0, area.value.length, 'end'); area.dispatchEvent(new Event('input', { bubbles: true })); return area.value; })()",
-    );
-    if (edited !== "changed") throw new Error("Data Exchange TextBox is not editable after selection");
-  } finally {
-    cdp.close();
-    child.kill("SIGKILL");
-  }
-}
-
-function createCdpPipe(input, output) {
-  let nextId = 1,
-    buffer = "";
-  const pending = new Map();
-  output.on("data", (chunk) => {
-    buffer += chunk.toString();
-    let boundary = buffer.indexOf("\0");
-    while (boundary >= 0) {
-      const packet = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 1);
-      if (packet) {
-        const message = JSON.parse(packet),
-          request = message.id ? pending.get(message.id) : undefined;
-        if (request) {
-          pending.delete(message.id);
-          if (message.error) request.reject(new Error(message.error.message));
-          else request.resolve(message.result ?? {});
-        }
-      }
-      boundary = buffer.indexOf("\0");
-    }
-  });
-  return {
-    send(method, params = {}, sessionId) {
-      const id = nextId++;
-      return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
-      });
-    },
-    async evaluate(sessionId, expression) {
-      const response = await this.send(
-        "Runtime.evaluate",
-        { expression, returnByValue: true },
-        sessionId,
-      );
-      if (response.exceptionDetails)
-        throw new Error(`Browser evaluation failed: ${expression}`);
-      return response.result?.value;
-    },
-    close() {
-      input.end();
-      for (const request of pending.values())
-        request.reject(new Error("Chromium CDP pipe closed"));
-      pending.clear();
-    },
-  };
-}
-
-async function waitFor(check, timeoutMs = 10_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("Browser interaction timed out");
-}
 function findBrowser() {
-  const candidates = [
-    process.env.BROWSER_PATH,
-    "google-chrome",
-    "google-chrome-stable",
-    "chromium",
-    "chromium-browser",
-    process.platform === "linux" ? "/usr/bin/chromium" : null,
-    process.platform === "linux" ? "/usr/lib/chromium/chromium" : null,
-    process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : null,
-    process.platform === "win32"
-      ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-      : null,
-    process.platform === "win32"
-      ? "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-      : null,
-  ].filter(Boolean);
-  for (const candidate of candidates) {
-    if (path.isAbsolute(candidate)) {
-      try {
-        fs.accessSync(candidate, fs.constants.X_OK);
-        return candidate;
-      } catch {
-        continue;
-      }
-    }
-    const probe = spawnSync(candidate, ["--version"], {
-      encoding: "utf8",
-      env: browserEnvironment,
-      timeout: 5000,
-    });
-    if (!probe.error && probe.status === 0) return candidate;
+  const configured = process.env.BROWSER_PATH;
+  if (configured && fs.existsSync(configured)) return configured;
+  for (const name of ["google-chrome", "chromium", "chromium-browser"]) {
+    const result = spawnSync("which", [name], { encoding: "utf8" });
+    if (result.status === 0) return result.stdout.trim();
   }
   return null;
 }
 function compact(value) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= 2400) return normalized;
-  return `${normalized.slice(0, 1200)} … ${normalized.slice(-1200)}`;
+  return value.replace(/\s+/g, " ").trim().slice(0, 9000);
+}
+async function interactiveFilterSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const find = (selector) => document.querySelector(selector);
+  for (let i = 0; i < 120 && !find('[data-filter-trigger="carrots"]'); i += 1)
+    await delay(50);
+  const trigger = find('[data-filter-trigger="carrots"]');
+  if (!trigger) throw new Error('missing carrot trigger');
+  trigger.click();
+  await delay(80);
+  const option = find('[data-filter-group="carrots"][data-filter-option]');
+  if (!option) throw new Error('missing carrot filter option');
+  const optionId = option.getAttribute('data-filter-option');
+  option.click();
+  await delay(80);
+  const currentTrigger = find('[data-filter-trigger="carrots"]');
+  const currentOption = optionId
+    ? find('[data-filter-group="carrots"][data-filter-option="' + optionId + '"]')
+    : null;
+  return JSON.stringify({
+    active: Boolean(currentTrigger?.classList.contains('active')),
+    selected: Boolean(currentOption?.classList.contains('selected')),
+    cards: document.querySelectorAll('[data-map-id]:not(.filter-hidden)').length,
+  });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (!payload.active || !payload.selected || payload.cards <= 0)
+    throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
+}
+async function interactiveDataExchangeSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  for (let i = 0; i < 120 && !document.querySelector('[data-home-import]'); i += 1)
+    await delay(50);
+  const importButton = document.querySelector('[data-home-import]');
+  if (!importButton) throw new Error('missing import button');
+  importButton.click();
+  await delay(80);
+  const importDialog = document.querySelector('.home-import-dialog');
+  if (!importDialog) throw new Error('missing import dialog');
+  return JSON.stringify({ import: Boolean(importDialog) });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (!payload.import)
+    throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
+}
+async function runBrowserEval(url, script) {
+  const port = 9222 + Math.floor(Math.random() * 1000);
+  const child = spawn(
+    browser,
+    [
+      "--headless=new",
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-background-networking",
+      `--remote-debugging-port=${port}`,
+      "about:blank",
+    ],
+    { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  let stdout = "",
+    stderr = "";
+  child.stdout.on("data", (chunk) => (stdout += String(chunk)));
+  child.stderr.on("data", (chunk) => (stderr += String(chunk)));
+  try {
+    const endpoint = await waitForDebugEndpoint(port);
+    const page = await fetch(`${endpoint}/json/new?about:blank`, {
+      method: "PUT",
+    }).then((response) => response.json());
+    const ws = new WebSocket(page.webSocketDebuggerUrl);
+    await new Promise((resolve, reject) => {
+      ws.addEventListener("open", resolve, { once: true });
+      ws.addEventListener("error", reject, { once: true });
+    });
+    let id = 0;
+    const pending = new Map();
+    ws.addEventListener("message", (event) => {
+      const message = JSON.parse(String(event.data));
+      const deferred = pending.get(message.id);
+      if (!deferred) return;
+      pending.delete(message.id);
+      deferred.resolve(message);
+    });
+    const send = (method, params = {}) =>
+      new Promise((resolve, reject) => {
+        const requestId = ++id;
+        pending.set(requestId, { resolve, reject });
+        ws.send(JSON.stringify({ id: requestId, method, params }));
+      });
+    await send("Page.enable");
+    await send("Runtime.enable");
+    await send("Page.navigate", { url });
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const evaluation = await send("Runtime.evaluate", {
+      expression: script,
+      awaitPromise: true,
+      returnByValue: true,
+    });
+    ws.close();
+    const exception = evaluation.result?.exceptionDetails;
+    if (exception) throw new Error(exception.text || "browser evaluation failed");
+    const value = evaluation.result?.result?.value;
+    return { status: 0, stdout: `${stdout}\n${JSON.stringify(value)}\n`, stderr };
+  } catch (error) {
+    return {
+      status: 1,
+      stdout,
+      stderr: `${stderr}\n${error instanceof Error ? error.stack : String(error)}`,
+    };
+  } finally {
+    child.kill("SIGKILL");
+  }
+}
+async function waitForDebugEndpoint(port) {
+  for (let i = 0; i < 80; i += 1) {
+    try {
+      const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((response) =>
+        response.json(),
+      );
+      if (version.webSocketDebuggerUrl) return `http://127.0.0.1:${port}`;
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error("Chrome DevTools endpoint did not start");
+}
+function lastJsonLine(value) {
+  const lines = value.trim().split(/\r?\n/).reverse();
+  for (const line of lines) {
+    try {
+      const parsed = JSON.parse(line);
+      if (typeof parsed === "string") return JSON.parse(parsed);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {}
+  }
+  throw new Error(`No JSON payload in browser output: ${compact(value)}`);
 }

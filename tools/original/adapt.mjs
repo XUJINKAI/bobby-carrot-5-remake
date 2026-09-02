@@ -97,7 +97,7 @@ for (const release of sourceIndex.releases) {
       const document = createMapDocument(
         {
           ...source,
-          objects: adaptObjects(source.objects, id, kind === "bonus"),
+          objects: adaptObjects(source.objects, id),
         },
         {
           id,
@@ -209,11 +209,9 @@ function createMapDocument(source, meta) {
   };
 }
 
-function adaptObjects(objects, mapId, bonus) {
+function adaptObjects(objects, mapId) {
   return objects.map((object) => {
     const properties = { ...(object.properties ?? {}) };
-    if (bonus && object.type === "lock")
-      properties.timedChallengeMs = properties.timedChallengeMs ?? "60000";
     if (object.type === "sandman")
       properties.dialogId =
         properties.dialogId ??

@@ -1,3 +1,4 @@
 export function chapterStars(stars: number): string {
-  return `${"★".repeat(stars)}${"☆".repeat(Math.max(0, 3 - stars))}`;
+  const count = Math.max(0, Math.min(3, Math.floor(stars)));
+  return "★".repeat(count);
 }

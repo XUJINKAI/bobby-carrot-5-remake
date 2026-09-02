@@ -6,6 +6,7 @@ import {
 import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
+  type EconomyState,
   type GlobalState,
   type ProfileCapabilities,
 } from "./GlobalState.js";
@@ -54,6 +55,7 @@ export interface WorldSnapshot {
 
 export interface WorldOptions {
   profile?: Partial<ProfileCapabilities>;
+  economy?: Partial<EconomyState>;
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
   actions?: RuntimeActionRegistry;
@@ -88,7 +90,7 @@ export class World {
       level.width,
       level.height,
     );
-    this.state = createGlobalState(options.profile);
+    this.state = createGlobalState(options.profile, options.economy);
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
@@ -163,6 +165,13 @@ export class World {
 
   setProfile(profile: Partial<ProfileCapabilities>): void {
     this.state.profile = { ...this.state.profile, ...profile };
+  }
+
+  setEconomy(economy: Partial<EconomyState>): void {
+    this.state.economy = {
+      bonusCoins: Math.max(0, Math.floor(economy.bonusCoins ?? this.state.economy.bonusCoins)),
+      goldenCarrots: Math.max(0, Math.floor(economy.goldenCarrots ?? this.state.economy.goldenCarrots)),
+    };
   }
 
   startAction(spec: RuntimeActionSpec): RuntimeActionId {
@@ -279,6 +288,7 @@ export class World {
       };
     }
 
+    this.state.lastReachedSelectors = this.selectorsForPresences(targetStack);
     for (const presence of sourceStack)
       this.runHook("onLeave", presence, actor, direction, queue);
     queue.move(actor.id, to.x, to.y);
@@ -308,7 +318,6 @@ export class World {
     this.state.elapsedMs += time.stepMs;
     const queue = new CommandQueue();
 
-    // 先推进上一 Tick 已经存在的跨时过程；本 Tick 新建 Action 从下一 Tick 才开始计时。
     this.actions.update(time, this.query, queue);
 
     const snapshot = this.entities.all().map((entity) => entity.id);
@@ -566,7 +575,9 @@ export class World {
         return {
           type: "reach",
           target: condition.target,
-          completed: this.hasSelectorAt(this.player, condition.target),
+          completed:
+            this.hasSelectorAt(this.player, condition.target) ||
+            this.state.lastReachedSelectors.includes(condition.target),
         };
       case "fill-all": {
         const targets = this.spatialCellsMatching(condition.target);
@@ -599,6 +610,17 @@ export class World {
       const entity = this.entities.require(presence.entityId);
       return entity.type === selector || presence.traits.includes(selector);
     });
+  }
+
+  private selectorsForPresences(presences: readonly EntityPresence[]): string[] {
+    const selectors = new Set<string>();
+    for (const presence of presences) {
+      const entity = this.entities.get(presence.entityId);
+      if (!entity) continue;
+      selectors.add(entity.type);
+      for (const trait of presence.traits) selectors.add(trait);
+    }
+    return [...selectors];
   }
 
   private spatialCellsMatching(selector: string): CellPosition[] {

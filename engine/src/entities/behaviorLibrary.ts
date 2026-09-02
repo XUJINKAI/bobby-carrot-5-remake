@@ -1,3 +1,4 @@
+import { EntityTypeId } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
 import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
@@ -5,7 +6,19 @@ import type { EntityBehaviorBinding } from "./EntityModule.js";
 
 const collect: Behavior = {
   id: "collectible",
-  onEnter({ self, commands }) {
+  onEnter({ self, query, commands }) {
+    const economy = query.global().economy;
+    if (self.entity.type === EntityTypeId.BONUS_COIN) {
+      commands.setGlobal("economy", {
+        ...economy,
+        bonusCoins: economy.bonusCoins + 1,
+      });
+    } else if (self.entity.type === EntityTypeId.GOLDEN_CARROT) {
+      commands.setGlobal("economy", {
+        ...economy,
+        goldenCarrots: economy.goldenCarrots + 1,
+      });
+    }
     commands.destroy(self.entity.id);
     commands.emit({
       type: `collect-${self.entity.type}`,

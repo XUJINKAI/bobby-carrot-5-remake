@@ -4,12 +4,14 @@ import { EntityTypeId } from "../../model/dist/index.js";
 import {
   adventureLevelId,
   campaignSequenceForChapter,
-  claimPersistentReward,
   completeAdventureLevel,
+  createAdventureLevelInstance,
   createAdventureSave,
+  grantAdventureItem,
+  isAdventureChapterCompleted,
   isAdventureLevelUnlocked,
   planAdventureSession,
-  createAdventureLevelInstance,
+  setAdventureResumeLevel,
   specialSceneIdForSource,
 } from "../dist/index.js";
 
@@ -34,35 +36,40 @@ test("original campaign uses continuous 1-40 ids and inserts bonus records after
   assert.equal(specialSceneIdForSource(5), "campaign-intro");
 });
 
-test("Adventure unlocks each four-chapter group like the original while keeping level progress linear", () => {
+test("every chapter is selectable while progression remains linear inside each chapter", () => {
   let save = createAdventureSave();
-  assert.deepEqual(
-    save.campaign.unlockedChapters,
-    [1, 5, 9, 13, 17, 21, 25, 29, 33, 37],
-  );
-  assert.equal(isAdventureLevelUnlocked(save, "1-1"), true);
-  assert.equal(isAdventureLevelUnlocked(save, "1-2"), false);
-  assert.equal(isAdventureLevelUnlocked(save, "5-1"), true);
-  assert.equal(isAdventureLevelUnlocked(save, "6-1"), false);
-
-  save = completeAdventureLevel(save, "1-1");
-  assert.equal(isAdventureLevelUnlocked(save, "1-2"), true);
-  for (const id of campaignSequenceForChapter(1).slice(1))
-    save = completeAdventureLevel(save, id);
-  assert.deepEqual(
-    save.campaign.unlockedChapters,
-    [1, 2, 3, 4, 5, 9, 13, 17, 21, 25, 29, 33, 37],
-  );
-
-  for (const id of campaignSequenceForChapter(13))
-    save = completeAdventureLevel(save, id);
-  assert.deepEqual(
-    save.campaign.unlockedChapters,
-    [1, 2, 3, 4, 5, 9, 13, 14, 15, 16, 17, 21, 25, 29, 33, 37],
-  );
+  for (const chapter of [1, 2, 20, 40]) {
+    assert.equal(isAdventureLevelUnlocked(save, `${chapter}-1`), true);
+    assert.equal(isAdventureLevelUnlocked(save, `${chapter}-2`), false);
+  }
+  save = completeAdventureLevel(save, "20-1");
+  assert.equal(isAdventureLevelUnlocked(save, "20-2"), true);
+  assert.equal(isAdventureLevelUnlocked(save, "20-3"), false);
 });
 
-test("persistent global rewards are identified by level and map position", () => {
+test("resume follows the last unfinished level and replaying completed levels does not move it", () => {
+  let save = createAdventureSave();
+  assert.equal(save.campaign.resumeLevelId, "1-1");
+  save = setAdventureResumeLevel(save, "25-1");
+  assert.equal(save.campaign.resumeLevelId, "25-1");
+  save = completeAdventureLevel(save, "25-1");
+  assert.equal(save.campaign.resumeLevelId, "25-2");
+  save = setAdventureResumeLevel(save, "25-1");
+  assert.equal(save.campaign.resumeLevelId, "25-2");
+});
+
+test("bonus levels remain mandatory for chapter completion", () => {
+  let save = createAdventureSave();
+  const sequence = campaignSequenceForChapter(1);
+  for (const id of sequence.filter((id) => !id.includes("bonus")))
+    save = completeAdventureLevel(save, id);
+  assert.equal(isAdventureChapterCompleted(save, 1), false);
+  save = completeAdventureLevel(save, "1-bonus-1");
+  save = completeAdventureLevel(save, "1-bonus-2");
+  assert.equal(isAdventureChapterCompleted(save, 1), true);
+});
+
+test("map-native currency remains present on every new Adventure level instance", () => {
   const level = {
     schemaVersion: 1,
     width: 3,
@@ -71,62 +78,68 @@ test("persistent global rewards are identified by level and map position", () =>
       { type: EntityTypeId.START, x: 0, y: 0 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0 },
       { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.EXIT, x: 2, y: 0 },
       { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 1 },
-      { type: EntityTypeId.GROUND_C, x: 2, y: 1 },
       { type: EntityTypeId.BONUS_COIN, x: 1, y: 0 },
-      { type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 1 },
-    ],
-  };
-  let save = createAdventureSave();
-  save = claimPersistentReward(save, "1-1", EntityTypeId.BONUS_COIN, 1, 0);
-  assert.equal(save.economy.bonusCoins, 1);
-  assert.deepEqual(
-    createAdventureLevelInstance("1-1", level, save).entities.filter((entity) =>
-      [EntityTypeId.BONUS_COIN, EntityTypeId.GOLDEN_CARROT].includes(entity.type),
-    ),
-    [{ type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 1 }],
-  );
-  const again = claimPersistentReward(
-    save,
-    "1-1",
-    EntityTypeId.BONUS_COIN,
-    1,
-    0,
-  );
-  assert.equal(again.economy.bonusCoins, 1);
-});
-
-test("Adventure session preserves the adapted map instance semantics", () => {
-  const level = {
-    schemaVersion: 1,
-    width: 3,
-    height: 1,
-    entities: [
-      { type: EntityTypeId.START, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.EXIT, x: 2, y: 0 },
-      { type: EntityTypeId.LOCK, x: 1, y: 0 },
-      { type: EntityTypeId.GOLDEN_CARROT, x: 2, y: 0 },
+      { type: EntityTypeId.GOLDEN_CARROT, x: 0, y: 1 },
     ],
   };
   const save = createAdventureSave();
-  const bonus = createAdventureLevelInstance("1-bonus-1", level, save);
-  const regular = createAdventureLevelInstance("1-1", level, save);
+  const first = createAdventureLevelInstance("1-1", level, save);
+  const second = createAdventureLevelInstance("1-1", level, save);
+  for (const instance of [first, second]) {
+    assert.equal(instance.entities.some((e) => e.type === EntityTypeId.BONUS_COIN), true);
+    assert.equal(instance.entities.some((e) => e.type === EntityTypeId.GOLDEN_CARROT), true);
+  }
+});
 
-  assert.equal(
-    bonus.entities.find((entity) => entity.type === EntityTypeId.LOCK)?.properties,
-    undefined,
+test("Adventure session projects inventory capabilities and wallet into Engine input", () => {
+  let save = createAdventureSave();
+  save.economy.bonusCoins = 7;
+  save.economy.goldenCarrots = 2;
+  save = grantAdventureItem(save, "golden-key");
+  save = grantAdventureItem(save, "speed-shoes");
+  const plan = planAdventureSession("1-bonus-1", save);
+  assert.equal(plan.capabilities.goldenKey, true);
+  assert.equal(plan.capabilities.speedShoes, true);
+  assert.equal(plan.capabilities.coinRadar, false);
+  assert.deepEqual(plan.economy, { bonusCoins: 7, goldenCarrots: 2 });
+  assert.equal(Object.hasOwn(plan, "viewportPolicy"), false);
+});
+
+test("Bonus runtime parameters are injected by Adventure policy, not Original maps", () => {
+  const save = createAdventureSave();
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 4,
+    entities: [
+      { type: EntityTypeId.BEAVER, x: 0, y: 0, direction: "right" },
+      { type: EntityTypeId.LOCK, x: 2, y: 2 },
+    ],
+  };
+  const regularPlan = planAdventureSession("1-1", save);
+  assert.deepEqual(regularPlan.entityPatches, []);
+
+  const bonusPlan = planAdventureSession("1-bonus-1", save, {
+    bonus: {
+      temporaryKeyVendor: {
+        interaction: "bonus-key-vendor",
+        priceBonusCoins: 8,
+      },
+      lock: { deathCountdownSeconds: 45 },
+    },
+  });
+  const prepared = createAdventureLevelInstance(
+    "1-bonus-1",
+    level,
+    save,
+    bonusPlan.entityPatches,
   );
-  assert.equal(
-    regular.entities.find((entity) => entity.type === EntityTypeId.LOCK)?.properties,
-    undefined,
-  );
-  assert.equal(planAdventureSession("1-bonus-1", save).viewportPolicy, "original-portrait");
-  assert.equal(
-    Object.hasOwn(planAdventureSession("1-bonus-1", save), "timedChallengeMs"),
-    false,
-  );
+  assert.deepEqual(prepared.entities[0].properties, {
+    interaction: "bonus-key-vendor",
+    temporaryKeyPriceBonusCoins: 8,
+  });
+  assert.deepEqual(prepared.entities[1].properties, {
+    deathCountdownSeconds: 45,
+  });
 });

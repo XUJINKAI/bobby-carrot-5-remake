@@ -1,115 +1,82 @@
 <script setup lang="ts">
+import type { ImageManager } from "@bobby/engine";
 import type { AdventureChapterRow } from "./types.js";
-import AdventureFrame from "./AdventureFrame.vue";
+import AdventureViewport from "./AdventureViewport.vue";
+import OriginalChapterStatusIcon from "./OriginalChapterStatusIcon.vue";
 
-defineProps<{ rows: AdventureChapterRow[] }>();
+defineProps<{ rows: AdventureChapterRow[]; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
 <template>
-  <AdventureFrame>
-    <header class="adventure-toolbar">
-      <a href="/adventure" @click.prevent="emit('navigate', '/adventure')">←</a>
-      <strong>CHAPTER SELECT</strong>
-      <span />
-    </header>
+  <AdventureViewport>
     <main class="adventure-scroll">
       <div class="adventure-chapters">
-        <template v-for="row in rows" :key="row.number">
-          <a
-            v-if="row.unlocked"
-            class="adventure-chapter"
-            :href="'/adventure/chapter/' + row.number"
-            @click.prevent="emit('navigate', '/adventure/chapter/' + row.number)"
-          >
-            <span class="adventure-chapter-no">
-              {{ String(row.number).padStart(2, "0") }}
-            </span>
-            <span class="adventure-chapter-copy">
-              <strong>{{ row.title }}</strong>
-              <span class="chapter-stars">{{ row.stars }}</span>
-              <small>{{ row.progress }}</small>
-            </span>
-          </a>
-          <div v-else class="adventure-chapter locked" aria-disabled="true">
-            <span class="adventure-chapter-no">
-              {{ String(row.number).padStart(2, "0") }}
-            </span>
-            <span class="adventure-chapter-copy">
-              <strong>{{ row.title }}</strong>
-              <span class="chapter-stars">{{ row.stars }}</span>
-              <small>🔒 LOCKED</small>
-            </span>
-          </div>
-        </template>
+        <a
+          v-for="row in rows"
+          :key="row.number"
+          class="adventure-chapter"
+          :href="'/adventure/chapter/' + row.number"
+          @click.prevent="emit('navigate', '/adventure/chapter/' + row.number)"
+        >
+          <OriginalChapterStatusIcon :images="images" :completed="row.completed" />
+          <span class="adventure-chapter-no">{{ String(row.number).padStart(2, "0") }}</span>
+          <strong>{{ row.title }}</strong>
+          <span class="chapter-stars">{{ row.stars }}</span>
+        </a>
       </div>
     </main>
-  </AdventureFrame>
+  </AdventureViewport>
 </template>
 
 <style scoped>
-.adventure-toolbar {
-  height: 56px;
-  display: grid;
-  grid-template-columns: 52px 1fr 80px;
-  align-items: center;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex: none;
-}
-
-.adventure-toolbar a {
-  color: inherit;
-  text-decoration: none;
-  font-size: 1.35rem;
-}
-
 .adventure-scroll {
+  height: 100%;
   overflow: auto;
-  min-height: 0;
-  flex: 1;
-  padding: 14px;
+  padding: 14px 12px 24px;
+  background: #143678;
+  color: #f4f7ff;
 }
 
 .adventure-chapters {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 7px;
 }
 
 .adventure-chapter {
+  min-height: 58px;
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 38px 36px minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
-  min-height: 72px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  background: #132019;
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 8px;
+  background: rgb(12 41 83 / 88%);
   color: inherit;
   text-decoration: none;
 }
 
-.adventure-chapter.locked {
-  opacity: 0.42;
-  filter: saturate(0.35);
+.adventure-chapter:hover {
+  background: rgb(18 57 108 / 94%);
 }
 
 .adventure-chapter-no {
-  font-size: 1.6rem;
-  font-weight: 900;
-  text-align: center;
+  color: #91aacb;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
-.adventure-chapter-copy {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 3px 8px;
-  align-items: center;
+.adventure-chapter strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
 }
 
-.adventure-chapter-copy small {
-  grid-column: 1 / -1;
-  color: #8fa095;
+.chapter-stars {
+  font-size: 0.76rem;
 }
 </style>

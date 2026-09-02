@@ -1,23 +1,17 @@
 <script setup lang="ts">
 import type { GamePageMode } from "./mountGamePage.js";
+import AdventureViewport from "../adventure/AdventureViewport.vue";
 import GameStage from "./GameStage.vue";
 
 defineProps<{ mode: GamePageMode }>();
 </script>
 
 <template>
-  <div
-    v-if="mode === 'adventure'"
-    class="adventure-desktop adventure-game-desktop"
-  >
-    <div class="adventure-phone adventure-game-phone">
-      <div class="adventure-phone-inner">
-        <div class="game-page original-adventure-game">
-          <GameStage :show-product-stats="false" />
-        </div>
-      </div>
+  <AdventureViewport v-if="mode === 'adventure'" class="adventure-game-viewport">
+    <div class="game-page original-adventure-game">
+      <GameStage :show-product-stats="false" />
     </div>
-  </div>
+  </AdventureViewport>
   <div v-else class="game-page">
     <GameStage :show-product-stats="true" />
   </div>
@@ -36,7 +30,6 @@ defineProps<{ mode: GamePageMode }>();
 }
 
 .original-adventure-game {
-  height: 100%;
   min-height: 0;
 }
 
@@ -52,19 +45,7 @@ defineProps<{ mode: GamePageMode }>();
   display: block;
 }
 
-.adventure-game-desktop .debug-panel {
+.adventure-game-viewport .debug-panel {
   display: none !important;
-}
-
-.adventure-game-phone {
-  width: min(100vw, calc(100dvh * 0.625));
-  height: 100dvh;
-}
-
-@media (max-width: 680px) {
-  .adventure-game-phone {
-    width: 100vw;
-    height: 100dvh;
-  }
 }
 </style>

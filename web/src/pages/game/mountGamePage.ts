@@ -1,18 +1,22 @@
 import {
-  claimPersistentReward,
+  BONUS_KEY_TRIAL_EVENT,
+  completeAdventureEvent,
   completeAdventureLevel,
-  isAdventureLevelUnlocked,
-  planAdventureSession,
   createAdventureLevelInstance,
+  isAdventureLevelUnlocked,
+  planAdventureProfile,
+  planAdventureSession,
+  setAdventureResumeLevel,
   type AdventureSave,
 } from "@bobby/adventure";
 import type { AudioRuntime, ImageManager } from "@bobby/engine";
-import { EntityTypeId, type LevelMap } from "@bobby/model";
+import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
   AdventureIndex,
   AdventureIndexChapter,
   AdventureIndexLevel,
+  AdventureIndexSpecialScene,
   MapMeta,
 } from "../../services/catalog/catalog.js";
 import {
@@ -56,6 +60,19 @@ export interface GameIdentity {
   title: string;
 }
 
+/** Adventure 用“横向可见格数”表达相机产品策略；Engine 仍只处理 zoom。 */
+export interface AdventureEngineCameraPolicy {
+  minColumns: number;
+  defaultColumns: number;
+  maxColumns: number;
+}
+
+export const DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY: AdventureEngineCameraPolicy = {
+  minColumns: 6,
+  defaultColumns: 7.5,
+  maxColumns: 10,
+};
+
 export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
@@ -67,6 +84,11 @@ export interface GamePageContext {
   mapMeta?: MapMeta;
   adventureChapter?: AdventureIndexChapter;
   adventureLevel?: AdventureIndexLevel;
+  adventureScene?: AdventureIndexSpecialScene;
+  adventureBackPath?: string;
+  adventureCompletionPath?: string;
+  adventureHudEconomy?: boolean;
+  adventureCameraPolicy?: Partial<AdventureEngineCameraPolicy>;
   mode: GamePageMode;
 }
 
@@ -75,6 +97,7 @@ export async function renderGamePage(
 ): Promise<PageController> {
   const {
     app,
+    adventure,
     audio,
     images,
     navigate,
@@ -83,30 +106,51 @@ export async function renderGamePage(
     mapMeta,
     adventureChapter,
     adventureLevel,
+    adventureScene,
+    adventureBackPath,
+    adventureCompletionPath,
+    adventureHudEconomy,
+    adventureCameraPolicy,
     mode,
   } = context;
-  if (mode === "adventure" && (!adventureChapter || !adventureLevel)) {
-    throw new Error("Adventure GamePage 需要 Campaign node");
+  const campaignNode = Boolean(adventureChapter && adventureLevel);
+  if (mode === "adventure" && !campaignNode && !adventureScene) {
+    throw new Error("Adventure GamePage 需要 Campaign node 或 Special Scene");
   }
 
   let adventureSave: AdventureSave | null =
     mode === "adventure" ? loadAdventureSave() : null;
   if (
     adventureSave &&
+    campaignNode &&
     !isAdventureLevelUnlocked(adventureSave, adventureLevel!.id)
   ) {
     navigate(`/adventure/chapter/${adventureChapter!.id}`);
     return NOOP_CONTROLLER;
   }
+  if (adventureSave && campaignNode) {
+    const next = setAdventureResumeLevel(adventureSave, adventureLevel!.id);
+    if (next.campaign.resumeLevelId !== adventureSave.campaign.resumeLevelId)
+      adventureSave = saveAdventureSave(next);
+  }
   if (mode === "explore") {
     rememberExploreMap(identity.collection, identity.id);
   }
 
+  const sessionPlan =
+    adventureSave && campaignNode
+      ? planAdventureSession(adventureLevel!.id, adventureSave)
+      : null;
   const plan = adventureSave
-    ? planAdventureSession(adventureLevel!.id, adventureSave)
+    ? (sessionPlan ?? planAdventureProfile(adventureSave))
     : null;
-  const sessionLevel = adventureSave
-    ? createAdventureLevelInstance(adventureLevel!.id, level, adventureSave)
+  const sessionLevel = adventureSave && sessionPlan
+    ? createAdventureLevelInstance(
+        adventureLevel!.id,
+        level,
+        adventureSave,
+        sessionPlan.entityPatches,
+      )
     : level;
   const screenControlEnabled = loadScreenControlPreference();
   configureShell(
@@ -131,15 +175,27 @@ export async function renderGamePage(
     gameOptions: {
       audio,
       images,
-      profile: adventureSave
+      ...(adventureSave
         ? {
-            superKey: plan!.capabilities.goldenKey,
-            speedShoes: plan!.capabilities.speedShoes,
+            profile: {
+              superKey: plan!.capabilities.goldenKey,
+              speedShoes: plan!.capabilities.speedShoes,
+              coinRadar: plan!.capabilities.coinRadar,
+              bonusKeyTrialUsed: plan!.capabilities.bonusKeyTrialUsed,
+            },
+            economy: plan!.economy,
           }
-        : { superKey: true },
+        : { profile: { superKey: true } }),
     },
     runtime: {
-      hud: true,
+      hud:
+        mode === "adventure"
+          ? {
+              objective: true,
+              inventory: true,
+              economy: adventureHudEconomy === true,
+            }
+          : { objective: true, inventory: true, economy: true },
       input: {
         undo: mode === "explore",
         debug: mode === "explore",
@@ -156,47 +212,55 @@ export async function renderGamePage(
   let levelStartedAt = performance.now();
   let debugInspection: string | null = null;
   let visibleResult: "death" | "complete" | null = null;
-  let rewardsProcessed = "";
+  let persistedAdventureSignature = "";
+  let completionNavigationStarted = false;
 
+  const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
+  let adventureCameraViewportWidth = 0;
   const applyAdventureCamera = (): void => {
     if (mode !== "adventure") return;
     const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const minZoom = Math.max(0.72, width / (game.sourceTileSize * 9));
-    game.setZoomLimits(minZoom, 2.75);
-    if (game.zoom < minZoom) game.setZoom(minZoom);
+    const tileSize = game.sourceTileSize;
+    const currentColumns =
+      adventureCameraViewportWidth > 0
+        ? adventureCameraViewportWidth / (tileSize * game.zoom)
+        : cameraPolicy.defaultColumns;
+    const targetColumns = Math.min(
+      cameraPolicy.maxColumns,
+      Math.max(cameraPolicy.minColumns, currentColumns),
+    );
+    const zoomForColumns = (columns: number): number =>
+      width / (tileSize * columns);
+    game.setZoomLimits(
+      zoomForColumns(cameraPolicy.maxColumns),
+      zoomForColumns(cameraPolicy.minColumns),
+    );
+    game.setZoom(zoomForColumns(targetColumns));
+    adventureCameraViewportWidth = width;
   };
   applyAdventureCamera();
   if (mode === "adventure") {
     window.addEventListener("resize", applyAdventureCamera);
   }
 
-  const processAdventureRewards = (): void => {
-    if (!adventureSave || !adventureLevel) return;
-    const signature = JSON.stringify(game.lastWorldEvents);
-    if (signature === rewardsProcessed) return;
-    rewardsProcessed = signature;
-    let next = adventureSave;
-    for (const event of game.lastWorldEvents) {
-      if (event.x === undefined || event.y === undefined) continue;
-      if (event.type === "collect-bonus-coin") {
-        next = claimPersistentReward(
-          next,
-          adventureLevel.id,
-          EntityTypeId.BONUS_COIN,
-          event.x,
-          event.y,
-        );
-      } else if (event.type === "collect-golden-carrot") {
-        next = claimPersistentReward(
-          next,
-          adventureLevel.id,
-          EntityTypeId.GOLDEN_CARROT,
-          event.x,
-          event.y,
-        );
-      }
+  const persistAdventureSession = (): void => {
+    if (!adventureSave || !game.hasLevel) return;
+    const state = game.state;
+    const signature = JSON.stringify({
+      economy: state.economy,
+      bonusKeyTrialUsed: state.profile.bonusKeyTrialUsed,
+    });
+    if (signature === persistedAdventureSignature) return;
+    persistedAdventureSignature = signature;
+    let next = structuredClone(adventureSave);
+    next.economy = { ...state.economy };
+    if (
+      state.profile.bonusKeyTrialUsed &&
+      !next.campaign.completedEvents.includes(BONUS_KEY_TRIAL_EVENT)
+    ) {
+      next = completeAdventureEvent(next, BONUS_KEY_TRIAL_EVENT);
     }
-    if (next !== adventureSave) adventureSave = saveAdventureSave(next);
+    adventureSave = saveAdventureSave(next);
   };
 
   const closeResult = (): void => {
@@ -217,20 +281,30 @@ export async function renderGamePage(
       closeResult();
       return;
     }
+    if (
+      kind === "complete" &&
+      adventureCompletionPath &&
+      !completionNavigationStarted
+    ) {
+      completionNavigationStarted = true;
+      persistAdventureSession();
+      navigate(adventureCompletionPath);
+      return;
+    }
     if (visibleResult === kind) return;
     visibleResult = kind;
     if (kind === "complete") {
       let nextId: string | undefined;
-      if (adventureSave && adventureLevel && adventureChapter) {
+      if (adventureSave && campaignNode) {
         adventureSave = saveAdventureSave(
-          completeAdventureLevel(adventureSave, adventureLevel.id),
+          completeAdventureLevel(adventureSave, adventureLevel!.id),
         );
-        nextId = nextAdventureLevel(adventureChapter, adventureLevel.id)?.id;
-      } else {
+        nextId = nextAdventureLevel(adventure, adventureLevel!.id)?.id;
+      } else if (mode === "explore") {
         markExploreMapCompleted(identity.collection, identity.id);
         nextId = mapMeta?.next;
       }
-      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)} · 金胡萝卜 ${state.goldenCarrotsInLevel}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "章节列表" : "自由探索"}</button></div>`;
+      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "返回冒险模式" : "自由探索"}</button></div>`;
     } else {
       resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
@@ -238,7 +312,7 @@ export async function renderGamePage(
   };
 
   const update = (): void => {
-    processAdventureRewards();
+    persistAdventureSession();
     if (productStats && game.hasLevel) {
       productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
     }
@@ -278,10 +352,11 @@ export async function renderGamePage(
     }
   };
   const askRestart = (): void => {
+    persistAdventureSession();
     game.restart();
     levelStartedAt = performance.now();
     debugInspection = null;
-    rewardsProcessed = "";
+    completionNavigationStarted = false;
     closeResult();
     update();
   };
@@ -295,7 +370,7 @@ export async function renderGamePage(
     if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
     else if (action === "levels") {
-      navigate(backPath(identity, adventureChapter, mode));
+      navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "next" && button.dataset.next) {
       navigate(
         mode === "adventure"
@@ -311,7 +386,8 @@ export async function renderGamePage(
   const onGameShellAction = (event: Event): void => {
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
-      navigate(backPath(identity, adventureChapter, mode));
+      persistAdventureSession();
+      navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "edit") {
       navigate(
         identity.collection === "imported" ? "/edit" : editorMapPath(identity),
@@ -338,6 +414,7 @@ export async function renderGamePage(
 
   return {
     destroy(): void {
+      persistAdventureSession();
       window.clearInterval(statisticsTimer);
       if (mode === "adventure") {
         window.removeEventListener("resize", applyAdventureCamera);
@@ -351,11 +428,12 @@ export async function renderGamePage(
 }
 
 function nextAdventureLevel(
-  chapter: AdventureIndexChapter,
+  adventure: AdventureIndex,
   currentId: string,
 ): AdventureIndexLevel | undefined {
-  const index = chapter.levels.findIndex((level) => level.id === currentId);
-  return index >= 0 ? chapter.levels[index + 1] : undefined;
+  const levels = adventure.chapters.flatMap((chapter) => chapter.levels);
+  const index = levels.findIndex((level) => level.id === currentId);
+  return index >= 0 ? levels[index + 1] : undefined;
 }
 
 function gameShellConfig(
@@ -427,14 +505,37 @@ function gameShellConfig(
 
 function backPath(
   identity: GameIdentity,
-  chapter: AdventureIndexChapter | undefined,
   mode: GamePageMode,
+  adventureBackPath?: string,
 ): string {
   return mode === "adventure"
-    ? `/adventure/chapter/${chapter!.id}`
+    ? (adventureBackPath ?? "/adventure")
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
+}
+
+function resolveAdventureCameraPolicy(
+  override?: Partial<AdventureEngineCameraPolicy>,
+): AdventureEngineCameraPolicy {
+  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY;
+  const minColumns = positiveFinite(override?.minColumns, defaults.minColumns);
+  const maxColumns = Math.max(
+    minColumns,
+    positiveFinite(override?.maxColumns, defaults.maxColumns),
+  );
+  const defaultColumns = Math.min(
+    maxColumns,
+    Math.max(
+      minColumns,
+      positiveFinite(override?.defaultColumns, defaults.defaultColumns),
+    ),
+  );
+  return { minColumns, defaultColumns, maxColumns };
+}
+
+function positiveFinite(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
 function bindGameShell(

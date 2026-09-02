@@ -17,6 +17,7 @@ import {
   renderAdventureChapter,
   renderAdventureChapters,
   renderAdventureHome,
+  renderAdventureNightTrain,
 } from "../pages/adventure/mountAdventurePages.js";
 import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
 import { renderEmbedPage } from "../pages/embed/mountEmbedPage.js";
@@ -178,6 +179,30 @@ export class BobbyApp {
       this.controller = renderAdventureChapters(context);
       return;
     }
+    if (path === "/adventure/beaver-shop") {
+      await this.renderAdventureScene("beaver-shop", context, "/adventure", true);
+      return;
+    }
+    if (path === "/adventure/night-train") {
+      this.controller = renderAdventureNightTrain(context);
+      return;
+    }
+    if (path === "/adventure/night-train/dream-machine") {
+      await this.renderAdventureScene(
+        "dream-machine",
+        context,
+        "/adventure/night-train",
+      );
+      return;
+    }
+    if (path === "/adventure/night-train/cloud-9") {
+      await this.renderAdventureScene(
+        "cloud-9",
+        context,
+        "/adventure/night-train",
+      );
+      return;
+    }
     if (path.startsWith("/adventure/chapter/")) {
       const chapter = Number(path.split("/").pop());
       if (!Number.isInteger(chapter)) {
@@ -315,6 +340,38 @@ export class BobbyApp {
       },
       adventureChapter: found.chapter,
       adventureLevel: found.level,
+      adventureBackPath: "/adventure",
+      mode: "adventure",
+    });
+  }
+
+  private async renderAdventureScene(
+    sceneId: string,
+    context: PageContext,
+    backPath: string,
+    economyHud = false,
+  ): Promise<void> {
+    const scene = this.adventure.specialScenes.find((item) => item.id === sceneId);
+    if (!scene) {
+      this.navigate(backPath);
+      return;
+    }
+    const ref = parseMapReference(scene.map);
+    if (!ref) throw new Error(`无效 Adventure scene map reference：${scene.map}`);
+    const resolved = await resolveMapDocument(ref);
+    this.controller = await renderGamePage({
+      ...context,
+      level: resolved.level,
+      mapMeta: resolved.document.meta,
+      identity: {
+        collection: "adventure",
+        id: scene.id,
+        title: scene.name,
+      },
+      adventureScene: scene,
+      adventureBackPath: backPath,
+      adventureCompletionPath: "/adventure",
+      adventureHudEconomy: economyHud,
       mode: "adventure",
     });
   }
