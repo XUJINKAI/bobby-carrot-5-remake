@@ -75,6 +75,28 @@ test("Bobby walking progress drives one eight-frame directional strip", () => {
   });
 });
 
+test("Bobby Ice slide stays on movement frame seven", () => {
+  const composition = bobbyVisual({
+    direction: "left",
+    runtime: {
+      offsetX: 0.5,
+      moving: true,
+      progress: 0.5,
+      animation: "ice",
+      direction: "left",
+    },
+  });
+  assert.deepEqual(composition.layers[0], {
+    kind: "image",
+    asset: "bobby-left",
+    frameColumns: 8,
+    frameRows: 1,
+    frameIndex: 6,
+    anchor: "bottom",
+    offsetY: -12,
+  });
+});
+
 test("Bobby idle switches to the three-frame b4 strip only after five seconds", () => {
   const before = bobbyVisual({
     runtime: { moving: false, progress: 1, stationarySinceMs: 1000 },
