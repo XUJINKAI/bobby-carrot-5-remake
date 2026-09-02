@@ -44,6 +44,7 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
     "hazard",
     "lock",
     "mowable",
+    "pickup",
     "portal",
     "shovelable",
     "stateful-block",
