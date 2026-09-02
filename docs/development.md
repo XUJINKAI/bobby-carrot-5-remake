@@ -24,21 +24,19 @@ npm run dev
 
 开发服务器由 Vite 提供源码级热更新。`web/src`、`engine/src`、`editor/src`、`adventure/src` 和 `model/src` 的修改会直接参与下一次模块编译；Vue 组件支持 HMR，游戏运行时模块更新后可能触发整页刷新。
 
-单独启动 Editor 开发入口：
+Editor 使用同一个 Web 开发入口，可直接打开：
 
-```bash
-npm run dev:editor
+```text
+http://localhost:5173/edit
 ```
-
-默认地址：`http://localhost:5175/edit`。
 
 如果只需要预览已有 `dist/`：
 
 ```bash
-npm run serve
+npm run preview
 ```
 
-该命令使用静态服务器，不监听源码变化。
+该命令使用项目自带静态服务器，不监听源码变化，也不会重新构建。预览服务器按照正式构建的 route shell 提供页面：合法路径读取对应的 `dist/<path>/index.html`，不存在的路径返回 404。
 
 ## Workspace
 
@@ -67,6 +65,8 @@ npm run build
 dist/
 ```
 
+Web 仍使用同一套 SPA bundle。构建会根据 Map / Adventure Catalog 为合法公开路径生成静态 route shell，并同时生成 `sitemap.xml`、`robots.txt` 与 `404.html`。每个 route shell 只提供该 URL 对应的 HTML `<head>` 和 SPA 挂载入口，页面交互继续由 Web SPA 接管。
+
 以下目录均为生成物，不提交 Git：
 
 ```text
@@ -87,17 +87,27 @@ tmp/
 
 ## 部署
 
-`/explore/*`、`/adventure/*`、`/settings`、`/edit/*` 等均为 SPA 路由。部署服务器应仅对应用路由 fallback 到 `/index.html`；缺失的静态资源必须返回真正的 404，不能被 SPA fallback 吞掉。
+正式站点为 `https://bc5r.xujinkai.net`。
+
+部署服务器应优先提供实际静态文件。对于无扩展名的页面路径，例如 `/explore/play/original/1-1`，应定位到对应的 `/explore/play/original/1-1/index.html`；对应 route shell 不存在时返回真正的 404。
+
+Vercel 的规则维护在根目录 `vercel.json`。其他静态服务器应采用等价语义，不应把任意未知路径统一 fallback 到根 `/index.html`。
 
 ## 机关与 Editor 调试
 
-Engine 机关调试统一通过 Editor Play Test。可以打开：
+Engine 机关调试统一通过 Editor Play Test。打开 Catalog 地图时使用 Editor fragment：
 
 ```text
-/edit/<collection>/<map-id>
+/edit#map=<collection>/<map-id>
 ```
 
-也可以 Import `editor/examples/mechanics-smoke.json` 等测试地图。
+例如：
+
+```text
+/edit#map=original/1-1
+```
+
+也可以通过 Data Exchange 导入测试地图。
 
 新增或修改机制的完整流程见 [`workflows/add-mechanic.md`](workflows/add-mechanic.md)。
 

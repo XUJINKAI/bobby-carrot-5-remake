@@ -19,8 +19,22 @@ export function parseMapPlayUrl(
   return { collection, id };
 }
 
+export function parseEditorMapHash(hash: string): ExploreMapRef | null {
+  const value = new URLSearchParams(hash.replace(/^#/, "")).get("map");
+  if (!value) return null;
+  const [collectionPart, idPart, extra] = value.split("/");
+  if (!collectionPart || !idPart || extra !== undefined) return null;
+  const collection = decodeURIComponent(collectionPart);
+  const id = decodeURIComponent(idPart);
+  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(collection)) return null;
+  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(id)) return null;
+  return { collection, id };
+}
+
 export function exploreCollectionPath(collection: string): string {
-  return `/explore/${encodeURIComponent(collection)}`;
+  return collection.toLowerCase() === "original"
+    ? "/explore"
+    : `/explore/${encodeURIComponent(collection)}`;
 }
 
 export function explorePlayPath(ref: ExploreMapRef): string {
@@ -28,5 +42,5 @@ export function explorePlayPath(ref: ExploreMapRef): string {
 }
 
 export function editorMapPath(ref: ExploreMapRef): string {
-  return `/edit/${encodeURIComponent(ref.collection)}/${encodeURIComponent(ref.id)}`;
+  return `/edit#map=${encodeURIComponent(ref.collection)}/${encodeURIComponent(ref.id)}`;
 }

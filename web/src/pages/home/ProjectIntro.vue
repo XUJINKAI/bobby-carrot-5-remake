@@ -67,7 +67,6 @@ defineProps<{ images: ImageManager }>();
   display: grid;
   gap: clamp(64px, 10vw, 120px);
   padding: clamp(90px, 12vw, 150px) 0 96px;
-  border-top: 1px solid var(--bc-panel-border);
 }
 
 .home-about-heading {

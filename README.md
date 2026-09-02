@@ -4,7 +4,7 @@
 
 本项目使用完全重写的游戏引擎，在保留原版关卡原汁原味的基础上，额外新增了地图编辑器以及地图分享功能，也预留了接口用于扩展新的地图机制。
 
-在线游玩：<https://xujinkai.github.io/bobby-carrot-5-remake>
+在线游玩：<https://bc5r.xujinkai.net>
 
 ## 特性
 

@@ -1,12 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-const STATIC_NAMESPACES = [
-  "/assets/",
-  "/model/",
-  "/engine/",
-  "/editor/",
-  "/vendor/",
-];
+
 export function resolveDistRequest(base, requestUrl) {
   const url = new URL(requestUrl ?? "/", "http://localhost");
   let pathname;
@@ -15,27 +9,21 @@ export function resolveDistRequest(base, requestUrl) {
   } catch {
     return { status: 400, message: "Bad path encoding" };
   }
+
   const resolvedBase = path.resolve(base);
-  let file = path.resolve(resolvedBase, `.${pathname}`),
-    normalizedRoot = `${resolvedBase}${path.sep}`;
+  let file = path.resolve(resolvedBase, `.${pathname}`);
+  const normalizedRoot = `${resolvedBase}${path.sep}`;
   if (file !== resolvedBase && !file.startsWith(normalizedRoot))
     return { status: 403, message: "Forbidden" };
+
   if (fs.existsSync(file) && fs.statSync(file).isDirectory())
     file = path.join(file, "index.html");
   if (fs.existsSync(file) && fs.statSync(file).isFile())
     return { status: 200, file };
-  if (shouldFallbackToSpa(pathname)) {
-    const index = path.join(resolvedBase, "index.html");
-    if (fs.existsSync(index))
-      return { status: 200, file: index, spaFallback: true };
-  }
+
   return { status: 404, message: "Not found" };
 }
-export function shouldFallbackToSpa(pathname) {
-  if (STATIC_NAMESPACES.some((prefix) => pathname.startsWith(prefix)))
-    return false;
-  return path.extname(pathname) === "";
-}
+
 export function contentType(file) {
   switch (path.extname(file).toLowerCase()) {
     case ".html":
@@ -54,10 +42,15 @@ export function contentType(file) {
       return "audio/midi";
     case ".svg":
       return "image/svg+xml";
+    case ".xml":
+      return "application/xml; charset=utf-8";
+    case ".txt":
+      return "text/plain; charset=utf-8";
     default:
       return "application/octet-stream";
   }
 }
+
 export function serveDistRequest(base, request, response) {
   const result = resolveDistRequest(base, request.url);
   if (!result.file) {
