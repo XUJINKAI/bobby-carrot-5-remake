@@ -105,7 +105,7 @@ export class Game {
   private readonly timing: EngineTiming;
   private readonly historyPolicy: HistoryPolicy;
   private readonly configuredControls: readonly ControlBinding[] | null;
-  private controlBindings: ControlBinding[] = [];
+  private controlBindings: readonly ControlBinding[] = [];
   private primaryActorIdValue: EntityId | null = null;
   private readonly worldClock: WorldClock;
   private readonly presentationClock: PresentationClock;
