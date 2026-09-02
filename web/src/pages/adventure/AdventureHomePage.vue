@@ -2,6 +2,7 @@
 import type { ImageManager } from "@bobby/engine";
 import type { AdventureHomeView } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
+import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
 import AdventureViewport from "./AdventureViewport.vue";
 
 defineProps<{ view: AdventureHomeView; images: ImageManager }>();
@@ -11,6 +12,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 <template>
   <AdventureViewport>
     <div class="adventure-home">
+      <OriginalStarfield class="adventure-home-starfield" :images="images" />
       <div class="adventure-home-hero" aria-hidden="true">
         <OriginalFlightScene :images="images" :show-stars="false" />
       </div>
@@ -64,9 +66,16 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   color: #f5f8ff;
 }
 
+.adventure-home-starfield {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
 .adventure-home-hero {
   position: absolute;
   inset: 0;
+  z-index: 1;
   overflow: hidden;
   pointer-events: none;
 }
@@ -94,7 +103,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 
 .adventure-menu {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(378px, calc(100% - 28px));
   margin: 0 auto;
   padding-top: min(44vh, 320px);
@@ -145,7 +154,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 
 .adventure-wallet {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   left: 50%;
   bottom: 13px;
   width: min(300px, calc(100% - 32px));
