@@ -9,13 +9,12 @@ import { RuntimeActionScheduler } from "../dist/world/action/RuntimeActionSchedu
 const query = {};
 const commands = {};
 
-test("RuntimeActionScheduler derives blocking and camera policy from active actions", () => {
+test("RuntimeAction focus owns camera and necessarily blocks controlled input", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(
     createDelayRuntimeAction(125, {
       ownerEntityId: 7,
-      blocksInput: true,
-      cameraTarget: 7,
+      focus: { entityId: 7 },
       reason: "test-motion",
     }),
   );
@@ -27,6 +26,13 @@ test("RuntimeActionScheduler derives blocking and camera policy from active acti
   assert.equal(scheduler.inputBlocked, true);
   scheduler.update({ tick: 1, stepMs: 62.5 }, query, commands);
   assert.equal(scheduler.inputBlocked, false);
+  assert.equal(scheduler.cameraTarget, null);
+});
+
+test("RuntimeAction may block input without taking camera focus", () => {
+  const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
+  scheduler.start(createDelayRuntimeAction(125, { blocksInput: true }));
+  assert.equal(scheduler.inputBlocked, true);
   assert.equal(scheduler.cameraTarget, null);
 });
 

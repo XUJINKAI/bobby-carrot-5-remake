@@ -1,36 +1,49 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {
+  ORIGINAL_GAMEPLAY_TIMING,
+  resolveGameplayTiming,
+} from "../dist/time/GameplayTiming.js";
 import { applyMotionEasing } from "../dist/visual/tuning/PresentationTuning.js";
 import {
   ORIGINAL_TUNING,
   resolveOriginalTuning,
 } from "../dist/visual/tuning/original.js";
 
-test("ORIGINAL_TUNING owns visual motion timing instead of Game literals", () => {
-  assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.speed, 70);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.ice, 88);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.tide, 132);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.flight, 94);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.leaf, 115);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs["mower-exit"], 105);
-  assert.equal(ORIGINAL_TUNING.motion.speedShoesScale, 0.76);
+test("original presentation defaults to canonical gameplay cadence", () => {
+  assert.equal(ORIGINAL_GAMEPLAY_TIMING.motion.normalMs, 132);
+  assert.equal(ORIGINAL_TUNING.motion.normalMs, ORIGINAL_GAMEPLAY_TIMING.motion.normalMs);
+  assert.deepEqual(ORIGINAL_TUNING.motion.forcedMs, ORIGINAL_GAMEPLAY_TIMING.motion.forcedMs);
+  assert.equal(
+    ORIGINAL_TUNING.motion.speedShoesScale,
+    ORIGINAL_GAMEPLAY_TIMING.motion.speedShoesScale,
+  );
   assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
 });
 
-test("runtime tuning override is partial and keeps the remaining original profile", () => {
-  const tuned = resolveOriginalTuning({
+test("presentation override does not mutate canonical gameplay timing", () => {
+  const presentation = resolveOriginalTuning({
     motion: {
-      normalMs: 120,
-      forcedMs: { ice: 80 },
+      normalMs: 20,
+      forcedMs: { ice: 10 },
       easing: "ease-in-out",
     },
   });
-  assert.equal(tuned.motion.normalMs, 120);
-  assert.equal(tuned.motion.forcedMs.ice, 80);
-  assert.equal(tuned.motion.forcedMs.speed, 70);
-  assert.equal(tuned.motion.speedShoesScale, 0.76);
-  assert.equal(tuned.motion.easing, "ease-in-out");
+  const gameplay = resolveGameplayTiming();
+
+  assert.equal(presentation.motion.normalMs, 20);
+  assert.equal(presentation.motion.forcedMs.ice, 10);
+  assert.equal(gameplay.motion.normalMs, 132);
+  assert.equal(gameplay.motion.forcedMs.ice, 88);
+});
+
+test("gameplay timing can be overridden independently from presentation", () => {
+  const gameplay = resolveGameplayTiming({
+    motion: { normalMs: 150, forcedMs: { speed: 90 } },
+  });
+  assert.equal(gameplay.motion.normalMs, 150);
+  assert.equal(gameplay.motion.forcedMs.speed, 90);
+  assert.equal(gameplay.motion.forcedMs.ice, 88);
   assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);
 });
 
