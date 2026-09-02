@@ -60,17 +60,17 @@ export interface GameIdentity {
   title: string;
 }
 
-/** Adventure 对 Engine camera 的产品约束入口；具体数值后续可以独立调整。 */
-export interface AdventureEngineCameraLimits {
-  minZoom: number;
-  maxZoom: number;
-  maxVisibleColumns: number;
+/** Adventure 用“横向可见格数”表达相机产品策略；Engine 仍只处理 zoom。 */
+export interface AdventureEngineCameraPolicy {
+  minColumns: number;
+  defaultColumns: number;
+  maxColumns: number;
 }
 
-export const DEFAULT_ADVENTURE_ENGINE_CAMERA_LIMITS: AdventureEngineCameraLimits = {
-  minZoom: 0.72,
-  maxZoom: 2.75,
-  maxVisibleColumns: 9,
+export const DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY: AdventureEngineCameraPolicy = {
+  minColumns: 6,
+  defaultColumns: 7.5,
+  maxColumns: 10,
 };
 
 export interface GamePageContext {
@@ -88,7 +88,7 @@ export interface GamePageContext {
   adventureBackPath?: string;
   adventureCompletionPath?: string;
   adventureHudEconomy?: boolean;
-  adventureCameraLimits?: Partial<AdventureEngineCameraLimits>;
+  adventureCameraPolicy?: Partial<AdventureEngineCameraPolicy>;
   mode: GamePageMode;
 }
 
@@ -110,7 +110,7 @@ export async function renderGamePage(
     adventureBackPath,
     adventureCompletionPath,
     adventureHudEconomy,
-    adventureCameraLimits,
+    adventureCameraPolicy,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -215,15 +215,28 @@ export async function renderGamePage(
   let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
 
-  const cameraLimits = resolveAdventureCameraLimits(adventureCameraLimits);
+  const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
+  let adventureCameraViewportWidth = 0;
   const applyAdventureCamera = (): void => {
     if (mode !== "adventure") return;
     const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const fitColumnsZoom =
-      width / (game.sourceTileSize * cameraLimits.maxVisibleColumns);
-    const minZoom = Math.max(cameraLimits.minZoom, fitColumnsZoom);
-    game.setZoomLimits(minZoom, cameraLimits.maxZoom);
-    if (game.zoom < minZoom) game.setZoom(minZoom);
+    const tileSize = game.sourceTileSize;
+    const currentColumns =
+      adventureCameraViewportWidth > 0
+        ? adventureCameraViewportWidth / (tileSize * game.zoom)
+        : cameraPolicy.defaultColumns;
+    const targetColumns = Math.min(
+      cameraPolicy.maxColumns,
+      Math.max(cameraPolicy.minColumns, currentColumns),
+    );
+    const zoomForColumns = (columns: number): number =>
+      width / (tileSize * columns);
+    game.setZoomLimits(
+      zoomForColumns(cameraPolicy.maxColumns),
+      zoomForColumns(cameraPolicy.minColumns),
+    );
+    game.setZoom(zoomForColumns(targetColumns));
+    adventureCameraViewportWidth = width;
   };
   applyAdventureCamera();
   if (mode === "adventure") {
@@ -502,18 +515,23 @@ function backPath(
       : exploreCollectionPath(identity.collection);
 }
 
-function resolveAdventureCameraLimits(
-  override?: Partial<AdventureEngineCameraLimits>,
-): AdventureEngineCameraLimits {
-  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_LIMITS;
-  return {
-    minZoom: positiveFinite(override?.minZoom, defaults.minZoom),
-    maxZoom: positiveFinite(override?.maxZoom, defaults.maxZoom),
-    maxVisibleColumns: positiveFinite(
-      override?.maxVisibleColumns,
-      defaults.maxVisibleColumns,
+function resolveAdventureCameraPolicy(
+  override?: Partial<AdventureEngineCameraPolicy>,
+): AdventureEngineCameraPolicy {
+  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY;
+  const minColumns = positiveFinite(override?.minColumns, defaults.minColumns);
+  const maxColumns = Math.max(
+    minColumns,
+    positiveFinite(override?.maxColumns, defaults.maxColumns),
+  );
+  const defaultColumns = Math.min(
+    maxColumns,
+    Math.max(
+      minColumns,
+      positiveFinite(override?.defaultColumns, defaults.defaultColumns),
     ),
-  };
+  );
+  return { minColumns, defaultColumns, maxColumns };
 }
 
 function positiveFinite(value: number | undefined, fallback: number): number {
