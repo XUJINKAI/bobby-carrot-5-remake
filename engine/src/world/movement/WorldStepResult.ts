@@ -50,6 +50,30 @@ export function emptyWorldStepResult(): WorldStepResult {
   };
 }
 
+/** Merge one phase result into the aggregate WorldTick result. */
+export function mergeWorldStepResult(
+  target: WorldStepResult,
+  source: WorldStepResult,
+): void {
+  target.moves.push(...source.moves.map((move) => structuredClone(move)));
+  target.motions.push(...source.motions.map((motion) => structuredClone(motion)));
+  target.events.push(...source.events.map((event) => structuredClone(event)));
+  mergeWorldMutationSummary(target.mutations, source.mutations);
+}
+
+export function mergeWorldMutationSummary(
+  target: WorldMutationSummary,
+  source: WorldMutationSummary,
+): void {
+  for (const value of source.moved) pushUnique(target.moved, value);
+  for (const value of source.stateChanged) pushUnique(target.stateChanged, value);
+  for (const value of source.spawned) pushUnique(target.spawned, value);
+  for (const value of source.destroyed) pushUnique(target.destroyed, value);
+  for (const value of source.globalsChanged) pushUnique(target.globalsChanged, value);
+  for (const value of source.actionsStarted) pushUnique(target.actionsStarted, value);
+  for (const value of source.actionsCancelled) pushUnique(target.actionsCancelled, value);
+}
+
 export function hasWorldMutation(summary: WorldMutationSummary): boolean {
   return (
     summary.moved.length > 0 ||
@@ -60,4 +84,8 @@ export function hasWorldMutation(summary: WorldMutationSummary): boolean {
     summary.actionsStarted.length > 0 ||
     summary.actionsCancelled.length > 0
   );
+}
+
+function pushUnique<T>(values: T[], value: T): void {
+  if (!values.includes(value)) values.push(value);
 }
