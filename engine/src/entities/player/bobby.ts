@@ -8,6 +8,11 @@ import {
   CONTENT_STACK_ORDER,
   originalModule,
 } from "../original/module.js";
+import {
+  BOBBY_INVENTORY_FIELDS,
+  bobbyMountId,
+  isBobbyFlying,
+} from "./BobbyState.js";
 
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_IDLE_DELAY_MS = 5000;
@@ -38,6 +43,7 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.BOBBY,
   traits: ["player"],
   stackOrder: CONTENT_STACK_ORDER,
+  state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",
     renderPass: "player",
@@ -47,7 +53,8 @@ const definition: EntityModuleDefinition = {
 export const bobby: EntityModule = originalModule(definition, {
   id: EntityTypeId.BOBBY,
   resolve(context) {
-    const direction = context.runtime?.direction ?? context.entity.direction ?? "down";
+    const direction =
+      context.runtime?.direction ?? context.entity.direction ?? "down";
     const rawProgress = context.runtime?.progress ?? 1;
     const progress = clampProgress(rawProgress);
 
@@ -72,7 +79,7 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    if (context.global?.ridingMower) {
+    if (bobbyMountId(context.entity.state) !== null) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition({
         asset: BOBBY_VISUAL_ASSETS.mower,
@@ -82,7 +89,7 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    if (context.global?.forced?.kind === "flight") {
+    if (isBobbyFlying(context.entity.state)) {
       return composition({
         asset: BOBBY_VISUAL_ASSETS.kite,
         frameColumns: 4,
@@ -145,5 +152,9 @@ function resolveIdleFrame(
   if (stationarySinceMs === undefined || nowMs === undefined) return null;
   const idleMs = Math.max(0, nowMs - stationarySinceMs);
   if (idleMs < BOBBY_IDLE_DELAY_MS) return null;
-  return Math.floor((idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_SOURCE_FRAME_MS) % 3;
+  return (
+    Math.floor(
+      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_SOURCE_FRAME_MS,
+    ) % 3
+  );
 }
