@@ -29,7 +29,7 @@ test("单指或鼠标左键拖动按主轴折算为单格移动方向", () => {
   assert.equal(directionForDiscreteDrag(3, 30), "down");
 });
 
-test("持续输入第一格立即产出，第二格等待 initial repeat delay", () => {
+test("显式 initial repeat delay 只作用于第一格和第二格之间", () => {
   const repeater = new HeldDirectionRepeater();
   repeater.setInput({
     source: "keyboard",
@@ -43,12 +43,24 @@ test("持续输入第一格立即产出，第二格等待 initial repeat delay",
   assert.equal(advance(repeater, 62.5), "right");
 });
 
+test("默认零 initial repeat delay 不制造第一步到第二步的特殊停顿", () => {
+  const repeater = new HeldDirectionRepeater();
+  repeater.setInput({
+    source: "keyboard",
+    direction: "right",
+    initialRepeatDelayMs: 0,
+  });
+
+  assert.equal(advance(repeater, 62.5), "right");
+  assert.equal(advance(repeater, 62.5), "right");
+});
+
 test("一个 tick 内按下再松开仍保留一次单格输入", () => {
   const repeater = new HeldDirectionRepeater();
   repeater.setInput({
     source: "keyboard",
     direction: "up",
-    initialRepeatDelayMs: 250,
+    initialRepeatDelayMs: 0,
   });
   repeater.setInput(null);
 
@@ -62,13 +74,13 @@ test("持续输入换方向后重新作为新的第一格处理", () => {
   repeater.setInput({
     source: "keyboard",
     direction: "right",
-    initialRepeatDelayMs: 250,
+    initialRepeatDelayMs: 0,
   });
   assert.equal(advance(repeater, 62.5), "right");
   repeater.setInput({
     source: "keyboard",
     direction: "down",
-    initialRepeatDelayMs: 250,
+    initialRepeatDelayMs: 0,
   });
   assert.equal(advance(repeater, 62.5), "down");
 });
@@ -78,7 +90,7 @@ test("持续输入 busy 时下一世界 tick 重试同一方向", () => {
   repeater.setInput({
     source: "keyboard",
     direction: "left",
-    initialRepeatDelayMs: 250,
+    initialRepeatDelayMs: 0,
   });
   assert.equal(advance(repeater, 62.5, "busy"), "left");
   assert.equal(advance(repeater, 62.5, "moved"), "left");
@@ -89,21 +101,18 @@ test("持续输入被阻挡后等待方向改变，不按世界 Tick 重复 bloc
   repeater.setInput({
     source: "joystick",
     direction: "left",
-    initialRepeatDelayMs: 375,
+    initialRepeatDelayMs: 0,
   });
   assert.equal(advance(repeater, 62.5, "blocked"), "left");
   for (let i = 0; i < 10; i += 1)
     assert.equal(advance(repeater, 62.5, "blocked"), null);
 });
 
-test("默认持续输入手感与可配置 WorldClock 分离", () => {
-  assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs, 250);
+test("默认持续输入没有额外首步延迟且与可配置 WorldClock 分离", () => {
+  assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs, 0);
+  assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs, 0);
+  assert.equal(DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs, 0);
   assert.equal(resolveEngineTiming().worldStepMs, 62.5);
-  assert.equal(DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs, 375);
-  assert.ok(
-    DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs >
-      DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
-  );
 });
 
 test("屏幕摇杆默认识别区紧贴右下角，默认圆盘完整落在识别区内", () => {
