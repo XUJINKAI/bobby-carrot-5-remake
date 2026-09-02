@@ -110,29 +110,7 @@ export class EditorCanvasRenderer {
           item.y,
         );
 
-    this.drawGrid(context, level.width, level.height);
     this.drawInteraction(context, state, preview);
-  }
-
-  private drawGrid(
-    context: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-  ): void {
-    context.strokeStyle = "rgba(255,255,255,.08)";
-    context.lineWidth = 1;
-    for (let x = 0; x <= width; x += 1) {
-      context.beginPath();
-      context.moveTo(x * EDITOR_TILE_SIZE, 0);
-      context.lineTo(x * EDITOR_TILE_SIZE, height * EDITOR_TILE_SIZE);
-      context.stroke();
-    }
-    for (let y = 0; y <= height; y += 1) {
-      context.beginPath();
-      context.moveTo(0, y * EDITOR_TILE_SIZE);
-      context.lineTo(width * EDITOR_TILE_SIZE, y * EDITOR_TILE_SIZE);
-      context.stroke();
-    }
   }
 
   private drawInteraction(
