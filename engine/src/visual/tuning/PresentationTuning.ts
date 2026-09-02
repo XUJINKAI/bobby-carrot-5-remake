@@ -1,10 +1,10 @@
-import type { ForcedKind } from "../../world/GlobalState.js";
+import type { ForcedMotionKind } from "../../world/movement/ForcedMotionTiming.js";
 
 export type MotionEasing = "linear" | "ease-in" | "ease-out" | "ease-in-out";
 
 export interface MotionPresentationTuning {
   normalMs: number;
-  forcedMs: Readonly<Record<ForcedKind, number>>;
+  forcedMs: Readonly<Record<ForcedMotionKind, number>>;
   speedShoesScale: number;
   easing: MotionEasing;
 }
@@ -16,7 +16,7 @@ export interface PresentationTuning {
 export interface PresentationTuningOverride {
   motion?: {
     normalMs?: number;
-    forcedMs?: Partial<Record<ForcedKind, number>>;
+    forcedMs?: Partial<Record<ForcedMotionKind, number>>;
     speedShoesScale?: number;
     easing?: MotionEasing;
   };
