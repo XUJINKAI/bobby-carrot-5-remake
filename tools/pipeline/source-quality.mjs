@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
@@ -22,10 +23,19 @@ const SOURCE_EXTENSIONS = new Set([
   ".html",
   ".vue",
 ]);
+const REPOSITORY_TEXT_EXTENSIONS = new Set([
+  ...SOURCE_EXTENSIONS,
+  ".md",
+  ".json",
+  ".txt",
+  ".yml",
+  ".yaml",
+]);
 const SCRIPT_EXTENSIONS = new Set([".ts", ".js", ".mjs"]);
 const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
 const IMAGE_MANAGER = path.normalize("engine/src/image/ImageManager.ts");
+const OBSOLETE_SITE_ORIGIN = "xujinkai.github.io";
 
 const errors = [];
 const warnings = [];
@@ -63,6 +73,15 @@ for (const sourceRoot of SOURCE_ROOTS) {
   });
 }
 
+for (const relative of trackedTextFiles()) {
+  const text = fs.readFileSync(path.join(root, relative), "utf8");
+  if (text.includes(OBSOLETE_SITE_ORIGIN)) {
+    errors.push(
+      `${relative}: 正式站点统一使用 https://bc5r.xujinkai.net，不应保留 ${OBSOLETE_SITE_ORIGIN}`,
+    );
+  }
+}
+
 for (const warning of warnings) {
   console.warn(`source-quality: warning: ${warning}`);
 }
@@ -71,11 +90,22 @@ if (errors.length > 0) {
   throw new Error(`源码质量检查失败：\n- ${errors.join("\n- ")}`);
 }
 
-console.log("source-quality: OK — 源文件行数、代码排版与 Engine 资源边界检查通过。");
+console.log("source-quality: OK — 源文件行数、代码排版、站点地址与 Engine 资源边界检查通过。");
 
 function countLines(text) {
   if (text.length === 0) return 0;
   return text.split(/\r?\n/).length;
+}
+
+function trackedTextFiles() {
+  const output = execFileSync("git", ["ls-files"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  return output
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .filter((relative) => REPOSITORY_TEXT_EXTENSIONS.has(path.extname(relative)));
 }
 
 function checkCompactCode(file, text, relative) {
