@@ -21,7 +21,7 @@ export interface GameplayTimingOverride {
 /** Canonical original gameplay cadence. Presentation defaults to these values but may override them. */
 export const ORIGINAL_GAMEPLAY_TIMING: GameplayTiming = {
   motion: {
-    normalMs: 132,
+    normalMs: 180,
     forcedMs: {
       speed: 70,
       ice: 88,
@@ -39,13 +39,15 @@ export function resolveGameplayTiming(
 ): GameplayTiming {
   return {
     motion: {
-      normalMs: override.motion?.normalMs ?? ORIGINAL_GAMEPLAY_TIMING.motion.normalMs,
+      normalMs:
+        override.motion?.normalMs ?? ORIGINAL_GAMEPLAY_TIMING.motion.normalMs,
       forcedMs: {
         ...ORIGINAL_GAMEPLAY_TIMING.motion.forcedMs,
         ...override.motion?.forcedMs,
       },
       speedShoesScale:
-        override.motion?.speedShoesScale ?? ORIGINAL_GAMEPLAY_TIMING.motion.speedShoesScale,
+        override.motion?.speedShoesScale ??
+        ORIGINAL_GAMEPLAY_TIMING.motion.speedShoesScale,
     },
   };
 }
