@@ -56,6 +56,10 @@ export class VisualRuntime {
     to: CellPosition,
     durationMs: number,
     frame: PresentationFrame,
+    options: {
+      animation?: string;
+      direction?: Direction;
+    } = {},
   ): void {
     this.beginMotion(
       entityId,
@@ -63,6 +67,8 @@ export class VisualRuntime {
       { x: 0, y: 0 },
       durationMs,
       frame,
+      options.animation,
+      options.direction,
     );
   }
 
