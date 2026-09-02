@@ -154,7 +154,7 @@ export class BobbyApp {
       await this.renderImport(context);
       return;
     }
-    if (path === "/explore" || path === "/explore/original") {
+    if (path === "/explore") {
       this.controller = await renderLevels(context, "original");
       return;
     }
@@ -218,19 +218,6 @@ export class BobbyApp {
     }
     if (path === "/edit") {
       this.controller = await renderEditorPage(context);
-      return;
-    }
-    if (path.startsWith("/edit/")) {
-      const parts = path.split("/").filter(Boolean);
-      this.controller = parts.length === 3
-        ? await renderEditorPage({
-            ...context,
-            mapRef: {
-              collection: decodeURIComponent(parts[1] ?? "").toLowerCase(),
-              id: decodeURIComponent(parts[2] ?? "").toLowerCase(),
-            },
-          })
-        : await renderEditorPage(context);
       return;
     }
     this.navigate("/");
@@ -423,7 +410,12 @@ function parseMapReference(value: string): ExploreMapRef | null {
 }
 
 function isDirectMapRoute(path: string): boolean {
-  return path === "/embed" || path === "/settings" || path.startsWith("/explore/play/") || /^\/edit\/[^/]+\/[^/]+$/.test(path);
+  return (
+    path === "/embed" ||
+    path === "/settings" ||
+    path === "/edit" ||
+    path.startsWith("/explore/play/")
+  );
 }
 
 function defaultShellState(): ShellViewState {
