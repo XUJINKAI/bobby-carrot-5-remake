@@ -33,7 +33,9 @@ export interface InputControllerOptions {
   zoom?: boolean;
   debug?: boolean;
   screenJoystick?: boolean | ScreenJoystickOptions;
+  /** Extra delay only between the first and second held move. Default is 0. */
   keyboardRepeatDelayMs?: number;
+  /** Extra delay only between the first and second held move. Default is 0. */
   externalRepeatDelayMs?: number;
 }
 
@@ -43,7 +45,13 @@ export interface LogicalMoveInput {
 }
 
 export interface InputState {
-  move: LogicalMoveInput | null;
+  /** One logical channel can emit at most one move per WorldTick. */
+  moves: readonly LogicalMoveInput[];
+}
+
+export interface MoveAttemptResolution {
+  source: string;
+  result: HeldMoveAttempt;
 }
 
 interface InputCapabilities {
@@ -68,8 +76,8 @@ export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
   pan: true,
   zoom: true,
   debug: true,
-  keyboardRepeatDelayMs: 250,
-  externalRepeatDelayMs: 250,
+  keyboardRepeatDelayMs: 0,
+  externalRepeatDelayMs: 0,
 } as const;
 
 const KEY_INPUT: Readonly<Record<string, LogicalMoveInput>> = {
@@ -101,13 +109,11 @@ export class InputController {
   private readonly pointers = new Map<number, PointerState>();
   private readonly heldMovementKeys: string[] = [];
   private readonly discreteMoves: LogicalMoveInput[] = [];
+  private readonly repeaters = new Map<string, HeldDirectionRepeater>();
   private readonly screenJoystick: ScreenJoystick | null;
-  private readonly repeater = new HeldDirectionRepeater();
   private readonly keyboardRepeatDelayMs: number;
   private readonly joystickRepeatDelayMs: number;
   private readonly externalRepeatDelayMs: number;
-  private pendingMoveSource: "continuous" | "discrete" | null = null;
-  private continuousLogicalSource: string | null = null;
   private externalDirection: Direction | null = null;
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
@@ -133,18 +139,21 @@ export class InputController {
     };
     this.keyboardRepeatDelayMs = Math.max(
       0,
-      options.keyboardRepeatDelayMs ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
+      options.keyboardRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs,
     );
     this.externalRepeatDelayMs = Math.max(
       0,
-      options.externalRepeatDelayMs ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs,
+      options.externalRepeatDelayMs ??
+        DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs,
     );
 
     const joystick = options.screenJoystick;
     const joystickOptions = joystick && joystick !== true ? joystick : undefined;
     this.joystickRepeatDelayMs = Math.max(
       0,
-      joystickOptions?.initialRepeatDelayMs ?? DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs,
+      joystickOptions?.initialRepeatDelayMs ??
+        DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs,
     );
 
     window.addEventListener("keydown", this.onKeyDown, { passive: false });
@@ -166,36 +175,27 @@ export class InputController {
           );
   }
 
-  /** 浏览器事件只维护状态；movement 同时保留逻辑 channel。 */
+  /** Browser events only maintain held state; each logical channel repeats independently. */
   update(time: WorldTick): InputState {
     if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
       this.clearMovementState();
-      return { move: null };
+      return { moves: [] };
     }
-    if (this.pendingMoveSource) return { move: null };
 
+    const moves: LogicalMoveInput[] = [];
     const discrete = this.discreteMoves.shift();
-    if (discrete) {
-      this.pendingMoveSource = "discrete";
-      return { move: discrete };
-    }
+    if (discrete) moves.push(discrete);
 
-    const continuous = this.repeater.update(time.stepMs);
-    if (continuous && this.continuousLogicalSource) {
-      this.pendingMoveSource = "continuous";
-      return {
-        move: {
-          source: this.continuousLogicalSource,
-          direction: continuous,
-        },
-      };
+    for (const [source, repeater] of this.repeaters) {
+      const direction = repeater.update(time.stepMs);
+      if (direction) moves.push({ source, direction });
     }
-    return { move: null };
+    return { moves };
   }
 
-  resolveMoveAttempt(result: HeldMoveAttempt): void {
-    if (this.pendingMoveSource === "continuous") this.repeater.resolveAttempt(result);
-    this.pendingMoveSource = null;
+  resolveMoveAttempts(resolutions: readonly MoveAttemptResolution[]): void {
+    for (const resolution of resolutions)
+      this.repeaters.get(resolution.source)?.resolveAttempt(resolution.result);
   }
 
   get isEnabled(): boolean {
@@ -211,7 +211,7 @@ export class InputController {
   setKeyboardEnabled(value: boolean): void {
     this.capabilities.keyboard = value;
     if (!value) this.heldMovementKeys.length = 0;
-    this.syncContinuousInput();
+    this.syncContinuousInputs();
   }
 
   setScreenJoystickEnabled(value: boolean): void {
@@ -221,11 +221,11 @@ export class InputController {
   setHeldDirection(direction: Direction | null): void {
     if (!this.enabled || !this.capabilities.movement) {
       this.externalDirection = null;
-      this.syncContinuousInput();
+      this.syncContinuousInputs();
       return;
     }
     this.externalDirection = direction;
-    this.syncContinuousInput();
+    this.syncContinuousInputs();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -249,23 +249,28 @@ export class InputController {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (!this.enabled || !this.capabilities.keyboard || !this.game.hasLevel) return;
+    if (!this.enabled || !this.capabilities.keyboard || !this.game.hasLevel)
+      return;
     const key = event.key.toLowerCase();
     const movement = KEY_INPUT[key];
     if (movement && this.capabilities.movement) {
       event.preventDefault();
       if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
-        this.syncContinuousInput();
+        this.syncContinuousInputs();
       }
       return;
     }
     if (event.repeat) return;
     if (key === "r" && this.capabilities.restart) this.game.restart();
-    else if (key === "z" && event.shiftKey && this.capabilities.redo) this.game.redo();
-    else if ((key === "z" || key === "u") && this.capabilities.undo) this.game.undo();
-    else if ((key === "=" || key === "+") && this.capabilities.zoom) this.game.zoomBy(1.1);
-    else if ((key === "-" || key === "_") && this.capabilities.zoom) this.game.zoomBy(1 / 1.1);
+    else if (key === "z" && event.shiftKey && this.capabilities.redo)
+      this.game.redo();
+    else if ((key === "z" || key === "u") && this.capabilities.undo)
+      this.game.undo();
+    else if ((key === "=" || key === "+") && this.capabilities.zoom)
+      this.game.zoomBy(1.1);
+    else if ((key === "-" || key === "_") && this.capabilities.zoom)
+      this.game.zoomBy(1 / 1.1);
     else if (
       this.capabilities.debug &&
       (event.code === "Backquote" || key === "`" || key === "~")
@@ -281,7 +286,7 @@ export class InputController {
     const index = this.heldMovementKeys.lastIndexOf(key);
     if (index >= 0) {
       this.heldMovementKeys.splice(index, 1);
-      this.syncContinuousInput();
+      this.syncContinuousInputs();
     }
   };
 
@@ -299,60 +304,79 @@ export class InputController {
 
   private clearMovementState(): void {
     this.discreteMoves.length = 0;
-    this.pendingMoveSource = null;
-    this.continuousLogicalSource = null;
-    this.repeater.reset();
+    for (const repeater of this.repeaters.values()) repeater.reset();
   }
 
-  private readonly setJoystickDirection = (direction: Direction | null): void => {
+  private readonly setJoystickDirection = (
+    direction: Direction | null,
+  ): void => {
     this.joystickDirection = direction;
-    this.syncContinuousInput();
+    this.syncContinuousInputs();
   };
 
-  private syncContinuousInput(): void {
-    const input = this.currentContinuousInput();
-    this.continuousLogicalSource = input?.source ?? null;
-    this.repeater.setInput(input);
-  }
+  private syncContinuousInputs(): void {
+    const inputs = new Map<string, HeldDirectionInput>();
 
-  private currentContinuousInput(): HeldDirectionInput | null {
     if (this.joystickDirection) {
-      return {
+      inputs.set("joystick", {
         source: "joystick",
         direction: this.joystickDirection,
         initialRepeatDelayMs: this.joystickRepeatDelayMs,
-      };
+      });
     }
     if (this.externalDirection) {
-      return {
+      inputs.set("external", {
         source: "external",
         direction: this.externalDirection,
         initialRepeatDelayMs: this.externalRepeatDelayMs,
-      };
+      });
     }
-    const keyboard = this.currentKeyboardInput();
-    return keyboard
-      ? {
-          source: keyboard.source,
-          direction: keyboard.direction,
-          initialRepeatDelayMs: this.keyboardRepeatDelayMs,
-        }
-      : null;
+    for (const keyboard of this.currentKeyboardInputs()) {
+      inputs.set(keyboard.source, {
+        source: keyboard.source,
+        direction: keyboard.direction,
+        initialRepeatDelayMs: this.keyboardRepeatDelayMs,
+      });
+    }
+
+    const sources = new Set([...this.repeaters.keys(), ...inputs.keys()]);
+    for (const source of sources) {
+      const input = inputs.get(source) ?? null;
+      let repeater = this.repeaters.get(source);
+      if (!repeater && input) {
+        repeater = new HeldDirectionRepeater();
+        this.repeaters.set(source, repeater);
+      }
+      repeater?.setInput(input);
+    }
   }
 
-  private currentKeyboardInput(): LogicalMoveInput | null {
-    const key = this.heldMovementKeys[this.heldMovementKeys.length - 1];
-    return key ? (KEY_INPUT[key] ?? null) : null;
+  private currentKeyboardInputs(): LogicalMoveInput[] {
+    const bySource = new Map<string, LogicalMoveInput>();
+    for (let index = this.heldMovementKeys.length - 1; index >= 0; index -= 1) {
+      const key = this.heldMovementKeys[index];
+      const movement = key ? KEY_INPUT[key] : undefined;
+      if (!movement || bySource.has(movement.source)) continue;
+      bySource.set(movement.source, movement);
+    }
+    return [...bySource.values()];
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
     if (
       !this.enabled ||
       !this.capabilities.pointer ||
-      (!this.capabilities.movement && !this.capabilities.pan && !this.capabilities.zoom)
+      (!this.capabilities.movement &&
+        !this.capabilities.pan &&
+        !this.capabilities.zoom)
     )
       return;
-    if (event.pointerType === "mouse" && event.button !== 0 && event.button !== 1) return;
+    if (
+      event.pointerType === "mouse" &&
+      event.button !== 0 &&
+      event.button !== 1
+    )
+      return;
 
     const panPointer = event.pointerType === "mouse" && event.button === 1;
     const discreteMovePointer = !panPointer && this.capabilities.movement;
@@ -372,7 +396,8 @@ export class InputController {
     if (this.capabilities.zoom && this.pointers.size === 2) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
-      for (const pointer of this.pointers.values()) pointer.discreteMoveIssued = true;
+      for (const pointer of this.pointers.values())
+        pointer.discreteMoveIssued = true;
     }
   };
 
@@ -392,7 +417,8 @@ export class InputController {
       this.pinchStartDistance > 0
     ) {
       this.game.setZoom(
-        this.pinchStartZoom * (this.pointerDistance() / this.pinchStartDistance),
+        this.pinchStartZoom *
+          (this.pointerDistance() / this.pinchStartDistance),
       );
       return;
     }
@@ -430,7 +456,8 @@ export class InputController {
     const wasPinching = this.pointers.size >= 2;
     this.pointers.delete(event.pointerId);
     const mayProduceClick = event.pointerType !== "mouse" || event.button === 0;
-    if (mayProduceClick && (pointer?.moved || wasPinching)) this.suppressNextClick = true;
+    if (mayProduceClick && (pointer?.moved || wasPinching))
+      this.suppressNextClick = true;
     if (this.pointers.size < 2) this.pinchStartDistance = 0;
     for (const remaining of this.pointers.values()) {
       remaining.startX = remaining.x;
@@ -441,7 +468,12 @@ export class InputController {
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
-    if (!this.enabled || !this.capabilities.pointer || !this.capabilities.zoom) return;
+    if (
+      !this.enabled ||
+      !this.capabilities.pointer ||
+      !this.capabilities.zoom
+    )
+      return;
     event.preventDefault();
     this.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
   };
