@@ -13,6 +13,13 @@ export interface RenderViewport {
   height: number;
 }
 
+interface PixelRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** 纯绘制器：不读取 World、不解析 EntityDefinition、不选择视觉、不加载图片。 */
 export class Renderer {
   private readonly context: CanvasRenderingContext2D | null;
@@ -61,9 +68,9 @@ export class Renderer {
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, viewport.width, viewport.height);
 
-    this.drawPass(context, scene.world, camera);
-    this.drawPass(context, scene.player, camera);
-    this.drawPass(context, scene.effect, camera);
+    this.drawPass(context, scene.world, camera, dpr);
+    this.drawPass(context, scene.player, camera, dpr);
+    this.drawPass(context, scene.effect, camera, dpr);
 
     if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
@@ -75,6 +82,7 @@ export class Renderer {
     context: CanvasRenderingContext2D,
     items: readonly RenderItem[],
     camera: Camera,
+    dpr: number,
   ): void {
     for (const item of items)
       this.drawComposition(
@@ -83,6 +91,7 @@ export class Renderer {
         item.visualX,
         item.visualY,
         camera,
+        dpr,
       );
   }
 
@@ -92,16 +101,24 @@ export class Renderer {
     x: number,
     y: number,
     camera: Camera,
+    dpr: number,
   ): void {
     const point = camera.worldToScreen(x, y);
     const size = camera.tileScreenSize;
+    const cell = snapRectToDevicePixels(
+      point.x,
+      point.y,
+      point.x + size,
+      point.y + size,
+      dpr,
+    );
     for (const layer of composition.layers) {
       if (layer.kind === "canvas") {
-        layer.draw(context, point.x, point.y, size);
+        layer.draw(context, cell.x, cell.y, Math.min(cell.width, cell.height));
       } else if (layer.kind === "image") {
-        this.drawImageLayer(context, layer, point.x, point.y, size, camera);
+        this.drawImageLayer(context, layer, cell, size, camera, dpr);
       } else {
-        this.drawAtlasLayer(context, layer, point.x, point.y, size, camera);
+        this.drawAtlasLayer(context, layer, cell, camera);
       }
     }
   }
@@ -109,10 +126,10 @@ export class Renderer {
   private drawImageLayer(
     context: CanvasRenderingContext2D,
     layer: ImageVisualLayer,
-    x: number,
-    y: number,
+    cell: PixelRect,
     size: number,
     camera: Camera,
+    dpr: number,
   ): void {
     const image = this.images.image(layer.asset);
     if (!image) return;
@@ -144,10 +161,10 @@ export class Renderer {
         sourceY,
         frameWidth,
         frameHeight,
-        x,
-        y,
-        size,
-        size,
+        cell.x,
+        cell.y,
+        cell.width,
+        cell.height,
       );
       return;
     }
@@ -156,36 +173,41 @@ export class Renderer {
     const drawWidth = frameWidth * scale;
     const drawHeight = frameHeight * scale;
     const drawX =
-      x + size / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
+      cell.x + cell.width / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
     const drawY =
       (layer.anchor === "center"
-        ? y + size / 2 - drawHeight / 2
-        : y + size - drawHeight) + (layer.offsetY ?? 0) * scale;
+        ? cell.y + cell.height / 2 - drawHeight / 2
+        : cell.y + cell.height - drawHeight) + (layer.offsetY ?? 0) * scale;
+    const drawRect = snapRectToDevicePixels(
+      drawX,
+      drawY,
+      drawX + drawWidth,
+      drawY + drawHeight,
+      dpr,
+    );
     context.drawImage(
       image,
       sourceX,
       sourceY,
       frameWidth,
       frameHeight,
-      drawX,
-      drawY,
-      drawWidth,
-      drawHeight,
+      drawRect.x,
+      drawRect.y,
+      drawRect.width,
+      drawRect.height,
     );
   }
 
   private drawAtlasLayer(
     context: CanvasRenderingContext2D,
     layer: AtlasVisualLayer,
-    x: number,
-    y: number,
-    size: number,
+    cell: PixelRect,
     camera: Camera,
   ): void {
     const atlas = this.images.image(this.images.atlasId);
     if (!atlas) return;
     context.save();
-    context.translate(x + size / 2, y + size / 2);
+    context.translate(cell.x + cell.width / 2, cell.y + cell.height / 2);
     context.rotate((layer.rotate ?? 0) * Math.PI / 2);
     context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
     const source = camera.sourceTileSize;
@@ -195,10 +217,10 @@ export class Renderer {
       layer.row * source,
       source,
       source,
-      -size / 2,
-      -size / 2,
-      size,
-      size,
+      -cell.width / 2,
+      -cell.height / 2,
+      cell.width,
+      cell.height,
     );
     context.restore();
   }
@@ -247,6 +269,25 @@ export class Renderer {
     context.strokeRect(point.x + 1, point.y + 1, size - 2, size - 2);
     context.restore();
   }
+}
+
+function snapRectToDevicePixels(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  dpr: number,
+): PixelRect {
+  const snappedLeft = Math.round(left * dpr) / dpr;
+  const snappedTop = Math.round(top * dpr) / dpr;
+  const snappedRight = Math.round(right * dpr) / dpr;
+  const snappedBottom = Math.round(bottom * dpr) / dpr;
+  return {
+    x: snappedLeft,
+    y: snappedTop,
+    width: snappedRight - snappedLeft,
+    height: snappedBottom - snappedTop,
+  };
 }
 
 function positiveInteger(value: number | undefined): number | null {
