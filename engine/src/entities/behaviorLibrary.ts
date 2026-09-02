@@ -3,6 +3,10 @@ import type { Behavior } from "../world/behavior/Behavior.js";
 import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
+import {
+  bobbyMountId,
+  readBobbyInventory,
+} from "./player/BobbyState.js";
 
 const collect: Behavior = {
   id: "collectible",
@@ -46,11 +50,8 @@ const hazard: Behavior = {
 
 const mowable: Behavior = {
   id: "mowable",
-  resolveEntry({ actor, query, self, commands }) {
-    const mountId = Number(actor.state?.mountId);
-    const mounted = Number.isInteger(mountId) && mountId > 0;
-    // Legacy global state is read only until mower state migration is complete.
-    if (!mounted && !query.global().ridingMower) return;
+  resolveEntry({ actor, self, commands }) {
+    if (bobbyMountId(actor.state) === null) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "mow",
@@ -64,10 +65,8 @@ const mowable: Behavior = {
 
 const shovelable: Behavior = {
   id: "shovelable",
-  resolveEntry({ actor, query, self, commands }) {
-    const actorHasShovel = actor.state?.shovel === true;
-    // Legacy global inventory is read only until actor inventory migration is complete.
-    if (!actorHasShovel && !query.global().inventory.shovel) return;
+  resolveEntry({ actor, self, commands }) {
+    if (!readBobbyInventory(actor.state).shovel) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "shovel",
