@@ -41,6 +41,10 @@ export function verifySeoArtifacts() {
   const notFound = read("404.html");
   if (!notFound.includes('name="robots" content="noindex,follow"'))
     throw new Error("404.html 必须 noindex,follow");
+  if (!notFound.includes('src="/assets/art/hd/sleep.png"'))
+    throw new Error("404.html 必须显示 sleep.png");
+  if (!notFound.includes('<a href="/">返回首页</a>'))
+    throw new Error("404.html 必须提供返回首页链接");
 
   const robots = read("robots.txt");
   if (!robots.includes(`Sitemap: ${siteOrigin}/sitemap.xml`))
