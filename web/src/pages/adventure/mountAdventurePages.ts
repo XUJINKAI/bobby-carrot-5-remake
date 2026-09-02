@@ -4,7 +4,6 @@ import {
   isAdventureLevelCompleted,
   isAdventureLevelUnlocked,
   parseAdventureLevelId,
-  type AdventureSave,
 } from "@bobby/adventure";
 import { createApp, type Component } from "vue";
 import type {
@@ -24,6 +23,7 @@ import { globalActions, pageIdentity } from "../../app/pageChrome.js";
 import AdventureChapterPage from "./AdventureChapterPage.vue";
 import AdventureChaptersPage from "./AdventureChaptersPage.vue";
 import AdventureHomePage from "./AdventureHomePage.vue";
+import AdventureNightTrainPage from "./AdventureNightTrainPage.vue";
 import type {
   AdventureChapterRow,
   AdventureLevelRow,
@@ -109,6 +109,23 @@ export function renderAdventureChapter(
   );
 }
 
+export function renderAdventureNightTrain(context: PageContext): PageController {
+  const { app, audio, images, navigate } = context;
+  const save = loadAdventureSave();
+  audio.playMusic("title");
+  return mountAdventure(
+    app,
+    AdventureNightTrainPage,
+    {
+      images,
+      map1: hasAdventureItem(save, "night-train-map-1"),
+      map2: hasAdventureItem(save, "night-train-map-2"),
+      onNavigate: navigate,
+    },
+    adventureShell("夜间列车", "/adventure"),
+  );
+}
+
 export function findAdventureLevel(
   adventure: AdventureIndex,
   id: string,
@@ -120,10 +137,6 @@ export function findAdventureLevel(
     if (level) return { chapter, level };
   }
   return undefined;
-}
-
-export function adventureHasItem(save: AdventureSave, item: "golden-key"): boolean {
-  return hasAdventureItem(save, item);
 }
 
 function mountAdventure(

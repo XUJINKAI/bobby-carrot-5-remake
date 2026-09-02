@@ -298,13 +298,14 @@ export class Game {
   restart(): void {
     if (!this.initialLevel) return;
     const wasPaused = this.worldClock.paused;
+    const profile = this.worldValue
+      ? structuredClone(this.world.state.profile)
+      : this.profile;
     const economy = this.worldValue
       ? structuredClone(this.world.state.economy)
       : this.initialEconomy;
-    this.worldValue = new World(this.initialLevel, {
-      profile: this.profile,
-      economy,
-    });
+    Object.assign(this.profile, profile);
+    this.worldValue = new World(this.initialLevel, { profile, economy });
     this.worldClock.reset();
     if (wasPaused) this.worldClock.pause();
     this.history.length = 0;
@@ -344,6 +345,7 @@ export class Game {
   }
 
   setProfile(profile: Partial<ProfileCapabilities>): void {
+    Object.assign(this.profile, profile);
     if (this.worldValue) this.world.setProfile(profile);
   }
 

@@ -203,7 +203,7 @@ onMounted(() => {
   flex: 1 0 auto;
 }
 
-.app-content:not(:has(.game-page)):not(:has(.adventure-desktop)):not(:has(.bobby-editor)):not(:has(.home-page)) {
+.app-content:not(:has(.game-page)):not(:has(.adventure-viewport)):not(:has(.bobby-editor)):not(:has(.home-page)) {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 60px;
@@ -223,16 +223,12 @@ onMounted(() => {
   padding: 0;
 }
 
-.app-content > .adventure-desktop {
-  min-height: 100%;
+.app-content:has(.adventure-viewport) {
+  width: 100%;
+  min-height: 0;
   height: 100%;
-}
-
-.app-content > .adventure-desktop .adventure-phone {
-  width: auto;
-  max-width: 100%;
-  height: 100%;
-  aspect-ratio: 5 / 8;
+  margin: 0;
+  padding: 0;
 }
 
 .quick-settings-layer {

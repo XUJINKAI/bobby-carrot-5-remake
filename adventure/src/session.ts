@@ -17,8 +17,7 @@ export interface AdventureCapabilities {
   bonusKeyTrialUsed: boolean;
 }
 
-export interface AdventureSessionPlan {
-  levelId: AdventureLevelId;
+export interface AdventureProfilePlan {
   capabilities: AdventureCapabilities;
   economy: {
     bonusCoins: number;
@@ -26,15 +25,13 @@ export interface AdventureSessionPlan {
   };
 }
 
-export function planAdventureSession(
-  levelId: string,
-  save: AdventureSave,
-): AdventureSessionPlan {
-  const parsed = parseAdventureLevelId(levelId);
-  if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
+export interface AdventureSessionPlan extends AdventureProfilePlan {
+  levelId: AdventureLevelId;
+}
+
+export function planAdventureProfile(save: AdventureSave): AdventureProfilePlan {
   const normalized = normalizeAdventureSave(save);
   return {
-    levelId: parsed.id,
     capabilities: {
       speedShoes: hasAdventureItem(normalized, "speed-shoes"),
       coinRadar: hasAdventureItem(normalized, "coin-radar"),
@@ -44,5 +41,17 @@ export function planAdventureSession(
       ),
     },
     economy: { ...normalized.economy },
+  };
+}
+
+export function planAdventureSession(
+  levelId: string,
+  save: AdventureSave,
+): AdventureSessionPlan {
+  const parsed = parseAdventureLevelId(levelId);
+  if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
+  return {
+    levelId: parsed.id,
+    ...planAdventureProfile(save),
   };
 }
