@@ -5,6 +5,13 @@ import type {
   VisualComposition,
 } from "@bobby/engine";
 
+interface PixelRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export function drawEditorVisualComposition(
   context: CanvasRenderingContext2D,
   images: ImageManager,
@@ -12,13 +19,22 @@ export function drawEditorVisualComposition(
   left: number,
   top: number,
   tileSize: number,
+  dpr: number,
 ): void {
   if (!composition) return;
+  const cell = snapRectToDevicePixels(
+    left,
+    top,
+    left + tileSize,
+    top + tileSize,
+    dpr,
+  );
   for (const layer of composition.layers) {
-    if (layer.kind === "canvas") layer.draw(context, left, top, tileSize);
+    if (layer.kind === "canvas")
+      layer.draw(context, cell.x, cell.y, Math.min(cell.width, cell.height));
     else if (layer.kind === "image")
-      drawImageLayer(context, images, layer, left, top, tileSize);
-    else drawAtlasLayer(context, images, layer, left, top, tileSize);
+      drawImageLayer(context, images, layer, cell, tileSize, dpr);
+    else drawAtlasLayer(context, images, layer, cell);
   }
 }
 
@@ -26,9 +42,9 @@ function drawImageLayer(
   context: CanvasRenderingContext2D,
   images: ImageManager,
   layer: ImageVisualLayer,
-  left: number,
-  top: number,
+  cell: PixelRect,
   tileSize: number,
+  dpr: number,
 ): void {
   const image = images.image(layer.asset);
   if (!image) return;
@@ -58,10 +74,10 @@ function drawImageLayer(
       sourceY,
       frameWidth,
       frameHeight,
-      left,
-      top,
-      tileSize,
-      tileSize,
+      cell.x,
+      cell.y,
+      cell.width,
+      cell.height,
     );
     return;
   }
@@ -69,22 +85,29 @@ function drawImageLayer(
   const drawWidth = frameWidth * scale;
   const drawHeight = frameHeight * scale;
   const drawX =
-    left + tileSize / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
+    cell.x + cell.width / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
   const drawY =
     (layer.anchor === "center"
-      ? top + tileSize / 2 - drawHeight / 2
-      : top + tileSize - drawHeight) +
+      ? cell.y + cell.height / 2 - drawHeight / 2
+      : cell.y + cell.height - drawHeight) +
     (layer.offsetY ?? 0) * scale;
+  const drawRect = snapRectToDevicePixels(
+    drawX,
+    drawY,
+    drawX + drawWidth,
+    drawY + drawHeight,
+    dpr,
+  );
   context.drawImage(
     image,
     sourceX,
     sourceY,
     frameWidth,
     frameHeight,
-    drawX,
-    drawY,
-    drawWidth,
-    drawHeight,
+    drawRect.x,
+    drawRect.y,
+    drawRect.width,
+    drawRect.height,
   );
 }
 
@@ -92,15 +115,13 @@ function drawAtlasLayer(
   context: CanvasRenderingContext2D,
   images: ImageManager,
   layer: AtlasVisualLayer,
-  left: number,
-  top: number,
-  tileSize: number,
+  cell: PixelRect,
 ): void {
   const atlas = images.image(images.atlasId);
   if (!atlas) return;
   const sourceTile = images.sourceTileSize;
-  const centerX = left + tileSize / 2;
-  const centerY = top + tileSize / 2;
+  const centerX = cell.x + cell.width / 2;
+  const centerY = cell.y + cell.height / 2;
   context.save();
   context.translate(centerX, centerY);
   context.rotate((layer.rotate ?? 0) * (Math.PI / 2));
@@ -111,12 +132,31 @@ function drawAtlasLayer(
     layer.row * sourceTile,
     sourceTile,
     sourceTile,
-    -tileSize / 2,
-    -tileSize / 2,
-    tileSize,
-    tileSize,
+    -cell.width / 2,
+    -cell.height / 2,
+    cell.width,
+    cell.height,
   );
   context.restore();
+}
+
+function snapRectToDevicePixels(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  dpr: number,
+): PixelRect {
+  const snappedLeft = Math.round(left * dpr) / dpr;
+  const snappedTop = Math.round(top * dpr) / dpr;
+  const snappedRight = Math.round(right * dpr) / dpr;
+  const snappedBottom = Math.round(bottom * dpr) / dpr;
+  return {
+    x: snappedLeft,
+    y: snappedTop,
+    width: snappedRight - snappedLeft,
+    height: snappedBottom - snappedTop,
+  };
 }
 
 function positiveInteger(value: number | undefined): number | null {
