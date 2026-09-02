@@ -10,7 +10,8 @@ const root = path.resolve(import.meta.dirname, "../../..");
 test("目录 patch 按 Campaign ID 合并生成对应原版 JAR", () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "bc5r-patch-"));
   const input = path.join(temporary, "in");
-  const output = path.join(temporary, "out");
+  const outputRoot = path.join(root, "tmp", path.basename(temporary));
+  const output = path.join(outputRoot, "out");
   fs.mkdirSync(input);
   try {
     fs.copyFileSync(
@@ -48,5 +49,6 @@ test("目录 patch 按 Campaign ID 合并生成对应原版 JAR", () => {
     );
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
+    fs.rmSync(outputRoot, { recursive: true, force: true });
   }
 });
