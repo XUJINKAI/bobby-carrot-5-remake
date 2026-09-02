@@ -213,7 +213,9 @@ function adaptObjects(objects, mapId, bonus) {
   return objects.map((object) => {
     const properties = { ...(object.properties ?? {}) };
     if (bonus && object.type === "lock")
-      properties.timedChallengeMs = properties.timedChallengeMs ?? "60000";
+      properties.deathCountdownSeconds = 60;
+    if (bonus && object.type === "beaver")
+      properties.interaction = "bonus-key-vendor";
     if (object.type === "sandman")
       properties.dialogId =
         properties.dialogId ??

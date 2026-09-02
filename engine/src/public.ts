@@ -86,6 +86,7 @@ export type {
   WorldEvent,
 } from "./world/WorldTypes.js";
 export type {
+  EconomyState,
   InventoryState,
   ProfileCapabilities,
 } from "./world/GlobalState.js";

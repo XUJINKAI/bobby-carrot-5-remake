@@ -171,7 +171,6 @@ export const staticContentModules: readonly EntityModule[] = [
     { behavior: fillEggNestOnLeave },
   ]),
   staticEntity(filledEggNestDefinition, objectCell(3)),
-  content(EntityTypeId.LOCK, "Lock", objectCell(4), ["blocking", "gate"]),
   content(
     EntityTypeId.BEANSTALK_TIP,
     "Beanstalk Tip",
@@ -218,6 +217,16 @@ export const staticContentModules: readonly EntityModule[] = [
   content(EntityTypeId.KITE, "Kite", objectCell(42), ["pickup"]),
   content(EntityTypeId.WHIRLWIND, "Whirlwind", objectCell(43), ["flight-entry"]),
   content(EntityTypeId.LANDING, "Landing", objectCell(44), ["flight-landing"]),
-  content(EntityTypeId.GOLDEN_CARROT, "Golden Carrot", objectCell(45), ["collectible"]),
-  content(EntityTypeId.BONUS_COIN, "Bonus Coin", objectCell(47), ["collectible"]),
+  content(
+    EntityTypeId.GOLDEN_CARROT,
+    "Golden Carrot",
+    objectCell(45),
+    ["collectible", "golden-carrot"],
+  ),
+  content(
+    EntityTypeId.BONUS_COIN,
+    "Bonus Coin",
+    objectCell(47),
+    ["collectible", "bonus-coin"],
+  ),
 ];

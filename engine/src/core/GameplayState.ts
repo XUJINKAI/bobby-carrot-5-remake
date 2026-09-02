@@ -1,5 +1,6 @@
 import type { Direction } from "@bobby/model";
 import type {
+  EconomyState,
   ForcedKind,
   InventoryState,
   ProfileCapabilities,
@@ -13,6 +14,7 @@ export interface GameplayState {
   player: { x: number; y: number };
   facing: Direction;
   inventory: Readonly<InventoryState>;
+  economy: Readonly<EconomyState>;
   profile: Readonly<ProfileCapabilities>;
   ridingMower: boolean;
   forced: {

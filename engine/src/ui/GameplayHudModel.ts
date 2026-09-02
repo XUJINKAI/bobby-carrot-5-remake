@@ -2,26 +2,20 @@ import { EntityTypeId } from "@bobby/model";
 import type { GameplayState } from "../core/GameplayState.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 
-const EGG_NEST_TARGET = "egg-nest";
-const EGG_FILLER = "egg";
-
-export interface GameplayHudTotals {
-  goldenCarrots: number;
-  bonusCoins: number;
-}
-
 export interface GameplayHudModel {
   objectives: {
     carrotRemaining: number | null;
     eggRemaining: number | null;
   };
-  items: {
+  inventory: {
     key: boolean;
     speedShoes: boolean;
     gas: boolean;
     shovel: boolean;
     kite: boolean;
     beans: number;
+  };
+  economy: {
     goldenCarrots: number;
     bonusCoins: number;
   };
@@ -31,7 +25,6 @@ export interface GameplayHudModel {
 export function buildGameplayHudModel(
   state: GameplayState,
   winState: WinConditionState | null,
-  totals: GameplayHudTotals,
 ): GameplayHudModel {
   return {
     objectives: {
@@ -44,20 +37,21 @@ export function buildGameplayHudModel(
         winState,
         (item) =>
           item.type === "fill-all" &&
-          item.target === EGG_NEST_TARGET &&
-          item.filler === EGG_FILLER,
+          item.target === "egg-nest" &&
+          item.filler === "egg",
       ),
     },
-    items: {
-      // superKey is a capability (for example Explore mode), not an owned HUD item.
-      key: state.profile.temporaryKey,
+    inventory: {
+      key: state.inventory.temporaryKey,
       speedShoes: state.profile.speedShoes,
       gas: state.inventory.gas,
       shovel: state.inventory.shovel,
       kite: state.inventory.kite,
       beans: Math.max(0, state.inventory.beans),
-      goldenCarrots: Math.max(0, totals.goldenCarrots - state.goldenCarrotsInLevel),
-      bonusCoins: Math.max(0, totals.bonusCoins - state.bonusCoinsInLevel),
+    },
+    economy: {
+      goldenCarrots: state.economy.goldenCarrots,
+      bonusCoins: state.economy.bonusCoins,
     },
   };
 }

@@ -6,6 +6,7 @@ import type { GameplayHudModel } from "./GameplayHudModel.js";
 export interface GameplayHudViewOptions {
   objective?: boolean;
   inventory?: boolean;
+  economy?: boolean;
 }
 
 interface HudChip {
@@ -90,12 +91,12 @@ export class GameplayHudView {
     this.kiteChip = this.chip("风筝", this.sprite("kite"));
     this.beanChip = this.chip("魔豆", this.sprite("bean"), true);
     this.goldenCarrotChip = this.chip(
-      "本关已收集 Golden Carrot",
+      "Golden Carrot",
       this.wholeImageIcon("golden-carrot", "🥕"),
       true,
     );
     this.bonusCoinChip = this.chip(
-      "本关已收集 Bonus Coin",
+      "Bonus Coin",
       this.entityVisualIcon(EntityTypeId.BONUS_COIN),
       true,
     );
@@ -127,25 +128,27 @@ export class GameplayHudView {
     );
 
     const showInventory = this.options.inventory !== false;
-    this.setChip(this.keyChip, showInventory && model.items.key);
-    this.setChip(this.speedShoesChip, showInventory && model.items.speedShoes);
-    this.setChip(this.gasChip, showInventory && model.items.gas);
-    this.setChip(this.shovelChip, showInventory && model.items.shovel);
-    this.setChip(this.kiteChip, showInventory && model.items.kite);
+    this.setChip(this.keyChip, showInventory && model.inventory.key);
+    this.setChip(this.speedShoesChip, showInventory && model.inventory.speedShoes);
+    this.setChip(this.gasChip, showInventory && model.inventory.gas);
+    this.setChip(this.shovelChip, showInventory && model.inventory.shovel);
+    this.setChip(this.kiteChip, showInventory && model.inventory.kite);
     this.setChip(
       this.beanChip,
-      showInventory && model.items.beans > 0,
-      model.items.beans,
+      showInventory && model.inventory.beans > 0,
+      model.inventory.beans,
     );
+
+    const showEconomy = this.options.economy === true;
     this.setChip(
       this.goldenCarrotChip,
-      showInventory && model.items.goldenCarrots > 0,
-      model.items.goldenCarrots,
+      showEconomy,
+      model.economy.goldenCarrots,
     );
     this.setChip(
       this.bonusCoinChip,
-      showInventory && model.items.bonusCoins > 0,
-      model.items.bonusCoins,
+      showEconomy,
+      model.economy.bonusCoins,
     );
   }
 

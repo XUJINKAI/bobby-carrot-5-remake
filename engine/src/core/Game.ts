@@ -27,6 +27,7 @@ import type {
 } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type {
+  EconomyState,
   ForcedKind,
   ProfileCapabilities,
 } from "../world/GlobalState.js";
@@ -53,6 +54,7 @@ export interface GameOptions {
   audio?: AudioBackend;
   debug?: boolean;
   profile?: Partial<ProfileCapabilities>;
+  economy?: Partial<EconomyState>;
   runtime?: GameRuntimeOptions;
 }
 
@@ -76,6 +78,7 @@ export class Game {
   private readonly gameplayHud: GameplayHud | null;
   private readonly debugRuntime: DebugRuntime;
   private readonly profile: Partial<ProfileCapabilities>;
+  private readonly initialEconomy: Partial<EconomyState>;
   private readonly tuning: PresentationTuning;
   private readonly timing: EngineTiming;
   private readonly worldClock: WorldClock;
@@ -105,6 +108,7 @@ export class Game {
     );
     this.audio = options.audio ?? new NullAudioBackend();
     this.profile = options.profile ?? {};
+    this.initialEconomy = options.economy ?? {};
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
     this.worldClock = new WorldClock(this.timing.worldHz);
@@ -177,6 +181,7 @@ export class Game {
       player: world.player,
       facing: world.facing,
       inventory: structuredClone(state.inventory),
+      economy: structuredClone(state.economy),
       profile: structuredClone(state.profile),
       ridingMower: state.ridingMower,
       forced: state.forced ? structuredClone(state.forced) : null,
@@ -219,7 +224,10 @@ export class Game {
 
   async loadLevel(level: LevelMap): Promise<void> {
     this.initialLevel = structuredClone(level);
-    this.worldValue = new World(level, { profile: this.profile });
+    this.worldValue = new World(level, {
+      profile: this.profile,
+      economy: this.initialEconomy,
+    });
     this.worldClock.reset();
     this.restoreDebugPausedInput();
     this.history.length = 0;
@@ -290,7 +298,13 @@ export class Game {
   restart(): void {
     if (!this.initialLevel) return;
     const wasPaused = this.worldClock.paused;
-    this.worldValue = new World(this.initialLevel, { profile: this.profile });
+    const economy = this.worldValue
+      ? structuredClone(this.world.state.economy)
+      : this.initialEconomy;
+    this.worldValue = new World(this.initialLevel, {
+      profile: this.profile,
+      economy,
+    });
     this.worldClock.reset();
     if (wasPaused) this.worldClock.pause();
     this.history.length = 0;
@@ -331,6 +345,10 @@ export class Game {
 
   setProfile(profile: Partial<ProfileCapabilities>): void {
     if (this.worldValue) this.world.setProfile(profile);
+  }
+
+  setEconomy(economy: Partial<EconomyState>): void {
+    if (this.worldValue) this.world.setEconomy(economy);
   }
 
   setZoom(value: number): void {

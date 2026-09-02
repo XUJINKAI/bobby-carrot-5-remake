@@ -10,6 +10,7 @@ import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
 import { fence } from "./fence.js";
 import { iceBlock } from "./ice-block.js";
+import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
 import { sandman } from "./sandman.js";
 import { speed } from "./speed.js";
@@ -43,6 +44,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   ...staticCoverModules,
   iceBlock,
   ...staticContentModules,
+  lock,
   dragon,
   sandman,
   dreamMachine,
