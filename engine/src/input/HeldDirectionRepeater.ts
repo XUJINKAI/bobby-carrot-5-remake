@@ -6,6 +6,7 @@ export type ContinuousInputSource = string;
 export interface HeldDirectionInput {
   source: ContinuousInputSource;
   direction: Direction;
+  /** Optional extra delay only between the first and second held move. */
   initialRepeatDelayMs: number;
 }
 
@@ -36,6 +37,15 @@ export class HeldDirectionRepeater {
         }
       : null;
     if (this.sameInput(this.heldInput, normalized)) return;
+
+    // A key/touch pressed and released between two WorldTicks must still produce
+    // exactly one move. Releasing after the initial move has been consumed simply
+    // stops repetition as usual.
+    if (!normalized && this.pendingInitialInput) {
+      this.heldInput = null;
+      this.blocked = false;
+      return;
+    }
 
     this.heldInput = normalized;
     this.pendingAttempt = null;
