@@ -1,6 +1,7 @@
 import type { Direction } from "@bobby/model";
 import { CommandQueue } from "../behavior/CommandQueue.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
+import type { MoveCause } from "./WorldIntent.js";
 import type { EntityMotion } from "./WorldStepResult.js";
 
 /**
@@ -35,6 +36,7 @@ export class MovementTransaction {
     from: CellPosition,
     to: CellPosition,
     direction: Direction,
+    cause: MoveCause,
     updateDirection = true,
   ): void {
     this.commands.move(entityId, to.x, to.y);
@@ -44,6 +46,7 @@ export class MovementTransaction {
       from: { ...from },
       to: { ...to },
       direction,
+      cause: structuredClone(cause),
     });
   }
 
