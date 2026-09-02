@@ -7,14 +7,18 @@ import type { EntityId } from "../entity/EntityInstance.js";
 export type RuntimeActionId = number;
 export type RuntimeActionState = Record<string, JsonValue>;
 
+export interface RuntimeActionFocus {
+  entityId: EntityId;
+}
+
 /** 创建一个跨多个 WorldTick 持续存在的 gameplay 过程。 */
 export interface RuntimeActionSpec {
   kind: string;
   ownerEntityId?: EntityId;
-  /** 活跃期间是否阻止玩家产生新的 gameplay movement。 */
+  /** 普通 gameplay lock；无需改变镜头。 */
   blocksInput?: boolean;
-  /** 活跃期间建议 Camera 跟随的 Entity；只是 gameplay policy，不保存 Camera tween。 */
-  cameraTarget?: EntityId;
+  /** 原版规则：Action 获取镜头焦点时，controlled input 必然同时被锁定。 */
+  focus?: RuntimeActionFocus;
   state?: RuntimeActionState;
 }
 

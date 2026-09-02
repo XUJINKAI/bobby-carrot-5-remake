@@ -24,13 +24,15 @@ export class RuntimeActionScheduler {
   }
 
   get inputBlocked(): boolean {
-    return [...this.actions.values()].some((action) => action.blocksInput === true);
+    return [...this.actions.values()].some(
+      (action) => action.blocksInput === true || action.focus !== undefined,
+    );
   }
 
-  /** 第一个声明 cameraTarget 的活跃 Action 获得焦点；顺序按稳定 action id。 */
+  /** 第一个声明 focus 的活跃 Action 获得镜头；顺序按稳定 action id。 */
   get cameraTarget(): EntityId | null {
     for (const action of [...this.actions.values()].sort((a, b) => a.id - b.id)) {
-      if (action.cameraTarget !== undefined) return action.cameraTarget;
+      if (action.focus) return action.focus.entityId;
     }
     return null;
   }
@@ -46,9 +48,7 @@ export class RuntimeActionScheduler {
         ? { ownerEntityId: spec.ownerEntityId }
         : {}),
       ...(spec.blocksInput !== undefined ? { blocksInput: spec.blocksInput } : {}),
-      ...(spec.cameraTarget !== undefined
-        ? { cameraTarget: spec.cameraTarget }
-        : {}),
+      ...(spec.focus ? { focus: structuredClone(spec.focus) } : {}),
       state: structuredClone(spec.state ?? {}),
     });
     return id;
