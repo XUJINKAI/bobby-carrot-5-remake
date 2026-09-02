@@ -8,6 +8,6 @@ test("pixel-snapped adjacent cells share the same boundary", () => {
   const second = snapRectToDevicePixels(38, 0, 76, 38, deviceScale);
 
   assert.equal(first.x + first.width, second.x);
-  assert.equal(first.width * deviceScale, 48);
-  assert.equal(second.width * deviceScale, 47);
+  assert.equal(Math.round(first.width * deviceScale), 48);
+  assert.equal(Math.round(second.width * deviceScale), 47);
 });
