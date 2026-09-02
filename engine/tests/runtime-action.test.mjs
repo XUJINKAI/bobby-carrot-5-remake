@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createBuiltinRuntimeActionRegistry,
   createDelayRuntimeAction,
+  createDelayedMoveRuntimeAction,
 } from "../dist/world/action/builtinActions.js";
 import { RuntimeActionScheduler } from "../dist/world/action/RuntimeActionScheduler.js";
 
@@ -64,4 +65,43 @@ test("RuntimeAction gameplay state is snapshotted and restored deterministically
   scheduler.restore(snapshot);
   assert.equal(scheduler.inputBlocked, true);
   assert.equal(scheduler.active[0].state.elapsedMs, 62.5);
+});
+
+test("delayed move action emits one semantic forced intent and completes", () => {
+  const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
+  scheduler.start(
+    createDelayedMoveRuntimeAction(7, "right", 125, {
+      mechanism: "ice",
+      sourceEntityId: 11,
+    }),
+  );
+  const actionQuery = {
+    entity(id) {
+      return id === 7 ? { id: 7 } : undefined;
+    },
+  };
+
+  assert.deepEqual(
+    scheduler.update({ tick: 0, stepMs: 62.5 }, actionQuery, commands),
+    [],
+  );
+  assert.equal(scheduler.inputBlocked, true);
+  assert.deepEqual(
+    scheduler.update({ tick: 1, stepMs: 62.5 }, actionQuery, commands),
+    [
+      {
+        type: "move",
+        actorId: 7,
+        direction: "right",
+        cause: {
+          type: "forced",
+          sourceEntityId: 11,
+          mechanism: "ice",
+          cadenceMs: 125,
+        },
+      },
+    ],
+  );
+  assert.equal(scheduler.inputBlocked, false);
+  assert.equal(scheduler.active.length, 0);
 });
