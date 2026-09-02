@@ -4,9 +4,15 @@ import { EntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
-const bobby = (x, y) => ({ type: EntityTypeId.BOBBY, x, y, direction: "right" });
+const bobby = (x, y, state) => ({
+  type: EntityTypeId.BOBBY,
+  x,
+  y,
+  direction: "right",
+  ...(state ? { state } : {}),
+});
 
-function corridor(extra, rules) {
+function corridor(extra, rules, bobbyState) {
   return {
     schemaVersion: 1,
     width: 4,
@@ -17,20 +23,25 @@ function corridor(extra, rules) {
       ground(1, 0),
       ground(2, 0),
       ground(3, 0),
-      bobby(0, 0),
+      bobby(0, 0, bobbyState),
       ...extra,
     ],
   };
 }
 
+function actor(world) {
+  const entity = world.query.entitiesWithTrait("player")[0];
+  assert.ok(entity, "test map must contain a player actor");
+  return entity;
+}
+
 function move(world, direction) {
-  const actor = world.query.entitiesWithTrait("player")[0];
-  assert.ok(actor, "test map must contain a player actor");
+  const player = actor(world);
   return world.step({
     intents: [
       {
         type: "move",
-        actorId: actor.id,
+        actorId: player.id,
         direction,
         cause: { type: "player-input", source: "test" },
       },
@@ -69,7 +80,7 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
   const first = new World(map, { economy: { bonusCoins: 3 } });
   const firstTouch = move(first, "right");
   assert.equal(firstTouch.moves[0].moved, false);
-  assert.equal(first.state.inventory.temporaryKey, true);
+  assert.equal(actor(first).state?.temporaryKey, true);
   assert.equal(first.state.economy.bonusCoins, 3);
   assert.equal(first.state.profile.bonusKeyTrialUsed, true);
   assert.equal(
@@ -83,7 +94,7 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
   });
   const laterTouch = move(later, "right");
   assert.equal(laterTouch.moves[0].moved, false);
-  assert.equal(later.state.inventory.temporaryKey, true);
+  assert.equal(actor(later).state?.temporaryKey, true);
   assert.equal(later.state.economy.bonusCoins, 0);
   assert.equal(
     laterTouch.events.some((event) => event.type === "spend-bonus-coins"),
@@ -93,19 +104,22 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
 
 test("bonus lock consumes a temporary key and starts a death countdown", () => {
   const world = new World(
-    corridor([
-      {
-        type: EntityTypeId.LOCK,
-        x: 1,
-        y: 0,
-        properties: { deathCountdownSeconds: 1 },
-      },
-    ]),
+    corridor(
+      [
+        {
+          type: EntityTypeId.LOCK,
+          x: 1,
+          y: 0,
+          properties: { deathCountdownSeconds: 1 },
+        },
+      ],
+      undefined,
+      { temporaryKey: true },
+    ),
   );
-  world.state.inventory.temporaryKey = true;
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
-  assert.equal(world.state.inventory.temporaryKey, false);
+  assert.equal(actor(world).state?.temporaryKey, false);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
