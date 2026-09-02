@@ -2,12 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   binCommand,
-  copyFile,
   copyTree,
   root,
   run,
   tscCommand,
 } from "../lib/fs.mjs";
+import { generateSeoArtifacts } from "./seo.mjs";
 
 const dist = path.join(root, "dist");
 const generatedAssets = path.join(root, "assets");
@@ -46,9 +46,6 @@ copyTree(path.join(root, "engine/dist"), path.join(dist, "engine"));
 copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
 copyTree(generatedAssets, path.join(dist, "assets"));
 
-// Fragment 不会发送给静态服务器，因此分享入口需要真实 HTML 文件。
-const importEntry = path.join(dist, "import/v1/index.html");
-fs.mkdirSync(path.dirname(importEntry), { recursive: true });
-copyFile(path.join(dist, "index.html"), importEntry);
+generateSeoArtifacts();
 
 console.log("Build complete: dist");
