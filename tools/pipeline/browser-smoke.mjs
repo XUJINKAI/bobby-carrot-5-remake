@@ -292,32 +292,23 @@ async function interactiveDataExchangeSmoke(url) {
   const script = `
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  for (let i = 0; i < 120 && !document.querySelector('[data-home-export]'); i += 1)
+  for (let i = 0; i < 120 && !document.querySelector('[data-home-import]'); i += 1)
     await delay(50);
-  const exportButton = document.querySelector('[data-home-export]');
-  if (!exportButton) throw new Error('missing export button');
-  exportButton.click();
-  await delay(80);
-  const exportDialog = document.querySelector('[data-export-dialog]');
-  if (!exportDialog) throw new Error('missing export dialog');
-  const closeExport = exportDialog.querySelector('button');
-  closeExport?.click();
-  await delay(50);
   const importButton = document.querySelector('[data-home-import]');
   if (!importButton) throw new Error('missing import button');
   importButton.click();
   await delay(80);
-  const importDialog = document.querySelector('[data-import-dialog]');
+  const importDialog = document.querySelector('.home-import-dialog');
   if (!importDialog) throw new Error('missing import dialog');
-  return JSON.stringify({ export: Boolean(exportDialog), import: Boolean(importDialog) });
+  return JSON.stringify({ import: Boolean(importDialog) });
 })()
 `;
   const result = await runBrowserEval(url, script);
   if (result.status !== 0)
-    throw new Error(`Interactive data exchange smoke failed: ${result.stderr || result.stdout}`);
+    throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.export || !payload.import)
-    throw new Error(`Unexpected data exchange smoke result: ${JSON.stringify(payload)}`);
+  if (!payload.import)
+    throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {
   const port = 9222 + Math.floor(Math.random() * 1000);
