@@ -1,6 +1,10 @@
 # Original 内容机制
 
-这里描述 Bobby Carrot 5 原版内容在 BC5R 中应呈现的行为与表现。它属于 `system` 文档的一部分，但 **Original 不是一套特殊 Engine**：这些内容仍应使用通用 Entity、Behavior、Visual、Audio 等机制实现。
+这里描述 Bobby Carrot 5 原版内容在 BC5R 中应呈现的行为与表现。
+
+original只是为了区分哪些素材来自原版，并非一套特殊的 Engine 机制。
+
+original中的定义也并非原版定义，而是 BC5R Engine 中新的行为模式的定义。（文档中同时会指出如何兼容原版，以供 adapter 参考）
 
 ## 文档
 

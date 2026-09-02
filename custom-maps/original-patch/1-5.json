@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "name": "1-5",
+  "width": 10,
+  "height": 9,
+  "entities": [
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 1
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 7,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 4
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 5
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 6
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 7
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 8
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 8
+    },
+    {
+      "type": "speed",
+      "x": 0,
+      "y": 5,
+      "direction": "up"
+    },
+    {
+      "type": "speed",
+      "x": 0,
+      "y": 6,
+      "direction": "down"
+    },
+    {
+      "type": "speed",
+      "x": 0,
+      "y": 7,
+      "direction": "left"
+    },
+    {
+      "type": "speed",
+      "x": 0,
+      "y": 8,
+      "direction": "right"
+    },
+    {
+      "type": "ground-a",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 8,
+      "y": 0
+    },
+    {
+      "type": "ground-a",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "type": "speed-switch",
+      "x": 0,
+      "y": 4,
+      "state": {
+        "pressed": true
+      }
+    },
+    {
+      "type": "speed-switch",
+      "x": 0,
+      "y": 3,
+      "state": {
+        "pressed": false
+      }
+    },
+    {
+      "type": "ground-a",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "type": "ground-a",
+      "x": 7,
+      "y": 3
+    },
+    {
+      "type": "start",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "type": "exit",
+      "x": 7,
+      "y": 1
+    },
+    {
+      "type": "bobby",
+      "x": 2,
+      "y": 1,
+      "direction": "down"
+    },
+    {
+      "type": "bonus-coin",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "bonus-coin",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "bonus-coin",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "type": "windmill-up",
+      "x": 3,
+      "y": 5
+    },
+    {
+      "type": "windmill-down",
+      "x": 3,
+      "y": 6
+    },
+    {
+      "type": "windmill-left",
+      "x": 3,
+      "y": 7
+    },
+    {
+      "type": "windmill-right",
+      "x": 3,
+      "y": 8
+    },
+    {
+      "type": "wind-switch",
+      "x": 5,
+      "y": 5,
+      "properties": {
+        "channel": 0
+      },
+      "state": {
+        "active": false
+      }
+    },
+    {
+      "type": "wind-switch",
+      "x": 5,
+      "y": 6,
+      "properties": {
+        "channel": 1
+      },
+      "state": {
+        "active": false
+      }
+    },
+    {
+      "type": "wind-switch",
+      "x": 5,
+      "y": 7,
+      "properties": {
+        "channel": 2
+      },
+      "state": {
+        "active": false
+      }
+    },
+    {
+      "type": "wind-switch",
+      "x": 5,
+      "y": 8,
+      "properties": {
+        "channel": 3
+      },
+      "state": {
+        "active": false
+      }
+    },
+    {
+      "type": "dragon",
+      "x": 2,
+      "y": 0,
+      "direction": "left"
+    },
+    {
+      "type": "whirlwind",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "landing",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "type": "landing",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "type": "landing",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "type": "landing",
+      "x": 9,
+      "y": 3
+    },
+    {
+      "type": "kite",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "type": "tide",
+      "x": 7,
+      "y": 5,
+      "direction": "down"
+    },
+    {
+      "type": "tide",
+      "x": 7,
+      "y": 6,
+      "direction": "up"
+    },
+    {
+      "type": "tide",
+      "x": 7,
+      "y": 7,
+      "direction": "right"
+    },
+    {
+      "type": "tide",
+      "x": 7,
+      "y": 8,
+      "direction": "left"
+    },
+    {
+      "type": "water-variant-1",
+      "x": 9,
+      "y": 5
+    },
+    {
+      "type": "water-variant-2",
+      "x": 9,
+      "y": 6
+    },
+    {
+      "type": "water-variant-3",
+      "x": 9,
+      "y": 7
+    }
+  ],
+  "description": "测试原版动画机制",
+  "rules": {
+    "win": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "reach",
+          "target": "exit"
+        }
+      ]
+    }
+  }
+}

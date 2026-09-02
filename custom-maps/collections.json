@@ -28,6 +28,14 @@
     ]
   },
   {
+    "id": "original-patch",
+    "name": "Original Patch",
+    "description": "Patch 到原版 jar 包的验证地图",
+    "cardSize": "small",
+    "order": 999,
+    "visible": true
+  },
+  {
     "id": "engine-lab",
     "name": "Engine Lab",
     "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
