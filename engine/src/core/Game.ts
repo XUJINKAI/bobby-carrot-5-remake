@@ -50,7 +50,10 @@ import type {
 import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
-import type { WorldStepResult } from "../world/movement/WorldStepResult.js";
+import type {
+  EntityMotion,
+  WorldStepResult,
+} from "../world/movement/WorldStepResult.js";
 import {
   DEFAULT_HISTORY_POLICY,
   shouldCheckpoint,
@@ -554,31 +557,45 @@ export class Game {
     this.lastWorldEvents = result.events;
 
     const controlledIds = group.intents.map((intent) => intent.actorId);
-    if (
-      this.pendingHistorySnapshot &&
-      shouldCheckpoint(this.historyPolicy, result, controlledIds)
-    ) {
-      this.history.push(this.pendingHistorySnapshot);
-      this.future.length = 0;
-      this.pendingHistorySnapshot = null;
-    }
-
+    this.checkpointPendingHistory(result, controlledIds);
     this.publishWorldEvents(result.events);
     this.emitTerminalEvents();
 
-    const moved = result.motions.length > 0;
-    if (!moved) {
+    if (result.motions.length === 0) {
       this.emit("blocked");
       this.emit("change");
       return result;
     }
 
+    this.presentMotions(result);
+    this.emit("move");
+    this.emit("change");
+    return result;
+  }
+
+  private checkpointPendingHistory(
+    result: WorldStepResult,
+    actorIds: readonly EntityId[],
+  ): void {
+    if (
+      !this.pendingHistorySnapshot ||
+      !shouldCheckpoint(this.historyPolicy, result, actorIds)
+    )
+      return;
+    this.history.push(this.pendingHistorySnapshot);
+    this.future.length = 0;
+    this.pendingHistorySnapshot = null;
+  }
+
+  private presentMotions(result: WorldStepResult): void {
+    if (result.motions.length === 0) return;
     const frame = this.presentationClock.current;
-    const gameplayDuration = this.gameplayMotionDuration();
-    const visualDuration = this.presentationMotionDuration();
     const deathEvent = result.events.find((event) => event.type === "death");
     this.visual.camera.recenterPan(frame);
+
     for (const motion of result.motions) {
+      const cadence = this.motionCadence(motion);
+      const visualDuration = this.motionPresentationDuration(motion);
       if (this.world.dead && deathEvent?.entityId === motion.entityId) {
         this.visual.beginDeath(
           motion.entityId,
@@ -592,10 +609,13 @@ export class Game {
       }
       if (!this.world.completed)
         this.world.startAction(
-          createDelayRuntimeAction(gameplayDuration, {
+          createDelayRuntimeAction(cadence, {
             ownerEntityId: motion.entityId,
             blocksInput: true,
-            reason: "actor-motion",
+            reason:
+              motion.cause.type === "forced" && motion.cause.mechanism
+                ? `${motion.cause.mechanism}-motion`
+                : "actor-motion",
           }),
         );
       this.visual.beginMove(
@@ -604,11 +624,36 @@ export class Game {
         motion.to,
         visualDuration,
         frame,
+        {
+          ...(motion.cause.type === "forced" && motion.cause.mechanism
+            ? { animation: motion.cause.mechanism }
+            : {}),
+          direction: motion.direction,
+        },
       );
     }
-    this.emit("move");
-    this.emit("change");
-    return result;
+  }
+
+  private motionCadence(motion: EntityMotion): number {
+    if (
+      motion.cause.type === "forced" &&
+      motion.cause.cadenceMs !== undefined &&
+      Number.isFinite(motion.cause.cadenceMs) &&
+      motion.cause.cadenceMs > 0
+    )
+      return motion.cause.cadenceMs;
+    return this.gameplayMotionDuration();
+  }
+
+  private motionPresentationDuration(motion: EntityMotion): number {
+    if (
+      motion.cause.type === "forced" &&
+      motion.cause.cadenceMs !== undefined &&
+      Number.isFinite(motion.cause.cadenceMs) &&
+      motion.cause.cadenceMs > 0
+    )
+      return motion.cause.cadenceMs;
+    return this.presentationMotionDuration();
   }
 
   private gameplayMotionDuration(): number {
@@ -629,13 +674,24 @@ export class Game {
   private updateWorld(time: WorldTick): void {
     if (!this.worldValue) return;
 
-    const events = this.world.update(time);
-    if (events.length > 0) {
-      this.lastWorldEvents = events;
-      this.publishWorldEvents(events);
+    const result = this.world.update(time);
+    if (result.moves.length > 0) this.lastMove = result.moves[0] ?? null;
+    if (result.events.length > 0) {
+      this.lastWorldEvents = result.events;
+      this.publishWorldEvents(result.events);
       this.emitTerminalEvents();
-      this.emit("change");
     }
+    if (result.motions.length > 0) {
+      const actorIds = result.moves
+        .map((move) => move.actorId)
+        .filter((id): id is EntityId => id !== undefined);
+      this.checkpointPendingHistory(result, actorIds);
+      this.presentMotions(result);
+      this.emit("move");
+    }
+    if (result.events.length > 0 || result.motions.length > 0)
+      this.emit("change");
+
     if (this.world.dead || this.world.completed) {
       this.heldDirection = null;
       return;
