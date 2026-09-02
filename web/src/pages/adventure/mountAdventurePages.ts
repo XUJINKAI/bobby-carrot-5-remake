@@ -27,6 +27,7 @@ import AdventureNightTrainPage from "./AdventureNightTrainPage.vue";
 import type {
   AdventureChapterRow,
   AdventureLevelRow,
+  AdventureNightTrainDestination,
 } from "./types.js";
 
 export function renderAdventureHome(context: PageContext): PageController {
@@ -112,16 +113,29 @@ export function renderAdventureChapter(
 export function renderAdventureNightTrain(context: PageContext): PageController {
   const { app, audio, images, navigate } = context;
   const save = loadAdventureSave();
+  const destinations: AdventureNightTrainDestination[] = [
+    {
+      id: "dream-machine",
+      label: "DREAM MACHINE",
+      href: "/adventure/night-train/dream-machine",
+    },
+    {
+      id: "cloud-9",
+      label: "CLOUD 9",
+      href: "/adventure/night-train/cloud-9",
+    },
+    ...(hasAdventureItem(save, "night-train-map-1")
+      ? [{ id: "map-1", label: "MAP I", note: "AUTHOR EXTRA" }]
+      : []),
+    ...(hasAdventureItem(save, "night-train-map-2")
+      ? [{ id: "map-2", label: "MAP II", note: "AUTHOR EXTRA" }]
+      : []),
+  ];
   audio.playMusic("title");
   return mountAdventure(
     app,
     AdventureNightTrainPage,
-    {
-      images,
-      map1: hasAdventureItem(save, "night-train-map-1"),
-      map2: hasAdventureItem(save, "night-train-map-2"),
-      onNavigate: navigate,
-    },
+    { images, destinations, onNavigate: navigate },
     adventureShell("夜间列车", "/adventure"),
   );
 }

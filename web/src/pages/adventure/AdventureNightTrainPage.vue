@@ -2,11 +2,11 @@
 import type { ImageManager } from "@bobby/engine";
 import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
 import AdventureViewport from "./AdventureViewport.vue";
+import type { AdventureNightTrainDestination } from "./types.js";
 
 defineProps<{
   images: ImageManager;
-  map1: boolean;
-  map2: boolean;
+  destinations: AdventureNightTrainDestination[];
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
@@ -16,24 +16,19 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     <div class="night-train-page">
       <NightTrainScene :images="images" class="night-train-hero" />
       <nav class="night-train-menu" aria-label="夜间列车">
-        <a
-          href="/adventure/night-train/dream-machine"
-          @click.prevent="emit('navigate', '/adventure/night-train/dream-machine')"
-        >
-          <strong>DREAM MACHINE</strong><span>→</span>
-        </a>
-        <a
-          href="/adventure/night-train/cloud-9"
-          @click.prevent="emit('navigate', '/adventure/night-train/cloud-9')"
-        >
-          <strong>CLOUD 9</strong><span>→</span>
-        </a>
-        <div v-if="map1" class="night-train-map-row">
-          <strong>MAP I</strong><span>AUTHOR EXTRA</span>
-        </div>
-        <div v-if="map2" class="night-train-map-row">
-          <strong>MAP II</strong><span>AUTHOR EXTRA</span>
-        </div>
+        <template v-for="destination in destinations" :key="destination.id">
+          <a
+            v-if="destination.href"
+            :href="destination.href"
+            @click.prevent="emit('navigate', destination.href)"
+          >
+            <strong>{{ destination.label }}</strong><span>→</span>
+          </a>
+          <div v-else class="night-train-map-row">
+            <strong>{{ destination.label }}</strong>
+            <span>{{ destination.note ?? "" }}</span>
+          </div>
+        </template>
       </nav>
     </div>
   </AdventureViewport>
