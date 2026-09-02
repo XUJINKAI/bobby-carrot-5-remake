@@ -5,6 +5,7 @@ import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
+import type { EntityLayer } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
   EntityId,
@@ -43,6 +44,7 @@ export interface DebugSelectionSnapshot {
 export interface DebugPresenceSnapshot {
   entityId: EntityId;
   type: string;
+  layer: EntityLayer;
   role?: string;
   stackOrder: number;
   traits: readonly string[];
@@ -58,6 +60,7 @@ export interface DebugEntitySnapshot {
   instanceTraits: readonly string[];
   definition: {
     traits: readonly string[];
+    layer: EntityLayer;
     stackOrder: number | null;
     footprint: unknown;
     propertyFields: unknown;
@@ -177,11 +180,10 @@ function buildEntitySnapshot(
     instanceTraits: [...(entity.instanceTraits ?? [])],
     definition: {
       traits: [...definition.traits],
+      layer: definition.layer ?? "object",
       stackOrder: definition.stackOrder ?? null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
-      propertyFields: definition.properties
-        ? structuredClone(definition.properties)
-        : null,
+      propertyFields: definition.properties ? structuredClone(definition.properties) : null,
       stateFields: definition.state ? structuredClone(definition.state) : null,
       explicitBehaviors: [...(definition.behaviors ?? [])],
     },
@@ -214,6 +216,7 @@ function debugPresence(
   return {
     entityId: presence.entityId,
     type: world.entity(presence.entityId)?.type ?? "unknown",
+    layer: presence.layer,
     ...(presence.role ? { role: presence.role } : {}),
     stackOrder: presence.stackOrder,
     traits: [...presence.traits],
