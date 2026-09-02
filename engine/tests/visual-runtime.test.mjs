@@ -21,6 +21,7 @@ function bobbyVisual(options = {}) {
       x: 0,
       y: 0,
       direction: options.direction ?? "right",
+      ...(options.state ? { state: options.state } : {}),
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -105,7 +106,7 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
 test("Bobby mower cycles vertically inside the direction column", () => {
   const mower = bobbyVisual({
     direction: "up",
-    global: { ridingMower: true },
+    state: { mountId: 9 },
     time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
   });
   assert.equal(mower.layers[0].asset, "bobby-mower");
@@ -132,7 +133,7 @@ test("Bobby snowplow uses three rows inside the attempted direction column", () 
 test("Bobby glider selects one of four direction columns", () => {
   const flight = bobbyVisual({
     direction: "left",
-    global: { forced: { kind: "flight", direction: "left" } },
+    state: { flying: true },
   });
   assert.equal(flight.layers[0].asset, "bobby-kite");
   assert.equal(flight.layers[0].frameColumns, 4);
