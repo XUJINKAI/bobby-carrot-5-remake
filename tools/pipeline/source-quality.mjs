@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
@@ -22,14 +22,6 @@ const SOURCE_EXTENSIONS = new Set([
   ".css",
   ".html",
   ".vue",
-]);
-const REPOSITORY_TEXT_EXTENSIONS = new Set([
-  ...SOURCE_EXTENSIONS,
-  ".md",
-  ".json",
-  ".txt",
-  ".yml",
-  ".yaml",
 ]);
 const SCRIPT_EXTENSIONS = new Set([".ts", ".js", ".mjs"]);
 const MAX_SOURCE_LINES = 1000;
@@ -73,13 +65,10 @@ for (const sourceRoot of SOURCE_ROOTS) {
   });
 }
 
-for (const relative of trackedTextFiles()) {
-  const text = fs.readFileSync(path.join(root, relative), "utf8");
-  if (text.includes(OBSOLETE_SITE_ORIGIN)) {
-    errors.push(
-      `${relative}: 正式站点统一使用 https://bc5r.xujinkai.net，不应保留旧 GitHub Pages 域名`,
-    );
-  }
+for (const relative of obsoleteSiteReferences()) {
+  errors.push(
+    `${relative}: 正式站点统一使用 https://bc5r.xujinkai.net，不应保留旧 GitHub Pages 域名`,
+  );
 }
 
 for (const warning of warnings) {
@@ -97,15 +86,17 @@ function countLines(text) {
   return text.split(/\r?\n/).length;
 }
 
-function trackedTextFiles() {
-  const output = execFileSync("git", ["ls-files"], {
-    cwd: root,
-    encoding: "utf8",
-  });
-  return output
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .filter((relative) => REPOSITORY_TEXT_EXTENSIONS.has(path.extname(relative)));
+function obsoleteSiteReferences() {
+  const result = spawnSync(
+    "git",
+    ["grep", "-Il", OBSOLETE_SITE_ORIGIN, "--", "."],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (result.status === 1) return [];
+  if (result.status !== 0) {
+    throw new Error(`无法扫描旧站点地址：${result.stderr.trim()}`);
+  }
+  return result.stdout.split(/\r?\n/).filter(Boolean);
 }
 
 function checkCompactCode(file, text, relative) {
