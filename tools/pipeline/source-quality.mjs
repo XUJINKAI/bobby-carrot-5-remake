@@ -35,7 +35,7 @@ const SCRIPT_EXTENSIONS = new Set([".ts", ".js", ".mjs"]);
 const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
 const IMAGE_MANAGER = path.normalize("engine/src/image/ImageManager.ts");
-const OBSOLETE_SITE_ORIGIN = "xujinkai.github.io";
+const OBSOLETE_SITE_ORIGIN = ["xujinkai", "github", "io"].join(".");
 
 const errors = [];
 const warnings = [];
@@ -77,7 +77,7 @@ for (const relative of trackedTextFiles()) {
   const text = fs.readFileSync(path.join(root, relative), "utf8");
   if (text.includes(OBSOLETE_SITE_ORIGIN)) {
     errors.push(
-      `${relative}: 正式站点统一使用 https://bc5r.xujinkai.net，不应保留 ${OBSOLETE_SITE_ORIGIN}`,
+      `${relative}: 正式站点统一使用 https://bc5r.xujinkai.net，不应保留旧 GitHub Pages 域名`,
     );
   }
 }
