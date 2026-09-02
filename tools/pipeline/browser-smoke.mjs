@@ -124,7 +124,7 @@ try {
     'id="editor-share"',
     'class="editor-palette"',
   ]);
-  await smoke(`${origin}/edit/novoban-pushbox/01`, ["bobby-editor"]);
+  await smoke(`${origin}/edit#map=novoban-pushbox/01`, ["bobby-editor"]);
   const mapPayload = exchangePayload(
     fs.readFileSync(
       path.join(root, "custom-maps/test/mechanics-smoke.json"),
@@ -154,12 +154,17 @@ try {
     'class="import-page"',
     "BC5R1",
   ]);
+  await expectStatus(`${origin}/robots.txt`, 200, "text/plain");
+  await expectStatus(`${origin}/sitemap.xml`, 200, "application/xml");
+  await expectStatus(`${origin}/edit/novoban-pushbox/01`, 404, "text/plain");
+  await expectStatus(`${origin}/explore/original`, 404, "text/plain");
+  await expectStatus(`${origin}/this-route-does-not-exist`, 404, "text/plain");
   await expectStatus(`${origin}/assets/does-not-exist.png`, 404, "text/plain");
   await expectStatus(`${origin}/engine/missing.js`, 404, "text/plain");
   await expectStatus(`${origin}/model/missing`, 404, "text/plain");
   await expectStatus(`${origin}/adventure/missing.js`, 404, "text/plain");
   console.log(
-    `browser smoke: OK — ${path.basename(browser)} loaded Explore/Adventure SPA routes while missing static resources returned 404`,
+    `browser smoke: OK — ${path.basename(browser)} loaded generated SPA route shells while unknown routes and missing static resources returned 404`,
   );
 } finally {
   await new Promise((resolve) => server.close(resolve));
@@ -178,10 +183,8 @@ async function expectStatus(url, expectedStatus, typePrefix) {
   if (!type.startsWith(typePrefix))
     throw new Error(`Expected ${url} content-type ${typePrefix}, got ${type}`);
   const body = await response.text();
-  if (body.includes('<div id="app">'))
-    throw new Error(
-      `Missing static resource ${url} incorrectly received SPA HTML`,
-    );
+  if (expectedStatus === 404 && body.includes('<div id="app">'))
+    throw new Error(`404 request ${url} incorrectly received SPA HTML`);
 }
 async function smoke(url, expected, forbidden = []) {
   const result = await runBrowser(url);
