@@ -38,8 +38,8 @@ Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `un
 `publicBaseUrl` 是包含 scheme、host、port 和可选 pathname 的完整 Web App 根地址。URL 拼接统一先清除 query/fragment、保留并规范化 pathname 尾部，再用相对路径 `import/v1` 构造。
 
 ```text
-https://xujinkai.github.io/bobby-carrot-5-remake
-→ https://xujinkai.github.io/bobby-carrot-5-remake/import/v1#PAYLOAD
+https://bc5r.xujinkai.net
+→ https://bc5r.xujinkai.net/import/v1#PAYLOAD
 ```
 
 Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构建通过 `BC5R_BASE_PATH` 配置前者，通过 `VITE_PUBLIC_BASE_URL` 配置后者；未配置分享根地址时使用 `document.baseURI`。
