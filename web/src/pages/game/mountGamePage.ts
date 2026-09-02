@@ -60,6 +60,19 @@ export interface GameIdentity {
   title: string;
 }
 
+/** Adventure 对 Engine camera 的产品约束入口；具体数值后续可以独立调整。 */
+export interface AdventureEngineCameraLimits {
+  minZoom: number;
+  maxZoom: number;
+  maxVisibleColumns: number;
+}
+
+export const DEFAULT_ADVENTURE_ENGINE_CAMERA_LIMITS: AdventureEngineCameraLimits = {
+  minZoom: 0.72,
+  maxZoom: 2.75,
+  maxVisibleColumns: 9,
+};
+
 export interface GamePageContext {
   app: HTMLDivElement;
   adventure: AdventureIndex;
@@ -73,7 +86,9 @@ export interface GamePageContext {
   adventureLevel?: AdventureIndexLevel;
   adventureScene?: AdventureIndexSpecialScene;
   adventureBackPath?: string;
+  adventureCompletionPath?: string;
   adventureHudEconomy?: boolean;
+  adventureCameraLimits?: Partial<AdventureEngineCameraLimits>;
   mode: GamePageMode;
 }
 
@@ -93,7 +108,9 @@ export async function renderGamePage(
     adventureLevel,
     adventureScene,
     adventureBackPath,
+    adventureCompletionPath,
     adventureHudEconomy,
+    adventureCameraLimits,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -120,13 +137,20 @@ export async function renderGamePage(
     rememberExploreMap(identity.collection, identity.id);
   }
 
-  const plan = adventureSave
-    ? campaignNode
+  const sessionPlan =
+    adventureSave && campaignNode
       ? planAdventureSession(adventureLevel!.id, adventureSave)
-      : planAdventureProfile(adventureSave)
+      : null;
+  const plan = adventureSave
+    ? (sessionPlan ?? planAdventureProfile(adventureSave))
     : null;
-  const sessionLevel = adventureSave && campaignNode
-    ? createAdventureLevelInstance(adventureLevel!.id, level, adventureSave)
+  const sessionLevel = adventureSave && sessionPlan
+    ? createAdventureLevelInstance(
+        adventureLevel!.id,
+        level,
+        adventureSave,
+        sessionPlan.entityPatches,
+      )
     : level;
   const screenControlEnabled = loadScreenControlPreference();
   configureShell(
@@ -189,12 +213,16 @@ export async function renderGamePage(
   let debugInspection: string | null = null;
   let visibleResult: "death" | "complete" | null = null;
   let persistedAdventureSignature = "";
+  let completionNavigationStarted = false;
 
+  const cameraLimits = resolveAdventureCameraLimits(adventureCameraLimits);
   const applyAdventureCamera = (): void => {
     if (mode !== "adventure") return;
     const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const minZoom = Math.max(0.72, width / (game.sourceTileSize * 9));
-    game.setZoomLimits(minZoom, 2.75);
+    const fitColumnsZoom =
+      width / (game.sourceTileSize * cameraLimits.maxVisibleColumns);
+    const minZoom = Math.max(cameraLimits.minZoom, fitColumnsZoom);
+    game.setZoomLimits(minZoom, cameraLimits.maxZoom);
     if (game.zoom < minZoom) game.setZoom(minZoom);
   };
   applyAdventureCamera();
@@ -238,6 +266,16 @@ export async function renderGamePage(
           : null;
     if (!kind) {
       closeResult();
+      return;
+    }
+    if (
+      kind === "complete" &&
+      adventureCompletionPath &&
+      !completionNavigationStarted
+    ) {
+      completionNavigationStarted = true;
+      persistAdventureSession();
+      navigate(adventureCompletionPath);
       return;
     }
     if (visibleResult === kind) return;
@@ -305,6 +343,7 @@ export async function renderGamePage(
     game.restart();
     levelStartedAt = performance.now();
     debugInspection = null;
+    completionNavigationStarted = false;
     closeResult();
     update();
   };
@@ -461,6 +500,24 @@ function backPath(
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
+}
+
+function resolveAdventureCameraLimits(
+  override?: Partial<AdventureEngineCameraLimits>,
+): AdventureEngineCameraLimits {
+  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_LIMITS;
+  return {
+    minZoom: positiveFinite(override?.minZoom, defaults.minZoom),
+    maxZoom: positiveFinite(override?.maxZoom, defaults.maxZoom),
+    maxVisibleColumns: positiveFinite(
+      override?.maxVisibleColumns,
+      defaults.maxVisibleColumns,
+    ),
+  };
+}
+
+function positiveFinite(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
 function bindGameShell(
