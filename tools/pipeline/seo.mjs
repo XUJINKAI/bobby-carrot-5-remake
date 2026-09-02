@@ -200,7 +200,57 @@ function writeRouteShell(sourceHtml, descriptor) {
 
 function writeNotFoundPage() {
   const title = `页面不存在 | ${brand}`;
-  const html = `<!doctype html>\n<html lang="zh-CN">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <meta name="robots" content="noindex,follow" />\n    <title>${escapeHtml(title)}</title>\n  </head>\n  <body>\n    <main>\n      <h1>页面不存在</h1>\n      <p><a href="/">返回 Bobby Carrot 5 Remake 首页</a></p>\n    </main>\n  </body>\n</html>\n`;
+  const html = `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,follow" />
+    <title>${escapeHtml(title)}</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; margin: 0; }
+      body {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 50% 40%, rgba(77, 128, 214, 0.28), transparent 34rem),
+          #143778;
+        color: #f5f8ff;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        display: grid;
+        justify-items: center;
+        gap: 28px;
+        padding: 40px 24px;
+        text-align: center;
+      }
+      img {
+        display: block;
+        width: clamp(160px, 28vw, 280px);
+        max-width: 72vw;
+        height: auto;
+      }
+      a {
+        color: #f5f8ff;
+        font-size: 1rem;
+        font-weight: 650;
+        text-decoration-color: rgba(245, 248, 255, 0.6);
+        text-underline-offset: 5px;
+      }
+      a:hover { text-decoration-color: currentColor; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/assets/art/hd/sleep.png" alt="睡着的兔子波比" />
+      <a href="/">返回首页</a>
+    </main>
+  </body>
+</html>
+`;
   fs.writeFileSync(path.join(dist, "404.html"), html);
 }
 
