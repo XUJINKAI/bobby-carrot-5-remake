@@ -340,7 +340,7 @@ async function runBrowserEval(url, script) {
   child.stderr.on("data", (chunk) => (stderr += String(chunk)));
   try {
     const endpoint = await waitForDebugEndpoint(port);
-    const page = await fetch(`${endpoint}/json/new?${encodeURIComponent(url)}`, {
+    const page = await fetch(`${endpoint}/json/new?about:blank`, {
       method: "PUT",
     }).then((response) => response.json());
     const ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -363,7 +363,9 @@ async function runBrowserEval(url, script) {
         pending.set(requestId, { resolve, reject });
         ws.send(JSON.stringify({ id: requestId, method, params }));
       });
+    await send("Page.enable");
     await send("Runtime.enable");
+    await send("Page.navigate", { url });
     await new Promise((resolve) => setTimeout(resolve, 700));
     const evaluation = await send("Runtime.evaluate", {
       expression: script,
