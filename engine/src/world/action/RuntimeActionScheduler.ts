@@ -2,6 +2,7 @@ import type { WorldTick } from "../../time/WorldClock.js";
 import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
+import type { WorldIntent } from "../movement/WorldIntent.js";
 import type {
   RuntimeActionId,
   RuntimeActionInstance,
@@ -68,7 +69,8 @@ export class RuntimeActionScheduler {
     time: WorldTick,
     query: WorldQueryApi,
     commands: WorldCommandApi,
-  ): void {
+  ): WorldIntent[] {
+    const intents: WorldIntent[] = [];
     const ids = [...this.actions.keys()].sort((a, b) => a - b);
     for (const id of ids) {
       const action = this.actions.get(id);
@@ -79,8 +81,12 @@ export class RuntimeActionScheduler {
         query,
         commands,
       });
-      if (result === "complete") this.actions.delete(id);
+      const status = typeof result === "string" ? result : result?.status;
+      if (typeof result === "object" && result?.intents)
+        intents.push(...result.intents.map((intent) => structuredClone(intent)));
+      if (status === "complete") this.actions.delete(id);
     }
+    return intents;
   }
 
   snapshot(): RuntimeActionSchedulerSnapshot {
