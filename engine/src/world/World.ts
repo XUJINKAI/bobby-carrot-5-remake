@@ -42,6 +42,7 @@ import { MovementTransaction } from "./movement/MovementTransaction.js";
 import type { MoveIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
 import {
   emptyMutationSummary,
+  emptyWorldStepResult,
   type WorldMutationSummary,
   type WorldStepResult,
 } from "./movement/WorldStepResult.js";
@@ -156,8 +157,14 @@ export class World {
 
   setEconomy(economy: Partial<EconomyState>): void {
     this.state.economy = {
-      bonusCoins: Math.max(0, Math.floor(economy.bonusCoins ?? this.state.economy.bonusCoins)),
-      goldenCarrots: Math.max(0, Math.floor(economy.goldenCarrots ?? this.state.economy.goldenCarrots)),
+      bonusCoins: Math.max(
+        0,
+        Math.floor(economy.bonusCoins ?? this.state.economy.bonusCoins),
+      ),
+      goldenCarrots: Math.max(
+        0,
+        Math.floor(economy.goldenCarrots ?? this.state.economy.goldenCarrots),
+      ),
     };
   }
 
@@ -165,7 +172,10 @@ export class World {
     return this.actions.start(spec);
   }
 
-  killActor(entityId: EntityId, reason = "An actor could not continue."): WorldEvent[] {
+  killActor(
+    entityId: EntityId,
+    reason = "An actor could not continue.",
+  ): WorldEvent[] {
     if (this.state.dead) return [];
     this.state.dead = true;
     this.state.deathReason = reason;
@@ -195,7 +205,9 @@ export class World {
     const cell = { x, y };
     if (!this.spatial.inBounds(cell)) return null;
     const rawPresences = this.spatial.presencesAt(cell);
-    const presences = rawPresences.map((presence) => this.inspectPresence(presence));
+    const presences = rawPresences.map((presence) =>
+      this.inspectPresence(presence),
+    );
     const topPresence = presences.at(-1);
     const actorIds = [
       ...new Set(
@@ -226,13 +238,16 @@ export class World {
       if (intent.type !== "move") continue;
       const result = this.resolveMove(intent, transaction, reachedSelectors);
       moves.push(result);
-      if (result.moved && intent.cause.type === "player-input") playerInputMoved = true;
+      if (result.moved && intent.cause.type === "player-input")
+        playerInputMoved = true;
     }
 
     if (playerInputMoved)
       transaction.commands.setGlobal("moves", this.state.moves + 1);
     if (reachedSelectors.size > 0)
-      transaction.commands.setGlobal("lastReachedSelectors", [...reachedSelectors]);
+      transaction.commands.setGlobal("lastReachedSelectors", [
+        ...reachedSelectors,
+      ]);
 
     const beforeDead = this.state.dead;
     const beforeCompleted = this.state.completed;
@@ -253,14 +268,36 @@ export class World {
     };
   }
 
-  /** RuntimeAction 与 Behavior 都只在统一 WorldTick 上推进。 */
-  update(time: WorldTick): WorldEvent[] {
-    if (time.stepMs <= 0 || this.state.dead || this.state.completed) return [];
+  /**
+   * 一个 WorldTick 分成稳定 phase：
+   * RuntimeAction commands -> RuntimeAction intents -> Behavior onTick。
+   * 每个 phase commit 后，后续 phase 才读取新的 World。
+   */
+  update(time: WorldTick): WorldStepResult {
+    const result = emptyWorldStepResult();
+    if (time.stepMs <= 0 || this.state.dead || this.state.completed)
+      return result;
+
     this.state.elapsedMs += time.stepMs;
-    const queue = new CommandQueue();
 
-    this.actions.update(time, this.query, queue);
+    const actionQueue = new CommandQueue();
+    const actionIntents = this.actions.update(time, this.query, actionQueue);
+    const actionCommit = this.commit(actionQueue);
+    this.refreshDerivedState();
+    this.evaluateCompletion(actionCommit.events);
+    absorbCommit(result, actionCommit);
+    if (this.state.dead || this.state.completed) return result;
 
+    if (actionIntents.length > 0) {
+      const actionStep = this.step({
+        intents: actionIntents,
+        historyBoundary: false,
+      });
+      absorbStep(result, actionStep);
+      if (this.state.dead || this.state.completed) return result;
+    }
+
+    const tickQueue = new CommandQueue();
     const snapshot = this.entities.all().map((entity) => entity.id);
     for (const entityId of snapshot) {
       const entity = this.entities.get(entityId);
@@ -271,18 +308,20 @@ export class World {
         presence,
         entity,
         undefined,
-        queue,
+        tickQueue,
         undefined,
         time,
       );
       for (const behavior of this.resolveBehaviors(entity, presence))
         behavior.onTick?.(context);
     }
-    const commit = this.commit(queue);
+
+    const tickCommit = this.commit(tickQueue);
     this.refreshDerivedState();
-    this.evaluateCompletion(commit.events);
-    this.evaluateLimits(commit.events);
-    return commit.events;
+    this.evaluateCompletion(tickCommit.events);
+    this.evaluateLimits(tickCommit.events);
+    absorbCommit(result, tickCommit);
+    return result;
   }
 
   private resolveMove(
@@ -293,15 +332,33 @@ export class World {
     const actor = this.entities.get(intent.actorId);
     const missingFrom = actor?.anchor ?? { x: -1, y: -1 };
     if (!actor)
-      return blockedResult(intent.actorId, missingFrom, missingFrom, intent.direction, "missing-actor");
+      return blockedResult(
+        intent.actorId,
+        missingFrom,
+        missingFrom,
+        intent.direction,
+        "missing-actor",
+      );
 
     const from = { ...actor.anchor };
     const to = addDirection(from, intent.direction);
     const movement: MovementContext = { from, to, cause: intent.cause };
     if (this.state.dead || this.state.completed)
-      return blockedResult(actor.id, from, to, intent.direction, "world-finished");
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "world-finished",
+      );
     if (!this.spatial.inBounds(to))
-      return blockedResult(actor.id, from, to, intent.direction, "void");
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "void",
+      );
 
     const local = new MovementTransaction();
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
@@ -323,10 +380,15 @@ export class World {
         leave.reason ?? "leave-blocked",
       );
 
-    let pushed: { entityId: EntityId; from: CellPosition; to: CellPosition } | null = null;
+    let pushed: {
+      entityId: EntityId;
+      from: CellPosition;
+      to: CellPosition;
+    } | null = null;
     const pushable = targetStack.find(
       (presence) =>
-        presence.entityId !== actor.id && presence.traits.includes("pushable"),
+        presence.entityId !== actor.id &&
+        presence.traits.includes("pushable"),
     );
     if (pushable) {
       const pushTo = addDirection(to, intent.direction);
@@ -334,15 +396,41 @@ export class World {
         !this.canOccupy(pushTo, pushable.entityId, group) ||
         !group.canReserveDestination(pushable.entityId, pushTo)
       ) {
-        this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
-        return blockedResult(actor.id, from, to, intent.direction, "push-blocked", group);
+        this.runTouch(
+          targetStack,
+          actor,
+          intent.direction,
+          group.commands,
+          movement,
+        );
+        return blockedResult(
+          actor.id,
+          from,
+          to,
+          intent.direction,
+          "push-blocked",
+          group,
+        );
       }
       pushed = { entityId: pushable.entityId, from: to, to: pushTo };
     }
 
     if (!this.hasWalkable(to)) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
-      return blockedResult(actor.id, from, to, intent.direction, "void", group);
+      this.runTouch(
+        targetStack,
+        actor,
+        intent.direction,
+        group.commands,
+        movement,
+      );
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "void",
+        group,
+      );
     }
 
     const resolution = this.resolveEntry(
@@ -354,7 +442,13 @@ export class World {
       pushable?.entityId ?? null,
     );
     if (!resolution.passable) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(
+        targetStack,
+        actor,
+        intent.direction,
+        group.commands,
+        movement,
+      );
       return blockedResult(
         actor.id,
         from,
@@ -375,7 +469,13 @@ export class World {
       pushable?.entityId ?? null,
     );
     if (!enter.passable) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(
+        targetStack,
+        actor,
+        intent.direction,
+        group.commands,
+        movement,
+      );
       return blockedResult(
         actor.id,
         from,
@@ -387,23 +487,66 @@ export class World {
     }
 
     if (!group.canReserveDestination(actor.id, to))
-      return blockedResult(actor.id, from, to, intent.direction, "destination-conflict");
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "destination-conflict",
+      );
     if (pushed && !group.canReserveDestination(pushed.entityId, pushed.to))
-      return blockedResult(actor.id, from, to, intent.direction, "destination-conflict");
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "destination-conflict",
+      );
 
     for (const presence of sourceStack)
-      this.runHook("onLeave", presence, actor, intent.direction, local.commands, movement);
+      this.runHook(
+        "onLeave",
+        presence,
+        actor,
+        intent.direction,
+        local.commands,
+        movement,
+      );
     if (pushed)
-      local.move(pushed.entityId, pushed.from, pushed.to, intent.direction, false);
-    local.move(actor.id, from, to, intent.direction);
+      local.move(
+        pushed.entityId,
+        pushed.from,
+        pushed.to,
+        intent.direction,
+        { type: "push", sourceEntityId: actor.id },
+        false,
+      );
+    local.move(actor.id, from, to, intent.direction, intent.cause);
     for (const presence of targetStack) {
       if (
         presence.entityId !== pushable?.entityId &&
         !local.isEntryAllowed(presence.entityId)
       )
-        this.runHook("onEnter", presence, actor, intent.direction, local.commands, movement);
-      else if (local.isEntryAllowed(presence.entityId) && this.entities.get(presence.entityId))
-        this.runHook("onEnter", presence, actor, intent.direction, local.commands, movement);
+        this.runHook(
+          "onEnter",
+          presence,
+          actor,
+          intent.direction,
+          local.commands,
+          movement,
+        );
+      else if (
+        local.isEntryAllowed(presence.entityId) &&
+        this.entities.get(presence.entityId)
+      )
+        this.runHook(
+          "onEnter",
+          presence,
+          actor,
+          intent.direction,
+          local.commands,
+          movement,
+        );
     }
 
     for (const selector of this.selectorsForPresences(targetStack))
@@ -451,15 +594,29 @@ export class World {
     ignoredEntity: EntityId | null = null,
   ): PassageResult {
     for (const presence of stack) {
-      if (presence.entityId === actor.id || presence.entityId === ignoredEntity) continue;
+      if (
+        presence.entityId === actor.id ||
+        presence.entityId === ignoredEntity
+      )
+        continue;
       const entity = this.entities.require(presence.entityId);
       for (const behavior of this.resolveBehaviors(entity, presence)) {
         const result = behavior.resolveEntry?.(
-          this.context(actor, presence, entity, direction, transaction.commands, movement),
+          this.context(
+            actor,
+            presence,
+            entity,
+            direction,
+            transaction.commands,
+            movement,
+          ),
         );
         if (!result) continue;
         if (result.result === "blocked")
-          return { passable: false, ...(result.reason ? { reason: result.reason } : {}) };
+          return {
+            passable: false,
+            ...(result.reason ? { reason: result.reason } : {}),
+          };
         if (result.result === "pass" || result.result === "clear-and-pass")
           transaction.allowEntryFor(presence.entityId);
       }
@@ -487,7 +644,14 @@ export class World {
       let explicitPass = false;
       for (const behavior of this.resolveBehaviors(entity, presence)) {
         const result = behavior[hook]?.(
-          this.context(actor, presence, entity, direction, transaction.commands, movement),
+          this.context(
+            actor,
+            presence,
+            entity,
+            direction,
+            transaction.commands,
+            movement,
+          ),
         );
         if (result?.passable === false) return result;
         if (result?.passable === true) explicitPass = true;
@@ -510,7 +674,14 @@ export class World {
   ): void {
     for (const presence of stack) {
       if (presence.entityId === actor.id) continue;
-      this.runHook("onTouch", presence, actor, direction, queue, movement);
+      this.runHook(
+        "onTouch",
+        presence,
+        actor,
+        direction,
+        queue,
+        movement,
+      );
     }
   }
 
@@ -648,9 +819,10 @@ export class World {
     for (const limit of this.rules?.limits ?? []) {
       const exceeded = this.limitExceeded(limit);
       if (!exceeded) continue;
-      const reason = limit.type === "max-moves"
-        ? `Move limit exceeded: ${limit.moves}`
-        : `Time limit exceeded: ${limit.seconds}s`;
+      const reason =
+        limit.type === "max-moves"
+          ? `Move limit exceeded: ${limit.moves}`
+          : `Time limit exceeded: ${limit.seconds}s`;
       if (!this.state.dead) {
         this.state.dead = true;
         this.state.deathReason = reason;
@@ -702,8 +874,9 @@ export class World {
           type: "reach",
           target: condition.target,
           completed:
-            actors.some((actor) => this.hasSelectorAt(actor.anchor, condition.target)) ||
-            this.state.lastReachedSelectors.includes(condition.target),
+            actors.some((actor) =>
+              this.hasSelectorAt(actor.anchor, condition.target),
+            ) || this.state.lastReachedSelectors.includes(condition.target),
         };
       }
       case "fill-all": {
@@ -739,7 +912,9 @@ export class World {
     });
   }
 
-  private selectorsForPresences(presences: readonly EntityPresence[]): string[] {
+  private selectorsForPresences(
+    presences: readonly EntityPresence[],
+  ): string[] {
     const selectors = new Set<string>();
     for (const presence of presences) {
       const entity = this.entities.get(presence.entityId);
@@ -762,9 +937,7 @@ export class World {
     return [...result.values()];
   }
 
-  private inspectPresence(
-    presence: EntityPresence,
-  ): PresenceInspection {
+  private inspectPresence(presence: EntityPresence): PresenceInspection {
     const entity = this.entities.require(presence.entityId);
     return {
       entityId: entity.id,
@@ -806,6 +979,35 @@ function blockedResult(
     passage: { reason, confidence: "rule" },
     events: transaction ? [] : [],
   };
+}
+
+function absorbCommit(target: WorldStepResult, commit: CommitResult): void {
+  target.events.push(...commit.events.map((event) => structuredClone(event)));
+  absorbMutations(target.mutations, commit.mutations);
+}
+
+function absorbStep(target: WorldStepResult, step: WorldStepResult): void {
+  target.moves.push(...step.moves.map((move) => structuredClone(move)));
+  target.motions.push(...step.motions.map((motion) => structuredClone(motion)));
+  target.events.push(...step.events.map((event) => structuredClone(event)));
+  absorbMutations(target.mutations, step.mutations);
+}
+
+function absorbMutations(
+  target: WorldMutationSummary,
+  source: WorldMutationSummary,
+): void {
+  for (const value of source.moved) pushUnique(target.moved, value);
+  for (const value of source.stateChanged)
+    pushUnique(target.stateChanged, value);
+  for (const value of source.spawned) pushUnique(target.spawned, value);
+  for (const value of source.destroyed) pushUnique(target.destroyed, value);
+  for (const value of source.globalsChanged)
+    pushUnique(target.globalsChanged, value);
+  for (const value of source.actionsStarted)
+    pushUnique(target.actionsStarted, value);
+  for (const value of source.actionsCancelled)
+    pushUnique(target.actionsCancelled, value);
 }
 
 function pushUnique<T>(values: T[], value: T): void {
