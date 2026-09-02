@@ -43,6 +43,8 @@ import type { MoveIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
 import {
   emptyMutationSummary,
   emptyWorldStepResult,
+  mergeWorldMutationSummary,
+  mergeWorldStepResult,
   type WorldMutationSummary,
   type WorldStepResult,
 } from "./movement/WorldStepResult.js";
@@ -293,7 +295,7 @@ export class World {
         intents: actionIntents,
         historyBoundary: false,
       });
-      absorbStep(result, actionStep);
+      mergeWorldStepResult(result, actionStep);
       if (this.state.dead || this.state.completed) return result;
     }
 
@@ -352,13 +354,7 @@ export class World {
         "world-finished",
       );
     if (!this.spatial.inBounds(to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "void",
-      );
+      return blockedResult(actor.id, from, to, intent.direction, "void");
 
     const local = new MovementTransaction();
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
@@ -409,7 +405,6 @@ export class World {
           to,
           intent.direction,
           "push-blocked",
-          group,
         );
       }
       pushed = { entityId: pushable.entityId, from: to, to: pushTo };
@@ -423,14 +418,7 @@ export class World {
         group.commands,
         movement,
       );
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "void",
-        group,
-      );
+      return blockedResult(actor.id, from, to, intent.direction, "void");
     }
 
     const resolution = this.resolveEntry(
@@ -455,7 +443,6 @@ export class World {
         to,
         intent.direction,
         resolution.reason ?? "blocked",
-        group,
       );
     }
 
@@ -482,7 +469,6 @@ export class World {
         to,
         intent.direction,
         enter.reason ?? "blocked",
-        group,
       );
     }
 
@@ -967,7 +953,6 @@ function blockedResult(
   to: CellPosition,
   direction: Direction,
   reason: string,
-  transaction?: MovementTransaction,
 ): MoveResult {
   return {
     actorId,
@@ -977,37 +962,13 @@ function blockedResult(
     to,
     direction,
     passage: { reason, confidence: "rule" },
-    events: transaction ? [] : [],
+    events: [],
   };
 }
 
 function absorbCommit(target: WorldStepResult, commit: CommitResult): void {
   target.events.push(...commit.events.map((event) => structuredClone(event)));
-  absorbMutations(target.mutations, commit.mutations);
-}
-
-function absorbStep(target: WorldStepResult, step: WorldStepResult): void {
-  target.moves.push(...step.moves.map((move) => structuredClone(move)));
-  target.motions.push(...step.motions.map((motion) => structuredClone(motion)));
-  target.events.push(...step.events.map((event) => structuredClone(event)));
-  absorbMutations(target.mutations, step.mutations);
-}
-
-function absorbMutations(
-  target: WorldMutationSummary,
-  source: WorldMutationSummary,
-): void {
-  for (const value of source.moved) pushUnique(target.moved, value);
-  for (const value of source.stateChanged)
-    pushUnique(target.stateChanged, value);
-  for (const value of source.spawned) pushUnique(target.spawned, value);
-  for (const value of source.destroyed) pushUnique(target.destroyed, value);
-  for (const value of source.globalsChanged)
-    pushUnique(target.globalsChanged, value);
-  for (const value of source.actionsStarted)
-    pushUnique(target.actionsStarted, value);
-  for (const value of source.actionsCancelled)
-    pushUnique(target.actionsCancelled, value);
+  mergeWorldMutationSummary(target.mutations, commit.mutations);
 }
 
 function pushUnique<T>(values: T[], value: T): void {
