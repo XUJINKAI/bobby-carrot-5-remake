@@ -4,7 +4,7 @@ import { root } from "../lib/fs.mjs";
 
 const dist = path.join(root, "dist");
 const siteOrigin = (
-  process.env.BC5R_SITE_ORIGIN ?? "https://bc5r.xujinkai.net"
+  process.env.VITE_SITE_ORIGIN ?? "https://bc5r.xujinkai.net"
 ).replace(/\/+$/, "");
 
 export function verifySeoArtifacts() {
