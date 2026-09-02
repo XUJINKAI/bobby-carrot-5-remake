@@ -1,5 +1,6 @@
 import type { Direction } from "@bobby/model";
 import type { CellPosition } from "./entity/EntityInstance.js";
+import type { ForcedMotionKind } from "./movement/ForcedMotionTiming.js";
 
 export interface InventoryState {
   gas: boolean;
@@ -21,8 +22,12 @@ export interface ProfileCapabilities {
   bonusKeyTrialUsed: boolean;
 }
 
-export type ForcedKind = "speed" | "ice" | "tide" | "flight" | "leaf" | "mower-exit";
-export interface ForcedMovement { kind: ForcedKind; direction: Direction; }
+/** Temporary alias while the old global forced driver is removed from Game. */
+export type ForcedKind = ForcedMotionKind;
+export interface ForcedMovement {
+  kind: ForcedMotionKind;
+  direction: Direction;
+}
 
 /** 非空间 gameplay 状态。空间身份与实例 state 只存在于 EntityStore。 */
 export interface GlobalState {
@@ -55,7 +60,13 @@ export function createGlobalState(
     deathReason: null,
     moves: 0,
     elapsedMs: 0,
-    inventory: { gas: false, kite: false, shovel: false, beans: 0, temporaryKey: false },
+    inventory: {
+      gas: false,
+      kite: false,
+      shovel: false,
+      beans: 0,
+      temporaryKey: false,
+    },
     economy: {
       bonusCoins: Math.max(0, Math.floor(economy.bonusCoins ?? 0)),
       goldenCarrots: Math.max(0, Math.floor(economy.goldenCarrots ?? 0)),
