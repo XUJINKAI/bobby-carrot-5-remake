@@ -31,6 +31,9 @@ test("EntityModule colocates definition visual and behavior bindings", () => {
   assert.ok(portal.visual);
   assert.deepEqual(bindingIds(portal), [["portal", "portal"]]);
   assert.ok(portal.definition.behaviors?.includes("portal"));
+
+  const ice = moduleFor(EntityTypeId.ICE);
+  assert.deepEqual(bindingIds(ice), [[undefined, "ice-slide"]]);
 });
 
 test("BehaviorRegistry is built from the same builtin EntityModule list", () => {
@@ -42,6 +45,7 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
     "dialog",
     "fill-egg-nest-on-leave",
     "hazard",
+    "ice-slide",
     "lock",
     "mowable",
     "pickup",
