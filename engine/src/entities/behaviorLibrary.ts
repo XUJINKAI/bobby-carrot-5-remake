@@ -34,7 +34,7 @@ const hazard: Behavior = {
   onEnter({ self, commands }) {
     if (self.entity.state?.active === false) return;
     commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "Bobby entered a hazard.");
+    commands.setGlobal("deathReason", "An actor entered a hazard.");
     commands.emit({
       type: "death",
       entityId: self.entity.id,
@@ -46,8 +46,11 @@ const hazard: Behavior = {
 
 const mowable: Behavior = {
   id: "mowable",
-  onTouch({ query, self, commands }) {
-    if (!query.global().ridingMower) return;
+  resolveEntry({ actor, query, self, commands }) {
+    const mountId = Number(actor.state?.mountId);
+    const mounted = Number.isInteger(mountId) && mountId > 0;
+    // Legacy global state is read only until mower state migration is complete.
+    if (!mounted && !query.global().ridingMower) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "mow",
@@ -55,13 +58,16 @@ const mowable: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
     });
+    return { result: "clear-and-pass", reason: "mow-clear" };
   },
 };
 
 const shovelable: Behavior = {
   id: "shovelable",
-  onTouch({ query, self, commands }) {
-    if (!query.global().inventory.shovel) return;
+  resolveEntry({ actor, query, self, commands }) {
+    const actorHasShovel = actor.state?.shovel === true;
+    // Legacy global inventory is read only until actor inventory migration is complete.
+    if (!actorHasShovel && !query.global().inventory.shovel) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "shovel",
@@ -69,6 +75,7 @@ const shovelable: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
     });
+    return { result: "clear-and-pass", reason: "shovel-clear" };
   },
 };
 
