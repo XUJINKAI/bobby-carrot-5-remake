@@ -1,11 +1,11 @@
 import {
   ORIGINAL_BOBBY_LOCOMOTION_TIMING,
 } from "../entities/player/BobbyLocomotion.js";
-import type { ForcedKind } from "../world/GlobalState.js";
+import type { ForcedMotionKind } from "../world/movement/ForcedMotionTiming.js";
 
 export interface GameplayMotionTiming {
   normalMs: number;
-  forcedMs: Readonly<Record<ForcedKind, number>>;
+  forcedMs: Readonly<Record<ForcedMotionKind, number>>;
   speedShoesScale: number;
 }
 
@@ -16,7 +16,7 @@ export interface GameplayTiming {
 export interface GameplayTimingOverride {
   motion?: {
     normalMs?: number;
-    forcedMs?: Partial<Record<ForcedKind, number>>;
+    forcedMs?: Partial<Record<ForcedMotionKind, number>>;
     speedShoesScale?: number;
   };
 }
