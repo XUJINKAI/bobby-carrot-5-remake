@@ -270,14 +270,19 @@ async function interactiveFilterSmoke(url) {
   if (!trigger) throw new Error('missing carrot trigger');
   trigger.click();
   await delay(80);
-  const option = find('[data-filter-option="carrots:1"]');
+  const option = find('[data-filter-group="carrots"][data-filter-option]');
   if (!option) throw new Error('missing carrot filter option');
+  const optionId = option.getAttribute('data-filter-option');
   option.click();
   await delay(80);
+  const currentTrigger = find('[data-filter-trigger="carrots"]');
+  const currentOption = optionId
+    ? find('[data-filter-group="carrots"][data-filter-option="' + optionId + '"]')
+    : null;
   return JSON.stringify({
-    selected: trigger.getAttribute('data-selected'),
-    active: option.classList.contains('active'),
-    cards: document.querySelectorAll('.level-card').length,
+    active: Boolean(currentTrigger?.classList.contains('active')),
+    selected: Boolean(currentOption?.classList.contains('selected')),
+    cards: document.querySelectorAll('[data-map-id]:not(.filter-hidden)').length,
   });
 })()
 `;
@@ -285,7 +290,7 @@ async function interactiveFilterSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (payload.selected !== "1" || !payload.active || payload.cards <= 0)
+  if (!payload.active || !payload.selected || payload.cards <= 0)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
 }
 async function interactiveDataExchangeSmoke(url) {
