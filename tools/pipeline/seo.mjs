@@ -5,7 +5,7 @@ import { root } from "../lib/fs.mjs";
 const dist = path.join(root, "dist");
 const assets = path.join(root, "assets");
 const siteOrigin = normalizeOrigin(
-  process.env.BC5R_SITE_ORIGIN ?? "https://bc5r.xujinkai.net",
+  process.env.VITE_SITE_ORIGIN ?? "https://bc5r.xujinkai.net",
 );
 const brand = "兔子波比5重制版";
 const ogImagePath = "/assets/art/hd/title.png";
