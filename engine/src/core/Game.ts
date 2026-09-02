@@ -3,6 +3,12 @@ import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
 import { DebugRuntime } from "../debug/DebugRuntime.js";
 import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
+import {
+  resolveBobbyLocomotionTiming,
+  type BobbyLocomotionTiming,
+  type BobbyLocomotionTimingOverride,
+} from "../entities/player/BobbyLocomotion.js";
+import { readBobbyInventory } from "../entities/player/BobbyState.js";
 import { visualRegistry } from "../entities/registry.js";
 import type { ImageManager } from "../image/ImageManager.js";
 import {
@@ -21,11 +27,6 @@ import {
   type EngineTiming,
   type EngineTimingOptions,
 } from "../time/EngineTiming.js";
-import {
-  resolveGameplayTiming,
-  type GameplayTiming,
-  type GameplayTimingOverride,
-} from "../time/GameplayTiming.js";
 import { PresentationClock } from "../time/PresentationClock.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
 import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
@@ -37,7 +38,6 @@ import type {
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type {
   EconomyState,
-  ForcedKind,
   ProfileCapabilities,
 } from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
@@ -62,7 +62,7 @@ export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
   tuning?: PresentationTuningOverride;
-  gameplayTiming?: GameplayTimingOverride;
+  bobbyLocomotion?: BobbyLocomotionTimingOverride;
   timing?: EngineTimingOptions;
   history?: HistoryPolicy;
   /** Concrete runtime bindings; callers may also call setControlBindings after load. */
@@ -101,7 +101,7 @@ export class Game {
   private readonly profile: Partial<ProfileCapabilities>;
   private readonly initialEconomy: Partial<EconomyState>;
   private readonly tuning: PresentationTuning;
-  private readonly gameplayTiming: GameplayTiming;
+  private readonly bobbyLocomotion: BobbyLocomotionTiming;
   private readonly timing: EngineTiming;
   private readonly historyPolicy: HistoryPolicy;
   private configuredControls: readonly ControlBinding[] | null;
@@ -137,7 +137,9 @@ export class Game {
     this.profile = options.profile ?? {};
     this.initialEconomy = options.economy ?? {};
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
-    this.gameplayTiming = resolveGameplayTiming(options.runtime?.gameplayTiming);
+    this.bobbyLocomotion = resolveBobbyLocomotionTiming(
+      options.runtime?.bobbyLocomotion,
+    );
     this.timing = resolveEngineTiming(options.runtime?.timing);
     this.historyPolicy = structuredClone(
       options.runtime?.history ?? DEFAULT_HISTORY_POLICY,
@@ -243,11 +245,9 @@ export class Game {
       actors,
       player: { ...primary.anchor },
       facing: primary.direction ?? "down",
-      inventory: structuredClone(state.inventory),
+      inventory: readBobbyInventory(primary.state),
       economy: structuredClone(state.economy),
       profile: structuredClone(state.profile),
-      ridingMower: state.ridingMower,
-      forced: state.forced ? structuredClone(state.forced) : null,
       bonusCoinsInLevel: state.bonusCoinsInLevel,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
       canUndo: this.canUndo,
@@ -330,7 +330,7 @@ export class Game {
       source,
       direction,
     );
-    const result = this.startLogicalStep(group, this.worldClock.nextTick);
+    const result = this.startLogicalStep(group);
     this.render();
     return result?.moves[0] ?? null;
   }
@@ -420,7 +420,7 @@ export class Game {
         actorId,
         position,
         position,
-        this.presentationMotionDuration(null),
+        this.presentationMotionDuration(),
         this.presentationClock.current,
         0,
       );
@@ -544,11 +544,7 @@ export class Game {
         ];
   }
 
-  private startLogicalStep(
-    group: WorldIntentGroup,
-    time: WorldTick,
-    forcedKind: ForcedKind | null = null,
-  ): WorldStepResult | null {
+  private startLogicalStep(group: WorldIntentGroup): WorldStepResult | null {
     if (group.intents.length === 0) return null;
     const before = this.world.snapshot();
     if (group.historyBoundary !== false) this.pendingHistorySnapshot = before;
@@ -578,8 +574,8 @@ export class Game {
     }
 
     const frame = this.presentationClock.current;
-    const gameplayDuration = this.gameplayMotionDuration(forcedKind);
-    const visualDuration = this.presentationMotionDuration(forcedKind);
+    const gameplayDuration = this.gameplayMotionDuration();
+    const visualDuration = this.presentationMotionDuration();
     const deathEvent = result.events.find((event) => event.type === "death");
     this.visual.camera.recenterPan(frame);
     for (const motion of result.motions) {
@@ -599,7 +595,7 @@ export class Game {
           createDelayRuntimeAction(gameplayDuration, {
             ownerEntityId: motion.entityId,
             blocksInput: true,
-            reason: forcedKind ? "forced-actor-motion" : "actor-motion",
+            reason: "actor-motion",
           }),
         );
       this.visual.beginMove(
@@ -615,21 +611,16 @@ export class Game {
     return result;
   }
 
-  private gameplayMotionDuration(forcedKind: ForcedKind | null): number {
-    const motion = this.gameplayTiming.motion;
-    let duration = forcedKind
-      ? motion.forcedMs[forcedKind]
-      : motion.normalMs;
+  private gameplayMotionDuration(): number {
+    let duration = this.bobbyLocomotion.moveMs;
     if (this.world.state.profile.speedShoes)
-      duration *= motion.speedShoesScale;
+      duration *= this.bobbyLocomotion.speedShoesScale;
     return duration;
   }
 
-  private presentationMotionDuration(forcedKind: ForcedKind | null): number {
+  private presentationMotionDuration(): number {
     const motion = this.tuning.motion;
-    let duration = forcedKind
-      ? motion.forcedMs[forcedKind]
-      : motion.normalMs;
+    let duration = motion.normalMs;
     if (this.world.state.profile.speedShoes)
       duration *= motion.speedShoesScale;
     return duration;
@@ -650,32 +641,12 @@ export class Game {
       return;
     }
 
-    const forced = this.world.state.forced;
-    if (!this.world.inputBlocked && forced) {
-      this.startLogicalStep(
-        {
-          intents: [
-            {
-              type: "move",
-              actorId: this.primaryActorId,
-              direction: forced.direction,
-              cause: { type: "forced" },
-            },
-          ],
-          historyBoundary: false,
-        },
-        time,
-        forced.kind,
-      );
-      return;
-    }
-
     const input = this.inputController?.update(time) ?? null;
-    if (input) this.applyInput(input, time);
-    else this.applyDirectHeldInput(time);
+    if (input) this.applyInput(input);
+    else this.applyDirectHeldInput();
   }
 
-  private applyInput(input: InputState, time: WorldTick): void {
+  private applyInput(input: InputState): void {
     if (!this.inputController || input.moves.length === 0) return;
 
     if (!this.worldValue || this.world.dead || this.world.completed) {
@@ -712,10 +683,7 @@ export class Game {
       return;
     }
 
-    const result = this.startLogicalStep(
-      { intents, historyBoundary: true },
-      time,
-    );
+    const result = this.startLogicalStep({ intents, historyBoundary: true });
     const movedActors = new Set(
       result?.moves
         .filter((move) => move.moved && move.actorId !== undefined)
@@ -742,7 +710,7 @@ export class Game {
     );
   }
 
-  private applyDirectHeldInput(time: WorldTick): void {
+  private applyDirectHeldInput(): void {
     if (
       !this.heldDirection ||
       this.heldDirectionBlocked ||
@@ -757,7 +725,7 @@ export class Game {
       "external",
       this.heldDirection,
     );
-    const result = this.startLogicalStep(group, time);
+    const result = this.startLogicalStep(group);
     if (!result?.moves.some((move) => move.moved))
       this.heldDirectionBlocked = true;
   }
