@@ -1,4 +1,4 @@
-import { ORIGINAL_GAMEPLAY_TIMING } from "../../time/GameplayTiming.js";
+import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../../entities/player/BobbyLocomotion.js";
 import {
   mergePresentationTuning,
   type PresentationTuning,
@@ -6,14 +6,13 @@ import {
 } from "./PresentationTuning.js";
 
 /**
- * 原版表现默认跟随 canonical gameplay cadence；presentation override 只改变视觉，
- * 不再反向决定 gameplay input lock / movement cadence。
+ * 原版表现默认跟随 Bobby 的 canonical locomotion cadence；presentation override
+ * 只改变视觉，不再反向决定 gameplay input lock / movement cadence。
  */
 export const ORIGINAL_TUNING: PresentationTuning = {
   motion: {
-    normalMs: ORIGINAL_GAMEPLAY_TIMING.motion.normalMs,
-    forcedMs: { ...ORIGINAL_GAMEPLAY_TIMING.motion.forcedMs },
-    speedShoesScale: ORIGINAL_GAMEPLAY_TIMING.motion.speedShoesScale,
+    normalMs: ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
+    speedShoesScale: ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
     easing: "linear",
   },
 };
