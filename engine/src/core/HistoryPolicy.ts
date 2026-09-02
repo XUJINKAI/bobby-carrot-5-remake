@@ -11,9 +11,16 @@ export const DEFAULT_HISTORY_POLICY: HistoryPolicy = {
   mode: "world-change",
 };
 
+const NON_CHECKPOINT_GLOBALS = new Set([
+  "moves",
+  "elapsedMs",
+  "lastReachedSelectors",
+  "logicRemainderMs",
+]);
+
 /**
- * world-change: 只有 controlled actor 自己的位置/朝向变化不建立 checkpoint；
- * 任何其他 Entity/global/action 变化都建立完整 WorldSnapshot checkpoint。
+ * Snapshot 始终是完整 WorldSnapshot；这里只决定是否把 step 前快照写进 history。
+ * world-change 忽略 controlled actor 的纯位移/方向与计步等 housekeeping 状态。
  */
 export function shouldCheckpoint(
   policy: HistoryPolicy,
@@ -29,9 +36,9 @@ export function shouldCheckpoint(
     mutation.stateChanged.length > 0 ||
     mutation.spawned.length > 0 ||
     mutation.destroyed.length > 0 ||
-    mutation.globalsChanged.length > 0 ||
     mutation.actionsStarted.length > 0 ||
-    mutation.actionsCancelled.length > 0
+    mutation.actionsCancelled.length > 0 ||
+    mutation.globalsChanged.some((key) => !NON_CHECKPOINT_GLOBALS.has(key))
   )
     return true;
   return mutation.moved.some((entityId) => !controlled.has(entityId));
