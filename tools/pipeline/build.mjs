@@ -8,6 +8,7 @@ import {
   tscCommand,
 } from "../lib/fs.mjs";
 import { generateSeoArtifacts } from "./seo.mjs";
+import { verifySeoArtifacts } from "./seo-verify.mjs";
 
 const dist = path.join(root, "dist");
 const generatedAssets = path.join(root, "assets");
@@ -47,5 +48,6 @@ copyTree(path.join(root, "editor/dist"), path.join(dist, "editor"));
 copyTree(generatedAssets, path.join(dist, "assets"));
 
 generateSeoArtifacts();
+verifySeoArtifacts();
 
 console.log("Build complete: dist");
