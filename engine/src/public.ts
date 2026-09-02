@@ -20,13 +20,6 @@ export {
   type EngineTimingOptions,
 } from "./time/EngineTiming.js";
 export {
-  ORIGINAL_GAMEPLAY_TIMING,
-  resolveGameplayTiming,
-  type GameplayMotionTiming,
-  type GameplayTiming,
-  type GameplayTimingOverride,
-} from "./time/GameplayTiming.js";
-export {
   PresentationClock,
   type PresentationFrame,
 } from "./time/PresentationClock.js";
@@ -87,6 +80,16 @@ export {
   GameplayDialog,
   type GameplayDialogOptions,
 } from "./ui/GameplayDialog.js";
+export {
+  ORIGINAL_BOBBY_LOCOMOTION_TIMING,
+  resolveBobbyLocomotionTiming,
+  type BobbyLocomotionTiming,
+  type BobbyLocomotionTimingOverride,
+} from "./entities/player/BobbyLocomotion.js";
+export {
+  readBobbyInventory,
+  type BobbyInventoryState,
+} from "./entities/player/BobbyState.js";
 export type {
   Direction,
   EntityProperties,
@@ -119,7 +122,6 @@ export type {
 } from "./world/movement/WorldStepResult.js";
 export type {
   EconomyState,
-  InventoryState,
   ProfileCapabilities,
 } from "./world/GlobalState.js";
 export {
