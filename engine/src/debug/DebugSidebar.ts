@@ -8,9 +8,11 @@ export interface DebugSidebarActions {
   resumeWorld(): void;
   stepWorld(): void;
   setHeldDirection(direction: Direction | null): void;
+  selectActor(actorId: EntityId): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
+  stepPresentationToNextSprite(): void;
   stepPresentationToNextChange(): void;
   clearTrace(): void;
   close(): void;
@@ -46,6 +48,7 @@ export class DebugSidebar {
   private readonly presentationPauseResumeButton: HTMLButtonElement;
   private readonly frameBackButton: HTMLButtonElement;
   private readonly frameForwardButton: HTMLButtonElement;
+  private readonly nextSpriteButton: HTMLButtonElement;
   private readonly nextChangeButton: HTMLButtonElement;
   private readonly actorPanel: HTMLDivElement;
   private readonly timelinePanel: HTMLDivElement;
@@ -53,10 +56,14 @@ export class DebugSidebar {
   private readonly tabButtons = new Map<DebugTab, HTMLButtonElement>();
 
   private readonly actorTitle: HTMLDivElement;
+  private readonly actorTitleText: HTMLSpanElement;
+  private readonly actorSelect: HTMLSelectElement;
+  private actorOptionsKey = "";
   private readonly actorValue: ValueRef;
   private readonly actorPosition: ValueRef;
   private readonly actorDirection: ValueRef;
   private readonly actorInput: ValueRef;
+  private readonly actorSprite: ValueRef;
   private readonly actorInputDetails: JsonDetailsRef;
   private readonly actorStateDetails: JsonDetailsRef;
   private readonly actorActionsDetails: JsonDetailsRef;
@@ -93,7 +100,7 @@ export class DebugSidebar {
       top: "0",
       right: "0",
       bottom: "0",
-      width: "min(420px, 94%)",
+      width: "min(440px, 96%)",
       zIndex: "30",
       overflow: "auto",
       boxSizing: "border-box",
@@ -154,8 +161,8 @@ export class DebugSidebar {
     const presentRow = document.createElement("div");
     Object.assign(presentRow.style, {
       display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto auto auto auto",
-      gap: "6px",
+      gridTemplateColumns: "minmax(0,1fr) auto auto auto auto auto",
+      gap: "5px",
       alignItems: "center",
     });
     this.presentationStatus = document.createElement("span");
@@ -165,6 +172,10 @@ export class DebugSidebar {
     });
     this.frameBackButton = this.button("-1", () => this.actions.stepPresentation(-1));
     this.frameForwardButton = this.button("+1", () => this.actions.stepPresentation(1));
+    this.nextSpriteButton = this.button("Sprite", () =>
+      this.actions.stepPresentationToNextSprite(),
+    );
+    this.nextSpriteButton.title = "Advance until the selected actor changes sprite frame";
     this.nextChangeButton = this.button("Next", () =>
       this.actions.stepPresentationToNextChange(),
     );
@@ -174,6 +185,7 @@ export class DebugSidebar {
       this.presentationPauseResumeButton,
       this.frameBackButton,
       this.frameForwardButton,
+      this.nextSpriteButton,
       this.nextChangeButton,
     );
     clock.append(worldRow, presentRow);
@@ -209,11 +221,13 @@ export class DebugSidebar {
     this.actorPosition = this.valueRef("Position");
     this.actorDirection = this.valueRef("Direction");
     this.actorInput = this.valueRef("Input");
+    this.actorSprite = this.valueRef("Sprite");
     actorFacts.append(
       this.actorValue.root,
       this.actorPosition.root,
       this.actorDirection.root,
       this.actorInput.root,
+      this.actorSprite.root,
     );
     actorSummary.append(actorFacts, this.directionPad());
     actorBody.append(actorSummary);
@@ -229,6 +243,30 @@ export class DebugSidebar {
     );
     const actorSection = this.section("Selected actor", actorBody);
     this.actorTitle = actorSection.firstElementChild as HTMLDivElement;
+    this.actorTitle.textContent = "";
+    Object.assign(this.actorTitle.style, {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "8px",
+    });
+    this.actorTitleText = document.createElement("span");
+    this.actorTitleText.textContent = "Selected actor";
+    this.actorSelect = document.createElement("select");
+    Object.assign(this.actorSelect.style, {
+      maxWidth: "160px",
+      padding: "2px 4px",
+      border: "1px solid rgba(255,255,255,.2)",
+      borderRadius: "4px",
+      background: "#14251a",
+      color: "inherit",
+      font: "inherit",
+    });
+    this.actorSelect.addEventListener("change", () => {
+      const actorId = Number(this.actorSelect.value);
+      if (Number.isFinite(actorId)) this.actions.selectActor(actorId);
+    });
+    this.actorTitle.append(this.actorTitleText, this.actorSelect);
     this.actorPanel.append(actorSection);
 
     this.timelinePanel = document.createElement("div");
@@ -253,7 +291,7 @@ export class DebugSidebar {
     this.inspectPanel = document.createElement("div");
     const inspectSectionBody = document.createElement("div");
     this.inspectMessage = document.createElement("div");
-    this.inspectMessage.textContent = "Click a cell to inspect it.";
+    this.inspectMessage.textContent = "Click a cell to inspect it. Double-click a cell to teleport the selected actor.";
     this.inspectBody = document.createElement("div");
     this.inspectCell = this.valueRef("Cell");
     this.inspectStack = document.createElement("div");
@@ -314,17 +352,23 @@ export class DebugSidebar {
     this.frameBackButton.disabled =
       !runtime.presentationPaused || runtime.presentationFrame <= 0;
     this.frameForwardButton.disabled = !runtime.presentationPaused;
+    this.nextSpriteButton.disabled =
+      !runtime.presentationPaused ||
+      !snapshot.actor ||
+      !hasActiveActorPresentation(snapshot.actor);
     this.nextChangeButton.disabled = !runtime.presentationPaused;
   }
 
   private renderActor(snapshot: DebugSnapshot): void {
+    this.updateActorSelector(snapshot);
     const actor = snapshot.actor;
     if (!actor) {
-      this.actorTitle.textContent = "Selected actor";
+      this.actorTitleText.textContent = "Selected actor";
       this.setValue(this.actorValue, "-");
       this.setValue(this.actorPosition, "-");
       this.setValue(this.actorDirection, "-");
       this.setValue(this.actorInput, "no actor");
+      this.setValue(this.actorSprite, "-");
       return;
     }
 
@@ -348,11 +392,12 @@ export class DebugSidebar {
             .join(" ")
         : "ready";
 
-    this.actorTitle.textContent = `Selected actor #${actor.id}`;
+    this.actorTitleText.textContent = `Selected actor #${actor.id}`;
     this.setValue(this.actorValue, `#${actor.id} ${actor.type}`);
     this.setValue(this.actorPosition, `${actor.anchor.x}, ${actor.anchor.y}`);
     this.setValue(this.actorDirection, actor.direction ?? "-");
     this.setValue(this.actorInput, inputLabel);
+    this.setValue(this.actorSprite, spriteLabel(actor));
     this.updateDirectionPad();
     this.setJson(this.actorInputDetails, snapshot.input);
     this.setJson(this.actorStateDetails, actor.state);
@@ -361,7 +406,27 @@ export class DebugSidebar {
         action.ownerEntityId === actor.id || action.focus?.entityId === actor.id,
     );
     this.setJson(this.actorActionsDetails, ownedActions);
-    this.setJson(this.actorPresentationDetails, actor.visual.runtime);
+    this.setJson(this.actorPresentationDetails, {
+      runtime: actor.visual.runtime,
+      renderItems: actor.visual.renderItems,
+    });
+  }
+
+  private updateActorSelector(snapshot: DebugSnapshot): void {
+    const key = snapshot.actors.map((actor) => `${actor.id}:${actor.type}`).join("|");
+    if (key !== this.actorOptionsKey) {
+      this.actorOptionsKey = key;
+      const fragment = document.createDocumentFragment();
+      for (const actor of snapshot.actors) {
+        const option = document.createElement("option");
+        option.value = String(actor.id);
+        option.textContent = `#${actor.id} ${actor.type}`;
+        fragment.append(option);
+      }
+      this.actorSelect.replaceChildren(fragment);
+    }
+    this.actorSelect.hidden = snapshot.actors.length <= 1;
+    if (snapshot.actor) this.actorSelect.value = String(snapshot.actor.id);
   }
 
   private directionPad(): HTMLElement {
@@ -634,4 +699,25 @@ export class DebugSidebar {
     button.addEventListener("click", action);
     return button;
   }
+}
+
+function hasActiveActorPresentation(actor: DebugEntitySnapshot): boolean {
+  if (!actor.visual.runtime || typeof actor.visual.runtime !== "object")
+    return false;
+  const runtime = actor.visual.runtime as Record<string, unknown>;
+  return runtime.moving === true || typeof runtime.animation === "string";
+}
+
+function spriteLabel(actor: DebugEntitySnapshot): string {
+  const imageLayers = actor.visual.renderItems
+    .flatMap((item) => item.layers)
+    .filter((layer) => layer.kind === "image");
+  const layer = imageLayers.at(-1);
+  if (!layer) return "-";
+  const asset = typeof layer.asset === "string" ? layer.asset : "image";
+  if (typeof layer.frameIndex === "number")
+    return `${asset} #${layer.frameIndex + 1}`;
+  if (typeof layer.frameProgress === "number")
+    return `${asset} ${(layer.frameProgress * 100).toFixed(1)}%`;
+  return asset;
 }
