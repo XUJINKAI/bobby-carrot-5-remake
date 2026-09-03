@@ -23,7 +23,6 @@ export interface DebugRuntimeHost {
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
-  close(): void;
   selectionChanged(cell: CellPosition | null): void;
   requestRender(): void;
 }
@@ -124,7 +123,6 @@ export class DebugRuntime {
           this.previousSnapshot = null;
           this.host.requestRender();
         },
-        close: () => this.host.close(),
         selectEntity: (entityId) => this.selectEntity(entityId),
         layoutChanged: () => this.host.requestRender(),
       });
