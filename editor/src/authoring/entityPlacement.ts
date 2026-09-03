@@ -15,6 +15,7 @@ import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
+import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 
 export interface Cell {
   x: number;
@@ -74,7 +75,10 @@ export function resolvePlacement(
   }
 
   const replaceGroup = authoring?.replaceGroup;
-  if (!replaceGroup || replaceGroup === "surface") {
+  if (!replaceGroup) return { entity, cells, replace: [], valid: true };
+  // Surface 的区域编辑由 Surface authoring 自己管理。保留直接放置真正 Surface
+  // 时的旧 API 替换语义，但不要让历史上误标为 surface 的机关删除地貌。
+  if (replaceGroup === "surface" && !isSurfaceEntityType(preset.type)) {
     return { entity, cells, replace: [], valid: true };
   }
   const preview = new EditorPreview(level, catalog);
