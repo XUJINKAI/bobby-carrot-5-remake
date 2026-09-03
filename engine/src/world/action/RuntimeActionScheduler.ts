@@ -65,6 +65,19 @@ export class RuntimeActionScheduler {
     }
   }
 
+  /** Input lock prevents movement, not observation by the gameplay process that owns the lock. */
+  observeIntents(intents: readonly WorldIntent[], query: WorldQueryApi): void {
+    const ids = [...this.actions.keys()].sort((a, b) => a - b);
+    for (const id of ids) {
+      const action = this.actions.get(id);
+      if (!action) continue;
+      const definition = this.registry.require(action.kind);
+      if (!definition.onIntent) continue;
+      for (const intent of intents)
+        definition.onIntent({ action, intent, query });
+    }
+  }
+
   update(
     time: WorldTick,
     query: WorldQueryApi,
