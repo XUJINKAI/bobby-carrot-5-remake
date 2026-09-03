@@ -1,6 +1,8 @@
 import type { EntityCatalog } from "@bobby/engine";
 import {
   EntityTypeId,
+  type EntityProperties,
+  type EntityState,
   type EntityType,
   type LevelEntity,
 } from "@bobby/model";
@@ -21,6 +23,7 @@ import {
   type SurfaceTool,
   type SurfaceType,
   type SurfaceVariant,
+  type SurfaceWeightedVariant,
 } from "../definitions/surface.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
@@ -49,6 +52,9 @@ export type {
 
 type ConcreteSurfaceTheme = Exclude<SurfaceTheme, "mixed">;
 
+const AUTO_TERRAIN_KEY = "__editorSurfaceAuto";
+const AUTO_SEED_KEY = "__editorSurfaceSeed";
+
 const terrainById = new Map(
   SURFACE_TERRAINS.map((definition) => [definition.id, definition] as const),
 );
@@ -57,9 +63,9 @@ for (const terrain of SURFACE_TERRAINS)
   for (const variant of terrain.rows.flat())
     terrainByEntityType.set(variant.type, terrain);
 
-// Fence 的 Auto 形态由 canonical Entity 根据邻居实时解析；Exact 仍使用原始图块。
-const fenceTerrain = terrainById.get("fence");
-if (fenceTerrain) terrainByEntityType.set(EntityTypeId.FENCE, fenceTerrain);
+const woodFenceTerrain = terrainById.get("wood-fence");
+if (woodFenceTerrain)
+  terrainByEntityType.set(EntityTypeId.FENCE, woodFenceTerrain);
 
 const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
 for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
@@ -103,6 +109,7 @@ export function applySurfaceTheme(
     apply(level) {
       if (theme === "mixed") return level;
       let changed = false;
+      const sourceLevel = level as EditorMap;
       const entities = level.entities.map((entity) => {
         const source = surfaceTerrainForEntity(entity.type);
         if (!source?.themeFamily || source.theme === theme) return entity;
@@ -114,11 +121,21 @@ export function applySurfaceTheme(
             candidate.slot === source.slot,
         );
         if (!target) return entity;
-        const type = resolveAutoType(target, entity, 1, new Set());
-        catalog.require(type);
-        if (type === entity.type) return entity;
         changed = true;
-        return applySurfaceInstanceTraits({ ...entity, type }, target);
+        const auto = autoMetadata(entity);
+        if (auto) {
+          return createSurfaceEntity(
+            catalog,
+            { terrain: target.id, pattern: "auto", seed: auto.seed },
+            entity,
+            new Set(),
+            sourceLevel,
+          ) ?? entity;
+        }
+        return applySurfaceInstanceTraits(
+          { ...stripAutoMetadata(entity), type: target.primary },
+          target,
+        );
       });
       return changed ? normalizeEditorLevel({ ...level, entities }) : level;
     },
@@ -136,20 +153,29 @@ export function paintSurface(
         cells.filter((cell) => inBounds(level, cell)).map(cellKey),
       );
       if (target.size === 0) return level;
-      const slot = surfaceTerrain(brush.terrain).slot;
+      const terrain = surfaceTerrain(brush.terrain);
+      const slot = terrain.slot;
       const kept = level.entities.filter((entity) => {
         if (!target.has(cellKey(entity))) return true;
         return surfaceTerrainForEntity(entity.type)?.slot !== slot;
       });
+      const sourceLevel = { ...level, entities: kept } as EditorMap;
       const painted = [...target]
         .map((key) =>
-          createSurfaceEntity(catalog, brush, parseCellKey(key), target),
+          createSurfaceEntity(
+            catalog,
+            brush,
+            parseCellKey(key),
+            target,
+            sourceLevel,
+          ),
         )
         .filter((entity): entity is LevelEntity => entity !== null);
-      return normalizeEditorLevel({
+      const next = normalizeEditorLevel({
         ...level,
         entities: [...kept, ...painted],
       });
+      return reflowAutoSurfaces(catalog, next);
     },
   };
 }
@@ -207,6 +233,20 @@ export function pickSurfaceBrush(
   if (!entity) return null;
   const item = surfaceTerrainForEntity(entity.type);
   if (!item) return null;
+  const auto = autoMetadata(entity);
+  if (auto) return { terrain: item.id, pattern: "auto", seed: auto.seed };
+
+  if (item.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
+    const variant = Number(entity.state?.variant);
+    const variants = item.rows.flat();
+    const selected =
+      Number.isInteger(variant) && variant >= 1 && variant <= variants.length
+        ? variants[variant - 1]?.type
+        : undefined;
+    if (selected)
+      return { terrain: item.id, pattern: "exact", exact: selected, seed: 1 };
+  }
+
   return {
     terrain: item.id,
     pattern: "exact",
@@ -215,37 +255,92 @@ export function pickSurfaceBrush(
   };
 }
 
+/**
+ * 导出/分享时把 Editor 内可重算的 Auto Surface 固化成当前 visual。
+ * 下次打开文件时没有 Auto metadata，因此不会因为邻居或 hash 再变化。
+ */
+export function materializeSurfaceVariants(level: EditorMap): EditorMap {
+  const entities = level.entities.map((entity) => {
+    const auto = autoMetadata(entity);
+    if (!auto) return stripAutoMetadata(entity);
+    const terrain = surfaceTerrainForEntity(entity.type);
+    let fixed = stripAutoMetadata(entity);
+    if (terrain?.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
+      const index = fenceVariantIndex(level, entity, terrain);
+      const state = { ...(fixed.state ?? {}), variant: index + 1 } as EntityState;
+      fixed = { ...fixed, state };
+    }
+    return fixed;
+  });
+  return normalizeEditorLevel({ ...level, entities });
+}
+
 function createSurfaceEntity(
   catalog: EntityCatalog,
   brush: SurfaceBrush,
   cell: Cell,
   target: ReadonlySet<string>,
+  level: Readonly<EditorMap>,
 ): LevelEntity | null {
   const item = surfaceTerrain(brush.terrain);
   const variants = item.rows.flat();
   if (variants.length === 0) return null;
 
-  let type: EntityType;
   if (
     brush.pattern === "exact" &&
     brush.exact &&
     variants.some((variant) => variant.type === brush.exact)
   ) {
-    type = brush.exact;
-  } else if (
+    return createFixedSurfaceEntity(catalog, item, brush.exact, cell);
+  }
+  if (
     brush.pattern === "alternate" &&
     brush.alternate &&
     brush.alternate.every((candidate) =>
       variants.some((variant) => variant.type === candidate),
     )
   ) {
-    type = brush.alternate[(cell.x + cell.y) & 1]!;
-  } else {
-    type = resolveAutoType(item, cell, brush.seed, target);
+    return createFixedSurfaceEntity(
+      catalog,
+      item,
+      brush.alternate[(cell.x + cell.y) & 1]!,
+      cell,
+    );
   }
 
-  catalog.require(type);
-  return applySurfaceInstanceTraits({ type, x: cell.x, y: cell.y }, item);
+  const type = resolveAutoType(item, cell, brush.seed, target, level);
+  let entity: LevelEntity;
+  if (item.auto.kind === "fence" && item.auto.canonical) {
+    entity = { type: item.auto.canonical, x: cell.x, y: cell.y };
+  } else {
+    entity = { type, x: cell.x, y: cell.y };
+  }
+  catalog.require(entity.type);
+  return markAuto(applySurfaceInstanceTraits(entity, item), item.id, brush.seed);
+}
+
+function createFixedSurfaceEntity(
+  catalog: EntityCatalog,
+  terrain: SurfaceTerrainDefinition,
+  selectedType: EntityType,
+  cell: Cell,
+): LevelEntity {
+  if (terrain.auto.kind === "fence" && terrain.auto.canonical) {
+    const index = terrain.auto.variants.indexOf(selectedType);
+    const entity: LevelEntity = {
+      type: terrain.auto.canonical,
+      x: cell.x,
+      y: cell.y,
+      ...(index >= 0 ? { state: { variant: index + 1 } } : {}),
+    };
+    catalog.require(entity.type);
+    return applySurfaceInstanceTraits(entity, terrain);
+  }
+  catalog.require(selectedType);
+  return applySurfaceInstanceTraits(
+    { type: selectedType, x: cell.x, y: cell.y },
+    terrain,
+  );
 }
 
 function resolveAutoType(
@@ -253,43 +348,236 @@ function resolveAutoType(
   cell: Cell,
   seed: number,
   target: ReadonlySet<string>,
+  level: Readonly<EditorMap>,
 ): EntityType {
-  if (terrain.id === "fence") return EntityTypeId.FENCE;
   const auto = terrain.auto;
   if (auto.kind === "primary") return terrain.primary;
   if (auto.kind === "vertical") {
-    const above = target.has(cellKey({ x: cell.x, y: cell.y - 1 }));
-    const below = target.has(cellKey({ x: cell.x, y: cell.y + 1 }));
+    const above = targetHasTerrain(level, target, terrain.id, {
+      x: cell.x,
+      y: cell.y - 1,
+    });
+    const below = targetHasTerrain(level, target, terrain.id, {
+      x: cell.x,
+      y: cell.y + 1,
+    });
     return !above ? auto.start : !below ? auto.end : auto.middle;
   }
-  return weightedAutoVariant(auto, hashCell(cell, seed + (auto.salt ?? 0)));
+  if (auto.kind === "fence") {
+    return auto.variants[fenceVariantIndex(level, cell, terrain, target)] ?? terrain.primary;
+  }
+  if (auto.kind === "neighbor") {
+    const neighboring = neighborTerrainIds(level, target, terrain.id, cell);
+    const rule = auto.rules.find((candidate) =>
+      candidate.neighborTerrains.some((id) => neighboring.has(id)),
+    );
+    const variants = rule?.variants ?? auto.fallback;
+    return weightedVariant(
+      variants,
+      hashCell(cell, seed + (auto.salt ?? 0)),
+      terrain.primary,
+    );
+  }
+  if (auto.kind === "paired-vertical") {
+    let top = cell.y;
+    while (
+      targetHasTerrain(level, target, terrain.id, { x: cell.x, y: top - 1 })
+    )
+      top -= 1;
+    const offset = cell.y - top;
+    const below = targetHasTerrain(level, target, terrain.id, {
+      x: cell.x,
+      y: cell.y + 1,
+    });
+    if (offset % 2 === 0 && below) return auto.top;
+    if (offset % 2 === 1) return auto.bottom;
+    return weightedVariant(
+      auto.singles,
+      hashCell(cell, seed + (auto.salt ?? 0)),
+      terrain.primary,
+    );
+  }
+  return weightedVariant(
+    auto.variants,
+    hashCell(cell, seed + (auto.salt ?? 0)),
+    terrain.primary,
+  );
+}
+
+function reflowAutoSurfaces(
+  catalog: EntityCatalog,
+  level: EditorMap,
+): EditorMap {
+  const autoCellsByTerrain = new Map<SurfaceTerrainId, Set<string>>();
+  for (const entity of level.entities) {
+    const auto = autoMetadata(entity);
+    if (!auto) continue;
+    const set = autoCellsByTerrain.get(auto.terrain) ?? new Set<string>();
+    set.add(cellKey(entity));
+    autoCellsByTerrain.set(auto.terrain, set);
+  }
+  if (autoCellsByTerrain.size === 0) return level;
+
+  let changed = false;
+  const entities = level.entities.map((entity) => {
+    const metadata = autoMetadata(entity);
+    if (!metadata) return entity;
+    const terrain = surfaceTerrain(metadata.terrain);
+    if (terrain.auto.kind === "fence" && terrain.auto.canonical) return entity;
+    const target = autoCellsByTerrain.get(metadata.terrain) ?? new Set<string>();
+    const type = resolveAutoType(
+      terrain,
+      entity,
+      metadata.seed,
+      target,
+      level,
+    );
+    if (type === entity.type) return entity;
+    catalog.require(type);
+    changed = true;
+    return markAuto(
+      applySurfaceInstanceTraits({ ...entity, type }, terrain),
+      terrain.id,
+      metadata.seed,
+    );
+  });
+  return changed ? normalizeEditorLevel({ ...level, entities }) : level;
 }
 
 function applySurfaceInstanceTraits(
   entity: LevelEntity,
   terrain: SurfaceTerrainDefinition,
 ): LevelEntity {
-  if (terrain.slot !== "overlay" || terrain.type !== "solid") return entity;
-  return {
-    ...entity,
-    traits: ["blocking", "fence"],
-  };
+  const traits = new Set(entity.traits ?? []);
+  if (terrain.type === "ground") traits.add("walkable");
+  if (terrain.type === "solid") traits.add("blocking");
+  if (terrain.slot === "overlay" && terrain.type === "solid") traits.add("fence");
+  return traits.size > 0 ? { ...entity, traits: [...traits] } : entity;
 }
 
-function weightedAutoVariant(
-  auto: Extract<SurfaceAutoDefinition, { kind: "weighted" }>,
+function weightedVariant(
+  variants: readonly SurfaceWeightedVariant[],
   hash: number,
+  fallback: EntityType,
 ): EntityType {
-  const entries = auto.variants.filter((variant) => variant.weight > 0);
-  if (entries.length === 0)
-    throw new Error("Surface weighted Auto 至少需要一个正权重 variant");
+  const entries = variants.filter((variant) => variant.weight > 0);
+  if (entries.length === 0) return fallback;
   const total = entries.reduce((sum, item) => sum + item.weight, 0);
   let target = hash % total;
   for (const item of entries) {
     target -= item.weight;
     if (target < 0) return item.type;
   }
-  return entries[0]!.type;
+  return entries[0]?.type ?? fallback;
+}
+
+function neighborTerrainIds(
+  level: Readonly<EditorMap>,
+  target: ReadonlySet<string>,
+  targetTerrain: SurfaceTerrainId,
+  cell: Cell,
+): Set<SurfaceTerrainId> {
+  const result = new Set<SurfaceTerrainId>();
+  for (const neighbor of cardinalNeighbors(cell)) {
+    if (target.has(cellKey(neighbor))) {
+      result.add(targetTerrain);
+      continue;
+    }
+    for (const slot of ["overlay", "base"] as const) {
+      const entity = surfaceAt(level, neighbor, slot);
+      const terrain = entity ? surfaceTerrainForEntity(entity.type) : null;
+      if (terrain) result.add(terrain.id);
+    }
+  }
+  return result;
+}
+
+function fenceVariantIndex(
+  level: Readonly<EditorMap>,
+  cell: Cell,
+  terrain: SurfaceTerrainDefinition,
+  target: ReadonlySet<string> = new Set(),
+): number {
+  const connectedAt = (neighbor: Cell): boolean => {
+    if (!inBounds(level, neighbor)) return true;
+    if (target.has(cellKey(neighbor))) return true;
+    return level.entities.some((entity) => {
+      if (entity.x !== neighbor.x || entity.y !== neighbor.y) return false;
+      const item = surfaceTerrainForEntity(entity.type);
+      return item?.id === terrain.id || entity.traits?.includes("fence") === true;
+    });
+  };
+  const left = connectedAt({ x: cell.x - 1, y: cell.y });
+  const down = connectedAt({ x: cell.x, y: cell.y + 1 });
+  const right = connectedAt({ x: cell.x + 1, y: cell.y });
+  const up = connectedAt({ x: cell.x, y: cell.y - 1 });
+  if (!left && down && !right) return 1;
+  if (left && !down && !right) return 2;
+  if (!left && down && right) return 3;
+  if (left && down && !right) return 4;
+  if (!left && !down && right) return 5;
+  if (up && !left && !right) return 1;
+  return 0;
+}
+
+function targetHasTerrain(
+  level: Readonly<EditorMap>,
+  target: ReadonlySet<string>,
+  terrain: SurfaceTerrainId,
+  cell: Cell,
+): boolean {
+  if (target.has(cellKey(cell))) return true;
+  if (!inBounds(level, cell)) return false;
+  return (["overlay", "base"] as const).some((slot) => {
+    const entity = surfaceAt(level, cell, slot);
+    return entity ? surfaceTerrainForEntity(entity.type)?.id === terrain : false;
+  });
+}
+
+function cardinalNeighbors(cell: Cell): Cell[] {
+  return [
+    { x: cell.x - 1, y: cell.y },
+    { x: cell.x + 1, y: cell.y },
+    { x: cell.x, y: cell.y - 1 },
+    { x: cell.x, y: cell.y + 1 },
+  ];
+}
+
+function markAuto(
+  entity: LevelEntity,
+  terrain: SurfaceTerrainId,
+  seed: number,
+): LevelEntity {
+  const properties = {
+    ...(entity.properties ?? {}),
+    [AUTO_TERRAIN_KEY]: terrain,
+    [AUTO_SEED_KEY]: seed,
+  } as EntityProperties;
+  return { ...entity, properties };
+}
+
+function autoMetadata(
+  entity: Readonly<LevelEntity>,
+): { terrain: SurfaceTerrainId; seed: number } | null {
+  const rawTerrain = entity.properties?.[AUTO_TERRAIN_KEY];
+  if (typeof rawTerrain !== "string" || !terrainById.has(rawTerrain as SurfaceTerrainId))
+    return null;
+  const rawSeed = Number(entity.properties?.[AUTO_SEED_KEY]);
+  return {
+    terrain: rawTerrain as SurfaceTerrainId,
+    seed: Number.isFinite(rawSeed) ? rawSeed : 1,
+  };
+}
+
+function stripAutoMetadata(entity: Readonly<LevelEntity>): LevelEntity {
+  if (!entity.properties) return structuredClone(entity);
+  const properties = { ...entity.properties } as EntityProperties;
+  delete properties[AUTO_TERRAIN_KEY];
+  delete properties[AUTO_SEED_KEY];
+  const next = { ...structuredClone(entity) };
+  if (Object.keys(properties).length > 0) next.properties = properties;
+  else delete next.properties;
+  return next;
 }
 
 function hashCell(cell: Cell, seed: number): number {
