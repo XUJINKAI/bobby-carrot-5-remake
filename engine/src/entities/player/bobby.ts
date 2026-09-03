@@ -1,4 +1,5 @@
 import { EntityTypeId, type Direction } from "@bobby/model";
+import type { VisualResolveContext } from "../../visual/VisualDefinition.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -140,9 +141,7 @@ export const bobby: EntityModule = originalModule(definition, {
   },
 });
 
-function isStandingOnIce(
-  context: Parameters<NonNullable<typeof bobby.visual>["resolve"]>[0],
-): boolean {
+function isStandingOnIce(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
     context.query.entity(presence.entityId)?.type === EntityTypeId.ICE
   );
