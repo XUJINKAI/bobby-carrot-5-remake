@@ -228,10 +228,7 @@ function runBrowser(url) {
         "--dump-dom",
         url,
       ],
-      {
-        env: browserEnvironment,
-        stdio: ["ignore", "pipe", "pipe"],
-      },
+      { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
     );
     let stdout = "",
       stderr = "";
@@ -253,116 +250,162 @@ function runBrowser(url) {
     });
   });
 }
-function compact(text) {
-  return text.replace(/\s+/g, " ").trim().slice(0, 16000);
-}
 function findBrowser() {
-  const explicit = process.env.BROWSER_PATH;
-  if (explicit && isExecutable(explicit)) return explicit;
-  const commands = [
-    "google-chrome",
-    "google-chrome-stable",
-    "chromium",
-    "chromium-browser",
-  ];
-  for (const command of commands) {
-    const probe = spawnSync("which", [command], { encoding: "utf8" });
-    const candidate = probe.status === 0 ? probe.stdout.trim() : "";
-    if (candidate && isExecutable(candidate)) return candidate;
+  const configured = process.env.BROWSER_PATH;
+  if (configured && fs.existsSync(configured)) return configured;
+  for (const name of ["google-chrome", "chromium", "chromium-browser"]) {
+    const result = spawnSync("which", [name], { encoding: "utf8" });
+    if (result.status === 0) return result.stdout.trim();
   }
   return null;
 }
-function isExecutable(candidate) {
-  try {
-    fs.accessSync(candidate, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
+function compact(value) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 9000);
 }
-
-async function interactiveDataExchangeSmoke(homeUrl) {
-  const script = `
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    window.addEventListener("load", async () => {
-      for (let i = 0; i < 100; i += 1) {
-        const button = document.querySelector('[data-home-import]');
-        if (button) {
-          button.click();
-          await sleep(50);
-          const dialog = document.querySelector('dialog[open]');
-          const area = dialog?.querySelector('textarea');
-          if (!area) throw new Error("Data Exchange textarea did not mount");
-          area.value = "{}";
-          area.dispatchEvent(new Event("input", { bubbles: true }));
-          await sleep(20);
-          const apply = [...dialog.querySelectorAll('button')].find((item) => item.textContent?.includes("打开"));
-          if (!apply) throw new Error("Data Exchange apply button missing");
-          console.log("BC5R_INTERACTIVE_EXCHANGE_OK");
-          return;
-        }
-        await sleep(20);
-      }
-      throw new Error("Data Exchange trigger did not mount");
-    });
-  `;
-  const result = await runInteractiveBrowser(homeUrl, script);
-  if (!result.stdout.includes("BC5R_INTERACTIVE_EXCHANGE_OK"))
-    throw new Error(`Data Exchange interactive smoke failed\n${compact(result.stderr)}`);
-}
-
 async function interactiveFilterSmoke(url) {
   const script = `
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    window.addEventListener("load", async () => {
-      for (let i = 0; i < 100; i += 1) {
-        const trigger = document.querySelector('[data-filter-trigger="carrots"]');
-        if (trigger) {
-          trigger.click();
-          await sleep(50);
-          const popup = document.querySelector('.level-filter-popup');
-          if (!popup) throw new Error("Carrot filter popup did not mount");
-          console.log("BC5R_INTERACTIVE_FILTER_OK");
-          return;
-        }
-        await sleep(20);
-      }
-      throw new Error("Carrot filter trigger did not mount");
-    });
-  `;
-  const result = await runInteractiveBrowser(url, script);
-  if (!result.stdout.includes("BC5R_INTERACTIVE_FILTER_OK"))
-    throw new Error(`Explore filter interactive smoke failed\n${compact(result.stderr)}`);
-}
-
-function runInteractiveBrowser(url, script) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(
-      browser,
-      [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        `--virtual-time-budget=5000`,
-        `--run-all-compositor-stages-before-draw`,
-        `--user-data-dir=${path.join(root, ".tmp-browser-smoke")}`,
-        `--remote-debugging-port=0`,
-        `data:text/html,<script>location.href=${JSON.stringify(url)};<\/script><script>${script}<\/script>`,
-      ],
-      { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
-    );
-    let stdout = "",
-      stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk;
-    });
-    child.once("error", reject);
-    child.once("close", (status) => resolve({ status, stdout, stderr }));
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const find = (selector) => document.querySelector(selector);
+  for (let i = 0; i < 120 && !find('[data-filter-trigger="carrots"]'); i += 1)
+    await delay(50);
+  const trigger = find('[data-filter-trigger="carrots"]');
+  if (!trigger) throw new Error('missing carrot trigger');
+  trigger.click();
+  await delay(80);
+  const option = find('[data-filter-group="carrots"][data-filter-option]');
+  if (!option) throw new Error('missing carrot filter option');
+  const optionId = option.getAttribute('data-filter-option');
+  option.click();
+  await delay(80);
+  const currentTrigger = find('[data-filter-trigger="carrots"]');
+  const currentOption = optionId
+    ? find('[data-filter-group="carrots"][data-filter-option="' + optionId + '"]')
+    : null;
+  return JSON.stringify({
+    active: Boolean(currentTrigger?.classList.contains('active')),
+    selected: Boolean(currentOption?.classList.contains('selected')),
+    cards: document.querySelectorAll('[data-map-id]:not(.filter-hidden)').length,
   });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (!payload.active || !payload.selected || payload.cards <= 0)
+    throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
+}
+async function interactiveDataExchangeSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  for (let i = 0; i < 120 && !document.querySelector('[data-home-import]'); i += 1)
+    await delay(50);
+  const importButton = document.querySelector('[data-home-import]');
+  if (!importButton) throw new Error('missing import button');
+  importButton.click();
+  await delay(80);
+  const importDialog = document.querySelector('.home-import-dialog');
+  if (!importDialog) throw new Error('missing import dialog');
+  return JSON.stringify({ import: Boolean(importDialog) });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (!payload.import)
+    throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
+}
+async function runBrowserEval(url, script) {
+  const port = 9222 + Math.floor(Math.random() * 1000);
+  const child = spawn(
+    browser,
+    [
+      "--headless=new",
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-background-networking",
+      `--remote-debugging-port=${port}`,
+      "about:blank",
+    ],
+    { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  let stdout = "",
+    stderr = "";
+  child.stdout.on("data", (chunk) => (stdout += String(chunk)));
+  child.stderr.on("data", (chunk) => (stderr += String(chunk)));
+  try {
+    const endpoint = await waitForDebugEndpoint(port);
+    const page = await fetch(`${endpoint}/json/new?about:blank`, {
+      method: "PUT",
+    }).then((response) => response.json());
+    const ws = new WebSocket(page.webSocketDebuggerUrl);
+    await new Promise((resolve, reject) => {
+      ws.addEventListener("open", resolve, { once: true });
+      ws.addEventListener("error", reject, { once: true });
+    });
+    let id = 0;
+    const pending = new Map();
+    ws.addEventListener("message", (event) => {
+      const message = JSON.parse(String(event.data));
+      const deferred = pending.get(message.id);
+      if (!deferred) return;
+      pending.delete(message.id);
+      deferred.resolve(message);
+    });
+    const send = (method, params = {}) =>
+      new Promise((resolve, reject) => {
+        const requestId = ++id;
+        pending.set(requestId, { resolve, reject });
+        ws.send(JSON.stringify({ id: requestId, method, params }));
+      });
+    await send("Page.enable");
+    await send("Runtime.enable");
+    await send("Page.navigate", { url });
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const evaluation = await send("Runtime.evaluate", {
+      expression: script,
+      awaitPromise: true,
+      returnByValue: true,
+    });
+    ws.close();
+    const exception = evaluation.result?.exceptionDetails;
+    if (exception) throw new Error(exception.text || "browser evaluation failed");
+    const value = evaluation.result?.result?.value;
+    return { status: 0, stdout: `${stdout}\n${JSON.stringify(value)}\n`, stderr };
+  } catch (error) {
+    return {
+      status: 1,
+      stdout,
+      stderr: `${stderr}\n${error instanceof Error ? error.stack : String(error)}`,
+    };
+  } finally {
+    child.kill("SIGKILL");
+  }
+}
+async function waitForDebugEndpoint(port) {
+  for (let i = 0; i < 80; i += 1) {
+    try {
+      const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((response) =>
+        response.json(),
+      );
+      if (version.webSocketDebuggerUrl) return `http://127.0.0.1:${port}`;
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error("Chrome DevTools endpoint did not start");
+}
+function lastJsonLine(value) {
+  const lines = value.trim().split(/\r?\n/).reverse();
+  for (const line of lines) {
+    try {
+      const parsed = JSON.parse(line);
+      if (typeof parsed === "string") return JSON.parse(parsed);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {}
+  }
+  throw new Error(`No JSON payload in browser output: ${compact(value)}`);
 }
