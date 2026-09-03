@@ -6,6 +6,7 @@ import {
   type GameplayRuntimeConfig,
   type LevelMap,
 } from "@bobby/engine";
+import { setShellRuntimeWarnings } from "../../shell/shellBridge.js";
 
 export interface GameSession {
   game: Game;
@@ -30,11 +31,13 @@ export async function createGameSession(
     ...options.gameOptions,
     ...(options.runtime ? { runtime: options.runtime } : {}),
   });
+  setShellRuntimeWarnings(runtime.warnings.map((warning) => warning.message));
   const { game, input } = runtime;
   return {
     game,
     input,
     destroy(): void {
+      setShellRuntimeWarnings([]);
       runtime.destroy();
     },
   };
