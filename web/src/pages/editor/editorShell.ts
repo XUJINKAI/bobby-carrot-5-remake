@@ -17,8 +17,9 @@ export function configureEditorShell(
   tool: EditorTool = "place",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
+  leftPanel: "palette" | "surface" = "surface",
 ): void {
-  configureShell(editorShellConfig(playing, tool, issues, playState), EDITOR_HELP);
+  configureShell(editorShellConfig(playing, tool, issues, playState, leftPanel), EDITOR_HELP);
 }
 
 export function editorShellConfig(
@@ -26,6 +27,7 @@ export function editorShellConfig(
   tool: EditorTool = "place",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
+  leftPanel: "palette" | "surface" = "surface",
 ): ShellConfig {
   return {
     topBar: {
@@ -55,7 +57,10 @@ export function editorShellConfig(
     bottomBar: {
       visible: true,
       fixed: true,
-      leading: [{ id: "editor-palette", icon: "palette", label: "Palette" }],
+      leading: [
+        { id: "editor-palette", icon: "palette", label: "Palette", pressed: leftPanel === "palette" },
+        { id: "editor-surface", icon: "palette", label: "Surface", pressed: leftPanel === "surface" },
+      ],
       info: shellIssueInfo(issues),
       trailing: [
         { id: "editor-inspector", icon: "inspector", label: "Inspector" },
