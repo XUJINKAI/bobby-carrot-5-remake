@@ -1,3 +1,4 @@
+import type { InputControllerInspection } from "../input/InputController.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { EngineTiming } from "../time/EngineTiming.js";
 import type { PresentationClock } from "../time/PresentationClock.js";
@@ -36,6 +37,7 @@ export interface DebugSnapshot {
   };
   actor: DebugEntitySnapshot | null;
   actions: readonly RuntimeActionInstance[];
+  input: InputControllerInspection | null;
   selection: DebugSelectionSnapshot | null;
   trace?: readonly DebugTraceEntry[];
 }
@@ -97,6 +99,7 @@ export function buildDebugSnapshot(options: {
   worldClock: WorldClock;
   presentationClock: PresentationClock;
   timing: EngineTiming;
+  input: InputControllerInspection | null;
   selection: DebugSelection | null;
 }): DebugSnapshot {
   const {
@@ -106,6 +109,7 @@ export function buildDebugSnapshot(options: {
     worldClock,
     presentationClock,
     timing,
+    input,
     selection,
   } = options;
   const actions = world?.actions.active ?? [];
@@ -130,9 +134,10 @@ export function buildDebugSnapshot(options: {
       : null;
 
   if (!world || !selection)
-    return { runtime, actor, actions, selection: null };
+    return { runtime, actor, actions, input, selection: null };
   const inspection = world.inspect(selection.cell.x, selection.cell.y);
-  if (!inspection) return { runtime, actor, actions, selection: null };
+  if (!inspection)
+    return { runtime, actor, actions, input, selection: null };
 
   const presences = world.presencesAt(selection.cell).map((presence) =>
     debugPresence(world, presence),
@@ -148,6 +153,7 @@ export function buildDebugSnapshot(options: {
     runtime,
     actor,
     actions,
+    input,
     selection: {
       cell: { ...inspection.cell },
       presences,
