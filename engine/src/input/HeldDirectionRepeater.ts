@@ -17,6 +17,15 @@ type PendingAttempt = {
   initial: boolean;
 };
 
+export interface HeldDirectionRepeaterInspection {
+  heldInput: HeldDirectionInput | null;
+  pendingInitialInput: HeldDirectionInput | null;
+  pendingAttempt: PendingAttempt | null;
+  initialMoveDone: boolean;
+  elapsedAfterInitialMoveMs: number;
+  blocked: boolean;
+}
+
 /**
  * 持续方向输入的统一 repeat 状态机。
  * 输入事件只更新 held state；update() 只在世界 Tick 上产出一个待尝试方向。
@@ -62,6 +71,24 @@ export class HeldDirectionRepeater {
     this.initialMoveDone = false;
     this.elapsedAfterInitialMoveMs = 0;
     this.blocked = false;
+  }
+
+  inspect(): HeldDirectionRepeaterInspection {
+    return {
+      heldInput: this.heldInput ? { ...this.heldInput } : null,
+      pendingInitialInput: this.pendingInitialInput
+        ? { ...this.pendingInitialInput }
+        : null,
+      pendingAttempt: this.pendingAttempt
+        ? {
+            input: { ...this.pendingAttempt.input },
+            initial: this.pendingAttempt.initial,
+          }
+        : null,
+      initialMoveDone: this.initialMoveDone,
+      elapsedAfterInitialMoveMs: this.elapsedAfterInitialMoveMs,
+      blocked: this.blocked,
+    };
   }
 
   update(deltaMs: number): Direction | null {

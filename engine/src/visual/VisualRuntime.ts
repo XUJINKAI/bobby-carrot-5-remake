@@ -129,6 +129,12 @@ export class VisualRuntime {
     this.entityRuntime.clear();
   }
 
+  clearEntity(entityId: EntityId): void {
+    this.motions.delete(entityId);
+    this.activeMotionIds.delete(entityId);
+    this.entityRuntime.delete(entityId);
+  }
+
   /** Camera focus wins; otherwise follow the first player-trait actor. */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
     const actorIds = world.query

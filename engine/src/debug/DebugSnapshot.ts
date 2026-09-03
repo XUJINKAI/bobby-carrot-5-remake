@@ -1,3 +1,4 @@
+import type { InputControllerInspection } from "../input/InputController.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { EngineTiming } from "../time/EngineTiming.js";
 import type { PresentationClock } from "../time/PresentationClock.js";
@@ -5,16 +6,23 @@ import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
+import type { RuntimeActionInstance } from "../world/action/RuntimeAction.js";
 import type { EntityLayer } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
   EntityId,
 } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
+import type { DebugTraceEntry } from "./DebugTrace.js";
 
 export interface DebugSelection {
   cell: CellPosition;
   entityId?: EntityId;
+}
+
+export interface DebugActorOption {
+  id: EntityId;
+  type: string;
 }
 
 export interface DebugSnapshot {
@@ -32,7 +40,12 @@ export interface DebugSnapshot {
     inputBlocked: boolean;
     cameraTarget: EntityId | null;
   };
+  actors: readonly DebugActorOption[];
+  actor: DebugEntitySnapshot | null;
+  actions: readonly RuntimeActionInstance[];
+  input: InputControllerInspection | null;
   selection: DebugSelectionSnapshot | null;
+  trace?: readonly DebugTraceEntry[];
 }
 
 export interface DebugSelectionSnapshot {
@@ -92,6 +105,8 @@ export function buildDebugSnapshot(options: {
   worldClock: WorldClock;
   presentationClock: PresentationClock;
   timing: EngineTiming;
+  input: InputControllerInspection | null;
+  actorId?: EntityId | null;
   selection: DebugSelection | null;
 }): DebugSnapshot {
   const {
@@ -101,8 +116,11 @@ export function buildDebugSnapshot(options: {
     worldClock,
     presentationClock,
     timing,
+    input,
+    actorId: requestedActorId,
     selection,
   } = options;
+  const actions = world?.actions.active ?? [];
   const runtime = {
     worldTickCount: worldClock.tickCount,
     worldHz: timing.worldHz,
@@ -113,14 +131,32 @@ export function buildDebugSnapshot(options: {
     presentationStepMs: timing.presentationStepMs,
     presentationPaused: presentationClock.paused,
     animating: visual.isAnimating,
-    actionCount: world?.actions.active.length ?? 0,
+    actionCount: actions.length,
     inputBlocked: world?.inputBlocked ?? false,
     cameraTarget: world?.cameraTarget ?? null,
   };
+  const actorEntities = world?.query.entitiesWithTrait("player") ?? [];
+  const actors = actorEntities.map((entity) => ({
+    id: entity.id,
+    type: entity.type,
+  }));
+  const actorIds = new Set(actors.map((actor) => actor.id));
+  const actorId =
+    requestedActorId !== undefined &&
+    requestedActorId !== null &&
+    actorIds.has(requestedActorId)
+      ? requestedActorId
+      : actors[0]?.id;
+  const actor =
+    world && actorId !== undefined
+      ? buildEntitySnapshot(world, scene, visual, actorId)
+      : null;
 
-  if (!world || !selection) return { runtime, selection: null };
+  if (!world || !selection)
+    return { runtime, actors, actor, actions, input, selection: null };
   const inspection = world.inspect(selection.cell.x, selection.cell.y);
-  if (!inspection) return { runtime, selection: null };
+  if (!inspection)
+    return { runtime, actors, actor, actions, input, selection: null };
 
   const presences = world.presencesAt(selection.cell).map((presence) =>
     debugPresence(world, presence),
@@ -134,6 +170,10 @@ export function buildDebugSnapshot(options: {
 
   return {
     runtime,
+    actors,
+    actor,
+    actions,
+    input,
     selection: {
       cell: { ...inspection.cell },
       presences,
