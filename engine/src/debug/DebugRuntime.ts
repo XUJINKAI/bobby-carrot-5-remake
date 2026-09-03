@@ -1,3 +1,4 @@
+import type { Direction } from "@bobby/model";
 import type { CellInspection } from "../world/WorldTypes.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { DebugSidebar } from "./DebugSidebar.js";
@@ -10,6 +11,7 @@ export interface DebugRuntimeHost {
   pause(): void;
   resume(): void;
   step(count: number): void;
+  setHeldDirection(direction: Direction | null): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
@@ -76,6 +78,10 @@ export class DebugRuntime {
         pauseWorld: () => this.host.pause(),
         resumeWorld: () => this.host.resume(),
         stepWorld: () => this.host.step(1),
+        setHeldDirection: (direction) => {
+          this.host.setHeldDirection(direction);
+          this.host.requestRender();
+        },
         pausePresentation: () => this.host.pausePresentation(),
         resumePresentation: () => this.host.resumePresentation(),
         stepPresentation: (frames) => this.host.stepPresentation(frames),
@@ -144,6 +150,30 @@ export class DebugRuntime {
           detail: { before: previousActor.state, after: actor.state },
           ...clock,
         });
+    }
+
+    if (JSON.stringify(snapshot.input) !== JSON.stringify(previous.input)) {
+      const active = snapshot.input?.channels.filter(
+        (channel) =>
+          channel.physicalDirection !== null ||
+          channel.repeater?.heldInput !== null ||
+          channel.repeater?.pendingAttempt !== null,
+      );
+      this.trace.record({
+        category: "input",
+        summary:
+          active && active.length > 0
+            ? active
+                .map(
+                  (channel) =>
+                    `${channel.source}:${channel.physicalDirection ?? channel.repeater?.heldInput?.direction ?? "pending"}`,
+                )
+                .join(" ")
+            : "input idle",
+        ...(actor ? { actorId: actor.id } : {}),
+        detail: snapshot.input,
+        ...clock,
+      });
     }
 
     if (JSON.stringify(snapshot.actions) !== JSON.stringify(previous.actions))
