@@ -1,4 +1,4 @@
-import type { EntityState, JsonValue } from "@bobby/model";
+import type { Direction, EntityState, JsonValue } from "@bobby/model";
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 
@@ -9,6 +9,14 @@ export interface BobbyInventoryState {
   shovel: boolean;
   beans: number;
   temporaryKey: boolean;
+}
+
+export type BobbySpeedPhase = "full" | "normal" | "slow";
+
+/** Runtime-only locomotion state created by the original Speed mechanism. */
+export interface BobbySpeedBoostState {
+  direction: Direction;
+  phase: BobbySpeedPhase;
 }
 
 /** Authorable per-Bobby inventory defaults. Runtime-only relation fields stay implicit. */
@@ -52,6 +60,27 @@ export function patchBobbyInventory(
   };
 }
 
+export function readBobbySpeedBoost(
+  state: EntityState | undefined,
+): BobbySpeedBoostState | null {
+  const raw = state?.speedBoost;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const direction = raw.direction;
+  const phase = raw.phase;
+  if (!isDirection(direction) || !isSpeedPhase(phase)) return null;
+  return { direction, phase };
+}
+
+export function patchBobbySpeedBoost(
+  state: EntityState | undefined,
+  boost: BobbySpeedBoostState | null,
+): EntityState {
+  const result: EntityState = { ...(state ?? {}) };
+  if (boost) result.speedBoost = { ...boost };
+  else delete result.speedBoost;
+  return result;
+}
+
 /** mountId is a lightweight relation to the concrete vehicle Entity. */
 export function bobbyMountId(state: EntityState | undefined): EntityId | null {
   const value = state?.mountId;
@@ -68,4 +97,12 @@ function nonNegativeInt(value: JsonValue | undefined): number {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.max(0, Math.floor(value))
     : 0;
+}
+
+function isDirection(value: JsonValue | undefined): value is Direction {
+  return value === "up" || value === "down" || value === "left" || value === "right";
+}
+
+function isSpeedPhase(value: JsonValue | undefined): value is BobbySpeedPhase {
+  return value === "full" || value === "normal" || value === "slow";
 }
