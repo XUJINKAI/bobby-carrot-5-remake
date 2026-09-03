@@ -60,9 +60,10 @@ export interface SurfaceTerrainDefinition {
   label: string;
   type: SurfaceType;
   primary: EntityType;
-  variants: readonly SurfaceVariant[];
+  /** Explicit authoring layout. Rows are preserved by the Surface UI. */
+  rows: readonly (readonly SurfaceVariant[])[];
   theme?: ConcreteSurfaceTheme;
-  /** Same-family terrain may be swapped by a visual Theme without changing SurfaceType. */
+  /** Theme switches only swap terrains within the same family and SurfaceType. */
   themeFamily?: string;
 }
 
@@ -86,298 +87,264 @@ function backgroundVariant(number: number): EntityType {
   return `background-variant-${String(number).padStart(3, "0")}`;
 }
 
+function variant(number: number, kind: "walkable" | "background"): SurfaceVariant {
+  return {
+    type: kind === "walkable" ? walkableVariant(number) : backgroundVariant(number),
+    label: String(number),
+  };
+}
+
+function variantRow(
+  numbers: readonly number[],
+  kind: "walkable" | "background",
+): SurfaceVariant[] {
+  return numbers.map((number) => variant(number, kind));
+}
+
 function range(start: number, end: number): number[] {
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
-function variants(
-  numbers: readonly number[],
-  kind: "walkable" | "background",
-): SurfaceVariant[] {
-  return numbers.map((number) => ({
-    type:
-      kind === "walkable"
-        ? walkableVariant(number)
-        : backgroundVariant(number),
-    label: String(number),
-  }));
+function terrain(
+  definition: Omit<SurfaceTerrainDefinition, "primary"> & { primary?: EntityType },
+): SurfaceTerrainDefinition {
+  const first = definition.rows.flat()[0]?.type;
+  if (!definition.primary && !first)
+    throw new Error(`Surface terrain ${definition.id} has no variants`);
+  return {
+    ...definition,
+    primary: definition.primary ?? first!,
+  };
 }
 
-// docs/system/original/surface.md 使用 1-based 的 ts 行列坐标；walkable variant
-// 从 ts 第 7 行开始编号，background variant 则覆盖完整 16×16 ts。
-const grassVariants = variants(
-  [
-    ...range(1, 3),
-    ...range(17, 19),
-    ...range(33, 35),
-    ...range(49, 52),
+// docs/system/original/surface.md 使用 1-based ts 行列坐标。
+const grass = terrain({
+  id: "grass",
+  label: "草地",
+  type: "ground",
+  theme: "forest",
+  themeFamily: "base-ground",
+  rows: [
+    variantRow(range(1, 3), "walkable"),
+    variantRow(range(17, 19), "walkable"),
+    variantRow(range(33, 35), "walkable"),
+    variantRow(range(49, 52), "walkable"),
   ],
-  "walkable",
-);
-const grassWaterEdgeVariants = variants(
-  [
-    ...range(4, 8),
-    ...range(20, 24),
-    ...range(36, 39),
+});
+const grassWaterEdge = terrain({
+  id: "grass-water-edge",
+  label: "水边草地",
+  type: "ground",
+  theme: "forest",
+  rows: [
+    variantRow(range(4, 8), "walkable"),
+    variantRow(range(20, 24), "walkable"),
+    variantRow(range(36, 39), "walkable"),
   ],
-  "walkable",
-);
-const snowGroundVariants = variants([15, 16, 31, 32, 47], "walkable");
-const sandVariants = variants([48], "walkable");
-const cloudVariants = variants(
-  [
-    ...range(9, 14),
-    ...range(25, 30),
-    39,
-    40,
-    ...range(41, 46),
+});
+const snowGround = terrain({
+  id: "snow-ground",
+  label: "雪地",
+  type: "ground",
+  theme: "snow",
+  themeFamily: "base-ground",
+  rows: [variantRow([15, 16], "walkable"), variantRow([31, 32, 47], "walkable")],
+});
+const sand = terrain({
+  id: "sand",
+  label: "沙地",
+  type: "ground",
+  theme: "desert",
+  themeFamily: "base-ground",
+  rows: [variantRow([48], "walkable")],
+});
+const cloud = terrain({
+  id: "cloud",
+  label: "云层",
+  type: "ground",
+  theme: "space",
+  themeFamily: "base-ground",
+  rows: [
+    variantRow(range(9, 14), "walkable"),
+    variantRow(range(25, 30), "walkable"),
+    variantRow([39, 40, ...range(41, 46)], "walkable"),
   ],
-  "walkable",
-);
-
-const stumpVariants = variants([1], "background");
-const snowRockVariants = variants([2], "background");
-const flowerPotVariants = variants([3], "background");
-const stoneWallVariants = variants(
-  [
-    ...range(4, 8),
-    ...range(20, 24),
-    ...range(36, 40),
-    ...range(55, 58),
+});
+const ice = terrain({
+  id: "ice",
+  label: "冰面",
+  type: "ice",
+  theme: "snow",
+  rows: [[{ type: EntityTypeId.ICE, label: "Ice" }]],
+});
+const water = terrain({
+  id: "water",
+  label: "水",
+  type: "water",
+  primary: EntityTypeId.WATER_ANIMATED,
+  rows: [[
+    { type: EntityTypeId.WATER, label: "Still" },
+    { type: EntityTypeId.WATER_ANIMATED, label: "Animated", weight: 2 },
+    { type: EntityTypeId.WATER_VARIANT_1, label: "Variant 1" },
+    { type: EntityTypeId.WATER_VARIANT_2, label: "Variant 2" },
+    { type: EntityTypeId.WATER_VARIANT_3, label: "Variant 3" },
+  ]],
+});
+const waterfall = terrain({
+  id: "waterfall",
+  label: "瀑布",
+  type: "waterfall",
+  primary: backgroundVariant(93),
+  rows: [[
+    { type: backgroundVariant(92), label: "Start" },
+    { type: backgroundVariant(93), label: "Middle" },
+    { type: backgroundVariant(94), label: "End" },
+  ]],
+});
+const sky = terrain({
+  id: "sky",
+  label: "天空",
+  type: "sky",
+  theme: "space",
+  primary: backgroundVariant(74),
+  rows: [variantRow([72, 73, 74], "background")],
+});
+const moon = terrain({
+  id: "moon",
+  label: "月亮",
+  type: "sky",
+  theme: "space",
+  rows: [variantRow([75, 76, 77], "background")],
+});
+const stump = terrain({
+  id: "stump",
+  label: "木桩",
+  type: "solid",
+  theme: "forest",
+  rows: [variantRow([1], "background")],
+});
+const flowerPot = terrain({
+  id: "flower-pot",
+  label: "花盆",
+  type: "solid",
+  theme: "forest",
+  rows: [variantRow([3], "background")],
+});
+const stone = terrain({
+  id: "stone",
+  label: "石头",
+  type: "solid",
+  theme: "forest",
+  themeFamily: "rock",
+  rows: [variantRow([54], "background")],
+});
+const stoneWall = terrain({
+  id: "stone-wall",
+  label: "墙",
+  type: "solid",
+  theme: "forest",
+  rows: [
+    variantRow(range(4, 8), "background"),
+    variantRow(range(20, 24), "background"),
+    variantRow(range(36, 40), "background"),
+    variantRow(range(55, 58), "background"),
   ],
-  "background",
-);
-const stoneVariants = variants([54], "background");
-const christmasTreeVariants = variants(
-  [9, 10, 25, 26, 41, 42],
-  "background",
-);
-const snowFenceVariants = variants([17, 18, 19, 33, 49], "background");
-const christmasTentVariants = variants([34, 50], "background");
-const snowmanVariants = variants([35, 51], "background");
-const treeVariants = variants(
-  [
-    ...range(11, 16),
-    ...range(27, 32),
-    ...range(43, 48),
-    59,
-    60,
+});
+const tree = terrain({
+  id: "tree",
+  label: "树",
+  type: "solid",
+  theme: "forest",
+  themeFamily: "vegetation",
+  rows: [
+    variantRow(range(11, 16), "background"),
+    variantRow(range(27, 32), "background"),
+    variantRow(range(43, 48), "background"),
+    variantRow([59, 60], "background"),
   ],
-  "background",
-);
-const cactusVariants = variants([63, 64, 79, 80], "background");
-const fenceVariants = variants(
-  [
-    ...range(65, 71),
-    ...range(81, 85),
-    52,
-    53,
+});
+const fence = terrain({
+  id: "fence",
+  label: "篱笆",
+  type: "solid",
+  theme: "forest",
+  themeFamily: "fence",
+  rows: [
+    variantRow(range(65, 71), "background"),
+    variantRow(range(81, 85), "background"),
+    variantRow([52, 53], "background"),
   ],
-  "background",
-);
-const skyVariants = variants([72, 73, 74], "background");
-const moonVariants = variants([75, 76, 77], "background");
-
-// ts(6,12/13/14) -> background variant 92/93/94（16×16 行优先编号）。
-const waterfallVariants = variants([92, 93, 94], "background").map(
-  (variant, index) => ({
-    ...variant,
-    label: ["Start", "Middle", "End"][index]!,
-  }),
-);
+});
+const snowRock = terrain({
+  id: "snow-rock",
+  label: "带雪的石头",
+  type: "solid",
+  theme: "snow",
+  themeFamily: "rock",
+  rows: [variantRow([2], "background")],
+});
+const christmasTree = terrain({
+  id: "christmas-tree",
+  label: "圣诞树",
+  type: "solid",
+  theme: "snow",
+  themeFamily: "vegetation",
+  rows: [variantRow([9, 10], "background"), variantRow([25, 26], "background"), variantRow([41, 42], "background")],
+});
+const snowFence = terrain({
+  id: "snow-fence",
+  label: "带雪的篱笆",
+  type: "solid",
+  theme: "snow",
+  themeFamily: "fence",
+  rows: [variantRow([17, 18, 19], "background"), variantRow([33, 49], "background")],
+});
+const christmasTent = terrain({
+  id: "christmas-tent",
+  label: "圣诞帐篷",
+  type: "solid",
+  theme: "snow",
+  rows: [variantRow([34, 50], "background")],
+});
+const snowman = terrain({
+  id: "snowman",
+  label: "雪人",
+  type: "solid",
+  theme: "snow",
+  rows: [variantRow([35, 51], "background")],
+});
+const cactus = terrain({
+  id: "cactus",
+  label: "仙人掌",
+  type: "solid",
+  theme: "desert",
+  themeFamily: "vegetation",
+  rows: [variantRow([63, 64], "background"), variantRow([79, 80], "background")],
+});
 
 export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
-  {
-    id: "grass",
-    label: "草地",
-    type: "ground",
-    theme: "forest",
-    themeFamily: "base-ground",
-    primary: grassVariants[0]!.type,
-    variants: grassVariants,
-  },
-  {
-    id: "grass-water-edge",
-    label: "水边草地",
-    type: "ground",
-    theme: "forest",
-    primary: grassWaterEdgeVariants[0]!.type,
-    variants: grassWaterEdgeVariants,
-  },
-  {
-    id: "snow-ground",
-    label: "雪地",
-    type: "ground",
-    theme: "snow",
-    themeFamily: "base-ground",
-    primary: snowGroundVariants[0]!.type,
-    variants: snowGroundVariants,
-  },
-  {
-    id: "sand",
-    label: "沙地",
-    type: "ground",
-    theme: "desert",
-    themeFamily: "base-ground",
-    primary: sandVariants[0]!.type,
-    variants: sandVariants,
-  },
-  {
-    id: "cloud",
-    label: "云层",
-    type: "ground",
-    theme: "space",
-    themeFamily: "base-ground",
-    primary: cloudVariants[0]!.type,
-    variants: cloudVariants,
-  },
-  {
-    id: "ice",
-    label: "冰面",
-    type: "ice",
-    theme: "snow",
-    primary: EntityTypeId.ICE,
-    variants: [{ type: EntityTypeId.ICE, label: "Ice" }],
-  },
-  {
-    id: "water",
-    label: "水",
-    type: "water",
-    primary: EntityTypeId.WATER_ANIMATED,
-    variants: [
-      { type: EntityTypeId.WATER, label: "Still" },
-      { type: EntityTypeId.WATER_ANIMATED, label: "Animated", weight: 2 },
-      { type: EntityTypeId.WATER_VARIANT_1, label: "Variant 1" },
-      { type: EntityTypeId.WATER_VARIANT_2, label: "Variant 2" },
-      { type: EntityTypeId.WATER_VARIANT_3, label: "Variant 3" },
-    ],
-  },
-  {
-    id: "waterfall",
-    label: "瀑布",
-    type: "waterfall",
-    primary: waterfallVariants[1]!.type,
-    variants: waterfallVariants,
-  },
-  {
-    id: "sky",
-    label: "天空",
-    type: "sky",
-    theme: "space",
-    primary: skyVariants[2]!.type,
-    variants: skyVariants,
-  },
-  {
-    id: "moon",
-    label: "月亮",
-    type: "sky",
-    theme: "space",
-    primary: moonVariants[0]!.type,
-    variants: moonVariants,
-  },
-  {
-    id: "stump",
-    label: "木桩",
-    type: "solid",
-    theme: "forest",
-    primary: stumpVariants[0]!.type,
-    variants: stumpVariants,
-  },
-  {
-    id: "flower-pot",
-    label: "花盆",
-    type: "solid",
-    theme: "forest",
-    primary: flowerPotVariants[0]!.type,
-    variants: flowerPotVariants,
-  },
-  {
-    id: "stone",
-    label: "石头",
-    type: "solid",
-    theme: "forest",
-    themeFamily: "rock",
-    primary: stoneVariants[0]!.type,
-    variants: stoneVariants,
-  },
-  {
-    id: "stone-wall",
-    label: "墙",
-    type: "solid",
-    theme: "forest",
-    primary: stoneWallVariants[0]!.type,
-    variants: stoneWallVariants,
-  },
-  {
-    id: "tree",
-    label: "树",
-    type: "solid",
-    theme: "forest",
-    themeFamily: "vegetation",
-    primary: treeVariants[0]!.type,
-    variants: treeVariants,
-  },
-  {
-    id: "fence",
-    label: "篱笆",
-    type: "solid",
-    theme: "forest",
-    themeFamily: "fence",
-    primary: fenceVariants[0]!.type,
-    variants: fenceVariants,
-  },
-  {
-    id: "snow-rock",
-    label: "带雪的石头",
-    type: "solid",
-    theme: "snow",
-    themeFamily: "rock",
-    primary: snowRockVariants[0]!.type,
-    variants: snowRockVariants,
-  },
-  {
-    id: "christmas-tree",
-    label: "圣诞树",
-    type: "solid",
-    theme: "snow",
-    themeFamily: "vegetation",
-    primary: christmasTreeVariants[0]!.type,
-    variants: christmasTreeVariants,
-  },
-  {
-    id: "snow-fence",
-    label: "带雪的篱笆",
-    type: "solid",
-    theme: "snow",
-    themeFamily: "fence",
-    primary: snowFenceVariants[0]!.type,
-    variants: snowFenceVariants,
-  },
-  {
-    id: "christmas-tent",
-    label: "圣诞帐篷",
-    type: "solid",
-    theme: "snow",
-    primary: christmasTentVariants[0]!.type,
-    variants: christmasTentVariants,
-  },
-  {
-    id: "snowman",
-    label: "雪人",
-    type: "solid",
-    theme: "snow",
-    primary: snowmanVariants[0]!.type,
-    variants: snowmanVariants,
-  },
-  {
-    id: "cactus",
-    label: "仙人掌",
-    type: "solid",
-    theme: "desert",
-    themeFamily: "vegetation",
-    primary: cactusVariants[0]!.type,
-    variants: cactusVariants,
-  },
+  grass,
+  grassWaterEdge,
+  snowGround,
+  sand,
+  cloud,
+  ice,
+  water,
+  waterfall,
+  sky,
+  moon,
+  stump,
+  flowerPot,
+  stone,
+  stoneWall,
+  tree,
+  fence,
+  snowRock,
+  christmasTree,
+  snowFence,
+  christmasTent,
+  snowman,
+  cactus,
 ];
 
 export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
@@ -398,63 +365,34 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
       ["snow-rock", "flower-pot", "christmas-tent", "snowman"],
     ],
   },
-  {
-    id: "environment",
-    label: "Environment",
-    rows: [["sky", "moon"]],
-  },
+  { id: "environment", label: "Environment", rows: [["sky", "moon"]] },
 ];
 
 export const SURFACE_THEMES: readonly SurfaceThemeDefinition[] = [
   {
     id: "mixed",
     label: "混合",
-    preview: [
-      grassVariants[0]!.type,
-      snowGroundVariants[0]!.type,
-      sandVariants[0]!.type,
-      skyVariants[2]!.type,
-    ],
+    preview: [grass.primary, snowGround.primary, sand.primary, sky.primary],
   },
   {
     id: "forest",
     label: "森林",
-    preview: [
-      grassVariants[0]!.type,
-      treeVariants[0]!.type,
-      fenceVariants[0]!.type,
-      stoneVariants[0]!.type,
-    ],
+    preview: [grass.primary, tree.primary, fence.primary, stone.primary],
   },
   {
     id: "snow",
     label: "雪地",
-    preview: [
-      snowGroundVariants[0]!.type,
-      snowFenceVariants[0]!.type,
-      christmasTreeVariants[0]!.type,
-      snowRockVariants[0]!.type,
-    ],
+    preview: [snowGround.primary, snowFence.primary, christmasTree.primary, snowRock.primary],
   },
   {
     id: "desert",
     label: "沙地",
-    preview: [
-      sandVariants[0]!.type,
-      cactusVariants[0]!.type,
-      cactusVariants[2]!.type,
-      stoneVariants[0]!.type,
-    ],
+    preview: [sand.primary, cactus.primary, cactus.rows.flat()[2]!.type, stone.primary],
   },
   {
     id: "space",
     label: "太空",
-    preview: [
-      cloudVariants[0]!.type,
-      skyVariants[0]!.type,
-      skyVariants[2]!.type,
-      moonVariants[0]!.type,
-    ],
+    preview: [cloud.primary, sky.rows.flat()[0]!.type, sky.primary, moon.primary],
   },
 ];
 
@@ -465,9 +403,7 @@ const LEGACY_GROUND_TYPES = new Set<EntityType>([
   EntityTypeId.GROUND_D,
 ]);
 const surfaceTypes = new Set<EntityType>(
-  SURFACE_TERRAINS.flatMap((terrain) =>
-    terrain.variants.map((variant) => variant.type),
-  ),
+  SURFACE_TERRAINS.flatMap((item) => item.rows.flat().map((item) => item.type)),
 );
 for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
 
@@ -475,21 +411,19 @@ export function isSurfaceEntityType(type: EntityType): boolean {
   return surfaceTypes.has(type);
 }
 
-export function surfaceTerrain(
-  id: SurfaceTerrainId,
-): SurfaceTerrainDefinition {
-  const terrain = SURFACE_TERRAINS.find((candidate) => candidate.id === id);
-  if (!terrain) throw new Error(`Unknown Surface terrain: ${id}`);
-  return terrain;
+export function surfaceTerrain(id: SurfaceTerrainId): SurfaceTerrainDefinition {
+  const result = SURFACE_TERRAINS.find((candidate) => candidate.id === id);
+  if (!result) throw new Error(`Unknown Surface terrain: ${id}`);
+  return result;
 }
 
 export function surfaceTerrainForEntity(
   type: EntityType,
 ): SurfaceTerrainDefinition | null {
-  if (LEGACY_GROUND_TYPES.has(type)) return surfaceTerrain("grass");
+  if (LEGACY_GROUND_TYPES.has(type)) return grass;
   return (
-    SURFACE_TERRAINS.find((terrain) =>
-      terrain.variants.some((variant) => variant.type === type),
+    SURFACE_TERRAINS.find((item) =>
+      item.rows.flat().some((variant) => variant.type === type),
     ) ?? null
   );
 }
@@ -501,8 +435,8 @@ export function defaultSurfaceBrush(): SurfaceBrush {
 export function detectSurfaceTheme(level: Readonly<EditorMap>): SurfaceTheme {
   const themes = new Set<ConcreteSurfaceTheme>();
   for (const entity of level.entities) {
-    const terrain = surfaceTerrainForEntity(entity.type);
-    if (terrain?.themeFamily && terrain.theme) themes.add(terrain.theme);
+    const item = surfaceTerrainForEntity(entity.type);
+    if (item?.themeFamily && item.theme) themes.add(item.theme);
     if (themes.size > 1) return "mixed";
   }
   return themes.values().next().value ?? "mixed";
@@ -525,9 +459,9 @@ export function applySurfaceTheme(
             candidate.theme === theme &&
             candidate.type === source.type,
         );
-        if (!target || target.variants.length === 0) return entity;
+        if (!target) return entity;
         const type = weightedVariant(
-          target.variants,
+          target.rows.flat(),
           hashCell({ x: entity.x, y: entity.y }, 1),
         );
         catalog.require(type);
@@ -547,7 +481,6 @@ export function paintSurface(
 ): EditorCommand {
   return {
     apply(level) {
-      if (cells.length === 0) return level;
       const target = new Set(
         cells.filter((cell) => inBounds(level, cell)).map(cellKey),
       );
@@ -557,10 +490,7 @@ export function paintSurface(
           !target.has(cellKey(entity)) || !isSurfaceEntityType(entity.type),
       );
       const painted = [...target]
-        .map((key) => {
-          const cell = parseCellKey(key);
-          return createSurfaceEntity(catalog, brush, cell, target);
-        })
+        .map((key) => createSurfaceEntity(catalog, brush, parseCellKey(key), target))
         .filter((entity): entity is LevelEntity => entity !== null);
       return normalizeEditorLevel({ ...level, entities: [...kept, ...painted] });
     },
@@ -574,8 +504,7 @@ export function fillSurface(
   brush: SurfaceBrush,
 ): EditorCommand {
   const source = surfaceAt(level, origin);
-  if (!source) return paintSurface(catalog, [origin], brush);
-  const sourceTerrain = surfaceTerrainForEntity(source.type);
+  const sourceTerrain = source ? surfaceTerrainForEntity(source.type) : null;
   if (!sourceTerrain) return paintSurface(catalog, [origin], brush);
   const cells: Cell[] = [];
   const visited = new Set<string>();
@@ -586,8 +515,8 @@ export function fillSurface(
     if (visited.has(key) || !inBounds(level, cell)) continue;
     visited.add(key);
     const entity = surfaceAt(level, cell);
-    const terrain = entity ? surfaceTerrainForEntity(entity.type) : null;
-    if (!terrain || terrain.id !== sourceTerrain.id) continue;
+    const item = entity ? surfaceTerrainForEntity(entity.type) : null;
+    if (!item || item.id !== sourceTerrain.id) continue;
     cells.push(cell);
     queue.push(
       { x: cell.x - 1, y: cell.y },
@@ -605,9 +534,8 @@ export function rectangleCells(anchor: Cell, focus: Cell): Cell[] {
   const top = Math.min(anchor.y, focus.y);
   const bottom = Math.max(anchor.y, focus.y);
   const cells: Cell[] = [];
-  for (let y = top; y <= bottom; y += 1) {
+  for (let y = top; y <= bottom; y += 1)
     for (let x = left; x <= right; x += 1) cells.push({ x, y });
-  }
   return cells;
 }
 
@@ -617,10 +545,10 @@ export function pickSurfaceBrush(
 ): SurfaceBrush | null {
   const entity = surfaceAt(level, cell);
   if (!entity) return null;
-  const terrain = surfaceTerrainForEntity(entity.type);
-  if (!terrain) return null;
+  const item = surfaceTerrainForEntity(entity.type);
+  if (!item) return null;
   return {
-    terrain: terrain.id,
+    terrain: item.id,
     pattern: "exact",
     exact: entity.type,
     seed: 1,
@@ -633,33 +561,34 @@ function createSurfaceEntity(
   cell: Cell,
   target: ReadonlySet<string>,
 ): LevelEntity | null {
-  const terrain = surfaceTerrain(brush.terrain);
-  if (terrain.variants.length === 0) return null;
+  const item = surfaceTerrain(brush.terrain);
+  const variants = item.rows.flat();
+  if (variants.length === 0) return null;
   let type: EntityType;
   if (
     brush.pattern === "exact" &&
     brush.exact &&
-    terrain.variants.some((variant) => variant.type === brush.exact)
+    variants.some((variant) => variant.type === brush.exact)
   ) {
     type = brush.exact;
   } else if (
     brush.pattern === "alternate" &&
     brush.alternate &&
     brush.alternate.every((candidate) =>
-      terrain.variants.some((variant) => variant.type === candidate),
+      variants.some((variant) => variant.type === candidate),
     )
   ) {
     type = brush.alternate[(cell.x + cell.y) & 1]!;
-  } else if (terrain.type === "waterfall" && terrain.variants.length >= 3) {
+  } else if (item.type === "waterfall" && variants.length >= 3) {
     const above = target.has(cellKey({ x: cell.x, y: cell.y - 1 }));
     const below = target.has(cellKey({ x: cell.x, y: cell.y + 1 }));
     type = !above
-      ? terrain.variants[0]!.type
+      ? variants[0]!.type
       : !below
-        ? terrain.variants[2]!.type
-        : terrain.variants[1]!.type;
+        ? variants[2]!.type
+        : variants[1]!.type;
   } else {
-    type = weightedVariant(terrain.variants, hashCell(cell, brush.seed));
+    type = weightedVariant(variants, hashCell(cell, brush.seed));
   }
   catalog.require(type);
   return { type, x: cell.x, y: cell.y };
@@ -670,13 +599,13 @@ function weightedVariant(
   hash: number,
 ): EntityType {
   const total = variants.reduce(
-    (sum, variant) => sum + (variant.weight ?? 1),
+    (sum, item) => sum + (item.weight ?? 1),
     0,
   );
   let target = hash % total;
-  for (const variant of variants) {
-    target -= variant.weight ?? 1;
-    if (target < 0) return variant.type;
+  for (const item of variants) {
+    target -= item.weight ?? 1;
+    if (target < 0) return item.type;
   }
   return variants[0]!.type;
 }
