@@ -37,14 +37,20 @@ export interface RuntimeActionContext {
 }
 
 /**
- * gameplay lock 期间的 controlled intent 仍可被 Action 观察，例如 Speed 记住
- * “本段全速移动中按过同方向”。这里只允许修改 Action 自己的 snapshot state。
+ * gameplay lock 期间的 controlled intent 仍可被 Action 观察，例如 Speed 逐格判断
+ * 当前 full 格是否收到正确输入。这里只允许修改 Action 自己的 snapshot state。
  */
 export interface RuntimeActionIntentContext {
   readonly action: RuntimeActionInstance;
   readonly intent: WorldIntent;
   readonly query: WorldQueryApi;
 }
+
+/**
+ * retry: gameplay 暂忙，本次 held input 可以在后续 WorldTick 继续尝试/观察。
+ * consumed: gameplay 明确吞掉本次输入，同一 held direction 不应在 Action 结束后补执行。
+ */
+export type RuntimeActionInputDisposition = "retry" | "consumed";
 
 export type RuntimeActionStatus = "running" | "complete";
 
@@ -62,7 +68,9 @@ export type RuntimeActionResult = RuntimeActionStatus | RuntimeActionUpdate;
 export interface RuntimeActionDefinition {
   kind: string;
   update(context: RuntimeActionContext): RuntimeActionResult | void;
-  onIntent?(context: RuntimeActionIntentContext): void;
+  onIntent?(
+    context: RuntimeActionIntentContext,
+  ): RuntimeActionInputDisposition | void;
 }
 
 export interface RuntimeActionSchedulerSnapshot {
