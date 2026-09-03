@@ -334,7 +334,8 @@ export class DebugSidebar {
     this.debugHeldDirection = external?.physicalDirection ?? null;
     const activeChannels = snapshot.input?.channels.filter(
       (channel) =>
-        channel.physicalDirection !== null || channel.repeater?.heldInput !== null,
+        channel.physicalDirection !== null ||
+        (channel.repeater?.heldInput ?? null) !== null,
     );
     const inputLabel = snapshot.runtime.inputBlocked
       ? "blocked"
