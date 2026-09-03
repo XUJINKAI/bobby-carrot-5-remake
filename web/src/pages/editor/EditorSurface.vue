@@ -111,6 +111,9 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
   const auto = definition.auto;
   if (auto.kind === "weighted") return `weighted · ${auto.variants.length} entries`;
   if (auto.kind === "vertical") return "vertical topology";
+  if (auto.kind === "fence") return `adjacency · ${auto.variants.length} variants`;
+  if (auto.kind === "neighbor") return `neighbor rules · ${auto.rules.length}`;
+  if (auto.kind === "paired-vertical") return "paired vertical";
   return "primary";
 }
 </script>
