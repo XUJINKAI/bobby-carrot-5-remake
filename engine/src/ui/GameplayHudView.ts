@@ -1,6 +1,7 @@
 import { EntityTypeId } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
 import { resolveEntityVisualPreview } from "../visual/preview.js";
+import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
 
 export interface GameplayHudViewOptions {
@@ -50,12 +51,12 @@ export class GameplayHudView {
     Object.assign(this.root.style, {
       position: "absolute",
       top: "12px",
-      right: "12px",
+      right: `calc(12px + var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
       zIndex: "5",
       display: "grid",
       justifyItems: "end",
       gap: "6px",
-      maxWidth: "calc(100% - 24px)",
+      maxWidth: `calc(100% - 24px - var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
       pointerEvents: "none",
       color: "#eef5ef",
       fontFamily: "system-ui, sans-serif",
