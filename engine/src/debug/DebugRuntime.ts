@@ -18,7 +18,7 @@ export interface DebugRuntimeHost {
   pause(): void;
   resume(): void;
   step(count: number): void;
-  setHeldDirection(direction: Direction | null): void;
+  setHeldDirection(actorId: EntityId, direction: Direction | null): void;
   teleportActor(actorId: EntityId, cell: CellPosition): boolean;
   pausePresentation(): void;
   resumePresentation(): void;
@@ -41,7 +41,7 @@ export class DebugRuntime {
   private selection: DebugSelection | null = null;
   private previousSnapshot: DebugSnapshot | null = null;
   private trackedActorId: EntityId | null = null;
-  private debugInputInjected = false;
+  private debugInputActorId: EntityId | null = null;
   private enabled = false;
 
   constructor(
@@ -97,8 +97,13 @@ export class DebugRuntime {
         },
         stepWorld: () => this.host.step(1),
         setHeldDirection: (direction) => {
-          this.host.setHeldDirection(direction);
-          this.debugInputInjected = direction !== null;
+          const actorId =
+            this.trackedActorId ??
+            this.host.snapshot(this.selection, null).actor?.id ??
+            null;
+          if (actorId === null) return;
+          this.host.setHeldDirection(actorId, direction);
+          this.debugInputActorId = direction === null ? null : actorId;
           this.host.requestRender();
         },
         selectActor: (actorId) => {
@@ -127,9 +132,9 @@ export class DebugRuntime {
   }
 
   private releaseDebugInput(): void {
-    if (!this.debugInputInjected) return;
-    this.host.setHeldDirection(null);
-    this.debugInputInjected = false;
+    if (this.debugInputActorId === null) return;
+    this.host.setHeldDirection(this.debugInputActorId, null);
+    this.debugInputActorId = null;
   }
 
   /** Advance until the selected actor actually resolves to a different sprite frame. */
