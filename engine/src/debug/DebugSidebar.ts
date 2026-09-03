@@ -58,6 +58,7 @@ export class DebugSidebar {
   private readonly gameplayInset: GameplayRightInsetLease;
   private readonly controlToolButton: HTMLButtonElement;
   private readonly infoToolButton: HTMLButtonElement;
+  private enabled = false;
   private controlVisible = true;
   private infoVisible = true;
 
@@ -398,7 +399,7 @@ export class DebugSidebar {
       bottom: "0",
       width: `${TOOL_STRIP_WIDTH}px`,
       zIndex: "32",
-      display: "flex",
+      display: "none",
       flexDirection: "column",
       alignItems: "stretch",
       gap: "4px",
@@ -423,23 +424,26 @@ export class DebugSidebar {
     mount.append(this.controlRoot, this.root, this.toolRoot);
     this.root.hidden = true;
     this.controlRoot.hidden = true;
-    this.toolRoot.hidden = true;
     this.setTab("actor");
   }
 
   setEnabled(enabled: boolean): void {
-    this.toolRoot.hidden = !enabled;
+    this.enabled = enabled;
     if (!enabled) {
+      this.toolRoot.style.display = "none";
       this.root.hidden = true;
       this.controlRoot.hidden = true;
       this.gameplayInset.set(0);
       return;
     }
+    this.controlVisible = true;
+    this.infoVisible = true;
+    this.toolRoot.style.display = "flex";
     this.applyDockLayout(false);
   }
 
   render(snapshot: DebugSnapshot): void {
-    if (this.toolRoot.hidden) return;
+    if (!this.enabled) return;
     this.updateControls(snapshot);
     this.renderActor(snapshot);
     this.renderTimeline(snapshot);
@@ -454,7 +458,7 @@ export class DebugSidebar {
   }
 
   private applyDockLayout(requestRender = true): void {
-    if (this.toolRoot.hidden) return;
+    if (!this.enabled) return;
     this.root.hidden = !this.infoVisible;
     this.controlRoot.hidden = !this.controlVisible;
     this.controlRoot.style.right = `${
