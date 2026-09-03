@@ -161,6 +161,7 @@ const emit = defineEmits<{
       :images="images"
       :catalog="catalog"
       :editor="editor"
+      :authoring-panel="leftPanel"
       @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
       @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
