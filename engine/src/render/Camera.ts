@@ -12,6 +12,12 @@ interface PanReturn {
   durationMs: number;
 }
 
+interface CameraShake {
+  startedAtMs: number;
+  durationMs: number;
+  amplitudeSourcePx: number;
+}
+
 export class Camera {
   centerX = 0;
   centerY = 0;
@@ -25,6 +31,9 @@ export class Camera {
   private panOffsetY = 0;
   /** 保留最近一次回中 tween，便于 Debug Presentation 倒一帧。 */
   private panReturn: PanReturn | null = null;
+  private shakeState: CameraShake | null = null;
+  private shakeOffsetX = 0;
+  private shakeOffsetY = 0;
 
   constructor(sourceTileSize = 48) {
     this.sourceTileSize = sourceTileSize;
@@ -38,6 +47,10 @@ export class Camera {
     return (
       Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001
     );
+  }
+
+  get shaking(): boolean {
+    return this.shakeState !== null;
   }
 
   setViewport(width: number, height: number): void {
@@ -90,20 +103,30 @@ export class Camera {
     };
   }
 
+  /** Pure presentation effect; gameplay emits semantic impact events, never camera commands. */
+  shake(
+    frame: PresentationFrame,
+    durationMs = 150,
+    amplitudeSourcePx = 6,
+  ): void {
+    this.shakeState = {
+      startedAtMs: frame.nowMs,
+      durationMs: Math.max(0, durationMs),
+      amplitudeSourcePx: Math.max(0, amplitudeSourcePx),
+    };
+    this.shakeOffsetX = 0;
+    this.shakeOffsetY = 0;
+  }
+
+  resetShake(): void {
+    this.shakeState = null;
+    this.shakeOffsetX = 0;
+    this.shakeOffsetY = 0;
+  }
+
   update(frame: PresentationFrame): void {
-    const returning = this.panReturn;
-    if (!returning) return;
-    const elapsedMs = Math.max(0, frame.nowMs - returning.startedAtMs);
-    const raw =
-      returning.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / returning.durationMs);
-    const eased = 1 - (1 - raw) ** 3;
-    const remaining = 1 - eased;
-    this.panOffsetX = returning.fromX * remaining;
-    this.panOffsetY = returning.fromY * remaining;
-    if (raw >= 1) {
-      this.panOffsetX = 0;
-      this.panOffsetY = 0;
-    }
+    this.updatePanReturn(frame);
+    this.updateShake(frame);
   }
 
   follow(point: CameraPoint, worldWidth: number, worldHeight: number): void {
@@ -119,17 +142,64 @@ export class Camera {
   worldToScreen(x: number, y: number): CameraPoint {
     const size = this.tileScreenSize;
     return {
-      x: (x - this.centerX) * size + this.viewportWidth / 2,
-      y: (y - this.centerY) * size + this.viewportHeight / 2,
+      x:
+        (x - this.centerX) * size +
+        this.viewportWidth / 2 +
+        this.shakeOffsetX,
+      y:
+        (y - this.centerY) * size +
+        this.viewportHeight / 2 +
+        this.shakeOffsetY,
     };
   }
 
   screenToTile(screenX: number, screenY: number): CameraPoint {
     const size = this.tileScreenSize;
     return {
-      x: Math.floor((screenX - this.viewportWidth / 2) / size + this.centerX),
-      y: Math.floor((screenY - this.viewportHeight / 2) / size + this.centerY),
+      x: Math.floor(
+        (screenX - this.shakeOffsetX - this.viewportWidth / 2) / size +
+          this.centerX,
+      ),
+      y: Math.floor(
+        (screenY - this.shakeOffsetY - this.viewportHeight / 2) / size +
+          this.centerY,
+      ),
     };
+  }
+
+  private updatePanReturn(frame: PresentationFrame): void {
+    const returning = this.panReturn;
+    if (!returning) return;
+    const elapsedMs = Math.max(0, frame.nowMs - returning.startedAtMs);
+    const raw =
+      returning.durationMs <= 0
+        ? 1
+        : Math.min(1, elapsedMs / returning.durationMs);
+    const eased = 1 - (1 - raw) ** 3;
+    const remaining = 1 - eased;
+    this.panOffsetX = returning.fromX * remaining;
+    this.panOffsetY = returning.fromY * remaining;
+    if (raw >= 1) {
+      this.panOffsetX = 0;
+      this.panOffsetY = 0;
+      this.panReturn = null;
+    }
+  }
+
+  private updateShake(frame: PresentationFrame): void {
+    const shake = this.shakeState;
+    if (!shake) return;
+    const elapsedMs = Math.max(0, frame.nowMs - shake.startedAtMs);
+    const raw =
+      shake.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / shake.durationMs);
+    if (raw >= 1) {
+      this.resetShake();
+      return;
+    }
+    const amplitude = shake.amplitudeSourcePx * this.zoom * (1 - raw);
+    // Deterministic presentation-time oscillation keeps Debug rewind reproducible.
+    this.shakeOffsetX = Math.sin(elapsedMs * 0.115) * amplitude;
+    this.shakeOffsetY = Math.sin(elapsedMs * 0.173 + 1.2) * amplitude * 0.72;
   }
 
   private clamp(worldWidth: number, worldHeight: number): void {
