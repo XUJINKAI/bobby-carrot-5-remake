@@ -2,6 +2,7 @@
 import {
   SURFACE_GROUPS,
   surfaceGroup,
+  type EditorDefinition,
   type SurfaceBrush,
   type SurfacePattern,
   type SurfaceTheme,
@@ -19,6 +20,7 @@ const props = defineProps<{
   selectionExists: boolean;
   images: ImageManager;
   catalog: EntityCatalog;
+  editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
   tool: [tool: SurfaceTool];
@@ -175,6 +177,7 @@ function themeLabel(theme: SurfaceTheme): string {
             :cell-size="48"
             :images="images"
             :catalog="catalog"
+            :editor="editor"
             :fallback-text="variant.label"
           />
           <span class="surface-variant-label">{{ variant.label }}</span>
