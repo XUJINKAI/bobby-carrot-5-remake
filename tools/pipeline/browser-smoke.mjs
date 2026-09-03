@@ -223,6 +223,8 @@ function runBrowser(url) {
         "--disable-gpu",
         "--no-sandbox",
         "--disable-dev-shm-usage",
+        "--disable-background-networking",
+        "--virtual-time-budget=10000",
         "--dump-dom",
         url,
       ],
@@ -233,16 +235,22 @@ function runBrowser(url) {
     );
     let stdout = "",
       stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
+    const max = 8 * 1024 * 1024,
+      timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
     child.stdout.on("data", (chunk) => {
-      stdout += chunk;
+      if (stdout.length < max) stdout += String(chunk);
     });
     child.stderr.on("data", (chunk) => {
-      stderr += chunk;
+      if (stderr.length < max) stderr += String(chunk);
     });
-    child.once("error", reject);
-    child.once("close", (status) => resolve({ status, stdout, stderr }));
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolve({ status, stdout, stderr });
+    });
   });
 }
 function compact(text) {
