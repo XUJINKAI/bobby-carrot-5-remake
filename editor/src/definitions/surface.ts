@@ -275,7 +275,7 @@ const cloud = terrain({
     walkRow(9, range(7, 14)),
   ],
   // 边缘映射待按原图继续精调；中心裂缝候选集中在这里，方便直接改。
-  auto: weighted(weights(cloudTypes), 37),
+  auto: { kind: "weighted", variants: weights(cloudTypes), salt: 37 },
 });
 
 const grassNormal = [
