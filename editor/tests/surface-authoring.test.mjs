@@ -25,6 +25,13 @@ function entityAt(level, x, y, predicate = () => true) {
     .find((entity) => entity.x === x && entity.y === y && predicate(entity));
 }
 
+function surfacesAt(level, x, y) {
+  return level.entities
+    .filter((entity) => entity.x === x && entity.y === y)
+    .map((entity) => ({ entity, terrain: surfaceTerrainForEntity(entity.type) }))
+    .filter((item) => item.terrain);
+}
+
 test("Surface catalog is independent from Palette", () => {
   assert.equal(isSurfaceEntityType(EntityTypeId.WATER), true);
   assert.equal(isSurfaceEntityType(EntityTypeId.ICE), true);
@@ -44,6 +51,42 @@ test("Surface terrain and variant layouts preserve explicit rows", () => {
     surfaceTerrain("waterfall").rows[0].map((variant) => variant.label),
     ["Start", "Middle", "End"],
   );
+});
+
+test("Fence is a Surface overlay and preserves the base terrain", () => {
+  let level = createBlankLevel(5, 5);
+  level = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }],
+    { terrain: "fence", pattern: "auto", seed: 1 },
+  ).apply(level);
+
+  let cell = surfacesAt(level, 1, 1);
+  assert.equal(cell.some((item) => item.terrain.slot === "base"), true);
+  assert.equal(cell.some((item) => item.terrain.id === "fence" && item.terrain.slot === "overlay"), true);
+
+  level = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }],
+    {
+      terrain: "snow-ground",
+      pattern: "exact",
+      exact: "walkable-variant-15",
+      seed: 1,
+    },
+  ).apply(level);
+  cell = surfacesAt(level, 1, 1);
+  assert.equal(cell.some((item) => item.terrain.id === "snow-ground"), true);
+  assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
+});
+
+test("Surface Auto strategy is explicit data instead of implicit all-variant random", () => {
+  assert.equal(surfaceTerrain("grass").auto.kind, "weighted");
+  assert.equal(surfaceTerrain("stone-wall").auto.kind, "primary");
+  assert.equal(surfaceTerrain("waterfall").auto.kind, "vertical");
+  if (surfaceTerrain("grass").auto.kind === "weighted") {
+    assert.ok(surfaceTerrain("grass").auto.variants.length < surfaceTerrain("grass").rows.flat().length);
+  }
 });
 
 test("Palette mechanism placement preserves the Surface underneath", () => {
@@ -189,7 +232,10 @@ test("Theme switch changes only recognized visual families", () => {
   const next = applySurfaceTheme(catalog, "snow").apply(level);
   assert.equal(detectSurfaceTheme(next), "snow");
   assert.equal(surfaceTerrainForEntity(entityAt(next, 0, 0)?.type)?.id, "snow-ground");
-  assert.equal(surfaceTerrainForEntity(entityAt(next, 2, 0)?.type)?.id, "snow-fence");
+  assert.equal(
+    surfacesAt(next, 2, 0).some((item) => item.terrain.id === "snow-fence"),
+    true,
+  );
   assert.equal(entityAt(next, 3, 0)?.type, EntityTypeId.WATER);
 });
 
