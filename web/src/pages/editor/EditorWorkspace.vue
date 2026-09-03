@@ -60,7 +60,6 @@ const emit = defineEmits<{
   surfaceExact: [type: EntityType];
   surfaceAlternateA: [type: EntityType];
   surfaceAlternateB: [type: EntityType];
-  surfaceReroll: [];
   hover: [cell: Cell | null];
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
@@ -110,6 +109,7 @@ const emit = defineEmits<{
       v-if="!playing && leftOpen && leftPanel === 'surface'"
       :brush="surfaceBrush"
       :current-theme="surfaceTheme"
+      :size="paletteSize"
       :images="images"
       :catalog="catalog"
       :editor="editor"
@@ -119,7 +119,7 @@ const emit = defineEmits<{
       @exact="emit('surfaceExact', $event)"
       @alternate-a="emit('surfaceAlternateA', $event)"
       @alternate-b="emit('surfaceAlternateB', $event)"
-      @reroll="emit('surfaceReroll')"
+      @resize="emit('paletteResize', $event)"
     />
     <section class="editor-map-shell" :class="{ playing }">
       <EditorCanvas
