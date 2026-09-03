@@ -1,3 +1,4 @@
+import type { RuntimeActionDefinition } from "../world/action/RuntimeAction.js";
 import type { Behavior } from "../world/behavior/Behavior.js";
 import type {
   AudioProfileId,
@@ -34,12 +35,15 @@ export interface EntityModule {
   presentation: EntityPresentationDefinition;
   visual?: VisualDefinition;
   behaviorBindings?: readonly EntityBehaviorBinding[];
+  /** 仅此 Entity 机制需要的跨 WorldTick gameplay 过程。 */
+  runtimeActions?: readonly RuntimeActionDefinition[];
 }
 
 export interface EntityModuleInput {
   definition: EntityModuleDefinition;
   visual?: VisualDefinition;
   behaviorBindings?: readonly EntityBehaviorBinding[];
+  runtimeActions?: readonly RuntimeActionDefinition[];
 }
 
 export function defineEntityModule(input: EntityModuleInput): EntityModule {
@@ -75,5 +79,6 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
     ...(input.behaviorBindings
       ? { behaviorBindings: input.behaviorBindings }
       : {}),
+    ...(input.runtimeActions ? { runtimeActions: input.runtimeActions } : {}),
   };
 }
