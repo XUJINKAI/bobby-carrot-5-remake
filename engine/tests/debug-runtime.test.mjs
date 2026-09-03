@@ -20,7 +20,7 @@ function debugTime() {
   return { timing, worldClock, presentationClock };
 }
 
-test("Debug snapshot exposes runtime clocks, actions, Entity, Behavior and Visual facts", () => {
+test("Debug snapshot exposes runtime clocks, primary actor, actions and inspected Entity facts", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -61,6 +61,11 @@ test("Debug snapshot exposes runtime clocks, actions, Entity, Behavior and Visua
   assert.equal(snapshot.runtime.presentationFrame, 1);
   assert.equal(snapshot.runtime.presentationPaused, false);
   assert.equal(snapshot.runtime.actionCount, 0);
+  assert.equal(snapshot.actions.length, 0);
+  assert.equal(snapshot.actor?.id, bobby.id);
+  assert.equal(snapshot.actor?.type, EntityTypeId.BOBBY);
+  assert.deepEqual(snapshot.actor?.anchor, { x: 0, y: 0 });
+  assert.equal(snapshot.actor?.direction, "right");
   assert.equal("status" in snapshot.runtime, false);
   assert.equal("player" in snapshot.runtime, false);
   assert.equal("facing" in snapshot.runtime, false);
@@ -100,27 +105,35 @@ test("Debug snapshot defaults selection to the top Presence", () => {
   assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
 });
 
-test("Debug Sidebar keeps the requested compact Selection and Entity details", () => {
+test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(source, /content\.replaceChildren\(/);
+  assert.match(source, /type DebugTab = "actor" \| "timeline" \| "inspect"/);
   assert.match(source, /private readonly worldPauseResumeButton/);
+  assert.match(source, /private readonly worldStepButton/);
   assert.match(source, /private readonly presentationPauseResumeButton/);
   assert.match(source, /private readonly frameBackButton/);
   assert.match(source, /private readonly frameForwardButton/);
-  assert.match(source, /◀ 1 Frame/);
-  assert.match(source, /1 Frame ▶/);
-  assert.match(source, /private readonly selectionStack/);
-  assert.doesNotMatch(source, /\["status", "Status"\]/);
-  assert.doesNotMatch(source, /\["player", "Player"\]/);
-  assert.doesNotMatch(source, /\["facing", "Facing"\]/);
-  assert.doesNotMatch(source, /Player here/);
-  assert.doesNotMatch(source, /\["anchor", "Anchor"\]/);
-  assert.doesNotMatch(source, /\["stack", "Stack order"\]/);
+  assert.match(source, /private readonly nextChangeButton/);
+  assert.match(source, /\["actor", "Actor"\]/);
+  assert.match(source, /\["timeline", "Timeline"\]/);
+  assert.match(source, /\["inspect", "Inspect"\]/);
+  assert.match(source, /Runtime actions/);
+  assert.match(source, /Presentation/);
+  assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
-  assert.match(source, /"Traits",\s*"Behaviors"/);
-  assert.match(source, /label === "Traits" \|\| label === "Behaviors"/);
-  assert.match(source, /details\.open = open/);
+  assert.match(source, /Resolved layers/);
+});
+
+test("Debug Runtime keeps semantic presentation stepping separate from presentation Hz", () => {
+  const source = fs.readFileSync(
+    new URL("../src/debug/DebugRuntime.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /stepPresentationToNextChange/);
+  assert.match(source, /for \(let frame = 0; frame < 240; frame \+= 1\)/);
+  assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
+  assert.doesNotMatch(source, /presentationHz\s*=/);
 });
