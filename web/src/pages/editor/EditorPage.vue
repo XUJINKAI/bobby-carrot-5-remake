@@ -10,7 +10,14 @@ import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import EditorContextMenu from "./EditorContextMenu.vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
@@ -55,6 +62,7 @@ function syncShell(): void {
       canRedo: session?.game.canRedo ?? false,
     },
     page.leftPanel.value,
+    page.surfaceTool.value,
   );
 }
 watch(
@@ -62,6 +70,7 @@ watch(
     page.playing.value,
     page.tool.value,
     page.leftPanel.value,
+    page.surfaceTool.value,
     shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
   syncShell,
@@ -187,6 +196,14 @@ function transform(
   result(page.transform(cell, step));
 }
 
+function switchAuthoringPanel(): void {
+  page.toggleAuthoringPanel();
+  leftOpen.value = true;
+  if (isMobileEditor()) rightPanel.value = null;
+  closeContextMenu();
+  syncShell();
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   if (isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
@@ -199,6 +216,11 @@ function handleKeydown(event: KeyboardEvent): void {
       event.preventDefault();
       session?.game.redo();
     }
+    return;
+  }
+  if (event.key === "Tab" && !modifier && !event.altKey) {
+    event.preventDefault();
+    switchAuthoringPanel();
     return;
   }
   if (event.key === "Escape") {
@@ -224,6 +246,17 @@ function handleKeydown(event: KeyboardEvent): void {
   } else if (event.key === "Delete" || event.key === "Backspace") {
     event.preventDefault();
     page.deleteSelection();
+  } else if (page.leftPanel.value === "surface") {
+    if (key === "1") {
+      event.preventDefault();
+      page.setSurfaceTool("rect");
+    } else if (key === "2") {
+      event.preventDefault();
+      page.setSurfaceTool("brush");
+    } else if (key === "4") {
+      event.preventDefault();
+      page.setSurfaceTool("fill");
+    }
   } else if (key === "1") {
     event.preventDefault();
     page.setTool("select");
@@ -244,6 +277,9 @@ function onShellAction(event: Event): void {
   if (action === "editor-tool-select") page.setTool("select");
   if (action === "editor-tool-place") page.setTool("place");
   if (action === "editor-tool-erase") page.setTool("erase");
+  if (action === "editor-surface-rect") page.setSurfaceTool("rect");
+  if (action === "editor-surface-brush") page.setSurfaceTool("brush");
+  if (action === "editor-surface-fill") page.setSurfaceTool("fill");
   if (action === "editor-undo") undo();
   if (action === "editor-redo") redo();
   if (action === "editor-play") void togglePlay();
@@ -257,8 +293,8 @@ function onShellAction(event: Event): void {
 
 function toggleLeftPanel(panel: "palette" | "surface"): void {
   const opening = !leftOpen.value || page.leftPanel.value !== panel;
-  page.leftPanel.value = panel;
   if (panel === "surface") page.activateSurface();
+  else page.activatePalette();
   leftOpen.value = opening;
   if (isMobileEditor() && opening) rightPanel.value = null;
 }
@@ -332,8 +368,8 @@ function isMobileEditor(): boolean {
       :placement="page.leftPanel.value === 'palette' ? page.placement.value : null"
       :palette-placement="page.placement.value"
       :left-panel="page.leftPanel.value"
-      :surface-tool="page.surfaceTool.value"
       :surface-brush="page.surfaceBrush.value"
+      :surface-theme="page.surfaceTheme.value"
       :selection="page.mapSelection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
@@ -349,15 +385,13 @@ function isMobileEditor(): boolean {
       :editor="page.editor"
       @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
-      @surface-tool="page.setSurfaceTool"
-      @surface-type="page.setSurfaceType"
+      @surface-terrain="page.selectSurfaceTerrain"
       @surface-theme="page.setSurfaceTheme"
       @surface-pattern="page.setSurfacePattern"
       @surface-exact="page.setSurfaceExact"
       @surface-alternate-a="(type) => page.setSurfaceAlternate(0, type)"
       @surface-alternate-b="(type) => page.setSurfaceAlternate(1, type)"
       @surface-reroll="page.rerollSurface"
-      @surface-apply-selection="page.applySurfaceSelection"
       @hover="page.hover.value = $event"
       @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
       @primary-move="page.primaryMove"
