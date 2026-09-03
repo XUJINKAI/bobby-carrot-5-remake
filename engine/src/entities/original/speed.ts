@@ -91,7 +91,7 @@ const speedRunAction: RuntimeActionDefinition = {
     if (booleanState(action.state.pendingMove)) {
       const beforeX = numberState(action.state.beforeX);
       const beforeY = numberState(action.state.beforeY);
-      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick若位置
+      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick 若位置
       // 没变，说明撞停；无需再等完整 motion cadence 才解除 boost。
       if (owner.anchor.x === beforeX && owner.anchor.y === beforeY) {
         commands.setState(
@@ -112,13 +112,10 @@ const speedRunAction: RuntimeActionDefinition = {
       const previousPhase = phaseState(action.state.movePhase) ?? "full";
       const beltDirection = speedDirectionAt(query, owner.anchor);
       if (beltDirection) {
-        const oldDirection = directionState(action.state.direction);
         action.state.direction = beltDirection;
         action.state.phase = "full";
         // Speed surface 本身保持全速；板上的输入不能预存给离板后的第一格。
         action.state.sustainCurrentFullCell = false;
-        if (oldDirection !== beltDirection)
-          action.state.sustainCurrentFullCell = false;
       } else if (previousPhase === "full") {
         // sustain 只代表“刚完成的这一格 full 期间是否观察到同方向输入”。
         // 每格结算只消费一次，下一格必须重新观察，否则立即进入衰减。
