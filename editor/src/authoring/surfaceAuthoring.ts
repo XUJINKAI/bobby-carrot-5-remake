@@ -113,8 +113,8 @@ const snowSolid = variants([
 const desertSolid = variants([63, 64, 79, 80], "background");
 const spaceSky = variants([72, 73, 74, 75, 76, 77], "background");
 
-// ts(6,12/13/14) -> background variant 182/198/214。
-const waterfallVariants = variants([182, 198, 214], "background").map(
+// ts(6,12/13/14) -> background variant 92/93/94（16×16 行优先编号）。
+const waterfallVariants = variants([92, 93, 94], "background").map(
   (variant, index) => ({
     ...variant,
     label: ["Start", "Middle", "End"][index]!,
