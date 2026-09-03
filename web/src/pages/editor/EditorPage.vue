@@ -265,7 +265,7 @@ function handleKeydown(event: KeyboardEvent): void {
     } else if (key === "2") {
       event.preventDefault();
       page.setSurfaceTool("brush");
-    } else if (key === "4") {
+    } else if (key === "3") {
       event.preventDefault();
       page.setSurfaceTool("fill");
     }
@@ -275,6 +275,9 @@ function handleKeydown(event: KeyboardEvent): void {
   } else if (key === "2") {
     event.preventDefault();
     page.setTool("place");
+  } else if (key === "4") {
+    event.preventDefault();
+    page.setTool("erase");
   } else if (key === "q" || key === "e") {
     event.preventDefault();
     page.cycleVariant(key === "q" ? -1 : 1);
@@ -285,6 +288,7 @@ function onShellAction(event: Event): void {
   const action = (event as CustomEvent<{ action: string }>).detail.action;
   if (action === "editor-tool-select") page.setTool("select");
   if (action === "editor-tool-brush") page.setTool("place");
+  if (action === "editor-tool-erase") page.setTool("erase");
   if (action === "editor-surface-select") page.setSurfaceTool("rect");
   if (action === "editor-surface-brush") page.setSurfaceTool("brush");
   if (action === "editor-surface-fill") page.setSurfaceTool("fill");
@@ -399,7 +403,6 @@ function isMobileEditor(): boolean {
       @surface-exact="page.setSurfaceExact"
       @surface-alternate-a="(type) => page.setSurfaceAlternate(0, type)"
       @surface-alternate-b="(type) => page.setSurfaceAlternate(1, type)"
-      @surface-reroll="page.rerollSurface"
       @hover="page.hover.value = $event"
       @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
       @primary-move="page.primaryMove"
