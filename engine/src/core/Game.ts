@@ -213,12 +213,6 @@ export class Game {
     return this.worldValue;
   }
 
-  private get primaryActorId(): EntityId {
-    if (this.primaryActorIdValue === null)
-      throw new Error("关卡没有可控制 actor");
-    return this.primaryActorIdValue;
-  }
-
   get actorIds(): readonly EntityId[] {
     if (!this.worldValue) return [];
     return this.world.query
@@ -250,16 +244,18 @@ export class Game {
         ...(entity.state ? { state: structuredClone(entity.state) } : {}),
       };
     });
-    const primary = world.entities.require(this.primaryActorId);
+    const primaryActorId = this.primaryActorIdValue;
+    const primary =
+      primaryActorId === null ? null : world.entities.get(primaryActorId) ?? null;
     return {
       status: world.dead ? "dead" : world.completed ? "won" : "playing",
       deathReason: state.deathReason,
       moves: state.moves,
-      primaryActorId: this.primaryActorId,
+      primaryActorId,
       actors,
-      player: { ...primary.anchor },
-      facing: primary.direction ?? "down",
-      inventory: readBobbyInventory(primary.state),
+      player: primary ? { ...primary.anchor } : null,
+      facing: primary?.direction ?? null,
+      inventory: readBobbyInventory(primary?.state),
       economy: structuredClone(state.economy),
       profile: structuredClone(state.profile),
       bonusCoinsInLevel: state.bonusCoinsInLevel,
@@ -420,8 +416,8 @@ export class Game {
   }
 
   killPlayer(reason?: string): void {
-    if (!this.worldValue) return;
-    this.killActor(this.primaryActorId, reason);
+    if (!this.worldValue || this.primaryActorIdValue === null) return;
+    this.killActor(this.primaryActorIdValue, reason);
   }
 
   killActor(actorId: EntityId, reason?: string): void {
@@ -536,14 +532,16 @@ export class Game {
 
   private configureActorsAndControls(): void {
     const actorIds = this.actorIds;
-    if (actorIds.length === 0)
-      throw new Error("Gameplay Game 至少需要一个带 player trait 的 actor");
-    this.primaryActorIdValue = actorIds[0]!;
+    this.primaryActorIdValue = actorIds[0] ?? null;
     if (this.configuredControls) {
       this.controlBindings = structuredClone(this.configuredControls);
       return;
     }
-    const primary = actorIds[0]!;
+    const primary = actorIds[0];
+    if (primary === undefined) {
+      this.controlBindings = [];
+      return;
+    }
     const secondary = actorIds[1];
     this.controlBindings = secondary
       ? [
