@@ -1,38 +1,38 @@
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import { resolveGameplayMount } from "../ui/gameplayMount.js";
-import type {
-  DebugEntitySnapshot,
-  DebugSnapshot,
-} from "./DebugSnapshot.js";
+import type { DebugEntitySnapshot, DebugSnapshot } from "./DebugSnapshot.js";
 
 export interface DebugSidebarActions {
   pauseWorld(): void;
   resumeWorld(): void;
+  stepWorld(): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
+  stepPresentationToNextChange(): void;
+  clearTrace(): void;
   close(): void;
   selectEntity(entityId: EntityId): void;
 }
 
-type ValueMap = Map<string, HTMLSpanElement>;
+type DebugTab = "actor" | "timeline" | "inspect";
 
-/** Engine 自带的只读调试侧栏，不依赖 Web / Editor 页面组件。 */
+/** Engine 自带的运行时调试侧栏，不依赖 Web / Editor 页面组件。 */
 export class DebugSidebar {
   private readonly root: HTMLDivElement;
-  private readonly runtimeValues: ValueMap = new Map();
-  private readonly selectionValues: ValueMap = new Map();
-  private readonly entityValues: ValueMap = new Map();
-  private readonly entityJson = new Map<string, HTMLPreElement>();
-  private readonly selectionMessage: HTMLDivElement;
-  private readonly selectionData: HTMLDivElement;
-  private readonly selectionStack: HTMLDivElement;
-  private readonly entitySection: HTMLElement;
+  private readonly worldStatus: HTMLSpanElement;
+  private readonly presentationStatus: HTMLSpanElement;
   private readonly worldPauseResumeButton: HTMLButtonElement;
+  private readonly worldStepButton: HTMLButtonElement;
   private readonly presentationPauseResumeButton: HTMLButtonElement;
   private readonly frameBackButton: HTMLButtonElement;
   private readonly frameForwardButton: HTMLButtonElement;
-  private selectionStackSignature = "";
+  private readonly nextChangeButton: HTMLButtonElement;
+  private readonly actorPanel: HTMLDivElement;
+  private readonly timelinePanel: HTMLDivElement;
+  private readonly inspectPanel: HTMLDivElement;
+  private readonly tabButtons = new Map<DebugTab, HTMLButtonElement>();
+  private activeTab: DebugTab = "actor";
   private worldPaused = false;
   private presentationPaused = false;
 
@@ -49,7 +49,7 @@ export class DebugSidebar {
       top: "0",
       right: "0",
       bottom: "0",
-      width: "min(380px, 92%)",
+      width: "min(420px, 94%)",
       zIndex: "30",
       overflow: "auto",
       boxSizing: "border-box",
@@ -77,100 +77,95 @@ export class DebugSidebar {
     close.setAttribute("aria-label", "Close Engine Debug");
     header.append(title, close);
 
-    const content = document.createElement("div");
-    content.style.display = "grid";
-    content.style.gap = "10px";
-
-    const runtimeBody = document.createElement("div");
-    for (const [key, label] of [
-      ["world", "World"],
-      ["presentation", "Present"],
-      ["actions", "Actions"],
-      ["cameraTarget", "Camera"],
-      ["animating", "Motion"],
-    ] as const)
-      runtimeBody.append(this.valueRow(label, key, this.runtimeValues));
-
-    const controls = document.createElement("div");
-    Object.assign(controls.style, {
+    const clock = document.createElement("div");
+    Object.assign(clock.style, {
       display: "grid",
-      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-      gap: "6px",
-      marginTop: "8px",
+      gap: "7px",
+      marginBottom: "10px",
+      padding: "9px",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: "6px",
+      background: "rgba(255,255,255,.035)",
     });
+
+    const worldRow = document.createElement("div");
+    Object.assign(worldRow.style, {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) auto auto",
+      gap: "6px",
+      alignItems: "center",
+    });
+    this.worldStatus = document.createElement("span");
     this.worldPauseResumeButton = this.button("⏸ World", () => {
       if (this.worldPaused) this.actions.resumeWorld();
       else this.actions.pauseWorld();
     });
+    this.worldStepButton = this.button("Step", () => this.actions.stepWorld());
+    worldRow.append(
+      this.worldStatus,
+      this.worldPauseResumeButton,
+      this.worldStepButton,
+    );
+
+    const presentRow = document.createElement("div");
+    Object.assign(presentRow.style, {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) auto auto auto auto",
+      gap: "6px",
+      alignItems: "center",
+    });
+    this.presentationStatus = document.createElement("span");
     this.presentationPauseResumeButton = this.button("⏸ Present", () => {
       if (this.presentationPaused) this.actions.resumePresentation();
       else this.actions.pausePresentation();
     });
-    this.frameBackButton = this.button("◀ 1 Frame", () =>
-      this.actions.stepPresentation(-1),
+    this.frameBackButton = this.button("-1", () => this.actions.stepPresentation(-1));
+    this.frameForwardButton = this.button("+1", () => this.actions.stepPresentation(1));
+    this.nextChangeButton = this.button("Next", () =>
+      this.actions.stepPresentationToNextChange(),
     );
-    this.frameForwardButton = this.button("1 Frame ▶", () =>
-      this.actions.stepPresentation(1),
-    );
-    controls.append(
-      this.worldPauseResumeButton,
+    this.nextChangeButton.title = "Jump to the end of the current visible motion";
+    presentRow.append(
+      this.presentationStatus,
       this.presentationPauseResumeButton,
       this.frameBackButton,
       this.frameForwardButton,
+      this.nextChangeButton,
     );
-    runtimeBody.append(controls);
+    clock.append(worldRow, presentRow);
 
-    const selectionBody = document.createElement("div");
-    this.selectionMessage = document.createElement("div");
-    this.selectionMessage.textContent = "Click a cell to inspect it.";
-    this.selectionData = document.createElement("div");
-    this.selectionData.append(
-      this.valueRow("Cell", "cell", this.selectionValues),
-    );
-    this.selectionStack = document.createElement("div");
-    Object.assign(this.selectionStack.style, {
+    const tabs = document.createElement("div");
+    Object.assign(tabs.style, {
       display: "grid",
-      gap: "4px",
-      marginTop: "7px",
+      gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+      gap: "6px",
+      marginBottom: "10px",
     });
-    this.selectionData.append(this.selectionStack);
-    selectionBody.append(this.selectionMessage, this.selectionData);
-
-    const entityBody = document.createElement("div");
-    for (const [key, label] of [
-      ["entity", "Entity"],
-      ["direction", "Direction"],
-      ["visual", "Visual"],
-    ] as const)
-      entityBody.append(this.valueRow(label, key, this.entityValues));
-    for (const label of [
-      "Traits",
-      "Behaviors",
-      "Instance traits",
-      "Properties",
-      "State",
-      "Footprint",
-      "Presence",
-      "Visual runtime",
-      "Resolved layers",
-    ]) {
-      const block = this.jsonDetails(
-        label,
-        label === "Traits" || label === "Behaviors",
-      );
-      this.entityJson.set(label, block.pre);
-      entityBody.append(block.details);
+    for (const [tab, label] of [
+      ["actor", "Actor"],
+      ["timeline", "Timeline"],
+      ["inspect", "Inspect"],
+    ] as const) {
+      const button = this.button(label, () => this.setTab(tab));
+      this.tabButtons.set(tab, button);
+      tabs.append(button);
     }
-    this.entitySection = this.section("Entity", entityBody);
 
-    content.append(
-      this.section("Runtime", runtimeBody),
-      this.section("Selection", selectionBody),
-      this.entitySection,
+    this.actorPanel = document.createElement("div");
+    this.timelinePanel = document.createElement("div");
+    this.inspectPanel = document.createElement("div");
+
+    this.root.append(
+      header,
+      clock,
+      tabs,
+      this.actorPanel,
+      this.timelinePanel,
+      this.inspectPanel,
     );
-    this.root.append(header, content);
     mount.append(this.root);
     this.root.hidden = true;
+    this.setTab("actor");
   }
 
   setEnabled(enabled: boolean): void {
@@ -179,165 +174,164 @@ export class DebugSidebar {
 
   render(snapshot: DebugSnapshot): void {
     if (this.root.hidden) return;
-    this.updateRuntime(snapshot);
-    this.updateSelection(snapshot);
+    this.updateClocks(snapshot);
+    this.renderActor(snapshot);
+    this.renderTimeline(snapshot);
+    this.renderInspect(snapshot);
   }
 
   destroy(): void {
     this.root.remove();
   }
 
-  private updateRuntime(snapshot: DebugSnapshot): void {
+  private updateClocks(snapshot: DebugSnapshot): void {
     const runtime = snapshot.runtime;
     this.worldPaused = runtime.worldPaused;
     this.presentationPaused = runtime.presentationPaused;
-    this.setValue(
-      this.runtimeValues,
-      "world",
-      `${runtime.worldHz}Hz (${formatMs(runtime.worldStepMs)}ms), ${runtime.worldTickCount} ticks`,
-    );
-    this.setValue(
-      this.runtimeValues,
-      "presentation",
-      `${runtime.presentationHz}Hz (${formatMs(runtime.presentationStepMs)}ms), ${runtime.presentationFrame} frames`,
-    );
-    this.setValue(
-      this.runtimeValues,
-      "actions",
-      `${runtime.actionCount} active · input ${runtime.inputBlocked ? "blocked" : "ready"}`,
-    );
-    this.setValue(
-      this.runtimeValues,
-      "cameraTarget",
-      runtime.cameraTarget === null ? "default" : `#${runtime.cameraTarget}`,
-    );
-    this.setValue(
-      this.runtimeValues,
-      "animating",
-      runtime.animating ? "active" : "idle",
-    );
-
-    this.worldPauseResumeButton.textContent = runtime.worldPaused
-      ? "▶ World"
-      : "⏸ World";
-    this.worldPauseResumeButton.title = runtime.worldPaused
-      ? "Resume World Clock"
-      : "Pause World Clock";
-    this.worldPauseResumeButton.setAttribute(
-      "aria-label",
-      this.worldPauseResumeButton.title,
-    );
-
+    this.worldStatus.textContent = `World W${runtime.worldTickCount} · ${runtime.worldHz}Hz`;
+    this.presentationStatus.textContent = `Present P${runtime.presentationFrame} · ${runtime.presentationHz}Hz`;
+    this.worldPauseResumeButton.textContent = runtime.worldPaused ? "▶ World" : "⏸ World";
     this.presentationPauseResumeButton.textContent = runtime.presentationPaused
       ? "▶ Present"
       : "⏸ Present";
-    this.presentationPauseResumeButton.title = runtime.presentationPaused
-      ? "Resume Presentation Clock"
-      : "Pause Presentation Clock";
-    this.presentationPauseResumeButton.setAttribute(
-      "aria-label",
-      this.presentationPauseResumeButton.title,
-    );
-
+    this.worldStepButton.disabled = !runtime.worldPaused;
     this.frameBackButton.disabled =
       !runtime.presentationPaused || runtime.presentationFrame <= 0;
     this.frameForwardButton.disabled = !runtime.presentationPaused;
+    this.nextChangeButton.disabled = !runtime.presentationPaused;
   }
 
-  private updateSelection(snapshot: DebugSnapshot): void {
-    const selection = snapshot.selection;
-    this.selectionMessage.hidden = selection !== null;
-    this.selectionData.hidden = selection === null;
-    this.entitySection.hidden = !selection?.entity;
-    if (!selection) return;
-
-    this.setValue(
-      this.selectionValues,
-      "cell",
-      `${selection.cell.x}, ${selection.cell.y}`,
-    );
-    const signature = JSON.stringify(
-      selection.presences.map((presence) => [
-        presence.entityId,
-        presence.type,
-        presence.role,
-        presence.stackOrder,
-      ]),
-    );
-    if (signature !== this.selectionStackSignature) {
-      this.selectionStackSignature = signature;
-      const buttons = [...selection.presences].reverse().map((presence) => {
-        const label = [
-          `[${presence.stackOrder}]`,
-          `#${presence.entityId}`,
-          presence.type,
-          presence.role ? `(${presence.role})` : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-        const button = this.button(label, () =>
-          this.actions.selectEntity(presence.entityId),
-        );
-        button.style.textAlign = "left";
-        button.style.width = "100%";
-        return button;
-      });
-      this.selectionStack.replaceChildren(
-        ...(buttons.length > 0
-          ? buttons
-          : [document.createTextNode("Empty cell")]),
-      );
+  private renderActor(snapshot: DebugSnapshot): void {
+    const actor = snapshot.actor;
+    if (!actor) {
+      this.actorPanel.replaceChildren(document.createTextNode("No player actor."));
+      return;
     }
-    if (selection.entity) this.updateEntity(selection.entity);
-  }
-
-  private updateEntity(entity: DebugEntitySnapshot): void {
-    this.setValue(this.entityValues, "entity", `#${entity.id} ${entity.type}`);
-    this.setValue(
-      this.entityValues,
-      "direction",
-      entity.direction ?? "-",
+    const body = document.createElement("div");
+    body.append(
+      this.valueRow("Actor", `#${actor.id} ${actor.type}`),
+      this.valueRow("Position", `${actor.anchor.x}, ${actor.anchor.y}`),
+      this.valueRow("Direction", actor.direction ?? "-"),
+      this.valueRow("Input", snapshot.runtime.inputBlocked ? "blocked" : "ready"),
     );
-    this.setValue(this.entityValues, "visual", entity.visual.visualId);
-    this.setJson("Traits", entity.definition.traits);
-    this.setJson("Behaviors", entity.behaviors);
-    this.setJson("Instance traits", entity.instanceTraits);
-    this.setJson("Properties", entity.properties);
-    this.setJson("State", entity.state);
-    this.setJson("Footprint", entity.definition.footprint);
-    this.setJson("Presence", entity.presences);
-    this.setJson("Visual runtime", entity.visual.runtime);
-    this.setJson("Resolved layers", entity.visual.renderItems);
+    body.append(this.jsonDetails("Entity state", actor.state, true));
+    const ownedActions = snapshot.actions.filter(
+      (action) =>
+        action.ownerEntityId === actor.id || action.focus?.entityId === actor.id,
+    );
+    body.append(this.jsonDetails("Runtime actions", ownedActions, true));
+    body.append(this.jsonDetails("Presentation", actor.visual.runtime, true));
+    this.actorPanel.replaceChildren(this.section(`Selected actor #${actor.id}`, body));
   }
 
-  private setValue(values: ValueMap, key: string, value: string): void {
-    const target = values.get(key);
-    if (target && target.textContent !== value) target.textContent = value;
+  private renderTimeline(snapshot: DebugSnapshot): void {
+    const entries = [...(snapshot.trace ?? [])].reverse();
+    const body = document.createElement("div");
+    const toolbar = document.createElement("div");
+    Object.assign(toolbar.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "7px",
+    });
+    const count = document.createElement("span");
+    count.textContent = `${entries.length}/50 events`;
+    count.style.color = "#8da495";
+    toolbar.append(count, this.button("Clear", () => this.actions.clearTrace()));
+    body.append(toolbar);
+
+    for (const entry of entries) {
+      const details = document.createElement("details");
+      const summary = document.createElement("summary");
+      summary.style.cursor = "pointer";
+      const world = entry.worldTick === null ? "W-" : `W${entry.worldTick}`;
+      summary.textContent = `${world} ${entry.category.padEnd(12)} ${entry.summary}`;
+      details.append(summary);
+      const pre = document.createElement("pre");
+      Object.assign(pre.style, {
+        margin: "5px 0 7px",
+        padding: "7px",
+        overflow: "auto",
+        borderRadius: "4px",
+        background: "#020604",
+        whiteSpace: "pre-wrap",
+      });
+      pre.textContent = JSON.stringify(entry, null, 2);
+      details.append(pre);
+      body.append(details);
+    }
+    if (entries.length === 0)
+      body.append(document.createTextNode("No runtime changes recorded yet."));
+    this.timelinePanel.replaceChildren(this.section("Timeline", body));
   }
 
-  private setJson(label: string, value: unknown): void {
-    const target = this.entityJson.get(label);
-    const text = formatJson(value);
-    if (target && target.textContent !== text) target.textContent = text;
+  private renderInspect(snapshot: DebugSnapshot): void {
+    const selection = snapshot.selection;
+    if (!selection) {
+      this.inspectPanel.replaceChildren(
+        this.section("Inspect", document.createTextNode("Click a cell to inspect it.")),
+      );
+      return;
+    }
+    const body = document.createElement("div");
+    body.append(this.valueRow("Cell", `${selection.cell.x}, ${selection.cell.y}`));
+    const stack = document.createElement("div");
+    Object.assign(stack.style, { display: "grid", gap: "4px", marginTop: "7px" });
+    for (const presence of [...selection.presences].reverse()) {
+      const button = this.button(
+        `[${presence.stackOrder}] #${presence.entityId} ${presence.type}${presence.role ? ` (${presence.role})` : ""}`,
+        () => this.actions.selectEntity(presence.entityId),
+      );
+      button.style.textAlign = "left";
+      stack.append(button);
+    }
+    if (selection.presences.length === 0) stack.append("Empty cell");
+    body.append(stack);
+    if (selection.entity) body.append(this.entityDetails(selection.entity));
+    this.inspectPanel.replaceChildren(this.section("Inspect", body));
   }
 
-  private valueRow(
-    labelText: string,
-    key: string,
-    values: ValueMap,
-  ): HTMLElement {
+  private entityDetails(entity: DebugEntitySnapshot): HTMLElement {
+    const body = document.createElement("div");
+    body.append(
+      this.valueRow("Entity", `#${entity.id} ${entity.type}`),
+      this.valueRow("Direction", entity.direction ?? "-"),
+      this.valueRow("Visual", entity.visual.visualId),
+      this.jsonDetails("Traits", entity.definition.traits, true),
+      this.jsonDetails("Behaviors", entity.behaviors, true),
+      this.jsonDetails("Instance traits", entity.instanceTraits),
+      this.jsonDetails("Properties", entity.properties),
+      this.jsonDetails("State", entity.state),
+      this.jsonDetails("Footprint", entity.definition.footprint),
+      this.jsonDetails("Presence", entity.presences),
+      this.jsonDetails("Visual runtime", entity.visual.runtime),
+      this.jsonDetails("Resolved layers", entity.visual.renderItems),
+    );
+    return body;
+  }
+
+  private setTab(tab: DebugTab): void {
+    this.activeTab = tab;
+    this.actorPanel.hidden = tab !== "actor";
+    this.timelinePanel.hidden = tab !== "timeline";
+    this.inspectPanel.hidden = tab !== "inspect";
+    for (const [key, button] of this.tabButtons)
+      button.style.background = key === tab ? "#285135" : "#14251a";
+  }
+
+  private valueRow(labelText: string, value: string): HTMLElement {
     const row = document.createElement("div");
     Object.assign(row.style, {
       display: "grid",
-      gridTemplateColumns: "78px minmax(0, 1fr)",
+      gridTemplateColumns: "86px minmax(0,1fr)",
       gap: "7px",
     });
     const label = document.createElement("span");
     label.textContent = labelText;
     label.style.color = "#8da495";
     const data = document.createElement("span");
+    data.textContent = value;
     data.style.overflowWrap = "anywhere";
-    values.set(key, data);
     row.append(label, data);
     return row;
   }
@@ -362,13 +356,7 @@ export class DebugSidebar {
     return section;
   }
 
-  private jsonDetails(
-    label: string,
-    open = false,
-  ): {
-    details: HTMLDetailsElement;
-    pre: HTMLPreElement;
-  } {
+  private jsonDetails(label: string, value: unknown, open = false): HTMLDetailsElement {
     const details = document.createElement("details");
     details.open = open;
     details.style.marginTop = "6px";
@@ -385,8 +373,9 @@ export class DebugSidebar {
       whiteSpace: "pre-wrap",
       overflowWrap: "anywhere",
     });
+    pre.textContent = JSON.stringify(value, null, 2) ?? String(value);
     details.append(summary, pre);
-    return { details, pre };
+    return details;
   }
 
   private button(label: string, action: () => void): HTMLButtonElement {
@@ -405,14 +394,4 @@ export class DebugSidebar {
     button.addEventListener("click", action);
     return button;
   }
-}
-
-function formatJson(value: unknown): string {
-  return JSON.stringify(value, null, 2) ?? String(value);
-}
-
-function formatMs(value: number): string {
-  return Number.isInteger(value)
-    ? String(value)
-    : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
