@@ -3,6 +3,10 @@ import {
   EditorPreview,
   isSurfaceEntityType,
   moveEntitiesBy,
+  paintSurface,
+  placeEntity,
+  rectangleCells,
+  selectionRect,
   validateEditorLevel,
   type Cell,
   type EditorCanvasContextMenuRequest,
@@ -43,6 +47,7 @@ let entityDrag: null | {
   dx: number;
   dy: number;
 } = null;
+let surfaceSelectionActive = false;
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
@@ -89,6 +94,7 @@ watch(
 async function togglePlay(): Promise<void> {
   closeContextMenu();
   finishEntityDrag();
+  surfaceSelectionActive = false;
   if (page.playing.value) {
     stopPlay();
     return;
@@ -170,6 +176,7 @@ function redo(): void {
 }
 function importLevel(level: EditorMap): void {
   finishEntityDrag();
+  surfaceSelectionActive = false;
   page.document.load(level);
   page.fileDialogOpen.value = false;
 }
@@ -184,6 +191,7 @@ function markDownloaded(metadata: {
 
 function openContextMenu(request: EditorCanvasContextMenuRequest): void {
   finishEntityDrag();
+  surfaceSelectionActive = false;
   if (page.leftPanel.value === "surface") {
     page.pickSurface(request.cell);
     closeContextMenu();
@@ -213,11 +221,18 @@ function transform(
 
 function primaryStart(cell: Cell): void {
   closeContextMenu();
+  if (startSurfaceSelection(cell)) return;
+  if (fillSelectionWithBrush(cell)) return;
   if (startEntityDrag(cell)) return;
   page.primaryStart(cell);
 }
 
 function primaryMove(cell: Cell): void {
+  if (surfaceSelectionActive) {
+    const selection = page.mapSelection.value;
+    if (selection) page.mapSelection.value = { ...selection, focus: cell };
+    return;
+  }
   const drag = entityDrag;
   if (!drag) {
     page.primaryMove(cell);
@@ -238,11 +253,85 @@ function primaryMove(cell: Cell): void {
 }
 
 function primaryEnd(cell: Cell | null): void {
+  if (surfaceSelectionActive) {
+    if (cell && page.mapSelection.value)
+      page.mapSelection.value = { ...page.mapSelection.value, focus: cell };
+    surfaceSelectionActive = false;
+    return;
+  }
   if (entityDrag) {
     finishEntityDrag();
     return;
   }
   page.primaryEnd(cell);
+}
+
+function startSurfaceSelection(cell: Cell): boolean {
+  if (
+    page.leftPanel.value !== "surface" ||
+    page.surfaceTool.value !== "rect"
+  )
+    return false;
+  surfaceSelectionActive = true;
+  page.mapSelection.value = { anchor: cell, focus: cell };
+  return true;
+}
+
+function fillSelectionWithBrush(cell: Cell): boolean {
+  const selection = page.mapSelection.value;
+  if (!selection || !selectionContains(selection, cell)) return false;
+  const cells = rectangleCells(selection.anchor, selection.focus);
+  if (
+    page.leftPanel.value === "surface" &&
+    page.surfaceTool.value === "brush"
+  ) {
+    page.document.execute(
+      paintSurface(page.catalog, cells, page.surfaceBrush.value),
+    );
+    return true;
+  }
+  if (
+    page.leftPanel.value === "palette" &&
+    page.paletteTool.value === "place"
+  ) {
+    page.document.beginTransaction();
+    for (const target of cells) {
+      page.document.execute(
+        placeEntity(
+          page.catalog,
+          page.placement.value,
+          target,
+          {},
+          page.editor,
+        ),
+      );
+    }
+    page.document.commitTransaction();
+    return true;
+  }
+  return false;
+}
+
+function selectionContains(
+  selection: NonNullable<typeof page.mapSelection.value>,
+  cell: Cell,
+): boolean {
+  const rect = selectionRect(selection);
+  return (
+    cell.x >= rect.left &&
+    cell.x <= rect.right &&
+    cell.y >= rect.top &&
+    cell.y <= rect.bottom
+  );
+}
+
+function selectAll(): void {
+  const level = page.snapshot.value.level as EditorMap;
+  page.mapSelection.value = {
+    anchor: { x: 0, y: 0 },
+    focus: { x: level.width - 1, y: level.height - 1 },
+  };
+  closeContextMenu();
 }
 
 function startEntityDrag(cell: Cell): boolean {
@@ -290,6 +379,7 @@ function shiftSelection(dx: number, dy: number): void {
 
 function switchAuthoringPanel(): void {
   finishEntityDrag();
+  surfaceSelectionActive = false;
   page.toggleAuthoringPanel();
   leftOpen.value = true;
   if (isMobileEditor()) rightPanel.value = null;
@@ -319,9 +409,13 @@ function handleKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") {
     closeContextMenu();
     finishEntityDrag();
+    surfaceSelectionActive = false;
     return;
   }
-  if (modifier && key === "z") {
+  if (modifier && key === "a") {
+    event.preventDefault();
+    selectAll();
+  } else if (modifier && key === "z") {
     event.preventDefault();
     undo();
   } else if (modifier && key === "y") {
@@ -357,9 +451,6 @@ function handleKeydown(event: KeyboardEvent): void {
   } else if (key === "2") {
     event.preventDefault();
     page.setTool("place");
-  } else if (key === "3") {
-    event.preventDefault();
-    page.setTool("erase");
   } else if (key === "q" || key === "e") {
     event.preventDefault();
     page.cycleVariant(key === "q" ? -1 : 1);
@@ -368,11 +459,11 @@ function handleKeydown(event: KeyboardEvent): void {
 
 function onShellAction(event: Event): void {
   finishEntityDrag();
+  surfaceSelectionActive = false;
   const action = (event as CustomEvent<{ action: string }>).detail.action;
   if (action === "editor-tool-select") page.setTool("select");
-  if (action === "editor-tool-place") page.setTool("place");
-  if (action === "editor-tool-erase") page.setTool("erase");
-  if (action === "editor-surface-rect") page.setSurfaceTool("rect");
+  if (action === "editor-tool-brush") page.setTool("place");
+  if (action === "editor-surface-select") page.setSurfaceTool("rect");
   if (action === "editor-surface-brush") page.setSurfaceTool("brush");
   if (action === "editor-surface-fill") page.setSurfaceTool("fill");
   if (action === "editor-undo") undo();
@@ -428,6 +519,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (entityDrag) page.document.cancelTransaction();
   entityDrag = null;
+  surfaceSelectionActive = false;
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
   window.removeEventListener("pointerdown", closeContextMenu);
@@ -482,7 +574,7 @@ function isMobileEditor(): boolean {
       :editor="page.editor"
       @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
-      @surface-terrain="page.selectSurfaceTerrain"
+      @surface-terrain="(terrain) => { page.selectSurfaceTerrain(terrain); page.setSurfaceTool('brush'); }"
       @surface-theme="page.setSurfaceTheme"
       @surface-pattern="page.setSurfacePattern"
       @surface-exact="page.setSurfaceExact"
