@@ -3,15 +3,23 @@ import type { CellInspection } from "../world/WorldTypes.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { DebugSidebar } from "./DebugSidebar.js";
 import { DebugTraceRecorder } from "./DebugTrace.js";
-import type { DebugSelection, DebugSnapshot } from "./DebugSnapshot.js";
+import type {
+  DebugEntitySnapshot,
+  DebugSelection,
+  DebugSnapshot,
+} from "./DebugSnapshot.js";
 
 export interface DebugRuntimeHost {
-  snapshot(selection: DebugSelection | null): DebugSnapshot;
+  snapshot(
+    selection: DebugSelection | null,
+    actorId: EntityId | null,
+  ): DebugSnapshot;
   inspectPoint(clientX: number, clientY: number): CellInspection | null;
   pause(): void;
   resume(): void;
   step(count: number): void;
   setHeldDirection(direction: Direction | null): void;
+  teleportActor(actorId: EntityId, cell: CellPosition): boolean;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
@@ -32,6 +40,7 @@ export class DebugRuntime {
   private readonly trace = new DebugTraceRecorder(50);
   private selection: DebugSelection | null = null;
   private previousSnapshot: DebugSnapshot | null = null;
+  private trackedActorId: EntityId | null = null;
   private debugInputInjected = false;
   private enabled = false;
 
@@ -42,6 +51,7 @@ export class DebugRuntime {
     canvas.addEventListener("pointerdown", this.onPointerDown);
     canvas.addEventListener("pointerup", this.onPointerUp);
     canvas.addEventListener("pointercancel", this.onPointerCancel);
+    canvas.addEventListener("dblclick", this.onDoubleClick);
   }
 
   setEnabled(enabled: boolean): void {
@@ -60,7 +70,8 @@ export class DebugRuntime {
 
   render(): void {
     if (!this.enabled) return;
-    const snapshot = this.host.snapshot(this.selection);
+    const snapshot = this.host.snapshot(this.selection, this.trackedActorId);
+    this.trackedActorId = snapshot.actor?.id ?? null;
     this.captureSnapshotDiff(snapshot);
     this.ensureSidebar().render({ ...snapshot, trace: this.trace.snapshot() });
     this.previousSnapshot = structuredClone(snapshot);
@@ -71,6 +82,7 @@ export class DebugRuntime {
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
     this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
+    this.canvas.removeEventListener("dblclick", this.onDoubleClick);
     this.sidebar?.destroy();
     this.sidebar = null;
   }
@@ -89,9 +101,18 @@ export class DebugRuntime {
           this.debugInputInjected = direction !== null;
           this.host.requestRender();
         },
+        selectActor: (actorId) => {
+          if (actorId === this.trackedActorId) return;
+          this.releaseDebugInput();
+          this.trackedActorId = actorId;
+          this.previousSnapshot = null;
+          this.host.requestRender();
+        },
         pausePresentation: () => this.host.pausePresentation(),
         resumePresentation: () => this.host.resumePresentation(),
         stepPresentation: (frames) => this.host.stepPresentation(frames),
+        stepPresentationToNextSprite: () =>
+          this.stepPresentationToNextSprite(),
         stepPresentationToNextChange: () => this.stepPresentationToNextChange(),
         clearTrace: () => {
           this.trace.clear();
@@ -111,9 +132,27 @@ export class DebugRuntime {
     this.debugInputInjected = false;
   }
 
+  /** Advance until the selected actor actually resolves to a different sprite frame. */
+  private stepPresentationToNextSprite(): void {
+    let snapshot = this.host.snapshot(this.selection, this.trackedActorId);
+    if (!snapshot.runtime.presentationPaused || !snapshot.actor) return;
+    const initialSignature = spriteSignature(snapshot.actor);
+    if (initialSignature === null || !hasActiveActorPresentation(snapshot.actor))
+      return;
+
+    for (let frame = 0; frame < 240; frame += 1) {
+      this.host.stepPresentation(1);
+      snapshot = this.host.snapshot(this.selection, this.trackedActorId);
+      if (!snapshot.actor) break;
+      const signature = spriteSignature(snapshot.actor);
+      if (signature !== null && signature !== initialSignature) break;
+      if (!hasActiveActorPresentation(snapshot.actor)) break;
+    }
+  }
+
   /** Jump presentation to the end of the current visible motion without changing Hz. */
   private stepPresentationToNextChange(): void {
-    let snapshot = this.host.snapshot(this.selection);
+    let snapshot = this.host.snapshot(this.selection, this.trackedActorId);
     if (!snapshot.runtime.presentationPaused) return;
     if (!snapshot.runtime.animating) {
       this.host.stepPresentation(1);
@@ -121,7 +160,7 @@ export class DebugRuntime {
     }
     for (let frame = 0; frame < 240; frame += 1) {
       this.host.stepPresentation(1);
-      snapshot = this.host.snapshot(this.selection);
+      snapshot = this.host.snapshot(this.selection, this.trackedActorId);
       if (!snapshot.runtime.animating) break;
     }
   }
@@ -215,6 +254,15 @@ export class DebugRuntime {
   private selectEntity(entityId: EntityId): void {
     if (!this.selection) return;
     this.selection = { ...this.selection, entityId };
+    const snapshot = this.host.snapshot(this.selection, this.trackedActorId);
+    if (
+      snapshot.selection?.entity?.id === entityId &&
+      snapshot.selection.entity.definition.traits.includes("player")
+    ) {
+      this.releaseDebugInput();
+      this.trackedActorId = entityId;
+      this.previousSnapshot = null;
+    }
     this.host.requestRender();
   }
 
@@ -244,6 +292,31 @@ export class DebugRuntime {
     this.host.requestRender();
   };
 
+  private readonly onDoubleClick = (event: MouseEvent): void => {
+    if (!this.enabled || event.button !== 0) return;
+    const inspection = this.host.inspectPoint(event.clientX, event.clientY);
+    if (!inspection) return;
+    const snapshot = this.host.snapshot(this.selection, this.trackedActorId);
+    const actorId = snapshot.actor?.id;
+    if (actorId === undefined) return;
+
+    this.releaseDebugInput();
+    if (!this.host.teleportActor(actorId, inspection.cell)) return;
+    this.trackedActorId = actorId;
+    this.selection = { cell: { ...inspection.cell }, entityId: actorId };
+    this.previousSnapshot = null;
+    this.host.selectionChanged(this.selection.cell);
+    this.trace.record({
+      category: "world",
+      summary: `debug teleport #${actorId} -> ${inspection.cell.x},${inspection.cell.y}`,
+      actorId,
+      worldTick: snapshot.runtime.worldTickCount,
+      presentationFrame: snapshot.runtime.presentationFrame,
+    });
+    event.preventDefault();
+    this.host.requestRender();
+  };
+
   private readonly onPointerCancel = (event: PointerEvent): void => {
     this.pointerStarts.delete(event.pointerId);
   };
@@ -251,4 +324,24 @@ export class DebugRuntime {
 
 function primaryPointer(event: PointerEvent): boolean {
   return event.pointerType !== "mouse" || event.button === 0;
+}
+
+function hasActiveActorPresentation(actor: DebugEntitySnapshot): boolean {
+  if (!actor.visual.runtime || typeof actor.visual.runtime !== "object")
+    return false;
+  const runtime = actor.visual.runtime as Record<string, unknown>;
+  return runtime.moving === true || typeof runtime.animation === "string";
+}
+
+function spriteSignature(actor: DebugEntitySnapshot): string | null {
+  const imageLayers = actor.visual.renderItems
+    .flatMap((item) => item.layers)
+    .filter((layer) => layer.kind === "image");
+  const layer = imageLayers.at(-1);
+  if (!layer) return null;
+  return JSON.stringify({
+    asset: layer.asset ?? null,
+    frameIndex: layer.frameIndex ?? null,
+    frameProgress: layer.frameProgress ?? null,
+  });
 }
