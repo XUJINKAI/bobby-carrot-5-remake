@@ -9,8 +9,14 @@ import com.nokia.mid.ui.FullCanvas;
 public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable {
     private final OriginalGameMidlet midlet;
 
-    /** 对应 `a.e`。由 MIDlet destroyApp() 写入。 */
+    /** 对应 `a.e`。由 MIDlet destroyApp() 写入，也是主循环退出条件。 */
     public boolean shutdownRequested = false;
+
+    /** 对应 `a.d`。hideNotify/showNotify 控制，表示 Canvas 当前可见。 */
+    private boolean canvasVisible = false;
+
+    /** 对应 `a.c`。目前只确认值 1 在退出时触发清理。 */
+    private byte runtimeMode;
 
     /** 对应 `a.aw`：0 左、1 右、2 上、3 下。 */
     private int playerDirection;
@@ -31,9 +37,60 @@ public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable 
         this.midlet = midlet;
     }
 
+    /**
+     * 对应原始 `a.b()`。
+     *
+     * 已确认它按当前 `a.x` 状态推进游戏/菜单状态机，并以 boolean 表示
+     * 本轮是否产生需要刷新的变化。内部 gameplay 方法名仍待继续拆解。
+     */
+    private boolean advanceRuntimeState() {
+        throw new UnsupportedOperationException("semantic reconstruction in progress");
+    }
+
+    /** 对应原始 `a.a()`；退出时在特定 runtimeMode 下执行。 */
+    private void cleanupRuntime() {
+        throw new UnsupportedOperationException("semantic reconstruction in progress");
+    }
+
+    /**
+     * 对应 `a.run()` 的等价控制流。
+     *
+     * 原版每轮把实际处理耗时额外计入 10ms，再补 sleep 到 62ms；
+     * 因此主循环目标周期约 62ms。
+     */
     @Override
     public void run() {
-        // 待从 `a.run()` 逐段恢复：主循环、输入、世界更新、绘制与约 62ms 节拍。
-        throw new UnsupportedOperationException("semantic reconstruction in progress");
+        boolean needsRepaint = true;
+
+        while (!shutdownRequested) {
+            long startedAtMs = System.currentTimeMillis();
+
+            boolean changedBeforePaint = needsRepaint | advanceRuntimeState();
+            needsRepaint = changedBeforePaint;
+
+            if (canvasVisible && changedBeforePaint) {
+                needsRepaint = false;
+                repaint();
+                serviceRepaints();
+            }
+
+            needsRepaint = needsRepaint | advanceRuntimeState();
+
+            long elapsedWithOriginalOverheadMs =
+                System.currentTimeMillis() - startedAtMs + 10L;
+
+            if (elapsedWithOriginalOverheadMs < 62L) {
+                try {
+                    Thread.sleep(62L - elapsedWithOriginalOverheadMs);
+                } catch (Exception ignored) {
+                    // 原版吞掉 sleep 异常并继续主循环。
+                }
+            }
+        }
+
+        if (runtimeMode == 1) {
+            cleanupRuntime();
+        }
+        midlet.notifyDestroyed();
     }
 }
