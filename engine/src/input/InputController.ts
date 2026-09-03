@@ -4,6 +4,7 @@ import type { WorldTick } from "../time/WorldClock.js";
 import {
   HeldDirectionRepeater,
   type HeldDirectionInput,
+  type HeldDirectionRepeaterInspection,
   type HeldMoveAttempt,
 } from "./HeldDirectionRepeater.js";
 import {
@@ -54,6 +55,18 @@ export interface MoveAttemptResolution {
   result: HeldMoveAttempt;
 }
 
+export interface InputChannelInspection {
+  source: string;
+  physicalDirection: Direction | null;
+  repeater: HeldDirectionRepeaterInspection | null;
+  lastResult?: HeldMoveAttempt;
+}
+
+export interface InputControllerInspection {
+  enabled: boolean;
+  channels: readonly InputChannelInspection[];
+}
+
 interface InputCapabilities {
   keyboard: boolean;
   pointer: boolean;
@@ -92,6 +105,7 @@ const KEY_INPUT: Readonly<Record<string, LogicalMoveInput>> = {
 };
 
 const DISCRETE_DRAG_THRESHOLD = 24;
+const INPUT_SOURCE_ORDER = ["arrows", "wasd", "joystick", "external"];
 
 export function directionForDiscreteDrag(
   dx: number,
@@ -110,6 +124,7 @@ export class InputController {
   private readonly heldMovementKeys: string[] = [];
   private readonly discreteMoves: LogicalMoveInput[] = [];
   private readonly repeaters = new Map<string, HeldDirectionRepeater>();
+  private readonly lastAttemptResults = new Map<string, HeldMoveAttempt>();
   private readonly screenJoystick: ScreenJoystick | null;
   private readonly keyboardRepeatDelayMs: number;
   private readonly joystickRepeatDelayMs: number;
@@ -194,8 +209,38 @@ export class InputController {
   }
 
   resolveMoveAttempts(resolutions: readonly MoveAttemptResolution[]): void {
-    for (const resolution of resolutions)
+    for (const resolution of resolutions) {
+      this.lastAttemptResults.set(resolution.source, resolution.result);
       this.repeaters.get(resolution.source)?.resolveAttempt(resolution.result);
+    }
+  }
+
+  inspectMovement(): InputControllerInspection {
+    const physical = new Map<string, Direction>();
+    if (this.joystickDirection) physical.set("joystick", this.joystickDirection);
+    if (this.externalDirection) physical.set("external", this.externalDirection);
+    for (const keyboard of this.currentKeyboardInputs())
+      physical.set(keyboard.source, keyboard.direction);
+
+    const sources = new Set([
+      ...INPUT_SOURCE_ORDER,
+      ...this.repeaters.keys(),
+      ...physical.keys(),
+      ...this.lastAttemptResults.keys(),
+    ]);
+    const channels = [...sources]
+      .sort((a, b) => inputSourceRank(a) - inputSourceRank(b) || a.localeCompare(b))
+      .map((source): InputChannelInspection => {
+        const repeater = this.repeaters.get(source);
+        const lastResult = this.lastAttemptResults.get(source);
+        return {
+          source,
+          physicalDirection: physical.get(source) ?? null,
+          repeater: repeater?.inspect() ?? null,
+          ...(lastResult !== undefined ? { lastResult } : {}),
+        };
+      });
+    return { enabled: this.enabled, channels };
   }
 
   get isEnabled(): boolean {
@@ -489,4 +534,9 @@ export class InputController {
     if (!a || !b) return 0;
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
+}
+
+function inputSourceRank(source: string): number {
+  const index = INPUT_SOURCE_ORDER.indexOf(source);
+  return index >= 0 ? index : INPUT_SOURCE_ORDER.length;
 }
