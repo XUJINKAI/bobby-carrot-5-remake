@@ -23,85 +23,37 @@ const horizontalDirections: readonly EditorEntityVariant[] = [
   { direction: "left", label: "left" },
   { direction: "right", label: "right" },
 ];
-
 const pressedVariants: readonly EditorEntityVariant[] = [
   { label: "Raised", state: { pressed: false } },
   { label: "Pressed", state: { pressed: true } },
 ];
-
 const activeVariants: readonly EditorEntityVariant[] = [
   { label: "Active", state: { active: true } },
   { label: "Inactive", state: { active: false } },
 ];
-
 const windSwitchVariants: readonly EditorEntityVariant[] = [
   { label: "On", state: { active: true } },
   { label: "Off", state: { active: false } },
 ];
-
 const raisedVariants: readonly EditorEntityVariant[] = [
   { label: "Raised", state: { raised: true } },
   { label: "Lowered", state: { raised: false } },
 ];
-
 const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
   (variant) => ({ label: String(variant), state: { variant } }),
 );
-
 const carouselVariants: readonly EditorEntityVariant[] = [
   ...fourVariants,
   { label: "Vertical", state: { variant: "vertical" } },
   { label: "Horizontal", state: { variant: "horizontal" } },
 ];
 
-const surface: EditorEntityDefinition = { replaceGroup: "surface" };
 const cover: EditorEntityDefinition = { replaceGroup: "cover" };
 const item: EditorEntityDefinition = { replaceGroup: "item" };
-const directionalSurface: EditorEntityDefinition = {
-  ...surface,
+const directionalMechanism: EditorEntityDefinition = {
   defaultDirection: "right",
   variants: directions,
 };
-
-const surfaceTypes: readonly EntityType[] = [
-  EntityTypeId.GROUND_A,
-  EntityTypeId.GROUND_B,
-  EntityTypeId.GROUND_C,
-  EntityTypeId.GROUND_D,
-  EntityTypeId.START,
-  EntityTypeId.SHOVEL_CLEARED_GROUND,
-  EntityTypeId.EXIT,
-  EntityTypeId.ICE,
-  EntityTypeId.SHOP_DREAM,
-  EntityTypeId.SHOP_CLOUD9,
-  EntityTypeId.SHOP_SUPER_KEY,
-  EntityTypeId.SHOP_STEREO,
-  EntityTypeId.SHOP_MUSIC,
-  EntityTypeId.SHOP_SPEED_SHOES,
-  EntityTypeId.SHOP_COIN_RADAR,
-  EntityTypeId.SHOP_UNAVAILABLE,
-  EntityTypeId.SHOVEL_PICKUP,
-  EntityTypeId.MOWER_PARKING,
-  EntityTypeId.WATER,
-  EntityTypeId.WATER_ANIMATED,
-  EntityTypeId.WATER_VARIANT_1,
-  EntityTypeId.WATER_VARIANT_2,
-  EntityTypeId.WATER_VARIANT_3,
-  EntityTypeId.SPEED,
-  EntityTypeId.TIDE,
-  EntityTypeId.TIDE_SWITCH,
-  EntityTypeId.SPEED_SWITCH,
-  EntityTypeId.CAROUSEL_SWITCH,
-  EntityTypeId.COLOR_YELLOW_SWITCH,
-  EntityTypeId.COLOR_PINK_SWITCH,
-  EntityTypeId.COLOR_YELLOW_BLOCK,
-  EntityTypeId.COLOR_PINK_BLOCK,
-  EntityTypeId.TRAP,
-  EntityTypeId.MIRROR,
-  EntityTypeId.CAROUSEL,
-  EntityTypeId.WIND_SWITCH,
-  EntityTypeId.PUSH_GOAL,
-];
 
 export const builtinEditorDefinition: EditorDefinition = {
   exclude: [
@@ -109,18 +61,27 @@ export const builtinEditorDefinition: EditorDefinition = {
     EntityTypeId.PLANK_CRUMBLING,
     EntityTypeId.PLANK_FRAGMENT,
     EntityTypeId.BEAN_SPROUT,
+    EntityTypeId.FENCE,
     { prefix: "background-variant-" },
     { prefix: "walkable-variant-" },
     { prefix: "object-variant-" },
   ],
   entities: {
-    ...withPolicy(surfaceTypes, surface),
     ...withPolicy(
-      [EntityTypeId.SNOW, EntityTypeId.HIGH_GRASS, EntityTypeId.HIGH_GRASS_OBJECTIVE, EntityTypeId.ICE_BLOCK],
+      [
+        EntityTypeId.SNOW,
+        EntityTypeId.HIGH_GRASS,
+        EntityTypeId.HIGH_GRASS_OBJECTIVE,
+        EntityTypeId.ICE_BLOCK,
+      ],
       cover,
     ),
     ...withPolicy(
-      [EntityTypeId.CARROT, EntityTypeId.EGG_NEST_EMPTY, EntityTypeId.EGG_NEST_FILLED],
+      [
+        EntityTypeId.CARROT,
+        EntityTypeId.EGG_NEST_EMPTY,
+        EntityTypeId.EGG_NEST_FILLED,
+      ],
       item,
     ),
     [EntityTypeId.BOBBY]: {
@@ -160,39 +121,31 @@ export const builtinEditorDefinition: EditorDefinition = {
       defaultDirection: "down",
       variants: directions,
     },
-    [EntityTypeId.SPEED]: directionalSurface,
-    [EntityTypeId.TIDE]: directionalSurface,
-    [EntityTypeId.TIDE_SWITCH]: { ...surface, variants: pressedVariants },
-    [EntityTypeId.SPEED_SWITCH]: { ...surface, variants: pressedVariants },
-    [EntityTypeId.CAROUSEL_SWITCH]: { ...surface, variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_SWITCH]: { ...surface, variants: pressedVariants },
-    [EntityTypeId.COLOR_PINK_SWITCH]: { ...surface, variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_BLOCK]: { ...surface, variants: raisedVariants },
-    [EntityTypeId.COLOR_PINK_BLOCK]: { ...surface, variants: raisedVariants },
-    [EntityTypeId.WIND_SWITCH]: { ...surface, variants: windSwitchVariants },
-    [EntityTypeId.TRAP]: { ...surface, variants: activeVariants },
-    [EntityTypeId.MIRROR]: { ...surface, variants: fourVariants },
-    [EntityTypeId.CAROUSEL]: { ...surface, variants: carouselVariants },
+    [EntityTypeId.SPEED]: directionalMechanism,
+    [EntityTypeId.TIDE]: directionalMechanism,
+    [EntityTypeId.TIDE_SWITCH]: { variants: pressedVariants },
+    [EntityTypeId.SPEED_SWITCH]: { variants: pressedVariants },
+    [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
+    [EntityTypeId.COLOR_YELLOW_SWITCH]: { variants: pressedVariants },
+    [EntityTypeId.COLOR_PINK_SWITCH]: { variants: pressedVariants },
+    [EntityTypeId.COLOR_YELLOW_BLOCK]: { variants: raisedVariants },
+    [EntityTypeId.COLOR_PINK_BLOCK]: { variants: raisedVariants },
+    [EntityTypeId.WIND_SWITCH]: { variants: windSwitchVariants },
+    [EntityTypeId.TRAP]: { variants: activeVariants },
+    [EntityTypeId.MIRROR]: { variants: fourVariants },
+    [EntityTypeId.CAROUSEL]: { variants: carouselVariants },
   },
   palette: {
     groups: [
       {
-        id: "terrain",
-        label: "地形",
+        id: "terrain-overlays",
+        label: "地貌对象",
         rows: [
           [
-            { type: EntityTypeId.GROUND_A },
-            { type: EntityTypeId.GROUND_B },
-            { type: EntityTypeId.GROUND_C },
-            { type: EntityTypeId.GROUND_D },
-            { type: EntityTypeId.FENCE },
             { type: EntityTypeId.CRUMBLY_ROCK },
             { type: EntityTypeId.HIGH_GRASS },
             { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
-            { type: EntityTypeId.ICE },
             { type: EntityTypeId.SNOW },
-            { type: EntityTypeId.WATER },
-            { type: EntityTypeId.WATER_ANIMATED },
             { type: EntityTypeId.PLANK },
             { type: EntityTypeId.LEAF },
           ],
@@ -227,16 +180,16 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.BONUS_COIN },
           ],
           [
-            { type: EntityTypeId.SHOP_CLOUD9, },
-            { type: EntityTypeId.SHOP_COIN_RADAR, },
-            { type: EntityTypeId.SHOP_DREAM, },
-            { type: EntityTypeId.SHOP_MUSIC, },
-            { type: EntityTypeId.SHOP_SPEED_SHOES, },
-            { type: EntityTypeId.SHOP_STEREO, },
-            { type: EntityTypeId.SHOP_SUPER_KEY, },
-            { type: EntityTypeId.SHOP_UNAVAILABLE, },
-            { type: EntityTypeId.LOCK, },
-          ]
+            { type: EntityTypeId.SHOP_CLOUD9 },
+            { type: EntityTypeId.SHOP_COIN_RADAR },
+            { type: EntityTypeId.SHOP_DREAM },
+            { type: EntityTypeId.SHOP_MUSIC },
+            { type: EntityTypeId.SHOP_SPEED_SHOES },
+            { type: EntityTypeId.SHOP_STEREO },
+            { type: EntityTypeId.SHOP_SUPER_KEY },
+            { type: EntityTypeId.SHOP_UNAVAILABLE },
+            { type: EntityTypeId.LOCK },
+          ],
         ],
       },
       {
@@ -292,10 +245,10 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.PORTAL },
           ],
           [
-            { type: EntityTypeId.WINDMILL_DOWN, },
-            { type: EntityTypeId.WINDMILL_UP, },
-            { type: EntityTypeId.WINDMILL_LEFT, },
-            { type: EntityTypeId.WINDMILL_RIGHT, },
+            { type: EntityTypeId.WINDMILL_DOWN },
+            { type: EntityTypeId.WINDMILL_UP },
+            { type: EntityTypeId.WINDMILL_LEFT },
+            { type: EntityTypeId.WINDMILL_RIGHT },
             { type: EntityTypeId.WIND_SWITCH },
             { type: EntityTypeId.CLOUD_GREEN },
             { type: EntityTypeId.CLOUD_PURPLE },
@@ -336,19 +289,19 @@ export function applyEditorVariant(
     ...(variant.direction ? { direction: variant.direction } : {}),
     ...(variant.properties
       ? {
-        properties: {
-          ...(entity.properties ?? {}),
-          ...structuredClone(variant.properties),
-        },
-      }
+          properties: {
+            ...(entity.properties ?? {}),
+            ...structuredClone(variant.properties),
+          },
+        }
       : {}),
     ...(variant.state
       ? {
-        state: {
-          ...(entity.state ?? {}),
-          ...structuredClone(variant.state),
-        },
-      }
+          state: {
+            ...(entity.state ?? {}),
+            ...structuredClone(variant.state),
+          },
+        }
       : {}),
   };
 }
