@@ -144,12 +144,16 @@ test("Debug snapshot defaults selection to the top Presence", () => {
   assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
 });
 
-test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs", () => {
+test("Debug uses a left control rail and right state inspector", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
   assert.match(source, /type DebugTab = "actor" \| "timeline" \| "inspect"/);
+  assert.match(source, /engine-debug-control-rail/);
+  assert.match(source, /Engine Debug Controls/);
+  assert.match(source, /private readonly controlRoot/);
+  assert.match(source, /private readonly sidebarBody/);
   assert.match(source, /private readonly worldPauseResumeButton/);
   assert.match(source, /private readonly worldStepButton/);
   assert.match(source, /private readonly presentationPauseResumeButton/);
@@ -157,7 +161,10 @@ test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs",
   assert.match(source, /private readonly frameForwardButton/);
   assert.match(source, /private readonly nextSpriteButton/);
   assert.match(source, /private readonly nextChangeButton/);
-  assert.match(source, /private readonly actorSelect/);
+  assert.match(source, /private readonly controlActorSelect/);
+  assert.match(source, /Double-click map: teleport selected actor/);
+  assert.match(source, /toggleControlCollapsed/);
+  assert.match(source, /toggleSidebarCollapsed/);
   assert.match(source, /\["actor", "Actor"\]/);
   assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
@@ -166,7 +173,6 @@ test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs",
   assert.match(source, /setHeldDirection/);
   assert.match(source, /selectActor/);
   assert.match(source, /stepPresentationToNextSprite/);
-  assert.match(source, /Presentation/);
   assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);
