@@ -176,6 +176,7 @@ export function isSurfaceEntityType(type: EntityType): boolean {
 export function surfaceGroup(type: SurfaceType, theme: SurfaceTheme): SurfaceGroup | null {
   return SURFACE_GROUPS.find((group) => group.type === type && group.theme === theme)
     ?? SURFACE_GROUPS.find((group) => group.type === type && group.theme === "shared")
+    ?? SURFACE_GROUPS.find((group) => group.type === type)
     ?? null;
 }
 
@@ -298,7 +299,7 @@ function createSurfaceEntity(
   ) {
     type = brush.exact;
   } else if (brush.pattern === "alternate" && brush.alternate) {
-    type = brush.alternate[(cell.x + cell.y) & 1];
+    type = brush.alternate[(cell.x + cell.y) & 1]!;
   } else if (brush.type === "waterfall" && group.variants.length >= 3) {
     const above = target.has(cellKey({ x: cell.x, y: cell.y - 1 }));
     const below = target.has(cellKey({ x: cell.x, y: cell.y + 1 }));
