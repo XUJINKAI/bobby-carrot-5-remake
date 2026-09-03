@@ -38,10 +38,10 @@ export class HeldDirectionRepeater {
       : null;
     if (this.sameInput(this.heldInput, normalized)) return;
 
-    // A key/touch pressed and released between two WorldTicks must still produce
-    // exactly one move. Releasing after the initial move has been consumed simply
-    // stops repetition as usual.
-    if (!normalized && this.pendingInitialInput) {
+    // A key/touch pressed and released before its first WorldTick attempt must still
+    // produce exactly one move. Once gameplay has already seen that initial attempt
+    // (moved/busy/etc.), physical release must cancel further retries.
+    if (!normalized && this.pendingInitialInput && !this.initialMoveDone) {
       this.heldInput = null;
       this.blocked = false;
       return;
@@ -91,15 +91,17 @@ export class HeldDirectionRepeater {
     this.pendingAttempt = null;
 
     if (attempt.initial) {
-      // busy means retry/observe again next WorldTick. consumed is deliberately
-      // different: the gameplay process has eaten this held input until release/change.
-      if (result === "busy") return;
       this.pendingInitialInput = null;
+
       if (result === "blocked" || result === "consumed") {
         if (this.sameInput(this.heldInput, attempt.input)) this.blocked = true;
         return;
       }
+
       if (this.sameInput(this.heldInput, attempt.input)) {
+        // `busy` means gameplay already observed this physical input but could not
+        // execute it yet. Continue retrying only while the key/touch remains held;
+        // releasing it must end the retry immediately.
         this.initialMoveDone = true;
         this.elapsedAfterInitialMoveMs = 0;
       }
