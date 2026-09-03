@@ -22,7 +22,7 @@ import {
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_TILE_SIZE = 48;
 const BOBBY_IDLE_DELAY_MS = 5000;
-const BOBBY_SOURCE_FRAME_MS = 1000 / 60;
+const BOBBY_IDLE_FRAME_MS = 50;
 const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
@@ -241,7 +241,7 @@ function resolveIdleFrame(
   if (idleMs < BOBBY_IDLE_DELAY_MS) return null;
   return (
     Math.floor(
-      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_SOURCE_FRAME_MS,
+      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
     ) % 3
   );
 }
