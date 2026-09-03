@@ -126,6 +126,7 @@ export class DebugRuntime {
         },
         close: () => this.host.close(),
         selectEntity: (entityId) => this.selectEntity(entityId),
+        layoutChanged: () => this.host.requestRender(),
       });
     }
     return this.sidebar;
