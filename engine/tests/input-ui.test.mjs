@@ -96,7 +96,7 @@ test("持续输入 busy 时下一世界 tick 重试同一方向", () => {
   assert.equal(advance(repeater, 62.5, "moved"), "left");
 });
 
-test("busy 输入松开后立即取消后续 retry", () => {
+test("连续 busy 输入松开后立即取消后续 retry", () => {
   const repeater = new HeldDirectionRepeater();
   repeater.setInput({
     source: "keyboard",
@@ -104,9 +104,11 @@ test("busy 输入松开后立即取消后续 retry", () => {
     initialRepeatDelayMs: 0,
   });
 
-  assert.equal(advance(repeater, 62.5, "busy"), "right");
-  repeater.setInput(null);
+  // 模拟 Speed full 阶段持续按住同方向，连续多个 WorldTick 都只观察、不执行。
+  for (let i = 0; i < 6; i += 1)
+    assert.equal(advance(repeater, 62.5, "busy"), "right");
 
+  repeater.setInput(null);
   for (let i = 0; i < 8; i += 1)
     assert.equal(advance(repeater, 62.5, "busy"), null);
 });
