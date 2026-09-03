@@ -76,9 +76,10 @@ const speedRunAction: RuntimeActionDefinition = {
     const previousDirection = directionState(action.state.direction);
     if (previousDirection !== currentDirection) {
       action.state.direction = currentDirection;
-      action.state.sustain = false;
+      action.state.sustainCurrentFullCell = false;
     }
-    if (intent.direction === currentDirection) action.state.sustain = true;
+    if (intent.direction === currentDirection)
+      action.state.sustainCurrentFullCell = true;
   },
 
   update({ action, time, query, commands }) {
@@ -90,7 +91,7 @@ const speedRunAction: RuntimeActionDefinition = {
     if (booleanState(action.state.pendingMove)) {
       const beforeX = numberState(action.state.beforeX);
       const beforeY = numberState(action.state.beforeY);
-      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick 若位置
+      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick若位置
       // 没变，说明撞停；无需再等完整 motion cadence 才解除 boost。
       if (owner.anchor.x === beforeX && owner.anchor.y === beforeY) {
         commands.setState(
@@ -114,11 +115,18 @@ const speedRunAction: RuntimeActionDefinition = {
         const oldDirection = directionState(action.state.direction);
         action.state.direction = beltDirection;
         action.state.phase = "full";
-        if (oldDirection !== beltDirection) action.state.sustain = false;
+        // Speed surface 本身保持全速；板上的输入不能预存给离板后的第一格。
+        action.state.sustainCurrentFullCell = false;
+        if (oldDirection !== beltDirection)
+          action.state.sustainCurrentFullCell = false;
       } else if (previousPhase === "full") {
-        action.state.phase = booleanState(action.state.sustain)
-          ? "full"
-          : "normal";
+        // sustain 只代表“刚完成的这一格 full 期间是否观察到同方向输入”。
+        // 每格结算只消费一次，下一格必须重新观察，否则立即进入衰减。
+        const sustainNextFull = booleanState(
+          action.state.sustainCurrentFullCell,
+        );
+        action.state.sustainCurrentFullCell = false;
+        action.state.phase = sustainNextFull ? "full" : "normal";
       } else if (previousPhase === "normal") {
         action.state.phase = "slow";
       } else {
@@ -141,10 +149,13 @@ const speedRunAction: RuntimeActionDefinition = {
       );
       return "complete";
     }
-    if (beltDirection && previousDirection !== beltDirection) {
-      action.state.sustain = false;
-      action.state.direction = beltDirection;
-      action.state.phase = "full";
+    if (beltDirection) {
+      // 只从离板后的当前 full 格开始记录续速输入。
+      action.state.sustainCurrentFullCell = false;
+      if (previousDirection !== beltDirection) {
+        action.state.direction = beltDirection;
+        action.state.phase = "full";
+      }
     }
 
     const phase = beltDirection
@@ -220,7 +231,7 @@ function createSpeedRunRuntimeAction(
     state: {
       direction,
       phase: "full",
-      sustain: false,
+      sustainCurrentFullCell: false,
       pendingMove: false,
       elapsedMs: 0,
       waitMs: initialWaitMs,
