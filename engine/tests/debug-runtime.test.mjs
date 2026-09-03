@@ -207,6 +207,19 @@ test("Debug dock reserves actual gameplay width and floating controls follow the
   assert.match(joystickSource, /right: `var\(\$\{GAMEPLAY_RIGHT_INSET_CSS_VAR\}, 0px\)`/);
 });
 
+test("Web game page no longer owns a second legacy debug panel", () => {
+  const stageSource = fs.readFileSync(
+    new URL("../../web/src/pages/game/GameStage.vue", import.meta.url),
+    "utf8",
+  );
+  const pageSource = fs.readFileSync(
+    new URL("../../web/src/pages/game/mountGamePage.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(stageSource, /data-debug-panel|debug-engine|debug-inspector/);
+  assert.doesNotMatch(pageSource, /formatTileInspection|debugInspection|debugPanel/);
+});
+
 test("Debug Sidebar keeps details DOM stable during presentation refresh", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
