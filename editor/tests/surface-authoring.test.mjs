@@ -9,10 +9,12 @@ import {
   detectSurfaceTheme,
   fillSurface,
   isSurfaceEntityType,
+  materializeSurfaceVariants,
   paintSurface,
   placeEntity,
   rectangleCells,
   resolveEditorPalette,
+  serializeEditorLevel,
   surfaceTerrain,
   surfaceTerrainForEntity,
 } from "../dist/index.js";
@@ -32,6 +34,12 @@ function surfacesAt(level, x, y) {
     .filter((item) => item.terrain);
 }
 
+function autoMetadata(entity) {
+  return Object.keys(entity?.properties ?? {}).filter((key) =>
+    key.startsWith("__editorSurface"),
+  );
+}
+
 test("Surface catalog is independent from Palette", () => {
   assert.equal(isSurfaceEntityType(EntityTypeId.WATER), true);
   assert.equal(isSurfaceEntityType(EntityTypeId.ICE), true);
@@ -45,25 +53,65 @@ test("Surface catalog is independent from Palette", () => {
   assert.equal(palette.some((item) => item.type === EntityTypeId.SPEED), true);
 });
 
-test("Surface terrain and variant layouts preserve explicit rows", () => {
-  assert.equal(surfaceTerrain("stone-wall").rows.length, 4);
+test("Surface catalog follows the documented original material groups", () => {
+  assert.equal(surfaceTerrain("stone-wall-1").rows.length, 3);
+  assert.equal(surfaceTerrain("stone-wall-2").rows.length, 4);
+  assert.equal(surfaceTerrain("mushroom").rows[0][0].type, "background-variant-062");
   assert.deepEqual(
-    surfaceTerrain("waterfall").rows[0].map((variant) => variant.label),
-    ["Start", "Middle", "End"],
+    surfaceTerrain("waterfall").rows[0].map((variant) => variant.type),
+    [
+      "background-variant-092",
+      "background-variant-093",
+      "background-variant-094",
+    ],
+  );
+  assert.deepEqual(
+    surfaceTerrain("starfield").rows[0].map((variant) => variant.type),
+    [
+      "background-variant-072",
+      "background-variant-073",
+      "background-variant-074",
+    ],
   );
 });
 
-test("Fence is a Surface overlay and preserves the base terrain", () => {
+test("documented Auto weights live in Surface data", () => {
+  const water = surfaceTerrain("water").auto;
+  assert.equal(water.kind, "weighted");
+  assert.deepEqual(
+    water.variants.map(({ type, weight }) => [type, weight]),
+    [
+      [EntityTypeId.WATER, 90],
+      [EntityTypeId.WATER_ANIMATED, 10],
+    ],
+  );
+
+  const starfield = surfaceTerrain("starfield").auto;
+  assert.equal(starfield.kind, "weighted");
+  assert.deepEqual(starfield.variants.map(({ weight }) => weight), [5, 10, 85]);
+  assert.equal(surfaceTerrain("grass").auto.kind, "neighbor");
+  assert.equal(surfaceTerrain("waterfall").auto.kind, "vertical");
+  assert.equal(surfaceTerrain("wood-fence").auto.kind, "fence");
+  assert.equal(surfaceTerrain("cactus").auto.kind, "paired-vertical");
+});
+
+test("wood Fence is a Surface overlay and preserves base terrain", () => {
   let level = createBlankLevel(5, 5);
   level = paintSurface(
     catalog,
     [{ x: 1, y: 1 }],
-    { terrain: "fence", pattern: "auto", seed: 1 },
+    { terrain: "wood-fence", pattern: "auto", seed: 1 },
   ).apply(level);
 
   let cell = surfacesAt(level, 1, 1);
   assert.equal(cell.some((item) => item.terrain.slot === "base"), true);
-  assert.equal(cell.some((item) => item.terrain.id === "fence" && item.terrain.slot === "overlay"), true);
+  assert.equal(
+    cell.some(
+      (item) =>
+        item.terrain.id === "wood-fence" && item.terrain.slot === "overlay",
+    ),
+    true,
+  );
 
   level = paintSurface(
     catalog,
@@ -77,16 +125,50 @@ test("Fence is a Surface overlay and preserves the base terrain", () => {
   ).apply(level);
   cell = surfacesAt(level, 1, 1);
   assert.equal(cell.some((item) => item.terrain.id === "snow-ground"), true);
-  assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
+  assert.equal(cell.some((item) => item.terrain.id === "wood-fence"), true);
 });
 
-test("Surface Auto strategy is explicit data instead of implicit all-variant random", () => {
-  assert.equal(surfaceTerrain("grass").auto.kind, "weighted");
-  assert.equal(surfaceTerrain("stone-wall").auto.kind, "primary");
-  assert.equal(surfaceTerrain("waterfall").auto.kind, "vertical");
-  if (surfaceTerrain("grass").auto.kind === "weighted") {
-    assert.ok(surfaceTerrain("grass").auto.variants.length < surfaceTerrain("grass").rows.flat().length);
+test("wood Fence supports Auto and explicit fixed variants", () => {
+  const level = createBlankLevel(5, 5);
+  const auto = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }, { x: 2, y: 1 }],
+    { terrain: "wood-fence", pattern: "auto", seed: 1 },
+  ).apply(level);
+  const autoFence = entityAt(auto, 1, 1, (entity) => entity.type === EntityTypeId.FENCE);
+  assert.ok(autoFence);
+  assert.equal(autoFence.state?.variant, undefined);
+  assert.ok(autoMetadata(autoFence).length > 0);
+
+  const exactType = surfaceTerrain("wood-fence").rows[0][2].type;
+  const exact = paintSurface(
+    catalog,
+    [{ x: 3, y: 1 }],
+    { terrain: "wood-fence", pattern: "exact", exact: exactType, seed: 1 },
+  ).apply(auto);
+  const exactFence = entityAt(exact, 3, 1, (entity) => entity.type === EntityTypeId.FENCE);
+  assert.equal(exactFence?.state?.variant, 3);
+  assert.deepEqual(autoMetadata(exactFence), []);
+});
+
+test("serialize materializes Auto Surface visuals and strips editor metadata", () => {
+  const level = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }, { x: 2, y: 1 }],
+    { terrain: "wood-fence", pattern: "auto", seed: 9 },
+  ).apply(createBlankLevel(5, 5));
+
+  const materialized = materializeSurfaceVariants(level);
+  for (const fence of materialized.entities.filter(
+    (entity) => entity.type === EntityTypeId.FENCE,
+  )) {
+    assert.ok(Number.isInteger(fence.state?.variant));
+    assert.deepEqual(autoMetadata(fence), []);
   }
+
+  const serialized = serializeEditorLevel(level);
+  assert.equal(serialized.includes("__editorSurfaceAuto"), false);
+  assert.equal(serialized.includes("__editorSurfaceSeed"), false);
 });
 
 test("Palette mechanism placement preserves the Surface underneath", () => {
@@ -104,7 +186,7 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.SPEED), true);
 });
 
-test("painting Surface replaces only Surface and preserves stacked entities", () => {
+test("painting Surface replaces only its Surface slot and preserves stacked entities", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push({ type: EntityTypeId.CARROT, x: 2, y: 2 });
   const next = paintSurface(
@@ -122,6 +204,21 @@ test("painting Surface replaces only Surface and preserves stacked entities", ()
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.GROUND_C), false);
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.WATER), true);
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.CARROT), true);
+});
+
+test("solid raw Surface variants receive blocking gameplay traits", () => {
+  const next = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }],
+    {
+      terrain: "stone-wall-1",
+      pattern: "exact",
+      exact: "background-variant-004",
+      seed: 1,
+    },
+  ).apply(createBlankLevel(4, 4));
+  const entity = entityAt(next, 1, 1, (item) => item.type === "background-variant-004");
+  assert.equal(entity?.traits?.includes("blocking"), true);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {
@@ -201,7 +298,7 @@ test("Alternate Surface pattern is a stable coordinate checker", () => {
   assert.equal(surface(1, 1), "walkable-variant-01");
 });
 
-test("Auto Surface is deterministic for the same seed", () => {
+test("Auto Surface remains deterministic for the same seed and map context", () => {
   const level = createBlankLevel(4, 4);
   const cells = rectangleCells({ x: 0, y: 0 }, { x: 3, y: 3 });
   const brush = { terrain: "grass", pattern: "auto", seed: 37 };
@@ -220,7 +317,7 @@ test("Theme switch changes only recognized visual families", () => {
   level = paintSurface(
     catalog,
     [{ x: 2, y: 0 }],
-    { terrain: "fence", pattern: "auto", seed: 1 },
+    { terrain: "wood-fence", pattern: "auto", seed: 1 },
   ).apply(level);
   level = paintSurface(
     catalog,
@@ -239,7 +336,7 @@ test("Theme switch changes only recognized visual families", () => {
   assert.equal(entityAt(next, 3, 0)?.type, EntityTypeId.WATER);
 });
 
-test("Waterfall Auto resolves vertical Start Middle End variants", () => {
+test("Waterfall Auto resolves vertical top middle bottom variants", () => {
   const level = createBlankLevel(5, 5);
   const next = paintSurface(
     catalog,
@@ -253,4 +350,16 @@ test("Waterfall Auto resolves vertical Start Middle End variants", () => {
     "background-variant-093",
     "background-variant-094",
   ]);
+});
+
+test("Cactus Auto prefers a vertical pair when two painted cells are available", () => {
+  const next = paintSurface(
+    catalog,
+    [{ x: 2, y: 1 }, { x: 2, y: 2 }],
+    { terrain: "cactus", pattern: "auto", seed: 1 },
+  ).apply(createBlankLevel(5, 5));
+  assert.deepEqual(
+    [entityAt(next, 2, 1)?.type, entityAt(next, 2, 2)?.type],
+    ["background-variant-064", "background-variant-080"],
+  );
 });
