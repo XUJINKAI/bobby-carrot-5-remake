@@ -324,6 +324,7 @@ const alternateB = computed(
   width: 48px;
   height: 48px;
   margin: 0;
+  border-color: #5fafd6;
   border-radius: 0;
 }
 .surface-variant + .surface-variant {
