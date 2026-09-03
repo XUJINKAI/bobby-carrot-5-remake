@@ -4,6 +4,7 @@ import type {
   EditorCanvasContextMenuRequest,
   EditorDefinition,
   EditorMap,
+  EditorPlacementPreset,
   EditorResizeEdges,
   EditorRuleCapability,
   EditorRuleKind,
@@ -13,25 +14,37 @@ import type {
   InspectorModel,
   PaletteItem,
   ResolvedPaletteGroup,
+  SurfaceBrush,
+  SurfacePattern,
+  SurfaceTheme,
+  SurfaceTool,
+  SurfaceType,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
+import type { EditorLeftPanel } from "./useEditorPage.js";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
 import EditorLevelInfo from "./EditorLevelInfo.vue";
 import EditorPalette from "./EditorPalette.vue";
+import EditorSurface from "./EditorSurface.vue";
 
 defineProps<{
   level: Readonly<EditorMap>;
   revision: number;
   tool: EditorTool;
-  placement: PaletteItem;
+  placement: EditorPlacementPreset | null;
+  palettePlacement: PaletteItem;
+  leftPanel: EditorLeftPanel;
+  surfaceTool: SurfaceTool;
+  surfaceBrush: SurfaceBrush;
   selection: EditorSelection | null;
   hover: Cell | null;
   inspector: InspectorModel;
   rules: readonly EditorRuleCapability[];
   palette: readonly ResolvedPaletteGroup[];
   paletteSize: number;
-  paletteOpen: boolean;
+  leftOpen: boolean;
   rightPanel: "inspector" | "level" | null;
   playing: boolean;
   playComplete: boolean;
@@ -42,6 +55,15 @@ defineProps<{
 const emit = defineEmits<{
   select: [item: PaletteItem];
   paletteResize: [delta: number];
+  surfaceTool: [tool: SurfaceTool];
+  surfaceType: [type: SurfaceType];
+  surfaceTheme: [theme: SurfaceTheme];
+  surfacePattern: [pattern: SurfacePattern];
+  surfaceExact: [type: EntityType];
+  surfaceAlternateA: [type: EntityType];
+  surfaceAlternateB: [type: EntityType];
+  surfaceReroll: [];
+  surfaceApplySelection: [];
   hover: [cell: Cell | null];
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
@@ -72,20 +94,38 @@ const emit = defineEmits<{
     class="editor-body"
     :class="{
       playing,
-      'palette-hidden': !paletteOpen,
+      'palette-hidden': !leftOpen,
       'right-hidden': rightPanel === null,
     }"
   >
     <EditorPalette
-      v-show="!playing && paletteOpen"
+      v-if="!playing && leftOpen && leftPanel === 'palette'"
       :groups="palette"
-      :placement="placement"
+      :placement="palettePlacement"
       :size="paletteSize"
       :images="images"
       :catalog="catalog"
       :editor="editor"
       @select="emit('select', $event)"
       @resize="emit('paletteResize', $event)"
+    />
+    <EditorSurface
+      v-if="!playing && leftOpen && leftPanel === 'surface'"
+      :brush="surfaceBrush"
+      :tool="surfaceTool"
+      :selection-exists="selection !== null"
+      :images="images"
+      :catalog="catalog"
+      :editor="editor"
+      @tool="emit('surfaceTool', $event)"
+      @type="emit('surfaceType', $event)"
+      @theme="emit('surfaceTheme', $event)"
+      @pattern="emit('surfacePattern', $event)"
+      @exact="emit('surfaceExact', $event)"
+      @alternate-a="emit('surfaceAlternateA', $event)"
+      @alternate-b="emit('surfaceAlternateB', $event)"
+      @reroll="emit('surfaceReroll')"
+      @apply-selection="emit('surfaceApplySelection')"
     />
     <section class="editor-map-shell" :class="{ playing }">
       <EditorCanvas
