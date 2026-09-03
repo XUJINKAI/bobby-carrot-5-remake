@@ -35,13 +35,11 @@ editor/src
 
 当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor authoring policy 不进入 Engine。
 
-Runtime collection 的 `MapDocument` 使用 `meta` 包装产品 metadata。Web 从 `MapDocument` 打开 Editor 时，只把其中 `LevelMap` gameplay 内容交给 Editor，并以 `meta.name` 生成副本名称。
-
 ## Surface 与 Palette
 
 Surface 与 Palette 是两套并列的 authoring UX，不要求与 Engine Entity taxonomy 一一对应。
 
-Surface 表示“这一格的基础地貌是什么”，每格最多保留一个 Surface。Surface 可以影响 gameplay；是否影响解法不是 Surface / Palette 的划分标准。当前 Surface Type 使用：
+Surface 表示“这一格的基础地貌是什么”，每格最多保留一个 Surface。Surface 可以影响 gameplay；是否影响解法不是 Surface / Palette 的划分标准。Editor 内部仍用这些语义类型描述基础环境：
 
 ```text
 ground
@@ -54,22 +52,42 @@ waterfall
 
 `blocking` 保留为 Engine trait / 行为语义，不作为 Surface Type 名称。
 
-Theme 是局部视觉族，不是整张地图的全局主题。Forest、Snow、Desert、Space 可以在同一地图中混用；Water、Ice、Waterfall 等没有主题差异时使用 Shared。
+用户在 Surface 面板中不直接操作 Type × Theme 矩阵，而是选择具体 Terrain，例如草地、雪地、沙地、石头、墙、水、瀑布、篱笆、带雪篱笆、天空等。每个 Terrain 指定一个主要 visual 作为入口，并通过显式 `rows` 定义其 variant 排列。Terrain 本身也可按 group / row 组织，和 Palette 一样由 Editor 精确控制布局。
 
-Surface 编辑支持四种空间操作：
+### Theme
 
-- Brush：连续按格涂抹，一次拖动形成一次 Undo；
-- Rect：拖出矩形后整块应用当前 Surface brush；
-- Fill：四方向 flood fill，匹配相邻 Surface 的 Type + Theme，忽略具体 visual variant；
-- Selection：先框选矩形，再把当前 Surface brush 批量应用到选区。
+Theme 是视觉批量转换入口，不是 Level 全局属性，也不会限制地图只能使用一种风格。当前入口：
+
+```text
+混合 / 森林 / 雪地 / 沙地 / 太空
+```
+
+Theme 卡使用多个代表 visual 拼成预览，强调视觉识别。点击具体 Theme 时，Editor 自动识别已知的同类 Terrain，并只在相同 SurfaceType / theme family 内换皮，例如草地 ↔ 雪地 ↔ 沙地 ↔ 云层、篱笆 ↔ 带雪篱笆。Water、Ice、Waterfall 等没有对应主题映射的 gameplay terrain 保持不变。地图包含多个主题时显示为“混合”。
+
+### 空间工具
+
+Surface 工具和 Palette 工具共用顶部工具栏，不在 Surface 面板里重复一套：
+
+- `1`：Rect，拖出矩形后整块应用当前 Terrain；
+- `2`：Brush，连续按格涂抹，一次拖动形成一次 Undo；
+- `4`：Fill，四方向 flood fill，相邻区域按同一 Terrain 匹配，忽略具体 visual variant；
+- Surface 没有 Erase 工具；基础地貌通过画成另一种 Terrain 来替换。
+
+Palette 仍使用 `1 Select / 2 Place / 3 Erase`。
+
+`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截 Tab。
+
+### Pattern 与 Variant
 
 Variant 分配支持：
 
 - Auto：按地图坐标和 seed 稳定分配 variant；同一 seed 不会因刷新而改变；
 - Exact：强制使用一个具体 variant，用于手工修边和原版精确复刻；
-- Alternate：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
+- 交错：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
 
-Surface 面板右键地图直接取样当前 Surface，读取 Type、Theme 和 Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
+Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Alternate 模式左键选择 A、右键选择 B。
+
+Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
 
 Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标区域自动选择 Start / Middle / End visual variant。
 
@@ -98,8 +116,9 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 ## 编辑交互
 
 - Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
-- Surface：Brush / Rect / Fill / Selection；右键取样；
-- Palette：Select / Place / Erase；Q/E 或滚轮切换可变 Entity；
+- Tab：Palette / Surface 快速切换；
+- Surface：顶部 Rect / Brush / Fill；右键取样；
+- Palette：顶部 Select / Place / Erase；Q/E 或滚轮切换可变 Entity；
 - 滚轮在没有 Entity variant 操作时缩放地图；
 - 中键拖动：平移；
 - 两指手势：缩放 Editor viewport；
