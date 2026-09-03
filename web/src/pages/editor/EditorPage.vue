@@ -27,7 +27,7 @@ const page = useEditorPage(props.initialLevel);
 let session: GameSession | null = null;
 let disposePlayChange = (): void => {};
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
-const paletteOpen = ref(true);
+const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
@@ -54,12 +54,14 @@ function syncShell(): void {
       canUndo: session?.game.canUndo ?? false,
       canRedo: session?.game.canRedo ?? false,
     },
+    page.leftPanel.value,
   );
 }
 watch(
   () => [
     page.playing.value,
     page.tool.value,
+    page.leftPanel.value,
     shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
   syncShell,
@@ -158,6 +160,11 @@ function markDownloaded(metadata: {
 }
 
 function openContextMenu(request: EditorCanvasContextMenuRequest): void {
+  if (page.leftPanel.value === "surface") {
+    page.pickSurface(request.cell);
+    closeContextMenu();
+    return;
+  }
   page.ensureSelectionAt(request.cell);
   contextMenu.value = {
     x: request.clientX,
@@ -242,26 +249,24 @@ function onShellAction(event: Event): void {
   if (action === "editor-play") void togglePlay();
   if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
-  if (action === "editor-palette") togglePanel("palette");
-  if (action === "editor-inspector") togglePanel("inspector");
-  if (action === "editor-level-info") togglePanel("level");
+  if (action === "editor-palette") toggleLeftPanel("palette");
+  if (action === "editor-surface") toggleLeftPanel("surface");
+  if (action === "editor-inspector") toggleRightPanel("inspector");
+  if (action === "editor-level-info") toggleRightPanel("level");
 }
 
-function togglePanel(panel: "palette" | "inspector" | "level"): void {
-  if (isMobileEditor()) {
-    if (panel === "palette") {
-      const opening = !paletteOpen.value;
-      paletteOpen.value = opening;
-      rightPanel.value = null;
-      return;
-    }
-    const opening = rightPanel.value !== panel;
-    paletteOpen.value = false;
-    rightPanel.value = opening ? panel : null;
-    return;
-  }
-  if (panel === "palette") paletteOpen.value = !paletteOpen.value;
-  else rightPanel.value = rightPanel.value === panel ? null : panel;
+function toggleLeftPanel(panel: "palette" | "surface"): void {
+  const opening = !leftOpen.value || page.leftPanel.value !== panel;
+  page.leftPanel.value = panel;
+  if (panel === "surface") page.activateSurface();
+  leftOpen.value = opening;
+  if (isMobileEditor() && opening) rightPanel.value = null;
+}
+
+function toggleRightPanel(panel: "inspector" | "level"): void {
+  const opening = rightPanel.value !== panel;
+  if (isMobileEditor()) leftOpen.value = false;
+  rightPanel.value = opening ? panel : null;
 }
 
 function onShellDialogOpen(): void {
@@ -316,7 +321,7 @@ function isMobileEditor(): boolean {
   <div
     class="bobby-editor"
     :class="{
-      'palette-sheet-open': paletteOpen,
+      'palette-sheet-open': leftOpen,
       'inspector-sheet-open': rightPanel !== null,
     }"
   >
@@ -324,14 +329,18 @@ function isMobileEditor(): boolean {
       :level="page.snapshot.value.level as EditorMap"
       :revision="page.snapshot.value.revision"
       :tool="page.tool.value"
-      :placement="page.placement.value"
+      :placement="page.leftPanel.value === 'palette' ? page.placement.value : null"
+      :palette-placement="page.placement.value"
+      :left-panel="page.leftPanel.value"
+      :surface-tool="page.surfaceTool.value"
+      :surface-brush="page.surfaceBrush.value"
       :selection="page.mapSelection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
       :rules="page.rules.value"
       :palette="page.palette"
       :palette-size="page.paletteSize.value"
-      :palette-open="paletteOpen"
+      :left-open="leftOpen"
       :right-panel="rightPanel"
       :playing="page.playing.value"
       :play-complete="playComplete"
@@ -340,6 +349,15 @@ function isMobileEditor(): boolean {
       :editor="page.editor"
       @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
+      @surface-tool="page.setSurfaceTool"
+      @surface-type="page.setSurfaceType"
+      @surface-theme="page.setSurfaceTheme"
+      @surface-pattern="page.setSurfacePattern"
+      @surface-exact="page.setSurfaceExact"
+      @surface-alternate-a="(type) => page.setSurfaceAlternate(0, type)"
+      @surface-alternate-b="(type) => page.setSurfaceAlternate(1, type)"
+      @surface-reroll="page.rerollSurface"
+      @surface-apply-selection="page.applySurfaceSelection"
       @hover="page.hover.value = $event"
       @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
       @primary-move="page.primaryMove"
