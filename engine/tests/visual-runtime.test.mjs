@@ -161,6 +161,36 @@ test("Bobby mower cycles vertically inside the direction column", () => {
   assert.equal(mower.layers[0].frameIndex, 6);
 });
 
+test("mow.png second row loops behind accelerated Bobby and mower", () => {
+  const boosted = bobbyVisual({
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: { moving: true, progress: 0.5, direction: "right" },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.deepEqual(boosted.layers[0], {
+    kind: "image",
+    asset: "bobby-speed-trail",
+    frameColumns: 5,
+    frameRows: 2,
+    frameIndex: 8,
+    anchor: "bottom",
+    offsetY: -12,
+  });
+  assert.equal(boosted.layers[1].asset, "bobby-right");
+
+  const mower = bobbyVisual({
+    direction: "right",
+    state: {
+      mountId: 9,
+      speedBoost: { direction: "right", phase: "normal" },
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(mower.layers[0].asset, "bobby-speed-trail");
+  assert.equal(mower.layers[0].frameIndex, 8);
+  assert.equal(mower.layers[1].asset, "bobby-mower");
+});
+
 test("Bobby snowplow uses three rows inside the attempted direction column", () => {
   const shovel = bobbyVisual({
     runtime: {
