@@ -145,7 +145,7 @@ export const bobby: EntityModule = originalModule(definition, {
         frameColumns: 8,
         frameRows: 1,
         frameIndex: context.runtime?.moving
-          ? resolveWalkingFrame(progress)
+          ? resolveWalkingFrame(rawProgress)
           : BOBBY_STANDING_FRAME,
       },
       speedTrail(context),
@@ -161,7 +161,8 @@ function isStandingOnIce(context: VisualResolveContext): boolean {
 
 /** 原版普通走路以第 4 帧为起止点：4,5,6,7,8,1,2,3,4。 */
 function resolveWalkingFrame(progress: number): number {
-  const step = Math.min(8, Math.floor(clampProgress(progress) * 8));
+  const normalized = Math.max(0, Math.min(1, progress));
+  const step = Math.min(8, Math.floor(normalized * 8));
   return (BOBBY_STANDING_FRAME + step) % 8;
 }
 
