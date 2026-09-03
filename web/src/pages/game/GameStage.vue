@@ -19,7 +19,6 @@ defineProps<{ showProductStats: boolean }>();
 </template>
 
 <style scoped>
-/* Debug UI is owned entirely by Engine and mounts into game-canvas-layer. */
 .product-game-statistics {
   position: absolute;
   left: 12px;
