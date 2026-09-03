@@ -96,6 +96,29 @@ test("持续输入 busy 时下一世界 tick 重试同一方向", () => {
   assert.equal(advance(repeater, 62.5, "moved"), "left");
 });
 
+test("HeldDirectionRepeater inspection exposes held retry state without mutation", () => {
+  const repeater = new HeldDirectionRepeater();
+  repeater.setInput({
+    source: "external",
+    direction: "right",
+    initialRepeatDelayMs: 0,
+  });
+
+  const before = repeater.inspect();
+  assert.equal(before.heldInput?.direction, "right");
+  assert.equal(before.pendingInitialInput?.direction, "right");
+  assert.equal(before.pendingAttempt, null);
+  assert.equal(before.initialMoveDone, false);
+
+  assert.equal(advance(repeater, 62.5, "busy"), "right");
+  const after = repeater.inspect();
+  assert.equal(after.heldInput?.direction, "right");
+  assert.equal(after.pendingInitialInput, null);
+  assert.equal(after.pendingAttempt, null);
+  assert.equal(after.initialMoveDone, true);
+  assert.equal(after.blocked, false);
+});
+
 test("连续 busy 输入松开后立即取消后续 retry", () => {
   const repeater = new HeldDirectionRepeater();
   repeater.setInput({
