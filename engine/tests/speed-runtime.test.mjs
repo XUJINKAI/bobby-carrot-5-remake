@@ -170,6 +170,6 @@ test("Speed boost state and observed input belong only to the owning Bobby", () 
 
   assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
   assert.equal(world.entity(boosted).state.speedBoost.phase, "normal");
-  assert.equal(world.entity(other).state.speedBoost, undefined);
+  assert.equal(world.entity(other).state?.speedBoost, undefined);
   assert.deepEqual(world.entity(other).anchor, { x: 0, y: 1 });
 });
