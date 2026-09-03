@@ -17,7 +17,7 @@ export { resolveEditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export type { EditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export { resolveEditorPalette, paletteItems, paletteGroups, paletteGroup, paletteLabel } from "./authoring/paletteCatalog.js";
 export type { PaletteItem, ResolvedPaletteGroup } from "./authoring/paletteCatalog.js";
-export { resolveDeletionTarget } from "./authoring/deletion.js";
+export { resolveDeletionTarget, resolveSelectionDeletionTargets } from "./authoring/deletion.js";
 export { selectionRect, selectedEntityRefs } from "./authoring/selection.js";
 export type { SelectionRect } from "./authoring/selection.js";
 export { copySelection, copyEntitySelection, pasteClipboard } from "./authoring/clipboard.js";
