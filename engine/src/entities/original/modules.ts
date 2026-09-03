@@ -9,6 +9,7 @@ import { colorYellowSwitch } from "./color-yellow-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
 import { fence } from "./fence.js";
+import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
@@ -28,6 +29,7 @@ import { windSwitch } from "./wind-switch.js";
 
 export const originalEntityModules: readonly EntityModule[] = [
   ...staticSurfaceModules,
+  ice,
   tide,
   tideSwitch,
   speedSwitch,

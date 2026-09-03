@@ -24,6 +24,26 @@ const bobby = (x, y) => ({
   direction: "right",
 });
 
+function actor(world) {
+  const entity = world.query.entitiesWithTrait("player")[0];
+  assert.ok(entity, "test map must contain a player actor");
+  return entity;
+}
+
+function move(world, direction) {
+  const player = actor(world);
+  return world.step({
+    intents: [
+      {
+        type: "move",
+        actorId: player.id,
+        direction,
+        cause: { type: "player-input", source: "test" },
+      },
+    ],
+  });
+}
+
 test("canonical original obstacle semantics keep known blockers blocking", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of BLOCKING_TYPES) {
@@ -49,23 +69,32 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   });
 
   assert.equal(world.winState?.remaining, 1);
-  const enter = world.move("right");
-  assert.equal(enter.moved, true);
+  const enter = move(world, "right");
+  assert.equal(enter.moves[0].moved, true);
   assert.equal(world.winState?.remaining, 1);
   assert.equal(
-    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+    world.entities
+      .all()
+      .some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
     true,
   );
 
-  const leave = world.move("right");
-  assert.equal(leave.moved, true);
-  assert.equal(leave.events.some((event) => event.type === "fill-egg-nest"), true);
+  const leave = move(world, "right");
+  assert.equal(leave.moves[0].moved, true);
   assert.equal(
-    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+    leave.events.some((event) => event.type === "fill-egg-nest"),
+    true,
+  );
+  assert.equal(
+    world.entities
+      .all()
+      .some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
     false,
   );
   assert.equal(
-    world.entities.all().some((entity) => entity.type === EntityTypeId.EGG_NEST_FILLED),
+    world.entities
+      .all()
+      .some((entity) => entity.type === EntityTypeId.EGG_NEST_FILLED),
     true,
   );
   assert.deepEqual(world.winState, {
@@ -90,8 +119,8 @@ test("Ice Block cover blocks Bobby instead of becoming pass-through scenery", ()
       { type: EntityTypeId.ICE_BLOCK, x: 1, y: 0 },
     ],
   });
-  assert.equal(world.move("right").moved, false);
-  assert.deepEqual(world.player, { x: 0, y: 0 });
+  assert.equal(move(world, "right").moves[0].moved, false);
+  assert.deepEqual(actor(world).anchor, { x: 0, y: 0 });
 });
 
 test("Water requires a terrain overlay for ordinary Bobby movement", () => {
@@ -105,7 +134,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
       bobby(0, 0),
     ],
   });
-  assert.equal(direct.move("right").moved, false);
+  assert.equal(move(direct, "right").moves[0].moved, false);
 
   const withPlank = new World({
     schemaVersion: 1,
@@ -118,7 +147,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
       bobby(0, 0),
     ],
   });
-  assert.equal(withPlank.move("right").moved, true);
+  assert.equal(move(withPlank, "right").moves[0].moved, true);
 });
 
 test("Unified color block uses state instead of split types for passage", () => {
@@ -137,7 +166,7 @@ test("Unified color block uses state instead of split types for passage", () => 
       bobby(0, 0),
     ],
   });
-  assert.equal(raised.move("right").moved, false);
+  assert.equal(move(raised, "right").moves[0].moved, false);
 
   const lowered = new World({
     schemaVersion: 1,
@@ -154,7 +183,7 @@ test("Unified color block uses state instead of split types for passage", () => 
       bobby(0, 0),
     ],
   });
-  assert.equal(lowered.move("right").moved, true);
+  assert.equal(move(lowered, "right").moves[0].moved, true);
 });
 
 test("authoring visual preview resolves through canonical Visual definitions", () => {

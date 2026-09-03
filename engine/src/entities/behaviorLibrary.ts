@@ -3,6 +3,11 @@ import type { Behavior } from "../world/behavior/Behavior.js";
 import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
+import {
+  bobbyMountId,
+  patchBobbyInventory,
+  readBobbyInventory,
+} from "./player/BobbyState.js";
 
 const collect: Behavior = {
   id: "collectible",
@@ -29,12 +34,66 @@ const collect: Behavior = {
   },
 };
 
+const pickup: Behavior = {
+  id: "pickup",
+  onEnter({ actor, self, commands }) {
+    const inventory = readBobbyInventory(actor.state);
+    switch (self.entity.type) {
+      case EntityTypeId.GAS:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { gas: true }),
+        );
+        break;
+      case EntityTypeId.KITE:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { kite: true }),
+        );
+        break;
+      case EntityTypeId.BEAN:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { beans: inventory.beans + 1 }),
+        );
+        break;
+      case EntityTypeId.SHOVEL_PICKUP:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, { shovel: true }),
+        );
+        commands.destroy(self.entity.id);
+        commands.spawn({
+          type: EntityTypeId.SHOVEL_CLEARED_GROUND,
+          x: self.entity.anchor.x,
+          y: self.entity.anchor.y,
+        });
+        commands.emit({
+          type: `collect-${self.entity.type}`,
+          entityId: self.entity.id,
+          x: self.presence.cell.x,
+          y: self.presence.cell.y,
+        });
+        return;
+      default:
+        return;
+    }
+    commands.destroy(self.entity.id);
+    commands.emit({
+      type: `collect-${self.entity.type}`,
+      entityId: self.entity.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+    });
+  },
+};
+
 const hazard: Behavior = {
   id: "hazard",
   onEnter({ self, commands }) {
     if (self.entity.state?.active === false) return;
     commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "Bobby entered a hazard.");
+    commands.setGlobal("deathReason", "An actor entered a hazard.");
     commands.emit({
       type: "death",
       entityId: self.entity.id,
@@ -46,8 +105,8 @@ const hazard: Behavior = {
 
 const mowable: Behavior = {
   id: "mowable",
-  onTouch({ query, self, commands }) {
-    if (!query.global().ridingMower) return;
+  resolveEntry({ actor, self, commands }) {
+    if (bobbyMountId(actor.state) === null) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "mow",
@@ -55,13 +114,14 @@ const mowable: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
     });
+    return { result: "clear-and-pass", reason: "mow-clear" };
   },
 };
 
 const shovelable: Behavior = {
   id: "shovelable",
-  onTouch({ query, self, commands }) {
-    if (!query.global().inventory.shovel) return;
+  resolveEntry({ actor, self, commands }) {
+    if (!readBobbyInventory(actor.state).shovel) return;
     commands.destroy(self.entity.id);
     commands.emit({
       type: "shovel",
@@ -69,6 +129,7 @@ const shovelable: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
     });
+    return { result: "clear-and-pass", reason: "shovel-clear" };
   },
 };
 
@@ -102,6 +163,7 @@ const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   dialog: dialogTraitBehavior,
   hazard,
   mowable,
+  pickup,
   shovelable,
   water: waterRequiresOverlay,
   "stateful-block": statefulBlock,

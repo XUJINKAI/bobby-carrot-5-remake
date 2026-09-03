@@ -1,5 +1,9 @@
 import { EntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
+import {
+  patchBobbyInventory,
+  readBobbyInventory,
+} from "../player/BobbyState.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -14,13 +18,14 @@ import {
 
 const unlock: Behavior = {
   id: "lock",
-  canEnter({ self, query, commands }) {
+  canEnter({ actor, self, query, commands }) {
     if (self.entity.state?.opened === true)
       return { passable: true, reason: "lock-open" };
 
     const global = query.global();
+    const inventory = readBobbyInventory(actor.state);
     const hasPermanentKey = global.profile.superKey;
-    const hasTemporaryKey = global.inventory.temporaryKey;
+    const hasTemporaryKey = inventory.temporaryKey;
     if (!hasPermanentKey && !hasTemporaryKey)
       return { passable: false, reason: "lock-needs-key" };
 
@@ -33,17 +38,18 @@ const unlock: Behavior = {
     commands.setState(self.entity.id, {
       ...(self.entity.state ?? {}),
       opened: true,
+      openedByActorId: actor.id,
       deathCountdownRemainingMs: seconds * 1000,
     });
     if (!hasPermanentKey && hasTemporaryKey)
-      commands.setGlobal("inventory", {
-        ...global.inventory,
-        temporaryKey: false,
-      });
+      commands.setState(
+        actor.id,
+        patchBobbyInventory(actor.state, { temporaryKey: false }),
+      );
     if (seconds > 0)
       commands.emit({
         type: "death-countdown-started",
-        entityId: self.entity.id,
+        entityId: actor.id,
         data: { seconds },
       });
     return { passable: true, reason: "lock-unlocked" };
@@ -58,11 +64,14 @@ const unlock: Behavior = {
       deathCountdownRemainingMs: next,
     });
     if (next > 0) return;
+    const openedByActorId = Number(self.entity.state.openedByActorId);
     commands.setGlobal("dead", true);
     commands.setGlobal("deathReason", "Time ran out.");
     commands.emit({
       type: "death",
-      entityId: self.entity.id,
+      ...(Number.isInteger(openedByActorId) && openedByActorId > 0
+        ? { entityId: openedByActorId }
+        : {}),
       reason: "death-countdown-expired",
     });
   },

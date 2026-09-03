@@ -3,17 +3,12 @@ import { Camera } from "../render/Camera.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
-import type {
-  CellPosition,
-  EntityId,
-} from "../world/entity/EntityInstance.js";
+import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
+import type { MotionEasing } from "./tuning/PresentationTuning.js";
+import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
-import {
-  applyMotionEasing,
-  type MotionEasing,
-} from "./tuning/PresentationTuning.js";
 
 interface VisualMotion {
   entityId: EntityId;
@@ -23,27 +18,28 @@ interface VisualMotion {
   endOffsetY: number;
   startedAtMs: number;
   durationMs: number;
+  /** Spatial movement stays moving even when a mechanism supplies an animation name. */
+  moving: boolean;
   animation?: string;
   direction?: Direction;
 }
 
 export interface VisualRuntimeInspection {
   visualId: string;
-  runtime: Readonly<EntityVisualRuntimeState> | null;
+  runtime: EntityVisualRuntimeState | null;
 }
 
-/** World 与 Renderer 之间唯一有业务感知的表现运行时；只吃 PresentationFrame。 */
+/** Pure presentation runtime. It never mutates World gameplay state. */
 export class VisualRuntime {
   readonly camera: Camera;
-  private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
-  /** 每个 Entity 保留最近一次 motion，便于 Debug 在刚结束后仍可倒一帧检查。 */
   private readonly motions = new Map<EntityId, VisualMotion>();
   private readonly activeMotionIds = new Set<EntityId>();
-  private frame: PresentationFrame | undefined;
+  private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
+  private frame: PresentationFrame | null = null;
 
   constructor(
     private readonly visuals: VisualRegistry,
-    sourceTileSize = 48,
+    sourceTileSize: number,
   ) {
     this.camera = new Camera(sourceTileSize);
   }
@@ -52,12 +48,8 @@ export class VisualRuntime {
     return this.activeMotionIds.size > 0;
   }
 
-  setEntityState(entityId: EntityId, state: EntityVisualRuntimeState): void {
-    this.entityRuntime.set(entityId, { ...state });
-  }
-
-  clearEntityState(entityId: EntityId): void {
-    this.entityRuntime.delete(entityId);
+  get runtimeStates(): ReadonlyMap<EntityId, EntityVisualRuntimeState> {
+    return this.entityRuntime;
   }
 
   beginMove(
@@ -66,6 +58,10 @@ export class VisualRuntime {
     to: CellPosition,
     durationMs: number,
     frame: PresentationFrame,
+    options: {
+      animation?: string;
+      direction?: Direction;
+    } = {},
   ): void {
     this.beginMotion(
       entityId,
@@ -73,31 +69,34 @@ export class VisualRuntime {
       { x: 0, y: 0 },
       durationMs,
       frame,
+      true,
+      options.animation,
+      options.direction,
     );
   }
 
-  /** Hazard death 只向目标格推进一部分；World 仍保持已经判定死亡后的 canonical 状态。 */
   beginDeath(
     entityId: EntityId,
     from: CellPosition,
     to: CellPosition,
     durationMs: number,
     frame: PresentationFrame,
-    travelFraction = 0.4,
+    travelRatio: number,
   ): void {
-    const fraction = Math.max(0, Math.min(1, travelFraction));
-    const start = { x: from.x - to.x, y: from.y - to.y };
+    const ratio = Math.max(0, Math.min(1, travelRatio));
+    const deltaX = from.x - to.x;
+    const deltaY = from.y - to.y;
     this.beginMotion(
       entityId,
-      start,
-      { x: start.x * (1 - fraction), y: start.y * (1 - fraction) },
+      { x: deltaX, y: deltaY },
+      { x: deltaX * (1 - ratio), y: deltaY * (1 - ratio) },
       durationMs,
       frame,
+      false,
       "death",
     );
   }
 
-  /** 原地的纯表现动作，例如铲雪；不修改 World anchor。 */
   beginAction(
     entityId: EntityId,
     animation: string,
@@ -111,12 +110,12 @@ export class VisualRuntime {
       { x: 0, y: 0 },
       durationMs,
       frame,
+      false,
       animation,
       direction,
     );
   }
 
-  /** 只推进表现状态；绝不触发 gameplay mutation。可接受 Debug 的负 delta frame。 */
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
     this.camera.update(frame);
@@ -130,11 +129,18 @@ export class VisualRuntime {
     this.entityRuntime.clear();
   }
 
-  /** 组装当前视觉快照，并让 Camera 跟随 gameplay 指定目标；默认跟随 Bobby。 */
+  /** Camera focus wins; otherwise follow the first player-trait actor. */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
-    this.ensureStationaryPlayerState(world);
-    const targetId = cameraTarget ?? world.playerId;
-    const target = world.entity(targetId) ?? world.entity(world.playerId);
+    const actorIds = world.query
+      .entitiesWithTrait("player")
+      .map((entity) => entity.id);
+    this.ensureStationaryActorStates(actorIds);
+    const defaultTargetId = actorIds[0];
+    const target =
+      (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
+      (defaultTargetId !== undefined
+        ? world.entity(defaultTargetId)
+        : undefined);
     if (target) {
       const runtime = this.entityRuntime.get(target.id);
       this.camera.follow(
@@ -146,10 +152,14 @@ export class VisualRuntime {
         world.height,
       );
     }
-    return buildVisualScene(world, this.visuals, this.entityRuntime, this.frame);
+    return buildVisualScene(
+      world,
+      this.visuals,
+      this.entityRuntime,
+      this.frame ?? undefined,
+    );
   }
 
-  /** Engine Debug Runtime 使用的只读视觉诊断信息。 */
   inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {
     const definition = world.definition(entityId);
     const runtime = this.entityRuntime.get(entityId);
@@ -165,6 +175,7 @@ export class VisualRuntime {
     endOffset: { x: number; y: number },
     durationMs: number,
     frame: PresentationFrame,
+    moving: boolean,
     animation?: string,
     direction?: Direction,
   ): void {
@@ -176,6 +187,7 @@ export class VisualRuntime {
       endOffsetY: endOffset.y,
       startedAtMs: frame.nowMs,
       durationMs: Math.max(0, durationMs),
+      moving,
       ...(animation ? { animation } : {}),
       ...(direction ? { direction } : {}),
     };
@@ -191,11 +203,16 @@ export class VisualRuntime {
   ): void {
     const elapsedMs = Math.max(0, frame.nowMs - motion.startedAtMs);
     const rawProgress =
-      motion.durationMs <= 0 ? 1 : Math.min(1, elapsedMs / motion.durationMs);
+      motion.durationMs <= 0
+        ? 1
+        : Math.min(1, elapsedMs / motion.durationMs);
     const progress = applyMotionEasing(rawProgress, easing);
     if (rawProgress >= 1) {
-      this.activeMotionIds.delete(motion.entityId);
-      this.finishMotion(motion, frame);
+      // Completed motions stay in `motions` for presentation-clock rewind. Only the
+      // active -> stationary transition may stamp stationarySinceMs; later frames
+      // must not keep resetting the idle timer.
+      if (this.activeMotionIds.delete(motion.entityId))
+        this.finishMotion(motion, frame);
       return;
     }
     this.activeMotionIds.add(motion.entityId);
@@ -214,14 +231,17 @@ export class VisualRuntime {
       offsetY:
         motion.startOffsetY +
         (motion.endOffsetY - motion.startOffsetY) * positionProgress,
-      moving: motion.animation === undefined,
+      moving: motion.moving,
       progress: animationProgress,
       ...(motion.animation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
     });
   }
 
-  private finishMotion(motion: VisualMotion, frame: PresentationFrame): void {
+  private finishMotion(
+    motion: VisualMotion,
+    frame: PresentationFrame,
+  ): void {
     const keepAnimation = motion.animation === "death";
     this.setEntityState(motion.entityId, {
       offsetX: motion.endOffsetX,
@@ -234,13 +254,28 @@ export class VisualRuntime {
     });
   }
 
-  private ensureStationaryPlayerState(world: World): void {
-    if (!this.frame || this.activeMotionIds.has(world.playerId)) return;
-    if (this.entityRuntime.has(world.playerId)) return;
-    this.setEntityState(world.playerId, {
-      moving: false,
-      progress: 1,
-      stationarySinceMs: this.frame.nowMs,
-    });
+  private ensureStationaryActorStates(
+    actorIds: readonly EntityId[],
+  ): void {
+    if (!this.frame) return;
+    for (const entityId of actorIds) {
+      if (
+        this.activeMotionIds.has(entityId) ||
+        this.entityRuntime.has(entityId)
+      )
+        continue;
+      this.setEntityState(entityId, {
+        moving: false,
+        progress: 1,
+        stationarySinceMs: this.frame.nowMs,
+      });
+    }
+  }
+
+  private setEntityState(
+    entityId: EntityId,
+    state: EntityVisualRuntimeState,
+  ): void {
+    this.entityRuntime.set(entityId, state);
   }
 }

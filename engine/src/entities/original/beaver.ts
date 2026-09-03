@@ -7,6 +7,10 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
+  readBobbyInventory,
+  patchBobbyInventory,
+} from "../player/BobbyState.js";
+import {
   atlasVisual,
   boundedInt,
   CONTENT_STACK_ORDER,
@@ -18,9 +22,10 @@ const DEFAULT_TEMPORARY_KEY_PRICE = 3;
 
 const bonusKeyVendor: Behavior = {
   id: "bonus-key-vendor",
-  onTouch({ self, query, commands }) {
+  onTouch({ actor, self, query, commands }) {
     if (self.entity.properties?.interaction !== "bonus-key-vendor") return;
     const global = query.global();
+    const inventory = readBobbyInventory(actor.state);
     const price = boundedInt(
       self.entity.properties?.temporaryKeyPriceBonusCoins,
       0,
@@ -37,7 +42,7 @@ const bonusKeyVendor: Behavior = {
       );
       return;
     }
-    if (global.inventory.temporaryKey) {
+    if (inventory.temporaryKey) {
       emitDialog(
         commands,
         self.entity.id,
@@ -48,17 +53,17 @@ const bonusKeyVendor: Behavior = {
       return;
     }
     if (!global.profile.bonusKeyTrialUsed) {
-      commands.setGlobal("inventory", {
-        ...global.inventory,
-        temporaryKey: true,
-      });
+      commands.setState(
+        actor.id,
+        patchBobbyInventory(actor.state, { temporaryKey: true }),
+      );
       commands.setGlobal("profile", {
         ...global.profile,
         bonusKeyTrialUsed: true,
       });
       commands.emit({
         type: "bonus-key-trial-granted",
-        entityId: self.entity.id,
+        entityId: actor.id,
         x: self.presence.cell.x,
         y: self.presence.cell.y,
       });
@@ -85,13 +90,13 @@ const bonusKeyVendor: Behavior = {
       ...global.economy,
       bonusCoins: global.economy.bonusCoins - price,
     });
-    commands.setGlobal("inventory", {
-      ...global.inventory,
-      temporaryKey: true,
-    });
+    commands.setState(
+      actor.id,
+      patchBobbyInventory(actor.state, { temporaryKey: true }),
+    );
     commands.emit({
       type: "spend-bonus-coins",
-      entityId: self.entity.id,
+      entityId: actor.id,
       x: self.presence.cell.x,
       y: self.presence.cell.y,
       data: { amount: price },

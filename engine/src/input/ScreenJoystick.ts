@@ -27,7 +27,7 @@ export const DEFAULT_SCREEN_JOYSTICK_OPTIONS = {
   activationInsetBottom: 0,
   defaultInsetRight: 28,
   defaultInsetBottom: 28,
-  initialRepeatDelayMs: 375,
+  initialRepeatDelayMs: 0,
 } as const;
 
 export interface ScreenJoystickLayout {
@@ -340,7 +340,8 @@ export class ScreenJoystick {
       this.deadZonePixels,
       this.direction,
     );
-    const scale = state.distance > this.radius ? this.radius / state.distance : 1;
+    const scale =
+      state.distance > this.radius ? this.radius / state.distance : 1;
     this.knob.style.transform = `translate(calc(-50% + ${dx * scale}px), calc(-50% + ${dy * scale}px))`;
     if (state.direction === this.direction) return;
     this.direction = state.direction;

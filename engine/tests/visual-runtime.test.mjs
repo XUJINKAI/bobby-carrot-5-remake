@@ -15,12 +15,13 @@ function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
-    { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+    { type: options.surfaceType ?? EntityTypeId.GROUND_C, x: 0, y: 0 },
     {
       type: EntityTypeId.BOBBY,
       x: 0,
       y: 0,
       direction: options.direction ?? "right",
+      ...(options.state ? { state: options.state } : {}),
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -59,36 +60,90 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   );
 });
 
-test("Bobby walking progress drives one eight-frame directional strip", () => {
-  const composition = bobbyVisual({
+test("Bobby walking loops from movement frame four back to frame four", () => {
+  const start = bobbyVisual({
+    runtime: { offsetX: -1, moving: true, progress: 0 },
+  });
+  const middle = bobbyVisual({
     runtime: { offsetX: -0.5, moving: true, progress: 0.5 },
   });
-  assert.deepEqual(composition.layers[0], {
+  const end = bobbyVisual({
+    runtime: { offsetX: 0, moving: true, progress: 1 },
+  });
+  assert.equal(start.layers[0].frameIndex, 3);
+  assert.deepEqual(middle.layers[0], {
     kind: "image",
     asset: "bobby-right",
     frameColumns: 8,
     frameRows: 1,
-    frameProgress: 0.5,
+    frameIndex: 7,
+    anchor: "bottom",
+    offsetY: -12,
+  });
+  assert.equal(end.layers[0].frameIndex, 3);
+});
+
+test("Bobby Ice slide stays on movement frame seven", () => {
+  const composition = bobbyVisual({
+    direction: "left",
+    runtime: {
+      offsetX: 0.5,
+      moving: true,
+      progress: 0.5,
+      animation: "ice",
+      direction: "left",
+    },
+  });
+  assert.deepEqual(composition.layers[0], {
+    kind: "image",
+    asset: "bobby-left",
+    frameColumns: 8,
+    frameRows: 1,
+    frameIndex: 6,
     anchor: "bottom",
     offsetY: -12,
   });
 });
 
-test("Bobby idle switches to the three-frame b4 strip only after five seconds", () => {
+test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", () => {
+  const composition = bobbyVisual({
+    surfaceType: EntityTypeId.ICE,
+    direction: "right",
+    runtime: {
+      offsetX: 0,
+      moving: false,
+      progress: 1,
+      direction: "right",
+      stationarySinceMs: 1000,
+    },
+  });
+  assert.equal(composition.layers[0].asset, "bobby-right");
+  assert.equal(composition.layers[0].frameIndex, 6);
+});
+
+test("Bobby idle starts after five seconds and advances every 50ms", () => {
+  const runtime = { moving: false, progress: 1, stationarySinceMs: 1000 };
   const before = bobbyVisual({
-    runtime: { moving: false, progress: 1, stationarySinceMs: 1000 },
+    runtime,
     time: { frame: 299, nowMs: 5999, deltaMs: 16.6667 },
   });
   assert.equal(before.layers[0].asset, "bobby-right");
-  assert.equal(before.layers[0].frameIndex, 7);
+  assert.equal(before.layers[0].frameIndex, 3);
 
-  const idle = bobbyVisual({
-    runtime: { moving: false, progress: 1, stationarySinceMs: 1000 },
-    time: { frame: 300, nowMs: 6000, deltaMs: 16.6667 },
-  });
-  assert.equal(idle.layers[0].asset, "bobby-idle");
-  assert.equal(idle.layers[0].frameColumns, 3);
-  assert.equal(idle.layers[0].frameIndex, 0);
+  for (const [nowMs, expectedFrame] of [
+    [6000, 0],
+    [6050, 1],
+    [6100, 2],
+    [6150, 0],
+  ]) {
+    const idle = bobbyVisual({
+      runtime,
+      time: { frame: 300, nowMs, deltaMs: 50 },
+    });
+    assert.equal(idle.layers[0].asset, "bobby-idle");
+    assert.equal(idle.layers[0].frameColumns, 3);
+    assert.equal(idle.layers[0].frameIndex, expectedFrame);
+  }
 });
 
 test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () => {
@@ -105,13 +160,104 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
 test("Bobby mower cycles vertically inside the direction column", () => {
   const mower = bobbyVisual({
     direction: "up",
-    global: { ridingMower: true },
+    state: { mountId: 9 },
     time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
   });
   assert.equal(mower.layers[0].asset, "bobby-mower");
   assert.equal(mower.layers[0].frameColumns, 4);
   assert.equal(mower.layers[0].frameRows, 2);
   assert.equal(mower.layers[0].frameIndex, 6);
+});
+
+test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt cells", () => {
+  const full = bobbyVisual({
+    direction: "right",
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: {
+      offsetX: -0.5,
+      moving: true,
+      progress: 0.5,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.deepEqual(full.layers[0], {
+    kind: "image",
+    asset: "bobby-speed-trail",
+    frameColumns: 5,
+    frameRows: 2,
+    frameIndex: 8,
+    anchor: "bottom",
+    offsetX: -48,
+    offsetY: -12,
+  });
+  assert.equal(full.layers[1].asset, "bobby-right");
+
+  const normalFirstHalf = bobbyVisual({
+    direction: "up",
+    state: { speedBoost: { direction: "up", phase: "normal" } },
+    runtime: {
+      offsetY: 0.51,
+      moving: true,
+      progress: 0.75,
+      animation: "speed",
+      direction: "up",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(normalFirstHalf.layers[0].asset, "bobby-speed-trail");
+  assert.equal(normalFirstHalf.layers[0].offsetX, 0);
+  assert.equal(normalFirstHalf.layers[0].offsetY, 36);
+
+  const normalSecondHalf = bobbyVisual({
+    state: { speedBoost: { direction: "right", phase: "normal" } },
+    runtime: {
+      offsetX: -0.5,
+      moving: true,
+      progress: 0.25,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(normalSecondHalf.layers.length, 1);
+  assert.equal(normalSecondHalf.layers[0].asset, "bobby-right");
+
+  const slow = bobbyVisual({
+    state: { speedBoost: { direction: "right", phase: "slow" } },
+    runtime: {
+      offsetX: -0.9,
+      moving: true,
+      progress: 0.1,
+      animation: "speed",
+      direction: "right",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(slow.layers.length, 1);
+});
+
+test("accelerated mower uses the same one-cell-behind trail", () => {
+  const mower = bobbyVisual({
+    direction: "left",
+    state: {
+      mountId: 9,
+      speedBoost: { direction: "left", phase: "full" },
+    },
+    runtime: {
+      offsetX: 0.75,
+      moving: true,
+      progress: 0.25,
+      animation: "speed",
+      direction: "left",
+    },
+    time: { frame: 14, nowMs: 240, deltaMs: 16 },
+  });
+  assert.equal(mower.layers[0].asset, "bobby-speed-trail");
+  assert.equal(mower.layers[0].offsetX, 48);
+  assert.equal(mower.layers[0].offsetY, -12);
+  assert.equal(mower.layers[1].asset, "bobby-mower");
 });
 
 test("Bobby snowplow uses three rows inside the attempted direction column", () => {
@@ -132,7 +278,7 @@ test("Bobby snowplow uses three rows inside the attempted direction column", () 
 test("Bobby glider selects one of four direction columns", () => {
   const flight = bobbyVisual({
     direction: "left",
-    global: { forced: { kind: "flight", direction: "left" } },
+    state: { flying: true },
   });
   assert.equal(flight.layers[0].asset, "bobby-kite");
   assert.equal(flight.layers[0].frameColumns, 4);
@@ -154,6 +300,44 @@ test("VisualRuntime motion interpolation follows PresentationFrame milliseconds"
   assert.equal(runtime.isAnimating, true);
   runtime.update({ frame: 12, nowMs: 1100, deltaMs: 50 }, "linear");
   assert.equal(runtime.isAnimating, false);
+});
+
+test("mechanism-tagged spatial motion remains moving for Speed walking animation", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    175,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { animation: "speed", direction: "right" },
+  );
+  runtime.update({ frame: 1, nowMs: 1080, deltaMs: 80 }, "linear");
+  const state = runtime.inspectEntity(
+    { definition: () => ({ type: EntityTypeId.BOBBY }) },
+    7,
+  ).runtime;
+  assert.equal(state.moving, true);
+  assert.equal(state.animation, "speed");
+  assert.ok(state.progress > 0 && state.progress < 1);
+});
+
+test("completed motion stamps stationarySinceMs only once", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = { definition: () => ({ type: EntityTypeId.BOBBY }) };
+  runtime.beginMove(
+    7,
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    100,
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+  );
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.stationarySinceMs, 1100);
+
+  runtime.update({ frame: 2, nowMs: 2100, deltaMs: 1000 }, "linear");
+  runtime.update({ frame: 3, nowMs: 6100, deltaMs: 4000 }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.stationarySinceMs, 1100);
 });
 
 test("completed presentation motion can be rewound and replayed without changing World", () => {
@@ -195,7 +379,7 @@ test("hazard death presentation stops forty percent into the target cell", () =>
   assert.equal(runtime.isAnimating, false);
 });
 
-test("motion duration remains 132ms and is independent from WorldClock rate", () => {
+test("explicit presentation motion duration is independent from WorldClock rate", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(
     7,

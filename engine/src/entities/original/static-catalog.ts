@@ -48,6 +48,7 @@ function surface(
     {
       type,
       traits,
+      layer: "surface",
       stackOrder: SURFACE_STACK_ORDER,
       presentation: { name },
     },
@@ -65,6 +66,7 @@ function content(
     {
       type,
       traits,
+      layer: "object",
       stackOrder: CONTENT_STACK_ORDER,
       presentation: { name },
     },
@@ -84,12 +86,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     cell(12, 7),
   ),
   surface(EntityTypeId.EXIT, "Exit", cell(6, 9), ["walkable", "exit"]),
-  surface(
-    EntityTypeId.ICE,
-    "Ice",
-    cell(4, 9),
-    ["walkable", "forced-movement"],
-  ),
   surface(EntityTypeId.SHOP_DREAM, "Dream Shop", cell(7, 9)),
   surface(EntityTypeId.SHOP_CLOUD9, "Cloud 9 Shop", cell(8, 9)),
   surface(EntityTypeId.SHOP_SUPER_KEY, "Super Key Shop", cell(9, 9)),
@@ -115,6 +111,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
 const snowDefinition: EntityModuleDefinition = {
   type: EntityTypeId.SNOW,
   traits: ["snow", "shovelable", "blocking"],
+  layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
 };
@@ -122,6 +119,7 @@ const snowDefinition: EntityModuleDefinition = {
 const highGrassDefinition: EntityModuleDefinition = {
   type: EntityTypeId.HIGH_GRASS,
   traits: ["mowable", "blocking"],
+  layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
 };
@@ -129,6 +127,7 @@ const highGrassDefinition: EntityModuleDefinition = {
 const highGrassObjectiveDefinition: EntityModuleDefinition = {
   type: EntityTypeId.HIGH_GRASS_OBJECTIVE,
   traits: ["mowable", "blocking", "hidden-objective"],
+  layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass Objective" },
 };
@@ -142,24 +141,28 @@ export const staticCoverModules: readonly EntityModule[] = [
 const consumedCarrotDefinition: EntityModuleDefinition = {
   type: EntityTypeId.CONSUMED_CARROT,
   traits: [],
+  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Consumed Carrot" },
 };
 const carrotDefinition: EntityModuleDefinition = {
   type: EntityTypeId.CARROT,
   traits: ["collectible"],
+  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
 const emptyEggNestDefinition: EntityModuleDefinition = {
   type: EntityTypeId.EGG_NEST_EMPTY,
   traits: ["egg-nest"],
+  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Empty Egg Nest" },
 };
 const filledEggNestDefinition: EntityModuleDefinition = {
   type: EntityTypeId.EGG_NEST_FILLED,
   traits: ["egg-nest", "egg", "blocking"],
+  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Filled Egg Nest" },
 };

@@ -1,10 +1,7 @@
-import type { ForcedKind } from "../../world/GlobalState.js";
-
 export type MotionEasing = "linear" | "ease-in" | "ease-out" | "ease-in-out";
 
 export interface MotionPresentationTuning {
   normalMs: number;
-  forcedMs: Readonly<Record<ForcedKind, number>>;
   speedShoesScale: number;
   easing: MotionEasing;
 }
@@ -16,7 +13,6 @@ export interface PresentationTuning {
 export interface PresentationTuningOverride {
   motion?: {
     normalMs?: number;
-    forcedMs?: Partial<Record<ForcedKind, number>>;
     speedShoesScale?: number;
     easing?: MotionEasing;
   };
@@ -29,10 +25,6 @@ export function mergePresentationTuning(
   return {
     motion: {
       normalMs: override.motion?.normalMs ?? base.motion.normalMs,
-      forcedMs: {
-        ...base.motion.forcedMs,
-        ...override.motion?.forcedMs,
-      },
       speedShoesScale:
         override.motion?.speedShoesScale ?? base.motion.speedShoesScale,
       easing: override.motion?.easing ?? base.motion.easing,

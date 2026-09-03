@@ -1,22 +1,18 @@
+import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../../entities/player/BobbyLocomotion.js";
 import {
   mergePresentationTuning,
   type PresentationTuning,
   type PresentationTuningOverride,
 } from "./PresentationTuning.js";
 
-/** Bobby Carrot 5 原版观感的默认表现参数。只包含 presentation timing，不包含 gameplay rule。 */
+/**
+ * 原版表现默认跟随 Bobby 的 canonical locomotion cadence；presentation override
+ * 只改变视觉，不再反向决定 gameplay input lock / movement cadence。
+ */
 export const ORIGINAL_TUNING: PresentationTuning = {
   motion: {
-    normalMs: 132,
-    forcedMs: {
-      speed: 70,
-      ice: 88,
-      tide: 132,
-      flight: 94,
-      leaf: 115,
-      "mower-exit": 105,
-    },
-    speedShoesScale: 0.76,
+    normalMs: ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
+    speedShoesScale: ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
     easing: "linear",
   },
 };

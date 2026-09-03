@@ -2,8 +2,10 @@ import type { WorldTick } from "../../time/WorldClock.js";
 import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
+import type { WorldIntent } from "../movement/WorldIntent.js";
 import type {
   RuntimeActionId,
+  RuntimeActionInputDisposition,
   RuntimeActionInstance,
   RuntimeActionSchedulerSnapshot,
   RuntimeActionSpec,
@@ -24,13 +26,15 @@ export class RuntimeActionScheduler {
   }
 
   get inputBlocked(): boolean {
-    return [...this.actions.values()].some((action) => action.blocksInput === true);
+    return [...this.actions.values()].some(
+      (action) => action.blocksInput === true || action.focus !== undefined,
+    );
   }
 
-  /** 第一个声明 cameraTarget 的活跃 Action 获得焦点；顺序按稳定 action id。 */
+  /** 第一个声明 focus 的活跃 Action 获得镜头；顺序按稳定 action id。 */
   get cameraTarget(): EntityId | null {
     for (const action of [...this.actions.values()].sort((a, b) => a.id - b.id)) {
-      if (action.cameraTarget !== undefined) return action.cameraTarget;
+      if (action.focus) return action.focus.entityId;
     }
     return null;
   }
@@ -46,9 +50,7 @@ export class RuntimeActionScheduler {
         ? { ownerEntityId: spec.ownerEntityId }
         : {}),
       ...(spec.blocksInput !== undefined ? { blocksInput: spec.blocksInput } : {}),
-      ...(spec.cameraTarget !== undefined
-        ? { cameraTarget: spec.cameraTarget }
-        : {}),
+      ...(spec.focus ? { focus: structuredClone(spec.focus) } : {}),
       state: structuredClone(spec.state ?? {}),
     });
     return id;
@@ -64,11 +66,32 @@ export class RuntimeActionScheduler {
     }
   }
 
+  /** Input lock prevents movement, not observation by the gameplay process that owns the lock. */
+  observeIntents(
+    intents: readonly WorldIntent[],
+    query: WorldQueryApi,
+  ): RuntimeActionInputDisposition {
+    let disposition: RuntimeActionInputDisposition = "retry";
+    const ids = [...this.actions.keys()].sort((a, b) => a - b);
+    for (const id of ids) {
+      const action = this.actions.get(id);
+      if (!action) continue;
+      const definition = this.registry.require(action.kind);
+      if (!definition.onIntent) continue;
+      for (const intent of intents) {
+        const current = definition.onIntent({ action, intent, query });
+        if (current === "consumed") disposition = "consumed";
+      }
+    }
+    return disposition;
+  }
+
   update(
     time: WorldTick,
     query: WorldQueryApi,
     commands: WorldCommandApi,
-  ): void {
+  ): WorldIntent[] {
+    const intents: WorldIntent[] = [];
     const ids = [...this.actions.keys()].sort((a, b) => a - b);
     for (const id of ids) {
       const action = this.actions.get(id);
@@ -79,8 +102,12 @@ export class RuntimeActionScheduler {
         query,
         commands,
       });
-      if (result === "complete") this.actions.delete(id);
+      const status = typeof result === "string" ? result : result?.status;
+      if (typeof result === "object" && result?.intents)
+        intents.push(...result.intents.map((intent) => structuredClone(intent)));
+      if (status === "complete") this.actions.delete(id);
     }
+    return intents;
   }
 
   snapshot(): RuntimeActionSchedulerSnapshot {

@@ -73,6 +73,7 @@ export class SpatialIndex {
     const resolved = resolveFootprintCells(entity, definition.footprint);
     const presences: EntityPresence[] = [];
     const baseStackOrder = entity.stackOrder ?? definition.stackOrder ?? 0;
+    const layer = definition.layer ?? "object";
     resolved.forEach((part, index) => {
       const cell = { x: part.x, y: part.y };
       if (!this.inBounds(cell)) {
@@ -90,6 +91,7 @@ export class SpatialIndex {
       const presence: EntityPresence = {
         entityId: entity.id,
         cell,
+        layer,
         ...(part.role ? { role: part.role } : {}),
         traits,
         stackOrder: part.stackOrder ?? baseStackOrder + index,

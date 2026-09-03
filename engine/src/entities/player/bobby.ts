@@ -1,5 +1,9 @@
 import { EntityTypeId, type Direction } from "@bobby/model";
 import type {
+  ImageVisualLayer,
+  VisualResolveContext,
+} from "../../visual/VisualDefinition.js";
+import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
@@ -8,10 +12,20 @@ import {
   CONTENT_STACK_ORDER,
   originalModule,
 } from "../original/module.js";
+import {
+  BOBBY_INVENTORY_FIELDS,
+  bobbyMountId,
+  isBobbyFlying,
+  readBobbySpeedBoost,
+} from "./BobbyState.js";
 
 const BOBBY_OFFSET_Y = -12;
+const BOBBY_TILE_SIZE = 48;
 const BOBBY_IDLE_DELAY_MS = 5000;
-const BOBBY_SOURCE_FRAME_MS = 1000 / 60;
+const BOBBY_IDLE_FRAME_MS = 50;
+const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
+const BOBBY_STANDING_FRAME = 3;
+const BOBBY_ICE_FRAME = 6;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   left: 0,
   right: 1,
@@ -32,12 +46,14 @@ export const BOBBY_VISUAL_ASSETS = {
   mower: "bobby-mower",
   snowplow: "bobby-snowplow",
   kite: "bobby-kite",
+  speedTrail: "bobby-speed-trail",
 } as const;
 
 const definition: EntityModuleDefinition = {
   type: EntityTypeId.BOBBY,
   traits: ["player"],
   stackOrder: CONTENT_STACK_ORDER,
+  state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",
     renderPass: "player",
@@ -47,7 +63,8 @@ const definition: EntityModuleDefinition = {
 export const bobby: EntityModule = originalModule(definition, {
   id: EntityTypeId.BOBBY,
   resolve(context) {
-    const direction = context.runtime?.direction ?? context.entity.direction ?? "down";
+    const direction =
+      context.runtime?.direction ?? context.entity.direction ?? "down";
     const rawProgress = context.runtime?.progress ?? 1;
     const progress = clampProgress(rawProgress);
 
@@ -72,17 +89,34 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    if (context.global?.ridingMower) {
-      const row = (context.time?.frame ?? 0) % 2;
+    // 原版 Ice 全程固定在普通移动 strip 的第 7 帧。连续 Ice 格之间
+    // Runtime motion 会短暂回到 stationary，因此静止在 Ice 上也保持同一帧。
+    if (
+      context.runtime?.animation === "ice" ||
+      (!context.runtime?.moving && isStandingOnIce(context))
+    ) {
       return composition({
-        asset: BOBBY_VISUAL_ASSETS.mower,
-        frameColumns: 4,
-        frameRows: 2,
-        frameIndex: DIRECTION_COLUMN[direction] + row * 4,
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: BOBBY_ICE_FRAME,
       });
     }
 
-    if (context.global?.forced?.kind === "flight") {
+    if (bobbyMountId(context.entity.state) !== null) {
+      const row = (context.time?.frame ?? 0) % 2;
+      return composition(
+        {
+          asset: BOBBY_VISUAL_ASSETS.mower,
+          frameColumns: 4,
+          frameRows: 2,
+          frameIndex: DIRECTION_COLUMN[direction] + row * 4,
+        },
+        speedTrail(context, direction),
+      );
+    }
+
+    if (isBobbyFlying(context.entity.state)) {
       return composition({
         asset: BOBBY_VISUAL_ASSETS.kite,
         frameColumns: 4,
@@ -106,16 +140,89 @@ export const bobby: EntityModule = originalModule(definition, {
       }
     }
 
-    return composition({
-      asset: BOBBY_VISUAL_ASSETS.move[direction],
-      frameColumns: 8,
-      frameRows: 1,
-      ...(context.runtime?.moving
-        ? { frameProgress: progress }
-        : { frameIndex: 7 }),
-    });
+    return composition(
+      {
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: context.runtime?.moving
+          ? resolveWalkingFrame(rawProgress)
+          : BOBBY_STANDING_FRAME,
+      },
+      speedTrail(context, direction),
+    );
   },
 });
+
+function isStandingOnIce(context: VisualResolveContext): boolean {
+  return context.query.presencesAt(context.entity.anchor).some((presence) =>
+    context.query.entity(presence.entityId)?.type === EntityTypeId.ICE
+  );
+}
+
+/** 原版普通走路以第 4 帧为起止点：4,5,6,7,8,1,2,3,4。 */
+function resolveWalkingFrame(progress: number): number {
+  const normalized = Math.max(0, Math.min(1, progress));
+  const step = Math.min(8, Math.floor(normalized * 8));
+  return (BOBBY_STANDING_FRAME + step) % 8;
+}
+
+function speedTrail(
+  context: VisualResolveContext,
+  direction: Direction,
+): ImageVisualLayer | null {
+  const boost = readBobbySpeedBoost(context.entity.state);
+  if (!boost || boost.phase === "slow") return null;
+
+  // 离开加速板后的默认三格衰减中，尾焰只持续前 1.5 格：
+  // full 第一格完整显示；normal 第二格只显示实际位移的前半；slow 不显示。
+  // 这里依据空间 offset 而不是时间 progress，因此不受 presentation easing 影响。
+  if (
+    boost.phase === "normal" &&
+    !isInFirstHalfOfSpeedMotion(context, direction)
+  )
+    return null;
+
+  const frame =
+    Math.floor(
+      Math.max(0, context.time?.nowMs ?? 0) / BOBBY_SPEED_TRAIL_FRAME_MS,
+    ) % 5;
+  const offset = speedTrailOffset(direction);
+  return {
+    kind: "image",
+    asset: BOBBY_VISUAL_ASSETS.speedTrail,
+    frameColumns: 5,
+    frameRows: 2,
+    // mow.png 第二行的 5 帧是 Bobby / mower 共用的加速尾焰。
+    frameIndex: 5 + frame,
+    anchor: "bottom",
+    offsetX: offset.x,
+    offsetY: BOBBY_OFFSET_Y + offset.y,
+  };
+}
+
+function isInFirstHalfOfSpeedMotion(
+  context: VisualResolveContext,
+  direction: Direction,
+): boolean {
+  if (
+    context.runtime?.animation !== "speed" ||
+    context.runtime.moving !== true
+  )
+    return false;
+  const remaining =
+    direction === "left" || direction === "right"
+      ? Math.abs(context.runtime.offsetX ?? 0)
+      : Math.abs(context.runtime.offsetY ?? 0);
+  return remaining > 0.5;
+}
+
+function speedTrailOffset(direction: Direction): { x: number; y: number } {
+  if (direction === "left") return { x: BOBBY_TILE_SIZE, y: 0 };
+  if (direction === "right") return { x: -BOBBY_TILE_SIZE, y: 0 };
+  if (direction === "up") return { x: 0, y: BOBBY_TILE_SIZE };
+  return { x: 0, y: -BOBBY_TILE_SIZE };
+}
 
 function composition(
   frame: {
@@ -125,16 +232,16 @@ function composition(
     frameIndex?: number;
     frameProgress?: number;
   },
+  background: ImageVisualLayer | null = null,
 ) {
+  const foreground: ImageVisualLayer = {
+    kind: "image",
+    ...frame,
+    anchor: "bottom",
+    offsetY: BOBBY_OFFSET_Y,
+  };
   return {
-    layers: [
-      {
-        kind: "image" as const,
-        ...frame,
-        anchor: "bottom" as const,
-        offsetY: BOBBY_OFFSET_Y,
-      },
-    ],
+    layers: background ? [background, foreground] : [foreground],
   };
 }
 
@@ -145,5 +252,9 @@ function resolveIdleFrame(
   if (stationarySinceMs === undefined || nowMs === undefined) return null;
   const idleMs = Math.max(0, nowMs - stationarySinceMs);
   if (idleMs < BOBBY_IDLE_DELAY_MS) return null;
-  return Math.floor((idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_SOURCE_FRAME_MS) % 3;
+  return (
+    Math.floor(
+      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
+    ) % 3
+  );
 }

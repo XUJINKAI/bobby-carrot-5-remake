@@ -1,14 +1,16 @@
 import type { Direction } from "@bobby/model";
 
-export type ContinuousInputSource = "keyboard" | "joystick" | "external";
+/** Logical input channel. InputController may use arrows/wasd/joystick/external independently. */
+export type ContinuousInputSource = string;
 
 export interface HeldDirectionInput {
   source: ContinuousInputSource;
   direction: Direction;
+  /** Optional extra delay only between the first and second held move. */
   initialRepeatDelayMs: number;
 }
 
-export type HeldMoveAttempt = "moved" | "blocked" | "busy";
+export type HeldMoveAttempt = "moved" | "blocked" | "busy" | "consumed";
 
 type PendingAttempt = {
   input: HeldDirectionInput;
@@ -17,9 +19,7 @@ type PendingAttempt = {
 
 /**
  * 持续方向输入的统一 repeat 状态机。
- *
- * 输入事件只更新 held state；update() 只在世界 Tick 上产出一个待尝试方向，
- * 调用方完成语义移动后通过 resolveAttempt() 回填结果。这样 Input 不再直接修改 Game。
+ * 输入事件只更新 held state；update() 只在世界 Tick 上产出一个待尝试方向。
  */
 export class HeldDirectionRepeater {
   private heldInput: HeldDirectionInput | null = null;
@@ -38,12 +38,21 @@ export class HeldDirectionRepeater {
       : null;
     if (this.sameInput(this.heldInput, normalized)) return;
 
+    // A key/touch pressed and released before its first WorldTick attempt must still
+    // produce exactly one move. Once gameplay has already seen that initial attempt
+    // (moved/busy/etc.), physical release must cancel further retries.
+    if (!normalized && this.pendingInitialInput && !this.initialMoveDone) {
+      this.heldInput = null;
+      this.blocked = false;
+      return;
+    }
+
     this.heldInput = normalized;
     this.pendingAttempt = null;
     this.initialMoveDone = false;
     this.elapsedAfterInitialMoveMs = 0;
     this.blocked = false;
-    if (normalized) this.pendingInitialInput = normalized;
+    this.pendingInitialInput = normalized;
   }
 
   reset(): void {
@@ -55,7 +64,6 @@ export class HeldDirectionRepeater {
     this.blocked = false;
   }
 
-  /** 当前世界 Tick 是否应尝试移动；一次 update 最多返回一个方向。 */
   update(deltaMs: number): Direction | null {
     if (this.pendingAttempt) return null;
 
@@ -70,36 +78,40 @@ export class HeldDirectionRepeater {
     if (!this.heldInput || !this.initialMoveDone || this.blocked) return null;
 
     this.elapsedAfterInitialMoveMs += Math.max(0, deltaMs);
-    if (
-      this.elapsedAfterInitialMoveMs < this.heldInput.initialRepeatDelayMs
-    )
+    if (this.elapsedAfterInitialMoveMs < this.heldInput.initialRepeatDelayMs)
       return null;
 
     this.pendingAttempt = { input: this.heldInput, initial: false };
     return this.heldInput.direction;
   }
 
-  /** 回填刚才 update() 产出的移动结果。 */
   resolveAttempt(result: HeldMoveAttempt): void {
     const attempt = this.pendingAttempt;
     if (!attempt) return;
     this.pendingAttempt = null;
 
     if (attempt.initial) {
-      if (result === "busy") return;
       this.pendingInitialInput = null;
-      if (result === "blocked") {
+
+      if (result === "blocked" || result === "consumed") {
         if (this.sameInput(this.heldInput, attempt.input)) this.blocked = true;
         return;
       }
+
       if (this.sameInput(this.heldInput, attempt.input)) {
+        // `busy` means gameplay already observed this physical input but could not
+        // execute it yet. Continue retrying only while the key/touch remains held;
+        // releasing it must end the retry immediately.
         this.initialMoveDone = true;
         this.elapsedAfterInitialMoveMs = 0;
       }
       return;
     }
 
-    if (result === "blocked" && this.sameInput(this.heldInput, attempt.input))
+    if (
+      (result === "blocked" || result === "consumed") &&
+      this.sameInput(this.heldInput, attempt.input)
+    )
       this.blocked = true;
   }
 

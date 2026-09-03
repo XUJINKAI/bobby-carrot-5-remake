@@ -1,37 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {
+  ORIGINAL_BOBBY_LOCOMOTION_TIMING,
+  resolveBobbyLocomotionTiming,
+} from "../dist/entities/player/BobbyLocomotion.js";
 import { applyMotionEasing } from "../dist/visual/tuning/PresentationTuning.js";
 import {
   ORIGINAL_TUNING,
   resolveOriginalTuning,
 } from "../dist/visual/tuning/original.js";
 
-test("ORIGINAL_TUNING owns visual motion timing instead of Game literals", () => {
-  assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.speed, 70);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.ice, 88);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.tide, 132);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.flight, 94);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs.leaf, 115);
-  assert.equal(ORIGINAL_TUNING.motion.forcedMs["mower-exit"], 105);
-  assert.equal(ORIGINAL_TUNING.motion.speedShoesScale, 0.76);
+test("Bobby owns the canonical original locomotion cadence", () => {
+  assert.equal(ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs, 350);
+  assert.equal(
+    ORIGINAL_TUNING.motion.normalMs,
+    ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
+  );
+  assert.equal(
+    ORIGINAL_TUNING.motion.speedShoesScale,
+    ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
+  );
   assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
 });
 
-test("runtime tuning override is partial and keeps the remaining original profile", () => {
-  const tuned = resolveOriginalTuning({
+test("presentation override does not mutate canonical Bobby gameplay timing", () => {
+  const presentation = resolveOriginalTuning({
     motion: {
-      normalMs: 120,
-      forcedMs: { ice: 80 },
+      normalMs: 20,
       easing: "ease-in-out",
     },
   });
-  assert.equal(tuned.motion.normalMs, 120);
-  assert.equal(tuned.motion.forcedMs.ice, 80);
-  assert.equal(tuned.motion.forcedMs.speed, 70);
-  assert.equal(tuned.motion.speedShoesScale, 0.76);
-  assert.equal(tuned.motion.easing, "ease-in-out");
-  assert.equal(ORIGINAL_TUNING.motion.normalMs, 132);
+  const gameplay = resolveBobbyLocomotionTiming();
+
+  assert.equal(presentation.motion.normalMs, 20);
+  assert.equal(gameplay.moveMs, 350);
+});
+
+test("Bobby gameplay cadence can be overridden independently from presentation", () => {
+  const bobby = resolveBobbyLocomotionTiming({ moveMs: 420 });
+  assert.equal(bobby.moveMs, 420);
+  assert.equal(ORIGINAL_TUNING.motion.normalMs, 350);
 });
 
 test("motion easing remains pure presentation math", () => {
