@@ -48,12 +48,25 @@ const carouselVariants: readonly EditorEntityVariant[] = [
   { label: "Horizontal", state: { variant: "horizontal" } },
 ];
 
+const surface: EditorEntityDefinition = { replaceGroup: "surface" };
 const cover: EditorEntityDefinition = { replaceGroup: "cover" };
 const item: EditorEntityDefinition = { replaceGroup: "item" };
 const directionalMechanism: EditorEntityDefinition = {
   defaultDirection: "right",
   variants: directions,
 };
+const directSurfaceTypes: readonly EntityType[] = [
+  EntityTypeId.GROUND_A,
+  EntityTypeId.GROUND_B,
+  EntityTypeId.GROUND_C,
+  EntityTypeId.GROUND_D,
+  EntityTypeId.ICE,
+  EntityTypeId.WATER,
+  EntityTypeId.WATER_ANIMATED,
+  EntityTypeId.WATER_VARIANT_1,
+  EntityTypeId.WATER_VARIANT_2,
+  EntityTypeId.WATER_VARIANT_3,
+];
 
 export const builtinEditorDefinition: EditorDefinition = {
   exclude: [
@@ -67,6 +80,7 @@ export const builtinEditorDefinition: EditorDefinition = {
     { prefix: "object-variant-" },
   ],
   entities: {
+    ...withPolicy(directSurfaceTypes, surface),
     ...withPolicy(
       [
         EntityTypeId.SNOW,
