@@ -48,7 +48,10 @@ import type {
   WorldEvent,
 } from "../world/WorldTypes.js";
 import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
-import type { EntityId } from "../world/entity/EntityInstance.js";
+import type {
+  CellPosition,
+  EntityId,
+} from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
   WorldIntentGroup,
@@ -57,6 +60,7 @@ import type {
   EntityMotion,
   WorldStepResult,
 } from "../world/movement/WorldStepResult.js";
+import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import {
   DEFAULT_HISTORY_POLICY,
   shouldCheckpoint,
@@ -124,6 +128,7 @@ export class Game {
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
+  private debugExternalActorId: EntityId | null = null;
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private animationFrame = 0;
@@ -172,7 +177,7 @@ export class Game {
       ? new InputController(this, options.runtime.input)
       : null;
     this.debugRuntime = new DebugRuntime(options.canvas, {
-      snapshot: (selection) =>
+      snapshot: (selection, actorId) =>
         buildDebugSnapshot({
           world: this.worldValue,
           scene: this.lastScene,
@@ -181,6 +186,7 @@ export class Game {
           presentationClock: this.presentationClock,
           timing: this.timing,
           input: this.inputController?.inspectMovement() ?? null,
+          actorId,
           selection,
         }),
       inspectPoint: (clientX, clientY) =>
@@ -188,7 +194,9 @@ export class Game {
       pause: () => this.pauseDebugClock(),
       resume: () => this.resumeDebugClock(),
       step: (count) => this.stepDebugClock(count),
-      setHeldDirection: (direction) => this.setHeldDirection(direction),
+      setHeldDirection: (actorId, direction) =>
+        this.setDebugHeldDirection(actorId, direction),
+      teleportActor: (actorId, cell) => this.debugTeleportActor(actorId, cell),
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
@@ -303,6 +311,7 @@ export class Game {
     this.history.length = 0;
     this.future.length = 0;
     this.pendingHistorySnapshot = null;
+    this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.visual.clear();
@@ -399,6 +408,7 @@ export class Game {
     this.history.length = 0;
     this.future.length = 0;
     this.pendingHistorySnapshot = null;
+    this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.resetVisualMotion();
@@ -721,11 +731,7 @@ export class Game {
     const claimedActors = new Set<EntityId>();
 
     for (const move of input.moves) {
-      const group = resolveControlInput(
-        this.controlBindings,
-        move.source,
-        move.direction,
-      );
+      const group = this.resolveRuntimeControlInput(move.source, move.direction);
       const actorIds: EntityId[] = [];
       for (const intent of group.intents) {
         if (claimedActors.has(intent.actorId)) continue;
@@ -782,6 +788,24 @@ export class Game {
       : "busy";
   }
 
+  private resolveRuntimeControlInput(
+    source: string,
+    direction: Direction,
+  ): WorldIntentGroup {
+    if (source === "external" && this.debugExternalActorId !== null)
+      return resolveControlInput(
+        [
+          {
+            input: "external",
+            targets: [{ entityId: this.debugExternalActorId }],
+          },
+        ],
+        source,
+        direction,
+      );
+    return resolveControlInput(this.controlBindings, source, direction);
+  }
+
   private applyDirectHeldInput(): void {
     if (
       !this.heldDirection ||
@@ -791,8 +815,7 @@ export class Game {
       this.world.completed
     )
       return;
-    const group = resolveControlInput(
-      this.controlBindings,
+    const group = this.resolveRuntimeControlInput(
       "external",
       this.heldDirection,
     );
@@ -804,6 +827,46 @@ export class Game {
     const result = this.startLogicalStep(group);
     if (!result?.moves.some((move) => move.moved))
       this.heldDirectionBlocked = true;
+  }
+
+  private setDebugHeldDirection(
+    actorId: EntityId,
+    direction: Direction | null,
+  ): void {
+    if (direction === null) {
+      if (this.debugExternalActorId === actorId)
+        this.debugExternalActorId = null;
+      this.setHeldDirection(null);
+      return;
+    }
+    this.debugExternalActorId = actorId;
+    this.setHeldDirection(direction);
+  }
+
+  private debugTeleportActor(actorId: EntityId, cell: CellPosition): boolean {
+    if (!this.debugValue || !this.worldValue) return false;
+    const actor = this.world.entities.get(actorId);
+    if (!actor || !this.actorIds.includes(actorId)) return false;
+    const definition = this.world.definition(actorId);
+    const footprint = resolveFootprintCells(
+      {
+        anchor: cell,
+        ...(actor.direction ? { direction: actor.direction } : {}),
+      },
+      definition.footprint,
+    );
+    if (!footprint.every((part) => this.world.spatial.inBounds(part)))
+      return false;
+
+    this.world.actions.cancelOwnedBy(actorId);
+    this.pendingHistorySnapshot = null;
+    if (this.debugExternalActorId === actorId)
+      this.setDebugHeldDirection(actorId, null);
+    this.world.spatial.moveEntity(actorId, cell);
+    this.visual.clearEntity(actorId);
+    this.lastMove = null;
+    this.lastWorldEvents = [];
+    return true;
   }
 
   private resetVisualMotion(): void {
