@@ -144,16 +144,26 @@ test("Debug snapshot defaults selection to the top Presence", () => {
   assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
 });
 
-test("Debug uses a left control rail and right state inspector", () => {
+test("Debug uses docked control and info panes behind a persistent tool strip", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
   assert.match(source, /type DebugTab = "actor" \| "timeline" \| "inspect"/);
   assert.match(source, /engine-debug-control-rail/);
-  assert.match(source, /Engine Debug Controls/);
-  assert.match(source, /private readonly controlRoot/);
-  assert.match(source, /private readonly sidebarBody/);
+  assert.match(source, /engine-debug-sidebar/);
+  assert.match(source, /engine-debug-tool-strip/);
+  assert.match(source, /TOOL_STRIP_WIDTH = 44/);
+  assert.match(source, /CONTROL_PANE_WIDTH = 220/);
+  assert.match(source, /INFO_PANE_WIDTH = 440/);
+  assert.match(source, /this\.controlVisible = !this\.controlVisible/);
+  assert.match(source, /this\.infoVisible = !this\.infoVisible/);
+  assert.match(source, /createGameplayRightInset/);
+  assert.match(source, /this\.gameplayInset\.set\(dockWidth\)/);
+  assert.match(source, /layoutChanged/);
+  assert.doesNotMatch(source, /toggleControlCollapsed/);
+  assert.doesNotMatch(source, /toggleSidebarCollapsed/);
+  assert.doesNotMatch(source, /Close Engine Debug/);
   assert.match(source, /private readonly worldPauseResumeButton/);
   assert.match(source, /private readonly worldStepButton/);
   assert.match(source, /private readonly presentationPauseResumeButton/);
@@ -163,8 +173,6 @@ test("Debug uses a left control rail and right state inspector", () => {
   assert.match(source, /private readonly nextChangeButton/);
   assert.match(source, /private readonly controlActorSelect/);
   assert.match(source, /Double-click map: teleport selected actor/);
-  assert.match(source, /toggleControlCollapsed/);
-  assert.match(source, /toggleSidebarCollapsed/);
   assert.match(source, /\["actor", "Actor"\]/);
   assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
@@ -176,6 +184,21 @@ test("Debug uses a left control rail and right state inspector", () => {
   assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);
+});
+
+test("Debug dock reserves actual gameplay width and HUD follows the same inset", () => {
+  const mountSource = fs.readFileSync(
+    new URL("../src/ui/gameplayMount.ts", import.meta.url),
+    "utf8",
+  );
+  const hudSource = fs.readFileSync(
+    new URL("../src/ui/GameplayHudView.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(mountSource, /--engine-gameplay-right-inset/);
+  assert.match(mountSource, /canvas\.style\.width = `calc\(100% - var\(/);
+  assert.match(hudSource, /GAMEPLAY_RIGHT_INSET_CSS_VAR/);
+  assert.match(hudSource, /right: `calc\(12px \+ var\(/);
 });
 
 test("Debug Sidebar keeps details DOM stable during presentation refresh", () => {
@@ -219,6 +242,7 @@ test("Debug Runtime supports selected-actor teleport and semantic sprite steppin
   assert.match(source, /stepPresentationToNextSprite/);
   assert.match(source, /spriteSignature/);
   assert.match(source, /stepPresentationToNextChange/);
+  assert.match(source, /layoutChanged: \(\) => this\.host\.requestRender\(\)/);
   assert.match(source, /for \(let frame = 0; frame < 240; frame \+= 1\)/);
   assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
   assert.match(source, /category: "input"/);
