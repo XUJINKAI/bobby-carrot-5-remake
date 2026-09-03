@@ -1,10 +1,14 @@
 import type { CellInspection } from "../world/WorldTypes.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { DebugSidebar } from "./DebugSidebar.js";
+import { DebugTraceRecorder, type DebugTraceRecord } from "./DebugTrace.js";
 import type { DebugSelection, DebugSnapshot } from "./DebugSnapshot.js";
 
 export interface DebugRuntimeHost {
-  snapshot(selection: DebugSelection | null): DebugSnapshot;
+  snapshot(
+    selection: DebugSelection | null,
+    trace: ReturnType<DebugTraceRecorder["snapshot"]>,
+  ): DebugSnapshot;
   inspectPoint(clientX: number, clientY: number): CellInspection | null;
   pause(): void;
   resume(): void;
@@ -12,6 +16,7 @@ export interface DebugRuntimeHost {
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
+  stepPresentationToNextChange(): void;
   close(): void;
   selectionChanged(cell: CellPosition | null): void;
   requestRender(): void;
@@ -22,10 +27,11 @@ interface PointerStart {
   y: number;
 }
 
-/** Debug Sidebar、Cell selection 与两套 Clock controls 的 Engine 内部协调器。 */
+/** Debug Sidebar、Cell selection、trace 与两套 Clock controls 的 Engine 内部协调器。 */
 export class DebugRuntime {
   private sidebar: DebugSidebar | null = null;
   private readonly pointerStarts = new Map<number, PointerStart>();
+  private readonly trace = new DebugTraceRecorder(50);
   private selection: DebugSelection | null = null;
   private enabled = false;
 
@@ -50,9 +56,21 @@ export class DebugRuntime {
     this.host.selectionChanged(null);
   }
 
+  clearTrace(): void {
+    this.trace.clear();
+    this.host.requestRender();
+  }
+
+  record(record: DebugTraceRecord): void {
+    if (!this.enabled) return;
+    this.trace.record(record);
+  }
+
   render(): void {
     if (!this.enabled) return;
-    this.ensureSidebar().render(this.host.snapshot(this.selection));
+    this.ensureSidebar().render(
+      this.host.snapshot(this.selection, this.trace.snapshot()),
+    );
   }
 
   destroy(): void {
@@ -68,9 +86,13 @@ export class DebugRuntime {
       this.sidebar = new DebugSidebar(this.canvas, {
         pauseWorld: () => this.host.pause(),
         resumeWorld: () => this.host.resume(),
+        stepWorld: () => this.host.step(1),
         pausePresentation: () => this.host.pausePresentation(),
         resumePresentation: () => this.host.resumePresentation(),
         stepPresentation: (frames) => this.host.stepPresentation(frames),
+        stepPresentationToNextChange: () =>
+          this.host.stepPresentationToNextChange(),
+        clearTrace: () => this.clearTrace(),
         close: () => this.host.close(),
         selectEntity: (entityId) => this.selectEntity(entityId),
       });
