@@ -18,6 +18,8 @@ interface VisualMotion {
   endOffsetY: number;
   startedAtMs: number;
   durationMs: number;
+  /** Spatial movement stays moving even when a mechanism supplies an animation name. */
+  moving: boolean;
   animation?: string;
   direction?: Direction;
 }
@@ -67,6 +69,7 @@ export class VisualRuntime {
       { x: 0, y: 0 },
       durationMs,
       frame,
+      true,
       options.animation,
       options.direction,
     );
@@ -89,6 +92,7 @@ export class VisualRuntime {
       { x: deltaX * (1 - ratio), y: deltaY * (1 - ratio) },
       durationMs,
       frame,
+      false,
       "death",
     );
   }
@@ -106,6 +110,7 @@ export class VisualRuntime {
       { x: 0, y: 0 },
       durationMs,
       frame,
+      false,
       animation,
       direction,
     );
@@ -170,6 +175,7 @@ export class VisualRuntime {
     endOffset: { x: number; y: number },
     durationMs: number,
     frame: PresentationFrame,
+    moving: boolean,
     animation?: string,
     direction?: Direction,
   ): void {
@@ -181,6 +187,7 @@ export class VisualRuntime {
       endOffsetY: endOffset.y,
       startedAtMs: frame.nowMs,
       durationMs: Math.max(0, durationMs),
+      moving,
       ...(animation ? { animation } : {}),
       ...(direction ? { direction } : {}),
     };
@@ -201,8 +208,11 @@ export class VisualRuntime {
         : Math.min(1, elapsedMs / motion.durationMs);
     const progress = applyMotionEasing(rawProgress, easing);
     if (rawProgress >= 1) {
-      this.activeMotionIds.delete(motion.entityId);
-      this.finishMotion(motion, frame);
+      // Completed motions stay in `motions` for presentation-clock rewind. Only the
+      // active -> stationary transition may stamp stationarySinceMs; later frames
+      // must not keep resetting the idle timer.
+      if (this.activeMotionIds.delete(motion.entityId))
+        this.finishMotion(motion, frame);
       return;
     }
     this.activeMotionIds.add(motion.entityId);
@@ -221,7 +231,7 @@ export class VisualRuntime {
       offsetY:
         motion.startOffsetY +
         (motion.endOffsetY - motion.startOffsetY) * positionProgress,
-      moving: motion.animation === undefined,
+      moving: motion.moving,
       progress: animationProgress,
       ...(motion.animation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
