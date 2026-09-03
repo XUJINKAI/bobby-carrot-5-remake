@@ -1,4 +1,4 @@
-import { materializeSurfaceVariants } from "../authoring/surfaceAuthoring.js";
+import { materializeSurfaceVariants } from "../authoring/surfacePersistence.js";
 import { normalizeEditorLevel } from "./editorLevel.js";
 import type { EditorMap } from "./types.js";
 
