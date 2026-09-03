@@ -51,12 +51,12 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
   const next = placeEntity(
     catalog,
     { type: EntityTypeId.SPEED, direction: "right" },
-    { x: 2, y: 2 },
+    { x: 1, y: 1 },
     {},
     builtinEditorDefinition,
   ).apply(level);
 
-  const cell = next.entities.filter((entity) => entity.x === 2 && entity.y === 2);
+  const cell = next.entities.filter((entity) => entity.x === 1 && entity.y === 1);
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.GROUND_C), true);
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.SPEED), true);
 });
