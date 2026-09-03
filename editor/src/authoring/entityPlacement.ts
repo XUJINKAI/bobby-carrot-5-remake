@@ -74,7 +74,9 @@ export function resolvePlacement(
   }
 
   const replaceGroup = authoring?.replaceGroup;
-  if (!replaceGroup) return { entity, cells, replace: [], valid: true };
+  if (!replaceGroup || replaceGroup === "surface") {
+    return { entity, cells, replace: [], valid: true };
+  }
   const preview = new EditorPreview(level, catalog);
   const replace = new Map<number, EntityRef>();
   for (const cell of cells) {
