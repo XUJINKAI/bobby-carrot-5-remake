@@ -87,6 +87,25 @@ Ice.onEnter
 
 这样撞墙会自然终止，滑入下一块 Ice 会由新的 `onEnter` 建立下一段 Action，且多 Bobby 时 Action 只驱动自己的 owner。
 
+Entity-specific RuntimeAction 应与对应 `EntityModule` 共置并由 builtin module registry 组合；`world/action/builtinActions.ts` 只保留 delay / delayed-move 之类与具体机关无关的通用过程。
+
+### Locked input observation
+
+`blocksInput` 表示 controlled input 不能直接推进 actor，但并不等于该输入对 gameplay 过程不可见。少数原版机制需要观察被锁住期间的玩家意图，例如 Speed 在全速段需要记住“是否按过同方向”。
+
+因此 RuntimeAction 可以声明 `onIntent`：
+
+```text
+InputController
+  -> ControlBinding -> semantic player MoveIntent
+  -> World.observeIntents
+  -> RuntimeAction.onIntent
+```
+
+这个入口只允许 Action 修改自己的 snapshot state；它不能执行 movement，也不能直接修改 EntityStore。真正的移动仍只能由 Action 后续 `update()` 产生 semantic intent，再交回 `World.step()`。
+
+这样 InputController 不需要知道 Speed / Ice 等机关，RuntimeAction 也不需要反向读取键盘、摇杆或 DOM 状态。
+
 ## WorldTick phase barriers
 
 一个 WorldTick 使用稳定的 phase barrier：
@@ -146,3 +165,4 @@ Undo 边界属于玩家发起的 semantic intent group，而不是 `forced: bool
 7. Actor-local state 不得通过 GlobalState 模拟；多 actor 时同一物品或载具能力不能串到另一只 actor。
 8. Entity-specific cadence 不属于 `time/`；clock sampling 与 gameplay policy 必须分离。
 9. WorldTick phase 之间必须 commit；后续 phase 不得继续读取前一 phase 的旧世界。
+10. Locked controlled intent 可以被 RuntimeAction 观察，但 observation 只能修改 Action 自身 state，不能成为绕过 World resolver 的第二条 gameplay 写入通道。
