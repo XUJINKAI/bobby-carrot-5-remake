@@ -625,11 +625,13 @@ function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
   const first = group?.variants[0]?.type;
   const second = group?.variants[1]?.type ?? first;
   if (!first) return brush;
+  const exact =
+    brush.exact && group.variants.some((variant) => variant.type === brush.exact)
+      ? brush.exact
+      : first;
   return {
     ...brush,
-    exact: group.variants.some((variant) => variant.type === brush.exact)
-      ? brush.exact
-      : first,
+    exact,
     alternate: [
       group.variants.some((variant) => variant.type === brush.alternate?.[0])
         ? brush.alternate![0]
