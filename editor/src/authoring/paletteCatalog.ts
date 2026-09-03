@@ -9,6 +9,7 @@ import type {
   EditorPlacementPreset,
 } from "../definitions/types.js";
 import { resolveEditorEntityPreviewLayout } from "./entityPreview.js";
+import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
@@ -29,13 +30,18 @@ export function resolveEditorPalette(
   editor: EditorDefinition = builtinEditorDefinition,
 ): ResolvedPaletteGroup[] {
   const used = new Set<EntityType>();
-  const groups = editor.palette.groups.map((group) =>
-    resolveGroup(group, catalog, editor, used),
-  );
+  const groups = editor.palette.groups
+    .map((group) => resolveGroup(group, catalog, editor, used))
+    .filter((group) => group.rows.some((row) => row.length > 0));
   const ungrouped = catalog
     .all()
     .map((definition) => definition.type)
-    .filter((type) => isEditorEntityCreatable(editor, type) && !used.has(type))
+    .filter(
+      (type) =>
+        isEditorEntityCreatable(editor, type) &&
+        !isSurfaceEntityType(type) &&
+        !used.has(type),
+    )
     .sort((a, b) => a.localeCompare(b));
   if (ungrouped.length > 0) {
     groups.push({
@@ -94,15 +100,17 @@ function resolveGroup(
     id: group.id,
     label: group.label,
     rows: group.rows.map((row, rowIndex) =>
-      row.map((entry, columnIndex) => {
-        used.add(entry.type);
-        return resolveEntry(
-          entry,
-          catalog,
-          editor,
-          `${group.id}/${rowIndex}/${columnIndex}`,
-        );
-      }),
+      row
+        .filter((entry) => !isSurfaceEntityType(entry.type))
+        .map((entry, columnIndex) => {
+          used.add(entry.type);
+          return resolveEntry(
+            entry,
+            catalog,
+            editor,
+            `${group.id}/${rowIndex}/${columnIndex}`,
+          );
+        }),
     ),
   };
 }
