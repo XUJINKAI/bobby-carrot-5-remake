@@ -186,7 +186,7 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
   assert.match(source, /Resolved layers/);
 });
 
-test("Debug dock reserves actual gameplay width and HUD follows the same inset", () => {
+test("Debug dock reserves actual gameplay width and floating controls follow the same inset", () => {
   const mountSource = fs.readFileSync(
     new URL("../src/ui/gameplayMount.ts", import.meta.url),
     "utf8",
@@ -195,10 +195,16 @@ test("Debug dock reserves actual gameplay width and HUD follows the same inset",
     new URL("../src/ui/GameplayHudView.ts", import.meta.url),
     "utf8",
   );
+  const joystickSource = fs.readFileSync(
+    new URL("../src/input/ScreenJoystick.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(mountSource, /--engine-gameplay-right-inset/);
   assert.match(mountSource, /canvas\.style\.width = `calc\(100% - var\(/);
   assert.match(hudSource, /GAMEPLAY_RIGHT_INSET_CSS_VAR/);
   assert.match(hudSource, /right: `calc\(12px \+ var\(/);
+  assert.match(joystickSource, /GAMEPLAY_RIGHT_INSET_CSS_VAR/);
+  assert.match(joystickSource, /right: `var\(\$\{GAMEPLAY_RIGHT_INSET_CSS_VAR\}, 0px\)`/);
 });
 
 test("Debug Sidebar keeps details DOM stable during presentation refresh", () => {
