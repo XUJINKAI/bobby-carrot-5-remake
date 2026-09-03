@@ -1,14 +1,11 @@
 import type { CellInspection } from "../world/WorldTypes.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { DebugSidebar } from "./DebugSidebar.js";
-import { DebugTraceRecorder, type DebugTraceRecord } from "./DebugTrace.js";
+import { DebugTraceRecorder } from "./DebugTrace.js";
 import type { DebugSelection, DebugSnapshot } from "./DebugSnapshot.js";
 
 export interface DebugRuntimeHost {
-  snapshot(
-    selection: DebugSelection | null,
-    trace: ReturnType<DebugTraceRecorder["snapshot"]>,
-  ): DebugSnapshot;
+  snapshot(selection: DebugSelection | null): DebugSnapshot;
   inspectPoint(clientX: number, clientY: number): CellInspection | null;
   pause(): void;
   resume(): void;
@@ -16,7 +13,6 @@ export interface DebugRuntimeHost {
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
-  stepPresentationToNextChange(): void;
   close(): void;
   selectionChanged(cell: CellPosition | null): void;
   requestRender(): void;
@@ -33,6 +29,7 @@ export class DebugRuntime {
   private readonly pointerStarts = new Map<number, PointerStart>();
   private readonly trace = new DebugTraceRecorder(50);
   private selection: DebugSelection | null = null;
+  private previousSnapshot: DebugSnapshot | null = null;
   private enabled = false;
 
   constructor(
@@ -48,6 +45,7 @@ export class DebugRuntime {
     this.enabled = enabled;
     if (enabled) this.ensureSidebar().setEnabled(true);
     else this.sidebar?.setEnabled(false);
+    this.previousSnapshot = null;
     this.host.selectionChanged(enabled ? (this.selection?.cell ?? null) : null);
   }
 
@@ -56,21 +54,12 @@ export class DebugRuntime {
     this.host.selectionChanged(null);
   }
 
-  clearTrace(): void {
-    this.trace.clear();
-    this.host.requestRender();
-  }
-
-  record(record: DebugTraceRecord): void {
-    if (!this.enabled) return;
-    this.trace.record(record);
-  }
-
   render(): void {
     if (!this.enabled) return;
-    this.ensureSidebar().render(
-      this.host.snapshot(this.selection, this.trace.snapshot()),
-    );
+    const snapshot = this.host.snapshot(this.selection);
+    this.captureSnapshotDiff(snapshot);
+    this.ensureSidebar().render({ ...snapshot, trace: this.trace.snapshot() });
+    this.previousSnapshot = structuredClone(snapshot);
   }
 
   destroy(): void {
@@ -90,14 +79,92 @@ export class DebugRuntime {
         pausePresentation: () => this.host.pausePresentation(),
         resumePresentation: () => this.host.resumePresentation(),
         stepPresentation: (frames) => this.host.stepPresentation(frames),
-        stepPresentationToNextChange: () =>
-          this.host.stepPresentationToNextChange(),
-        clearTrace: () => this.clearTrace(),
+        stepPresentationToNextChange: () => this.stepPresentationToNextChange(),
+        clearTrace: () => {
+          this.trace.clear();
+          this.previousSnapshot = null;
+          this.host.requestRender();
+        },
         close: () => this.host.close(),
         selectEntity: (entityId) => this.selectEntity(entityId),
       });
     }
     return this.sidebar;
+  }
+
+  /** Jump presentation to the end of the current visible motion without changing Hz. */
+  private stepPresentationToNextChange(): void {
+    let snapshot = this.host.snapshot(this.selection);
+    if (!snapshot.runtime.presentationPaused) return;
+    if (!snapshot.runtime.animating) {
+      this.host.stepPresentation(1);
+      return;
+    }
+    for (let frame = 0; frame < 240; frame += 1) {
+      this.host.stepPresentation(1);
+      snapshot = this.host.snapshot(this.selection);
+      if (!snapshot.runtime.animating) break;
+    }
+  }
+
+  private captureSnapshotDiff(snapshot: DebugSnapshot): void {
+    const previous = this.previousSnapshot;
+    if (!previous) return;
+    const clock = {
+      worldTick: snapshot.runtime.worldTickCount,
+      presentationFrame: snapshot.runtime.presentationFrame,
+    };
+
+    if (snapshot.runtime.worldTickCount !== previous.runtime.worldTickCount)
+      this.trace.record({
+        category: "world",
+        summary: `world tick ${previous.runtime.worldTickCount} -> ${snapshot.runtime.worldTickCount}`,
+        ...clock,
+      });
+
+    const actor = snapshot.actor;
+    const previousActor = previous.actor;
+    if (actor && previousActor && actor.id === previousActor.id) {
+      if (
+        actor.anchor.x !== previousActor.anchor.x ||
+        actor.anchor.y !== previousActor.anchor.y
+      )
+        this.trace.record({
+          category: "world",
+          summary: `#${actor.id} ${previousActor.anchor.x},${previousActor.anchor.y} -> ${actor.anchor.x},${actor.anchor.y}`,
+          actorId: actor.id,
+          detail: { before: previousActor.anchor, after: actor.anchor },
+          ...clock,
+        });
+      if (JSON.stringify(actor.state) !== JSON.stringify(previousActor.state))
+        this.trace.record({
+          category: "world",
+          summary: `#${actor.id} state changed`,
+          actorId: actor.id,
+          detail: { before: previousActor.state, after: actor.state },
+          ...clock,
+        });
+    }
+
+    if (JSON.stringify(snapshot.actions) !== JSON.stringify(previous.actions))
+      this.trace.record({
+        category: "action",
+        summary: `${snapshot.actions.length} active runtime action${snapshot.actions.length === 1 ? "" : "s"}`,
+        detail: snapshot.actions,
+        ...clock,
+      });
+
+    if (
+      snapshot.runtime.animating !== previous.runtime.animating ||
+      (snapshot.runtime.presentationPaused &&
+        snapshot.runtime.presentationFrame !== previous.runtime.presentationFrame)
+    )
+      this.trace.record({
+        category: "presentation",
+        summary: snapshot.runtime.animating ? "presentation motion active" : "presentation motion idle",
+        actorId: actor?.id,
+        ...clock,
+      });
   }
 
   private selectEntity(entityId: EntityId): void {
