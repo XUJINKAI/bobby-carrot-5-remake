@@ -20,6 +20,11 @@ export interface DebugSelection {
   entityId?: EntityId;
 }
 
+export interface DebugActorOption {
+  id: EntityId;
+  type: string;
+}
+
 export interface DebugSnapshot {
   runtime: {
     worldTickCount: number;
@@ -35,6 +40,7 @@ export interface DebugSnapshot {
     inputBlocked: boolean;
     cameraTarget: EntityId | null;
   };
+  actors: readonly DebugActorOption[];
   actor: DebugEntitySnapshot | null;
   actions: readonly RuntimeActionInstance[];
   input: InputControllerInspection | null;
@@ -100,6 +106,7 @@ export function buildDebugSnapshot(options: {
   presentationClock: PresentationClock;
   timing: EngineTiming;
   input: InputControllerInspection | null;
+  actorId?: EntityId | null;
   selection: DebugSelection | null;
 }): DebugSnapshot {
   const {
@@ -110,6 +117,7 @@ export function buildDebugSnapshot(options: {
     presentationClock,
     timing,
     input,
+    actorId: requestedActorId,
     selection,
   } = options;
   const actions = world?.actions.active ?? [];
@@ -127,17 +135,28 @@ export function buildDebugSnapshot(options: {
     inputBlocked: world?.inputBlocked ?? false,
     cameraTarget: world?.cameraTarget ?? null,
   };
-  const actorId = world?.query.entitiesWithTrait("player")[0]?.id;
+  const actorEntities = world?.query.entitiesWithTrait("player") ?? [];
+  const actors = actorEntities.map((entity) => ({
+    id: entity.id,
+    type: entity.type,
+  }));
+  const actorIds = new Set(actors.map((actor) => actor.id));
+  const actorId =
+    requestedActorId !== undefined &&
+    requestedActorId !== null &&
+    actorIds.has(requestedActorId)
+      ? requestedActorId
+      : actors[0]?.id;
   const actor =
     world && actorId !== undefined
       ? buildEntitySnapshot(world, scene, visual, actorId)
       : null;
 
   if (!world || !selection)
-    return { runtime, actor, actions, input, selection: null };
+    return { runtime, actors, actor, actions, input, selection: null };
   const inspection = world.inspect(selection.cell.x, selection.cell.y);
   if (!inspection)
-    return { runtime, actor, actions, input, selection: null };
+    return { runtime, actors, actor, actions, input, selection: null };
 
   const presences = world.presencesAt(selection.cell).map((presence) =>
     debugPresence(world, presence),
@@ -151,6 +170,7 @@ export function buildDebugSnapshot(options: {
 
   return {
     runtime,
+    actors,
     actor,
     actions,
     input,
