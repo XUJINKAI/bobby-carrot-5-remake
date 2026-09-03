@@ -304,16 +304,30 @@ const alternateB = computed(
 .surface-variant-rows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+  overflow-x: auto;
 }
 .variant-row {
-  overflow-x: auto;
+  width: max-content;
+  min-width: 100%;
+  gap: 0;
+  overflow: visible;
+  padding-bottom: 0;
+}
+.variant-row + .variant-row {
+  margin-top: 0;
+  border-top: 2px solid #b4eafd;
 }
 .surface-variant {
   --palette-size: 48px;
   flex: 0 0 48px;
   width: 48px;
   height: 48px;
+  margin: 0;
+  border-radius: 0;
+}
+.surface-variant + .surface-variant {
+  margin-left: -1px;
 }
 .surface-variant-label {
   position: absolute;
