@@ -31,6 +31,7 @@ const props = defineProps<{
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
+page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
 let disposePlayChange = (): void => {};
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
