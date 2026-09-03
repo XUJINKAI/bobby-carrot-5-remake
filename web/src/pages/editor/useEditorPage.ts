@@ -2,13 +2,15 @@ import {
   EditorDocument,
   EditorPreview,
   applyEditorVariant,
+  applySurfaceTheme,
   buildInspectorModel,
   builtinEditorDefinition,
-  copySelection,
+  copyEntitySelection,
   createBuiltinEntityCatalog,
   cycleEntityVariant,
   cyclePlacementVariant,
   defaultSurfaceBrush,
+  detectSurfaceTheme,
   fillSurface,
   inspectEditorRules,
   paintSurface,
@@ -24,9 +26,8 @@ import {
   resolveEditorPalette,
   resizeMapEdges,
   selectedEntityRefs,
-  selectionCells,
   selectionRect,
-  surfaceGroup,
+  surfaceTerrain,
   toLevelMap,
   updateEditorRule,
   updateMaxMoves,
@@ -46,9 +47,9 @@ import {
   type PaletteItem,
   type SurfaceBrush,
   type SurfacePattern,
+  type SurfaceTerrainId,
   type SurfaceTheme,
   type SurfaceTool,
-  type SurfaceType,
 } from "@bobby/editor";
 import {
   type EntityProperties,
@@ -71,7 +72,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const document = new EditorDocument(initialLevel);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
-  const tool = ref<EditorTool>("select");
+  const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
   const leftPanel = ref<EditorLeftPanel>("surface");
   const surfaceTool = ref<SurfaceTool>("brush");
@@ -85,6 +86,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
   let surfaceRectAnchor: Cell | null = null;
+
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
     storeEditorDraft(next.level as EditorMap);
@@ -93,64 +95,70 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
   const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
+  const tool = computed<EditorTool>(() => {
+    if (leftPanel.value === "surface")
+      return surfaceTool.value === "rect" ? "select" : "place";
+    return paletteTool.value;
+  });
   const selectedRefs = computed(() =>
     mapSelection.value
       ? selectedEntityRefs(currentLevel(), preview(), mapSelection.value)
       : [],
   );
   const inspector = computed(() =>
-    buildInspectorModel(
-      currentLevel(),
-      catalog,
-      mapSelection.value,
-      editor,
-    ),
+    buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
   );
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
+  const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
   function setTool(next: EditorTool): void {
     leftPanel.value = "palette";
-    tool.value = next;
+    paletteTool.value = next;
   }
 
   function selectPalette(item: PaletteItem): void {
     leftPanel.value = "palette";
     placement.value = item;
-    tool.value = "place";
+    paletteTool.value = "place";
+  }
+
+  function activatePalette(): void {
+    leftPanel.value = "palette";
   }
 
   function activateSurface(): void {
     leftPanel.value = "surface";
-    tool.value = surfaceTool.value === "selection" ? "select" : "place";
+  }
+
+  function toggleAuthoringPanel(): EditorLeftPanel {
+    leftPanel.value = leftPanel.value === "palette" ? "surface" : "palette";
+    return leftPanel.value;
   }
 
   function setSurfaceTool(next: SurfaceTool): void {
     activateSurface();
     surfaceTool.value = next;
-    tool.value = next === "selection" ? "select" : "place";
   }
 
-  function setSurfaceType(type: SurfaceType): void {
+  function selectSurfaceTerrain(terrain: SurfaceTerrainId): void {
     activateSurface();
-    const direct = surfaceGroup(type, surfaceBrush.value.theme);
-    const fallback = direct ?? surfaceGroup(type, "shared") ?? undefined;
-    if (!fallback) return;
     surfaceBrush.value = normalizeSurfaceBrush({
       ...surfaceBrush.value,
-      type,
-      theme: fallback.theme,
+      terrain,
     });
   }
 
-  function setSurfaceTheme(theme: SurfaceTheme): void {
+  function setSurfaceTheme(theme: SurfaceTheme): boolean {
     activateSurface();
-    if (!surfaceGroup(surfaceBrush.value.type, theme)) return;
-    surfaceBrush.value = normalizeSurfaceBrush({ ...surfaceBrush.value, theme });
+    return document.execute(applySurfaceTheme(catalog, theme));
   }
 
   function setSurfacePattern(pattern: SurfacePattern): void {
     activateSurface();
-    surfaceBrush.value = normalizeSurfaceBrush({ ...surfaceBrush.value, pattern });
+    surfaceBrush.value = normalizeSurfaceBrush({
+      ...surfaceBrush.value,
+      pattern,
+    });
   }
 
   function setSurfaceExact(type: EntityType): void {
@@ -164,10 +172,13 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function setSurfaceAlternate(index: 0 | 1, type: EntityType): void {
     activateSurface();
-    const group = surfaceGroup(surfaceBrush.value.type, surfaceBrush.value.theme);
-    if (!group?.variants.some((variant) => variant.type === type)) return;
-    const first = surfaceBrush.value.alternate?.[0] ?? group.variants[0]?.type;
-    const second = surfaceBrush.value.alternate?.[1] ?? group.variants[1]?.type ?? first;
+    const terrain = surfaceTerrain(surfaceBrush.value.terrain);
+    if (!terrain.variants.some((variant) => variant.type === type)) return;
+    const first = surfaceBrush.value.alternate?.[0] ?? terrain.variants[0]?.type;
+    const second =
+      surfaceBrush.value.alternate?.[1] ??
+      terrain.variants[1]?.type ??
+      first;
     if (!first || !second) return;
     const alternate: [EntityType, EntityType] = [first, second];
     alternate[index] = type;
@@ -185,15 +196,6 @@ export function useEditorPage(initialLevel: EditorMap) {
       pattern: "auto",
       seed: surfaceBrush.value.seed + 1,
     };
-    if (mapSelection.value) applySurfaceSelection();
-  }
-
-  function applySurfaceSelection(): boolean {
-    const selection = mapSelection.value;
-    if (!selection) return false;
-    return document.execute(
-      paintSurface(catalog, selectionCells(selection), surfaceBrush.value),
-    );
   }
 
   function primaryStart(cell: Cell): void {
@@ -201,7 +203,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       surfacePrimaryStart(cell);
       return;
     }
-    if (tool.value === "select") {
+    if (paletteTool.value === "select") {
       mapSelection.value = { anchor: cell, focus: cell };
       return;
     }
@@ -215,7 +217,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       surfacePrimaryMove(cell);
       return;
     }
-    if (tool.value === "select") {
+    if (paletteTool.value === "select") {
       if (mapSelection.value)
         mapSelection.value = { ...mapSelection.value, focus: cell };
       return;
@@ -238,10 +240,6 @@ export function useEditorPage(initialLevel: EditorMap) {
       document.execute(fillSurface(catalog, currentLevel(), cell, surfaceBrush.value));
       return;
     }
-    if (surfaceTool.value === "selection") {
-      mapSelection.value = { anchor: cell, focus: cell };
-      return;
-    }
     if (surfaceTool.value === "rect") {
       surfaceRectAnchor = cell;
       mapSelection.value = { anchor: cell, focus: cell };
@@ -253,13 +251,13 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function surfacePrimaryMove(cell: Cell): void {
-    if (surfaceTool.value === "selection" || surfaceTool.value === "rect") {
-      if (mapSelection.value) mapSelection.value = { ...mapSelection.value, focus: cell };
+    if (surfaceTool.value === "rect") {
+      if (mapSelection.value)
+        mapSelection.value = { ...mapSelection.value, focus: cell };
       return;
     }
-    if (surfaceTool.value === "brush" && transactionActive) {
+    if (surfaceTool.value === "brush" && transactionActive)
       document.execute(paintSurface(catalog, [cell], surfaceBrush.value));
-    }
   }
 
   function surfacePrimaryEnd(cell?: Cell): void {
@@ -281,19 +279,12 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function applyPalettePrimary(cell: Cell): void {
-    if (tool.value === "place") {
-      document.execute(
-        placeEntity(catalog, placement.value, cell, {}, editor),
-      );
+    if (paletteTool.value === "place") {
+      document.execute(placeEntity(catalog, placement.value, cell, {}, editor));
       return;
     }
-    if (tool.value === "erase") {
-      const ref = resolveDeletionTarget(
-        currentLevel(),
-        catalog,
-        cell,
-        editor,
-      );
+    if (paletteTool.value === "erase") {
+      const ref = resolveDeletionTarget(currentLevel(), catalog, cell, editor);
       if (ref) document.execute(removeEntities([ref]));
     }
   }
@@ -301,7 +292,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   function pickSurface(cell: Cell): boolean {
     const picked = pickSurfaceBrush(currentLevel(), cell);
     if (!picked) return false;
-    surfaceBrush.value = picked;
+    surfaceBrush.value = normalizeSurfaceBrush(picked);
     activateSurface();
     return true;
   }
@@ -323,7 +314,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function copy(): boolean {
     if (!mapSelection.value) return false;
-    clipboard.value = copySelection(
+    clipboard.value = copyEntitySelection(
       currentLevel(),
       catalog,
       mapSelection.value,
@@ -336,8 +327,17 @@ export function useEditorPage(initialLevel: EditorMap) {
     return deleteSelection();
   }
 
+  function entitySelectedRefs(): EntityRef[] {
+    const level = currentLevel();
+    return selectedRefs.value.filter((ref) => {
+      const entity = level.entities[ref.index];
+      return entity && !pickSurfaceBrush(level, { x: entity.x, y: entity.y })?.exact?.includes("__never__") && !isSurfaceRef(level, ref);
+    });
+  }
+
   function deleteSelection(): boolean {
-    const refs = selectedRefs.value;
+    if (leftPanel.value === "surface") return false;
+    const refs = entitySelectedRefs();
     if (refs.length === 0) return false;
     const changed = document.execute(removeEntities(refs));
     if (changed) mapSelection.value = null;
@@ -385,10 +385,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const variant = editor.entities?.[entity.type]?.variants?.[index];
     if (!variant) return false;
     return document.execute(
-      replaceEntity(
-        { index: entityIndex },
-        applyEditorVariant(entity, variant),
-      ),
+      replaceEntity({ index: entityIndex }, applyEditorVariant(entity, variant)),
     );
   }
 
@@ -413,8 +410,8 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function cycleVariant(step: number, cell?: Cell): boolean {
     if (leftPanel.value === "surface") return false;
-    if (tool.value === "erase") return false;
-    if (tool.value === "place") {
+    if (paletteTool.value === "erase") return false;
+    if (paletteTool.value === "place") {
       const definition = editor.entities?.[placement.value.type];
       const next = cyclePlacementVariant(
         placement.value,
@@ -450,11 +447,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     return document.execute(replaceEntity(inspection.ref, next));
   }
 
-  function updateProperty(
-    entityIndex: number,
-    key: string,
-    raw: string,
-  ): void {
+  function updateProperty(entityIndex: number, key: string, raw: string): void {
     updatePropertiesForRefs([{ index: entityIndex }], key, raw);
   }
 
@@ -542,10 +535,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const index = Math.max(0, sizes.indexOf(paletteSize.value));
     paletteSize.value =
       sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
-    localStorage.setItem(
-      "bobby.editor.paletteSize",
-      String(paletteSize.value),
-    );
+    localStorage.setItem("bobby.editor.paletteSize", String(paletteSize.value));
   }
 
   return {
@@ -555,10 +545,12 @@ export function useEditorPage(initialLevel: EditorMap) {
     document,
     snapshot,
     tool,
+    paletteTool,
     placement,
     leftPanel,
     surfaceTool,
     surfaceBrush,
+    surfaceTheme,
     mapSelection,
     clipboard,
     hover,
@@ -572,15 +564,16 @@ export function useEditorPage(initialLevel: EditorMap) {
     levelMap: computed(() => toLevelMap(currentLevel())),
     setTool,
     selectPalette,
+    activatePalette,
     activateSurface,
+    toggleAuthoringPanel,
     setSurfaceTool,
-    setSurfaceType,
+    selectSurfaceTerrain,
     setSurfaceTheme,
     setSurfacePattern,
     setSurfaceExact,
     setSurfaceAlternate,
     rerollSurface,
-    applySurfaceSelection,
     pickSurface,
     primaryStart,
     primaryMove,
@@ -620,23 +613,36 @@ export function useEditorPage(initialLevel: EditorMap) {
   };
 }
 
+function isSurfaceRef(level: EditorMap, ref: EntityRef): boolean {
+  const entity = level.entities[ref.index];
+  return Boolean(entity && surfaceTerrainForType(entity.type));
+}
+
+function surfaceTerrainForType(type: EntityType): boolean {
+  try {
+    return Boolean(type && (type.startsWith("background-variant-") || type.startsWith("walkable-variant-") || ["ground-a", "ground-b", "ground-c", "ground-d", "water", "water-animated", "water-variant-1", "water-variant-2", "water-variant-3", "ice"].includes(type)));
+  } catch {
+    return false;
+  }
+}
+
 function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
-  const group = surfaceGroup(brush.type, brush.theme);
-  const first = group?.variants[0]?.type;
-  const second = group?.variants[1]?.type ?? first;
+  const terrain = surfaceTerrain(brush.terrain);
+  const first = terrain.variants[0]?.type;
+  const second = terrain.variants[1]?.type ?? first;
   if (!first) return brush;
   const exact =
-    brush.exact && group.variants.some((variant) => variant.type === brush.exact)
+    brush.exact && terrain.variants.some((variant) => variant.type === brush.exact)
       ? brush.exact
       : first;
   return {
     ...brush,
     exact,
     alternate: [
-      group.variants.some((variant) => variant.type === brush.alternate?.[0])
+      terrain.variants.some((variant) => variant.type === brush.alternate?.[0])
         ? brush.alternate![0]
         : first,
-      group.variants.some((variant) => variant.type === brush.alternate?.[1])
+      terrain.variants.some((variant) => variant.type === brush.alternate?.[1])
         ? brush.alternate![1]
         : second!,
     ],
