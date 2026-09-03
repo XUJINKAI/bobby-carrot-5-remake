@@ -138,10 +138,9 @@ function terrain(
   const first = definition.rows.flat()[0]?.type;
   if (!definition.primary && !first)
     throw new Error(`Surface terrain ${definition.id} has no variants`);
-  const primary = definition.primary ?? first!;
   return {
     ...definition,
-    primary,
+    primary: definition.primary ?? first!,
     slot: definition.slot ?? "base",
     auto: definition.auto ?? { kind: "primary" },
   };
@@ -158,8 +157,8 @@ function weighted(
   };
 }
 
-// Surface 的素材分类、排列和 Auto 策略都集中在本文件。
-// docs/system/original/surface.md 使用 1-based ts 行列坐标。
+// Surface 的分类、排列、variant 和 Auto 策略统一在这里调。
+// background variant 号码直接对应 docs/system/original/surface.md 的 ts.png 1-based 线性格。
 const grass = terrain({
   id: "grass",
   label: "草地",
@@ -303,11 +302,11 @@ const waterfall = terrain({
 
 const sky = terrain({
   id: "sky",
-  label: "天空",
+  label: "星空",
   type: "sky",
   theme: "space",
   primary: backgroundVariant(74),
-  rows: [variantRow([72, 73, 74], "background")],
+  rows: [variantRow([65, 73, 74], "background")],
 });
 
 const moon = terrain({
@@ -345,7 +344,7 @@ const stone = terrain({
 
 const stoneWall = terrain({
   id: "stone-wall",
-  label: "墙",
+  label: "石墙",
   type: "solid",
   theme: "forest",
   rows: [
@@ -377,11 +376,8 @@ const fence = terrain({
   slot: "overlay",
   theme: "forest",
   themeFamily: "fence",
-  rows: [
-    variantRow(range(65, 71), "background"),
-    variantRow(range(81, 85), "background"),
-    variantRow([52, 53], "background"),
-  ],
+  primary: EntityTypeId.FENCE,
+  rows: [[{ type: EntityTypeId.FENCE, label: "Auto" }]],
 });
 
 const snowRock = terrain({
@@ -531,7 +527,7 @@ export const SURFACE_THEMES: readonly SurfaceThemeDefinition[] = [
   {
     id: "space",
     label: "太空",
-    preview: [cloud.primary, sky.rows.flat()[0]!.type, sky.primary, moon.primary],
+    preview: [cloud.primary, backgroundVariant(65), backgroundVariant(73), moon.primary],
   },
 ];
 
