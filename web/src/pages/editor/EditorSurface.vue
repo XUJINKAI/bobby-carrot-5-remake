@@ -6,17 +6,19 @@ import {
   type EditorDefinition,
   type SurfaceBrush,
   type SurfacePattern,
+  type SurfaceTerrainDefinition,
   type SurfaceTerrainId,
   type SurfaceTheme,
 } from "@bobby/editor";
 import type { EntityCatalog, ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
 
 const props = defineProps<{
   brush: SurfaceBrush;
   currentTheme: SurfaceTheme;
+  size: number;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
@@ -28,7 +30,7 @@ const emit = defineEmits<{
   exact: [type: EntityType];
   alternateA: [type: EntityType];
   alternateB: [type: EntityType];
-  reroll: [];
+  resize: [delta: number];
 }>();
 
 const patterns: readonly { id: SurfacePattern; label: string }[] = [
@@ -48,25 +50,84 @@ const alternateB = computed(
     variants.value[1]?.type ??
     variants.value[0]?.type,
 );
+const tooltip = ref<null | {
+  x: number;
+  y: number;
+  name: string;
+  type?: string;
+  variantCount?: number;
+  surfaceType?: string;
+  slot?: string;
+  theme?: string;
+  auto?: string;
+  detail?: string;
+}>(null);
+
+function showTerrainTooltip(
+  definition: SurfaceTerrainDefinition,
+  event: MouseEvent,
+): void {
+  tooltip.value = {
+    x: event.clientX + 14,
+    y: event.clientY + 14,
+    name: definition.label,
+    variantCount: definition.rows.flat().length,
+    surfaceType: definition.type,
+    slot: definition.slot,
+    ...(definition.theme ? { theme: definition.theme } : {}),
+    auto: autoLabel(definition),
+  };
+}
+
+function showVariantTooltip(
+  definition: SurfaceTerrainDefinition,
+  type: EntityType,
+  label: string,
+  event: MouseEvent,
+): void {
+  const all = definition.rows.flat();
+  const index = all.findIndex((variant) => variant.type === type);
+  tooltip.value = {
+    x: event.clientX + 14,
+    y: event.clientY + 14,
+    name: `${definition.label} · ${label}`,
+    type,
+    detail: `variant ${Math.max(1, index + 1)} / ${all.length}`,
+    surfaceType: definition.type,
+    slot: definition.slot,
+  };
+}
+
+function moveTooltip(event: MouseEvent): void {
+  if (!tooltip.value) return;
+  tooltip.value = {
+    ...tooltip.value,
+    x: event.clientX + 14,
+    y: event.clientY + 14,
+  };
+}
+
+function autoLabel(definition: SurfaceTerrainDefinition): string {
+  const auto = definition.auto;
+  if (auto.kind === "weighted") return `weighted · ${auto.variants.length} entries`;
+  if (auto.kind === "vertical") return "vertical topology";
+  return "primary";
+}
 </script>
 
 <template>
   <aside class="editor-palette editor-surface-panel">
     <div class="editor-palette-head">
-      <div>
-        <div class="editor-panel-title">Surface</div>
-        <div class="surface-summary">{{ terrain.label }} · {{ brush.pattern }}</div>
+      <div class="editor-panel-title">Surface</div>
+      <div class="editor-palette-zoom">
+        <button class="editor-mini-btn" type="button" @click="emit('resize', -1)">−</button>
+        <span>{{ size }}</span>
+        <button class="editor-mini-btn" type="button" @click="emit('resize', 1)">+</button>
       </div>
-      <button
-        class="editor-mini-btn"
-        type="button"
-        title="重新分配 Auto variant"
-        @click="emit('reroll')"
-      >↻</button>
     </div>
 
-    <section class="surface-section">
-      <h3>主题</h3>
+    <details class="surface-theme-section">
+      <summary>主题</summary>
       <div class="surface-theme-grid">
         <button
           v-for="theme in SURFACE_THEMES"
@@ -92,45 +153,46 @@ const alternateB = computed(
           <span>{{ theme.label }}</span>
         </button>
       </div>
-    </section>
+    </details>
 
-    <section class="surface-section terrain-section">
-      <h3>地形</h3>
-      <div
+    <div class="editor-palette-groups surface-groups">
+      <section
         v-for="group in SURFACE_TERRAIN_GROUPS"
         :key="group.id"
-        class="surface-terrain-group"
+        class="editor-palette-group"
       >
-        <div class="surface-group-label">{{ group.label }}</div>
+        <h3>{{ group.label }}</h3>
         <div
           v-for="(row, rowIndex) in group.rows"
-          :key="`${group.id}-${rowIndex}`"
-          class="surface-tile-row"
+          :key="`${group.id}:${rowIndex}`"
+          class="editor-palette-grid surface-palette-grid"
+          :style="{ '--palette-size': `${size}px` }"
         >
           <button
             v-for="terrainId in row"
             :key="terrainId"
-            class="surface-terrain-tile"
-            :class="{ active: brush.terrain === terrainId }"
             type="button"
-            :title="surfaceTerrain(terrainId).label"
+            class="editor-palette-tile surface-terrain-tile"
+            :class="{ active: brush.terrain === terrainId }"
             @click="emit('terrain', terrainId)"
+            @mouseenter="showTerrainTooltip(surfaceTerrain(terrainId), $event)"
+            @mousemove="moveTooltip"
+            @mouseleave="tooltip = null"
           >
             <EditorEntityPreview
               :source="{ type: surfaceTerrain(terrainId).primary }"
-              :cell-size="48"
+              :cell-size="size"
               :images="images"
               :catalog="catalog"
               :editor="editor"
-              :fallback-text="surfaceTerrain(terrainId).label"
+              fallback-text=""
             />
-            <span>{{ surfaceTerrain(terrainId).label }}</span>
           </button>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="surface-section">
+    <section class="surface-control-section">
       <h3>Pattern</h3>
       <div class="surface-pattern-grid">
         <button
@@ -144,69 +206,78 @@ const alternateB = computed(
       </div>
     </section>
 
-    <section class="surface-section">
-      <h3>Variants · {{ terrain.label }}</h3>
-      <div class="surface-variant-rows">
-        <div
-          v-for="(row, rowIndex) in terrain.rows"
-          :key="`${terrain.id}-variants-${rowIndex}`"
-          class="surface-tile-row variant-row"
+    <section class="editor-palette-group surface-variants">
+      <h3>Variants</h3>
+      <div
+        v-for="(row, rowIndex) in terrain.rows"
+        :key="`${terrain.id}:variant:${rowIndex}`"
+        class="editor-palette-grid surface-palette-grid"
+        :style="{ '--palette-size': `${size}px` }"
+      >
+        <button
+          v-for="variant in row"
+          :key="variant.type"
+          class="editor-palette-tile surface-variant"
+          :class="{
+            active: brush.pattern === 'exact' && brush.exact === variant.type,
+            'alternate-a': brush.pattern === 'alternate' && alternateA === variant.type,
+            'alternate-b': brush.pattern === 'alternate' && alternateB === variant.type,
+          }"
+          type="button"
+          @click="brush.pattern === 'alternate' ? emit('alternateA', variant.type) : emit('exact', variant.type)"
+          @contextmenu.prevent="emit('alternateB', variant.type)"
+          @mouseenter="showVariantTooltip(terrain, variant.type, variant.label, $event)"
+          @mousemove="moveTooltip"
+          @mouseleave="tooltip = null"
         >
-          <button
-            v-for="variant in row"
-            :key="variant.type"
-            class="editor-palette-tile surface-variant"
-            :class="{
-              active: brush.pattern === 'exact' && brush.exact === variant.type,
-              'alternate-a': brush.pattern === 'alternate' && alternateA === variant.type,
-              'alternate-b': brush.pattern === 'alternate' && alternateB === variant.type,
-            }"
-            type="button"
-            :title="`${variant.label} · ${variant.type}`"
-            @click="brush.pattern === 'alternate' ? emit('alternateA', variant.type) : emit('exact', variant.type)"
-            @contextmenu.prevent="emit('alternateB', variant.type)"
-          >
-            <EditorEntityPreview
-              :source="{ type: variant.type }"
-              :cell-size="48"
-              :images="images"
-              :catalog="catalog"
-              :editor="editor"
-              :fallback-text="variant.label"
-            />
-            <span class="surface-variant-label">{{ variant.label }}</span>
-          </button>
-        </div>
+          <EditorEntityPreview
+            :source="{ type: variant.type }"
+            :cell-size="size"
+            :images="images"
+            :catalog="catalog"
+            :editor="editor"
+            fallback-text=""
+          />
+        </button>
       </div>
-      <p v-if="brush.pattern === 'alternate'" class="editor-muted surface-hint">
-        左键选择 A，右键选择 B；按地图坐标稳定交错。
-      </p>
     </section>
+
+    <Teleport to="body">
+      <div
+        v-if="tooltip"
+        class="editor-palette-tooltip surface-tooltip"
+        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+      >
+        <strong>{{ tooltip.name }}</strong>
+        <code v-if="tooltip.type">{{ tooltip.type }}</code>
+        <div v-if="tooltip.variantCount !== undefined">
+          <span>variants</span> {{ tooltip.variantCount }}
+        </div>
+        <div v-if="tooltip.detail">{{ tooltip.detail }}</div>
+        <div v-if="tooltip.surfaceType"><span>type</span> {{ tooltip.surfaceType }}</div>
+        <div v-if="tooltip.slot"><span>slot</span> {{ tooltip.slot }}</div>
+        <div v-if="tooltip.theme"><span>theme</span> {{ tooltip.theme }}</div>
+        <div v-if="tooltip.auto"><span>auto</span> {{ tooltip.auto }}</div>
+      </div>
+    </Teleport>
   </aside>
 </template>
 
 <style scoped>
 .editor-surface-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: block;
 }
-.surface-summary {
-  margin-top: 4px;
+.surface-theme-section {
+  margin: 0 0 14px;
+  border-bottom: 1px solid #ffffff18;
+  padding-bottom: 10px;
+}
+.surface-theme-section summary {
+  padding: 5px 0 9px;
   color: var(--editor-muted);
-  font: 11px ui-monospace, monospace;
-  text-transform: uppercase;
-}
-.surface-section {
-  padding: 11px 0;
-  border-top: 1px solid #ffffff18;
-}
-.surface-section h3 {
-  margin: 0 0 8px;
-  color: var(--editor-muted);
-  font-size: .7rem;
-  text-transform: uppercase;
-  letter-spacing: .08em;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 700;
 }
 .surface-theme-grid {
   display: grid;
@@ -230,8 +301,6 @@ const alternateB = computed(
 }
 .surface-theme-card:hover,
 .surface-theme-card.active,
-.surface-terrain-tile:hover,
-.surface-terrain-tile.active,
 .surface-choice:hover,
 .surface-choice.active {
   background: var(--editor-accent);
@@ -247,44 +316,37 @@ const alternateB = computed(
   border-radius: 3px;
   background: #002d62;
 }
-.surface-terrain-group + .surface-terrain-group {
-  margin-top: 10px;
+.surface-groups {
+  margin-bottom: 14px;
 }
-.surface-group-label {
-  margin: 0 0 5px;
-  color: #a7d9f2;
-  font-size: .67rem;
-  letter-spacing: .04em;
-}
-.surface-tile-row {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 3px;
-}
-.surface-tile-row + .surface-tile-row {
-  margin-top: 6px;
-}
-.surface-terrain-tile {
-  position: relative;
-  flex: 0 0 58px;
-  width: 58px;
-  padding: 4px 4px 5px;
-  border: 1px solid #ffffff20;
-  border-radius: 5px;
-  background: #063c70;
-  color: #fff;
-  cursor: pointer;
-}
-.surface-terrain-tile > span {
-  display: block;
-  margin-top: 2px;
+.surface-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--palette-size));
+  grid-auto-rows: var(--palette-size);
+  grid-auto-flow: row dense;
+  gap: 4px;
+  margin-bottom: 4px;
   overflow: hidden;
-  font-size: 9px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.surface-terrain-tile,
+.surface-variant {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  box-shadow: none;
+}
+.surface-control-section {
+  padding: 10px 0 14px;
+  border-top: 1px solid #ffffff18;
+}
+.surface-control-section h3,
+.surface-variants h3 {
+  margin: 0 0 7px;
+  color: #bdc9c0;
+  font-size: .72rem;
+  font-weight: 700;
 }
 .surface-pattern-grid {
   display: grid;
@@ -301,45 +363,6 @@ const alternateB = computed(
   cursor: pointer;
   font-size: .72rem;
 }
-.surface-variant-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow-x: auto;
-}
-.variant-row {
-  width: max-content;
-  min-width: 100%;
-  gap: 0;
-  overflow: visible;
-  padding-bottom: 0;
-}
-.variant-row + .variant-row {
-  margin-top: 0;
-  border-top: 2px solid #b4eafd;
-}
-.surface-variant {
-  --palette-size: 48px;
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
-  margin: 0;
-  border-color: #5fafd6;
-  border-radius: 0;
-}
-.surface-variant + .surface-variant {
-  margin-left: -1px;
-}
-.surface-variant-label {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  padding: 1px 3px;
-  border-radius: 3px;
-  background: #00285ccc;
-  color: #fff;
-  font: 9px ui-monospace, monospace;
-}
 .surface-variant.alternate-a::before,
 .surface-variant.alternate-b::after {
   position: absolute;
@@ -351,7 +374,33 @@ const alternateB = computed(
   color: #fff;
   font: 9px ui-monospace, monospace;
 }
-.surface-variant.alternate-a::before { content: "A"; left: 2px; }
-.surface-variant.alternate-b::after { content: "B"; right: 2px; }
-.surface-hint { margin: 8px 0 0; }
+.surface-variant.alternate-a::before {
+  content: "A";
+  left: 2px;
+}
+.surface-variant.alternate-b::after {
+  content: "B";
+  right: 2px;
+}
+.surface-tooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: 320px;
+  pointer-events: none;
+  padding: 8px 10px;
+  border: 1px solid #3d88bb;
+  border-radius: 6px;
+  background: #082f59;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+.surface-tooltip strong,
+.surface-tooltip code {
+  display: block;
+  margin-bottom: 3px;
+}
+.surface-tooltip span {
+  color: var(--bc-text-muted);
+}
 </style>
