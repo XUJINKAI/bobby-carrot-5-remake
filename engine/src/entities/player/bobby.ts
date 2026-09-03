@@ -20,6 +20,7 @@ import {
 } from "./BobbyState.js";
 
 const BOBBY_OFFSET_Y = -12;
+const BOBBY_TILE_SIZE = 48;
 const BOBBY_IDLE_DELAY_MS = 5000;
 const BOBBY_SOURCE_FRAME_MS = 1000 / 60;
 const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
@@ -111,7 +112,7 @@ export const bobby: EntityModule = originalModule(definition, {
           frameRows: 2,
           frameIndex: DIRECTION_COLUMN[direction] + row * 4,
         },
-        speedTrail(context),
+        speedTrail(context, direction),
       );
     }
 
@@ -148,7 +149,7 @@ export const bobby: EntityModule = originalModule(definition, {
           ? resolveWalkingFrame(rawProgress)
           : BOBBY_STANDING_FRAME,
       },
-      speedTrail(context),
+      speedTrail(context, direction),
     );
   },
 });
@@ -166,12 +167,30 @@ function resolveWalkingFrame(progress: number): number {
   return (BOBBY_STANDING_FRAME + step) % 8;
 }
 
-function speedTrail(context: VisualResolveContext): ImageVisualLayer | null {
-  if (!readBobbySpeedBoost(context.entity.state)) return null;
+function speedTrail(
+  context: VisualResolveContext,
+  direction: Direction,
+): ImageVisualLayer | null {
+  const boost = readBobbySpeedBoost(context.entity.state);
+  if (!boost || boost.phase === "slow") return null;
+
+  // 离开加速板后的默认三格衰减中，尾焰只持续前 1.5 格：
+  // full 第一格完整显示；normal 第二格显示前半；slow 第三格不显示。
+  // 若玩家持续同方向输入使状态保持 full，则尾焰自然继续保持。
+  if (boost.phase === "normal") {
+    if (
+      context.runtime?.animation !== "speed" ||
+      context.runtime.moving !== true ||
+      (context.runtime.progress ?? 1) >= 0.5
+    )
+      return null;
+  }
+
   const frame =
     Math.floor(
       Math.max(0, context.time?.nowMs ?? 0) / BOBBY_SPEED_TRAIL_FRAME_MS,
     ) % 5;
+  const offset = speedTrailOffset(direction);
   return {
     kind: "image",
     asset: BOBBY_VISUAL_ASSETS.speedTrail,
@@ -180,8 +199,16 @@ function speedTrail(context: VisualResolveContext): ImageVisualLayer | null {
     // mow.png 第二行的 5 帧是 Bobby / mower 共用的加速尾焰。
     frameIndex: 5 + frame,
     anchor: "bottom",
-    offsetY: BOBBY_OFFSET_Y,
+    offsetX: offset.x,
+    offsetY: BOBBY_OFFSET_Y + offset.y,
   };
+}
+
+function speedTrailOffset(direction: Direction): { x: number; y: number } {
+  if (direction === "left") return { x: BOBBY_TILE_SIZE, y: 0 };
+  if (direction === "right") return { x: -BOBBY_TILE_SIZE, y: 0 };
+  if (direction === "up") return { x: 0, y: BOBBY_TILE_SIZE };
+  return { x: 0, y: -BOBBY_TILE_SIZE };
 }
 
 function composition(
