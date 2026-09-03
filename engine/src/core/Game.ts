@@ -124,7 +124,6 @@ export class Game {
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
   private debugValue = false;
-  private debugInputEnabledBeforePause: boolean | null = null;
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private animationFrame = 0;
@@ -181,6 +180,7 @@ export class Game {
           worldClock: this.worldClock,
           presentationClock: this.presentationClock,
           timing: this.timing,
+          input: this.inputController?.inspectMovement() ?? null,
           selection,
         }),
       inspectPoint: (clientX, clientY) =>
@@ -188,6 +188,7 @@ export class Game {
       pause: () => this.pauseDebugClock(),
       resume: () => this.resumeDebugClock(),
       step: (count) => this.stepDebugClock(count),
+      setHeldDirection: (direction) => this.setHeldDirection(direction),
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
@@ -299,7 +300,6 @@ export class Game {
     });
     this.configureActorsAndControls();
     this.worldClock.reset();
-    this.restoreDebugPausedInput();
     this.history.length = 0;
     this.future.length = 0;
     this.pendingHistorySnapshot = null;
@@ -812,11 +812,6 @@ export class Game {
 
   private pauseDebugClock(): void {
     if (this.worldClock.paused) return;
-    this.debugInputEnabledBeforePause =
-      this.inputController?.isEnabled ?? null;
-    this.inputController?.setEnabled(false);
-    this.heldDirection = null;
-    this.heldDirectionBlocked = false;
     this.worldClock.pause();
     this.render();
   }
@@ -824,19 +819,7 @@ export class Game {
   private resumeDebugClock(): void {
     if (!this.worldClock.paused) return;
     this.worldClock.resume();
-    this.restoreDebugPausedInput();
-    this.heldDirection = null;
-    this.heldDirectionBlocked = false;
     this.render();
-  }
-
-  private restoreDebugPausedInput(): void {
-    if (
-      this.inputController &&
-      this.debugInputEnabledBeforePause !== null
-    )
-      this.inputController.setEnabled(this.debugInputEnabledBeforePause);
-    this.debugInputEnabledBeforePause = null;
   }
 
   private stepDebugClock(count: number): void {
