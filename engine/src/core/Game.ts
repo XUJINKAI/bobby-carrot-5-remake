@@ -200,7 +200,6 @@ export class Game {
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
-      close: () => this.setDebug(false),
       selectionChanged: (cell) => this.renderer.setDebugSelection(cell),
       requestRender: () => this.render(),
     });
