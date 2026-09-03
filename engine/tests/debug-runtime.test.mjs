@@ -20,7 +20,7 @@ function debugTime() {
   return { timing, worldClock, presentationClock };
 }
 
-test("Debug snapshot exposes runtime clocks, primary actor, actions and inspected Entity facts", () => {
+test("Debug snapshot exposes runtime clocks, selected actor, actions and inspected Entity facts", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -64,6 +64,7 @@ test("Debug snapshot exposes runtime clocks, primary actor, actions and inspecte
   assert.equal(snapshot.runtime.actionCount, 0);
   assert.equal(snapshot.actions.length, 0);
   assert.equal(snapshot.input, null);
+  assert.deepEqual(snapshot.actors, [{ id: bobby.id, type: EntityTypeId.BOBBY }]);
   assert.equal(snapshot.actor?.id, bobby.id);
   assert.equal(snapshot.actor?.type, EntityTypeId.BOBBY);
   assert.deepEqual(snapshot.actor?.anchor, { x: 0, y: 0 });
@@ -80,6 +81,41 @@ test("Debug snapshot exposes runtime clocks, primary actor, actions and inspecte
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
+});
+
+test("Debug snapshot can track a non-primary player actor", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "left" },
+    ],
+  });
+  const visual = new VisualRuntime(createBuiltinVisualRegistry());
+  const { timing, worldClock, presentationClock } = debugTime();
+  visual.scene(world);
+  const actors = world.query.entitiesWithTrait("player");
+  assert.equal(actors.length, 2);
+
+  const snapshot = buildDebugSnapshot({
+    world,
+    scene: visual.scene(world),
+    visual,
+    worldClock,
+    presentationClock,
+    timing,
+    input: null,
+    actorId: actors[1].id,
+    selection: null,
+  });
+
+  assert.equal(snapshot.actors.length, 2);
+  assert.equal(snapshot.actor?.id, actors[1].id);
+  assert.deepEqual(snapshot.actor?.anchor, { x: 1, y: 0 });
 });
 
 test("Debug snapshot defaults selection to the top Presence", () => {
@@ -119,13 +155,17 @@ test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs",
   assert.match(source, /private readonly presentationPauseResumeButton/);
   assert.match(source, /private readonly frameBackButton/);
   assert.match(source, /private readonly frameForwardButton/);
+  assert.match(source, /private readonly nextSpriteButton/);
   assert.match(source, /private readonly nextChangeButton/);
+  assert.match(source, /private readonly actorSelect/);
   assert.match(source, /\["actor", "Actor"\]/);
   assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
   assert.match(source, /Runtime actions/);
   assert.match(source, /Input channels/);
   assert.match(source, /setHeldDirection/);
+  assert.match(source, /selectActor/);
+  assert.match(source, /stepPresentationToNextSprite/);
   assert.match(source, /Presentation/);
   assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
@@ -158,14 +198,20 @@ test("Debug World pause freezes only the clock and preserves input state", () =>
   assert.doesNotMatch(pause[0], /setEnabled\(false\)/);
   assert.doesNotMatch(pause[0], /heldDirection = null/);
   assert.match(source, /input: this\.inputController\?\.inspectMovement\(\) \?\? null/);
-  assert.match(source, /setHeldDirection: \(direction\) => this\.setHeldDirection\(direction\)/);
+  assert.match(source, /setHeldDirection: \(actorId, direction\)/);
+  assert.match(source, /this\.setDebugHeldDirection\(actorId, direction\)/);
 });
 
-test("Debug Runtime keeps semantic presentation stepping separate from presentation Hz", () => {
+test("Debug Runtime supports selected-actor teleport and semantic sprite stepping", () => {
   const source = fs.readFileSync(
     new URL("../src/debug/DebugRuntime.ts", import.meta.url),
     "utf8",
   );
+  assert.match(source, /addEventListener\("dblclick", this\.onDoubleClick\)/);
+  assert.match(source, /teleportActor\(actorId, inspection\.cell\)/);
+  assert.match(source, /trackedActorId/);
+  assert.match(source, /stepPresentationToNextSprite/);
+  assert.match(source, /spriteSignature/);
   assert.match(source, /stepPresentationToNextChange/);
   assert.match(source, /for \(let frame = 0; frame < 240; frame \+= 1\)/);
   assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
