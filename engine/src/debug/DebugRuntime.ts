@@ -32,6 +32,7 @@ export class DebugRuntime {
   private readonly trace = new DebugTraceRecorder(50);
   private selection: DebugSelection | null = null;
   private previousSnapshot: DebugSnapshot | null = null;
+  private debugInputInjected = false;
   private enabled = false;
 
   constructor(
@@ -44,6 +45,7 @@ export class DebugRuntime {
   }
 
   setEnabled(enabled: boolean): void {
+    if (!enabled) this.releaseDebugInput();
     this.enabled = enabled;
     if (enabled) this.ensureSidebar().setEnabled(true);
     else this.sidebar?.setEnabled(false);
@@ -65,6 +67,7 @@ export class DebugRuntime {
   }
 
   destroy(): void {
+    this.releaseDebugInput();
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
     this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
@@ -76,10 +79,14 @@ export class DebugRuntime {
     if (!this.sidebar) {
       this.sidebar = new DebugSidebar(this.canvas, {
         pauseWorld: () => this.host.pause(),
-        resumeWorld: () => this.host.resume(),
+        resumeWorld: () => {
+          this.releaseDebugInput();
+          this.host.resume();
+        },
         stepWorld: () => this.host.step(1),
         setHeldDirection: (direction) => {
           this.host.setHeldDirection(direction);
+          this.debugInputInjected = direction !== null;
           this.host.requestRender();
         },
         pausePresentation: () => this.host.pausePresentation(),
@@ -96,6 +103,12 @@ export class DebugRuntime {
       });
     }
     return this.sidebar;
+  }
+
+  private releaseDebugInput(): void {
+    if (!this.debugInputInjected) return;
+    this.host.setHeldDirection(null);
+    this.debugInputInjected = false;
   }
 
   /** Jump presentation to the end of the current visible motion without changing Hz. */
