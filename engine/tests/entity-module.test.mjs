@@ -4,6 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import {
   builtinEntityModules,
   createBuiltinBehaviorRegistry,
+  createBuiltinRuntimeActionRegistry,
 } from "../dist/entities/registry.js";
 
 function moduleFor(type) {
@@ -34,6 +35,10 @@ test("EntityModule colocates definition visual and behavior bindings", () => {
 
   const ice = moduleFor(EntityTypeId.ICE);
   assert.deepEqual(bindingIds(ice), [[undefined, "ice-slide"]]);
+
+  const speed = moduleFor(EntityTypeId.SPEED);
+  assert.deepEqual(bindingIds(speed), [[undefined, "speed-boost"]]);
+  assert.deepEqual(speed.runtimeActions?.map((action) => action.kind), ["speed-run"]);
 });
 
 test("BehaviorRegistry is built from the same builtin EntityModule list", () => {
@@ -51,6 +56,7 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
     "pickup",
     "portal",
     "shovelable",
+    "speed-boost",
     "stateful-block",
     "water-requires-overlay",
   ]);
@@ -59,4 +65,11 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
     registry.resolve([], ["water"])[0]?.id,
     "water-requires-overlay",
   );
+});
+
+test("RuntimeActionRegistry composes core actions with Entity-owned actions", () => {
+  const registry = createBuiltinRuntimeActionRegistry();
+  assert.equal(registry.require("delay").kind, "delay");
+  assert.equal(registry.require("delayed-move").kind, "delayed-move");
+  assert.equal(registry.require("speed-run").kind, "speed-run");
 });
