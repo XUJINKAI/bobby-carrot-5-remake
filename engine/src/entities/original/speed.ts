@@ -63,23 +63,33 @@ const speedRunAction: RuntimeActionDefinition = {
     if (
       intent.type !== "move" ||
       intent.cause.type !== "player-input" ||
-      intent.actorId !== action.ownerEntityId ||
-      phaseState(action.state.phase) !== "full"
+      intent.actorId !== action.ownerEntityId
     )
       return;
 
+    const phase = phaseState(action.state.phase);
+    if (phase === "normal" || phase === "slow") {
+      // 衰减的第二、三格完全不吃控制；输入由 gameplay 明确吞掉，
+      // 不能在 Speed Action 结束后作为 held retry 补走一格。
+      return "consumed";
+    }
+    if (phase !== "full") return;
+
     const owner = query.entity(intent.actorId);
     if (!owner) return;
-    const currentDirection =
-      speedDirectionAt(query, owner.anchor) ?? directionState(action.state.direction);
-    if (!currentDirection) return;
-    const previousDirection = directionState(action.state.direction);
-    if (previousDirection !== currentDirection) {
-      action.state.direction = currentDirection;
-      action.state.sustainCurrentFullCell = false;
+    const beltDirection = speedDirectionAt(query, owner.anchor);
+    if (beltDirection) {
+      // 板上的输入不属于离板 full 格的判定窗口；持续按住时 input 会继续 retry，
+      // 真正进入离板 full 格之后才开始记录。
+      return "retry";
     }
+
+    const currentDirection = directionState(action.state.direction);
+    if (!currentDirection) return;
     if (intent.direction === currentDirection)
-      action.state.sustainCurrentFullCell = true;
+      action.state.sawSameDirectionCurrentFullCell = true;
+    else action.state.sawOtherDirectionCurrentFullCell = true;
+    return "retry";
   },
 
   update({ action, time, query, commands }) {
@@ -91,9 +101,10 @@ const speedRunAction: RuntimeActionDefinition = {
     if (booleanState(action.state.pendingMove)) {
       const beforeX = numberState(action.state.beforeX);
       const beforeY = numberState(action.state.beforeY);
-      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick 若位置
-      // 没变，说明撞停；无需再等完整 motion cadence 才解除 boost。
+      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick若位置
+      // 没变，说明 Speed 强制移动撞停。
       if (owner.anchor.x === beforeX && owner.anchor.y === beforeY) {
+        commands.emit({ type: "speed-impact", entityId: ownerEntityId });
         commands.setState(
           ownerEntityId,
           patchBobbySpeedBoost(owner.state, null),
@@ -114,15 +125,14 @@ const speedRunAction: RuntimeActionDefinition = {
       if (beltDirection) {
         action.state.direction = beltDirection;
         action.state.phase = "full";
-        // Speed surface 本身保持全速；板上的输入不能预存给离板后的第一格。
-        action.state.sustainCurrentFullCell = false;
+        clearFullCellInput(action.state);
       } else if (previousPhase === "full") {
-        // sustain 只代表“刚完成的这一格 full 期间是否观察到同方向输入”。
-        // 每格结算只消费一次，下一格必须重新观察，否则立即进入衰减。
-        const sustainNextFull = booleanState(
-          action.state.sustainCurrentFullCell,
-        );
-        action.state.sustainCurrentFullCell = false;
+        // 每一个 full 格都有独立判定窗口：必须“只按过同方向”。
+        // 没输入、只按异方向、同向和异向都按过，都会进入衰减。
+        const sustainNextFull =
+          booleanState(action.state.sawSameDirectionCurrentFullCell) &&
+          !booleanState(action.state.sawOtherDirectionCurrentFullCell);
+        clearFullCellInput(action.state);
         action.state.phase = sustainNextFull ? "full" : "normal";
       } else if (previousPhase === "normal") {
         action.state.phase = "slow";
@@ -148,7 +158,7 @@ const speedRunAction: RuntimeActionDefinition = {
     }
     if (beltDirection) {
       // 只从离板后的当前 full 格开始记录续速输入。
-      action.state.sustainCurrentFullCell = false;
+      clearFullCellInput(action.state);
       if (previousDirection !== beltDirection) {
         action.state.direction = beltDirection;
         action.state.phase = "full";
@@ -228,7 +238,8 @@ function createSpeedRunRuntimeAction(
     state: {
       direction,
       phase: "full",
-      sustainCurrentFullCell: false,
+      sawSameDirectionCurrentFullCell: false,
+      sawOtherDirectionCurrentFullCell: false,
       pendingMove: false,
       elapsedMs: 0,
       waitMs: initialWaitMs,
@@ -263,6 +274,11 @@ function cadenceForPhase(phase: BobbySpeedPhase): number {
   if (phase === "full") return DEFAULT_SPEED_FULL_CADENCE_MS;
   if (phase === "normal") return DEFAULT_SPEED_NORMAL_CADENCE_MS;
   return DEFAULT_SPEED_SLOW_CADENCE_MS;
+}
+
+function clearFullCellInput(state: Record<string, JsonValue>): void {
+  state.sawSameDirectionCurrentFullCell = false;
+  state.sawOtherDirectionCurrentFullCell = false;
 }
 
 function phaseState(value: JsonValue | undefined): BobbySpeedPhase | null {
