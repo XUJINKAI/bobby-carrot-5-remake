@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import {
-  EditorPreview,
-  isSurfaceEntityType,
-  moveEntitiesBy,
   paintSurface,
   placeEntity,
   rectangleCells,
@@ -11,7 +8,6 @@ import {
   type Cell,
   type EditorCanvasContextMenuRequest,
   type EditorMap,
-  type EntityRef,
   type LevelValidationIssue,
 } from "@bobby/editor";
 import type { AudioBackend, ImageManager } from "@bobby/engine";
@@ -41,12 +37,6 @@ const props = defineProps<{
 const page = useEditorPage(props.initialLevel);
 let session: GameSession | null = null;
 let disposePlayChange = (): void => {};
-let entityDrag: null | {
-  refs: EntityRef[];
-  start: Cell;
-  dx: number;
-  dy: number;
-} = null;
 let surfaceSelectionActive = false;
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const leftOpen = ref(true);
@@ -93,7 +83,6 @@ watch(
 
 async function togglePlay(): Promise<void> {
   closeContextMenu();
-  finishEntityDrag();
   surfaceSelectionActive = false;
   if (page.playing.value) {
     stopPlay();
@@ -165,17 +154,14 @@ function restartPlay(): void {
   syncShell();
 }
 function undo(): void {
-  finishEntityDrag();
   if (page.playing.value) session?.game.undo();
   else page.document.undo();
 }
 function redo(): void {
-  finishEntityDrag();
   if (page.playing.value) session?.game.redo();
   else page.document.redo();
 }
 function importLevel(level: EditorMap): void {
-  finishEntityDrag();
   surfaceSelectionActive = false;
   page.document.load(level);
   page.fileDialogOpen.value = false;
@@ -190,7 +176,6 @@ function markDownloaded(metadata: {
 }
 
 function openContextMenu(request: EditorCanvasContextMenuRequest): void {
-  finishEntityDrag();
   surfaceSelectionActive = false;
   if (page.leftPanel.value === "surface") {
     page.pickSurface(request.cell);
@@ -223,7 +208,6 @@ function primaryStart(cell: Cell): void {
   closeContextMenu();
   if (startSurfaceSelection(cell)) return;
   if (fillSelectionWithBrush(cell)) return;
-  if (startEntityDrag(cell)) return;
   page.primaryStart(cell);
 }
 
@@ -233,23 +217,7 @@ function primaryMove(cell: Cell): void {
     if (selection) page.mapSelection.value = { ...selection, focus: cell };
     return;
   }
-  const drag = entityDrag;
-  if (!drag) {
-    page.primaryMove(cell);
-    return;
-  }
-  const desiredX = cell.x - drag.start.x;
-  const desiredY = cell.y - drag.start.y;
-  const stepX = desiredX - drag.dx;
-  const stepY = desiredY - drag.dy;
-  if (stepX === 0 && stepY === 0) return;
-  const changed = page.document.execute(
-    moveEntitiesBy(page.catalog, drag.refs, stepX, stepY),
-  );
-  if (!changed) return;
-  drag.dx += stepX;
-  drag.dy += stepY;
-  shiftSelection(stepX, stepY);
+  page.primaryMove(cell);
 }
 
 function primaryEnd(cell: Cell | null): void {
@@ -257,10 +225,6 @@ function primaryEnd(cell: Cell | null): void {
     if (cell && page.mapSelection.value)
       page.mapSelection.value = { ...page.mapSelection.value, focus: cell };
     surfaceSelectionActive = false;
-    return;
-  }
-  if (entityDrag) {
-    finishEntityDrag();
     return;
   }
   page.primaryEnd(cell);
@@ -334,51 +298,7 @@ function selectAll(): void {
   closeContextMenu();
 }
 
-function startEntityDrag(cell: Cell): boolean {
-  if (
-    page.leftPanel.value !== "palette" ||
-    page.paletteTool.value !== "select"
-  )
-    return false;
-  const level = page.snapshot.value.level as EditorMap;
-  const preview = new EditorPreview(level, page.catalog);
-  const candidate = [...preview.inspectCell(cell.x, cell.y).presences]
-    .reverse()
-    .find((item) => !isSurfaceEntityType(item.entity.type));
-  if (!candidate) return false;
-
-  const selected = page.selectedRefs.value.filter((ref) => {
-    const entity = level.entities[ref.index];
-    return Boolean(entity && !isSurfaceEntityType(entity.type));
-  });
-  const alreadySelected = selected.some(
-    (ref) => ref.index === candidate.ref.index,
-  );
-  const refs = alreadySelected ? selected : [candidate.ref];
-  if (!alreadySelected)
-    page.mapSelection.value = { anchor: cell, focus: cell };
-  page.document.beginTransaction();
-  entityDrag = { refs, start: cell, dx: 0, dy: 0 };
-  return true;
-}
-
-function finishEntityDrag(): void {
-  if (!entityDrag) return;
-  entityDrag = null;
-  page.document.commitTransaction();
-}
-
-function shiftSelection(dx: number, dy: number): void {
-  const selection = page.mapSelection.value;
-  if (!selection) return;
-  page.mapSelection.value = {
-    anchor: { x: selection.anchor.x + dx, y: selection.anchor.y + dy },
-    focus: { x: selection.focus.x + dx, y: selection.focus.y + dy },
-  };
-}
-
 function switchAuthoringPanel(): void {
-  finishEntityDrag();
   surfaceSelectionActive = false;
   page.toggleAuthoringPanel();
   leftOpen.value = true;
@@ -408,7 +328,6 @@ function handleKeydown(event: KeyboardEvent): void {
   }
   if (event.key === "Escape") {
     closeContextMenu();
-    finishEntityDrag();
     surfaceSelectionActive = false;
     return;
   }
@@ -458,7 +377,6 @@ function handleKeydown(event: KeyboardEvent): void {
 }
 
 function onShellAction(event: Event): void {
-  finishEntityDrag();
   surfaceSelectionActive = false;
   const action = (event as CustomEvent<{ action: string }>).detail.action;
   if (action === "editor-tool-select") page.setTool("select");
@@ -517,8 +435,6 @@ onMounted(() => {
   window.addEventListener("beforeunload", onBeforeUnload);
 });
 onBeforeUnmount(() => {
-  if (entityDrag) page.document.cancelTransaction();
-  entityDrag = null;
   surfaceSelectionActive = false;
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
