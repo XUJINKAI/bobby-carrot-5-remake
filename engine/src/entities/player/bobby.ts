@@ -17,6 +17,8 @@ import {
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_IDLE_DELAY_MS = 5000;
 const BOBBY_SOURCE_FRAME_MS = 1000 / 60;
+const BOBBY_STANDING_FRAME = 3;
+const BOBBY_ICE_FRAME = 6;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   left: 0,
   right: 1,
@@ -79,13 +81,17 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    // 原版 Ice 滑行固定停在普通移动 strip 的第 7 帧；离开 Ice 后回第 8 帧。
-    if (context.runtime?.animation === "ice") {
+    // 原版 Ice 全程固定在普通移动 strip 的第 7 帧。连续 Ice 格之间
+    // Runtime motion 会短暂回到 stationary，因此静止在 Ice 上也保持同一帧。
+    if (
+      context.runtime?.animation === "ice" ||
+      (!context.runtime?.moving && isStandingOnIce(context))
+    ) {
       return composition({
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
         frameRows: 1,
-        frameIndex: 6,
+        frameIndex: BOBBY_ICE_FRAME,
       });
     }
 
@@ -127,12 +133,26 @@ export const bobby: EntityModule = originalModule(definition, {
       asset: BOBBY_VISUAL_ASSETS.move[direction],
       frameColumns: 8,
       frameRows: 1,
-      ...(context.runtime?.moving
-        ? { frameProgress: progress }
-        : { frameIndex: 7 }),
+      frameIndex: context.runtime?.moving
+        ? resolveWalkingFrame(progress)
+        : BOBBY_STANDING_FRAME,
     });
   },
 });
+
+function isStandingOnIce(
+  context: Parameters<NonNullable<typeof bobby.visual>["resolve"]>[0],
+): boolean {
+  return context.query.presencesAt(context.entity.anchor).some((presence) =>
+    context.query.entity(presence.entityId)?.type === EntityTypeId.ICE
+  );
+}
+
+/** 原版普通走路以第 4 帧为起止点：4,5,6,7,8,1,2,3,4。 */
+function resolveWalkingFrame(progress: number): number {
+  const step = Math.min(8, Math.floor(clampProgress(progress) * 8));
+  return (BOBBY_STANDING_FRAME + step) % 8;
+}
 
 function composition(
   frame: {
