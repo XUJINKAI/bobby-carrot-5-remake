@@ -57,9 +57,9 @@ export function editorShellConfig(
     leftPanel === "surface"
       ? [
           {
-            id: "editor-surface-rect",
+            id: "editor-surface-select",
             icon: "select",
-            title: "矩形填充 (1)",
+            title: "选择 (1)",
             pressed: surfaceTool === "rect",
           },
           {
@@ -71,7 +71,7 @@ export function editorShellConfig(
           {
             id: "editor-surface-fill",
             icon: "fill",
-            title: "油漆桶 (4)",
+            title: "智能填充 (4)",
             pressed: surfaceTool === "fill",
           },
         ]
@@ -83,16 +83,10 @@ export function editorShellConfig(
             pressed: tool === "select",
           },
           {
-            id: "editor-tool-place",
-            icon: "place",
-            title: "放置 (2)",
+            id: "editor-tool-brush",
+            icon: "edit",
+            title: "画笔 (2)",
             pressed: tool === "place",
-          },
-          {
-            id: "editor-tool-erase",
-            icon: "erase",
-            title: "橡皮擦 (3)",
-            pressed: tool === "erase",
           },
         ];
 
