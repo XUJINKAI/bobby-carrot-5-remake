@@ -26,11 +26,11 @@ const EMPTY_PLAY_STATE: EditorPlayShellState = {
 
 export function configureEditorShell(
   playing: boolean,
-  tool: EditorTool = "place",
+  tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
   leftPanel: "palette" | "surface" = "surface",
-  surfaceTool: SurfaceTool = "brush",
+  surfaceTool: SurfaceTool = "rect",
 ): void {
   configureShell(
     editorShellConfig(
@@ -47,11 +47,11 @@ export function configureEditorShell(
 
 export function editorShellConfig(
   playing: boolean,
-  tool: EditorTool = "place",
+  tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
   leftPanel: "palette" | "surface" = "surface",
-  surfaceTool: SurfaceTool = "brush",
+  surfaceTool: SurfaceTool = "rect",
 ): ShellConfig {
   const authoringCommands: ShellAction[] =
     leftPanel === "surface"
@@ -71,7 +71,7 @@ export function editorShellConfig(
           {
             id: "editor-surface-fill",
             icon: "fill",
-            title: "智能填充 (4)",
+            title: "填充 (3)",
             pressed: surfaceTool === "fill",
           },
         ]
@@ -87,6 +87,12 @@ export function editorShellConfig(
             icon: "edit",
             title: "画笔 (2)",
             pressed: tool === "place",
+          },
+          {
+            id: "editor-tool-erase",
+            icon: "erase",
+            title: "删除 (4)",
+            pressed: tool === "erase",
           },
         ];
 
