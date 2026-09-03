@@ -10,7 +10,7 @@ export interface HeldDirectionInput {
   initialRepeatDelayMs: number;
 }
 
-export type HeldMoveAttempt = "moved" | "blocked" | "busy";
+export type HeldMoveAttempt = "moved" | "blocked" | "busy" | "consumed";
 
 type PendingAttempt = {
   input: HeldDirectionInput;
@@ -91,9 +91,11 @@ export class HeldDirectionRepeater {
     this.pendingAttempt = null;
 
     if (attempt.initial) {
+      // busy means retry/observe again next WorldTick. consumed is deliberately
+      // different: the gameplay process has eaten this held input until release/change.
       if (result === "busy") return;
       this.pendingInitialInput = null;
-      if (result === "blocked") {
+      if (result === "blocked" || result === "consumed") {
         if (this.sameInput(this.heldInput, attempt.input)) this.blocked = true;
         return;
       }
@@ -104,7 +106,10 @@ export class HeldDirectionRepeater {
       return;
     }
 
-    if (result === "blocked" && this.sameInput(this.heldInput, attempt.input))
+    if (
+      (result === "blocked" || result === "consumed") &&
+      this.sameInput(this.heldInput, attempt.input)
+    )
       this.blocked = true;
   }
 
