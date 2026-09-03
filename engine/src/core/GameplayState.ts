@@ -15,17 +15,18 @@ export interface GameplayActorState {
 
 /**
  * 外层 UI 可读取的 gameplay 状态。
- * player/facing/inventory 都只是 primary actor 的单人 UI 便利视图；
+ * primaryActorId/player/facing/inventory 都只是 primary actor 的单人 UI 便利视图；
+ * 地图缺少 player 时 primaryActorId/player/facing 为 null，World 仍然可以正常展示。
  * 多 actor 的真实状态始终存在 actors[].state / EntityStore。
  */
 export interface GameplayState {
   status: "playing" | "won" | "dead";
   deathReason: string | null;
   moves: number;
-  primaryActorId: EntityId;
+  primaryActorId: EntityId | null;
   actors: readonly GameplayActorState[];
-  player: { x: number; y: number };
-  facing: Direction;
+  player: { x: number; y: number } | null;
+  facing: Direction | null;
   inventory: Readonly<BobbyInventoryState>;
   economy: Readonly<EconomyState>;
   profile: Readonly<ProfileCapabilities>;
