@@ -6,7 +6,7 @@ import {
   type InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import EditorCellInspector from "./EditorCellInspector.vue";
 import EditorMultiInspector from "./EditorMultiInspector.vue";
 
@@ -15,6 +15,7 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
+  authoringPanel: "palette" | "surface";
 }>();
 const emit = defineEmits<{
   property: [entityIndex: number, key: string, value: string];
@@ -29,6 +30,13 @@ const emit = defineEmits<{
 }>();
 
 const showSurface = ref(false);
+watch(
+  () => props.authoringPanel,
+  (panel) => {
+    showSurface.value = panel === "surface";
+  },
+  { immediate: true },
+);
 const surfaceCount = computed(() => {
   if (props.model.mode === "cell")
     return props.model.layers.filter((layer) =>
