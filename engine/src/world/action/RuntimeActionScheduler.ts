@@ -5,6 +5,7 @@ import type { EntityId } from "../entity/EntityInstance.js";
 import type { WorldIntent } from "../movement/WorldIntent.js";
 import type {
   RuntimeActionId,
+  RuntimeActionInputDisposition,
   RuntimeActionInstance,
   RuntimeActionSchedulerSnapshot,
   RuntimeActionSpec,
@@ -66,16 +67,23 @@ export class RuntimeActionScheduler {
   }
 
   /** Input lock prevents movement, not observation by the gameplay process that owns the lock. */
-  observeIntents(intents: readonly WorldIntent[], query: WorldQueryApi): void {
+  observeIntents(
+    intents: readonly WorldIntent[],
+    query: WorldQueryApi,
+  ): RuntimeActionInputDisposition {
+    let disposition: RuntimeActionInputDisposition = "retry";
     const ids = [...this.actions.keys()].sort((a, b) => a - b);
     for (const id of ids) {
       const action = this.actions.get(id);
       if (!action) continue;
       const definition = this.registry.require(action.kind);
       if (!definition.onIntent) continue;
-      for (const intent of intents)
-        definition.onIntent({ action, intent, query });
+      for (const intent of intents) {
+        const current = definition.onIntent({ action, intent, query });
+        if (current === "consumed") disposition = "consumed";
+      }
     }
+    return disposition;
   }
 
   update(
