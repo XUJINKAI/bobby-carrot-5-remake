@@ -35,3 +35,18 @@ test("screenToTile compensates the current shake offset", () => {
   const screen = camera.worldToScreen(4.25, 3.25);
   assert.deepEqual(camera.screenToTile(screen.x, screen.y), { x: 4, y: 3 });
 });
+
+test("resetShake removes the effect without changing camera follow position", () => {
+  const camera = new Camera(48);
+  camera.setViewport(480, 320);
+  camera.follow({ x: 4, y: 3 }, 20, 20);
+  const baseline = camera.worldToScreen(4, 3);
+
+  camera.shake(frame(100), 150, 6);
+  camera.update(frame(125, 25, 1));
+  assert.notDeepEqual(camera.worldToScreen(4, 3), baseline);
+  camera.resetShake();
+
+  assert.equal(camera.shaking, false);
+  assert.deepEqual(camera.worldToScreen(4, 3), baseline);
+});
