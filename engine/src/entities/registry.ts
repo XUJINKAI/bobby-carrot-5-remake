@@ -1,4 +1,7 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
+import {
+  createBuiltinRuntimeActionRegistry as createCoreRuntimeActionRegistry,
+} from "../world/action/builtinActions.js";
 import { BehaviorRegistry } from "../world/behavior/BehaviorRegistry.js";
 import type { EntityRegistry } from "../world/entity/EntityRegistry.js";
 import { EntityCatalog } from "./EntityCatalog.js";
@@ -62,6 +65,15 @@ export function createBuiltinBehaviorRegistry(
       if (trait) registry.bindTrait(trait, behavior.id);
     }
   }
+  return registry;
+}
+
+export function createBuiltinRuntimeActionRegistry(
+  modules: readonly EntityModule[] = builtinEntityModules,
+) {
+  const registry = createCoreRuntimeActionRegistry();
+  for (const module of modules)
+    for (const action of module.runtimeActions ?? []) registry.register(action);
   return registry;
 }
 
