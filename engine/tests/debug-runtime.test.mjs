@@ -51,6 +51,7 @@ test("Debug snapshot exposes runtime clocks, primary actor, actions and inspecte
     worldClock,
     presentationClock,
     timing,
+    input: null,
     selection: { cell: { x: 0, y: 0 }, entityId: bobby.id },
   });
 
@@ -62,6 +63,7 @@ test("Debug snapshot exposes runtime clocks, primary actor, actions and inspecte
   assert.equal(snapshot.runtime.presentationPaused, false);
   assert.equal(snapshot.runtime.actionCount, 0);
   assert.equal(snapshot.actions.length, 0);
+  assert.equal(snapshot.input, null);
   assert.equal(snapshot.actor?.id, bobby.id);
   assert.equal(snapshot.actor?.type, EntityTypeId.BOBBY);
   assert.deepEqual(snapshot.actor?.anchor, { x: 0, y: 0 });
@@ -99,6 +101,7 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     worldClock,
     presentationClock,
     timing,
+    input: null,
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
@@ -121,10 +124,41 @@ test("Debug Sidebar exposes persistent clocks plus Actor Timeline Inspect tabs",
   assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
   assert.match(source, /Runtime actions/);
+  assert.match(source, /Input channels/);
+  assert.match(source, /setHeldDirection/);
   assert.match(source, /Presentation/);
   assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);
+});
+
+test("Debug Sidebar keeps details DOM stable during presentation refresh", () => {
+  const source = fs.readFileSync(
+    new URL("../src/debug/DebugSidebar.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /private readonly actorInputDetails/);
+  assert.match(source, /private readonly actorPresentationDetails/);
+  assert.match(source, /private setJson\(/);
+  assert.doesNotMatch(source, /this\.actorPanel\.replaceChildren/);
+  assert.doesNotMatch(source, /this\.inspectPanel\.replaceChildren/);
+  assert.match(source, /if \(key === this\.timelineKey\) return/);
+});
+
+test("Debug World pause freezes only the clock and preserves input state", () => {
+  const source = fs.readFileSync(
+    new URL("../src/core/Game.ts", import.meta.url),
+    "utf8",
+  );
+  const pause = source.match(
+    /private pauseDebugClock\(\): void \{[\s\S]*?\n  \}/,
+  );
+  assert.ok(pause);
+  assert.match(pause[0], /this\.worldClock\.pause\(\)/);
+  assert.doesNotMatch(pause[0], /setEnabled\(false\)/);
+  assert.doesNotMatch(pause[0], /heldDirection = null/);
+  assert.match(source, /input: this\.inputController\?\.inspectMovement\(\) \?\? null/);
+  assert.match(source, /setHeldDirection: \(direction\) => this\.setHeldDirection\(direction\)/);
 });
 
 test("Debug Runtime keeps semantic presentation stepping separate from presentation Hz", () => {
@@ -135,5 +169,6 @@ test("Debug Runtime keeps semantic presentation stepping separate from presentat
   assert.match(source, /stepPresentationToNextChange/);
   assert.match(source, /for \(let frame = 0; frame < 240; frame \+= 1\)/);
   assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
+  assert.match(source, /category: "input"/);
   assert.doesNotMatch(source, /presentationHz\s*=/);
 });
