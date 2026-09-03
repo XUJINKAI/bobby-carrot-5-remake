@@ -1,5 +1,8 @@
 import type { Direction } from "@bobby/model";
-import { resolveGameplayMount } from "../ui/gameplayMount.js";
+import {
+  GAMEPLAY_RIGHT_INSET_CSS_VAR,
+  resolveGameplayMount,
+} from "../ui/gameplayMount.js";
 
 export interface ScreenJoystickOptions {
   enabled?: boolean;
@@ -175,14 +178,16 @@ export class ScreenJoystick {
         ),
       );
 
-    // Visual layer covers the gameplay mount and clips floating controls at its
-    // boundary. A joystick centered near the screen edge therefore cannot grow
-    // the document scroll area, while the hit area remains independently sized.
+    // Visual layer covers only the currently available gameplay viewport. Debug
+    // docks reserve the right side through the shared gameplay inset variable.
     this.layer = document.createElement("div");
     this.layer.className = "engine-screen-joystick-layer";
     Object.assign(this.layer.style, {
       position: "absolute",
-      inset: "0",
+      top: "0",
+      left: "0",
+      bottom: "0",
+      right: `var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px)`,
       overflow: "hidden",
       pointerEvents: "none",
       zIndex: "7",
