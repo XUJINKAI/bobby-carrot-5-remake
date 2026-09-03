@@ -13,6 +13,7 @@ import {
   detectSurfaceTheme,
   fillSurface,
   inspectEditorRules,
+  isSurfaceEntityType,
   paintSurface,
   pasteClipboard,
   pickSurfaceBrush,
@@ -95,11 +96,13 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
   const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
-  const tool = computed<EditorTool>(() => {
-    if (leftPanel.value === "surface")
-      return surfaceTool.value === "rect" ? "select" : "place";
-    return paletteTool.value;
-  });
+  const tool = computed<EditorTool>(() =>
+    leftPanel.value === "surface"
+      ? surfaceTool.value === "rect"
+        ? "select"
+        : "place"
+      : paletteTool.value,
+  );
   const selectedRefs = computed(() =>
     mapSelection.value
       ? selectedEntityRefs(currentLevel(), preview(), mapSelection.value)
@@ -140,11 +143,11 @@ export function useEditorPage(initialLevel: EditorMap) {
     surfaceTool.value = next;
   }
 
-  function selectSurfaceTerrain(terrain: SurfaceTerrainId): void {
+  function selectSurfaceTerrain(terrainId: SurfaceTerrainId): void {
     activateSurface();
     surfaceBrush.value = normalizeSurfaceBrush({
       ...surfaceBrush.value,
-      terrain,
+      terrain: terrainId,
     });
   }
 
@@ -172,13 +175,11 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function setSurfaceAlternate(index: 0 | 1, type: EntityType): void {
     activateSurface();
-    const terrain = surfaceTerrain(surfaceBrush.value.terrain);
-    if (!terrain.variants.some((variant) => variant.type === type)) return;
-    const first = surfaceBrush.value.alternate?.[0] ?? terrain.variants[0]?.type;
+    const variants = surfaceTerrain(surfaceBrush.value.terrain).rows.flat();
+    if (!variants.some((variant) => variant.type === type)) return;
+    const first = surfaceBrush.value.alternate?.[0] ?? variants[0]?.type;
     const second =
-      surfaceBrush.value.alternate?.[1] ??
-      terrain.variants[1]?.type ??
-      first;
+      surfaceBrush.value.alternate?.[1] ?? variants[1]?.type ?? first;
     if (!first || !second) return;
     const alternate: [EntityType, EntityType] = [first, second];
     alternate[index] = type;
@@ -312,6 +313,14 @@ export function useEditorPage(initialLevel: EditorMap) {
     mapSelection.value = { anchor: cell, focus: cell };
   }
 
+  function entitySelectedRefs(): EntityRef[] {
+    const level = currentLevel();
+    return selectedRefs.value.filter((ref) => {
+      const entity = level.entities[ref.index];
+      return Boolean(entity && !isSurfaceEntityType(entity.type));
+    });
+  }
+
   function copy(): boolean {
     if (!mapSelection.value) return false;
     clipboard.value = copyEntitySelection(
@@ -325,14 +334,6 @@ export function useEditorPage(initialLevel: EditorMap) {
   function cut(): boolean {
     if (!copy()) return false;
     return deleteSelection();
-  }
-
-  function entitySelectedRefs(): EntityRef[] {
-    const level = currentLevel();
-    return selectedRefs.value.filter((ref) => {
-      const entity = level.entities[ref.index];
-      return entity && !pickSurfaceBrush(level, { x: entity.x, y: entity.y })?.exact?.includes("__never__") && !isSurfaceRef(level, ref);
-    });
   }
 
   function deleteSelection(): boolean {
@@ -613,36 +614,23 @@ export function useEditorPage(initialLevel: EditorMap) {
   };
 }
 
-function isSurfaceRef(level: EditorMap, ref: EntityRef): boolean {
-  const entity = level.entities[ref.index];
-  return Boolean(entity && surfaceTerrainForType(entity.type));
-}
-
-function surfaceTerrainForType(type: EntityType): boolean {
-  try {
-    return Boolean(type && (type.startsWith("background-variant-") || type.startsWith("walkable-variant-") || ["ground-a", "ground-b", "ground-c", "ground-d", "water", "water-animated", "water-variant-1", "water-variant-2", "water-variant-3", "ice"].includes(type)));
-  } catch {
-    return false;
-  }
-}
-
 function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
-  const terrain = surfaceTerrain(brush.terrain);
-  const first = terrain.variants[0]?.type;
-  const second = terrain.variants[1]?.type ?? first;
+  const variants = surfaceTerrain(brush.terrain).rows.flat();
+  const first = variants[0]?.type;
+  const second = variants[1]?.type ?? first;
   if (!first) return brush;
   const exact =
-    brush.exact && terrain.variants.some((variant) => variant.type === brush.exact)
+    brush.exact && variants.some((variant) => variant.type === brush.exact)
       ? brush.exact
       : first;
   return {
     ...brush,
     exact,
     alternate: [
-      terrain.variants.some((variant) => variant.type === brush.alternate?.[0])
+      variants.some((variant) => variant.type === brush.alternate?.[0])
         ? brush.alternate![0]
         : first,
-      terrain.variants.some((variant) => variant.type === brush.alternate?.[1])
+      variants.some((variant) => variant.type === brush.alternate?.[1])
         ? brush.alternate![1]
         : second!,
     ],
