@@ -91,9 +91,14 @@ export const EDITOR_HELP: HelpDescriptor = {
   sections: [
     {
       lines: [
-        "左键放置 Terrain 或 Object",
-        "右键 / Del：删除完整对象",
-        "Q / E：切换对象形态",
+        "1 选择：单选或拖出矩形多选",
+        "2 画笔：绘制当前素材；点入选择框可整块填充",
+        "4 智能填充：Surface 连通区域填充",
+        "Tab：切换 Palette / Surface",
+        "Ctrl/Cmd+A：全选地图",
+        "Delete / Backspace：删除选中的 Palette Entity",
+        "Surface 右键：取样当前 Terrain / Variant",
+        "Q / E：切换 Palette Entity 形态",
         "滚轮：切换形态或缩放地图",
       ],
     },
