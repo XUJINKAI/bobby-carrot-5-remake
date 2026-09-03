@@ -1,3 +1,4 @@
+import type { Direction } from "@bobby/model";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import { resolveGameplayMount } from "../ui/gameplayMount.js";
 import type { DebugEntitySnapshot, DebugSnapshot } from "./DebugSnapshot.js";
@@ -6,6 +7,7 @@ export interface DebugSidebarActions {
   pauseWorld(): void;
   resumeWorld(): void;
   stepWorld(): void;
+  setHeldDirection(direction: Direction | null): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
@@ -35,6 +37,7 @@ export class DebugSidebar {
   private activeTab: DebugTab = "actor";
   private worldPaused = false;
   private presentationPaused = false;
+  private debugHeldDirection: Direction | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -207,13 +210,43 @@ export class DebugSidebar {
       this.actorPanel.replaceChildren(document.createTextNode("No player actor."));
       return;
     }
+    const external = snapshot.input?.channels.find(
+      (channel) => channel.source === "external",
+    );
+    this.debugHeldDirection = external?.physicalDirection ?? null;
+    const activeChannels = snapshot.input?.channels.filter(
+      (channel) =>
+        channel.physicalDirection !== null || channel.repeater?.heldInput !== null,
+    );
+    const inputLabel = snapshot.runtime.inputBlocked
+      ? "blocked"
+      : activeChannels && activeChannels.length > 0
+        ? activeChannels
+            .map(
+              (channel) =>
+                `${channel.source}:${channel.physicalDirection ?? channel.repeater?.heldInput?.direction ?? "held"}`,
+            )
+            .join(" ")
+        : "ready";
+
     const body = document.createElement("div");
-    body.append(
+    const summary = document.createElement("div");
+    Object.assign(summary.style, {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) auto",
+      gap: "12px",
+      alignItems: "start",
+    });
+    const facts = document.createElement("div");
+    facts.append(
       this.valueRow("Actor", `#${actor.id} ${actor.type}`),
       this.valueRow("Position", `${actor.anchor.x}, ${actor.anchor.y}`),
       this.valueRow("Direction", actor.direction ?? "-"),
-      this.valueRow("Input", snapshot.runtime.inputBlocked ? "blocked" : "ready"),
+      this.valueRow("Input", inputLabel),
     );
+    summary.append(facts, this.directionPad());
+    body.append(summary);
+    body.append(this.jsonDetails("Input channels", snapshot.input, true));
     body.append(this.jsonDetails("Entity state", actor.state, true));
     const ownedActions = snapshot.actions.filter(
       (action) =>
@@ -222,6 +255,54 @@ export class DebugSidebar {
     body.append(this.jsonDetails("Runtime actions", ownedActions, true));
     body.append(this.jsonDetails("Presentation", actor.visual.runtime, true));
     this.actorPanel.replaceChildren(this.section(`Selected actor #${actor.id}`, body));
+  }
+
+  private directionPad(): HTMLElement {
+    const pad = document.createElement("div");
+    Object.assign(pad.style, {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 30px)",
+      gridTemplateRows: "repeat(3, 28px)",
+      gap: "3px",
+    });
+    const cells: Array<[string, Direction | null] | null> = [
+      null,
+      ["↑", "up"],
+      null,
+      ["←", "left"],
+      ["·", null],
+      ["→", "right"],
+      null,
+      ["↓", "down"],
+      null,
+    ];
+    for (const cell of cells) {
+      if (!cell) {
+        pad.append(document.createElement("span"));
+        continue;
+      }
+      const [label, direction] = cell;
+      const button = this.button(label, () =>
+        this.actions.setHeldDirection(
+          direction !== null && direction === this.debugHeldDirection
+            ? null
+            : direction,
+        ),
+      );
+      button.disabled = !this.worldPaused;
+      button.title = this.worldPaused
+        ? direction
+          ? `Hold debug input ${direction}`
+          : "Release debug input"
+        : "Pause World before injecting debug input";
+      button.style.padding = "2px";
+      button.style.background =
+        direction !== null && direction === this.debugHeldDirection
+          ? "#477a53"
+          : "#14251a";
+      pad.append(button);
+    }
+    return pad;
   }
 
   private renderTimeline(snapshot: DebugSnapshot): void {
