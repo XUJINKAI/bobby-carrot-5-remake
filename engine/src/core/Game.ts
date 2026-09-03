@@ -49,7 +49,10 @@ import type {
 } from "../world/WorldTypes.js";
 import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
-import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
+import type {
+  WorldIntent,
+  WorldIntentGroup,
+} from "../world/movement/WorldIntent.js";
 import type {
   EntityMotion,
   WorldStepResult,
@@ -92,7 +95,7 @@ type GameEventName =
   | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
-type MoveAttempt = "moved" | "blocked" | "busy";
+type MoveAttempt = "moved" | "blocked" | "busy" | "consumed";
 
 export class Game {
   readonly audio: AudioBackend;
@@ -333,7 +336,7 @@ export class Game {
       direction,
     );
     if (this.world.inputBlocked) {
-      this.world.observeIntents(group.intents);
+      this.observeBlockedIntents(group.intents);
       return null;
     }
     const result = this.startLogicalStep(group);
@@ -738,8 +741,8 @@ export class Game {
       return;
     }
     if (this.world.inputBlocked) {
-      this.world.observeIntents(intents);
-      this.resolveInputAttempts(input, "busy");
+      const disposition = this.observeBlockedIntents(intents);
+      this.resolveInputAttempts(input, disposition);
       return;
     }
 
@@ -770,6 +773,15 @@ export class Game {
     );
   }
 
+  private observeBlockedIntents(
+    intents: readonly WorldIntent[],
+  ): "busy" | "consumed" {
+    return this.world.actions.observeIntents(intents, this.world.query) ===
+      "consumed"
+      ? "consumed"
+      : "busy";
+  }
+
   private applyDirectHeldInput(): void {
     if (
       !this.heldDirection ||
@@ -785,7 +797,8 @@ export class Game {
       this.heldDirection,
     );
     if (this.world.inputBlocked) {
-      this.world.observeIntents(group.intents);
+      if (this.observeBlockedIntents(group.intents) === "consumed")
+        this.heldDirectionBlocked = true;
       return;
     }
     const result = this.startLogicalStep(group);
@@ -894,8 +907,11 @@ export class Game {
   };
 
   private publishWorldEvents(events: readonly WorldEvent[]): void {
-    for (const event of events)
+    for (const event of events) {
+      if (event.type === "speed-impact")
+        this.visual.camera.shake(this.presentationClock.current);
       for (const listener of this.worldEventListeners) listener(event);
+    }
   }
 
   private emitTerminalEvents(): void {
