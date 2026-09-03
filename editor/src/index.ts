@@ -28,7 +28,8 @@ export type { EditorRuleCapability, EditorRuleKind } from "./authoring/rules.js"
 export { editorVariantIndex, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorMode, InspectorEntityModel, InspectorEntityGroupModel } from "./authoring/inspectorModel.js";
-export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, materializeSurfaceVariants, paintSurface, pickSurfaceBrush, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";
+export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, paintSurface, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";
+export { materializeSurfaceVariants, pickSurfaceBrush } from "./authoring/surfacePersistence.js";
 export type { SurfaceBrush, SurfacePattern, SurfaceTerrainDefinition, SurfaceTerrainGroup, SurfaceTerrainId, SurfaceTheme, SurfaceThemeDefinition, SurfaceTool, SurfaceType, SurfaceVariant } from "./authoring/surfaceAuthoring.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
 export type { EditorViewportState } from "./canvas/EditorViewport.js";
