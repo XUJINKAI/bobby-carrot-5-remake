@@ -1,5 +1,8 @@
 import { EntityTypeId, type Direction } from "@bobby/model";
-import type { VisualResolveContext } from "../../visual/VisualDefinition.js";
+import type {
+  ImageVisualLayer,
+  VisualResolveContext,
+} from "../../visual/VisualDefinition.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -13,11 +16,13 @@ import {
   BOBBY_INVENTORY_FIELDS,
   bobbyMountId,
   isBobbyFlying,
+  readBobbySpeedBoost,
 } from "./BobbyState.js";
 
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_IDLE_DELAY_MS = 5000;
 const BOBBY_SOURCE_FRAME_MS = 1000 / 60;
+const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
@@ -40,6 +45,7 @@ export const BOBBY_VISUAL_ASSETS = {
   mower: "bobby-mower",
   snowplow: "bobby-snowplow",
   kite: "bobby-kite",
+  speedTrail: "bobby-speed-trail",
 } as const;
 
 const definition: EntityModuleDefinition = {
@@ -98,12 +104,15 @@ export const bobby: EntityModule = originalModule(definition, {
 
     if (bobbyMountId(context.entity.state) !== null) {
       const row = (context.time?.frame ?? 0) % 2;
-      return composition({
-        asset: BOBBY_VISUAL_ASSETS.mower,
-        frameColumns: 4,
-        frameRows: 2,
-        frameIndex: DIRECTION_COLUMN[direction] + row * 4,
-      });
+      return composition(
+        {
+          asset: BOBBY_VISUAL_ASSETS.mower,
+          frameColumns: 4,
+          frameRows: 2,
+          frameIndex: DIRECTION_COLUMN[direction] + row * 4,
+        },
+        speedTrail(context),
+      );
     }
 
     if (isBobbyFlying(context.entity.state)) {
@@ -130,14 +139,17 @@ export const bobby: EntityModule = originalModule(definition, {
       }
     }
 
-    return composition({
-      asset: BOBBY_VISUAL_ASSETS.move[direction],
-      frameColumns: 8,
-      frameRows: 1,
-      frameIndex: context.runtime?.moving
-        ? resolveWalkingFrame(progress)
-        : BOBBY_STANDING_FRAME,
-    });
+    return composition(
+      {
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: context.runtime?.moving
+          ? resolveWalkingFrame(progress)
+          : BOBBY_STANDING_FRAME,
+      },
+      speedTrail(context),
+    );
   },
 });
 
@@ -153,6 +165,24 @@ function resolveWalkingFrame(progress: number): number {
   return (BOBBY_STANDING_FRAME + step) % 8;
 }
 
+function speedTrail(context: VisualResolveContext): ImageVisualLayer | null {
+  if (!readBobbySpeedBoost(context.entity.state)) return null;
+  const frame =
+    Math.floor(
+      Math.max(0, context.time?.nowMs ?? 0) / BOBBY_SPEED_TRAIL_FRAME_MS,
+    ) % 5;
+  return {
+    kind: "image",
+    asset: BOBBY_VISUAL_ASSETS.speedTrail,
+    frameColumns: 5,
+    frameRows: 2,
+    // mow.png 第二行的 5 帧是 Bobby / mower 共用的加速尾焰。
+    frameIndex: 5 + frame,
+    anchor: "bottom",
+    offsetY: BOBBY_OFFSET_Y,
+  };
+}
+
 function composition(
   frame: {
     asset: string;
@@ -161,16 +191,16 @@ function composition(
     frameIndex?: number;
     frameProgress?: number;
   },
+  background: ImageVisualLayer | null = null,
 ) {
+  const foreground: ImageVisualLayer = {
+    kind: "image",
+    ...frame,
+    anchor: "bottom",
+    offsetY: BOBBY_OFFSET_Y,
+  };
   return {
-    layers: [
-      {
-        kind: "image" as const,
-        ...frame,
-        anchor: "bottom" as const,
-        offsetY: BOBBY_OFFSET_Y,
-      },
-    ],
+    layers: background ? [background, foreground] : [foreground],
   };
 }
 
