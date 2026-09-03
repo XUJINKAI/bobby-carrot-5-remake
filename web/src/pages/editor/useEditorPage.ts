@@ -24,6 +24,7 @@ import {
   replaceEntities,
   replaceEntity,
   resolveEditorPalette,
+  resolveSelectionDeletionTargets,
   resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
@@ -75,7 +76,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
   const leftPanel = ref<EditorLeftPanel>("surface");
-  const surfaceTool = ref<SurfaceTool>("brush");
+  const surfaceTool = ref<SurfaceTool>("rect");
   const surfaceBrush = ref<SurfaceBrush>(defaultSurfaceBrush());
   const mapSelection = ref<EditorSelection | null>(null);
   const clipboard = ref<EditorClipboard | null>(null);
@@ -85,6 +86,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const helpDialogOpen = ref(false);
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
+  const eraseVisited = new Set<string>();
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
@@ -207,6 +209,13 @@ export function useEditorPage(initialLevel: EditorMap) {
       mapSelection.value = { anchor: cell, focus: cell };
       return;
     }
+    if (paletteTool.value === "erase") {
+      document.beginTransaction();
+      transactionActive = true;
+      eraseVisited.clear();
+      applyErase(cell);
+      return;
+    }
     if (paletteTool.value !== "place") return;
     document.beginTransaction();
     transactionActive = true;
@@ -223,14 +232,18 @@ export function useEditorPage(initialLevel: EditorMap) {
         mapSelection.value = { ...mapSelection.value, focus: cell };
       return;
     }
-    if (paletteTool.value === "place" && transactionActive)
+    if (paletteTool.value === "place" && transactionActive) {
       applyPaletteBrush(cell);
+      return;
+    }
+    if (paletteTool.value === "erase" && transactionActive) applyErase(cell);
   }
 
   function primaryEnd(): void {
     if (isSelectMode()) return;
     if (!transactionActive) return;
     transactionActive = false;
+    eraseVisited.clear();
     document.commitTransaction();
   }
 
@@ -301,6 +314,19 @@ export function useEditorPage(initialLevel: EditorMap) {
     document.execute(placeEntity(catalog, placement.value, cell, {}, editor));
   }
 
+  function applyErase(cell: Cell): void {
+    const key = `${cell.x},${cell.y}`;
+    if (eraseVisited.has(key)) return;
+    eraseVisited.add(key);
+    const refs = resolveSelectionDeletionTargets(
+      currentLevel(),
+      catalog,
+      { anchor: cell, focus: cell },
+      editor,
+    );
+    if (refs.length > 0) document.execute(removeEntities(refs));
+  }
+
   function pickSurface(cell: Cell): boolean {
     const picked = pickSurfaceBrush(currentLevel(), cell);
     if (!picked) return false;
@@ -344,16 +370,19 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function cut(): boolean {
     if (!copy()) return false;
-    return deleteSelection();
+    const refs = entitySelectedRefs();
+    return refs.length > 0 && document.execute(removeEntities(refs));
   }
 
   function deleteSelection(): boolean {
-    if (leftPanel.value === "surface") return false;
-    const refs = entitySelectedRefs();
-    if (refs.length === 0) return false;
-    const changed = document.execute(removeEntities(refs));
-    if (changed) mapSelection.value = null;
-    return changed;
+    if (leftPanel.value === "surface" || !mapSelection.value) return false;
+    const refs = resolveSelectionDeletionTargets(
+      currentLevel(),
+      catalog,
+      mapSelection.value,
+      editor,
+    );
+    return refs.length > 0 && document.execute(removeEntities(refs));
   }
 
   function deleteLayer(entityIndex: number): boolean {
