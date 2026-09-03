@@ -38,9 +38,25 @@ interface InspectEntityRefs {
   resolvedLayers: JsonDetailsRef;
 }
 
-/** Engine 自带的运行时调试侧栏，不依赖 Web / Editor 页面组件。 */
+/**
+ * Engine Debug uses two independent surfaces:
+ * - left Control Rail: commands only, always reachable while inspecting deep JSON;
+ * - right Sidebar: Actor / Timeline / Inspect state only.
+ */
 export class DebugSidebar {
   private readonly root: HTMLDivElement;
+  private readonly sidebarBody: HTMLDivElement;
+  private readonly sidebarTitle: HTMLElement;
+  private readonly sidebarCloseButton: HTMLButtonElement;
+  private readonly sidebarCollapseButton: HTMLButtonElement;
+  private sidebarCollapsed = false;
+
+  private readonly controlRoot: HTMLDivElement;
+  private readonly controlBody: HTMLDivElement;
+  private readonly controlTitle: HTMLElement;
+  private readonly controlCollapseButton: HTMLButtonElement;
+  private controlCollapsed = false;
+
   private readonly worldStatus: HTMLSpanElement;
   private readonly presentationStatus: HTMLSpanElement;
   private readonly worldPauseResumeButton: HTMLButtonElement;
@@ -50,15 +66,16 @@ export class DebugSidebar {
   private readonly frameForwardButton: HTMLButtonElement;
   private readonly nextSpriteButton: HTMLButtonElement;
   private readonly nextChangeButton: HTMLButtonElement;
+  private readonly controlActorSelect: HTMLSelectElement;
+  private actorOptionsKey = "";
+  private readonly directionButtons = new Map<Direction | "release", HTMLButtonElement>();
+
   private readonly actorPanel: HTMLDivElement;
   private readonly timelinePanel: HTMLDivElement;
   private readonly inspectPanel: HTMLDivElement;
   private readonly tabButtons = new Map<DebugTab, HTMLButtonElement>();
 
-  private readonly actorTitle: HTMLDivElement;
   private readonly actorTitleText: HTMLSpanElement;
-  private readonly actorSelect: HTMLSelectElement;
-  private actorOptionsKey = "";
   private readonly actorValue: ValueRef;
   private readonly actorPosition: ValueRef;
   private readonly actorDirection: ValueRef;
@@ -68,7 +85,6 @@ export class DebugSidebar {
   private readonly actorStateDetails: JsonDetailsRef;
   private readonly actorActionsDetails: JsonDetailsRef;
   private readonly actorPresentationDetails: JsonDetailsRef;
-  private readonly directionButtons = new Map<Direction | "release", HTMLButtonElement>();
 
   private readonly timelineCount: HTMLSpanElement;
   private readonly timelineList: HTMLDivElement;
@@ -92,9 +108,10 @@ export class DebugSidebar {
     private readonly actions: DebugSidebarActions,
   ) {
     const mount = resolveGameplayMount(canvas, undefined, "DebugSidebar");
+
     this.root = document.createElement("div");
     this.root.className = "engine-debug-sidebar";
-    this.root.setAttribute("aria-label", "Engine Debug");
+    this.root.setAttribute("aria-label", "Engine Debug Inspector");
     Object.assign(this.root.style, {
       position: "absolute",
       top: "0",
@@ -113,83 +130,33 @@ export class DebugSidebar {
       pointerEvents: "auto",
     });
 
-    const header = document.createElement("header");
-    Object.assign(header.style, {
+    const sidebarHeader = document.createElement("header");
+    Object.assign(sidebarHeader.style, {
+      position: "sticky",
+      top: "-12px",
+      zIndex: "2",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       gap: "8px",
-      marginBottom: "10px",
+      margin: "-12px -12px 10px",
+      padding: "12px",
+      background: "rgba(4, 11, 7, .98)",
+      borderBottom: "1px solid rgba(255,255,255,.08)",
     });
-    const title = document.createElement("strong");
-    title.textContent = "ENGINE DEBUG";
-    title.style.letterSpacing = ".08em";
-    const close = this.button("×", () => this.actions.close());
-    close.setAttribute("aria-label", "Close Engine Debug");
-    header.append(title, close);
+    this.sidebarTitle = document.createElement("strong");
+    this.sidebarTitle.textContent = "ENGINE DEBUG";
+    this.sidebarTitle.style.letterSpacing = ".08em";
+    const sidebarHeaderActions = document.createElement("div");
+    Object.assign(sidebarHeaderActions.style, { display: "flex", gap: "5px" });
+    this.sidebarCollapseButton = this.button("›", () => this.toggleSidebarCollapsed());
+    this.sidebarCollapseButton.title = "Collapse inspector";
+    this.sidebarCloseButton = this.button("×", () => this.actions.close());
+    this.sidebarCloseButton.setAttribute("aria-label", "Close Engine Debug");
+    sidebarHeaderActions.append(this.sidebarCollapseButton, this.sidebarCloseButton);
+    sidebarHeader.append(this.sidebarTitle, sidebarHeaderActions);
 
-    const clock = document.createElement("div");
-    Object.assign(clock.style, {
-      display: "grid",
-      gap: "7px",
-      marginBottom: "10px",
-      padding: "9px",
-      border: "1px solid rgba(255,255,255,.12)",
-      borderRadius: "6px",
-      background: "rgba(255,255,255,.035)",
-    });
-
-    const worldRow = document.createElement("div");
-    Object.assign(worldRow.style, {
-      display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto auto",
-      gap: "6px",
-      alignItems: "center",
-    });
-    this.worldStatus = document.createElement("span");
-    this.worldPauseResumeButton = this.button("⏸ World", () => {
-      if (this.worldPaused) this.actions.resumeWorld();
-      else this.actions.pauseWorld();
-    });
-    this.worldStepButton = this.button("Step", () => this.actions.stepWorld());
-    worldRow.append(
-      this.worldStatus,
-      this.worldPauseResumeButton,
-      this.worldStepButton,
-    );
-
-    const presentRow = document.createElement("div");
-    Object.assign(presentRow.style, {
-      display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto auto auto auto auto",
-      gap: "5px",
-      alignItems: "center",
-    });
-    this.presentationStatus = document.createElement("span");
-    this.presentationPauseResumeButton = this.button("⏸ Present", () => {
-      if (this.presentationPaused) this.actions.resumePresentation();
-      else this.actions.pausePresentation();
-    });
-    this.frameBackButton = this.button("-1", () => this.actions.stepPresentation(-1));
-    this.frameForwardButton = this.button("+1", () => this.actions.stepPresentation(1));
-    this.nextSpriteButton = this.button("Sprite", () =>
-      this.actions.stepPresentationToNextSprite(),
-    );
-    this.nextSpriteButton.title = "Advance until the selected actor changes sprite frame";
-    this.nextChangeButton = this.button("Next", () =>
-      this.actions.stepPresentationToNextChange(),
-    );
-    this.nextChangeButton.title = "Jump to the end of the current visible motion";
-    presentRow.append(
-      this.presentationStatus,
-      this.presentationPauseResumeButton,
-      this.frameBackButton,
-      this.frameForwardButton,
-      this.nextSpriteButton,
-      this.nextChangeButton,
-    );
-    clock.append(worldRow, presentRow);
-
+    this.sidebarBody = document.createElement("div");
     const tabs = document.createElement("div");
     Object.assign(tabs.style, {
       display: "grid",
@@ -209,13 +176,6 @@ export class DebugSidebar {
 
     this.actorPanel = document.createElement("div");
     const actorBody = document.createElement("div");
-    const actorSummary = document.createElement("div");
-    Object.assign(actorSummary.style, {
-      display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto",
-      gap: "12px",
-      alignItems: "start",
-    });
     const actorFacts = document.createElement("div");
     this.actorValue = this.valueRef("Actor");
     this.actorPosition = this.valueRef("Position");
@@ -229,8 +189,7 @@ export class DebugSidebar {
       this.actorInput.root,
       this.actorSprite.root,
     );
-    actorSummary.append(actorFacts, this.directionPad());
-    actorBody.append(actorSummary);
+    actorBody.append(actorFacts);
     this.actorInputDetails = this.jsonDetails("Input channels", true);
     this.actorStateDetails = this.jsonDetails("Entity state", true);
     this.actorActionsDetails = this.jsonDetails("Runtime actions", true);
@@ -242,31 +201,11 @@ export class DebugSidebar {
       this.actorPresentationDetails.details,
     );
     const actorSection = this.section("Selected actor", actorBody);
-    this.actorTitle = actorSection.firstElementChild as HTMLDivElement;
-    this.actorTitle.textContent = "";
-    Object.assign(this.actorTitle.style, {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "8px",
-    });
+    const actorTitle = actorSection.firstElementChild as HTMLDivElement;
+    actorTitle.textContent = "";
     this.actorTitleText = document.createElement("span");
     this.actorTitleText.textContent = "Selected actor";
-    this.actorSelect = document.createElement("select");
-    Object.assign(this.actorSelect.style, {
-      maxWidth: "160px",
-      padding: "2px 4px",
-      border: "1px solid rgba(255,255,255,.2)",
-      borderRadius: "4px",
-      background: "#14251a",
-      color: "inherit",
-      font: "inherit",
-    });
-    this.actorSelect.addEventListener("change", () => {
-      const actorId = Number(this.actorSelect.value);
-      if (Number.isFinite(actorId)) this.actions.selectActor(actorId);
-    });
-    this.actorTitle.append(this.actorTitleText, this.actorSelect);
+    actorTitle.append(this.actorTitleText);
     this.actorPanel.append(actorSection);
 
     this.timelinePanel = document.createElement("div");
@@ -291,7 +230,8 @@ export class DebugSidebar {
     this.inspectPanel = document.createElement("div");
     const inspectSectionBody = document.createElement("div");
     this.inspectMessage = document.createElement("div");
-    this.inspectMessage.textContent = "Click a cell to inspect it. Double-click a cell to teleport the selected actor.";
+    this.inspectMessage.textContent =
+      "Click a cell to inspect it. Double-click a cell to teleport the selected actor.";
     this.inspectBody = document.createElement("div");
     this.inspectCell = this.valueRef("Cell");
     this.inspectStack = document.createElement("div");
@@ -309,45 +249,199 @@ export class DebugSidebar {
     inspectSectionBody.append(this.inspectMessage, this.inspectBody);
     this.inspectPanel.append(this.section("Inspect", inspectSectionBody));
 
-    this.root.append(
-      header,
-      clock,
-      tabs,
-      this.actorPanel,
-      this.timelinePanel,
-      this.inspectPanel,
+    this.sidebarBody.append(tabs, this.actorPanel, this.timelinePanel, this.inspectPanel);
+    this.root.append(sidebarHeader, this.sidebarBody);
+
+    this.controlRoot = document.createElement("div");
+    this.controlRoot.className = "engine-debug-control-rail";
+    this.controlRoot.setAttribute("aria-label", "Engine Debug Controls");
+    Object.assign(this.controlRoot.style, {
+      position: "absolute",
+      top: "12px",
+      left: "12px",
+      width: "204px",
+      maxWidth: "calc(100% - 24px)",
+      maxHeight: "calc(100% - 24px)",
+      zIndex: "31",
+      overflow: "auto",
+      boxSizing: "border-box",
+      padding: "10px",
+      border: "1px solid rgba(255,255,255,.18)",
+      borderRadius: "7px",
+      background: "rgba(4, 11, 7, .94)",
+      boxShadow: "10px 10px 28px rgba(0,0,0,.34)",
+      color: "#e8f3ea",
+      font: "12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      pointerEvents: "auto",
+    });
+
+    const controlHeader = document.createElement("header");
+    Object.assign(controlHeader.style, {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "8px",
+      marginBottom: "9px",
+    });
+    this.controlTitle = document.createElement("strong");
+    this.controlTitle.textContent = "DEBUG CONTROL";
+    this.controlTitle.style.letterSpacing = ".06em";
+    this.controlCollapseButton = this.button("‹", () => this.toggleControlCollapsed());
+    this.controlCollapseButton.title = "Collapse controls";
+    controlHeader.append(this.controlTitle, this.controlCollapseButton);
+
+    this.controlBody = document.createElement("div");
+    Object.assign(this.controlBody.style, { display: "grid", gap: "8px" });
+
+    const actorControl = document.createElement("div");
+    const actorControlLabel = document.createElement("div");
+    actorControlLabel.textContent = "Actor";
+    actorControlLabel.style.color = "#8da495";
+    actorControlLabel.style.marginBottom = "4px";
+    this.controlActorSelect = document.createElement("select");
+    Object.assign(this.controlActorSelect.style, {
+      width: "100%",
+      padding: "4px 5px",
+      border: "1px solid rgba(255,255,255,.2)",
+      borderRadius: "4px",
+      background: "#14251a",
+      color: "inherit",
+      font: "inherit",
+    });
+    this.controlActorSelect.addEventListener("change", () => {
+      const actorId = Number(this.controlActorSelect.value);
+      if (Number.isFinite(actorId)) this.actions.selectActor(actorId);
+    });
+    actorControl.append(actorControlLabel, this.controlActorSelect);
+
+    const worldControl = this.controlSection("World");
+    this.worldStatus = document.createElement("span");
+    this.worldStatus.style.color = "#8da495";
+    const worldButtons = document.createElement("div");
+    Object.assign(worldButtons.style, {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) auto",
+      gap: "5px",
+      marginTop: "5px",
+    });
+    this.worldPauseResumeButton = this.button("⏸ Pause", () => {
+      if (this.worldPaused) this.actions.resumeWorld();
+      else this.actions.pauseWorld();
+    });
+    this.worldStepButton = this.button("Step", () => this.actions.stepWorld());
+    worldButtons.append(this.worldPauseResumeButton, this.worldStepButton);
+    worldControl.append(this.worldStatus, worldButtons);
+
+    const presentationControl = this.controlSection("Presentation");
+    this.presentationStatus = document.createElement("span");
+    this.presentationStatus.style.color = "#8da495";
+    this.presentationPauseResumeButton = this.button("⏸ Pause", () => {
+      if (this.presentationPaused) this.actions.resumePresentation();
+      else this.actions.pausePresentation();
+    });
+    this.presentationPauseResumeButton.style.marginTop = "5px";
+    this.presentationPauseResumeButton.style.width = "100%";
+    const presentationButtons = document.createElement("div");
+    Object.assign(presentationButtons.style, {
+      display: "grid",
+      gridTemplateColumns: "repeat(4,minmax(0,1fr))",
+      gap: "4px",
+      marginTop: "5px",
+    });
+    this.frameBackButton = this.button("-1", () => this.actions.stepPresentation(-1));
+    this.frameForwardButton = this.button("+1", () => this.actions.stepPresentation(1));
+    this.nextSpriteButton = this.button("Sprite", () =>
+      this.actions.stepPresentationToNextSprite(),
     );
-    mount.append(this.root);
+    this.nextSpriteButton.title =
+      "Advance until the selected actor changes sprite frame";
+    this.nextChangeButton = this.button("Next", () =>
+      this.actions.stepPresentationToNextChange(),
+    );
+    this.nextChangeButton.title = "Jump to the end of the current visible motion";
+    presentationButtons.append(
+      this.frameBackButton,
+      this.frameForwardButton,
+      this.nextSpriteButton,
+      this.nextChangeButton,
+    );
+    presentationControl.append(
+      this.presentationStatus,
+      this.presentationPauseResumeButton,
+      presentationButtons,
+    );
+
+    const inputControl = this.controlSection("Input");
+    const padWrap = document.createElement("div");
+    Object.assign(padWrap.style, {
+      display: "flex",
+      justifyContent: "center",
+      marginTop: "2px",
+    });
+    padWrap.append(this.directionPad());
+    const inputHint = document.createElement("div");
+    inputHint.textContent = "Pause World, choose a direction, then Step.";
+    Object.assign(inputHint.style, {
+      marginTop: "6px",
+      color: "#8da495",
+      fontSize: "11px",
+    });
+    inputControl.append(padWrap, inputHint);
+
+    const teleportHint = document.createElement("div");
+    teleportHint.textContent = "Double-click map: teleport selected actor";
+    Object.assign(teleportHint.style, {
+      paddingTop: "2px",
+      color: "#8da495",
+      fontSize: "11px",
+    });
+
+    this.controlBody.append(
+      actorControl,
+      worldControl,
+      presentationControl,
+      inputControl,
+      teleportHint,
+    );
+    this.controlRoot.append(controlHeader, this.controlBody);
+
+    mount.append(this.controlRoot, this.root);
     this.root.hidden = true;
+    this.controlRoot.hidden = true;
     this.setTab("actor");
   }
 
   setEnabled(enabled: boolean): void {
     this.root.hidden = !enabled;
+    this.controlRoot.hidden = !enabled;
   }
 
   render(snapshot: DebugSnapshot): void {
     if (this.root.hidden) return;
-    this.updateClocks(snapshot);
+    this.updateControls(snapshot);
     this.renderActor(snapshot);
     this.renderTimeline(snapshot);
     this.renderInspect(snapshot);
   }
 
   destroy(): void {
+    this.controlRoot.remove();
     this.root.remove();
   }
 
-  private updateClocks(snapshot: DebugSnapshot): void {
+  private updateControls(snapshot: DebugSnapshot): void {
     const runtime = snapshot.runtime;
     this.worldPaused = runtime.worldPaused;
     this.presentationPaused = runtime.presentationPaused;
-    this.worldStatus.textContent = `World W${runtime.worldTickCount} · ${runtime.worldHz}Hz`;
-    this.presentationStatus.textContent = `Present P${runtime.presentationFrame} · ${runtime.presentationHz}Hz`;
-    this.worldPauseResumeButton.textContent = runtime.worldPaused ? "▶ World" : "⏸ World";
+    this.worldStatus.textContent = `W${runtime.worldTickCount} · ${runtime.worldHz}Hz`;
+    this.presentationStatus.textContent =
+      `P${runtime.presentationFrame} · ${runtime.presentationHz}Hz`;
+    this.worldPauseResumeButton.textContent = runtime.worldPaused
+      ? "▶ Resume"
+      : "⏸ Pause";
     this.presentationPauseResumeButton.textContent = runtime.presentationPaused
-      ? "▶ Present"
-      : "⏸ Present";
+      ? "▶ Resume"
+      : "⏸ Pause";
     this.worldStepButton.disabled = !runtime.worldPaused;
     this.frameBackButton.disabled =
       !runtime.presentationPaused || runtime.presentationFrame <= 0;
@@ -357,10 +451,11 @@ export class DebugSidebar {
       !snapshot.actor ||
       !hasActiveActorPresentation(snapshot.actor);
     this.nextChangeButton.disabled = !runtime.presentationPaused;
+    this.updateActorSelector(snapshot);
+    this.updateDirectionPad(snapshot.actor !== null);
   }
 
   private renderActor(snapshot: DebugSnapshot): void {
-    this.updateActorSelector(snapshot);
     const actor = snapshot.actor;
     if (!actor) {
       this.actorTitleText.textContent = "Selected actor";
@@ -398,7 +493,7 @@ export class DebugSidebar {
     this.setValue(this.actorDirection, actor.direction ?? "-");
     this.setValue(this.actorInput, inputLabel);
     this.setValue(this.actorSprite, spriteLabel(actor));
-    this.updateDirectionPad();
+    this.updateDirectionPad(true);
     this.setJson(this.actorInputDetails, snapshot.input);
     this.setJson(this.actorStateDetails, actor.state);
     const ownedActions = snapshot.actions.filter(
@@ -423,19 +518,19 @@ export class DebugSidebar {
         option.textContent = `#${actor.id} ${actor.type}`;
         fragment.append(option);
       }
-      this.actorSelect.replaceChildren(fragment);
+      this.controlActorSelect.replaceChildren(fragment);
     }
-    this.actorSelect.hidden = snapshot.actors.length <= 1;
-    if (snapshot.actor) this.actorSelect.value = String(snapshot.actor.id);
+    this.controlActorSelect.disabled = snapshot.actors.length === 0;
+    if (snapshot.actor) this.controlActorSelect.value = String(snapshot.actor.id);
   }
 
   private directionPad(): HTMLElement {
     const pad = document.createElement("div");
     Object.assign(pad.style, {
       display: "grid",
-      gridTemplateColumns: "repeat(3, 30px)",
-      gridTemplateRows: "repeat(3, 28px)",
-      gap: "3px",
+      gridTemplateColumns: "repeat(3, 34px)",
+      gridTemplateRows: "repeat(3, 32px)",
+      gap: "4px",
     });
     const cells: Array<[string, Direction | "release"] | null> = [
       null,
@@ -469,14 +564,16 @@ export class DebugSidebar {
     return pad;
   }
 
-  private updateDirectionPad(): void {
+  private updateDirectionPad(hasActor: boolean): void {
     for (const [key, button] of this.directionButtons) {
-      button.disabled = !this.worldPaused;
-      button.title = this.worldPaused
-        ? key === "release"
-          ? "Release debug input"
-          : `Hold debug input ${key}`
-        : "Pause World before injecting debug input";
+      button.disabled = !this.worldPaused || !hasActor;
+      button.title = !hasActor
+        ? "No selected actor"
+        : this.worldPaused
+          ? key === "release"
+            ? "Release debug input"
+            : `Hold debug input ${key}`
+          : "Pause World before injecting debug input";
       button.style.background =
         key !== "release" && key === this.debugHeldDirection
           ? "#477a53"
@@ -603,6 +700,37 @@ export class DebugSidebar {
     this.setJson(refs.resolvedLayers, entity.visual.renderItems);
   }
 
+  private toggleSidebarCollapsed(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.sidebarBody.hidden = this.sidebarCollapsed;
+    this.sidebarTitle.hidden = this.sidebarCollapsed;
+    this.sidebarCloseButton.hidden = this.sidebarCollapsed;
+    this.sidebarCollapseButton.textContent = this.sidebarCollapsed ? "‹" : "›";
+    this.sidebarCollapseButton.title = this.sidebarCollapsed
+      ? "Expand inspector"
+      : "Collapse inspector";
+    Object.assign(this.root.style, {
+      width: this.sidebarCollapsed ? "42px" : "min(440px, 96%)",
+      padding: this.sidebarCollapsed ? "6px" : "12px",
+      overflow: this.sidebarCollapsed ? "hidden" : "auto",
+    });
+  }
+
+  private toggleControlCollapsed(): void {
+    this.controlCollapsed = !this.controlCollapsed;
+    this.controlBody.hidden = this.controlCollapsed;
+    this.controlTitle.hidden = this.controlCollapsed;
+    this.controlCollapseButton.textContent = this.controlCollapsed ? "›" : "‹";
+    this.controlCollapseButton.title = this.controlCollapsed
+      ? "Expand controls"
+      : "Collapse controls";
+    Object.assign(this.controlRoot.style, {
+      width: this.controlCollapsed ? "42px" : "204px",
+      padding: this.controlCollapsed ? "6px" : "10px",
+      overflow: this.controlCollapsed ? "hidden" : "auto",
+    });
+  }
+
   private setTab(tab: DebugTab): void {
     this.activeTab = tab;
     this.actorPanel.hidden = tab !== "actor";
@@ -610,6 +738,25 @@ export class DebugSidebar {
     this.inspectPanel.hidden = tab !== "inspect";
     for (const [key, button] of this.tabButtons)
       button.style.background = key === tab ? "#285135" : "#14251a";
+  }
+
+  private controlSection(titleText: string): HTMLDivElement {
+    const section = document.createElement("div");
+    Object.assign(section.style, {
+      padding: "7px",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: "5px",
+      background: "rgba(255,255,255,.03)",
+    });
+    const title = document.createElement("div");
+    title.textContent = titleText;
+    Object.assign(title.style, {
+      marginBottom: "3px",
+      color: "#9fd6aa",
+      fontWeight: "700",
+    });
+    section.append(title);
+    return section;
   }
 
   private valueRef(labelText: string): ValueRef {
@@ -695,6 +842,7 @@ export class DebugSidebar {
       color: "inherit",
       font: "inherit",
       cursor: "pointer",
+      minWidth: "0",
     });
     button.addEventListener("click", action);
     return button;
