@@ -96,6 +96,25 @@ test("持续输入 busy 时下一世界 tick 重试同一方向", () => {
   assert.equal(advance(repeater, 62.5, "moved"), "left");
 });
 
+test("持续输入 consumed 后不会在 gameplay lock 结束时补执行", () => {
+  const repeater = new HeldDirectionRepeater();
+  const input = {
+    source: "keyboard",
+    direction: "up",
+    initialRepeatDelayMs: 0,
+  };
+  repeater.setInput(input);
+  assert.equal(advance(repeater, 62.5, "consumed"), "up");
+
+  for (let i = 0; i < 10; i += 1)
+    assert.equal(advance(repeater, 62.5), null);
+
+  // 只有真实 release/change 才重新成为一个新的输入操作。
+  repeater.setInput(null);
+  repeater.setInput(input);
+  assert.equal(advance(repeater, 62.5), "up");
+});
+
 test("持续输入被阻挡后等待方向改变，不按世界 Tick 重复 blocked", () => {
   const repeater = new HeldDirectionRepeater();
   repeater.setInput({
