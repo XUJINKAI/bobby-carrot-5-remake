@@ -1,6 +1,7 @@
 import type { Direction, LevelLimit, LevelMap, WinCondition } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
+  createBuiltinRuntimeActionRegistry,
   entityRegistry as builtinEntities,
 } from "../entities/registry.js";
 import type { WorldTick } from "../time/WorldClock.js";
@@ -17,7 +18,6 @@ import type {
 } from "./action/RuntimeAction.js";
 import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
 import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
-import { createBuiltinRuntimeActionRegistry } from "./action/builtinActions.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
 import type {
   Behavior,
@@ -39,7 +39,11 @@ import {
   type EntityStoreSnapshot,
 } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
-import type { MoveIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
+import type {
+  MoveIntent,
+  WorldIntent,
+  WorldIntentGroup,
+} from "./movement/WorldIntent.js";
 import {
   emptyMutationSummary,
   emptyWorldStepResult,
@@ -172,6 +176,10 @@ export class World {
 
   startAction(spec: RuntimeActionSpec): RuntimeActionId {
     return this.actions.start(spec);
+  }
+
+  observeIntents(intents: readonly WorldIntent[]): void {
+    this.actions.observeIntents(intents, this.query);
   }
 
   killActor(
