@@ -66,16 +66,15 @@ Theme 卡使用多个代表 visual 拼成预览，强调视觉识别。点击具
 
 ### 空间工具
 
-Surface 工具和 Palette 工具共用顶部工具栏，不在 Surface 面板里重复一套：
+Palette 和 Surface 使用一致的基础工具语义：
 
-- `1`：Rect，拖出矩形后整块应用当前 Terrain；
-- `2`：Brush，连续按格涂抹，一次拖动形成一次 Undo；
-- `4`：Fill，四方向 flood fill，相邻区域按同一 Terrain 匹配，忽略具体 visual variant；
-- Surface 没有 Erase 工具；基础地貌通过画成另一种 Terrain 来替换。
+- `1 Select`：单击单选，拖动建立矩形多选；选择本身不绘制或删除内容；
+- `2 Brush`：在 Canvas 上绘制当前 Palette Entity 或 Surface Terrain；若按下位置位于当前矩形 Selection 内，则一次性填充整个 Selection；
+- `4 Smart Fill`：仅 Surface 提供。按当前 Terrain 对四方向连通区域进行 flood fill，匹配 Terrain 而忽略具体 visual variant。
 
-Palette 仍使用 `1 Select / 2 Place / 3 Erase`。
+Surface 没有 Erase；基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的删除使用 Selection + Delete/Backspace，而不再占用一个独立顶部 Erase 工具。
 
-`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截 Tab。
+`Ctrl/Cmd+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
 
 ### Pattern 与 Variant
 
@@ -85,7 +84,7 @@ Variant 分配支持：
 - Exact：强制使用一个具体 variant，用于手工修边和原版精确复刻；
 - 交错：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
 
-Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Alternate 模式左键选择 A、右键选择 B。
+Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，使整体更接近 atlas 预览。Alternate 模式左键选择 A、右键选择 B。
 
 Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
 
@@ -117,8 +116,11 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 
 - Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
 - Tab：Palette / Surface 快速切换；
-- Surface：顶部 Rect / Brush / Fill；右键取样；
-- Palette：顶部 Select / Place / Erase；Q/E 或滚轮切换可变 Entity；
+- Select：单选或矩形多选，不直接绘制；
+- Brush：单格/连续绘制；点入已有 Selection 时整块填充；
+- Surface：额外提供 Smart Fill；右键取样；
+- Ctrl/Cmd+A：全选地图；
+- Palette：Q/E 或滚轮切换可变 Entity；
 - 滚轮在没有 Entity variant 操作时缩放地图；
 - 中键拖动：平移；
 - 两指手势：缩放 Editor viewport；
