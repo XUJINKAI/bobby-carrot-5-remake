@@ -1,6 +1,10 @@
 import type { Direction } from "@bobby/model";
 import type { EntityId } from "../world/entity/EntityInstance.js";
-import { resolveGameplayMount } from "../ui/gameplayMount.js";
+import {
+  createGameplayRightInset,
+  resolveGameplayMount,
+  type GameplayRightInsetLease,
+} from "../ui/gameplayMount.js";
 import type { DebugEntitySnapshot, DebugSnapshot } from "./DebugSnapshot.js";
 
 export interface DebugSidebarActions {
@@ -17,6 +21,7 @@ export interface DebugSidebarActions {
   clearTrace(): void;
   close(): void;
   selectEntity(entityId: EntityId): void;
+  layoutChanged(): void;
 }
 
 type DebugTab = "actor" | "timeline" | "inspect";
@@ -38,24 +43,24 @@ interface InspectEntityRefs {
   resolvedLayers: JsonDetailsRef;
 }
 
+const TOOL_STRIP_WIDTH = 44;
+const CONTROL_PANE_WIDTH = 220;
+const INFO_PANE_WIDTH = 440;
+
 /**
- * Engine Debug uses two independent surfaces:
- * - left Control Rail: commands only, always reachable while inspecting deep JSON;
- * - right Sidebar: Actor / Timeline / Inspect state only.
+ * Engine Debug 是一个真正占据 gameplay 右侧空间的 dock：
+ * Canvas | Control | Inspector | Tool Strip。
+ * Tool Strip 永远存在；两个 pane 由它独立开关，不再产生 collapsed pane。
  */
 export class DebugSidebar {
   private readonly root: HTMLDivElement;
-  private readonly sidebarBody: HTMLDivElement;
-  private readonly sidebarTitle: HTMLElement;
-  private readonly sidebarCloseButton: HTMLButtonElement;
-  private readonly sidebarCollapseButton: HTMLButtonElement;
-  private sidebarCollapsed = false;
-
   private readonly controlRoot: HTMLDivElement;
-  private readonly controlBody: HTMLDivElement;
-  private readonly controlTitle: HTMLElement;
-  private readonly controlCollapseButton: HTMLButtonElement;
-  private controlCollapsed = false;
+  private readonly toolRoot: HTMLDivElement;
+  private readonly gameplayInset: GameplayRightInsetLease;
+  private readonly controlToolButton: HTMLButtonElement;
+  private readonly infoToolButton: HTMLButtonElement;
+  private controlVisible = true;
+  private infoVisible = true;
 
   private readonly worldStatus: HTMLSpanElement;
   private readonly presentationStatus: HTMLSpanElement;
@@ -108,6 +113,7 @@ export class DebugSidebar {
     private readonly actions: DebugSidebarActions,
   ) {
     const mount = resolveGameplayMount(canvas, undefined, "DebugSidebar");
+    this.gameplayInset = createGameplayRightInset(canvas, "DebugSidebar");
 
     this.root = document.createElement("div");
     this.root.className = "engine-debug-sidebar";
@@ -115,16 +121,15 @@ export class DebugSidebar {
     Object.assign(this.root.style, {
       position: "absolute",
       top: "0",
-      right: "0",
+      right: `${TOOL_STRIP_WIDTH}px`,
       bottom: "0",
-      width: "min(440px, 96%)",
+      width: `${INFO_PANE_WIDTH}px`,
       zIndex: "30",
       overflow: "auto",
       boxSizing: "border-box",
       padding: "12px",
       borderLeft: "1px solid rgba(255,255,255,.18)",
-      background: "rgba(4, 11, 7, .96)",
-      boxShadow: "-16px 0 36px rgba(0,0,0,.42)",
+      background: "rgba(4, 11, 7, .98)",
       color: "#e8f3ea",
       font: "12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       pointerEvents: "auto",
@@ -135,28 +140,16 @@ export class DebugSidebar {
       position: "sticky",
       top: "-12px",
       zIndex: "2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "8px",
       margin: "-12px -12px 10px",
       padding: "12px",
-      background: "rgba(4, 11, 7, .98)",
+      background: "rgba(4, 11, 7, .99)",
       borderBottom: "1px solid rgba(255,255,255,.08)",
     });
-    this.sidebarTitle = document.createElement("strong");
-    this.sidebarTitle.textContent = "ENGINE DEBUG";
-    this.sidebarTitle.style.letterSpacing = ".08em";
-    const sidebarHeaderActions = document.createElement("div");
-    Object.assign(sidebarHeaderActions.style, { display: "flex", gap: "5px" });
-    this.sidebarCollapseButton = this.button("›", () => this.toggleSidebarCollapsed());
-    this.sidebarCollapseButton.title = "Collapse inspector";
-    this.sidebarCloseButton = this.button("×", () => this.actions.close());
-    this.sidebarCloseButton.setAttribute("aria-label", "Close Engine Debug");
-    sidebarHeaderActions.append(this.sidebarCollapseButton, this.sidebarCloseButton);
-    sidebarHeader.append(this.sidebarTitle, sidebarHeaderActions);
+    const sidebarTitle = document.createElement("strong");
+    sidebarTitle.textContent = "ENGINE DEBUG";
+    sidebarTitle.style.letterSpacing = ".08em";
+    sidebarHeader.append(sidebarTitle);
 
-    this.sidebarBody = document.createElement("div");
     const tabs = document.createElement("div");
     Object.assign(tabs.style, {
       display: "grid",
@@ -248,28 +241,23 @@ export class DebugSidebar {
     );
     inspectSectionBody.append(this.inspectMessage, this.inspectBody);
     this.inspectPanel.append(this.section("Inspect", inspectSectionBody));
-
-    this.sidebarBody.append(tabs, this.actorPanel, this.timelinePanel, this.inspectPanel);
-    this.root.append(sidebarHeader, this.sidebarBody);
+    this.root.append(sidebarHeader, tabs, this.actorPanel, this.timelinePanel, this.inspectPanel);
 
     this.controlRoot = document.createElement("div");
     this.controlRoot.className = "engine-debug-control-rail";
     this.controlRoot.setAttribute("aria-label", "Engine Debug Controls");
     Object.assign(this.controlRoot.style, {
       position: "absolute",
-      top: "12px",
-      left: "12px",
-      width: "204px",
-      maxWidth: "calc(100% - 24px)",
-      maxHeight: "calc(100% - 24px)",
+      top: "0",
+      right: `${TOOL_STRIP_WIDTH + INFO_PANE_WIDTH}px`,
+      bottom: "0",
+      width: `${CONTROL_PANE_WIDTH}px`,
       zIndex: "31",
       overflow: "auto",
       boxSizing: "border-box",
       padding: "10px",
-      border: "1px solid rgba(255,255,255,.18)",
-      borderRadius: "7px",
-      background: "rgba(4, 11, 7, .94)",
-      boxShadow: "10px 10px 28px rgba(0,0,0,.34)",
+      borderLeft: "1px solid rgba(255,255,255,.18)",
+      background: "rgba(4, 11, 7, .96)",
       color: "#e8f3ea",
       font: "12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       pointerEvents: "auto",
@@ -277,21 +265,17 @@ export class DebugSidebar {
 
     const controlHeader = document.createElement("header");
     Object.assign(controlHeader.style, {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "8px",
       marginBottom: "9px",
+      paddingBottom: "8px",
+      borderBottom: "1px solid rgba(255,255,255,.08)",
     });
-    this.controlTitle = document.createElement("strong");
-    this.controlTitle.textContent = "DEBUG CONTROL";
-    this.controlTitle.style.letterSpacing = ".06em";
-    this.controlCollapseButton = this.button("‹", () => this.toggleControlCollapsed());
-    this.controlCollapseButton.title = "Collapse controls";
-    controlHeader.append(this.controlTitle, this.controlCollapseButton);
+    const controlTitle = document.createElement("strong");
+    controlTitle.textContent = "DEBUG CONTROL";
+    controlTitle.style.letterSpacing = ".06em";
+    controlHeader.append(controlTitle);
 
-    this.controlBody = document.createElement("div");
-    Object.assign(this.controlBody.style, { display: "grid", gap: "8px" });
+    const controlBody = document.createElement("div");
+    Object.assign(controlBody.style, { display: "grid", gap: "8px" });
 
     const actorControl = document.createElement("div");
     const actorControlLabel = document.createElement("div");
@@ -396,28 +380,67 @@ export class DebugSidebar {
       fontSize: "11px",
     });
 
-    this.controlBody.append(
+    controlBody.append(
       actorControl,
       worldControl,
       presentationControl,
       inputControl,
       teleportHint,
     );
-    this.controlRoot.append(controlHeader, this.controlBody);
+    this.controlRoot.append(controlHeader, controlBody);
 
-    mount.append(this.controlRoot, this.root);
+    this.toolRoot = document.createElement("div");
+    this.toolRoot.className = "engine-debug-tool-strip";
+    this.toolRoot.setAttribute("aria-label", "Engine Debug Tools");
+    Object.assign(this.toolRoot.style, {
+      position: "absolute",
+      top: "0",
+      right: "0",
+      bottom: "0",
+      width: `${TOOL_STRIP_WIDTH}px`,
+      zIndex: "32",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "4px",
+      boxSizing: "border-box",
+      padding: "4px",
+      borderLeft: "1px solid rgba(255,255,255,.2)",
+      background: "rgba(2, 7, 4, .99)",
+      color: "#e8f3ea",
+      font: "11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      pointerEvents: "auto",
+    });
+    this.controlToolButton = this.toolButton("C", "Toggle debug controls", () => {
+      this.controlVisible = !this.controlVisible;
+      this.applyDockLayout();
+    });
+    this.infoToolButton = this.toolButton("D", "Toggle debug information", () => {
+      this.infoVisible = !this.infoVisible;
+      this.applyDockLayout();
+    });
+    this.toolRoot.append(this.controlToolButton, this.infoToolButton);
+
+    mount.append(this.controlRoot, this.root, this.toolRoot);
     this.root.hidden = true;
     this.controlRoot.hidden = true;
+    this.toolRoot.hidden = true;
     this.setTab("actor");
   }
 
   setEnabled(enabled: boolean): void {
-    this.root.hidden = !enabled;
-    this.controlRoot.hidden = !enabled;
+    this.toolRoot.hidden = !enabled;
+    if (!enabled) {
+      this.root.hidden = true;
+      this.controlRoot.hidden = true;
+      this.gameplayInset.set(0);
+      return;
+    }
+    this.applyDockLayout(false);
   }
 
   render(snapshot: DebugSnapshot): void {
-    if (this.root.hidden) return;
+    if (this.toolRoot.hidden) return;
     this.updateControls(snapshot);
     this.renderActor(snapshot);
     this.renderTimeline(snapshot);
@@ -425,8 +448,31 @@ export class DebugSidebar {
   }
 
   destroy(): void {
+    this.gameplayInset.release();
     this.controlRoot.remove();
     this.root.remove();
+    this.toolRoot.remove();
+  }
+
+  private applyDockLayout(requestRender = true): void {
+    if (this.toolRoot.hidden) return;
+    this.root.hidden = !this.infoVisible;
+    this.controlRoot.hidden = !this.controlVisible;
+    this.controlRoot.style.right = `${
+      TOOL_STRIP_WIDTH + (this.infoVisible ? INFO_PANE_WIDTH : 0)
+    }px`;
+    this.controlToolButton.style.background = this.controlVisible
+      ? "#285135"
+      : "#14251a";
+    this.infoToolButton.style.background = this.infoVisible
+      ? "#285135"
+      : "#14251a";
+    const dockWidth =
+      TOOL_STRIP_WIDTH +
+      (this.controlVisible ? CONTROL_PANE_WIDTH : 0) +
+      (this.infoVisible ? INFO_PANE_WIDTH : 0);
+    this.gameplayInset.set(dockWidth);
+    if (requestRender) this.actions.layoutChanged();
   }
 
   private updateControls(snapshot: DebugSnapshot): void {
@@ -493,7 +539,6 @@ export class DebugSidebar {
     this.setValue(this.actorDirection, actor.direction ?? "-");
     this.setValue(this.actorInput, inputLabel);
     this.setValue(this.actorSprite, spriteLabel(actor));
-    this.updateDirectionPad(true);
     this.setJson(this.actorInputDetails, snapshot.input);
     this.setJson(this.actorStateDetails, actor.state);
     const ownedActions = snapshot.actions.filter(
@@ -700,37 +745,6 @@ export class DebugSidebar {
     this.setJson(refs.resolvedLayers, entity.visual.renderItems);
   }
 
-  private toggleSidebarCollapsed(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
-    this.sidebarBody.hidden = this.sidebarCollapsed;
-    this.sidebarTitle.hidden = this.sidebarCollapsed;
-    this.sidebarCloseButton.hidden = this.sidebarCollapsed;
-    this.sidebarCollapseButton.textContent = this.sidebarCollapsed ? "‹" : "›";
-    this.sidebarCollapseButton.title = this.sidebarCollapsed
-      ? "Expand inspector"
-      : "Collapse inspector";
-    Object.assign(this.root.style, {
-      width: this.sidebarCollapsed ? "42px" : "min(440px, 96%)",
-      padding: this.sidebarCollapsed ? "6px" : "12px",
-      overflow: this.sidebarCollapsed ? "hidden" : "auto",
-    });
-  }
-
-  private toggleControlCollapsed(): void {
-    this.controlCollapsed = !this.controlCollapsed;
-    this.controlBody.hidden = this.controlCollapsed;
-    this.controlTitle.hidden = this.controlCollapsed;
-    this.controlCollapseButton.textContent = this.controlCollapsed ? "›" : "‹";
-    this.controlCollapseButton.title = this.controlCollapsed
-      ? "Expand controls"
-      : "Collapse controls";
-    Object.assign(this.controlRoot.style, {
-      width: this.controlCollapsed ? "42px" : "204px",
-      padding: this.controlCollapsed ? "6px" : "10px",
-      overflow: this.controlCollapsed ? "hidden" : "auto",
-    });
-  }
-
   private setTab(tab: DebugTab): void {
     this.activeTab = tab;
     this.actorPanel.hidden = tab !== "actor";
@@ -845,6 +859,23 @@ export class DebugSidebar {
       minWidth: "0",
     });
     button.addEventListener("click", action);
+    return button;
+  }
+
+  private toolButton(
+    label: string,
+    title: string,
+    action: () => void,
+  ): HTMLButtonElement {
+    const button = this.button(label, action);
+    button.title = title;
+    button.setAttribute("aria-label", title);
+    Object.assign(button.style, {
+      width: "36px",
+      height: "36px",
+      padding: "0",
+      fontWeight: "700",
+    });
     return button;
   }
 }
