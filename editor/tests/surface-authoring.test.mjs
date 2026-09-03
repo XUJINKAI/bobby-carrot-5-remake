@@ -7,6 +7,7 @@ import {
   fillSurface,
   isSurfaceEntityType,
   paintSurface,
+  placeEntity,
   rectangleCells,
   resolveEditorPalette,
   builtinEditorDefinition,
@@ -31,6 +32,21 @@ test("Surface catalog is independent from Palette", () => {
   assert.equal(palette.some((item) => item.type === EntityTypeId.WATER), false);
   assert.equal(palette.some((item) => item.type === EntityTypeId.ICE), false);
   assert.equal(palette.some((item) => item.type === EntityTypeId.SPEED), true);
+});
+
+test("Palette mechanism placement preserves the Surface underneath", () => {
+  const level = createBlankLevel(5, 5);
+  const next = placeEntity(
+    catalog,
+    { type: EntityTypeId.SPEED, direction: "right" },
+    { x: 2, y: 2 },
+    {},
+    builtinEditorDefinition,
+  ).apply(level);
+
+  const cell = next.entities.filter((entity) => entity.x === 2 && entity.y === 2);
+  assert.equal(cell.some((entity) => entity.type === EntityTypeId.GROUND_C), true);
+  assert.equal(cell.some((entity) => entity.type === EntityTypeId.SPEED), true);
 });
 
 test("painting Surface replaces only Surface and preserves stacked entities", () => {
