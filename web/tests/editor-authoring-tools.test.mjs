@@ -6,6 +6,10 @@ const page = fs.readFileSync(
   new URL("../src/pages/editor/EditorPage.vue", import.meta.url),
   "utf8",
 );
+const pageState = fs.readFileSync(
+  new URL("../src/pages/editor/useEditorPage.ts", import.meta.url),
+  "utf8",
+);
 const shell = fs.readFileSync(
   new URL("../src/pages/editor/editorShell.ts", import.meta.url),
   "utf8",
@@ -26,10 +30,12 @@ test("Palette and Surface expose Select and Brush while Smart Fill stays Surface
 });
 
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {
-  assert.match(page, /function startSurfaceSelection/);
-  assert.match(page, /function fillSelectionWithBrush/);
-  assert.match(page, /paintSurface\(page\.catalog, cells, page\.surfaceBrush\.value\)/);
-  assert.match(page, /placeEntity\([\s\S]*page\.placement\.value/);
+  assert.match(pageState, /function fillSelectionWithBrush/);
+  assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*mapSelection\.value = \{ anchor: cell, focus: cell \}/);
+  assert.doesNotMatch(pageState, /surfaceRectAnchor/);
+  assert.match(pageState, /paintSurface\(catalog, cells, surfaceBrush\.value\)/);
+  assert.match(pageState, /for \(const target of cells\) applyPaletteBrush\(target\)/);
+  assert.doesNotMatch(page, /startSurfaceSelection|fillSelectionWithBrush/);
 });
 
 test("Editor supports select-all and tightly packed Surface variant rows", () => {
