@@ -16,9 +16,8 @@ import type {
   ResolvedPaletteGroup,
   SurfaceBrush,
   SurfacePattern,
+  SurfaceTerrainId,
   SurfaceTheme,
-  SurfaceTool,
-  SurfaceType,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
@@ -36,8 +35,8 @@ defineProps<{
   placement: EditorPlacementPreset | null;
   palettePlacement: PaletteItem;
   leftPanel: EditorLeftPanel;
-  surfaceTool: SurfaceTool;
   surfaceBrush: SurfaceBrush;
+  surfaceTheme: SurfaceTheme;
   selection: EditorSelection | null;
   hover: Cell | null;
   inspector: InspectorModel;
@@ -55,15 +54,13 @@ defineProps<{
 const emit = defineEmits<{
   select: [item: PaletteItem];
   paletteResize: [delta: number];
-  surfaceTool: [tool: SurfaceTool];
-  surfaceType: [type: SurfaceType];
+  surfaceTerrain: [terrain: SurfaceTerrainId];
   surfaceTheme: [theme: SurfaceTheme];
   surfacePattern: [pattern: SurfacePattern];
   surfaceExact: [type: EntityType];
   surfaceAlternateA: [type: EntityType];
   surfaceAlternateB: [type: EntityType];
   surfaceReroll: [];
-  surfaceApplySelection: [];
   hover: [cell: Cell | null];
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
@@ -112,20 +109,17 @@ const emit = defineEmits<{
     <EditorSurface
       v-if="!playing && leftOpen && leftPanel === 'surface'"
       :brush="surfaceBrush"
-      :tool="surfaceTool"
-      :selection-exists="selection !== null"
+      :current-theme="surfaceTheme"
       :images="images"
       :catalog="catalog"
       :editor="editor"
-      @tool="emit('surfaceTool', $event)"
-      @type="emit('surfaceType', $event)"
+      @terrain="emit('surfaceTerrain', $event)"
       @theme="emit('surfaceTheme', $event)"
       @pattern="emit('surfacePattern', $event)"
       @exact="emit('surfaceExact', $event)"
       @alternate-a="emit('surfaceAlternateA', $event)"
       @alternate-b="emit('surfaceAlternateB', $event)"
       @reroll="emit('surfaceReroll')"
-      @apply-selection="emit('surfaceApplySelection')"
     />
     <section class="editor-map-shell" :class="{ playing }">
       <EditorCanvas
