@@ -15,7 +15,7 @@ function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
-    { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+    { type: options.surfaceType ?? EntityTypeId.GROUND_C, x: 0, y: 0 },
     {
       type: EntityTypeId.BOBBY,
       x: 0,
@@ -60,19 +60,27 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   );
 });
 
-test("Bobby walking progress drives one eight-frame directional strip", () => {
-  const composition = bobbyVisual({
+test("Bobby walking loops from movement frame four back to frame four", () => {
+  const start = bobbyVisual({
+    runtime: { offsetX: -1, moving: true, progress: 0 },
+  });
+  const middle = bobbyVisual({
     runtime: { offsetX: -0.5, moving: true, progress: 0.5 },
   });
-  assert.deepEqual(composition.layers[0], {
+  const end = bobbyVisual({
+    runtime: { offsetX: 0, moving: true, progress: 1 },
+  });
+  assert.equal(start.layers[0].frameIndex, 3);
+  assert.deepEqual(middle.layers[0], {
     kind: "image",
     asset: "bobby-right",
     frameColumns: 8,
     frameRows: 1,
-    frameProgress: 0.5,
+    frameIndex: 7,
     anchor: "bottom",
     offsetY: -12,
   });
+  assert.equal(end.layers[0].frameIndex, 3);
 });
 
 test("Bobby Ice slide stays on movement frame seven", () => {
@@ -97,13 +105,29 @@ test("Bobby Ice slide stays on movement frame seven", () => {
   });
 });
 
+test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", () => {
+  const composition = bobbyVisual({
+    surfaceType: EntityTypeId.ICE,
+    direction: "right",
+    runtime: {
+      offsetX: 0,
+      moving: false,
+      progress: 1,
+      direction: "right",
+      stationarySinceMs: 1000,
+    },
+  });
+  assert.equal(composition.layers[0].asset, "bobby-right");
+  assert.equal(composition.layers[0].frameIndex, 6);
+});
+
 test("Bobby idle switches to the three-frame b4 strip only after five seconds", () => {
   const before = bobbyVisual({
     runtime: { moving: false, progress: 1, stationarySinceMs: 1000 },
     time: { frame: 299, nowMs: 5999, deltaMs: 16.6667 },
   });
   assert.equal(before.layers[0].asset, "bobby-right");
-  assert.equal(before.layers[0].frameIndex, 7);
+  assert.equal(before.layers[0].frameIndex, 3);
 
   const idle = bobbyVisual({
     runtime: { moving: false, progress: 1, stationarySinceMs: 1000 },
