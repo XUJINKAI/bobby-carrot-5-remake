@@ -32,7 +32,6 @@ import {
   rememberExploreMap,
   markExploreMapCompleted,
 } from "../../storage/exploreProgressStorage.js";
-import { formatTileInspection } from "../../runtime/game/formatTileInspection.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
@@ -162,9 +161,6 @@ export async function renderGamePage(
   gamePage.mount(app);
 
   const canvas = required<HTMLCanvasElement>(app, "#game");
-  const debugPanel = required<HTMLElement>(app, "[data-debug-panel]");
-  const debugEngine = required<HTMLElement>(debugPanel, ".debug-engine");
-  const debugInspector = required<HTMLElement>(debugPanel, ".debug-inspector");
   const gameResult = required<HTMLDivElement>(app, "[data-result-overlay]");
   const resultCard = required<HTMLElement>(gameResult, "[data-result-card]");
   const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
@@ -210,7 +206,6 @@ export async function renderGamePage(
   audio.playMusic(mapMeta?.music ?? (isBonus ? "bonus" : "ingame1"));
 
   let levelStartedAt = performance.now();
-  let debugInspection: string | null = null;
   let visibleResult: "death" | "complete" | null = null;
   let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
@@ -316,26 +311,10 @@ export async function renderGamePage(
     if (productStats && game.hasLevel) {
       productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
     }
-    debugPanel.classList.toggle("visible", mode === "explore" && game.debug);
-    const move = game.lastMove;
-    const engineMessage = move
-      ? `${move.moved ? "移动" : "阻挡"} · ${move.passage.reason} [${move.passage.confidence}]`
-      : "Engine: no passage yet";
-    debugEngine.textContent =
-      mode === "explore" && game.debug
-        ? `ENGINE MESSAGE\n${engineMessage}`
-        : "";
-    debugInspector.textContent =
-      mode === "explore" && game.debug
-        ? (debugInspection ?? "DEBUG\n点击地图格查看详情")
-        : "";
     renderResult();
   };
   game.on("change", update);
-  game.on("debug-change", () => {
-    if (!game.debug) debugInspection = null;
-    update();
-  });
+  game.on("debug-change", update);
   update();
   const statisticsTimer = window.setInterval(update, 250);
 
@@ -355,7 +334,6 @@ export async function renderGamePage(
     persistAdventureSession();
     game.restart();
     levelStartedAt = performance.now();
-    debugInspection = null;
     completionNavigationStarted = false;
     closeResult();
     update();
@@ -398,19 +376,6 @@ export async function renderGamePage(
   };
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
-
-  canvas.addEventListener("click", (event) => {
-    if (
-      mode !== "explore" ||
-      !game.debug ||
-      input.consumePointerClickSuppression()
-    ) {
-      return;
-    }
-    const tile = game.inspectCanvasPoint(event.clientX, event.clientY);
-    debugInspection = tile ? formatTileInspection(tile, game) : "DEBUG\n地图外";
-    update();
-  });
 
   return {
     destroy(): void {
