@@ -82,7 +82,7 @@ function themeLabel(theme: SurfaceTheme): string {
 </script>
 
 <template>
-  <aside class="editor-palette editor-surface-panel">
+  <aside class="editor-palette">
     <div class="editor-palette-head">
       <div>
         <div class="editor-panel-title">Surface</div>
@@ -191,7 +191,7 @@ function themeLabel(theme: SurfaceTheme): string {
 </template>
 
 <style scoped>
-.editor-surface-panel {
+.editor-palette {
   display: flex;
   flex-direction: column;
   gap: 4px;
