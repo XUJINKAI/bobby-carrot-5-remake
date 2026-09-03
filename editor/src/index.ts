@@ -11,6 +11,7 @@ export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, repla
 export type { EditorCommand, EditorEntityReplacement } from "./document/commands.js";
 export { EditorPreview } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
+export { moveEntitiesBy } from "./authoring/entityMovement.js";
 export { entityCells, placeEntity, resolvePlacement, topEntityRefAt } from "./authoring/entityPlacement.js";
 export type { Cell, EntityPlacementPlan, PlacementCell, PlacementOverrides } from "./authoring/entityPlacement.js";
 export { resolveEditorEntityPreviewLayout } from "./authoring/entityPreview.js";
