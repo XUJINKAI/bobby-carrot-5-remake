@@ -57,7 +57,7 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   assert.equal(moved, false);
 });
 
-test("Debug pause freezes WorldClock and restores prior InputController state", () => {
+test("Debug pause freezes only WorldClock and preserves input plus held state", () => {
   const game = Object.create(Game.prototype);
   let paused = false;
   let inputEnabled = true;
@@ -82,25 +82,26 @@ test("Debug pause freezes WorldClock and restores prior InputController state", 
       inputTransitions.push(value);
     },
   };
-  game.debugInputEnabledBeforePause = null;
   game.heldDirection = "right";
   game.heldDirectionBlocked = true;
   game.render = () => {};
 
   game.pauseDebugClock();
   assert.equal(paused, true);
-  assert.equal(inputEnabled, false);
-  assert.equal(game.heldDirection, null);
-  assert.equal(game.heldDirectionBlocked, false);
+  assert.equal(inputEnabled, true);
+  assert.equal(game.heldDirection, "right");
+  assert.equal(game.heldDirectionBlocked, true);
+  assert.deepEqual(inputTransitions, []);
 
   game.resumeDebugClock();
   assert.equal(paused, false);
   assert.equal(inputEnabled, true);
-  assert.deepEqual(inputTransitions, [false, true]);
-  assert.equal(game.debugInputEnabledBeforePause, null);
+  assert.equal(game.heldDirection, "right");
+  assert.equal(game.heldDirectionBlocked, true);
+  assert.deepEqual(inputTransitions, []);
 });
 
-test("Debug pause does not enable input that was already disabled by the host", () => {
+test("Debug pause leaves host-disabled input disabled", () => {
   const game = Object.create(Game.prototype);
   let paused = false;
   let inputEnabled = false;
@@ -123,9 +124,6 @@ test("Debug pause does not enable input that was already disabled by the host", 
       inputEnabled = value;
     },
   };
-  game.debugInputEnabledBeforePause = null;
-  game.heldDirection = null;
-  game.heldDirectionBlocked = false;
   game.render = () => {};
 
   game.pauseDebugClock();
