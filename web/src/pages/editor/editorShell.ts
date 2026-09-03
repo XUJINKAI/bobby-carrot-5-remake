@@ -8,7 +8,11 @@ import {
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
-import { configureShell, type ShellConfig } from "../../shell/shellBridge.js";
+import {
+  configureShell,
+  type ShellAction,
+  type ShellConfig,
+} from "../../shell/shellBridge.js";
 
 export interface EditorPlayShellState {
   canUndo: boolean;
@@ -49,7 +53,7 @@ export function editorShellConfig(
   leftPanel: "palette" | "surface" = "surface",
   surfaceTool: SurfaceTool = "brush",
 ): ShellConfig {
-  const authoringCommands =
+  const authoringCommands: ShellAction[] =
     leftPanel === "surface"
       ? [
           {
