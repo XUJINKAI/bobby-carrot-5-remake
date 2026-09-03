@@ -324,8 +324,7 @@ export class Game {
       !this.worldValue ||
       this.worldClock.paused ||
       this.world.dead ||
-      this.world.completed ||
-      this.world.inputBlocked
+      this.world.completed
     )
       return null;
     const group = resolveControlInput(
@@ -333,6 +332,10 @@ export class Game {
       source,
       direction,
     );
+    if (this.world.inputBlocked) {
+      this.world.observeIntents(group.intents);
+      return null;
+    }
     const result = this.startLogicalStep(group);
     this.render();
     return result?.moves[0] ?? null;
@@ -709,10 +712,6 @@ export class Game {
       this.resolveInputAttempts(input, "blocked");
       return;
     }
-    if (this.world.inputBlocked) {
-      this.resolveInputAttempts(input, "busy");
-      return;
-    }
 
     const intents: WorldIntentGroup["intents"] = [];
     const actorsBySource = new Map<string, EntityId[]>();
@@ -736,6 +735,11 @@ export class Game {
 
     if (intents.length === 0) {
       this.resolveInputAttempts(input, "blocked");
+      return;
+    }
+    if (this.world.inputBlocked) {
+      this.world.observeIntents(intents);
+      this.resolveInputAttempts(input, "busy");
       return;
     }
 
@@ -772,8 +776,7 @@ export class Game {
       this.heldDirectionBlocked ||
       !this.worldValue ||
       this.world.dead ||
-      this.world.completed ||
-      this.world.inputBlocked
+      this.world.completed
     )
       return;
     const group = resolveControlInput(
@@ -781,6 +784,10 @@ export class Game {
       "external",
       this.heldDirection,
     );
+    if (this.world.inputBlocked) {
+      this.world.observeIntents(group.intents);
+      return;
+    }
     const result = this.startLogicalStep(group);
     if (!result?.moves.some((move) => move.moved))
       this.heldDirectionBlocked = true;
