@@ -1,5 +1,13 @@
-import type { EditorTool, LevelValidationIssue } from "@bobby/editor";
-import { EDITOR_HELP, globalActions, pageIdentity } from "../../app/pageChrome.js";
+import type {
+  EditorTool,
+  LevelValidationIssue,
+  SurfaceTool,
+} from "@bobby/editor";
+import {
+  EDITOR_HELP,
+  globalActions,
+  pageIdentity,
+} from "../../app/pageChrome.js";
 import { configureShell, type ShellConfig } from "../../shell/shellBridge.js";
 
 export interface EditorPlayShellState {
@@ -18,8 +26,19 @@ export function configureEditorShell(
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
   leftPanel: "palette" | "surface" = "surface",
+  surfaceTool: SurfaceTool = "brush",
 ): void {
-  configureShell(editorShellConfig(playing, tool, issues, playState, leftPanel), EDITOR_HELP);
+  configureShell(
+    editorShellConfig(
+      playing,
+      tool,
+      issues,
+      playState,
+      leftPanel,
+      surfaceTool,
+    ),
+    EDITOR_HELP,
+  );
 }
 
 export function editorShellConfig(
@@ -28,7 +47,51 @@ export function editorShellConfig(
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
   leftPanel: "palette" | "surface" = "surface",
+  surfaceTool: SurfaceTool = "brush",
 ): ShellConfig {
+  const authoringCommands =
+    leftPanel === "surface"
+      ? [
+          {
+            id: "editor-surface-rect",
+            icon: "select",
+            title: "矩形填充 (1)",
+            pressed: surfaceTool === "rect",
+          },
+          {
+            id: "editor-surface-brush",
+            icon: "edit",
+            title: "画笔 (2)",
+            pressed: surfaceTool === "brush",
+          },
+          {
+            id: "editor-surface-fill",
+            icon: "fill",
+            title: "油漆桶 (4)",
+            pressed: surfaceTool === "fill",
+          },
+        ]
+      : [
+          {
+            id: "editor-tool-select",
+            icon: "select",
+            title: "选择 (1)",
+            pressed: tool === "select",
+          },
+          {
+            id: "editor-tool-place",
+            icon: "place",
+            title: "放置 (2)",
+            pressed: tool === "place",
+          },
+          {
+            id: "editor-tool-erase",
+            icon: "erase",
+            title: "橡皮擦 (3)",
+            pressed: tool === "erase",
+          },
+        ];
+
   return {
     topBar: {
       visible: true,
@@ -36,21 +99,54 @@ export function editorShellConfig(
       identity: pageIdentity("编辑器模式", "/edit"),
       commands: playing
         ? [
-            { id: "editor-undo", icon: "undo", title: "Undo Play Test", disabled: !playState.canUndo },
-            { id: "editor-redo", icon: "redo", title: "Redo Play Test", disabled: !playState.canRedo },
-            { id: "editor-restart", icon: "restart", title: "Restart Play Test" },
-            { id: "editor-play", icon: "stop", title: "Stop Play Test", separatorBefore: true },
+            {
+              id: "editor-undo",
+              icon: "undo",
+              title: "Undo Play Test",
+              disabled: !playState.canUndo,
+            },
+            {
+              id: "editor-redo",
+              icon: "redo",
+              title: "Redo Play Test",
+              disabled: !playState.canRedo,
+            },
+            {
+              id: "editor-restart",
+              icon: "restart",
+              title: "Restart Play Test",
+            },
+            {
+              id: "editor-play",
+              icon: "stop",
+              title: "Stop Play Test",
+              separatorBefore: true,
+            },
           ]
         : [
-            { id: "editor-tool-select", icon: "select", title: "选择 (1)", pressed: tool === "select" },
-            { id: "editor-tool-place", icon: "place", title: "放置 (2)", pressed: tool === "place" },
-            { id: "editor-tool-erase", icon: "erase", title: "橡皮擦 (3)", pressed: tool === "erase" },
-            { id: "editor-undo", icon: "undo", title: "Undo", separatorBefore: true },
+            ...authoringCommands,
+            {
+              id: "editor-undo",
+              icon: "undo",
+              title: "Undo",
+              separatorBefore: true,
+            },
             { id: "editor-redo", icon: "redo", title: "Redo" },
-            { id: "editor-play", icon: "play", title: "Play Test", separatorBefore: true },
+            {
+              id: "editor-play",
+              icon: "play",
+              title: "Play Test",
+              separatorBefore: true,
+            },
           ],
       actions: [
-        { id: "editor-share", icon: "share", label: "分享", title: "地图数据交换与分享", collapse: "overflow" },
+        {
+          id: "editor-share",
+          icon: "share",
+          label: "分享",
+          title: "地图数据交换与分享",
+          collapse: "overflow",
+        },
         ...globalActions(),
       ],
     },
@@ -58,8 +154,18 @@ export function editorShellConfig(
       visible: true,
       fixed: true,
       leading: [
-        { id: "editor-palette", icon: "palette", label: "Palette", pressed: leftPanel === "palette" },
-        { id: "editor-surface", icon: "palette", label: "Surface", pressed: leftPanel === "surface" },
+        {
+          id: "editor-palette",
+          icon: "palette",
+          label: "Palette",
+          pressed: leftPanel === "palette",
+        },
+        {
+          id: "editor-surface",
+          icon: "palette",
+          label: "Surface",
+          pressed: leftPanel === "surface",
+        },
       ],
       info: shellIssueInfo(issues),
       trailing: [
@@ -72,7 +178,8 @@ export function editorShellConfig(
 
 function shellIssueInfo(issues: readonly LevelValidationIssue[]) {
   if (issues.length === 0) return [];
-  const issue = issues.find((candidate) => candidate.level === "error") ?? issues[0]!;
+  const issue =
+    issues.find((candidate) => candidate.level === "error") ?? issues[0]!;
   const prefix = issue.level === "error" ? "⛔" : "⚠";
   const suffix = issues.length > 1 ? ` · 共 ${issues.length} 个问题` : "";
   return [{ text: `${prefix} ${issue.message}${suffix}` }];
