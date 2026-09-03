@@ -36,6 +36,16 @@ export interface RuntimeActionContext {
   readonly commands: WorldCommandApi;
 }
 
+/**
+ * gameplay lock 期间的 controlled intent 仍可被 Action 观察，例如 Speed 记住
+ * “本段全速移动中按过同方向”。这里只允许修改 Action 自己的 snapshot state。
+ */
+export interface RuntimeActionIntentContext {
+  readonly action: RuntimeActionInstance;
+  readonly intent: WorldIntent;
+  readonly query: WorldQueryApi;
+}
+
 export type RuntimeActionStatus = "running" | "complete";
 
 /**
@@ -52,6 +62,7 @@ export type RuntimeActionResult = RuntimeActionStatus | RuntimeActionUpdate;
 export interface RuntimeActionDefinition {
   kind: string;
   update(context: RuntimeActionContext): RuntimeActionResult | void;
+  onIntent?(context: RuntimeActionIntentContext): void;
 }
 
 export interface RuntimeActionSchedulerSnapshot {
