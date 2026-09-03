@@ -1,5 +1,9 @@
 import type { EntityCatalog } from "@bobby/engine";
-import type { EntityType, LevelEntity } from "@bobby/model";
+import {
+  EntityTypeId,
+  type EntityType,
+  type LevelEntity,
+} from "@bobby/model";
 import {
   LEGACY_GROUND_TYPES,
   SURFACE_TERRAIN_GROUPS,
@@ -52,6 +56,10 @@ const terrainByEntityType = new Map<EntityType, SurfaceTerrainDefinition>();
 for (const terrain of SURFACE_TERRAINS)
   for (const variant of terrain.rows.flat())
     terrainByEntityType.set(variant.type, terrain);
+
+// Fence 的 Auto 形态由 canonical Entity 根据邻居实时解析；Exact 仍使用原始图块。
+const fenceTerrain = terrainById.get("fence");
+if (fenceTerrain) terrainByEntityType.set(EntityTypeId.FENCE, fenceTerrain);
 
 const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
 for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
@@ -110,7 +118,7 @@ export function applySurfaceTheme(
         catalog.require(type);
         if (type === entity.type) return entity;
         changed = true;
-        return { ...entity, type };
+        return applySurfaceInstanceTraits({ ...entity, type }, target);
       });
       return changed ? normalizeEditorLevel({ ...level, entities }) : level;
     },
@@ -237,7 +245,7 @@ function createSurfaceEntity(
   }
 
   catalog.require(type);
-  return { type, x: cell.x, y: cell.y };
+  return applySurfaceInstanceTraits({ type, x: cell.x, y: cell.y }, item);
 }
 
 function resolveAutoType(
@@ -246,6 +254,7 @@ function resolveAutoType(
   seed: number,
   target: ReadonlySet<string>,
 ): EntityType {
+  if (terrain.id === "fence") return EntityTypeId.FENCE;
   const auto = terrain.auto;
   if (auto.kind === "primary") return terrain.primary;
   if (auto.kind === "vertical") {
@@ -254,6 +263,17 @@ function resolveAutoType(
     return !above ? auto.start : !below ? auto.end : auto.middle;
   }
   return weightedAutoVariant(auto, hashCell(cell, seed + (auto.salt ?? 0)));
+}
+
+function applySurfaceInstanceTraits(
+  entity: LevelEntity,
+  terrain: SurfaceTerrainDefinition,
+): LevelEntity {
+  if (terrain.slot !== "overlay" || terrain.type !== "solid") return entity;
+  return {
+    ...entity,
+    traits: ["blocking", "fence"],
+  };
 }
 
 function weightedAutoVariant(
