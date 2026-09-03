@@ -169,8 +169,8 @@ export class DebugRuntime {
       const active = snapshot.input?.channels.filter(
         (channel) =>
           channel.physicalDirection !== null ||
-          channel.repeater?.heldInput !== null ||
-          channel.repeater?.pendingAttempt !== null,
+          (channel.repeater?.heldInput ?? null) !== null ||
+          (channel.repeater?.pendingAttempt ?? null) !== null,
       );
       this.trace.record({
         category: "input",
