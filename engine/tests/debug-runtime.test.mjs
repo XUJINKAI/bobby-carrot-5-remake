@@ -164,6 +164,7 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
   assert.doesNotMatch(source, /toggleControlCollapsed/);
   assert.doesNotMatch(source, /toggleSidebarCollapsed/);
   assert.doesNotMatch(source, /Close Engine Debug/);
+  assert.doesNotMatch(source, /close\(\): void/);
   assert.match(source, /private readonly worldPauseResumeButton/);
   assert.match(source, /private readonly worldStepButton/);
   assert.match(source, /private readonly presentationPauseResumeButton/);
@@ -216,8 +217,13 @@ test("Web game page no longer owns a second legacy debug panel", () => {
     new URL("../../web/src/pages/game/mountGamePage.ts", import.meta.url),
     "utf8",
   );
+  const formatterUrl = new URL(
+    "../../web/src/runtime/game/formatTileInspection.ts",
+    import.meta.url,
+  );
   assert.doesNotMatch(stageSource, /data-debug-panel|debug-engine|debug-inspector/);
   assert.doesNotMatch(pageSource, /formatTileInspection|debugInspection|debugPanel/);
+  assert.equal(fs.existsSync(formatterUrl), false);
 });
 
 test("Debug Sidebar keeps details DOM stable during presentation refresh", () => {
@@ -248,6 +254,7 @@ test("Debug World pause freezes only the clock and preserves input state", () =>
   assert.match(source, /input: this\.inputController\?\.inspectMovement\(\) \?\? null/);
   assert.match(source, /setHeldDirection: \(actorId, direction\)/);
   assert.match(source, /this\.setDebugHeldDirection\(actorId, direction\)/);
+  assert.doesNotMatch(source, /close: \(\) => this\.setDebug\(false\)/);
 });
 
 test("Debug Runtime supports selected-actor teleport and semantic sprite stepping", () => {
@@ -266,4 +273,5 @@ test("Debug Runtime supports selected-actor teleport and semantic sprite steppin
   assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
   assert.match(source, /category: "input"/);
   assert.doesNotMatch(source, /presentationHz\s*=/);
+  assert.doesNotMatch(source, /host\.close|close: \(\)/);
 });
