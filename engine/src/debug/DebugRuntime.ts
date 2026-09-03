@@ -161,8 +161,10 @@ export class DebugRuntime {
     )
       this.trace.record({
         category: "presentation",
-        summary: snapshot.runtime.animating ? "presentation motion active" : "presentation motion idle",
-        actorId: actor?.id,
+        summary: snapshot.runtime.animating
+          ? "presentation motion active"
+          : "presentation motion idle",
+        ...(actor ? { actorId: actor.id } : {}),
         ...clock,
       });
   }
