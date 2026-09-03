@@ -174,6 +174,7 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
     direction: "right",
     state: { speedBoost: { direction: "right", phase: "full" } },
     runtime: {
+      offsetX: -0.5,
       moving: true,
       progress: 0.5,
       animation: "speed",
@@ -197,8 +198,9 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
     direction: "up",
     state: { speedBoost: { direction: "up", phase: "normal" } },
     runtime: {
+      offsetY: 0.51,
       moving: true,
-      progress: 0.49,
+      progress: 0.75,
       animation: "speed",
       direction: "up",
     },
@@ -211,8 +213,9 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
   const normalSecondHalf = bobbyVisual({
     state: { speedBoost: { direction: "right", phase: "normal" } },
     runtime: {
+      offsetX: -0.5,
       moving: true,
-      progress: 0.5,
+      progress: 0.25,
       animation: "speed",
       direction: "right",
     },
@@ -224,6 +227,7 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
   const slow = bobbyVisual({
     state: { speedBoost: { direction: "right", phase: "slow" } },
     runtime: {
+      offsetX: -0.9,
       moving: true,
       progress: 0.1,
       animation: "speed",
@@ -242,6 +246,7 @@ test("accelerated mower uses the same one-cell-behind trail", () => {
       speedBoost: { direction: "left", phase: "full" },
     },
     runtime: {
+      offsetX: 0.75,
       moving: true,
       progress: 0.25,
       animation: "speed",
