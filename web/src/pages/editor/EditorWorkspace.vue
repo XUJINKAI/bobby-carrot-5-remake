@@ -194,6 +194,9 @@ const emit = defineEmits<{
 .editor-body.playing {
   grid-template-columns: minmax(0, 1fr);
 }
+.editor-map-shell.playing > canvas[data-editor-game-canvas] {
+  width: calc(100% - var(--engine-gameplay-right-inset, 0px)) !important;
+}
 @media (max-width: 1100px) and (min-width: 821px) {
   .editor-body.palette-hidden {
     grid-template-columns: minmax(0, 1fr) 310px;
