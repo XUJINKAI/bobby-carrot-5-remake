@@ -19,7 +19,6 @@ export interface DebugSidebarActions {
   stepPresentationToNextSprite(): void;
   stepPresentationToNextChange(): void;
   clearTrace(): void;
-  close(): void;
   selectEntity(entityId: EntityId): void;
   layoutChanged(): void;
 }
