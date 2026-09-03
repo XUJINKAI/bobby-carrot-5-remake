@@ -1,11 +1,11 @@
 import type { EntityCatalog } from "@bobby/engine";
 import { EntityTypeId, type EntityType, type LevelEntity } from "@bobby/model";
+import type { EditorSelection } from "../definitions/types.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
 import type { Cell } from "./entityPlacement.js";
 import { selectionRect } from "./selection.js";
-import type { EditorSelection } from "../definitions/types.js";
 
 export type SurfaceType = "ground" | "solid" | "water" | "ice" | "sky" | "waterfall";
 export type SurfaceTheme = "forest" | "snow" | "desert" | "space" | "shared";
@@ -53,6 +53,8 @@ function variants(numbers: readonly number[], kind: "walkable" | "background"): 
   }));
 }
 
+// docs/system/original/surface.md 使用 1-based 的 ts 行列坐标；walkable variant
+// 从 ts 第 7 行开始编号，background variant 则覆盖完整 16×16 ts。
 const forestGround = variants([
   ...range(1, 3),
   ...range(17, 19),
@@ -62,7 +64,6 @@ const forestGround = variants([
   ...range(20, 24),
   ...range(36, 39),
 ], "walkable");
-
 const snowGround = variants([15, 16, 31, 32, 47], "walkable");
 const desertGround = variants([48], "walkable");
 const spaceGround = variants([
@@ -79,32 +80,46 @@ const forestSolid = variants([
   ...range(4, 8),
   ...range(20, 24),
   ...range(36, 40),
+  ...range(55, 58),
   54,
   ...range(11, 16),
   ...range(27, 32),
   ...range(43, 48),
   59,
   60,
+  52,
+  53,
   ...range(65, 71),
-  ...range(81, 87),
+  ...range(81, 85),
 ], "background");
-
 const snowSolid = variants([
   2,
   9,
   10,
+  25,
+  26,
+  41,
+  42,
   17,
   18,
   19,
   33,
-  34,
   49,
+  34,
   50,
+  35,
   51,
-  52,
 ], "background");
 const desertSolid = variants([63, 64, 79, 80], "background");
 const spaceSky = variants([72, 73, 74, 75, 76, 77], "background");
+
+// ts(6,12/13/14) -> background variant 182/198/214。
+const waterfallVariants = variants([182, 198, 214], "background").map(
+  (variant, index) => ({
+    ...variant,
+    label: ["Start", "Middle", "End"][index]!,
+  }),
+);
 
 export const SURFACE_GROUPS: readonly SurfaceGroup[] = [
   { type: "ground", theme: "forest", label: "Forest Ground", variants: forestGround },
@@ -137,17 +152,22 @@ export const SURFACE_GROUPS: readonly SurfaceGroup[] = [
     type: "waterfall",
     theme: "shared",
     label: "Waterfall",
-    variants: variants([92, 93, 94], "background").map((variant, index) => ({
-      ...variant,
-      label: ["Start", "Middle", "End"][index]!,
-    })),
+    variants: waterfallVariants,
   },
 ];
 
-const surfaceTypes = new Set(SURFACE_GROUPS.flatMap((group) => group.variants.map((variant) => variant.type)));
-for (const type of [EntityTypeId.GROUND_A, EntityTypeId.GROUND_B, EntityTypeId.GROUND_C, EntityTypeId.GROUND_D]) {
-  surfaceTypes.add(type);
-}
+const LEGACY_GROUND_TYPES = new Set<EntityType>([
+  EntityTypeId.GROUND_A,
+  EntityTypeId.GROUND_B,
+  EntityTypeId.GROUND_C,
+  EntityTypeId.GROUND_D,
+]);
+const surfaceTypes = new Set<EntityType>(
+  SURFACE_GROUPS.flatMap((group) =>
+    group.variants.map((variant) => variant.type),
+  ),
+);
+for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
 
 export function isSurfaceEntityType(type: EntityType): boolean {
   return surfaceTypes.has(type);
@@ -171,13 +191,20 @@ export function paintSurface(
   return {
     apply(level) {
       if (cells.length === 0) return level;
-      const target = new Set(cells.filter((cell) => inBounds(level, cell)).map(cellKey));
+      const target = new Set(
+        cells.filter((cell) => inBounds(level, cell)).map(cellKey),
+      );
       if (target.size === 0) return level;
-      const kept = level.entities.filter((entity) => !target.has(cellKey(entity)) || !isSurfaceEntityType(entity.type));
-      const painted = [...target].map((key) => {
-        const cell = parseCellKey(key);
-        return createSurfaceEntity(catalog, brush, cell);
-      }).filter((entity): entity is LevelEntity => entity !== null);
+      const kept = level.entities.filter(
+        (entity) =>
+          !target.has(cellKey(entity)) || !isSurfaceEntityType(entity.type),
+      );
+      const painted = [...target]
+        .map((key) => {
+          const cell = parseCellKey(key);
+          return createSurfaceEntity(catalog, brush, cell, target);
+        })
+        .filter((entity): entity is LevelEntity => entity !== null);
       return normalizeEditorLevel({ ...level, entities: [...kept, ...painted] });
     },
   };
@@ -200,7 +227,8 @@ export function fillSurface(
     if (visited.has(key) || !inBounds(level, cell)) continue;
     visited.add(key);
     const entity = surfaceAt(level, cell);
-    if (!entity || surfaceIdentity(entity.type) !== surfaceIdentity(source.type)) continue;
+    if (!entity || surfaceIdentity(entity.type) !== surfaceIdentity(source.type))
+      continue;
     cells.push(cell);
     queue.push(
       { x: cell.x - 1, y: cell.y },
@@ -225,7 +253,10 @@ export function rectangleCells(anchor: Cell, focus: Cell): Cell[] {
   return selectionCells({ anchor, focus });
 }
 
-export function pickSurfaceBrush(level: Readonly<EditorMap>, cell: Cell): SurfaceBrush | null {
+export function pickSurfaceBrush(
+  level: Readonly<EditorMap>,
+  cell: Cell,
+): SurfaceBrush | null {
   const entity = surfaceAt(level, cell);
   if (!entity) return null;
   for (const group of SURFACE_GROUPS) {
@@ -239,22 +270,39 @@ export function pickSurfaceBrush(level: Readonly<EditorMap>, cell: Cell): Surfac
       };
     }
   }
-  if ([EntityTypeId.GROUND_A, EntityTypeId.GROUND_B, EntityTypeId.GROUND_C, EntityTypeId.GROUND_D].includes(entity.type as never)) {
-    return { type: "ground", theme: "forest", pattern: "exact", exact: entity.type, seed: 1 };
+  if (LEGACY_GROUND_TYPES.has(entity.type)) {
+    return {
+      type: "ground",
+      theme: "forest",
+      pattern: "exact",
+      exact: entity.type,
+      seed: 1,
+    };
   }
   return null;
 }
 
-function createSurfaceEntity(catalog: EntityCatalog, brush: SurfaceBrush, cell: Cell): LevelEntity | null {
+function createSurfaceEntity(
+  catalog: EntityCatalog,
+  brush: SurfaceBrush,
+  cell: Cell,
+  target: ReadonlySet<string>,
+): LevelEntity | null {
   const group = surfaceGroup(brush.type, brush.theme);
   if (!group || group.variants.length === 0) return null;
   let type: EntityType;
-  if (brush.pattern === "exact" && brush.exact && group.variants.some((variant) => variant.type === brush.exact)) {
+  if (
+    brush.pattern === "exact" &&
+    brush.exact &&
+    group.variants.some((variant) => variant.type === brush.exact)
+  ) {
     type = brush.exact;
   } else if (brush.pattern === "alternate" && brush.alternate) {
     type = brush.alternate[(cell.x + cell.y) & 1];
   } else if (brush.type === "waterfall" && group.variants.length >= 3) {
-    type = group.variants[1]!.type;
+    const above = target.has(cellKey({ x: cell.x, y: cell.y - 1 }));
+    const below = target.has(cellKey({ x: cell.x, y: cell.y + 1 }));
+    type = !above ? group.variants[0]!.type : !below ? group.variants[2]!.type : group.variants[1]!.type;
   } else {
     type = weightedVariant(group.variants, hashCell(cell, brush.seed));
   }
@@ -262,8 +310,14 @@ function createSurfaceEntity(catalog: EntityCatalog, brush: SurfaceBrush, cell: 
   return { type, x: cell.x, y: cell.y };
 }
 
-function weightedVariant(variants: readonly SurfaceVariant[], hash: number): EntityType {
-  const total = variants.reduce((sum, variant) => sum + (variant.weight ?? 1), 0);
+function weightedVariant(
+  variants: readonly SurfaceVariant[],
+  hash: number,
+): EntityType {
+  const total = variants.reduce(
+    (sum, variant) => sum + (variant.weight ?? 1),
+    0,
+  );
   let target = hash % total;
   for (const variant of variants) {
     target -= variant.weight ?? 1;
@@ -273,25 +327,45 @@ function weightedVariant(variants: readonly SurfaceVariant[], hash: number): Ent
 }
 
 function hashCell(cell: Cell, seed: number): number {
-  let value = Math.imul(cell.x + 0x9e3779b9, 0x85ebca6b) ^ Math.imul(cell.y + seed, 0xc2b2ae35);
+  let value =
+    Math.imul(cell.x + 0x9e3779b9, 0x85ebca6b) ^
+    Math.imul(cell.y + seed, 0xc2b2ae35);
   value ^= value >>> 16;
   return value >>> 0;
 }
 
-function surfaceAt(level: Readonly<EditorMap>, cell: Cell): Readonly<LevelEntity> | null {
-  return [...level.entities].reverse().find((entity) => entity.x === cell.x && entity.y === cell.y && isSurfaceEntityType(entity.type)) ?? null;
+function surfaceAt(
+  level: Readonly<EditorMap>,
+  cell: Cell,
+): Readonly<LevelEntity> | null {
+  return (
+    [...level.entities]
+      .reverse()
+      .find(
+        (entity) =>
+          entity.x === cell.x &&
+          entity.y === cell.y &&
+          isSurfaceEntityType(entity.type),
+      ) ?? null
+  );
 }
 
 function surfaceIdentity(type: EntityType): string {
   for (const group of SURFACE_GROUPS) {
-    if (group.variants.some((variant) => variant.type === type)) return `${group.type}:${group.theme}`;
+    if (group.variants.some((variant) => variant.type === type))
+      return `${group.type}:${group.theme}`;
   }
-  if ([EntityTypeId.GROUND_A, EntityTypeId.GROUND_B, EntityTypeId.GROUND_C, EntityTypeId.GROUND_D].includes(type as never)) return "ground:forest";
+  if (LEGACY_GROUND_TYPES.has(type)) return "ground:forest";
   return type;
 }
 
 function inBounds(level: Readonly<EditorMap>, cell: Cell): boolean {
-  return cell.x >= 0 && cell.y >= 0 && cell.x < level.width && cell.y < level.height;
+  return (
+    cell.x >= 0 &&
+    cell.y >= 0 &&
+    cell.x < level.width &&
+    cell.y < level.height
+  );
 }
 
 function cellKey(cell: Cell): string {
