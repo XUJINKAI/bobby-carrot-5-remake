@@ -18,6 +18,23 @@ export interface DebugSidebarActions {
 }
 
 type DebugTab = "actor" | "timeline" | "inspect";
+type JsonDetailsRef = { details: HTMLDetailsElement; pre: HTMLPreElement };
+type ValueRef = { root: HTMLDivElement; value: HTMLSpanElement };
+
+interface InspectEntityRefs {
+  entityId: EntityId;
+  direction: ValueRef;
+  visual: ValueRef;
+  traits: JsonDetailsRef;
+  behaviors: JsonDetailsRef;
+  instanceTraits: JsonDetailsRef;
+  properties: JsonDetailsRef;
+  state: JsonDetailsRef;
+  footprint: JsonDetailsRef;
+  presence: JsonDetailsRef;
+  visualRuntime: JsonDetailsRef;
+  resolvedLayers: JsonDetailsRef;
+}
 
 /** Engine 自带的运行时调试侧栏，不依赖 Web / Editor 页面组件。 */
 export class DebugSidebar {
@@ -34,6 +51,30 @@ export class DebugSidebar {
   private readonly timelinePanel: HTMLDivElement;
   private readonly inspectPanel: HTMLDivElement;
   private readonly tabButtons = new Map<DebugTab, HTMLButtonElement>();
+
+  private readonly actorTitle: HTMLDivElement;
+  private readonly actorValue: ValueRef;
+  private readonly actorPosition: ValueRef;
+  private readonly actorDirection: ValueRef;
+  private readonly actorInput: ValueRef;
+  private readonly actorInputDetails: JsonDetailsRef;
+  private readonly actorStateDetails: JsonDetailsRef;
+  private readonly actorActionsDetails: JsonDetailsRef;
+  private readonly actorPresentationDetails: JsonDetailsRef;
+  private readonly directionButtons = new Map<Direction | "release", HTMLButtonElement>();
+
+  private readonly timelineCount: HTMLSpanElement;
+  private readonly timelineList: HTMLDivElement;
+  private timelineKey = "";
+
+  private readonly inspectMessage: HTMLDivElement;
+  private readonly inspectBody: HTMLDivElement;
+  private readonly inspectCell: ValueRef;
+  private readonly inspectStack: HTMLDivElement;
+  private readonly inspectEntityContainer: HTMLDivElement;
+  private inspectStackKey = "";
+  private inspectEntityRefs: InspectEntityRefs | null = null;
+
   private activeTab: DebugTab = "actor";
   private worldPaused = false;
   private presentationPaused = false;
@@ -155,8 +196,80 @@ export class DebugSidebar {
     }
 
     this.actorPanel = document.createElement("div");
+    const actorBody = document.createElement("div");
+    const actorSummary = document.createElement("div");
+    Object.assign(actorSummary.style, {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) auto",
+      gap: "12px",
+      alignItems: "start",
+    });
+    const actorFacts = document.createElement("div");
+    this.actorValue = this.valueRef("Actor");
+    this.actorPosition = this.valueRef("Position");
+    this.actorDirection = this.valueRef("Direction");
+    this.actorInput = this.valueRef("Input");
+    actorFacts.append(
+      this.actorValue.root,
+      this.actorPosition.root,
+      this.actorDirection.root,
+      this.actorInput.root,
+    );
+    actorSummary.append(actorFacts, this.directionPad());
+    actorBody.append(actorSummary);
+    this.actorInputDetails = this.jsonDetails("Input channels", true);
+    this.actorStateDetails = this.jsonDetails("Entity state", true);
+    this.actorActionsDetails = this.jsonDetails("Runtime actions", true);
+    this.actorPresentationDetails = this.jsonDetails("Presentation", true);
+    actorBody.append(
+      this.actorInputDetails.details,
+      this.actorStateDetails.details,
+      this.actorActionsDetails.details,
+      this.actorPresentationDetails.details,
+    );
+    const actorSection = this.section("Selected actor", actorBody);
+    this.actorTitle = actorSection.firstElementChild as HTMLDivElement;
+    this.actorPanel.append(actorSection);
+
     this.timelinePanel = document.createElement("div");
+    const timelineBody = document.createElement("div");
+    const timelineToolbar = document.createElement("div");
+    Object.assign(timelineToolbar.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "7px",
+    });
+    this.timelineCount = document.createElement("span");
+    this.timelineCount.style.color = "#8da495";
+    timelineToolbar.append(
+      this.timelineCount,
+      this.button("Clear", () => this.actions.clearTrace()),
+    );
+    this.timelineList = document.createElement("div");
+    timelineBody.append(timelineToolbar, this.timelineList);
+    this.timelinePanel.append(this.section("Timeline", timelineBody));
+
     this.inspectPanel = document.createElement("div");
+    const inspectSectionBody = document.createElement("div");
+    this.inspectMessage = document.createElement("div");
+    this.inspectMessage.textContent = "Click a cell to inspect it.";
+    this.inspectBody = document.createElement("div");
+    this.inspectCell = this.valueRef("Cell");
+    this.inspectStack = document.createElement("div");
+    Object.assign(this.inspectStack.style, {
+      display: "grid",
+      gap: "4px",
+      marginTop: "7px",
+    });
+    this.inspectEntityContainer = document.createElement("div");
+    this.inspectBody.append(
+      this.inspectCell.root,
+      this.inspectStack,
+      this.inspectEntityContainer,
+    );
+    inspectSectionBody.append(this.inspectMessage, this.inspectBody);
+    this.inspectPanel.append(this.section("Inspect", inspectSectionBody));
 
     this.root.append(
       header,
@@ -207,9 +320,14 @@ export class DebugSidebar {
   private renderActor(snapshot: DebugSnapshot): void {
     const actor = snapshot.actor;
     if (!actor) {
-      this.actorPanel.replaceChildren(document.createTextNode("No player actor."));
+      this.actorTitle.textContent = "Selected actor";
+      this.setValue(this.actorValue, "-");
+      this.setValue(this.actorPosition, "-");
+      this.setValue(this.actorDirection, "-");
+      this.setValue(this.actorInput, "no actor");
       return;
     }
+
     const external = snapshot.input?.channels.find(
       (channel) => channel.source === "external",
     );
@@ -229,32 +347,20 @@ export class DebugSidebar {
             .join(" ")
         : "ready";
 
-    const body = document.createElement("div");
-    const summary = document.createElement("div");
-    Object.assign(summary.style, {
-      display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto",
-      gap: "12px",
-      alignItems: "start",
-    });
-    const facts = document.createElement("div");
-    facts.append(
-      this.valueRow("Actor", `#${actor.id} ${actor.type}`),
-      this.valueRow("Position", `${actor.anchor.x}, ${actor.anchor.y}`),
-      this.valueRow("Direction", actor.direction ?? "-"),
-      this.valueRow("Input", inputLabel),
-    );
-    summary.append(facts, this.directionPad());
-    body.append(summary);
-    body.append(this.jsonDetails("Input channels", snapshot.input, true));
-    body.append(this.jsonDetails("Entity state", actor.state, true));
+    this.actorTitle.textContent = `Selected actor #${actor.id}`;
+    this.setValue(this.actorValue, `#${actor.id} ${actor.type}`);
+    this.setValue(this.actorPosition, `${actor.anchor.x}, ${actor.anchor.y}`);
+    this.setValue(this.actorDirection, actor.direction ?? "-");
+    this.setValue(this.actorInput, inputLabel);
+    this.updateDirectionPad();
+    this.setJson(this.actorInputDetails, snapshot.input);
+    this.setJson(this.actorStateDetails, actor.state);
     const ownedActions = snapshot.actions.filter(
       (action) =>
         action.ownerEntityId === actor.id || action.focus?.entityId === actor.id,
     );
-    body.append(this.jsonDetails("Runtime actions", ownedActions, true));
-    body.append(this.jsonDetails("Presentation", actor.visual.runtime, true));
-    this.actorPanel.replaceChildren(this.section(`Selected actor #${actor.id}`, body));
+    this.setJson(this.actorActionsDetails, ownedActions);
+    this.setJson(this.actorPresentationDetails, actor.visual.runtime);
   }
 
   private directionPad(): HTMLElement {
@@ -265,12 +371,12 @@ export class DebugSidebar {
       gridTemplateRows: "repeat(3, 28px)",
       gap: "3px",
     });
-    const cells: Array<[string, Direction | null] | null> = [
+    const cells: Array<[string, Direction | "release"] | null> = [
       null,
       ["↑", "up"],
       null,
       ["←", "left"],
-      ["·", null],
+      ["·", "release"],
       ["→", "right"],
       null,
       ["↓", "down"],
@@ -281,114 +387,154 @@ export class DebugSidebar {
         pad.append(document.createElement("span"));
         continue;
       }
-      const [label, direction] = cell;
-      const button = this.button(label, () =>
+      const [label, key] = cell;
+      const button = this.button(label, () => {
+        const direction = key === "release" ? null : key;
         this.actions.setHeldDirection(
           direction !== null && direction === this.debugHeldDirection
             ? null
             : direction,
-        ),
-      );
-      button.disabled = !this.worldPaused;
-      button.title = this.worldPaused
-        ? direction
-          ? `Hold debug input ${direction}`
-          : "Release debug input"
-        : "Pause World before injecting debug input";
+        );
+      });
       button.style.padding = "2px";
-      button.style.background =
-        direction !== null && direction === this.debugHeldDirection
-          ? "#477a53"
-          : "#14251a";
+      this.directionButtons.set(key, button);
       pad.append(button);
     }
     return pad;
   }
 
+  private updateDirectionPad(): void {
+    for (const [key, button] of this.directionButtons) {
+      button.disabled = !this.worldPaused;
+      button.title = this.worldPaused
+        ? key === "release"
+          ? "Release debug input"
+          : `Hold debug input ${key}`
+        : "Pause World before injecting debug input";
+      button.style.background =
+        key !== "release" && key === this.debugHeldDirection
+          ? "#477a53"
+          : "#14251a";
+    }
+  }
+
   private renderTimeline(snapshot: DebugSnapshot): void {
     const entries = [...(snapshot.trace ?? [])].reverse();
-    const body = document.createElement("div");
-    const toolbar = document.createElement("div");
-    Object.assign(toolbar.style, {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "7px",
-    });
-    const count = document.createElement("span");
-    count.textContent = `${entries.length}/50 events`;
-    count.style.color = "#8da495";
-    toolbar.append(count, this.button("Clear", () => this.actions.clearTrace()));
-    body.append(toolbar);
+    const key = entries.map((entry) => entry.seq).join(",");
+    this.timelineCount.textContent = `${entries.length}/50 events`;
+    if (key === this.timelineKey) return;
+    this.timelineKey = key;
 
+    const openEntries = new Set(
+      [...this.timelineList.querySelectorAll("details[open]")]
+        .map((details) => details.getAttribute("data-seq"))
+        .filter((value): value is string => value !== null),
+    );
+    const fragment = document.createDocumentFragment();
     for (const entry of entries) {
       const details = document.createElement("details");
+      details.dataset.seq = String(entry.seq);
+      details.open = openEntries.has(String(entry.seq));
       const summary = document.createElement("summary");
       summary.style.cursor = "pointer";
       const world = entry.worldTick === null ? "W-" : `W${entry.worldTick}`;
       summary.textContent = `${world} ${entry.category.padEnd(12)} ${entry.summary}`;
-      details.append(summary);
-      const pre = document.createElement("pre");
-      Object.assign(pre.style, {
-        margin: "5px 0 7px",
-        padding: "7px",
-        overflow: "auto",
-        borderRadius: "4px",
-        background: "#020604",
-        whiteSpace: "pre-wrap",
-      });
+      const pre = this.pre();
       pre.textContent = JSON.stringify(entry, null, 2);
-      details.append(pre);
-      body.append(details);
+      details.append(summary, pre);
+      fragment.append(details);
     }
     if (entries.length === 0)
-      body.append(document.createTextNode("No runtime changes recorded yet."));
-    this.timelinePanel.replaceChildren(this.section("Timeline", body));
+      fragment.append(document.createTextNode("No runtime changes recorded yet."));
+    this.timelineList.replaceChildren(fragment);
   }
 
   private renderInspect(snapshot: DebugSnapshot): void {
     const selection = snapshot.selection;
-    if (!selection) {
-      this.inspectPanel.replaceChildren(
-        this.section("Inspect", document.createTextNode("Click a cell to inspect it.")),
-      );
+    this.inspectMessage.hidden = selection !== null;
+    this.inspectBody.hidden = selection === null;
+    if (!selection) return;
+
+    this.setValue(this.inspectCell, `${selection.cell.x}, ${selection.cell.y}`);
+    const stackKey = selection.presences
+      .map((presence) => `${presence.entityId}:${presence.stackOrder}:${presence.role ?? ""}`)
+      .join("|");
+    if (stackKey !== this.inspectStackKey) {
+      this.inspectStackKey = stackKey;
+      const fragment = document.createDocumentFragment();
+      for (const presence of [...selection.presences].reverse()) {
+        const button = this.button(
+          `[${presence.stackOrder}] #${presence.entityId} ${presence.type}${presence.role ? ` (${presence.role})` : ""}`,
+          () => this.actions.selectEntity(presence.entityId),
+        );
+        button.style.textAlign = "left";
+        fragment.append(button);
+      }
+      if (selection.presences.length === 0)
+        fragment.append(document.createTextNode("Empty cell"));
+      this.inspectStack.replaceChildren(fragment);
+    }
+
+    const entity = selection.entity;
+    if (!entity) {
+      this.inspectEntityContainer.hidden = true;
       return;
     }
-    const body = document.createElement("div");
-    body.append(this.valueRow("Cell", `${selection.cell.x}, ${selection.cell.y}`));
-    const stack = document.createElement("div");
-    Object.assign(stack.style, { display: "grid", gap: "4px", marginTop: "7px" });
-    for (const presence of [...selection.presences].reverse()) {
-      const button = this.button(
-        `[${presence.stackOrder}] #${presence.entityId} ${presence.type}${presence.role ? ` (${presence.role})` : ""}`,
-        () => this.actions.selectEntity(presence.entityId),
-      );
-      button.style.textAlign = "left";
-      stack.append(button);
-    }
-    if (selection.presences.length === 0) stack.append("Empty cell");
-    body.append(stack);
-    if (selection.entity) body.append(this.entityDetails(selection.entity));
-    this.inspectPanel.replaceChildren(this.section("Inspect", body));
+    this.inspectEntityContainer.hidden = false;
+    if (!this.inspectEntityRefs || this.inspectEntityRefs.entityId !== entity.id)
+      this.buildInspectEntity(entity);
+    this.updateInspectEntity(entity);
   }
 
-  private entityDetails(entity: DebugEntitySnapshot): HTMLElement {
+  private buildInspectEntity(entity: DebugEntitySnapshot): void {
+    const refs: InspectEntityRefs = {
+      entityId: entity.id,
+      direction: this.valueRef("Direction"),
+      visual: this.valueRef("Visual"),
+      traits: this.jsonDetails("Traits", true),
+      behaviors: this.jsonDetails("Behaviors", true),
+      instanceTraits: this.jsonDetails("Instance traits"),
+      properties: this.jsonDetails("Properties"),
+      state: this.jsonDetails("State"),
+      footprint: this.jsonDetails("Footprint"),
+      presence: this.jsonDetails("Presence"),
+      visualRuntime: this.jsonDetails("Visual runtime"),
+      resolvedLayers: this.jsonDetails("Resolved layers"),
+    };
     const body = document.createElement("div");
     body.append(
-      this.valueRow("Entity", `#${entity.id} ${entity.type}`),
-      this.valueRow("Direction", entity.direction ?? "-"),
-      this.valueRow("Visual", entity.visual.visualId),
-      this.jsonDetails("Traits", entity.definition.traits, true),
-      this.jsonDetails("Behaviors", entity.behaviors, true),
-      this.jsonDetails("Instance traits", entity.instanceTraits),
-      this.jsonDetails("Properties", entity.properties),
-      this.jsonDetails("State", entity.state),
-      this.jsonDetails("Footprint", entity.definition.footprint),
-      this.jsonDetails("Presence", entity.presences),
-      this.jsonDetails("Visual runtime", entity.visual.runtime),
-      this.jsonDetails("Resolved layers", entity.visual.renderItems),
+      refs.direction.root,
+      refs.visual.root,
+      refs.traits.details,
+      refs.behaviors.details,
+      refs.instanceTraits.details,
+      refs.properties.details,
+      refs.state.details,
+      refs.footprint.details,
+      refs.presence.details,
+      refs.visualRuntime.details,
+      refs.resolvedLayers.details,
     );
-    return body;
+    this.inspectEntityContainer.replaceChildren(
+      this.section(`Entity #${entity.id} ${entity.type}`, body),
+    );
+    this.inspectEntityRefs = refs;
+  }
+
+  private updateInspectEntity(entity: DebugEntitySnapshot): void {
+    const refs = this.inspectEntityRefs;
+    if (!refs) return;
+    this.setValue(refs.direction, entity.direction ?? "-");
+    this.setValue(refs.visual, entity.visual.visualId);
+    this.setJson(refs.traits, entity.definition.traits);
+    this.setJson(refs.behaviors, entity.behaviors);
+    this.setJson(refs.instanceTraits, entity.instanceTraits);
+    this.setJson(refs.properties, entity.properties);
+    this.setJson(refs.state, entity.state);
+    this.setJson(refs.footprint, entity.definition.footprint);
+    this.setJson(refs.presence, entity.presences);
+    this.setJson(refs.visualRuntime, entity.visual.runtime);
+    this.setJson(refs.resolvedLayers, entity.visual.renderItems);
   }
 
   private setTab(tab: DebugTab): void {
@@ -400,9 +546,9 @@ export class DebugSidebar {
       button.style.background = key === tab ? "#285135" : "#14251a";
   }
 
-  private valueRow(labelText: string, value: string): HTMLElement {
-    const row = document.createElement("div");
-    Object.assign(row.style, {
+  private valueRef(labelText: string): ValueRef {
+    const root = document.createElement("div");
+    Object.assign(root.style, {
       display: "grid",
       gridTemplateColumns: "86px minmax(0,1fr)",
       gap: "7px",
@@ -410,11 +556,14 @@ export class DebugSidebar {
     const label = document.createElement("span");
     label.textContent = labelText;
     label.style.color = "#8da495";
-    const data = document.createElement("span");
-    data.textContent = value;
-    data.style.overflowWrap = "anywhere";
-    row.append(label, data);
-    return row;
+    const value = document.createElement("span");
+    value.style.overflowWrap = "anywhere";
+    root.append(label, value);
+    return { root, value };
+  }
+
+  private setValue(ref: ValueRef, value: string): void {
+    if (ref.value.textContent !== value) ref.value.textContent = value;
   }
 
   private section(titleText: string, body: Node): HTMLElement {
@@ -437,13 +586,19 @@ export class DebugSidebar {
     return section;
   }
 
-  private jsonDetails(label: string, value: unknown, open = false): HTMLDetailsElement {
+  private jsonDetails(label: string, open = false): JsonDetailsRef {
     const details = document.createElement("details");
     details.open = open;
     details.style.marginTop = "6px";
     const summary = document.createElement("summary");
     summary.textContent = label;
     summary.style.cursor = "pointer";
+    const pre = this.pre();
+    details.append(summary, pre);
+    return { details, pre };
+  }
+
+  private pre(): HTMLPreElement {
     const pre = document.createElement("pre");
     Object.assign(pre.style, {
       margin: "6px 0 0",
@@ -454,9 +609,12 @@ export class DebugSidebar {
       whiteSpace: "pre-wrap",
       overflowWrap: "anywhere",
     });
-    pre.textContent = JSON.stringify(value, null, 2) ?? String(value);
-    details.append(summary, pre);
-    return details;
+    return pre;
+  }
+
+  private setJson(ref: JsonDetailsRef, value: unknown): void {
+    const text = JSON.stringify(value, null, 2) ?? String(value);
+    if (ref.pre.textContent !== text) ref.pre.textContent = text;
   }
 
   private button(label: string, action: () => void): HTMLButtonElement {
