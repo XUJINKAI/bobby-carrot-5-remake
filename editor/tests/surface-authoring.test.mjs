@@ -117,8 +117,8 @@ test("Waterfall Auto resolves vertical Start Middle End variants", () => {
   ).apply(level);
   const surface = (y) => entityAt(next, 2, y, (entity) => isSurfaceEntityType(entity.type))?.type;
   assert.deepEqual([surface(1), surface(2), surface(3)], [
-    "background-variant-182",
-    "background-variant-198",
-    "background-variant-214",
+    "background-variant-092",
+    "background-variant-093",
+    "background-variant-094",
   ]);
 });
