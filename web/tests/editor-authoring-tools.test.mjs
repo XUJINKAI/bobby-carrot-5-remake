@@ -19,14 +19,15 @@ const surface = fs.readFileSync(
   "utf8",
 );
 
-test("Palette and Surface expose Select and Brush while Smart Fill stays Surface-only", () => {
-  assert.match(shell, /id: "editor-tool-select"/);
-  assert.match(shell, /id: "editor-tool-brush"/);
-  assert.doesNotMatch(shell, /id: "editor-tool-erase"/);
-  assert.match(shell, /id: "editor-surface-select"/);
-  assert.match(shell, /id: "editor-surface-brush"/);
-  assert.match(shell, /id: "editor-surface-fill"/);
-  assert.match(shell, /title: "智能填充 \(4\)"/);
+test("Palette and Surface expose the agreed tool shortcuts", () => {
+  assert.match(shell, /id: "editor-tool-select"[\s\S]*选择 \(1\)/);
+  assert.match(shell, /id: "editor-tool-brush"[\s\S]*画笔 \(2\)/);
+  assert.match(shell, /id: "editor-tool-erase"[\s\S]*删除 \(4\)/);
+  assert.match(shell, /id: "editor-surface-select"[\s\S]*选择 \(1\)/);
+  assert.match(shell, /id: "editor-surface-brush"[\s\S]*画笔 \(2\)/);
+  assert.match(shell, /id: "editor-surface-fill"[\s\S]*填充 \(3\)/);
+  assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
+  assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
 });
 
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {
@@ -38,10 +39,14 @@ test("Selection is non-painting and Brush fills an existing rectangular selectio
   assert.doesNotMatch(page, /startSurfaceSelection|fillSelectionWithBrush/);
 });
 
-test("Editor supports select-all and tightly packed Surface variant rows", () => {
+test("Surface panel reuses Palette tiles and keeps theme collapsed by default", () => {
   assert.match(page, /modifier && key === "a"/);
   assert.match(page, /focus: \{ x: level\.width - 1, y: level\.height - 1 \}/);
-  assert.match(surface, /\.surface-variant-rows \{[\s\S]*gap: 0;/);
-  assert.match(surface, /\.variant-row \+[\s\S]*border-top: 2px solid/);
-  assert.match(surface, /\.variant-row \{[\s\S]*gap: 0;/);
+  assert.match(surface, /<details class="surface-theme-section">/);
+  assert.doesNotMatch(surface, /<details[^>]*\sopen/);
+  assert.match(surface, /editor-palette-zoom/);
+  assert.match(surface, /editor-palette-tile surface-terrain-tile/);
+  assert.match(surface, /editor-palette-tile surface-variant/);
+  assert.match(surface, /editor-palette-tooltip surface-tooltip/);
+  assert.doesNotMatch(surface, /surface-summary|reroll|重新分配/);
 });
