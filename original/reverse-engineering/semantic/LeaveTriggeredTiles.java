@@ -1,5 +1,5 @@
 // 研究性语义重建：来源为 UP9 a.class / a.J()、a.c(byte) 以及 atlas raw ID。
-// 这里集中记录原版通过“记住当前格坐标，下一次移动完成后再修改上一格”实现的 on-leave 机制。
+// 原版通过“记住当前格坐标，下一次移动跨过中点时再修改上一格”实现这些 on-leave 机制。
 
 public final class LeaveTriggeredTiles {
     private static final int MIRROR_RIGHT_DOWN = 0xB1;
@@ -27,8 +27,8 @@ public final class LeaveTriggeredTiles {
     }
 
     /**
-     * 原版 `a.J()` 在 Bobby 到达 Inactive Trap 时记录坐标；
-     * 下一次 `J()` 执行开头把该旧格写成 Active Trap。
+     * 原版 `a.J()` 在 Bobby 跨过 Inactive Trap 所在移动的中点时记录坐标；
+     * 下一次移动跨过中点、再次执行 `J()` 时把该旧格写成 Active Trap。
      */
     int activateTrapOnLeave(int rawTile) {
         if ((rawTile & 0xFF) == TRAP_INACTIVE) {
