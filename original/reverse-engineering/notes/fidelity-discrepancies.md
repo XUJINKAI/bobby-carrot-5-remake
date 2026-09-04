@@ -2,6 +2,43 @@
 
 本文件只记录已经由原版 `a.class` 控制流与当前仓库实现交叉确认出的差异候选。这里先保存证据，不在逆向阶段直接修改 Engine / DAT Adapter。
 
+## Tide 四方向 DAT 映射与原版运行时相反
+
+### 原版运行时事实
+
+`a.P()` 的 Leaf routing 与 moving-entity grid-pass helper 共同确认：
+
+| raw | 原版流向 | 证据 |
+|---:|---|---|
+| `0x57` | Down | Leaf 到达后强制 `direction=3`；逆向 Up 进入被拒绝。 |
+| `0x58` | Up | Leaf 到达后强制 `direction=2`；逆向 Down 进入被拒绝。 |
+| `0x59` | Right | Leaf 到达后强制 `direction=1`；逆向 Left 进入被拒绝。 |
+| `0x5A` | Left | Leaf 到达后强制 `direction=0`；逆向 Right 进入被拒绝。 |
+
+该映射也与 `docs/system/original/mechanics.md` 的 atlas 坐标一致。
+
+### 当前仓库状态
+
+`tools/original/dat/mapping.mjs` 当前定义为：
+
+- `0x57 -> TIDE_UP`
+- `0x58 -> TIDE_DOWN`
+- `0x59 -> TIDE_LEFT`
+- `0x5A -> TIDE_RIGHT`
+
+四个方向全部与原版 runtime 相反。
+
+### 当前结论
+
+这是已经能够由 bytecode 行为直接判定的 DAT semantic mapping 差异。进入修复阶段时应同步检查：
+
+- `tools/original/dat/mapping.mjs`
+- `EntityTypeId` / Tide state 的方向转换
+- Editor palette / visual resolver
+- Engine Tide 行为测试
+
+避免只改 Adapter 后让 Engine 内部方向再次翻转一次。
+
 ## Carousel Switch / Tide Switch 状态命名疑似反转
 
 ### 原版运行时事实
