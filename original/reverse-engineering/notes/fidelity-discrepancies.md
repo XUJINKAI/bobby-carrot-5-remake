@@ -2,6 +2,48 @@
 
 本文件只记录已经由原版 `a.class` 控制流与当前仓库实现交叉确认出的差异候选。这里先保存证据，不在逆向阶段直接修改 Engine / DAT Adapter。
 
+## Speed 衰减状态机与原版实现不一致
+
+### 原版运行时事实
+
+`a.M()` 与 `a.N()` 直接确认：
+
+- 进入 `0xB5..0xB8` Speed tile 后，按 tile 方向设置 Bobby 朝向，并把 `aN=3`；
+- `aN > 0` 时，每次 movement step 都沿当前方向自动前进；
+- `a.N()` 在整个 `aN > 0` 期间固定使用 `6px/tick`，48px 一格恒为 8 tick；
+- 离开 Speed 后，如果对应的同向 held flag 仍为 true，则每跨一格把 `aN` 重新续为 3；
+- 没有同向 held input 时，每跨一格 `aN` 减 1，因此离板后连续快速移动 3 格后结束；
+- 撞停时立即 `aN=0`，并触发 8 tick camera shake；
+- 原版没有 `full -> normal -> slow` 的速度衰减阶段。
+
+原版续速判断只读取当前运动方向对应的 held flag；并没有记录“本格是否曾经按过异方向”来取消同向续速。
+
+### 当前仓库状态
+
+`engine/src/entities/original/speed.ts` 当前实现：
+
+- 定义 `full / normal / slow` 三个 phase；
+- cadence 分别约为普通移动的 `0.5x / 1x / 1.2x`；
+- 离板后未满足 sustain 条件时依次经历 normal、slow 后结束；
+- full 格中如果同时观察到同方向和异方向输入，会判定为不能继续 full。
+
+### 当前结论
+
+这部分已经不是“需要继续真机微调”的节奏差异，而是原版 class 控制流与当前 BC5R 状态机结构不同。
+
+进入 Engine 修复阶段时应优先把 Speed 改为：
+
+```text
+speed tile -> continuation=3
+while continuation > 0
+    每格恒定 fast cadence
+    same-direction held -> continuation=3
+    otherwise -> continuation--
+collision -> continuation=0
+```
+
+并删除依赖 `normal/slow` phase 的 gameplay 语义；视觉表现若需要额外效果，应留在 Presentation 层。
+
 ## Tide 四方向 DAT 映射与原版运行时相反
 
 ### 原版运行时事实
