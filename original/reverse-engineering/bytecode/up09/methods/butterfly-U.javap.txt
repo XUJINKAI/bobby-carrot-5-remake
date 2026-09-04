@@ -1,0 +1,125 @@
+  private final void U();
+    descriptor: ()V
+    Code:
+       0: aload_0
+       1: getfield      #1043               // Field bB:Z
+       4: ifeq          169
+       7: aload_0
+       8: aload_0
+       9: getfield      #1045               // Field bA:B
+      12: iconst_1
+      13: iadd
+      14: i2b
+      15: i2b
+      16: putfield      #1045               // Field bA:B
+      19: aload_0
+      20: getfield      #1045               // Field bA:B
+      23: bipush        8
+      25: if_icmplt     40
+      28: aload_0
+      29: iconst_0
+      30: putfield      #1043               // Field bB:Z
+      33: aload_0
+      34: bipush        8
+      36: i2b
+      37: putfield      #1045               // Field bA:B
+      40: aload_0
+      41: getfield      #1047               // Field bw:I
+      44: aload_0
+      45: getfield      #347                // Field r:I
+      48: ishr
+      49: istore_1
+      50: aload_0
+      51: getfield      #1049               // Field bx:I
+      54: aload_0
+      55: getfield      #347                // Field r:I
+      58: ishr
+      59: istore_2
+      60: iload_1
+      61: aload_0
+      62: getfield      #1051               // Field by:I
+      65: if_icmpne     85
+      68: aload_0
+      69: aload_0
+      70: aload_0
+      71: getfield      #1053               // Field at:I
+      74: iconst_1
+      75: iadd
+      76: bipush        24
+      78: isub
+      79: invokespecial #704                // Method b:(I)I
+      82: putfield      #1051               // Field by:I
+      85: iload_2
+      86: aload_0
+      87: getfield      #1055               // Field bz:I
+      90: if_icmpne     110
+      93: aload_0
+      94: aload_0
+      95: aload_0
+      96: getfield      #1057               // Field au:I
+      99: iconst_1
+     100: iadd
+     101: bipush        24
+     103: isub
+     104: invokespecial #704                // Method b:(I)I
+     107: putfield      #1055               // Field bz:I
+     110: aload_0
+     111: bipush        48
+     113: invokespecial #704                // Method b:(I)I
+     116: istore_3
+     117: aload_0
+     118: getfield      #1047               // Field bw:I
+     121: istore        4
+     123: iload_1
+     124: aload_0
+     125: getfield      #1051               // Field by:I
+     128: if_icmpge     202
+     131: aload_0
+     132: iload         4
+     134: iload_3
+     135: iadd
+     136: putfield      #1047               // Field bw:I
+     139: aload_0
+     140: bipush        24
+     142: invokespecial #704                // Method b:(I)I
+     145: istore_3
+     146: aload_0
+     147: getfield      #1049               // Field bx:I
+     150: istore        4
+     152: iload_2
+     153: aload_0
+     154: getfield      #1055               // Field bz:I
+     157: if_icmpge     208
+     160: aload_0
+     161: iload         4
+     163: iload_3
+     164: iadd
+     165: putfield      #1049               // Field bx:I
+     168: return
+     169: aload_0
+     170: aload_0
+     171: getfield      #1045               // Field bA:B
+     174: iconst_1
+     175: isub
+     176: i2b
+     177: i2b
+     178: putfield      #1045               // Field bA:B
+     181: aload_0
+     182: getfield      #1045               // Field bA:B
+     185: ifgt          40
+     188: aload_0
+     189: iconst_1
+     190: putfield      #1043               // Field bB:Z
+     193: aload_0
+     194: iconst_0
+     195: i2b
+     196: putfield      #1045               // Field bA:B
+     199: goto          40
+     202: iload_3
+     203: ineg
+     204: istore_3
+     205: goto          131
+     208: iload_3
+     209: ineg
+     210: istore_3
+     211: goto          160
