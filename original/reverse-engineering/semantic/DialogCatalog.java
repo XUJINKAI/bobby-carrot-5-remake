@@ -6,6 +6,10 @@ public final class DialogCatalog {
     // ---- Common UI ----
     static final int NEW_GAME = 0;
     static final int CONTINUE = 1;
+    static final int MUSIC_ON_SUFFIX = 2;
+    static final int MUSIC_OFF_SUFFIX = 3;
+    static final int MUSIC = 4;
+    static final int VOLUME = 5;
     static final int SOUND_TEST = 6;
     static final int HELP = 18;
     static final int CREDITS = 19;
@@ -17,6 +21,7 @@ public final class DialogCatalog {
     static final int DREAM_MACHINE = 25;
     static final int CLOUD_9 = 26;
     static final int RESTART_LEVEL = 27;
+    static final int MENU = 28;
     static final int BACK = 29;
     static final int OK = 30;
     static final int CONTINUE_BUTTON = 31;
@@ -32,6 +37,24 @@ public final class DialogCatalog {
     static final int DREAM_MACHINE_TITLE = 41;
     static final int BONUS_LEVEL_TITLE = 42;
     static final int WELCOME_TITLE = 43;
+
+    // ---- Result / confirmation / system dialog ----
+    static final int FINISHED_LEVEL = 44;
+    static final int RESULT_TIME = 45;
+    static final int RESULT_BONUS_COINS = 46;
+    static final int RESULT_TOTAL_COINS = 47;
+    static final int RESULT_OF = 48;
+    static final int HELP_GOAL = 49;
+    static final int HELP_CONTROLS = 50;
+    static final int FATAL_ERROR = 51;
+    static final int CREDITS_TEXT = 52;
+    static final int GAME_OVER = 53;
+    static final int TIME_HAS_RUN_OUT = 54;
+    static final int CONFIRM_EXIT_LEVEL = 55;
+    static final int CONFIRM_QUIT_GAME = 56;
+    static final int CONFIRM_ENABLE_MUSIC = 57;
+    static final int HELP_CONTROL_TEXT = 58;
+    static final int HELP_GAME_INTRO = 59;
 
     // ---- Original help pages: EN.dat itself is a second semantic source for mechanics ----
     // 60..80 are mechanism/tutorial descriptions. eD[][] chooses which raw tiles are drawn beside each page.
@@ -56,6 +79,7 @@ public final class DialogCatalog {
     static final int HELP_GIANT_BEAN = 78;
     static final int HELP_SHOVEL = 79;
     static final int HELP_GOLDEN_CARROT = 80;
+    static final int PRESS_A_KEY = 81;
 
     // ---- Beaver Shop item labels ----
     static final int SHOP_TICKET_DREAM_MACHINE = 82;
@@ -76,6 +100,8 @@ public final class DialogCatalog {
     static final int SHOP_DESC_EXTRA_MUSIC = 95;
     static final int SHOP_DESC_SPEED_SHOES = 96;
     static final int SHOP_DESC_COIN_RADAR = 97;
+    static final int SHOP_CANNOT_AFFORD = 98;
+    static final int SHOP_CONFIRM_BUY = 99;
 
     // ---- Shared scene / campaign dialog ----
     static final int BEAVER_SHOP_WELCOME_PREFIX = 100;
@@ -106,6 +132,20 @@ public final class DialogCatalog {
     static final int GOLDEN_CARROT_RESULT_SUFFIX = 121;
     static final int LAST_MAGIC_CODES = 122;
 
+    /** Normal level result screen is assembled from these fragments, not one precomposed string. */
+    static int[] normalLevelResultFragments() {
+        return new int[]{FINISHED_LEVEL, RESULT_TIME, RESULT_BONUS_COINS, RESULT_OF, RESULT_TOTAL_COINS};
+    }
+
+    static int confirmationDialogForAction(int kind) {
+        switch (kind) {
+            case 0: return CONFIRM_EXIT_LEVEL;
+            case 1: return CONFIRM_QUIT_GAME;
+            case 2: return CONFIRM_ENABLE_MUSIC;
+            default: return -1;
+        }
+    }
+
     /**
      * Shared-character Body handler (`0xEA` Sandman body / `0xF7` Beaver body) 的 bU 语义。
      * archive 0 时 bU 1..5 是 shared special scene；archive>0 的 1..10 则是普通关 record，不能混用。
@@ -125,6 +165,12 @@ public final class DialogCatalog {
             default:
                 return new int[0];
         }
+    }
+
+    static int shopDescriptionForUpgradeIndex(int upgradeIndex) {
+        return upgradeIndex >= 0 && upgradeIndex <= 6
+            ? SHOP_DESC_DREAM_MACHINE_TICKET + upgradeIndex
+            : -1;
     }
 
     /** Timed Bonus 根据持久 Super Key / 临时 permit / currency 走不同文案。 */
