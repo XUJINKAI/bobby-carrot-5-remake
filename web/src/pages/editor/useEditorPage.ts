@@ -23,8 +23,8 @@ import {
   reorderEntityStack,
   replaceEntities,
   replaceEntity,
+  resolveDeletion,
   resolveEditorPalette,
-  resolveSelectionDeletionTargets,
   resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
@@ -75,7 +75,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
-  const leftPanel = ref<EditorLeftPanel>("surface");
+  const leftPanel = ref<EditorLeftPanel>("palette");
   const surfaceTool = ref<SurfaceTool>("rect");
   const surfaceBrush = ref<SurfaceBrush>(defaultSurfaceBrush());
   const mapSelection = ref<EditorSelection | null>(null);
@@ -187,15 +187,6 @@ export function useEditorPage(initialLevel: EditorMap) {
       ...surfaceBrush.value,
       pattern: "alternate",
       alternate,
-    };
-  }
-
-  function rerollSurface(): void {
-    activateSurface();
-    surfaceBrush.value = {
-      ...surfaceBrush.value,
-      pattern: "auto",
-      seed: surfaceBrush.value.seed + 1,
     };
   }
 
@@ -318,7 +309,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const key = `${cell.x},${cell.y}`;
     if (eraseVisited.has(key)) return;
     eraseVisited.add(key);
-    const refs = resolveSelectionDeletionTargets(
+    const refs = resolveDeletion(
       currentLevel(),
       catalog,
       { anchor: cell, focus: cell },
@@ -376,7 +367,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function deleteSelection(): boolean {
     if (leftPanel.value === "surface" || !mapSelection.value) return false;
-    const refs = resolveSelectionDeletionTargets(
+    const refs = resolveDeletion(
       currentLevel(),
       catalog,
       mapSelection.value,
@@ -613,7 +604,6 @@ export function useEditorPage(initialLevel: EditorMap) {
     setSurfacePattern,
     setSurfaceExact,
     setSurfaceAlternate,
-    rerollSurface,
     pickSurface,
     primaryStart,
     primaryMove,
