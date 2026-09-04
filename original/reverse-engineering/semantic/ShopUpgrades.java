@@ -1,6 +1,5 @@
-// 研究性语义重建：来源为 UP9 a.class / player midpoint shop branch、
-// generic dialog action dispatcher、pause menu action 30/31/32、gameplay F()/M()、
-// D[] 全引用追踪、EN.dat 精准字符串索引与 menu mode 4/5 控制流。
+// 研究性语义重建：来源为 UP9 a.class / Shop 购买、D[] 引用、EN.dat、
+// menu mode 4/5、Night Train A()/B() 与 gameplay F()/M()。
 // 本文件只表达原版持久 upgrade 状态，不作为可直接编译的产品源码。
 
 public final class ShopUpgrades {
@@ -8,8 +7,8 @@ public final class ShopUpgrades {
     private static final int SHOP_LAST = 0x9D;
     private static final int SHOP_UNAVAILABLE = 0x9E;
 
-    private static final int UPGRADE_DREAM_MACHINE = 0;
-    private static final int UPGRADE_CLOUD_9 = 1;
+    private static final int TICKET_DREAM_MACHINE = 0;
+    private static final int TICKET_CLOUD_9 = 1;
     private static final int UPGRADE_SUPER_KEY = 2;
     private static final int UPGRADE_SOUND_TEST = 3;
     private static final int UPGRADE_MUSIC = 4;
@@ -86,20 +85,21 @@ public final class ShopUpgrades {
     }
 
     /**
-     * D[0]/D[1] 的完整引用追踪只确认它们控制 menu mode 4 是否出现：
-     * - D[0] > 0 -> 显示 "DREAM MACHINE"；
-     * - D[1] > 0 -> 显示 "CLOUD 9"。
+     * D[0]/D[1] 是 Beaver Shop 出售的 Night Train destination tickets。
      *
-     * mode 4 的确认键经过通用 18-step menu transition 后进入 `ak(ea=4)`，
-     * 该分支没有 scene jump 或 gameplay action。因此当前能确认的是“解锁 mode-4
-     * 条目/显示”，不能再向上解释成可操作 scene 入口。
+     * 三条证据闭环：
+     * 1. EN.dat mode-4 条目分别为 "DREAM MACHINE" / "CLOUD 9"；
+     * 2. Night Train A() 在没有任何 mode-4 目的地时显示 a[119]：需要 Ticket，
+     *    并明确要求去 Beaver Shop 购买；
+     * 3. Night Train B() 选择 action 1 后进入 bV=0,bU=3 Dream Machine，
+     *    action 2 后进入 bV=0,bU=2 Cloud 9。
      */
-    boolean showsDreamMachineMode4Entry() {
-        return purchasedUpgradeCount[UPGRADE_DREAM_MACHINE] > 0;
+    boolean hasDreamMachineTrainTicket() {
+        return purchasedUpgradeCount[TICKET_DREAM_MACHINE] > 0;
     }
 
-    boolean showsCloud9Mode4Entry() {
-        return purchasedUpgradeCount[UPGRADE_CLOUD_9] > 0;
+    boolean hasCloud9TrainTicket() {
+        return purchasedUpgradeCount[TICKET_CLOUD_9] > 0;
     }
 
     /** D[3] 的 action 16 与 mode 5 bytecode 已完整确认是 Sound Test。 */
