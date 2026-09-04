@@ -41,7 +41,7 @@ public final class GameplayRenderOrder {
         // 这些明确在 Bobby / fireball / hint 之后。
         drawForegroundSnowOrButterfly();
 
-        // 10. HUD：计时、目标数、inventory 等。
+        // 10. HUD：计时、目标数、inventory 等；精确条件与布局见 GameplayHud。
         drawHud();
 
         // 11. Timed Bonus alarm overlay。

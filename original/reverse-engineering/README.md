@@ -56,7 +56,7 @@
 - `semantic/TileAnimationClock.java`：Water / Speed / Tide / Fall / Windmill / Whirlwind / Exit / Bonus Coin 的全局共享 animation phase。
 - `semantic/GameplayRenderOrder.java`：原版 gameplay layer 顺序。
 - `semantic/BobbyAnimationCadence.java`：Bobby walk / idle / death / transition 节奏。
-- `semantic/CameraShake.java`、`OverviewMode.java`、`MissingItemHint.java`：相机与 gameplay HUD 辅助行为。
+- `semantic/GameplayHud.java`、`CameraShake.java`、`OverviewMode.java`、`MissingItemHint.java`：HUD、相机与提示行为。
 
 原版 outer loop 约 62ms，但每轮调用两次 runtime advance；一个 gameplay step 稳态约 **31ms / 32Hz**。不要把旧文档中的 16Hz 当成原版 World tick。
 
