@@ -37,7 +37,9 @@ jobs:
               'bn', 'bh', 'bi', 'bj', 'bk', 'bl', 'bm', 'bo',
               'cV', 'cW', 'cX', 'cY', 'cZ',
               'aN', 'aO', 'aT', 'bc', 'bd', 'be', 'bf', 'bg',
-              'de', 'df', 'dg', 'dO', 'dP', 'dQ', 'eB', 'eg'
+              'de', 'df', 'dg', 'dO', 'dP', 'dQ', 'eB', 'eg',
+              'ac', 'ad', 'ae', 'bA', 'bB', 'bw', 'bx', 'by', 'bz',
+              'cf', 'cg', 'ch'
           ]
 
           for symbol in symbols:
