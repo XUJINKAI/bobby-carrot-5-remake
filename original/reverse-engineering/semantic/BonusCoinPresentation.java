@@ -14,30 +14,25 @@ public final class BonusCoinPresentation {
     private boolean bonusCoinSparkleEnabled;
 
     /**
-     * 精确对应 a.V() 的时序：
-     *
-     * 每个 gameplay step：
-     * 1. 先处理 bE==0 时的 bH sparkle gate；
-     * 2. 然后推进 bG；
-     * 3. 只有 bG 回到 0 时，下一次 V() 才推进 bE/bC/bD/bF。
-     *
-     * 注意：bH 检查不是每 16 step 一次。bE 保持为 0 的窗口内，
-     * 每个 gameplay step 都可能关闭当前 sparkle 或重新随机开启。
+     * 精确对应 a.V() 的执行顺序。phase 只在 ambientSubstep==0 时推进；
+     * cache 使用推进后的 phase 和推进前的 bH 重绘。随后，bE==0 的每个 step
+     * 都会对 bH 做一次“active 则关闭，否则 1/7 开启”的更新。
      */
-    void gameplayStep() {
+    void gameplayStep(RandomSource random) {
+        if (ambientSubstep == 0) {
+            ambientPhase4 = (ambientPhase4 + 1) % 4;
+            redrawCachedBonusCoins();
+        }
+
         if (ambientPhase4 == 0) {
             if (bonusCoinSparkleEnabled) {
                 bonusCoinSparkleEnabled = false;
-            } else if (randomInt(7) == 0) {
+            } else if (random.nextInt(7) == 0) {
                 bonusCoinSparkleEnabled = true;
             }
         }
 
-        ambientSubstep++;
-        if (ambientSubstep >= 4) {
-            ambientSubstep = 0;
-            ambientPhase4 = (ambientPhase4 + 1) % 4;
-        }
+        ambientSubstep = (ambientSubstep + 1) % 4;
     }
 
     boolean useAnimatedBonusCoinFrame(int objectRaw) {
@@ -52,14 +47,19 @@ public final class BonusCoinPresentation {
     }
 
     /**
-     * 统计含义：
-     * - ambient phase 每 4 gameplay step 推进；
-     * - bH 只在 phase=0 窗口处理；
-     * - sparkle 持续时间不是固定 496ms。
-     *
-     * 具体可见持续时间取决于 bG/bE 当前相位和下一次 gate 处理。
+     * bE==0 的四步窗口结束时，bH 是否恰好为 true 决定下一轮是否可见。
+     * 进入窗口时 bH=false 的精确概率是 300/2401；bH=true 时是 43/343；
+     * 长期稳态两者收敛到 1/8。可见后 bH 在 bE=1/2/3 期间保持 true，
+     * 所以三张动态帧各保持 4 step，总可见时长固定 12 step，约 372ms。
      */
-    private int randomInt(int bound) {
-        throw new UnsupportedOperationException("original Random.nextInt wrapper");
+    int visibleSparkleGameplaySteps() {
+        return 12;
     }
+
+    private void redrawCachedBonusCoins() {}
+
+    interface RandomSource {
+        int nextInt(int bound);
+    }
+
 }

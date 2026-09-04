@@ -37,6 +37,9 @@ public final class TileAnimationClock {
     /** bF = 0..2：静态帧 + 2 张 Tide / Fall / Windmill ta 帧。 */
     private int shortPhase;
 
+    /** 对应 bG：0..3 的四步 ambient 分频器。 */
+    private int ambientSubstep;
+
     private boolean bonusCoinSparkleGate;
     private int remainingObjectives;
     private boolean windUpEnabled;
@@ -44,12 +47,37 @@ public final class TileAnimationClock {
     private boolean windLeftEnabled;
     private boolean windRightEnabled;
 
-    /** 对应 `V()` 的全局 phase 递进。每次 gameplay step 同时推进。 */
-    void gameplayStep() {
-        waterPhase = (waterPhase + 1) % 8;
-        whirlwindPhase = (whirlwindPhase + 1) % 6;
-        fourPhase = (fourPhase + 1) % 4;
-        shortPhase = (shortPhase + 1) % 3;
+    /**
+     * 精确对应 `V()`：
+     *
+     * 1. 只有进入 step 时 bG==0 才推进 bC/bD/bE/bF；
+     * 2. phase 推进后，原版立即重绘当前 cache 中需要动画的格；
+     * 3. 随后只要 bE==0，每个 step 都更新 Bonus Coin 的 bH gate；
+     * 4. 最后 bG=(bG+1)%4。
+     *
+     * 因此四组 phase 每 4 个 gameplay step 才前进一步，而不是每 step 推进。
+     * bH 在 bE==0 保持的整个四步窗口中会被连续检查四次。
+     */
+    void gameplayStep(RandomSource random) {
+        if (ambientSubstep == 0) {
+            waterPhase = (waterPhase + 1) % 8;
+            whirlwindPhase = (whirlwindPhase + 1) % 6;
+            fourPhase = (fourPhase + 1) % 4;
+            shortPhase = (shortPhase + 1) % 3;
+
+            // 原版此时按新 phase 重绘 animation cache；必须早于下面的 bH 更新。
+            redrawAnimatedCachedCells();
+        }
+
+        if (fourPhase == 0) {
+            if (bonusCoinSparkleGate) {
+                bonusCoinSparkleGate = false;
+            } else if (random.nextInt(7) == 0) {
+                bonusCoinSparkleGate = true;
+            }
+        }
+
+        ambientSubstep = (ambientSubstep + 1) % 4;
     }
 
     /**
@@ -139,6 +167,12 @@ public final class TileAnimationClock {
      */
     boolean sameTypeTilesAnimateInSync() {
         return true;
+    }
+
+    private void redrawAnimatedCachedCells() {}
+
+    interface RandomSource {
+        int nextInt(int bound);
     }
 
     static final class DynamicFrame {

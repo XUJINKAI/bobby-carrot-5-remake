@@ -93,7 +93,7 @@
 | `0xF5` | Landing | Grounded Bobby 普通通过；airborne midpoint 开始 landing。Airborne movement 本身绕过普通 terrain/object collision；原版没有地图边缘自动 landing 分支。 | 确认 |
 | `0xF6` | Golden Carrot | 非 mower midpoint 直接进入特殊关完成/持久化流程。 | 确认主干 |
 | `0xF7` | Beaver Body | 与 EA 共用角色 interaction handler；Campaign mode 决定具体文案/action。 | 确认主干 |
-| `0xF8` | Bonus Coin | 非 mower midpoint 收集，增加本关 bonus count；全场 Coin 共用 sparkle gate：每约 16 gameplay step 检查，inactive 时 1/7 概率开启，active 下一周期必关闭。 | 确认 |
+| `0xF8` | Bonus Coin | 非 mower midpoint 收集，增加本关 bonus count；全场 Coin 共用 sparkle gate。`bE==0` 的四步窗口每步更新 `bH`，窗口末稳态开启概率 `1/8`；可见后三张动态帧各保持 4 step，共约 372ms。 | 确认 |
 | `0xF9..0xFE` | Fence variants | Bobby blocking。 | 确认 |
 | `0xFF` | Empty | 无 object。 | 确认 |
 

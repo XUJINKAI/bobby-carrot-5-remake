@@ -148,7 +148,7 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 
 Web Runtime 的 Original Visual resolver 应按最终确认的原版毫秒节拍计算 phase，而不是把 `time.tick % 4` 当作原版事实。Renderer 的 image layer 支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
 
-原版 Bonus Coin 还存在随机闪烁门控；当前已恢复确认基础相位动画，随机门控继续作为 fidelity 项处理。
+Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更新 `bH`，窗口结束时 gate 为 true 的稳态概率为 `1/8`；随后 `bE=1/2/3` 三帧各保持 4 step，一次可见闪耀固定约 372ms。
 
 ## 7. Bobby 四方向人物图
 
