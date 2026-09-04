@@ -210,10 +210,12 @@ Left/Right：ta(14,4) --> ta(15,1) --> ta(15,2)
 ### Kite 风筝 / Whirlwind 旋风/龙卷风
 
 - Kite是关卡内的可收集物品
-- 拥有Kite的bobby，走到旋风上会起飞
-- 飞起来的bobby，遇到 Landing 会降落，或直到撞到地图边缘
+- 拥有Kite的 Bobby 走到 Whirlwind 上会起飞
+- airborne 状态完全绕过普通 terrain/object 碰撞，只保持当前方向逐格飞行
+- airborne Bobby 跨过 Landing `0xF5` 的移动中点时开始降落
+- 原版 class 没有“飞到地图边缘自动降落/停止”的逻辑；正常 flight path 必须在出界前由 Landing 收尾
 
-待验证：地图边缘为blocking地貌如何降落
+如果 airborne Bobby 被异常地图布局引导出 grid 数组边界，下一 movement cycle 会访问越界坐标；这是无保护的异常路径，而不是一种正常玩法结算。
 
 旋风动画：
 Whirlwind: ts(16,5) --> ta(7,3) --> ta(7,4) --> ta(8,1) --> ta(8,2) --> ta(8,3)
