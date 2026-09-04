@@ -1,9 +1,10 @@
 import type { Direction } from "@bobby/model";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
+import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { MoveCause } from "./WorldIntent.js";
 
 export type WorldMotionId = number;
-export type WorldMotionStatus = "running" | "interrupted";
+export type WorldMotionStatus = "running" | "completed" | "interrupted";
 
 export interface WorldPose {
   x: number;
@@ -44,6 +45,11 @@ export interface StartWorldMotion {
   durationMs: number;
 }
 
+export interface MovementLifecycle {
+  source: readonly EntityPresence[];
+  target: readonly EntityPresence[];
+}
+
 export class WorldMotionStore {
   private readonly motions = new Map<WorldMotionId, WorldMotion>();
   private readonly motionByEntity = new Map<EntityId, WorldMotionId>();
@@ -76,7 +82,7 @@ export class WorldMotionStore {
       cause: structuredClone(spec.cause),
       durationMs,
       elapsedMs: 0,
-      progress: durationMs === 0 ? 1 : 0,
+      progress: 0,
       status: "running",
     };
     this.motions.set(motion.id, motion);
@@ -127,6 +133,13 @@ export class WorldMotionStore {
     if (this.motionByEntity.get(motion.entityId) === id)
       this.motionByEntity.delete(motion.entityId);
     return cloneMotion(motion);
+  }
+
+  complete(id: WorldMotionId): WorldMotion | undefined {
+    const motion = this.motions.get(id);
+    if (!motion || motion.status !== "running") return undefined;
+    motion.status = "completed";
+    return this.remove(id);
   }
 
   clearEntity(entityId: EntityId): WorldMotion | undefined {

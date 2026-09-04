@@ -4,7 +4,7 @@ import type {
   WorldDelta,
   WorldDeltaSequence,
 } from "./delta/WorldDelta.js";
-import type { WorldMotionStore } from "./movement/WorldMotion.js";
+import type { MovementRuntime } from "./movement/MovementRuntime.js";
 import {
   emptyMutationSummary,
   type WorldMutationSummary,
@@ -31,7 +31,7 @@ export class WorldCommitter {
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
     private readonly actions: RuntimeActionScheduler,
-    private readonly motions: WorldMotionStore,
+    private readonly movement: MovementRuntime,
     private readonly state: () => GlobalState,
     private readonly sequence: WorldDeltaSequence,
   ) {}
@@ -54,7 +54,7 @@ export class WorldCommitter {
         }
         case "destroy":
           this.actions.cancelOwnedBy(command.entityId);
-          this.motions.clearEntity(command.entityId);
+          this.movement.clearEntity(command.entityId);
           this.spatial.removeEntity(command.entityId);
           this.entities.destroy(command.entityId);
           pushUnique(mutations.destroyed, command.entityId);

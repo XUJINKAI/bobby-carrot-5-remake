@@ -1,4 +1,4 @@
-import type { Direction, LevelLimit, LevelMap, WinCondition } from "@bobby/model";
+import type { Direction, LevelMap } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
@@ -41,10 +41,11 @@ import {
 } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
-  WorldMotionStore,
-  type WorldMotion,
-  type WorldMotionSnapshot,
-} from "./movement/WorldMotion.js";
+  MovementRuntime,
+  type MovementMarker,
+  type MovementRuntimeSnapshot,
+} from "./movement/MovementRuntime.js";
+import type { WorldMotion } from "./movement/WorldMotion.js";
 import type {
   MoveIntent,
   WorldIntent,
@@ -61,6 +62,7 @@ import {
 import type { EntityPresence } from "./spatial/EntityPresence.js";
 import { SpatialIndex } from "./spatial/SpatialIndex.js";
 import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
+import { WorldRuleEvaluator } from "./WorldRuleEvaluator.js";
 import type {
   CellInspection,
   MoveResult,
@@ -73,7 +75,7 @@ export interface WorldSnapshot {
   entities: EntityStoreSnapshot;
   state: GlobalState;
   actions: RuntimeActionSchedulerSnapshot;
-  motions: WorldMotionSnapshot;
+  movement: MovementRuntimeSnapshot;
 }
 
 export interface WorldOptions {
@@ -95,11 +97,12 @@ export class World {
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
   readonly actions: RuntimeActionScheduler;
-  readonly motions = new WorldMotionStore();
+  readonly movement = new MovementRuntime();
   readonly rules: LevelMap["rules"];
   state: GlobalState;
   private readonly deltaSequence = new WorldDeltaSequence();
   private readonly committer: WorldCommitter;
+  private readonly ruleEvaluator: WorldRuleEvaluator;
   private motionDurationMs: number;
   private currentWorldTick: number | null = null;
 
@@ -130,13 +133,20 @@ export class World {
       this.entities,
       this.spatial,
       this.actions,
-      this.motions,
+      this.movement,
       () => this.state,
       this.deltaSequence,
     );
+    this.ruleEvaluator = new WorldRuleEvaluator(
+      this.rules,
+      this.entities,
+      this.spatial,
+      this.query,
+      () => this.state,
+    );
     this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
-    this.refreshDerivedState();
-    this.evaluateCompletion([]);
+    this.ruleEvaluator.refreshDerivedState();
+    this.ruleEvaluator.evaluateCompletion([], false);
   }
 
   get dead(): boolean {
@@ -148,7 +158,7 @@ export class World {
   }
 
   get winState(): WinConditionState | null {
-    return this.rules?.win ? this.evaluateWin(this.rules.win) : null;
+    return this.ruleEvaluator.winState;
   }
 
   get inputBlocked(): boolean {
@@ -224,7 +234,7 @@ export class World {
       entities: this.entities.snapshot(),
       state: structuredClone(this.state),
       actions: this.actions.snapshot(),
-      motions: this.motions.snapshot(),
+      movement: this.movement.snapshot(),
     };
   }
 
@@ -232,7 +242,7 @@ export class World {
     this.entities.restore(snapshot.entities);
     this.state = structuredClone(snapshot.state);
     this.actions.restore(snapshot.actions);
-    this.motions.restore(snapshot.motions);
+    this.movement.restore(snapshot.movement);
     this.spatial.rebuild();
   }
 
@@ -266,12 +276,11 @@ export class World {
   step(group: WorldIntentGroup): WorldStepResult {
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
-    const reachedSelectors = new Set<string>();
     let playerInputMoved = false;
 
     for (const intent of group.intents) {
       if (intent.type !== "move") continue;
-      const result = this.resolveMove(intent, transaction, reachedSelectors);
+      const result = this.resolveMove(intent, transaction);
       moves.push(result);
       if (result.moved && intent.cause.type === "player-input")
         playerInputMoved = true;
@@ -279,35 +288,37 @@ export class World {
 
     if (playerInputMoved)
       transaction.commands.setGlobal("moves", this.state.moves + 1);
-    if (reachedSelectors.size > 0)
-      transaction.commands.setGlobal("lastReachedSelectors", [
-        ...reachedSelectors,
-      ]);
+    if (transaction.motions.length > 0)
+      transaction.commands.setGlobal("lastReachedSelectors", []);
 
     const beforeDead = this.state.dead;
     const beforeCompleted = this.state.completed;
     const commit = this.committer.commit(transaction.commands, this.deltaClock());
-    const motions = this.startMotions(transaction.motions, commit.deltas);
-    this.refreshDerivedState();
-    this.evaluateCompletion(commit.events);
-    this.evaluateLimits(commit.events);
+    const result: WorldStepResult = {
+      moves,
+      motions: [],
+      events: commit.events,
+      mutations: commit.mutations,
+      deltas: commit.deltas,
+    };
+    this.startMotions(transaction.motions, result);
+    this.ruleEvaluator.refreshDerivedState();
+    this.ruleEvaluator.evaluateCompletion(
+      result.events,
+      this.movement.running.length > 0,
+    );
+    this.ruleEvaluator.evaluateLimits(result.events);
     if (!beforeDead && this.state.dead)
       pushUnique(commit.mutations.globalsChanged, "dead");
     if (!beforeCompleted && this.state.completed)
       pushUnique(commit.mutations.globalsChanged, "completed");
 
-    return {
-      moves,
-      motions,
-      events: commit.events,
-      mutations: commit.mutations,
-      deltas: commit.deltas,
-    };
+    return result;
   }
 
   /**
    * 一个 WorldTick 分成稳定 phase：
-   * RuntimeAction commands -> RuntimeAction intents -> Behavior onTick。
+   * Movement markers -> RuntimeAction commands -> RuntimeAction intents -> Behavior onTick。
    * 每个 phase commit 后，后续 phase 才读取新的 World。
    */
   update(time: WorldTick): WorldStepResult {
@@ -317,12 +328,20 @@ export class World {
 
     this.currentWorldTick = time.tick;
     this.state.elapsedMs += time.stepMs;
+    this.advanceMotions(time.stepMs, result);
+    if (this.state.dead || this.state.completed) {
+      this.currentWorldTick = null;
+      return result;
+    }
 
     const actionQueue = new CommandQueue();
     const actionIntents = this.actions.update(time, this.query, actionQueue);
     const actionCommit = this.committer.commit(actionQueue, this.deltaClock());
-    this.refreshDerivedState();
-    this.evaluateCompletion(actionCommit.events);
+    this.ruleEvaluator.refreshDerivedState();
+    this.ruleEvaluator.evaluateCompletion(
+      actionCommit.events,
+      this.movement.running.length > 0,
+    );
     absorbCommit(result, actionCommit);
     if (this.state.dead || this.state.completed) {
       this.currentWorldTick = null;
@@ -361,9 +380,12 @@ export class World {
     }
 
     const tickCommit = this.committer.commit(tickQueue, this.deltaClock());
-    this.refreshDerivedState();
-    this.evaluateCompletion(tickCommit.events);
-    this.evaluateLimits(tickCommit.events);
+    this.ruleEvaluator.refreshDerivedState();
+    this.ruleEvaluator.evaluateCompletion(
+      tickCommit.events,
+      this.movement.running.length > 0,
+    );
+    this.ruleEvaluator.evaluateLimits(tickCommit.events);
     absorbCommit(result, tickCommit);
     this.currentWorldTick = null;
     return result;
@@ -372,7 +394,6 @@ export class World {
   private resolveMove(
     intent: MoveIntent,
     group: MovementTransaction,
-    reachedSelectors: Set<string>,
   ): MoveResult {
     const actor = this.entities.get(intent.actorId);
     const missingFrom = actor?.anchor ?? { x: -1, y: -1 };
@@ -395,6 +416,14 @@ export class World {
         to,
         intent.direction,
         "world-finished",
+      );
+    if (this.movement.motions.forEntity(actor.id)?.status === "running")
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "actor-busy",
       );
     if (!this.spatial.inBounds(to))
       return blockedResult(actor.id, from, to, intent.direction, "void");
@@ -532,15 +561,6 @@ export class World {
         "destination-conflict",
       );
 
-    for (const presence of sourceStack)
-      this.runHook(
-        "onLeave",
-        presence,
-        actor,
-        intent.direction,
-        local.commands,
-        movement,
-      );
     if (pushed)
       local.move(
         pushed.entityId,
@@ -550,36 +570,12 @@ export class World {
         { type: "push", sourceEntityId: actor.id },
         false,
       );
-    local.move(actor.id, from, to, intent.direction, intent.cause);
-    for (const presence of targetStack) {
-      if (
-        presence.entityId !== pushable?.entityId &&
-        !local.isEntryAllowed(presence.entityId)
-      )
-        this.runHook(
-          "onEnter",
-          presence,
-          actor,
-          intent.direction,
-          local.commands,
-          movement,
-        );
-      else if (
-        local.isEntryAllowed(presence.entityId) &&
-        this.entities.get(presence.entityId)
-      )
-        this.runHook(
-          "onEnter",
-          presence,
-          actor,
-          intent.direction,
-          local.commands,
-          movement,
-        );
-    }
-
-    for (const selector of this.selectorsForPresences(targetStack))
-      reachedSelectors.add(selector);
+    local.move(actor.id, from, to, intent.direction, intent.cause, true, {
+      source: sourceStack,
+      target: targetStack.filter(
+        (presence) => presence.entityId !== pushable?.entityId,
+      ),
+    });
     group.reserveDestination(actor.id, to);
     if (pushed) group.reserveDestination(pushed.entityId, pushed.to);
     group.absorb(local);
@@ -766,30 +762,120 @@ export class World {
 
   private startMotions(
     requests: readonly EntityMotionRequest[],
-    deltas: WorldDelta[],
-  ): WorldMotion[] {
-    const started: WorldMotion[] = [];
+    result: WorldStepResult,
+  ): void {
     for (const request of requests) {
       const durationMs = this.durationForMotion(request);
-      const motion = this.motions.start({ ...request, durationMs });
-      started.push(motion);
-      deltas.push(
+      const motion = this.movement.start(
+        request,
+        durationMs,
+        request.lifecycle,
+      );
+      result.motions.push(motion);
+      result.deltas.push(
         this.deltaSequence.create(
           { type: "motion-started", motion },
           this.deltaClock(),
         ),
       );
-      if (durationMs === 0) {
-        const completed = this.motions.remove(motion.id) ?? motion;
-        deltas.push(
+    }
+    this.advanceMotions(0, result);
+  }
+
+  private advanceMotions(stepMs: number, result: WorldStepResult): void {
+    this.movement.advance(stepMs, {
+      progressed: (motion) => {
+        result.deltas.push(
           this.deltaSequence.create(
-            { type: "motion-completed", motion: completed },
+            { type: "motion-progressed", motion },
             this.deltaClock(),
           ),
         );
-      }
+      },
+      marker: (motion, marker) => {
+        result.deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-marker", motion, marker },
+            this.deltaClock(),
+          ),
+        );
+        this.runMovementMarker(motion, marker, result);
+      },
+      completed: (motion) => {
+        result.deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-completed", motion },
+            this.deltaClock(),
+          ),
+        );
+        this.ruleEvaluator.evaluateCompletion(
+          result.events,
+          this.movement.running.length > 0,
+        );
+      },
+    });
+  }
+
+  private runMovementMarker(
+    motion: WorldMotion,
+    marker: MovementMarker,
+    result: WorldStepResult,
+  ): void {
+    const plan = this.movement.plan(motion.id);
+    const actor = this.entities.get(motion.entityId);
+    if (!plan || !actor) return;
+    const queue = new CommandQueue();
+    const movement: MovementContext = {
+      from: motion.from,
+      to: motion.to,
+      cause: motion.cause,
+      motion: {
+        id: motion.id,
+        marker,
+        progress: motion.progress,
+        durationMs: motion.durationMs,
+      },
+    };
+
+    const hook = marker === "departed" ? "onLeave" : "onEnter";
+    if (marker === "departed" || marker === "interaction") {
+      const presences = marker === "departed" ? plan.source : plan.target;
+      for (const presence of presences)
+        this.runHook(
+          hook,
+          presence,
+          actor,
+          motion.direction,
+          queue,
+          movement,
+        );
     }
-    return started;
+    if (marker === "interaction") {
+      const selectors = new Set(this.state.lastReachedSelectors);
+      for (const selector of this.selectorsForPresences(plan.target))
+        selectors.add(selector);
+      queue.setGlobal("lastReachedSelectors", [...selectors]);
+    }
+
+    const commit = this.committer.commit(queue, this.deltaClock());
+    absorbCommit(result, commit);
+    this.ruleEvaluator.refreshDerivedState();
+    if (this.state.dead) this.interruptMotion(motion, result);
+  }
+
+  private interruptMotion(motion: WorldMotion, result: WorldStepResult): void {
+    const interrupted = this.movement.interruptEntity(
+      motion.entityId,
+      this.state.deathReason ?? "actor-downed",
+      motion.progress,
+    );
+    if (!interrupted) return;
+    result.deltas.push(
+      this.deltaSequence.create(
+        { type: "motion-interrupted", motion: interrupted },
+        this.deltaClock(),
+      ),
+    );
   }
 
   private durationForMotion(request: EntityMotionRequest): number {
@@ -808,119 +894,6 @@ export class World {
     };
   }
 
-  private refreshDerivedState(): void {
-    this.state.goldenCarrotsInLevel =
-      this.query.entitiesWithTrait("golden-carrot").length;
-    this.state.bonusCoinsInLevel =
-      this.query.entitiesWithTrait("bonus-coin").length;
-  }
-
-  private evaluateCompletion(events: WorldEvent[]): void {
-    if (this.state.completed || this.state.dead) return;
-    const win = this.winState;
-    if (!win?.completed) return;
-    this.state.completed = true;
-    events.push({ type: "complete" });
-  }
-
-  private evaluateLimits(events: WorldEvent[]): void {
-    if (this.state.completed || this.state.dead) return;
-    for (const limit of this.rules?.limits ?? []) {
-      const exceeded = this.limitExceeded(limit);
-      if (!exceeded) continue;
-      const reason =
-        limit.type === "max-moves"
-          ? `Move limit exceeded: ${limit.moves}`
-          : `Time limit exceeded: ${limit.seconds}s`;
-      if (!this.state.dead) {
-        this.state.dead = true;
-        this.state.deathReason = reason;
-        events.push({ type: "death", reason });
-      }
-      return;
-    }
-  }
-
-  private limitExceeded(limit: LevelLimit): boolean {
-    if (limit.type === "max-moves") return this.state.moves > limit.moves;
-    return this.state.elapsedMs > limit.seconds * 1000;
-  }
-
-  private evaluateWin(condition: WinCondition): WinConditionState {
-    switch (condition.type) {
-      case "all": {
-        const conditions = condition.conditions.map((item) =>
-          this.evaluateWin(item),
-        );
-        return {
-          type: "all",
-          completed: conditions.every((item) => item.completed),
-          conditions,
-        };
-      }
-      case "any": {
-        const conditions = condition.conditions.map((item) =>
-          this.evaluateWin(item),
-        );
-        return {
-          type: "any",
-          completed: conditions.some((item) => item.completed),
-          conditions,
-        };
-      }
-      case "collect-all": {
-        const remaining = this.matchingEntityCount(condition.target);
-        return {
-          type: "collect-all",
-          target: condition.target,
-          completed: remaining === 0,
-          remaining,
-        };
-      }
-      case "reach": {
-        const actors = this.query.entitiesWithTrait("player");
-        return {
-          type: "reach",
-          target: condition.target,
-          completed:
-            actors.some((actor) =>
-              this.hasSelectorAt(actor.anchor, condition.target),
-            ) || this.state.lastReachedSelectors.includes(condition.target),
-        };
-      }
-      case "fill-all": {
-        const targets = this.spatialCellsMatching(condition.target);
-        const remaining = targets.filter(
-          (cell) => !this.hasSelectorAt(cell, condition.filler),
-        ).length;
-        return {
-          type: "fill-all",
-          target: condition.target,
-          filler: condition.filler,
-          completed: targets.length > 0 && remaining === 0,
-          remaining,
-        };
-      }
-    }
-  }
-
-  private matchingEntityCount(selector: string): number {
-    return this.entities
-      .all()
-      .filter(
-        (entity) =>
-          entity.type === selector ||
-          this.query.entityHasTrait(entity.id, selector),
-      ).length;
-  }
-
-  private hasSelectorAt(cell: CellPosition, selector: string): boolean {
-    return this.spatial.presencesAt(cell).some((presence) => {
-      const entity = this.entities.require(presence.entityId);
-      return entity.type === selector || presence.traits.includes(selector);
-    });
-  }
-
   private selectorsForPresences(
     presences: readonly EntityPresence[],
   ): string[] {
@@ -932,18 +905,6 @@ export class World {
       for (const trait of presence.traits) selectors.add(trait);
     }
     return [...selectors];
-  }
-
-  private spatialCellsMatching(selector: string): CellPosition[] {
-    const result = new Map<string, CellPosition>();
-    for (const entity of this.entities.all()) {
-      const typeMatches = entity.type === selector;
-      for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (!typeMatches && !presence.traits.includes(selector)) continue;
-        result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
-      }
-    }
-    return [...result.values()];
   }
 
   private inspectPresence(presence: EntityPresence): PresenceInspection {

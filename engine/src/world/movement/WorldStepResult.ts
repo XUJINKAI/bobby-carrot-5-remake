@@ -5,6 +5,7 @@ import type { MoveCause } from "./WorldIntent.js";
 import type { MoveResult, WorldEvent } from "../WorldTypes.js";
 import type { WorldDelta } from "../delta/WorldDelta.js";
 import type { WorldMotion } from "./WorldMotion.js";
+import type { MovementLifecycle } from "./WorldMotion.js";
 
 export type EntityMotion = WorldMotion;
 
@@ -14,6 +15,7 @@ export interface EntityMotionRequest {
   to: CellPosition;
   direction: Direction;
   cause: MoveCause;
+  lifecycle?: MovementLifecycle;
 }
 
 export interface WorldMutationSummary {

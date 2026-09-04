@@ -3,6 +3,7 @@ import { CommandQueue } from "../behavior/CommandQueue.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
 import type { MoveCause } from "./WorldIntent.js";
 import type { EntityMotionRequest } from "./WorldStepResult.js";
+import type { MovementLifecycle } from "./WorldMotion.js";
 
 /**
  * 一次 WorldStep 内的 gameplay mutation buffer。
@@ -38,6 +39,7 @@ export class MovementTransaction {
     direction: Direction,
     cause: MoveCause,
     updateDirection = true,
+    lifecycle?: MovementLifecycle,
   ): void {
     this.commands.move(entityId, to.x, to.y);
     if (updateDirection) this.commands.setDirection(entityId, direction);
@@ -47,6 +49,14 @@ export class MovementTransaction {
       to: { ...to },
       direction,
       cause: structuredClone(cause),
+      ...(lifecycle
+        ? {
+            lifecycle: {
+              source: lifecycle.source.map((presence) => structuredClone(presence)),
+              target: lifecycle.target.map((presence) => structuredClone(presence)),
+            },
+          }
+        : {}),
     });
   }
 

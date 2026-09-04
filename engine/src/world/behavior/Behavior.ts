@@ -7,6 +7,8 @@ import type {
 } from "../action/RuntimeAction.js";
 import type { CellPosition, EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { MoveCause } from "../movement/WorldIntent.js";
+import type { MovementMarker } from "../movement/MovementRuntime.js";
+import type { WorldMotionId } from "../movement/WorldMotion.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { WorldEvent } from "../WorldTypes.js";
 import type { WorldCommandApi } from "./CommandQueue.js";
@@ -35,6 +37,13 @@ export interface MovementContext {
   readonly from: CellPosition;
   readonly to: CellPosition;
   readonly cause: MoveCause;
+  /** passage 判定时省略；持续移动 marker hook 会提供权威 WorldMotion 进度。 */
+  readonly motion?: {
+    readonly id: WorldMotionId;
+    readonly marker: MovementMarker;
+    readonly progress: number;
+    readonly durationMs: number;
+  };
 }
 
 export interface BehaviorContext {
