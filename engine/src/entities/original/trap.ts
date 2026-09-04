@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -10,6 +11,18 @@ import {
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
+
+const armTrapAfterLeave: Behavior = {
+  id: "arm-trap-after-leave",
+  onLeave({ actor, self, query, commands }) {
+    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (self.entity.state?.active !== false) return;
+    commands.setState(self.entity.id, {
+      ...self.entity.state,
+      active: true,
+    });
+  },
+};
 
 const definition: EntityModuleDefinition = {
   type: EntityTypeId.TRAP,
@@ -24,4 +37,5 @@ export const trap: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.active === false ? cell(0, 11) : cell(15, 10),
   ),
+  [{ behavior: armTrapAfterLeave }],
 );
