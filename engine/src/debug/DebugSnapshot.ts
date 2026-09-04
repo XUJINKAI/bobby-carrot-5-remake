@@ -7,12 +7,14 @@ import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
 import type { RuntimeActionInstance } from "../world/action/RuntimeAction.js";
+import type { ActorLifecycleState } from "../world/actor/ActorLifecycle.js";
 import type { EntityLayer } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
   EntityId,
 } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
+import type { WorldMotion, WorldPose } from "../world/movement/WorldMotion.js";
 import type { DebugTraceEntry } from "./DebugTrace.js";
 
 export interface DebugSelection {
@@ -67,6 +69,10 @@ export interface DebugEntitySnapshot {
   id: EntityId;
   type: string;
   anchor: CellPosition;
+  worldPose: WorldPose;
+  worldMotion: WorldMotion | null;
+  lifecycle: ActorLifecycleState;
+  inputBlocked: boolean;
   direction: string | null;
   properties: unknown;
   state: unknown;
@@ -214,6 +220,10 @@ function buildEntitySnapshot(
     id: entity.id,
     type: entity.type,
     anchor: { ...entity.anchor },
+    worldPose: world.movement.motions.poseFor(entity.id, entity.anchor),
+    worldMotion: world.movement.motions.forEntity(entity.id) ?? null,
+    lifecycle: world.actorLifecycle(entity.id),
+    inputBlocked: world.isInputBlockedFor(entity.id),
     direction: entity.direction ?? null,
     properties: entity.properties ? structuredClone(entity.properties) : null,
     state: entity.state ? structuredClone(entity.state) : null,

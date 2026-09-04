@@ -525,7 +525,7 @@ export class DebugSidebar {
         channel.physicalDirection !== null ||
         (channel.repeater?.heldInput ?? null) !== null,
     );
-    const inputLabel = snapshot.runtime.inputBlocked
+    const inputLabel = actor.inputBlocked
       ? "blocked"
       : activeChannels && activeChannels.length > 0
         ? activeChannels
@@ -538,12 +538,21 @@ export class DebugSidebar {
 
     this.actorTitleText.textContent = `Selected actor #${actor.id}`;
     this.setValue(this.actorValue, `#${actor.id} ${actor.type}`);
-    this.setValue(this.actorPosition, `${actor.anchor.x}, ${actor.anchor.y}`);
+    this.setValue(
+      this.actorPosition,
+      `${actor.anchor.x}, ${actor.anchor.y} / pose ${actor.worldPose.x.toFixed(2)}, ${actor.worldPose.y.toFixed(2)}`,
+    );
     this.setValue(this.actorDirection, actor.direction ?? "-");
     this.setValue(this.actorInput, inputLabel);
     this.setValue(this.actorSprite, spriteLabel(actor));
     this.setJson(this.actorInputDetails, snapshot.input);
-    this.setJson(this.actorStateDetails, actor.state);
+    this.setJson(this.actorStateDetails, {
+      lifecycle: actor.lifecycle,
+      anchor: actor.anchor,
+      worldPose: actor.worldPose,
+      worldMotion: actor.worldMotion,
+      entityState: actor.state,
+    });
     const ownedActions = snapshot.actions.filter(
       (action) =>
         action.ownerEntityId === actor.id || action.focus?.entityId === actor.id,
@@ -649,7 +658,11 @@ export class DebugSidebar {
       const summary = document.createElement("summary");
       summary.style.cursor = "pointer";
       const world = entry.worldTick === null ? "W-" : `W${entry.worldTick}`;
-      summary.textContent = `${world} ${entry.category.padEnd(12)} ${entry.summary}`;
+      const delta =
+        entry.worldSequence === undefined ? "" : ` Δ${entry.worldSequence}`;
+      const time =
+        entry.worldTimeMs === undefined ? "" : ` ${entry.worldTimeMs}ms`;
+      summary.textContent = `${world}${delta}${time} ${entry.category.padEnd(12)} ${entry.summary}`;
       const pre = this.pre();
       pre.textContent = JSON.stringify(entry, null, 2);
       details.append(summary, pre);

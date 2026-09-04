@@ -4,6 +4,9 @@ export type DebugTraceCategory =
   | "input"
   | "action"
   | "world"
+  | "motion"
+  | "lifecycle"
+  | "outcome"
   | "presentation"
   | "event";
 
@@ -12,6 +15,8 @@ export interface DebugTraceEntry {
   category: DebugTraceCategory;
   summary: string;
   worldTick: number | null;
+  worldTimeMs?: number;
+  worldSequence?: number;
   presentationFrame: number;
   actorId?: EntityId;
   detail?: unknown;
@@ -21,6 +26,8 @@ export interface DebugTraceRecord {
   category: DebugTraceCategory;
   summary: string;
   worldTick: number | null;
+  worldTimeMs?: number;
+  worldSequence?: number;
   presentationFrame: number;
   actorId?: EntityId;
   detail?: unknown;
@@ -40,6 +47,12 @@ export class DebugTraceRecorder {
       summary: record.summary,
       worldTick: record.worldTick,
       presentationFrame: record.presentationFrame,
+      ...(record.worldTimeMs !== undefined
+        ? { worldTimeMs: record.worldTimeMs }
+        : {}),
+      ...(record.worldSequence !== undefined
+        ? { worldSequence: record.worldSequence }
+        : {}),
       ...(record.actorId !== undefined ? { actorId: record.actorId } : {}),
       ...(record.detail !== undefined
         ? { detail: structuredClone(record.detail) }

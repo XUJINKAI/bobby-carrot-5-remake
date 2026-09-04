@@ -608,6 +608,7 @@ export class Game {
   private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {
     if (deltas.length === 0) return;
     const frame = this.presentationClock.current;
+    this.debugRuntime.recordWorldDeltas(deltas, frame.frame);
     this.visual.camera.recenterPan(frame);
     this.visual.consumeWorldDeltas(this.world, deltas, frame, {
       motionDuration: (motion) => this.motionPresentationDuration(motion),
