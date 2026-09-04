@@ -5,7 +5,6 @@
 状态：
 
 - **确认**：已经在碰撞 / midpoint / task / loader 控制流中直接定位；
-- **部分**：主行为确认，但 Campaign / Presentation 边角仍待恢复；
 - **静态**：当前只看到普通通行或视觉用途，没有专门 gameplay 分支。
 
 ## Terrain
@@ -25,7 +24,7 @@
 | `0x94` | Ice | 默认可走；midpoint 标记 sliding；下一移动周期先按当前方向自动续滑，前方阻塞才恢复普通输入。 | 确认 |
 | `0x95` | Start | Loader 后扫描并初始化 Bobby grid/pixel 坐标。 | 确认 |
 | `0x96` | Exit | 默认可走；只有 `remainingObjectiveCount==0` 且非 mower 时 midpoint 启动 completion。 | 确认 |
-| `0x97..0x9D` | Shop tiles | 可走；midpoint 打开对应购买 dialog；成功购买后扣全局 currency、D[index]++、当前 tile 改 0x9E 并持久化。 | 确认主干 |
+| `0x97..0x9D` | Shop tiles | 可走；midpoint 打开对应购买 dialog；成功购买后扣全局 currency、D[index]++、当前 tile 改 0x9E 并持久化。 | 确认 |
 | `0x9E` | Shop unavailable | 已购买 shop 的静态结果；可走，没有 shop midpoint action。 | 确认 |
 | `0x9F` | Shovel Pickup | 非 mower midpoint：`hasShovel=true`，terrain 立即改 `0x7C`。 | 确认 |
 | `0xA0` | Mower Parking | riding mower midpoint 登记下车；真正 dismount 在当前格视觉移动结束后完成，Mower 写回 Parking 格，Bobby 被放到右一格。 | 确认 |
@@ -81,8 +80,8 @@
 | `0xE4..0xE6` | Ice Melt phases | `E4→E5→E6→empty`，每阶段 6 gameplay step。 | 确认 |
 | `0xE7` | Beaver Head | blocking；DAT anchor，Loader 自动写 F7 Body。 | 确认 |
 | `0xE8/0xE9` | Dragon Head attack frames | Head wind-up 中间状态，各 6 gameplay step；不在 player collision blocking 集合中，wind-up 也没有 camera/input lock，因此 Bobby 按原版控制流可进入 Head 格。 | 确认原版 quirk |
-| `0xEA` | Sandman Body | blocking interaction；与 F7 Beaver Body 共用 handler，具体对话/action 由 `bU` Campaign mode 决定。 | 确认主干 |
-| `0xEB` | Dream Machine Body | blocking interaction；直接进入独立 runtime state 16 dialog。 | 确认主干 |
+| `0xEA` | Sandman Body | blocking interaction；与 F7 Beaver Body 共用 handler，具体对话/action 由 `bU` Campaign mode 决定。 | 确认 |
+| `0xEB` | Dream Machine Body | blocking interaction；直接进入独立 runtime state 16 dialog。 | 确认 |
 | `0xEC` | Leaf | Loader 转 moving entity；只走 Water/Tide/Fall；停止实体可 mount，Bobby 与载体共享 pixel delta；停下后必须离开再重新 mount 才能再次启动。 | 确认 |
 | `0xED` | Crumbly Rock | Bobby blocking；mower 在 Speed continuation 或 Speed probe 下可撞碎，撞碎后立即 empty + camera shake。Fireball 被它阻挡。 | 确认 |
 | `0xEE` | Beanstalk Base | 所在 terrain 本身可走时非 mower 可进入并标 climbing；与 CE/DE 不同，它不覆盖不可走 terrain。 | 确认 |
@@ -91,16 +90,14 @@
 | `0xF3` | Kite | 非 mower midpoint 收集，`hasKite=true`。 | 确认 |
 | `0xF4` | Whirlwind | mower blocking；无 Kite blocking + hint；有 Kite 可进入，midpoint 开始 takeoff。 | 确认 |
 | `0xF5` | Landing | Grounded Bobby 普通通过；airborne midpoint 开始 landing。Airborne movement 本身绕过普通 terrain/object collision；原版没有地图边缘自动 landing 分支。 | 确认 |
-| `0xF6` | Golden Carrot | 非 mower midpoint 直接进入特殊关完成/持久化流程。 | 确认主干 |
-| `0xF7` | Beaver Body | 与 EA 共用角色 interaction handler；Campaign mode 决定具体文案/action。 | 确认主干 |
+| `0xF6` | Golden Carrot | 非 mower midpoint 直接进入特殊关完成/持久化流程。 | 确认 |
+| `0xF7` | Beaver Body | 与 EA 共用角色 interaction handler；Campaign mode 决定具体文案/action。 | 确认 |
 | `0xF8` | Bonus Coin | 非 mower midpoint 收集，增加本关 bonus count；全场 Coin 共用 sparkle gate。`bE==0` 的四步窗口每步更新 `bH`，窗口末稳态开启概率 `1/8`；可见后三张动态帧各保持 4 step，共约 372ms。 | 确认 |
 | `0xF9..0xFE` | Fence variants | Bobby blocking。 | 确认 |
 | `0xFF` | Empty | 无 object。 | 确认 |
 
-## 当前剩余专项逆向
+## 收口状态
 
-核心地图 gameplay 的 raw byte 行为已经基本闭环。当前剩余工作主要转向以下三类：
+表内所有 UP09 gameplay terrain/object raw 分支均已归类；0x4E..0x54 等无专门控制流的低段背景已在 docs/reference/tile-ids.md 明确标作背景变体。Campaign、Presentation、音乐、文字与 RMS 的跨系统覆盖见 ../COVERAGE.md 和 semantic-coverage.md。
 
-1. **Campaign 人类语义**：继续给 `bU=1..12`、Sandman / Beaver / Dream Machine 特殊场景补正式名称与持久化后果；控制流主干已恢复。
-2. **Presentation 收尾**：Snow / Butterfly / Star shimmer / Bonus Coin gate 已恢复，继续核对 scene-specific 粒子状态与低价值菜单动画。
-3. **原版实现覆盖审计**：逐项检查 semantic 文件是否完整覆盖 collision / midpoint / task / camera / presentation，避免已知事实只散落在 notes 中。
+本表不把 Base / UP01 代际差异、损坏 DAT 异常或设备 MIDI 差异伪装成未完成机关。

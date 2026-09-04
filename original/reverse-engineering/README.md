@@ -13,6 +13,8 @@
 
 ## UP09 主入口
 
+- `COVERAGE.md`：UP09 runtime semantics 最终收口计数、完成定义与非 gameplay 边界。
+
 后续 BC5R fidelity 实现优先从以下文件进入，不需要重新阅读 8500 行混淆源码：
 
 ### 机制
