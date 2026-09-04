@@ -31,11 +31,15 @@ const delayedMoveAction: RuntimeActionDefinition = {
     const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
     if (elapsedMs + time.stepMs / 2 < durationMs) return "running";
+    if (query.motionForEntity?.(ownerEntityId)?.status === "running")
+      return "running";
 
     const direction = directionState(action.state.direction);
     if (!direction) return "complete";
     const mechanism = stringState(action.state.mechanism);
     const sourceEntityId = positiveIntegerState(action.state.sourceEntityId);
+    const moveCadenceMs =
+      positiveNumberState(action.state.moveCadenceMs) ?? durationMs;
     return {
       status: "complete",
       intents: [
@@ -47,7 +51,7 @@ const delayedMoveAction: RuntimeActionDefinition = {
             type: "forced",
             ...(sourceEntityId !== null ? { sourceEntityId } : {}),
             ...(mechanism ? { mechanism } : {}),
-            cadenceMs: durationMs,
+            cadenceMs: moveCadenceMs,
           },
         },
       ],
@@ -98,6 +102,7 @@ export function createDelayedMoveRuntimeAction(
     sourceEntityId?: EntityId;
     blocksInput?: boolean;
     focus?: { entityId: EntityId };
+    moveCadenceMs?: number;
   } = {},
 ): RuntimeActionSpec {
   const state: Record<string, JsonValue> = {
@@ -108,6 +113,8 @@ export function createDelayedMoveRuntimeAction(
   if (options.mechanism) state.mechanism = options.mechanism;
   if (options.sourceEntityId !== undefined)
     state.sourceEntityId = options.sourceEntityId;
+  if (options.moveCadenceMs !== undefined)
+    state.moveCadenceMs = safeDuration(options.moveCadenceMs);
   return {
     kind: DELAYED_MOVE_RUNTIME_ACTION,
     ownerEntityId,
@@ -123,6 +130,11 @@ function safeDuration(value: number): number {
 
 function numberState(value: JsonValue | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function positiveNumberState(value: JsonValue | undefined): number | null {
+  const number = numberState(value);
+  return number > 0 ? number : null;
 }
 
 function stringState(value: JsonValue | undefined): string | null {

@@ -70,6 +70,9 @@ test("Ice emits semantic forced moves until Bobby leaves the Ice surface", () =>
   assert.equal(secondSlide.motions.length, 1);
   assert.equal(secondSlide.motions[0].cause.type, "forced");
   assert.equal(secondSlide.motions[0].cause.mechanism, "ice");
+  // anchor 已离开 Ice，但连续空间过程仍需走完，期间 actor 继续 busy。
+  assert.equal(world.inputBlocked, true);
+  advance(world, 7, 14);
   assert.equal(world.inputBlocked, false);
 });
 

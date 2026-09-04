@@ -99,9 +99,13 @@ export class RuntimeActionScheduler {
     time: WorldTick,
     query: WorldQueryApi,
     commands: WorldCommandApi,
+    eligibleIds?: readonly RuntimeActionId[],
   ): WorldIntent[] {
     const intents: WorldIntent[] = [];
-    const ids = [...this.actions.keys()].sort((a, b) => a - b);
+    const eligible = eligibleIds ? new Set(eligibleIds) : null;
+    const ids = [...this.actions.keys()]
+      .filter((id) => eligible?.has(id) ?? true)
+      .sort((a, b) => a - b);
     for (const id of ids) {
       const action = this.actions.get(id);
       if (!action) continue;

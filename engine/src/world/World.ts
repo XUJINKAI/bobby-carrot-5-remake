@@ -134,6 +134,7 @@ export class World {
       this.spatial,
       this.registry,
       () => this.state,
+      this.movement.motions,
     );
     this.inspector = new WorldInspector(this.entities, this.spatial);
     this.committer = new WorldCommitter(
@@ -180,7 +181,7 @@ export class World {
   }
 
   get inputBlocked(): boolean {
-    return this.actions.inputBlocked;
+    return this.actions.inputBlocked || this.movement.running.length > 0;
   }
 
   isInputBlockedFor(actorId: EntityId): boolean {
@@ -363,6 +364,7 @@ export class World {
       return result;
 
     this.currentWorldTick = time.tick;
+    const actionsAtTickStart = this.actions.active.map((action) => action.id);
     this.state.elapsedMs += time.stepMs;
     this.advanceMotions(time.stepMs, result);
     if (!this.outcome.playing) {
@@ -371,7 +373,12 @@ export class World {
     }
 
     const actionQueue = new CommandQueue();
-    const actionIntents = this.actions.update(time, this.query, actionQueue);
+    const actionIntents = this.actions.update(
+      time,
+      this.query,
+      actionQueue,
+      actionsAtTickStart,
+    );
     const actionCommit = this.committer.commit(actionQueue, this.deltaClock());
     absorbCommit(result, actionCommit);
     this.lifecycle.settle(result);

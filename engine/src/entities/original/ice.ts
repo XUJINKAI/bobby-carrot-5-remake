@@ -20,22 +20,31 @@ export const DEFAULT_ICE_SLIDE_CADENCE_MS = 350;
 
 const slide: Behavior = {
   id: "ice-slide",
-  onEnter({ actor, self, direction, query, commands }) {
+  onEnter({ actor, self, direction, movement, query, commands }) {
     if (!direction || !query.entityHasTrait(actor.id, "player")) return;
     commands.startAction(
       createDelayedMoveRuntimeAction(
         actor.id,
         direction,
-        DEFAULT_ICE_SLIDE_CADENCE_MS,
+        nextSlideDelay(movement),
         {
           mechanism: "ice",
           sourceEntityId: self.entity.id,
           blocksInput: true,
+          moveCadenceMs: DEFAULT_ICE_SLIDE_CADENCE_MS,
         },
       ),
     );
   },
 };
+
+function nextSlideDelay(
+  movement: Parameters<NonNullable<Behavior["onEnter"]>>[0]["movement"],
+): number {
+  const motion = movement?.motion;
+  const elapsedMotionMs = motion ? motion.durationMs * motion.progress : 0;
+  return Math.max(0, DEFAULT_ICE_SLIDE_CADENCE_MS - elapsedMotionMs);
+}
 
 const definition: EntityModuleDefinition = {
   type: EntityTypeId.ICE,

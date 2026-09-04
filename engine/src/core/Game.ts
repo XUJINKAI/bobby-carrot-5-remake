@@ -842,7 +842,7 @@ export class Game {
       return false;
 
     this.world.actions.cancelOwnedBy(actorId);
-    this.world.movement.clearEntity(actorId);
+    this.world.movement?.clearEntity(actorId);
     this.pendingHistorySnapshot = null;
     if (this.debugExternalActorId === actorId)
       this.setDebugHeldDirection(actorId, null);

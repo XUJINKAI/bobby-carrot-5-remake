@@ -117,6 +117,10 @@ const speedRunAction: RuntimeActionDefinition = {
     const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
     if (elapsedMs + time.stepMs / 2 < waitMs) return "running";
+    if (query.motionForEntity(ownerEntityId)?.status === "running") {
+      action.state.elapsedMs = waitMs;
+      return "running";
+    }
     action.state.elapsedMs = 0;
 
     if (booleanState(action.state.pendingMove)) {

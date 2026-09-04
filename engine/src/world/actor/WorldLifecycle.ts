@@ -58,7 +58,7 @@ export class WorldLifecycle {
       this.syncLegacyState();
       return;
     }
-    const actorId = preferredActorId ?? playerIds[0];
+    const actorId = preferredActorId ?? playerIds[0]!;
     const reason =
       this.actors.state(actorId).reason ?? "No active player remains.";
     this.finish("lost", result, reason, actorId);

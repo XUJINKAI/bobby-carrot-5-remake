@@ -117,7 +117,7 @@ export class MovementRuntime {
       motion.durationMs === 0 ? 1 : targetElapsed / motion.durationMs;
 
     while (plan.nextMarkerIndex < MARKERS.length) {
-      const marker = MARKERS[plan.nextMarkerIndex];
+      const marker = MARKERS[plan.nextMarkerIndex]!;
       if (marker.progress > targetProgress) break;
       this.progressTo(motion, marker.progress, visitor);
       plan.nextMarkerIndex += 1;
