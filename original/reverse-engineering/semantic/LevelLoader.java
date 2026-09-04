@@ -18,15 +18,15 @@ public final class LevelLoader {
     private byte[][] terrainGrid;
     private byte[][] objectGrid;
 
-    private int movingEntityCapacity;
+    /** 对应原版 `cB`：DAT 直接给出的动态实体数量。 */
+    private int movingEntityCount;
     private byte[] movingEntityType;
     private byte[] movingEntityDirection;
-    private byte[] movingEntityPixelStep;
+    private byte[] movingEntityPixelsRemaining;
     private short[] movingEntityPixelX;
     private short[] movingEntityPixelY;
-    private boolean[] movingEntityFlag;
+    private boolean[] movingEntityFastMotion;
 
-    private int movingEntityCount;
     private int bonusCoinCount;
 
     /**
@@ -47,8 +47,7 @@ public final class LevelLoader {
             int length = in.readShort();
             int skipped = in.skipBytes(length);
             while (skipped < length) {
-                int remaining = length - skipped;
-                skipped += in.skipBytes(remaining);
+                skipped += in.skipBytes(length - skipped);
             }
         }
 
@@ -70,16 +69,16 @@ public final class LevelLoader {
             }
         }
 
-        movingEntityCapacity = in.readByte();
-        movingEntityType = new byte[movingEntityCapacity];
-        movingEntityDirection = new byte[movingEntityCapacity];
-        movingEntityPixelStep = new byte[movingEntityCapacity];
-        movingEntityPixelX = new short[movingEntityCapacity];
-        movingEntityPixelY = new short[movingEntityCapacity];
-        movingEntityFlag = new boolean[movingEntityCapacity];
+        movingEntityCount = in.readByte();
+        movingEntityType = new byte[movingEntityCount];
+        movingEntityDirection = new byte[movingEntityCount];
+        movingEntityPixelsRemaining = new byte[movingEntityCount];
+        movingEntityPixelX = new short[movingEntityCount];
+        movingEntityPixelY = new short[movingEntityCount];
+        movingEntityFastMotion = new boolean[movingEntityCount];
 
         int objectEntryCount = in.readShort();
-        movingEntityCount = 0;
+        int movingEntityIndex = 0;
 
         for (int entry = 0; entry < objectEntryCount; entry++) {
             int rawType = in.readByte();
@@ -92,7 +91,7 @@ public final class LevelLoader {
                 case OBJECT_CLOUD_PURPLE:
                 case OBJECT_CLOUD_GREEN:
                 case OBJECT_LEAF:
-                    addMovingEntity(rawType, x, y);
+                    addMovingEntity(movingEntityIndex++, rawType, x, y);
                     consumedByRuntimeEntity = true;
                     break;
 
@@ -126,13 +125,12 @@ public final class LevelLoader {
         in.close();
     }
 
-    private void addMovingEntity(int rawType, int x, int y) {
-        movingEntityPixelX[movingEntityCount] = (short)(x * 48);
-        movingEntityPixelY[movingEntityCount] = (short)(y * 48);
-        movingEntityDirection[movingEntityCount] = 4; // 原版停止/未移动状态。
-        movingEntityPixelStep[movingEntityCount] = 0;
-        movingEntityType[movingEntityCount] = (byte)rawType;
-        movingEntityCount++;
+    private void addMovingEntity(int index, int rawType, int x, int y) {
+        movingEntityPixelX[index] = (short)(x * 48);
+        movingEntityPixelY[index] = (short)(y * 48);
+        movingEntityDirection[index] = 4; // 原版停止/未移动状态。
+        movingEntityPixelsRemaining[index] = 0;
+        movingEntityType[index] = (byte)rawType;
     }
 
     private void clearRuntimeLevelState() {
@@ -141,9 +139,9 @@ public final class LevelLoader {
         objectGrid = null;
         movingEntityType = null;
         movingEntityDirection = null;
-        movingEntityPixelStep = null;
+        movingEntityPixelsRemaining = null;
         movingEntityPixelX = null;
         movingEntityPixelY = null;
-        movingEntityFlag = null;
+        movingEntityFastMotion = null;
     }
 }
