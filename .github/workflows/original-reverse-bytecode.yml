@@ -61,6 +61,10 @@ jobs:
               'fireball-Q': 'private final void Q();',
               'ice-melting-R': 'private final void R();',
               'bean-growth-S': 'private final void S();',
+              'snow-T': 'private final void T();',
+              'butterfly-U': 'private final void U();',
+              'ambient-V': 'private final void V();',
+              'menu-action-ak': 'private final boolean ak();',
               'runtime-b': 'public final boolean b();',
               'main-loop-run': 'public void run();',
           }
