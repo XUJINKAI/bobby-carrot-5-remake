@@ -122,7 +122,7 @@ try {
     "bobby-editor",
     'id="editor-play"',
     'id="editor-share"',
-    'class="editor-palette"',
+    "editor-surface-panel",
   ]);
   await smoke(`${origin}/edit#map=novoban-pushbox/01`, ["bobby-editor"]);
   const mapPayload = exchangePayload(

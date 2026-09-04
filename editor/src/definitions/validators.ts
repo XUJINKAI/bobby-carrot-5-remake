@@ -1,5 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine";
-import type { WinCondition } from "@bobby/model";
+import { validateLevelPlayability } from "@bobby/engine";
 import type { LevelValidationIssue } from "../level/types.js";
 import type { EditorMapValidator } from "./types.js";
 
@@ -18,82 +17,12 @@ export const registeredEntityTypesValidator: EditorMapValidator = ({
   return issues;
 };
 
-export const playerPresenceValidator: EditorMapValidator = ({
-  map,
-  catalog,
-}) => {
-  const players = knownEntities(map.entities, catalog).filter(
-    ({ entity, definition }) =>
-      definition.traits.includes("player") ||
-      entity.traits?.includes("player") === true,
-  );
-  if (players.length > 0) return [];
-  return [
-    {
-      level: "warning",
-      message: "地图至少需要一个 player Entity。",
-    },
-  ];
-};
+export const playerPresenceValidator: EditorMapValidator = ({ map, catalog }) =>
+  validateLevelPlayability(map, catalog)
+    .filter((warning) => warning.code === "missing-player")
+    .map((warning) => ({ level: "warning" as const, message: warning.message }));
 
-export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) => {
-  const known = knownEntities(map.entities, catalog);
-  const issues: LevelValidationIssue[] = [];
-  for (const selector of requiredReachSelectors(map.rules?.win)) {
-    const exists = known.some(
-      ({ entity, definition }) =>
-        entity.type === selector ||
-        definition.traits.includes(selector) ||
-        entity.traits?.includes(selector) === true ||
-        definition.footprint?.parts.some((part) =>
-          part.traits?.includes(selector),
-        ) === true,
-    );
-    if (!exists) {
-      issues.push({
-        level: "warning",
-        message: `当前获胜条件需要 selector '${selector}'，地图中没有对应 Entity。`,
-      });
-    }
-  }
-  return issues;
-};
-
-function knownEntities(
-  entities: readonly import("@bobby/model").LevelEntity[],
-  catalog: EntityCatalog,
-) {
-  return entities.flatMap((entity) =>
-    catalog.has(entity.type)
-      ? [{ entity, definition: catalog.require(entity.type) }]
-      : [],
-  );
-}
-
-function requiredReachSelectors(
-  condition: WinCondition | undefined,
-): Set<string> {
-  const result = new Set<string>();
-  collectRequiredReachSelectors(condition, result);
-  return result;
-}
-
-function collectRequiredReachSelectors(
-  condition: WinCondition | undefined,
-  result: Set<string>,
-): void {
-  if (!condition) return;
-  switch (condition.type) {
-    case "reach":
-      result.add(condition.target);
-      break;
-    case "all":
-      for (const child of condition.conditions)
-        collectRequiredReachSelectors(child, result);
-      break;
-    case "any":
-      if (condition.conditions.length === 1)
-        collectRequiredReachSelectors(condition.conditions[0], result);
-      break;
-  }
-}
+export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) =>
+  validateLevelPlayability(map, catalog)
+    .filter((warning) => warning.code === "missing-reach-target")
+    .map((warning) => ({ level: "warning" as const, message: warning.message }));

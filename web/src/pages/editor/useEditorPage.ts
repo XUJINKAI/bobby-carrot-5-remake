@@ -2,24 +2,33 @@ import {
   EditorDocument,
   EditorPreview,
   applyEditorVariant,
+  applySurfaceTheme,
   buildInspectorModel,
   builtinEditorDefinition,
-  copySelection,
+  copyEntitySelection,
   createBuiltinEntityCatalog,
   cycleEntityVariant,
   cyclePlacementVariant,
+  defaultSurfaceBrush,
+  detectSurfaceTheme,
+  fillSurface,
   inspectEditorRules,
+  isSurfaceEntityType,
+  paintSurface,
   pasteClipboard,
+  pickSurfaceBrush,
   placeEntity,
+  rectangleCells,
   removeEntities,
   reorderEntityStack,
   replaceEntities,
   replaceEntity,
-  resolveDeletionTarget,
+  resolveDeletion,
   resolveEditorPalette,
   resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
+  surfaceTerrain,
   toLevelMap,
   updateEditorRule,
   updateMaxMoves,
@@ -37,9 +46,13 @@ import {
   type EntityFieldDefinition,
   type EntityRef,
   type PaletteItem,
+  type SurfaceBrush,
+  type SurfacePattern,
+  type SurfaceTerrainId,
+  type SurfaceTheme,
+  type SurfaceTool,
 } from "@bobby/editor";
 import {
-  EntityTypeId,
   type EntityProperties,
   type EntityState,
   type EntityType,
@@ -49,20 +62,22 @@ import {
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
 
+export type EditorLeftPanel = "palette" | "surface";
+
 export function useEditorPage(initialLevel: EditorMap) {
   const catalog = createBuiltinEntityCatalog();
   const editor = builtinEditorDefinition;
   const palette = resolveEditorPalette(catalog, editor);
-  const flatPalette = palette.flatMap((group) => group.rows.flat());
-  const first =
-    flatPalette.find((item) => item.type === EntityTypeId.GROUND_C) ??
-    flatPalette[0];
+  const first = palette.flatMap((group) => group.rows.flat())[0];
   if (!first) throw new Error("Editor Palette 不能为空");
 
   const document = new EditorDocument(initialLevel);
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
-  const tool = ref<EditorTool>("place");
+  const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
+  const leftPanel = ref<EditorLeftPanel>("surface");
+  const surfaceTool = ref<SurfaceTool>("rect");
+  const surfaceBrush = ref<SurfaceBrush>(defaultSurfaceBrush());
   const mapSelection = ref<EditorSelection | null>(null);
   const clipboard = ref<EditorClipboard | null>(null);
   const hover = ref<Cell | null>(null);
@@ -71,6 +86,8 @@ export function useEditorPage(initialLevel: EditorMap) {
   const helpDialogOpen = ref(false);
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
+  const eraseVisited = new Set<string>();
+
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
     storeEditorDraft(next.level as EditorMap);
@@ -79,71 +96,234 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
   const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
+  const tool = computed<EditorTool>(() =>
+    leftPanel.value === "surface"
+      ? surfaceTool.value === "rect"
+        ? "select"
+        : "place"
+      : paletteTool.value,
+  );
   const selectedRefs = computed(() =>
     mapSelection.value
       ? selectedEntityRefs(currentLevel(), preview(), mapSelection.value)
       : [],
   );
   const inspector = computed(() =>
-    buildInspectorModel(
-      currentLevel(),
-      catalog,
-      mapSelection.value,
-      editor,
-    ),
+    buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
   );
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
+  const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
   function setTool(next: EditorTool): void {
-    tool.value = next;
+    leftPanel.value = "palette";
+    paletteTool.value = next;
   }
 
   function selectPalette(item: PaletteItem): void {
+    leftPanel.value = "palette";
     placement.value = item;
-    tool.value = "place";
+    paletteTool.value = "place";
+  }
+
+  function activatePalette(): void {
+    leftPanel.value = "palette";
+  }
+
+  function activateSurface(): void {
+    leftPanel.value = "surface";
+  }
+
+  function toggleAuthoringPanel(): EditorLeftPanel {
+    leftPanel.value = leftPanel.value === "palette" ? "surface" : "palette";
+    return leftPanel.value;
+  }
+
+  function setSurfaceTool(next: SurfaceTool): void {
+    activateSurface();
+    surfaceTool.value = next;
+  }
+
+  function selectSurfaceTerrain(terrainId: SurfaceTerrainId): void {
+    activateSurface();
+    surfaceBrush.value = normalizeSurfaceBrush({
+      ...surfaceBrush.value,
+      terrain: terrainId,
+    });
+  }
+
+  function setSurfaceTheme(theme: SurfaceTheme): boolean {
+    activateSurface();
+    return document.execute(applySurfaceTheme(catalog, theme));
+  }
+
+  function setSurfacePattern(pattern: SurfacePattern): void {
+    activateSurface();
+    surfaceBrush.value = normalizeSurfaceBrush({
+      ...surfaceBrush.value,
+      pattern,
+    });
+  }
+
+  function setSurfaceExact(type: EntityType): void {
+    activateSurface();
+    surfaceBrush.value = normalizeSurfaceBrush({
+      ...surfaceBrush.value,
+      pattern: "exact",
+      exact: type,
+    });
+  }
+
+  function setSurfaceAlternate(index: 0 | 1, type: EntityType): void {
+    activateSurface();
+    const variants = surfaceTerrain(surfaceBrush.value.terrain).rows.flat();
+    if (!variants.some((variant) => variant.type === type)) return;
+    const first = surfaceBrush.value.alternate?.[0] ?? variants[0]?.type;
+    const second =
+      surfaceBrush.value.alternate?.[1] ?? variants[1]?.type ?? first;
+    if (!first || !second) return;
+    const alternate: [EntityType, EntityType] = [first, second];
+    alternate[index] = type;
+    surfaceBrush.value = {
+      ...surfaceBrush.value,
+      pattern: "alternate",
+      alternate,
+    };
   }
 
   function primaryStart(cell: Cell): void {
-    if (tool.value === "select") {
+    if (fillSelectionWithBrush(cell)) return;
+    if (leftPanel.value === "surface") {
+      surfacePrimaryStart(cell);
+      return;
+    }
+    if (paletteTool.value === "select") {
+      mapSelection.value = { anchor: cell, focus: cell };
+      return;
+    }
+    if (paletteTool.value === "erase") {
+      document.beginTransaction();
+      transactionActive = true;
+      eraseVisited.clear();
+      applyErase(cell);
+      return;
+    }
+    if (paletteTool.value !== "place") return;
+    document.beginTransaction();
+    transactionActive = true;
+    applyPaletteBrush(cell);
+  }
+
+  function primaryMove(cell: Cell): void {
+    if (leftPanel.value === "surface") {
+      surfacePrimaryMove(cell);
+      return;
+    }
+    if (paletteTool.value === "select") {
+      if (mapSelection.value)
+        mapSelection.value = { ...mapSelection.value, focus: cell };
+      return;
+    }
+    if (paletteTool.value === "place" && transactionActive) {
+      applyPaletteBrush(cell);
+      return;
+    }
+    if (paletteTool.value === "erase" && transactionActive) applyErase(cell);
+  }
+
+  function primaryEnd(): void {
+    if (isSelectMode()) return;
+    if (!transactionActive) return;
+    transactionActive = false;
+    eraseVisited.clear();
+    document.commitTransaction();
+  }
+
+  function surfacePrimaryStart(cell: Cell): void {
+    if (surfaceTool.value === "fill") {
+      document.execute(fillSurface(catalog, currentLevel(), cell, surfaceBrush.value));
+      return;
+    }
+    if (surfaceTool.value === "rect") {
       mapSelection.value = { anchor: cell, focus: cell };
       return;
     }
     document.beginTransaction();
     transactionActive = true;
-    applyPrimary(cell);
+    document.execute(paintSurface(catalog, [cell], surfaceBrush.value));
   }
 
-  function primaryMove(cell: Cell): void {
-    if (tool.value === "select") {
+  function surfacePrimaryMove(cell: Cell): void {
+    if (surfaceTool.value === "rect") {
       if (mapSelection.value)
         mapSelection.value = { ...mapSelection.value, focus: cell };
       return;
     }
-    if (transactionActive) applyPrimary(cell);
+    if (surfaceTool.value === "brush" && transactionActive)
+      document.execute(paintSurface(catalog, [cell], surfaceBrush.value));
   }
 
-  function primaryEnd(): void {
-    if (!transactionActive) return;
-    transactionActive = false;
-    document.commitTransaction();
+  function fillSelectionWithBrush(cell: Cell): boolean {
+    const selection = mapSelection.value;
+    if (!selection || !selectionContains(selection, cell)) return false;
+    const cells = rectangleCells(selection.anchor, selection.focus);
+    if (
+      leftPanel.value === "surface" &&
+      surfaceTool.value === "brush"
+    ) {
+      document.execute(paintSurface(catalog, cells, surfaceBrush.value));
+      return true;
+    }
+    if (
+      leftPanel.value === "palette" &&
+      paletteTool.value === "place"
+    ) {
+      document.beginTransaction();
+      for (const target of cells) applyPaletteBrush(target);
+      document.commitTransaction();
+      return true;
+    }
+    return false;
   }
 
-  function applyPrimary(cell: Cell): void {
-    if (tool.value === "place") {
-      document.execute(
-        placeEntity(catalog, placement.value, cell, {}, editor),
-      );
-      return;
-    }
-    if (tool.value === "erase") {
-      const ref = resolveDeletionTarget(
-        currentLevel(),
-        catalog,
-        cell,
-        editor,
-      );
-      if (ref) document.execute(removeEntities([ref]));
-    }
+  function selectionContains(selection: EditorSelection, cell: Cell): boolean {
+    const rect = selectionRect(selection);
+    return (
+      cell.x >= rect.left &&
+      cell.x <= rect.right &&
+      cell.y >= rect.top &&
+      cell.y <= rect.bottom
+    );
+  }
+
+  function isSelectMode(): boolean {
+    return leftPanel.value === "surface"
+      ? surfaceTool.value === "rect"
+      : paletteTool.value === "select";
+  }
+
+  function applyPaletteBrush(cell: Cell): void {
+    document.execute(placeEntity(catalog, placement.value, cell, {}, editor));
+  }
+
+  function applyErase(cell: Cell): void {
+    const key = `${cell.x},${cell.y}`;
+    if (eraseVisited.has(key)) return;
+    eraseVisited.add(key);
+    const refs = resolveDeletion(
+      currentLevel(),
+      catalog,
+      { anchor: cell, focus: cell },
+      editor,
+    );
+    if (refs.length > 0) document.execute(removeEntities(refs));
+  }
+
+  function pickSurface(cell: Cell): boolean {
+    const picked = pickSurfaceBrush(currentLevel(), cell);
+    if (!picked) return false;
+    surfaceBrush.value = normalizeSurfaceBrush(picked);
+    activateSurface();
+    return true;
   }
 
   function ensureSelectionAt(cell: Cell): void {
@@ -161,9 +341,17 @@ export function useEditorPage(initialLevel: EditorMap) {
     mapSelection.value = { anchor: cell, focus: cell };
   }
 
+  function entitySelectedRefs(): EntityRef[] {
+    const level = currentLevel();
+    return selectedRefs.value.filter((ref) => {
+      const entity = level.entities[ref.index];
+      return Boolean(entity && !isSurfaceEntityType(entity.type));
+    });
+  }
+
   function copy(): boolean {
     if (!mapSelection.value) return false;
-    clipboard.value = copySelection(
+    clipboard.value = copyEntitySelection(
       currentLevel(),
       catalog,
       mapSelection.value,
@@ -173,15 +361,19 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function cut(): boolean {
     if (!copy()) return false;
-    return deleteSelection();
+    const refs = entitySelectedRefs();
+    return refs.length > 0 && document.execute(removeEntities(refs));
   }
 
   function deleteSelection(): boolean {
-    const refs = selectedRefs.value;
-    if (refs.length === 0) return false;
-    const changed = document.execute(removeEntities(refs));
-    if (changed) mapSelection.value = null;
-    return changed;
+    if (leftPanel.value === "surface" || !mapSelection.value) return false;
+    const refs = resolveDeletion(
+      currentLevel(),
+      catalog,
+      mapSelection.value,
+      editor,
+    );
+    return refs.length > 0 && document.execute(removeEntities(refs));
   }
 
   function deleteLayer(entityIndex: number): boolean {
@@ -225,10 +417,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const variant = editor.entities?.[entity.type]?.variants?.[index];
     if (!variant) return false;
     return document.execute(
-      replaceEntity(
-        { index: entityIndex },
-        applyEditorVariant(entity, variant),
-      ),
+      replaceEntity({ index: entityIndex }, applyEditorVariant(entity, variant)),
     );
   }
 
@@ -252,48 +441,44 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function cycleVariant(step: number, cell?: Cell): boolean {
-    if (tool.value === "erase") return false;
-    if (tool.value === "place") {
-      const definition = editor.entities?.[placement.value.type];
-      const next = cyclePlacementVariant(
-        placement.value,
+    if (leftPanel.value === "surface") return false;
+    if (paletteTool.value !== "place") {
+      const targetCell = cell ?? mapSelection.value?.focus;
+      if (!targetCell) return false;
+      if (cell) ensureSelectionAt(cell);
+      const inspection = [...preview().inspectCell(targetCell.x, targetCell.y).presences]
+        .reverse()
+        .find(
+          (candidate) =>
+            (editor.entities?.[candidate.entity.type]?.variants?.length ?? 0) > 0,
+        );
+      if (!inspection) return false;
+      const next = cycleEntityVariant(
+        inspection.entity,
         catalog,
-        definition,
+        editor.entities?.[inspection.entity.type],
         step,
       );
       if (!next) return false;
-      placement.value = {
-        ...placement.value,
-        ...cleanPlacementPreset(next),
-        previewPreset: cleanPlacementPreset(next),
-      };
-      return true;
+      return document.execute(replaceEntity(inspection.ref, next));
     }
-    const targetCell = cell ?? mapSelection.value?.focus;
-    if (!targetCell) return false;
-    if (cell) ensureSelectionAt(cell);
-    const inspection = [...preview().inspectCell(targetCell.x, targetCell.y).presences]
-      .reverse()
-      .find(
-        (candidate) =>
-          (editor.entities?.[candidate.entity.type]?.variants?.length ?? 0) > 0,
-      );
-    if (!inspection) return false;
-    const next = cycleEntityVariant(
-      inspection.entity,
+    const definition = editor.entities?.[placement.value.type];
+    const next = cyclePlacementVariant(
+      placement.value,
       catalog,
-      editor.entities?.[inspection.entity.type],
+      definition,
       step,
     );
     if (!next) return false;
-    return document.execute(replaceEntity(inspection.ref, next));
+    placement.value = {
+      ...placement.value,
+      ...cleanPlacementPreset(next),
+      previewPreset: cleanPlacementPreset(next),
+    };
+    return true;
   }
 
-  function updateProperty(
-    entityIndex: number,
-    key: string,
-    raw: string,
-  ): void {
+  function updateProperty(entityIndex: number, key: string, raw: string): void {
     updatePropertiesForRefs([{ index: entityIndex }], key, raw);
   }
 
@@ -381,10 +566,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const index = Math.max(0, sizes.indexOf(paletteSize.value));
     paletteSize.value =
       sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
-    localStorage.setItem(
-      "bobby.editor.paletteSize",
-      String(paletteSize.value),
-    );
+    localStorage.setItem("bobby.editor.paletteSize", String(paletteSize.value));
   }
 
   return {
@@ -394,7 +576,12 @@ export function useEditorPage(initialLevel: EditorMap) {
     document,
     snapshot,
     tool,
+    paletteTool,
     placement,
+    leftPanel,
+    surfaceTool,
+    surfaceBrush,
+    surfaceTheme,
     mapSelection,
     clipboard,
     hover,
@@ -408,6 +595,16 @@ export function useEditorPage(initialLevel: EditorMap) {
     levelMap: computed(() => toLevelMap(currentLevel())),
     setTool,
     selectPalette,
+    activatePalette,
+    activateSurface,
+    toggleAuthoringPanel,
+    setSurfaceTool,
+    selectSurfaceTerrain,
+    setSurfaceTheme,
+    setSurfacePattern,
+    setSurfaceExact,
+    setSurfaceAlternate,
+    pickSurface,
     primaryStart,
     primaryMove,
     primaryEnd,
@@ -443,6 +640,29 @@ export function useEditorPage(initialLevel: EditorMap) {
     }): void {
       document.execute(updateMetadata(metadata));
     },
+  };
+}
+
+function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
+  const variants = surfaceTerrain(brush.terrain).rows.flat();
+  const first = variants[0]?.type;
+  const second = variants[1]?.type ?? first;
+  if (!first) return brush;
+  const exact =
+    brush.exact && variants.some((variant) => variant.type === brush.exact)
+      ? brush.exact
+      : first;
+  return {
+    ...brush,
+    exact,
+    alternate: [
+      variants.some((variant) => variant.type === brush.alternate?.[0])
+        ? brush.alternate![0]
+        : first,
+      variants.some((variant) => variant.type === brush.alternate?.[1])
+        ? brush.alternate![1]
+        : second!,
+    ],
   };
 }
 

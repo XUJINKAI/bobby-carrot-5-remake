@@ -4,12 +4,17 @@ import {
   AudioRuntime,
   type AudioRuntimeOptions,
 } from "../audio/AudioRuntime.js";
+import { entityCatalog } from "../entities/registry.js";
 import { InputController } from "../input/InputController.js";
 import {
   GameplayDialog,
   type GameplayDialogOptions,
 } from "../ui/GameplayDialog.js";
 import { Game, type GameOptions, type GameRuntimeOptions } from "./Game.js";
+import {
+  validateLevelPlayability,
+  type LevelRuntimeWarning,
+} from "./LevelWarnings.js";
 
 export interface GameplayRuntimeConfig extends GameRuntimeOptions {
   dialog?: boolean | GameplayDialogOptions;
@@ -27,6 +32,7 @@ export interface GameplayRuntime {
   game: Game;
   input: InputController;
   audio: AudioBackend;
+  warnings: readonly LevelRuntimeWarning[];
   destroy(): void;
 }
 
@@ -41,6 +47,7 @@ export async function createGameplayRuntime(
     audioOptions,
     ...gameOptions
   } = options;
+  const warnings = validateLevelPlayability(level, entityCatalog);
   const { dialog: dialogOptions, ...gameRuntime } = runtime ?? {};
   const ownedAudio = suppliedAudio ? null : new AudioRuntime(audioOptions);
   const audio = suppliedAudio ?? ownedAudio!;
@@ -74,6 +81,7 @@ export async function createGameplayRuntime(
     game,
     input,
     audio,
+    warnings,
     destroy(): void {
       if (!inputOwnedByGame) input.destroy();
       dialog?.destroy();

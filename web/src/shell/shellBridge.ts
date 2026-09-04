@@ -1,4 +1,4 @@
-export type ShellIcon = "back" | "edit" | "erase" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "place" | "play" | "redo" | "restart" | "select" | "settings" | "share" | "stop" | "undo";
+export type ShellIcon = "back" | "edit" | "erase" | "fill" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "place" | "play" | "redo" | "restart" | "select" | "settings" | "share" | "stop" | "undo";
 
 export interface ShellMenuItem {
   label: string;
@@ -68,9 +68,16 @@ export interface ShellBridge {
 
 const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
 let activeBridge: ShellBridge | null = null;
+let activeConfig: ShellConfig | null = null;
+let activeHelp: HelpDescriptor = defaultHelpDescriptor();
+let runtimeWarnings: string[] = [];
 
 export function installShellBridge(bridge: ShellBridge | null): void {
   activeBridge = bridge;
+  if (bridge) return;
+  activeConfig = null;
+  activeHelp = defaultHelpDescriptor();
+  runtimeWarnings = [];
 }
 
 export function configureShell(
@@ -78,7 +85,46 @@ export function configureShell(
   help: HelpDescriptor = defaultHelpDescriptor(),
 ): void {
   if (!activeBridge) throw new Error("Web Shell 尚未挂载");
-  activeBridge.apply(config, help);
+  activeConfig = config;
+  activeHelp = help;
+  activeBridge.apply(mergeShellRuntimeWarnings(config, runtimeWarnings), help);
+}
+
+/** Gameplay session 的可玩性警告由 Shell 统一叠加，页面不需要重复处理。 */
+export function setShellRuntimeWarnings(warnings: readonly string[]): void {
+  runtimeWarnings = [
+    ...new Set(warnings.map((warning) => warning.trim()).filter(Boolean)),
+  ];
+  if (!activeBridge || !activeConfig) return;
+  activeBridge.apply(
+    mergeShellRuntimeWarnings(activeConfig, runtimeWarnings),
+    activeHelp,
+  );
+}
+
+export function mergeShellRuntimeWarnings(
+  config: ShellConfig,
+  warnings: readonly string[],
+): ShellConfig {
+  const bottomBar = config.bottomBar;
+  if (!bottomBar || bottomBar.visible === false || warnings.length === 0)
+    return config;
+  const info = bottomBar.info ?? [];
+  if (
+    warnings.some((warning) =>
+      info.some((item) => item.text.includes(warning)),
+    )
+  )
+    return config;
+  const first = warnings[0]!;
+  const suffix = warnings.length > 1 ? ` · 共 ${warnings.length} 个警告` : "";
+  return {
+    ...config,
+    bottomBar: {
+      ...bottomBar,
+      info: [...info, { text: `⚠ ${first}${suffix}` }],
+    },
+  };
 }
 
 export function defaultHelpDescriptor(): HelpDescriptor {

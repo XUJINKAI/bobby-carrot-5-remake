@@ -9,11 +9,14 @@ import EditorEntityFields from "./EditorEntityFields.vue";
 
 const props = defineProps<{
   model: InspectorModel;
+  showSurface: boolean;
+  surfaceCount: number;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
+  toggleSurface: [];
   property: [type: string, key: string, value: string];
   state: [type: string, key: string, value: string];
   variant: [type: string, index: number];
@@ -24,11 +27,21 @@ const emit = defineEmits<{
 <template>
   <div class="editor-multi-inspector">
     <section class="editor-inspector-section editor-selection-summary">
-      <strong>{{ model.rect?.width }} × {{ model.rect?.height }} 选区</strong>
-      <span class="editor-muted">{{ model.entityCount }} Entities</span>
+      <span class="editor-summary-text">
+        <strong>{{ model.rect?.width }} × {{ model.rect?.height }} 选区</strong>
+        <span class="editor-muted">{{ model.entityCount }} Entities</span>
+      </span>
+      <button
+        v-if="surfaceCount > 0"
+        type="button"
+        class="editor-surface-toggle"
+        :class="{ active: showSurface }"
+        :title="showSurface ? '隐藏 Surface' : `显示 ${surfaceCount} 个 Surface`"
+        @click="emit('toggleSurface')"
+      >Surface</button>
     </section>
 
-    <div class="editor-batch-groups">
+    <div v-if="model.groups.length" class="editor-batch-groups">
       <article
         v-for="group in model.groups"
         :key="group.type"
@@ -62,15 +75,38 @@ const emit = defineEmits<{
         />
       </article>
     </div>
+    <div v-else class="editor-inspector-section editor-muted">
+      选区内没有可见 Entity。
+    </div>
   </div>
 </template>
 
 <style scoped>
 .editor-selection-summary {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+.editor-summary-text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.editor-surface-toggle {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 5px;
+  background: rgb(0 20 45 / 28%);
+  color: var(--editor-muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+.editor-surface-toggle.active {
+  border-color: #8bdfff;
+  background: #0b689c;
+  color: #fff;
 }
 .editor-batch-groups {
   display: grid;
