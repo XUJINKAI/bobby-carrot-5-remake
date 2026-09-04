@@ -127,20 +127,20 @@ export class EditorCanvasRenderer {
   ): void {
     if (state.selection) {
       const rect = selectionRect(state.selection);
-      context.fillStyle = "rgba(90,170,255,.12)";
+      context.fillStyle = "rgba(20,105,185,.28)";
       context.fillRect(
         rect.left * EDITOR_TILE_SIZE,
         rect.top * EDITOR_TILE_SIZE,
         rect.width * EDITOR_TILE_SIZE,
         rect.height * EDITOR_TILE_SIZE,
       );
-      context.strokeStyle = "#83cfff";
-      context.lineWidth = 2;
+      context.strokeStyle = "#42b8ff";
+      context.lineWidth = 3;
       context.strokeRect(
-        rect.left * EDITOR_TILE_SIZE + 1,
-        rect.top * EDITOR_TILE_SIZE + 1,
-        rect.width * EDITOR_TILE_SIZE - 2,
-        rect.height * EDITOR_TILE_SIZE - 2,
+        rect.left * EDITOR_TILE_SIZE + 1.5,
+        rect.top * EDITOR_TILE_SIZE + 1.5,
+        rect.width * EDITOR_TILE_SIZE - 3,
+        rect.height * EDITOR_TILE_SIZE - 3,
       );
     }
     const hover = state.hover;

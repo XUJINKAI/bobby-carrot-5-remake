@@ -6,9 +6,9 @@ Editor 是 Bobby Carrot 5 Remake 的玩家功能，也是 Engine 的交互式调
 
 ```text
 editor/src
-├── level/       EditorLevel、规范化、校验与 JSON 序列化
+├── level/       EditorMap、规范化、校验与 JSON 序列化
 ├── document/    EditorDocument、History 与编辑命令
-├── authoring/   owner/layout、放置、Palette Catalog 与 Inspector Model
+├── authoring/   放置、Surface、Palette、Selection 与 Inspector Model
 └── canvas/      Renderer、Input、Viewport 与坐标转换
 ```
 
@@ -16,7 +16,7 @@ editor/src
 
 ## Editor JSON
 
-导入/导出使用当前语义 schema v1：
+导入/导出使用当前语义 schema v1，地图 gameplay 内容继续使用统一 Entity 列表：
 
 ```json
 {
@@ -26,29 +26,85 @@ editor/src
   "description": "optional",
   "width": 20,
   "height": 16,
-  "terrain": [["ground-c"]],
-  "objects": [{ "type": "carrot", "x": 4, "y": 8 }]
+  "entities": [
+    { "type": "ground-c", "x": 0, "y": 0 },
+    { "type": "carrot", "x": 4, "y": 8 }
+  ]
 }
 ```
 
-当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor metadata 不进入 Engine。
+当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor authoring policy 不进入 Engine。
 
-Runtime collection 的 `MapDocument` 使用 `meta` 包装产品 metadata。Web 从 `MapDocument` 打开 Editor 时，只把其中 `LevelMap` gameplay 内容交给 Editor，并以 `meta.name` 生成副本名称。
+## Surface 与 Palette
+
+Surface 与 Palette 是两套并列的 authoring UX，不要求与 Engine Entity taxonomy 一一对应。
+
+Surface 表示“这一格的基础地貌是什么”，每格最多保留一个 Surface。Surface 可以影响 gameplay；是否影响解法不是 Surface / Palette 的划分标准。Editor 内部仍用这些语义类型描述基础环境：
+
+```text
+ground
+solid
+water
+ice
+sky
+waterfall
+```
+
+`blocking` 保留为 Engine trait / 行为语义，不作为 Surface Type 名称。
+
+用户在 Surface 面板中不直接操作 Type × Theme 矩阵，而是选择具体 Terrain，例如草地、雪地、沙地、石头、墙、水、瀑布、篱笆、带雪篱笆、天空等。每个 Terrain 指定一个主要 visual 作为入口，并通过显式 `rows` 定义其 variant 排列。Terrain 本身也可按 group / row 组织，和 Palette 一样由 Editor 精确控制布局。
+
+### Theme
+
+Theme 是视觉批量转换入口，不是 Level 全局属性，也不会限制地图只能使用一种风格。当前入口：
+
+```text
+混合 / 森林 / 雪地 / 沙地 / 太空
+```
+
+Theme 卡使用多个代表 visual 拼成预览，强调视觉识别。点击具体 Theme 时，Editor 自动识别已知的同类 Terrain，并只在相同 SurfaceType / theme family 内换皮，例如草地 ↔ 雪地 ↔ 沙地 ↔ 云层、篱笆 ↔ 带雪篱笆。Water、Ice、Waterfall 等没有对应主题映射的 gameplay terrain 保持不变。地图包含多个主题时显示为“混合”。
+
+### 空间工具
+
+Palette 和 Surface 使用一致的基础工具语义：
+
+- `1 Select`：单击单选，拖动建立矩形多选；选择本身不绘制或删除内容；
+- `2 Brush`：在 Canvas 上绘制当前 Palette Entity 或 Surface Terrain；若按下位置位于当前矩形 Selection 内，则一次性填充整个 Selection；
+- `4 Smart Fill`：仅 Surface 提供。按当前 Terrain 对四方向连通区域进行 flood fill，匹配 Terrain 而忽略具体 visual variant。
+
+Surface 没有 Erase；基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的删除使用 Selection + Delete/Backspace，而不再占用一个独立顶部 Erase 工具。
+
+`Ctrl/Cmd+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
+
+### Pattern 与 Variant
+
+Variant 分配支持：
+
+- Auto：按地图坐标和 seed 稳定分配 variant；同一 seed 不会因刷新而改变；
+- Exact：强制使用一个具体 variant，用于手工修边和原版精确复刻；
+- 交错：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
+
+Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，使整体更接近 atlas 预览。Alternate 模式左键选择 A、右键选择 B。
+
+Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
+
+Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标区域自动选择 Start / Middle / End visual variant。
+
+Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
 
 ## Multi-cell Object
 
-Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存 anchor。footprint、cursor、authoring variant 共用 Engine Object Layout：
+Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析：
 
 - 鼠标指向 body/tail 仍 resolve 到完整 owner；
-- 右键 / Del 删除完整 owner；
-- 放置新对象时，与 footprint 相交的旧 owner 整体替换；
+- Del 删除完整 owner；
 - Q/E 或滚轮切换支持的 authoring variant；
 - runtime occupancy 只在 Engine level-load 边界展开。
 
 ## Play Test
 
 ```text
-EditorLevel
+EditorMap
   -> normalize / clone
   -> LevelMap
   -> Game.loadLevel()
@@ -58,14 +114,17 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 
 ## 编辑交互
 
-- 左键 / 拖动：放置当前 Terrain / Object；
-- 右键 / Del：删除鼠标指向的完整 Object；
-- Q / E：旋转、翻转或切换支持 authoring variant 的 Object；
-- 滚轮：指向可变 Object 时切换 variant，否则缩放地图；
+- Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
+- Tab：Palette / Surface 快速切换；
+- Select：单选或矩形多选，不直接绘制；
+- Brush：单格/连续绘制；点入已有 Selection 时整块填充；
+- Surface：额外提供 Smart Fill；右键取样；
+- Ctrl/Cmd+A：全选地图；
+- Palette：Q/E 或滚轮切换可变 Entity；
+- 滚轮在没有 Entity variant 操作时缩放地图；
 - 中键拖动：平移；
 - 两指手势：缩放 Editor viewport；
-- Ctrl/Cmd+Z、Y：Undo / Redo；
-- 泛蓝高亮：表示本次操作将删除或替换的完整 owner。
+- Ctrl/Cmd+Z、Y：Undo / Redo。
 
 ## Data Exchange
 

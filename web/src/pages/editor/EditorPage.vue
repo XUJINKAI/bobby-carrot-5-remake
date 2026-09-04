@@ -10,7 +10,14 @@ import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { loadScreenControlPreference } from "../../shell/shellBridge.js";
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import EditorContextMenu from "./EditorContextMenu.vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
@@ -24,10 +31,11 @@ const props = defineProps<{
   navigate: (path: string) => void;
 }>();
 const page = useEditorPage(props.initialLevel);
+page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
 let disposePlayChange = (): void => {};
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
-const paletteOpen = ref(true);
+const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
@@ -54,12 +62,16 @@ function syncShell(): void {
       canUndo: session?.game.canUndo ?? false,
       canRedo: session?.game.canRedo ?? false,
     },
+    page.leftPanel.value,
+    page.surfaceTool.value,
   );
 }
 watch(
   () => [
     page.playing.value,
     page.tool.value,
+    page.leftPanel.value,
+    page.surfaceTool.value,
     shellIssues.value.map((issue) => `${issue.level}:${issue.message}`).join("|"),
   ],
   syncShell,
@@ -158,6 +170,11 @@ function markDownloaded(metadata: {
 }
 
 function openContextMenu(request: EditorCanvasContextMenuRequest): void {
+  if (page.leftPanel.value === "surface") {
+    page.pickSurface(request.cell);
+    closeContextMenu();
+    return;
+  }
   page.ensureSelectionAt(request.cell);
   contextMenu.value = {
     x: request.clientX,
@@ -180,6 +197,23 @@ function transform(
   result(page.transform(cell, step));
 }
 
+function selectAll(): void {
+  const level = page.snapshot.value.level as EditorMap;
+  page.mapSelection.value = {
+    anchor: { x: 0, y: 0 },
+    focus: { x: level.width - 1, y: level.height - 1 },
+  };
+  closeContextMenu();
+}
+
+function switchAuthoringPanel(): void {
+  page.toggleAuthoringPanel();
+  leftOpen.value = true;
+  if (isMobileEditor()) rightPanel.value = null;
+  closeContextMenu();
+  syncShell();
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   if (isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
@@ -194,16 +228,24 @@ function handleKeydown(event: KeyboardEvent): void {
     }
     return;
   }
+  if (event.key === "Tab" && !modifier && !event.altKey) {
+    event.preventDefault();
+    switchAuthoringPanel();
+    return;
+  }
   if (event.key === "Escape") {
     closeContextMenu();
     return;
   }
-  if (modifier && key === "z") {
+  if (modifier && key === "a") {
     event.preventDefault();
-    event.shiftKey ? page.document.redo() : page.document.undo();
+    selectAll();
+  } else if (modifier && key === "z") {
+    event.preventDefault();
+    undo();
   } else if (modifier && key === "y") {
     event.preventDefault();
-    page.document.redo();
+    redo();
   } else if (modifier && key === "c") {
     event.preventDefault();
     page.copy();
@@ -217,13 +259,24 @@ function handleKeydown(event: KeyboardEvent): void {
   } else if (event.key === "Delete" || event.key === "Backspace") {
     event.preventDefault();
     page.deleteSelection();
+  } else if (page.leftPanel.value === "surface") {
+    if (key === "1") {
+      event.preventDefault();
+      page.setSurfaceTool("rect");
+    } else if (key === "2") {
+      event.preventDefault();
+      page.setSurfaceTool("brush");
+    } else if (key === "3") {
+      event.preventDefault();
+      page.setSurfaceTool("fill");
+    }
   } else if (key === "1") {
     event.preventDefault();
     page.setTool("select");
   } else if (key === "2") {
     event.preventDefault();
     page.setTool("place");
-  } else if (key === "3") {
+  } else if (key === "4") {
     event.preventDefault();
     page.setTool("erase");
   } else if (key === "q" || key === "e") {
@@ -235,33 +288,34 @@ function handleKeydown(event: KeyboardEvent): void {
 function onShellAction(event: Event): void {
   const action = (event as CustomEvent<{ action: string }>).detail.action;
   if (action === "editor-tool-select") page.setTool("select");
-  if (action === "editor-tool-place") page.setTool("place");
+  if (action === "editor-tool-brush") page.setTool("place");
   if (action === "editor-tool-erase") page.setTool("erase");
+  if (action === "editor-surface-select") page.setSurfaceTool("rect");
+  if (action === "editor-surface-brush") page.setSurfaceTool("brush");
+  if (action === "editor-surface-fill") page.setSurfaceTool("fill");
   if (action === "editor-undo") undo();
   if (action === "editor-redo") redo();
   if (action === "editor-play") void togglePlay();
   if (action === "editor-restart") restartPlay();
   if (action === "editor-share") page.fileDialogOpen.value = true;
-  if (action === "editor-palette") togglePanel("palette");
-  if (action === "editor-inspector") togglePanel("inspector");
-  if (action === "editor-level-info") togglePanel("level");
+  if (action === "editor-palette") toggleLeftPanel("palette");
+  if (action === "editor-surface") toggleLeftPanel("surface");
+  if (action === "editor-inspector") toggleRightPanel("inspector");
+  if (action === "editor-level-info") toggleRightPanel("level");
 }
 
-function togglePanel(panel: "palette" | "inspector" | "level"): void {
-  if (isMobileEditor()) {
-    if (panel === "palette") {
-      const opening = !paletteOpen.value;
-      paletteOpen.value = opening;
-      rightPanel.value = null;
-      return;
-    }
-    const opening = rightPanel.value !== panel;
-    paletteOpen.value = false;
-    rightPanel.value = opening ? panel : null;
-    return;
-  }
-  if (panel === "palette") paletteOpen.value = !paletteOpen.value;
-  else rightPanel.value = rightPanel.value === panel ? null : panel;
+function toggleLeftPanel(panel: "palette" | "surface"): void {
+  const opening = !leftOpen.value || page.leftPanel.value !== panel;
+  if (panel === "surface") page.activateSurface();
+  else page.activatePalette();
+  leftOpen.value = opening;
+  if (isMobileEditor() && opening) rightPanel.value = null;
+}
+
+function toggleRightPanel(panel: "inspector" | "level"): void {
+  const opening = rightPanel.value !== panel;
+  if (isMobileEditor()) leftOpen.value = false;
+  rightPanel.value = opening ? panel : null;
 }
 
 function onShellDialogOpen(): void {
@@ -316,7 +370,7 @@ function isMobileEditor(): boolean {
   <div
     class="bobby-editor"
     :class="{
-      'palette-sheet-open': paletteOpen,
+      'palette-sheet-open': leftOpen,
       'inspector-sheet-open': rightPanel !== null,
     }"
   >
@@ -324,14 +378,18 @@ function isMobileEditor(): boolean {
       :level="page.snapshot.value.level as EditorMap"
       :revision="page.snapshot.value.revision"
       :tool="page.tool.value"
-      :placement="page.placement.value"
+      :placement="page.leftPanel.value === 'palette' ? page.placement.value : null"
+      :palette-placement="page.placement.value"
+      :left-panel="page.leftPanel.value"
+      :surface-brush="page.surfaceBrush.value"
+      :surface-theme="page.surfaceTheme.value"
       :selection="page.mapSelection.value"
       :hover="page.hover.value"
       :inspector="page.inspector.value"
       :rules="page.rules.value"
       :palette="page.palette"
       :palette-size="page.paletteSize.value"
-      :palette-open="paletteOpen"
+      :left-open="leftOpen"
       :right-panel="rightPanel"
       :playing="page.playing.value"
       :play-complete="playComplete"
@@ -340,6 +398,12 @@ function isMobileEditor(): boolean {
       :editor="page.editor"
       @select="page.selectPalette"
       @palette-resize="page.setPaletteSize"
+      @surface-terrain="(terrain) => { page.selectSurfaceTerrain(terrain); page.setSurfaceTool('brush'); }"
+      @surface-theme="page.setSurfaceTheme"
+      @surface-pattern="page.setSurfacePattern"
+      @surface-exact="page.setSurfaceExact"
+      @surface-alternate-a="(type) => page.setSurfaceAlternate(0, type)"
+      @surface-alternate-b="(type) => page.setSurfaceAlternate(1, type)"
       @hover="page.hover.value = $event"
       @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
       @primary-move="page.primaryMove"

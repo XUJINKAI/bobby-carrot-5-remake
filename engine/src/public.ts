@@ -7,6 +7,11 @@ export {
   type HistoryPolicy,
 } from "./core/HistoryPolicy.js";
 export {
+  validateLevelPlayability,
+  type LevelRuntimeWarning,
+  type LevelRuntimeWarningCode,
+} from "./core/LevelWarnings.js";
+export {
   createGameplayRuntime,
   type GameplayRuntime,
   type GameplayRuntimeConfig,

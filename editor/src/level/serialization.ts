@@ -1,8 +1,10 @@
+import { materializeSurfaceVariants } from "../authoring/surfacePersistence.js";
 import { normalizeEditorLevel } from "./editorLevel.js";
 import type { EditorMap } from "./types.js";
 
 export function serializeEditorLevel(level: EditorMap): string {
-  return `${JSON.stringify(normalizeEditorLevel(level), null, 2)}\n`;
+  const materialized = materializeSurfaceVariants(level);
+  return `${JSON.stringify(normalizeEditorLevel(materialized), null, 2)}\n`;
 }
 
 export function parseEditorLevel(text: string): EditorMap {
