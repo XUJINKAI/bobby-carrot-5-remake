@@ -30,13 +30,18 @@ const emit = defineEmits<{
 }>();
 
 const showSurface = ref(false);
+const surfacePreferenceManual = ref(false);
 watch(
   () => props.authoringPanel,
   (panel) => {
-    showSurface.value = panel === "surface";
+    if (!surfacePreferenceManual.value) showSurface.value = panel === "surface";
   },
   { immediate: true },
 );
+function toggleSurface(): void {
+  surfacePreferenceManual.value = true;
+  showSurface.value = !showSurface.value;
+}
 const surfaceCount = computed(() => {
   if (props.model.mode === "cell")
     return props.model.layers.filter((layer) =>
@@ -88,7 +93,7 @@ const visibleModel = computed<InspectorModel>(() => {
       :images="images"
       :catalog="catalog"
       :editor="editor"
-      @toggle-surface="showSurface = !showSurface"
+      @toggle-surface="toggleSurface"
       @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
       @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
@@ -103,7 +108,7 @@ const visibleModel = computed<InspectorModel>(() => {
       :images="images"
       :catalog="catalog"
       :editor="editor"
-      @toggle-surface="showSurface = !showSurface"
+      @toggle-surface="toggleSurface"
       @property="(type, key, value) => emit('batchProperty', type, key, value)"
       @state="(type, key, value) => emit('batchState', type, key, value)"
       @variant="(type, index) => emit('batchVariant', type, index)"
