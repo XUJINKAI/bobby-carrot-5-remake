@@ -55,6 +55,7 @@
 ### Presentation / Timing
 
 - `semantic/TileAnimationClock.java`：Water / Speed / Tide / Fall / Windmill / Whirlwind / Exit / Bonus Coin 的全局共享 animation phase。
+- `semantic/StarShimmer.java`、`SpecialSceneStarfield.java`：gameplay 3-slot 星空闪耀与 Title/Magic Code/Flight 5-slot 滚动星场。
 - `semantic/GameplayRenderOrder.java`：原版 gameplay layer 顺序。
 - `semantic/BobbyAnimationCadence.java`：Bobby walk / idle / death / transition 节奏。
 - `semantic/GameplayHud.java`、`CameraShake.java`、`OverviewMode.java`、`MissingItemHint.java`：HUD、相机与提示行为。

@@ -1,5 +1,5 @@
 // 研究性语义重建：来源为 UP9 a.class / level initialization、a.V() 与 c(Graphics,... )。
-// 本文件表达 gameplay 星空 shimmer 的原版 Presentation 状态。
+// 本文件表达 gameplay 星空 shimmer；Title / Magic Code / Flight 的 5-slot 星场见 SpecialSceneStarfield。
 
 public final class StarShimmer {
     private static final int ALLOCATED_SLOT_COUNT = 5;
