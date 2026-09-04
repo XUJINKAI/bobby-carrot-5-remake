@@ -45,6 +45,7 @@
 
 - `semantic/SceneCatalog.java`：archive/record → shared scene / normal level / timed bonus、标题、主对话、音乐。
 - `semantic/CampaignProgression.java`：release record progression 与 11/12 Bonus slot。
+- `semantic/PersistentSaveFormat.java`：`BC5Data` 单 record 的完整二进制字段顺序、默认值与持久/临时边界。
 - `semantic/NightTrain.java`：Dream Machine / Cloud 9 ticket 与 destination。
 - `semantic/GoldenCarrotCampaign.java`、`CampaignRewardScenes.java`：Golden Carrot、Magic Code、Flight reward。
 

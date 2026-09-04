@@ -11,6 +11,9 @@
 | `Bobby.c` | `runtimeThread` | 已确认 | `startApp()` 创建并启动。 |
 | `a.e` | `shutdownRequested` | 已确认 | `run()` 以 `while (!e)` 为主循环。 |
 | `a.x` | `runtimeState` | 已确认 | `a.b()` 直接按该字段分派 gameplay / menu / scene / result。 |
+| `a.c` | `audioEnabled` | 已确认 | `0=Off / 1=On`；所有 MIDI 请求、菜单 ON/OFF 与 hide/show lifecycle 都读取或改写。它不属于顶层 runtime state，也不写入 RMS。 |
+| `a.y` | `selectedLanguageCode` | 已确认 | `EN/DE/FR/IT/SP/PG`，直接组成 `<code>.dat` 并写入 RMS。 |
+| `a.bt` | `volumeSetting` | 已确认 | 1..5 档，默认 3；写入 RMS。 |
 | `a.run()` | `mainLoop()` | 已确认 | 每轮调用 `b()` 两次，并把整轮节拍控制在约 62ms。 |
 | `a.b()` | `advanceRuntimeState()` | 已确认 | 顶层每 tick 状态机；`x==1` 为 gameplay。 |
 
@@ -73,7 +76,7 @@
 | `a.de` | `temporaryLockPermit` | 高置信 | Lock collision 允许通过；进入 Lock midpoint 后无条件清 false；dialog action 7 授予。 |
 | `a.D[2]` | `permanentSuperKeyUpgrade` | 高置信 | 持久化 Shop upgrade；Lock collision 直接允许通过。 |
 | `a.I` | `globalCurrency` | 高置信 | 持久化 short；Shop / 临时 Lock permit 会消费；level clear 增加本关 bonus coin。 |
-| `a.dg` | `specialInsufficientFundsState` | 待继续命名 | dialog action 7 在 `I < 3` 时置 true；会改变死亡后的 campaign continuation。 |
+| `a.dg` | `skipTimedBonusRetryAfterFreePermitDeath` | 已确认 | currency<3 时 action 7 仍免费授予临时 permit 并置 true；该 Bonus 死亡后走 progression：slot 11→4、12→7。 |
 | `a.cV` | `timedBonusMap` | 已确认 | `ae()` 仅对 `bU==11/12` 置 true；HUD/Lock/60 秒逻辑均读取。 |
 | `a.df` | `timedBonusRunning` | 已确认 | Timed Bonus map 中进入 Lock midpoint 首次置 true；启动 60 秒计时。 |
 | `a.cb` | `levelTimerPaused` | 已确认 | `l()/m()` 切换暂停/运行；计时 HUD 和 timeout 都据此计算。 |
@@ -122,6 +125,14 @@
 | `a.cU` | `eggObjectiveMode` | 高置信 | 扫描 `CA/CB` 时根据目标类型设置；HUD 图标与高草恢复结果读取。 |
 | `a.bX` | `levelBonusCoinCount` | 已确认 | `F8` 收集递增；clear 时加入 `I`。 |
 | `a.J` | `goldenCarrotCount` | 高置信 | `F6` 收集递增并持久化；相关 scene 也读写。 |
+| `a.A[4]` | `archiveResumeRecordSlot` | 已确认 | archive 1..4 的继续位置；0 表示没有挂起进度。 |
+| `a.B[4]` | `archiveCompleted` | 已确认 | 完成普通 slot 10 时置 true；菜单使用 completed 图标。 |
+| `a.E` | `coinRadarEnabled` | 已确认 | 持久开关；只在已购买 D[6] 后可切换，gameplay 决定是否调用 F()。 |
+| `a.F` | `speedShoesEnabled` | 已确认 | 持久开关；只在已购买 D[5] 后可切换，普通 Bobby 使用 6px/step。 |
+| `a.G` | `campaignIntroCompleted` | 已确认 | false 时选择 release 先进入 shared slot 5 Welcome；该 scene 完成后置 true。 |
+| `a.K` | `specialCompletionBits` | 已确认 | 每个 archive 三位，依次记录 Bonus 11、Bonus 12、normal slot 10 的完成。 |
+| `a.L` | `magicCodeSeed` | 已确认 | 新档随机 int；生成 16 字符 Magic Code 的 10-byte payload 前四字节。 |
+| `a.M[5]` | `recentMagicCodes` | 已确认 | 最近五个 code，新 code 前插；主菜单 Magic Codes 展示读取。 |
 
 ## 核心方法
 
@@ -208,11 +219,6 @@ NN.dat
 
 Cloud 与 Leaf 在原版 runtime 中已经是独立动态实体，不属于普通 objectGrid。
 
-## 当前继续恢复重点
+## 当前封口状态
 
-1. Beaver / Sandman / Dream Machine 的 campaign interaction 与 action 编号。
-2. `dg` 的准确语义，以及 temporary Lock permit 不足 3 currency 时的特殊流程。
-3. Fireball 对所有 terrain/object 的完整 collision matrix。
-4. Kite 飞到地图边缘的真实结束逻辑。
-5. Top-level `runtimeState` 全枚举与 scene transition。
-6. 对照 semantic 总表建立原版机制覆盖矩阵；本逆向 PR 不修改 Engine / DAT Adapter。
+上述早期重点均已落到对应 semantic：角色场景、`dg` 免费 permit 死亡分支、Fireball collision matrix、Kite 越界契约、`runtimeState 0..16` 与机制覆盖表都已恢复。后续变更只接受能够指出具体 class 控制流缺口或现有 semantic 矛盾的证据，不再保留泛化的“待继续”清单。

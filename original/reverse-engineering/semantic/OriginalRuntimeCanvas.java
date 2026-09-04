@@ -3,8 +3,9 @@ import com.nokia.mid.ui.FullCanvas;
 /**
  * `a.class` 的第一层语义骨架。
  *
- * 该文件只收录已经确认的职责和字段；未知部分继续保留在
- * `decompiled/up09/a.java` 中，不在这里提前猜测。
+ * 该文件只表达 MIDlet/Canvas 主循环骨架；状态、Gameplay、资源与持久化语义
+ * 分别拆在 RuntimeStateMachine、各机制 semantic、MusicCatalog/DialogCatalog
+ * 与 PersistentSaveFormat 中。
  */
 public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable {
     private final OriginalGameMidlet midlet;
@@ -15,8 +16,11 @@ public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable 
     /** 对应 `a.d`。hideNotify/showNotify 控制，表示 Canvas 当前可见。 */
     private boolean canvasVisible = false;
 
-    /** 对应 `a.c`。目前只确认值 1 在退出时触发清理。 */
-    private byte runtimeMode;
+    /**
+     * 对应 `a.c`：0=Music Off，1=Music On。
+     * 新进程默认 1；该字段不写入 BC5Data RMS，hideNotify 也会临时关闭并释放 Player。
+     */
+    private byte audioEnabled;
 
     /** 对应 `a.aw`：0 左、1 右、2 上、3 下。 */
     private int playerDirection;
@@ -40,15 +44,15 @@ public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable 
     /**
      * 对应原始 `a.b()`。
      *
-     * 已确认它按当前 `a.x` 状态推进游戏/菜单状态机，并以 boolean 表示
-     * 本轮是否产生需要刷新的变化。内部 gameplay 方法名仍待继续拆解。
+     * 它按当前 `a.x` 分派 RuntimeStateMachine，并以 boolean 表示本轮是否需要刷新。
+     * `x==1` 的完整子系统顺序见 GameplayStepOrder / 各机制 semantic。
      */
     private boolean advanceRuntimeState() {
         throw new UnsupportedOperationException("semantic reconstruction in progress");
     }
 
-    /** 对应原始 `a.a()`；退出时在特定 runtimeMode 下执行。 */
-    private void cleanupRuntime() {
+    /** 对应原始 `a.a()`：停止、deallocate、close 当前 MIDI Player 并清 track path。 */
+    private void cleanupAudioPlayer() {
         throw new UnsupportedOperationException("semantic reconstruction in progress");
     }
 
@@ -88,8 +92,8 @@ public final class OriginalRuntimeCanvas extends FullCanvas implements Runnable 
             }
         }
 
-        if (runtimeMode == 1) {
-            cleanupRuntime();
+        if (audioEnabled == 1) {
+            cleanupAudioPlayer();
         }
         midlet.notifyDestroyed();
     }
