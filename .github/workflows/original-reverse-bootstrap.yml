@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: reverse/original-runtime
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -31,19 +32,20 @@ jobs:
             https://www.benf.org/other/cfr/cfr-0.152.jar \
             -o tmp/original-reverse/cfr.jar
 
-      - name: Decompile UP9 runtime
+      - name: Decompile runtime generations
         run: |
-          rm -rf original/reverse-engineering/decompiled/up09
-          mkdir -p original/reverse-engineering/decompiled/up09
-          java -jar tmp/original-reverse/cfr.jar \
-            original/official-hd/up09.jar \
-            --outputdir original/reverse-engineering/decompiled/up09 \
-            --silent true
+          for label in base up01 up09; do
+            rm -rf "original/reverse-engineering/decompiled/$label"
+            mkdir -p "original/reverse-engineering/decompiled/$label"
+            java -jar tmp/original-reverse/cfr.jar \
+              "original/official-hd/$label.jar" \
+              --outputdir "original/reverse-engineering/decompiled/$label" \
+              --silent true
+            sha256sum "original/official-hd/$label.jar" > "original/reverse-engineering/decompiled/$label.jar.sha256"
+          done
 
-      - name: Record provenance
+      - name: Record generation scope
         run: |
-          mkdir -p original/reverse-engineering
-          sha256sum original/official-hd/up09.jar > original/reverse-engineering/decompiled/up09.jar.sha256
           cat > original/reverse-engineering/README.md <<'EOF'
           # 原版 Runtime 逆向工作区
 
@@ -51,9 +53,16 @@ jobs:
 
           ## 目录
 
-          - `decompiled/up09/`：CFR 0.152 对 `up09.jar` 的直接反编译结果。保留混淆名称，作为后续语义整理的只读基准。
-          - `semantic/`：逐步整理、重命名和拆解后的语义化研究代码。该层必须能够追溯到 `decompiled/` 中的原始类、字段和方法。
-          - `notes/`：逆向索引、命名映射、证据和未确认项。
+          - `decompiled/up09/`：CFR 0.152 对稳定代 `up09.jar` 的直接反编译结果。UP02～UP09 的核心 Runtime 已由 structural bytecode fingerprint 确认一致，因此该目录作为 UP02～UP09 的主反编译基准。
+          - `decompiled/up01/`：UP01 legacy generation 的机械反编译基准。
+          - `decompiled/base/`：Base 1.0.3 legacy generation 的机械反编译基准。
+          - `bytecode/`：`javap` 字节码基准与关键方法切片；反编译器无法可靠结构化时回退到这里。
+          - `semantic/`：逐步整理、重命名和拆解后的语义化研究代码。该层必须能够追溯到 `decompiled/` / `bytecode/` 中的原始类、字段和方法。
+          - `notes/`：逆向索引、命名映射、版本指纹、证据和未确认项。
+
+          ## Runtime generation 边界
+
+          方法级 structural fingerprint 已确认：UP02～UP09 的主循环、玩家移动、碰撞、midpoint、Cloud/Leaf、Dragon、Ice、Bean 与 Loader 等已追踪核心方法语义结构一致。Base 与 UP01 则分别属于更早的 runtime generation，需要单独审计。
 
           ## 原则
 
@@ -63,16 +72,15 @@ jobs:
           4. 每个语义结论记录原始 class / method / field 依据，并区分“已由字节码确认”“由运行实测确认”“推断”。
           5. 本目录来自原版第三方程序的逆向研究产物，不属于项目自身 `LICENSE` 的原创授权范围；权利边界见根目录 `THIRD_PARTY_ASSETS.md`。
           EOF
-          mkdir -p original/reverse-engineering/semantic original/reverse-engineering/notes
-          touch original/reverse-engineering/semantic/.gitkeep original/reverse-engineering/notes/.gitkeep
 
-      - name: Commit decompilation baseline
+      - name: Commit decompilation baselines
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add original/reverse-engineering
+          git add original/reverse-engineering/decompiled original/reverse-engineering/README.md
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "reverse: add UP9 decompilation baseline"
+          git commit -m "reverse: add legacy runtime decompilation baselines"
+          git pull --rebase origin reverse/original-runtime
           git push origin HEAD:reverse/original-runtime
