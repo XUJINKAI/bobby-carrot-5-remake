@@ -1,5 +1,5 @@
 // 研究性语义重建：来源为 UP9 a.class / player midpoint shop branch、
-// generic dialog action dispatcher、pause menu action 30/31/32 与 gameplay F()/M()。
+// generic dialog action dispatcher、pause menu action 30/31/32、gameplay F()/M() 与 D[] 全引用追踪。
 // 本文件只表达原版持久 upgrade 状态，不作为可直接编译的产品源码。
 
 public final class ShopUpgrades {
@@ -125,9 +125,23 @@ public final class ShopUpgrades {
     }
 
     /**
-     * D[0]/D[1]/D[3] 已能与原 DAT semantic 名 Dream / Cloud9 / Stereo 对齐，
-     * 但其完整跨 scene 能力继续由 Campaign reverse 拆解；这里不按名字猜 runtime 后果。
+     * 对 `D[]` 的完整引用追踪确认：D[0] / D[1] / D[3] 没有任何 gameplay
+     * 读点。D[0]/D[1] 只让 menu mode 4 出现两个 scene 入口；D[3] 只让主菜单
+     * 出现 action 16，随后进入另一组 scene/menu 流程。
+     *
+     * 因此它们属于持久的 scene/product unlock，而不是地图内 gameplay buff。
+     * Dream / Cloud9 / Stereo 是现有 DAT semantic 名；完整场景人类名称继续等待
+     * language resource 与 scene method 的双重证据，不按名称臆测能力。
      */
+    boolean unlocksSceneEntry(int upgradeIndex) {
+        if (upgradeIndex != UPGRADE_DREAM
+                && upgradeIndex != UPGRADE_CLOUD9
+                && upgradeIndex != UPGRADE_STEREO) {
+            return false;
+        }
+        return purchasedUpgradeCount[upgradeIndex] > 0;
+    }
+
     int purchasedCount(int upgradeIndex) {
         return purchasedUpgradeCount[upgradeIndex] & 0xFF;
     }
