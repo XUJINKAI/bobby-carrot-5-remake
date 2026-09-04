@@ -53,6 +53,13 @@ jobs:
               'player-movement-M': 'private final boolean M();',
               'pixel-motion-N': 'private final void N();',
               'player-collision-a-int-int-boolean': 'private final boolean a(int, int, boolean);',
+              'moving-entity-grid-pass-a-int-int-int-byte': 'private final boolean a(int, int, int, byte);',
+              'moving-entity-pixel-collision-a-int-int-int-int': 'private final boolean a(int, int, int, int);',
+              'moving-entities-P': 'private final void P();',
+              'arrival-J': 'private final void J();',
+              'fireball-Q': 'private final void Q();',
+              'ice-melting-R': 'private final void R();',
+              'bean-growth-S': 'private final void S();',
               'runtime-b': 'public final boolean b();',
               'main-loop-run': 'public void run();',
           }
