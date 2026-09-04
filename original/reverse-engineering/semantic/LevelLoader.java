@@ -7,11 +7,20 @@ import java.io.InputStream;
 public final class LevelLoader {
     private static final int OBJECT_EMPTY = 0xFF;
 
-    // 原版将这四类 object 从 grid 中抽出，作为可移动 runtime entity。
+    private static final int OBJECT_DRAGON_HEAD = 0xD7;
+    private static final int OBJECT_DRAGON_BODY = 0xD8;
+    private static final int OBJECT_DRAGON_TAIL = 0xD9;
+    private static final int OBJECT_SANDMAN_HEAD = 0xDA;
+    private static final int OBJECT_DREAM_MACHINE_HEAD = 0xDB;
     private static final int OBJECT_CLOUD_RED = 0xE0;
     private static final int OBJECT_CLOUD_PURPLE = 0xE1;
     private static final int OBJECT_CLOUD_GREEN = 0xE2;
+    private static final int OBJECT_BEAVER_HEAD = 0xE7;
+    private static final int OBJECT_SANDMAN_BODY = 0xEA;
+    private static final int OBJECT_DREAM_MACHINE_BODY = 0xEB;
     private static final int OBJECT_LEAF = 0xEC;
+    private static final int OBJECT_BEAVER_BODY = 0xF7;
+    private static final int OBJECT_BONUS_COIN = 0xF8;
 
     private int mapWidthTiles;
     private int mapHeightTiles;
@@ -95,22 +104,25 @@ public final class LevelLoader {
                     consumedByRuntimeEntity = true;
                     break;
 
-                // 下面四组是原版 compact object 的 multi-cell 展开。
-                // 具体 Entity 名称继续从 atlas / DAT adapter / gameplay 引用交叉确认。
-                case 0xD7:
-                    objectGrid[y][x + 1] = (byte)0xD8;
-                    objectGrid[y][x + 2] = (byte)0xD9;
+                // Dragon 是横向 3 格：DAT 只保存 Head anchor。
+                case OBJECT_DRAGON_HEAD:
+                    objectGrid[y][x + 1] = (byte)OBJECT_DRAGON_BODY;
+                    objectGrid[y][x + 2] = (byte)OBJECT_DRAGON_TAIL;
                     break;
-                case 0xDA:
-                    objectGrid[y + 1][x] = (byte)0xEA;
+
+                // Sandman / Dream Machine / Beaver 都是纵向 2 格：DAT 只保存 Head anchor，
+                // Loader 在下一行自动 materialize Body。碰撞交互实际绑定在 Body byte 上。
+                case OBJECT_SANDMAN_HEAD:
+                    objectGrid[y + 1][x] = (byte)OBJECT_SANDMAN_BODY;
                     break;
-                case 0xDB:
-                    objectGrid[y + 1][x] = (byte)0xEB;
+                case OBJECT_DREAM_MACHINE_HEAD:
+                    objectGrid[y + 1][x] = (byte)OBJECT_DREAM_MACHINE_BODY;
                     break;
-                case 0xE7:
-                    objectGrid[y + 1][x] = (byte)0xF7;
+                case OBJECT_BEAVER_HEAD:
+                    objectGrid[y + 1][x] = (byte)OBJECT_BEAVER_BODY;
                     break;
-                case 0xF8:
+
+                case OBJECT_BONUS_COIN:
                     bonusCoinCount++;
                     break;
                 default:
