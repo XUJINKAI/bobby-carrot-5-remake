@@ -32,6 +32,8 @@ jobs:
           out.mkdir(parents=True, exist_ok=True)
 
           symbols = [
+              'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+              'an', 'bU', 'bV', 'bW',
               'bn', 'bh', 'bi', 'bj', 'bk', 'bl', 'bm', 'bo',
               'cV', 'cW', 'cX', 'cY', 'cZ',
               'aN', 'aO', 'aT', 'bc', 'bd', 'be', 'bf', 'bg',
