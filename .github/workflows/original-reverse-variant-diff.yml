@@ -1,0 +1,117 @@
+name: Original reverse variant diff
+
+on:
+  push:
+    branches:
+      - reverse/original-runtime
+    paths:
+      - .github/workflows/original-reverse-variant-diff.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reverse/original-runtime
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build normalized method diffs
+        run: |
+          rm -rf tmp/original-reverse/variant-diff
+          mkdir -p tmp/original-reverse/variant-diff
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import difflib
+          import re
+          import subprocess
+          import zipfile
+
+          root = Path('tmp/original-reverse/variant-diff')
+          jars = {
+              'up02': Path('original/official-hd/up02.jar'),
+              'up03': Path('original/official-hd/up03.jar'),
+              'up09': Path('original/official-hd/up09.jar'),
+          }
+
+          signatures = {
+              'collision': 'private final boolean a(int, int, boolean);',
+              'ice-melting-R': 'private final void R();',
+              'loader': 'private final void e(int, int);',
+          }
+
+          def split_methods(text):
+              lines = text.splitlines()
+              starts = []
+              for i, line in enumerate(lines):
+                  if line.startswith('  ') and not line.startswith('    ') and line.rstrip().endswith(';'):
+                      starts.append(i)
+              result = {}
+              for pos, start in enumerate(starts):
+                  end = starts[pos + 1] if pos + 1 < len(starts) else len(lines)
+                  result[lines[start].strip()] = lines[start:end]
+              return result
+
+          def normalize(lines):
+              out = []
+              for line in lines:
+                  line = re.sub(r'#\d+', '#', line.rstrip())
+                  out.append(line)
+              return out
+
+          methods_by_release = {}
+          for label, jar in jars.items():
+              out = root / label
+              out.mkdir(parents=True, exist_ok=True)
+              with zipfile.ZipFile(jar) as z:
+                  (out / 'a.class').write_bytes(z.read('a.class'))
+              javap = subprocess.check_output([
+                  'javap', '-classpath', str(out), '-c', '-p', '-s', 'a'
+              ], text=True)
+              methods_by_release[label] = split_methods(javap)
+
+          comparisons = [
+              ('collision', 'up02', 'up09'),
+              ('ice-melting-R', 'up02', 'up03'),
+              ('loader', 'up02', 'up09'),
+          ]
+
+          report = Path('original/reverse-engineering/notes/release-runtime-variant-diffs.md')
+          with report.open('w', encoding='utf-8') as f:
+              f.write('# 原版 Runtime 方法版本差异\n\n')
+              f.write('本报告只对方法指纹已经证明存在分叉的代表版本做归一化 `javap` diff；constant-pool 序号已移除。\n\n')
+              for method_name, left, right in comparisons:
+                  signature = signatures[method_name]
+                  a = normalize(methods_by_release[left].get(signature, []))
+                  b = normalize(methods_by_release[right].get(signature, []))
+                  diff = list(difflib.unified_diff(a, b, fromfile=left, tofile=right, lineterm=''))
+                  f.write(f'## {method_name}: {left} → {right}\n\n')
+                  if not diff:
+                      f.write('归一化后无文本差异。\n\n')
+                      continue
+                  f.write('```diff\n')
+                  f.write('\n'.join(diff))
+                  f.write('\n```\n\n')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add original/reverse-engineering/notes/release-runtime-variant-diffs.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "reverse: capture runtime variant bytecode diffs"
+          git pull --rebase origin reverse/original-runtime
+          git push origin HEAD:reverse/original-runtime
