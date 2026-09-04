@@ -1,4 +1,5 @@
 // 研究性语义重建：来源为 UP9 a.class / a.a(int,int,boolean)、a.J()、a.H()、a.M()。
+// 本文件用于表达已经确认的原版控制流，不作为可直接编译的产品源码。
 
 public final class KiteFlight {
     private static final int OBJECT_EMPTY = 0xFF;
@@ -8,8 +9,9 @@ public final class KiteFlight {
 
     private static final int TILE_SIZE = 48;
     private static final int FLIGHT_PIXEL_OFFSET = 24;
-    private static final int TAKEOFF_OFFSET_PER_TICK = 6;
+    private static final int TAKEOFF_OFFSET_PER_STEP = 6;
 
+    private byte[][] terrainGrid;
     private byte[][] objectGrid;
 
     /** 对应 `cY`。 */
@@ -47,11 +49,11 @@ public final class KiteFlight {
 
     /**
      * 对应 `H()` 在本格剩余视觉移动期间的 takeoff offset。
-     * 每 tick +6；本格移动完全结束后切换 `airborne=true` 并固定 offset=24。
+     * 每 gameplay step +6；本格移动完全结束后切 `airborne=true` 并固定 offset=24。
      */
-    void tickTakeoffOffset() {
+    void advanceTakeoffOffset() {
         if (transition == 1) {
-            flightPixelOffset += TAKEOFF_OFFSET_PER_TICK;
+            flightPixelOffset += TAKEOFF_OFFSET_PER_STEP;
         }
     }
 
@@ -65,8 +67,13 @@ public final class KiteFlight {
     }
 
     /**
-     * airborne 时原版 `M()` 不调用普通 terrain/object collision，直接按当前方向
-     * 将 Bobby 的 grid 坐标推进一格并开始新的 48px 视觉移动。
+     * airborne 时原版 `M()` 在读取当前格后直接进入独立分支：
+     * - 不调用普通 `canPlayerMove()`；
+     * - 不检查目标 terrain/object；
+     * - 不检查目标 X/Y 边界；
+     * - 只按当前方向把 grid 坐标推进一格并令 ay=48。
+     *
+     * 所以飞行不是“ignore blocking 但保留 edge collision”，而是真正绕过普通格碰撞。
      */
     void advanceAirborneGrid(PlayerPosition player, int direction) {
         if (!airborne) {
@@ -92,7 +99,7 @@ public final class KiteFlight {
     }
 
     /**
-     * `J()` 在 airborne 时跳过普通格互动；只有当前 object 为 F5 Landing 时开始降落。
+     * `J()` 在 airborne 时跳过普通格互动；唯一识别的 gameplay object 是 F5 Landing。
      */
     void handleAirborneMidpointObject(int rawObject) {
         if (airborne && (rawObject & 0xFF) == LANDING) {
@@ -100,9 +107,9 @@ public final class KiteFlight {
         }
     }
 
-    void tickLandingOffset() {
+    void advanceLandingOffset() {
         if (transition == 2) {
-            flightPixelOffset -= TAKEOFF_OFFSET_PER_TICK;
+            flightPixelOffset -= TAKEOFF_OFFSET_PER_STEP;
         }
     }
 
@@ -115,7 +122,19 @@ public final class KiteFlight {
         flightPixelOffset = 0;
     }
 
-    // 地图边缘的原版收尾路径仍需继续追踪，不在这里根据表现猜测。
+    /**
+     * 原版 class 中没有“飞到地图边缘自动降落/自动停止”的路径。
+     *
+     * 反而 `M()` 开头会先读取 `terrainGrid[playerY][playerX]` 与 objectGrid；如果官方地图
+     * 让 airborne Bobby 真正越过数组边界，下一 movement cycle 就会触发越界异常，最终被
+     * 顶层 `b()` 的 Throwable catch 当成 runtime error 处理。
+     *
+     * 因此可确认的原版关卡契约是：正常 flight path 必须在出界以前用 F5 Landing 收尾。
+     * 这里描述的是 class 控制流，不额外断言所有官方 DAT 都满足该约束；地图数据可另做验证。
+     */
+    boolean hasAutomaticMapEdgeLanding() {
+        return false;
+    }
 
     static final class PlayerPosition {
         int gridX;
