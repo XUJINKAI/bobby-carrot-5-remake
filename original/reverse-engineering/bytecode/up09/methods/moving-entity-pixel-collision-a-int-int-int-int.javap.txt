@@ -1,0 +1,103 @@
+  private final boolean a(int, int, int, int);
+    descriptor: (IIII)Z
+    Code:
+       0: iconst_0
+       1: istore        5
+       3: iload         5
+       5: aload_0
+       6: getfield      #1035               // Field cB:I
+       9: if_icmpge     197
+      12: iload         5
+      14: iload_3
+      15: if_icmpeq     191
+      18: iload_3
+      19: iconst_m1
+      20: if_icmpeq     64
+      23: aload_0
+      24: getfield      #787                // Field cF:[B
+      27: iload         5
+      29: baload
+      30: iload         4
+      32: if_icmpeq     191
+      35: aload_0
+      36: iload_1
+      37: iload_2
+      38: aload_0
+      39: getfield      #781                // Field cI:[S
+      42: iload         5
+      44: saload
+      45: aload_0
+      46: getfield      #783                // Field cJ:[S
+      49: iload         5
+      51: saload
+      52: invokespecial #1307               // Method b:(IIII)Z
+      55: ifeq          191
+      58: iconst_1
+      59: istore        6
+      61: iload         6
+      63: ireturn
+      64: aload_0
+      65: getfield      #785                // Field cG:[B
+      68: iload         5
+      70: baload
+      71: istore        7
+      73: aload_0
+      74: getfield      #781                // Field cI:[S
+      77: iload         5
+      79: saload
+      80: istore        8
+      82: aload_0
+      83: getfield      #783                // Field cJ:[S
+      86: iload         5
+      88: saload
+      89: istore        9
+      91: aload_0
+      92: getfield      #787                // Field cF:[B
+      95: iload         5
+      97: baload
+      98: tableswitch   { // 0 to 3
+                     0: 147
+                     1: 158
+                     2: 169
+                     3: 180
+               default: 128
+          }
+     128: aload_0
+     129: iload_1
+     130: iload_2
+     131: iload         8
+     133: iload         9
+     135: invokespecial #1307               // Method b:(IIII)Z
+     138: ifeq          191
+     141: iconst_1
+     142: istore        6
+     144: goto          61
+     147: iload         8
+     149: iload         7
+     151: isub
+     152: i2s
+     153: istore        8
+     155: goto          128
+     158: iload         8
+     160: iload         7
+     162: iadd
+     163: i2s
+     164: istore        8
+     166: goto          128
+     169: iload         9
+     171: iload         7
+     173: isub
+     174: i2s
+     175: istore        9
+     177: goto          128
+     180: iload         9
+     182: iload         7
+     184: iadd
+     185: i2s
+     186: istore        9
+     188: goto          128
+     191: iinc          5, 1
+     194: goto          3
+     197: iconst_0
+     198: istore        6
+     200: goto          61

@@ -1,0 +1,227 @@
+  private final boolean a(int, int, int, byte);
+    descriptor: (IIIB)Z
+    Code:
+       0: iload_1
+       1: iflt          24
+       4: iload_2
+       5: iflt          24
+       8: iload_1
+       9: aload_0
+      10: getfield      #710                // Field dw:I
+      13: if_icmpge     24
+      16: iload_2
+      17: aload_0
+      18: getfield      #712                // Field dx:I
+      21: if_icmplt     30
+      24: iconst_0
+      25: istore        5
+      27: iload         5
+      29: ireturn
+      30: aload_0
+      31: getfield      #714                // Field cv:[[B
+      34: iload_2
+      35: aaload
+      36: iload_1
+      37: baload
+      38: lookupswitch  { // 14
+                   -44: 234
+                   -43: 234
+                   -42: 234
+                   -29: 234
+                   -28: 234
+                   -27: 234
+                   -26: 234
+                   -19: 234
+                    -7: 234
+                    -6: 234
+                    -5: 234
+                    -4: 234
+                    -3: 234
+                    -2: 234
+               default: 160
+          }
+     160: aload_0
+     161: getfield      #716                // Field cu:[[B
+     164: iload_2
+     165: aaload
+     166: iload_1
+     167: baload
+     168: istore        6
+     170: iload         4
+     172: bipush        -20
+     174: if_icmpne     330
+     177: iload         6
+     179: tableswitch   { // 85 to 93
+                    85: 307
+                    86: 307
+                    87: 257
+                    88: 240
+                    89: 291
+                    90: 274
+                    91: 313
+                    92: 313
+                    93: 313
+               default: 228
+          }
+     228: iconst_0
+     229: istore        5
+     231: goto          27
+     234: iconst_0
+     235: istore        5
+     237: goto          27
+     240: iload_3
+     241: iconst_3
+     242: if_icmpne     251
+     245: iconst_0
+     246: istore        5
+     248: goto          27
+     251: iconst_1
+     252: istore        5
+     254: goto          27
+     257: iload_3
+     258: iconst_2
+     259: if_icmpne     268
+     262: iconst_0
+     263: istore        5
+     265: goto          27
+     268: iconst_1
+     269: istore        5
+     271: goto          27
+     274: iload_3
+     275: iconst_1
+     276: if_icmpne     285
+     279: iconst_0
+     280: istore        5
+     282: goto          27
+     285: iconst_1
+     286: istore        5
+     288: goto          27
+     291: iload_3
+     292: ifne          301
+     295: iconst_0
+     296: istore        5
+     298: goto          27
+     301: iconst_1
+     302: istore        5
+     304: goto          27
+     307: iconst_1
+     308: istore        5
+     310: goto          27
+     313: iload_3
+     314: iconst_2
+     315: if_icmpne     324
+     318: iconst_0
+     319: istore        5
+     321: goto          27
+     324: iconst_1
+     325: istore        5
+     327: goto          27
+     330: iload_3
+     331: tableswitch   { // 0 to 3
+                     0: 388
+                     1: 429
+                     2: 470
+                     3: 511
+               default: 360
+          }
+     360: iload         6
+     362: sipush        255
+     365: iand
+     366: bipush        71
+     368: if_icmplt     228
+     371: iload         6
+     373: sipush        255
+     376: iand
+     377: bipush        76
+     379: if_icmpgt     228
+     382: iconst_1
+     383: istore        5
+     385: goto          27
+     388: aload_0
+     389: getfield      #986                // Field dd:Z
+     392: ifeq          360
+     395: iload_2
+     396: aload_0
+     397: getfield      #1002               // Field cR:S
+     400: if_icmpne     360
+     403: iload_1
+     404: aload_0
+     405: getfield      #1000               // Field cQ:S
+     408: iconst_1
+     409: iadd
+     410: if_icmplt     360
+     413: iload_1
+     414: aload_0
+     415: getfield      #1000               // Field cQ:S
+     418: iconst_3
+     419: iadd
+     420: if_icmpgt     360
+     423: iconst_0
+     424: istore        5
+     426: goto          27
+     429: aload_0
+     430: getfield      #984                // Field dc:Z
+     433: ifeq          360
+     436: iload_2
+     437: aload_0
+     438: getfield      #998                // Field cP:S
+     441: if_icmpne     360
+     444: iload_1
+     445: aload_0
+     446: getfield      #996                // Field cO:S
+     449: iconst_3
+     450: isub
+     451: if_icmplt     360
+     454: iload_1
+     455: aload_0
+     456: getfield      #996                // Field cO:S
+     459: iconst_1
+     460: isub
+     461: if_icmpgt     360
+     464: iconst_0
+     465: istore        5
+     467: goto          27
+     470: aload_0
+     471: getfield      #982                // Field db:Z
+     474: ifeq          360
+     477: iload_1
+     478: aload_0
+     479: getfield      #992                // Field cM:S
+     482: if_icmpne     360
+     485: iload_2
+     486: aload_0
+     487: getfield      #994                // Field cN:S
+     490: iconst_1
+     491: iadd
+     492: if_icmplt     360
+     495: iload_2
+     496: aload_0
+     497: getfield      #994                // Field cN:S
+     500: iconst_3
+     501: iadd
+     502: if_icmpgt     360
+     505: iconst_0
+     506: istore        5
+     508: goto          27
+     511: aload_0
+     512: getfield      #978                // Field da:Z
+     515: ifeq          360
+     518: iload_1
+     519: aload_0
+     520: getfield      #988                // Field cK:S
+     523: if_icmpne     360
+     526: iload_2
+     527: aload_0
+     528: getfield      #990                // Field cL:S
+     531: iconst_3
+     532: isub
+     533: if_icmplt     360
+     536: iload_2
+     537: aload_0
+     538: getfield      #990                // Field cL:S
+     541: iconst_1
+     542: isub
+     543: if_icmpgt     360
+     546: iconst_0
+     547: istore        5
+     549: goto          27
