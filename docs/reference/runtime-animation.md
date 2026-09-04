@@ -104,7 +104,7 @@ RuntimeAction：
 - 可以声明 `cameraTarget`；
 - gameplay state 可进入 World snapshot。
 
-因此原版“火球飞完以前 Bobby 不能动”可以通过 blocking Action 表达；未来自制玩法允许火球与 Bobby 并行时，只需让对应 Action 不阻塞输入，不需要第二套 Actor 模型或第二套 Engine mode。
+原版 Fireball 存活时每拍刷新共享 aT=16，所以普通方向输入路径被挡住；但 Speed continuation、Ice forced continuation、airborne flight 在 aT 检查之前，世界子系统也继续推进。现代 blocking Action 必须表达“挡普通输入”而不是误写成 World pause。
 
 ## 5. Undo 与 Presentation
 
@@ -177,7 +177,7 @@ Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 Prese
 
 相邻两次生长 mutation 相隔约 **16 个 gameplay step ≈ 496ms**。
 
-`0xCE / 0xDE / 0xEE` 都是可攀爬段，能够覆盖本来不可普通步行的背景格。
+`0xCE` Tip 与 `0xDE` Middle 能覆盖本来不可普通步行的 terrain；`0xEE` Base 只有 terrain 自身可走时才能进入。三者都可触发 climbing presentation，但碰撞 override 不相同。
 
 ## 9. 其它已确认 step 时长
 

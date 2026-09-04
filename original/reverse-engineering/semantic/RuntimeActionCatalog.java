@@ -5,7 +5,7 @@ public final class RuntimeActionCatalog {
     static final int GAMEPLAY_STEP_MILLIS_APPROX = 31;
 
     static final Action BOBBY_MOVE = new Action(
-        "BobbyMove", 16, false, false,
+        "BobbyMove", 16, true, false,
         "普通 3px/step；Speed terrain 或 Speed Shoes 为 8 step、6px/step"
     );
 

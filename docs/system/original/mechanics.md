@@ -19,7 +19,7 @@
 - `misc.png`: 1x9, 章节进度、难度、国家图标。
 - `mow.png`: 2x5, 割草动画。
 
-`arrows.png` 的具体语义或帧布局尚未在这里固定，后续确认后补充。
+`arrows.png` 是滚动/菜单箭头：Up `(0,0,17×9)`、Down `(0,9,17×9)`、Left `(17,0,9×17)`、Right `(26,0,9×17)`。
 
 其他资源包括：
 
@@ -38,12 +38,7 @@
 
 ## 通关目标
 
-原版关卡可组合三类目标：
-
-- 收集全部胡萝卜；
-- 填充全部 Easter Egg Nest；
-- 收集到金色胡萝卜。
-- 到达 Exit。
+普通 release 关的计数目标是二选一：收集全部胡萝卜，或填充全部 Easter Egg Nest；计数归零后再到达 Exit 才完成。Golden Carrot 使用另一条特殊关完成流程，触碰后直接结算并持久化。隐藏 Cheat 还可把普通关剩余目标直接清零，但仍走正常 Exit 完成流程。
 
 普通关通关时进入结果界面，原版文本列出本次 `TIME`、本关获得的 `BONUS COINS` 与累计 `TOTAL COINS`，并播放一次性音乐 `cleared.mid`。原版结果界面不显示步数。
 
@@ -190,7 +185,7 @@ Cloud Green Parking:  ts(16,3)
 Windmill Switch Up:     On ts(11,8), Off ts(11,9)
 Windmill Switch Down:   On ts(11,10), Off ts(11,11)
 Windmill Switch Left:   On ts(11,12), Off ts(11,13)
-Windmill Switch Down:   On ts(11,14), Off ts(11,15)
+Windmill Switch Right:  On ts(11,14), Off ts(11,15)
 
 风车开启后的动画：
 Up:    ts(14,1) --> ta(5,3) --> ta(5,4)
