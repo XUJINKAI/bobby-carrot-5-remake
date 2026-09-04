@@ -75,7 +75,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
-  const leftPanel = ref<EditorLeftPanel>("palette");
+  const leftPanel = ref<EditorLeftPanel>("surface");
   const surfaceTool = ref<SurfaceTool>("rect");
   const surfaceBrush = ref<SurfaceBrush>(defaultSurfaceBrush());
   const mapSelection = ref<EditorSelection | null>(null);
