@@ -23,7 +23,7 @@ UP9 `EN.dat` 的 `a[60]..a[80]` 本身就是官方 Help 文案。它描述“玩
 | `a[74]` | Magic Mirror | `DragonFireball`, `MidpointInteractionDispatcher` | 一致。火球按镜面状态反射；Bobby 跑过后旋转实际上在离开后的下一 movement midpoint 执行。 |
 | `a[75]` | Wooden Plank | `PlankDecay`, `MidpointInteractionDispatcher` | 一致。离开后 D4→D5，6 gameplay-step 后 D6，再 6 step 后 empty；原版只维护一个旧 Plank decay 槽。 |
 | `a[76]` | Colourful Clouds + Grid | `MovingEntities`, `CloudPassage` | 一致。同色 Parking 才强制停车；否则 Cloud 沿现方向继续，直到非 sky passage / moving-entity collision / wind routing 等阻止。 |
-| `a[77]` | Windmill + Switch | `CloudWind`, `CloudPassage`, `CameraFocusInputLock` | 一致。风区为 Windmill 前方 1～3 格。Switch 会抢镜头到 Windmill；第一朵真正被该风改向的 Cloud 还能接管镜头约 64 gameplay-step，然后回 Bobby。 |
+| `a[77]` | Windmill + Switch | `CloudWind`, `CloudPassage`, `GameplayCameraFocus` | 一致。风区为 Windmill 前方 1～3 格。Switch 会抢镜头到 Windmill；第一朵真正被该风改向的 Cloud 还能接管镜头约 64 gameplay-step，然后回 Bobby。 |
 | `a[78]` | Giant Bean + Field | `BeanGrowth`, `MidpointInteractionDispatcher` | 一致。Beanfield 消耗一个 Bean 并启动任务；每个新藤蔓高度推进 16 gameplay-step，遇 object occupied / 越界 / 不允许 terrain 停止。 |
 | `a[79]` | Snow Shovel | `ShovelRuntime`, `PlayerCollisionRules` | 一致。Snow collision 本次 move 失败并启动 32-step blocking action；完成后清雪，再自动 replay 原 move intent。 |
 | `a[80]` | Golden Carrot | `GoldenCarrotCampaign`, `TimedBonusChallenge` | Help 只强调价值；class 明确它会直接结束特殊关、增加全局 Golden Carrot、结算本关 Bonus Coins、写 completion bit，并进入 Golden Carrot result / Night Train → Cloud 9 导流。 |
