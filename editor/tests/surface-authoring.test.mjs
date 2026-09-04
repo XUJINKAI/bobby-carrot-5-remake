@@ -92,7 +92,7 @@ test("documented Auto weights live in Surface data", () => {
   assert.equal(surfaceTerrain("grass").auto.kind, "neighbor");
   assert.equal(surfaceTerrain("waterfall").auto.kind, "vertical");
   assert.equal(surfaceTerrain("wood-fence").auto.kind, "fence");
-  assert.equal(surfaceTerrain("cactus").auto.kind, "paired-vertical");
+  assert.equal(surfaceTerrain("cactus").auto.kind, "weighted");
 });
 
 test("wood Fence is a Surface overlay and preserves base terrain", () => {
