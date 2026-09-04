@@ -27,7 +27,6 @@ public final class LevelLoader {
     private byte[][] terrainGrid;
     private byte[][] objectGrid;
 
-    /** 对应原版 `cB`：DAT 直接给出的动态实体数量。 */
     private int movingEntityCount;
     private byte[] movingEntityType;
     private byte[] movingEntityDirection;
@@ -39,20 +38,27 @@ public final class LevelLoader {
     private int bonusCoinCount;
 
     /**
-     * 对应原版 `a.e(int,int)`。
+     * 原版调用点直接传 `e(bV,bU)`：
      *
-     * @param archiveNumber 原版资源文件号，例如 9 -> `09.dat`
-     * @param recordIndex   length-prefixed DAT 中需要跳到的 record 序号
+     * - `bV` 是 archive DAT number，直接决定 `00.dat / 01.dat / ...`；
+     * - `bU` 是该 DAT 内的 record slot，Loader 先跳过恰好 bU 条 length-prefixed record；
+     * - 不存在 `bV/bU -> DAT` 的额外换算层。
+     *
+     * UP9 构造器另有 `ci={5,6,7,8}`，只用于把 bV=1..4 显示为玩家可见编号 5..8；
+     * 因此 archive DAT identity 与玩家显示/Campaign identity 明确是两套身份。
+     *
+     * @param archiveDatNumber 原版 DAT 文件号，例如 1 -> `01.dat`
+     * @param recordSlot       length-prefixed DAT 中需要跳过的 record 数量
      */
-    void loadLevel(int archiveNumber, int recordIndex) throws Exception {
+    void loadLevel(int archiveDatNumber, int recordSlot) throws Exception {
         clearRuntimeLevelState();
         bonusCoinCount = 0;
 
-        String resource = (archiveNumber < 10 ? "0" : "") + archiveNumber + ".dat";
+        String resource = (archiveDatNumber < 10 ? "0" : "") + archiveDatNumber + ".dat";
         InputStream raw = getClass().getResourceAsStream(resource);
         DataInputStream in = new DataInputStream(raw);
 
-        for (int record = 0; record < recordIndex; record++) {
+        for (int record = 0; record < recordSlot; record++) {
             int length = in.readShort();
             int skipped = in.skipBytes(length);
             while (skipped < length) {
@@ -60,7 +66,6 @@ public final class LevelLoader {
             }
         }
 
-        // 当前 record 自己也以 signed short 长度开头；原版只消费，不依赖该值解析内部结构。
         in.readShort();
 
         mapWidthTiles = in.readByte();
@@ -104,14 +109,11 @@ public final class LevelLoader {
                     consumedByRuntimeEntity = true;
                     break;
 
-                // Dragon 是横向 3 格：DAT 只保存 Head anchor。
                 case OBJECT_DRAGON_HEAD:
                     objectGrid[y][x + 1] = (byte)OBJECT_DRAGON_BODY;
                     objectGrid[y][x + 2] = (byte)OBJECT_DRAGON_TAIL;
                     break;
 
-                // Sandman / Dream Machine / Beaver 都是纵向 2 格：DAT 只保存 Head anchor，
-                // Loader 在下一行自动 materialize Body。碰撞交互实际绑定在 Body byte 上。
                 case OBJECT_SANDMAN_HEAD:
                     objectGrid[y + 1][x] = (byte)OBJECT_SANDMAN_BODY;
                     break;
@@ -140,13 +142,12 @@ public final class LevelLoader {
     private void addMovingEntity(int index, int rawType, int x, int y) {
         movingEntityPixelX[index] = (short)(x * 48);
         movingEntityPixelY[index] = (short)(y * 48);
-        movingEntityDirection[index] = 4; // 原版停止/未移动状态。
+        movingEntityDirection[index] = 4;
         movingEntityPixelsRemaining[index] = 0;
         movingEntityType[index] = (byte)rawType;
     }
 
     private void clearRuntimeLevelState() {
-        // 对应原版 `a.ac()`；实际还会释放动态任务数组等引用。
         terrainGrid = null;
         objectGrid = null;
         movingEntityType = null;
