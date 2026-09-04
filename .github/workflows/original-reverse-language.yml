@@ -40,8 +40,10 @@ jobs:
               public static void main(String[] args) throws Exception {
                   Set<Integer> wanted = new LinkedHashSet<>();
                   for (int i = 6; i <= 16; i++) wanted.add(i);
+                  wanted.add(22);
                   wanted.add(25);
                   wanted.add(26);
+                  for (int i = 39; i <= 43; i++) wanted.add(i);
                   for (int i = 100; i <= 122; i++) wanted.add(i);
 
                   try (DataInputStream in = new DataInputStream(new FileInputStream("EN.dat"))) {
