@@ -2,25 +2,39 @@
 // 原版大量动态 tile 不拥有独立计时器，而是共享全局 ambient phase，因此同类 tile 同步动画。
 
 public final class TileAnimationClock {
-    private static final int EXIT = 0x96;
     private static final int ANIMATED_WATER = 0x56;
-    private static final int WHIRLWIND = 0xF4;
-    private static final int BONUS_COIN = 0xF8;
+    private static final int TIDE_DOWN = 0x57;
+    private static final int TIDE_UP = 0x58;
+    private static final int TIDE_RIGHT = 0x59;
+    private static final int TIDE_LEFT = 0x5A;
+    private static final int FALL_START = 0x5B;
+    private static final int FALL_MIDDLE = 0x5C;
+    private static final int FALL_END = 0x5D;
+    private static final int EXIT = 0x96;
+
+    private static final int SPEED_UP = 0xB5;
+    private static final int SPEED_DOWN = 0xB6;
+    private static final int SPEED_LEFT = 0xB7;
+    private static final int SPEED_RIGHT = 0xB8;
+
     private static final int WINDMILL_UP = 0xD0;
     private static final int WINDMILL_DOWN = 0xD1;
     private static final int WINDMILL_LEFT = 0xD2;
     private static final int WINDMILL_RIGHT = 0xD3;
 
-    /** 原版 bC：Animated Water 使用的长 ambient phase。0 表示静态 ts 帧。 */
+    private static final int WHIRLWIND = 0xF4;
+    private static final int BONUS_COIN = 0xF8;
+
+    /** bC = 0..7：静态帧 + 7 张 Animated Water ta 帧。 */
     private int waterPhase;
 
-    /** 原版 bD：Whirlwind 使用的 ambient phase。0 表示静态 ts 帧。 */
+    /** bD = 0..5：静态帧 + 5 张 Whirlwind ta 帧。 */
     private int whirlwindPhase;
 
-    /** 原版 bE：Exit / Bonus Coin 等四相动画使用。0 表示静态 ts 帧。 */
+    /** bE = 0..3：静态帧 + 3 张 Exit / Speed / Bonus Coin ta 帧。 */
     private int fourPhase;
 
-    /** 原版 bF：Windmill / Tide / Fall 等短周期动画使用。0 表示静态 ts 帧。 */
+    /** bF = 0..2：静态帧 + 2 张 Tide / Fall / Windmill ta 帧。 */
     private int shortPhase;
 
     private boolean bonusCoinSparkleGate;
@@ -30,58 +44,98 @@ public final class TileAnimationClock {
     private boolean windLeftEnabled;
     private boolean windRightEnabled;
 
+    /** 对应 `V()` 的全局 phase 递进。每次 gameplay step 同时推进。 */
+    void gameplayStep() {
+        waterPhase = (waterPhase + 1) % 8;
+        whirlwindPhase = (whirlwindPhase + 1) % 6;
+        fourPhase = (fourPhase + 1) % 4;
+        shortPhase = (shortPhase + 1) % 3;
+    }
+
     /**
-     * 原版 renderer 的关键结构：phase==0 时继续画 static `ts.png` raw tile；
-     * phase>0 时把 raw byte 改写成 `ta.png` 的 flattened dynamic frame index。
-     * 因而“静态帧 + N 张 ta 帧”共同组成一个周期。
+     * 原版 visual resolver 的核心：phase==0 画 static `ts.png`；phase>0 改写成
+     * `ta.png` flattened index。flattened index 为 zero-based，每行 4 帧。
      */
     DynamicFrame resolve(int rawTile) {
         int raw = rawTile & 0xFF;
 
-        // Exit 只有目标全部完成以后才接入 bE 动画，否则永远保持静态 0x96。
-        if (raw == EXIT && remainingObjectives == 0 && fourPhase != 0) {
-            // ta flattened 0..2 -> 文档 ta(1,1)..ta(1,3)
-            return DynamicFrame.ta(fourPhase - 1);
+        // fourPhase: static + 3 dynamic frames
+        if (fourPhase != 0) {
+            if (raw == EXIT && remainingObjectives == 0) {
+                return DynamicFrame.ta(0 + fourPhase - 1);   // ta(1,1)..ta(1,3)
+            }
+            if (raw == SPEED_UP) {
+                return DynamicFrame.ta(3 + fourPhase - 1);   // ta(1,4)..ta(2,2)
+            }
+            if (raw == SPEED_DOWN) {
+                return DynamicFrame.ta(6 + fourPhase - 1);   // ta(2,3)..ta(3,1)
+            }
+            if (raw == SPEED_LEFT) {
+                return DynamicFrame.ta(9 + fourPhase - 1);   // ta(3,2)..ta(3,4)
+            }
+            if (raw == SPEED_RIGHT) {
+                return DynamicFrame.ta(12 + fourPhase - 1);  // ta(4,1)..ta(4,3)
+            }
+            if (raw == BONUS_COIN && bonusCoinSparkleGate) {
+                return DynamicFrame.ta(15 + fourPhase - 1);  // ta(4,4)..ta(5,2)
+            }
         }
 
-        // Bonus Coin 的四相 animation 还受全局 sparkle gate 控制。
-        if (raw == BONUS_COIN && bonusCoinSparkleGate && fourPhase != 0) {
-            // flattened 15..17 -> ta(4,4), ta(5,1), ta(5,2)
-            return DynamicFrame.ta(15 + fourPhase - 1);
+        // shortPhase: static + 2 dynamic frames
+        if (shortPhase != 0) {
+            if (raw == WINDMILL_UP && windUpEnabled) {
+                return DynamicFrame.ta(18 + shortPhase - 1); // ta(5,3)..ta(5,4)
+            }
+            if (raw == WINDMILL_DOWN && windDownEnabled) {
+                return DynamicFrame.ta(20 + shortPhase - 1); // ta(6,1)..ta(6,2)
+            }
+            if (raw == WINDMILL_LEFT && windLeftEnabled) {
+                return DynamicFrame.ta(22 + shortPhase - 1); // ta(6,3)..ta(6,4)
+            }
+            if (raw == WINDMILL_RIGHT && windRightEnabled) {
+                return DynamicFrame.ta(24 + shortPhase - 1); // ta(7,1)..ta(7,2)
+            }
+
+            if (raw == TIDE_UP) {
+                return DynamicFrame.ta(31 + shortPhase - 1); // ta(8,4)..ta(9,1)
+            }
+            if (raw == TIDE_DOWN) {
+                return DynamicFrame.ta(33 + shortPhase - 1); // ta(9,2)..ta(9,3)
+            }
+            if (raw == TIDE_LEFT) {
+                return DynamicFrame.ta(35 + shortPhase - 1); // ta(9,4)..ta(10,1)
+            }
+            if (raw == TIDE_RIGHT) {
+                return DynamicFrame.ta(37 + shortPhase - 1); // ta(10,2)..ta(10,3)
+            }
+
+            if (raw == FALL_START) {
+                return DynamicFrame.ta(46 + shortPhase - 1); // ta(12,3)..ta(12,4)
+            }
+            if (raw == FALL_MIDDLE) {
+                return DynamicFrame.ta(48 + shortPhase - 1); // ta(13,1)..ta(13,2)
+            }
+            if (raw == FALL_END) {
+                return DynamicFrame.ta(50 + shortPhase - 1); // ta(13,3)..ta(13,4)
+            }
         }
 
-        // Whirlwind: static F4 + bD 动态帧序列。
+        // whirlwindPhase: static + 5 dynamic frames
         if (raw == WHIRLWIND && whirlwindPhase != 0) {
-            // flattened base 26，具体 atlas 序列见 mechanics.md。
-            return DynamicFrame.ta(26 + whirlwindPhase - 1);
+            return DynamicFrame.ta(26 + whirlwindPhase - 1); // ta(7,3)..ta(8,3)
         }
 
-        // Animated Water: static 0x56 + 8 个共享动态帧。
+        // waterPhase: static + 7 dynamic frames
         if (raw == ANIMATED_WATER && waterPhase != 0) {
-            // flattened base 39 -> ta(10,4) ... ta(12,2)
-            return DynamicFrame.ta(39 + waterPhase - 1);
-        }
-
-        // Windmill 只有对应风已启用时才使用短周期动态帧；关闭时保持 static ts。
-        if (raw == WINDMILL_UP && windUpEnabled && shortPhase != 0) {
-            return DynamicFrame.ta(18 + shortPhase - 1);
-        }
-        if (raw == WINDMILL_DOWN && windDownEnabled && shortPhase != 0) {
-            return DynamicFrame.ta(20 + shortPhase - 1);
-        }
-        if (raw == WINDMILL_LEFT && windLeftEnabled && shortPhase != 0) {
-            return DynamicFrame.ta(22 + shortPhase - 1);
-        }
-        if (raw == WINDMILL_RIGHT && windRightEnabled && shortPhase != 0) {
-            return DynamicFrame.ta(24 + shortPhase - 1);
+            return DynamicFrame.ta(39 + waterPhase - 1); // ta(10,4)..ta(12,2)
         }
 
         return DynamicFrame.staticTs(raw);
     }
 
     /**
-     * 重要 fidelity 结论：这些 phase 是 runtime 全局字段，不是按格随机偏移。
-     * 因而所有 Animated Water、所有已开启 Windmill、所有可用 Exit 等同类 tile 会同步切帧。
+     * 所有 phase 都是 runtime 全局字段；同类 tile 没有 per-cell phase offset。
+     * 因而同一类型的 Water / Speed / Tide / Windmill / Exit 会严格同步切帧。
      */
     boolean sameTypeTilesAnimateInSync() {
         return true;
