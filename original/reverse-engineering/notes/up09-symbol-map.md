@@ -19,7 +19,18 @@
 | `a.aq` | `playerPixelY` | 已确认 | 出生点扫描后赋值 `gridY * tileHeight`；后续滚动/表现代码以像素坐标使用。 |
 | `a.h` | `tileWidth` | 已确认 | 默认 48；出生点像素 X 为 `gridX * h`，地图像素宽度为 `dw * h`。 |
 | `a.i` | `tileHeight` | 已确认 | 默认 48；出生点像素 Y 为 `gridY * i`，地图像素高度为 `dx * i`。 |
-| `a.aw` | `playerDirectionOrMotionState` | 已确认（部分枚举） | `0/1/2/3 = 左/右/上/下` 已确认；同一字段还使用 `4/5/6` 表示特殊 motion/state，因此字段职责比纯方向更宽。 |
+| `a.N` | `inputUpHeld` | 已确认 | `keyPressed(50/-1)` 置 true，`keyReleased` 置 false；`M()` 对应 `(0,-1)`。 |
+| `a.O` | `inputDownHeld` | 已确认 | `keyPressed(56/-2)` 置 true，`keyReleased` 置 false；`M()` 对应 `(0,+1)`。 |
+| `a.P` | `inputLeftHeld` | 已确认 | `keyPressed(52/-3)` 置 true，`keyReleased` 置 false；`M()` 对应 `(-1,0)`。 |
+| `a.Q` | `inputRightHeld` | 已确认 | `keyPressed(54/-4)` 置 true，`keyReleased` 置 false；`M()` 对应 `(+1,0)`。 |
+| `a.R` | `inputFireHeld` | 已确认 | `keyPressed(53/-5)` 置 true，`keyReleased` 置 false。具体 gameplay 语义按当前 runtime state 分派。 |
+| `a.S` | `leftSoftkeyHeld` | 已确认 | Nokia key code `-6`。 |
+| `a.T` | `rightSoftkeyHeld` | 已确认 | Nokia key code `-7`。 |
+| `a.U` | `anyKeyActivity` | 高置信 | 任意非零 `keyPressed` 先置 true，多处 scene/menu 状态消费。 |
+| `a.aw` | `playerDirectionOrMotionState` | 已确认（部分枚举） | `0/1/2/3 = 左/右/上/下`；同一字段还使用 `4/5/6` 表示特殊 motion/state，因此职责比纯方向更宽。 |
+| `a.ay` | `playerMovePixelsRemaining` | 已确认 | 每次格移动成功后赋 `tileWidth/tileHeight`；`N()` 在动画/移动推进中递减，归零后处理到达格效果。 |
+| `a.M()` | `advancePlayerMovement()` | 已确认 | 同时处理普通 held direction、Speed `0xB5..0xB8`、若干 forced movement，并在碰撞成功后直接更新 `playerGridX/Y`。 |
+| `a.a(int,int,boolean)` | `canPlayerMove(dx,dy,specialMode)` | 已确认（内部规则待拆） | `M()` 所有格移动前统一调用；方法读取源/目标 terrain、目标 object、边界和状态后返回是否允许进入。 |
 | `a.bC` | `ambientPhase8` | 已确认 | 原版动态格 8 相循环计数器。 |
 | `a.bD` | `ambientPhase6` | 已确认 | 原版动态格 6 相循环计数器。 |
 | `a.bE` | `ambientPhase4` | 已确认 | 原版动态格 4 相循环计数器。 |
@@ -45,7 +56,7 @@ run()
           -> 其它 state: title / scene / menu / transition 等
 ```
 
-其中 `x == 1` 的分支会连续调用 `H/Q/P/S/V/T-or-U/G/F/X/Y` 等 gameplay 更新步骤，是继续恢复世界更新顺序的核心入口。
+其中 `x == 1` 的分支会先调用 `H()`，随后执行 `Q/P/S/V/T-or-U/G/F/X/Y` 等 gameplay 更新步骤。
 
 ### Gameplay Grid
 
@@ -56,10 +67,35 @@ objectGrid  = cv[mapHeightTiles][mapWidthTiles]
 
 `objectGrid` 空格使用 `0xFF(-1)`。`ae()` 在载入关卡后扫描两层网格，识别玩家出生点、目标计数以及特殊 object 坐标。
 
+### 输入到一次移动
+
+```text
+keyPressed / keyReleased
+        │
+        ├─ N = up
+        ├─ O = down
+        ├─ P = left
+        └─ Q = right
+              │
+              ▼
+             H()
+              │
+              ▼
+             M()
+              │
+              ├─ canPlayerMove(dx, dy, false)
+              │
+              ├─ playerGridX/Y += direction
+              │
+              └─ playerMovePixelsRemaining = 48
+```
+
+`M()` 同时检查当前 terrain。站在 `0xB5..0xB8` Speed tile 时，它会设置对应方向并维护连续移动计数 `aN`；因此原版 Speed 不是独立 actor，而是直接嵌在 Bobby movement state machine 中。
+
 ## 下一批优先恢复
 
-1. `e(int,int)`：关卡 DAT 记录如何解码并填入 `cu/cv`；CFR 对该方法失败，必须以 `javap` 字节码为基准恢复。
-2. `H()` 与周边方法：玩家输入/移动状态如何进入一次 grid move。
-3. `a(int,int,boolean)`：已确认是核心通行/碰撞判定之一，继续拆出 terrain/object 分支语义。
-4. `V()` 等 gameplay update：确认世界更新顺序与动态机制 dispatch。
-5. 将已确认主干逐段搬入 `semantic/OriginalRuntimeCanvas.java`，保持每段可追溯到原始符号。
+1. `e(int,int)`：关卡 DAT 记录如何解码并填入 `cu/cv`；CFR 对该方法失败，使用 `bytecode/up09/a.javap.txt` 恢复。
+2. `N()`：确认 `ay` 如何从 48px 递减到 0，以及 grid truth 与 pixel movement 的先后顺序。
+3. `a(int,int,boolean)`：继续拆 terrain/object 的通行分支，把 Carousel、Water、Ice、Vehicle 等规则定位出来。
+4. `V()` 等 gameplay update：确认动态对象更新顺序。
+5. 按机制建立独立 semantic 文件，避免把恢复后的 8000 行逻辑再次堆回一个巨型类。
