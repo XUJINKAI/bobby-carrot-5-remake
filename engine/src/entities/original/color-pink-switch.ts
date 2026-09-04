@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import { pinkColorSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -24,4 +25,5 @@ export const colorPinkSwitch: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.pressed === true ? cell(2, 12) : cell(1, 12),
   ),
+  [{ behavior: pinkColorSwitchBehavior }],
 );
