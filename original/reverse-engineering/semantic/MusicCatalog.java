@@ -98,6 +98,30 @@ public final class MusicCatalog {
         // semantic marker only
     }
 
+    /**
+     * 原版通用 MIDI 播放方法 `a(String path, int volume, boolean loop)` 的语义：
+     *
+     * - `loop=true` -> `Player.setLoopCount(-1)`，无限循环；
+     * - `loop=false` -> `Player.setLoopCount(1)`，只播放一次；
+     * - gameplay / title / shared scene / Night Train / reward scene 的 `b(path)` 包装器都传 loop=true；
+     * - level result、special result、death / alarm 直接传 loop=false，因此是 one-shot；
+     * - 若 loop=true 且请求路径和当前循环曲目相同，原版直接 return，不重启同一首曲子；
+     * - 切换到另一首前会停止/释放旧 Player，再创建新的 MIDI Player；
+     * - `start()` 后原线程固定 `sleep(250ms)`。这是音频切换实现 quirk，不应误当成 gameplay tick。
+     */
+    PlaybackMode playbackModeFor(String path, boolean resultOrDeath) {
+        return resultOrDeath ? PlaybackMode.ONE_SHOT : PlaybackMode.LOOP;
+    }
+
+    boolean shouldRestartLoopingTrack(String requestedPath, String currentlyPlayingPath) {
+        return currentlyPlayingPath == null || !currentlyPlayingPath.equals(requestedPath);
+    }
+
+    enum PlaybackMode {
+        LOOP,
+        ONE_SHOT,
+    }
+
     /** Night Train state 12。 */
     String nightTrainMusic() {
         return TRAIN;
@@ -113,12 +137,12 @@ public final class MusicCatalog {
         return FLIGHT;
     }
 
-    /** 普通 level result 与 special result 都直接播放 cleared.mid。 */
+    /** 普通 level result 与 special result 都直接播放 cleared.mid，且是 one-shot。 */
     String resultMusic() {
         return CLEARED;
     }
 
-    /** Bonus timeout 使用 alarm.mid，其它统一 death pipeline 使用 death.mid。 */
+    /** Bonus timeout 使用 alarm.mid，其它统一 death pipeline 使用 death.mid；两者均 one-shot。 */
     String deathMusic(boolean bonusAlarmActive) {
         return bonusAlarmActive ? ALARM : DEATH;
     }
