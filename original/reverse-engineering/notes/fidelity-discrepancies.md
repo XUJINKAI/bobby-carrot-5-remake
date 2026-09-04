@@ -10,10 +10,10 @@
 
 - 进入 `0xB5..0xB8` Speed tile 后，按 tile 方向设置 Bobby 朝向，并把 `aN=3`；
 - `aN > 0` 时，每次 movement step 都沿当前方向自动前进；
-- `a.N()` 在整个 `aN > 0` 期间固定使用 `6px/tick`，48px 一格恒为 8 tick；
+- `a.N()` 在整个 `aN > 0` 期间固定使用 `6px/gameplay step`，48px 一格恒为 8 step；
 - 离开 Speed 后，如果对应的同向 held flag 仍为 true，则每跨一格把 `aN` 重新续为 3；
 - 没有同向 held input 时，每跨一格 `aN` 减 1，因此离板后连续快速移动 3 格后结束；
-- 撞停时立即 `aN=0`，并触发 8 tick camera shake；
+- 撞停时立即 `aN=0`，并触发 8-step camera shake；
 - 原版没有 `full -> normal -> slow` 的速度衰减阶段。
 
 原版续速判断只读取当前运动方向对应的 held flag；并没有记录“本格是否曾经按过异方向”来取消同向续速。
@@ -43,6 +43,46 @@ collision -> continuation=0
 ```
 
 并删除依赖 `normal/slow` phase 的 gameplay 语义；视觉表现若需要额外效果，应留在 Presentation 层。
+
+## Ice 状态机、cadence 与 Bobby 帧和当前实现不一致
+
+### 原版运行时事实
+
+`a.M()` / `a.J()` / `a.O()` 直接确认：
+
+- Ice raw terrain 为 `0x94`；
+- Bobby 跨过 Ice midpoint 时 `bn=true` 且 `av=1`；
+- 每个新的 movement cycle 开始时先清 `bn=false`；
+- 如果**当前格**仍是 Ice，`M()` 先按 Bobby 当前方向尝试自动前进一步；
+- 前方能走时，本次 move 不读取新的方向选择，继续直线滑行并再次置 `bn=true`；
+- 前方走不通时才结束自动滑行并回到普通输入分支；
+- Ice 自身没有独立 `350ms` cadence：未开 Speed Shoes 时仍是普通 `3px/gameplay step`，48px 一格约 16 gameplay step；开 Speed Shoes 后才是 `6px/gameplay step`；
+- `bn=true` 时 `O()` 强制 `av=1`，renderer 直接使用 `av*48` 取帧，因此固定的是方向人物图中的 zero-based frame 1，即 sprite sheet 第 2 格；
+- class 中没有“离开 Ice 时专门播放 sprite 第 8 格”的状态分支。
+
+### 当前仓库状态
+
+`engine/src/entities/original/ice.ts` 当前：
+
+- 在 Ice `onEnter` 时启动一个 `createDelayedMoveRuntimeAction`；
+- `DEFAULT_ICE_SLIDE_CADENCE_MS = 350`；
+- forced move 与原版“下一 movement cycle 先从当前 Ice 格尝试续滑”的生命周期不同；
+- cadence 也不是从原版 3px/6px 像素推进导出的值。
+
+`docs/system/original/player.md` 此前还写过“滑冰固定第 7 帧、离开播放第 8 帧”，也与 class 的 `av=1` 直接索引不一致，已在逆向分支修正。
+
+### 当前结论
+
+Ice 和 Speed 一样已经可以从原版 class 直接恢复，不应继续把 `350ms` 作为人工 fidelity 参数。后续 Engine 修复应基于：
+
+```text
+current terrain == Ice
+    try same direction
+    success -> slide this cell
+    blocked -> ordinary input
+```
+
+同时让实际 move cadence 继承 Bobby 当前 speed-shoes/fast-motion 状态。
 
 ## Tide 四方向 DAT 映射与原版运行时相反
 
