@@ -19,6 +19,7 @@ import type {
 import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
 import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
+import { WorldDeltaSequence, type WorldDelta } from "./delta/WorldDelta.js";
 import type {
   Behavior,
   BehaviorContext,
@@ -39,21 +40,27 @@ import {
   type EntityStoreSnapshot,
 } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
+import {
+  WorldMotionStore,
+  type WorldMotion,
+  type WorldMotionSnapshot,
+} from "./movement/WorldMotion.js";
 import type {
   MoveIntent,
   WorldIntent,
   WorldIntentGroup,
 } from "./movement/WorldIntent.js";
 import {
-  emptyMutationSummary,
   emptyWorldStepResult,
   mergeWorldMutationSummary,
   mergeWorldStepResult,
+  type EntityMotionRequest,
   type WorldMutationSummary,
   type WorldStepResult,
 } from "./movement/WorldStepResult.js";
 import type { EntityPresence } from "./spatial/EntityPresence.js";
 import { SpatialIndex } from "./spatial/SpatialIndex.js";
+import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
 import type {
   CellInspection,
   MoveResult,
@@ -66,6 +73,7 @@ export interface WorldSnapshot {
   entities: EntityStoreSnapshot;
   state: GlobalState;
   actions: RuntimeActionSchedulerSnapshot;
+  motions: WorldMotionSnapshot;
 }
 
 export interface WorldOptions {
@@ -74,11 +82,8 @@ export interface WorldOptions {
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
   actions?: RuntimeActionRegistry;
-}
-
-interface CommitResult {
-  events: WorldEvent[];
-  mutations: WorldMutationSummary;
+  /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
+  motionDurationMs?: number;
 }
 
 export class World {
@@ -90,8 +95,13 @@ export class World {
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
   readonly actions: RuntimeActionScheduler;
+  readonly motions = new WorldMotionStore();
   readonly rules: LevelMap["rules"];
   state: GlobalState;
+  private readonly deltaSequence = new WorldDeltaSequence();
+  private readonly committer: WorldCommitter;
+  private motionDurationMs: number;
+  private currentWorldTick: number | null = null;
 
   constructor(level: LevelMap, options: WorldOptions = {}) {
     this.width = level.width;
@@ -116,6 +126,15 @@ export class World {
       this.registry,
       () => this.state,
     );
+    this.committer = new WorldCommitter(
+      this.entities,
+      this.spatial,
+      this.actions,
+      this.motions,
+      () => this.state,
+      this.deltaSequence,
+    );
+    this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
     this.refreshDerivedState();
     this.evaluateCompletion([]);
   }
@@ -174,6 +193,10 @@ export class World {
     };
   }
 
+  setMotionDurationMs(durationMs: number): void {
+    this.motionDurationMs = safeDuration(durationMs);
+  }
+
   startAction(spec: RuntimeActionSpec): RuntimeActionId {
     return this.actions.start(spec);
   }
@@ -201,6 +224,7 @@ export class World {
       entities: this.entities.snapshot(),
       state: structuredClone(this.state),
       actions: this.actions.snapshot(),
+      motions: this.motions.snapshot(),
     };
   }
 
@@ -208,6 +232,7 @@ export class World {
     this.entities.restore(snapshot.entities);
     this.state = structuredClone(snapshot.state);
     this.actions.restore(snapshot.actions);
+    this.motions.restore(snapshot.motions);
     this.spatial.rebuild();
   }
 
@@ -261,7 +286,8 @@ export class World {
 
     const beforeDead = this.state.dead;
     const beforeCompleted = this.state.completed;
-    const commit = this.commit(transaction.commands);
+    const commit = this.committer.commit(transaction.commands, this.deltaClock());
+    const motions = this.startMotions(transaction.motions, commit.deltas);
     this.refreshDerivedState();
     this.evaluateCompletion(commit.events);
     this.evaluateLimits(commit.events);
@@ -272,9 +298,10 @@ export class World {
 
     return {
       moves,
-      motions: transaction.motions.map((motion) => structuredClone(motion)),
+      motions,
       events: commit.events,
       mutations: commit.mutations,
+      deltas: commit.deltas,
     };
   }
 
@@ -288,15 +315,19 @@ export class World {
     if (time.stepMs <= 0 || this.state.dead || this.state.completed)
       return result;
 
+    this.currentWorldTick = time.tick;
     this.state.elapsedMs += time.stepMs;
 
     const actionQueue = new CommandQueue();
     const actionIntents = this.actions.update(time, this.query, actionQueue);
-    const actionCommit = this.commit(actionQueue);
+    const actionCommit = this.committer.commit(actionQueue, this.deltaClock());
     this.refreshDerivedState();
     this.evaluateCompletion(actionCommit.events);
     absorbCommit(result, actionCommit);
-    if (this.state.dead || this.state.completed) return result;
+    if (this.state.dead || this.state.completed) {
+      this.currentWorldTick = null;
+      return result;
+    }
 
     if (actionIntents.length > 0) {
       const actionStep = this.step({
@@ -304,7 +335,10 @@ export class World {
         historyBoundary: false,
       });
       mergeWorldStepResult(result, actionStep);
-      if (this.state.dead || this.state.completed) return result;
+      if (this.state.dead || this.state.completed) {
+        this.currentWorldTick = null;
+        return result;
+      }
     }
 
     const tickQueue = new CommandQueue();
@@ -326,11 +360,12 @@ export class World {
         behavior.onTick?.(context);
     }
 
-    const tickCommit = this.commit(tickQueue);
+    const tickCommit = this.committer.commit(tickQueue, this.deltaClock());
     this.refreshDerivedState();
     this.evaluateCompletion(tickCommit.events);
     this.evaluateLimits(tickCommit.events);
     absorbCommit(result, tickCommit);
+    this.currentWorldTick = null;
     return result;
   }
 
@@ -729,68 +764,48 @@ export class World {
     };
   }
 
-  private commit(queue: CommandQueue): CommitResult {
-    const events: WorldEvent[] = [];
-    const mutations = emptyMutationSummary();
-    for (const command of queue.drain()) {
-      switch (command.type) {
-        case "spawn": {
-          const entity = this.entities.spawn(command.entity);
-          this.spatial.addEntity(entity);
-          pushUnique(mutations.spawned, entity.id);
-          break;
-        }
-        case "destroy":
-          this.actions.cancelOwnedBy(command.entityId);
-          this.spatial.removeEntity(command.entityId);
-          this.entities.destroy(command.entityId);
-          pushUnique(mutations.destroyed, command.entityId);
-          break;
-        case "move":
-          if (this.entities.get(command.entityId)) {
-            this.spatial.moveEntity(command.entityId, {
-              x: command.x,
-              y: command.y,
-            });
-            pushUnique(mutations.moved, command.entityId);
-          }
-          break;
-        case "set-direction": {
-          const entity = this.entities.get(command.entityId);
-          if (entity) {
-            entity.direction = command.direction;
-            this.spatial.rebuildEntity(entity.id);
-          }
-          break;
-        }
-        case "set-state": {
-          const entity = this.entities.get(command.entityId);
-          if (entity) {
-            entity.state = structuredClone(command.state);
-            pushUnique(mutations.stateChanged, command.entityId);
-          }
-          break;
-        }
-        case "set-global":
-          (this.state as unknown as Record<string, unknown>)[command.key] =
-            structuredClone(command.value);
-          pushUnique(mutations.globalsChanged, command.key);
-          break;
-        case "start-action": {
-          const id = this.actions.start(command.action);
-          pushUnique(mutations.actionsStarted, id);
-          break;
-        }
-        case "cancel-action":
-          this.actions.cancel(command.actionId);
-          pushUnique(mutations.actionsCancelled, command.actionId);
-          break;
-        case "emit":
-          events.push(command.event);
-          break;
+  private startMotions(
+    requests: readonly EntityMotionRequest[],
+    deltas: WorldDelta[],
+  ): WorldMotion[] {
+    const started: WorldMotion[] = [];
+    for (const request of requests) {
+      const durationMs = this.durationForMotion(request);
+      const motion = this.motions.start({ ...request, durationMs });
+      started.push(motion);
+      deltas.push(
+        this.deltaSequence.create(
+          { type: "motion-started", motion },
+          this.deltaClock(),
+        ),
+      );
+      if (durationMs === 0) {
+        const completed = this.motions.remove(motion.id) ?? motion;
+        deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-completed", motion: completed },
+            this.deltaClock(),
+          ),
+        );
       }
     }
-    return { events, mutations };
+    return started;
+  }
+
+  private durationForMotion(request: EntityMotionRequest): number {
+    if (
+      request.cause.type === "forced" &&
+      request.cause.cadenceMs !== undefined
+    )
+      return safeDuration(request.cause.cadenceMs);
+    return this.motionDurationMs;
+  }
+
+  private deltaClock(): { worldTick: number | null; worldTimeMs: number } {
+    return {
+      worldTick: this.currentWorldTick,
+      worldTimeMs: this.state.elapsedMs,
+    };
   }
 
   private refreshDerivedState(): void {
@@ -974,11 +989,16 @@ function blockedResult(
   };
 }
 
-function absorbCommit(target: WorldStepResult, commit: CommitResult): void {
+function absorbCommit(target: WorldStepResult, commit: WorldCommitResult): void {
   target.events.push(...commit.events.map((event) => structuredClone(event)));
+  target.deltas.push(...commit.deltas.map((delta) => structuredClone(delta)));
   mergeWorldMutationSummary(target.mutations, commit.mutations);
 }
 
 function pushUnique<T>(values: T[], value: T): void {
   if (!values.includes(value)) values.push(value);
+}
+
+function safeDuration(value: number): number {
+  return Math.max(0, Number.isFinite(value) ? value : 0);
 }

@@ -2,7 +2,7 @@ import type { Direction } from "@bobby/model";
 import { CommandQueue } from "../behavior/CommandQueue.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
 import type { MoveCause } from "./WorldIntent.js";
-import type { EntityMotion } from "./WorldStepResult.js";
+import type { EntityMotionRequest } from "./WorldStepResult.js";
 
 /**
  * 一次 WorldStep 内的 gameplay mutation buffer。
@@ -10,7 +10,7 @@ import type { EntityMotion } from "./WorldStepResult.js";
  */
 export class MovementTransaction {
   readonly commands = new CommandQueue();
-  readonly motions: EntityMotion[] = [];
+  readonly motions: EntityMotionRequest[] = [];
   private readonly entryBypasses = new Set<EntityId>();
   private readonly reservedDestinations = new Map<string, EntityId>();
 
