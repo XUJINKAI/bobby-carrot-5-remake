@@ -1,0 +1,67 @@
+  private final void N();
+    descriptor: ()V
+    Code:
+       0: aload_0
+       1: getfield      #733                // Field aw:I
+       4: istore_1
+       5: aload_0
+       6: getfield      #775                // Field aN:I
+       9: ifgt          19
+      12: aload_0
+      13: getfield      #833                // Field bl:Z
+      16: ifeq          77
+      19: bipush        6
+      21: istore_2
+      22: aload_0
+      23: aload_0
+      24: getfield      #767                // Field ay:I
+      27: iload_2
+      28: isub
+      29: putfield      #767                // Field ay:I
+      32: aload_0
+      33: getfield      #733                // Field aw:I
+      36: bipush        6
+      38: if_icmpne     46
+      41: aload_0
+      42: getfield      #1004               // Field ax:I
+      45: istore_1
+      46: iload_1
+      47: tableswitch   { // 0 to 3
+                     0: 82
+                     1: 95
+                     2: 108
+                     3: 121
+               default: 76
+          }
+      76: return
+      77: iconst_3
+      78: istore_2
+      79: goto          22
+      82: aload_0
+      83: aload_0
+      84: getfield      #869                // Field ap:I
+      87: iload_2
+      88: isub
+      89: putfield      #869                // Field ap:I
+      92: goto          76
+      95: aload_0
+      96: aload_0
+      97: getfield      #869                // Field ap:I
+     100: iload_2
+     101: iadd
+     102: putfield      #869                // Field ap:I
+     105: goto          76
+     108: aload_0
+     109: aload_0
+     110: getfield      #871                // Field aq:I
+     113: iload_2
+     114: isub
+     115: putfield      #871                // Field aq:I
+     118: goto          76
+     121: aload_0
+     122: aload_0
+     123: getfield      #871                // Field aq:I
+     126: iload_2
+     127: iadd
+     128: putfield      #871                // Field aq:I
+     131: goto          76

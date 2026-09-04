@@ -1,0 +1,876 @@
+  private final boolean a(int, int, boolean);
+    descriptor: (IIZ)Z
+    Code:
+       0: aload_0
+       1: getfield      #811                // Field ar:I
+       4: iload_1
+       5: iadd
+       6: istore        4
+       8: aload_0
+       9: getfield      #813                // Field as:I
+      12: iload_2
+      13: iadd
+      14: istore        5
+      16: aload_0
+      17: iconst_0
+      18: i2b
+      19: putfield      #769                // Field bc:B
+      22: iload         4
+      24: iflt          50
+      27: iload         5
+      29: iflt          50
+      32: iload         4
+      34: aload_0
+      35: getfield      #710                // Field dw:I
+      38: if_icmpge     50
+      41: iload         5
+      43: aload_0
+      44: getfield      #712                // Field dx:I
+      47: if_icmplt     54
+      50: iconst_0
+      51: istore_3
+      52: iload_3
+      53: ireturn
+      54: aload_0
+      55: getfield      #797                // Field bm:Z
+      58: ifeq          66
+      61: iconst_1
+      62: istore_3
+      63: goto          52
+      66: aload_0
+      67: getfield      #716                // Field cu:[[B
+      70: aload_0
+      71: getfield      #813                // Field as:I
+      74: aaload
+      75: aload_0
+      76: getfield      #811                // Field ar:I
+      79: baload
+      80: istore        6
+      82: aload_0
+      83: getfield      #716                // Field cu:[[B
+      86: iload         5
+      88: aaload
+      89: iload         4
+      91: baload
+      92: istore        7
+      94: aload_0
+      95: getfield      #714                // Field cv:[[B
+      98: iload         5
+     100: aaload
+     101: iload         4
+     103: baload
+     104: istore        4
+     106: iconst_1
+     107: istore        5
+     109: iload         6
+     111: bipush        -66
+     113: if_icmpne     139
+     116: iload_1
+     117: ifeq          133
+     120: iconst_1
+     121: istore        5
+     123: iload         5
+     125: ifne          278
+     128: iconst_0
+     129: istore_3
+     130: goto          52
+     133: iconst_0
+     134: istore        5
+     136: goto          123
+     139: iload         6
+     141: bipush        -67
+     143: if_icmpne     162
+     146: iload_2
+     147: ifeq          156
+     150: iconst_1
+     151: istore        5
+     153: goto          123
+     156: iconst_0
+     157: istore        5
+     159: goto          153
+     162: iload         6
+     164: bipush        -68
+     166: if_icmpne     191
+     169: iload_1
+     170: iconst_1
+     171: if_icmpeq     179
+     174: iload_2
+     175: iconst_1
+     176: if_icmpne     185
+     179: iconst_1
+     180: istore        5
+     182: goto          123
+     185: iconst_0
+     186: istore        5
+     188: goto          182
+     191: iload         6
+     193: bipush        -69
+     195: if_icmpne     220
+     198: iload_1
+     199: iconst_m1
+     200: if_icmpeq     208
+     203: iload_2
+     204: iconst_1
+     205: if_icmpne     214
+     208: iconst_1
+     209: istore        5
+     211: goto          123
+     214: iconst_0
+     215: istore        5
+     217: goto          211
+     220: iload         6
+     222: bipush        -70
+     224: if_icmpne     249
+     227: iload_1
+     228: iconst_m1
+     229: if_icmpeq     237
+     232: iload_2
+     233: iconst_m1
+     234: if_icmpne     243
+     237: iconst_1
+     238: istore        5
+     240: goto          123
+     243: iconst_0
+     244: istore        5
+     246: goto          240
+     249: iload         6
+     251: bipush        -71
+     253: if_icmpne     123
+     256: iload_1
+     257: iconst_1
+     258: if_icmpeq     266
+     261: iload_2
+     262: iconst_m1
+     263: if_icmpne     272
+     266: iconst_1
+     267: istore        5
+     269: goto          123
+     272: iconst_0
+     273: istore        5
+     275: goto          269
+     278: aload_0
+     279: getfield      #795                // Field bi:Z
+     282: ifne          309
+     285: aload_0
+     286: aload_0
+     287: getfield      #811                // Field ar:I
+     290: iload_1
+     291: iadd
+     292: aload_0
+     293: getfield      #813                // Field as:I
+     296: iload_2
+     297: iadd
+     298: invokespecial #1309               // Method a:(II)Z
+     301: ifeq          309
+     304: iconst_1
+     305: istore_3
+     306: goto          52
+     309: iload         7
+     311: sipush        255
+     314: iand
+     315: bipush        94
+     317: if_icmplt     471
+     320: iload         7
+     322: sipush        255
+     325: iand
+     326: sipush        200
+     329: if_icmpgt     471
+     332: iconst_1
+     333: istore        5
+     335: iload         5
+     337: istore        6
+     339: iload         6
+     341: ifeq          716
+     344: iload         7
+     346: sipush        255
+     349: iand
+     350: sipush        185
+     353: if_icmplt     609
+     356: iload         7
+     358: sipush        255
+     361: iand
+     362: sipush        190
+     365: if_icmpgt     609
+     368: aload_0
+     369: getfield      #795                // Field bi:Z
+     372: ifne          603
+     375: iload         7
+     377: tableswitch   { // -71 to -66
+                   -71: 477
+                   -70: 500
+                   -69: 523
+                   -68: 546
+                   -67: 569
+                   -66: 586
+               default: 416
+          }
+     416: iload         6
+     418: istore        5
+     420: iload         5
+     422: ifne          853
+     425: iload         4
+     427: lookupswitch  { // 3
+                   -50: 836
+                   -44: 836
+                   -34: 836
+               default: 460
+          }
+     460: iconst_0
+     461: istore_1
+     462: iload_1
+     463: ifne          1822
+     466: iconst_0
+     467: istore_3
+     468: goto          52
+     471: iconst_0
+     472: istore        5
+     474: goto          335
+     477: iload_1
+     478: iconst_m1
+     479: if_icmpeq     487
+     482: iload_2
+     483: iconst_1
+     484: if_icmpne     495
+     487: iconst_1
+     488: istore_1
+     489: iload_1
+     490: istore        5
+     492: goto          420
+     495: iconst_0
+     496: istore_1
+     497: goto          489
+     500: iload_1
+     501: iconst_1
+     502: if_icmpeq     510
+     505: iload_2
+     506: iconst_1
+     507: if_icmpne     518
+     510: iconst_1
+     511: istore_1
+     512: iload_1
+     513: istore        5
+     515: goto          420
+     518: iconst_0
+     519: istore_1
+     520: goto          512
+     523: iload_1
+     524: iconst_1
+     525: if_icmpeq     533
+     528: iload_2
+     529: iconst_m1
+     530: if_icmpne     541
+     533: iconst_1
+     534: istore_1
+     535: iload_1
+     536: istore        5
+     538: goto          420
+     541: iconst_0
+     542: istore_1
+     543: goto          535
+     546: iload_1
+     547: iconst_m1
+     548: if_icmpeq     556
+     551: iload_2
+     552: iconst_m1
+     553: if_icmpne     564
+     556: iconst_1
+     557: istore_1
+     558: iload_1
+     559: istore        5
+     561: goto          420
+     564: iconst_0
+     565: istore_1
+     566: goto          558
+     569: iload_2
+     570: ifeq          581
+     573: iconst_1
+     574: istore_1
+     575: iload_1
+     576: istore        5
+     578: goto          420
+     581: iconst_0
+     582: istore_1
+     583: goto          575
+     586: iload_1
+     587: ifeq          598
+     590: iconst_1
+     591: istore_1
+     592: iload_1
+     593: istore        5
+     595: goto          420
+     598: iconst_0
+     599: istore_1
+     600: goto          592
+     603: iconst_0
+     604: istore        5
+     606: goto          420
+     609: iload         7
+     611: sipush        255
+     614: iand
+     615: sipush        177
+     618: if_icmplt     653
+     621: iload         7
+     623: sipush        255
+     626: iand
+     627: sipush        180
+     630: if_icmpgt     653
+     633: aload_0
+     634: getfield      #795                // Field bi:Z
+     637: ifne          648
+     640: iconst_1
+     641: istore_1
+     642: iload_1
+     643: istore        5
+     645: goto          420
+     648: iconst_0
+     649: istore_1
+     650: goto          642
+     653: iload         7
+     655: bipush        -57
+     657: if_icmpeq     667
+     660: iload         7
+     662: bipush        -56
+     664: if_icmpne     692
+     667: aload_0
+     668: getfield      #795                // Field bi:Z
+     671: ifeq          686
+     674: aload_0
+     675: iconst_1
+     676: putfield      #835                // Field bk:Z
+     679: iload         6
+     681: istore        5
+     683: goto          420
+     686: iconst_0
+     687: istore        5
+     689: goto          420
+     692: iload         7
+     694: bipush        -61
+     696: if_icmpeq     710
+     699: iload         6
+     701: istore        5
+     703: iload         7
+     705: bipush        -59
+     707: if_icmpne     420
+     710: iconst_0
+     711: istore        5
+     713: goto          420
+     716: iload         6
+     718: istore        5
+     720: iload         7
+     722: bipush        77
+     724: if_icmpne     420
+     727: iload         6
+     729: istore        5
+     731: aload_0
+     732: getfield      #795                // Field bi:Z
+     735: ifne          420
+     738: aload_0
+     739: getfield      #976                // Field cZ:Z
+     742: ifeq          818
+     745: aload_0
+     746: bipush        32
+     748: i2b
+     749: putfield      #769                // Field bc:B
+     752: aload_0
+     753: iconst_0
+     754: putfield      #799                // Field av:I
+     757: iload_1
+     758: ifeq          799
+     761: iload_1
+     762: ifge          794
+     765: iconst_0
+     766: istore_1
+     767: aload_0
+     768: iload_1
+     769: putfield      #733                // Field aw:I
+     772: aload_0
+     773: iconst_0
+     774: putfield      #833                // Field bl:Z
+     777: aload_0
+     778: iconst_0
+     779: putfield      #775                // Field aN:I
+     782: aload_0
+     783: iconst_0
+     784: putfield      #809                // Field aC:I
+     787: iload         6
+     789: istore        5
+     791: goto          420
+     794: iconst_1
+     795: istore_1
+     796: goto          767
+     799: iload_2
+     800: ifge          813
+     803: iconst_2
+     804: istore_1
+     805: aload_0
+     806: iload_1
+     807: putfield      #733                // Field aw:I
+     810: goto          772
+     813: iconst_3
+     814: istore_1
+     815: goto          805
+     818: aload_0
+     819: iconst_3
+     820: i2b
+     821: putfield      #953                // Field aY:B
+     824: aload_0
+     825: iconst_4
+     826: putfield      #935                // Field aA:I
+     829: iload         6
+     831: istore        5
+     833: goto          420
+     836: aload_0
+     837: getfield      #795                // Field bi:Z
+     840: ifne          848
+     843: iconst_1
+     844: istore_1
+     845: goto          462
+     848: iconst_0
+     849: istore_1
+     850: goto          845
+     853: iload         4
+     855: tableswitch   { // -54 to -2
+                   -54: 1091
+                   -53: 1080
+                   -52: 1108
+                   -51: 1113
+                   -50: 1080
+                   -49: 1080
+                   -48: 1108
+                   -47: 1108
+                   -46: 1108
+                   -45: 1108
+                   -44: 1080
+                   -43: 1080
+                   -42: 1080
+                   -41: 1108
+                   -40: 1108
+                   -39: 1080
+                   -38: 1108
+                   -37: 1108
+                   -36: 1162
+                   -35: 1080
+                   -34: 1080
+                   -33: 1080
+                   -32: 1080
+                   -31: 1080
+                   -30: 1080
+                   -29: 1108
+                   -28: 1080
+                   -27: 1080
+                   -26: 1080
+                   -25: 1108
+                   -24: 1080
+                   -23: 1080
+                   -22: 1190
+                   -21: 1745
+                   -20: 1080
+                   -19: 1754
+                   -18: 1080
+                   -17: 1080
+                   -16: 1080
+                   -15: 1080
+                   -14: 1080
+                   -13: 1080
+                   -12: 1782
+                   -11: 1080
+                   -10: 1080
+                    -9: 1190
+                    -8: 1080
+                    -7: 1108
+                    -6: 1108
+                    -5: 1108
+                    -4: 1108
+                    -3: 1108
+                    -2: 1108
+               default: 1080
+          }
+    1080: iconst_1
+    1081: istore_1
+    1082: iload_1
+    1083: ifne          1822
+    1086: iconst_0
+    1087: istore_3
+    1088: goto          52
+    1091: aload_0
+    1092: getfield      #795                // Field bi:Z
+    1095: ifne          1103
+    1098: iconst_1
+    1099: istore_1
+    1100: goto          1082
+    1103: iconst_0
+    1104: istore_1
+    1105: goto          1100
+    1108: iconst_0
+    1109: istore_1
+    1110: goto          1082
+    1113: aload_0
+    1114: getfield      #795                // Field bi:Z
+    1117: ifne          1157
+    1120: aload_0
+    1121: getfield      #927                // Field de:Z
+    1124: ifne          1152
+    1127: aload_0
+    1128: getfield      #367                // Field D:[B
+    1131: iconst_2
+    1132: baload
+    1133: ifne          1152
+    1136: aload_0
+    1137: iconst_1
+    1138: i2b
+    1139: putfield      #953                // Field aY:B
+    1142: aload_0
+    1143: iconst_4
+    1144: putfield      #935                // Field aA:I
+    1147: iconst_0
+    1148: istore_1
+    1149: goto          1082
+    1152: iconst_1
+    1153: istore_1
+    1154: goto          1082
+    1157: iconst_0
+    1158: istore_1
+    1159: goto          1082
+    1162: aload_0
+    1163: getfield      #937                // Field cX:Z
+    1166: ifne          1185
+    1169: aload_0
+    1170: iconst_0
+    1171: i2b
+    1172: putfield      #953                // Field aY:B
+    1175: aload_0
+    1176: iconst_4
+    1177: putfield      #935                // Field aA:I
+    1180: iconst_0
+    1181: istore_1
+    1182: goto          1082
+    1185: iconst_1
+    1186: istore_1
+    1187: goto          1082
+    1190: aload_0
+    1191: getfield      #729                // Field cV:Z
+    1194: ifeq          1456
+    1197: iconst_0
+    1198: istore_2
+    1199: aload_0
+    1200: getfield      #731                // Field df:Z
+    1203: ifne          1424
+    1206: aload_0
+    1207: getfield      #367                // Field D:[B
+    1210: iconst_2
+    1211: baload
+    1212: ifle          1303
+    1215: iconst_m1
+    1216: istore_1
+    1217: new           #532                // class java/lang/StringBuffer
+    1220: dup
+    1221: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1224: aload_0
+    1225: getfield      #349                // Field a:[Ljava/lang/String;
+    1228: bipush        113
+    1230: aaload
+    1231: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1234: aload_0
+    1235: getfield      #349                // Field a:[Ljava/lang/String;
+    1238: bipush        114
+    1240: aaload
+    1241: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1244: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1247: astore        8
+    1249: aload_0
+    1250: getfield      #349                // Field a:[Ljava/lang/String;
+    1253: astore        9
+    1255: iload_1
+    1256: iconst_m1
+    1257: if_icmpeq     1444
+    1260: iload_2
+    1261: ifeq          1438
+    1264: bipush        34
+    1266: istore_2
+    1267: aload         9
+    1269: iload_2
+    1270: aaload
+    1271: astore        10
+    1273: iload_1
+    1274: iconst_m1
+    1275: if_icmpeq     1450
+    1278: aload_0
+    1279: getfield      #349                // Field a:[Ljava/lang/String;
+    1282: bipush        33
+    1284: aaload
+    1285: astore        9
+    1287: aload_0
+    1288: iload_1
+    1289: aload         8
+    1291: aload         10
+    1293: aload         9
+    1295: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1298: iconst_0
+    1299: istore_1
+    1300: goto          1082
+    1303: aload_0
+    1304: getfield      #927                // Field de:Z
+    1307: ifne          1410
+    1310: bipush        7
+    1312: istore_1
+    1313: aload_0
+    1314: getfield      #960                // Field I:S
+    1317: iconst_3
+    1318: if_icmplt     1373
+    1321: new           #532                // class java/lang/StringBuffer
+    1324: dup
+    1325: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1328: aload_0
+    1329: getfield      #349                // Field a:[Ljava/lang/String;
+    1332: bipush        113
+    1334: aaload
+    1335: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1338: aload_0
+    1339: getfield      #349                // Field a:[Ljava/lang/String;
+    1342: bipush        115
+    1344: aaload
+    1345: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1348: aload_0
+    1349: getfield      #960                // Field I:S
+    1352: invokevirtual #890                // Method java/lang/StringBuffer.append:(I)Ljava/lang/StringBuffer;
+    1355: aload_0
+    1356: getfield      #349                // Field a:[Ljava/lang/String;
+    1359: bipush        116
+    1361: aaload
+    1362: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1365: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1368: astore        8
+    1370: goto          1249
+    1373: new           #532                // class java/lang/StringBuffer
+    1376: dup
+    1377: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1380: aload_0
+    1381: getfield      #349                // Field a:[Ljava/lang/String;
+    1384: bipush        113
+    1386: aaload
+    1387: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1390: aload_0
+    1391: getfield      #349                // Field a:[Ljava/lang/String;
+    1394: bipush        117
+    1396: aaload
+    1397: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1400: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1403: astore        8
+    1405: iconst_1
+    1406: istore_2
+    1407: goto          1249
+    1410: iconst_m1
+    1411: istore_1
+    1412: aload_0
+    1413: getfield      #349                // Field a:[Ljava/lang/String;
+    1416: bipush        118
+    1418: aaload
+    1419: astore        8
+    1421: goto          1249
+    1424: iconst_m1
+    1425: istore_1
+    1426: aload_0
+    1427: getfield      #349                // Field a:[Ljava/lang/String;
+    1430: bipush        118
+    1432: aaload
+    1433: astore        8
+    1435: goto          1249
+    1438: bipush        32
+    1440: istore_2
+    1441: goto          1267
+    1444: bipush        30
+    1446: istore_2
+    1447: goto          1267
+    1450: aconst_null
+    1451: astore        9
+    1453: goto          1287
+    1456: aload_0
+    1457: getfield      #668                // Field bV:I
+    1460: ifne          1298
+    1463: aload_0
+    1464: getfield      #672                // Field bU:I
+    1467: iconst_1
+    1468: if_icmpne     1524
+    1471: aload_0
+    1472: iconst_m1
+    1473: new           #532                // class java/lang/StringBuffer
+    1476: dup
+    1477: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1480: aload_0
+    1481: getfield      #349                // Field a:[Ljava/lang/String;
+    1484: bipush        100
+    1486: aaload
+    1487: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1490: aload_0
+    1491: getfield      #960                // Field I:S
+    1494: invokevirtual #890                // Method java/lang/StringBuffer.append:(I)Ljava/lang/StringBuffer;
+    1497: aload_0
+    1498: getfield      #349                // Field a:[Ljava/lang/String;
+    1501: bipush        101
+    1503: aaload
+    1504: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1507: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1510: aload_0
+    1511: getfield      #349                // Field a:[Ljava/lang/String;
+    1514: bipush        30
+    1516: aaload
+    1517: aconst_null
+    1518: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1521: goto          1298
+    1524: aload_0
+    1525: getfield      #672                // Field bU:I
+    1528: iconst_2
+    1529: if_icmpne     1645
+    1532: aload_0
+    1533: getfield      #955                // Field J:S
+    1536: ifle          1599
+    1539: aload_0
+    1540: bipush        9
+    1542: new           #532                // class java/lang/StringBuffer
+    1545: dup
+    1546: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1549: aload_0
+    1550: getfield      #349                // Field a:[Ljava/lang/String;
+    1553: bipush        102
+    1555: aaload
+    1556: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1559: aload_0
+    1560: getfield      #955                // Field J:S
+    1563: invokevirtual #890                // Method java/lang/StringBuffer.append:(I)Ljava/lang/StringBuffer;
+    1566: aload_0
+    1567: getfield      #349                // Field a:[Ljava/lang/String;
+    1570: bipush        103
+    1572: aaload
+    1573: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1576: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1579: aload_0
+    1580: getfield      #349                // Field a:[Ljava/lang/String;
+    1583: bipush        32
+    1585: aaload
+    1586: aload_0
+    1587: getfield      #349                // Field a:[Ljava/lang/String;
+    1590: bipush        33
+    1592: aaload
+    1593: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1596: goto          1298
+    1599: aload_0
+    1600: iconst_m1
+    1601: new           #532                // class java/lang/StringBuffer
+    1604: dup
+    1605: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1608: aload_0
+    1609: getfield      #349                // Field a:[Ljava/lang/String;
+    1612: bipush        102
+    1614: aaload
+    1615: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1618: aload_0
+    1619: getfield      #349                // Field a:[Ljava/lang/String;
+    1622: bipush        104
+    1624: aaload
+    1625: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1628: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1631: aload_0
+    1632: getfield      #349                // Field a:[Ljava/lang/String;
+    1635: bipush        30
+    1637: aaload
+    1638: aconst_null
+    1639: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1642: goto          1298
+    1645: aload_0
+    1646: getfield      #672                // Field bU:I
+    1649: iconst_3
+    1650: if_icmpne     1676
+    1653: aload_0
+    1654: iconst_m1
+    1655: aload_0
+    1656: getfield      #349                // Field a:[Ljava/lang/String;
+    1659: bipush        109
+    1661: aaload
+    1662: aload_0
+    1663: getfield      #349                // Field a:[Ljava/lang/String;
+    1666: bipush        30
+    1668: aaload
+    1669: aconst_null
+    1670: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1673: goto          1298
+    1676: aload_0
+    1677: getfield      #672                // Field bU:I
+    1680: iconst_4
+    1681: if_icmpne     1714
+    1684: aload_0
+    1685: bipush        10
+    1687: aload_0
+    1688: getfield      #349                // Field a:[Ljava/lang/String;
+    1691: bipush        112
+    1693: aaload
+    1694: aload_0
+    1695: getfield      #349                // Field a:[Ljava/lang/String;
+    1698: bipush        32
+    1700: aaload
+    1701: aload_0
+    1702: getfield      #349                // Field a:[Ljava/lang/String;
+    1705: bipush        33
+    1707: aaload
+    1708: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1711: goto          1298
+    1714: aload_0
+    1715: getfield      #672                // Field bU:I
+    1718: iconst_5
+    1719: if_icmpne     1298
+    1722: aload_0
+    1723: iconst_m1
+    1724: aload_0
+    1725: getfield      #349                // Field a:[Ljava/lang/String;
+    1728: bipush        110
+    1730: aaload
+    1731: aload_0
+    1732: getfield      #349                // Field a:[Ljava/lang/String;
+    1735: bipush        30
+    1737: aaload
+    1738: aconst_null
+    1739: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1742: goto          1298
+    1745: aload_0
+    1746: invokespecial #1311               // Method D:()V
+    1749: iconst_0
+    1750: istore_1
+    1751: goto          1082
+    1754: aload_0
+    1755: getfield      #795                // Field bi:Z
+    1758: ifeq          1777
+    1761: aload_0
+    1762: getfield      #775                // Field aN:I
+    1765: ifgt          1772
+    1768: iload_3
+    1769: ifeq          1777
+    1772: iconst_1
+    1773: istore_1
+    1774: goto          1082
+    1777: iconst_0
+    1778: istore_1
+    1779: goto          1774
+    1782: aload_0
+    1783: getfield      #795                // Field bi:Z
+    1786: ifne          1817
+    1789: aload_0
+    1790: getfield      #939                // Field cY:Z
+    1793: ifeq          1801
+    1796: iconst_1
+    1797: istore_1
+    1798: goto          1082
+    1801: aload_0
+    1802: iconst_2
+    1803: i2b
+    1804: putfield      #953                // Field aY:B
+    1807: aload_0
+    1808: iconst_4
+    1809: putfield      #935                // Field aA:I
+    1812: iconst_0
+    1813: istore_1
+    1814: goto          1082
+    1817: iconst_0
+    1818: istore_1
+    1819: goto          1082
+    1822: iconst_1
+    1823: istore_3
+    1824: goto          52
