@@ -1,94 +1,88 @@
-// 研究性语义重建：来源为 UP9 a.class / a.f(boolean)、menu launch、result/death callers。
+// 研究性语义重建：来源为 UP9 a.class / a.f(boolean)、a.e(int,int)、ab()、
+// Night Train 与 result/death callers。
 // 本文件保留原版 bV/bU/A/B/K 的 progression 事实，不作为可直接编译的产品源码。
 
 public final class CampaignProgression {
-    /** 当前 release / levelpack，原版 `bV`。0 表示非 release gameplay。 */
-    private int release;
+    /**
+     * 原版 `bV`：DAT archive number。
+     * - 0 -> `00.dat` shared Special Scenes；
+     * - >0 -> 直接读取同号 `01.dat / 02.dat / ...`。
+     *
+     * 这是 archive provenance，不等同现代 Campaign chapter identity。
+     */
+    private int archiveDatNumber;
 
-    /** 当前 release 内 mode，原版 `bU`。 */
-    private int mode;
+    /**
+     * 原版 `bU`：当前 DAT 内 record slot。
+     * - archive 0: slot 1..5 为 shared Special Scenes；
+     * - archive >0: slot 1..10 为普通 progression records，11/12 为插入 Bonus records。
+     */
+    private int recordSlot;
 
-    /** `bW`：离开 release 进入特殊 scene 前记住的 release。 */
-    private int savedRelease;
+    /** `bW`：离开 archive progression 进入特殊 scene 前记住的 archive。 */
+    private int savedArchiveDatNumber;
 
-    /** `A[4]`：每个 release 的 resume mode；0 表示不挂起。 */
-    private byte[] resumeMode = new byte[4];
+    /** `A[4]`：每个当前可选 archive 的 resume record slot；0 表示不挂起。 */
+    private byte[] resumeRecordSlot = new byte[4];
 
-    /** `B[4]`：每个 release 的另一条 persistent completion flag。 */
-    private boolean[] releaseFlag = new boolean[4];
+    /** `B[4]`：每个当前可选 archive 的另一条 persistent completion flag。 */
+    private boolean[] archiveFlag = new boolean[4];
 
-    /** `K`：按 (release, kind 10/11/12) 编码的 persistent completion bitset。 */
+    /** `K`：按 (archive, kind 10/11/12) 编码的 persistent completion bitset。 */
     private long completionBits;
 
     /**
-     * 对应 `a.f(boolean withLoadingPaint)`。
-     *
-     * 大多数 mode 默认进入 mode+1；少数 mode 会根据 persistent bit 插入/跳过 Bonus mode。
+     * UP9 还硬编码 `ci={5,6,7,8}`，只用于把当前可选 archive 1..4 的 HUD 标题
+     * 显示为玩家编号 5..8。Loader 本身仍读取 01.dat..04.dat。
      */
-    ProgressionResult advanceAfterMode(boolean withLoadingPaint) {
-        savedRelease = release;
+    private final int[] visibleArchiveNumber = {5, 6, 7, 8};
 
-        int nextRelease = release;
-        int nextMode = mode + 1;
+    ProgressionResult advanceAfterRecord(boolean withLoadingPaint) {
+        savedArchiveDatNumber = archiveDatNumber;
+
+        int nextArchive = archiveDatNumber;
+        int nextSlot = recordSlot + 1;
         boolean reloadGameplay = true;
-        boolean clearResumeMode = false;
+        boolean clearResumeSlot = false;
 
-        switch (mode) {
+        switch (recordSlot) {
             case 3:
-                // kind 11 未完成时，在 3 和 4 之间插入 mode 11。
-                if (!isCompleted(release, 11)) {
-                    nextMode = 11;
-                } else {
-                    nextMode = 4;
-                }
+                // kind 11 未完成时，在普通 slot 3 和 4 之间插入 Bonus slot 11。
+                nextSlot = isCompleted(archiveDatNumber, 11) ? 4 : 11;
                 break;
 
             case 6:
-                // kind 12 未完成时，在 6 和 7 之间插入 mode 12。
-                if (!isCompleted(release, 12)) {
-                    nextMode = 12;
-                } else {
-                    nextMode = 7;
-                }
+                // kind 12 未完成时，在普通 slot 6 和 7 之间插入 Bonus slot 12。
+                nextSlot = isCompleted(archiveDatNumber, 12) ? 7 : 12;
                 break;
 
             case 11:
-                nextMode = 4;
+                nextSlot = 4;
                 break;
 
             case 12:
-                nextMode = 7;
+                nextSlot = 7;
                 break;
 
             case 10:
-                releaseFlag[release - 1] = true;
-                clearResumeMode = true;
+                archiveFlag[archiveDatNumber - 1] = true;
+                clearResumeSlot = true;
 
-                if (!isCompleted(release, 10)) {
-                    // 首次到 mode 10 且 kind10 尚未完成：跳到 release=0/mode4 的特殊路径。
-                    nextRelease = 0;
-                    nextMode = 4;
+                if (!isCompleted(archiveDatNumber, 10)) {
+                    // 首次完成 slot 10 后进入 archive 0 / shared scene slot 4 的奖励路径。
+                    nextArchive = 0;
+                    nextSlot = 4;
                 } else {
-                    // kind10 已完成时不再 reload gameplay，而是回 Title。
                     reloadGameplay = false;
                 }
                 break;
 
-            case 4:
-            case 5:
-            case 7:
-            case 8:
-            case 9:
-                // 明确无额外分支，保留默认 mode+1。
-                break;
-
             default:
-                // 其它 mode 当前也保持默认 mode+1；具体 scene 名继续由入口/资源确认。
                 break;
         }
 
-        if (release > 0) {
-            resumeMode[release - 1] = (byte)(clearResumeMode ? 0 : nextMode);
+        if (archiveDatNumber > 0) {
+            resumeRecordSlot[archiveDatNumber - 1] = (byte)(clearResumeSlot ? 0 : nextSlot);
         }
         persist();
 
@@ -96,38 +90,33 @@ public final class CampaignProgression {
             return ProgressionResult.toTitle();
         }
 
-        release = nextRelease;
-        mode = nextMode;
+        archiveDatNumber = nextArchive;
+        recordSlot = nextSlot;
         if (withLoadingPaint) {
             paintLoadingSynchronously();
         }
-        reloadCurrentModeLevel();
-        return ProgressionResult.toGameplay(release, mode);
+        reloadCurrentRecord();
+        return ProgressionResult.toGameplay(archiveDatNumber, recordSlot);
     }
 
     /**
-     * Death 的正常路径并不调用本 progression；只 `ab()` 重载当前 level。
-     * 唯一已确认的 death progression 例外是 dg=true 的 Timed Bonus：调用 `f(false)`，
-     * 因而 mode 11 -> 4、mode 12 -> 7。
+     * dg=true 的 Timed Bonus 死亡是 progression 例外：slot 11->4、12->7，
+     * 而不是重载当前 Bonus record。
      */
     ProgressionResult skipBonusRetryAfterFreePermitDeath() {
-        if (mode != 11 && mode != 12) {
-            throw new IllegalStateException("confirmed only for bonus modes 11/12");
+        if (recordSlot != 11 && recordSlot != 12) {
+            throw new IllegalStateException("confirmed only for bonus slots 11/12");
         }
-        return advanceAfterMode(false);
+        return advanceAfterRecord(false);
     }
 
-    /**
-     * 原版 `h(release, kind)`：每个 release 用 3 bit 表示 kind 11/12/10。
-     * bit index = (release-1)*3 + {11:0, 12:1, 10:2}。
-     */
-    boolean isCompleted(int release, int kind) {
-        int bit = completionBitIndex(release, kind);
+    boolean isCompleted(int archive, int kind) {
+        int bit = completionBitIndex(archive, kind);
         return bit >= 0 && (completionBits & (1L << bit)) != 0;
     }
 
-    void setCompleted(int release, int kind, boolean value) {
-        int bit = completionBitIndex(release, kind);
+    void setCompleted(int archive, int kind, boolean value) {
+        int bit = completionBitIndex(archive, kind);
         if (bit < 0) return;
         if (value) {
             completionBits |= 1L << bit;
@@ -136,8 +125,15 @@ public final class CampaignProgression {
         }
     }
 
-    private int completionBitIndex(int release, int kind) {
-        int bit = (release - 1) * 3;
+    int visibleNumberForCurrentArchive() {
+        if (archiveDatNumber <= 0 || archiveDatNumber > visibleArchiveNumber.length) {
+            return archiveDatNumber;
+        }
+        return visibleArchiveNumber[archiveDatNumber - 1];
+    }
+
+    private int completionBitIndex(int archive, int kind) {
+        int bit = (archive - 1) * 3;
         if (kind == 11) return bit;
         if (kind == 12) return bit + 1;
         if (kind == 10) return bit + 2;
@@ -146,25 +142,25 @@ public final class CampaignProgression {
 
     private void persist() {}
     private void paintLoadingSynchronously() {}
-    private void reloadCurrentModeLevel() {}
+    private void reloadCurrentRecord() {}
 
     static final class ProgressionResult {
         final boolean title;
-        final int release;
-        final int mode;
+        final int archiveDatNumber;
+        final int recordSlot;
 
-        private ProgressionResult(boolean title, int release, int mode) {
+        private ProgressionResult(boolean title, int archiveDatNumber, int recordSlot) {
             this.title = title;
-            this.release = release;
-            this.mode = mode;
+            this.archiveDatNumber = archiveDatNumber;
+            this.recordSlot = recordSlot;
         }
 
         static ProgressionResult toTitle() {
             return new ProgressionResult(true, -1, -1);
         }
 
-        static ProgressionResult toGameplay(int release, int mode) {
-            return new ProgressionResult(false, release, mode);
+        static ProgressionResult toGameplay(int archiveDatNumber, int recordSlot) {
+            return new ProgressionResult(false, archiveDatNumber, recordSlot);
         }
     }
 }
