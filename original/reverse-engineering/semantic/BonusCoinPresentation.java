@@ -1,34 +1,30 @@
-// 研究性语义重建：来源为 UP9 a.class / a.V() 与 tile renderer a(byte,int,int)。
+// 研究性语义重建：来源为 UP9 a.class / a.V() 与 tile renderer a(byte,int,int).
 // 这是原版 presentation runtime 事实，不作为可直接编译的产品源码。
 
 public final class BonusCoinPresentation {
     private static final int BONUS_COIN = 0xF8;
 
-    /** 对应 `bE`：0..3 四相 ambient phase。 */
+    /** 对应 bE：0..3 四相 ambient phase。 */
     private int ambientPhase4;
 
-    /** 对应 `bG`：每 4 次 gameplay step 才推进一次 ambient phase。 */
+    /** 对应 bG：ambient phase 的四步门控。 */
     private int ambientSubstep;
 
-    /** 对应 `bH`：全场 Bonus Coin 共用的 sparkle gate。 */
+    /** 对应 bH：全场 Bonus Coin 共用 sparkle gate。 */
     private boolean bonusCoinSparkleEnabled;
 
     /**
-     * 对应 `a.V()` 的精确门控。
+     * 精确对应 a.V() 的时序：
      *
-     * 每次 gameplay step：
-     * 1. 只有 ambientSubstep==0 时才推进 ambientPhase4；
-     * 2. ambientPhase4 回到 0 时才评估 Bonus Coin gate；
-     * 3. gate 已开启 -> 无条件关闭；
-     * 4. gate 未开启 -> Random(7)==0 才开启。
+     * 每个 gameplay step：
+     * 1. 先处理 bE==0 时的 bH sparkle gate；
+     * 2. 然后推进 bG；
+     * 3. 只有 bG 回到 0 时，下一次 V() 才推进 bE/bC/bD/bF。
      *
-     * 所以这不是“50% 等 1 秒 / 30% 等 3 秒 / 20% 等 6 秒”的三档定时器。
+     * 注意：bH 检查不是每 16 step 一次。bE 保持为 0 的窗口内，
+     * 每个 gameplay step 都可能关闭当前 sparkle 或重新随机开启。
      */
     void gameplayStep() {
-        if (ambientSubstep == 0) {
-            ambientPhase4 = (ambientPhase4 + 1) % 4;
-        }
-
         if (ambientPhase4 == 0) {
             if (bonusCoinSparkleEnabled) {
                 bonusCoinSparkleEnabled = false;
@@ -40,14 +36,10 @@ public final class BonusCoinPresentation {
         ambientSubstep++;
         if (ambientSubstep >= 4) {
             ambientSubstep = 0;
+            ambientPhase4 = (ambientPhase4 + 1) % 4;
         }
     }
 
-    /**
-     * 所有 F8 Coin 共用同一个 `bH`，因此同一时刻会一起进入/退出 sparkle。
-     * gate 开启期间，renderer 用 bE 的 1..3 相去索引 `ta.png` base 15；
-     * phase 0 仍是 `ts.png` 静态帧。
-     */
     boolean useAnimatedBonusCoinFrame(int objectRaw) {
         return (objectRaw & 0xFF) == BONUS_COIN
             && bonusCoinSparkleEnabled
@@ -55,21 +47,18 @@ public final class BonusCoinPresentation {
     }
 
     int animatedFrameIndex() {
-        // 原版 `15 + bE - 1`。
+        // 原版 renderer: base 15 + bE - 1。
         return 15 + ambientPhase4 - 1;
     }
 
     /**
-     * 时基：ambientPhase4 每 4 gameplay step 前进一步；完整四相一轮 16 step。
-     * 稳态约 31ms/step，所以一次 gate 评估约每 496ms。
+     * 统计含义：
+     * - ambient phase 每 4 gameplay step 推进；
+     * - bH 只在 phase=0 窗口处理；
+     * - sparkle 持续时间不是固定 496ms。
      *
-     * 未开启时每次评估独立 1/7 概率开启，等待时间是几何分布；
-     * 开启后到下一次评估必定关闭，因此一次 sparkle gate 固定持续约 496ms。
+     * 具体可见持续时间取决于 bG/bE 当前相位和下一次 gate 处理。
      */
-    double expectedIdleMilliseconds() {
-        return 7.0 * 16.0 * 31.0; // 约 3472ms，仅为稳态期望值。
-    }
-
     private int randomInt(int bound) {
         throw new UnsupportedOperationException("original Random.nextInt wrapper");
     }
