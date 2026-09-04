@@ -1,4 +1,4 @@
-// 研究性语义重建：来源为 UP9 a.class / a.Q()。
+// 研究性语义重建：来源为 UP9 a.class / a.Q() 与 gameplay renderer。
 // 本文件用于表达已经确认的原版控制流，不作为可直接编译的产品源码。
 
 public final class DragonFireball {
@@ -7,9 +7,9 @@ public final class DragonFireball {
     private static final int UP = 2;
     private static final int DOWN = 3;
 
-    private static final int PIXELS_PER_TICK = 6;
+    private static final int PIXELS_PER_STEP = 6;
     private static final int TILE_SIZE = 48;
-    private static final int TICKS_PER_TILE = TILE_SIZE / PIXELS_PER_TICK;
+    private static final int STEPS_PER_TILE = TILE_SIZE / PIXELS_PER_STEP;
 
     private static final int TERRAIN_SKY_MIN = 0x47;
     private static final int TERRAIN_SKY_MAX = 0x4C;
@@ -37,46 +37,57 @@ public final class DragonFireball {
     private int pixelY;
     private int direction;
     private int pendingDirection = -1;
-    private int ticksUntilTileBoundary = TICKS_PER_TILE;
+    private int stepsUntilTileBoundary = STEPS_PER_TILE;
     private boolean active;
+
+    /** 原版 `bv=0..7`；renderer 0..3 使用 hud 第一火球帧，4..7 使用第二帧。 */
+    private int presentationPhase;
+
+    /** 原版共享 `aT`，Fireball 每次 Q() 都刷新为 16。 */
+    private int cameraFocusStepsRemaining;
 
     /**
      * 对应原版 `a.Q()`。
-     * 火球固定 6px/tick，因此 48px 一格需要 8 次 Q() 更新。
+     * 火球固定 6px/gameplay-step，因此 48px 一格需要 8 次 Q() 更新。
      */
-    void tick() {
-        if (!active) {
-            return;
-        }
+    void gameplayStep() {
+        if (!active) return;
+
+        presentationPhase = (presentationPhase + 1) % 8;
+
+        // Fireball 存活期间每 step 都刷新 camera focus，并把 target 更新到火球当前像素。
+        // 因而 Bobby 普通移动输入持续被共享 camera/input lock 挡住。
+        cameraFocusStepsRemaining = 16;
+        focusCameraAt(pixelX, pixelY);
 
         // 原版在当前 8-step tile phase 剩 3 时检查格内容；Mirror 转向先写入
         // pendingDirection，到 phase 重置时才成为实际 direction。
-        if (ticksUntilTileBoundary == 3 && !resolveCurrentTileCollision()) {
+        if (stepsUntilTileBoundary == 3 && !resolveCurrentTileCollision()) {
             active = false;
             return;
         }
 
-        if (ticksUntilTileBoundary == 0) {
-            ticksUntilTileBoundary = TICKS_PER_TILE;
+        if (stepsUntilTileBoundary == 0) {
+            stepsUntilTileBoundary = STEPS_PER_TILE;
             if (pendingDirection != -1) {
                 direction = pendingDirection;
                 pendingDirection = -1;
             }
         }
 
-        ticksUntilTileBoundary--;
+        stepsUntilTileBoundary--;
         switch (direction) {
             case LEFT:
-                pixelX -= PIXELS_PER_TICK;
+                pixelX -= PIXELS_PER_STEP;
                 return;
             case RIGHT:
-                pixelX += PIXELS_PER_TICK;
+                pixelX += PIXELS_PER_STEP;
                 return;
             case UP:
-                pixelY -= PIXELS_PER_TICK;
+                pixelY -= PIXELS_PER_STEP;
                 return;
             case DOWN:
-                pixelY += PIXELS_PER_TICK;
+                pixelY += PIXELS_PER_STEP;
                 return;
             default:
                 active = false;
@@ -84,8 +95,15 @@ public final class DragonFireball {
     }
 
     /**
+     * 火球视觉不是按 ms 单独计时：每 4 gameplay-step 换一帧。
+     * 稳态约 31ms/step，因此单帧约 124ms，完整两帧循环约 248ms。
+     */
+    int hudFireballFrame() {
+        return presentationPhase < 4 ? 0 : 1;
+    }
+
+    /**
      * `Q()` 的碰撞优先级：
-     *
      * 1. 地图边界；
      * 2. terrain 是否属于三个允许传播的 raw 区间；
      * 3. Raised Color Block；
@@ -98,86 +116,46 @@ public final class DragonFireball {
     private boolean resolveCurrentTileCollision() {
         int tileX = pixelX / TILE_SIZE;
         int tileY = pixelY / TILE_SIZE;
-        if (
-            tileX < 0
-                || tileY < 0
-                || tileY >= terrainGrid.length
-                || tileX >= terrainGrid[0].length
-        ) {
+        if (tileX < 0 || tileY < 0 || tileY >= terrainGrid.length || tileX >= terrainGrid[0].length) {
             return false;
         }
 
         int terrain = terrainGrid[tileY][tileX] & 0xFF;
         int object = objectGrid[tileY][tileX] & 0xFF;
 
-        if (!isFireballTerrainBasePassable(terrain)) {
-            return false;
-        }
-        if (terrain == YELLOW_BLOCK_RAISED || terrain == PINK_BLOCK_RAISED) {
-            return false;
-        }
+        if (!isFireballTerrainBasePassable(terrain)) return false;
+        if (terrain == YELLOW_BLOCK_RAISED || terrain == PINK_BLOCK_RAISED) return false;
 
         switch (object) {
             case DRAGON_HEAD:
             case DRAGON_BODY:
             case CRUMBLY_ROCK:
                 return false;
-
             case ICE_BLOCK:
-                // 很关键：命中 Ice Block 只启动融化任务，不让火球消失。
-                // Q() 随后仍继续执行 Mirror/普通通行逻辑。
+                // 命中 Ice 只启动融化，不让火球消失。
                 startIceMelting(tileX, tileY);
                 break;
-
             default:
                 break;
         }
 
         switch (terrain) {
             case MIRROR_RIGHT_DOWN:
-                if (direction == LEFT) {
-                    pendingDirection = DOWN;
-                    return true;
-                }
-                if (direction == UP) {
-                    pendingDirection = RIGHT;
-                    return true;
-                }
+                if (direction == LEFT) { pendingDirection = DOWN; return true; }
+                if (direction == UP) { pendingDirection = RIGHT; return true; }
                 return false;
-
             case MIRROR_LEFT_DOWN:
-                if (direction == RIGHT) {
-                    pendingDirection = DOWN;
-                    return true;
-                }
-                if (direction == UP) {
-                    pendingDirection = LEFT;
-                    return true;
-                }
+                if (direction == RIGHT) { pendingDirection = DOWN; return true; }
+                if (direction == UP) { pendingDirection = LEFT; return true; }
                 return false;
-
             case MIRROR_RIGHT_UP:
-                if (direction == LEFT) {
-                    pendingDirection = UP;
-                    return true;
-                }
-                if (direction == DOWN) {
-                    pendingDirection = RIGHT;
-                    return true;
-                }
+                if (direction == LEFT) { pendingDirection = UP; return true; }
+                if (direction == DOWN) { pendingDirection = RIGHT; return true; }
                 return false;
-
             case MIRROR_LEFT_UP:
-                if (direction == RIGHT) {
-                    pendingDirection = UP;
-                    return true;
-                }
-                if (direction == DOWN) {
-                    pendingDirection = LEFT;
-                    return true;
-                }
+                if (direction == RIGHT) { pendingDirection = UP; return true; }
+                if (direction == DOWN) { pendingDirection = LEFT; return true; }
                 return false;
-
             default:
                 return true;
         }
@@ -190,7 +168,8 @@ public final class DragonFireball {
     }
 
     private void startIceMelting(int x, int y) {
-        // 原版 `Q()` 调 `b((byte)x,(byte)y)`：立即 E3→E4，并加入最多 5 个任务；
-        // 后续 E4→E5→E6→empty 每阶段 6 tick。见 IceMelting.java。
+        // 立即 E3→E4，并加入最多 5 个任务；后续见 IceMelting.java。
     }
+
+    private void focusCameraAt(int x, int y) {}
 }
