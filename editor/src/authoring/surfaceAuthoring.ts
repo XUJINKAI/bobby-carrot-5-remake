@@ -379,18 +379,6 @@ function resolveAutoType(
     );
   }
   if (auto.kind === "paired-vertical") {
-    let top = cell.y;
-    while (
-      targetHasTerrain(level, target, terrain.id, { x: cell.x, y: top - 1 })
-    )
-      top -= 1;
-    const offset = cell.y - top;
-    const below = targetHasTerrain(level, target, terrain.id, {
-      x: cell.x,
-      y: cell.y + 1,
-    });
-    if (offset % 2 === 0 && below) return auto.top;
-    if (offset % 2 === 1) return auto.bottom;
     return weightedVariant(
       auto.singles,
       hashCell(cell, seed + (auto.salt ?? 0)),
