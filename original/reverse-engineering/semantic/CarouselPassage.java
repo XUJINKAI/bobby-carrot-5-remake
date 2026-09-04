@@ -64,8 +64,9 @@ public final class CarouselPassage {
 
     /**
      * 对应原版 `a.b(byte)`。
-     * Bobby 进入 Carousel 时 `a.J()` 只记住其坐标；下一次移动完成时，
-     * `J()` 开头才调用该转换，因此语义上是 rotate-on-leave。
+     * Bobby 第一次跨过 Carousel 的移动中点时，`a.J()` 记住该格坐标；
+     * 下一次移动跨过中点、再次执行 `J()` 时，函数开头才对上一格调用该转换。
+     * 因此 gameplay 语义是 rotate-on-leave，但原版实际结算点位于下一次视觉移动的中点。
      */
     int rotateClockwiseOnLeave(int rawTile) {
         switch (rawTile & 0xFF) {
