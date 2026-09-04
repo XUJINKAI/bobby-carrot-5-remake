@@ -1,4 +1,4 @@
-// 研究性语义重建：来源为 UP9 a.class / a.M() 与 a.a(int,int,boolean)。
+// 研究性语义重建：来源为 UP9 a.class / a.M()、a.N() 与 a.a(int,int,boolean)。
 // 本文件用于表达已经确认的原版控制流，不作为可直接编译的产品源码。
 
 public final class PlayerMovement {
@@ -6,6 +6,10 @@ public final class PlayerMovement {
     private static final int DIR_RIGHT = 1;
     private static final int DIR_UP = 2;
     private static final int DIR_DOWN = 3;
+
+    private static final int TILE_SIZE = 48;
+    private static final int NORMAL_PIXELS_PER_TICK = 3;
+    private static final int FAST_PIXELS_PER_TICK = 6;
 
     private static final int TERRAIN_SPEED_UP = 0xB5;
     private static final int TERRAIN_SPEED_DOWN = 0xB6;
@@ -17,9 +21,12 @@ public final class PlayerMovement {
 
     private int playerGridX;
     private int playerGridY;
+    private int playerPixelX;
+    private int playerPixelY;
     private int playerMotionState;
     private int playerMovePixelsRemaining;
     private int speedContinuation;
+    private boolean fastPixelMotion;
 
     private boolean inputUpHeld;
     private boolean inputDownHeld;
@@ -51,14 +58,14 @@ public final class PlayerMovement {
 
         if (speedContinuation > 0) {
             if (moveInCurrentDirection()) {
-                // 原版随后根据输入同向保持、碰撞和当前 terrain 继续调整 aN。
-                // 这些分支继续在后续 semantic pass 中恢复。
-                playerMovePixelsRemaining = 48;
+                fastPixelMotion = true;
+                playerMovePixelsRemaining = TILE_SIZE;
                 return true;
             }
             speedContinuation = 0;
         }
 
+        fastPixelMotion = false;
         if (inputLeftHeld && tryMove(-1, 0, DIR_LEFT)) {
             return true;
         }
@@ -75,6 +82,35 @@ public final class PlayerMovement {
         return false;
     }
 
+    /**
+     * 对应原版 `a.N()`。
+     *
+     * 普通移动每 tick 走 3px，Speed / 特殊快速移动每 tick 走 6px。
+     * 48px tile 因此分别需要 16 tick 与 8 tick；结合约 62ms 主循环，
+     * 原版一格视觉位移约为 992ms 与 496ms。
+     */
+    void advancePixelMotion() {
+        int pixels = fastPixelMotion ? FAST_PIXELS_PER_TICK : NORMAL_PIXELS_PER_TICK;
+        playerMovePixelsRemaining -= pixels;
+
+        switch (playerMotionState) {
+            case DIR_LEFT:
+                playerPixelX -= pixels;
+                return;
+            case DIR_RIGHT:
+                playerPixelX += pixels;
+                return;
+            case DIR_UP:
+                playerPixelY -= pixels;
+                return;
+            case DIR_DOWN:
+                playerPixelY += pixels;
+                return;
+            default:
+                return;
+        }
+    }
+
     private boolean tryMove(int dx, int dy, int direction) {
         if (!canPlayerMove(dx, dy, false)) {
             return false;
@@ -83,7 +119,7 @@ public final class PlayerMovement {
         playerGridX += dx;
         playerGridY += dy;
         playerMotionState = direction;
-        playerMovePixelsRemaining = 48;
+        playerMovePixelsRemaining = TILE_SIZE;
         return true;
     }
 
