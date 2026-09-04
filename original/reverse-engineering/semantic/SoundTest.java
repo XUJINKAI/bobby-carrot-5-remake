@@ -4,6 +4,20 @@ public final class SoundTest {
     /** D[3] 购买后主菜单出现 "SOUND TEST"，action 16 进入 menu mode 5。 */
     private boolean unlocked;
 
+    /** mode 5 按此顺序构造 10 个菜单项；ID 顺序不是连续区间。 */
+    static final int[] LABEL_STRING_IDS = {
+        DialogCatalog.SOUND_TEST_INGAME_1,
+        DialogCatalog.SOUND_TEST_INGAME_2,
+        DialogCatalog.SOUND_TEST_INGAME_3,
+        DialogCatalog.SOUND_TEST_LAWNMOWER,
+        DialogCatalog.SOUND_TEST_SANDMAN,
+        DialogCatalog.SOUND_TEST_BEAVER,
+        DialogCatalog.SOUND_TEST_UNIVERSE,
+        DialogCatalog.SOUND_TEST_GOLDEN_CARROT,
+        DialogCatalog.SOUND_TEST_BONUS_LEVEL,
+        DialogCatalog.SOUND_TEST_LEVEL_COMPLETE,
+    };
+
     static final String[] LABELS = {
         "INGAME 1",
         "INGAME 2",
@@ -14,6 +28,7 @@ public final class SoundTest {
         "UNIVERSE",
         "GOLDEN CARROT",
         "BONUS LEVEL",
+        "LEVEL COMPLETE",
     };
 
     /**
@@ -38,8 +53,10 @@ public final class SoundTest {
                 return "/fly.mid";
             case 8:
                 return "/bonus.mid";
-            default:
+            case 9:
                 return "/cleared.mid";
+            default:
+                return null;
         }
     }
 }

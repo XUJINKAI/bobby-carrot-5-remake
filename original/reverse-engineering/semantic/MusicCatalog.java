@@ -115,7 +115,8 @@ public final class MusicCatalog {
             case 6: return UNIVERSE;
             case 7: return FLIGHT;
             case 8: return BONUS;
-            default: return CLEARED;
+            case 9: return CLEARED;
+            default: return null;
         }
     }
 

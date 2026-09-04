@@ -11,6 +11,17 @@ public final class DialogCatalog {
     static final int MUSIC = 4;
     static final int VOLUME = 5;
     static final int SOUND_TEST = 6;
+    static final int SOUND_TEST_INGAME_1 = 7;
+    static final int SOUND_TEST_INGAME_2 = 8;
+    static final int SOUND_TEST_INGAME_3 = 9;
+    static final int SOUND_TEST_BONUS_LEVEL = 10;
+    static final int SOUND_TEST_LEVEL_COMPLETE = 11;
+    static final int SOUND_TEST_LAWNMOWER = 12;
+    static final int SOUND_TEST_SANDMAN = 13;
+    static final int SOUND_TEST_BEAVER = 14;
+    static final int SOUND_TEST_UNIVERSE = 15;
+    static final int SOUND_TEST_GOLDEN_CARROT = 16;
+    static final int LANGUAGE = 17;
     static final int HELP = 18;
     static final int CREDITS = 19;
     static final int EXIT_LEVEL = 20;
