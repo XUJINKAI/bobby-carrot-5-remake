@@ -1,0 +1,141 @@
+name: Original reverse resource semantics
+
+on:
+  push:
+    branches:
+      - reverse/original-runtime
+    paths:
+      - .github/workflows/original-reverse-resource-semantics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reverse/original-runtime
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract language and resource catalog
+        run: |
+          rm -rf tmp/original-reverse/resources
+          mkdir -p tmp/original-reverse/resources
+          cd tmp/original-reverse/resources
+          jar xf ../../../original/official-hd/up09.jar EN.dat
+          jar tf ../../../original/official-hd/up09.jar > jar-files.txt
+
+          cat > ReadLanguage.java <<'JAVA'
+          import java.io.*;
+
+          public final class ReadLanguage {
+              public static void main(String[] args) throws Exception {
+                  try (DataInputStream in = new DataInputStream(new FileInputStream("EN.dat"))) {
+                      int count = in.readUnsignedShort();
+                      for (int i = 0; i < count; i++) {
+                          String value = in.readUTF();
+                          value = value
+                              .replace("\\", "\\\\")
+                              .replace("\t", "\\t")
+                              .replace("\r", "\\r")
+                              .replace("\n", "\\n");
+                          System.out.println(i + "\t" + value);
+                      }
+                  }
+              }
+          }
+          JAVA
+          javac ReadLanguage.java
+          java ReadLanguage > language.tsv
+
+          cd ../../..
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('tmp/original-reverse/resources')
+          src_path = Path('original/reverse-engineering/decompiled/up09/a.java')
+          lines = src_path.read_text(encoding='utf-8').splitlines()
+
+          strings = {}
+          for row in (root / 'language.tsv').read_text(encoding='utf-8').splitlines():
+              idx, text = row.split('\t', 1)
+              strings[int(idx)] = text
+
+          # Build a simple source-method map. CFR output keeps method declarations on their own lines.
+          method_at_line = {}
+          current = '<field-initializer>'
+          method_decl = re.compile(r'^\s*(?:public|private|protected).*?\([^;]*\)\s*\{\s*$')
+          for no, line in enumerate(lines, 1):
+              if method_decl.match(line):
+                  current = line.strip().removesuffix('{').strip()
+              method_at_line[no] = current
+
+          usage = {idx: [] for idx in strings}
+          literal_re = re.compile(r'\bthis\.a\[(\d+)\]')
+          for no, line in enumerate(lines, 1):
+              for m in literal_re.finditer(line):
+                  idx = int(m.group(1))
+                  if idx in usage:
+                      usage[idx].append((no, method_at_line[no], line.strip()))
+
+          out = Path('original/reverse-engineering/notes/up09-language-catalog.md')
+          with out.open('w', encoding='utf-8') as f:
+              f.write('# UP9 Language Catalog\n\n')
+              f.write('从 `EN.dat` 机械读取全部字符串，并索引 `a.class` 反编译代码中的直接 `a[index]` 使用位置。')
+              f.write('这是原版资源研究基准，不属于项目原创授权范围。\n\n')
+              f.write(f'字符串总数：**{len(strings)}**。\n\n')
+              for idx in sorted(strings):
+                  text = strings[idx].replace('|', '\\|')
+                  f.write(f'## `a[{idx}]`\n\n')
+                  f.write(f'原文：`{text}`\n\n')
+                  if usage[idx]:
+                      f.write('直接使用：\n\n')
+                      for line_no, method, source in usage[idx]:
+                          f.write(f'- L{line_no} · `{method}` · `{source.replace("`", "\\`")}`\n')
+                      f.write('\n')
+                  else:
+                      f.write('直接使用：未在 CFR 源码中发现常量下标引用（可能经变量索引/数组复制间接使用）。\n\n')
+
+          # Music resources + source usages.
+          jar_files = (root / 'jar-files.txt').read_text(encoding='utf-8').splitlines()
+          music_resources = sorted(p for p in jar_files if p.lower().endswith(('.mid', '.midi')))
+          string_mid = re.compile(r'"([^"]+\.(?:mid|midi))"', re.I)
+          music_usages = []
+          for no, line in enumerate(lines, 1):
+              for m in string_mid.finditer(line):
+                  music_usages.append((m.group(1), no, method_at_line[no], line.strip()))
+
+          mout = Path('original/reverse-engineering/notes/up09-music-index.md')
+          with mout.open('w', encoding='utf-8') as f:
+              f.write('# UP9 Music Resource Index\n\n')
+              f.write('机械列出 JAR 中 MIDI 资源，以及 `a.java` 中所有直接 MIDI 字符串引用。\n\n')
+              f.write('## JAR MIDI resources\n\n')
+              for resource in music_resources:
+                  f.write(f'- `{resource}`\n')
+              f.write('\n## Direct runtime usages\n\n')
+              for resource, line_no, method, source in music_usages:
+                  f.write(f'- `{resource}` · L{line_no} · `{method}`\n  - `{source.replace("`", "\\`")}`\n')
+          PY
+
+      - name: Commit resource semantics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            original/reverse-engineering/notes/up09-language-catalog.md \
+            original/reverse-engineering/notes/up09-music-index.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "reverse: index UP9 language and music resources"
+          git pull --rebase origin reverse/original-runtime
+          git push origin HEAD:reverse/original-runtime
