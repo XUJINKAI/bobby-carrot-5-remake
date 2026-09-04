@@ -10,6 +10,7 @@
 - `bytecode/`：`javap` 字节码基准与关键方法切片；反编译器无法可靠结构化时回退到这里。
 - `semantic/`：逐步整理、重命名和拆解后的语义化研究代码。该层必须能够追溯到 `decompiled/` / `bytecode/` 中的原始类、字段和方法。
 - `notes/`：逆向索引、命名映射、版本指纹、资源索引、证据和未确认项。
+- `scripts/`：可重复运行的反编译、bytecode、源码索引、资源审计与版本指纹脚本；使用说明见 `scripts/README.md`。
 
 ## UP09 主入口
 
@@ -69,6 +70,10 @@
 - `notes/fidelity-discrepancies.md`：只记录已由 class 与当前仓库交叉确认的差异；本逆向分支不修改 Engine / Adapter。
 
 目前明确包括 Speed 状态机、Ice 生命周期、Tide raw direction、Carousel/Tide Switch 命名，以及原版 gameplay-step 与当前默认 World 16Hz 的时基关系。
+
+## 可复现工具
+
+逆向生成逻辑均为仓库内本地脚本，不依赖具有写权限的 GitHub Actions。完整命令、依赖、输入只读边界和输出表见 `scripts/README.md`。脚本只生成机械基准与报告，不修改 `semantic/`，也不自动 commit/push。
 
 ## Runtime generation 边界
 
