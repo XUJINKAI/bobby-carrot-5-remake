@@ -1,6 +1,6 @@
 // 研究性语义重建：来源为 UP9 a.class / player midpoint shop branch、
 // generic dialog action dispatcher、pause menu action 30/31/32、gameplay F()/M()、
-// D[] 全引用追踪与 EN.dat 精准字符串索引。
+// D[] 全引用追踪、EN.dat 精准字符串索引与 menu mode 4/5 控制流。
 // 本文件只表达原版持久 upgrade 状态，不作为可直接编译的产品源码。
 
 public final class ShopUpgrades {
@@ -20,26 +20,15 @@ public final class ShopUpgrades {
     private static final int[] PRICE = {5, 10, 30, 20, 10, 25, 10};
 
     private byte[][] terrainGrid;
-
-    /** 对应持久化 `D[7]`。 */
     private byte[] purchasedUpgradeCount = new byte[7];
-
-    /** 对应持久化 `I`。 */
     private int globalCurrency;
-
-    /** 对应 `F` / `E`，本身也持久化。 */
     private boolean speedShoesEnabled;
     private boolean coinRadarEnabled;
-
-    /** 对应 `H`：-1 为随机 ingame track，否则 0..D[4]。 */
     private int selectedIngameMusic = -1;
 
     int shopIndexForTerrain(int rawTerrain) {
         int raw = rawTerrain & 0xFF;
-        if (raw < SHOP_FIRST || raw > SHOP_LAST) {
-            return -1;
-        }
-        return raw - SHOP_FIRST;
+        return raw >= SHOP_FIRST && raw <= SHOP_LAST ? raw - SHOP_FIRST : -1;
     }
 
     boolean canAfford(int upgradeIndex) {
@@ -49,9 +38,7 @@ public final class ShopUpgrades {
     }
 
     boolean purchase(int x, int y, int upgradeIndex) {
-        if (!canAfford(upgradeIndex)) {
-            return false;
-        }
+        if (!canAfford(upgradeIndex)) return false;
 
         globalCurrency -= PRICE[upgradeIndex];
         terrainGrid[y][x] = (byte)SHOP_UNAVAILABLE;
@@ -70,9 +57,7 @@ public final class ShopUpgrades {
     }
 
     void toggleSpeedShoes() {
-        if (purchasedUpgradeCount[UPGRADE_SPEED_SHOES] == 0) {
-            return;
-        }
+        if (purchasedUpgradeCount[UPGRADE_SPEED_SHOES] == 0) return;
         speedShoesEnabled = !speedShoesEnabled;
         persist();
     }
@@ -82,9 +67,7 @@ public final class ShopUpgrades {
     }
 
     void toggleCoinRadar() {
-        if (purchasedUpgradeCount[UPGRADE_COIN_RADAR] == 0) {
-            return;
-        }
+        if (purchasedUpgradeCount[UPGRADE_COIN_RADAR] == 0) return;
         coinRadarEnabled = !coinRadarEnabled;
         persist();
     }
@@ -103,24 +86,23 @@ public final class ShopUpgrades {
     }
 
     /**
-     * EN.dat 与菜单构造已经直接确认这三个 scene/product unlock：
+     * D[0]/D[1] 的完整引用追踪只确认它们控制 menu mode 4 是否出现：
+     * - D[0] > 0 -> 显示 "DREAM MACHINE"；
+     * - D[1] > 0 -> 显示 "CLOUD 9"。
      *
-     * D[0] -> "DREAM MACHINE"，在 menu mode 4 中出现 action 1；
-     * D[1] -> "CLOUD 9"，在 menu mode 4 中出现 action 2；
-     * D[3] -> "SOUND TEST"，在主菜单出现 action 16。
-     *
-     * Sound Test 的 mode 5 列表原文包括 INGAME 1/2/3、BONUS LEVEL、
-     * LEVEL COMPLETE、LAWNMOWER、SANDMAN、BEAVER、UNIVERSE、GOLDEN CARROT，
-     * 因此 D[3] 的效果可以无歧义命名为解锁音轨试听菜单。
+     * mode 4 的确认键经过通用 18-step menu transition 后进入 `ak(ea=4)`，
+     * 该分支没有 scene jump 或 gameplay action。因此当前能确认的是“解锁 mode-4
+     * 条目/显示”，不能再向上解释成可操作 scene 入口。
      */
-    boolean hasDreamMachineUnlock() {
+    boolean showsDreamMachineMode4Entry() {
         return purchasedUpgradeCount[UPGRADE_DREAM_MACHINE] > 0;
     }
 
-    boolean hasCloud9Unlock() {
+    boolean showsCloud9Mode4Entry() {
         return purchasedUpgradeCount[UPGRADE_CLOUD_9] > 0;
     }
 
+    /** D[3] 的 action 16 与 mode 5 bytecode 已完整确认是 Sound Test。 */
     boolean hasSoundTestUnlock() {
         return purchasedUpgradeCount[UPGRADE_SOUND_TEST] > 0;
     }
