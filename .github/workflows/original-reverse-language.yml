@@ -34,7 +34,6 @@ jobs:
 
           cat > ReadLanguage.java <<'JAVA'
           import java.io.*;
-          import java.nio.file.*;
           import java.util.*;
 
           public final class ReadLanguage {
@@ -43,6 +42,7 @@ jobs:
                   for (int i = 6; i <= 16; i++) wanted.add(i);
                   wanted.add(25);
                   wanted.add(26);
+                  for (int i = 100; i <= 122; i++) wanted.add(i);
 
                   try (DataInputStream in = new DataInputStream(new FileInputStream("EN.dat"))) {
                       int count = in.readUnsignedShort();
