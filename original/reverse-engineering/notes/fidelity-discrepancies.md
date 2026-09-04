@@ -2,6 +2,56 @@
 
 本文件只记录已经由原版 `a.class` 控制流与当前仓库实现交叉确认出的差异候选。这里先保存证据，不在逆向阶段直接修改 Engine / DAT Adapter。
 
+## Gameplay step 时基不能直接按当前 World 16Hz 等同
+
+### 原版运行时事实
+
+UP9 `a.run()` 的外层循环把整轮 wall-clock 节拍控制在约 `62ms`，但每个外层循环会调用 **两次** `a.b()`：
+
+```text
+advanceRuntimeState()
+repaint / serviceRepaints（按需）
+advanceRuntimeState()
+sleep until outer cycle ~= 62ms
+```
+
+当 `x==1` 时，每次 `a.b()` 都会推进 gameplay 的 `H()/P()/S()/V()/...`，所以稳定状态下一个原版 gameplay step 平均约为：
+
+```text
+62ms / 2 ~= 31ms
+~= 32.26 gameplay steps / second
+```
+
+这也是为什么 class 中：
+
+- 普通 Bobby：48px / 3px = 16 step ≈ 496ms / 格；
+- Speed：48px / 6px = 8 step ≈ 248ms / 格；
+- Bean：16 step ≈ 496ms / 生长格；
+- Plank / Ice melt / Dragon prep：6 step ≈ 186ms / 阶段。
+
+### 当前仓库状态
+
+`engine/src/time/EngineTiming.ts` 当前：
+
+```ts
+export const DEFAULT_WORLD_HZ = 16;
+```
+
+而且 Engine 的设计说明明确允许 gameplay duration 用 ms 表达，因此 **16Hz 本身不一定必须修改**。
+
+真正的问题是：不能再把“1 个原版 gameplay step”直接翻译成“1 个 Engine World tick”。如果某机制把原版 `6 / 16 / 32 / 64 step` 常量直接照搬为 World tick 数，在 16Hz 下时长会整体变成原版约两倍。
+
+### 当前结论
+
+后续 Engine fidelity 修复有两条可行路线：
+
+1. World 仍保持 16Hz，但所有原版 step 常量先按约 `31ms/step` 转为 ms / RuntimeAction elapsed time；
+2. 或将需要原版逐 step 顺序的 subsystem 设计为更高频固定步进。
+
+优先推荐第一种，因为当前 Engine 已经把 World cadence 与以 ms 表达的时长解耦。
+
+但需要特别注意：midpoint interaction、moving-entity pixel collision、camera focus countdown 等不仅有“总时长”，还有**逐 step 执行顺序**；这些不能只通过把最终 duration 调成相同毫秒数来近似。
+
 ## Speed 衰减状态机与原版实现不一致
 
 ### 原版运行时事实
