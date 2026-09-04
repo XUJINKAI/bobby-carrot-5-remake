@@ -79,7 +79,7 @@ export type SurfaceAutoDefinition =
       salt?: number;
     }
   | {
-      /** 纵向区域优先两两拼接；落单格再从 singles 中选择。 */
+      /** 旧实验策略，仅为兼容已有代码路径；当前 Catalog 不使用多格 Auto。 */
       kind: "paired-vertical";
       top: EntityType;
       bottom: EntityType;
@@ -274,7 +274,6 @@ const cloud = terrain({
     walkRow(8, range(9, 14)),
     walkRow(9, range(7, 14)),
   ],
-  // 边缘映射待按原图继续精调；中心裂缝候选集中在这里，方便直接改。
   auto: { kind: "weighted", variants: weights(cloudTypes), salt: 37 },
 });
 
@@ -492,16 +491,11 @@ const cactus = terrain({
     [variant(bg(4, 15), "4,15 小仙人掌"), variant(bg(5, 15), "5,15 仙人球")],
     [variant(bg(4, 16), "4,16 两格上"), variant(bg(5, 16), "5,16 两格下")],
   ],
-  auto: {
-    kind: "paired-vertical",
-    top: bg(4, 16),
-    bottom: bg(5, 16),
-    singles: [
-      { type: bg(4, 15), weight: 3 },
-      { type: bg(5, 15), weight: 1 },
-    ],
-    salt: 43,
-  },
+  // Composite Surface Asset 延期；Auto 只在单格仙人掌中做加权选择。
+  auto: weighted([
+    [bg(4, 15), 3],
+    [bg(5, 15), 1],
+  ], 43),
 });
 const sand = terrain({
   id: "sand",
