@@ -1,0 +1,162 @@
+name: Original reverse text audit
+
+on:
+  push:
+    branches:
+      - reverse/original-runtime
+    paths:
+      - .github/workflows/original-reverse-text-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reverse/original-runtime
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract localized language resources
+        run: |
+          rm -rf tmp/original-reverse/text-audit
+          mkdir -p tmp/original-reverse/text-audit
+          cd tmp/original-reverse/text-audit
+          for lang in EN DE FR IT SP PG; do
+            jar xf ../../../original/official-hd/up09.jar ${lang}.dat
+          done
+
+          cat > ReadLanguage.java <<'JAVA'
+          import java.io.*;
+
+          public final class ReadLanguage {
+              public static void main(String[] args) throws Exception {
+                  for (String path : args) {
+                      try (DataInputStream in = new DataInputStream(new FileInputStream(path))) {
+                          int count = in.readUnsignedShort();
+                          System.out.println(path + "\t" + count);
+                          for (int i = 0; i < count; i++) {
+                              String value = in.readUTF();
+                              value = value
+                                  .replace("\\", "\\\\")
+                                  .replace("\t", "\\t")
+                                  .replace("\r", "\\r")
+                                  .replace("\n", "\\n");
+                              System.out.println(path + "\t" + i + "\t" + value);
+                          }
+                      }
+                  }
+              }
+          }
+          JAVA
+          javac ReadLanguage.java
+          java ReadLanguage EN.dat DE.dat FR.dat IT.dat SP.dat PG.dat > locales.tsv
+          cd ../../..
+
+      - name: Build text audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import ast
+          import re
+
+          root = Path('tmp/original-reverse/text-audit')
+          lines = Path('original/reverse-engineering/decompiled/up09/a.java').read_text(encoding='utf-8').splitlines()
+
+          # Locale counts / shape.
+          counts = {}
+          values = {}
+          for row in (root / 'locales.tsv').read_text(encoding='utf-8').splitlines():
+              parts = row.split('\t', 2)
+              lang = parts[0].removesuffix('.dat')
+              if len(parts) == 2:
+                  counts[lang] = int(parts[1])
+                  values.setdefault(lang, {})
+              else:
+                  values.setdefault(lang, {})[int(parts[1])] = parts[2]
+
+          # Source method map.
+          current = '<field-initializer>'
+          method_at_line = {}
+          method_decl = re.compile(r'^\s*(?:public|private|protected).*?\([^;]*\)\s*\{\s*$')
+          for no, line in enumerate(lines, 1):
+              if method_decl.match(line):
+                  current = line.strip().removesuffix('{').strip()
+              method_at_line[no] = current
+
+          # Java string literals. Decode common escapes enough for research display.
+          literal_re = re.compile(r'"(?:\\.|[^"\\])*"')
+          hardcoded = []
+          for no, line in enumerate(lines, 1):
+              for m in literal_re.finditer(line):
+                  raw = m.group(0)
+                  try:
+                      value = ast.literal_eval(raw)
+                  except Exception:
+                      value = raw[1:-1]
+
+                  # Resource paths, MIME, record-store names, locale filename construction,
+                  # numeric/format fragments and language selection tables are kept in a separate
+                  # mechanical list but not called user-facing dialog.
+                  category = 'other'
+                  upper = value.upper()
+                  if value.startswith('/') or re.search(r'\.(?:MID|PNG|DAT)$', upper):
+                      category = 'resource'
+                  elif value in ('audio/midi', '', '0', '-', '###', '##'):
+                      category = 'format/runtime'
+                  elif 'DEUTSCH=DE;' in value:
+                      category = 'language-menu-table'
+                  elif any(token in upper for token in (
+                      'DO YOU ', 'CHEAT!', 'FORMAT THE RMS', 'ERROR', 'HTTP://', 'WWW.',
+                  )):
+                      category = 'user-facing/hardcoded'
+                  elif len(value) >= 12 and (' ' in value or '?' in value or '!' in value):
+                      category = 'possible-user-facing'
+
+                  hardcoded.append((no, method_at_line[no], category, value, line.strip()))
+
+          out = Path('original/reverse-engineering/notes/up09-text-audit.md')
+          with out.open('w', encoding='utf-8') as f:
+              f.write('# UP9 Text Audit\n\n')
+              f.write('审计 `EN/DE/FR/IT/SP/PG.dat` 与 `a.class` 中直接硬编码的字符串，补足仅查看 `EN.dat` 会漏掉的文字。\n\n')
+              f.write('## Locale resource shape\n\n')
+              f.write('| locale | string count | IDs match EN 0..122 |\n|---|---:|---|\n')
+              for lang in ['EN','DE','FR','IT','SP','PG']:
+                  count = counts.get(lang, 0)
+                  ids_match = sorted(values.get(lang, {})) == list(range(count)) and count == counts.get('EN')
+                  f.write(f'| {lang} | {count} | {"yes" if ids_match else "no"} |\n')
+
+              f.write('\n结论：semantic string ID 以 EN 名称命名，但同一 ID 可直接索引其它五个原版 locale。完整原文仍留在只读 JAR；本报告不重复提交六份完整翻译正文。\n\n')
+
+              f.write('## User-facing strings hardcoded in class\n\n')
+              selected = [x for x in hardcoded if x[2] in ('user-facing/hardcoded','possible-user-facing')]
+              for no, method, category, value, source in selected:
+                  escaped = value.replace('`','\\`').replace('\n','\\n').replace('\r','\\r')
+                  f.write(f'- L{no} · **{category}** · `{method}`\n')
+                  f.write(f'  - `{escaped}`\n')
+
+              f.write('\n## All class string literals by category\n\n')
+              for no, method, category, value, source in hardcoded:
+                  escaped = value.replace('`','\\`').replace('\n','\\n').replace('\r','\\r')
+                  f.write(f'- L{no} · `{category}` · `{escaped}` · `{method}`\n')
+          PY
+
+      - name: Commit audit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add original/reverse-engineering/notes/up09-text-audit.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "reverse: audit UP9 localized and hardcoded text"
+          git pull --rebase origin reverse/original-runtime
+          git push origin HEAD:reverse/original-runtime
