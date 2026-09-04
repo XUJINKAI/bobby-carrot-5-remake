@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import { tideSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -24,4 +25,5 @@ export const tideSwitch: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.pressed === true ? cell(6, 10) : cell(5, 10),
   ),
+  [{ behavior: tideSwitchBehavior }],
 );

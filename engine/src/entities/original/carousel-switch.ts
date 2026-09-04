@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import { carouselSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -24,4 +25,5 @@ export const carouselSwitch: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.pressed === true ? cell(4, 10) : cell(3, 10),
   ),
+  [{ behavior: carouselSwitchBehavior }],
 );
