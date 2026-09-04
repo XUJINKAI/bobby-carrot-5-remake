@@ -3,7 +3,9 @@ import { Camera } from "../render/Camera.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
+import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
+import type { WorldMotion } from "../world/movement/WorldMotion.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
@@ -27,6 +29,11 @@ interface VisualMotion {
 export interface VisualRuntimeInspection {
   visualId: string;
   runtime: EntityVisualRuntimeState | null;
+}
+
+export interface WorldDeltaPresentationOptions {
+  motionDuration(motion: WorldMotion): number;
+  stationaryDeathDurationMs: number;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -114,6 +121,68 @@ export class VisualRuntime {
       animation,
       direction,
     );
+  }
+
+  /** 将有序 World 事实映射为表现状态；不向 World 回写 delay 或 gameplay mutation。 */
+  consumeWorldDeltas(
+    world: World,
+    deltas: readonly WorldDelta[],
+    frame: PresentationFrame,
+    options: WorldDeltaPresentationOptions,
+  ): void {
+    const interruptedActors = new Set(
+      deltas
+        .filter((delta) => delta.type === "motion-interrupted")
+        .map((delta) => delta.motion.entityId),
+    );
+    for (const delta of deltas) {
+      if (delta.type === "motion-started") {
+        const motion = delta.motion;
+        this.beginMove(
+          motion.entityId,
+          motion.from,
+          motion.to,
+          options.motionDuration(motion),
+          frame,
+          {
+            ...(motion.cause.type === "forced" && motion.cause.mechanism
+              ? { animation: motion.cause.mechanism }
+              : {}),
+            direction: motion.direction,
+          },
+        );
+        continue;
+      }
+      if (delta.type === "motion-interrupted") {
+        const motion = delta.motion;
+        this.beginDeath(
+          motion.entityId,
+          motion.from,
+          motion.to,
+          options.motionDuration(motion),
+          frame,
+          motion.progress,
+        );
+        continue;
+      }
+      if (delta.type !== "actor-lifecycle-changed") continue;
+      const actor = delta.actor;
+      if (actor.phase === "active") {
+        this.clearEntity(actor.entityId);
+        continue;
+      }
+      if (interruptedActors.has(actor.entityId)) continue;
+      const entity = world.entity(actor.entityId);
+      if (!entity) continue;
+      this.beginDeath(
+        actor.entityId,
+        entity.anchor,
+        entity.anchor,
+        options.stationaryDeathDurationMs,
+        frame,
+        0,
+      );
+    }
   }
 
   update(frame: PresentationFrame, easing: MotionEasing): void {

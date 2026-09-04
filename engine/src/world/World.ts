@@ -184,7 +184,11 @@ export class World {
   }
 
   isInputBlockedFor(actorId: EntityId): boolean {
-    return !this.actors.isActive(actorId) || this.actions.isInputBlockedFor(actorId);
+    return (
+      !this.actors.isActive(actorId) ||
+      this.movement.motions.forEntity(actorId)?.status === "running" ||
+      this.actions.isInputBlockedFor(actorId)
+    );
   }
 
   actorLifecycle(actorId: EntityId): Readonly<ActorLifecycleState> {

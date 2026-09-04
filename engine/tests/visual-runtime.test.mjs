@@ -379,6 +379,58 @@ test("hazard death presentation stops forty percent into the target cell", () =>
   assert.equal(runtime.isAnimating, false);
 });
 
+test("WorldDelta interruption drives death presentation at authoritative progress", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 1, y: 0 } }),
+    definition: () => ({ type: EntityTypeId.BOBBY }),
+  };
+  const motion = {
+    id: 1,
+    kind: "move",
+    entityId: 7,
+    from: { x: 0, y: 0 },
+    to: { x: 1, y: 0 },
+    direction: "right",
+    cause: { type: "player-input", source: "test" },
+    durationMs: 100,
+    elapsedMs: 50,
+    progress: 0.5,
+    status: "interrupted",
+    interruption: { reason: "trap" },
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [
+      {
+        sequence: 1,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "actor-lifecycle-changed",
+        actor: {
+          entityId: 7,
+          phase: "downed",
+          reason: "trap",
+          changedAtMs: 50,
+        },
+      },
+      {
+        sequence: 2,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "motion-interrupted",
+        motion,
+      },
+    ],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  const state = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(state.animation, "death");
+  assert.equal(state.offsetX, -0.5);
+});
+
 test("explicit presentation motion duration is independent from WorldClock rate", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(
