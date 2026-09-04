@@ -71,7 +71,6 @@ jobs:
           root = Path('tmp/original-reverse/text-audit')
           lines = Path('original/reverse-engineering/decompiled/up09/a.java').read_text(encoding='utf-8').splitlines()
 
-          # Locale counts / shape.
           counts = {}
           values = {}
           for row in (root / 'locales.tsv').read_text(encoding='utf-8').splitlines():
@@ -83,7 +82,6 @@ jobs:
               else:
                   values.setdefault(lang, {})[int(parts[1])] = parts[2]
 
-          # Source method map.
           current = '<field-initializer>'
           method_at_line = {}
           method_decl = re.compile(r'^\s*(?:public|private|protected).*?\([^;]*\)\s*\{\s*$')
@@ -92,7 +90,6 @@ jobs:
                   current = line.strip().removesuffix('{').strip()
               method_at_line[no] = current
 
-          # Java string literals. Decode common escapes enough for research display.
           literal_re = re.compile(r'"(?:\\.|[^"\\])*"')
           hardcoded = []
           for no, line in enumerate(lines, 1):
@@ -103,12 +100,13 @@ jobs:
                   except Exception:
                       value = raw[1:-1]
 
-                  # Resource paths, MIME, record-store names, locale filename construction,
-                  # numeric/format fragments and language selection tables are kept in a separate
-                  # mechanical list but not called user-facing dialog.
                   category = 'other'
                   upper = value.upper()
-                  if value.startswith('/') or re.search(r'\.(?:MID|PNG|DAT)$', upper):
+                  if value == 'Decompilation failed':
+                      # CFR inserts this throw/message when it cannot structure a method. It is not
+                      # present as an original user-facing runtime string and must not enter the catalog.
+                      category = 'decompiler-synthetic'
+                  elif value.startswith('/') or re.search(r'\.(?:MID|PNG|DAT)$', upper):
                       category = 'resource'
                   elif value in ('audio/midi', '', '0', '-', '###', '##'):
                       category = 'format/runtime'
@@ -143,7 +141,9 @@ jobs:
                   f.write(f'- L{no} · **{category}** · `{method}`\n')
                   f.write(f'  - `{escaped}`\n')
 
-              f.write('\n## All class string literals by category\n\n')
+              f.write('\n`Decompilation failed` 被标为 `decompiler-synthetic`，是 CFR 伪源码，不属于原版可见文本。\n\n')
+
+              f.write('## All class string literals by category\n\n')
               for no, method, category, value, source in hardcoded:
                   escaped = value.replace('`','\\`').replace('\n','\\n').replace('\r','\\r')
                   f.write(f'- L{no} · `{category}` · `{escaped}` · `{method}`\n')
