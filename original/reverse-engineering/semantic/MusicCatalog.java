@@ -29,7 +29,12 @@ public final class MusicCatalog {
 
     /**
      * 原版 `H`：持久化的 Ingame Music selection。
-     * -1 = RANDOM；0..D[4] = 固定 ingameN。
+     *
+     * - 新存档初始化为 0，即固定 `ingame0.mid`；
+     * - 0..D[4] = 固定 ingameN；
+     * - -1 = UI 文案 `AUTO`：每次 resolver 被调用时，从 0..D[4] 随机一首。
+     *
+     * 因此 AUTO 不是“每一关预先绑定随机结果”，而是 soundtrack resolver 的运行时选择。
      */
     private int selectedIngameMusic;
 
@@ -47,8 +52,8 @@ public final class MusicCatalog {
 
         if (archiveNumber != 0) {
             if (timedBonusMap) {
-                // Bonus record 在拿到/打开 Lock 前播放 shop.mid；
-                // Lock midpoint 启动 60 秒计时后立即切 bonus.mid。
+                // Bonus record 在 Lock midpoint 启动倒计时以前播放 shop.mid；
+                // 一旦 timedBonusRunning=true，立即切 bonus.mid。
                 return timedBonusRunning ? BONUS : SHOP;
             }
 
@@ -75,6 +80,22 @@ public final class MusicCatalog {
             default:
                 return SHOP;
         }
+    }
+
+    /**
+     * 原版明确重新调用 `I()` 的 gameplay 时刻：
+     *
+     * 1. `ab()` 完成关卡 reset / scene level load；
+     * 2. Bobby 真正 mount Mower 后（ridingMower=true）-> mow.mid；
+     * 3. Bobby 在 Mower Parking 完成 dismount 后（ridingMower=false）-> 恢复当前 scene BGM；
+     * 4. Timed Bonus 的 Lock midpoint 把 timedBonusRunning 置 true -> shop.mid 切 bonus.mid；
+     * 5. 从 menu / audio state 返回 gameplay 时恢复；
+     * 6. 主菜单 action 32 改变 Current Music 后立刻重新解析并播放。
+     *
+     * 所以 Mower / Bonus music 都不是在地图 metadata 里指定，而是 runtime mode override。
+     */
+    void soundtrackLifecycleReferenceOnly() {
+        // semantic marker only
     }
 
     /** Night Train state 12。 */
