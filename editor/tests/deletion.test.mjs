@@ -5,7 +5,7 @@ import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
   builtinEditorDefinition,
   createBlankLevel,
-  resolveSelectionDeletionTargets,
+  resolveDeletion,
 } from "../dist/index.js";
 
 const catalog = createBuiltinEntityCatalog();
@@ -17,7 +17,7 @@ test("single-cell deletion removes only the top non-Surface entity", () => {
     { type: EntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 120 },
   );
 
-  const refs = resolveSelectionDeletionTargets(
+  const refs = resolveDeletion(
     level,
     catalog,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
@@ -36,7 +36,7 @@ test("multi-cell deletion removes only the highest stackOrder layer", () => {
     { type: EntityTypeId.CARROT, x: 2, y: 1, stackOrder: 120 },
   );
 
-  const refs = resolveSelectionDeletionTargets(
+  const refs = resolveDeletion(
     level,
     catalog,
     { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 1 } },
@@ -51,7 +51,7 @@ test("multi-cell deletion removes only the highest stackOrder layer", () => {
 
 test("Palette deletion never selects Surface", () => {
   const level = createBlankLevel(5, 5);
-  const refs = resolveSelectionDeletionTargets(
+  const refs = resolveDeletion(
     level,
     catalog,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },

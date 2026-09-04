@@ -30,7 +30,7 @@ export function resolveDeletionTarget(
  * - 多格：删除选区内最高 stackOrder 的整层 Entity。
  * Surface 由 Surface authoring 工具负责，Palette 删除永远不触碰 Surface。
  */
-export function resolveSelectionDeletionTargets(
+export function resolveDeletion(
   level: EditorMap,
   catalog: EntityCatalog,
   selection: EditorSelection,
@@ -70,6 +70,9 @@ export function resolveSelectionDeletionTargets(
     .filter((item) => item.stackOrder === highest)
     .map((item) => item.ref);
 }
+
+/** 兼容当前 Web 调用点；统一实现由 resolveDeletion() 提供。 */
+export const resolveSelectionDeletionTargets = resolveDeletion;
 
 function deletionCandidatesAt(
   level: EditorMap,
