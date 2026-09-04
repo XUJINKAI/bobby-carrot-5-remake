@@ -25,7 +25,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build normalized method diffs
+      - name: Build structural loader diff
         run: |
           rm -rf tmp/original-reverse/variant-diff
           mkdir -p tmp/original-reverse/variant-diff
@@ -40,15 +40,11 @@ jobs:
           root = Path('tmp/original-reverse/variant-diff')
           jars = {
               'up02': Path('original/official-hd/up02.jar'),
-              'up03': Path('original/official-hd/up03.jar'),
               'up09': Path('original/official-hd/up09.jar'),
           }
-
-          signatures = {
-              'collision': 'private final boolean a(int, int, boolean);',
-              'ice-melting-R': 'private final void R();',
-              'loader': 'private final void e(int, int);',
-          }
+          signature = 'private final void e(int, int);'
+          LOCAL_OPS = r'(?:[a-z]load|[a-z]store|ret)'
+          BRANCH_OPS = r'(?:if\S*|goto(?:_w)?|jsr(?:_w)?)'
 
           def split_methods(text):
               lines = text.splitlines()
@@ -62,14 +58,27 @@ jobs:
                   result[lines[start].strip()] = lines[start:end]
               return result
 
-          def normalize(lines):
+          def normalize_structural(lines):
               out = []
-              for line in lines:
-                  line = re.sub(r'#\d+', '#', line.rstrip())
-                  out.append(line)
+              for raw in lines:
+                  line = re.sub(r'#\d+', '#', raw.rstrip())
+                  m = re.match(r'^(\s*)(-?\d+|default):\s+-?\d+\s*$', line)
+                  if m:
+                      out.append(f'{m.group(1)}{m.group(2)}: <target>')
+                      continue
+                  m = re.match(r'^\s*\d+:\s+(.*)$', line)
+                  if not m:
+                      out.append(line.strip() if line.strip() else '')
+                      continue
+                  instr = m.group(1)
+                  instr = re.sub(rf'^({LOCAL_OPS})_[0-3]\b', r'\1 <local>', instr)
+                  instr = re.sub(rf'^({LOCAL_OPS})\s+\d+\b', r'\1 <local>', instr)
+                  instr = re.sub(r'^iinc\s+\d+,', 'iinc <local>,', instr)
+                  instr = re.sub(rf'^({BRANCH_OPS})\s+-?\d+\b', r'\1 <target>', instr)
+                  out.append(instr)
               return out
 
-          methods_by_release = {}
+          normalized = {}
           for label, jar in jars.items():
               out = root / label
               out.mkdir(parents=True, exist_ok=True)
@@ -78,30 +87,25 @@ jobs:
               javap = subprocess.check_output([
                   'javap', '-classpath', str(out), '-c', '-p', '-s', 'a'
               ], text=True)
-              methods_by_release[label] = split_methods(javap)
+              methods = split_methods(javap)
+              normalized[label] = normalize_structural(methods[signature])
 
-          comparisons = [
-              ('collision', 'up02', 'up09'),
-              ('ice-melting-R', 'up02', 'up03'),
-              ('loader', 'up02', 'up09'),
-          ]
+          diff = list(difflib.unified_diff(
+              normalized['up02'], normalized['up09'],
+              fromfile='up02-loader', tofile='up09-loader', lineterm=''
+          ))
 
           report = Path('original/reverse-engineering/notes/release-runtime-variant-diffs.md')
           with report.open('w', encoding='utf-8') as f:
-              f.write('# 原版 Runtime 方法版本差异\n\n')
-              f.write('本报告只对方法指纹已经证明存在分叉的代表版本做归一化 `javap` diff；constant-pool 序号已移除。\n\n')
-              for method_name, left, right in comparisons:
-                  signature = signatures[method_name]
-                  a = normalize(methods_by_release[left].get(signature, []))
-                  b = normalize(methods_by_release[right].get(signature, []))
-                  diff = list(difflib.unified_diff(a, b, fromfile=left, tofile=right, lineterm=''))
-                  f.write(f'## {method_name}: {left} → {right}\n\n')
-                  if not diff:
-                      f.write('归一化后无文本差异。\n\n')
-                      continue
+              f.write('# 原版 Runtime 真正结构差异\n\n')
+              f.write('第一轮 layout diff 已证明 collision / Ice R 的分叉只是 local-variable slot 布局。第二层 structural fingerprint 后，UP02～UP09 只有 Loader 仍分成两组。本报告只保留 Loader 的 structural diff。\n\n')
+              f.write('## Loader: UP02-family → UP09-family\n\n')
+              if not diff:
+                  f.write('structural 归一化后无差异。\n')
+              else:
                   f.write('```diff\n')
                   f.write('\n'.join(diff))
-                  f.write('\n```\n\n')
+                  f.write('\n```\n')
           PY
 
       - name: Commit report
@@ -112,6 +116,6 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "reverse: capture runtime variant bytecode diffs"
+          git commit -m "reverse: isolate structural loader difference"
           git pull --rebase origin reverse/original-runtime
           git push origin HEAD:reverse/original-runtime
