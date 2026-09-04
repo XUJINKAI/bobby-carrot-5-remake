@@ -59,15 +59,48 @@ jobs:
               'run': 'public void run();',
           }
 
+          LOCAL_OPS = r'(?:[a-z]load|[a-z]store|ret)'
+          BRANCH_OPS = r'(?:if\S*|goto(?:_w)?|jsr(?:_w)?)'
+
           def sha(data: bytes) -> str:
               return hashlib.sha256(data).hexdigest()
 
-          def normalize_method(text: str) -> str:
-              # Constant-pool numbering is layout noise; keep symbolic comments and bytecode offsets.
+          def normalize_layout(text: str) -> str:
               text = re.sub(r'#\d+', '#', text)
-              # javap may vary whitespace while preserving instructions.
               text = '\n'.join(line.rstrip() for line in text.splitlines())
               return text.strip() + '\n'
+
+          def normalize_structural(text: str) -> str:
+              out = []
+              for raw in text.splitlines():
+                  line = raw.rstrip()
+                  line = re.sub(r'#\d+', '#', line)
+
+                  # Switch table entries: preserve case key, discard target bytecode offset.
+                  m = re.match(r'^(\s*)(-?\d+|default):\s+-?\d+\s*$', line)
+                  if m:
+                      out.append(f'{m.group(1)}{m.group(2)}: <target>')
+                      continue
+
+                  # Remove instruction bytecode offset while preserving opcode and operands.
+                  m = re.match(r'^\s*\d+:\s+(.*)$', line)
+                  if m:
+                      instr = m.group(1)
+
+                      # Normalize compact local opcodes such as aload_0 / istore_3.
+                      instr = re.sub(rf'^({LOCAL_OPS})_[0-3]\b', r'\1 <local>', instr)
+                      # Normalize explicit local slot operands.
+                      instr = re.sub(rf'^({LOCAL_OPS})\s+\d+\b', r'\1 <local>', instr)
+                      # iinc: local slot is layout noise, increment value is semantic.
+                      instr = re.sub(r'^iinc\s+\d+,', 'iinc <local>,', instr)
+                      # Branch destination offsets are layout noise.
+                      instr = re.sub(rf'^({BRANCH_OPS})\s+-?\d+\b', r'\1 <target>', instr)
+                      out.append(instr)
+                      continue
+
+                  out.append(line.strip() if line.strip() else '')
+
+              return '\n'.join(out).strip() + '\n'
 
           def split_methods(text: str):
               lines = text.splitlines()
@@ -83,7 +116,8 @@ jobs:
               return result
 
           records = []
-          method_hashes = {name: {} for name in signatures}
+          layout_hashes = {name: {} for name in signatures}
+          structural_hashes = {name: {} for name in signatures}
 
           for label, jar in zip(labels, jars):
               out = root / label
@@ -115,42 +149,53 @@ jobs:
                   'jar_size': jar.stat().st_size,
                   'a_size': len(a_bytes),
                   'a_sha': sha(a_bytes)[:12],
-                  'bobby_size': len(bobby_bytes),
                   'bobby_sha': sha(bobby_bytes)[:12],
               })
 
               for method_name, signature in signatures.items():
                   body = methods.get(signature)
-                  method_hashes[method_name][label] = (
-                      sha(normalize_method(body).encode())[:12] if body is not None else 'missing'
-                  )
+                  if body is None:
+                      layout_hashes[method_name][label] = 'missing'
+                      structural_hashes[method_name][label] = 'missing'
+                      continue
+                  layout_hashes[method_name][label] = sha(normalize_layout(body).encode())[:12]
+                  structural_hashes[method_name][label] = sha(normalize_structural(body).encode())[:12]
 
           out_file = Path('original/reverse-engineering/notes/release-runtime-fingerprints.md')
           with out_file.open('w', encoding='utf-8') as f:
               f.write('# 原版 10 JAR Runtime 指纹\n\n')
-              f.write('本报告机械比较 `base.jar` 与 `up01..up09.jar`。方法指纹来自 `javap -c -p -s`，仅归一化 constant-pool 序号；相同 hash 表示该方法字节码控制流在该归一化下相同。\n\n')
+              f.write('本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target 与 local-variable slot 编号，用来识别“同一控制流被重新编译布局”的情况。\n\n')
+
               f.write('## Class 指纹\n\n')
               f.write('| JAR | MIDlet | Version | JAR bytes | a.class bytes | a.class SHA | Bobby.class SHA |\n')
               f.write('|---|---|---|---:|---:|---|---|\n')
               for r in records:
                   f.write(f"| {r['label']} | {r['name']} | {r['version']} | {r['jar_size']} | {r['a_size']} | `{r['a_sha']}` | `{r['bobby_sha']}` |\n")
 
-              f.write('\n## 核心方法归一化指纹\n\n')
+              f.write('\n## 核心方法 structural 指纹\n\n')
               f.write('| Method | ' + ' | '.join(labels) + ' |\n')
               f.write('|---|' + '|'.join(['---'] * len(labels)) + '|\n')
               for method_name in signatures:
-                  hashes = method_hashes[method_name]
+                  hashes = structural_hashes[method_name]
                   f.write('| ' + method_name + ' | ' + ' | '.join(f'`{hashes[l]}`' for l in labels) + ' |\n')
 
-              f.write('\n## 机械分组\n\n')
+              f.write('\n## Structural 分组\n\n')
               for method_name in signatures:
                   groups = {}
                   for label in labels:
-                      groups.setdefault(method_hashes[method_name][label], []).append(label)
+                      groups.setdefault(structural_hashes[method_name][label], []).append(label)
                   f.write(f'### {method_name}\n\n')
                   for digest, members in groups.items():
                       f.write(f'- `{digest}`: {", ".join(members)}\n')
                   f.write('\n')
+
+              f.write('## Layout-only 分叉提示\n\n')
+              f.write('如果某方法 structural 分组相同而 layout 分组不同，差异只来自当前归一化已识别的编译布局噪声，不应解释成玩法版本差异。\n\n')
+              for method_name in signatures:
+                  l_groups = len(set(layout_hashes[method_name].values()))
+                  s_groups = len(set(structural_hashes[method_name].values()))
+                  if l_groups > s_groups:
+                      f.write(f'- `{method_name}`: layout {l_groups} 组 → structural {s_groups} 组。\n')
           PY
 
       - name: Commit report
@@ -161,6 +206,6 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "reverse: fingerprint original runtime releases"
+          git commit -m "reverse: refresh structural runtime fingerprints"
           git pull --rebase origin reverse/original-runtime
           git push origin HEAD:reverse/original-runtime
