@@ -1,4 +1,4 @@
-// 研究性语义重建：来源为 UP9 a.class / a.ae()、a.J() 与 a.H()。
+// 研究性语义重建：来源为 UP9 a.class / a.ae()、a.J()、a.H() 与 player collision。
 // Dragon Head / Body / Tail 由 DAT loader 展开为 D7/D8/D9。
 
 public final class DragonAttack {
@@ -33,7 +33,10 @@ public final class DragonAttack {
         }
     }
 
-    /** 原版 `J()` 在 Bobby 到达 Dragon Tail D9 时触发准备阶段。 */
+    /**
+     * 原版 `J()` 在 Bobby 到达 Dragon Tail D9 时触发准备阶段。
+     * 这里只启动 `ds=0` 与 6-step countdown；不会设置 camera/input lock。
+     */
     void onEnterObject(int rawObject) {
         if ((rawObject & 0xFF) != DRAGON_TAIL || dragonHeadX < 0 || attackState != -1) {
             return;
@@ -42,7 +45,16 @@ public final class DragonAttack {
         phaseCountdown = PHASE_TICKS;
     }
 
-    /** 对应 `H()` 中 `ds == 0` 的 Dragon Head 分帧状态机。 */
+    /**
+     * 对应 `H()` 中 `ds == 0` 的 Dragon Head 分帧状态机。
+     *
+     * 原版存在一个值得保留的实现特性：player collision 只把 D7 Head Base
+     * 判为 blocking；E8/E9 两个 wind-up object state 不在 blocking 集合里。
+     * 同时 wind-up 阶段没有 `aT` input lock，因此 Bobby 在这两个 6-step
+     * 准备帧期间按原版控制流可以进入 Dragon Head 所在格。
+     *
+     * 这是 class 控制流直接确认的原版 quirk，不应在语义重建中擅自“修正”。
+     */
     void tickWindUp() {
         if (attackState != 0) {
             return;
