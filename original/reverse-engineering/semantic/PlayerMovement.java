@@ -8,8 +8,8 @@ public final class PlayerMovement {
     private static final int DIR_DOWN = 3;
 
     private static final int TILE_SIZE = 48;
-    private static final int NORMAL_PIXELS_PER_TICK = 3;
-    private static final int FAST_PIXELS_PER_TICK = 6;
+    private static final int NORMAL_PIXELS_PER_GAMEPLAY_STEP = 3;
+    private static final int FAST_PIXELS_PER_GAMEPLAY_STEP = 6;
 
     private static final int TERRAIN_SPEED_UP = 0xB5;
     private static final int TERRAIN_SPEED_DOWN = 0xB6;
@@ -85,12 +85,21 @@ public final class PlayerMovement {
     /**
      * 对应原版 `a.N()`。
      *
-     * 普通移动每 tick 走 3px，Speed / 特殊快速移动每 tick 走 6px。
-     * 48px tile 因此分别需要 16 tick 与 8 tick；结合约 62ms 主循环，
-     * 原版一格视觉位移约为 992ms 与 496ms。
+     * 普通移动每次 gameplay `b()` 调用走 3px，Speed / 特殊快速移动走 6px。
+     * 48px tile 因此分别需要 16 与 8 次 gameplay step。
+     *
+     * 重要：`run()` 的外层周期约 62ms，但每个外层周期会调用两次 `b()`，所以
+     * gameplay step 的稳态间隔约为 31ms。连续格移动的 cadence 因而约为：
+     *
+     * - 普通：16 × 31ms ≈ 496ms；
+     * - Speed：8 × 31ms ≈ 248ms。
+     *
+     * 不能再把一次 `b()` 误当成一次 62ms 外层循环。
      */
     void advancePixelMotion() {
-        int pixels = fastPixelMotion ? FAST_PIXELS_PER_TICK : NORMAL_PIXELS_PER_TICK;
+        int pixels = fastPixelMotion
+            ? FAST_PIXELS_PER_GAMEPLAY_STEP
+            : NORMAL_PIXELS_PER_GAMEPLAY_STEP;
         playerMovePixelsRemaining -= pixels;
 
         switch (playerMotionState) {
@@ -140,9 +149,9 @@ public final class PlayerMovement {
 
     /**
      * 对应原版 `a.a(int,int,boolean)`。
-     * 该函数已经确认是 Bobby 的统一格通行判定，但其全部 terrain/object 分支仍在拆解。
+     * 完整 collision 主规则已整理在 `PlayerCollisionRules.java`。
      */
-    private boolean canPlayerMove(int dx, int dy, boolean specialMode) {
-        throw new UnsupportedOperationException("collision reconstruction in progress");
+    private boolean canPlayerMove(int dx, int dy, boolean speedProbe) {
+        throw new UnsupportedOperationException("see PlayerCollisionRules.java");
     }
 }
