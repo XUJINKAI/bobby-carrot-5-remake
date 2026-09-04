@@ -1,9 +1,11 @@
 import type { EntityState } from "@bobby/model";
 import type { RuntimeActionId } from "../action/RuntimeAction.js";
 import type { GlobalState } from "../GlobalState.js";
+import type { ActorLifecycleState } from "../actor/ActorLifecycle.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
 import type { WorldEvent } from "../WorldTypes.js";
 import type { WorldMotion } from "../movement/WorldMotion.js";
+import type { WorldOutcomeState } from "../outcome/WorldOutcome.js";
 
 export interface WorldDeltaBase {
   sequence: number;
@@ -23,6 +25,8 @@ export type WorldDeltaPayload =
   | { type: "entity-direction-changed"; entityId: EntityId }
   | { type: "entity-state-changed"; entityId: EntityId; state: EntityState }
   | { type: "global-state-changed"; key: keyof GlobalState }
+  | { type: "actor-lifecycle-changed"; actor: ActorLifecycleState }
+  | { type: "world-outcome-changed"; outcome: WorldOutcomeState }
   | { type: "action-started"; actionId: RuntimeActionId }
   | { type: "action-cancelled"; actionId: RuntimeActionId }
   | { type: "world-event"; event: WorldEvent }

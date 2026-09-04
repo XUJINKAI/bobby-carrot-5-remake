@@ -445,6 +445,17 @@ export class Game {
     this.emit("change");
   }
 
+  /** 仅提供 engine 能力；具体复活机制决定条件、距离和消耗。 */
+  reviveActor(actorId: EntityId): void {
+    if (!this.worldValue) return;
+    const result = this.world.reviveActor(actorId);
+    if (result.events.length === 0) return;
+    this.lastWorldEvents = result.events;
+    this.publishWorldEvents(result.events);
+    this.render();
+    this.emit("change");
+  }
+
   setProfile(profile: Partial<ProfileCapabilities>): void {
     Object.assign(this.profile, profile);
     if (this.worldValue) this.world.setProfile(profile);

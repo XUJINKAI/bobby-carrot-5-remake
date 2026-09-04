@@ -71,9 +71,7 @@ test("movement interaction marker 在任意 WorldTick 跨过中点时只执行�
 
 test("midpoint death 冻结 World pose 并保持 marker 到中断的因果顺序", () => {
   const { world, actorId } = runtime(({ actor, commands }) => {
-    commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "trap");
-    commands.emit({ type: "death", entityId: actor.id, reason: "trap" });
+    commands.downActor(actor.id, "trap");
   });
 
   moveRight(world, actorId);
@@ -89,7 +87,7 @@ test("midpoint death 冻结 World pose 并保持 marker 到中断的因果顺序
   const causalTypes = result.deltas.map((delta) => delta.type);
   assert.ok(
     causalTypes.indexOf("motion-marker") <
-      causalTypes.indexOf("global-state-changed"),
+      causalTypes.indexOf("actor-lifecycle-changed"),
   );
   assert.ok(
     causalTypes.indexOf("world-event") <

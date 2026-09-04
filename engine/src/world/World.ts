@@ -11,6 +11,12 @@ import {
   type GlobalState,
   type ProfileCapabilities,
 } from "./GlobalState.js";
+import {
+  ActorLifecycleStore,
+  type ActorLifecycleSnapshot,
+  type ActorLifecycleState,
+} from "./actor/ActorLifecycle.js";
+import { WorldLifecycle } from "./actor/WorldLifecycle.js";
 import type {
   RuntimeActionId,
   RuntimeActionSchedulerSnapshot,
@@ -29,16 +35,9 @@ import type {
 import type { BehaviorRegistry } from "./behavior/BehaviorRegistry.js";
 import { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityDefinition } from "./entity/EntityDefinition.js";
-import type {
-  CellPosition,
-  EntityId,
-  EntityInstance,
-} from "./entity/EntityInstance.js";
+import type { CellPosition, EntityId, EntityInstance } from "./entity/EntityInstance.js";
 import type { EntityRegistry } from "./entity/EntityRegistry.js";
-import {
-  EntityStore,
-  type EntityStoreSnapshot,
-} from "./entity/EntityStore.js";
+import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
   MovementRuntime,
@@ -46,6 +45,7 @@ import {
   type MovementRuntimeSnapshot,
 } from "./movement/MovementRuntime.js";
 import type { WorldMotion } from "./movement/WorldMotion.js";
+import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
 import type {
   MoveIntent,
   WorldIntent,
@@ -62,11 +62,11 @@ import {
 import type { EntityPresence } from "./spatial/EntityPresence.js";
 import { SpatialIndex } from "./spatial/SpatialIndex.js";
 import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
+import { WorldInspector } from "./WorldInspector.js";
 import { WorldRuleEvaluator } from "./WorldRuleEvaluator.js";
 import type {
   CellInspection,
   MoveResult,
-  PresenceInspection,
   WinConditionState,
   WorldEvent,
 } from "./WorldTypes.js";
@@ -76,6 +76,8 @@ export interface WorldSnapshot {
   state: GlobalState;
   actions: RuntimeActionSchedulerSnapshot;
   movement: MovementRuntimeSnapshot;
+  actors: ActorLifecycleSnapshot;
+  outcome: WorldOutcomeState;
 }
 
 export interface WorldOptions {
@@ -98,11 +100,15 @@ export class World {
   readonly behaviors: BehaviorRegistry;
   readonly actions: RuntimeActionScheduler;
   readonly movement = new MovementRuntime();
+  readonly actors = new ActorLifecycleStore();
+  readonly outcome = new WorldOutcomeStore();
   readonly rules: LevelMap["rules"];
   state: GlobalState;
   private readonly deltaSequence = new WorldDeltaSequence();
   private readonly committer: WorldCommitter;
   private readonly ruleEvaluator: WorldRuleEvaluator;
+  private readonly lifecycle: WorldLifecycle;
+  private readonly inspector: WorldInspector;
   private motionDurationMs: number;
   private currentWorldTick: number | null = null;
 
@@ -129,11 +135,14 @@ export class World {
       this.registry,
       () => this.state,
     );
+    this.inspector = new WorldInspector(this.entities, this.spatial);
     this.committer = new WorldCommitter(
       this.entities,
       this.spatial,
       this.actions,
       this.movement,
+      this.actors,
+      this.outcome,
       () => this.state,
       this.deltaSequence,
     );
@@ -144,17 +153,26 @@ export class World {
       this.query,
       () => this.state,
     );
+    this.lifecycle = new WorldLifecycle(
+      this.actors,
+      this.outcome,
+      this.movement,
+      this.query,
+      this.ruleEvaluator,
+      () => this.state,
+      this.deltaSequence,
+      () => this.deltaClock(),
+    );
     this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
-    this.ruleEvaluator.refreshDerivedState();
-    this.ruleEvaluator.evaluateCompletion([], false);
+    this.lifecycle.initialize();
   }
 
   get dead(): boolean {
-    return this.state.dead;
+    return this.outcome.state.phase === "lost";
   }
 
   get completed(): boolean {
-    return this.state.completed;
+    return this.outcome.state.phase === "won";
   }
 
   get winState(): WinConditionState | null {
@@ -163,6 +181,14 @@ export class World {
 
   get inputBlocked(): boolean {
     return this.actions.inputBlocked;
+  }
+
+  isInputBlockedFor(actorId: EntityId): boolean {
+    return !this.actors.isActive(actorId) || this.actions.isInputBlockedFor(actorId);
+  }
+
+  actorLifecycle(actorId: EntityId): Readonly<ActorLifecycleState> {
+    return this.actors.state(actorId);
   }
 
   get cameraTarget(): EntityId | null {
@@ -215,14 +241,44 @@ export class World {
     this.actions.observeIntents(intents, this.query);
   }
 
-  killActor(
+  downActor(
     entityId: EntityId,
     reason = "An actor could not continue.",
-  ): WorldEvent[] {
-    if (this.state.dead) return [];
-    this.state.dead = true;
-    this.state.deathReason = reason;
-    return [{ type: "death", entityId, reason }];
+  ): WorldStepResult {
+    const queue = new CommandQueue();
+    queue.downActor(entityId, reason);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.settle(result, entityId);
+    return result;
+  }
+
+  /** 只提供 engine 能力；复活位置、距离与消耗由具体机制另行决定。 */
+  reviveActor(entityId: EntityId): WorldStepResult {
+    if (!this.outcome.playing) return emptyWorldStepResult();
+    const queue = new CommandQueue();
+    queue.reviveActor(entityId);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.syncLegacyState();
+    return result;
+  }
+
+  eliminateActor(
+    entityId: EntityId,
+    reason = "An actor was eliminated.",
+  ): WorldStepResult {
+    const queue = new CommandQueue();
+    queue.eliminateActor(entityId, reason);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.settle(result, entityId);
+    return result;
+  }
+
+  /** 兼容旧调用；新代码应消费 downActor 返回的完整 WorldStepResult。 */
+  killActor(entityId: EntityId, reason?: string): WorldEvent[] {
+    return this.downActor(entityId, reason).events;
   }
 
   clearTransientEffects(): void {
@@ -235,6 +291,8 @@ export class World {
       state: structuredClone(this.state),
       actions: this.actions.snapshot(),
       movement: this.movement.snapshot(),
+      actors: this.actors.snapshot(),
+      outcome: this.outcome.state,
     };
   }
 
@@ -243,30 +301,14 @@ export class World {
     this.state = structuredClone(snapshot.state);
     this.actions.restore(snapshot.actions);
     this.movement.restore(snapshot.movement);
+    this.actors.restore(snapshot.actors);
+    this.outcome.restore(snapshot.outcome);
+    this.lifecycle.syncLegacyState();
     this.spatial.rebuild();
   }
 
   inspect(x: number, y: number): CellInspection | null {
-    const cell = { x, y };
-    if (!this.spatial.inBounds(cell)) return null;
-    const rawPresences = this.spatial.presencesAt(cell);
-    const presences = rawPresences.map((presence) =>
-      this.inspectPresence(presence),
-    );
-    const topPresence = presences.at(-1);
-    const actorIds = [
-      ...new Set(
-        rawPresences
-          .filter((presence) => presence.traits.includes("player"))
-          .map((presence) => presence.entityId),
-      ),
-    ];
-    return {
-      cell,
-      presences,
-      ...(topPresence ? { topPresence } : {}),
-      actorIds,
-    };
+    return this.inspector.inspect({ x, y });
   }
 
   /**
@@ -291,8 +333,6 @@ export class World {
     if (transaction.motions.length > 0)
       transaction.commands.setGlobal("lastReachedSelectors", []);
 
-    const beforeDead = this.state.dead;
-    const beforeCompleted = this.state.completed;
     const commit = this.committer.commit(transaction.commands, this.deltaClock());
     const result: WorldStepResult = {
       moves,
@@ -302,16 +342,8 @@ export class World {
       deltas: commit.deltas,
     };
     this.startMotions(transaction.motions, result);
-    this.ruleEvaluator.refreshDerivedState();
-    this.ruleEvaluator.evaluateCompletion(
-      result.events,
-      this.movement.running.length > 0,
-    );
-    this.ruleEvaluator.evaluateLimits(result.events);
-    if (!beforeDead && this.state.dead)
-      pushUnique(commit.mutations.globalsChanged, "dead");
-    if (!beforeCompleted && this.state.completed)
-      pushUnique(commit.mutations.globalsChanged, "completed");
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
 
     return result;
   }
@@ -323,13 +355,13 @@ export class World {
    */
   update(time: WorldTick): WorldStepResult {
     const result = emptyWorldStepResult();
-    if (time.stepMs <= 0 || this.state.dead || this.state.completed)
+    if (time.stepMs <= 0 || !this.outcome.playing)
       return result;
 
     this.currentWorldTick = time.tick;
     this.state.elapsedMs += time.stepMs;
     this.advanceMotions(time.stepMs, result);
-    if (this.state.dead || this.state.completed) {
+    if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
     }
@@ -337,13 +369,10 @@ export class World {
     const actionQueue = new CommandQueue();
     const actionIntents = this.actions.update(time, this.query, actionQueue);
     const actionCommit = this.committer.commit(actionQueue, this.deltaClock());
-    this.ruleEvaluator.refreshDerivedState();
-    this.ruleEvaluator.evaluateCompletion(
-      actionCommit.events,
-      this.movement.running.length > 0,
-    );
     absorbCommit(result, actionCommit);
-    if (this.state.dead || this.state.completed) {
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
+    if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
     }
@@ -354,7 +383,7 @@ export class World {
         historyBoundary: false,
       });
       mergeWorldStepResult(result, actionStep);
-      if (this.state.dead || this.state.completed) {
+      if (!this.outcome.playing) {
         this.currentWorldTick = null;
         return result;
       }
@@ -380,13 +409,9 @@ export class World {
     }
 
     const tickCommit = this.committer.commit(tickQueue, this.deltaClock());
-    this.ruleEvaluator.refreshDerivedState();
-    this.ruleEvaluator.evaluateCompletion(
-      tickCommit.events,
-      this.movement.running.length > 0,
-    );
-    this.ruleEvaluator.evaluateLimits(tickCommit.events);
     absorbCommit(result, tickCommit);
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
     this.currentWorldTick = null;
     return result;
   }
@@ -409,13 +434,32 @@ export class World {
     const from = { ...actor.anchor };
     const to = addDirection(from, intent.direction);
     const movement: MovementContext = { from, to, cause: intent.cause };
-    if (this.state.dead || this.state.completed)
+    if (!this.outcome.playing)
       return blockedResult(
         actor.id,
         from,
         to,
         intent.direction,
         "world-finished",
+      );
+    if (!this.actors.isActive(actor.id))
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "actor-inactive",
+      );
+    if (
+      intent.cause.type === "player-input" &&
+      this.actions.isInputBlockedFor(actor.id)
+    )
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "actor-busy",
       );
     if (this.movement.motions.forEntity(actor.id)?.status === "running")
       return blockedResult(
@@ -808,10 +852,7 @@ export class World {
             this.deltaClock(),
           ),
         );
-        this.ruleEvaluator.evaluateCompletion(
-          result.events,
-          this.movement.running.length > 0,
-        );
+        this.lifecycle.evaluateRules(result);
       },
     });
   }
@@ -860,22 +901,7 @@ export class World {
     const commit = this.committer.commit(queue, this.deltaClock());
     absorbCommit(result, commit);
     this.ruleEvaluator.refreshDerivedState();
-    if (this.state.dead) this.interruptMotion(motion, result);
-  }
-
-  private interruptMotion(motion: WorldMotion, result: WorldStepResult): void {
-    const interrupted = this.movement.interruptEntity(
-      motion.entityId,
-      this.state.deathReason ?? "actor-downed",
-      motion.progress,
-    );
-    if (!interrupted) return;
-    result.deltas.push(
-      this.deltaSequence.create(
-        { type: "motion-interrupted", motion: interrupted },
-        this.deltaClock(),
-      ),
-    );
+    this.lifecycle.settle(result, motion.entityId);
   }
 
   private durationForMotion(request: EntityMotionRequest): number {
@@ -907,18 +933,6 @@ export class World {
     return [...selectors];
   }
 
-  private inspectPresence(presence: EntityPresence): PresenceInspection {
-    const entity = this.entities.require(presence.entityId);
-    return {
-      entityId: entity.id,
-      type: entity.type,
-      layer: presence.layer,
-      ...(presence.role ? { role: presence.role } : {}),
-      stackOrder: presence.stackOrder,
-      traits: presence.traits,
-      ...(entity.state ? { state: structuredClone(entity.state) } : {}),
-    };
-  }
 }
 
 function addDirection(

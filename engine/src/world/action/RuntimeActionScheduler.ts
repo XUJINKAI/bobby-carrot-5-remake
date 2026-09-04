@@ -31,6 +31,15 @@ export class RuntimeActionScheduler {
     );
   }
 
+  /** owner-scoped lock 只阻塞对应 actor；无 owner 或 focus 仍是 world-level lock。 */
+  isInputBlockedFor(entityId: EntityId): boolean {
+    return [...this.actions.values()].some((action) => {
+      if (action.focus !== undefined) return true;
+      if (action.blocksInput !== true) return false;
+      return action.ownerEntityId === undefined || action.ownerEntityId === entityId;
+    });
+  }
+
   /** 第一个声明 focus 的活跃 Action 获得镜头；顺序按稳定 action id。 */
   get cameraTarget(): EntityId | null {
     for (const action of [...this.actions.values()].sort((a, b) => a.id - b.id)) {

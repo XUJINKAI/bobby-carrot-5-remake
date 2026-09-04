@@ -1,10 +1,12 @@
 import type { GlobalState } from "./GlobalState.js";
+import type { ActorLifecycleStore } from "./actor/ActorLifecycle.js";
 import type { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
 import type {
   WorldDelta,
   WorldDeltaSequence,
 } from "./delta/WorldDelta.js";
 import type { MovementRuntime } from "./movement/MovementRuntime.js";
+import type { WorldOutcomeStore } from "./outcome/WorldOutcome.js";
 import {
   emptyMutationSummary,
   type WorldMutationSummary,
@@ -32,6 +34,8 @@ export class WorldCommitter {
     private readonly spatial: SpatialIndex,
     private readonly actions: RuntimeActionScheduler,
     private readonly movement: MovementRuntime,
+    private readonly actors: ActorLifecycleStore,
+    private readonly outcome: WorldOutcomeStore,
     private readonly state: () => GlobalState,
     private readonly sequence: WorldDeltaSequence,
   ) {}
@@ -91,6 +95,73 @@ export class WorldCommitter {
               state: structuredClone(command.state),
             });
           }
+          break;
+        }
+        case "down-actor": {
+          const actor = this.actors.down(
+            command.entityId,
+            command.reason,
+            clock.worldTimeMs,
+          );
+          if (!actor) break;
+          this.actions.cancelOwnedBy(actor.entityId);
+          const event: WorldEvent = {
+            type: "actor-downed",
+            entityId: actor.entityId,
+            reason: command.reason,
+          };
+          events.push(event);
+          record({ type: "actor-lifecycle-changed", actor });
+          record({ type: "world-event", event });
+          break;
+        }
+        case "revive-actor": {
+          const actor = this.actors.revive(command.entityId, clock.worldTimeMs);
+          if (!actor) break;
+          const event: WorldEvent = {
+            type: "actor-revived",
+            entityId: actor.entityId,
+          };
+          events.push(event);
+          record({ type: "actor-lifecycle-changed", actor });
+          record({ type: "world-event", event });
+          break;
+        }
+        case "eliminate-actor": {
+          const actor = this.actors.eliminate(
+            command.entityId,
+            command.reason,
+            clock.worldTimeMs,
+          );
+          if (!actor) break;
+          this.actions.cancelOwnedBy(actor.entityId);
+          const event: WorldEvent = {
+            type: "actor-eliminated",
+            entityId: actor.entityId,
+            reason: command.reason,
+          };
+          events.push(event);
+          record({ type: "actor-lifecycle-changed", actor });
+          record({ type: "world-event", event });
+          break;
+        }
+        case "lose-world": {
+          const outcome = this.outcome.lose(
+            command.reason,
+            clock.worldTimeMs,
+            command.actorId,
+          );
+          if (!outcome) break;
+          const event: WorldEvent = {
+            type: "death",
+            ...(command.actorId !== undefined
+              ? { entityId: command.actorId }
+              : {}),
+            reason: command.reason,
+          };
+          events.push(event);
+          record({ type: "world-outcome-changed", outcome });
+          record({ type: "world-event", event });
           break;
         }
         case "set-global":

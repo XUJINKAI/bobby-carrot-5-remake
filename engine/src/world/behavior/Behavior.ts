@@ -82,6 +82,10 @@ export type BehaviorCommand =
   | { type: "move"; entityId: EntityId; x: number; y: number }
   | { type: "set-direction"; entityId: EntityId; direction: Direction }
   | SetStateCommand
+  | { type: "down-actor"; entityId: EntityId; reason: string }
+  | { type: "revive-actor"; entityId: EntityId }
+  | { type: "eliminate-actor"; entityId: EntityId; reason: string }
+  | { type: "lose-world"; reason: string; actorId?: EntityId }
   | {
       type: "set-global";
       key: keyof GlobalState;

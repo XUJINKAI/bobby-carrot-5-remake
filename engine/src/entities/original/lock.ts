@@ -65,15 +65,9 @@ const unlock: Behavior = {
     });
     if (next > 0) return;
     const openedByActorId = Number(self.entity.state.openedByActorId);
-    commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "Time ran out.");
-    commands.emit({
-      type: "death",
-      ...(Number.isInteger(openedByActorId) && openedByActorId > 0
-        ? { entityId: openedByActorId }
-        : {}),
-      reason: "death-countdown-expired",
-    });
+    if (Number.isInteger(openedByActorId) && openedByActorId > 0)
+      commands.downActor(openedByActorId, "death-countdown-expired");
+    else commands.loseWorld("death-countdown-expired");
   },
 };
 

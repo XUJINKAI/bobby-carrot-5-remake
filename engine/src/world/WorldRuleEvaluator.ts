@@ -3,7 +3,7 @@ import type { GlobalState } from "./GlobalState.js";
 import type { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityStore } from "./entity/EntityStore.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
-import type { WinConditionState, WorldEvent } from "./WorldTypes.js";
+import type { WinConditionState } from "./WorldTypes.js";
 
 /** 地图目标、限制和派生计数的集中求值器。 */
 export class WorldRuleEvaluator {
@@ -27,29 +27,25 @@ export class WorldRuleEvaluator {
     state.bonusCoinsInLevel = this.query.entitiesWithTrait("bonus-coin").length;
   }
 
-  evaluateCompletion(events: WorldEvent[], motionRunning: boolean): void {
+  completionReady(motionRunning: boolean): boolean {
     const state = this.state();
-    if (state.completed || state.dead || motionRunning) return;
+    if (state.completed || state.dead || motionRunning) return false;
     const win = this.winState;
-    if (!win?.completed) return;
-    state.completed = true;
-    events.push({ type: "complete" });
+    return win?.completed === true;
   }
 
-  evaluateLimits(events: WorldEvent[]): void {
+  exceededLimitReason(): string | null {
     const state = this.state();
-    if (state.completed || state.dead) return;
+    if (state.completed || state.dead) return null;
     for (const limit of this.rules?.limits ?? []) {
       if (!this.limitExceeded(limit)) continue;
-      const reason =
+      return (
         limit.type === "max-moves"
           ? `Move limit exceeded: ${limit.moves}`
-          : `Time limit exceeded: ${limit.seconds}s`;
-      state.dead = true;
-      state.deathReason = reason;
-      events.push({ type: "death", reason });
-      return;
+          : `Time limit exceeded: ${limit.seconds}s`
+      );
     }
+    return null;
   }
 
   private limitExceeded(limit: LevelLimit): boolean {

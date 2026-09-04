@@ -14,6 +14,10 @@ export interface WorldCommandApi {
   move(entityId: EntityId, x: number, y: number): void;
   setDirection(entityId: EntityId, direction: Direction): void;
   setState(entityId: EntityId, state: EntityState): void;
+  downActor(entityId: EntityId, reason: string): void;
+  reviveActor(entityId: EntityId): void;
+  eliminateActor(entityId: EntityId, reason: string): void;
+  loseWorld(reason: string, actorId?: EntityId): void;
   setGlobal<K extends keyof GlobalState>(key: K, value: GlobalState[K]): void;
   startAction(action: RuntimeActionSpec): void;
   cancelAction(actionId: RuntimeActionId): void;
@@ -45,6 +49,26 @@ export class CommandQueue implements WorldCommandApi {
       type: "set-state",
       entityId,
       state: structuredClone(state),
+    });
+  }
+
+  downActor(entityId: EntityId, reason: string): void {
+    this.commands.push({ type: "down-actor", entityId, reason });
+  }
+
+  reviveActor(entityId: EntityId): void {
+    this.commands.push({ type: "revive-actor", entityId });
+  }
+
+  eliminateActor(entityId: EntityId, reason: string): void {
+    this.commands.push({ type: "eliminate-actor", entityId, reason });
+  }
+
+  loseWorld(reason: string, actorId?: EntityId): void {
+    this.commands.push({
+      type: "lose-world",
+      reason,
+      ...(actorId !== undefined ? { actorId } : {}),
     });
   }
 

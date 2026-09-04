@@ -37,6 +37,15 @@ test("RuntimeAction may block input without taking camera focus", () => {
   assert.equal(scheduler.cameraTarget, null);
 });
 
+test("owner-scoped RuntimeAction 只阻塞所属 actor", () => {
+  const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
+  scheduler.start(
+    createDelayRuntimeAction(125, { ownerEntityId: 7, blocksInput: true }),
+  );
+  assert.equal(scheduler.isInputBlockedFor(7), true);
+  assert.equal(scheduler.isInputBlockedFor(8), false);
+});
+
 test("RuntimeAction durations stay in milliseconds when worldHz changes", () => {
   const runFor = (stepMs) => {
     const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());

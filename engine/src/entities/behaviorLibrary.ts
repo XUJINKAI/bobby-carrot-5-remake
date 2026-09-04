@@ -90,16 +90,9 @@ const pickup: Behavior = {
 
 const hazard: Behavior = {
   id: "hazard",
-  onEnter({ self, commands }) {
+  onEnter({ actor, self, commands }) {
     if (self.entity.state?.active === false) return;
-    commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "An actor entered a hazard.");
-    commands.emit({
-      type: "death",
-      entityId: self.entity.id,
-      x: self.presence.cell.x,
-      y: self.presence.cell.y,
-    });
+    commands.downActor(actor.id, "An actor entered a hazard.");
   },
 };
 
