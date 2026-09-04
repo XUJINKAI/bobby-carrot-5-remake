@@ -1,6 +1,6 @@
 # 原版 10 JAR Runtime 指纹
 
-本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target 与 local-variable slot 编号，用来识别“同一控制流被重新编译布局”的情况。
+本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target、local-variable slot 与 exception-table offset，用来识别“同一控制流被重新编译布局”的情况。
 
 ## Class 指纹
 
@@ -31,9 +31,9 @@
 | bean-S | `5e76f759f561` | `c4eb86b42413` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` | `a07a279cafb6` |
 | collision | `21cea40139f7` | `5ca1ca9d9144` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` | `29a325e575e0` |
 | moving-grid-pass | `37edb7145af9` | `bfdeb643d8cf` | `336848c0c146` | `336848c0c146` | `336848c0c146` | `336848c0c146` | `336848c0c146` | `336848c0c146` | `336848c0c146` | `336848c0c146` |
-| loader | `f4d22f67dbc4` | `43594aede3ef` | `b90b8520b532` | `b90b8520b532` | `489cc4628189` | `b90b8520b532` | `489cc4628189` | `b90b8520b532` | `b90b8520b532` | `489cc4628189` |
-| runtime-b | `c8260efe2b70` | `bf2a2b3124c7` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` | `fccc2f811d15` |
-| run | `e572dc6d46e8` | `e572dc6d46e8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` | `6f8c891d3fd8` |
+| loader | `63289414d37f` | `e130192ff4d0` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` | `e840ff6fe73d` |
+| runtime-b | `2c8bdef36627` | `cc86e240c91b` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` | `ce3740f90fd8` |
+| run | `50b536aebc27` | `50b536aebc27` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` | `d23c98787c02` |
 
 ## Structural 分组
 
@@ -99,26 +99,23 @@
 
 ### loader
 
-- `f4d22f67dbc4`: base
-- `43594aede3ef`: up01
-- `b90b8520b532`: up02, up03, up05, up07, up08
-- `489cc4628189`: up04, up06, up09
+- `63289414d37f`: base
+- `e130192ff4d0`: up01
+- `e840ff6fe73d`: up02, up03, up04, up05, up06, up07, up08, up09
 
 ### runtime-b
 
-- `c8260efe2b70`: base
-- `bf2a2b3124c7`: up01
-- `fccc2f811d15`: up02, up03, up04, up05, up06, up07, up08, up09
+- `2c8bdef36627`: base
+- `cc86e240c91b`: up01
+- `ce3740f90fd8`: up02, up03, up04, up05, up06, up07, up08, up09
 
 ### run
 
-- `e572dc6d46e8`: base, up01
-- `6f8c891d3fd8`: up02, up03, up04, up05, up06, up07, up08, up09
+- `50b536aebc27`: base, up01
+- `d23c98787c02`: up02, up03, up04, up05, up06, up07, up08, up09
 
 ## Layout-only 分叉提示
 
-如果某方法 structural 分组相同而 layout 分组不同，差异只来自当前归一化已识别的编译布局噪声，不应解释成玩法版本差异。
-
 - `ice-R`: layout 4 组 → structural 3 组。
 - `collision`: layout 4 组 → structural 3 组。
-- `loader`: layout 8 组 → structural 4 组。
+- `loader`: layout 8 组 → structural 3 组。
