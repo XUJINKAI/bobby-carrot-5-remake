@@ -45,7 +45,7 @@
 - 收集到金色胡萝卜。
 - 到达 Exit。
 
-通关时，弹出通关菜单，列举本次用时和步数信息，并播放音乐`cleared.ogg`。
+普通关通关时进入结果界面，原版文本列出本次 `TIME`、本关获得的 `BONUS COINS` 与累计 `TOTAL COINS`，并播放一次性音乐 `cleared.mid`。原版结果界面不显示步数。
 
 ### carrot 胡萝卜
 
@@ -111,7 +111,7 @@ Right: ts(12,9) --> ta(4,1) --> ta(4,2) --> ta(4,3)
 
 表现：
 - bobby坐割草机的动画在`b7.png`（2x4），每列两个图片循环，从左到右分别代表左/右/上/下四个方向
-- bobby坐割草机会播放音乐`mow.ogg`
+- bobby坐割草机会播放音乐`mow.mid`
 - 割草机撞碎易碎岩石会有全屏震动的效果
 
 ### Carousel 旋转机关
@@ -177,7 +177,8 @@ End:    ts(6,14) --> ta(13,3) --> ta(13,4)
 - 云可以被风车吹动，直到遇到 Cloud Parking，或撞到不是星空的障碍物
 - 风车有四个方向，由四种开关控制
 - bobby 走到风车开关上，可以切换开关状态
-- bobby 走到风车开关上，对应风车也会暂时抢走镜头控制3秒
+- bobby 触发 Wind Switch 后，原版用共享的 Camera Focus/Input Lock 把镜头目标切到对应 Windmill，固定 focus countdown 为 64 个 gameplay step（稳态约 1.98 秒），再加上镜头飞行时间。
+- 如果第一朵 Cloud 真正被刚开启的风改向，镜头可继续 handoff 到该 Cloud，并跟随约 64 个 gameplay step，最后再回 Bobby。因此肉眼看到的完整抢镜头过程可能接近 3 秒或更久，但原版没有一个简单的“固定 3 秒”计时器。
 
 静态资产：
 Cloud Red:    ts(15,1)
@@ -259,7 +260,7 @@ ts(14,5) --> ts(14,6) --> ts(14,7)
 - 火龙射出的火球会融化冰块
 - 火龙的火球会根据镜子拐弯
 - 火球碰到blocking障碍物会消失
-- 火球或临时获取镜头
+- 火球会临时获取镜头，并通过同一个 Camera Focus 字段阻止 Bobby 开始新的普通移动
 
 - bobby离开镜子时，镜子会顺时针变换方向
 
@@ -293,9 +294,10 @@ Trap:   Active ts(11,16),     Inactive ts(12,1)
 
 ### Ice 冰面
 
-- bobby走到冰面上会向前打滑，直到走出冰面
-
-bobby走到冰面上滑动时，会固定在b0/b1/b2/b3的第7帧，走出冰面时播放第8帧结束。
+- bobby走到冰面上会沿当前方向自动继续滑行；下一格可走时不会读取新的方向选择，直到前方走不通后才回到普通输入。
+- 滑行没有独立的固定 cadence，仍继承 Bobby 当前普通/Speed Shoes 的 3px 或 6px gameplay-step 位移。
+- 原版 `a.J()` / `a.O()` 在 sliding 状态将 `av=1`，renderer 直接用 `av * 48` 取帧，因此固定的是 `b0/b1/b2/b3` 对应方向 sprite sheet 的 zero-based frame 1（第 2 格）。
+- class 中没有“离开冰面专门播放第 8 帧”的状态分支；滑行结束后直接回到普通 movement/standing presentation state。
 
 ### Snow 雪块 / Shovel 雪铲
 
