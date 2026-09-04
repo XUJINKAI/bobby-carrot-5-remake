@@ -4,9 +4,24 @@
 
 ## 1. 原版主循环事实
 
-原版游戏主循环目标间隔约为 **62ms**。部分 gameplay 机制确实按这个逻辑循环计数，因此可以把原版理解为约 16Hz 的单线程更新环境。
+原版 `run()` 的外层循环目标周期约为 **62ms**，但每个外层周期会调用两次 runtime advance `b()`：
 
-这是原版实现事实，不代表 Web 版必须把所有视觉也限制在 16Hz。
+```text
+outer loop start
+  -> b()
+  -> repaint / serviceRepaints（需要时）
+  -> b()
+  -> 补 sleep，使整个 outer loop 约 62ms
+```
+
+因此需要区分两个时间单位：
+
+- outer loop：约 62ms，约 16Hz；
+- gameplay step：一次 `b()` 调用，稳态约 31ms，约 32Hz。
+
+`H/N/P/Q/R/S/V/...` 等 gameplay 方法按 `b()` 调用推进，而不是每个 outer loop 只推进一次。原版以“6 tick / 16 tick”实现的机关，换算真实时间时必须按 gameplay step 计算。
+
+这是原版实现事实，不代表 Web 版必须复制这种“双 update + 单 repaint”的循环结构。
 
 ## 2. Web Engine 混合时钟
 
@@ -31,7 +46,9 @@ requestAnimationFrame
 
 ### WorldClock
 
-默认 `16Hz / 62.5ms`，负责 Grid Truth 与 gameplay。默认值集中在 `resolveEngineTiming()`，不是业务代码中的隐式常量。
+当前默认 `16Hz / 62.5ms`，负责 Grid Truth 与 gameplay。这个值是现代 Engine 配置，并不是从原版“一次 gameplay step = 62ms”推出的原版事实。
+
+逆向已经确认原版在每个约 62ms outer loop 内推进两次 gameplay。是否需要因此调整 Web Engine 默认 worldHz，属于后续实现 PR 的问题；本文只记录原版时基。
 
 ### PresentationClock
 
@@ -48,10 +65,10 @@ requestAnimationFrame
 而不是：
 
 ```text
-4 ticks
+N 个 Web WorldTick
 ```
 
-改变 `worldHz` 或 `presentationHz` 只改变采样粒度，不能自动改变行为速度。只有逆向证据明确证明“恰好 N 个原版逻辑循环”本身就是玩法规则时，文档才应保留这个原版计数事实；Web 实现仍应优先把它换算为可解释的时间语义。
+原版若明确以 N 次 `b()` gameplay step 控制状态，则先保存这个原版计数事实，再按约 31ms/step 换算原版时长。Web 实现仍应优先把行为表达为可解释的时间语义，而不是盲目复制混淆代码计数器。
 
 ## 3. Grid Truth 与视觉过渡
 
@@ -87,7 +104,7 @@ RuntimeAction：
 - 可以声明 `cameraTarget`；
 - gameplay state 可进入 World snapshot。
 
-因此原版“火球飞完以前 Bobby 不能动”可以通过 blocking Action 表达；未来自制玩法允许火球与 Bobby 并行时，只需让对应 Action 不阻塞输入，不需要第二套 Actor 模型或第二套 Engine mode。
+原版 Fireball 存活时每拍刷新共享 aT=16，所以普通方向输入路径被挡住；但 Speed continuation、Ice forced continuation、airborne flight 在 aT 检查之前，世界子系统也继续推进。现代 blocking Action 必须表达“挡普通输入”而不是误写成 World pause。
 
 ## 5. Undo 与 Presentation
 
@@ -99,16 +116,24 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 
 ## 6. `ta.png` 动态格图集
 
-高清版 `ta.png` 为 192×720，即 **4 列 × 15 行 × 48px**。原版 `V()` 每约 4 个逻辑循环更新一次四组动画计数器：
+高清版 `ta.png` 为 192×720，即 **4 列 × 15 行 × 48px**。原版 `V()` 维护四组动画计数器：
 
 - `bC`: 0..7，8 相循环；
 - `bD`: 0..5，6 相循环；
 - `bE`: 0..3，4 相循环；
 - `bF`: 0..2，3 相循环。
 
-按原版约 62ms 主循环计算，动态格约每 **248ms** 换一帧。Web Engine 把这个逆向事实表达为 Presentation 时间，而不是 `time.tick % 4`；因此未来调整 `worldHz` 不会改变环境动画速度。
+`V()` 每次 gameplay `b()` 都被调用，但只有内部四相门控 `bG == 0` 时才推进这些 phase；`bG` 每 4 次 gameplay step 回到 0。因此 phase 约每：
 
-已经确认并接入的映射包括：
+```text
+4 × 31ms ≈ 124ms
+```
+
+推进一次，而不是 248ms。
+
+由于原版每个 outer loop 只在两次 `b()` 之间最多 repaint 一次，simulation step 与实际可见帧并不是一一对应；但连续 phase 改变在稳态仍约隔两个 62ms outer loop，即约 124ms。
+
+已经确认的映射包括：
 
 | 对象/地形 | `ta.png` 基础线性序号 | 原版计数器 |
 |---|---:|---|
@@ -121,17 +146,9 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 | 潮汐 `0x57..0x5A` | 33 / 31 / 37 / 35 | `bF` |
 | 水域边缘 `0x5B..0x5D` | 46 / 48 / 50 | `bF` |
 
-Web Runtime 的 Original Visual resolver 使用 `PresentationFrame.nowMs` 计算 phase：
+Web Runtime 的 Original Visual resolver 应按最终确认的原版毫秒节拍计算 phase，而不是把 `time.tick % 4` 当作原版事实。Renderer 的 image layer 支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
 
-```text
-phase = floor(nowMs / 248ms) % cycleLength
-```
-
-`phase == 0` 时继续绘制 `ts.png` 的静态格；其余 phase 把 `ta.png` 当作 4×15 的规则网格 sprite sheet，并按 `baseIndex + phase - 1` 取帧。Renderer 的 image layer 因此支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
-
-这些环境动画不创建 RuntimeAction、不写 Entity state，也不读取 WorldTick。WorldClock 停止后，只要 PresentationClock 仍运行，它们就继续播放。
-
-原版 Bonus Coin 还存在随机闪烁门控；当前已恢复确认的基础相位动画，随机门控仍作为后续 fidelity 项处理。
+Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更新 `bH`，窗口结束时 gate 为 true 的稳态概率为 `1/8`；随后 `bE=1/2/3` 三帧各保持 4 step，一次可见闪耀固定约 372ms。
 
 ## 7. Bobby 四方向人物图
 
@@ -144,7 +161,9 @@ phase = floor(nowMs / 248ms) % cycleLength
 
 藤蔓攀爬状态下原版会设置攀爬标志并强制使用 `b2.png`。
 
-Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。默认 16Hz World 不再意味着 Bobby 只能以 16fps 移动。
+原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；连续格移动 cadence 约 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，约 `248ms`。
+
+Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
 
 ## 8. 魔豆与藤蔓
 
@@ -152,21 +171,33 @@ Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 Prese
 
 1. 豆田变为 `0xEF` 萌芽；
 2. 创建生长任务，倒计时初值 16；
-3. 主循环逐次递减；
+3. 每次 gameplay `b()` 调用执行 `S()` 并递减；
 4. 可继续生长时，旧顶端变 `0xDE` 中段，基座为 `0xEE`，新顶端为 `0xCE`；
 5. 向上重复，直到越界、目标格已有对象，或目标地形 unsigned ID 大于 `0x5D`。
 
-原版 16 次约 62ms 循环对应约 **992ms**。Web 版应由 RuntimeAction 保存生长 gameplay phase / remaining time，并使用 `WorldTick.stepMs` 累计毫秒；藤蔓“长出一格”的 World mutation 与这次变化如何动画呈现继续分离。
+相邻两次生长 mutation 相隔约 **16 个 gameplay step ≈ 496ms**。
 
-`0xCE / 0xDE / 0xEE` 都是可攀爬段，能够覆盖本来不可普通步行的背景格。
+`0xCE` Tip 与 `0xDE` Middle 能覆盖本来不可普通步行的 terrain；`0xEE` Base 只有 terrain 自身可走时才能进入。三者都可触发 climbing presentation，但碰撞 override 不相同。
 
-## 9. 荷叶
+## 9. 其它已确认 step 时长
+
+按约 31ms/gameplay step 换算：
+
+- Ice Block melting：每阶段 6 step，约 186ms；
+- Plank `D5→D6→empty`：每阶段 6 step，约 186ms；
+- Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：每阶段 6 step，约 186ms；
+- Fireball：6px/gameplay step，48px 一格约 248ms；
+- Shovel：32 gameplay step 后清除 Snow，约 992ms。
+
+这些换算是根据当前恢复出的控制流与稳态主循环得到的近似真实时间；原版 `System.currentTimeMillis()` 调度、设备执行耗时和 sleep 抖动会让实测存在少量偏差。
+
+## 10. 荷叶
 
 原版帮助文本明确说明：荷叶沿 Bobby 进入时的方向漂流，**一旦停住就不能直接再次启动，必须先下叶再重新登上**。
 
 原版动态实体更新时 Bobby 与荷叶的像素坐标使用相同增量。Web 版应让 World / RuntimeAction 决定荷叶和 Bobby 的逻辑格变化，而 Presentation 为两者建立共享时长/轨迹的视觉过渡；不能让两者以互不相关的 Tween 漂移。
 
-## 10. Pause 与逐帧调试语义
+## 11. Pause 与逐帧调试语义
 
 World 与 Presentation 可以独立暂停：
 

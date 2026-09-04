@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""生成十个官方 JAR 的结构化 runtime 指纹。
+
+输入 JAR / 反编译基准只读；输出只写入 original/reverse-engineering/notes。
+"""
+
+import os
+from pathlib import Path as _ScriptPath
+
+os.chdir(_ScriptPath(__file__).resolve().parents[3])
+
+from pathlib import Path
+import hashlib
+import re
+import subprocess
+import zipfile
+
+jars = [Path('original/official-hd/base.jar')] + [
+    Path(f'original/official-hd/up{i:02d}.jar') for i in range(1, 10)
+]
+labels = ['base'] + [f'up{i:02d}' for i in range(1, 10)]
+root = Path('tmp/original-reverse/releases')
+
+signatures = {
+    'gameplay-H': 'private final boolean H();',
+    'movement-M': 'private final boolean M();',
+    'pixel-N': 'private final void N();',
+    'midpoint-J': 'private final void J();',
+    'moving-P': 'private final void P();',
+    'fireball-Q': 'private final void Q();',
+    'ice-R': 'private final void R();',
+    'bean-S': 'private final void S();',
+    'collision': 'private final boolean a(int, int, boolean);',
+    'moving-grid-pass': 'private final boolean a(int, int, int, byte);',
+    'loader': 'private final void e(int, int);',
+    'runtime-b': 'public final boolean b();',
+    'run': 'public void run();',
+}
+
+LOCAL_OPS = r'(?:[a-z]load|[a-z]store|ret)'
+BRANCH_OPS = r'(?:if\S*|goto(?:_w)?|jsr(?:_w)?)'
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+def normalize_layout(text: str) -> str:
+    text = re.sub(r'#\d+', '#', text)
+    return '\n'.join(line.rstrip() for line in text.splitlines()).strip() + '\n'
+
+def normalize_structural(text: str) -> str:
+    out = []
+    for raw in text.splitlines():
+        line = re.sub(r'#\d+', '#', raw.rstrip())
+
+        # Switch 表保留 case key，丢弃只与布局有关的目标 offset。
+        m = re.match(r'^(\s*)(-?\d+|default):\s+-?\d+\s*$', line)
+        if m:
+            out.append(f'{m.group(1)}{m.group(2)}: <target>')
+            continue
+
+        # Exception table offset 只反映 bytecode 布局。
+        m = re.match(r'^\s*\d+\s+\d+\s+\d+\s+(Class .+|any)\s*$', line)
+        if m:
+            out.append(f'<from> <to> <target> {m.group(1)}')
+            continue
+
+        # 删除指令 offset，保留实际 operation。
+        m = re.match(r'^\s*\d+:\s+(.*)$', line)
+        if m:
+            instr = m.group(1)
+            instr = re.sub(rf'^({LOCAL_OPS})_[0-3]\b', r'\1 <local>', instr)
+            instr = re.sub(rf'^({LOCAL_OPS})\s+\d+\b', r'\1 <local>', instr)
+            instr = re.sub(r'^iinc\s+\d+,', 'iinc <local>,', instr)
+            instr = re.sub(rf'^({BRANCH_OPS})\s+-?\d+\b', r'\1 <target>', instr)
+            out.append(instr)
+            continue
+
+        out.append(line.strip() if line.strip() else '')
+
+    return '\n'.join(out).strip() + '\n'
+
+def split_methods(text: str):
+    lines = text.splitlines()
+    starts = []
+    for i, line in enumerate(lines):
+        if line.startswith('  ') and not line.startswith('    ') and line.rstrip().endswith(';'):
+            starts.append(i)
+    result = {}
+    for pos, start in enumerate(starts):
+        end = starts[pos + 1] if pos + 1 < len(starts) else len(lines)
+        result[lines[start].strip()] = '\n'.join(lines[start:end]).rstrip() + '\n'
+    return result
+
+records = []
+layout_hashes = {name: {} for name in signatures}
+structural_hashes = {name: {} for name in signatures}
+
+for label, jar in zip(labels, jars):
+    out = root / label
+    out.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(jar) as z:
+        a_bytes = z.read('a.class')
+        bobby_bytes = z.read('Bobby.class')
+        manifest = z.read('META-INF/MANIFEST.MF').decode('utf-8', errors='replace')
+        (out / 'a.class').write_bytes(a_bytes)
+        (out / 'Bobby.class').write_bytes(bobby_bytes)
+
+    javap = subprocess.check_output([
+        'javap', '-classpath', str(out), '-c', '-p', '-s', 'a'
+    ], text=True)
+    methods = split_methods(javap)
+
+    version = ''
+    name = ''
+    for line in manifest.replace('\r', '').split('\n'):
+        if line.startswith('MIDlet-Version:'):
+            version = line.split(':', 1)[1].strip()
+        elif line.startswith('MIDlet-Name:'):
+            name = line.split(':', 1)[1].strip()
+
+    records.append({
+        'label': label,
+        'name': name,
+        'version': version,
+        'jar_size': jar.stat().st_size,
+        'a_size': len(a_bytes),
+        'a_sha': sha(a_bytes)[:12],
+        'bobby_sha': sha(bobby_bytes)[:12],
+    })
+
+    for method_name, signature in signatures.items():
+        body = methods.get(signature)
+        if body is None:
+            layout_hashes[method_name][label] = 'missing'
+            structural_hashes[method_name][label] = 'missing'
+            continue
+        layout_hashes[method_name][label] = sha(normalize_layout(body).encode())[:12]
+        structural_hashes[method_name][label] = sha(normalize_structural(body).encode())[:12]
+
+out_file = Path('original/reverse-engineering/notes/release-runtime-fingerprints.md')
+with out_file.open('w', encoding='utf-8') as f:
+    f.write('# 原版 10 JAR Runtime 指纹\n\n')
+    f.write('本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target、local-variable slot 与 exception-table offset，用来识别“同一控制流被重新编译布局”的情况。\n\n')
+
+    f.write('## Class 指纹\n\n')
+    f.write('| JAR | MIDlet | Version | JAR bytes | a.class bytes | a.class SHA | Bobby.class SHA |\n')
+    f.write('|---|---|---|---:|---:|---|---|\n')
+    for r in records:
+        f.write(f"| {r['label']} | {r['name']} | {r['version']} | {r['jar_size']} | {r['a_size']} | `{r['a_sha']}` | `{r['bobby_sha']}` |\n")
+
+    f.write('\n## 核心方法 structural 指纹\n\n')
+    f.write('| Method | ' + ' | '.join(labels) + ' |\n')
+    f.write('|---|' + '|'.join(['---'] * len(labels)) + '|\n')
+    for method_name in signatures:
+        hashes = structural_hashes[method_name]
+        f.write('| ' + method_name + ' | ' + ' | '.join(f'`{hashes[l]}`' for l in labels) + ' |\n')
+
+    f.write('\n## Structural 分组\n\n')
+    for method_name in signatures:
+        groups = {}
+        for label in labels:
+            groups.setdefault(structural_hashes[method_name][label], []).append(label)
+        f.write(f'### {method_name}\n\n')
+        for digest, members in groups.items():
+            f.write(f'- `{digest}`: {", ".join(members)}\n')
+        f.write('\n')
+
+    f.write('## Layout-only 分叉提示\n\n')
+    for method_name in signatures:
+        l_groups = len(set(layout_hashes[method_name].values()))
+        s_groups = len(set(structural_hashes[method_name].values()))
+        if l_groups > s_groups:
+            f.write(f'- `{method_name}`: layout {l_groups} 组 → structural {s_groups} 组。\n')

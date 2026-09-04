@@ -1,0 +1,1025 @@
+  private final void J();
+    descriptor: ()V
+    Code:
+       0: aload_0
+       1: getfield      #716                // Field cu:[[B
+       4: aload_0
+       5: getfield      #813                // Field as:I
+       8: aaload
+       9: aload_0
+      10: getfield      #811                // Field ar:I
+      13: baload
+      14: istore_1
+      15: aload_0
+      16: getfield      #714                // Field cv:[[B
+      19: aload_0
+      20: getfield      #813                // Field as:I
+      23: aaload
+      24: aload_0
+      25: getfield      #811                // Field ar:I
+      28: baload
+      29: istore_2
+      30: aload_0
+      31: getfield      #900                // Field aF:I
+      34: iconst_m1
+      35: if_icmpeq     114
+      38: aload_0
+      39: getfield      #716                // Field cu:[[B
+      42: aload_0
+      43: getfield      #902                // Field aG:I
+      46: aaload
+      47: aload_0
+      48: getfield      #900                // Field aF:I
+      51: bipush        -81
+      53: i2b
+      54: bastore
+      55: aload_0
+      56: aload_0
+      57: getfield      #699                // Field bI:I
+      60: aload_0
+      61: getfield      #706                // Field bJ:I
+      64: invokespecial #815                // Method f:(II)V
+      67: aload_0
+      68: iconst_m1
+      69: putfield      #900                // Field aF:I
+      72: aload_0
+      73: getfield      #797                // Field bm:Z
+      76: ifeq          395
+      79: iload_2
+      80: bipush        -11
+      82: if_icmpne     392
+      85: aload_0
+      86: iconst_2
+      87: i2b
+      88: putfield      #827                // Field bb:B
+      91: iload_2
+      92: bipush        -44
+      94: if_icmpne     415
+      97: aload_0
+      98: aload_0
+      99: getfield      #811                // Field ar:I
+     102: putfield      #904                // Field aJ:I
+     105: aload_0
+     106: aload_0
+     107: getfield      #813                // Field as:I
+     110: putfield      #906                // Field aK:I
+     113: return
+     114: aload_0
+     115: getfield      #908                // Field aH:I
+     118: iconst_m1
+     119: if_icmpeq     174
+     122: aload_0
+     123: getfield      #716                // Field cu:[[B
+     126: aload_0
+     127: getfield      #910                // Field aI:I
+     130: aaload
+     131: aload_0
+     132: getfield      #908                // Field aH:I
+     135: aload_0
+     136: aload_0
+     137: getfield      #716                // Field cu:[[B
+     140: aload_0
+     141: getfield      #910                // Field aI:I
+     144: aaload
+     145: aload_0
+     146: getfield      #908                // Field aH:I
+     149: baload
+     150: invokespecial #913                // Method b:(B)B
+     153: bastore
+     154: aload_0
+     155: aload_0
+     156: getfield      #699                // Field bI:I
+     159: aload_0
+     160: getfield      #706                // Field bJ:I
+     163: invokespecial #815                // Method f:(II)V
+     166: aload_0
+     167: iconst_m1
+     168: putfield      #908                // Field aH:I
+     171: goto          72
+     174: aload_0
+     175: getfield      #915                // Field aU:I
+     178: iconst_m1
+     179: if_icmpeq     234
+     182: aload_0
+     183: getfield      #716                // Field cu:[[B
+     186: aload_0
+     187: getfield      #917                // Field aV:I
+     190: aaload
+     191: aload_0
+     192: getfield      #915                // Field aU:I
+     195: aload_0
+     196: aload_0
+     197: getfield      #716                // Field cu:[[B
+     200: aload_0
+     201: getfield      #917                // Field aV:I
+     204: aaload
+     205: aload_0
+     206: getfield      #915                // Field aU:I
+     209: baload
+     210: invokespecial #919                // Method c:(B)B
+     213: bastore
+     214: aload_0
+     215: aload_0
+     216: getfield      #699                // Field bI:I
+     219: aload_0
+     220: getfield      #706                // Field bJ:I
+     223: invokespecial #815                // Method f:(II)V
+     226: aload_0
+     227: iconst_m1
+     228: putfield      #915                // Field aU:I
+     231: goto          72
+     234: aload_0
+     235: getfield      #904                // Field aJ:I
+     238: iconst_m1
+     239: if_icmpeq     337
+     242: aload_0
+     243: getfield      #841                // Field aL:I
+     246: iconst_m1
+     247: if_icmpeq     278
+     250: aload_0
+     251: getfield      #714                // Field cv:[[B
+     254: aload_0
+     255: getfield      #845                // Field aM:I
+     258: aaload
+     259: aload_0
+     260: getfield      #841                // Field aL:I
+     263: iconst_m1
+     264: i2b
+     265: bastore
+     266: aload_0
+     267: aload_0
+     268: getfield      #699                // Field bI:I
+     271: aload_0
+     272: getfield      #706                // Field bJ:I
+     275: invokespecial #815                // Method f:(II)V
+     278: aload_0
+     279: getfield      #714                // Field cv:[[B
+     282: aload_0
+     283: getfield      #906                // Field aK:I
+     286: aaload
+     287: aload_0
+     288: getfield      #904                // Field aJ:I
+     291: bipush        -43
+     293: i2b
+     294: bastore
+     295: aload_0
+     296: aload_0
+     297: getfield      #699                // Field bI:I
+     300: aload_0
+     301: getfield      #706                // Field bJ:I
+     304: invokespecial #815                // Method f:(II)V
+     307: aload_0
+     308: aload_0
+     309: getfield      #904                // Field aJ:I
+     312: putfield      #841                // Field aL:I
+     315: aload_0
+     316: aload_0
+     317: getfield      #906                // Field aK:I
+     320: putfield      #845                // Field aM:I
+     323: aload_0
+     324: bipush        6
+     326: putfield      #843                // Field aP:I
+     329: aload_0
+     330: iconst_m1
+     331: putfield      #904                // Field aJ:I
+     334: goto          72
+     337: aload_0
+     338: getfield      #921                // Field aR:I
+     341: iconst_m1
+     342: if_icmpeq     72
+     345: aload_0
+     346: aload_0
+     347: getfield      #923                // Field cC:I
+     350: iconst_1
+     351: isub
+     352: putfield      #923                // Field cC:I
+     355: aload_0
+     356: getfield      #714                // Field cv:[[B
+     359: aload_0
+     360: getfield      #925                // Field aS:I
+     363: aaload
+     364: aload_0
+     365: getfield      #921                // Field aR:I
+     368: bipush        -52
+     370: i2b
+     371: bastore
+     372: aload_0
+     373: aload_0
+     374: getfield      #699                // Field bI:I
+     377: aload_0
+     378: getfield      #706                // Field bJ:I
+     381: invokespecial #815                // Method f:(II)V
+     384: aload_0
+     385: iconst_m1
+     386: putfield      #921                // Field aR:I
+     389: goto          72
+     392: goto          113
+     395: iload_2
+     396: bipush        -12
+     398: if_icmpne     91
+     401: aload_0
+     402: iconst_1
+     403: i2b
+     404: putfield      #827                // Field bb:B
+     407: aload_0
+     408: iconst_0
+     409: putfield      #829                // Field aW:I
+     412: goto          113
+     415: iload_2
+     416: bipush        -39
+     418: if_icmpne     449
+     421: aload_0
+     422: getfield      #857                // Field cS:S
+     425: iconst_m1
+     426: if_icmpeq     449
+     429: aload_0
+     430: getfield      #851                // Field ds:B
+     433: iconst_m1
+     434: if_icmpne     449
+     437: aload_0
+     438: iconst_0
+     439: i2b
+     440: putfield      #851                // Field ds:B
+     443: aload_0
+     444: bipush        6
+     446: putfield      #853                // Field aQ:I
+     449: aload_0
+     450: iconst_0
+     451: putfield      #879                // Field bj:Z
+     454: aload_0
+     455: getfield      #795                // Field bi:Z
+     458: ifne          536
+     461: iload_2
+     462: bipush        -51
+     464: if_icmpne     549
+     467: aload_0
+     468: iconst_0
+     469: putfield      #927                // Field de:Z
+     472: aload_0
+     473: getfield      #729                // Field cV:Z
+     476: ifeq          508
+     479: aload_0
+     480: getfield      #731                // Field df:Z
+     483: ifne          508
+     486: aload_0
+     487: iconst_1
+     488: putfield      #731                // Field df:Z
+     491: aload_0
+     492: aload_0
+     493: invokespecial #875                // Method I:()Ljava/lang/String;
+     496: invokespecial #633                // Method b:(Ljava/lang/String;)V
+     499: aload_0
+     500: invokespecial #929                // Method m:()V
+     503: aload_0
+     504: lconst_0
+     505: putfield      #741                // Field bZ:J
+     508: aload_0
+     509: getfield      #714                // Field cv:[[B
+     512: aload_0
+     513: getfield      #813                // Field as:I
+     516: aaload
+     517: aload_0
+     518: getfield      #811                // Field ar:I
+     521: iconst_m1
+     522: i2b
+     523: bastore
+     524: aload_0
+     525: aload_0
+     526: getfield      #699                // Field bI:I
+     529: aload_0
+     530: getfield      #706                // Field bJ:I
+     533: invokespecial #815                // Method f:(II)V
+     536: iload_1
+     537: bipush        -92
+     539: if_icmpne     1083
+     542: aload_0
+     543: invokespecial #931                // Method L:()V
+     546: goto          113
+     549: iload_2
+     550: bipush        -8
+     552: if_icmpne     596
+     555: aload_0
+     556: aload_0
+     557: getfield      #933                // Field bX:I
+     560: iconst_1
+     561: iadd
+     562: putfield      #933                // Field bX:I
+     565: aload_0
+     566: getfield      #714                // Field cv:[[B
+     569: aload_0
+     570: getfield      #813                // Field as:I
+     573: aaload
+     574: aload_0
+     575: getfield      #811                // Field ar:I
+     578: iconst_m1
+     579: i2b
+     580: bastore
+     581: aload_0
+     582: aload_0
+     583: getfield      #699                // Field bI:I
+     586: aload_0
+     587: getfield      #706                // Field bJ:I
+     590: invokespecial #815                // Method f:(II)V
+     593: goto          536
+     596: iload_2
+     597: bipush        -35
+     599: if_icmpne     643
+     602: aload_0
+     603: iconst_0
+     604: putfield      #935                // Field aA:I
+     607: aload_0
+     608: iconst_1
+     609: putfield      #937                // Field cX:Z
+     612: aload_0
+     613: getfield      #714                // Field cv:[[B
+     616: aload_0
+     617: getfield      #813                // Field as:I
+     620: aaload
+     621: aload_0
+     622: getfield      #811                // Field ar:I
+     625: iconst_m1
+     626: i2b
+     627: bastore
+     628: aload_0
+     629: aload_0
+     630: getfield      #699                // Field bI:I
+     633: aload_0
+     634: getfield      #706                // Field bJ:I
+     637: invokespecial #815                // Method f:(II)V
+     640: goto          536
+     643: iload_2
+     644: bipush        -13
+     646: if_icmpne     690
+     649: aload_0
+     650: iconst_0
+     651: putfield      #935                // Field aA:I
+     654: aload_0
+     655: iconst_1
+     656: putfield      #939                // Field cY:Z
+     659: aload_0
+     660: getfield      #714                // Field cv:[[B
+     663: aload_0
+     664: getfield      #813                // Field as:I
+     667: aaload
+     668: aload_0
+     669: getfield      #811                // Field ar:I
+     672: iconst_m1
+     673: i2b
+     674: bastore
+     675: aload_0
+     676: aload_0
+     677: getfield      #699                // Field bI:I
+     680: aload_0
+     681: getfield      #706                // Field bJ:I
+     684: invokespecial #815                // Method f:(II)V
+     687: goto          536
+     690: iload_2
+     691: bipush        -49
+     693: if_icmpne     737
+     696: aload_0
+     697: aload_0
+     698: getfield      #941                // Field cD:I
+     701: iconst_1
+     702: iadd
+     703: putfield      #941                // Field cD:I
+     706: aload_0
+     707: getfield      #714                // Field cv:[[B
+     710: aload_0
+     711: getfield      #813                // Field as:I
+     714: aaload
+     715: aload_0
+     716: getfield      #811                // Field ar:I
+     719: iconst_m1
+     720: i2b
+     721: bastore
+     722: aload_0
+     723: aload_0
+     724: getfield      #699                // Field bI:I
+     727: aload_0
+     728: getfield      #706                // Field bJ:I
+     731: invokespecial #815                // Method f:(II)V
+     734: goto          536
+     737: iload_2
+     738: bipush        -54
+     740: if_icmpne     785
+     743: aload_0
+     744: aload_0
+     745: getfield      #923                // Field cC:I
+     748: iconst_1
+     749: isub
+     750: putfield      #923                // Field cC:I
+     753: aload_0
+     754: getfield      #714                // Field cv:[[B
+     757: aload_0
+     758: getfield      #813                // Field as:I
+     761: aaload
+     762: aload_0
+     763: getfield      #811                // Field ar:I
+     766: bipush        -55
+     768: i2b
+     769: bastore
+     770: aload_0
+     771: aload_0
+     772: getfield      #699                // Field bI:I
+     775: aload_0
+     776: getfield      #706                // Field bJ:I
+     779: invokespecial #815                // Method f:(II)V
+     782: goto          536
+     785: iload_2
+     786: bipush        -53
+     788: if_icmpne     810
+     791: aload_0
+     792: aload_0
+     793: getfield      #811                // Field ar:I
+     796: putfield      #921                // Field aR:I
+     799: aload_0
+     800: aload_0
+     801: getfield      #813                // Field as:I
+     804: putfield      #925                // Field aS:I
+     807: goto          536
+     810: iload_2
+     811: bipush        -33
+     813: if_icmpne     942
+     816: aload_0
+     817: getfield      #941                // Field cD:I
+     820: ifle          928
+     823: aload_0
+     824: aload_0
+     825: getfield      #941                // Field cD:I
+     828: iconst_1
+     829: isub
+     830: putfield      #941                // Field cD:I
+     833: aload_0
+     834: getfield      #943                // Field dh:[B
+     837: aload_0
+     838: getfield      #945                // Field do:I
+     841: aload_0
+     842: getfield      #811                // Field ar:I
+     845: i2b
+     846: i2b
+     847: bastore
+     848: aload_0
+     849: getfield      #947                // Field di:[B
+     852: aload_0
+     853: getfield      #945                // Field do:I
+     856: aload_0
+     857: getfield      #813                // Field as:I
+     860: i2b
+     861: i2b
+     862: bastore
+     863: aload_0
+     864: getfield      #949                // Field dj:[B
+     867: aload_0
+     868: getfield      #945                // Field do:I
+     871: iconst_1
+     872: i2b
+     873: bastore
+     874: aload_0
+     875: getfield      #951                // Field dk:[B
+     878: aload_0
+     879: getfield      #945                // Field do:I
+     882: bipush        16
+     884: i2b
+     885: bastore
+     886: aload_0
+     887: aload_0
+     888: getfield      #945                // Field do:I
+     891: iconst_1
+     892: iadd
+     893: putfield      #945                // Field do:I
+     896: aload_0
+     897: getfield      #714                // Field cv:[[B
+     900: aload_0
+     901: getfield      #813                // Field as:I
+     904: aaload
+     905: aload_0
+     906: getfield      #811                // Field ar:I
+     909: bipush        -17
+     911: i2b
+     912: bastore
+     913: aload_0
+     914: aload_0
+     915: getfield      #699                // Field bI:I
+     918: aload_0
+     919: getfield      #706                // Field bJ:I
+     922: invokespecial #815                // Method f:(II)V
+     925: goto          536
+     928: aload_0
+     929: iconst_4
+     930: i2b
+     931: putfield      #953                // Field aY:B
+     934: aload_0
+     935: iconst_4
+     936: putfield      #935                // Field aA:I
+     939: goto          536
+     942: iload_2
+     943: bipush        -18
+     945: if_icmpeq     960
+     948: iload_2
+     949: bipush        -34
+     951: if_icmpeq     960
+     954: iload_2
+     955: bipush        -50
+     957: if_icmpne     968
+     960: aload_0
+     961: iconst_1
+     962: putfield      #879                // Field bj:Z
+     965: goto          536
+     968: iload_2
+     969: bipush        -36
+     971: if_icmpne     983
+     974: aload_0
+     975: iconst_1
+     976: i2b
+     977: putfield      #839                // Field aX:B
+     980: goto          536
+     983: iload_2
+     984: bipush        -10
+     986: if_icmpne     536
+     989: aload_0
+     990: aload_0
+     991: getfield      #955                // Field J:S
+     994: iconst_1
+     995: iadd
+     996: i2s
+     997: i2s
+     998: putfield      #955                // Field J:S
+    1001: aload_0
+    1002: getfield      #714                // Field cv:[[B
+    1005: aload_0
+    1006: getfield      #813                // Field as:I
+    1009: aaload
+    1010: aload_0
+    1011: getfield      #811                // Field ar:I
+    1014: iconst_m1
+    1015: i2b
+    1016: bastore
+    1017: aload_0
+    1018: aload_0
+    1019: getfield      #699                // Field bI:I
+    1022: aload_0
+    1023: getfield      #706                // Field bJ:I
+    1026: invokespecial #815                // Method f:(II)V
+    1029: aload_0
+    1030: iconst_1
+    1031: aload_0
+    1032: getfield      #668                // Field bV:I
+    1035: aload_0
+    1036: getfield      #672                // Field bU:I
+    1039: invokespecial #958                // Method a:(ZII)V
+    1042: aload_0
+    1043: aload_0
+    1044: getfield      #960                // Field I:S
+    1047: aload_0
+    1048: getfield      #933                // Field bX:I
+    1051: iadd
+    1052: i2s
+    1053: i2s
+    1054: putfield      #960                // Field I:S
+    1057: aload_0
+    1058: iconst_0
+    1059: i2b
+    1060: putfield      #962                // Field eg:B
+    1063: aload_0
+    1064: invokespecial #964                // Method h:()V
+    1067: aload_0
+    1068: iconst_0
+    1069: invokespecial #677                // Method d:(Z)V
+    1072: aload_0
+    1073: invokespecial #966                // Method l:()V
+    1076: aload_0
+    1077: invokespecial #968                // Method s:()V
+    1080: goto          113
+    1083: iload_1
+    1084: bipush        -94
+    1086: if_icmpne     1097
+    1089: aload_0
+    1090: iconst_0
+    1091: invokespecial #971                // Method c:(I)V
+    1094: goto          546
+    1097: iload_1
+    1098: bipush        -108
+    1100: if_icmpne     1116
+    1103: aload_0
+    1104: iconst_1
+    1105: putfield      #771                // Field bn:Z
+    1108: aload_0
+    1109: iconst_1
+    1110: putfield      #799                // Field av:I
+    1113: goto          546
+    1116: iload_1
+    1117: sipush        255
+    1120: iand
+    1121: sipush        191
+    1124: if_icmplt     1146
+    1127: iload_1
+    1128: sipush        255
+    1131: iand
+    1132: sipush        194
+    1135: if_icmpgt     1146
+    1138: aload_0
+    1139: iload_1
+    1140: invokespecial #974                // Method a:(B)V
+    1143: goto          546
+    1146: iload_1
+    1147: bipush        -90
+    1149: if_icmpne     1160
+    1152: aload_0
+    1153: iconst_1
+    1154: invokespecial #971                // Method c:(I)V
+    1157: goto          546
+    1160: iload_1
+    1161: bipush        -80
+    1163: if_icmpne     1185
+    1166: aload_0
+    1167: aload_0
+    1168: getfield      #811                // Field ar:I
+    1171: putfield      #900                // Field aF:I
+    1174: aload_0
+    1175: aload_0
+    1176: getfield      #813                // Field as:I
+    1179: putfield      #902                // Field aG:I
+    1182: goto          546
+    1185: aload_0
+    1186: getfield      #795                // Field bi:Z
+    1189: ifne          1233
+    1192: iload_1
+    1193: sipush        255
+    1196: iand
+    1197: sipush        185
+    1200: if_icmplt     1233
+    1203: iload_1
+    1204: sipush        255
+    1207: iand
+    1208: sipush        190
+    1211: if_icmpgt     1233
+    1214: aload_0
+    1215: aload_0
+    1216: getfield      #811                // Field ar:I
+    1219: putfield      #908                // Field aH:I
+    1222: aload_0
+    1223: aload_0
+    1224: getfield      #813                // Field as:I
+    1227: putfield      #910                // Field aI:I
+    1230: goto          546
+    1233: aload_0
+    1234: getfield      #795                // Field bi:Z
+    1237: ifne          1281
+    1240: iload_1
+    1241: sipush        255
+    1244: iand
+    1245: sipush        177
+    1248: if_icmplt     1281
+    1251: iload_1
+    1252: sipush        255
+    1255: iand
+    1256: sipush        180
+    1259: if_icmpgt     1281
+    1262: aload_0
+    1263: aload_0
+    1264: getfield      #811                // Field ar:I
+    1267: putfield      #915                // Field aU:I
+    1270: aload_0
+    1271: aload_0
+    1272: getfield      #813                // Field as:I
+    1275: putfield      #917                // Field aV:I
+    1278: goto          546
+    1281: aload_0
+    1282: getfield      #795                // Field bi:Z
+    1285: ifne          1331
+    1288: iload_1
+    1289: bipush        -97
+    1291: if_icmpne     1331
+    1294: aload_0
+    1295: iconst_1
+    1296: putfield      #976                // Field cZ:Z
+    1299: aload_0
+    1300: getfield      #716                // Field cu:[[B
+    1303: aload_0
+    1304: getfield      #813                // Field as:I
+    1307: aaload
+    1308: aload_0
+    1309: getfield      #811                // Field ar:I
+    1312: bipush        124
+    1314: i2b
+    1315: bastore
+    1316: aload_0
+    1317: aload_0
+    1318: getfield      #699                // Field bI:I
+    1321: aload_0
+    1322: getfield      #706                // Field bJ:I
+    1325: invokespecial #815                // Method f:(II)V
+    1328: goto          546
+    1331: iload_1
+    1332: bipush        -89
+    1334: if_icmpne     1353
+    1337: aload_0
+    1338: iconst_0
+    1339: putfield      #978                // Field da:Z
+    1342: aload_0
+    1343: bipush        -89
+    1345: bipush        -88
+    1347: invokespecial #980                // Method a:(BB)V
+    1350: goto          546
+    1353: iload_1
+    1354: bipush        -87
+    1356: if_icmpne     1375
+    1359: aload_0
+    1360: iconst_0
+    1361: putfield      #982                // Field db:Z
+    1364: aload_0
+    1365: bipush        -87
+    1367: bipush        -86
+    1369: invokespecial #980                // Method a:(BB)V
+    1372: goto          546
+    1375: iload_1
+    1376: bipush        -85
+    1378: if_icmpne     1397
+    1381: aload_0
+    1382: iconst_0
+    1383: putfield      #984                // Field dc:Z
+    1386: aload_0
+    1387: bipush        -85
+    1389: bipush        -84
+    1391: invokespecial #980                // Method a:(BB)V
+    1394: goto          546
+    1397: iload_1
+    1398: bipush        -83
+    1400: if_icmpne     1419
+    1403: aload_0
+    1404: iconst_0
+    1405: putfield      #986                // Field dd:Z
+    1408: aload_0
+    1409: bipush        -83
+    1411: bipush        -82
+    1413: invokespecial #980                // Method a:(BB)V
+    1416: goto          546
+    1419: iload_1
+    1420: bipush        -88
+    1422: if_icmpne     1475
+    1425: aload_0
+    1426: iconst_1
+    1427: putfield      #978                // Field da:Z
+    1430: aload_0
+    1431: iconst_2
+    1432: i2b
+    1433: putfield      #753                // Field aZ:B
+    1436: aload_0
+    1437: bipush        -88
+    1439: bipush        -89
+    1441: invokespecial #980                // Method a:(BB)V
+    1444: aload_0
+    1445: bipush        64
+    1447: putfield      #747                // Field aT:I
+    1450: aload_0
+    1451: aload_0
+    1452: getfield      #988                // Field cK:S
+    1455: aload_0
+    1456: getfield      #327                // Field h:I
+    1459: imul
+    1460: aload_0
+    1461: getfield      #990                // Field cL:S
+    1464: aload_0
+    1465: getfield      #329                // Field i:I
+    1468: imul
+    1469: invokespecial #873                // Method d:(II)V
+    1472: goto          546
+    1475: iload_1
+    1476: bipush        -86
+    1478: if_icmpne     1531
+    1481: aload_0
+    1482: iconst_1
+    1483: putfield      #982                // Field db:Z
+    1486: aload_0
+    1487: iconst_3
+    1488: i2b
+    1489: putfield      #753                // Field aZ:B
+    1492: aload_0
+    1493: bipush        -86
+    1495: bipush        -87
+    1497: invokespecial #980                // Method a:(BB)V
+    1500: aload_0
+    1501: bipush        64
+    1503: putfield      #747                // Field aT:I
+    1506: aload_0
+    1507: aload_0
+    1508: getfield      #992                // Field cM:S
+    1511: aload_0
+    1512: getfield      #327                // Field h:I
+    1515: imul
+    1516: aload_0
+    1517: getfield      #994                // Field cN:S
+    1520: aload_0
+    1521: getfield      #329                // Field i:I
+    1524: imul
+    1525: invokespecial #873                // Method d:(II)V
+    1528: goto          546
+    1531: iload_1
+    1532: bipush        -84
+    1534: if_icmpne     1587
+    1537: aload_0
+    1538: iconst_1
+    1539: putfield      #984                // Field dc:Z
+    1542: aload_0
+    1543: iconst_0
+    1544: i2b
+    1545: putfield      #753                // Field aZ:B
+    1548: aload_0
+    1549: bipush        -84
+    1551: bipush        -85
+    1553: invokespecial #980                // Method a:(BB)V
+    1556: aload_0
+    1557: bipush        64
+    1559: putfield      #747                // Field aT:I
+    1562: aload_0
+    1563: aload_0
+    1564: getfield      #996                // Field cO:S
+    1567: aload_0
+    1568: getfield      #327                // Field h:I
+    1571: imul
+    1572: aload_0
+    1573: getfield      #998                // Field cP:S
+    1576: aload_0
+    1577: getfield      #329                // Field i:I
+    1580: imul
+    1581: invokespecial #873                // Method d:(II)V
+    1584: goto          546
+    1587: iload_1
+    1588: bipush        -82
+    1590: if_icmpne     1643
+    1593: aload_0
+    1594: iconst_1
+    1595: putfield      #986                // Field dd:Z
+    1598: aload_0
+    1599: iconst_1
+    1600: i2b
+    1601: putfield      #753                // Field aZ:B
+    1604: aload_0
+    1605: bipush        -82
+    1607: bipush        -83
+    1609: invokespecial #980                // Method a:(BB)V
+    1612: aload_0
+    1613: bipush        64
+    1615: putfield      #747                // Field aT:I
+    1618: aload_0
+    1619: aload_0
+    1620: getfield      #1000               // Field cQ:S
+    1623: aload_0
+    1624: getfield      #327                // Field h:I
+    1627: imul
+    1628: aload_0
+    1629: getfield      #1002               // Field cR:S
+    1632: aload_0
+    1633: getfield      #329                // Field i:I
+    1636: imul
+    1637: invokespecial #873                // Method d:(II)V
+    1640: goto          546
+    1643: aload_0
+    1644: getfield      #795                // Field bi:Z
+    1647: ifne          1663
+    1650: iload_1
+    1651: bipush        -81
+    1653: if_icmpne     1663
+    1656: aload_0
+    1657: invokespecial #745                // Method K:()V
+    1660: goto          546
+    1663: aload_0
+    1664: getfield      #795                // Field bi:Z
+    1667: ifne          1719
+    1670: aload_0
+    1671: getfield      #923                // Field cC:I
+    1674: ifne          1719
+    1677: iload_1
+    1678: bipush        -106
+    1680: if_icmpne     1719
+    1683: aload_0
+    1684: iconst_0
+    1685: invokespecial #677                // Method d:(Z)V
+    1688: aload_0
+    1689: invokespecial #966                // Method l:()V
+    1692: aload_0
+    1693: aload_0
+    1694: getfield      #733                // Field aw:I
+    1697: putfield      #1004               // Field ax:I
+    1700: aload_0
+    1701: bipush        6
+    1703: putfield      #733                // Field aw:I
+    1706: aload_0
+    1707: iconst_0
+    1708: putfield      #799                // Field av:I
+    1711: aload_0
+    1712: iconst_1
+    1713: putfield      #881                // Field be:Z
+    1716: goto          546
+    1719: aload_0
+    1720: getfield      #795                // Field bi:Z
+    1723: ifeq          1741
+    1726: iload_1
+    1727: bipush        -96
+    1729: if_icmpne     1741
+    1732: aload_0
+    1733: iconst_2
+    1734: i2b
+    1735: putfield      #839                // Field aX:B
+    1738: goto          546
+    1741: iload_1
+    1742: sipush        255
+    1745: iand
+    1746: sipush        151
+    1749: if_icmplt     546
+    1752: iload_1
+    1753: sipush        255
+    1756: iand
+    1757: sipush        157
+    1760: if_icmpgt     546
+    1763: iload_1
+    1764: sipush        255
+    1767: iand
+    1768: sipush        151
+    1771: isub
+    1772: istore_3
+    1773: aload_0
+    1774: getfield      #960                // Field I:S
+    1777: aload_0
+    1778: getfield      #400                // Field bu:[B
+    1781: iload_3
+    1782: baload
+    1783: if_icmplt     1894
+    1786: iconst_1
+    1787: istore_2
+    1788: iload_2
+    1789: ifeq          1899
+    1792: iload_3
+    1793: istore        4
+    1795: new           #532                // class java/lang/StringBuffer
+    1798: dup
+    1799: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+    1802: aload_0
+    1803: getfield      #349                // Field a:[Ljava/lang/String;
+    1806: bipush        82
+    1808: iload_3
+    1809: iadd
+    1810: aaload
+    1811: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1814: aload_0
+    1815: getfield      #349                // Field a:[Ljava/lang/String;
+    1818: bipush        91
+    1820: iload_3
+    1821: iadd
+    1822: aaload
+    1823: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1826: astore        5
+    1828: iload_2
+    1829: ifeq          1905
+    1832: aload_0
+    1833: getfield      #349                // Field a:[Ljava/lang/String;
+    1836: bipush        99
+    1838: aaload
+    1839: astore        6
+    1841: aload         5
+    1843: aload         6
+    1845: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+    1848: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+    1851: astore        7
+    1853: iload_2
+    1854: ifeq          1917
+    1857: aload_0
+    1858: getfield      #349                // Field a:[Ljava/lang/String;
+    1861: bipush        32
+    1863: aaload
+    1864: astore        6
+    1866: iload_2
+    1867: ifeq          1929
+    1870: aload_0
+    1871: getfield      #349                // Field a:[Ljava/lang/String;
+    1874: bipush        33
+    1876: aaload
+    1877: astore        5
+    1879: aload_0
+    1880: iload         4
+    1882: aload         7
+    1884: aload         6
+    1886: aload         5
+    1888: invokespecial #763                // Method a:(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    1891: goto          546
+    1894: iconst_0
+    1895: istore_2
+    1896: goto          1788
+    1899: iconst_m1
+    1900: istore        4
+    1902: goto          1795
+    1905: aload_0
+    1906: getfield      #349                // Field a:[Ljava/lang/String;
+    1909: bipush        98
+    1911: aaload
+    1912: astore        6
+    1914: goto          1841
+    1917: aload_0
+    1918: getfield      #349                // Field a:[Ljava/lang/String;
+    1921: bipush        30
+    1923: aaload
+    1924: astore        6
+    1926: goto          1866
+    1929: aconst_null
+    1930: astore        5
+    1932: goto          1879

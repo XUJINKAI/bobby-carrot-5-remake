@@ -1,0 +1,99 @@
+  private final void T();
+    descriptor: ()V
+    Code:
+       0: bipush        48
+       2: istore_1
+       3: aload_0
+       4: getfield      #1041               // Field cf:I
+       7: aload_0
+       8: getfield      #706                // Field bJ:I
+      11: if_icmpge     124
+      14: iload_1
+      15: bipush        24
+      17: isub
+      18: istore_2
+      19: iconst_0
+      20: istore_1
+      21: iload_1
+      22: iconst_5
+      23: if_icmpge     145
+      26: aload_0
+      27: getfield      #404                // Field ch:[I
+      30: iload_1
+      31: iaload
+      32: aload_0
+      33: getfield      #347                // Field r:I
+      36: ishr
+      37: aload_0
+      38: getfield      #574                // Field v:I
+      41: if_icmple     81
+      44: aload_0
+      45: getfield      #402                // Field cg:[I
+      48: iload_1
+      49: aload_0
+      50: aload_0
+      51: getfield      #569                // Field u:I
+      54: invokespecial #704                // Method b:(I)I
+      57: aload_0
+      58: getfield      #347                // Field r:I
+      61: ishl
+      62: iastore
+      63: aload_0
+      64: getfield      #404                // Field ch:[I
+      67: iload_1
+      68: aload_0
+      69: bipush        10
+      71: invokespecial #704                // Method b:(I)I
+      74: aload_0
+      75: getfield      #347                // Field r:I
+      78: ishl
+      79: ineg
+      80: iastore
+      81: aload_0
+      82: getfield      #402                // Field cg:[I
+      85: astore_3
+      86: aload_3
+      87: iload_1
+      88: aload_3
+      89: iload_1
+      90: iaload
+      91: aload_0
+      92: iconst_3
+      93: invokespecial #704                // Method b:(I)I
+      96: iconst_1
+      97: isub
+      98: aload_0
+      99: getfield      #347                // Field r:I
+     102: ishl
+     103: iadd
+     104: iastore
+     105: aload_0
+     106: getfield      #404                // Field ch:[I
+     109: astore_3
+     110: aload_3
+     111: iload_1
+     112: aload_3
+     113: iload_1
+     114: iaload
+     115: iload_2
+     116: iadd
+     117: iastore
+     118: iinc          1, 1
+     121: goto          21
+     124: iload_1
+     125: istore_2
+     126: aload_0
+     127: getfield      #1041               // Field cf:I
+     130: aload_0
+     131: getfield      #706                // Field bJ:I
+     134: if_icmple     19
+     137: iload_1
+     138: bipush        24
+     140: iadd
+     141: istore_2
+     142: goto          19
+     145: aload_0
+     146: aload_0
+     147: getfield      #706                // Field bJ:I
+     150: putfield      #1041               // Field cf:I
+     153: return

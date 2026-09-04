@@ -9,6 +9,7 @@
 - `b0.png`～`b3.png`：1×8，Bobby 左 / 右 / 上 / 下。
 - `b4.png`：1×3，待机。
 - `b5.png`：1×8，死亡。
+- `b6.png`：1×10，Bobby 关卡进入 / 通关过渡；进入关卡时反向播放，通关时正向播放。
 - `b7.png`：2×4，割草机。
 - `b8.png`：3×4，雪铲。
 - `b9.png`：1×4，风筝。
@@ -18,7 +19,7 @@
 - `misc.png`: 1x9, 章节进度、难度、国家图标。
 - `mow.png`: 2x5, 割草动画。
 
-`b6.png`、`arrows.png` 的具体语义或帧布局尚未在这里固定，后续确认后补充。
+`arrows.png` 是滚动/菜单箭头：Up `(0,0,17×9)`、Down `(0,9,17×9)`、Left `(17,0,9×17)`、Right `(26,0,9×17)`。
 
 其他资源包括：
 
@@ -37,14 +38,9 @@
 
 ## 通关目标
 
-原版关卡可组合三类目标：
+普通 release 关的计数目标是二选一：收集全部胡萝卜，或填充全部 Easter Egg Nest；计数归零后再到达 Exit 才完成。Golden Carrot 使用另一条特殊关完成流程，触碰后直接结算并持久化。隐藏 Cheat 还可把普通关剩余目标直接清零，但仍走正常 Exit 完成流程。
 
-- 收集全部胡萝卜；
-- 填充全部 Easter Egg Nest；
-- 收集到金色胡萝卜。
-- 到达 Exit。
-
-通关时，弹出通关菜单，列举本次用时和步数信息，并播放音乐`cleared.ogg`。
+普通关通关时进入结果界面，原版文本列出本次 `TIME`、本关获得的 `BONUS COINS` 与累计 `TOTAL COINS`，并播放一次性音乐 `cleared.mid`。原版结果界面不显示步数。
 
 ### carrot 胡萝卜
 
@@ -110,7 +106,7 @@ Right: ts(12,9) --> ta(4,1) --> ta(4,2) --> ta(4,3)
 
 表现：
 - bobby坐割草机的动画在`b7.png`（2x4），每列两个图片循环，从左到右分别代表左/右/上/下四个方向
-- bobby坐割草机会播放音乐`mow.ogg`
+- bobby坐割草机会播放音乐`mow.mid`
 - 割草机撞碎易碎岩石会有全屏震动的效果
 
 ### Carousel 旋转机关
@@ -176,7 +172,8 @@ End:    ts(6,14) --> ta(13,3) --> ta(13,4)
 - 云可以被风车吹动，直到遇到 Cloud Parking，或撞到不是星空的障碍物
 - 风车有四个方向，由四种开关控制
 - bobby 走到风车开关上，可以切换开关状态
-- bobby 走到风车开关上，对应风车也会暂时抢走镜头控制3秒
+- bobby 触发 Wind Switch 后，原版用共享的 Camera Focus/Input Lock 把镜头目标切到对应 Windmill，固定 focus countdown 为 64 个 gameplay step（稳态约 1.98 秒），再加上镜头飞行时间。
+- 如果第一朵 Cloud 真正被刚开启的风改向，镜头可继续 handoff 到该 Cloud，并跟随约 64 个 gameplay step，最后再回 Bobby。因此肉眼看到的完整抢镜头过程可能接近 3 秒或更久，但原版没有一个简单的“固定 3 秒”计时器。
 
 静态资产：
 Cloud Red:    ts(15,1)
@@ -188,7 +185,7 @@ Cloud Green Parking:  ts(16,3)
 Windmill Switch Up:     On ts(11,8), Off ts(11,9)
 Windmill Switch Down:   On ts(11,10), Off ts(11,11)
 Windmill Switch Left:   On ts(11,12), Off ts(11,13)
-Windmill Switch Down:   On ts(11,14), Off ts(11,15)
+Windmill Switch Right:  On ts(11,14), Off ts(11,15)
 
 风车开启后的动画：
 Up:    ts(14,1) --> ta(5,3) --> ta(5,4)
@@ -210,10 +207,12 @@ Left/Right：ta(14,4) --> ta(15,1) --> ta(15,2)
 ### Kite 风筝 / Whirlwind 旋风/龙卷风
 
 - Kite是关卡内的可收集物品
-- 拥有Kite的bobby，走到旋风上会起飞
-- 飞起来的bobby，遇到 Landing 会降落，或直到撞到地图边缘
+- 拥有Kite的 Bobby 走到 Whirlwind 上会起飞
+- airborne 状态完全绕过普通 terrain/object 碰撞，只保持当前方向逐格飞行
+- airborne Bobby 跨过 Landing `0xF5` 的移动中点时开始降落
+- 原版 class 没有“飞到地图边缘自动降落/停止”的逻辑；正常 flight path 必须在出界前由 Landing 收尾
 
-待验证：地图边缘为blocking地貌如何降落
+如果 airborne Bobby 被异常地图布局引导出 grid 数组边界，下一 movement cycle 会访问越界坐标；这是无保护的异常路径，而不是一种正常玩法结算。
 
 旋风动画：
 Whirlwind: ts(16,5) --> ta(7,3) --> ta(7,4) --> ta(8,1) --> ta(8,2) --> ta(8,3)
@@ -256,7 +255,7 @@ ts(14,5) --> ts(14,6) --> ts(14,7)
 - 火龙射出的火球会融化冰块
 - 火龙的火球会根据镜子拐弯
 - 火球碰到blocking障碍物会消失
-- 火球或临时获取镜头
+- 火球会临时获取镜头，并通过同一个 Camera Focus 字段阻止 Bobby 开始新的普通移动
 
 - bobby离开镜子时，镜子会顺时针变换方向
 
@@ -290,9 +289,10 @@ Trap:   Active ts(11,16),     Inactive ts(12,1)
 
 ### Ice 冰面
 
-- bobby走到冰面上会向前打滑，直到走出冰面
-
-bobby走到冰面上滑动时，会固定在b0/b1/b2/b3的第7帧，走出冰面时播放第8帧结束。
+- bobby走到冰面上会沿当前方向自动继续滑行；下一格可走时不会读取新的方向选择，直到前方走不通后才回到普通输入。
+- 滑行没有独立的固定 cadence，仍继承 Bobby 当前普通/Speed Shoes 的 3px 或 6px gameplay-step 位移。
+- 原版 `a.J()` / `a.O()` 在 sliding 状态将 `av=1`，renderer 直接用 `av * 48` 取帧，因此固定的是 `b0/b1/b2/b3` 对应方向 sprite sheet 的 zero-based frame 1（第 2 格）。
+- class 中没有“离开冰面专门播放第 8 帧”的状态分支；滑行结束后直接回到普通 movement/standing presentation state。
 
 ### Snow 雪块 / Shovel 雪铲
 
@@ -310,11 +310,17 @@ bobby走到冰面上滑动时，会固定在b0/b1/b2/b3的第7帧，走出冰面
 ts(16,9) --> ta(4,4) --> ta(5,1) --> ta(5,2)
 ```
 
-Bonus Coin 的闪烁动画规则是，扔色子，按以下概率获得下一次闪烁时间：
-50% --> 1s
-30% --> 3s
-20% --> 6s
-所有场上的Coin使用同一个色子一起闪烁。
+所有场上的 Bonus Coin 共用同一个闪烁门控，因此会同时开始和结束闪烁。
+
+原版 `V()` 把动态 tile phase 与随机 gate 分成两个节拍：
+
+- `bC/bD/bE/bF` 只在 `bG==0` 时推进一次并立即重绘 tile cache；`bG` 每 4 个 gameplay step 回到 0；
+- `bE` 回到 0 后会保持 4 个 gameplay step，这四步中的**每一步**都更新 `bH`：当前为 true 就关闭，否则以 `1/7` 概率开启；
+- 四步窗口结束时 `bH` 是否恰好为 true，决定下一次 `bE=1` cache 重绘是否进入闪耀；
+- 稳态下启动概率精确收敛为 `1/8`。若窗口开始时 `bH=false`，本轮结束为 true 的概率为 `300/2401`；开始时为 true 则为 `43/343`；
+- 一旦可见，`bH` 在 `bE=1/2/3` 期间不再变化，三张动态帧各保持 4 step。因此一次可见闪耀固定持续 **12 gameplay step，约 372ms**。
+
+随机 gate 和 cache 重绘的先后顺序很重要：`bE` 刚回到 0 时先把 Coin 重绘为静态帧，再更新 `bH`；新 gate 要到下一次 `bE=1` 才能显示。
 
 ### 水面涟漪
 

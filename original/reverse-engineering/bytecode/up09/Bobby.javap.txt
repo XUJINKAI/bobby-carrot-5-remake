@@ -1,0 +1,67 @@
+public final class Bobby extends javax.microedition.midlet.MIDlet {
+  public javax.microedition.lcdui.Display a;
+    descriptor: Ljavax/microedition/lcdui/Display;
+
+  private a b;
+    descriptor: La;
+
+  private java.lang.Thread c;
+    descriptor: Ljava/lang/Thread;
+
+  public Bobby();
+    descriptor: ()V
+    Code:
+       0: aload_0
+       1: invokespecial #14                 // Method javax/microedition/midlet/MIDlet."<init>":()V
+       4: aload_0
+       5: aconst_null
+       6: putfield      #16                 // Field c:Ljava/lang/Thread;
+       9: aload_0
+      10: aload_0
+      11: invokestatic  #22                 // Method javax/microedition/lcdui/Display.getDisplay:(Ljavax/microedition/midlet/MIDlet;)Ljavax/microedition/lcdui/Display;
+      14: putfield      #24                 // Field a:Ljavax/microedition/lcdui/Display;
+      17: aload_0
+      18: new           #25                 // class a
+      21: dup
+      22: aload_0
+      23: invokespecial #28                 // Method a."<init>":(LBobby;)V
+      26: putfield      #30                 // Field b:La;
+      29: return
+
+  public final void destroyApp(boolean);
+    descriptor: (Z)V
+    Code:
+       0: aload_0
+       1: getfield      #30                 // Field b:La;
+       4: iconst_1
+       5: putfield      #37                 // Field a.e:Z
+       8: return
+
+  public final void pauseApp();
+    descriptor: ()V
+    Code:
+       0: return
+
+  public final void startApp();
+    descriptor: ()V
+    Code:
+       0: aload_0
+       1: getfield      #24                 // Field a:Ljavax/microedition/lcdui/Display;
+       4: aload_0
+       5: getfield      #30                 // Field b:La;
+       8: invokevirtual #43                 // Method javax/microedition/lcdui/Display.setCurrent:(Ljavax/microedition/lcdui/Displayable;)V
+      11: aload_0
+      12: getfield      #16                 // Field c:Ljava/lang/Thread;
+      15: ifnonnull     40
+      18: aload_0
+      19: new           #45                 // class java/lang/Thread
+      22: dup
+      23: aload_0
+      24: getfield      #30                 // Field b:La;
+      27: invokespecial #48                 // Method java/lang/Thread."<init>":(Ljava/lang/Runnable;)V
+      30: putfield      #16                 // Field c:Ljava/lang/Thread;
+      33: aload_0
+      34: getfield      #16                 // Field c:Ljava/lang/Thread;
+      37: invokevirtual #51                 // Method java/lang/Thread.start:()V
+      40: return
+}

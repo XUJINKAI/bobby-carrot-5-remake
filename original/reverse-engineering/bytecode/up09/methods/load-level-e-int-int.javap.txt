@@ -1,0 +1,343 @@
+  private final void e(int, int);
+    descriptor: (II)V
+    Code:
+       0: aload_0
+       1: invokespecial #1564               // Method ac:()V
+       4: aload_0
+       5: iconst_0
+       6: putfield      #1413               // Field bY:I
+       9: aload_0
+      10: invokevirtual #1513               // Method java/lang/Object.getClass:()Ljava/lang/Class;
+      13: astore_3
+      14: new           #532                // class java/lang/StringBuffer
+      17: astore        4
+      19: aload         4
+      21: invokespecial #533                // Method java/lang/StringBuffer."<init>":()V
+      24: iload_1
+      25: bipush        10
+      27: if_icmpge     107
+      30: ldc_w         #1515               // String 0
+      33: astore        5
+      35: aload_3
+      36: aload         4
+      38: aload         5
+      40: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+      43: iload_1
+      44: invokevirtual #890                // Method java/lang/StringBuffer.append:(I)Ljava/lang/StringBuffer;
+      47: ldc_w         #539                // String .dat
+      50: invokevirtual #537                // Method java/lang/StringBuffer.append:(Ljava/lang/String;)Ljava/lang/StringBuffer;
+      53: invokevirtual #543                // Method java/lang/StringBuffer.toString:()Ljava/lang/String;
+      56: invokestatic  #1521               // Method javax/microedition/util/ContextHolder.getResourceAsStream:(Ljava/lang/Class;Ljava/lang/String;)Ljava/io/InputStream;
+      59: astore_3
+      60: new           #1523               // class java/io/DataInputStream
+      63: astore        5
+      65: aload         5
+      67: aload_3
+      68: invokespecial #1526               // Method java/io/DataInputStream."<init>":(Ljava/io/InputStream;)V
+      71: iconst_0
+      72: istore_1
+      73: iload_1
+      74: iload_2
+      75: if_icmpge     125
+      78: aload         5
+      80: invokevirtual #1530               // Method java/io/DataInputStream.readShort:()S
+      83: istore        6
+      85: aload         5
+      87: iload         6
+      89: invokevirtual #1567               // Method java/io/DataInputStream.skipBytes:(I)I
+      92: istore        7
+      94: iload         7
+      96: iload         6
+      98: if_icmplt     115
+     101: iinc          1, 1
+     104: goto          73
+     107: ldc_w         #1407               // String
+     110: astore        5
+     112: goto          35
+     115: iload         6
+     117: iload         7
+     119: isub
+     120: istore        6
+     122: goto          85
+     125: aload         5
+     127: invokevirtual #1530               // Method java/io/DataInputStream.readShort:()S
+     130: pop
+     131: aload_0
+     132: aload         5
+     134: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     137: putfield      #710                // Field dw:I
+     140: aload_0
+     141: aload         5
+     143: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     146: putfield      #712                // Field dx:I
+     149: aload_0
+     150: getfield      #712                // Field dx:I
+     153: istore_2
+     154: aload_0
+     155: getfield      #710                // Field dw:I
+     158: istore_1
+     159: aload_0
+     160: iload_2
+     161: iload_1
+     162: multianewarray #1335,  2          // class "[[B"
+     166: putfield      #716                // Field cu:[[B
+     169: iconst_0
+     170: istore_1
+     171: iload_1
+     172: aload_0
+     173: getfield      #712                // Field dx:I
+     176: if_icmpge     196
+     179: aload         5
+     181: aload_0
+     182: getfield      #716                // Field cu:[[B
+     185: iload_1
+     186: aaload
+     187: invokevirtual #1571               // Method java/io/DataInputStream.readFully:([B)V
+     190: iinc          1, 1
+     193: goto          171
+     196: aload_0
+     197: getfield      #712                // Field dx:I
+     200: istore_2
+     201: aload_0
+     202: getfield      #710                // Field dw:I
+     205: istore_1
+     206: aload_0
+     207: iload_2
+     208: iload_1
+     209: multianewarray #1335,  2          // class "[[B"
+     213: putfield      #714                // Field cv:[[B
+     216: iconst_0
+     217: istore_1
+     218: iload_1
+     219: aload_0
+     220: getfield      #712                // Field dx:I
+     223: if_icmpge     258
+     226: iconst_0
+     227: istore_2
+     228: iload_2
+     229: aload_0
+     230: getfield      #710                // Field dw:I
+     233: if_icmpge     252
+     236: aload_0
+     237: getfield      #714                // Field cv:[[B
+     240: iload_1
+     241: aaload
+     242: iload_2
+     243: iconst_m1
+     244: i2b
+     245: bastore
+     246: iinc          2, 1
+     249: goto          228
+     252: iinc          1, 1
+     255: goto          218
+     258: aload_0
+     259: aload         5
+     261: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     264: putfield      #1035               // Field cB:I
+     267: aload_0
+     268: aload_0
+     269: getfield      #1035               // Field cB:I
+     272: newarray       byte
+     274: putfield      #777                // Field cE:[B
+     277: aload_0
+     278: aload_0
+     279: getfield      #1035               // Field cB:I
+     282: newarray       byte
+     284: putfield      #787                // Field cF:[B
+     287: aload_0
+     288: aload_0
+     289: getfield      #1035               // Field cB:I
+     292: newarray       byte
+     294: putfield      #785                // Field cG:[B
+     297: aload_0
+     298: aload_0
+     299: getfield      #1035               // Field cB:I
+     302: newarray       short
+     304: putfield      #781                // Field cI:[S
+     307: aload_0
+     308: aload_0
+     309: getfield      #1035               // Field cB:I
+     312: newarray       short
+     314: putfield      #783                // Field cJ:[S
+     317: aload_0
+     318: aload_0
+     319: getfield      #1035               // Field cB:I
+     322: newarray       boolean
+     324: putfield      #789                // Field cH:[Z
+     327: aload         5
+     329: invokevirtual #1530               // Method java/io/DataInputStream.readShort:()S
+     332: istore        7
+     334: iconst_0
+     335: istore_2
+     336: iconst_0
+     337: istore_1
+     338: iload_1
+     339: iload         7
+     341: if_icmpge     647
+     344: aload         5
+     346: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     349: istore        8
+     351: aload         5
+     353: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     356: istore        9
+     358: aload         5
+     360: invokevirtual #1534               // Method java/io/DataInputStream.readByte:()B
+     363: istore        10
+     365: iconst_0
+     366: istore        6
+     368: iload         8
+     370: lookupswitch  { // 9
+                   -41: 540
+                   -38: 573
+                   -37: 591
+                   -32: 476
+                   -31: 476
+                   -30: 476
+                   -25: 609
+                   -20: 476
+                    -8: 627
+               default: 452
+          }
+     452: iload         6
+     454: ifne          470
+     457: aload_0
+     458: getfield      #714                // Field cv:[[B
+     461: iload         10
+     463: aaload
+     464: iload         9
+     466: iload         8
+     468: i2b
+     469: bastore
+     470: iinc          1, 1
+     473: goto          338
+     476: aload_0
+     477: getfield      #781                // Field cI:[S
+     480: iload_2
+     481: iload         9
+     483: aload_0
+     484: getfield      #327                // Field h:I
+     487: imul
+     488: i2s
+     489: i2s
+     490: sastore
+     491: aload_0
+     492: getfield      #783                // Field cJ:[S
+     495: iload_2
+     496: iload         10
+     498: aload_0
+     499: getfield      #329                // Field i:I
+     502: imul
+     503: i2s
+     504: i2s
+     505: sastore
+     506: aload_0
+     507: getfield      #787                // Field cF:[B
+     510: iload_2
+     511: iconst_4
+     512: i2b
+     513: bastore
+     514: aload_0
+     515: getfield      #785                // Field cG:[B
+     518: iload_2
+     519: iconst_0
+     520: i2b
+     521: bastore
+     522: aload_0
+     523: getfield      #777                // Field cE:[B
+     526: iload_2
+     527: iload         8
+     529: i2b
+     530: bastore
+     531: iinc          2, 1
+     534: iconst_1
+     535: istore        6
+     537: goto          452
+     540: aload_0
+     541: getfield      #714                // Field cv:[[B
+     544: iload         10
+     546: aaload
+     547: iload         9
+     549: iconst_1
+     550: iadd
+     551: bipush        -40
+     553: i2b
+     554: bastore
+     555: aload_0
+     556: getfield      #714                // Field cv:[[B
+     559: iload         10
+     561: aaload
+     562: iload         9
+     564: iconst_2
+     565: iadd
+     566: bipush        -39
+     568: i2b
+     569: bastore
+     570: goto          452
+     573: aload_0
+     574: getfield      #714                // Field cv:[[B
+     577: iload         10
+     579: iconst_1
+     580: iadd
+     581: aaload
+     582: iload         9
+     584: bipush        -22
+     586: i2b
+     587: bastore
+     588: goto          452
+     591: aload_0
+     592: getfield      #714                // Field cv:[[B
+     595: iload         10
+     597: iconst_1
+     598: iadd
+     599: aaload
+     600: iload         9
+     602: bipush        -21
+     604: i2b
+     605: bastore
+     606: goto          452
+     609: aload_0
+     610: getfield      #714                // Field cv:[[B
+     613: iload         10
+     615: iconst_1
+     616: iadd
+     617: aaload
+     618: iload         9
+     620: bipush        -9
+     622: i2b
+     623: bastore
+     624: goto          452
+     627: aload_0
+     628: aload_0
+     629: getfield      #1413               // Field bY:I
+     632: iconst_1
+     633: iadd
+     634: putfield      #1413               // Field bY:I
+     637: goto          452
+     640: astore        5
+     642: aload_0
+     643: invokespecial #1146               // Method c:()V
+     646: return
+     647: aload         5
+     649: invokevirtual #1542               // Method java/io/DataInputStream.close:()V
+     652: goto          646
+    Exception table:
+       from    to  target type
+           9    24   640   Class java/lang/Exception
+          35    71   640   Class java/lang/Exception
+          78    85   640   Class java/lang/Exception
+          85    94   640   Class java/lang/Exception
+         125   169   640   Class java/lang/Exception
+         171   190   640   Class java/lang/Exception
+         196   216   640   Class java/lang/Exception
+         218   226   640   Class java/lang/Exception
+         228   246   640   Class java/lang/Exception
+         258   334   640   Class java/lang/Exception
+         344   365   640   Class java/lang/Exception
+         457   470   640   Class java/lang/Exception
+         476   531   640   Class java/lang/Exception
+         540   570   640   Class java/lang/Exception
+         573   588   640   Class java/lang/Exception
+         591   606   640   Class java/lang/Exception
+         609   624   640   Class java/lang/Exception
+         627   637   640   Class java/lang/Exception
+         647   652   640   Class java/lang/Exception
