@@ -18,7 +18,7 @@ public final class PlankDecay {
     private int decayingY = -1;
     private int countdown;
 
-    /** 原版 `J()` 到达 D4 Plank 时只登记坐标。 */
+    /** 原版 `J()` 在 Bobby 跨过 D4 Plank 所在移动的中点时登记坐标。 */
     void onEnter(int x, int y) {
         if ((objectGrid[y][x] & 0xFF) == PLANK) {
             pendingLeaveX = x;
@@ -27,7 +27,7 @@ public final class PlankDecay {
     }
 
     /**
-     * 原版下一次 move-complete 进入别格时，在 `J()` 开头结算上一块 Plank。
+     * Bobby 下一次移动跨过中点时，`J()` 开头结算上一块 Plank 的 leave-trigger。
      * 如果已有更旧的 fragment 正在 tracked，先直接删除它。
      */
     void settlePreviousLeave() {
