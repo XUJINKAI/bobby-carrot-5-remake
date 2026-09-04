@@ -1,0 +1,162 @@
+name: Original reverse legacy index
+
+on:
+  push:
+    branches:
+      - reverse/original-runtime
+    paths:
+      - .github/workflows/original-reverse-legacy-index.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reverse/original-runtime
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Index methods
+        run: |
+          rm -rf tmp/original-reverse/legacy-index
+          mkdir -p tmp/original-reverse/legacy-index
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          import zipfile
+
+          releases = ['base', 'up01', 'up02']
+          root = Path('tmp/original-reverse/legacy-index')
+
+          # Mechanic raw constants useful for correlating obfuscated methods.
+          interesting = {
+              -108: 'Ice 0x94',
+              -81: 'Trap Active 0xAF',
+              -80: 'Trap Inactive 0xB0',
+              -79: 'Mirror 0xB1',
+              -78: 'Mirror 0xB2',
+              -77: 'Mirror 0xB3',
+              -76: 'Mirror 0xB4',
+              -75: 'Speed Up 0xB5',
+              -74: 'Speed Down 0xB6',
+              -73: 'Speed Left 0xB7',
+              -72: 'Speed Right 0xB8',
+              -71: 'Carousel 0xB9',
+              -70: 'Carousel 0xBA',
+              -69: 'Carousel 0xBB',
+              -68: 'Carousel 0xBC',
+              -67: 'Carousel V 0xBD',
+              -66: 'Carousel H 0xBE',
+              -54: 'Carrot 0xCA',
+              -53: 'Egg empty 0xCB',
+              -51: 'Lock 0xCD',
+              -44: 'Plank 0xD4',
+              -39: 'Dragon Tail 0xD9',
+              -35: 'Gas 0xDD',
+              -33: 'Bean Field 0xDF',
+              -29: 'Ice Block 0xE3',
+              -20: 'Leaf 0xEC',
+              -19: 'Crumbly Rock 0xED',
+              -13: 'Kite 0xF3',
+              -12: 'Whirlwind 0xF4',
+              -11: 'Landing 0xF5',
+              -10: 'Golden Carrot 0xF6',
+              -8: 'Bonus Coin 0xF8',
+          }
+
+          def parse_methods(text):
+              lines = text.splitlines()
+              starts = []
+              for i, line in enumerate(lines):
+                  if line.startswith('  ') and not line.startswith('    ') and line.rstrip().endswith(';'):
+                      starts.append(i)
+              methods = []
+              for pos, start in enumerate(starts):
+                  end = starts[pos + 1] if pos + 1 < len(starts) else len(lines)
+                  block = lines[start:end]
+                  signature = lines[start].strip()
+                  code_offsets = []
+                  constants = set()
+                  called = set()
+                  fields = set()
+                  for line in block:
+                      m = re.match(r'^\s*(\d+):', line)
+                      if m:
+                          code_offsets.append(int(m.group(1)))
+                      # Capture bipush/sipush signed constants.
+                      m = re.search(r'\b(?:bipush|sipush)\s+(-?\d+)', line)
+                      if m:
+                          value = int(m.group(1))
+                          if value in interesting:
+                              constants.add(value)
+                      m = re.search(r'// Method ([^:]+):', line)
+                      if m:
+                          called.add(m.group(1))
+                      m = re.search(r'// Field ([^:]+):', line)
+                      if m:
+                          fields.add(m.group(1))
+                  methods.append({
+                      'signature': signature,
+                      'last_offset': max(code_offsets) if code_offsets else 0,
+                      'constants': sorted(constants),
+                      'calls': sorted(called),
+                      'fields': sorted(fields),
+                  })
+              return methods
+
+          all_methods = {}
+          for release in releases:
+              out = root / release
+              out.mkdir(parents=True, exist_ok=True)
+              jar = Path(f'original/official-hd/{release}.jar')
+              with zipfile.ZipFile(jar) as z:
+                  (out / 'a.class').write_bytes(z.read('a.class'))
+              javap = subprocess.check_output([
+                  'javap', '-classpath', str(out), '-c', '-p', '-s', 'a'
+              ], text=True)
+              all_methods[release] = parse_methods(javap)
+
+          report = Path('original/reverse-engineering/notes/legacy-method-index.md')
+          with report.open('w', encoding='utf-8') as f:
+              f.write('# Base / UP01 / UP02 方法索引\n\n')
+              f.write('用于把早期混淆 runtime 与 UP02+ 稳定代的方法角色关联。`last offset` 只是方法规模近似；`mechanic constants` 只列当前逆向已知的特殊 raw byte。\n\n')
+              for release in releases:
+                  f.write(f'## {release}\n\n')
+                  f.write('| signature | last offset | mechanic constants |\n')
+                  f.write('|---|---:|---|\n')
+                  for m in all_methods[release]:
+                      constants = ', '.join(f'`{v}` {interesting[v]}' for v in m['constants'])
+                      f.write(f"| `{m['signature']}` | {m['last_offset']} | {constants} |\n")
+                  f.write('\n')
+
+              f.write('## 机制常量候选方法\n\n')
+              for value, label in interesting.items():
+                  f.write(f'### {value} — {label}\n\n')
+                  for release in releases:
+                      hits = [m['signature'] for m in all_methods[release] if value in m['constants']]
+                      f.write(f'- {release}: ' + (', '.join(f'`{x}`' for x in hits) if hits else '—') + '\n')
+                  f.write('\n')
+          PY
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add original/reverse-engineering/notes/legacy-method-index.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "reverse: index legacy runtime methods"
+          git pull --rebase origin reverse/original-runtime
+          git push origin HEAD:reverse/original-runtime
