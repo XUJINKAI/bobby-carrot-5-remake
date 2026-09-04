@@ -67,33 +67,32 @@ jobs:
 
           def normalize_layout(text: str) -> str:
               text = re.sub(r'#\d+', '#', text)
-              text = '\n'.join(line.rstrip() for line in text.splitlines())
-              return text.strip() + '\n'
+              return '\n'.join(line.rstrip() for line in text.splitlines()).strip() + '\n'
 
           def normalize_structural(text: str) -> str:
               out = []
               for raw in text.splitlines():
-                  line = raw.rstrip()
-                  line = re.sub(r'#\d+', '#', line)
+                  line = re.sub(r'#\d+', '#', raw.rstrip())
 
-                  # Switch table entries: preserve case key, discard target bytecode offset.
+                  # Switch table: preserve case key, discard destination offset.
                   m = re.match(r'^(\s*)(-?\d+|default):\s+-?\d+\s*$', line)
                   if m:
                       out.append(f'{m.group(1)}{m.group(2)}: <target>')
                       continue
 
-                  # Remove instruction bytecode offset while preserving opcode and operands.
+                  # Exception table offsets are bytecode layout only.
+                  m = re.match(r'^\s*\d+\s+\d+\s+\d+\s+(Class .+|any)\s*$', line)
+                  if m:
+                      out.append(f'<from> <to> <target> {m.group(1)}')
+                      continue
+
+                  # Remove instruction offset while preserving operation.
                   m = re.match(r'^\s*\d+:\s+(.*)$', line)
                   if m:
                       instr = m.group(1)
-
-                      # Normalize compact local opcodes such as aload_0 / istore_3.
                       instr = re.sub(rf'^({LOCAL_OPS})_[0-3]\b', r'\1 <local>', instr)
-                      # Normalize explicit local slot operands.
                       instr = re.sub(rf'^({LOCAL_OPS})\s+\d+\b', r'\1 <local>', instr)
-                      # iinc: local slot is layout noise, increment value is semantic.
                       instr = re.sub(r'^iinc\s+\d+,', 'iinc <local>,', instr)
-                      # Branch destination offsets are layout noise.
                       instr = re.sub(rf'^({BRANCH_OPS})\s+-?\d+\b', r'\1 <target>', instr)
                       out.append(instr)
                       continue
@@ -111,8 +110,7 @@ jobs:
               result = {}
               for pos, start in enumerate(starts):
                   end = starts[pos + 1] if pos + 1 < len(starts) else len(lines)
-                  signature = lines[start].strip()
-                  result[signature] = '\n'.join(lines[start:end]).rstrip() + '\n'
+                  result[lines[start].strip()] = '\n'.join(lines[start:end]).rstrip() + '\n'
               return result
 
           records = []
@@ -164,7 +162,7 @@ jobs:
           out_file = Path('original/reverse-engineering/notes/release-runtime-fingerprints.md')
           with out_file.open('w', encoding='utf-8') as f:
               f.write('# 原版 10 JAR Runtime 指纹\n\n')
-              f.write('本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target 与 local-variable slot 编号，用来识别“同一控制流被重新编译布局”的情况。\n\n')
+              f.write('本报告机械比较 `base.jar` 与 `up01..up09.jar`。`layout` 指纹只去除 constant-pool 序号；`structural` 进一步去除 bytecode offset、branch target、local-variable slot 与 exception-table offset，用来识别“同一控制流被重新编译布局”的情况。\n\n')
 
               f.write('## Class 指纹\n\n')
               f.write('| JAR | MIDlet | Version | JAR bytes | a.class bytes | a.class SHA | Bobby.class SHA |\n')
@@ -190,7 +188,6 @@ jobs:
                   f.write('\n')
 
               f.write('## Layout-only 分叉提示\n\n')
-              f.write('如果某方法 structural 分组相同而 layout 分组不同，差异只来自当前归一化已识别的编译布局噪声，不应解释成玩法版本差异。\n\n')
               for method_name in signatures:
                   l_groups = len(set(layout_hashes[method_name].values()))
                   s_groups = len(set(structural_hashes[method_name].values()))
@@ -206,6 +203,6 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "reverse: refresh structural runtime fingerprints"
+          git commit -m "reverse: fingerprint original runtime releases"
           git pull --rebase origin reverse/original-runtime
           git push origin HEAD:reverse/original-runtime
