@@ -18,6 +18,10 @@ const surface = fs.readFileSync(
   new URL("../src/pages/editor/EditorSurface.vue", import.meta.url),
   "utf8",
 );
+const inspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorInspector.vue", import.meta.url),
+  "utf8",
+);
 
 test("Palette and Surface expose the agreed tool shortcuts", () => {
   assert.match(shell, /id: "editor-tool-select"[\s\S]*选择 \(1\)/);
@@ -28,6 +32,22 @@ test("Palette and Surface expose the agreed tool shortcuts", () => {
   assert.match(shell, /id: "editor-surface-fill"[\s\S]*填充 \(3\)/);
   assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
   assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
+  assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
+});
+
+test("Editor starts in Select semantics and preserves manual Surface inspector preference", () => {
+  assert.match(pageState, /paletteTool = ref<EditorTool>\("select"\)/);
+  assert.match(pageState, /surfaceTool = ref<SurfaceTool>\("rect"\)/);
+  assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*\? "select"/);
+  assert.match(inspector, /surfacePreferenceManual = ref\(false\)/);
+  assert.match(
+    inspector,
+    /if \(!surfacePreferenceManual\.value\) showSurface\.value = panel === "surface"/,
+  );
+  assert.match(
+    inspector,
+    /surfacePreferenceManual\.value = true[\s\S]*showSurface\.value = !showSurface\.value/,
+  );
 });
 
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {
