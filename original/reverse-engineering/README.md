@@ -20,6 +20,7 @@
 - `notes/runtime-entity-matrix.md`：raw terrain/object byte → 原版 runtime 行为总表。
 - `notes/up09-help-mechanic-crosscheck.md`：`EN.dat` 官方 Help 与 bytecode 逐机制交叉验证。
 - `notes/semantic-coverage.md`：机制 × collision / midpoint / task / camera / presentation / campaign 覆盖审计。
+- `semantic/GameplayStepOrder.java`、`RuntimeActionCatalog.java`：每拍子系统顺序、early return、长期动作输入/Camera/并发边界。
 - `semantic/PlayerMoveLifecycle.java`：最关键的玩家移动时序；grid 先变、midpoint interaction、visual arrival 收尾。
 - `semantic/PlayerCollisionRules.java`：terrain-first / object-override 的统一碰撞模型。
 - `semantic/MidpointInteractionDispatcher.java`：原版 `J()` previous-leave + current midpoint interaction 顺序。
