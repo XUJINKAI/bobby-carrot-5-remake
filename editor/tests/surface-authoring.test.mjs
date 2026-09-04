@@ -352,14 +352,17 @@ test("Waterfall Auto resolves vertical top middle bottom variants", () => {
   ]);
 });
 
-test("Cactus Auto prefers a vertical pair when two painted cells are available", () => {
+test("Cactus Auto stays cell-local while composite assets are deferred", () => {
   const next = paintSurface(
     catalog,
     [{ x: 2, y: 1 }, { x: 2, y: 2 }],
     { terrain: "cactus", pattern: "auto", seed: 1 },
   ).apply(createBlankLevel(5, 5));
-  assert.deepEqual(
-    [entityAt(next, 2, 1)?.type, entityAt(next, 2, 2)?.type],
-    ["background-variant-064", "background-variant-080"],
-  );
+  const types = [entityAt(next, 2, 1)?.type, entityAt(next, 2, 2)?.type];
+  for (const type of types)
+    assert.ok(
+      type === "background-variant-063" || type === "background-variant-079",
+    );
+  assert.equal(types.includes("background-variant-064"), false);
+  assert.equal(types.includes("background-variant-080"), false);
 });
