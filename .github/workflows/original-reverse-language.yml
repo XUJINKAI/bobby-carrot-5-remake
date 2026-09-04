@@ -1,0 +1,79 @@
+name: Original reverse language
+
+on:
+  push:
+    branches:
+      - reverse/original-runtime
+    paths:
+      - .github/workflows/original-reverse-language.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reverse/original-runtime
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract selected EN.dat strings
+        run: |
+          rm -rf tmp/original-reverse/language
+          mkdir -p tmp/original-reverse/language
+          cd tmp/original-reverse/language
+          jar xf ../../../original/official-hd/up09.jar EN.dat
+
+          cat > ReadLanguage.java <<'JAVA'
+          import java.io.*;
+          import java.nio.file.*;
+          import java.util.*;
+
+          public final class ReadLanguage {
+              public static void main(String[] args) throws Exception {
+                  Set<Integer> wanted = new LinkedHashSet<>();
+                  for (int i = 6; i <= 16; i++) wanted.add(i);
+                  wanted.add(25);
+                  wanted.add(26);
+
+                  try (DataInputStream in = new DataInputStream(new FileInputStream("EN.dat"))) {
+                      int count = in.readUnsignedShort();
+                      System.out.println("# UP9 selected language strings");
+                      System.out.println();
+                      System.out.println("仅抽取逆向命名所需索引，不保存完整原版语言资源。");
+                      System.out.println();
+                      System.out.println("| index | EN.dat text |");
+                      System.out.println("|---:|---|");
+                      for (int i = 0; i < count; i++) {
+                          String value = in.readUTF();
+                          if (!wanted.contains(i)) continue;
+                          value = value.replace("|", "\\|").replace("\r", "\\r").replace("\n", "\\n");
+                          System.out.println("| `a[" + i + "]` | " + value + " |");
+                      }
+                  }
+              }
+          }
+          JAVA
+
+          javac ReadLanguage.java
+          java ReadLanguage > ../../../original/reverse-engineering/notes/up09-selected-language.md
+
+      - name: Commit selected language index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add original/reverse-engineering/notes/up09-selected-language.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "reverse: index selected UP9 language strings"
+          git pull --rebase origin reverse/original-runtime
+          git push origin HEAD:reverse/original-runtime
