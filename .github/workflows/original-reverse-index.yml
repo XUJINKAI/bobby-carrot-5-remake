@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: reverse/original-runtime
+          fetch-depth: 0
 
       - name: Build source index
         run: |
@@ -36,7 +37,22 @@ jobs:
               if method_re.match(line):
                   methods.append((i, line.strip()))
 
-          symbols = ['cu', 'cv', 'dH', 'dI', 'bC', 'bD', 'bE', 'bF', 'aw', 'aF', 'aG']
+          symbols = [
+              'cu', 'cv', 'dH', 'dI',
+              'bC', 'bD', 'bE', 'bF',
+              'ar', 'as', 'ap', 'aq', 'aw', 'ay',
+              'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+              'aN', 'aO', 'aT', 'aW', 'aX', 'aY', 'aZ',
+              'az', 'bc', 'bh', 'bi', 'bj', 'bk', 'bl', 'bm', 'bn', 'bo',
+              'cX', 'cY', 'cZ', 'cC', 'cD', 'cU', 'cV', 'cW',
+              'cB', 'cE', 'cF', 'cG', 'cH', 'cI', 'cJ',
+              'da', 'db', 'dc', 'dd',
+              'cK', 'cL', 'cM', 'cN', 'cO', 'cP', 'cQ', 'cR', 'cS', 'cT',
+              'do', 'dh', 'di', 'dj', 'dk',
+              'dr', 'dl', 'dm', 'dn',
+              'ds', 'dp', 'dq', 'dt', 'du', 'dv',
+              'aF', 'aG', 'aH', 'aI', 'aJ', 'aK', 'aL', 'aM', 'aP', 'aQ', 'aR', 'aS', 'aU', 'aV',
+          ]
           occurrences = {}
           for sym in symbols:
               pat = re.compile(rf'\bthis\.{re.escape(sym)}\b')
@@ -44,7 +60,7 @@ jobs:
               for i, line in enumerate(lines, 1):
                   if pat.search(line):
                       hits.append((i, line.strip()))
-              occurrences[sym] = hits[:80]
+              occurrences[sym] = hits[:120]
 
           with out_path.open('w', encoding='utf-8') as f:
               f.write('# UP9 `a.java` 符号索引\n\n')
@@ -69,4 +85,5 @@ jobs:
             exit 0
           fi
           git commit -m "reverse: index UP9 runtime symbols"
+          git pull --rebase origin reverse/original-runtime
           git push origin HEAD:reverse/original-runtime
