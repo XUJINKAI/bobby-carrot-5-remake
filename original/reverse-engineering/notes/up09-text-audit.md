@@ -21,18 +21,16 @@
   - `DO YOU WANT TO ENABLE THE CHEAT?`
 - L759 · **user-facing/hardcoded** · `private final boolean H()`
   - `DO YOU WANT TO FORMAT THE RMS AND COMPLETELY RESET THE GAME?`
-- L3840 · **possible-user-facing** · `private final boolean a(int var1_1, int var2_2, int var3_3, byte var4_4)`
-  - `Decompilation failed`
 - L5837 · **user-facing/hardcoded** · `private final void c()`
   - `Error`
 - L6002 · **user-facing/hardcoded** · `private final void c(byte var1_1, byte var2_2)`
   - `CHEAT!`
-- L6746 · **possible-user-facing** · `private final void e(int var1_1, int var2_2)`
-  - `Decompilation failed`
 - L7759 · **possible-user-facing** · `private final void u()`
   - `0000 0000 0000 0000##`
 - L8367 · **possible-user-facing** · `public final void paint(Graphics var1_1)`
   - `EXTRA-LEVELPACK 9`
+
+`Decompilation failed` 被标为 `decompiler-synthetic`，是 CFR 伪源码，不属于原版可见文本。
 
 ## All class string literals by category
 
@@ -72,7 +70,7 @@
 - L3697 · `other` · `IT` · `private final void a(Graphics graphics, boolean bl)`
 - L3699 · `other` · `SP` · `private final void a(Graphics graphics, boolean bl)`
 - L3701 · `other` · `PG` · `private final void a(Graphics graphics, boolean bl)`
-- L3840 · `possible-user-facing` · `Decompilation failed` · `private final boolean a(int var1_1, int var2_2, int var3_3, byte var4_4)`
+- L3840 · `decompiler-synthetic` · `Decompilation failed` · `private final boolean a(int var1_1, int var2_2, int var3_3, byte var4_4)`
 - L4582 · `resource` · `/b9.png` · `private final void ah()`
 - L4583 · `resource` · `/ta.png` · `private final void ah()`
 - L4584 · `resource` · `/title.png` · `private final void ah()`
@@ -125,7 +123,7 @@
 - L6690 · `other` · `BC5Data` · `private final void e()`
 - L6691 · `other` · `BC5Data` · `private final void e()`
 - L6709 · `format/runtime` · `` · `private final void e()`
-- L6746 · `possible-user-facing` · `Decompilation failed` · `private final void e(int var1_1, int var2_2)`
+- L6746 · `decompiler-synthetic` · `Decompilation failed` · `private final void e(int var1_1, int var2_2)`
 - L6824 · `resource` · `/title.mid` · `private final boolean e(boolean bl)`
 - L6837 · `other` · `BC5Data` · `private final void f()`
 - L7014 · `other` · `BC5Data` · `private final void g()`
