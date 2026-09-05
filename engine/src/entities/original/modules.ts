@@ -16,6 +16,7 @@ import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
 import { cloudGreen, cloudPurple, cloudRed, leaf } from "./moving-entities.js";
+import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
 import { speed } from "./speed.js";
@@ -33,6 +34,7 @@ import { windSwitch } from "./wind-switch.js";
 
 export const originalEntityModules: readonly EntityModule[] = [
   ...staticSurfaceModules,
+  mowerParkingTile,
   ice,
   tide,
   tideSwitch,
@@ -55,6 +57,8 @@ export const originalEntityModules: readonly EntityModule[] = [
   cloudPurple,
   cloudGreen,
   leaf,
+  mower,
+  crumblyRock,
   beanField,
   lock,
   dragon,

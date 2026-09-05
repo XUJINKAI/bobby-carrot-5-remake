@@ -103,7 +103,11 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    if (bobbyMountId(context.entity.state) !== null) {
+    const mountId = bobbyMountId(context.entity.state);
+    if (
+      mountId !== null &&
+      context.query.entity(mountId)?.type === EntityTypeId.MOWER
+    ) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
         {

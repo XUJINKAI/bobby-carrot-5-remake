@@ -4,6 +4,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { bobbyMountId } from "../player/BobbyState.js";
 import {
   cell,
   CONTENT_STACK_ORDER,
@@ -15,7 +16,12 @@ import {
 
 const fillEggNestOnLeave: Behavior = {
   id: "fill-egg-nest-on-leave",
-  onLeave({ self, commands }) {
+  onLeave({ actor, self, query, commands }) {
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null
+    )
+      return;
     const source = self.entity;
     commands.destroy(source.id);
     commands.spawn({
@@ -100,7 +106,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     cell(15, 9),
     ["walkable", "pickup"],
   ),
-  surface(EntityTypeId.MOWER_PARKING, "Mower Parking", cell(0, 10)),
   surface(EntityTypeId.WATER, "Water", cell(5, 5), ["water", "bean-growth-space"]),
   surface(EntityTypeId.WATER_ANIMATED, "Animated Water", cell(6, 5), ["water", "bean-growth-space"]),
   surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water", "waterfall", "bean-growth-space"]),
@@ -178,7 +183,12 @@ export const staticContentModules: readonly EntityModule[] = [
     EntityTypeId.BEANSTALK_TIP,
     "Beanstalk Tip",
     objectCell(5),
-    ["terrain-overlay", "climbable", "walkable"],
+    [
+      "terrain-overlay",
+      "climbable",
+      "walkable",
+      "mower-conditional-overlay",
+    ],
   ),
   content(EntityTypeId.BEAN, "Bean", objectCell(6), ["pickup"]),
   content(EntityTypeId.WINDMILL_UP, "Windmill Up", objectCell(7), ["blocking", "windmill"]),
@@ -187,20 +197,23 @@ export const staticContentModules: readonly EntityModule[] = [
   content(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", objectCell(10), ["blocking", "windmill"]),
   content(EntityTypeId.PLANK_CRUMBLING, "Crumbling Plank", objectCell(12)),
   content(EntityTypeId.PLANK_FRAGMENT, "Plank Fragment", objectCell(13)),
-  content(EntityTypeId.MOWER, "Mower", objectCell(19), ["vehicle"]),
   content(EntityTypeId.GAS, "Gas", objectCell(20), ["pickup"]),
   content(
     EntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     objectCell(21),
-    ["terrain-overlay", "climbable", "walkable"],
+    [
+      "terrain-overlay",
+      "climbable",
+      "walkable",
+      "mower-conditional-overlay",
+    ],
   ),
-  content(EntityTypeId.CRUMBLY_ROCK, "Crumbly Rock", objectCell(36), ["dragon-fire-blocking"]),
   content(
     EntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
     objectCell(37),
-    ["terrain-overlay", "climbable", "walkable"],
+    ["climbable"],
   ),
   content(EntityTypeId.BEAN_SPROUT, "Bean Sprout", objectCell(38)),
   content(EntityTypeId.CLOUD_GRID_RED, "Red Cloud Grid", objectCell(39)),

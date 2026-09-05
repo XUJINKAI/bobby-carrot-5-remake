@@ -66,6 +66,8 @@ export interface Behavior {
   onTouch?(context: BehaviorContext): void;
   onEnter?(context: BehaviorContext): void;
   onLeave?(context: BehaviorContext): void;
+  /** 整格 WorldMotion 完成；用于 gameplay 事实必须等视觉位移落定的机制。 */
+  onArrive?(context: BehaviorContext): void;
   onTick?(context: BehaviorContext): void;
   onDestroy?(context: BehaviorContext): void;
 }

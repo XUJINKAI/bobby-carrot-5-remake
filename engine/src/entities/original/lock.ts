@@ -1,6 +1,7 @@
 import { EntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import {
+  bobbyMountId,
   patchBobbyInventory,
   readBobbyInventory,
 } from "../player/BobbyState.js";
@@ -19,6 +20,8 @@ import {
 const unlock: Behavior = {
   id: "lock",
   canEnter({ actor, self, query, commands }) {
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mounted-actor-cannot-unlock" };
     if (self.entity.state?.opened === true)
       return { passable: true, reason: "lock-open" };
 

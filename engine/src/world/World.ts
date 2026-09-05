@@ -636,6 +636,16 @@ export class World {
         (presence) => presence.entityId !== pushable?.entityId,
       ),
     });
+    const carriedVehicle = this.carriedVehicleFor(actor);
+    if (carriedVehicle)
+      local.move(
+        carriedVehicle.id,
+        carriedVehicle.anchor,
+        to,
+        intent.direction,
+        { type: "carry", carrierId: actor.id },
+        true,
+      );
     group.reserveDestination(actor.id, to);
     if (pushed) group.reserveDestination(pushed.entityId, pushed.to);
     group.absorb(local);
@@ -850,7 +860,7 @@ export class World {
   }
 
   private runHook(
-    hook: "onEnter" | "onLeave" | "onTouch",
+    hook: "onArrive" | "onEnter" | "onLeave" | "onTouch",
     presence: EntityPresence,
     actor: EntityInstance,
     direction: Direction,
@@ -973,8 +983,17 @@ export class World {
       },
     };
 
-    const hook = marker === "departed" ? "onLeave" : "onEnter";
-    if (marker === "departed" || marker === "interaction") {
+    const hook =
+      marker === "departed"
+        ? "onLeave"
+        : marker === "arrived"
+          ? "onArrive"
+          : "onEnter";
+    if (
+      marker === "departed" ||
+      marker === "interaction" ||
+      marker === "arrived"
+    ) {
       const presences = marker === "departed" ? plan.source : plan.target;
       for (const presence of presences)
         this.runHook(
@@ -1006,6 +1025,15 @@ export class World {
     )
       return safeDuration(request.cause.cadenceMs);
     return this.motionDurationMs;
+  }
+
+  private carriedVehicleFor(actor: EntityInstance): EntityInstance | null {
+    const relation = mountId(actor);
+    if (relation === null) return null;
+    const vehicle = this.entities.get(relation);
+    return vehicle && this.query.entityHasTrait(vehicle.id, "ride-carried")
+      ? vehicle
+      : null;
   }
 
   private deltaClock(): { worldTick: number | null; worldTimeMs: number } {

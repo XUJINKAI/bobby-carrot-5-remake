@@ -4,6 +4,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
   boundedInt,
@@ -17,16 +18,24 @@ type CarouselVariant = 1 | 2 | 3 | 4 | "vertical" | "horizontal";
 
 const carouselPassage: Behavior = {
   id: "carousel-passage",
-  canEnter({ self, movement }) {
+  canEnter({ actor, self, movement }) {
     if (!movement) return;
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mounted-actor-cannot-use-carousel" };
     return passageResult(carouselVariant(self.entity.state?.variant), movement, true);
   },
-  canLeave({ self, movement }) {
+  canLeave({ actor, self, movement }) {
     if (!movement) return;
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mounted-actor-cannot-use-carousel" };
     return passageResult(carouselVariant(self.entity.state?.variant), movement, false);
   },
   onLeave({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null
+    )
+      return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
       variant: rotateCarousel(carouselVariant(self.entity.state?.variant)),

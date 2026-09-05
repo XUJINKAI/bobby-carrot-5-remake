@@ -4,6 +4,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
   boundedInt,
@@ -16,7 +17,11 @@ import {
 const rotateMirrorOnLeave: Behavior = {
   id: "rotate-mirror-on-leave",
   onLeave({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null
+    )
+      return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
       variant: nextMirrorVariant(self.entity.state?.variant),
