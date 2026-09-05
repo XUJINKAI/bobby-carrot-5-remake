@@ -194,7 +194,7 @@ function originalAmbientSequence(
     return { baseIndex, cycleLength: 4 };
   }
   if (type === EntityTypeId.TIDE) {
-    const baseIndex = { up: 33, down: 31, left: 37, right: 35 }[
+    const baseIndex = { up: 31, down: 33, left: 35, right: 37 }[
       direction ?? "right"
     ];
     return { baseIndex, cycleLength: 3 };

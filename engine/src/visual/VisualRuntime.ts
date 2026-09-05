@@ -26,6 +26,11 @@ interface VisualMotion {
   direction?: Direction;
 }
 
+interface VisualMovementGroup {
+  primary: WorldMotion;
+  motions: WorldMotion[];
+}
+
 export interface VisualRuntimeInspection {
   visualId: string;
   runtime: EntityVisualRuntimeState | null;
@@ -135,21 +140,18 @@ export class VisualRuntime {
         .filter((delta) => delta.type === "motion-interrupted")
         .map((delta) => delta.motion.entityId),
     );
+    const movementGroups = buildVisualMovementGroups(deltas);
+    const startedGroups = new Set<number>();
+
     for (const delta of deltas) {
       if (delta.type === "motion-started") {
-        const motion = delta.motion;
-        this.beginMove(
-          motion.entityId,
-          motion.from,
-          motion.to,
-          options.motionDuration(motion),
+        const group = movementGroups.get(delta.motion.id);
+        if (!group || startedGroups.has(group.primary.id)) continue;
+        startedGroups.add(group.primary.id);
+        this.beginMoveGroup(
+          group.motions,
+          options.motionDuration(group.primary),
           frame,
-          {
-            ...(motion.cause.type === "forced" && motion.cause.mechanism
-              ? { animation: motion.cause.mechanism }
-              : {}),
-            direction: motion.direction,
-          },
         );
         continue;
       }
@@ -255,6 +257,28 @@ export class VisualRuntime {
       visualId: this.visuals.visualIdFor(definition),
       runtime: runtime ? structuredClone(runtime) : null,
     };
+  }
+
+  private beginMoveGroup(
+    motions: readonly WorldMotion[],
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    for (const motion of motions) {
+      this.beginMove(
+        motion.entityId,
+        motion.from,
+        motion.to,
+        durationMs,
+        frame,
+        {
+          ...(motion.cause.type === "forced" && motion.cause.mechanism
+            ? { animation: motion.cause.mechanism }
+            : {}),
+          direction: motion.direction,
+        },
+      );
+    }
   }
 
   private beginMotion(
@@ -366,4 +390,45 @@ export class VisualRuntime {
   ): void {
     this.entityRuntime.set(entityId, state);
   }
+}
+
+function buildVisualMovementGroups(
+  deltas: readonly WorldDelta[],
+): ReadonlyMap<number, VisualMovementGroup> {
+  const started = deltas
+    .filter((delta) => delta.type === "motion-started")
+    .map((delta) => delta.motion);
+  const byEntity = new Map(started.map((motion) => [motion.entityId, motion]));
+  const groupsByPrimary = new Map<number, VisualMovementGroup>();
+
+  for (const motion of started) {
+    const primary = resolveVisualGroupPrimary(motion, byEntity);
+    const group = groupsByPrimary.get(primary.id) ?? {
+      primary,
+      motions: [],
+    };
+    group.motions.push(motion);
+    groupsByPrimary.set(primary.id, group);
+  }
+
+  const byMotionId = new Map<number, VisualMovementGroup>();
+  for (const group of groupsByPrimary.values())
+    for (const motion of group.motions) byMotionId.set(motion.id, group);
+  return byMotionId;
+}
+
+function resolveVisualGroupPrimary(
+  source: WorldMotion,
+  byEntity: ReadonlyMap<EntityId, WorldMotion>,
+): WorldMotion {
+  let current = source;
+  const visited = new Set<number>();
+  while (current.cause.type === "carry") {
+    if (visited.has(current.id)) break;
+    visited.add(current.id);
+    const carrier = byEntity.get(current.cause.carrierId);
+    if (!carrier) break;
+    current = carrier;
+  }
+  return current;
 }

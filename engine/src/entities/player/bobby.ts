@@ -135,7 +135,9 @@ const bobbyVisual = {
       });
     }
 
-    if (bobbyMountId(context.entity.state) !== null) {
+    const mountId = bobbyMountId(context.entity.state);
+    const mount = mountId === null ? undefined : context.query.entity(mountId);
+    if (mount?.type === EntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
         {
@@ -146,6 +148,17 @@ const bobbyVisual = {
         },
         speedTrail(context, direction),
       );
+    }
+
+    // Leaf / Cloud 等 moving platform 只改变 Bobby 的空间关系，不切换到
+    // Mower 专用 sprite；被载具携带时保持普通方向站立帧。
+    if (mountId !== null) {
+      return composition({
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: BOBBY_STANDING_FRAME,
+      });
     }
 
     if (isBobbyFlying(context.entity.state)) {
