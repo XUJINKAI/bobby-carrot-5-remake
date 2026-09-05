@@ -28,7 +28,10 @@ export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 const vehicleBehavior: Behavior = {
   id: "moving-entity-vehicle",
   canEnter({ actor, self, query }) {
-    if (!query.entityHasTrait(actor.id, "player"))
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null
+    )
       return { passable: false, reason: "moving-entity-collision" };
     const moving =
       self.entity.state?.moving === true ||
@@ -47,6 +50,7 @@ const vehicleBehavior: Behavior = {
     if (
       !direction ||
       !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null ||
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running"
     )

@@ -9,6 +9,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { bobbyMountId } from "../player/BobbyState.js";
 import {
   CONTENT_STACK_ORDER,
   objectCell,
@@ -26,6 +27,7 @@ const triggerDragon: Behavior = {
     if (
       self.presence.role !== "tail" ||
       !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null ||
       self.entity.state?.attacking === true
     )
       return;

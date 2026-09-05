@@ -23,10 +23,10 @@ export const tide: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      cell(7, 5),
       cell(8, 5),
-      cell(9, 5),
+      cell(7, 5),
       cell(10, 5),
+      cell(9, 5),
     ),
   ),
 );

@@ -1048,7 +1048,12 @@ export class World {
     }
     if (marker === "interaction") {
       const selectors = new Set(this.state.lastReachedSelectors);
-      for (const selector of this.selectorsForPresences(plan.target))
+      const reached = plan.target.filter(
+        (presence) =>
+          !presence.traits.includes("requires-unmounted-reach") ||
+          mountId(actor) === null,
+      );
+      for (const selector of this.selectorsForPresences(reached))
         selectors.add(selector);
       queue.setGlobal("lastReachedSelectors", [...selectors]);
     }

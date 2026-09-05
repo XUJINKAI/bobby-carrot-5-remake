@@ -91,7 +91,11 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Shovel Cleared Ground",
     cell(12, 7),
   ),
-  surface(EntityTypeId.EXIT, "Exit", cell(6, 9), ["walkable", "exit"]),
+  surface(EntityTypeId.EXIT, "Exit", cell(6, 9), [
+    "walkable",
+    "exit",
+    "requires-unmounted-reach",
+  ]),
   surface(EntityTypeId.SHOP_DREAM, "Dream Shop", cell(7, 9)),
   surface(EntityTypeId.SHOP_CLOUD9, "Cloud 9 Shop", cell(8, 9)),
   surface(EntityTypeId.SHOP_SUPER_KEY, "Super Key Shop", cell(9, 9)),

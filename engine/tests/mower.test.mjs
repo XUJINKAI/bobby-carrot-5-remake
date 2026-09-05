@@ -105,3 +105,25 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
     result.events.some((event) => event.type === "crumbly-rock-smashed"),
   );
 });
+
+test("Mower cannot complete an Exit reach condition", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+      { type: EntityTypeId.EXIT, x: 1, y: 0 },
+      { type: EntityTypeId.MOWER, x: 0, y: 0 },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+    rules: { win: { type: "reach", target: EntityTypeId.EXIT } },
+  });
+  const actor = world.query.entitiesWithTrait("player")[0];
+  const mower = world.query.entitiesWithTrait("mower")[0];
+  world.entities.require(actor.id).state = { mountId: mower.id };
+  world.entities.require(mower.id).state = { mountedByActorId: actor.id };
+
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+  assert.equal(world.completed, false);
+});

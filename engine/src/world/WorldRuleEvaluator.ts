@@ -93,7 +93,7 @@ export class WorldRuleEvaluator {
           target: condition.target,
           completed:
             actors.some((actor) =>
-              this.hasSelectorAt(actor.anchor, condition.target),
+              this.actorReaches(actor, condition.target),
             ) || state.lastReachedSelectors.includes(condition.target),
         };
       }
@@ -130,6 +130,21 @@ export class WorldRuleEvaluator {
     return this.spatial.presencesAt(cell).some((presence) => {
       const entity = this.entities.require(presence.entityId);
       return entity.type === selector || presence.traits.includes(selector);
+    });
+  }
+
+  private actorReaches(
+    actor: { anchor: { x: number; y: number }; state?: Record<string, unknown> },
+    selector: string,
+  ): boolean {
+    return this.spatial.presencesAt(actor.anchor).some((presence) => {
+      const entity = this.entities.require(presence.entityId);
+      const matches =
+        entity.type === selector || presence.traits.includes(selector);
+      if (!matches) return false;
+      if (!presence.traits.includes("requires-unmounted-reach")) return true;
+      const mountId = actor.state?.mountId;
+      return !(typeof mountId === "number" && Number.isInteger(mountId));
     });
   }
 
