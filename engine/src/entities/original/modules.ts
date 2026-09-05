@@ -1,5 +1,6 @@
 import type { EntityModule } from "../EntityModule.js";
 import { beaver } from "./beaver.js";
+import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
 import { colorPinkBlock } from "./color-pink-block.js";
@@ -46,6 +47,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   ...staticCoverModules,
   iceBlock,
   ...staticContentModules,
+  beanField,
   lock,
   dragon,
   sandman,
