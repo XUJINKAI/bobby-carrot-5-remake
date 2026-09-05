@@ -2,9 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import {
+  DEFAULT_SPEED_CONTINUATION_CELLS,
   DEFAULT_SPEED_FULL_CADENCE_MS,
-  DEFAULT_SPEED_NORMAL_CADENCE_MS,
-  DEFAULT_SPEED_SLOW_CADENCE_MS,
 } from "../dist/entities/original/speed.js";
 import { World } from "../dist/world/World.js";
 
@@ -81,7 +80,7 @@ function straightWorld(width = 6) {
   });
 }
 
-test("Speed decays full -> normal -> slow and stops on the third off-belt cell", () => {
+test("Speed keeps one fast cadence for exactly three off-belt cells", () => {
   const world = straightWorld();
   const actor = actorIds(world)[0];
   assert.equal(move(world, actor, "right").moves[0].moved, true);
@@ -104,22 +103,22 @@ test("Speed decays full -> normal -> slow and stops on the third off-belt cell",
   assert.equal(world.entity(actor).anchor.x, 3);
   assert.equal(
     second.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_NORMAL_CADENCE_MS,
+    DEFAULT_SPEED_FULL_CADENCE_MS,
   );
   assert.deepEqual(world.entity(actor).state.speedBoost, {
     direction: "right",
-    phase: "normal",
+    phase: "full",
   });
 
   const third = nextMotion(world, second.nextTick);
   assert.equal(world.entity(actor).anchor.x, 4);
   assert.equal(
     third.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_SLOW_CADENCE_MS,
+    DEFAULT_SPEED_FULL_CADENCE_MS,
   );
   assert.deepEqual(world.entity(actor).state.speedBoost, {
     direction: "right",
-    phase: "slow",
+    phase: "full",
   });
 
   finishAction(world, third.nextTick);
@@ -127,7 +126,7 @@ test("Speed decays full -> normal -> slow and stops on the third off-belt cell",
   assert.equal(world.entity(actor).state.speedBoost, undefined);
 });
 
-test("same-direction input on one full cell sustains only the next full cell", () => {
+test("same-direction held input renews the three-cell continuation", () => {
   const world = straightWorld(8);
   const actor = actorIds(world)[0];
   move(world, actor, "right");
@@ -146,14 +145,13 @@ test("same-direction input on one full cell sustains only the next full cell", (
 
   const third = nextMotion(world, second.nextTick);
   assert.equal(world.entity(actor).anchor.x, 4);
-  assert.equal(
-    third.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_NORMAL_CADENCE_MS,
-  );
-  assert.equal(world.entity(actor).state.speedBoost.phase, "normal");
+  const fourth = nextMotion(world, third.nextTick);
+  assert.equal(world.entity(actor).anchor.x, 5);
+  finishAction(world, fourth.nextTick);
+  assert.equal(world.entity(actor).state.speedBoost, undefined);
 });
 
-test("held same-direction input must renew sustain on every full cell", () => {
+test("held same-direction input can renew Speed on every cell", () => {
   const world = straightWorld(9);
   const actor = actorIds(world)[0];
   move(world, actor, "right");
@@ -170,27 +168,20 @@ test("held same-direction input must renew sustain on every full cell", () => {
   assert.equal(observe(world, actor, "right"), "retry");
   const fourth = nextMotion(world, third.nextTick);
   assert.equal(fourth.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
-
-  const fifth = nextMotion(world, fourth.nextTick);
-  assert.equal(fifth.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
-  const sixth = nextMotion(world, fifth.nextTick);
-  assert.equal(sixth.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_SLOW_CADENCE_MS);
-  finishAction(world, sixth.nextTick);
-  assert.equal(world.entity(actor).state.speedBoost, undefined);
+  assert.equal(world.entity(actor).anchor.x, 5);
 });
 
-test("full cell requires same-direction input and no other-direction input", () => {
+test("other-direction input does not cancel the fixed continuation", () => {
   const world = straightWorld(8);
   const actor = actorIds(world)[0];
   move(world, actor, "right");
 
   const first = nextMotion(world);
-  assert.equal(observe(world, actor, "right"), "retry");
   assert.equal(observe(world, actor, "up"), "retry");
 
   const second = nextMotion(world, first.nextTick);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
-  assert.equal(world.entity(actor).state.speedBoost.phase, "normal");
+  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assert.equal(world.entity(actor).state.speedBoost.phase, "full");
 });
 
 test("same-direction input while still on the Speed surface does not pre-arm off-belt sustain", () => {
@@ -204,41 +195,7 @@ test("same-direction input while still on the Speed surface does not pre-arm off
   assert.equal(first.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
 
   const second = nextMotion(world, first.nextTick);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
-});
-
-test("normal and slow Speed phases consume every player direction", () => {
-  const world = straightWorld();
-  const actor = actorIds(world)[0];
-  move(world, actor, "right");
-
-  const first = nextMotion(world);
-  const second = nextMotion(world, first.nextTick);
-  assert.equal(world.entity(actor).state.speedBoost.phase, "normal");
-  assert.equal(observe(world, actor, "up"), "consumed");
-  assert.equal(observe(world, actor, "right"), "consumed");
-
-  const third = nextMotion(world, second.nextTick);
-  assert.equal(world.entity(actor).state.speedBoost.phase, "slow");
-  assert.equal(observe(world, actor, "left"), "consumed");
-  assert.equal(observe(world, actor, "right"), "consumed");
-
-  finishAction(world, third.nextTick);
-  assert.equal(world.entity(actor).state.speedBoost, undefined);
-});
-
-test("other-direction input does not sustain the first off-belt full-speed segment", () => {
-  const world = straightWorld();
-  const actor = actorIds(world)[0];
-  move(world, actor, "right");
-
-  const first = nextMotion(world);
-  assert.equal(observe(world, actor, "up"), "retry");
-  const second = nextMotion(world, first.nextTick);
-
-  assert.equal(world.entity(actor).anchor.x, 3);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
-  assert.equal(world.entity(actor).state.speedBoost.phase, "normal");
+  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
 });
 
 test("blocked Speed forced movement emits impact and clears the boost", () => {
@@ -293,8 +250,12 @@ test("Speed boost state and observed input belong only to the owning Bobby", () 
   assert.equal(observe(world, other, "right"), "retry");
   const second = nextMotion(world, first.nextTick);
 
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_NORMAL_CADENCE_MS);
-  assert.equal(world.entity(boosted).state.speedBoost.phase, "normal");
+  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assert.equal(world.entity(boosted).state.speedBoost.phase, "full");
   assert.equal(world.entity(other).state?.speedBoost, undefined);
   assert.deepEqual(world.entity(other).anchor, { x: 0, y: 1 });
+});
+
+test("Speed exports the original continuation length", () => {
+  assert.equal(DEFAULT_SPEED_CONTINUATION_CELLS, 3);
 });

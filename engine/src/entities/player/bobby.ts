@@ -172,16 +172,7 @@ function speedTrail(
   direction: Direction,
 ): ImageVisualLayer | null {
   const boost = readBobbySpeedBoost(context.entity.state);
-  if (!boost || boost.phase === "slow") return null;
-
-  // 离开加速板后的默认三格衰减中，尾焰只持续前 1.5 格：
-  // full 第一格完整显示；normal 第二格只显示实际位移的前半；slow 不显示。
-  // 这里依据空间 offset 而不是时间 progress，因此不受 presentation easing 影响。
-  if (
-    boost.phase === "normal" &&
-    !isInFirstHalfOfSpeedMotion(context, direction)
-  )
-    return null;
+  if (!boost) return null;
 
   const frame =
     Math.floor(
@@ -199,22 +190,6 @@ function speedTrail(
     offsetX: offset.x,
     offsetY: BOBBY_OFFSET_Y + offset.y,
   };
-}
-
-function isInFirstHalfOfSpeedMotion(
-  context: VisualResolveContext,
-  direction: Direction,
-): boolean {
-  if (
-    context.runtime?.animation !== "speed" ||
-    context.runtime.moving !== true
-  )
-    return false;
-  const remaining =
-    direction === "left" || direction === "right"
-      ? Math.abs(context.runtime.offsetX ?? 0)
-      : Math.abs(context.runtime.offsetY ?? 0);
-  return remaining > 0.5;
 }
 
 function speedTrailOffset(direction: Direction): { x: number; y: number } {

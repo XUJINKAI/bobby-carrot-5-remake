@@ -11,27 +11,24 @@ import {
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
-/**
- * Ice owns its automatic-step cadence. It currently matches the tuned original
- * Bobby cadence, but remains independent so later source comparison can tune it
- * without changing Bobby or WorldClock.
- */
+/** 同步 World 测试未配置 motion duration 时使用的普通移动回退值。 */
 export const DEFAULT_ICE_SLIDE_CADENCE_MS = 350;
 
 const slide: Behavior = {
   id: "ice-slide",
   onEnter({ actor, self, direction, movement, query, commands }) {
     if (!direction || !query.entityHasTrait(actor.id, "player")) return;
+    const cadenceMs = inheritedCadence(movement);
     commands.startAction(
       createDelayedMoveRuntimeAction(
         actor.id,
         direction,
-        nextSlideDelay(movement),
+        nextSlideDelay(movement, cadenceMs),
         {
           mechanism: "ice",
           sourceEntityId: self.entity.id,
           blocksInput: true,
-          moveCadenceMs: DEFAULT_ICE_SLIDE_CADENCE_MS,
+          moveCadenceMs: cadenceMs,
         },
       ),
     );
@@ -40,10 +37,30 @@ const slide: Behavior = {
 
 function nextSlideDelay(
   movement: Parameters<NonNullable<Behavior["onEnter"]>>[0]["movement"],
+  cadenceMs: number,
 ): number {
   const motion = movement?.motion;
   const elapsedMotionMs = motion ? motion.durationMs * motion.progress : 0;
-  return Math.max(0, DEFAULT_ICE_SLIDE_CADENCE_MS - elapsedMotionMs);
+  return Math.max(0, cadenceMs - elapsedMotionMs);
+}
+
+function inheritedCadence(
+  movement: Parameters<NonNullable<Behavior["onEnter"]>>[0]["movement"],
+): number {
+  const motionDurationMs = movement?.motion?.durationMs;
+  if (
+    motionDurationMs !== undefined &&
+    Number.isFinite(motionDurationMs) &&
+    motionDurationMs > 0
+  )
+    return motionDurationMs;
+  const causeCadenceMs =
+    movement?.cause.type === "forced" ? movement.cause.cadenceMs : undefined;
+  return causeCadenceMs !== undefined &&
+    Number.isFinite(causeCadenceMs) &&
+    causeCadenceMs > 0
+    ? causeCadenceMs
+    : DEFAULT_ICE_SLIDE_CADENCE_MS;
 }
 
 const definition: EntityModuleDefinition = {
