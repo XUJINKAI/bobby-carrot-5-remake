@@ -40,6 +40,11 @@ import type { EntityRegistry } from "./entity/EntityRegistry.js";
 import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
+  createMovementPlan,
+  type MovementPlan,
+  type MovementPlanningContext,
+} from "./movement/MovementPlan.js";
+import {
   MovementRuntime,
   type MovementRuntimeSnapshot,
 } from "./movement/MovementRuntime.js";
@@ -508,20 +513,37 @@ export class World {
     if (!this.spatial.inBounds(to))
       return blockedResult(actor.id, from, to, intent.direction, "void");
 
-    if (
-      actor.state?.flying === true &&
-      intent.cause.type === "forced" &&
-      intent.cause.mechanism === "flight"
-    )
-      return this.resolveFlightMove(actor, intent, group);
-    if (this.query.entityHasTrait(actor.id, "projectile"))
-      return this.resolveProjectileMove(actor, intent, group);
-    if (this.query.entityHasTrait(actor.id, "moving-platform"))
-      return this.resolveMovingPlatformMove(actor, intent, group);
-
-    const local = new MovementTransaction();
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
     const targetStack = [...this.spatial.presencesAt(to)].reverse();
+    const planningContext: MovementPlanningContext = {
+      actor,
+      query: this.query,
+      direction: intent.direction,
+      from,
+      to,
+      cause: intent.cause,
+      source: sourceStack,
+      target: targetStack,
+    };
+    const plan = createMovementPlan(
+      planningContext,
+      this.resolveMovementBehaviors(actor).map((behavior) =>
+        behavior.planMovement?.(planningContext),
+      ),
+    );
+    const planBlocked = this.validatePlan(plan, group);
+    if (planBlocked)
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        planBlocked,
+      );
+    if (plan.passage === "unrestricted")
+      return this.commitMovementPlan(plan, group);
+
+    const local = new MovementTransaction();
     const leave = this.runPassage(
       sourceStack,
       actor,
@@ -635,14 +657,6 @@ export class World {
       );
     }
 
-    if (!group.canReserveDestination(actor.id, to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
     if (pushed && !group.canReserveDestination(pushed.entityId, pushed.to))
       return blockedResult(
         actor.id,
@@ -661,23 +675,25 @@ export class World {
         { type: "push", sourceEntityId: actor.id },
         false,
       );
-    local.move(actor.id, from, to, intent.direction, intent.cause, true, {
-      source: sourceStack,
-      target: targetStack.filter(
+    const primaryLifecycle = {
+      ...plan.lifecycle,
+      target: plan.lifecycle.target.filter(
         (presence) => presence.entityId !== pushable?.entityId,
       ),
-    });
-    const carriedVehicle = this.carriedVehicleFor(actor);
-    if (carriedVehicle)
-      local.move(
-        carriedVehicle.id,
-        carriedVehicle.anchor,
-        to,
-        intent.direction,
-        { type: "carry", carrierId: actor.id },
-        true,
-      );
+    };
+    local.move(
+      actor.id,
+      from,
+      to,
+      intent.direction,
+      intent.cause,
+      plan.updateDirection,
+      primaryLifecycle,
+    );
+    this.appendCompanions(plan, local);
     group.reserveDestination(actor.id, to);
+    for (const companion of plan.companions)
+      group.reserveDestination(actor.id, companion.to);
     if (pushed) group.reserveDestination(pushed.entityId, pushed.to);
     group.absorb(local);
 
@@ -692,118 +708,70 @@ export class World {
     };
   }
 
-  private resolveProjectileMove(
-    projectile: EntityInstance,
-    intent: MoveIntent,
+  private validatePlan(
+    plan: MovementPlan,
+    group: MovementTransaction,
+  ): string | null {
+    if (!group.canReserveDestination(plan.actorId, plan.to))
+      return "destination-conflict";
+    for (const companion of plan.companions) {
+      const entity = this.entities.get(companion.entityId);
+      if (!entity) return "missing-companion";
+      if (!this.spatial.inBounds(companion.to)) return "companion-out-of-bounds";
+      if (this.movement.motions.forEntity(entity.id)?.status === "running")
+        return "companion-busy";
+      if (!group.canReserveDestination(plan.actorId, companion.to))
+        return "destination-conflict";
+    }
+    return null;
+  }
+
+  private commitMovementPlan(
+    plan: MovementPlan,
     group: MovementTransaction,
   ): MoveResult {
-    const from = { ...projectile.anchor };
-    const to = addDirection(from, intent.direction);
-    if (!group.canReserveDestination(projectile.id, to))
-      return blockedResult(
-        projectile.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
     const local = new MovementTransaction();
     local.move(
-      projectile.id,
-      from,
-      to,
-      intent.direction,
-      intent.cause,
-      false,
+      plan.actorId,
+      plan.from,
+      plan.to,
+      plan.direction,
+      plan.cause,
+      plan.updateDirection,
+      plan.lifecycle,
     );
-    group.reserveDestination(projectile.id, to);
+    this.appendCompanions(plan, local);
+    group.reserveDestination(plan.actorId, plan.to);
+    for (const companion of plan.companions)
+      group.reserveDestination(plan.actorId, companion.to);
     group.absorb(local);
     return {
-      actorId: projectile.id,
+      actorId: plan.actorId,
       moved: true,
-      from,
-      to,
-      direction: intent.direction,
-      passage: { reason: "projectile-passage", confidence: "rule" },
+      from: plan.from,
+      to: plan.to,
+      direction: plan.direction,
+      passage: { reason: plan.reason, confidence: "rule" },
       events: [],
     };
   }
 
-  private resolveFlightMove(
-    actor: EntityInstance,
-    intent: MoveIntent,
-    group: MovementTransaction,
-  ): MoveResult {
-    const from = { ...actor.anchor };
-    const to = addDirection(from, intent.direction);
-    if (!group.canReserveDestination(actor.id, to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
-    const local = new MovementTransaction();
-    local.move(actor.id, from, to, intent.direction, intent.cause, true, {
-      source: [],
-      target: this.spatial
-        .presencesAt(to)
-        .filter((presence) => presence.traits.includes("flight-landing")),
-    });
-    group.reserveDestination(actor.id, to);
-    group.absorb(local);
-    return {
-      actorId: actor.id,
-      moved: true,
-      from,
-      to,
-      direction: intent.direction,
-      passage: { reason: "airborne-passage", confidence: "rule" },
-      events: [],
-    };
-  }
-
-  private resolveMovingPlatformMove(
-    platform: EntityInstance,
-    intent: MoveIntent,
-    group: MovementTransaction,
-  ): MoveResult {
-    const from = { ...platform.anchor };
-    const to = addDirection(from, intent.direction);
-    if (!group.canReserveDestination(platform.id, to))
-      return blockedResult(
-        platform.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
-
-    const local = new MovementTransaction();
-    local.move(platform.id, from, to, intent.direction, intent.cause, true);
-    for (const passenger of this.query.entitiesWithTrait("player")) {
-      if (mountId(passenger) !== platform.id) continue;
-      local.move(
-        passenger.id,
-        passenger.anchor,
-        to,
-        intent.direction,
-        { type: "carry", carrierId: platform.id },
-        false,
+  private appendCompanions(
+    plan: MovementPlan,
+    transaction: MovementTransaction,
+  ): void {
+    for (const companion of plan.companions) {
+      const entity = this.entities.require(companion.entityId);
+      transaction.move(
+        entity.id,
+        entity.anchor,
+        companion.to,
+        plan.direction,
+        companion.cause,
+        companion.updateDirection ?? false,
+        companion.lifecycle,
       );
     }
-    group.reserveDestination(platform.id, to);
-    group.absorb(local);
-    return {
-      actorId: platform.id,
-      moved: true,
-      from,
-      to,
-      direction: intent.direction,
-      passage: { reason: "moving-platform-passage", confidence: "rule" },
-      events: [],
-    };
   }
 
   private canOccupy(
@@ -955,6 +923,18 @@ export class World {
     return this.behaviors.resolve(definition.behaviors, presence.traits);
   }
 
+  private resolveMovementBehaviors(
+    entity: EntityInstance,
+  ): readonly Behavior[] {
+    const definition = this.registry.require(entity.type);
+    const traits = new Set(
+      this.spatial
+        .presencesForEntity(entity.id)
+        .flatMap((presence) => [...presence.traits]),
+    );
+    return this.behaviors.resolve(definition.behaviors, [...traits]);
+  }
+
   private context(
     actor: EntityInstance,
     presence: EntityPresence,
@@ -1089,15 +1069,6 @@ export class World {
     return this.motionDurationMs;
   }
 
-  private carriedVehicleFor(actor: EntityInstance): EntityInstance | null {
-    const relation = mountId(actor);
-    if (relation === null) return null;
-    const vehicle = this.entities.get(relation);
-    return vehicle && this.query.entityHasTrait(vehicle.id, "ride-carried")
-      ? vehicle
-      : null;
-  }
-
   private deltaClock(): { worldTick: number | null; worldTimeMs: number } {
     return {
       worldTick: this.currentWorldTick,
@@ -1161,11 +1132,4 @@ function pushUnique<T>(values: T[], value: T): void {
 
 function safeDuration(value: number): number {
   return Math.max(0, Number.isFinite(value) ? value : 0);
-}
-
-function mountId(entity: EntityInstance): EntityId | null {
-  const value = entity.state?.mountId;
-  return typeof value === "number" && Number.isInteger(value) && value > 0
-    ? value
-    : null;
 }

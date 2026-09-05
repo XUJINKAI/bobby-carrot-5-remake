@@ -27,6 +27,14 @@ export const DEFAULT_FIREBALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 
 const runFireball: Behavior = {
   id: "run-dragon-fireball",
+  planMovement() {
+    return {
+      passage: "unrestricted",
+      updateDirection: false,
+      lifecycle: { source: [], target: [] },
+      reason: "projectile-passage",
+    };
+  },
   onTick({ self, commands }) {
     if (self.entity.state?.runtimeStarted === true) return;
     commands.setState(self.entity.id, {

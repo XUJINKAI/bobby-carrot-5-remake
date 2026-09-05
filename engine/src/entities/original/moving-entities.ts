@@ -32,6 +32,22 @@ export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 
 const vehicleBehavior: Behavior = {
   id: "moving-entity-vehicle",
+  planMovement({ actor, query, to }) {
+    return {
+      passage: "unrestricted",
+      lifecycle: { source: [], target: [] },
+      companions: query
+        .entitiesWithTrait("player")
+        .filter((passenger) => bobbyMountId(passenger.state) === actor.id)
+        .map((passenger) => ({
+          entityId: passenger.id,
+          to,
+          cause: { type: "carry" as const, carrierId: actor.id },
+          updateDirection: false,
+        })),
+      reason: "moving-platform-passage",
+    };
+  },
   canEnter({ actor, self, query }) {
     if (
       !query.entityHasTrait(actor.id, "player") ||

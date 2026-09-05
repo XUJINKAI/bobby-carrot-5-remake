@@ -3,6 +3,7 @@ import type {
   ImageVisualLayer,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -60,9 +61,40 @@ const definition: EntityModuleDefinition = {
   },
 };
 
-export const bobby: EntityModule = originalModule(definition, {
+const bobbyMovementPolicy: Behavior = {
+  id: "bobby-movement-policy",
+  planMovement({ actor, query, to, target }) {
+    if (isBobbyFlying(actor.state))
+      return {
+        passage: "unrestricted",
+        lifecycle: {
+          source: [],
+          target: target.filter((presence) =>
+            presence.traits.includes("flight-landing"),
+          ),
+        },
+        reason: "airborne-passage",
+      };
+
+    const relation = bobbyMountId(actor.state);
+    if (relation === null || !query.entityHasTrait(relation, "ride-carried"))
+      return;
+    return {
+      companions: [
+        {
+          entityId: relation,
+          to,
+          cause: { type: "carry", carrierId: actor.id },
+          updateDirection: true,
+        },
+      ],
+    };
+  },
+};
+
+const bobbyVisual = {
   id: EntityTypeId.BOBBY,
-  resolve(context) {
+  resolve(context: VisualResolveContext) {
     const direction =
       context.runtime?.direction ?? context.entity.direction ?? "down";
     const rawProgress = context.runtime?.progress ?? 1;
@@ -156,7 +188,11 @@ export const bobby: EntityModule = originalModule(definition, {
       speedTrail(context, direction),
     );
   },
-});
+};
+
+export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
+  { behavior: bobbyMovementPolicy },
+]);
 
 function isStandingOnIce(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>

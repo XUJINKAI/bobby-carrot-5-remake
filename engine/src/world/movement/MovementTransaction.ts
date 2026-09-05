@@ -54,6 +54,13 @@ export class MovementTransaction {
             lifecycle: {
               source: lifecycle.source.map((presence) => structuredClone(presence)),
               target: lifecycle.target.map((presence) => structuredClone(presence)),
+              ...(lifecycle.markers
+                ? {
+                    markers: lifecycle.markers.map((marker) =>
+                      structuredClone(marker),
+                    ),
+                  }
+                : {}),
             },
           }
         : {}),
