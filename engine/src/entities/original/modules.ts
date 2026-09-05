@@ -10,6 +10,7 @@ import { colorYellowSwitch } from "./color-yellow-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
 import { fence } from "./fence.js";
+import { fireball } from "./fireball.js";
 import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
@@ -52,6 +53,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   beanField,
   lock,
   dragon,
+  fireball,
   sandman,
   dreamMachine,
   beaver,

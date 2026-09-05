@@ -483,6 +483,9 @@ export class World {
     if (!this.spatial.inBounds(to))
       return blockedResult(actor.id, from, to, intent.direction, "void");
 
+    if (this.query.entityHasTrait(actor.id, "projectile"))
+      return this.resolveProjectileMove(actor, intent, group);
+
     const local = new MovementTransaction();
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
     const targetStack = [...this.spatial.presencesAt(to)].reverse();
@@ -642,6 +645,43 @@ export class World {
       to,
       direction: intent.direction,
       passage: { reason: "passable", confidence: "rule" },
+      events: [],
+    };
+  }
+
+  private resolveProjectileMove(
+    projectile: EntityInstance,
+    intent: MoveIntent,
+    group: MovementTransaction,
+  ): MoveResult {
+    const from = { ...projectile.anchor };
+    const to = addDirection(from, intent.direction);
+    if (!group.canReserveDestination(projectile.id, to))
+      return blockedResult(
+        projectile.id,
+        from,
+        to,
+        intent.direction,
+        "destination-conflict",
+      );
+    const local = new MovementTransaction();
+    local.move(
+      projectile.id,
+      from,
+      to,
+      intent.direction,
+      intent.cause,
+      false,
+    );
+    group.reserveDestination(projectile.id, to);
+    group.absorb(local);
+    return {
+      actorId: projectile.id,
+      moved: true,
+      from,
+      to,
+      direction: intent.direction,
+      passage: { reason: "projectile-passage", confidence: "rule" },
       events: [],
     };
   }
