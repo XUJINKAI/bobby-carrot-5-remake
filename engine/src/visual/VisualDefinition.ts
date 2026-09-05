@@ -66,6 +66,8 @@ export interface VisualComposition {
 export interface EntityVisualRuntimeState {
   offsetX?: number;
   offsetY?: number;
+  /** Visual-only height above the grid anchor, in source-art pixels. */
+  elevationPx?: number;
   moving?: boolean;
   progress?: number;
   /** 上一次进入静止状态的 PresentationTime；供 Entity 自己决定何时进入 idle。 */
@@ -99,6 +101,8 @@ export interface VisualDefinition {
   id: VisualId;
   /** 固定渲染 pass；默认 world。它只影响表现，不进入 World/Spatial。 */
   renderPass?: VisualRenderPass;
+  /** Visual-only top-surface height used when an actor stands on this Entity. */
+  supportHeightPx?: number;
   resolve(context: VisualResolveContext): VisualComposition | null;
 }
 

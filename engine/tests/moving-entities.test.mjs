@@ -149,3 +149,70 @@ test("Leaf starts moving on the same tick that a player arrives", () => {
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
   assert.equal(world.entity(actor.id).state?.mountId, undefined);
 });
+
+test("Leaf can launch perpendicular to Tide and follows Tide after the first cell", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 3,
+      entities: [
+        { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
+        { type: EntityTypeId.WATER, x: 1, y: 1 },
+        { type: EntityTypeId.WATER, x: 2, y: 1 },
+        { type: EntityTypeId.WATER, x: 2, y: 2 },
+        { type: EntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
+        { type: EntityTypeId.TIDE, x: 2, y: 1, direction: "down" },
+        { type: EntityTypeId.LEAF, x: 1, y: 1 },
+        { type: EntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 100 },
+  );
+  const actor = world.query.entitiesWithTrait("player")[0];
+  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+
+  let sawPerpendicularCell = false;
+  let sawRedirectedCell = false;
+  for (let tick = 1; tick <= 20; tick += 1) {
+    world.update({ tick, stepMs: 100 });
+    const anchor = world.entity(leaf.id).anchor;
+    if (anchor.x === 2 && anchor.y === 1) sawPerpendicularCell = true;
+    if (anchor.x === 2 && anchor.y === 2) {
+      sawRedirectedCell = true;
+      break;
+    }
+  }
+
+  assert.equal(sawPerpendicularCell, true);
+  assert.equal(sawRedirectedCell, true);
+});
+
+test("Leaf does not launch against Tide", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 3,
+      entities: [
+        { type: EntityTypeId.WATER, x: 1, y: 1 },
+        { type: EntityTypeId.GROUND_C, x: 1, y: 2 },
+        { type: EntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
+        { type: EntityTypeId.LEAF, x: 1, y: 1 },
+        { type: EntityTypeId.BOBBY, x: 1, y: 2, direction: "up" },
+      ],
+    },
+    { motionDurationMs: 100 },
+  );
+  const actor = world.query.entitiesWithTrait("player")[0];
+  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  assert.equal(move(world, actor.id, "up").moves[0].moved, true);
+
+  for (let tick = 1; tick <= 4; tick += 1)
+    world.update({ tick, stepMs: 50 });
+
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 1 });
+  assert.equal(world.entity(leaf.id).state?.moving, undefined);
+  assert.equal(world.actions.active.length, 0);
+});

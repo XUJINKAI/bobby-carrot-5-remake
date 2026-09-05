@@ -32,6 +32,8 @@ interface VisualMotion {
   startOffsetY: number;
   endOffsetX: number;
   endOffsetY: number;
+  startElevationPx: number;
+  endElevationPx: number;
   timeline: VisualTimeline;
   /** Spatial movement stays moving even when a mechanism supplies an animation name. */
   moving: boolean;
@@ -179,6 +181,7 @@ export class VisualRuntime {
         if (!group || startedGroups.has(group.primary.id)) continue;
         startedGroups.add(group.primary.id);
         this.beginMoveGroup(
+          world,
           group.motions,
           options.motionDuration(group.primary),
           frame,
@@ -269,7 +272,7 @@ export class VisualRuntime {
     const actorIds = world.query
       .entitiesWithTrait("player")
       .map((entity) => entity.id);
-    this.ensureStationaryActorStates(actorIds);
+    this.ensureStationaryActorStates(world, actorIds);
     const defaultTargetId = actorIds[0];
     const target =
       (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
@@ -306,6 +309,7 @@ export class VisualRuntime {
   }
 
   private beginMoveGroup(
+    world: World,
     motions: readonly WorldMotion[],
     durationMs: number,
     frame: PresentationFrame,
@@ -315,6 +319,20 @@ export class VisualRuntime {
       durationMs: Math.max(0, durationMs),
     };
     for (const motion of motions) {
+      const carrierHeight =
+        motion.cause.type === "carry"
+          ? this.supportHeightForEntity(world, motion.cause.carrierId)
+          : null;
+      const previousHeight = this.entityRuntime.get(
+        motion.entityId,
+      )?.elevationPx;
+      const startElevationPx =
+        carrierHeight ??
+        previousHeight ??
+        this.supportHeightAt(world, motion.from, motion.entityId);
+      const endElevationPx =
+        carrierHeight ??
+        this.supportHeightAt(world, motion.to, motion.entityId);
       this.beginMotion(
         motion.entityId,
         { x: motion.from.x - motion.to.x, y: motion.from.y - motion.to.y },
@@ -327,8 +345,9 @@ export class VisualRuntime {
           : motion.cause.type === "forced" && motion.cause.mechanism
             ? motion.cause.mechanism
             : undefined,
-        motion.direction,
+        motion.cause.type === "carry" ? undefined : motion.direction,
         timeline,
+        { startPx: startElevationPx, endPx: endElevationPx },
       );
     }
   }
@@ -343,13 +362,17 @@ export class VisualRuntime {
     animation?: string,
     direction?: Direction,
     timeline?: VisualTimeline,
+    elevation?: { startPx: number; endPx: number },
   ): void {
+    const currentElevationPx = this.entityRuntime.get(entityId)?.elevationPx ?? 0;
     const motion: VisualMotion = {
       entityId,
       startOffsetX: startOffset.x,
       startOffsetY: startOffset.y,
       endOffsetX: endOffset.x,
       endOffsetY: endOffset.y,
+      startElevationPx: elevation?.startPx ?? currentElevationPx,
+      endElevationPx: elevation?.endPx ?? currentElevationPx,
       timeline: timeline ?? {
         startedAtMs: frame.nowMs,
         durationMs: Math.max(0, durationMs),
@@ -465,6 +488,10 @@ export class VisualRuntime {
       offsetY:
         motion.startOffsetY +
         (motion.endOffsetY - motion.startOffsetY) * positionProgress,
+      elevationPx:
+        animationProgress < 0.5
+          ? motion.startElevationPx
+          : motion.endElevationPx,
       moving: motion.moving,
       progress: animationProgress,
       ...(motion.animation ? { animation: motion.animation } : {}),
@@ -480,6 +507,7 @@ export class VisualRuntime {
     this.setEntityState(motion.entityId, {
       offsetX: motion.endOffsetX,
       offsetY: motion.endOffsetY,
+      elevationPx: motion.endElevationPx,
       moving: false,
       progress: 1,
       stationarySinceMs: frame.nowMs,
@@ -489,6 +517,7 @@ export class VisualRuntime {
   }
 
   private ensureStationaryActorStates(
+    world: World,
     actorIds: readonly EntityId[],
   ): void {
     if (!this.frame) return;
@@ -498,12 +527,40 @@ export class VisualRuntime {
         this.entityRuntime.has(entityId)
       )
         continue;
+      const entity = world.entity(entityId);
+      if (!entity) continue;
       this.setEntityState(entityId, {
+        elevationPx: this.supportHeightAt(world, entity.anchor, entityId),
         moving: false,
         progress: 1,
         stationarySinceMs: this.frame.nowMs,
       });
     }
+  }
+
+  private supportHeightAt(
+    world: World,
+    cell: CellPosition,
+    excludeEntityId?: EntityId,
+  ): number {
+    let height = 0;
+    for (const presence of world.presencesAt(cell)) {
+      if (presence.entityId === excludeEntityId) continue;
+      const entity = world.entity(presence.entityId);
+      if (!entity) continue;
+      height = Math.max(
+        height,
+        this.visuals.supportHeightFor(world.registry.require(entity.type)),
+      );
+    }
+    return height;
+  }
+
+  private supportHeightForEntity(world: World, entityId: EntityId): number {
+    const entity = world.entity(entityId);
+    return entity
+      ? this.visuals.supportHeightFor(world.registry.require(entity.type))
+      : 0;
   }
 
   private setEntityState(

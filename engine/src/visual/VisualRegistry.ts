@@ -62,6 +62,15 @@ export class VisualRegistry {
     return this.get(this.visualIdFor(entityDefinition))?.renderPass ?? "world";
   }
 
+  supportHeightFor(entityDefinition: EntityDefinition): number {
+    const value = this.get(
+      this.visualIdFor(entityDefinition),
+    )?.supportHeightPx;
+    return typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, value)
+      : 0;
+  }
+
   resolve(
     entityDefinition: EntityDefinition,
     context: VisualResolveContext,

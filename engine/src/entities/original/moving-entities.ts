@@ -28,6 +28,7 @@ const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 
 export const DEFAULT_MOVING_ENTITY_CELL_MS = 16 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const LEAF_SUPPORT_HEIGHT_PX = 4;
 
 /** Leaf / Cloud are walkable moving supports. Player walking never becomes a mount. */
 const movingPlatformBehavior: Behavior = {
@@ -71,8 +72,11 @@ const movingPlatformBehavior: Behavior = {
     )
       return;
 
-    // Walking onto a Leaf is still ordinary player movement. Arrival only gives
-    // the Leaf the entry direction and starts its own drifting process.
+    const tideDirection = tideDirectionAt(query, self.entity.anchor);
+    if (tideDirection === oppositeDirection(direction)) return;
+
+    // A Tide constrains launch only against its current. Perpendicular launch keeps
+    // Bobby's entry direction for the first Leaf cell; later cells follow Tide.
     commands.setState(self.entity.id, {
       ...self.entity.state,
       moving: true,
@@ -86,6 +90,7 @@ const movingPlatformBehavior: Behavior = {
       createMovingEntityAction(
         self.entity.id,
         primeDeadlineForHandoff(cadenceMs, movement?.motion),
+        tideDirection !== null ? direction : null,
       ),
     );
   },
@@ -120,11 +125,13 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (isCloud(entity.type) && isMatchingCloudParking(query, entity))
       return stopMovingEntity(entity, commands, false);
 
-    const route = nextRoute(query, entity);
+    const launchDirection = directionState(action.state.launchDirection);
+    const route = nextRoute(query, entity, launchDirection);
     if (!route) return stopMovingEntity(entity, commands, isCloud(entity.type));
 
     if (!consumeActionDeadline(action, route.cadenceMs, time.stepMs / 2))
       return "running";
+    if (launchDirection !== null) delete action.state.launchDirection;
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
     commands.setState(entityId, { ...entity.state, moving: true });
@@ -199,9 +206,15 @@ function movingEntityModule(
     ],
     presentation: { name },
   };
+  const visual = {
+    ...atlasVisual(definition, objectCell(atlasIndex)),
+    ...(type === EntityTypeId.LEAF
+      ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
+      : {}),
+  };
   const module = originalModule(
     definition,
-    atlasVisual(definition, objectCell(atlasIndex)),
+    visual,
     [{ behavior: movingPlatformBehavior }],
   );
   return ownsAction ? { ...module, runtimeActions: [movingEntityAction] } : module;
@@ -210,12 +223,14 @@ function movingEntityModule(
 function createMovingEntityAction(
   ownerEntityId: EntityId,
   initialElapsedMs: number,
+  launchDirection: Direction | null = null,
 ): RuntimeActionSpec {
   return {
     kind: MOVING_ENTITY_ACTION,
     ownerEntityId,
     state: {
       elapsedMs: initialElapsedMs,
+      ...(launchDirection !== null ? { launchDirection } : {}),
     },
   };
 }
@@ -223,6 +238,7 @@ function createMovingEntityAction(
 function nextRoute(
   query: WorldQueryApi,
   entity: Readonly<EntityInstance>,
+  launchDirection: Direction | null = null,
 ): { direction: Direction; cadenceMs: number } | null {
   const initial = directionState(entity.direction) ?? "right";
   const direction = isCloud(entity.type)
@@ -232,7 +248,7 @@ function nextRoute(
         entity.state?.moving === true ? initial : null,
       ) ??
       (entity.state?.moving === true ? initial : null)
-    : leafDirectionAt(query, entity.anchor, initial);
+    : launchDirection ?? leafDirectionAt(query, entity.anchor, initial);
   if (!direction) return null;
   const target = addDirection(entity.anchor, direction);
   if (!canEnterMovingDomain(query, entity, target, direction)) return null;
@@ -251,11 +267,20 @@ function leafDirectionAt(
   cell: { x: number; y: number },
   fallback: Direction,
 ): Direction {
+  return tideDirectionAt(query, cell) ??
+    (query.hasTraitAt(cell, "waterfall") ? "down" : fallback);
+}
+
+function tideDirectionAt(
+  query: WorldQueryApi,
+  cell: { x: number; y: number },
+): Direction | null {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type === EntityTypeId.TIDE) return entity.direction ?? fallback;
+    if (entity?.type !== EntityTypeId.TIDE) continue;
+    return directionState(entity.direction) ?? null;
   }
-  return query.hasTraitAt(cell, "waterfall") ? "down" : fallback;
+  return null;
 }
 
 function canEnterMovingDomain(

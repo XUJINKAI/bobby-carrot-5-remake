@@ -101,7 +101,7 @@ const bobbyVisual = {
     const progress = clampProgress(rawProgress);
 
     if (context.global?.dead) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.death,
         frameColumns: 8,
         frameRows: 1,
@@ -113,7 +113,7 @@ const bobbyVisual = {
 
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.snowplow,
         frameColumns: 4,
         frameRows: 3,
@@ -127,7 +127,7 @@ const bobbyVisual = {
       context.runtime?.animation === "ice" ||
       (!context.runtime?.moving && isStandingOnIce(context))
     ) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
         frameRows: 1,
@@ -140,6 +140,7 @@ const bobbyVisual = {
     if (mount?.type === EntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
+        context,
         {
           asset: BOBBY_VISUAL_ASSETS.mower,
           frameColumns: 4,
@@ -153,7 +154,7 @@ const bobbyVisual = {
     // Carry is a passive positional movement. The carrier and every carried
     // player share one Presentation timeline, while Bobby keeps a standing pose.
     if (context.runtime?.animation === "carry") {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
         frameRows: 1,
@@ -162,7 +163,7 @@ const bobbyVisual = {
     }
 
     if (isBobbyFlying(context.entity.state)) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.kite,
         frameColumns: 4,
         frameRows: 1,
@@ -176,7 +177,7 @@ const bobbyVisual = {
         context.time?.nowMs,
       );
       if (idleFrame !== null) {
-        return composition({
+        return composition(context, {
           asset: BOBBY_VISUAL_ASSETS.idle,
           frameColumns: 3,
           frameRows: 1,
@@ -186,6 +187,7 @@ const bobbyVisual = {
     }
 
     return composition(
+      context,
       {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
@@ -246,7 +248,7 @@ function speedTrail(
     frameIndex: 5 + frame,
     anchor: "bottom",
     offsetX: offset.x,
-    offsetY: BOBBY_OFFSET_Y + offset.y,
+    offsetY: BOBBY_OFFSET_Y - visualElevation(context) + offset.y,
   };
 }
 
@@ -273,7 +275,15 @@ function speedTrailOffset(direction: Direction): { x: number; y: number } {
   return { x: 0, y: -BOBBY_TILE_SIZE };
 }
 
+function visualElevation(context: VisualResolveContext): number {
+  const value = context.runtime?.elevationPx;
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, value)
+    : 0;
+}
+
 function composition(
+  context: VisualResolveContext,
   frame: {
     asset: string;
     frameColumns: number;
@@ -287,7 +297,7 @@ function composition(
     kind: "image",
     ...frame,
     anchor: "bottom",
-    offsetY: BOBBY_OFFSET_Y,
+    offsetY: BOBBY_OFFSET_Y - visualElevation(context),
   };
   return {
     layers: background ? [background, foreground] : [foreground],
