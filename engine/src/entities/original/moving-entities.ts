@@ -49,17 +49,29 @@ const vehicleBehavior: Behavior = {
     };
   },
   canEnter({ actor, self, query }) {
+    if (!query.entityHasTrait(actor.id, "player"))
+      return { passable: false, reason: "moving-entity-collision" };
+
+    const mountId = bobbyMountId(actor.state);
     if (
-      !query.entityHasTrait(actor.id, "player") ||
-      bobbyMountId(actor.state) !== null
+      mountId === self.entity.id ||
+      (mountId !== null && !query.entityHasTrait(mountId, "moving-platform"))
     )
       return { passable: false, reason: "moving-entity-collision" };
+
     const moving =
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running";
-    return moving
-      ? { passable: false, reason: "moving-entity-in-motion" }
-      : { passable: true, reason: "mount-stopped-moving-entity" };
+    if (moving)
+      return { passable: false, reason: "moving-entity-in-motion" };
+
+    return {
+      passable: true,
+      reason:
+        mountId === null
+          ? "mount-stopped-moving-entity"
+          : "transfer-stopped-moving-entity",
+    };
   },
   canLeave({ actor, self, query }) {
     if (!query.entityHasTrait(actor.id, "player")) return;
@@ -137,7 +149,6 @@ const movingEntityAction: RuntimeActionDefinition = {
 
     if (!consumeActionDeadline(action, route.cadenceMs, time.stepMs / 2))
       return "running";
-
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
     commands.setState(entityId, { ...entity.state, moving: true });
