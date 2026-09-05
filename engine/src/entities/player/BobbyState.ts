@@ -11,7 +11,7 @@ export interface BobbyInventoryState {
   temporaryKey: boolean;
 }
 
-export type BobbySpeedPhase = "full";
+export type BobbySpeedPhase = "full" | "normal" | "slow";
 
 /** Runtime-only locomotion state created by the original Speed mechanism. */
 export interface BobbySpeedBoostState {
@@ -125,5 +125,5 @@ function isDirection(value: JsonValue | undefined): value is Direction {
 }
 
 function isSpeedPhase(value: JsonValue | undefined): value is BobbySpeedPhase {
-  return value === "full";
+  return value === "full" || value === "normal" || value === "slow";
 }

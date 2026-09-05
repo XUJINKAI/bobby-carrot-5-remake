@@ -135,11 +135,7 @@ const bobbyVisual = {
       });
     }
 
-    const mountId = bobbyMountId(context.entity.state);
-    if (
-      mountId !== null &&
-      context.query.entity(mountId)?.type === EntityTypeId.MOWER
-    ) {
+    if (bobbyMountId(context.entity.state) !== null) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
         {
@@ -212,7 +208,16 @@ function speedTrail(
   direction: Direction,
 ): ImageVisualLayer | null {
   const boost = readBobbySpeedBoost(context.entity.state);
-  if (!boost) return null;
+  if (!boost || boost.phase === "slow") return null;
+
+  // Legacy normal/slow phases remain presentation-compatible even though the
+  // current fixed continuation policy emits full. Presentation consumes the
+  // recorded state and must not reinterpret its producer.
+  if (
+    boost.phase === "normal" &&
+    !isInFirstHalfOfSpeedMotion(context, direction)
+  )
+    return null;
 
   const frame =
     Math.floor(
@@ -230,6 +235,22 @@ function speedTrail(
     offsetX: offset.x,
     offsetY: BOBBY_OFFSET_Y + offset.y,
   };
+}
+
+function isInFirstHalfOfSpeedMotion(
+  context: VisualResolveContext,
+  direction: Direction,
+): boolean {
+  if (
+    context.runtime?.animation !== "speed" ||
+    context.runtime.moving !== true
+  )
+    return false;
+  const remaining =
+    direction === "left" || direction === "right"
+      ? Math.abs(context.runtime.offsetX ?? 0)
+      : Math.abs(context.runtime.offsetY ?? 0);
+  return remaining > 0.5;
 }
 
 function speedTrailOffset(direction: Direction): { x: number; y: number } {
