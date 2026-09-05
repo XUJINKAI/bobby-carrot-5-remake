@@ -54,8 +54,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
     if (!dragon) return "complete";
     const elapsedMs = Number(action.state.elapsedMs ?? 0) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < DEFAULT_DRAGON_WINDUP_MS)
-      return "running";
+    if (elapsedMs < DEFAULT_DRAGON_WINDUP_MS) return "running";
 
     const head = query
       .presencesForEntity(dragonId)

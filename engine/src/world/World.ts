@@ -387,7 +387,7 @@ export class World {
     this.currentWorldTick = time.tick;
     const actionsAtTickStart = this.actions.active.map((action) => action.id);
     this.state.elapsedMs += time.stepMs;
-    this.advanceMotions(time.stepMs, result);
+    const movementActionBudgets = this.advanceMotions(time.stepMs, result);
     if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
@@ -413,11 +413,16 @@ export class World {
     }
 
     const handoffQueue = new CommandQueue();
-    const handoffRequests = this.actions.update(
-      { tick: time.tick, stepMs: 0 },
-      this.query,
-      handoffQueue,
-      actionsStartedByMovement,
+    const handoffRequests = actionsStartedByMovement.flatMap((actionId) =>
+      this.actions.update(
+        {
+          tick: time.tick,
+          stepMs: movementActionBudgets.get(actionId) ?? 0,
+        },
+        this.query,
+        handoffQueue,
+        [actionId],
+      )
     );
     const handoffCommit = this.committer.commit(
       handoffQueue,
@@ -507,7 +512,19 @@ export class World {
     this.advanceMotions(0, result);
   }
 
-  private advanceMotions(stepMs: number, result: WorldStepResult): void {
+  /**
+   * 推进 motion，并记录 marker 新建 Action 在当前 tick 还可消费的真实时间。
+   * marker 前已用于 motion 的时间不能再次交给 Action，否则大 tick 会重复计时；
+   * 剩余时间也不能直接丢弃，否则连续机关会在每格之间产生一个空 tick。
+   */
+  private advanceMotions(
+    stepMs: number,
+    result: WorldStepResult,
+  ): ReadonlyMap<RuntimeActionId, number> {
+    const initialElapsed = new Map(
+      this.movement.running.map((motion) => [motion.id, motion.elapsedMs]),
+    );
+    const actionBudgets = new Map<RuntimeActionId, number>();
     this.movement.advance(stepMs, {
       progressed: (motion) => {
         result.deltas.push(
@@ -518,6 +535,9 @@ export class World {
         );
       },
       marker: (motion, marker) => {
+        const actionsBeforeMarker = new Set(
+          this.actions.active.map((action) => action.id),
+        );
         result.deltas.push(
           this.deltaSequence.create(
             { type: "motion-marker", motion, marker: marker.id },
@@ -525,6 +545,15 @@ export class World {
           ),
         );
         this.runMovementMarker(motion, marker, result);
+        const consumedMs = Math.max(
+          0,
+          motion.elapsedMs - (initialElapsed.get(motion.id) ?? 0),
+        );
+        const remainingMs = Math.max(0, stepMs - consumedMs);
+        for (const action of this.actions.active) {
+          if (!actionsBeforeMarker.has(action.id))
+            actionBudgets.set(action.id, remainingMs);
+        }
       },
       completed: (motion) => {
         result.deltas.push(
@@ -536,6 +565,7 @@ export class World {
         this.lifecycle.evaluateRules(result);
       },
     });
+    return actionBudgets;
   }
 
   private runMovementMarker(

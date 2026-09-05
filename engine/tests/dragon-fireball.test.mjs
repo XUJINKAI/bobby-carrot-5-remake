@@ -36,7 +36,16 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
       },
     ],
   });
-  const spawned = update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
+  const almostSpawned = update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
+  assert.equal(
+    almostSpawned.events.some(
+      (event) => event.type === "dragon-fireball-spawned",
+    ),
+    false,
+  );
+  // Dragon is triggered at the entering motion's midpoint. Only the remainder
+  // of that WorldTick belongs to the newly started wind-up Action.
+  const spawned = update(world, 2, DEFAULT_FIREBALL_CELL_MS / 2);
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
@@ -44,7 +53,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
 
-  const melted = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  const melted = update(world, 3, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
   assert.equal(
     world.query.entitiesWithTrait("meltable").length,
@@ -52,11 +61,11 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   );
   assert.ok(melted.events.some((event) => event.type === "ice-melted"));
 
-  update(world, 3, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 4, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
   assert.equal(world.entity(fireball.id).direction, "down");
 
-  update(world, 4, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 5, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 1 });
 });
 
