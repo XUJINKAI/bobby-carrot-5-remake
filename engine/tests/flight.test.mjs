@@ -49,7 +49,7 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
 
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
-  assert.equal(world.actorLifecycle(actor.id).status, "active");
+  assert.equal(world.actorLifecycle(actor.id).phase, "active");
 
   world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 3, y: 0 });
