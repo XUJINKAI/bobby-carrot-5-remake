@@ -7,6 +7,11 @@ import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
+import {
+  accrueActionDeadline,
+  consumeActionDeadline,
+  primeDeadlineForHandoff,
+} from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
@@ -46,6 +51,10 @@ const speedBoost: Behavior = {
         actor.id,
         beltDirection,
         incomingCadence(movement?.cause),
+        primeDeadlineForHandoff(
+          incomingCadence(movement?.cause),
+          movement?.motion,
+        ),
       ),
     );
   },
@@ -100,14 +109,11 @@ const speedRunAction: RuntimeActionDefinition = {
     }
 
     const waitMs = positiveNumberState(action.state.waitMs);
-    const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
-    action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < waitMs) return "running";
-    if (query.motionForEntity(ownerEntityId)?.status === "running") {
-      action.state.elapsedMs = waitMs;
+    accrueActionDeadline(action, time);
+    if (query.motionForEntity(ownerEntityId)?.status === "running")
       return "running";
-    }
-    action.state.elapsedMs = 0;
+    if (!consumeActionDeadline(action, waitMs, time.stepMs / 2))
+      return "running";
 
     if (booleanState(action.state.pendingMove)) {
       const beltDirection = speedDirectionAt(query, owner.anchor);
@@ -208,6 +214,7 @@ function createSpeedRunRuntimeAction(
   ownerEntityId: EntityId,
   direction: Direction,
   initialWaitMs: number,
+  initialElapsedMs: number,
 ): RuntimeActionSpec {
   return {
     kind: SPEED_RUN_ACTION,
@@ -218,7 +225,7 @@ function createSpeedRunRuntimeAction(
       continuation: DEFAULT_SPEED_CONTINUATION_CELLS,
       sawSameDirectionCurrentCell: false,
       pendingMove: false,
-      elapsedMs: 0,
+      elapsedMs: initialElapsedMs,
       waitMs: initialWaitMs,
     },
   };

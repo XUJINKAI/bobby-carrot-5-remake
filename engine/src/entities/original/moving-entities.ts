@@ -3,6 +3,11 @@ import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
+import {
+  accrueActionDeadline,
+  consumeActionDeadline,
+  primeDeadlineForHandoff,
+} from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -46,7 +51,7 @@ const vehicleBehavior: Behavior = {
       ? { passable: true, reason: "dismount-moving-entity" }
       : undefined;
   },
-  onEnter({ actor, self, direction, query, commands }) {
+  onEnter({ actor, self, direction, movement, query, commands }) {
     if (
       !direction ||
       !query.entityHasTrait(actor.id, "player") ||
@@ -63,7 +68,15 @@ const vehicleBehavior: Behavior = {
       runtimeStarted: true,
     });
     commands.setDirection(self.entity.id, direction);
-    commands.startAction(createMovingEntityAction(self.entity.id));
+    const cadenceMs = query.hasTraitAt(self.entity.anchor, "waterfall")
+      ? DEFAULT_WATERFALL_CELL_MS
+      : DEFAULT_MOVING_ENTITY_CELL_MS;
+    commands.startAction(
+      createMovingEntityAction(
+        self.entity.id,
+        primeDeadlineForHandoff(cadenceMs, movement?.motion),
+      ),
+    );
   },
   onLeave({ actor, self, query, commands }) {
     if (
@@ -80,7 +93,9 @@ const vehicleBehavior: Behavior = {
       moving: false,
       runtimeStarted: true,
     });
-    commands.startAction(createMovingEntityAction(self.entity.id));
+    commands.startAction(
+      createMovingEntityAction(self.entity.id, DEFAULT_MOVING_ENTITY_CELL_MS),
+    );
   },
 };
 
@@ -91,6 +106,7 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (entityId === undefined) return "complete";
     const entity = query.entity(entityId);
     if (!entity) return "complete";
+    accrueActionDeadline(action, time);
     if (
       query.motionForEntity(entityId)?.status === "running" ||
       mountedPassengerIsMoving(query, entityId)
@@ -111,9 +127,8 @@ const movingEntityAction: RuntimeActionDefinition = {
     const route = nextRoute(query, entity);
     if (!route) return stopMovingEntity(entity, commands, isCloud(entity.type));
 
-    const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
-    action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < route.cadenceMs) return "running";
+    if (!consumeActionDeadline(action, route.cadenceMs, time.stepMs / 2))
+      return "running";
 
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
@@ -121,7 +136,6 @@ const movingEntityAction: RuntimeActionDefinition = {
     action.state.beforeX = entity.anchor.x;
     action.state.beforeY = entity.anchor.y;
     action.state.pendingMove = true;
-    action.state.elapsedMs = Math.max(0, elapsedMs - route.cadenceMs);
     return {
       status: "running",
       intents: [
@@ -188,12 +202,15 @@ function movingEntityModule(
   return ownsAction ? { ...module, runtimeActions: [movingEntityAction] } : module;
 }
 
-function createMovingEntityAction(ownerEntityId: EntityId): RuntimeActionSpec {
+function createMovingEntityAction(
+  ownerEntityId: EntityId,
+  initialElapsedMs: number,
+): RuntimeActionSpec {
   return {
     kind: MOVING_ENTITY_ACTION,
     ownerEntityId,
     state: {
-      elapsedMs: 0,
+      elapsedMs: initialElapsedMs,
       pendingMove: false,
     },
   };

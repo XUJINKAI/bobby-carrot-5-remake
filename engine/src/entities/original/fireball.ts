@@ -3,6 +3,10 @@ import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
+import {
+  accrueActionDeadline,
+  consumeActionDeadline,
+} from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
@@ -40,6 +44,7 @@ const fireballAction: RuntimeActionDefinition = {
     if (fireballId === undefined) return "complete";
     const fireball = query.entity(fireballId);
     if (!fireball) return "complete";
+    accrueActionDeadline(action, time);
     if (query.motionForEntity(fireballId)?.status === "running")
       return "running";
 
@@ -56,9 +61,13 @@ const fireballAction: RuntimeActionDefinition = {
       action.state.pendingMove = false;
     }
 
-    const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
-    action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < DEFAULT_FIREBALL_CELL_MS)
+    if (
+      !consumeActionDeadline(
+        action,
+        DEFAULT_FIREBALL_CELL_MS,
+        time.stepMs / 2,
+      )
+    )
       return "running";
 
     const direction = fireball.direction ?? "left";
@@ -79,7 +88,6 @@ const fireballAction: RuntimeActionDefinition = {
     action.state.beforeX = fireball.anchor.x;
     action.state.beforeY = fireball.anchor.y;
     action.state.pendingMove = true;
-    action.state.elapsedMs = Math.max(0, elapsedMs - DEFAULT_FIREBALL_CELL_MS);
     return {
       status: "running",
       intents: [
@@ -87,7 +95,11 @@ const fireballAction: RuntimeActionDefinition = {
           type: "move",
           actorId: fireballId,
           direction,
-          cause: { type: "projectile" },
+          cause: {
+            type: "forced",
+            mechanism: "fireball",
+            cadenceMs: DEFAULT_FIREBALL_CELL_MS,
+          },
         },
       ],
     };
@@ -145,7 +157,7 @@ function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FIREBALL_ACTION,
     ownerEntityId,
     focus: { entityId: ownerEntityId },
-    state: { elapsedMs: 0, pendingMove: false },
+    state: { elapsedMs: DEFAULT_FIREBALL_CELL_MS, pendingMove: false },
   };
 }
 

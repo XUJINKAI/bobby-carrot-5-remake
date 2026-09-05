@@ -82,3 +82,44 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
     ),
   );
 });
+
+test("Airborne movement chains without a stationary World tick", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 8,
+      height: 1,
+      entities: [
+        ...Array.from({ length: 8 }, (_, x) => ({
+          type: EntityTypeId.GROUND_C,
+          x,
+          y: 0,
+        })),
+        { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+        {
+          type: EntityTypeId.BOBBY,
+          x: 0,
+          y: 0,
+          direction: "right",
+          state: { kite: true },
+        },
+      ],
+    },
+    { motionDurationMs: 350 },
+  );
+  const actor = world.query.entitiesWithTrait("player")[0];
+  move(world, actor.id, "right");
+
+  let airborne = false;
+  let observedFlightMotion = false;
+  for (let tick = 0; tick < 20; tick += 1) {
+    world.update({ tick, stepMs: 50 });
+    airborne ||= world.entity(actor.id).state?.flying === true;
+    if (!airborne) continue;
+    const motion = world.movement.motions.forEntity(actor.id);
+    if (motion?.cause.mechanism === "flight") observedFlightMotion = true;
+    if (observedFlightMotion)
+      assert.equal(motion?.status, "running", `stationary at tick ${tick}`);
+  }
+  assert.equal(observedFlightMotion, true);
+});

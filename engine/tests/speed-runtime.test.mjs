@@ -259,3 +259,31 @@ test("Speed boost state and observed input belong only to the owning Bobby", () 
 test("Speed exports the original continuation length", () => {
   assert.equal(DEFAULT_SPEED_CONTINUATION_CELLS, 3);
 });
+
+test("Speed hands off on the same tick that the entering motion completes", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 4,
+      height: 1,
+      entities: [
+        ...Array.from({ length: 4 }, (_, x) => ground(x, 0)),
+        speed(1, 0),
+        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 350 },
+  );
+  const actor = actorIds(world)[0];
+  move(world, actor, "right");
+
+  let chained = null;
+  for (let tick = 0; tick < 7; tick += 1) {
+    const result = world.update({ tick, stepMs: 50 });
+    if (result.motions.some((motion) => motion.cause.mechanism === "speed"))
+      chained = result;
+  }
+  assert.ok(chained);
+  assert.deepEqual(world.entity(actor).anchor, { x: 2, y: 0 });
+  assert.equal(world.movement.motions.forEntity(actor).status, "running");
+});

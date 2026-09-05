@@ -3,6 +3,10 @@ import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
+import {
+  accrueActionDeadline,
+  consumeActionDeadline,
+} from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type {
@@ -112,6 +116,7 @@ const flightAction: RuntimeActionDefinition = {
     if (actorId === undefined) return "complete";
     const actor = query.entity(actorId);
     if (!actor || !isBobbyFlying(actor.state)) return "complete";
+    accrueActionDeadline(action, time);
     if (query.motionForEntity(actorId)?.status === "running") return "running";
 
     if (booleanState(action.state.pendingMove)) {
@@ -130,13 +135,10 @@ const flightAction: RuntimeActionDefinition = {
       action.state.pendingMove = false;
     }
 
-    const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
-    action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < DEFAULT_FLIGHT_CELL_MS)
+    if (!consumeActionDeadline(action, DEFAULT_FLIGHT_CELL_MS, time.stepMs / 2))
       return "running";
     const direction = actor.direction;
     if (!direction) return "complete";
-    action.state.elapsedMs = Math.max(0, elapsedMs - DEFAULT_FLIGHT_CELL_MS);
     action.state.beforeX = actor.anchor.x;
     action.state.beforeY = actor.anchor.y;
     action.state.pendingMove = true;
@@ -194,7 +196,7 @@ function createFlightAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FLIGHT_ACTION,
     ownerEntityId,
     blocksInput: true,
-    state: { elapsedMs: 0, pendingMove: false },
+    state: { elapsedMs: DEFAULT_FLIGHT_CELL_MS, pendingMove: false },
   };
 }
 
