@@ -387,7 +387,7 @@ export class World {
       .map((action) => action.id)
       .filter((id) => !actionsAtTickStart.includes(id));
     const actionQueue = new CommandQueue();
-    const actionIntents = this.actions.update(
+    const actionRequests = this.actions.update(
       time,
       this.query,
       actionQueue,
@@ -403,7 +403,7 @@ export class World {
     }
 
     const handoffQueue = new CommandQueue();
-    const handoffIntents = this.actions.update(
+    const handoffRequests = this.actions.update(
       { tick: time.tick, stepMs: 0 },
       this.query,
       handoffQueue,
@@ -421,13 +421,27 @@ export class World {
       return result;
     }
 
-    const readyActionIntents = [...actionIntents, ...handoffIntents];
-    if (readyActionIntents.length > 0) {
+    const readyActionRequests = [...actionRequests, ...handoffRequests];
+    if (readyActionRequests.length > 0) {
       const actionStep = this.step({
-        intents: readyActionIntents,
+        intents: readyActionRequests.map((request) => request.intent),
         historyBoundary: false,
       });
       mergeWorldStepResult(result, actionStep);
+      const resultQueue = new CommandQueue();
+      this.actions.resolveIntentResults(
+        readyActionRequests,
+        actionStep.moves,
+        this.query,
+        resultQueue,
+      );
+      const resultCommit = this.committer.commit(
+        resultQueue,
+        this.deltaClock(),
+      );
+      absorbCommit(result, resultCommit);
+      this.lifecycle.settle(result);
+      this.lifecycle.evaluateRules(result);
       if (!this.outcome.playing) {
         this.currentWorldTick = null;
         return result;

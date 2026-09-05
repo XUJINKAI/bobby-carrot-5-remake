@@ -3,8 +3,10 @@ import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
 import type { WorldIntent } from "../movement/WorldIntent.js";
+import type { MoveResult } from "../WorldTypes.js";
 import type {
   RuntimeActionId,
+  RuntimeActionIntentRequest,
   RuntimeActionInputDisposition,
   RuntimeActionInstance,
   RuntimeActionSchedulerSnapshot,
@@ -100,8 +102,8 @@ export class RuntimeActionScheduler {
     query: WorldQueryApi,
     commands: WorldCommandApi,
     eligibleIds?: readonly RuntimeActionId[],
-  ): WorldIntent[] {
-    const intents: WorldIntent[] = [];
+  ): RuntimeActionIntentRequest[] {
+    const requests: RuntimeActionIntentRequest[] = [];
     const eligible = eligibleIds ? new Set(eligibleIds) : null;
     const ids = [...this.actions.keys()]
       .filter((id) => eligible?.has(id) ?? true)
@@ -117,10 +119,37 @@ export class RuntimeActionScheduler {
       });
       const status = typeof result === "string" ? result : result?.status;
       if (typeof result === "object" && result?.intents)
-        intents.push(...result.intents.map((intent) => structuredClone(intent)));
+        requests.push(
+          ...result.intents.map((intent) => ({
+            actionId: id,
+            intent: structuredClone(intent),
+          })),
+        );
       if (status === "complete") this.actions.delete(id);
     }
-    return intents;
+    return requests;
+  }
+
+  resolveIntentResults(
+    requests: readonly RuntimeActionIntentRequest[],
+    results: readonly MoveResult[],
+    query: WorldQueryApi,
+    commands: WorldCommandApi,
+  ): void {
+    if (requests.length !== results.length)
+      throw new Error("RuntimeAction intent 与 MoveResult 数量不一致");
+    requests.forEach((request, index) => {
+      const action = this.actions.get(request.actionId);
+      if (!action) return;
+      const definition = this.registry.require(action.kind);
+      definition.onIntentResult?.({
+        action,
+        intent: structuredClone(request.intent),
+        result: structuredClone(results[index]!),
+        query,
+        commands,
+      });
+    });
   }
 
   snapshot(): RuntimeActionSchedulerSnapshot {

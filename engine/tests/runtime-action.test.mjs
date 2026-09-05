@@ -6,6 +6,7 @@ import {
   createDelayedMoveRuntimeAction,
 } from "../dist/world/action/builtinActions.js";
 import { RuntimeActionScheduler } from "../dist/world/action/RuntimeActionScheduler.js";
+import { RuntimeActionRegistry } from "../dist/world/action/RuntimeActionRegistry.js";
 
 const query = {};
 const commands = {};
@@ -99,18 +100,68 @@ test("delayed move action emits one semantic forced intent and completes", () =>
     scheduler.update({ tick: 1, stepMs: 62.5 }, actionQuery, commands),
     [
       {
-        type: "move",
-        actorId: 7,
-        direction: "right",
-        cause: {
-          type: "forced",
-          sourceEntityId: 11,
-          mechanism: "ice",
-          cadenceMs: 125,
+        actionId: 1,
+        intent: {
+          type: "move",
+          actorId: 7,
+          direction: "right",
+          cause: {
+            type: "forced",
+            sourceEntityId: 11,
+            mechanism: "ice",
+            cadenceMs: 125,
+          },
         },
       },
     ],
   );
   assert.equal(scheduler.inputBlocked, false);
   assert.equal(scheduler.active.length, 0);
+});
+
+test("RuntimeAction receives the authoritative MoveResult", () => {
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "result-aware-move",
+    update({ action }) {
+      if (action.state.requested === true) return "running";
+      action.state.requested = true;
+      return {
+        status: "running",
+        intents: [
+          {
+            type: "move",
+            actorId: action.ownerEntityId,
+            direction: "right",
+            cause: { type: "actor" },
+          },
+        ],
+      };
+    },
+    onIntentResult({ action, result }) {
+      action.state.moveSucceeded = result.moved;
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  scheduler.start({ kind: "result-aware-move", ownerEntityId: 7 });
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  scheduler.resolveIntentResults(
+    requests,
+    [
+      {
+        actorId: 7,
+        moved: false,
+        blocked: true,
+        from: { x: 0, y: 0 },
+        to: { x: 1, y: 0 },
+        direction: "right",
+        passage: { reason: "blocked", confidence: "rule" },
+        events: [],
+      },
+    ],
+    query,
+    commands,
+  );
+
+  assert.equal(scheduler.active[0].state.moveSucceeded, false);
 });

@@ -4,6 +4,7 @@ import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
 import type { WorldIntent } from "../movement/WorldIntent.js";
+import type { MoveResult } from "../WorldTypes.js";
 
 export type RuntimeActionId = number;
 export type RuntimeActionState = Record<string, JsonValue>;
@@ -46,6 +47,19 @@ export interface RuntimeActionIntentContext {
   readonly query: WorldQueryApi;
 }
 
+export interface RuntimeActionIntentResultContext {
+  readonly action: RuntimeActionInstance;
+  readonly intent: WorldIntent;
+  readonly result: MoveResult;
+  readonly query: WorldQueryApi;
+  readonly commands: WorldCommandApi;
+}
+
+export interface RuntimeActionIntentRequest {
+  actionId: RuntimeActionId;
+  intent: WorldIntent;
+}
+
 /**
  * retry: gameplay 暂忙，本次 held input 可以在后续 WorldTick 继续尝试/观察。
  * consumed: gameplay 明确吞掉本次输入，同一 held direction 不应在 Action 结束后补执行。
@@ -71,6 +85,8 @@ export interface RuntimeActionDefinition {
   onIntent?(
     context: RuntimeActionIntentContext,
   ): RuntimeActionInputDisposition | void;
+  /** World 完成裁决后回传权威结果；Action 不需要再用坐标变化猜测成功与否。 */
+  onIntentResult?(context: RuntimeActionIntentResultContext): void;
 }
 
 export interface RuntimeActionSchedulerSnapshot {
