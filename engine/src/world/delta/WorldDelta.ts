@@ -34,7 +34,8 @@ export type WorldDeltaPayload =
   | { type: "motion-progressed"; motion: WorldMotion }
   | { type: "motion-marker"; motion: WorldMotion; marker: string }
   | { type: "motion-completed"; motion: WorldMotion }
-  | { type: "motion-interrupted"; motion: WorldMotion };
+  | { type: "motion-interrupted"; motion: WorldMotion }
+  | { type: "motion-cleared"; motion: WorldMotion; reason: string };
 
 /** 一次 World 推进产生的有序语义事实，供 Presentation、Debug 与外层事件桥消费。 */
 export type WorldDelta = WorldDeltaBase & WorldDeltaPayload;

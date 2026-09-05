@@ -56,14 +56,31 @@ export class WorldCommitter {
           record({ type: "entity-spawned", entityId: entity.id });
           break;
         }
-        case "destroy":
+        case "destroy": {
           this.actions.cancelOwnedBy(command.entityId);
-          this.movement.clearEntity(command.entityId);
+          const running = this.movement.motions.forEntity(command.entityId);
+          if (running?.status === "running") {
+            const interrupted = this.movement.interruptEntity(
+              command.entityId,
+              "entity-destroyed",
+              running.progress,
+            );
+            if (interrupted)
+              record({ type: "motion-interrupted", motion: interrupted });
+          }
+          const cleared = this.movement.clearEntity(command.entityId);
+          if (cleared)
+            record({
+              type: "motion-cleared",
+              motion: cleared,
+              reason: "entity-destroyed",
+            });
           this.spatial.removeEntity(command.entityId);
           this.entities.destroy(command.entityId);
           pushUnique(mutations.destroyed, command.entityId);
           record({ type: "entity-destroyed", entityId: command.entityId });
           break;
+        }
         case "move": {
           const entity = this.entities.get(command.entityId);
           if (entity) {
@@ -118,6 +135,13 @@ export class WorldCommitter {
         case "revive-actor": {
           const actor = this.actors.revive(command.entityId, clock.worldTimeMs);
           if (!actor) break;
+          const cleared = this.movement.clearEntity(actor.entityId);
+          if (cleared)
+            record({
+              type: "motion-cleared",
+              motion: cleared,
+              reason: "actor-revived",
+            });
           const event: WorldEvent = {
             type: "actor-revived",
             entityId: actor.entityId,

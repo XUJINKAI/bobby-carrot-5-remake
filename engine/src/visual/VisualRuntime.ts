@@ -165,6 +165,14 @@ export class VisualRuntime {
         );
         continue;
       }
+      if (delta.type === "motion-cleared" || delta.type === "entity-destroyed") {
+        const entityId =
+          delta.type === "motion-cleared"
+            ? delta.motion.entityId
+            : delta.entityId;
+        this.clearEntity(entityId);
+        continue;
+      }
       if (delta.type !== "actor-lifecycle-changed") continue;
       const actor = delta.actor;
       if (actor.phase === "active") {

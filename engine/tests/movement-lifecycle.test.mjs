@@ -110,3 +110,35 @@ test("movement snapshot 保存已跨过的 marker", () => {
   world.update({ tick: 1, stepMs: 40 });
   assert.equal(world.query.entitiesWithTrait("trigger")[0].state.hits, 1);
 });
+
+test("revive 清除死亡时冻结的 motion 并恢复到 grid anchor", () => {
+  const { world, actorId } = runtime(({ actor, commands }) => {
+    commands.downActor(actor.id, "trap");
+  });
+  moveRight(world, actorId);
+  world.update({ tick: 0, stepMs: 60 });
+  assert.equal(world.movement.motions.forEntity(actorId).status, "interrupted");
+
+  const revived = world.reviveActor(actorId);
+  assert.equal(world.movement.motions.forEntity(actorId), undefined);
+  assert.deepEqual(
+    world.movement.motions.poseFor(actorId, world.entity(actorId).anchor),
+    { x: 1, y: 0 },
+  );
+  assert.ok(revived.deltas.some((delta) => delta.type === "motion-cleared"));
+});
+
+test("destroy 中断并清除实体正在进行的 motion", () => {
+  const { world, actorId } = runtime(({ actor, commands }) => {
+    commands.destroy(actor.id);
+  });
+  moveRight(world, actorId);
+  const result = world.update({ tick: 0, stepMs: 60 });
+
+  assert.equal(world.entity(actorId), undefined);
+  assert.equal(world.movement.motions.forEntity(actorId), undefined);
+  const types = result.deltas.map((delta) => delta.type);
+  assert.ok(types.indexOf("motion-marker") < types.indexOf("motion-interrupted"));
+  assert.ok(types.indexOf("motion-interrupted") < types.indexOf("motion-cleared"));
+  assert.ok(types.indexOf("motion-cleared") < types.indexOf("entity-destroyed"));
+});

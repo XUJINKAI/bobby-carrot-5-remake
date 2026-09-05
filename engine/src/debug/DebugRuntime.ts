@@ -361,6 +361,7 @@ function traceRecordForDelta(
     case "motion-progressed":
     case "motion-completed":
     case "motion-interrupted":
+    case "motion-cleared":
       return {
         ...base,
         category: "motion",
