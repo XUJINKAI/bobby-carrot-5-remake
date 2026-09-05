@@ -84,6 +84,8 @@ export type RuntimeActionStatus = "running" | "complete";
 /**
  * Action 可以在 WorldTick 中请求 semantic intent；真正的 passage / collision /
  * enter-leave hooks 仍由 World resolver 执行，Action 不能用 commands.move 绕过规则。
+ * complete 表示不再产生后续工作；若同时带 intents，Scheduler 会保留 Action，
+ * 直到这些 intent 的权威 MoveResult 全部结算后再正常完成。
  */
 export interface RuntimeActionUpdate {
   status: RuntimeActionStatus;
@@ -98,13 +100,20 @@ export interface RuntimeActionDefinition {
   onIntent?(
     context: RuntimeActionIntentContext,
   ): RuntimeActionInputDisposition | void;
-  /** World 完成裁决后回传权威结果；Action 不需要再用坐标变化猜测成功与否。 */
+  /** World 完成裁决后回传权威结果；包括 complete 返回的最后一批 intent。 */
   onIntentResult?(context: RuntimeActionIntentResultContext): void;
-  /** Action 结束未来调度前清理 owner-local gameplay state。 */
+  /** 仅显式取消时清理 owner-local gameplay state；正常 complete 不调用。 */
   onCancel?(context: RuntimeActionCancelContext): void;
+}
+
+export interface RuntimeActionSettlementSnapshot {
+  actionId: RuntimeActionId;
+  pendingResults: number;
 }
 
 export interface RuntimeActionSchedulerSnapshot {
   nextId: number;
   actions: RuntimeActionInstance[];
+  /** 旧 snapshot 无此字段时等价于没有待结算 Action。 */
+  settling?: RuntimeActionSettlementSnapshot[];
 }

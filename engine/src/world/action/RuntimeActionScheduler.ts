@@ -18,6 +18,8 @@ import type { RuntimeActionRegistry } from "./RuntimeActionRegistry.js";
 /** 固定顺序、单线程推进 RuntimeAction；并发是 gameplay 语义，不是 Promise 并发。 */
 export class RuntimeActionScheduler {
   private readonly actions = new Map<RuntimeActionId, RuntimeActionInstance>();
+  /** complete + intents 后停止 update，只等待已发出的权威结果结算。 */
+  private readonly settling = new Map<RuntimeActionId, number>();
   private nextIdValue = 1;
 
   constructor(private readonly registry: RuntimeActionRegistry) {}
@@ -85,6 +87,7 @@ export class RuntimeActionScheduler {
         query: context.query,
         commands: context.commands,
       });
+    this.settling.delete(id);
     this.actions.delete(id);
     return true;
   }
@@ -112,6 +115,7 @@ export class RuntimeActionScheduler {
     let disposition: RuntimeActionInputDisposition = "retry";
     const ids = [...this.actions.keys()].sort((a, b) => a - b);
     for (const id of ids) {
+      if (this.settling.has(id)) continue;
       const action = this.actions.get(id);
       if (!action) continue;
       const definition = this.registry.require(action.kind);
@@ -133,7 +137,7 @@ export class RuntimeActionScheduler {
     const requests: RuntimeActionIntentRequest[] = [];
     const eligible = eligibleIds ? new Set(eligibleIds) : null;
     const ids = [...this.actions.keys()]
-      .filter((id) => eligible?.has(id) ?? true)
+      .filter((id) => (eligible?.has(id) ?? true) && !this.settling.has(id))
       .sort((a, b) => a - b);
     for (const id of ids) {
       const action = this.actions.get(id);
@@ -145,14 +149,18 @@ export class RuntimeActionScheduler {
         commands,
       });
       const status = typeof result === "string" ? result : result?.status;
-      if (typeof result === "object" && result?.intents)
+      const intents =
+        typeof result === "object" && result?.intents ? result.intents : [];
+      if (intents.length > 0)
         requests.push(
-          ...result.intents.map((intent) => ({
+          ...intents.map((intent) => ({
             actionId: id,
             intent: structuredClone(intent),
           })),
         );
-      if (status === "complete") this.actions.delete(id);
+      if (status !== "complete") continue;
+      if (intents.length > 0) this.settling.set(id, intents.length);
+      else this.actions.delete(id);
     }
     return requests;
   }
@@ -176,6 +184,14 @@ export class RuntimeActionScheduler {
         query,
         commands,
       });
+      const pendingResults = this.settling.get(request.actionId);
+      if (pendingResults === undefined) return;
+      if (pendingResults > 1) {
+        this.settling.set(request.actionId, pendingResults - 1);
+        return;
+      }
+      this.settling.delete(request.actionId);
+      this.actions.delete(request.actionId);
     });
   }
 
@@ -183,18 +199,29 @@ export class RuntimeActionScheduler {
     return {
       nextId: this.nextIdValue,
       actions: this.active.map((action) => structuredClone(action)),
+      settling: [...this.settling.entries()]
+        .sort(([left], [right]) => left - right)
+        .map(([actionId, pendingResults]) => ({ actionId, pendingResults })),
     };
   }
 
   restore(snapshot: RuntimeActionSchedulerSnapshot): void {
     this.actions.clear();
+    this.settling.clear();
     this.nextIdValue = Math.max(1, Math.floor(snapshot.nextId));
     for (const action of snapshot.actions)
       this.actions.set(action.id, structuredClone(action));
+    for (const settlement of snapshot.settling ?? []) {
+      if (!this.actions.has(settlement.actionId)) continue;
+      const pendingResults = Math.max(0, Math.floor(settlement.pendingResults));
+      if (pendingResults > 0)
+        this.settling.set(settlement.actionId, pendingResults);
+    }
   }
 
   clear(): void {
     this.actions.clear();
+    this.settling.clear();
     this.nextIdValue = 1;
   }
 }

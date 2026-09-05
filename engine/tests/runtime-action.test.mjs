@@ -11,6 +11,36 @@ import { RuntimeActionRegistry } from "../dist/world/action/RuntimeActionRegistr
 const query = {};
 const commands = {};
 
+function moveIntent(direction = "right") {
+  return {
+    type: "move",
+    actorId: 7,
+    direction,
+    cause: { type: "actor" },
+  };
+}
+
+function blockedMoveResult(direction = "right") {
+  const to =
+    direction === "down"
+      ? { x: 0, y: 1 }
+      : direction === "left"
+        ? { x: -1, y: 0 }
+        : direction === "up"
+          ? { x: 0, y: -1 }
+          : { x: 1, y: 0 };
+  return {
+    actorId: 7,
+    moved: false,
+    blocked: true,
+    from: { x: 0, y: 0 },
+    to,
+    direction,
+    passage: { reason: "blocked", confidence: "rule" },
+    events: [],
+  };
+}
+
 test("RuntimeAction focus owns camera and necessarily blocks controlled input", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(
@@ -77,7 +107,7 @@ test("RuntimeAction gameplay state is snapshotted and restored deterministically
   assert.equal(scheduler.active[0].state.elapsedMs, 62.5);
 });
 
-test("delayed move action emits one semantic forced intent and completes", () => {
+test("delayed move action settles its final semantic intent before completing", () => {
   const scheduler = new RuntimeActionScheduler(createBuiltinRuntimeActionRegistry());
   scheduler.start(
     createDelayedMoveRuntimeAction(7, "right", 125, {
@@ -96,27 +126,226 @@ test("delayed move action emits one semantic forced intent and completes", () =>
     [],
   );
   assert.equal(scheduler.inputBlocked, true);
-  assert.deepEqual(
-    scheduler.update({ tick: 1, stepMs: 62.5 }, actionQuery, commands),
-    [
-      {
-        actionId: 1,
-        intent: {
-          type: "move",
-          actorId: 7,
-          direction: "right",
-          cause: {
-            type: "forced",
-            sourceEntityId: 11,
-            mechanism: "ice",
-            cadenceMs: 125,
-          },
+  const requests = scheduler.update(
+    { tick: 1, stepMs: 62.5 },
+    actionQuery,
+    commands,
+  );
+  assert.deepEqual(requests, [
+    {
+      actionId: 1,
+      intent: {
+        type: "move",
+        actorId: 7,
+        direction: "right",
+        cause: {
+          type: "forced",
+          sourceEntityId: 11,
+          mechanism: "ice",
+          cadenceMs: 125,
         },
       },
-    ],
+    },
+  ]);
+  assert.equal(scheduler.inputBlocked, true);
+  assert.equal(scheduler.active.length, 1);
+
+  scheduler.resolveIntentResults(
+    requests,
+    [blockedMoveResult("right")],
+    actionQuery,
+    commands,
   );
   assert.equal(scheduler.inputBlocked, false);
   assert.equal(scheduler.active.length, 0);
+});
+
+test("complete RuntimeAction receives its authoritative blocked result before removal", () => {
+  const observed = [];
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "complete-result-aware",
+    update() {
+      return { status: "complete", intents: [moveIntent("right")] };
+    },
+    onIntentResult({ result }) {
+      observed.push(result.moved);
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  scheduler.start({ kind: "complete-result-aware", ownerEntityId: 7 });
+
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  assert.equal(scheduler.active.length, 1);
+  scheduler.resolveIntentResults(
+    requests,
+    [blockedMoveResult("right")],
+    query,
+    commands,
+  );
+
+  assert.deepEqual(observed, [false]);
+  assert.equal(scheduler.active.length, 0);
+});
+
+test("complete RuntimeAction waits for every emitted intent result", () => {
+  const observed = [];
+  let updates = 0;
+  let observedInputs = 0;
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "complete-two-results",
+    update() {
+      updates += 1;
+      return {
+        status: "complete",
+        intents: [moveIntent("right"), moveIntent("down")],
+      };
+    },
+    onIntent() {
+      observedInputs += 1;
+      return "consumed";
+    },
+    onIntentResult({ result }) {
+      observed.push(result.direction);
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  scheduler.start({
+    kind: "complete-two-results",
+    ownerEntityId: 7,
+    blocksInput: true,
+  });
+
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  assert.equal(requests.length, 2);
+  assert.equal(scheduler.active.length, 1);
+  assert.equal(scheduler.inputBlocked, true);
+  assert.deepEqual(scheduler.update({ tick: 1, stepMs: 50 }, query, commands), []);
+  assert.equal(updates, 1);
+  assert.equal(
+    scheduler.observeIntents([moveIntent("left")], query),
+    "retry",
+  );
+  assert.equal(observedInputs, 0);
+
+  scheduler.resolveIntentResults(
+    [requests[0]],
+    [blockedMoveResult("right")],
+    query,
+    commands,
+  );
+  assert.deepEqual(observed, ["right"]);
+  assert.equal(scheduler.active.length, 1);
+  assert.equal(scheduler.inputBlocked, true);
+
+  scheduler.resolveIntentResults(
+    [requests[1]],
+    [blockedMoveResult("down")],
+    query,
+    commands,
+  );
+  assert.deepEqual(observed, ["right", "down"]);
+  assert.equal(scheduler.active.length, 0);
+  assert.equal(scheduler.inputBlocked, false);
+});
+
+test("complete RuntimeAction without result callback finishes normally without onCancel", () => {
+  let cancellations = 0;
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "complete-no-result-callback",
+    update() {
+      return { status: "complete", intents: [moveIntent("right")] };
+    },
+    onCancel() {
+      cancellations += 1;
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  scheduler.start({ kind: "complete-no-result-callback", ownerEntityId: 7 });
+
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  assert.equal(scheduler.active.length, 1);
+  scheduler.resolveIntentResults(
+    requests,
+    [blockedMoveResult("right")],
+    query,
+    commands,
+  );
+
+  assert.equal(cancellations, 0);
+  assert.equal(scheduler.active.length, 0);
+});
+
+test("cancelling a settling RuntimeAction suppresses remaining result callbacks", () => {
+  const results = [];
+  const cancellations = [];
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "cancel-settling",
+    update() {
+      return { status: "complete", intents: [moveIntent("right")] };
+    },
+    onIntentResult({ result }) {
+      results.push(result.moved);
+    },
+    onCancel({ reason }) {
+      cancellations.push(reason);
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  const actionId = scheduler.start({ kind: "cancel-settling", ownerEntityId: 7 });
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  assert.equal(scheduler.active.length, 1);
+
+  assert.equal(
+    scheduler.cancel(actionId, {
+      query,
+      commands,
+      reason: "owner-inactive",
+    }),
+    true,
+  );
+  scheduler.resolveIntentResults(
+    requests,
+    [blockedMoveResult("right")],
+    query,
+    commands,
+  );
+
+  assert.deepEqual(cancellations, ["owner-inactive"]);
+  assert.deepEqual(results, []);
+  assert.equal(scheduler.active.length, 0);
+});
+
+test("settling RuntimeAction state survives scheduler snapshot restore", () => {
+  let updates = 0;
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "snapshot-settling",
+    update() {
+      updates += 1;
+      return { status: "complete", intents: [moveIntent("right")] };
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  scheduler.start({ kind: "snapshot-settling", ownerEntityId: 7 });
+  const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
+  const snapshot = scheduler.snapshot();
+
+  const restored = new RuntimeActionScheduler(registry);
+  restored.restore(snapshot);
+  assert.equal(restored.active.length, 1);
+  assert.deepEqual(restored.update({ tick: 1, stepMs: 50 }, query, commands), []);
+  assert.equal(updates, 1);
+  restored.resolveIntentResults(
+    requests,
+    [blockedMoveResult("right")],
+    query,
+    commands,
+  );
+  assert.equal(restored.active.length, 0);
 });
 
 test("RuntimeAction receives the authoritative MoveResult", () => {
@@ -147,18 +376,7 @@ test("RuntimeAction receives the authoritative MoveResult", () => {
   const requests = scheduler.update({ tick: 0, stepMs: 50 }, query, commands);
   scheduler.resolveIntentResults(
     requests,
-    [
-      {
-        actorId: 7,
-        moved: false,
-        blocked: true,
-        from: { x: 0, y: 0 },
-        to: { x: 1, y: 0 },
-        direction: "right",
-        passage: { reason: "blocked", confidence: "rule" },
-        events: [],
-      },
-    ],
+    [blockedMoveResult("right")],
     query,
     commands,
   );
