@@ -12,14 +12,18 @@ import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
 
+interface VisualTimeline {
+  startedAtMs: number;
+  durationMs: number;
+}
+
 interface VisualMotion {
   entityId: EntityId;
   startOffsetX: number;
   startOffsetY: number;
   endOffsetX: number;
   endOffsetY: number;
-  startedAtMs: number;
-  durationMs: number;
+  timeline: VisualTimeline;
   /** Spatial movement stays moving even when a mechanism supplies an animation name. */
   moving: boolean;
   animation?: string;
@@ -29,6 +33,11 @@ interface VisualMotion {
 interface VisualMovementGroup {
   primary: WorldMotion;
   motions: WorldMotion[];
+}
+
+interface TimelineProgress {
+  raw: number;
+  position: number;
 }
 
 export interface VisualRuntimeInspection {
@@ -203,8 +212,15 @@ export class VisualRuntime {
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
     this.camera.update(frame);
-    for (const motion of this.motions.values())
-      this.advanceMotion(motion, frame, easing);
+    const timelineProgress = new Map<VisualTimeline, TimelineProgress>();
+    for (const motion of this.motions.values()) {
+      let progress = timelineProgress.get(motion.timeline);
+      if (!progress) {
+        progress = resolveTimelineProgress(motion.timeline, frame, easing);
+        timelineProgress.set(motion.timeline, progress);
+      }
+      this.advanceMotion(motion, frame, progress);
+    }
   }
 
   clear(): void {
@@ -264,19 +280,23 @@ export class VisualRuntime {
     durationMs: number,
     frame: PresentationFrame,
   ): void {
+    const timeline: VisualTimeline = {
+      startedAtMs: frame.nowMs,
+      durationMs: Math.max(0, durationMs),
+    };
     for (const motion of motions) {
-      this.beginMove(
+      this.beginMotion(
         motion.entityId,
-        motion.from,
-        motion.to,
+        { x: motion.from.x - motion.to.x, y: motion.from.y - motion.to.y },
+        { x: 0, y: 0 },
         durationMs,
         frame,
-        {
-          ...(motion.cause.type === "forced" && motion.cause.mechanism
-            ? { animation: motion.cause.mechanism }
-            : {}),
-          direction: motion.direction,
-        },
+        true,
+        motion.cause.type === "forced" && motion.cause.mechanism
+          ? motion.cause.mechanism
+          : undefined,
+        motion.direction,
+        timeline,
       );
     }
   }
@@ -290,6 +310,7 @@ export class VisualRuntime {
     moving: boolean,
     animation?: string,
     direction?: Direction,
+    timeline?: VisualTimeline,
   ): void {
     const motion: VisualMotion = {
       entityId,
@@ -297,8 +318,10 @@ export class VisualRuntime {
       startOffsetY: startOffset.y,
       endOffsetX: endOffset.x,
       endOffsetY: endOffset.y,
-      startedAtMs: frame.nowMs,
-      durationMs: Math.max(0, durationMs),
+      timeline: timeline ?? {
+        startedAtMs: frame.nowMs,
+        durationMs: Math.max(0, durationMs),
+      },
       moving,
       ...(animation ? { animation } : {}),
       ...(direction ? { direction } : {}),
@@ -311,15 +334,9 @@ export class VisualRuntime {
   private advanceMotion(
     motion: VisualMotion,
     frame: PresentationFrame,
-    easing: MotionEasing,
+    progress: TimelineProgress,
   ): void {
-    const elapsedMs = Math.max(0, frame.nowMs - motion.startedAtMs);
-    const rawProgress =
-      motion.durationMs <= 0
-        ? 1
-        : Math.min(1, elapsedMs / motion.durationMs);
-    const progress = applyMotionEasing(rawProgress, easing);
-    if (rawProgress >= 1) {
+    if (progress.raw >= 1) {
       // Completed motions stay in `motions` for presentation-clock rewind. Only the
       // active -> stationary transition may stamp stationarySinceMs; later frames
       // must not keep resetting the idle timer.
@@ -328,7 +345,7 @@ export class VisualRuntime {
       return;
     }
     this.activeMotionIds.add(motion.entityId);
-    this.setMotionState(motion, progress, rawProgress);
+    this.setMotionState(motion, progress.position, progress.raw);
   }
 
   private setMotionState(
@@ -390,6 +407,22 @@ export class VisualRuntime {
   ): void {
     this.entityRuntime.set(entityId, state);
   }
+}
+
+function resolveTimelineProgress(
+  timeline: VisualTimeline,
+  frame: PresentationFrame,
+  easing: MotionEasing,
+): TimelineProgress {
+  const elapsedMs = Math.max(0, frame.nowMs - timeline.startedAtMs);
+  const raw =
+    timeline.durationMs <= 0
+      ? 1
+      : Math.min(1, elapsedMs / timeline.durationMs);
+  return {
+    raw,
+    position: applyMotionEasing(raw, easing),
+  };
 }
 
 function buildVisualMovementGroups(
