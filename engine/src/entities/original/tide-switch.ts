@@ -23,7 +23,7 @@ const definition: EntityModuleDefinition = {
 export const tideSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.pressed === true ? cell(6, 10) : cell(5, 10),
+    context.entity.state?.pressed === true ? cell(5, 10) : cell(6, 10),
   ),
   [{ behavior: tideSwitchBehavior }],
 );
