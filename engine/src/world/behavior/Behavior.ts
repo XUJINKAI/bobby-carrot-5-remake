@@ -61,11 +61,19 @@ export interface BehaviorContext {
   readonly time?: WorldTick;
 }
 
+export interface ReachContext {
+  readonly actor: Readonly<EntityInstance>;
+  readonly self: BehaviorSubject;
+  readonly query: WorldQueryApi;
+}
+
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
 export interface Behavior {
   id: string;
   /** 纯查询的 movement 规则提案；World 负责合并、校验和提交。 */
   planMovement?(context: MovementPlanningContext): MovementPolicy | void;
+  /** 目标 Entity 决定当前 actor 是否满足 reach 条件。 */
+  canReach?(context: ReachContext): PassageResult | void;
   resolveEntry?(context: BehaviorContext): EntryResolution | void;
   canEnter?(context: BehaviorContext): PassageResult | void;
   canLeave?(context: BehaviorContext): PassageResult | void;

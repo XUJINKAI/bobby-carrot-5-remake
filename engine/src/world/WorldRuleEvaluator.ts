@@ -2,6 +2,7 @@ import type { LevelLimit, LevelMap, WinCondition } from "@bobby/model";
 import type { GlobalState } from "./GlobalState.js";
 import type { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityStore } from "./entity/EntityStore.js";
+import type { ReachResolver } from "./outcome/ReachResolver.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
 import type { WinConditionState } from "./WorldTypes.js";
 
@@ -12,6 +13,7 @@ export class WorldRuleEvaluator {
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
     private readonly query: WorldQueryApi,
+    private readonly reach: ReachResolver,
     private readonly state: () => GlobalState,
   ) {}
 
@@ -93,8 +95,9 @@ export class WorldRuleEvaluator {
           target: condition.target,
           completed:
             actors.some((actor) =>
-              this.actorReaches(actor, condition.target),
-            ) || state.lastReachedSelectors.includes(condition.target),
+              this.reach.actorReaches(actor, condition.target),
+            ) ||
+            state.lastReachedSelectors.includes(condition.target),
         };
       }
       case "fill-all": {
@@ -130,21 +133,6 @@ export class WorldRuleEvaluator {
     return this.spatial.presencesAt(cell).some((presence) => {
       const entity = this.entities.require(presence.entityId);
       return entity.type === selector || presence.traits.includes(selector);
-    });
-  }
-
-  private actorReaches(
-    actor: { anchor: { x: number; y: number }; state?: Record<string, unknown> },
-    selector: string,
-  ): boolean {
-    return this.spatial.presencesAt(actor.anchor).some((presence) => {
-      const entity = this.entities.require(presence.entityId);
-      const matches =
-        entity.type === selector || presence.traits.includes(selector);
-      if (!matches) return false;
-      if (!presence.traits.includes("requires-unmounted-reach")) return true;
-      const mountId = actor.state?.mountId;
-      return !(typeof mountId === "number" && Number.isInteger(mountId));
     });
   }
 

@@ -191,6 +191,15 @@ const statefulBlock: Behavior = {
   },
 };
 
+const requiresUnmountedReach: Behavior = {
+  id: "requires-unmounted-reach",
+  canReach({ actor }) {
+    return bobbyMountId(actor.state) === null
+      ? { passable: true, reason: "actor-unmounted" }
+      : { passable: false, reason: "actor-mounted" };
+  },
+};
+
 const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   collectible: collect,
   dialog: dialogTraitBehavior,
@@ -198,6 +207,7 @@ const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   mowable,
   "mower-conditional-overlay": mowerConditionalOverlay,
   pickup,
+  "requires-unmounted-reach": requiresUnmountedReach,
   shovelable,
   water: waterRequiresOverlay,
   "stateful-block": statefulBlock,

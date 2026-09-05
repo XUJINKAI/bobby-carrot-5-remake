@@ -53,6 +53,7 @@ import type {
   WorldMotion,
 } from "./movement/WorldMotion.js";
 import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
+import { ReachResolver } from "./outcome/ReachResolver.js";
 import type {
   MoveIntent,
   WorldIntent,
@@ -114,6 +115,7 @@ export class World {
   private readonly deltaSequence = new WorldDeltaSequence();
   private readonly committer: WorldCommitter;
   private readonly ruleEvaluator: WorldRuleEvaluator;
+  private readonly reachResolver: ReachResolver;
   private readonly lifecycle: WorldLifecycle;
   private readonly inspector: WorldInspector;
   private motionDurationMs: number;
@@ -144,6 +146,7 @@ export class World {
       this.movement.motions,
     );
     this.inspector = new WorldInspector(this.entities, this.spatial);
+    this.reachResolver = new ReachResolver(this.query, this.behaviors);
     this.committer = new WorldCommitter(
       this.entities,
       this.spatial,
@@ -159,6 +162,7 @@ export class World {
       this.entities,
       this.spatial,
       this.query,
+      this.reachResolver,
       () => this.state,
     );
     this.lifecycle = new WorldLifecycle(
@@ -1044,12 +1048,10 @@ export class World {
     }
     if (marker.recordsReach === true) {
       const selectors = new Set(this.state.lastReachedSelectors);
-      const reached = plan.target.filter(
-        (presence) =>
-          !presence.traits.includes("requires-unmounted-reach") ||
-          mountId(actor) === null,
-      );
-      for (const selector of this.selectorsForPresences(reached))
+      for (const selector of this.reachResolver.selectorsFor(
+        actor,
+        plan.target,
+      ))
         selectors.add(selector);
       queue.setGlobal("lastReachedSelectors", [...selectors]);
     }
@@ -1074,19 +1076,6 @@ export class World {
       worldTick: this.currentWorldTick,
       worldTimeMs: this.state.elapsedMs,
     };
-  }
-
-  private selectorsForPresences(
-    presences: readonly EntityPresence[],
-  ): string[] {
-    const selectors = new Set<string>();
-    for (const presence of presences) {
-      const entity = this.entities.get(presence.entityId);
-      if (!entity) continue;
-      selectors.add(entity.type);
-      for (const trait of presence.traits) selectors.add(trait);
-    }
-    return [...selectors];
   }
 
 }
