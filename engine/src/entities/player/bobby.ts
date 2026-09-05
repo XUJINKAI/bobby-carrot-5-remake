@@ -150,9 +150,9 @@ const bobbyVisual = {
       );
     }
 
-    // Leaf / Cloud 等 moving platform 只改变 Bobby 的空间关系，不切换到
-    // Mower 专用 sprite；被载具携带时保持普通方向站立帧。
-    if (mountId !== null) {
+    // Carry is a passive positional movement. The carrier and every carried
+    // player share one Presentation timeline, while Bobby keeps a standing pose.
+    if (context.runtime?.animation === "carry") {
       return composition({
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,

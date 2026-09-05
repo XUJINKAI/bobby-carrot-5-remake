@@ -32,10 +32,11 @@ const mowerVehicle: Behavior = {
       ? { passable: true, reason: "mount-mower" }
       : { passable: false, reason: "mower-needs-gas" };
   },
-  canLeave({ actor, self }) {
-    return bobbyMountId(actor.state) === self.entity.id
-      ? { passable: true, reason: "drive-mower" }
-      : undefined;
+  canLeave({ actor, self, query, movement }) {
+    if (bobbyMountId(actor.state) !== self.entity.id) return;
+    if (movement && query.hasTraitAt(movement.to, "moving-platform"))
+      return { passable: false, reason: "mower-cannot-enter-moving-platform" };
+    return { passable: true, reason: "drive-mower" };
   },
   onTouch({ actor, self, query, commands }) {
     if (

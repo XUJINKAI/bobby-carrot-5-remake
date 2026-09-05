@@ -19,7 +19,7 @@ function move(world, actorId, direction) {
   });
 }
 
-test("Leaf carries its mounted Bobby and stops before non-water", () => {
+test("Leaf carries co-located Bobby without creating a mount relation", () => {
   const world = new World({
     schemaVersion: 1,
     width: 4,
@@ -37,11 +37,12 @@ test("Leaf carries its mounted Bobby and stops before non-water", () => {
   const leaf = world.query.entitiesWithTrait("moving-platform")[0];
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
-  assert.equal(world.entity(actor.id).state.mountId, leaf.id);
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
   const drift = world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.equal(drift.motions.length, 2);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
 
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.equal(world.entity(leaf.id).state.moving, false);
@@ -49,6 +50,32 @@ test("Leaf carries its mounted Bobby and stops before non-water", () => {
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   assert.equal(world.entity(actor.id).state.mountId, undefined);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
+});
+
+test("Leaf carries every player currently on its cell", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    entities: [
+      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+      { type: EntityTypeId.WATER, x: 1, y: 0 },
+      { type: EntityTypeId.WATER, x: 2, y: 0 },
+      { type: EntityTypeId.WATER, x: 3, y: 0 },
+      { type: EntityTypeId.LEAF, x: 1, y: 0 },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
+    ],
+  });
+  const players = world.query.entitiesWithTrait("player");
+  const leaf = world.query.entitiesWithTrait("leaf")[0];
+
+  assert.equal(move(world, players[0].id, "right").moves[0].moved, true);
+  const drift = world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.equal(drift.motions.length, 3);
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
+  assert.deepEqual(world.entity(players[0].id).anchor, { x: 2, y: 0 });
+  assert.deepEqual(world.entity(players[1].id).anchor, { x: 2, y: 0 });
 });
 
 test("Wind drives a Cloud through sky and matching Parking stops it", () => {
@@ -85,7 +112,7 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
   assert.equal(world.entity(cloud.id).state.moving, false);
 });
 
-test("Leaf starts moving on the same tick that its passenger arrives", () => {
+test("Leaf starts moving on the same tick that a player arrives", () => {
   const world = new World(
     {
       schemaVersion: 1,
@@ -120,4 +147,5 @@ test("Leaf starts moving on the same tick that its passenger arrives", () => {
   assert.ok(handoff);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
 });

@@ -97,7 +97,7 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
   assert.equal(world.entity(tide.id).direction, "left");
 });
 
-test("Bobby can transfer directly between adjacent stopped Leaves", () => {
+test("Bobby walks directly between adjacent stopped Leaves without mount state", () => {
   const world = new World(
     {
       schemaVersion: 1,
@@ -113,20 +113,20 @@ test("Bobby can transfer directly between adjacent stopped Leaves", () => {
           x: 0,
           y: 0,
           direction: "right",
-          state: { mountId: 3 },
         },
       ],
     },
     { motionDurationMs: 100 },
   );
   const actor = world.query.entitiesWithTrait("player")[0];
-  const leaves = world.query.entitiesWithTrait("leaf");
   assert.ok(actor);
-  assert.equal(leaves.length, 2);
 
   const result = move(world, actor.id, "right");
   assert.equal(result.moves[0].moved, true);
-  world.update({ tick: 1, stepMs: 50 });
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
 
-  assert.equal(world.entity(actor.id).state.mountId, leaves[1].id);
+  world.update({ tick: 1, stepMs: 50 });
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  world.update({ tick: 2, stepMs: 50 });
+  assert.equal(world.entity(actor.id).state.mountId, undefined);
 });

@@ -78,15 +78,65 @@ for (const cadenceMs of [496, 248]) {
     assert.equal(passengerState.offsetX, -0.5);
     assert.equal(carrierState.progress, 0.5);
     assert.equal(passengerState.progress, 0.5);
+    assert.equal(passengerState.animation, "carry");
   });
 }
 
-function mountedBobbyVisual(mountType) {
+function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  const store = new EntityStore([
+    { type: surfaceType, x: 0, y: 0 },
+    {
+      type: EntityTypeId.BOBBY,
+      x: 0,
+      y: 0,
+      direction: "right",
+      state,
+    },
+  ]);
+  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const bobby = store.require(2);
+  const presence = spatial.presencesForEntity(bobby.id)[0];
+  assert.ok(presence);
+  return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
+    entity: bobby,
+    presence,
+    query: new SpatialVisualQuery(store, spatial),
+    runtime,
+    time: { frame: 1, nowMs: 1000, deltaMs: 16 },
+  });
+}
+
+test("Bobby self movement on a Leaf uses the ordinary walking strip", () => {
+  const visual = bobbyVisualOnSurface(EntityTypeId.LEAF, {
+    offsetX: -0.5,
+    moving: true,
+    progress: 0.5,
+    direction: "right",
+  });
+  assert.equal(visual.layers[0].asset, "bobby-right");
+  assert.equal(visual.layers[0].frameIndex, 7);
+});
+
+test("Bobby carried by a Leaf keeps the standing frame for the whole group", () => {
+  const visual = bobbyVisualOnSurface(EntityTypeId.LEAF, {
+    offsetX: -0.5,
+    moving: true,
+    progress: 0.5,
+    animation: "carry",
+    direction: "right",
+  });
+  assert.equal(visual.layers[0].asset, "bobby-right");
+  assert.equal(visual.layers[0].frameIndex, 3);
+});
+
+test("Mower mount still uses the dedicated Bobby mower sprite", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
     { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-    { type: mountType, x: 0, y: 0 },
+    { type: EntityTypeId.MOWER, x: 0, y: 0 },
     {
       type: EntityTypeId.BOBBY,
       x: 0,
@@ -99,7 +149,7 @@ function mountedBobbyVisual(mountType) {
   const bobby = store.require(3);
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
-  return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
+  const visual = visuals.resolve(entities.require(EntityTypeId.BOBBY), {
     entity: bobby,
     presence,
     query: new SpatialVisualQuery(store, spatial),
@@ -111,16 +161,6 @@ function mountedBobbyVisual(mountType) {
     },
     time: { frame: 1, nowMs: 1000, deltaMs: 16 },
   });
-}
-
-test("Leaf mount keeps Bobby on the ordinary standing sprite", () => {
-  const visual = mountedBobbyVisual(EntityTypeId.LEAF);
-  assert.equal(visual.layers[0].asset, "bobby-right");
-  assert.equal(visual.layers[0].frameIndex, 3);
-});
-
-test("Mower mount still uses the dedicated Bobby mower sprite", () => {
-  const visual = mountedBobbyVisual(EntityTypeId.MOWER);
   assert.equal(visual.layers[0].asset, "bobby-mower");
 });
 

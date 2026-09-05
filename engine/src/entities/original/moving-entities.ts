@@ -16,7 +16,6 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
-import { bobbyMountId, patchBobbyMount } from "../player/BobbyState.js";
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
@@ -30,21 +29,19 @@ const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 export const DEFAULT_MOVING_ENTITY_CELL_MS = 16 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 
-const vehicleBehavior: Behavior = {
-  id: "moving-entity-vehicle",
+/** Leaf / Cloud are walkable moving supports. Player walking never becomes a mount. */
+const movingPlatformBehavior: Behavior = {
+  id: "moving-platform-support",
   planMovement({ actor, query, to }) {
     return {
       passage: "unrestricted",
       lifecycle: { source: [], target: [] },
-      companions: query
-        .entitiesWithTrait("player")
-        .filter((passenger) => bobbyMountId(passenger.state) === actor.id)
-        .map((passenger) => ({
-          entityId: passenger.id,
-          to,
-          cause: { type: "carry" as const, carrierId: actor.id },
-          updateDirection: false,
-        })),
+      companions: playersAt(query, actor.anchor).map((passenger) => ({
+        entityId: passenger.id,
+        to,
+        cause: { type: "carry" as const, carrierId: actor.id },
+        updateDirection: false,
+      })),
       reason: "moving-platform-passage",
     };
   },
@@ -52,44 +49,30 @@ const vehicleBehavior: Behavior = {
     if (!query.entityHasTrait(actor.id, "player"))
       return { passable: false, reason: "moving-entity-collision" };
 
-    const mountId = bobbyMountId(actor.state);
-    if (
-      mountId === self.entity.id ||
-      (mountId !== null && !query.entityHasTrait(mountId, "moving-platform"))
-    )
-      return { passable: false, reason: "moving-entity-collision" };
-
     const moving =
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running";
-    if (moving)
-      return { passable: false, reason: "moving-entity-in-motion" };
-
-    return {
-      passable: true,
-      reason:
-        mountId === null
-          ? "mount-stopped-moving-entity"
-          : "transfer-stopped-moving-entity",
-    };
+    return moving
+      ? { passable: false, reason: "moving-entity-in-motion" }
+      : { passable: true, reason: "moving-platform-support" };
   },
-  canLeave({ actor, self, query }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
-    return bobbyMountId(actor.state) === self.entity.id
-      ? { passable: true, reason: "dismount-moving-entity" }
+  canLeave({ actor, query }) {
+    return query.entityHasTrait(actor.id, "player")
+      ? { passable: true, reason: "leave-moving-platform-support" }
       : undefined;
   },
-  onEnter({ actor, self, direction, movement, query, commands }) {
+  onArrive({ actor, self, direction, movement, query, commands }) {
     if (
       !direction ||
       !query.entityHasTrait(actor.id, "player") ||
-      bobbyMountId(actor.state) !== null ||
+      self.entity.type !== EntityTypeId.LEAF ||
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running"
     )
       return;
-    commands.setState(actor.id, patchBobbyMount(actor.state, self.entity.id));
-    if (self.entity.type !== EntityTypeId.LEAF) return;
+
+    // Walking onto a Leaf is still ordinary player movement. Arrival only gives
+    // the Leaf the entry direction and starts its own drifting process.
     commands.setState(self.entity.id, {
       ...self.entity.state,
       moving: true,
@@ -105,13 +88,6 @@ const vehicleBehavior: Behavior = {
         primeDeadlineForHandoff(cadenceMs, movement?.motion),
       ),
     );
-  },
-  onLeave({ actor, self, query, commands }) {
-    if (
-      query.entityHasTrait(actor.id, "player") &&
-      bobbyMountId(actor.state) === self.entity.id
-    )
-      commands.setState(actor.id, patchBobbyMount(actor.state, null));
   },
   onTick({ self, commands }) {
     if (!isCloud(self.entity.type) || self.entity.state?.runtimeStarted === true)
@@ -137,7 +113,7 @@ const movingEntityAction: RuntimeActionDefinition = {
     accrueActionDeadline(action, time);
     if (
       query.motionForEntity(entityId)?.status === "running" ||
-      mountedPassengerIsMoving(query, entityId)
+      coLocatedPlayerIsMoving(query, entity)
     )
       return "running";
 
@@ -181,11 +157,6 @@ const movingEntityAction: RuntimeActionDefinition = {
     const entity = entityId === undefined ? undefined : query.entity(entityId);
     if (entity && reason !== "owner-destroyed")
       stopMovingEntity(entity, commands);
-    if (entityId === undefined) return;
-    for (const passenger of query.entitiesWithTrait("player")) {
-      if (bobbyMountId(passenger.state) !== entityId) continue;
-      commands.setState(passenger.id, patchBobbyMount(passenger.state, null));
-    }
   },
 };
 
@@ -216,7 +187,6 @@ function movingEntityModule(
   const definition: EntityModuleDefinition = {
     type,
     traits: [
-      "vehicle",
       "moving-platform",
       "terrain-overlay",
       "walkable",
@@ -232,7 +202,7 @@ function movingEntityModule(
   const module = originalModule(
     definition,
     atlasVisual(definition, objectCell(atlasIndex)),
-    [{ behavior: vehicleBehavior }],
+    [{ behavior: movingPlatformBehavior }],
   );
   return ownsAction ? { ...module, runtimeActions: [movingEntityAction] } : module;
 }
@@ -389,14 +359,21 @@ function isMatchingCloudParking(
   );
 }
 
-function mountedPassengerIsMoving(
+function playersAt(
   query: WorldQueryApi,
-  vehicleId: EntityId,
+  cell: { x: number; y: number },
+): readonly EntityInstance[] {
+  return query.entitiesWithTrait("player").filter(
+    (actor) => actor.anchor.x === cell.x && actor.anchor.y === cell.y,
+  );
+}
+
+function coLocatedPlayerIsMoving(
+  query: WorldQueryApi,
+  platform: Readonly<EntityInstance>,
 ): boolean {
-  return query.entitiesWithTrait("player").some(
-    (actor) =>
-      bobbyMountId(actor.state) === vehicleId &&
-      query.motionForEntity(actor.id)?.status === "running",
+  return playersAt(query, platform.anchor).some(
+    (actor) => query.motionForEntity(actor.id)?.status === "running",
   );
 }
 

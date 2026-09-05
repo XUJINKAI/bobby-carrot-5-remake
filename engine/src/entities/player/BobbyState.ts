@@ -81,7 +81,10 @@ export function patchBobbySpeedBoost(
   return result;
 }
 
-/** mountId is a lightweight relation to the concrete vehicle Entity. */
+/**
+ * mountId is a ride/control relation to a concrete ride-carried vehicle such as
+ * Mower. Passive moving supports such as Leaf / Cloud never use mountId.
+ */
 export function bobbyMountId(state: EntityState | undefined): EntityId | null {
   const value = state?.mountId;
   return typeof value === "number" && Number.isInteger(value) && value > 0

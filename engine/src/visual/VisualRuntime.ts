@@ -292,9 +292,11 @@ export class VisualRuntime {
         durationMs,
         frame,
         true,
-        motion.cause.type === "forced" && motion.cause.mechanism
-          ? motion.cause.mechanism
-          : undefined,
+        motion.cause.type === "carry"
+          ? "carry"
+          : motion.cause.type === "forced" && motion.cause.mechanism
+            ? motion.cause.mechanism
+            : undefined,
         motion.direction,
         timeline,
       );
