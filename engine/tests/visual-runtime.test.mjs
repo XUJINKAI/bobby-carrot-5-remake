@@ -14,14 +14,19 @@ import {
 function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
+  const mountType = options.mountType;
+  const state = mountType
+    ? { ...(options.state ?? {}), mountId: 2 }
+    : options.state;
   const store = new EntityStore([
     { type: options.surfaceType ?? EntityTypeId.GROUND_C, x: 0, y: 0 },
+    ...(mountType ? [{ type: mountType, x: 0, y: 0 }] : []),
     {
       type: EntityTypeId.BOBBY,
       x: 0,
       y: 0,
       direction: options.direction ?? "right",
-      ...(options.state ? { state: options.state } : {}),
+      ...(state ? { state } : {}),
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -160,7 +165,7 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
 test("Bobby mower cycles vertically inside the direction column", () => {
   const mower = bobbyVisual({
     direction: "up",
-    state: { mountId: 9 },
+    mountType: EntityTypeId.MOWER,
     time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
   });
   assert.equal(mower.layers[0].asset, "bobby-mower");
@@ -241,8 +246,8 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
 test("accelerated mower uses the same one-cell-behind trail", () => {
   const mower = bobbyVisual({
     direction: "left",
+    mountType: EntityTypeId.MOWER,
     state: {
-      mountId: 9,
       speedBoost: { direction: "left", phase: "full" },
     },
     runtime: {

@@ -76,10 +76,10 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
 
 test("original ta.png Speed and Tide mappings preserve DAT direction order", () => {
   for (const [direction, speedFrame, tideFrame] of [
-    ["up", 3, 33],
-    ["down", 6, 31],
-    ["left", 9, 37],
-    ["right", 12, 35],
+    ["up", 3, 31],
+    ["down", 6, 33],
+    ["left", 9, 35],
+    ["right", 12, 37],
   ]) {
     expectAnimated(EntityTypeId.SPEED, speedFrame, direction);
     expectAnimated(EntityTypeId.TIDE, tideFrame, direction);
