@@ -67,7 +67,11 @@ const fireballAction: RuntimeActionDefinition = {
 
     const direction = fireball.direction ?? "left";
     const target = addDirection(fireball.anchor, direction);
-    if (!query.inBounds(target) || projectileBlockedAt(query, target)) {
+    if (
+      !query.inBounds(target) ||
+      !projectileTerrainPassableAt(query, target) ||
+      projectileBlockedAt(query, target)
+    ) {
       destroyFireball(commands, fireballId, target.x, target.y);
       return "complete";
     }
@@ -166,14 +170,29 @@ function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
   };
 }
 
+function projectileTerrainPassableAt(
+  query: WorldQueryApi,
+  cell: { x: number; y: number },
+): boolean {
+  return query.presencesAt(cell).some(
+    (presence) =>
+      presence.traits.includes("walkable") ||
+      presence.traits.includes("water") ||
+      presence.traits.includes("cloud-space"),
+  );
+}
+
 function projectileBlockedAt(
   query: WorldQueryApi,
   cell: { x: number; y: number },
 ): boolean {
   return query.presencesAt(cell).some((presence) => {
-    if (presence.traits.includes("dragon-fire-blocking")) return true;
+    const entity = query.entity(presence.entityId);
+    if (entity?.type === EntityTypeId.CRUMBLY_ROCK) return true;
+    if (entity?.type === EntityTypeId.DRAGON && presence.role !== "tail")
+      return true;
     if (!presence.traits.includes("stateful-block")) return false;
-    return query.entity(presence.entityId)?.state?.raised !== false;
+    return entity?.state?.raised !== false;
   });
 }
 
