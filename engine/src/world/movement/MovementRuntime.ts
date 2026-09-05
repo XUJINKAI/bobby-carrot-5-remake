@@ -64,7 +64,11 @@ export class MovementRuntime {
     durationMs: number,
     lifecycle?: MovementLifecycle,
   ): WorldMotion {
-    const motion = this.motions.start({ ...request, durationMs });
+    const resolvedDurationMs = this.resolveDuration(request, durationMs);
+    const motion = this.motions.start({
+      ...request,
+      durationMs: resolvedDurationMs,
+    });
     this.plans.set(motion.id, {
       motionId: motion.id,
       source: lifecycle?.source.map(clonePresence) ?? [],
@@ -114,6 +118,19 @@ export class MovementRuntime {
     this.plans.clear();
     for (const source of snapshot.plans)
       this.plans.set(source.motionId, structuredClone(source));
+  }
+
+  private resolveDuration(
+    request: EntityMotionRequest,
+    durationMs: number,
+  ): number {
+    if (request.cause.type !== "carry") return durationMs;
+    const carrier = this.motions.forEntity(request.cause.carrierId);
+    if (!carrier || carrier.status !== "running")
+      throw new Error(
+        `Carry companion ${request.entityId} 缺少进行中的 carrier motion ${request.cause.carrierId}`,
+      );
+    return carrier.durationMs;
   }
 
   private advanceOne(

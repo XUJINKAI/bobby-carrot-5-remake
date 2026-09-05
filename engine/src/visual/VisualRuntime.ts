@@ -155,13 +155,18 @@ export class VisualRuntime {
       }
       if (delta.type === "motion-interrupted") {
         const motion = delta.motion;
-        this.beginDeath(
+        const offset = {
+          x: (motion.from.x - motion.to.x) * (1 - motion.progress),
+          y: (motion.from.y - motion.to.y) * (1 - motion.progress),
+        };
+        this.beginMotion(
           motion.entityId,
-          motion.from,
-          motion.to,
+          offset,
+          offset,
           options.motionDuration(motion),
           frame,
-          motion.progress,
+          false,
+          "death",
         );
         continue;
       }
