@@ -48,6 +48,22 @@ export interface StartWorldMotion {
 export interface MovementLifecycle {
   source: readonly EntityPresence[];
   target: readonly EntityPresence[];
+  /** 可序列化的 gameplay checkpoint；省略时使用标准 leave/enter/arrive。 */
+  markers?: readonly MovementMarkerDefinition[];
+}
+
+export type MovementLifecycleHook = "onLeave" | "onEnter" | "onArrive";
+
+export interface MovementMarkerDispatch {
+  scope: "source" | "target";
+  hook: MovementLifecycleHook;
+}
+
+export interface MovementMarkerDefinition {
+  id: string;
+  progress: number;
+  dispatch?: readonly MovementMarkerDispatch[];
+  recordsReach?: boolean;
 }
 
 export class WorldMotionStore {

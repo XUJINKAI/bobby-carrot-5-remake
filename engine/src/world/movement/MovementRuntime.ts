@@ -6,14 +6,16 @@ import {
   type WorldMotionId,
   type WorldMotionSnapshot,
   type MovementLifecycle,
+  type MovementMarkerDefinition,
 } from "./WorldMotion.js";
 
-export type MovementMarker = "departed" | "interaction" | "arrived";
+export type MovementMarker = string;
 
 export interface MovementPlan {
   motionId: WorldMotionId;
   source: EntityPresence[];
   target: EntityPresence[];
+  markers: MovementMarkerDefinition[];
   nextMarkerIndex: number;
 }
 
@@ -24,15 +26,28 @@ export interface MovementRuntimeSnapshot {
 
 export interface MovementAdvanceVisitor {
   progressed(motion: WorldMotion): void;
-  marker(motion: WorldMotion, marker: MovementMarker): void;
+  marker(motion: WorldMotion, marker: MovementMarkerDefinition): void;
   completed(motion: WorldMotion): void;
 }
 
-const MARKERS: readonly { progress: number; marker: MovementMarker }[] = [
+export const DEFAULT_MOVEMENT_MARKERS: readonly MovementMarkerDefinition[] = [
   // 原版中点先结算来源格离开，再处理目标格交互。
-  { progress: 0.5, marker: "departed" },
-  { progress: 0.5, marker: "interaction" },
-  { progress: 1, marker: "arrived" },
+  {
+    id: "departed",
+    progress: 0.5,
+    dispatch: [{ scope: "source", hook: "onLeave" }],
+  },
+  {
+    id: "interaction",
+    progress: 0.5,
+    dispatch: [{ scope: "target", hook: "onEnter" }],
+    recordsReach: true,
+  },
+  {
+    id: "arrived",
+    progress: 1,
+    dispatch: [{ scope: "target", hook: "onArrive" }],
+  },
 ];
 
 /** WorldClock 驱动的空间过程；只报告语义阶段，不执行 Entity Behavior。 */
@@ -54,6 +69,7 @@ export class MovementRuntime {
       motionId: motion.id,
       source: lifecycle?.source.map(clonePresence) ?? [],
       target: lifecycle?.target.map(clonePresence) ?? [],
+      markers: normalizeMarkers(lifecycle?.markers),
       nextMarkerIndex: 0,
     });
     return motion;
@@ -116,12 +132,12 @@ export class MovementRuntime {
     const targetProgress =
       motion.durationMs === 0 ? 1 : targetElapsed / motion.durationMs;
 
-    while (plan.nextMarkerIndex < MARKERS.length) {
-      const marker = MARKERS[plan.nextMarkerIndex]!;
+    while (plan.nextMarkerIndex < plan.markers.length) {
+      const marker = plan.markers[plan.nextMarkerIndex]!;
       if (marker.progress > targetProgress) break;
       this.progressTo(motion, marker.progress, visitor);
       plan.nextMarkerIndex += 1;
-      visitor.marker(structuredClone(motion), marker.marker);
+      visitor.marker(structuredClone(motion), structuredClone(marker));
       if (motion.status !== "running") return;
     }
 
@@ -146,4 +162,28 @@ export class MovementRuntime {
 
 function clonePresence(presence: EntityPresence): EntityPresence {
   return structuredClone(presence);
+}
+
+function normalizeMarkers(
+  markers: readonly MovementMarkerDefinition[] | undefined,
+): MovementMarkerDefinition[] {
+  return (markers ?? DEFAULT_MOVEMENT_MARKERS)
+    .map((marker, index) => ({
+      marker: {
+        ...structuredClone(marker),
+        id: marker.id.trim() || `marker-${index}`,
+        progress: clampProgress(marker.progress),
+      },
+      index,
+    }))
+    .sort((left, right) =>
+      left.marker.progress === right.marker.progress
+        ? left.index - right.index
+        : left.marker.progress - right.marker.progress,
+    )
+    .map(({ marker }) => marker);
+}
+
+function clampProgress(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }

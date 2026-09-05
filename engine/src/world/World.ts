@@ -41,10 +41,12 @@ import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
   MovementRuntime,
-  type MovementMarker,
   type MovementRuntimeSnapshot,
 } from "./movement/MovementRuntime.js";
-import type { WorldMotion } from "./movement/WorldMotion.js";
+import type {
+  MovementMarkerDefinition,
+  WorldMotion,
+} from "./movement/WorldMotion.js";
 import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
 import type {
   MoveIntent,
@@ -985,7 +987,7 @@ export class World {
       marker: (motion, marker) => {
         result.deltas.push(
           this.deltaSequence.create(
-            { type: "motion-marker", motion, marker },
+            { type: "motion-marker", motion, marker: marker.id },
             this.deltaClock(),
           ),
         );
@@ -1005,7 +1007,7 @@ export class World {
 
   private runMovementMarker(
     motion: WorldMotion,
-    marker: MovementMarker,
+    marker: MovementMarkerDefinition,
     result: WorldStepResult,
   ): void {
     const plan = this.movement.plan(motion.id);
@@ -1018,27 +1020,18 @@ export class World {
       cause: motion.cause,
       motion: {
         id: motion.id,
-        marker,
+        marker: marker.id,
         progress: motion.progress,
         durationMs: motion.durationMs,
       },
     };
 
-    const hook =
-      marker === "departed"
-        ? "onLeave"
-        : marker === "arrived"
-          ? "onArrive"
-          : "onEnter";
-    if (
-      marker === "departed" ||
-      marker === "interaction" ||
-      marker === "arrived"
-    ) {
-      const presences = marker === "departed" ? plan.source : plan.target;
+    for (const dispatch of marker.dispatch ?? []) {
+      const presences =
+        dispatch.scope === "source" ? plan.source : plan.target;
       for (const presence of presences)
         this.runHook(
-          hook,
+          dispatch.hook,
           presence,
           actor,
           motion.direction,
@@ -1046,7 +1039,7 @@ export class World {
           movement,
         );
     }
-    if (marker === "interaction") {
+    if (marker.recordsReach === true) {
       const selectors = new Set(this.state.lastReachedSelectors);
       const reached = plan.target.filter(
         (presence) =>
