@@ -276,6 +276,7 @@ export class World {
     const result = emptyWorldStepResult();
     absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
     this.lifecycle.settle(result, entityId);
+    this.settleTerminalRuntime(result);
     return result;
   }
 
@@ -299,6 +300,7 @@ export class World {
     const result = emptyWorldStepResult();
     absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
     this.lifecycle.settle(result, entityId);
+    this.settleTerminalRuntime(result);
     return result;
   }
 
@@ -370,6 +372,7 @@ export class World {
     this.startMotions(transaction.motions, result);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
 
     return result;
   }
@@ -388,6 +391,7 @@ export class World {
     const actionsAtTickStart = this.actions.active.map((action) => action.id);
     this.state.elapsedMs += time.stepMs;
     const movementActionBudgets = this.advanceMotions(time.stepMs, result);
+    this.settleTerminalRuntime(result);
     if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
@@ -407,6 +411,7 @@ export class World {
     absorbCommit(result, actionCommit);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
     if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
@@ -431,6 +436,7 @@ export class World {
     absorbCommit(result, handoffCommit);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
     if (!this.outcome.playing) {
       this.currentWorldTick = null;
       return result;
@@ -457,6 +463,7 @@ export class World {
       absorbCommit(result, resultCommit);
       this.lifecycle.settle(result);
       this.lifecycle.evaluateRules(result);
+      this.settleTerminalRuntime(result);
       if (!this.outcome.playing) {
         this.currentWorldTick = null;
         return result;
@@ -486,6 +493,7 @@ export class World {
     absorbCommit(result, tickCommit);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
     this.currentWorldTick = null;
     return result;
   }
@@ -616,6 +624,34 @@ export class World {
     absorbCommit(result, commit);
     this.ruleEvaluator.refreshDerivedState();
     this.lifecycle.settle(result, motion.entityId);
+  }
+
+  /** Terminal World 不再推进 gameplay；所有仍在运行的过程必须在同一结算点结束。 */
+  private settleTerminalRuntime(result: WorldStepResult): void {
+    if (this.outcome.playing) return;
+
+    const cancellationQueue = new CommandQueue();
+    for (const action of this.actions.active)
+      cancellationQueue.cancelAction(action.id, "world-finished");
+    absorbCommit(
+      result,
+      this.committer.commit(cancellationQueue, this.deltaClock()),
+    );
+
+    for (const motion of this.movement.running) {
+      const interrupted = this.movement.interruptEntity(
+        motion.entityId,
+        "world-finished",
+        motion.progress,
+      );
+      if (!interrupted) continue;
+      result.deltas.push(
+        this.deltaSequence.create(
+          { type: "motion-interrupted", motion: interrupted },
+          this.deltaClock(),
+        ),
+      );
+    }
   }
 
   private durationForMotion(request: EntityMotionRequest): number {
