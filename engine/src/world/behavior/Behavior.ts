@@ -7,6 +7,10 @@ import type {
 } from "../action/RuntimeAction.js";
 import type { CellPosition, EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { MoveCause } from "../movement/WorldIntent.js";
+import type {
+  MovementPlanningContext,
+  MovementPolicy,
+} from "../movement/MovementPlan.js";
 import type { MovementMarker } from "../movement/MovementRuntime.js";
 import type { WorldMotionId } from "../movement/WorldMotion.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
@@ -60,6 +64,8 @@ export interface BehaviorContext {
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
 export interface Behavior {
   id: string;
+  /** 纯查询的 movement 规则提案；World 负责合并、校验和提交。 */
+  planMovement?(context: MovementPlanningContext): MovementPolicy | void;
   resolveEntry?(context: BehaviorContext): EntryResolution | void;
   canEnter?(context: BehaviorContext): PassageResult | void;
   canLeave?(context: BehaviorContext): PassageResult | void;
