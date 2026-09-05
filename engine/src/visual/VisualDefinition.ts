@@ -7,7 +7,7 @@ import type {
   EntityId,
   EntityInstance,
 } from "../world/entity/EntityInstance.js";
-import type { WorldEvent } from "../world/WorldTypes.js";
+import type { WinConditionState, WorldEvent } from "../world/WorldTypes.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
@@ -92,6 +92,8 @@ export interface VisualResolveContext {
   runtime?: Readonly<EntityVisualRuntimeState>;
   /** Runtime 可以提供只读全局 gameplay 状态；Editor preview 可省略。 */
   global?: Readonly<GlobalState>;
+  /** 当前只读目标树；用于表现目标是否已进入可达阶段。 */
+  winState?: Readonly<WinConditionState> | null;
   /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
   time?: PresentationFrame;
 }

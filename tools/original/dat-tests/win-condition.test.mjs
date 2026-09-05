@@ -5,25 +5,53 @@ import { deriveOriginalWinCondition } from "../win-condition.mjs";
 
 const level = (...types) => ({ entities: types.map((type) => ({ type })) });
 
-test("Original carrot map completes by collecting carrots even when it also has an exit", () => {
+test("Original carrot map keeps Exit as the final required objective", () => {
   assert.deepEqual(
     deriveOriginalWinCondition(level(EntityTypeId.CARROT, EntityTypeId.EXIT)),
-    { type: "collect-all", target: EntityTypeId.CARROT },
+    {
+      type: "all",
+      conditions: [
+        { type: "collect-all", target: EntityTypeId.CARROT },
+        { type: "reach", target: EntityTypeId.EXIT },
+      ],
+    },
   );
 });
 
-test("Original egg map completes by filling nests instead of reaching its exit", () => {
+test("Original egg map keeps Exit as the final required objective", () => {
+  const expected = {
+    type: "all",
+    conditions: [
+      { type: "fill-all", target: "egg-nest", filler: "egg" },
+      { type: "reach", target: EntityTypeId.EXIT },
+    ],
+  };
   assert.deepEqual(
     deriveOriginalWinCondition(
       level(EntityTypeId.EGG_NEST_EMPTY, EntityTypeId.EXIT),
     ),
-    { type: "fill-all", target: "egg-nest", filler: "egg" },
+    expected,
   );
   assert.deepEqual(
     deriveOriginalWinCondition(
       level(EntityTypeId.EGG_NEST_FILLED, EntityTypeId.EXIT),
     ),
-    { type: "fill-all", target: "egg-nest", filler: "egg" },
+    expected,
+  );
+});
+
+test("Original Golden Carrot map keeps its existing alternative Exit rule", () => {
+  assert.deepEqual(
+    deriveOriginalWinCondition(
+      level(EntityTypeId.GOLDEN_CARROT, EntityTypeId.EXIT),
+    ),
+    {
+      type: "any",
+      conditions: [
+        { type: "reach", target: EntityTypeId.GOLDEN_CARROT },
+        { type: "reach", target: EntityTypeId.EXIT },
+      ],
+    },
   );
 });
 

@@ -38,6 +38,7 @@ export function buildVisualScene(
           presence,
           query,
           global: world.state,
+          winState: world.winState,
           ...(visualRuntime ? { runtime: visualRuntime } : {}),
           ...(time ? { time } : {}),
         });
