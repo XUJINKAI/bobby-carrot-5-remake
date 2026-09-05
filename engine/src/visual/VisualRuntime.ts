@@ -1,15 +1,24 @@
 import type { Direction } from "@bobby/model";
 import { Camera } from "../render/Camera.js";
-import type { RenderScene } from "../render/RenderScene.js";
+import {
+  sortRenderItems,
+  type RenderItem,
+  type RenderScene,
+} from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import type { WorldMotion } from "../world/movement/WorldMotion.js";
+import type { WorldEvent } from "../world/WorldTypes.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
-import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
+import type {
+  EntityVisualRuntimeState,
+  TransientVisualDefinition,
+  VisualRenderPass,
+} from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
 
 interface VisualTimeline {
@@ -35,6 +44,15 @@ interface VisualMovementGroup {
   motions: WorldMotion[];
 }
 
+interface ActiveTransientVisual {
+  id: number;
+  definition: TransientVisualDefinition;
+  event: WorldEvent;
+  x: number;
+  y: number;
+  startedAtMs: number;
+}
+
 interface TimelineProgress {
   raw: number;
   position: number;
@@ -56,6 +74,9 @@ export class VisualRuntime {
   private readonly motions = new Map<EntityId, VisualMotion>();
   private readonly activeMotionIds = new Set<EntityId>();
   private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
+  private readonly transients = new Map<number, ActiveTransientVisual>();
+  private readonly activeTransientIds = new Set<number>();
+  private nextTransientId = 1;
   private frame: PresentationFrame | null = null;
 
   constructor(
@@ -66,7 +87,7 @@ export class VisualRuntime {
   }
 
   get isAnimating(): boolean {
-    return this.activeMotionIds.size > 0;
+    return this.activeMotionIds.size > 0 || this.activeTransientIds.size > 0;
   }
 
   get runtimeStates(): ReadonlyMap<EntityId, EntityVisualRuntimeState> {
@@ -189,6 +210,10 @@ export class VisualRuntime {
         this.clearEntity(entityId);
         continue;
       }
+      if (delta.type === "world-event") {
+        this.beginTransient(delta.event, frame);
+        continue;
+      }
       if (delta.type !== "actor-lifecycle-changed") continue;
       const actor = delta.actor;
       if (actor.phase === "active") {
@@ -221,12 +246,16 @@ export class VisualRuntime {
       }
       this.advanceMotion(motion, frame, progress);
     }
+    this.updateTransients(frame);
   }
 
   clear(): void {
     this.motions.clear();
     this.activeMotionIds.clear();
     this.entityRuntime.clear();
+    this.transients.clear();
+    this.activeTransientIds.clear();
+    this.nextTransientId = 1;
   }
 
   clearEntity(entityId: EntityId): void {
@@ -258,12 +287,13 @@ export class VisualRuntime {
         world.height,
       );
     }
-    return buildVisualScene(
+    const scene = buildVisualScene(
       world,
       this.visuals,
       this.entityRuntime,
       this.frame ?? undefined,
     );
+    return this.appendTransientVisuals(scene);
   }
 
   inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {
@@ -331,6 +361,79 @@ export class VisualRuntime {
     this.motions.set(entityId, motion);
     this.activeMotionIds.add(entityId);
     this.setMotionState(motion, 0, 0);
+  }
+
+  private beginTransient(event: WorldEvent, frame: PresentationFrame): void {
+    const definition = this.visuals.transientForEvent(event.type);
+    if (
+      !definition ||
+      typeof event.x !== "number" ||
+      typeof event.y !== "number" ||
+      !Number.isFinite(event.x) ||
+      !Number.isFinite(event.y)
+    )
+      return;
+    const id = this.nextTransientId++;
+    this.transients.set(id, {
+      id,
+      definition,
+      event: structuredClone(event),
+      x: event.x,
+      y: event.y,
+      startedAtMs: frame.nowMs,
+    });
+    if (definition.durationMs > 0) this.activeTransientIds.add(id);
+  }
+
+  private updateTransients(frame: PresentationFrame): void {
+    for (const transient of this.transients.values()) {
+      const visible =
+        frame.nowMs >= transient.startedAtMs &&
+        frame.nowMs < transient.startedAtMs + Math.max(0, transient.definition.durationMs);
+      if (visible) this.activeTransientIds.add(transient.id);
+      else this.activeTransientIds.delete(transient.id);
+    }
+  }
+
+  private appendTransientVisuals(scene: RenderScene): RenderScene {
+    if (!this.frame || this.transients.size === 0) return scene;
+    const passes: Record<VisualRenderPass, RenderItem[]> = {
+      world: [...scene.world],
+      player: [...scene.player],
+      effect: [...scene.effect],
+    };
+    for (const transient of this.transients.values()) {
+      const durationMs = Math.max(0, transient.definition.durationMs);
+      const elapsedMs = this.frame.nowMs - transient.startedAtMs;
+      if (elapsedMs < 0 || durationMs <= 0 || elapsedMs >= durationMs) continue;
+      const progress = Math.max(0, Math.min(1, elapsedMs / durationMs));
+      const composition = transient.definition.resolve({
+        event: transient.event,
+        progress,
+        time: this.frame,
+      });
+      if (!composition) continue;
+      const pass = transient.definition.renderPass ?? "effect";
+      passes[pass].push({
+        presence: {
+          entityId: -transient.id,
+          cell: { x: transient.x, y: transient.y },
+          layer: "object",
+          traits: [],
+          stackOrder: transient.definition.stackOrder ?? 0,
+        },
+        composition,
+        visualX: transient.x,
+        visualY: transient.y,
+      });
+    }
+    return {
+      worldWidth: scene.worldWidth,
+      worldHeight: scene.worldHeight,
+      world: sortRenderItems(passes.world),
+      player: sortRenderItems(passes.player),
+      effect: sortRenderItems(passes.effect),
+    };
   }
 
   private advanceMotion(

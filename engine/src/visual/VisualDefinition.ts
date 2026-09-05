@@ -7,6 +7,7 @@ import type {
   EntityId,
   EntityInstance,
 } from "../world/entity/EntityInstance.js";
+import type { WorldEvent } from "../world/WorldTypes.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
@@ -99,4 +100,21 @@ export interface VisualDefinition {
   /** 固定渲染 pass；默认 world。它只影响表现，不进入 World/Spatial。 */
   renderPass?: VisualRenderPass;
   resolve(context: VisualResolveContext): VisualComposition | null;
+}
+
+/**
+ * World gameplay 已经结束后仍可继续播放的短暂视觉。它由语义 WorldEvent 启动，
+ * 只存在于 PresentationTime，不进入 EntityStore、Spatial 或 World snapshot。
+ */
+export interface TransientVisualDefinition {
+  id: string;
+  eventType: string;
+  durationMs: number;
+  renderPass?: VisualRenderPass;
+  stackOrder?: number;
+  resolve(context: {
+    event: Readonly<WorldEvent>;
+    progress: number;
+    time: PresentationFrame;
+  }): VisualComposition | null;
 }

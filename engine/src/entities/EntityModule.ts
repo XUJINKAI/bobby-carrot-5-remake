@@ -7,6 +7,7 @@ import type {
   VisualId,
 } from "../world/entity/EntityDefinition.js";
 import type {
+  TransientVisualDefinition,
   VisualDefinition,
   VisualRenderPass,
 } from "../visual/VisualDefinition.js";
@@ -34,6 +35,7 @@ export interface EntityModule {
   definition: EntityDefinition;
   presentation: EntityPresentationDefinition;
   visual?: VisualDefinition;
+  transientVisuals?: readonly TransientVisualDefinition[];
   behaviorBindings?: readonly EntityBehaviorBinding[];
   /** 仅此 Entity 机制需要的跨 WorldTick gameplay 过程。 */
   runtimeActions?: readonly RuntimeActionDefinition[];
@@ -42,6 +44,7 @@ export interface EntityModule {
 export interface EntityModuleInput {
   definition: EntityModuleDefinition;
   visual?: VisualDefinition;
+  transientVisuals?: readonly TransientVisualDefinition[];
   behaviorBindings?: readonly EntityBehaviorBinding[];
   runtimeActions?: readonly RuntimeActionDefinition[];
 }
@@ -76,6 +79,9 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
     definition,
     presentation,
     ...(visual ? { visual } : {}),
+    ...(input.transientVisuals
+      ? { transientVisuals: input.transientVisuals }
+      : {}),
     ...(input.behaviorBindings
       ? { behaviorBindings: input.behaviorBindings }
       : {}),

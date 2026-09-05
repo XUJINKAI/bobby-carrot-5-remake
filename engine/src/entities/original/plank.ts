@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -12,6 +13,10 @@ import {
   originalModule,
 } from "./module.js";
 
+const ORIGINAL_GAMEPLAY_STEP_MS = 31;
+export const PLANK_DECAY_PHASE_MS = 6 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const PLANK_DECAY_DURATION_MS = 2 * PLANK_DECAY_PHASE_MS;
+
 const plankPassage: Behavior = {
   id: "plank-passage",
   canEnter({ actor, self, query }) {
@@ -23,11 +28,6 @@ const plankPassage: Behavior = {
           presence.layer === "surface" &&
           presence.traits.includes("walkable"),
       );
-    if (self.entity.state?.spent === true)
-      return {
-        passable: underlyingWalkable,
-        reason: underlyingWalkable ? "spent-plank-on-ground" : "spent-plank",
-      };
     if (bobbyMountId(actor.state) !== null && !underlyingWalkable)
       return { passable: false, reason: "mower-cannot-use-plank-bridge" };
     return { passable: true, reason: "plank-bridge" };
@@ -35,14 +35,12 @@ const plankPassage: Behavior = {
   onLeave({ actor, self, query, commands }) {
     if (
       !query.entityHasTrait(actor.id, "player") ||
-      bobbyMountId(actor.state) !== null ||
-      self.entity.state?.spent === true
+      bobbyMountId(actor.state) !== null
     )
       return;
-    commands.setState(self.entity.id, {
-      ...self.entity.state,
-      spent: true,
-    });
+
+    // Gameplay ends immediately. D5/D6 are a Presentation-only corpse animation.
+    commands.destroy(self.entity.id);
     commands.emit({
       type: "plank-decay-started",
       entityId: self.entity.id,
@@ -56,16 +54,30 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.PLANK,
   traits: ["terrain-overlay", "walkable"],
   stackOrder: CONTENT_STACK_ORDER,
-  state: [
-    { key: "spent", kind: "boolean", label: "已失效", default: false },
-  ],
   presentation: { name: "Plank" },
 };
 
-export const plank: EntityModule = originalModule(
+const plankDecayVisual: TransientVisualDefinition = {
+  id: "plank-decay",
+  eventType: "plank-decay-started",
+  durationMs: PLANK_DECAY_DURATION_MS,
+  renderPass: "world",
+  stackOrder: CONTENT_STACK_ORDER,
+  resolve({ progress }) {
+    const atlas = objectCell(progress < 0.5 ? 12 : 13);
+    return {
+      layers: [{ kind: "atlas", column: atlas.column, row: atlas.row }],
+    };
+  },
+};
+
+const module = originalModule(
   definition,
-  atlasVisual(definition, (context) =>
-    context.entity.state?.spent === true ? objectCell(12) : objectCell(11),
-  ),
+  atlasVisual(definition, objectCell(11)),
   [{ behavior: plankPassage }],
 );
+
+export const plank: EntityModule = {
+  ...module,
+  transientVisuals: [plankDecayVisual],
+};

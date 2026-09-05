@@ -46,6 +46,8 @@ export function createBuiltinVisualRegistry(
   for (const module of modules) {
     const visualId = module.presentation.visual ?? module.visual?.id;
     if (visualId) registry.bindEntityVisual(module.definition.type, visualId);
+    for (const transient of module.transientVisuals ?? [])
+      registry.registerTransient(transient);
   }
   return registry;
 }

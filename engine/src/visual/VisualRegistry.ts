@@ -4,6 +4,7 @@ import type {
   VisualId,
 } from "../world/entity/EntityDefinition.js";
 import type {
+  TransientVisualDefinition,
   VisualComposition,
   VisualDefinition,
   VisualRenderPass,
@@ -13,6 +14,7 @@ import type {
 export class VisualRegistry {
   private readonly definitions = new Map<VisualId, VisualDefinition>();
   private readonly entityVisuals = new Map<EntityType, VisualId>();
+  private readonly transientByEvent = new Map<string, TransientVisualDefinition>();
 
   register(definition: VisualDefinition): void {
     if (this.definitions.has(definition.id))
@@ -22,6 +24,16 @@ export class VisualRegistry {
 
   registerAll(definitions: readonly VisualDefinition[]): void {
     for (const definition of definitions) this.register(definition);
+  }
+
+  registerTransient(definition: TransientVisualDefinition): void {
+    if (this.transientByEvent.has(definition.eventType))
+      throw new Error(`重复 transient visual event：${definition.eventType}`);
+    this.transientByEvent.set(definition.eventType, definition);
+  }
+
+  transientForEvent(eventType: string): TransientVisualDefinition | undefined {
+    return this.transientByEvent.get(eventType);
   }
 
   bindEntityVisual(type: EntityType, visualId: VisualId): void {
