@@ -167,7 +167,7 @@ export const mowerParkingTile: EntityModule = originalModule(
 
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: EntityTypeId.CRUMBLY_ROCK,
-  traits: ["blocking", "dragon-fire-blocking", "crumbly-rock"],
+  traits: ["blocking", "crumbly-rock"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Crumbly Rock" },
 };
