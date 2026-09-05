@@ -2,6 +2,7 @@ import type { Direction, EntityState, LevelEntity } from "@bobby/model";
 import type { WorldTick } from "../../time/WorldClock.js";
 import type { GlobalState } from "../GlobalState.js";
 import type {
+  RuntimeActionCancelReason,
   RuntimeActionId,
   RuntimeActionSpec,
 } from "../action/RuntimeAction.js";
@@ -108,5 +109,9 @@ export type BehaviorCommand =
       value: GlobalState[keyof GlobalState];
     }
   | { type: "start-action"; action: RuntimeActionSpec }
-  | { type: "cancel-action"; actionId: RuntimeActionId }
+  | {
+      type: "cancel-action";
+      actionId: RuntimeActionId;
+      reason: RuntimeActionCancelReason;
+    }
   | { type: "emit"; event: WorldEvent };

@@ -144,7 +144,6 @@ const flightAction: RuntimeActionDefinition = {
     const actorId = action.ownerEntityId;
     const actor = actorId === undefined ? undefined : query.entity(actorId);
     if (actor) {
-      commands.setState(actor.id, patchBobbyFlight(actor.state, false));
       commands.emit({
         type: "flight-path-invalid",
         entityId: actor.id,
@@ -154,6 +153,13 @@ const flightAction: RuntimeActionDefinition = {
       });
     }
     commands.cancelAction(action.id);
+  },
+  onCancel({ action, reason, query, commands }) {
+    if (reason === "owner-destroyed") return;
+    const actorId = action.ownerEntityId;
+    const actor = actorId === undefined ? undefined : query.entity(actorId);
+    if (actor)
+      commands.setState(actor.id, patchBobbyFlight(actor.state, false));
   },
 };
 

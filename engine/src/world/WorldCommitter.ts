@@ -1,6 +1,7 @@
 import type { GlobalState } from "./GlobalState.js";
 import type { ActorLifecycleStore } from "./actor/ActorLifecycle.js";
 import type { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
+import type { RuntimeActionCancelReason } from "./action/RuntimeAction.js";
 import type {
   WorldDelta,
   WorldDeltaSequence,
@@ -11,7 +12,8 @@ import {
   emptyMutationSummary,
   type WorldMutationSummary,
 } from "./movement/WorldStepResult.js";
-import type { CommandQueue } from "./behavior/CommandQueue.js";
+import { CommandQueue } from "./behavior/CommandQueue.js";
+import type { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityStore } from "./entity/EntityStore.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
 import type { WorldEvent } from "./WorldTypes.js";
@@ -33,6 +35,7 @@ export class WorldCommitter {
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
     private readonly actions: RuntimeActionScheduler,
+    private readonly query: WorldQueryApi,
     private readonly movement: MovementRuntime,
     private readonly actors: ActorLifecycleStore,
     private readonly outcome: WorldOutcomeStore,
@@ -47,7 +50,25 @@ export class WorldCommitter {
     const record = (payload: Parameters<WorldDeltaSequence["create"]>[0]) =>
       deltas.push(this.sequence.create(payload, clock));
 
-    for (const command of queue.drain()) {
+    const pending = queue.drain();
+    const appendCancellationCommands = (
+      index: number,
+      cancellationQueue: CommandQueue,
+    ) => {
+      pending.splice(index + 1, 0, ...cancellationQueue.drain());
+    };
+    const recordCancelledActions = (
+      actionIds: readonly number[],
+      reason: RuntimeActionCancelReason,
+    ) => {
+      for (const actionId of actionIds) {
+        pushUnique(mutations.actionsCancelled, actionId);
+        record({ type: "action-cancelled", actionId, reason });
+      }
+    };
+
+    for (let index = 0; index < pending.length; index += 1) {
+      const command = pending[index]!;
       switch (command.type) {
         case "spawn": {
           const entity = this.entities.spawn(command.entity);
@@ -57,7 +78,14 @@ export class WorldCommitter {
           break;
         }
         case "destroy": {
-          this.actions.cancelOwnedBy(command.entityId);
+          const cancellationQueue = new CommandQueue();
+          const cancelled = this.actions.cancelOwnedBy(command.entityId, {
+            query: this.query,
+            commands: cancellationQueue,
+            reason: "owner-destroyed",
+          });
+          recordCancelledActions(cancelled, "owner-destroyed");
+          appendCancellationCommands(index, cancellationQueue);
           const running = this.movement.motions.forEntity(command.entityId);
           if (running?.status === "running") {
             const interrupted = this.movement.interruptEntity(
@@ -121,7 +149,14 @@ export class WorldCommitter {
             clock.worldTimeMs,
           );
           if (!actor) break;
-          this.actions.cancelOwnedBy(actor.entityId);
+          const cancellationQueue = new CommandQueue();
+          const cancelled = this.actions.cancelOwnedBy(actor.entityId, {
+            query: this.query,
+            commands: cancellationQueue,
+            reason: "owner-inactive",
+          });
+          recordCancelledActions(cancelled, "owner-inactive");
+          appendCancellationCommands(index, cancellationQueue);
           const event: WorldEvent = {
             type: "actor-downed",
             entityId: actor.entityId,
@@ -158,7 +193,14 @@ export class WorldCommitter {
             clock.worldTimeMs,
           );
           if (!actor) break;
-          this.actions.cancelOwnedBy(actor.entityId);
+          const cancellationQueue = new CommandQueue();
+          const cancelled = this.actions.cancelOwnedBy(actor.entityId, {
+            query: this.query,
+            commands: cancellationQueue,
+            reason: "owner-inactive",
+          });
+          recordCancelledActions(cancelled, "owner-inactive");
+          appendCancellationCommands(index, cancellationQueue);
           const event: WorldEvent = {
             type: "actor-eliminated",
             entityId: actor.entityId,
@@ -200,11 +242,18 @@ export class WorldCommitter {
           record({ type: "action-started", actionId: id });
           break;
         }
-        case "cancel-action":
-          this.actions.cancel(command.actionId);
-          pushUnique(mutations.actionsCancelled, command.actionId);
-          record({ type: "action-cancelled", actionId: command.actionId });
+        case "cancel-action": {
+          const cancellationQueue = new CommandQueue();
+          const cancelled = this.actions.cancel(command.actionId, {
+            query: this.query,
+            commands: cancellationQueue,
+            reason: command.reason,
+          });
+          if (cancelled)
+            recordCancelledActions([command.actionId], command.reason);
+          appendCancellationCommands(index, cancellationQueue);
           break;
+        }
         case "emit":
           events.push(command.event);
           record({ type: "world-event", event: command.event });

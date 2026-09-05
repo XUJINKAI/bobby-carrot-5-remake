@@ -165,3 +165,30 @@ test("RuntimeAction receives the authoritative MoveResult", () => {
 
   assert.equal(scheduler.active[0].state.moveSucceeded, false);
 });
+
+test("RuntimeAction cancellation invokes cleanup with an explicit reason", () => {
+  const observed = [];
+  const registry = new RuntimeActionRegistry();
+  registry.register({
+    kind: "cancel-aware",
+    update() {
+      return "running";
+    },
+    onCancel({ action, reason }) {
+      observed.push({ actionId: action.id, reason });
+    },
+  });
+  const scheduler = new RuntimeActionScheduler(registry);
+  const actionId = scheduler.start({ kind: "cancel-aware", ownerEntityId: 7 });
+
+  assert.equal(
+    scheduler.cancel(actionId, {
+      query,
+      commands,
+      reason: "owner-inactive",
+    }),
+    true,
+  );
+  assert.deepEqual(observed, [{ actionId, reason: "owner-inactive" }]);
+  assert.equal(scheduler.active.length, 0);
+});

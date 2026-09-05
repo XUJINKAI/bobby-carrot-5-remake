@@ -160,3 +160,39 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
     ),
   );
 });
+
+test("Downing an airborne actor cancels flight and clears flight state", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 3 }, (_, x) => ({
+        type: EntityTypeId.GROUND_C,
+        x,
+        y: 0,
+      })),
+      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      {
+        type: EntityTypeId.BOBBY,
+        x: 0,
+        y: 0,
+        direction: "right",
+        state: { kite: true },
+      },
+    ],
+  });
+  const actor = world.query.entitiesWithTrait("player")[0];
+  move(world, actor.id, "right");
+
+  const downed = world.downActor(actor.id, "test-down");
+  assert.equal(world.entity(actor.id).state.flying, false);
+  assert.equal(world.actions.active.length, 0);
+  assert.ok(
+    downed.deltas.some(
+      (delta) =>
+        delta.type === "action-cancelled" &&
+        delta.reason === "owner-inactive",
+    ),
+  );
+});

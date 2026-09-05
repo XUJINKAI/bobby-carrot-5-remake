@@ -1,6 +1,7 @@
 import type { Direction, EntityState, LevelEntity } from "@bobby/model";
 import type { GlobalState } from "../GlobalState.js";
 import type {
+  RuntimeActionCancelReason,
   RuntimeActionId,
   RuntimeActionSpec,
 } from "../action/RuntimeAction.js";
@@ -20,7 +21,10 @@ export interface WorldCommandApi {
   loseWorld(reason: string, actorId?: EntityId): void;
   setGlobal<K extends keyof GlobalState>(key: K, value: GlobalState[K]): void;
   startAction(action: RuntimeActionSpec): void;
-  cancelAction(actionId: RuntimeActionId): void;
+  cancelAction(
+    actionId: RuntimeActionId,
+    reason?: RuntimeActionCancelReason,
+  ): void;
   emit(event: WorldEvent): void;
 }
 
@@ -84,8 +88,11 @@ export class CommandQueue implements WorldCommandApi {
     this.commands.push({ type: "start-action", action: structuredClone(action) });
   }
 
-  cancelAction(actionId: RuntimeActionId): void {
-    this.commands.push({ type: "cancel-action", actionId });
+  cancelAction(
+    actionId: RuntimeActionId,
+    reason: RuntimeActionCancelReason = "requested",
+  ): void {
+    this.commands.push({ type: "cancel-action", actionId, reason });
   }
 
   emit(event: WorldEvent): void {

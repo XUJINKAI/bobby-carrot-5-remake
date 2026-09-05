@@ -165,6 +165,17 @@ const movingEntityAction: RuntimeActionDefinition = {
     stopMovingEntity(entity, commands);
     if (!isCloud(entity.type)) commands.cancelAction(action.id);
   },
+  onCancel({ action, reason, query, commands }) {
+    const entityId = action.ownerEntityId;
+    const entity = entityId === undefined ? undefined : query.entity(entityId);
+    if (entity && reason !== "owner-destroyed")
+      stopMovingEntity(entity, commands);
+    if (entityId === undefined) return;
+    for (const passenger of query.entitiesWithTrait("player")) {
+      if (bobbyMountId(passenger.state) !== entityId) continue;
+      commands.setState(passenger.id, patchBobbyMount(passenger.state, null));
+    }
+  },
 };
 
 export const leaf = movingEntityModule(

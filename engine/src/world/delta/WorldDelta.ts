@@ -1,5 +1,8 @@
 import type { EntityState } from "@bobby/model";
-import type { RuntimeActionId } from "../action/RuntimeAction.js";
+import type {
+  RuntimeActionCancelReason,
+  RuntimeActionId,
+} from "../action/RuntimeAction.js";
 import type { GlobalState } from "../GlobalState.js";
 import type { ActorLifecycleState } from "../actor/ActorLifecycle.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
@@ -28,7 +31,11 @@ export type WorldDeltaPayload =
   | { type: "actor-lifecycle-changed"; actor: ActorLifecycleState }
   | { type: "world-outcome-changed"; outcome: WorldOutcomeState }
   | { type: "action-started"; actionId: RuntimeActionId }
-  | { type: "action-cancelled"; actionId: RuntimeActionId }
+  | {
+      type: "action-cancelled";
+      actionId: RuntimeActionId;
+      reason: RuntimeActionCancelReason;
+    }
   | { type: "world-event"; event: WorldEvent }
   | { type: "motion-started"; motion: WorldMotion }
   | { type: "motion-progressed"; motion: WorldMotion }

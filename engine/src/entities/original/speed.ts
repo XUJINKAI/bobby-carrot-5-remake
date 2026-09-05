@@ -87,21 +87,28 @@ const speedRunAction: RuntimeActionDefinition = {
     return "retry";
   },
 
-  onIntentResult({ action, result, query, commands }) {
+  onIntentResult({ action, result, commands }) {
     const ownerEntityId = action.ownerEntityId;
     if (ownerEntityId === undefined) return;
     if (result.moved) {
       action.state.pendingMove = true;
       return;
     }
-    const owner = query.entity(ownerEntityId);
     commands.emit({ type: "speed-impact", entityId: ownerEntityId });
+    commands.cancelAction(action.id);
+  },
+
+  onCancel({ action, reason, query, commands }) {
+    if (reason === "owner-destroyed") return;
+    const ownerEntityId = action.ownerEntityId;
+    const owner = ownerEntityId === undefined
+      ? undefined
+      : query.entity(ownerEntityId);
     if (owner)
       commands.setState(
-        ownerEntityId,
+        owner.id,
         patchBobbySpeedBoost(owner.state, null),
       );
-    commands.cancelAction(action.id);
   },
 
   update({ action, time, query, commands }) {

@@ -151,6 +151,7 @@ export class World {
       this.entities,
       this.spatial,
       this.actions,
+      this.query,
       this.movement,
       this.actors,
       this.outcome,

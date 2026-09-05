@@ -5,6 +5,7 @@ import type { EntityId } from "../entity/EntityInstance.js";
 import type { WorldIntent } from "../movement/WorldIntent.js";
 import type { MoveResult } from "../WorldTypes.js";
 import type {
+  RuntimeActionCancelReason,
   RuntimeActionId,
   RuntimeActionIntentRequest,
   RuntimeActionInputDisposition,
@@ -67,14 +68,40 @@ export class RuntimeActionScheduler {
     return id;
   }
 
-  cancel(id: RuntimeActionId): void {
+  cancel(
+    id: RuntimeActionId,
+    context?: {
+      query: WorldQueryApi;
+      commands: WorldCommandApi;
+      reason: RuntimeActionCancelReason;
+    },
+  ): boolean {
+    const action = this.actions.get(id);
+    if (!action) return false;
+    if (context)
+      this.registry.require(action.kind).onCancel?.({
+        action,
+        reason: context.reason,
+        query: context.query,
+        commands: context.commands,
+      });
     this.actions.delete(id);
+    return true;
   }
 
-  cancelOwnedBy(entityId: EntityId): void {
-    for (const action of this.actions.values()) {
-      if (action.ownerEntityId === entityId) this.actions.delete(action.id);
-    }
+  cancelOwnedBy(
+    entityId: EntityId,
+    context?: {
+      query: WorldQueryApi;
+      commands: WorldCommandApi;
+      reason: RuntimeActionCancelReason;
+    },
+  ): RuntimeActionId[] {
+    const ids = [...this.actions.values()]
+      .filter((action) => action.ownerEntityId === entityId)
+      .map((action) => action.id)
+      .sort((a, b) => a - b);
+    return ids.filter((id) => this.cancel(id, context));
   }
 
   /** Input lock prevents movement, not observation by the gameplay process that owns the lock. */

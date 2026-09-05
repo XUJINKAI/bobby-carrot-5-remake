@@ -55,6 +55,19 @@ export interface RuntimeActionIntentResultContext {
   readonly commands: WorldCommandApi;
 }
 
+export type RuntimeActionCancelReason =
+  | "requested"
+  | "owner-destroyed"
+  | "owner-inactive"
+  | "world-finished";
+
+export interface RuntimeActionCancelContext {
+  readonly action: RuntimeActionInstance;
+  readonly reason: RuntimeActionCancelReason;
+  readonly query: WorldQueryApi;
+  readonly commands: WorldCommandApi;
+}
+
 export interface RuntimeActionIntentRequest {
   actionId: RuntimeActionId;
   intent: WorldIntent;
@@ -87,6 +100,8 @@ export interface RuntimeActionDefinition {
   ): RuntimeActionInputDisposition | void;
   /** World 完成裁决后回传权威结果；Action 不需要再用坐标变化猜测成功与否。 */
   onIntentResult?(context: RuntimeActionIntentResultContext): void;
+  /** Action 结束未来调度前清理 owner-local gameplay state。 */
+  onCancel?(context: RuntimeActionCancelContext): void;
 }
 
 export interface RuntimeActionSchedulerSnapshot {
