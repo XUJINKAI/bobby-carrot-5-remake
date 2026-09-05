@@ -14,6 +14,7 @@ import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
+import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
 import { speed } from "./speed.js";
 import { speedSwitch } from "./speed-switch.js";
@@ -45,6 +46,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   colorYellowBlock,
   colorPinkBlock,
   ...staticCoverModules,
+  plank,
   iceBlock,
   ...staticContentModules,
   beanField,

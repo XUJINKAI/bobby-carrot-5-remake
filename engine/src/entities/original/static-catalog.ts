@@ -185,14 +185,8 @@ export const staticContentModules: readonly EntityModule[] = [
   content(EntityTypeId.WINDMILL_DOWN, "Windmill Down", objectCell(8), ["blocking"]),
   content(EntityTypeId.WINDMILL_LEFT, "Windmill Left", objectCell(9), ["blocking"]),
   content(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", objectCell(10), ["blocking"]),
-  content(EntityTypeId.PLANK, "Plank", objectCell(11), ["terrain-overlay", "walkable"]),
-  content(
-    EntityTypeId.PLANK_CRUMBLING,
-    "Crumbling Plank",
-    objectCell(12),
-    ["terrain-overlay", "walkable", "blocking"],
-  ),
-  content(EntityTypeId.PLANK_FRAGMENT, "Plank Fragment", objectCell(13), ["blocking"]),
+  content(EntityTypeId.PLANK_CRUMBLING, "Crumbling Plank", objectCell(12)),
+  content(EntityTypeId.PLANK_FRAGMENT, "Plank Fragment", objectCell(13)),
   content(EntityTypeId.MOWER, "Mower", objectCell(19), ["vehicle"]),
   content(EntityTypeId.GAS, "Gas", objectCell(20), ["pickup"]),
   content(
