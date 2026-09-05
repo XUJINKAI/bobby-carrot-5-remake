@@ -123,10 +123,10 @@ test("Bobby walks directly between adjacent stopped Leaves without mount state",
 
   const result = move(world, actor.id, "right");
   assert.equal(result.moves[0].moved, true);
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
 
   world.update({ tick: 1, stepMs: 50 });
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
   world.update({ tick: 2, stepMs: 50 });
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
 });

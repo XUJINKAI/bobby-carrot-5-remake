@@ -37,18 +37,18 @@ test("Leaf carries co-located Bobby without creating a mount relation", () => {
   const leaf = world.query.entitiesWithTrait("moving-platform")[0];
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
   const drift = world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.equal(drift.motions.length, 2);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
 
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.equal(world.entity(leaf.id).state.moving, false);
   assert.equal(world.actions.active.length, 0);
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
 });
 
@@ -147,5 +147,5 @@ test("Leaf starts moving on the same tick that a player arrives", () => {
   assert.ok(handoff);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
-  assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.equal(world.entity(actor.id).state?.mountId, undefined);
 });
