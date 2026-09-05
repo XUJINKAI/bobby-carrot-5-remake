@@ -28,7 +28,7 @@ const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 
 export const DEFAULT_MOVING_ENTITY_CELL_MS = 16 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
-export const LEAF_SUPPORT_HEIGHT_PX = 4;
+export const LEAF_SUPPORT_HEIGHT_PX = 12;
 
 /** Leaf / Cloud are walkable moving supports. Player walking never becomes a mount. */
 const movingPlatformBehavior: Behavior = {
