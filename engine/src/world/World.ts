@@ -485,6 +485,8 @@ export class World {
 
     if (this.query.entityHasTrait(actor.id, "projectile"))
       return this.resolveProjectileMove(actor, intent, group);
+    if (this.query.entityHasTrait(actor.id, "moving-platform"))
+      return this.resolveMovingPlatformMove(actor, intent, group);
 
     const local = new MovementTransaction();
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
@@ -682,6 +684,48 @@ export class World {
       to,
       direction: intent.direction,
       passage: { reason: "projectile-passage", confidence: "rule" },
+      events: [],
+    };
+  }
+
+  private resolveMovingPlatformMove(
+    platform: EntityInstance,
+    intent: MoveIntent,
+    group: MovementTransaction,
+  ): MoveResult {
+    const from = { ...platform.anchor };
+    const to = addDirection(from, intent.direction);
+    if (!group.canReserveDestination(platform.id, to))
+      return blockedResult(
+        platform.id,
+        from,
+        to,
+        intent.direction,
+        "destination-conflict",
+      );
+
+    const local = new MovementTransaction();
+    local.move(platform.id, from, to, intent.direction, intent.cause, true);
+    for (const passenger of this.query.entitiesWithTrait("player")) {
+      if (mountId(passenger) !== platform.id) continue;
+      local.move(
+        passenger.id,
+        passenger.anchor,
+        to,
+        intent.direction,
+        { type: "carry", carrierId: platform.id },
+        false,
+      );
+    }
+    group.reserveDestination(platform.id, to);
+    group.absorb(local);
+    return {
+      actorId: platform.id,
+      moved: true,
+      from,
+      to,
+      direction: intent.direction,
+      passage: { reason: "moving-platform-passage", confidence: "rule" },
       events: [],
     };
   }
@@ -1027,4 +1071,11 @@ function pushUnique<T>(values: T[], value: T): void {
 
 function safeDuration(value: number): number {
   return Math.max(0, Number.isFinite(value) ? value : 0);
+}
+
+function mountId(entity: EntityInstance): EntityId | null {
+  const value = entity.state?.mountId;
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : null;
 }

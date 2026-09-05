@@ -89,6 +89,16 @@ export function bobbyMountId(state: EntityState | undefined): EntityId | null {
     : null;
 }
 
+export function patchBobbyMount(
+  state: EntityState | undefined,
+  mountId: EntityId | null,
+): EntityState {
+  const result: EntityState = { ...(state ?? {}) };
+  if (mountId === null) delete result.mountId;
+  else result.mountId = mountId;
+  return result;
+}
+
 export function isBobbyFlying(state: EntityState | undefined): boolean {
   return state?.flying === true;
 }

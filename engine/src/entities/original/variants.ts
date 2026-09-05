@@ -24,7 +24,10 @@ const backgroundVariants = Array.from({ length: 256 }, (_, index) => {
   const number = index + 1;
   const definition: EntityModuleDefinition = {
     type: `background-variant-${String(number).padStart(3, "0")}`,
-    traits: number <= 94 ? ["bean-growth-space"] : [],
+    traits: [
+      ...(number <= 94 ? ["bean-growth-space"] : []),
+      ...(number >= 72 && number <= 77 ? ["cloud-space"] : []),
+    ],
     stackOrder: SURFACE_STACK_ORDER,
     state: visualVariantState,
     presentation: { name: `Background Variant ${number}` },

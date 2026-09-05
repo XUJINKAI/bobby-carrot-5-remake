@@ -103,9 +103,9 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   surface(EntityTypeId.MOWER_PARKING, "Mower Parking", cell(0, 10)),
   surface(EntityTypeId.WATER, "Water", cell(5, 5), ["water", "bean-growth-space"]),
   surface(EntityTypeId.WATER_ANIMATED, "Animated Water", cell(6, 5), ["water", "bean-growth-space"]),
-  surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water", "bean-growth-space"]),
-  surface(EntityTypeId.WATER_VARIANT_2, "Water Variant 2", cell(12, 5), ["water", "bean-growth-space"]),
-  surface(EntityTypeId.WATER_VARIANT_3, "Water Variant 3", cell(13, 5), ["water", "bean-growth-space"]),
+  surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water", "waterfall", "bean-growth-space"]),
+  surface(EntityTypeId.WATER_VARIANT_2, "Water Variant 2", cell(12, 5), ["water", "waterfall", "bean-growth-space"]),
+  surface(EntityTypeId.WATER_VARIANT_3, "Water Variant 3", cell(13, 5), ["water", "waterfall", "bean-growth-space"]),
 ];
 
 const snowDefinition: EntityModuleDefinition = {
@@ -181,10 +181,10 @@ export const staticContentModules: readonly EntityModule[] = [
     ["terrain-overlay", "climbable", "walkable"],
   ),
   content(EntityTypeId.BEAN, "Bean", objectCell(6), ["pickup"]),
-  content(EntityTypeId.WINDMILL_UP, "Windmill Up", objectCell(7), ["blocking"]),
-  content(EntityTypeId.WINDMILL_DOWN, "Windmill Down", objectCell(8), ["blocking"]),
-  content(EntityTypeId.WINDMILL_LEFT, "Windmill Left", objectCell(9), ["blocking"]),
-  content(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", objectCell(10), ["blocking"]),
+  content(EntityTypeId.WINDMILL_UP, "Windmill Up", objectCell(7), ["blocking", "windmill"]),
+  content(EntityTypeId.WINDMILL_DOWN, "Windmill Down", objectCell(8), ["blocking", "windmill"]),
+  content(EntityTypeId.WINDMILL_LEFT, "Windmill Left", objectCell(9), ["blocking", "windmill"]),
+  content(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", objectCell(10), ["blocking", "windmill"]),
   content(EntityTypeId.PLANK_CRUMBLING, "Crumbling Plank", objectCell(12)),
   content(EntityTypeId.PLANK_FRAGMENT, "Plank Fragment", objectCell(13)),
   content(EntityTypeId.MOWER, "Mower", objectCell(19), ["vehicle"]),
@@ -195,10 +195,6 @@ export const staticContentModules: readonly EntityModule[] = [
     objectCell(21),
     ["terrain-overlay", "climbable", "walkable"],
   ),
-  content(EntityTypeId.CLOUD_RED, "Red Cloud", objectCell(23), ["vehicle", "cloud"]),
-  content(EntityTypeId.CLOUD_PURPLE, "Purple Cloud", objectCell(24), ["vehicle", "cloud"]),
-  content(EntityTypeId.CLOUD_GREEN, "Green Cloud", objectCell(25), ["vehicle", "cloud"]),
-  content(EntityTypeId.LEAF, "Leaf", objectCell(35), ["vehicle", "leaf"]),
   content(EntityTypeId.CRUMBLY_ROCK, "Crumbly Rock", objectCell(36), ["dragon-fire-blocking"]),
   content(
     EntityTypeId.BEANSTALK_BASE,
