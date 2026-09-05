@@ -33,11 +33,24 @@ Delta 包括：
 
 Presentation、Debug、Audio 可以分别消费同一序列。消费者不得通过动画完成回调反向推进 World。
 
+## MovementPolicy 与 MovementPlan
+
+Entity Behavior 使用纯查询的 `planMovement()` 提出特殊移动规则，World 将所有 policy 合并并校验为单一 `MovementPlan`，然后统一裁决和原子提交。Policy 可以描述：
+
+- 使用标准 passage，或由 Entity 已完成领域判定的 unrestricted passage；
+- primary 是否随方向更新；
+- 本次 movement 的 lifecycle 与 markers；
+- 与 primary 同一事务移动的 companions，例如载具或乘客。
+
+同一 plan 的参与者拥有共同 reservation identity，因此可以有意共享目的格；不同 plan 仍会发生 destination conflict。World 只实现这套通用规则，不识别 Flight、Fireball、Leaf、Cloud、Mower 或 Entity 私有 relation 字段。
+
+特殊规则的职责边界为：Entity 决定 policy，World 校验边界、busy 状态与 reservation，并提交 Grid Fact 和 WorldMotion。Behavior 不能借助 policy 直接修改 EntityStore 或推进时间。
+
 ## Marker
 
 Marker 是持续 gameplay 过程中的一次性语义阈值，不是 sprite frame、脚步声帧或某个 Entity 的固有属性。
 
-当前移动 marker 为：
+标准移动默认使用以下 marker；MovementPolicy 可以为单次 movement 提供另一组可序列化定义：
 
 | progress | marker | 语义 |
 | --- | --- | --- |
@@ -58,6 +71,10 @@ Marker 名称描述 gameplay 意义。纯表现 cue 由 Presentation 根据 delt
 
 Entity / Behavior 只能查询 World 并请求 command、intent 或 action；它们不推进时间，也不直接修改 World storage。
 
+RuntimeAction 请求移动后，World 返回带 `actionId` 的权威 `MoveResult`。Action 通过 `onIntentResult` 处理 blocked、边界和冲突，不比较前后坐标猜测结果。连续 action 的 deadline 在当前 WorldMotion 进行时继续累计；到达下一格时若 deadline 已满足，可以在同一 WorldTick 接续下一段 motion，避免插入 stationary tick。
+
+Action cancellation 带明确 reason，并在删除 action 前执行 `onCancel` 清理 owner-local gameplay state。Cancel 只停止未来调度；已经提交的 WorldMotion 保持为 World 事实并正常完成，除非 actor lifecycle 或 entity destroy 明确中断它。
+
 判断一个原版 task 应落在哪层，关键不是原版类名，而是现代 Engine 中后续 gameplay 是否依赖过程进度：
 
 - Plank 若放下后立即可通行：即时 World mutation + Presentation 动画。
@@ -71,10 +88,12 @@ Actor 独立处于 `active | downed | eliminated`；World 独立处于 `playing 
 - 一个 actor downed 时，只取消其 owner-scoped action、其中断 motion、阻塞其输入。
 - 仍有 active player 时，World 继续推进，其他 actor 和 world systems 不停止。
 - 所有 player 都无法行动时，World 才进入 lost。
-- `reviveActor()` 只提供 Engine 能力，把 playing World 中的 downed actor 恢复为 active；具体距离、消耗、动画和机关不属于本次基础设施。
+- `reviveActor()` 只提供 Engine 能力，把 playing World 中的 downed actor 恢复为 active，并清除死亡时保留的 interrupted motion；具体距离、消耗、动画和机关不属于本次基础设施。
 - World 已进入终态后不会通过 revive 重新打开。
 
 为兼容现有外层状态，`GlobalState.dead/completed/deathReason` 由 WorldOutcome 同步；它们不再是 actor 死亡的源事实。
+
+Motion 终态使用有序 delta 表达：down 保留 interrupted pose 供死亡表现读取；revive 发出 `motion-cleared` 后回到权威 grid anchor；destroy 依次产生 interrupt、clear、entity destroy。Presentation 只消费这段事实序列。
 
 ## Debug Timeline
 

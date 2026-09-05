@@ -11,7 +11,7 @@ import {
 
 export type MovementMarker = string;
 
-export interface MovementPlan {
+export interface MovementRuntimePlan {
   motionId: WorldMotionId;
   source: EntityPresence[];
   target: EntityPresence[];
@@ -21,7 +21,7 @@ export interface MovementPlan {
 
 export interface MovementRuntimeSnapshot {
   motions: WorldMotionSnapshot;
-  plans: MovementPlan[];
+  plans: MovementRuntimePlan[];
 }
 
 export interface MovementAdvanceVisitor {
@@ -53,7 +53,7 @@ export const DEFAULT_MOVEMENT_MARKERS: readonly MovementMarkerDefinition[] = [
 /** WorldClock 驱动的空间过程；只报告语义阶段，不执行 Entity Behavior。 */
 export class MovementRuntime {
   readonly motions = new WorldMotionStore();
-  private readonly plans = new Map<WorldMotionId, MovementPlan>();
+  private readonly plans = new Map<WorldMotionId, MovementRuntimePlan>();
 
   get running(): readonly WorldMotion[] {
     return this.motions.running;
@@ -75,7 +75,7 @@ export class MovementRuntime {
     return motion;
   }
 
-  plan(motionId: WorldMotionId): Readonly<MovementPlan> | undefined {
+  plan(motionId: WorldMotionId): Readonly<MovementRuntimePlan> | undefined {
     const plan = this.plans.get(motionId);
     return plan ? structuredClone(plan) : undefined;
   }
