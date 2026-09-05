@@ -483,6 +483,12 @@ export class World {
     if (!this.spatial.inBounds(to))
       return blockedResult(actor.id, from, to, intent.direction, "void");
 
+    if (
+      actor.state?.flying === true &&
+      intent.cause.type === "forced" &&
+      intent.cause.mechanism === "flight"
+    )
+      return this.resolveFlightMove(actor, intent, group);
     if (this.query.entityHasTrait(actor.id, "projectile"))
       return this.resolveProjectileMove(actor, intent, group);
     if (this.query.entityHasTrait(actor.id, "moving-platform"))
@@ -694,6 +700,41 @@ export class World {
       to,
       direction: intent.direction,
       passage: { reason: "projectile-passage", confidence: "rule" },
+      events: [],
+    };
+  }
+
+  private resolveFlightMove(
+    actor: EntityInstance,
+    intent: MoveIntent,
+    group: MovementTransaction,
+  ): MoveResult {
+    const from = { ...actor.anchor };
+    const to = addDirection(from, intent.direction);
+    if (!group.canReserveDestination(actor.id, to))
+      return blockedResult(
+        actor.id,
+        from,
+        to,
+        intent.direction,
+        "destination-conflict",
+      );
+    const local = new MovementTransaction();
+    local.move(actor.id, from, to, intent.direction, intent.cause, true, {
+      source: [],
+      target: this.spatial
+        .presencesAt(to)
+        .filter((presence) => presence.traits.includes("flight-landing")),
+    });
+    group.reserveDestination(actor.id, to);
+    group.absorb(local);
+    return {
+      actorId: actor.id,
+      moved: true,
+      from,
+      to,
+      direction: intent.direction,
+      passage: { reason: "airborne-passage", confidence: "rule" },
       events: [],
     };
   }

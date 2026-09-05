@@ -220,8 +220,6 @@ export const staticContentModules: readonly EntityModule[] = [
   content(EntityTypeId.CLOUD_GRID_PURPLE, "Purple Cloud Grid", objectCell(40)),
   content(EntityTypeId.CLOUD_GRID_GREEN, "Green Cloud Grid", objectCell(41)),
   content(EntityTypeId.KITE, "Kite", objectCell(42), ["pickup"]),
-  content(EntityTypeId.WHIRLWIND, "Whirlwind", objectCell(43), ["flight-entry"]),
-  content(EntityTypeId.LANDING, "Landing", objectCell(44), ["flight-landing"]),
   content(
     EntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",

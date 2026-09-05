@@ -103,6 +103,17 @@ export function isBobbyFlying(state: EntityState | undefined): boolean {
   return state?.flying === true;
 }
 
+export function patchBobbyFlight(
+  state: EntityState | undefined,
+  flying: boolean,
+  transition: "takeoff" | "landing" | null = null,
+): EntityState {
+  const result: EntityState = { ...(state ?? {}), flying };
+  if (transition === null) delete result.flightTransition;
+  else result.flightTransition = transition;
+  return result;
+}
+
 function nonNegativeInt(value: JsonValue | undefined): number {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.max(0, Math.floor(value))
