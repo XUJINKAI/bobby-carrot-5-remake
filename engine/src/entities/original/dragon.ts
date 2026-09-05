@@ -1,9 +1,9 @@
 import { EntityTypeId } from "@bobby/model";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
-import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { VisualDefinition } from "../../visual/VisualDefinition.js";
 import type {
   EntityModule,
@@ -91,13 +91,13 @@ const definition: EntityModuleDefinition = {
         dx: 0,
         dy: 0,
         role: "head",
-        traits: ["blocking", "dragon-fire-blocking"],
+        traits: ["blocking"],
       },
       {
         dx: 1,
         dy: 0,
         role: "body",
-        traits: ["blocking", "dragon-fire-blocking"],
+        traits: ["blocking"],
       },
       {
         dx: 2,
