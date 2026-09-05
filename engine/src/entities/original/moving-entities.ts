@@ -290,16 +290,11 @@ function canEnterMovingDomain(
   direction: Direction,
 ): boolean {
   if (!query.inBounds(target)) return false;
-  if (
-    query.presencesAt(target).some(
-      (presence) =>
-        presence.entityId !== entity.id &&
-        presence.traits.includes("moving-platform"),
-    )
-  )
-    return false;
+  const domainTrait = entity.type === EntityTypeId.LEAF ? "water" : "cloud-space";
+  if (!query.hasTraitAt(target, domainTrait)) return false;
+  if (movingSupportOccupiedAt(query, entity, target, domainTrait)) return false;
+
   if (entity.type === EntityTypeId.LEAF) {
-    if (!query.hasTraitAt(target, "water")) return false;
     for (const presence of query.presencesAt(target)) {
       const tide = query.entity(presence.entityId);
       if (
@@ -310,9 +305,27 @@ function canEnterMovingDomain(
     }
     return !(direction === "up" && query.hasTraitAt(target, "waterfall"));
   }
-  if (!query.hasTraitAt(target, "cloud-space")) return false;
+
   const opposingWind = forcedWindAt(query, target, direction);
   return opposingWind !== oppositeDirection(direction);
+}
+
+function movingSupportOccupiedAt(
+  query: WorldQueryApi,
+  mover: Readonly<EntityInstance>,
+  target: { x: number; y: number },
+  domainTrait: "water" | "cloud-space",
+): boolean {
+  return query.presencesAt(target).some((presence) => {
+    if (presence.entityId === mover.id || presence.traits.includes(domainTrait))
+      return false;
+    const occupant = query.entity(presence.entityId);
+    return !(
+      isCloud(mover.type) &&
+      occupant !== undefined &&
+      isCloudParkingType(occupant.type)
+    );
+  });
 }
 
 function forcedWindAt(
@@ -382,6 +395,12 @@ function isMatchingCloudParking(
   return parking !== undefined && query.presencesAt(cloud.anchor).some(
     (presence) => query.entity(presence.entityId)?.type === parking,
   );
+}
+
+function isCloudParkingType(type: EntityType): boolean {
+  return type === EntityTypeId.CLOUD_GRID_RED ||
+    type === EntityTypeId.CLOUD_GRID_PURPLE ||
+    type === EntityTypeId.CLOUD_GRID_GREEN;
 }
 
 function playersAt(
