@@ -1,4 +1,4 @@
-import type { Direction, LevelMap } from "@bobby/model";
+import type { LevelMap } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
@@ -24,13 +24,11 @@ import type {
 } from "./action/RuntimeAction.js";
 import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
 import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
+import { BehaviorRuntime } from "./behavior/BehaviorRuntime.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
 import { WorldDeltaSequence, type WorldDelta } from "./delta/WorldDelta.js";
 import type {
-  Behavior,
-  BehaviorContext,
   MovementContext,
-  PassageResult,
 } from "./behavior/Behavior.js";
 import type { BehaviorRegistry } from "./behavior/BehaviorRegistry.js";
 import { WorldQueryApi } from "./behavior/WorldQueryApi.js";
@@ -40,25 +38,17 @@ import type { EntityRegistry } from "./entity/EntityRegistry.js";
 import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
-  createMovementPlan,
-  type MovementPlan,
-  type MovementPlanningContext,
-} from "./movement/MovementPlan.js";
-import {
   MovementRuntime,
   type MovementRuntimeSnapshot,
 } from "./movement/MovementRuntime.js";
+import { WorldMovementResolver } from "./movement/WorldMovementResolver.js";
 import type {
   MovementMarkerDefinition,
   WorldMotion,
 } from "./movement/WorldMotion.js";
 import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
 import { ReachResolver } from "./outcome/ReachResolver.js";
-import type {
-  MoveIntent,
-  WorldIntent,
-  WorldIntentGroup,
-} from "./movement/WorldIntent.js";
+import type { WorldIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
   mergeWorldMutationSummary,
@@ -116,6 +106,8 @@ export class World {
   private readonly committer: WorldCommitter;
   private readonly ruleEvaluator: WorldRuleEvaluator;
   private readonly reachResolver: ReachResolver;
+  private readonly behaviorRuntime: BehaviorRuntime;
+  private readonly movementResolver: WorldMovementResolver;
   private readonly lifecycle: WorldLifecycle;
   private readonly inspector: WorldInspector;
   private motionDurationMs: number;
@@ -146,6 +138,23 @@ export class World {
       this.movement.motions,
     );
     this.inspector = new WorldInspector(this.entities, this.spatial);
+    this.behaviorRuntime = new BehaviorRuntime(
+      this.registry,
+      this.behaviors,
+      this.entities,
+      this.spatial,
+      this.query,
+    );
+    this.movementResolver = new WorldMovementResolver(
+      this.entities,
+      this.spatial,
+      this.query,
+      this.actions,
+      this.movement,
+      this.actors,
+      this.outcome,
+      this.behaviorRuntime,
+    );
     this.reachResolver = new ReachResolver(this.query, this.behaviors);
     this.committer = new WorldCommitter(
       this.entities,
@@ -339,7 +348,7 @@ export class World {
 
     for (const intent of group.intents) {
       if (intent.type !== "move") continue;
-      const result = this.resolveMove(intent, transaction);
+      const result = this.movementResolver.resolve(intent, transaction);
       moves.push(result);
       if (result.moved && intent.cause.type === "player-input")
         playerInputMoved = true;
@@ -455,7 +464,7 @@ export class World {
       const entity = this.entities.get(entityId);
       const presence = this.spatial.presencesForEntity(entityId)[0];
       if (!entity || !presence) continue;
-      const context = this.context(
+      const context = this.behaviorRuntime.context(
         entity,
         presence,
         entity,
@@ -464,7 +473,7 @@ export class World {
         undefined,
         time,
       );
-      for (const behavior of this.resolveBehaviors(entity, presence))
+      for (const behavior of this.behaviorRuntime.resolve(entity, presence))
         behavior.onTick?.(context);
     }
 
@@ -474,504 +483,6 @@ export class World {
     this.lifecycle.evaluateRules(result);
     this.currentWorldTick = null;
     return result;
-  }
-
-  private resolveMove(
-    intent: MoveIntent,
-    group: MovementTransaction,
-  ): MoveResult {
-    const actor = this.entities.get(intent.actorId);
-    const missingFrom = actor?.anchor ?? { x: -1, y: -1 };
-    if (!actor)
-      return blockedResult(
-        intent.actorId,
-        missingFrom,
-        missingFrom,
-        intent.direction,
-        "missing-actor",
-      );
-
-    const from = { ...actor.anchor };
-    const to = addDirection(from, intent.direction);
-    const movement: MovementContext = { from, to, cause: intent.cause };
-    if (!this.outcome.playing)
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "world-finished",
-      );
-    if (!this.actors.isActive(actor.id))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "actor-inactive",
-      );
-    if (
-      intent.cause.type === "player-input" &&
-      this.actions.isInputBlockedFor(actor.id)
-    )
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "actor-busy",
-      );
-    if (this.movement.motions.forEntity(actor.id)?.status === "running")
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "actor-busy",
-      );
-    if (!this.spatial.inBounds(to))
-      return blockedResult(actor.id, from, to, intent.direction, "void");
-
-    const sourceStack = [...this.spatial.presencesAt(from)].reverse();
-    const targetStack = [...this.spatial.presencesAt(to)].reverse();
-    const planningContext: MovementPlanningContext = {
-      actor,
-      query: this.query,
-      direction: intent.direction,
-      from,
-      to,
-      cause: intent.cause,
-      source: sourceStack,
-      target: targetStack,
-    };
-    const plan = createMovementPlan(
-      planningContext,
-      this.resolveMovementBehaviors(actor).map((behavior) =>
-        behavior.planMovement?.(planningContext),
-      ),
-    );
-    const planBlocked = this.validatePlan(plan, group);
-    if (planBlocked)
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        planBlocked,
-      );
-    if (plan.passage === "unrestricted")
-      return this.commitMovementPlan(plan, group);
-
-    const local = new MovementTransaction();
-    const leave = this.runPassage(
-      sourceStack,
-      actor,
-      intent.direction,
-      local,
-      "canLeave",
-      movement,
-    );
-    if (!leave.passable)
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        leave.reason ?? "leave-blocked",
-      );
-
-    let pushed: {
-      entityId: EntityId;
-      from: CellPosition;
-      to: CellPosition;
-    } | null = null;
-    const pushable = targetStack.find(
-      (presence) =>
-        presence.entityId !== actor.id &&
-        presence.traits.includes("pushable"),
-    );
-    if (pushable) {
-      const pushTo = addDirection(to, intent.direction);
-      if (
-        !this.canOccupy(pushTo, pushable.entityId, group) ||
-        !group.canReserveDestination(pushable.entityId, pushTo)
-      ) {
-        this.runTouch(
-          targetStack,
-          actor,
-          intent.direction,
-          group.commands,
-          movement,
-        );
-        return blockedResult(
-          actor.id,
-          from,
-          to,
-          intent.direction,
-          "push-blocked",
-        );
-      }
-      pushed = { entityId: pushable.entityId, from: to, to: pushTo };
-    }
-
-    if (!this.hasWalkable(to)) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(actor.id, from, to, intent.direction, "void");
-    }
-
-    const resolution = this.resolveEntry(
-      targetStack,
-      actor,
-      intent.direction,
-      local,
-      movement,
-      pushable?.entityId ?? null,
-    );
-    if (!resolution.passable) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        resolution.reason ?? "blocked",
-      );
-    }
-
-    const enter = this.runPassage(
-      targetStack,
-      actor,
-      intent.direction,
-      local,
-      "canEnter",
-      movement,
-      pushable?.entityId ?? null,
-    );
-    if (!enter.passable) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        enter.reason ?? "blocked",
-      );
-    }
-
-    if (pushed && !group.canReserveDestination(pushed.entityId, pushed.to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
-
-    if (pushed)
-      local.move(
-        pushed.entityId,
-        pushed.from,
-        pushed.to,
-        intent.direction,
-        { type: "push", sourceEntityId: actor.id },
-        false,
-      );
-    const primaryLifecycle = {
-      ...plan.lifecycle,
-      target: plan.lifecycle.target.filter(
-        (presence) => presence.entityId !== pushable?.entityId,
-      ),
-    };
-    local.move(
-      actor.id,
-      from,
-      to,
-      intent.direction,
-      intent.cause,
-      plan.updateDirection,
-      primaryLifecycle,
-    );
-    this.appendCompanions(plan, local);
-    group.reserveDestination(actor.id, to);
-    for (const companion of plan.companions)
-      group.reserveDestination(actor.id, companion.to);
-    if (pushed) group.reserveDestination(pushed.entityId, pushed.to);
-    group.absorb(local);
-
-    return {
-      actorId: actor.id,
-      moved: true,
-      from,
-      to,
-      direction: intent.direction,
-      passage: { reason: "passable", confidence: "rule" },
-      events: [],
-    };
-  }
-
-  private validatePlan(
-    plan: MovementPlan,
-    group: MovementTransaction,
-  ): string | null {
-    if (!group.canReserveDestination(plan.actorId, plan.to))
-      return "destination-conflict";
-    for (const companion of plan.companions) {
-      const entity = this.entities.get(companion.entityId);
-      if (!entity) return "missing-companion";
-      if (!this.spatial.inBounds(companion.to)) return "companion-out-of-bounds";
-      if (this.movement.motions.forEntity(entity.id)?.status === "running")
-        return "companion-busy";
-      if (!group.canReserveDestination(plan.actorId, companion.to))
-        return "destination-conflict";
-    }
-    return null;
-  }
-
-  private commitMovementPlan(
-    plan: MovementPlan,
-    group: MovementTransaction,
-  ): MoveResult {
-    const local = new MovementTransaction();
-    local.move(
-      plan.actorId,
-      plan.from,
-      plan.to,
-      plan.direction,
-      plan.cause,
-      plan.updateDirection,
-      plan.lifecycle,
-    );
-    this.appendCompanions(plan, local);
-    group.reserveDestination(plan.actorId, plan.to);
-    for (const companion of plan.companions)
-      group.reserveDestination(plan.actorId, companion.to);
-    group.absorb(local);
-    return {
-      actorId: plan.actorId,
-      moved: true,
-      from: plan.from,
-      to: plan.to,
-      direction: plan.direction,
-      passage: { reason: plan.reason, confidence: "rule" },
-      events: [],
-    };
-  }
-
-  private appendCompanions(
-    plan: MovementPlan,
-    transaction: MovementTransaction,
-  ): void {
-    for (const companion of plan.companions) {
-      const entity = this.entities.require(companion.entityId);
-      transaction.move(
-        entity.id,
-        entity.anchor,
-        companion.to,
-        plan.direction,
-        companion.cause,
-        companion.updateDirection ?? false,
-        companion.lifecycle,
-      );
-    }
-  }
-
-  private canOccupy(
-    cell: CellPosition,
-    movingEntityId: EntityId,
-    transaction?: MovementTransaction,
-  ): boolean {
-    if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
-    return !this.spatial.presencesAt(cell).some(
-      (presence) =>
-        presence.entityId !== movingEntityId &&
-        !transaction?.isEntryAllowed(presence.entityId) &&
-        (presence.traits.includes("blocking") ||
-          presence.traits.includes("pushable")),
-    );
-  }
-
-  private hasWalkable(cell: CellPosition): boolean {
-    return this.spatial.hasTraitAt(cell, "walkable");
-  }
-
-  private resolveEntry(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    transaction: MovementTransaction,
-    movement: MovementContext,
-    ignoredEntity: EntityId | null = null,
-  ): PassageResult {
-    for (const presence of stack) {
-      if (
-        presence.entityId === actor.id ||
-        presence.entityId === ignoredEntity
-      )
-        continue;
-      const entity = this.entities.require(presence.entityId);
-      for (const behavior of this.resolveBehaviors(entity, presence)) {
-        const result = behavior.resolveEntry?.(
-          this.context(
-            actor,
-            presence,
-            entity,
-            direction,
-            transaction.commands,
-            movement,
-          ),
-        );
-        if (!result) continue;
-        if (result.result === "blocked")
-          return {
-            passable: false,
-            ...(result.reason ? { reason: result.reason } : {}),
-          };
-        if (result.result === "pass" || result.result === "clear-and-pass")
-          transaction.allowEntryFor(presence.entityId);
-      }
-    }
-    return { passable: true };
-  }
-
-  private runPassage(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    transaction: MovementTransaction,
-    hook: "canEnter" | "canLeave",
-    movement: MovementContext,
-    ignoredEntity: EntityId | null = null,
-  ): PassageResult {
-    for (const presence of stack) {
-      if (
-        presence.entityId === actor.id ||
-        presence.entityId === ignoredEntity ||
-        (hook === "canEnter" && transaction.isEntryAllowed(presence.entityId))
-      )
-        continue;
-      const entity = this.entities.require(presence.entityId);
-      let explicitPass = false;
-      for (const behavior of this.resolveBehaviors(entity, presence)) {
-        const result = behavior[hook]?.(
-          this.context(
-            actor,
-            presence,
-            entity,
-            direction,
-            transaction.commands,
-            movement,
-          ),
-        );
-        if (result?.passable === false) return result;
-        if (result?.passable === true) explicitPass = true;
-      }
-      if (!explicitPass && presence.traits.includes("blocking"))
-        return {
-          passable: false,
-          reason: `blocking:${entity.type}`,
-        };
-    }
-    return { passable: true };
-  }
-
-  private runTouch(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    queue: CommandQueue,
-    movement: MovementContext,
-  ): void {
-    for (const presence of stack) {
-      if (presence.entityId === actor.id) continue;
-      this.runHook(
-        "onTouch",
-        presence,
-        actor,
-        direction,
-        queue,
-        movement,
-      );
-    }
-  }
-
-  private runHook(
-    hook: "onArrive" | "onEnter" | "onLeave" | "onTouch",
-    presence: EntityPresence,
-    actor: EntityInstance,
-    direction: Direction,
-    queue: CommandQueue,
-    movement: MovementContext,
-  ): void {
-    const entity = this.entities.get(presence.entityId);
-    if (!entity) return;
-    const context = this.context(
-      actor,
-      presence,
-      entity,
-      direction,
-      queue,
-      movement,
-    );
-    for (const behavior of this.resolveBehaviors(entity, presence))
-      behavior[hook]?.(context);
-  }
-
-  private resolveBehaviors(
-    entity: EntityInstance,
-    presence: EntityPresence,
-  ): readonly Behavior[] {
-    const definition = this.registry.require(entity.type);
-    return this.behaviors.resolve(definition.behaviors, presence.traits);
-  }
-
-  private resolveMovementBehaviors(
-    entity: EntityInstance,
-  ): readonly Behavior[] {
-    const definition = this.registry.require(entity.type);
-    const traits = new Set(
-      this.spatial
-        .presencesForEntity(entity.id)
-        .flatMap((presence) => [...presence.traits]),
-    );
-    return this.behaviors.resolve(definition.behaviors, [...traits]);
-  }
-
-  private context(
-    actor: EntityInstance,
-    presence: EntityPresence,
-    self: EntityInstance,
-    direction: Direction | undefined,
-    queue: CommandQueue,
-    movement?: MovementContext,
-    time?: WorldTick,
-  ): BehaviorContext {
-    return {
-      query: this.query,
-      commands: queue,
-      actor,
-      self: { entity: self, presence },
-      ...(direction ? { direction } : {}),
-      ...(movement ? { movement } : {}),
-      ...(time ? { time } : {}),
-    };
   }
 
   private startMotions(
@@ -1052,7 +563,7 @@ export class World {
       const presences =
         dispatch.scope === "source" ? plan.source : plan.target;
       for (const presence of presences)
-        this.runHook(
+        this.behaviorRuntime.runHook(
           dispatch.hook,
           presence,
           actor,
@@ -1093,35 +604,6 @@ export class World {
     };
   }
 
-}
-
-function addDirection(
-  cell: CellPosition,
-  direction: Direction,
-): CellPosition {
-  if (direction === "up") return { x: cell.x, y: cell.y - 1 };
-  if (direction === "down") return { x: cell.x, y: cell.y + 1 };
-  if (direction === "left") return { x: cell.x - 1, y: cell.y };
-  return { x: cell.x + 1, y: cell.y };
-}
-
-function blockedResult(
-  actorId: EntityId,
-  from: CellPosition,
-  to: CellPosition,
-  direction: Direction,
-  reason: string,
-): MoveResult {
-  return {
-    actorId,
-    moved: false,
-    blocked: true,
-    from,
-    to,
-    direction,
-    passage: { reason, confidence: "rule" },
-    events: [],
-  };
 }
 
 function absorbCommit(target: WorldStepResult, commit: WorldCommitResult): void {
