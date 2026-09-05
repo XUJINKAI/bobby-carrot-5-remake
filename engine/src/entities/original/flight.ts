@@ -1,4 +1,4 @@
-import { EntityTypeId, type JsonValue } from "@bobby/model";
+import { EntityTypeId } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -111,7 +111,7 @@ const landingBehavior: Behavior = {
 
 const flightAction: RuntimeActionDefinition = {
   kind: FLIGHT_ACTION,
-  update({ action, time, query, commands }) {
+  update({ action, time, query }) {
     const actorId = action.ownerEntityId;
     if (actorId === undefined) return "complete";
     const actor = query.entity(actorId);
@@ -119,29 +119,10 @@ const flightAction: RuntimeActionDefinition = {
     accrueActionDeadline(action, time);
     if (query.motionForEntity(actorId)?.status === "running") return "running";
 
-    if (booleanState(action.state.pendingMove)) {
-      const beforeX = integerState(action.state.beforeX);
-      const beforeY = integerState(action.state.beforeY);
-      if (actor.anchor.x === beforeX && actor.anchor.y === beforeY) {
-        commands.emit({
-          type: "flight-path-invalid",
-          entityId: actor.id,
-          x: actor.anchor.x,
-          y: actor.anchor.y,
-          reason: "map-edge",
-        });
-        return "complete";
-      }
-      action.state.pendingMove = false;
-    }
-
     if (!consumeActionDeadline(action, DEFAULT_FLIGHT_CELL_MS, time.stepMs / 2))
       return "running";
     const direction = actor.direction;
     if (!direction) return "complete";
-    action.state.beforeX = actor.anchor.x;
-    action.state.beforeY = actor.anchor.y;
-    action.state.pendingMove = true;
     return {
       status: "running",
       intents: [
@@ -157,6 +138,22 @@ const flightAction: RuntimeActionDefinition = {
         },
       ],
     };
+  },
+  onIntentResult({ action, result, query, commands }) {
+    if (result.moved) return;
+    const actorId = action.ownerEntityId;
+    const actor = actorId === undefined ? undefined : query.entity(actorId);
+    if (actor) {
+      commands.setState(actor.id, patchBobbyFlight(actor.state, false));
+      commands.emit({
+        type: "flight-path-invalid",
+        entityId: actor.id,
+        x: actor.anchor.x,
+        y: actor.anchor.y,
+        reason: result.passage.reason,
+      });
+    }
+    commands.cancelAction(action.id);
   },
 };
 
@@ -196,18 +193,6 @@ function createFlightAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FLIGHT_ACTION,
     ownerEntityId,
     blocksInput: true,
-    state: { elapsedMs: DEFAULT_FLIGHT_CELL_MS, pendingMove: false },
+    state: { elapsedMs: DEFAULT_FLIGHT_CELL_MS },
   };
-}
-
-function booleanState(value: JsonValue | undefined): boolean {
-  return value === true;
-}
-
-function numberState(value: JsonValue | undefined): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function integerState(value: JsonValue | undefined): number {
-  return Math.floor(numberState(value));
 }

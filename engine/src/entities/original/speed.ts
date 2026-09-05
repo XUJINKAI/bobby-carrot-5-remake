@@ -87,26 +87,28 @@ const speedRunAction: RuntimeActionDefinition = {
     return "retry";
   },
 
+  onIntentResult({ action, result, query, commands }) {
+    const ownerEntityId = action.ownerEntityId;
+    if (ownerEntityId === undefined) return;
+    if (result.moved) {
+      action.state.pendingMove = true;
+      return;
+    }
+    const owner = query.entity(ownerEntityId);
+    commands.emit({ type: "speed-impact", entityId: ownerEntityId });
+    if (owner)
+      commands.setState(
+        ownerEntityId,
+        patchBobbySpeedBoost(owner.state, null),
+      );
+    commands.cancelAction(action.id);
+  },
+
   update({ action, time, query, commands }) {
     const ownerEntityId = action.ownerEntityId;
     if (ownerEntityId === undefined) return "complete";
     const owner = query.entity(ownerEntityId);
     if (!owner) return "complete";
-
-    if (booleanState(action.state.pendingMove)) {
-      const beforeX = numberState(action.state.beforeX);
-      const beforeY = numberState(action.state.beforeY);
-      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick若位置
-      // 没变，说明 Speed 强制移动撞停。
-      if (owner.anchor.x === beforeX && owner.anchor.y === beforeY) {
-        commands.emit({ type: "speed-impact", entityId: ownerEntityId });
-        commands.setState(
-          ownerEntityId,
-          patchBobbySpeedBoost(owner.state, null),
-        );
-        return "complete";
-      }
-    }
 
     const waitMs = positiveNumberState(action.state.waitMs);
     accrueActionDeadline(action, time);
@@ -160,9 +162,6 @@ const speedRunAction: RuntimeActionDefinition = {
       patchBobbySpeedBoost(owner.state, { direction, phase: "full" }),
     );
     action.state.direction = direction;
-    action.state.beforeX = owner.anchor.x;
-    action.state.beforeY = owner.anchor.y;
-    action.state.pendingMove = true;
     action.state.waitMs = cadenceMs;
 
     return {

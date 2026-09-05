@@ -129,14 +129,6 @@ const movingEntityAction: RuntimeActionDefinition = {
     )
       return "running";
 
-    if (booleanState(action.state.pendingMove)) {
-      const beforeX = integerState(action.state.beforeX);
-      const beforeY = integerState(action.state.beforeY);
-      if (entity.anchor.x === beforeX && entity.anchor.y === beforeY)
-        return stopMovingEntity(entity, commands, isCloud(entity.type));
-      action.state.pendingMove = false;
-    }
-
     if (isCloud(entity.type) && isMatchingCloudParking(query, entity))
       return stopMovingEntity(entity, commands, false);
 
@@ -149,9 +141,6 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (entity.direction !== route.direction)
       commands.setDirection(entityId, route.direction);
     commands.setState(entityId, { ...entity.state, moving: true });
-    action.state.beforeX = entity.anchor.x;
-    action.state.beforeY = entity.anchor.y;
-    action.state.pendingMove = true;
     return {
       status: "running",
       intents: [
@@ -167,6 +156,14 @@ const movingEntityAction: RuntimeActionDefinition = {
         },
       ],
     };
+  },
+  onIntentResult({ action, result, query, commands }) {
+    if (result.moved) return;
+    const entityId = action.ownerEntityId;
+    const entity = entityId === undefined ? undefined : query.entity(entityId);
+    if (!entity) return;
+    stopMovingEntity(entity, commands);
+    if (!isCloud(entity.type)) commands.cancelAction(action.id);
   },
 };
 
@@ -227,7 +224,6 @@ function createMovingEntityAction(
     ownerEntityId,
     state: {
       elapsedMs: initialElapsedMs,
-      pendingMove: false,
     },
   };
 }
@@ -426,8 +422,4 @@ function numberState(value: JsonValue | undefined): number {
 
 function integerState(value: JsonValue | undefined): number {
   return Math.max(0, Math.floor(numberState(value)));
-}
-
-function booleanState(value: JsonValue | undefined): boolean {
-  return value === true;
 }

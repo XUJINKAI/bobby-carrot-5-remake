@@ -123,3 +123,40 @@ test("Airborne movement chains without a stationary World tick", () => {
   }
   assert.equal(observedFlightMotion, true);
 });
+
+test("Flight boundary leaves the actor in a coherent grounded state", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 3 }, (_, x) => ({
+        type: EntityTypeId.GROUND_C,
+        x,
+        y: 0,
+      })),
+      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      {
+        type: EntityTypeId.BOBBY,
+        x: 0,
+        y: 0,
+        direction: "right",
+        state: { kite: true },
+      },
+    ],
+  });
+  const actor = world.query.entitiesWithTrait("player")[0];
+  move(world, actor.id, "right");
+  world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
+  const boundary = world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
+
+  assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
+  assert.equal(world.entity(actor.id).state.flying, false);
+  assert.equal(world.actions.active.length, 0);
+  assert.ok(
+    boundary.events.some(
+      (event) =>
+        event.type === "flight-path-invalid" && event.reason === "void",
+    ),
+  );
+});

@@ -56,19 +56,6 @@ const fireballAction: RuntimeActionDefinition = {
     if (query.motionForEntity(fireballId)?.status === "running")
       return "running";
 
-    if (booleanState(action.state.pendingMove)) {
-      const beforeX = integerState(action.state.beforeX);
-      const beforeY = integerState(action.state.beforeY);
-      if (
-        fireball.anchor.x === beforeX &&
-        fireball.anchor.y === beforeY
-      ) {
-        destroyFireball(commands, fireballId, fireball.anchor.x, fireball.anchor.y);
-        return "complete";
-      }
-      action.state.pendingMove = false;
-    }
-
     if (
       !consumeActionDeadline(
         action,
@@ -90,12 +77,6 @@ const fireballAction: RuntimeActionDefinition = {
       destroyFireball(commands, fireballId, target.x, target.y);
       return "complete";
     }
-    meltIceAt(query, commands, target.x, target.y);
-    if (reflected) commands.setDirection(fireballId, reflected);
-
-    action.state.beforeX = fireball.anchor.x;
-    action.state.beforeY = fireball.anchor.y;
-    action.state.pendingMove = true;
     return {
       status: "running",
       intents: [
@@ -111,6 +92,22 @@ const fireballAction: RuntimeActionDefinition = {
         },
       ],
     };
+  },
+  onIntentResult({ action, intent, result, query, commands }) {
+    const fireballId = action.ownerEntityId;
+    if (fireballId === undefined) return;
+    if (!result.moved) {
+      commands.cancelAction(action.id);
+      destroyFireball(commands, fireballId, result.to.x, result.to.y);
+      return;
+    }
+    meltIceAt(query, commands, result.to.x, result.to.y);
+    const reflected = reflectedDirectionAt(
+      query,
+      result.to,
+      intent.direction,
+    );
+    if (reflected) commands.setDirection(fireballId, reflected);
   },
 };
 
@@ -165,7 +162,7 @@ function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FIREBALL_ACTION,
     ownerEntityId,
     focus: { entityId: ownerEntityId },
-    state: { elapsedMs: DEFAULT_FIREBALL_CELL_MS, pendingMove: false },
+    state: { elapsedMs: DEFAULT_FIREBALL_CELL_MS },
   };
 }
 
@@ -242,8 +239,4 @@ function numberState(value: JsonValue | undefined): number {
 
 function integerState(value: JsonValue | undefined): number {
   return Math.max(0, Math.floor(numberState(value)));
-}
-
-function booleanState(value: JsonValue | undefined): boolean {
-  return value === true;
 }
