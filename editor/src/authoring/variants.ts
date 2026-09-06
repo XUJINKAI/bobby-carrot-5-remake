@@ -1,8 +1,14 @@
-import type { EntityCatalog, EntityFieldDefinition } from "@bobby/engine";
-import type { JsonValue, LevelEntity } from "@bobby/model";
+import type { EntityCatalog } from "@bobby/engine";
+import {
+  entityMapDefinition,
+  isLevelEntityReservedField,
+  type JsonPrimitive,
+  type LevelEntity,
+} from "@bobby/model";
 import { applyEditorVariant } from "../definitions/builtin.js";
 import type {
   EditorEntityDefinition,
+  EditorEntityFields,
   EditorEntityVariant,
   EditorPlacementPreset,
 } from "../definitions/types.js";
@@ -44,44 +50,34 @@ export function cyclePlacementVariant<T extends EditorPlacementPreset>(
     type: preset.type,
     x: 0,
     y: 0,
+    ...(preset.fields ? structuredClone(preset.fields) : {}),
     ...(preset.direction ? { direction: preset.direction } : {}),
-    ...(preset.properties ? { properties: structuredClone(preset.properties) } : {}),
-    ...(preset.state ? { state: structuredClone(preset.state) } : {}),
   };
   const current = editorVariantIndex(source, catalog, definition);
   const base = current >= 0 ? current : 0;
   const index = modulo(base + Math.sign(step || 1), variants.length);
   const next = applyEditorVariant(source, variants[index]!);
+  const fields = fieldsFromEntity(next);
   return {
     ...preset,
     ...(next.direction ? { direction: next.direction } : {}),
-    ...(next.properties ? { properties: next.properties } : {}),
-    ...(next.state ? { state: next.state } : {}),
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
 
 function withDefaults(
   entity: Readonly<LevelEntity>,
-  catalog: EntityCatalog,
+  _catalog: EntityCatalog,
   editor: EditorEntityDefinition | undefined,
 ): LevelEntity {
-  const definition = catalog.require(entity.type);
-  return {
-    ...structuredClone(entity),
-    ...(entity.direction
-      ? { direction: entity.direction }
-      : editor?.defaultDirection
-        ? { direction: editor.defaultDirection }
-        : {}),
-    properties: {
-      ...fieldDefaults(definition.properties),
-      ...(entity.properties ?? {}),
-    },
-    state: {
-      ...fieldDefaults(definition.state),
-      ...(entity.state ?? {}),
-    },
-  };
+  const result = structuredClone(entity);
+  for (const field of entityMapDefinition(entity.type)?.fields ?? []) {
+    if (result[field.key] === undefined && field.default !== undefined)
+      result[field.key] = structuredClone(field.default);
+  }
+  if (!result.direction && editor?.defaultDirection)
+    result.direction = editor.defaultDirection;
+  return result;
 }
 
 function variantMatches(
@@ -89,24 +85,27 @@ function variantMatches(
   variant: EditorEntityVariant,
 ): boolean {
   if (variant.direction && entity.direction !== variant.direction) return false;
-  for (const [key, value] of Object.entries(variant.properties ?? {}))
-    if (!same(entity.properties?.[key], value)) return false;
-  for (const [key, value] of Object.entries(variant.state ?? {}))
-    if (!same(entity.state?.[key], value)) return false;
+  for (const [key, value] of Object.entries(variant.fields ?? {}))
+    if (!same(entity[key], value)) return false;
   return true;
 }
 
-function fieldDefaults(
-  fields: readonly EntityFieldDefinition[] | undefined,
-): Record<string, JsonValue> {
-  const result: Record<string, JsonValue> = {};
-  for (const field of fields ?? [])
-    if (field.default !== undefined) result[field.key] = structuredClone(field.default);
-  return result;
+function fieldsFromEntity(entity: Readonly<LevelEntity>): EditorEntityFields {
+  const fields: Record<string, JsonPrimitive> = {};
+  for (const [key, value] of Object.entries(entity)) {
+    if (
+      key === "direction" ||
+      isLevelEntityReservedField(key) ||
+      value === undefined
+    )
+      continue;
+    fields[key] = value;
+  }
+  return fields;
 }
 
-function same(left: JsonValue | undefined, right: JsonValue): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+function same(left: JsonPrimitive | undefined, right: JsonPrimitive): boolean {
+  return Object.is(left, right);
 }
 
 function modulo(value: number, size: number): number {
