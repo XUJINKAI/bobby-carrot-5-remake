@@ -4,6 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
 import { World } from "../dist/world/World.js";
+import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 
 test("Fireball owns its obstacle policy instead of target-side projectile traits", () => {
   const registry = createBuiltinEntityRegistry();
@@ -11,12 +12,15 @@ test("Fireball owns its obstacle policy instead of target-side projectile traits
   const rock = registry.require(EntityTypeId.CRUMBLY_ROCK);
 
   assert.equal(rock.traits.includes("dragon-fire-blocking"), false);
-  assert.equal(
-    dragon.footprint.parts.some((part) =>
-      part.traits?.includes("dragon-fire-blocking"),
-    ),
-    false,
-  );
+  for (const direction of ["left", "right"]) {
+    assert.equal(
+      resolveFootprintCells(
+        { anchor: { x: 2, y: 0 }, direction },
+        dragon.footprint,
+      ).some((part) => part.traits?.includes("dragon-fire-blocking")),
+      false,
+    );
+  }
 });
 
 test("Fireball stops when the target terrain is outside its propagation domain", () => {

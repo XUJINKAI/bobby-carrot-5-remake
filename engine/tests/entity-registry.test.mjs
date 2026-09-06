@@ -72,26 +72,51 @@ test("首轮合并类型使用 state/direction/property 而不是拆分 type", (
   assert.equal(registry.require("color-pink-block").state[0].key, "raised");
 });
 
-test("Dragon 的 direction 表示龙头实际朝向并通过 footprint 表达三格", () => {
+test("Dragon 只显式声明 left/right body-centered footprint", () => {
   const dragon = createBuiltinEntityRegistry().require("dragon");
-  assert.equal(dragon.footprint.rotateWithDirection, true);
-  assert.equal(dragon.footprint.baseDirection, "left");
+  assert.deepEqual(Object.keys(dragon.footprint.byDirection).sort(), [
+    "left",
+    "right",
+  ]);
   assert.deepEqual(
-    dragon.footprint.parts.map((part) => [part.dx, part.dy, part.role]),
+    dragon.footprint.byDirection.left.map((part) => [
+      part.dx,
+      part.dy,
+      part.role,
+    ]),
     [
-      [0, 0, "head"],
-      [1, 0, "body"],
-      [2, 0, "tail"],
+      [-1, 0, "head"],
+      [0, 0, "body"],
+      [1, 0, "tail"],
+    ],
+  );
+  assert.deepEqual(
+    dragon.footprint.byDirection.right.map((part) => [
+      part.dx,
+      part.dy,
+      part.role,
+    ]),
+    [
+      [1, 0, "head"],
+      [0, 0, "body"],
+      [-1, 0, "tail"],
     ],
   );
 });
 
-test("Sandman / Dream Machine / Beaver 共享 directional footprint 约定", () => {
+test("Sandman / Dream Machine / Beaver 使用固定 footprint", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
-    const definition = registry.require(type);
-    assert.equal(definition.footprint.rotateWithDirection, true, type);
-    assert.equal(definition.footprint.baseDirection, "down", type);
+    const footprint = registry.require(type).footprint;
+    assert.equal("parts" in footprint, true, type);
+    assert.deepEqual(
+      footprint.parts.map((part) => [part.dx, part.dy, part.role]),
+      [
+        [0, 0, "head"],
+        [0, 1, "body"],
+      ],
+      type,
+    );
   }
 });
 

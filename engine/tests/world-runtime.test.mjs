@@ -22,12 +22,16 @@ function registry() {
       layer: "object",
       stackOrder: 100,
       footprint: {
-        rotateWithDirection: true,
-        baseDirection: "right",
-        parts: [
-          { dx: 0, dy: 0, role: "head" },
-          { dx: 1, dy: 0, role: "tail" },
-        ],
+        byDirection: {
+          right: [
+            { dx: 0, dy: 0, role: "head" },
+            { dx: 1, dy: 0, role: "tail" },
+          ],
+          down: [
+            { dx: 0, dy: 0, role: "head" },
+            { dx: 0, dy: 1, role: "tail" },
+          ],
+        },
       },
     },
   ]);
@@ -197,7 +201,7 @@ test("layer is semantic and independent from stackOrder", () => {
   assert.equal(inspection.presences.find((item) => item.type === "item").layer, "object");
 });
 
-test("directional footprint rotates from its base direction", () => {
+test("directional footprint uses the explicitly declared direction layout", () => {
   const entities = registry();
   const world = new World(
     {
