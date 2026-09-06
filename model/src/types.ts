@@ -1,6 +1,6 @@
 export type Direction = "up" | "down" | "left" | "right";
 
-/** Canonical entity type identity. Source folders such as original/custom are not part of this value. */
+/** Canonical Entity identity. Source folders such as original/custom are not part of this value. */
 export type EntityType = string;
 
 export type JsonPrimitive = string | number | boolean | null;
@@ -9,22 +9,17 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-export type EntityProperties = Record<string, JsonValue>;
-export type EntityState = Record<string, JsonValue>;
-export type EntityTraits = string[];
-
-/** One persisted entity anchor in a canonical BC5R map. */
+/**
+ * LevelMap.entities[] 的公共持久化形状。
+ * 除 type/x/y/stackOrder 外，其余顶层字段由 EntityMapDefinition 按 type 精确约束。
+ */
 export interface LevelEntity {
   type: EntityType;
   x: number;
   y: number;
-  direction?: Direction;
   /** Optional instance-level Spatial ordering override. */
   stackOrder?: number;
-  properties?: EntityProperties;
-  traits?: EntityTraits;
-  /** Initial mutable gameplay state for this entity. */
-  state?: EntityState;
+  [key: string]: JsonPrimitive | undefined;
 }
 
 export type WinCondition =
@@ -48,11 +43,31 @@ export interface LevelRules {
   limits?: LevelLimit[];
 }
 
-/** Canonical playable/authorable BC5R map. */
+/** Logical music track ID. Playback style such as modern/8bit is runtime configuration. */
+export type MusicTrackId = string;
+
+/** "random" / "none" are reserved map-level policies; other strings are logical track IDs. */
+export type MapMusic = "random" | "none" | MusicTrackId;
+
+/** Pure playable Engine input. */
 export interface LevelMap {
   schemaVersion: 1;
   width: number;
   height: number;
+  music?: MapMusic;
+  /** In-game note/presentation text that belongs to this map. */
+  note?: string;
   entities: LevelEntity[];
   rules?: LevelRules;
+}
+
+/** Human-facing metadata carried by a standalone map document. */
+export interface MapMeta {
+  name: string;
+  author?: string;
+}
+
+/** Canonical source/built/share map document. Resource identity comes from path/filename. */
+export interface MapDocument extends LevelMap {
+  meta: MapMeta;
 }
