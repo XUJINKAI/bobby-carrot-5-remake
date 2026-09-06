@@ -11,6 +11,8 @@ export interface LevelEntity {
   type: EntityType;
   x: number;
   y: number;
+  /** Common typed field; EntityMapDefinition decides which Entity types may persist it. */
+  direction?: Direction;
   stackOrder?: number;
   [key: string]: JsonPrimitive | undefined;
 }
