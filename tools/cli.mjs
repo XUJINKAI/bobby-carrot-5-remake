@@ -27,7 +27,8 @@ if (group === "original") {
   else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
 } else if (group === "schema") {
   if (action === "examples") {
-    run(tscCommand(), ["-b", "model", "adventure", "--force"]);
+    // Schema review phase intentionally builds only model; the rest of the repo still consumes the old LevelEntity shape.
+    run(tscCommand(), ["-b", "model", "--force"]);
     run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {

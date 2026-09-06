@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@bobby/adventure": "0.1.0",
     "@bobby/model": "0.1.0"
   }
 }
