@@ -1,6 +1,6 @@
-import type { Direction, EntityState, JsonValue } from "@bobby/model";
+import type { Direction, JsonValue } from "@bobby/model";
 import type { EntityLayer } from "./entity/EntityDefinition.js";
-import type { EntityId } from "./entity/EntityInstance.js";
+import type { EntityId, EntityState } from "./entity/EntityInstance.js";
 
 /** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
 export interface WorldEvent {
