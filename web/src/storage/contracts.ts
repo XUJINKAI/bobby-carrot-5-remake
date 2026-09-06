@@ -1,5 +1,5 @@
 import type { AdventureSave } from "@bobby/adventure";
-import type { MapDocument } from "@bobby/model";
+import type { Bc5rGameId, MapDocument } from "@bobby/model";
 
 /** Physical browser-storage namespace. These strings are part of the persisted Web contract. */
 export const ADVENTURE_STORAGE_KEY = "bc5r:adventure";
@@ -11,6 +11,8 @@ export const EDITOR_AUTOSAVE_STORAGE_KEY = `${EDITOR_STORAGE_PREFIX}${EDITOR_AUT
 /** One Explore collection is one physical localStorage record: bc5r:explore/<collection>. */
 export interface ExploreCollectionStorage {
   schemaVersion: 1;
+  /** Project provenance/source marker stored with every independently managed collection save. */
+  game: Bc5rGameId;
   completedMaps: string[];
   lastMap?: string;
 }
