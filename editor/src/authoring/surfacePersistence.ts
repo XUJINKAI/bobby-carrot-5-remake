@@ -1,4 +1,4 @@
-import { EntityTypeId, type EntityState, type EntityType, type LevelEntity } from "@bobby/model";
+import { EntityTypeId, type EntityType, type LevelEntity } from "@bobby/model";
 import type { EditorMap } from "../level/types.js";
 import {
   materializeSurfaceVariants as resolveAutoSurfaceVariants,
@@ -25,7 +25,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
   };
 }
 
-/** 吸取已保存的 canonical type + state.variant 时仍恢复到对应 Exact visual。 */
+/** 吸取已保存的 canonical type + flat variant 时仍恢复到对应 Exact visual。 */
 export function pickSurfaceBrush(
   level: Readonly<EditorMap>,
   cell: Cell,
@@ -36,9 +36,9 @@ export function pickSurfaceBrush(
   const terrain = surfaceTerrainForEntity(entity.type);
   if (!terrain) return null;
 
-  const autoTerrain = entity.properties?.[AUTO_TERRAIN_KEY];
+  const autoTerrain = entity[AUTO_TERRAIN_KEY];
   if (typeof autoTerrain === "string") {
-    const seed = Number(entity.properties?.[AUTO_SEED_KEY]);
+    const seed = Number(entity[AUTO_SEED_KEY]);
     return {
       terrain: autoTerrain as SurfaceTerrainId,
       pattern: "auto",
@@ -68,7 +68,7 @@ function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
         ? 2
         : entity.type === EntityTypeId.WATER
           ? 1
-          : Number(entity.state?.variant);
+          : Number(entity.variant);
     return Number.isInteger(variant)
       ? withVariant(entity, entity.type, variant)
       : entity;
@@ -86,13 +86,13 @@ function resolveFixedVariantType(
 ): EntityType | null {
   const variants = terrain.rows.flat();
   if (terrain.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
-    const index = Number(entity.state?.variant) - 1;
+    const index = Number(entity.variant) - 1;
     return Number.isInteger(index) && index >= 0
       ? variants[index]?.type ?? null
       : null;
   }
   if (terrain.id === "water") {
-    const index = Number(entity.state?.variant) - 1;
+    const index = Number(entity.variant) - 1;
     if (Number.isInteger(index) && index >= 0)
       return variants[index]?.type ?? null;
     return variants.find((candidate) => candidate.type === entity.type)?.type ?? null;
@@ -111,12 +111,11 @@ function withVariant(
   type: EntityType,
   variant: number,
 ): LevelEntity {
-  const state = { ...(entity.state ?? {}), variant } as EntityState;
-  return { ...entity, type, state };
+  return { ...entity, type, variant };
 }
 
 function absoluteTsVariant(entity: Readonly<LevelEntity>): number | null {
-  const fixed = Number(entity.state?.variant);
+  const fixed = Number(entity.variant);
   if (Number.isInteger(fixed) && fixed >= 1 && fixed <= 256) return fixed;
   return absoluteTsType(entity.type);
 }
