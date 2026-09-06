@@ -1,5 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
-import type { AdventureEntityPropertiesPatch } from "./augment.js";
+import type { AdventureEntityFieldPatch } from "./augment.js";
 import {
   parseAdventureLevelId,
   type AdventureLevelId,
@@ -27,9 +27,7 @@ export interface AdventureProfilePlan {
   };
 }
 
-/**
- * Adventure 对 Bonus 关卡的可调策略。这里保留产品参数入口；Engine 只读取最终 Entity properties。
- */
+/** Adventure-specific policy values materialized as canonical flat Map fields. */
 export interface AdventureBonusRuntimePolicy {
   temporaryKeyVendor: {
     interaction: string;
@@ -58,7 +56,7 @@ export const DEFAULT_ADVENTURE_RUNTIME_POLICY: AdventureRuntimePolicy = {
 
 export interface AdventureSessionPlan extends AdventureProfilePlan {
   levelId: AdventureLevelId;
-  entityPatches: readonly AdventureEntityPropertiesPatch[];
+  entityPatches: readonly AdventureEntityFieldPatch[];
 }
 
 export function planAdventureProfile(save: AdventureSave): AdventureProfilePlan {
@@ -93,11 +91,11 @@ export function planAdventureSession(
 
 function bonusEntityPatches(
   policy: AdventureBonusRuntimePolicy,
-): AdventureEntityPropertiesPatch[] {
+): AdventureEntityFieldPatch[] {
   return [
     {
       type: EntityTypeId.BEAVER,
-      properties: {
+      fields: {
         interaction: policy.temporaryKeyVendor.interaction,
         temporaryKeyPriceBonusCoins:
           policy.temporaryKeyVendor.priceBonusCoins,
@@ -105,7 +103,7 @@ function bonusEntityPatches(
     },
     {
       type: EntityTypeId.LOCK,
-      properties: {
+      fields: {
         deathCountdownSeconds: policy.lock.deathCountdownSeconds,
       },
     },
