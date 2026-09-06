@@ -5,10 +5,10 @@ import type { Behavior } from "../../world/behavior/Behavior.js";
 const portalBehavior: Behavior = {
   id: "portal",
   onEnter({ query, actor, self, commands }) {
-    const channel = self.entity.properties?.channel;
+    const channel = self.entity.state?.channel;
     const target = query.entitiesWithTrait("portal").find(
       (entity) =>
-        entity.id !== self.entity.id && entity.properties?.channel === channel,
+        entity.id !== self.entity.id && entity.state?.channel === channel,
     );
     if (!target) return;
     commands.move(actor.id, target.anchor.x, target.anchor.y);
