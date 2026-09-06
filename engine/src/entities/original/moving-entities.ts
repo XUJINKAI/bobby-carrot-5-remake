@@ -334,9 +334,8 @@ function forcedWindAt(
   currentDirection: Direction | null,
 ): Direction | null {
   const directions: readonly Direction[] = ["up", "down", "left", "right"];
-  for (let channel = 0; channel < directions.length; channel += 1) {
-    const direction = directions[channel]!;
-    if (direction === currentDirection || !windEnabled(query, channel)) continue;
+  for (const direction of directions) {
+    if (direction === currentDirection || !windEnabled(query, direction)) continue;
     const windmill = windmillFor(query, direction);
     if (windmill && insideWindRange(cell, windmill.anchor, direction))
       return direction;
@@ -344,11 +343,11 @@ function forcedWindAt(
   return null;
 }
 
-function windEnabled(query: WorldQueryApi, channel: number): boolean {
+function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
   return query.entitiesWithTrait("switch").some(
     (entity) =>
       entity.type === EntityTypeId.WIND_SWITCH &&
-      integerState(entity.properties?.channel) === channel &&
+      entity.direction === direction &&
       entity.state?.active === true,
   );
 }
@@ -457,12 +456,4 @@ function directionState(value: JsonValue | undefined): Direction | null {
   return value === "up" || value === "down" || value === "left" || value === "right"
     ? value
     : null;
-}
-
-function numberState(value: JsonValue | undefined): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function integerState(value: JsonValue | undefined): number {
-  return Math.max(0, Math.floor(numberState(value)));
 }
