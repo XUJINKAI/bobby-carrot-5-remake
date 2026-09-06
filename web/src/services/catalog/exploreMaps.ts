@@ -24,10 +24,6 @@ export async function resolveMapDocument(
     throw new Error(
       `${ref.collection}/${ref.id}: map schemaVersion 必须为 1`,
     );
-  if (document.meta?.id !== ref.id)
-    throw new Error(
-      `${ref.collection}/${ref.id}: meta.id 与资源 ID 不一致`,
-    );
   return {
     ref,
     document,
