@@ -1,6 +1,11 @@
 import type { EntityType } from "./types.js";
 
-/** Stable canonical entity type names used by built-in BC5R content. */
+/**
+ * Current Engine implementation identities.
+ * During level-schema stabilization these are NOT the authoritative LevelMap entity catalog;
+ * persisted map identities are defined by MapEntityTypeId / ENTITY_MAP_DEFINITIONS.
+ * Runtime-only identities will move out of @bobby/model during the later repository migration.
+ */
 export const EntityTypeId = {
   BOBBY: "bobby",
 

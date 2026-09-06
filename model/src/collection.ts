@@ -42,10 +42,12 @@ export interface MapCollectionMap {
   filters?: Record<string, string[]>;
 }
 
-/** assets/maps/<collection>/index.json */
+/**
+ * assets/maps/<collection>/index.json
+ * Collection identity comes from the resource path and is deliberately not repeated here.
+ */
 export interface MapCollectionIndex {
   schemaVersion: 1;
-  id: string;
   name: string;
   description?: string;
   cardSize: MapCollectionCardSize;
@@ -55,6 +57,7 @@ export interface MapCollectionIndex {
 }
 
 export interface MapCollectionSummary {
+  /** Resource/path ID used to resolve assets/maps/<id>/index.json. */
   id: string;
   name: string;
   description?: string;

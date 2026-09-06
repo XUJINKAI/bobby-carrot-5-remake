@@ -15,12 +15,16 @@ export const ADVENTURE_ITEM_IDS = [
 ] as const;
 export type AdventureItemId = (typeof ADVENTURE_ITEM_IDS)[number];
 
+/** Persisted one-off Adventure events. Keep this list explicit; do not accept arbitrary strings. */
+export const ADVENTURE_EVENT_IDS = ["bonus-key-trial"] as const;
+export type AdventureEventId = (typeof ADVENTURE_EVENT_IDS)[number];
+
 export interface AdventureSave {
   schemaVersion: 1;
   game: "bc5r";
   campaign: {
     completedLevels: AdventureLevelId[];
-    completedEvents: string[];
+    completedEvents: AdventureEventId[];
     resumeLevelId: AdventureLevelId;
   };
   economy: {
@@ -64,6 +68,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   const completedLevels = stringArray(campaign.completedLevels)
     .map((id) => parseAdventureLevelId(id)?.id)
     .filter((id): id is AdventureLevelId => Boolean(id));
+  const completedEvents = stringArray(campaign.completedEvents).filter(isAdventureEventId);
   const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
   const items = stringArray(raw.items).filter(isAdventureItemId);
   return {
@@ -71,7 +76,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
     game: "bc5r",
     campaign: {
       completedLevels: unique(completedLevels).sort(compareLevelIds),
-      completedEvents: unique(stringArray(campaign.completedEvents)).sort(),
+      completedEvents: unique(completedEvents).sort(),
       resumeLevelId: parsedResume?.id ?? "1-1",
     },
     economy: {
@@ -143,13 +148,11 @@ export function completeAdventureLevel(
 
 export function completeAdventureEvent(
   save: AdventureSave,
-  eventId: string,
+  eventId: AdventureEventId,
 ): AdventureSave {
-  const id = eventId.trim();
-  if (!id) throw new Error("Event ID 不能为空");
   const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.completedEvents.includes(id))
-    next.campaign.completedEvents.push(id);
+  if (!next.campaign.completedEvents.includes(eventId))
+    next.campaign.completedEvents.push(eventId);
   return normalizeAdventureSave(next);
 }
 
@@ -181,6 +184,10 @@ function nextAdventureLevelId(current: AdventureLevelId): AdventureLevelId | nul
 
 function isAdventureItemId(value: string): value is AdventureItemId {
   return (ADVENTURE_ITEM_IDS as readonly string[]).includes(value);
+}
+
+function isAdventureEventId(value: string): value is AdventureEventId {
+  return (ADVENTURE_EVENT_IDS as readonly string[]).includes(value);
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

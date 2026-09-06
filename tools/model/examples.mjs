@@ -1,14 +1,26 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  ADVENTURE_EVENT_IDS,
+  ADVENTURE_ITEM_IDS,
+} from "@bobby/adventure";
+import {
   ENTITY_MAP_DEFINITIONS,
-  ENTITY_MAP_INDEXED_FAMILIES,
+  ENTITY_MAP_MIGRATION_ALIASES,
+  ENTITY_MAP_UNRESOLVED_SOURCES,
   LEVEL_ENTITY_RESERVED_FIELDS,
   entityMapDefinition,
 } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 
 const requestedType = process.argv[2];
+
+const STORAGE_KEYS = {
+  adventure: "bc5r:adventure",
+  explore: "bc5r:explore/<collection>",
+  editorAutosave: "bc5r:editor/autosave",
+  editorNamed: "bc5r:editor/<name>",
+};
 
 if (requestedType) {
   const definition = entityMapDefinition(requestedType);
@@ -26,7 +38,9 @@ if (requestedType) {
 } else {
   const outputDir = path.join(root, "tmp/schema");
   const examplesDir = path.join(outputDir, "examples");
+  const reviewDir = path.join(outputDir, "review");
   fs.mkdirSync(examplesDir, { recursive: true });
+  fs.mkdirSync(reviewDir, { recursive: true });
 
   const entityContract = {
     schemaVersion: 1,
@@ -37,12 +51,8 @@ if (requestedType) {
         contractView(definition),
       ]),
     ),
-    indexedFamilies: ENTITY_MAP_INDEXED_FAMILIES.map((family) => ({
-      pattern: indexedFamilyPattern(family),
-      min: family.min,
-      max: family.max,
-      fields: fieldMap(family.fields),
-    })),
+    migrationAliases: ENTITY_MAP_MIGRATION_ALIASES,
+    unresolvedSources: ENTITY_MAP_UNRESOLVED_SOURCES,
   };
 
   const entityExamples = {
@@ -53,20 +63,6 @@ if (requestedType) {
         examplesForDefinition(definition),
       ]),
     ),
-    indexedFamilies: ENTITY_MAP_INDEXED_FAMILIES.map((family) => {
-      const sampleType = `${family.prefix}${String(family.min).padStart(
-        family.digits,
-        "0",
-      )}`;
-      const definition = entityMapDefinition(sampleType);
-      if (!definition)
-        throw new Error(`Failed to resolve indexed entity family: ${sampleType}`);
-      return {
-        pattern: indexedFamilyPattern(family),
-        sampleType,
-        examples: examplesForDefinition(definition),
-      };
-    }),
   };
 
   const mapDocument = mapDocumentExample();
@@ -77,7 +73,8 @@ if (requestedType) {
   const adventureSave = adventureSaveExample();
   const exploreCollectionStorage = exploreCollectionStorageExample();
   const exploreStorage = exploreStorageExample();
-  const editorStorage = { draft: mapDocument };
+  const editorStorage = editorStorageExample(mapDocument);
+  const storageContract = storageContractExample();
   const webStorageSnapshot = {
     schemaVersion: 1,
     adventure: adventureSave,
@@ -94,25 +91,28 @@ if (requestedType) {
   const schemaIndex = {
     schemaVersion: 1,
     schemas: [
-      schema("entity-map", "@bobby/model", "model/src/entity-map.ts", "entity-map-contract.json"),
-      schema("level-entity", "@bobby/model", "model/src/types.ts", "level-map.json"),
-      schema("win-condition", "@bobby/model", "model/src/types.ts", "level-map.json"),
-      schema("level-limit-rules", "@bobby/model", "model/src/types.ts", "level-map.json"),
-      schema("map-music", "@bobby/model", "model/src/types.ts", "level-map.json"),
-      schema("level-map", "@bobby/model", "model/src/types.ts", "level-map.json"),
-      schema("map-meta-document", "@bobby/model", "model/src/types.ts", "map-document.json"),
-      schema("collection-ui-types", "@bobby/model", "model/src/collection.ts", "map-collection-index.json"),
-      schema("map-collection-index", "@bobby/model", "model/src/collection.ts", "map-collection-index.json"),
-      schema("map-collections-index", "@bobby/model", "model/src/collection.ts", "map-collections-index.json"),
-      schema("collection-manifest", "@bobby/model", "model/src/collection.ts", "collections-manifest.json"),
-      schema("adventure-save", "@bobby/adventure", "adventure/src/save.ts", "adventure-save.json"),
-      schema("web-storage", "web", "web/src/storage/contracts.ts", "web-storage-snapshot.json"),
+      schema("entity-map", "@bobby/model", "model/src/entity-map.ts", "entity-map-contract.json", "review/entity-map.jsonc"),
+      schema("level-entity", "@bobby/model", "model/src/types.ts", "examples/level-map.json", "review/map-document.jsonc"),
+      schema("win-condition", "@bobby/model", "model/src/types.ts", "examples/level-map.json", "review/map-document.jsonc"),
+      schema("level-limit-rules", "@bobby/model", "model/src/types.ts", "examples/level-map.json", "review/map-document.jsonc"),
+      schema("map-music", "@bobby/model", "model/src/types.ts", "examples/level-map.json", "review/map-document.jsonc"),
+      schema("level-map", "@bobby/model", "model/src/types.ts", "examples/level-map.json", "review/map-document.jsonc"),
+      schema("map-meta-document", "@bobby/model", "model/src/types.ts", "examples/map-document.json", "review/map-document.jsonc"),
+      schema("collection-ui-types", "@bobby/model", "model/src/collection.ts", "examples/map-collection-index.json", "review/map-collection-index.jsonc"),
+      schema("map-collection-index", "@bobby/model", "model/src/collection.ts", "examples/map-collection-index.json", "review/map-collection-index.jsonc"),
+      schema("map-collections-index", "@bobby/model", "model/src/collection.ts", "examples/map-collections-index.json", "review/map-collections-index.jsonc"),
+      schema("collection-manifest", "@bobby/model", "model/src/collection.ts", "examples/collections-manifest.json", "review/collections-manifest.jsonc"),
+      schema("adventure-save", "@bobby/adventure", "adventure/src/save.ts", "examples/adventure-save.json", "review/adventure-save.jsonc"),
+      schema("storage-keys", "web", "web/src/storage/contracts.ts", "examples/storage-contract.json", "review/storage-keys.jsonc"),
+      schema("explore-storage", "web", "web/src/storage/contracts.ts", "examples/explore-collection-storage.json", "review/storage-keys.jsonc"),
+      schema("editor-storage", "web", "web/src/storage/contracts.ts", "examples/editor-storage.json", "review/storage-keys.jsonc"),
+      schema("web-storage-snapshot", "web", "web/src/storage/contracts.ts", "examples/web-storage-snapshot.json", "review/storage-keys.jsonc"),
       {
         id: "bc5r1-map-transport",
         owner: "editor/share",
         source: "transport around MapDocument",
         kind: "transport",
-        example: "bc5r1-transport.json",
+        example: "examples/bc5r1-transport.json",
       },
     ],
   };
@@ -128,6 +128,7 @@ if (requestedType) {
     "map-collections-index.json": collectionsIndex,
     "map-collection-index.json": collectionIndex,
     "adventure-save.json": adventureSave,
+    "storage-contract.json": storageContract,
     "explore-collection-storage.json": exploreCollectionStorage,
     "explore-storage.json": exploreStorage,
     "editor-storage.json": editorStorage,
@@ -138,6 +139,15 @@ if (requestedType) {
   for (const [filename, value] of Object.entries(exampleFiles))
     writeJson(path.join(examplesDir, filename), value);
 
+  writeText(path.join(reviewDir, "entity-map.jsonc"), entityReviewJsonc());
+  writeText(path.join(reviewDir, "entity-migration.jsonc"), entityMigrationReviewJsonc());
+  writeText(path.join(reviewDir, "map-document.jsonc"), mapDocumentReviewJsonc(mapDocument));
+  writeText(path.join(reviewDir, "collections-manifest.jsonc"), collectionManifestReviewJsonc(collectionManifest));
+  writeText(path.join(reviewDir, "map-collections-index.jsonc"), collectionsIndexReviewJsonc(collectionsIndex));
+  writeText(path.join(reviewDir, "map-collection-index.jsonc"), collectionIndexReviewJsonc(collectionIndex));
+  writeText(path.join(reviewDir, "adventure-save.jsonc"), adventureSaveReviewJsonc(adventureSave));
+  writeText(path.join(reviewDir, "storage-keys.jsonc"), storageReviewJsonc());
+
   const allExamples = {
     schemaVersion: 1,
     levelMap,
@@ -146,6 +156,7 @@ if (requestedType) {
     mapCollectionsIndex: collectionsIndex,
     mapCollectionIndex: collectionIndex,
     adventureSave,
+    storageContract,
     exploreCollectionStorage,
     exploreStorage,
     editorStorage,
@@ -158,14 +169,18 @@ if (requestedType) {
   console.log(path.relative(root, path.join(outputDir, "schema-index.json")));
   console.log(path.relative(root, path.join(outputDir, "examples.json")));
   console.log(path.relative(root, examplesDir));
+  console.log(path.relative(root, reviewDir));
 }
 
-function schema(id, owner, source, example) {
-  return { id, owner, source, kind: "json", example };
+function schema(id, owner, source, example, review) {
+  return { id, owner, source, kind: "json", example, ...(review ? { review } : {}) };
 }
 
 function contractView(definition) {
-  return { fields: fieldMap(definition.fields) };
+  return {
+    ...(definition.description ? { description: definition.description } : {}),
+    fields: fieldMap(definition.fields),
+  };
 }
 
 function fieldMap(fields) {
@@ -185,7 +200,8 @@ function examplesForDefinition(definition) {
   };
 
   for (const field of definition.fields) {
-    if (field.default !== undefined) baseline[field.key] = field.default;
+    const value = baselineValue(field);
+    if (value !== undefined) baseline[field.key] = value;
   }
 
   const examples = [baseline];
@@ -196,6 +212,16 @@ function examplesForDefinition(definition) {
     }
   }
   return dedupeExamples(examples);
+}
+
+function baselineValue(field) {
+  if (field.default !== undefined) return field.default;
+  if (field.required && field.kind === "enum") return field.values[0];
+  if (field.required && (field.kind === "integer" || field.kind === "number"))
+    return field.min ?? 0;
+  if (field.required && field.kind === "boolean") return false;
+  if (field.required && field.kind === "string") return "example";
+  return undefined;
 }
 
 function reviewValues(field) {
@@ -221,10 +247,6 @@ function dedupeExamples(examples) {
   });
 }
 
-function indexedFamilyPattern(family) {
-  return `${family.prefix}${"N".repeat(family.digits)}`;
-}
-
 function mapDocumentExample() {
   return {
     schemaVersion: 1,
@@ -237,9 +259,10 @@ function mapDocumentExample() {
     music: "ingame0",
     note: "验证 Carousel 与 Speed 的初始地图语义。",
     entities: [
-      { type: "bobby", x: 1, y: 2, direction: "right" },
+      { type: "bobby", x: 1, y: 2 },
       { type: "speed", x: 2, y: 2, direction: "right" },
-      { type: "carousel", x: 4, y: 2, variant: 1 },
+      { type: "carousel", x: 4, y: 2, direction: "left-up" },
+      { type: "color-switch", x: 5, y: 2, color: "yellow" },
       { type: "exit", x: 6, y: 2 },
     ],
     rules: {
@@ -303,7 +326,6 @@ function collectionsIndexExample() {
 function collectionIndexExample() {
   return {
     schemaVersion: 1,
-    id: "original-patch",
     name: "Original Patch",
     description: "用于与原版 JAR 对比机关机制的测试地图。",
     cardSize: "medium",
@@ -344,7 +366,7 @@ function adventureSaveExample() {
     game: "bc5r",
     campaign: {
       completedLevels: ["1-1", "1-bonus-1"],
-      completedEvents: ["campaign-intro"],
+      completedEvents: ["bonus-key-trial"],
       resumeLevelId: "1-2",
     },
     economy: {
@@ -355,8 +377,20 @@ function adventureSaveExample() {
   };
 }
 
+function storageContractExample() {
+  return {
+    keys: STORAGE_KEYS,
+    editorPolicy: {
+      autosave: "Editing writes only bc5r:editor/autosave.",
+      namedSave: "Save / Save As explicitly writes bc5r:editor/<name>.",
+      loadNamedSave: "Load copies the named save into the working autosave; edits do not mutate the named slot until Save.",
+    },
+  };
+}
+
 function exploreCollectionStorageExample() {
   return {
+    schemaVersion: 1,
     completedMaps: ["37-1", "37-2"],
     lastMap: "37-10",
   };
@@ -365,6 +399,7 @@ function exploreCollectionStorageExample() {
 function exploreStorageExample() {
   return {
     original: {
+      schemaVersion: 1,
       completedMaps: ["1-1", "1-2"],
       lastMap: "1-3",
     },
@@ -372,7 +407,131 @@ function exploreStorageExample() {
   };
 }
 
+function editorStorageExample(mapDocument) {
+  return {
+    autosave: mapDocument,
+    saves: {
+      "carousel-lab": {
+        ...mapDocument,
+        meta: { ...mapDocument.meta, name: "Carousel Lab Saved Copy" },
+      },
+    },
+  };
+}
+
+function entityReviewJsonc() {
+  const lines = [
+    "{",
+    "  // Canonical types accepted in LevelMap.entities[]. Runtime/presentation identities are excluded.",
+    '  "entities": {',
+  ];
+  const definitions = Object.values(ENTITY_MAP_DEFINITIONS);
+  definitions.forEach((definition, index) => {
+    lines.push(`    ${JSON.stringify(definition.type)}: {`);
+    if (definition.description)
+      lines.push(`      // ${sanitizeComment(definition.description)}`);
+    if (definition.fields.length === 0) {
+      lines.push("      // No entity-specific persisted fields.");
+    } else {
+      for (const field of definition.fields)
+        lines.push(`      // ${sanitizeComment(fieldSummary(field))}`);
+    }
+    lines.push(`      "example": ${indentJson(examplesForDefinition(definition)[0], 6).trimStart()}`);
+    lines.push(`    }${index === definitions.length - 1 ? "" : ","}`);
+  });
+  lines.push("  }", "}", "");
+  return lines.join("\n");
+}
+
+function entityMigrationReviewJsonc() {
+  return `{
+  // These are migration/review notes only. The final strict parser should NOT accept old aliases.
+  "aliases": ${indentJson(ENTITY_MAP_MIGRATION_ALIASES, 2).trimStart()},
+
+  // These source groups intentionally have no stable Map ABI yet.
+  // Do not freeze background-variant-*, walkable-variant-*, ground-a..d, or object-variant-* names.
+  "unresolved": ${indentJson(ENTITY_MAP_UNRESOLVED_SOURCES, 2).trimStart()}
+}
+`;
+}
+
+function mapDocumentReviewJsonc(document) {
+  const json = JSON.stringify(document, null, 2)
+    .replace('"music": "ingame0",', '// music: "random" | "none" | logical track ID. Style (modern/8bit) is runtime config.\n  "music": "ingame0",')
+    .replace('"win": {', '// win.type: all | any | collect-all | fill-all | reach\n    "win": {')
+    .replace('"limits": [', '// limit.type: max-moves | max-time-seconds\n    "limits": [');
+  return `// MapDocument has no id/chapter/next/collection fields; resource identity comes from its path.\n${json}\n`;
+}
+
+function collectionManifestReviewJsonc(value) {
+  return `// Hand-maintained custom-maps/collections.json.\n// No maps, filters, visible, or order fields. Array order is collection order; filesystem defines membership.\n${JSON.stringify(value, null, 2)}\n`;
+}
+
+function collectionsIndexReviewJsonc(value) {
+  return `// assets/maps/index.json. Summary id is required because it resolves assets/maps/<id>/index.json.\n${JSON.stringify(value, null, 2)}\n`;
+}
+
+function collectionIndexReviewJsonc(value) {
+  return `// assets/maps/<collection>/index.json.\n// There is deliberately NO top-level id: collection identity already comes from the resource path.\n// maps[].id remains required because it resolves the map filename/path.\n${JSON.stringify(value, null, 2)}\n`;
+}
+
+function adventureSaveReviewJsonc(value) {
+  const eventList = ADVENTURE_EVENT_IDS.map((id) => `"${id}"`).join(" | ");
+  const itemList = ADVENTURE_ITEM_IDS.map((id) => `"${id}"`).join(" | ");
+  const json = JSON.stringify(value, null, 2)
+    .replace('"completedEvents": [', `// allowed completedEvents: ${eventList}\n    // bonus-key-trial: Beaver bonus temporary-key trial has been used/completed.\n    "completedEvents": [`)
+    .replace('"items": [', `// allowed items: ${itemList}\n  "items": [`);
+  return `// Physical localStorage key: ${STORAGE_KEYS.adventure}\n${json}\n`;
+}
+
+function storageReviewJsonc() {
+  return `{
+  // These physical localStorage namespaces are part of the stable Web persistence contract.
+  "adventure": "${STORAGE_KEYS.adventure}",
+  "explore": "${STORAGE_KEYS.explore}", // one independent record per collection
+  "editorAutosave": "${STORAGE_KEYS.editorAutosave}", // overwritten automatically while editing
+  "editorNamed": "${STORAGE_KEYS.editorNamed}" // written ONLY by explicit Save / Save As
+
+  // Editor workflow:
+  // 1. Opening/new/importing a document creates/updates autosave.
+  // 2. Typing only updates autosave.
+  // 3. Save / Save As writes a named key.
+  // 4. Loading a named key copies it to autosave; it does not make subsequent typing overwrite the named key.
+  // 5. "autosave" is a reserved slot name. Named slots are unlimited; enumerate keys by the bc5r:editor/ prefix.
+  // 6. User-facing names are URI-encoded in the physical key suffix.
+}
+`;
+}
+
+function fieldSummary(field) {
+  const pieces = [`${field.key}: ${field.kind}`];
+  if (field.kind === "enum") pieces.push(`values = ${field.values.map(String).join(" | ")}`);
+  if (field.required) pieces.push("required");
+  if (field.default !== undefined) pieces.push(`default = ${JSON.stringify(field.default)}`);
+  if (field.min !== undefined) pieces.push(`min = ${field.min}`);
+  if (field.max !== undefined) pieces.push(`max = ${field.max}`);
+  if (field.description) pieces.push(field.description);
+  return pieces.join("; ");
+}
+
+function sanitizeComment(value) {
+  return String(value).replaceAll("\n", " ");
+}
+
+function indentJson(value, spaces) {
+  const indent = " ".repeat(spaces);
+  return JSON.stringify(value, null, 2)
+    .split("\n")
+    .map((line, index) => (index === 0 ? line : indent + line))
+    .join("\n");
+}
+
 function writeJson(filepath, value) {
   fs.mkdirSync(path.dirname(filepath), { recursive: true });
   fs.writeFileSync(filepath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function writeText(filepath, value) {
+  fs.mkdirSync(path.dirname(filepath), { recursive: true });
+  fs.writeFileSync(filepath, value.endsWith("\n") ? value : `${value}\n`);
 }

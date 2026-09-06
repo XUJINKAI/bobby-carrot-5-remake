@@ -1,7 +1,9 @@
 export { EntityTypeId } from "./ids.js";
 export {
+  MapEntityTypeId,
   ENTITY_MAP_DEFINITIONS,
-  ENTITY_MAP_INDEXED_FAMILIES,
+  ENTITY_MAP_MIGRATION_ALIASES,
+  ENTITY_MAP_UNRESOLVED_SOURCES,
   LEVEL_ENTITY_RESERVED_FIELDS,
   entityMapDefinition,
   requireEntityMapDefinition,
@@ -9,9 +11,11 @@ export {
   isLevelEntityReservedField,
 } from "./entity-map.js";
 export type {
+  MapEntityType,
   EntityMapDefinition,
   EntityMapFieldDefinition,
-  EntityMapIndexedFamilyDefinition,
+  EntityMapMigrationAlias,
+  UnresolvedEntityMapSource,
   LevelEntityReservedField,
 } from "./entity-map.js";
 export type {
