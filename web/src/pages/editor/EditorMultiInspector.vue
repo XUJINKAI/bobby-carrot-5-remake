@@ -7,7 +7,7 @@ import type {
 import type { ImageManager } from "@bobby/engine";
 import EditorEntityFields from "./EditorEntityFields.vue";
 
-const props = defineProps<{
+defineProps<{
   model: InspectorModel;
   showSurface: boolean;
   surfaceCount: number;
@@ -17,8 +17,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   toggleSurface: [];
-  property: [type: string, key: string, value: string];
-  state: [type: string, key: string, value: string];
+  field: [type: string, key: string, value: string];
   variant: [type: string, index: number];
   deleteType: [type: string];
 }>();
@@ -69,8 +68,7 @@ const emit = defineEmits<{
           :images="images"
           :catalog="catalog"
           :editor="editor"
-          @property="(key, value) => emit('property', group.type, key, value)"
-          @state="(key, value) => emit('state', group.type, key, value)"
+          @field="(key, value) => emit('field', group.type, key, value)"
           @variant="(variantIndex) => emit('variant', group.type, variantIndex)"
         />
       </article>
