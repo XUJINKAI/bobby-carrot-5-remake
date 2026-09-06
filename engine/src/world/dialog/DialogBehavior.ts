@@ -31,7 +31,7 @@ export const dialogTraitBehavior: Behavior = {
 
 function emitDialog(context: BehaviorContext): void {
   const message = resolveDialogMessage(
-    context.self.entity.properties?.dialog,
+    context.self.entity.state?.dialog,
     context,
   );
   if (message === undefined || message === null) return;
