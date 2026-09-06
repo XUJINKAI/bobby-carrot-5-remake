@@ -1,17 +1,29 @@
-import type {
-  Direction,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
-  EntityType,
-  LevelEntity,
+import {
+  entityMapDefinition,
+  type Direction,
+  type EntityType,
+  type JsonPrimitive,
+  type JsonValue,
+  type LevelEntity,
 } from "@bobby/model";
 
 export type EntityId = number;
+export type EntityState = Record<string, JsonValue>;
 
 export interface CellPosition {
   x: number;
   y: number;
+}
+
+/** Engine-owned runtime spawn contract. Runtime-only entity types are valid here. */
+export interface EntitySpawnSpec {
+  type: EntityType;
+  x: number;
+  y: number;
+  direction?: Direction;
+  stackOrder?: number;
+  state?: EntityState;
+  instanceTraits?: readonly string[];
 }
 
 /** World 中一个具体 Entity 的运行时身份与可变状态。 */
@@ -21,14 +33,45 @@ export interface EntityInstance {
   anchor: CellPosition;
   direction?: Direction;
   stackOrder?: number;
-  properties?: EntityProperties;
   state?: EntityState;
-  instanceTraits?: EntityTraits;
+  instanceTraits?: string[];
 }
 
+/** Convert canonical flat Map JSON into the Engine runtime shape. */
 export function instantiateLevelEntity(
   id: EntityId,
   source: LevelEntity,
+): EntityInstance {
+  const definition = entityMapDefinition(source.type);
+  const state: EntityState = {};
+  let direction: Direction | undefined;
+
+  for (const field of definition?.fields ?? []) {
+    const raw = source[field.key];
+    const value = raw === undefined ? field.default : raw;
+    if (value === undefined) continue;
+    if (field.key === "direction" && isDirection(value)) {
+      direction = value;
+      continue;
+    }
+    state[field.key] = structuredClone(value);
+  }
+
+  return {
+    id,
+    type: source.type,
+    anchor: { x: source.x, y: source.y },
+    ...(direction ? { direction } : {}),
+    ...(Number.isFinite(source.stackOrder)
+      ? { stackOrder: source.stackOrder }
+      : {}),
+    ...(Object.keys(state).length > 0 ? { state } : {}),
+  };
+}
+
+export function instantiateSpawnSpec(
+  id: EntityId,
+  source: EntitySpawnSpec,
 ): EntityInstance {
   return {
     id,
@@ -38,10 +81,18 @@ export function instantiateLevelEntity(
     ...(Number.isFinite(source.stackOrder)
       ? { stackOrder: source.stackOrder }
       : {}),
-    ...(source.properties
-      ? { properties: structuredClone(source.properties) }
-      : {}),
     ...(source.state ? { state: structuredClone(source.state) } : {}),
-    ...(source.traits ? { instanceTraits: [...source.traits] } : {}),
+    ...(source.instanceTraits?.length
+      ? { instanceTraits: [...new Set(source.instanceTraits)] }
+      : {}),
   };
+}
+
+function isDirection(value: JsonPrimitive | undefined): value is Direction {
+  return (
+    value === "up" ||
+    value === "down" ||
+    value === "left" ||
+    value === "right"
+  );
 }
