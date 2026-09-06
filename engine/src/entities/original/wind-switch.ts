@@ -1,4 +1,4 @@
-import { EntityTypeId, type Direction, type JsonValue } from "@bobby/model";
+import { EntityTypeId, type Direction } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -12,37 +12,24 @@ import {
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
-export const WIND_CHANNELS = ["yellow", "red", "blue", "purple"] as const;
-export type WindChannel = (typeof WIND_CHANNELS)[number];
+const WIND_SWITCH_DIRECTIONS: readonly Direction[] = [
+  "up",
+  "down",
+  "left",
+  "right",
+];
 
-const WIND_DIRECTION_BY_CHANNEL: Readonly<Record<WindChannel, Direction>> = {
-  yellow: "up",
-  red: "down",
-  blue: "left",
-  purple: "right",
-};
-
-export function readWindChannel(value: JsonValue | undefined): WindChannel | null {
-  return typeof value === "string" && WIND_CHANNELS.includes(value as WindChannel)
-    ? (value as WindChannel)
-    : null;
-}
-
-export function windDirectionForChannel(channel: WindChannel): Direction {
-  return WIND_DIRECTION_BY_CHANNEL[channel];
-}
-
-const toggleWindChannel: Behavior = {
-  id: "wind-switch-channel-toggle",
+const toggleWindDirection: Behavior = {
+  id: "wind-switch-direction-toggle",
   onEnter({ actor, self, query, commands }) {
     if (!query.entityHasTrait(actor.id, "player")) return;
-    const channel = readWindChannel(self.entity.state?.channel);
-    if (!channel) return;
+    const direction = self.entity.direction;
+    if (!direction) return;
     const active = self.entity.state?.active !== true;
 
     for (const entity of query.entitiesWithTrait("switch")) {
       if (entity.type !== EntityTypeId.WIND_SWITCH) continue;
-      if (readWindChannel(entity.state?.channel) !== channel) continue;
+      if (entity.direction !== direction) continue;
       commands.setState(entity.id, {
         ...entity.state,
         active,
@@ -55,15 +42,6 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.WIND_SWITCH,
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
-  properties: [
-    {
-      key: "channel",
-      kind: "enum",
-      label: "频道",
-      default: "yellow",
-      options: WIND_CHANNELS.map((value) => ({ value })),
-    },
-  ],
   state: activeState(false),
   presentation: { name: "Wind Switch" },
 };
@@ -71,10 +49,12 @@ const definition: EntityModuleDefinition = {
 export const windSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
-    const channel = readWindChannel(context.entity.state?.channel) ?? "yellow";
-    const channelIndex = WIND_CHANNELS.indexOf(channel);
+    const directionIndex = Math.max(
+      0,
+      WIND_SWITCH_DIRECTIONS.indexOf(context.entity.direction ?? "up"),
+    );
     const active = context.entity.state?.active === true;
-    return cell(7 + channelIndex * 2 + (active ? 0 : 1), 10);
+    return cell(7 + directionIndex * 2 + (active ? 0 : 1), 10);
   }),
-  [{ behavior: toggleWindChannel }],
+  [{ behavior: toggleWindDirection }],
 );
