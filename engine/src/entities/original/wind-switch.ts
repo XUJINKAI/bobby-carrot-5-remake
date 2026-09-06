@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, type Direction, type JsonValue } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -7,22 +7,42 @@ import type {
 import {
   activeState,
   atlasVisual,
-  boundedInt,
   cell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
+export const WIND_CHANNELS = ["yellow", "red", "blue", "purple"] as const;
+export type WindChannel = (typeof WIND_CHANNELS)[number];
+
+const WIND_DIRECTION_BY_CHANNEL: Readonly<Record<WindChannel, Direction>> = {
+  yellow: "up",
+  red: "down",
+  blue: "left",
+  purple: "right",
+};
+
+export function readWindChannel(value: JsonValue | undefined): WindChannel | null {
+  return typeof value === "string" && WIND_CHANNELS.includes(value as WindChannel)
+    ? (value as WindChannel)
+    : null;
+}
+
+export function windDirectionForChannel(channel: WindChannel): Direction {
+  return WIND_DIRECTION_BY_CHANNEL[channel];
+}
+
 const toggleWindChannel: Behavior = {
   id: "wind-switch-channel-toggle",
   onEnter({ actor, self, query, commands }) {
     if (!query.entityHasTrait(actor.id, "player")) return;
-    const channel = boundedInt(self.entity.properties?.channel, 0, 3, 0);
+    const channel = readWindChannel(self.entity.state?.channel);
+    if (!channel) return;
     const active = self.entity.state?.active !== true;
 
     for (const entity of query.entitiesWithTrait("switch")) {
       if (entity.type !== EntityTypeId.WIND_SWITCH) continue;
-      if (boundedInt(entity.properties?.channel, 0, 3, 0) !== channel) continue;
+      if (readWindChannel(entity.state?.channel) !== channel) continue;
       commands.setState(entity.id, {
         ...entity.state,
         active,
@@ -40,8 +60,8 @@ const definition: EntityModuleDefinition = {
       key: "channel",
       kind: "enum",
       label: "频道",
-      default: 0,
-      options: [0, 1, 2, 3].map((value) => ({ value })),
+      default: "yellow",
+      options: WIND_CHANNELS.map((value) => ({ value })),
     },
   ],
   state: activeState(false),
@@ -51,9 +71,10 @@ const definition: EntityModuleDefinition = {
 export const windSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
-    const channel = boundedInt(context.entity.properties?.channel, 0, 3, 0);
+    const channel = readWindChannel(context.entity.state?.channel) ?? "yellow";
+    const channelIndex = WIND_CHANNELS.indexOf(channel);
     const active = context.entity.state?.active === true;
-    return cell(7 + channel * 2 + (active ? 0 : 1), 10);
+    return cell(7 + channelIndex * 2 + (active ? 0 : 1), 10);
   }),
   [{ behavior: toggleWindChannel }],
 );
