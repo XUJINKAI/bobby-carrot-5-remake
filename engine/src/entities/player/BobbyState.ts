@@ -1,6 +1,9 @@
-import type { Direction, EntityState, JsonValue } from "@bobby/model";
+import type { Direction, JsonValue } from "@bobby/model";
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
-import type { EntityId } from "../../world/entity/EntityInstance.js";
+import type {
+  EntityId,
+  EntityState,
+} from "../../world/entity/EntityInstance.js";
 
 /** Items carried by one Bobby inside the current gameplay World. */
 export interface BobbyInventoryState {
@@ -19,7 +22,7 @@ export interface BobbySpeedBoostState {
   phase: BobbySpeedPhase;
 }
 
-/** Authorable per-Bobby inventory defaults. Runtime-only relation fields stay implicit. */
+/** Runtime/default metadata only; stable Map ABI does not expose Bobby inventory fields. */
 export const BOBBY_INVENTORY_FIELDS: readonly EntityFieldDefinition[] = [
   { key: "gas", kind: "boolean", label: "Gas", default: false },
   { key: "kite", kind: "boolean", label: "Kite", default: false },
@@ -124,7 +127,12 @@ function nonNegativeInt(value: JsonValue | undefined): number {
 }
 
 function isDirection(value: JsonValue | undefined): value is Direction {
-  return value === "up" || value === "down" || value === "left" || value === "right";
+  return (
+    value === "up" ||
+    value === "down" ||
+    value === "left" ||
+    value === "right"
+  );
 }
 
 function isSpeedPhase(value: JsonValue | undefined): value is BobbySpeedPhase {
