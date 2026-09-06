@@ -28,7 +28,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.SPEED_SWITCH),
   defineEntity(MapEntityTypeId.CAROUSEL_SWITCH),
   defineEntity(MapEntityTypeId.WIND_SWITCH, [
-    enumField("channel", ["yellow", "red", "blue", "purple"], undefined, true, "Wind channel color; raw numeric channels are adapter details."),
+    enumField("direction", DIRECTIONS, undefined, true, "Wind direction controlled by this switch. Color is presentation-only."),
   ]),
   defineEntity(MapEntityTypeId.TRAP),
   defineEntity(MapEntityTypeId.MIRROR, [
