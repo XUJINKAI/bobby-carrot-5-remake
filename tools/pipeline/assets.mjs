@@ -157,7 +157,7 @@ function originalFilters() {
         ],
         ["mower", "割草机", entityIcon("mower")],
         ["beanstalk", "魔豆藤", entityIcon("beanstalk-tip")],
-        ["dragon", "龙", entityIcon("dragon")],
+        ["dragon", "龙", entityIcon("dragon", { direction: "left" })],
         ["beaver", "海狸 / 锁", entityIcon("beaver")],
         ["dream", "梦境机关", entityIcon("dream-machine")],
         ["plank", "木板", entityIcon("plank")],
