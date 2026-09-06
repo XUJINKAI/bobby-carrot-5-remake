@@ -1,6 +1,10 @@
 export { EntityTypeId } from "./implementation-ids.js";
 export { MapEntityTypeId } from "./ids.js";
-export type { NamedMapEntityType, CoordinateSurfaceEntityType, MapEntityType } from "./ids.js";
+export type {
+  NamedMapEntityType,
+  CoordinateSurfaceEntityType,
+  MapEntityType,
+} from "./ids.js";
 
 export {
   LEVEL_ENTITY_RESERVED_FIELDS,
@@ -23,6 +27,7 @@ export {
   coordinateSurfaceType,
   coordinateSurfaceDefinition,
   tsLabel,
+  tsVariant,
 } from "./surface.js";
 export type { TsCoordinate, SurfaceSourceMapping } from "./surface.js";
 
@@ -38,4 +43,7 @@ export {
   ENTITY_MAP_UNRESOLVED_SOURCES,
   legacyEntityMapAlias,
 } from "./migration.js";
-export type { EntityMapMigrationAlias, UnresolvedEntityMapSource } from "./migration.js";
+export type {
+  EntityMapMigrationAlias,
+  UnresolvedEntityMapSource,
+} from "./migration.js";
