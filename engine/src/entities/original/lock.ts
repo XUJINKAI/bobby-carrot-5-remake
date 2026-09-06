@@ -33,7 +33,7 @@ const unlock: Behavior = {
       return { passable: false, reason: "lock-needs-key" };
 
     const seconds = boundedInt(
-      self.entity.properties?.deathCountdownSeconds,
+      self.entity.state?.deathCountdownSeconds,
       0,
       3600,
       0,
