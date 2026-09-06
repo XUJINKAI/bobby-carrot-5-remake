@@ -29,11 +29,6 @@ const fillEggNestOnLeave: Behavior = {
       x: source.anchor.x,
       y: source.anchor.y,
       ...(source.direction ? { direction: source.direction } : {}),
-      ...(source.properties
-        ? { properties: structuredClone(source.properties) }
-        : {}),
-      ...(source.state ? { state: structuredClone(source.state) } : {}),
-      ...(source.instanceTraits ? { traits: [...source.instanceTraits] } : {}),
     });
     commands.emit({
       type: "fill-egg-nest",
