@@ -24,12 +24,12 @@ const DEFAULT_TEMPORARY_KEY_PRICE = 3;
 const bonusKeyVendor: Behavior = {
   id: "bonus-key-vendor",
   onTouch({ actor, self, query, commands }) {
-    if (self.entity.properties?.interaction !== "bonus-key-vendor") return;
+    if (self.entity.state?.interaction !== "bonus-key-vendor") return;
     if (bobbyMountId(actor.state) !== null) return;
     const global = query.global();
     const inventory = readBobbyInventory(actor.state);
     const price = boundedInt(
-      self.entity.properties?.temporaryKeyPriceBonusCoins,
+      self.entity.state?.temporaryKeyPriceBonusCoins,
       0,
       9999,
       DEFAULT_TEMPORARY_KEY_PRICE,
