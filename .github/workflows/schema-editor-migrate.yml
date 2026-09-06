@@ -1,0 +1,100 @@
+name: schema-editor-migrate
+
+on:
+  push:
+    branches: [schema/entity-map-contract]
+    paths:
+      - .github/workflows/schema-editor-migrate.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: schema/entity-map-contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply flat Editor migration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"missing replacement in {path}: {old[:80]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          path = "web/src/pages/editor/useEditorPage.ts"
+          replace_once(path,
+          '  type EntityFieldDefinition,\n',
+          '')
+          replace_once(path,
+          'import {\n  type EntityProperties,\n  type EntityState,\n  type EntityType,\n  type JsonValue,\n  type LevelEntity,\n} from "@bobby/model";',
+          'import {\n  entityMapDefinition,\n  type EntityMapFieldDefinition,\n  type EntityType,\n  type JsonPrimitive,\n  type LevelEntity,\n} from "@bobby/model";')
+          replace_once(path,
+          '''  function updateProperty(entityIndex: number, key: string, raw: string): void {\n    updatePropertiesForRefs([{ index: entityIndex }], key, raw);\n  }\n\n  function updateBatchProperty(type: EntityType, key: string, raw: string): void {\n    updatePropertiesForRefs(selectedRefsOfType(type), key, raw);\n  }\n\n  function updateState(entityIndex: number, key: string, raw: string): void {\n    updateStateForRefs([{ index: entityIndex }], key, raw);\n  }\n\n  function updateBatchState(type: EntityType, key: string, raw: string): void {\n    updateStateForRefs(selectedRefsOfType(type), key, raw);\n  }\n\n  function updatePropertiesForRefs(\n    refs: readonly EntityRef[],\n    key: string,\n    raw: string,\n  ): void {\n    const replacements = refs.flatMap((ref) => {\n      const entity = currentLevel().entities[ref.index];\n      if (!entity) return [];\n      const field = catalog\n        .require(entity.type)\n        .properties?.find((item) => item.key === key);\n      if (!field) return [];\n      const properties = { ...(entity.properties ?? {}) } as EntityProperties;\n      if (raw === "") delete properties[key];\n      else properties[key] = coerceFieldValue(field, raw);\n      const next = { ...entity };\n      if (Object.keys(properties).length > 0) next.properties = properties;\n      else delete next.properties;\n      return [{ ref, entity: next }];\n    });\n    if (replacements.length > 0) document.execute(replaceEntities(replacements));\n  }\n\n  function updateStateForRefs(\n    refs: readonly EntityRef[],\n    key: string,\n    raw: string,\n  ): void {\n    const replacements = refs.flatMap((ref) => {\n      const entity = currentLevel().entities[ref.index];\n      if (!entity) return [];\n      const field = catalog\n        .require(entity.type)\n        .state?.find((item) => item.key === key);\n      if (!field) return [];\n      const state = { ...(entity.state ?? {}) } as EntityState;\n      if (raw === "") delete state[key];\n      else state[key] = coerceFieldValue(field, raw);\n      const next = { ...entity };\n      if (Object.keys(state).length > 0) next.state = state;\n      else delete next.state;\n      return [{ ref, entity: next }];\n    });\n    if (replacements.length > 0) document.execute(replaceEntities(replacements));\n  }''',
+          '''  function updateField(entityIndex: number, key: string, raw: string): void {\n    updateFieldsForRefs([{ index: entityIndex }], key, raw);\n  }\n\n  function updateBatchField(type: EntityType, key: string, raw: string): void {\n    updateFieldsForRefs(selectedRefsOfType(type), key, raw);\n  }\n\n  function updateFieldsForRefs(\n    refs: readonly EntityRef[],\n    key: string,\n    raw: string,\n  ): void {\n    const replacements = refs.flatMap((ref) => {\n      const entity = currentLevel().entities[ref.index];\n      if (!entity) return [];\n      const field = entityMapDefinition(entity.type)?.fields.find(\n        (candidate) => candidate.key === key,\n      );\n      if (!field) return [];\n      const next: LevelEntity = { ...entity };\n      if (raw === "") delete next[key];\n      else next[key] = coerceFieldValue(field, raw);\n      return [{ ref, entity: next }];\n    });\n    if (replacements.length > 0) document.execute(replaceEntities(replacements));\n  }''')
+          replace_once(path,
+          '''    updateProperty,\n    updateBatchProperty,\n    updateState,\n    updateBatchState,''',
+          '''    updateField,\n    updateBatchField,''')
+          replace_once(path,
+          '''    updateMetadata(metadata: {\n      name: string;\n      author?: string;\n      description?: string;\n    }): void {''',
+          '''    updateMetadata(metadata: {\n      name: string;\n      author?: string;\n    }): void {''')
+          replace_once(path,
+          '''function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {\n  return {\n    type: source.type,\n    ...(source.direction ? { direction: source.direction } : {}),\n    ...(source.properties\n      ? { properties: structuredClone(source.properties) }\n      : {}),\n    ...(source.state ? { state: structuredClone(source.state) } : {}),\n  };\n}''',
+          '''function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {\n  return {\n    type: source.type,\n    ...(source.direction ? { direction: source.direction } : {}),\n    ...(source.fields ? { fields: structuredClone(source.fields) } : {}),\n  };\n}''')
+          replace_once(path,
+          '''function coerceFieldValue(\n  field: EntityFieldDefinition,\n  raw: string,\n): JsonValue {\n  if (field.kind === "number") {\n    const value = Number(raw);\n    return Number.isFinite(value) ? value : raw;\n  }\n  if (field.kind === "boolean") return raw === "true";\n  if (field.kind === "enum") {\n    const option = field.options?.find(\n      (candidate) => String(candidate.value) === raw,\n    );\n    if (option) return structuredClone(option.value);\n  }\n  return raw;\n}''',
+          '''function coerceFieldValue(\n  field: EntityMapFieldDefinition,\n  raw: string,\n): JsonPrimitive {\n  if (field.kind === "number" || field.kind === "integer") {\n    const value = Number(raw);\n    return Number.isFinite(value)\n      ? field.kind === "integer"\n        ? Math.trunc(value)\n        : value\n      : raw;\n  }\n  if (field.kind === "boolean") return raw === "true";\n  if (field.kind === "enum") {\n    const option = field.values.find((candidate) => String(candidate) === raw);\n    if (option !== undefined) return option;\n  }\n  return raw;\n}''')
+
+          path = "web/src/pages/editor/EditorPage.vue"
+          replace_once(path,
+          '''function markDownloaded(metadata: {\n  name: string;\n  author?: string;\n  description?: string;\n}): void {''',
+          '''function markDownloaded(metadata: {\n  name: string;\n  author?: string;\n}): void {''')
+          replace_once(path,
+          '''      @property="page.updateProperty"\n      @state="page.updateState"''',
+          '''      @field="page.updateField"''')
+          replace_once(path,
+          '''      @batch-property="page.updateBatchProperty"\n      @batch-state="page.updateBatchState"''',
+          '''      @batch-field="page.updateBatchField"''')
+
+          path = "web/src/pages/editor/EditorFileDialog.vue"
+          replace_once(path,
+          '''  saved: [metadata: { name: string; author?: string; description?: string }];\n}>();\nconst metadata = reactive({ name: "", author: "", description: "" });''',
+          '''  saved: [metadata: { name: string; author?: string }];\n}>();\nconst metadata = reactive({ name: "", author: "" });''')
+          replace_once(path,
+          '''    metadata.name = props.level.name;\n    metadata.author = props.level.author ?? "";\n    metadata.description = props.level.description ?? "";''',
+          '''    metadata.name = props.level.meta.name;\n    metadata.author = props.level.meta.author ?? "";''')
+          replace_once(path,
+          '''const exchangeLevel = computed<EditorMap>(() => {\n  const level: EditorMap = { ...props.level, name: metadata.name };\n  delete level.author;\n  delete level.description;\n  if (metadata.author) level.author = metadata.author;\n  if (metadata.description) level.description = metadata.description;\n  return level;\n});''',
+          '''const exchangeLevel = computed<EditorMap>(() => ({\n  ...props.level,\n  meta: {\n    name: metadata.name,\n    ...(metadata.author ? { author: metadata.author } : {}),\n  },\n}));''')
+          replace_once(path,
+          '''function metadataValue(): { name: string; author?: string; description?: string } {\n  return {\n    name: metadata.name,\n    ...(metadata.author ? { author: metadata.author } : {}),\n    ...(metadata.description ? { description: metadata.description } : {}),\n  };\n}''',
+          '''function metadataValue(): { name: string; author?: string } {\n  return {\n    name: metadata.name,\n    ...(metadata.author ? { author: metadata.author } : {}),\n  };\n}''')
+          replace_once(path,
+          '''      <label class="editor-field"><span>描述</span><textarea v-model="metadata.description" maxlength="500" rows="3" placeholder="可选" /></label>\n''',
+          '')
+          replace_once(path,
+          ':reset-key="open ? `${level.name}:${level.width}:${level.height}` : \'closed\'"',
+          ':reset-key="open ? `${level.meta.name}:${level.width}:${level.height}` : \'closed\'"')
+          PY
+      - name: Commit migration
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add web/src/pages/editor/useEditorPage.ts web/src/pages/editor/EditorPage.vue web/src/pages/editor/EditorFileDialog.vue
+          git commit -m "refactor(web): finish flat editor document fields"
+          git push origin HEAD:schema/entity-map-contract
+      - name: TypeScript diagnosis
+        run: npx tsc -b
