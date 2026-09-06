@@ -1,8 +1,6 @@
 import type { EntityCatalog } from "@bobby/engine";
 import {
   EntityTypeId,
-  type EntityProperties,
-  type EntityState,
   type EntityType,
   type LevelEntity,
 } from "@bobby/model";
@@ -237,7 +235,7 @@ export function pickSurfaceBrush(
   if (auto) return { terrain: item.id, pattern: "auto", seed: auto.seed };
 
   if (item.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
-    const variant = Number(entity.state?.variant);
+    const variant = Number(entity.variant);
     const variants = item.rows.flat();
     const selected =
       Number.isInteger(variant) && variant >= 1 && variant <= variants.length
@@ -267,8 +265,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
     let fixed = stripAutoMetadata(entity);
     if (terrain?.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
       const index = fenceVariantIndex(level, entity, terrain);
-      const state = { ...(fixed.state ?? {}), variant: index + 1 } as EntityState;
-      fixed = { ...fixed, state };
+      fixed = { ...fixed, variant: index + 1 };
     }
     return fixed;
   });
@@ -331,7 +328,7 @@ function createFixedSurfaceEntity(
       type: terrain.auto.canonical,
       x: cell.x,
       y: cell.y,
-      ...(index >= 0 ? { state: { variant: index + 1 } } : {}),
+      ...(index >= 0 ? { variant: index + 1 } : {}),
     };
     catalog.require(entity.type);
     return applySurfaceInstanceTraits(entity, terrain);
@@ -432,15 +429,12 @@ function reflowAutoSurfaces(
   return changed ? normalizeEditorLevel({ ...level, entities }) : level;
 }
 
+/** Map JSON never carries gameplay trait overrides; Engine owns surface semantics. */
 function applySurfaceInstanceTraits(
   entity: LevelEntity,
-  terrain: SurfaceTerrainDefinition,
+  _terrain: SurfaceTerrainDefinition,
 ): LevelEntity {
-  const traits = new Set(entity.traits ?? []);
-  if (terrain.type === "ground") traits.add("walkable");
-  if (terrain.type === "solid") traits.add("blocking");
-  if (terrain.slot === "overlay" && terrain.type === "solid") traits.add("fence");
-  return traits.size > 0 ? { ...entity, traits: [...traits] } : entity;
+  return entity;
 }
 
 function weightedVariant(
@@ -491,8 +485,7 @@ function fenceVariantIndex(
     if (target.has(cellKey(neighbor))) return true;
     return level.entities.some((entity) => {
       if (entity.x !== neighbor.x || entity.y !== neighbor.y) return false;
-      const item = surfaceTerrainForEntity(entity.type);
-      return item?.id === terrain.id || entity.traits?.includes("fence") === true;
+      return surfaceTerrainForEntity(entity.type)?.id === terrain.id;
     });
   };
   const left = connectedAt({ x: cell.x - 1, y: cell.y });
@@ -536,21 +529,20 @@ function markAuto(
   terrain: SurfaceTerrainId,
   seed: number,
 ): LevelEntity {
-  const properties = {
-    ...(entity.properties ?? {}),
+  return {
+    ...entity,
     [AUTO_TERRAIN_KEY]: terrain,
     [AUTO_SEED_KEY]: seed,
-  } as EntityProperties;
-  return { ...entity, properties };
+  };
 }
 
 function autoMetadata(
   entity: Readonly<LevelEntity>,
 ): { terrain: SurfaceTerrainId; seed: number } | null {
-  const rawTerrain = entity.properties?.[AUTO_TERRAIN_KEY];
+  const rawTerrain = entity[AUTO_TERRAIN_KEY];
   if (typeof rawTerrain !== "string" || !terrainById.has(rawTerrain as SurfaceTerrainId))
     return null;
-  const rawSeed = Number(entity.properties?.[AUTO_SEED_KEY]);
+  const rawSeed = Number(entity[AUTO_SEED_KEY]);
   return {
     terrain: rawTerrain as SurfaceTerrainId,
     seed: Number.isFinite(rawSeed) ? rawSeed : 1,
@@ -558,13 +550,9 @@ function autoMetadata(
 }
 
 function stripAutoMetadata(entity: Readonly<LevelEntity>): LevelEntity {
-  if (!entity.properties) return structuredClone(entity);
-  const properties = { ...entity.properties } as EntityProperties;
-  delete properties[AUTO_TERRAIN_KEY];
-  delete properties[AUTO_SEED_KEY];
   const next = { ...structuredClone(entity) };
-  if (Object.keys(properties).length > 0) next.properties = properties;
-  else delete next.properties;
+  delete next[AUTO_TERRAIN_KEY];
+  delete next[AUTO_SEED_KEY];
   return next;
 }
 
