@@ -1,0 +1,17 @@
+name: schema-tsc-check
+
+on:
+  push:
+    branches: [schema/entity-map-contract]
+
+jobs:
+  tsc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc -b model adventure engine editor --force
