@@ -140,26 +140,15 @@ function resolveEntry(
 
 function previewPresetFor(entry: EditorPaletteEntry): EditorPlacementPreset {
   const preview = entry.preview;
+  const fields = {
+    ...(entry.fields ?? {}),
+    ...(preview?.fields ?? {}),
+  };
   return {
     type: entry.type,
     ...(preview?.direction ?? entry.direction
       ? { direction: preview?.direction ?? entry.direction }
       : {}),
-    ...mergeRecord("properties", entry.properties, preview?.properties),
-    ...mergeRecord("state", entry.state, preview?.state),
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
-}
-
-function mergeRecord<Key extends "properties" | "state">(
-  key: Key,
-  base: EditorPlacementPreset[Key],
-  override: EditorPlacementPreset[Key],
-): Pick<EditorPlacementPreset, Key> | {} {
-  if (!base && !override) return {};
-  return {
-    [key]: {
-      ...(base ?? {}),
-      ...(override ?? {}),
-    },
-  } as Pick<EditorPlacementPreset, Key>;
 }
