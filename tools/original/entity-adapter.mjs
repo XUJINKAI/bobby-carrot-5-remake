@@ -82,6 +82,8 @@ const directObjectTypes = new Set([
   LegacyObject.BONUS_COIN,
 ]);
 
+const WIND_DIRECTIONS = ["up", "down", "left", "right"];
+
 export function adaptLegacyMap(map, options = {}) {
   const entities = [];
   const starts = [];
@@ -170,19 +172,21 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
 
   const switchState = foldedPressedSwitch(type);
   if (switchState) {
-    return [
-      entity(switchState.type, x, y, {
-        state: { pressed: switchState.pressed },
-      }),
-    ];
+    const extra = switchState.canonical
+      ? switchState.pressed
+        ? { pressed: true }
+        : {}
+      : { state: { pressed: switchState.pressed } };
+    return [entity(switchState.type, x, y, extra)];
   }
 
   const wind = /^wind-switch-([0-3])-(on|off)$/.exec(type);
   if (wind) {
+    const direction = WIND_DIRECTIONS[Number(wind[1])];
     return [
       entity(EntityTypeId.WIND_SWITCH, x, y, {
-        properties: { channel: Number(wind[1]) },
-        state: { active: wind[2] === "on" },
+        direction,
+        ...(wind[2] === "on" ? { active: true } : {}),
       }),
     ];
   }
@@ -191,7 +195,7 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
   if (trap) {
     return [
       entity(EntityTypeId.TRAP, x, y, {
-        state: { active: trap[1] === "active" },
+        ...(trap[1] === "inactive" ? { active: false } : {}),
       }),
     ];
   }
@@ -295,7 +299,11 @@ function foldedPressedSwitch(type) {
     type,
   );
   if (!match) return null;
-  return { type: match[1], pressed: match[2] === "pressed" };
+  return {
+    type: match[1],
+    pressed: match[2] === "pressed",
+    canonical: !match[1].startsWith("color-"),
+  };
 }
 
 function directionSuffix(type, prefix) {
