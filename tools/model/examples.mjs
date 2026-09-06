@@ -254,7 +254,7 @@ function mapDocumentExample() {
     note: "验证 Carousel 与 Speed 的初始地图语义。",
     entities: [
       { type: "bobby", x: 1, y: 2 },
-      { type: "grass", x: 0, y: 0, variant: 1 },
+      { type: "grass", x: 0, y: 0, variant: "ts-7-1" },
       { type: "speed", x: 2, y: 2, direction: "right" },
       { type: "carousel", x: 4, y: 2, direction: "left-up" },
       { type: "color-switch", x: 5, y: 2, color: "yellow" },
@@ -401,7 +401,7 @@ function surfaceReview() {
     "[",
     "  // First-pass semantic mapping based on docs/system/original/surface.md.",
     "  // Coordinates follow docs/system/original/README.md: ts(row,column), 1-based.",
-    "  // Numeric variant values are review-order variants, not original DAT IDs.",
+    "  // Visual-only variants use ts-row-column; semantically meaningful variants keep semantic names.",
     "  // Unknown tiles intentionally use surface-<row>-<column> instead of a guessed semantic name.",
   ];
   SURFACE_SOURCE_MAPPINGS.forEach((mapping, index) => {
