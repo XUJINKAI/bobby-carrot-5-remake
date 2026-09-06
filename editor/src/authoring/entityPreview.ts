@@ -24,14 +24,11 @@ export function resolveEditorEntityPreviewLayout(
   const direction =
     source.direction ?? editor.entities?.[source.type]?.defaultDirection;
   const prototype: LevelEntity = {
+    ...(source.fields ? structuredClone(source.fields) : {}),
     type: source.type,
     x: 0,
     y: 0,
     ...(direction ? { direction } : {}),
-    ...(source.properties
-      ? { properties: structuredClone(source.properties) }
-      : {}),
-    ...(source.state ? { state: structuredClone(source.state) } : {}),
   };
   const cells = resolveFootprintCells(
     {
