@@ -34,7 +34,7 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
   ]);
 });
 
-test("旧 terrain 状态 ID 折叠到 canonical direction/state/property", () => {
+test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
   assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TIDE_LEFT, 1, 2), [
     { type: EntityTypeId.TIDE, x: 1, y: 2, direction: "left" },
   ]);
@@ -45,19 +45,72 @@ test("旧 terrain 状态 ID 折叠到 canonical direction/state/property", () =>
         type: EntityTypeId.SPEED_SWITCH,
         x: 1,
         y: 2,
-        state: { pressed: true },
+        pressed: true,
       },
     ],
+  );
+  assert.deepEqual(
+    adaptLegacyTerrain(LegacyTerrain.SPEED_SWITCH_RAISED, 1, 2),
+    [{ type: EntityTypeId.SPEED_SWITCH, x: 1, y: 2 }],
   );
   assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.WIND_SWITCH_2_OFF, 1, 2), [
     {
       type: EntityTypeId.WIND_SWITCH,
       x: 1,
       y: 2,
-      properties: { channel: 2 },
-      state: { active: false },
+      direction: "left",
     },
   ]);
+  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.WIND_SWITCH_3_ON, 1, 2), [
+    {
+      type: EntityTypeId.WIND_SWITCH,
+      x: 1,
+      y: 2,
+      direction: "right",
+      active: true,
+    },
+  ]);
+  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TRAP_ACTIVE, 1, 2), [
+    { type: EntityTypeId.TRAP, x: 1, y: 2 },
+  ]);
+  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TRAP_INACTIVE, 1, 2), [
+    { type: EntityTypeId.TRAP, x: 1, y: 2, active: false },
+  ]);
+});
+
+test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
+  const reversed = reverseEntityMap({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: EntityTypeId.START, x: 0, y: 0 },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
+      {
+        type: EntityTypeId.WIND_SWITCH,
+        x: 1,
+        y: 0,
+        direction: "left",
+        active: true,
+      },
+    ],
+  });
+  assert.equal(reversed.terrain[0][1], LegacyTerrain.WIND_SWITCH_2_ON);
+  assert.deepEqual(
+    adaptLegacyMap(reversed).entities.find(
+      (entity) => entity.type === EntityTypeId.WIND_SWITCH,
+    ),
+    {
+      type: EntityTypeId.WIND_SWITCH,
+      x: 1,
+      y: 0,
+      direction: "left",
+      active: true,
+    },
+  );
+});
+
+test("尚未迁移的 legacy terrain 状态保持隔离，不冒充 stable contract", () => {
   assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.MIRROR_4, 1, 2), [
     { type: EntityTypeId.MIRROR, x: 1, y: 2, state: { variant: 4 } },
   ]);
@@ -184,7 +237,9 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
   };
   const reversed = reverseEntityMap(map);
   assert.deepEqual(
-    reversed.objects.filter((object) => object.type === LegacyObject.DRAGON_HEAD_BASE),
+    reversed.objects.filter(
+      (object) => object.type === LegacyObject.DRAGON_HEAD_BASE,
+    ),
     [{ type: LegacyObject.DRAGON_HEAD_BASE, x: 1, y: 0 }],
   );
   assert.deepEqual(
