@@ -9,7 +9,12 @@ import {
   type EntityCatalogEntry,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { JsonValue, LevelEntity } from "@bobby/model";
+import {
+  entityMapDefinition,
+  type EntityMapFieldDefinition,
+  type JsonPrimitive,
+  type LevelEntity,
+} from "@bobby/model";
 import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
 
@@ -22,8 +27,7 @@ const props = defineProps<{
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
-  property: [key: string, value: string];
-  state: [key: string, value: string];
+  field: [key: string, value: string];
   variant: [index: number];
 }>();
 
@@ -36,36 +40,24 @@ const activeVariant = computed(() => {
 });
 const directionVariants = computed(() => variantEntries(true));
 const shapeVariants = computed(() => variantEntries(false));
-const controlledStateKeys = computed(() =>
-  new Set(
-    (props.entityPolicy?.variants ?? []).flatMap((variant) =>
-      Object.keys(variant.state ?? {}),
-    ),
-  ),
-);
-const controlledPropertyKeys = computed(() =>
-  new Set(
-    (props.entityPolicy?.variants ?? []).flatMap((variant) =>
-      Object.keys(variant.properties ?? {}),
-    ),
-  ),
-);
-const editableState = computed(() =>
-  (props.definition.state ?? []).filter(
-    (field) => !controlledStateKeys.value.has(field.key),
-  ),
-);
-const editableProperties = computed(() =>
-  (props.definition.properties ?? []).filter(
-    (field) => !controlledPropertyKeys.value.has(field.key),
+const controlledFieldKeys = computed(() => {
+  const keys = new Set<string>();
+  for (const variant of props.entityPolicy?.variants ?? []) {
+    if (variant.direction) keys.add("direction");
+    for (const key of Object.keys(variant.fields ?? {})) keys.add(key);
+  }
+  return keys;
+});
+const editableFields = computed(() =>
+  (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
+    (field) => !controlledFieldKeys.value.has(field.key),
   ),
 );
 const hasFields = computed(
   () =>
     directionVariants.value.length > 0 ||
     shapeVariants.value.length > 0 ||
-    editableProperties.value.length > 0 ||
-    editableState.value.length > 0,
+    editableFields.value.length > 0,
 );
 
 function variantEntries(directional: boolean) {
@@ -78,11 +70,16 @@ function variantSource(index: number): EditorPlacementPreset {
   const source = props.targets[0]!;
   const variant = props.entityPolicy?.variants?.[index];
   const candidate = variant ? applyEditorVariant(source, variant) : source;
+  const fields: Record<string, JsonPrimitive> = {};
+  for (const field of entityMapDefinition(candidate.type)?.fields ?? []) {
+    if (field.key === "direction") continue;
+    const value = candidate[field.key];
+    if (value !== undefined) fields[field.key] = value;
+  }
   return {
     type: candidate.type,
     ...(candidate.direction ? { direction: candidate.direction } : {}),
-    ...(candidate.properties ? { properties: candidate.properties } : {}),
-    ...(candidate.state ? { state: candidate.state } : {}),
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
 
@@ -92,31 +89,31 @@ function variantLabel(index: number): string {
 }
 
 function fieldValue(
-  section: "properties" | "state",
   key: string,
-  fallback: JsonValue | undefined,
+  fallback: JsonPrimitive | undefined,
 ): string {
   if (props.targets.length === 0) return "";
   const values = props.targets.map(
-    (entity) => entity[section]?.[key] ?? fallback ?? null,
+    (entity) => entity[key] ?? fallback ?? null,
   );
-  const first = JSON.stringify(values[0]);
-  if (!values.every((value) => JSON.stringify(value) === first)) return "";
+  if (!values.every((value) => Object.is(value, values[0]))) return "";
   const value = values[0];
   return value === null ? "" : String(value);
 }
 
 function fieldMixed(
-  section: "properties" | "state",
   key: string,
-  fallback: JsonValue | undefined,
+  fallback: JsonPrimitive | undefined,
 ): boolean {
   if (props.targets.length < 2) return false;
   const values = props.targets.map(
-    (entity) => entity[section]?.[key] ?? fallback ?? null,
+    (entity) => entity[key] ?? fallback ?? null,
   );
-  const first = JSON.stringify(values[0]);
-  return !values.every((value) => JSON.stringify(value) === first);
+  return !values.every((value) => Object.is(value, values[0]));
+}
+
+function inputType(field: EntityMapFieldDefinition): "number" | "text" {
+  return field.kind === "number" || field.kind === "integer" ? "number" : "text";
 }
 </script>
 
@@ -172,95 +169,55 @@ function fieldMixed(
       </div>
     </section>
 
-    <section v-if="editableProperties.length" class="editor-fields-block">
-      <strong>属性</strong>
+    <section v-if="editableFields.length" class="editor-fields-block">
+      <strong>地图字段</strong>
       <label
-        v-for="property in editableProperties"
-        :key="property.key"
-        class="editor-field"
-      >
-        <span>{{ property.label ?? property.key }}</span>
-        <select
-          v-if="property.kind === 'enum'"
-          :value="fieldValue('properties', property.key, property.default)"
-          @change="emit('property', property.key, ($event.target as HTMLSelectElement).value)"
-        >
-          <option
-            v-if="fieldMixed('properties', property.key, property.default)"
-            value=""
-            disabled
-          >
-            多种值
-          </option>
-          <option
-            v-for="option in property.options ?? []"
-            :key="String(option.value)"
-            :value="String(option.value)"
-          >
-            {{ option.label ?? option.value }}
-          </option>
-        </select>
-        <input
-          v-else-if="property.kind === 'boolean'"
-          type="checkbox"
-          :checked="fieldValue('properties', property.key, property.default) === 'true'"
-          @change="emit('property', property.key, String(($event.target as HTMLInputElement).checked))"
-        />
-        <input
-          v-else
-          :type="property.kind === 'number' ? 'number' : 'text'"
-          :value="fieldValue('properties', property.key, property.default)"
-          :placeholder="fieldMixed('properties', property.key, property.default) ? '多种值' : ''"
-          @change="emit('property', property.key, ($event.target as HTMLInputElement).value)"
-        />
-      </label>
-    </section>
-
-    <section v-if="editableState.length" class="editor-fields-block">
-      <strong>状态</strong>
-      <label
-        v-for="field in editableState"
+        v-for="field in editableFields"
         :key="field.key"
         class="editor-field"
+        :title="field.description"
       >
-        <span>{{ field.label ?? field.key }}</span>
+        <span>{{ field.key }}</span>
         <select
           v-if="field.kind === 'enum'"
-          :value="fieldValue('state', field.key, field.default)"
-          @change="emit('state', field.key, ($event.target as HTMLSelectElement).value)"
+          :value="fieldValue(field.key, field.default)"
+          @change="emit('field', field.key, ($event.target as HTMLSelectElement).value)"
         >
           <option
-            v-if="fieldMixed('state', field.key, field.default)"
+            v-if="fieldMixed(field.key, field.default)"
             value=""
             disabled
           >
             多种值
           </option>
           <option
-            v-for="option in field.options ?? []"
-            :key="String(option.value)"
-            :value="String(option.value)"
+            v-for="value in field.values"
+            :key="String(value)"
+            :value="String(value)"
           >
-            {{ option.label ?? option.value }}
+            {{ value }}
           </option>
         </select>
         <input
           v-else-if="field.kind === 'boolean'"
           type="checkbox"
-          :checked="fieldValue('state', field.key, field.default) === 'true'"
-          @change="emit('state', field.key, String(($event.target as HTMLInputElement).checked))"
+          :checked="fieldValue(field.key, field.default) === 'true'"
+          @change="emit('field', field.key, String(($event.target as HTMLInputElement).checked))"
         />
         <input
           v-else
-          :type="field.kind === 'number' ? 'number' : 'text'"
-          :value="fieldValue('state', field.key, field.default)"
-          :placeholder="fieldMixed('state', field.key, field.default) ? '多种值' : ''"
-          @change="emit('state', field.key, ($event.target as HTMLInputElement).value)"
+          :type="inputType(field)"
+          :step="field.kind === 'integer' ? 1 : undefined"
+          :min="field.kind === 'number' || field.kind === 'integer' ? field.min : undefined"
+          :max="field.kind === 'number' || field.kind === 'integer' ? field.max : undefined"
+          :value="fieldValue(field.key, field.default)"
+          :placeholder="fieldMixed(field.key, field.default) ? '多种值' : ''"
+          @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
         />
       </label>
     </section>
 
-    <p v-if="!hasFields" class="editor-muted">该素材没有可编辑属性。</p>
+    <p v-if="!hasFields" class="editor-muted">该素材没有可编辑地图字段。</p>
   </div>
 </template>
 
