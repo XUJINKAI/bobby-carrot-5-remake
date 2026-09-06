@@ -25,6 +25,11 @@ if (group === "original") {
   else if (action === "patch") run(process.execPath, ["tools/original/patch-cli.mjs", ...process.argv.slice(3)]);
   else if (action === "research") run(process.execPath, ["tools/original/research.mjs", ...process.argv.slice(3)]);
   else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
+} else if (group === "schema") {
+  if (action === "examples") {
+    run(tscCommand(), ["-b", "model", "--force"]);
+    run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(3)]);
+  } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
   if (action === "rebuild") rebuildAssets();
@@ -38,4 +43,4 @@ else if (group === "verify" && action === "browser")
   run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 else if (group === "verify") run(process.execPath, ["tools/pipeline/verify.mjs"]);
 else if (group === "clean") run(process.execPath, ["tools/pipeline/clean.mjs"]);
-else throw new Error("用法：node tools/cli.mjs dev|assets|build|preview|test|verify|clean");
+else throw new Error("用法：node tools/cli.mjs dev|assets|build|preview|schema|test|verify|clean");
