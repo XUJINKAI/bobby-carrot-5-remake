@@ -1,9 +1,6 @@
 import {
   EntityTypeId,
-  type EntityProperties,
-  type EntityState,
-  type EntityTraits,
-  type JsonValue,
+  type JsonPrimitive,
   type LevelEntity,
   type LevelLimit,
   type LevelMap,
@@ -33,11 +30,10 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
     type: EntityTypeId.BOBBY,
     x: Math.min(2, safeWidth - 1),
     y: Math.min(2, safeHeight - 1),
-    direction: "down",
   });
   return {
     schemaVersion: 1,
-    name: "Untitled Bobby Level",
+    meta: { name: "Untitled Bobby Level" },
     width: safeWidth,
     height: safeHeight,
     entities,
@@ -51,7 +47,7 @@ export function fromLevelMap(
 ): EditorMap {
   return normalizeEditorLevel({
     ...structuredClone(level),
-    name,
+    meta: { name },
   });
 }
 
@@ -61,6 +57,8 @@ export function toLevelMap(level: EditorMap): LevelMap {
     schemaVersion: 1,
     width: normalized.width,
     height: normalized.height,
+    ...(normalized.music ? { music: normalized.music } : {}),
+    ...(normalized.note ? { note: normalized.note } : {}),
     entities: normalized.entities.map(cloneEntity),
     ...(normalized.rules ? { rules: structuredClone(normalized.rules) } : {}),
   };
@@ -85,14 +83,19 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
     );
   const level: EditorMap = {
     schemaVersion: 1,
-    name: String(input.name || "Untitled Bobby Level").slice(0, 120),
+    meta: {
+      name: String(input.meta?.name || "Untitled Bobby Level").slice(0, 120),
+    },
     width,
     height,
     entities,
   };
-  if (input.author) level.author = String(input.author).slice(0, 80);
-  if (input.description)
-    level.description = String(input.description).slice(0, 500);
+  if (input.meta?.author)
+    level.meta.author = String(input.meta.author).slice(0, 80);
+  if (typeof input.music === "string" && input.music)
+    level.music = input.music;
+  if (typeof input.note === "string" && input.note)
+    level.note = input.note.slice(0, 500);
   const limits = normalizeLimits(input.rules?.limits);
   level.rules = {
     ...(limits.length > 0 ? { limits } : {}),
@@ -135,57 +138,24 @@ function normalizeEntity(raw: LevelEntity): LevelEntity | null {
   const y = Math.trunc(Number(raw.y));
   if (!type || !Number.isFinite(x) || !Number.isFinite(y)) return null;
   const entity: LevelEntity = { type, x, y };
-  const direction = raw.direction;
-  if (
-    direction === "up" ||
-    direction === "down" ||
-    direction === "left" ||
-    direction === "right"
-  )
-    entity.direction = direction;
   if (Number.isFinite(raw.stackOrder))
     entity.stackOrder = Math.trunc(raw.stackOrder!);
-  const properties = normalizeJsonRecord(raw.properties);
-  if (properties) entity.properties = properties;
-  const state = normalizeJsonRecord(raw.state);
-  if (state) entity.state = state;
-  const traits = normalizeTraits(raw.traits);
-  if (traits) entity.traits = traits;
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === "type" || key === "x" || key === "y" || key === "stackOrder")
+      continue;
+    if (!key || !isJsonPrimitive(value)) continue;
+    entity[key] = value;
+  }
   return entity;
 }
 
-function normalizeJsonRecord(
-  value: EntityProperties | EntityState | undefined,
-): Record<string, JsonValue> | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    return undefined;
-  const out: Record<string, JsonValue> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (!key || !isJsonValue(item)) continue;
-    out[key] = structuredClone(item);
-  }
-  return Object.keys(out).length > 0 ? out : undefined;
-}
-
-function normalizeTraits(value: EntityTraits | undefined): EntityTraits | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const traits = [
-    ...new Set(value.filter((item) => typeof item === "string" && item)),
-  ];
-  return traits.length > 0 ? traits : undefined;
-}
-
-function isJsonValue(value: unknown): value is JsonValue {
-  if (
+function isJsonPrimitive(value: unknown): value is JsonPrimitive {
+  return (
     value === null ||
     typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  )
-    return true;
-  if (Array.isArray(value)) return value.every(isJsonValue);
-  if (typeof value !== "object") return false;
-  return Object.values(value).every(isJsonValue);
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  );
 }
 
 function defaultWinCondition(): WinCondition {
