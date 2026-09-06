@@ -1,5 +1,7 @@
-import type { LevelMap, WinCondition } from "@bobby/model";
+import type { LevelEntity, LevelMap, WinCondition } from "@bobby/model";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
+import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
+import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 
 export type LevelRuntimeWarningCode =
   | "missing-player"
@@ -43,9 +45,7 @@ export function validateLevelPlayability(
         entity.type === selector ||
         definition.traits.includes(selector) ||
         entity.traits?.includes(selector) === true ||
-        definition.footprint?.parts.some((part) =>
-          part.traits?.includes(selector),
-        ) === true,
+        footprintHasTrait(entity, definition, selector),
     );
     if (exists) continue;
     warnings.push({
@@ -55,6 +55,27 @@ export function validateLevelPlayability(
   }
 
   return warnings;
+}
+
+function footprintHasTrait(
+  entity: LevelEntity,
+  definition: EntityCatalogEntry,
+  trait: string,
+): boolean {
+  if (!definition.footprint) return false;
+  try {
+    return resolveFootprintCells(
+      {
+        anchor: { x: entity.x, y: entity.y },
+        ...(entity.direction ? { direction: entity.direction } : {}),
+      },
+      definition.footprint,
+    ).some((part) => part.traits?.includes(trait));
+  } catch {
+    // Structural validity belongs to the normal load boundary. This helper only
+    // answers whether a playable reach target is present.
+    return false;
+  }
 }
 
 function requiredReachSelectors(
