@@ -1,6 +1,9 @@
-import type { Direction, EntityState } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type { BobbyInventoryState } from "../entities/player/BobbyState.js";
-import type { EntityId } from "../world/entity/EntityInstance.js";
+import type {
+  EntityId,
+  EntityState,
+} from "../world/entity/EntityInstance.js";
 import type {
   EconomyState,
   ProfileCapabilities,
