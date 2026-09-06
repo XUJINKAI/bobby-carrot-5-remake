@@ -1,5 +1,5 @@
 import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
-import type { EntityType, LevelEntity } from "@bobby/model";
+import { entityMapDefinition, type EntityType, type LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
   EditorDefinition,
@@ -157,8 +157,7 @@ function entityEditableScore(
 ): number {
   return (
     (editor?.variants?.length ?? 0) * 100 +
-    (definition.properties?.length ?? 0) * 10 +
-    (definition.state?.length ?? 0) * 10 +
+    (entityMapDefinition(definition.type)?.fields.length ?? 0) * 10 +
     (editor?.quickActions?.length ?? 0)
   );
 }
