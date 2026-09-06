@@ -21,7 +21,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Apply remaining contract migration
+      - name: Add runtime-only entity initialization
         shell: bash
         run: |
           python - <<'PY'
@@ -34,70 +34,82 @@ jobs:
                   raise SystemExit(f"missing replacement in {path}: {old[:100]!r}")
               p.write_text(text.replace(old, new, 1))
 
-          replace_once("engine/src/debug/DebugSnapshot.ts", "  properties: unknown;\n", "")
-          replace_once("engine/src/debug/DebugSnapshot.ts", "    properties: entity.properties ? structuredClone(entity.properties) : null,\n", "")
+          path = "engine/src/debug/DebugSidebar.ts"
+          replace_once(path, "  properties: JsonDetailsRef;\n", "")
+          replace_once(path, '      properties: this.jsonDetails("Properties"),\n', "")
+          replace_once(path, "      refs.properties.details,\n", "")
+          replace_once(path, "    this.setJson(refs.properties, entity.properties);\n", "")
 
+          path = "engine/src/core/Game.ts"
           replace_once(
-            "editor/src/authoring/rules.ts",
-            '  if (entity.type === selector || entity.traits?.includes(selector)) return true;',
-            '  if (entity.type === selector) return true;',
+            path,
+            '''import type {\n  CellPosition,\n  EntityId,\n} from "../world/entity/EntityInstance.js";''',
+            '''import type {\n  CellPosition,\n  EntityId,\n  EntityInstance,\n  EntityState,\n} from "../world/entity/EntityInstance.js";''',
           )
           replace_once(
-            "editor/src/authoring/variants.ts",
-            '  const result = structuredClone(entity);',
-            '  const result: LevelEntity = structuredClone(entity) as LevelEntity;',
+            path,
+            '''export interface GameRuntimeOptions {''',
+            '''export type RuntimeEntityStateInitializer = (\n  entity: Readonly<EntityInstance>,\n) => EntityState | null | undefined;\n\nexport interface GameRuntimeOptions {''',
           )
           replace_once(
-            "editor/src/canvas/EditorEntityPreviewRenderer.ts",
-            '      name: "Entity Preview",',
-            '      meta: { name: "Entity Preview" },',
+            path,
+            '''  /** Concrete runtime bindings; callers may also call setControlBindings after load. */\n  controls?: readonly ControlBinding[];''',
+            '''  /** Concrete runtime bindings; callers may also call setControlBindings after load. */\n  controls?: readonly ControlBinding[];\n  /** Host-only runtime state patch applied after Map entities are instantiated; never serialized. */\n  initializeEntityState?: RuntimeEntityStateInitializer;''',
+          )
+          replace_once(
+            path,
+            '''  private readonly historyPolicy: HistoryPolicy;\n  private configuredControls: readonly ControlBinding[] | null;''',
+            '''  private readonly historyPolicy: HistoryPolicy;\n  private readonly initializeEntityState: RuntimeEntityStateInitializer | null;\n  private configuredControls: readonly ControlBinding[] | null;''',
+          )
+          replace_once(
+            path,
+            '''    this.historyPolicy = structuredClone(\n      options.runtime?.history ?? DEFAULT_HISTORY_POLICY,\n    );\n    this.configuredControls = options.runtime?.controls''',
+            '''    this.historyPolicy = structuredClone(\n      options.runtime?.history ?? DEFAULT_HISTORY_POLICY,\n    );\n    this.initializeEntityState = options.runtime?.initializeEntityState ?? null;\n    this.configuredControls = options.runtime?.controls''',
+          )
+          replace_once(
+            path,
+            '''  private get world(): World {\n    if (!this.worldValue) throw new Error("尚未载入关卡");\n    return this.worldValue;\n  }''',
+            '''  private get world(): World {\n    if (!this.worldValue) throw new Error("尚未载入关卡");\n    return this.worldValue;\n  }\n\n  private applyRuntimeEntityStateInitializer(): void {\n    if (!this.initializeEntityState) return;\n    for (const entity of this.world.entities.all()) {\n      const patch = this.initializeEntityState(structuredClone(entity));\n      if (!patch) continue;\n      entity.state = {\n        ...(entity.state ?? {}),\n        ...structuredClone(patch),\n      };\n    }\n  }''',
+          )
+          replace_once(
+            path,
+            '''    this.worldValue = new World(level, {\n      profile: this.profile,\n      economy: this.initialEconomy,\n    });\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
+            '''    this.worldValue = new World(level, {\n      profile: this.profile,\n      economy: this.initialEconomy,\n    });\n    this.applyRuntimeEntityStateInitializer();\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
+          )
+          replace_once(
+            path,
+            '''    this.worldValue = new World(this.initialLevel, { profile, economy });\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
+            '''    this.worldValue = new World(this.initialLevel, { profile, economy });\n    this.applyRuntimeEntityStateInitializer();\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
           )
 
-          path = "web/src/app/BobbyApp.ts"
-          replace_once(path, "  type PageController,\n", "  type PageController,\n  type ResolvedMapCollection,\n")
-          replace_once(path, "  private collections: MapCollectionIndex[] = [];", "  private collections: ResolvedMapCollection[] = [];")
-          replace_once(path, "            title: imported.value.name,", "            title: imported.value.meta.name,")
-          replace_once(path, "        identity: { ...ref, title: level.name },", "        identity: { ...ref, title: level.meta.name },")
+          path = "engine/src/public.ts"
           replace_once(
             path,
-            '''      const resolved = await resolveMapDocument(ref);\n      this.controller = await renderGamePage({''',
-            '''      const resolved = await resolveMapDocument(ref);\n      const collection = context.collections.find((item) => item.id === ref.collection);\n      const currentIndex = collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;\n      const exploreNextMapId =\n        currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;\n      this.controller = await renderGamePage({''',
-          )
-          replace_once(
-            path,
-            '''        mapMeta: resolved.document.meta,\n        identity: { ...resolved.ref, title: resolved.document.meta.name },\n        mode: "explore",''',
-            '''        mapMeta: resolved.document.meta,\n        identity: { ...resolved.ref, title: resolved.document.meta.name },\n        ...(exploreNextMapId ? { exploreNextMapId } : {}),\n        mode: "explore",''',
-          )
-          replace_once(
-            path,
-            '''        collectionsIndex.collections.map((collection) =>\n          fetchJson<MapCollectionIndex>(\n            siteUrl(`assets/maps/${collection.id}/index.json`),\n          ),\n        ),''',
-            '''        collectionsIndex.collections.map(async (collection) => ({\n          id: collection.id,\n          ...(await fetchJson<MapCollectionIndex>(\n            siteUrl(`assets/maps/${collection.id}/index.json`),\n          )),\n        })),''',
+            'export { Game, type GameOptions, type GameRuntimeOptions } from "./core/Game.js";',
+            'export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";',
           )
 
-          path = "web/src/pages/editor/mountEditorPage.ts"
+          path = "web/src/pages/home/mountHomePage.ts"
+          replace_once(path, 'import { EntityTypeId, type LevelMap } from "@bobby/model";', 'import { EntityTypeId } from "@bobby/model";')
+          replace_once(path, '      level: prepareHomeDemoLevel(demo.level),', '      level: demo.level,')
           replace_once(
             path,
-            '''      level = fromLevelMap(resolved.level);\n      level.name = `${resolved.document.meta.name} · 副本`;''',
-            '''      level = fromLevelMap(\n        resolved.level,\n        `${resolved.document.meta.name} · 副本`,\n      );''',
+            '''      runtime: {\n        hud: true,''',
+            '''      runtime: {\n        initializeEntityState: (entity) =>\n          entity.type === EntityTypeId.SANDMAN\n            ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }\n            : undefined,\n        hud: true,''',
           )
-
-          path = "web/src/pages/game/mountGamePage.ts"
-          replace_once(path, "  mapMeta?: MapMeta;\n", "  mapMeta?: MapMeta;\n  exploreNextMapId?: string;\n")
-          replace_once(path, "    mapMeta,\n", "    mapMeta,\n    exploreNextMapId,\n")
           replace_once(
             path,
-            '  audio.playMusic(mapMeta?.music ?? (isBonus ? "bonus" : "ingame1"));',
-            '''  if (level.music === "none") audio.stopMusic();\n  else\n    audio.playMusic(\n      level.music && level.music !== "random"\n        ? level.music\n        : isBonus\n          ? "bonus"\n          : "ingame1",\n    );''',
+            '''function prepareHomeDemoLevel(level: LevelMap): LevelMap {\n  const result = structuredClone(level);\n  for (const entity of result.entities) {\n    if (entity.type !== EntityTypeId.SANDMAN) continue;\n    entity.properties = {\n      ...(entity.properties ?? {}),\n      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },\n    };\n  }\n  return result;\n}\n\n''',
+            '',
           )
-          replace_once(path, "        nextId = mapMeta?.next;", "        nextId = exploreNextMapId;")
           PY
       - name: Commit migration
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add engine/src/debug/DebugSnapshot.ts editor/src/authoring/rules.ts editor/src/authoring/variants.ts editor/src/canvas/EditorEntityPreviewRenderer.ts web/src/app/BobbyApp.ts web/src/pages/editor/mountEditorPage.ts web/src/pages/game/mountGamePage.ts
-          git commit -m "refactor(schema): clear remaining document contract leaks"
+          git add engine/src/debug/DebugSidebar.ts engine/src/core/Game.ts engine/src/public.ts web/src/pages/home/mountHomePage.ts
+          git commit -m "refactor(engine): support host-only entity state initialization"
           git push origin HEAD:schema/entity-map-contract
       - name: TypeScript diagnosis
         run: npx tsc -b
