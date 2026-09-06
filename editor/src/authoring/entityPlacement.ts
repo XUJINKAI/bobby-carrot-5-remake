@@ -3,7 +3,7 @@ import {
   type EntityCatalog,
   type EntityCatalogEntry,
 } from "@bobby/engine";
-import type { JsonValue, LevelEntity } from "@bobby/model";
+import { isLevelEntityReservedField, type Direction, type LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import { isEditorEntityCreatable } from "../definitions/entities.js";
 import type {
@@ -141,7 +141,7 @@ function resolveAnchor(
   cursor: Cell,
   definition: EntityCatalogEntry,
   placementPoint: EditorPlacementPoint | undefined,
-  direction: LevelEntity["direction"],
+  direction: Direction | undefined,
 ): Cell {
   if (!placementPoint) return cursor;
   if ("offset" in placementPoint) {
@@ -181,31 +181,17 @@ function createPlacedEntity(
   definition: EntityCatalogEntry,
   anchor: Cell,
   preset: EditorPlacementPreset,
-  direction: LevelEntity["direction"],
+  direction: Direction | undefined,
 ): LevelEntity {
-  const properties = defaults(definition.properties);
-  const state = defaults(definition.state);
   const entity: LevelEntity = {
     type: definition.type,
     x: anchor.x,
     y: anchor.y,
   };
-  if (direction) entity.direction = direction;
-  const mergedProperties = { ...properties, ...preset.properties };
-  if (Object.keys(mergedProperties).length > 0)
-    entity.properties = mergedProperties;
-  const mergedState = { ...state, ...preset.state };
-  if (Object.keys(mergedState).length > 0) entity.state = mergedState;
-  return entity;
-}
-
-function defaults(
-  fields: EntityCatalogEntry["properties"] | EntityCatalogEntry["state"],
-): Record<string, JsonValue> {
-  const result: Record<string, JsonValue> = {};
-  for (const field of fields ?? []) {
-    if (field.default !== undefined)
-      result[field.key] = structuredClone(field.default);
+  for (const [key, value] of Object.entries(preset.fields ?? {})) {
+    if (!key || key === "direction" || isLevelEntityReservedField(key)) continue;
+    entity[key] = value;
   }
-  return result;
+  if (direction) entity.direction = direction;
+  return entity;
 }
