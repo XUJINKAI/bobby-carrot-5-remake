@@ -84,28 +84,48 @@ const definition: EntityModuleDefinition = {
   traits: ["dragon"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
-    rotateWithDirection: true,
-    baseDirection: "left",
-    parts: [
-      {
-        dx: 0,
-        dy: 0,
-        role: "head",
-        traits: ["blocking"],
-      },
-      {
-        dx: 1,
-        dy: 0,
-        role: "body",
-        traits: ["blocking"],
-      },
-      {
-        dx: 2,
-        dy: 0,
-        role: "tail",
-        traits: ["walkable", "dragon-trigger"],
-      },
-    ],
+    byDirection: {
+      left: [
+        {
+          dx: 0,
+          dy: 0,
+          role: "head",
+          traits: ["blocking"],
+        },
+        {
+          dx: 1,
+          dy: 0,
+          role: "body",
+          traits: ["blocking"],
+        },
+        {
+          dx: 2,
+          dy: 0,
+          role: "tail",
+          traits: ["walkable", "dragon-trigger"],
+        },
+      ],
+      right: [
+        {
+          dx: 0,
+          dy: 0,
+          role: "head",
+          traits: ["blocking"],
+        },
+        {
+          dx: -1,
+          dy: 0,
+          role: "body",
+          traits: ["blocking"],
+        },
+        {
+          dx: -2,
+          dy: 0,
+          role: "tail",
+          traits: ["walkable", "dragon-trigger"],
+        },
+      ],
+    },
   },
   presentation: { name: "Dragon" },
 };

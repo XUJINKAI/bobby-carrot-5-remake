@@ -122,18 +122,12 @@ export const builtinEditorDefinition: EditorDefinition = {
     },
     [EntityTypeId.SANDMAN]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
     [EntityTypeId.DREAM_MACHINE]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
     [EntityTypeId.BEAVER]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
     [EntityTypeId.SPEED]: directionalMechanism,
     [EntityTypeId.TIDE]: directionalMechanism,

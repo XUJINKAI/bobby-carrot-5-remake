@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 
 function registry() {
   const registry = new EntityRegistry();
@@ -136,6 +137,61 @@ test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", ()
   assert.equal(
     preview.entities.all().filter((entity) => entity.type === "dragon").length,
     1,
+  );
+});
+
+test("fixed footprint 不随 Entity direction 改变", () => {
+  const footprint = {
+    parts: [
+      { dx: 0, dy: 0, role: "head" },
+      { dx: 0, dy: 1, role: "body" },
+    ],
+  };
+  const down = resolveFootprintCells(
+    { anchor: { x: 2, y: 2 }, direction: "down" },
+    footprint,
+  );
+  const right = resolveFootprintCells(
+    { anchor: { x: 2, y: 2 }, direction: "right" },
+    footprint,
+  );
+  assert.deepEqual(right, down);
+});
+
+test("directional footprint 只解析显式声明的方向", () => {
+  const footprint = {
+    byDirection: {
+      left: [
+        { dx: 0, dy: 0, role: "head" },
+        { dx: 1, dy: 0, role: "body" },
+      ],
+      right: [
+        { dx: 0, dy: 0, role: "head" },
+        { dx: -1, dy: 0, role: "body" },
+      ],
+    },
+  };
+  assert.deepEqual(
+    resolveFootprintCells(
+      { anchor: { x: 2, y: 2 }, direction: "right" },
+      footprint,
+    ).map(({ x, y, role }) => [x, y, role]),
+    [
+      [2, 2, "head"],
+      [1, 2, "body"],
+    ],
+  );
+  assert.throws(
+    () =>
+      resolveFootprintCells(
+        { anchor: { x: 2, y: 2 }, direction: "up" },
+        footprint,
+      ),
+    /does not define direction: up/,
+  );
+  assert.throws(
+    () => resolveFootprintCells({ anchor: { x: 2, y: 2 } }, footprint),
+    /requires entity direction/,
   );
 });
 

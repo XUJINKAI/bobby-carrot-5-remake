@@ -15,8 +15,6 @@ const definition: EntityModuleDefinition = {
   traits: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
-    rotateWithDirection: true,
-    baseDirection: "down",
     parts: [
       { dx: 0, dy: 0, role: "head" },
       { dx: 0, dy: 1, role: "body" },
