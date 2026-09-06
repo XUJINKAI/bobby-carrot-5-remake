@@ -19,7 +19,7 @@ npm run verify
 - 校验依赖方向：Web、Editor、Engine 不允许依赖 `@bobby/dat`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；
 - 校验用户地图只保留 JSON 产品路径，不允许旧 DAT-backed URL share 代码回来；
 - 校验单一 `dist/`、model/adventure/engine/editor browser modules 和 import map，并明确禁止 `dist/dat`；
-- 用 Chrome/Chromium smoke test 加载 Home、Level Browser、Play、Adventure、Editor SPA 路由；本地也可通过 `npm run verify:browser` 单独运行同一检查。
+- 用 Chrome/Chromium smoke test 加载 Home、Level Browser、Play、Adventure、Editor SPA 路由；本地也可通过 `npm run verify` 单独运行同一检查。
 
 源码质量门禁也可以单独运行：
 
