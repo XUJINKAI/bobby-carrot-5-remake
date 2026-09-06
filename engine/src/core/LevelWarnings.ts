@@ -1,4 +1,9 @@
-import type { LevelEntity, LevelMap, WinCondition } from "@bobby/model";
+import type {
+  Direction,
+  LevelEntity,
+  LevelMap,
+  WinCondition,
+} from "@bobby/model";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
@@ -27,12 +32,7 @@ export function validateLevelPlayability(
   );
   const warnings: LevelRuntimeWarning[] = [];
 
-  const hasPlayer = known.some(
-    ({ entity, definition }) =>
-      definition.traits.includes("player") ||
-      entity.traits?.includes("player") === true,
-  );
-  if (!hasPlayer) {
+  if (!known.some(({ definition }) => definition.traits.includes("player"))) {
     warnings.push({
       code: "missing-player",
       message: "地图至少需要一个 player Entity。",
@@ -44,7 +44,6 @@ export function validateLevelPlayability(
       ({ entity, definition }) =>
         entity.type === selector ||
         definition.traits.includes(selector) ||
-        entity.traits?.includes(selector) === true ||
         footprintHasTrait(entity, definition, selector),
     );
     if (exists) continue;
@@ -63,11 +62,12 @@ function footprintHasTrait(
   trait: string,
 ): boolean {
   if (!definition.footprint) return false;
+  const direction = asDirection(entity.direction);
   try {
     return resolveFootprintCells(
       {
         anchor: { x: entity.x, y: entity.y },
-        ...(entity.direction ? { direction: entity.direction } : {}),
+        ...(direction ? { direction } : {}),
       },
       definition.footprint,
     ).some((part) => part.traits?.includes(trait));
@@ -76,6 +76,12 @@ function footprintHasTrait(
     // answers whether a playable reach target is present.
     return false;
   }
+}
+
+function asDirection(value: unknown): Direction | undefined {
+  return value === "up" || value === "right" || value === "down" || value === "left"
+    ? value
+    : undefined;
 }
 
 function requiredReachSelectors(
