@@ -1,11 +1,10 @@
-import type {
-  Direction,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
-  LevelEntity,
-  LevelLimit,
-  WinCondition,
+import {
+  isLevelEntityReservedField,
+  type Direction,
+  type JsonPrimitive,
+  type LevelEntity,
+  type LevelLimit,
+  type WinCondition,
 } from "@bobby/model";
 import {
   normalizeEditorLevel,
@@ -78,49 +77,20 @@ export function setEntityDirection(
   ref: EntityRef,
   direction: Direction | undefined,
 ): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    if (direction) next.direction = direction;
-    else delete next.direction;
-    return next;
-  });
+  return updateEntityField(ref, "direction", direction);
 }
 
-export function updateEntityProperties(
+/** Update one entity-owned flat Map field. Reserved identity/position fields use dedicated commands. */
+export function updateEntityField(
   ref: EntityRef,
-  properties: EntityProperties | undefined,
+  key: string,
+  value: JsonPrimitive | undefined,
 ): EditorCommand {
+  if (!key || isLevelEntityReservedField(key)) return command((level) => level);
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
-    if (properties && Object.keys(properties).length > 0)
-      next.properties = structuredClone(properties);
-    else delete next.properties;
-    return next;
-  });
-}
-
-export function updateEntityState(
-  ref: EntityRef,
-  state: EntityState | undefined,
-): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    if (state && Object.keys(state).length > 0)
-      next.state = structuredClone(state);
-    else delete next.state;
-    return next;
-  });
-}
-
-export function updateEntityTraits(
-  ref: EntityRef,
-  traits: EntityTraits | undefined,
-): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    const unique = traits ? [...new Set(traits)] : [];
-    if (unique.length > 0) next.traits = unique;
-    else delete next.traits;
+    if (value === undefined) delete next[key];
+    else next[key] = value;
     return next;
   });
 }
@@ -173,16 +143,16 @@ export function reorderEntityStack(
 export function updateMetadata(metadata: {
   name: string;
   author?: string;
-  description?: string;
 }): EditorCommand {
-  return command((level) => {
-    const next: EditorMap = { ...level, name: metadata.name };
-    if (metadata.author) next.author = metadata.author;
-    else delete next.author;
-    if (metadata.description) next.description = metadata.description;
-    else delete next.description;
-    return normalizeEditorLevel(next);
-  });
+  return command((level) =>
+    normalizeEditorLevel({
+      ...level,
+      meta: {
+        name: metadata.name,
+        ...(metadata.author ? { author: metadata.author } : {}),
+      },
+    }),
+  );
 }
 
 export function resizeDocument(width: number, height: number): EditorCommand {
