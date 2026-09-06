@@ -1,6 +1,6 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { createDialogBehavior } from "@bobby/engine";
-import { EntityTypeId, type LevelMap } from "@bobby/model";
+import { EntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, homeIdentity } from "../../app/pageChrome.js";
@@ -87,13 +87,17 @@ export async function renderHome(
   try {
     session = await createGameSession({
       canvas,
-      level: prepareHomeDemoLevel(demo.level),
+      level: demo.level,
       gameOptions: {
         audio,
         images,
         profile: { superKey: true },
       },
       runtime: {
+        initializeEntityState: (entity) =>
+          entity.type === EntityTypeId.SANDMAN
+            ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }
+            : undefined,
         hud: true,
         input: {
           undo: false,
@@ -154,18 +158,6 @@ export async function renderHome(
       homeApp.unmount();
     },
   };
-}
-
-function prepareHomeDemoLevel(level: LevelMap): LevelMap {
-  const result = structuredClone(level);
-  for (const entity of result.entities) {
-    if (entity.type !== EntityTypeId.SANDMAN) continue;
-    entity.properties = {
-      ...(entity.properties ?? {}),
-      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },
-    };
-  }
-  return result;
 }
 
 function importHomeMap(

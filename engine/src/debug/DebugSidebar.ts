@@ -34,7 +34,6 @@ interface InspectEntityRefs {
   traits: JsonDetailsRef;
   behaviors: JsonDetailsRef;
   instanceTraits: JsonDetailsRef;
-  properties: JsonDetailsRef;
   state: JsonDetailsRef;
   footprint: JsonDetailsRef;
   presence: JsonDetailsRef;
@@ -718,7 +717,6 @@ export class DebugSidebar {
       traits: this.jsonDetails("Traits", true),
       behaviors: this.jsonDetails("Behaviors", true),
       instanceTraits: this.jsonDetails("Instance traits"),
-      properties: this.jsonDetails("Properties"),
       state: this.jsonDetails("State"),
       footprint: this.jsonDetails("Footprint"),
       presence: this.jsonDetails("Presence"),
@@ -732,7 +730,6 @@ export class DebugSidebar {
       refs.traits.details,
       refs.behaviors.details,
       refs.instanceTraits.details,
-      refs.properties.details,
       refs.state.details,
       refs.footprint.details,
       refs.presence.details,
@@ -753,7 +750,6 @@ export class DebugSidebar {
     this.setJson(refs.traits, entity.definition.traits);
     this.setJson(refs.behaviors, entity.behaviors);
     this.setJson(refs.instanceTraits, entity.instanceTraits);
-    this.setJson(refs.properties, entity.properties);
     this.setJson(refs.state, entity.state);
     this.setJson(refs.footprint, entity.definition.footprint);
     this.setJson(refs.presence, entity.presences);

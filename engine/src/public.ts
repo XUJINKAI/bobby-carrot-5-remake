@@ -1,4 +1,4 @@
-export { Game, type GameOptions, type GameRuntimeOptions } from "./core/Game.js";
+export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
 export {
   DEFAULT_HISTORY_POLICY,
