@@ -15,10 +15,13 @@ export const NOOP_CONTROLLER: PageController = {
   destroy() {},
 };
 
+/** Runtime wrapper: serialized MapCollectionIndex identity still comes from its resource path. */
+export type ResolvedMapCollection = MapCollectionIndex & { id: string };
+
 export interface PageContext {
   app: HTMLDivElement;
   collectionsIndex: MapCollectionsIndex;
-  collections: MapCollectionIndex[];
+  collections: ResolvedMapCollection[];
   adventure: AdventureIndex;
   audio: AudioRuntime;
   images: ImageManager;
