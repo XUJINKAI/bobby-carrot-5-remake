@@ -24,28 +24,28 @@ const horizontalDirections: readonly EditorEntityVariant[] = [
   { direction: "right", label: "right" },
 ];
 const pressedVariants: readonly EditorEntityVariant[] = [
-  { label: "Raised", state: { pressed: false } },
-  { label: "Pressed", state: { pressed: true } },
+  { label: "Raised", fields: { pressed: false } },
+  { label: "Pressed", fields: { pressed: true } },
 ];
 const activeVariants: readonly EditorEntityVariant[] = [
-  { label: "Active", state: { active: true } },
-  { label: "Inactive", state: { active: false } },
+  { label: "Active", fields: { active: true } },
+  { label: "Inactive", fields: { active: false } },
 ];
 const windSwitchVariants: readonly EditorEntityVariant[] = [
-  { label: "On", state: { active: true } },
-  { label: "Off", state: { active: false } },
+  { label: "On", fields: { active: true } },
+  { label: "Off", fields: { active: false } },
 ];
 const raisedVariants: readonly EditorEntityVariant[] = [
-  { label: "Raised", state: { raised: true } },
-  { label: "Lowered", state: { raised: false } },
+  { label: "Raised", fields: { raised: true } },
+  { label: "Lowered", fields: { raised: false } },
 ];
 const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
-  (variant) => ({ label: String(variant), state: { variant } }),
+  (variant) => ({ label: String(variant), fields: { variant } }),
 );
 const carouselVariants: readonly EditorEntityVariant[] = [
   ...fourVariants,
-  { label: "Vertical", state: { variant: "vertical" } },
-  { label: "Horizontal", state: { variant: "horizontal" } },
+  { label: "Vertical", fields: { variant: "vertical" } },
+  { label: "Horizontal", fields: { variant: "horizontal" } },
 ];
 
 const surface: EditorEntityDefinition = { replaceGroup: "surface" };
@@ -99,8 +99,6 @@ export const builtinEditorDefinition: EditorDefinition = {
       item,
     ),
     [EntityTypeId.BOBBY]: {
-      defaultDirection: "down",
-      variants: directions,
       editorVisual: () => ({
         layers: [
           {
@@ -294,23 +292,8 @@ export function applyEditorVariant(
 ): LevelEntity {
   return {
     ...structuredClone(entity),
+    ...(variant.fields ? structuredClone(variant.fields) : {}),
     ...(variant.direction ? { direction: variant.direction } : {}),
-    ...(variant.properties
-      ? {
-          properties: {
-            ...(entity.properties ?? {}),
-            ...structuredClone(variant.properties),
-          },
-        }
-      : {}),
-    ...(variant.state
-      ? {
-          state: {
-            ...(entity.state ?? {}),
-            ...structuredClone(variant.state),
-          },
-        }
-      : {}),
   };
 }
 
