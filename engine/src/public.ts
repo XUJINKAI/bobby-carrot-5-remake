@@ -95,11 +95,10 @@ export {
   readBobbyInventory,
   type BobbyInventoryState,
 } from "./entities/player/BobbyState.js";
+
+/** Canonical serialized map contracts. */
 export type {
   Direction,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
   EntityType,
   JsonValue,
   LevelEntity,
@@ -108,6 +107,7 @@ export type {
   LevelRules,
   WinCondition,
 } from "@bobby/model";
+
 export type {
   CellInspection,
   MoveResult,
@@ -166,10 +166,13 @@ export type {
 } from "./world/entity/EntityDefinition.js";
 export { EntityStore } from "./world/entity/EntityStore.js";
 export type { EntityStoreSnapshot } from "./world/entity/EntityStore.js";
+/** Engine runtime entity contracts; these are not Map JSON. */
 export type {
   CellPosition,
   EntityId,
   EntityInstance,
+  EntitySpawnSpec,
+  EntityState,
 } from "./world/entity/EntityInstance.js";
 export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
