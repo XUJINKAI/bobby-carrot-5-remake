@@ -3,13 +3,19 @@ import type { RuntimeActionId } from "../action/RuntimeAction.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
 import type { MoveCause } from "./WorldIntent.js";
 import type { MoveResult, WorldEvent } from "../WorldTypes.js";
+import type { WorldDelta } from "../delta/WorldDelta.js";
+import type { WorldMotion } from "./WorldMotion.js";
+import type { MovementLifecycle } from "./WorldMotion.js";
 
-export interface EntityMotion {
+export type EntityMotion = WorldMotion;
+
+export interface EntityMotionRequest {
   entityId: EntityId;
   from: CellPosition;
   to: CellPosition;
   direction: Direction;
   cause: MoveCause;
+  lifecycle?: MovementLifecycle;
 }
 
 export interface WorldMutationSummary {
@@ -24,9 +30,11 @@ export interface WorldMutationSummary {
 
 export interface WorldStepResult {
   moves: MoveResult[];
-  motions: EntityMotion[];
+  /** 本次推进新启动的空间过程；完整因果顺序以 deltas 为准。 */
+  motions: WorldMotion[];
   events: WorldEvent[];
   mutations: WorldMutationSummary;
+  deltas: WorldDelta[];
 }
 
 export function emptyMutationSummary(): WorldMutationSummary {
@@ -47,6 +55,7 @@ export function emptyWorldStepResult(): WorldStepResult {
     motions: [],
     events: [],
     mutations: emptyMutationSummary(),
+    deltas: [],
   };
 }
 
@@ -58,6 +67,7 @@ export function mergeWorldStepResult(
   target.moves.push(...source.moves.map((move) => structuredClone(move)));
   target.motions.push(...source.motions.map((motion) => structuredClone(motion)));
   target.events.push(...source.events.map((event) => structuredClone(event)));
+  target.deltas.push(...source.deltas.map((delta) => structuredClone(delta)));
   mergeWorldMutationSummary(target.mutations, source.mutations);
 }
 

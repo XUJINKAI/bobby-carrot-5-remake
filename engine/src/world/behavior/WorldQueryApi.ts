@@ -5,6 +5,7 @@ import type { EntityStore } from "../entity/EntityStore.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { SpatialIndex } from "../spatial/SpatialIndex.js";
+import type { WorldMotion, WorldMotionStore } from "../movement/WorldMotion.js";
 
 export interface CellQuery {
   x: number;
@@ -17,6 +18,7 @@ export class WorldQueryApi {
     private readonly spatial: SpatialIndex,
     private readonly registry: EntityRegistry,
     private readonly globalState: () => Readonly<GlobalState>,
+    private readonly motions?: WorldMotionStore,
   ) {}
 
   inBounds(cell: CellQuery): boolean {
@@ -50,6 +52,10 @@ export class WorldQueryApi {
 
   global(): Readonly<GlobalState> {
     return this.globalState();
+  }
+
+  motionForEntity(entityId: EntityId): Readonly<WorldMotion> | undefined {
+    return this.motions?.forEntity(entityId);
   }
 
   entityHasTrait(entityId: EntityId, trait: EntityTrait): boolean {

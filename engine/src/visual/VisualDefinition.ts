@@ -7,6 +7,7 @@ import type {
   EntityId,
   EntityInstance,
 } from "../world/entity/EntityInstance.js";
+import type { WinConditionState, WorldEvent } from "../world/WorldTypes.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
@@ -65,6 +66,8 @@ export interface VisualComposition {
 export interface EntityVisualRuntimeState {
   offsetX?: number;
   offsetY?: number;
+  /** Visual-only height above the grid anchor, in source-art pixels. */
+  elevationPx?: number;
   moving?: boolean;
   progress?: number;
   /** 上一次进入静止状态的 PresentationTime；供 Entity 自己决定何时进入 idle。 */
@@ -89,6 +92,8 @@ export interface VisualResolveContext {
   runtime?: Readonly<EntityVisualRuntimeState>;
   /** Runtime 可以提供只读全局 gameplay 状态；Editor preview 可省略。 */
   global?: Readonly<GlobalState>;
+  /** 当前只读目标树；用于表现目标是否已进入可达阶段。 */
+  winState?: Readonly<WinConditionState> | null;
   /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
   time?: PresentationFrame;
 }
@@ -98,5 +103,24 @@ export interface VisualDefinition {
   id: VisualId;
   /** 固定渲染 pass；默认 world。它只影响表现，不进入 World/Spatial。 */
   renderPass?: VisualRenderPass;
+  /** Visual-only top-surface height used when an actor stands on this Entity. */
+  supportHeightPx?: number;
   resolve(context: VisualResolveContext): VisualComposition | null;
+}
+
+/**
+ * World gameplay 已经结束后仍可继续播放的短暂视觉。它由语义 WorldEvent 启动，
+ * 只存在于 PresentationTime，不进入 EntityStore、Spatial 或 World snapshot。
+ */
+export interface TransientVisualDefinition {
+  id: string;
+  eventType: string;
+  durationMs: number;
+  renderPass?: VisualRenderPass;
+  stackOrder?: number;
+  resolve(context: {
+    event: Readonly<WorldEvent>;
+    progress: number;
+    time: PresentationFrame;
+  }): VisualComposition | null;
 }

@@ -295,25 +295,28 @@ function assertOriginalStartContract(document, relative) {
 
 function assertOriginalWinRule(document, relative) {
   const types = new Set(document.entities.map((entity) => entity.type));
+  const exit = types.has("exit") ? { type: "reach", target: "exit" } : null;
   let expected;
   if (types.has("golden-carrot")) {
     const goldenCarrot = { type: "reach", target: "golden-carrot" };
-    expected = types.has("exit")
+    expected = exit
       ? {
           type: "any",
-          conditions: [goldenCarrot, { type: "reach", target: "exit" }],
+          conditions: [goldenCarrot, exit],
         }
       : goldenCarrot;
   } else if (types.has("carrot")) {
-    expected = { type: "collect-all", target: "carrot" };
+    const carrots = { type: "collect-all", target: "carrot" };
+    expected = exit ? { type: "all", conditions: [carrots, exit] } : carrots;
   } else if (types.has("egg-nest-empty") || types.has("egg-nest-filled")) {
-    expected = {
+    const eggs = {
       type: "fill-all",
       target: "egg-nest",
       filler: "egg",
     };
-  } else if (types.has("exit")) {
-    expected = { type: "reach", target: "exit" };
+    expected = exit ? { type: "all", conditions: [eggs, exit] } : eggs;
+  } else if (exit) {
+    expected = exit;
   } else {
     throw new Error(`${relative}: Original Campaign map 缺少可识别获胜目标`);
   }

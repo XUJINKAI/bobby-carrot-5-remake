@@ -51,6 +51,8 @@ const { game, input } = runtime;
 
 Engine 明确区分 gameplay 与 presentation 两套时间。
 
+World 内部进一步区分整数网格事实与连续运动事实；两者都由 WorldClock 推进，Presentation 只消费有序语义 delta。完整约束见 [`world-runtime.md`](world-runtime.md)。
+
 ### WorldClock
 
 `WorldClock` 是 gameplay 的固定步长时钟：
@@ -66,6 +68,7 @@ interface WorldTick {
 
 - Input gameplay sampling；
 - World / Behavior；
+- WorldMotion / MovementRuntime；
 - RuntimeActionScheduler；
 - forced movement 与其他 gameplay rule。
 
@@ -105,28 +108,34 @@ runtime: {
 
 未来 modern / retro 若需要不同帧感，应优先改变 `presentationHz`（例如 modern 60、retro 16），而不是改变 World gameplay 规则。
 
-## Entity / Behavior / RuntimeAction
+## Entity / Behavior / MovementPlan / WorldMotion / RuntimeAction
 
 持续跨多个 WorldTick 的 gameplay 过程使用 RuntimeAction，而不是 Promise、wall-clock timer 或第二套 Actor 模型：
 
 ```text
 Entity          这个东西是什么 / 当前 gameplay state
 Behavior        事件发生时如何响应
+MovementPlan    一次移动的通行、参与者与 lifecycle 裁决输入
+WorldMotion     具有连续位置与 marker 的空间 gameplay 过程
 RuntimeAction   一个正在持续进行的 gameplay 过程
 ```
+
+Behavior 通过纯查询 `MovementPolicy` 描述特殊通行、携带关系与 marker；World 将 policies 规范化为一个 `MovementPlan`，负责通用边界、reservation、busy 状态与原子提交。World 不识别具体 Entity 机制或私有 state 字段。
 
 RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 CommandQueue 修改 World。Action 可以声明：
 
 ```ts
 {
   blocksInput?: boolean;
-  cameraTarget?: EntityId;
+  focus?: { entityId: EntityId };
 }
 ```
 
-`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`cameraTarget` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
+`inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
 
-RuntimeAction 是 gameplay state，因此可进入 World snapshot。Presentation tween / Camera transition 不进入 snapshot。
+RuntimeAction 产生 semantic intent 后，由 World 回传带 action identity 的权威 `MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时 `onCancel` 按明确 reason 清理 owner-local gameplay state。
+
+RuntimeAction、WorldMotion、ActorLifecycle 与 WorldOutcome 都是 gameplay state，因此进入 World snapshot。Presentation tween / Camera transition 不进入 snapshot。
 
 ## Undo / Redo
 
@@ -156,6 +165,8 @@ game.setHeldDirection(null);
 game.undo();
 game.redo();
 game.restart();
+game.killActor(actorId);
+game.reviveActor(actorId);
 
 game.setZoom(1.25);
 game.setZoomLimits(0.8, 2.75);

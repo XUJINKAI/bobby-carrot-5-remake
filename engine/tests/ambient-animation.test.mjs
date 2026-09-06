@@ -11,7 +11,7 @@ import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 
 const AMBIENT_STEP_MS = 248;
 
-function resolveAt(type, nowMs, direction) {
+function resolveAt(type, nowMs, direction, winState) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
@@ -31,6 +31,7 @@ function resolveAt(type, nowMs, direction) {
     entity,
     presence,
     query: new SpatialVisualQuery(store, spatial),
+    ...(winState !== undefined ? { winState } : {}),
     time: { frame: 1, nowMs, deltaMs: 16 },
   });
   assert.ok(composition);
@@ -59,7 +60,6 @@ test("original ta.png ambient phase zero keeps the static ts.png atlas frame", (
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {
   for (const [type, frameIndex] of [
-    [EntityTypeId.EXIT, 0],
     [EntityTypeId.BONUS_COIN, 15],
     [EntityTypeId.WINDMILL_UP, 18],
     [EntityTypeId.WINDMILL_DOWN, 20],
@@ -74,12 +74,62 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
     expectAnimated(type, frameIndex);
 });
 
+test("Exit animates only when reach Exit is the only unfinished objective", () => {
+  const blocked = {
+    type: "all",
+    completed: false,
+    conditions: [
+      {
+        type: "collect-all",
+        target: EntityTypeId.CARROT,
+        completed: false,
+        remaining: 1,
+      },
+      { type: "reach", target: EntityTypeId.EXIT, completed: false },
+    ],
+  };
+  assert.equal(
+    resolveAt(EntityTypeId.EXIT, AMBIENT_STEP_MS, undefined, blocked).kind,
+    "atlas",
+  );
+
+  const ready = {
+    ...blocked,
+    conditions: [
+      {
+        type: "collect-all",
+        target: EntityTypeId.CARROT,
+        completed: true,
+        remaining: 0,
+      },
+      { type: "reach", target: EntityTypeId.EXIT, completed: false },
+    ],
+  };
+  const readyLayer = resolveAt(
+    EntityTypeId.EXIT,
+    AMBIENT_STEP_MS,
+    undefined,
+    ready,
+  );
+  assert.equal(readyLayer.kind, "image");
+  assert.equal(readyLayer.frameIndex, 0);
+
+  const directLayer = resolveAt(
+    EntityTypeId.EXIT,
+    AMBIENT_STEP_MS,
+    undefined,
+    { type: "reach", target: EntityTypeId.EXIT, completed: false },
+  );
+  assert.equal(directLayer.kind, "image");
+  assert.equal(directLayer.frameIndex, 0);
+});
+
 test("original ta.png Speed and Tide mappings preserve DAT direction order", () => {
   for (const [direction, speedFrame, tideFrame] of [
-    ["up", 3, 33],
-    ["down", 6, 31],
-    ["left", 9, 37],
-    ["right", 12, 35],
+    ["up", 3, 31],
+    ["down", 6, 33],
+    ["left", 9, 35],
+    ["right", 12, 37],
   ]) {
     expectAnimated(EntityTypeId.SPEED, speedFrame, direction);
     expectAnimated(EntityTypeId.TIDE, tideFrame, direction);

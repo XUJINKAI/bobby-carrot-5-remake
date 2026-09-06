@@ -5,6 +5,7 @@ import {
   type JsonValue,
 } from "@bobby/model";
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
+import type { WinConditionState } from "../../world/WorldTypes.js";
 import type {
   ImageVisualLayer,
   VisualDefinition,
@@ -143,6 +144,11 @@ function originalAmbientLayer(
   context: VisualResolveContext,
 ): ImageVisualLayer | null {
   if (!context.time) return null;
+  if (
+    context.entity.type === EntityTypeId.EXIT &&
+    !exitAnimationReady(context.winState)
+  )
+    return null;
   const sequence = originalAmbientSequence(
     context.entity.type,
     context.entity.direction,
@@ -194,10 +200,27 @@ function originalAmbientSequence(
     return { baseIndex, cycleLength: 4 };
   }
   if (type === EntityTypeId.TIDE) {
-    const baseIndex = { up: 33, down: 31, left: 37, right: 35 }[
+    const baseIndex = { up: 31, down: 33, left: 35, right: 37 }[
       direction ?? "right"
     ];
     return { baseIndex, cycleLength: 3 };
   }
   return null;
+}
+
+function exitAnimationReady(
+  state: Readonly<WinConditionState> | null | undefined,
+): boolean {
+  if (!state || state.completed) return false;
+  if (state.type === "reach")
+    return state.target === EntityTypeId.EXIT;
+  if (state.type !== "all") return false;
+
+  let pendingExit = false;
+  for (const condition of state.conditions) {
+    if (condition.completed) continue;
+    if (!exitAnimationReady(condition)) return false;
+    pendingExit = true;
+  }
+  return pendingExit;
 }

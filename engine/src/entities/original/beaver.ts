@@ -7,6 +7,7 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
+  bobbyMountId,
   readBobbyInventory,
   patchBobbyInventory,
 } from "../player/BobbyState.js";
@@ -24,6 +25,7 @@ const bonusKeyVendor: Behavior = {
   id: "bonus-key-vendor",
   onTouch({ actor, self, query, commands }) {
     if (self.entity.properties?.interaction !== "bonus-key-vendor") return;
+    if (bobbyMountId(actor.state) !== null) return;
     const global = query.global();
     const inventory = readBobbyInventory(actor.state);
     const price = boundedInt(

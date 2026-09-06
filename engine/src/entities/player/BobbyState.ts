@@ -81,7 +81,10 @@ export function patchBobbySpeedBoost(
   return result;
 }
 
-/** mountId is a lightweight relation to the concrete vehicle Entity. */
+/**
+ * mountId is a ride/control relation to a concrete ride-carried vehicle such as
+ * Mower. Passive moving supports such as Leaf / Cloud never use mountId.
+ */
 export function bobbyMountId(state: EntityState | undefined): EntityId | null {
   const value = state?.mountId;
   return typeof value === "number" && Number.isInteger(value) && value > 0
@@ -89,8 +92,29 @@ export function bobbyMountId(state: EntityState | undefined): EntityId | null {
     : null;
 }
 
+export function patchBobbyMount(
+  state: EntityState | undefined,
+  mountId: EntityId | null,
+): EntityState {
+  const result: EntityState = { ...(state ?? {}) };
+  if (mountId === null) delete result.mountId;
+  else result.mountId = mountId;
+  return result;
+}
+
 export function isBobbyFlying(state: EntityState | undefined): boolean {
   return state?.flying === true;
+}
+
+export function patchBobbyFlight(
+  state: EntityState | undefined,
+  flying: boolean,
+  transition: "takeoff" | "landing" | null = null,
+): EntityState {
+  const result: EntityState = { ...(state ?? {}), flying };
+  if (transition === null) delete result.flightTransition;
+  else result.flightTransition = transition;
+  return result;
 }
 
 function nonNegativeInt(value: JsonValue | undefined): number {

@@ -1,6 +1,7 @@
 import { EntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import {
+  bobbyMountId,
   patchBobbyInventory,
   readBobbyInventory,
 } from "../player/BobbyState.js";
@@ -19,6 +20,8 @@ import {
 const unlock: Behavior = {
   id: "lock",
   canEnter({ actor, self, query, commands }) {
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mounted-actor-cannot-unlock" };
     if (self.entity.state?.opened === true)
       return { passable: true, reason: "lock-open" };
 
@@ -65,15 +68,9 @@ const unlock: Behavior = {
     });
     if (next > 0) return;
     const openedByActorId = Number(self.entity.state.openedByActorId);
-    commands.setGlobal("dead", true);
-    commands.setGlobal("deathReason", "Time ran out.");
-    commands.emit({
-      type: "death",
-      ...(Number.isInteger(openedByActorId) && openedByActorId > 0
-        ? { entityId: openedByActorId }
-        : {}),
-      reason: "death-countdown-expired",
-    });
+    if (Number.isInteger(openedByActorId) && openedByActorId > 0)
+      commands.downActor(openedByActorId, "death-countdown-expired");
+    else commands.loseWorld("death-countdown-expired");
   },
 };
 

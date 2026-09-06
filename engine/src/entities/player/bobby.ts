@@ -3,6 +3,7 @@ import type {
   ImageVisualLayer,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -60,16 +61,47 @@ const definition: EntityModuleDefinition = {
   },
 };
 
-export const bobby: EntityModule = originalModule(definition, {
+const bobbyMovementPolicy: Behavior = {
+  id: "bobby-movement-policy",
+  planMovement({ actor, query, to, target }) {
+    if (isBobbyFlying(actor.state))
+      return {
+        passage: "unrestricted",
+        lifecycle: {
+          source: [],
+          target: target.filter((presence) =>
+            presence.traits.includes("flight-landing"),
+          ),
+        },
+        reason: "airborne-passage",
+      };
+
+    const relation = bobbyMountId(actor.state);
+    if (relation === null || !query.entityHasTrait(relation, "ride-carried"))
+      return;
+    return {
+      companions: [
+        {
+          entityId: relation,
+          to,
+          cause: { type: "carry", carrierId: actor.id },
+          updateDirection: true,
+        },
+      ],
+    };
+  },
+};
+
+const bobbyVisual = {
   id: EntityTypeId.BOBBY,
-  resolve(context) {
+  resolve(context: VisualResolveContext) {
     const direction =
       context.runtime?.direction ?? context.entity.direction ?? "down";
     const rawProgress = context.runtime?.progress ?? 1;
     const progress = clampProgress(rawProgress);
 
     if (context.global?.dead) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.death,
         frameColumns: 8,
         frameRows: 1,
@@ -81,7 +113,7 @@ export const bobby: EntityModule = originalModule(definition, {
 
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.snowplow,
         frameColumns: 4,
         frameRows: 3,
@@ -95,7 +127,7 @@ export const bobby: EntityModule = originalModule(definition, {
       context.runtime?.animation === "ice" ||
       (!context.runtime?.moving && isStandingOnIce(context))
     ) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
         frameRows: 1,
@@ -103,9 +135,12 @@ export const bobby: EntityModule = originalModule(definition, {
       });
     }
 
-    if (bobbyMountId(context.entity.state) !== null) {
+    const mountId = bobbyMountId(context.entity.state);
+    const mount = mountId === null ? undefined : context.query.entity(mountId);
+    if (mount?.type === EntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
+        context,
         {
           asset: BOBBY_VISUAL_ASSETS.mower,
           frameColumns: 4,
@@ -116,8 +151,19 @@ export const bobby: EntityModule = originalModule(definition, {
       );
     }
 
+    // Carry is a passive positional movement. The carrier and every carried
+    // player share one Presentation timeline, while Bobby keeps a standing pose.
+    if (context.runtime?.animation === "carry") {
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: BOBBY_STANDING_FRAME,
+      });
+    }
+
     if (isBobbyFlying(context.entity.state)) {
-      return composition({
+      return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.kite,
         frameColumns: 4,
         frameRows: 1,
@@ -131,7 +177,7 @@ export const bobby: EntityModule = originalModule(definition, {
         context.time?.nowMs,
       );
       if (idleFrame !== null) {
-        return composition({
+        return composition(context, {
           asset: BOBBY_VISUAL_ASSETS.idle,
           frameColumns: 3,
           frameRows: 1,
@@ -141,6 +187,7 @@ export const bobby: EntityModule = originalModule(definition, {
     }
 
     return composition(
+      context,
       {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
         frameColumns: 8,
@@ -152,7 +199,11 @@ export const bobby: EntityModule = originalModule(definition, {
       speedTrail(context, direction),
     );
   },
-});
+};
+
+export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
+  { behavior: bobbyMovementPolicy },
+]);
 
 function isStandingOnIce(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
@@ -174,9 +225,9 @@ function speedTrail(
   const boost = readBobbySpeedBoost(context.entity.state);
   if (!boost || boost.phase === "slow") return null;
 
-  // 离开加速板后的默认三格衰减中，尾焰只持续前 1.5 格：
-  // full 第一格完整显示；normal 第二格只显示实际位移的前半；slow 不显示。
-  // 这里依据空间 offset 而不是时间 progress，因此不受 presentation easing 影响。
+  // Legacy normal/slow phases remain presentation-compatible even though the
+  // current fixed continuation policy emits full. Presentation consumes the
+  // recorded state and must not reinterpret its producer.
   if (
     boost.phase === "normal" &&
     !isInFirstHalfOfSpeedMotion(context, direction)
@@ -197,7 +248,7 @@ function speedTrail(
     frameIndex: 5 + frame,
     anchor: "bottom",
     offsetX: offset.x,
-    offsetY: BOBBY_OFFSET_Y + offset.y,
+    offsetY: BOBBY_OFFSET_Y - visualElevation(context) + offset.y,
   };
 }
 
@@ -224,7 +275,15 @@ function speedTrailOffset(direction: Direction): { x: number; y: number } {
   return { x: 0, y: -BOBBY_TILE_SIZE };
 }
 
+function visualElevation(context: VisualResolveContext): number {
+  const value = context.runtime?.elevationPx;
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, value)
+    : 0;
+}
+
 function composition(
+  context: VisualResolveContext,
   frame: {
     asset: string;
     frameColumns: number;
@@ -238,7 +297,7 @@ function composition(
     kind: "image",
     ...frame,
     anchor: "bottom",
-    offsetY: BOBBY_OFFSET_Y,
+    offsetY: BOBBY_OFFSET_Y - visualElevation(context),
   };
   return {
     layers: background ? [background, foreground] : [foreground],

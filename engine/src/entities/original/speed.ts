@@ -7,6 +7,11 @@ import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
+import {
+  accrueActionDeadline,
+  consumeActionDeadline,
+  primeDeadlineForHandoff,
+} from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
@@ -16,7 +21,6 @@ import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../player/BobbyLocomotion.js";
 import {
   patchBobbySpeedBoost,
   readBobbySpeedBoost,
-  type BobbySpeedPhase,
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
@@ -28,15 +32,11 @@ import {
 
 const SPEED_RUN_ACTION = "speed-run";
 
-/** 原版实测相对节奏；独立常量便于后续继续对照真机微调。 */
+/** 原版 Speed 恒为普通 Bobby 的两倍速度。 */
 export const DEFAULT_SPEED_FULL_CADENCE_MS = Math.round(
   ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs * 0.5,
 );
-export const DEFAULT_SPEED_NORMAL_CADENCE_MS =
-  ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs;
-export const DEFAULT_SPEED_SLOW_CADENCE_MS = Math.round(
-  ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs * 1.2,
-);
+export const DEFAULT_SPEED_CONTINUATION_CELLS = 3;
 
 const speedBoost: Behavior = {
   id: "speed-boost",
@@ -51,6 +51,10 @@ const speedBoost: Behavior = {
         actor.id,
         beltDirection,
         incomingCadence(movement?.cause),
+        primeDeadlineForHandoff(
+          incomingCadence(movement?.cause),
+          movement?.motion,
+        ),
       ),
     );
   },
@@ -67,14 +71,6 @@ const speedRunAction: RuntimeActionDefinition = {
     )
       return;
 
-    const phase = phaseState(action.state.phase);
-    if (phase === "normal" || phase === "slow") {
-      // 衰减的第二、三格完全不吃控制；输入由 gameplay 明确吞掉，
-      // 不能在 Speed Action 结束后作为 held retry 补走一格。
-      return "consumed";
-    }
-    if (phase !== "full") return;
-
     const owner = query.entity(intent.actorId);
     if (!owner) return;
     const beltDirection = speedDirectionAt(query, owner.anchor);
@@ -87,9 +83,32 @@ const speedRunAction: RuntimeActionDefinition = {
     const currentDirection = directionState(action.state.direction);
     if (!currentDirection) return;
     if (intent.direction === currentDirection)
-      action.state.sawSameDirectionCurrentFullCell = true;
-    else action.state.sawOtherDirectionCurrentFullCell = true;
+      action.state.sawSameDirectionCurrentCell = true;
     return "retry";
+  },
+
+  onIntentResult({ action, result, commands }) {
+    const ownerEntityId = action.ownerEntityId;
+    if (ownerEntityId === undefined) return;
+    if (result.moved) {
+      action.state.pendingMove = true;
+      return;
+    }
+    commands.emit({ type: "speed-impact", entityId: ownerEntityId });
+    commands.cancelAction(action.id);
+  },
+
+  onCancel({ action, reason, query, commands }) {
+    if (reason === "owner-destroyed") return;
+    const ownerEntityId = action.ownerEntityId;
+    const owner = ownerEntityId === undefined
+      ? undefined
+      : query.entity(ownerEntityId);
+    if (owner)
+      commands.setState(
+        owner.id,
+        patchBobbySpeedBoost(owner.state, null),
+      );
   },
 
   update({ action, time, query, commands }) {
@@ -98,52 +117,35 @@ const speedRunAction: RuntimeActionDefinition = {
     const owner = query.entity(ownerEntityId);
     if (!owner) return "complete";
 
-    if (booleanState(action.state.pendingMove)) {
-      const beforeX = numberState(action.state.beforeX);
-      const beforeY = numberState(action.state.beforeY);
-      // World resolver 已在发出 intent 的同一 tick 给出结果。下一 tick若位置
-      // 没变，说明 Speed 强制移动撞停。
-      if (owner.anchor.x === beforeX && owner.anchor.y === beforeY) {
-        commands.emit({ type: "speed-impact", entityId: ownerEntityId });
-        commands.setState(
-          ownerEntityId,
-          patchBobbySpeedBoost(owner.state, null),
-        );
-        return "complete";
-      }
-    }
-
     const waitMs = positiveNumberState(action.state.waitMs);
-    const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
-    action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < waitMs) return "running";
-    action.state.elapsedMs = 0;
+    accrueActionDeadline(action, time);
+    if (query.motionForEntity(ownerEntityId)?.status === "running")
+      return "running";
+    if (!consumeActionDeadline(action, waitMs, time.stepMs / 2))
+      return "running";
 
     if (booleanState(action.state.pendingMove)) {
-      const previousPhase = phaseState(action.state.movePhase) ?? "full";
       const beltDirection = speedDirectionAt(query, owner.anchor);
       if (beltDirection) {
         action.state.direction = beltDirection;
-        action.state.phase = "full";
-        clearFullCellInput(action.state);
-      } else if (previousPhase === "full") {
-        // 每一个 full 格都有独立判定窗口：必须“只按过同方向”。
-        // 没输入、只按异方向、同向和异向都按过，都会进入衰减。
-        const sustainNextFull =
-          booleanState(action.state.sawSameDirectionCurrentFullCell) &&
-          !booleanState(action.state.sawOtherDirectionCurrentFullCell);
-        clearFullCellInput(action.state);
-        action.state.phase = sustainNextFull ? "full" : "normal";
-      } else if (previousPhase === "normal") {
-        action.state.phase = "slow";
+        action.state.continuation = DEFAULT_SPEED_CONTINUATION_CELLS;
       } else {
+        const continuation = booleanState(
+          action.state.sawSameDirectionCurrentCell,
+        )
+          ? DEFAULT_SPEED_CONTINUATION_CELLS
+          : Math.max(0, integerState(action.state.continuation) - 1);
+        action.state.continuation = continuation;
+      }
+      action.state.sawSameDirectionCurrentCell = false;
+      action.state.pendingMove = false;
+      if (integerState(action.state.continuation) <= 0) {
         commands.setState(
           ownerEntityId,
           patchBobbySpeedBoost(owner.state, null),
         );
         return "complete";
       }
-      action.state.pendingMove = false;
     }
 
     const beltDirection = speedDirectionAt(query, owner.anchor);
@@ -157,28 +159,16 @@ const speedRunAction: RuntimeActionDefinition = {
       return "complete";
     }
     if (beltDirection) {
-      // 只从离板后的当前 full 格开始记录续速输入。
-      clearFullCellInput(action.state);
-      if (previousDirection !== beltDirection) {
-        action.state.direction = beltDirection;
-        action.state.phase = "full";
-      }
+      action.state.sawSameDirectionCurrentCell = false;
+      action.state.continuation = DEFAULT_SPEED_CONTINUATION_CELLS;
     }
 
-    const phase = beltDirection
-      ? "full"
-      : (phaseState(action.state.phase) ?? "full");
-    const cadenceMs = cadenceForPhase(phase);
+    const cadenceMs = DEFAULT_SPEED_FULL_CADENCE_MS;
     commands.setState(
       ownerEntityId,
-      patchBobbySpeedBoost(owner.state, { direction, phase }),
+      patchBobbySpeedBoost(owner.state, { direction, phase: "full" }),
     );
     action.state.direction = direction;
-    action.state.phase = phase;
-    action.state.movePhase = phase;
-    action.state.beforeX = owner.anchor.x;
-    action.state.beforeY = owner.anchor.y;
-    action.state.pendingMove = true;
     action.state.waitMs = cadenceMs;
 
     return {
@@ -230,6 +220,7 @@ function createSpeedRunRuntimeAction(
   ownerEntityId: EntityId,
   direction: Direction,
   initialWaitMs: number,
+  initialElapsedMs: number,
 ): RuntimeActionSpec {
   return {
     kind: SPEED_RUN_ACTION,
@@ -237,11 +228,10 @@ function createSpeedRunRuntimeAction(
     blocksInput: true,
     state: {
       direction,
-      phase: "full",
-      sawSameDirectionCurrentFullCell: false,
-      sawOtherDirectionCurrentFullCell: false,
+      continuation: DEFAULT_SPEED_CONTINUATION_CELLS,
+      sawSameDirectionCurrentCell: false,
       pendingMove: false,
-      elapsedMs: 0,
+      elapsedMs: initialElapsedMs,
       waitMs: initialWaitMs,
     },
   };
@@ -270,23 +260,6 @@ function speedDirectionAt(
   return null;
 }
 
-function cadenceForPhase(phase: BobbySpeedPhase): number {
-  if (phase === "full") return DEFAULT_SPEED_FULL_CADENCE_MS;
-  if (phase === "normal") return DEFAULT_SPEED_NORMAL_CADENCE_MS;
-  return DEFAULT_SPEED_SLOW_CADENCE_MS;
-}
-
-function clearFullCellInput(state: Record<string, JsonValue>): void {
-  state.sawSameDirectionCurrentFullCell = false;
-  state.sawOtherDirectionCurrentFullCell = false;
-}
-
-function phaseState(value: JsonValue | undefined): BobbySpeedPhase | null {
-  return value === "full" || value === "normal" || value === "slow"
-    ? value
-    : null;
-}
-
 function directionState(value: JsonValue | undefined): Direction | null {
   return value === "up" ||
     value === "down" ||
@@ -302,6 +275,10 @@ function booleanState(value: JsonValue | undefined): boolean {
 
 function numberState(value: JsonValue | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function integerState(value: JsonValue | undefined): number {
+  return Math.max(0, Math.floor(numberState(value)));
 }
 
 function positiveNumberState(value: JsonValue | undefined): number {

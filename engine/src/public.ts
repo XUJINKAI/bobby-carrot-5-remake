@@ -126,6 +126,24 @@ export type {
   WorldStepResult,
 } from "./world/movement/WorldStepResult.js";
 export type {
+  WorldMotion,
+  WorldMotionId,
+  WorldMotionStatus,
+  WorldPose,
+} from "./world/movement/WorldMotion.js";
+export type {
+  WorldDelta,
+  WorldDeltaPayload,
+} from "./world/delta/WorldDelta.js";
+export type {
+  ActorLifecyclePhase,
+  ActorLifecycleState,
+} from "./world/actor/ActorLifecycle.js";
+export type {
+  WorldOutcomePhase,
+  WorldOutcomeState,
+} from "./world/outcome/WorldOutcome.js";
+export type {
   EconomyState,
   ProfileCapabilities,
 } from "./world/GlobalState.js";

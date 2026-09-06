@@ -68,6 +68,10 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.actor?.id, bobby.id);
   assert.equal(snapshot.actor?.type, EntityTypeId.BOBBY);
   assert.deepEqual(snapshot.actor?.anchor, { x: 0, y: 0 });
+  assert.deepEqual(snapshot.actor?.worldPose, { x: 0, y: 0 });
+  assert.equal(snapshot.actor?.worldMotion, null);
+  assert.equal(snapshot.actor?.lifecycle.phase, "active");
+  assert.equal(snapshot.actor?.inputBlocked, false);
   assert.equal(snapshot.actor?.direction, "right");
   assert.equal("status" in snapshot.runtime, false);
   assert.equal("player" in snapshot.runtime, false);
@@ -272,6 +276,9 @@ test("Debug Runtime supports selected-actor teleport and semantic sprite steppin
   assert.match(source, /for \(let frame = 0; frame < 240; frame \+= 1\)/);
   assert.match(source, /if \(!snapshot\.runtime\.animating\) break/);
   assert.match(source, /category: "input"/);
+  assert.match(source, /recordWorldDeltas/);
+  assert.match(source, /category: "motion"/);
+  assert.match(source, /category: "lifecycle"/);
   assert.doesNotMatch(source, /presentationHz\s*=/);
   assert.doesNotMatch(source, /host\.close|close: \(\)/);
 });

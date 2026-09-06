@@ -14,14 +14,19 @@ import {
 function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
+  const mountType = options.mountType;
+  const state = mountType
+    ? { ...(options.state ?? {}), mountId: 2 }
+    : options.state;
   const store = new EntityStore([
     { type: options.surfaceType ?? EntityTypeId.GROUND_C, x: 0, y: 0 },
+    ...(mountType ? [{ type: mountType, x: 0, y: 0 }] : []),
     {
       type: EntityTypeId.BOBBY,
       x: 0,
       y: 0,
       direction: options.direction ?? "right",
-      ...(options.state ? { state: options.state } : {}),
+      ...(state ? { state } : {}),
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -160,7 +165,7 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
 test("Bobby mower cycles vertically inside the direction column", () => {
   const mower = bobbyVisual({
     direction: "up",
-    state: { mountId: 9 },
+    mountType: EntityTypeId.MOWER,
     time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
   });
   assert.equal(mower.layers[0].asset, "bobby-mower");
@@ -241,8 +246,8 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
 test("accelerated mower uses the same one-cell-behind trail", () => {
   const mower = bobbyVisual({
     direction: "left",
+    mountType: EntityTypeId.MOWER,
     state: {
-      mountId: 9,
       speedBoost: { direction: "left", phase: "full" },
     },
     runtime: {
@@ -377,6 +382,58 @@ test("hazard death presentation stops forty percent into the target cell", () =>
   assert.equal(state.offsetX, -0.6);
   assert.equal(state.progress, 1);
   assert.equal(runtime.isAnimating, false);
+});
+
+test("WorldDelta interruption drives death presentation at authoritative progress", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 1, y: 0 } }),
+    definition: () => ({ type: EntityTypeId.BOBBY }),
+  };
+  const motion = {
+    id: 1,
+    kind: "move",
+    entityId: 7,
+    from: { x: 0, y: 0 },
+    to: { x: 1, y: 0 },
+    direction: "right",
+    cause: { type: "player-input", source: "test" },
+    durationMs: 100,
+    elapsedMs: 50,
+    progress: 0.5,
+    status: "interrupted",
+    interruption: { reason: "trap" },
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [
+      {
+        sequence: 1,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "actor-lifecycle-changed",
+        actor: {
+          entityId: 7,
+          phase: "downed",
+          reason: "trap",
+          changedAtMs: 50,
+        },
+      },
+      {
+        sequence: 2,
+        worldTick: 1,
+        worldTimeMs: 50,
+        type: "motion-interrupted",
+        motion,
+      },
+    ],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  const state = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(state.animation, "death");
+  assert.equal(state.offsetX, -0.5);
 });
 
 test("explicit presentation motion duration is independent from WorldClock rate", () => {

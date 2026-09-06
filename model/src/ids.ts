@@ -59,6 +59,7 @@ export const EntityTypeId = {
   PLANK_CRUMBLING: "plank-crumbling",
   PLANK_FRAGMENT: "plank-fragment",
   DRAGON: "dragon",
+  FIREBALL: "fireball",
   SANDMAN: "sandman",
   DREAM_MACHINE: "dream-machine",
   MOWER: "mower",

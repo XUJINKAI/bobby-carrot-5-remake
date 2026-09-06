@@ -8,6 +8,16 @@ import {
   mowedGroundAt,
 } from "../entity-adapter.mjs";
 import { LegacyObject, LegacyTerrain } from "../dat/semantic-ids.mjs";
+import { decodeDatTerrain, encodeDatTerrain } from "../dat/mapping.mjs";
+
+test("DAT Tide bytes use the confirmed runtime directions", () => {
+  assert.equal(decodeDatTerrain(0x57), LegacyTerrain.TIDE_DOWN);
+  assert.equal(decodeDatTerrain(0x58), LegacyTerrain.TIDE_UP);
+  assert.equal(decodeDatTerrain(0x59), LegacyTerrain.TIDE_RIGHT);
+  assert.equal(decodeDatTerrain(0x5a), LegacyTerrain.TIDE_LEFT);
+  assert.equal(encodeDatTerrain(LegacyTerrain.TIDE_DOWN), 0x57);
+  assert.equal(encodeDatTerrain(LegacyTerrain.TIDE_LEFT), 0x5a);
+});
 
 test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
   const result = adaptLegacyMap({

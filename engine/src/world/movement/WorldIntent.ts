@@ -6,15 +6,14 @@ export type MoveCause =
   | {
       type: "forced";
       sourceEntityId?: EntityId;
-      /** Mechanism identity such as ice / leaf / flight. */
+      /** 提供给 Presentation 的 movement 语义标签。 */
       mechanism?: string;
       /** Gameplay cadence owned by that mechanism, in milliseconds. */
       cadenceMs?: number;
     }
   | { type: "push"; sourceEntityId: EntityId }
   | { type: "carry"; carrierId: EntityId }
-  | { type: "actor" }
-  | { type: "projectile" };
+  | { type: "actor" };
 
 export interface MoveIntent {
   type: "move";

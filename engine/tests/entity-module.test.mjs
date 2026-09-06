@@ -44,22 +44,14 @@ test("EntityModule colocates definition visual and behavior bindings", () => {
 test("BehaviorRegistry is built from the same builtin EntityModule list", () => {
   const registry = createBuiltinBehaviorRegistry();
   const ids = registry.all().map((behavior) => behavior.id).sort();
-  assert.deepEqual(ids, [
-    "bonus-key-vendor",
-    "collectible",
-    "dialog",
-    "fill-egg-nest-on-leave",
-    "hazard",
-    "ice-slide",
-    "lock",
-    "mowable",
-    "pickup",
-    "portal",
-    "shovelable",
-    "speed-boost",
-    "stateful-block",
-    "water-requires-overlay",
-  ]);
+  const moduleBehaviorIds = [
+    ...new Set(
+      builtinEntityModules.flatMap((module) =>
+        (module.behaviorBindings ?? []).map(({ behavior }) => behavior.id),
+      ),
+    ),
+  ].sort();
+  assert.deepEqual(ids, moduleBehaviorIds);
   assert.equal(registry.resolve([], ["collectible"])[0]?.id, "collectible");
   assert.equal(
     registry.resolve([], ["water"])[0]?.id,

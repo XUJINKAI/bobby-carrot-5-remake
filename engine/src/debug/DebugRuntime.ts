@@ -1,5 +1,6 @@
 import type { Direction } from "@bobby/model";
 import type { CellInspection } from "../world/WorldTypes.js";
+import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { DebugSidebar } from "./DebugSidebar.js";
 import { DebugTraceRecorder } from "./DebugTrace.js";
@@ -74,6 +75,16 @@ export class DebugRuntime {
     this.captureSnapshotDiff(snapshot);
     this.ensureSidebar().render({ ...snapshot, trace: this.trace.snapshot() });
     this.previousSnapshot = structuredClone(snapshot);
+  }
+
+  /** WorldDelta 是 Timeline 的权威 gameplay 内容；snapshot diff 只补充输入和表现变化。 */
+  recordWorldDeltas(
+    deltas: readonly WorldDelta[],
+    presentationFrame: number,
+  ): void {
+    if (!this.enabled) return;
+    for (const delta of deltas)
+      this.trace.record(traceRecordForDelta(delta, presentationFrame));
   }
 
   destroy(): void {
@@ -185,28 +196,6 @@ export class DebugRuntime {
       });
 
     const actor = snapshot.actor;
-    const previousActor = previous.actor;
-    if (actor && previousActor && actor.id === previousActor.id) {
-      if (
-        actor.anchor.x !== previousActor.anchor.x ||
-        actor.anchor.y !== previousActor.anchor.y
-      )
-        this.trace.record({
-          category: "world",
-          summary: `#${actor.id} ${previousActor.anchor.x},${previousActor.anchor.y} -> ${actor.anchor.x},${actor.anchor.y}`,
-          actorId: actor.id,
-          detail: { before: previousActor.anchor, after: actor.anchor },
-          ...clock,
-        });
-      if (JSON.stringify(actor.state) !== JSON.stringify(previousActor.state))
-        this.trace.record({
-          category: "world",
-          summary: `#${actor.id} state changed`,
-          actorId: actor.id,
-          detail: { before: previousActor.state, after: actor.state },
-          ...clock,
-        });
-    }
 
     if (JSON.stringify(snapshot.input) !== JSON.stringify(previous.input)) {
       const active = snapshot.input?.channels.filter(
@@ -328,6 +317,87 @@ export class DebugRuntime {
 
 function primaryPointer(event: PointerEvent): boolean {
   return event.pointerType !== "mouse" || event.button === 0;
+}
+
+function traceRecordForDelta(
+  delta: WorldDelta,
+  presentationFrame: number,
+): Parameters<DebugTraceRecorder["record"]>[0] {
+  const base = {
+    worldTick: delta.worldTick,
+    worldTimeMs: delta.worldTimeMs,
+    worldSequence: delta.sequence,
+    presentationFrame,
+    detail: delta,
+  };
+  switch (delta.type) {
+    case "entity-moved":
+      return {
+        ...base,
+        category: "world",
+        actorId: delta.entityId,
+        summary: `#${delta.entityId} anchor ${delta.from.x},${delta.from.y} -> ${delta.to.x},${delta.to.y}`,
+      };
+    case "entity-spawned":
+    case "entity-destroyed":
+    case "entity-direction-changed":
+    case "entity-state-changed":
+      return {
+        ...base,
+        category: "world",
+        actorId: delta.entityId,
+        summary: `${delta.type} #${delta.entityId}`,
+      };
+    case "global-state-changed":
+      return { ...base, category: "world", summary: `global ${delta.key}` };
+    case "action-started":
+    case "action-cancelled":
+      return {
+        ...base,
+        category: "action",
+        summary: `${delta.type} #${delta.actionId}`,
+      };
+    case "motion-started":
+    case "motion-progressed":
+    case "motion-completed":
+    case "motion-interrupted":
+    case "motion-cleared":
+      return {
+        ...base,
+        category: "motion",
+        actorId: delta.motion.entityId,
+        summary: `${delta.type} #${delta.motion.entityId} @${delta.motion.progress.toFixed(2)}`,
+      };
+    case "motion-marker":
+      return {
+        ...base,
+        category: "motion",
+        actorId: delta.motion.entityId,
+        summary: `#${delta.motion.entityId} marker ${delta.marker} @${delta.motion.progress.toFixed(2)}`,
+      };
+    case "actor-lifecycle-changed":
+      return {
+        ...base,
+        category: "lifecycle",
+        actorId: delta.actor.entityId,
+        summary: `#${delta.actor.entityId} ${delta.actor.phase}`,
+      };
+    case "world-outcome-changed":
+      return {
+        ...base,
+        category: "outcome",
+        summary: `world ${delta.outcome.phase}`,
+      };
+    case "world-event":
+      return {
+        ...base,
+        category: "event",
+        ...(delta.event.entityId !== undefined
+          ? { actorId: delta.event.entityId }
+          : {}),
+        summary: delta.event.type,
+      };
+  }
 }
 
 function hasActiveActorPresentation(actor: DebugEntitySnapshot): boolean {

@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import { yellowColorSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -24,4 +25,5 @@ export const colorYellowSwitch: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.pressed === true ? cell(0, 12) : cell(15, 11),
   ),
+  [{ behavior: yellowColorSwitchBehavior }],
 );

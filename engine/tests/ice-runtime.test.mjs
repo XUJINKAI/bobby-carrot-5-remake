@@ -70,6 +70,9 @@ test("Ice emits semantic forced moves until Bobby leaves the Ice surface", () =>
   assert.equal(secondSlide.motions.length, 1);
   assert.equal(secondSlide.motions[0].cause.type, "forced");
   assert.equal(secondSlide.motions[0].cause.mechanism, "ice");
+  // anchor 已离开 Ice，但连续空间过程仍需走完，期间 actor 继续 busy。
+  assert.equal(world.inputBlocked, true);
+  advance(world, 7, 14);
   assert.equal(world.inputBlocked, false);
 });
 
@@ -119,4 +122,33 @@ test("Ice RuntimeAction moves only the Bobby that entered it", () => {
 
   assert.deepEqual(world.entity(sliding).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(stationary).anchor, { x: 0, y: 1 });
+});
+
+test("Ice inherits the cadence of the movement that entered it", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 3,
+      height: 1,
+      entities: [
+        ground(0, 0),
+        ice(1, 0),
+        ground(2, 0),
+        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 248 },
+  );
+  const actor = actorIds(world)[0];
+
+  move(world, actor, "right");
+  let slide = null;
+  for (let tick = 0; tick < 6 && !slide; tick += 1) {
+    const result = world.update({ tick, stepMs: 62 });
+    if (result.motions.length > 0) slide = result;
+  }
+
+  assert.ok(slide);
+  assert.equal(slide.motions[0].cause.mechanism, "ice");
+  assert.equal(slide.motions[0].cause.cadenceMs, 248);
 });

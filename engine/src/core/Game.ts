@@ -47,7 +47,7 @@ import type {
   WinConditionState,
   WorldEvent,
 } from "../world/WorldTypes.js";
-import { createDelayRuntimeAction } from "../world/action/builtinActions.js";
+import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   CellPosition,
   EntityId,
@@ -301,6 +301,7 @@ export class Game {
       profile: this.profile,
       economy: this.initialEconomy,
     });
+    this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.worldClock.reset();
     this.history.length = 0;
@@ -339,11 +340,10 @@ export class Game {
       source,
       direction,
     );
-    if (this.world.inputBlocked) {
-      this.observeBlockedIntents(group.intents);
-      return null;
-    }
-    const result = this.startLogicalStep(group);
+    const { runnable, blocked } = this.partitionInputIntents(group.intents);
+    if (blocked.length > 0) this.observeBlockedIntents(blocked);
+    if (runnable.length === 0) return null;
+    const result = this.startLogicalStep({ ...group, intents: runnable });
     this.render();
     return result?.moves[0] ?? null;
   }
@@ -397,6 +397,7 @@ export class Game {
       : this.initialEconomy;
     Object.assign(this.profile, profile);
     this.worldValue = new World(this.initialLevel, { profile, economy });
+    this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.worldClock.reset();
     if (wasPaused) this.worldClock.pause();
@@ -422,32 +423,36 @@ export class Game {
 
   killActor(actorId: EntityId, reason?: string): void {
     if (!this.worldValue) return;
-    const actor = this.world.entities.get(actorId);
-    if (!actor) return;
-    const position = { ...actor.anchor };
-    const events = this.world.killActor(actorId, reason);
+    if (!this.world.entities.get(actorId)) return;
+    const result = this.world.downActor(actorId, reason);
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
-    this.resetVisualMotion();
-    if (events.length > 0)
-      this.visual.beginDeath(
-        actorId,
-        position,
-        position,
-        this.presentationMotionDuration(),
-        this.presentationClock.current,
-        0,
-      );
-    this.lastWorldEvents = events;
-    this.publishWorldEvents(events);
+    this.consumeWorldDeltas(result.deltas);
+    this.lastWorldEvents = result.events;
+    this.publishWorldEvents(result.events);
     this.render();
     this.emitTerminalEvents();
     this.emit("change");
   }
 
+  /** 仅提供 engine 能力；具体复活机制决定条件、距离和消耗。 */
+  reviveActor(actorId: EntityId): void {
+    if (!this.worldValue) return;
+    const result = this.world.reviveActor(actorId);
+    if (result.events.length === 0) return;
+    this.consumeWorldDeltas(result.deltas);
+    this.lastWorldEvents = result.events;
+    this.publishWorldEvents(result.events);
+    this.render();
+    this.emit("change");
+  }
+
   setProfile(profile: Partial<ProfileCapabilities>): void {
     Object.assign(this.profile, profile);
-    if (this.worldValue) this.world.setProfile(profile);
+    if (this.worldValue) {
+      this.world.setProfile(profile);
+      this.world.setMotionDurationMs(this.gameplayMotionDuration());
+    }
   }
 
   setEconomy(economy: Partial<EconomyState>): void {
@@ -571,6 +576,7 @@ export class Game {
 
     const controlledIds = group.intents.map((intent) => intent.actorId);
     this.checkpointPendingHistory(result, controlledIds);
+    this.consumeWorldDeltas(result.deltas);
     this.publishWorldEvents(result.events);
     this.emitTerminalEvents();
 
@@ -580,7 +586,6 @@ export class Game {
       return result;
     }
 
-    this.presentMotions(result);
     this.emit("move");
     this.emit("change");
     return result;
@@ -600,62 +605,15 @@ export class Game {
     this.pendingHistorySnapshot = null;
   }
 
-  private presentMotions(result: WorldStepResult): void {
-    if (result.motions.length === 0) return;
+  private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {
+    if (deltas.length === 0) return;
     const frame = this.presentationClock.current;
-    const deathEvent = result.events.find((event) => event.type === "death");
+    this.debugRuntime.recordWorldDeltas(deltas, frame.frame);
     this.visual.camera.recenterPan(frame);
-
-    for (const motion of result.motions) {
-      const cadence = this.motionCadence(motion);
-      const visualDuration = this.motionPresentationDuration(motion);
-      if (this.world.dead && deathEvent?.entityId === motion.entityId) {
-        this.visual.beginDeath(
-          motion.entityId,
-          motion.from,
-          motion.to,
-          visualDuration,
-          frame,
-          0.4,
-        );
-        continue;
-      }
-      if (!this.world.completed)
-        this.world.startAction(
-          createDelayRuntimeAction(cadence, {
-            ownerEntityId: motion.entityId,
-            blocksInput: true,
-            reason:
-              motion.cause.type === "forced" && motion.cause.mechanism
-                ? `${motion.cause.mechanism}-motion`
-                : "actor-motion",
-          }),
-        );
-      this.visual.beginMove(
-        motion.entityId,
-        motion.from,
-        motion.to,
-        visualDuration,
-        frame,
-        {
-          ...(motion.cause.type === "forced" && motion.cause.mechanism
-            ? { animation: motion.cause.mechanism }
-            : {}),
-          direction: motion.direction,
-        },
-      );
-    }
-  }
-
-  private motionCadence(motion: EntityMotion): number {
-    if (
-      motion.cause.type === "forced" &&
-      motion.cause.cadenceMs !== undefined &&
-      Number.isFinite(motion.cause.cadenceMs) &&
-      motion.cause.cadenceMs > 0
-    )
-      return motion.cause.cadenceMs;
-    return this.gameplayMotionDuration();
+    this.visual.consumeWorldDeltas(this.world, deltas, frame, {
+      motionDuration: (motion) => this.motionPresentationDuration(motion),
+      stationaryDeathDurationMs: this.presentationMotionDuration(),
+    });
   }
 
   private motionPresentationDuration(motion: EntityMotion): number {
@@ -688,6 +646,7 @@ export class Game {
     if (!this.worldValue) return;
 
     const result = this.world.update(time);
+    this.consumeWorldDeltas(result.deltas);
     if (result.moves.length > 0) this.lastMove = result.moves[0] ?? null;
     if (result.events.length > 0) {
       this.lastWorldEvents = result.events;
@@ -699,10 +658,13 @@ export class Game {
         .map((move) => move.actorId)
         .filter((id): id is EntityId => id !== undefined);
       this.checkpointPendingHistory(result, actorIds);
-      this.presentMotions(result);
       this.emit("move");
     }
-    if (result.events.length > 0 || result.motions.length > 0)
+    if (
+      result.events.length > 0 ||
+      result.motions.length > 0 ||
+      result.deltas.length > 0
+    )
       this.emit("change");
 
     if (this.world.dead || this.world.completed) {
@@ -743,13 +705,19 @@ export class Game {
       this.resolveInputAttempts(input, "blocked");
       return;
     }
-    if (this.world.inputBlocked) {
-      const disposition = this.observeBlockedIntents(intents);
+    const { runnable, blocked } = this.partitionInputIntents(intents);
+    const blockedDisposition =
+      blocked.length > 0 ? this.observeBlockedIntents(blocked) : "busy";
+    if (runnable.length === 0) {
+      const disposition = blockedDisposition;
       this.resolveInputAttempts(input, disposition);
       return;
     }
 
-    const result = this.startLogicalStep({ intents, historyBoundary: true });
+    const result = this.startLogicalStep({
+      intents: runnable,
+      historyBoundary: true,
+    });
     const movedActors = new Set(
       result?.moves
         .filter((move) => move.moved && move.actorId !== undefined)
@@ -762,7 +730,11 @@ export class Game {
           movedActors.has(actorId),
         )
           ? "moved"
-          : "blocked",
+          : (actorsBySource.get(move.source) ?? []).some((actorId) =>
+                blocked.some((intent) => intent.actorId === actorId),
+              )
+            ? blockedDisposition
+            : "blocked",
       })),
     );
   }
@@ -783,6 +755,19 @@ export class Game {
       "consumed"
       ? "consumed"
       : "busy";
+  }
+
+  private partitionInputIntents(intents: readonly WorldIntent[]): {
+    runnable: WorldIntent[];
+    blocked: WorldIntent[];
+  } {
+    const runnable: WorldIntent[] = [];
+    const blocked: WorldIntent[] = [];
+    for (const intent of intents)
+      (this.world.isInputBlockedFor(intent.actorId) ? blocked : runnable).push(
+        intent,
+      );
+    return { runnable, blocked };
   }
 
   private resolveRuntimeControlInput(
@@ -816,12 +801,13 @@ export class Game {
       "external",
       this.heldDirection,
     );
-    if (this.world.inputBlocked) {
-      if (this.observeBlockedIntents(group.intents) === "consumed")
+    const { runnable, blocked } = this.partitionInputIntents(group.intents);
+    if (blocked.length > 0) {
+      if (this.observeBlockedIntents(blocked) === "consumed")
         this.heldDirectionBlocked = true;
-      return;
     }
-    const result = this.startLogicalStep(group);
+    if (runnable.length === 0) return;
+    const result = this.startLogicalStep({ ...group, intents: runnable });
     if (!result?.moves.some((move) => move.moved))
       this.heldDirectionBlocked = true;
   }
@@ -856,6 +842,7 @@ export class Game {
       return false;
 
     this.world.actions.cancelOwnedBy(actorId);
+    this.world.movement?.clearEntity(actorId);
     this.pendingHistorySnapshot = null;
     if (this.debugExternalActorId === actorId)
       this.setDebugHeldDirection(actorId, null);

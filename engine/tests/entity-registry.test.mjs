@@ -28,7 +28,10 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
   const catalog = createBuiltinEntityCatalog();
-  assert.deepEqual(registry.require("background-variant-001").traits, []);
+  assert.deepEqual(
+    registry.require("background-variant-001").traits,
+    ["bean-growth-space"],
+  );
   assert.equal(registry.require("background-variant-001").stackOrder, 0);
   assert.equal(
     catalog.require("background-variant-001").presentation.name,

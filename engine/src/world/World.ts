@@ -1,4 +1,4 @@
-import type { Direction, LevelLimit, LevelMap, WinCondition } from "@bobby/model";
+import type { LevelMap } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
@@ -11,6 +11,12 @@ import {
   type GlobalState,
   type ProfileCapabilities,
 } from "./GlobalState.js";
+import {
+  ActorLifecycleStore,
+  type ActorLifecycleSnapshot,
+  type ActorLifecycleState,
+} from "./actor/ActorLifecycle.js";
+import { WorldLifecycle } from "./actor/WorldLifecycle.js";
 import type {
   RuntimeActionId,
   RuntimeActionSchedulerSnapshot,
@@ -18,46 +24,47 @@ import type {
 } from "./action/RuntimeAction.js";
 import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
 import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
+import { BehaviorRuntime } from "./behavior/BehaviorRuntime.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
+import { WorldDeltaSequence, type WorldDelta } from "./delta/WorldDelta.js";
 import type {
-  Behavior,
-  BehaviorContext,
   MovementContext,
-  PassageResult,
 } from "./behavior/Behavior.js";
 import type { BehaviorRegistry } from "./behavior/BehaviorRegistry.js";
 import { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityDefinition } from "./entity/EntityDefinition.js";
-import type {
-  CellPosition,
-  EntityId,
-  EntityInstance,
-} from "./entity/EntityInstance.js";
+import type { CellPosition, EntityId, EntityInstance } from "./entity/EntityInstance.js";
 import type { EntityRegistry } from "./entity/EntityRegistry.js";
-import {
-  EntityStore,
-  type EntityStoreSnapshot,
-} from "./entity/EntityStore.js";
+import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
-import type {
-  MoveIntent,
-  WorldIntent,
-  WorldIntentGroup,
-} from "./movement/WorldIntent.js";
 import {
-  emptyMutationSummary,
+  MovementRuntime,
+  type MovementRuntimeSnapshot,
+} from "./movement/MovementRuntime.js";
+import { WorldMovementResolver } from "./movement/WorldMovementResolver.js";
+import type {
+  MovementMarkerDefinition,
+  WorldMotion,
+} from "./movement/WorldMotion.js";
+import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
+import { ReachResolver } from "./outcome/ReachResolver.js";
+import type { WorldIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
+import {
   emptyWorldStepResult,
   mergeWorldMutationSummary,
   mergeWorldStepResult,
+  type EntityMotionRequest,
   type WorldMutationSummary,
   type WorldStepResult,
 } from "./movement/WorldStepResult.js";
 import type { EntityPresence } from "./spatial/EntityPresence.js";
 import { SpatialIndex } from "./spatial/SpatialIndex.js";
+import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
+import { WorldInspector } from "./WorldInspector.js";
+import { WorldRuleEvaluator } from "./WorldRuleEvaluator.js";
 import type {
   CellInspection,
   MoveResult,
-  PresenceInspection,
   WinConditionState,
   WorldEvent,
 } from "./WorldTypes.js";
@@ -66,6 +73,9 @@ export interface WorldSnapshot {
   entities: EntityStoreSnapshot;
   state: GlobalState;
   actions: RuntimeActionSchedulerSnapshot;
+  movement: MovementRuntimeSnapshot;
+  actors: ActorLifecycleSnapshot;
+  outcome: WorldOutcomeState;
 }
 
 export interface WorldOptions {
@@ -74,11 +84,8 @@ export interface WorldOptions {
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
   actions?: RuntimeActionRegistry;
-}
-
-interface CommitResult {
-  events: WorldEvent[];
-  mutations: WorldMutationSummary;
+  /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
+  motionDurationMs?: number;
 }
 
 export class World {
@@ -90,8 +97,21 @@ export class World {
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
   readonly actions: RuntimeActionScheduler;
+  readonly movement = new MovementRuntime();
+  readonly actors = new ActorLifecycleStore();
+  readonly outcome = new WorldOutcomeStore();
   readonly rules: LevelMap["rules"];
   state: GlobalState;
+  private readonly deltaSequence = new WorldDeltaSequence();
+  private readonly committer: WorldCommitter;
+  private readonly ruleEvaluator: WorldRuleEvaluator;
+  private readonly reachResolver: ReachResolver;
+  private readonly behaviorRuntime: BehaviorRuntime;
+  private readonly movementResolver: WorldMovementResolver;
+  private readonly lifecycle: WorldLifecycle;
+  private readonly inspector: WorldInspector;
+  private motionDurationMs: number;
+  private currentWorldTick: number | null = null;
 
   constructor(level: LevelMap, options: WorldOptions = {}) {
     this.width = level.width;
@@ -115,25 +135,86 @@ export class World {
       this.spatial,
       this.registry,
       () => this.state,
+      this.movement.motions,
     );
-    this.refreshDerivedState();
-    this.evaluateCompletion([]);
+    this.inspector = new WorldInspector(this.entities, this.spatial);
+    this.behaviorRuntime = new BehaviorRuntime(
+      this.registry,
+      this.behaviors,
+      this.entities,
+      this.spatial,
+      this.query,
+    );
+    this.movementResolver = new WorldMovementResolver(
+      this.entities,
+      this.spatial,
+      this.query,
+      this.actions,
+      this.movement,
+      this.actors,
+      this.outcome,
+      this.behaviorRuntime,
+    );
+    this.reachResolver = new ReachResolver(this.query, this.behaviors);
+    this.committer = new WorldCommitter(
+      this.entities,
+      this.spatial,
+      this.actions,
+      this.query,
+      this.movement,
+      this.actors,
+      this.outcome,
+      () => this.state,
+      this.deltaSequence,
+    );
+    this.ruleEvaluator = new WorldRuleEvaluator(
+      this.rules,
+      this.entities,
+      this.spatial,
+      this.query,
+      this.reachResolver,
+      () => this.state,
+    );
+    this.lifecycle = new WorldLifecycle(
+      this.actors,
+      this.outcome,
+      this.movement,
+      this.query,
+      this.ruleEvaluator,
+      () => this.state,
+      this.deltaSequence,
+      () => this.deltaClock(),
+    );
+    this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
+    this.lifecycle.initialize();
   }
 
   get dead(): boolean {
-    return this.state.dead;
+    return this.outcome.state.phase === "lost";
   }
 
   get completed(): boolean {
-    return this.state.completed;
+    return this.outcome.state.phase === "won";
   }
 
   get winState(): WinConditionState | null {
-    return this.rules?.win ? this.evaluateWin(this.rules.win) : null;
+    return this.ruleEvaluator.winState;
   }
 
   get inputBlocked(): boolean {
-    return this.actions.inputBlocked;
+    return this.actions.inputBlocked || this.movement.running.length > 0;
+  }
+
+  isInputBlockedFor(actorId: EntityId): boolean {
+    return (
+      !this.actors.isActive(actorId) ||
+      this.movement.motions.forEntity(actorId)?.status === "running" ||
+      this.actions.isInputBlockedFor(actorId)
+    );
+  }
+
+  actorLifecycle(actorId: EntityId): Readonly<ActorLifecycleState> {
+    return this.actors.state(actorId);
   }
 
   get cameraTarget(): EntityId | null {
@@ -174,6 +255,10 @@ export class World {
     };
   }
 
+  setMotionDurationMs(durationMs: number): void {
+    this.motionDurationMs = safeDuration(durationMs);
+  }
+
   startAction(spec: RuntimeActionSpec): RuntimeActionId {
     return this.actions.start(spec);
   }
@@ -182,14 +267,46 @@ export class World {
     this.actions.observeIntents(intents, this.query);
   }
 
-  killActor(
+  downActor(
     entityId: EntityId,
     reason = "An actor could not continue.",
-  ): WorldEvent[] {
-    if (this.state.dead) return [];
-    this.state.dead = true;
-    this.state.deathReason = reason;
-    return [{ type: "death", entityId, reason }];
+  ): WorldStepResult {
+    const queue = new CommandQueue();
+    queue.downActor(entityId, reason);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.settle(result, entityId);
+    this.settleTerminalRuntime(result);
+    return result;
+  }
+
+  /** 只提供 engine 能力；复活位置、距离与消耗由具体机制另行决定。 */
+  reviveActor(entityId: EntityId): WorldStepResult {
+    if (!this.outcome.playing) return emptyWorldStepResult();
+    const queue = new CommandQueue();
+    queue.reviveActor(entityId);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.syncLegacyState();
+    return result;
+  }
+
+  eliminateActor(
+    entityId: EntityId,
+    reason = "An actor was eliminated.",
+  ): WorldStepResult {
+    const queue = new CommandQueue();
+    queue.eliminateActor(entityId, reason);
+    const result = emptyWorldStepResult();
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
+    this.lifecycle.settle(result, entityId);
+    this.settleTerminalRuntime(result);
+    return result;
+  }
+
+  /** 兼容旧调用；新代码应消费 downActor 返回的完整 WorldStepResult。 */
+  killActor(entityId: EntityId, reason?: string): WorldEvent[] {
+    return this.downActor(entityId, reason).events;
   }
 
   clearTransientEffects(): void {
@@ -201,6 +318,9 @@ export class World {
       entities: this.entities.snapshot(),
       state: structuredClone(this.state),
       actions: this.actions.snapshot(),
+      movement: this.movement.snapshot(),
+      actors: this.actors.snapshot(),
+      outcome: this.outcome.state,
     };
   }
 
@@ -208,30 +328,15 @@ export class World {
     this.entities.restore(snapshot.entities);
     this.state = structuredClone(snapshot.state);
     this.actions.restore(snapshot.actions);
+    this.movement.restore(snapshot.movement);
+    this.actors.restore(snapshot.actors);
+    this.outcome.restore(snapshot.outcome);
+    this.lifecycle.syncLegacyState();
     this.spatial.rebuild();
   }
 
   inspect(x: number, y: number): CellInspection | null {
-    const cell = { x, y };
-    if (!this.spatial.inBounds(cell)) return null;
-    const rawPresences = this.spatial.presencesAt(cell);
-    const presences = rawPresences.map((presence) =>
-      this.inspectPresence(presence),
-    );
-    const topPresence = presences.at(-1);
-    const actorIds = [
-      ...new Set(
-        rawPresences
-          .filter((presence) => presence.traits.includes("player"))
-          .map((presence) => presence.entityId),
-      ),
-    ];
-    return {
-      cell,
-      presences,
-      ...(topPresence ? { topPresence } : {}),
-      actorIds,
-    };
+    return this.inspector.inspect({ x, y });
   }
 
   /**
@@ -241,12 +346,11 @@ export class World {
   step(group: WorldIntentGroup): WorldStepResult {
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
-    const reachedSelectors = new Set<string>();
     let playerInputMoved = false;
 
     for (const intent of group.intents) {
       if (intent.type !== "move") continue;
-      const result = this.resolveMove(intent, transaction, reachedSelectors);
+      const result = this.movementResolver.resolve(intent, transaction);
       moves.push(result);
       if (result.moved && intent.cause.type === "player-input")
         playerInputMoved = true;
@@ -254,57 +358,116 @@ export class World {
 
     if (playerInputMoved)
       transaction.commands.setGlobal("moves", this.state.moves + 1);
-    if (reachedSelectors.size > 0)
-      transaction.commands.setGlobal("lastReachedSelectors", [
-        ...reachedSelectors,
-      ]);
+    if (transaction.motions.length > 0)
+      transaction.commands.setGlobal("lastReachedSelectors", []);
 
-    const beforeDead = this.state.dead;
-    const beforeCompleted = this.state.completed;
-    const commit = this.commit(transaction.commands);
-    this.refreshDerivedState();
-    this.evaluateCompletion(commit.events);
-    this.evaluateLimits(commit.events);
-    if (!beforeDead && this.state.dead)
-      pushUnique(commit.mutations.globalsChanged, "dead");
-    if (!beforeCompleted && this.state.completed)
-      pushUnique(commit.mutations.globalsChanged, "completed");
-
-    return {
+    const commit = this.committer.commit(transaction.commands, this.deltaClock());
+    const result: WorldStepResult = {
       moves,
-      motions: transaction.motions.map((motion) => structuredClone(motion)),
+      motions: [],
       events: commit.events,
       mutations: commit.mutations,
+      deltas: commit.deltas,
     };
+    this.startMotions(transaction.motions, result);
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
+
+    return result;
   }
 
   /**
    * 一个 WorldTick 分成稳定 phase：
-   * RuntimeAction commands -> RuntimeAction intents -> Behavior onTick。
+   * Movement markers -> RuntimeAction commands -> RuntimeAction intents -> Behavior onTick。
    * 每个 phase commit 后，后续 phase 才读取新的 World。
    */
   update(time: WorldTick): WorldStepResult {
     const result = emptyWorldStepResult();
-    if (time.stepMs <= 0 || this.state.dead || this.state.completed)
+    if (time.stepMs <= 0 || !this.outcome.playing)
       return result;
 
+    this.currentWorldTick = time.tick;
+    const actionsAtTickStart = this.actions.active.map((action) => action.id);
     this.state.elapsedMs += time.stepMs;
+    const movementActionBudgets = this.advanceMotions(time.stepMs, result);
+    this.settleTerminalRuntime(result);
+    if (!this.outcome.playing) {
+      this.currentWorldTick = null;
+      return result;
+    }
 
+    const actionsStartedByMovement = this.actions.active
+      .map((action) => action.id)
+      .filter((id) => !actionsAtTickStart.includes(id));
     const actionQueue = new CommandQueue();
-    const actionIntents = this.actions.update(time, this.query, actionQueue);
-    const actionCommit = this.commit(actionQueue);
-    this.refreshDerivedState();
-    this.evaluateCompletion(actionCommit.events);
+    const actionRequests = this.actions.update(
+      time,
+      this.query,
+      actionQueue,
+      actionsAtTickStart,
+    );
+    const actionCommit = this.committer.commit(actionQueue, this.deltaClock());
     absorbCommit(result, actionCommit);
-    if (this.state.dead || this.state.completed) return result;
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
+    if (!this.outcome.playing) {
+      this.currentWorldTick = null;
+      return result;
+    }
 
-    if (actionIntents.length > 0) {
+    const handoffQueue = new CommandQueue();
+    const handoffRequests = actionsStartedByMovement.flatMap((actionId) =>
+      this.actions.update(
+        {
+          tick: time.tick,
+          stepMs: movementActionBudgets.get(actionId) ?? 0,
+        },
+        this.query,
+        handoffQueue,
+        [actionId],
+      )
+    );
+    const handoffCommit = this.committer.commit(
+      handoffQueue,
+      this.deltaClock(),
+    );
+    absorbCommit(result, handoffCommit);
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
+    if (!this.outcome.playing) {
+      this.currentWorldTick = null;
+      return result;
+    }
+
+    const readyActionRequests = [...actionRequests, ...handoffRequests];
+    if (readyActionRequests.length > 0) {
       const actionStep = this.step({
-        intents: actionIntents,
+        intents: readyActionRequests.map((request) => request.intent),
         historyBoundary: false,
       });
       mergeWorldStepResult(result, actionStep);
-      if (this.state.dead || this.state.completed) return result;
+      const resultQueue = new CommandQueue();
+      this.actions.resolveIntentResults(
+        readyActionRequests,
+        actionStep.moves,
+        this.query,
+        resultQueue,
+      );
+      const resultCommit = this.committer.commit(
+        resultQueue,
+        this.deltaClock(),
+      );
+      absorbCommit(result, resultCommit);
+      this.lifecycle.settle(result);
+      this.lifecycle.evaluateRules(result);
+      this.settleTerminalRuntime(result);
+      if (!this.outcome.playing) {
+        this.currentWorldTick = null;
+        return result;
+      }
     }
 
     const tickQueue = new CommandQueue();
@@ -313,7 +476,7 @@ export class World {
       const entity = this.entities.get(entityId);
       const presence = this.spatial.presencesForEntity(entityId)[0];
       if (!entity || !presence) continue;
-      const context = this.context(
+      const context = this.behaviorRuntime.context(
         entity,
         presence,
         entity,
@@ -322,663 +485,203 @@ export class World {
         undefined,
         time,
       );
-      for (const behavior of this.resolveBehaviors(entity, presence))
+      for (const behavior of this.behaviorRuntime.resolve(entity, presence))
         behavior.onTick?.(context);
     }
 
-    const tickCommit = this.commit(tickQueue);
-    this.refreshDerivedState();
-    this.evaluateCompletion(tickCommit.events);
-    this.evaluateLimits(tickCommit.events);
+    const tickCommit = this.committer.commit(tickQueue, this.deltaClock());
     absorbCommit(result, tickCommit);
+    this.lifecycle.settle(result);
+    this.lifecycle.evaluateRules(result);
+    this.settleTerminalRuntime(result);
+    this.currentWorldTick = null;
     return result;
   }
 
-  private resolveMove(
-    intent: MoveIntent,
-    group: MovementTransaction,
-    reachedSelectors: Set<string>,
-  ): MoveResult {
-    const actor = this.entities.get(intent.actorId);
-    const missingFrom = actor?.anchor ?? { x: -1, y: -1 };
-    if (!actor)
-      return blockedResult(
-        intent.actorId,
-        missingFrom,
-        missingFrom,
-        intent.direction,
-        "missing-actor",
+  private startMotions(
+    requests: readonly EntityMotionRequest[],
+    result: WorldStepResult,
+  ): void {
+    for (const request of requests) {
+      const durationMs = this.durationForMotion(request);
+      const motion = this.movement.start(
+        request,
+        durationMs,
+        request.lifecycle,
       );
-
-    const from = { ...actor.anchor };
-    const to = addDirection(from, intent.direction);
-    const movement: MovementContext = { from, to, cause: intent.cause };
-    if (this.state.dead || this.state.completed)
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "world-finished",
-      );
-    if (!this.spatial.inBounds(to))
-      return blockedResult(actor.id, from, to, intent.direction, "void");
-
-    const local = new MovementTransaction();
-    const sourceStack = [...this.spatial.presencesAt(from)].reverse();
-    const targetStack = [...this.spatial.presencesAt(to)].reverse();
-    const leave = this.runPassage(
-      sourceStack,
-      actor,
-      intent.direction,
-      local,
-      "canLeave",
-      movement,
-    );
-    if (!leave.passable)
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        leave.reason ?? "leave-blocked",
-      );
-
-    let pushed: {
-      entityId: EntityId;
-      from: CellPosition;
-      to: CellPosition;
-    } | null = null;
-    const pushable = targetStack.find(
-      (presence) =>
-        presence.entityId !== actor.id &&
-        presence.traits.includes("pushable"),
-    );
-    if (pushable) {
-      const pushTo = addDirection(to, intent.direction);
-      if (
-        !this.canOccupy(pushTo, pushable.entityId, group) ||
-        !group.canReserveDestination(pushable.entityId, pushTo)
-      ) {
-        this.runTouch(
-          targetStack,
-          actor,
-          intent.direction,
-          group.commands,
-          movement,
-        );
-        return blockedResult(
-          actor.id,
-          from,
-          to,
-          intent.direction,
-          "push-blocked",
-        );
-      }
-      pushed = { entityId: pushable.entityId, from: to, to: pushTo };
-    }
-
-    if (!this.hasWalkable(to)) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(actor.id, from, to, intent.direction, "void");
-    }
-
-    const resolution = this.resolveEntry(
-      targetStack,
-      actor,
-      intent.direction,
-      local,
-      movement,
-      pushable?.entityId ?? null,
-    );
-    if (!resolution.passable) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        resolution.reason ?? "blocked",
+      result.motions.push(motion);
+      result.deltas.push(
+        this.deltaSequence.create(
+          { type: "motion-started", motion },
+          this.deltaClock(),
+        ),
       );
     }
-
-    const enter = this.runPassage(
-      targetStack,
-      actor,
-      intent.direction,
-      local,
-      "canEnter",
-      movement,
-      pushable?.entityId ?? null,
-    );
-    if (!enter.passable) {
-      this.runTouch(
-        targetStack,
-        actor,
-        intent.direction,
-        group.commands,
-        movement,
-      );
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        enter.reason ?? "blocked",
-      );
-    }
-
-    if (!group.canReserveDestination(actor.id, to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
-    if (pushed && !group.canReserveDestination(pushed.entityId, pushed.to))
-      return blockedResult(
-        actor.id,
-        from,
-        to,
-        intent.direction,
-        "destination-conflict",
-      );
-
-    for (const presence of sourceStack)
-      this.runHook(
-        "onLeave",
-        presence,
-        actor,
-        intent.direction,
-        local.commands,
-        movement,
-      );
-    if (pushed)
-      local.move(
-        pushed.entityId,
-        pushed.from,
-        pushed.to,
-        intent.direction,
-        { type: "push", sourceEntityId: actor.id },
-        false,
-      );
-    local.move(actor.id, from, to, intent.direction, intent.cause);
-    for (const presence of targetStack) {
-      if (
-        presence.entityId !== pushable?.entityId &&
-        !local.isEntryAllowed(presence.entityId)
-      )
-        this.runHook(
-          "onEnter",
-          presence,
-          actor,
-          intent.direction,
-          local.commands,
-          movement,
-        );
-      else if (
-        local.isEntryAllowed(presence.entityId) &&
-        this.entities.get(presence.entityId)
-      )
-        this.runHook(
-          "onEnter",
-          presence,
-          actor,
-          intent.direction,
-          local.commands,
-          movement,
-        );
-    }
-
-    for (const selector of this.selectorsForPresences(targetStack))
-      reachedSelectors.add(selector);
-    group.reserveDestination(actor.id, to);
-    if (pushed) group.reserveDestination(pushed.entityId, pushed.to);
-    group.absorb(local);
-
-    return {
-      actorId: actor.id,
-      moved: true,
-      from,
-      to,
-      direction: intent.direction,
-      passage: { reason: "passable", confidence: "rule" },
-      events: [],
-    };
+    this.advanceMotions(0, result);
   }
 
-  private canOccupy(
-    cell: CellPosition,
-    movingEntityId: EntityId,
-    transaction?: MovementTransaction,
-  ): boolean {
-    if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
-    return !this.spatial.presencesAt(cell).some(
-      (presence) =>
-        presence.entityId !== movingEntityId &&
-        !transaction?.isEntryAllowed(presence.entityId) &&
-        (presence.traits.includes("blocking") ||
-          presence.traits.includes("pushable")),
+  /**
+   * 推进 motion，并记录 marker 新建 Action 在当前 tick 还可消费的真实时间。
+   * marker 前已用于 motion 的时间不能再次交给 Action，否则大 tick 会重复计时；
+   * 剩余时间也不能直接丢弃，否则连续机关会在每格之间产生一个空 tick。
+   */
+  private advanceMotions(
+    stepMs: number,
+    result: WorldStepResult,
+  ): ReadonlyMap<RuntimeActionId, number> {
+    const initialElapsed = new Map(
+      this.movement.running.map((motion) => [motion.id, motion.elapsedMs]),
     );
-  }
-
-  private hasWalkable(cell: CellPosition): boolean {
-    return this.spatial.hasTraitAt(cell, "walkable");
-  }
-
-  private resolveEntry(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    transaction: MovementTransaction,
-    movement: MovementContext,
-    ignoredEntity: EntityId | null = null,
-  ): PassageResult {
-    for (const presence of stack) {
-      if (
-        presence.entityId === actor.id ||
-        presence.entityId === ignoredEntity
-      )
-        continue;
-      const entity = this.entities.require(presence.entityId);
-      for (const behavior of this.resolveBehaviors(entity, presence)) {
-        const result = behavior.resolveEntry?.(
-          this.context(
-            actor,
-            presence,
-            entity,
-            direction,
-            transaction.commands,
-            movement,
+    const actionBudgets = new Map<RuntimeActionId, number>();
+    this.movement.advance(stepMs, {
+      progressed: (motion) => {
+        result.deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-progressed", motion },
+            this.deltaClock(),
           ),
         );
-        if (!result) continue;
-        if (result.result === "blocked")
-          return {
-            passable: false,
-            ...(result.reason ? { reason: result.reason } : {}),
-          };
-        if (result.result === "pass" || result.result === "clear-and-pass")
-          transaction.allowEntryFor(presence.entityId);
-      }
-    }
-    return { passable: true };
-  }
-
-  private runPassage(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    transaction: MovementTransaction,
-    hook: "canEnter" | "canLeave",
-    movement: MovementContext,
-    ignoredEntity: EntityId | null = null,
-  ): PassageResult {
-    for (const presence of stack) {
-      if (
-        presence.entityId === actor.id ||
-        presence.entityId === ignoredEntity ||
-        (hook === "canEnter" && transaction.isEntryAllowed(presence.entityId))
-      )
-        continue;
-      const entity = this.entities.require(presence.entityId);
-      let explicitPass = false;
-      for (const behavior of this.resolveBehaviors(entity, presence)) {
-        const result = behavior[hook]?.(
-          this.context(
-            actor,
-            presence,
-            entity,
-            direction,
-            transaction.commands,
-            movement,
+      },
+      marker: (motion, marker) => {
+        const actionsBeforeMarker = new Set(
+          this.actions.active.map((action) => action.id),
+        );
+        result.deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-marker", motion, marker: marker.id },
+            this.deltaClock(),
           ),
         );
-        if (result?.passable === false) return result;
-        if (result?.passable === true) explicitPass = true;
-      }
-      if (!explicitPass && presence.traits.includes("blocking"))
-        return {
-          passable: false,
-          reason: `blocking:${entity.type}`,
-        };
-    }
-    return { passable: true };
-  }
-
-  private runTouch(
-    stack: readonly EntityPresence[],
-    actor: EntityInstance,
-    direction: Direction,
-    queue: CommandQueue,
-    movement: MovementContext,
-  ): void {
-    for (const presence of stack) {
-      if (presence.entityId === actor.id) continue;
-      this.runHook(
-        "onTouch",
-        presence,
-        actor,
-        direction,
-        queue,
-        movement,
-      );
-    }
-  }
-
-  private runHook(
-    hook: "onEnter" | "onLeave" | "onTouch",
-    presence: EntityPresence,
-    actor: EntityInstance,
-    direction: Direction,
-    queue: CommandQueue,
-    movement: MovementContext,
-  ): void {
-    const entity = this.entities.get(presence.entityId);
-    if (!entity) return;
-    const context = this.context(
-      actor,
-      presence,
-      entity,
-      direction,
-      queue,
-      movement,
-    );
-    for (const behavior of this.resolveBehaviors(entity, presence))
-      behavior[hook]?.(context);
-  }
-
-  private resolveBehaviors(
-    entity: EntityInstance,
-    presence: EntityPresence,
-  ): readonly Behavior[] {
-    const definition = this.registry.require(entity.type);
-    return this.behaviors.resolve(definition.behaviors, presence.traits);
-  }
-
-  private context(
-    actor: EntityInstance,
-    presence: EntityPresence,
-    self: EntityInstance,
-    direction: Direction | undefined,
-    queue: CommandQueue,
-    movement?: MovementContext,
-    time?: WorldTick,
-  ): BehaviorContext {
-    return {
-      query: this.query,
-      commands: queue,
-      actor,
-      self: { entity: self, presence },
-      ...(direction ? { direction } : {}),
-      ...(movement ? { movement } : {}),
-      ...(time ? { time } : {}),
-    };
-  }
-
-  private commit(queue: CommandQueue): CommitResult {
-    const events: WorldEvent[] = [];
-    const mutations = emptyMutationSummary();
-    for (const command of queue.drain()) {
-      switch (command.type) {
-        case "spawn": {
-          const entity = this.entities.spawn(command.entity);
-          this.spatial.addEntity(entity);
-          pushUnique(mutations.spawned, entity.id);
-          break;
-        }
-        case "destroy":
-          this.actions.cancelOwnedBy(command.entityId);
-          this.spatial.removeEntity(command.entityId);
-          this.entities.destroy(command.entityId);
-          pushUnique(mutations.destroyed, command.entityId);
-          break;
-        case "move":
-          if (this.entities.get(command.entityId)) {
-            this.spatial.moveEntity(command.entityId, {
-              x: command.x,
-              y: command.y,
-            });
-            pushUnique(mutations.moved, command.entityId);
-          }
-          break;
-        case "set-direction": {
-          const entity = this.entities.get(command.entityId);
-          if (entity) {
-            entity.direction = command.direction;
-            this.spatial.rebuildEntity(entity.id);
-          }
-          break;
-        }
-        case "set-state": {
-          const entity = this.entities.get(command.entityId);
-          if (entity) {
-            entity.state = structuredClone(command.state);
-            pushUnique(mutations.stateChanged, command.entityId);
-          }
-          break;
-        }
-        case "set-global":
-          (this.state as unknown as Record<string, unknown>)[command.key] =
-            structuredClone(command.value);
-          pushUnique(mutations.globalsChanged, command.key);
-          break;
-        case "start-action": {
-          const id = this.actions.start(command.action);
-          pushUnique(mutations.actionsStarted, id);
-          break;
-        }
-        case "cancel-action":
-          this.actions.cancel(command.actionId);
-          pushUnique(mutations.actionsCancelled, command.actionId);
-          break;
-        case "emit":
-          events.push(command.event);
-          break;
-      }
-    }
-    return { events, mutations };
-  }
-
-  private refreshDerivedState(): void {
-    this.state.goldenCarrotsInLevel =
-      this.query.entitiesWithTrait("golden-carrot").length;
-    this.state.bonusCoinsInLevel =
-      this.query.entitiesWithTrait("bonus-coin").length;
-  }
-
-  private evaluateCompletion(events: WorldEvent[]): void {
-    if (this.state.completed || this.state.dead) return;
-    const win = this.winState;
-    if (!win?.completed) return;
-    this.state.completed = true;
-    events.push({ type: "complete" });
-  }
-
-  private evaluateLimits(events: WorldEvent[]): void {
-    if (this.state.completed || this.state.dead) return;
-    for (const limit of this.rules?.limits ?? []) {
-      const exceeded = this.limitExceeded(limit);
-      if (!exceeded) continue;
-      const reason =
-        limit.type === "max-moves"
-          ? `Move limit exceeded: ${limit.moves}`
-          : `Time limit exceeded: ${limit.seconds}s`;
-      if (!this.state.dead) {
-        this.state.dead = true;
-        this.state.deathReason = reason;
-        events.push({ type: "death", reason });
-      }
-      return;
-    }
-  }
-
-  private limitExceeded(limit: LevelLimit): boolean {
-    if (limit.type === "max-moves") return this.state.moves > limit.moves;
-    return this.state.elapsedMs > limit.seconds * 1000;
-  }
-
-  private evaluateWin(condition: WinCondition): WinConditionState {
-    switch (condition.type) {
-      case "all": {
-        const conditions = condition.conditions.map((item) =>
-          this.evaluateWin(item),
+        this.runMovementMarker(motion, marker, result);
+        const consumedMs = Math.max(
+          0,
+          motion.elapsedMs - (initialElapsed.get(motion.id) ?? 0),
         );
-        return {
-          type: "all",
-          completed: conditions.every((item) => item.completed),
-          conditions,
-        };
-      }
-      case "any": {
-        const conditions = condition.conditions.map((item) =>
-          this.evaluateWin(item),
+        const remainingMs = Math.max(0, stepMs - consumedMs);
+        for (const action of this.actions.active) {
+          if (!actionsBeforeMarker.has(action.id))
+            actionBudgets.set(action.id, remainingMs);
+        }
+      },
+      completed: (motion) => {
+        result.deltas.push(
+          this.deltaSequence.create(
+            { type: "motion-completed", motion },
+            this.deltaClock(),
+          ),
         );
-        return {
-          type: "any",
-          completed: conditions.some((item) => item.completed),
-          conditions,
-        };
-      }
-      case "collect-all": {
-        const remaining = this.matchingEntityCount(condition.target);
-        return {
-          type: "collect-all",
-          target: condition.target,
-          completed: remaining === 0,
-          remaining,
-        };
-      }
-      case "reach": {
-        const actors = this.query.entitiesWithTrait("player");
-        return {
-          type: "reach",
-          target: condition.target,
-          completed:
-            actors.some((actor) =>
-              this.hasSelectorAt(actor.anchor, condition.target),
-            ) || this.state.lastReachedSelectors.includes(condition.target),
-        };
-      }
-      case "fill-all": {
-        const targets = this.spatialCellsMatching(condition.target);
-        const remaining = targets.filter(
-          (cell) => !this.hasSelectorAt(cell, condition.filler),
-        ).length;
-        return {
-          type: "fill-all",
-          target: condition.target,
-          filler: condition.filler,
-          completed: targets.length > 0 && remaining === 0,
-          remaining,
-        };
-      }
-    }
-  }
-
-  private matchingEntityCount(selector: string): number {
-    return this.entities
-      .all()
-      .filter(
-        (entity) =>
-          entity.type === selector ||
-          this.query.entityHasTrait(entity.id, selector),
-      ).length;
-  }
-
-  private hasSelectorAt(cell: CellPosition, selector: string): boolean {
-    return this.spatial.presencesAt(cell).some((presence) => {
-      const entity = this.entities.require(presence.entityId);
-      return entity.type === selector || presence.traits.includes(selector);
+        this.lifecycle.evaluateRules(result);
+      },
     });
+    return actionBudgets;
   }
 
-  private selectorsForPresences(
-    presences: readonly EntityPresence[],
-  ): string[] {
-    const selectors = new Set<string>();
-    for (const presence of presences) {
-      const entity = this.entities.get(presence.entityId);
-      if (!entity) continue;
-      selectors.add(entity.type);
-      for (const trait of presence.traits) selectors.add(trait);
+  private runMovementMarker(
+    motion: WorldMotion,
+    marker: MovementMarkerDefinition,
+    result: WorldStepResult,
+  ): void {
+    const plan = this.movement.plan(motion.id);
+    const actor = this.entities.get(motion.entityId);
+    if (!plan || !actor) return;
+    const queue = new CommandQueue();
+    const movement: MovementContext = {
+      from: motion.from,
+      to: motion.to,
+      cause: motion.cause,
+      motion: {
+        id: motion.id,
+        marker: marker.id,
+        progress: motion.progress,
+        durationMs: motion.durationMs,
+      },
+    };
+
+    for (const dispatch of marker.dispatch ?? []) {
+      const presences =
+        dispatch.scope === "source" ? plan.source : plan.target;
+      for (const presence of presences)
+        this.behaviorRuntime.runHook(
+          dispatch.hook,
+          presence,
+          actor,
+          motion.direction,
+          queue,
+          movement,
+        );
     }
-    return [...selectors];
-  }
-
-  private spatialCellsMatching(selector: string): CellPosition[] {
-    const result = new Map<string, CellPosition>();
-    for (const entity of this.entities.all()) {
-      const typeMatches = entity.type === selector;
-      for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (!typeMatches && !presence.traits.includes(selector)) continue;
-        result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
-      }
+    if (marker.recordsReach === true) {
+      const selectors = new Set(this.state.lastReachedSelectors);
+      for (const selector of this.reachResolver.selectorsFor(
+        actor,
+        plan.target,
+      ))
+        selectors.add(selector);
+      queue.setGlobal("lastReachedSelectors", [...selectors]);
     }
-    return [...result.values()];
+
+    const commit = this.committer.commit(queue, this.deltaClock());
+    absorbCommit(result, commit);
+    this.ruleEvaluator.refreshDerivedState();
+    this.lifecycle.settle(result, motion.entityId);
   }
 
-  private inspectPresence(presence: EntityPresence): PresenceInspection {
-    const entity = this.entities.require(presence.entityId);
+  /** Terminal World 不再推进 gameplay；所有仍在运行的过程必须在同一结算点结束。 */
+  private settleTerminalRuntime(result: WorldStepResult): void {
+    if (this.outcome.playing) return;
+
+    const cancellationQueue = new CommandQueue();
+    for (const action of this.actions.active)
+      cancellationQueue.cancelAction(action.id, "world-finished");
+    absorbCommit(
+      result,
+      this.committer.commit(cancellationQueue, this.deltaClock()),
+    );
+
+    for (const motion of this.movement.running) {
+      const interrupted = this.movement.interruptEntity(
+        motion.entityId,
+        "world-finished",
+        motion.progress,
+      );
+      if (!interrupted) continue;
+      result.deltas.push(
+        this.deltaSequence.create(
+          { type: "motion-interrupted", motion: interrupted },
+          this.deltaClock(),
+        ),
+      );
+    }
+  }
+
+  private durationForMotion(request: EntityMotionRequest): number {
+    if (
+      request.cause.type === "forced" &&
+      request.cause.cadenceMs !== undefined
+    )
+      return safeDuration(request.cause.cadenceMs);
+    return this.motionDurationMs;
+  }
+
+  private deltaClock(): { worldTick: number | null; worldTimeMs: number } {
     return {
-      entityId: entity.id,
-      type: entity.type,
-      layer: presence.layer,
-      ...(presence.role ? { role: presence.role } : {}),
-      stackOrder: presence.stackOrder,
-      traits: presence.traits,
-      ...(entity.state ? { state: structuredClone(entity.state) } : {}),
+      worldTick: this.currentWorldTick,
+      worldTimeMs: this.state.elapsedMs,
     };
   }
+
 }
 
-function addDirection(
-  cell: CellPosition,
-  direction: Direction,
-): CellPosition {
-  if (direction === "up") return { x: cell.x, y: cell.y - 1 };
-  if (direction === "down") return { x: cell.x, y: cell.y + 1 };
-  if (direction === "left") return { x: cell.x - 1, y: cell.y };
-  return { x: cell.x + 1, y: cell.y };
-}
-
-function blockedResult(
-  actorId: EntityId,
-  from: CellPosition,
-  to: CellPosition,
-  direction: Direction,
-  reason: string,
-): MoveResult {
-  return {
-    actorId,
-    moved: false,
-    blocked: true,
-    from,
-    to,
-    direction,
-    passage: { reason, confidence: "rule" },
-    events: [],
-  };
-}
-
-function absorbCommit(target: WorldStepResult, commit: CommitResult): void {
+function absorbCommit(target: WorldStepResult, commit: WorldCommitResult): void {
   target.events.push(...commit.events.map((event) => structuredClone(event)));
+  target.deltas.push(...commit.deltas.map((delta) => structuredClone(delta)));
   mergeWorldMutationSummary(target.mutations, commit.mutations);
 }
 
 function pushUnique<T>(values: T[], value: T): void {
   if (!values.includes(value)) values.push(value);
+}
+
+function safeDuration(value: number): number {
+  return Math.max(0, Number.isFinite(value) ? value : 0);
 }

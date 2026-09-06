@@ -1,4 +1,5 @@
 import { EntityTypeId } from "@bobby/model";
+import { speedSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -24,4 +25,5 @@ export const speedSwitch: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     context.entity.state?.pressed === true ? cell(1, 10) : cell(2, 10),
   ),
+  [{ behavior: speedSwitchBehavior }],
 );
