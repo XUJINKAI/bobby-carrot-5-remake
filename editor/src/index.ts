@@ -7,7 +7,7 @@ export { isEditorEntityCreatable } from "./definitions/entities.js";
 export type { EditorTool, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
-export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityProperties, updateEntityState, updateEntityTraits, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
+export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityField, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
 export type { EditorCommand, EditorEntityReplacement } from "./document/commands.js";
 export { EditorPreview } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
