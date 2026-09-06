@@ -18,8 +18,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   toggleSurface: [];
-  property: [entityIndex: number, key: string, value: string];
-  state: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
   delete: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
@@ -98,8 +97,7 @@ function dropAt(index: number): void {
           :images="images"
           :catalog="catalog"
           :editor="editor"
-          @property="(key, value) => emit('property', layer.ref.index, key, value)"
-          @state="(key, value) => emit('state', layer.ref.index, key, value)"
+          @field="(key, value) => emit('field', layer.ref.index, key, value)"
           @variant="(variantIndex) => emit('variant', layer.ref.index, variantIndex)"
         />
       </article>
