@@ -70,7 +70,7 @@ function withDefaults(
   _catalog: EntityCatalog,
   editor: EditorEntityDefinition | undefined,
 ): LevelEntity {
-  const result = structuredClone(entity);
+  const result: LevelEntity = structuredClone(entity) as LevelEntity;
   for (const field of entityMapDefinition(entity.type)?.fields ?? []) {
     if (result[field.key] === undefined && field.default !== undefined)
       result[field.key] = structuredClone(field.default);

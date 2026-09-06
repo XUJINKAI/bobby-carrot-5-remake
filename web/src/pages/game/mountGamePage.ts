@@ -81,6 +81,7 @@ export interface GamePageContext {
   level: LevelMap;
   identity: GameIdentity;
   mapMeta?: MapMeta;
+  exploreNextMapId?: string;
   adventureChapter?: AdventureIndexChapter;
   adventureLevel?: AdventureIndexLevel;
   adventureScene?: AdventureIndexSpecialScene;
@@ -103,6 +104,7 @@ export async function renderGamePage(
     level,
     identity,
     mapMeta,
+    exploreNextMapId,
     adventureChapter,
     adventureLevel,
     adventureScene,
@@ -203,7 +205,15 @@ export async function renderGamePage(
   });
   const { game, input } = session;
   const isBonus = adventureLevel?.id.includes("-bonus-") ?? false;
-  audio.playMusic(mapMeta?.music ?? (isBonus ? "bonus" : "ingame1"));
+  if (level.music === "none") audio.stopMusic();
+  else
+    audio.playMusic(
+      level.music && level.music !== "random"
+        ? level.music
+        : isBonus
+          ? "bonus"
+          : "ingame1",
+    );
 
   let levelStartedAt = performance.now();
   let visibleResult: "death" | "complete" | null = null;
@@ -297,7 +307,7 @@ export async function renderGamePage(
         nextId = nextAdventureLevel(adventure, adventureLevel!.id)?.id;
       } else if (mode === "explore") {
         markExploreMapCompleted(identity.collection, identity.id);
-        nextId = mapMeta?.next;
+        nextId = exploreNextMapId;
       }
       resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "返回冒险模式" : "自由探索"}</button></div>`;
     } else {

@@ -23,8 +23,10 @@ export async function renderEditorPage(
   if (mapRef) {
     try {
       const resolved = await resolveMapDocument(mapRef);
-      level = fromLevelMap(resolved.level);
-      level.name = `${resolved.document.meta.name} · 副本`;
+      level = fromLevelMap(
+        resolved.level,
+        `${resolved.document.meta.name} · 副本`,
+      );
     } catch {
       navigate("/edit");
       return NOOP_CONTROLLER;

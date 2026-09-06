@@ -74,7 +74,6 @@ export interface DebugEntitySnapshot {
   lifecycle: ActorLifecycleState;
   inputBlocked: boolean;
   direction: string | null;
-  properties: unknown;
   state: unknown;
   instanceTraits: readonly string[];
   definition: {
@@ -225,7 +224,6 @@ function buildEntitySnapshot(
     lifecycle: world.actorLifecycle(entity.id),
     inputBlocked: world.isInputBlockedFor(entity.id),
     direction: entity.direction ?? null,
-    properties: entity.properties ? structuredClone(entity.properties) : null,
     state: entity.state ? structuredClone(entity.state) : null,
     instanceTraits: [...(entity.instanceTraits ?? [])],
     definition: {

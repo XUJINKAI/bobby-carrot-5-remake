@@ -54,7 +54,7 @@ export class EditorEntityPreviewRenderer {
 
     const level: EditorMap = {
       schemaVersion: 1,
-      name: "Entity Preview",
+      meta: { name: "Entity Preview" },
       width: layout.width + 2,
       height: layout.height + 2,
       entities: [
