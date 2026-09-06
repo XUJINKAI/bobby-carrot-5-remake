@@ -49,6 +49,12 @@ const specialObjectTypes = new Set([
 const directObjectTypes = new Set(
   Object.values(LegacyObject).filter((type) => !specialObjectTypes.has(type)),
 );
+const WIND_DIRECTION_INDEX = {
+  up: 0,
+  down: 1,
+  left: 2,
+  right: 3,
+};
 
 /** 将产品 Entity Map 还原为 DAT 编码器专用的 legacy terrain/object 表示。 */
 export function reverseEntityMap(map) {
@@ -78,7 +84,12 @@ function validateMapShape(map) {
   if (!Number.isInteger(map.width) || !Number.isInteger(map.height)) {
     throw new Error("Patch map 的 width 与 height 必须是整数");
   }
-  if (map.width < 1 || map.width > 255 || map.height < 1 || map.height > 255) {
+  if (
+    map.width < 1 ||
+    map.width > 255 ||
+    map.height < 1 ||
+    map.height > 255
+  ) {
     throw new Error("Patch map 尺寸必须在 1 到 255 格之间");
   }
   if (!Array.isArray(map.entities)) {
@@ -118,7 +129,9 @@ function terrainAt(entities, x, y) {
   }
   const candidates = entities.map(legacyTerrainFor).filter(Boolean);
   if (candidates.length !== 1)
-    throw new Error(`Patch map ${x},${y} 必须恰好包含一个可编码的地形 Entity，实际为 ${candidates.length}`);
+    throw new Error(
+      `Patch map ${x},${y} 必须恰好包含一个可编码的地形 Entity，实际为 ${candidates.length}`,
+    );
   return candidates[0];
 }
 
@@ -136,13 +149,13 @@ function legacyTerrainFor(entity) {
     return directionTerrain("speed", entity.direction);
   }
   if (type === EntityTypeId.SPEED_SWITCH) {
-    return pressedTerrain("speed-switch", entity.state?.pressed);
+    return pressedTerrain("speed-switch", entity.pressed ?? false);
   }
   if (type === EntityTypeId.TIDE_SWITCH) {
-    return pressedTerrain("tide-switch", entity.state?.pressed);
+    return pressedTerrain("tide-switch", entity.pressed ?? false);
   }
   if (type === EntityTypeId.CAROUSEL_SWITCH) {
-    return pressedTerrain("carousel-switch", entity.state?.pressed);
+    return pressedTerrain("carousel-switch", entity.pressed ?? false);
   }
   if (type === EntityTypeId.COLOR_YELLOW_SWITCH) {
     return pressedTerrain("color-yellow-switch", entity.state?.pressed);
@@ -151,17 +164,34 @@ function legacyTerrainFor(entity) {
     return pressedTerrain("color-pink-switch", entity.state?.pressed);
   }
   if (type === EntityTypeId.WIND_SWITCH) {
-    const channel = entity.properties?.channel;
-    if (!Number.isInteger(channel) || channel < 0 || channel > 3)
-      throw new Error("wind-switch 的 properties.channel 必须是 0 到 3 的整数");
-    return `wind-switch-${channel}-${entity.state?.active ? "on" : "off"}`;
+    const channel = WIND_DIRECTION_INDEX[entity.direction];
+    if (channel === undefined)
+      throw new Error("wind-switch 的 direction 必须是 up/down/left/right");
+    return `wind-switch-${channel}-${entity.active === true ? "on" : "off"}`;
   }
-  if (type === EntityTypeId.TRAP) return `trap-${entity.state?.active ? "active" : "inactive"}`;
-  if (type === EntityTypeId.MIRROR) return variantTerrain("mirror", entity.state?.variant, [1, 2, 3, 4]);
-  if (type === EntityTypeId.CAROUSEL) return variantTerrain("carousel", entity.state?.variant, [1, 2, 3, 4, "vertical", "horizontal"]);
-  if (type === EntityTypeId.COLOR_YELLOW_BLOCK) return `color-yellow-block-${entity.state?.raised ? "raised" : "lowered"}`;
-  if (type === EntityTypeId.COLOR_PINK_BLOCK) return `color-pink-block-${entity.state?.raised ? "raised" : "lowered"}`;
-  if (directTerrainTypes.has(type) || /^walkable-variant-\d{2}$/.test(type) || /^background-variant-\d{3}$/.test(type)) return type;
+  if (type === EntityTypeId.TRAP)
+    return `trap-${entity.active === false ? "inactive" : "active"}`;
+  if (type === EntityTypeId.MIRROR)
+    return variantTerrain("mirror", entity.state?.variant, [1, 2, 3, 4]);
+  if (type === EntityTypeId.CAROUSEL)
+    return variantTerrain("carousel", entity.state?.variant, [
+      1,
+      2,
+      3,
+      4,
+      "vertical",
+      "horizontal",
+    ]);
+  if (type === EntityTypeId.COLOR_YELLOW_BLOCK)
+    return `color-yellow-block-${entity.state?.raised ? "raised" : "lowered"}`;
+  if (type === EntityTypeId.COLOR_PINK_BLOCK)
+    return `color-pink-block-${entity.state?.raised ? "raised" : "lowered"}`;
+  if (
+    directTerrainTypes.has(type) ||
+    /^walkable-variant-\d{2}$/.test(type) ||
+    /^background-variant-\d{3}$/.test(type)
+  )
+    return type;
   return null;
 }
 
@@ -179,11 +209,22 @@ function objectFor(entity) {
     return [{ type: LegacyObject.FENCE_1, x, y }];
   if (type === EntityTypeId.ICE_BLOCK) {
     const stage = entity.state?.meltStage;
-    const legacyType = stage === undefined || stage === 0 ? LegacyObject.ICE_BLOCK : ({ 1: LegacyObject.ICE_MELT_1, 2: LegacyObject.ICE_MELT_2, 3: LegacyObject.ICE_MELT_3 })[stage];
-    if (!legacyType) throw new Error("ice-block 的 state.meltStage 必须是 1 到 3 的整数");
+    const legacyType =
+      stage === undefined || stage === 0
+        ? LegacyObject.ICE_BLOCK
+        : {
+            1: LegacyObject.ICE_MELT_1,
+            2: LegacyObject.ICE_MELT_2,
+            3: LegacyObject.ICE_MELT_3,
+          }[stage];
+    if (!legacyType)
+      throw new Error("ice-block 的 state.meltStage 必须是 1 到 3 的整数");
     return [{ type: legacyType, x, y }];
   }
-  if (directObjectTypes.has(type) || /^object-variant-\d{3}$/.test(type))
+  if (
+    directObjectTypes.has(type) ||
+    /^object-variant-\d{3}$/.test(type)
+  )
     return [{ type, x, y }];
   throw new Error(`Entity type 无法编码为原版 DAT：${type}`);
 }
@@ -191,21 +232,26 @@ function objectFor(entity) {
 function validateBobbyStartPair(entities) {
   const bobby = entities.filter((entity) => entity.type === EntityTypeId.BOBBY);
   const starts = entities.filter((entity) => entity.type === EntityTypeId.START);
-  if (bobby.length !== 1) throw new Error("Patch map 必须恰好包含一个 Bobby Entity");
-  if (starts.length !== 1) throw new Error("Patch map 必须恰好包含一个 Start Entity");
+  if (bobby.length !== 1)
+    throw new Error("Patch map 必须恰好包含一个 Bobby Entity");
+  if (starts.length !== 1)
+    throw new Error("Patch map 必须恰好包含一个 Start Entity");
   if (bobby[0].x !== starts[0].x || bobby[0].y !== starts[0].y)
     throw new Error("Bobby 必须与 Start Entity 位于同一格");
 }
 
 function directionTerrain(prefix, direction) {
-  if (!["up", "down", "left", "right"].includes(direction)) throw new Error(`${prefix} Entity 必须使用 up/down/left/right direction`);
+  if (!["up", "down", "left", "right"].includes(direction))
+    throw new Error(`${prefix} Entity 必须使用 up/down/left/right direction`);
   return `${prefix}-${direction}`;
 }
 function pressedTerrain(prefix, pressed) {
-  if (typeof pressed !== "boolean") throw new Error(`${prefix} 的 state.pressed 必须是 boolean`);
+  if (typeof pressed !== "boolean")
+    throw new Error(`${prefix} 的 pressed 必须是 boolean`);
   return `${prefix}-${pressed ? "pressed" : "raised"}`;
 }
 function variantTerrain(prefix, variant, allowed) {
-  if (!allowed.includes(variant)) throw new Error(`${prefix} 的 state.variant 无法编码为原版 DAT`);
+  if (!allowed.includes(variant))
+    throw new Error(`${prefix} 的 state.variant 无法编码为原版 DAT`);
   return `${prefix}-${variant}`;
 }
