@@ -28,7 +28,7 @@ if (group === "original") {
 } else if (group === "schema") {
   if (action === "examples") {
     run(tscCommand(), ["-b", "model", "--force"]);
-    run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(3)]);
+    run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
