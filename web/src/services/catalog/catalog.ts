@@ -1,23 +1,11 @@
-import type { LevelEntity, LevelMap } from "@bobby/model";
-
-export interface MapMeta {
-  id: string;
-  name: string;
-  description?: string;
-  author?: string;
-  next?: string;
-  music?: string;
-}
-
-export interface MapDocument extends LevelMap {
-  schemaVersion: 1;
-  meta: MapMeta;
-}
+import type { LevelEntity, LevelMap, MapDocument } from "@bobby/model";
+export type { MapDocument, MapMeta } from "@bobby/model";
 
 export type MapCollectionEntityIcon = Pick<
   LevelEntity,
-  "type" | "direction" | "properties" | "state" | "traits"
->;
+  "type"
+> &
+  Omit<LevelEntity, "x" | "y" | "stackOrder">;
 
 export type MapCollectionIcon =
   | { type: "entity"; entity: MapCollectionEntityIcon }
@@ -109,6 +97,8 @@ export function levelMapFromDocument(document: MapDocument): LevelMap {
     width: document.width,
     height: document.height,
     entities: structuredClone(document.entities),
+    ...(document.music !== undefined ? { music: document.music } : {}),
+    ...(document.note !== undefined ? { note: document.note } : {}),
     ...(document.rules ? { rules: structuredClone(document.rules) } : {}),
   };
 }
