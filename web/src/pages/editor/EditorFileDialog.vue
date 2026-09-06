@@ -9,26 +9,24 @@ const props = defineProps<{ open: boolean; level: Readonly<EditorMap> }>();
 const emit = defineEmits<{
   close: [];
   import: [level: EditorMap];
-  saved: [metadata: { name: string; author?: string; description?: string }];
+  saved: [metadata: { name: string; author?: string }];
 }>();
-const metadata = reactive({ name: "", author: "", description: "" });
+const metadata = reactive({ name: "", author: "" });
 watch(
   () => [props.open, props.level],
   () => {
-    metadata.name = props.level.name;
-    metadata.author = props.level.author ?? "";
-    metadata.description = props.level.description ?? "";
+    metadata.name = props.level.meta.name;
+    metadata.author = props.level.meta.author ?? "";
   },
   { immediate: true },
 );
-const exchangeLevel = computed<EditorMap>(() => {
-  const level: EditorMap = { ...props.level, name: metadata.name };
-  delete level.author;
-  delete level.description;
-  if (metadata.author) level.author = metadata.author;
-  if (metadata.description) level.description = metadata.description;
-  return level;
-});
+const exchangeLevel = computed<EditorMap>(() => ({
+  ...props.level,
+  meta: {
+    name: metadata.name,
+    ...(metadata.author ? { author: metadata.author } : {}),
+  },
+}));
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
   left: [
@@ -57,11 +55,10 @@ async function openEmbed(): Promise<void> {
   window.location.assign(url.href);
 }
 
-function metadataValue(): { name: string; author?: string; description?: string } {
+function metadataValue(): { name: string; author?: string } {
   return {
     name: metadata.name,
     ...(metadata.author ? { author: metadata.author } : {}),
-    ...(metadata.description ? { description: metadata.description } : {}),
   };
 }
 </script>
@@ -72,7 +69,6 @@ function metadataValue(): { name: string; author?: string; description?: string 
       <header><strong>地图文件</strong><button class="editor-mini-btn" type="button" @click="emit('close')">×</button></header>
       <label class="editor-field"><span>名称</span><input v-model="metadata.name" maxlength="120"></label>
       <label class="editor-field"><span>作者</span><input v-model="metadata.author" maxlength="80" placeholder="可选"></label>
-      <label class="editor-field"><span>描述</span><textarea v-model="metadata.description" maxlength="500" rows="3" placeholder="可选" /></label>
       <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
       <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
       <DataExchangePanel
@@ -82,7 +78,7 @@ function metadataValue(): { name: string; author?: string; description?: string 
         :public-base-url="publicBaseUrl()"
         :filename="metadata.name || 'bc5r-map'"
         :toolbar="toolbar"
-        :reset-key="open ? `${level.name}:${level.width}:${level.height}` : 'closed'"
+        :reset-key="open ? `${level.meta.name}:${level.width}:${level.height}` : 'closed'"
         @import="emit('import', $event as EditorMap)"
         @downloaded="emit('saved', metadataValue())"
       />

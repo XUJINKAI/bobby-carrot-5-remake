@@ -163,7 +163,6 @@ function importLevel(level: EditorMap): void {
 function markDownloaded(metadata: {
   name: string;
   author?: string;
-  description?: string;
 }): void {
   page.updateMetadata(metadata);
   page.document.markSaved();
@@ -411,13 +410,11 @@ function isMobileEditor(): boolean {
       @context-menu="openContextMenu"
       @transform="transform"
       @resize="page.resize"
-      @property="page.updateProperty"
-      @state="page.updateState"
+      @field="page.updateField"
       @variant="page.applyVariant"
       @delete-layer="page.deleteLayer"
       @reorder-layers="page.reorderLayers"
-      @batch-property="page.updateBatchProperty"
-      @batch-state="page.updateBatchState"
+      @batch-field="page.updateBatchField"
       @batch-variant="page.applyBatchVariant"
       @batch-delete="page.deleteSelectedType"
       @rule="page.setRule"
