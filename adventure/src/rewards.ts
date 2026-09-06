@@ -1,5 +1,5 @@
 import type { LevelMap } from "@bobby/model";
-import type { AdventureEntityPropertiesPatch } from "./augment.js";
+import type { AdventureEntityFieldPatch } from "./augment.js";
 import { augmentAdventureLevel } from "./augment.js";
 import { normalizeAdventureSave, type AdventureSave } from "./save.js";
 
@@ -7,9 +7,9 @@ export function createAdventureLevelInstance(
   _levelId: string,
   level: LevelMap,
   _save: AdventureSave,
-  propertyPatches: readonly AdventureEntityPropertiesPatch[] = [],
+  fieldPatches: readonly AdventureEntityFieldPatch[] = [],
 ): LevelMap {
-  return augmentAdventureLevel(structuredClone(level), propertyPatches);
+  return augmentAdventureLevel(structuredClone(level), fieldPatches);
 }
 
 export function addBonusCoins(
