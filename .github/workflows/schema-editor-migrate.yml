@@ -6,11 +6,8 @@ on:
     paths:
       - .github/workflows/schema-editor-migrate.yml
 
-permissions:
-  contents: write
-
 jobs:
-  migrate:
+  diagnose:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,95 +18,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Add runtime-only entity initialization
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text()
-              if old not in text:
-                  raise SystemExit(f"missing replacement in {path}: {old[:100]!r}")
-              p.write_text(text.replace(old, new, 1))
-
-          path = "engine/src/debug/DebugSidebar.ts"
-          replace_once(path, "  properties: JsonDetailsRef;\n", "")
-          replace_once(path, '      properties: this.jsonDetails("Properties"),\n', "")
-          replace_once(path, "      refs.properties.details,\n", "")
-          replace_once(path, "    this.setJson(refs.properties, entity.properties);\n", "")
-
-          path = "engine/src/core/Game.ts"
-          replace_once(
-            path,
-            '''import type {\n  CellPosition,\n  EntityId,\n} from "../world/entity/EntityInstance.js";''',
-            '''import type {\n  CellPosition,\n  EntityId,\n  EntityInstance,\n  EntityState,\n} from "../world/entity/EntityInstance.js";''',
-          )
-          replace_once(
-            path,
-            '''export interface GameRuntimeOptions {''',
-            '''export type RuntimeEntityStateInitializer = (\n  entity: Readonly<EntityInstance>,\n) => EntityState | null | undefined;\n\nexport interface GameRuntimeOptions {''',
-          )
-          replace_once(
-            path,
-            '''  /** Concrete runtime bindings; callers may also call setControlBindings after load. */\n  controls?: readonly ControlBinding[];''',
-            '''  /** Concrete runtime bindings; callers may also call setControlBindings after load. */\n  controls?: readonly ControlBinding[];\n  /** Host-only runtime state patch applied after Map entities are instantiated; never serialized. */\n  initializeEntityState?: RuntimeEntityStateInitializer;''',
-          )
-          replace_once(
-            path,
-            '''  private readonly historyPolicy: HistoryPolicy;\n  private configuredControls: readonly ControlBinding[] | null;''',
-            '''  private readonly historyPolicy: HistoryPolicy;\n  private readonly initializeEntityState: RuntimeEntityStateInitializer | null;\n  private configuredControls: readonly ControlBinding[] | null;''',
-          )
-          replace_once(
-            path,
-            '''    this.historyPolicy = structuredClone(\n      options.runtime?.history ?? DEFAULT_HISTORY_POLICY,\n    );\n    this.configuredControls = options.runtime?.controls''',
-            '''    this.historyPolicy = structuredClone(\n      options.runtime?.history ?? DEFAULT_HISTORY_POLICY,\n    );\n    this.initializeEntityState = options.runtime?.initializeEntityState ?? null;\n    this.configuredControls = options.runtime?.controls''',
-          )
-          replace_once(
-            path,
-            '''  private get world(): World {\n    if (!this.worldValue) throw new Error("尚未载入关卡");\n    return this.worldValue;\n  }''',
-            '''  private get world(): World {\n    if (!this.worldValue) throw new Error("尚未载入关卡");\n    return this.worldValue;\n  }\n\n  private applyRuntimeEntityStateInitializer(): void {\n    if (!this.initializeEntityState) return;\n    for (const entity of this.world.entities.all()) {\n      const patch = this.initializeEntityState(structuredClone(entity));\n      if (!patch) continue;\n      entity.state = {\n        ...(entity.state ?? {}),\n        ...structuredClone(patch),\n      };\n    }\n  }''',
-          )
-          replace_once(
-            path,
-            '''    this.worldValue = new World(level, {\n      profile: this.profile,\n      economy: this.initialEconomy,\n    });\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
-            '''    this.worldValue = new World(level, {\n      profile: this.profile,\n      economy: this.initialEconomy,\n    });\n    this.applyRuntimeEntityStateInitializer();\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
-          )
-          replace_once(
-            path,
-            '''    this.worldValue = new World(this.initialLevel, { profile, economy });\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
-            '''    this.worldValue = new World(this.initialLevel, { profile, economy });\n    this.applyRuntimeEntityStateInitializer();\n    this.world.setMotionDurationMs(this.gameplayMotionDuration());''',
-          )
-
-          path = "engine/src/public.ts"
-          replace_once(
-            path,
-            'export { Game, type GameOptions, type GameRuntimeOptions } from "./core/Game.js";',
-            'export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";',
-          )
-
-          path = "web/src/pages/home/mountHomePage.ts"
-          replace_once(path, 'import { EntityTypeId, type LevelMap } from "@bobby/model";', 'import { EntityTypeId } from "@bobby/model";')
-          replace_once(path, '      level: prepareHomeDemoLevel(demo.level),', '      level: demo.level,')
-          replace_once(
-            path,
-            '''      runtime: {\n        hud: true,''',
-            '''      runtime: {\n        initializeEntityState: (entity) =>\n          entity.type === EntityTypeId.SANDMAN\n            ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }\n            : undefined,\n        hud: true,''',
-          )
-          replace_once(
-            path,
-            '''function prepareHomeDemoLevel(level: LevelMap): LevelMap {\n  const result = structuredClone(level);\n  for (const entity of result.entities) {\n    if (entity.type !== EntityTypeId.SANDMAN) continue;\n    entity.properties = {\n      ...(entity.properties ?? {}),\n      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },\n    };\n  }\n  return result;\n}\n\n''',
-            '',
-          )
-          PY
-      - name: Commit migration
-        shell: bash
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add engine/src/debug/DebugSidebar.ts engine/src/core/Game.ts engine/src/public.ts web/src/pages/home/mountHomePage.ts
-          git commit -m "refactor(engine): support host-only entity state initialization"
-          git push origin HEAD:schema/entity-map-contract
-      - name: TypeScript diagnosis
-        run: npx tsc -b
+      - name: Schema examples
+        run: npm run schema:examples
+      - name: Verify
+        run: npm run verify
