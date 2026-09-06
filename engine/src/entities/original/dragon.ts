@@ -87,19 +87,19 @@ const definition: EntityModuleDefinition = {
     byDirection: {
       left: [
         {
-          dx: 0,
+          dx: -1,
           dy: 0,
           role: "head",
           traits: ["blocking"],
         },
         {
-          dx: 1,
+          dx: 0,
           dy: 0,
           role: "body",
           traits: ["blocking"],
         },
         {
-          dx: 2,
+          dx: 1,
           dy: 0,
           role: "tail",
           traits: ["walkable", "dragon-trigger"],
@@ -107,19 +107,19 @@ const definition: EntityModuleDefinition = {
       ],
       right: [
         {
-          dx: 0,
+          dx: 1,
           dy: 0,
           role: "head",
           traits: ["blocking"],
         },
         {
-          dx: -1,
+          dx: 0,
           dy: 0,
           role: "body",
           traits: ["blocking"],
         },
         {
-          dx: -2,
+          dx: -1,
           dy: 0,
           role: "tail",
           traits: ["walkable", "dragon-trigger"],

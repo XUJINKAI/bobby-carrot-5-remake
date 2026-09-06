@@ -168,8 +168,11 @@ function legacyTerrainFor(entity) {
 function objectFor(entity) {
   const { type, x, y } = entity;
   if (type === EntityTypeId.BOBBY || legacyTerrainFor(entity)) return [];
-  if (type === EntityTypeId.DRAGON)
-    return [{ type: LegacyObject.DRAGON_HEAD_BASE, x, y }];
+  if (type === EntityTypeId.DRAGON) {
+    if (entity.direction !== "left")
+      throw new Error("原版 DAT Dragon 只支持 left direction");
+    return [{ type: LegacyObject.DRAGON_HEAD_BASE, x: x - 1, y }];
+  }
   if (type === EntityTypeId.BEAVER)
     return [{ type: LegacyObject.BEAVER_BASE, x, y }];
   if (type === EntityTypeId.FENCE)

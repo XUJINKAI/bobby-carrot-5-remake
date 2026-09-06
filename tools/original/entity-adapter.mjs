@@ -244,7 +244,12 @@ export function adaptLegacyObject(object) {
     type === LegacyObject.DRAGON_ANIM_1 ||
     type === LegacyObject.DRAGON_ANIM_2
   ) {
-    return [entity(EntityTypeId.DRAGON, x, y, copiedFields(object))];
+    return [
+      entity(EntityTypeId.DRAGON, x + 1, y, {
+        ...copiedFields(object),
+        direction: "left",
+      }),
+    ];
   }
   if (type === LegacyObject.BEAVER_BASE) {
     return [entity(EntityTypeId.BEAVER, x, y, copiedFields(object))];

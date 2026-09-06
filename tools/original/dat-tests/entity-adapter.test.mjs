@@ -7,6 +7,7 @@ import {
   adaptLegacyTerrain,
   mowedGroundAt,
 } from "../entity-adapter.mjs";
+import { reverseEntityMap } from "../entity-reverse-adapter.mjs";
 import { LegacyObject, LegacyTerrain } from "../dat/semantic-ids.mjs";
 import { decodeDatTerrain, encodeDatTerrain } from "../dat/mapping.mjs";
 
@@ -144,7 +145,7 @@ test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty 
 test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
   assert.deepEqual(
     adaptLegacyObject({ type: LegacyObject.DRAGON_HEAD_BASE, x: 2, y: 3 }),
-    [{ type: EntityTypeId.DRAGON, x: 2, y: 3 }],
+    [{ type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" }],
   );
   assert.deepEqual(
     adaptLegacyObject({ type: LegacyObject.DRAGON_TAIL, x: 4, y: 3 }),
@@ -160,6 +161,50 @@ test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
         state: { meltStage: 2 },
       },
     ],
+  );
+});
+
+test("Dragon canonical body anchor round-trips to original head coordinate", () => {
+  const baseEntities = [
+    { type: EntityTypeId.GROUND_A, x: 0, y: 0 },
+    { type: EntityTypeId.GROUND_A, x: 1, y: 0 },
+    { type: EntityTypeId.GROUND_A, x: 2, y: 0 },
+    { type: EntityTypeId.START, x: 3, y: 0 },
+    { type: EntityTypeId.BOBBY, x: 3, y: 0, direction: "down" },
+    { type: EntityTypeId.GROUND_A, x: 4, y: 0 },
+  ];
+  const map = {
+    schemaVersion: 1,
+    width: 5,
+    height: 1,
+    entities: [
+      ...baseEntities,
+      { type: EntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
+    ],
+  };
+  const reversed = reverseEntityMap(map);
+  assert.deepEqual(
+    reversed.objects.filter((object) => object.type === LegacyObject.DRAGON_HEAD_BASE),
+    [{ type: LegacyObject.DRAGON_HEAD_BASE, x: 1, y: 0 }],
+  );
+  assert.deepEqual(
+    adaptLegacyMap(reversed).entities.find(
+      (entity) => entity.type === EntityTypeId.DRAGON,
+    ),
+    { type: EntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
+  );
+
+  assert.throws(
+    () =>
+      reverseEntityMap({
+        ...map,
+        entities: map.entities.map((entity) =>
+          entity.type === EntityTypeId.DRAGON
+            ? { ...entity, direction: "right" }
+            : entity,
+        ),
+      }),
+    /Dragon 只支持 left direction/,
   );
 });
 

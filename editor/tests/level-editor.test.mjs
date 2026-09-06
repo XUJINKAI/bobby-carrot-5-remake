@@ -87,9 +87,9 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
     ),
   };
   assert.deepEqual(entityCells(preview, ref), [
-    { x: 3, y: 3, role: "head" },
-    { x: 4, y: 3, role: "body" },
-    { x: 5, y: 3, role: "tail" },
+    { x: 2, y: 3, role: "head" },
+    { x: 3, y: 3, role: "body" },
+    { x: 4, y: 3, role: "tail" },
   ]);
   assert.equal(
     fromLevelMap(map).entities.filter(
@@ -111,7 +111,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
     type: EntityTypeId.DRAGON,
-    x: 6,
+    x: 5,
     y: 3,
     direction: "right",
   });
@@ -134,7 +134,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
     type: EntityTypeId.DRAGON,
-    x: 4,
+    x: 5,
     y: 3,
     direction: "left",
   });
@@ -327,10 +327,10 @@ test("single-cell Inspector exposes every layer top-first", () => {
     builtinEditorDefinition,
   );
   assert.equal(model.mode, "cell");
-  assert.deepEqual(
-    model.layers.slice(0, 2).map((layer) => layer.entity.type),
-    [EntityTypeId.CARROT, EntityTypeId.PORTAL],
-  );
+  assert.deepEqual(model.layers.slice(0, 2).map((layer) => layer.entity.type), [
+    EntityTypeId.CARROT,
+    EntityTypeId.PORTAL,
+  ]);
 });
 
 test("multi-cell Inspector groups same types and prioritizes editable groups", () => {

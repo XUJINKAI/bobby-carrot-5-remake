@@ -26,14 +26,14 @@ function dragonLayers(direction) {
   }));
 }
 
-test("Dragon left uses source art and right mirrors every footprint tile", () => {
+test("Dragon left/right mirror roles around the same body anchor", () => {
   const left = dragonLayers("left");
   assert.deepEqual(
     left.map((item) => [item.role, item.x, item.layer.flipX ?? false]),
     [
-      ["head", 2, false],
-      ["body", 3, false],
-      ["tail", 4, false],
+      ["head", 1, false],
+      ["body", 2, false],
+      ["tail", 3, false],
     ],
   );
 
@@ -41,9 +41,14 @@ test("Dragon left uses source art and right mirrors every footprint tile", () =>
   assert.deepEqual(
     right.map((item) => [item.role, item.x, item.layer.flipX ?? false]),
     [
-      ["head", 2, true],
-      ["body", 1, true],
-      ["tail", 0, true],
+      ["head", 3, true],
+      ["body", 2, true],
+      ["tail", 1, true],
     ],
+  );
+
+  assert.deepEqual(
+    left.map((item) => item.x).sort(),
+    right.map((item) => item.x).sort(),
   );
 });
