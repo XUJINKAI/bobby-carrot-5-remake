@@ -1,16 +1,20 @@
-import type { Direction, EntityState, LevelEntity } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type { GlobalState } from "../GlobalState.js";
 import type {
   RuntimeActionCancelReason,
   RuntimeActionId,
   RuntimeActionSpec,
 } from "../action/RuntimeAction.js";
-import type { EntityId } from "../entity/EntityInstance.js";
+import type {
+  EntityId,
+  EntitySpawnSpec,
+  EntityState,
+} from "../entity/EntityInstance.js";
 import type { WorldEvent } from "../WorldTypes.js";
 import type { BehaviorCommand } from "./Behavior.js";
 
 export interface WorldCommandApi {
-  spawn(entity: LevelEntity): void;
+  spawn(entity: EntitySpawnSpec): void;
   destroy(entityId: EntityId): void;
   move(entityId: EntityId, x: number, y: number): void;
   setDirection(entityId: EntityId, direction: Direction): void;
@@ -32,7 +36,7 @@ export interface WorldCommandApi {
 export class CommandQueue implements WorldCommandApi {
   private readonly commands: BehaviorCommand[] = [];
 
-  spawn(entity: LevelEntity): void {
+  spawn(entity: EntitySpawnSpec): void {
     this.commands.push({ type: "spawn", entity: structuredClone(entity) });
   }
 
