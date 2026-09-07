@@ -27,8 +27,8 @@ if (group === "original") {
   else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
 } else if (group === "schema") {
   if (action === "examples") {
-    // Schema 示例只依赖 Model，保持生成命令快速且职责单一。
-    run(tscCommand(), ["-b", "model", "--force"]);
+    // Storage 示例通过 Adventure 的正式 parser 生成，避免手写镜像漂移。
+    run(tscCommand(), ["-b", "model", "adventure", "--force"]);
     run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
