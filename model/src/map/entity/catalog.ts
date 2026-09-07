@@ -100,7 +100,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ),
   defineEntity(MapEntityTypeId.SNOW),
   defineEntity(MapEntityTypeId.FENCE, [
-    enumField("variant", [1, 2, 3, 4, 5, 6], 1, true),
+    enumField("variant", [1, 2, 3, 4, 5, 6], undefined, true),
   ]),
 
   defineEntity(MapEntityTypeId.CARROT),

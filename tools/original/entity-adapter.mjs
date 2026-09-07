@@ -125,8 +125,8 @@ export function adaptLegacyMap(map, options = {}) {
   const objectiveType = sourceObjects.some(
     (object) => object.type === LegacyObject.CARROT,
   )
-    ? EntityTypeId.CARROT
-    : EntityTypeId.EGG_NEST_EMPTY;
+    ? MapEntityTypeId.CARROT
+    : MapEntityTypeId.EGG_NEST;
   const composites = collapseCompositeTerrain(map);
 
   for (let y = 0; y < map.height; y += 1) {
