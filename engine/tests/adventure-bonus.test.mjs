@@ -4,13 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
-const bobby = (x, y, state) => ({
-  type: EntityTypeId.BOBBY,
-  x,
-  y,
-  direction: "right",
-  ...(state ? { state } : {}),
-});
+const bobby = (x, y) => ({ type: EntityTypeId.BOBBY, x, y });
 
 function corridor(extra, rules, bobbyState) {
   return {
@@ -23,7 +17,7 @@ function corridor(extra, rules, bobbyState) {
       ground(1, 0),
       ground(2, 0),
       ground(3, 0),
-      bobby(0, 0, bobbyState),
+      bobby(0, 0),
       ...extra,
     ],
   };
@@ -74,7 +68,7 @@ test("bonus beaver grants one trial key, then sells temporary keys for three coi
       type: EntityTypeId.BEAVER,
       x: 1,
       y: 0,
-      properties: { interaction: "bonus-key-vendor" },
+      interaction: "bonus-key-vendor",
     },
   ]);
   const first = new World(map, { economy: { bonusCoins: 3 } });
@@ -110,13 +104,14 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
           type: EntityTypeId.LOCK,
           x: 1,
           y: 0,
-          properties: { deathCountdownSeconds: 1 },
+          deathCountdownSeconds: 1,
         },
       ],
       undefined,
       { temporaryKey: true },
     ),
   );
+  actor(world).state = { temporaryKey: true };
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.temporaryKey, false);
