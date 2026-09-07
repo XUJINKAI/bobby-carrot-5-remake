@@ -1,15 +1,15 @@
 import {
-  resolveEntityVisualPreview,
-  type EntityVisualPreviewSource,
+  resolveLevelEntityVisualPreview,
+  type LevelEntityVisualPreviewSource,
   type ImageManager,
 } from "@bobby/engine";
 
 export function entityVisualStyle(
   images: ImageManager,
-  entity: EntityVisualPreviewSource,
+  entity: LevelEntityVisualPreviewSource,
   size: number,
 ): Record<string, string> | null {
-  const layer = resolveEntityVisualPreview(entity)?.layers[0];
+  const layer = resolveLevelEntityVisualPreview(entity)?.layers[0];
   if (!layer) return null;
   if (layer.kind === "atlas") {
     const url = images.source(images.atlasId);
