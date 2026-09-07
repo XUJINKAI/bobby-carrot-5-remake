@@ -6,6 +6,12 @@ import {
 } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 
+const RUNTIME_VISUALS_BY_TS = new Map([
+  ["14,8", { type: "dragon", label: "Dragon head 基础帧" }],
+  ["15,9", { type: "dragon", label: "Dragon head 吐火第一帧" }],
+  ["15,10", { type: "dragon", label: "Dragon head 吐火第二帧" }],
+]);
+
 export function parseTsAssetQuery(value) {
   const input = String(value ?? "").trim().toLowerCase();
   const match = /^(?:ts[-(](\d+)[-,](\d+)\)?|surface-(\d+)-(\d+))$/.exec(input);
@@ -39,14 +45,27 @@ export function findOriginalTsUsage(catalog, readMap, coordinate) {
         fields: {},
       };
   const entries = [...catalog.maps, ...catalog.specialScenes];
+  const runtimeVisual = RUNTIME_VISUALS_BY_TS.get(
+    `${coordinate.row},${coordinate.column}`,
+  );
   const maps = [];
   let occurrenceCount = 0;
 
   for (const entry of entries) {
     const document = readMap(entry);
-    const occurrences = document.entities
+    const directOccurrences = document.entities
       .filter((entity) => matchesSelector(entity, selector))
       .map((entity) => ({ x: entity.x, y: entity.y }));
+    const runtimeOccurrences = runtimeVisual
+      ? document.entities
+          .filter((entity) => entity.type === runtimeVisual.type)
+          .map((entity) => ({
+            x: entity.x,
+            y: entity.y,
+            usage: runtimeVisual.label,
+          }))
+      : [];
+    const occurrences = [...directOccurrences, ...runtimeOccurrences];
     if (occurrences.length === 0) continue;
     occurrenceCount += occurrences.length;
     maps.push({
@@ -67,6 +86,7 @@ export function findOriginalTsUsage(catalog, readMap, coordinate) {
       label: `ts-${coordinate.row}-${coordinate.column}`,
     },
     selector,
+    ...(runtimeVisual ? { runtimeVisual } : {}),
     mapCount: maps.length,
     occurrenceCount,
     maps,
@@ -147,11 +167,18 @@ export function formatOriginalTsUsage(result) {
     : result.selector.type;
   const lines = [
     `${result.query.label} → ${selectorText}`,
+    ...(result.runtimeVisual
+      ? [
+          `Runtime 视觉：${result.runtimeVisual.type}（${result.runtimeVisual.label}）`,
+        ]
+      : []),
     `引用：${result.mapCount} 张地图，${result.occurrenceCount} 个 Entity anchor`,
   ];
   for (const map of result.maps) {
     const positions = map.occurrences
-      .map(({ x, y }) => `(${x},${y})`)
+      .map(({ x, y, usage }) =>
+        usage ? `(${x},${y}; ${usage})` : `(${x},${y})`,
+      )
       .join(" ");
     const source = map.source;
     const provenance = source

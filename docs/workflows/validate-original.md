@@ -17,6 +17,8 @@ npm run original:usage -- ts-4-13
 - Base / UP release、DAT 包和 one-based record slot；
 - 可直接打开的 Explore 路径。
 
+Dragon 吐火帧等 runtime visual 也会反查到使用该视觉的 semantic Entity 和地图；同一 atlas 单元被直接当作地形摆放时，两类引用会同时列出。
+
 需要给脚本继续处理时使用 JSON 输出：
 
 ```bash

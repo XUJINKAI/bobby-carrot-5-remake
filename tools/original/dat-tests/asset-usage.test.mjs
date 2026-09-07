@@ -71,6 +71,37 @@ test("已归类素材通过 semantic type 与 atlas variant 精确反查", () =>
   assert.deepEqual(result.maps[0].occurrences, [{ x: 1, y: 1 }]);
 });
 
+test("Dragon 吐火帧反查包含 runtime visual 与直接地形引用", () => {
+  const catalog = {
+    maps: [{ id: "1-1" }, { id: "15-2" }],
+    specialScenes: [],
+  };
+  const documents = {
+    "1-1": {
+      entities: [{ type: "dragon", x: 4, y: 5, direction: "left" }],
+    },
+    "15-2": {
+      entities: [{ type: "surface-15-10", x: 8, y: 0 }],
+    },
+  };
+  const result = findOriginalTsUsage(
+    catalog,
+    (entry) => documents[entry.id],
+    { row: 15, column: 10 },
+  );
+
+  assert.deepEqual(result.runtimeVisual, {
+    type: "dragon",
+    label: "Dragon head 吐火第二帧",
+  });
+  assert.equal(result.mapCount, 2);
+  assert.equal(result.occurrenceCount, 2);
+  assert.deepEqual(result.maps[0].occurrences, [
+    { x: 4, y: 5, usage: "Dragon head 吐火第二帧" },
+  ]);
+  assert.deepEqual(result.maps[1].occurrences, [{ x: 8, y: 0 }]);
+});
+
 test("临时素材总表给出可继续反查的坐标身份", () => {
   assert.equal(
     formatOriginalTemporarySurfaceUsage({
