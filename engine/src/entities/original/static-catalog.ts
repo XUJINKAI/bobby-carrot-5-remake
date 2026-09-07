@@ -105,7 +105,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     cell(15, 9),
     ["walkable", "pickup"],
   ),
-  surface(EntityTypeId.WATER, "Water", cell(5, 5), ["water", "bean-growth-space"]),
   surface(EntityTypeId.WATER_ANIMATED, "Animated Water", cell(6, 5), ["water", "bean-growth-space"]),
   surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water", "waterfall", "bean-growth-space"]),
   surface(EntityTypeId.WATER_VARIANT_2, "Water Variant 2", cell(12, 5), ["water", "waterfall", "bean-growth-space"]),
