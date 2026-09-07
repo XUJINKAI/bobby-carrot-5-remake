@@ -3,8 +3,6 @@ name: schema-editor-migrate
 on:
   push:
     branches: [schema/entity-map-contract]
-    paths:
-      - .github/workflows/schema-editor-migrate.yml
 
 jobs:
   diagnose:
