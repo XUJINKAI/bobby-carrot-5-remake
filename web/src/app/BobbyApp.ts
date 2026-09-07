@@ -296,12 +296,15 @@ export class BobbyApp {
       const currentIndex = collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
       const exploreNextMapId =
         currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
+      const exploreMapKind =
+        currentIndex >= 0 ? collection?.maps[currentIndex]?.kind : undefined;
       this.controller = await renderGamePage({
         ...context,
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
+        ...(exploreMapKind ? { exploreMapKind } : {}),
         mode: "explore",
       });
     } catch {

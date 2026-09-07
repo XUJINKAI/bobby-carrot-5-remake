@@ -35,6 +35,7 @@ import {
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
+import { resolveGameMusic } from "./gameMusic.js";
 import {
   editorMapPath,
   exploreCollectionPath,
@@ -82,6 +83,7 @@ export interface GamePageContext {
   identity: GameIdentity;
   mapMeta?: MapMeta;
   exploreNextMapId?: string;
+  exploreMapKind?: string;
   adventureChapter?: AdventureIndexChapter;
   adventureLevel?: AdventureIndexLevel;
   adventureScene?: AdventureIndexSpecialScene;
@@ -105,6 +107,7 @@ export async function renderGamePage(
     identity,
     mapMeta,
     exploreNextMapId,
+    exploreMapKind,
     adventureChapter,
     adventureLevel,
     adventureScene,
@@ -204,16 +207,14 @@ export async function renderGamePage(
     },
   });
   const { game, input } = session;
-  const isBonus = adventureLevel?.id.includes("-bonus-") ?? false;
-  if (level.music === "none") audio.stopMusic();
-  else
-    audio.playMusic(
-      level.music && level.music !== "random"
-        ? level.music
-        : isBonus
-          ? "bonus"
-          : "ingame1",
-    );
+  const isBonus = adventureLevel?.id.includes("-bonus-") ??
+    exploreMapKind === "bonus";
+  const music = resolveGameMusic(level.music, {
+    bonus: isBonus,
+    specialScene: adventureScene !== undefined,
+  });
+  if (music) audio.playMusic(music);
+  else audio.stopMusic();
 
   let levelStartedAt = performance.now();
   let visibleResult: "death" | "complete" | null = null;
