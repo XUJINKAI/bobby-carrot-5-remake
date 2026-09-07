@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { entityMapDefinition } from "@bobby/model";
 import { root, run } from "../lib/fs.mjs";
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
@@ -9,7 +10,7 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 for (const file of [
-  "custom-maps/loma-pushbox/01-01.json",
+  "custom-maps/loma-pushbox/01/01-01.json",
   "custom-maps/novoban-pushbox/01.json",
 ])
   run("git", ["check-ignore", "--quiet", file]);
@@ -28,7 +29,7 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
   const collection = readJson(relative);
   assertSchemaV1(collection, relative);
   if (
-    collection.id !== summary.id ||
+    Object.hasOwn(collection, "id") ||
     !cardSizes.has(collection.cardSize) ||
     !Array.isArray(collection.filters) ||
     !Array.isArray(collection.chapters) ||
@@ -36,11 +37,11 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
   )
     throw new Error(`${relative}: collection 合同不完整`);
   for (const map of collection.maps) {
-    const mapRelative = `assets/maps/${collection.id}/${map.id}.json`;
+    const mapRelative = `assets/maps/${summary.id}/${map.id}.json`;
     const document = readJson(mapRelative);
-    assertMapDocument(document, mapRelative, map.id);
+    assertMapDocument(document, mapRelative);
   }
-  return collection;
+  return { id: summary.id, ...collection };
 });
 
 const original = collectionIndexes.find((collection) => collection.id === "original");
@@ -91,12 +92,6 @@ for (const map of original.maps) {
   assertOriginalStartContract(document, relative);
   assertOriginalWinRule(document, relative);
 }
-assertNext("1-3", "1-bonus-1");
-assertNext("1-bonus-1", "1-4");
-assertNext("1-6", "1-bonus-2");
-assertNext("1-bonus-2", "1-7");
-assertNext("1-10", "2-1");
-
 const adventure = readJson("assets/adventure/index.json");
 assertSchemaV1(adventure, "assets/adventure/index.json");
 if (adventure.chapters.length !== 40)
@@ -117,7 +112,7 @@ for (const scene of adventure.specialScenes) {
   if (!ref) throw new Error(`无效 Adventure Special Scene map ref：${scene.map}`);
   const relative = `assets/maps/${ref.collection}/${ref.id}.json`;
   const document = readJson(relative);
-  assertMapDocument(document, relative, ref.id);
+  assertMapDocument(document, relative);
   if (ref.collection === "original") assertOriginalStartContract(document, relative);
 }
 
@@ -228,7 +223,7 @@ function assertPushboxWinRule(document, relative) {
   if (document.entities.some((entity) => entity.type === "start"))
     throw new Error(`${relative}: Sokoban 不使用 Start surface`);
   const pushables = document.entities.filter((entity) =>
-    entity.traits?.includes("pushable"),
+    entity.type === "pushable-rock",
   ).length;
   const goals = document.entities.filter((entity) => entity.type === "push-goal").length;
   if (document.entities.some((entity) => entity.type === "exit"))
@@ -236,22 +231,15 @@ function assertPushboxWinRule(document, relative) {
   return { pushables, goals };
 }
 
-function assertNext(id, expected) {
-  const document = readJson(`assets/maps/original/${id}.json`);
-  if (document.meta.next !== expected)
-    throw new Error(`${id}.meta.next 应为 ${expected}，实际 ${document.meta.next}`);
-}
-
 function assertSchemaV1(value, relative) {
   if (!value || typeof value !== "object" || value.schemaVersion !== 1)
     throw new Error(`${relative}: schemaVersion 必须严格为 1`);
 }
 
-function assertMapDocument(document, relative, expectedId) {
+function assertMapDocument(document, relative) {
   assertSchemaV1(document, relative);
   if (
     !document.meta ||
-    document.meta.id !== expectedId ||
     typeof document.meta.name !== "string" ||
     !Number.isInteger(document.width) ||
     !Number.isInteger(document.height) ||
@@ -260,10 +248,50 @@ function assertMapDocument(document, relative, expectedId) {
     !Array.isArray(document.entities)
   )
     throw new Error(`${relative}: MapDocument Entity 合同不完整`);
+  for (const obsolete of ["id", "next"])
+    if (Object.hasOwn(document.meta, obsolete))
+      throw new Error(`${relative}: meta 不允许持久化资源字段 ${obsolete}`);
+  for (const obsolete of ["name", "author", "description", "chapter"])
+    if (Object.hasOwn(document, obsolete))
+      throw new Error(`${relative}: 文档 metadata 必须放在 meta，不能使用顶层 ${obsolete}`);
   for (const obsolete of ["terrain", "objects", "playerStart"])
     if (Object.hasOwn(document, obsolete))
       throw new Error(`${relative}: 不允许持久化旧字段 ${obsolete}`);
   assertEntityBounds(document, relative);
+  assertEntityContracts(document, relative);
+}
+
+function assertEntityContracts(document, relative) {
+  for (const [index, entity] of document.entities.entries()) {
+    const definition = entityMapDefinition(entity.type);
+    if (!definition)
+      throw new Error(`${relative}: entities[${index}] 使用未知 map type ${entity.type}`);
+    const fields = new Map(definition.fields.map((field) => [field.key, field]));
+    for (const key of Object.keys(entity)) {
+      if (["type", "x", "y", "stackOrder"].includes(key) || fields.has(key))
+        continue;
+      throw new Error(`${relative}: entities[${index}] 不允许字段 ${key}`);
+    }
+    for (const field of fields.values()) {
+      const value = entity[field.key];
+      if (field.required && value === undefined)
+        throw new Error(`${relative}: entities[${index}] 缺少必填字段 ${field.key}`);
+      if (value !== undefined && !fieldAccepts(field, value))
+        throw new Error(`${relative}: entities[${index}].${field.key} 不符合 ${field.kind} 合同`);
+    }
+  }
+}
+
+function fieldAccepts(field, value) {
+  if (field.kind === "boolean") return typeof value === "boolean";
+  if (field.kind === "string") return typeof value === "string";
+  if (field.kind === "enum") return field.values.includes(value);
+  if (field.kind === "integer" && !Number.isInteger(value)) return false;
+  if (field.kind === "number" && typeof value !== "number") return false;
+  if (field.kind === "integer" || field.kind === "number")
+    return (field.min === undefined || value >= field.min) &&
+      (field.max === undefined || value <= field.max);
+  return false;
 }
 
 function assertEntityBounds(document, relative) {
@@ -308,7 +336,7 @@ function assertOriginalWinRule(document, relative) {
   } else if (types.has("carrot")) {
     const carrots = { type: "collect-all", target: "carrot" };
     expected = exit ? { type: "all", conditions: [carrots, exit] } : carrots;
-  } else if (types.has("egg-nest-empty") || types.has("egg-nest-filled")) {
+  } else if (types.has("egg-nest")) {
     const eggs = {
       type: "fill-all",
       target: "egg-nest",

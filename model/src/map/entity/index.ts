@@ -1,8 +1,9 @@
 export { EntityTypeId } from "./implementation-ids.js";
-export { MapEntityTypeId } from "./ids.js";
+export { MapEntityTypeId, coordinateObjectType } from "./ids.js";
 export type {
   NamedMapEntityType,
   CoordinateSurfaceEntityType,
+  CoordinateObjectEntityType,
   MapEntityType,
 } from "./ids.js";
 
