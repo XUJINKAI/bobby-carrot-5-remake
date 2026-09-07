@@ -217,35 +217,6 @@ export const cloud: EntityModule = originalModule(
   [{ behavior: movingPlatformBehavior }],
 );
 
-const cloudParkingDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.CLOUD_PARKING,
-  traits: [],
-  stackOrder: CONTENT_STACK_ORDER,
-  state: [
-    {
-      key: "color",
-      kind: "enum",
-      label: "颜色",
-      default: "red",
-      options: [{ value: "red" }, { value: "purple" }, { value: "green" }],
-    },
-  ],
-  presentation: { name: "Cloud Parking" },
-};
-
-export const cloudParking: EntityModule = originalModule(
-  cloudParkingDefinition,
-  atlasVisual(cloudParkingDefinition, (context) =>
-    objectCell(
-      context.entity.state?.color === "purple"
-        ? 40
-        : context.entity.state?.color === "green"
-          ? 41
-          : 39,
-    ),
-  ),
-);
-
 function movingEntityModule(
   type: EntityType,
   name: string,
