@@ -2,6 +2,30 @@
 
 当字节码分析还不足以确认机关细节时，用同一张最小地图分别运行 bc5r 与原版 Java ME Engine。
 
+## 反查 `ts.png` 素材引用
+
+对素材语义或命名不确定时，可以按 atlas 行列坐标反查正式原版地图：
+
+```bash
+npm run original:usage -- ts-4-13
+```
+
+命令也接受 `ts(4,13)` 和临时 Entity 名 `surface-4-13`。输出包含：
+
+- canonical Entity selector；
+- 玩家关卡 ID 和地图内 `(x,y)` anchor；
+- Base / UP release、DAT 包和 one-based record slot；
+- 可直接打开的 Explore 路径。
+
+需要给脚本继续处理时使用 JSON 输出：
+
+```bash
+npm run original:usage -- ts-4-13 --json
+```
+
+反查读取 `original/adapted/` 生成物。缺少生成物时先执行 `npm run assets`。
+未确认语义的 `ts.png` 单元使用 `surface-<row>-<column>` 作为临时 Entity 名；已归类素材通过 semantic type 与 `ts-<row>-<column>` variant 精确匹配。复合素材返回 semantic Entity 的持久化 anchor。
+
 ## 1. 做最小地图
 
 在 `/edit` 创建地图，尽量只保留要验证的机关、Bobby 起点、必要目标/出口。先用 Editor Play Test 记录 bc5r 行为，然后导出 JSON。

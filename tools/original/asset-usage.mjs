@@ -1,0 +1,134 @@
+import fs from "node:fs";
+import path from "node:path";
+import {
+  coordinateSurfaceType,
+  surfaceMappingForTs,
+} from "@bobby/model";
+import { root } from "../lib/fs.mjs";
+
+export function parseTsAssetQuery(value) {
+  const input = String(value ?? "").trim().toLowerCase();
+  const match = /^(?:ts[-(](\d+)[-,](\d+)\)?|surface-(\d+)-(\d+))$/.exec(input);
+  if (!match)
+    throw new Error(
+      "素材坐标格式应为 ts-<row>-<column>、ts(<row>,<column>) 或 surface-<row>-<column>",
+    );
+  const row = Number(match[1] ?? match[3]);
+  const column = Number(match[2] ?? match[4]);
+  if (
+    !Number.isInteger(row) ||
+    !Number.isInteger(column) ||
+    row < 1 ||
+    row > 16 ||
+    column < 1 ||
+    column > 16
+  )
+    throw new Error(`ts.png 素材坐标超出 1~16：${row},${column}`);
+  return { row, column };
+}
+
+export function findOriginalTsUsage(catalog, readMap, coordinate) {
+  const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
+  const selector = mapping
+    ? {
+        type: mapping.type,
+        fields: mapping.fields ?? {},
+        composite: mapping.composite === true,
+      }
+    : {
+        type: coordinateSurfaceType(coordinate.row, coordinate.column),
+        fields: {},
+        composite: false,
+      };
+  const entries = [...catalog.maps, ...catalog.specialScenes];
+  const maps = [];
+  let occurrenceCount = 0;
+
+  for (const entry of entries) {
+    const document = readMap(entry);
+    const occurrences = document.entities
+      .filter((entity) => matchesSelector(entity, selector))
+      .map((entity) => ({ x: entity.x, y: entity.y }));
+    if (occurrences.length === 0) continue;
+    occurrenceCount += occurrences.length;
+    maps.push({
+      id: entry.id,
+      name: document.meta?.name ?? entry.id,
+      ...(entry.chapter ? { chapter: entry.chapter } : {}),
+      ...(entry.kind ? { kind: entry.kind } : { kind: "special-scene" }),
+      source: entry.source,
+      occurrences,
+    });
+  }
+
+  return {
+    query: {
+      atlas: "ts.png",
+      row: coordinate.row,
+      column: coordinate.column,
+      label: `ts-${coordinate.row}-${coordinate.column}`,
+    },
+    selector,
+    mapCount: maps.length,
+    occurrenceCount,
+    maps,
+  };
+}
+
+export function loadOriginalTsUsage(value) {
+  const adaptedRoot = path.join(root, "original/adapted");
+  const catalogPath = path.join(adaptedRoot, "catalog.json");
+  if (!fs.existsSync(catalogPath))
+    throw new Error("缺少 Original Adapter 生成物；请先执行 npm run assets");
+  const catalog = readJson(catalogPath);
+  if (
+    catalog.schemaVersion !== 1 ||
+    !Array.isArray(catalog.maps) ||
+    !Array.isArray(catalog.specialScenes)
+  )
+    throw new Error("Original adapted catalog 合同无效；请重新执行 npm run assets");
+  return findOriginalTsUsage(
+    catalog,
+    (entry) => readJson(path.join(adaptedRoot, entry.path)),
+    parseTsAssetQuery(value),
+  );
+}
+
+export function formatOriginalTsUsage(result) {
+  const fieldText = Object.entries(result.selector.fields)
+    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+    .join(", ");
+  const selectorText = fieldText
+    ? `${result.selector.type} (${fieldText})`
+    : result.selector.type;
+  const lines = [
+    `${result.query.label} → ${selectorText}`,
+    `引用：${result.mapCount} 张地图，${result.occurrenceCount} 个 Entity anchor`,
+  ];
+  if (result.selector.composite)
+    lines.push("说明：这是复合素材，坐标显示 semantic Entity 的持久化 anchor。");
+  for (const map of result.maps) {
+    const positions = map.occurrences
+      .map(({ x, y }) => `(${x},${y})`)
+      .join(" ");
+    const source = map.source;
+    const provenance = source
+      ? `${source.release}/${source.packFile}.dat#${source.levelIndex}`
+      : "未知来源";
+    lines.push(
+      `${map.id} [${map.kind}] ${positions}  ${provenance}  /explore/play/original/${map.id}`,
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function matchesSelector(entity, selector) {
+  if (entity.type !== selector.type) return false;
+  return Object.entries(selector.fields).every(
+    ([key, value]) => entity[key] === value,
+  );
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}

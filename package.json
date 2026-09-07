@@ -10,6 +10,7 @@
     "build": "node tools/cli.mjs build",
     "preview": "node tools/cli.mjs preview",
     "patch": "node tools/cli.mjs original patch",
+    "original:usage": "node tools/cli.mjs original usage",
     "schema:examples": "node tools/cli.mjs schema examples",
     "test": "node tools/cli.mjs test",
     "verify": "node tools/cli.mjs verify",

@@ -22,12 +22,13 @@ if (group === "original") {
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "decode"]);
     run(process.execPath, [fileURLToPath(import.meta.url), "original", "adapt"]);
   } else if (action === "inspect") run(process.execPath, ["tools/original/inspect.mjs", ...process.argv.slice(3)]);
+  else if (action === "usage") run(process.execPath, ["tools/original/asset-usage-cli.mjs", ...process.argv.slice(4)]);
   else if (action === "patch") run(process.execPath, ["tools/original/patch-cli.mjs", ...process.argv.slice(3)]);
   else if (action === "research") run(process.execPath, ["tools/original/research.mjs", ...process.argv.slice(3)]);
-  else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|patch|research");
+  else throw new Error("用法：node tools/cli.mjs original extract|decode|adapt|prepare|inspect|usage|patch|research");
 } else if (group === "schema") {
   if (action === "examples") {
-    // Schema review phase intentionally builds only model; the rest of the repo still consumes the old LevelEntity shape.
+    // Schema 示例只依赖 Model，保持生成命令快速且职责单一。
     run(tscCommand(), ["-b", "model", "--force"]);
     run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
