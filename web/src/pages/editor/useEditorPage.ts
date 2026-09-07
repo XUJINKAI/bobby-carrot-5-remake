@@ -59,7 +59,7 @@ import {
   type LevelEntity,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
-import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
+import { storeEditorAutosave } from "../../storage/editorDraftStorage.js";
 
 export type EditorLeftPanel = "palette" | "surface";
 
@@ -89,7 +89,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
-    storeEditorDraft(next.level as EditorMap);
+    storeEditorAutosave(next.level as EditorMap);
   });
   onUnmounted(unsubscribe);
 
