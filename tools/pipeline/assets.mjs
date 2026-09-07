@@ -153,7 +153,7 @@ function originalFilters() {
         [
           "color-switch",
           "彩色开关",
-          entityIcon("color-yellow-switch", { state: { pressed: false } }),
+          entityIcon("color-switch", { color: "yellow", pressed: false }),
         ],
         ["mower", "割草机", entityIcon("mower")],
         ["beanstalk", "魔豆藤", entityIcon("beanstalk-tip")],

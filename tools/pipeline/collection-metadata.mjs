@@ -33,11 +33,7 @@ const MECHANICS = [
   ["trap", (type) => type === "trap"],
   [
     "color-switch",
-    (type) =>
-      type === "color-yellow-switch" ||
-      type === "color-pink-switch" ||
-      type === "color-yellow-block" ||
-      type === "color-pink-block",
+    (type) => type === "color-switch" || type === "color-block",
   ],
   [
     "mower",
