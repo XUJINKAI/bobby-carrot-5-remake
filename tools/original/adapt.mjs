@@ -99,7 +99,6 @@ for (const release of sourceIndex.releases) {
         source,
         {
           name: id.toUpperCase(),
-          music: kind === "bonus" ? "bonus" : "ingame1",
         },
       );
       documents.set(id, document);
@@ -177,7 +176,6 @@ function buildSpecialScenes(index, target) {
       id,
       createMapDocument(source, {
         name: specialLabels[id] ?? id,
-        music: "title",
       }),
     );
     result.push({
@@ -194,11 +192,9 @@ function buildSpecialScenes(index, target) {
 function createMapDocument(source, meta) {
   const canonical = adaptDecodedMap(source);
   const win = deriveOriginalWinCondition(canonical);
-  const { music, ...mapMeta } = meta;
   return parseMapDocument({
     schemaVersion: 1,
-    meta: mapMeta,
-    ...(music ? { music } : {}),
+    meta,
     ...(win ? { rules: { win } } : {}),
     ...canonical,
   });

@@ -92,6 +92,7 @@ for (const map of original.maps) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
   assertOriginalStartContract(document, relative);
+  assertOriginalMusicContract(document, relative);
   assertOriginalWinRule(document, relative);
 }
 const adventure = readJson("assets/adventure/index.json");
@@ -115,7 +116,10 @@ for (const scene of adventure.specialScenes) {
   const relative = `assets/maps/${ref.collection}/${ref.id}.json`;
   const document = readJson(relative);
   assertMapDocument(document, relative);
-  if (ref.collection === "original") assertOriginalStartContract(document, relative);
+  if (ref.collection === "original") {
+    assertOriginalStartContract(document, relative);
+    assertOriginalMusicContract(document, relative);
+  }
 }
 
 for (const file of [
@@ -254,6 +258,11 @@ function assertOriginalStartContract(document, relative) {
     throw new Error(`${relative}: Original 必须恰好包含一个 Start surface 与一个 Bobby`);
   if (starts[0].x !== bobbies[0].x || starts[0].y !== bobbies[0].y)
     throw new Error(`${relative}: Original 初始 Bobby 必须与 Start surface 同格`);
+}
+
+function assertOriginalMusicContract(document, relative) {
+  if (Object.hasOwn(document, "music"))
+    throw new Error(`${relative}: Original MapDocument 不应持久化 music`);
 }
 
 function assertOriginalWinRule(document, relative) {
