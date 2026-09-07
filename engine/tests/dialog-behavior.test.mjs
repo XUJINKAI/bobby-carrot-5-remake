@@ -4,7 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import { createDialogBehavior } from "../dist/public.js";
 import { World } from "../dist/world/World.js";
 
-function dialogLevel(dialog) {
+function dialogLevel() {
   return {
     schemaVersion: 1,
     width: 2,
@@ -19,11 +19,20 @@ function dialogLevel(dialog) {
         type: EntityTypeId.SANDMAN,
         x: 1,
         y: 0,
-        direction: "down",
-        properties: { dialog },
+
       },
     ],
   };
+}
+
+function dialogWorld(dialog) {
+  const world = new World(dialogLevel());
+  const sandman = world.entities.all().find(
+    (entity) => entity.type === EntityTypeId.SANDMAN,
+  );
+  assert.ok(sandman);
+  sandman.state = { dialog };
+  return world;
 }
 
 function move(world, direction) {
@@ -41,8 +50,8 @@ function move(world, direction) {
   });
 }
 
-test("dialog trait emits a raw message directly from JSON", () => {
-  const world = new World(dialogLevel({ message: "hello world!" }));
+test("dialog behavior emits a raw runtime message", () => {
+  const world = dialogWorld({ message: "hello world!" });
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
   assert.equal(
@@ -64,9 +73,7 @@ test("dialog message-ref invokes its registered runtime initializer each time", 
     },
   );
   try {
-    const world = new World(
-      dialogLevel({ "message-ref": "sandman-dialog-test" }),
-    );
+    const world = dialogWorld({ "message-ref": "sandman-dialog-test" });
     assert.equal(
       move(world, "right").events.find((event) => event.type === "dialog")
         ?.text,
