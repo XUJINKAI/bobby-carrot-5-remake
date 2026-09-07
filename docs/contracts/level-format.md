@@ -68,6 +68,8 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 
 未完成最终语义命名的 `ts.png` 单元使用 `surface-<row>-<column>` 临时 type；已归类但仅有视觉差异的素材使用 `variant: "ts-<row>-<column>"`。两者都能直接反查 atlas 坐标，不把 DAT byte 当作坐标来源。
 
+Editor Surface 始终按单格持久化。月亮、圣诞树、雪人等视觉拼图由多个同类型、不同 `variant` 的单格 Entity 组成；它们不使用 footprint。Dragon 等 Palette Object 仍按下文的 multi-cell anchor 合同持久化。
+
 ### Bobby 与 Start
 
 Bobby 是普通 Entity，地图不使用 `playerStart`：

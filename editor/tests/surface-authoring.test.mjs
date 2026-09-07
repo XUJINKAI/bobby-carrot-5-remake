@@ -352,7 +352,7 @@ test("Waterfall Auto resolves vertical top middle bottom variants", () => {
   ]);
 });
 
-test("Cactus Auto stays cell-local while composite assets are deferred", () => {
+test("Cactus Auto stays cell-local", () => {
   const next = paintSurface(
     catalog,
     [{ x: 2, y: 1 }, { x: 2, y: 2 }],

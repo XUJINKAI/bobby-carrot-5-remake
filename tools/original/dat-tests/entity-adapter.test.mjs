@@ -277,8 +277,11 @@ test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
 });
 
 test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
-  assert.deepEqual(adaptLegacyTerrain("walkable-variant-01", 0, 0), [
+  assert.deepEqual(adaptLegacyTerrain("ts-7-1", 0, 0), [
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-7-1" },
+  ]);
+  assert.deepEqual(adaptLegacyTerrain("ts-4-13", 1, 0), [
+    { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
   ]);
   assert.deepEqual(
     adaptLegacyObject({ type: "object-variant-001", x: 0, y: 0 }),
@@ -287,18 +290,20 @@ test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
 });
 
 
-test("多格 surface source 在 Adapter 边界折叠为单一 canonical Entity", () => {
+test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", () => {
   const result = adaptLegacyMap({
     width: 3,
     height: 2,
     terrain: [
-      ["background-variant-075", "background-variant-076", "background-variant-077"],
+      ["ts-5-11", "ts-5-12", "ts-5-13"],
       [LegacyTerrain.START, LegacyTerrain.GROUND_A, LegacyTerrain.GROUND_A],
     ],
     objects: [],
   });
   assert.deepEqual(result.entities.filter((entity) => entity.type === MapEntityTypeId.MOON), [
-    { type: MapEntityTypeId.MOON, x: 0, y: 0 },
+    { type: MapEntityTypeId.MOON, x: 0, y: 0, variant: "ts-5-11" },
+    { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12" },
+    { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13" },
   ]);
   assert.equal(result.entities.some((entity) => entity.type.startsWith("surface-5-")), false);
 });

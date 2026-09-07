@@ -15,7 +15,7 @@ function documentWith(entities) {
 test("Map parser 接受 canonical Entity 和坐标型临时 Surface", () => {
   const document = documentWith([
     { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
-    { type: "surface-4-13", x: 1, y: 0 },
+    { type: "surface-14-10", x: 1, y: 0 },
     { type: "sandman", x: 1, y: 1, dialogue: "测试对白" },
   ]);
   assert.deepEqual(parseMapDocument(document), document);
@@ -52,13 +52,13 @@ test("Map parser 拒绝旧 Entity 别名、未知字段和错误字段值", () =
 
 test("LevelMap parser 校验 MapDocument 后只返回 gameplay 字段", () => {
   const document = documentWith([
-    { type: "surface-4-13", x: 1, y: 2 },
+    { type: "surface-14-10", x: 1, y: 2 },
   ]);
   assert.deepEqual(parseLevelMap(document), {
     schemaVersion: 1,
     width: 3,
     height: 3,
-    entities: [{ type: "surface-4-13", x: 1, y: 2 }],
+    entities: [{ type: "surface-14-10", x: 1, y: 2 }],
   });
 });
 
@@ -66,7 +66,7 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
   assert.throws(
     () =>
       parseMapDocument(
-        documentWith([{ type: "surface-4-13", x: 3, y: 0 }]),
+        documentWith([{ type: "surface-14-10", x: 3, y: 0 }]),
       ),
     /坐标.*超出/,
   );
@@ -82,4 +82,18 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     () => parseMapDocument({ ...documentWith([]), meta: { name: "" } }),
     /meta.name 必须为非空字符串/,
   );
+});
+
+test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () => {
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([{ type: "surface-4-13", x: 0, y: 0 }]),
+      ),
+    /未知 Entity type：surface-4-13/,
+  );
+  const document = documentWith([
+    { type: "tree", x: 0, y: 0, variant: "ts-4-13" },
+  ]);
+  assert.deepEqual(parseMapDocument(document), document);
 });

@@ -3,7 +3,6 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   SURFACE_SOURCE_MAPPINGS,
-  coordinateSurfaceType,
 } from "@bobby/model";
 import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
 
@@ -68,21 +67,8 @@ export function reverseEntityMap(map) {
   const cells = Array.from({ length: map.height }, () =>
     Array.from({ length: map.width }, () => []),
   );
-  for (const entity of map.entities) {
-    const composite = compositeSurfaceMapping(entity);
-    if (!composite) {
-      cells[entity.y][entity.x].push(entity);
-      continue;
-    }
-    const anchor = composite.sources[0];
-    for (const source of composite.sources) {
-      const x = entity.x + source.column - anchor.column;
-      const y = entity.y + source.row - anchor.row;
-      if (x < 0 || y < 0 || x >= map.width || y >= map.height)
-        throw new Error(`${entity.type} composite footprint 超出地图边界`);
-      cells[y][x].push({ type: coordinateSurfaceType(source.row, source.column), x, y });
-    }
-  }
+  for (const entity of map.entities)
+    cells[entity.y][entity.x].push(entity);
   const terrain = cells.map((row, y) =>
     row.map((entities, x) => terrainAt(entities, x, y)),
   );
@@ -91,9 +77,7 @@ export function reverseEntityMap(map) {
     width: map.width,
     height: map.height,
     terrain,
-    objects: map.entities.flatMap((entity) =>
-      compositeSurfaceMapping(entity) ? [] : objectFor(entity),
-    ),
+    objects: map.entities.flatMap(objectFor),
   };
 }
 
@@ -221,6 +205,7 @@ function legacyTerrainFor(entity) {
   }
   if (
     directTerrainTypes.has(type) ||
+    /^ts-\d+-\d+$/.test(type) ||
     /^walkable-variant-\d{2}$/.test(type) ||
     /^background-variant-\d{3}$/.test(type)
   )
@@ -241,19 +226,12 @@ function legacySurfaceTerrain(entity) {
     if (coordinate) {
       mapping = {
         type: entity.type,
-        sources: [
-          { row: Number(coordinate[1]), column: Number(coordinate[2]) },
-        ],
+        source: { row: Number(coordinate[1]), column: Number(coordinate[2]) },
       };
     }
   }
   if (!mapping) return null;
-  if (mapping.composite)
-    throw new Error(
-      `${entity.type} 是 composite surface，DAT reverse adapter 尚不能从单个 anchor 展开`,
-    );
-  const source = mapping.sources[0];
-  if (!source) return null;
+  const source = mapping.source;
   const alias = ENTITY_MAP_MIGRATION_ALIASES.find(
     (candidate) =>
       candidate.to === entity.type &&
@@ -263,21 +241,7 @@ function legacySurfaceTerrain(entity) {
       ),
   );
   if (alias) return alias.from;
-  const byte = (source.row - 1) * 16 + source.column - 1;
-  if (byte >= 0x60 && byte <= 0x93)
-    return `walkable-variant-${String(byte - 0x60 + 1).padStart(2, "0")}`;
-  return `background-variant-${String(byte + 1).padStart(3, "0")}`;
-}
-
-function compositeSurfaceMapping(entity) {
-  return SURFACE_SOURCE_MAPPINGS.find(
-    (candidate) =>
-      candidate.composite &&
-      candidate.type === entity.type &&
-      Object.entries(candidate.fields ?? {}).every(
-        ([key, value]) => entity[key] === value,
-      ),
-  );
+  return `ts-${source.row}-${source.column}`;
 }
 
 function objectFor(entity) {

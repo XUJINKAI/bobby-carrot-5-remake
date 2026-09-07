@@ -99,7 +99,7 @@ export const canonicalSurfaceModules: readonly EntityModule[] = [
     const row = Math.floor(index / 16) + 1;
     const column = (index % 16) + 1;
     return canonicalSurface(coordinateSurfaceType(row, column), [
-      { type: coordinateSurfaceType(row, column), sources: [{ row, column }] },
+      { type: coordinateSurfaceType(row, column), source: { row, column } },
     ]);
   }),
 ];
@@ -108,27 +108,11 @@ function canonicalSurface(
   type: string,
   mappings: readonly SurfaceSourceMapping[],
 ): EntityModule {
-  const fixedComposite =
-    mappings.length === 1 && mappings[0]!.composite
-      ? mappings[0]!
-      : undefined;
-  const anchor = fixedComposite?.sources[0];
   const definition: EntityModuleDefinition = {
     type,
     traits: canonicalSurfaceTraits(mappings),
     layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,
-    ...(fixedComposite && anchor
-      ? {
-          footprint: {
-            parts: fixedComposite.sources.map((source, index) => ({
-              dx: source.column - anchor.column,
-              dy: source.row - anchor.row,
-              role: `source-${index}`,
-            })),
-          },
-        }
-      : {}),
     presentation: { name: type },
   };
   return originalModule(
@@ -141,12 +125,7 @@ function canonicalSurface(
           ),
         ) ?? mappings[0];
       if (!mapping) return null;
-      const role = context.presence.role;
-      const index =
-        typeof role === "string" && role.startsWith("source-")
-          ? Number(role.slice("source-".length))
-          : 0;
-      const source = mapping.sources[index] ?? mapping.sources[0];
+      const source = mapping.source;
       return source ? cell(source.column - 1, source.row - 1) : null;
     }),
   );
@@ -155,10 +134,8 @@ function canonicalSurface(
 function canonicalSurfaceTraits(
   mappings: readonly SurfaceSourceMapping[],
 ): string[] {
-  const numbers = mappings.flatMap((mapping) =>
-    mapping.sources.map(
-      (source) => (source.row - 1) * 16 + source.column,
-    ),
+  const numbers = mappings.map(
+    ({ source }) => (source.row - 1) * 16 + source.column,
   );
   const traits = new Set<string>();
   if (numbers.some((number) => number >= 97 && number <= 148))

@@ -371,28 +371,24 @@ function fieldSummary(field) {
 
 function entityMigrationReview() {
   const dynamicExamples = [
-    "background-variant-001",
-    "background-variant-086",
-    "background-variant-092",
-    "background-variant-096",
-    "walkable-variant-01",
-    "walkable-variant-10",
+    "ts-1-1",
+    "ts-6-6",
+    "ts-6-12",
+    "ts-7-1",
   ].map((type) => legacyEntityMapAlias(type)).filter(Boolean);
   const value = {
     staticAliases: ENTITY_MAP_MIGRATION_ALIASES,
     dynamicRawExamples: dynamicExamples,
     unresolved: ENTITY_MAP_UNRESOLVED_SOURCES,
   };
-  return `// Review-only migration guide. These aliases are NOT accepted by the final strict Map parser.\n// background-variant-* / walkable-variant-* are resolved from their original ts(row,column) coordinates.\n${JSON.stringify(value, null, 2)}\n`;
+  return `// Review-only migration guide. These aliases are NOT accepted by the final strict Map parser.\n// Decoded archive ts-row-column values resolve to semantic surfaces or temporary coordinate identities.\n${JSON.stringify(value, null, 2)}\n`;
 }
 
 function surfaceMappingView(mapping) {
   return {
-    source: mapping.sources.map(tsLabel),
+    source: tsLabel(mapping.source),
     type: mapping.type,
     ...(mapping.fields ? { fields: mapping.fields } : {}),
-    ...(mapping.composite ? { composite: true } : {}),
-    ...(mapping.note ? { note: mapping.note } : {}),
   };
 }
 

@@ -4,6 +4,7 @@ import fs from "node:fs";
 import {
   datSourceForObject,
   datSourceForTerrain,
+  decodeDatTerrain,
   decodeDatLevelRecord,
   deriveDatDynamicSlots,
   encodeDatLevelRecord,
@@ -79,11 +80,13 @@ test("original DAT provenance belongs to the Original tooling boundary", () => {
 });
 
 test("unnamed semantic variants keep inferred DAT provenance in Original tooling", () => {
-  const walkable = datSourceForTerrain("walkable-variant-01");
+  assert.equal(decodeDatTerrain(0x2b), "ts-3-12");
+
+  const walkable = datSourceForTerrain("ts-7-1");
   assert.equal(walkable?.datHexIds[0], "0x60");
   assert.equal(walkable?.confidence, "inferred");
 
-  const background = datSourceForTerrain("background-variant-001");
+  const background = datSourceForTerrain("ts-1-1");
   assert.equal(background?.datHexIds[0], "0x00");
   assert.equal(background?.confidence, "inferred");
 

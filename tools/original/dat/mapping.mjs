@@ -137,19 +137,37 @@ export function decodeDatTerrain(byte) {
   const code = normalizeByte(byte);
   const known = TERRAIN_BY_DAT.get(code);
   if (known) return known;
-  if (code >= 0x60 && code <= 0x93)
-    return `walkable-variant-${String(code - 0x60 + 1).padStart(2, "0")}`;
-  return `background-variant-${String(code + 1).padStart(3, "0")}`;
+  return tsCoordinateFromByte(code);
 }
 
 export function encodeDatTerrain(type) {
   const known = DAT_BY_TERRAIN.get(type);
   if (known !== undefined) return known;
+  const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
+  if (coordinate)
+    return byteFromTsCoordinate(Number(coordinate[1]), Number(coordinate[2]));
   const walkable = /^walkable-variant-(\d{2})$/.exec(type);
   if (walkable) return normalizeByte(0x60 + Number(walkable[1]) - 1);
   const background = /^background-variant-(\d{3})$/.exec(type);
   if (background) return normalizeByte(Number(background[1]) - 1);
   throw new Error(`No original DAT terrain mapping for semantic type: ${type}`);
+}
+
+function tsCoordinateFromByte(byte) {
+  return `ts-${Math.floor(byte / 16) + 1}-${(byte % 16) + 1}`;
+}
+
+function byteFromTsCoordinate(row, column) {
+  if (
+    !Number.isInteger(row) ||
+    !Number.isInteger(column) ||
+    row < 1 ||
+    row > 16 ||
+    column < 1 ||
+    column > 16
+  )
+    throw new Error(`Invalid ts.png coordinate: ${row},${column}`);
+  return (row - 1) * 16 + column - 1;
 }
 
 export function decodeDatObject(byte) {

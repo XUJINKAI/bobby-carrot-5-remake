@@ -96,7 +96,7 @@ Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette �
 
 ## Multi-cell Object
 
-Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析：
+Dragon、Sandman、Dream Machine、Beaver 等多格 Palette Object 在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析。Surface atlas 单元始终是单格 Entity，视觉拼图使用相同 semantic type 的不同 `ts-*` variant：
 
 - 鼠标指向 body/tail 仍 resolve 到完整 owner；
 - Del 删除完整 owner；

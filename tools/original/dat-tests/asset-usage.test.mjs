@@ -33,13 +33,13 @@ test("未命名素材通过坐标型临时 Entity 反查地图与原版位置", 
     () => ({
       meta: { name: "1-1" },
       entities: [
-        { type: "surface-4-13", x: 2, y: 3 },
-        { type: "surface-4-13", x: 5, y: 8 },
+        { type: "surface-14-10", x: 2, y: 3 },
+        { type: "surface-14-10", x: 5, y: 8 },
       ],
     }),
-    { row: 4, column: 13 },
+    { row: 14, column: 10 },
   );
-  assert.equal(result.selector.type, "surface-4-13");
+  assert.equal(result.selector.type, "surface-14-10");
   assert.equal(result.mapCount, 1);
   assert.equal(result.occurrenceCount, 2);
   assert.deepEqual(result.maps[0].occurrences, [
@@ -67,7 +67,6 @@ test("已归类素材通过 semantic type 与 atlas variant 精确反查", () =>
   assert.deepEqual(result.selector, {
     type: "tree",
     fields: { variant: "ts-1-14" },
-    composite: false,
   });
   assert.deepEqual(result.maps[0].occurrences, [{ x: 1, y: 1 }]);
 });
@@ -78,8 +77,8 @@ test("临时素材总表给出可继续反查的坐标身份", () => {
       temporarySurfaceCount: 1,
       surfaces: [
         {
-          label: "ts-4-13",
-          type: "surface-4-13",
+          label: "ts-14-10",
+          type: "surface-14-10",
           mapCount: 2,
           occurrenceCount: 5,
           maps: ["1-1", "2-1"],
@@ -88,7 +87,7 @@ test("临时素材总表给出可继续反查的坐标身份", () => {
     }),
     [
       "临时 Surface：1 种",
-      "ts-4-13 → surface-4-13：2 张地图，5 个 anchor",
+      "ts-14-10 → surface-14-10：2 张地图，5 个 anchor",
       "逐项反查：npm run original:usage -- ts-<row>-<column>",
       "",
     ].join("\n"),

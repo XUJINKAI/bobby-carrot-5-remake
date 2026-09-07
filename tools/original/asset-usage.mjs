@@ -31,14 +31,12 @@ export function findOriginalTsUsage(catalog, readMap, coordinate) {
   const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
   const selector = mapping
     ? {
-        type: mapping.type,
-        fields: mapping.fields ?? {},
-        composite: mapping.composite === true,
-      }
+      type: mapping.type,
+      fields: mapping.fields ?? {},
+    }
     : {
         type: coordinateSurfaceType(coordinate.row, coordinate.column),
         fields: {},
-        composite: false,
       };
   const entries = [...catalog.maps, ...catalog.specialScenes];
   const maps = [];
@@ -151,8 +149,6 @@ export function formatOriginalTsUsage(result) {
     `${result.query.label} → ${selectorText}`,
     `引用：${result.mapCount} 张地图，${result.occurrenceCount} 个 Entity anchor`,
   ];
-  if (result.selector.composite)
-    lines.push("说明：这是复合素材，坐标显示 semantic Entity 的持久化 anchor。");
   for (const map of result.maps) {
     const positions = map.occurrences
       .map(({ x, y }) => `(${x},${y})`)

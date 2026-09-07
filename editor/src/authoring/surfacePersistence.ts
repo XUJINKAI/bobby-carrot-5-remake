@@ -139,6 +139,9 @@ function absoluteTsVariant(entity: Readonly<LevelEntity>): number | null {
 }
 
 function absoluteTsType(type: EntityType): number | null {
+  const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
+  if (coordinate)
+    return (Number(coordinate[1]) - 1) * 16 + Number(coordinate[2]);
   const background = /^background-variant-(\d{3})$/.exec(type);
   if (background) return Number(background[1]);
   const walkable = /^walkable-variant-(\d{2})$/.exec(type);

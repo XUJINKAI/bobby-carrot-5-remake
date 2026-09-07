@@ -12,12 +12,9 @@ export interface TsCoordinate {
 }
 
 export interface SurfaceSourceMapping {
-  sources: readonly TsCoordinate[];
+  source: TsCoordinate;
   type: MapEntityType;
   fields?: Readonly<Record<string, JsonPrimitive>>;
-  /** Multiple atlas/source tiles form one logical map entity. Adapter must collapse them structurally. */
-  composite?: boolean;
-  note?: string;
 }
 
 const CLOUD_LAYER_COORDS = [
@@ -40,7 +37,17 @@ const HEDGE_COORDS = [
   coord(5, 6),
   coord(5, 7),
 ];
-const TREE_COORDS = [...rect(1, 11, 3, 16), coord(4, 11), coord(4, 12)];
+const TREE_COORDS = [
+  ...rect(1, 11, 3, 16),
+  coord(4, 11),
+  coord(4, 12),
+  coord(4, 13),
+];
+const MOON_COORDS = rect(5, 11, 5, 13);
+const SNOWMAN_COORDS = [coord(3, 3), coord(4, 3)];
+const CANDY_CANE_COORDS = [coord(3, 2), coord(4, 2)];
+const CHRISTMAS_TREE_COORDS = rect(1, 9, 3, 10);
+const TALL_CACTUS_COORDS = [coord(4, 16), coord(5, 16)];
 const STONE_WALL_1_COORDS = rect(1, 4, 3, 6);
 const STONE_WALL_2_COORDS = [...rect(1, 7, 3, 8), ...rect(4, 7, 4, 10)];
 const SNOW_FENCE_COORDS = [
@@ -66,11 +73,9 @@ export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object
   defineEntity(MapEntityTypeId.STARFIELD, [
     enumField("variant", ["large-star", "small-star", "empty"], undefined, true),
   ]),
-  defineEntity(
-    MapEntityTypeId.MOON,
-    [],
-    "Three source tiles compose one fixed L-shaped moon surface object.",
-  ),
+  defineEntity(MapEntityTypeId.MOON, [
+    enumField("variant", surfaceVariants(MOON_COORDS), undefined, true),
+  ]),
   defineEntity(MapEntityTypeId.CLOUD_LAYER, [
     enumField("variant", surfaceVariants(CLOUD_LAYER_COORDS), undefined, true),
   ]),
@@ -96,21 +101,20 @@ export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object
   defineEntity(MapEntityTypeId.FLOWER_POT),
   defineEntity(MapEntityTypeId.ROCK),
   defineEntity(MapEntityTypeId.MUSHROOM),
-  defineEntity(
-    MapEntityTypeId.SNOWMAN,
-    [],
-    "Two source tiles form one fixed vertical object.",
-  ),
-  defineEntity(
-    MapEntityTypeId.CANDY_CANE,
-    [],
-    "Two source tiles form one fixed vertical object.",
-  ),
-  defineEntity(
-    MapEntityTypeId.CHRISTMAS_TREE,
-    [],
-    "Six source tiles form one fixed 2x3 object.",
-  ),
+  defineEntity(MapEntityTypeId.SNOWMAN, [
+    enumField("variant", surfaceVariants(SNOWMAN_COORDS), undefined, true),
+  ]),
+  defineEntity(MapEntityTypeId.CANDY_CANE, [
+    enumField("variant", surfaceVariants(CANDY_CANE_COORDS), undefined, true),
+  ]),
+  defineEntity(MapEntityTypeId.CHRISTMAS_TREE, [
+    enumField(
+      "variant",
+      surfaceVariants(CHRISTMAS_TREE_COORDS),
+      undefined,
+      true,
+    ),
+  ]),
   defineEntity(MapEntityTypeId.SNOW_FENCE, [
     enumField("variant", surfaceVariants(SNOW_FENCE_COORDS), undefined, true),
   ]),
@@ -121,11 +125,9 @@ export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object
   defineEntity(MapEntityTypeId.CACTUS, [
     enumField("variant", ["small", "round"], undefined, true),
   ]),
-  defineEntity(
-    MapEntityTypeId.TALL_CACTUS,
-    [],
-    "Two source tiles form one fixed vertical cactus.",
-  ),
+  defineEntity(MapEntityTypeId.TALL_CACTUS, [
+    enumField("variant", surfaceVariants(TALL_CACTUS_COORDS), undefined, true),
+  ]),
   defineEntity(MapEntityTypeId.SAND),
   defineEntity(MapEntityTypeId.CLOUD_PARKING, [
     enumField("color", ["red", "purple", "green"], undefined, true),
@@ -147,11 +149,7 @@ export const SURFACE_SOURCE_MAPPINGS: readonly SurfaceSourceMapping[] = Object.f
   single(5, 8, MapEntityTypeId.STARFIELD, { variant: "large-star" }),
   single(5, 9, MapEntityTypeId.STARFIELD, { variant: "small-star" }),
   single(5, 10, MapEntityTypeId.STARFIELD, { variant: "empty" }),
-  composite(
-    [coord(5, 11), coord(5, 12), coord(5, 13)],
-    MapEntityTypeId.MOON,
-    "Fixed three-tile moon composition.",
-  ),
+  ...variantMappings(MapEntityTypeId.MOON, MOON_COORDS),
 
   ...variantMappings(MapEntityTypeId.CLOUD_LAYER, CLOUD_LAYER_COORDS),
   ...variantMappings(MapEntityTypeId.GRASS, GRASS_COORDS),
@@ -166,32 +164,16 @@ export const SURFACE_SOURCE_MAPPINGS: readonly SurfaceSourceMapping[] = Object.f
   single(4, 6, MapEntityTypeId.ROCK),
   single(4, 14, MapEntityTypeId.MUSHROOM),
 
-  composite(
-    [coord(3, 3), coord(4, 3)],
-    MapEntityTypeId.SNOWMAN,
-    "Fixed two-tile snowman.",
-  ),
-  composite(
-    [coord(3, 2), coord(4, 2)],
-    MapEntityTypeId.CANDY_CANE,
-    "Fixed two-tile candy cane.",
-  ),
-  composite(
-    rect(1, 9, 3, 10),
-    MapEntityTypeId.CHRISTMAS_TREE,
-    "Fixed six-tile Christmas tree.",
-  ),
+  ...variantMappings(MapEntityTypeId.SNOWMAN, SNOWMAN_COORDS),
+  ...variantMappings(MapEntityTypeId.CANDY_CANE, CANDY_CANE_COORDS),
+  ...variantMappings(MapEntityTypeId.CHRISTMAS_TREE, CHRISTMAS_TREE_COORDS),
   ...variantMappings(MapEntityTypeId.SNOW_FENCE, SNOW_FENCE_COORDS),
   single(1, 2, MapEntityTypeId.SNOWY_ROCK),
   ...variantMappings(MapEntityTypeId.SNOW_GROUND, SNOW_GROUND_COORDS),
 
   single(4, 15, MapEntityTypeId.CACTUS, { variant: "small" }),
   single(5, 15, MapEntityTypeId.CACTUS, { variant: "round" }),
-  composite(
-    [coord(4, 16), coord(5, 16)],
-    MapEntityTypeId.TALL_CACTUS,
-    "Tall two-tile cactus.",
-  ),
+  ...variantMappings(MapEntityTypeId.TALL_CACTUS, TALL_CACTUS_COORDS),
   single(9, 16, MapEntityTypeId.SAND),
 
   single(16, 1, MapEntityTypeId.CLOUD_PARKING, { color: "red" }),
@@ -204,9 +186,7 @@ export function surfaceMappingForTs(
   column: number,
 ): SurfaceSourceMapping | undefined {
   return SURFACE_SOURCE_MAPPINGS.find((mapping) =>
-    mapping.sources.some(
-      (source) => source.row === row && source.column === column,
-    ),
+    mapping.source.row === row && mapping.source.column === column,
   );
 }
 
@@ -226,6 +206,7 @@ export function coordinateSurfaceDefinition(
   const row = Number(match[1]);
   const column = Number(match[2]);
   if (!isTsCoordinate(row, column)) return undefined;
+  if (surfaceMappingForTs(row, column)) return undefined;
   return defineEntity(
     type as CoordinateSurfaceEntityType,
     [],
@@ -249,23 +230,8 @@ function single(
   fields?: Readonly<Record<string, JsonPrimitive>>,
 ): SurfaceSourceMapping {
   return Object.freeze({
-    sources: Object.freeze([coord(row, column)]),
+    source: coord(row, column),
     type,
-    ...(fields ? { fields: Object.freeze({ ...fields }) } : {}),
-  });
-}
-
-function composite(
-  sources: readonly TsCoordinate[],
-  type: MapEntityType,
-  note: string,
-  fields?: Readonly<Record<string, JsonPrimitive>>,
-): SurfaceSourceMapping {
-  return Object.freeze({
-    sources: Object.freeze([...sources]),
-    type,
-    composite: true,
-    note,
     ...(fields ? { fields: Object.freeze({ ...fields }) } : {}),
   });
 }
@@ -276,7 +242,7 @@ function variantMappings(
 ): SurfaceSourceMapping[] {
   return coordinates.map((source) =>
     Object.freeze({
-      sources: Object.freeze([source]),
+      source,
       type,
       fields: Object.freeze({ variant: tsVariant(source) }),
     }),

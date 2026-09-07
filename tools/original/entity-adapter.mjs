@@ -1,11 +1,8 @@
 import {
   EntityTypeId,
   MapEntityTypeId,
-  SURFACE_SOURCE_MAPPINGS,
   coordinateObjectType,
-  coordinateSurfaceType,
   legacyEntityMapAlias,
-  surfaceMappingForTs,
 } from "@bobby/model";
 import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
 
@@ -127,8 +124,6 @@ export function adaptLegacyMap(map, options = {}) {
   )
     ? MapEntityTypeId.CARROT
     : MapEntityTypeId.EGG_NEST;
-  const composites = collapseCompositeTerrain(map);
-
   for (let y = 0; y < map.height; y += 1) {
     const row = map.terrain[y];
     if (!row || row.length !== map.width) {
@@ -139,13 +134,6 @@ export function adaptLegacyMap(map, options = {}) {
     for (let x = 0; x < map.width; x += 1) {
       const type = row[x];
       if (type === LegacyTerrain.START) starts.push({ x, y });
-      const coordinate = `${x},${y}`;
-      const composite = composites.anchors.get(coordinate);
-      if (composite) {
-        entities.push(entity(composite.type, x, y, composite.fields ?? {}));
-        continue;
-      }
-      if (composites.consumed.has(coordinate)) continue;
       entities.push(
         ...adaptLegacyTerrain(type, x, y, {
           hiddenObjectiveType:
@@ -358,66 +346,7 @@ function foldedPressedSwitch(type) {
 function canonicalTerrainEntity(type, x, y) {
   const alias = legacyEntityMapAlias(type);
   if (!alias?.to) return entity(type, x, y);
-  const source = legacyTerrainCoordinate(type);
-  if (source && surfaceMappingForTs(source.row, source.column)?.composite) {
-    return entity(coordinateSurfaceType(source.row, source.column), x, y);
-  }
   return entity(alias.to, x, y, alias.fields ?? {});
-}
-
-function collapseCompositeTerrain(map) {
-  const anchors = new Map();
-  const consumed = new Set();
-  const mappings = SURFACE_SOURCE_MAPPINGS.filter(
-    (mapping) => mapping.composite,
-  );
-  for (const mapping of mappings) {
-    const anchorSource = mapping.sources[0];
-    if (!anchorSource) continue;
-    for (let y = 0; y < map.height; y += 1) {
-      for (let x = 0; x < map.width; x += 1) {
-        const cells = mapping.sources.map((source) => ({
-          x: x + source.column - anchorSource.column,
-          y: y + source.row - anchorSource.row,
-          expected: legacyTerrainTypeForTs(source.row, source.column),
-        }));
-        if (
-          cells.some(
-            (cell) =>
-              cell.x < 0 ||
-              cell.y < 0 ||
-              cell.x >= map.width ||
-              cell.y >= map.height ||
-              map.terrain[cell.y]?.[cell.x] !== cell.expected ||
-              consumed.has(`${cell.x},${cell.y}`),
-          )
-        )
-          continue;
-        anchors.set(`${x},${y}`, mapping);
-        for (const cell of cells) consumed.add(`${cell.x},${cell.y}`);
-      }
-    }
-  }
-  return { anchors, consumed };
-}
-
-function legacyTerrainCoordinate(type) {
-  const background = /^background-variant-(\d{3})$/.exec(type);
-  if (background) return coordinateFromByte(Number(background[1]) - 1);
-  const walkable = /^walkable-variant-(\d{2})$/.exec(type);
-  if (walkable) return coordinateFromByte(0x60 + Number(walkable[1]) - 1);
-  return null;
-}
-
-function legacyTerrainTypeForTs(row, column) {
-  const byte = (row - 1) * 16 + column - 1;
-  if (byte >= 0x60 && byte <= 0x93)
-    return `walkable-variant-${String(byte - 0x60 + 1).padStart(2, "0")}`;
-  return `background-variant-${String(byte + 1).padStart(3, "0")}`;
-}
-
-function coordinateFromByte(byte) {
-  return { row: Math.floor(byte / 16) + 1, column: (byte % 16) + 1 };
 }
 
 function directionSuffix(type, prefix) {
@@ -430,6 +359,7 @@ function directionSuffix(type, prefix) {
 
 function isLegacyTerrainVariant(type) {
   return (
+    /^ts-\d+-\d+$/.test(type) ||
     /^walkable-variant-\d{2}$/.test(type) ||
     /^background-variant-\d{3}$/.test(type)
   );

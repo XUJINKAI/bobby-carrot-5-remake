@@ -80,11 +80,23 @@ export const ENTITY_MAP_UNRESOLVED_SOURCES: readonly UnresolvedEntityMapSource[]
 
 /**
  * 把当前通用 raw terrain 名称解析为首轮 semantic/coordinate Map 身份。
- * background-variant-NNN 与 walkable-variant-NN 的 archive 映射只用于迁移审阅。
+ * ts-row-column 是当前 archive 表示；旧 variant 名只用于迁移审阅。
  */
 export function legacyEntityMapAlias(type: string): EntityMapMigrationAlias | undefined {
   const exact = ENTITY_MAP_MIGRATION_ALIASES.find((candidate) => candidate.from === type);
   if (exact) return exact;
+
+  const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
+  if (coordinate) {
+    const row = Number(coordinate[1]);
+    const column = Number(coordinate[2]);
+    if (row < 1 || row > 16 || column < 1 || column > 16) return undefined;
+    return fromCoordinate(
+      type,
+      { row, column },
+      "Archive atlas coordinate replaced by semantic surface or reviewable coordinate identity.",
+    );
+  }
 
   const background = /^background-variant-(\d{3})$/.exec(type);
   if (background) {
