@@ -83,6 +83,17 @@ function runtimeTypeForLevelEntity(source: LevelEntity): EntityType {
       right: EntityTypeId.WINDMILL_RIGHT,
     }[String(source.direction)] ?? EntityTypeId.WINDMILL_UP;
   }
+  if (source.type === MapEntityTypeId.EGG_NEST)
+    return EntityTypeId.EGG_NEST_EMPTY;
+  if (source.type === MapEntityTypeId.BEANSTALK)
+    return EntityTypeId.BEANSTALK_TIP;
+  const coordinateObject = /^object-(\d+)-(\d+)$/.exec(source.type);
+  if (coordinateObject) {
+    const row = Number(coordinateObject[1]);
+    const column = Number(coordinateObject[2]);
+    const number = (row - 1) * 16 + column;
+    return `object-variant-${String(number).padStart(3, "0")}`;
+  }
   return source.type;
 }
 

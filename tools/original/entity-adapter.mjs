@@ -2,6 +2,7 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   SURFACE_SOURCE_MAPPINGS,
+  coordinateObjectType,
   coordinateSurfaceType,
   legacyEntityMapAlias,
   surfaceMappingForTs,
@@ -40,6 +41,9 @@ const internalObjectParts = new Set([
   LegacyObject.SANDMAN_BODY,
   LegacyObject.DREAM_MACHINE_BODY,
   LegacyObject.BEAVER_BODY,
+  LegacyObject.BEANSTALK_MID,
+  LegacyObject.BEANSTALK_BASE,
+  LegacyObject.BEAN_SPROUT,
 ]);
 
 const legacyFenceTypes = new Set([
@@ -90,6 +94,24 @@ const directObjectTypes = new Set([
 ]);
 
 const WIND_DIRECTIONS = ["up", "down", "left", "right"];
+const canonicalObjectAliases = new Map([
+  [LegacyObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
+  [LegacyObject.EGG_NEST_EMPTY, { type: MapEntityTypeId.EGG_NEST }],
+  [LegacyObject.EGG_NEST_FILLED, { type: MapEntityTypeId.EGG_NEST }],
+  [LegacyObject.BEANSTALK_TIP, { type: MapEntityTypeId.BEANSTALK }],
+  [LegacyObject.WINDMILL_UP, { type: MapEntityTypeId.WINDMILL, direction: "up" }],
+  [LegacyObject.WINDMILL_DOWN, { type: MapEntityTypeId.WINDMILL, direction: "down" }],
+  [LegacyObject.WINDMILL_LEFT, { type: MapEntityTypeId.WINDMILL, direction: "left" }],
+  [LegacyObject.WINDMILL_RIGHT, { type: MapEntityTypeId.WINDMILL, direction: "right" }],
+  [LegacyObject.PLANK_CRUMBLING, { type: MapEntityTypeId.PLANK }],
+  [LegacyObject.PLANK_FRAGMENT, { type: MapEntityTypeId.PLANK }],
+  [LegacyObject.CLOUD_RED, { type: MapEntityTypeId.CLOUD, color: "red" }],
+  [LegacyObject.CLOUD_PURPLE, { type: MapEntityTypeId.CLOUD, color: "purple" }],
+  [LegacyObject.CLOUD_GREEN, { type: MapEntityTypeId.CLOUD, color: "green" }],
+  [LegacyObject.CLOUD_GRID_RED, { type: MapEntityTypeId.CLOUD_PARKING, color: "red" }],
+  [LegacyObject.CLOUD_GRID_PURPLE, { type: MapEntityTypeId.CLOUD_PARKING, color: "purple" }],
+  [LegacyObject.CLOUD_GRID_GREEN, { type: MapEntityTypeId.CLOUD_PARKING, color: "green" }],
+]);
 
 export function adaptLegacyMap(map, options = {}) {
   const entities = [];
@@ -269,10 +291,15 @@ export function adaptLegacyObject(object) {
     ];
   }
   if (type === LegacyObject.BEAVER_BASE) {
-    return [entity(EntityTypeId.BEAVER, x, y, copiedFields(object))];
+    return [entity(MapEntityTypeId.BEAVER, x, y)];
   }
   if (legacyFenceTypes.has(type)) {
-    return [entity(EntityTypeId.FENCE, x, y, copiedFields(object))];
+    const variant = [...legacyFenceTypes].indexOf(type) + 10;
+    return [
+      entity(MapEntityTypeId.WOOD_FENCE, x, y, {
+        variant: `ts-16-${variant}`,
+      }),
+    ];
   }
 
   const melt = /^ice-melt-([1-3])$/.exec(type);
@@ -280,19 +307,25 @@ export function adaptLegacyObject(object) {
     return [
       entity(EntityTypeId.ICE_BLOCK, x, y, {
         ...copiedFields(object),
-        ...(melt
-          ? {
-              state: {
-                ...(object.state ?? {}),
-                meltStage: Number(melt[1]),
-              },
-            }
-          : {}),
       }),
     ];
   }
 
-  if (directObjectTypes.has(type) || /^object-variant-\d{3}$/.test(type)) {
+  const alias = canonicalObjectAliases.get(type);
+  if (alias) return [entity(alias.type, x, y, alias)];
+
+  const variant = /^object-variant-(\d{3})$/.exec(type);
+  if (variant) {
+    const index = Number(variant[1]) - 1;
+    return [
+      entity(
+        coordinateObjectType(Math.floor(index / 16) + 1, (index % 16) + 1),
+        x,
+        y,
+      ),
+    ];
+  }
+  if (directObjectTypes.has(type)) {
     return [entity(type, x, y, copiedFields(object))];
   }
   throw new Error(`Unsupported legacy object type: ${type}`);
@@ -407,9 +440,6 @@ function isLegacyTerrainVariant(type) {
 function copiedFields(object) {
   return {
     ...(object.direction ? { direction: object.direction } : {}),
-    ...(object.properties ? { properties: { ...object.properties } } : {}),
-    ...(object.traits ? { traits: [...object.traits] } : {}),
-    ...(object.state ? { state: { ...object.state } } : {}),
   };
 }
 

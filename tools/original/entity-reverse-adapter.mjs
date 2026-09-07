@@ -264,6 +264,30 @@ function objectFor(entity) {
   }
   if (type === EntityTypeId.BEAVER)
     return [{ type: LegacyObject.BEAVER_BASE, x, y }];
+  if (type === MapEntityTypeId.EGG_NEST)
+    return [{ type: LegacyObject.EGG_NEST_EMPTY, x, y }];
+  if (type === MapEntityTypeId.BEANSTALK)
+    return [{ type: LegacyObject.BEANSTALK_TIP, x, y }];
+  if (type === MapEntityTypeId.WINDMILL) {
+    const legacyType = {
+      up: LegacyObject.WINDMILL_UP,
+      down: LegacyObject.WINDMILL_DOWN,
+      left: LegacyObject.WINDMILL_LEFT,
+      right: LegacyObject.WINDMILL_RIGHT,
+    }[entity.direction];
+    if (!legacyType)
+      throw new Error("windmill 的 direction 必须是 up/down/left/right");
+    return [{ type: legacyType, x, y }];
+  }
+  if (type === MapEntityTypeId.CLOUD) {
+    const legacyType = {
+      red: LegacyObject.CLOUD_RED,
+      purple: LegacyObject.CLOUD_PURPLE,
+      green: LegacyObject.CLOUD_GREEN,
+    }[entity.color];
+    if (!legacyType) throw new Error("cloud 的 color 必须是 red/purple/green");
+    return [{ type: legacyType, x, y }];
+  }
   if (type === EntityTypeId.FENCE)
     return [{ type: LegacyObject.FENCE_1, x, y }];
   if (type === EntityTypeId.ICE_BLOCK) {
@@ -285,6 +309,13 @@ function objectFor(entity) {
     /^object-variant-\d{3}$/.test(type)
   )
     return [{ type, x, y }];
+  const coordinateObject = /^object-(\d+)-(\d+)$/.exec(type);
+  if (coordinateObject) {
+    const row = Number(coordinateObject[1]);
+    const column = Number(coordinateObject[2]);
+    const number = (row - 1) * 16 + column;
+    return [{ type: `object-variant-${String(number).padStart(3, "0")}`, x, y }];
+  }
   throw new Error(`Entity type 无法编码为原版 DAT：${type}`);
 }
 

@@ -91,5 +91,26 @@ export type NamedMapEntityType =
 
 /** Reviewable fallback for an original ts.png tile whose semantics are not known yet. */
 export type CoordinateSurfaceEntityType = `surface-${number}-${number}`;
+/** Reviewable fallback for an original object.png cell whose semantics are not known yet. */
+export type CoordinateObjectEntityType = `object-${number}-${number}`;
 
-export type MapEntityType = NamedMapEntityType | CoordinateSurfaceEntityType;
+export type MapEntityType =
+  | NamedMapEntityType
+  | CoordinateSurfaceEntityType
+  | CoordinateObjectEntityType;
+
+export function coordinateObjectType(
+  row: number,
+  column: number,
+): CoordinateObjectEntityType {
+  if (
+    !Number.isInteger(row) ||
+    !Number.isInteger(column) ||
+    row < 1 ||
+    row > 16 ||
+    column < 1 ||
+    column > 16
+  )
+    throw new Error(`Invalid object coordinate: ${row},${column}`);
+  return `object-${row}-${column}`;
+}

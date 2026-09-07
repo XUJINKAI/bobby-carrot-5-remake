@@ -95,12 +95,8 @@ for (const release of sourceIndex.releases) {
       const kind = bonusOrdinal === null ? "level" : "bonus";
       const sourceRef = sourceReference(release, source, sourceName);
       const document = createMapDocument(
+        source,
         {
-          ...source,
-          objects: adaptObjects(source.objects, id),
-        },
-        {
-          id,
           name: id.toUpperCase(),
           music: kind === "bonus" ? "bonus" : "ingame1",
         },
@@ -134,12 +130,9 @@ const orderedMaps = playerOrder.map((id) => {
   if (!map) throw new Error(`缺少 Original map metadata：${id}`);
   return map;
 });
-for (let index = 0; index < playerOrder.length; index += 1) {
-  const id = playerOrder[index];
+for (const id of playerOrder) {
   const document = documents.get(id);
   if (!document) throw new Error(`缺少 adapted map：${id}`);
-  const next = playerOrder[index + 1];
-  if (next) document.meta.next = next;
   writeJson(path.join(mapsRoot, `${id}.json`), document);
 }
 
@@ -182,7 +175,6 @@ function buildSpecialScenes(index, target) {
     target.set(
       id,
       createMapDocument(source, {
-        id,
         name: specialLabels[id] ?? id,
         music: "title",
       }),
@@ -201,26 +193,14 @@ function buildSpecialScenes(index, target) {
 function createMapDocument(source, meta) {
   const canonical = adaptLegacyMap(source);
   const win = deriveOriginalWinCondition(canonical);
+  const { music, ...mapMeta } = meta;
   return {
     schemaVersion: 1,
-    meta,
+    meta: mapMeta,
     ...canonical,
+    ...(music ? { music } : {}),
     ...(win ? { rules: { win } } : {}),
   };
-}
-
-function adaptObjects(objects, mapId) {
-  return objects.map((object) => {
-    const properties = { ...(object.properties ?? {}) };
-    if (object.type === "sandman")
-      properties.dialogId =
-        properties.dialogId ??
-        `original.${mapId}.sandman-${object.x}-${object.y}`;
-    return {
-      ...object,
-      ...(Object.keys(properties).length > 0 ? { properties } : {}),
-    };
-  });
 }
 
 function sourceReference(release, source, sourceName) {
