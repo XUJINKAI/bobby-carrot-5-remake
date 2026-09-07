@@ -1,4 +1,12 @@
-import { EntityTypeId, type EntityType, type LevelEntity } from "@bobby/model";
+import {
+  EntityTypeId,
+  MapEntityTypeId,
+  coordinateSurfaceType,
+  surfaceMappingForTs,
+  type EntityType,
+  type LevelEntity,
+  type SurfaceSourceMapping,
+} from "@bobby/model";
 import type { EditorMap } from "../level/types.js";
 import {
   materializeSurfaceVariants as resolveAutoSurfaceVariants,
@@ -56,28 +64,40 @@ export function pickSurfaceBrush(
 }
 
 function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
-  const terrain = surfaceTerrainForEntity(entity.type);
-  if (!terrain) return entity;
-
-  if (terrain.id === "wood-fence" && entity.type === EntityTypeId.FENCE)
-    return entity;
-
-  if (terrain.id === "water") {
-    const variant =
-      entity.type === EntityTypeId.WATER_ANIMATED
-        ? 2
-        : entity.type === EntityTypeId.WATER
-          ? 1
-          : Number(entity.variant);
-    return Number.isInteger(variant)
-      ? withVariant(entity, entity.type, variant)
-      : entity;
+  if (entity.type === EntityTypeId.FENCE) {
+    const index = Number(entity.variant);
+    if (Number.isInteger(index) && index >= 1 && index <= 6)
+      return mappedSurfaceEntity(entity, surfaceMappingForTs(16, 9 + index));
   }
 
+  if (entity.type === EntityTypeId.WATER_ANIMATED)
+    return { ...stripAutoMetadata(entity), type: MapEntityTypeId.WATER_RIPPLE };
+
   const absolute = absoluteTsVariant(entity);
-  const primaryAbsolute = absoluteTsType(terrain.primary);
-  if (absolute === null || primaryAbsolute === null) return entity;
-  return withVariant(entity, terrain.primary, absolute);
+  if (absolute === null) return stripAutoMetadata(entity);
+  const row = Math.floor((absolute - 1) / 16) + 1;
+  const column = ((absolute - 1) % 16) + 1;
+  return mappedSurfaceEntity(
+    entity,
+    surfaceMappingForTs(row, column),
+    row,
+    column,
+  );
+}
+
+function mappedSurfaceEntity(
+  entity: Readonly<LevelEntity>,
+  mapping: SurfaceSourceMapping | undefined,
+  row = 1,
+  column = 1,
+): LevelEntity {
+  const next: LevelEntity = {
+    ...stripAutoMetadata(entity),
+    type: mapping?.type ?? coordinateSurfaceType(row, column),
+  };
+  delete next.variant;
+  if (mapping?.fields) Object.assign(next, mapping.fields);
+  return next;
 }
 
 function resolveFixedVariantType(
@@ -85,33 +105,21 @@ function resolveFixedVariantType(
   terrain: SurfaceTerrainDefinition,
 ): EntityType | null {
   const variants = terrain.rows.flat();
-  if (terrain.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
-    const index = Number(entity.variant) - 1;
-    return Number.isInteger(index) && index >= 0
-      ? variants[index]?.type ?? null
-      : null;
+  for (const candidate of variants) {
+    if (candidate.type === entity.type) return candidate.type;
+    const absolute = absoluteTsType(candidate.type);
+    if (absolute === null) continue;
+    const row = Math.floor((absolute - 1) / 16) + 1;
+    const column = ((absolute - 1) % 16) + 1;
+    const mapping = surfaceMappingForTs(row, column);
+    if (!mapping || mapping.type !== entity.type) continue;
+    const fields = mapping.fields ?? {};
+    if (
+      Object.entries(fields).every(([key, value]) => entity[key] === value)
+    )
+      return candidate.type;
   }
-  if (terrain.id === "water") {
-    const index = Number(entity.variant) - 1;
-    if (Number.isInteger(index) && index >= 0)
-      return variants[index]?.type ?? null;
-    return variants.find((candidate) => candidate.type === entity.type)?.type ?? null;
-  }
-
-  const absolute = absoluteTsVariant(entity);
-  if (absolute === null) return entity.type;
-  return (
-    variants.find((candidate) => absoluteTsType(candidate.type) === absolute)?.type ??
-    entity.type
-  );
-}
-
-function withVariant(
-  entity: Readonly<LevelEntity>,
-  type: EntityType,
-  variant: number,
-): LevelEntity {
-  return { ...entity, type, variant };
+  return null;
 }
 
 function absoluteTsVariant(entity: Readonly<LevelEntity>): number | null {
