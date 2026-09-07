@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_MOVING_ENTITY_CELL_MS,
 } from "../dist/entities/original/moving-entities.js";
@@ -88,16 +88,16 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
       { type: "background-variant-072", x: 1, y: 0 },
       { type: "background-variant-072", x: 2, y: 0 },
       { type: "background-variant-072", x: 3, y: 0 },
-      { type: EntityTypeId.WINDMILL_RIGHT, x: 0, y: 0 },
+      { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
         type: EntityTypeId.WIND_SWITCH,
         x: 0,
         y: 0,
-        properties: { channel: 3 },
-        state: { active: true },
+        direction: "right",
+        active: true,
       },
-      { type: EntityTypeId.CLOUD_RED, x: 1, y: 0 },
-      { type: EntityTypeId.CLOUD_GRID_RED, x: 3, y: 0 },
+      { type: MapEntityTypeId.CLOUD, x: 1, y: 0, color: "red" },
+      { type: MapEntityTypeId.CLOUD_PARKING, x: 3, y: 0, color: "red" },
     ],
   });
 
