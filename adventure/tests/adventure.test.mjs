@@ -135,11 +135,7 @@ test("Bonus runtime parameters are injected by Adventure policy, not Original ma
     save,
     bonusPlan.entityPatches,
   );
-  assert.deepEqual(prepared.entities[0].properties, {
-    interaction: "bonus-key-vendor",
-    temporaryKeyPriceBonusCoins: 8,
-  });
-  assert.deepEqual(prepared.entities[1].properties, {
-    deathCountdownSeconds: 45,
-  });
+  assert.equal(prepared.entities[0].interaction, "bonus-key-vendor");
+  assert.equal(prepared.entities[0].temporaryKeyPriceBonusCoins, 8);
+  assert.equal(prepared.entities[1].deathCountdownSeconds, 45);
 });
