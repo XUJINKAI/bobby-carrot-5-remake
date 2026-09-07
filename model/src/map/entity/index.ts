@@ -32,8 +32,8 @@ export type { TsCoordinate, SurfaceSourceMapping } from "./surface.js";
 
 export {
   TS_SURFACE_FAMILIES,
-  TS_UNIDENTIFIED_CELLS,
   TS_VISUALS,
+  tsSurfaceFamily,
   tsVisual,
   tsAtlasCell,
   tsCoordinateLabel,

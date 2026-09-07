@@ -15,7 +15,7 @@ export const DecodedTerrain = {
   SHOP_MUSIC: "shop-music",
   SHOP_SPEED_SHOES: "shop-speed-shoes",
   SHOP_COIN_RADAR: "shop-coin-radar",
-  SHOP_UNAVAILABLE: "shop-unavailable",
+  SHOP_EMPTY: "shop-empty",
   SHOVEL_PICKUP: "shovel-pickup",
   MOWER_PARKING: "mower-parking",
   SPEED_SWITCH_PRESSED: "speed-switch-pressed",

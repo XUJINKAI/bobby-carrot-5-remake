@@ -73,14 +73,13 @@ const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.WATERFALL, "waterfall"],
   [MapEntityTypeId.STARFIELD, "starfield"],
   [MapEntityTypeId.MOON, "moon"],
-  [MapEntityTypeId.CLOUD_LAYER, "cloud"],
+  [MapEntityTypeId.SNOW_CLOUD, "snow-cloud"],
   [MapEntityTypeId.GRASS, "grass"],
   [MapEntityTypeId.FENCE, "fence"],
-  [MapEntityTypeId.SURFACE, "source-tile"],
+  [MapEntityTypeId.SURFACE, "original-visual"],
   [MapEntityTypeId.HEDGE, "hedge"],
   [MapEntityTypeId.TREE, "tree"],
-  [MapEntityTypeId.STONE_WALL_1, "stone-wall-1"],
-  [MapEntityTypeId.STONE_WALL_2, "stone-wall-2"],
+  [MapEntityTypeId.STONE_WALL, "stone-wall"],
   [MapEntityTypeId.STUMP, "stump"],
   [MapEntityTypeId.FLOWER_POT, "flower-pot"],
   [MapEntityTypeId.ROCK, "stone"],
@@ -90,7 +89,6 @@ const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.CHRISTMAS_TREE, "christmas-tree"],
   [MapEntityTypeId.SNOW_FENCE, "snow-fence"],
   [MapEntityTypeId.SNOWY_ROCK, "snow-rock"],
-  [MapEntityTypeId.SNOW_GROUND, "snow-ground"],
   [MapEntityTypeId.CACTUS, "cactus"],
   [MapEntityTypeId.TALL_CACTUS, "cactus"],
   [MapEntityTypeId.SAND, "sand"],
@@ -310,9 +308,13 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
     if (!auto) return stripAutoMetadata(entity);
     const terrain = surfaceTerrainForEntity(entity.type);
     let fixed = stripAutoMetadata(entity);
-    if (terrain?.id === "fence" && entity.type === EntityTypeId.FENCE) {
+    if (
+      terrain?.id === "fence" &&
+      terrain.auto.kind === "fence" &&
+      entity.type === EntityTypeId.FENCE
+    ) {
       const index = fenceVariantIndex(level, entity, terrain);
-      fixed = { ...fixed, variant: `ts-16-${index + 10}` };
+      fixed = { ...fixed, variant: terrain.auto.variants[index] };
     }
     return fixed;
   });

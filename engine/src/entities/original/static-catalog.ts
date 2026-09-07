@@ -110,7 +110,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   surface(EntityTypeId.SHOP_MUSIC, "Music Shop", namedCell("shop-music")),
   surface(EntityTypeId.SHOP_SPEED_SHOES, "Speed Shoes Shop", namedCell("shop-speed-shoes")),
   surface(EntityTypeId.SHOP_COIN_RADAR, "Coin Radar Shop", namedCell("shop-coin-radar")),
-  surface(EntityTypeId.SHOP_UNAVAILABLE, "Unavailable Shop", namedCell("shop-unavailable")),
+  surface(EntityTypeId.SHOP_EMPTY, "Empty Shop", namedCell("shop-empty")),
   surface(
     EntityTypeId.SHOVEL_PICKUP,
     "Shovel Pickup",

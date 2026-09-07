@@ -18,7 +18,7 @@ const TERRAIN_BY_DAT = new Map([
   [0x9b, DecodedTerrain.SHOP_MUSIC],
   [0x9c, DecodedTerrain.SHOP_SPEED_SHOES],
   [0x9d, DecodedTerrain.SHOP_COIN_RADAR],
-  [0x9e, DecodedTerrain.SHOP_UNAVAILABLE],
+  [0x9e, DecodedTerrain.SHOP_EMPTY],
   [0x9f, DecodedTerrain.SHOVEL_PICKUP],
   [0xa0, DecodedTerrain.MOWER_PARKING],
   [0xa1, DecodedTerrain.SPEED_SWITCH_PRESSED],

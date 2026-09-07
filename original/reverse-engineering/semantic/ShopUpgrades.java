@@ -5,7 +5,7 @@
 public final class ShopUpgrades {
     private static final int SHOP_FIRST = 0x97;
     private static final int SHOP_LAST = 0x9D;
-    private static final int SHOP_UNAVAILABLE = 0x9E;
+    private static final int SHOP_EMPTY = 0x9E;
 
     private static final int TICKET_DREAM_MACHINE = 0;
     private static final int TICKET_CLOUD_9 = 1;
@@ -40,7 +40,7 @@ public final class ShopUpgrades {
         if (!canAfford(upgradeIndex)) return false;
 
         globalCurrency -= PRICE[upgradeIndex];
-        terrainGrid[y][x] = (byte)SHOP_UNAVAILABLE;
+        terrainGrid[y][x] = (byte)SHOP_EMPTY;
         purchasedUpgradeCount[upgradeIndex]++;
 
         if (upgradeIndex == UPGRADE_MUSIC) {

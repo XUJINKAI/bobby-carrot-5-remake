@@ -377,7 +377,7 @@ function surfaceReview() {
     "  // First-pass semantic mapping based on docs/system/original/surface.md.",
     "  // Coordinates follow docs/system/original/README.md: ts(row,column), 1-based.",
     "  // Visual-only variants use ts-row-column; semantically meaningful variants keep semantic names.",
-    "  // 待确认单格使用 surface + ts-row-column variant。",
+    "  // terrain 层中的独立机关 Visual 使用 surface + ts-row-column variant。",
   ];
   SURFACE_SOURCE_MAPPINGS.forEach((mapping, index) => {
     const view = surfaceMappingView(mapping);

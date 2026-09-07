@@ -23,7 +23,7 @@ const directTerrainTypes = new Set([
   DecodedTerrain.SHOP_MUSIC,
   DecodedTerrain.SHOP_SPEED_SHOES,
   DecodedTerrain.SHOP_COIN_RADAR,
-  DecodedTerrain.SHOP_UNAVAILABLE,
+  DecodedTerrain.SHOP_EMPTY,
   DecodedTerrain.SHOVEL_PICKUP,
   DecodedTerrain.MOWER_PARKING,
 ]);

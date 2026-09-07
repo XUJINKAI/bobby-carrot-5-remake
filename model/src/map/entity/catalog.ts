@@ -13,10 +13,17 @@ import {
 } from "./ids.js";
 import {
   SURFACE_ENTITY_DEFINITIONS,
+  SURFACE_SOURCE_MAPPINGS,
 } from "./surface.js";
 
 const DIRECTIONS = ["up", "right", "down", "left"] as const;
 const HORIZONTAL_DIRECTIONS = ["left", "right"] as const;
+const FENCE_VARIANTS = SURFACE_SOURCE_MAPPINGS.flatMap((mapping) =>
+  mapping.type === MapEntityTypeId.FENCE &&
+    typeof mapping.fields?.variant === "string"
+    ? [mapping.fields.variant]
+    : [],
+);
 
 const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(
@@ -35,7 +42,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.SHOP_MUSIC),
   defineEntity(MapEntityTypeId.SHOP_SPEED_SHOES),
   defineEntity(MapEntityTypeId.SHOP_COIN_RADAR),
-  defineEntity(MapEntityTypeId.SHOP_UNAVAILABLE),
+  defineEntity(MapEntityTypeId.SHOP_EMPTY),
 
   defineEntity(MapEntityTypeId.SHOVEL_PICKUP),
   defineEntity(MapEntityTypeId.MOWER_PARKING),
@@ -108,14 +115,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.FENCE, [
     enumField(
       "variant",
-      [
-        "ts-16-10",
-        "ts-16-11",
-        "ts-16-12",
-        "ts-16-13",
-        "ts-16-14",
-        "ts-16-15",
-      ],
+      FENCE_VARIANTS,
       undefined,
       true,
     ),

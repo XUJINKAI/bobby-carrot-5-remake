@@ -199,7 +199,7 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.SHOP_SPEED_SHOES },
             { type: EntityTypeId.SHOP_STEREO },
             { type: EntityTypeId.SHOP_SUPER_KEY },
-            { type: EntityTypeId.SHOP_UNAVAILABLE },
+            { type: EntityTypeId.SHOP_EMPTY },
             { type: EntityTypeId.LOCK },
           ],
         ],

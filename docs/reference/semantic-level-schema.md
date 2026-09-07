@@ -11,8 +11,9 @@
 - decoded archive 保留 Terrain 与 Object 两层，二者的标签统一为
   `ts-<row>-<column>:<semantic>`。例如 `ts-4-13:tree` 与
   `ts-16-14:fence`；坐标提供无损身份，语义后缀用于人工审阅。
-- 待确认的单格 terrain 转换为 `surface` Entity，并把 atlas 坐标保存在
-  `variant: "ts-<row>-<column>"`。Object 必须先取得稳定语义名称再进入 `LevelMap`。
+- 原版 terrain 层中的独立机关 Visual 转换为 `surface` Entity，并把 atlas 坐标
+  保存在 `variant: "ts-<row>-<column>"`。Object 必须先取得稳定语义名称再进入
+  `LevelMap`。
 - Engine 规则不依赖 DAT byte；原版 atlas 坐标与命名统一维护在
   `model/src/map/entity/ts-visuals.json`，由 Model API 提供给 Engine 与 Editor。
 

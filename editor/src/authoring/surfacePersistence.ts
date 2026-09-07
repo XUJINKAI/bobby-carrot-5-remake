@@ -71,9 +71,10 @@ export function surfaceVisualVariant(
     terrain.auto.kind === "fence" &&
     terrain.auto.canonical === entity.type
   ) {
-    const match = /^ts-16-(1[0-5])$/.exec(String(entity.variant));
-    const index = match ? Number(match[1]) - 10 : -1;
-    return terrain.auto.variants[index] ?? null;
+    return typeof entity.variant === "string" &&
+      terrain.auto.variants.includes(entity.variant)
+      ? entity.variant
+      : null;
   }
   return resolveFixedVariantType(entity, terrain);
 }

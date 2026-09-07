@@ -24,8 +24,8 @@
       ]
     },
     {
-      "type": "stone-wall-1",
-      "label": "石墙一",
+      "type": "stone-wall",
+      "label": "石墙",
       "coordinateVariant": true,
       "cells": [
         "1-4",
@@ -36,14 +36,7 @@
         "2-6",
         "3-4",
         "3-5",
-        "3-6"
-      ]
-    },
-    {
-      "type": "stone-wall-2",
-      "label": "石墙二",
-      "coordinateVariant": true,
-      "cells": [
+        "3-6",
         "1-7",
         "1-8",
         "2-7",
@@ -53,7 +46,9 @@
         "4-7",
         "4-8",
         "4-9",
-        "4-10"
+        "4-10",
+        "10-3",
+        "10-4"
       ]
     },
     {
@@ -300,14 +295,12 @@
         "9-5",
         "9-6",
         "10-1",
-        "10-2",
-        "10-3",
-        "10-4"
+        "10-2"
       ]
     },
     {
-      "type": "cloud-layer",
-      "label": "云层",
+      "type": "snow-cloud",
+      "label": "雪地 / 云层",
       "coordinateVariant": true,
       "cells": [
         "7-9",
@@ -332,14 +325,7 @@
         "9-11",
         "9-12",
         "9-13",
-        "9-14"
-      ]
-    },
-    {
-      "type": "snow-ground",
-      "label": "雪地",
-      "coordinateVariant": true,
-      "cells": [
+        "9-14",
         "7-15",
         "7-16",
         "8-15",
@@ -414,7 +400,7 @@
     },
     {
       "type": "surface",
-      "label": "待确认 Surface",
+      "label": "原版机关 Visual Surface",
       "coordinateVariant": true,
       "cells": [
         {
@@ -426,7 +412,7 @@
         {
           "cell": "14-12",
           "name": "dream-machine",
-          "label": "Dream Machine 主体",
+          "label": "Dream Machine 头部",
           "frame": "dream-machine"
         },
         {
@@ -514,10 +500,10 @@
       "label": "Coin Radar 商店",
       "name": "shop-coin-radar"
     },
-    "shop-unavailable": {
+    "shop-empty": {
       "cell": "10-15",
-      "label": "不可用商店",
-      "name": "shop-unavailable"
+      "label": "商店售罄后的空地面",
+      "name": "shop-empty"
     },
     "shovel-pickup": {
       "cell": "10-16",
@@ -944,6 +930,5 @@
       "label": "全透明",
       "name": "transparent"
     }
-  },
-  "unidentifiedCells": []
+  }
 }

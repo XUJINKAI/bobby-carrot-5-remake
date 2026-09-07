@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import {
+  EntityTypeId,
+  MapEntityTypeId,
+  tsCoordinateLabel,
+  tsSurfaceFamily,
+} from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
   applySurfaceTheme,
@@ -54,8 +59,18 @@ test("Surface catalog is independent from Palette", () => {
 });
 
 test("Surface catalog follows the documented original material groups", () => {
-  assert.equal(surfaceTerrain("stone-wall-1").rows.length, 3);
-  assert.equal(surfaceTerrain("stone-wall-2").rows.length, 4);
+  assert.deepEqual(
+    surfaceTerrain("stone-wall").rows.flat().map((item) => item.type).toSorted(),
+    tsSurfaceFamily("stone-wall").cells.map(tsCoordinateLabel).toSorted(),
+  );
+  assert.deepEqual(
+    surfaceTerrain("snow-cloud").rows.flat().map((item) => item.type).toSorted(),
+    tsSurfaceFamily("snow-cloud").cells.map(tsCoordinateLabel).toSorted(),
+  );
+  assert.deepEqual(
+    surfaceTerrain("original-visual").rows.flat().map((item) => item.type),
+    ["ts-14-10", "ts-14-12", "ts-15-10"],
+  );
   assert.equal(surfaceTerrain("mushroom").rows[0][0].type, "ts-4-14");
   assert.deepEqual(
     surfaceTerrain("waterfall").rows[0].map((variant) => variant.type),
@@ -117,14 +132,14 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
     catalog,
     [{ x: 1, y: 1 }],
     {
-      terrain: "snow-ground",
+      terrain: "snow-cloud",
       pattern: "exact",
       exact: "ts-7-15",
       seed: 1,
     },
   ).apply(level);
   cell = surfacesAt(level, 1, 1);
-  assert.equal(cell.some((item) => item.terrain.id === "snow-ground"), true);
+  assert.equal(cell.some((item) => item.terrain.id === "snow-cloud"), true);
   assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
 });
 
@@ -211,13 +226,13 @@ test("Surface instances leave gameplay semantics to Engine definitions", () => {
     catalog,
     [{ x: 1, y: 1 }],
     {
-      terrain: "stone-wall-1",
+      terrain: "stone-wall",
       pattern: "exact",
       exact: "ts-1-4",
       seed: 1,
     },
   ).apply(createBlankLevel(4, 4));
-  const entity = entityAt(next, 1, 1, (item) => item.type === "stone-wall-1");
+  const entity = entityAt(next, 1, 1, (item) => item.type === "stone-wall");
   assert.equal(entity?.traits, undefined);
   assert.equal(entity?.variant, "ts-1-4");
 });
@@ -329,7 +344,7 @@ test("Theme switch changes only recognized visual families", () => {
   assert.equal(detectSurfaceTheme(level), "forest");
   const next = applySurfaceTheme(catalog, "snow").apply(level);
   assert.equal(detectSurfaceTheme(next), "snow");
-  assert.equal(surfaceTerrainForEntity(entityAt(next, 0, 0)?.type)?.id, "snow-ground");
+  assert.equal(surfaceTerrainForEntity(entityAt(next, 0, 0)?.type)?.id, "snow-cloud");
   assert.equal(
     surfacesAt(next, 2, 0).some((item) => item.terrain.id === "snow-fence"),
     true,

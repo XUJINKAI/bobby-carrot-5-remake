@@ -1,4 +1,9 @@
-import { EntityTypeId, type EntityType } from "@bobby/model";
+import {
+  EntityTypeId,
+  tsCoordinateLabel,
+  tsSurfaceFamily,
+  type EntityType,
+} from "@bobby/model";
 
 export type SurfaceType =
   | "ground"
@@ -16,13 +21,12 @@ export type SurfaceTerrainId =
   | "waterfall"
   | "starfield"
   | "moon"
-  | "cloud"
+  | "snow-cloud"
   | "grass"
   | "fence"
   | "hedge"
   | "tree"
-  | "stone-wall-1"
-  | "stone-wall-2"
+  | "stone-wall"
   | "stump"
   | "flower-pot"
   | "stone"
@@ -32,11 +36,10 @@ export type SurfaceTerrainId =
   | "christmas-tree"
   | "snow-fence"
   | "snow-rock"
-  | "snow-ground"
   | "cactus"
   | "sand"
   | "ice"
-  | "source-tile";
+  | "original-visual";
 
 type ConcreteSurfaceTheme = Exclude<SurfaceTheme, "mixed">;
 
@@ -128,12 +131,21 @@ function variant(type: EntityType, label = type): SurfaceVariant {
   return { type, label };
 }
 
-function bgRow(row: number, columns: readonly number[]): SurfaceVariant[] {
-  return columns.map((column) => variant(bg(row, column), `${row},${column}`));
+function familyRows(type: string): SurfaceVariant[][] {
+  const rows = new Map<number, SurfaceVariant[]>();
+  for (const cell of tsSurfaceFamily(type).cells) {
+    const variants = rows.get(cell.row) ?? [];
+    variants.push(variant(
+      tsCoordinateLabel(cell),
+      `${cell.row},${cell.column}${cell.label ? ` ${cell.label}` : ""}`,
+    ));
+    rows.set(cell.row, variants);
+  }
+  return [...rows.values()];
 }
 
-function walkRow(row: number, columns: readonly number[]): SurfaceVariant[] {
-  return columns.map((column) => variant(walk(row, column), `${row},${column}`));
+function familyTypes(type: string): EntityType[] {
+  return familyRows(type).flat().map((item) => item.type);
 }
 
 function range(start: number, end: number): number[] {
@@ -182,10 +194,7 @@ const water = terrain({
   label: "水",
   type: "water",
   primary: EntityTypeId.WATER,
-  rows: [[
-    variant(bg(6, 6), "6,6 水面"),
-    variant(bg(6, 7), "6,7 涟漪"),
-  ]],
+  rows: [[...familyRows("water").flat(), ...familyRows("water-ripple").flat()]],
   auto: weighted([
     [bg(6, 6), 90],
     [bg(6, 7), 10],
@@ -197,11 +206,7 @@ const waterfall = terrain({
   label: "瀑布",
   type: "waterfall",
   primary: bg(6, 13),
-  rows: [[
-    variant(bg(6, 12), "6,12 顶部"),
-    variant(bg(6, 13), "6,13 中段"),
-    variant(bg(6, 14), "6,14 底部"),
-  ]],
+  rows: familyRows("waterfall"),
   auto: {
     kind: "vertical",
     start: bg(6, 12),
@@ -216,11 +221,7 @@ const starfield = terrain({
   type: "sky",
   theme: "space",
   primary: bg(5, 10),
-  rows: [[
-    variant(bg(5, 8), "5,8 大星星"),
-    variant(bg(5, 9), "5,9 小星星"),
-    variant(bg(5, 10), "5,10 星空"),
-  ]],
+  rows: familyRows("starfield"),
   auto: weighted([
     [bg(5, 8), 5],
     [bg(5, 9), 10],
@@ -233,32 +234,18 @@ const moon = terrain({
   label: "月亮",
   type: "sky",
   theme: "space",
-  rows: [[
-    variant(bg(5, 11), "5,11 左上"),
-    variant(bg(5, 12), "5,12 右上"),
-    variant(bg(5, 13), "5,13 右下"),
-  ]],
+  rows: familyRows("moon"),
 });
 
-const cloudTypes = [
-  ...range(9, 14).map((column) => walk(7, column)),
-  ...range(9, 14).map((column) => walk(8, column)),
-  walk(9, 7),
-  walk(9, 8),
-  ...range(9, 14).map((column) => walk(9, column)),
-];
-const cloud = terrain({
-  id: "cloud",
-  label: "云层",
+const snowCloudTypes = familyTypes("snow-cloud");
+const snowCloud = terrain({
+  id: "snow-cloud",
+  label: "雪地 / 云层",
   type: "ground",
-  theme: "space",
+  theme: "snow",
   themeFamily: "base-ground",
-  rows: [
-    walkRow(7, range(9, 14)),
-    walkRow(8, range(9, 14)),
-    walkRow(9, range(7, 14)),
-  ],
-  auto: { kind: "weighted", variants: weights(cloudTypes), salt: 37 },
+  rows: familyRows("snow-cloud"),
+  auto: { kind: "weighted", variants: weights(snowCloudTypes), salt: 37 },
 });
 
 const grassNormal = [
@@ -277,27 +264,14 @@ const grassWaterEdge = [
   walk(8, 7),
   walk(8, 8),
 ];
-const grassTreeEdge = range(1, 4).map((column) => walk(10, column));
+const grassTreeEdge = range(1, 2).map((column) => walk(10, column));
 const grass = terrain({
   id: "grass",
   label: "草地",
   type: "ground",
   theme: "forest",
   themeFamily: "base-ground",
-  rows: [
-    [
-      ...walkRow(7, range(1, 3)),
-      ...bgRow(6, [15, 16]),
-    ],
-    walkRow(8, range(1, 3)),
-    walkRow(9, range(1, 3)),
-    [
-      ...walkRow(7, range(4, 8)),
-      ...walkRow(8, range(4, 8)),
-    ],
-    walkRow(9, range(4, 6)),
-    walkRow(10, range(1, 4)),
-  ],
+  rows: familyRows("grass"),
   auto: {
     kind: "neighbor",
     fallback: weights(grassNormal),
@@ -309,7 +283,7 @@ const grass = terrain({
   },
 });
 
-const fenceVariants = range(10, 15).map((column) => bg(16, column));
+const fenceVariants = familyTypes("fence");
 const fence = terrain({
   id: "fence",
   label: "木栅栏",
@@ -318,7 +292,7 @@ const fence = terrain({
   theme: "forest",
   themeFamily: "fence",
   primary: EntityTypeId.FENCE,
-  rows: [bgRow(16, range(10, 15))],
+  rows: familyRows("fence"),
   auto: {
     kind: "fence",
     variants: fenceVariants,
@@ -331,11 +305,7 @@ const hedge = terrain({
   label: "篱笆",
   type: "solid",
   theme: "forest",
-  rows: [
-    bgRow(4, [4, 5]),
-    bgRow(5, range(1, 7)),
-    bgRow(6, range(1, 5)),
-  ],
+  rows: familyRows("hedge"),
 });
 
 const tree = terrain({
@@ -343,37 +313,15 @@ const tree = terrain({
   label: "树",
   type: "solid",
   theme: "forest",
-  rows: [
-    bgRow(1, range(11, 16)),
-    bgRow(2, range(11, 16)),
-    bgRow(3, range(11, 16)),
-    bgRow(4, [11, 12, 13]),
-  ],
+  rows: familyRows("tree"),
 });
 
-const stoneWall1 = terrain({
-  id: "stone-wall-1",
-  label: "石头墙1",
+const stoneWall = terrain({
+  id: "stone-wall",
+  label: "石墙",
   type: "solid",
   theme: "forest",
-  rows: [
-    bgRow(1, range(4, 6)),
-    bgRow(2, range(4, 6)),
-    bgRow(3, range(4, 6)),
-  ],
-});
-
-const stoneWall2 = terrain({
-  id: "stone-wall-2",
-  label: "石头墙2",
-  type: "solid",
-  theme: "forest",
-  rows: [
-    bgRow(1, range(7, 8)),
-    bgRow(2, range(7, 8)),
-    bgRow(3, range(7, 8)),
-    bgRow(4, range(7, 10)),
-  ],
+  rows: familyRows("stone-wall"),
 });
 
 const stump = terrain({
@@ -381,14 +329,14 @@ const stump = terrain({
   label: "木桩",
   type: "solid",
   theme: "forest",
-  rows: [[variant(bg(1, 1), "1,1")]],
+  rows: familyRows("stump"),
 });
 const flowerPot = terrain({
   id: "flower-pot",
   label: "花盆",
   type: "solid",
   theme: "forest",
-  rows: [[variant(bg(1, 3), "1,3")]],
+  rows: familyRows("flower-pot"),
 });
 const stone = terrain({
   id: "stone",
@@ -396,14 +344,14 @@ const stone = terrain({
   type: "solid",
   theme: "forest",
   themeFamily: "rock",
-  rows: [[variant(bg(4, 6), "4,6")]],
+  rows: familyRows("rock"),
 });
 const mushroom = terrain({
   id: "mushroom",
   label: "蘑菇",
   type: "solid",
   theme: "forest",
-  rows: [[variant(bg(4, 14), "4,14")]],
+  rows: familyRows("mushroom"),
 });
 
 const snowman = terrain({
@@ -411,27 +359,23 @@ const snowman = terrain({
   label: "雪人",
   type: "solid",
   theme: "snow",
-  rows: [[variant(bg(3, 3), "3,3 上"), variant(bg(4, 3), "4,3 下")]],
+  rows: familyRows("snowman"),
 });
 const christmasCane = terrain({
   id: "christmas-cane",
   label: "圣诞杖",
   type: "solid",
   theme: "snow",
-  rows: [[variant(bg(3, 2), "3,2 上"), variant(bg(4, 2), "4,2 下")]],
+  rows: familyRows("candy-cane"),
 });
 const christmasTree = terrain({
   id: "christmas-tree",
   label: "圣诞树",
   type: "solid",
   theme: "snow",
-  rows: [
-    bgRow(1, [9, 10]),
-    bgRow(2, [9, 10]),
-    bgRow(3, [9, 10]),
-  ],
+  rows: familyRows("christmas-tree"),
 });
-const snowFenceTypes = [bg(2, 1), bg(2, 2), bg(2, 3), bg(3, 1), bg(4, 1)];
+const snowFenceTypes = familyTypes("snow-fence");
 const snowFence = terrain({
   id: "snow-fence",
   label: "雪地栅栏",
@@ -439,7 +383,7 @@ const snowFence = terrain({
   slot: "overlay",
   theme: "snow",
   themeFamily: "fence",
-  rows: [bgRow(2, range(1, 3)), bgRow(3, [1]), bgRow(4, [1])],
+  rows: familyRows("snow-fence"),
   auto: { kind: "fence", variants: snowFenceTypes },
 });
 const snowRock = terrain({
@@ -448,22 +392,7 @@ const snowRock = terrain({
   type: "solid",
   theme: "snow",
   themeFamily: "rock",
-  rows: [[variant(bg(1, 2), "1,2")]],
-});
-const snowGround = terrain({
-  id: "snow-ground",
-  label: "雪地",
-  type: "ground",
-  theme: "snow",
-  themeFamily: "base-ground",
-  rows: [walkRow(7, [15, 16]), walkRow(8, [15, 16]), walkRow(9, [15])],
-  auto: weighted([
-    [walk(7, 15), 70],
-    [walk(7, 16), 10],
-    [walk(8, 15), 8],
-    [walk(8, 16), 7],
-    [walk(9, 15), 5],
-  ], 23),
+  rows: familyRows("snowy-rock"),
 });
 
 const cactus = terrain({
@@ -471,10 +400,7 @@ const cactus = terrain({
   label: "仙人掌",
   type: "solid",
   theme: "desert",
-  rows: [
-    [variant(bg(4, 15), "4,15 小仙人掌"), variant(bg(5, 15), "5,15 仙人球")],
-    [variant(bg(4, 16), "4,16 两格上"), variant(bg(5, 16), "5,16 两格下")],
-  ],
+  rows: [...familyRows("cactus"), ...familyRows("tall-cactus")],
   // Composite Surface Asset 延期；Auto 只在单格仙人掌中做加权选择。
   auto: weighted([
     [bg(4, 15), 3],
@@ -487,7 +413,7 @@ const sand = terrain({
   type: "ground",
   theme: "desert",
   themeFamily: "base-ground",
-  rows: [[variant(walk(9, 16), "9,16")]],
+  rows: familyRows("sand"),
 });
 
 // Ice 仍是 Surface gameplay terrain；它不是本次 surface.md 新列的静态 ts 分类之一。
@@ -499,15 +425,11 @@ const ice = terrain({
   rows: [[variant(EntityTypeId.ICE, "Ice")]],
 });
 
-const sourceTile = terrain({
-  id: "source-tile",
-  label: "待确认素材",
+const originalVisual = terrain({
+  id: "original-visual",
+  label: "原版机关 Visual",
   type: "solid",
-  rows: [[
-    variant(bg(14, 10), "14,10 火龙尾部素材"),
-    variant(bg(14, 12), "14,12 Dream Machine 素材"),
-    variant(bg(15, 10), "15,10 火龙吐火第二帧"),
-  ]],
+  rows: familyRows("surface"),
 });
 
 export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
@@ -515,13 +437,12 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   waterfall,
   starfield,
   moon,
-  cloud,
+  snowCloud,
   grass,
   fence,
   hedge,
   tree,
-  stoneWall1,
-  stoneWall2,
+  stoneWall,
   stump,
   flowerPot,
   stone,
@@ -531,11 +452,10 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   christmasTree,
   snowFence,
   snowRock,
-  snowGround,
   cactus,
   sand,
   ice,
-  sourceTile,
+  originalVisual,
 ];
 
 export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
@@ -544,7 +464,7 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     label: "水与太空",
     rows: [
       ["water", "waterfall", "starfield", "moon"],
-      ["cloud"],
+      ["snow-cloud"],
     ],
   },
   {
@@ -552,7 +472,7 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     label: "森林",
     rows: [
       ["grass", "fence", "hedge", "tree"],
-      ["stone-wall-1", "stone-wall-2", "stump", "flower-pot"],
+      ["stone-wall", "stump", "flower-pot"],
       ["stone", "mushroom"],
     ],
   },
@@ -560,7 +480,7 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     id: "snow",
     label: "雪地（圣诞）",
     rows: [
-      ["snow-ground", "snow-rock", "snow-fence", "ice"],
+      ["snow-cloud", "snow-rock", "snow-fence", "ice"],
       ["snowman", "christmas-cane", "christmas-tree"],
     ],
   },
@@ -570,9 +490,9 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     rows: [["sand", "cactus"]],
   },
   {
-    id: "source",
-    label: "待确认",
-    rows: [["source-tile"]],
+    id: "original-visual",
+    label: "原版 Visual",
+    rows: [["original-visual"]],
   },
 ];
 

@@ -51,7 +51,6 @@ const rawCatalog = catalog as {
   atlas: string;
   surfaceFamilies: RawSurfaceFamily[];
   visuals: Record<string, { cell: string; label: string; name: string }>;
-  unidentifiedCells: string[];
 };
 
 if (rawCatalog.schemaVersion !== 1 || rawCatalog.atlas !== "ts.png")
@@ -100,10 +99,6 @@ export const TS_VISUALS: Readonly<Record<string, TsVisualDefinition>> =
     ] as const),
   ]));
 
-export const TS_UNIDENTIFIED_CELLS: readonly TsCoordinate[] = Object.freeze(
-  rawCatalog.unidentifiedCells.map(parseTsCell),
-);
-
 const atlasCells = new Map<string, TsAtlasCellDefinition>();
 for (const family of TS_SURFACE_FAMILIES) {
   for (const cell of family.cells) {
@@ -123,12 +118,11 @@ for (const visual of Object.values(TS_VISUALS)) {
     label: visual.label,
   }));
 }
-for (const cell of TS_UNIDENTIFIED_CELLS) {
-  atlasCells.set(tsCoordinateLabel(cell), Object.freeze({
-    ...cell,
-    name: "unidentified",
-    label: "待确认素材",
-  }));
+
+export function tsSurfaceFamily(type: string): TsSurfaceFamilyDefinition {
+  const family = TS_SURFACE_FAMILIES.find((candidate) => candidate.type === type);
+  if (!family) throw new Error(`ts visual 命名表缺少 Surface family：${type}`);
+  return family;
 }
 
 export function tsAtlasCell(row: number, column: number): TsAtlasCellDefinition {

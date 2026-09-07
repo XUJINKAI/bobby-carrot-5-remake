@@ -66,9 +66,9 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 | `dragon-head/body/tail/anim-*` | `dragon` | footprint role + visual/runtime state |
 | `ice-block/ice-melt-*` | `ice-block` | melt stage 只存在于 runtime state |
 
-待确认的 `ts.png` 单格使用 `type: "surface"` 与
-`variant: "ts-<row>-<column>"`；已归类但仅有视觉差异的 Surface 也使用同样的
-坐标 variant。Object 使用稳定语义 type。atlas 坐标与名称以
+原版地图偶尔会把机关动画帧放在 terrain 层；这类已知 Visual 使用
+`type: "surface"` 与 `variant: "ts-<row>-<column>"`。已归类但仅有视觉差异的
+Surface 也使用同样的坐标 variant。Object 使用稳定语义 type。atlas 坐标与名称以
 `model/src/map/entity/ts-visuals.json` 为唯一来源，不从 DAT byte 推导。
 
 Editor Surface 始终按单格持久化。月亮、圣诞树、雪人等视觉拼图由多个同类型、不同 `variant` 的单格 Entity 组成；它们不使用 footprint。Dragon 等 Palette Object 仍按下文的 multi-cell anchor 合同持久化。
