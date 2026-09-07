@@ -152,7 +152,7 @@ export function adaptLegacyMap(map, options = {}) {
 export function adaptLegacyTerrain(type, x, y, options = {}) {
   if (type === LegacyTerrain.SNOW) {
     return [
-      entity(EntityTypeId.GROUND_D, x, y),
+      canonicalTerrainEntity(EntityTypeId.GROUND_D, x, y),
       entity(EntityTypeId.SNOW, x, y),
     ];
   }
