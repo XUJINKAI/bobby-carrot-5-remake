@@ -102,7 +102,7 @@ const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
 for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
 
 export function isSurfaceEntityType(type: EntityType): boolean {
-  return surfaceTypes.has(type);
+  return surfaceTypes.has(type) || /^surface-\d+-\d+$/.test(type);
 }
 
 export function surfaceTerrain(id: SurfaceTerrainId): SurfaceTerrainDefinition {

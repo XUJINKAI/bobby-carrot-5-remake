@@ -4,6 +4,8 @@ import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
   defineEntityModule,
+  SpatialVisualQuery,
+  visualRegistry,
 } from "../../engine/dist/public.js";
 import {
   EditorDocument,
@@ -295,6 +297,47 @@ test("Palette keeps explicit directional presets and appends new creatable types
     palette.flatMap((group) => group.rows.flat())
       .some((entry) => entry.type === "background-variant-001"),
     false,
+  );
+  assert.equal(
+    palette
+      .flatMap((group) => group.rows.flat())
+      .some((entry) => entry.type === "surface-14-10"),
+    false,
+  );
+});
+
+test("Editor Preview 将 Surface variant 投影到 Engine visual state", () => {
+  const level = createBlankLevel(2, 1);
+  level.entities.push({
+    type: MapEntityTypeId.GRASS,
+    x: 0,
+    y: 0,
+    variant: "ts-7-1",
+  });
+  level.entities.push({
+    type: MapEntityTypeId.GRASS,
+    x: 1,
+    y: 0,
+    variant: "ts-10-1",
+  });
+  const preview = new EditorPreview(level, catalog);
+  const entities = preview.entities.all().slice(-2);
+  assert.deepEqual(
+    entities.map((entity) => entity.state?.variant),
+    ["ts-7-1", "ts-10-1"],
+  );
+  const query = new SpatialVisualQuery(preview.entities, preview.spatial);
+  assert.deepEqual(
+    entities.map((entity) => {
+      const presence = preview.spatial.presencesForEntity(entity.id)[0];
+      const visual = visualRegistry.resolve(catalog.require(entity.type), {
+        entity,
+        presence,
+        query,
+      });
+      return [visual?.layers[0]?.row, visual?.layers[0]?.column];
+    }),
+    [[6, 0], [9, 0]],
   );
 });
 
