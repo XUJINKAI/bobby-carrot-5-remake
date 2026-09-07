@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
   applySurfaceTheme,
@@ -182,7 +182,7 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
   ).apply(level);
 
   const cell = next.entities.filter((entity) => entity.x === 1 && entity.y === 1);
-  assert.equal(cell.some((entity) => entity.type === EntityTypeId.GROUND_C), true);
+  assert.equal(cell.some((entity) => entity.type === MapEntityTypeId.GRASS), true);
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.SPEED), true);
 });
 

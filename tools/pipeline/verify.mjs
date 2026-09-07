@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
-let entityMapDefinition;
+let parseMapDocument;
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
 const packageJson = readJson("package.json");
@@ -17,7 +17,7 @@ for (const file of [
   run("git", ["check-ignore", "--quiet", file]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
-({ entityMapDefinition } = await import("@bobby/model"));
+({ parseMapDocument } = await import("@bobby/model"));
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const collectionsIndex = readJson("assets/maps/index.json");
@@ -239,78 +239,11 @@ function assertSchemaV1(value, relative) {
 }
 
 function assertMapDocument(document, relative) {
-  assertSchemaV1(document, relative);
-  if (
-    !document.meta ||
-    typeof document.meta.name !== "string" ||
-    !Number.isInteger(document.width) ||
-    !Number.isInteger(document.height) ||
-    document.width <= 0 ||
-    document.height <= 0 ||
-    !Array.isArray(document.entities)
-  )
-    throw new Error(`${relative}: MapDocument Entity 合同不完整`);
-  for (const obsolete of ["id", "next"])
-    if (Object.hasOwn(document.meta, obsolete))
-      throw new Error(`${relative}: meta 不允许持久化资源字段 ${obsolete}`);
-  for (const obsolete of ["name", "author", "description", "chapter"])
-    if (Object.hasOwn(document, obsolete))
-      throw new Error(`${relative}: 文档 metadata 必须放在 meta，不能使用顶层 ${obsolete}`);
-  for (const obsolete of ["terrain", "objects", "playerStart"])
-    if (Object.hasOwn(document, obsolete))
-      throw new Error(`${relative}: 不允许持久化旧字段 ${obsolete}`);
-  assertEntityBounds(document, relative);
-  assertEntityContracts(document, relative);
-}
-
-function assertEntityContracts(document, relative) {
-  for (const [index, entity] of document.entities.entries()) {
-    const definition = entityMapDefinition(entity.type);
-    if (!definition)
-      throw new Error(`${relative}: entities[${index}] 使用未知 map type ${entity.type}`);
-    const fields = new Map(definition.fields.map((field) => [field.key, field]));
-    for (const key of Object.keys(entity)) {
-      if (["type", "x", "y", "stackOrder"].includes(key) || fields.has(key))
-        continue;
-      throw new Error(`${relative}: entities[${index}] 不允许字段 ${key}`);
-    }
-    for (const field of fields.values()) {
-      const value = entity[field.key];
-      if (field.required && value === undefined)
-        throw new Error(`${relative}: entities[${index}] 缺少必填字段 ${field.key}`);
-      if (value !== undefined && !fieldAccepts(field, value))
-        throw new Error(`${relative}: entities[${index}].${field.key} 不符合 ${field.kind} 合同`);
-    }
-  }
-}
-
-function fieldAccepts(field, value) {
-  if (field.kind === "boolean") return typeof value === "boolean";
-  if (field.kind === "string") return typeof value === "string";
-  if (field.kind === "enum") return field.values.includes(value);
-  if (field.kind === "integer" && !Number.isInteger(value)) return false;
-  if (field.kind === "number" && typeof value !== "number") return false;
-  if (field.kind === "integer" || field.kind === "number")
-    return (field.min === undefined || value >= field.min) &&
-      (field.max === undefined || value <= field.max);
-  return false;
-}
-
-function assertEntityBounds(document, relative) {
-  for (const [index, entity] of document.entities.entries()) {
-    if (
-      !entity ||
-      typeof entity !== "object" ||
-      typeof entity.type !== "string" ||
-      !entity.type ||
-      !Number.isInteger(entity.x) ||
-      !Number.isInteger(entity.y) ||
-      entity.x < 0 ||
-      entity.y < 0 ||
-      entity.x >= document.width ||
-      entity.y >= document.height
-    )
-      throw new Error(`${relative}: entities[${index}] identity/坐标无效`);
+  try {
+    parseMapDocument(document);
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`${relative}: ${detail}`, { cause });
   }
 }
 

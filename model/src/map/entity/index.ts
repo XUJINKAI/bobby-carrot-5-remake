@@ -11,6 +11,7 @@ export {
   LEVEL_ENTITY_RESERVED_FIELDS,
   defineEntity,
   booleanField,
+  stringField,
   integerField,
   enumField,
   isLevelEntityReservedField,

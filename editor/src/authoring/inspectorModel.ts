@@ -8,6 +8,7 @@ import type {
 } from "../definitions/types.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
+import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 import {
   selectedEntityRefs,
   selectionRect,
@@ -155,6 +156,8 @@ function entityEditableScore(
   definition: EntityCatalogEntry,
   editor: EditorEntityDefinition | undefined,
 ): number {
+  // Surface 由专用 Surface 面板编辑，不能凭 variant 字段挤到机关分组之前。
+  if (isSurfaceEntityType(definition.type)) return 0;
   return (
     (editor?.variants?.length ?? 0) * 100 +
     (entityMapDefinition(definition.type)?.fields.length ?? 0) * 10 +

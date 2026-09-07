@@ -201,12 +201,12 @@ function dialogPayload() {
     },
     width: 2,
     height: 2,
-    rules: { win: { type: "reach", trait: "exit" } },
+    rules: { win: { type: "reach", target: "exit" } },
     entities: [
-      { type: "ground-c", x: 0, y: 0 },
-      { type: "ground-c", x: 1, y: 0 },
-      { type: "ground-c", x: 0, y: 1 },
-      { type: "ground-c", x: 1, y: 1 },
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
       { type: "start", x: 0, y: 0 },
       { type: "bobby", x: 0, y: 0 },
       {

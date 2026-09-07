@@ -2,6 +2,7 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   coordinateSurfaceType,
+  legacyEntityMapAlias,
   surfaceMappingForTs,
   type EntityType,
   type LevelEntity,
@@ -72,6 +73,15 @@ function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
 
   if (entity.type === EntityTypeId.WATER_ANIMATED)
     return { ...stripAutoMetadata(entity), type: MapEntityTypeId.WATER_RIPPLE };
+
+  const alias = legacyEntityMapAlias(entity.type);
+  if (alias?.to) {
+    return {
+      ...stripAutoMetadata(entity),
+      type: alias.to,
+      ...(alias.fields ?? {}),
+    };
+  }
 
   const absolute = absoluteTsVariant(entity);
   if (absolute === null) return stripAutoMetadata(entity);

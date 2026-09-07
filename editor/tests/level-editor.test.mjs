@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
   defineEntityModule,
@@ -149,7 +149,7 @@ test("Editor replaceGroup replaces only matching authoring layers", () => {
   const level = createBlankLevel(8, 8);
   const before = new EditorPreview(level, catalog).inspectCell(1, 1);
   assert.deepEqual(before.presences.map((item) => item.entity.type), [
-    EntityTypeId.GROUND_C,
+    MapEntityTypeId.GRASS,
   ]);
   const after = placeEntity(
     catalog,
@@ -237,11 +237,11 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   const preview = new EditorPreview(document.getSnapshot().level, catalog);
   assert.equal(
     preview.inspectCell(1, 1).top?.entity.type,
-    EntityTypeId.GROUND_C,
+    MapEntityTypeId.GRASS,
   );
   assert.equal(
     preview.inspectCell(2, 1).top?.entity.type,
-    EntityTypeId.GROUND_C,
+    MapEntityTypeId.GRASS,
   );
 });
 
@@ -262,7 +262,7 @@ test("Editor exclusions hide internal and raw Original variants from creation", 
   );
   assert.equal(
     isEditorEntityCreatable(builtinEditorDefinition, EntityTypeId.GROUND_C),
-    true,
+    false,
   );
 });
 
@@ -345,7 +345,7 @@ test("multi-cell Inspector groups same types and prioritizes editable groups", (
   assert.equal(model.groups[0].type, EntityTypeId.SPEED_SWITCH);
   assert.equal(model.groups[0].count, 2);
   assert.equal(
-    model.groups.find((group) => group.type === EntityTypeId.GROUND_C)?.count,
+    model.groups.find((group) => group.type === MapEntityTypeId.GRASS)?.count,
     4,
   );
 });

@@ -1,6 +1,7 @@
 import {
   EntityTypeId,
   MapEntityTypeId,
+  SURFACE_ENTITY_DEFINITIONS,
   type Direction,
   type EntityType,
   type LevelEntity,
@@ -66,6 +67,7 @@ const directionalMechanism: EditorEntityDefinition = {
   variants: directions,
 };
 const directSurfaceTypes: readonly EntityType[] = [
+  ...SURFACE_ENTITY_DEFINITIONS.map((definition) => definition.type),
   EntityTypeId.GROUND_A,
   EntityTypeId.GROUND_B,
   EntityTypeId.GROUND_C,
@@ -80,6 +82,10 @@ const directSurfaceTypes: readonly EntityType[] = [
 
 export const builtinEditorDefinition: EditorDefinition = {
   exclude: [
+    EntityTypeId.GROUND_A,
+    EntityTypeId.GROUND_B,
+    EntityTypeId.GROUND_C,
+    EntityTypeId.GROUND_D,
     EntityTypeId.CONSUMED_CARROT,
     EntityTypeId.PLANK_CRUMBLING,
     EntityTypeId.PLANK_FRAGMENT,

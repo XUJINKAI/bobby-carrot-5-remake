@@ -6,9 +6,9 @@ export type LevelEntityReservedField = (typeof LEVEL_ENTITY_RESERVED_FIELDS)[num
 
 interface EntityMapFieldBase {
   key: string;
-  /** Human review note; Editor labels/help remain Editor-owned. */
+  /** 供人工审阅的说明；Editor label/help 仍由 Editor 持有。 */
   description?: string;
-  /** Required means canonical JSON must spell the field out. */
+  /** required 表示 canonical JSON 必须显式写出该字段。 */
   required?: boolean;
 }
 
@@ -46,6 +46,21 @@ export function booleanField(
   return Object.freeze({
     key,
     kind: "boolean",
+    ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+    ...(required ? { required: true } : {}),
+    ...(description ? { description } : {}),
+  });
+}
+
+export function stringField(
+  key: string,
+  defaultValue?: string,
+  required = false,
+  description?: string,
+): EntityMapFieldDefinition {
+  return Object.freeze({
+    key,
+    kind: "string",
     ...(defaultValue !== undefined ? { default: defaultValue } : {}),
     ...(required ? { required: true } : {}),
     ...(description ? { description } : {}),

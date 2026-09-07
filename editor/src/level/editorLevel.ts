@@ -1,5 +1,6 @@
 import {
   EntityTypeId,
+  MapEntityTypeId,
   type JsonPrimitive,
   type LevelEntity,
   type LevelLimit,
@@ -22,9 +23,12 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
         type:
           x === exit.x && y === exit.y
             ? EntityTypeId.EXIT
-            : EntityTypeId.GROUND_C,
+            : MapEntityTypeId.GRASS,
         x,
         y,
+        ...(x === exit.x && y === exit.y
+          ? {}
+          : { variant: "ts-10-1" }),
       });
   entities.push({
     type: EntityTypeId.BOBBY,
@@ -92,6 +96,8 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
   };
   if (input.meta?.author)
     level.meta.author = String(input.meta.author).slice(0, 80);
+  if (input.meta?.description)
+    level.meta.description = String(input.meta.description).slice(0, 500);
   if (typeof input.music === "string" && input.music)
     level.music = input.music;
   if (typeof input.note === "string" && input.note)

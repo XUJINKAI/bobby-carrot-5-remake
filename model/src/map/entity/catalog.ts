@@ -3,6 +3,7 @@ import {
   defineEntity,
   enumField,
   integerField,
+  stringField,
   type EntityMapDefinition,
   type EntityMapFieldDefinition,
 } from "./contract.js";
@@ -137,7 +138,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.DRAGON, [
     enumField("direction", HORIZONTAL_DIRECTIONS, undefined, true),
   ]),
-  defineEntity(MapEntityTypeId.SANDMAN),
+  defineEntity(MapEntityTypeId.SANDMAN, [
+    stringField("dialogue", undefined, false, "地图作者设置的对话文本。"),
+  ]),
   defineEntity(MapEntityTypeId.DREAM_MACHINE),
   defineEntity(MapEntityTypeId.MOWER),
   defineEntity(MapEntityTypeId.GAS),

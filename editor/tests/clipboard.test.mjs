@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
   copyEntitySelection,
@@ -31,7 +31,10 @@ test("Entity clipboard copies without Surface and pastes at the requested origin
   );
   assert.equal(
     next.entities.filter(
-      (entity) => entity.x === 4 && entity.y === 3 && entity.type === EntityTypeId.GROUND_C,
+      (entity) =>
+        entity.x === 4 &&
+        entity.y === 3 &&
+        entity.type === MapEntityTypeId.GRASS,
     ).length,
     1,
   );
