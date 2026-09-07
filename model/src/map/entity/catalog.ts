@@ -240,7 +240,7 @@ function coordinateObjectDefinition(
   return defineEntity(
     type as CoordinateObjectEntityType,
     [],
-    `Unresolved original object at object.png(${row},${column}).`,
+    `Unresolved original object at ts.png(${row},${column}).`,
   );
 }
 

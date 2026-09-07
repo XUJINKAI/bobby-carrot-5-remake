@@ -174,6 +174,7 @@ export type {
   EntitySpawnSpec,
   EntityState,
 } from "./world/entity/EntityInstance.js";
+export { levelEntityRuntimeType } from "./world/entity/EntityInstance.js";
 export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
   footprintCell,
@@ -191,6 +192,7 @@ export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
   defineEntityModule,
   type EntityBehaviorBinding,
+  type EntityAuthoringDefinition,
   type EntityModule,
   type EntityModuleDefinition,
   type EntityModuleInput,

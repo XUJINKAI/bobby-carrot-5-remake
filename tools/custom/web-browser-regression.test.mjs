@@ -62,6 +62,7 @@ test(
     try {
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, `${origin}/settings`);
+      await verifyEditorSurfaceInspector(cdp, `${origin}/edit`);
       await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
     } finally {
       cdp.close();
@@ -131,6 +132,82 @@ async function verifySettingsPage(cdp, url) {
   );
   if (snapshot.cards < 2 || !snapshot.text.includes("Adventure") || !snapshot.text.includes("Explore"))
     throw new Error("Settings save management did not expose Adventure and Explore cards");
+}
+
+async function verifyEditorSurfaceInspector(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.editor-canvas') && document.querySelector('.editor-surface-panel')",
+      ),
+    ),
+    20_000,
+  );
+  const point = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const canvas = document.querySelector('.editor-canvas');
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 32,
+        y: rect.top + rect.height / 32,
+      };
+    })()`,
+  );
+  if (!point) throw new Error("Editor canvas was not measurable");
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    { type: "mousePressed", x: point.x, y: point.y, button: "left", clickCount: 1 },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    { type: "mouseReleased", x: point.x, y: point.y, button: "left", clickCount: 1 },
+    sessionId,
+  );
+  await waitFor(async () =>
+    Number(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelectorAll('.editor-layer-card .editor-surface-variant-btn').length",
+      ),
+    ) > 1,
+  );
+  const snapshot = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const card = document.querySelector('.editor-layer-card');
+      const active = card?.querySelector('.editor-surface-variant-btn.active');
+      const next = [...(card?.querySelectorAll('.editor-surface-variant-btn') ?? [])]
+        .find((button) => button !== active);
+      const nextTitle = next?.getAttribute('title') ?? '';
+      next?.click();
+      return {
+        selects: card?.querySelectorAll('select').length ?? -1,
+        nextTitle,
+        text: document.body.textContent ?? '',
+      };
+    })()`,
+  );
+  if (snapshot.selects !== 0 || !snapshot.nextTitle)
+    throw new Error("Surface Inspector did not expose a visual-only variant grid");
+  if (snapshot.text.includes("使用未注册 type"))
+    throw new Error("Editor reported an unregistered canonical Entity type");
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.editor-layer-card .editor-surface-variant-btn.active')?.getAttribute('title') ?? ''",
+    )) === snapshot.nextTitle,
+  );
 }
 
 async function verifyGameplayDialog(cdp, url) {

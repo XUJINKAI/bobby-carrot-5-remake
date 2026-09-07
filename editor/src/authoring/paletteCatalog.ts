@@ -2,6 +2,7 @@ import type { EntityCatalog } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import { isEditorEntityCreatable } from "../definitions/entities.js";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type {
   EditorDefinition,
   EditorPaletteEntry,
@@ -38,7 +39,7 @@ export function resolveEditorPalette(
     .map((definition) => definition.type)
     .filter(
       (type) =>
-        isEditorEntityCreatable(editor, type) &&
+        isEditorEntityCreatable(editor, type, catalog) &&
         !isSurfaceEntityType(type) &&
         !used.has(type),
     )
@@ -131,7 +132,15 @@ function resolveEntry(
     ...entry,
     key,
     label:
-      entry.label ?? catalog.require(entry.type).presentation.name ?? entry.type,
+      entry.label ??
+      editorCatalogEntry(catalog, {
+        type: entry.type,
+        x: 0,
+        y: 0,
+        ...(entry.direction ? { direction: entry.direction } : {}),
+        ...(entry.fields ?? {}),
+      }).presentation.name ??
+      entry.type,
     previewPreset,
     previewWidth: layout.width,
     previewHeight: layout.height,

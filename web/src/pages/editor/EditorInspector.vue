@@ -6,6 +6,7 @@ import {
   type InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import { computed, ref, watch } from "vue";
 import EditorCellInspector from "./EditorCellInspector.vue";
 import EditorMultiInspector from "./EditorMultiInspector.vue";
@@ -20,10 +21,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
   batchField: [type: string, key: string, value: string];
   batchVariant: [type: string, index: number];
+  batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
 }>();
 
@@ -94,6 +97,7 @@ const visibleModel = computed<InspectorModel>(() => {
       @toggle-surface="toggleSurface"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
+      @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
       @delete="emit('deleteLayer', $event)"
       @reorder="emit('reorder', $event)"
     />
@@ -108,6 +112,7 @@ const visibleModel = computed<InspectorModel>(() => {
       @toggle-surface="toggleSurface"
       @field="(type, key, value) => emit('batchField', type, key, value)"
       @variant="(type, index) => emit('batchVariant', type, index)"
+      @surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @delete-type="emit('batchDelete', $event)"
     />
   </aside>

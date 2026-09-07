@@ -86,20 +86,6 @@ const directSurfaceTypes: readonly EntityType[] = [
 ];
 
 export const builtinEditorDefinition: EditorDefinition = {
-  exclude: [
-    EntityTypeId.GROUND_A,
-    EntityTypeId.GROUND_B,
-    EntityTypeId.GROUND_C,
-    EntityTypeId.GROUND_D,
-    EntityTypeId.CONSUMED_CARROT,
-    EntityTypeId.PLANK_CRUMBLING,
-    EntityTypeId.PLANK_FRAGMENT,
-    EntityTypeId.BEAN_SPROUT,
-    EntityTypeId.FENCE,
-    { prefix: "background-variant-" },
-    { prefix: "walkable-variant-" },
-    { prefix: "object-variant-" },
-  ],
   entities: {
     ...withPolicy(directSurfaceTypes, surface),
     ...withPolicy(
@@ -114,8 +100,7 @@ export const builtinEditorDefinition: EditorDefinition = {
     ...withPolicy(
       [
         EntityTypeId.CARROT,
-        EntityTypeId.EGG_NEST_EMPTY,
-        EntityTypeId.EGG_NEST_FILLED,
+        MapEntityTypeId.EGG_NEST,
       ],
       item,
     ),
@@ -150,6 +135,7 @@ export const builtinEditorDefinition: EditorDefinition = {
     },
     [EntityTypeId.SPEED]: directionalMechanism,
     [EntityTypeId.TIDE]: directionalMechanism,
+    [MapEntityTypeId.WINDMILL]: directionalMechanism,
     [EntityTypeId.TIDE_SWITCH]: { variants: pressedVariants },
     [EntityTypeId.SPEED_SWITCH]: { variants: pressedVariants },
     [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
@@ -205,8 +191,7 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.START },
             { type: EntityTypeId.EXIT },
             { type: EntityTypeId.CARROT },
-            { type: EntityTypeId.EGG_NEST_EMPTY },
-            { type: EntityTypeId.EGG_NEST_FILLED },
+            { type: MapEntityTypeId.EGG_NEST },
             { type: EntityTypeId.PUSH_GOAL },
             { type: MapEntityTypeId.PUSHABLE_ROCK },
           ],
@@ -234,6 +219,7 @@ export const builtinEditorDefinition: EditorDefinition = {
           [
             { type: EntityTypeId.BEAN },
             { type: EntityTypeId.BEAN_FIELD },
+            { type: MapEntityTypeId.BEANSTALK },
             { type: EntityTypeId.GAS },
             { type: EntityTypeId.MOWER },
             { type: EntityTypeId.MOWER_PARKING },
@@ -296,10 +282,10 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.PORTAL, fields: { channel: "blue" } },
           ],
           [
-            { type: EntityTypeId.WINDMILL_DOWN },
-            { type: EntityTypeId.WINDMILL_UP },
-            { type: EntityTypeId.WINDMILL_LEFT },
-            { type: EntityTypeId.WINDMILL_RIGHT },
+            ...directions.map((variant) => ({
+              type: MapEntityTypeId.WINDMILL,
+              direction: variant.direction!,
+            })),
             { type: EntityTypeId.WIND_SWITCH, direction: "up" },
             {
               type: EntityTypeId.CLOUD,

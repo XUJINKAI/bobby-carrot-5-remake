@@ -92,7 +92,7 @@ export type NamedMapEntityType =
 
 /** Reviewable fallback for an original ts.png tile whose semantics are not known yet. */
 export type CoordinateSurfaceEntityType = `surface-${number}-${number}`;
-/** Reviewable fallback for an original object.png cell whose semantics are not known yet. */
+/** Reviewable fallback for an original ts.png object cell whose semantics are not known yet. */
 export type CoordinateObjectEntityType = `object-${number}-${number}`;
 
 export type MapEntityType =

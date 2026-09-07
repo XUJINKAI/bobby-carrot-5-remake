@@ -21,6 +21,7 @@ import {
   rectangleCells,
   removeEntities,
   reorderEntityStack,
+  replaceSurfaceVisualVariant,
   replaceEntities,
   replaceEntity,
   resolveDeletion,
@@ -439,6 +440,40 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
+  function applySurfaceVariant(
+    entityIndex: number,
+    variantType: EntityType,
+  ): boolean {
+    const entity = currentLevel().entities[entityIndex];
+    if (!entity) return false;
+    const replacement = replaceSurfaceVisualVariant(entity, variantType);
+    return Boolean(
+      replacement &&
+      document.execute(replaceEntity({ index: entityIndex }, replacement)),
+    );
+  }
+
+  function applyBatchSurfaceVariant(
+    type: EntityType,
+    variantType: EntityType,
+  ): boolean {
+    const replacements = selectedRefsOfType(type)
+      .map((ref) => {
+        const entity = currentLevel().entities[ref.index];
+        const replacement = entity
+          ? replaceSurfaceVisualVariant(entity, variantType)
+          : null;
+        return replacement ? { ref, entity: replacement } : null;
+      })
+      .filter(
+        (replacement): replacement is { ref: EntityRef; entity: LevelEntity } =>
+          replacement !== null,
+      );
+    return (
+      replacements.length > 0 && document.execute(replaceEntities(replacements))
+    );
+  }
+
   function cycleVariant(step: number, cell?: Cell): boolean {
     if (leftPanel.value === "surface") return false;
     if (paletteTool.value !== "place") {
@@ -583,6 +618,8 @@ export function useEditorPage(initialLevel: EditorMap) {
     reorderLayers,
     applyVariant,
     applyBatchVariant,
+    applySurfaceVariant,
+    applyBatchSurfaceVariant,
     cycleVariant,
     transform: (cell: Cell, step: number) => cycleVariant(step, cell),
     updateField,

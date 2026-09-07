@@ -5,6 +5,7 @@ import type {
   InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import EditorEntityFields from "./EditorEntityFields.vue";
 
 defineProps<{
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   toggleSurface: [];
   field: [type: string, key: string, value: string];
   variant: [type: string, index: number];
+  surfaceVariant: [entityType: string, variantType: EntityType];
   deleteType: [type: string];
 }>();
 </script>
@@ -70,6 +72,7 @@ const emit = defineEmits<{
           :editor="editor"
           @field="(key, value) => emit('field', group.type, key, value)"
           @variant="(variantIndex) => emit('variant', group.type, variantIndex)"
+          @surface-variant="(variantType) => emit('surfaceVariant', group.type, variantType)"
         />
       </article>
     </div>

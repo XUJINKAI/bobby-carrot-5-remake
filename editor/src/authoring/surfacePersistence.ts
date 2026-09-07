@@ -64,6 +64,53 @@ export function pickSurfaceBrush(
   };
 }
 
+/** Inspector 使用与 Surface Palette 相同的 visual variant 身份。 */
+export function surfaceVisualVariant(
+  entity: Readonly<LevelEntity>,
+): EntityType | null {
+  const terrain = surfaceTerrainForEntity(entity.type);
+  if (!terrain) return null;
+  if (
+    terrain.auto.kind === "fence" &&
+    terrain.auto.canonical === entity.type
+  ) {
+    const match = /^ts-16-(1[0-5])$/.exec(String(entity.variant));
+    const index = match ? Number(match[1]) - 10 : Number(entity.variant) - 1;
+    return terrain.auto.variants[index] ?? null;
+  }
+  return resolveFixedVariantType(entity, terrain);
+}
+
+/** 把 Inspector 中选择的 atlas 单元写回 canonical Surface Entity。 */
+export function replaceSurfaceVisualVariant(
+  entity: Readonly<LevelEntity>,
+  selectedType: EntityType,
+): LevelEntity | null {
+  const terrain = surfaceTerrainForEntity(entity.type);
+  if (!terrain) return null;
+  const variants = terrain.rows.flat();
+  if (!variants.some((variant) => variant.type === selectedType)) return null;
+
+  if (terrain.auto.kind === "fence" && terrain.auto.canonical) {
+    const index = terrain.auto.variants.indexOf(selectedType);
+    if (index < 0) return null;
+    return {
+      type: terrain.auto.canonical,
+      x: entity.x,
+      y: entity.y,
+      ...(entity.stackOrder !== undefined ? { stackOrder: entity.stackOrder } : {}),
+      variant: `ts-16-${index + 10}`,
+    };
+  }
+
+  return canonicalizeSurfaceVariant({
+    type: selectedType,
+    x: entity.x,
+    y: entity.y,
+    ...(entity.stackOrder !== undefined ? { stackOrder: entity.stackOrder } : {}),
+  });
+}
+
 function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
   if (entity.type === EntityTypeId.FENCE) {
     const index = Number(entity.variant);
@@ -117,13 +164,17 @@ function resolveFixedVariantType(
   const variants = terrain.rows.flat();
   for (const candidate of variants) {
     if (candidate.type === entity.type) return candidate.type;
-    const absolute = absoluteTsType(candidate.type);
-    if (absolute === null) continue;
-    const row = Math.floor((absolute - 1) / 16) + 1;
-    const column = ((absolute - 1) % 16) + 1;
-    const mapping = surfaceMappingForTs(row, column);
-    if (!mapping || mapping.type !== entity.type) continue;
-    const fields = mapping.fields ?? {};
+    const mapped = canonicalizeSurfaceVariant({
+      type: candidate.type,
+      x: entity.x,
+      y: entity.y,
+    });
+    if (mapped.type !== entity.type) continue;
+    const fields = Object.fromEntries(
+      Object.entries(mapped).filter(
+        ([key]) => key !== "type" && key !== "x" && key !== "y",
+      ),
+    );
     if (
       Object.entries(fields).every(([key, value]) => entity[key] === value)
     )

@@ -88,11 +88,15 @@ Variant 分配支持：
 
 Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，使整体更接近 atlas 预览。Alternate 模式左键选择 A、右键选择 B。
 
+Inspector 编辑 Surface 时复用同一份二维 `rows`，直接显示 atlas visual 网格并高亮当前单元；选择结果写回 canonical type + `variant`。Surface 的 `variant` 不显示为文本下拉框。
+
 Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
 
 Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标区域自动选择 Start / Middle / End visual variant。
 
 Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
+
+Palette 自动补充项读取 Engine Definition 的 `authoring.palette`。Gameplay 生成的 phase、raw atlas compatibility Entity 与其它 runtime-only Entity 在 Definition 中声明 `palette: false`；Editor 不维护相同 ID 的私有黑名单。
 
 ## Multi-cell Object
 

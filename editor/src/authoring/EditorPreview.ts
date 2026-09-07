@@ -7,6 +7,7 @@ import {
   type EntityPresence,
 } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 
 export interface EditorPresenceInspection {
@@ -79,7 +80,7 @@ export class EditorPreview {
     return {
       ref,
       entity,
-      definition: this.catalog.require(entity.type),
+      definition: editorCatalogEntry(this.catalog, entity),
       presence,
     };
   }

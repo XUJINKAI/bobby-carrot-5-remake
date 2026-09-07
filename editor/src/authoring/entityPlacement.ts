@@ -5,7 +5,10 @@ import {
 } from "@bobby/engine";
 import { isLevelEntityReservedField, type Direction, type LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
-import { isEditorEntityCreatable } from "../definitions/entities.js";
+import {
+  editorCatalogEntry,
+  isEditorEntityCreatable,
+} from "../definitions/entities.js";
 import type {
   EditorDefinition,
   EditorPlacementPoint,
@@ -42,9 +45,8 @@ export function resolvePlacement(
   cursor: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
 ): EntityPlacementPlan {
-  const definition = catalog.require(preset.type);
   const authoring = editor.entities?.[preset.type];
-  if (!isEditorEntityCreatable(editor, preset.type)) {
+  if (!isEditorEntityCreatable(editor, preset.type, catalog)) {
     return {
       entity: { type: preset.type, x: cursor.x, y: cursor.y },
       cells: [],
@@ -54,6 +56,13 @@ export function resolvePlacement(
   }
 
   const direction = preset.direction ?? authoring?.defaultDirection;
+  const definition = editorCatalogEntry(catalog, {
+    ...(preset.fields ?? {}),
+    type: preset.type,
+    x: cursor.x,
+    y: cursor.y,
+    ...(direction ? { direction } : {}),
+  });
   const anchor = resolveAnchor(
     cursor,
     definition,
@@ -184,7 +193,7 @@ function createPlacedEntity(
   direction: Direction | undefined,
 ): LevelEntity {
   const entity: LevelEntity = {
-    type: definition.type,
+    type: preset.type,
     x: anchor.x,
     y: anchor.y,
   };

@@ -5,6 +5,7 @@ import type {
   InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import { ref } from "vue";
 import EditorEntityFields from "./EditorEntityFields.vue";
 
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   toggleSurface: [];
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   delete: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
 }>();
@@ -99,6 +101,7 @@ function dropAt(index: number): void {
           :editor="editor"
           @field="(key, value) => emit('field', layer.ref.index, key, value)"
           @variant="(variantIndex) => emit('variant', layer.ref.index, variantIndex)"
+          @surface-variant="(type) => emit('surfaceVariant', layer.ref.index, type)"
         />
       </article>
     </div>

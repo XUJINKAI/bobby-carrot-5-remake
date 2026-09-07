@@ -11,6 +11,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: EntityTypeId.FENCE,
+  authoring: { palette: false },
   traits: ["blocking", "fence"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [

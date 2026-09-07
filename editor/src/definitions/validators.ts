@@ -2,6 +2,7 @@ import { validateLevelPlayability } from "@bobby/engine";
 import { entityMapDefinition } from "@bobby/model";
 import type { LevelValidationIssue } from "../level/types.js";
 import type { EditorMapValidator } from "./types.js";
+import { editorCatalogEntry } from "./entities.js";
 
 export const registeredEntityTypesValidator: EditorMapValidator = ({
   map,
@@ -9,7 +10,12 @@ export const registeredEntityTypesValidator: EditorMapValidator = ({
 }) => {
   const issues: LevelValidationIssue[] = [];
   map.entities.forEach((entity, index) => {
-    if (catalog.has(entity.type)) return;
+    try {
+      editorCatalogEntry(catalog, entity);
+      return;
+    } catch {
+      // 统一生成 Editor 可定位的校验问题，不把 Catalog 异常泄漏到 UI。
+    }
     issues.push({
       level: "error",
       message: `Entity #${index + 1} 使用未注册 type：${entity.type}`,

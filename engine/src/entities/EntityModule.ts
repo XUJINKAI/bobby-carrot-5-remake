@@ -19,9 +19,15 @@ export interface EntityPresentationDefinition {
   renderPass?: VisualRenderPass;
 }
 
+export interface EntityAuthoringDefinition {
+  /** false 表示该 Runtime Entity 只能由关卡加载或 gameplay 生成。 */
+  palette?: boolean;
+}
+
 /** Full definition used by an Entity module. Editor policy belongs to @bobby/editor. */
 export interface EntityModuleDefinition extends EntityDefinition {
   presentation: EntityPresentationDefinition;
+  authoring?: EntityAuthoringDefinition;
 }
 
 export interface EntityBehaviorBinding {
@@ -34,6 +40,7 @@ export interface EntityBehaviorBinding {
 export interface EntityModule {
   definition: EntityDefinition;
   presentation: EntityPresentationDefinition;
+  authoring?: EntityAuthoringDefinition;
   visual?: VisualDefinition;
   transientVisuals?: readonly TransientVisualDefinition[];
   behaviorBindings?: readonly EntityBehaviorBinding[];
@@ -50,7 +57,7 @@ export interface EntityModuleInput {
 }
 
 export function defineEntityModule(input: EntityModuleInput): EntityModule {
-  const { presentation, ...gameplayDefinition } = input.definition;
+  const { presentation, authoring, ...gameplayDefinition } = input.definition;
   const behaviorIds =
     input.behaviorBindings?.map(({ behavior }) => behavior.id) ?? [];
   const definition: EntityDefinition =
@@ -78,6 +85,7 @@ export function defineEntityModule(input: EntityModuleInput): EntityModule {
   return {
     definition,
     presentation,
+    ...(authoring ? { authoring } : {}),
     ...(visual ? { visual } : {}),
     ...(input.transientVisuals
       ? { transientVisuals: input.transientVisuals }

@@ -2,16 +2,20 @@
 import {
   applyEditorVariant,
   editorVariantIndex,
+  surfaceTerrainForEntity,
+  surfaceVisualVariant,
   type EditorDefinition,
   type EditorEntityDefinition,
   type EditorPlacementPreset,
   type EntityCatalog,
   type EntityCatalogEntry,
+  type SurfaceVariant,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import {
   entityMapDefinition,
   type EntityMapFieldDefinition,
+  type EntityType,
   type JsonPrimitive,
   type LevelEntity,
 } from "@bobby/model";
@@ -29,6 +33,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   field: [key: string, value: string];
   variant: [index: number];
+  surfaceVariant: [type: EntityType];
 }>();
 
 const activeVariant = computed(() => {
@@ -40,8 +45,22 @@ const activeVariant = computed(() => {
 });
 const directionVariants = computed(() => variantEntries(true));
 const shapeVariants = computed(() => variantEntries(false));
+const surfaceTerrain = computed(() =>
+  props.targets.length > 0
+    ? surfaceTerrainForEntity(props.targets[0]!.type)
+    : null,
+);
+const surfaceRows = computed(() => surfaceTerrain.value?.rows ?? []);
+const activeSurfaceVariant = computed(() => {
+  if (props.targets.length === 0) return null;
+  const variants = props.targets.map(surfaceVisualVariant);
+  return variants.every((variant) => variant === variants[0])
+    ? variants[0]
+    : null;
+});
 const controlledFieldKeys = computed(() => {
   const keys = new Set<string>();
+  if (surfaceTerrain.value) keys.add("variant");
   for (const variant of props.entityPolicy?.variants ?? []) {
     if (variant.direction) keys.add("direction");
     for (const key of Object.keys(variant.fields ?? {})) keys.add(key);
@@ -57,6 +76,7 @@ const hasFields = computed(
   () =>
     directionVariants.value.length > 0 ||
     shapeVariants.value.length > 0 ||
+    surfaceRows.value.length > 0 ||
     editableFields.value.length > 0,
 );
 
@@ -86,6 +106,10 @@ function variantSource(index: number): EditorPlacementPreset {
 function variantLabel(index: number): string {
   const variant = props.entityPolicy?.variants?.[index];
   return variant?.label ?? variant?.direction ?? `Variant ${index + 1}`;
+}
+
+function surfaceVariantSource(variant: SurfaceVariant): EditorPlacementPreset {
+  return { type: variant.type };
 }
 
 function fieldValue(
@@ -165,6 +189,34 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
             fallback-text="◇"
           />
           <small>{{ variantLabel(entry.index) }}</small>
+        </button>
+      </div>
+    </section>
+
+    <section v-if="surfaceRows.length" class="editor-fields-block">
+      <strong>Visual variant</strong>
+      <div
+        v-for="(row, rowIndex) in surfaceRows"
+        :key="`${surfaceTerrain?.id}:${rowIndex}`"
+        class="editor-surface-variant-row"
+      >
+        <button
+          v-for="variant in row"
+          :key="variant.type"
+          type="button"
+          class="editor-surface-variant-btn"
+          :class="{ active: activeSurfaceVariant === variant.type }"
+          :title="variant.label"
+          @click="emit('surfaceVariant', variant.type)"
+        >
+          <EditorEntityPreview
+            :source="surfaceVariantSource(variant)"
+            :cell-size="32"
+            :images="images"
+            :catalog="catalog"
+            :editor="editor"
+            fallback-text=""
+          />
         </button>
       </div>
     </section>
@@ -261,5 +313,26 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
   white-space: nowrap;
   color: var(--editor-muted);
   font-size: 0.62rem;
+}
+.editor-surface-variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.editor-surface-variant-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #0b130e;
+}
+.editor-surface-variant-btn.active {
+  border-color: var(--editor-accent);
+  outline: 1px solid var(--editor-accent);
 }
 </style>

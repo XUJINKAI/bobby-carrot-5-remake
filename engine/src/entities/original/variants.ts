@@ -30,6 +30,7 @@ const backgroundVariants = Array.from({ length: 256 }, (_, index) => {
   const number = index + 1;
   const definition: EntityModuleDefinition = {
     type: `background-variant-${String(number).padStart(3, "0")}`,
+    authoring: { palette: false },
     traits: [
       ...(number <= 94 ? ["bean-growth-space"] : []),
       ...(number >= 72 && number <= 77 ? ["cloud-space"] : []),
@@ -49,6 +50,7 @@ const walkableVariants = Array.from({ length: 52 }, (_, index) => {
   const absolute = 6 * 16 + number;
   const definition: EntityModuleDefinition = {
     type: `walkable-variant-${String(number).padStart(2, "0")}`,
+    authoring: { palette: false },
     traits: ["walkable"],
     stackOrder: SURFACE_STACK_ORDER,
     state: visualVariantState,
@@ -66,6 +68,7 @@ const objectVariants = Array.from({ length: 256 }, (_, index) => {
   const number = index + 1;
   const definition: EntityModuleDefinition = {
     type: `object-variant-${String(number).padStart(3, "0")}`,
+    authoring: { palette: false },
     traits: [],
     stackOrder: CONTENT_STACK_ORDER,
     presentation: { name: `Object Variant ${number}` },
@@ -110,6 +113,7 @@ function canonicalSurface(
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
+    authoring: { palette: false },
     traits: canonicalSurfaceTraits(mappings),
     layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,

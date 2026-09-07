@@ -7,7 +7,9 @@ import {
   materializeSurfaceVariants,
   paintSurface,
   parseEditorLevel,
+  replaceSurfaceVisualVariant,
   serializeEditorLevel,
+  surfaceVisualVariant,
   surfaceTerrain,
 } from "../dist/index.js";
 
@@ -63,4 +65,29 @@ test("Exact Surface persists the selected concrete visual", () => {
   assert.equal(fixed.type, "grass");
   assert.equal(fixed.variant, "ts-8-1");
   assert.equal(hasAutoMetadata(fixed), false);
+});
+
+test("Inspector Surface visual variant 复用 Palette atlas 身份", () => {
+  const grass = {
+    type: "grass",
+    x: 2,
+    y: 1,
+    variant: "ts-7-1",
+  };
+  assert.equal(surfaceVisualVariant(grass), "walkable-variant-01");
+  assert.deepEqual(
+    replaceSurfaceVisualVariant(grass, "walkable-variant-17"),
+    { type: "grass", x: 2, y: 1, variant: "ts-8-1" },
+  );
+
+  const fence = { type: "fence", x: 1, y: 1, variant: "ts-16-10" };
+  assert.equal(surfaceVisualVariant(fence), "background-variant-250");
+  assert.deepEqual(
+    replaceSurfaceVisualVariant(fence, "background-variant-254"),
+    { type: "fence", x: 1, y: 1, variant: "ts-16-14" },
+  );
+  assert.equal(
+    surfaceVisualVariant({ type: "water-ripple", x: 1, y: 1 }),
+    "water-animated",
+  );
 });

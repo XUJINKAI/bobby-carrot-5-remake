@@ -3,7 +3,7 @@ export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js
 export { validateEditorLevel } from "./level/validation.js";
 export type { EditorMap, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
 export { builtinEditorDefinition, EDITOR_DIRECTIONS, applyEditorVariant } from "./definitions/builtin.js";
-export { isEditorEntityCreatable } from "./definitions/entities.js";
+export { editorCatalogEntry, isEditorEntityCreatable } from "./definitions/entities.js";
 export type { EditorTool, EditorEntityFields, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
@@ -29,7 +29,7 @@ export { editorVariantIndex, cycleEntityVariant, cyclePlacementVariant } from ".
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorMode, InspectorEntityModel, InspectorEntityGroupModel } from "./authoring/inspectorModel.js";
 export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, paintSurface, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";
-export { materializeSurfaceVariants, pickSurfaceBrush } from "./authoring/surfacePersistence.js";
+export { materializeSurfaceVariants, pickSurfaceBrush, replaceSurfaceVisualVariant, surfaceVisualVariant } from "./authoring/surfacePersistence.js";
 export type { SurfaceBrush, SurfacePattern, SurfaceTerrainDefinition, SurfaceTerrainGroup, SurfaceTerrainId, SurfaceTheme, SurfaceThemeDefinition, SurfaceTool, SurfaceType, SurfaceVariant } from "./authoring/surfaceAuthoring.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
 export type { EditorViewportState } from "./canvas/EditorViewport.js";

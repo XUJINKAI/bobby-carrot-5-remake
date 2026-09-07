@@ -3,12 +3,14 @@ import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import { EntityRegistry } from "../world/entity/EntityRegistry.js";
 import type {
   EntityModule,
+  EntityAuthoringDefinition,
   EntityPresentationDefinition,
 } from "./EntityModule.js";
 
 /** Generic Entity definition plus human-facing presentation metadata. */
 export interface EntityCatalogEntry extends EntityDefinition {
   presentation: EntityPresentationDefinition;
+  authoring?: EntityAuthoringDefinition;
 }
 
 export class EntityCatalog {
@@ -27,6 +29,7 @@ export class EntityCatalog {
     this.entries.set(type, {
       ...module.definition,
       presentation: module.presentation,
+      ...(module.authoring ? { authoring: module.authoring } : {}),
     });
   }
 

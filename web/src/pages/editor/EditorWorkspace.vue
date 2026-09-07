@@ -69,10 +69,12 @@ const emit = defineEmits<{
   resize: [edges: EditorResizeEdges];
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorderLayers: [refsTopToBottom: number[]];
   batchField: [type: string, key: string, value: string];
   batchVariant: [type: string, index: number];
+  batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
@@ -162,10 +164,12 @@ const emit = defineEmits<{
       :authoring-panel="leftPanel"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
+      @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
       @delete-layer="emit('deleteLayer', $event)"
       @reorder="emit('reorderLayers', $event)"
       @batch-field="(type, key, value) => emit('batchField', type, key, value)"
       @batch-variant="(type, index) => emit('batchVariant', type, index)"
+      @batch-surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @batch-delete="emit('batchDelete', $event)"
     />
     <EditorLevelInfo

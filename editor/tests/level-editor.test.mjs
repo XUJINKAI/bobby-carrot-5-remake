@@ -16,6 +16,7 @@ import {
   entityCells,
   fromLevelMap,
   isEditorEntityCreatable,
+  paintSurface,
   parseEditorLevel,
   placeEntity,
   reorderEntityStack,
@@ -155,26 +156,32 @@ test("Editor replaceGroup replaces only matching authoring layers", () => {
   ]);
   const after = placeEntity(
     catalog,
-    EntityTypeId.WATER,
+    EntityTypeId.CARROT,
     { x: 1, y: 1 },
-  ).apply(level);
+  ).apply(
+    paintSurface(
+      catalog,
+      [{ x: 1, y: 1 }],
+      { terrain: "water", pattern: "exact", exact: EntityTypeId.WATER, seed: 1 },
+    ).apply(level),
+  );
   assert.deepEqual(
     new EditorPreview(after, catalog)
       .inspectCell(1, 1)
       .presences.map((item) => item.entity.type),
-    [EntityTypeId.WATER],
+    [EntityTypeId.WATER, EntityTypeId.CARROT],
   );
 
-  const withCarrot = placeEntity(
+  const withLock = placeEntity(
     catalog,
-    EntityTypeId.CARROT,
+    EntityTypeId.LOCK,
     { x: 1, y: 1 },
   ).apply(after);
   assert.deepEqual(
-    new EditorPreview(withCarrot, catalog)
+    new EditorPreview(withLock, catalog)
       .inspectCell(1, 1)
       .presences.map((item) => item.entity.type),
-    [EntityTypeId.WATER, EntityTypeId.CARROT],
+    [EntityTypeId.WATER, EntityTypeId.CARROT, EntityTypeId.LOCK],
   );
 });
 
@@ -228,8 +235,8 @@ test("validation is executed through Editor definitions", () => {
 test("one placement stroke forms one Undo and returns to the saved Entity state", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();
-  document.execute(placeEntity(catalog, EntityTypeId.WATER, { x: 1, y: 1 }));
-  document.execute(placeEntity(catalog, EntityTypeId.WATER, { x: 2, y: 1 }));
+  document.execute(placeEntity(catalog, EntityTypeId.CARROT, { x: 1, y: 1 }));
+  document.execute(placeEntity(catalog, EntityTypeId.CARROT, { x: 2, y: 1 }));
   document.commitTransaction();
   assert.equal(document.getSnapshot().canUndo, true);
   assert.equal(document.getSnapshot().dirty, true);
@@ -247,11 +254,12 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   );
 });
 
-test("Editor exclusions hide internal and raw Original variants from creation", () => {
+test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", () => {
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
       EntityTypeId.CONSUMED_CARROT,
+      catalog,
     ),
     false,
   );
@@ -259,11 +267,16 @@ test("Editor exclusions hide internal and raw Original variants from creation", 
     isEditorEntityCreatable(
       builtinEditorDefinition,
       "background-variant-001",
+      catalog,
     ),
     false,
   );
   assert.equal(
-    isEditorEntityCreatable(builtinEditorDefinition, EntityTypeId.GROUND_C),
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      EntityTypeId.GROUND_C,
+      catalog,
+    ),
     false,
   );
 });
@@ -303,6 +316,46 @@ test("Palette keeps explicit directional presets and appends new creatable types
       .flatMap((group) => group.rows.flat())
       .some((entry) => entry.type === "surface-14-10"),
     false,
+  );
+  const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
+  assert.equal(allTypes.includes(MapEntityTypeId.EGG_NEST), true);
+  assert.equal(allTypes.includes(EntityTypeId.EGG_NEST_EMPTY), false);
+  assert.equal(allTypes.includes(EntityTypeId.FIREBALL), false);
+  assert.equal(allTypes.includes(EntityTypeId.BEANSTALK_MID), false);
+  assert.deepEqual(
+    palette
+      .flatMap((group) => group.rows.flat())
+      .filter((entry) => entry.type === MapEntityTypeId.WINDMILL)
+      .map((entry) => entry.direction),
+    ["up", "right", "down", "left"],
+  );
+});
+
+test("Editor 对 canonical alias 与坐标型临时 Object 共用 Runtime Definition", () => {
+  const level = createBlankLevel(4, 2);
+  level.entities.push(
+    { type: MapEntityTypeId.WINDMILL, x: 1, y: 0, direction: "left" },
+    { type: MapEntityTypeId.EGG_NEST, x: 2, y: 0 },
+    { type: "object-13-11", x: 3, y: 0 },
+  );
+  assert.deepEqual(
+    validateEditorLevel(level, catalog, builtinEditorDefinition),
+    [],
+  );
+  assert.deepEqual(
+    [1, 2, 3].map(
+      (x) => new EditorPreview(level, catalog).inspectCell(x, 0).top?.entity.type,
+    ),
+    [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG_NEST, "object-13-11"],
+  );
+  assert.equal(
+    resolvePlacement(
+      level,
+      catalog,
+      { type: MapEntityTypeId.WINDMILL, direction: "right" },
+      { x: 0, y: 1 },
+    ).entity.type,
+    MapEntityTypeId.WINDMILL,
   );
 });
 

@@ -64,7 +64,7 @@ export function instantiateLevelEntity(
 
   return {
     id,
-    type: runtimeTypeForLevelEntity(source),
+    type: levelEntityRuntimeType(source),
     anchor: { x: source.x, y: source.y },
     ...(direction ? { direction } : {}),
     ...(Number.isFinite(source.stackOrder)
@@ -74,7 +74,8 @@ export function instantiateLevelEntity(
   };
 }
 
-function runtimeTypeForLevelEntity(source: LevelEntity): EntityType {
+/** Map type 到 Engine Runtime type 的唯一加载边界。 */
+export function levelEntityRuntimeType(source: Readonly<LevelEntity>): EntityType {
   if (source.type === MapEntityTypeId.WINDMILL) {
     return {
       up: EntityTypeId.WINDMILL_UP,
