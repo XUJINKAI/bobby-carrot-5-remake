@@ -19,7 +19,8 @@ import {
 const DRAGON_ATTACK_ACTION = "dragon-attack";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 
-export const DEFAULT_DRAGON_WINDUP_MS = 18 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const DRAGON_ATTACK_FRAME_MS = 6 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const DEFAULT_DRAGON_WINDUP_MS = 3 * DRAGON_ATTACK_FRAME_MS;
 
 const triggerDragon: Behavior = {
   id: "trigger-dragon-attack",
@@ -54,7 +55,15 @@ const dragonAttackAction: RuntimeActionDefinition = {
     if (!dragon) return "complete";
     const elapsedMs = Number(action.state.elapsedMs ?? 0) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
-    if (elapsedMs < DEFAULT_DRAGON_WINDUP_MS) return "running";
+    if (elapsedMs < DRAGON_ATTACK_FRAME_MS) return "running";
+    if (elapsedMs < 2 * DRAGON_ATTACK_FRAME_MS) {
+      commands.setState(dragonId, { ...dragon.state, attackFrame: 1 });
+      return "running";
+    }
+    if (elapsedMs < DEFAULT_DRAGON_WINDUP_MS) {
+      commands.setState(dragonId, { ...dragon.state, attackFrame: 2 });
+      return "running";
+    }
 
     const head = query
       .presencesForEntity(dragonId)
@@ -74,7 +83,11 @@ const dragonAttackAction: RuntimeActionDefinition = {
         direction: dragon.direction ?? "left",
       });
     }
-    commands.setState(dragonId, { ...dragon.state, attacking: false });
+    commands.setState(dragonId, {
+      ...dragon.state,
+      attacking: false,
+      attackFrame: 0,
+    });
     return "complete";
   },
 };
@@ -133,12 +146,10 @@ const definition: EntityModuleDefinition = {
 const visual: VisualDefinition = {
   id: EntityTypeId.DRAGON,
   resolve(context) {
-    const atlas =
-      context.presence.role === "body"
-        ? objectCell(15)
-        : context.presence.role === "tail"
-          ? objectCell(16)
-          : objectCell(14);
+    const atlas = dragonAtlasCell(
+      context.presence.role,
+      context.entity.state?.attackFrame,
+    );
     return {
       layers: [
         {
@@ -151,6 +162,14 @@ const visual: VisualDefinition = {
     };
   },
 };
+
+function dragonAtlasCell(role: string | undefined, attackFrame: unknown) {
+  if (role === "body") return objectCell(15);
+  if (role === "tail") return objectCell(16);
+  if (attackFrame === 1) return objectCell(31);
+  if (attackFrame === 2) return objectCell(32);
+  return objectCell(14);
+}
 
 const base = originalModule(definition, visual, [
   { behavior: triggerDragon },

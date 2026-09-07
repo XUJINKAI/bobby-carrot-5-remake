@@ -185,7 +185,7 @@ Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 Prese
 
 - Ice Block melting：每阶段 6 step，约 186ms；
 - Plank `D5→D6→empty`：每阶段 6 step，约 186ms；
-- Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：每阶段 6 step，约 186ms；
+- Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：对应 `ts-14-8 → ts-15-9 → ts-15-10 → ts-14-8`，每阶段 6 step，约 186ms；
 - Fireball：6px/gameplay step，48px 一格约 248ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
 
