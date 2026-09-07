@@ -1,4 +1,8 @@
-import { EntityTypeId } from "@bobby/model";
+import {
+  EntityTypeId,
+  MapEntityTypeId,
+  legacyEntityMapAlias,
+} from "@bobby/model";
 import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
 
 const directTerrainTypes = new Set([
@@ -157,7 +161,7 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
     type === LegacyTerrain.HIGH_GRASS_OBJECTIVE
   ) {
     return [
-      entity(mowedGroundAt(x, y), x, y),
+      canonicalTerrainEntity(mowedGroundAt(x, y), x, y),
       ...(options.hiddenObjectiveType
         ? [entity(options.hiddenObjectiveType, x, y)]
         : []),
@@ -172,12 +176,12 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
 
   const switchState = foldedPressedSwitch(type);
   if (switchState) {
-    const extra = switchState.canonical
-      ? switchState.pressed
-        ? { pressed: true }
-        : {}
-      : { state: { pressed: switchState.pressed } };
-    return [entity(switchState.type, x, y, extra)];
+    return [
+      entity(switchState.type, x, y, {
+        ...(switchState.color ? { color: switchState.color } : {}),
+        ...(switchState.pressed ? { pressed: true } : {}),
+      }),
+    ];
   }
 
   const wind = /^wind-switch-([0-3])-(on|off)$/.exec(type);
@@ -227,14 +231,15 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
   );
   if (colorBlock) {
     return [
-      entity(colorBlock[1], x, y, {
-        state: { raised: colorBlock[2] === "raised" },
+      entity(MapEntityTypeId.COLOR_BLOCK, x, y, {
+        color: colorBlock[1].includes("pink") ? "pink" : "yellow",
+        ...(colorBlock[2] === "lowered" ? { raised: false } : {}),
       }),
     ];
   }
 
   if (directTerrainTypes.has(type) || isLegacyTerrainVariant(type)) {
-    return [entity(type, x, y)];
+    return [canonicalTerrainEntity(type, x, y)];
   }
   throw new Error(`Unsupported legacy terrain type: ${type}`);
 }
@@ -299,11 +304,22 @@ function foldedPressedSwitch(type) {
     type,
   );
   if (!match) return null;
+  const color = match[1].startsWith("color-")
+    ? match[1].includes("pink")
+      ? "pink"
+      : "yellow"
+    : undefined;
   return {
-    type: match[1],
+    type: color ? MapEntityTypeId.COLOR_SWITCH : match[1],
     pressed: match[2] === "pressed",
-    canonical: !match[1].startsWith("color-"),
+    ...(color ? { color } : {}),
   };
+}
+
+function canonicalTerrainEntity(type, x, y) {
+  const alias = legacyEntityMapAlias(type);
+  if (!alias?.to) return entity(type, x, y);
+  return entity(alias.to, x, y, alias.fields ?? {});
 }
 
 function directionSuffix(type, prefix) {
