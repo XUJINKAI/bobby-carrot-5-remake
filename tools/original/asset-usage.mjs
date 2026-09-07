@@ -139,7 +139,9 @@ export function formatOriginalTemporarySurfaceUsage(result) {
     lines.push(
       `${surface.label} → ${surface.type}：${surface.mapCount} 张地图，${surface.occurrenceCount} 个 anchor`,
     );
-  lines.push("逐项反查：npm run original:usage -- ts-<row>-<column>");
+  lines.push(
+    "逐项反查：node tools/cli.mjs original usage ts-<row>-<column>",
+  );
   return `${lines.join("\n")}\n`;
 }
 

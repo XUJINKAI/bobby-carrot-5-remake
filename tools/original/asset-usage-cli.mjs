@@ -10,7 +10,9 @@ const json = args.includes("--json");
 const temporary = args.includes("--temporary");
 const query = args.find((arg) => !arg.startsWith("--"));
 if (!query && !temporary)
-  throw new Error("用法：npm run original:usage -- ts-4-13 [--json]");
+  throw new Error(
+    "用法：node tools/cli.mjs original usage ts-4-13 [--json]",
+  );
 
 const result = temporary
   ? loadOriginalTemporarySurfaceUsage()

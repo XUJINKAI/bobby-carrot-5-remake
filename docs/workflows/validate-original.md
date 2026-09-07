@@ -7,7 +7,7 @@
 对素材语义或命名不确定时，可以按 atlas 行列坐标反查正式原版地图：
 
 ```bash
-npm run original:usage -- ts-4-13
+node tools/cli.mjs original usage ts-4-13
 ```
 
 命令也接受 `ts(4,13)` 和临时 Entity 名 `surface-4-13`。输出包含：
@@ -22,13 +22,13 @@ Dragon 吐火帧等 runtime visual 也会反查到使用该视觉的 semantic En
 需要给脚本继续处理时使用 JSON 输出：
 
 ```bash
-npm run original:usage -- ts-4-13 --json
+node tools/cli.mjs original usage ts-4-13 --json
 ```
 
 最终命名前可以先列出所有仍使用坐标型临时名的 Surface：
 
 ```bash
-npm run original:usage -- --temporary
+node tools/cli.mjs original usage --temporary
 ```
 
 反查读取 `original/adapted/` 生成物。缺少生成物时先执行 `npm run assets`。

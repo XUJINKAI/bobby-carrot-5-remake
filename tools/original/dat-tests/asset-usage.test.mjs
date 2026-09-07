@@ -119,7 +119,7 @@ test("临时素材总表给出可继续反查的坐标身份", () => {
     [
       "临时 Surface：1 种",
       "ts-14-10 → surface-14-10：2 张地图，5 个 anchor",
-      "逐项反查：npm run original:usage -- ts-<row>-<column>",
+      "逐项反查：node tools/cli.mjs original usage ts-<row>-<column>",
       "",
     ].join("\n"),
   );
