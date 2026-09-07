@@ -136,6 +136,13 @@ function absoluteTsType(type: EntityType): number | null {
   return null;
 }
 
+function stripAutoMetadata(entity: Readonly<LevelEntity>): LevelEntity {
+  const next = { ...structuredClone(entity) };
+  delete next[AUTO_TERRAIN_KEY];
+  delete next[AUTO_SEED_KEY];
+  return next;
+}
+
 function surfaceAt(
   level: Readonly<EditorMap>,
   cell: Cell,
