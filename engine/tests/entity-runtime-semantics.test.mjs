@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { resolveEntityVisualPreview } from "../dist/visual/preview.js";
@@ -150,7 +150,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
   assert.equal(move(withPlank, "right").moves[0].moved, true);
 });
 
-test("Unified color block uses state instead of split types for passage", () => {
+test("Unified color block uses flat color and raised fields for passage", () => {
   const raised = new World({
     schemaVersion: 1,
     width: 2,
@@ -158,10 +158,11 @@ test("Unified color block uses state instead of split types for passage", () => 
     entities: [
       ground(0, 0),
       {
-        type: EntityTypeId.COLOR_YELLOW_BLOCK,
+        type: MapEntityTypeId.COLOR_BLOCK,
         x: 1,
         y: 0,
-        state: { raised: true },
+        color: "yellow",
+        raised: true,
       },
       bobby(0, 0),
     ],
@@ -175,10 +176,11 @@ test("Unified color block uses state instead of split types for passage", () => 
     entities: [
       ground(0, 0),
       {
-        type: EntityTypeId.COLOR_YELLOW_BLOCK,
+        type: MapEntityTypeId.COLOR_BLOCK,
         x: 1,
         y: 0,
-        state: { raised: false },
+        color: "yellow",
+        raised: false,
       },
       bobby(0, 0),
     ],
