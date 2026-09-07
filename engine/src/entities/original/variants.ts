@@ -11,6 +11,7 @@ import {
   SURFACE_STACK_ORDER,
   tsCoordinateCell,
 } from "./module.js";
+import { sharedOriginalSurfaceTraits } from "./surface-traits.js";
 
 const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
 for (const mapping of SURFACE_SOURCE_MAPPINGS) {
@@ -57,7 +58,7 @@ function canonicalSurface(
   const definition: EntityModuleDefinition = {
     type,
     authoring: { palette: false },
-    traits: canonicalSurfaceTraits(mappings),
+    traits: sharedOriginalSurfaceTraits(mappings),
     layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,
     presentation: { name: type },
@@ -73,32 +74,4 @@ function canonicalSurface(
       return mapping ? tsCoordinateCell(mapping.source) : null;
     }),
   );
-}
-
-function canonicalSurfaceTraits(
-  mappings: readonly SurfaceSourceMapping[],
-): string[] {
-  const numbers = mappings.map(
-    ({ source }) => (source.row - 1) * 16 + source.column,
-  );
-  const traits = new Set<string>();
-  if (numbers.some((number) => number >= 97 && number <= 148))
-    traits.add("walkable");
-  if (numbers.some((number) => number <= 94))
-    traits.add("bean-growth-space");
-  if (numbers.some((number) => number >= 72 && number <= 77))
-    traits.add("cloud-space");
-  if (
-    mappings.some((mapping) =>
-      mapping.type === MapEntityTypeId.WATER ||
-      mapping.type === MapEntityTypeId.WATER_RIPPLE ||
-      mapping.type === MapEntityTypeId.WATERFALL
-    )
-  ) {
-    traits.add("water");
-    traits.add("bean-growth-space");
-  }
-  if (mappings.some((mapping) => mapping.type === MapEntityTypeId.WATERFALL))
-    traits.add("waterfall");
-  return [...traits];
 }

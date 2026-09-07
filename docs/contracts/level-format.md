@@ -71,6 +71,10 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 Surface 也使用同样的坐标 variant。Object 使用稳定语义 type。atlas 坐标与名称以
 `model/src/map/entity/ts-visuals.json` 为唯一来源，不从 DAT byte 推导。
 
+同一语义 type 的 atlas variant 可以具有不同地图内语义。Model 负责提供 type、
+variant 与 atlas 坐标的稳定对应关系；Engine 在加载关卡时为具体实例解析 Trait，
+Entity Definition 只登记该 type 所有 variant 共有的 Trait。
+
 Editor Surface 始终按单格持久化。月亮、圣诞树、雪人等视觉拼图由多个同类型、不同 `variant` 的单格 Entity 组成；它们不使用 footprint。Dragon 等 Palette Object 仍按下文的 multi-cell anchor 合同持久化。
 
 ### Bobby 与 Start

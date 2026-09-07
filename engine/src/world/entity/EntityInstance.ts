@@ -2,12 +2,14 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   entityMapDefinition,
+  surfaceMappingForEntity,
   type Direction,
   type EntityType,
   type JsonPrimitive,
   type JsonValue,
   type LevelEntity,
 } from "@bobby/model";
+import { originalSurfaceTraits } from "../../entities/original/surface-traits.js";
 
 export type EntityId = number;
 export type EntityState = Record<string, JsonValue>;
@@ -17,7 +19,7 @@ export interface CellPosition {
   y: number;
 }
 
-/** Engine-owned runtime spawn contract. Runtime-only entity types are valid here. */
+/** Engine 持有的运行时生成合同；这里可以使用只存在于 Runtime 的 Entity type。 */
 export interface EntitySpawnSpec {
   type: EntityType;
   x: number;
@@ -39,7 +41,7 @@ export interface EntityInstance {
   instanceTraits?: string[];
 }
 
-/** Convert canonical flat Map JSON into the Engine runtime shape. */
+/** 把标准的扁平 Map JSON 转换为 Engine Runtime 结构。 */
 export function instantiateLevelEntity(
   id: EntityId,
   source: LevelEntity,
@@ -62,6 +64,11 @@ export function instantiateLevelEntity(
     state[field.key] = structuredClone(value);
   }
 
+  const surfaceMapping = surfaceMappingForEntity(source.type, source);
+  const instanceTraits = surfaceMapping
+    ? originalSurfaceTraits(surfaceMapping)
+    : [];
+
   return {
     id,
     type: levelEntityRuntimeType(source),
@@ -71,6 +78,9 @@ export function instantiateLevelEntity(
       ? { stackOrder: source.stackOrder }
       : {}),
     ...(Object.keys(state).length > 0 ? { state } : {}),
+    ...(instanceTraits.length > 0
+      ? { instanceTraits: [...instanceTraits] }
+      : {}),
   };
 }
 

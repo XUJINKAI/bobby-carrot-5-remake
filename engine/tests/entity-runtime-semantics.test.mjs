@@ -54,6 +54,53 @@ test("canonical original obstacle semantics keep known blockers blocking", () =>
   }
 });
 
+test("stone-wall 根据 atlas variant 使用各自的 Surface Trait", () => {
+  const wall = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.STONE_WALL, variant: "ts-1-4", x: 1, y: 0 },
+    ],
+  });
+  const wallEntity = wall.entities
+    .all()
+    .find((entity) => entity.type === MapEntityTypeId.STONE_WALL);
+  assert.ok(wallEntity);
+  assert.equal(
+    wall.query.entityHasTrait(wallEntity.id, "bean-growth-space"),
+    true,
+  );
+  assert.equal(wall.query.entityHasTrait(wallEntity.id, "walkable"), false);
+  assert.equal(move(wall, "right").moves[0].moved, false);
+
+  const shadowRoad = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.STONE_WALL, variant: "ts-10-3", x: 1, y: 0 },
+    ],
+  });
+  const shadowEntity = shadowRoad.entities
+    .all()
+    .find((entity) => entity.type === MapEntityTypeId.STONE_WALL);
+  assert.ok(shadowEntity);
+  assert.equal(
+    shadowRoad.query.entityHasTrait(shadowEntity.id, "bean-growth-space"),
+    false,
+  );
+  assert.equal(
+    shadowRoad.query.entityHasTrait(shadowEntity.id, "walkable"),
+    true,
+  );
+  assert.equal(move(shadowRoad, "right").moves[0].moved, true);
+});
+
 test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   const world = new World({
     schemaVersion: 1,
