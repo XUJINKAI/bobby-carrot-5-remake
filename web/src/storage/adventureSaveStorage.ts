@@ -5,11 +5,11 @@ import {
   serializeAdventureSave,
   type AdventureSave,
 } from "@bobby/adventure";
-
-const SAVE_KEY = "bobby.adventure.save";
+import { BC5R_GAME_ID } from "@bobby/model";
+import { ADVENTURE_STORAGE_KEY } from "./contracts.js";
 
 export function loadAdventureSave(): AdventureSave {
-  const raw = localStorage.getItem(SAVE_KEY);
+  const raw = localStorage.getItem(ADVENTURE_STORAGE_KEY);
   if (!raw) return createAdventureSave();
   try {
     return parseAdventureSave(raw);
@@ -20,13 +20,13 @@ export function loadAdventureSave(): AdventureSave {
 
 export function saveAdventureSave(save: AdventureSave): AdventureSave {
   const normalized = normalizeAdventureSave(save);
-  localStorage.setItem(SAVE_KEY, JSON.stringify(normalized));
+  localStorage.setItem(ADVENTURE_STORAGE_KEY, JSON.stringify(normalized));
   return normalized;
 }
 
 export function resetAdventureSave(): AdventureSave {
   const save = createAdventureSave();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  localStorage.setItem(ADVENTURE_STORAGE_KEY, JSON.stringify(save));
   return save;
 }
 
@@ -34,7 +34,7 @@ export function parseAdventureProfileExchange(value: unknown): AdventureSave {
   if (
     typeof value !== "object" ||
     value === null ||
-    (value as Record<string, unknown>).game !== "bc5r" ||
+    (value as Record<string, unknown>).game !== BC5R_GAME_ID ||
     (value as Record<string, unknown>).schemaVersion !== 1 ||
     typeof (value as Record<string, unknown>).campaign !== "object" ||
     typeof (value as Record<string, unknown>).economy !== "object"
