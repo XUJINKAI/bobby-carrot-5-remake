@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, entityMapDefinition } from "@bobby/model";
+import {
+  EntityTypeId,
+  MapEntityTypeId,
+  entityMapDefinition,
+} from "@bobby/model";
 import {
   builtinEntityDefinitions,
   createBuiltinEntityCatalog,
@@ -43,6 +47,23 @@ test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () =>
     catalog.require("object-variant-001").presentation.name,
     "Object Variant 1",
   );
+});
+
+test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
+  const registry = createBuiltinEntityRegistry();
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.TREE).traits, [
+    "bean-growth-space",
+  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).traits, [
+    "bean-growth-space",
+    "water",
+    "waterfall",
+  ]);
+  assert.deepEqual(registry.require("surface-7-1").traits, ["walkable"]);
+  assert.deepEqual(registry.require("surface-1-1").traits, [
+    "bean-growth-space",
+  ]);
 });
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
