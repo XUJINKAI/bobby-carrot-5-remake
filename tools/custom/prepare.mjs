@@ -60,7 +60,7 @@ function validateChapters(collectionId, value) {
     if (typeof name !== "string" || !name.trim()) throw new Error(`${collectionId}/${id}: chapter name 不能为空`);
     if (typeof description !== "string") throw new Error(`${collectionId}/${id}: chapter description 必须是字符串`);
     return { id, name, description };
-  });
+  }).sort((left, right) => left.id.localeCompare(right.id));
 }
 
 function readCollectionMaps(collectionId, directory, chapters) {
