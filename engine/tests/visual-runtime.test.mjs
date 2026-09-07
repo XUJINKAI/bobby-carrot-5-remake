@@ -25,13 +25,14 @@ function bobbyVisual(options = {}) {
       type: EntityTypeId.BOBBY,
       x: 0,
       y: 0,
-      direction: options.direction ?? "right",
-      ...(state ? { state } : {}),
+
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const bobby = store.all().find((entity) => entity.type === EntityTypeId.BOBBY);
   assert.ok(bobby);
+  bobby.direction = options.direction ?? "right";
+  if (state) bobby.state = structuredClone(state);
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
   return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
