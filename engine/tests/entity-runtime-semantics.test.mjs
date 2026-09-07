@@ -167,6 +167,10 @@ test("Unified color block uses flat color and raised fields for passage", () => 
       bobby(0, 0),
     ],
   });
+  assert.equal(
+    raised.entities.all().some((entity) => entity.type === MapEntityTypeId.COLOR_BLOCK),
+    true,
+  );
   assert.equal(move(raised, "right").moves[0].moved, false);
 
   const lowered = new World({
@@ -186,6 +190,64 @@ test("Unified color block uses flat color and raised fields for passage", () => 
     ],
   });
   assert.equal(move(lowered, "right").moves[0].moved, true);
+});
+
+test("Color Switch toggles only switches and blocks of the same color", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      ground(2, 0),
+      bobby(0, 0),
+      {
+        type: MapEntityTypeId.COLOR_SWITCH,
+        x: 1,
+        y: 0,
+        color: "yellow",
+      },
+      {
+        type: MapEntityTypeId.COLOR_SWITCH,
+        x: 2,
+        y: 0,
+        color: "pink",
+      },
+      {
+        type: MapEntityTypeId.COLOR_BLOCK,
+        x: 2,
+        y: 0,
+        color: "yellow",
+      },
+      {
+        type: MapEntityTypeId.COLOR_BLOCK,
+        x: 2,
+        y: 0,
+        color: "pink",
+      },
+    ],
+  });
+
+  assert.equal(move(world, "right").moves[0].moved, true);
+  const switches = world.query.entitiesWithTrait("switch");
+  const blocks = world.query.entitiesWithTrait("stateful-block");
+  assert.equal(
+    switches.find((entity) => entity.state.color === "yellow").state.pressed,
+    true,
+  );
+  assert.equal(
+    switches.find((entity) => entity.state.color === "pink").state.pressed,
+    false,
+  );
+  assert.equal(
+    blocks.find((entity) => entity.state.color === "yellow").state.raised,
+    false,
+  );
+  assert.equal(
+    blocks.find((entity) => entity.state.color === "pink").state.raised,
+    true,
+  );
 });
 
 test("authoring visual preview resolves through canonical Visual definitions", () => {

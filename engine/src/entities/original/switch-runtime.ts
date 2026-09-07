@@ -1,40 +1,44 @@
 import {
   EntityTypeId,
+  MapEntityTypeId,
   type Direction,
   type EntityType,
   type JsonValue,
 } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 
-function colorSwitchBehavior(
-  id: string,
-  switchType: EntityType,
-  blockType: EntityType,
-): Behavior {
-  return {
-    id,
-    onEnter({ actor, query, commands }) {
-      if (!query.entityHasTrait(actor.id, "player")) return;
+export const colorSwitchBehavior: Behavior = {
+  id: "color-switch-global-toggle",
+  onEnter({ actor, self, query, commands }) {
+    if (!query.entityHasTrait(actor.id, "player")) return;
 
-      for (const entity of query.entitiesWithTrait("switch")) {
-        if (entity.type !== switchType) continue;
-        commands.setState(entity.id, {
-          ...entity.state,
-          pressed: entity.state?.pressed !== true,
-        });
-      }
+    const color = self.entity.state?.color === "pink" ? "pink" : "yellow";
+    for (const entity of query.entitiesWithTrait("switch")) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_SWITCH ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        pressed: entity.state?.pressed !== true,
+      });
+    }
 
-      for (const entity of query.entitiesWithTrait("stateful-block")) {
-        if (entity.type !== blockType) continue;
-        commands.setState(entity.id, {
-          ...entity.state,
-          // 未显式保存 state 时遵循 Definition 的 raised 默认值，第一次翻转应落下。
-          raised: entity.state?.raised === false,
-        });
-      }
-    },
-  };
-}
+    for (const entity of query.entitiesWithTrait("stateful-block")) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_BLOCK ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        // 未显式保存 raised 时遵循 Definition 默认值，第一次翻转应落下。
+        raised: entity.state?.raised === false,
+      });
+    }
+  },
+};
 
 function directionalSwitchBehavior(
   id: string,
@@ -66,18 +70,6 @@ function directionalSwitchBehavior(
     },
   };
 }
-
-export const yellowColorSwitchBehavior = colorSwitchBehavior(
-  "yellow-color-switch-global-toggle",
-  EntityTypeId.COLOR_YELLOW_SWITCH,
-  EntityTypeId.COLOR_YELLOW_BLOCK,
-);
-
-export const pinkColorSwitchBehavior = colorSwitchBehavior(
-  "pink-color-switch-global-toggle",
-  EntityTypeId.COLOR_PINK_SWITCH,
-  EntityTypeId.COLOR_PINK_BLOCK,
-);
 
 export const speedSwitchBehavior = directionalSwitchBehavior(
   "speed-switch-global-reverse",

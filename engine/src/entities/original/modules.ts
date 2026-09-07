@@ -3,10 +3,8 @@ import { beaver } from "./beaver.js";
 import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
-import { colorPinkBlock } from "./color-pink-block.js";
-import { colorPinkSwitch } from "./color-pink-switch.js";
-import { colorYellowBlock } from "./color-yellow-block.js";
-import { colorYellowSwitch } from "./color-yellow-switch.js";
+import { colorBlock } from "./color-block.js";
+import { colorSwitch } from "./color-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
 import { fence } from "./fence.js";
@@ -46,10 +44,8 @@ export const originalEntityModules: readonly EntityModule[] = [
   mirror,
   speed,
   carousel,
-  colorYellowSwitch,
-  colorPinkSwitch,
-  colorYellowBlock,
-  colorPinkBlock,
+  colorSwitch,
+  colorBlock,
   ...staticCoverModules,
   plank,
   iceBlock,

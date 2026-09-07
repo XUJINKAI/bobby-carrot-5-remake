@@ -75,14 +75,6 @@ export function instantiateLevelEntity(
 }
 
 function runtimeTypeForLevelEntity(source: LevelEntity): EntityType {
-  if (source.type === MapEntityTypeId.COLOR_SWITCH)
-    return source.color === "pink"
-      ? EntityTypeId.COLOR_PINK_SWITCH
-      : EntityTypeId.COLOR_YELLOW_SWITCH;
-  if (source.type === MapEntityTypeId.COLOR_BLOCK)
-    return source.color === "pink"
-      ? EntityTypeId.COLOR_PINK_BLOCK
-      : EntityTypeId.COLOR_YELLOW_BLOCK;
   if (source.type === MapEntityTypeId.WINDMILL) {
     return {
       up: EntityTypeId.WINDMILL_UP,
