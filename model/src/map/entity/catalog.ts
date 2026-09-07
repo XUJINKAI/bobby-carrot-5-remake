@@ -99,6 +99,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     "Covered carrot/egg is overlapping high-grass + objective; covered visual is presentation.",
   ),
   defineEntity(MapEntityTypeId.SNOW),
+  defineEntity(MapEntityTypeId.FENCE, [
+    enumField("variant", [1, 2, 3, 4, 5, 6], 1, true),
+  ]),
 
   defineEntity(MapEntityTypeId.CARROT),
   defineEntity(MapEntityTypeId.EGG),

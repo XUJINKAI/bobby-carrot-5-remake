@@ -294,11 +294,9 @@ export function adaptLegacyObject(object) {
     return [entity(MapEntityTypeId.BEAVER, x, y)];
   }
   if (legacyFenceTypes.has(type)) {
-    const variant = [...legacyFenceTypes].indexOf(type) + 10;
+    const variant = [...legacyFenceTypes].indexOf(type) + 1;
     return [
-      entity(MapEntityTypeId.WOOD_FENCE, x, y, {
-        variant: `ts-16-${variant}`,
-      }),
+      entity(MapEntityTypeId.FENCE, x, y, { variant }),
     ];
   }
 

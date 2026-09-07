@@ -3,6 +3,7 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   SURFACE_SOURCE_MAPPINGS,
+  coordinateSurfaceType,
 } from "@bobby/model";
 import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
 
@@ -68,7 +69,19 @@ export function reverseEntityMap(map) {
     Array.from({ length: map.width }, () => []),
   );
   for (const entity of map.entities) {
-    cells[entity.y][entity.x].push(entity);
+    const composite = compositeSurfaceMapping(entity);
+    if (!composite) {
+      cells[entity.y][entity.x].push(entity);
+      continue;
+    }
+    const anchor = composite.sources[0];
+    for (const source of composite.sources) {
+      const x = entity.x + source.column - anchor.column;
+      const y = entity.y + source.row - anchor.row;
+      if (x < 0 || y < 0 || x >= map.width || y >= map.height)
+        throw new Error(`${entity.type} composite footprint 超出地图边界`);
+      cells[y][x].push({ type: coordinateSurfaceType(source.row, source.column), x, y });
+    }
   }
   const terrain = cells.map((row, y) =>
     row.map((entities, x) => terrainAt(entities, x, y)),
@@ -78,7 +91,9 @@ export function reverseEntityMap(map) {
     width: map.width,
     height: map.height,
     terrain,
-    objects: map.entities.flatMap((entity) => objectFor(entity)),
+    objects: map.entities.flatMap((entity) =>
+      compositeSurfaceMapping(entity) ? [] : objectFor(entity),
+    ),
   };
 }
 
@@ -254,6 +269,17 @@ function legacySurfaceTerrain(entity) {
   return `background-variant-${String(byte + 1).padStart(3, "0")}`;
 }
 
+function compositeSurfaceMapping(entity) {
+  return SURFACE_SOURCE_MAPPINGS.find(
+    (candidate) =>
+      candidate.composite &&
+      candidate.type === entity.type &&
+      Object.entries(candidate.fields ?? {}).every(
+        ([key, value]) => entity[key] === value,
+      ),
+  );
+}
+
 function objectFor(entity) {
   const { type, x, y } = entity;
   if (type === EntityTypeId.BOBBY || legacyTerrainFor(entity)) return [];
@@ -288,8 +314,18 @@ function objectFor(entity) {
     if (!legacyType) throw new Error("cloud 的 color 必须是 red/purple/green");
     return [{ type: legacyType, x, y }];
   }
-  if (type === EntityTypeId.FENCE)
-    return [{ type: LegacyObject.FENCE_1, x, y }];
+  if (type === MapEntityTypeId.FENCE) {
+    const legacyType = [
+      LegacyObject.FENCE_1,
+      LegacyObject.FENCE_2,
+      LegacyObject.FENCE_3,
+      LegacyObject.FENCE_4,
+      LegacyObject.FENCE_5,
+      LegacyObject.FENCE_6,
+    ][Number(entity.variant) - 1];
+    if (!legacyType) throw new Error("fence 的 variant 必须是 1 到 6");
+    return [{ type: legacyType, x, y }];
+  }
   if (type === EntityTypeId.ICE_BLOCK) {
     const stage = entity.state?.meltStage;
     const legacyType =

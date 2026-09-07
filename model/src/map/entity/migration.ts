@@ -57,7 +57,7 @@ export const ENTITY_MAP_MIGRATION_ALIASES: readonly EntityMapMigrationAlias[] = 
   rename("color-pink-switch", MapEntityTypeId.COLOR_SWITCH, { color: "pink" }, "Color becomes a field."),
   rename("color-yellow-block", MapEntityTypeId.COLOR_BLOCK, { color: "yellow" }, "Color becomes a field."),
   rename("color-pink-block", MapEntityTypeId.COLOR_BLOCK, { color: "pink" }, "Color becomes a field."),
-  rename("fence", MapEntityTypeId.WOOD_FENCE, {}, "Preserve the existing numeric 1..6 variant as wood-fence.variant."),
+  rename("fence", MapEntityTypeId.FENCE, { variant: 1 }, "Legacy object fence defaults to variant 1; DAT fence-1..6 preserve their numeric variant."),
 ]);
 
 export const ENTITY_MAP_UNRESOLVED_SOURCES: readonly UnresolvedEntityMapSource[] = Object.freeze([

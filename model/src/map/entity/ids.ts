@@ -12,6 +12,7 @@ export const MapEntityTypeId = {
   CLOUD_LAYER: "cloud-layer",
   GRASS: "grass",
   WOOD_FENCE: "wood-fence",
+  FENCE: "fence",
   HEDGE: "hedge",
   TREE: "tree",
   STONE_WALL_1: "stone-wall-1",

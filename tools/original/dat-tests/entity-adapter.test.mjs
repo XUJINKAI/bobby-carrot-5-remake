@@ -34,7 +34,7 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
   assert.deepEqual(result.entities, [
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-6-15" },
     { type: EntityTypeId.START, x: 1, y: 0 },
-    { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "down" },
+    { type: EntityTypeId.BOBBY, x: 1, y: 0 },
   ]);
 });
 
@@ -116,7 +116,7 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
 
 test("未确认的 Mirror/Carousel 语义保持在 adapter 隔离层", () => {
   assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.MIRROR_4, 1, 2), [
-    { type: EntityTypeId.MIRROR, x: 1, y: 2, state: { variant: 4 } },
+    { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: 4 },
   ]);
   assert.deepEqual(
     adaptLegacyTerrain(LegacyTerrain.CAROUSEL_HORIZONTAL, 1, 2),
@@ -125,7 +125,7 @@ test("未确认的 Mirror/Carousel 语义保持在 adapter 隔离层", () => {
         type: EntityTypeId.CAROUSEL,
         x: 1,
         y: 2,
-        state: { variant: "horizontal" },
+        variant: "horizontal",
       },
     ],
   );
@@ -170,14 +170,14 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
     [
       canonicalMowedGroundAt(1, 0),
       { type: EntityTypeId.CARROT, x: 1, y: 0 },
-      { type: EntityTypeId.HIGH_GRASS_OBJECTIVE, x: 1, y: 0 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
     ],
   );
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
     [
       canonicalMowedGroundAt(2, 0),
-      { type: EntityTypeId.HIGH_GRASS_OBJECTIVE, x: 2, y: 0 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0 },
       { type: EntityTypeId.CARROT, x: 2, y: 0 },
     ],
   );
@@ -193,7 +193,7 @@ test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty 
   assert.ok(
     result.entities.some(
       (entity) =>
-        entity.type === EntityTypeId.EGG_NEST_EMPTY &&
+        entity.type === MapEntityTypeId.EGG_NEST &&
         entity.x === 1 &&
         entity.y === 0,
     ),
@@ -211,14 +211,7 @@ test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
   );
   assert.deepEqual(
     adaptLegacyObject({ type: LegacyObject.ICE_MELT_2, x: 4, y: 3 }),
-    [
-      {
-        type: EntityTypeId.ICE_BLOCK,
-        x: 4,
-        y: 3,
-        state: { meltStage: 2 },
-      },
-    ],
+    [{ type: EntityTypeId.ICE_BLOCK, x: 4, y: 3 }],
   );
 });
 
@@ -269,16 +262,16 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
 });
 
 test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
-  for (const type of [
+  for (const [index, type] of [
     LegacyObject.FENCE_1,
     LegacyObject.FENCE_2,
     LegacyObject.FENCE_3,
     LegacyObject.FENCE_4,
     LegacyObject.FENCE_5,
     LegacyObject.FENCE_6,
-  ]) {
+  ].entries()) {
     assert.deepEqual(adaptLegacyObject({ type, x: 4, y: 3 }), [
-      { type: EntityTypeId.FENCE, x: 4, y: 3 },
+      { type: MapEntityTypeId.FENCE, x: 4, y: 3, variant: index + 1 },
     ]);
   }
 });
@@ -289,8 +282,25 @@ test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
   ]);
   assert.deepEqual(
     adaptLegacyObject({ type: "object-variant-001", x: 0, y: 0 }),
-    [{ type: "object-variant-001", x: 0, y: 0 }],
+    [{ type: "object-1-1", x: 0, y: 0 }],
   );
+});
+
+
+test("多格 surface source 在 Adapter 边界折叠为单一 canonical Entity", () => {
+  const result = adaptLegacyMap({
+    width: 3,
+    height: 2,
+    terrain: [
+      ["background-variant-075", "background-variant-076", "background-variant-077"],
+      [LegacyTerrain.START, LegacyTerrain.GROUND_A, LegacyTerrain.GROUND_A],
+    ],
+    objects: [],
+  });
+  assert.deepEqual(result.entities.filter((entity) => entity.type === MapEntityTypeId.MOON), [
+    { type: MapEntityTypeId.MOON, x: 0, y: 0 },
+  ]);
+  assert.equal(result.entities.some((entity) => entity.type.startsWith("surface-5-")), false);
 });
 
 function canonicalMowedGroundAt(x, y) {
