@@ -17,7 +17,7 @@ function hasType(world, x, y, type) {
 }
 
 function createWorld(beans = 1) {
-  return new World({
+  const world = new World({
     schemaVersion: 1,
     width: 2,
     height: 4,
@@ -32,11 +32,13 @@ function createWorld(beans = 1) {
         type: EntityTypeId.BOBBY,
         x: 0,
         y: 3,
-        direction: "right",
-        state: { beans },
+
       },
     ],
   });
+  const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { beans };
+  return world;
 }
 
 test("Bean growth changes climbable World facts one cell at a time", () => {
