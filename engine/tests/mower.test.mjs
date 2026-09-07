@@ -93,8 +93,8 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
   const actor = world.query.entitiesWithTrait("player")[0];
   const mower = world.query.entitiesWithTrait("mower")[0];
   world.entities.require(actor.id).state = {
-    ...world.entity(actor.id).state,
     mountId: mower.id,
+    speedBoost: { direction: "right", phase: "full" },
   };
   world.entities.require(mower.id).state = { mountedByActorId: actor.id };
 
