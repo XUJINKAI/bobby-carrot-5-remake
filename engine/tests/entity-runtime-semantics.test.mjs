@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
-import { resolveEntityVisualPreview } from "../dist/visual/preview.js";
+import {
+  resolveEntityVisualPreview,
+  resolveLevelEntityVisualPreview,
+} from "../dist/visual/preview.js";
 
 const BLOCKING_TYPES = [
   EntityTypeId.EGG_NEST_FILLED,
@@ -255,4 +258,18 @@ test("authoring visual preview resolves through canonical Visual definitions", (
   assert.equal(carrot?.layers[0]?.kind, "atlas");
   const fence = resolveEntityVisualPreview({ type: EntityTypeId.FENCE });
   assert.equal(fence?.layers[0]?.kind, "atlas");
+});
+
+
+test("collection icon preview translates canonical flat Map entities", () => {
+  const beanstalk = resolveLevelEntityVisualPreview({
+    type: MapEntityTypeId.BEANSTALK,
+  });
+  assert.ok(beanstalk?.layers.length);
+
+  const mirror = resolveLevelEntityVisualPreview({
+    type: MapEntityTypeId.MIRROR,
+    variant: 2,
+  });
+  assert.equal(mirror?.layers[0]?.kind, "atlas");
 });
