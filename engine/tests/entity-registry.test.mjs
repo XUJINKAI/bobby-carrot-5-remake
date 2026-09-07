@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, entityMapDefinition } from "@bobby/model";
 import {
   builtinEntityDefinitions,
   createBuiltinEntityCatalog,
@@ -52,24 +52,17 @@ test("Start 是普通可步行 Entity，不携带出生语义", () => {
   assert.equal(start.traits.includes("start"), false);
 });
 
-test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {
-  const registry = createBuiltinEntityRegistry();
-  assert.equal(registry.require("speed-switch").state[0].key, "pressed");
-  assert.equal(registry.require("tide-switch").state[0].key, "pressed");
-  assert.equal(registry.require("carousel-switch").state[0].key, "pressed");
-  assert.deepEqual(
-    registry.require("wind-switch").properties.map((field) => field.key),
-    ["channel"],
-  );
-  assert.deepEqual(
-    registry.require("wind-switch").state.map((field) => field.key),
-    ["active"],
-  );
-  assert.equal(registry.require("trap").state[0].key, "active");
-  assert.equal(registry.require("mirror").state[0].key, "variant");
-  assert.equal(registry.require("carousel").state[0].key, "variant");
-  assert.equal(registry.require("color-yellow-block").state[0].key, "raised");
-  assert.equal(registry.require("color-pink-block").state[0].key, "raised");
+test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
+  const fieldKeys = (type) =>
+    entityMapDefinition(type)?.fields.map((field) => field.key) ?? [];
+  assert.deepEqual(fieldKeys("speed-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("tide-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("carousel-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("wind-switch"), ["direction", "active"]);
+  assert.deepEqual(fieldKeys("trap"), ["active"]);
+  assert.deepEqual(fieldKeys("mirror"), ["variant"]);
+  assert.deepEqual(fieldKeys("carousel"), ["variant"]);
+  assert.deepEqual(fieldKeys("color-block"), ["color", "raised"]);
 });
 
 test("Dragon 只显式声明 left/right body-centered footprint", () => {
