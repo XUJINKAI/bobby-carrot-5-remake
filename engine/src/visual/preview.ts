@@ -1,7 +1,14 @@
-import type { Direction, EntityType, JsonValue } from "@bobby/model";
+import type {
+  Direction,
+  EntityType,
+  JsonValue,
+  LevelEntity,
+} from "@bobby/model";
 import { entityRegistry, visualRegistry } from "../entities/registry.js";
 import {
+  instantiateLevelEntity,
   instantiateSpawnSpec,
+  type EntityInstance,
   type EntityState,
 } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
@@ -18,8 +25,37 @@ export interface EntityVisualPreviewSource {
   instanceTraits?: readonly string[];
 }
 
+/** A canonical flat Map entity without the position required by persisted levels. */
+export type LevelEntityVisualPreviewSource = Omit<LevelEntity, "x" | "y">;
+
+/** Resolve a runtime spawn spec directly. */
 export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
+): VisualComposition | null {
+  return resolveInstantiatedVisualPreview(
+    instantiateSpawnSpec(1, {
+      ...source,
+      x: 0,
+      y: 0,
+    }),
+  );
+}
+
+/** Translate and resolve a canonical flat Map entity, including its type-owned fields. */
+export function resolveLevelEntityVisualPreview(
+  source: LevelEntityVisualPreviewSource,
+): VisualComposition | null {
+  return resolveInstantiatedVisualPreview(
+    instantiateLevelEntity(1, {
+      ...source,
+      x: 0,
+      y: 0,
+    }),
+  );
+}
+
+function resolveInstantiatedVisualPreview(
+  source: EntityInstance,
 ): VisualComposition | null {
   const definition = entityRegistry.require(source.type);
   const state = {
@@ -27,16 +63,8 @@ export function resolveEntityVisualPreview(
     ...defaults(definition.state),
     ...(source.state ?? {}),
   };
-  const entity = instantiateSpawnSpec(1, {
-    type: source.type,
-    x: 0,
-    y: 0,
-    ...(source.direction ? { direction: source.direction } : {}),
-    ...(Object.keys(state).length > 0 ? { state } : {}),
-    ...(source.instanceTraits?.length
-      ? { instanceTraits: source.instanceTraits }
-      : {}),
-  });
+  const entity: EntityInstance =
+    Object.keys(state).length > 0 ? { ...source, state } : source;
   const part = resolveFootprintCells(entity, definition.footprint)[0];
   if (!part) return null;
   const presence: EntityPresence = {
@@ -44,11 +72,13 @@ export function resolveEntityVisualPreview(
     cell: { x: part.x, y: part.y },
     layer: definition.layer ?? "object",
     ...(part.role ? { role: part.role } : {}),
-    traits: [...new Set([
-      ...definition.traits,
-      ...(entity.instanceTraits ?? []),
-      ...(part.traits ?? []),
-    ])],
+    traits: [
+      ...new Set([
+        ...definition.traits,
+        ...(entity.instanceTraits ?? []),
+        ...(part.traits ?? []),
+      ]),
+    ],
     stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,
   };
   const query: VisualQuery = {
