@@ -1,7 +1,7 @@
 import type { EntityType } from "../map/document.js";
 import type { JsonPrimitive } from "../shared/json.js";
 
-/** Entity-based collection icon. Entity-specific fields use the same flat Entity Map ABI. */
+/** 基于 Entity 的 collection icon；类型专属字段共用扁平 Entity Map ABI。 */
 export interface MapCollectionEntityIcon {
   type: EntityType;
   [key: string]: JsonPrimitive;
@@ -33,7 +33,7 @@ export interface MapCollectionChapter {
   difficulty?: number;
 }
 
-/** Runtime collection entry. Original-specific kind/filters remain optional extensions. */
+/** Runtime collection entry；Original 专属 kind/filters 是可选扩展。 */
 export interface MapCollectionMap {
   id: string;
   name: string;
@@ -43,7 +43,7 @@ export interface MapCollectionMap {
   filters?: Record<string, string[]>;
 }
 
-/** assets/maps/<collection>/index.json; collection identity comes from the resource path. */
+/** assets/maps/<collection>/index.json；collection 身份来自资源路径。 */
 export interface MapCollectionIndex {
   schemaVersion: 1;
   name: string;
@@ -55,13 +55,13 @@ export interface MapCollectionIndex {
 }
 
 export interface MapCollectionSummary {
-  /** Resource/path ID used to resolve assets/maps/<id>/index.json. */
+  /** 用于解析 assets/maps/<id>/index.json 的资源路径 ID。 */
   id: string;
   name: string;
   description?: string;
 }
 
-/** assets/maps/index.json. collections[] array order is display/navigation order. */
+/** assets/maps/index.json；collections[] 数组顺序即展示与导航顺序。 */
 export interface MapCollectionsIndex {
   schemaVersion: 1;
   collections: MapCollectionSummary[];
@@ -72,7 +72,7 @@ export interface CollectionManifestChapter {
   description?: string;
 }
 
-/** Hand-maintained collection metadata; filesystem paths define membership/chapter/map IDs. */
+/** 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。 */
 export interface CollectionManifestEntry {
   id: string;
   name: string;
@@ -81,7 +81,7 @@ export interface CollectionManifestEntry {
   chapters?: Record<string, CollectionManifestChapter>;
 }
 
-/** custom-maps/collections.json. collections[] array order is collection order. */
+/** custom-maps/collections.json；collections[] 数组顺序即 collection 顺序。 */
 export interface CollectionManifest {
   schemaVersion: 1;
   collections: CollectionManifestEntry[];

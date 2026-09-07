@@ -14,7 +14,7 @@ import type { EditorMap, EntityRef, LevelValidationIssue } from "../level/types.
 /** Stable Editor interaction modes. Concrete Entity knowledge must not leak into this type. */
 export type EditorTool = "select" | "place" | "erase";
 
-/** Flat persisted Map fields attached to an Editor-only preset/variant. */
+/** Editor 专用 preset/variant 携带的扁平 Map 持久化字段。 */
 export type EditorEntityFields = Readonly<Record<string, JsonPrimitive>>;
 
 /** What the Editor Core should create when the current placement action is committed. */

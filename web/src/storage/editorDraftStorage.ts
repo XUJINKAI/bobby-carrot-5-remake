@@ -23,14 +23,14 @@ export interface EditorNamedSave {
   key: string;
 }
 
-/** Automatic working copy. It is deliberately separate from every named save. */
+/** 自动工作副本，与所有命名存档保持独立。 */
 export function loadEditorAutosave(
   storage: EditorLocalStorage = localStorage,
 ): EditorMap | null {
   return loadAtKey(EDITOR_AUTOSAVE_STORAGE_KEY, storage, true);
 }
 
-/** Every EditorDocument change updates only autosave; named saves are never touched here. */
+/** 每次 EditorDocument 变化只更新 autosave；这里不会写入命名存档。 */
 export function storeEditorAutosave(
   level: Readonly<EditorMap>,
   storage: EditorLocalStorage = localStorage,
@@ -53,7 +53,7 @@ export function listEditorNamedSaves(
         if (!name.trim()) continue;
         saves.push({ name, key });
       } catch {
-        // Ignore malformed keys from unrelated/old data.
+        // 忽略无关数据中的异常 key。
       }
     }
   } catch {
@@ -69,7 +69,7 @@ export function loadEditorNamedSave(
   return loadAtKey(editorStorageKey(name), storage, false);
 }
 
-/** Explicit Save / Save As only. Editing never calls this function automatically. */
+/** 只供显式 Save / Save As 使用；编辑过程不会自动调用。 */
 export function storeEditorNamedSave(
   name: string,
   level: Readonly<EditorMap>,
@@ -85,7 +85,7 @@ export function deleteEditorNamedSave(
   try {
     storage.removeItem(editorStorageKey(name));
   } catch {
-    // Storage failures must not break the Editor UI.
+    // Storage 失败不能中断 Editor UI。
   }
 }
 
@@ -103,7 +103,7 @@ function loadAtKey(
       try {
         storage.removeItem(key);
       } catch {
-        // Storage unavailable; keep Editor usable.
+        // Storage 不可用时仍保持 Editor 可操作。
       }
     }
     return null;
@@ -118,6 +118,6 @@ function storeAtKey(
   try {
     storage.setItem(key, serializeEditorLevel(level as EditorMap));
   } catch {
-    // Quota/privacy mode errors must not interrupt editing.
+    // 配额或隐私模式错误不能中断编辑。
   }
 }

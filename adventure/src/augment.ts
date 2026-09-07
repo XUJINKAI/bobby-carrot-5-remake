@@ -8,9 +8,9 @@ export interface AdventureEntityFieldPatch {
 }
 
 /**
- * Adventure can override canonical flat Map entity fields before a LevelMap enters Engine.
- * x / y / type are optional selectors; at least one selector is required.
- * The resulting LevelMap still uses the same public Map ABI as Editor/custom/original maps.
+ * Adventure 可以在 LevelMap 进入 Engine 前覆盖扁平的 canonical Map Entity 字段。
+ * x / y / type 都是可选 selector，但至少需要一个 selector。
+ * 处理后的 LevelMap 仍与 Editor、custom 和 original 地图共用公开 Map ABI。
  */
 export function augmentAdventureLevel(
   level: LevelMap,

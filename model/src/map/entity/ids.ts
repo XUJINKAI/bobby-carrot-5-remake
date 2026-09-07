@@ -1,6 +1,6 @@
 import type { EntityType } from "../document.js";
 
-/** Stable identities accepted in LevelMap.entities[]. */
+/** LevelMap.entities[] 接受的稳定身份。 */
 export const MapEntityTypeId = {
   BOBBY: "bobby",
 
@@ -88,5 +88,5 @@ export const MapEntityTypeId = {
 export type NamedMapEntityType =
   (typeof MapEntityTypeId)[keyof typeof MapEntityTypeId];
 
-/** Reviewable fallback for an original ts.png tile whose semantics are not known yet. */
+/** 原版 ts.png 单格语义尚未确认时使用的可审阅 fallback。 */
 export type MapEntityType = NamedMapEntityType;

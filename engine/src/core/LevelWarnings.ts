@@ -72,8 +72,7 @@ function footprintHasTrait(
       definition.footprint,
     ).some((part) => part.traits?.includes(trait));
   } catch {
-    // Structural validity belongs to the normal load boundary. This helper only
-    // answers whether a playable reach target is present.
+    // 结构有效性由常规加载边界校验；这里仅判断地图是否存在可游玩的 reach target。
     return false;
   }
 }

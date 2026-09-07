@@ -15,7 +15,7 @@ export const NOOP_CONTROLLER: PageController = {
   destroy() {},
 };
 
-/** Runtime wrapper: serialized MapCollectionIndex identity still comes from its resource path. */
+/** Runtime wrapper；序列化 MapCollectionIndex 的身份仍来自资源路径。 */
 export type ResolvedMapCollection = MapCollectionIndex & { id: string };
 
 export interface PageContext {

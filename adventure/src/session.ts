@@ -27,7 +27,7 @@ export interface AdventureProfilePlan {
   };
 }
 
-/** Adventure-specific policy values materialized as canonical flat Map fields. */
+/** Adventure policy 在进入 Engine 前落实为扁平的 canonical Map 字段。 */
 export interface AdventureBonusRuntimePolicy {
   temporaryKeyVendor: {
     interaction: string;

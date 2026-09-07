@@ -83,7 +83,7 @@ export interface GameRuntimeOptions {
   history?: HistoryPolicy;
   /** Concrete runtime bindings; callers may also call setControlBindings after load. */
   controls?: readonly ControlBinding[];
-  /** Host-only runtime state patch applied after Map entities are instantiated; never serialized. */
+  /** Map Entity 实例化后应用的宿主 Runtime state patch；不会进入序列化结果。 */
   initializeEntityState?: RuntimeEntityStateInitializer;
 }
 

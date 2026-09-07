@@ -1,6 +1,6 @@
 import type { LevelEntity, MapDocument } from "@bobby/model";
 
-/** Editor works directly on the canonical persisted MapDocument. */
+/** Editor 直接编辑 canonical 持久化 MapDocument。 */
 export type EditorMap = MapDocument;
 
 /** 仅在一个 Editor snapshot 内有效，不进入持久化 JSON。 */

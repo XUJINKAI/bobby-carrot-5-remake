@@ -458,7 +458,7 @@ function reflowAutoSurfaces(
   return changed ? normalizeEditorLevel({ ...level, entities }) : level;
 }
 
-/** Map JSON never carries gameplay trait overrides; Engine owns surface semantics. */
+/** Map JSON 不保存 gameplay Trait 覆盖；Surface 语义由 Engine 持有。 */
 function applySurfaceInstanceTraits(
   entity: LevelEntity,
   _terrain: SurfaceTerrainDefinition,

@@ -25,7 +25,7 @@ export interface EntityVisualPreviewSource {
   instanceTraits?: readonly string[];
 }
 
-/** A canonical flat Map entity without the position required by persisted levels. */
+/** 省略持久化关卡所需坐标的扁平 canonical Map Entity。 */
 export interface LevelEntityVisualPreviewSource {
   type: EntityType;
   direction?: Direction;
@@ -33,7 +33,7 @@ export interface LevelEntityVisualPreviewSource {
   [key: string]: JsonPrimitive | undefined;
 }
 
-/** Resolve a runtime spawn spec directly. */
+/** 直接解析 Runtime spawn spec。 */
 export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
 ): VisualComposition | null {
@@ -46,7 +46,7 @@ export function resolveEntityVisualPreview(
   );
 }
 
-/** Translate and resolve a canonical flat Map entity, including its type-owned fields. */
+/** 转换并解析扁平 canonical Map Entity，包括该 type 持有的字段。 */
 export function resolveLevelEntityVisualPreview(
   source: LevelEntityVisualPreviewSource,
 ): VisualComposition | null {

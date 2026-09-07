@@ -1,9 +1,9 @@
 import type { EntityType } from "../document.js";
 
 /**
- * Transitional IDs used by the current Engine/original adapter implementation.
- * Some are runtime/presentation phases and are deliberately NOT part of the stable Map ABI.
- * Remove this module once Engine and adapters consume the canonical Map entity contract directly.
+ * 当前 Engine/original adapter 实现使用的过渡 ID。
+ * 其中一部分属于 Runtime/presentation phase，不进入稳定 Map ABI。
+ * Engine 与 adapter 全部直接消费 canonical Map Entity 合同后即可删除此模块。
  */
 export const EntityTypeId = {
   BOBBY: "bobby",

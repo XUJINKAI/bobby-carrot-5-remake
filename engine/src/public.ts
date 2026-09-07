@@ -96,7 +96,7 @@ export {
   type BobbyInventoryState,
 } from "./entities/player/BobbyState.js";
 
-/** Canonical serialized map contracts. */
+/** Canonical 地图序列化合同。 */
 export type {
   Direction,
   EntityType,
@@ -166,7 +166,7 @@ export type {
 } from "./world/entity/EntityDefinition.js";
 export { EntityStore } from "./world/entity/EntityStore.js";
 export type { EntityStoreSnapshot } from "./world/entity/EntityStore.js";
-/** Engine runtime entity contracts; these are not Map JSON. */
+/** Engine Runtime Entity 合同；不属于 Map JSON。 */
 export type {
   CellPosition,
   EntityId,

@@ -22,7 +22,7 @@ export interface BobbySpeedBoostState {
   phase: BobbySpeedPhase;
 }
 
-/** Runtime/default metadata only; stable Map ABI does not expose Bobby inventory fields. */
+/** 仅供 Runtime/default metadata 使用；稳定 Map ABI 不暴露 Bobby inventory 字段。 */
 export const BOBBY_INVENTORY_FIELDS: readonly EntityFieldDefinition[] = [
   { key: "gas", kind: "boolean", label: "Gas", default: false },
   { key: "kite", kind: "boolean", label: "Kite", default: false },

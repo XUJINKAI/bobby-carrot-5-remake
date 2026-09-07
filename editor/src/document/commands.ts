@@ -80,7 +80,7 @@ export function setEntityDirection(
   return updateEntityField(ref, "direction", direction);
 }
 
-/** Update one entity-owned flat Map field. Reserved identity/position fields use dedicated commands. */
+/** 更新一个 Entity 持有的扁平 Map 字段；身份与坐标保留字段使用专用 command。 */
 export function updateEntityField(
   ref: EntityRef,
   key: string,
