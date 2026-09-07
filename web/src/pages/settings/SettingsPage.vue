@@ -36,10 +36,15 @@ const toolbar = {
 };
 
 const exploreCompletedCount = computed(() =>
-  Object.values(exploreSave.value.completedMaps).reduce(
-    (total, ids) => total + ids.length,
+  Object.values(exploreSave.value.collections).reduce(
+    (total, save) => total + save.completedMaps.length,
     0,
   ),
+);
+const exploreRecentCollectionCount = computed(
+  () =>
+    Object.values(exploreSave.value.collections).filter((save) => save.lastMap)
+      .length,
 );
 
 function parseAdventure(value: unknown): AdventureSave {
@@ -124,7 +129,7 @@ function exportFilename(kind: "adventure" | "explore"): string {
             </div>
             <span class="save-summary">
               {{ exploreCompletedCount }} 已完成 ·
-              {{ Object.keys(exploreSave.lastMaps).length }} 个集合有最近记录
+              {{ exploreRecentCollectionCount }} 个集合有最近记录
             </span>
           </header>
           <DataExchangePanel
