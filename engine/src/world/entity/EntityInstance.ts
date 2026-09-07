@@ -1,4 +1,6 @@
 import {
+  EntityTypeId,
+  MapEntityTypeId,
   entityMapDefinition,
   type Direction,
   type EntityType,
@@ -59,7 +61,7 @@ export function instantiateLevelEntity(
 
   return {
     id,
-    type: source.type,
+    type: runtimeTypeForLevelEntity(source),
     anchor: { x: source.x, y: source.y },
     ...(direction ? { direction } : {}),
     ...(Number.isFinite(source.stackOrder)
@@ -67,6 +69,40 @@ export function instantiateLevelEntity(
       : {}),
     ...(Object.keys(state).length > 0 ? { state } : {}),
   };
+}
+
+function runtimeTypeForLevelEntity(source: LevelEntity): EntityType {
+  if (source.type === MapEntityTypeId.COLOR_SWITCH)
+    return source.color === "pink"
+      ? EntityTypeId.COLOR_PINK_SWITCH
+      : EntityTypeId.COLOR_YELLOW_SWITCH;
+  if (source.type === MapEntityTypeId.COLOR_BLOCK)
+    return source.color === "pink"
+      ? EntityTypeId.COLOR_PINK_BLOCK
+      : EntityTypeId.COLOR_YELLOW_BLOCK;
+  if (source.type === MapEntityTypeId.WINDMILL) {
+    return {
+      up: EntityTypeId.WINDMILL_UP,
+      down: EntityTypeId.WINDMILL_DOWN,
+      left: EntityTypeId.WINDMILL_LEFT,
+      right: EntityTypeId.WINDMILL_RIGHT,
+    }[String(source.direction)] ?? EntityTypeId.WINDMILL_UP;
+  }
+  if (source.type === MapEntityTypeId.CLOUD) {
+    return {
+      red: EntityTypeId.CLOUD_RED,
+      purple: EntityTypeId.CLOUD_PURPLE,
+      green: EntityTypeId.CLOUD_GREEN,
+    }[String(source.color)] ?? EntityTypeId.CLOUD_RED;
+  }
+  if (source.type === MapEntityTypeId.CLOUD_PARKING) {
+    return {
+      red: EntityTypeId.CLOUD_GRID_RED,
+      purple: EntityTypeId.CLOUD_GRID_PURPLE,
+      green: EntityTypeId.CLOUD_GRID_GREEN,
+    }[String(source.color)] ?? EntityTypeId.CLOUD_GRID_RED;
+  }
+  return source.type;
 }
 
 export function instantiateSpawnSpec(
