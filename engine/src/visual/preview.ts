@@ -1,8 +1,8 @@
 import type {
   Direction,
   EntityType,
+  JsonPrimitive,
   JsonValue,
-  LevelEntity,
 } from "@bobby/model";
 import { entityRegistry, visualRegistry } from "../entities/registry.js";
 import {
@@ -26,7 +26,12 @@ export interface EntityVisualPreviewSource {
 }
 
 /** A canonical flat Map entity without the position required by persisted levels. */
-export type LevelEntityVisualPreviewSource = Omit<LevelEntity, "x" | "y">;
+export interface LevelEntityVisualPreviewSource {
+  type: EntityType;
+  direction?: Direction;
+  stackOrder?: number;
+  [key: string]: JsonPrimitive | undefined;
+}
 
 /** Resolve a runtime spawn spec directly. */
 export function resolveEntityVisualPreview(
