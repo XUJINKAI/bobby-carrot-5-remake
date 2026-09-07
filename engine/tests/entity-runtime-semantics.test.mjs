@@ -19,7 +19,7 @@ const BLOCKING_TYPES = [
   EntityTypeId.ICE_BLOCK,
 ];
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const bobby = (x, y) => ({
   type: EntityTypeId.BOBBY,
   x,

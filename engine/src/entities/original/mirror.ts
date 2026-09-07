@@ -8,7 +8,7 @@ import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
   boundedInt,
-  cell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
   variantState,
@@ -40,7 +40,7 @@ const definition: EntityModuleDefinition = {
 export const mirror: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    cell(boundedInt(context.entity.state?.variant, 1, 4, 1), 11),
+    namedCell(`mirror-${boundedInt(context.entity.state?.variant, 1, 4, 1)}`),
   ),
   [{ behavior: rotateMirrorOnLeave }],
 );

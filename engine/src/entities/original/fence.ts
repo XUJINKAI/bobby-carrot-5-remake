@@ -5,7 +5,7 @@ import type {
 } from "../EntityModule.js";
 import {
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
 } from "./module.js";
 
@@ -51,7 +51,9 @@ export const fence: EntityModule = originalModule(definition, {
       typeof fixed === "string" && /^ts-16-1[0-5]$/.test(fixed)
         ? fixed
         : resolveFenceVariant(resolveConnections(context));
-    const atlas = objectCell(48 + Number(variant.slice("ts-16-".length)) - 10);
+    const atlas = namedCell(
+      `fence-${Number(variant.slice("ts-16-".length)) - 9}`,
+    );
     return {
       layers: [
         {

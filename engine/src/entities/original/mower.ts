@@ -13,9 +13,8 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  cell,
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -146,7 +145,7 @@ export const mower: EntityModule = originalModule(
   atlasVisual(mowerDefinition, (context) =>
     Number(context.entity.state?.mountedByActorId ?? 0) > 0
       ? null
-      : objectCell(19),
+      : namedCell("mower"),
   ),
   [{ behavior: mowerVehicle }],
 );
@@ -161,7 +160,7 @@ const parkingDefinition: EntityModuleDefinition = {
 
 export const mowerParkingTile: EntityModule = originalModule(
   parkingDefinition,
-  atlasVisual(parkingDefinition, cell(0, 10)),
+  atlasVisual(parkingDefinition, namedCell("mower-parking")),
   [{ behavior: mowerParking }],
 );
 
@@ -174,7 +173,7 @@ const crumblyRockDefinition: EntityModuleDefinition = {
 
 export const crumblyRock: EntityModule = originalModule(
   crumblyRockDefinition,
-  atlasVisual(crumblyRockDefinition, objectCell(36)),
+  atlasVisual(crumblyRockDefinition, namedCell("crumbly-rock")),
   [{ behavior: smashCrumblyRock }],
 );
 
@@ -187,6 +186,6 @@ const pushableRockDefinition: EntityModuleDefinition = {
 
 export const pushableRock: EntityModule = originalModule(
   pushableRockDefinition,
-  atlasVisual(pushableRockDefinition, objectCell(36)),
+  atlasVisual(pushableRockDefinition, namedCell("crumbly-rock")),
   [{ behavior: smashCrumblyRock }],
 );

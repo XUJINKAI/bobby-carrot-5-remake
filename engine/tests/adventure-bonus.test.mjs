@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const bobby = (x, y) => ({ type: EntityTypeId.BOBBY, x, y });
 
 function corridor(extra, rules, bobbyState) {

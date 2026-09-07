@@ -2,37 +2,12 @@
 
 当字节码分析还不足以确认机关细节时，用同一张最小地图分别运行 bc5r 与原版 Java ME Engine。
 
-## 反查 `ts.png` 素材引用
+## 按坐标查找 `ts.png` 素材
 
-对素材语义或命名不确定时，可以按 atlas 行列坐标反查正式原版地图：
-
-```bash
-node tools/cli.mjs original usage ts-4-13
-```
-
-命令也接受 `ts(4,13)` 和临时 Entity 名 `surface-4-13`。输出包含：
-
-- canonical Entity selector；
-- 玩家关卡 ID 和地图内 `(x,y)` anchor；
-- Base / UP release、DAT 包和 one-based record slot；
-- 可直接打开的 Explore 路径。
-
-Dragon 吐火帧等 runtime visual 也会反查到使用该视觉的 semantic Entity 和地图；同一 atlas 单元被直接当作地形摆放时，两类引用会同时列出。
-
-需要给脚本继续处理时使用 JSON 输出：
-
-```bash
-node tools/cli.mjs original usage ts-4-13 --json
-```
-
-最终命名前可以先列出所有仍使用坐标型临时名的 Surface：
-
-```bash
-node tools/cli.mjs original usage --temporary
-```
-
-反查读取 `original/adapted/` 生成物。缺少生成物时先执行 `npm run assets`。
-未确认语义的 `ts.png` 单元使用 `surface-<row>-<column>` 作为临时 Entity 名；已归类素材通过 semantic type 与 `ts-<row>-<column>` variant 精确匹配。Editor Surface 的每个 atlas 单元都是一个单格 Entity。
+`original/decoded/` 中的 terrain 和 object 标签均以 `ts-<row>-<column>:` 开头。
+对素材语义或命名不确定时，直接全局搜索坐标前缀即可定位所有原版地图引用，
+例如搜索 `ts-4-13:`。Engine 使用的机关帧与 Surface 归类集中维护在
+`model/src/map/entity/ts-visuals.json`；Editor Surface 的每个 atlas 单元均为单格 Entity。
 
 ## 1. 做最小地图
 

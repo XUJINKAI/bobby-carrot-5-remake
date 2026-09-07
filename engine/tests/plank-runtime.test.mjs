@@ -29,9 +29,14 @@ function worldWithPlank(surfaceType) {
       width: 3,
       height: 1,
       entities: [
-        { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-        { type: surfaceType, x: 1, y: 0 },
-        { type: EntityTypeId.GROUND_C, x: 2, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        {
+          type: surfaceType,
+          x: 1,
+          y: 0,
+          ...(surfaceType === "grass" ? { variant: "ts-10-1" } : {}),
+        },
+        { type: "grass", variant: "ts-10-1", x: 2, y: 0 },
         { type: EntityTypeId.PLANK, x: 1, y: 0 },
         { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
@@ -58,7 +63,7 @@ test("Plank leaves World immediately and water becomes naturally impassable", ()
 });
 
 test("Destroyed Plank on ordinary ground leaves the ground walkable", () => {
-  const world = worldWithPlank(EntityTypeId.GROUND_C);
+  const world = worldWithPlank("grass");
   const actor = world.query.entitiesWithTrait("player")[0];
   const plank = world.query.entitiesWithTrait("terrain-overlay").find(
     (entity) => entity.type === EntityTypeId.PLANK,

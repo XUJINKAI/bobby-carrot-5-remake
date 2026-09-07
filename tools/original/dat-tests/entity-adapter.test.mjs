@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   EntityTypeId,
   MapEntityTypeId,
-  legacyEntityMapAlias,
 } from "../../../model/dist/index.js";
 import {
   adaptDecodedMap,
@@ -16,6 +15,7 @@ import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
 import {
   decodeDatObject,
   decodeDatTerrain,
+  encodeDatObject,
   encodeDatTerrain,
 } from "../dat/mapping.mjs";
 
@@ -32,7 +32,10 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
   const result = adaptDecodedMap({
     width: 2,
     height: 1,
-    terrain: [[DecodedTerrain.GROUND_A, DecodedTerrain.START]],
+    terrain: [[
+      decodeDatTerrain(0x5e),
+      decodeDatTerrain(encodeDatTerrain(DecodedTerrain.START)),
+    ]],
     objects: [],
   });
   assert.deepEqual(result.entities, [
@@ -103,7 +106,10 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
       },
     ],
   });
-  assert.equal(reversed.terrain[0][1], DecodedTerrain.WIND_SWITCH_2_ON);
+  assert.equal(
+    reversed.terrain[0][1],
+    decodeDatTerrain(encodeDatTerrain(DecodedTerrain.WIND_SWITCH_2_ON)),
+  );
   assert.deepEqual(
     adaptDecodedMap(reversed).entities.find(
       (entity) => entity.type === EntityTypeId.WIND_SWITCH,
@@ -278,20 +284,16 @@ test("atlas-first Object 标签参与隐藏目标和空对象判定", () => {
         entity.y === 0,
     ),
   );
-  assert.equal(
-    carrotMap.entities.some((entity) => entity.type === "object-13-11"),
-    false,
-  );
 });
 
 test("Dragon canonical body anchor round-trips to original head coordinate", () => {
   const baseEntities = [
-    { type: EntityTypeId.GROUND_A, x: 0, y: 0 },
-    { type: EntityTypeId.GROUND_A, x: 1, y: 0 },
-    { type: EntityTypeId.GROUND_A, x: 2, y: 0 },
+    { type: "grass", x: 0, y: 0, variant: "ts-6-15" },
+    { type: "grass", x: 1, y: 0, variant: "ts-6-15" },
+    { type: "grass", x: 2, y: 0, variant: "ts-6-15" },
     { type: EntityTypeId.START, x: 3, y: 0 },
     { type: EntityTypeId.BOBBY, x: 3, y: 0, direction: "down" },
-    { type: EntityTypeId.GROUND_A, x: 4, y: 0 },
+    { type: "grass", x: 4, y: 0, variant: "ts-6-15" },
   ];
   const map = {
     schemaVersion: 1,
@@ -305,9 +307,16 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
   const reversed = reverseEntityMap(map);
   assert.deepEqual(
     reversed.objects.filter(
-      (object) => object.type === DecodedObject.DRAGON_HEAD_BASE,
+      (object) =>
+        object.type === decodeDatObject(
+          encodeDatObject(DecodedObject.DRAGON_HEAD_BASE),
+        ),
     ),
-    [{ type: DecodedObject.DRAGON_HEAD_BASE, x: 1, y: 0 }],
+    [{
+      type: decodeDatObject(encodeDatObject(DecodedObject.DRAGON_HEAD_BASE)),
+      x: 1,
+      y: 0,
+    }],
   );
   assert.deepEqual(
     adaptDecodedMap(reversed).entities.find(
@@ -362,18 +371,15 @@ test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
 });
 
 test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
-  assert.deepEqual(adaptDecodedTerrain("ts-7-1", 0, 0), [
+  assert.deepEqual(adaptDecodedTerrain("ts-7-1:grass", 0, 0), [
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-7-1" },
-  ]);
-  assert.deepEqual(adaptDecodedTerrain("ts-4-13", 1, 0), [
-    { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
   ]);
   assert.deepEqual(adaptDecodedTerrain("ts-4-13:tree", 1, 0), [
     { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
   ]);
-  assert.deepEqual(
-    adaptDecodedObject({ type: "object-variant-001", x: 0, y: 0 }),
-    [{ type: "object-1-1", x: 0, y: 0 }],
+  assert.throws(
+    () => adaptDecodedObject({ type: "unknown-object", x: 0, y: 0 }),
+    /Unsupported decoded object type/,
   );
 });
 
@@ -383,8 +389,12 @@ test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", ()
     width: 3,
     height: 2,
     terrain: [
-      ["ts-5-11", "ts-5-12", "ts-5-13"],
-      [DecodedTerrain.START, DecodedTerrain.GROUND_A, DecodedTerrain.GROUND_A],
+      ["ts-5-11:moon", "ts-5-12:moon", "ts-5-13:moon"],
+      [
+        decodeDatTerrain(encodeDatTerrain(DecodedTerrain.START)),
+        decodeDatTerrain(0x5e),
+        decodeDatTerrain(0x5e),
+      ],
     ],
     objects: [],
   });
@@ -393,11 +403,8 @@ test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", ()
     { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12" },
     { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13" },
   ]);
-  assert.equal(result.entities.some((entity) => entity.type.startsWith("surface-5-")), false);
 });
 
 function canonicalMowedGroundAt(x, y) {
-  const alias = legacyEntityMapAlias(mowedGroundAt(x, y));
-  assert.ok(alias?.to);
-  return { type: alias.to, x, y, ...(alias.fields ?? {}) };
+  return { type: MapEntityTypeId.GRASS, x, y, variant: mowedGroundAt(x, y) };
 }

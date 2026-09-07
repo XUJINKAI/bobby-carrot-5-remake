@@ -6,7 +6,7 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   pressedState,
   SURFACE_STACK_ORDER,
@@ -35,11 +35,11 @@ export const colorSwitch: EntityModule = originalModule(
     const pressed = context.entity.state?.pressed === true;
     return context.entity.state?.color === "pink"
       ? pressed
-        ? cell(2, 12)
-        : cell(1, 12)
+        ? namedCell("color-pink-switch-pressed")
+        : namedCell("color-pink-switch-raised")
       : pressed
-        ? cell(0, 12)
-        : cell(15, 11);
+        ? namedCell("color-yellow-switch-pressed")
+        : namedCell("color-yellow-switch-raised");
   }),
   [{ behavior: colorSwitchBehavior }],
 );

@@ -12,7 +12,7 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
 } from "./module.js";
 
@@ -164,11 +164,11 @@ const visual: VisualDefinition = {
 };
 
 function dragonAtlasCell(role: string | undefined, attackFrame: unknown) {
-  if (role === "body") return objectCell(15);
-  if (role === "tail") return objectCell(16);
-  if (attackFrame === 1) return objectCell(31);
-  if (attackFrame === 2) return objectCell(32);
-  return objectCell(14);
+  if (role === "body") return namedCell("dragon-body");
+  if (role === "tail") return namedCell("dragon-tail");
+  if (attackFrame === 1) return namedCell("dragon-fire-1");
+  if (attackFrame === 2) return namedCell("dragon-fire-2");
+  return namedCell("dragon-head");
 }
 
 const base = originalModule(definition, visual, [

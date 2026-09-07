@@ -6,7 +6,7 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   pressedState,
   SURFACE_STACK_ORDER,
@@ -23,7 +23,9 @@ const definition: EntityModuleDefinition = {
 export const carouselSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.pressed === true ? cell(3, 10) : cell(4, 10),
+    context.entity.state?.pressed === true
+      ? namedCell("carousel-switch-pressed")
+      : namedCell("carousel-switch-raised"),
   ),
   [{ behavior: carouselSwitchBehavior }],
 );

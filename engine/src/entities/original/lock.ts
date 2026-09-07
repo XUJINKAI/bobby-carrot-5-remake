@@ -13,7 +13,7 @@ import {
   atlasVisual,
   boundedInt,
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
 } from "./module.js";
 
@@ -101,7 +101,7 @@ const definition: EntityModuleDefinition = {
 export const lock: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.opened === true ? null : objectCell(4),
+    context.entity.state?.opened === true ? null : namedCell("lock"),
   ),
   [{ behavior: unlock }],
 );

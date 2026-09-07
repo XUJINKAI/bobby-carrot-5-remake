@@ -25,17 +25,8 @@
 | `node tools/cli.mjs original adapt` | 将 decoded 数据转换为语义地图，并生成 Adventure Catalog。 |
 | `node tools/cli.mjs original prepare` | 依次构建 Model、extract、decode 和 adapt。 |
 | `node tools/cli.mjs original inspect [--all]` | 将待确认的 atlas/object 类型统计写入 `tmp/unknown-tiles.json`；`--all` 保留全部引用。 |
-| `node tools/cli.mjs original usage ts-4-13 [--json]` | 反查某个 `ts.png` 单格在哪些原版地图、坐标和语义 Entity 中出现。 |
-| `node tools/cli.mjs original usage --temporary [--json]` | 列出所有仍使用临时坐标身份的 Surface，并汇总原版地图引用。 |
 | `node tools/cli.mjs original patch [--in <dir>] [--out <tmp-dir>]` | 构建 Model 后执行原版 JAR patch；输入默认是 `custom-maps/original-patch/`，输出默认是 `tmp/original-patch/`。 |
 | `node tools/cli.mjs original research [--output <dir>]` | 比较官方发布包内容，默认写入 `tmp/release-research/`。 |
-
-`usage` 接受 `ts-r-c`、`r-c` 或 `r,c`。例如：
-
-```sh
-node tools/cli.mjs original usage ts-4-13
-node tools/cli.mjs original usage 15,10 --json
-```
 
 ## Schema 与资源
 

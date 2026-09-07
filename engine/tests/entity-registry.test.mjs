@@ -29,24 +29,14 @@ test("Registry 不包含 original/custom identity 前缀", () => {
   }
 });
 
-test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
+test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  const catalog = createBuiltinEntityCatalog();
-  assert.deepEqual(
-    registry.require("background-variant-001").traits,
-    ["bean-growth-space"],
-  );
-  assert.equal(registry.require("background-variant-001").stackOrder, 0);
-  assert.equal(
-    catalog.require("background-variant-001").presentation.name,
-    "Background Variant 1",
-  );
-  assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
-  assert.equal(registry.require("object-variant-001").stackOrder, 100);
-  assert.equal(
-    catalog.require("object-variant-001").presentation.name,
-    "Object Variant 1",
-  );
+  assert.deepEqual(registry.require(MapEntityTypeId.SURFACE).traits, []);
+  assert.equal(registry.require(MapEntityTypeId.SURFACE).stackOrder, 0);
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).traits, [
+    "bean-growth-space",
+  ]);
 });
 
 test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
@@ -59,10 +49,6 @@ test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
     "bean-growth-space",
     "water",
     "waterfall",
-  ]);
-  assert.deepEqual(registry.require("surface-7-1").traits, ["walkable"]);
-  assert.deepEqual(registry.require("surface-1-1").traits, [
-    "bean-growth-space",
   ]);
 });
 

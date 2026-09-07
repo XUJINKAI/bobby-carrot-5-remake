@@ -5,8 +5,8 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
   directionCell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -23,10 +23,10 @@ export const tide: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      cell(8, 5),
-      cell(7, 5),
-      cell(10, 5),
-      cell(9, 5),
+      namedCell("tide-up"),
+      namedCell("tide-down"),
+      namedCell("tide-left"),
+      namedCell("tide-right"),
     ),
   ),
 );

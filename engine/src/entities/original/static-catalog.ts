@@ -6,10 +6,9 @@ import type {
 } from "../EntityModule.js";
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
-  cell,
   CONTENT_STACK_ORDER,
   COVER_STACK_ORDER,
-  objectCell,
+  namedCell,
   staticEntity,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -42,7 +41,7 @@ const fillEggNestOnLeave: Behavior = {
 function surface(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof cell>,
+  atlas: ReturnType<typeof namedCell>,
   traits: EntityModuleDefinition["traits"] = ["walkable"],
   palette = true,
 ): EntityModule {
@@ -62,7 +61,7 @@ function surface(
 function runtimeOnlyContent(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof objectCell>,
+  atlas: ReturnType<typeof namedCell>,
   traits: EntityModuleDefinition["traits"] = [],
 ): EntityModule {
   const module = content(type, name, atlas, traits);
@@ -75,7 +74,7 @@ function runtimeOnlyContent(
 function content(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof objectCell>,
+  atlas: ReturnType<typeof namedCell>,
   traits: EntityModuleDefinition["traits"] = [],
 ): EntityModule {
   return staticEntity(
@@ -91,41 +90,33 @@ function content(
 }
 
 export const staticSurfaceModules: readonly EntityModule[] = [
-  surface(EntityTypeId.GROUND_A, "Ground A", cell(14, 5), ["walkable"], false),
-  surface(EntityTypeId.GROUND_B, "Ground B", cell(15, 5), ["walkable"], false),
-  surface(EntityTypeId.GROUND_C, "Ground C", cell(0, 9), ["walkable"], false),
-  surface(EntityTypeId.GROUND_D, "Ground D", cell(1, 9), ["walkable"], false),
-  surface(EntityTypeId.START, "Start", cell(5, 9)),
+  surface(EntityTypeId.START, "Start", namedCell("start")),
   surface(
     EntityTypeId.SHOVEL_CLEARED_GROUND,
     "Shovel Cleared Ground",
-    cell(12, 7),
+    namedCell("shovel-cleared-ground"),
     ["walkable"],
     false,
   ),
-  surface(EntityTypeId.EXIT, "Exit", cell(6, 9), [
+  surface(EntityTypeId.EXIT, "Exit", namedCell("exit"), [
     "walkable",
     "exit",
     "requires-unmounted-reach",
   ]),
-  surface(EntityTypeId.SHOP_DREAM, "Dream Shop", cell(7, 9)),
-  surface(EntityTypeId.SHOP_CLOUD9, "Cloud 9 Shop", cell(8, 9)),
-  surface(EntityTypeId.SHOP_SUPER_KEY, "Super Key Shop", cell(9, 9)),
-  surface(EntityTypeId.SHOP_STEREO, "Stereo Shop", cell(10, 9)),
-  surface(EntityTypeId.SHOP_MUSIC, "Music Shop", cell(11, 9)),
-  surface(EntityTypeId.SHOP_SPEED_SHOES, "Speed Shoes Shop", cell(12, 9)),
-  surface(EntityTypeId.SHOP_COIN_RADAR, "Coin Radar Shop", cell(13, 9)),
-  surface(EntityTypeId.SHOP_UNAVAILABLE, "Unavailable Shop", cell(14, 9)),
+  surface(EntityTypeId.SHOP_DREAM, "Dream Shop", namedCell("shop-dream")),
+  surface(EntityTypeId.SHOP_CLOUD9, "Cloud 9 Shop", namedCell("shop-cloud9")),
+  surface(EntityTypeId.SHOP_SUPER_KEY, "Super Key Shop", namedCell("shop-super-key")),
+  surface(EntityTypeId.SHOP_STEREO, "Stereo Shop", namedCell("shop-stereo")),
+  surface(EntityTypeId.SHOP_MUSIC, "Music Shop", namedCell("shop-music")),
+  surface(EntityTypeId.SHOP_SPEED_SHOES, "Speed Shoes Shop", namedCell("shop-speed-shoes")),
+  surface(EntityTypeId.SHOP_COIN_RADAR, "Coin Radar Shop", namedCell("shop-coin-radar")),
+  surface(EntityTypeId.SHOP_UNAVAILABLE, "Unavailable Shop", namedCell("shop-unavailable")),
   surface(
     EntityTypeId.SHOVEL_PICKUP,
     "Shovel Pickup",
-    cell(15, 9),
+    namedCell("shovel-pickup"),
     ["walkable", "pickup"],
   ),
-  surface(EntityTypeId.WATER_ANIMATED, "Animated Water", cell(6, 5), ["water", "bean-growth-space"], false),
-  surface(EntityTypeId.WATER_VARIANT_1, "Water Variant 1", cell(11, 5), ["water", "waterfall", "bean-growth-space"], false),
-  surface(EntityTypeId.WATER_VARIANT_2, "Water Variant 2", cell(12, 5), ["water", "waterfall", "bean-growth-space"], false),
-  surface(EntityTypeId.WATER_VARIANT_3, "Water Variant 3", cell(13, 5), ["water", "waterfall", "bean-growth-space"], false),
 ];
 
 const snowDefinition: EntityModuleDefinition = {
@@ -153,9 +144,9 @@ const highGrassObjectiveDefinition: EntityModuleDefinition = {
 };
 
 export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(snowDefinition, cell(13, 4)),
-  staticEntity(highGrassDefinition, cell(7, 12)),
-  staticEntity(highGrassObjectiveDefinition, cell(8, 12)),
+  staticEntity(snowDefinition, namedCell("snow")),
+  staticEntity(highGrassDefinition, namedCell("high-grass")),
+  staticEntity(highGrassObjectiveDefinition, namedCell("high-grass-objective")),
 ];
 
 const consumedCarrotDefinition: EntityModuleDefinition = {
@@ -191,16 +182,16 @@ const filledEggNestDefinition: EntityModuleDefinition = {
 };
 
 export const staticContentModules: readonly EntityModule[] = [
-  staticEntity(consumedCarrotDefinition, objectCell(0)),
-  staticEntity(carrotDefinition, objectCell(1)),
-  staticEntity(emptyEggNestDefinition, objectCell(2), [
+  staticEntity(consumedCarrotDefinition, namedCell("carrot-consumed")),
+  staticEntity(carrotDefinition, namedCell("carrot")),
+  staticEntity(emptyEggNestDefinition, namedCell("egg-nest-empty"), [
     { behavior: fillEggNestOnLeave },
   ]),
-  staticEntity(filledEggNestDefinition, objectCell(3)),
+  staticEntity(filledEggNestDefinition, namedCell("egg-nest-filled")),
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_TIP,
     "Beanstalk Tip",
-    objectCell(5),
+    namedCell("beanstalk-tip"),
     [
       "terrain-overlay",
       "climbable",
@@ -208,28 +199,28 @@ export const staticContentModules: readonly EntityModule[] = [
       "mower-conditional-overlay",
     ],
   ),
-  content(EntityTypeId.BEAN, "Bean", objectCell(6), ["pickup"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_UP, "Windmill Up", objectCell(7), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_DOWN, "Windmill Down", objectCell(8), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_LEFT, "Windmill Left", objectCell(9), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", objectCell(10), ["blocking", "windmill"]),
+  content(EntityTypeId.BEAN, "Bean", namedCell("bean"), ["pickup"]),
+  runtimeOnlyContent(EntityTypeId.WINDMILL_UP, "Windmill Up", namedCell("windmill-up"), ["blocking", "windmill"]),
+  runtimeOnlyContent(EntityTypeId.WINDMILL_DOWN, "Windmill Down", namedCell("windmill-down"), ["blocking", "windmill"]),
+  runtimeOnlyContent(EntityTypeId.WINDMILL_LEFT, "Windmill Left", namedCell("windmill-left"), ["blocking", "windmill"]),
+  runtimeOnlyContent(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", namedCell("windmill-right"), ["blocking", "windmill"]),
   runtimeOnlyContent(
     EntityTypeId.PLANK_CRUMBLING,
     "Crumbling Plank",
-    objectCell(12),
+    namedCell("plank-crumbling-1"),
     ["blocking"],
   ),
   runtimeOnlyContent(
     EntityTypeId.PLANK_FRAGMENT,
     "Plank Fragment",
-    objectCell(13),
+    namedCell("plank-crumbling-2"),
     ["blocking"],
   ),
-  content(EntityTypeId.GAS, "Gas", objectCell(20), ["pickup"]),
+  content(EntityTypeId.GAS, "Gas", namedCell("gas"), ["pickup"]),
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
-    objectCell(21),
+    namedCell("beanstalk-middle"),
     [
       "terrain-overlay",
       "climbable",
@@ -240,21 +231,21 @@ export const staticContentModules: readonly EntityModule[] = [
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
-    objectCell(37),
+    namedCell("beanstalk-base"),
     ["climbable"],
   ),
-  runtimeOnlyContent(EntityTypeId.BEAN_SPROUT, "Bean Sprout", objectCell(38)),
-  content(EntityTypeId.KITE, "Kite", objectCell(42), ["pickup"]),
+  runtimeOnlyContent(EntityTypeId.BEAN_SPROUT, "Bean Sprout", namedCell("bean-sprout")),
+  content(EntityTypeId.KITE, "Kite", namedCell("kite"), ["pickup"]),
   content(
     EntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
-    objectCell(45),
+    namedCell("golden-carrot"),
     ["collectible", "golden-carrot"],
   ),
   content(
     EntityTypeId.BONUS_COIN,
     "Bonus Coin",
-    objectCell(47),
+    namedCell("bonus-coin"),
     ["collectible", "bonus-coin"],
   ),
 ];

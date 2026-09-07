@@ -2,11 +2,12 @@ import type { EntityCatalog } from "@bobby/engine";
 import {
   EntityTypeId,
   MapEntityTypeId,
+  parseTsCoordinateLabel,
+  surfaceMappingForTs,
   type EntityType,
   type LevelEntity,
 } from "@bobby/model";
 import {
-  LEGACY_GROUND_TYPES,
   SURFACE_TERRAIN_GROUPS,
   SURFACE_TERRAINS,
   SURFACE_THEMES,
@@ -62,9 +63,9 @@ for (const terrain of SURFACE_TERRAINS)
   for (const variant of terrain.rows.flat())
     terrainByEntityType.set(variant.type, terrain);
 
-const woodFenceTerrain = terrainById.get("wood-fence");
-if (woodFenceTerrain)
-  terrainByEntityType.set(EntityTypeId.FENCE, woodFenceTerrain);
+const fenceTerrain = terrainById.get("fence");
+if (fenceTerrain)
+  terrainByEntityType.set(EntityTypeId.FENCE, fenceTerrain);
 
 const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.WATER, "water"],
@@ -74,7 +75,8 @@ const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.MOON, "moon"],
   [MapEntityTypeId.CLOUD_LAYER, "cloud"],
   [MapEntityTypeId.GRASS, "grass"],
-  [MapEntityTypeId.WOOD_FENCE, "wood-fence"],
+  [MapEntityTypeId.FENCE, "fence"],
+  [MapEntityTypeId.SURFACE, "source-tile"],
   [MapEntityTypeId.HEDGE, "hedge"],
   [MapEntityTypeId.TREE, "tree"],
   [MapEntityTypeId.STONE_WALL_1, "stone-wall-1"],
@@ -90,6 +92,7 @@ const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.SNOWY_ROCK, "snow-rock"],
   [MapEntityTypeId.SNOW_GROUND, "snow-ground"],
   [MapEntityTypeId.CACTUS, "cactus"],
+  [MapEntityTypeId.TALL_CACTUS, "cactus"],
   [MapEntityTypeId.SAND, "sand"],
   [MapEntityTypeId.ICE, "ice"],
 ];
@@ -99,10 +102,9 @@ for (const [type, terrainId] of semanticTerrainTypes) {
 }
 
 const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
-for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
 
 export function isSurfaceEntityType(type: EntityType): boolean {
-  return surfaceTypes.has(type) || /^surface-\d+-\d+$/.test(type);
+  return surfaceTypes.has(type) || parseTsCoordinateLabel(type) !== undefined;
 }
 
 export function surfaceTerrain(id: SurfaceTerrainId): SurfaceTerrainDefinition {
@@ -114,8 +116,23 @@ export function surfaceTerrain(id: SurfaceTerrainId): SurfaceTerrainDefinition {
 export function surfaceTerrainForEntity(
   type: EntityType,
 ): SurfaceTerrainDefinition | null {
-  if (LEGACY_GROUND_TYPES.has(type)) return surfaceTerrain("grass");
   return terrainByEntityType.get(type) ?? null;
+}
+
+/** Palette 以 atlas 坐标选图，地图始终保存对应的语义 Entity。 */
+export function surfaceEntityForVisual(
+  visual: EntityType,
+  cell: Cell = { x: 0, y: 0 },
+): LevelEntity {
+  const coordinate = parseTsCoordinateLabel(visual);
+  if (!coordinate) return { type: visual, x: cell.x, y: cell.y };
+  const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
+  return {
+    type: mapping?.type ?? MapEntityTypeId.SURFACE,
+    x: cell.x,
+    y: cell.y,
+    ...(mapping ? mapping.fields ?? {} : { variant: visual }),
+  };
 }
 
 export function defaultSurfaceBrush(): SurfaceBrush {
@@ -163,10 +180,10 @@ export function applySurfaceTheme(
             sourceLevel,
           ) ?? entity;
         }
-        return applySurfaceInstanceTraits(
-          { ...stripAutoMetadata(entity), type: target.primary },
-          target,
-        );
+        return applySurfaceInstanceTraits({
+          ...stripAutoMetadata(entity),
+          ...surfaceEntityForVisual(target.primary, entity),
+        }, target);
       });
       return changed ? normalizeEditorLevel({ ...level, entities }) : level;
     },
@@ -267,13 +284,10 @@ export function pickSurfaceBrush(
   const auto = autoMetadata(entity);
   if (auto) return { terrain: item.id, pattern: "auto", seed: auto.seed };
 
-  if (item.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
-    const variant = Number(entity.variant);
-    const variants = item.rows.flat();
-    const selected =
-      Number.isInteger(variant) && variant >= 1 && variant <= variants.length
-        ? variants[variant - 1]?.type
-        : undefined;
+  if (item.id === "fence" && entity.type === EntityTypeId.FENCE) {
+    const selected = typeof entity.variant === "string"
+      ? entity.variant as EntityType
+      : undefined;
     if (selected)
       return { terrain: item.id, pattern: "exact", exact: selected, seed: 1 };
   }
@@ -296,7 +310,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
     if (!auto) return stripAutoMetadata(entity);
     const terrain = surfaceTerrainForEntity(entity.type);
     let fixed = stripAutoMetadata(entity);
-    if (terrain?.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
+    if (terrain?.id === "fence" && entity.type === EntityTypeId.FENCE) {
       const index = fenceVariantIndex(level, entity, terrain);
       fixed = { ...fixed, variant: `ts-16-${index + 10}` };
     }
@@ -339,12 +353,7 @@ function createSurfaceEntity(
   }
 
   const type = resolveAutoType(item, cell, brush.seed, target, level);
-  let entity: LevelEntity;
-  if (item.auto.kind === "fence" && item.auto.canonical) {
-    entity = { type: item.auto.canonical, x: cell.x, y: cell.y };
-  } else {
-    entity = { type, x: cell.x, y: cell.y };
-  }
+  const entity = surfaceEntityForVisual(type, cell);
   catalog.require(entity.type);
   return markAuto(applySurfaceInstanceTraits(entity, item), item.id, brush.seed);
 }
@@ -355,22 +364,9 @@ function createFixedSurfaceEntity(
   selectedType: EntityType,
   cell: Cell,
 ): LevelEntity {
-  if (terrain.auto.kind === "fence" && terrain.auto.canonical) {
-    const index = terrain.auto.variants.indexOf(selectedType);
-    const entity: LevelEntity = {
-      type: terrain.auto.canonical,
-      x: cell.x,
-      y: cell.y,
-      ...(index >= 0 ? { variant: `ts-16-${index + 10}` } : {}),
-    };
-    catalog.require(entity.type);
-    return applySurfaceInstanceTraits(entity, terrain);
-  }
-  catalog.require(selectedType);
-  return applySurfaceInstanceTraits(
-    { type: selectedType, x: cell.x, y: cell.y },
-    terrain,
-  );
+  const entity = surfaceEntityForVisual(selectedType, cell);
+  catalog.require(entity.type);
+  return applySurfaceInstanceTraits(entity, terrain);
 }
 
 function resolveAutoType(
@@ -408,13 +404,6 @@ function resolveAutoType(
       terrain.primary,
     );
   }
-  if (auto.kind === "paired-vertical") {
-    return weightedVariant(
-      auto.singles,
-      hashCell(cell, seed + (auto.salt ?? 0)),
-      terrain.primary,
-    );
-  }
   return weightedVariant(
     auto.variants,
     hashCell(cell, seed + (auto.salt ?? 0)),
@@ -441,7 +430,6 @@ function reflowAutoSurfaces(
     const metadata = autoMetadata(entity);
     if (!metadata) return entity;
     const terrain = surfaceTerrain(metadata.terrain);
-    if (terrain.auto.kind === "fence" && terrain.auto.canonical) return entity;
     const target = autoCellsByTerrain.get(metadata.terrain) ?? new Set<string>();
     const type = resolveAutoType(
       terrain,
@@ -450,11 +438,17 @@ function reflowAutoSurfaces(
       target,
       level,
     );
-    if (type === entity.type) return entity;
-    catalog.require(type);
+    const resolved = surfaceEntityForVisual(type, entity);
+    const current = stripAutoMetadata(entity);
+    const fieldsMatch = Object.entries(resolved).every(
+      ([key, value]) => current[key] === value,
+    );
+    if (fieldsMatch && Object.keys(current).length === Object.keys(resolved).length)
+      return entity;
+    catalog.require(resolved.type);
     changed = true;
     return markAuto(
-      applySurfaceInstanceTraits({ ...entity, type }, terrain),
+      applySurfaceInstanceTraits(resolved, terrain),
       terrain.id,
       metadata.seed,
     );

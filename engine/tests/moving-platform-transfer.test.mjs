@@ -67,7 +67,7 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
       width: 3,
       height: 1,
       entities: [
-        { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
         {
           type: EntityTypeId.TIDE_SWITCH,
           x: 1,

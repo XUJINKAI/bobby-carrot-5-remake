@@ -24,8 +24,8 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  cell,
   directionCell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -202,10 +202,10 @@ const base = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      cell(5, 11),
-      cell(6, 11),
-      cell(7, 11),
-      cell(8, 11),
+      namedCell("speed-up"),
+      namedCell("speed-down"),
+      namedCell("speed-left"),
+      namedCell("speed-right"),
     ),
   ),
   [{ behavior: speedBoost }],

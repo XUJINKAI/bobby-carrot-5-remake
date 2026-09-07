@@ -197,7 +197,7 @@ test("Bobby steps down from Leaf exactly at movement midpoint", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
       { type: EntityTypeId.WATER, x: 1, y: 0 },
       { type: EntityTypeId.LEAF, x: 1, y: 0 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
@@ -232,7 +232,7 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
-    { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+    { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
     { type: EntityTypeId.MOWER, x: 0, y: 0 },
     {
       type: EntityTypeId.BOBBY,

@@ -9,11 +9,9 @@ import {
 } from "./contract.js";
 import {
   MapEntityTypeId,
-  type CoordinateObjectEntityType,
   type MapEntityType,
 } from "./ids.js";
 import {
-  coordinateSurfaceDefinition,
   SURFACE_ENTITY_DEFINITIONS,
 } from "./surface.js";
 
@@ -222,26 +220,7 @@ export const ENTITY_MAP_DEFINITIONS = Object.freeze(
 export function entityMapDefinition(
   type: string,
 ): EntityMapDefinition | undefined {
-  return (
-    ENTITY_MAP_DEFINITIONS[type] ??
-    coordinateSurfaceDefinition(type) ??
-    coordinateObjectDefinition(type)
-  );
-}
-
-function coordinateObjectDefinition(
-  type: string,
-): EntityMapDefinition | undefined {
-  const match = /^object-(\d+)-(\d+)$/.exec(type);
-  if (!match) return undefined;
-  const row = Number(match[1]);
-  const column = Number(match[2]);
-  if (row < 1 || row > 16 || column < 1 || column > 16) return undefined;
-  return defineEntity(
-    type as CoordinateObjectEntityType,
-    [],
-    `Unresolved original object at ts.png(${row},${column}).`,
-  );
+  return ENTITY_MAP_DEFINITIONS[type];
 }
 
 export function requireEntityMapDefinition(type: string): EntityMapDefinition {

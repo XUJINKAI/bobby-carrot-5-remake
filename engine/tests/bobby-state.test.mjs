@@ -4,7 +4,7 @@ import { EntityTypeId } from "@bobby/model";
 import { readBobbyInventory } from "../dist/entities/player/BobbyState.js";
 import { World } from "../dist/world/World.js";
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 
 function actors(world) {
   return world.query.entitiesWithTrait("player");

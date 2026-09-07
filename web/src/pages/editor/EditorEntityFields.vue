@@ -3,6 +3,7 @@ import {
   applyEditorVariant,
   editorVariantIndex,
   surfaceTerrainForEntity,
+  surfaceVariantPreset,
   surfaceVisualVariant,
   type EditorDefinition,
   type EditorEntityDefinition,
@@ -109,7 +110,7 @@ function variantLabel(index: number): string {
 }
 
 function surfaceVariantSource(variant: SurfaceVariant): EditorPlacementPreset {
-  return { type: variant.type };
+  return surfaceVariantPreset(variant.type);
 }
 
 function fieldValue(

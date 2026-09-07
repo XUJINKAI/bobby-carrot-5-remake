@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "Preserve",
     "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

@@ -7,7 +7,7 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
   variantState,
@@ -67,15 +67,7 @@ export const carousel: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
     const variant = carouselVariant(context.entity.state?.variant);
-    if (variant === "vertical") return cell(13, 11);
-    if (variant === "horizontal") return cell(14, 11);
-    return cell(
-      9 +
-        ["right-top", "left-top", "left-bottom", "right-bottom"].indexOf(
-          variant,
-        ),
-      11,
-    );
+    return namedCell(`carousel-${variant}`);
   }),
   [{ behavior: carouselPassage }],
 );

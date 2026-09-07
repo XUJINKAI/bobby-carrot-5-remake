@@ -172,7 +172,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
         floor(0, 0), floor(1, 0),
         { type: "player", x: 0, y: 0 },
         { type: "item", x: 1, y: 0 },
-        { type: "grass", x: 1, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       ],
     },
     { entities, behaviors },

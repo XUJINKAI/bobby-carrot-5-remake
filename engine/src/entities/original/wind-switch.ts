@@ -7,7 +7,7 @@ import type {
 import {
   activeState,
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -49,12 +49,13 @@ const definition: EntityModuleDefinition = {
 export const windSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
-    const directionIndex = Math.max(
-      0,
-      WIND_SWITCH_DIRECTIONS.indexOf(context.entity.direction ?? "up"),
-    );
+    const direction = WIND_SWITCH_DIRECTIONS.includes(
+      context.entity.direction as (typeof WIND_SWITCH_DIRECTIONS)[number],
+    )
+      ? context.entity.direction
+      : "up";
     const active = context.entity.state?.active === true;
-    return cell(7 + directionIndex * 2 + (active ? 0 : 1), 10);
+    return namedCell(`wind-switch-${direction}-${active ? "on" : "off"}`);
   }),
   [{ behavior: toggleWindDirection }],
 );

@@ -7,7 +7,7 @@ import type {
 import {
   activeState,
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -35,7 +35,9 @@ const definition: EntityModuleDefinition = {
 export const trap: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.active === false ? cell(0, 11) : cell(15, 10),
+    context.entity.state?.active === false
+      ? namedCell("trap-inactive")
+      : namedCell("trap-active"),
   ),
   [{ behavior: armTrapAfterLeave }],
 );

@@ -1,5 +1,8 @@
 import {
   EntityTypeId,
+  MapEntityTypeId,
+  tsVisual,
+  type TsCoordinate,
   type Direction,
   type EntityType,
   type JsonValue,
@@ -37,11 +40,14 @@ export const SURFACE_STACK_ORDER = 0;
 export const CONTENT_STACK_ORDER = 100;
 export const COVER_STACK_ORDER = 200;
 
-export const cell = (column: number, row: number): AtlasCell => ({ column, row });
+const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
-export function objectCell(index: number): AtlasCell {
-  const linear = 9 + index;
-  return cell(linear % 16, 12 + Math.floor(linear / 16));
+export function tsCoordinateCell(source: TsCoordinate): AtlasCell {
+  return cell(source.column - 1, source.row - 1);
+}
+
+export function namedCell(id: string): AtlasCell {
+  return tsCoordinateCell(tsVisual(id));
 }
 
 export function originalModule(
@@ -152,6 +158,7 @@ function originalAmbientLayer(
   const sequence = originalAmbientSequence(
     context.entity.type,
     context.entity.direction,
+    context.entity.state?.variant,
   );
   if (!sequence) return null;
   const phase =
@@ -171,6 +178,7 @@ function originalAmbientLayer(
 function originalAmbientSequence(
   type: EntityType,
   direction: Direction | undefined,
+  variant: JsonValue | undefined,
 ): OriginalAmbientSequence | null {
   if (type === EntityTypeId.EXIT) return { baseIndex: 0, cycleLength: 4 };
   if (type === EntityTypeId.BONUS_COIN)
@@ -185,14 +193,12 @@ function originalAmbientSequence(
     return { baseIndex: 24, cycleLength: 3 };
   if (type === EntityTypeId.WHIRLWIND)
     return { baseIndex: 26, cycleLength: 6 };
-  if (type === EntityTypeId.WATER_ANIMATED)
+  if (type === MapEntityTypeId.WATER_RIPPLE)
     return { baseIndex: 39, cycleLength: 8 };
-  if (type === EntityTypeId.WATER_VARIANT_1)
-    return { baseIndex: 46, cycleLength: 3 };
-  if (type === EntityTypeId.WATER_VARIANT_2)
-    return { baseIndex: 48, cycleLength: 3 };
-  if (type === EntityTypeId.WATER_VARIANT_3)
-    return { baseIndex: 50, cycleLength: 3 };
+  if (type === MapEntityTypeId.WATERFALL) {
+    const baseIndex = { top: 46, middle: 48, bottom: 50 }[String(variant)];
+    if (baseIndex !== undefined) return { baseIndex, cycleLength: 3 };
+  }
   if (type === EntityTypeId.SPEED) {
     const baseIndex = { up: 3, down: 6, left: 9, right: 12 }[
       direction ?? "right"

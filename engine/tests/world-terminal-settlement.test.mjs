@@ -29,7 +29,7 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
       height: 1,
       rules: { win: { type: "reach", target: EntityTypeId.EXIT } },
       entities: [
-        { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
         { type: EntityTypeId.EXIT, x: 1, y: 0 },
         { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
@@ -72,8 +72,8 @@ test("losing World interrupts a running WorldMotion at its current progress", ()
       height: 1,
       rules: { limits: [{ type: "max-time-seconds", seconds: 0.05 }] },
       entities: [
-        { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-        { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
         { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },

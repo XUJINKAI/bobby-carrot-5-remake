@@ -57,5 +57,5 @@ test("Original exit-only map completes by reaching the exit", () => {
 });
 
 test("Original special scene without a gameplay objective has no synthetic win rule", () => {
-  assert.equal(deriveOriginalWinCondition(level(MapEntityTypeId.GROUND_C)), undefined);
+  assert.equal(deriveOriginalWinCondition(level(MapEntityTypeId.GRASS)), undefined);
 });

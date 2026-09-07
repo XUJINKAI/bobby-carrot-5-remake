@@ -52,7 +52,7 @@ test("Auto Surface is materialized before persistence and stays stable after reo
 });
 
 test("Exact Surface persists the selected concrete visual", () => {
-  const selected = "walkable-variant-17";
+  const selected = "ts-8-1";
   const draft = paintSurface(
     catalog,
     [{ x: 2, y: 1 }],
@@ -74,20 +74,20 @@ test("Inspector Surface visual variant 复用 Palette atlas 身份", () => {
     y: 1,
     variant: "ts-7-1",
   };
-  assert.equal(surfaceVisualVariant(grass), "walkable-variant-01");
+  assert.equal(surfaceVisualVariant(grass), "ts-7-1");
   assert.deepEqual(
-    replaceSurfaceVisualVariant(grass, "walkable-variant-17"),
+    replaceSurfaceVisualVariant(grass, "ts-8-1"),
     { type: "grass", x: 2, y: 1, variant: "ts-8-1" },
   );
 
   const fence = { type: "fence", x: 1, y: 1, variant: "ts-16-10" };
-  assert.equal(surfaceVisualVariant(fence), "background-variant-250");
+  assert.equal(surfaceVisualVariant(fence), "ts-16-10");
   assert.deepEqual(
-    replaceSurfaceVisualVariant(fence, "background-variant-254"),
+    replaceSurfaceVisualVariant(fence, "ts-16-14"),
     { type: "fence", x: 1, y: 1, variant: "ts-16-14" },
   );
   assert.equal(
     surfaceVisualVariant({ type: "water-ripple", x: 1, y: 1 }),
-    "water-animated",
+    "ts-6-7",
   );
 });

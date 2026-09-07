@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -11,7 +11,7 @@ import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 
 const AMBIENT_STEP_MS = 248;
 
-function resolveAt(type, nowMs, direction, winState) {
+function resolveAt(type, nowMs, direction, winState, variant) {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
@@ -20,6 +20,7 @@ function resolveAt(type, nowMs, direction, winState) {
       x: 0,
       y: 0,
       ...(direction ? { direction } : {}),
+      ...(variant ? { variant } : {}),
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -40,8 +41,8 @@ function resolveAt(type, nowMs, direction, winState) {
   return layer;
 }
 
-function expectAnimated(type, frameIndex, direction) {
-  const layer = resolveAt(type, AMBIENT_STEP_MS, direction);
+function expectAnimated(type, frameIndex, direction, variant) {
+  const layer = resolveAt(type, AMBIENT_STEP_MS, direction, undefined, variant);
   assert.equal(layer.kind, "image");
   assert.equal(layer.asset, "original-animated-tiles");
   assert.equal(layer.frameWidth, 48);
@@ -51,27 +52,27 @@ function expectAnimated(type, frameIndex, direction) {
 }
 
 test("original ta.png ambient phase zero keeps the static ts.png atlas frame", () => {
-  assert.equal(resolveAt(EntityTypeId.WATER_ANIMATED, 0).kind, "atlas");
+  assert.equal(resolveAt(MapEntityTypeId.WATER_RIPPLE, 0).kind, "atlas");
   assert.equal(
-    resolveAt(EntityTypeId.WATER_ANIMATED, AMBIENT_STEP_MS * 8).kind,
+    resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS * 8).kind,
     "atlas",
   );
 });
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {
-  for (const [type, frameIndex] of [
+  for (const [type, frameIndex, variant] of [
     [EntityTypeId.BONUS_COIN, 15],
     [EntityTypeId.WINDMILL_UP, 18],
     [EntityTypeId.WINDMILL_DOWN, 20],
     [EntityTypeId.WINDMILL_LEFT, 22],
     [EntityTypeId.WINDMILL_RIGHT, 24],
     [EntityTypeId.WHIRLWIND, 26],
-    [EntityTypeId.WATER_ANIMATED, 39],
-    [EntityTypeId.WATER_VARIANT_1, 46],
-    [EntityTypeId.WATER_VARIANT_2, 48],
-    [EntityTypeId.WATER_VARIANT_3, 50],
+    [MapEntityTypeId.WATER_RIPPLE, 39],
+    [MapEntityTypeId.WATERFALL, 46, "top"],
+    [MapEntityTypeId.WATERFALL, 48, "middle"],
+    [MapEntityTypeId.WATERFALL, 50, "bottom"],
   ])
-    expectAnimated(type, frameIndex);
+    expectAnimated(type, frameIndex, undefined, variant);
 });
 
 test("Exit animates only when reach Exit is the only unfinished objective", () => {
@@ -137,8 +138,8 @@ test("original ta.png Speed and Tide mappings preserve DAT direction order", () 
 });
 
 test("original ta.png phase advances every 248ms without WorldTick input", () => {
-  const phase1 = resolveAt(EntityTypeId.WATER_ANIMATED, AMBIENT_STEP_MS);
-  const phase2 = resolveAt(EntityTypeId.WATER_ANIMATED, AMBIENT_STEP_MS * 2);
+  const phase1 = resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS);
+  const phase2 = resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS * 2);
   assert.equal(phase1.kind, "image");
   assert.equal(phase2.kind, "image");
   assert.equal(phase1.frameIndex, 39);

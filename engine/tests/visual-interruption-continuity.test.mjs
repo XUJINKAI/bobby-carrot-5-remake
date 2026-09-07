@@ -21,8 +21,8 @@ test("motion interruption keeps the current authoritative visual position", () =
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });

@@ -24,7 +24,8 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
       height: 1,
       entities: [
         ...Array.from({ length: 6 }, (_, x) => ({
-          type: EntityTypeId.GROUND_C,
+          type: "grass",
+          variant: "ts-10-1",
           x,
           y: 0,
         })),
@@ -69,8 +70,8 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       {
         type: EntityTypeId.MOWER,
         x: 0,
@@ -112,7 +113,7 @@ test("Mower cannot complete an Exit reach condition", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
       { type: EntityTypeId.EXIT, x: 1, y: 0 },
       { type: EntityTypeId.MOWER, x: 0, y: 0 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },

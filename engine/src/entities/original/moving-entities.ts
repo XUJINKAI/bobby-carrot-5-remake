@@ -25,7 +25,7 @@ import type {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
 } from "./module.js";
 
@@ -176,7 +176,7 @@ const movingEntityAction: RuntimeActionDefinition = {
 export const leaf = movingEntityModule(
   EntityTypeId.LEAF,
   "Leaf",
-  35,
+  "leaf",
   true,
 );
 
@@ -206,12 +206,12 @@ const cloudDefinition: EntityModuleDefinition = {
 export const cloud: EntityModule = originalModule(
   cloudDefinition,
   atlasVisual(cloudDefinition, (context) =>
-    objectCell(
+    namedCell(
       context.entity.state?.color === "purple"
-        ? 24
+        ? "cloud-purple"
         : context.entity.state?.color === "green"
-          ? 25
-          : 23,
+          ? "cloud-green"
+          : "cloud-red",
     ),
   ),
   [{ behavior: movingPlatformBehavior }],
@@ -220,7 +220,7 @@ export const cloud: EntityModule = originalModule(
 function movingEntityModule(
   type: EntityType,
   name: string,
-  atlasIndex: number,
+  visualId: string,
   ownsAction = false,
 ): EntityModule {
   const definition: EntityModuleDefinition = {
@@ -239,7 +239,7 @@ function movingEntityModule(
     presentation: { name },
   };
   const visual = {
-    ...atlasVisual(definition, objectCell(atlasIndex)),
+    ...atlasVisual(definition, namedCell(visualId)),
     ...(type === EntityTypeId.LEAF
       ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
       : {}),

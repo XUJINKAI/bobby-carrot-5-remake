@@ -1,36 +1,13 @@
 import { DecodedObject, DecodedTerrain } from "./semantic-ids.mjs";
-import { surfaceMappingForTs } from "@bobby/model";
-
-const VISUAL_TERRAIN_BYTES = new Set([
-  0x55,
-  0x56,
-  0x5b,
-  0x5c,
-  0x5d,
-  0x5e,
-  0x5f,
-  0x7c,
-  0x90,
-  0x91,
-  0x94,
-]);
+import { tsAtlasCell } from "@bobby/model";
 
 const TERRAIN_BY_DAT = new Map([
   [0x4d, DecodedTerrain.SNOW],
   [0x55, DecodedTerrain.WATER],
-  [0x56, DecodedTerrain.WATER_ANIMATED],
   [0x57, DecodedTerrain.TIDE_DOWN],
   [0x58, DecodedTerrain.TIDE_UP],
   [0x59, DecodedTerrain.TIDE_RIGHT],
   [0x5a, DecodedTerrain.TIDE_LEFT],
-  [0x5b, DecodedTerrain.WATER_VARIANT_1],
-  [0x5c, DecodedTerrain.WATER_VARIANT_2],
-  [0x5d, DecodedTerrain.WATER_VARIANT_3],
-  [0x5e, DecodedTerrain.GROUND_A],
-  [0x5f, DecodedTerrain.GROUND_B],
-  [0x7c, DecodedTerrain.SHOVEL_CLEARED_GROUND],
-  [0x90, DecodedTerrain.GROUND_C],
-  [0x91, DecodedTerrain.GROUND_D],
   [0x94, DecodedTerrain.ICE],
   [0x95, DecodedTerrain.START],
   [0x96, DecodedTerrain.EXIT],
@@ -153,11 +130,7 @@ export function decodeDatTerrain(byte) {
   const coordinate = tsCoordinateFromByte(code);
   const row = Math.floor(code / 16) + 1;
   const column = (code % 16) + 1;
-  const decoded = TERRAIN_BY_DAT.get(code);
-  const surface = surfaceMappingForTs(row, column)?.type;
-  const semantic =
-    decoded && !VISUAL_TERRAIN_BYTES.has(code) ? decoded : surface ?? decoded;
-  return `${coordinate}:${semantic ?? "unknown-terrain"}`;
+  return `${coordinate}:${tsAtlasCell(row, column).name}`;
 }
 
 export function encodeDatTerrain(type) {
@@ -172,10 +145,6 @@ export function encodeDatTerrain(type) {
   const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
   if (coordinate)
     return byteFromTsCoordinate(Number(coordinate[1]), Number(coordinate[2]));
-  const walkable = /^walkable-variant-(\d{2})$/.exec(type);
-  if (walkable) return normalizeByte(0x60 + Number(walkable[1]) - 1);
-  const background = /^background-variant-(\d{3})$/.exec(type);
-  if (background) return normalizeByte(Number(background[1]) - 1);
   throw new Error(`No original DAT terrain mapping for semantic type: ${type}`);
 }
 
@@ -198,8 +167,9 @@ function byteFromTsCoordinate(row, column) {
 
 export function decodeDatObject(byte) {
   const code = normalizeByte(byte);
-  const semantic = OBJECT_BY_DAT.get(code);
-  return `${tsCoordinateFromByte(code)}:${objectLabelSemantic(semantic)}`;
+  const row = Math.floor(code / 16) + 1;
+  const column = (code % 16) + 1;
+  return `${tsCoordinateFromByte(code)}:${tsAtlasCell(row, column).name}`;
 }
 
 export function encodeDatObject(type) {
@@ -211,8 +181,6 @@ export function encodeDatObject(type) {
     );
   const known = DAT_BY_OBJECT.get(type);
   if (known !== undefined) return known;
-  const variant = /^object-variant-(\d{3})$/.exec(type);
-  if (variant) return normalizeByte(Number(variant[1]) - 1);
   throw new Error(`No original DAT object mapping for semantic type: ${type}`);
 }
 
@@ -236,25 +204,6 @@ export function decodedObjectSourceSemantic(type) {
   if (!coordinate) return type;
   const code = encodeDatObject(type);
   return OBJECT_BY_DAT.get(code) ?? "unknown-object";
-}
-
-function objectLabelSemantic(semantic) {
-  if (!semantic) return "unknown-object";
-  if (/^(?:consumed-)?carrot$/.test(semantic)) return "carrot";
-  if (/^egg-nest-(?:empty|filled)$/.test(semantic)) return "egg-nest";
-  if (/^(?:beanstalk-(?:tip|mid|base)|bean-sprout)$/.test(semantic))
-    return "beanstalk";
-  if (/^windmill-(?:up|down|left|right)$/.test(semantic)) return "windmill";
-  if (/^plank(?:-(?:crumbling|fragment))?$/.test(semantic)) return "plank";
-  if (/^dragon-(?:head|body|tail|anim-[12])$/.test(semantic)) return "dragon";
-  if (semantic === "sandman-body") return "sandman";
-  if (semantic === "dream-machine-body") return "dream-machine";
-  if (/^cloud-grid-/.test(semantic)) return "cloud-parking";
-  if (/^cloud-(?:red|purple|green)$/.test(semantic)) return "cloud";
-  if (/^ice-(?:block|melt-[123])$/.test(semantic)) return "ice-block";
-  if (/^beaver-(?:base|body)$/.test(semantic)) return "beaver";
-  if (/^fence-[1-6]$/.test(semantic)) return "fence";
-  return semantic;
 }
 
 export function datSourceForTerrain(type) {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_BEAN_GROWTH_SEGMENT_MS,
 } from "../dist/entities/original/bean-field.js";
@@ -22,11 +22,11 @@ function createWorld(beans = 1) {
     width: 2,
     height: 4,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 3 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 3 },
-      { type: "background-variant-001", x: 1, y: 2 },
-      { type: "background-variant-001", x: 1, y: 1 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 3 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 3 },
+      { type: MapEntityTypeId.STUMP, x: 1, y: 2 },
+      { type: MapEntityTypeId.STUMP, x: 1, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: EntityTypeId.BEAN_FIELD, x: 1, y: 3 },
       {
         type: EntityTypeId.BOBBY,

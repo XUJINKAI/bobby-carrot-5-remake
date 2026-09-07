@@ -5,7 +5,7 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -38,10 +38,10 @@ export const colorBlock: EntityModule = originalModule(
     const raised = context.entity.state?.raised !== false;
     return context.entity.state?.color === "pink"
       ? raised
-        ? cell(5, 12)
-        : cell(6, 12)
+        ? namedCell("color-pink-block-raised")
+        : namedCell("color-pink-block-lowered")
       : raised
-        ? cell(3, 12)
-        : cell(4, 12);
+        ? namedCell("color-yellow-block-raised")
+        : namedCell("color-yellow-block-lowered");
   }),
 );

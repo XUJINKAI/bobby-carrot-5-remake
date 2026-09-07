@@ -266,15 +266,7 @@ test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", (
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      "background-variant-001",
-      catalog,
-    ),
-    false,
-  );
-  assert.equal(
-    isEditorEntityCreatable(
-      builtinEditorDefinition,
-      EntityTypeId.GROUND_C,
+      "grass",
       catalog,
     ),
     false,
@@ -308,13 +300,13 @@ test("Palette keeps explicit directional presets and appends new creatable types
   );
   assert.equal(
     palette.flatMap((group) => group.rows.flat())
-      .some((entry) => entry.type === "background-variant-001"),
+      .some((entry) => entry.type === "ts-1-1"),
     false,
   );
   assert.equal(
     palette
       .flatMap((group) => group.rows.flat())
-      .some((entry) => entry.type === "surface-14-10"),
+      .some((entry) => entry.type === MapEntityTypeId.SURFACE),
     false,
   );
   const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
@@ -331,22 +323,21 @@ test("Palette keeps explicit directional presets and appends new creatable types
   );
 });
 
-test("Editor 对 canonical alias 与坐标型临时 Object 共用 Runtime Definition", () => {
+test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => {
   const level = createBlankLevel(4, 2);
   level.entities.push(
     { type: MapEntityTypeId.WINDMILL, x: 1, y: 0, direction: "left" },
     { type: MapEntityTypeId.EGG_NEST, x: 2, y: 0 },
-    { type: "object-13-11", x: 3, y: 0 },
   );
   assert.deepEqual(
     validateEditorLevel(level, catalog, builtinEditorDefinition),
     [],
   );
   assert.deepEqual(
-    [1, 2, 3].map(
+    [1, 2].map(
       (x) => new EditorPreview(level, catalog).inspectCell(x, 0).top?.entity.type,
     ),
-    [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG_NEST, "object-13-11"],
+    [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG_NEST],
   );
   assert.equal(
     resolvePlacement(

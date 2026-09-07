@@ -1,16 +1,11 @@
 const WATER = new Set([
   "water",
-  "water-animated",
-  "water-variant-1",
-  "water-variant-2",
-  "water-variant-3",
+  "water-ripple",
+  "waterfall",
   "tide",
 ]);
 const GROUND = new Set([
-  "ground-a",
-  "ground-b",
-  "ground-c",
-  "ground-d",
+  "grass",
   "start",
   "shovel-cleared-ground",
 ]);
@@ -87,7 +82,7 @@ export function levelFeatures(level) {
   const scenes = [];
   if (
     entityTypes.some(
-      (type) => GROUND.has(type) || type.startsWith("walkable-variant-"),
+      (type) => GROUND.has(type),
     )
   )
     scenes.push("grassland");

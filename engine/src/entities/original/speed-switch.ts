@@ -6,7 +6,7 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
+  namedCell,
   originalModule,
   pressedState,
   SURFACE_STACK_ORDER,
@@ -23,7 +23,9 @@ const definition: EntityModuleDefinition = {
 export const speedSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.pressed === true ? cell(1, 10) : cell(2, 10),
+    context.entity.state?.pressed === true
+      ? namedCell("speed-switch-pressed")
+      : namedCell("speed-switch-raised"),
   ),
   [{ behavior: speedSwitchBehavior }],
 );

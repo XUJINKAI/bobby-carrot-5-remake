@@ -23,7 +23,7 @@ test("Leaf stops before an occupied water cell", () => {
     width: 3,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
       { type: EntityTypeId.WATER, x: 1, y: 0 },
       { type: EntityTypeId.WATER, x: 2, y: 0 },
       { type: EntityTypeId.LEAF, x: 1, y: 0 },
@@ -48,10 +48,10 @@ test("Cloud stops before Plank but may enter Cloud Grid infrastructure", () => {
     width: 4,
     height: 1,
     entities: [
-      { type: "background-variant-072", x: 0, y: 0 },
-      { type: "background-variant-072", x: 1, y: 0 },
-      { type: "background-variant-072", x: 2, y: 0 },
-      { type: "background-variant-072", x: 3, y: 0 },
+      { type: MapEntityTypeId.STARFIELD, x: 0, y: 0, variant: "large-star" },
+      { type: MapEntityTypeId.STARFIELD, x: 1, y: 0, variant: "large-star" },
+      { type: MapEntityTypeId.STARFIELD, x: 2, y: 0, variant: "large-star" },
+      { type: MapEntityTypeId.STARFIELD, x: 3, y: 0, variant: "large-star" },
       { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
         type: EntityTypeId.WIND_SWITCH,
@@ -80,9 +80,9 @@ test("Cloud Grid does not count as support occupancy", () => {
     width: 3,
     height: 1,
     entities: [
-      { type: "background-variant-072", x: 0, y: 0 },
-      { type: "background-variant-072", x: 1, y: 0 },
-      { type: "background-variant-072", x: 2, y: 0 },
+      { type: MapEntityTypeId.STARFIELD, x: 0, y: 0, variant: "large-star" },
+      { type: MapEntityTypeId.STARFIELD, x: 1, y: 0, variant: "large-star" },
+      { type: MapEntityTypeId.STARFIELD, x: 2, y: 0, variant: "large-star" },
       { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
         type: EntityTypeId.WIND_SWITCH,

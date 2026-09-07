@@ -18,7 +18,7 @@ export type SurfaceTerrainId =
   | "moon"
   | "cloud"
   | "grass"
-  | "wood-fence"
+  | "fence"
   | "hedge"
   | "tree"
   | "stone-wall-1"
@@ -35,7 +35,8 @@ export type SurfaceTerrainId =
   | "snow-ground"
   | "cactus"
   | "sand"
-  | "ice";
+  | "ice"
+  | "source-tile";
 
 type ConcreteSurfaceTheme = Exclude<SurfaceTheme, "mixed">;
 
@@ -78,14 +79,6 @@ export type SurfaceAutoDefinition =
       }[];
       salt?: number;
     }
-  | {
-      /** 旧实验策略，仅为兼容已有代码路径；当前 Catalog 不使用多格 Auto。 */
-      kind: "paired-vertical";
-      top: EntityType;
-      bottom: EntityType;
-      singles: readonly SurfaceWeightedVariant[];
-      salt?: number;
-    };
 
 export interface SurfaceBrush {
   terrain: SurfaceTerrainId;
@@ -123,20 +116,12 @@ export interface SurfaceThemeDefinition {
   preview: readonly EntityType[];
 }
 
-function walkableVariant(number: number): EntityType {
-  return `walkable-variant-${String(number).padStart(2, "0")}`;
-}
-
-function backgroundVariant(number: number): EntityType {
-  return `background-variant-${String(number).padStart(3, "0")}`;
-}
-
 function bg(row: number, column: number): EntityType {
-  return backgroundVariant((row - 1) * 16 + column);
+  return `ts-${row}-${column}`;
 }
 
 function walk(row: number, column: number): EntityType {
-  return walkableVariant((row - 7) * 16 + column);
+  return `ts-${row}-${column}`;
 }
 
 function variant(type: EntityType, label = type): SurfaceVariant {
@@ -191,20 +176,19 @@ function terrain(
   };
 }
 
-// 本文件直接对应 docs/system/original/surface.md。
-// 坐标只在这里维护；authoring 算法不再散落具体 ts.png 号码。
+// 分组只定义 Editor 面板布局；语义归类与名称以 ts-visuals.json 为准。
 const water = terrain({
   id: "water",
   label: "水",
   type: "water",
   primary: EntityTypeId.WATER,
   rows: [[
-    variant(EntityTypeId.WATER, "6,6 水面"),
-    variant(EntityTypeId.WATER_ANIMATED, "6,7 涟漪"),
+    variant(bg(6, 6), "6,6 水面"),
+    variant(bg(6, 7), "6,7 涟漪"),
   ]],
   auto: weighted([
-    [EntityTypeId.WATER, 90],
-    [EntityTypeId.WATER_ANIMATED, 10],
+    [bg(6, 6), 90],
+    [bg(6, 7), 10],
   ], 5),
 });
 
@@ -325,9 +309,9 @@ const grass = terrain({
   },
 });
 
-const woodFenceVariants = range(10, 15).map((column) => bg(16, column));
-const woodFence = terrain({
-  id: "wood-fence",
+const fenceVariants = range(10, 15).map((column) => bg(16, column));
+const fence = terrain({
+  id: "fence",
   label: "木栅栏",
   type: "solid",
   slot: "overlay",
@@ -337,7 +321,7 @@ const woodFence = terrain({
   rows: [bgRow(16, range(10, 15))],
   auto: {
     kind: "fence",
-    variants: woodFenceVariants,
+    variants: fenceVariants,
     canonical: EntityTypeId.FENCE,
   },
 });
@@ -363,7 +347,7 @@ const tree = terrain({
     bgRow(1, range(11, 16)),
     bgRow(2, range(11, 16)),
     bgRow(3, range(11, 16)),
-    bgRow(4, [11, 12]),
+    bgRow(4, [11, 12, 13]),
   ],
 });
 
@@ -515,6 +499,17 @@ const ice = terrain({
   rows: [[variant(EntityTypeId.ICE, "Ice")]],
 });
 
+const sourceTile = terrain({
+  id: "source-tile",
+  label: "待确认素材",
+  type: "solid",
+  rows: [[
+    variant(bg(14, 10), "14,10 火龙尾部素材"),
+    variant(bg(14, 12), "14,12 Dream Machine 素材"),
+    variant(bg(15, 10), "15,10 火龙吐火第二帧"),
+  ]],
+});
+
 export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   water,
   waterfall,
@@ -522,7 +517,7 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   moon,
   cloud,
   grass,
-  woodFence,
+  fence,
   hedge,
   tree,
   stoneWall1,
@@ -540,6 +535,7 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   cactus,
   sand,
   ice,
+  sourceTile,
 ];
 
 export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
@@ -555,7 +551,7 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     id: "forest",
     label: "森林",
     rows: [
-      ["grass", "wood-fence", "hedge", "tree"],
+      ["grass", "fence", "hedge", "tree"],
       ["stone-wall-1", "stone-wall-2", "stump", "flower-pot"],
       ["stone", "mushroom"],
     ],
@@ -572,6 +568,11 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     id: "desert",
     label: "沙漠",
     rows: [["sand", "cactus"]],
+  },
+  {
+    id: "source",
+    label: "待确认",
+    rows: [["source-tile"]],
   },
 ];
 
@@ -602,10 +603,3 @@ export const SURFACE_THEMES: readonly SurfaceThemeDefinition[] = [
     preview: [bg(5, 10), bg(5, 8), walk(7, 9), bg(5, 11)],
   },
 ];
-
-export const LEGACY_GROUND_TYPES = new Set<EntityType>([
-  EntityTypeId.GROUND_A,
-  EntityTypeId.GROUND_B,
-  EntityTypeId.GROUND_C,
-  EntityTypeId.GROUND_D,
-]);

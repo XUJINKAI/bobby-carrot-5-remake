@@ -1,10 +1,11 @@
-import {
-  ENTITY_MAP_MIGRATION_ALIASES,
-  EntityTypeId,
-  MapEntityTypeId,
-  SURFACE_SOURCE_MAPPINGS,
-} from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId, surfaceMappingForEntity } from "@bobby/model";
 import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
+import {
+  decodeDatObject,
+  decodeDatTerrain,
+  encodeDatObject,
+  encodeDatTerrain,
+} from "./dat/mapping.mjs";
 import {
   ORIGINAL_ENTITY_CORRESPONDENCE,
   correspondenceByField,
@@ -12,15 +13,6 @@ import {
 
 const directTerrainTypes = new Set([
   DecodedTerrain.WATER,
-  DecodedTerrain.WATER_ANIMATED,
-  DecodedTerrain.WATER_VARIANT_1,
-  DecodedTerrain.WATER_VARIANT_2,
-  DecodedTerrain.WATER_VARIANT_3,
-  DecodedTerrain.GROUND_A,
-  DecodedTerrain.GROUND_B,
-  DecodedTerrain.GROUND_C,
-  DecodedTerrain.GROUND_D,
-  DecodedTerrain.SHOVEL_CLEARED_GROUND,
   DecodedTerrain.ICE,
   DecodedTerrain.START,
   DecodedTerrain.EXIT,
@@ -70,7 +62,10 @@ export function reverseEntityMap(map) {
     width: map.width,
     height: map.height,
     terrain,
-    objects: map.entities.flatMap(objectFor),
+    objects: map.entities.flatMap(objectFor).map((object) => ({
+      ...object,
+      type: decodeDatObject(encodeDatObject(object.type)),
+    })),
   };
 }
 
@@ -119,7 +114,7 @@ function terrainAt(entities, x, y) {
     )
     .map(decodedTerrainFor);
   if (special.length === 1) {
-    return special[0];
+    return taggedTerrain(special[0]);
   }
   if (special.length > 1) {
     throw new Error(`Patch map ${x},${y} 包含多个可编码的覆盖地形 Entity`);
@@ -129,7 +124,7 @@ function terrainAt(entities, x, y) {
     throw new Error(
       `Patch map ${x},${y} 必须恰好包含一个可编码的地形 Entity，实际为 ${candidates.length}`,
     );
-  return candidates[0];
+  return taggedTerrain(candidates[0]);
 }
 
 function decodedTerrainFor(entity) {
@@ -200,44 +195,17 @@ function decodedTerrainFor(entity) {
       throw new Error("color-block 的 color 必须是 yellow/pink");
     return `color-${entity.color}-block-${entity.raised === false ? "lowered" : "raised"}`;
   }
-  if (
-    directTerrainTypes.has(type) ||
-    /^ts-\d+-\d+$/.test(type) ||
-    /^walkable-variant-\d{2}$/.test(type) ||
-    /^background-variant-\d{3}$/.test(type)
-  )
+  if (directTerrainTypes.has(type))
     return type;
   return decodedSurfaceTerrain(entity);
 }
 
 function decodedSurfaceTerrain(entity) {
-  let mapping = SURFACE_SOURCE_MAPPINGS.find(
-    (candidate) =>
-      candidate.type === entity.type &&
-      Object.entries(candidate.fields ?? {}).every(
-        ([key, value]) => entity[key] === value,
-      ),
-  );
-  if (!mapping) {
-    const coordinate = /^surface-(\d+)-(\d+)$/.exec(entity.type);
-    if (coordinate) {
-      mapping = {
-        type: entity.type,
-        source: { row: Number(coordinate[1]), column: Number(coordinate[2]) },
-      };
-    }
-  }
+  // Fence 在 Editor 中属于单格 Surface overlay，在原版 DAT 中仍占 object byte。
+  if (entity.type === MapEntityTypeId.FENCE) return null;
+  const mapping = surfaceMappingForEntity(entity.type, entity);
   if (!mapping) return null;
   const source = mapping.source;
-  const alias = ENTITY_MAP_MIGRATION_ALIASES.find(
-    (candidate) =>
-      candidate.to === entity.type &&
-      candidate.from !== "fence" &&
-      Object.entries(candidate.fields ?? {}).every(
-        ([key, value]) => entity[key] === value,
-      ),
-  );
-  if (alias) return alias.from;
   return `ts-${source.row}-${source.column}`;
 }
 
@@ -299,19 +267,13 @@ function objectFor(entity) {
       throw new Error("ice-block 的 state.meltStage 必须是 1 到 3 的整数");
     return [{ type: decodedType, x, y }];
   }
-  if (
-    directObjectTypes.has(type) ||
-    /^object-variant-\d{3}$/.test(type)
-  )
+  if (directObjectTypes.has(type))
     return [{ type, x, y }];
-  const coordinateObject = /^object-(\d+)-(\d+)$/.exec(type);
-  if (coordinateObject) {
-    const row = Number(coordinateObject[1]);
-    const column = Number(coordinateObject[2]);
-    const number = (row - 1) * 16 + column;
-    return [{ type: `object-variant-${String(number).padStart(3, "0")}`, x, y }];
-  }
   throw new Error(`Entity type 无法编码为原版 DAT：${type}`);
+}
+
+function taggedTerrain(type) {
+  return decodeDatTerrain(encodeDatTerrain(type));
 }
 
 function validateBobbyStartPair(entities) {

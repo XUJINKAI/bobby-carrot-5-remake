@@ -23,7 +23,7 @@ import {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  objectCell,
+  namedCell,
   originalModule,
 } from "./module.js";
 
@@ -172,7 +172,7 @@ const whirlwindDefinition: EntityModuleDefinition = {
 
 const whirlwindBase = originalModule(
   whirlwindDefinition,
-  atlasVisual(whirlwindDefinition, objectCell(43)),
+  atlasVisual(whirlwindDefinition, namedCell("whirlwind")),
   [{ behavior: whirlwindBehavior }],
 );
 
@@ -190,7 +190,7 @@ const landingDefinition: EntityModuleDefinition = {
 
 export const landing: EntityModule = originalModule(
   landingDefinition,
-  atlasVisual(landingDefinition, objectCell(44)),
+  atlasVisual(landingDefinition, namedCell("landing")),
   [{ behavior: landingBehavior }],
 );
 

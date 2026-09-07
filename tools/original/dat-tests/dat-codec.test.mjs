@@ -96,9 +96,9 @@ test("atlas-tagged semantic variants keep inferred DAT provenance in Original to
   assert.equal(background?.datHexIds[0], "0x00");
   assert.equal(background?.confidence, "inferred");
 
-  const objectVariant = datSourceForObject("object-variant-001");
-  assert.equal(objectVariant?.datHexIds[0], "0x00");
-  assert.equal(objectVariant?.confidence, "inferred");
+  const object = datSourceForObject("ts-1-1:stump");
+  assert.equal(object?.datHexIds[0], "0x00");
+  assert.equal(object?.confidence, "inferred");
 });
 
 test("decoded terrain 与 object 使用统一的 atlas-first 标签", () => {

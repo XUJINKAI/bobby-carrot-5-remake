@@ -77,8 +77,8 @@ test("map-native currency remains present on every new Adventure level instance"
     entities: [
       { type: EntityTypeId.START, x: 0, y: 0 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
       { type: EntityTypeId.BONUS_COIN, x: 1, y: 0 },
       { type: EntityTypeId.GOLDEN_CARROT, x: 0, y: 1 },
     ],

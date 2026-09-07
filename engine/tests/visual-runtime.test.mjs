@@ -19,7 +19,14 @@ function bobbyVisual(options = {}) {
     ? { ...(options.state ?? {}), mountId: 2 }
     : options.state;
   const store = new EntityStore([
-    { type: options.surfaceType ?? EntityTypeId.GROUND_C, x: 0, y: 0 },
+    {
+      type: options.surfaceType ?? "grass",
+      x: 0,
+      y: 0,
+      ...(!options.surfaceType || options.surfaceType === "grass"
+        ? { variant: "ts-10-1" }
+        : {}),
+    },
     ...(mountType ? [{ type: mountType, x: 0, y: 0 }] : []),
     {
       type: EntityTypeId.BOBBY,

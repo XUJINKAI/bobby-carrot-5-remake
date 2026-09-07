@@ -24,7 +24,8 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
     height: 1,
     entities: [
       ...Array.from({ length: 4 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),
@@ -66,8 +67,8 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
@@ -91,7 +92,8 @@ test("Airborne movement chains without a stationary World tick", () => {
       height: 1,
       entities: [
         ...Array.from({ length: 8 }, (_, x) => ({
-          type: EntityTypeId.GROUND_C,
+          type: "grass",
+          variant: "ts-10-1",
           x,
           y: 0,
         })),
@@ -132,7 +134,8 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
     height: 1,
     entities: [
       ...Array.from({ length: 3 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),
@@ -169,7 +172,8 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
     height: 1,
     entities: [
       ...Array.from({ length: 3 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),

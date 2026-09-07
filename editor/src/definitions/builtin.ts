@@ -73,16 +73,8 @@ const directionalMechanism: EditorEntityDefinition = {
 };
 const directSurfaceTypes: readonly EntityType[] = [
   ...SURFACE_ENTITY_DEFINITIONS.map((definition) => definition.type),
-  EntityTypeId.GROUND_A,
-  EntityTypeId.GROUND_B,
-  EntityTypeId.GROUND_C,
-  EntityTypeId.GROUND_D,
   EntityTypeId.ICE,
   EntityTypeId.WATER,
-  EntityTypeId.WATER_ANIMATED,
-  EntityTypeId.WATER_VARIANT_1,
-  EntityTypeId.WATER_VARIANT_2,
-  EntityTypeId.WATER_VARIANT_3,
 ];
 
 export const builtinEditorDefinition: EditorDefinition = {

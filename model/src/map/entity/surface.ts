@@ -1,15 +1,14 @@
 import type { JsonPrimitive } from "../../shared/json.js";
 import { defineEntity, enumField, type EntityMapDefinition } from "./contract.js";
+import { MapEntityTypeId, type MapEntityType } from "./ids.js";
 import {
-  MapEntityTypeId,
-  type CoordinateSurfaceEntityType,
-  type MapEntityType,
-} from "./ids.js";
+  TS_SURFACE_FAMILIES,
+  parseTsCoordinateLabel,
+  tsCoordinateLabel,
+  type TsCoordinate,
+} from "./ts-visual-catalog.js";
 
-export interface TsCoordinate {
-  row: number;
-  column: number;
-}
+export type { TsCoordinate } from "./ts-visual-catalog.js";
 
 export interface SurfaceSourceMapping {
   source: TsCoordinate;
@@ -17,168 +16,65 @@ export interface SurfaceSourceMapping {
   fields?: Readonly<Record<string, JsonPrimitive>>;
 }
 
-const CLOUD_LAYER_COORDS = [
-  ...rect(7, 9, 9, 14),
-  ...rect(9, 7, 9, 8),
-];
-const GRASS_COORDS = [
-  ...rect(7, 1, 9, 3),
-  coord(6, 15),
-  coord(6, 16),
-  ...rect(7, 4, 9, 6),
-  ...rect(7, 7, 8, 8),
-  ...rect(10, 1, 10, 4),
-];
-const WOOD_FENCE_COORDS = rect(16, 10, 16, 15);
-const HEDGE_COORDS = [
-  ...rect(5, 1, 6, 5),
-  coord(4, 4),
-  coord(4, 5),
-  coord(5, 6),
-  coord(5, 7),
-];
-const TREE_COORDS = [
-  ...rect(1, 11, 3, 16),
-  coord(4, 11),
-  coord(4, 12),
-  coord(4, 13),
-];
-const MOON_COORDS = rect(5, 11, 5, 13);
-const SNOWMAN_COORDS = [coord(3, 3), coord(4, 3)];
-const CANDY_CANE_COORDS = [coord(3, 2), coord(4, 2)];
-const CHRISTMAS_TREE_COORDS = rect(1, 9, 3, 10);
-const TALL_CACTUS_COORDS = [coord(4, 16), coord(5, 16)];
-const STONE_WALL_1_COORDS = rect(1, 4, 3, 6);
-const STONE_WALL_2_COORDS = [...rect(1, 7, 3, 8), ...rect(4, 7, 4, 10)];
-const SNOW_FENCE_COORDS = [
-  coord(2, 1),
-  coord(2, 2),
-  coord(2, 3),
-  coord(3, 1),
-  coord(4, 1),
-];
-const SNOW_GROUND_COORDS = [...rect(7, 15, 8, 16), coord(9, 15)];
+export const SURFACE_SOURCE_MAPPINGS: readonly SurfaceSourceMapping[] =
+  Object.freeze(TS_SURFACE_FAMILIES.flatMap((family) =>
+    family.cells.map((cell) => Object.freeze({
+      source: { row: cell.row, column: cell.column },
+      type: family.type as MapEntityType,
+      ...(family.coordinateVariant
+        ? { fields: Object.freeze({ variant: tsVariant(cell) }) }
+        : cell.fields
+          ? { fields: cell.fields }
+          : {}),
+    })),
+  ));
 
-/** Named surface families confirmed by docs/system/original/surface.md. */
+const allTsVariants = Array.from({ length: 256 }, (_, index) =>
+  tsCoordinateLabel({
+    row: Math.floor(index / 16) + 1,
+    column: (index % 16) + 1,
+  }),
+);
+
 export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object.freeze([
-  defineEntity(MapEntityTypeId.WATER),
   defineEntity(
-    MapEntityTypeId.WATER_RIPPLE,
-    [],
-    "Water surface with ripple animation; animation frames are presentation-only.",
+    MapEntityTypeId.SURFACE,
+    [enumField("variant", allTsVariants, undefined, true)],
+    "尚未确定语义名称的 ts.png 单格 Surface。",
   ),
+  defineEntity(MapEntityTypeId.WATER),
+  defineEntity(MapEntityTypeId.WATER_RIPPLE, [], "带波纹动画的水面。"),
   defineEntity(MapEntityTypeId.WATERFALL, [
     enumField("variant", ["top", "middle", "bottom"], undefined, true),
   ]),
   defineEntity(MapEntityTypeId.STARFIELD, [
     enumField("variant", ["large-star", "small-star", "empty"], undefined, true),
   ]),
-  defineEntity(MapEntityTypeId.MOON, [
-    enumField("variant", surfaceVariants(MOON_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.CLOUD_LAYER, [
-    enumField("variant", surfaceVariants(CLOUD_LAYER_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.GRASS, [
-    enumField("variant", surfaceVariants(GRASS_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.WOOD_FENCE, [
-    enumField("variant", surfaceVariants(WOOD_FENCE_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.HEDGE, [
-    enumField("variant", surfaceVariants(HEDGE_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.TREE, [
-    enumField("variant", surfaceVariants(TREE_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.STONE_WALL_1, [
-    enumField("variant", surfaceVariants(STONE_WALL_1_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.STONE_WALL_2, [
-    enumField("variant", surfaceVariants(STONE_WALL_2_COORDS), undefined, true),
-  ]),
+  coordinateVariantDefinition(MapEntityTypeId.MOON),
+  coordinateVariantDefinition(MapEntityTypeId.CLOUD_LAYER),
+  coordinateVariantDefinition(MapEntityTypeId.GRASS),
+  coordinateVariantDefinition(MapEntityTypeId.HEDGE),
+  coordinateVariantDefinition(MapEntityTypeId.TREE),
+  coordinateVariantDefinition(MapEntityTypeId.STONE_WALL_1),
+  coordinateVariantDefinition(MapEntityTypeId.STONE_WALL_2),
   defineEntity(MapEntityTypeId.STUMP),
   defineEntity(MapEntityTypeId.FLOWER_POT),
   defineEntity(MapEntityTypeId.ROCK),
   defineEntity(MapEntityTypeId.MUSHROOM),
-  defineEntity(MapEntityTypeId.SNOWMAN, [
-    enumField("variant", surfaceVariants(SNOWMAN_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.CANDY_CANE, [
-    enumField("variant", surfaceVariants(CANDY_CANE_COORDS), undefined, true),
-  ]),
-  defineEntity(MapEntityTypeId.CHRISTMAS_TREE, [
-    enumField(
-      "variant",
-      surfaceVariants(CHRISTMAS_TREE_COORDS),
-      undefined,
-      true,
-    ),
-  ]),
-  defineEntity(MapEntityTypeId.SNOW_FENCE, [
-    enumField("variant", surfaceVariants(SNOW_FENCE_COORDS), undefined, true),
-  ]),
+  coordinateVariantDefinition(MapEntityTypeId.SNOWMAN),
+  coordinateVariantDefinition(MapEntityTypeId.CANDY_CANE),
+  coordinateVariantDefinition(MapEntityTypeId.CHRISTMAS_TREE),
+  coordinateVariantDefinition(MapEntityTypeId.SNOW_FENCE),
   defineEntity(MapEntityTypeId.SNOWY_ROCK),
-  defineEntity(MapEntityTypeId.SNOW_GROUND, [
-    enumField("variant", surfaceVariants(SNOW_GROUND_COORDS), undefined, true),
-  ]),
+  coordinateVariantDefinition(MapEntityTypeId.SNOW_GROUND),
   defineEntity(MapEntityTypeId.CACTUS, [
     enumField("variant", ["small", "round"], undefined, true),
   ]),
-  defineEntity(MapEntityTypeId.TALL_CACTUS, [
-    enumField("variant", surfaceVariants(TALL_CACTUS_COORDS), undefined, true),
-  ]),
+  coordinateVariantDefinition(MapEntityTypeId.TALL_CACTUS),
   defineEntity(MapEntityTypeId.SAND),
   defineEntity(MapEntityTypeId.CLOUD_PARKING, [
     enumField("color", ["red", "purple", "green"], undefined, true),
   ]),
-]);
-
-/**
- * First-pass source mapping. Purely visual variants use ts-row-column as their stable value,
- * so the Map ABI keeps a direct, reviewable link back to the original atlas coordinate.
- * Semantically meaningful variants keep semantic names instead.
- */
-export const SURFACE_SOURCE_MAPPINGS: readonly SurfaceSourceMapping[] = Object.freeze([
-  single(6, 6, MapEntityTypeId.WATER),
-  single(6, 7, MapEntityTypeId.WATER_RIPPLE),
-  single(6, 12, MapEntityTypeId.WATERFALL, { variant: "top" }),
-  single(6, 13, MapEntityTypeId.WATERFALL, { variant: "middle" }),
-  single(6, 14, MapEntityTypeId.WATERFALL, { variant: "bottom" }),
-
-  single(5, 8, MapEntityTypeId.STARFIELD, { variant: "large-star" }),
-  single(5, 9, MapEntityTypeId.STARFIELD, { variant: "small-star" }),
-  single(5, 10, MapEntityTypeId.STARFIELD, { variant: "empty" }),
-  ...variantMappings(MapEntityTypeId.MOON, MOON_COORDS),
-
-  ...variantMappings(MapEntityTypeId.CLOUD_LAYER, CLOUD_LAYER_COORDS),
-  ...variantMappings(MapEntityTypeId.GRASS, GRASS_COORDS),
-  ...variantMappings(MapEntityTypeId.WOOD_FENCE, WOOD_FENCE_COORDS),
-  ...variantMappings(MapEntityTypeId.HEDGE, HEDGE_COORDS),
-  ...variantMappings(MapEntityTypeId.TREE, TREE_COORDS),
-  ...variantMappings(MapEntityTypeId.STONE_WALL_1, STONE_WALL_1_COORDS),
-  ...variantMappings(MapEntityTypeId.STONE_WALL_2, STONE_WALL_2_COORDS),
-
-  single(1, 1, MapEntityTypeId.STUMP),
-  single(1, 3, MapEntityTypeId.FLOWER_POT),
-  single(4, 6, MapEntityTypeId.ROCK),
-  single(4, 14, MapEntityTypeId.MUSHROOM),
-
-  ...variantMappings(MapEntityTypeId.SNOWMAN, SNOWMAN_COORDS),
-  ...variantMappings(MapEntityTypeId.CANDY_CANE, CANDY_CANE_COORDS),
-  ...variantMappings(MapEntityTypeId.CHRISTMAS_TREE, CHRISTMAS_TREE_COORDS),
-  ...variantMappings(MapEntityTypeId.SNOW_FENCE, SNOW_FENCE_COORDS),
-  single(1, 2, MapEntityTypeId.SNOWY_ROCK),
-  ...variantMappings(MapEntityTypeId.SNOW_GROUND, SNOW_GROUND_COORDS),
-
-  single(4, 15, MapEntityTypeId.CACTUS, { variant: "small" }),
-  single(5, 15, MapEntityTypeId.CACTUS, { variant: "round" }),
-  ...variantMappings(MapEntityTypeId.TALL_CACTUS, TALL_CACTUS_COORDS),
-  single(9, 16, MapEntityTypeId.SAND),
-
-  single(16, 1, MapEntityTypeId.CLOUD_PARKING, { color: "red" }),
-  single(16, 2, MapEntityTypeId.CLOUD_PARKING, { color: "purple" }),
-  single(16, 3, MapEntityTypeId.CLOUD_PARKING, { color: "green" }),
 ]);
 
 export function surfaceMappingForTs(
@@ -186,31 +82,29 @@ export function surfaceMappingForTs(
   column: number,
 ): SurfaceSourceMapping | undefined {
   return SURFACE_SOURCE_MAPPINGS.find((mapping) =>
-    mapping.source.row === row && mapping.source.column === column,
+    mapping.source.row === row && mapping.source.column === column
   );
 }
 
-export function coordinateSurfaceType(
-  row: number,
-  column: number,
-): CoordinateSurfaceEntityType {
-  assertTsCoordinate(row, column);
-  return `surface-${row}-${column}`;
-}
-
-export function coordinateSurfaceDefinition(
+export function surfaceMappingForEntity(
   type: string,
-): EntityMapDefinition | undefined {
-  const match = /^surface-(\d+)-(\d+)$/.exec(type);
-  if (!match) return undefined;
-  const row = Number(match[1]);
-  const column = Number(match[2]);
-  if (!isTsCoordinate(row, column)) return undefined;
-  if (surfaceMappingForTs(row, column)) return undefined;
-  return defineEntity(
-    type as CoordinateSurfaceEntityType,
-    [],
-    `Unresolved original surface at ts(${row},${column}).`,
+  fields: Readonly<Record<string, unknown>>,
+): SurfaceSourceMapping | undefined {
+  if (type === MapEntityTypeId.SURFACE) {
+    const coordinate = typeof fields.variant === "string"
+      ? parseTsCoordinateLabel(fields.variant)
+      : undefined;
+    return coordinate
+      ? {
+          type: MapEntityTypeId.SURFACE,
+          source: coordinate,
+          fields: { variant: fields.variant as string },
+        }
+      : undefined;
+  }
+  return SURFACE_SOURCE_MAPPINGS.find((mapping) =>
+    mapping.type === type &&
+    Object.entries(mapping.fields ?? {}).every(([key, value]) => fields[key] === value)
   );
 }
 
@@ -218,71 +112,14 @@ export function tsLabel(source: TsCoordinate): string {
   return `ts(${source.row},${source.column})`;
 }
 
-/** Stable field value for a visual-only variant with no stronger semantic name. */
 export function tsVariant(source: TsCoordinate): string {
-  return `ts-${source.row}-${source.column}`;
+  return tsCoordinateLabel(source);
 }
 
-function single(
-  row: number,
-  column: number,
-  type: MapEntityType,
-  fields?: Readonly<Record<string, JsonPrimitive>>,
-): SurfaceSourceMapping {
-  return Object.freeze({
-    source: coord(row, column),
-    type,
-    ...(fields ? { fields: Object.freeze({ ...fields }) } : {}),
-  });
-}
-
-function variantMappings(
-  type: MapEntityType,
-  coordinates: readonly TsCoordinate[],
-): SurfaceSourceMapping[] {
-  return coordinates.map((source) =>
-    Object.freeze({
-      source,
-      type,
-      fields: Object.freeze({ variant: tsVariant(source) }),
-    }),
-  );
-}
-
-function surfaceVariants(coordinates: readonly TsCoordinate[]): readonly string[] {
-  return coordinates.map(tsVariant);
-}
-
-function coord(row: number, column: number): TsCoordinate {
-  assertTsCoordinate(row, column);
-  return Object.freeze({ row, column });
-}
-
-function rect(
-  startRow: number,
-  startColumn: number,
-  endRow: number,
-  endColumn: number,
-): TsCoordinate[] {
-  const result: TsCoordinate[] = [];
-  for (let row = startRow; row <= endRow; row += 1)
-    for (let column = startColumn; column <= endColumn; column += 1)
-      result.push(coord(row, column));
-  return result;
-}
-
-function assertTsCoordinate(row: number, column: number): void {
-  if (!isTsCoordinate(row, column))
-    throw new Error(`Invalid ts coordinate: ${row},${column}`);
-}
-
-function isTsCoordinate(row: number, column: number): boolean {
-  return (
-    Number.isInteger(row) &&
-    Number.isInteger(column) &&
-    row >= 1 &&
-    row <= 16 &&
-    column >= 1 &&
-    column <= 16
-  );
+function coordinateVariantDefinition(type: MapEntityType): EntityMapDefinition {
+  const values = SURFACE_SOURCE_MAPPINGS
+    .filter((mapping) => mapping.type === type)
+    .map((mapping) => mapping.fields?.variant)
+    .filter((value): value is string => typeof value === "string");
+  return defineEntity(type, [enumField("variant", values, undefined, true)]);
 }

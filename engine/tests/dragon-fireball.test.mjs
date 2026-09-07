@@ -13,7 +13,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   const entities = [];
   for (let y = 0; y < 3; y += 1)
     for (let x = 0; x < 7; x += 1)
-      entities.push({ type: EntityTypeId.GROUND_C, x, y });
+      entities.push({ type: "grass", variant: "ts-10-1", x, y });
   entities.push(
     { type: EntityTypeId.MIRROR, x: 1, y: 0, state: { variant: 1 } },
     { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
@@ -75,8 +75,8 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: EntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
       { type: EntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
     ],

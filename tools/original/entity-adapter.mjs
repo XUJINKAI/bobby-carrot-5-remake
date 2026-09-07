@@ -1,8 +1,8 @@
 import {
   EntityTypeId,
   MapEntityTypeId,
-  coordinateObjectType,
-  legacyEntityMapAlias,
+  parseTsCoordinateLabel,
+  surfaceMappingForTs,
 } from "@bobby/model";
 import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
 import {
@@ -17,15 +17,6 @@ import {
 
 const directTerrainTypes = new Set([
   DecodedTerrain.WATER,
-  DecodedTerrain.WATER_ANIMATED,
-  DecodedTerrain.WATER_VARIANT_1,
-  DecodedTerrain.WATER_VARIANT_2,
-  DecodedTerrain.WATER_VARIANT_3,
-  DecodedTerrain.GROUND_A,
-  DecodedTerrain.GROUND_B,
-  DecodedTerrain.GROUND_C,
-  DecodedTerrain.GROUND_D,
-  DecodedTerrain.SHOVEL_CLEARED_GROUND,
   DecodedTerrain.ICE,
   DecodedTerrain.START,
   DecodedTerrain.EXIT,
@@ -182,7 +173,7 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
   type = decodedTerrainSourceSemantic(type);
   if (type === DecodedTerrain.SNOW) {
     return [
-      canonicalTerrainEntity(EntityTypeId.GROUND_D, x, y),
+      entity(MapEntityTypeId.GRASS, x, y, { variant: "ts-10-2" }),
       entity(EntityTypeId.SNOW, x, y),
     ];
   }
@@ -269,9 +260,7 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
     ];
   }
 
-  if (directTerrainTypes.has(type) || isDecodedTerrainVariant(type)) {
-    return [canonicalTerrainEntity(type, x, y)];
-  }
+  if (directTerrainTypes.has(type)) return [entity(type, x, y)];
   if (coordinateType) {
     return [canonicalTerrainEntity(coordinateType, x, y)];
   }
@@ -280,7 +269,6 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 
 export function adaptDecodedObject(object) {
   const { x, y } = object;
-  const coordinateType = decodedAtlasCoordinate(object.type);
   const type = decodedObjectSourceSemantic(object.type);
   if (type === DecodedObject.EMPTY || internalObjectParts.has(type)) return [];
 
@@ -323,36 +311,15 @@ export function adaptDecodedObject(object) {
     return [entity(type, x, y, copiedFields(object))];
   }
 
-  const variant = /^object-variant-(\d{3})$/.exec(type);
-  if (variant) {
-    const index = Number(variant[1]) - 1;
-    return [
-      entity(
-        coordinateObjectType(Math.floor(index / 16) + 1, (index % 16) + 1),
-        x,
-        y,
-      ),
-    ];
-  }
-  if (coordinateType) {
-    const coordinate = /^ts-(\d+)-(\d+)$/.exec(coordinateType);
-    return [
-      entity(
-        coordinateObjectType(Number(coordinate[1]), Number(coordinate[2])),
-        x,
-        y,
-      ),
-    ];
-  }
   throw new Error(`Unsupported decoded object type: ${type}`);
 }
 
 export function mowedGroundAt(x, y) {
   return [
-    EntityTypeId.GROUND_A,
-    EntityTypeId.GROUND_B,
-    EntityTypeId.GROUND_C,
-    EntityTypeId.GROUND_D,
+    "ts-6-15",
+    "ts-6-16",
+    "ts-10-1",
+    "ts-10-2",
   ][(x * 17 + y * 31) & 3];
 }
 
@@ -374,9 +341,12 @@ function foldedPressedSwitch(type) {
 }
 
 function canonicalTerrainEntity(type, x, y) {
-  const alias = legacyEntityMapAlias(type);
-  if (!alias?.to) return entity(type, x, y);
-  return entity(alias.to, x, y, alias.fields ?? {});
+  const coordinate = parseTsCoordinateLabel(type);
+  if (!coordinate) return entity(type, x, y);
+  const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
+  return mapping
+    ? entity(mapping.type, x, y, mapping.fields ?? {})
+    : entity(MapEntityTypeId.SURFACE, x, y, { variant: type });
 }
 
 function directionSuffix(type, prefix) {
@@ -385,14 +355,6 @@ function directionSuffix(type, prefix) {
   return ["up", "down", "left", "right"].includes(direction)
     ? direction
     : null;
-}
-
-function isDecodedTerrainVariant(type) {
-  return (
-    /^ts-\d+-\d+$/.test(type) ||
-    /^walkable-variant-\d{2}$/.test(type) ||
-    /^background-variant-\d{3}$/.test(type)
-  );
 }
 
 function copiedFields(object) {

@@ -79,7 +79,7 @@ test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
     width: 3,
     height: 3,
     entities: [
-      { type: "grass", x: 1, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 1 },
       { type: "coin", x: 1, y: 1 },
       { type: "water", x: 1, y: 1 },
     ],

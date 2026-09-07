@@ -3,12 +3,9 @@ import path from "node:path";
 import {
   BC5R_GAME_ID,
   ENTITY_MAP_DEFINITIONS,
-  ENTITY_MAP_MIGRATION_ALIASES,
-  ENTITY_MAP_UNRESOLVED_SOURCES,
   LEVEL_ENTITY_RESERVED_FIELDS,
   SURFACE_SOURCE_MAPPINGS,
   entityMapDefinition,
-  legacyEntityMapAlias,
   parseMapDocument,
   tsLabel,
 } from "@bobby/model";
@@ -102,8 +99,6 @@ function generateAll() {
     entities: Object.fromEntries(
       Object.values(ENTITY_MAP_DEFINITIONS).map((definition) => [definition.type, contractView(definition)]),
     ),
-    migrationAliases: ENTITY_MAP_MIGRATION_ALIASES,
-    unresolvedSources: ENTITY_MAP_UNRESOLVED_SOURCES,
   };
   const entityExamples = {
     schemaVersion: 1,
@@ -119,7 +114,6 @@ function generateAll() {
       item("game-id", "@bobby/model", "model/src/shared/game.ts", "examples/storage-contract.json", "review/storage-keys.jsonc"),
       item("entity-map", "@bobby/model", "model/src/map/entity/catalog.ts", "entity-map-contract.json", "review/entity-map.jsonc"),
       item("surface-map", "@bobby/model", "model/src/map/entity/surface.ts", "surface-map.json", "review/surface-map.jsonc"),
-      item("entity-migration", "@bobby/model", "model/src/map/entity/migration.ts", "entity-map-contract.json", "review/entity-migration.jsonc"),
       item("level-entity", "@bobby/model", "model/src/map/document.ts", "examples/level-map.json", "review/map-document.jsonc"),
       item("win-condition", "@bobby/model", "model/src/map/rules.ts", "examples/level-map.json", "review/map-document.jsonc"),
       item("level-limit-rules", "@bobby/model", "model/src/map/rules.ts", "examples/level-map.json", "review/map-document.jsonc"),
@@ -159,7 +153,6 @@ function generateAll() {
   for (const [name, value] of Object.entries(examples)) writeJson(path.join(examplesDir, name), value);
 
   writeText(path.join(reviewDir, "entity-map.jsonc"), entityReview());
-  writeText(path.join(reviewDir, "entity-migration.jsonc"), entityMigrationReview());
   writeText(path.join(reviewDir, "surface-map.jsonc"), surfaceReview());
   writeText(path.join(reviewDir, "map-document.jsonc"), mapDocumentReview(mapDocument));
   writeText(path.join(reviewDir, "collections-manifest.jsonc"), `// Hand-maintained custom-maps/collections.json.\n// No maps/filters/order. Array order is collection order; filesystem defines membership.\n${JSON.stringify(manifest, null, 2)}\n`);
@@ -370,21 +363,6 @@ function fieldSummary(field) {
   return pieces.join("; ");
 }
 
-function entityMigrationReview() {
-  const dynamicExamples = [
-    "ts-1-1",
-    "ts-6-6",
-    "ts-6-12",
-    "ts-7-1",
-  ].map((type) => legacyEntityMapAlias(type)).filter(Boolean);
-  const value = {
-    staticAliases: ENTITY_MAP_MIGRATION_ALIASES,
-    dynamicRawExamples: dynamicExamples,
-    unresolved: ENTITY_MAP_UNRESOLVED_SOURCES,
-  };
-  return `// Review-only migration guide. These aliases are NOT accepted by the final strict Map parser.\n// Decoded archive ts-row-column values resolve to semantic surfaces or temporary coordinate identities.\n${JSON.stringify(value, null, 2)}\n`;
-}
-
 function surfaceMappingView(mapping) {
   return {
     source: tsLabel(mapping.source),
@@ -399,7 +377,7 @@ function surfaceReview() {
     "  // First-pass semantic mapping based on docs/system/original/surface.md.",
     "  // Coordinates follow docs/system/original/README.md: ts(row,column), 1-based.",
     "  // Visual-only variants use ts-row-column; semantically meaningful variants keep semantic names.",
-    "  // Unknown tiles intentionally use surface-<row>-<column> instead of a guessed semantic name.",
+    "  // 待确认单格使用 surface + ts-row-column variant。",
   ];
   SURFACE_SOURCE_MAPPINGS.forEach((mapping, index) => {
     const view = surfaceMappingView(mapping);

@@ -16,9 +16,10 @@ Original Adapter 位于 `tools/original/`，负责在原版 DAT 的地图表示�
 4. `tools/original/entity-reverse-adapter.mjs` 只服务 JAR patch，并由 DAT
    byte-for-byte round-trip 测试约束为正向边界的逆变换。
 
-`model/src/map/entity/surface.ts` 维护产品语义 Surface 到 atlas visual 的映射；
-Engine Definition 维护 canonical Entity 的行为与 Visual。它们不读取 DAT byte，
-也不建立第二份 DAT 对应表。
+`model/src/map/entity/ts-visuals.json` 按 Surface 家族与独立 visual 分组维护
+`ts.png` 全部 256 格的名称；`model/src/map/entity/surface.ts` 从该表生成产品语义
+Surface 映射。Engine Definition 维护 canonical Entity 的行为，并通过命名表查找
+Visual。它们不读取 DAT byte，也不建立第二份 DAT 对应表。
 
 新增或修正原版对应关系时，先修改 `dat/mapping.mjs` 的原版事实，再修改唯一
 Adapter 边界，并补充正向转换与 DAT round-trip 测试。`npm run verify` 会重新生成

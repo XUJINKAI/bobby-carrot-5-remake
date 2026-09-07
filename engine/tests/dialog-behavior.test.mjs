@@ -10,10 +10,10 @@ function dialogLevel() {
     width: 2,
     height: 2,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 1 },
       { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       {
         type: EntityTypeId.SANDMAN,
