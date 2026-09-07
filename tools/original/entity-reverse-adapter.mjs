@@ -1,4 +1,9 @@
-import { EntityTypeId } from "@bobby/model";
+import {
+  ENTITY_MAP_MIGRATION_ALIASES,
+  EntityTypeId,
+  MapEntityTypeId,
+  SURFACE_SOURCE_MAPPINGS,
+} from "@bobby/model";
 import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
 
 const directTerrainTypes = new Set([
@@ -157,6 +162,14 @@ function legacyTerrainFor(entity) {
   if (type === EntityTypeId.CAROUSEL_SWITCH) {
     return pressedTerrain("carousel-switch", entity.pressed ?? false);
   }
+  if (type === MapEntityTypeId.COLOR_SWITCH) {
+    if (entity.color !== "yellow" && entity.color !== "pink")
+      throw new Error("color-switch 的 color 必须是 yellow/pink");
+    return pressedTerrain(
+      `color-${entity.color}-switch`,
+      entity.pressed ?? false,
+    );
+  }
   if (type === EntityTypeId.COLOR_YELLOW_SWITCH) {
     return pressedTerrain("color-yellow-switch", entity.state?.pressed);
   }
@@ -186,13 +199,59 @@ function legacyTerrainFor(entity) {
     return `color-yellow-block-${entity.state?.raised ? "raised" : "lowered"}`;
   if (type === EntityTypeId.COLOR_PINK_BLOCK)
     return `color-pink-block-${entity.state?.raised ? "raised" : "lowered"}`;
+  if (type === MapEntityTypeId.COLOR_BLOCK) {
+    if (entity.color !== "yellow" && entity.color !== "pink")
+      throw new Error("color-block 的 color 必须是 yellow/pink");
+    return `color-${entity.color}-block-${entity.raised === false ? "lowered" : "raised"}`;
+  }
   if (
     directTerrainTypes.has(type) ||
     /^walkable-variant-\d{2}$/.test(type) ||
     /^background-variant-\d{3}$/.test(type)
   )
     return type;
-  return null;
+  return legacySurfaceTerrain(entity);
+}
+
+function legacySurfaceTerrain(entity) {
+  let mapping = SURFACE_SOURCE_MAPPINGS.find(
+    (candidate) =>
+      candidate.type === entity.type &&
+      Object.entries(candidate.fields ?? {}).every(
+        ([key, value]) => entity[key] === value,
+      ),
+  );
+  if (!mapping) {
+    const coordinate = /^surface-(\d+)-(\d+)$/.exec(entity.type);
+    if (coordinate) {
+      mapping = {
+        type: entity.type,
+        sources: [
+          { row: Number(coordinate[1]), column: Number(coordinate[2]) },
+        ],
+      };
+    }
+  }
+  if (!mapping) return null;
+  if (mapping.composite)
+    throw new Error(
+      `${entity.type} 是 composite surface，DAT reverse adapter 尚不能从单个 anchor 展开`,
+    );
+  const source = mapping.sources[0];
+  if (!source) return null;
+  const alias = ENTITY_MAP_MIGRATION_ALIASES.find(
+    (candidate) =>
+      candidate.to === entity.type &&
+      candidate.from !== "fence" &&
+      Object.entries(candidate.fields ?? {}).every(
+        ([key, value]) => entity[key] === value,
+      ),
+  );
+  if (alias) return alias.from;
+  const byte = (source.row - 1) * 16 + source.column - 1;
+  if (byte >= 0x60 && byte <= 0x93)
+    return `walkable-variant-${String(byte - 0x60 + 1).padStart(2, "0")}`;
+  return `background-variant-${String(byte + 1).padStart(3, "0")}`;
 }
 
 function objectFor(entity) {
