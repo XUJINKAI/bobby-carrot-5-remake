@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { entityMapDefinition } from "@bobby/model";
 import { root, run } from "../lib/fs.mjs";
+
+let entityMapDefinition;
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
 const packageJson = readJson("package.json");
@@ -16,6 +17,7 @@ for (const file of [
   run("git", ["check-ignore", "--quiet", file]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
+({ entityMapDefinition } = await import("@bobby/model"));
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const collectionsIndex = readJson("assets/maps/index.json");
