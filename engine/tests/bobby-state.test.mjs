@@ -57,14 +57,14 @@ test("bean pickup increments only the acting Bobby inventory", () => {
         type: EntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { beans: 2 },
+
       },
       { type: EntityTypeId.BEAN, x: 1, y: 0 },
     ],
   });
   const [bobby] = actors(world);
   assert.ok(bobby);
+  bobby.state = { beans: 2 };
 
   move(world, bobby.id, "right");
   assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).beans, 3);
