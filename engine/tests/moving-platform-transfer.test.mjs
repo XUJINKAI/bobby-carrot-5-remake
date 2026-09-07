@@ -31,7 +31,7 @@ function resolveTideSwitchVisual(pressed) {
       type: EntityTypeId.TIDE_SWITCH,
       x: 0,
       y: 0,
-      state: { pressed },
+      pressed,
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
@@ -72,7 +72,7 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
           type: EntityTypeId.TIDE_SWITCH,
           x: 1,
           y: 0,
-          state: { pressed: false },
+          pressed: false,
         },
         { type: EntityTypeId.WATER, x: 2, y: 0 },
         { type: EntityTypeId.TIDE, x: 2, y: 0, direction: "right" },
