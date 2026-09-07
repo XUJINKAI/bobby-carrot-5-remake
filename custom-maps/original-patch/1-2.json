@@ -347,7 +347,7 @@
     }
   },
   "meta": {
-    "name": "1-2",
-    "description": "当场上没有胡萝卜时，high-grass-objective也会变出胡萝卜"
-  }
+    "name": "1-2"
+  },
+  "note": "当场上没有胡萝卜时，high-grass-objective也会变出胡萝卜"
 }

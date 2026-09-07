@@ -163,6 +163,7 @@ function importLevel(level: EditorMap): void {
 function markDownloaded(metadata: {
   name: string;
   author?: string;
+  note?: string;
 }): void {
   page.updateMetadata(metadata);
   page.document.markSaved();

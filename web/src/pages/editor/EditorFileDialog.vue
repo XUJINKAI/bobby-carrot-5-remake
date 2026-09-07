@@ -9,24 +9,30 @@ const props = defineProps<{ open: boolean; level: Readonly<EditorMap> }>();
 const emit = defineEmits<{
   close: [];
   import: [level: EditorMap];
-  saved: [metadata: { name: string; author?: string }];
+  saved: [metadata: { name: string; author?: string; note?: string }];
 }>();
-const metadata = reactive({ name: "", author: "" });
+const metadata = reactive({ name: "", author: "", note: "" });
 watch(
   () => [props.open, props.level],
   () => {
     metadata.name = props.level.meta.name;
     metadata.author = props.level.meta.author ?? "";
+    metadata.note = props.level.note ?? "";
   },
   { immediate: true },
 );
-const exchangeLevel = computed<EditorMap>(() => ({
-  ...props.level,
-  meta: {
-    name: metadata.name,
-    ...(metadata.author ? { author: metadata.author } : {}),
-  },
-}));
+const exchangeLevel = computed<EditorMap>(() => {
+  const level: EditorMap = {
+    ...props.level,
+    meta: {
+      name: metadata.name,
+      ...(metadata.author ? { author: metadata.author } : {}),
+    },
+  };
+  if (metadata.note) level.note = metadata.note;
+  else delete level.note;
+  return level;
+});
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);
 const toolbar = {
   left: [
@@ -55,10 +61,11 @@ async function openEmbed(): Promise<void> {
   window.location.assign(url.href);
 }
 
-function metadataValue(): { name: string; author?: string } {
+function metadataValue(): { name: string; author?: string; note?: string } {
   return {
     name: metadata.name,
     ...(metadata.author ? { author: metadata.author } : {}),
+    ...(metadata.note ? { note: metadata.note } : {}),
   };
 }
 </script>
@@ -69,6 +76,7 @@ function metadataValue(): { name: string; author?: string } {
       <header><strong>地图文件</strong><button class="editor-mini-btn" type="button" @click="emit('close')">×</button></header>
       <label class="editor-field"><span>名称</span><input v-model="metadata.name" maxlength="120"></label>
       <label class="editor-field"><span>作者</span><input v-model="metadata.author" maxlength="80" placeholder="可选"></label>
+      <label class="editor-field"><span>注记</span><textarea v-model="metadata.note" maxlength="500" rows="4" placeholder="可选"></textarea></label>
       <p class="editor-muted">地图内容使用语义 JSON，可通过文本、分享链接、`.json` 或 `.bc5r` 文件交换。</p>
       <p class="editor-muted"><a :href="embedUrl" @click.prevent="openEmbed">内嵌到其他网页</a></p>
       <DataExchangePanel

@@ -11,13 +11,14 @@ const props = defineProps<{
   rules: readonly EditorRuleCapability[];
 }>();
 const emit = defineEmits<{
-  metadata: [value: { name: string; author?: string }];
+  metadata: [value: { name: string; author?: string; note?: string }];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   rule: [kind: EditorRuleKind, enabled: boolean];
 }>();
 const name = ref("");
 const author = ref("");
+const note = ref("");
 const labels: Record<EditorRuleKind, string> = {
   carrots: "收集胡萝卜",
   eggs: "放置彩蛋",
@@ -30,6 +31,7 @@ watch(
   (level) => {
     name.value = level.meta.name;
     author.value = level.meta.author ?? "";
+    note.value = level.note ?? "";
   },
   { immediate: true, deep: true },
 );
@@ -54,6 +56,7 @@ function applyMetadata(): void {
   emit("metadata", {
     name: name.value,
     ...(author.value ? { author: author.value } : {}),
+    ...(note.value ? { note: note.value } : {}),
   });
 }
 </script>
@@ -70,6 +73,10 @@ function applyMetadata(): void {
       <label class="editor-field">
         <span>作者</span>
         <input v-model="author" @change="applyMetadata">
+      </label>
+      <label class="editor-field">
+        <span>注记</span>
+        <textarea v-model="note" maxlength="500" rows="4" @change="applyMetadata"></textarea>
       </label>
     </section>
     <section class="editor-inspector-section editor-level-rules">

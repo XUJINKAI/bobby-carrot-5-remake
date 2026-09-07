@@ -67,7 +67,7 @@
   ],
   "meta": {
     "name": "Stack Lab",
-    "author": "Bobby Carrot 5 Remake",
-    "description": "验证同格 surface/content/cover 堆叠与 inspect。"
-  }
+    "author": "Bobby Carrot 5 Remake"
+  },
+  "note": "验证同格 surface/content/cover 堆叠与 inspect。"
 }

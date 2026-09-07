@@ -25,6 +25,7 @@ import {
   resolvePlacement,
   serializeEditorLevel,
   toLevelMap,
+  updateMetadata,
   validateEditorLevel,
 } from "../dist/index.js";
 
@@ -65,6 +66,20 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
       dialogue: "作者写的话",
     },
   );
+});
+
+test("Editor metadata command edits and clears the top-level note", () => {
+  const level = createBlankLevel(10, 8);
+  const withNote = updateMetadata({
+    name: "Note Test",
+    author: "xjk",
+    note: "地图注记",
+  }).apply(level);
+  assert.equal(withNote.note, "地图注记");
+  assert.deepEqual(withNote.meta, { name: "Note Test", author: "xjk" });
+
+  const withoutNote = updateMetadata({ name: "Note Test" }).apply(withNote);
+  assert.equal("note" in withoutNote, false);
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {

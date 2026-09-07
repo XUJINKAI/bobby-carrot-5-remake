@@ -82,6 +82,18 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     () => parseMapDocument({ ...documentWith([]), meta: { name: "" } }),
     /meta.name 必须为非空字符串/,
   );
+  assert.throws(
+    () =>
+      parseMapDocument({
+        ...documentWith([]),
+        meta: { name: "合同测试", description: "旧字段" },
+      }),
+    /不允许字段 description/,
+  );
+  assert.deepEqual(
+    parseMapDocument({ ...documentWith([]), note: "作者注记" }).note,
+    "作者注记",
+  );
 });
 
 test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () => {

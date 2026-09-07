@@ -36,7 +36,6 @@ export interface LevelMap {
 export interface MapMeta {
   name: string;
   author?: string;
-  description?: string;
 }
 
 /** 源文件、构建产物与分享共用的地图文档；资源身份来自路径或文件名。 */

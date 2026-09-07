@@ -101,7 +101,7 @@ function readMap(collectionId, { directory, filename, chapter }) {
   return {
     id,
     name: level.meta.name,
-    description: typeof level.meta.description === "string" ? level.meta.description : "",
+    description: "",
     ...(chapter ? { chapter } : {}),
     level,
   };

@@ -636,6 +636,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     updateMetadata(metadata: {
       name: string;
       author?: string;
+      note?: string;
     }): void {
       document.execute(updateMetadata(metadata));
     },

@@ -80,7 +80,7 @@
   ],
   "meta": {
     "name": "Footprint Lab",
-    "author": "Bobby Carrot 5 Remake",
-    "description": "验证多格 Entity footprint、Presence role 与 cover 覆盖。"
-  }
+    "author": "Bobby Carrot 5 Remake"
+  },
+  "note": "验证多格 Entity footprint、Presence role 与 cover 覆盖。"
 }

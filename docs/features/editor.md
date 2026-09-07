@@ -23,9 +23,9 @@ editor/src
   "schemaVersion": 1,
   "meta": {
     "name": "My Level",
-    "author": "optional",
-    "description": "optional"
+    "author": "optional"
   },
+  "note": "optional",
   "width": 20,
   "height": 16,
   "entities": [

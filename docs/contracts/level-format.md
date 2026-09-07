@@ -210,19 +210,18 @@ Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remai
 interface MapDocument extends LevelMap {
   meta: {
     name: string;
-    description?: string;
     author?: string;
   };
 }
 ```
 
-`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和下一张导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`。
+`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和下一张导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`，地图注记使用顶层 `LevelMap.note`。
 
 `@bobby/model` 的 `parseMapDocument()` 是持久化文档的严格入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口；未知 Entity、未知字段、错误字段值、越界坐标和非法规则都会被拒绝。
 
 ## Editor JSON
 
-Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可附加 authoring metadata，例如 name / author / description。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
+Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 name、author 与顶层 note。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
 
 `BC5R1` 是 JSON 的传输编码版本，不是地图 schemaVersion。
 

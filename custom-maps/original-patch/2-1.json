@@ -1277,7 +1277,7 @@
     }
   },
   "meta": {
-    "name": "2-1",
-    "description": "机关验证 Speed"
-  }
+    "name": "2-1"
+  },
+  "note": "机关验证 Speed"
 }

@@ -96,8 +96,6 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
   };
   if (input.meta?.author)
     level.meta.author = String(input.meta.author).slice(0, 80);
-  if (input.meta?.description)
-    level.meta.description = String(input.meta.description).slice(0, 500);
   if (typeof input.music === "string" && input.music)
     level.music = input.music;
   if (typeof input.note === "string" && input.note)

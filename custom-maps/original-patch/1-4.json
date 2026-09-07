@@ -352,7 +352,7 @@
     }
   },
   "meta": {
-    "name": "1-4",
-    "description": "当场上放一格彩蛋时，high-grass-objective也会变为彩蛋"
-  }
+    "name": "1-4"
+  },
+  "note": "当场上放一格彩蛋时，high-grass-objective也会变为彩蛋"
 }

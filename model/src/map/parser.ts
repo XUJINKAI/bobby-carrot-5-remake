@@ -14,7 +14,7 @@ const MAP_FIELDS = new Set([
   "entities",
   "rules",
 ]);
-const META_FIELDS = new Set(["name", "author", "description"]);
+const META_FIELDS = new Set(["name", "author"]);
 const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
 
 /** 校验 MapDocument 的持久化合同，并返回与输入隔离的副本。 */
@@ -91,7 +91,7 @@ function parseMapMeta(value: unknown): MapMeta {
   rejectUnknownFields(meta, META_FIELDS, "MapDocument meta");
   if (typeof meta.name !== "string" || meta.name.length === 0)
     throw new Error("MapDocument meta.name 必须为非空字符串");
-  for (const key of ["author", "description"])
+  for (const key of ["author"])
     if (meta[key] !== undefined && typeof meta[key] !== "string")
       throw new Error(`MapDocument meta.${key} 必须为字符串`);
   return structuredClone(meta) as unknown as MapMeta;

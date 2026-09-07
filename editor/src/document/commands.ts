@@ -143,16 +143,20 @@ export function reorderEntityStack(
 export function updateMetadata(metadata: {
   name: string;
   author?: string;
+  note?: string;
 }): EditorCommand {
-  return command((level) =>
-    normalizeEditorLevel({
+  return command((level) => {
+    const next: EditorMap = {
       ...level,
       meta: {
         name: metadata.name,
         ...(metadata.author ? { author: metadata.author } : {}),
       },
-    }),
-  );
+    };
+    if (metadata.note) next.note = metadata.note;
+    else delete next.note;
+    return normalizeEditorLevel(next);
+  });
 }
 
 export function resizeDocument(width: number, height: number): EditorCommand {

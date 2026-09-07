@@ -51,7 +51,7 @@ function buildOriginalCollection() {
     return {
       id: entry.id,
       name: document.meta.name,
-      description: document.meta.description ?? "",
+      description: "",
       chapter: entry.chapter,
       kind: entry.kind,
       filters: {

@@ -352,7 +352,7 @@
     }
   },
   "meta": {
-    "name": "1-1",
-    "description": "当场上有一个胡萝卜时，high-grass-objective自动变出胡萝卜"
-  }
+    "name": "1-1"
+  },
+  "note": "当场上有一个胡萝卜时，high-grass-objective自动变出胡萝卜"
 }

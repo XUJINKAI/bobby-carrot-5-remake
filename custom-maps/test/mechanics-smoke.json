@@ -682,7 +682,7 @@
   ],
   "meta": {
     "name": "Engine Mechanics Smoke Map",
-    "author": "bc5r",
-    "description": "Editor → Engine / Original JAR 回归测试夹具；不是正式谜题关。"
-  }
+    "author": "bc5r"
+  },
+  "note": "Editor → Engine / Original JAR 回归测试夹具；不是正式谜题关。"
 }
