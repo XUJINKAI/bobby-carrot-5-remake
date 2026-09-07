@@ -13,7 +13,11 @@ import {
 } from "../entity-adapter.mjs";
 import { reverseEntityMap } from "../entity-reverse-adapter.mjs";
 import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
-import { decodeDatTerrain, encodeDatTerrain } from "../dat/mapping.mjs";
+import {
+  decodeDatObject,
+  decodeDatTerrain,
+  encodeDatTerrain,
+} from "../dat/mapping.mjs";
 
 test("DAT Tide bytes use the confirmed runtime directions", () => {
   assert.equal(decodeDatTerrain(0x57), "ts-6-8:tide-down");
@@ -223,6 +227,60 @@ test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
   assert.deepEqual(
     adaptDecodedObject({ type: DecodedObject.ICE_MELT_2, x: 4, y: 3 }),
     [{ type: EntityTypeId.ICE_BLOCK, x: 4, y: 3 }],
+  );
+});
+
+test("atlas-first Object 标签仍进入已知 canonical Entity 分支", () => {
+  assert.deepEqual(
+    adaptDecodedObject({ type: decodeDatObject(0xca), x: 2, y: 3 }),
+    [{ type: MapEntityTypeId.CARROT, x: 2, y: 3 }],
+  );
+  assert.deepEqual(
+    adaptDecodedObject({ type: decodeDatObject(0xd4), x: 2, y: 3 }),
+    [{ type: MapEntityTypeId.PLANK, x: 2, y: 3 }],
+  );
+  assert.deepEqual(
+    adaptDecodedObject({ type: decodeDatObject(0xde), x: 2, y: 3 }),
+    [],
+  );
+});
+
+test("原版已登记 Object byte 不会落入坐标型 fallback", () => {
+  for (let byte = 0xc9; byte <= 0xff; byte += 1) {
+    const entities = adaptDecodedObject({
+      type: decodeDatObject(byte),
+      x: 2,
+      y: 3,
+    });
+    assert.equal(
+      entities.some((entity) => /^object-\d+-\d+$/.test(entity.type)),
+      false,
+      `0x${byte.toString(16).toUpperCase()}`,
+    );
+  }
+});
+
+test("atlas-first Object 标签参与隐藏目标和空对象判定", () => {
+  const carrotMap = adaptDecodedMap({
+    width: 2,
+    height: 1,
+    terrain: [[DecodedTerrain.START, DecodedTerrain.HIGH_GRASS_OBJECTIVE]],
+    objects: [
+      { type: decodeDatObject(0xca), x: 0, y: 0 },
+      { type: decodeDatObject(0xff), x: 1, y: 0 },
+    ],
+  });
+  assert.ok(
+    carrotMap.entities.some(
+      (entity) =>
+        entity.type === MapEntityTypeId.CARROT &&
+        entity.x === 1 &&
+        entity.y === 0,
+    ),
+  );
+  assert.equal(
+    carrotMap.entities.some((entity) => entity.type === "object-13-11"),
+    false,
   );
 });
 

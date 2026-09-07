@@ -119,11 +119,15 @@ export function adaptDecodedMap(map, options = {}) {
   const sourceObjects = map.objects ?? [];
   const explicitObjectCells = new Set(
     sourceObjects
-      .filter((object) => object.type !== DecodedObject.EMPTY)
+      .filter(
+        (object) =>
+          decodedObjectSourceSemantic(object.type) !== DecodedObject.EMPTY,
+      )
       .map((object) => `${object.x},${object.y}`),
   );
   const objectiveType = sourceObjects.some(
-    (object) => object.type === DecodedObject.CARROT,
+    (object) =>
+      decodedObjectSourceSemantic(object.type) === DecodedObject.CARROT,
   )
     ? MapEntityTypeId.CARROT
     : MapEntityTypeId.EGG_NEST;
@@ -315,6 +319,10 @@ export function adaptDecodedObject(object) {
   const alias = canonicalObjectAliases.get(type);
   if (alias) return [entity(alias.type, x, y, alias)];
 
+  if (directObjectTypes.has(type)) {
+    return [entity(type, x, y, copiedFields(object))];
+  }
+
   const variant = /^object-variant-(\d{3})$/.exec(type);
   if (variant) {
     const index = Number(variant[1]) - 1;
@@ -335,9 +343,6 @@ export function adaptDecodedObject(object) {
         y,
       ),
     ];
-  }
-  if (directObjectTypes.has(type)) {
-    return [entity(type, x, y, copiedFields(object))];
   }
   throw new Error(`Unsupported decoded object type: ${type}`);
 }
