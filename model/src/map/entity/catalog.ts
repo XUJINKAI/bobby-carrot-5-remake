@@ -14,12 +14,6 @@ import {
 
 const DIRECTIONS = ["up", "right", "down", "left"] as const;
 const HORIZONTAL_DIRECTIONS = ["left", "right"] as const;
-const CORNER_DIRECTIONS = [
-  "left-up",
-  "right-up",
-  "left-down",
-  "right-down",
-] as const;
 
 const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(
@@ -69,9 +63,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ]),
   defineEntity(MapEntityTypeId.MIRROR, [
     enumField(
-      "direction",
-      CORNER_DIRECTIONS,
-      undefined,
+      "variant",
+      [1, 2, 3, 4],
+      1,
       true,
       "Two-way mirror corner orientation.",
     ),
@@ -81,9 +75,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ]),
   defineEntity(MapEntityTypeId.CAROUSEL, [
     enumField(
-      "direction",
-      [...CORNER_DIRECTIONS, "vertical", "horizontal"],
-      undefined,
+      "variant",
+      [1, 2, 3, 4, "vertical", "horizontal"],
+      1,
       true,
     ),
   ]),
@@ -171,6 +165,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ),
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
+  defineEntity(
+    MapEntityTypeId.PUSHABLE_ROCK,
+    [],
+    "Sokoban box: visually a rock, with pushability defined by its type rather than per-map traits.",
+  ),
   defineEntity(MapEntityTypeId.KITE),
   defineEntity(MapEntityTypeId.WHIRLWIND),
   defineEntity(MapEntityTypeId.LANDING),

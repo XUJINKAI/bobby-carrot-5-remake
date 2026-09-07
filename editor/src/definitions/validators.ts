@@ -1,4 +1,5 @@
 import { validateLevelPlayability } from "@bobby/engine";
+import { entityMapDefinition } from "@bobby/model";
 import type { LevelValidationIssue } from "../level/types.js";
 import type { EditorMapValidator } from "./types.js";
 
@@ -13,6 +14,20 @@ export const registeredEntityTypesValidator: EditorMapValidator = ({
       level: "error",
       message: `Entity #${index + 1} 使用未注册 type：${entity.type}`,
     });
+  });
+  return issues;
+};
+
+export const requiredEntityFieldsValidator: EditorMapValidator = ({ map }) => {
+  const issues: LevelValidationIssue[] = [];
+  map.entities.forEach((entity, index) => {
+    for (const field of entityMapDefinition(entity.type)?.fields ?? []) {
+      if (!field.required || entity[field.key] !== undefined) continue;
+      issues.push({
+        level: "error",
+        message: `Entity #${index + 1} (${entity.type}) 缺少必填字段：${field.key}`,
+      });
+    }
   });
   return issues;
 };

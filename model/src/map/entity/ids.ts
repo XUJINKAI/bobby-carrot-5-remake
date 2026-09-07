@@ -27,6 +27,7 @@ export const MapEntityTypeId = {
   SNOWY_ROCK: "snowy-rock",
   SNOW_GROUND: "snow-ground",
   CACTUS: "cactus",
+  TALL_CACTUS: "tall-cactus",
   SAND: "sand",
   CLOUD_PARKING: "cloud-parking",
 
@@ -74,6 +75,7 @@ export const MapEntityTypeId = {
   BEAVER: "beaver",
   LEAF: "leaf",
   CRUMBLY_ROCK: "crumbly-rock",
+  PUSHABLE_ROCK: "pushable-rock",
   KITE: "kite",
   WHIRLWIND: "whirlwind",
   LANDING: "landing",

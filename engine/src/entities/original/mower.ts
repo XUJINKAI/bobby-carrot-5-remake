@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -175,5 +175,18 @@ const crumblyRockDefinition: EntityModuleDefinition = {
 export const crumblyRock: EntityModule = originalModule(
   crumblyRockDefinition,
   atlasVisual(crumblyRockDefinition, objectCell(36)),
+  [{ behavior: smashCrumblyRock }],
+);
+
+const pushableRockDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.PUSHABLE_ROCK,
+  traits: ["blocking", "crumbly-rock", "pushable"],
+  stackOrder: CONTENT_STACK_ORDER,
+  presentation: { name: "Pushable Rock" },
+};
+
+export const pushableRock: EntityModule = originalModule(
+  pushableRockDefinition,
+  atlasVisual(pushableRockDefinition, objectCell(36)),
   [{ behavior: smashCrumblyRock }],
 );

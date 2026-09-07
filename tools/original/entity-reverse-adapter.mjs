@@ -185,9 +185,9 @@ function legacyTerrainFor(entity) {
   if (type === EntityTypeId.TRAP)
     return `trap-${entity.active === false ? "inactive" : "active"}`;
   if (type === EntityTypeId.MIRROR)
-    return variantTerrain("mirror", entity.state?.variant, [1, 2, 3, 4]);
+    return variantTerrain("mirror", entity.variant, [1, 2, 3, 4]);
   if (type === EntityTypeId.CAROUSEL)
-    return variantTerrain("carousel", entity.state?.variant, [
+    return variantTerrain("carousel", entity.variant, [
       1,
       2,
       3,
@@ -311,6 +311,6 @@ function pressedTerrain(prefix, pressed) {
 }
 function variantTerrain(prefix, variant, allowed) {
   if (!allowed.includes(variant))
-    throw new Error(`${prefix} 的 state.variant 无法编码为原版 DAT`);
+    throw new Error(`${prefix} 的 variant 无法编码为原版 DAT`);
   return `${prefix}-${variant}`;
 }

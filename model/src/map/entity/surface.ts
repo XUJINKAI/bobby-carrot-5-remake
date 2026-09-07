@@ -119,8 +119,13 @@ export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object
     enumField("variant", surfaceVariants(SNOW_GROUND_COORDS), undefined, true),
   ]),
   defineEntity(MapEntityTypeId.CACTUS, [
-    enumField("variant", ["small", "round", "tall"], undefined, true),
+    enumField("variant", ["small", "round"], undefined, true),
   ]),
+  defineEntity(
+    MapEntityTypeId.TALL_CACTUS,
+    [],
+    "Two source tiles form one fixed vertical cactus.",
+  ),
   defineEntity(MapEntityTypeId.SAND),
   defineEntity(MapEntityTypeId.CLOUD_PARKING, [
     enumField("color", ["red", "purple", "green"], undefined, true),
@@ -184,9 +189,8 @@ export const SURFACE_SOURCE_MAPPINGS: readonly SurfaceSourceMapping[] = Object.f
   single(5, 15, MapEntityTypeId.CACTUS, { variant: "round" }),
   composite(
     [coord(4, 16), coord(5, 16)],
-    MapEntityTypeId.CACTUS,
+    MapEntityTypeId.TALL_CACTUS,
     "Tall two-tile cactus.",
-    { variant: "tall" },
   ),
   single(9, 16, MapEntityTypeId.SAND),
 

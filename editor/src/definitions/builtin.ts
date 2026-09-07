@@ -1,5 +1,6 @@
 import {
   EntityTypeId,
+  MapEntityTypeId,
   type Direction,
   type EntityType,
   type LevelEntity,
@@ -13,6 +14,7 @@ import {
   playerPresenceValidator,
   reachTargetValidator,
   registeredEntityTypesValidator,
+  requiredEntityFieldsValidator,
 } from "./validators.js";
 
 const directions: readonly EditorEntityVariant[] = (
@@ -142,10 +144,19 @@ export const builtinEditorDefinition: EditorDefinition = {
     [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
     [EntityTypeId.COLOR_SWITCH]: { variants: colorSwitchVariants },
     [EntityTypeId.COLOR_BLOCK]: { variants: colorBlockVariants },
-    [EntityTypeId.WIND_SWITCH]: { variants: windSwitchVariants },
+    [EntityTypeId.WIND_SWITCH]: {
+      defaultDirection: "up",
+      variants: windSwitchVariants,
+    },
     [EntityTypeId.TRAP]: { variants: activeVariants },
     [EntityTypeId.MIRROR]: { variants: fourVariants },
     [EntityTypeId.CAROUSEL]: { variants: carouselVariants },
+    [EntityTypeId.PORTAL]: {
+      variants: ["blue", "red", "green"].map((channel) => ({
+        label: channel,
+        fields: { channel },
+      })),
+    },
   },
   palette: {
     groups: [
@@ -186,6 +197,7 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.EGG_NEST_EMPTY },
             { type: EntityTypeId.EGG_NEST_FILLED },
             { type: EntityTypeId.PUSH_GOAL },
+            { type: MapEntityTypeId.PUSHABLE_ROCK },
           ],
           [
             { type: EntityTypeId.GOLDEN_CARROT },
@@ -263,21 +275,21 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.TRAP },
           ],
           [
-            { type: EntityTypeId.MIRROR },
-            { type: EntityTypeId.CAROUSEL },
+            { type: EntityTypeId.MIRROR, fields: { variant: 1 } },
+            { type: EntityTypeId.CAROUSEL, fields: { variant: 1 } },
             { type: EntityTypeId.CAROUSEL_SWITCH },
           ],
           [
             { type: EntityTypeId.DRAGON },
             { type: EntityTypeId.ICE_BLOCK },
-            { type: EntityTypeId.PORTAL },
+            { type: EntityTypeId.PORTAL, fields: { channel: "blue" } },
           ],
           [
             { type: EntityTypeId.WINDMILL_DOWN },
             { type: EntityTypeId.WINDMILL_UP },
             { type: EntityTypeId.WINDMILL_LEFT },
             { type: EntityTypeId.WINDMILL_RIGHT },
-            { type: EntityTypeId.WIND_SWITCH },
+            { type: EntityTypeId.WIND_SWITCH, direction: "up" },
             {
               type: EntityTypeId.CLOUD,
               label: "Green Cloud",
@@ -315,6 +327,7 @@ export const builtinEditorDefinition: EditorDefinition = {
   },
   validators: [
     registeredEntityTypesValidator,
+    requiredEntityFieldsValidator,
     playerPresenceValidator,
     reachTargetValidator,
   ],
