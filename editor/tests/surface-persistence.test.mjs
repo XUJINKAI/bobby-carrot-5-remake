@@ -23,7 +23,7 @@ function surfaceAt(level, x, y) {
 }
 
 function hasAutoMetadata(entity) {
-  return Object.keys(entity?.properties ?? {}).some((key) =>
+  return Object.keys(entity ?? {}).some((key) =>
     key.startsWith("__editorSurface"),
   );
 }
@@ -41,7 +41,7 @@ test("Auto Surface is materialized before persistence and stays stable after reo
   const fixed = surfaceAt(materialized, 1, 1);
   assert.ok(fixed);
   assert.equal(hasAutoMetadata(fixed), false);
-  assert.ok(Number.isInteger(fixed.state?.variant));
+  assert.match(fixed.variant, /^ts-\d+-\d+$/);
 
   const first = serializeEditorLevel(draft);
   const reopened = parseEditorLevel(first);
@@ -60,7 +60,7 @@ test("Exact Surface persists the selected concrete visual", () => {
   const reopened = parseEditorLevel(serializeEditorLevel(draft));
   const fixed = surfaceAt(reopened, 2, 1);
   assert.ok(fixed);
-  assert.equal(fixed.type, surfaceTerrain("grass").primary);
-  assert.equal(fixed.state?.variant, 113);
+  assert.equal(fixed.type, "grass");
+  assert.equal(fixed.variant, "ts-8-1");
   assert.equal(hasAutoMetadata(fixed), false);
 });
