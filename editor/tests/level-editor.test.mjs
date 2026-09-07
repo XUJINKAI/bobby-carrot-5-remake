@@ -29,13 +29,13 @@ const catalog = createBuiltinEntityCatalog();
 
 test("Editor JSON only stores canonical Entity Map plus document metadata", () => {
   const level = createBlankLevel(10, 8);
-  level.name = "Test Map";
-  level.author = "xjk";
+  level.meta.name = "Test Map";
+  level.meta.author = "xjk";
   level.entities.push({
     type: EntityTypeId.SANDMAN,
     x: 4,
     y: 4,
-    properties: { dialogue: "作者写的话" },
+    dialogue: "作者写的话",
   });
   const json = serializeEditorLevel(level);
   assert.equal(json.includes("\"terrain\""), false);
@@ -59,7 +59,7 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
       type: EntityTypeId.SANDMAN,
       x: 4,
       y: 4,
-      properties: { dialogue: "作者写的话" },
+      dialogue: "作者写的话",
     },
   );
 });
@@ -176,7 +176,7 @@ test("Editor replaceGroup replaces only matching authoring layers", () => {
   );
 });
 
-test("Entity state traits and instance stack order round-trip", () => {
+test("Entity fields and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
     {
@@ -184,26 +184,21 @@ test("Entity state traits and instance stack order round-trip", () => {
       x: 3,
       y: 3,
       stackOrder: 2300,
-      state: { pressed: true },
+      pressed: true,
     },
-    {
-      type: EntityTypeId.CRUMBLY_ROCK,
-      x: 4,
-      y: 3,
-      traits: ["pushable"],
-    },
+    { type: EntityTypeId.CRUMBLY_ROCK, x: 4, y: 3 },
   );
   const parsed = parseEditorLevel(serializeEditorLevel(level));
   const speedSwitch = parsed.entities.find(
     (entity) => entity.type === EntityTypeId.SPEED_SWITCH,
   );
-  assert.deepEqual(speedSwitch?.state, { pressed: true });
+  assert.equal(speedSwitch?.pressed, true);
   assert.equal(speedSwitch?.stackOrder, 2300);
-  assert.deepEqual(
+  assert.equal(
     parsed.entities.find(
       (entity) => entity.type === EntityTypeId.CRUMBLY_ROCK,
     )?.traits,
-    ["pushable"],
+    undefined,
   );
 });
 
