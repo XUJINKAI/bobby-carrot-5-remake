@@ -46,7 +46,10 @@ export function instantiateLevelEntity(
 ): EntityInstance {
   const definition = entityMapDefinition(source.type);
   const state: EntityState = {};
-  let direction: Direction | undefined;
+  let direction: Direction | undefined =
+    definition === undefined && isDirection(source.direction)
+      ? source.direction
+      : undefined;
 
   for (const field of definition?.fields ?? []) {
     const raw = source[field.key];
