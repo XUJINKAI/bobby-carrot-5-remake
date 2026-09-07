@@ -30,18 +30,18 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
       })),
       { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
       { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
-      { type: EntityTypeId.TRAP, x: 2, y: 0, state: { active: true } },
+      { type: EntityTypeId.TRAP, x: 2, y: 0, active: true },
       { type: EntityTypeId.LANDING, x: 3, y: 0 },
       {
         type: EntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
 
   const takeoff = move(world, actor.id, "right");
   assert.equal(world.entity(actor.id).state.flying, true);
@@ -108,6 +108,7 @@ test("Airborne movement chains without a stationary World tick", () => {
     { motionDurationMs: 350 },
   );
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
 
   let airborne = false;
@@ -140,12 +141,12 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
         type: EntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   const boundary = world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
@@ -177,12 +178,12 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
         type: EntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
 
   const downed = world.downActor(actor.id, "test-down");
