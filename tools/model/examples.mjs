@@ -314,7 +314,7 @@ function adventureSaveExample() {
     schemaVersion: 1,
     game: BC5R_GAME_ID,
     campaign: {
-      completedLevels: ["1-1", "1-bonus-1"],
+      completedThrough: { "1": "1-bonus-1" },
       completedEvents: ["bonus-key-trial"],
       resumeLevelId: "1-2",
     },

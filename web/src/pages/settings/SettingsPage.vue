@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { AdventureSave } from "@bobby/adventure";
+import {
+  completedAdventureLevelCount,
+  type AdventureSave,
+} from "@bobby/adventure";
 import { computed, ref } from "vue";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
@@ -21,6 +24,9 @@ const adventureSave = ref(loadAdventureSave());
 const exploreSave = ref(loadExploreProgressSave());
 const adventureFeedback = ref("");
 const exploreFeedback = ref("");
+const adventureCompletedCount = computed(() =>
+  completedAdventureLevelCount(adventureSave.value),
+);
 
 const toolbar = {
   left: [
@@ -101,7 +107,7 @@ function exportFilename(kind: "adventure" | "explore"): string {
               <p>Campaign 进度、Bonus Coin 和 Golden Carrot。</p>
             </div>
             <span class="save-summary">
-              {{ adventureSave.campaign.completedLevels.length }} 已完成 ·
+              {{ adventureCompletedCount }} 已完成 ·
               {{ adventureSave.economy.bonusCoins }} Bonus Coin ·
               {{ adventureSave.economy.goldenCarrots }} Golden Carrot
             </span>

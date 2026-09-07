@@ -4,12 +4,15 @@ import { EntityTypeId } from "../../model/dist/index.js";
 import {
   adventureLevelId,
   campaignSequenceForChapter,
+  completedAdventureLevelCount,
   completeAdventureLevel,
   createAdventureLevelInstance,
   createAdventureSave,
   grantAdventureItem,
   isAdventureChapterCompleted,
+  isAdventureLevelCompleted,
   isAdventureLevelUnlocked,
+  parseAdventureSave,
   planAdventureSession,
   setAdventureResumeLevel,
   specialSceneIdForSource,
@@ -43,8 +46,29 @@ test("every chapter is selectable while progression remains linear inside each c
     assert.equal(isAdventureLevelUnlocked(save, `${chapter}-2`), false);
   }
   save = completeAdventureLevel(save, "20-1");
+  assert.deepEqual(save.campaign.completedThrough, { "20": "20-1" });
+  assert.equal(isAdventureLevelCompleted(save, "20-1"), true);
   assert.equal(isAdventureLevelUnlocked(save, "20-2"), true);
   assert.equal(isAdventureLevelUnlocked(save, "20-3"), false);
+  assert.throws(
+    () => completeAdventureLevel(save, "20-3"),
+    /尚未解锁/,
+  );
+});
+
+test("Adventure Save 只接受每章一个完成位置", () => {
+  assert.throws(
+    () =>
+      parseAdventureSave(JSON.stringify({
+        ...createAdventureSave(),
+        campaign: {
+          completedLevels: ["1-1"],
+          completedEvents: [],
+          resumeLevelId: "1-2",
+        },
+      })),
+    /completedThrough/,
+  );
 });
 
 test("resume follows the last unfinished level and replaying completed levels does not move it", () => {
@@ -61,12 +85,13 @@ test("resume follows the last unfinished level and replaying completed levels do
 test("bonus levels remain mandatory for chapter completion", () => {
   let save = createAdventureSave();
   const sequence = campaignSequenceForChapter(1);
-  for (const id of sequence.filter((id) => !id.includes("bonus")))
+  for (const id of sequence.slice(0, -1))
     save = completeAdventureLevel(save, id);
   assert.equal(isAdventureChapterCompleted(save, 1), false);
-  save = completeAdventureLevel(save, "1-bonus-1");
-  save = completeAdventureLevel(save, "1-bonus-2");
+  assert.deepEqual(save.campaign.completedThrough, { "1": "1-9" });
+  save = completeAdventureLevel(save, "1-10");
   assert.equal(isAdventureChapterCompleted(save, 1), true);
+  assert.equal(completedAdventureLevelCount(save), 12);
 });
 
 test("map-native currency remains present on every new Adventure level instance", () => {
