@@ -20,11 +20,11 @@ Adapter 因而必须将原版的单层编码展开为完整的语义堆叠；反
 大多数原版 terrain 直接转换为同名语义 Entity。编码把多种含义合并到一个
 terrain byte 时，Adapter 按下列规则展开：
 
-- `snow` 展开为 `ground-d` 与 `snow`。
+- `snow` 展开为带明确 atlas variant 的 `grass` 与 `snow`。
 - `high-grass` 展开为割草后应留下的 ground，以及 `high-grass` cover。
 - `high-grass-objective` 使用相同 ground 和 cover，并按下节规则补出隐藏主目标。
 - 含方向、开关状态、颜色方块状态或变体的 terrain byte，转换为一个 canonical
-  Entity 及其 `direction`、`properties` 或 `state`。
+  Entity 及其 Definition 声明的顶层字段。
 
 这些展开结果使 Engine 只处理语义 Entity，不依赖 DAT byte 或原版的 terrain /
 object 分层方式。
@@ -37,7 +37,7 @@ materialize 该格缺失的内容 Entity：
 
 1. 如果该格有显式的非空 object，转换该 object，不额外生成隐藏目标。
 2. 如果该格没有显式 object，且地图任意位置有显式 `carrot`，生成 `carrot`。
-3. 如果该格没有显式 object，且地图没有显式 `carrot`，生成 `egg-nest-empty`。
+3. 如果该格没有显式 object，且地图没有显式 `carrot`，生成 `egg-nest`。
 
 因此，隐藏目标的类型由该地图的目标模式决定，并非只由单个
 `high-grass-objective` terrain byte 决定。转换后的同格顺序为：ground、隐藏目标

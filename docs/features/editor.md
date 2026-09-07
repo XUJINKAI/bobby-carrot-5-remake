@@ -21,13 +21,15 @@ editor/src
 ```json
 {
   "schemaVersion": 1,
-  "name": "My Level",
-  "author": "optional",
-  "description": "optional",
+  "meta": {
+    "name": "My Level",
+    "author": "optional",
+    "description": "optional"
+  },
   "width": 20,
   "height": 16,
   "entities": [
-    { "type": "ground-c", "x": 0, "y": 0 },
+    { "type": "grass", "x": 0, "y": 0, "variant": "ts-10-1" },
     { "type": "carrot", "x": 4, "y": 8 }
   ]
 }
@@ -144,7 +146,7 @@ Share URL fragment
 Editor JSON 与原版 JAR patch 围绕同一套 semantic `LevelMap`：
 
 ```text
-Editor Draft -> Play Test -> bc5r Engine
+Editor Draft -> Play Test -> Bobby Carrot 5 Remake Engine
             \-> Original DAT tooling -> patched JAR -> original Java ME Engine
 ```
 

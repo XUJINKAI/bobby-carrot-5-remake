@@ -14,7 +14,7 @@ npm run verify
 - 验证 semantic schema、public ID、章节星级和 collection metadata；
 - 对所有官方 Campaign map 验证 `dynamic_slots` 可从 LevelMap 派生；
 - 运行 DAT byte-for-byte record round-trip 测试；
-- 运行 Adventure / Engine / Editor 回归测试，包括 `LevelObject.properties`、Sandman dialogue 和 Adventure map augmentation；
+- 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、Sandman dialogue 和 Adventure map augmentation；
 - 生成一个临时 patched original JAR 并做 JAR → DAT → LevelMap round-trip；
 - 校验依赖方向：Web、Editor、Engine 不允许依赖 `@bobby/dat`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；
 - 校验用户地图只保留 JSON 产品路径，不允许旧 DAT-backed URL share 代码回来；

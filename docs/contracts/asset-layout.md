@@ -89,7 +89,7 @@ Collection JSON 不保存 atlas 坐标。
 /assets/maps/<collection>/<map-id>.json
 ```
 
-Play route 不需要 collection index。地图的 `meta.next` 提供同 collection 下一张导航。
+Play route 直接加载当前 MapDocument；同 collection 的列表与下一张导航来自 collection index。
 
 MapDocument 的 gameplay 部分统一是 Entity Map v1。Bobby 是 Entity；Start 如果存在也是普通 surface Entity，不承担出生语义。具体规则见 `docs/contracts/level-format.md`。
 
@@ -147,7 +147,7 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成 `ground-c` surface，目标生成 `push-goal` surface，箱子生成带 `pushable` Trait 的 Crumbly Rock，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-rock`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
 `custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
 

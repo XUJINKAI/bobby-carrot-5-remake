@@ -22,10 +22,10 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - 死亡/通关状态与 Web Result 层；
 - semantic Tile/Object Definition 调试检查；需要原版 hex provenance 时由 Web/Editor Debug 层查询 `@bobby/dat`。
 
-地图内限时挑战由 `LevelObject.properties` 描述。当前 Lock 支持：
+地图内限时挑战由 Lock 的类型专属字段描述：
 
 ```text
-timedChallengeMs = 60000
+deathCountdownSeconds = 60
 ```
 
 成功打开带该属性的 Lock 后，Engine 启动倒计时；取得 Golden Carrot、完成关卡或死亡时结束倒计时，超时由 Engine 触发死亡。Undo 恢复计时快照，Restart 和重新加载关卡重置计时状态。

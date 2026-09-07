@@ -27,25 +27,20 @@ Original DAT tooling 是原版格式互操作边界，不属于浏览器产品�
 
 ## @bobby/model
 
-`model/` 是最底层的稳定语义合同，只包含：
-
-- `TerrainType` / `ObjectType`；
-- `Terrain` / `ObjectId` 稳定语义常量；
-- `LevelObject`；
-- `LevelMap { width, height, terrain, objects, rules? }`。
-
-对象实例可以携带可选参数：
+`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和严格 parser。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
 
 ```ts
-interface LevelObject {
-  type: ObjectType;
+interface LevelEntity {
+  type: EntityType;
   x: number;
   y: number;
-  properties?: Record<string, string>;
+  direction?: Direction;
+  stackOrder?: number;
+  [field: string]: JsonPrimitive | undefined;
 }
 ```
 
-`LevelObject.traits`、`properties` 与 `rules` 承载声明式地图 gameplay semantics。实例 Trait 只能来自 Definition 的 `authoring.traits` 白名单；参数由 `authoring.properties` 描述。它们不表达 DAT、Catalog、Adventure 或 Editor 来源。具体执行逻辑只位于 Engine，Engine 始终只接收一份 `LevelMap`。
+字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 
@@ -86,14 +81,14 @@ Engine 负责：
 Game 的关卡输入只有纯 `LevelMap`：
 
 ```text
-LevelMap(anchor objects + optional properties)
+LevelMap(anchor entities + type-owned fields)
        ↓ Game.loadLevel
-Object Layout expansion
+Entity Layout expansion
        ↓
 Runtime World occupancy
 ```
 
-多格对象展开时保留 anchor 的实例 `properties`，因此隐式 runtime cell 仍能访问同一份实例参数。
+多格 Entity 展开时保留同一个 runtime Entity identity，因此所有 footprint Presence 都读取同一份实例字段与 runtime state。
 
 判断一条规则属于 Engine 还是 Adventure 时，优先问：**脱离 Campaign，单独加载这张 `LevelMap` 时规则是否仍然应该成立？** 如果成立，它就是地图内 gameplay rule，进入 Engine；只有章节、跨关存档、永久经济等 Campaign 语义进入 Adventure。
 
@@ -192,7 +187,7 @@ action = "open"
 触碰 Sandman 是普通 Definition-driven Object touch：
 
 ```text
-LevelObject.properties.dialogue
+LevelEntity.dialogue
         ↓
 Object Definition touch behavior
         ↓
@@ -207,16 +202,16 @@ Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持
 
 ### 地图内 Timed Challenge
 
-地图实例可以通过 `LevelObject.properties` 为 Lock 声明限时挑战：
+地图实例可以通过 Lock 的类型专属字段声明限时挑战：
 
 ```text
-Lock.properties.timedChallengeMs = "60000"
+Lock.deathCountdownSeconds = 60
 ```
 
 运行关系：
 
 ```text
-成功打开带 timedChallengeMs 的 Lock
+成功打开带 deathCountdownSeconds 的 Lock
         ↓
 Engine TimedChallenge
         ├─ Golden Carrot -> clear
@@ -234,21 +229,21 @@ Engine TimedChallenge
 Tile Definition Registry
 ├─ id
 ├─ presentation
-├─ traits
+├─ gameplay traits
 ├─ behaviors[]
 └─ authoring
    ├─ palette
-   └─ properties[]
+   └─ map fields[]
       ├─ string
       └─ enum
 
-Object Layout Definition
+Entity Layout Definition
 ├─ footprint[]
 ├─ cursor
 └─ authoringVariants[]
 ```
 
-`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Object 的 authoring 可见性。`authoring.properties` 描述当前对象允许编辑的实例参数；Editor Inspector 直接消费这份 Definition metadata，不维护对象类型特判表。
+`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Entity 的 authoring 可见性。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
 
 当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 
@@ -264,32 +259,32 @@ Object Layout Definition
 - Adventure Save contract；
 - 全局经济 / 永久升级 / 一次性奖励位置；
 - Adventure session plan；
-- 在基础 `LevelMap` 进入 Engine 前按需要增强对象实例参数。
+- 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
 
 地图准备顺序固定为：
 
 ```text
 base / official LevelMap
         ↓
-Adventure object-property augmentation
+Adventure Entity field augmentation
         ↓
 persistent reward filtering
         ↓
 Engine Game.loadLevel(LevelMap)
 ```
 
-Adventure 可以覆盖 Sandman `dialogue`、Lock `timedChallengeMs` 或未来已经由 semantic Definition 定义的实例参数；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
+Adventure 可以覆盖 Sandman `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
 ### 原版 Bonus 地图增强
 
-Original Adapter 知道哪些 source record 是 Bonus 关，并把原版 60 秒事实编码成普通地图实例属性：
+Adventure 根据 Campaign node 判断 Bonus 关，并把原版 60 秒策略写入 session 地图的普通 Entity 字段：
 
 ```text
 Bonus LevelMap
    ↓
-Lock.properties.timedChallengeMs = "60000"
+Lock.deathCountdownSeconds = 60
    ↓
 Engine
 ```
@@ -331,11 +326,11 @@ assets/maps/<collection>/<map>.json
 
 ## Editor
 
-Editor 持久化 `EditorLevel extends LevelMap`：
+Editor 持久化 `MapDocument extends LevelMap`：
 
-- `schemaVersion / name / author / description`；
-- semantic terrain / objects；
-- `LevelObject.properties`；
+- `schemaVersion` 与 `meta.name / author / description`；
+- semantic `entities[]`；
+- `LevelEntity` 类型专属顶层字段；
 - multi-cell 只保存 anchor。
 
 用户地图的长期内容格式是 JSON，浏览器 Data Exchange 为它提供统一传输表示：
@@ -350,7 +345,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Engine Definition 的 `authoring.properties` 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `timedChallengeMs` 都通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
