@@ -406,7 +406,7 @@ const EMPTY_COLLECTIONS_INDEX: MapCollectionsIndex = {
 
 const EMPTY_ADVENTURE_INDEX: AdventureIndex = {
   schemaVersion: 1,
-  name: "Bobby Carrot 5",
+  name: "Bobby Carrot 5 Remake",
   chapters: [],
   specialScenes: [],
 };
