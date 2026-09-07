@@ -157,11 +157,11 @@ export function decodeDatTerrain(byte) {
   const surface = surfaceMappingForTs(row, column)?.type;
   const semantic =
     decoded && !VISUAL_TERRAIN_BYTES.has(code) ? decoded : surface ?? decoded;
-  return semantic ? `${semantic}:${coordinate}` : coordinate;
+  return `${coordinate}:${semantic ?? "unknown-terrain"}`;
 }
 
 export function encodeDatTerrain(type) {
-  const taggedCoordinate = /(?:^|:)ts-(\d+)-(\d+)$/.exec(type);
+  const taggedCoordinate = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
   if (taggedCoordinate)
     return byteFromTsCoordinate(
       Number(taggedCoordinate[1]),
@@ -169,6 +169,9 @@ export function encodeDatTerrain(type) {
     );
   const known = DAT_BY_TERRAIN.get(type);
   if (known !== undefined) return known;
+  const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
+  if (coordinate)
+    return byteFromTsCoordinate(Number(coordinate[1]), Number(coordinate[2]));
   const walkable = /^walkable-variant-(\d{2})$/.exec(type);
   if (walkable) return normalizeByte(0x60 + Number(walkable[1]) - 1);
   const background = /^background-variant-(\d{3})$/.exec(type);
@@ -195,18 +198,63 @@ function byteFromTsCoordinate(row, column) {
 
 export function decodeDatObject(byte) {
   const code = normalizeByte(byte);
-  return (
-    OBJECT_BY_DAT.get(code) ??
-    `object-variant-${String(code + 1).padStart(3, "0")}`
-  );
+  const semantic = OBJECT_BY_DAT.get(code);
+  return `${tsCoordinateFromByte(code)}:${objectLabelSemantic(semantic)}`;
 }
 
 export function encodeDatObject(type) {
+  const taggedCoordinate = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
+  if (taggedCoordinate)
+    return byteFromTsCoordinate(
+      Number(taggedCoordinate[1]),
+      Number(taggedCoordinate[2]),
+    );
   const known = DAT_BY_OBJECT.get(type);
   if (known !== undefined) return known;
   const variant = /^object-variant-(\d{3})$/.exec(type);
   if (variant) return normalizeByte(Number(variant[1]) - 1);
   throw new Error(`No original DAT object mapping for semantic type: ${type}`);
+}
+
+/** decoded 标签中的坐标是 DAT byte 的无损身份，后缀只用于人工审阅。 */
+export function decodedAtlasCoordinate(type) {
+  const match = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
+  return match ? `ts-${match[1]}-${match[2]}` : undefined;
+}
+
+/** 返回 terrain byte 对应的原版细分语义，供唯一 Adapter 边界消费。 */
+export function decodedTerrainSourceSemantic(type) {
+  const coordinate = decodedAtlasCoordinate(type);
+  if (!coordinate) return type;
+  const code = encodeDatTerrain(type);
+  return TERRAIN_BY_DAT.get(code) ?? type.slice(type.indexOf(":") + 1);
+}
+
+/** 返回 object byte 对应的原版细分语义，供唯一 Adapter 边界消费。 */
+export function decodedObjectSourceSemantic(type) {
+  const coordinate = decodedAtlasCoordinate(type);
+  if (!coordinate) return type;
+  const code = encodeDatObject(type);
+  return OBJECT_BY_DAT.get(code) ?? "unknown-object";
+}
+
+function objectLabelSemantic(semantic) {
+  if (!semantic) return "unknown-object";
+  if (/^(?:consumed-)?carrot$/.test(semantic)) return "carrot";
+  if (/^egg-nest-(?:empty|filled)$/.test(semantic)) return "egg-nest";
+  if (/^(?:beanstalk-(?:tip|mid|base)|bean-sprout)$/.test(semantic))
+    return "beanstalk";
+  if (/^windmill-(?:up|down|left|right)$/.test(semantic)) return "windmill";
+  if (/^plank(?:-(?:crumbling|fragment))?$/.test(semantic)) return "plank";
+  if (/^dragon-(?:head|body|tail|anim-[12])$/.test(semantic)) return "dragon";
+  if (semantic === "sandman-body") return "sandman";
+  if (semantic === "dream-machine-body") return "dream-machine";
+  if (/^cloud-grid-/.test(semantic)) return "cloud-parking";
+  if (/^cloud-(?:red|purple|green)$/.test(semantic)) return "cloud";
+  if (/^ice-(?:block|melt-[123])$/.test(semantic)) return "ice-block";
+  if (/^beaver-(?:base|body)$/.test(semantic)) return "beaver";
+  if (/^fence-[1-6]$/.test(semantic)) return "fence";
+  return semantic;
 }
 
 export function datSourceForTerrain(type) {

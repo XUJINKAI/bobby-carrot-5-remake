@@ -5,6 +5,10 @@ import {
   SURFACE_SOURCE_MAPPINGS,
 } from "@bobby/model";
 import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
+import {
+  ORIGINAL_ENTITY_CORRESPONDENCE,
+  correspondenceByField,
+} from "./entity-correspondence.mjs";
 
 const directTerrainTypes = new Set([
   DecodedTerrain.WATER,
@@ -44,28 +48,11 @@ const specialObjectTypes = new Set([
   DecodedObject.ICE_MELT_1,
   DecodedObject.ICE_MELT_2,
   DecodedObject.ICE_MELT_3,
-  DecodedObject.FENCE_1,
-  DecodedObject.FENCE_2,
-  DecodedObject.FENCE_3,
-  DecodedObject.FENCE_4,
-  DecodedObject.FENCE_5,
-  DecodedObject.FENCE_6,
+  ...ORIGINAL_ENTITY_CORRESPONDENCE.fence.map((item) => item.decoded),
 ]);
 const directObjectTypes = new Set(
   Object.values(DecodedObject).filter((type) => !specialObjectTypes.has(type)),
 );
-const WIND_DIRECTION_INDEX = {
-  up: 0,
-  down: 1,
-  left: 2,
-  right: 3,
-};
-const CAROUSEL_DAT_VARIANTS = {
-  "right-top": 1,
-  "left-top": 2,
-  "left-bottom": 3,
-  "right-bottom": 4,
-};
 
 /** 将产品 Entity Map 还原为 DAT 编码器专用的 decoded terrain/object 表示。 */
 export function reverseEntityMap(map) {
@@ -182,7 +169,11 @@ function decodedTerrainFor(entity) {
     return pressedTerrain("color-pink-switch", entity.state?.pressed);
   }
   if (type === EntityTypeId.WIND_SWITCH) {
-    const channel = WIND_DIRECTION_INDEX[entity.direction];
+    const channel = correspondenceByField(
+      "windSwitch",
+      "direction",
+      entity.direction,
+    )?.channel;
     if (channel === undefined)
       throw new Error("wind-switch 的 direction 必须是 up/down/left/right");
     return `wind-switch-${channel}-${entity.active === true ? "on" : "off"}`;
@@ -191,12 +182,15 @@ function decodedTerrainFor(entity) {
     return `trap-${entity.active === false ? "inactive" : "active"}`;
   if (type === EntityTypeId.MIRROR)
     return variantTerrain("mirror", entity.variant, [1, 2, 3, 4]);
-  if (type === EntityTypeId.CAROUSEL)
-    return variantTerrain(
+  if (type === EntityTypeId.CAROUSEL) {
+    const decoded = correspondenceByField(
       "carousel",
-      CAROUSEL_DAT_VARIANTS[entity.variant] ?? entity.variant,
-      [1, 2, 3, 4, "vertical", "horizontal"],
-    );
+      "variant",
+      entity.variant,
+    )?.decoded;
+    if (!decoded) throw new Error("carousel 的 variant 无法编码为原版 DAT");
+    return decoded;
+  }
   if (type === EntityTypeId.COLOR_YELLOW_BLOCK)
     return `color-yellow-block-${entity.state?.raised ? "raised" : "lowered"}`;
   if (type === EntityTypeId.COLOR_PINK_BLOCK)
@@ -282,15 +276,11 @@ function objectFor(entity) {
     return [{ type: decodedType, x, y }];
   }
   if (type === MapEntityTypeId.FENCE) {
-    const variant = /^ts-16-(1[0-5])$/.exec(entity.variant)?.[1];
-    const decodedType = [
-      DecodedObject.FENCE_1,
-      DecodedObject.FENCE_2,
-      DecodedObject.FENCE_3,
-      DecodedObject.FENCE_4,
-      DecodedObject.FENCE_5,
-      DecodedObject.FENCE_6,
-    ][Number(variant) - 10];
+    const decodedType = correspondenceByField(
+      "fence",
+      "variant",
+      entity.variant,
+    )?.decoded;
     if (!decodedType)
       throw new Error("fence 的 variant 必须是 ts-16-10 到 ts-16-15");
     return [{ type: decodedType, x, y }];

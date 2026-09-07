@@ -4,9 +4,12 @@ import fs from "node:fs";
 import {
   datSourceForObject,
   datSourceForTerrain,
+  decodeDatObject,
   decodeDatTerrain,
   decodeDatLevelRecord,
   deriveDatDynamicSlots,
+  encodeDatObject,
+  encodeDatTerrain,
   encodeDatLevelRecord,
   replaceDatLevelRecord,
   splitDatPackage,
@@ -21,7 +24,7 @@ test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const decoded = decodeDatLevelRecord(record);
   assert.equal(
     decoded.map.terrain[16]?.[7],
-    `${DecodedTerrain.START}:ts-10-6`,
+    "ts-10-6:start",
   );
   assert.equal(deriveDatDynamicSlots(decoded.map), decoded.dynamicSlots);
   assert.deepEqual(
@@ -83,7 +86,7 @@ test("original DAT provenance belongs to the Original tooling boundary", () => {
 });
 
 test("atlas-tagged semantic variants keep inferred DAT provenance in Original tooling", () => {
-  assert.equal(decodeDatTerrain(0x2b), "tree:ts-3-12");
+  assert.equal(decodeDatTerrain(0x2b), "ts-3-12:tree");
 
   const walkable = datSourceForTerrain("ts-7-1");
   assert.equal(walkable?.datHexIds[0], "0x60");
@@ -96,4 +99,23 @@ test("atlas-tagged semantic variants keep inferred DAT provenance in Original to
   const objectVariant = datSourceForObject("object-variant-001");
   assert.equal(objectVariant?.datHexIds[0], "0x00");
   assert.equal(objectVariant?.confidence, "inferred");
+});
+
+test("decoded terrain 与 object 使用统一的 atlas-first 标签", () => {
+  for (let byte = 0; byte <= 0xff; byte += 1) {
+    const terrain = decodeDatTerrain(byte);
+    const object = decodeDatObject(byte);
+    assert.match(
+      terrain,
+      /^ts-(?:[1-9]|1[0-6])-(?:[1-9]|1[0-6]):[a-z0-9-]+$/,
+    );
+    assert.match(
+      object,
+      /^ts-(?:[1-9]|1[0-6])-(?:[1-9]|1[0-6]):[a-z0-9-]+$/,
+    );
+    assert.equal(encodeDatTerrain(terrain), byte);
+    assert.equal(encodeDatObject(object), byte);
+  }
+  assert.equal(decodeDatTerrain(0x3c), "ts-4-13:tree");
+  assert.equal(decodeDatObject(0xfd), "ts-16-14:fence");
 });

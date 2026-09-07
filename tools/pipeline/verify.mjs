@@ -10,6 +10,7 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
+assertDecodedArchiveLabels();
 for (const file of [
   "custom-maps/loma-pushbox/01/01-01.json",
   "custom-maps/novoban-pushbox/01.json",
@@ -236,6 +237,33 @@ function assertPushboxWinRule(document, relative) {
 function assertSchemaV1(value, relative) {
   if (!value || typeof value !== "object" || value.schemaVersion !== 1)
     throw new Error(`${relative}: schemaVersion 必须严格为 1`);
+}
+
+function assertDecodedArchiveLabels() {
+  const decodedRoot = path.join(root, "original/decoded");
+  const label = /^ts-(?:[1-9]|1[0-6])-(?:[1-9]|1[0-6]):[a-z0-9-]+$/;
+  for (const release of fs.readdirSync(decodedRoot, { withFileTypes: true })) {
+    if (!release.isDirectory()) continue;
+    const levelsRoot = path.join(decodedRoot, release.name, "levels");
+    if (!fs.existsSync(levelsRoot)) continue;
+    for (const relative of listFiles(levelsRoot)) {
+      if (!relative.endsWith(".json")) continue;
+      const file = path.join(levelsRoot, relative);
+      const document = readJson(file);
+      for (const [rowIndex, row] of document.terrain.entries()) {
+        for (const [columnIndex, type] of row.entries()) {
+          if (!label.test(type))
+            throw new Error(
+              `${file}: terrain (${columnIndex},${rowIndex}) 必须使用 atlas-first 标签`,
+            );
+        }
+      }
+      for (const object of document.objects) {
+        if (!label.test(object.type))
+          throw new Error(`${file}: object 必须使用 atlas-first 标签`);
+      }
+    }
+  }
 }
 
 function assertMapDocument(document, relative) {

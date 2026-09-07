@@ -16,10 +16,10 @@ import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
 import { decodeDatTerrain, encodeDatTerrain } from "../dat/mapping.mjs";
 
 test("DAT Tide bytes use the confirmed runtime directions", () => {
-  assert.equal(decodeDatTerrain(0x57), `${DecodedTerrain.TIDE_DOWN}:ts-6-8`);
-  assert.equal(decodeDatTerrain(0x58), `${DecodedTerrain.TIDE_UP}:ts-6-9`);
-  assert.equal(decodeDatTerrain(0x59), `${DecodedTerrain.TIDE_RIGHT}:ts-6-10`);
-  assert.equal(decodeDatTerrain(0x5a), `${DecodedTerrain.TIDE_LEFT}:ts-6-11`);
+  assert.equal(decodeDatTerrain(0x57), "ts-6-8:tide-down");
+  assert.equal(decodeDatTerrain(0x58), "ts-6-9:tide-up");
+  assert.equal(decodeDatTerrain(0x59), "ts-6-10:tide-right");
+  assert.equal(decodeDatTerrain(0x5a), "ts-6-11:tide-left");
   assert.equal(encodeDatTerrain(DecodedTerrain.TIDE_DOWN), 0x57);
   assert.equal(encodeDatTerrain(DecodedTerrain.TIDE_LEFT), 0x5a);
 });
@@ -290,6 +290,17 @@ test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
       },
     ]);
   }
+  assert.deepEqual(
+    adaptDecodedObject({ type: "ts-16-14:fence", x: 4, y: 3 }),
+    [
+      {
+        type: MapEntityTypeId.FENCE,
+        x: 4,
+        y: 3,
+        variant: "ts-16-14",
+      },
+    ],
+  );
 });
 
 test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
@@ -297,6 +308,9 @@ test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-7-1" },
   ]);
   assert.deepEqual(adaptDecodedTerrain("ts-4-13", 1, 0), [
+    { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
+  ]);
+  assert.deepEqual(adaptDecodedTerrain("ts-4-13:tree", 1, 0), [
     { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
   ]);
   assert.deepEqual(

@@ -5,6 +5,15 @@ import {
   legacyEntityMapAlias,
 } from "@bobby/model";
 import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
+import {
+  decodedAtlasCoordinate,
+  decodedObjectSourceSemantic,
+  decodedTerrainSourceSemantic,
+} from "./dat/mapping.mjs";
+import {
+  ORIGINAL_ENTITY_CORRESPONDENCE,
+  correspondenceByDecoded,
+} from "./entity-correspondence.mjs";
 
 const directTerrainTypes = new Set([
   DecodedTerrain.WATER,
@@ -43,14 +52,9 @@ const internalObjectParts = new Set([
   DecodedObject.BEAN_SPROUT,
 ]);
 
-const decodedFenceTypes = new Set([
-  DecodedObject.FENCE_1,
-  DecodedObject.FENCE_2,
-  DecodedObject.FENCE_3,
-  DecodedObject.FENCE_4,
-  DecodedObject.FENCE_5,
-  DecodedObject.FENCE_6,
-]);
+const decodedFenceTypes = new Set(
+  ORIGINAL_ENTITY_CORRESPONDENCE.fence.map((item) => item.decoded),
+);
 
 const directObjectTypes = new Set([
   DecodedObject.CONSUMED_CARROT,
@@ -90,13 +94,6 @@ const directObjectTypes = new Set([
   DecodedObject.BONUS_COIN,
 ]);
 
-const WIND_DIRECTIONS = ["up", "down", "left", "right"];
-const CAROUSEL_VARIANTS = {
-  1: "right-top",
-  2: "left-top",
-  3: "left-bottom",
-  4: "right-bottom",
-};
 const canonicalObjectAliases = new Map([
   [DecodedObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
   [DecodedObject.EGG_NEST_EMPTY, { type: MapEntityTypeId.EGG_NEST }],
@@ -139,7 +136,7 @@ export function adaptDecodedMap(map, options = {}) {
     }
     for (let x = 0; x < map.width; x += 1) {
       const type = row[x];
-      const semanticType = decodedTerrainSemantic(type);
+      const semanticType = decodedTerrainSourceSemantic(type);
       if (semanticType === DecodedTerrain.START) starts.push({ x, y });
       entities.push(
         ...adaptDecodedTerrain(type, x, y, {
@@ -177,8 +174,8 @@ export function adaptDecodedMap(map, options = {}) {
 }
 
 export function adaptDecodedTerrain(type, x, y, options = {}) {
-  const coordinateType = decodedTerrainCoordinate(type);
-  type = decodedTerrainSemantic(type);
+  const coordinateType = decodedAtlasCoordinate(type);
+  type = decodedTerrainSourceSemantic(type);
   if (type === DecodedTerrain.SNOW) {
     return [
       canonicalTerrainEntity(EntityTypeId.GROUND_D, x, y),
@@ -215,7 +212,9 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 
   const wind = /^wind-switch-([0-3])-(on|off)$/.exec(type);
   if (wind) {
-    const direction = WIND_DIRECTIONS[Number(wind[1])];
+    const direction = ORIGINAL_ENTITY_CORRESPONDENCE.windSwitch.find(
+      (item) => item.channel === Number(wind[1]),
+    )?.direction;
     return [
       entity(EntityTypeId.WIND_SWITCH, x, y, {
         direction,
@@ -244,11 +243,12 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 
   const carousel = /^carousel-(1|2|3|4|vertical|horizontal)$/.exec(type);
   if (carousel) {
+    const correspondence = correspondenceByDecoded("carousel", type);
+    if (!correspondence)
+      throw new Error(`Carousel decoded identity 未登记：${type}`);
     return [
       entity(EntityTypeId.CAROUSEL, x, y, {
-        variant: /^\d$/.test(carousel[1])
-          ? CAROUSEL_VARIANTS[carousel[1]]
-          : carousel[1],
+        variant: correspondence.variant,
       }),
     ];
   }
@@ -275,7 +275,9 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 }
 
 export function adaptDecodedObject(object) {
-  const { type, x, y } = object;
+  const { x, y } = object;
+  const coordinateType = decodedAtlasCoordinate(object.type);
+  const type = decodedObjectSourceSemantic(object.type);
   if (type === DecodedObject.EMPTY || internalObjectParts.has(type)) return [];
 
   if (
@@ -294,9 +296,10 @@ export function adaptDecodedObject(object) {
     return [entity(MapEntityTypeId.BEAVER, x, y)];
   }
   if (decodedFenceTypes.has(type)) {
-    const variant = [...decodedFenceTypes].indexOf(type) + 1;
+    const variant = correspondenceByDecoded("fence", type)?.variant;
+    if (!variant) throw new Error(`Fence decoded identity 未登记：${type}`);
     return [
-      entity(MapEntityTypeId.FENCE, x, y, { variant: `ts-16-${variant + 9}` }),
+      entity(MapEntityTypeId.FENCE, x, y, { variant }),
     ];
   }
 
@@ -318,6 +321,16 @@ export function adaptDecodedObject(object) {
     return [
       entity(
         coordinateObjectType(Math.floor(index / 16) + 1, (index % 16) + 1),
+        x,
+        y,
+      ),
+    ];
+  }
+  if (coordinateType) {
+    const coordinate = /^ts-(\d+)-(\d+)$/.exec(coordinateType);
+    return [
+      entity(
+        coordinateObjectType(Number(coordinate[1]), Number(coordinate[2])),
         x,
         y,
       ),
@@ -375,16 +388,6 @@ function isDecodedTerrainVariant(type) {
     /^walkable-variant-\d{2}$/.test(type) ||
     /^background-variant-\d{3}$/.test(type)
   );
-}
-
-function decodedTerrainSemantic(type) {
-  const separator = type.lastIndexOf(":ts-");
-  return separator < 0 ? type : type.slice(0, separator);
-}
-
-function decodedTerrainCoordinate(type) {
-  const match = /(?:^|:)(ts-\d+-\d+)$/.exec(type);
-  return match?.[1];
 }
 
 function copiedFields(object) {

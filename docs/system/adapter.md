@@ -2,6 +2,28 @@
 
 Original Adapter 位于 `tools/original/`，负责在原版 DAT 的地图表示与Bobby Carrot 5 Remake 的语义 Entity Map 之间转换。它是原版格式互操作边界，不属于 Engine、Editor 或 Web 的运行时依赖。
 
+## 对应关系的唯一归属
+
+原版到 Engine 不是一张跨层大表，而是两个方向明确的合同边界：
+
+1. `tools/original/dat/mapping.mjs` 是 DAT byte、`ts.png` 坐标、decoded
+   细分语义和 decoded 审阅标签之间的唯一映射。decoded 标签固定为
+   `ts-<row>-<column>:<semantic>`。
+2. `tools/original/entity-correspondence.mjs` 是需要改名的双向
+   variant/direction 对应关系的唯一数据表，正反 Adapter 共用。
+3. `tools/original/entity-adapter.mjs` 是 decoded 原版语义展开为 canonical
+   `LevelMap` Entity 的唯一正向边界。
+4. `tools/original/entity-reverse-adapter.mjs` 只服务 JAR patch，并由 DAT
+   byte-for-byte round-trip 测试约束为正向边界的逆变换。
+
+`model/src/map/entity/surface.ts` 维护产品语义 Surface 到 atlas visual 的映射；
+Engine Definition 维护 canonical Entity 的行为与 Visual。它们不读取 DAT byte，
+也不建立第二份 DAT 对应表。
+
+新增或修正原版对应关系时，先修改 `dat/mapping.mjs` 的原版事实，再修改唯一
+Adapter 边界，并补充正向转换与 DAT round-trip 测试。`npm run verify` 会重新生成
+全部 decoded 地图并校验其 atlas-first 标签。
+
 ## 原版记录结构
 
 一条 DAT level record 包含固定尺寸的两部分地图数据：
@@ -17,7 +39,7 @@ Adapter 因而必须将原版的单层编码展开为完整的语义堆叠；反
 
 ## terrain 的语义展开
 
-大多数原版 terrain 直接转换为同名语义 Entity。编码把多种含义合并到一个
+大多数原版 terrain 按 decoded 标签的语义部分转换为对应 Entity。编码把多种含义合并到一个
 terrain byte 时，Adapter 按下列规则展开：
 
 - `snow` 展开为带明确 atlas variant 的 `grass` 与 `snow`。
