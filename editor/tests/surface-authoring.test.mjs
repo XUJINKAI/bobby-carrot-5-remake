@@ -35,7 +35,7 @@ function surfacesAt(level, x, y) {
 }
 
 function autoMetadata(entity) {
-  return Object.keys(entity?.properties ?? {}).filter((key) =>
+  return Object.keys(entity ?? {}).filter((key) =>
     key.startsWith("__editorSurface"),
   );
 }
@@ -137,7 +137,7 @@ test("wood Fence supports Auto and explicit fixed variants", () => {
   ).apply(level);
   const autoFence = entityAt(auto, 1, 1, (entity) => entity.type === EntityTypeId.FENCE);
   assert.ok(autoFence);
-  assert.equal(autoFence.state?.variant, undefined);
+  assert.equal(autoFence.variant, undefined);
   assert.ok(autoMetadata(autoFence).length > 0);
 
   const exactType = surfaceTerrain("wood-fence").rows[0][2].type;
@@ -147,7 +147,7 @@ test("wood Fence supports Auto and explicit fixed variants", () => {
     { terrain: "wood-fence", pattern: "exact", exact: exactType, seed: 1 },
   ).apply(auto);
   const exactFence = entityAt(exact, 3, 1, (entity) => entity.type === EntityTypeId.FENCE);
-  assert.equal(exactFence?.state?.variant, 3);
+  assert.equal(exactFence?.variant, 3);
   assert.deepEqual(autoMetadata(exactFence), []);
 });
 
@@ -162,7 +162,7 @@ test("serialize materializes Auto Surface visuals and strips editor metadata", (
   for (const fence of materialized.entities.filter(
     (entity) => entity.type === EntityTypeId.FENCE,
   )) {
-    assert.ok(Number.isInteger(fence.state?.variant));
+    assert.match(fence.variant, /^ts-16-(?:1[0-5])$/);
     assert.deepEqual(autoMetadata(fence), []);
   }
 
@@ -206,7 +206,7 @@ test("painting Surface replaces only its Surface slot and preserves stacked enti
   assert.equal(cell.some((entity) => entity.type === EntityTypeId.CARROT), true);
 });
 
-test("solid raw Surface variants receive blocking gameplay traits", () => {
+test("Surface instances leave gameplay semantics to Engine definitions", () => {
   const next = paintSurface(
     catalog,
     [{ x: 1, y: 1 }],
@@ -218,7 +218,7 @@ test("solid raw Surface variants receive blocking gameplay traits", () => {
     },
   ).apply(createBlankLevel(4, 4));
   const entity = entityAt(next, 1, 1, (item) => item.type === "background-variant-004");
-  assert.equal(entity?.traits?.includes("blocking"), true);
+  assert.equal(entity?.traits, undefined);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {
