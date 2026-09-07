@@ -83,20 +83,6 @@ function runtimeTypeForLevelEntity(source: LevelEntity): EntityType {
       right: EntityTypeId.WINDMILL_RIGHT,
     }[String(source.direction)] ?? EntityTypeId.WINDMILL_UP;
   }
-  if (source.type === MapEntityTypeId.CLOUD) {
-    return {
-      red: EntityTypeId.CLOUD_RED,
-      purple: EntityTypeId.CLOUD_PURPLE,
-      green: EntityTypeId.CLOUD_GREEN,
-    }[String(source.color)] ?? EntityTypeId.CLOUD_RED;
-  }
-  if (source.type === MapEntityTypeId.CLOUD_PARKING) {
-    return {
-      red: EntityTypeId.CLOUD_GRID_RED,
-      purple: EntityTypeId.CLOUD_GRID_PURPLE,
-      green: EntityTypeId.CLOUD_GRID_GREEN,
-    }[String(source.color)] ?? EntityTypeId.CLOUD_GRID_RED;
-  }
   return source.type;
 }
 

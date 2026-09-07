@@ -27,7 +27,8 @@ const MECHANICS = [
     (type) =>
       type === "wind-switch" ||
       type.startsWith("windmill-") ||
-      type.startsWith("cloud-"),
+      type === "cloud" ||
+      type === "cloud-parking",
   ],
   ["mirror", (type) => type === "mirror"],
   ["trap", (type) => type === "trap"],

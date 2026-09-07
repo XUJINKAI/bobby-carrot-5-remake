@@ -1,4 +1,10 @@
-import { EntityTypeId, type Direction, type EntityType, type JsonValue } from "@bobby/model";
+import {
+  EntityTypeId,
+  MapEntityTypeId,
+  type Direction,
+  type EntityType,
+  type JsonValue,
+} from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -173,16 +179,71 @@ export const leaf = movingEntityModule(
   35,
   true,
 );
-export const cloudRed = movingEntityModule(EntityTypeId.CLOUD_RED, "Red Cloud", 23);
-export const cloudPurple = movingEntityModule(
-  EntityTypeId.CLOUD_PURPLE,
-  "Purple Cloud",
-  24,
+
+const cloudDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.CLOUD,
+  traits: [
+    "moving-platform",
+    "terrain-overlay",
+    "walkable",
+    "blocking",
+    "cloud",
+  ],
+  stackOrder: CONTENT_STACK_ORDER,
+  state: [
+    {
+      key: "color",
+      kind: "enum",
+      label: "颜色",
+      default: "red",
+      options: [{ value: "red" }, { value: "purple" }, { value: "green" }],
+    },
+    { key: "moving", kind: "boolean", label: "移动中", default: false },
+  ],
+  presentation: { name: "Cloud" },
+};
+
+export const cloud: EntityModule = originalModule(
+  cloudDefinition,
+  atlasVisual(cloudDefinition, (context) =>
+    objectCell(
+      context.entity.state?.color === "purple"
+        ? 24
+        : context.entity.state?.color === "green"
+          ? 25
+          : 23,
+    ),
+  ),
+  [{ behavior: movingPlatformBehavior }],
 );
-export const cloudGreen = movingEntityModule(
-  EntityTypeId.CLOUD_GREEN,
-  "Green Cloud",
-  25,
+
+const cloudParkingDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.CLOUD_PARKING,
+  traits: [],
+  stackOrder: CONTENT_STACK_ORDER,
+  state: [
+    {
+      key: "color",
+      kind: "enum",
+      label: "颜色",
+      default: "red",
+      options: [{ value: "red" }, { value: "purple" }, { value: "green" }],
+    },
+  ],
+  presentation: { name: "Cloud Parking" },
+};
+
+export const cloudParking: EntityModule = originalModule(
+  cloudParkingDefinition,
+  atlasVisual(cloudParkingDefinition, (context) =>
+    objectCell(
+      context.entity.state?.color === "purple"
+        ? 40
+        : context.entity.state?.color === "green"
+          ? 41
+          : 39,
+    ),
+  ),
 );
 
 function movingEntityModule(
@@ -383,23 +444,16 @@ function isMatchingCloudParking(
   query: WorldQueryApi,
   cloud: Readonly<EntityInstance>,
 ): boolean {
-  const parking =
-    cloud.type === EntityTypeId.CLOUD_RED
-      ? EntityTypeId.CLOUD_GRID_RED
-      : cloud.type === EntityTypeId.CLOUD_PURPLE
-        ? EntityTypeId.CLOUD_GRID_PURPLE
-        : cloud.type === EntityTypeId.CLOUD_GREEN
-          ? EntityTypeId.CLOUD_GRID_GREEN
-          : undefined;
-  return parking !== undefined && query.presencesAt(cloud.anchor).some(
-    (presence) => query.entity(presence.entityId)?.type === parking,
-  );
+  const color = cloudColor(cloud.state?.color);
+  return query.presencesAt(cloud.anchor).some((presence) => {
+    const parking = query.entity(presence.entityId);
+    return parking?.type === MapEntityTypeId.CLOUD_PARKING &&
+      cloudColor(parking.state?.color) === color;
+  });
 }
 
 function isCloudParkingType(type: EntityType): boolean {
-  return type === EntityTypeId.CLOUD_GRID_RED ||
-    type === EntityTypeId.CLOUD_GRID_PURPLE ||
-    type === EntityTypeId.CLOUD_GRID_GREEN;
+  return type === MapEntityTypeId.CLOUD_PARKING;
 }
 
 function playersAt(
@@ -431,9 +485,11 @@ function stopMovingEntity(
 }
 
 function isCloud(type: EntityType): boolean {
-  return type === EntityTypeId.CLOUD_RED ||
-    type === EntityTypeId.CLOUD_PURPLE ||
-    type === EntityTypeId.CLOUD_GREEN;
+  return type === MapEntityTypeId.CLOUD;
+}
+
+function cloudColor(value: JsonValue | undefined): "red" | "purple" | "green" {
+  return value === "purple" || value === "green" ? value : "red";
 }
 
 function addDirection(

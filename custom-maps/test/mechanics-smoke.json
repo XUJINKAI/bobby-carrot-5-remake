@@ -119,7 +119,7 @@
     {"type":"lock","x":10,"y":3},
     {"type":"plank","x":2,"y":5},
     {"type":"windmill-right","x":4,"y":5},
-    {"type":"cloud-red","x":6,"y":5},
+    {"type":"cloud","x":6,"y":5,"color":"red"},
     {"type":"ice-block","x":8,"y":5},
     {"type":"crumbly-rock","x":9,"y":5}
   ]

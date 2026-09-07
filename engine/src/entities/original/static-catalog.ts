@@ -224,9 +224,6 @@ export const staticContentModules: readonly EntityModule[] = [
     ["climbable"],
   ),
   content(EntityTypeId.BEAN_SPROUT, "Bean Sprout", objectCell(38)),
-  content(EntityTypeId.CLOUD_GRID_RED, "Red Cloud Grid", objectCell(39)),
-  content(EntityTypeId.CLOUD_GRID_PURPLE, "Purple Cloud Grid", objectCell(40)),
-  content(EntityTypeId.CLOUD_GRID_GREEN, "Green Cloud Grid", objectCell(41)),
   content(EntityTypeId.KITE, "Kite", objectCell(42), ["pickup"]),
   content(
     EntityTypeId.GOLDEN_CARROT,
