@@ -35,9 +35,17 @@ const windSwitchVariants: readonly EditorEntityVariant[] = [
   { label: "On", fields: { active: true } },
   { label: "Off", fields: { active: false } },
 ];
-const raisedVariants: readonly EditorEntityVariant[] = [
-  { label: "Raised", fields: { raised: true } },
-  { label: "Lowered", fields: { raised: false } },
+const colorSwitchVariants: readonly EditorEntityVariant[] = [
+  { label: "Yellow Raised", fields: { color: "yellow", pressed: false } },
+  { label: "Yellow Pressed", fields: { color: "yellow", pressed: true } },
+  { label: "Pink Raised", fields: { color: "pink", pressed: false } },
+  { label: "Pink Pressed", fields: { color: "pink", pressed: true } },
+];
+const colorBlockVariants: readonly EditorEntityVariant[] = [
+  { label: "Yellow Raised", fields: { color: "yellow", raised: true } },
+  { label: "Yellow Lowered", fields: { color: "yellow", raised: false } },
+  { label: "Pink Raised", fields: { color: "pink", raised: true } },
+  { label: "Pink Lowered", fields: { color: "pink", raised: false } },
 ];
 const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
   (variant) => ({ label: String(variant), fields: { variant } }),
@@ -132,10 +140,8 @@ export const builtinEditorDefinition: EditorDefinition = {
     [EntityTypeId.TIDE_SWITCH]: { variants: pressedVariants },
     [EntityTypeId.SPEED_SWITCH]: { variants: pressedVariants },
     [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_PINK_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_BLOCK]: { variants: raisedVariants },
-    [EntityTypeId.COLOR_PINK_BLOCK]: { variants: raisedVariants },
+    [EntityTypeId.COLOR_SWITCH]: { variants: colorSwitchVariants },
+    [EntityTypeId.COLOR_BLOCK]: { variants: colorBlockVariants },
     [EntityTypeId.WIND_SWITCH]: { variants: windSwitchVariants },
     [EntityTypeId.TRAP]: { variants: activeVariants },
     [EntityTypeId.MIRROR]: { variants: fourVariants },
@@ -234,10 +240,26 @@ export const builtinEditorDefinition: EditorDefinition = {
             { type: EntityTypeId.TIDE_SWITCH },
           ],
           [
-            { type: EntityTypeId.COLOR_YELLOW_SWITCH },
-            { type: EntityTypeId.COLOR_PINK_SWITCH },
-            { type: EntityTypeId.COLOR_YELLOW_BLOCK },
-            { type: EntityTypeId.COLOR_PINK_BLOCK },
+            {
+              type: EntityTypeId.COLOR_SWITCH,
+              label: "Yellow Switch",
+              fields: { color: "yellow" },
+            },
+            {
+              type: EntityTypeId.COLOR_SWITCH,
+              label: "Pink Switch",
+              fields: { color: "pink" },
+            },
+            {
+              type: EntityTypeId.COLOR_BLOCK,
+              label: "Yellow Block",
+              fields: { color: "yellow" },
+            },
+            {
+              type: EntityTypeId.COLOR_BLOCK,
+              label: "Pink Block",
+              fields: { color: "pink" },
+            },
             { type: EntityTypeId.TRAP },
           ],
           [
