@@ -1,6 +1,7 @@
 import type { EntityCatalog } from "@bobby/engine";
 import {
   EntityTypeId,
+  MapEntityTypeId,
   type EntityType,
   type LevelEntity,
 } from "@bobby/model";
@@ -64,6 +65,38 @@ for (const terrain of SURFACE_TERRAINS)
 const woodFenceTerrain = terrainById.get("wood-fence");
 if (woodFenceTerrain)
   terrainByEntityType.set(EntityTypeId.FENCE, woodFenceTerrain);
+
+const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
+  [MapEntityTypeId.WATER, "water"],
+  [MapEntityTypeId.WATER_RIPPLE, "water"],
+  [MapEntityTypeId.WATERFALL, "waterfall"],
+  [MapEntityTypeId.STARFIELD, "starfield"],
+  [MapEntityTypeId.MOON, "moon"],
+  [MapEntityTypeId.CLOUD_LAYER, "cloud"],
+  [MapEntityTypeId.GRASS, "grass"],
+  [MapEntityTypeId.WOOD_FENCE, "wood-fence"],
+  [MapEntityTypeId.HEDGE, "hedge"],
+  [MapEntityTypeId.TREE, "tree"],
+  [MapEntityTypeId.STONE_WALL_1, "stone-wall-1"],
+  [MapEntityTypeId.STONE_WALL_2, "stone-wall-2"],
+  [MapEntityTypeId.STUMP, "stump"],
+  [MapEntityTypeId.FLOWER_POT, "flower-pot"],
+  [MapEntityTypeId.ROCK, "stone"],
+  [MapEntityTypeId.MUSHROOM, "mushroom"],
+  [MapEntityTypeId.SNOWMAN, "snowman"],
+  [MapEntityTypeId.CANDY_CANE, "christmas-cane"],
+  [MapEntityTypeId.CHRISTMAS_TREE, "christmas-tree"],
+  [MapEntityTypeId.SNOW_FENCE, "snow-fence"],
+  [MapEntityTypeId.SNOWY_ROCK, "snow-rock"],
+  [MapEntityTypeId.SNOW_GROUND, "snow-ground"],
+  [MapEntityTypeId.CACTUS, "cactus"],
+  [MapEntityTypeId.SAND, "sand"],
+  [MapEntityTypeId.ICE, "ice"],
+];
+for (const [type, terrainId] of semanticTerrainTypes) {
+  const terrain = terrainById.get(terrainId);
+  if (terrain) terrainByEntityType.set(type, terrain);
+}
 
 const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
 for (const type of LEGACY_GROUND_TYPES) surfaceTypes.add(type);
