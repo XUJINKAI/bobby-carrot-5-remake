@@ -1,17 +1,24 @@
 import {
   formatOriginalTsUsage,
+  formatOriginalTemporarySurfaceUsage,
   loadOriginalTsUsage,
+  loadOriginalTemporarySurfaceUsage,
 } from "./asset-usage.mjs";
 
 const args = process.argv.slice(2);
 const json = args.includes("--json");
+const temporary = args.includes("--temporary");
 const query = args.find((arg) => !arg.startsWith("--"));
-if (!query)
+if (!query && !temporary)
   throw new Error("用法：npm run original:usage -- ts-4-13 [--json]");
 
-const result = loadOriginalTsUsage(query);
+const result = temporary
+  ? loadOriginalTemporarySurfaceUsage()
+  : loadOriginalTsUsage(query);
 process.stdout.write(
   json
     ? `${JSON.stringify(result, null, 2)}\n`
-    : formatOriginalTsUsage(result),
+    : temporary
+      ? formatOriginalTemporarySurfaceUsage(result)
+      : formatOriginalTsUsage(result),
 );

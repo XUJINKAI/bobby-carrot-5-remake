@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   findOriginalTsUsage,
+  formatOriginalTemporarySurfaceUsage,
   parseTsAssetQuery,
 } from "../asset-usage.mjs";
 
@@ -69,4 +70,27 @@ test("已归类素材通过 semantic type 与 atlas variant 精确反查", () =>
     composite: false,
   });
   assert.deepEqual(result.maps[0].occurrences, [{ x: 1, y: 1 }]);
+});
+
+test("临时素材总表给出可继续反查的坐标身份", () => {
+  assert.equal(
+    formatOriginalTemporarySurfaceUsage({
+      temporarySurfaceCount: 1,
+      surfaces: [
+        {
+          label: "ts-4-13",
+          type: "surface-4-13",
+          mapCount: 2,
+          occurrenceCount: 5,
+          maps: ["1-1", "2-1"],
+        },
+      ],
+    }),
+    [
+      "临时 Surface：1 种",
+      "ts-4-13 → surface-4-13：2 张地图，5 个 anchor",
+      "逐项反查：npm run original:usage -- ts-<row>-<column>",
+      "",
+    ].join("\n"),
+  );
 });

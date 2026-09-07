@@ -23,6 +23,12 @@ npm run original:usage -- ts-4-13
 npm run original:usage -- ts-4-13 --json
 ```
 
+最终命名前可以先列出所有仍使用坐标型临时名的 Surface：
+
+```bash
+npm run original:usage -- --temporary
+```
+
 反查读取 `original/adapted/` 生成物。缺少生成物时先执行 `npm run assets`。
 未确认语义的 `ts.png` 单元使用 `surface-<row>-<column>` 作为临时 Entity 名；已归类素材通过 semantic type 与 `ts-<row>-<column>` variant 精确匹配。复合素材返回 semantic Entity 的持久化 anchor。
 

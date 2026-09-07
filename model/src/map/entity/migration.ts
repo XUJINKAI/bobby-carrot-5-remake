@@ -16,7 +16,7 @@ export interface UnresolvedEntityMapSource {
   note: string;
 }
 
-/** Review-only migration notes. Final strict Map parser will not accept these aliases. */
+/** 仅供审阅的迁移记录；最终严格 Map parser 不接受这些 alias。 */
 export const ENTITY_MAP_MIGRATION_ALIASES: readonly EntityMapMigrationAlias[] = Object.freeze([
   rename("snow", MapEntityTypeId.SNOW, {}, "Snow is a shovelable cover mechanic; the visual currently comes from ts(5,14)."),
   rename("water-animated", MapEntityTypeId.WATER_RIPPLE, {}, "ts(6,7) is the ripple water surface."),
@@ -62,25 +62,25 @@ export const ENTITY_MAP_MIGRATION_ALIASES: readonly EntityMapMigrationAlias[] = 
 
 export const ENTITY_MAP_UNRESOLVED_SOURCES: readonly UnresolvedEntityMapSource[] = Object.freeze([
   {
-    id: "surface-4-13",
-    source: "ts(4,13)",
-    note: "Not named by docs/system/original/surface.md yet; use coordinate name until reviewed.",
+    id: "coordinate-surfaces",
+    source: "surface-<row>-<column>",
+    note: "尚未完成最终语义命名的 ts.png 单元使用坐标型临时身份；通过 original:usage 逐项审阅。",
   },
   {
     id: "original-object-variants",
     source: "current object-variant-* fallback",
-    note: "Every remaining raw object needs a semantic canonical identity before v1 freeze.",
+    note: "剩余原版 object fallback 在确认语义前使用坐标型临时身份。",
   },
   {
     id: "beaver-dialog-ids",
     source: "Adventure/original Beaver dialog interactions",
-    note: "bonus-key-vendor is confirmed; fixed normal-dialog IDs still need reconstruction before v1 freeze.",
+    note: "bonus-key-vendor 已确认；普通对话身份仍需进一步还原。",
   },
 ]);
 
 /**
- * Resolve current generic raw terrain names to the first-pass semantic/coordinate Map identity.
- * background-variant-NNN maps directly to ts(row,column); walkable-variant-NN starts at DAT 0x60.
+ * 把当前通用 raw terrain 名称解析为首轮 semantic/coordinate Map 身份。
+ * background-variant-NNN 与 walkable-variant-NN 的 archive 映射只用于迁移审阅。
  */
 export function legacyEntityMapAlias(type: string): EntityMapMigrationAlias | undefined {
   const exact = ENTITY_MAP_MIGRATION_ALIASES.find((candidate) => candidate.from === type);

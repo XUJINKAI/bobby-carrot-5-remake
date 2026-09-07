@@ -76,6 +76,56 @@ export function findOriginalTsUsage(catalog, readMap, coordinate) {
 }
 
 export function loadOriginalTsUsage(value) {
+  const { adaptedRoot, catalog } = loadAdaptedCatalog();
+  return findOriginalTsUsage(
+    catalog,
+    (entry) => readJson(path.join(adaptedRoot, entry.path)),
+    parseTsAssetQuery(value),
+  );
+}
+
+export function loadOriginalTemporarySurfaceUsage() {
+  const { adaptedRoot, catalog } = loadAdaptedCatalog();
+  const byType = new Map();
+  for (const entry of [...catalog.maps, ...catalog.specialScenes]) {
+    const document = readJson(path.join(adaptedRoot, entry.path));
+    const counts = new Map();
+    for (const entity of document.entities) {
+      if (!/^surface-\d+-\d+$/.test(entity.type)) continue;
+      counts.set(entity.type, (counts.get(entity.type) ?? 0) + 1);
+    }
+    for (const [type, count] of counts) {
+      const item = byType.get(type) ?? {
+        type,
+        label: type.replace("surface-", "ts-"),
+        mapCount: 0,
+        occurrenceCount: 0,
+        maps: [],
+      };
+      item.mapCount += 1;
+      item.occurrenceCount += count;
+      item.maps.push(entry.id);
+      byType.set(type, item);
+    }
+  }
+  const surfaces = [...byType.values()].sort(compareTemporarySurfaces);
+  return {
+    temporarySurfaceCount: surfaces.length,
+    surfaces,
+  };
+}
+
+export function formatOriginalTemporarySurfaceUsage(result) {
+  const lines = [`临时 Surface：${result.temporarySurfaceCount} 种`];
+  for (const surface of result.surfaces)
+    lines.push(
+      `${surface.label} → ${surface.type}：${surface.mapCount} 张地图，${surface.occurrenceCount} 个 anchor`,
+    );
+  lines.push("逐项反查：npm run original:usage -- ts-<row>-<column>");
+  return `${lines.join("\n")}\n`;
+}
+
+function loadAdaptedCatalog() {
   const adaptedRoot = path.join(root, "original/adapted");
   const catalogPath = path.join(adaptedRoot, "catalog.json");
   if (!fs.existsSync(catalogPath))
@@ -87,11 +137,7 @@ export function loadOriginalTsUsage(value) {
     !Array.isArray(catalog.specialScenes)
   )
     throw new Error("Original adapted catalog 合同无效；请重新执行 npm run assets");
-  return findOriginalTsUsage(
-    catalog,
-    (entry) => readJson(path.join(adaptedRoot, entry.path)),
-    parseTsAssetQuery(value),
-  );
+  return { adaptedRoot, catalog };
 }
 
 export function formatOriginalTsUsage(result) {
@@ -126,6 +172,15 @@ function matchesSelector(entity, selector) {
   if (entity.type !== selector.type) return false;
   return Object.entries(selector.fields).every(
     ([key, value]) => entity[key] === value,
+  );
+}
+
+function compareTemporarySurfaces(left, right) {
+  const leftCoordinate = parseTsAssetQuery(left.type);
+  const rightCoordinate = parseTsAssetQuery(right.type);
+  return (
+    leftCoordinate.row - rightCoordinate.row ||
+    leftCoordinate.column - rightCoordinate.column
   );
 }
 
