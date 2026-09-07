@@ -14,7 +14,7 @@ export function originalSurfaceTraits(
 
   const number = (mapping.source.row - 1) * 16 + mapping.source.column;
   const traits = new Set<string>();
-  if (number >= 97 && number <= 148) traits.add("walkable");
+  if (number >= 95 && number <= 148) traits.add("walkable");
   if (number <= 94) traits.add("bean-growth-space");
   if (number >= 72 && number <= 77) traits.add("cloud-space");
   if (
