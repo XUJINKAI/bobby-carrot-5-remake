@@ -36,6 +36,7 @@ export interface LevelMap {
 export interface MapMeta {
   name: string;
   author?: string;
+  description?: string;
 }
 
 /** Canonical source/built/share map document. Resource identity comes from path/filename. */

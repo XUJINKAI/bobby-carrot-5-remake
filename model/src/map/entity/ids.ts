@@ -56,6 +56,7 @@ export const MapEntityTypeId = {
   COLOR_SWITCH: "color-switch",
   COLOR_BLOCK: "color-block",
   HIGH_GRASS: "high-grass",
+  SNOW: "snow",
   CARROT: "carrot",
   EGG: "egg",
   EGG_NEST: "egg-nest",

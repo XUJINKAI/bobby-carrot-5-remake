@@ -1,46 +1,41 @@
-[
-  {
-    "id": "novoban-pushbox",
-    "name": "Novoban",
-    "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
-    "cardSize": "medium",
-    "order": 20,
-    "visible": true
-  },
-  {
-    "id": "loma-pushbox",
-    "name": "LOMA",
-    "description": "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
-    "cardSize": "small",
-    "order": 30,
-    "visible": true,
-    "chapters": [
-      { "id": "01", "name": "Pattern", "description": "" },
-      { "id": "02", "name": "Pattern", "description": "" },
-      { "id": "03", "name": "Pattern", "description": "" },
-      { "id": "04", "name": "Pattern", "description": "" },
-      { "id": "05", "name": "Pattern", "description": "" },
-      { "id": "06", "name": "Pattern", "description": "" },
-      { "id": "07", "name": "Pattern", "description": "" },
-      { "id": "08", "name": "Pattern", "description": "" },
-      { "id": "09", "name": "Pattern", "description": "" },
-      { "id": "10", "name": "Pattern", "description": "" }
-    ]
-  },
-  {
-    "id": "original-patch",
-    "name": "Original Patch",
-    "description": "Patch 到原版 jar 包的验证地图",
-    "cardSize": "small",
-    "order": 999,
-    "visible": true
-  },
-  {
-    "id": "engine-lab",
-    "name": "Engine Lab",
-    "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
-    "cardSize": "big",
-    "order": 100,
-    "visible": true
-  }
-]
+{
+  "schemaVersion": 1,
+  "collections": [
+    {
+      "id": "novoban-pushbox",
+      "name": "Novoban",
+      "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
+      "cardSize": "medium"
+    },
+    {
+      "id": "loma-pushbox",
+      "name": "LOMA",
+      "description": "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
+      "cardSize": "small",
+      "chapters": {
+        "01": { "name": "Pattern", "description": "" },
+        "02": { "name": "Pattern", "description": "" },
+        "03": { "name": "Pattern", "description": "" },
+        "04": { "name": "Pattern", "description": "" },
+        "05": { "name": "Pattern", "description": "" },
+        "06": { "name": "Pattern", "description": "" },
+        "07": { "name": "Pattern", "description": "" },
+        "08": { "name": "Pattern", "description": "" },
+        "09": { "name": "Pattern", "description": "" },
+        "10": { "name": "Pattern", "description": "" }
+      }
+    },
+    {
+      "id": "engine-lab",
+      "name": "Engine Lab",
+      "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
+      "cardSize": "big"
+    },
+    {
+      "id": "original-patch",
+      "name": "Original Patch",
+      "description": "Patch 到原版 jar 包的验证地图",
+      "cardSize": "small"
+    }
+  ]
+}

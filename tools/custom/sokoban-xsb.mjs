@@ -111,7 +111,7 @@ function findExteriorSpaces(grid, width, height) {
 }
 
 function floor(x, y) {
-  return { type: "ground-c", x, y };
+  return { type: "grass", x, y, variant: "ts-10-1" };
 }
 
 function goal(x, y) {

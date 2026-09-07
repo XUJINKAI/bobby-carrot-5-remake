@@ -18,7 +18,7 @@ export interface UnresolvedEntityMapSource {
 
 /** Review-only migration notes. Final strict Map parser will not accept these aliases. */
 export const ENTITY_MAP_MIGRATION_ALIASES: readonly EntityMapMigrationAlias[] = Object.freeze([
-  fromTs("snow", 5, 14, "Current name is not supported by surface.md; keep the atlas coordinate visible until identified."),
+  rename("snow", MapEntityTypeId.SNOW, {}, "Snow is a shovelable cover mechanic; the visual currently comes from ts(5,14)."),
   rename("water-animated", MapEntityTypeId.WATER_RIPPLE, {}, "ts(6,7) is the ripple water surface."),
   rename("water-variant-1", MapEntityTypeId.WATERFALL, { variant: "top" }, "ts(6,12) is waterfall top/start."),
   rename("water-variant-2", MapEntityTypeId.WATERFALL, { variant: "middle" }, "ts(6,13) is waterfall middle."),
@@ -65,11 +65,6 @@ export const ENTITY_MAP_UNRESOLVED_SOURCES: readonly UnresolvedEntityMapSource[]
     id: "surface-4-13",
     source: "ts(4,13)",
     note: "Not named by docs/system/original/surface.md yet; use coordinate name until reviewed.",
-  },
-  {
-    id: "surface-5-14",
-    source: "ts(5,14) / current legacy name snow",
-    note: "surface.md does not identify this tile; keep the coordinate visible instead of freezing the guessed name snow.",
   },
   {
     id: "original-object-variants",
