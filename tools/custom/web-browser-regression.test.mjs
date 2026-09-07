@@ -160,7 +160,7 @@ async function verifyGameplayDialog(cdp, url) {
     sessionId,
     "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
   );
-  if (text !== "dialog smoke")
+  if (text !== "你的金钥匙可以直接打开这把锁。")
     throw new Error(`Engine Dialog rendered unexpected text: ${text}`);
 
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowDown", 40);
@@ -195,9 +195,10 @@ async function dispatchKey(cdp, sessionId, type, key, windowsVirtualKeyCode) {
 function dialogPayload() {
   const map = {
     schemaVersion: 1,
-    name: "Dialog Browser Regression",
-    author: "bc5r",
-    description: "Engine Dialog browser regression fixture",
+    meta: {
+      name: "Dialog Browser Regression",
+      author: "bc5r",
+    },
     width: 2,
     height: 2,
     rules: { win: { type: "reach", trait: "exit" } },
@@ -207,13 +208,12 @@ function dialogPayload() {
       { type: "ground-c", x: 0, y: 1 },
       { type: "ground-c", x: 1, y: 1 },
       { type: "start", x: 0, y: 0 },
-      { type: "bobby", x: 0, y: 0, direction: "right" },
+      { type: "bobby", x: 0, y: 0 },
       {
-        type: "sandman",
+        type: "beaver",
         x: 1,
         y: 0,
-        direction: "down",
-        properties: { dialog: { message: "dialog smoke" } },
+        interaction: "bonus-key-vendor",
       },
       { type: "exit", x: 1, y: 1 },
     ],
