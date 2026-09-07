@@ -42,6 +42,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
     .all()
     .find((entity) => entity.type === EntityTypeId.BOBBY);
   assert.ok(bobby);
+  bobby.direction = "right";
 
   const scene = visual.scene(world);
   const snapshot = buildDebugSnapshot({
