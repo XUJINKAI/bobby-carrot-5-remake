@@ -53,7 +53,7 @@ function presentationOptions() {
 }
 
 function carryWorld() {
-  return new World({
+  const world = new World({
     schemaVersion: 1,
     width: 2,
     height: 1,
@@ -64,6 +64,9 @@ function carryWorld() {
       { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
+  const bobby = world.query.entitiesWithTrait("player")[0];
+  bobby.direction = "right";
+  return world;
 }
 
 for (const cadenceMs of [496, 248]) {
@@ -123,6 +126,8 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const bobby = store.require(2);
+  bobby.direction = "right";
+  if (Object.keys(state).length > 0) bobby.state = structuredClone(state);
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
   return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
@@ -239,6 +244,8 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const bobby = store.require(3);
+  bobby.direction = "right";
+  bobby.state = { mountId: 2 };
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
   const visual = visuals.resolve(entities.require(EntityTypeId.BOBBY), {
