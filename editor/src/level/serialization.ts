@@ -5,7 +5,8 @@ import type { EditorMap } from "./types.js";
 
 export function serializeEditorLevel(level: EditorMap): string {
   const materialized = materializeSurfaceVariants(level);
-  return `${JSON.stringify(normalizeEditorLevel(materialized), null, 2)}\n`;
+  const canonical = parseMapDocument(normalizeEditorLevel(materialized));
+  return `${JSON.stringify(canonical, null, 2)}\n`;
 }
 
 export function parseEditorLevel(text: string): EditorMap {

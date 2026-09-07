@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
 
@@ -52,11 +53,11 @@ export function writeLomaMaps(text) {
   for (const entry of levels) {
     const directory = path.join(outputDirectory, entry.chapter);
     fs.mkdirSync(directory, { recursive: true });
-    const document = {
+    const document = parseMapDocument({
       schemaVersion: 1,
       meta: { name: entry.id, author: entry.author, ...(entry.comment ? { description: entry.comment } : {}) },
       ...entry.level,
-    };
+    });
     fs.writeFileSync(path.join(directory, `${entry.id}.json`), `${JSON.stringify(document, null, 2)}\n`);
   }
   return levels;

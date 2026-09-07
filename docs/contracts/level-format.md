@@ -61,7 +61,7 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 | `trap-active/inactive` | `trap` | `active` |
 | `mirror-1/2/3/4` | `mirror` | `variant` |
 | `speed-up/down/left/right` | `speed` | `direction` |
-| `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `variant` |
+| `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `variant: right-top/left-top/left-bottom/right-bottom/vertical/horizontal` |
 | `color-yellow/pink-switch-raised/pressed` | `color-switch` | `color` + `pressed` |
 | `dragon-head/body/tail/anim-*` | `dragon` | footprint role + visual/runtime state |
 | `ice-block/ice-melt-*` | `ice-block` | melt stage 只存在于 runtime state |

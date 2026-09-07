@@ -147,7 +147,7 @@ test("wood Fence supports Auto and explicit fixed variants", () => {
     { terrain: "wood-fence", pattern: "exact", exact: exactType, seed: 1 },
   ).apply(auto);
   const exactFence = entityAt(exact, 3, 1, (entity) => entity.type === EntityTypeId.FENCE);
-  assert.equal(exactFence?.variant, 3);
+  assert.equal(exactFence?.variant, "ts-16-12");
   assert.deepEqual(autoMetadata(exactFence), []);
 });
 

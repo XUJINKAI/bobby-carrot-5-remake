@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMapDocument } from "@bobby/model";
 import {
   campaignLevelId,
   campaignSequenceForChapter,
@@ -11,7 +12,7 @@ import {
   RELEASES,
   SOURCE_TILE_SIZE,
 } from "./source-definitions.mjs";
-import { adaptLegacyMap } from "./entity-adapter.mjs";
+import { adaptDecodedMap } from "./entity-adapter.mjs";
 import { deriveOriginalWinCondition } from "./win-condition.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -191,16 +192,16 @@ function buildSpecialScenes(index, target) {
 }
 
 function createMapDocument(source, meta) {
-  const canonical = adaptLegacyMap(source);
+  const canonical = adaptDecodedMap(source);
   const win = deriveOriginalWinCondition(canonical);
   const { music, ...mapMeta } = meta;
-  return {
+  return parseMapDocument({
     schemaVersion: 1,
     meta: mapMeta,
-    ...canonical,
     ...(music ? { music } : {}),
     ...(win ? { rules: { win } } : {}),
-  };
+    ...canonical,
+  });
 }
 
 function sourceReference(release, source, sourceName) {

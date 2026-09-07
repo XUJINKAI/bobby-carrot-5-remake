@@ -1,4 +1,4 @@
-import { LegacyObject } from "./semantic-ids.mjs";
+import { DecodedObject } from "./semantic-ids.mjs";
 import {
   decodeDatObject,
   decodeDatTerrain,
@@ -7,10 +7,10 @@ import {
 } from "./mapping.mjs";
 
 const DYNAMIC_DAT_OBJECTS = new Set([
-  LegacyObject.CLOUD_RED,
-  LegacyObject.CLOUD_PURPLE,
-  LegacyObject.CLOUD_GREEN,
-  LegacyObject.LEAF,
+  DecodedObject.CLOUD_RED,
+  DecodedObject.CLOUD_PURPLE,
+  DecodedObject.CLOUD_GREEN,
+  DecodedObject.LEAF,
 ]);
 
 export function deriveDatDynamicSlots(map) {

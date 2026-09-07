@@ -21,8 +21,12 @@ const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
 export function parseMapDocument(value: unknown): MapDocument {
   const source = parseMapObject(value, true);
   return {
-    ...copyLevelMap(source),
+    schemaVersion: 1,
     meta: parseMapMeta(source.meta),
+    ...copyOptionalMapFields(source),
+    width: source.width as number,
+    height: source.height as number,
+    entities: structuredClone(source.entities as LevelEntity[]),
   };
 }
 
@@ -65,11 +69,17 @@ function parseMapObject(
 function copyLevelMap(source: Record<string, unknown>): LevelMap {
   return {
     schemaVersion: 1,
+    ...copyOptionalMapFields(source),
     width: source.width as number,
     height: source.height as number,
+    entities: structuredClone(source.entities as LevelEntity[]),
+  };
+}
+
+function copyOptionalMapFields(source: Record<string, unknown>) {
+  return {
     ...(source.music !== undefined ? { music: source.music as string } : {}),
     ...(source.note !== undefined ? { note: source.note as string } : {}),
-    entities: structuredClone(source.entities as LevelEntity[]),
     ...(source.rules !== undefined
       ? { rules: structuredClone(source.rules as LevelRules) }
       : {}),

@@ -9,6 +9,7 @@ import {
   SURFACE_SOURCE_MAPPINGS,
   entityMapDefinition,
   legacyEntityMapAlias,
+  parseMapDocument,
   tsLabel,
 } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
@@ -245,23 +246,23 @@ function uniqueJson(values) {
 }
 
 function mapDocumentExample() {
-  return {
+  return parseMapDocument({
     schemaVersion: 1,
     meta: { name: "Carousel Direction Test", author: "Alice" },
-    width: 8,
-    height: 6,
     music: "ingame0",
     note: "验证 Carousel 与 Speed 的初始地图语义。",
+    rules: { win: { type: "reach", target: "exit" }, limits: [{ type: "max-moves", moves: 100 }] },
+    width: 8,
+    height: 6,
     entities: [
       { type: "bobby", x: 1, y: 2 },
       { type: "grass", x: 0, y: 0, variant: "ts-7-1" },
       { type: "speed", x: 2, y: 2, direction: "right" },
-      { type: "carousel", x: 4, y: 2, direction: "left-up" },
+      { type: "carousel", x: 4, y: 2, variant: "left-top" },
       { type: "color-switch", x: 5, y: 2, color: "yellow" },
       { type: "exit", x: 6, y: 2 },
     ],
-    rules: { win: { type: "reach", target: "exit" }, limits: [{ type: "max-moves", moves: 100 }] },
-  };
+  });
 }
 
 function withoutMeta(document) {

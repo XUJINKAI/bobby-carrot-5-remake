@@ -11,7 +11,7 @@ import {
   replaceDatLevelRecord,
   splitDatPackage,
 } from "../dat/index.mjs";
-import { LegacyObject, LegacyTerrain } from "../dat/semantic-ids.mjs";
+import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
 
 test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const dat = fs.readFileSync("original/extracted/base/00.dat");
@@ -19,7 +19,10 @@ test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const record = parts.levelRecords[0];
   assert.ok(record);
   const decoded = decodeDatLevelRecord(record);
-  assert.equal(decoded.map.terrain[16]?.[7], LegacyTerrain.START);
+  assert.equal(
+    decoded.map.terrain[16]?.[7],
+    `${DecodedTerrain.START}:ts-10-6`,
+  );
   assert.equal(deriveDatDynamicSlots(decoded.map), decoded.dynamicSlots);
   assert.deepEqual(
     Buffer.from(encodeDatLevelRecord(decoded.map)),
@@ -55,32 +58,32 @@ test("DAT package replacement preserves metadata and untouched records", () => {
 
 test("original DAT provenance belongs to the Original tooling boundary", () => {
   assert.equal(
-    datSourceForTerrain(LegacyTerrain.CAROUSEL_1)?.datHexIds[0],
+    datSourceForTerrain(DecodedTerrain.CAROUSEL_1)?.datHexIds[0],
     "0xB9",
   );
   assert.equal(
-    datSourceForTerrain(LegacyTerrain.MIRROR_1)?.datHexIds[0],
+    datSourceForTerrain(DecodedTerrain.MIRROR_1)?.datHexIds[0],
     "0xB1",
   );
   assert.equal(
-    datSourceForObject(LegacyObject.LOCK)?.datHexIds[0],
+    datSourceForObject(DecodedObject.LOCK)?.datHexIds[0],
     "0xCD",
   );
 
-  for (const id of Object.values(LegacyTerrain)) {
+  for (const id of Object.values(DecodedTerrain)) {
     const source = datSourceForTerrain(id);
     assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
     assert.equal(source?.confidence, "confirmed");
   }
-  for (const id of Object.values(LegacyObject)) {
+  for (const id of Object.values(DecodedObject)) {
     const source = datSourceForObject(id);
     assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
     assert.equal(source?.confidence, "confirmed");
   }
 });
 
-test("unnamed semantic variants keep inferred DAT provenance in Original tooling", () => {
-  assert.equal(decodeDatTerrain(0x2b), "ts-3-12");
+test("atlas-tagged semantic variants keep inferred DAT provenance in Original tooling", () => {
+  assert.equal(decodeDatTerrain(0x2b), "tree:ts-3-12");
 
   const walkable = datSourceForTerrain("ts-7-1");
   assert.equal(walkable?.datHexIds[0], "0x60");

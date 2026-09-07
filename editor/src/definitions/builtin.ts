@@ -54,7 +54,12 @@ const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
   (variant) => ({ label: String(variant), fields: { variant } }),
 );
 const carouselVariants: readonly EditorEntityVariant[] = [
-  ...fourVariants,
+  ...[
+    "right-top",
+    "left-top",
+    "left-bottom",
+    "right-bottom",
+  ].map((variant) => ({ label: variant, fields: { variant } })),
   { label: "Vertical", fields: { variant: "vertical" } },
   { label: "Horizontal", fields: { variant: "horizontal" } },
 ];
@@ -282,7 +287,7 @@ export const builtinEditorDefinition: EditorDefinition = {
           ],
           [
             { type: EntityTypeId.MIRROR, fields: { variant: 1 } },
-            { type: EntityTypeId.CAROUSEL, fields: { variant: 1 } },
+            { type: EntityTypeId.CAROUSEL, fields: { variant: "right-top" } },
             { type: EntityTypeId.CAROUSEL_SWITCH },
           ],
           [

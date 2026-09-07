@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 
 const sourceRoot = path.join(root, "custom-maps");
@@ -111,7 +112,10 @@ function writeCollection(collection) {
   fs.rmSync(target, { recursive: true, force: true });
   fs.mkdirSync(target, { recursive: true });
   for (const entry of collection.maps)
-    fs.writeFileSync(path.join(target, `${entry.id}.json`), `${JSON.stringify(entry.level, null, 2)}\n`);
+    fs.writeFileSync(
+      path.join(target, `${entry.id}.json`),
+      `${JSON.stringify(parseMapDocument(entry.level), null, 2)}\n`,
+    );
   fs.writeFileSync(
     path.join(target, "index.json"),
     `${JSON.stringify({

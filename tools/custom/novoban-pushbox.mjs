@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
 
@@ -32,7 +33,7 @@ export function writeNovobanMaps(text) {
   fs.rmSync(outputDirectory, { recursive: true, force: true });
   fs.mkdirSync(outputDirectory, { recursive: true });
   for (const entry of levels) {
-    const document = { schemaVersion: 1, meta: { name: `${entry.id} · ${entry.title}`, author: entry.author }, ...entry.level };
+    const document = parseMapDocument({ schemaVersion: 1, meta: { name: `${entry.id} · ${entry.title}`, author: entry.author }, ...entry.level });
     fs.writeFileSync(path.join(outputDirectory, `${entry.id}.json`), `${JSON.stringify(document, null, 2)}\n`);
   }
   return levels;

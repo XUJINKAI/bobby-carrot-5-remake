@@ -23,13 +23,13 @@ export type MapMusic = "random" | "none" | MusicTrackId;
 /** 可直接游玩的纯 Engine 输入。 */
 export interface LevelMap {
   schemaVersion: 1;
-  width: number;
-  height: number;
   music?: MapMusic;
   /** 属于地图内容的游戏内注记或表现文本。 */
   note?: string;
-  entities: LevelEntity[];
   rules?: LevelRules;
+  width: number;
+  height: number;
+  entities: LevelEntity[];
 }
 
 /** 独立地图文档携带的面向用户 metadata。 */

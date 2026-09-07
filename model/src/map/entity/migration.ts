@@ -57,14 +57,14 @@ export const ENTITY_MAP_MIGRATION_ALIASES: readonly EntityMapMigrationAlias[] = 
   rename("color-pink-switch", MapEntityTypeId.COLOR_SWITCH, { color: "pink" }, "Color becomes a field."),
   rename("color-yellow-block", MapEntityTypeId.COLOR_BLOCK, { color: "yellow" }, "Color becomes a field."),
   rename("color-pink-block", MapEntityTypeId.COLOR_BLOCK, { color: "pink" }, "Color becomes a field."),
-  rename("fence", MapEntityTypeId.FENCE, { variant: 1 }, "Legacy object fence defaults to variant 1; DAT fence-1..6 preserve their numeric variant."),
+  rename("fence", MapEntityTypeId.FENCE, { variant: "ts-16-10" }, "DAT fence frames use their ts.png coordinates as variants."),
 ]);
 
 export const ENTITY_MAP_UNRESOLVED_SOURCES: readonly UnresolvedEntityMapSource[] = Object.freeze([
   {
     id: "coordinate-surfaces",
     source: "surface-<row>-<column>",
-    note: "尚未完成最终语义命名的 ts.png 单元使用坐标型临时身份；通过 original:usage 逐项审阅。",
+    note: "尚未完成最终语义命名的 ts.png 单元使用坐标型临时身份；可用 atlas usage CLI 逐项审阅。",
   },
   {
     id: "original-object-variants",

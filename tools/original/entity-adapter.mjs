@@ -4,123 +4,129 @@ import {
   coordinateObjectType,
   legacyEntityMapAlias,
 } from "@bobby/model";
-import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
+import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
 
 const directTerrainTypes = new Set([
-  LegacyTerrain.WATER,
-  LegacyTerrain.WATER_ANIMATED,
-  LegacyTerrain.WATER_VARIANT_1,
-  LegacyTerrain.WATER_VARIANT_2,
-  LegacyTerrain.WATER_VARIANT_3,
-  LegacyTerrain.GROUND_A,
-  LegacyTerrain.GROUND_B,
-  LegacyTerrain.GROUND_C,
-  LegacyTerrain.GROUND_D,
-  LegacyTerrain.SHOVEL_CLEARED_GROUND,
-  LegacyTerrain.ICE,
-  LegacyTerrain.START,
-  LegacyTerrain.EXIT,
-  LegacyTerrain.SHOP_DREAM,
-  LegacyTerrain.SHOP_CLOUD9,
-  LegacyTerrain.SHOP_SUPER_KEY,
-  LegacyTerrain.SHOP_STEREO,
-  LegacyTerrain.SHOP_MUSIC,
-  LegacyTerrain.SHOP_SPEED_SHOES,
-  LegacyTerrain.SHOP_COIN_RADAR,
-  LegacyTerrain.SHOP_UNAVAILABLE,
-  LegacyTerrain.SHOVEL_PICKUP,
-  LegacyTerrain.MOWER_PARKING,
+  DecodedTerrain.WATER,
+  DecodedTerrain.WATER_ANIMATED,
+  DecodedTerrain.WATER_VARIANT_1,
+  DecodedTerrain.WATER_VARIANT_2,
+  DecodedTerrain.WATER_VARIANT_3,
+  DecodedTerrain.GROUND_A,
+  DecodedTerrain.GROUND_B,
+  DecodedTerrain.GROUND_C,
+  DecodedTerrain.GROUND_D,
+  DecodedTerrain.SHOVEL_CLEARED_GROUND,
+  DecodedTerrain.ICE,
+  DecodedTerrain.START,
+  DecodedTerrain.EXIT,
+  DecodedTerrain.SHOP_DREAM,
+  DecodedTerrain.SHOP_CLOUD9,
+  DecodedTerrain.SHOP_SUPER_KEY,
+  DecodedTerrain.SHOP_STEREO,
+  DecodedTerrain.SHOP_MUSIC,
+  DecodedTerrain.SHOP_SPEED_SHOES,
+  DecodedTerrain.SHOP_COIN_RADAR,
+  DecodedTerrain.SHOP_UNAVAILABLE,
+  DecodedTerrain.SHOVEL_PICKUP,
+  DecodedTerrain.MOWER_PARKING,
 ]);
 
 const internalObjectParts = new Set([
-  LegacyObject.DRAGON_BODY,
-  LegacyObject.DRAGON_TAIL,
-  LegacyObject.SANDMAN_BODY,
-  LegacyObject.DREAM_MACHINE_BODY,
-  LegacyObject.BEAVER_BODY,
-  LegacyObject.BEANSTALK_MID,
-  LegacyObject.BEANSTALK_BASE,
-  LegacyObject.BEAN_SPROUT,
+  DecodedObject.DRAGON_BODY,
+  DecodedObject.DRAGON_TAIL,
+  DecodedObject.SANDMAN_BODY,
+  DecodedObject.DREAM_MACHINE_BODY,
+  DecodedObject.BEAVER_BODY,
+  DecodedObject.BEANSTALK_MID,
+  DecodedObject.BEANSTALK_BASE,
+  DecodedObject.BEAN_SPROUT,
 ]);
 
-const legacyFenceTypes = new Set([
-  LegacyObject.FENCE_1,
-  LegacyObject.FENCE_2,
-  LegacyObject.FENCE_3,
-  LegacyObject.FENCE_4,
-  LegacyObject.FENCE_5,
-  LegacyObject.FENCE_6,
+const decodedFenceTypes = new Set([
+  DecodedObject.FENCE_1,
+  DecodedObject.FENCE_2,
+  DecodedObject.FENCE_3,
+  DecodedObject.FENCE_4,
+  DecodedObject.FENCE_5,
+  DecodedObject.FENCE_6,
 ]);
 
 const directObjectTypes = new Set([
-  LegacyObject.CONSUMED_CARROT,
-  LegacyObject.CARROT,
-  LegacyObject.EGG_NEST_EMPTY,
-  LegacyObject.EGG_NEST_FILLED,
-  LegacyObject.LOCK,
-  LegacyObject.BEANSTALK_TIP,
-  LegacyObject.BEAN,
-  LegacyObject.WINDMILL_UP,
-  LegacyObject.WINDMILL_DOWN,
-  LegacyObject.WINDMILL_LEFT,
-  LegacyObject.WINDMILL_RIGHT,
-  LegacyObject.PLANK,
-  LegacyObject.PLANK_CRUMBLING,
-  LegacyObject.PLANK_FRAGMENT,
-  LegacyObject.SANDMAN,
-  LegacyObject.DREAM_MACHINE,
-  LegacyObject.MOWER,
-  LegacyObject.GAS,
-  LegacyObject.BEANSTALK_MID,
-  LegacyObject.BEAN_FIELD,
-  LegacyObject.CLOUD_RED,
-  LegacyObject.CLOUD_PURPLE,
-  LegacyObject.CLOUD_GREEN,
-  LegacyObject.LEAF,
-  LegacyObject.CRUMBLY_ROCK,
-  LegacyObject.BEANSTALK_BASE,
-  LegacyObject.BEAN_SPROUT,
-  LegacyObject.CLOUD_GRID_RED,
-  LegacyObject.CLOUD_GRID_PURPLE,
-  LegacyObject.CLOUD_GRID_GREEN,
-  LegacyObject.KITE,
-  LegacyObject.WHIRLWIND,
-  LegacyObject.LANDING,
-  LegacyObject.GOLDEN_CARROT,
-  LegacyObject.BONUS_COIN,
+  DecodedObject.CONSUMED_CARROT,
+  DecodedObject.CARROT,
+  DecodedObject.EGG_NEST_EMPTY,
+  DecodedObject.EGG_NEST_FILLED,
+  DecodedObject.LOCK,
+  DecodedObject.BEANSTALK_TIP,
+  DecodedObject.BEAN,
+  DecodedObject.WINDMILL_UP,
+  DecodedObject.WINDMILL_DOWN,
+  DecodedObject.WINDMILL_LEFT,
+  DecodedObject.WINDMILL_RIGHT,
+  DecodedObject.PLANK,
+  DecodedObject.PLANK_CRUMBLING,
+  DecodedObject.PLANK_FRAGMENT,
+  DecodedObject.SANDMAN,
+  DecodedObject.DREAM_MACHINE,
+  DecodedObject.MOWER,
+  DecodedObject.GAS,
+  DecodedObject.BEANSTALK_MID,
+  DecodedObject.BEAN_FIELD,
+  DecodedObject.CLOUD_RED,
+  DecodedObject.CLOUD_PURPLE,
+  DecodedObject.CLOUD_GREEN,
+  DecodedObject.LEAF,
+  DecodedObject.CRUMBLY_ROCK,
+  DecodedObject.BEANSTALK_BASE,
+  DecodedObject.BEAN_SPROUT,
+  DecodedObject.CLOUD_GRID_RED,
+  DecodedObject.CLOUD_GRID_PURPLE,
+  DecodedObject.CLOUD_GRID_GREEN,
+  DecodedObject.KITE,
+  DecodedObject.WHIRLWIND,
+  DecodedObject.LANDING,
+  DecodedObject.GOLDEN_CARROT,
+  DecodedObject.BONUS_COIN,
 ]);
 
 const WIND_DIRECTIONS = ["up", "down", "left", "right"];
+const CAROUSEL_VARIANTS = {
+  1: "right-top",
+  2: "left-top",
+  3: "left-bottom",
+  4: "right-bottom",
+};
 const canonicalObjectAliases = new Map([
-  [LegacyObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
-  [LegacyObject.EGG_NEST_EMPTY, { type: MapEntityTypeId.EGG_NEST }],
-  [LegacyObject.EGG_NEST_FILLED, { type: MapEntityTypeId.EGG_NEST }],
-  [LegacyObject.BEANSTALK_TIP, { type: MapEntityTypeId.BEANSTALK }],
-  [LegacyObject.WINDMILL_UP, { type: MapEntityTypeId.WINDMILL, direction: "up" }],
-  [LegacyObject.WINDMILL_DOWN, { type: MapEntityTypeId.WINDMILL, direction: "down" }],
-  [LegacyObject.WINDMILL_LEFT, { type: MapEntityTypeId.WINDMILL, direction: "left" }],
-  [LegacyObject.WINDMILL_RIGHT, { type: MapEntityTypeId.WINDMILL, direction: "right" }],
-  [LegacyObject.PLANK_CRUMBLING, { type: MapEntityTypeId.PLANK }],
-  [LegacyObject.PLANK_FRAGMENT, { type: MapEntityTypeId.PLANK }],
-  [LegacyObject.CLOUD_RED, { type: MapEntityTypeId.CLOUD, color: "red" }],
-  [LegacyObject.CLOUD_PURPLE, { type: MapEntityTypeId.CLOUD, color: "purple" }],
-  [LegacyObject.CLOUD_GREEN, { type: MapEntityTypeId.CLOUD, color: "green" }],
-  [LegacyObject.CLOUD_GRID_RED, { type: MapEntityTypeId.CLOUD_PARKING, color: "red" }],
-  [LegacyObject.CLOUD_GRID_PURPLE, { type: MapEntityTypeId.CLOUD_PARKING, color: "purple" }],
-  [LegacyObject.CLOUD_GRID_GREEN, { type: MapEntityTypeId.CLOUD_PARKING, color: "green" }],
+  [DecodedObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
+  [DecodedObject.EGG_NEST_EMPTY, { type: MapEntityTypeId.EGG_NEST }],
+  [DecodedObject.EGG_NEST_FILLED, { type: MapEntityTypeId.EGG_NEST }],
+  [DecodedObject.BEANSTALK_TIP, { type: MapEntityTypeId.BEANSTALK }],
+  [DecodedObject.WINDMILL_UP, { type: MapEntityTypeId.WINDMILL, direction: "up" }],
+  [DecodedObject.WINDMILL_DOWN, { type: MapEntityTypeId.WINDMILL, direction: "down" }],
+  [DecodedObject.WINDMILL_LEFT, { type: MapEntityTypeId.WINDMILL, direction: "left" }],
+  [DecodedObject.WINDMILL_RIGHT, { type: MapEntityTypeId.WINDMILL, direction: "right" }],
+  [DecodedObject.PLANK_CRUMBLING, { type: MapEntityTypeId.PLANK }],
+  [DecodedObject.PLANK_FRAGMENT, { type: MapEntityTypeId.PLANK }],
+  [DecodedObject.CLOUD_RED, { type: MapEntityTypeId.CLOUD, color: "red" }],
+  [DecodedObject.CLOUD_PURPLE, { type: MapEntityTypeId.CLOUD, color: "purple" }],
+  [DecodedObject.CLOUD_GREEN, { type: MapEntityTypeId.CLOUD, color: "green" }],
+  [DecodedObject.CLOUD_GRID_RED, { type: MapEntityTypeId.CLOUD_PARKING, color: "red" }],
+  [DecodedObject.CLOUD_GRID_PURPLE, { type: MapEntityTypeId.CLOUD_PARKING, color: "purple" }],
+  [DecodedObject.CLOUD_GRID_GREEN, { type: MapEntityTypeId.CLOUD_PARKING, color: "green" }],
 ]);
 
-export function adaptLegacyMap(map, options = {}) {
+export function adaptDecodedMap(map, options = {}) {
   const entities = [];
   const starts = [];
   const sourceObjects = map.objects ?? [];
   const explicitObjectCells = new Set(
     sourceObjects
-      .filter((object) => object.type !== LegacyObject.EMPTY)
+      .filter((object) => object.type !== DecodedObject.EMPTY)
       .map((object) => `${object.x},${object.y}`),
   );
   const objectiveType = sourceObjects.some(
-    (object) => object.type === LegacyObject.CARROT,
+    (object) => object.type === DecodedObject.CARROT,
   )
     ? MapEntityTypeId.CARROT
     : MapEntityTypeId.EGG_NEST;
@@ -128,16 +134,17 @@ export function adaptLegacyMap(map, options = {}) {
     const row = map.terrain[y];
     if (!row || row.length !== map.width) {
       throw new Error(
-        `Legacy terrain row ${y} does not match width ${map.width}`,
+        `Decoded terrain row ${y} does not match width ${map.width}`,
       );
     }
     for (let x = 0; x < map.width; x += 1) {
       const type = row[x];
-      if (type === LegacyTerrain.START) starts.push({ x, y });
+      const semanticType = decodedTerrainSemantic(type);
+      if (semanticType === DecodedTerrain.START) starts.push({ x, y });
       entities.push(
-        ...adaptLegacyTerrain(type, x, y, {
+        ...adaptDecodedTerrain(type, x, y, {
           hiddenObjectiveType:
-            type === LegacyTerrain.HIGH_GRASS_OBJECTIVE &&
+            semanticType === DecodedTerrain.HIGH_GRASS_OBJECTIVE &&
             !explicitObjectCells.has(`${x},${y}`)
               ? objectiveType
               : null,
@@ -159,7 +166,7 @@ export function adaptLegacyMap(map, options = {}) {
   });
 
   for (const object of sourceObjects) {
-    entities.push(...adaptLegacyObject(object));
+    entities.push(...adaptDecodedObject(object));
   }
 
   return {
@@ -169,16 +176,18 @@ export function adaptLegacyMap(map, options = {}) {
   };
 }
 
-export function adaptLegacyTerrain(type, x, y, options = {}) {
-  if (type === LegacyTerrain.SNOW) {
+export function adaptDecodedTerrain(type, x, y, options = {}) {
+  const coordinateType = decodedTerrainCoordinate(type);
+  type = decodedTerrainSemantic(type);
+  if (type === DecodedTerrain.SNOW) {
     return [
       canonicalTerrainEntity(EntityTypeId.GROUND_D, x, y),
       entity(EntityTypeId.SNOW, x, y),
     ];
   }
   if (
-    type === LegacyTerrain.HIGH_GRASS ||
-    type === LegacyTerrain.HIGH_GRASS_OBJECTIVE
+    type === DecodedTerrain.HIGH_GRASS ||
+    type === DecodedTerrain.HIGH_GRASS_OBJECTIVE
   ) {
     return [
       canonicalTerrainEntity(mowedGroundAt(x, y), x, y),
@@ -238,7 +247,7 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
     return [
       entity(EntityTypeId.CAROUSEL, x, y, {
         variant: /^\d$/.test(carousel[1])
-          ? Number(carousel[1])
+          ? CAROUSEL_VARIANTS[carousel[1]]
           : carousel[1],
       }),
     ];
@@ -256,20 +265,23 @@ export function adaptLegacyTerrain(type, x, y, options = {}) {
     ];
   }
 
-  if (directTerrainTypes.has(type) || isLegacyTerrainVariant(type)) {
+  if (directTerrainTypes.has(type) || isDecodedTerrainVariant(type)) {
     return [canonicalTerrainEntity(type, x, y)];
   }
-  throw new Error(`Unsupported legacy terrain type: ${type}`);
+  if (coordinateType) {
+    return [canonicalTerrainEntity(coordinateType, x, y)];
+  }
+  throw new Error(`Unsupported decoded terrain type: ${type}`);
 }
 
-export function adaptLegacyObject(object) {
+export function adaptDecodedObject(object) {
   const { type, x, y } = object;
-  if (type === LegacyObject.EMPTY || internalObjectParts.has(type)) return [];
+  if (type === DecodedObject.EMPTY || internalObjectParts.has(type)) return [];
 
   if (
-    type === LegacyObject.DRAGON_HEAD_BASE ||
-    type === LegacyObject.DRAGON_ANIM_1 ||
-    type === LegacyObject.DRAGON_ANIM_2
+    type === DecodedObject.DRAGON_HEAD_BASE ||
+    type === DecodedObject.DRAGON_ANIM_1 ||
+    type === DecodedObject.DRAGON_ANIM_2
   ) {
     return [
       entity(EntityTypeId.DRAGON, x + 1, y, {
@@ -278,18 +290,18 @@ export function adaptLegacyObject(object) {
       }),
     ];
   }
-  if (type === LegacyObject.BEAVER_BASE) {
+  if (type === DecodedObject.BEAVER_BASE) {
     return [entity(MapEntityTypeId.BEAVER, x, y)];
   }
-  if (legacyFenceTypes.has(type)) {
-    const variant = [...legacyFenceTypes].indexOf(type) + 1;
+  if (decodedFenceTypes.has(type)) {
+    const variant = [...decodedFenceTypes].indexOf(type) + 1;
     return [
-      entity(MapEntityTypeId.FENCE, x, y, { variant }),
+      entity(MapEntityTypeId.FENCE, x, y, { variant: `ts-16-${variant + 9}` }),
     ];
   }
 
   const melt = /^ice-melt-([1-3])$/.exec(type);
-  if (type === LegacyObject.ICE_BLOCK || melt) {
+  if (type === DecodedObject.ICE_BLOCK || melt) {
     return [
       entity(EntityTypeId.ICE_BLOCK, x, y, {
         ...copiedFields(object),
@@ -314,7 +326,7 @@ export function adaptLegacyObject(object) {
   if (directObjectTypes.has(type)) {
     return [entity(type, x, y, copiedFields(object))];
   }
-  throw new Error(`Unsupported legacy object type: ${type}`);
+  throw new Error(`Unsupported decoded object type: ${type}`);
 }
 
 export function mowedGroundAt(x, y) {
@@ -357,12 +369,22 @@ function directionSuffix(type, prefix) {
     : null;
 }
 
-function isLegacyTerrainVariant(type) {
+function isDecodedTerrainVariant(type) {
   return (
     /^ts-\d+-\d+$/.test(type) ||
     /^walkable-variant-\d{2}$/.test(type) ||
     /^background-variant-\d{3}$/.test(type)
   );
+}
+
+function decodedTerrainSemantic(type) {
+  const separator = type.lastIndexOf(":ts-");
+  return separator < 0 ? type : type.slice(0, separator);
+}
+
+function decodedTerrainCoordinate(type) {
+  const match = /(?:^|:)(ts-\d+-\d+)$/.exec(type);
+  return match?.[1];
 }
 
 function copiedFields(object) {

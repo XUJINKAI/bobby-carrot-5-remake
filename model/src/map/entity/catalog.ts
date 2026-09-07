@@ -81,8 +81,15 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.CAROUSEL, [
     enumField(
       "variant",
-      [1, 2, 3, 4, "vertical", "horizontal"],
-      1,
+      [
+        "right-top",
+        "left-top",
+        "left-bottom",
+        "right-bottom",
+        "vertical",
+        "horizontal",
+      ],
+      "right-top",
       true,
     ),
   ]),
@@ -101,7 +108,19 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ),
   defineEntity(MapEntityTypeId.SNOW),
   defineEntity(MapEntityTypeId.FENCE, [
-    enumField("variant", [1, 2, 3, 4, 5, 6], undefined, true),
+    enumField(
+      "variant",
+      [
+        "ts-16-10",
+        "ts-16-11",
+        "ts-16-12",
+        "ts-16-13",
+        "ts-16-14",
+        "ts-16-15",
+      ],
+      undefined,
+      true,
+    ),
   ]),
 
   defineEntity(MapEntityTypeId.CARROT),

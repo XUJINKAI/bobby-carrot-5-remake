@@ -1,4 +1,4 @@
-export const LegacyTerrain = {
+export const DecodedTerrain = {
   SNOW: "snow",
   WATER: "water",
   WATER_ANIMATED: "water-animated",
@@ -69,7 +69,7 @@ export const LegacyTerrain = {
   HIGH_GRASS_OBJECTIVE: "high-grass-objective",
 };
 
-export const LegacyObject = {
+export const DecodedObject = {
   CONSUMED_CARROT: "consumed-carrot",
   CARROT: "carrot",
   EGG_NEST_EMPTY: "egg-nest-empty",

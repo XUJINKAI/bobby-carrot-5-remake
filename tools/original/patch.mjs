@@ -7,7 +7,7 @@ import {
   replaceDatLevelRecord,
   splitDatPackage,
 } from "./dat/index.mjs";
-import { adaptLegacyMap } from "./entity-adapter.mjs";
+import { adaptDecodedMap } from "./entity-adapter.mjs";
 import { reverseEntityMap } from "./entity-reverse-adapter.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
@@ -99,8 +99,8 @@ function verifyPatchedJar(file, maps) {
       item.source.levelIndex - 1
     ];
     if (!record) throw new Error(`Patch 后缺少 ${item.id} 的 DAT record`);
-    const decoded = adaptLegacyMap(decodeDatLevelRecord(record).map);
-    const expected = adaptLegacyMap(reverseEntityMap(item.map));
+    const decoded = adaptDecodedMap(decodeDatLevelRecord(record).map);
+    const expected = adaptDecodedMap(reverseEntityMap(item.map));
     if (
       JSON.stringify(normalizeEntityMap(decoded)) !==
       JSON.stringify(normalizeEntityMap(expected))

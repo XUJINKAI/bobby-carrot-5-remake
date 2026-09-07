@@ -16,7 +16,7 @@ const definition: EntityModuleDefinition = {
   state: [
     {
       key: "variant",
-      kind: "number",
+      kind: "string",
       label: "Visual variant",
     },
   ],
@@ -30,27 +30,27 @@ export interface FenceConnections {
   up: boolean;
 }
 
-/** 1..6 对应 ts.png 16,10--16,15；未指定 variant 时使用该邻接算法。 */
-export function resolveFenceVariant(connections: FenceConnections): number {
+/** 返回 ts.png 单格坐标；未指定 variant 时使用该邻接算法。 */
+export function resolveFenceVariant(connections: FenceConnections): string {
   const { left, down, right, up } = connections;
-  if (!left && down && !right) return 2;
-  if (left && !down && !right) return 3;
-  if (!left && down && right) return 4;
-  if (left && down && !right) return 5;
-  if (!left && !down && right) return 6;
-  if (up && !left && !right) return 2;
-  return 1;
+  if (!left && down && !right) return "ts-16-11";
+  if (left && !down && !right) return "ts-16-12";
+  if (!left && down && right) return "ts-16-13";
+  if (left && down && !right) return "ts-16-14";
+  if (!left && !down && right) return "ts-16-15";
+  if (up && !left && !right) return "ts-16-11";
+  return "ts-16-10";
 }
 
 export const fence: EntityModule = originalModule(definition, {
   id: EntityTypeId.FENCE,
   resolve(context) {
-    const fixed = Number(context.entity.state?.variant);
+    const fixed = context.entity.state?.variant;
     const variant =
-      Number.isInteger(fixed) && fixed >= 1 && fixed <= 6
+      typeof fixed === "string" && /^ts-16-1[0-5]$/.test(fixed)
         ? fixed
         : resolveFenceVariant(resolveConnections(context));
-    const atlas = objectCell(47 + variant);
+    const atlas = objectCell(48 + Number(variant.slice("ts-16-".length)) - 10);
     return {
       layers: [
         {

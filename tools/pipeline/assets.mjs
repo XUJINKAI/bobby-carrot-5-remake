@@ -145,7 +145,11 @@ function originalFilters() {
       options: [
         ["tide", "潮汐", entityIcon("tide", { direction: "right" })],
         ["speed", "加速带", entityIcon("speed", { direction: "right" })],
-        ["carousel", "旋转通道", entityIcon("carousel", { variant: 1 })],
+        [
+          "carousel",
+          "旋转通道",
+          entityIcon("carousel", { variant: "right-top" }),
+        ],
         ["wind", "风车 / 云", entityIcon("windmill", { direction: "right" })],
         ["mirror", "魔法镜", entityIcon("mirror", { variant: 1 })],
         ["trap", "陷阱", entityIcon("trap", { active: true })],

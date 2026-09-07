@@ -298,7 +298,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
     let fixed = stripAutoMetadata(entity);
     if (terrain?.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
       const index = fenceVariantIndex(level, entity, terrain);
-      fixed = { ...fixed, variant: index + 1 };
+      fixed = { ...fixed, variant: `ts-16-${index + 10}` };
     }
     return fixed;
   });
@@ -361,7 +361,7 @@ function createFixedSurfaceEntity(
       type: terrain.auto.canonical,
       x: cell.x,
       y: cell.y,
-      ...(index >= 0 ? { variant: index + 1 } : {}),
+      ...(index >= 0 ? { variant: `ts-16-${index + 10}` } : {}),
     };
     catalog.require(entity.type);
     return applySurfaceInstanceTraits(entity, terrain);

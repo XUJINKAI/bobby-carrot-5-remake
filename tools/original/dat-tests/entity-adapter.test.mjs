@@ -6,29 +6,29 @@ import {
   legacyEntityMapAlias,
 } from "../../../model/dist/index.js";
 import {
-  adaptLegacyMap,
-  adaptLegacyObject,
-  adaptLegacyTerrain,
+  adaptDecodedMap,
+  adaptDecodedObject,
+  adaptDecodedTerrain,
   mowedGroundAt,
 } from "../entity-adapter.mjs";
 import { reverseEntityMap } from "../entity-reverse-adapter.mjs";
-import { LegacyObject, LegacyTerrain } from "../dat/semantic-ids.mjs";
+import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
 import { decodeDatTerrain, encodeDatTerrain } from "../dat/mapping.mjs";
 
 test("DAT Tide bytes use the confirmed runtime directions", () => {
-  assert.equal(decodeDatTerrain(0x57), LegacyTerrain.TIDE_DOWN);
-  assert.equal(decodeDatTerrain(0x58), LegacyTerrain.TIDE_UP);
-  assert.equal(decodeDatTerrain(0x59), LegacyTerrain.TIDE_RIGHT);
-  assert.equal(decodeDatTerrain(0x5a), LegacyTerrain.TIDE_LEFT);
-  assert.equal(encodeDatTerrain(LegacyTerrain.TIDE_DOWN), 0x57);
-  assert.equal(encodeDatTerrain(LegacyTerrain.TIDE_LEFT), 0x5a);
+  assert.equal(decodeDatTerrain(0x57), `${DecodedTerrain.TIDE_DOWN}:ts-6-8`);
+  assert.equal(decodeDatTerrain(0x58), `${DecodedTerrain.TIDE_UP}:ts-6-9`);
+  assert.equal(decodeDatTerrain(0x59), `${DecodedTerrain.TIDE_RIGHT}:ts-6-10`);
+  assert.equal(decodeDatTerrain(0x5a), `${DecodedTerrain.TIDE_LEFT}:ts-6-11`);
+  assert.equal(encodeDatTerrain(DecodedTerrain.TIDE_DOWN), 0x57);
+  assert.equal(encodeDatTerrain(DecodedTerrain.TIDE_LEFT), 0x5a);
 });
 
 test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
-  const result = adaptLegacyMap({
+  const result = adaptDecodedMap({
     width: 2,
     height: 1,
-    terrain: [[LegacyTerrain.GROUND_A, LegacyTerrain.START]],
+    terrain: [[DecodedTerrain.GROUND_A, DecodedTerrain.START]],
     objects: [],
   });
   assert.deepEqual(result.entities, [
@@ -39,11 +39,11 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
 });
 
 test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TIDE_LEFT, 1, 2), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.TIDE_LEFT, 1, 2), [
     { type: EntityTypeId.TIDE, x: 1, y: 2, direction: "left" },
   ]);
   assert.deepEqual(
-    adaptLegacyTerrain(LegacyTerrain.SPEED_SWITCH_PRESSED, 1, 2),
+    adaptDecodedTerrain(DecodedTerrain.SPEED_SWITCH_PRESSED, 1, 2),
     [
       {
         type: EntityTypeId.SPEED_SWITCH,
@@ -54,10 +54,10 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
     ],
   );
   assert.deepEqual(
-    adaptLegacyTerrain(LegacyTerrain.SPEED_SWITCH_RAISED, 1, 2),
+    adaptDecodedTerrain(DecodedTerrain.SPEED_SWITCH_RAISED, 1, 2),
     [{ type: EntityTypeId.SPEED_SWITCH, x: 1, y: 2 }],
   );
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.WIND_SWITCH_2_OFF, 1, 2), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.WIND_SWITCH_2_OFF, 1, 2), [
     {
       type: EntityTypeId.WIND_SWITCH,
       x: 1,
@@ -65,7 +65,7 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
       direction: "left",
     },
   ]);
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.WIND_SWITCH_3_ON, 1, 2), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.WIND_SWITCH_3_ON, 1, 2), [
     {
       type: EntityTypeId.WIND_SWITCH,
       x: 1,
@@ -74,10 +74,10 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
       active: true,
     },
   ]);
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TRAP_ACTIVE, 1, 2), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.TRAP_ACTIVE, 1, 2), [
     { type: EntityTypeId.TRAP, x: 1, y: 2 },
   ]);
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.TRAP_INACTIVE, 1, 2), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.TRAP_INACTIVE, 1, 2), [
     { type: EntityTypeId.TRAP, x: 1, y: 2, active: false },
   ]);
 });
@@ -99,9 +99,9 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
       },
     ],
   });
-  assert.equal(reversed.terrain[0][1], LegacyTerrain.WIND_SWITCH_2_ON);
+  assert.equal(reversed.terrain[0][1], DecodedTerrain.WIND_SWITCH_2_ON);
   assert.deepEqual(
-    adaptLegacyMap(reversed).entities.find(
+    adaptDecodedMap(reversed).entities.find(
       (entity) => entity.type === EntityTypeId.WIND_SWITCH,
     ),
     {
@@ -114,12 +114,23 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
   );
 });
 
-test("未确认的 Mirror/Carousel 语义保持在 adapter 隔离层", () => {
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.MIRROR_4, 1, 2), [
+test("Mirror 数字帧与 Carousel 方向在 adapter 边界转换", () => {
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.MIRROR_4, 1, 2), [
     { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: 4 },
   ]);
   assert.deepEqual(
-    adaptLegacyTerrain(LegacyTerrain.CAROUSEL_HORIZONTAL, 1, 2),
+    adaptDecodedTerrain(DecodedTerrain.CAROUSEL_2, 1, 2),
+    [
+      {
+        type: EntityTypeId.CAROUSEL,
+        x: 1,
+        y: 2,
+        variant: "left-top",
+      },
+    ],
+  );
+  assert.deepEqual(
+    adaptDecodedTerrain(DecodedTerrain.CAROUSEL_HORIZONTAL, 1, 2),
     [
       {
         type: EntityTypeId.CAROUSEL,
@@ -130,7 +141,7 @@ test("未确认的 Mirror/Carousel 语义保持在 adapter 隔离层", () => {
     ],
   );
   assert.deepEqual(
-    adaptLegacyTerrain(LegacyTerrain.COLOR_PINK_BLOCK_LOWERED, 1, 2),
+    adaptDecodedTerrain(DecodedTerrain.COLOR_PINK_BLOCK_LOWERED, 1, 2),
     [
       {
         type: MapEntityTypeId.COLOR_BLOCK,
@@ -144,26 +155,26 @@ test("未确认的 Mirror/Carousel 语义保持在 adapter 隔离层", () => {
 });
 
 test("旧单层 Snow/High Grass 精确展开为 surface + cover", () => {
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.SNOW, 3, 4), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.SNOW, 3, 4), [
     { type: MapEntityTypeId.GRASS, x: 3, y: 4, variant: "ts-10-2" },
     { type: EntityTypeId.SNOW, x: 3, y: 4 },
   ]);
-  assert.deepEqual(adaptLegacyTerrain(LegacyTerrain.HIGH_GRASS, 3, 4), [
+  assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.HIGH_GRASS, 3, 4), [
     canonicalMowedGroundAt(3, 4),
     { type: EntityTypeId.HIGH_GRASS, x: 3, y: 4 },
   ]);
 });
 
 test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显式 Entity 时不重复生成", () => {
-  const result = adaptLegacyMap({
+  const result = adaptDecodedMap({
     width: 3,
     height: 1,
     terrain: [[
-      LegacyTerrain.START,
-      LegacyTerrain.HIGH_GRASS_OBJECTIVE,
-      LegacyTerrain.HIGH_GRASS_OBJECTIVE,
+      DecodedTerrain.START,
+      DecodedTerrain.HIGH_GRASS_OBJECTIVE,
+      DecodedTerrain.HIGH_GRASS_OBJECTIVE,
     ]],
-    objects: [{ type: LegacyObject.CARROT, x: 2, y: 0 }],
+    objects: [{ type: DecodedObject.CARROT, x: 2, y: 0 }],
   });
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
@@ -184,10 +195,10 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
 });
 
 test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty Nest", () => {
-  const result = adaptLegacyMap({
+  const result = adaptDecodedMap({
     width: 2,
     height: 1,
-    terrain: [[LegacyTerrain.START, LegacyTerrain.HIGH_GRASS_OBJECTIVE]],
+    terrain: [[DecodedTerrain.START, DecodedTerrain.HIGH_GRASS_OBJECTIVE]],
     objects: [],
   });
   assert.ok(
@@ -202,15 +213,15 @@ test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty 
 
 test("旧 Object anchor/phase 映射到单一 canonical Entity", () => {
   assert.deepEqual(
-    adaptLegacyObject({ type: LegacyObject.DRAGON_HEAD_BASE, x: 2, y: 3 }),
+    adaptDecodedObject({ type: DecodedObject.DRAGON_HEAD_BASE, x: 2, y: 3 }),
     [{ type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" }],
   );
   assert.deepEqual(
-    adaptLegacyObject({ type: LegacyObject.DRAGON_TAIL, x: 4, y: 3 }),
+    adaptDecodedObject({ type: DecodedObject.DRAGON_TAIL, x: 4, y: 3 }),
     [],
   );
   assert.deepEqual(
-    adaptLegacyObject({ type: LegacyObject.ICE_MELT_2, x: 4, y: 3 }),
+    adaptDecodedObject({ type: DecodedObject.ICE_MELT_2, x: 4, y: 3 }),
     [{ type: EntityTypeId.ICE_BLOCK, x: 4, y: 3 }],
   );
 });
@@ -236,12 +247,12 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
   const reversed = reverseEntityMap(map);
   assert.deepEqual(
     reversed.objects.filter(
-      (object) => object.type === LegacyObject.DRAGON_HEAD_BASE,
+      (object) => object.type === DecodedObject.DRAGON_HEAD_BASE,
     ),
-    [{ type: LegacyObject.DRAGON_HEAD_BASE, x: 1, y: 0 }],
+    [{ type: DecodedObject.DRAGON_HEAD_BASE, x: 1, y: 0 }],
   );
   assert.deepEqual(
-    adaptLegacyMap(reversed).entities.find(
+    adaptDecodedMap(reversed).entities.find(
       (entity) => entity.type === EntityTypeId.DRAGON,
     ),
     { type: EntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
@@ -263,40 +274,45 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
 
 test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
   for (const [index, type] of [
-    LegacyObject.FENCE_1,
-    LegacyObject.FENCE_2,
-    LegacyObject.FENCE_3,
-    LegacyObject.FENCE_4,
-    LegacyObject.FENCE_5,
-    LegacyObject.FENCE_6,
+    DecodedObject.FENCE_1,
+    DecodedObject.FENCE_2,
+    DecodedObject.FENCE_3,
+    DecodedObject.FENCE_4,
+    DecodedObject.FENCE_5,
+    DecodedObject.FENCE_6,
   ].entries()) {
-    assert.deepEqual(adaptLegacyObject({ type, x: 4, y: 3 }), [
-      { type: MapEntityTypeId.FENCE, x: 4, y: 3, variant: index + 1 },
+    assert.deepEqual(adaptDecodedObject({ type, x: 4, y: 3 }), [
+      {
+        type: MapEntityTypeId.FENCE,
+        x: 4,
+        y: 3,
+        variant: `ts-16-${index + 10}`,
+      },
     ]);
   }
 });
 
 test("DAT surface variant 转换为可追溯的稳定 Surface ABI", () => {
-  assert.deepEqual(adaptLegacyTerrain("ts-7-1", 0, 0), [
+  assert.deepEqual(adaptDecodedTerrain("ts-7-1", 0, 0), [
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-7-1" },
   ]);
-  assert.deepEqual(adaptLegacyTerrain("ts-4-13", 1, 0), [
+  assert.deepEqual(adaptDecodedTerrain("ts-4-13", 1, 0), [
     { type: MapEntityTypeId.TREE, x: 1, y: 0, variant: "ts-4-13" },
   ]);
   assert.deepEqual(
-    adaptLegacyObject({ type: "object-variant-001", x: 0, y: 0 }),
+    adaptDecodedObject({ type: "object-variant-001", x: 0, y: 0 }),
     [{ type: "object-1-1", x: 0, y: 0 }],
   );
 });
 
 
 test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", () => {
-  const result = adaptLegacyMap({
+  const result = adaptDecodedMap({
     width: 3,
     height: 2,
     terrain: [
       ["ts-5-11", "ts-5-12", "ts-5-13"],
-      [LegacyTerrain.START, LegacyTerrain.GROUND_A, LegacyTerrain.GROUND_A],
+      [DecodedTerrain.START, DecodedTerrain.GROUND_A, DecodedTerrain.GROUND_A],
     ],
     objects: [],
   });

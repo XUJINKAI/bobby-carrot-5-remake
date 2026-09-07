@@ -4,55 +4,55 @@ import {
   MapEntityTypeId,
   SURFACE_SOURCE_MAPPINGS,
 } from "@bobby/model";
-import { LegacyObject, LegacyTerrain } from "./dat/semantic-ids.mjs";
+import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
 
 const directTerrainTypes = new Set([
-  LegacyTerrain.WATER,
-  LegacyTerrain.WATER_ANIMATED,
-  LegacyTerrain.WATER_VARIANT_1,
-  LegacyTerrain.WATER_VARIANT_2,
-  LegacyTerrain.WATER_VARIANT_3,
-  LegacyTerrain.GROUND_A,
-  LegacyTerrain.GROUND_B,
-  LegacyTerrain.GROUND_C,
-  LegacyTerrain.GROUND_D,
-  LegacyTerrain.SHOVEL_CLEARED_GROUND,
-  LegacyTerrain.ICE,
-  LegacyTerrain.START,
-  LegacyTerrain.EXIT,
-  LegacyTerrain.SHOP_DREAM,
-  LegacyTerrain.SHOP_CLOUD9,
-  LegacyTerrain.SHOP_SUPER_KEY,
-  LegacyTerrain.SHOP_STEREO,
-  LegacyTerrain.SHOP_MUSIC,
-  LegacyTerrain.SHOP_SPEED_SHOES,
-  LegacyTerrain.SHOP_COIN_RADAR,
-  LegacyTerrain.SHOP_UNAVAILABLE,
-  LegacyTerrain.SHOVEL_PICKUP,
-  LegacyTerrain.MOWER_PARKING,
+  DecodedTerrain.WATER,
+  DecodedTerrain.WATER_ANIMATED,
+  DecodedTerrain.WATER_VARIANT_1,
+  DecodedTerrain.WATER_VARIANT_2,
+  DecodedTerrain.WATER_VARIANT_3,
+  DecodedTerrain.GROUND_A,
+  DecodedTerrain.GROUND_B,
+  DecodedTerrain.GROUND_C,
+  DecodedTerrain.GROUND_D,
+  DecodedTerrain.SHOVEL_CLEARED_GROUND,
+  DecodedTerrain.ICE,
+  DecodedTerrain.START,
+  DecodedTerrain.EXIT,
+  DecodedTerrain.SHOP_DREAM,
+  DecodedTerrain.SHOP_CLOUD9,
+  DecodedTerrain.SHOP_SUPER_KEY,
+  DecodedTerrain.SHOP_STEREO,
+  DecodedTerrain.SHOP_MUSIC,
+  DecodedTerrain.SHOP_SPEED_SHOES,
+  DecodedTerrain.SHOP_COIN_RADAR,
+  DecodedTerrain.SHOP_UNAVAILABLE,
+  DecodedTerrain.SHOVEL_PICKUP,
+  DecodedTerrain.MOWER_PARKING,
 ]);
 const specialObjectTypes = new Set([
-  LegacyObject.EMPTY,
-  LegacyObject.DRAGON_HEAD_BASE,
-  LegacyObject.DRAGON_BODY,
-  LegacyObject.DRAGON_TAIL,
-  LegacyObject.DRAGON_ANIM_1,
-  LegacyObject.DRAGON_ANIM_2,
-  LegacyObject.BEAVER_BASE,
-  LegacyObject.BEAVER_BODY,
-  LegacyObject.ICE_BLOCK,
-  LegacyObject.ICE_MELT_1,
-  LegacyObject.ICE_MELT_2,
-  LegacyObject.ICE_MELT_3,
-  LegacyObject.FENCE_1,
-  LegacyObject.FENCE_2,
-  LegacyObject.FENCE_3,
-  LegacyObject.FENCE_4,
-  LegacyObject.FENCE_5,
-  LegacyObject.FENCE_6,
+  DecodedObject.EMPTY,
+  DecodedObject.DRAGON_HEAD_BASE,
+  DecodedObject.DRAGON_BODY,
+  DecodedObject.DRAGON_TAIL,
+  DecodedObject.DRAGON_ANIM_1,
+  DecodedObject.DRAGON_ANIM_2,
+  DecodedObject.BEAVER_BASE,
+  DecodedObject.BEAVER_BODY,
+  DecodedObject.ICE_BLOCK,
+  DecodedObject.ICE_MELT_1,
+  DecodedObject.ICE_MELT_2,
+  DecodedObject.ICE_MELT_3,
+  DecodedObject.FENCE_1,
+  DecodedObject.FENCE_2,
+  DecodedObject.FENCE_3,
+  DecodedObject.FENCE_4,
+  DecodedObject.FENCE_5,
+  DecodedObject.FENCE_6,
 ]);
 const directObjectTypes = new Set(
-  Object.values(LegacyObject).filter((type) => !specialObjectTypes.has(type)),
+  Object.values(DecodedObject).filter((type) => !specialObjectTypes.has(type)),
 );
 const WIND_DIRECTION_INDEX = {
   up: 0,
@@ -60,8 +60,14 @@ const WIND_DIRECTION_INDEX = {
   left: 2,
   right: 3,
 };
+const CAROUSEL_DAT_VARIANTS = {
+  "right-top": 1,
+  "left-top": 2,
+  "left-bottom": 3,
+  "right-bottom": 4,
+};
 
-/** 将产品 Entity Map 还原为 DAT 编码器专用的 legacy terrain/object 表示。 */
+/** 将产品 Entity Map 还原为 DAT 编码器专用的 decoded terrain/object 表示。 */
 export function reverseEntityMap(map) {
   validateMapShape(map);
   const cells = Array.from({ length: map.height }, () =>
@@ -124,14 +130,14 @@ function terrainAt(entities, x, y) {
         entity.type === EntityTypeId.HIGH_GRASS ||
         entity.type === EntityTypeId.HIGH_GRASS_OBJECTIVE,
     )
-    .map(legacyTerrainFor);
+    .map(decodedTerrainFor);
   if (special.length === 1) {
     return special[0];
   }
   if (special.length > 1) {
     throw new Error(`Patch map ${x},${y} 包含多个可编码的覆盖地形 Entity`);
   }
-  const candidates = entities.map(legacyTerrainFor).filter(Boolean);
+  const candidates = entities.map(decodedTerrainFor).filter(Boolean);
   if (candidates.length !== 1)
     throw new Error(
       `Patch map ${x},${y} 必须恰好包含一个可编码的地形 Entity，实际为 ${candidates.length}`,
@@ -139,12 +145,12 @@ function terrainAt(entities, x, y) {
   return candidates[0];
 }
 
-function legacyTerrainFor(entity) {
+function decodedTerrainFor(entity) {
   const { type } = entity;
-  if (type === EntityTypeId.SNOW) return LegacyTerrain.SNOW;
-  if (type === EntityTypeId.HIGH_GRASS) return LegacyTerrain.HIGH_GRASS;
+  if (type === EntityTypeId.SNOW) return DecodedTerrain.SNOW;
+  if (type === EntityTypeId.HIGH_GRASS) return DecodedTerrain.HIGH_GRASS;
   if (type === EntityTypeId.HIGH_GRASS_OBJECTIVE) {
-    return LegacyTerrain.HIGH_GRASS_OBJECTIVE;
+    return DecodedTerrain.HIGH_GRASS_OBJECTIVE;
   }
   if (type === EntityTypeId.TIDE) {
     return directionTerrain("tide", entity.direction);
@@ -186,14 +192,11 @@ function legacyTerrainFor(entity) {
   if (type === EntityTypeId.MIRROR)
     return variantTerrain("mirror", entity.variant, [1, 2, 3, 4]);
   if (type === EntityTypeId.CAROUSEL)
-    return variantTerrain("carousel", entity.variant, [
-      1,
-      2,
-      3,
-      4,
-      "vertical",
-      "horizontal",
-    ]);
+    return variantTerrain(
+      "carousel",
+      CAROUSEL_DAT_VARIANTS[entity.variant] ?? entity.variant,
+      [1, 2, 3, 4, "vertical", "horizontal"],
+    );
   if (type === EntityTypeId.COLOR_YELLOW_BLOCK)
     return `color-yellow-block-${entity.state?.raised ? "raised" : "lowered"}`;
   if (type === EntityTypeId.COLOR_PINK_BLOCK)
@@ -210,10 +213,10 @@ function legacyTerrainFor(entity) {
     /^background-variant-\d{3}$/.test(type)
   )
     return type;
-  return legacySurfaceTerrain(entity);
+  return decodedSurfaceTerrain(entity);
 }
 
-function legacySurfaceTerrain(entity) {
+function decodedSurfaceTerrain(entity) {
   let mapping = SURFACE_SOURCE_MAPPINGS.find(
     (candidate) =>
       candidate.type === entity.type &&
@@ -246,63 +249,65 @@ function legacySurfaceTerrain(entity) {
 
 function objectFor(entity) {
   const { type, x, y } = entity;
-  if (type === EntityTypeId.BOBBY || legacyTerrainFor(entity)) return [];
+  if (type === EntityTypeId.BOBBY || decodedTerrainFor(entity)) return [];
   if (type === EntityTypeId.DRAGON) {
     if (entity.direction !== "left")
       throw new Error("原版 DAT Dragon 只支持 left direction");
-    return [{ type: LegacyObject.DRAGON_HEAD_BASE, x: x - 1, y }];
+    return [{ type: DecodedObject.DRAGON_HEAD_BASE, x: x - 1, y }];
   }
   if (type === EntityTypeId.BEAVER)
-    return [{ type: LegacyObject.BEAVER_BASE, x, y }];
+    return [{ type: DecodedObject.BEAVER_BASE, x, y }];
   if (type === MapEntityTypeId.EGG_NEST)
-    return [{ type: LegacyObject.EGG_NEST_EMPTY, x, y }];
+    return [{ type: DecodedObject.EGG_NEST_EMPTY, x, y }];
   if (type === MapEntityTypeId.BEANSTALK)
-    return [{ type: LegacyObject.BEANSTALK_TIP, x, y }];
+    return [{ type: DecodedObject.BEANSTALK_TIP, x, y }];
   if (type === MapEntityTypeId.WINDMILL) {
-    const legacyType = {
-      up: LegacyObject.WINDMILL_UP,
-      down: LegacyObject.WINDMILL_DOWN,
-      left: LegacyObject.WINDMILL_LEFT,
-      right: LegacyObject.WINDMILL_RIGHT,
+    const decodedType = {
+      up: DecodedObject.WINDMILL_UP,
+      down: DecodedObject.WINDMILL_DOWN,
+      left: DecodedObject.WINDMILL_LEFT,
+      right: DecodedObject.WINDMILL_RIGHT,
     }[entity.direction];
-    if (!legacyType)
+    if (!decodedType)
       throw new Error("windmill 的 direction 必须是 up/down/left/right");
-    return [{ type: legacyType, x, y }];
+    return [{ type: decodedType, x, y }];
   }
   if (type === MapEntityTypeId.CLOUD) {
-    const legacyType = {
-      red: LegacyObject.CLOUD_RED,
-      purple: LegacyObject.CLOUD_PURPLE,
-      green: LegacyObject.CLOUD_GREEN,
+    const decodedType = {
+      red: DecodedObject.CLOUD_RED,
+      purple: DecodedObject.CLOUD_PURPLE,
+      green: DecodedObject.CLOUD_GREEN,
     }[entity.color];
-    if (!legacyType) throw new Error("cloud 的 color 必须是 red/purple/green");
-    return [{ type: legacyType, x, y }];
+    if (!decodedType) throw new Error("cloud 的 color 必须是 red/purple/green");
+    return [{ type: decodedType, x, y }];
   }
   if (type === MapEntityTypeId.FENCE) {
-    const legacyType = [
-      LegacyObject.FENCE_1,
-      LegacyObject.FENCE_2,
-      LegacyObject.FENCE_3,
-      LegacyObject.FENCE_4,
-      LegacyObject.FENCE_5,
-      LegacyObject.FENCE_6,
-    ][Number(entity.variant) - 1];
-    if (!legacyType) throw new Error("fence 的 variant 必须是 1 到 6");
-    return [{ type: legacyType, x, y }];
+    const variant = /^ts-16-(1[0-5])$/.exec(entity.variant)?.[1];
+    const decodedType = [
+      DecodedObject.FENCE_1,
+      DecodedObject.FENCE_2,
+      DecodedObject.FENCE_3,
+      DecodedObject.FENCE_4,
+      DecodedObject.FENCE_5,
+      DecodedObject.FENCE_6,
+    ][Number(variant) - 10];
+    if (!decodedType)
+      throw new Error("fence 的 variant 必须是 ts-16-10 到 ts-16-15");
+    return [{ type: decodedType, x, y }];
   }
   if (type === EntityTypeId.ICE_BLOCK) {
     const stage = entity.state?.meltStage;
-    const legacyType =
+    const decodedType =
       stage === undefined || stage === 0
-        ? LegacyObject.ICE_BLOCK
+        ? DecodedObject.ICE_BLOCK
         : {
-            1: LegacyObject.ICE_MELT_1,
-            2: LegacyObject.ICE_MELT_2,
-            3: LegacyObject.ICE_MELT_3,
+            1: DecodedObject.ICE_MELT_1,
+            2: DecodedObject.ICE_MELT_2,
+            3: DecodedObject.ICE_MELT_3,
           }[stage];
-    if (!legacyType)
+    if (!decodedType)
       throw new Error("ice-block 的 state.meltStage 必须是 1 到 3 的整数");
-    return [{ type: legacyType, x, y }];
+    return [{ type: decodedType, x, y }];
   }
   if (
     directObjectTypes.has(type) ||

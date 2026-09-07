@@ -97,3 +97,38 @@ test("Map parser 要求已归类 Surface 使用 semantic type 与 variant", () =
   ]);
   assert.deepEqual(parseMapDocument(document), document);
 });
+
+test("Map parser 规范化字段顺序，并将 entities 放在最后", () => {
+  const parsed = parseMapDocument({
+    entities: [{ type: "carousel", x: 0, y: 0, variant: "left-top" }],
+    height: 3,
+    rules: { win: { type: "reach", target: "exit" } },
+    width: 3,
+    music: "ingame0",
+    meta: { name: "字段顺序" },
+    schemaVersion: 1,
+  });
+  assert.deepEqual(Object.keys(parsed), [
+    "schemaVersion",
+    "meta",
+    "music",
+    "rules",
+    "width",
+    "height",
+    "entities",
+  ]);
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([{ type: "carousel", x: 0, y: 0, variant: 1 }]),
+      ),
+    /variant 不符合 enum 合同/,
+  );
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([{ type: "fence", x: 0, y: 0, variant: 1 }]),
+      ),
+    /variant 不符合 enum 合同/,
+  );
+});

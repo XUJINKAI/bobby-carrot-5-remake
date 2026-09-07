@@ -134,7 +134,7 @@
       "type": "carousel",
       "x": 7,
       "y": 1,
-      "variant": 1
+      "variant": "right-top"
     },
     {
       "type": "mirror",
