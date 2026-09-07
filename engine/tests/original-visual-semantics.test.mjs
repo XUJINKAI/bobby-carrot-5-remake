@@ -18,7 +18,7 @@ function resolveCarouselSwitch(pressed) {
       type: EntityTypeId.CAROUSEL_SWITCH,
       x: 0,
       y: 0,
-      state: { pressed },
+      pressed,
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
