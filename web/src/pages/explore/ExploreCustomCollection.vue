@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { MapCollectionIndex } from "../../services/catalog/catalog.js";
+import type { ResolvedMapCollection } from "../../app/pageContracts.js";
 import ExploreMapGrid from "./ExploreMapGrid.vue";
 
 defineProps<{
-  collection: MapCollectionIndex;
+  collection: ResolvedMapCollection;
   completedIds: Set<string>;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
