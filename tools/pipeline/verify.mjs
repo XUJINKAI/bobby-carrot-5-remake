@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
-let originalExploreTagRules;
+let buildOriginalExploreFilters;
 let parseMapDocument;
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
@@ -11,7 +11,7 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
-({ ORIGINAL_EXPLORE_TAG_RULES: originalExploreTagRules } = await import(
+({ originalExploreFilters: buildOriginalExploreFilters } = await import(
   "../original/explore-filter-tags.mjs"
 ));
 for (const file of [
@@ -77,10 +77,10 @@ if (!original) throw new Error("缺少 Original collection index");
 if (original.cardSize !== "small")
   throw new Error("Original collection cardSize 必须为 small");
 const originalCampaignChapters = original.chapters.filter(
-  (chapter) => chapter.kind !== "special-scenes",
+  (chapter) => chapter.id !== "special-scenes",
 );
 const originalSpecialChapter = original.chapters.find(
-  (chapter) => chapter.kind === "special-scenes",
+  (chapter) => chapter.id === "special-scenes",
 );
 if (
   originalCampaignChapters.length !== 40 ||
@@ -136,12 +136,18 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
   throw new Error(
     `Original Chapter 1 Explore 顺序错误：${actualFirstChapter.join(",")}`,
   );
-for (const map of original.maps.filter((entry) => entry.kind !== "special-scene")) {
+for (const map of original.maps.filter(
+  (entry) => entry.chapter !== originalSpecialChapter.id,
+)) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
   assertOriginalMapName(map, document, relative);
   assertOriginalStartContract(document, relative);
-  assertOriginalMusicContract(document, relative);
+  assertOriginalMusicContract(
+    document,
+    map.id.includes("-bonus-") ? "bonus" : undefined,
+    relative,
+  );
   assertOriginalWinRule(document, relative);
 }
 const adventure = readJson("assets/adventure/index.json");
@@ -152,12 +158,12 @@ const adventureLevels = adventure.chapters.flatMap((chapter) => chapter.levels);
 if (adventureLevels.length !== 480 || adventure.specialScenes.length !== 5)
   throw new Error("Adventure index 必须包含 480 个 Campaign node / 5 Special Scene");
 const exploreSpecialScenes = original.maps.filter(
-  (map) => map.kind === "special-scene",
+  (map) => map.chapter === originalSpecialChapter.id,
 );
 if (
   JSON.stringify(exploreSpecialScenes.map((map) => map.id)) !==
     JSON.stringify(adventure.specialScenes.map((scene) => scene.id)) ||
-  exploreSpecialScenes.some((map) => map.chapter !== originalSpecialChapter.id)
+  exploreSpecialScenes.length !== 5
 )
   throw new Error("Original Explore 必须在 40 章后按 catalog 顺序展示 5 个 Special Scene");
 for (const chapter of adventure.chapters) {
@@ -176,7 +182,7 @@ for (const scene of adventure.specialScenes) {
   assertMapDocument(document, relative);
   if (ref.collection === "original") {
     assertOriginalStartContract(document, relative);
-    assertOriginalMusicContract(document, relative);
+    assertOriginalMusicContract(document, undefined, relative);
   }
 }
 
@@ -326,9 +332,11 @@ function assertOriginalStartContract(document, relative) {
     throw new Error(`${relative}: Original 初始 Bobby 必须与 Start surface 同格`);
 }
 
-function assertOriginalMusicContract(document, relative) {
-  if (Object.hasOwn(document, "music"))
-    throw new Error(`${relative}: Original MapDocument 不应持久化 music`);
+function assertOriginalMusicContract(document, expected, relative) {
+  if (document.music !== expected)
+    throw new Error(
+      `${relative}: Original music 应为 ${expected ?? "未指定"}`,
+    );
 }
 
 function assertOriginalWinRule(document, relative) {
@@ -414,20 +422,9 @@ function assertCollectionFilters(collection, relative) {
 }
 
 function assertOriginalExploreFilters(collection) {
-  const filters = new Map(
-    collection.filters.map((filter) => [filter.id, filter]),
-  );
-  if (filters.get("carrots")?.selection !== "single")
-    throw new Error("Original 萝卜数 filter 必须单选");
-  for (const id of ["items", "scenes", "mechanics"])
-    if (filters.get(id)?.selection !== "multiple")
-      throw new Error(`Original ${id} filter 必须支持多选`);
-  for (const [group, rules] of Object.entries(originalExploreTagRules)) {
-    const optionIds = filters.get(group)?.options.map((option) => option.id);
-    const ruleIds = rules.map((rule) => rule.id);
-    if (JSON.stringify(optionIds) !== JSON.stringify(ruleIds))
-      throw new Error(`Original ${group} filter 必须与标签扫描表一致`);
-  }
+  const expected = buildOriginalExploreFilters();
+  if (JSON.stringify(collection.filters) !== JSON.stringify(expected))
+    throw new Error("Original filter 必须由统一定义生成");
 }
 
 function readJson(relative) {

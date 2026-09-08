@@ -2,18 +2,45 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  ORIGINAL_EXPLORE_TAG_RULES,
-  levelFeatures,
+  ORIGINAL_EXPLORE_FILTER_DEFINITIONS,
+  originalExploreFilters,
+  originalExploreMapFilters,
 } from "../explore-filter-tags.mjs";
+
+test("Original Explore filter 定义发布 UI 字段并保留扫描依据", () => {
+  const published = originalExploreFilters();
+  assert.equal(published[0].selection, "single");
+  assert.equal(published.slice(1).every((filter) => filter.selection === "multiple"), true);
+  assert.equal(
+    published.flatMap((filter) => filter.options).some((option) => "match" in option),
+    false,
+  );
+  assert.equal(
+    ORIGINAL_EXPLORE_FILTER_DEFINITIONS.flatMap((filter) => filter.options)
+      .every((option) => "match" in option),
+    true,
+  );
+});
+
+test("Original Explore 萝卜数区间由统一 filter 定义匹配", () => {
+  assert.deepEqual(filters().carrots, ["0"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 1)).carrots, ["1-5"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 5)).carrots, ["1-5"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 6)).carrots, ["6-10"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 10)).carrots, ["6-10"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 11)).carrots, ["11-20"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 20)).carrots, ["11-20"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 21)).carrots, ["21+"]);
+});
 
 test("Original Explore 场景只由五类明确 Entity 确认", () => {
   assert.deepEqual(
-    ORIGINAL_EXPLORE_TAG_RULES.scenes.map((rule) => rule.id),
+    filterDefinition("scenes").options.map((option) => option.id),
     ["grassland", "water", "snow", "starfield", "desert"],
   );
-  assert.deepEqual(features(MapEntityTypeId.SNOW_CLOUD).scenes, []);
+  assert.deepEqual(filters(MapEntityTypeId.SNOW_CLOUD).scenes, []);
   assert.deepEqual(
-    features(
+    filters(
       MapEntityTypeId.GRASS,
       MapEntityTypeId.WATERFALL,
       MapEntityTypeId.SNOW,
@@ -25,7 +52,7 @@ test("Original Explore 场景只由五类明确 Entity 确认", () => {
 });
 
 test("Original Explore 标签表区分特殊道具与机关", () => {
-  const result = features(
+  const result = filters(
     MapEntityTypeId.MOWER,
     MapEntityTypeId.GAS,
     MapEntityTypeId.BEAVER,
@@ -34,23 +61,24 @@ test("Original Explore 标签表区分特殊道具与机关", () => {
     MapEntityTypeId.DREAM_MACHINE,
   );
 
-  assert.deepEqual(result.specialItems, ["gas"]);
+  assert.deepEqual(result.items, ["gas"]);
   assert.deepEqual(result.mechanics, ["mower"]);
 });
 
-test("Original Explore 萝卜数统计 canonical Carrot Entity", () => {
-  assert.equal(
-    features(
-      MapEntityTypeId.CARROT,
-      MapEntityTypeId.CARROT,
-      MapEntityTypeId.HIGH_GRASS,
-    ).carrotCount,
-    2,
+function filterDefinition(id) {
+  const definition = ORIGINAL_EXPLORE_FILTER_DEFINITIONS.find(
+    (filter) => filter.id === id,
   );
-});
+  assert.ok(definition);
+  return definition;
+}
 
-function features(...types) {
-  return levelFeatures({
+function filters(...types) {
+  return originalExploreMapFilters({
     entities: types.map((type, index) => ({ type, x: index, y: 0 })),
   });
+}
+
+function entities(type, count) {
+  return Array.from({ length: count }, () => type);
 }

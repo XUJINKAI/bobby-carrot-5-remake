@@ -309,8 +309,6 @@ export class BobbyApp {
         currentIndex > 0 ? collection.maps[currentIndex - 1]?.id : undefined;
       const exploreNextMapId =
         currentIndex >= 0 ? collection.maps[currentIndex + 1]?.id : undefined;
-      const exploreMapKind =
-        currentIndex >= 0 ? collection.maps[currentIndex]?.kind : undefined;
       this.controller = await renderGamePage({
         ...context,
         level: resolved.level,
@@ -318,7 +316,6 @@ export class BobbyApp {
         identity: { ...resolved.ref, title: resolved.document.meta.name },
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
-        ...(exploreMapKind ? { exploreMapKind } : {}),
         mode: "explore",
       });
     } catch {

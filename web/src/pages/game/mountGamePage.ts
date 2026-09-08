@@ -84,7 +84,6 @@ export interface GamePageContext {
   mapMeta?: MapMeta;
   exploreNextMapId?: string;
   explorePreviousMapId?: string;
-  exploreMapKind?: string;
   adventureChapter?: AdventureIndexChapter;
   adventureLevel?: AdventureIndexLevel;
   adventureScene?: AdventureIndexSpecialScene;
@@ -109,7 +108,6 @@ export async function renderGamePage(
     mapMeta,
     exploreNextMapId,
     explorePreviousMapId,
-    exploreMapKind,
     adventureChapter,
     adventureLevel,
     adventureScene,
@@ -215,10 +213,7 @@ export async function renderGamePage(
     },
   });
   const { game, input } = session;
-  const isBonus = adventureLevel?.id.includes("-bonus-") ??
-    exploreMapKind === "bonus";
   const music = resolveGameMusic(level.music, {
-    bonus: isBonus,
     specialScene: adventureScene !== undefined,
   });
   if (music) audio.playMusic(music);

@@ -57,7 +57,12 @@ assets/
 
 `maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。chapter 的 `name` 与 `description` 也只在源 manifest 定义时生成并按原值展示；目录只提供 `id`。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
 
-Original collection 在 40 个正式章节后追加 `kind: "special-scenes"` 的展示分组，其中 5 张地图使用 `kind: "special-scene"`。该分组只表达 Explore 的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
+Original collection 在 40 个正式章节后追加 ID 为 `special-scenes` 的普通 chapter
+分组，5 张地图通过 `chapter: "special-scenes"` 进入该分组。该分组只表达 Explore
+的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
+
+Original Bonus 地图显式保存 `music: "bonus"`；普通关卡省略 `music`，由播放页面
+在 `ingame0..2` 中随机选择。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
 

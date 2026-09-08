@@ -34,17 +34,13 @@ export interface MapCollectionChapter {
   name?: string;
   description?: string;
   difficulty?: number;
-  /** Original Explore 用它区分正式章节与尾部 Special Scene 分组。 */
-  kind?: "special-scenes";
 }
 
-/** Runtime collection entry；Original 专属 kind/filters 是可选扩展。 */
 export interface MapCollectionMap {
   id: string;
   name: string;
   description?: string;
   chapter?: string;
-  kind?: string;
   filters?: Record<string, string[]>;
 }
 
