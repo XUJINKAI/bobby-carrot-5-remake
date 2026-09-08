@@ -42,6 +42,10 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
     const mapRelative = `assets/maps/${summary.id}/${map.id}.json`;
     const document = readJson(mapRelative);
     assertMapDocument(document, mapRelative);
+    if (map.name !== document.meta.name)
+      throw new Error(
+        `${mapRelative}: collection map name 必须来自 MapDocument meta.name`,
+      );
   }
   return { id: summary.id, ...collection };
 });
@@ -91,6 +95,7 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
 for (const map of original.maps) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
+  assertOriginalMapName(map, document, relative);
   assertOriginalStartContract(document, relative);
   assertOriginalMusicContract(document, relative);
   assertOriginalWinRule(document, relative);
@@ -213,6 +218,14 @@ function assertNovobanCollection(collections) {
     )
   )
     throw new Error("Novoban 07 必须把 XSB + 保留为 Bobby 位于 push-goal 上");
+}
+
+function assertOriginalMapName(map, document, relative) {
+  const bonus = /^(\d+)-bonus-([12])$/.exec(map.id);
+  const level = /^(\d+)-(\d+)$/.exec(map.id);
+  const expected = bonus ? `BONUS ${bonus[2]}` : level?.[2];
+  if (!expected || document.meta.name !== expected || map.name !== expected)
+    throw new Error(`${relative}: Original 地图名称必须是章节内关卡名称`);
 }
 
 function assertPushboxWinRule(document, relative) {

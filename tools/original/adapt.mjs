@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseMapDocument } from "@bobby/model";
 import {
   campaignLevelId,
+  campaignLevelName,
   campaignSequenceForChapter,
   specialSceneIdForSource,
 } from "./public-ids.mjs";
@@ -98,7 +99,7 @@ for (const release of sourceIndex.releases) {
       const document = createMapDocument(
         source,
         {
-          name: id.toUpperCase(),
+          name: campaignLevelName(sourceLevelIndex),
         },
       );
       documents.set(id, document);
