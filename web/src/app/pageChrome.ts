@@ -14,6 +14,7 @@ export function homeIdentity(): ShellIdentity {
     icon: siteUrl("assets/art/hd/icon.png"),
     productName: "Bobby Carrot 5 Remake",
     productNameVisible: true,
+    statusText: "开发中",
     href: "/",
   };
 }
@@ -51,10 +52,16 @@ export function pageIdentity(
 
 export function globalActions(): ShellAction[] {
   return [
-    translatedGlobalAction("music", "music", "shell.music"),
+    translatedGlobalAction("music", "sound-on", "shell.music"),
     translatedGlobalAction("settings", "settings", "shell.settings"),
     translatedGlobalAction("help", "help", "shell.help"),
   ];
+}
+
+export function musicActionIcon(
+  musicEnabled: boolean,
+): "sound-on" | "sound-off" {
+  return musicEnabled ? "sound-on" : "sound-off";
 }
 
 export function repositoryAction(): ShellAction {
@@ -123,7 +130,7 @@ export const EDITOR_HELP: HelpDescriptor = {
 
 function translatedGlobalAction(
   id: "music" | "settings" | "help",
-  icon: "music" | "settings" | "help",
+  icon: NonNullable<ShellAction["icon"]>,
   key: WebTranslationKey,
 ): ShellAction {
   const label = webT(key);

@@ -11,6 +11,7 @@ export interface ShellMenuItem {
 export interface ShellIdentity {
   icon: string;
   productName?: string;
+  statusText?: string;
   contextName?: string;
   productNameVisible?: boolean;
   contextNameVisible?: boolean;

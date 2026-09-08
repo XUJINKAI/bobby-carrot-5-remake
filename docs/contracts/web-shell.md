@@ -39,7 +39,7 @@ Identity + Back + Leading | Commands | Actions / Overflow
 
 三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。移动端仍使用同一套 DOM 和三列结构。
 
-`ShellIdentity` 可以声明 icon、产品名、上下文名、首页链接和导航 menu。CSS 按可用宽度依次收敛产品名、上下文名和 menu 指示，不由页面判断 viewport。
+`ShellIdentity` 可以声明 icon、产品名、可选状态文字、上下文名、首页链接和导航 menu。CSS 按可用宽度依次收敛产品名、状态文字、上下文名和 menu 指示，不由页面判断 viewport。首页使用状态文字显示当前开发状态，其它页面不提供该字段。
 
 ## Action 与 Overflow
 

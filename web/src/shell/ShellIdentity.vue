@@ -27,6 +27,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
     <summary @click.prevent="open = !open">
       <img :src="identity.icon" alt="">
       <span v-if="identity.productName && identity.productNameVisible !== false" class="shell-product-name">{{ identity.productName }}</span>
+      <span v-if="identity.statusText" class="shell-status-text">{{ identity.statusText }}</span>
       <span v-if="identity.contextName && identity.contextNameVisible !== false" class="shell-context-name">{{ identity.contextName }}</span>
       <AppIcon name="dropdown" />
     </summary>
@@ -37,6 +38,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   <a v-else class="shell-identity" :href="identity.href ?? '/'" @click.prevent="navigate(identity.href ?? '/')">
     <img :src="identity.icon" alt="">
     <span v-if="identity.productName && identity.productNameVisible !== false" class="shell-product-name">{{ identity.productName }}</span>
+    <span v-if="identity.statusText" class="shell-status-text">{{ identity.statusText }}</span>
     <span v-if="identity.contextName && identity.contextNameVisible !== false" class="shell-context-name">{{ identity.contextName }}</span>
   </a>
 </template>
@@ -85,6 +87,13 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
   color: var(--bc-text-muted);
 }
 
+.shell-status-text {
+  color: var(--bc-text-muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
 .shell-identity nav {
   position: absolute;
   top: calc(100% + 10px);
@@ -117,7 +126,8 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 }
 
 @media (max-width: 900px) {
-  .shell-product-name {
+  .shell-product-name,
+  .shell-status-text {
     display: none;
   }
 }

@@ -35,6 +35,8 @@ export type AppIconName =
   | "share"
   | "shape"
   | "shuffle"
+  | "sound-off"
+  | "sound-on"
   | "star"
   | "stop"
   | "undo"

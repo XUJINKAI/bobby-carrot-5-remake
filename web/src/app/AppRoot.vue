@@ -2,7 +2,7 @@
 import type { AudioRuntime } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
-import { localizeGlobalActions } from "./pageChrome.js";
+import { localizeGlobalActions, musicActionIcon } from "./pageChrome.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
@@ -95,7 +95,9 @@ function shellActions() {
 
 function updateActionPressed(id: string, pressed: boolean): void {
   const target = shellActions().find((item) => item.id === id);
-  if (target) target.pressed = pressed;
+  if (!target) return;
+  target.pressed = pressed;
+  if (id === "music") target.icon = musicActionIcon(pressed);
 }
 
 function audioInteractionRequired(): boolean {
