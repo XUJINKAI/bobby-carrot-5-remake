@@ -110,10 +110,13 @@ function activate(event?: MouseEvent): void {
 
 .shell-action-corner-icon {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
+  top: -5px;
+  right: -5px;
+  width: 15px;
+  height: 15px;
+  padding: 1px;
+  border-radius: 3px;
+  background: var(--bc-panel);
 }
 
 .shell-action-badge {
