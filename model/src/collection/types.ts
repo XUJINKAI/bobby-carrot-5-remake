@@ -14,6 +14,7 @@ export type MapCollectionIcon =
 
 export type MapCollectionCardSize = "small" | "medium" | "big";
 export type CollectionManifestVisibility = boolean | "dev";
+export type MapCollectionFilterSelection = "single" | "multiple";
 
 export interface MapCollectionFilterOption {
   id: string;
@@ -24,6 +25,7 @@ export interface MapCollectionFilterOption {
 export interface MapCollectionFilter {
   id: string;
   name: string;
+  selection: MapCollectionFilterSelection;
   options: MapCollectionFilterOption[];
 }
 

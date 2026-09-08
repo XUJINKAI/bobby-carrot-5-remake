@@ -10,6 +10,7 @@
 | [`model/src/map/entity/original-tile-visuals.json`](../model/src/map/entity/original-tile-visuals.json) | `ts.png` 单元与 `type / fields / role / phase` 的语义是否准确；`ta.png` 帧是否属于正确动画；`surface/palette` 是否适合 Editor 操作。 |
 | [`tools/original/entity-adapter.mjs`](../tools/original/entity-adapter.mjs) | 原版 `terrain/objects` 转为 canonical Entity 时的整图推断、堆叠展开、阶段合并与 anchor 换算是否正确。文件中的代码与就地注释是正向特例的规范性说明。 |
 | [`tools/original/entity-reverse-adapter.mjs`](../tools/original/entity-reverse-adapter.mjs) | canonical Entity 写回原版 DAT 时的 terrain 选择、cover 优先级、静态 Visual 选择、object/anchor 写回与拒绝条件是否正确。文件中的代码与就地注释是 Patch 特例的规范性说明。 |
+| [`tools/original/explore-filter-tags.mjs`](../tools/original/explore-filter-tags.mjs) | Original Explore 的萝卜计数，以及特殊道具、场景、机关标签分别由哪些 canonical Entity 确认。雪地与星空共用的 `snow-cloud` 底板不参与场景推断。 |
 
 审阅 Original Adapter 改动时，应连贯阅读这三个文件：目录定义原版视觉表达，正向
 Adapter 定义进入 `LevelMap` 的语义，反向 Adapter 定义 Patch 能表达的范围。

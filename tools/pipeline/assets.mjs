@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { prepareCustomCollections } from "../custom/prepare.mjs";
-import { levelFeatures } from "./collection-metadata.mjs";
+import { levelFeatures } from "../original/explore-filter-tags.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const original = path.join(root, "original");
@@ -12,7 +12,7 @@ const originalCollection = {
   id: "original",
   name: "原版关卡",
   description:
-    "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
+    "原版 400 个关卡、80 个奖励关、及 5 个特殊场景。",
 };
 
 function run(command, args) {
@@ -141,6 +141,7 @@ function originalFilters() {
     {
       id: "carrots",
       name: "萝卜数",
+      selection: "single",
       options: ["0", "1-5", "6-10", "11-20", "21+"].map((id) => ({
         id,
         name: id,
@@ -150,9 +151,9 @@ function originalFilters() {
     {
       id: "items",
       name: "特殊道具",
+      selection: "multiple",
       options: [
         ["shovel", "雪铲", "shovel-pickup"],
-        ["mower", "割草机", "mower"],
         ["gas", "汽油", "gas"],
         ["bean", "魔豆", "bean"],
         ["kite", "风筝", "kite"],
@@ -167,13 +168,13 @@ function originalFilters() {
     {
       id: "scenes",
       name: "场景",
+      selection: "multiple",
       options: [
         ["grassland", "草地", "grass", { variant: "ts-10-1" }],
         ["water", "水域", "water", { variant: "ripple" }],
         ["snow", "雪地", "snow"],
-        ["ice", "冰面", "ice"],
-        ["high-grass", "高草", "high-grass"],
-        ["shop", "商店", "shop-dream-machine-ticket"],
+        ["starfield", "星空", "starfield", { variant: "large-star" }],
+        ["desert", "沙漠", "sand"],
       ].map(([id, name, entityType, fields]) => ({
         id,
         name,
@@ -183,6 +184,7 @@ function originalFilters() {
     {
       id: "mechanics",
       name: "机关",
+      selection: "multiple",
       options: [
         ["tide", "潮汐", entityIcon("tide", { direction: "right" })],
         ["speed", "加速带", entityIcon("speed", { direction: "right" })],
@@ -202,8 +204,6 @@ function originalFilters() {
         ["mower", "割草机", entityIcon("mower")],
         ["beanstalk", "魔豆藤", entityIcon("beanstalk")],
         ["dragon", "龙", entityIcon("dragon", { direction: "left" })],
-        ["beaver", "海狸 / 锁", entityIcon("beaver")],
-        ["dream", "梦境机关", entityIcon("dream-machine")],
         ["plank", "木板", entityIcon("plank")],
         ["whirlwind", "龙卷风 / 风筝", entityIcon("whirlwind")],
         ["ice-block", "冰块", entityIcon("ice-block")],

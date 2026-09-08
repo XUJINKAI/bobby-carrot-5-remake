@@ -61,6 +61,10 @@ Original collection 在 40 个正式章节后追加 `kind: "special-scenes"` 的
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
 
+每个 filter 使用 `selection: "single" | "multiple"` 声明选择方式。多个已选
+option 以及不同 filter 之间都按“且”匹配；`single` 只约束该 filter 同时最多保留
+一个 option。Original 的萝卜数使用 `single`，其余 filter 使用 `multiple`。
+
 ```json
 { "type": "entity", "entity": { "type": "carrot" } }
 { "type": "entity", "entity": { "type": "tide", "direction": "right" } }

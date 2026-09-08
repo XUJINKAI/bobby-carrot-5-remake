@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
+let originalExploreTagRules;
 let parseMapDocument;
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
@@ -10,6 +11,9 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
+({ ORIGINAL_EXPLORE_TAG_RULES: originalExploreTagRules } = await import(
+  "../original/explore-filter-tags.mjs"
+));
 for (const file of [
   "custom-maps/loma-pushbox/01/01-01.json",
   "custom-maps/novoban-pushbox/01.json",
@@ -55,6 +59,7 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
     !Array.isArray(collection.maps)
   )
     throw new Error(`${relative}: collection 合同不完整`);
+  assertCollectionFilters(collection, relative);
   for (const map of collection.maps) {
     const mapRelative = `assets/maps/${summary.id}/${map.id}.json`;
     const document = readJson(mapRelative);
@@ -87,6 +92,7 @@ if (
   );
 if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
+assertOriginalExploreFilters(original);
 const novoban = collectionIndexes.find(
   (collection) => collection.id === "novoban-pushbox",
 );
@@ -360,6 +366,68 @@ function parseMapRef(value) {
   if (typeof value !== "string") return null;
   const [collection, id, extra] = value.split("/");
   return collection && id && extra === undefined ? { collection, id } : null;
+}
+
+function assertCollectionFilters(collection, relative) {
+  const filterIds = new Set();
+  const optionsByFilter = new Map();
+  for (const filter of collection.filters) {
+    if (
+      !filter ||
+      typeof filter.id !== "string" ||
+      !filter.id ||
+      typeof filter.name !== "string" ||
+      !filter.name ||
+      !["single", "multiple"].includes(filter.selection) ||
+      !Array.isArray(filter.options) ||
+      filter.options.length === 0 ||
+      filterIds.has(filter.id)
+    )
+      throw new Error(`${relative}: filter 定义无效`);
+    filterIds.add(filter.id);
+    const optionIds = new Set();
+    for (const option of filter.options) {
+      if (
+        !option ||
+        typeof option.id !== "string" ||
+        !option.id ||
+        typeof option.name !== "string" ||
+        !option.name ||
+        optionIds.has(option.id)
+      )
+        throw new Error(`${relative}: filter option 定义无效`);
+      optionIds.add(option.id);
+    }
+    optionsByFilter.set(filter.id, optionIds);
+  }
+  for (const map of collection.maps) {
+    for (const [filterId, values] of Object.entries(map.filters ?? {})) {
+      const options = optionsByFilter.get(filterId);
+      if (
+        !options ||
+        !Array.isArray(values) ||
+        values.some((value) => !options.has(value))
+      )
+        throw new Error(`${relative}: map ${map.id} 使用了未定义的 filter 标签`);
+    }
+  }
+}
+
+function assertOriginalExploreFilters(collection) {
+  const filters = new Map(
+    collection.filters.map((filter) => [filter.id, filter]),
+  );
+  if (filters.get("carrots")?.selection !== "single")
+    throw new Error("Original 萝卜数 filter 必须单选");
+  for (const id of ["items", "scenes", "mechanics"])
+    if (filters.get(id)?.selection !== "multiple")
+      throw new Error(`Original ${id} filter 必须支持多选`);
+  for (const [group, rules] of Object.entries(originalExploreTagRules)) {
+    const optionIds = filters.get(group)?.options.map((option) => option.id);
+    const ruleIds = rules.map((rule) => rule.id);
+    if (JSON.stringify(optionIds) !== JSON.stringify(ruleIds))
+      throw new Error(`Original ${group} filter 必须与标签扫描表一致`);
+  }
 }
 
 function readJson(relative) {

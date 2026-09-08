@@ -84,7 +84,7 @@ function filterPanel(filter: MapCollectionFilter): string {
   const options = filter.options
     .map((option) => {
       const selectedClass = values.has(option.id) ? " selected" : "";
-      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
+      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
     })
     .join("");
   return `<div class="level-filter-panel" data-filter-panel="${escapeAttribute(filter.id)}" ${activePanel === filter.id ? "" : "hidden"}>${options}</div>`;
@@ -106,9 +106,11 @@ function onFilterClick(event: Event): void {
     const id = option.dataset.filterOption;
     if (!group || !id) return;
     const values = selected.get(group);
-    if (!values) return;
-    if (values.has(id)) values.delete(id);
-    else values.add(id);
+    const filter = currentCollection?.filters.find(
+      (candidate) => candidate.id === group,
+    );
+    if (!values || !filter) return;
+    toggleLevelFilterOption(values, filter, id);
     rerender(option);
     return;
   }
@@ -152,8 +154,8 @@ function applyFilters(): void {
   setText(
     document.querySelector("[data-filter-status]"),
     active
-      ? `匹配 ${visibleMaps} 张地图；同一类别内满足任一条件，不同类别需同时满足。`
-      : "同一类别内为“或”，不同类别之间为“且”。",
+      ? `匹配 ${visibleMaps} 张地图；已选条件需同时满足。`
+      : "萝卜数单选；其余筛选可多选，已选条件需同时满足。",
   );
   let empty = document.querySelector<HTMLElement>(".level-filter-empty");
   if (active && visibleMaps === 0) {
@@ -169,12 +171,32 @@ function applyFilters(): void {
 }
 
 function mapMatchesCurrent(map: MapCollectionMap): boolean {
-  for (const [group, wanted] of selected) {
+  return mapMatchesLevelFilters(map, selected);
+}
+
+export function mapMatchesLevelFilters(
+  map: MapCollectionMap,
+  filters: ReadonlyMap<string, ReadonlySet<string>>,
+): boolean {
+  for (const [group, wanted] of filters) {
     if (wanted.size === 0) continue;
     const values = map.filters?.[group] ?? [];
-    if (!values.some((value) => wanted.has(value))) return false;
+    if (![...wanted].every((value) => values.includes(value))) return false;
   }
   return true;
+}
+
+export function toggleLevelFilterOption(
+  values: Set<string>,
+  filter: MapCollectionFilter,
+  optionId: string,
+): void {
+  if (values.has(optionId)) {
+    values.delete(optionId);
+    return;
+  }
+  if (filter.selection === "single") values.clear();
+  values.add(optionId);
 }
 
 function iconHtml(icon: MapCollectionIcon | undefined): string {

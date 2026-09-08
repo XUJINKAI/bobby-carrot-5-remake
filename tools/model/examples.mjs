@@ -179,6 +179,7 @@ function collectionExamples() {
         {
           id: "mechanism",
           name: "Mechanism",
+          selection: "multiple",
           options: [
             {
               id: "dragon",

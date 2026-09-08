@@ -5,6 +5,7 @@ export type {
   MapCollectionEntityIcon,
   MapCollectionFilter,
   MapCollectionFilterOption,
+  MapCollectionFilterSelection,
   MapCollectionIcon,
   MapCollectionIndex,
   MapCollectionMap,
