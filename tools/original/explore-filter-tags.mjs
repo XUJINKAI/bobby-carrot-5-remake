@@ -17,7 +17,7 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
       countOption("0-10", 0, 10),
       countOption("11-20", 11, 20),
       countOption("21-40", 21, 40),
-      countOption("40-60", 40, 60),
+      countOption("41-60", 41, 60),
       countOption("61+", 61),
     ],
   },

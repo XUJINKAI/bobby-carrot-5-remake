@@ -23,14 +23,15 @@ test("Original Explore filter 定义发布 UI 字段并保留扫描依据", () =
 });
 
 test("Original Explore 萝卜数区间由统一 filter 定义匹配", () => {
-  assert.deepEqual(filters().carrots, ["0"]);
-  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 1)).carrots, ["1-5"]);
-  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 5)).carrots, ["1-5"]);
-  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 6)).carrots, ["6-10"]);
-  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 10)).carrots, ["6-10"]);
+  assert.deepEqual(filters().carrots, ["0-10"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 10)).carrots, ["0-10"]);
   assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 11)).carrots, ["11-20"]);
   assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 20)).carrots, ["11-20"]);
-  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 21)).carrots, ["21+"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 21)).carrots, ["21-40"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 40)).carrots, ["21-40"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 41)).carrots, ["41-60"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 60)).carrots, ["41-60"]);
+  assert.deepEqual(filters(...entities(MapEntityTypeId.CARROT, 61)).carrots, ["61+"]);
 });
 
 test("Original Explore 场景只由五类明确 Entity 确认", () => {
