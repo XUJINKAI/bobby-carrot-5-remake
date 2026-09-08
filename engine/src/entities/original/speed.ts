@@ -1,5 +1,5 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
   type Direction,
   type JsonValue,
 } from "@bobby/model";
@@ -24,8 +24,8 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  cell,
   directionCell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -190,7 +190,7 @@ const speedRunAction: RuntimeActionDefinition = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.SPEED,
+  type: MapEntityTypeId.SPEED,
   traits: ["walkable", "forced-movement"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
@@ -202,10 +202,10 @@ const base = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      cell(5, 11),
-      cell(6, 11),
-      cell(7, 11),
-      cell(8, 11),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "up" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "down" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "left" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "right" } }),
     ),
   ),
   [{ behavior: speedBoost }],
@@ -254,7 +254,7 @@ function speedDirectionAt(
 ): Direction | null {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.SPEED) continue;
+    if (entity?.type !== MapEntityTypeId.SPEED) continue;
     return entity.direction ?? "right";
   }
   return null;

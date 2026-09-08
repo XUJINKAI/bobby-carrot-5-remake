@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
 import { World } from "../dist/world/World.js";
@@ -13,12 +14,12 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   const entities = [];
   for (let y = 0; y < 3; y += 1)
     for (let x = 0; x < 7; x += 1)
-      entities.push({ type: EntityTypeId.GROUND_C, x, y });
+      entities.push({ type: "grass", variant: "ts-10-1", x, y });
   entities.push(
-    { type: EntityTypeId.MIRROR, x: 1, y: 0, state: { variant: 1 } },
-    { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
-    { type: EntityTypeId.DRAGON, x: 3, y: 0, direction: "left" },
-    { type: EntityTypeId.BOBBY, x: 6, y: 0, direction: "left" },
+    { type: MapEntityTypeId.MIRROR, x: 1, y: 0, state: { variant: "right-bottom" } },
+    { type: MapEntityTypeId.ICE_BLOCK, x: 2, y: 0 },
+    { type: MapEntityTypeId.DRAGON, x: 4, y: 0, direction: "left" },
+    { type: MapEntityTypeId.BOBBY, x: 6, y: 0, direction: "left" },
   );
   const world = new World(
     { schemaVersion: 1, width: 7, height: 3, entities },
@@ -75,10 +76,10 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: RuntimeEntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
     ],
   });
 

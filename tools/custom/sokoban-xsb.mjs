@@ -55,7 +55,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
   if (options.expectedBoxes !== undefined && boxes !== options.expectedBoxes)
     throw new Error(`${title}: 应有 ${options.expectedBoxes} 个箱子，实际 ${boxes}`);
 
-  entities.push({ type: "bobby", ...player, direction: "down" });
+  entities.push({ type: "bobby", ...player });
 
   return {
     width,
@@ -111,7 +111,7 @@ function findExteriorSpaces(grid, width, height) {
 }
 
 function floor(x, y) {
-  return { type: "ground-c", x, y };
+  return { type: "grass", x, y, variant: "ts-10-1" };
 }
 
 function goal(x, y) {
@@ -119,7 +119,7 @@ function goal(x, y) {
 }
 
 function pushableRock(x, y) {
-  return { type: "crumbly-rock", x, y, traits: ["pushable"] };
+  return { type: "pushable-rock", x, y };
 }
 
 function key(x, y) {

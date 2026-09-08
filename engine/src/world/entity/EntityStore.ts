@@ -1,9 +1,11 @@
 import type { LevelEntity } from "@bobby/model";
 import {
   instantiateLevelEntity,
+  instantiateSpawnSpec,
   type CellPosition,
   type EntityId,
   type EntityInstance,
+  type EntitySpawnSpec,
 } from "./EntityInstance.js";
 
 export interface EntityStoreSnapshot {
@@ -17,7 +19,7 @@ export class EntityStore {
   private nextEntityId = 1;
 
   constructor(levelEntities: readonly LevelEntity[] = []) {
-    for (const source of levelEntities) this.spawn(source);
+    for (const source of levelEntities) this.spawnLevelEntity(source);
   }
 
   all(): readonly EntityInstance[] {
@@ -34,9 +36,16 @@ export class EntityStore {
     return entity;
   }
 
-  spawn(source: LevelEntity): EntityInstance {
+  spawnLevelEntity(source: LevelEntity): EntityInstance {
     const id = this.nextEntityId++;
     const entity = instantiateLevelEntity(id, source);
+    this.entities.set(id, entity);
+    return entity;
+  }
+
+  spawn(source: EntitySpawnSpec): EntityInstance {
+    const id = this.nextEntityId++;
+    const entity = instantiateSpawnSpec(id, source);
     this.entities.set(id, entity);
     return entity;
   }

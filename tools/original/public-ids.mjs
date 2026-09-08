@@ -11,15 +11,16 @@ const SPECIAL_SCENES = [
 export function campaignLevelId(chapter, sourceLevelIndex) {
   if (!Number.isInteger(chapter) || chapter < 1 || chapter > 40)
     throw new Error(`无效的 Campaign chapter：${chapter}`);
-  if (
-    !Number.isInteger(sourceLevelIndex) ||
-    sourceLevelIndex < 1 ||
-    sourceLevelIndex > 12
-  )
-    throw new Error(`无效的 Campaign source level：${sourceLevelIndex}`);
+  assertSourceLevelIndex(sourceLevelIndex);
   if (sourceLevelIndex === 11) return `${chapter}-bonus-1`;
   if (sourceLevelIndex === 12) return `${chapter}-bonus-2`;
   return `${chapter}-${sourceLevelIndex}`;
+}
+
+export function campaignLevelName(sourceLevelIndex) {
+  assertSourceLevelIndex(sourceLevelIndex);
+  if (sourceLevelIndex > 10) return `BONUS ${sourceLevelIndex - 10}`;
+  return String(sourceLevelIndex);
 }
 
 export function campaignSequenceForChapter(chapter) {
@@ -32,4 +33,13 @@ export function specialSceneIdForSource(sourceLevelIndex) {
   const id = SPECIAL_SCENES[sourceLevelIndex - 1];
   if (!id) throw new Error(`无效的 Special Scene source level：${sourceLevelIndex}`);
   return id;
+}
+
+function assertSourceLevelIndex(sourceLevelIndex) {
+  if (
+    !Number.isInteger(sourceLevelIndex) ||
+    sourceLevelIndex < 1 ||
+    sourceLevelIndex > 12
+  )
+    throw new Error(`无效的 Campaign source level：${sourceLevelIndex}`);
 }

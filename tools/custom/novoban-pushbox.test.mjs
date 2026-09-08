@@ -29,7 +29,7 @@ test("Novoban keeps variable box counts and only uses fill-all push goals", () =
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, SOKOBAN_WIN_RULE);
     const pushables = entry.level.entities.filter((entity) =>
-      entity.traits?.includes("pushable"),
+      entity.type === "pushable-rock",
     );
     const goals = countPushGoals(entry.level);
     assert.equal(pushables.length, goals, entry.id);
@@ -58,7 +58,7 @@ test("Novoban XSB plus keeps push-goal surface under Bobby", () => {
   const surrounded = levels.find((level) => level.title === "Surrounded");
   assert.ok(surrounded);
   const bobby = surrounded.level.entities.find((entity) => entity.type === "bobby");
-  assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3, direction: "down" });
+  assert.deepEqual(bobby, { type: "bobby", x: 3, y: 3 });
   assert.equal(
     surrounded.level.entities.some(
       (entity) => entity.type === "push-goal" && entity.x === 3 && entity.y === 3,

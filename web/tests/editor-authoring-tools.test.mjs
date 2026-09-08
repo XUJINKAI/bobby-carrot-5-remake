@@ -22,6 +22,10 @@ const inspector = fs.readFileSync(
   new URL("../src/pages/editor/EditorInspector.vue", import.meta.url),
   "utf8",
 );
+const entityFields = fs.readFileSync(
+  new URL("../src/pages/editor/EditorEntityFields.vue", import.meta.url),
+  "utf8",
+);
 
 test("Palette and Surface expose the agreed tool shortcuts", () => {
   assert.match(shell, /id: "editor-tool-select"[\s\S]*选择 \(1\)/);
@@ -69,4 +73,13 @@ test("Surface panel reuses Palette tiles and keeps theme collapsed by default", 
   assert.match(surface, /editor-palette-tile surface-variant/);
   assert.match(surface, /editor-palette-tooltip surface-tooltip/);
   assert.doesNotMatch(surface, /surface-summary|reroll|重新分配/);
+});
+
+test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {
+  assert.match(entityFields, /surfaceTerrainForEntity/);
+  assert.match(entityFields, /surfaceVisualVariant/);
+  assert.match(entityFields, /editor-surface-variant-row/);
+  assert.match(entityFields, /EditorEntityPreview/);
+  assert.match(entityFields, /emit\('surfaceVariant', variant\.type\)/);
+  assert.match(entityFields, /if \(surfaceTerrain\.value\) keys\.add\("variant"\)/);
 });

@@ -1,15 +1,15 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 
 export const pushGoal: EntityModule = defineEntityModule({
   definition: {
-    type: EntityTypeId.PUSH_GOAL,
+    type: MapEntityTypeId.PUSH_GOAL,
     traits: ["walkable", "push-goal"],
     stackOrder: 0,
     presentation: { name: "Push Goal" },
   },
   visual: {
-    id: EntityTypeId.PUSH_GOAL,
+    id: MapEntityTypeId.PUSH_GOAL,
     resolve: () => ({
       layers: [{ kind: "canvas", draw: drawPushGoal }],
     }),

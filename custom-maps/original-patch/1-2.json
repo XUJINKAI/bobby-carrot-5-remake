@@ -1,238 +1,283 @@
 {
   "schemaVersion": 1,
-  "name": "1-2",
   "width": 7,
   "height": 7,
   "entities": [
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 2
+      "y": 2,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 2
+      "y": 2,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 2
+      "y": 2,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 5,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 6,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 2
+      "y": 2,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 1
+      "y": 1,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 2
+      "y": 2,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 0,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 3
+      "y": 3,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 4
+      "y": 4,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 3,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 4,
-      "y": 6
+      "y": 6,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 5
+      "y": 5,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 1,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
-      "type": "ground-a",
+      "type": "grass",
       "x": 2,
-      "y": 0
+      "y": 0,
+      "variant": "ts-6-15"
     },
     {
       "type": "start",
@@ -245,7 +290,12 @@
       "y": 2
     },
     {
-      "type": "high-grass-objective",
+      "type": "high-grass",
+      "x": 5,
+      "y": 4
+    },
+    {
+      "type": "egg",
       "x": 5,
       "y": 4
     },
@@ -270,18 +320,21 @@
       "y": 4
     },
     {
-      "type": "high-grass-objective",
+      "type": "high-grass",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "type": "egg",
       "x": 5,
       "y": 3
     },
     {
       "type": "bobby",
       "x": 2,
-      "y": 2,
-      "direction": "down"
+      "y": 2
     }
   ],
-  "description": "当场上没有胡萝卜时，high-grass-objective也会变出胡萝卜",
   "rules": {
     "win": {
       "type": "all",
@@ -292,5 +345,9 @@
         }
       ]
     }
-  }
+  },
+  "meta": {
+    "name": "1-2"
+  },
+  "note": "当场上没有胡萝卜时，high-grass-objective也会变出胡萝卜"
 }

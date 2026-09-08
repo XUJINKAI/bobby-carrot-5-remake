@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import {
   bobbyMountId,
@@ -13,7 +13,7 @@ import {
   atlasVisual,
   boundedInt,
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -33,7 +33,7 @@ const unlock: Behavior = {
       return { passable: false, reason: "lock-needs-key" };
 
     const seconds = boundedInt(
-      self.entity.properties?.deathCountdownSeconds,
+      self.entity.state?.deathCountdownSeconds,
       0,
       3600,
       0,
@@ -75,7 +75,7 @@ const unlock: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.LOCK,
+  type: MapEntityTypeId.LOCK,
   traits: ["blocking", "gate"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
@@ -101,7 +101,7 @@ const definition: EntityModuleDefinition = {
 export const lock: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.opened === true ? null : objectCell(4),
+    context.entity.state?.opened === true ? null : tileCell(MapEntityTypeId.LOCK),
   ),
   [{ behavior: unlock }],
 );

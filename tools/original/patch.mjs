@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import {
   decodeDatLevelRecord,
@@ -7,7 +8,6 @@ import {
   replaceDatLevelRecord,
   splitDatPackage,
 } from "./dat/index.mjs";
-import { adaptLegacyMap } from "./entity-adapter.mjs";
 import { reverseEntityMap } from "./entity-reverse-adapter.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
@@ -45,7 +45,7 @@ for (const [releaseId, replacements] of groupByRelease(maps)) {
   fs.writeFileSync(out, patched.buffer);
   verifyPatchedJar(out, replacements);
   console.log(
-    `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · Entity Map round-trip: OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
+    `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · DAT record 写入校验：OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
   );
 }
 
@@ -99,32 +99,11 @@ function verifyPatchedJar(file, maps) {
       item.source.levelIndex - 1
     ];
     if (!record) throw new Error(`Patch 后缺少 ${item.id} 的 DAT record`);
-    const decoded = adaptLegacyMap(decodeDatLevelRecord(record).map);
-    const expected = adaptLegacyMap(reverseEntityMap(item.map));
-    if (
-      JSON.stringify(normalizeEntityMap(decoded)) !==
-      JSON.stringify(normalizeEntityMap(expected))
-    )
-      throw new Error(`Patch 后 ${item.id} 的 Entity Map round-trip 校验失败`);
+    const decoded = decodeDatLevelRecord(record).map;
+    const expected = reverseEntityMap(item.map);
+    if (!isDeepStrictEqual(decoded, expected))
+      throw new Error(`Patch 后 ${item.id} 的 DAT record 写入校验失败`);
   }
-}
-
-function normalizeEntityMap(map) {
-  return {
-    width: map.width,
-    height: map.height,
-    entities: map.entities
-      .map((entity) => ({
-        type: entity.type,
-        x: entity.x,
-        y: entity.y,
-        ...(entity.direction ? { direction: entity.direction } : {}),
-        ...(entity.properties ? { properties: entity.properties } : {}),
-        ...(entity.traits ? { traits: entity.traits } : {}),
-        ...(entity.state ? { state: entity.state } : {}),
-      }))
-      .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
-  };
 }
 
 function listJsonFiles(directory) {

@@ -2,6 +2,7 @@ import type { EntityCatalog } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import { isEditorEntityCreatable } from "../definitions/entities.js";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type {
   EditorDefinition,
   EditorPaletteEntry,
@@ -14,6 +15,8 @@ import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
   label: string;
+  traits: readonly string[];
+  behaviors: readonly string[];
   previewPreset: EditorPlacementPreset;
   previewWidth: number;
   previewHeight: number;
@@ -38,7 +41,7 @@ export function resolveEditorPalette(
     .map((definition) => definition.type)
     .filter(
       (type) =>
-        isEditorEntityCreatable(editor, type) &&
+        isEditorEntityCreatable(editor, type, catalog) &&
         !isSurfaceEntityType(type) &&
         !used.has(type),
     )
@@ -101,7 +104,10 @@ function resolveGroup(
     label: group.label,
     rows: group.rows.map((row, rowIndex) =>
       row
-        .filter((entry) => !isSurfaceEntityType(entry.type))
+        .filter((entry) =>
+          !isSurfaceEntityType(entry.type) &&
+          isEditorEntityCreatable(editor, entry.type, catalog)
+        )
         .map((entry, columnIndex) => {
           used.add(entry.type);
           return resolveEntry(
@@ -122,6 +128,13 @@ function resolveEntry(
   key: string,
 ): PaletteItem {
   const previewPreset = previewPresetFor(entry);
+  const definition = editorCatalogEntry(catalog, {
+    type: entry.type,
+    x: 0,
+    y: 0,
+    ...(entry.direction ? { direction: entry.direction } : {}),
+    ...(entry.fields ?? {}),
+  });
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
     previewPreset,
@@ -131,7 +144,11 @@ function resolveEntry(
     ...entry,
     key,
     label:
-      entry.label ?? catalog.require(entry.type).presentation.name ?? entry.type,
+      entry.label ??
+      definition.presentation.name ??
+      entry.type,
+    traits: definition.traits,
+    behaviors: definition.behaviors ?? [],
     previewPreset,
     previewWidth: layout.width,
     previewHeight: layout.height,
@@ -140,26 +157,15 @@ function resolveEntry(
 
 function previewPresetFor(entry: EditorPaletteEntry): EditorPlacementPreset {
   const preview = entry.preview;
+  const fields = {
+    ...(entry.fields ?? {}),
+    ...(preview?.fields ?? {}),
+  };
   return {
     type: entry.type,
     ...(preview?.direction ?? entry.direction
       ? { direction: preview?.direction ?? entry.direction }
       : {}),
-    ...mergeRecord("properties", entry.properties, preview?.properties),
-    ...mergeRecord("state", entry.state, preview?.state),
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
-}
-
-function mergeRecord<Key extends "properties" | "state">(
-  key: Key,
-  base: EditorPlacementPreset[Key],
-  override: EditorPlacementPreset[Key],
-): Pick<EditorPlacementPreset, Key> | {} {
-  if (!base && !override) return {};
-  return {
-    [key]: {
-      ...(base ?? {}),
-      ...(override ?? {}),
-    },
-  } as Pick<EditorPlacementPreset, Key>;
 }

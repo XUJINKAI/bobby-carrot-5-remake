@@ -1,16 +1,24 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createBlankLevel } from "../../editor/dist/index.js";
 import {
-  EDITOR_DRAFT_STORAGE_KEY,
-  loadEditorDraft,
-  storeEditorDraft,
+  EDITOR_AUTOSAVE_STORAGE_KEY,
+  loadEditorAutosave,
+  loadEditorNamedSave,
+  storeEditorAutosave,
+  storeEditorNamedSave,
 } from "../src/storage/editorDraftStorage.ts";
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
   return {
+    get length() {
+      return values.size;
+    },
+    key(index) {
+      return [...values.keys()][index] ?? null;
+    },
     getItem(key) {
       return values.get(key) ?? null;
     },
@@ -24,26 +32,42 @@ function memoryStorage(initial = {}) {
   };
 }
 
-test("editor draft storage round-trips the latest canonical map", () => {
+test("editor autosave round-trips the latest canonical map", () => {
   const storage = memoryStorage();
   const level = createBlankLevel(7, 6);
-  level.name = "Recovered Map";
-  level.entities.push({ type: EntityTypeId.CARROT, x: 3, y: 2 });
-  storeEditorDraft(level, storage);
+  level.meta.name = "Recovered Map";
+  level.entities.push({ type: MapEntityTypeId.CARROT, x: 3, y: 2 });
+  storeEditorAutosave(level, storage);
 
-  const restored = loadEditorDraft(storage);
-  assert.equal(restored?.name, "Recovered Map");
+  const restored = loadEditorAutosave(storage);
+  assert.equal(restored?.meta.name, "Recovered Map");
   assert.equal(restored?.width, 7);
   assert.equal(
     restored?.entities.some(
-      (entity) => entity.type === EntityTypeId.CARROT && entity.x === 3,
+      (entity) => entity.type === MapEntityTypeId.CARROT && entity.x === 3,
     ),
     true,
   );
 });
 
-test("invalid editor draft is discarded instead of breaking editor startup", () => {
-  const storage = memoryStorage({ [EDITOR_DRAFT_STORAGE_KEY]: "not-json" });
-  assert.equal(loadEditorDraft(storage), null);
-  assert.equal(storage.getItem(EDITOR_DRAFT_STORAGE_KEY), null);
+test("named saves are isolated from autosave", () => {
+  const storage = memoryStorage();
+  const named = createBlankLevel(4, 4);
+  named.meta.name = "Named";
+  storeEditorNamedSave("slot one", named, storage);
+
+  const autosave = createBlankLevel(8, 8);
+  autosave.meta.name = "Working";
+  storeEditorAutosave(autosave, storage);
+
+  assert.equal(loadEditorNamedSave("slot one", storage)?.meta.name, "Named");
+  assert.equal(loadEditorAutosave(storage)?.meta.name, "Working");
+});
+
+test("invalid editor autosave is discarded instead of breaking editor startup", () => {
+  const storage = memoryStorage({
+    [EDITOR_AUTOSAVE_STORAGE_KEY]: "not-json",
+  });
+  assert.equal(loadEditorAutosave(storage), null);
+  assert.equal(storage.getItem(EDITOR_AUTOSAVE_STORAGE_KEY), null);
 });

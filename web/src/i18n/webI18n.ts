@@ -6,8 +6,6 @@ import {
   type Translator,
 } from "@bobby/i18n";
 
-const LOCALE_STORAGE_KEY = "bobby.locale";
-
 const WEB_CATALOGS = {
   "zh-CN": {
     "shell.music": "音乐",
@@ -49,13 +47,7 @@ export type WebTranslationKey = keyof (typeof WEB_CATALOGS)["zh-CN"];
 
 let translator: Translator | null = null;
 
-export function resolvePreferredLocale(
-  storedLocale: string | null | undefined,
-  browserLocales: readonly string[],
-): Locale {
-  const stored = normalizeLocale(storedLocale);
-  if (stored) return stored;
-
+export function resolveBrowserLocale(browserLocales: readonly string[]): Locale {
   for (const candidate of browserLocales) {
     const locale = normalizeLocale(candidate);
     if (locale) return locale;
@@ -63,14 +55,7 @@ export function resolvePreferredLocale(
   return "en";
 }
 
-export function initializeWebI18n(): Locale {
-  const browserLocales = navigator.languages.length
-    ? navigator.languages
-    : [navigator.language];
-  const locale = resolvePreferredLocale(
-    localStorage.getItem(LOCALE_STORAGE_KEY),
-    browserLocales,
-  );
+export function initializeWebI18n(locale: Locale): Locale {
   ensureTranslator().setLocale(locale);
   document.documentElement.lang = locale;
   return locale;
@@ -82,7 +67,6 @@ export function getWebLocale(): Locale {
 
 export function setWebLocale(locale: Locale): void {
   ensureTranslator().setLocale(locale);
-  localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   document.documentElement.lang = locale;
 }
 

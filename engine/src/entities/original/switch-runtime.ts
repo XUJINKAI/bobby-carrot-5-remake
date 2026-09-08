@@ -1,40 +1,43 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
   type Direction,
   type EntityType,
   type JsonValue,
 } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 
-function colorSwitchBehavior(
-  id: string,
-  switchType: EntityType,
-  blockType: EntityType,
-): Behavior {
-  return {
-    id,
-    onEnter({ actor, query, commands }) {
-      if (!query.entityHasTrait(actor.id, "player")) return;
+export const colorSwitchBehavior: Behavior = {
+  id: "color-switch-global-toggle",
+  onEnter({ actor, self, query, commands }) {
+    if (!query.entityHasTrait(actor.id, "player")) return;
 
-      for (const entity of query.entitiesWithTrait("switch")) {
-        if (entity.type !== switchType) continue;
-        commands.setState(entity.id, {
-          ...entity.state,
-          pressed: entity.state?.pressed !== true,
-        });
-      }
+    const color = self.entity.state?.color === "pink" ? "pink" : "yellow";
+    for (const entity of query.entitiesWithTrait("switch")) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_SWITCH ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        state: entity.state?.state === "state-2" ? "state-1" : "state-2",
+      });
+    }
 
-      for (const entity of query.entitiesWithTrait("stateful-block")) {
-        if (entity.type !== blockType) continue;
-        commands.setState(entity.id, {
-          ...entity.state,
-          // 未显式保存 state 时遵循 Definition 的 raised 默认值，第一次翻转应落下。
-          raised: entity.state?.raised === false,
-        });
-      }
-    },
-  };
-}
+    for (const entity of query.entitiesWithTrait("stateful-block")) {
+      if (
+        entity.type !== MapEntityTypeId.COLOR_BLOCK ||
+        entity.state?.color !== color
+      )
+        continue;
+      commands.setState(entity.id, {
+        ...entity.state,
+        // 未显式保存 raised 时遵循 Definition 默认值，第一次翻转应落下。
+        raised: entity.state?.raised === false,
+      });
+    }
+  },
+};
 
 function directionalSwitchBehavior(
   id: string,
@@ -67,28 +70,16 @@ function directionalSwitchBehavior(
   };
 }
 
-export const yellowColorSwitchBehavior = colorSwitchBehavior(
-  "yellow-color-switch-global-toggle",
-  EntityTypeId.COLOR_YELLOW_SWITCH,
-  EntityTypeId.COLOR_YELLOW_BLOCK,
-);
-
-export const pinkColorSwitchBehavior = colorSwitchBehavior(
-  "pink-color-switch-global-toggle",
-  EntityTypeId.COLOR_PINK_SWITCH,
-  EntityTypeId.COLOR_PINK_BLOCK,
-);
-
 export const speedSwitchBehavior = directionalSwitchBehavior(
   "speed-switch-global-reverse",
-  EntityTypeId.SPEED_SWITCH,
-  EntityTypeId.SPEED,
+  MapEntityTypeId.SPEED_SWITCH,
+  MapEntityTypeId.SPEED,
 );
 
 export const tideSwitchBehavior = directionalSwitchBehavior(
   "tide-switch-global-reverse",
-  EntityTypeId.TIDE_SWITCH,
-  EntityTypeId.TIDE,
+  MapEntityTypeId.TIDE_SWITCH,
+  MapEntityTypeId.TIDE,
 );
 
 export const carouselSwitchBehavior: Behavior = {
@@ -98,7 +89,7 @@ export const carouselSwitchBehavior: Behavior = {
     if (self.entity.state?.pressed === true) return;
 
     for (const entity of query.entitiesWithTrait("switch")) {
-      if (entity.type !== EntityTypeId.CAROUSEL_SWITCH) continue;
+      if (entity.type !== MapEntityTypeId.CAROUSEL_SWITCH) continue;
       commands.setState(entity.id, {
         ...entity.state,
         pressed: entity.state?.pressed !== true,
@@ -106,7 +97,7 @@ export const carouselSwitchBehavior: Behavior = {
     }
 
     for (const entity of query.entitiesWithTrait("carousel")) {
-      if (entity.type !== EntityTypeId.CAROUSEL) continue;
+      if (entity.type !== MapEntityTypeId.CAROUSEL) continue;
       commands.setState(entity.id, {
         ...entity.state,
         variant: rotateCarouselVariant(entity.state?.variant),

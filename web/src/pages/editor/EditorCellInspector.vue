@@ -5,6 +5,7 @@ import type {
   InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import { ref } from "vue";
 import EditorEntityFields from "./EditorEntityFields.vue";
 
@@ -18,9 +19,9 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   toggleSurface: [];
-  property: [entityIndex: number, key: string, value: string];
-  state: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   delete: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
 }>();
@@ -78,7 +79,7 @@ function dropAt(index: number): void {
         <header class="editor-layer-head">
           <span class="editor-layer-drag" title="拖动调整叠加顺序" aria-hidden="true">⠿</span>
           <span class="editor-layer-title">
-            <strong>{{ layer.definition.presentation.name }}</strong>
+            <strong>{{ layer.label }}</strong>
             <code>{{ layer.entity.type }}</code>
           </span>
           <span class="editor-layer-order">z {{ layer.stackOrder }}</span>
@@ -98,9 +99,9 @@ function dropAt(index: number): void {
           :images="images"
           :catalog="catalog"
           :editor="editor"
-          @property="(key, value) => emit('property', layer.ref.index, key, value)"
-          @state="(key, value) => emit('state', layer.ref.index, key, value)"
+          @field="(key, value) => emit('field', layer.ref.index, key, value)"
           @variant="(variantIndex) => emit('variant', layer.ref.index, variantIndex)"
+          @surface-variant="(type) => emit('surfaceVariant', layer.ref.index, type)"
         />
       </article>
     </div>

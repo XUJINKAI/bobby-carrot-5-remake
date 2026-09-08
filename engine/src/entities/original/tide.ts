@@ -1,18 +1,18 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
   directionCell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.TIDE,
+  type: MapEntityTypeId.TIDE,
   traits: ["water", "forced-movement"],
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Tide" },
@@ -23,10 +23,10 @@ export const tide: EntityModule = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      cell(8, 5),
-      cell(7, 5),
-      cell(10, 5),
-      cell(9, 5),
+      tileCell(MapEntityTypeId.TIDE, { fields: { direction: "up" } }),
+      tileCell(MapEntityTypeId.TIDE, { fields: { direction: "down" } }),
+      tileCell(MapEntityTypeId.TIDE, { fields: { direction: "left" } }),
+      tileCell(MapEntityTypeId.TIDE, { fields: { direction: "right" } }),
     ),
   ),
 );

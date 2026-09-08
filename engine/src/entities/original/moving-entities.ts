@@ -1,4 +1,9 @@
-import { EntityTypeId, type Direction, type EntityType, type JsonValue } from "@bobby/model";
+import {
+  MapEntityTypeId,
+  type Direction,
+  type EntityType,
+  type JsonValue,
+} from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -19,7 +24,7 @@ import type {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -66,7 +71,7 @@ const movingPlatformBehavior: Behavior = {
     if (
       !direction ||
       !query.entityHasTrait(actor.id, "player") ||
-      self.entity.type !== EntityTypeId.LEAF ||
+      self.entity.type !== MapEntityTypeId.LEAF ||
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running"
     )
@@ -168,27 +173,64 @@ const movingEntityAction: RuntimeActionDefinition = {
 };
 
 export const leaf = movingEntityModule(
-  EntityTypeId.LEAF,
+  MapEntityTypeId.LEAF,
   "Leaf",
-  35,
   true,
 );
-export const cloudRed = movingEntityModule(EntityTypeId.CLOUD_RED, "Red Cloud", 23);
-export const cloudPurple = movingEntityModule(
-  EntityTypeId.CLOUD_PURPLE,
-  "Purple Cloud",
-  24,
+
+const cloudDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.CLOUD,
+  traits: [
+    "moving-platform",
+    "terrain-overlay",
+    "walkable",
+    "blocking",
+    "cloud",
+  ],
+  stackOrder: CONTENT_STACK_ORDER,
+  state: [
+    {
+      key: "color",
+      kind: "enum",
+      label: "颜色",
+      default: "red",
+      options: [{ value: "red" }, { value: "purple" }, { value: "green" }],
+    },
+    { key: "moving", kind: "boolean", label: "移动中", default: false },
+  ],
+  presentation: { name: "Cloud" },
+};
+
+export const cloud: EntityModule = originalModule(
+  cloudDefinition,
+  atlasVisual(cloudDefinition, (context) =>
+    tileCell(MapEntityTypeId.CLOUD, {
+      fields: { color: cloudColor(context.entity.state?.color) },
+    }),
+  ),
+  [{ behavior: movingPlatformBehavior }],
 );
-export const cloudGreen = movingEntityModule(
-  EntityTypeId.CLOUD_GREEN,
-  "Green Cloud",
-  25,
+
+const cloudParkingDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.CLOUD_PARKING,
+  traits: [],
+  layer: "object",
+  stackOrder: CONTENT_STACK_ORDER,
+  presentation: { name: "Cloud Parking" },
+};
+
+export const cloudParking: EntityModule = originalModule(
+  cloudParkingDefinition,
+  atlasVisual(cloudParkingDefinition, (context) =>
+    tileCell(MapEntityTypeId.CLOUD_PARKING, {
+      fields: { color: cloudColor(context.entity.state?.color) },
+    }),
+  ),
 );
 
 function movingEntityModule(
   type: EntityType,
   name: string,
-  atlasIndex: number,
   ownsAction = false,
 ): EntityModule {
   const definition: EntityModuleDefinition = {
@@ -207,8 +249,8 @@ function movingEntityModule(
     presentation: { name },
   };
   const visual = {
-    ...atlasVisual(definition, objectCell(atlasIndex)),
-    ...(type === EntityTypeId.LEAF
+    ...atlasVisual(definition, tileCell(type)),
+    ...(type === MapEntityTypeId.LEAF
       ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
       : {}),
   };
@@ -255,7 +297,7 @@ function nextRoute(
   return {
     direction,
     cadenceMs:
-      entity.type === EntityTypeId.LEAF &&
+      entity.type === MapEntityTypeId.LEAF &&
       query.hasTraitAt(entity.anchor, "waterfall")
         ? DEFAULT_WATERFALL_CELL_MS
         : DEFAULT_MOVING_ENTITY_CELL_MS,
@@ -277,7 +319,7 @@ function tideDirectionAt(
 ): Direction | null {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.TIDE) continue;
+    if (entity?.type !== MapEntityTypeId.TIDE) continue;
     return directionState(entity.direction) ?? null;
   }
   return null;
@@ -290,15 +332,15 @@ function canEnterMovingDomain(
   direction: Direction,
 ): boolean {
   if (!query.inBounds(target)) return false;
-  const domainTrait = entity.type === EntityTypeId.LEAF ? "water" : "cloud-space";
+  const domainTrait = entity.type === MapEntityTypeId.LEAF ? "water" : "cloud-space";
   if (!query.hasTraitAt(target, domainTrait)) return false;
   if (movingSupportOccupiedAt(query, entity, target, domainTrait)) return false;
 
-  if (entity.type === EntityTypeId.LEAF) {
+  if (entity.type === MapEntityTypeId.LEAF) {
     for (const presence of query.presencesAt(target)) {
       const tide = query.entity(presence.entityId);
       if (
-        tide?.type === EntityTypeId.TIDE &&
+        tide?.type === MapEntityTypeId.TIDE &&
         tide.direction === oppositeDirection(direction)
       )
         return false;
@@ -334,9 +376,8 @@ function forcedWindAt(
   currentDirection: Direction | null,
 ): Direction | null {
   const directions: readonly Direction[] = ["up", "down", "left", "right"];
-  for (let channel = 0; channel < directions.length; channel += 1) {
-    const direction = directions[channel]!;
-    if (direction === currentDirection || !windEnabled(query, channel)) continue;
+  for (const direction of directions) {
+    if (direction === currentDirection || !windEnabled(query, direction)) continue;
     const windmill = windmillFor(query, direction);
     if (windmill && insideWindRange(cell, windmill.anchor, direction))
       return direction;
@@ -344,11 +385,11 @@ function forcedWindAt(
   return null;
 }
 
-function windEnabled(query: WorldQueryApi, channel: number): boolean {
+function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
   return query.entitiesWithTrait("switch").some(
     (entity) =>
-      entity.type === EntityTypeId.WIND_SWITCH &&
-      integerState(entity.properties?.channel) === channel &&
+      entity.type === MapEntityTypeId.WIND_SWITCH &&
+      entity.direction === direction &&
       entity.state?.active === true,
   );
 }
@@ -357,13 +398,11 @@ function windmillFor(
   query: WorldQueryApi,
   direction: Direction,
 ): Readonly<EntityInstance> | undefined {
-  const type = {
-    up: EntityTypeId.WINDMILL_UP,
-    down: EntityTypeId.WINDMILL_DOWN,
-    left: EntityTypeId.WINDMILL_LEFT,
-    right: EntityTypeId.WINDMILL_RIGHT,
-  }[direction];
-  return query.entitiesWithTrait("windmill").find((entity) => entity.type === type);
+  return query.entitiesWithTrait("windmill").find(
+    (entity) =>
+      entity.type === MapEntityTypeId.WINDMILL &&
+      entity.direction === direction,
+  );
 }
 
 function insideWindRange(
@@ -384,23 +423,16 @@ function isMatchingCloudParking(
   query: WorldQueryApi,
   cloud: Readonly<EntityInstance>,
 ): boolean {
-  const parking =
-    cloud.type === EntityTypeId.CLOUD_RED
-      ? EntityTypeId.CLOUD_GRID_RED
-      : cloud.type === EntityTypeId.CLOUD_PURPLE
-        ? EntityTypeId.CLOUD_GRID_PURPLE
-        : cloud.type === EntityTypeId.CLOUD_GREEN
-          ? EntityTypeId.CLOUD_GRID_GREEN
-          : undefined;
-  return parking !== undefined && query.presencesAt(cloud.anchor).some(
-    (presence) => query.entity(presence.entityId)?.type === parking,
-  );
+  const color = cloudColor(cloud.state?.color);
+  return query.presencesAt(cloud.anchor).some((presence) => {
+    const parking = query.entity(presence.entityId);
+    return parking?.type === MapEntityTypeId.CLOUD_PARKING &&
+      cloudColor(parking.state?.color) === color;
+  });
 }
 
 function isCloudParkingType(type: EntityType): boolean {
-  return type === EntityTypeId.CLOUD_GRID_RED ||
-    type === EntityTypeId.CLOUD_GRID_PURPLE ||
-    type === EntityTypeId.CLOUD_GRID_GREEN;
+  return type === MapEntityTypeId.CLOUD_PARKING;
 }
 
 function playersAt(
@@ -432,9 +464,11 @@ function stopMovingEntity(
 }
 
 function isCloud(type: EntityType): boolean {
-  return type === EntityTypeId.CLOUD_RED ||
-    type === EntityTypeId.CLOUD_PURPLE ||
-    type === EntityTypeId.CLOUD_GREEN;
+  return type === MapEntityTypeId.CLOUD;
+}
+
+function cloudColor(value: JsonValue | undefined): "red" | "purple" | "green" {
+  return value === "purple" || value === "green" ? value : "red";
 }
 
 function addDirection(
@@ -457,12 +491,4 @@ function directionState(value: JsonValue | undefined): Direction | null {
   return value === "up" || value === "down" || value === "left" || value === "right"
     ? value
     : null;
-}
-
-function numberState(value: JsonValue | undefined): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function integerState(value: JsonValue | undefined): number {
-  return Math.max(0, Math.floor(numberState(value)));
 }

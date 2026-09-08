@@ -1,15 +1,4 @@
-export { EntityTypeId } from "./ids.js";
-export type {
-  Direction,
-  EntityType,
-  JsonPrimitive,
-  JsonValue,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
-  LevelEntity,
-  LevelRules,
-  LevelLimit,
-  WinCondition,
-  LevelMap,
-} from "./types.js";
+export * from "./shared/game.js";
+export * from "./shared/json.js";
+export * from "./map/index.js";
+export * from "./collection/index.js";

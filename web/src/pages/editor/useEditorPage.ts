@@ -21,6 +21,7 @@ import {
   rectangleCells,
   removeEntities,
   reorderEntityStack,
+  replaceSurfaceVisualVariant,
   replaceEntities,
   replaceEntity,
   resolveDeletion,
@@ -43,7 +44,6 @@ import {
   type EditorSelection,
   type EditorSnapshot,
   type EditorTool,
-  type EntityFieldDefinition,
   type EntityRef,
   type PaletteItem,
   type SurfaceBrush,
@@ -53,14 +53,22 @@ import {
   type SurfaceTool,
 } from "@bobby/editor";
 import {
-  type EntityProperties,
-  type EntityState,
+  entityMapDefinition,
+  type EntityMapFieldDefinition,
   type EntityType,
-  type JsonValue,
+  type JsonPrimitive,
   type LevelEntity,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
-import { storeEditorDraft } from "../../storage/editorDraftStorage.js";
+import {
+  EDITOR_PALETTE_SIZES,
+  type EditorPaletteSize,
+} from "../../storage/contracts.js";
+import { storeEditorAutosave } from "../../storage/editorDraftStorage.js";
+import {
+  getWebSettings,
+  updateWebSettings,
+} from "../../storage/settingsStorage.js";
 
 export type EditorLeftPanel = "palette" | "surface";
 
@@ -90,7 +98,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
-    storeEditorDraft(next.level as EditorMap);
+    storeEditorAutosave(next.level as EditorMap);
   });
   onUnmounted(unsubscribe);
 
@@ -440,6 +448,40 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
+  function applySurfaceVariant(
+    entityIndex: number,
+    variantType: EntityType,
+  ): boolean {
+    const entity = currentLevel().entities[entityIndex];
+    if (!entity) return false;
+    const replacement = replaceSurfaceVisualVariant(entity, variantType);
+    return Boolean(
+      replacement &&
+      document.execute(replaceEntity({ index: entityIndex }, replacement)),
+    );
+  }
+
+  function applyBatchSurfaceVariant(
+    type: EntityType,
+    variantType: EntityType,
+  ): boolean {
+    const replacements = selectedRefsOfType(type)
+      .map((ref) => {
+        const entity = currentLevel().entities[ref.index];
+        const replacement = entity
+          ? replaceSurfaceVisualVariant(entity, variantType)
+          : null;
+        return replacement ? { ref, entity: replacement } : null;
+      })
+      .filter(
+        (replacement): replacement is { ref: EntityRef; entity: LevelEntity } =>
+          replacement !== null,
+      );
+    return (
+      replacements.length > 0 && document.execute(replaceEntities(replacements))
+    );
+  }
+
   function cycleVariant(step: number, cell?: Cell): boolean {
     if (leftPanel.value === "surface") return false;
     if (paletteTool.value !== "place") {
@@ -478,23 +520,15 @@ export function useEditorPage(initialLevel: EditorMap) {
     return true;
   }
 
-  function updateProperty(entityIndex: number, key: string, raw: string): void {
-    updatePropertiesForRefs([{ index: entityIndex }], key, raw);
+  function updateField(entityIndex: number, key: string, raw: string): void {
+    updateFieldsForRefs([{ index: entityIndex }], key, raw);
   }
 
-  function updateBatchProperty(type: EntityType, key: string, raw: string): void {
-    updatePropertiesForRefs(selectedRefsOfType(type), key, raw);
+  function updateBatchField(type: EntityType, key: string, raw: string): void {
+    updateFieldsForRefs(selectedRefsOfType(type), key, raw);
   }
 
-  function updateState(entityIndex: number, key: string, raw: string): void {
-    updateStateForRefs([{ index: entityIndex }], key, raw);
-  }
-
-  function updateBatchState(type: EntityType, key: string, raw: string): void {
-    updateStateForRefs(selectedRefsOfType(type), key, raw);
-  }
-
-  function updatePropertiesForRefs(
+  function updateFieldsForRefs(
     refs: readonly EntityRef[],
     key: string,
     raw: string,
@@ -502,39 +536,13 @@ export function useEditorPage(initialLevel: EditorMap) {
     const replacements = refs.flatMap((ref) => {
       const entity = currentLevel().entities[ref.index];
       if (!entity) return [];
-      const field = catalog
-        .require(entity.type)
-        .properties?.find((item) => item.key === key);
+      const field = entityMapDefinition(entity.type)?.fields.find(
+        (candidate) => candidate.key === key,
+      );
       if (!field) return [];
-      const properties = { ...(entity.properties ?? {}) } as EntityProperties;
-      if (raw === "") delete properties[key];
-      else properties[key] = coerceFieldValue(field, raw);
-      const next = { ...entity };
-      if (Object.keys(properties).length > 0) next.properties = properties;
-      else delete next.properties;
-      return [{ ref, entity: next }];
-    });
-    if (replacements.length > 0) document.execute(replaceEntities(replacements));
-  }
-
-  function updateStateForRefs(
-    refs: readonly EntityRef[],
-    key: string,
-    raw: string,
-  ): void {
-    const replacements = refs.flatMap((ref) => {
-      const entity = currentLevel().entities[ref.index];
-      if (!entity) return [];
-      const field = catalog
-        .require(entity.type)
-        .state?.find((item) => item.key === key);
-      if (!field) return [];
-      const state = { ...(entity.state ?? {}) } as EntityState;
-      if (raw === "") delete state[key];
-      else state[key] = coerceFieldValue(field, raw);
-      const next = { ...entity };
-      if (Object.keys(state).length > 0) next.state = state;
-      else delete next.state;
+      const next: LevelEntity = { ...entity };
+      if (raw === "") delete next[key];
+      else next[key] = coerceFieldValue(field, raw);
       return [{ ref, entity: next }];
     });
     if (replacements.length > 0) document.execute(replaceEntities(replacements));
@@ -562,11 +570,18 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function setPaletteSize(delta: number): void {
-    const sizes = [32, 40, 48, 56, 64];
-    const index = Math.max(0, sizes.indexOf(paletteSize.value));
+    const index = Math.max(0, EDITOR_PALETTE_SIZES.indexOf(paletteSize.value));
     paletteSize.value =
-      sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
-    localStorage.setItem("bobby.editor.paletteSize", String(paletteSize.value));
+      EDITOR_PALETTE_SIZES[
+        Math.min(
+          EDITOR_PALETTE_SIZES.length - 1,
+          Math.max(0, index + delta),
+        )
+      ]!;
+    updateWebSettings((settings) => ({
+      ...settings,
+      editor: { ...settings.editor, paletteSize: paletteSize.value },
+    }));
   }
 
   return {
@@ -618,12 +633,12 @@ export function useEditorPage(initialLevel: EditorMap) {
     reorderLayers,
     applyVariant,
     applyBatchVariant,
+    applySurfaceVariant,
+    applyBatchSurfaceVariant,
     cycleVariant,
     transform: (cell: Cell, step: number) => cycleVariant(step, cell),
-    updateProperty,
-    updateBatchProperty,
-    updateState,
-    updateBatchState,
+    updateField,
+    updateBatchField,
     setPaletteSize,
     resize,
     setRule,
@@ -636,7 +651,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     updateMetadata(metadata: {
       name: string;
       author?: string;
-      description?: string;
+      note?: string;
     }): void {
       document.execute(updateMetadata(metadata));
     },
@@ -670,10 +685,7 @@ function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPre
   return {
     type: source.type,
     ...(source.direction ? { direction: source.direction } : {}),
-    ...(source.properties
-      ? { properties: structuredClone(source.properties) }
-      : {}),
-    ...(source.state ? { state: structuredClone(source.state) } : {}),
+    ...(source.fields ? { fields: structuredClone(source.fields) } : {}),
   };
 }
 
@@ -689,24 +701,25 @@ function shiftedCell(
 }
 
 function coerceFieldValue(
-  field: EntityFieldDefinition,
+  field: EntityMapFieldDefinition,
   raw: string,
-): JsonValue {
-  if (field.kind === "number") {
+): JsonPrimitive {
+  if (field.kind === "number" || field.kind === "integer") {
     const value = Number(raw);
-    return Number.isFinite(value) ? value : raw;
+    return Number.isFinite(value)
+      ? field.kind === "integer"
+        ? Math.trunc(value)
+        : value
+      : raw;
   }
   if (field.kind === "boolean") return raw === "true";
   if (field.kind === "enum") {
-    const option = field.options?.find(
-      (candidate) => String(candidate.value) === raw,
-    );
-    if (option) return structuredClone(option.value);
+    const option = field.values.find((candidate) => String(candidate) === raw);
+    if (option !== undefined) return option;
   }
   return raw;
 }
 
-function readPaletteSize(): number {
-  const stored = Number(localStorage.getItem("bobby.editor.paletteSize"));
-  return [32, 40, 48, 56, 64].includes(stored) ? stored : 48;
+function readPaletteSize(): EditorPaletteSize {
+  return getWebSettings().editor.paletteSize;
 }

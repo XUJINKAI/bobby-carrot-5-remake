@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "../dist/world/World.js";
@@ -21,9 +21,9 @@ test("motion interruption keeps the current authoritative visual position", () =
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];

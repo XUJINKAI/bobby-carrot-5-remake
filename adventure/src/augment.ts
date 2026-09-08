@@ -1,26 +1,20 @@
-import type {
-  EntityProperties,
-  EntityType,
-  LevelMap,
-} from "@bobby/model";
+import type { EntityType, JsonPrimitive, LevelMap } from "@bobby/model";
 
-export interface AdventureEntityPropertiesPatch {
+export interface AdventureEntityFieldPatch {
   x?: number;
   y?: number;
   type?: EntityType;
-  properties: EntityProperties;
+  fields: Record<string, JsonPrimitive>;
 }
 
 /**
- * Adventure 可以在纯 LevelMap 进入 Engine 前覆盖 Entity 实例参数。
- * Engine 不知道这些参数来自 Adventure；Editor JSON 也走同一个 LevelEntity.properties。
- *
- * x / y / type 都是可选 selector；至少要提供一个。只给 type 时会匹配该类型的全部 Entity，
- * 便于 Adventure 给原版地图注入玩法策略，而不用把坐标或 Adventure policy 写回 Original Adapter。
+ * Adventure 可以在 LevelMap 进入 Engine 前覆盖扁平的 canonical Map Entity 字段。
+ * x / y / type 都是可选 selector，但至少需要一个 selector。
+ * 处理后的 LevelMap 仍与 Editor、custom 和 original 地图共用公开 Map ABI。
  */
 export function augmentAdventureLevel(
   level: LevelMap,
-  patches: readonly AdventureEntityPropertiesPatch[] = [],
+  patches: readonly AdventureEntityFieldPatch[] = [],
 ): LevelMap {
   const result = structuredClone(level);
   for (const patch of patches) {
@@ -30,10 +24,11 @@ export function augmentAdventureLevel(
       if (patch.x !== undefined && entity.x !== patch.x) continue;
       if (patch.y !== undefined && entity.y !== patch.y) continue;
       if (patch.type !== undefined && entity.type !== patch.type) continue;
-      entity.properties = {
-        ...(entity.properties ?? {}),
-        ...patch.properties,
-      };
+      for (const [key, value] of Object.entries(patch.fields)) {
+        if (key === "type" || key === "x" || key === "y" || key === "stackOrder")
+          throw new Error(`Adventure cannot patch reserved LevelEntity field: ${key}`);
+        entity[key] = value;
+      }
     }
   }
   return result;

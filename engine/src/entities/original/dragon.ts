@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   RuntimeActionDefinition,
@@ -10,16 +10,19 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import { bobbyMountId } from "../player/BobbyState.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileAnimationCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
 const DRAGON_ATTACK_ACTION = "dragon-attack";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 
-export const DEFAULT_DRAGON_WINDUP_MS = 18 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const DRAGON_ATTACK_FRAME_MS = 6 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const DEFAULT_DRAGON_WINDUP_MS = 3 * DRAGON_ATTACK_FRAME_MS;
 
 const triggerDragon: Behavior = {
   id: "trigger-dragon-attack",
@@ -54,14 +57,22 @@ const dragonAttackAction: RuntimeActionDefinition = {
     if (!dragon) return "complete";
     const elapsedMs = Number(action.state.elapsedMs ?? 0) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
-    if (elapsedMs < DEFAULT_DRAGON_WINDUP_MS) return "running";
+    if (elapsedMs < DRAGON_ATTACK_FRAME_MS) return "running";
+    if (elapsedMs < 2 * DRAGON_ATTACK_FRAME_MS) {
+      commands.setState(dragonId, { ...dragon.state, attackFrame: 1 });
+      return "running";
+    }
+    if (elapsedMs < DEFAULT_DRAGON_WINDUP_MS) {
+      commands.setState(dragonId, { ...dragon.state, attackFrame: 2 });
+      return "running";
+    }
 
     const head = query
       .presencesForEntity(dragonId)
       .find((presence) => presence.role === "head");
     if (head) {
       commands.spawn({
-        type: EntityTypeId.FIREBALL,
+        type: RuntimeEntityTypeId.FIREBALL,
         x: head.cell.x,
         y: head.cell.y,
         direction: dragon.direction ?? "left",
@@ -74,51 +85,73 @@ const dragonAttackAction: RuntimeActionDefinition = {
         direction: dragon.direction ?? "left",
       });
     }
-    commands.setState(dragonId, { ...dragon.state, attacking: false });
+    commands.setState(dragonId, {
+      ...dragon.state,
+      attacking: false,
+      attackFrame: 0,
+    });
     return "complete";
   },
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.DRAGON,
+  type: MapEntityTypeId.DRAGON,
   traits: ["dragon"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
-    rotateWithDirection: true,
-    baseDirection: "left",
-    parts: [
-      {
-        dx: 0,
-        dy: 0,
-        role: "head",
-        traits: ["blocking"],
-      },
-      {
-        dx: 1,
-        dy: 0,
-        role: "body",
-        traits: ["blocking"],
-      },
-      {
-        dx: 2,
-        dy: 0,
-        role: "tail",
-        traits: ["walkable", "dragon-trigger"],
-      },
-    ],
+    byDirection: {
+      left: [
+        {
+          dx: -1,
+          dy: 0,
+          role: "head",
+          traits: ["blocking"],
+        },
+        {
+          dx: 0,
+          dy: 0,
+          role: "body",
+          traits: ["blocking"],
+        },
+        {
+          dx: 1,
+          dy: 0,
+          role: "tail",
+          traits: ["walkable", "dragon-trigger"],
+        },
+      ],
+      right: [
+        {
+          dx: 1,
+          dy: 0,
+          role: "head",
+          traits: ["blocking"],
+        },
+        {
+          dx: 0,
+          dy: 0,
+          role: "body",
+          traits: ["blocking"],
+        },
+        {
+          dx: -1,
+          dy: 0,
+          role: "tail",
+          traits: ["walkable", "dragon-trigger"],
+        },
+      ],
+    },
   },
   presentation: { name: "Dragon" },
 };
 
 const visual: VisualDefinition = {
-  id: EntityTypeId.DRAGON,
+  id: MapEntityTypeId.DRAGON,
   resolve(context) {
-    const atlas =
-      context.presence.role === "body"
-        ? objectCell(15)
-        : context.presence.role === "tail"
-          ? objectCell(16)
-          : objectCell(14);
+    const atlas = dragonAtlasCell(
+      context.presence.role,
+      context.entity.state?.attackFrame,
+    );
     return {
       layers: [
         {
@@ -131,6 +164,16 @@ const visual: VisualDefinition = {
     };
   },
 };
+
+function dragonAtlasCell(role: string | undefined, attackFrame: unknown) {
+  if (role === "body") return tileCell(MapEntityTypeId.DRAGON, { role: "body" });
+  if (role === "tail") return tileCell(MapEntityTypeId.DRAGON, { role: "tail" });
+  if (attackFrame === 1)
+    return tileAnimationCell(MapEntityTypeId.DRAGON, "fire", 1, { role: "head" });
+  if (attackFrame === 2)
+    return tileAnimationCell(MapEntityTypeId.DRAGON, "fire", 2, { role: "head" });
+  return tileCell(MapEntityTypeId.DRAGON, { role: "head" });
+}
 
 const base = originalModule(definition, visual, [
   { behavior: triggerDragon },

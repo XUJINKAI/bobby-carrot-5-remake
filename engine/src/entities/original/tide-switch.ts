@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { tideSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
@@ -6,14 +6,14 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  cell,
+  tileCell,
   originalModule,
   pressedState,
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.TIDE_SWITCH,
+  type: MapEntityTypeId.TIDE_SWITCH,
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
@@ -23,7 +23,9 @@ const definition: EntityModuleDefinition = {
 export const tideSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.pressed === true ? cell(5, 10) : cell(6, 10),
+    tileCell(MapEntityTypeId.TIDE_SWITCH, {
+      fields: { pressed: context.entity.state?.pressed === true },
+    }),
   ),
   [{ behavior: tideSwitchBehavior }],
 );

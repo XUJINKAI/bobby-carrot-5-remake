@@ -1,11 +1,14 @@
-import type { EntityState } from "@bobby/model";
 import type {
   RuntimeActionCancelReason,
   RuntimeActionId,
 } from "../action/RuntimeAction.js";
 import type { GlobalState } from "../GlobalState.js";
 import type { ActorLifecycleState } from "../actor/ActorLifecycle.js";
-import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
+import type {
+  CellPosition,
+  EntityId,
+  EntityState,
+} from "../entity/EntityInstance.js";
 import type { WorldEvent } from "../WorldTypes.js";
 import type { WorldMotion } from "../movement/WorldMotion.js";
 import type { WorldOutcomeState } from "../outcome/WorldOutcome.js";

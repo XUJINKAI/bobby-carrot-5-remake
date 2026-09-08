@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createDelayedMoveRuntimeAction } from "../../world/action/builtinActions.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
@@ -6,7 +6,7 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  cell,
+  tileCell,
   staticEntity,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -64,7 +64,7 @@ function inheritedCadence(
 }
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.ICE,
+  type: MapEntityTypeId.ICE,
   traits: ["walkable", "forced-movement"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
@@ -73,6 +73,6 @@ const definition: EntityModuleDefinition = {
 
 export const ice: EntityModule = staticEntity(
   definition,
-  cell(4, 9),
+  tileCell(MapEntityTypeId.ICE),
   [{ behavior: slide }],
 );

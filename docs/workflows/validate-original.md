@@ -2,6 +2,13 @@
 
 当字节码分析还不足以确认机关细节时，用同一张最小地图分别运行 bc5r 与原版 Java ME Engine。
 
+## 按坐标查找 `ts.png` 素材
+
+`original/decoded/` 中的 terrain 和 object 标签均以 `ts-<row>-<column>:` 开头。
+对素材语义或命名不确定时，直接全局搜索坐标前缀即可定位所有原版地图引用，
+例如搜索 `ts-4-13:`。Engine 使用的机关帧与 Surface 归类集中维护在
+`model/src/map/entity/original-tile-visuals.json`；Editor Surface 的每个 atlas 单元均为单格 Entity。
+
 ## 1. 做最小地图
 
 在 `/edit` 创建地图，尽量只保留要验证的机关、Bobby 起点、必要目标/出口。先用 Editor Play Test 记录 bc5r 行为，然后导出 JSON。
@@ -40,7 +47,7 @@ node tools/cli.mjs original patch
 - DAT metadata 与其它关卡 record 原字节保留；
 - JAR 其它 entry 尽可能原 local ZIP block 保留；
 - 失效签名 entry 被移除；
-- 输出 JAR 再读取后得到的 Entity Map 与输入地图的 Adapter 规范化结果一致。
+- 输出 JAR 再读取后的目标 DAT record 与反向 Adapter 输出一致。
 
 ## 4. 在原版模拟器运行
 
@@ -49,7 +56,7 @@ node tools/cli.mjs original patch
 ## 5. 回到 Engine
 
 如果原版与 bc5r 不同：
-1. 先确认自定义 map 的 JAR round-trip 已通过；
+1. 先确认自定义 map 的 DAT record 写入校验已通过；
 2. 查看原版字节码与 `docs/reference/`；
 3. 修改 Engine Definition/World；
 4. 增加自动回归测试；

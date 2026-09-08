@@ -1,4 +1,4 @@
-import { EntityTypeId, type JsonValue } from "@bobby/model";
+import { MapEntityTypeId, type JsonValue } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -15,10 +15,11 @@ import {
   patchBobbyInventory,
   readBobbyInventory,
 } from "../player/BobbyState.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -54,7 +55,7 @@ const plantBean: Behavior = {
     );
     commands.destroy(self.entity.id);
     commands.spawn({
-      type: EntityTypeId.BEAN_SPROUT,
+      type: RuntimeEntityTypeId.BEAN_SPROUT,
       x: self.presence.cell.x,
       y: self.presence.cell.y,
     });
@@ -99,12 +100,12 @@ const beanGrowthAction: RuntimeActionDefinition = {
     commands.spawn({
       type:
         height === 1
-          ? EntityTypeId.BEANSTALK_BASE
-          : EntityTypeId.BEANSTALK_MID,
+          ? RuntimeEntityTypeId.BEANSTALK_BASE
+          : RuntimeEntityTypeId.BEANSTALK_MID,
       x,
       y: oldTipY,
     });
-    commands.spawn({ type: EntityTypeId.BEANSTALK_TIP, x, y: nextY });
+    commands.spawn({ type: MapEntityTypeId.BEANSTALK, x, y: nextY });
     commands.emit({
       type: "bean-growth-segment",
       x,
@@ -121,7 +122,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.BEAN_FIELD,
+  type: MapEntityTypeId.BEAN_FIELD,
   traits: [],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Bean Field" },
@@ -129,7 +130,7 @@ const definition: EntityModuleDefinition = {
 
 const base = originalModule(
   definition,
-  atlasVisual(definition, objectCell(22)),
+  atlasVisual(definition, tileCell(MapEntityTypeId.BEAN_FIELD)),
   [{ behavior: plantBean }],
 );
 
@@ -164,8 +165,8 @@ function stalkTipAt(
   for (const presence of query.presencesAt({ x, y })) {
     const entity = query.entity(presence.entityId);
     if (
-      entity?.type === EntityTypeId.BEAN_SPROUT ||
-      entity?.type === EntityTypeId.BEANSTALK_TIP
+      entity?.type === RuntimeEntityTypeId.BEAN_SPROUT ||
+      entity?.type === MapEntityTypeId.BEANSTALK
     )
       return entity.id;
   }

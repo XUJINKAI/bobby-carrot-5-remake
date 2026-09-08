@@ -1,11 +1,10 @@
-import type {
-  Direction,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
-  LevelEntity,
-  LevelLimit,
-  WinCondition,
+import {
+  isLevelEntityReservedField,
+  type Direction,
+  type JsonPrimitive,
+  type LevelEntity,
+  type LevelLimit,
+  type WinCondition,
 } from "@bobby/model";
 import {
   normalizeEditorLevel,
@@ -78,49 +77,20 @@ export function setEntityDirection(
   ref: EntityRef,
   direction: Direction | undefined,
 ): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    if (direction) next.direction = direction;
-    else delete next.direction;
-    return next;
-  });
+  return updateEntityField(ref, "direction", direction);
 }
 
-export function updateEntityProperties(
+/** 更新一个 Entity 持有的扁平 Map 字段；身份与坐标保留字段使用专用 command。 */
+export function updateEntityField(
   ref: EntityRef,
-  properties: EntityProperties | undefined,
+  key: string,
+  value: JsonPrimitive | undefined,
 ): EditorCommand {
+  if (!key || isLevelEntityReservedField(key)) return command((level) => level);
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
-    if (properties && Object.keys(properties).length > 0)
-      next.properties = structuredClone(properties);
-    else delete next.properties;
-    return next;
-  });
-}
-
-export function updateEntityState(
-  ref: EntityRef,
-  state: EntityState | undefined,
-): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    if (state && Object.keys(state).length > 0)
-      next.state = structuredClone(state);
-    else delete next.state;
-    return next;
-  });
-}
-
-export function updateEntityTraits(
-  ref: EntityRef,
-  traits: EntityTraits | undefined,
-): EditorCommand {
-  return updateEntity(ref, (entity) => {
-    const next = { ...entity };
-    const unique = traits ? [...new Set(traits)] : [];
-    if (unique.length > 0) next.traits = unique;
-    else delete next.traits;
+    if (value === undefined) delete next[key];
+    else next[key] = value;
     return next;
   });
 }
@@ -173,14 +143,18 @@ export function reorderEntityStack(
 export function updateMetadata(metadata: {
   name: string;
   author?: string;
-  description?: string;
+  note?: string;
 }): EditorCommand {
   return command((level) => {
-    const next: EditorMap = { ...level, name: metadata.name };
-    if (metadata.author) next.author = metadata.author;
-    else delete next.author;
-    if (metadata.description) next.description = metadata.description;
-    else delete next.description;
+    const next: EditorMap = {
+      ...level,
+      meta: {
+        name: metadata.name,
+        ...(metadata.author ? { author: metadata.author } : {}),
+      },
+    };
+    if (metadata.note) next.note = metadata.note;
+    else delete next.note;
     return normalizeEditorLevel(next);
   });
 }

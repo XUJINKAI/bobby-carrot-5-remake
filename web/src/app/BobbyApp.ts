@@ -42,6 +42,7 @@ import {
   NOOP_CONTROLLER,
   type PageContext,
   type PageController,
+  type ResolvedMapCollection,
 } from "./pageContracts.js";
 import {
   parseMapPlayUrl,
@@ -58,7 +59,7 @@ export class BobbyApp {
   private readonly images = createImageManager();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
   private collectionsIndex: MapCollectionsIndex = EMPTY_COLLECTIONS_INDEX;
-  private collections: MapCollectionIndex[] = [];
+  private collections: ResolvedMapCollection[] = [];
   private adventure: AdventureIndex = EMPTY_ADVENTURE_INDEX;
   private indexesLoaded = false;
   private content!: HTMLDivElement;
@@ -238,7 +239,7 @@ export class BobbyApp {
           identity: {
             collection: "imported",
             id: "shared-map",
-            title: imported.value.name,
+            title: imported.value.meta.name,
           },
           mode: "explore",
         });
@@ -284,18 +285,26 @@ export class BobbyApp {
       this.controller = await renderGamePage({
         ...context,
         level: importedLevelMap(level),
-        identity: { ...ref, title: level.name },
+        identity: { ...ref, title: level.meta.name },
         mode: "explore",
       });
       return;
     }
     try {
       const resolved = await resolveMapDocument(ref);
+      const collection = context.collections.find((item) => item.id === ref.collection);
+      const currentIndex = collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
+      const exploreNextMapId =
+        currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
+      const exploreMapKind =
+        currentIndex >= 0 ? collection?.maps[currentIndex]?.kind : undefined;
       this.controller = await renderGamePage({
         ...context,
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
+        ...(exploreNextMapId ? { exploreNextMapId } : {}),
+        ...(exploreMapKind ? { exploreMapKind } : {}),
         mode: "explore",
       });
     } catch {
@@ -372,11 +381,12 @@ export class BobbyApp {
       throw new Error("maps/index.json schemaVersion 必须为 1");
     const [collections, adventure] = await Promise.all([
       Promise.all(
-        collectionsIndex.collections.map((collection) =>
-          fetchJson<MapCollectionIndex>(
+        collectionsIndex.collections.map(async (collection) => ({
+          id: collection.id,
+          ...(await fetchJson<MapCollectionIndex>(
             siteUrl(`assets/maps/${collection.id}/index.json`),
-          ),
-        ),
+          )),
+        })),
       ),
       fetchJson<AdventureIndex>(siteUrl("assets/adventure/index.json")),
     ]);
@@ -399,7 +409,7 @@ const EMPTY_COLLECTIONS_INDEX: MapCollectionsIndex = {
 
 const EMPTY_ADVENTURE_INDEX: AdventureIndex = {
   schemaVersion: 1,
-  name: "Bobby Carrot 5",
+  name: "Bobby Carrot 5 Remake",
   chapters: [],
   specialScenes: [],
 };

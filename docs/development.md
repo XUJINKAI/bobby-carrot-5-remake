@@ -121,7 +121,7 @@ node tools/cli.mjs original patch \
   --out tmp/original-patch
 ```
 
-工具以输入目录内 JSON 文件名匹配 Campaign public ID，根据 Catalog provenance 找到所属原始 JAR、DAT 与 record slot；同一 JAR 的多个目标会合并输出，并在输出后重新读取验证 Entity Map round-trip。
+工具以输入目录内 JSON 文件名匹配 Campaign public ID，根据 Catalog provenance 找到所属原始 JAR、DAT 与 record slot；同一 JAR 的多个目标会合并输出，并在输出后重新读取目标 DAT record，确认内容与反向 Adapter 的输出一致。
 
 详细流程见 [`workflows/validate-original.md`](workflows/validate-original.md)。
 

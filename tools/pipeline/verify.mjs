@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
+let parseMapDocument;
+
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
 const packageJson = readJson("package.json");
 for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
@@ -9,12 +11,13 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 for (const file of [
-  "custom-maps/loma-pushbox/01-01.json",
+  "custom-maps/loma-pushbox/01/01-01.json",
   "custom-maps/novoban-pushbox/01.json",
 ])
   run("git", ["check-ignore", "--quiet", file]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
+({ parseMapDocument } = await import("@bobby/model"));
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const collectionsIndex = readJson("assets/maps/index.json");
@@ -28,7 +31,7 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
   const collection = readJson(relative);
   assertSchemaV1(collection, relative);
   if (
-    collection.id !== summary.id ||
+    Object.hasOwn(collection, "id") ||
     !cardSizes.has(collection.cardSize) ||
     !Array.isArray(collection.filters) ||
     !Array.isArray(collection.chapters) ||
@@ -36,11 +39,15 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
   )
     throw new Error(`${relative}: collection 合同不完整`);
   for (const map of collection.maps) {
-    const mapRelative = `assets/maps/${collection.id}/${map.id}.json`;
+    const mapRelative = `assets/maps/${summary.id}/${map.id}.json`;
     const document = readJson(mapRelative);
-    assertMapDocument(document, mapRelative, map.id);
+    assertMapDocument(document, mapRelative);
+    if (map.name !== document.meta.name)
+      throw new Error(
+        `${mapRelative}: collection map name 必须来自 MapDocument meta.name`,
+      );
   }
-  return collection;
+  return { id: summary.id, ...collection };
 });
 
 const original = collectionIndexes.find((collection) => collection.id === "original");
@@ -88,15 +95,11 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
 for (const map of original.maps) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
+  assertOriginalMapName(map, document, relative);
   assertOriginalStartContract(document, relative);
+  assertOriginalMusicContract(document, relative);
   assertOriginalWinRule(document, relative);
 }
-assertNext("1-3", "1-bonus-1");
-assertNext("1-bonus-1", "1-4");
-assertNext("1-6", "1-bonus-2");
-assertNext("1-bonus-2", "1-7");
-assertNext("1-10", "2-1");
-
 const adventure = readJson("assets/adventure/index.json");
 assertSchemaV1(adventure, "assets/adventure/index.json");
 if (adventure.chapters.length !== 40)
@@ -117,8 +120,11 @@ for (const scene of adventure.specialScenes) {
   if (!ref) throw new Error(`无效 Adventure Special Scene map ref：${scene.map}`);
   const relative = `assets/maps/${ref.collection}/${ref.id}.json`;
   const document = readJson(relative);
-  assertMapDocument(document, relative, ref.id);
-  if (ref.collection === "original") assertOriginalStartContract(document, relative);
+  assertMapDocument(document, relative);
+  if (ref.collection === "original") {
+    assertOriginalStartContract(document, relative);
+    assertOriginalMusicContract(document, relative);
+  }
 }
 
 for (const file of [
@@ -214,6 +220,14 @@ function assertNovobanCollection(collections) {
     throw new Error("Novoban 07 必须把 XSB + 保留为 Bobby 位于 push-goal 上");
 }
 
+function assertOriginalMapName(map, document, relative) {
+  const bonus = /^(\d+)-bonus-([12])$/.exec(map.id);
+  const level = /^(\d+)-(\d+)$/.exec(map.id);
+  const expected = bonus ? `BONUS ${bonus[2]}` : level?.[2];
+  if (!expected || document.meta.name !== expected || map.name !== expected)
+    throw new Error(`${relative}: Original 地图名称必须是章节内关卡名称`);
+}
+
 function assertPushboxWinRule(document, relative) {
   const expected = {
     type: "fill-all",
@@ -228,7 +242,7 @@ function assertPushboxWinRule(document, relative) {
   if (document.entities.some((entity) => entity.type === "start"))
     throw new Error(`${relative}: Sokoban 不使用 Start surface`);
   const pushables = document.entities.filter((entity) =>
-    entity.traits?.includes("pushable"),
+    entity.type === "pushable-rock",
   ).length;
   const goals = document.entities.filter((entity) => entity.type === "push-goal").length;
   if (document.entities.some((entity) => entity.type === "exit"))
@@ -236,51 +250,17 @@ function assertPushboxWinRule(document, relative) {
   return { pushables, goals };
 }
 
-function assertNext(id, expected) {
-  const document = readJson(`assets/maps/original/${id}.json`);
-  if (document.meta.next !== expected)
-    throw new Error(`${id}.meta.next 应为 ${expected}，实际 ${document.meta.next}`);
-}
-
 function assertSchemaV1(value, relative) {
   if (!value || typeof value !== "object" || value.schemaVersion !== 1)
     throw new Error(`${relative}: schemaVersion 必须严格为 1`);
 }
 
-function assertMapDocument(document, relative, expectedId) {
-  assertSchemaV1(document, relative);
-  if (
-    !document.meta ||
-    document.meta.id !== expectedId ||
-    typeof document.meta.name !== "string" ||
-    !Number.isInteger(document.width) ||
-    !Number.isInteger(document.height) ||
-    document.width <= 0 ||
-    document.height <= 0 ||
-    !Array.isArray(document.entities)
-  )
-    throw new Error(`${relative}: MapDocument Entity 合同不完整`);
-  for (const obsolete of ["terrain", "objects", "playerStart"])
-    if (Object.hasOwn(document, obsolete))
-      throw new Error(`${relative}: 不允许持久化旧字段 ${obsolete}`);
-  assertEntityBounds(document, relative);
-}
-
-function assertEntityBounds(document, relative) {
-  for (const [index, entity] of document.entities.entries()) {
-    if (
-      !entity ||
-      typeof entity !== "object" ||
-      typeof entity.type !== "string" ||
-      !entity.type ||
-      !Number.isInteger(entity.x) ||
-      !Number.isInteger(entity.y) ||
-      entity.x < 0 ||
-      entity.y < 0 ||
-      entity.x >= document.width ||
-      entity.y >= document.height
-    )
-      throw new Error(`${relative}: entities[${index}] identity/坐标无效`);
+function assertMapDocument(document, relative) {
+  try {
+    parseMapDocument(document);
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`${relative}: ${detail}`, { cause });
   }
 }
 
@@ -291,6 +271,11 @@ function assertOriginalStartContract(document, relative) {
     throw new Error(`${relative}: Original 必须恰好包含一个 Start surface 与一个 Bobby`);
   if (starts[0].x !== bobbies[0].x || starts[0].y !== bobbies[0].y)
     throw new Error(`${relative}: Original 初始 Bobby 必须与 Start surface 同格`);
+}
+
+function assertOriginalMusicContract(document, relative) {
+  if (Object.hasOwn(document, "music"))
+    throw new Error(`${relative}: Original MapDocument 不应持久化 music`);
 }
 
 function assertOriginalWinRule(document, relative) {
@@ -308,11 +293,11 @@ function assertOriginalWinRule(document, relative) {
   } else if (types.has("carrot")) {
     const carrots = { type: "collect-all", target: "carrot" };
     expected = exit ? { type: "all", conditions: [carrots, exit] } : carrots;
-  } else if (types.has("egg-nest-empty") || types.has("egg-nest-filled")) {
+  } else if (types.has("egg")) {
     const eggs = {
       type: "fill-all",
       target: "egg-nest",
-      filler: "egg",
+      filler: "filled-egg",
     };
     expected = exit ? { type: "all", conditions: [eggs, exit] } : eggs;
   } else if (exit) {

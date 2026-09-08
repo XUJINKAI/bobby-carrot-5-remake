@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import { parseLevelMap, type LevelMap } from "@bobby/model";
 
 const SHARE_PREFIX = "BC5R1:";
 const IMPORT_MARKER = "v1#";
@@ -15,7 +15,7 @@ export async function loadEmbedMap(options: {
   const source = hasMap ? options.map! : await fetchMapText(options.mapUrl!);
   const payload = extractSharePayload(source);
   const jsonText = await gunzipText(decodeBase64Url(payload));
-  return parseLevelMap(jsonText);
+  return parsePayloadLevelMap(jsonText);
 }
 
 export function extractSharePayload(value: string): string {
@@ -62,23 +62,12 @@ async function gunzipText(value: Uint8Array): Promise<string> {
   }
 }
 
-function parseLevelMap(jsonText: string): LevelMap {
+function parsePayloadLevelMap(jsonText: string): LevelMap {
   let value: unknown;
   try {
     value = JSON.parse(jsonText);
   } catch (cause) {
     throw new Error("BC5R1 payload does not contain valid JSON", { cause });
   }
-  if (!value || typeof value !== "object")
-    throw new Error("BC5R map must be an object");
-  const candidate = value as Record<string, unknown>;
-  if (candidate.schemaVersion !== 1)
-    throw new Error("BC5R map schemaVersion must be 1");
-  if (!Number.isInteger(candidate.width) || Number(candidate.width) <= 0)
-    throw new Error("BC5R map width must be a positive integer");
-  if (!Number.isInteger(candidate.height) || Number(candidate.height) <= 0)
-    throw new Error("BC5R map height must be a positive integer");
-  if (!Array.isArray(candidate.entities))
-    throw new Error("BC5R map entities must be an array");
-  return value as LevelMap;
+  return parseLevelMap(value);
 }

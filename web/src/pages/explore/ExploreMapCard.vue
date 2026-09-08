@@ -5,27 +5,13 @@ import type {
 } from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
 
-const props = defineProps<{
+defineProps<{
   collectionId: string;
   map: MapCollectionMap;
   completed?: boolean;
   cardSize: MapCollectionCardSize;
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
-
-function primaryLabel(): string {
-  const bonus = /-bonus-([12])$/.exec(props.map.id);
-  if (bonus) return `BONUS ${bonus[1]}`;
-  if (props.map.name.toLowerCase() !== props.map.id.toLowerCase())
-    return props.map.name;
-  return props.map.id.split("-").at(-1)?.toUpperCase() ?? props.map.id.toUpperCase();
-}
-
-function secondaryLabel(): string | null {
-  return props.map.name.toLowerCase() !== props.map.id.toLowerCase()
-    ? props.map.id.toUpperCase()
-    : null;
-}
 </script>
 
 <template>
@@ -43,8 +29,7 @@ function secondaryLabel(): string | null {
     :title="map.description || map.name"
     @click.prevent="emit('navigate', explorePlayPath({ collection: collectionId, id: map.id }))"
   >
-    <span class="explore-map-card-label">{{ primaryLabel() }}</span>
-    <span v-if="secondaryLabel()" class="explore-map-card-id">{{ secondaryLabel() }}</span>
+    <span class="explore-map-card-label">{{ map.name }}</span>
     <span v-if="completed" class="done-mark" title="自由浏览中已通关">✓</span>
   </a>
 </template>
@@ -117,17 +102,6 @@ function secondaryLabel(): string | null {
 
 .card-size-big .explore-map-card-label {
   font-size: 1.08rem;
-}
-
-.explore-map-card-id {
-  color: var(--muted);
-  font-size: 0.62rem;
-  letter-spacing: 0.04em;
-}
-
-.card-size-medium .explore-map-card-id,
-.card-size-big .explore-map-card-id {
-  font-size: 0.68rem;
 }
 
 .done-mark {

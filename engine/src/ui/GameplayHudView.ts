@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
 import { resolveEntityVisualPreview } from "../visual/preview.js";
 import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
@@ -98,7 +98,7 @@ export class GameplayHudView {
     );
     this.bonusCoinChip = this.chip(
       "Bonus Coin",
-      this.entityVisualIcon(EntityTypeId.BONUS_COIN),
+      this.entityVisualIcon(MapEntityTypeId.BONUS_COIN),
       true,
     );
     items.append(

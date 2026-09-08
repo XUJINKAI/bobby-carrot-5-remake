@@ -39,14 +39,13 @@ function tileStyle(item: PaletteItem): Record<string, string> {
   };
 }
 function showTooltip(item: PaletteItem, event: MouseEvent): void {
-  const definition = props.catalog.require(item.type);
   tooltip.value = {
     x: event.clientX + 14,
     y: event.clientY + 14,
     name: item.label,
     type: item.type,
-    traits: definition.traits,
-    behaviors: definition.behaviors ?? [],
+    traits: item.traits,
+    behaviors: item.behaviors,
   };
 }
 function moveTooltip(event: MouseEvent): void {
@@ -85,6 +84,8 @@ function moveTooltip(event: MouseEvent): void {
             class="editor-palette-tile"
             :class="{ active: placement.key === item.key }"
             :style="tileStyle(item)"
+            :aria-label="item.label"
+            :data-palette-type="item.type"
             @click="emit('select', item)"
             @mouseenter="showTooltip(item, $event)"
             @mousemove="moveTooltip"

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -53,17 +53,20 @@ function presentationOptions() {
 }
 
 function carryWorld() {
-  return new World({
+  const world = new World({
     schemaVersion: 1,
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.WATER, x: 0, y: 0 },
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.LEAF, x: 1, y: 0, direction: "down" },
-      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WATER, x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0, direction: "down" },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
+  const bobby = world.query.entitiesWithTrait("player")[0];
+  bobby.direction = "right";
+  return world;
 }
 
 for (const cadenceMs of [496, 248]) {
@@ -114,7 +117,7 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
   const store = new EntityStore([
     { type: surfaceType, x: 0, y: 0 },
     {
-      type: EntityTypeId.BOBBY,
+      type: MapEntityTypeId.BOBBY,
       x: 0,
       y: 0,
       direction: "right",
@@ -123,9 +126,11 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const bobby = store.require(2);
+  bobby.direction = "right";
+  if (Object.keys(state).length > 0) bobby.state = structuredClone(state);
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
-  return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
+  return visuals.resolve(entities.require(MapEntityTypeId.BOBBY), {
     entity: bobby,
     presence,
     query: new SpatialVisualQuery(store, spatial),
@@ -135,7 +140,7 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
 }
 
 test("Bobby self movement on a Leaf uses the ordinary walking strip", () => {
-  const visual = bobbyVisualOnSurface(EntityTypeId.LEAF, {
+  const visual = bobbyVisualOnSurface(MapEntityTypeId.LEAF, {
     offsetX: -0.5,
     elevationPx: LEAF_SUPPORT_HEIGHT_PX,
     moving: true,
@@ -148,7 +153,7 @@ test("Bobby self movement on a Leaf uses the ordinary walking strip", () => {
 });
 
 test("Bobby carried by a Leaf keeps its own facing and standing frame", () => {
-  const visual = bobbyVisualOnSurface(EntityTypeId.LEAF, {
+  const visual = bobbyVisualOnSurface(MapEntityTypeId.LEAF, {
     offsetX: -0.5,
     elevationPx: LEAF_SUPPORT_HEIGHT_PX,
     moving: true,
@@ -192,10 +197,10 @@ test("Bobby steps down from Leaf exactly at movement midpoint", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.LEAF, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
     ],
   });
   const bobby = world.query.entitiesWithTrait("player")[0];
@@ -227,10 +232,10 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
-    { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-    { type: EntityTypeId.MOWER, x: 0, y: 0 },
+    { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+    { type: MapEntityTypeId.MOWER, x: 0, y: 0 },
     {
-      type: EntityTypeId.BOBBY,
+      type: MapEntityTypeId.BOBBY,
       x: 0,
       y: 0,
       direction: "right",
@@ -239,9 +244,11 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const bobby = store.require(3);
+  bobby.direction = "right";
+  bobby.state = { mountId: 2 };
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
-  const visual = visuals.resolve(entities.require(EntityTypeId.BOBBY), {
+  const visual = visuals.resolve(entities.require(MapEntityTypeId.BOBBY), {
     entity: bobby,
     presence,
     query: new SpatialVisualQuery(store, spatial),
@@ -266,13 +273,13 @@ for (const [direction, frameIndex] of [
     const entities = createBuiltinEntityRegistry();
     const visuals = createBuiltinVisualRegistry();
     const store = new EntityStore([
-      { type: EntityTypeId.TIDE, x: 0, y: 0, direction },
+      { type: MapEntityTypeId.TIDE, x: 0, y: 0, direction },
     ]);
     const spatial = new SpatialIndex(store, entities, 1, 1);
     const tide = store.require(1);
     const presence = spatial.presencesForEntity(tide.id)[0];
     assert.ok(presence);
-    const visual = visuals.resolve(entities.require(EntityTypeId.TIDE), {
+    const visual = visuals.resolve(entities.require(MapEntityTypeId.TIDE), {
       entity: tide,
       presence,
       query: new SpatialVisualQuery(store, spatial),

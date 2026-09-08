@@ -27,25 +27,19 @@ Original DAT tooling 是原版格式互操作边界，不属于浏览器产品�
 
 ## @bobby/model
 
-`model/` 是最底层的稳定语义合同，只包含：
-
-- `TerrainType` / `ObjectType`；
-- `Terrain` / `ObjectId` 稳定语义常量；
-- `LevelObject`；
-- `LevelMap { width, height, terrain, objects, rules? }`。
-
-对象实例可以携带可选参数：
+`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和严格 parser。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
 
 ```ts
-interface LevelObject {
-  type: ObjectType;
+interface LevelEntity {
+  type: EntityType;
   x: number;
   y: number;
-  properties?: Record<string, string>;
+  stackOrder?: number;
+  [field: string]: JsonPrimitive | undefined;
 }
 ```
 
-`LevelObject.traits`、`properties` 与 `rules` 承载声明式地图 gameplay semantics。实例 Trait 只能来自 Definition 的 `authoring.traits` 白名单；参数由 `authoring.properties` 描述。它们不表达 DAT、Catalog、Adventure 或 Editor 来源。具体执行逻辑只位于 Engine，Engine 始终只接收一份 `LevelMap`。
+字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
 
@@ -59,7 +53,7 @@ LevelMap <-> DAT level record
 DAT package <-> metadata + level records
 ```
 
-`tools/original/dat/mapping.mjs` 是唯一 raw DAT ID table。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
+`tools/original/dat/mapping.mjs` 是唯一 DAT byte 与 atlas 坐标换算边界。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
 
 `dynamic_slots` 属于原版 record 的序列化字段，由 `deriveDatDynamicSlots(LevelMap)` 派生。`verify` 对全部 530 条官方 source record 检查派生值与原值一致。
 
@@ -86,14 +80,14 @@ Engine 负责：
 Game 的关卡输入只有纯 `LevelMap`：
 
 ```text
-LevelMap(anchor objects + optional properties)
+LevelMap(anchor entities + type-owned fields)
        ↓ Game.loadLevel
-Object Layout expansion
+Entity Layout expansion
        ↓
 Runtime World occupancy
 ```
 
-多格对象展开时保留 anchor 的实例 `properties`，因此隐式 runtime cell 仍能访问同一份实例参数。
+多格 Entity 展开时保留同一个 runtime Entity identity，因此所有 footprint Presence 都读取同一份实例字段与 runtime state。
 
 判断一条规则属于 Engine 还是 Adventure 时，优先问：**脱离 Campaign，单独加载这张 `LevelMap` 时规则是否仍然应该成立？** 如果成立，它就是地图内 gameplay rule，进入 Engine；只有章节、跨关存档、永久经济等 Campaign 语义进入 Adventure。
 
@@ -192,7 +186,7 @@ action = "open"
 触碰 Sandman 是普通 Definition-driven Object touch：
 
 ```text
-LevelObject.properties.dialogue
+LevelEntity.dialogue
         ↓
 Object Definition touch behavior
         ↓
@@ -207,16 +201,16 @@ Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持
 
 ### 地图内 Timed Challenge
 
-地图实例可以通过 `LevelObject.properties` 为 Lock 声明限时挑战：
+地图实例可以通过 Lock 的类型专属字段声明限时挑战：
 
 ```text
-Lock.properties.timedChallengeMs = "60000"
+Lock.deathCountdownSeconds = 60
 ```
 
 运行关系：
 
 ```text
-成功打开带 timedChallengeMs 的 Lock
+成功打开带 deathCountdownSeconds 的 Lock
         ↓
 Engine TimedChallenge
         ├─ Golden Carrot -> clear
@@ -234,21 +228,29 @@ Engine TimedChallenge
 Tile Definition Registry
 ├─ id
 ├─ presentation
-├─ traits
+├─ gameplay traits
 ├─ behaviors[]
 └─ authoring
    ├─ palette
-   └─ properties[]
+   └─ map fields[]
       ├─ string
       └─ enum
 
-Object Layout Definition
+Entity Layout Definition
 ├─ footprint[]
 ├─ cursor
 └─ authoringVariants[]
 ```
 
-`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Object 的 authoring 可见性。`authoring.properties` 描述当前对象允许编辑的实例参数；Editor Inspector 直接消费这份 Definition metadata，不维护对象类型特判表。
+Map Entity 在 Engine World、Editor 预览、校验和 footprint 查询中统一使用 canonical
+type，并直接取得同名 Definition。`windmill` 的方向、`egg` 的填充状态等运行阶段由
+Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎中间段等临时实体
+使用 Engine 私有身份，不进入 Model API 或 LevelMap。
+
+Editor Palette 只枚举具有 Model `EntityMapDefinition` 的 canonical type；Engine 私有临时实体
+不会进入 Editor。`authoring.palette=false` 用于把应在 Surface 面板等其它入口编辑的 canonical
+type 排除出 Object Palette。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor
+Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
 
 当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 
@@ -264,32 +266,32 @@ Object Layout Definition
 - Adventure Save contract；
 - 全局经济 / 永久升级 / 一次性奖励位置；
 - Adventure session plan；
-- 在基础 `LevelMap` 进入 Engine 前按需要增强对象实例参数。
+- 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
 
 地图准备顺序固定为：
 
 ```text
 base / official LevelMap
         ↓
-Adventure object-property augmentation
+Adventure Entity field augmentation
         ↓
 persistent reward filtering
         ↓
 Engine Game.loadLevel(LevelMap)
 ```
 
-Adventure 可以覆盖 Sandman `dialogue`、Lock `timedChallengeMs` 或未来已经由 semantic Definition 定义的实例参数；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
+Adventure 可以覆盖 Sandman `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
 ### 原版 Bonus 地图增强
 
-Original Adapter 知道哪些 source record 是 Bonus 关，并把原版 60 秒事实编码成普通地图实例属性：
+Adventure 根据 Campaign node 判断 Bonus 关，并把原版 60 秒策略写入 session 地图的普通 Entity 字段：
 
 ```text
 Bonus LevelMap
    ↓
-Lock.properties.timedChallengeMs = "60000"
+Lock.deathCountdownSeconds = 60
    ↓
 Engine
 ```
@@ -319,23 +321,24 @@ Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collecti
 
 ```text
 custom-maps/<collection>/<map>.json
+custom-maps/<collection>/<chapter>/<map>.json
         ↓ build
 assets/maps/index.json
 assets/maps/<collection>/index.json
 assets/maps/<collection>/<map>.json
 ```
 
-源码目录负责内容归类，manifest 负责 collection discovery。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
+源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
 ## Editor
 
-Editor 持久化 `EditorLevel extends LevelMap`：
+Editor 持久化 `MapDocument extends LevelMap`：
 
-- `schemaVersion / name / author / description`；
-- semantic terrain / objects；
-- `LevelObject.properties`；
+- `schemaVersion`、`meta.name / author` 与顶层 `note`；
+- semantic `entities[]`；
+- `LevelEntity` 类型专属顶层字段；
 - multi-cell 只保存 anchor。
 
 用户地图的长期内容格式是 JSON，浏览器 Data Exchange 为它提供统一传输表示：
@@ -350,7 +353,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Engine Definition 的 `authoring.properties` 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `timedChallengeMs` 都通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
@@ -369,7 +372,7 @@ web/src
 ├── app/                 Vue 根应用、路由协调与页面生命周期合同
 ├── shell/               通用 TopBar、BottomBar、Identity、Action 与 ShellConfig
 ├── app/dialogs/         Settings、Help 等产品级 Dialog
-├── app/settings/        全局设置状态与浏览器适配
+├── app/settings/        全局设置状态与运行时应用
 ├── pages/<mode>/        页面组件、页面挂载器与页面私有交互
 ├── runtime/game/        Web 对 Engine session 生命周期的适配
 ├── services/            Audio、Catalog 与产品资产访问
@@ -377,6 +380,12 @@ web/src
 ├── app.ts               Web 入口
 └── vue-env.d.ts         Vue SFC 类型声明
 ```
+
+Web 用户偏好使用一条版本化 `bc5r:setting` JSON record。`locale`、`theme`、
+`audio`、`controls` 和 `editor` 偏好由 `storage/settingsStorage.ts` 统一解析和
+写入；Theme、I18n、Shell、Audio 与 Editor 页面只负责把设置应用到各自的
+运行时能力。首次读取时，浏览器语言和指针类型参与默认值计算；写入时始终
+保存完整的 schema v1 文档。
 
 页面相关的 TypeScript 与 `.vue` 文件共置在对应 `pages/<mode>/` 中。Web 根目录不承载页面实现、运行时服务或模糊的通用工具模块。
 
@@ -489,22 +498,22 @@ DAT 只在这些工具/验证路径需要时编译；正常产品输出不复制
 允许：
 
 ```text
-model <- dat
+model <- tools/original/dat
 model <- engine
 model <- adventure
 model + engine <- editor
 model + engine + adventure + editor <- web
-tools -> dat + model + original assets + generated metadata
+Original Adapter/Patch -> tools/original/dat + model + original assets + generated metadata
 ```
 
 禁止：
 
 ```text
-engine -> adventure / DAT byte / @bobby/dat / Catalog / HTTP
+engine -> adventure / DAT byte / Original DAT tooling / Catalog / HTTP
 adventure -> engine / DAT / JAR / archive release fields / DOM / localStorage
 model -> DAT/JAR/gameplay/Campaign
-editor -> @bobby/dat / DAT import-export / DAT-backed URL share
-web -> @bobby/dat / DAT feature / DAT browser module
+editor -> Original DAT tooling / DAT import-export / DAT-backed URL share
+web -> Original DAT tooling / DAT feature / DAT browser module
 World -> per-object multi-cell synthesis switch
 web filter -> MutationObserver patch another page
 ```

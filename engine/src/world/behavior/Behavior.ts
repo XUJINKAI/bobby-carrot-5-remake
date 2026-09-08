@@ -1,4 +1,4 @@
-import type { Direction, EntityState, LevelEntity } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type { WorldTick } from "../../time/WorldClock.js";
 import type { GlobalState } from "../GlobalState.js";
 import type {
@@ -6,7 +6,13 @@ import type {
   RuntimeActionId,
   RuntimeActionSpec,
 } from "../action/RuntimeAction.js";
-import type { CellPosition, EntityId, EntityInstance } from "../entity/EntityInstance.js";
+import type {
+  CellPosition,
+  EntityId,
+  EntityInstance,
+  EntitySpawnSpec,
+  EntityState,
+} from "../entity/EntityInstance.js";
 import type { MoveCause } from "../movement/WorldIntent.js";
 import type {
   MovementPlanningContext,
@@ -94,7 +100,7 @@ export interface SetStateCommand {
 }
 
 export type BehaviorCommand =
-  | { type: "spawn"; entity: LevelEntity }
+  | { type: "spawn"; entity: EntitySpawnSpec }
   | { type: "destroy"; entityId: EntityId }
   | { type: "move"; entityId: EntityId; x: number; y: number }
   | { type: "set-direction"; entityId: EntityId; direction: Direction }

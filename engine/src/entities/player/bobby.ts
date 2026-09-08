@@ -1,4 +1,4 @@
-import { EntityTypeId, type Direction } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type {
   ImageVisualLayer,
   VisualResolveContext,
@@ -51,7 +51,7 @@ export const BOBBY_VISUAL_ASSETS = {
 } as const;
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.BOBBY,
+  type: MapEntityTypeId.BOBBY,
   traits: ["player"],
   stackOrder: CONTENT_STACK_ORDER,
   state: BOBBY_INVENTORY_FIELDS,
@@ -93,7 +93,7 @@ const bobbyMovementPolicy: Behavior = {
 };
 
 const bobbyVisual = {
-  id: EntityTypeId.BOBBY,
+  id: MapEntityTypeId.BOBBY,
   resolve(context: VisualResolveContext) {
     const direction =
       context.runtime?.direction ?? context.entity.direction ?? "down";
@@ -137,7 +137,7 @@ const bobbyVisual = {
 
     const mountId = bobbyMountId(context.entity.state);
     const mount = mountId === null ? undefined : context.query.entity(mountId);
-    if (mount?.type === EntityTypeId.MOWER) {
+    if (mount?.type === MapEntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
       return composition(
         context,
@@ -207,7 +207,7 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
 
 function isStandingOnIce(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    context.query.entity(presence.entityId)?.type === EntityTypeId.ICE
+    context.query.entity(presence.entityId)?.type === MapEntityTypeId.ICE
   );
 }
 

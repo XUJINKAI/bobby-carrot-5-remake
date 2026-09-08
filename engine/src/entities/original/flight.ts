@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -23,7 +23,7 @@ import {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -164,7 +164,7 @@ const flightAction: RuntimeActionDefinition = {
 };
 
 const whirlwindDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.WHIRLWIND,
+  type: MapEntityTypeId.WHIRLWIND,
   traits: ["flight-entry", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Whirlwind" },
@@ -172,7 +172,7 @@ const whirlwindDefinition: EntityModuleDefinition = {
 
 const whirlwindBase = originalModule(
   whirlwindDefinition,
-  atlasVisual(whirlwindDefinition, objectCell(43)),
+  atlasVisual(whirlwindDefinition, tileCell(MapEntityTypeId.WHIRLWIND)),
   [{ behavior: whirlwindBehavior }],
 );
 
@@ -182,7 +182,7 @@ export const whirlwind: EntityModule = {
 };
 
 const landingDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.LANDING,
+  type: MapEntityTypeId.LANDING,
   traits: ["flight-landing"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Landing" },
@@ -190,7 +190,7 @@ const landingDefinition: EntityModuleDefinition = {
 
 export const landing: EntityModule = originalModule(
   landingDefinition,
-  atlasVisual(landingDefinition, objectCell(44)),
+  atlasVisual(landingDefinition, tileCell(MapEntityTypeId.LANDING)),
   [{ behavior: landingBehavior }],
 );
 

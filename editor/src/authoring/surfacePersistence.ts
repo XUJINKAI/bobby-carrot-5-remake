@@ -1,7 +1,13 @@
-import { EntityTypeId, type EntityState, type EntityType, type LevelEntity } from "@bobby/model";
+import {
+  type EntityType,
+  type JsonPrimitive,
+  type LevelEntity,
+} from "@bobby/model";
+import type { EditorPlacementPreset } from "../definitions/types.js";
 import type { EditorMap } from "../level/types.js";
 import {
   materializeSurfaceVariants as resolveAutoSurfaceVariants,
+  surfaceEntityForVisual,
   surfaceTerrainForEntity,
   type SurfaceBrush,
   type SurfaceSlot,
@@ -15,7 +21,7 @@ const AUTO_SEED_KEY = "__editorSurfaceSeed";
 
 /**
  * Editor 内 Auto Surface 可以保持未锁定 variant；写出地图前统一固定当前 visual。
- * raw ts.png Surface 规范化为该 terrain 的 primary type + 1-based absolute ts variant。
+ * atlas 坐标选择值会规范化为该格对应的语义 Entity。
  */
 export function materializeSurfaceVariants(level: EditorMap): EditorMap {
   const resolved = resolveAutoSurfaceVariants(level);
@@ -25,7 +31,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
   };
 }
 
-/** 吸取已保存的 canonical type + state.variant 时仍恢复到对应 Exact visual。 */
+/** 吸取已保存的 canonical type + flat variant 时仍恢复到对应 Exact visual。 */
 export function pickSurfaceBrush(
   level: Readonly<EditorMap>,
   cell: Cell,
@@ -36,9 +42,9 @@ export function pickSurfaceBrush(
   const terrain = surfaceTerrainForEntity(entity.type);
   if (!terrain) return null;
 
-  const autoTerrain = entity.properties?.[AUTO_TERRAIN_KEY];
+  const autoTerrain = entity[AUTO_TERRAIN_KEY];
   if (typeof autoTerrain === "string") {
-    const seed = Number(entity.properties?.[AUTO_SEED_KEY]);
+    const seed = Number(entity[AUTO_SEED_KEY]);
     return {
       terrain: autoTerrain as SurfaceTerrainId,
       pattern: "auto",
@@ -55,29 +61,44 @@ export function pickSurfaceBrush(
   };
 }
 
-function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
+/** Inspector 使用与 Surface Palette 相同的 visual variant 身份。 */
+export function surfaceVisualVariant(
+  entity: Readonly<LevelEntity>,
+): EntityType | null {
   const terrain = surfaceTerrainForEntity(entity.type);
-  if (!terrain) return entity;
-
-  if (terrain.id === "wood-fence" && entity.type === EntityTypeId.FENCE)
-    return entity;
-
-  if (terrain.id === "water") {
-    const variant =
-      entity.type === EntityTypeId.WATER_ANIMATED
-        ? 2
-        : entity.type === EntityTypeId.WATER
-          ? 1
-          : Number(entity.state?.variant);
-    return Number.isInteger(variant)
-      ? withVariant(entity, entity.type, variant)
-      : entity;
+  if (!terrain) return null;
+  if (
+    terrain.auto.kind === "fence" &&
+    terrain.auto.canonical === entity.type
+  ) {
+    return typeof entity.variant === "string" &&
+      terrain.auto.variants.includes(entity.variant)
+      ? entity.variant
+      : null;
   }
+  return resolveFixedVariantType(entity, terrain);
+}
 
-  const absolute = absoluteTsVariant(entity);
-  const primaryAbsolute = absoluteTsType(terrain.primary);
-  if (absolute === null || primaryAbsolute === null) return entity;
-  return withVariant(entity, terrain.primary, absolute);
+/** 把 Inspector 中选择的 atlas 单元写回 canonical Surface Entity。 */
+export function replaceSurfaceVisualVariant(
+  entity: Readonly<LevelEntity>,
+  selectedType: EntityType,
+): LevelEntity | null {
+  const terrain = surfaceTerrainForEntity(entity.type);
+  if (!terrain) return null;
+  const variants = terrain.rows.flat();
+  if (!variants.some((variant) => variant.type === selectedType)) return null;
+
+  return {
+    ...surfaceEntityForVisual(selectedType, entity),
+    ...(entity.stackOrder !== undefined ? { stackOrder: entity.stackOrder } : {}),
+  };
+}
+
+function canonicalizeSurfaceVariant(entity: LevelEntity): LevelEntity {
+  const next = stripAutoMetadata(entity);
+  if (!/^ts-\d+-\d+$/.test(next.type)) return next;
+  return { ...next, ...surfaceEntityForVisual(next.type, next) };
 }
 
 function resolveFixedVariantType(
@@ -85,48 +106,47 @@ function resolveFixedVariantType(
   terrain: SurfaceTerrainDefinition,
 ): EntityType | null {
   const variants = terrain.rows.flat();
-  if (terrain.id === "wood-fence" && entity.type === EntityTypeId.FENCE) {
-    const index = Number(entity.state?.variant) - 1;
-    return Number.isInteger(index) && index >= 0
-      ? variants[index]?.type ?? null
-      : null;
+  for (const candidate of variants) {
+    if (candidate.type === entity.type) return candidate.type;
+    const mapped = canonicalizeSurfaceVariant({
+      type: candidate.type,
+      x: entity.x,
+      y: entity.y,
+    });
+    if (mapped.type !== entity.type) continue;
+    const fields = Object.fromEntries(
+      Object.entries(mapped).filter(
+        ([key]) => key !== "type" && key !== "x" && key !== "y",
+      ),
+    );
+    if (
+      Object.entries(fields).every(([key, value]) => entity[key] === value)
+    )
+      return candidate.type;
   }
-  if (terrain.id === "water") {
-    const index = Number(entity.state?.variant) - 1;
-    if (Number.isInteger(index) && index >= 0)
-      return variants[index]?.type ?? null;
-    return variants.find((candidate) => candidate.type === entity.type)?.type ?? null;
-  }
-
-  const absolute = absoluteTsVariant(entity);
-  if (absolute === null) return entity.type;
-  return (
-    variants.find((candidate) => absoluteTsType(candidate.type) === absolute)?.type ??
-    entity.type
-  );
-}
-
-function withVariant(
-  entity: Readonly<LevelEntity>,
-  type: EntityType,
-  variant: number,
-): LevelEntity {
-  const state = { ...(entity.state ?? {}), variant } as EntityState;
-  return { ...entity, type, state };
-}
-
-function absoluteTsVariant(entity: Readonly<LevelEntity>): number | null {
-  const fixed = Number(entity.state?.variant);
-  if (Number.isInteger(fixed) && fixed >= 1 && fixed <= 256) return fixed;
-  return absoluteTsType(entity.type);
-}
-
-function absoluteTsType(type: EntityType): number | null {
-  const background = /^background-variant-(\d{3})$/.exec(type);
-  if (background) return Number(background[1]);
-  const walkable = /^walkable-variant-(\d{2})$/.exec(type);
-  if (walkable) return 96 + Number(walkable[1]);
   return null;
+}
+
+/** Surface Palette 和 Inspector 预览使用与地图相同的语义 Entity。 */
+export function surfaceVariantPreset(visual: EntityType): EditorPlacementPreset {
+  const entity = surfaceEntityForVisual(visual);
+  const fields: Record<string, JsonPrimitive> = {};
+  for (const [key, value] of Object.entries(entity)) {
+    if (key === "type" || key === "x" || key === "y") continue;
+    if (value === null || ["string", "number", "boolean"].includes(typeof value))
+      fields[key] = value as JsonPrimitive;
+  }
+  return {
+    type: entity.type,
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
+  };
+}
+
+function stripAutoMetadata(entity: Readonly<LevelEntity>): LevelEntity {
+  const next = { ...structuredClone(entity) };
+  delete next[AUTO_TERRAIN_KEY];
+  delete next[AUTO_SEED_KEY];
+  return next;
 }
 
 function surfaceAt(

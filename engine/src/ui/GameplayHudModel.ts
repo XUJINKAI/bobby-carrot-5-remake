@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { GameplayState } from "../core/GameplayState.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 
@@ -31,14 +31,14 @@ export function buildGameplayHudModel(
       carrotRemaining: remainingForCondition(
         winState,
         (item) =>
-          item.type === "collect-all" && item.target === EntityTypeId.CARROT,
+          item.type === "collect-all" && item.target === MapEntityTypeId.CARROT,
       ),
       eggRemaining: remainingForCondition(
         winState,
         (item) =>
           item.type === "fill-all" &&
           item.target === "egg-nest" &&
-          item.filler === "egg",
+          item.filler === "filled-egg",
       ),
     },
     inventory: {

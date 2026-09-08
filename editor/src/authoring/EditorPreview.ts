@@ -7,6 +7,7 @@ import {
   type EntityPresence,
 } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 
 export interface EditorPresenceInspection {
@@ -25,7 +26,7 @@ export interface EditorCellInspection {
 
 /** Editor 的 Entity/Cell 只读空间视图，只依赖 Engine 通用 Entity/Spatial API。 */
 export class EditorPreview {
-  readonly entities = new EntityStore();
+  readonly entities: EntityStore;
   readonly spatial: SpatialIndex;
   private readonly refByEntityId = new Map<EntityId, EntityRef>();
   private readonly entityIdByRef = new Map<number, EntityId>();
@@ -34,8 +35,12 @@ export class EditorPreview {
     readonly level: EditorMap,
     readonly catalog: EntityCatalog,
   ) {
-    level.entities.forEach((source, index) => {
-      const entity = this.entities.spawn(source);
+    this.entities = new EntityStore(level.entities);
+    const runtimeEntities = this.entities.all();
+    level.entities.forEach((_source, index) => {
+      const entity = runtimeEntities[index];
+      if (!entity)
+        throw new Error(`Editor Preview 无法实例化 Entity：${index}`);
       const ref = { index };
       this.refByEntityId.set(entity.id, ref);
       this.entityIdByRef.set(index, entity.id);
@@ -75,7 +80,7 @@ export class EditorPreview {
     return {
       ref,
       entity,
-      definition: this.catalog.require(entity.type),
+      definition: editorCatalogEntry(this.catalog, entity),
       presence,
     };
   }

@@ -4,6 +4,10 @@ import {
 } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
+import {
+  editorCatalogEntry,
+  editorEntityDirection,
+} from "../definitions/entities.js";
 import type {
   EditorDefinition,
   EditorPlacementPreset,
@@ -20,23 +24,21 @@ export function resolveEditorEntityPreviewLayout(
   source: EditorPlacementPreset,
   editor: EditorDefinition = builtinEditorDefinition,
 ): EditorEntityPreviewLayout {
-  const definition = catalog.require(source.type);
   const direction =
     source.direction ?? editor.entities?.[source.type]?.defaultDirection;
   const prototype: LevelEntity = {
+    ...(source.fields ? structuredClone(source.fields) : {}),
     type: source.type,
     x: 0,
     y: 0,
     ...(direction ? { direction } : {}),
-    ...(source.properties
-      ? { properties: structuredClone(source.properties) }
-      : {}),
-    ...(source.state ? { state: structuredClone(source.state) } : {}),
   };
+  const definition = editorCatalogEntry(catalog, prototype);
+  const prototypeDirection = editorEntityDirection(prototype);
   const cells = resolveFootprintCells(
     {
       anchor: { x: 0, y: 0 },
-      ...(prototype.direction ? { direction: prototype.direction } : {}),
+      ...(prototypeDirection ? { direction: prototypeDirection } : {}),
     },
     definition.footprint,
   );

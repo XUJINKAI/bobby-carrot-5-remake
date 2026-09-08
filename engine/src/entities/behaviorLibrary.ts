@@ -1,8 +1,9 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
 import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
+import { RuntimeEntityTypeId } from "./runtime-types.js";
 import {
   bobbyMountId,
   patchBobbyInventory,
@@ -15,18 +16,18 @@ const collect: Behavior = {
     if (!isRidingMower(actor.state, query)) return;
     if (query.hasTraitAt(self.presence.cell, "hidden-objective"))
       return { passable: true, reason: "objective-hidden-under-grass" };
-    if (self.entity.type === EntityTypeId.CARROT)
+    if (self.entity.type === MapEntityTypeId.CARROT)
       return { passable: false, reason: "mower-cannot-collect-carrot" };
   },
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
     const economy = query.global().economy;
-    if (self.entity.type === EntityTypeId.BONUS_COIN) {
+    if (self.entity.type === MapEntityTypeId.BONUS_COIN) {
       commands.setGlobal("economy", {
         ...economy,
         bonusCoins: economy.bonusCoins + 1,
       });
-    } else if (self.entity.type === EntityTypeId.GOLDEN_CARROT) {
+    } else if (self.entity.type === MapEntityTypeId.GOLDEN_CARROT) {
       commands.setGlobal("economy", {
         ...economy,
         goldenCarrots: economy.goldenCarrots + 1,
@@ -48,32 +49,32 @@ const pickup: Behavior = {
     if (isRidingMower(actor.state, query)) return;
     const inventory = readBobbyInventory(actor.state);
     switch (self.entity.type) {
-      case EntityTypeId.GAS:
+      case MapEntityTypeId.GAS:
         commands.setState(
           actor.id,
           patchBobbyInventory(actor.state, { gas: true }),
         );
         break;
-      case EntityTypeId.KITE:
+      case MapEntityTypeId.KITE:
         commands.setState(
           actor.id,
           patchBobbyInventory(actor.state, { kite: true }),
         );
         break;
-      case EntityTypeId.BEAN:
+      case MapEntityTypeId.BEAN:
         commands.setState(
           actor.id,
           patchBobbyInventory(actor.state, { beans: inventory.beans + 1 }),
         );
         break;
-      case EntityTypeId.SHOVEL_PICKUP:
+      case MapEntityTypeId.SHOVEL_PICKUP:
         commands.setState(
           actor.id,
           patchBobbyInventory(actor.state, { shovel: true }),
         );
         commands.destroy(self.entity.id);
         commands.spawn({
-          type: EntityTypeId.SHOVEL_CLEARED_GROUND,
+          type: RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND,
           x: self.entity.anchor.x,
           y: self.entity.anchor.y,
         });

@@ -4,9 +4,8 @@ import type {
 } from "@bobby/engine";
 import type {
   Direction,
-  EntityProperties,
-  EntityState,
   EntityType,
+  JsonPrimitive,
   LevelEntity,
 } from "@bobby/model";
 import type { Cell } from "../authoring/entityPlacement.js";
@@ -15,12 +14,14 @@ import type { EditorMap, EntityRef, LevelValidationIssue } from "../level/types.
 /** Stable Editor interaction modes. Concrete Entity knowledge must not leak into this type. */
 export type EditorTool = "select" | "place" | "erase";
 
+/** Editor 专用 preset/variant 携带的扁平 Map 持久化字段。 */
+export type EditorEntityFields = Readonly<Record<string, JsonPrimitive>>;
+
 /** What the Editor Core should create when the current placement action is committed. */
 export interface EditorPlacementPreset {
   type: EntityType;
   direction?: Direction;
-  properties?: EntityProperties;
-  state?: EntityState;
+  fields?: EditorEntityFields;
 }
 
 /** Rectangular cell selection; the rectangle is derived from anchor/focus. */
@@ -43,8 +44,7 @@ export type EditorPlacementPoint =
 export interface EditorEntityVariant {
   label?: string;
   direction?: Direction;
-  properties?: EntityProperties;
-  state?: EntityState;
+  fields?: EditorEntityFields;
 }
 
 export interface EditorQuickAction {
@@ -69,8 +69,7 @@ export type EditorEntityExclusion =
 
 export interface EditorPalettePreview {
   direction?: Direction;
-  properties?: EntityProperties;
-  state?: EntityState;
+  fields?: EditorEntityFields;
 }
 
 export interface EditorPaletteEntry extends EditorPlacementPreset {

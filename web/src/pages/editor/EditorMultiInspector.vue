@@ -5,9 +5,10 @@ import type {
   InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import EditorEntityFields from "./EditorEntityFields.vue";
 
-const props = defineProps<{
+defineProps<{
   model: InspectorModel;
   showSurface: boolean;
   surfaceCount: number;
@@ -17,9 +18,9 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   toggleSurface: [];
-  property: [type: string, key: string, value: string];
-  state: [type: string, key: string, value: string];
+  field: [type: string, key: string, value: string];
   variant: [type: string, index: number];
+  surfaceVariant: [entityType: string, variantType: EntityType];
   deleteType: [type: string];
 }>();
 </script>
@@ -49,14 +50,14 @@ const emit = defineEmits<{
       >
         <header class="editor-batch-head">
           <span class="editor-batch-title">
-            <strong>{{ group.definition.presentation.name }}</strong>
+            <strong>{{ group.label }}</strong>
             <code>{{ group.type }}</code>
           </span>
           <span class="editor-batch-count">× {{ group.count }}</span>
           <button
             type="button"
             class="editor-batch-delete"
-            :title="`删除选区内全部 ${group.definition.presentation.name}`"
+            :title="`删除选区内全部 ${group.label}`"
             @click="emit('deleteType', group.type)"
           >
             ✕
@@ -69,9 +70,9 @@ const emit = defineEmits<{
           :images="images"
           :catalog="catalog"
           :editor="editor"
-          @property="(key, value) => emit('property', group.type, key, value)"
-          @state="(key, value) => emit('state', group.type, key, value)"
+          @field="(key, value) => emit('field', group.type, key, value)"
           @variant="(variantIndex) => emit('variant', group.type, variantIndex)"
+          @surface-variant="(variantType) => emit('surfaceVariant', group.type, variantType)"
         />
       </article>
     </div>

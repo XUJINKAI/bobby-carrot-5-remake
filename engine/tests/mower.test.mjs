@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
 function move(world, actorId, direction) {
@@ -24,15 +24,16 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
       height: 1,
       entities: [
         ...Array.from({ length: 6 }, (_, x) => ({
-          type: EntityTypeId.GROUND_C,
+          type: "grass",
+          variant: "ts-10-1",
           x,
           y: 0,
         })),
-        { type: EntityTypeId.GAS, x: 1, y: 0 },
-        { type: EntityTypeId.MOWER, x: 2, y: 0 },
-        { type: EntityTypeId.HIGH_GRASS, x: 3, y: 0 },
-        { type: EntityTypeId.MOWER_PARKING, x: 4, y: 0 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.GAS, x: 1, y: 0 },
+        { type: MapEntityTypeId.MOWER, x: 2, y: 0 },
+        { type: MapEntityTypeId.HIGH_GRASS, x: 3, y: 0 },
+        { type: MapEntityTypeId.MOWER_PARKING, x: 4, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 100 },
@@ -69,17 +70,17 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       {
-        type: EntityTypeId.MOWER,
+        type: MapEntityTypeId.MOWER,
         x: 0,
         y: 0,
         state: { mountedByActorId: 2 },
       },
-      { type: EntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
+      { type: MapEntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
         direction: "right",
@@ -93,8 +94,8 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
   const actor = world.query.entitiesWithTrait("player")[0];
   const mower = world.query.entitiesWithTrait("mower")[0];
   world.entities.require(actor.id).state = {
-    ...world.entity(actor.id).state,
     mountId: mower.id,
+    speedBoost: { direction: "right", phase: "full" },
   };
   world.entities.require(mower.id).state = { mountedByActorId: actor.id };
 
@@ -112,12 +113,12 @@ test("Mower cannot complete an Exit reach condition", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.EXIT, x: 1, y: 0 },
-      { type: EntityTypeId.MOWER, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+      { type: MapEntityTypeId.MOWER, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
-    rules: { win: { type: "reach", target: EntityTypeId.EXIT } },
+    rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
   });
   const actor = world.query.entitiesWithTrait("player")[0];
   const mower = world.query.entitiesWithTrait("mower")[0];

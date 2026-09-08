@@ -1,16 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
-const bobby = (x, y, state) => ({
-  type: EntityTypeId.BOBBY,
-  x,
-  y,
-  direction: "right",
-  ...(state ? { state } : {}),
-});
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
+const bobby = (x, y) => ({ type: MapEntityTypeId.BOBBY, x, y });
 
 function corridor(extra, rules, bobbyState) {
   return {
@@ -23,7 +17,7 @@ function corridor(extra, rules, bobbyState) {
       ground(1, 0),
       ground(2, 0),
       ground(3, 0),
-      bobby(0, 0, bobbyState),
+      bobby(0, 0),
       ...extra,
     ],
   };
@@ -52,8 +46,8 @@ function move(world, direction) {
 test("reach can complete on a collectible removed by onEnter", () => {
   const world = new World(
     corridor(
-      [{ type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 0 }],
-      { win: { type: "reach", target: EntityTypeId.GOLDEN_CARROT } },
+      [{ type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 }],
+      { win: { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT } },
     ),
   );
   const result = move(world, "right");
@@ -63,7 +57,7 @@ test("reach can complete on a collectible removed by onEnter", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.GOLDEN_CARROT),
+      .some((entity) => entity.type === MapEntityTypeId.GOLDEN_CARROT),
     false,
   );
 });
@@ -71,10 +65,10 @@ test("reach can complete on a collectible removed by onEnter", () => {
 test("bonus beaver grants one trial key, then sells temporary keys for three coins", () => {
   const map = corridor([
     {
-      type: EntityTypeId.BEAVER,
+      type: MapEntityTypeId.BEAVER,
       x: 1,
       y: 0,
-      properties: { interaction: "bonus-key-vendor" },
+      interaction: "bonus-key-vendor",
     },
   ]);
   const first = new World(map, { economy: { bonusCoins: 3 } });
@@ -107,16 +101,17 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
     corridor(
       [
         {
-          type: EntityTypeId.LOCK,
+          type: MapEntityTypeId.LOCK,
           x: 1,
           y: 0,
-          properties: { deathCountdownSeconds: 1 },
+          deathCountdownSeconds: 1,
         },
       ],
       undefined,
       { temporaryKey: true },
     ),
   );
+  actor(world).state = { temporaryKey: true };
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.temporaryKey, false);
@@ -130,7 +125,7 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
 
 test("permanent key opens the lock without being consumed", () => {
   const world = new World(
-    corridor([{ type: EntityTypeId.LOCK, x: 1, y: 0 }]),
+    corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
     { profile: { superKey: true } },
   );
   assert.equal(move(world, "right").moves[0].moved, true);

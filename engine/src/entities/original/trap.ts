@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -7,7 +7,7 @@ import type {
 import {
   activeState,
   atlasVisual,
-  cell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -25,7 +25,7 @@ const armTrapAfterLeave: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.TRAP,
+  type: MapEntityTypeId.TRAP,
   traits: ["walkable", "hazard"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(true),
@@ -35,7 +35,9 @@ const definition: EntityModuleDefinition = {
 export const trap: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.active === false ? cell(0, 11) : cell(15, 10),
+    tileCell(MapEntityTypeId.TRAP, {
+      fields: { active: context.entity.state?.active !== false },
+    }),
   ),
   [{ behavior: armTrapAfterLeave }],
 );

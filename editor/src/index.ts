@@ -3,11 +3,15 @@ export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js
 export { validateEditorLevel } from "./level/validation.js";
 export type { EditorMap, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
 export { builtinEditorDefinition, EDITOR_DIRECTIONS, applyEditorVariant } from "./definitions/builtin.js";
-export { isEditorEntityCreatable } from "./definitions/entities.js";
-export type { EditorTool, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
+export {
+  editorCatalogEntry,
+  editorEntityDirection,
+  isEditorEntityCreatable,
+} from "./definitions/entities.js";
+export type { EditorTool, EditorEntityFields, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
-export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityProperties, updateEntityState, updateEntityTraits, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
+export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityField, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
 export type { EditorCommand, EditorEntityReplacement } from "./document/commands.js";
 export { EditorPreview } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
@@ -29,7 +33,7 @@ export { editorVariantIndex, cycleEntityVariant, cyclePlacementVariant } from ".
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorMode, InspectorEntityModel, InspectorEntityGroupModel } from "./authoring/inspectorModel.js";
 export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, paintSurface, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";
-export { materializeSurfaceVariants, pickSurfaceBrush } from "./authoring/surfacePersistence.js";
+export { materializeSurfaceVariants, pickSurfaceBrush, replaceSurfaceVisualVariant, surfaceVariantPreset, surfaceVisualVariant } from "./authoring/surfacePersistence.js";
 export type { SurfaceBrush, SurfacePattern, SurfaceTerrainDefinition, SurfaceTerrainGroup, SurfaceTerrainId, SurfaceTheme, SurfaceThemeDefinition, SurfaceTool, SurfaceType, SurfaceVariant } from "./authoring/surfaceAuthoring.js";
 export { EditorViewport } from "./canvas/EditorViewport.js";
 export type { EditorViewportState } from "./canvas/EditorViewport.js";
@@ -40,4 +44,4 @@ export { EditorCanvasInput } from "./canvas/EditorCanvasInput.js";
 export type { EditorCanvasInputHandlers, EditorCanvasContextMenuRequest } from "./canvas/EditorCanvasInput.js";
 export { canvasPointToCell } from "./canvas/coordinates.js";
 export { createBuiltinEntityCatalog } from "@bobby/engine";
-export type { EntityCatalog, EntityCatalogEntry, EntityFieldDefinition } from "@bobby/engine";
+export type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";

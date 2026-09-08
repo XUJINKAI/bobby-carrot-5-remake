@@ -18,12 +18,14 @@ if (
     "embed",
     "--force",
   ]);
+run(process.execPath, ["--test", "tools/model/examples.test.mjs"]);
 run(
   process.execPath,
   [
     "--test",
     "tools/custom/*.test.mjs",
     "tools/original/dat-tests/*.test.mjs",
+    "model/tests/*.test.mjs",
     "i18n/tests/*.test.mjs",
     "adventure/tests/*.test.mjs",
     "engine/tests/*.test.mjs",

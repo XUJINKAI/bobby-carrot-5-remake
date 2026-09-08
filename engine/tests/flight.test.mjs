@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { DEFAULT_FLIGHT_CELL_MS } from "../dist/entities/original/flight.js";
 import { World } from "../dist/world/World.js";
 
@@ -24,24 +24,25 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
     height: 1,
     entities: [
       ...Array.from({ length: 4 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
-      { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
-      { type: EntityTypeId.TRAP, x: 2, y: 0, state: { active: true } },
-      { type: EntityTypeId.LANDING, x: 3, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 2, y: 0 },
+      { type: MapEntityTypeId.TRAP, x: 2, y: 0, active: true },
+      { type: MapEntityTypeId.LANDING, x: 3, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
 
   const takeoff = move(world, actor.id, "right");
   assert.equal(world.entity(actor.id).state.flying, true);
@@ -66,10 +67,10 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
@@ -91,13 +92,14 @@ test("Airborne movement chains without a stationary World tick", () => {
       height: 1,
       entities: [
         ...Array.from({ length: 8 }, (_, x) => ({
-          type: EntityTypeId.GROUND_C,
+          type: "grass",
+          variant: "ts-10-1",
           x,
           y: 0,
         })),
-        { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+        { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
         {
-          type: EntityTypeId.BOBBY,
+          type: MapEntityTypeId.BOBBY,
           x: 0,
           y: 0,
           direction: "right",
@@ -108,6 +110,7 @@ test("Airborne movement chains without a stationary World tick", () => {
     { motionDurationMs: 350 },
   );
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
 
   let airborne = false;
@@ -131,21 +134,22 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
     height: 1,
     entities: [
       ...Array.from({ length: 3 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   const boundary = world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
@@ -168,21 +172,22 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
     height: 1,
     entities: [
       ...Array.from({ length: 3 }, (_, x) => ({
-        type: EntityTypeId.GROUND_C,
+        type: "grass",
+        variant: "ts-10-1",
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
-        direction: "right",
-        state: { kite: true },
+
       },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  actor.state = { kite: true };
   move(world, actor.id, "right");
 
   const downed = world.downActor(actor.id, "test-down");

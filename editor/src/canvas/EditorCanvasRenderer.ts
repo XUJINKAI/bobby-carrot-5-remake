@@ -251,7 +251,7 @@ export class EditorCanvasRenderer {
     const entity = preview.entities.require(inspection.presence.entityId);
     const resolveContext = { entity, presence: inspection.presence, query };
     const composition =
-      this.editor.entities?.[entity.type]?.editorVisual?.(resolveContext) ??
+      this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??
       this.visuals.resolve(inspection.definition, resolveContext);
     drawVisualComposition(
       context,

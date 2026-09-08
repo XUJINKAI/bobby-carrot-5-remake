@@ -12,7 +12,7 @@ if (catalog.schemaVersion !== 1)
 
 const adventure = {
   schemaVersion: 1,
-  name: "Bobby Carrot 5",
+  name: "Bobby Carrot 5 Remake",
   chapters: catalog.chapters.map((chapter) => ({
     id: chapter.id,
     name: chapter.name,

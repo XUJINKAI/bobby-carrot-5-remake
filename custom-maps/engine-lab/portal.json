@@ -1,39 +1,171 @@
 {
   "schemaVersion": 1,
-  "name": "Portal Lab",
-  "author": "Bobby Carrot 5 Remake",
-  "description": "验证两组不同频道的 Portal。",
   "width": 7,
   "height": 3,
   "rules": {
-    "win": { "type": "reach", "target": "exit" }
+    "win": {
+      "type": "reach",
+      "target": "exit"
+    }
   },
   "entities": [
-    { "type": "ground-c", "x": 0, "y": 0 },
-    { "type": "ground-c", "x": 1, "y": 0 },
-    { "type": "ground-c", "x": 2, "y": 0 },
-    { "type": "portal", "x": 2, "y": 0, "properties": { "channel": "red" } },
-    { "type": "ground-c", "x": 3, "y": 0 },
-    { "type": "ground-c", "x": 4, "y": 0 },
-    { "type": "ground-c", "x": 5, "y": 0 },
-    { "type": "ground-c", "x": 6, "y": 0 },
-    { "type": "start", "x": 0, "y": 1 },
-    { "type": "bobby", "x": 0, "y": 1, "direction": "right" },
-    { "type": "ground-c", "x": 1, "y": 1 },
-    { "type": "portal", "x": 1, "y": 1, "properties": { "channel": "blue" } },
-    { "type": "ground-c", "x": 2, "y": 1 },
-    { "type": "ground-c", "x": 3, "y": 1 },
-    { "type": "ground-c", "x": 4, "y": 1 },
-    { "type": "ground-c", "x": 5, "y": 1 },
-    { "type": "portal", "x": 5, "y": 1, "properties": { "channel": "blue" } },
-    { "type": "exit", "x": 6, "y": 1 },
-    { "type": "ground-c", "x": 0, "y": 2 },
-    { "type": "ground-c", "x": 1, "y": 2 },
-    { "type": "ground-c", "x": 2, "y": 2 },
-    { "type": "ground-c", "x": 3, "y": 2 },
-    { "type": "ground-c", "x": 4, "y": 2 },
-    { "type": "portal", "x": 4, "y": 2, "properties": { "channel": "red" } },
-    { "type": "ground-c", "x": 5, "y": 2 },
-    { "type": "ground-c", "x": 6, "y": 2 }
-  ]
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "portal",
+      "x": 2,
+      "y": 0,
+      "channel": "red"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 0,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "start",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "bobby",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "portal",
+      "x": 1,
+      "y": 1,
+      "channel": "blue"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 1,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "portal",
+      "x": 5,
+      "y": 1,
+      "channel": "blue"
+    },
+    {
+      "type": "exit",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "portal",
+      "x": 4,
+      "y": 2,
+      "channel": "red"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 2,
+      "variant": "ts-10-1"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 2,
+      "variant": "ts-10-1"
+    }
+  ],
+  "meta": {
+    "name": "Portal Lab",
+    "author": "Bobby Carrot 5 Remake"
+  },
+  "note": "验证两组不同频道的 Portal。"
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -15,17 +15,17 @@ function resolveCarouselSwitch(pressed) {
   const visuals = createBuiltinVisualRegistry();
   const store = new EntityStore([
     {
-      type: EntityTypeId.CAROUSEL_SWITCH,
+      type: MapEntityTypeId.CAROUSEL_SWITCH,
       x: 0,
       y: 0,
-      state: { pressed },
+      pressed,
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
   const entity = store.require(1);
   const presence = spatial.presencesForEntity(entity.id)[0];
   assert.ok(presence);
-  return visuals.resolve(entities.require(EntityTypeId.CAROUSEL_SWITCH), {
+  return visuals.resolve(entities.require(MapEntityTypeId.CAROUSEL_SWITCH), {
     entity,
     presence,
     query: new SpatialVisualQuery(store, spatial),

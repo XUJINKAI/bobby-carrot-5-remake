@@ -52,7 +52,7 @@ test("decoded source level crosses the DAT boundary as semantic schema v1", () =
   assert.equal(level.width, 25);
   assert.equal(level.height, 20);
   assert.equal(level.objects.length, 10);
-  assert.equal(level.terrain[16]?.[7], "start");
+  assert.equal(level.terrain[16]?.[7], "ts-10-6:start");
   assert.ok(
     level.objects.every(
       (object) => typeof object.type === "string" && !("id" in object),

@@ -51,7 +51,7 @@ function buildOriginalCollection() {
     return {
       id: entry.id,
       name: document.meta.name,
-      description: document.meta.description ?? "",
+      description: "",
       chapter: entry.chapter,
       kind: entry.kind,
       filters: {
@@ -73,7 +73,6 @@ function buildOriginalCollection() {
     path.join(target, "index.json"),
     `${JSON.stringify({
       schemaVersion: 1,
-      id: "original",
       name: "原版关卡",
       description: "Bobby Carrot 5 原版 40 章地图。",
       cardSize: "small",
@@ -128,16 +127,16 @@ function originalFilters() {
       id: "scenes",
       name: "场景",
       options: [
-        ["grassland", "草地", "ground-c"],
-        ["water", "水域", "water-animated"],
+        ["grassland", "草地", "grass", { variant: "ts-10-1" }],
+        ["water", "水域", "water", { variant: "ripple" }],
         ["snow", "雪地", "snow"],
         ["ice", "冰面", "ice"],
         ["high-grass", "高草", "high-grass"],
-        ["shop", "商店", "shop-dream"],
-      ].map(([id, name, entityType]) => ({
+        ["shop", "商店", "shop-dream-machine-ticket"],
+      ].map(([id, name, entityType, fields]) => ({
         id,
         name,
-        icon: entityIcon(entityType),
+        icon: entityIcon(entityType, fields),
       })),
     },
     {
@@ -146,18 +145,22 @@ function originalFilters() {
       options: [
         ["tide", "潮汐", entityIcon("tide", { direction: "right" })],
         ["speed", "加速带", entityIcon("speed", { direction: "right" })],
-        ["carousel", "旋转通道", entityIcon("carousel", { state: { variant: 1 } })],
-        ["wind", "风车 / 云", entityIcon("windmill-right")],
-        ["mirror", "魔法镜", entityIcon("mirror", { state: { variant: 1 } })],
-        ["trap", "陷阱", entityIcon("trap", { state: { active: true } })],
+        [
+          "carousel",
+          "旋转通道",
+          entityIcon("carousel", { variant: "right-top" }),
+        ],
+        ["wind", "风车 / 云", entityIcon("windmill", { direction: "right" })],
+        ["mirror", "魔法镜", entityIcon("mirror", { variant: "right-bottom" })],
+        ["trap", "陷阱", entityIcon("trap", { active: true })],
         [
           "color-switch",
           "彩色开关",
-          entityIcon("color-yellow-switch", { state: { pressed: false } }),
+          entityIcon("color-switch", { color: "yellow", state: "state-1" }),
         ],
         ["mower", "割草机", entityIcon("mower")],
-        ["beanstalk", "魔豆藤", entityIcon("beanstalk-tip")],
-        ["dragon", "龙", entityIcon("dragon")],
+        ["beanstalk", "魔豆藤", entityIcon("beanstalk")],
+        ["dragon", "龙", entityIcon("dragon", { direction: "left" })],
         ["beaver", "海狸 / 锁", entityIcon("beaver")],
         ["dream", "梦境机关", entityIcon("dream-machine")],
         ["plank", "木板", entityIcon("plank")],

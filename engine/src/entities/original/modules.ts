@@ -3,10 +3,8 @@ import { beaver } from "./beaver.js";
 import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
-import { colorPinkBlock } from "./color-pink-block.js";
-import { colorPinkSwitch } from "./color-pink-switch.js";
-import { colorYellowBlock } from "./color-yellow-block.js";
-import { colorYellowSwitch } from "./color-yellow-switch.js";
+import { colorBlock } from "./color-block.js";
+import { colorSwitch } from "./color-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
 import { fence } from "./fence.js";
@@ -16,8 +14,8 @@ import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
-import { cloudGreen, cloudPurple, cloudRed, leaf } from "./moving-entities.js";
-import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
+import { cloud, cloudParking, leaf } from "./moving-entities.js";
+import { crumblyRock, mower, mowerParkingTile, pushableRock } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
 import { speed } from "./speed.js";
@@ -46,20 +44,18 @@ export const originalEntityModules: readonly EntityModule[] = [
   mirror,
   speed,
   carousel,
-  colorYellowSwitch,
-  colorPinkSwitch,
-  colorYellowBlock,
-  colorPinkBlock,
+  colorSwitch,
+  colorBlock,
   ...staticCoverModules,
   plank,
   iceBlock,
   ...staticContentModules,
-  cloudRed,
-  cloudPurple,
-  cloudGreen,
+  cloud,
+  cloudParking,
   leaf,
   mower,
   crumblyRock,
+  pushableRock,
   whirlwind,
   landing,
   beanField,

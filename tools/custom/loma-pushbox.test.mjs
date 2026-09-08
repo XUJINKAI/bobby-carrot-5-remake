@@ -43,7 +43,7 @@ test("LOMA XSB conversion preserves geometry and uses only entity fill-all push 
       filler: "pushable",
     });
     assert.equal(
-      entry.level.entities.filter((entity) => entity.traits?.includes("pushable"))
+      entry.level.entities.filter((entity) => entity.type === "pushable-rock")
         .length,
       3,
       entry.id,

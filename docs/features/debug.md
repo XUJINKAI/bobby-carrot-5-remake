@@ -141,7 +141,7 @@ Selection 显示 Cell Stack，并允许在同格多个 Presence 中选择具体 
 - id / type / direction；
 - Definition traits / footprint；
 - instance traits；
-- properties / state；
+- 类型专属地图字段 / runtime state；
 - resolve 后的 Behavior IDs；
 - Entity 的全部 Presence；
 - Visual ID；

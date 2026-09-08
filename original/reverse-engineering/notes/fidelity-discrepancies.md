@@ -165,7 +165,7 @@ current terrain == Ice
 这是已经能够由 bytecode 行为直接判定的 DAT semantic mapping 差异。进入修复阶段时应同步检查：
 
 - `tools/original/dat/mapping.mjs`
-- `EntityTypeId` / Tide state 的方向转换
+- `MapEntityTypeId.TIDE` / Tide state 的方向转换
 - Editor palette / visual resolver
 - Engine Tide 行为测试
 

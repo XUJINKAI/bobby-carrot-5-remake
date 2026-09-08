@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { AdventureSave } from "@bobby/adventure";
+import {
+  completedAdventureLevelCount,
+  type AdventureSave,
+} from "@bobby/adventure";
 
 defineProps<{
   status: "profile" | "error" | "unknown";
@@ -17,7 +20,7 @@ const emit = defineEmits<{ confirm: []; cancel: []; home: [] }>();
         <h1>Adventure Profile</h1>
         <p>来自分享链接的冒险进度：</p>
         <dl>
-          <div><dt>已完成</dt><dd>{{ profile.campaign.completedLevels.length }}</dd></div>
+          <div><dt>已完成</dt><dd>{{ completedAdventureLevelCount(profile) }}</dd></div>
           <div><dt>Bonus Coin</dt><dd>{{ profile.economy.bonusCoins }}</dd></div>
           <div><dt>Golden Carrot</dt><dd>{{ profile.economy.goldenCarrots }}</dd></div>
         </dl>

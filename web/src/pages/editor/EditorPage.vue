@@ -9,7 +9,7 @@ import {
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { loadScreenControlPreference } from "../../shell/shellBridge.js";
+import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
   computed,
   nextTick,
@@ -104,7 +104,9 @@ async function togglePlay(): Promise<void> {
       runtime: {
         hud: true,
         input: {
-          screenJoystick: { enabled: loadScreenControlPreference() },
+          screenJoystick: {
+            enabled: getWebSettings().controls.screenControlEnabled,
+          },
         },
       },
     });
@@ -163,7 +165,7 @@ function importLevel(level: EditorMap): void {
 function markDownloaded(metadata: {
   name: string;
   author?: string;
-  description?: string;
+  note?: string;
 }): void {
   page.updateMetadata(metadata);
   page.document.markSaved();
@@ -411,14 +413,14 @@ function isMobileEditor(): boolean {
       @context-menu="openContextMenu"
       @transform="transform"
       @resize="page.resize"
-      @property="page.updateProperty"
-      @state="page.updateState"
+      @field="page.updateField"
       @variant="page.applyVariant"
+      @surface-variant="page.applySurfaceVariant"
       @delete-layer="page.deleteLayer"
       @reorder-layers="page.reorderLayers"
-      @batch-property="page.updateBatchProperty"
-      @batch-state="page.updateBatchState"
+      @batch-field="page.updateBatchField"
       @batch-variant="page.applyBatchVariant"
+      @batch-surface-variant="page.applyBatchSurfaceVariant"
       @batch-delete="page.deleteSelectedType"
       @rule="page.setRule"
       @max-moves="page.setMaxMoves"

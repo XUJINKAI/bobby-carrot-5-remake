@@ -1,16 +1,10 @@
 const WATER = new Set([
   "water",
-  "water-animated",
-  "water-variant-1",
-  "water-variant-2",
-  "water-variant-3",
+  "waterfall",
   "tide",
 ]);
 const GROUND = new Set([
-  "ground-a",
-  "ground-b",
-  "ground-c",
-  "ground-d",
+  "grass",
   "start",
   "shovel-cleared-ground",
 ]);
@@ -26,18 +20,15 @@ const MECHANICS = [
     "wind",
     (type) =>
       type === "wind-switch" ||
-      type.startsWith("windmill-") ||
-      type.startsWith("cloud-"),
+      type === "windmill" ||
+      type === "cloud" ||
+      type === "cloud-parking",
   ],
   ["mirror", (type) => type === "mirror"],
   ["trap", (type) => type === "trap"],
   [
     "color-switch",
-    (type) =>
-      type === "color-yellow-switch" ||
-      type === "color-pink-switch" ||
-      type === "color-yellow-block" ||
-      type === "color-pink-block",
+    (type) => type === "color-switch" || type === "color-block",
   ],
   [
     "mower",
@@ -53,7 +44,7 @@ const MECHANICS = [
     (type) =>
       type === "bean" ||
       type === "bean-field" ||
-      type.startsWith("beanstalk-"),
+      type === "beanstalk",
   ],
   ["dragon", (type) => type === "dragon"],
   ["beaver", (type) => type === "beaver" || type === "lock"],
@@ -90,7 +81,7 @@ export function levelFeatures(level) {
   const scenes = [];
   if (
     entityTypes.some(
-      (type) => GROUND.has(type) || type.startsWith("walkable-variant-"),
+      (type) => GROUND.has(type),
     )
   )
     scenes.push("grassland");

@@ -1,13 +1,15 @@
 import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
-import type { EntityType, LevelEntity } from "@bobby/model";
+import { entityMapDefinition, type EntityType, type LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
   EditorDefinition,
   EditorEntityDefinition,
   EditorSelection,
 } from "../definitions/types.js";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
+import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 import {
   selectedEntityRefs,
   selectionRect,
@@ -18,6 +20,7 @@ export interface InspectorEntityModel {
   ref: EntityRef;
   entity: LevelEntity;
   definition: EntityCatalogEntry;
+  label: string;
   editor?: EditorEntityDefinition;
   stackOrder: number;
   editableScore: number;
@@ -28,6 +31,7 @@ export interface InspectorEntityGroupModel {
   refs: readonly EntityRef[];
   entities: readonly LevelEntity[];
   definition: EntityCatalogEntry;
+  label: string;
   editor?: EditorEntityDefinition;
   count: number;
   editableScore: number;
@@ -107,13 +111,11 @@ function cellLayers(
       return {
         ref: inspection.ref,
         entity: inspection.entity,
-        definition: catalog.require(inspection.entity.type),
+        definition: inspection.definition,
+        label: inspection.definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         stackOrder: inspection.presence.stackOrder,
-        editableScore: entityEditableScore(
-          catalog.require(inspection.entity.type),
-          policy,
-        ),
+        editableScore: entityEditableScore(inspection.definition, policy),
       };
     });
 }
@@ -134,7 +136,8 @@ function groupEntities(
   }
   return [...byType.entries()]
     .map(([type, typeRefs]) => {
-      const definition = catalog.require(type);
+      const first = level.entities[typeRefs[0]!.index]!;
+      const definition = editorCatalogEntry(catalog, first);
       const policy = editor.entities?.[type];
       return {
         type,
@@ -143,6 +146,7 @@ function groupEntities(
           .map((ref) => level.entities[ref.index])
           .filter((entity): entity is LevelEntity => Boolean(entity)),
         definition,
+        label: definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         count: typeRefs.length,
         editableScore: entityEditableScore(definition, policy),
@@ -155,10 +159,11 @@ function entityEditableScore(
   definition: EntityCatalogEntry,
   editor: EditorEntityDefinition | undefined,
 ): number {
+  // Surface 由专用 Surface 面板编辑，不能凭 variant 字段挤到机关分组之前。
+  if (isSurfaceEntityType(definition.type)) return 0;
   return (
     (editor?.variants?.length ?? 0) * 100 +
-    (definition.properties?.length ?? 0) * 10 +
-    (definition.state?.length ?? 0) * 10 +
+    (entityMapDefinition(definition.type)?.fields.length ?? 0) * 10 +
     (editor?.quickActions?.length ?? 0)
   );
 }
@@ -173,6 +178,6 @@ function compareGroups(
     bEditable - aEditable ||
     b.count - a.count ||
     b.editableScore - a.editableScore ||
-    a.definition.presentation.name.localeCompare(b.definition.presentation.name)
+    a.label.localeCompare(b.label)
   );
 }

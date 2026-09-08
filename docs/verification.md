@@ -13,18 +13,21 @@ npm run verify
 - 从 10 个不可变原始 JAR 重建全部资产与 530 source / 485 unique DAT map；其中 Campaign 内容为 400 个普通关卡 + 80 个 Bonus 奖励关，另有 5 个共享商店 / Special Scene；
 - 验证 semantic schema、public ID、章节星级和 collection metadata；
 - 对所有官方 Campaign map 验证 `dynamic_slots` 可从 LevelMap 派生；
+- 对全部 530 条官方 source 验证
+  `Adapter → Reverse Adapter → Adapter` 后 canonical `LevelMap` 玩法语义一致；
 - 运行 DAT byte-for-byte record round-trip 测试；
-- 运行 Adventure / Engine / Editor 回归测试，包括 `LevelObject.properties`、Sandman dialogue 和 Adventure map augmentation；
-- 生成一个临时 patched original JAR 并做 JAR → DAT → LevelMap round-trip；
-- 校验依赖方向：Web、Editor、Engine 不允许依赖 `@bobby/dat`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；
+- 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、Sandman dialogue 和 Adventure map augmentation；
+- 生成临时 patched original JAR，重新读取目标 DAT record 并验证写入结果；
+- 校验依赖方向：Model、Adventure、Engine、Editor、Web 不允许依赖
+  `tools/original/dat/`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；
 - 校验用户地图只保留 JSON 产品路径，不允许旧 DAT-backed URL share 代码回来；
 - 校验单一 `dist/`、model/adventure/engine/editor browser modules 和 import map，并明确禁止 `dist/dat`；
-- 用 Chrome/Chromium smoke test 加载 Home、Level Browser、Play、Adventure、Editor SPA 路由；本地也可通过 `npm run verify` 单独运行同一检查。
+- 用 Chrome/Chromium smoke test 加载 Home、Level Browser、Play、Adventure、Editor SPA 路由；本地也可通过 `node tools/cli.mjs verify browser` 单独运行同一检查。
 
 源码质量门禁也可以单独运行：
 
 ```bash
-npm run source:check
+node tools/pipeline/source-quality.mjs
 ```
 
 `verify` 失败时不能把任务描述为完成。

@@ -12,19 +12,15 @@ test("直达 Play 只按 URL 加载一个 canonical MapDocument", async () => {
     return new Response(
       JSON.stringify({
         schemaVersion: 1,
-        meta: {
-          id: "1-5",
-          name: "1-5",
-          next: "1-6",
-        },
+        meta: { name: "1-5" },
         width: 2,
         height: 1,
         entities: [
           { type: "start", x: 0, y: 0 },
-          { type: "bobby", x: 0, y: 0, direction: "right" },
+          { type: "bobby", x: 0, y: 0 },
           { type: "exit", x: 1, y: 0 },
         ],
-        rules: { win: { type: "reach", trait: "exit" } },
+        rules: { win: { type: "reach", target: "exit" } },
       }),
     );
   };
@@ -37,13 +33,13 @@ test("直达 Play 只按 URL 加载一个 canonical MapDocument", async () => {
     assert.deepEqual(requests, [
       "https://example.test/assets/maps/original/1-5.json",
     ]);
-    assert.equal(resolved.document.meta.id, "1-5");
-    assert.equal(resolved.document.meta.next, "1-6");
+    assert.equal(resolved.ref.id, "1-5");
+    assert.equal(resolved.document.meta.name, "1-5");
     assert.equal(Object.hasOwn(resolved.level, "meta"), false);
     assert.equal(resolved.level.schemaVersion, 1);
     assert.deepEqual(resolved.level.entities, [
       { type: "start", x: 0, y: 0 },
-      { type: "bobby", x: 0, y: 0, direction: "right" },
+      { type: "bobby", x: 0, y: 0 },
       { type: "exit", x: 1, y: 0 },
     ]);
   } finally {
@@ -60,19 +56,19 @@ test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () =
     new Response(
       JSON.stringify({
         schemaVersion: 1,
-        meta: { id: "01-01", name: "LOMA 01-01" },
+        meta: { name: "LOMA 01-01" },
         width: 2,
         height: 1,
         entities: [
-          { type: "ground-c", x: 0, y: 0 },
-          { type: "bobby", x: 0, y: 0, direction: "right" },
+          { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+          { type: "bobby", x: 0, y: 0 },
           { type: "push-goal", x: 1, y: 0 },
         ],
         rules: {
           win: {
             type: "fill-all",
-            targetTrait: "push-goal",
-            fillerTrait: "pushable",
+            target: "push-goal",
+            filler: "pushable",
           },
         },
       }),
@@ -90,8 +86,8 @@ test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () =
     );
     assert.deepEqual(resolved.level.rules?.win, {
       type: "fill-all",
-      targetTrait: "push-goal",
-      fillerTrait: "pushable",
+      target: "push-goal",
+      filler: "pushable",
     });
     assert.equal(Object.hasOwn(resolved.level, "meta"), false);
     assert.equal(resolved.level.schemaVersion, 1);
@@ -101,7 +97,7 @@ test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () =
   }
 });
 
-test("MapDocument 的 meta.id 必须与 URL map id 一致", async () => {
+test("地图资源 identity 来自 URL，而不是 MapDocument metadata", async () => {
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
   globalThis.document = { baseURI: "https://example.test/" };
@@ -109,17 +105,19 @@ test("MapDocument 的 meta.id 必须与 URL map id 一致", async () => {
     new Response(
       JSON.stringify({
         schemaVersion: 1,
-        meta: { id: "other", name: "Other" },
+        meta: { name: "Other" },
         width: 1,
         height: 1,
         entities: [{ type: "bobby", x: 0, y: 0 }],
       }),
     );
   try {
-    await assert.rejects(
-      resolveMapDocument({ collection: "engine-lab", id: "expected" }),
-      /meta.id/,
-    );
+    const resolved = await resolveMapDocument({
+      collection: "engine-lab",
+      id: "expected",
+    });
+    assert.equal(resolved.ref.id, "expected");
+    assert.equal(resolved.document.meta.name, "Other");
   } finally {
     globalThis.fetch = previousFetch;
     globalThis.document = previousDocument;

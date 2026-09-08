@@ -15,10 +15,13 @@ export const NOOP_CONTROLLER: PageController = {
   destroy() {},
 };
 
+/** Runtime wrapper；序列化 MapCollectionIndex 的身份仍来自资源路径。 */
+export type ResolvedMapCollection = MapCollectionIndex & { id: string };
+
 export interface PageContext {
   app: HTMLDivElement;
   collectionsIndex: MapCollectionsIndex;
-  collections: MapCollectionIndex[];
+  collections: ResolvedMapCollection[];
   adventure: AdventureIndex;
   audio: AudioRuntime;
   images: ImageManager;

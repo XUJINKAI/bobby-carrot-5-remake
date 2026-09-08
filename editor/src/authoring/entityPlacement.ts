@@ -3,9 +3,13 @@ import {
   type EntityCatalog,
   type EntityCatalogEntry,
 } from "@bobby/engine";
-import type { JsonValue, LevelEntity } from "@bobby/model";
+import { isLevelEntityReservedField, type Direction, type LevelEntity } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
-import { isEditorEntityCreatable } from "../definitions/entities.js";
+import {
+  editorCatalogEntry,
+  editorEntityDirection,
+  isEditorEntityCreatable,
+} from "../definitions/entities.js";
 import type {
   EditorDefinition,
   EditorPlacementPoint,
@@ -42,9 +46,8 @@ export function resolvePlacement(
   cursor: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
 ): EntityPlacementPlan {
-  const definition = catalog.require(preset.type);
   const authoring = editor.entities?.[preset.type];
-  if (!isEditorEntityCreatable(editor, preset.type)) {
+  if (!isEditorEntityCreatable(editor, preset.type, catalog)) {
     return {
       entity: { type: preset.type, x: cursor.x, y: cursor.y },
       cells: [],
@@ -54,6 +57,13 @@ export function resolvePlacement(
   }
 
   const direction = preset.direction ?? authoring?.defaultDirection;
+  const definition = editorCatalogEntry(catalog, {
+    ...(preset.fields ?? {}),
+    type: preset.type,
+    x: cursor.x,
+    y: cursor.y,
+    ...(direction ? { direction } : {}),
+  });
   const anchor = resolveAnchor(
     cursor,
     definition,
@@ -141,7 +151,7 @@ function resolveAnchor(
   cursor: Cell,
   definition: EntityCatalogEntry,
   placementPoint: EditorPlacementPoint | undefined,
-  direction: LevelEntity["direction"],
+  direction: Direction | undefined,
 ): Cell {
   if (!placementPoint) return cursor;
   if ("offset" in placementPoint) {
@@ -164,10 +174,11 @@ function footprintCells(
   entity: LevelEntity,
   definition: EntityCatalogEntry,
 ): PlacementCell[] {
+  const direction = editorEntityDirection(entity);
   return resolveFootprintCells(
     {
       anchor: { x: entity.x, y: entity.y },
-      ...(entity.direction ? { direction: entity.direction } : {}),
+      ...(direction ? { direction } : {}),
     },
     definition.footprint,
   ).map((cell) => ({
@@ -181,31 +192,17 @@ function createPlacedEntity(
   definition: EntityCatalogEntry,
   anchor: Cell,
   preset: EditorPlacementPreset,
-  direction: LevelEntity["direction"],
+  direction: Direction | undefined,
 ): LevelEntity {
-  const properties = defaults(definition.properties);
-  const state = defaults(definition.state);
   const entity: LevelEntity = {
-    type: definition.type,
+    type: preset.type,
     x: anchor.x,
     y: anchor.y,
   };
-  if (direction) entity.direction = direction;
-  const mergedProperties = { ...properties, ...preset.properties };
-  if (Object.keys(mergedProperties).length > 0)
-    entity.properties = mergedProperties;
-  const mergedState = { ...state, ...preset.state };
-  if (Object.keys(mergedState).length > 0) entity.state = mergedState;
-  return entity;
-}
-
-function defaults(
-  fields: EntityCatalogEntry["properties"] | EntityCatalogEntry["state"],
-): Record<string, JsonValue> {
-  const result: Record<string, JsonValue> = {};
-  for (const field of fields ?? []) {
-    if (field.default !== undefined)
-      result[field.key] = structuredClone(field.default);
+  for (const [key, value] of Object.entries(preset.fields ?? {})) {
+    if (!key || key === "direction" || isLevelEntityReservedField(key)) continue;
+    entity[key] = value;
   }
-  return result;
+  if (direction) entity["direction"] = direction;
+  return entity;
 }

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
@@ -60,9 +61,9 @@ try {
   await smoke(`${origin}/explore/loma-pushbox`, [
     'class="explore-tabs"',
     'class="chapter-card"',
+    'class="chapter-name"',
     'data-card-size="small"',
     "LOMA",
-    "Pattern",
     'href="/explore/play/loma-pushbox/01-01"',
   ]);
   await smoke(`${origin}/explore/engine-lab`, [
@@ -216,6 +217,7 @@ async function smoke(url, expected, forbidden = []) {
 }
 function runBrowser(url) {
   return new Promise((resolve, reject) => {
+    const profile = createBrowserProfile();
     const child = spawn(
       browser,
       [
@@ -224,6 +226,7 @@ function runBrowser(url) {
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-background-networking",
+        `--user-data-dir=${profile}`,
         "--virtual-time-budget=10000",
         "--dump-dom",
         url,
@@ -242,10 +245,12 @@ function runBrowser(url) {
     });
     child.on("error", (error) => {
       clearTimeout(timer);
+      removeBrowserProfile(profile);
       reject(error);
     });
     child.on("close", (status) => {
       clearTimeout(timer);
+      removeBrowserProfile(profile);
       resolve({ status, stdout, stderr });
     });
   });
@@ -320,6 +325,7 @@ async function interactiveDataExchangeSmoke(url) {
 }
 async function runBrowserEval(url, script) {
   const port = 9222 + Math.floor(Math.random() * 1000);
+  const profile = createBrowserProfile();
   const child = spawn(
     browser,
     [
@@ -328,6 +334,7 @@ async function runBrowserEval(url, script) {
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "--disable-background-networking",
+      `--user-data-dir=${profile}`,
       `--remote-debugging-port=${port}`,
       "about:blank",
     ],
@@ -384,7 +391,23 @@ async function runBrowserEval(url, script) {
     };
   } finally {
     child.kill("SIGKILL");
+    await waitForBrowserClose(child);
+    removeBrowserProfile(profile);
   }
+}
+
+function createBrowserProfile() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "bc5r-browser-smoke-"));
+}
+
+function removeBrowserProfile(profile) {
+  fs.rmSync(profile, { recursive: true, force: true });
+}
+
+function waitForBrowserClose(child) {
+  if (child.exitCode !== null || child.signalCode !== null)
+    return Promise.resolve();
+  return new Promise((resolve) => child.once("close", resolve));
 }
 async function waitForDebugEndpoint(port) {
   for (let i = 0; i < 80; i += 1) {

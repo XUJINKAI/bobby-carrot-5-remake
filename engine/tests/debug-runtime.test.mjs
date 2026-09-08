@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { buildDebugSnapshot } from "../dist/debug/DebugSnapshot.js";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { resolveEngineTiming } from "../dist/time/EngineTiming.js";
@@ -10,7 +10,7 @@ import { WorldClock } from "../dist/time/WorldClock.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "../dist/world/World.js";
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 
 function debugTime() {
   const timing = resolveEngineTiming();
@@ -28,7 +28,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
     entities: [
       ground(0, 0),
       ground(1, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
@@ -40,8 +40,9 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   visual.update(frame, "linear");
   const bobby = world.entities
     .all()
-    .find((entity) => entity.type === EntityTypeId.BOBBY);
+    .find((entity) => entity.type === MapEntityTypeId.BOBBY);
   assert.ok(bobby);
+  bobby.direction = "right";
 
   const scene = visual.scene(world);
   const snapshot = buildDebugSnapshot({
@@ -64,9 +65,9 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.runtime.actionCount, 0);
   assert.equal(snapshot.actions.length, 0);
   assert.equal(snapshot.input, null);
-  assert.deepEqual(snapshot.actors, [{ id: bobby.id, type: EntityTypeId.BOBBY }]);
+  assert.deepEqual(snapshot.actors, [{ id: bobby.id, type: MapEntityTypeId.BOBBY }]);
   assert.equal(snapshot.actor?.id, bobby.id);
-  assert.equal(snapshot.actor?.type, EntityTypeId.BOBBY);
+  assert.equal(snapshot.actor?.type, MapEntityTypeId.BOBBY);
   assert.deepEqual(snapshot.actor?.anchor, { x: 0, y: 0 });
   assert.deepEqual(snapshot.actor?.worldPose, { x: 0, y: 0 });
   assert.equal(snapshot.actor?.worldMotion, null);
@@ -79,7 +80,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.deepEqual(snapshot.selection?.cell, { x: 0, y: 0 });
   assert.equal("playerHere" in snapshot.selection, false);
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
-  assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
+  assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.entity?.direction, "right");
   assert.ok(snapshot.selection?.entity?.definition.traits.includes("player"));
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
@@ -95,8 +96,8 @@ test("Debug snapshot can track a non-primary player actor", () => {
     entities: [
       ground(0, 0),
       ground(1, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "left" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "left" },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
@@ -129,7 +130,7 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
@@ -144,7 +145,7 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     input: null,
     selection: { cell: { x: 0, y: 0 } },
   });
-  assert.equal(snapshot.selection?.entity?.type, EntityTypeId.BOBBY);
+  assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
 });
 

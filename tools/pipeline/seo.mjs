@@ -29,9 +29,10 @@ export function generateSeoArtifacts() {
 
 function buildPublicRoutes() {
   const collectionsIndex = readJson(path.join(assets, "maps/index.json"));
-  const collections = collectionsIndex.collections.map((summary) =>
-    readJson(path.join(assets, `maps/${summary.id}/index.json`)),
-  );
+  const collections = collectionsIndex.collections.map((summary) => ({
+    id: summary.id,
+    ...readJson(path.join(assets, `maps/${summary.id}/index.json`)),
+  }));
   const adventure = readJson(path.join(assets, "adventure/index.json"));
 
   const routes = [

@@ -9,7 +9,7 @@ import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { NOOP_CONTROLLER } from "../../app/pageContracts.js";
 import { parseEditorMapHash } from "../../app/routes.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import { loadEditorDraft } from "../../storage/editorDraftStorage.js";
+import { loadEditorAutosave } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
 import { configureEditorShell } from "./editorShell.js";
 
@@ -23,8 +23,10 @@ export async function renderEditorPage(
   if (mapRef) {
     try {
       const resolved = await resolveMapDocument(mapRef);
-      level = fromLevelMap(resolved.level);
-      level.name = `${resolved.document.meta.name} · 副本`;
+      level = fromLevelMap(
+        resolved.level,
+        `${resolved.document.meta.name} · 副本`,
+      );
     } catch {
       navigate("/edit");
       return NOOP_CONTROLLER;
@@ -35,7 +37,7 @@ export async function renderEditorPage(
       sessionStorage.removeItem("bc5r:pending-editor-level");
       level = parseEditorLevel(pending);
     } else {
-      level = loadEditorDraft() ?? createBlankLevel(16, 16);
+      level = loadEditorAutosave() ?? createBlankLevel(16, 16);
     }
   }
 

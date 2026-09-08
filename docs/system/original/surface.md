@@ -1,123 +1,45 @@
-# 静态地形说明
+# Original Tile Visual 目录
 
-本文档是对assets.md的补充说明，列举`ts.png`中的静态地形。
+原版 `ts.png` 与 `ta.png` 的可执行语义目录位于
+`model/src/map/entity/original-tile-visuals.json`。该文件完整覆盖 `ts.png` 的 256 个
+单元，并保存由 Engine、Editor 与 Original Adapter 共用的类型、selector、部件、
+阶段和动画帧序列。
 
-本文档用于editor中surface的分类，以及对各种地形统一命名。
+## Editor 分类
 
-坐标遵从README规则，row,column 皆为从1开始。此外，坐标还会有 1,9--3,10 这样的表示法，意思是以这两个坐标画矩阵覆盖的所有图。
+顶层 `surface` 与 `palette` 是 Editor 的二分面板分类：
 
-某些地形是多格的，且不能分拆，会在括号中标注，在editor中应该展示为一个物体。
+- `surface` 中的条目作为单格地貌编辑；视觉拼图仍由多个单格 Entity 组成。
+- `palette` 中的条目作为可放置 Entity；multi-cell Entity 只保存 anchor，部件由
+  Engine footprint 展开。
 
-## 水
+Editor 可以维护面板内的主题、排列与 Auto 选图策略，但 Entity 是否属于 Surface
+或 Palette、可用 selector 及其 atlas 单元均从目录读取。
 
-6,6     水面
-6,7     有涟漪动画的水面
+## 条目结构
 
-auto: 随机，涟漪10%
+每个条目以 `type` 为 `LevelEntity.type`，并且必须使用一种基础形状：
 
-## 瀑布
+- `base`：单一静态单元；
+- `coordinateVariants`：仅以 `ts-<row>-<column>` 区分的 Surface 形态；
+- `variants`：由 `fields` 唯一选择的语义形态；
+- `parts`：由 footprint `role` 选择的多格部件。
 
-6,12--6,14
+条目还可附加：
 
-auto: 根据所属位置显示visual，最上6,12，中间都是6,13，最下6,14
+- `phases`：同一 Entity 的运行时或表现阶段；
+- `animations`：有序帧序列，可指向 `ts` 或 `ta` atlas；variant 也可拥有自己的动画。
 
-## 星空
+Engine 使用 `type + fields + role + phase` 查询静态单元，使用
+`type + fields + role + animation id` 查询动画。动画触发、节拍、随机门控和 gameplay
+状态属于 Engine。
 
-5,8 大星星
-5,9 小星星
-5,10 无星星的星空
+## 特殊 terrain 记录
 
-auto: 随机，大星星5%，小星星10%，剩下的无星星星空
+少量原版 DAT 记录把 Palette 图块写在 terrain 层。Adapter 将这类记录保存为
+`original-tile`，其 `variant` 仍由目录中的 `ts.png` 坐标产生。该类型只用于无损表达
+原版记录，不进入 Editor 的 Surface 或 Palette 面板。
 
-## 月亮
-
-5,11--5,13
-
-5,11拼接到5,13上方，是一个缺一格的2x2形状，不能拆分
-
-## 云层
-
-7,9--9,14
-9,7--9,8
-
-边缘固定算法拼接，中心随机裂缝
-
-## 森林
-
-- 草地
-7,1--9,3; 6,15; 6,16
-7,4--9,6; 7,7--8,8
-10,1--10,4
-
-根据相邻位置是否有树，是否临水智能选择
-
-- 栅栏（木头样式，透明叠加）
-
-16,10--16,15
-
-- 篱笆（灌木丛）
-
-5,1--6,5
-4,4; 4,5
-5,6; 5,7
-
-- 树
-
-1,11--3,16; 4,11; 4,12
-
-- 石头墙1
-
-1,4--3,6
-
-- 石头墙2
-
-1,7--3,8; 4,7--4,10
-
-- 其他
-
-1,1 木桩
-1,3 花盆
-4,6 石头
-4,14 蘑菇
-
-## 雪地（圣诞）
-
-- 雪人
-
-3,3; 4,3            （上下拼接，不能延长）
-
-- 雪地里的圣诞杖
-
-3,2; 4,2            （上下拼接，不能延长）
-
-- 圣诞树
-
-1,9--3,10           （6格，按原图拼接，不能变化）
-
-- 栅栏（雪地圣诞风格）
-
-2,1--2,3; 3,1; 4,1
-
-根据相邻格显示visual
-
-- 带雪的石头
-
-1,2
-
-- 雪地
-
-7,15--8,16; 9,15
-
-## 沙漠
-
-- 仙人掌
-
-4,15        单独一个小仙人掌
-5,15        单独一个仙人球
-4,16; 5,16  两格仙人掌（上下拼接，不能延长）
-
-auto时，根据涂抹面积智能选择，优先使用两格的，再用一格的填充
-
-- 沙漠
-
-9,16
+目录加载时会验证 schema、selector 唯一性、atlas 边界、动画 selector，以及
+`ts.png` 和 `ta.png` 每个单元恰好登记一次。Model 还会验证目录中的 `type` 与
+`fields` 符合对应的 `LevelEntity` 合同。

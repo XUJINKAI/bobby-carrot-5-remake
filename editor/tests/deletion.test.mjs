@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
   builtinEditorDefinition,
@@ -13,8 +13,8 @@ const catalog = createBuiltinEntityCatalog();
 test("single-cell deletion removes only the top non-Surface entity", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: EntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: EntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 120 },
   );
 
   const refs = resolveDeletion(
@@ -24,16 +24,16 @@ test("single-cell deletion removes only the top non-Surface entity", () => {
     builtinEditorDefinition,
   );
   assert.equal(refs.length, 1);
-  assert.equal(level.entities[refs[0].index].type, EntityTypeId.BONUS_COIN);
+  assert.equal(level.entities[refs[0].index].type, MapEntityTypeId.BONUS_COIN);
 });
 
 test("multi-cell deletion removes only the highest stackOrder layer", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: EntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: EntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 130 },
-    { type: EntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 130 },
-    { type: EntityTypeId.CARROT, x: 2, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 130 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 130 },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 120 },
   );
 
   const refs = resolveDeletion(

@@ -1,4 +1,4 @@
-export { Game, type GameOptions, type GameRuntimeOptions } from "./core/Game.js";
+export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
 export {
   DEFAULT_HISTORY_POLICY,
@@ -95,11 +95,10 @@ export {
   readBobbyInventory,
   type BobbyInventoryState,
 } from "./entities/player/BobbyState.js";
+
+/** Canonical 地图序列化合同。 */
 export type {
   Direction,
-  EntityProperties,
-  EntityState,
-  EntityTraits,
   EntityType,
   JsonValue,
   LevelEntity,
@@ -108,6 +107,7 @@ export type {
   LevelRules,
   WinCondition,
 } from "@bobby/model";
+
 export type {
   CellInspection,
   MoveResult,
@@ -166,10 +166,13 @@ export type {
 } from "./world/entity/EntityDefinition.js";
 export { EntityStore } from "./world/entity/EntityStore.js";
 export type { EntityStoreSnapshot } from "./world/entity/EntityStore.js";
+/** Engine Runtime Entity 合同；不属于 Map JSON。 */
 export type {
   CellPosition,
   EntityId,
   EntityInstance,
+  EntitySpawnSpec,
+  EntityState,
 } from "./world/entity/EntityInstance.js";
 export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
@@ -188,6 +191,7 @@ export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
   defineEntityModule,
   type EntityBehaviorBinding,
+  type EntityAuthoringDefinition,
   type EntityModule,
   type EntityModuleDefinition,
   type EntityModuleInput,
@@ -208,7 +212,9 @@ export { VisualRegistry } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
 export {
   resolveEntityVisualPreview,
+  resolveLevelEntityVisualPreview,
   type EntityVisualPreviewSource,
+  type LevelEntityVisualPreviewSource,
 } from "./visual/preview.js";
 export type {
   AtlasVisualLayer,

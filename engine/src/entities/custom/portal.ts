@@ -1,14 +1,14 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 
 const portalBehavior: Behavior = {
   id: "portal",
   onEnter({ query, actor, self, commands }) {
-    const channel = self.entity.properties?.channel;
+    const channel = self.entity.state?.channel;
     const target = query.entitiesWithTrait("portal").find(
       (entity) =>
-        entity.id !== self.entity.id && entity.properties?.channel === channel,
+        entity.id !== self.entity.id && entity.state?.channel === channel,
     );
     if (!target) return;
     commands.move(actor.id, target.anchor.x, target.anchor.y);
@@ -23,7 +23,7 @@ const portalBehavior: Behavior = {
 
 export const portal: EntityModule = defineEntityModule({
   definition: {
-    type: EntityTypeId.PORTAL,
+    type: MapEntityTypeId.PORTAL,
     traits: ["portal"],
     stackOrder: 100,
     properties: [
@@ -43,7 +43,7 @@ export const portal: EntityModule = defineEntityModule({
   },
   behaviorBindings: [{ trait: "portal", behavior: portalBehavior }],
   visual: {
-    id: EntityTypeId.PORTAL,
+    id: MapEntityTypeId.PORTAL,
     resolve: () => ({
       layers: [{ kind: "canvas", draw: drawPortal }],
     }),

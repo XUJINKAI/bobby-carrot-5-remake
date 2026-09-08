@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
@@ -15,7 +15,7 @@ import {
   atlasVisual,
   boundedInt,
   CONTENT_STACK_ORDER,
-  objectCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -24,12 +24,12 @@ const DEFAULT_TEMPORARY_KEY_PRICE = 3;
 const bonusKeyVendor: Behavior = {
   id: "bonus-key-vendor",
   onTouch({ actor, self, query, commands }) {
-    if (self.entity.properties?.interaction !== "bonus-key-vendor") return;
+    if (self.entity.state?.interaction !== "bonus-key-vendor") return;
     if (bobbyMountId(actor.state) !== null) return;
     const global = query.global();
     const inventory = readBobbyInventory(actor.state);
     const price = boundedInt(
-      self.entity.properties?.temporaryKeyPriceBonusCoins,
+      self.entity.state?.temporaryKeyPriceBonusCoins,
       0,
       9999,
       DEFAULT_TEMPORARY_KEY_PRICE,
@@ -124,12 +124,10 @@ function emitDialog(
 }
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.BEAVER,
+  type: MapEntityTypeId.BEAVER,
   traits: ["blocking", "dialog"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
-    rotateWithDirection: true,
-    baseDirection: "down",
     parts: [
       { dx: 0, dy: 0, role: "head" },
       { dx: 0, dy: 1, role: "body" },
@@ -159,7 +157,9 @@ const definition: EntityModuleDefinition = {
 export const beaver: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.presence.role === "body" ? objectCell(46) : objectCell(30),
+    context.presence.role === "body"
+      ? tileCell(MapEntityTypeId.BEAVER, { role: "body" })
+      : tileCell(MapEntityTypeId.BEAVER, { role: "head" }),
   ),
   [{ behavior: bonusKeyVendor }],
 );

@@ -1,5 +1,8 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
+  SURFACE_ENTITY_DEFINITIONS,
+  originalTileVisualGroup,
+  originalTileVisualGroups,
   type Direction,
   type EntityType,
   type LevelEntity,
@@ -8,11 +11,14 @@ import type {
   EditorDefinition,
   EditorEntityDefinition,
   EditorEntityVariant,
+  EditorPaletteEntry,
+  EditorPaletteGroup,
 } from "./types.js";
 import {
   playerPresenceValidator,
   reachTargetValidator,
   registeredEntityTypesValidator,
+  requiredEntityFieldsValidator,
 } from "./validators.js";
 
 const directions: readonly EditorEntityVariant[] = (
@@ -23,84 +29,36 @@ const horizontalDirections: readonly EditorEntityVariant[] = [
   { direction: "left", label: "left" },
   { direction: "right", label: "right" },
 ];
-const pressedVariants: readonly EditorEntityVariant[] = [
-  { label: "Raised", state: { pressed: false } },
-  { label: "Pressed", state: { pressed: true } },
-];
-const activeVariants: readonly EditorEntityVariant[] = [
-  { label: "Active", state: { active: true } },
-  { label: "Inactive", state: { active: false } },
-];
-const windSwitchVariants: readonly EditorEntityVariant[] = [
-  { label: "On", state: { active: true } },
-  { label: "Off", state: { active: false } },
-];
-const raisedVariants: readonly EditorEntityVariant[] = [
-  { label: "Raised", state: { raised: true } },
-  { label: "Lowered", state: { raised: false } },
-];
-const fourVariants: readonly EditorEntityVariant[] = [1, 2, 3, 4].map(
-  (variant) => ({ label: String(variant), state: { variant } }),
-);
-const carouselVariants: readonly EditorEntityVariant[] = [
-  ...fourVariants,
-  { label: "Vertical", state: { variant: "vertical" } },
-  { label: "Horizontal", state: { variant: "horizontal" } },
-];
+const speedVariants = catalogVariants(MapEntityTypeId.SPEED);
+const tideVariants = catalogVariants(MapEntityTypeId.TIDE);
+const windmillVariants = catalogVariants(MapEntityTypeId.WINDMILL);
 
 const surface: EditorEntityDefinition = { replaceGroup: "surface" };
 const cover: EditorEntityDefinition = { replaceGroup: "cover" };
 const item: EditorEntityDefinition = { replaceGroup: "item" };
-const directionalMechanism: EditorEntityDefinition = {
-  defaultDirection: "right",
-  variants: directions,
-};
 const directSurfaceTypes: readonly EntityType[] = [
-  EntityTypeId.GROUND_A,
-  EntityTypeId.GROUND_B,
-  EntityTypeId.GROUND_C,
-  EntityTypeId.GROUND_D,
-  EntityTypeId.ICE,
-  EntityTypeId.WATER,
-  EntityTypeId.WATER_ANIMATED,
-  EntityTypeId.WATER_VARIANT_1,
-  EntityTypeId.WATER_VARIANT_2,
-  EntityTypeId.WATER_VARIANT_3,
+  ...SURFACE_ENTITY_DEFINITIONS.map((definition) => definition.type),
 ];
 
 export const builtinEditorDefinition: EditorDefinition = {
-  exclude: [
-    EntityTypeId.CONSUMED_CARROT,
-    EntityTypeId.PLANK_CRUMBLING,
-    EntityTypeId.PLANK_FRAGMENT,
-    EntityTypeId.BEAN_SPROUT,
-    EntityTypeId.FENCE,
-    { prefix: "background-variant-" },
-    { prefix: "walkable-variant-" },
-    { prefix: "object-variant-" },
-  ],
   entities: {
     ...withPolicy(directSurfaceTypes, surface),
     ...withPolicy(
       [
-        EntityTypeId.SNOW,
-        EntityTypeId.HIGH_GRASS,
-        EntityTypeId.HIGH_GRASS_OBJECTIVE,
-        EntityTypeId.ICE_BLOCK,
+        MapEntityTypeId.SNOW,
+        MapEntityTypeId.HIGH_GRASS,
+        MapEntityTypeId.ICE_BLOCK,
       ],
       cover,
     ),
     ...withPolicy(
       [
-        EntityTypeId.CARROT,
-        EntityTypeId.EGG_NEST_EMPTY,
-        EntityTypeId.EGG_NEST_FILLED,
+        MapEntityTypeId.CARROT,
+        MapEntityTypeId.EGG,
       ],
       item,
     ),
-    [EntityTypeId.BOBBY]: {
-      defaultDirection: "down",
-      variants: directions,
+    [MapEntityTypeId.BOBBY]: {
       editorVisual: () => ({
         layers: [
           {
@@ -115,53 +73,69 @@ export const builtinEditorDefinition: EditorDefinition = {
         ],
       }),
     },
-    [EntityTypeId.DRAGON]: {
+    [MapEntityTypeId.DRAGON]: {
       placementPoint: { role: "body" },
       defaultDirection: "left",
       variants: horizontalDirections,
     },
-    [EntityTypeId.SANDMAN]: {
+    [MapEntityTypeId.SANDMAN]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
-    [EntityTypeId.DREAM_MACHINE]: {
+    [MapEntityTypeId.DREAM_MACHINE]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
-    [EntityTypeId.BEAVER]: {
+    [MapEntityTypeId.BEAVER]: {
       placementPoint: { role: "body" },
-      defaultDirection: "down",
-      variants: directions,
     },
-    [EntityTypeId.SPEED]: directionalMechanism,
-    [EntityTypeId.TIDE]: directionalMechanism,
-    [EntityTypeId.TIDE_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.SPEED_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.CAROUSEL_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_PINK_SWITCH]: { variants: pressedVariants },
-    [EntityTypeId.COLOR_YELLOW_BLOCK]: { variants: raisedVariants },
-    [EntityTypeId.COLOR_PINK_BLOCK]: { variants: raisedVariants },
-    [EntityTypeId.WIND_SWITCH]: { variants: windSwitchVariants },
-    [EntityTypeId.TRAP]: { variants: activeVariants },
-    [EntityTypeId.MIRROR]: { variants: fourVariants },
-    [EntityTypeId.CAROUSEL]: { variants: carouselVariants },
+    [MapEntityTypeId.SPEED]: { defaultDirection: "right", variants: speedVariants },
+    [MapEntityTypeId.TIDE]: { defaultDirection: "right", variants: tideVariants },
+    [MapEntityTypeId.WINDMILL]: {
+      defaultDirection: "right",
+      variants: windmillVariants,
+    },
+    [MapEntityTypeId.TIDE_SWITCH]: {
+      variants: catalogVariants(MapEntityTypeId.TIDE_SWITCH),
+    },
+    [MapEntityTypeId.SPEED_SWITCH]: {
+      variants: catalogVariants(MapEntityTypeId.SPEED_SWITCH),
+    },
+    [MapEntityTypeId.CAROUSEL_SWITCH]: {
+      variants: catalogVariants(MapEntityTypeId.CAROUSEL_SWITCH),
+    },
+    [MapEntityTypeId.COLOR_SWITCH]: {
+      variants: catalogVariants(MapEntityTypeId.COLOR_SWITCH),
+    },
+    [MapEntityTypeId.COLOR_BLOCK]: {
+      variants: catalogVariants(MapEntityTypeId.COLOR_BLOCK),
+    },
+    [MapEntityTypeId.WIND_SWITCH]: {
+      defaultDirection: "up",
+      variants: catalogVariants(MapEntityTypeId.WIND_SWITCH),
+    },
+    [MapEntityTypeId.TRAP]: { variants: catalogVariants(MapEntityTypeId.TRAP) },
+    [MapEntityTypeId.MIRROR]: { variants: catalogVariants(MapEntityTypeId.MIRROR) },
+    [MapEntityTypeId.CAROUSEL]: {
+      variants: catalogVariants(MapEntityTypeId.CAROUSEL),
+    },
+    [MapEntityTypeId.PORTAL]: {
+      variants: ["blue", "red", "green"].map((channel) => ({
+        label: channel,
+        fields: { channel },
+      })),
+    },
   },
   palette: {
-    groups: [
+    groups: catalogPaletteGroups([
       {
         id: "terrain-overlays",
         label: "地貌对象",
         rows: [
           [
-            { type: EntityTypeId.CRUMBLY_ROCK },
-            { type: EntityTypeId.HIGH_GRASS },
-            { type: EntityTypeId.HIGH_GRASS_OBJECTIVE },
-            { type: EntityTypeId.SNOW },
-            { type: EntityTypeId.PLANK },
-            { type: EntityTypeId.LEAF },
+            { type: MapEntityTypeId.CRUMBLY_ROCK },
+            { type: MapEntityTypeId.HIGH_GRASS },
+            { type: MapEntityTypeId.SNOW },
+            { type: MapEntityTypeId.PLANK },
+            { type: MapEntityTypeId.LEAF },
           ],
         ],
       },
@@ -170,10 +144,10 @@ export const builtinEditorDefinition: EditorDefinition = {
         label: "玩家与人物",
         rows: [
           [
-            { type: EntityTypeId.BOBBY },
-            { type: EntityTypeId.SANDMAN },
-            { type: EntityTypeId.DREAM_MACHINE },
-            { type: EntityTypeId.BEAVER },
+            { type: MapEntityTypeId.BOBBY },
+            { type: MapEntityTypeId.SANDMAN },
+            { type: MapEntityTypeId.DREAM_MACHINE },
+            { type: MapEntityTypeId.BEAVER },
           ],
         ],
       },
@@ -182,27 +156,27 @@ export const builtinEditorDefinition: EditorDefinition = {
         label: "目标与收集",
         rows: [
           [
-            { type: EntityTypeId.START },
-            { type: EntityTypeId.EXIT },
-            { type: EntityTypeId.CARROT },
-            { type: EntityTypeId.EGG_NEST_EMPTY },
-            { type: EntityTypeId.EGG_NEST_FILLED },
-            { type: EntityTypeId.PUSH_GOAL },
+            { type: MapEntityTypeId.START },
+            { type: MapEntityTypeId.EXIT },
+            { type: MapEntityTypeId.CARROT },
+            { type: MapEntityTypeId.EGG },
+            { type: MapEntityTypeId.PUSH_GOAL },
+            { type: MapEntityTypeId.PUSHABLE_ROCK },
           ],
           [
-            { type: EntityTypeId.GOLDEN_CARROT },
-            { type: EntityTypeId.BONUS_COIN },
+            { type: MapEntityTypeId.GOLDEN_CARROT },
+            { type: MapEntityTypeId.BONUS_COIN },
           ],
           [
-            { type: EntityTypeId.SHOP_CLOUD9 },
-            { type: EntityTypeId.SHOP_COIN_RADAR },
-            { type: EntityTypeId.SHOP_DREAM },
-            { type: EntityTypeId.SHOP_MUSIC },
-            { type: EntityTypeId.SHOP_SPEED_SHOES },
-            { type: EntityTypeId.SHOP_STEREO },
-            { type: EntityTypeId.SHOP_SUPER_KEY },
-            { type: EntityTypeId.SHOP_UNAVAILABLE },
-            { type: EntityTypeId.LOCK },
+            { type: MapEntityTypeId.SHOP_CLOUD9_TICKET },
+            { type: MapEntityTypeId.SHOP_COIN_RADAR },
+            { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET },
+            { type: MapEntityTypeId.SHOP_EXTRA_MUSIC },
+            { type: MapEntityTypeId.SHOP_SPEED_SHOES },
+            { type: MapEntityTypeId.SHOP_STEREO_SYSTEM },
+            { type: MapEntityTypeId.SHOP_SUPER_KEY },
+            { type: MapEntityTypeId.SHOP_EMPTY },
+            { type: MapEntityTypeId.LOCK },
           ],
         ],
       },
@@ -211,15 +185,16 @@ export const builtinEditorDefinition: EditorDefinition = {
         label: "道具",
         rows: [
           [
-            { type: EntityTypeId.BEAN },
-            { type: EntityTypeId.BEAN_FIELD },
-            { type: EntityTypeId.GAS },
-            { type: EntityTypeId.MOWER },
-            { type: EntityTypeId.MOWER_PARKING },
-            { type: EntityTypeId.SHOVEL_PICKUP },
-            { type: EntityTypeId.KITE },
-            { type: EntityTypeId.WHIRLWIND },
-            { type: EntityTypeId.LANDING },
+            { type: MapEntityTypeId.BEAN },
+            { type: MapEntityTypeId.BEAN_FIELD },
+            { type: MapEntityTypeId.BEANSTALK },
+            { type: MapEntityTypeId.GAS },
+            { type: MapEntityTypeId.MOWER },
+            { type: MapEntityTypeId.MOWER_PARKING },
+            { type: MapEntityTypeId.SHOVEL_PICKUP },
+            { type: MapEntityTypeId.KITE },
+            { type: MapEntityTypeId.WHIRLWIND },
+            { type: MapEntityTypeId.LANDING },
           ],
         ],
       },
@@ -229,54 +204,95 @@ export const builtinEditorDefinition: EditorDefinition = {
         rows: [
           [
             ...directions.map((variant) => ({
-              type: EntityTypeId.SPEED,
+              type: MapEntityTypeId.SPEED,
               direction: variant.direction!,
             })),
-            { type: EntityTypeId.SPEED_SWITCH },
+            { type: MapEntityTypeId.SPEED_SWITCH },
           ],
           [
             ...directions.map((variant) => ({
-              type: EntityTypeId.TIDE,
+              type: MapEntityTypeId.TIDE,
               direction: variant.direction!,
             })),
-            { type: EntityTypeId.TIDE_SWITCH },
+            { type: MapEntityTypeId.TIDE_SWITCH },
           ],
           [
-            { type: EntityTypeId.COLOR_YELLOW_SWITCH },
-            { type: EntityTypeId.COLOR_PINK_SWITCH },
-            { type: EntityTypeId.COLOR_YELLOW_BLOCK },
-            { type: EntityTypeId.COLOR_PINK_BLOCK },
-            { type: EntityTypeId.TRAP },
+            {
+              type: MapEntityTypeId.COLOR_SWITCH,
+              label: "Yellow Switch",
+              fields: { color: "yellow", state: "state-1" },
+            },
+            {
+              type: MapEntityTypeId.COLOR_SWITCH,
+              label: "Pink Switch",
+              fields: { color: "pink", state: "state-1" },
+            },
+            {
+              type: MapEntityTypeId.COLOR_BLOCK,
+              label: "Yellow Block",
+              fields: { color: "yellow" },
+            },
+            {
+              type: MapEntityTypeId.COLOR_BLOCK,
+              label: "Pink Block",
+              fields: { color: "pink" },
+            },
+            { type: MapEntityTypeId.TRAP },
           ],
           [
-            { type: EntityTypeId.MIRROR },
-            { type: EntityTypeId.CAROUSEL },
-            { type: EntityTypeId.CAROUSEL_SWITCH },
+            { type: MapEntityTypeId.MIRROR, fields: { variant: "right-bottom" } },
+            { type: MapEntityTypeId.CAROUSEL, fields: { variant: "right-top" } },
+            { type: MapEntityTypeId.CAROUSEL_SWITCH },
           ],
           [
-            { type: EntityTypeId.DRAGON },
-            { type: EntityTypeId.ICE_BLOCK },
-            { type: EntityTypeId.PORTAL },
+            { type: MapEntityTypeId.DRAGON },
+            { type: MapEntityTypeId.ICE_BLOCK },
+            { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
           ],
           [
-            { type: EntityTypeId.WINDMILL_DOWN },
-            { type: EntityTypeId.WINDMILL_UP },
-            { type: EntityTypeId.WINDMILL_LEFT },
-            { type: EntityTypeId.WINDMILL_RIGHT },
-            { type: EntityTypeId.WIND_SWITCH },
-            { type: EntityTypeId.CLOUD_GREEN },
-            { type: EntityTypeId.CLOUD_PURPLE },
-            { type: EntityTypeId.CLOUD_RED },
-            { type: EntityTypeId.CLOUD_GRID_GREEN },
-            { type: EntityTypeId.CLOUD_GRID_PURPLE },
-            { type: EntityTypeId.CLOUD_GRID_RED },
+            ...directions.map((variant) => ({
+              type: MapEntityTypeId.WINDMILL,
+              direction: variant.direction!,
+            })),
+            { type: MapEntityTypeId.WIND_SWITCH, direction: "up" },
+            {
+              type: MapEntityTypeId.CLOUD,
+              label: "Green Cloud",
+              fields: { color: "green" },
+            },
+            {
+              type: MapEntityTypeId.CLOUD,
+              label: "Purple Cloud",
+              fields: { color: "purple" },
+            },
+            {
+              type: MapEntityTypeId.CLOUD,
+              label: "Red Cloud",
+              fields: { color: "red" },
+            },
+            {
+              type: MapEntityTypeId.CLOUD_PARKING,
+              label: "Green Cloud Parking",
+              fields: { color: "green" },
+            },
+            {
+              type: MapEntityTypeId.CLOUD_PARKING,
+              label: "Purple Cloud Parking",
+              fields: { color: "purple" },
+            },
+            {
+              type: MapEntityTypeId.CLOUD_PARKING,
+              label: "Red Cloud Parking",
+              fields: { color: "red" },
+            },
           ],
         ],
       },
-    ],
+    ]),
   },
   validators: [
     registeredEntityTypesValidator,
+    requiredEntityFieldsValidator,
     playerPresenceValidator,
     reachTargetValidator,
   ],
@@ -300,23 +316,8 @@ export function applyEditorVariant(
 ): LevelEntity {
   return {
     ...structuredClone(entity),
+    ...(variant.fields ? structuredClone(variant.fields) : {}),
     ...(variant.direction ? { direction: variant.direction } : {}),
-    ...(variant.properties
-      ? {
-          properties: {
-            ...(entity.properties ?? {}),
-            ...structuredClone(variant.properties),
-          },
-        }
-      : {}),
-    ...(variant.state
-      ? {
-          state: {
-            ...(entity.state ?? {}),
-            ...structuredClone(variant.state),
-          },
-        }
-      : {}),
   };
 }
 
@@ -325,4 +326,71 @@ function withPolicy(
   policy: EditorEntityDefinition,
 ): Partial<Record<EntityType, EditorEntityDefinition>> {
   return Object.fromEntries(types.map((type) => [type, policy]));
+}
+
+function catalogVariants(type: EntityType): readonly EditorEntityVariant[] {
+  const variants: EditorEntityVariant[] = [];
+  const seen = new Set<string>();
+  for (const visual of originalTileVisualGroup(type).visuals) {
+    if (visual.role || visual.phase) continue;
+    const { direction, ...fields } = visual.fields;
+    const key = JSON.stringify({ direction, fields });
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (direction === undefined && Object.keys(fields).length === 0) continue;
+    variants.push({
+      label: Object.values(visual.fields).map(String).join(" / "),
+      ...(isDirection(direction) ? { direction } : {}),
+      ...(Object.keys(fields).length > 0 ? { fields } : {}),
+    });
+  }
+  return variants;
+}
+
+function catalogPaletteGroups(
+  layout: readonly EditorPaletteGroup[],
+): readonly EditorPaletteGroup[] {
+  const tileTypes = new Set(
+    originalTileVisualGroups("palette").map((group) => group.type),
+  );
+  const customTypes = new Set<EntityType>([
+    MapEntityTypeId.BOBBY,
+    MapEntityTypeId.PUSH_GOAL,
+    MapEntityTypeId.PUSHABLE_ROCK,
+    MapEntityTypeId.PORTAL,
+  ]);
+  const placed = new Set<EntityType>();
+  const groups = layout.map((group) => ({
+    ...group,
+    rows: group.rows.map((row) => row.flatMap((entry) => {
+      if (customTypes.has(entry.type)) return [entry];
+      if (!tileTypes.has(entry.type) || placed.has(entry.type)) return [];
+      placed.add(entry.type);
+      return catalogPaletteEntries(entry.type);
+    })),
+  }));
+  const missing = [...tileTypes].filter((type) => !placed.has(type));
+  if (missing.length > 0) {
+    groups.push({
+      id: "original-tile-catalog",
+      label: "Original Tile",
+      rows: missing.map((type) => catalogPaletteEntries(type)),
+    });
+  }
+  return groups;
+}
+
+function catalogPaletteEntries(type: EntityType): EditorPaletteEntry[] {
+  const variants = catalogVariants(type);
+  if (variants.length === 0) return [{ type }];
+  return variants.map((variant) => ({
+    type,
+    ...(variant.label ? { label: variant.label } : {}),
+    ...(variant.direction ? { direction: variant.direction } : {}),
+    ...(variant.fields ? { fields: variant.fields } : {}),
+  }));
+}
+
+function isDirection(value: unknown): value is Direction {
+  return value === "up" || value === "right" || value === "down" || value === "left";
 }

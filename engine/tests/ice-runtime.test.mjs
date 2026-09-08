@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
-const ground = (x, y) => ({ type: EntityTypeId.GROUND_C, x, y });
-const ice = (x, y) => ({ type: EntityTypeId.ICE, x, y });
+const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
+const ice = (x, y) => ({ type: MapEntityTypeId.ICE, x, y });
 
 function actorIds(world) {
   return world.query.entitiesWithTrait("player").map((entity) => entity.id);
@@ -41,7 +41,7 @@ test("Ice emits semantic forced moves until Bobby leaves the Ice surface", () =>
       ice(1, 0),
       ice(2, 0),
       ground(3, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = actorIds(world)[0];
@@ -85,8 +85,8 @@ test("Ice stops after a blocked forced move instead of looping", () => {
       ground(0, 0),
       ice(1, 0),
       ground(2, 0),
-      { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 2, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = actorIds(world)[0];
@@ -111,8 +111,8 @@ test("Ice RuntimeAction moves only the Bobby that entered it", () => {
     entities: [
       ground(0, 0), ice(1, 0), ground(2, 0),
       ground(0, 1), ground(1, 1), ground(2, 1),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
     ],
   });
   const [sliding, stationary] = actorIds(world);
@@ -134,7 +134,7 @@ test("Ice inherits the cadence of the movement that entered it", () => {
         ground(0, 0),
         ice(1, 0),
         ground(2, 0),
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 248 },

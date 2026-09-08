@@ -6,6 +6,7 @@ import {
   type InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { EntityType } from "@bobby/model";
 import { computed, ref, watch } from "vue";
 import EditorCellInspector from "./EditorCellInspector.vue";
 import EditorMultiInspector from "./EditorMultiInspector.vue";
@@ -18,14 +19,14 @@ const props = defineProps<{
   authoringPanel: "palette" | "surface";
 }>();
 const emit = defineEmits<{
-  property: [entityIndex: number, key: string, value: string];
-  state: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
-  batchProperty: [type: string, key: string, value: string];
-  batchState: [type: string, key: string, value: string];
+  batchField: [type: string, key: string, value: string];
   batchVariant: [type: string, index: number];
+  batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
 }>();
 
@@ -94,9 +95,9 @@ const visibleModel = computed<InspectorModel>(() => {
       :catalog="catalog"
       :editor="editor"
       @toggle-surface="toggleSurface"
-      @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
-      @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
+      @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
+      @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
       @delete="emit('deleteLayer', $event)"
       @reorder="emit('reorder', $event)"
     />
@@ -109,9 +110,9 @@ const visibleModel = computed<InspectorModel>(() => {
       :catalog="catalog"
       :editor="editor"
       @toggle-surface="toggleSurface"
-      @property="(type, key, value) => emit('batchProperty', type, key, value)"
-      @state="(type, key, value) => emit('batchState', type, key, value)"
+      @field="(type, key, value) => emit('batchField', type, key, value)"
       @variant="(type, index) => emit('batchVariant', type, index)"
+      @surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @delete-type="emit('batchDelete', $event)"
     />
   </aside>

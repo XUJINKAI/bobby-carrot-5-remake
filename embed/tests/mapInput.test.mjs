@@ -50,6 +50,6 @@ test("loadEmbedMap requires one source and rejects invalid maps", async () => {
   );
   await assert.rejects(
     () => loadEmbedMap({ map: payload({ ...level, schemaVersion: 2 }) }),
-    /schemaVersion must be 1/,
+    /schemaVersion.*1/,
   );
 });

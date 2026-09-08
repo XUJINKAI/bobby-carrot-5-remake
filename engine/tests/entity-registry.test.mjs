@@ -1,15 +1,29 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import {
+  MapEntityTypeId,
+  entityMapDefinition,
+  ENTITY_MAP_DEFINITIONS,
+} from "@bobby/model";
 import {
   builtinEntityDefinitions,
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
 } from "../dist/entities/registry.js";
 
-test("所有 canonical EntityTypeId 恰好注册一次", () => {
+test("所有 Map Entity 合同都对应可加载的 Runtime Definition", () => {
+  const registry = createBuiltinEntityRegistry();
+  for (const type of Object.keys(ENTITY_MAP_DEFINITIONS)) {
+    assert.doesNotThrow(
+      () => registry.require(type),
+      type,
+    );
+  }
+});
+
+test("所有 canonical MapEntityTypeId 恰好注册一次", () => {
   const definitions = builtinEntityDefinitions.map((item) => item.type);
-  for (const type of new Set(Object.values(EntityTypeId))) {
+  for (const type of new Set(Object.values(MapEntityTypeId))) {
     assert.equal(
       definitions.filter((candidate) => candidate === type).length,
       1,
@@ -25,24 +39,29 @@ test("Registry 不包含 original/custom identity 前缀", () => {
   }
 });
 
-test("未命名原版 DAT 语义仍是普通 canonical Entity Definition", () => {
+test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  const catalog = createBuiltinEntityCatalog();
-  assert.deepEqual(
-    registry.require("background-variant-001").traits,
-    ["bean-growth-space"],
-  );
-  assert.equal(registry.require("background-variant-001").stackOrder, 0);
-  assert.equal(
-    catalog.require("background-variant-001").presentation.name,
-    "Background Variant 1",
-  );
-  assert.deepEqual(registry.require("walkable-variant-01").traits, ["walkable"]);
-  assert.equal(registry.require("object-variant-001").stackOrder, 100);
-  assert.equal(
-    catalog.require("object-variant-001").presentation.name,
-    "Object Variant 1",
-  );
+  assert.deepEqual(registry.require(MapEntityTypeId.WATER).traits, [
+    "bean-growth-space",
+    "water",
+  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).traits, [
+    "bean-growth-space",
+  ]);
+});
+
+test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
+  const registry = createBuiltinEntityRegistry();
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.TREE).traits, [
+    "bean-growth-space",
+  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).traits, [
+    "bean-growth-space",
+    "water",
+    "waterfall",
+  ]);
 });
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
@@ -52,55 +71,73 @@ test("Start 是普通可步行 Entity，不携带出生语义", () => {
   assert.equal(start.traits.includes("start"), false);
 });
 
-test("首轮合并类型使用 state/direction/property 而不是拆分 type", () => {
-  const registry = createBuiltinEntityRegistry();
-  assert.equal(registry.require("speed-switch").state[0].key, "pressed");
-  assert.equal(registry.require("tide-switch").state[0].key, "pressed");
-  assert.equal(registry.require("carousel-switch").state[0].key, "pressed");
-  assert.deepEqual(
-    registry.require("wind-switch").properties.map((field) => field.key),
-    ["channel"],
-  );
-  assert.deepEqual(
-    registry.require("wind-switch").state.map((field) => field.key),
-    ["active"],
-  );
-  assert.equal(registry.require("trap").state[0].key, "active");
-  assert.equal(registry.require("mirror").state[0].key, "variant");
-  assert.equal(registry.require("carousel").state[0].key, "variant");
-  assert.equal(registry.require("color-yellow-block").state[0].key, "raised");
-  assert.equal(registry.require("color-pink-block").state[0].key, "raised");
+test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
+  const fieldKeys = (type) =>
+    entityMapDefinition(type)?.fields.map((field) => field.key) ?? [];
+  assert.deepEqual(fieldKeys("speed-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("tide-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("carousel-switch"), ["pressed"]);
+  assert.deepEqual(fieldKeys("wind-switch"), ["direction", "active"]);
+  assert.deepEqual(fieldKeys("trap"), ["active"]);
+  assert.deepEqual(fieldKeys("mirror"), ["variant"]);
+  assert.deepEqual(fieldKeys("carousel"), ["variant"]);
+  assert.deepEqual(fieldKeys("color-block"), ["color", "raised"]);
 });
 
-test("Dragon 的 direction 表示龙头实际朝向并通过 footprint 表达三格", () => {
+test("Dragon 只显式声明 left/right body-centered footprint", () => {
   const dragon = createBuiltinEntityRegistry().require("dragon");
-  assert.equal(dragon.footprint.rotateWithDirection, true);
-  assert.equal(dragon.footprint.baseDirection, "left");
+  assert.deepEqual(Object.keys(dragon.footprint.byDirection).sort(), [
+    "left",
+    "right",
+  ]);
   assert.deepEqual(
-    dragon.footprint.parts.map((part) => [part.dx, part.dy, part.role]),
+    dragon.footprint.byDirection.left.map((part) => [
+      part.dx,
+      part.dy,
+      part.role,
+    ]),
     [
-      [0, 0, "head"],
-      [1, 0, "body"],
-      [2, 0, "tail"],
+      [-1, 0, "head"],
+      [0, 0, "body"],
+      [1, 0, "tail"],
+    ],
+  );
+  assert.deepEqual(
+    dragon.footprint.byDirection.right.map((part) => [
+      part.dx,
+      part.dy,
+      part.role,
+    ]),
+    [
+      [1, 0, "head"],
+      [0, 0, "body"],
+      [-1, 0, "tail"],
     ],
   );
 });
 
-test("Sandman / Dream Machine / Beaver 共享 directional footprint 约定", () => {
+test("Sandman / Dream Machine / Beaver 使用固定 footprint", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
-    const definition = registry.require(type);
-    assert.equal(definition.footprint.rotateWithDirection, true, type);
-    assert.equal(definition.footprint.baseDirection, "down", type);
+    const footprint = registry.require(type).footprint;
+    assert.equal("parts" in footprint, true, type);
+    assert.deepEqual(
+      footprint.parts.map((part) => [part.dx, part.dy, part.role]),
+      [
+        [0, 0, "head"],
+        [0, 1, "body"],
+      ],
+      type,
+    );
   }
 });
 
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
-  const fence = registry.require(EntityTypeId.FENCE);
+  const fence = registry.require(MapEntityTypeId.FENCE);
   assert.deepEqual(fence.traits, ["blocking", "fence"]);
   assert.equal(
-    Object.values(EntityTypeId).some((type) => /^fence-\d$/.test(type)),
+    Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,
   );
 });

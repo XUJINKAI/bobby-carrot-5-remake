@@ -1,22 +1,19 @@
-import { LegacyObject } from "./semantic-ids.mjs";
 import {
   decodeDatObject,
   decodeDatTerrain,
+  decodedTileVisual,
   encodeDatObject,
   encodeDatTerrain,
 } from "./mapping.mjs";
 
-const DYNAMIC_DAT_OBJECTS = new Set([
-  LegacyObject.CLOUD_RED,
-  LegacyObject.CLOUD_PURPLE,
-  LegacyObject.CLOUD_GREEN,
-  LegacyObject.LEAF,
-]);
+const DYNAMIC_DAT_OBJECT_TYPES = new Set(["cloud", "leaf"]);
 
 export function deriveDatDynamicSlots(map) {
   return Math.min(
     255,
-    map.objects.filter((object) => DYNAMIC_DAT_OBJECTS.has(object.type)).length,
+    map.objects.filter((object) =>
+      DYNAMIC_DAT_OBJECT_TYPES.has(decodedTileVisual(object.type)?.type)
+    ).length,
   );
 }
 

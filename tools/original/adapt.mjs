@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMapDocument } from "@bobby/model";
 import {
   campaignLevelId,
+  campaignLevelName,
   campaignSequenceForChapter,
   specialSceneIdForSource,
 } from "./public-ids.mjs";
@@ -11,7 +13,7 @@ import {
   RELEASES,
   SOURCE_TILE_SIZE,
 } from "./source-definitions.mjs";
-import { adaptLegacyMap } from "./entity-adapter.mjs";
+import { adaptDecodedMap } from "./entity-adapter.mjs";
 import { deriveOriginalWinCondition } from "./win-condition.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -95,14 +97,9 @@ for (const release of sourceIndex.releases) {
       const kind = bonusOrdinal === null ? "level" : "bonus";
       const sourceRef = sourceReference(release, source, sourceName);
       const document = createMapDocument(
+        source,
         {
-          ...source,
-          objects: adaptObjects(source.objects, id),
-        },
-        {
-          id,
-          name: id.toUpperCase(),
-          music: kind === "bonus" ? "bonus" : "ingame1",
+          name: campaignLevelName(sourceLevelIndex),
         },
       );
       documents.set(id, document);
@@ -134,12 +131,9 @@ const orderedMaps = playerOrder.map((id) => {
   if (!map) throw new Error(`缺少 Original map metadata：${id}`);
   return map;
 });
-for (let index = 0; index < playerOrder.length; index += 1) {
-  const id = playerOrder[index];
+for (const id of playerOrder) {
   const document = documents.get(id);
   if (!document) throw new Error(`缺少 adapted map：${id}`);
-  const next = playerOrder[index + 1];
-  if (next) document.meta.next = next;
   writeJson(path.join(mapsRoot, `${id}.json`), document);
 }
 
@@ -182,9 +176,7 @@ function buildSpecialScenes(index, target) {
     target.set(
       id,
       createMapDocument(source, {
-        id,
         name: specialLabels[id] ?? id,
-        music: "title",
       }),
     );
     result.push({
@@ -199,27 +191,13 @@ function buildSpecialScenes(index, target) {
 }
 
 function createMapDocument(source, meta) {
-  const canonical = adaptLegacyMap(source);
+  const canonical = adaptDecodedMap(source);
   const win = deriveOriginalWinCondition(canonical);
-  return {
+  return parseMapDocument({
     schemaVersion: 1,
     meta,
-    ...canonical,
     ...(win ? { rules: { win } } : {}),
-  };
-}
-
-function adaptObjects(objects, mapId) {
-  return objects.map((object) => {
-    const properties = { ...(object.properties ?? {}) };
-    if (object.type === "sandman")
-      properties.dialogId =
-        properties.dialogId ??
-        `original.${mapId}.sandman-${object.x}-${object.y}`;
-    return {
-      ...object,
-      ...(Object.keys(properties).length > 0 ? { properties } : {}),
-    };
+    ...canonical,
   });
 }
 

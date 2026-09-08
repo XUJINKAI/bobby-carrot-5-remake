@@ -1,29 +1,38 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createDialogBehavior } from "../dist/public.js";
 import { World } from "../dist/world/World.js";
 
-function dialogLevel(dialog) {
+function dialogLevel() {
   return {
     schemaVersion: 1,
     width: 2,
     height: 2,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 0, y: 1 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 1 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 1 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       {
-        type: EntityTypeId.SANDMAN,
+        type: MapEntityTypeId.SANDMAN,
         x: 1,
         y: 0,
-        direction: "down",
-        properties: { dialog },
+
       },
     ],
   };
+}
+
+function dialogWorld(dialog) {
+  const world = new World(dialogLevel());
+  const sandman = world.entities.all().find(
+    (entity) => entity.type === MapEntityTypeId.SANDMAN,
+  );
+  assert.ok(sandman);
+  sandman.state = { dialog };
+  return world;
 }
 
 function move(world, direction) {
@@ -41,8 +50,8 @@ function move(world, direction) {
   });
 }
 
-test("dialog trait emits a raw message directly from JSON", () => {
-  const world = new World(dialogLevel({ message: "hello world!" }));
+test("dialog behavior emits a raw runtime message", () => {
+  const world = dialogWorld({ message: "hello world!" });
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
   assert.equal(
@@ -64,9 +73,7 @@ test("dialog message-ref invokes its registered runtime initializer each time", 
     },
   );
   try {
-    const world = new World(
-      dialogLevel({ "message-ref": "sandman-dialog-test" }),
-    );
+    const world = dialogWorld({ "message-ref": "sandman-dialog-test" });
     assert.equal(
       move(world, "right").events.find((event) => event.type === "dialog")
         ?.text,

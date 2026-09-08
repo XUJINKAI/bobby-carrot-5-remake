@@ -1,22 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
 import { World } from "../dist/world/World.js";
+import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 
 test("Fireball owns its obstacle policy instead of target-side projectile traits", () => {
   const registry = createBuiltinEntityRegistry();
-  const dragon = registry.require(EntityTypeId.DRAGON);
-  const rock = registry.require(EntityTypeId.CRUMBLY_ROCK);
+  const dragon = registry.require(MapEntityTypeId.DRAGON);
+  const rock = registry.require(MapEntityTypeId.CRUMBLY_ROCK);
 
   assert.equal(rock.traits.includes("dragon-fire-blocking"), false);
-  assert.equal(
-    dragon.footprint.parts.some((part) =>
-      part.traits?.includes("dragon-fire-blocking"),
-    ),
-    false,
-  );
+  for (const direction of ["left", "right"]) {
+    assert.equal(
+      resolveFootprintCells(
+        { anchor: { x: 2, y: 0 }, direction },
+        dragon.footprint,
+      ).some((part) => part.traits?.includes("dragon-fire-blocking")),
+      false,
+    );
+  }
 });
 
 test("Fireball stops when the target terrain is outside its propagation domain", () => {
@@ -25,9 +30,9 @@ test("Fireball stops when the target terrain is outside its propagation domain",
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.SNOW, x: 1, y: 0 },
-      { type: EntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+      { type: RuntimeEntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
     ],
   });
 
@@ -44,10 +49,10 @@ test("Fireball still impacts Crumbly Rock without a blocker trait", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.GROUND_C, x: 0, y: 0 },
-      { type: EntityTypeId.GROUND_C, x: 1, y: 0 },
-      { type: EntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: RuntimeEntityTypeId.FIREBALL, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.CRUMBLY_ROCK, x: 1, y: 0 },
     ],
   });
 

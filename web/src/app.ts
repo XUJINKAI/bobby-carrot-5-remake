@@ -1,13 +1,24 @@
 import { BobbyApp } from "./app/BobbyApp.js";
-import { initializeWebI18n } from "./i18n/webI18n.js";
+import {
+  initializeWebI18n,
+  resolveBrowserLocale,
+} from "./i18n/webI18n.js";
 import { installRuntimeSeo } from "./seo/runtimeSeo.js";
+import { initializeWebSettings } from "./storage/settingsStorage.js";
 import { initializeWebTheme } from "./theme/webTheme.js";
 import "../style.css";
 import "../game-ui.css";
 import "../../editor/style.css";
 
-initializeWebI18n();
-initializeWebTheme();
+const browserLocales = navigator.languages.length
+  ? navigator.languages
+  : [navigator.language];
+const settings = initializeWebSettings({
+  locale: resolveBrowserLocale(browserLocales),
+  screenControlEnabled: window.matchMedia("(pointer: coarse)").matches,
+});
+initializeWebI18n(settings.locale);
+initializeWebTheme(settings.theme);
 installRuntimeSeo();
 const root = document.querySelector<HTMLDivElement>("#app");
 if (!root) throw new Error("#app not found");

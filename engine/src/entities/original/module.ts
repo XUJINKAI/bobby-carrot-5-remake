@@ -1,5 +1,11 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
+  ORIGINAL_TILE_ATLASES,
+  originalTileAnimation,
+  originalTileVisual,
+  type JsonPrimitive,
+  type OriginalTileCoordinate,
+  type OriginalTileSource,
   type Direction,
   type EntityType,
   type JsonValue,
@@ -25,8 +31,7 @@ export interface AtlasCell {
 }
 
 interface OriginalAmbientSequence {
-  baseIndex: number;
-  cycleLength: number;
+  frames: readonly OriginalTileSource[];
 }
 
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
@@ -37,11 +42,41 @@ export const SURFACE_STACK_ORDER = 0;
 export const CONTENT_STACK_ORDER = 100;
 export const COVER_STACK_ORDER = 200;
 
-export const cell = (column: number, row: number): AtlasCell => ({ column, row });
+const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
-export function objectCell(index: number): AtlasCell {
-  const linear = 9 + index;
-  return cell(linear % 16, 12 + Math.floor(linear / 16));
+export function tsCoordinateCell(source: OriginalTileCoordinate): AtlasCell {
+  return cell(source.column - 1, source.row - 1);
+}
+
+export function tileCell(
+  type: string,
+  options: {
+    fields?: Readonly<Record<string, JsonPrimitive>>;
+    role?: string;
+    phase?: string;
+  } = {},
+): AtlasCell {
+  return tsCoordinateCell(originalTileVisual({ type, ...options }));
+}
+
+export function tileAnimationCell(
+  type: string,
+  animation: string,
+  frame: number,
+  options: {
+    fields?: Readonly<Record<string, JsonPrimitive>>;
+    role?: string;
+  } = {},
+): AtlasCell {
+  const source = originalTileAnimation({
+    type,
+    id: animation,
+    ...options,
+  }).frames[frame - 1];
+  if (!source || source.atlas !== "ts") {
+    throw new Error(`原版 ts.png 动画帧不存在：${type}/${animation}/${frame}`);
+  }
+  return tsCoordinateCell(source);
 }
 
 export function originalModule(
@@ -145,25 +180,29 @@ function originalAmbientLayer(
 ): ImageVisualLayer | null {
   if (!context.time) return null;
   if (
-    context.entity.type === EntityTypeId.EXIT &&
+    context.entity.type === MapEntityTypeId.EXIT &&
     !exitAnimationReady(context.winState)
   )
     return null;
   const sequence = originalAmbientSequence(
     context.entity.type,
     context.entity.direction,
+    context.entity.state?.variant,
   );
   if (!sequence) return null;
+  const cycleLength = sequence.frames.length + 1;
   const phase =
     Math.floor(Math.max(0, context.time.nowMs) / ORIGINAL_AMBIENT_FRAME_MS) %
-    sequence.cycleLength;
+    cycleLength;
   if (phase === 0) return null;
+  const source = sequence.frames[phase - 1]!;
   return {
     kind: "image",
     asset: ORIGINAL_ANIMATED_TILES_ASSET,
     frameWidth: ORIGINAL_TILE_SIZE,
     frameHeight: ORIGINAL_TILE_SIZE,
-    frameIndex: sequence.baseIndex + phase - 1,
+    frameIndex:
+      (source.row - 1) * ORIGINAL_TILE_ATLASES.ta.columns + source.column - 1,
     anchor: "fill",
   };
 }
@@ -171,41 +210,40 @@ function originalAmbientLayer(
 function originalAmbientSequence(
   type: EntityType,
   direction: Direction | undefined,
+  variant: JsonValue | undefined,
 ): OriginalAmbientSequence | null {
-  if (type === EntityTypeId.EXIT) return { baseIndex: 0, cycleLength: 4 };
-  if (type === EntityTypeId.BONUS_COIN)
-    return { baseIndex: 15, cycleLength: 4 };
-  if (type === EntityTypeId.WINDMILL_UP)
-    return { baseIndex: 18, cycleLength: 3 };
-  if (type === EntityTypeId.WINDMILL_DOWN)
-    return { baseIndex: 20, cycleLength: 3 };
-  if (type === EntityTypeId.WINDMILL_LEFT)
-    return { baseIndex: 22, cycleLength: 3 };
-  if (type === EntityTypeId.WINDMILL_RIGHT)
-    return { baseIndex: 24, cycleLength: 3 };
-  if (type === EntityTypeId.WHIRLWIND)
-    return { baseIndex: 26, cycleLength: 6 };
-  if (type === EntityTypeId.WATER_ANIMATED)
-    return { baseIndex: 39, cycleLength: 8 };
-  if (type === EntityTypeId.WATER_VARIANT_1)
-    return { baseIndex: 46, cycleLength: 3 };
-  if (type === EntityTypeId.WATER_VARIANT_2)
-    return { baseIndex: 48, cycleLength: 3 };
-  if (type === EntityTypeId.WATER_VARIANT_3)
-    return { baseIndex: 50, cycleLength: 3 };
-  if (type === EntityTypeId.SPEED) {
-    const baseIndex = { up: 3, down: 6, left: 9, right: 12 }[
-      direction ?? "right"
-    ];
-    return { baseIndex, cycleLength: 4 };
+  let selector: Parameters<typeof originalTileAnimation>[0] | null = null;
+  if (
+    type === MapEntityTypeId.EXIT ||
+    type === MapEntityTypeId.BONUS_COIN ||
+    type === MapEntityTypeId.WHIRLWIND
+  ) {
+    selector = { type, id: "ambient" };
+  } else if (type === MapEntityTypeId.WINDMILL) {
+    selector = windmillAnimation(direction ?? "right");
+  } else if (type === MapEntityTypeId.WATER && variant === "ripple") {
+    selector = { type, id: "ambient", fields: { variant: "ripple" } };
+  } else if (type === MapEntityTypeId.WATERFALL) {
+    selector = { type, id: "ambient", fields: { variant: String(variant) } };
+  } else if (type === MapEntityTypeId.SPEED || type === MapEntityTypeId.TIDE) {
+    selector = { type, id: "ambient", fields: { direction: direction ?? "right" } };
   }
-  if (type === EntityTypeId.TIDE) {
-    const baseIndex = { up: 31, down: 33, left: 35, right: 37 }[
-      direction ?? "right"
-    ];
-    return { baseIndex, cycleLength: 3 };
+  if (!selector) return null;
+  const frames = originalTileAnimation(selector).frames;
+  if (frames.some((frame) => frame.atlas !== "ta")) {
+    throw new Error(`原版 ambient 动画必须使用 ta.png：${selector.type}/${selector.id}`);
   }
-  return null;
+  return { frames };
+}
+
+function windmillAnimation(
+  direction: Direction,
+): Parameters<typeof originalTileAnimation>[0] {
+  return {
+    type: MapEntityTypeId.WINDMILL,
+    id: "ambient",
+    fields: { direction },
+  };
 }
 
 function exitAnimationReady(
@@ -213,7 +251,7 @@ function exitAnimationReady(
 ): boolean {
   if (!state || state.completed) return false;
   if (state.type === "reach")
-    return state.target === EntityTypeId.EXIT;
+    return state.target === MapEntityTypeId.EXIT;
   if (state.type !== "all") return false;
 
   let pendingExit = false;

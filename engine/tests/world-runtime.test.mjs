@@ -22,12 +22,16 @@ function registry() {
       layer: "object",
       stackOrder: 100,
       footprint: {
-        rotateWithDirection: true,
-        baseDirection: "right",
-        parts: [
-          { dx: 0, dy: 0, role: "head" },
-          { dx: 1, dy: 0, role: "tail" },
-        ],
+        byDirection: {
+          right: [
+            { dx: 0, dy: 0, role: "head" },
+            { dx: 1, dy: 0, role: "tail" },
+          ],
+          down: [
+            { dx: 0, dy: 0, role: "head" },
+            { dx: 0, dy: 1, role: "tail" },
+          ],
+        },
       },
     },
   ]);
@@ -168,7 +172,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
         floor(0, 0), floor(1, 0),
         { type: "player", x: 0, y: 0 },
         { type: "item", x: 1, y: 0 },
-        { type: "grass", x: 1, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       ],
     },
     { entities, behaviors },
@@ -197,7 +201,7 @@ test("layer is semantic and independent from stackOrder", () => {
   assert.equal(inspection.presences.find((item) => item.type === "item").layer, "object");
 });
 
-test("directional footprint rotates from its base direction", () => {
+test("directional footprint uses the explicitly declared direction layout", () => {
   const entities = registry();
   const world = new World(
     {

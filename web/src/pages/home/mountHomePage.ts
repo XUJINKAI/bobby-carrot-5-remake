@@ -1,16 +1,14 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { createDialogBehavior } from "@bobby/engine";
-import { EntityTypeId, type LevelMap } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import {
-  configureShell,
-  loadScreenControlPreference,
-} from "../../shell/shellBridge.js";
+import { configureShell } from "../../shell/shellBridge.js";
+import { getWebSettings } from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
 
@@ -87,19 +85,25 @@ export async function renderHome(
   try {
     session = await createGameSession({
       canvas,
-      level: prepareHomeDemoLevel(demo.level),
+      level: demo.level,
       gameOptions: {
         audio,
         images,
         profile: { superKey: true },
       },
       runtime: {
+        initializeEntityState: (entity) =>
+          entity.type === MapEntityTypeId.SANDMAN
+            ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }
+            : undefined,
         hud: true,
         input: {
           undo: false,
           zoom: false,
           debug: false,
-          screenJoystick: { enabled: loadScreenControlPreference() },
+          screenJoystick: {
+            enabled: getWebSettings().controls.screenControlEnabled,
+          },
         },
       },
     });
@@ -154,18 +158,6 @@ export async function renderHome(
       homeApp.unmount();
     },
   };
-}
-
-function prepareHomeDemoLevel(level: LevelMap): LevelMap {
-  const result = structuredClone(level);
-  for (const entity of result.entities) {
-    if (entity.type !== EntityTypeId.SANDMAN) continue;
-    entity.properties = {
-      ...(entity.properties ?? {}),
-      dialog: { "message-ref": HOME_DEMO_DIALOG_REF },
-    };
-  }
-  return result;
 }
 
 function importHomeMap(

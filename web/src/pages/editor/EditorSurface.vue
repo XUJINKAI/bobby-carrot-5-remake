@@ -3,6 +3,7 @@ import {
   SURFACE_TERRAIN_GROUPS,
   SURFACE_THEMES,
   surfaceTerrain,
+  surfaceVariantPreset,
   type EditorDefinition,
   type SurfaceBrush,
   type SurfacePattern,
@@ -113,7 +114,6 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
   if (auto.kind === "vertical") return "vertical topology";
   if (auto.kind === "fence") return `adjacency · ${auto.variants.length} variants`;
   if (auto.kind === "neighbor") return `neighbor rules · ${auto.rules.length}`;
-  if (auto.kind === "paired-vertical") return "paired vertical";
   return "primary";
 }
 </script>
@@ -145,7 +145,7 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
             <EditorEntityPreview
               v-for="type in theme.preview"
               :key="type"
-              :source="{ type }"
+              :source="surfaceVariantPreset(type)"
               :cell-size="23"
               :images="images"
               :catalog="catalog"
@@ -183,7 +183,7 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
             @mouseleave="tooltip = null"
           >
             <EditorEntityPreview
-              :source="{ type: surfaceTerrain(terrainId).primary }"
+              :source="surfaceVariantPreset(surfaceTerrain(terrainId).primary)"
               :cell-size="size"
               :images="images"
               :catalog="catalog"
@@ -234,7 +234,7 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
           @mouseleave="tooltip = null"
         >
           <EditorEntityPreview
-            :source="{ type: variant.type }"
+            :source="surfaceVariantPreset(variant.type)"
             :cell-size="size"
             :images="images"
             :catalog="catalog"

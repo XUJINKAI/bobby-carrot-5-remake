@@ -200,14 +200,13 @@ async function resolveExploreMapSeo(path: string): Promise<SeoDescriptor> {
     );
   try {
     const document = await fetchJson<{
-      meta: { name: string; description?: string; author?: string };
+      meta: { name: string; author?: string };
     }>(siteUrl(mapAssetUrl(collection, id)));
     const title = normalizeMapTitle(document.meta.name, id);
     const author = document.meta.author ? `，作者 ${document.meta.author}` : "";
-    const detail = document.meta.description ? `。${document.meta.description}` : "。";
     return descriptor(
       `${title} | ${BRAND}`,
-      `在线游玩「${document.meta.name}」${author}${detail}`,
+      `在线游玩「${document.meta.name}」${author}。`,
       path,
     );
   } catch {

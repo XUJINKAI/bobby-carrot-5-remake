@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type {
-  MapCollectionIndex,
   MapCollectionMap,
   MapCollectionSummary,
 } from "../../services/catalog/catalog.js";
+import type { ResolvedMapCollection } from "../../app/pageContracts.js";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
 import ExploreCustomCollection from "./ExploreCustomCollection.vue";
 import ExploreTabs from "./ExploreTabs.vue";
 
 const props = defineProps<{
-  activeCollection: MapCollectionIndex;
+  activeCollection: ResolvedMapCollection;
   collections: MapCollectionSummary[];
   mapsByChapter: Map<string, MapCollectionMap[]>;
   completedIds: Set<string>;
@@ -39,7 +39,7 @@ function summary(): string {
     <ExploreHeader
       :collection="activeCollection.id"
       :title="activeCollection.name"
-      :description="activeCollection.description"
+      :description="activeCollection.description ?? ''"
       :summary="summary()"
       :last-map-id="lastMapId"
       :last-map-label="lastMapLabel"

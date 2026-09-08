@@ -19,10 +19,8 @@ interface LevelEntity {
   type: EntityType;
   x: number;
   y: number;
-  direction?: Direction;
-  properties?: Record<string, JsonValue>;
-  traits?: string[];
-  state?: Record<string, JsonValue>;
+  stackOrder?: number;
+  [field: string]: JsonPrimitive | undefined;
 }
 ```
 
@@ -30,9 +28,13 @@ interface LevelEntity {
 
 `original/` 与 `custom/` 只允许作为源码目录组织方式，便于维护和对照原版；两者必须通过同一个 `EntityRegistry`、同一个 Definition 合同和同一套 World / Editor 流程注册和使用。Registry 不知道 Definition 来自哪个源码目录。
 
-### Entity State
+### Entity 字段与 Runtime State
 
-`properties` 描述 Entity 的实例配置，通常在 gameplay 中保持不变；`state` 描述地图开始时 Entity 所处的可变状态，并直接成为运行时 Entity state 的初值。
+每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。
+
+`LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
+
+地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
 例如同一种 Switch 不再使用 `switch-raised` / `switch-pressed` 两种 type：
 
@@ -41,35 +43,41 @@ interface LevelEntity {
   "type": "speed-switch",
   "x": 7,
   "y": 2,
-  "state": {
-    "pressed": false
-  }
+  "pressed": false
 }
 ```
 
-Behavior 可以把 `pressed` 改为 `true`，Visual Runtime 根据 state 选择对应视觉。纯状态或视觉阶段不应成为持久化 Entity type。
+Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime 根据 runtime state 选择对应视觉。纯状态或视觉阶段不应成为持久化 Entity type。
 
 首轮 canonical 合并规则如下；后续可以精调字段名，但不恢复拆分 type：
 
 | 旧表示 | canonical Entity | 实例状态 / 参数 |
 | --- | --- | --- |
-| `color-yellow-block-raised/lowered` | `color-yellow-block` | `state.raised: boolean` |
-| `color-pink-block-raised/lowered` | `color-pink-block` | `state.raised: boolean` |
+| `color-yellow/pink-block-raised/lowered` | `color-block` | `color` + `raised` |
 | `tide-up/down/left/right` | `tide` | `direction` |
-| `tide-switch-raised/pressed` | `tide-switch` | `state.pressed: boolean` |
-| `speed-switch-raised/pressed` | `speed-switch` | `state.pressed: boolean` |
-| `carousel-switch-raised/pressed` | `carousel-switch` | `state.pressed: boolean` |
-| `wind-switch-{0..3}-on/off` | `wind-switch` | `properties.channel`, `state.active: boolean` |
-| `trap-active/inactive` | `trap` | `state.active: boolean` |
-| `mirror-1/2/3/4` | `mirror` | `state.variant` |
+| `tide-switch-raised/pressed` | `tide-switch` | `pressed` |
+| `speed-switch-raised/pressed` | `speed-switch` | `pressed` |
+| `carousel-switch-raised/pressed` | `carousel-switch` | `pressed` |
+| `wind-switch-{0..3}-on/off` | `wind-switch` | `direction` + `active` |
+| `trap-active/inactive` | `trap` | `active` |
+| `mirror-1/2/3/4` | `mirror` | `variant` |
 | `speed-up/down/left/right` | `speed` | `direction` |
-| `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `state.variant` |
-| `color-yellow-switch-raised/pressed` | `color-yellow-switch` | `state.pressed: boolean` |
-| `color-pink-switch-raised/pressed` | `color-pink-switch` | `state.pressed: boolean` |
+| `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `variant: right-top/left-top/left-bottom/right-bottom/vertical/horizontal` |
+| `color-yellow/pink-switch-raised/pressed` | `color-switch` | `color` + `state` |
 | `dragon-head/body/tail/anim-*` | `dragon` | footprint role + visual/runtime state |
-| `ice-block/ice-melt-*` | `ice-block` | melt stage in `state` |
+| `ice-block/ice-melt-*` | `ice-block` | melt stage 只存在于 runtime state |
 
-地图中的 `state` 只描述开局状态；运行过程中的 motion progress、animation clock、runtime Entity id、Presence、RenderNode 等都不进入 LevelMap。
+原版地图偶尔会把 Palette 图块放在 terrain 层；这类记录使用
+`type: "original-tile"` 与 `variant: "ts-<row>-<column>"`。普通 Surface 与 Object
+使用稳定语义 type。atlas 坐标、selector 与动画帧以
+`model/src/map/entity/original-tile-visuals.json` 为唯一来源；
+`tools/original/dat/` 可以从 DAT byte 的行优先位置推导 atlas 坐标。
+
+同一语义 type 的 atlas variant 可以具有不同地图内语义。Model 负责提供 type、
+variant 与 atlas 坐标的稳定对应关系；Engine 在加载关卡时为具体实例解析 Trait，
+Entity Definition 只登记该 type 所有 variant 共有的 Trait。
+
+Editor Surface 始终按单格持久化。月亮、圣诞树、雪人等视觉拼图由多个同类型、不同 `variant` 的单格 Entity 组成；它们不使用 footprint。Dragon 等 Palette Object 仍按下文的 multi-cell anchor 合同持久化。
 
 ### Bobby 与 Start
 
@@ -79,8 +87,7 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 {
   "type": "bobby",
   "x": 2,
-  "y": 3,
-  "direction": "down"
+  "y": 3
 }
 ```
 
@@ -89,7 +96,7 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 ```json
 [
   { "type": "start", "x": 2, "y": 3 },
-  { "type": "bobby", "x": 2, "y": 3, "direction": "down" }
+  { "type": "bobby", "x": 2, "y": 3 }
 ]
 ```
 
@@ -105,7 +112,7 @@ Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surf
 
 ```json
 [
-  { "type": "ground-c", "x": 4, "y": 3 },
+  { "type": "grass", "x": 4, "y": 3, "variant": "ts-10-1" },
   { "type": "bonus-coin", "x": 4, "y": 3 },
   { "type": "high-grass", "x": 4, "y": 3 }
 ]
@@ -158,8 +165,11 @@ type WinCondition =
 ```
 
 ```json
-{ "type": "fill-all", "target": "egg-nest", "filler": "egg" }
+{ "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" }
 ```
+
+地图中的鸟巢实体使用 `egg`。填充状态由 Engine 在运行时管理；规则中的
+`egg-nest` 与 `egg` 分别匹配鸟巢位置和已填充状态的 Runtime Trait selector。
 
 ```json
 { "type": "reach", "target": "exit" }
@@ -182,7 +192,7 @@ Sokoban 可以使用 Trait selector：
   "type": "all",
   "conditions": [
     { "type": "collect-all", "target": "carrot" },
-    { "type": "fill-all", "target": "egg-nest", "filler": "egg" },
+    { "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" },
     { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
     { "type": "reach", "target": "exit" }
   ]
@@ -204,21 +214,19 @@ Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remai
 ```ts
 interface MapDocument extends LevelMap {
   meta: {
-    id: string;
     name: string;
-    description?: string;
     author?: string;
-    next?: string;
-    music?: string;
   };
 }
 ```
 
-`meta.next` 是同一 collection 中的下一张地图 ID。`/explore/play/<collection>/<id>` 只请求当前地图文件即可完成标题、游玩和下一张导航，不读取 collection `index.json`。
+`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和下一张导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`，地图注记使用顶层 `LevelMap.note`。
+
+`@bobby/model` 的 `parseMapDocument()` 是持久化文档的严格入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口；未知 Entity、未知字段、错误字段值、越界坐标和非法规则都会被拒绝。
 
 ## Editor JSON
 
-Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可附加 authoring metadata，例如 name / author / description。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
+Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 name、author 与顶层 note。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
 
 `BC5R1` 是 JSON 的传输编码版本，不是地图 schemaVersion。
 
@@ -271,7 +279,7 @@ Original Adapter 负责所有历史表示转换，例如：
 - DAT Start terrain -> `start` surface Entity，并在同一坐标生成 Bobby Entity；
 - Dragon object anchor -> `dragon` Entity；
 - `dragon` Entity -> DAT Dragon anchor；
-- 原版 pressed/raised 或 animation-specific id -> 单一 Entity type + `state`；
+- 原版 pressed/raised 或 animation-specific id -> 单一 Entity type + 顶层开局字段；
 - Entity surface/content/cover -> 对应 DAT terrain/object 表达。
 
 Engine、Editor 与通用 Model 不得因为 DAT 限制重新引入 Terrain/Object 分类。

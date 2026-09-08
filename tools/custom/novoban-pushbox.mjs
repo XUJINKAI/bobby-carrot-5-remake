@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { convertXsbBoard, isXsbBoardLine } from "./sokoban-xsb.mjs";
 
@@ -10,31 +11,19 @@ const author = "François Marques";
 
 export function parseNovoban(text) {
   const lines = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
-  if (!text.includes(`Copyright: ${author}`))
-    throw new Error(`NOVOBAN.txt 缺少 Copyright: ${author}`);
+  if (!text.includes(`Copyright: ${author}`)) throw new Error(`NOVOBAN.txt 缺少 Copyright: ${author}`);
   const levels = [];
   let index = 0;
-
   while (index < lines.length) {
     while (index < lines.length && !isXsbBoardLine(lines[index])) index += 1;
     if (index >= lines.length) break;
     const boardStart = index;
     const board = [];
-    while (index < lines.length && isXsbBoardLine(lines[index])) {
-      board.push(lines[index]);
-      index += 1;
-    }
+    while (index < lines.length && isXsbBoardLine(lines[index])) board.push(lines[index++]);
     const title = titleBeforeBoard(lines, boardStart);
     const id = String(levels.length + 1).padStart(2, "0");
-    levels.push({
-      id,
-      title,
-      author,
-      board,
-      level: convertXsbBoard(board, `Novoban ${id} · ${title}`),
-    });
+    levels.push({ id, title, author, board, level: convertXsbBoard(board, `Novoban ${id} · ${title}`) });
   }
-
   validateCollection(levels);
   return levels;
 }
@@ -44,17 +33,8 @@ export function writeNovobanMaps(text) {
   fs.rmSync(outputDirectory, { recursive: true, force: true });
   fs.mkdirSync(outputDirectory, { recursive: true });
   for (const entry of levels) {
-    const document = {
-      schemaVersion: 1,
-      name: `${entry.id} · ${entry.title}`,
-      author: entry.author,
-      description: "",
-      ...entry.level,
-    };
-    fs.writeFileSync(
-      path.join(outputDirectory, `${entry.id}.json`),
-      `${JSON.stringify(document, null, 2)}\n`,
-    );
+    const document = parseMapDocument({ schemaVersion: 1, meta: { name: `${entry.id} · ${entry.title}`, author: entry.author }, ...entry.level });
+    fs.writeFileSync(path.join(outputDirectory, `${entry.id}.json`), `${JSON.stringify(document, null, 2)}\n`);
   }
   return levels;
 }
@@ -66,21 +46,16 @@ function titleBeforeBoard(lines, boardStart) {
     const match = /^;\s*(.+?)\s*$/.exec(line);
     if (!match) throw new Error(`Novoban 地图前缺少标题注释：${line}`);
     const title = match[1].trim();
-    if (!title || title === "Novoban" || title.includes("Copyright:"))
-      throw new Error(`Novoban 地图标题无效：${title || "<missing>"}`);
+    if (!title || title === "Novoban" || title.includes("Copyright:")) throw new Error(`Novoban 地图标题无效：${title || "<missing>"}`);
     return title;
   }
   throw new Error("Novoban 第一张地图缺少标题注释");
 }
 
 function validateCollection(levels) {
-  if (levels.length !== 50)
-    throw new Error(`Novoban 必须包含 50 张地图，实际 ${levels.length}`);
-  if (levels[0]?.title !== "Be ban 10" || levels.at(-1)?.title !== "For ban 5")
-    throw new Error("Novoban 地图顺序与源文件不一致");
-  const titles = new Set(levels.map((level) => level.title));
-  if (titles.size !== levels.length)
-    throw new Error("Novoban 出现重复地图标题");
+  if (levels.length !== 50) throw new Error(`Novoban 必须包含 50 张地图，实际 ${levels.length}`);
+  if (levels[0]?.title !== "Be ban 10" || levels.at(-1)?.title !== "For ban 5") throw new Error("Novoban 地图顺序与源文件不一致");
+  if (new Set(levels.map((level) => level.title)).size !== levels.length) throw new Error("Novoban 出现重复地图标题");
 }
 
 function isMainModule() {

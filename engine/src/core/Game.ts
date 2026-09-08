@@ -51,6 +51,8 @@ import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   CellPosition,
   EntityId,
+  EntityInstance,
+  EntityState,
 } from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
@@ -68,6 +70,10 @@ import {
 } from "./HistoryPolicy.js";
 import type { GameplayState } from "./GameplayState.js";
 
+export type RuntimeEntityStateInitializer = (
+  entity: Readonly<EntityInstance>,
+) => EntityState | null | undefined;
+
 export interface GameRuntimeOptions {
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
@@ -77,6 +83,8 @@ export interface GameRuntimeOptions {
   history?: HistoryPolicy;
   /** Concrete runtime bindings; callers may also call setControlBindings after load. */
   controls?: readonly ControlBinding[];
+  /** Map Entity 实例化后应用的宿主 Runtime state patch；不会进入序列化结果。 */
+  initializeEntityState?: RuntimeEntityStateInitializer;
 }
 
 export interface GameOptions {
@@ -114,6 +122,7 @@ export class Game {
   private readonly bobbyLocomotion: BobbyLocomotionTiming;
   private readonly timing: EngineTiming;
   private readonly historyPolicy: HistoryPolicy;
+  private readonly initializeEntityState: RuntimeEntityStateInitializer | null;
   private configuredControls: readonly ControlBinding[] | null;
   private controlBindings: readonly ControlBinding[] = [];
   private primaryActorIdValue: EntityId | null = null;
@@ -154,6 +163,7 @@ export class Game {
     this.historyPolicy = structuredClone(
       options.runtime?.history ?? DEFAULT_HISTORY_POLICY,
     );
+    this.initializeEntityState = options.runtime?.initializeEntityState ?? null;
     this.configuredControls = options.runtime?.controls
       ? structuredClone(options.runtime.controls)
       : null;
@@ -211,6 +221,18 @@ export class Game {
   private get world(): World {
     if (!this.worldValue) throw new Error("尚未载入关卡");
     return this.worldValue;
+  }
+
+  private applyRuntimeEntityStateInitializer(): void {
+    if (!this.initializeEntityState) return;
+    for (const entity of this.world.entities.all()) {
+      const patch = this.initializeEntityState(structuredClone(entity));
+      if (!patch) continue;
+      entity.state = {
+        ...(entity.state ?? {}),
+        ...structuredClone(patch),
+      };
+    }
   }
 
   get actorIds(): readonly EntityId[] {
@@ -301,6 +323,7 @@ export class Game {
       profile: this.profile,
       economy: this.initialEconomy,
     });
+    this.applyRuntimeEntityStateInitializer();
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.worldClock.reset();
@@ -397,6 +420,7 @@ export class Game {
       : this.initialEconomy;
     Object.assign(this.profile, profile);
     this.worldValue = new World(this.initialLevel, { profile, economy });
+    this.applyRuntimeEntityStateInitializer();
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.worldClock.reset();

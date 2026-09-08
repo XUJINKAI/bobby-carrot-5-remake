@@ -1,26 +1,17 @@
 import type { AudioRuntime } from "@bobby/engine";
 import type { Locale } from "@bobby/i18n";
 import { reactive } from "vue";
-import {
-  loadScreenControlPreference,
-  storeScreenControlPreference,
-} from "../../shell/shellBridge.js";
 import { getWebLocale, setWebLocale } from "../../i18n/webI18n.js";
+import {
+  getWebSettings,
+  updateWebSettings,
+} from "../../storage/settingsStorage.js";
 import {
   getWebTheme,
   setWebTheme,
   type WebTheme,
 } from "../../theme/webTheme.js";
-import {
-  resolveMusicMode,
-  resolveMusicStyle,
-  resolveVolume,
-  type MusicMode,
-} from "./globalPreferences.js";
-
-const MUSIC_ENABLED_KEY = "bobby.musicEnabled";
-const MUSIC_MODE_KEY = "bobby.musicMode";
-const VOLUME_KEY = "bobby.volume";
+import { resolveMusicStyle, type MusicMode } from "./globalPreferences.js";
 
 export interface GlobalSettingsState {
   locale: Locale;
@@ -39,10 +30,12 @@ export function useGlobalSettings(audio: AudioRuntime) {
     Object.assign(state, readState(audio));
   };
   const setLocale = (locale: Locale): void => {
+    updateWebSettings((settings) => ({ ...settings, locale }));
     setWebLocale(locale);
     state.locale = locale;
   };
   const setTheme = (theme: WebTheme): void => {
+    updateWebSettings((settings) => ({ ...settings, theme }));
     setWebTheme(theme);
     state.theme = theme;
     applyResolvedMusicStyle(audio, theme, state.musicMode);
@@ -51,26 +44,41 @@ export function useGlobalSettings(audio: AudioRuntime) {
     setMusicEnabled(!audio.isMusicEnabled());
   };
   const setMusicEnabled = (enabled: boolean): void => {
+    updateWebSettings((settings) => ({
+      ...settings,
+      audio: { ...settings.audio, musicEnabled: enabled },
+    }));
     audio.setMusicEnabled(enabled);
-    localStorage.setItem(MUSIC_ENABLED_KEY, String(enabled));
     state.musicEnabled = enabled;
   };
   const setMusicMode = (mode: MusicMode): void => {
-    localStorage.setItem(MUSIC_MODE_KEY, mode);
+    updateWebSettings((settings) => ({
+      ...settings,
+      audio: { ...settings.audio, musicMode: mode },
+    }));
     state.musicMode = mode;
     applyResolvedMusicStyle(audio, state.theme, mode);
   };
   const setVolume = (value: number): void => {
     const volume = clampVolume(value);
     const gain = volume / 100;
+    updateWebSettings((settings) => ({
+      ...settings,
+      audio: { ...settings.audio, volume },
+    }));
     audio.setMusicGain(gain);
     audio.setSoundGain(gain);
-    localStorage.setItem(VOLUME_KEY, String(volume));
     state.volume = volume;
   };
   const setScreenControl = (enabled: boolean): void => {
+    updateWebSettings((settings) => ({
+      ...settings,
+      controls: { ...settings.controls, screenControlEnabled: enabled },
+    }));
     state.screenControlEnabled = enabled;
-    storeScreenControlPreference(enabled);
+    window.dispatchEvent(
+      new CustomEvent("screen-control-change", { detail: { enabled } }),
+    );
   };
 
   return {
@@ -88,23 +96,24 @@ export function useGlobalSettings(audio: AudioRuntime) {
 
 function applyStoredAudioSettings(audio: AudioRuntime): void {
   const theme = getWebTheme();
-  const musicMode = resolveMusicMode(localStorage.getItem(MUSIC_MODE_KEY));
-  const volume = resolveVolume(localStorage.getItem(VOLUME_KEY));
+  const settings = getWebSettings();
+  const { musicEnabled, musicMode, volume } = settings.audio;
   const gain = volume / 100;
-  audio.setMusicEnabled(localStorage.getItem(MUSIC_ENABLED_KEY) !== "false");
+  audio.setMusicEnabled(musicEnabled);
   audio.setMusicGain(gain);
   audio.setSoundGain(gain);
   applyResolvedMusicStyle(audio, theme, musicMode);
 }
 
 function readState(audio: AudioRuntime): GlobalSettingsState {
+  const settings = getWebSettings();
   return {
     locale: getWebLocale(),
     theme: getWebTheme(),
     musicEnabled: audio.isMusicEnabled(),
-    musicMode: resolveMusicMode(localStorage.getItem(MUSIC_MODE_KEY)),
+    musicMode: settings.audio.musicMode,
     volume: Math.round(audio.getMusicGain() * 100),
-    screenControlEnabled: loadScreenControlPreference(),
+    screenControlEnabled: settings.controls.screenControlEnabled,
   };
 }
 

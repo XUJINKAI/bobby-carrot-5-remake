@@ -1,3 +1,4 @@
+import { BC5R_GAME_ID } from "@bobby/model";
 import {
   CHAPTER_COUNT,
   campaignSequenceForChapter,
@@ -15,12 +16,18 @@ export const ADVENTURE_ITEM_IDS = [
 ] as const;
 export type AdventureItemId = (typeof ADVENTURE_ITEM_IDS)[number];
 
+/** 需要持久化的一次性 Adventure 事件；只接受这里明确登记的 ID。 */
+export const ADVENTURE_EVENT_IDS = ["bonus-key-trial"] as const;
+export type AdventureEventId = (typeof ADVENTURE_EVENT_IDS)[number];
+
 export interface AdventureSave {
   schemaVersion: 1;
-  game: "bc5r";
+  /** 随存档保存的项目来源标识。 */
+  game: typeof BC5R_GAME_ID;
   campaign: {
-    completedLevels: AdventureLevelId[];
-    completedEvents: string[];
+    /** 每章只保存按顺序完成到的最远关卡。 */
+    completedThrough: Record<string, AdventureLevelId>;
+    completedEvents: AdventureEventId[];
     resumeLevelId: AdventureLevelId;
   };
   economy: {
@@ -33,9 +40,9 @@ export interface AdventureSave {
 export function createAdventureSave(): AdventureSave {
   return {
     schemaVersion: 1,
-    game: "bc5r",
+    game: BC5R_GAME_ID,
     campaign: {
-      completedLevels: [],
+      completedThrough: {},
       completedEvents: [],
       resumeLevelId: "1-1",
     },
@@ -56,22 +63,21 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   if (!value || typeof value !== "object")
     throw new Error("存档必须是 JSON object");
   const raw = value as Record<string, unknown>;
-  if (raw.game !== "bc5r") throw new Error("这不是 bc5r 存档");
+  if (raw.game !== BC5R_GAME_ID) throw new Error("这不是 Bobby Carrot 5 Remake 存档");
   if (raw.schemaVersion !== 1)
     throw new Error(`不支持的存档版本：${String(raw.schemaVersion)}`);
   const campaign = objectValue(raw.campaign);
   const economy = objectValue(raw.economy);
-  const completedLevels = stringArray(campaign.completedLevels)
-    .map((id) => parseAdventureLevelId(id)?.id)
-    .filter((id): id is AdventureLevelId => Boolean(id));
+  const completedThrough = normalizeCompletedThrough(campaign.completedThrough);
+  const completedEvents = stringArray(campaign.completedEvents).filter(isAdventureEventId);
   const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
   const items = stringArray(raw.items).filter(isAdventureItemId);
   return {
     schemaVersion: 1,
-    game: "bc5r",
+    game: BC5R_GAME_ID,
     campaign: {
-      completedLevels: unique(completedLevels).sort(compareLevelIds),
-      completedEvents: unique(stringArray(campaign.completedEvents)).sort(),
+      completedThrough,
+      completedEvents: unique(completedEvents).sort(),
       resumeLevelId: parsedResume?.id ?? "1-1",
     },
     economy: {
@@ -87,7 +93,11 @@ export function isAdventureLevelCompleted(
   levelId: string,
 ): boolean {
   const parsed = parseAdventureLevelId(levelId);
-  return parsed !== null && save.campaign.completedLevels.includes(parsed.id);
+  if (!parsed) return false;
+  const sequence = campaignSequenceForChapter(parsed.chapter);
+  const completed = save.campaign.completedThrough[String(parsed.chapter)];
+  return completed !== undefined &&
+    sequence.indexOf(parsed.id) <= sequence.indexOf(completed);
 }
 
 export function isAdventureLevelUnlocked(
@@ -99,7 +109,7 @@ export function isAdventureLevelUnlocked(
   const sequence = campaignSequenceForChapter(parsed.chapter);
   const index = sequence.indexOf(parsed.id);
   if (index <= 0) return index === 0;
-  return save.campaign.completedLevels.includes(sequence[index - 1]!);
+  return isAdventureLevelCompleted(save, sequence[index - 1]!);
 }
 
 export function isAdventureChapterCompleted(
@@ -108,8 +118,18 @@ export function isAdventureChapterCompleted(
 ): boolean {
   if (!Number.isInteger(chapter) || chapter < 1 || chapter > CHAPTER_COUNT)
     return false;
-  return campaignSequenceForChapter(chapter).every((id) =>
-    save.campaign.completedLevels.includes(id),
+  const sequence = campaignSequenceForChapter(chapter);
+  return save.campaign.completedThrough[String(chapter)] === sequence.at(-1);
+}
+
+export function completedAdventureLevelCount(save: AdventureSave): number {
+  const normalized = normalizeAdventureSave(save);
+  return Object.entries(normalized.campaign.completedThrough).reduce(
+    (total, [chapter, completed]) => {
+      const sequence = campaignSequenceForChapter(Number(chapter));
+      return total + sequence.indexOf(completed) + 1;
+    },
+    0,
   );
 }
 
@@ -120,7 +140,7 @@ export function setAdventureResumeLevel(
   const parsed = parseAdventureLevelId(levelId);
   if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
   const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.completedLevels.includes(parsed.id))
+  if (!isAdventureLevelCompleted(next, parsed.id))
     next.campaign.resumeLevelId = parsed.id;
   return normalizeAdventureSave(next);
 }
@@ -132,8 +152,11 @@ export function completeAdventureLevel(
   const parsed = parseAdventureLevelId(levelId);
   if (!parsed) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
   const next = structuredClone(normalizeAdventureSave(save));
-  const alreadyCompleted = next.campaign.completedLevels.includes(parsed.id);
-  if (!alreadyCompleted) next.campaign.completedLevels.push(parsed.id);
+  const alreadyCompleted = isAdventureLevelCompleted(next, parsed.id);
+  if (!alreadyCompleted && !isAdventureLevelUnlocked(next, parsed.id))
+    throw new Error(`Adventure 关卡尚未解锁：${parsed.id}`);
+  if (!alreadyCompleted)
+    next.campaign.completedThrough[String(parsed.chapter)] = parsed.id;
   if (!alreadyCompleted && next.campaign.resumeLevelId === parsed.id) {
     const following = nextAdventureLevelId(parsed.id);
     if (following) next.campaign.resumeLevelId = following;
@@ -143,13 +166,11 @@ export function completeAdventureLevel(
 
 export function completeAdventureEvent(
   save: AdventureSave,
-  eventId: string,
+  eventId: AdventureEventId,
 ): AdventureSave {
-  const id = eventId.trim();
-  if (!id) throw new Error("Event ID 不能为空");
   const next = structuredClone(normalizeAdventureSave(save));
-  if (!next.campaign.completedEvents.includes(id))
-    next.campaign.completedEvents.push(id);
+  if (!next.campaign.completedEvents.includes(eventId))
+    next.campaign.completedEvents.push(eventId);
   return normalizeAdventureSave(next);
 }
 
@@ -183,10 +204,36 @@ function isAdventureItemId(value: string): value is AdventureItemId {
   return (ADVENTURE_ITEM_IDS as readonly string[]).includes(value);
 }
 
+function isAdventureEventId(value: string): value is AdventureEventId {
+  return (ADVENTURE_EVENT_IDS as readonly string[]).includes(value);
+}
+
 function objectValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function normalizeCompletedThrough(value: unknown): Record<string, AdventureLevelId> {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("Adventure Save campaign.completedThrough 必须为 object");
+  const source = value as Record<string, unknown>;
+  const result: Record<string, AdventureLevelId> = {};
+  for (let chapter = 1; chapter <= CHAPTER_COUNT; chapter += 1) {
+    const key = String(chapter);
+    const raw = source[key];
+    if (raw === undefined) continue;
+    const parsed = typeof raw === "string" ? parseAdventureLevelId(raw) : null;
+    if (!parsed || parsed.chapter !== chapter)
+      throw new Error(`Adventure Save campaign.completedThrough.${key} 无效`);
+    result[key] = parsed.id;
+  }
+  const unknown = Object.keys(source).find(
+    (key) => !Object.prototype.hasOwnProperty.call(result, key),
+  );
+  if (unknown !== undefined)
+    throw new Error(`Adventure Save campaign.completedThrough 章节无效：${unknown}`);
+  return result;
 }
 function stringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -202,13 +249,4 @@ function nonNegativeInteger(value: unknown): number {
 }
 function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
-}
-function compareLevelIds(a: AdventureLevelId, b: AdventureLevelId): number {
-  const pa = parseAdventureLevelId(a)!,
-    pb = parseAdventureLevelId(b)!;
-  if (pa.chapter !== pb.chapter) return pa.chapter - pb.chapter;
-  return (
-    campaignSequenceForChapter(pa.chapter).indexOf(a) -
-    campaignSequenceForChapter(pb.chapter).indexOf(b)
-  );
 }

@@ -21,13 +21,15 @@ editor/src
 ```json
 {
   "schemaVersion": 1,
-  "name": "My Level",
-  "author": "optional",
-  "description": "optional",
+  "meta": {
+    "name": "My Level",
+    "author": "optional"
+  },
+  "note": "optional",
   "width": 20,
   "height": 16,
   "entities": [
-    { "type": "ground-c", "x": 0, "y": 0 },
+    { "type": "grass", "x": 0, "y": 0, "variant": "ts-10-1" },
     { "type": "carrot", "x": 4, "y": 8 }
   ]
 }
@@ -86,15 +88,24 @@ Variant 分配支持：
 
 Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，使整体更接近 atlas 预览。Alternate 模式左键选择 A、右键选择 B。
 
+Inspector 编辑 Surface 时复用同一份二维 `rows`，直接显示 atlas visual 网格并高亮当前单元；选择结果写回 canonical type + `variant`。Surface 的 `variant` 不显示为文本下拉框。
+
 Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
 
 Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标区域自动选择 Start / Middle / End visual variant。
 
 Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
 
+Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinition` 和 Engine Definition，
+并读取 Engine Definition 的 `authoring.palette`。Engine 私有临时实体不属于 Map Definition，
+不会进入 Editor；`palette: false` 用于把通过 Surface 等其它入口编辑的 canonical Entity
+排除出 Object Palette。
+
+草下目标通过在同格放置 `high-grass` 与 `carrot` 或 `egg` 创建。云朵停靠格使用带 `color` 的 `cloud-parking`，放置时保留同格基础地形。
+
 ## Multi-cell Object
 
-Dragon、Sandman、Dream Machine、Beaver 等多格对象在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析：
+Dragon、Sandman、Dream Machine、Beaver 等多格 Palette Object 在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析。Surface atlas 单元始终是单格 Entity，视觉拼图使用相同 semantic type 的不同 `ts-*` variant：
 
 - 鼠标指向 body/tail 仍 resolve 到完整 owner；
 - Del 删除完整 owner；
@@ -144,7 +155,7 @@ Share URL fragment
 Editor JSON 与原版 JAR patch 围绕同一套 semantic `LevelMap`：
 
 ```text
-Editor Draft -> Play Test -> bc5r Engine
+Editor Draft -> Play Test -> Bobby Carrot 5 Remake Engine
             \-> Original DAT tooling -> patched JAR -> original Java ME Engine
 ```
 

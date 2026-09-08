@@ -67,19 +67,19 @@ const emit = defineEmits<{
   contextMenu: [request: EditorCanvasContextMenuRequest];
   transform: [cell: Cell, step: number, result: (changed: boolean) => void];
   resize: [edges: EditorResizeEdges];
-  property: [entityIndex: number, key: string, value: string];
-  state: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
+  surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorderLayers: [refsTopToBottom: number[]];
-  batchProperty: [type: string, key: string, value: string];
-  batchState: [type: string, key: string, value: string];
+  batchField: [type: string, key: string, value: string];
   batchVariant: [type: string, index: number];
+  batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
-  metadata: [value: { name: string; author?: string; description?: string }];
+  metadata: [value: { name: string; author?: string }];
   playRestart: [];
   playStop: [];
 }>();
@@ -162,14 +162,14 @@ const emit = defineEmits<{
       :catalog="catalog"
       :editor="editor"
       :authoring-panel="leftPanel"
-      @property="(entityIndex, key, value) => emit('property', entityIndex, key, value)"
-      @state="(entityIndex, key, value) => emit('state', entityIndex, key, value)"
+      @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
+      @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
       @delete-layer="emit('deleteLayer', $event)"
       @reorder="emit('reorderLayers', $event)"
-      @batch-property="(type, key, value) => emit('batchProperty', type, key, value)"
-      @batch-state="(type, key, value) => emit('batchState', type, key, value)"
+      @batch-field="(type, key, value) => emit('batchField', type, key, value)"
       @batch-variant="(type, index) => emit('batchVariant', type, index)"
+      @batch-surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @batch-delete="emit('batchDelete', $event)"
     />
     <EditorLevelInfo
