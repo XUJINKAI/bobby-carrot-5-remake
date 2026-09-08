@@ -2,11 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { prepareCustomCollections } from "../custom/prepare.mjs";
 import { levelFeatures } from "./collection-metadata.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const original = path.join(root, "original");
 const assets = path.join(root, "assets");
+const originalCollection = {
+  id: "original",
+  name: "原版关卡",
+  description:
+    "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
+};
 
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
@@ -29,11 +36,14 @@ export function prepareAssets({ includeDevCollections = false } = {}) {
   fs.mkdirSync(assets, { recursive: true });
   run(process.execPath, ["tools/custom/loma-pushbox.mjs"]);
   run(process.execPath, ["tools/custom/novoban-pushbox.mjs"]);
-  run(process.execPath, [
-    "tools/custom/prepare.mjs",
-    ...(includeDevCollections ? ["--dev"] : []),
-  ]);
+  const customCollections = prepareCustomCollections({
+    development: includeDevCollections,
+  });
   buildOriginalCollection();
+  buildCollectionDiscoveryIndex([
+    { id: originalCollection.id, name: originalCollection.name },
+    ...customCollections,
+  ]);
   buildAdventureIndex();
   fs.rmSync(path.join(assets, "art/hd"), { recursive: true, force: true });
   copyTree(path.join(original, "adapted/art"), path.join(assets, "art"));
@@ -90,8 +100,8 @@ function buildOriginalCollection() {
     path.join(target, "index.json"),
     `${JSON.stringify({
       schemaVersion: 1,
-      name: "原版关卡",
-      description: "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
+      name: originalCollection.name,
+      description: originalCollection.description,
       cardSize: "small",
       filters: originalFilters(),
       chapters: catalog.chapters.map((chapter) => ({
@@ -108,6 +118,15 @@ function buildOriginalCollection() {
       maps,
     }, null, 2)}\n`,
   );
+}
+
+function buildCollectionDiscoveryIndex(collections) {
+  const target = path.join(assets, "maps/index.json");
+  fs.writeFileSync(
+    target,
+    `${JSON.stringify({ schemaVersion: 1, collections }, null, 2)}\n`,
+  );
+  console.log(`构建 Collection discovery index：${collections.length} 个集合。`);
 }
 
 function buildAdventureIndex() {

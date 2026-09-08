@@ -28,10 +28,12 @@ assets/
 {
   "schemaVersion": 1,
   "collections": [
-    { "id": "original", "name": "原版关卡", "description": "...", "order": 0 }
+    { "id": "original", "name": "原版关卡" }
   ]
 }
 ```
+
+该索引由总资产流水线在 Original 与 custom collection 均生成后统一写入。每个 discovery 项只包含 `id` 与 `name`；description 等完整展示信息只存在于对应 collection 的详细索引。
 
 ## `maps/<collection>/index.json`
 
@@ -40,7 +42,6 @@ assets/
 ```json
 {
   "schemaVersion": 1,
-  "id": "original",
   "name": "原版关卡",
   "description": "...",
   "cardSize": "small",

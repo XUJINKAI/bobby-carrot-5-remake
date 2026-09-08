@@ -61,7 +61,6 @@ export interface MapCollectionSummary {
   /** 用于解析 assets/maps/<id>/index.json 的资源路径 ID。 */
   id: string;
   name: string;
-  description?: string;
 }
 
 /** assets/maps/index.json；collections[] 数组顺序即展示与导航顺序。 */

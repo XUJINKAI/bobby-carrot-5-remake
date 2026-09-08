@@ -22,6 +22,17 @@ run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const collectionsIndex = readJson("assets/maps/index.json");
 assertSchemaV1(collectionsIndex, "assets/maps/index.json");
+for (const collection of collectionsIndex.collections) {
+  if (
+    !collection ||
+    typeof collection.id !== "string" || !collection.id ||
+    typeof collection.name !== "string" || !collection.name ||
+    Object.keys(collection).sort().join(",") !== "id,name"
+  )
+    throw new Error(
+      "Runtime collection discovery 项只能包含非空的 id 与 name",
+    );
+}
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
   throw new Error("Runtime collection index 必须包含 original");
 if (

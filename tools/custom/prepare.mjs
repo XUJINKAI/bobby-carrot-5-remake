@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { discoverCollectionSource } from "./collection-source.mjs";
@@ -11,44 +12,39 @@ import {
 const sourceRoot = path.join(root, "custom-maps");
 const outputRoot = path.join(root, "assets/maps");
 const cardSizes = new Set(["small", "medium", "big"]);
-const development = process.argv.includes("--dev");
-const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, "collections.json"), "utf8"));
 
-if (!manifest || typeof manifest !== "object" || manifest.schemaVersion !== 1 || !Array.isArray(manifest.collections))
-  throw new Error("custom-maps/collections.json 必须是 schemaVersion: 1 的 collection manifest");
+export function prepareCustomCollections({ development = false } = {}) {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(sourceRoot, "collections.json"), "utf8"),
+  );
+  if (
+    !manifest ||
+    typeof manifest !== "object" ||
+    manifest.schemaVersion !== 1 ||
+    !Array.isArray(manifest.collections)
+  )
+    throw new Error(
+      "custom-maps/collections.json 必须是 schemaVersion: 1 的 collection manifest",
+    );
 
-fs.mkdirSync(outputRoot, { recursive: true });
-const ids = new Set();
-const collections = manifest.collections.map(buildCollection);
-const visibleCollections = collections.filter((collection) =>
-  isCollectionVisible(collection.visible, development),
-);
+  fs.mkdirSync(outputRoot, { recursive: true });
+  const ids = new Set();
+  const collections = manifest.collections.map((entry) =>
+    buildCollection(entry, ids),
+  );
+  const visibleCollections = collections.filter((collection) =>
+    isCollectionVisible(collection.visible, development),
+  );
 
-fs.writeFileSync(
-  path.join(outputRoot, "index.json"),
-  `${JSON.stringify({
-    schemaVersion: 1,
-    collections: [
-      {
-        id: "original",
-        name: "原版关卡",
-        description: "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
-      },
-      ...visibleCollections.map(({ id, name, description }) => ({
-        id,
-        name,
-        ...(description ? { description } : {}),
-      })),
-    ],
-  }, null, 2)}\n`,
-);
+  for (const collection of collections) writeCollection(collection);
+  console.log(
+    `构建地图 Collection：${collections.length} 个自定义集合 / ${collections.reduce((sum, item) => sum + item.maps.length, 0)} 张自定义地图；${visibleCollections.length} 个进入 discovery index。`,
+  );
 
-for (const collection of collections) writeCollection(collection);
-console.log(
-  `构建地图 Collection：${collections.length + 1} 个集合 / ${collections.reduce((sum, item) => sum + item.maps.length, 0)} 张自定义地图；当前索引展示 ${visibleCollections.length + 1} 个集合。`,
-);
+  return visibleCollections.map(({ id, name }) => ({ id, name }));
+}
 
-function buildCollection(entry) {
+function buildCollection(entry, ids) {
   if (!entry || typeof entry !== "object") throw new Error("collection 定义必须是对象");
   const {
     id,
@@ -128,4 +124,13 @@ function writeCollection(collection) {
 
 function isSlug(value) {
   return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+function isMainModule() {
+  return process.argv[1] &&
+    path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+}
+
+if (isMainModule()) {
+  prepareCustomCollections({ development: process.argv.includes("--dev") });
 }

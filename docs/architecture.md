@@ -330,6 +330,8 @@ assets/maps/<collection>/<map>.json
 
 源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。同一 collection 混合两类地图时，根目录地图先作为无章节内容进入 index，随后按 chapter 与 map ID 排列章节内容。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
+`tools/custom/prepare.mjs` 只生成 custom collection 资产并返回可见摘要；`tools/pipeline/assets.mjs` 在 Original 与 custom collection 全部就绪后统一生成 `assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description 只保存在各自的详细索引。
+
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
 ## Editor
