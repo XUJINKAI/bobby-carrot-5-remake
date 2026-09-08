@@ -18,6 +18,7 @@ if (
     "embed",
     "--force",
   ]);
+run(process.execPath, ["--test", "tools/model/examples.test.mjs"]);
 run(
   process.execPath,
   [

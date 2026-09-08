@@ -72,7 +72,13 @@ function mapDocumentExample() {
       { type: "grass", x: 0, y: 0, variant: "ts-7-1" },
       { type: "speed", x: 2, y: 2, direction: "right" },
       { type: "carousel", x: 4, y: 2, variant: "left-top" },
-      { type: "color-switch", x: 5, y: 2, color: "yellow" },
+      {
+        type: "color-switch",
+        x: 5,
+        y: 2,
+        color: "yellow",
+        state: "state-1",
+      },
       { type: "exit", x: 6, y: 2 },
     ],
   });
