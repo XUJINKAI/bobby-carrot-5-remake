@@ -8,10 +8,12 @@ import type {
 } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
 import { resolveFootprintCells } from "./Footprint.js";
+import { EntitySelectorIndex } from "./EntitySelectorIndex.js";
 
 export class SpatialIndex {
   private readonly cells = new Map<string, EntityPresence[]>();
   private readonly byEntity = new Map<EntityId, EntityPresence[]>();
+  private readonly selectors = new EntitySelectorIndex();
 
   constructor(
     private readonly entities: EntityStore,
@@ -49,6 +51,14 @@ export class SpatialIndex {
     );
   }
 
+  entityIdsWithTrait(trait: EntityTrait): readonly EntityId[] {
+    return this.selectors.withTrait(trait);
+  }
+
+  entityIdsMatching(selector: string): readonly EntityId[] {
+    return this.selectors.matching(selector);
+  }
+
   moveEntity(entityId: EntityId, anchor: CellPosition): void {
     const entity = this.entities.require(entityId);
     this.removeEntity(entityId);
@@ -65,6 +75,7 @@ export class SpatialIndex {
   rebuild(): void {
     this.cells.clear();
     this.byEntity.clear();
+    this.selectors.clear();
     for (const entity of this.entities.all()) this.addEntity(entity);
   }
 
@@ -103,6 +114,7 @@ export class SpatialIndex {
       this.cells.set(key(cell), list);
     });
     this.byEntity.set(entity.id, presences);
+    this.selectors.add(entity, definition, presences);
   }
 
   removeEntity(entityId: EntityId): void {
@@ -116,6 +128,7 @@ export class SpatialIndex {
       else this.cells.delete(cellKey);
     }
     this.byEntity.delete(entityId);
+    this.selectors.remove(entityId);
   }
 }
 

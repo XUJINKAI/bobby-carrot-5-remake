@@ -21,6 +21,8 @@
 
 ## WorldDelta
 
+SpatialIndex 在加载、增删、移动、方向重建与恢复时同步维护 type / Trait 的 Entity 索引。Trait 合并 Definition、实例与全部 footprint Presence，并按 Entity identity 去重、排序。玩家与目标查询复用该索引；机关状态变化仍按既有 phase 顺序结算。
+
 每次 `World.step()` / `World.update()` 返回有序 `WorldDelta[]`。`sequence` 是跨 WorldTick 的权威因果顺序；`worldTick` 与 `worldTimeMs` 表示事实发生在哪个 gameplay 时间点。
 
 Delta 包括：

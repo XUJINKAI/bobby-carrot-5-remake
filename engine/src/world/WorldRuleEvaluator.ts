@@ -117,13 +117,7 @@ export class WorldRuleEvaluator {
   }
 
   private matchingEntityCount(selector: string): number {
-    return this.entities
-      .all()
-      .filter(
-        (entity) =>
-          entity.type === selector ||
-          this.query.entityHasTrait(entity.id, selector),
-      ).length;
+    return this.spatial.entityIdsMatching(selector).length;
   }
 
   private hasSelectorAt(
@@ -138,7 +132,8 @@ export class WorldRuleEvaluator {
 
   private spatialCellsMatching(selector: string): { x: number; y: number }[] {
     const result = new Map<string, { x: number; y: number }>();
-    for (const entity of this.entities.all()) {
+    for (const id of this.spatial.entityIdsMatching(selector)) {
+      const entity = this.entities.require(id);
       const typeMatches = entity.type === selector;
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
         if (!typeMatches && !presence.traits.includes(selector)) continue;
