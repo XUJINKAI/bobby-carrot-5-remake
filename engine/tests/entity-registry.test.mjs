@@ -43,8 +43,10 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 
 test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.SURFACE).traits, []);
-  assert.equal(registry.require(MapEntityTypeId.SURFACE).stackOrder, 0);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATER).traits, [
+    "bean-growth-space",
+    "water",
+  ]);
   assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
   assert.deepEqual(registry.require(MapEntityTypeId.STUMP).traits, [
     "bean-growth-space",

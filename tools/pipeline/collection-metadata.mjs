@@ -1,6 +1,5 @@
 const WATER = new Set([
   "water",
-  "water-ripple",
   "waterfall",
   "tide",
 ]);
@@ -21,7 +20,7 @@ const MECHANICS = [
     "wind",
     (type) =>
       type === "wind-switch" ||
-      type.startsWith("windmill-") ||
+      type === "windmill" ||
       type === "cloud" ||
       type === "cloud-parking",
   ],
@@ -45,7 +44,7 @@ const MECHANICS = [
     (type) =>
       type === "bean" ||
       type === "bean-field" ||
-      type.startsWith("beanstalk-"),
+      type === "beanstalk",
   ],
   ["dragon", (type) => type === "dragon"],
   ["beaver", (type) => type === "beaver" || type === "lock"],

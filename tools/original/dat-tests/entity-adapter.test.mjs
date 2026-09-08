@@ -160,7 +160,7 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
 
 test("Mirror 数字帧与 Carousel 方向在 adapter 边界转换", () => {
   assert.deepEqual(adaptDecodedTerrain(DecodedTerrain.MIRROR_4, 1, 2), [
-    { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: 4 },
+    { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: "left-top" },
   ]);
   assert.deepEqual(
     adaptDecodedTerrain(DecodedTerrain.CAROUSEL_2, 1, 2),
@@ -248,7 +248,7 @@ test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty 
   assert.ok(
     result.entities.some(
       (entity) =>
-        entity.type === MapEntityTypeId.EGG_NEST &&
+        entity.type === MapEntityTypeId.EGG &&
         entity.x === 1 &&
         entity.y === 0,
     ),

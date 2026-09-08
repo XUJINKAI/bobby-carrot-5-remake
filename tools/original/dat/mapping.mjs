@@ -1,5 +1,5 @@
 import { DecodedObject, DecodedTerrain } from "./semantic-ids.mjs";
-import { tsAtlasCell } from "@bobby/model";
+import { originalTileAtlasCell } from "@bobby/model";
 
 const TERRAIN_BY_DAT = new Map([
   [0x4d, DecodedTerrain.SNOW],
@@ -11,11 +11,11 @@ const TERRAIN_BY_DAT = new Map([
   [0x94, DecodedTerrain.ICE],
   [0x95, DecodedTerrain.START],
   [0x96, DecodedTerrain.EXIT],
-  [0x97, DecodedTerrain.SHOP_DREAM],
-  [0x98, DecodedTerrain.SHOP_CLOUD9],
+  [0x97, DecodedTerrain.SHOP_DREAM_MACHINE_TICKET],
+  [0x98, DecodedTerrain.SHOP_CLOUD9_TICKET],
   [0x99, DecodedTerrain.SHOP_SUPER_KEY],
-  [0x9a, DecodedTerrain.SHOP_STEREO],
-  [0x9b, DecodedTerrain.SHOP_MUSIC],
+  [0x9a, DecodedTerrain.SHOP_STEREO_SYSTEM],
+  [0x9b, DecodedTerrain.SHOP_EXTRA_MUSIC],
   [0x9c, DecodedTerrain.SHOP_SPEED_SHOES],
   [0x9d, DecodedTerrain.SHOP_COIN_RADAR],
   [0x9e, DecodedTerrain.SHOP_EMPTY],
@@ -66,8 +66,8 @@ const TERRAIN_BY_DAT = new Map([
 const OBJECT_BY_DAT = new Map([
   [0xc9, DecodedObject.CONSUMED_CARROT],
   [0xca, DecodedObject.CARROT],
-  [0xcb, DecodedObject.EGG_NEST_EMPTY],
-  [0xcc, DecodedObject.EGG_NEST_FILLED],
+  [0xcb, DecodedObject.EGG_EMPTY],
+  [0xcc, DecodedObject.EGG_FILLED],
   [0xcd, DecodedObject.LOCK],
   [0xce, DecodedObject.BEANSTALK_TIP],
   [0xcf, DecodedObject.BEAN],
@@ -130,7 +130,7 @@ export function decodeDatTerrain(byte) {
   const coordinate = tsCoordinateFromByte(code);
   const row = Math.floor(code / 16) + 1;
   const column = (code % 16) + 1;
-  return `${coordinate}:${tsAtlasCell(row, column).name}`;
+  return `${coordinate}:${requireOriginalTile(row, column).name}`;
 }
 
 export function encodeDatTerrain(type) {
@@ -169,7 +169,7 @@ export function decodeDatObject(byte) {
   const code = normalizeByte(byte);
   const row = Math.floor(code / 16) + 1;
   const column = (code % 16) + 1;
-  return `${tsCoordinateFromByte(code)}:${tsAtlasCell(row, column).name}`;
+  return `${tsCoordinateFromByte(code)}:${requireOriginalTile(row, column).name}`;
 }
 
 export function encodeDatObject(type) {
@@ -236,4 +236,11 @@ function normalizeByte(value) {
   if (!Number.isFinite(value))
     throw new Error(`Invalid DAT byte: ${String(value)}`);
   return Math.min(255, Math.max(0, Math.trunc(value))) & 0xff;
+}
+
+function requireOriginalTile(row, column) {
+  const visual = originalTileAtlasCell("ts", row, column);
+  if (!visual)
+    throw new Error(`Original Tile Visual 目录缺少 ts:${row}-${column}`);
+  return visual;
 }

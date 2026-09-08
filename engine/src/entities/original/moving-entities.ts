@@ -25,7 +25,7 @@ import type {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -176,7 +176,6 @@ const movingEntityAction: RuntimeActionDefinition = {
 export const leaf = movingEntityModule(
   EntityTypeId.LEAF,
   "Leaf",
-  "leaf",
   true,
 );
 
@@ -206,13 +205,9 @@ const cloudDefinition: EntityModuleDefinition = {
 export const cloud: EntityModule = originalModule(
   cloudDefinition,
   atlasVisual(cloudDefinition, (context) =>
-    namedCell(
-      context.entity.state?.color === "purple"
-        ? "cloud-purple"
-        : context.entity.state?.color === "green"
-          ? "cloud-green"
-          : "cloud-red",
-    ),
+    tileCell(MapEntityTypeId.CLOUD, {
+      fields: { color: cloudColor(context.entity.state?.color) },
+    }),
   ),
   [{ behavior: movingPlatformBehavior }],
 );
@@ -228,14 +223,15 @@ const cloudParkingDefinition: EntityModuleDefinition = {
 export const cloudParking: EntityModule = originalModule(
   cloudParkingDefinition,
   atlasVisual(cloudParkingDefinition, (context) =>
-    namedCell(`cloud-parking-${cloudColor(context.entity.state?.color)}`),
+    tileCell(MapEntityTypeId.CLOUD_PARKING, {
+      fields: { color: cloudColor(context.entity.state?.color) },
+    }),
   ),
 );
 
 function movingEntityModule(
   type: EntityType,
   name: string,
-  visualId: string,
   ownsAction = false,
 ): EntityModule {
   const definition: EntityModuleDefinition = {
@@ -254,7 +250,7 @@ function movingEntityModule(
     presentation: { name },
   };
   const visual = {
-    ...atlasVisual(definition, namedCell(visualId)),
+    ...atlasVisual(definition, tileCell(type)),
     ...(type === EntityTypeId.LEAF
       ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
       : {}),

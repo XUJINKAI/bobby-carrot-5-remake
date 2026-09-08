@@ -28,7 +28,7 @@ test("Original egg map keeps Exit as the final required objective", () => {
   };
   assert.deepEqual(
     deriveOriginalWinCondition(
-      level(MapEntityTypeId.EGG_NEST, MapEntityTypeId.EXIT),
+      level(MapEntityTypeId.EGG, MapEntityTypeId.EXIT),
     ),
     expected,
   );

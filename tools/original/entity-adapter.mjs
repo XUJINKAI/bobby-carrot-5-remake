@@ -1,7 +1,7 @@
 import {
   EntityTypeId,
   MapEntityTypeId,
-  parseTsCoordinateLabel,
+  parseOriginalTileCoordinateLabel,
   surfaceMappingForTs,
 } from "@bobby/model";
 import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
@@ -20,11 +20,11 @@ const directTerrainTypes = new Set([
   DecodedTerrain.ICE,
   DecodedTerrain.START,
   DecodedTerrain.EXIT,
-  DecodedTerrain.SHOP_DREAM,
-  DecodedTerrain.SHOP_CLOUD9,
+  DecodedTerrain.SHOP_DREAM_MACHINE_TICKET,
+  DecodedTerrain.SHOP_CLOUD9_TICKET,
   DecodedTerrain.SHOP_SUPER_KEY,
-  DecodedTerrain.SHOP_STEREO,
-  DecodedTerrain.SHOP_MUSIC,
+  DecodedTerrain.SHOP_STEREO_SYSTEM,
+  DecodedTerrain.SHOP_EXTRA_MUSIC,
   DecodedTerrain.SHOP_SPEED_SHOES,
   DecodedTerrain.SHOP_COIN_RADAR,
   DecodedTerrain.SHOP_EMPTY,
@@ -50,8 +50,8 @@ const decodedFenceTypes = new Set(
 const directObjectTypes = new Set([
   DecodedObject.CONSUMED_CARROT,
   DecodedObject.CARROT,
-  DecodedObject.EGG_NEST_EMPTY,
-  DecodedObject.EGG_NEST_FILLED,
+  DecodedObject.EGG_EMPTY,
+  DecodedObject.EGG_FILLED,
   DecodedObject.LOCK,
   DecodedObject.BEANSTALK_TIP,
   DecodedObject.BEAN,
@@ -87,8 +87,8 @@ const directObjectTypes = new Set([
 
 const canonicalObjectAliases = new Map([
   [DecodedObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
-  [DecodedObject.EGG_NEST_EMPTY, { type: MapEntityTypeId.EGG_NEST }],
-  [DecodedObject.EGG_NEST_FILLED, { type: MapEntityTypeId.EGG_NEST }],
+  [DecodedObject.EGG_EMPTY, { type: MapEntityTypeId.EGG }],
+  [DecodedObject.EGG_FILLED, { type: MapEntityTypeId.EGG }],
   [DecodedObject.BEANSTALK_TIP, { type: MapEntityTypeId.BEANSTALK }],
   [DecodedObject.WINDMILL_UP, { type: MapEntityTypeId.WINDMILL, direction: "up" }],
   [DecodedObject.WINDMILL_DOWN, { type: MapEntityTypeId.WINDMILL, direction: "down" }],
@@ -121,7 +121,7 @@ export function adaptDecodedMap(map, options = {}) {
       decodedObjectSourceSemantic(object.type) === DecodedObject.CARROT,
   )
     ? MapEntityTypeId.CARROT
-    : MapEntityTypeId.EGG_NEST;
+    : MapEntityTypeId.EGG;
   for (let y = 0; y < map.height; y += 1) {
     const row = map.terrain[y];
     if (!row || row.length !== map.width) {
@@ -170,7 +170,14 @@ export function adaptDecodedMap(map, options = {}) {
 
 export function adaptDecodedTerrain(type, x, y, options = {}) {
   const coordinateType = decodedAtlasCoordinate(type);
+  const surface = coordinateType
+    ? canonicalTerrainEntity(coordinateType, x, y)
+    : null;
+  if (surface) return [surface];
   type = decodedTerrainSourceSemantic(type);
+  if (type === DecodedTerrain.WATER) {
+    return [entity(MapEntityTypeId.WATER, x, y, { variant: "still" })];
+  }
   if (type === DecodedTerrain.SNOW) {
     return [
       entity(MapEntityTypeId.GRASS, x, y, { variant: "ts-10-2" }),
@@ -200,7 +207,9 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
     return [
       entity(switchState.type, x, y, {
         ...(switchState.color ? { color: switchState.color } : {}),
-        ...(switchState.pressed ? { pressed: true } : {}),
+        ...(switchState.color
+          ? { state: switchState.pressed ? "state-2" : "state-1" }
+          : switchState.pressed ? { pressed: true } : {}),
       }),
     ];
   }
@@ -229,9 +238,12 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 
   const mirror = /^mirror-([1-4])$/.exec(type);
   if (mirror) {
+    const correspondence = correspondenceByDecoded("mirror", type);
+    if (!correspondence)
+      throw new Error(`Mirror decoded identity 未登记：${type}`);
     return [
       entity(EntityTypeId.MIRROR, x, y, {
-        variant: Number(mirror[1]),
+        variant: correspondence.variant,
       }),
     ];
   }
@@ -262,7 +274,11 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
 
   if (directTerrainTypes.has(type)) return [entity(type, x, y)];
   if (coordinateType) {
-    return [canonicalTerrainEntity(coordinateType, x, y)];
+    const mapped = canonicalTerrainEntity(coordinateType, x, y);
+    if (mapped) return [mapped];
+    return [entity(MapEntityTypeId.ORIGINAL_TILE, x, y, {
+      variant: coordinateType,
+    })];
   }
   throw new Error(`Unsupported decoded terrain type: ${type}`);
 }
@@ -341,12 +357,10 @@ function foldedPressedSwitch(type) {
 }
 
 function canonicalTerrainEntity(type, x, y) {
-  const coordinate = parseTsCoordinateLabel(type);
+  const coordinate = parseOriginalTileCoordinateLabel(type);
   if (!coordinate) return entity(type, x, y);
   const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
-  return mapping
-    ? entity(mapping.type, x, y, mapping.fields ?? {})
-    : entity(MapEntityTypeId.SURFACE, x, y, { variant: type });
+  return mapping ? entity(mapping.type, x, y, mapping.fields ?? {}) : null;
 }
 
 function directionSuffix(type, prefix) {

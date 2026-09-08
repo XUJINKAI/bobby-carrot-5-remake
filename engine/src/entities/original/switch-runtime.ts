@@ -21,7 +21,7 @@ export const colorSwitchBehavior: Behavior = {
         continue;
       commands.setState(entity.id, {
         ...entity.state,
-        pressed: entity.state?.pressed !== true,
+        state: entity.state?.state === "state-2" ? "state-1" : "state-2",
       });
     }
 

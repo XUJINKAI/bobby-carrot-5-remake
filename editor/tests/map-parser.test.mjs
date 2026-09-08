@@ -12,22 +12,22 @@ function documentWith(entities) {
   };
 }
 
-test("鸟巢实体与填充状态 selector 使用各自的合同", () => {
+test("egg 实体与填充规则使用稳定合同", () => {
   const document = {
-    ...documentWith([{ type: "egg-nest", x: 1, y: 1 }]),
-    rules: { win: { type: "fill-all", target: "egg-nest", filler: "egg" } },
+    ...documentWith([{ type: "egg", x: 1, y: 1 }]),
+    rules: { win: { type: "fill-all", target: "egg", filler: "egg" } },
   };
   assert.deepEqual(parseMapDocument(document), document);
   assert.throws(
-    () => parseMapDocument(documentWith([{ type: "egg", x: 1, y: 1 }])),
+    () => parseMapDocument(documentWith([{ type: "egg-nest", x: 1, y: 1 }])),
     /未知 Entity type/,
   );
 });
 
-test("Map parser 接受 canonical Entity 和带坐标 variant 的临时 Surface", () => {
+test("Map parser 接受 canonical Entity 和显式 Surface variant", () => {
   const document = documentWith([
     { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
-    { type: "surface", x: 1, y: 0, variant: "ts-14-10" },
+    { type: "water", x: 1, y: 0, variant: "ripple" },
     { type: "sandman", x: 1, y: 1, dialogue: "测试对白" },
   ]);
   assert.deepEqual(parseMapDocument(document), document);
@@ -64,13 +64,13 @@ test("Map parser 拒绝未知 Entity、未知字段和错误字段值", () => {
 
 test("LevelMap parser 校验 MapDocument 后只返回 gameplay 字段", () => {
   const document = documentWith([
-    { type: "surface", x: 1, y: 2, variant: "ts-14-10" },
+    { type: "water", x: 1, y: 2, variant: "ripple" },
   ]);
   assert.deepEqual(parseLevelMap(document), {
     schemaVersion: 1,
     width: 3,
     height: 3,
-    entities: [{ type: "surface", x: 1, y: 2, variant: "ts-14-10" }],
+    entities: [{ type: "water", x: 1, y: 2, variant: "ripple" }],
   });
 });
 
@@ -78,7 +78,7 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
   assert.throws(
     () =>
       parseMapDocument(
-        documentWith([{ type: "surface", x: 3, y: 0, variant: "ts-14-10" }]),
+        documentWith([{ type: "water", x: 3, y: 0, variant: "ripple" }]),
       ),
     /坐标.*超出/,
   );

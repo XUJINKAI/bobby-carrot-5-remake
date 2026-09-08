@@ -8,7 +8,8 @@ import { bobbyMountId } from "../player/BobbyState.js";
 import {
   CONTENT_STACK_ORDER,
   COVER_STACK_ORDER,
-  namedCell,
+  tileAnimationCell,
+  tileCell,
   staticEntity,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -24,7 +25,7 @@ const fillEggNestOnLeave: Behavior = {
     const source = self.entity;
     commands.destroy(source.id);
     commands.spawn({
-      type: EntityTypeId.EGG_NEST_FILLED,
+      type: EntityTypeId.EGG_FILLED,
       x: source.anchor.x,
       y: source.anchor.y,
       ...(source.direction ? { direction: source.direction } : {}),
@@ -41,7 +42,7 @@ const fillEggNestOnLeave: Behavior = {
 function surface(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof namedCell>,
+  atlas: ReturnType<typeof tileCell>,
   traits: EntityModuleDefinition["traits"] = ["walkable"],
   palette = true,
 ): EntityModule {
@@ -61,7 +62,7 @@ function surface(
 function runtimeOnlyContent(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof namedCell>,
+  atlas: ReturnType<typeof tileCell>,
   traits: EntityModuleDefinition["traits"] = [],
 ): EntityModule {
   const module = content(type, name, atlas, traits);
@@ -74,7 +75,7 @@ function runtimeOnlyContent(
 function content(
   type: EntityModuleDefinition["type"],
   name: string,
-  atlas: ReturnType<typeof namedCell>,
+  atlas: ReturnType<typeof tileCell>,
   traits: EntityModuleDefinition["traits"] = [],
 ): EntityModule {
   return staticEntity(
@@ -90,31 +91,63 @@ function content(
 }
 
 export const staticSurfaceModules: readonly EntityModule[] = [
-  surface(EntityTypeId.START, "Start", namedCell("start")),
+  surface(EntityTypeId.START, "Start", tileCell(EntityTypeId.START)),
   surface(
     EntityTypeId.SHOVEL_CLEARED_GROUND,
     "Shovel Cleared Ground",
-    namedCell("shovel-cleared-ground"),
+    tileCell("snow-cloud", { fields: { variant: "ts-8-13" } }),
     ["walkable"],
     false,
   ),
-  surface(EntityTypeId.EXIT, "Exit", namedCell("exit"), [
+  surface(EntityTypeId.EXIT, "Exit", tileCell(EntityTypeId.EXIT), [
     "walkable",
     "exit",
     "requires-unmounted-reach",
   ]),
-  surface(EntityTypeId.SHOP_DREAM, "Dream Shop", namedCell("shop-dream")),
-  surface(EntityTypeId.SHOP_CLOUD9, "Cloud 9 Shop", namedCell("shop-cloud9")),
-  surface(EntityTypeId.SHOP_SUPER_KEY, "Super Key Shop", namedCell("shop-super-key")),
-  surface(EntityTypeId.SHOP_STEREO, "Stereo Shop", namedCell("shop-stereo")),
-  surface(EntityTypeId.SHOP_MUSIC, "Music Shop", namedCell("shop-music")),
-  surface(EntityTypeId.SHOP_SPEED_SHOES, "Speed Shoes Shop", namedCell("shop-speed-shoes")),
-  surface(EntityTypeId.SHOP_COIN_RADAR, "Coin Radar Shop", namedCell("shop-coin-radar")),
-  surface(EntityTypeId.SHOP_EMPTY, "Empty Shop", namedCell("shop-empty")),
+  surface(
+    EntityTypeId.SHOP_DREAM_MACHINE_TICKET,
+    "Dream Machine Ticket",
+    tileCell(EntityTypeId.SHOP_DREAM_MACHINE_TICKET),
+  ),
+  surface(
+    EntityTypeId.SHOP_CLOUD9_TICKET,
+    "Cloud 9 Ticket",
+    tileCell(EntityTypeId.SHOP_CLOUD9_TICKET),
+  ),
+  surface(
+    EntityTypeId.SHOP_SUPER_KEY,
+    "Super Key",
+    tileCell(EntityTypeId.SHOP_SUPER_KEY),
+  ),
+  surface(
+    EntityTypeId.SHOP_STEREO_SYSTEM,
+    "Stereo System",
+    tileCell(EntityTypeId.SHOP_STEREO_SYSTEM),
+  ),
+  surface(
+    EntityTypeId.SHOP_EXTRA_MUSIC,
+    "Extra Music",
+    tileCell(EntityTypeId.SHOP_EXTRA_MUSIC),
+  ),
+  surface(
+    EntityTypeId.SHOP_SPEED_SHOES,
+    "Speed Shoes",
+    tileCell(EntityTypeId.SHOP_SPEED_SHOES),
+  ),
+  surface(
+    EntityTypeId.SHOP_COIN_RADAR,
+    "Coin Radar",
+    tileCell(EntityTypeId.SHOP_COIN_RADAR),
+  ),
+  surface(
+    EntityTypeId.SHOP_EMPTY,
+    "Empty Shop",
+    tileCell(EntityTypeId.SHOP_EMPTY),
+  ),
   surface(
     EntityTypeId.SHOVEL_PICKUP,
     "Shovel Pickup",
-    namedCell("shovel-pickup"),
+    tileCell(EntityTypeId.SHOVEL_PICKUP),
     ["walkable", "pickup"],
   ),
 ];
@@ -145,9 +178,12 @@ const highGrassObjectiveDefinition: EntityModuleDefinition = {
 };
 
 export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(snowDefinition, namedCell("snow")),
-  staticEntity(highGrassDefinition, namedCell("high-grass")),
-  staticEntity(highGrassObjectiveDefinition, namedCell("high-grass-objective")),
+  staticEntity(snowDefinition, tileCell(EntityTypeId.SNOW)),
+  staticEntity(highGrassDefinition, tileCell(EntityTypeId.HIGH_GRASS)),
+  staticEntity(
+    highGrassObjectiveDefinition,
+    tileCell(EntityTypeId.HIGH_GRASS, { phase: "objective" }),
+  ),
 ];
 
 const consumedCarrotDefinition: EntityModuleDefinition = {
@@ -166,7 +202,7 @@ const carrotDefinition: EntityModuleDefinition = {
   presentation: { name: "Carrot" },
 };
 const emptyEggNestDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.EGG_NEST_EMPTY,
+  type: EntityTypeId.EGG_EMPTY,
   authoring: { palette: false },
   traits: ["egg-nest"],
   layer: "object",
@@ -174,7 +210,7 @@ const emptyEggNestDefinition: EntityModuleDefinition = {
   presentation: { name: "Empty Egg Nest" },
 };
 const filledEggNestDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.EGG_NEST_FILLED,
+  type: EntityTypeId.EGG_FILLED,
   authoring: { palette: false },
   traits: ["egg-nest", "egg", "blocking"],
   layer: "object",
@@ -183,16 +219,19 @@ const filledEggNestDefinition: EntityModuleDefinition = {
 };
 
 export const staticContentModules: readonly EntityModule[] = [
-  staticEntity(consumedCarrotDefinition, namedCell("carrot-consumed")),
-  staticEntity(carrotDefinition, namedCell("carrot")),
-  staticEntity(emptyEggNestDefinition, namedCell("egg-nest-empty"), [
+  staticEntity(
+    consumedCarrotDefinition,
+    tileCell(EntityTypeId.CARROT, { phase: "consumed" }),
+  ),
+  staticEntity(carrotDefinition, tileCell(EntityTypeId.CARROT)),
+  staticEntity(emptyEggNestDefinition, tileCell("egg"), [
     { behavior: fillEggNestOnLeave },
   ]),
-  staticEntity(filledEggNestDefinition, namedCell("egg-nest-filled")),
+  staticEntity(filledEggNestDefinition, tileCell("egg", { phase: "filled" })),
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_TIP,
     "Beanstalk Tip",
-    namedCell("beanstalk-tip"),
+    tileCell("beanstalk", { role: "tip" }),
     [
       "terrain-overlay",
       "climbable",
@@ -200,28 +239,48 @@ export const staticContentModules: readonly EntityModule[] = [
       "mower-conditional-overlay",
     ],
   ),
-  content(EntityTypeId.BEAN, "Bean", namedCell("bean"), ["pickup"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_UP, "Windmill Up", namedCell("windmill-up"), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_DOWN, "Windmill Down", namedCell("windmill-down"), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_LEFT, "Windmill Left", namedCell("windmill-left"), ["blocking", "windmill"]),
-  runtimeOnlyContent(EntityTypeId.WINDMILL_RIGHT, "Windmill Right", namedCell("windmill-right"), ["blocking", "windmill"]),
+  content(EntityTypeId.BEAN, "Bean", tileCell(EntityTypeId.BEAN), ["pickup"]),
+  runtimeOnlyContent(
+    EntityTypeId.WINDMILL_UP,
+    "Windmill Up",
+    tileCell("windmill", { fields: { direction: "up" } }),
+    ["blocking", "windmill"],
+  ),
+  runtimeOnlyContent(
+    EntityTypeId.WINDMILL_DOWN,
+    "Windmill Down",
+    tileCell("windmill", { fields: { direction: "down" } }),
+    ["blocking", "windmill"],
+  ),
+  runtimeOnlyContent(
+    EntityTypeId.WINDMILL_LEFT,
+    "Windmill Left",
+    tileCell("windmill", { fields: { direction: "left" } }),
+    ["blocking", "windmill"],
+  ),
+  runtimeOnlyContent(
+    EntityTypeId.WINDMILL_RIGHT,
+    "Windmill Right",
+    tileCell("windmill", { fields: { direction: "right" } }),
+    ["blocking", "windmill"],
+  ),
   runtimeOnlyContent(
     EntityTypeId.PLANK_CRUMBLING,
     "Crumbling Plank",
-    namedCell("plank-crumbling-1"),
+    tileAnimationCell(EntityTypeId.PLANK, "crumbling", 1),
     ["blocking"],
   ),
   runtimeOnlyContent(
     EntityTypeId.PLANK_FRAGMENT,
     "Plank Fragment",
-    namedCell("plank-crumbling-2"),
+    tileAnimationCell(EntityTypeId.PLANK, "crumbling", 2),
     ["blocking"],
   ),
-  content(EntityTypeId.GAS, "Gas", namedCell("gas"), ["pickup"]),
+  content(EntityTypeId.GAS, "Gas", tileCell(EntityTypeId.GAS), ["pickup"]),
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
-    namedCell("beanstalk-middle"),
+    tileCell("beanstalk", { role: "middle" }),
     [
       "terrain-overlay",
       "climbable",
@@ -232,21 +291,25 @@ export const staticContentModules: readonly EntityModule[] = [
   runtimeOnlyContent(
     EntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
-    namedCell("beanstalk-base"),
+    tileCell("beanstalk", { role: "base" }),
     ["climbable"],
   ),
-  runtimeOnlyContent(EntityTypeId.BEAN_SPROUT, "Bean Sprout", namedCell("bean-sprout")),
-  content(EntityTypeId.KITE, "Kite", namedCell("kite"), ["pickup"]),
+  runtimeOnlyContent(
+    EntityTypeId.BEAN_SPROUT,
+    "Bean Sprout",
+    tileCell("beanstalk", { phase: "sprout" }),
+  ),
+  content(EntityTypeId.KITE, "Kite", tileCell(EntityTypeId.KITE), ["pickup"]),
   content(
     EntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
-    namedCell("golden-carrot"),
+    tileCell(EntityTypeId.GOLDEN_CARROT),
     ["collectible", "golden-carrot"],
   ),
   content(
     EntityTypeId.BONUS_COIN,
     "Bonus Coin",
-    namedCell("bonus-coin"),
+    tileCell(EntityTypeId.BONUS_COIN),
     ["collectible", "bonus-coin"],
   ),
 ];

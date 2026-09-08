@@ -98,9 +98,10 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "water-ripple",
+      "type": "water",
       "x": 2,
-      "y": 1
+      "y": 1,
+      "variant": "ripple"
     },
     {
       "type": "tide",
@@ -140,7 +141,7 @@
       "type": "mirror",
       "x": 8,
       "y": 1,
-      "variant": 1
+      "variant": "right-bottom"
     },
     {
       "type": "trap",
@@ -204,7 +205,7 @@
       "x": 6,
       "y": 2,
       "color": "yellow",
-      "pressed": false
+      "state": "state-1"
     },
     {
       "type": "color-block",

@@ -12,7 +12,8 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileAnimationCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -164,11 +165,13 @@ const visual: VisualDefinition = {
 };
 
 function dragonAtlasCell(role: string | undefined, attackFrame: unknown) {
-  if (role === "body") return namedCell("dragon-body");
-  if (role === "tail") return namedCell("dragon-tail");
-  if (attackFrame === 1) return namedCell("dragon-fire-1");
-  if (attackFrame === 2) return namedCell("dragon-fire-2");
-  return namedCell("dragon-head");
+  if (role === "body") return tileCell(EntityTypeId.DRAGON, { role: "body" });
+  if (role === "tail") return tileCell(EntityTypeId.DRAGON, { role: "tail" });
+  if (attackFrame === 1)
+    return tileAnimationCell(EntityTypeId.DRAGON, "fire", 1, { role: "head" });
+  if (attackFrame === 2)
+    return tileAnimationCell(EntityTypeId.DRAGON, "fire", 2, { role: "head" });
+  return tileCell(EntityTypeId.DRAGON, { role: "head" });
 }
 
 const base = originalModule(definition, visual, [

@@ -52,9 +52,9 @@ function expectAnimated(type, frameIndex, direction, variant) {
 }
 
 test("original ta.png ambient phase zero keeps the static ts.png atlas frame", () => {
-  assert.equal(resolveAt(MapEntityTypeId.WATER_RIPPLE, 0).kind, "atlas");
+  assert.equal(resolveAt(MapEntityTypeId.WATER, 0, undefined, undefined, "ripple").kind, "atlas");
   assert.equal(
-    resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS * 8).kind,
+    resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS * 8, undefined, undefined, "ripple").kind,
     "atlas",
   );
 });
@@ -67,7 +67,7 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
     [EntityTypeId.WINDMILL_LEFT, 22],
     [EntityTypeId.WINDMILL_RIGHT, 24],
     [EntityTypeId.WHIRLWIND, 26],
-    [MapEntityTypeId.WATER_RIPPLE, 39],
+    [MapEntityTypeId.WATER, 39, "ripple"],
     [MapEntityTypeId.WATERFALL, 46, "top"],
     [MapEntityTypeId.WATERFALL, 48, "middle"],
     [MapEntityTypeId.WATERFALL, 50, "bottom"],
@@ -138,8 +138,8 @@ test("original ta.png Speed and Tide mappings preserve DAT direction order", () 
 });
 
 test("original ta.png phase advances every 248ms without WorldTick input", () => {
-  const phase1 = resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS);
-  const phase2 = resolveAt(MapEntityTypeId.WATER_RIPPLE, AMBIENT_STEP_MS * 2);
+  const phase1 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS, undefined, undefined, "ripple");
+  const phase2 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS * 2, undefined, undefined, "ripple");
   assert.equal(phase1.kind, "image");
   assert.equal(phase2.kind, "image");
   assert.equal(phase1.frameIndex, 39);

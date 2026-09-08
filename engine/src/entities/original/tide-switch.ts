@@ -6,7 +6,7 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  namedCell,
+  tileCell,
   originalModule,
   pressedState,
   SURFACE_STACK_ORDER,
@@ -23,9 +23,9 @@ const definition: EntityModuleDefinition = {
 export const tideSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.pressed === true
-      ? namedCell("tide-switch-pressed")
-      : namedCell("tide-switch-raised"),
+    tileCell(EntityTypeId.TIDE_SWITCH, {
+      fields: { pressed: context.entity.state?.pressed === true },
+    }),
   ),
   [{ behavior: tideSwitchBehavior }],
 );

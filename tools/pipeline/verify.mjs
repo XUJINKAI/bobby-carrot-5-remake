@@ -280,7 +280,7 @@ function assertOriginalWinRule(document, relative) {
   } else if (types.has("carrot")) {
     const carrots = { type: "collect-all", target: "carrot" };
     expected = exit ? { type: "all", conditions: [carrots, exit] } : carrots;
-  } else if (types.has("egg-nest")) {
+  } else if (types.has("egg")) {
     const eggs = {
       type: "fill-all",
       target: "egg-nest",

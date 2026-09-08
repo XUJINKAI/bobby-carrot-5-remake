@@ -1,7 +1,7 @@
 import {
   MapEntityTypeId,
   SURFACE_SOURCE_MAPPINGS,
-  parseTsCoordinateLabel,
+  parseOriginalTileCoordinateLabel,
   type SurfaceSourceMapping,
 } from "@bobby/model";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
@@ -17,36 +17,36 @@ const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
 for (const mapping of SURFACE_SOURCE_MAPPINGS) {
   if (
     mapping.type === MapEntityTypeId.FENCE ||
-    mapping.type === MapEntityTypeId.CLOUD_PARKING ||
-    mapping.type === MapEntityTypeId.SURFACE
+    mapping.type === MapEntityTypeId.ICE ||
+    mapping.type === MapEntityTypeId.CLOUD_PARKING
   ) continue;
   const group = semanticSurfaceGroups.get(mapping.type) ?? [];
   group.push(mapping);
   semanticSurfaceGroups.set(mapping.type, group);
 }
 
-const genericSurfaceDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.SURFACE,
+const originalTileDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.ORIGINAL_TILE,
   authoring: { palette: false },
   traits: [],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
-  state: [{ key: "variant", kind: "string", label: "Visual variant" }],
-  presentation: { name: "Surface" },
+  state: [{ key: "variant", kind: "string", label: "Original Tile" }],
+  presentation: { name: "Original Tile" },
 };
 
-const genericSurface = originalModule(
-  genericSurfaceDefinition,
-  atlasVisual(genericSurfaceDefinition, (context) => {
+const originalTile = originalModule(
+  originalTileDefinition,
+  atlasVisual(originalTileDefinition, (context) => {
     const coordinate = typeof context.entity.state?.variant === "string"
-      ? parseTsCoordinateLabel(context.entity.state.variant)
+      ? parseOriginalTileCoordinateLabel(context.entity.state.variant)
       : undefined;
     return coordinate ? tsCoordinateCell(coordinate) : null;
   }),
 );
 
 export const originalVariantModules: readonly EntityModule[] = [
-  genericSurface,
+  originalTile,
   ...[...semanticSurfaceGroups.entries()].map(([type, mappings]) =>
     canonicalSurface(type, mappings)
   ),

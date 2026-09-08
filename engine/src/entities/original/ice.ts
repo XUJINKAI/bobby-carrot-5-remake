@@ -6,7 +6,7 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  namedCell,
+  tileCell,
   staticEntity,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -73,6 +73,6 @@ const definition: EntityModuleDefinition = {
 
 export const ice: EntityModule = staticEntity(
   definition,
-  namedCell("ice"),
+  tileCell(EntityTypeId.ICE),
   [{ behavior: slide }],
 );

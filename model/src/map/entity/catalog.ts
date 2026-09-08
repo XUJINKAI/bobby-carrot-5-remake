@@ -13,33 +13,41 @@ import {
 } from "./ids.js";
 import {
   SURFACE_ENTITY_DEFINITIONS,
-  SURFACE_SOURCE_MAPPINGS,
 } from "./surface.js";
+import {
+  ORIGINAL_TILE_VISUAL_GROUPS,
+  ORIGINAL_TILE_VISUALS,
+  originalTileCoordinateLabel,
+} from "./original-tile-visual-catalog.js";
 
 const DIRECTIONS = ["up", "right", "down", "left"] as const;
 const HORIZONTAL_DIRECTIONS = ["left", "right"] as const;
-const FENCE_VARIANTS = SURFACE_SOURCE_MAPPINGS.flatMap((mapping) =>
-  mapping.type === MapEntityTypeId.FENCE &&
-    typeof mapping.fields?.variant === "string"
-    ? [mapping.fields.variant]
-    : [],
-);
-
 const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(
     MapEntityTypeId.BOBBY,
     [],
     "Player start anchor. Map JSON does not persist Bobby facing direction.",
   ),
+  defineEntity(
+    MapEntityTypeId.ORIGINAL_TILE,
+    [
+      enumField(
+        "variant",
+        ORIGINAL_TILE_VISUALS.map(originalTileCoordinateLabel),
+        undefined,
+        true,
+      ),
+    ],
+    "原版记录把 Palette 图块写入 terrain 时使用的单格视觉实体。",
+  ),
   defineEntity(MapEntityTypeId.START),
-  defineEntity(MapEntityTypeId.ICE),
   defineEntity(MapEntityTypeId.EXIT),
 
-  defineEntity(MapEntityTypeId.SHOP_DREAM),
-  defineEntity(MapEntityTypeId.SHOP_CLOUD9),
+  defineEntity(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
+  defineEntity(MapEntityTypeId.SHOP_CLOUD9_TICKET),
   defineEntity(MapEntityTypeId.SHOP_SUPER_KEY),
-  defineEntity(MapEntityTypeId.SHOP_STEREO),
-  defineEntity(MapEntityTypeId.SHOP_MUSIC),
+  defineEntity(MapEntityTypeId.SHOP_STEREO_SYSTEM),
+  defineEntity(MapEntityTypeId.SHOP_EXTRA_MUSIC),
   defineEntity(MapEntityTypeId.SHOP_SPEED_SHOES),
   defineEntity(MapEntityTypeId.SHOP_COIN_RADAR),
   defineEntity(MapEntityTypeId.SHOP_EMPTY),
@@ -74,8 +82,8 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.MIRROR, [
     enumField(
       "variant",
-      [1, 2, 3, 4],
-      1,
+      ["right-bottom", "left-bottom", "right-top", "left-top"],
+      "right-bottom",
       true,
       "Two-way mirror corner orientation.",
     ),
@@ -100,7 +108,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ]),
   defineEntity(MapEntityTypeId.COLOR_SWITCH, [
     enumField("color", ["yellow", "pink"], undefined, true),
-    booleanField("pressed", false, false, "Initial switch state."),
+    enumField("state", ["state-1", "state-2"], "state-1", true),
   ]),
   defineEntity(MapEntityTypeId.COLOR_BLOCK, [
     enumField("color", ["yellow", "pink"], undefined, true),
@@ -112,18 +120,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     "Covered carrot/egg is overlapping high-grass + objective; covered visual is presentation.",
   ),
   defineEntity(MapEntityTypeId.SNOW),
-  defineEntity(MapEntityTypeId.FENCE, [
-    enumField(
-      "variant",
-      FENCE_VARIANTS,
-      undefined,
-      true,
-    ),
-  ]),
-
   defineEntity(MapEntityTypeId.CARROT),
   defineEntity(
-    MapEntityTypeId.EGG_NEST,
+    MapEntityTypeId.EGG,
     [],
     "Filled/empty is runtime state, not a different map entity type.",
   ),
@@ -161,6 +160,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.MOWER),
   defineEntity(MapEntityTypeId.GAS),
   defineEntity(MapEntityTypeId.BEAN_FIELD),
+  defineEntity(MapEntityTypeId.CLOUD_PARKING, [
+    enumField("color", ["red", "purple", "green"], undefined, true),
+  ]),
   defineEntity(MapEntityTypeId.CLOUD, [
     enumField("color", ["red", "purple", "green"], undefined, true),
   ]),
@@ -216,6 +218,8 @@ export const ENTITY_MAP_DEFINITIONS = Object.freeze(
   ),
 ) as Readonly<Record<string, EntityMapDefinition>>;
 
+validateOriginalTileSelectors();
+
 export function entityMapDefinition(
   type: string,
 ): EntityMapDefinition | undefined {
@@ -232,4 +236,34 @@ export function entityMapFields(
   type: MapEntityType | string,
 ): readonly EntityMapFieldDefinition[] {
   return entityMapDefinition(type)?.fields ?? [];
+}
+
+function validateOriginalTileSelectors(): void {
+  for (const group of ORIGINAL_TILE_VISUAL_GROUPS) {
+    const definition = ENTITY_MAP_DEFINITIONS[group.type];
+    if (!definition) {
+      throw new Error(`Original Tile Visual type 缺少 LevelEntity 合同：${group.type}`);
+    }
+    for (const visual of group.visuals) {
+      for (const [key, value] of Object.entries(visual.fields)) {
+        const field = definition.fields.find((candidate) => candidate.key === key);
+        if (!field || !fieldAccepts(field, value)) {
+          throw new Error(
+            `Original Tile Visual selector 不符合 LevelEntity 合同：${group.type}.${key}=${String(value)}`,
+          );
+        }
+      }
+    }
+  }
+}
+
+function fieldAccepts(
+  field: EntityMapFieldDefinition,
+  value: unknown,
+): boolean {
+  if (field.kind === "boolean") return typeof value === "boolean";
+  if (field.kind === "string") return typeof value === "string";
+  if (field.kind === "number") return typeof value === "number" && Number.isFinite(value);
+  if (field.kind === "integer") return typeof value === "number" && Number.isInteger(value);
+  return field.values.includes(value as never);
 }

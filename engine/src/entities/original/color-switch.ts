@@ -6,9 +6,8 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  namedCell,
+  tileCell,
   originalModule,
-  pressedState,
   SURFACE_STACK_ORDER,
 } from "./module.js";
 
@@ -24,7 +23,13 @@ const definition: EntityModuleDefinition = {
       default: "yellow",
       options: [{ value: "yellow" }, { value: "pink" }],
     },
-    ...pressedState,
+    {
+      key: "state",
+      kind: "enum",
+      label: "状态",
+      default: "state-1",
+      options: [{ value: "state-1" }, { value: "state-2" }],
+    },
   ],
   presentation: { name: "Color Switch" },
 };
@@ -32,14 +37,13 @@ const definition: EntityModuleDefinition = {
 export const colorSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
-    const pressed = context.entity.state?.pressed === true;
-    return context.entity.state?.color === "pink"
-      ? pressed
-        ? namedCell("color-pink-switch-pressed")
-        : namedCell("color-pink-switch-raised")
-      : pressed
-        ? namedCell("color-yellow-switch-pressed")
-        : namedCell("color-yellow-switch-raised");
+    const color = context.entity.state?.color === "pink" ? "pink" : "yellow";
+    const state = context.entity.state?.state === "state-2"
+      ? "state-2"
+      : "state-1";
+    return tileCell(MapEntityTypeId.COLOR_SWITCH, {
+      fields: { color, state },
+    });
   }),
   [{ behavior: colorSwitchBehavior }],
 );

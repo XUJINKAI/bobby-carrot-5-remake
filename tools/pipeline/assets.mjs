@@ -128,11 +128,11 @@ function originalFilters() {
       name: "场景",
       options: [
         ["grassland", "草地", "grass", { variant: "ts-10-1" }],
-        ["water", "水域", "water-ripple"],
+        ["water", "水域", "water", { variant: "ripple" }],
         ["snow", "雪地", "snow"],
         ["ice", "冰面", "ice"],
         ["high-grass", "高草", "high-grass"],
-        ["shop", "商店", "shop-dream"],
+        ["shop", "商店", "shop-dream-machine-ticket"],
       ].map(([id, name, entityType, fields]) => ({
         id,
         name,
@@ -151,12 +151,12 @@ function originalFilters() {
           entityIcon("carousel", { variant: "right-top" }),
         ],
         ["wind", "风车 / 云", entityIcon("windmill", { direction: "right" })],
-        ["mirror", "魔法镜", entityIcon("mirror", { variant: 1 })],
+        ["mirror", "魔法镜", entityIcon("mirror", { variant: "right-bottom" })],
         ["trap", "陷阱", entityIcon("trap", { active: true })],
         [
           "color-switch",
           "彩色开关",
-          entityIcon("color-switch", { color: "yellow", pressed: false }),
+          entityIcon("color-switch", { color: "yellow", state: "state-1" }),
         ],
         ["mower", "割草机", entityIcon("mower")],
         ["beanstalk", "魔豆藤", entityIcon("beanstalk")],

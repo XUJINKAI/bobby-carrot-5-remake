@@ -306,7 +306,7 @@ test("Palette keeps explicit directional presets and appends new creatable types
     .filter((entry) => entry.type === EntityTypeId.SPEED);
   assert.deepEqual(
     speed.map((entry) => entry.direction),
-    ["up", "right", "down", "left"],
+    ["up", "down", "left", "right"],
   );
   assert.equal(
     palette.find((group) => group.id === "ungrouped")?.rows[0]
@@ -321,12 +321,12 @@ test("Palette keeps explicit directional presets and appends new creatable types
   assert.equal(
     palette
       .flatMap((group) => group.rows.flat())
-      .some((entry) => entry.type === MapEntityTypeId.SURFACE),
+      .some((entry) => entry.type === MapEntityTypeId.ORIGINAL_TILE),
     false,
   );
   const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
-  assert.equal(allTypes.includes(MapEntityTypeId.EGG_NEST), true);
-  assert.equal(allTypes.includes(EntityTypeId.EGG_NEST_EMPTY), false);
+  assert.equal(allTypes.includes(MapEntityTypeId.EGG), true);
+  assert.equal(allTypes.includes(EntityTypeId.EGG_EMPTY), false);
   assert.equal(allTypes.includes(EntityTypeId.FIREBALL), false);
   assert.equal(allTypes.includes(EntityTypeId.BEANSTALK_MID), false);
   assert.deepEqual(
@@ -334,7 +334,7 @@ test("Palette keeps explicit directional presets and appends new creatable types
       .flatMap((group) => group.rows.flat())
       .filter((entry) => entry.type === MapEntityTypeId.WINDMILL)
       .map((entry) => entry.direction),
-    ["up", "right", "down", "left"],
+    ["up", "down", "left", "right"],
   );
 });
 
@@ -342,7 +342,7 @@ test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => 
   const level = createBlankLevel(4, 2);
   level.entities.push(
     { type: MapEntityTypeId.WINDMILL, x: 1, y: 0, direction: "left" },
-    { type: MapEntityTypeId.EGG_NEST, x: 2, y: 0 },
+    { type: MapEntityTypeId.EGG, x: 2, y: 0 },
   );
   assert.deepEqual(
     validateEditorLevel(level, catalog, builtinEditorDefinition),
@@ -352,7 +352,7 @@ test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => 
     [1, 2].map(
       (x) => new EditorPreview(level, catalog).inspectCell(x, 0).top?.entity.type,
     ),
-    [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG_NEST],
+    [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG],
   );
   assert.equal(
     resolvePlacement(

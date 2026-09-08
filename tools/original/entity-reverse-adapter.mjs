@@ -16,11 +16,11 @@ const directTerrainTypes = new Set([
   DecodedTerrain.ICE,
   DecodedTerrain.START,
   DecodedTerrain.EXIT,
-  DecodedTerrain.SHOP_DREAM,
-  DecodedTerrain.SHOP_CLOUD9,
+  DecodedTerrain.SHOP_DREAM_MACHINE_TICKET,
+  DecodedTerrain.SHOP_CLOUD9_TICKET,
   DecodedTerrain.SHOP_SUPER_KEY,
-  DecodedTerrain.SHOP_STEREO,
-  DecodedTerrain.SHOP_MUSIC,
+  DecodedTerrain.SHOP_STEREO_SYSTEM,
+  DecodedTerrain.SHOP_EXTRA_MUSIC,
   DecodedTerrain.SHOP_SPEED_SHOES,
   DecodedTerrain.SHOP_COIN_RADAR,
   DecodedTerrain.SHOP_EMPTY,
@@ -154,7 +154,7 @@ function decodedTerrainFor(entity) {
       throw new Error("color-switch 的 color 必须是 yellow/pink");
     return pressedTerrain(
       `color-${entity.color}-switch`,
-      entity.pressed ?? false,
+      entity.state === "state-2",
     );
   }
   if (type === EntityTypeId.COLOR_YELLOW_SWITCH) {
@@ -175,8 +175,15 @@ function decodedTerrainFor(entity) {
   }
   if (type === EntityTypeId.TRAP)
     return `trap-${entity.active === false ? "inactive" : "active"}`;
-  if (type === EntityTypeId.MIRROR)
-    return variantTerrain("mirror", entity.variant, [1, 2, 3, 4]);
+  if (type === EntityTypeId.MIRROR) {
+    const decoded = correspondenceByField(
+      "mirror",
+      "variant",
+      entity.variant,
+    )?.decoded;
+    if (!decoded) throw new Error("mirror 的 variant 无法编码为原版 DAT");
+    return decoded;
+  }
   if (type === EntityTypeId.CAROUSEL) {
     const decoded = correspondenceByField(
       "carousel",
@@ -206,6 +213,11 @@ function decodedSurfaceTerrain(entity) {
     entity.type === MapEntityTypeId.FENCE ||
     entity.type === MapEntityTypeId.CLOUD_PARKING
   ) return null;
+  if (entity.type === MapEntityTypeId.ORIGINAL_TILE) {
+    if (!/^ts-(?:[1-9]|1[0-6])-(?:[1-9]|1[0-6])$/.test(entity.variant))
+      throw new Error("original-tile 的 variant 必须是有效 ts.png 坐标");
+    return entity.variant;
+  }
   const mapping = surfaceMappingForEntity(entity.type, entity);
   if (!mapping) return null;
   const source = mapping.source;
@@ -222,8 +234,8 @@ function objectFor(entity) {
   }
   if (type === EntityTypeId.BEAVER)
     return [{ type: DecodedObject.BEAVER_BASE, x, y }];
-  if (type === MapEntityTypeId.EGG_NEST)
-    return [{ type: DecodedObject.EGG_NEST_EMPTY, x, y }];
+  if (type === MapEntityTypeId.EGG)
+    return [{ type: DecodedObject.EGG_EMPTY, x, y }];
   if (type === MapEntityTypeId.BEANSTALK)
     return [{ type: DecodedObject.BEANSTALK_TIP, x, y }];
   if (type === MapEntityTypeId.WINDMILL) {

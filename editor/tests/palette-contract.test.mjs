@@ -42,8 +42,8 @@ test("三色云朵停靠格放置后保留底层地形与持久化颜色", () =>
   }
 });
 
-test("草下胡萝卜与鸟巢组合可以往返保存", () => {
-  for (const type of ["carrot", "egg-nest"]) {
+test("草下胡萝卜与 egg 组合可以往返保存", () => {
+  for (const type of ["carrot", "egg"]) {
     let level = createBlankLevel();
     for (const entityType of [type, "high-grass"])
       level = placeEntity(catalog, entityType, { x: 5, y: 5 }).apply(level);

@@ -133,18 +133,9 @@ Undo 恢复后 VisualRuntime 丢弃当前 transition，并直接从恢复后的 
 
 由于原版每个 outer loop 只在两次 `b()` 之间最多 repaint 一次，simulation step 与实际可见帧并不是一一对应；但连续 phase 改变在稳态仍约隔两个 62ms outer loop，即约 124ms。
 
-已经确认的映射包括：
-
-| 对象/地形 | `ta.png` 基础线性序号 | 原版计数器 |
-|---|---:|---|
-| 已解锁出口 `0x96` | 0 | `bE` |
-| 加速格 `0xB5..0xB8` | 3 / 6 / 9 / 12 | `bE` |
-| Bonus Coin `0xF8` | 15 | `bE` |
-| 四向风车 `0xD0..0xD3` | 18 / 20 / 22 / 24 | `bF` |
-| 龙卷风 `0xF4` | 26 | `bD` |
-| 水域 `0x56` | 39 | `bC` |
-| 潮汐 `0x57..0x5A` | 33 / 31 / 37 / 35 | `bF` |
-| 水域边缘 `0x5B..0x5D` | 46 / 48 / 50 | `bF` |
+`ta.png` 的具体对象、方向与帧序列统一登记在
+`model/src/map/entity/original-tile-visuals.json`。本文只保存计数器、门控与节拍事实，
+避免与可执行目录重复维护坐标表。
 
 Web Runtime 的 Original Visual resolver 应按最终确认的原版毫秒节拍计算 phase，而不是把 `time.tick % 4` 当作原版事实。Renderer 的 image layer 支持 `frameWidth + frameHeight + frameIndex`，这项能力仍属于纯表现层。
 

@@ -7,7 +7,7 @@
 `original/decoded/` 中的 terrain 和 object 标签均以 `ts-<row>-<column>:` 开头。
 对素材语义或命名不确定时，直接全局搜索坐标前缀即可定位所有原版地图引用，
 例如搜索 `ts-4-13:`。Engine 使用的机关帧与 Surface 归类集中维护在
-`model/src/map/entity/ts-visuals.json`；Editor Surface 的每个 atlas 单元均为单格 Entity。
+`model/src/map/entity/original-tile-visuals.json`；Editor Surface 的每个 atlas 单元均为单格 Entity。
 
 ## 1. 做最小地图
 

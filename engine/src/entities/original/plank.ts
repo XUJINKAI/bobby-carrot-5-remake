@@ -9,7 +9,8 @@ import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileAnimationCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -64,8 +65,10 @@ const plankDecayVisual: TransientVisualDefinition = {
   renderPass: "world",
   stackOrder: CONTENT_STACK_ORDER,
   resolve({ progress }) {
-    const atlas = namedCell(
-      progress < 0.5 ? "plank-crumbling-1" : "plank-crumbling-2",
+    const atlas = tileAnimationCell(
+      EntityTypeId.PLANK,
+      "crumbling",
+      progress < 0.5 ? 1 : 2,
     );
     return {
       layers: [{ kind: "atlas", column: atlas.column, row: atlas.row }],
@@ -75,7 +78,7 @@ const plankDecayVisual: TransientVisualDefinition = {
 
 const module = originalModule(
   definition,
-  atlasVisual(definition, namedCell("plank")),
+  atlasVisual(definition, tileCell(EntityTypeId.PLANK)),
   [{ behavior: plankPassage }],
 );
 

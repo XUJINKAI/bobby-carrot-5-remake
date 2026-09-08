@@ -7,7 +7,8 @@ import {
   atlasVisual,
   boundedInt,
   COVER_STACK_ORDER,
-  namedCell,
+  tileAnimationCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -29,12 +30,10 @@ const definition: EntityModuleDefinition = {
 
 export const iceBlock: EntityModule = originalModule(
   definition,
-  atlasVisual(definition, (context) =>
-    namedCell([
-      "ice-block",
-      "ice-block-melt-1",
-      "ice-block-melt-2",
-      "ice-block-melt-3",
-    ][boundedInt(context.entity.state?.meltStage, 0, 3, 0)]!),
-  ),
+  atlasVisual(definition, (context) => {
+    const stage = boundedInt(context.entity.state?.meltStage, 0, 3, 0);
+    return stage === 0
+      ? tileCell(EntityTypeId.ICE_BLOCK)
+      : tileAnimationCell(EntityTypeId.ICE_BLOCK, "melt", stage);
+  }),
 );

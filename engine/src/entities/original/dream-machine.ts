@@ -6,7 +6,7 @@ import type {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -27,7 +27,7 @@ export const dreamMachine: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
     context.presence.role === "body"
-      ? namedCell("dream-machine-body")
-      : namedCell("dream-machine"),
+      ? tileCell(EntityTypeId.DREAM_MACHINE, { role: "body" })
+      : tileCell(EntityTypeId.DREAM_MACHINE, { role: "head" }),
   ),
 );

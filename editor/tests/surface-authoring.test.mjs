@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import {
   EntityTypeId,
   MapEntityTypeId,
-  tsCoordinateLabel,
-  tsSurfaceFamily,
+  originalTileCoordinateLabel,
+  originalTileVisualGroup,
 } from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
 import {
@@ -61,15 +61,15 @@ test("Surface catalog is independent from Palette", () => {
 test("Surface catalog follows the documented original material groups", () => {
   assert.deepEqual(
     surfaceTerrain("stone-wall").rows.flat().map((item) => item.type).toSorted(),
-    tsSurfaceFamily("stone-wall").cells.map(tsCoordinateLabel).toSorted(),
+    originalTileVisualGroup("stone-wall").visuals
+      .map(originalTileCoordinateLabel)
+      .toSorted(),
   );
   assert.deepEqual(
     surfaceTerrain("snow-cloud").rows.flat().map((item) => item.type).toSorted(),
-    tsSurfaceFamily("snow-cloud").cells.map(tsCoordinateLabel).toSorted(),
-  );
-  assert.deepEqual(
-    surfaceTerrain("original-visual").rows.flat().map((item) => item.type),
-    ["ts-14-10", "ts-14-12", "ts-15-10"],
+    originalTileVisualGroup("snow-cloud").visuals
+      .map(originalTileCoordinateLabel)
+      .toSorted(),
   );
   assert.equal(surfaceTerrain("mushroom").rows[0][0].type, "ts-4-14");
   assert.deepEqual(

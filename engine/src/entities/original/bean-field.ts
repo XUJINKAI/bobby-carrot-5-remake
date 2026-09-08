@@ -18,7 +18,7 @@ import {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -129,7 +129,7 @@ const definition: EntityModuleDefinition = {
 
 const base = originalModule(
   definition,
-  atlasVisual(definition, namedCell("bean-field")),
+  atlasVisual(definition, tileCell(EntityTypeId.BEAN_FIELD)),
   [{ behavior: plantBean }],
 );
 

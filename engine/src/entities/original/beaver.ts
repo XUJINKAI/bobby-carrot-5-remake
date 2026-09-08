@@ -15,7 +15,7 @@ import {
   atlasVisual,
   boundedInt,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileCell,
   originalModule,
 } from "./module.js";
 
@@ -158,8 +158,8 @@ export const beaver: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
     context.presence.role === "body"
-      ? namedCell("beaver-body")
-      : namedCell("beaver"),
+      ? tileCell(EntityTypeId.BEAVER, { role: "body" })
+      : tileCell(EntityTypeId.BEAVER, { role: "head" }),
   ),
   [{ behavior: bonusKeyVendor }],
 );

@@ -25,7 +25,7 @@ import {
 import {
   atlasVisual,
   directionCell,
-  namedCell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -202,10 +202,10 @@ const base = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      namedCell("speed-up"),
-      namedCell("speed-down"),
-      namedCell("speed-left"),
-      namedCell("speed-right"),
+      tileCell(EntityTypeId.SPEED, { fields: { direction: "up" } }),
+      tileCell(EntityTypeId.SPEED, { fields: { direction: "down" } }),
+      tileCell(EntityTypeId.SPEED, { fields: { direction: "left" } }),
+      tileCell(EntityTypeId.SPEED, { fields: { direction: "right" } }),
     ),
   ),
   [{ behavior: speedBoost }],

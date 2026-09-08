@@ -6,21 +6,20 @@ Original Adapter 位于 `tools/original/`，负责在原版 DAT 的地图表示�
 
 原版到 Engine 不是一张跨层大表，而是两个方向明确的合同边界：
 
-1. `tools/original/dat/mapping.mjs` 是 DAT byte、`ts.png` 坐标、decoded
-   细分语义和 decoded 审阅标签之间的唯一映射。decoded 标签固定为
-   `ts-<row>-<column>:<semantic>`。
-2. `tools/original/entity-correspondence.mjs` 是需要改名的双向
-   variant/direction 对应关系的唯一数据表，正反 Adapter 共用。
+1. `tools/original/dat/mapping.mjs` 是 DAT byte 与 decoded 细分语义的格式边界。
+   decoded 标签固定为 `ts-<row>-<column>:<semantic>`，坐标和人工审阅名称通过
+   Model 的 Original Tile Visual 目录取得。
+2. `tools/original/entity-correspondence.mjs` 从 Original Tile Visual 目录派生
+   variant/direction 顺序，正反 Adapter 共用。
 3. `tools/original/entity-adapter.mjs` 是 decoded 原版语义展开为 canonical
    `LevelMap` Entity 的唯一正向边界。
 4. `tools/original/entity-reverse-adapter.mjs` 只服务 JAR patch，并由 DAT
    byte-for-byte round-trip 测试约束为正向边界的逆变换。
 
-`model/src/map/entity/ts-visuals.json` 按 Surface 家族与独立 visual 分组维护
-`ts.png` 全部 256 格的名称；`model/src/map/entity/surface.ts` 从该表生成产品语义
-Surface 映射，Editor Surface 面板也从相同家族生成 visual 列表。Engine Definition
-维护 canonical Entity 的行为，并通过命名表查找 Visual。它们不读取 DAT byte，也不
-建立第二份 DAT 对应表。
+`model/src/map/entity/original-tile-visuals.json` 按 Editor 的 `surface/palette`
+分类维护 `ts.png` 全部 256 格及 `ta.png` 动画序列。Model 从该表生成 Surface 映射，
+Editor 从中生成面板成员与 variant，Engine 以结构化 selector 查找 Visual。DAT byte
+仍只存在于 `@bobby/dat` 边界。
 
 新增或修正原版对应关系时，先修改 `dat/mapping.mjs` 的原版事实，再修改唯一
 Adapter 边界，并补充正向转换与 DAT round-trip 测试。`npm run verify` 会重新生成
@@ -61,7 +60,7 @@ materialize 该格缺失的内容 Entity：
 
 1. 如果该格有显式的非空 object，转换该 object，不额外生成隐藏目标。
 2. 如果该格没有显式 object，且地图任意位置有显式 `carrot`，生成 `carrot`。
-3. 如果该格没有显式 object，且地图没有显式 `carrot`，生成 `egg-nest`。
+3. 如果该格没有显式 object，且地图没有显式 `carrot`，生成 `egg`。
 
 因此，隐藏目标的类型由该地图的目标模式决定，并非只由单个
 `high-grass-objective` terrain byte 决定。转换后的同格顺序为：ground、隐藏目标

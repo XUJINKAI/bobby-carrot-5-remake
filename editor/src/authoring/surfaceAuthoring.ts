@@ -2,7 +2,7 @@ import type { EntityCatalog } from "@bobby/engine";
 import {
   EntityTypeId,
   MapEntityTypeId,
-  parseTsCoordinateLabel,
+  parseOriginalTileCoordinateLabel,
   surfaceMappingForTs,
   type EntityType,
   type LevelEntity,
@@ -69,14 +69,12 @@ if (fenceTerrain)
 
 const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.WATER, "water"],
-  [MapEntityTypeId.WATER_RIPPLE, "water"],
   [MapEntityTypeId.WATERFALL, "waterfall"],
   [MapEntityTypeId.STARFIELD, "starfield"],
   [MapEntityTypeId.MOON, "moon"],
   [MapEntityTypeId.SNOW_CLOUD, "snow-cloud"],
   [MapEntityTypeId.GRASS, "grass"],
   [MapEntityTypeId.FENCE, "fence"],
-  [MapEntityTypeId.SURFACE, "original-visual"],
   [MapEntityTypeId.HEDGE, "hedge"],
   [MapEntityTypeId.TREE, "tree"],
   [MapEntityTypeId.STONE_WALL, "stone-wall"],
@@ -90,7 +88,6 @@ const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.SNOW_FENCE, "snow-fence"],
   [MapEntityTypeId.SNOWY_ROCK, "snow-rock"],
   [MapEntityTypeId.CACTUS, "cactus"],
-  [MapEntityTypeId.TALL_CACTUS, "cactus"],
   [MapEntityTypeId.SAND, "sand"],
   [MapEntityTypeId.ICE, "ice"],
 ];
@@ -102,7 +99,7 @@ for (const [type, terrainId] of semanticTerrainTypes) {
 const surfaceTypes = new Set<EntityType>(terrainByEntityType.keys());
 
 export function isSurfaceEntityType(type: EntityType): boolean {
-  return surfaceTypes.has(type) || parseTsCoordinateLabel(type) !== undefined;
+  return surfaceTypes.has(type) || parseOriginalTileCoordinateLabel(type) !== undefined;
 }
 
 export function surfaceTerrain(id: SurfaceTerrainId): SurfaceTerrainDefinition {
@@ -122,14 +119,16 @@ export function surfaceEntityForVisual(
   visual: EntityType,
   cell: Cell = { x: 0, y: 0 },
 ): LevelEntity {
-  const coordinate = parseTsCoordinateLabel(visual);
+  const coordinate = parseOriginalTileCoordinateLabel(visual);
   if (!coordinate) return { type: visual, x: cell.x, y: cell.y };
   const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
+  if (!mapping)
+    throw new Error(`该 Original Tile 不属于 Surface 面板：${visual}`);
   return {
-    type: mapping?.type ?? MapEntityTypeId.SURFACE,
+    type: mapping.type,
     x: cell.x,
     y: cell.y,
-    ...(mapping ? mapping.fields ?? {} : { variant: visual }),
+    ...(mapping.fields ?? {}),
   };
 }
 

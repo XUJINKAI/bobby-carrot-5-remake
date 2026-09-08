@@ -31,19 +31,31 @@ export {
 export type { TsCoordinate, SurfaceSourceMapping } from "./surface.js";
 
 export {
-  TS_SURFACE_FAMILIES,
-  TS_VISUALS,
-  tsSurfaceFamily,
-  tsVisual,
-  tsAtlasCell,
-  tsCoordinateLabel,
-  parseTsCoordinateLabel,
-} from "./ts-visual-catalog.js";
+  ORIGINAL_TILE_ATLASES,
+  ORIGINAL_TILE_VISUAL_GROUPS,
+  ORIGINAL_TILE_VISUALS,
+  ORIGINAL_TILE_ANIMATIONS,
+  originalTileVisualGroup,
+  originalTileVisualGroups,
+  originalTileVisual,
+  originalTileAnimation,
+  originalTileAtlasCell,
+  originalTileCoordinateLabel,
+  parseOriginalTileCoordinateLabel,
+  isOriginalTileCoordinate,
+} from "./original-tile-visual-catalog.js";
 export type {
-  TsVisualDefinition,
-  TsSurfaceFamilyDefinition,
-  TsAtlasCellDefinition,
-} from "./ts-visual-catalog.js";
+  OriginalTilePanel,
+  OriginalTileAtlasId,
+  OriginalTileCoordinate,
+  OriginalTileSource,
+  OriginalTileAtlasDefinition,
+  OriginalTileVisualDefinition,
+  OriginalTileAnimationDefinition,
+  OriginalTileVisualGroupDefinition,
+  OriginalTileVisualSelector,
+  OriginalTileAnimationSelector,
+} from "./original-tile-visual-catalog.js";
 
 export {
   ENTITY_MAP_DEFINITIONS,

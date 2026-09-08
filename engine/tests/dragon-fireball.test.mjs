@@ -15,7 +15,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
     for (let x = 0; x < 7; x += 1)
       entities.push({ type: "grass", variant: "ts-10-1", x, y });
   entities.push(
-    { type: EntityTypeId.MIRROR, x: 1, y: 0, state: { variant: 1 } },
+    { type: EntityTypeId.MIRROR, x: 1, y: 0, state: { variant: "right-bottom" } },
     { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
     { type: EntityTypeId.DRAGON, x: 4, y: 0, direction: "left" },
     { type: EntityTypeId.BOBBY, x: 6, y: 0, direction: "left" },

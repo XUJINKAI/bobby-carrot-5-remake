@@ -9,7 +9,7 @@ import {
 } from "../dist/visual/preview.js";
 
 const BLOCKING_TYPES = [
-  EntityTypeId.EGG_NEST_FILLED,
+  EntityTypeId.EGG_FILLED,
   EntityTypeId.WINDMILL_UP,
   EntityTypeId.WINDMILL_DOWN,
   EntityTypeId.WINDMILL_LEFT,
@@ -114,7 +114,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
       ground(1, 0),
       ground(2, 0),
       bobby(0, 0),
-      { type: EntityTypeId.EGG_NEST_EMPTY, x: 1, y: 0 },
+      { type: EntityTypeId.EGG_EMPTY, x: 1, y: 0 },
     ],
   });
 
@@ -125,7 +125,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+      .some((entity) => entity.type === EntityTypeId.EGG_EMPTY),
     true,
   );
 
@@ -138,13 +138,13 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_NEST_EMPTY),
+      .some((entity) => entity.type === EntityTypeId.EGG_EMPTY),
     false,
   );
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_NEST_FILLED),
+      .some((entity) => entity.type === EntityTypeId.EGG_FILLED),
     true,
   );
   assert.deepEqual(world.winState, {
@@ -283,12 +283,12 @@ test("Color Switch toggles only switches and blocks of the same color", () => {
   const switches = world.query.entitiesWithTrait("switch");
   const blocks = world.query.entitiesWithTrait("stateful-block");
   assert.equal(
-    switches.find((entity) => entity.state.color === "yellow").state.pressed,
-    true,
+    switches.find((entity) => entity.state.color === "yellow").state.state,
+    "state-2",
   );
   assert.equal(
-    switches.find((entity) => entity.state.color === "pink").state.pressed,
-    false,
+    switches.find((entity) => entity.state.color === "pink").state.state,
+    "state-1",
   );
   assert.equal(
     blocks.find((entity) => entity.state.color === "yellow").state.raised,
@@ -316,7 +316,7 @@ test("collection icon preview translates canonical flat Map entities", () => {
 
   const mirror = resolveLevelEntityVisualPreview({
     type: MapEntityTypeId.MIRROR,
-    variant: 2,
+    variant: "left-bottom",
   });
   assert.equal(mirror?.layers[0]?.kind, "atlas");
 });

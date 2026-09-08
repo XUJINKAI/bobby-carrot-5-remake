@@ -87,7 +87,7 @@ test("Inspector Surface visual variant 复用 Palette atlas 身份", () => {
     { type: "fence", x: 1, y: 1, variant: "ts-16-14" },
   );
   assert.equal(
-    surfaceVisualVariant({ type: "water-ripple", x: 1, y: 1 }),
+    surfaceVisualVariant({ type: "water", x: 1, y: 1, variant: "ripple" }),
     "ts-6-7",
   );
 });

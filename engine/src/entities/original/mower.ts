@@ -14,7 +14,7 @@ import {
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  namedCell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
@@ -145,7 +145,7 @@ export const mower: EntityModule = originalModule(
   atlasVisual(mowerDefinition, (context) =>
     Number(context.entity.state?.mountedByActorId ?? 0) > 0
       ? null
-      : namedCell("mower"),
+      : tileCell(EntityTypeId.MOWER),
   ),
   [{ behavior: mowerVehicle }],
 );
@@ -160,7 +160,7 @@ const parkingDefinition: EntityModuleDefinition = {
 
 export const mowerParkingTile: EntityModule = originalModule(
   parkingDefinition,
-  atlasVisual(parkingDefinition, namedCell("mower-parking")),
+  atlasVisual(parkingDefinition, tileCell(EntityTypeId.MOWER_PARKING)),
   [{ behavior: mowerParking }],
 );
 
@@ -173,7 +173,7 @@ const crumblyRockDefinition: EntityModuleDefinition = {
 
 export const crumblyRock: EntityModule = originalModule(
   crumblyRockDefinition,
-  atlasVisual(crumblyRockDefinition, namedCell("crumbly-rock")),
+  atlasVisual(crumblyRockDefinition, tileCell(EntityTypeId.CRUMBLY_ROCK)),
   [{ behavior: smashCrumblyRock }],
 );
 
@@ -186,6 +186,6 @@ const pushableRockDefinition: EntityModuleDefinition = {
 
 export const pushableRock: EntityModule = originalModule(
   pushableRockDefinition,
-  atlasVisual(pushableRockDefinition, namedCell("crumbly-rock")),
+  atlasVisual(pushableRockDefinition, tileCell(EntityTypeId.CRUMBLY_ROCK)),
   [{ behavior: smashCrumblyRock }],
 );

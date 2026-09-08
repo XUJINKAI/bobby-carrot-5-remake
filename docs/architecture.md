@@ -245,7 +245,7 @@ Entity Layout Definition
 
 Map Entity 在 Editor 预览、校验和 footprint 查询时，统一通过 Engine
 level-load type resolver 找到 Runtime Definition；Inspector 与 JSON 始终保留原始
-canonical Map type。`windmill`、`egg-nest` 等加载时转换 Runtime type 的 Entity
+canonical Map type。`windmill`、`egg` 等加载时转换 Runtime type 的 Entity
 因此不会在 Editor 中漂移为 phase type。
 
 `authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Entity 的 authoring 可见性。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。

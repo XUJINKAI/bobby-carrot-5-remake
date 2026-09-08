@@ -8,7 +8,6 @@ export function originalSurfaceTraits(
   mapping: Readonly<SurfaceSourceMapping>,
 ): readonly string[] {
   if (
-    mapping.type === MapEntityTypeId.SURFACE ||
     mapping.type === MapEntityTypeId.FENCE
   ) return [];
 
@@ -19,7 +18,6 @@ export function originalSurfaceTraits(
   if (number >= 72 && number <= 77) traits.add("cloud-space");
   if (
     mapping.type === MapEntityTypeId.WATER ||
-    mapping.type === MapEntityTypeId.WATER_RIPPLE ||
     mapping.type === MapEntityTypeId.WATERFALL
   ) {
     traits.add("water");

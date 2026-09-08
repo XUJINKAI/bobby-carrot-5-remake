@@ -28,7 +28,7 @@ export function deriveOriginalWinCondition(level) {
     };
     return exit ? { type: "all", conditions: [carrots, exit] } : carrots;
   }
-  if (types.has(MapEntityTypeId.EGG_NEST)) {
+  if (types.has(MapEntityTypeId.EGG)) {
     const eggs = {
       type: "fill-all",
       target: ORIGINAL_EGG_NEST_TARGET,

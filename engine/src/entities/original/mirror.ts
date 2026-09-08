@@ -7,8 +7,7 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  boundedInt,
-  namedCell,
+  tileCell,
   originalModule,
   SURFACE_STACK_ORDER,
   variantState,
@@ -33,19 +32,38 @@ const definition: EntityModuleDefinition = {
   type: EntityTypeId.MIRROR,
   traits: ["walkable", "mirror", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
-  state: variantState([1, 2, 3, 4]),
+  state: variantState([
+    "right-bottom",
+    "left-bottom",
+    "right-top",
+    "left-top",
+  ]),
   presentation: { name: "Mirror" },
 };
 
 export const mirror: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    namedCell(`mirror-${boundedInt(context.entity.state?.variant, 1, 4, 1)}`),
+    tileCell(EntityTypeId.MIRROR, {
+      fields: { variant: mirrorVariant(context.entity.state?.variant) },
+    }),
   ),
   [{ behavior: rotateMirrorOnLeave }],
 );
 
-function nextMirrorVariant(value: JsonValue | undefined): 1 | 2 | 3 | 4 {
-  const variant = boundedInt(value, 1, 4, 1);
-  return ({ 1: 2, 2: 4, 4: 3, 3: 1 } as const)[variant as 1 | 2 | 3 | 4];
+type MirrorVariant = "right-bottom" | "left-bottom" | "right-top" | "left-top";
+
+function mirrorVariant(value: JsonValue | undefined): MirrorVariant {
+  if (value === "left-bottom" || value === "right-top" || value === "left-top")
+    return value;
+  return "right-bottom";
+}
+
+function nextMirrorVariant(value: JsonValue | undefined): MirrorVariant {
+  return {
+    "right-bottom": "left-bottom",
+    "left-bottom": "left-top",
+    "left-top": "right-top",
+    "right-top": "right-bottom",
+  }[mirrorVariant(value)] as MirrorVariant;
 }

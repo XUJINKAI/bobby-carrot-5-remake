@@ -94,8 +94,8 @@ export function levelEntityRuntimeType(source: Readonly<LevelEntity>): EntityTyp
       right: EntityTypeId.WINDMILL_RIGHT,
     }[String(source.direction)] ?? EntityTypeId.WINDMILL_UP;
   }
-  if (source.type === MapEntityTypeId.EGG_NEST)
-    return EntityTypeId.EGG_NEST_EMPTY;
+  if (source.type === MapEntityTypeId.EGG)
+    return EntityTypeId.EGG_EMPTY;
   if (source.type === MapEntityTypeId.BEANSTALK)
     return EntityTypeId.BEANSTALK_TIP;
   return source.type;

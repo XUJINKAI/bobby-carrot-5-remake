@@ -5,8 +5,7 @@ export const MapEntityTypeId = {
   BOBBY: "bobby",
 
   WATER: "water",
-  SURFACE: "surface",
-  WATER_RIPPLE: "water-ripple",
+  ORIGINAL_TILE: "original-tile",
   WATERFALL: "waterfall",
   STARFIELD: "starfield",
   MOON: "moon",
@@ -26,18 +25,18 @@ export const MapEntityTypeId = {
   SNOW_FENCE: "snow-fence",
   SNOWY_ROCK: "snowy-rock",
   CACTUS: "cactus",
-  TALL_CACTUS: "tall-cactus",
   SAND: "sand",
+  TRANSPARENT: "transparent",
   CLOUD_PARKING: "cloud-parking",
 
   START: "start",
   ICE: "ice",
   EXIT: "exit",
-  SHOP_DREAM: "shop-dream",
-  SHOP_CLOUD9: "shop-cloud9",
+  SHOP_DREAM_MACHINE_TICKET: "shop-dream-machine-ticket",
+  SHOP_CLOUD9_TICKET: "shop-cloud9-ticket",
   SHOP_SUPER_KEY: "shop-super-key",
-  SHOP_STEREO: "shop-stereo",
-  SHOP_MUSIC: "shop-music",
+  SHOP_STEREO_SYSTEM: "shop-stereo-system",
+  SHOP_EXTRA_MUSIC: "shop-extra-music",
   SHOP_SPEED_SHOES: "shop-speed-shoes",
   SHOP_COIN_RADAR: "shop-coin-radar",
   SHOP_EMPTY: "shop-empty",
@@ -57,7 +56,7 @@ export const MapEntityTypeId = {
   HIGH_GRASS: "high-grass",
   SNOW: "snow",
   CARROT: "carrot",
-  EGG_NEST: "egg-nest",
+  EGG: "egg",
   LOCK: "lock",
   BEANSTALK: "beanstalk",
   BEAN: "bean",
@@ -87,5 +86,5 @@ export const MapEntityTypeId = {
 export type NamedMapEntityType =
   (typeof MapEntityTypeId)[keyof typeof MapEntityTypeId];
 
-/** 原版 ts.png 单格语义尚未确认时使用的可审阅 fallback。 */
+/** 原版 terrain 记录直接引用 Palette 单元时使用的可审阅单格视觉身份。 */
 export type MapEntityType = NamedMapEntityType;

@@ -1,7 +1,7 @@
 import {
   EntityTypeId,
-  tsCoordinateLabel,
-  tsSurfaceFamily,
+  originalTileCoordinateLabel,
+  originalTileVisualGroup,
   type EntityType,
 } from "@bobby/model";
 
@@ -38,8 +38,7 @@ export type SurfaceTerrainId =
   | "snow-rock"
   | "cactus"
   | "sand"
-  | "ice"
-  | "original-visual";
+  | "ice";
 
 type ConcreteSurfaceTheme = Exclude<SurfaceTheme, "mixed">;
 
@@ -133,13 +132,13 @@ function variant(type: EntityType, label = type): SurfaceVariant {
 
 function familyRows(type: string): SurfaceVariant[][] {
   const rows = new Map<number, SurfaceVariant[]>();
-  for (const cell of tsSurfaceFamily(type).cells) {
-    const variants = rows.get(cell.row) ?? [];
+  for (const visual of originalTileVisualGroup(type).visuals) {
+    const variants = rows.get(visual.row) ?? [];
     variants.push(variant(
-      tsCoordinateLabel(cell),
-      `${cell.row},${cell.column}${cell.label ? ` ${cell.label}` : ""}`,
+      originalTileCoordinateLabel(visual),
+      `${visual.row},${visual.column}`,
     ));
-    rows.set(cell.row, variants);
+    rows.set(visual.row, variants);
   }
   return [...rows.values()];
 }
@@ -188,13 +187,13 @@ function terrain(
   };
 }
 
-// 分组只定义 Editor 面板布局；语义归类与名称以 ts-visuals.json 为准。
+// 分组只定义 Editor 面板布局；语义归类与名称以 Original Tile Visual 目录为准。
 const water = terrain({
   id: "water",
   label: "水",
   type: "water",
-  primary: EntityTypeId.WATER,
-  rows: [[...familyRows("water").flat(), ...familyRows("water-ripple").flat()]],
+  primary: bg(6, 6),
+  rows: familyRows("water"),
   auto: weighted([
     [bg(6, 6), 90],
     [bg(6, 7), 10],
@@ -400,8 +399,8 @@ const cactus = terrain({
   label: "仙人掌",
   type: "solid",
   theme: "desert",
-  rows: [...familyRows("cactus"), ...familyRows("tall-cactus")],
-  // Composite Surface Asset 延期；Auto 只在单格仙人掌中做加权选择。
+  rows: familyRows("cactus"),
+  // Auto 选取两种单格形态；纵向形态由精确画笔放置。
   auto: weighted([
     [bg(4, 15), 3],
     [bg(5, 15), 1],
@@ -423,13 +422,6 @@ const ice = terrain({
   type: "ice",
   theme: "snow",
   rows: [[variant(EntityTypeId.ICE, "Ice")]],
-});
-
-const originalVisual = terrain({
-  id: "original-visual",
-  label: "原版机关 Visual",
-  type: "solid",
-  rows: familyRows("surface"),
 });
 
 export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
@@ -455,7 +447,6 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
   cactus,
   sand,
   ice,
-  originalVisual,
 ];
 
 export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
@@ -488,11 +479,6 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
     id: "desert",
     label: "沙漠",
     rows: [["sand", "cactus"]],
-  },
-  {
-    id: "original-visual",
-    label: "原版 Visual",
-    rows: [["original-visual"]],
   },
 ];
 

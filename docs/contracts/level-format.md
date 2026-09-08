@@ -62,14 +62,15 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 | `mirror-1/2/3/4` | `mirror` | `variant` |
 | `speed-up/down/left/right` | `speed` | `direction` |
 | `carousel-1/2/3/4/vertical/horizontal` | `carousel` | `variant: right-top/left-top/left-bottom/right-bottom/vertical/horizontal` |
-| `color-yellow/pink-switch-raised/pressed` | `color-switch` | `color` + `pressed` |
+| `color-yellow/pink-switch-raised/pressed` | `color-switch` | `color` + `state` |
 | `dragon-head/body/tail/anim-*` | `dragon` | footprint role + visual/runtime state |
 | `ice-block/ice-melt-*` | `ice-block` | melt stage 只存在于 runtime state |
 
-原版地图偶尔会把机关动画帧放在 terrain 层；这类已知 Visual 使用
-`type: "surface"` 与 `variant: "ts-<row>-<column>"`。已归类但仅有视觉差异的
-Surface 也使用同样的坐标 variant。Object 使用稳定语义 type。atlas 坐标与名称以
-`model/src/map/entity/ts-visuals.json` 为唯一来源，不从 DAT byte 推导。
+原版地图偶尔会把 Palette 图块放在 terrain 层；这类记录使用
+`type: "original-tile"` 与 `variant: "ts-<row>-<column>"`。普通 Surface 与 Object
+使用稳定语义 type。atlas 坐标、selector 与动画帧以
+`model/src/map/entity/original-tile-visuals.json` 为唯一来源；`@bobby/dat` 可以从
+DAT byte 的行优先位置推导 atlas 坐标。
 
 同一语义 type 的 atlas variant 可以具有不同地图内语义。Model 负责提供 type、
 variant 与 atlas 坐标的稳定对应关系；Engine 在加载关卡时为具体实例解析 Trait，
@@ -166,7 +167,8 @@ type WinCondition =
 { "type": "fill-all", "target": "egg-nest", "filler": "egg" }
 ```
 
-地图中的鸟巢实体使用 `egg-nest`。填充状态由 Engine 在运行时管理；规则中的 `egg` 是匹配已填充鸟巢的 Trait selector。
+地图中的鸟巢实体使用 `egg`。填充状态由 Engine 在运行时管理；规则中的
+`egg-nest` 与 `egg` 分别匹配鸟巢位置和已填充状态的 Runtime Trait selector。
 
 ```json
 { "type": "reach", "target": "exit" }
