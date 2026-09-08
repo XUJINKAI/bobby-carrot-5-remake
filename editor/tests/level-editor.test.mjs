@@ -452,6 +452,42 @@ test("multi-cell Inspector groups same types and prioritizes editable groups", (
   );
 });
 
+test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: MapEntityTypeId.EGG, x: 1, y: 1 },
+    { type: MapEntityTypeId.BEANSTALK, x: 2, y: 1 },
+    { type: MapEntityTypeId.WINDMILL, x: 3, y: 1, direction: "left" },
+  );
+
+  const cell = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(cell.layers[0]?.definition.type, EntityTypeId.EGG_EMPTY);
+
+  const multi = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 1, y: 1 }, focus: { x: 3, y: 1 } },
+    builtinEditorDefinition,
+  );
+  const definitions = new Map(
+    multi.groups.map((group) => [group.type, group.definition.type]),
+  );
+  assert.equal(definitions.get(MapEntityTypeId.EGG), EntityTypeId.EGG_EMPTY);
+  assert.equal(
+    definitions.get(MapEntityTypeId.BEANSTALK),
+    EntityTypeId.BEANSTALK_TIP,
+  );
+  assert.equal(
+    definitions.get(MapEntityTypeId.WINDMILL),
+    EntityTypeId.WINDMILL_LEFT,
+  );
+});
+
 test("reordering a cell stack changes actual Spatial top Presence", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(

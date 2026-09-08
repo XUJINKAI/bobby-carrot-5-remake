@@ -6,6 +6,7 @@ import type {
   EditorEntityDefinition,
   EditorSelection,
 } from "../definitions/types.js";
+import { editorCatalogEntry } from "../definitions/entities.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 import { isSurfaceEntityType } from "./surfaceAuthoring.js";
@@ -108,13 +109,10 @@ function cellLayers(
       return {
         ref: inspection.ref,
         entity: inspection.entity,
-        definition: catalog.require(inspection.entity.type),
+        definition: inspection.definition,
         ...(policy ? { editor: policy } : {}),
         stackOrder: inspection.presence.stackOrder,
-        editableScore: entityEditableScore(
-          catalog.require(inspection.entity.type),
-          policy,
-        ),
+        editableScore: entityEditableScore(inspection.definition, policy),
       };
     });
 }
@@ -135,7 +133,8 @@ function groupEntities(
   }
   return [...byType.entries()]
     .map(([type, typeRefs]) => {
-      const definition = catalog.require(type);
+      const first = level.entities[typeRefs[0]!.index]!;
+      const definition = editorCatalogEntry(catalog, first);
       const policy = editor.entities?.[type];
       return {
         type,
