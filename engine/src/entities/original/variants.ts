@@ -17,6 +17,7 @@ const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
 for (const mapping of SURFACE_SOURCE_MAPPINGS) {
   if (
     mapping.type === MapEntityTypeId.FENCE ||
+    mapping.type === MapEntityTypeId.CLOUD_PARKING ||
     mapping.type === MapEntityTypeId.SURFACE
   ) continue;
   const group = semanticSurfaceGroups.get(mapping.type) ?? [];

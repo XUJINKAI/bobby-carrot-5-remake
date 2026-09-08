@@ -4,12 +4,24 @@ import {
   EntityTypeId,
   MapEntityTypeId,
   entityMapDefinition,
+  ENTITY_MAP_DEFINITIONS,
 } from "@bobby/model";
 import {
   builtinEntityDefinitions,
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
 } from "../dist/entities/registry.js";
+import { levelEntityRuntimeType } from "../dist/world/entity/EntityInstance.js";
+
+test("所有 Map Entity 合同都对应可加载的 Runtime Definition", () => {
+  const registry = createBuiltinEntityRegistry();
+  for (const type of Object.keys(ENTITY_MAP_DEFINITIONS)) {
+    assert.doesNotThrow(
+      () => registry.require(levelEntityRuntimeType({ type, x: 0, y: 0 })),
+      type,
+    );
+  }
+});
 
 test("所有 canonical EntityTypeId 恰好注册一次", () => {
   const definitions = builtinEntityDefinitions.map((item) => item.type);

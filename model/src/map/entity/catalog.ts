@@ -122,7 +122,6 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   ]),
 
   defineEntity(MapEntityTypeId.CARROT),
-  defineEntity(MapEntityTypeId.EGG),
   defineEntity(
     MapEntityTypeId.EGG_NEST,
     [],

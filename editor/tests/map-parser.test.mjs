@@ -12,6 +12,18 @@ function documentWith(entities) {
   };
 }
 
+test("鸟巢实体与填充状态 selector 使用各自的合同", () => {
+  const document = {
+    ...documentWith([{ type: "egg-nest", x: 1, y: 1 }]),
+    rules: { win: { type: "fill-all", target: "egg-nest", filler: "egg" } },
+  };
+  assert.deepEqual(parseMapDocument(document), document);
+  assert.throws(
+    () => parseMapDocument(documentWith([{ type: "egg", x: 1, y: 1 }])),
+    /未知 Entity type/,
+  );
+});
+
 test("Map parser 接受 canonical Entity 和带坐标 variant 的临时 Surface", () => {
   const document = documentWith([
     { type: "grass", x: 0, y: 0, variant: "ts-10-1" },

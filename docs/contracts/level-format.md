@@ -166,6 +166,8 @@ type WinCondition =
 { "type": "fill-all", "target": "egg-nest", "filler": "egg" }
 ```
 
+地图中的鸟巢实体使用 `egg-nest`。填充状态由 Engine 在运行时管理；规则中的 `egg` 是匹配已填充鸟巢的 Trait selector。
+
 ```json
 { "type": "reach", "target": "exit" }
 ```

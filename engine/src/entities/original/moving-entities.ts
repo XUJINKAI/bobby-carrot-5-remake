@@ -217,6 +217,21 @@ export const cloud: EntityModule = originalModule(
   [{ behavior: movingPlatformBehavior }],
 );
 
+const cloudParkingDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.CLOUD_PARKING,
+  traits: [],
+  layer: "object",
+  stackOrder: CONTENT_STACK_ORDER,
+  presentation: { name: "Cloud Parking" },
+};
+
+export const cloudParking: EntityModule = originalModule(
+  cloudParkingDefinition,
+  atlasVisual(cloudParkingDefinition, (context) =>
+    namedCell(`cloud-parking-${cloudColor(context.entity.state?.color)}`),
+  ),
+);
+
 function movingEntityModule(
   type: EntityType,
   name: string,

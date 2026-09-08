@@ -102,7 +102,10 @@ function resolveGroup(
     label: group.label,
     rows: group.rows.map((row, rowIndex) =>
       row
-        .filter((entry) => !isSurfaceEntityType(entry.type))
+        .filter((entry) =>
+          !isSurfaceEntityType(entry.type) &&
+          isEditorEntityCreatable(editor, entry.type, catalog)
+        )
         .map((entry, columnIndex) => {
           used.add(entry.type);
           return resolveEntry(

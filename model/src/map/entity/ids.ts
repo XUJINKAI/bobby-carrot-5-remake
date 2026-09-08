@@ -57,7 +57,6 @@ export const MapEntityTypeId = {
   HIGH_GRASS: "high-grass",
   SNOW: "snow",
   CARROT: "carrot",
-  EGG: "egg",
   EGG_NEST: "egg-nest",
   LOCK: "lock",
   BEANSTALK: "beanstalk",

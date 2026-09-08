@@ -137,6 +137,7 @@ const highGrassDefinition: EntityModuleDefinition = {
 
 const highGrassObjectiveDefinition: EntityModuleDefinition = {
   type: EntityTypeId.HIGH_GRASS_OBJECTIVE,
+  authoring: { palette: false },
   traits: ["mowable", "blocking", "hidden-objective"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,

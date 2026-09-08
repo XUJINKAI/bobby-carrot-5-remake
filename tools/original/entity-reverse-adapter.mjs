@@ -201,8 +201,11 @@ function decodedTerrainFor(entity) {
 }
 
 function decodedSurfaceTerrain(entity) {
-  // Fence 在 Editor 中属于单格 Surface overlay，在原版 DAT 中仍占 object byte。
-  if (entity.type === MapEntityTypeId.FENCE) return null;
+  // atlas 分类只负责选图；这些实体在原版 DAT 中占 object byte，保留同格 terrain。
+  if (
+    entity.type === MapEntityTypeId.FENCE ||
+    entity.type === MapEntityTypeId.CLOUD_PARKING
+  ) return null;
   const mapping = surfaceMappingForEntity(entity.type, entity);
   if (!mapping) return null;
   const source = mapping.source;
@@ -241,6 +244,16 @@ function objectFor(entity) {
       green: DecodedObject.CLOUD_GREEN,
     }[entity.color];
     if (!decodedType) throw new Error("cloud 的 color 必须是 red/purple/green");
+    return [{ type: decodedType, x, y }];
+  }
+  if (type === MapEntityTypeId.CLOUD_PARKING) {
+    const decodedType = {
+      red: DecodedObject.CLOUD_GRID_RED,
+      purple: DecodedObject.CLOUD_GRID_PURPLE,
+      green: DecodedObject.CLOUD_GRID_GREEN,
+    }[entity.color];
+    if (!decodedType)
+      throw new Error("cloud-parking 的 color 必须是 red/purple/green");
     return [{ type: decodedType, x, y }];
   }
   if (type === MapEntityTypeId.FENCE) {

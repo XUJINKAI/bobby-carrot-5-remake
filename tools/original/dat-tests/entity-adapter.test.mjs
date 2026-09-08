@@ -19,6 +19,40 @@ import {
   encodeDatTerrain,
 } from "../dat/mapping.mjs";
 
+test("三色云朵停靠格通过 DAT object 往返并保留底层 terrain", () => {
+  for (const [color, type] of [
+    ["red", DecodedObject.CLOUD_GRID_RED],
+    ["purple", DecodedObject.CLOUD_GRID_PURPLE],
+    ["green", DecodedObject.CLOUD_GRID_GREEN],
+  ]) {
+    const source = {
+      width: 2,
+      height: 1,
+      terrain: [[DecodedTerrain.START, DecodedTerrain.WATER]],
+      objects: [{ type, x: 1, y: 0 }],
+    };
+    const map = adaptDecodedMap(source);
+    assert.ok(map.entities.some((entity) =>
+      entity.type === "cloud-parking" && entity.color === color
+    ));
+    const decoded = reverseEntityMap({
+      schemaVersion: 1,
+      width: source.width,
+      height: source.height,
+      ...map,
+    });
+    assert.deepEqual(decoded.terrain, source.terrain.map((row) =>
+      row.map((terrain) => decodeDatTerrain(encodeDatTerrain(terrain)))
+    ));
+    assert.deepEqual(decoded.objects, [{
+      type: decodeDatObject(encodeDatObject(type)),
+      x: 1,
+      y: 0,
+    }]);
+    assert.deepEqual(adaptDecodedMap(decoded), map);
+  }
+});
+
 test("DAT Tide bytes use the confirmed runtime directions", () => {
   assert.equal(decodeDatTerrain(0x57), "ts-6-8:tide-down");
   assert.equal(decodeDatTerrain(0x58), "ts-6-9:tide-up");
