@@ -25,6 +25,8 @@ export function buildVisualScene(
     effect: [],
   };
   const query = new SpatialVisualQuery(world.entities, world.spatial);
+  // 同一次场景构建读取同一个 World；规则求值可能扫描实体，应由所有视觉共享。
+  const winState = world.winState;
 
   for (let y = 0; y < world.height; y += 1) {
     for (let x = 0; x < world.width; x += 1) {
@@ -38,7 +40,7 @@ export function buildVisualScene(
           presence,
           query,
           global: world.state,
-          winState: world.winState,
+          winState,
           ...(visualRuntime ? { runtime: visualRuntime } : {}),
           ...(time ? { time } : {}),
         });
