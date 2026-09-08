@@ -51,6 +51,18 @@ http://sokoban.online.fr/levels/novoban/novoban.txt
 
 Novoban 原始文本及由它生成的 `custom-maps/novoban-pushbox/`、runtime MapDocument 均属于第三方关卡内容，**不属于本项目 `LICENSE` 的授权范围**。本仓库保留原始 copyright/source 信息；任何进一步分发仍应自行确认 François Marques 对相应关卡内容的授权条件。本项目的生成工具代码本身仍按根目录 `LICENSE` 授权。
 
+## Phosphor Icons
+
+Web 界面通过 `@phosphor-icons/vue` 使用 Phosphor Icons。该图标库由 Phosphor Icons 项目提供，并按 MIT License 发布；业务组件只通过 `web/src/shared/icons/` 的项目适配层使用它。
+
+项目地址：
+
+```text
+https://github.com/phosphor-icons/vue
+```
+
+Phosphor Icons 的版权与许可条件以其随包发布的许可证为准。
+
 ## 许可证边界
 
 `LICENSE` 仅授权 Bobby Carrot 5 Remake 项目自身原创的源代码、文档及其他由相应作者有权许可的原创材料。

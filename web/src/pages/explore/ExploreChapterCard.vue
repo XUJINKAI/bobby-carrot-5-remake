@@ -5,6 +5,7 @@ import type {
   MapCollectionMap,
 } from "../../services/catalog/catalog.js";
 import ExploreMapGrid from "./ExploreMapGrid.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   collectionId: string;
@@ -15,9 +16,6 @@ defineProps<{
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
-function stars(value: number | undefined): string {
-  return value ? "★".repeat(value) : "";
-}
 </script>
 
 <template>
@@ -38,7 +36,14 @@ function stars(value: number | undefined): string {
           v-if="chapter.difficulty"
           class="chapter-stars"
           :title="`章节难度 ${chapter.difficulty} 星`"
-        >{{ stars(chapter.difficulty) }}</span>
+        >
+          <AppIcon
+            v-for="star in chapter.difficulty"
+            :key="star"
+            name="star"
+            weight="fill"
+          />
+        </span>
         <span class="muted chapter-count">{{ maps.length }} 关</span>
       </div>
     </header>
@@ -101,6 +106,8 @@ function stars(value: number | undefined): string {
 }
 
 .chapter-stars {
+  display: inline-flex;
+  gap: 1px;
   letter-spacing: 0.04em;
   text-align: right;
 }

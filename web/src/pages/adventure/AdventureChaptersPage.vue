@@ -3,6 +3,7 @@ import type { ImageManager } from "@bobby/engine";
 import type { AdventureChapterRow } from "./types.js";
 import AdventureViewport from "./AdventureViewport.vue";
 import OriginalChapterStatusIcon from "./OriginalChapterStatusIcon.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{ rows: AdventureChapterRow[]; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -22,7 +23,14 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           <OriginalChapterStatusIcon :images="images" :completed="row.completed" />
           <span class="adventure-chapter-no">{{ String(row.number).padStart(2, "0") }}</span>
           <strong>{{ row.title }}</strong>
-          <span class="chapter-stars">{{ row.stars }}</span>
+          <span class="chapter-stars" :title="`章节难度 ${row.difficulty} 星`">
+            <AppIcon
+              v-for="star in row.difficulty"
+              :key="star"
+              name="star"
+              weight="fill"
+            />
+          </span>
         </a>
       </div>
     </main>
@@ -77,6 +85,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 }
 
 .chapter-stars {
+  display: inline-flex;
+  gap: 1px;
   font-size: 0.76rem;
 }
 </style>

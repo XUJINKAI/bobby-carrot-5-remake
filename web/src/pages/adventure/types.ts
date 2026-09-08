@@ -8,7 +8,7 @@ export interface AdventureHomeView {
 export interface AdventureChapterRow {
   number: number;
   title: string;
-  stars: string;
+  difficulty: number;
   completed: boolean;
 }
 

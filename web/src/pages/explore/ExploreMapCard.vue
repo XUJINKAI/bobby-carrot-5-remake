@@ -4,6 +4,7 @@ import type {
   MapCollectionMap,
 } from "../../services/catalog/catalog.js";
 import { explorePlayPath } from "../../app/routes.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   collectionId: string;
@@ -30,7 +31,9 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     @click.prevent="emit('navigate', explorePlayPath({ collection: collectionId, id: map.id }))"
   >
     <span class="explore-map-card-label">{{ map.name }}</span>
-    <span v-if="completed" class="done-mark" title="自由浏览中已通关">✓</span>
+    <span v-if="completed" class="done-mark" title="自由浏览中已通关">
+      <AppIcon name="check" />
+    </span>
   </a>
 </template>
 

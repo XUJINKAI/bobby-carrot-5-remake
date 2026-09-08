@@ -3,6 +3,7 @@ import type { ImageManager } from "@bobby/engine";
 import NightTrainScene from "../../shared/original-scenes/NightTrainScene.vue";
 import AdventureViewport from "./AdventureViewport.vue";
 import type { AdventureNightTrainDestination } from "./types.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   images: ImageManager;
@@ -22,7 +23,8 @@ const emit = defineEmits<{ navigate: [path: string] }>();
             :href="destination.href"
             @click.prevent="emit('navigate', destination.href)"
           >
-            <strong>{{ destination.label }}</strong><span>→</span>
+            <strong>{{ destination.label }}</strong>
+            <AppIcon name="next" />
           </a>
           <div v-else class="night-train-map-row">
             <strong>{{ destination.label }}</strong>

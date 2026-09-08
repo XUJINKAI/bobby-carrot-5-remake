@@ -38,7 +38,6 @@ try {
       'class="home-sky-brand"',
       'class="home-demo-screen-control"',
       'href="https://github.com/XUJINKAI/bobby-carrot-5-remake"',
-      'href="https://github.com/XUJINKAI/bobby-carrot-5-remake/blob/main/LICENSE"',
     ],
     ["本项目还在开发中"],
   );

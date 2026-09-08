@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HomeViewState } from "./types.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{ state: HomeViewState }>();
 const emit = defineEmits<{
@@ -59,7 +60,7 @@ function reportCanvas(element: unknown): void {
         :aria-pressed="state.screenControlEnabled"
         @click="emit('screenControl')"
       >
-        <span aria-hidden="true">🕹</span>
+        <AppIcon name="joystick" />
       </button>
     </footer>
   </article>

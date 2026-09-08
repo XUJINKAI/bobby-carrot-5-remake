@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { explorePlayPath } from "../../app/routes.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 defineProps<{
   collection: string;
   title: string;
@@ -27,11 +28,13 @@ const emit = defineEmits<{
       </div>
     </div>
     <div class="level-browser-actions">
-      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
-        继续游玩 · {{ lastMapLabel }}
-      </button>
       <button id="random-level" class="ghost-btn" @click="emit('random')">
+        <AppIcon name="shuffle" />
         随机关卡
+      </button>
+      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
+        <AppIcon name="play" weight="fill" />
+        继续游玩 · {{ lastMapLabel }}
       </button>
     </div>
   </section>
@@ -67,6 +70,12 @@ const emit = defineEmits<{
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.level-browser-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 @media (max-width: 700px) {

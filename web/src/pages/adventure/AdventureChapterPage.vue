@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { AdventureLevelRow } from "./types.js";
 import AdventureViewport from "./AdventureViewport.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   chapterNumber: number;
   title: string;
   description: string;
-  stars: string;
+  difficulty: number;
   rows: AdventureLevelRow[];
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -18,7 +19,14 @@ const emit = defineEmits<{ navigate: [path: string] }>();
       <div>
         <span>{{ String(chapterNumber).padStart(2, "0") }}</span>
         <h2>{{ title }}</h2>
-        <span class="chapter-stars">{{ stars }}</span>
+        <span class="chapter-stars" :title="`章节难度 ${difficulty} 星`">
+          <AppIcon
+            v-for="star in difficulty"
+            :key="star"
+            name="star"
+            weight="fill"
+          />
+        </span>
       </div>
       <p v-if="description">{{ description }}</p>
     </section>
@@ -32,11 +40,18 @@ const emit = defineEmits<{ navigate: [path: string] }>();
             :href="'/adventure/play/' + row.id"
             @click.prevent="emit('navigate', '/adventure/play/' + row.id)"
           >
-            <span class="level-status">{{ row.completed ? "✓" : "▶" }}</span>
+            <span class="level-status">
+              <AppIcon
+                :name="row.completed ? 'check' : 'play'"
+                :weight="row.completed ? 'bold' : 'fill'"
+              />
+            </span>
             <strong>{{ row.id.toUpperCase() }}</strong>
           </a>
           <div v-else class="adventure-level-row locked" aria-disabled="true">
-            <span class="level-status">🔒</span>
+            <span class="level-status">
+              <AppIcon name="lock" weight="fill" />
+            </span>
             <strong>{{ row.id.toUpperCase() }}</strong>
           </div>
         </template>

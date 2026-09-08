@@ -7,6 +7,8 @@ import {
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import { onMounted, ref, watch } from "vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
+import type { AppIconName } from "../../shared/icons/types.js";
 
 const props = defineProps<{
   source: EditorPlacementPreset;
@@ -14,6 +16,7 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
+  fallbackIcon?: AppIconName | undefined;
   fallbackText?: string | undefined;
 }>();
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -50,7 +53,8 @@ onMounted(() => { void draw(); });
       aria-hidden="true"
     />
     <span v-if="!rendered" class="editor-entity-preview-fallback" aria-hidden="true">
-      {{ fallbackText ?? source.type.slice(0, 2).toUpperCase() }}
+      <AppIcon v-if="fallbackIcon" :name="fallbackIcon" />
+      <template v-else>{{ fallbackText ?? source.type.slice(0, 2).toUpperCase() }}</template>
     </span>
   </span>
 </template>

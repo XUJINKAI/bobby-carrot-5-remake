@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import type { ShellAction } from "./shellBridge.js";
+import AppIcon from "../shared/icons/AppIcon.vue";
 
 const props = defineProps<{ action: ShellAction; overflow?: boolean }>();
 const emit = defineEmits<{ action: [id: string]; navigate: [path: string] }>();
-const icons: Record<string, string> = {
-  back: "←", edit: "✎", erase: "✕", fill: "▧", help: "?", info: "ⓘ", inspector: "⌕", menu: "☰",
-  joystick: "🕹", music: "♫", "next-track": "⏭", palette: "▦", place: "＋", play: "▶",
-  "previous-track": "⏮", redo: "↷", restart: "↻", select: "↖", settings: "⚙",
-  share: "↗", stop: "■", undo: "↶",
-};
-
 function activate(event?: MouseEvent): void {
   if (props.action.disabled) return;
   if (props.action.href) {
@@ -40,7 +34,10 @@ function activate(event?: MouseEvent): void {
     :rel="action.external ? 'noreferrer' : undefined"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon" aria-hidden="true">{{ icons[action.icon] }}</span>
+    <span v-if="action.icon" class="shell-action-icon">
+      <AppIcon :name="action.icon" />
+    </span>
+    <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
     <span v-if="action.badge" class="shell-action-badge" :class="action.badge.className" :title="action.badge.title">{{ action.badge.label }}</span>
     <span v-if="action.tip" class="shell-action-tip" role="status">{{ action.tip }}</span>
@@ -60,7 +57,10 @@ function activate(event?: MouseEvent): void {
     :disabled="action.disabled"
     @click="activate($event)"
   >
-    <span v-if="action.icon" class="shell-action-icon" aria-hidden="true">{{ icons[action.icon] }}</span>
+    <span v-if="action.icon" class="shell-action-icon">
+      <AppIcon :name="action.icon" />
+    </span>
+    <AppIcon v-if="action.cornerIcon" class="shell-action-corner-icon" :name="action.cornerIcon" weight="regular" />
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
     <span v-if="action.badge" class="shell-action-badge" :class="action.badge.className" :title="action.badge.title">{{ action.badge.label }}</span>
     <span v-if="action.tip" class="shell-action-tip" role="status">{{ action.tip }}</span>
@@ -102,10 +102,18 @@ function activate(event?: MouseEvent): void {
 }
 
 .shell-action-icon {
-  min-width: 1em;
-  font-size: 1rem;
-  line-height: 1;
-  text-align: center;
+  display: grid;
+  min-width: 18px;
+  place-items: center;
+  font-size: 18px;
+}
+
+.shell-action-corner-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
 }
 
 .shell-action-badge {

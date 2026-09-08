@@ -63,6 +63,8 @@ Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动�
 
 Action 可以携带短暂 `tip`，Shell 将其锚定到对应控件下方。提示内容与出现条件由 App 或页面决定，Shell 不解释其业务语义。
 
+`ShellIcon` 与页面内图标统一使用 `web/src/shared/icons/AppIcon.vue` 暴露的产品语义名称。业务组件不直接依赖第三方图标组件；Phosphor 的名称映射、默认 weight 与未来替换都集中在该适配层。
+
 ## BottomBar
 
 BottomBar 使用固定三段：
@@ -71,7 +73,7 @@ BottomBar 使用固定三段：
 Leading | Info | Trailing
 ```
 
-`leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
+`leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接，并可带语义图标。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
 
 ## 全局功能与 Help
 

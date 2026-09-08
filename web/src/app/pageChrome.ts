@@ -60,6 +60,8 @@ export function globalActions(): ShellAction[] {
 export function repositoryAction(): ShellAction {
   return {
     id: "github-repository",
+    icon: "github",
+    cornerIcon: "external",
     label: "GitHub",
     title: "打开 GitHub 仓库",
     href: PROJECT_REPOSITORY_URL,

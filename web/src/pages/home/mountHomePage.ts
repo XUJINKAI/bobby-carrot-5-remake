@@ -46,16 +46,6 @@ export async function renderHome(
           external: true,
         },
         { text: "GitHub", href: PROJECT_REPOSITORY_URL, external: true },
-        {
-          text: "License",
-          href: `${PROJECT_REPOSITORY_URL}/blob/main/LICENSE`,
-          external: true,
-        },
-        {
-          text: "Third-party Assets",
-          href: `${PROJECT_REPOSITORY_URL}/blob/main/THIRD_PARTY_ASSETS.md`,
-          external: true,
-        },
       ],
     },
   });

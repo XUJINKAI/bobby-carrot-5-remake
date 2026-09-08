@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ShellConfig } from "./shellBridge.js";
 import ShellActionButton from "./ShellActionButton.vue";
+import AppIcon from "../shared/icons/AppIcon.vue";
 
 defineProps<{ config: NonNullable<ShellConfig["bottomBar"]> }>();
 const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
@@ -20,6 +21,7 @@ function navigateInfo(event: MouseEvent, href: string, external?: boolean): void
     <div class="shell-bottom-info">
       <template v-for="(item, index) in config.info ?? []" :key="`${item.text}-${index}`">
         <span v-if="index" aria-hidden="true">·</span>
+        <AppIcon v-if="item.icon" :name="item.icon" />
         <a
           v-if="item.href"
           :href="item.href"

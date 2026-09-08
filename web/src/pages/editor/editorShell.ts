@@ -184,7 +184,9 @@ function shellIssueInfo(issues: readonly LevelValidationIssue[]) {
   if (issues.length === 0) return [];
   const issue =
     issues.find((candidate) => candidate.level === "error") ?? issues[0]!;
-  const prefix = issue.level === "error" ? "⛔" : "⚠";
   const suffix = issues.length > 1 ? ` · 共 ${issues.length} 个问题` : "";
-  return [{ text: `${prefix} ${issue.message}${suffix}` }];
+  return [{
+    text: `${issue.message}${suffix}`,
+    icon: issue.level === "error" ? "error" as const : "warning" as const,
+  }];
 }

@@ -189,7 +189,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
             :images="images"
             :catalog="catalog"
             :editor="editor"
-            fallback-text="◇"
+            fallback-icon="shape"
           />
           <small>{{ variantLabel(entry.index) }}</small>
         </button>

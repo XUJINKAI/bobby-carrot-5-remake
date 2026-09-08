@@ -4,6 +4,7 @@ import { webT } from "../../i18n/webI18n.js";
 import type { WebTheme } from "../../theme/webTheme.js";
 import type { MusicMode } from "../settings/globalPreferences.js";
 import type { GlobalSettingsState } from "../settings/useGlobalSettings.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{ state: GlobalSettingsState }>();
 const emit = defineEmits<{
@@ -105,7 +106,7 @@ function numberValue(event: Event): number {
 
     <button type="button" class="quick-settings-more" @click="emit('moreSettings')">
       <span>{{ webT('settings.more') }}</span>
-      <span aria-hidden="true">›</span>
+      <AppIcon name="next" />
     </button>
   </aside>
 </template>
