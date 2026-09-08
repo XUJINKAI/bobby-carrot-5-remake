@@ -5,7 +5,7 @@ defineProps<{
   collection: string;
   title: string;
   description: string;
-  summary: string;
+  mapCount: number;
   lastMapId: string;
   lastMapLabel: string;
 }>();
@@ -18,14 +18,12 @@ const emit = defineEmits<{
 <template>
   <section class="level-browser-head">
     <div class="section-title">
-      <div>
-        <div class="eyebrow">EXPLORE MODE</div>
+      <div class="eyebrow">EXPLORE MODE</div>
+      <div class="collection-title-line">
         <h1>{{ title }}</h1>
-        <p>{{ description }}</p>
+        <span class="level-browser-count">{{ mapCount }} 关</span>
       </div>
-      <div class="level-browser-summary muted">
-        {{ summary }}
-      </div>
+      <p>{{ description }}</p>
     </div>
     <div class="level-browser-actions">
       <button id="random-level" class="ghost-btn" @click="emit('random')">
@@ -50,10 +48,13 @@ const emit = defineEmits<{
 }
 
 .section-title {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
   margin: 0;
+}
+
+.collection-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
 }
 
 .section-title h1 {
@@ -64,6 +65,14 @@ const emit = defineEmits<{
 .section-title p {
   margin: 0;
   color: var(--muted);
+}
+
+.level-browser-count {
+  color: var(--bc-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.72;
+  white-space: nowrap;
 }
 
 .level-browser-actions {
