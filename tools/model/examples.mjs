@@ -10,6 +10,7 @@ import {
 import { root } from "../lib/fs.mjs";
 
 const STORAGE_KEYS = {
+  setting: "bc5r:setting",
   adventure: "bc5r:adventure",
   explore: "bc5r:explore/<collection>",
   editorAutosave: "bc5r:editor/autosave",
@@ -208,6 +209,21 @@ function storageExamples(mapDocument) {
   return {
     game: BC5R_GAME_ID,
     records: [
+      {
+        key: STORAGE_KEYS.setting,
+        value: {
+          schemaVersion: 1,
+          locale: "zh-CN",
+          theme: "bobby",
+          audio: {
+            musicEnabled: true,
+            musicMode: "follow-theme",
+            volume: 100,
+          },
+          controls: { screenControlEnabled: true },
+          editor: { paletteSize: 48 },
+        },
+      },
       {
         key: STORAGE_KEYS.adventure,
         value: adventureSaveExample(),

@@ -9,7 +9,7 @@ import {
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { loadScreenControlPreference } from "../../shell/shellBridge.js";
+import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
   computed,
   nextTick,
@@ -104,7 +104,9 @@ async function togglePlay(): Promise<void> {
       runtime: {
         hud: true,
         input: {
-          screenJoystick: { enabled: loadScreenControlPreference() },
+          screenJoystick: {
+            enabled: getWebSettings().controls.screenControlEnabled,
+          },
         },
       },
     });

@@ -369,7 +369,7 @@ web/src
 ├── app/                 Vue 根应用、路由协调与页面生命周期合同
 ├── shell/               通用 TopBar、BottomBar、Identity、Action 与 ShellConfig
 ├── app/dialogs/         Settings、Help 等产品级 Dialog
-├── app/settings/        全局设置状态与浏览器适配
+├── app/settings/        全局设置状态与运行时应用
 ├── pages/<mode>/        页面组件、页面挂载器与页面私有交互
 ├── runtime/game/        Web 对 Engine session 生命周期的适配
 ├── services/            Audio、Catalog 与产品资产访问
@@ -377,6 +377,12 @@ web/src
 ├── app.ts               Web 入口
 └── vue-env.d.ts         Vue SFC 类型声明
 ```
+
+Web 用户偏好使用一条版本化 `bc5r:setting` JSON record。`locale`、`theme`、
+`audio`、`controls` 和 `editor` 偏好由 `storage/settingsStorage.ts` 统一解析和
+写入；Theme、I18n、Shell、Audio 与 Editor 页面只负责把设置应用到各自的
+运行时能力。首次读取时，浏览器语言和指针类型参与默认值计算；写入时始终
+保存完整的 schema v1 文档。
 
 页面相关的 TypeScript 与 `.vue` 文件共置在对应 `pages/<mode>/` 中。Web 根目录不承载页面实现、运行时服务或模糊的通用工具模块。
 

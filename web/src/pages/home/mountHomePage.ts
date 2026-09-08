@@ -7,10 +7,8 @@ import { globalActions, homeIdentity } from "../../app/pageChrome.js";
 import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import {
-  configureShell,
-  loadScreenControlPreference,
-} from "../../shell/shellBridge.js";
+import { configureShell } from "../../shell/shellBridge.js";
+import { getWebSettings } from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
 
@@ -103,7 +101,9 @@ export async function renderHome(
           undo: false,
           zoom: false,
           debug: false,
-          screenJoystick: { enabled: loadScreenControlPreference() },
+          screenJoystick: {
+            enabled: getWebSettings().controls.screenControlEnabled,
+          },
         },
       },
     });

@@ -1,12 +1,37 @@
 import type { AdventureSave } from "@bobby/adventure";
+import type { Locale } from "@bobby/i18n";
 import type { Bc5rGameId, MapDocument } from "@bobby/model";
 
 /** 浏览器物理存储命名空间；这些字符串属于 Web 持久化合同。 */
+export const SETTING_STORAGE_KEY = "bc5r:setting";
 export const ADVENTURE_STORAGE_KEY = "bc5r:adventure";
 export const EXPLORE_STORAGE_PREFIX = "bc5r:explore/";
 export const EDITOR_STORAGE_PREFIX = "bc5r:editor/";
 export const EDITOR_AUTOSAVE_SLOT = "autosave";
 export const EDITOR_AUTOSAVE_STORAGE_KEY = `${EDITOR_STORAGE_PREFIX}${EDITOR_AUTOSAVE_SLOT}`;
+
+export type WebTheme = "bobby" | "fc";
+export type MusicMode = "follow-theme" | "modern" | "8bit";
+export const EDITOR_PALETTE_SIZES = [32, 40, 48, 56, 64] as const;
+export type EditorPaletteSize = (typeof EDITOR_PALETTE_SIZES)[number];
+
+/** Web 用户偏好的唯一持久化合同，对应一条 bc5r:setting record。 */
+export interface WebSettings {
+  schemaVersion: 1;
+  locale: Locale;
+  theme: WebTheme;
+  audio: {
+    musicEnabled: boolean;
+    musicMode: MusicMode;
+    volume: number;
+  };
+  controls: {
+    screenControlEnabled: boolean;
+  };
+  editor: {
+    paletteSize: EditorPaletteSize;
+  };
+}
 
 /** 每个 Explore collection 对应一条物理 localStorage record。 */
 export interface ExploreCollectionStorage {
@@ -32,6 +57,7 @@ export interface EditorStorageSnapshot {
 /** 跨 Web 持久化领域的完整便携备份；自身不是 localStorage record。 */
 export interface WebStorageSnapshot {
   schemaVersion: 1;
+  setting: WebSettings;
   adventure: AdventureSave;
   explore: ExploreStorageSnapshot;
   editor: EditorStorageSnapshot;

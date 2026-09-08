@@ -60,7 +60,15 @@ import {
   type LevelEntity,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
+import {
+  EDITOR_PALETTE_SIZES,
+  type EditorPaletteSize,
+} from "../../storage/contracts.js";
 import { storeEditorAutosave } from "../../storage/editorDraftStorage.js";
+import {
+  getWebSettings,
+  updateWebSettings,
+} from "../../storage/settingsStorage.js";
 
 export type EditorLeftPanel = "palette" | "surface";
 
@@ -562,11 +570,18 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function setPaletteSize(delta: number): void {
-    const sizes = [32, 40, 48, 56, 64];
-    const index = Math.max(0, sizes.indexOf(paletteSize.value));
+    const index = Math.max(0, EDITOR_PALETTE_SIZES.indexOf(paletteSize.value));
     paletteSize.value =
-      sizes[Math.min(sizes.length - 1, Math.max(0, index + delta))]!;
-    localStorage.setItem("bobby.editor.paletteSize", String(paletteSize.value));
+      EDITOR_PALETTE_SIZES[
+        Math.min(
+          EDITOR_PALETTE_SIZES.length - 1,
+          Math.max(0, index + delta),
+        )
+      ]!;
+    updateWebSettings((settings) => ({
+      ...settings,
+      editor: { ...settings.editor, paletteSize: paletteSize.value },
+    }));
   }
 
   return {
@@ -705,7 +720,6 @@ function coerceFieldValue(
   return raw;
 }
 
-function readPaletteSize(): number {
-  const stored = Number(localStorage.getItem("bobby.editor.paletteSize"));
-  return [32, 40, 48, 56, 64].includes(stored) ? stored : 48;
+function readPaletteSize(): EditorPaletteSize {
+  return getWebSettings().editor.paletteSize;
 }

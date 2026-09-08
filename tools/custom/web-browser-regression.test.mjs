@@ -92,6 +92,27 @@ async function verifyQuickSettings(cdp, url) {
 
   await chooseTheme(cdp, sessionId, "FC", "fc");
   await chooseTheme(cdp, sessionId, "Bobby", "bobby");
+
+  const stored = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      keys: Object.keys(localStorage).sort(),
+      setting: JSON.parse(localStorage.getItem('bc5r:setting'))
+    }))()`,
+  );
+  if (!stored.keys.includes("bc5r:setting"))
+    throw new Error("Quick Settings 未写入 bc5r:setting");
+  if (
+    stored.keys.some(
+      (key) => key.startsWith("bobby.") || key === "bc5r:screen-control",
+    )
+  )
+    throw new Error("Quick Settings 写入了散装设置 key");
+  if (
+    stored.setting?.schemaVersion !== 1 ||
+    stored.setting?.theme !== "bobby"
+  )
+    throw new Error("Quick Settings 写入的 settings document 无效");
 }
 
 async function chooseTheme(cdp, sessionId, label, expected) {

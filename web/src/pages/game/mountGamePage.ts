@@ -43,9 +43,9 @@ import {
 } from "../../app/routes.js";
 import {
   configureShell,
-  loadScreenControlPreference,
   type ShellConfig,
 } from "../../shell/shellBridge.js";
+import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
   GAME_HELP,
   globalActions,
@@ -156,7 +156,7 @@ export async function renderGamePage(
         sessionPlan.entityPatches,
       )
     : level;
-  const screenControlEnabled = loadScreenControlPreference();
+  const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   configureShell(
     gameShellConfig(identity, mode, screenControlEnabled),
     GAME_HELP,

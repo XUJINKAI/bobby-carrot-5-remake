@@ -66,7 +66,6 @@ export interface ShellBridge {
   apply(config: ShellConfig, help: HelpDescriptor): void;
 }
 
-const SCREEN_CONTROL_STORAGE_KEY = "bc5r:screen-control";
 let activeBridge: ShellBridge | null = null;
 let activeConfig: ShellConfig | null = null;
 let activeHelp: HelpDescriptor = defaultHelpDescriptor();
@@ -132,17 +131,4 @@ export function defaultHelpDescriptor(): HelpDescriptor {
     title: "操作帮助",
     sections: [{ lines: ["WASD / 方向键：移动", "拖动画面：查看地图"] }],
   };
-}
-
-export function loadScreenControlPreference(): boolean {
-  const stored = localStorage.getItem(SCREEN_CONTROL_STORAGE_KEY);
-  if (stored !== null) return stored === "true";
-  return window.matchMedia("(pointer: coarse)").matches;
-}
-
-export function storeScreenControlPreference(enabled: boolean): void {
-  localStorage.setItem(SCREEN_CONTROL_STORAGE_KEY, String(enabled));
-  window.dispatchEvent(
-    new CustomEvent("screen-control-change", { detail: { enabled } }),
-  );
 }
