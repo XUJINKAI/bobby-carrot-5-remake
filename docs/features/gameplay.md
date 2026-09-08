@@ -5,7 +5,7 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 已经实现的基础能力：
 
 - 通过纯 semantic `LevelMap` 加载官方关卡或自定义地图；
-- 根据 `Terrain.START` 初始化 Bobby；原版 DAT `0x95` 映射属于 `@bobby/dat`；
+- 从 Bobby Entity 初始化玩家；Start 是可与 Bobby 同格放置的普通 Surface；
 - 四方向原版 Bobby 动画与格间插值；
 - 原版 `ts.png` 静态图集与 `ta.png` 动态图集；
 - Camera、Zoom 与可配置 `InputController`；
@@ -20,7 +20,7 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - 通用 `onWorldEvent()` 世界事件流；
 - 地图实例参数驱动的 Timed Challenge；
 - 死亡/通关状态与 Web Result 层；
-- semantic Tile/Object Definition 调试检查；需要原版 hex provenance 时由 Web/Editor Debug 层查询 `@bobby/dat`。
+- semantic Entity Definition 调试检查；原版 hex provenance 只由 Original tooling 查询。
 
 地图内限时挑战由 Lock 的类型专属字段描述：
 

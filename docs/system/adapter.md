@@ -22,7 +22,7 @@ DAT level record
 
 `mapping.mjs` 按行优先规则换算 DAT byte 与 `ts.png` 坐标。decoded 标签中的坐标是
 无损身份，名称由 Original Tile Visual 目录生成并在编码时校验。DAT byte 只存在于
-`@bobby/dat` 边界。
+`tools/original/dat/` 边界。
 
 `original-tile-visuals.json` 按 Editor 的 `surface/palette` 分类维护 `ts.png` 全部
 256 格及 `ta.png` 动画序列。该分类只决定 Editor 面板，不表示 DAT 的
@@ -48,12 +48,14 @@ DAT level record
 - `objects`：每项为 `type`、`x`、`y` 的紧凑对象表。
 
 canonical `LevelMap` 可以在同一坐标保存多个 Entity。正向 Adapter 把原版压缩表示
-展开为语义堆叠；反向 Adapter 只接受能够明确写回一层 terrain 与 objects 表的地图。
+展开为语义堆叠；反向 Adapter 把原版 DAT 能表达的 Entity 压回一层 terrain 与
+objects 表。Engine 专属字段与其它扩展地图语义不属于原版 DAT 的无损范围。
 
 ## 验证
 
 - `tools/original/dat-tests/entity-adapter.test.mjs` 为两个 Adapter 的特例提供可执行示例。
-- `npm run verify` 对全部官方 source record 执行 DAT 解码、Adapter、Patch round-trip
-  与 atlas 标签检查。
+- `npm run verify` 对全部 530 条官方 source record 执行 DAT 解码，并验证
+  `Adapter → Reverse Adapter → Adapter` 后 canonical `LevelMap` 语义一致；同时检查
+  atlas 标签与实际 JAR Patch 写入结果。
 - 需要确认原版 Java ME runtime 行为时，使用
   [`validate-original.md`](../workflows/validate-original.md) 的 JAR Patch 流程。

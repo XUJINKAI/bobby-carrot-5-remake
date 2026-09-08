@@ -489,22 +489,22 @@ DAT 只在这些工具/验证路径需要时编译；正常产品输出不复制
 允许：
 
 ```text
-model <- dat
+model <- tools/original/dat
 model <- engine
 model <- adventure
 model + engine <- editor
 model + engine + adventure + editor <- web
-tools -> dat + model + original assets + generated metadata
+Original Adapter/Patch -> tools/original/dat + model + original assets + generated metadata
 ```
 
 禁止：
 
 ```text
-engine -> adventure / DAT byte / @bobby/dat / Catalog / HTTP
+engine -> adventure / DAT byte / Original DAT tooling / Catalog / HTTP
 adventure -> engine / DAT / JAR / archive release fields / DOM / localStorage
 model -> DAT/JAR/gameplay/Campaign
-editor -> @bobby/dat / DAT import-export / DAT-backed URL share
-web -> @bobby/dat / DAT feature / DAT browser module
+editor -> Original DAT tooling / DAT import-export / DAT-backed URL share
+web -> Original DAT tooling / DAT feature / DAT browser module
 World -> per-object multi-cell synthesis switch
 web filter -> MutationObserver patch another page
 ```

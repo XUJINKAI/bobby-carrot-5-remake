@@ -130,7 +130,7 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
     height: 1,
     entities: [
       { type: EntityTypeId.START, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
+      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
       {
         type: EntityTypeId.WIND_SWITCH,
         x: 1,
@@ -397,7 +397,7 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
     { type: "grass", x: 1, y: 0, variant: "ts-6-15" },
     { type: "grass", x: 2, y: 0, variant: "ts-6-15" },
     { type: EntityTypeId.START, x: 3, y: 0 },
-    { type: EntityTypeId.BOBBY, x: 3, y: 0, direction: "down" },
+    { type: EntityTypeId.BOBBY, x: 3, y: 0 },
     { type: "grass", x: 4, y: 0, variant: "ts-6-15" },
   ];
   const map = {

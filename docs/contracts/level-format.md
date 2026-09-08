@@ -69,8 +69,8 @@ Behavior 可以在 runtime state 中把 `pressed` 改为 `true`，Visual Runtime
 原版地图偶尔会把 Palette 图块放在 terrain 层；这类记录使用
 `type: "original-tile"` 与 `variant: "ts-<row>-<column>"`。普通 Surface 与 Object
 使用稳定语义 type。atlas 坐标、selector 与动画帧以
-`model/src/map/entity/original-tile-visuals.json` 为唯一来源；`@bobby/dat` 可以从
-DAT byte 的行优先位置推导 atlas 坐标。
+`model/src/map/entity/original-tile-visuals.json` 为唯一来源；
+`tools/original/dat/` 可以从 DAT byte 的行优先位置推导 atlas 坐标。
 
 同一语义 type 的 atlas variant 可以具有不同地图内语义。Model 负责提供 type、
 variant 与 atlas 坐标的稳定对应关系；Engine 在加载关卡时为具体实例解析 Trait，

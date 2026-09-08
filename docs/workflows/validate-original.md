@@ -47,7 +47,7 @@ node tools/cli.mjs original patch
 - DAT metadata 与其它关卡 record 原字节保留；
 - JAR 其它 entry 尽可能原 local ZIP block 保留；
 - 失效签名 entry 被移除；
-- 输出 JAR 再读取后得到的 Entity Map 与输入地图的 Adapter 规范化结果一致。
+- 输出 JAR 再读取后的目标 DAT record 与反向 Adapter 输出一致。
 
 ## 4. 在原版模拟器运行
 
@@ -56,7 +56,7 @@ node tools/cli.mjs original patch
 ## 5. 回到 Engine
 
 如果原版与 bc5r 不同：
-1. 先确认自定义 map 的 JAR round-trip 已通过；
+1. 先确认自定义 map 的 DAT record 写入校验已通过；
 2. 查看原版字节码与 `docs/reference/`；
 3. 修改 Engine Definition/World；
 4. 增加自动回归测试；

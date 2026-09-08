@@ -14,7 +14,7 @@
 - Engine 读取静态单元与动画序列，持有触发、时序、门控和 runtime state。
 - Editor 读取 `surface/palette` 分类、可放置类型与 variant，另外维护 UI 排列与
   Surface Auto 策略。
-- `@bobby/dat` 从 byte 计算 atlas 坐标，并通过目录取得名称和 canonical selector；
+- `tools/original/dat/` 从 byte 计算 atlas 坐标，并通过目录取得名称和 canonical selector；
   DAT byte 与 archive identity 留在格式边界。
 - 文档说明结构、行为与边界，具体坐标和帧序列直接引用可执行目录。
 

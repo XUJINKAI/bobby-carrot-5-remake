@@ -4,8 +4,8 @@
 
 规则：
 
-- Engine、Editor、Web、生成地图、玩法测试与 Runtime Debug 使用 canonical
-  terrain/object 语义身份。
+- Engine、Editor、Web、生成地图、玩法测试与 Runtime Debug 使用 canonical Entity
+  语义身份。
 - 原始 DAT byte 只出现在 DAT codec、逆向参考资料和明确的 codec round-trip
   测试中。
 - decoded archive 保留 Terrain 与 Object 两层，二者的标签统一为

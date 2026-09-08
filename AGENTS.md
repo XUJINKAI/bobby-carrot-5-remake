@@ -89,7 +89,7 @@
 3. 正式 Campaign 玩家 ID 使用连续章节编号：`1-1 / 1-bonus-1 / ... / 40-10`。`base / up01 ... up09`、DAT 包名和 record slot 只属于 archive provenance；`001...485` 仍只是内部 canonical identity。
 4. 原始 Campaign 内容必须区分：40 章共 400 个普通关卡 + 80 个 Bonus 奖励关；此外还有 5 个共享商店 / Special Scene：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。技术上可以把前两者统称为 480 个 Campaign map，但面向玩家的文案使用 400 个普通关卡 + 80 个 Bonus 奖励关的产品表述。
 5. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；`LevelEntity` 的类型专属顶层 primitive 字段由 Model Definition 声明，`LevelMap.rules` 承载地图规则，具体执行逻辑与 runtime state 只位于 Engine；禁止加入 JAR/DAT byte、发布包、SHA、HTTP 或 Campaign 信息。
-6. **所有原版 DAT byte ↔ semantic 映射只能位于 `@bobby/dat`。** Engine / Model 不允许维护第二份 DAT table；Editor/Web 只有分享或 Debug provenance 这种明确边界可以调用 `@bobby/dat` API。
+6. **所有原版 DAT byte ↔ `ts.png` 坐标换算只能位于 `tools/original/dat/`。** 坐标对应的 `type / fields / role / phase` 以 `model/src/map/entity/original-tile-visuals.json` 为唯一来源。Engine / Model 不允许维护第二份 DAT table；Editor/Web 不依赖 Original DAT tooling。
 7. `engine/` 是唯一地图内游戏规则实现。Web、Adventure 与 Editor 禁止复制碰撞、机关、地图内计时、地图内死亡/胜利条件。
 8. Engine 不知道 Adventure。`Game.loadLevel()` 只消费纯语义 `LevelMap`；release、chapter、difficulty、record hash、JAR source 等产品/来源字段不能成为 Engine load options。地图内机关实例参数通过 Definition 声明的 `LevelEntity` 顶层字段随 `LevelMap` 进入 Engine。
 9. Engine 对外通过通用 `onWorldEvent()` 报告世界事件，并提供通用 Game 动作。禁止为 Adventure 增加 `bonus-timeout` 等 Campaign 专用 Engine API。
@@ -113,23 +113,22 @@
 ## 依赖方向
 
 ```text
-@bobby/model <- @bobby/dat
 @bobby/model <- engine
 @bobby/model <- @bobby/adventure
 @bobby/model <- editor <- web
-@bobby/dat   <- editor (share/debug boundary)
+@bobby/model <- tools
 engine       <- editor <- web
 @bobby/adventure <- web
-tools        -> @bobby/dat / original JAR / generated Catalog
+Original Adapter/Patch -> tools/original/dat / @bobby/model / original JAR
 ```
 
 禁止：
 
 ```text
-engine    -> @bobby/adventure / @bobby/dat / JAR / Catalog / HTTP
-adventure -> @bobby/engine / @bobby/dat / JAR / Catalog archive fields / DOM / localStorage
-model     -> engine / dat / adventure / web / editor
-editor    -> raw DAT literals
-web       -> raw DAT literals
+engine    -> @bobby/adventure / tools/original/dat / JAR / Catalog / HTTP
+adventure -> @bobby/engine / tools/original/dat / JAR / Catalog archive fields / DOM / localStorage
+model     -> engine / tools/original/dat / adventure / web / editor
+editor    -> tools/original/dat / raw DAT literals
+web       -> tools/original/dat / raw DAT literals
 mechanics -> DOM
 ```

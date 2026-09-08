@@ -7,7 +7,6 @@ import { root } from "../lib/fs.mjs";
 const SOURCE_ROOTS = [
   "model",
   "i18n",
-  "dat",
   "engine",
   "adventure",
   "editor",
@@ -28,6 +27,13 @@ const MAX_SOURCE_LINES = 1000;
 const REVIEW_SOURCE_LINES = 800;
 const IMAGE_MANAGER = path.normalize("engine/src/image/ImageManager.ts");
 const OBSOLETE_SITE_ORIGIN = ["xujinkai", "github", "io"].join(".");
+const ORIGINAL_DAT_FORBIDDEN_ROOTS = [
+  "model",
+  "engine",
+  "adventure",
+  "editor",
+  "web",
+];
 
 const errors = [];
 const warnings = [];
@@ -57,6 +63,14 @@ for (const sourceRoot of SOURCE_ROOTS) {
     }
     if (normalized.startsWith(path.normalize("engine/src/")) && /\bVisualAssetSources\b/.test(text)) {
       errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);
+    }
+    if (
+      ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
+        normalized.startsWith(path.normalize(`${directory}/src/`))
+      ) &&
+      /(?:@bobby\/dat|tools\/original\/dat)/.test(text)
+    ) {
+      errors.push(`${relative}: 产品运行时代码不得依赖 Original DAT tooling`);
     }
 
     if (SCRIPT_EXTENSIONS.has(path.extname(file))) {

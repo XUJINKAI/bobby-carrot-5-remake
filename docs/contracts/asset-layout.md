@@ -61,10 +61,10 @@ filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区
 ```json
 { "type": "entity", "entity": { "type": "carrot" } }
 { "type": "entity", "entity": { "type": "tide", "direction": "right" } }
-{ "type": "entity", "entity": { "type": "mirror", "state": { "variant": 1 } } }
+{ "type": "entity", "entity": { "type": "mirror", "variant": "right-bottom" } }
 ```
 
-`entity` 使用与 `LevelEntity` 相同的 `type / direction / properties / state` 语义，但作为预览描述不包含坐标。Explore 应通过 Engine VisualDefinition/preview 能力绘制它，而不是按 ID 自己维护一套 atlas 或 CSS 映射。
+`entity` 使用与 `LevelEntity` 相同的 `type` 与类型专属顶层字段，但作为预览描述不包含坐标。Explore 应通过 Engine VisualDefinition/preview 能力绘制它，而不是按 ID 自己维护一套 atlas 或 CSS 映射。
 
 纯 UI 图标仍可使用：
 
