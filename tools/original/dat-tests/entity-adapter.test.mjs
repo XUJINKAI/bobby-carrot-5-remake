@@ -205,7 +205,12 @@ test("Mirror 数字帧与 Carousel 方向在 adapter 边界转换", () => {
 
 test("原版单层 Snow/High Grass 精确展开为 surface + cover", () => {
   assert.deepEqual(adaptDecodedTerrain(terrain(0x4d), 3, 4), [
-    { type: MapEntityTypeId.GRASS, x: 3, y: 4, variant: "ts-10-2" },
+    {
+      type: MapEntityTypeId.SNOW_CLOUD,
+      x: 3,
+      y: 4,
+      variant: "ts-8-13",
+    },
     { type: EntityTypeId.SNOW, x: 3, y: 4 },
   ]);
   assert.deepEqual(adaptDecodedTerrain(terrain(0xc7), 3, 4), [
@@ -237,10 +242,51 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
     result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
     [
       canonicalMowedGroundAt(2, 0),
-      { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0 },
       { type: EntityTypeId.CARROT, x: 2, y: 0 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0 },
     ],
   );
+});
+
+test("High Grass 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠", () => {
+  const result = adaptDecodedMap({
+    width: 2,
+    height: 1,
+    terrain: [[terrain(0x95), terrain(0xc7)]],
+    objects: [{ type: objectTile(0xf8), x: 1, y: 0 }],
+  });
+  assert.deepEqual(
+    result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
+    [
+      canonicalMowedGroundAt(1, 0),
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
+    ],
+  );
+});
+
+test("Patch 以 Snow 作为 terrain，并忽略同格底层 Surface", () => {
+  const reversed = reverseEntityMap({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.START, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.SNOW_CLOUD,
+        x: 1,
+        y: 0,
+        variant: "ts-8-13",
+      },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  assert.equal(reversed.terrain[0][1], terrain(0x4d));
+  assert.deepEqual(reversed.objects, [
+    { type: objectTile(0xf8), x: 1, y: 0 },
+  ]);
 });
 
 test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty Nest", () => {

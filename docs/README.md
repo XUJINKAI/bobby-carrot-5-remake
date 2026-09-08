@@ -2,6 +2,7 @@
 
 - `design.md`：产品是什么，以及哪些地方明确要现代化。
 - `architecture.md`：模块边界与依赖方向。
+- `human-focus.md`：需要人类重点判断的语义、Adapter 与玩法文件。
 - `system/`：BC5R 的核心系统与内容定义；原版内容规则见 `system/original/`。
 - `contracts/`：Engine API、关卡格式、资产目录等跨模块契约。
 - `features/`：具体功能的行为约束；Web UI 见 `features/ui.md`，地图编辑器见 `features/editor.md`。

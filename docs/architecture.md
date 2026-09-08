@@ -54,7 +54,7 @@ LevelMap <-> DAT level record
 DAT package <-> metadata + level records
 ```
 
-`tools/original/dat/mapping.mjs` 是唯一 raw DAT ID table。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
+`tools/original/dat/mapping.mjs` 是唯一 DAT byte 与 atlas 坐标换算边界。原版 hex ID、record provenance 等信息只用于 tools、逆向研究、官方地图解码、原版 JAR patch 和相关测试，不进入 Web/Editor 产品功能。
 
 `dynamic_slots` 属于原版 record 的序列化字段，由 `deriveDatDynamicSlots(LevelMap)` 派生。`verify` 对全部 530 条官方 source record 检查派生值与原值一致。
 
