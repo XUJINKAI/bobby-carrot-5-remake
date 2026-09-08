@@ -14,30 +14,11 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
     name: "萝卜数",
     selection: "single",
     options: [
-      countOption("0", 0, 0),
-      countOption("1-5", 1, 5),
-      countOption("6-10", 6, 10),
+      countOption("0-10", 0, 10),
       countOption("11-20", 11, 20),
-      countOption("21+", 21),
-    ],
-  },
-  {
-    id: "items",
-    name: "特殊道具",
-    selection: "multiple",
-    options: [
-      entityOption("shovel", "雪铲", "shovel-pickup", [
-        MapEntityTypeId.SHOVEL_PICKUP,
-      ]),
-      entityOption("gas", "汽油", "gas", [MapEntityTypeId.GAS]),
-      entityOption("bean", "魔豆", "bean", [MapEntityTypeId.BEAN]),
-      entityOption("kite", "风筝", "kite", [MapEntityTypeId.KITE]),
-      entityOption("golden-carrot", "金胡萝卜", "golden-carrot", [
-        MapEntityTypeId.GOLDEN_CARROT,
-      ]),
-      entityOption("bonus-coin", "Bonus Coin", "bonus-coin", [
-        MapEntityTypeId.BONUS_COIN,
-      ]),
+      countOption("21-40", 21, 40),
+      countOption("40-60", 40, 60),
+      countOption("61+", 61),
     ],
   },
   {
@@ -68,6 +49,25 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
         { variant: "large-star" },
       ),
       entityOption("desert", "沙漠", "sand", [MapEntityTypeId.SAND]),
+    ],
+  },
+  {
+    id: "items",
+    name: "特殊道具",
+    selection: "multiple",
+    options: [
+      entityOption("shovel", "雪铲", "shovel-pickup", [
+        MapEntityTypeId.SHOVEL_PICKUP,
+      ]),
+      entityOption("gas", "汽油", "gas", [MapEntityTypeId.GAS]),
+      entityOption("bean", "魔豆", "bean", [MapEntityTypeId.BEAN]),
+      entityOption("kite", "风筝", "kite", [MapEntityTypeId.KITE]),
+      entityOption("golden-carrot", "金胡萝卜", "golden-carrot", [
+        MapEntityTypeId.GOLDEN_CARROT,
+      ]),
+      entityOption("bonus-coin", "Bonus Coin", "bonus-coin", [
+        MapEntityTypeId.BONUS_COIN,
+      ]),
     ],
   },
   {
