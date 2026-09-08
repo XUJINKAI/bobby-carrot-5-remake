@@ -6,6 +6,9 @@ import type {
   ShellIdentity,
 } from "../shell/shellBridge.js";
 
+export const PROJECT_REPOSITORY_URL =
+  "https://github.com/XUJINKAI/bobby-carrot-5-remake";
+
 export function homeIdentity(): ShellIdentity {
   return {
     icon: siteUrl("assets/art/hd/icon.png"),
@@ -52,6 +55,17 @@ export function globalActions(): ShellAction[] {
     translatedGlobalAction("settings", "settings", "shell.settings"),
     translatedGlobalAction("help", "help", "shell.help"),
   ];
+}
+
+export function repositoryAction(): ShellAction {
+  return {
+    id: "github-repository",
+    label: "GitHub",
+    title: "打开 GitHub 仓库",
+    href: PROJECT_REPOSITORY_URL,
+    external: true,
+    collapse: "overflow",
+  };
 }
 
 export function localizeGlobalActions(actions: readonly ShellAction[]): void {

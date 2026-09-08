@@ -78,6 +78,7 @@ function shellActions() {
   const bottomBar = props.shell.config.bottomBar;
   return [
     ...(topBar?.back ? [topBar.back] : []),
+    ...(topBar?.leading ?? []),
     ...(topBar?.commands ?? []),
     ...(topBar?.actions ?? []),
     ...(bottomBar?.leading ?? []),

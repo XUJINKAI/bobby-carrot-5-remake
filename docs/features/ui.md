@@ -465,7 +465,7 @@ Explore Play：
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←12-4 ↶ ↻ ✎ │ ♫ ⚙ ? │
+│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↶ ↻ ✎ │ ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 02:31 · 84 STEPS                                                🥕 12 │
 │                                                            🔑  🫘×2 │
@@ -479,7 +479,7 @@ Explore Play：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
+所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。页面从当前 collection `index.json` 取得前后关顺序；返回按钮固定显示“返回”，相邻的上一关、下一关使用媒体切换图标。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
 
 ### Editor
 

@@ -1,4 +1,26 @@
-export type ShellIcon = "back" | "edit" | "erase" | "fill" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "place" | "play" | "redo" | "restart" | "select" | "settings" | "share" | "stop" | "undo";
+export type ShellIcon =
+  | "back"
+  | "edit"
+  | "erase"
+  | "fill"
+  | "help"
+  | "info"
+  | "inspector"
+  | "joystick"
+  | "menu"
+  | "music"
+  | "next-track"
+  | "palette"
+  | "place"
+  | "play"
+  | "previous-track"
+  | "redo"
+  | "restart"
+  | "select"
+  | "settings"
+  | "share"
+  | "stop"
+  | "undo";
 
 export interface ShellMenuItem {
   label: string;
@@ -22,6 +44,7 @@ export interface ShellAction {
   icon?: ShellIcon;
   title?: string;
   href?: string;
+  external?: boolean;
   collapse?: "keep" | "overflow" | "hide";
   disabled?: boolean;
   pressed?: boolean;
@@ -32,6 +55,7 @@ export interface ShellAction {
 export interface ShellInfo {
   text: string;
   href?: string;
+  external?: boolean;
 }
 
 export interface ShellConfig {
@@ -40,6 +64,7 @@ export interface ShellConfig {
     fixed?: boolean;
     identity?: ShellIdentity;
     back?: ShellAction;
+    leading?: ShellAction[];
     commands?: ShellAction[];
     actions?: ShellAction[];
   };

@@ -30,11 +30,18 @@ try {
   if (!address || typeof address === "string")
     throw new Error("Failed to determine smoke-test server port");
   const origin = `http://127.0.0.1:${address.port}`;
-  await smoke(`${origin}/`, [
-    "data-shell",
-    'class="home-mode-panel"',
-    'class="home-sky-brand"',
-  ]);
+  await smoke(
+    `${origin}/`,
+    [
+      "data-shell",
+      'class="home-mode-panel"',
+      'class="home-sky-brand"',
+      'class="home-demo-screen-control"',
+      'href="https://github.com/XUJINKAI/bobby-carrot-5-remake"',
+      'href="https://github.com/XUJINKAI/bobby-carrot-5-remake/blob/main/LICENSE"',
+    ],
+    ["本项目还在开发中"],
+  );
   await interactiveDataExchangeSmoke(`${origin}/`);
   await smoke(`${origin}/embed`, ['class="embed-page"', "BC5R Embed v1"]);
   await expectStatus(`${origin}/embed/v1/bc5r.js`, 200, "text/javascript");
@@ -87,6 +94,10 @@ try {
     'id="game"',
     'id="undo"',
     'id="redo"',
+    'id="previous-level"',
+    'id="next-level"',
+    'aria-label="上一关"',
+    'aria-label="下一关"',
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',

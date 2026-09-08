@@ -27,13 +27,15 @@ function stars(value: number | undefined): string {
         <span class="chapter-id">{{ chapter.id }}</span>
         <span class="chapter-separator">·</span>
         <span class="chapter-name">{{ chapter.name }}</span>
+      </div>
+      <div class="chapter-meta">
+        <span class="muted chapter-count">{{ maps.length }} 关</span>
         <span
           v-if="chapter.difficulty"
           class="chapter-stars"
           :title="`章节难度 ${chapter.difficulty} 星`"
         >{{ stars(chapter.difficulty) }}</span>
       </div>
-      <span class="muted chapter-count">{{ maps.length }} 关</span>
     </header>
     <ExploreMapGrid
       :collection-id="collectionId"
@@ -86,8 +88,17 @@ function stars(value: number | undefined): string {
   text-transform: uppercase;
 }
 
+.chapter-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .chapter-stars {
   letter-spacing: 0.04em;
+  text-align: right;
 }
 
 @media (max-width: 700px) {
@@ -97,6 +108,12 @@ function stars(value: number | undefined): string {
 
   .chapter-title-line {
     flex-wrap: wrap;
+  }
+
+  .chapter-meta {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
   }
 }
 </style>

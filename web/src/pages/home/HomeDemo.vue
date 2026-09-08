@@ -6,6 +6,7 @@ const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   restart: [];
   adventure: [];
+  screenControl: [];
 }>();
 
 function reportCanvas(element: unknown): void {
@@ -48,7 +49,19 @@ function reportCanvas(element: unknown): void {
         </div>
       </section>
     </div>
-    <p class="home-demo-status">{{ state.demoStatus }}</p>
+    <footer class="home-demo-footer">
+      <p class="home-demo-status">{{ state.demoStatus }}</p>
+      <button
+        class="home-demo-screen-control"
+        type="button"
+        title="屏幕摇杆"
+        aria-label="屏幕摇杆"
+        :aria-pressed="state.screenControlEnabled"
+        @click="emit('screenControl')"
+      >
+        <span aria-hidden="true">🕹</span>
+      </button>
+    </footer>
   </article>
 </template>
 
@@ -107,16 +120,46 @@ function reportCanvas(element: unknown): void {
   inset: 0;
 }
 
-.home-demo-status {
+.home-demo-footer {
   min-height: 42px;
-  margin: 0;
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 8px 14px;
   border-top: 1px solid var(--bc-panel-border);
+}
+
+.home-demo-status {
+  min-width: 0;
+  margin: 0;
+  flex: 1 1 auto;
   color: var(--bc-text-muted);
   font-size: 0.72rem;
   line-height: 1.35;
+}
+
+.home-demo-screen-control {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.home-demo-screen-control:hover {
+  background: var(--bc-control-hover);
+}
+
+.home-demo-screen-control[aria-pressed="true"] {
+  background: var(--bc-control-selected);
+  color: var(--bc-control-selected-text);
 }
 
 .result-card {

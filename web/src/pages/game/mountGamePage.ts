@@ -83,6 +83,7 @@ export interface GamePageContext {
   identity: GameIdentity;
   mapMeta?: MapMeta;
   exploreNextMapId?: string;
+  explorePreviousMapId?: string;
   exploreMapKind?: string;
   adventureChapter?: AdventureIndexChapter;
   adventureLevel?: AdventureIndexLevel;
@@ -107,6 +108,7 @@ export async function renderGamePage(
     identity,
     mapMeta,
     exploreNextMapId,
+    explorePreviousMapId,
     exploreMapKind,
     adventureChapter,
     adventureLevel,
@@ -158,7 +160,13 @@ export async function renderGamePage(
     : level;
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   configureShell(
-    gameShellConfig(identity, mode, screenControlEnabled),
+    gameShellConfig(
+      identity,
+      mode,
+      screenControlEnabled,
+      explorePreviousMapId,
+      exploreNextMapId,
+    ),
     GAME_HELP,
   );
   app.replaceChildren();
@@ -377,6 +385,20 @@ export async function renderGamePage(
     if (action === "back") {
       persistAdventureSession();
       navigate(backPath(identity, mode, adventureBackPath));
+    } else if (action === "previous-level" && explorePreviousMapId) {
+      navigate(
+        explorePlayPath({
+          collection: identity.collection,
+          id: explorePreviousMapId,
+        }),
+      );
+    } else if (action === "next-level" && exploreNextMapId) {
+      navigate(
+        explorePlayPath({
+          collection: identity.collection,
+          id: exploreNextMapId,
+        }),
+      );
     } else if (action === "edit") {
       navigate(
         identity.collection === "imported" ? "/edit" : editorMapPath(identity),
@@ -416,6 +438,8 @@ function gameShellConfig(
   identity: GameIdentity,
   mode: GamePageMode,
   screenControlEnabled: boolean,
+  explorePreviousMapId?: string,
+  exploreNextMapId?: string,
 ): ShellConfig {
   const explore = mode === "explore";
   return {
@@ -430,9 +454,25 @@ function gameShellConfig(
       back: {
         id: "back",
         icon: "back",
-        label: identity.title,
+        label: explore ? "返回" : identity.title,
         title: "返回",
       },
+      leading: explore
+        ? [
+            {
+              id: "previous-level",
+              icon: "previous-track",
+              title: "上一关",
+              disabled: !explorePreviousMapId,
+            },
+            {
+              id: "next-level",
+              icon: "next-track",
+              title: "下一关",
+              disabled: !exploreNextMapId,
+            },
+          ]
+        : [],
       commands: [
         ...(explore
           ? [
@@ -471,6 +511,7 @@ function gameShellConfig(
       trailing: [
         {
           id: "screen-control",
+          icon: "joystick",
           label: "屏幕摇杆",
           pressed: screenControlEnabled,
         },

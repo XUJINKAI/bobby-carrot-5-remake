@@ -4,6 +4,12 @@ import ShellActionButton from "./ShellActionButton.vue";
 
 defineProps<{ config: NonNullable<ShellConfig["bottomBar"]> }>();
 const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
+
+function navigateInfo(event: MouseEvent, href: string, external?: boolean): void {
+  if (external) return;
+  event.preventDefault();
+  emit("navigate", href);
+}
 </script>
 
 <template>
@@ -14,7 +20,13 @@ const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
     <div class="shell-bottom-info">
       <template v-for="(item, index) in config.info ?? []" :key="`${item.text}-${index}`">
         <span v-if="index" aria-hidden="true">·</span>
-        <a v-if="item.href" :href="item.href" @click.prevent="emit('navigate', item.href)">{{ item.text }}</a>
+        <a
+          v-if="item.href"
+          :href="item.href"
+          :target="item.external ? '_blank' : undefined"
+          :rel="item.external ? 'noreferrer' : undefined"
+          @click="navigateInfo($event, item.href, item.external)"
+        >{{ item.text }}</a>
         <span v-else>{{ item.text }}</span>
       </template>
     </div>

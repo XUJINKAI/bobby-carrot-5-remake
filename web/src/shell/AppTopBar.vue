@@ -24,7 +24,7 @@ function action(id: string): void {
     <div class="shell-topbar-left">
       <ShellIdentity v-if="config.identity" :identity="config.identity" @navigate="emit('navigate', $event)" />
       <ShellActionButton v-if="config.back" :action="config.back" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
-      <span class="shell-development-notice">本项目还在开发中</span>
+      <ShellActionButton v-for="item in config.leading ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
     </div>
     <div class="shell-topbar-center">
       <template v-for="item in config.commands ?? []" :key="item.id">
@@ -69,12 +69,6 @@ function action(id: string): void {
 
 .shell-topbar-left {
   justify-content: flex-start;
-}
-
-.shell-development-notice {
-  color: red;
-  font-size: 0.9rem;
-  white-space: nowrap;
 }
 
 .shell-topbar-center {

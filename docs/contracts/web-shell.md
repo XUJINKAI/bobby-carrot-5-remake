@@ -13,6 +13,7 @@ interface ShellConfig {
     fixed?: boolean;
     identity?: ShellIdentity;
     back?: ShellAction;
+    leading?: ShellAction[];
     commands?: ShellAction[];
     actions?: ShellAction[];
   };
@@ -33,7 +34,7 @@ interface ShellConfig {
 TopBar 使用固定三列：
 
 ```text
-Identity + Back | Commands | Actions / Overflow
+Identity + Back + Leading | Commands | Actions / Overflow
 ```
 
 三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。移动端仍使用同一套 DOM 和三列结构。
@@ -57,6 +58,8 @@ interface ShellAction {
 ```
 
 Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动端保留，`overflow` 收入自动生成的菜单，`hide` 在移动端隐藏。Overflow 菜单由当前配置自动派生。
+
+`href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换。
 
 ## BottomBar
 
