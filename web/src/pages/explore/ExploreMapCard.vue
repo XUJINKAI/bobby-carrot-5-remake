@@ -20,10 +20,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
     class="chapter-level explore-map-card"
     :class="[
       `card-size-${cardSize}`,
-      {
-        completed,
-        'bonus-level': map.kind === 'bonus',
-      },
+      { completed },
     ]"
     :data-map-id="map.id"
     :href="explorePlayPath({ collection: collectionId, id: map.id })"
@@ -82,10 +79,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 .explore-map-card.completed {
   border-color: var(--bc-highlight);
   background: #07518f;
-}
-
-.explore-map-card.bonus-level {
-  outline: 1px solid rgba(247, 212, 95, 0.2);
 }
 
 .explore-map-card-label {

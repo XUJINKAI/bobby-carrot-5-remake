@@ -19,10 +19,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
 <template>
-  <section
-    class="chapter-card"
-    :data-chapter-kind="chapter.kind ?? 'chapter'"
-  >
+  <section class="chapter-card">
     <header class="chapter-head">
       <div class="chapter-title-line">
         <span class="chapter-id">{{ chapter.id }}</span>

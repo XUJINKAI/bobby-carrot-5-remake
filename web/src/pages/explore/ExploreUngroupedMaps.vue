@@ -12,7 +12,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 </script>
 
 <template>
-  <section class="explore-custom-collection">
+  <section class="explore-ungrouped-maps">
     <ExploreMapGrid
       :collection-id="collection.id"
       :maps="maps"

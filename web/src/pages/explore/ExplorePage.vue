@@ -7,7 +7,7 @@ import type { ResolvedMapCollection } from "../../app/pageContracts.js";
 import { computed } from "vue";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
-import ExploreCustomCollection from "./ExploreCustomCollection.vue";
+import ExploreUngroupedMaps from "./ExploreUngroupedMaps.vue";
 import ExploreTabs from "./ExploreTabs.vue";
 
 const props = defineProps<{
@@ -46,7 +46,7 @@ const unchapteredMaps = computed(() =>
       @random="emit('random')"
     />
     <div class="collection-sections">
-      <ExploreCustomCollection
+      <ExploreUngroupedMaps
         v-if="unchapteredMaps.length > 0"
         :collection="activeCollection"
         :maps="unchapteredMaps"

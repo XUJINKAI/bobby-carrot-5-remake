@@ -53,7 +53,6 @@ try {
       'data-filter-trigger="carrots"',
       'data-filter-trigger="mechanics"',
       'data-card-size="small"',
-      'data-chapter-kind="special-scenes"',
       "Special Scenes",
       "Dreamland Reward",
       'href="/explore/play/original/campaign-intro"',
@@ -63,7 +62,7 @@ try {
   await interactiveFilterSmoke(`${origin}/explore`);
   await smoke(`${origin}/explore/novoban-pushbox`, [
     'class="explore-tabs"',
-    'class="explore-custom-collection"',
+    'class="explore-ungrouped-maps"',
     'data-card-size="medium"',
     "Novoban",
     "01 · Be ban 10",
@@ -82,7 +81,7 @@ try {
   await smoke(
     `${origin}/explore/engine-lab`,
     [
-      'class="explore-custom-collection"',
+      'class="explore-ungrouped-maps"',
       'class="collection-sections"',
       'class="chapter-card"',
       'data-card-size="small"',

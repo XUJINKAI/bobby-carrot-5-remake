@@ -155,7 +155,7 @@ function applyFilters(): void {
     document.querySelector("[data-filter-status]"),
     active
       ? `匹配 ${visibleMaps} 张地图；已选条件需同时满足。`
-      : "萝卜数单选；其余筛选可多选，已选条件需同时满足。",
+      : "所有已选条件需同时满足。",
   );
   let empty = document.querySelector<HTMLElement>(".level-filter-empty");
   if (active && visibleMaps === 0) {
