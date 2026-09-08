@@ -71,7 +71,6 @@ function buildCollection(entry) {
 function readCollectionMaps(collectionId, files) {
   const mapIds = new Set();
   return files.map((file) => readMap(collectionId, file))
-    .sort((left, right) => left.id.localeCompare(right.id))
     .map((map) => {
       if (mapIds.has(map.id)) throw new Error(`${collectionId}: 重复地图 ID：${map.id}`);
       mapIds.add(map.id);

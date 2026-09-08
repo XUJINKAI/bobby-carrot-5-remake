@@ -24,9 +24,12 @@ const collectionsIndex = readJson("assets/maps/index.json");
 assertSchemaV1(collectionsIndex, "assets/maps/index.json");
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
   throw new Error("Runtime collection index 必须包含 original");
-for (const id of ["engine-lab", "original-patch"])
-  if (collectionsIndex.collections.some((collection) => collection.id === id))
-    throw new Error(`生产 collection index 不应展示开发集合 ${id}`);
+if (
+  collectionsIndex.collections.some(
+    (collection) => collection.id === "original-patch",
+  )
+)
+  throw new Error("生产 collection index 不应展示开发集合 original-patch");
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
@@ -66,10 +69,20 @@ const novoban = collectionIndexes.find(
 );
 if (novoban?.cardSize !== "medium")
   throw new Error("Novoban collection cardSize 必须为 medium");
-const engineLab = readJson("assets/maps/engine-lab/index.json");
-assertSchemaV1(engineLab, "assets/maps/engine-lab/index.json");
-if (engineLab.cardSize !== "big")
-  throw new Error("Engine Lab collection cardSize 必须为 big");
+const engineLab = collectionIndexes.find(
+  (collection) => collection.id === "engine-lab",
+);
+if (!engineLab) throw new Error("缺少 Engine Lab collection");
+if (engineLab.cardSize !== "small")
+  throw new Error("Engine Lab collection cardSize 必须为 small");
+const firstEngineLabChapter = engineLab.maps.findIndex((map) => map.chapter);
+if (firstEngineLabChapter <= 0)
+  throw new Error("Engine Lab 必须先展示根目录地图，再展示 chapter 地图");
+if (engineLab.maps.slice(firstEngineLabChapter).some((map) => !map.chapter))
+  throw new Error("Engine Lab 根目录地图必须集中在 chapter 地图之前");
+for (const chapterId of ["portal", "pushbox"])
+  if (!engineLab.chapters.some((chapter) => chapter.id === chapterId))
+    throw new Error(`Engine Lab 必须发现 ${chapterId} chapter`);
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
 

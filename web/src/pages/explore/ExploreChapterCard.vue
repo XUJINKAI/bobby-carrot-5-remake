@@ -29,12 +29,12 @@ function stars(value: number | undefined): string {
         <span class="chapter-name">{{ chapter.name }}</span>
       </div>
       <div class="chapter-meta">
-        <span class="muted chapter-count">{{ maps.length }} 关</span>
         <span
           v-if="chapter.difficulty"
           class="chapter-stars"
           :title="`章节难度 ${chapter.difficulty} 星`"
         >{{ stars(chapter.difficulty) }}</span>
+        <span class="muted chapter-count">{{ maps.length }} 关</span>
       </div>
     </header>
     <ExploreMapGrid

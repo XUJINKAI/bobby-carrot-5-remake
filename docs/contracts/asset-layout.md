@@ -54,7 +54,7 @@ assets/
 
 `cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
-`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
 

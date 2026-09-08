@@ -4,6 +4,7 @@ import type {
   MapCollectionSummary,
 } from "../../services/catalog/catalog.js";
 import type { ResolvedMapCollection } from "../../app/pageContracts.js";
+import { computed } from "vue";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
 import ExploreCustomCollection from "./ExploreCustomCollection.vue";
@@ -27,6 +28,10 @@ function summary(): string {
     ? `${props.activeCollection.chapters.length} 章 · ${props.activeCollection.maps.length} 关`
     : `${props.activeCollection.maps.length} 张地图`;
 }
+
+const unchapteredMaps = computed(() =>
+  props.activeCollection.maps.filter((map) => map.chapter === undefined),
+);
 </script>
 
 <template>
@@ -46,6 +51,13 @@ function summary(): string {
       @navigate="emit('navigate', $event)"
       @random="emit('random')"
     />
+    <ExploreCustomCollection
+      v-if="unchapteredMaps.length > 0"
+      :collection="activeCollection"
+      :maps="unchapteredMaps"
+      :completed-ids="completedIds"
+      @navigate="emit('navigate', $event)"
+    />
     <div v-if="activeCollection.chapters.length > 0" class="chapter-list">
       <ExploreChapterCard
         v-for="chapter in activeCollection.chapters"
@@ -58,12 +70,6 @@ function summary(): string {
         @navigate="emit('navigate', $event)"
       />
     </div>
-    <ExploreCustomCollection
-      v-else
-      :collection="activeCollection"
-      :completed-ids="completedIds"
-      @navigate="emit('navigate', $event)"
-    />
   </div>
 </template>
 

@@ -328,7 +328,7 @@ assets/maps/<collection>/index.json
 assets/maps/<collection>/<map>.json
 ```
 
-源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
+源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。同一 collection 混合两类地图时，根目录地图先作为无章节内容进入 index，随后按 chapter 与 map ID 排列章节内容。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
