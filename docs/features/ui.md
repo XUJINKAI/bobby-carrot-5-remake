@@ -596,7 +596,7 @@ Settings 是全局 Dialog：
 - Adventure Save：导入、导出和清空；
 - About：版本、项目链接与第三方资产说明。
 
-Music TopBar 按钮只负责静音切换，其它音频配置进入 Settings。
+Music TopBar 按钮只负责静音切换，其它音频配置进入 Settings。首次加载时如果浏览器仍在等待用户交互才能播放音乐，按钮下方显示轻量提示；页面收到交互并恢复音频后自动收起。
 
 Help 根据当前上下文展示操作说明：
 

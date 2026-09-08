@@ -60,6 +60,7 @@ test(
     const origin = `http://127.0.0.1:${address.port}`;
 
     try {
+      await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, `${origin}/settings`);
       await verifyEditorSurfaceInspector(cdp, `${origin}/edit`);
@@ -71,6 +72,37 @@ test(
     }
   },
 );
+
+async function verifyMusicInteractionTip(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('#music .shell-action-tip')",
+      ),
+    ),
+  );
+
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    { type: "mousePressed", x: 4, y: 80, button: "left", clickCount: 1 },
+    sessionId,
+  );
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    { type: "mouseReleased", x: 4, y: 80, button: "left", clickCount: 1 },
+    sessionId,
+  );
+  await waitFor(async () =>
+    !Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('#music .shell-action-tip')",
+      ),
+    ),
+  );
+}
 
 async function verifyQuickSettings(cdp, url) {
   const sessionId = await openPage(cdp, url);

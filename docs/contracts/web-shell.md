@@ -61,6 +61,8 @@ Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动�
 
 `href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换。
 
+Action 可以携带短暂 `tip`，Shell 将其锚定到对应控件下方。提示内容与出现条件由 App 或页面决定，Shell 不解释其业务语义。
+
 ## BottomBar
 
 BottomBar 使用固定三段：

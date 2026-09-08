@@ -243,6 +243,8 @@ runtime: {
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
 
+浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
+
 ## InputController
 
 `InputController` 把浏览器输入翻译成固定 `WorldTick` 上的语义输入。浏览器事件只维护 held / queued state：

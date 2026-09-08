@@ -43,6 +43,7 @@ function activate(event?: MouseEvent): void {
     <span v-if="action.icon" class="shell-action-icon" aria-hidden="true">{{ icons[action.icon] }}</span>
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
     <span v-if="action.badge" class="shell-action-badge" :class="action.badge.className" :title="action.badge.title">{{ action.badge.label }}</span>
+    <span v-if="action.tip" class="shell-action-tip" role="status">{{ action.tip }}</span>
   </a>
   <button
     v-else
@@ -62,6 +63,7 @@ function activate(event?: MouseEvent): void {
     <span v-if="action.icon" class="shell-action-icon" aria-hidden="true">{{ icons[action.icon] }}</span>
     <span v-if="action.label" class="shell-action-label">{{ action.label }}</span>
     <span v-if="action.badge" class="shell-action-badge" :class="action.badge.className" :title="action.badge.title">{{ action.badge.label }}</span>
+    <span v-if="action.tip" class="shell-action-tip" role="status">{{ action.tip }}</span>
   </button>
 </template>
 
@@ -112,6 +114,34 @@ function activate(event?: MouseEvent): void {
   right: -8px;
   z-index: 2;
   font-size: 0.6rem;
+}
+
+.shell-action-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 50;
+  width: max-content;
+  max-width: min(230px, calc(100vw - 24px));
+  padding: 7px 10px;
+  border: var(--bc-panel-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-panel);
+  color: var(--bc-text);
+  box-shadow: var(--bc-panel-shadow);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.shell-action-tip::before {
+  position: absolute;
+  right: 13px;
+  bottom: 100%;
+  border: 6px solid transparent;
+  border-bottom-color: var(--bc-panel-border);
+  content: "";
 }
 
 @media (max-width: 700px) {

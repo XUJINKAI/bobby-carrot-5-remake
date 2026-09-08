@@ -48,6 +48,7 @@ export interface ShellAction {
   collapse?: "keep" | "overflow" | "hide";
   disabled?: boolean;
   pressed?: boolean;
+  tip?: string;
   separatorBefore?: boolean;
   badge?: { label: string; title?: string; className?: string };
 }

@@ -130,7 +130,7 @@ function translatedGlobalAction(
     icon,
     label,
     title: label,
-    collapse: "overflow",
+    collapse: id === "music" ? "keep" : "overflow",
   };
 }
 

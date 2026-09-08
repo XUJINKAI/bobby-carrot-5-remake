@@ -46,3 +46,63 @@ test("original music URLs are resolved by style and track id", () => {
     "https://example.test/assets/audio/original/8bit/ingame1.ogg",
   );
 });
+
+test("audio runtime reports when browser interaction is required", async (t) => {
+  const originalAudioContext = globalThis.AudioContext;
+  const originalFetch = globalThis.fetch;
+  globalThis.AudioContext = SuspendedAudioContext;
+  globalThis.fetch = () => new Promise(() => undefined);
+  t.after(() => {
+    globalThis.AudioContext = originalAudioContext;
+    globalThis.fetch = originalFetch;
+  });
+
+  const audio = new AudioRuntime({
+    baseUrl: "https://example.test/assets/audio/original/",
+  });
+  const changes = [];
+  const dispose = audio.onMusicInteractionRequiredChange((required) => {
+    changes.push(required);
+  });
+
+  audio.playMusic("title");
+  await Promise.resolve();
+  assert.equal(audio.isMusicInteractionRequired(), true);
+  assert.deepEqual(changes, [true]);
+
+  audio.resume();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(audio.isMusicInteractionRequired(), false);
+  assert.deepEqual(changes, [true, false]);
+
+  dispose();
+  audio.destroy();
+});
+
+class SuspendedAudioContext {
+  state = "suspended";
+  currentTime = 0;
+  destination = {};
+  stateListeners = new Set();
+
+  createGain() {
+    return {
+      gain: { value: 1 },
+      connect() {},
+    };
+  }
+
+  addEventListener(type, listener) {
+    if (type === "statechange") this.stateListeners.add(listener);
+  }
+
+  async resume() {
+    this.state = "running";
+    for (const listener of this.stateListeners) listener();
+  }
+
+  async close() {
+    this.state = "closed";
+  }
+}
