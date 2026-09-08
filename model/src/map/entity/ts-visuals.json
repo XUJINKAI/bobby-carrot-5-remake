@@ -1,934 +1,494 @@
 {
-  "schemaVersion": 1,
-  "atlas": "ts.png",
-  "surfaceFamilies": [
+  "surface": [
     {
       "type": "stump",
-      "label": "木桩",
-      "cells": [
-        "1-1"
-      ]
+      "note": "木桩",
+      "cells": ["1-1"]
     },
     {
       "type": "snowy-rock",
-      "label": "积雪石块",
-      "cells": [
-        "1-2"
-      ]
+      "note": "积雪石块",
+      "cells": ["1-2"]
     },
     {
       "type": "flower-pot",
-      "label": "花盆",
-      "cells": [
-        "1-3"
-      ]
+      "note": "花盆",
+      "cells": ["1-3"]
     },
     {
       "type": "stone-wall",
-      "label": "石墙",
-      "coordinateVariant": true,
-      "cells": [
-        "1-4",
-        "1-5",
-        "1-6",
-        "2-4",
-        "2-5",
-        "2-6",
-        "3-4",
-        "3-5",
-        "3-6",
-        "1-7",
-        "1-8",
-        "2-7",
-        "2-8",
-        "3-7",
-        "3-8",
-        "4-7",
-        "4-8",
-        "4-9",
-        "4-10",
-        "10-3",
-        "10-4"
-      ]
+      "note": "石墙",
+      "cells": ["1-4","1-5","1-6","2-4","2-5","2-6","3-4","3-5","3-6","1-7","1-8","2-7","2-8","3-7","3-8","4-7","4-8","4-9","4-10","10-3","10-4"]
     },
     {
       "type": "christmas-tree",
-      "label": "圣诞树",
-      "coordinateVariant": true,
-      "cells": [
-        "1-9",
-        "1-10",
-        "2-9",
-        "2-10",
-        "3-9",
-        "3-10"
-      ]
+      "note": "圣诞树",
+      "cells": ["1-9","1-10","2-9","2-10","3-9","3-10"]
     },
     {
       "type": "tree",
-      "label": "树",
-      "coordinateVariant": true,
-      "cells": [
-        "1-11",
-        "1-12",
-        "1-13",
-        "1-14",
-        "1-15",
-        "1-16",
-        "2-11",
-        "2-12",
-        "2-13",
-        "2-14",
-        "2-15",
-        "2-16",
-        "3-11",
-        "3-12",
-        "3-13",
-        "3-14",
-        "3-15",
-        "3-16",
-        "4-11",
-        "4-12",
-        "4-13"
-      ]
+      "note": "树",
+      "cells": ["1-11","1-12","1-13","1-14","1-15","1-16","2-11","2-12","2-13","2-14","2-15","2-16","3-11","3-12","3-13","3-14","3-15","3-16","4-11","4-12","4-13"]
     },
     {
       "type": "snow-fence",
-      "label": "雪地栅栏",
-      "coordinateVariant": true,
-      "cells": [
-        "2-1",
-        "2-2",
-        "2-3",
-        "3-1",
-        "4-1"
-      ]
+      "note": "雪地栅栏",
+      "cells": ["2-1","2-2","2-3","3-1","4-1"]
     },
     {
       "type": "candy-cane",
-      "label": "圣诞糖果杖",
-      "coordinateVariant": true,
-      "cells": [
-        "3-2",
-        "4-2"
-      ]
+      "note": "圣诞糖果杖",
+      "cells": ["3-2","4-2"]
     },
     {
       "type": "snowman",
-      "label": "雪人",
-      "coordinateVariant": true,
-      "cells": [
-        "3-3",
-        "4-3"
-      ]
+      "note": "雪人",
+      "cells": ["3-3","4-3"]
     },
     {
       "type": "hedge",
-      "label": "树篱",
-      "coordinateVariant": true,
-      "cells": [
-        "4-4",
-        "4-5",
-        "5-1",
-        "5-2",
-        "5-3",
-        "5-4",
-        "5-5",
-        "5-6",
-        "5-7",
-        "6-1",
-        "6-2",
-        "6-3",
-        "6-4",
-        "6-5"
-      ]
+      "note": "树篱",
+      "cells": ["4-4","4-5","5-1","5-2","5-3","5-4","5-5","5-6","5-7","6-1","6-2","6-3","6-4","6-5"]
     },
     {
       "type": "rock",
-      "label": "石块",
-      "cells": [
-        "4-6"
-      ]
+      "note": "石块",
+      "cells": ["4-6"]
     },
     {
       "type": "mushroom",
-      "label": "蘑菇",
-      "cells": [
-        "4-14"
-      ]
+      "note": "蘑菇",
+      "cells": ["4-14"]
     },
     {
       "type": "cactus",
-      "label": "仙人掌",
+      "note": "仙人掌",
       "cells": [
-        {
-          "cell": "4-15",
-          "fields": {
-            "variant": "small"
-          }
-        },
-        {
-          "cell": "5-15",
-          "fields": {
-            "variant": "round"
-          }
-        }
-      ]
-    },
-    {
-      "type": "tall-cactus",
-      "label": "高仙人掌",
-      "coordinateVariant": true,
-      "cells": [
-        "4-16",
-        "5-16"
+        {"cell":"4-15","variant":"small"},
+        {"cell":"5-15","variant":"round"},
+        {"cell":"4-16","variant":"tall-head"},
+        {"cell":"5-16","variant":"tall-body"}
       ]
     },
     {
       "type": "starfield",
-      "label": "星空",
+      "note": "星空",
       "cells": [
-        {
-          "cell": "5-8",
-          "fields": {
-            "variant": "large-star"
-          }
-        },
-        {
-          "cell": "5-9",
-          "fields": {
-            "variant": "small-star"
-          }
-        },
-        {
-          "cell": "5-10",
-          "fields": {
-            "variant": "empty"
-          }
-        }
+        {"cell":"5-8","variant":"large-star"},
+        {"cell":"5-9","variant":"small-star"},
+        {"cell":"5-10","variant":"empty"}
       ]
     },
     {
       "type": "moon",
-      "label": "月面",
-      "coordinateVariant": true,
-      "cells": [
-        "5-11",
-        "5-12",
-        "5-13"
-      ]
+      "note": "月面",
+      "cells": ["5-11","5-12","5-13"]
     },
     {
       "type": "water",
-      "label": "水面",
+      "note": "水面",
       "cells": [
-        {
-          "cell": "6-6",
-          "frame": "water"
-        }
-      ]
-    },
-    {
-      "type": "water-ripple",
-      "label": "波纹水面",
-      "cells": [
-        {
-          "cell": "6-7",
-          "frame": "water-ripple"
-        }
+        {"cell":"6-6","variant":"still"},
+        {"cell":"6-7","variant":"ripple"}
       ]
     },
     {
       "type": "waterfall",
-      "label": "瀑布顶部",
+      "note": "瀑布",
       "cells": [
-        {
-          "cell": "6-12",
-          "fields": {
-            "variant": "top"
-          },
-          "frame": "waterfall-top"
-        },
-        {
-          "cell": "6-13",
-          "fields": {
-            "variant": "middle"
-          },
-          "frame": "waterfall-middle"
-        },
-        {
-          "cell": "6-14",
-          "fields": {
-            "variant": "bottom"
-          },
-          "frame": "waterfall-bottom"
-        }
+        {"cell":"6-12","variant":"top"},
+        {"cell":"6-13","variant":"middle"},
+        {"cell":"6-14","variant":"bottom"}
       ]
     },
     {
       "type": "grass",
-      "label": "草地",
-      "coordinateVariant": true,
-      "cells": [
-        "6-15",
-        "6-16",
-        "7-1",
-        "7-2",
-        "7-3",
-        "7-4",
-        "7-5",
-        "7-6",
-        "7-7",
-        "7-8",
-        "8-1",
-        "8-2",
-        "8-3",
-        "8-4",
-        "8-5",
-        "8-6",
-        "8-7",
-        "8-8",
-        "9-1",
-        "9-2",
-        "9-3",
-        "9-4",
-        "9-5",
-        "9-6",
-        "10-1",
-        "10-2"
-      ]
+      "note": "草地",
+      "cells": ["6-15","6-16","7-1","7-2","7-3","7-4","7-5","7-6","7-7","7-8","8-1","8-2","8-3","8-4","8-5","8-6","8-7","8-8","9-1","9-2","9-3","9-4","9-5","9-6","10-1","10-2"]
     },
     {
       "type": "snow-cloud",
-      "label": "雪地 / 云层",
-      "coordinateVariant": true,
-      "cells": [
-        "7-9",
-        "7-10",
-        "7-11",
-        "7-12",
-        "7-13",
-        "7-14",
-        "8-9",
-        "8-10",
-        "8-11",
-        "8-12",
-        {
-          "cell": "8-13",
-          "frame": "shovel-cleared-ground"
-        },
-        "8-14",
-        "9-7",
-        "9-8",
-        "9-9",
-        "9-10",
-        "9-11",
-        "9-12",
-        "9-13",
-        "9-14",
-        "7-15",
-        "7-16",
-        "8-15",
-        "8-16",
-        "9-15"
-      ]
+      "note": "雪地 / 云层",
+      "cells": ["7-9","7-10","7-11","7-12","7-13","7-14","8-9","8-10","8-11","8-12","8-13","8-14","9-7","9-8","9-9","9-10","9-11","9-12","9-13","9-14","7-15","7-16","8-15","8-16","9-15"]
     },
     {
       "type": "sand",
-      "label": "沙地",
-      "cells": [
-        "9-16"
-      ]
-    },
-    {
-      "type": "cloud-parking",
-      "label": "红云停靠点",
-      "cells": [
-        {
-          "cell": "16-1",
-          "fields": {
-            "color": "red"
-          },
-          "frame": "cloud-parking-red"
-        },
-        {
-          "cell": "16-2",
-          "fields": {
-            "color": "purple"
-          },
-          "frame": "cloud-parking-purple"
-        },
-        {
-          "cell": "16-3",
-          "fields": {
-            "color": "green"
-          },
-          "frame": "cloud-parking-green"
-        }
-      ]
+      "note": "沙地",
+      "cells": ["9-16"]
     },
     {
       "type": "fence",
-      "label": "木栅栏形态一",
-      "coordinateVariant": true,
+      "note": "木栅栏",
+      "cells": ["16-10","16-11","16-12","16-13","16-14","16-15"]
+    },
+    {
+      "type": "ice",
+      "note": "冰面",
+      "cells": ["10-5"]
+    },
+    {
+      "type": "transparent",
+      "note": "全透明",
+      "cells": ["16-16"]
+    }
+  ],
+  "palette": [
+    {
+      "type": "cloud-parking",
+      "note": "云朵停靠点",
       "cells": [
-        {
-          "cell": "16-10",
-          "frame": "fence-1"
-        },
-        {
-          "cell": "16-11",
-          "frame": "fence-2"
-        },
-        {
-          "cell": "16-12",
-          "frame": "fence-3"
-        },
-        {
-          "cell": "16-13",
-          "frame": "fence-4"
-        },
-        {
-          "cell": "16-14",
-          "frame": "fence-5"
-        },
-        {
-          "cell": "16-15",
-          "frame": "fence-6"
-        }
+        {"cell":"16-1","color":"red"},
+        {"cell":"16-2","color":"purple"},
+        {"cell":"16-3","color":"green"}
       ]
     },
     {
-      "type": "surface",
-      "label": "原版机关 Visual Surface",
-      "coordinateVariant": true,
+      "type": "dragon",
+      "note": "火龙",
       "cells": [
-        {
-          "cell": "14-10",
-          "name": "dragon-tail",
-          "label": "火龙尾部",
-          "frame": "dragon-tail"
-        },
-        {
-          "cell": "14-12",
-          "name": "dream-machine",
-          "label": "Dream Machine 头部",
-          "frame": "dream-machine"
-        },
-        {
-          "cell": "15-10",
-          "name": "dragon-fire-2",
-          "label": "火龙吐火第二帧",
-          "frame": "dragon-fire-2"
-        }
+        {"cell":"14-8","part":"head"},
+        {"cell":"14-9","part":"body"},
+        {"cell":"14-10","part":"tail"}
+      ],
+      "animate": [
+        {"cell":"15-9","part":"head","frame":"fire-1"},
+        {"cell":"15-10","part":"head","frame":"fire-2"}
       ]
+    },
+    {
+      "type": "dream-machine",
+      "note": "Dream Machine",
+      "cells": [
+        {"cell":"14-12","part":"head"},
+        {"cell":"15-12","part":"body"}
+      ]
+    },
+    {
+      "type": "snow",
+      "note": "积雪",
+      "cells": ["5-14"]
+    },
+    {
+      "type": "tide",
+      "note": "潮汐",
+      "cells": [
+        {"cell":"6-8","direction":"down"},
+        {"cell":"6-9","direction":"up"},
+        {"cell":"6-10","direction":"right"},
+        {"cell":"6-11","direction":"left"}
+      ]
+    },
+    {
+      "type": "start",
+      "note": "起点",
+      "cells": ["10-6"]
+    },
+    {
+      "type": "exit",
+      "note": "出口",
+      "cells": ["10-7"]
+    },
+    {
+      "type": "shop-dream",
+      "note": "Dream 商店",
+      "cells": ["10-8"]
+    },
+    {
+      "type": "shop-cloud9",
+      "note": "Cloud 9 商店",
+      "cells": ["10-9"]
+    },
+    {
+      "type": "shop-super-key",
+      "note": "Super Key 商店",
+      "cells": ["10-10"]
+    },
+    {
+      "type": "shop-stereo",
+      "note": "Stereo 商店",
+      "cells": ["10-11"]
+    },
+    {
+      "type": "shop-music",
+      "note": "Music 商店",
+      "cells": ["10-12"]
+    },
+    {
+      "type": "shop-speed-shoes",
+      "note": "Speed Shoes 商店",
+      "cells": ["10-13"]
+    },
+    {
+      "type": "shop-coin-radar",
+      "note": "Coin Radar 商店",
+      "cells": ["10-14"]
+    },
+    {
+      "type": "shop-empty",
+      "note": "商店售罄后的空地面",
+      "cells": ["10-15"]
+    },
+    {
+      "type": "shovel-pickup",
+      "note": "雪铲",
+      "cells": ["10-16"]
+    },
+    {
+      "type": "mower-parking",
+      "note": "割草机停靠点",
+      "cells": ["11-1"]
+    },
+    {
+      "type": "speed-switch",
+      "note": "速度开关",
+      "cells": [
+        {"cell":"11-2","state":"pressed"},
+        {"cell":"11-3","state":"raised"}
+      ]
+    },
+    {
+      "type": "carousel-switch",
+      "note": "转盘开关",
+      "cells": [
+        {"cell":"11-4","state":"pressed"},
+        {"cell":"11-5","state":"raised"}
+      ]
+    },
+    {
+      "type": "tide-switch",
+      "note": "潮汐开关",
+      "cells": [
+        {"cell":"11-6","state":"pressed"},
+        {"cell":"11-7","state":"raised"}
+      ]
+    },
+    {
+      "type": "wind-switch",
+      "note": "风向开关",
+      "cells": [
+        {"cell":"11-8","direction":"up","state":"on"},
+        {"cell":"11-9","direction":"up","state":"off"},
+        {"cell":"11-10","direction":"down","state":"on"},
+        {"cell":"11-11","direction":"down","state":"off"},
+        {"cell":"11-12","direction":"left","state":"on"},
+        {"cell":"11-13","direction":"left","state":"off"},
+        {"cell":"11-14","direction":"right","state":"on"},
+        {"cell":"11-15","direction":"right","state":"off"}
+      ]
+    },
+    {
+      "type": "trap",
+      "note": "陷阱",
+      "cells": [
+        {"cell":"11-16","state":"active"},
+        {"cell":"12-1","state":"inactive"}
+      ]
+    },
+    {
+      "type": "mirror",
+      "note": "镜子",
+      "cells": [
+        {"cell":"12-2","variant":"right-bottom"},
+        {"cell":"12-3","variant":"left-bottom"},
+        {"cell":"12-4","variant":"right-top"},
+        {"cell":"12-5","variant":"left-top"}
+      ]
+    },
+    {
+      "type": "speed",
+      "note": "加速地面",
+      "cells": [
+        {"cell":"12-6","direction":"up"},
+        {"cell":"12-7","direction":"down"},
+        {"cell":"12-8","direction":"left"},
+        {"cell":"12-9","direction":"right"}
+      ]
+    },
+    {
+      "type": "carousel",
+      "note": "转盘",
+      "cells": [
+        {"cell":"12-10","variant":"right-top"},
+        {"cell":"12-11","variant":"left-top"},
+        {"cell":"12-12","variant":"left-bottom"},
+        {"cell":"12-13","variant":"right-bottom"},
+        {"cell":"12-14","variant":"vertical"},
+        {"cell":"12-15","variant":"horizontal"}
+      ]
+    },
+    {
+      "type": "color-switch",
+      "note": "颜色开关",
+      "cells": [
+        {"cell":"12-16","color":"yellow","state":"raised"},
+        {"cell":"13-1","color":"yellow","state":"pressed"},
+        {"cell":"13-2","color":"pink","state":"raised"},
+        {"cell":"13-3","color":"pink","state":"pressed"}
+      ]
+    },
+    {
+      "type": "color-block",
+      "note": "颜色方块",
+      "cells": [
+        {"cell":"13-4","color":"yellow","state":"raised"},
+        {"cell":"13-5","color":"yellow","state":"lowered"},
+        {"cell":"13-6","color":"pink","state":"raised"},
+        {"cell":"13-7","color":"pink","state":"lowered"}
+      ]
+    },
+    {
+      "type": "high-grass",
+      "note": "高草",
+      "cells": [
+        {"cell":"13-8","state":"plain"},
+        {"cell":"13-9","state":"objective"}
+      ]
+    },
+    {
+      "type": "carrot",
+      "note": "胡萝卜",
+      "cells": [
+        {"cell":"13-10","state":"consumed"},
+        {"cell":"13-11","state":"fresh"}
+      ]
+    },
+    {
+      "type": "egg",
+      "note": "彩蛋",
+      "cells": [
+        {"cell":"13-12","state":"empty"},
+        {"cell":"13-13","state":"filled"}
+      ]
+    },
+    {
+      "type": "lock",
+      "note": "锁",
+      "cells": ["13-14"]
+    },
+    {
+      "type": "beanstalk",
+      "note": "豆茎",
+      "cells": [
+        {"cell":"13-15","part":"tip"},
+        {"cell":"14-15","part":"middle"},
+        {"cell":"15-15","part":"base"}
+      ],
+      "animate": [
+        {"cell":"15-16","part":"sprout"}
+      ]
+    },
+    {
+      "type": "bean",
+      "note": "魔豆",
+      "cells": ["13-16"]
+    },
+    {
+      "type": "windmill",
+      "note": "风车",
+      "cells": [
+        {"cell":"14-1","direction":"up"},
+        {"cell":"14-2","direction":"down"},
+        {"cell":"14-3","direction":"left"},
+        {"cell":"14-4","direction":"right"}
+      ]
+    },
+    {
+      "type": "plank",
+      "note": "木板",
+      "cells": [
+        {"cell":"14-5","state":"intact"}
+      ],
+      "animate": [
+        {"cell":"14-6","frame":"crumbling-1"},
+        {"cell":"14-7","frame":"crumbling-2"}
+      ]
+    },
+    {
+      "type": "sandman",
+      "note": "Sandman",
+      "cells": [
+        {"cell":"14-11","part":"head"},
+        {"cell":"15-11","part":"body"}
+      ]
+    },
+    {
+      "type": "mower",
+      "note": "割草机",
+      "cells": ["14-13"]
+    },
+    {
+      "type": "gas",
+      "note": "汽油",
+      "cells": ["14-14"]
+    },
+    {
+      "type": "bean-field",
+      "note": "魔豆田",
+      "cells": ["14-16"]
+    },
+    {
+      "type": "cloud",
+      "note": "云朵",
+      "cells": [
+        {"cell":"15-1","color":"red"},
+        {"cell":"15-2","color":"purple"},
+        {"cell":"15-3","color":"green"}
+      ]
+    },
+    {
+      "type": "ice-block",
+      "note": "冰块",
+      "cells": [
+        {"cell":"15-4"}
+      ],
+      "animate": [
+        {"cell":"15-5","frame":"melt-1"},
+        {"cell":"15-6","frame":"melt-2"},
+        {"cell":"15-7","frame":"melt-3"}
+      ]
+    },
+    {
+      "type": "beaver",
+      "note": "海狸",
+      "cells": [
+        {"cell":"15-8","part":"head"},
+        {"cell":"16-8","part":"body"}
+      ]
+    },
+    {
+      "type": "leaf",
+      "note": "叶子",
+      "cells": ["15-13"]
+    },
+    {
+      "type": "crumbly-rock",
+      "note": "易碎石块",
+      "cells": ["15-14"]
+    },
+    {
+      "type": "kite",
+      "note": "风筝",
+      "cells": ["16-4"]
+    },
+    {
+      "type": "whirlwind",
+      "note": "旋风",
+      "cells": ["16-5"]
+    },
+    {
+      "type": "landing",
+      "note": "降落点",
+      "cells": ["16-6"]
+    },
+    {
+      "type": "golden-carrot",
+      "note": "金胡萝卜",
+      "cells": ["16-7"]
+    },
+    {
+      "type": "bonus-coin",
+      "note": "Bonus Coin",
+      "cells": ["16-9"]
     }
-  ],
-  "visuals": {
-    "snow": {
-      "cell": "5-14",
-      "label": "积雪",
-      "name": "snow"
-    },
-    "tide-down": {
-      "cell": "6-8",
-      "label": "向下潮汐",
-      "name": "tide-down"
-    },
-    "tide-up": {
-      "cell": "6-9",
-      "label": "向上潮汐",
-      "name": "tide-up"
-    },
-    "tide-right": {
-      "cell": "6-10",
-      "label": "向右潮汐",
-      "name": "tide-right"
-    },
-    "tide-left": {
-      "cell": "6-11",
-      "label": "向左潮汐",
-      "name": "tide-left"
-    },
-    "ice": {
-      "cell": "10-5",
-      "label": "冰面",
-      "name": "ice"
-    },
-    "start": {
-      "cell": "10-6",
-      "label": "起点",
-      "name": "start"
-    },
-    "exit": {
-      "cell": "10-7",
-      "label": "出口",
-      "name": "exit"
-    },
-    "shop-dream": {
-      "cell": "10-8",
-      "label": "Dream 商店",
-      "name": "shop-dream"
-    },
-    "shop-cloud9": {
-      "cell": "10-9",
-      "label": "Cloud 9 商店",
-      "name": "shop-cloud9"
-    },
-    "shop-super-key": {
-      "cell": "10-10",
-      "label": "Super Key 商店",
-      "name": "shop-super-key"
-    },
-    "shop-stereo": {
-      "cell": "10-11",
-      "label": "Stereo 商店",
-      "name": "shop-stereo"
-    },
-    "shop-music": {
-      "cell": "10-12",
-      "label": "Music 商店",
-      "name": "shop-music"
-    },
-    "shop-speed-shoes": {
-      "cell": "10-13",
-      "label": "Speed Shoes 商店",
-      "name": "shop-speed-shoes"
-    },
-    "shop-coin-radar": {
-      "cell": "10-14",
-      "label": "Coin Radar 商店",
-      "name": "shop-coin-radar"
-    },
-    "shop-empty": {
-      "cell": "10-15",
-      "label": "商店售罄后的空地面",
-      "name": "shop-empty"
-    },
-    "shovel-pickup": {
-      "cell": "10-16",
-      "label": "雪铲",
-      "name": "shovel-pickup"
-    },
-    "mower-parking": {
-      "cell": "11-1",
-      "label": "割草机停靠点",
-      "name": "mower-parking"
-    },
-    "speed-switch-pressed": {
-      "cell": "11-2",
-      "label": "速度开关按下",
-      "name": "speed-switch-pressed"
-    },
-    "speed-switch-raised": {
-      "cell": "11-3",
-      "label": "速度开关抬起",
-      "name": "speed-switch-raised"
-    },
-    "carousel-switch-pressed": {
-      "cell": "11-4",
-      "label": "转盘开关按下",
-      "name": "carousel-switch-pressed"
-    },
-    "carousel-switch-raised": {
-      "cell": "11-5",
-      "label": "转盘开关抬起",
-      "name": "carousel-switch-raised"
-    },
-    "tide-switch-pressed": {
-      "cell": "11-6",
-      "label": "潮汐开关按下",
-      "name": "tide-switch-pressed"
-    },
-    "tide-switch-raised": {
-      "cell": "11-7",
-      "label": "潮汐开关抬起",
-      "name": "tide-switch-raised"
-    },
-    "wind-switch-up-on": {
-      "cell": "11-8",
-      "label": "向上风开关开启",
-      "name": "wind-switch-up-on"
-    },
-    "wind-switch-up-off": {
-      "cell": "11-9",
-      "label": "向上风开关关闭",
-      "name": "wind-switch-up-off"
-    },
-    "wind-switch-down-on": {
-      "cell": "11-10",
-      "label": "向下风开关开启",
-      "name": "wind-switch-down-on"
-    },
-    "wind-switch-down-off": {
-      "cell": "11-11",
-      "label": "向下风开关关闭",
-      "name": "wind-switch-down-off"
-    },
-    "wind-switch-left-on": {
-      "cell": "11-12",
-      "label": "向左风开关开启",
-      "name": "wind-switch-left-on"
-    },
-    "wind-switch-left-off": {
-      "cell": "11-13",
-      "label": "向左风开关关闭",
-      "name": "wind-switch-left-off"
-    },
-    "wind-switch-right-on": {
-      "cell": "11-14",
-      "label": "向右风开关开启",
-      "name": "wind-switch-right-on"
-    },
-    "wind-switch-right-off": {
-      "cell": "11-15",
-      "label": "向右风开关关闭",
-      "name": "wind-switch-right-off"
-    },
-    "trap-active": {
-      "cell": "11-16",
-      "label": "激活陷阱",
-      "name": "trap-active"
-    },
-    "trap-inactive": {
-      "cell": "12-1",
-      "label": "未激活陷阱",
-      "name": "trap-inactive"
-    },
-    "mirror-1": {
-      "cell": "12-2",
-      "label": "镜子形态一",
-      "name": "mirror-1"
-    },
-    "mirror-2": {
-      "cell": "12-3",
-      "label": "镜子形态二",
-      "name": "mirror-2"
-    },
-    "mirror-3": {
-      "cell": "12-4",
-      "label": "镜子形态三",
-      "name": "mirror-3"
-    },
-    "mirror-4": {
-      "cell": "12-5",
-      "label": "镜子形态四",
-      "name": "mirror-4"
-    },
-    "speed-up": {
-      "cell": "12-6",
-      "label": "向上加速",
-      "name": "speed-up"
-    },
-    "speed-down": {
-      "cell": "12-7",
-      "label": "向下加速",
-      "name": "speed-down"
-    },
-    "speed-left": {
-      "cell": "12-8",
-      "label": "向左加速",
-      "name": "speed-left"
-    },
-    "speed-right": {
-      "cell": "12-9",
-      "label": "向右加速",
-      "name": "speed-right"
-    },
-    "carousel-right-top": {
-      "cell": "12-10",
-      "label": "转盘右上",
-      "name": "carousel-right-top"
-    },
-    "carousel-left-top": {
-      "cell": "12-11",
-      "label": "转盘左上",
-      "name": "carousel-left-top"
-    },
-    "carousel-left-bottom": {
-      "cell": "12-12",
-      "label": "转盘左下",
-      "name": "carousel-left-bottom"
-    },
-    "carousel-right-bottom": {
-      "cell": "12-13",
-      "label": "转盘右下",
-      "name": "carousel-right-bottom"
-    },
-    "carousel-vertical": {
-      "cell": "12-14",
-      "label": "纵向转盘",
-      "name": "carousel-vertical"
-    },
-    "carousel-horizontal": {
-      "cell": "12-15",
-      "label": "横向转盘",
-      "name": "carousel-horizontal"
-    },
-    "color-yellow-switch-raised": {
-      "cell": "12-16",
-      "label": "黄色开关抬起",
-      "name": "color-yellow-switch-raised"
-    },
-    "color-yellow-switch-pressed": {
-      "cell": "13-1",
-      "label": "黄色开关按下",
-      "name": "color-yellow-switch-pressed"
-    },
-    "color-pink-switch-raised": {
-      "cell": "13-2",
-      "label": "粉色开关抬起",
-      "name": "color-pink-switch-raised"
-    },
-    "color-pink-switch-pressed": {
-      "cell": "13-3",
-      "label": "粉色开关按下",
-      "name": "color-pink-switch-pressed"
-    },
-    "color-yellow-block-raised": {
-      "cell": "13-4",
-      "label": "黄色方块升起",
-      "name": "color-yellow-block-raised"
-    },
-    "color-yellow-block-lowered": {
-      "cell": "13-5",
-      "label": "黄色方块落下",
-      "name": "color-yellow-block-lowered"
-    },
-    "color-pink-block-raised": {
-      "cell": "13-6",
-      "label": "粉色方块升起",
-      "name": "color-pink-block-raised"
-    },
-    "color-pink-block-lowered": {
-      "cell": "13-7",
-      "label": "粉色方块落下",
-      "name": "color-pink-block-lowered"
-    },
-    "high-grass": {
-      "cell": "13-8",
-      "label": "高草",
-      "name": "high-grass"
-    },
-    "high-grass-objective": {
-      "cell": "13-9",
-      "label": "覆盖目标的高草",
-      "name": "high-grass-objective"
-    },
-    "carrot-consumed": {
-      "cell": "13-10",
-      "label": "已收集胡萝卜帧",
-      "name": "carrot-consumed"
-    },
-    "carrot": {
-      "cell": "13-11",
-      "label": "胡萝卜",
-      "name": "carrot"
-    },
-    "egg-nest-empty": {
-      "cell": "13-12",
-      "label": "空蛋巢",
-      "name": "egg-nest-empty"
-    },
-    "egg-nest-filled": {
-      "cell": "13-13",
-      "label": "装满的蛋巢",
-      "name": "egg-nest-filled"
-    },
-    "lock": {
-      "cell": "13-14",
-      "label": "锁",
-      "name": "lock"
-    },
-    "beanstalk-tip": {
-      "cell": "13-15",
-      "label": "豆茎顶部",
-      "name": "beanstalk-tip"
-    },
-    "bean": {
-      "cell": "13-16",
-      "label": "魔豆",
-      "name": "bean"
-    },
-    "windmill-up": {
-      "cell": "14-1",
-      "label": "向上风车",
-      "name": "windmill-up"
-    },
-    "windmill-down": {
-      "cell": "14-2",
-      "label": "向下风车",
-      "name": "windmill-down"
-    },
-    "windmill-left": {
-      "cell": "14-3",
-      "label": "向左风车",
-      "name": "windmill-left"
-    },
-    "windmill-right": {
-      "cell": "14-4",
-      "label": "向右风车",
-      "name": "windmill-right"
-    },
-    "plank": {
-      "cell": "14-5",
-      "label": "木板",
-      "name": "plank"
-    },
-    "plank-crumbling-1": {
-      "cell": "14-6",
-      "label": "木板破碎第一帧",
-      "name": "plank-crumbling-1"
-    },
-    "plank-crumbling-2": {
-      "cell": "14-7",
-      "label": "木板破碎第二帧",
-      "name": "plank-crumbling-2"
-    },
-    "dragon-head": {
-      "cell": "14-8",
-      "label": "火龙头部",
-      "name": "dragon-head"
-    },
-    "dragon-body": {
-      "cell": "14-9",
-      "label": "火龙身体",
-      "name": "dragon-body"
-    },
-    "sandman": {
-      "cell": "14-11",
-      "label": "Sandman 主体",
-      "name": "sandman"
-    },
-    "mower": {
-      "cell": "14-13",
-      "label": "割草机",
-      "name": "mower"
-    },
-    "gas": {
-      "cell": "14-14",
-      "label": "汽油",
-      "name": "gas"
-    },
-    "beanstalk-middle": {
-      "cell": "14-15",
-      "label": "豆茎中部",
-      "name": "beanstalk-middle"
-    },
-    "bean-field": {
-      "cell": "14-16",
-      "label": "魔豆田",
-      "name": "bean-field"
-    },
-    "cloud-red": {
-      "cell": "15-1",
-      "label": "红云",
-      "name": "cloud-red"
-    },
-    "cloud-purple": {
-      "cell": "15-2",
-      "label": "紫云",
-      "name": "cloud-purple"
-    },
-    "cloud-green": {
-      "cell": "15-3",
-      "label": "绿云",
-      "name": "cloud-green"
-    },
-    "ice-block": {
-      "cell": "15-4",
-      "label": "冰块",
-      "name": "ice-block"
-    },
-    "ice-block-melt-1": {
-      "cell": "15-5",
-      "label": "冰块融化第一帧",
-      "name": "ice-block-melt-1"
-    },
-    "ice-block-melt-2": {
-      "cell": "15-6",
-      "label": "冰块融化第二帧",
-      "name": "ice-block-melt-2"
-    },
-    "ice-block-melt-3": {
-      "cell": "15-7",
-      "label": "冰块融化第三帧",
-      "name": "ice-block-melt-3"
-    },
-    "beaver": {
-      "cell": "15-8",
-      "label": "海狸主体",
-      "name": "beaver"
-    },
-    "dragon-fire-1": {
-      "cell": "15-9",
-      "label": "火龙吐火第一帧",
-      "name": "dragon-fire-1"
-    },
-    "sandman-body": {
-      "cell": "15-11",
-      "label": "Sandman 身体",
-      "name": "sandman-body"
-    },
-    "dream-machine-body": {
-      "cell": "15-12",
-      "label": "Dream Machine 身体",
-      "name": "dream-machine-body"
-    },
-    "leaf": {
-      "cell": "15-13",
-      "label": "叶子",
-      "name": "leaf"
-    },
-    "crumbly-rock": {
-      "cell": "15-14",
-      "label": "易碎石块",
-      "name": "crumbly-rock"
-    },
-    "beanstalk-base": {
-      "cell": "15-15",
-      "label": "豆茎根部",
-      "name": "beanstalk-base"
-    },
-    "bean-sprout": {
-      "cell": "15-16",
-      "label": "豆芽",
-      "name": "bean-sprout"
-    },
-    "kite": {
-      "cell": "16-4",
-      "label": "风筝",
-      "name": "kite"
-    },
-    "whirlwind": {
-      "cell": "16-5",
-      "label": "旋风",
-      "name": "whirlwind"
-    },
-    "landing": {
-      "cell": "16-6",
-      "label": "降落点",
-      "name": "landing"
-    },
-    "golden-carrot": {
-      "cell": "16-7",
-      "label": "金胡萝卜",
-      "name": "golden-carrot"
-    },
-    "beaver-body": {
-      "cell": "16-8",
-      "label": "海狸身体",
-      "name": "beaver-body"
-    },
-    "bonus-coin": {
-      "cell": "16-9",
-      "label": "Bonus Coin",
-      "name": "bonus-coin"
-    },
-    "transparent": {
-      "cell": "16-16",
-      "label": "全透明",
-      "name": "transparent"
-    }
-  }
+  ]
 }
