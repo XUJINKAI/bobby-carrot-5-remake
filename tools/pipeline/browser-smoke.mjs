@@ -61,9 +61,9 @@ try {
   await smoke(`${origin}/explore/loma-pushbox`, [
     'class="explore-tabs"',
     'class="chapter-card"',
+    'class="chapter-name"',
     'data-card-size="small"',
     "LOMA",
-    "Pattern",
     'href="/explore/play/loma-pushbox/01-01"',
   ]);
   await smoke(`${origin}/explore/engine-lab`, [
