@@ -34,154 +34,200 @@ const PHASE_COLLAPSED_OBJECT_TYPES = new Set([
 /**
  * 转换整张 decoded 地图。
  *
- * Start 数量与隐藏目标类型依赖整张记录，不能在单格转换函数中可靠判断；因此这里先
- * 收集全图事实，再把 object 插入同格 cover 之前，生成可直接审阅的 Entity 堆叠。
+ * DAT 把 terrain 与 objects 分开保存，规则却总是作用于同一坐标的完整内容。这里先
+ * 将两张表归并为原版 Cell Stack，再收集全图事实，最后逐格展开为 canonical Entity。
  */
 export function adaptDecodedMap(map) {
-  const entities = [];
-  const starts = [];
-  const sourceObjects = map.objects ?? [];
-
-  // 空 object 只是原版占位；其它 object 即使是内部部件，也会占用该格的 object 记录。
-  const explicitObjectCells = new Set(
-    sourceObjects
-      .filter((object) => !isEmptyObject(object.type))
-      .map((object) => `${object.x},${object.y}`),
-  );
-
-  // 原版地图以显式 Carrot 判断目标模式；其余地图的隐藏目标按 Egg 解释。
-  const objectiveType = sourceObjects.some((object) => {
-    const visual = decodedTileVisual(object.type);
-    return visual?.type === MapEntityTypeId.CARROT && visual.phase === undefined;
-  })
-    ? MapEntityTypeId.CARROT
-    : MapEntityTypeId.EGG;
-
-  for (let y = 0; y < map.height; y += 1) {
-    const row = map.terrain[y];
-    if (!row || row.length !== map.width) {
-      throw new Error(
-        `Decoded terrain row ${y} does not match width ${map.width}`,
-      );
-    }
-    for (let x = 0; x < map.width; x += 1) {
-      const visual = requireDecodedVisual(row[x], "terrain");
-      if (visual.type === MapEntityTypeId.START) starts.push({ x, y });
-      entities.push(
-        ...adaptDecodedTerrain(row[x], x, y, {
-          hiddenObjectiveType:
-            visual.type === MapEntityTypeId.HIGH_GRASS &&
-            visual.phase === "objective" &&
-            !explicitObjectCells.has(`${x},${y}`)
-              ? objectiveType
-              : null,
-        }),
-      );
-    }
-  }
-
-  if (starts.length !== 1) {
+  const cells = buildOriginalStackCells(map);
+  const context = analyzeOriginalMap(cells);
+  if (context.startCount !== 1) {
     throw new Error(
-      `Original map must contain exactly one Start terrain, got ${starts.length}`,
+      `Original map must contain exactly one Start terrain, got ${context.startCount}`,
     );
-  }
-
-  // DAT 只用 Start terrain 保存出生位置；LevelMap 显式保存同格 Bobby。
-  entities.push(entity(MapEntityTypeId.BOBBY, starts[0].x, starts[0].y));
-
-  // 原版 objects 表与 terrain 分开保存；语义地图按 ground/content/cover 排列同格 Entity。
-  for (const object of sourceObjects) {
-    for (const adapted of adaptDecodedObject(object)) {
-      insertBelowCover(entities, adapted);
-    }
   }
 
   return {
     width: map.width,
     height: map.height,
-    entities,
+    entities: cells.flatMap((cell) => adaptStackCell(cell, context)),
   };
 }
 
 /**
- * 把一个 DAT terrain 单元展开为一个或多个 LevelEntity。
- * 普通单元直接使用目录语义；原版把 cover 与底层地面压进同一 byte 的情况在此展开。
+ * 将原版的 terrain 矩阵和稀疏 objects 表合并为按行排列的 Cell Stack。
+ * objects 使用数组，因为 DAT 格式允许同一坐标出现多项记录，并保留其原始顺序。
  */
-export function adaptDecodedTerrain(type, x, y, options = {}) {
-  const visual = requireDecodedVisual(type, "terrain");
-
-  // object 区中的 TS 单元若出现在 terrain，按原坐标保真，避免把层语义混入面板分类。
-  if (isDatObjectTile(type)) {
-    return [
-      entity(MapEntityTypeId.ORIGINAL_TILE, x, y, {
-        variant: decodedAtlasCoordinate(type),
-      }),
-    ];
+function buildOriginalStackCells(map) {
+  const rows = [];
+  for (let y = 0; y < map.height; y += 1) {
+    const terrainRow = map.terrain[y];
+    if (!terrainRow || terrainRow.length !== map.width) {
+      throw new Error(
+        `Decoded terrain row ${y} does not match width ${map.width}`,
+      );
+    }
+    rows.push(
+      terrainRow.map((type, x) => ({
+        x,
+        y,
+        terrain: {
+          type,
+          visual: requireDecodedVisual(type, "terrain"),
+        },
+        objects: [],
+      })),
+    );
   }
 
-  if (visual.type === MapEntityTypeId.SNOW) {
-    // Snow byte 同时压缩了地面和积雪；语义地图展开为 ts-8-13 Surface + Snow。
-    return [
-      canonicalTerrainEntity("ts-8-13", x, y),
-      entity(MapEntityTypeId.SNOW, x, y),
-    ];
-  }
-  if (visual.type === MapEntityTypeId.HIGH_GRASS) {
-    // High Grass 被割除后必须留下地面；objective phase 还可能隐含一个主目标。
-    return [
-      canonicalTerrainEntity(mowedGroundAt(x, y), x, y),
-      ...(options.hiddenObjectiveType
-        ? [entity(options.hiddenObjectiveType, x, y)]
-        : []),
-      entity(MapEntityTypeId.HIGH_GRASS, x, y),
-    ];
-  }
-
-  const surface = surfaceMappingForTs(visual.row, visual.column);
-  if (surface) {
-    // Surface variant 保留具体 TS 坐标，避免相同 type 的不同地形语义被合并。
-    return [entity(surface.type, x, y, surface.fields ?? {})];
+  for (const object of map.objects ?? []) {
+    if (
+      !Number.isInteger(object.x) ||
+      !Number.isInteger(object.y) ||
+      object.x < 0 ||
+      object.x >= map.width ||
+      object.y < 0 ||
+      object.y >= map.height
+    ) {
+      throw new Error(
+        `Decoded object coordinate is outside map: ${object.x},${object.y}`,
+      );
+    }
+    rows[object.y][object.x].objects.push({
+      source: object,
+      visual: requireDecodedObjectVisual(object.type),
+    });
   }
 
-  // Start、机关等 terrain 直接沿用目录声明的稳定 type 与初始字段。
-  return [canonicalVisualEntity(visual, x, y)];
+  return rows.flat();
+}
+
+/** 单格规则需要的整图事实只在这里推导一次。 */
+function analyzeOriginalMap(cells) {
+  let startCount = 0;
+  let hasExplicitCarrot = false;
+
+  for (const cell of cells) {
+    if (cell.terrain.visual.type === MapEntityTypeId.START) startCount += 1;
+    if (
+      cell.objects.some(
+        ({ visual }) =>
+          visual.type === MapEntityTypeId.CARROT && visual.phase === undefined,
+      )
+    ) {
+      hasExplicitCarrot = true;
+    }
+  }
+
+  return {
+    startCount,
+    objectiveType: hasExplicitCarrot
+      ? MapEntityTypeId.CARROT
+      : MapEntityTypeId.EGG,
+  };
 }
 
 /**
- * 把一项 DAT object 记录转换为 canonical LevelEntity。
- * 内部部件与动画阶段不会成为独立 Entity；只有记录 anchor 的图块生成持久化对象。
+ * 将一个原版 Cell Stack 转为按 ground/content/cover 排列的 canonical Entity。
+ * switch 只列会改变堆叠结构的原版特例；普通坐标继续由 Visual 目录机械转换。
  */
-export function adaptDecodedObject(object) {
-  const { x, y } = object;
-  const visual = requireDecodedVisual(object.type, "object");
-  if (!isDatObjectTile(object.type)) {
-    throw new Error(`Unsupported decoded object tile: ${object.type}`);
+function adaptStackCell(cell, context) {
+  const { x, y, terrain, objects } = cell;
+  const adaptedObjects = [];
+
+  for (const { source, visual } of objects) {
+    // ts-16-16 是 objects 表的空值，不生成语义实体。
+    if (isEmptyVisual(visual)) continue;
+
+    switch (visual.type) {
+      case MapEntityTypeId.DRAGON:
+        if (visual.role === "head") {
+          // 原版保存左侧 head；canonical Dragon 保存中间 body anchor。
+          adaptedObjects.push(
+            entity(MapEntityTypeId.DRAGON, source.x + 1, source.y, {
+              direction: "left",
+            }),
+          );
+        }
+        break;
+
+      default:
+        // body/tail/middle 由 Engine footprint 展开，LevelMap 只保存 anchor。
+        if (visual.role && !OBJECT_ANCHOR_ROLES.has(visual.role)) continue;
+        // 没有稳定地图身份的瞬时画面不应成为开局 Entity。
+        if (
+          visual.phase &&
+          !PHASE_COLLAPSED_OBJECT_TYPES.has(visual.type)
+        ) {
+          continue;
+        }
+        adaptedObjects.push(
+          canonicalVisualEntity(visual, source.x, source.y),
+        );
+    }
   }
 
-  // ts-16-16 是 objects 表的空值，不生成语义实体。
-  if (isEmptyVisual(visual)) return [];
-
-  if (visual.type === MapEntityTypeId.DRAGON) {
-    if (visual.role !== "head") return [];
-
-    // 原版保存左侧 head；canonical Dragon 保存中间 body anchor，所以向右移动一格。
+  // object 区中的 TS 单元若出现在 terrain，按原坐标保真，避免猜测层语义。
+  if (isDatObjectTile(terrain.type)) {
     return [
-      entity(MapEntityTypeId.DRAGON, x + 1, y, { direction: "left" }),
+      entity(MapEntityTypeId.ORIGINAL_TILE, x, y, {
+        variant: decodedAtlasCoordinate(terrain.type),
+      }),
+      ...adaptedObjects,
     ];
   }
 
-  if (visual.role) {
-    // body/tail/middle 等单元由 Engine footprint 展开，不在 LevelMap 重复持久化。
-    if (!OBJECT_ANCHOR_ROLES.has(visual.role)) return [];
-    return [canonicalVisualEntity(visual, x, y)];
-  }
-  if (visual.phase && !PHASE_COLLAPSED_OBJECT_TYPES.has(visual.type)) {
-    // 没有稳定地图身份的瞬时 phase 只属于原版画面，不生成开局 Entity。
-    return [];
-  }
+  switch (terrain.visual.type) {
+    case MapEntityTypeId.SNOW:
+      // Snow byte 压缩了地面与积雪；同格 object 位于二者之间。
+      return [
+        canonicalTerrainEntity("ts-8-13", x, y),
+        ...adaptedObjects,
+        entity(MapEntityTypeId.SNOW, x, y),
+      ];
 
-  // Carrot/Egg/Plank/Ice Block 的 phase 共用同一地图身份与开局规则。
-  return [canonicalVisualEntity(visual, x, y)];
+    case MapEntityTypeId.HIGH_GRASS: {
+      // 内部部件即使不生成 Entity，也算显式 object，不能再合成隐藏目标。
+      const hasExplicitObject = objects.some(
+        ({ visual }) => !isEmptyVisual(visual),
+      );
+      const hiddenObjective =
+        terrain.visual.phase === "objective" && !hasExplicitObject
+          ? [entity(context.objectiveType, x, y)]
+          : [];
+      return [
+        canonicalTerrainEntity(mowedGroundAt(x, y), x, y),
+        ...adaptedObjects,
+        ...hiddenObjective,
+        entity(MapEntityTypeId.HIGH_GRASS, x, y),
+      ];
+    }
+
+    case MapEntityTypeId.START:
+      // DAT 只保存 Start terrain；LevelMap 在相同 Cell 显式保存玩家实体。
+      return [
+        canonicalVisualEntity(terrain.visual, x, y),
+        ...adaptedObjects,
+        entity(MapEntityTypeId.BOBBY, x, y),
+      ];
+
+    default: {
+      const surface = surfaceMappingForTs(
+        terrain.visual.row,
+        terrain.visual.column,
+      );
+      if (surface) {
+        // variant 保留 TS 坐标，防止相同 type 的不同原版地形被合并。
+        return [
+          entity(surface.type, x, y, surface.fields ?? {}),
+          ...adaptedObjects,
+        ];
+      }
+      return [
+        canonicalVisualEntity(terrain.visual, x, y),
+        ...adaptedObjects,
+      ];
+    }
+  }
 }
 
 /**
@@ -225,30 +271,6 @@ function canonicalFields(type, fields) {
   );
 }
 
-/**
- * Entity 数组按同格视觉堆叠保持可读：Surface 在前，content 居中，Snow/High Grass
- * cover 在后。Engine 最终仍按 Definition stackOrder 建立权威 Cell Stack。
- */
-function insertBelowCover(entities, inserted) {
-  const coverIndex = entities.findIndex(
-    (candidate) =>
-      candidate.x === inserted.x &&
-      candidate.y === inserted.y &&
-      (candidate.type === MapEntityTypeId.SNOW ||
-        candidate.type === MapEntityTypeId.HIGH_GRASS),
-  );
-  if (coverIndex === -1) {
-    entities.push(inserted);
-    return;
-  }
-  entities.splice(coverIndex, 0, inserted);
-}
-
-function isEmptyObject(type) {
-  const visual = decodedTileVisual(type);
-  return visual ? isEmptyVisual(visual) : false;
-}
-
 function isEmptyVisual(visual) {
   return visual.type === MapEntityTypeId.TRANSPARENT && visual.cell === "16-16";
 }
@@ -256,6 +278,14 @@ function isEmptyVisual(visual) {
 function requireDecodedVisual(type, layer) {
   const visual = decodedTileVisual(type);
   if (!visual) throw new Error(`Unsupported decoded ${layer} tile: ${type}`);
+  return visual;
+}
+
+function requireDecodedObjectVisual(type) {
+  const visual = requireDecodedVisual(type, "object");
+  if (!isDatObjectTile(type)) {
+    throw new Error(`Unsupported decoded object tile: ${type}`);
+  }
   return visual;
 }
 
