@@ -1,246 +1,130 @@
-import { DecodedObject, DecodedTerrain } from "./semantic-ids.mjs";
-import { originalTileAtlasCell } from "@bobby/model";
+import {
+  ORIGINAL_TILE_ATLASES,
+  originalTileAtlasCell,
+  originalTileCoordinateLabel,
+  originalTileVisual,
+  parseOriginalTileCoordinateLabel,
+} from "@bobby/model";
 
-const TERRAIN_BY_DAT = new Map([
-  [0x4d, DecodedTerrain.SNOW],
-  [0x55, DecodedTerrain.WATER],
-  [0x57, DecodedTerrain.TIDE_DOWN],
-  [0x58, DecodedTerrain.TIDE_UP],
-  [0x59, DecodedTerrain.TIDE_RIGHT],
-  [0x5a, DecodedTerrain.TIDE_LEFT],
-  [0x94, DecodedTerrain.ICE],
-  [0x95, DecodedTerrain.START],
-  [0x96, DecodedTerrain.EXIT],
-  [0x97, DecodedTerrain.SHOP_DREAM_MACHINE_TICKET],
-  [0x98, DecodedTerrain.SHOP_CLOUD9_TICKET],
-  [0x99, DecodedTerrain.SHOP_SUPER_KEY],
-  [0x9a, DecodedTerrain.SHOP_STEREO_SYSTEM],
-  [0x9b, DecodedTerrain.SHOP_EXTRA_MUSIC],
-  [0x9c, DecodedTerrain.SHOP_SPEED_SHOES],
-  [0x9d, DecodedTerrain.SHOP_COIN_RADAR],
-  [0x9e, DecodedTerrain.SHOP_EMPTY],
-  [0x9f, DecodedTerrain.SHOVEL_PICKUP],
-  [0xa0, DecodedTerrain.MOWER_PARKING],
-  [0xa1, DecodedTerrain.SPEED_SWITCH_PRESSED],
-  [0xa2, DecodedTerrain.SPEED_SWITCH_RAISED],
-  [0xa3, DecodedTerrain.CAROUSEL_SWITCH_PRESSED],
-  [0xa4, DecodedTerrain.CAROUSEL_SWITCH_RAISED],
-  [0xa5, DecodedTerrain.TIDE_SWITCH_PRESSED],
-  [0xa6, DecodedTerrain.TIDE_SWITCH_RAISED],
-  [0xa7, DecodedTerrain.WIND_SWITCH_0_ON],
-  [0xa8, DecodedTerrain.WIND_SWITCH_0_OFF],
-  [0xa9, DecodedTerrain.WIND_SWITCH_1_ON],
-  [0xaa, DecodedTerrain.WIND_SWITCH_1_OFF],
-  [0xab, DecodedTerrain.WIND_SWITCH_2_ON],
-  [0xac, DecodedTerrain.WIND_SWITCH_2_OFF],
-  [0xad, DecodedTerrain.WIND_SWITCH_3_ON],
-  [0xae, DecodedTerrain.WIND_SWITCH_3_OFF],
-  [0xaf, DecodedTerrain.TRAP_ACTIVE],
-  [0xb0, DecodedTerrain.TRAP_INACTIVE],
-  [0xb1, DecodedTerrain.MIRROR_1],
-  [0xb2, DecodedTerrain.MIRROR_2],
-  [0xb3, DecodedTerrain.MIRROR_3],
-  [0xb4, DecodedTerrain.MIRROR_4],
-  [0xb5, DecodedTerrain.SPEED_UP],
-  [0xb6, DecodedTerrain.SPEED_DOWN],
-  [0xb7, DecodedTerrain.SPEED_LEFT],
-  [0xb8, DecodedTerrain.SPEED_RIGHT],
-  [0xb9, DecodedTerrain.CAROUSEL_1],
-  [0xba, DecodedTerrain.CAROUSEL_2],
-  [0xbb, DecodedTerrain.CAROUSEL_3],
-  [0xbc, DecodedTerrain.CAROUSEL_4],
-  [0xbd, DecodedTerrain.CAROUSEL_VERTICAL],
-  [0xbe, DecodedTerrain.CAROUSEL_HORIZONTAL],
-  [0xbf, DecodedTerrain.COLOR_YELLOW_SWITCH_RAISED],
-  [0xc0, DecodedTerrain.COLOR_YELLOW_SWITCH_PRESSED],
-  [0xc1, DecodedTerrain.COLOR_PINK_SWITCH_RAISED],
-  [0xc2, DecodedTerrain.COLOR_PINK_SWITCH_PRESSED],
-  [0xc3, DecodedTerrain.COLOR_YELLOW_BLOCK_RAISED],
-  [0xc4, DecodedTerrain.COLOR_YELLOW_BLOCK_LOWERED],
-  [0xc5, DecodedTerrain.COLOR_PINK_BLOCK_RAISED],
-  [0xc6, DecodedTerrain.COLOR_PINK_BLOCK_LOWERED],
-  [0xc7, DecodedTerrain.HIGH_GRASS],
-  [0xc8, DecodedTerrain.HIGH_GRASS_OBJECTIVE],
-]);
-
-const OBJECT_BY_DAT = new Map([
-  [0xc9, DecodedObject.CONSUMED_CARROT],
-  [0xca, DecodedObject.CARROT],
-  [0xcb, DecodedObject.EGG_EMPTY],
-  [0xcc, DecodedObject.EGG_FILLED],
-  [0xcd, DecodedObject.LOCK],
-  [0xce, DecodedObject.BEANSTALK_TIP],
-  [0xcf, DecodedObject.BEAN],
-  [0xd0, DecodedObject.WINDMILL_UP],
-  [0xd1, DecodedObject.WINDMILL_DOWN],
-  [0xd2, DecodedObject.WINDMILL_LEFT],
-  [0xd3, DecodedObject.WINDMILL_RIGHT],
-  [0xd4, DecodedObject.PLANK],
-  [0xd5, DecodedObject.PLANK_CRUMBLING],
-  [0xd6, DecodedObject.PLANK_FRAGMENT],
-  [0xd7, DecodedObject.DRAGON_HEAD_BASE],
-  [0xd8, DecodedObject.DRAGON_BODY],
-  [0xd9, DecodedObject.DRAGON_TAIL],
-  [0xda, DecodedObject.SANDMAN],
-  [0xdb, DecodedObject.DREAM_MACHINE],
-  [0xdc, DecodedObject.MOWER],
-  [0xdd, DecodedObject.GAS],
-  [0xde, DecodedObject.BEANSTALK_MID],
-  [0xdf, DecodedObject.BEAN_FIELD],
-  [0xe0, DecodedObject.CLOUD_RED],
-  [0xe1, DecodedObject.CLOUD_PURPLE],
-  [0xe2, DecodedObject.CLOUD_GREEN],
-  [0xe3, DecodedObject.ICE_BLOCK],
-  [0xe4, DecodedObject.ICE_MELT_1],
-  [0xe5, DecodedObject.ICE_MELT_2],
-  [0xe6, DecodedObject.ICE_MELT_3],
-  [0xe7, DecodedObject.BEAVER_BASE],
-  [0xe8, DecodedObject.DRAGON_ANIM_1],
-  [0xe9, DecodedObject.DRAGON_ANIM_2],
-  [0xea, DecodedObject.SANDMAN_BODY],
-  [0xeb, DecodedObject.DREAM_MACHINE_BODY],
-  [0xec, DecodedObject.LEAF],
-  [0xed, DecodedObject.CRUMBLY_ROCK],
-  [0xee, DecodedObject.BEANSTALK_BASE],
-  [0xef, DecodedObject.BEAN_SPROUT],
-  [0xf0, DecodedObject.CLOUD_GRID_RED],
-  [0xf1, DecodedObject.CLOUD_GRID_PURPLE],
-  [0xf2, DecodedObject.CLOUD_GRID_GREEN],
-  [0xf3, DecodedObject.KITE],
-  [0xf4, DecodedObject.WHIRLWIND],
-  [0xf5, DecodedObject.LANDING],
-  [0xf6, DecodedObject.GOLDEN_CARROT],
-  [0xf7, DecodedObject.BEAVER_BODY],
-  [0xf8, DecodedObject.BONUS_COIN],
-  [0xf9, DecodedObject.FENCE_1],
-  [0xfa, DecodedObject.FENCE_2],
-  [0xfb, DecodedObject.FENCE_3],
-  [0xfc, DecodedObject.FENCE_4],
-  [0xfd, DecodedObject.FENCE_5],
-  [0xfe, DecodedObject.FENCE_6],
-  [0xff, DecodedObject.EMPTY],
-]);
-
-const DAT_BY_TERRAIN = reverse(TERRAIN_BY_DAT);
-const DAT_BY_OBJECT = reverse(OBJECT_BY_DAT);
+const TAGGED_TILE = /^(ts-(?:[1-9]|1[0-6])-(?:[1-9]|1[0-6])):([a-z0-9-]+)$/;
+const FIRST_OBJECT_TILE_BYTE = byteForVisual(
+  originalTileVisual({ type: "carrot", phase: "consumed" }),
+);
 const hex = (value) => `0x${value.toString(16).padStart(2, "0").toUpperCase()}`;
 
 export function decodeDatTerrain(byte) {
-  const code = normalizeByte(byte);
-  const coordinate = tsCoordinateFromByte(code);
-  const row = Math.floor(code / 16) + 1;
-  const column = (code % 16) + 1;
-  return `${coordinate}:${requireOriginalTile(row, column).name}`;
+  return decodeDatTile(byte);
 }
 
 export function encodeDatTerrain(type) {
-  const taggedCoordinate = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
-  if (taggedCoordinate)
-    return byteFromTsCoordinate(
-      Number(taggedCoordinate[1]),
-      Number(taggedCoordinate[2]),
-    );
-  const known = DAT_BY_TERRAIN.get(type);
-  if (known !== undefined) return known;
-  const coordinate = /^ts-(\d+)-(\d+)$/.exec(type);
-  if (coordinate)
-    return byteFromTsCoordinate(Number(coordinate[1]), Number(coordinate[2]));
-  throw new Error(`No original DAT terrain mapping for semantic type: ${type}`);
-}
-
-function tsCoordinateFromByte(byte) {
-  return `ts-${Math.floor(byte / 16) + 1}-${(byte % 16) + 1}`;
-}
-
-function byteFromTsCoordinate(row, column) {
-  if (
-    !Number.isInteger(row) ||
-    !Number.isInteger(column) ||
-    row < 1 ||
-    row > 16 ||
-    column < 1 ||
-    column > 16
-  )
-    throw new Error(`Invalid ts.png coordinate: ${row},${column}`);
-  return (row - 1) * 16 + column - 1;
+  return encodeDatTile(type, "terrain");
 }
 
 export function decodeDatObject(byte) {
-  const code = normalizeByte(byte);
-  const row = Math.floor(code / 16) + 1;
-  const column = (code % 16) + 1;
-  return `${tsCoordinateFromByte(code)}:${requireOriginalTile(row, column).name}`;
+  return decodeDatTile(byte);
 }
 
 export function encodeDatObject(type) {
-  const taggedCoordinate = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
-  if (taggedCoordinate)
-    return byteFromTsCoordinate(
-      Number(taggedCoordinate[1]),
-      Number(taggedCoordinate[2]),
-    );
-  const known = DAT_BY_OBJECT.get(type);
-  if (known !== undefined) return known;
-  throw new Error(`No original DAT object mapping for semantic type: ${type}`);
+  return encodeDatTile(type, "object");
 }
 
 /** decoded 标签中的坐标是 DAT byte 的无损身份，后缀只用于人工审阅。 */
 export function decodedAtlasCoordinate(type) {
-  const match = /^ts-(\d+)-(\d+):[a-z0-9-]+$/.exec(type);
-  return match ? `ts-${match[1]}-${match[2]}` : undefined;
+  return decodedTile(type)?.coordinate;
 }
 
-/** 返回 terrain byte 对应的原版细分语义，供唯一 Adapter 边界消费。 */
-export function decodedTerrainSourceSemantic(type) {
-  const coordinate = decodedAtlasCoordinate(type);
-  if (!coordinate) return type;
-  const code = encodeDatTerrain(type);
-  return TERRAIN_BY_DAT.get(code) ?? type.slice(type.indexOf(":") + 1);
+/** 返回 decoded 标签指向的目录条目，供唯一 Adapter 边界消费。 */
+export function decodedTileVisual(type) {
+  return decodedTile(type)?.visual;
 }
 
-/** 返回 object byte 对应的原版细分语义，供唯一 Adapter 边界消费。 */
-export function decodedObjectSourceSemantic(type) {
-  const coordinate = decodedAtlasCoordinate(type);
-  if (!coordinate) return type;
-  const code = encodeDatObject(type);
-  return OBJECT_BY_DAT.get(code) ?? "unknown-object";
+/** 从 decoded 坐标恢复原版 DAT byte，不解释 terrain/object 层语义。 */
+export function decodedTileByte(type) {
+  const decoded = decodedTile(type);
+  if (!decoded) return undefined;
+  return byteForVisual(decoded.visual);
+}
+
+/** 判断 TS 单元是否属于原版 objects 表使用的图块区。 */
+export function isDatObjectTile(type) {
+  const byte = decodedTileByte(type);
+  return byte !== undefined && byte >= FIRST_OBJECT_TILE_BYTE;
+}
+
+/** 为 decoded archive 生成包含坐标与可读名称的稳定标签。 */
+export function decodedTileLabel(source) {
+  return `${originalTileCoordinateLabel(source)}:${source.name}`;
 }
 
 export function datSourceForTerrain(type) {
-  const known = DAT_BY_TERRAIN.get(type);
-  if (known !== undefined)
-    return { datHexIds: [hex(known)], confidence: "confirmed" };
-  try {
-    return { datHexIds: [hex(encodeDatTerrain(type))], confidence: "inferred" };
-  } catch {
-    return undefined;
-  }
+  return datSourceForTile(type, "terrain");
 }
 
 export function datSourceForObject(type) {
-  const known = DAT_BY_OBJECT.get(type);
-  if (known !== undefined)
-    return { datHexIds: [hex(known)], confidence: "confirmed" };
+  return datSourceForTile(type, "object");
+}
+
+function decodeDatTile(byte) {
+  const code = normalizeByte(byte);
+  const columns = ORIGINAL_TILE_ATLASES.ts.columns;
+  const row = Math.floor(code / columns) + 1;
+  const column = (code % columns) + 1;
+  return decodedTileLabel(requireOriginalTile(row, column));
+}
+
+function encodeDatTile(type, layer) {
+  const decoded = decodedTile(type);
+  if (!decoded) {
+    throw new Error(`No original DAT ${layer} mapping for tile: ${type}`);
+  }
+  return byteForVisual(decoded.visual);
+}
+
+function decodedTile(type) {
+  if (typeof type !== "string") return undefined;
+  const tagged = TAGGED_TILE.exec(type);
+  const coordinate = tagged?.[1] ?? type;
+  const source = parseOriginalTileCoordinateLabel(coordinate);
+  if (!source) return undefined;
+  const visual = originalTileAtlasCell("ts", source.row, source.column);
+  if (!visual) return undefined;
+  if (tagged && tagged[2] !== visual.name) {
+    throw new Error(
+      `Decoded Tile 标签与目录不一致：${type}，目录名称为 ${visual.name}`,
+    );
+  }
+  return { coordinate, visual };
+}
+
+function datSourceForTile(type, layer) {
   try {
-    return { datHexIds: [hex(encodeDatObject(type))], confidence: "inferred" };
+    return {
+      datHexIds: [
+        hex(layer === "terrain" ? encodeDatTerrain(type) : encodeDatObject(type)),
+      ],
+      confidence: TAGGED_TILE.test(type) ? "confirmed" : "inferred",
+    };
   } catch {
     return undefined;
   }
 }
 
-function reverse(map) {
-  return new Map(Array.from(map, ([code, type]) => [type, code]));
+function normalizeByte(value) {
+  if (!Number.isFinite(value)) {
+    throw new Error(`Invalid DAT byte: ${String(value)}`);
+  }
+  return Math.min(255, Math.max(0, Math.trunc(value))) & 0xff;
 }
 
-function normalizeByte(value) {
-  if (!Number.isFinite(value))
-    throw new Error(`Invalid DAT byte: ${String(value)}`);
-  return Math.min(255, Math.max(0, Math.trunc(value))) & 0xff;
+function byteForVisual(visual) {
+  const columns = ORIGINAL_TILE_ATLASES.ts.columns;
+  return (visual.row - 1) * columns + visual.column - 1;
 }
 
 function requireOriginalTile(row, column) {
   const visual = originalTileAtlasCell("ts", row, column);
-  if (!visual)
+  if (!visual) {
     throw new Error(`Original Tile Visual 目录缺少 ts:${row}-${column}`);
+  }
   return visual;
 }

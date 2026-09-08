@@ -4,26 +4,26 @@ Original Adapter 位于 `tools/original/`，负责在原版 DAT 的地图表示�
 
 ## 对应关系的唯一归属
 
-原版到 Engine 不是一张跨层大表，而是两个方向明确的合同边界：
+原版到 Engine 由一条单向可追溯链路连接：
 
-1. `tools/original/dat/mapping.mjs` 是 DAT byte 与 decoded 细分语义的格式边界。
-   decoded 标签固定为 `ts-<row>-<column>:<semantic>`，坐标和人工审阅名称通过
-   Model 的 Original Tile Visual 目录取得。
-2. `tools/original/entity-correspondence.mjs` 从 Original Tile Visual 目录派生
-   variant/direction 顺序，正反 Adapter 共用。
-3. `tools/original/entity-adapter.mjs` 是 decoded 原版语义展开为 canonical
+1. `tools/original/dat/mapping.mjs` 按行优先规则在 DAT byte 与 `ts.png` 坐标之间换算。
+   decoded 标签固定为 `ts-<row>-<column>:<name>`；其中坐标是无损身份，名称由
+   Original Tile Visual 目录生成并在编码时校验。
+2. `tools/original/entity-adapter.mjs` 直接读取该坐标对应 Visual 的
+   `type / fields / role / phase`，展开为 canonical
    `LevelMap` Entity 的唯一正向边界。
-4. `tools/original/entity-reverse-adapter.mjs` 只服务 JAR patch，并由 DAT
-   byte-for-byte round-trip 测试约束为正向边界的逆变换。
+3. `tools/original/entity-reverse-adapter.mjs` 用同一组 Visual selector 选择坐标，
+   只服务 JAR patch，并由 DAT byte-for-byte round-trip 测试约束。
 
 `model/src/map/entity/original-tile-visuals.json` 按 Editor 的 `surface/palette`
 分类维护 `ts.png` 全部 256 格及 `ta.png` 动画序列。Model 从该表生成 Surface 映射，
 Editor 从中生成面板成员与 variant，Engine 以结构化 selector 查找 Visual。DAT byte
-仍只存在于 `@bobby/dat` 边界。
+只存在于 `@bobby/dat` 边界。`surface/palette` 是 Editor 分类，不表示 DAT 的
+`terrain/objects` 记录层；Adapter 根据当前记录层解释同一 Visual。
 
-新增或修正原版对应关系时，先修改 `dat/mapping.mjs` 的原版事实，再修改唯一
-Adapter 边界，并补充正向转换与 DAT round-trip 测试。`npm run verify` 会重新生成
-全部 decoded 地图并校验其 atlas-first 标签。
+新增或修正原版对应关系时，修改 Original Tile Visual 目录，并为需要展开、合并或
+移动 anchor 的 DAT 结构规则补充 Adapter 测试。`npm run verify` 会重新生成全部
+decoded 地图并校验其 atlas-first 标签。
 
 ## 原版记录结构
 
@@ -40,21 +40,21 @@ Adapter 因而必须将原版的单层编码展开为完整的语义堆叠；反
 
 ## terrain 的语义展开
 
-大多数原版 terrain 按 decoded 标签的语义部分转换为对应 Entity。编码把多种含义合并到一个
-terrain byte 时，Adapter 按下列规则展开：
+大多数原版 terrain 按 Visual 的 `type` 和 `fields` 转换为对应 Entity。编码把多种
+含义合并到一个 terrain byte 时，Adapter 按下列规则展开：
 
 - `snow` 展开为带明确 atlas variant 的 `grass` 与 `snow`。
 - `high-grass` 展开为割草后应留下的 ground，以及 `high-grass` cover。
-- `high-grass-objective` 使用相同 ground 和 cover，并按下节规则补出隐藏主目标。
+- `high-grass` 的 `objective` phase 使用相同 ground 和 cover，并按下节规则补出隐藏主目标。
 - 含方向、开关状态、颜色方块状态或变体的 terrain byte，转换为一个 canonical
   Entity 及其 Definition 声明的顶层字段。
 
 这些展开结果使 Engine 只处理语义 Entity，不依赖 DAT byte 或原版的 terrain /
 object 分层方式。
 
-## `high-grass-objective` 的隐藏目标
+## High Grass `objective` phase 的隐藏目标
 
-`high-grass-objective` 是 terrain 层的特殊编码，表示高草格具有隐藏主目标语义。
+`high-grass` 的 `objective` phase 是 terrain 层的特殊编码，表示高草格具有隐藏主目标语义。
 原版 object 表不能在同一个坐标再表达第二个对象，因此 Adapter 在读取整张地图后
 materialize 该格缺失的内容 Entity：
 
@@ -69,7 +69,7 @@ materialize 该格缺失的内容 Entity：
 ## 反向编码约束
 
 `reverseEntityMap()` 为原版 JAR patch 使用。它从每格 Entity 中选择一个可编码的
-terrain；`snow`、`high-grass` 与 `high-grass-objective` 是覆盖 terrain，优先作为
+terrain；`snow` 与 `high-grass` 是覆盖 terrain，优先作为
 该格的 terrain byte。不能同时选择多个可编码覆盖 terrain。
 
 每个可编码 content Entity 生成一项 DAT object。由于原版数据结构只能在一个坐标

@@ -1,127 +1,38 @@
 import {
-  EntityTypeId,
   MapEntityTypeId,
-  parseOriginalTileCoordinateLabel,
+  entityMapDefinition,
   surfaceMappingForTs,
 } from "@bobby/model";
-import { DecodedObject, DecodedTerrain } from "./dat/semantic-ids.mjs";
 import {
   decodedAtlasCoordinate,
-  decodedObjectSourceSemantic,
-  decodedTerrainSourceSemantic,
+  decodedTileVisual,
+  isDatObjectTile,
 } from "./dat/mapping.mjs";
-import {
-  ORIGINAL_ENTITY_CORRESPONDENCE,
-  correspondenceByDecoded,
-} from "./entity-correspondence.mjs";
 
-const directTerrainTypes = new Set([
-  DecodedTerrain.WATER,
-  DecodedTerrain.ICE,
-  DecodedTerrain.START,
-  DecodedTerrain.EXIT,
-  DecodedTerrain.SHOP_DREAM_MACHINE_TICKET,
-  DecodedTerrain.SHOP_CLOUD9_TICKET,
-  DecodedTerrain.SHOP_SUPER_KEY,
-  DecodedTerrain.SHOP_STEREO_SYSTEM,
-  DecodedTerrain.SHOP_EXTRA_MUSIC,
-  DecodedTerrain.SHOP_SPEED_SHOES,
-  DecodedTerrain.SHOP_COIN_RADAR,
-  DecodedTerrain.SHOP_EMPTY,
-  DecodedTerrain.SHOVEL_PICKUP,
-  DecodedTerrain.MOWER_PARKING,
+const OBJECT_ANCHOR_ROLES = new Set(["head", "tip"]);
+const PHASE_COLLAPSED_OBJECT_TYPES = new Set([
+  MapEntityTypeId.CARROT,
+  MapEntityTypeId.EGG,
+  MapEntityTypeId.PLANK,
+  MapEntityTypeId.ICE_BLOCK,
 ]);
 
-const internalObjectParts = new Set([
-  DecodedObject.DRAGON_BODY,
-  DecodedObject.DRAGON_TAIL,
-  DecodedObject.SANDMAN_BODY,
-  DecodedObject.DREAM_MACHINE_BODY,
-  DecodedObject.BEAVER_BODY,
-  DecodedObject.BEANSTALK_MID,
-  DecodedObject.BEANSTALK_BASE,
-  DecodedObject.BEAN_SPROUT,
-]);
-
-const decodedFenceTypes = new Set(
-  ORIGINAL_ENTITY_CORRESPONDENCE.fence.map((item) => item.decoded),
-);
-
-const directObjectTypes = new Set([
-  DecodedObject.CONSUMED_CARROT,
-  DecodedObject.CARROT,
-  DecodedObject.EGG_EMPTY,
-  DecodedObject.EGG_FILLED,
-  DecodedObject.LOCK,
-  DecodedObject.BEANSTALK_TIP,
-  DecodedObject.BEAN,
-  DecodedObject.WINDMILL_UP,
-  DecodedObject.WINDMILL_DOWN,
-  DecodedObject.WINDMILL_LEFT,
-  DecodedObject.WINDMILL_RIGHT,
-  DecodedObject.PLANK,
-  DecodedObject.PLANK_CRUMBLING,
-  DecodedObject.PLANK_FRAGMENT,
-  DecodedObject.SANDMAN,
-  DecodedObject.DREAM_MACHINE,
-  DecodedObject.MOWER,
-  DecodedObject.GAS,
-  DecodedObject.BEANSTALK_MID,
-  DecodedObject.BEAN_FIELD,
-  DecodedObject.CLOUD_RED,
-  DecodedObject.CLOUD_PURPLE,
-  DecodedObject.CLOUD_GREEN,
-  DecodedObject.LEAF,
-  DecodedObject.CRUMBLY_ROCK,
-  DecodedObject.BEANSTALK_BASE,
-  DecodedObject.BEAN_SPROUT,
-  DecodedObject.CLOUD_GRID_RED,
-  DecodedObject.CLOUD_GRID_PURPLE,
-  DecodedObject.CLOUD_GRID_GREEN,
-  DecodedObject.KITE,
-  DecodedObject.WHIRLWIND,
-  DecodedObject.LANDING,
-  DecodedObject.GOLDEN_CARROT,
-  DecodedObject.BONUS_COIN,
-]);
-
-const canonicalObjectAliases = new Map([
-  [DecodedObject.CONSUMED_CARROT, { type: MapEntityTypeId.CARROT }],
-  [DecodedObject.EGG_EMPTY, { type: MapEntityTypeId.EGG }],
-  [DecodedObject.EGG_FILLED, { type: MapEntityTypeId.EGG }],
-  [DecodedObject.BEANSTALK_TIP, { type: MapEntityTypeId.BEANSTALK }],
-  [DecodedObject.WINDMILL_UP, { type: MapEntityTypeId.WINDMILL, direction: "up" }],
-  [DecodedObject.WINDMILL_DOWN, { type: MapEntityTypeId.WINDMILL, direction: "down" }],
-  [DecodedObject.WINDMILL_LEFT, { type: MapEntityTypeId.WINDMILL, direction: "left" }],
-  [DecodedObject.WINDMILL_RIGHT, { type: MapEntityTypeId.WINDMILL, direction: "right" }],
-  [DecodedObject.PLANK_CRUMBLING, { type: MapEntityTypeId.PLANK }],
-  [DecodedObject.PLANK_FRAGMENT, { type: MapEntityTypeId.PLANK }],
-  [DecodedObject.CLOUD_RED, { type: MapEntityTypeId.CLOUD, color: "red" }],
-  [DecodedObject.CLOUD_PURPLE, { type: MapEntityTypeId.CLOUD, color: "purple" }],
-  [DecodedObject.CLOUD_GREEN, { type: MapEntityTypeId.CLOUD, color: "green" }],
-  [DecodedObject.CLOUD_GRID_RED, { type: MapEntityTypeId.CLOUD_PARKING, color: "red" }],
-  [DecodedObject.CLOUD_GRID_PURPLE, { type: MapEntityTypeId.CLOUD_PARKING, color: "purple" }],
-  [DecodedObject.CLOUD_GRID_GREEN, { type: MapEntityTypeId.CLOUD_PARKING, color: "green" }],
-]);
-
-export function adaptDecodedMap(map, options = {}) {
+export function adaptDecodedMap(map) {
   const entities = [];
   const starts = [];
   const sourceObjects = map.objects ?? [];
   const explicitObjectCells = new Set(
     sourceObjects
-      .filter(
-        (object) =>
-          decodedObjectSourceSemantic(object.type) !== DecodedObject.EMPTY,
-      )
+      .filter((object) => !isEmptyObject(object.type))
       .map((object) => `${object.x},${object.y}`),
   );
-  const objectiveType = sourceObjects.some(
-    (object) =>
-      decodedObjectSourceSemantic(object.type) === DecodedObject.CARROT,
-  )
+  const objectiveType = sourceObjects.some((object) => {
+    const visual = decodedTileVisual(object.type);
+    return visual?.type === MapEntityTypeId.CARROT && visual.phase === undefined;
+  })
     ? MapEntityTypeId.CARROT
     : MapEntityTypeId.EGG;
+
   for (let y = 0; y < map.height; y += 1) {
     const row = map.terrain[y];
     if (!row || row.length !== map.width) {
@@ -130,13 +41,13 @@ export function adaptDecodedMap(map, options = {}) {
       );
     }
     for (let x = 0; x < map.width; x += 1) {
-      const type = row[x];
-      const semanticType = decodedTerrainSourceSemantic(type);
-      if (semanticType === DecodedTerrain.START) starts.push({ x, y });
+      const visual = requireDecodedVisual(row[x], "terrain");
+      if (visual.type === MapEntityTypeId.START) starts.push({ x, y });
       entities.push(
-        ...adaptDecodedTerrain(type, x, y, {
+        ...adaptDecodedTerrain(row[x], x, y, {
           hiddenObjectiveType:
-            semanticType === DecodedTerrain.HIGH_GRASS_OBJECTIVE &&
+            visual.type === MapEntityTypeId.HIGH_GRASS &&
+            visual.phase === "objective" &&
             !explicitObjectCells.has(`${x},${y}`)
               ? objectiveType
               : null,
@@ -150,12 +61,7 @@ export function adaptDecodedMap(map, options = {}) {
       `Original map must contain exactly one Start terrain, got ${starts.length}`,
     );
   }
-  const start = starts[0];
-  entities.push({
-    type: EntityTypeId.BOBBY,
-    x: start.x,
-    y: start.y,
-  });
+  entities.push(entity(MapEntityTypeId.BOBBY, starts[0].x, starts[0].y));
 
   for (const object of sourceObjects) {
     entities.push(...adaptDecodedObject(object));
@@ -169,25 +75,24 @@ export function adaptDecodedMap(map, options = {}) {
 }
 
 export function adaptDecodedTerrain(type, x, y, options = {}) {
-  const coordinateType = decodedAtlasCoordinate(type);
-  const surface = coordinateType
-    ? canonicalTerrainEntity(coordinateType, x, y)
-    : null;
-  if (surface) return [surface];
-  type = decodedTerrainSourceSemantic(type);
-  if (type === DecodedTerrain.WATER) {
-    return [entity(MapEntityTypeId.WATER, x, y, { variant: "still" })];
-  }
-  if (type === DecodedTerrain.SNOW) {
+  const visual = requireDecodedVisual(type, "terrain");
+
+  // object 区中的 TS 单元若出现在 terrain，按原坐标保真，避免把层语义混入面板分类。
+  if (isDatObjectTile(type)) {
     return [
-      entity(MapEntityTypeId.GRASS, x, y, { variant: "ts-10-2" }),
-      entity(EntityTypeId.SNOW, x, y),
+      entity(MapEntityTypeId.ORIGINAL_TILE, x, y, {
+        variant: decodedAtlasCoordinate(type),
+      }),
     ];
   }
-  if (
-    type === DecodedTerrain.HIGH_GRASS ||
-    type === DecodedTerrain.HIGH_GRASS_OBJECTIVE
-  ) {
+
+  if (visual.type === MapEntityTypeId.SNOW) {
+    return [
+      canonicalTerrainEntity("ts-10-2", x, y),
+      entity(MapEntityTypeId.SNOW, x, y),
+    ];
+  }
+  if (visual.type === MapEntityTypeId.HIGH_GRASS) {
     return [
       canonicalTerrainEntity(mowedGroundAt(x, y), x, y),
       ...(options.hiddenObjectiveType
@@ -197,137 +102,36 @@ export function adaptDecodedTerrain(type, x, y, options = {}) {
     ];
   }
 
-  const tide = directionSuffix(type, "tide-");
-  if (tide) return [entity(EntityTypeId.TIDE, x, y, { direction: tide })];
-  const speed = directionSuffix(type, "speed-");
-  if (speed) return [entity(EntityTypeId.SPEED, x, y, { direction: speed })];
-
-  const switchState = foldedPressedSwitch(type);
-  if (switchState) {
-    return [
-      entity(switchState.type, x, y, {
-        ...(switchState.color ? { color: switchState.color } : {}),
-        ...(switchState.color
-          ? { state: switchState.pressed ? "state-2" : "state-1" }
-          : switchState.pressed ? { pressed: true } : {}),
-      }),
-    ];
+  const surface = surfaceMappingForTs(visual.row, visual.column);
+  if (surface) {
+    return [entity(surface.type, x, y, surface.fields ?? {})];
   }
-
-  const wind = /^wind-switch-([0-3])-(on|off)$/.exec(type);
-  if (wind) {
-    const direction = ORIGINAL_ENTITY_CORRESPONDENCE.windSwitch.find(
-      (item) => item.channel === Number(wind[1]),
-    )?.direction;
-    return [
-      entity(EntityTypeId.WIND_SWITCH, x, y, {
-        direction,
-        ...(wind[2] === "on" ? { active: true } : {}),
-      }),
-    ];
-  }
-
-  const trap = /^trap-(active|inactive)$/.exec(type);
-  if (trap) {
-    return [
-      entity(EntityTypeId.TRAP, x, y, {
-        ...(trap[1] === "inactive" ? { active: false } : {}),
-      }),
-    ];
-  }
-
-  const mirror = /^mirror-([1-4])$/.exec(type);
-  if (mirror) {
-    const correspondence = correspondenceByDecoded("mirror", type);
-    if (!correspondence)
-      throw new Error(`Mirror decoded identity 未登记：${type}`);
-    return [
-      entity(EntityTypeId.MIRROR, x, y, {
-        variant: correspondence.variant,
-      }),
-    ];
-  }
-
-  const carousel = /^carousel-(1|2|3|4|vertical|horizontal)$/.exec(type);
-  if (carousel) {
-    const correspondence = correspondenceByDecoded("carousel", type);
-    if (!correspondence)
-      throw new Error(`Carousel decoded identity 未登记：${type}`);
-    return [
-      entity(EntityTypeId.CAROUSEL, x, y, {
-        variant: correspondence.variant,
-      }),
-    ];
-  }
-
-  const colorBlock = /^(color-(?:yellow|pink)-block)-(raised|lowered)$/.exec(
-    type,
-  );
-  if (colorBlock) {
-    return [
-      entity(MapEntityTypeId.COLOR_BLOCK, x, y, {
-        color: colorBlock[1].includes("pink") ? "pink" : "yellow",
-        ...(colorBlock[2] === "lowered" ? { raised: false } : {}),
-      }),
-    ];
-  }
-
-  if (directTerrainTypes.has(type)) return [entity(type, x, y)];
-  if (coordinateType) {
-    const mapped = canonicalTerrainEntity(coordinateType, x, y);
-    if (mapped) return [mapped];
-    return [entity(MapEntityTypeId.ORIGINAL_TILE, x, y, {
-      variant: coordinateType,
-    })];
-  }
-  throw new Error(`Unsupported decoded terrain type: ${type}`);
+  return [canonicalVisualEntity(visual, x, y)];
 }
 
 export function adaptDecodedObject(object) {
   const { x, y } = object;
-  const type = decodedObjectSourceSemantic(object.type);
-  if (type === DecodedObject.EMPTY || internalObjectParts.has(type)) return [];
+  const visual = requireDecodedVisual(object.type, "object");
+  if (!isDatObjectTile(object.type)) {
+    throw new Error(`Unsupported decoded object tile: ${object.type}`);
+  }
+  if (isEmptyVisual(visual)) return [];
 
-  if (
-    type === DecodedObject.DRAGON_HEAD_BASE ||
-    type === DecodedObject.DRAGON_ANIM_1 ||
-    type === DecodedObject.DRAGON_ANIM_2
-  ) {
+  if (visual.type === MapEntityTypeId.DRAGON) {
+    if (visual.role !== "head") return [];
     return [
-      entity(EntityTypeId.DRAGON, x + 1, y, {
-        ...copiedFields(object),
-        direction: "left",
-      }),
-    ];
-  }
-  if (type === DecodedObject.BEAVER_BASE) {
-    return [entity(MapEntityTypeId.BEAVER, x, y)];
-  }
-  if (decodedFenceTypes.has(type)) {
-    const variant = correspondenceByDecoded("fence", type)?.variant;
-    if (!variant) throw new Error(`Fence decoded identity 未登记：${type}`);
-    return [
-      entity(MapEntityTypeId.FENCE, x, y, { variant }),
+      entity(MapEntityTypeId.DRAGON, x + 1, y, { direction: "left" }),
     ];
   }
 
-  const melt = /^ice-melt-([1-3])$/.exec(type);
-  if (type === DecodedObject.ICE_BLOCK || melt) {
-    return [
-      entity(EntityTypeId.ICE_BLOCK, x, y, {
-        ...copiedFields(object),
-      }),
-    ];
+  if (visual.role) {
+    if (!OBJECT_ANCHOR_ROLES.has(visual.role)) return [];
+    return [canonicalVisualEntity(visual, x, y)];
   }
-
-  const alias = canonicalObjectAliases.get(type);
-  if (alias) return [entity(alias.type, x, y, alias)];
-
-  if (directObjectTypes.has(type)) {
-    return [entity(type, x, y, copiedFields(object))];
+  if (visual.phase && !PHASE_COLLAPSED_OBJECT_TYPES.has(visual.type)) {
+    return [];
   }
-
-  throw new Error(`Unsupported decoded object type: ${type}`);
+  return [canonicalVisualEntity(visual, x, y)];
 }
 
 export function mowedGroundAt(x, y) {
@@ -339,42 +143,43 @@ export function mowedGroundAt(x, y) {
   ][(x * 17 + y * 31) & 3];
 }
 
-function foldedPressedSwitch(type) {
-  const match = /^(speed-switch|tide-switch|carousel-switch|color-yellow-switch|color-pink-switch)-(raised|pressed)$/.exec(
-    type,
-  );
-  if (!match) return null;
-  const color = match[1].startsWith("color-")
-    ? match[1].includes("pink")
-      ? "pink"
-      : "yellow"
-    : undefined;
-  return {
-    type: color ? MapEntityTypeId.COLOR_SWITCH : match[1],
-    pressed: match[2] === "pressed",
-    ...(color ? { color } : {}),
-  };
-}
-
 function canonicalTerrainEntity(type, x, y) {
-  const coordinate = parseOriginalTileCoordinateLabel(type);
-  if (!coordinate) return entity(type, x, y);
-  const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
-  return mapping ? entity(mapping.type, x, y, mapping.fields ?? {}) : null;
+  const visual = requireDecodedVisual(type, "terrain");
+  const mapping = surfaceMappingForTs(visual.row, visual.column);
+  if (!mapping) {
+    throw new Error(`Mowed ground 不是 Surface：${type}`);
+  }
+  return entity(mapping.type, x, y, mapping.fields ?? {});
 }
 
-function directionSuffix(type, prefix) {
-  if (!type.startsWith(prefix)) return null;
-  const direction = type.slice(prefix.length);
-  return ["up", "down", "left", "right"].includes(direction)
-    ? direction
-    : null;
+function canonicalVisualEntity(visual, x, y) {
+  return entity(visual.type, x, y, canonicalFields(visual.type, visual.fields));
 }
 
-function copiedFields(object) {
-  return {
-    ...(object.direction ? { direction: object.direction } : {}),
-  };
+function canonicalFields(type, fields) {
+  const definition = entityMapDefinition(type);
+  if (!definition) throw new Error(`Unknown map entity type: ${type}`);
+  return Object.fromEntries(
+    Object.entries(fields).filter(([key, value]) => {
+      const field = definition.fields.find((candidate) => candidate.key === key);
+      return field?.required || field?.default === undefined || field.default !== value;
+    }),
+  );
+}
+
+function isEmptyObject(type) {
+  const visual = decodedTileVisual(type);
+  return visual ? isEmptyVisual(visual) : false;
+}
+
+function isEmptyVisual(visual) {
+  return visual.type === MapEntityTypeId.TRANSPARENT && visual.cell === "16-16";
+}
+
+function requireDecodedVisual(type, layer) {
+  const visual = decodedTileVisual(type);
+  if (!visual) throw new Error(`Unsupported decoded ${layer} tile: ${type}`);
+  return visual;
 }
 
 function entity(type, x, y, extra = {}) {

@@ -14,7 +14,6 @@ import {
   replaceDatLevelRecord,
   splitDatPackage,
 } from "../dat/index.mjs";
-import { DecodedObject, DecodedTerrain } from "../dat/semantic-ids.mjs";
 
 test("DAT record round-trips byte-for-byte through semantic LevelMap", () => {
   const dat = fs.readFileSync("original/extracted/base/00.dat");
@@ -61,31 +60,31 @@ test("DAT package replacement preserves metadata and untouched records", () => {
 
 test("original DAT provenance belongs to the Original tooling boundary", () => {
   assert.equal(
-    datSourceForTerrain(DecodedTerrain.CAROUSEL_1)?.datHexIds[0],
+    datSourceForTerrain(decodeDatTerrain(0xb9))?.datHexIds[0],
     "0xB9",
   );
   assert.equal(
-    datSourceForTerrain(DecodedTerrain.MIRROR_1)?.datHexIds[0],
+    datSourceForTerrain(decodeDatTerrain(0xb1))?.datHexIds[0],
     "0xB1",
   );
   assert.equal(
-    datSourceForObject(DecodedObject.LOCK)?.datHexIds[0],
+    datSourceForObject(decodeDatObject(0xcd))?.datHexIds[0],
     "0xCD",
   );
 
-  for (const id of Object.values(DecodedTerrain)) {
-    const source = datSourceForTerrain(id);
-    assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
+  for (let byte = 0; byte <= 0xff; byte += 1) {
+    const source = datSourceForTerrain(decodeDatTerrain(byte));
+    assert.equal(source?.datHexIds[0], `0x${byte.toString(16).padStart(2, "0").toUpperCase()}`);
     assert.equal(source?.confidence, "confirmed");
   }
-  for (const id of Object.values(DecodedObject)) {
-    const source = datSourceForObject(id);
-    assert.match(source?.datHexIds[0] ?? "", /^0x[0-9A-F]{2}$/);
+  for (let byte = 0; byte <= 0xff; byte += 1) {
+    const source = datSourceForObject(decodeDatObject(byte));
+    assert.equal(source?.datHexIds[0], `0x${byte.toString(16).padStart(2, "0").toUpperCase()}`);
     assert.equal(source?.confidence, "confirmed");
   }
 });
 
-test("atlas-tagged semantic variants keep inferred DAT provenance in Original tooling", () => {
+test("decoded 标签与裸坐标分别报告 confirmed/inferred DAT provenance", () => {
   assert.equal(decodeDatTerrain(0x2b), "ts-3-12:tree");
 
   const walkable = datSourceForTerrain("ts-7-1");
@@ -98,7 +97,7 @@ test("atlas-tagged semantic variants keep inferred DAT provenance in Original to
 
   const object = datSourceForObject("ts-1-1:stump");
   assert.equal(object?.datHexIds[0], "0x00");
-  assert.equal(object?.confidence, "inferred");
+  assert.equal(object?.confidence, "confirmed");
 });
 
 test("decoded terrain 与 object 使用统一的 atlas-first 标签", () => {
@@ -121,4 +120,8 @@ test("decoded terrain 与 object 使用统一的 atlas-first 标签", () => {
   assert.equal(decodeDatTerrain(0x93), "ts-10-4:stone-wall");
   assert.equal(decodeDatTerrain(0x9e), "ts-10-15:shop-empty");
   assert.equal(decodeDatObject(0xfd), "ts-16-14:fence");
+  assert.throws(
+    () => encodeDatTerrain("ts-12-2:mirror-left-top"),
+    /标签与目录不一致/,
+  );
 });
