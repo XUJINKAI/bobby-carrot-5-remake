@@ -142,7 +142,7 @@ RuntimeAction、WorldMotion、ActorLifecycle 与 WorldOutcome 都是 gameplay st
 
 ## Undo / Redo
 
-Game 在玩家语义 move 前保存 gameplay snapshot。Snapshot 包含 Entity / GlobalState / RuntimeAction gameplay state，但不包含视觉插值。
+Game 在启用历史记录且开始新的玩家语义操作时，于 move 前保存 gameplay snapshot。`runtime.history.mode: "disabled"` 时跳过历史快照；`historyBoundary: false` 的续接步骤沿用已有待提交快照。Snapshot 包含 Entity / GlobalState / RuntimeAction gameplay state，但不包含视觉插值。
 
 Undo 后：
 
