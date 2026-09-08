@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import {
   bobbyMountId,
@@ -75,7 +75,7 @@ const unlock: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.LOCK,
+  type: MapEntityTypeId.LOCK,
   traits: ["blocking", "gate"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
@@ -101,7 +101,7 @@ const definition: EntityModuleDefinition = {
 export const lock: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    context.entity.state?.opened === true ? null : tileCell(EntityTypeId.LOCK),
+    context.entity.state?.opened === true ? null : tileCell(MapEntityTypeId.LOCK),
   ),
   [{ behavior: unlock }],
 );

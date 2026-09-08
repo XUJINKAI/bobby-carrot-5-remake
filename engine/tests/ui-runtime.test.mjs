@@ -37,7 +37,7 @@ test("egg-only objective projects to egg counter without carrot", () => {
   const model = buildGameplayHudModel(state(), {
     type: "fill-all",
     target: "egg-nest",
-    filler: "egg",
+    filler: "filled-egg",
     completed: false,
     remaining: 4,
   });

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
@@ -21,16 +21,16 @@ const EXPECTED = new Map([
 function fenceArt(neighbors) {
   const registry = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
-  const source = [{ type: EntityTypeId.FENCE, x: 1, y: 1 }];
+  const source = [{ type: MapEntityTypeId.FENCE, x: 1, y: 1 }];
   for (const [dx, dy] of neighbors)
-    source.push({ type: EntityTypeId.FENCE, x: 1 + dx, y: 1 + dy });
+    source.push({ type: MapEntityTypeId.FENCE, x: 1 + dx, y: 1 + dy });
 
   const store = new EntityStore(source);
   const spatial = new SpatialIndex(store, registry, 3, 3);
   const query = new SpatialVisualQuery(store, spatial);
   const entity = store.all()[0];
   const presence = spatial.presencesForEntity(entity.id)[0];
-  const composition = visuals.resolve(registry.require(EntityTypeId.FENCE), {
+  const composition = visuals.resolve(registry.require(MapEntityTypeId.FENCE), {
     entity,
     presence,
     query,

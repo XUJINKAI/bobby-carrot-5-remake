@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
@@ -29,20 +29,20 @@ function bobbyVisual(options = {}) {
     },
     ...(mountType ? [{ type: mountType, x: 0, y: 0 }] : []),
     {
-      type: EntityTypeId.BOBBY,
+      type: MapEntityTypeId.BOBBY,
       x: 0,
       y: 0,
 
     },
   ]);
   const spatial = new SpatialIndex(store, entities, 1, 1);
-  const bobby = store.all().find((entity) => entity.type === EntityTypeId.BOBBY);
+  const bobby = store.all().find((entity) => entity.type === MapEntityTypeId.BOBBY);
   assert.ok(bobby);
   bobby.direction = options.direction ?? "right";
   if (state) bobby.state = structuredClone(state);
   const presence = spatial.presencesForEntity(bobby.id)[0];
   assert.ok(presence);
-  return visuals.resolve(entities.require(EntityTypeId.BOBBY), {
+  return visuals.resolve(entities.require(MapEntityTypeId.BOBBY), {
     entity: bobby,
     presence,
     query: new SpatialVisualQuery(store, spatial),
@@ -56,19 +56,19 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   assert.equal(
-    visuals.renderPassFor(entities.require(EntityTypeId.ICE_BLOCK)),
+    visuals.renderPassFor(entities.require(MapEntityTypeId.ICE_BLOCK)),
     "world",
   );
   assert.equal(
-    visuals.renderPassFor(entities.require(EntityTypeId.HIGH_GRASS)),
+    visuals.renderPassFor(entities.require(MapEntityTypeId.HIGH_GRASS)),
     "world",
   );
   assert.equal(
-    visuals.renderPassFor(entities.require(EntityTypeId.SNOW)),
+    visuals.renderPassFor(entities.require(MapEntityTypeId.SNOW)),
     "world",
   );
   assert.equal(
-    visuals.renderPassFor(entities.require(EntityTypeId.BOBBY)),
+    visuals.renderPassFor(entities.require(MapEntityTypeId.BOBBY)),
     "player",
   );
 });
@@ -120,7 +120,7 @@ test("Bobby Ice slide stays on movement frame seven", () => {
 
 test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", () => {
   const composition = bobbyVisual({
-    surfaceType: EntityTypeId.ICE,
+    surfaceType: MapEntityTypeId.ICE,
     direction: "right",
     runtime: {
       offsetX: 0,
@@ -173,7 +173,7 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
 test("Bobby mower cycles vertically inside the direction column", () => {
   const mower = bobbyVisual({
     direction: "up",
-    mountType: EntityTypeId.MOWER,
+    mountType: MapEntityTypeId.MOWER,
     time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
   });
   assert.equal(mower.layers[0].asset, "bobby-mower");
@@ -254,7 +254,7 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
 test("accelerated mower uses the same one-cell-behind trail", () => {
   const mower = bobbyVisual({
     direction: "left",
-    mountType: EntityTypeId.MOWER,
+    mountType: MapEntityTypeId.MOWER,
     state: {
       speedBoost: { direction: "left", phase: "full" },
     },
@@ -327,7 +327,7 @@ test("mechanism-tagged spatial motion remains moving for Speed walking animation
   );
   runtime.update({ frame: 1, nowMs: 1080, deltaMs: 80 }, "linear");
   const state = runtime.inspectEntity(
-    { definition: () => ({ type: EntityTypeId.BOBBY }) },
+    { definition: () => ({ type: MapEntityTypeId.BOBBY }) },
     7,
   ).runtime;
   assert.equal(state.moving, true);
@@ -337,7 +337,7 @@ test("mechanism-tagged spatial motion remains moving for Speed walking animation
 
 test("completed motion stamps stationarySinceMs only once", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
-  const world = { definition: () => ({ type: EntityTypeId.BOBBY }) };
+  const world = { definition: () => ({ type: MapEntityTypeId.BOBBY }) };
   runtime.beginMove(
     7,
     { x: 0, y: 0 },
@@ -383,7 +383,7 @@ test("hazard death presentation stops forty percent into the target cell", () =>
   runtime.update({ frame: 6, nowMs: 1100, deltaMs: 100 }, "linear");
   const state = runtime.inspectEntity(
     {
-      definition: () => ({ type: EntityTypeId.BOBBY }),
+      definition: () => ({ type: MapEntityTypeId.BOBBY }),
     },
     7,
   ).runtime;
@@ -396,7 +396,7 @@ test("WorldDelta interruption drives death presentation at authoritative progres
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   const world = {
     entity: () => ({ id: 7, anchor: { x: 1, y: 0 } }),
-    definition: () => ({ type: EntityTypeId.BOBBY }),
+    definition: () => ({ type: MapEntityTypeId.BOBBY }),
   };
   const motion = {
     id: 1,

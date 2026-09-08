@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   RuntimeActionDefinition,
@@ -10,6 +10,7 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import { bobbyMountId } from "../player/BobbyState.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   CONTENT_STACK_ORDER,
   tileAnimationCell,
@@ -71,7 +72,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
       .find((presence) => presence.role === "head");
     if (head) {
       commands.spawn({
-        type: EntityTypeId.FIREBALL,
+        type: RuntimeEntityTypeId.FIREBALL,
         x: head.cell.x,
         y: head.cell.y,
         direction: dragon.direction ?? "left",
@@ -94,7 +95,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.DRAGON,
+  type: MapEntityTypeId.DRAGON,
   traits: ["dragon"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
@@ -145,7 +146,7 @@ const definition: EntityModuleDefinition = {
 };
 
 const visual: VisualDefinition = {
-  id: EntityTypeId.DRAGON,
+  id: MapEntityTypeId.DRAGON,
   resolve(context) {
     const atlas = dragonAtlasCell(
       context.presence.role,
@@ -165,13 +166,13 @@ const visual: VisualDefinition = {
 };
 
 function dragonAtlasCell(role: string | undefined, attackFrame: unknown) {
-  if (role === "body") return tileCell(EntityTypeId.DRAGON, { role: "body" });
-  if (role === "tail") return tileCell(EntityTypeId.DRAGON, { role: "tail" });
+  if (role === "body") return tileCell(MapEntityTypeId.DRAGON, { role: "body" });
+  if (role === "tail") return tileCell(MapEntityTypeId.DRAGON, { role: "tail" });
   if (attackFrame === 1)
-    return tileAnimationCell(EntityTypeId.DRAGON, "fire", 1, { role: "head" });
+    return tileAnimationCell(MapEntityTypeId.DRAGON, "fire", 1, { role: "head" });
   if (attackFrame === 2)
-    return tileAnimationCell(EntityTypeId.DRAGON, "fire", 2, { role: "head" });
-  return tileCell(EntityTypeId.DRAGON, { role: "head" });
+    return tileAnimationCell(MapEntityTypeId.DRAGON, "fire", 2, { role: "head" });
+  return tileCell(MapEntityTypeId.DRAGON, { role: "head" });
 }
 
 const base = originalModule(definition, visual, [

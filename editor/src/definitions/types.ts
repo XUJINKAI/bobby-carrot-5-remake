@@ -55,8 +55,6 @@ export interface EditorQuickAction {
 
 /** Entity-specific authoring policy. This belongs to Editor, never Engine. */
 export interface EditorEntityDefinition {
-  /** canonical Entity 在 Editor 中的展示名。 */
-  label?: string;
   placementPoint?: EditorPlacementPoint;
   defaultDirection?: Direction;
   replaceGroup?: string;

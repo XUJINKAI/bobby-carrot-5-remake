@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  EntityTypeId,
   MapEntityTypeId,
 } from "../../../model/dist/index.js";
 import {
@@ -74,20 +73,20 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
   });
   assert.deepEqual(result.entities, [
     { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-6-15" },
-    { type: EntityTypeId.START, x: 1, y: 0 },
-    { type: EntityTypeId.BOBBY, x: 1, y: 0 },
+    { type: MapEntityTypeId.START, x: 1, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
   ]);
 });
 
 test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
   assert.deepEqual(adaptTerrainCell(terrain(0x5a), 1, 2), [
-    { type: EntityTypeId.TIDE, x: 1, y: 2, direction: "left" },
+    { type: MapEntityTypeId.TIDE, x: 1, y: 2, direction: "left" },
   ]);
   assert.deepEqual(
     adaptTerrainCell(terrain(0xa1), 1, 2),
     [
       {
-        type: EntityTypeId.SPEED_SWITCH,
+        type: MapEntityTypeId.SPEED_SWITCH,
         x: 1,
         y: 2,
         pressed: true,
@@ -96,11 +95,11 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
   );
   assert.deepEqual(
     adaptTerrainCell(terrain(0xa2), 1, 2),
-    [{ type: EntityTypeId.SPEED_SWITCH, x: 1, y: 2 }],
+    [{ type: MapEntityTypeId.SPEED_SWITCH, x: 1, y: 2 }],
   );
   assert.deepEqual(adaptTerrainCell(terrain(0xac), 1, 2), [
     {
-      type: EntityTypeId.WIND_SWITCH,
+      type: MapEntityTypeId.WIND_SWITCH,
       x: 1,
       y: 2,
       direction: "left",
@@ -108,7 +107,7 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
   ]);
   assert.deepEqual(adaptTerrainCell(terrain(0xad), 1, 2), [
     {
-      type: EntityTypeId.WIND_SWITCH,
+      type: MapEntityTypeId.WIND_SWITCH,
       x: 1,
       y: 2,
       direction: "right",
@@ -116,10 +115,10 @@ test("已稳定 terrain 字段折叠为 canonical flat fields", () => {
     },
   ]);
   assert.deepEqual(adaptTerrainCell(terrain(0xaf), 1, 2), [
-    { type: EntityTypeId.TRAP, x: 1, y: 2 },
+    { type: MapEntityTypeId.TRAP, x: 1, y: 2 },
   ]);
   assert.deepEqual(adaptTerrainCell(terrain(0xb0), 1, 2), [
-    { type: EntityTypeId.TRAP, x: 1, y: 2, active: false },
+    { type: MapEntityTypeId.TRAP, x: 1, y: 2, active: false },
   ]);
 });
 
@@ -129,10 +128,10 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
     width: 2,
     height: 1,
     entities: [
-      { type: EntityTypeId.START, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.START, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
       {
-        type: EntityTypeId.WIND_SWITCH,
+        type: MapEntityTypeId.WIND_SWITCH,
         x: 1,
         y: 0,
         direction: "left",
@@ -146,10 +145,10 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
   );
   assert.deepEqual(
     adaptDecodedMap(reversed).entities.find(
-      (entity) => entity.type === EntityTypeId.WIND_SWITCH,
+      (entity) => entity.type === MapEntityTypeId.WIND_SWITCH,
     ),
     {
-      type: EntityTypeId.WIND_SWITCH,
+      type: MapEntityTypeId.WIND_SWITCH,
       x: 1,
       y: 0,
       direction: "left",
@@ -160,16 +159,16 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
 
 test("Mirror 数字帧与 Carousel 方向在 adapter 边界转换", () => {
   assert.deepEqual(adaptTerrainCell(terrain(0xb1), 1, 2), [
-    { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: "right-bottom" },
+    { type: MapEntityTypeId.MIRROR, x: 1, y: 2, variant: "right-bottom" },
   ]);
   assert.deepEqual(adaptTerrainCell(terrain(0xb4), 1, 2), [
-    { type: EntityTypeId.MIRROR, x: 1, y: 2, variant: "left-top" },
+    { type: MapEntityTypeId.MIRROR, x: 1, y: 2, variant: "left-top" },
   ]);
   assert.deepEqual(
     adaptTerrainCell(terrain(0xba), 1, 2),
     [
       {
-        type: EntityTypeId.CAROUSEL,
+        type: MapEntityTypeId.CAROUSEL,
         x: 1,
         y: 2,
         variant: "left-top",
@@ -180,7 +179,7 @@ test("Mirror 数字帧与 Carousel 方向在 adapter 边界转换", () => {
     adaptTerrainCell(terrain(0xbe), 1, 2),
     [
       {
-        type: EntityTypeId.CAROUSEL,
+        type: MapEntityTypeId.CAROUSEL,
         x: 1,
         y: 2,
         variant: "horizontal",
@@ -209,11 +208,11 @@ test("原版单层 Snow/High Grass 精确展开为 surface + cover", () => {
       y: 4,
       variant: "ts-8-13",
     },
-    { type: EntityTypeId.SNOW, x: 3, y: 4 },
+    { type: MapEntityTypeId.SNOW, x: 3, y: 4 },
   ]);
   assert.deepEqual(adaptTerrainCell(terrain(0xc7), 3, 4), [
     canonicalMowedGroundAt(3, 4),
-    { type: EntityTypeId.HIGH_GRASS, x: 3, y: 4 },
+    { type: MapEntityTypeId.HIGH_GRASS, x: 3, y: 4 },
   ]);
 });
 
@@ -232,7 +231,7 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
     [
       canonicalMowedGroundAt(1, 0),
-      { type: EntityTypeId.CARROT, x: 1, y: 0 },
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
       { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
     ],
   );
@@ -240,7 +239,7 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
     result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
     [
       canonicalMowedGroundAt(2, 0),
-      { type: EntityTypeId.CARROT, x: 2, y: 0 },
+      { type: MapEntityTypeId.CARROT, x: 2, y: 0 },
       { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0 },
     ],
   );
@@ -329,7 +328,7 @@ test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty 
 test("原版 Object anchor/phase 映射到单一 canonical Entity", () => {
   assert.deepEqual(
     adaptObjectCell({ type: objectTile(0xd7), x: 2, y: 3 }),
-    [{ type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" }],
+    [{ type: MapEntityTypeId.DRAGON, x: 3, y: 3, direction: "left" }],
   );
   assert.deepEqual(
     adaptObjectCell({ type: objectTile(0xd9), x: 4, y: 3 }),
@@ -337,7 +336,7 @@ test("原版 Object anchor/phase 映射到单一 canonical Entity", () => {
   );
   assert.deepEqual(
     adaptObjectCell({ type: objectTile(0xe5), x: 4, y: 3 }),
-    [{ type: EntityTypeId.ICE_BLOCK, x: 4, y: 3 }],
+    [{ type: MapEntityTypeId.ICE_BLOCK, x: 4, y: 3 }],
   );
 });
 
@@ -396,8 +395,8 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
     { type: "grass", x: 0, y: 0, variant: "ts-6-15" },
     { type: "grass", x: 1, y: 0, variant: "ts-6-15" },
     { type: "grass", x: 2, y: 0, variant: "ts-6-15" },
-    { type: EntityTypeId.START, x: 3, y: 0 },
-    { type: EntityTypeId.BOBBY, x: 3, y: 0 },
+    { type: MapEntityTypeId.START, x: 3, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 3, y: 0 },
     { type: "grass", x: 4, y: 0, variant: "ts-6-15" },
   ];
   const map = {
@@ -406,7 +405,7 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
     height: 1,
     entities: [
       ...baseEntities,
-      { type: EntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
+      { type: MapEntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
     ],
   };
   const reversed = reverseEntityMap(map);
@@ -425,9 +424,9 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
   );
   assert.deepEqual(
     adaptDecodedMap(reversed).entities.find(
-      (entity) => entity.type === EntityTypeId.DRAGON,
+      (entity) => entity.type === MapEntityTypeId.DRAGON,
     ),
-    { type: EntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
   );
 
   assert.throws(
@@ -435,7 +434,7 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
       reverseEntityMap({
         ...map,
         entities: map.entities.map((entity) =>
-          entity.type === EntityTypeId.DRAGON
+          entity.type === MapEntityTypeId.DRAGON
             ? { ...entity, direction: "right" }
             : entity,
         ),

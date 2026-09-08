@@ -86,5 +86,5 @@ export const MapEntityTypeId = {
 export type NamedMapEntityType =
   (typeof MapEntityTypeId)[keyof typeof MapEntityTypeId];
 
-/** 原版 terrain 记录直接引用 Palette 单元时使用的可审阅单格视觉身份。 */
+/** LevelMap 中可持久化的 canonical Entity 身份。 */
 export type MapEntityType = NamedMapEntityType;

@@ -1,6 +1,6 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { createDialogBehavior } from "@bobby/engine";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { globalActions, homeIdentity } from "../../app/pageChrome.js";
@@ -93,7 +93,7 @@ export async function renderHome(
       },
       runtime: {
         initializeEntityState: (entity) =>
-          entity.type === EntityTypeId.SANDMAN
+          entity.type === MapEntityTypeId.SANDMAN
             ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }
             : undefined,
         hud: true,

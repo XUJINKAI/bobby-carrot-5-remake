@@ -218,6 +218,7 @@ export const ENTITY_MAP_DEFINITIONS = Object.freeze(
   ),
 ) as Readonly<Record<string, EntityMapDefinition>>;
 
+validateEntityMapDefinitions();
 validateOriginalTileSelectors();
 
 export function entityMapDefinition(
@@ -255,6 +256,17 @@ function validateOriginalTileSelectors(): void {
       }
     }
   }
+}
+
+function validateEntityMapDefinitions(): void {
+  const ids = new Set(Object.values(MapEntityTypeId));
+  const definitions = new Set(Object.keys(ENTITY_MAP_DEFINITIONS));
+  const missing = [...ids].filter((type) => !definitions.has(type));
+  const extra = [...definitions].filter((type) => !ids.has(type as MapEntityType));
+  if (missing.length === 0 && extra.length === 0) return;
+  throw new Error(
+    `Map Entity ID 与 Definition 不一致：missing=${missing.join(",")}; extra=${extra.join(",")}`,
+  );
 }
 
 function fieldAccepts(

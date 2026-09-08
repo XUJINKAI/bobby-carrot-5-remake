@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  EntityTypeId,
   MapEntityTypeId,
   originalTileCoordinateLabel,
   originalTileVisualGroup,
@@ -46,16 +45,16 @@ function autoMetadata(entity) {
 }
 
 test("Surface catalog is independent from Palette", () => {
-  assert.equal(isSurfaceEntityType(EntityTypeId.WATER), true);
-  assert.equal(isSurfaceEntityType(EntityTypeId.ICE), true);
+  assert.equal(isSurfaceEntityType(MapEntityTypeId.WATER), true);
+  assert.equal(isSurfaceEntityType(MapEntityTypeId.ICE), true);
   assert.equal(isSurfaceEntityType("ts-7-1"), true);
-  assert.equal(isSurfaceEntityType(EntityTypeId.SPEED), false);
+  assert.equal(isSurfaceEntityType(MapEntityTypeId.SPEED), false);
 
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition)
     .flatMap((group) => group.rows.flat());
-  assert.equal(palette.some((item) => item.type === EntityTypeId.WATER), false);
-  assert.equal(palette.some((item) => item.type === EntityTypeId.ICE), false);
-  assert.equal(palette.some((item) => item.type === EntityTypeId.SPEED), true);
+  assert.equal(palette.some((item) => item.type === MapEntityTypeId.WATER), false);
+  assert.equal(palette.some((item) => item.type === MapEntityTypeId.ICE), false);
+  assert.equal(palette.some((item) => item.type === MapEntityTypeId.SPEED), true);
 });
 
 test("Surface catalog follows the documented original material groups", () => {
@@ -150,7 +149,7 @@ test("Fence supports Auto and explicit fixed variants", () => {
     [{ x: 1, y: 1 }, { x: 2, y: 1 }],
     { terrain: "fence", pattern: "auto", seed: 1 },
   ).apply(level);
-  const autoFence = entityAt(auto, 1, 1, (entity) => entity.type === EntityTypeId.FENCE);
+  const autoFence = entityAt(auto, 1, 1, (entity) => entity.type === MapEntityTypeId.FENCE);
   assert.ok(autoFence);
   assert.match(autoFence.variant, /^ts-16-(?:1[0-5])$/);
   assert.ok(autoMetadata(autoFence).length > 0);
@@ -161,7 +160,7 @@ test("Fence supports Auto and explicit fixed variants", () => {
     [{ x: 3, y: 1 }],
     { terrain: "fence", pattern: "exact", exact: exactType, seed: 1 },
   ).apply(auto);
-  const exactFence = entityAt(exact, 3, 1, (entity) => entity.type === EntityTypeId.FENCE);
+  const exactFence = entityAt(exact, 3, 1, (entity) => entity.type === MapEntityTypeId.FENCE);
   assert.equal(exactFence?.variant, "ts-16-12");
   assert.deepEqual(autoMetadata(exactFence), []);
 });
@@ -175,7 +174,7 @@ test("serialize materializes Auto Surface visuals and strips editor metadata", (
 
   const materialized = materializeSurfaceVariants(level);
   for (const fence of materialized.entities.filter(
-    (entity) => entity.type === EntityTypeId.FENCE,
+    (entity) => entity.type === MapEntityTypeId.FENCE,
   )) {
     assert.match(fence.variant, /^ts-16-(?:1[0-5])$/);
     assert.deepEqual(autoMetadata(fence), []);
@@ -190,7 +189,7 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
   const level = createBlankLevel(5, 5);
   const next = placeEntity(
     catalog,
-    { type: EntityTypeId.SPEED, direction: "right" },
+    { type: MapEntityTypeId.SPEED, direction: "right" },
     { x: 1, y: 1 },
     {},
     builtinEditorDefinition,
@@ -198,12 +197,12 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
 
   const cell = next.entities.filter((entity) => entity.x === 1 && entity.y === 1);
   assert.equal(cell.some((entity) => entity.type === MapEntityTypeId.GRASS), true);
-  assert.equal(cell.some((entity) => entity.type === EntityTypeId.SPEED), true);
+  assert.equal(cell.some((entity) => entity.type === MapEntityTypeId.SPEED), true);
 });
 
 test("painting Surface replaces only its Surface slot and preserves stacked entities", () => {
   const level = createBlankLevel(5, 5);
-  level.entities.push({ type: EntityTypeId.CARROT, x: 2, y: 2 });
+  level.entities.push({ type: MapEntityTypeId.CARROT, x: 2, y: 2 });
   const next = paintSurface(
     catalog,
     [{ x: 2, y: 2 }],
@@ -217,8 +216,8 @@ test("painting Surface replaces only its Surface slot and preserves stacked enti
 
   const cell = next.entities.filter((entity) => entity.x === 2 && entity.y === 2);
   assert.equal(cell.some((entity) => entity.type === "grass"), false);
-  assert.equal(cell.some((entity) => entity.type === EntityTypeId.WATER), true);
-  assert.equal(cell.some((entity) => entity.type === EntityTypeId.CARROT), true);
+  assert.equal(cell.some((entity) => entity.type === MapEntityTypeId.WATER), true);
+  assert.equal(cell.some((entity) => entity.type === MapEntityTypeId.CARROT), true);
 });
 
 test("Surface instances leave gameplay semantics to Engine definitions", () => {
@@ -290,7 +289,7 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
     surfaceTerrainForEntity(entityAt(next, 2, 1, (entity) => isSurfaceEntityType(entity.type))?.type)?.id,
     "sand",
   );
-  assert.equal(entityAt(next, 3, 1, (entity) => isSurfaceEntityType(entity.type))?.type, EntityTypeId.WATER);
+  assert.equal(entityAt(next, 3, 1, (entity) => isSurfaceEntityType(entity.type))?.type, MapEntityTypeId.WATER);
 });
 
 test("Alternate Surface pattern is a stable coordinate checker", () => {
@@ -349,7 +348,7 @@ test("Theme switch changes only recognized visual families", () => {
     surfacesAt(next, 2, 0).some((item) => item.terrain.id === "snow-fence"),
     true,
   );
-  assert.equal(entityAt(next, 3, 0)?.type, EntityTypeId.WATER);
+  assert.equal(entityAt(next, 3, 0)?.type, MapEntityTypeId.WATER);
 });
 
 test("Waterfall Auto resolves vertical top middle bottom variants", () => {

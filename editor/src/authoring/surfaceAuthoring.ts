@@ -1,6 +1,5 @@
 import type { EntityCatalog } from "@bobby/engine";
 import {
-  EntityTypeId,
   MapEntityTypeId,
   parseOriginalTileCoordinateLabel,
   surfaceMappingForTs,
@@ -65,7 +64,7 @@ for (const terrain of SURFACE_TERRAINS)
 
 const fenceTerrain = terrainById.get("fence");
 if (fenceTerrain)
-  terrainByEntityType.set(EntityTypeId.FENCE, fenceTerrain);
+  terrainByEntityType.set(MapEntityTypeId.FENCE, fenceTerrain);
 
 const semanticTerrainTypes: readonly [EntityType, SurfaceTerrainId][] = [
   [MapEntityTypeId.WATER, "water"],
@@ -281,7 +280,7 @@ export function pickSurfaceBrush(
   const auto = autoMetadata(entity);
   if (auto) return { terrain: item.id, pattern: "auto", seed: auto.seed };
 
-  if (item.id === "fence" && entity.type === EntityTypeId.FENCE) {
+  if (item.id === "fence" && entity.type === MapEntityTypeId.FENCE) {
     const selected = typeof entity.variant === "string"
       ? entity.variant as EntityType
       : undefined;
@@ -310,7 +309,7 @@ export function materializeSurfaceVariants(level: EditorMap): EditorMap {
     if (
       terrain?.id === "fence" &&
       terrain.auto.kind === "fence" &&
-      entity.type === EntityTypeId.FENCE
+      entity.type === MapEntityTypeId.FENCE
     ) {
       const index = fenceVariantIndex(level, entity, terrain);
       fixed = { ...fixed, variant: terrain.auto.variants[index] };

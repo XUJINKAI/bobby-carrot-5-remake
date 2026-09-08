@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  EntityTypeId,
   MapEntityTypeId,
   entityMapDefinition,
   ENTITY_MAP_DEFINITIONS,
@@ -11,21 +10,20 @@ import {
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
 } from "../dist/entities/registry.js";
-import { levelEntityRuntimeType } from "../dist/world/entity/EntityInstance.js";
 
 test("所有 Map Entity 合同都对应可加载的 Runtime Definition", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of Object.keys(ENTITY_MAP_DEFINITIONS)) {
     assert.doesNotThrow(
-      () => registry.require(levelEntityRuntimeType({ type, x: 0, y: 0 })),
+      () => registry.require(type),
       type,
     );
   }
 });
 
-test("所有 canonical EntityTypeId 恰好注册一次", () => {
+test("所有 canonical MapEntityTypeId 恰好注册一次", () => {
   const definitions = builtinEntityDefinitions.map((item) => item.type);
-  for (const type of new Set(Object.values(EntityTypeId))) {
+  for (const type of new Set(Object.values(MapEntityTypeId))) {
     assert.equal(
       definitions.filter((candidate) => candidate === type).length,
       1,
@@ -136,10 +134,10 @@ test("Sandman / Dream Machine / Beaver 使用固定 footprint", () => {
 
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
-  const fence = registry.require(EntityTypeId.FENCE);
+  const fence = registry.require(MapEntityTypeId.FENCE);
   assert.deepEqual(fence.traits, ["blocking", "fence"]);
   assert.equal(
-    Object.values(EntityTypeId).some((type) => /^fence-\d$/.test(type)),
+    Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,
   );
 });

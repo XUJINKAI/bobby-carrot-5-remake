@@ -1,5 +1,4 @@
 import {
-  EntityTypeId,
   MapEntityTypeId,
   ORIGINAL_TILE_ATLASES,
   originalTileAnimation,
@@ -181,7 +180,7 @@ function originalAmbientLayer(
 ): ImageVisualLayer | null {
   if (!context.time) return null;
   if (
-    context.entity.type === EntityTypeId.EXIT &&
+    context.entity.type === MapEntityTypeId.EXIT &&
     !exitAnimationReady(context.winState)
   )
     return null;
@@ -215,24 +214,18 @@ function originalAmbientSequence(
 ): OriginalAmbientSequence | null {
   let selector: Parameters<typeof originalTileAnimation>[0] | null = null;
   if (
-    type === EntityTypeId.EXIT ||
-    type === EntityTypeId.BONUS_COIN ||
-    type === EntityTypeId.WHIRLWIND
+    type === MapEntityTypeId.EXIT ||
+    type === MapEntityTypeId.BONUS_COIN ||
+    type === MapEntityTypeId.WHIRLWIND
   ) {
     selector = { type, id: "ambient" };
-  } else if (type === EntityTypeId.WINDMILL_UP) {
-    selector = windmillAnimation("up");
-  } else if (type === EntityTypeId.WINDMILL_DOWN) {
-    selector = windmillAnimation("down");
-  } else if (type === EntityTypeId.WINDMILL_LEFT) {
-    selector = windmillAnimation("left");
-  } else if (type === EntityTypeId.WINDMILL_RIGHT) {
-    selector = windmillAnimation("right");
+  } else if (type === MapEntityTypeId.WINDMILL) {
+    selector = windmillAnimation(direction ?? "right");
   } else if (type === MapEntityTypeId.WATER && variant === "ripple") {
     selector = { type, id: "ambient", fields: { variant: "ripple" } };
   } else if (type === MapEntityTypeId.WATERFALL) {
     selector = { type, id: "ambient", fields: { variant: String(variant) } };
-  } else if (type === EntityTypeId.SPEED || type === EntityTypeId.TIDE) {
+  } else if (type === MapEntityTypeId.SPEED || type === MapEntityTypeId.TIDE) {
     selector = { type, id: "ambient", fields: { direction: direction ?? "right" } };
   }
   if (!selector) return null;
@@ -258,7 +251,7 @@ function exitAnimationReady(
 ): boolean {
   if (!state || state.completed) return false;
   if (state.type === "reach")
-    return state.target === EntityTypeId.EXIT;
+    return state.target === MapEntityTypeId.EXIT;
   if (state.type !== "all") return false;
 
   let pendingExit = false;

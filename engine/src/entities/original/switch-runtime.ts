@@ -1,5 +1,4 @@
 import {
-  EntityTypeId,
   MapEntityTypeId,
   type Direction,
   type EntityType,
@@ -73,14 +72,14 @@ function directionalSwitchBehavior(
 
 export const speedSwitchBehavior = directionalSwitchBehavior(
   "speed-switch-global-reverse",
-  EntityTypeId.SPEED_SWITCH,
-  EntityTypeId.SPEED,
+  MapEntityTypeId.SPEED_SWITCH,
+  MapEntityTypeId.SPEED,
 );
 
 export const tideSwitchBehavior = directionalSwitchBehavior(
   "tide-switch-global-reverse",
-  EntityTypeId.TIDE_SWITCH,
-  EntityTypeId.TIDE,
+  MapEntityTypeId.TIDE_SWITCH,
+  MapEntityTypeId.TIDE,
 );
 
 export const carouselSwitchBehavior: Behavior = {
@@ -90,7 +89,7 @@ export const carouselSwitchBehavior: Behavior = {
     if (self.entity.state?.pressed === true) return;
 
     for (const entity of query.entitiesWithTrait("switch")) {
-      if (entity.type !== EntityTypeId.CAROUSEL_SWITCH) continue;
+      if (entity.type !== MapEntityTypeId.CAROUSEL_SWITCH) continue;
       commands.setState(entity.id, {
         ...entity.state,
         pressed: entity.state?.pressed !== true,
@@ -98,7 +97,7 @@ export const carouselSwitchBehavior: Behavior = {
     }
 
     for (const entity of query.entitiesWithTrait("carousel")) {
-      if (entity.type !== EntityTypeId.CAROUSEL) continue;
+      if (entity.type !== MapEntityTypeId.CAROUSEL) continue;
       commands.setState(entity.id, {
         ...entity.state,
         variant: rotateCarouselVariant(entity.state?.variant),

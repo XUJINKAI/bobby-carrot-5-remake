@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeActionRegistry } from "../dist/world/action/RuntimeActionRegistry.js";
 import { World } from "../dist/world/World.js";
 
@@ -27,11 +27,11 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
       schemaVersion: 1,
       width: 2,
       height: 1,
-      rules: { win: { type: "reach", target: EntityTypeId.EXIT } },
+      rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
-        { type: EntityTypeId.EXIT, x: 1, y: 0 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { actions, motionDurationMs: 0 },
@@ -74,7 +74,7 @@ test("losing World interrupts a running WorldMotion at its current progress", ()
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
         { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 100 },

@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
-const bobby = (x, y) => ({ type: EntityTypeId.BOBBY, x, y });
+const bobby = (x, y) => ({ type: MapEntityTypeId.BOBBY, x, y });
 
 function corridor(extra, rules, bobbyState) {
   return {
@@ -46,8 +46,8 @@ function move(world, direction) {
 test("reach can complete on a collectible removed by onEnter", () => {
   const world = new World(
     corridor(
-      [{ type: EntityTypeId.GOLDEN_CARROT, x: 1, y: 0 }],
-      { win: { type: "reach", target: EntityTypeId.GOLDEN_CARROT } },
+      [{ type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 }],
+      { win: { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT } },
     ),
   );
   const result = move(world, "right");
@@ -57,7 +57,7 @@ test("reach can complete on a collectible removed by onEnter", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.GOLDEN_CARROT),
+      .some((entity) => entity.type === MapEntityTypeId.GOLDEN_CARROT),
     false,
   );
 });
@@ -65,7 +65,7 @@ test("reach can complete on a collectible removed by onEnter", () => {
 test("bonus beaver grants one trial key, then sells temporary keys for three coins", () => {
   const map = corridor([
     {
-      type: EntityTypeId.BEAVER,
+      type: MapEntityTypeId.BEAVER,
       x: 1,
       y: 0,
       interaction: "bonus-key-vendor",
@@ -101,7 +101,7 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
     corridor(
       [
         {
-          type: EntityTypeId.LOCK,
+          type: MapEntityTypeId.LOCK,
           x: 1,
           y: 0,
           deathCountdownSeconds: 1,
@@ -125,7 +125,7 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
 
 test("permanent key opens the lock without being consumed", () => {
   const world = new World(
-    corridor([{ type: EntityTypeId.LOCK, x: 1, y: 0 }]),
+    corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
     { profile: { superKey: true } },
   );
   assert.equal(move(world, "right").moves[0].moved, true);

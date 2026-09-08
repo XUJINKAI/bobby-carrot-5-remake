@@ -96,7 +96,10 @@ Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标
 
 Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
 
-Palette 显式条目与自动补充项都读取 Engine Definition 的 `authoring.palette`。Gameplay 生成的 phase、raw atlas compatibility Entity 与其它 runtime-only Entity 在 Definition 中声明 `palette: false`；Editor 不维护相同 ID 的私有黑名单。
+Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinition` 和 Engine Definition，
+并读取 Engine Definition 的 `authoring.palette`。Engine 私有临时实体不属于 Map Definition，
+不会进入 Editor；`palette: false` 用于把通过 Surface 等其它入口编辑的 canonical Entity
+排除出 Object Palette。
 
 草下目标通过在同格放置 `high-grass` 与 `carrot` 或 `egg` 创建。云朵停靠格使用带 `color` 的 `cloud-parking`，放置时保留同格基础地形。
 

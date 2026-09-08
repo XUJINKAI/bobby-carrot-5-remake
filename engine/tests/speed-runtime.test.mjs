@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_SPEED_CONTINUATION_CELLS,
   DEFAULT_SPEED_FULL_CADENCE_MS,
@@ -9,7 +9,7 @@ import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const speed = (x, y, direction = "right") => ({
-  type: EntityTypeId.SPEED,
+  type: MapEntityTypeId.SPEED,
   x,
   y,
   direction,
@@ -75,7 +75,7 @@ function straightWorld(width = 6) {
     entities: [
       ...Array.from({ length: width }, (_, x) => ground(x, 0)),
       speed(1, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
 }
@@ -206,8 +206,8 @@ test("blocked Speed forced movement emits impact and clears the boost", () => {
     entities: [
       ...Array.from({ length: 4 }, (_, x) => ground(x, 0)),
       speed(1, 0),
-      { type: EntityTypeId.WINDMILL_UP, x: 2, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WINDMILL, x: 2, y: 0, direction: "up" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = actorIds(world)[0];
@@ -239,8 +239,8 @@ test("Speed boost state and observed input belong only to the owning Bobby", () 
       ...Array.from({ length: 6 }, (_, x) => ground(x, 0)),
       ...Array.from({ length: 6 }, (_, x) => ground(x, 1)),
       speed(1, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
     ],
   });
   const [boosted, other] = actorIds(world);
@@ -269,7 +269,7 @@ test("Speed hands off on the same tick that the entering motion completes", () =
       entities: [
         ...Array.from({ length: 4 }, (_, x) => ground(x, 0)),
         speed(1, 0),
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 350 },

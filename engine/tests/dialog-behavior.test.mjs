@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createDialogBehavior } from "../dist/public.js";
 import { World } from "../dist/world/World.js";
 
@@ -14,9 +14,9 @@ function dialogLevel() {
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
       { type: "grass", variant: "ts-10-1", x: 1, y: 1 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       {
-        type: EntityTypeId.SANDMAN,
+        type: MapEntityTypeId.SANDMAN,
         x: 1,
         y: 0,
 
@@ -28,7 +28,7 @@ function dialogLevel() {
 function dialogWorld(dialog) {
   const world = new World(dialogLevel());
   const sandman = world.entities.all().find(
-    (entity) => entity.type === EntityTypeId.SANDMAN,
+    (entity) => entity.type === MapEntityTypeId.SANDMAN,
   );
   assert.ok(sandman);
   sandman.state = { dialog };

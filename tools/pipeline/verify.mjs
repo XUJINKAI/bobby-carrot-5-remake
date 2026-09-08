@@ -284,7 +284,7 @@ function assertOriginalWinRule(document, relative) {
     const eggs = {
       type: "fill-all",
       target: "egg-nest",
-      filler: "egg",
+      filler: "filled-egg",
     };
     expected = exit ? { type: "all", conditions: [eggs, exit] } : eggs;
   } else if (exit) {

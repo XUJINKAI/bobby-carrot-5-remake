@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "../../model/dist/index.js";
+import { MapEntityTypeId } from "../../model/dist/index.js";
 import {
   augmentAdventureLevel,
   createAdventureSave,
@@ -12,7 +12,7 @@ function sandmanLevel() {
     schemaVersion: 1,
     width: 4,
     height: 4,
-    entities: [{ type: EntityTypeId.SANDMAN, x: 1, y: 1 }],
+    entities: [{ type: MapEntityTypeId.SANDMAN, x: 1, y: 1 }],
   };
 }
 
@@ -20,7 +20,7 @@ test("Adventure can add dialogue without changing the base LevelMap", () => {
   const base = sandmanLevel();
   const augmented = augmentAdventureLevel(base, [
     {
-      type: EntityTypeId.SANDMAN,
+      type: MapEntityTypeId.SANDMAN,
       x: 1,
       y: 1,
       fields: { dialogue: "Adventure 自定义对白" },
@@ -52,14 +52,14 @@ test("type-only Adventure patches apply to every matching Entity", () => {
     width: 4,
     height: 4,
     entities: [
-      { type: EntityTypeId.BEAVER, x: 0, y: 0 },
-      { type: EntityTypeId.BEAVER, x: 2, y: 0 },
-      { type: EntityTypeId.LOCK, x: 1, y: 2 },
+      { type: MapEntityTypeId.BEAVER, x: 0, y: 0 },
+      { type: MapEntityTypeId.BEAVER, x: 2, y: 0 },
+      { type: MapEntityTypeId.LOCK, x: 1, y: 2 },
     ],
   };
   const augmented = augmentAdventureLevel(level, [
     {
-      type: EntityTypeId.BEAVER,
+      type: MapEntityTypeId.BEAVER,
       fields: { interaction: "bonus-key-vendor" },
     },
   ]);

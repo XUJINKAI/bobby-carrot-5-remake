@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -10,7 +10,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.FENCE,
+  type: MapEntityTypeId.FENCE,
   authoring: { palette: false },
   traits: ["blocking", "fence"],
   stackOrder: CONTENT_STACK_ORDER,
@@ -44,14 +44,14 @@ export function resolveFenceVariant(connections: FenceConnections): string {
 }
 
 export const fence: EntityModule = originalModule(definition, {
-  id: EntityTypeId.FENCE,
+  id: MapEntityTypeId.FENCE,
   resolve(context) {
     const fixed = context.entity.state?.variant;
     const variant =
       typeof fixed === "string" && /^ts-16-1[0-5]$/.test(fixed)
         ? fixed
         : resolveFenceVariant(resolveConnections(context));
-    const atlas = tileCell(EntityTypeId.FENCE, {
+    const atlas = tileCell(MapEntityTypeId.FENCE, {
       fields: { variant },
     });
     return {

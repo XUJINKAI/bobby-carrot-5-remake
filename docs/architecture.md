@@ -34,7 +34,6 @@ interface LevelEntity {
   type: EntityType;
   x: number;
   y: number;
-  direction?: Direction;
   stackOrder?: number;
   [field: string]: JsonPrimitive | undefined;
 }
@@ -243,12 +242,15 @@ Entity Layout Definition
 └─ authoringVariants[]
 ```
 
-Map Entity 在 Editor 预览、校验和 footprint 查询时，统一通过 Engine
-level-load type resolver 找到 Runtime Definition；Inspector 与 JSON 始终保留原始
-canonical Map type。`windmill`、`egg` 等加载时转换 Runtime type 的 Entity
-因此不会在 Editor 中漂移为 phase type。
+Map Entity 在 Engine World、Editor 预览、校验和 footprint 查询中统一使用 canonical
+type，并直接取得同名 Definition。`windmill` 的方向、`egg` 的填充状态等运行阶段由
+Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎中间段等临时实体
+使用 Engine 私有身份，不进入 Model API 或 LevelMap。
 
-`authoring.palette=false` 描述 consumed carrot、动画中间帧等 runtime-only Entity 的 authoring 可见性。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
+Editor Palette 只枚举具有 Model `EntityMapDefinition` 的 canonical type；Engine 私有临时实体
+不会进入 Editor。`authoring.palette=false` 用于把应在 Surface 面板等其它入口编辑的 canonical
+type 排除出 Object Palette。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor
+Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
 
 当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 

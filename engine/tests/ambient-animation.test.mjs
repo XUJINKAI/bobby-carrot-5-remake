@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -60,19 +60,19 @@ test("original ta.png ambient phase zero keeps the static ts.png atlas frame", (
 });
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {
-  for (const [type, frameIndex, variant] of [
-    [EntityTypeId.BONUS_COIN, 15],
-    [EntityTypeId.WINDMILL_UP, 18],
-    [EntityTypeId.WINDMILL_DOWN, 20],
-    [EntityTypeId.WINDMILL_LEFT, 22],
-    [EntityTypeId.WINDMILL_RIGHT, 24],
-    [EntityTypeId.WHIRLWIND, 26],
-    [MapEntityTypeId.WATER, 39, "ripple"],
-    [MapEntityTypeId.WATERFALL, 46, "top"],
-    [MapEntityTypeId.WATERFALL, 48, "middle"],
-    [MapEntityTypeId.WATERFALL, 50, "bottom"],
+  for (const [type, frameIndex, direction, variant] of [
+    [MapEntityTypeId.BONUS_COIN, 15],
+    [MapEntityTypeId.WINDMILL, 18, "up"],
+    [MapEntityTypeId.WINDMILL, 20, "down"],
+    [MapEntityTypeId.WINDMILL, 22, "left"],
+    [MapEntityTypeId.WINDMILL, 24, "right"],
+    [MapEntityTypeId.WHIRLWIND, 26],
+    [MapEntityTypeId.WATER, 39, undefined, "ripple"],
+    [MapEntityTypeId.WATERFALL, 46, undefined, "top"],
+    [MapEntityTypeId.WATERFALL, 48, undefined, "middle"],
+    [MapEntityTypeId.WATERFALL, 50, undefined, "bottom"],
   ])
-    expectAnimated(type, frameIndex, undefined, variant);
+    expectAnimated(type, frameIndex, direction, variant);
 });
 
 test("Exit animates only when reach Exit is the only unfinished objective", () => {
@@ -82,15 +82,15 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     conditions: [
       {
         type: "collect-all",
-        target: EntityTypeId.CARROT,
+        target: MapEntityTypeId.CARROT,
         completed: false,
         remaining: 1,
       },
-      { type: "reach", target: EntityTypeId.EXIT, completed: false },
+      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
     ],
   };
   assert.equal(
-    resolveAt(EntityTypeId.EXIT, AMBIENT_STEP_MS, undefined, blocked).kind,
+    resolveAt(MapEntityTypeId.EXIT, AMBIENT_STEP_MS, undefined, blocked).kind,
     "atlas",
   );
 
@@ -99,15 +99,15 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     conditions: [
       {
         type: "collect-all",
-        target: EntityTypeId.CARROT,
+        target: MapEntityTypeId.CARROT,
         completed: true,
         remaining: 0,
       },
-      { type: "reach", target: EntityTypeId.EXIT, completed: false },
+      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
     ],
   };
   const readyLayer = resolveAt(
-    EntityTypeId.EXIT,
+    MapEntityTypeId.EXIT,
     AMBIENT_STEP_MS,
     undefined,
     ready,
@@ -116,10 +116,10 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
   assert.equal(readyLayer.frameIndex, 0);
 
   const directLayer = resolveAt(
-    EntityTypeId.EXIT,
+    MapEntityTypeId.EXIT,
     AMBIENT_STEP_MS,
     undefined,
-    { type: "reach", target: EntityTypeId.EXIT, completed: false },
+    { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
   );
   assert.equal(directLayer.kind, "image");
   assert.equal(directLayer.frameIndex, 0);
@@ -132,8 +132,8 @@ test("original ta.png Speed and Tide mappings preserve DAT direction order", () 
     ["left", 9, 35],
     ["right", 12, 37],
   ]) {
-    expectAnimated(EntityTypeId.SPEED, speedFrame, direction);
-    expectAnimated(EntityTypeId.TIDE, tideFrame, direction);
+    expectAnimated(MapEntityTypeId.SPEED, speedFrame, direction);
+    expectAnimated(MapEntityTypeId.TIDE, tideFrame, direction);
   }
 });
 

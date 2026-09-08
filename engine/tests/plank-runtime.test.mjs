@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import {
   PLANK_DECAY_DURATION_MS,
@@ -37,8 +37,8 @@ function worldWithPlank(surfaceType) {
           ...(surfaceType === "grass" ? { variant: "ts-10-1" } : {}),
         },
         { type: "grass", variant: "ts-10-1", x: 2, y: 0 },
-        { type: EntityTypeId.PLANK, x: 1, y: 0 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 0 },
@@ -46,10 +46,10 @@ function worldWithPlank(surfaceType) {
 }
 
 test("Plank leaves World immediately and water becomes naturally impassable", () => {
-  const world = worldWithPlank(EntityTypeId.WATER);
+  const world = worldWithPlank(MapEntityTypeId.WATER);
   const actor = world.query.entitiesWithTrait("player")[0];
   const plank = world.query.entitiesWithTrait("terrain-overlay").find(
-    (entity) => entity.type === EntityTypeId.PLANK,
+    (entity) => entity.type === MapEntityTypeId.PLANK,
   );
   assert.ok(actor && plank);
 
@@ -66,7 +66,7 @@ test("Destroyed Plank on ordinary ground leaves the ground walkable", () => {
   const world = worldWithPlank("grass");
   const actor = world.query.entitiesWithTrait("player")[0];
   const plank = world.query.entitiesWithTrait("terrain-overlay").find(
-    (entity) => entity.type === EntityTypeId.PLANK,
+    (entity) => entity.type === MapEntityTypeId.PLANK,
   );
   assert.ok(actor && plank);
 
@@ -77,7 +77,7 @@ test("Destroyed Plank on ordinary ground leaves the ground walkable", () => {
 });
 
 test("Plank decay survives Entity destruction as a transient Presentation visual", () => {
-  const world = worldWithPlank(EntityTypeId.WATER);
+  const world = worldWithPlank(MapEntityTypeId.WATER);
   const actor = world.query.entitiesWithTrait("player")[0];
   move(world, actor.id, "right");
   const result = move(world, actor.id, "right");

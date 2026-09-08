@@ -165,7 +165,7 @@ type WinCondition =
 ```
 
 ```json
-{ "type": "fill-all", "target": "egg-nest", "filler": "egg" }
+{ "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" }
 ```
 
 地图中的鸟巢实体使用 `egg`。填充状态由 Engine 在运行时管理；规则中的
@@ -192,7 +192,7 @@ Sokoban 可以使用 Trait selector：
   "type": "all",
   "conditions": [
     { "type": "collect-all", "target": "carrot" },
-    { "type": "fill-all", "target": "egg-nest", "filler": "egg" },
+    { "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" },
     { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
     { "type": "reach", "target": "exit" }
   ]

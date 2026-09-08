@@ -22,7 +22,7 @@ test("Original egg map keeps Exit as the final required objective", () => {
   const expected = {
     type: "all",
     conditions: [
-      { type: "fill-all", target: "egg-nest", filler: "egg" },
+      { type: "fill-all", target: "egg-nest", filler: "filled-egg" },
       { type: "reach", target: MapEntityTypeId.EXIT },
     ],
   };

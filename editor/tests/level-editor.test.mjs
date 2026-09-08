@@ -1,9 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { entityMapDefinition, MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
-  defineEntityModule,
   SpatialVisualQuery,
   visualRegistry,
 } from "../../engine/dist/public.js";
@@ -36,7 +35,7 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
   level.meta.name = "Test Map";
   level.meta.author = "xjk";
   level.entities.push({
-    type: EntityTypeId.SANDMAN,
+    type: MapEntityTypeId.SANDMAN,
     x: 4,
     y: 4,
     dialogue: "作者写的话",
@@ -58,9 +57,9 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
   ]);
   assert.equal(map.schemaVersion, 1);
   assert.deepEqual(
-    map.entities.find((entity) => entity.type === EntityTypeId.SANDMAN),
+    map.entities.find((entity) => entity.type === MapEntityTypeId.SANDMAN),
     {
-      type: EntityTypeId.SANDMAN,
+      type: MapEntityTypeId.SANDMAN,
       x: 4,
       y: 4,
       dialogue: "作者写的话",
@@ -85,23 +84,23 @@ test("Editor metadata command edits and clears the top-level note", () => {
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {
   const level = createBlankLevel(12, 8);
   level.entities.push({
-    type: EntityTypeId.DRAGON,
+    type: MapEntityTypeId.DRAGON,
     x: 3,
     y: 3,
     direction: "left",
   });
   const map = toLevelMap(level);
   const dragons = map.entities.filter(
-    (entity) => entity.type === EntityTypeId.DRAGON,
+    (entity) => entity.type === MapEntityTypeId.DRAGON,
   );
   assert.deepEqual(dragons, [
-    { type: EntityTypeId.DRAGON, x: 3, y: 3, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, x: 3, y: 3, direction: "left" },
   ]);
 
   const preview = new EditorPreview(level, catalog);
   const ref = {
     index: level.entities.findIndex(
-      (entity) => entity.type === EntityTypeId.DRAGON,
+      (entity) => entity.type === MapEntityTypeId.DRAGON,
     ),
   };
   assert.deepEqual(entityCells(preview, ref), [
@@ -111,7 +110,7 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
   ]);
   assert.equal(
     fromLevelMap(map).entities.filter(
-      (entity) => entity.type === EntityTypeId.DRAGON,
+      (entity) => entity.type === MapEntityTypeId.DRAGON,
     ).length,
     1,
   );
@@ -122,13 +121,13 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: EntityTypeId.DRAGON, direction: "right" },
+    { type: MapEntityTypeId.DRAGON, direction: "right" },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
-    type: EntityTypeId.DRAGON,
+    type: MapEntityTypeId.DRAGON,
     x: 5,
     y: 3,
     direction: "right",
@@ -145,13 +144,13 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: EntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, direction: "left" },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
   assert.equal(dragon.valid, true);
   assert.deepEqual(dragon.entity, {
-    type: EntityTypeId.DRAGON,
+    type: MapEntityTypeId.DRAGON,
     x: 5,
     y: 3,
     direction: "left",
@@ -171,32 +170,32 @@ test("Editor replaceGroup replaces only matching authoring layers", () => {
   ]);
   const after = placeEntity(
     catalog,
-    EntityTypeId.CARROT,
+    MapEntityTypeId.CARROT,
     { x: 1, y: 1 },
   ).apply(
     paintSurface(
       catalog,
       [{ x: 1, y: 1 }],
-      { terrain: "water", pattern: "exact", exact: EntityTypeId.WATER, seed: 1 },
+      { terrain: "water", pattern: "exact", exact: MapEntityTypeId.WATER, seed: 1 },
     ).apply(level),
   );
   assert.deepEqual(
     new EditorPreview(after, catalog)
       .inspectCell(1, 1)
       .presences.map((item) => item.entity.type),
-    [EntityTypeId.WATER, EntityTypeId.CARROT],
+    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT],
   );
 
   const withLock = placeEntity(
     catalog,
-    EntityTypeId.LOCK,
+    MapEntityTypeId.LOCK,
     { x: 1, y: 1 },
   ).apply(after);
   assert.deepEqual(
     new EditorPreview(withLock, catalog)
       .inspectCell(1, 1)
       .presences.map((item) => item.entity.type),
-    [EntityTypeId.WATER, EntityTypeId.CARROT, EntityTypeId.LOCK],
+    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT, MapEntityTypeId.LOCK],
   );
 });
 
@@ -204,23 +203,23 @@ test("Entity fields and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
     {
-      type: EntityTypeId.SPEED_SWITCH,
+      type: MapEntityTypeId.SPEED_SWITCH,
       x: 3,
       y: 3,
       stackOrder: 2300,
       pressed: true,
     },
-    { type: EntityTypeId.CRUMBLY_ROCK, x: 4, y: 3 },
+    { type: MapEntityTypeId.CRUMBLY_ROCK, x: 4, y: 3 },
   );
   const parsed = parseEditorLevel(serializeEditorLevel(level));
   const speedSwitch = parsed.entities.find(
-    (entity) => entity.type === EntityTypeId.SPEED_SWITCH,
+    (entity) => entity.type === MapEntityTypeId.SPEED_SWITCH,
   );
   assert.equal(speedSwitch?.pressed, true);
   assert.equal(speedSwitch?.stackOrder, 2300);
   assert.equal(
     parsed.entities.find(
-      (entity) => entity.type === EntityTypeId.CRUMBLY_ROCK,
+      (entity) => entity.type === MapEntityTypeId.CRUMBLY_ROCK,
     )?.traits,
     undefined,
   );
@@ -235,7 +234,7 @@ test("validation is executed through Editor definitions", () => {
   const withoutPlayer = {
     ...level,
     entities: level.entities.filter(
-      (entity) => entity.type !== EntityTypeId.BOBBY,
+      (entity) => entity.type !== MapEntityTypeId.BOBBY,
     ),
   };
   assert.ok(
@@ -250,8 +249,8 @@ test("validation is executed through Editor definitions", () => {
 test("one placement stroke forms one Undo and returns to the saved Entity state", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();
-  document.execute(placeEntity(catalog, EntityTypeId.CARROT, { x: 1, y: 1 }));
-  document.execute(placeEntity(catalog, EntityTypeId.CARROT, { x: 2, y: 1 }));
+  document.execute(placeEntity(catalog, MapEntityTypeId.CARROT, { x: 1, y: 1 }));
+  document.execute(placeEntity(catalog, MapEntityTypeId.CARROT, { x: 2, y: 1 }));
   document.commitTransaction();
   assert.equal(document.getSnapshot().canUndo, true);
   assert.equal(document.getSnapshot().dirty, true);
@@ -273,7 +272,7 @@ test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", (
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      EntityTypeId.CONSUMED_CARROT,
+      "consumed-carrot",
       catalog,
     ),
     false,
@@ -288,30 +287,14 @@ test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", (
   );
 });
 
-test("Palette keeps explicit directional presets and appends new creatable types ungrouped", () => {
-  const customCatalog = createBuiltinEntityCatalog();
-  customCatalog.register(
-    defineEntityModule({
-      definition: {
-        type: "flower",
-        traits: [],
-        stackOrder: 100,
-        presentation: { name: "Flower" },
-      },
-    }),
-  );
-  const palette = resolveEditorPalette(customCatalog, builtinEditorDefinition);
+test("Palette 只发布具有 Model Definition 的 canonical directional preset", () => {
+  const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
   const speed = palette
     .flatMap((group) => group.rows.flat())
-    .filter((entry) => entry.type === EntityTypeId.SPEED);
+    .filter((entry) => entry.type === MapEntityTypeId.SPEED);
   assert.deepEqual(
     speed.map((entry) => entry.direction),
     ["up", "down", "left", "right"],
-  );
-  assert.equal(
-    palette.find((group) => group.id === "ungrouped")?.rows[0]
-      .some((entry) => entry.type === "flower"),
-    true,
   );
   assert.equal(
     palette.flatMap((group) => group.rows.flat())
@@ -326,9 +309,7 @@ test("Palette keeps explicit directional presets and appends new creatable types
   );
   const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
   assert.equal(allTypes.includes(MapEntityTypeId.EGG), true);
-  assert.equal(allTypes.includes(EntityTypeId.EGG_EMPTY), false);
-  assert.equal(allTypes.includes(EntityTypeId.FIREBALL), false);
-  assert.equal(allTypes.includes(EntityTypeId.BEANSTALK_MID), false);
+  assert.equal(allTypes.every((type) => entityMapDefinition(type)), true);
   assert.deepEqual(
     palette
       .flatMap((group) => group.rows.flat())
@@ -408,19 +389,19 @@ test("Editor Preview 将 Surface variant 投影到 Engine visual state", () => {
 test("Palette preview layout derives full multi-cell footprint generically", () => {
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
-    { type: EntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, direction: "left" },
     builtinEditorDefinition,
   );
   assert.equal(layout.width, 3);
   assert.equal(layout.height, 1);
-  assert.equal(layout.entity.type, EntityTypeId.DRAGON);
+  assert.equal(layout.entity.type, MapEntityTypeId.DRAGON);
 });
 
 test("single-cell Inspector exposes every layer top-first", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: EntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
-    { type: EntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
+    { type: MapEntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
+    { type: MapEntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
   );
   const model = buildInspectorModel(
     level,
@@ -430,17 +411,17 @@ test("single-cell Inspector exposes every layer top-first", () => {
   );
   assert.equal(model.mode, "cell");
   assert.deepEqual(model.layers.slice(0, 2).map((layer) => layer.entity.type), [
-    EntityTypeId.CARROT,
-    EntityTypeId.PORTAL,
+    MapEntityTypeId.CARROT,
+    MapEntityTypeId.PORTAL,
   ]);
 });
 
 test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: EntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
-    { type: EntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
-    { type: EntityTypeId.CARROT, x: 1, y: 2 },
+    { type: MapEntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
+    { type: MapEntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 2 },
   );
   const model = buildInspectorModel(
     level,
@@ -449,7 +430,7 @@ test("multi-cell Inspector groups same types and prioritizes editable groups", (
     builtinEditorDefinition,
   );
   assert.equal(model.mode, "multi");
-  assert.equal(model.groups[0].type, EntityTypeId.SPEED_SWITCH);
+  assert.equal(model.groups[0].type, MapEntityTypeId.SPEED_SWITCH);
   assert.equal(model.groups[0].count, 2);
   assert.equal(
     model.groups.find((group) => group.type === MapEntityTypeId.GRASS)?.count,
@@ -457,7 +438,7 @@ test("multi-cell Inspector groups same types and prioritizes editable groups", (
   );
 });
 
-test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
+test("Inspector 直接使用 canonical Entity Definition", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
     { type: MapEntityTypeId.EGG, x: 1, y: 1 },
@@ -471,7 +452,7 @@ test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );
-  assert.equal(cell.layers[0]?.definition.type, EntityTypeId.EGG_EMPTY);
+  assert.equal(cell.layers[0]?.definition.type, MapEntityTypeId.EGG);
   assert.equal(cell.layers[0]?.label, "Egg");
 
   const multi = buildInspectorModel(
@@ -483,14 +464,14 @@ test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
   const definitions = new Map(
     multi.groups.map((group) => [group.type, group.definition.type]),
   );
-  assert.equal(definitions.get(MapEntityTypeId.EGG), EntityTypeId.EGG_EMPTY);
+  assert.equal(definitions.get(MapEntityTypeId.EGG), MapEntityTypeId.EGG);
   assert.equal(
     definitions.get(MapEntityTypeId.BEANSTALK),
-    EntityTypeId.BEANSTALK_TIP,
+    MapEntityTypeId.BEANSTALK,
   );
   assert.equal(
     definitions.get(MapEntityTypeId.WINDMILL),
-    EntityTypeId.WINDMILL_LEFT,
+    MapEntityTypeId.WINDMILL,
   );
   assert.equal(
     multi.groups.find((group) => group.type === MapEntityTypeId.EGG)?.label,
@@ -501,8 +482,8 @@ test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
 test("reordering a cell stack changes actual Spatial top Presence", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: EntityTypeId.PORTAL, x: 3, y: 3 },
-    { type: EntityTypeId.CARROT, x: 3, y: 3 },
+    { type: MapEntityTypeId.PORTAL, x: 3, y: 3 },
+    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
   );
   const portalIndex = level.entities.length - 2;
   const carrotIndex = level.entities.length - 1;
@@ -511,12 +492,12 @@ test("reordering a cell stack changes actual Spatial top Presence", () => {
     { index: carrotIndex },
   ]).apply(level);
   const preview = new EditorPreview(reordered, catalog);
-  assert.equal(preview.inspectCell(3, 3).top?.entity.type, EntityTypeId.PORTAL);
+  assert.equal(preview.inspectCell(3, 3).top?.entity.type, MapEntityTypeId.PORTAL);
 });
 
 test("Bobby Editor visual is fixed to the final down frame", () => {
   const resolve =
-    builtinEditorDefinition.entities?.[EntityTypeId.BOBBY]?.editorVisual;
+    builtinEditorDefinition.entities?.[MapEntityTypeId.BOBBY]?.editorVisual;
   assert.ok(resolve);
   assert.deepEqual(resolve({}).layers[0], {
     kind: "image",

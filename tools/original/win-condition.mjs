@@ -1,7 +1,7 @@
 import { MapEntityTypeId } from "@bobby/model";
 
 export const ORIGINAL_EGG_NEST_TARGET = "egg-nest";
-export const ORIGINAL_EGG_FILLER = "egg";
+export const ORIGINAL_EGG_FILLER = "filled-egg";
 
 /** Original source 的目标模式由 canonical Entity 事实决定，不再依赖跨玩法聚合 Trait。 */
 export function deriveOriginalWinCondition(level) {

@@ -1,4 +1,4 @@
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -126,7 +126,7 @@ const smashCrumblyRock: Behavior = {
 };
 
 const mowerDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.MOWER,
+  type: MapEntityTypeId.MOWER,
   traits: ["vehicle", "mower", "ride-carried", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
@@ -145,13 +145,13 @@ export const mower: EntityModule = originalModule(
   atlasVisual(mowerDefinition, (context) =>
     Number(context.entity.state?.mountedByActorId ?? 0) > 0
       ? null
-      : tileCell(EntityTypeId.MOWER),
+      : tileCell(MapEntityTypeId.MOWER),
   ),
   [{ behavior: mowerVehicle }],
 );
 
 const parkingDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.MOWER_PARKING,
+  type: MapEntityTypeId.MOWER_PARKING,
   traits: ["walkable", "mower-parking"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
@@ -160,12 +160,12 @@ const parkingDefinition: EntityModuleDefinition = {
 
 export const mowerParkingTile: EntityModule = originalModule(
   parkingDefinition,
-  atlasVisual(parkingDefinition, tileCell(EntityTypeId.MOWER_PARKING)),
+  atlasVisual(parkingDefinition, tileCell(MapEntityTypeId.MOWER_PARKING)),
   [{ behavior: mowerParking }],
 );
 
 const crumblyRockDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.CRUMBLY_ROCK,
+  type: MapEntityTypeId.CRUMBLY_ROCK,
   traits: ["blocking", "crumbly-rock"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Crumbly Rock" },
@@ -173,7 +173,7 @@ const crumblyRockDefinition: EntityModuleDefinition = {
 
 export const crumblyRock: EntityModule = originalModule(
   crumblyRockDefinition,
-  atlasVisual(crumblyRockDefinition, tileCell(EntityTypeId.CRUMBLY_ROCK)),
+  atlasVisual(crumblyRockDefinition, tileCell(MapEntityTypeId.CRUMBLY_ROCK)),
   [{ behavior: smashCrumblyRock }],
 );
 
@@ -186,6 +186,6 @@ const pushableRockDefinition: EntityModuleDefinition = {
 
 export const pushableRock: EntityModule = originalModule(
   pushableRockDefinition,
-  atlasVisual(pushableRockDefinition, tileCell(EntityTypeId.CRUMBLY_ROCK)),
+  atlasVisual(pushableRockDefinition, tileCell(MapEntityTypeId.CRUMBLY_ROCK)),
   [{ behavior: smashCrumblyRock }],
 );

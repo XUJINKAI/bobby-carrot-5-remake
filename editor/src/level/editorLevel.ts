@@ -1,5 +1,4 @@
 import {
-  EntityTypeId,
   MapEntityTypeId,
   type JsonPrimitive,
   type LevelEntity,
@@ -22,7 +21,7 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
       entities.push({
         type:
           x === exit.x && y === exit.y
-            ? EntityTypeId.EXIT
+            ? MapEntityTypeId.EXIT
             : MapEntityTypeId.GRASS,
         x,
         y,
@@ -31,7 +30,7 @@ export function createBlankLevel(width = 16, height = 16): EditorMap {
           : { variant: "ts-10-1" }),
       });
   entities.push({
-    type: EntityTypeId.BOBBY,
+    type: MapEntityTypeId.BOBBY,
     x: Math.min(2, safeWidth - 1),
     y: Math.min(2, safeHeight - 1),
   });
@@ -163,7 +162,7 @@ function isJsonPrimitive(value: unknown): value is JsonPrimitive {
 }
 
 function defaultWinCondition(): WinCondition {
-  return { type: "reach", target: EntityTypeId.EXIT };
+  return { type: "reach", target: MapEntityTypeId.EXIT };
 }
 
 function cloneEntity(entity: LevelEntity): LevelEntity {

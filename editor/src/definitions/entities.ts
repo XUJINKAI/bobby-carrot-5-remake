@@ -1,9 +1,10 @@
+import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
 import {
-  levelEntityRuntimeType,
-  type EntityCatalog,
-  type EntityCatalogEntry,
-} from "@bobby/engine";
-import type { Direction, EntityType, LevelEntity } from "@bobby/model";
+  entityMapDefinition,
+  type Direction,
+  type EntityType,
+  type LevelEntity,
+} from "@bobby/model";
 import type { EditorDefinition, EditorEntityExclusion } from "./types.js";
 
 export function isEditorEntityCreatable(
@@ -13,19 +14,18 @@ export function isEditorEntityCreatable(
 ): boolean {
   if ((editor.exclude ?? []).some((selector) => matchesExclusion(selector, type)))
     return false;
+  if (!entityMapDefinition(type)) return false;
   if (!catalog) return true;
-  const source = { type, x: 0, y: 0 };
-  const runtimeType = levelEntityRuntimeType(source);
-  if (runtimeType !== type) return true;
-  return editorCatalogEntry(catalog, source).authoring?.palette !== false;
+  const definition = catalog.get(type);
+  return definition !== undefined && definition.authoring?.palette !== false;
 }
 
-/** Editor 查询 footprint / Visual 时使用 Runtime Definition，持久化身份仍保留 Map type。 */
+/** Editor 与 Engine 共用 canonical Entity Definition。 */
 export function editorCatalogEntry(
   catalog: EntityCatalog,
   entity: Readonly<LevelEntity>,
 ): EntityCatalogEntry {
-  return catalog.require(levelEntityRuntimeType(entity));
+  return catalog.require(entity.type);
 }
 
 /** 读取由具体 EntityMapDefinition 声明并经 parser 校验的方向字段。 */

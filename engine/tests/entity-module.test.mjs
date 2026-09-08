@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   builtinEntityModules,
   createBuiltinBehaviorRegistry,
@@ -18,25 +18,25 @@ function bindingIds(module) {
 }
 
 test("EntityModule colocates definition visual and behavior bindings", () => {
-  const carrot = moduleFor(EntityTypeId.CARROT);
+  const carrot = moduleFor(MapEntityTypeId.CARROT);
   assert.ok(carrot.visual);
   assert.deepEqual(bindingIds(carrot), [["collectible", "collectible"]]);
   assert.ok(carrot.definition.behaviors?.includes("collectible"));
 
-  const water = moduleFor(EntityTypeId.WATER);
+  const water = moduleFor(MapEntityTypeId.WATER);
   assert.ok(water.visual);
   assert.deepEqual(bindingIds(water), [["water", "water-requires-overlay"]]);
   assert.ok(water.definition.behaviors?.includes("water-requires-overlay"));
 
-  const portal = moduleFor(EntityTypeId.PORTAL);
+  const portal = moduleFor(MapEntityTypeId.PORTAL);
   assert.ok(portal.visual);
   assert.deepEqual(bindingIds(portal), [["portal", "portal"]]);
   assert.ok(portal.definition.behaviors?.includes("portal"));
 
-  const ice = moduleFor(EntityTypeId.ICE);
+  const ice = moduleFor(MapEntityTypeId.ICE);
   assert.deepEqual(bindingIds(ice), [[undefined, "ice-slide"]]);
 
-  const speed = moduleFor(EntityTypeId.SPEED);
+  const speed = moduleFor(MapEntityTypeId.SPEED);
   assert.deepEqual(bindingIds(speed), [[undefined, "speed-boost"]]);
   assert.deepEqual(speed.runtimeActions?.map((action) => action.kind), ["speed-run"]);
 });

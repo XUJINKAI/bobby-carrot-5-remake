@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 
@@ -23,7 +23,7 @@ const portalBehavior: Behavior = {
 
 export const portal: EntityModule = defineEntityModule({
   definition: {
-    type: EntityTypeId.PORTAL,
+    type: MapEntityTypeId.PORTAL,
     traits: ["portal"],
     stackOrder: 100,
     properties: [
@@ -43,7 +43,7 @@ export const portal: EntityModule = defineEntityModule({
   },
   behaviorBindings: [{ trait: "portal", behavior: portalBehavior }],
   visual: {
-    id: EntityTypeId.PORTAL,
+    id: MapEntityTypeId.PORTAL,
     resolve: () => ({
       layers: [{ kind: "canvas", draw: drawPortal }],
     }),

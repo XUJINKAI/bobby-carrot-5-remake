@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
   validateLevelPlayability,
@@ -13,7 +13,7 @@ test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", (
       width: 3,
       height: 1,
       entities: [
-        { type: EntityTypeId.BOBBY, x: 0, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
         {
           type: MapEntityTypeId.WINDMILL,
           x: 2,

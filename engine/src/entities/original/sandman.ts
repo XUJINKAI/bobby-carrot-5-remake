@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -11,7 +11,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.SANDMAN,
+  type: MapEntityTypeId.SANDMAN,
   traits: ["blocking", "dialog"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
@@ -27,7 +27,7 @@ export const sandman: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
     context.presence.role === "body"
-      ? tileCell(EntityTypeId.SANDMAN, { role: "body" })
-      : tileCell(EntityTypeId.SANDMAN, { role: "head" }),
+      ? tileCell(MapEntityTypeId.SANDMAN, { role: "body" })
+      : tileCell(MapEntityTypeId.SANDMAN, { role: "head" }),
   ),
 );

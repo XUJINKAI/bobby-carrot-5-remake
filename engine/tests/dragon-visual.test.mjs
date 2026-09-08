@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
   createBuiltinVisualRegistry,
@@ -12,14 +12,14 @@ import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 function dragonLayers(direction, state) {
   const catalog = createBuiltinEntityCatalog();
   const store = new EntityStore([
-    { type: EntityTypeId.DRAGON, x: 2, y: 1, direction },
+    { type: MapEntityTypeId.DRAGON, x: 2, y: 1, direction },
   ]);
   const spatial = new SpatialIndex(store, catalog.entities, 5, 3);
   const query = new SpatialVisualQuery(store, spatial);
   const visuals = createBuiltinVisualRegistry();
   const entity = store.all()[0];
   if (state) entity.state = structuredClone(state);
-  const definition = catalog.require(EntityTypeId.DRAGON);
+  const definition = catalog.require(MapEntityTypeId.DRAGON);
   return spatial.presencesForEntity(entity.id).map((presence) => ({
     role: presence.role,
     x: presence.cell.x,

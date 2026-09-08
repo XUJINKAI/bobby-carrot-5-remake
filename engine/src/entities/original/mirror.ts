@@ -1,4 +1,4 @@
-import { EntityTypeId, type JsonValue } from "@bobby/model";
+import { MapEntityTypeId, type JsonValue } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -29,7 +29,7 @@ const rotateMirrorOnLeave: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.MIRROR,
+  type: MapEntityTypeId.MIRROR,
   traits: ["walkable", "mirror", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
@@ -44,7 +44,7 @@ const definition: EntityModuleDefinition = {
 export const mirror: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    tileCell(EntityTypeId.MIRROR, {
+    tileCell(MapEntityTypeId.MIRROR, {
       fields: { variant: mirrorVariant(context.entity.state?.variant) },
     }),
   ),

@@ -145,7 +145,6 @@ function resolveEntry(
     key,
     label:
       entry.label ??
-      editor.entities?.[entry.type]?.label ??
       definition.presentation.name ??
       entry.type,
     traits: definition.traits,

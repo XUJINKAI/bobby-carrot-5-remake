@@ -6,7 +6,6 @@ import type {
 } from "@bobby/model";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
-import { levelEntityRuntimeType } from "../world/entity/EntityInstance.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 
 export type LevelRuntimeWarningCode =
@@ -27,9 +26,8 @@ export function validateLevelPlayability(
   catalog: EntityCatalog,
 ): LevelRuntimeWarning[] {
   const known = level.entities.flatMap((entity) => {
-    const runtimeType = levelEntityRuntimeType(entity);
-    return catalog.has(runtimeType)
-      ? [{ entity, definition: catalog.require(runtimeType) }]
+    return catalog.has(entity.type)
+      ? [{ entity, definition: catalog.require(entity.type) }]
       : [];
   });
   const warnings: LevelRuntimeWarning[] = [];

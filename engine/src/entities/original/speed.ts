@@ -1,5 +1,5 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
   type Direction,
   type JsonValue,
 } from "@bobby/model";
@@ -190,7 +190,7 @@ const speedRunAction: RuntimeActionDefinition = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.SPEED,
+  type: MapEntityTypeId.SPEED,
   traits: ["walkable", "forced-movement"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
@@ -202,10 +202,10 @@ const base = originalModule(
   atlasVisual(definition, (context) =>
     directionCell(
       context.entity.direction,
-      tileCell(EntityTypeId.SPEED, { fields: { direction: "up" } }),
-      tileCell(EntityTypeId.SPEED, { fields: { direction: "down" } }),
-      tileCell(EntityTypeId.SPEED, { fields: { direction: "left" } }),
-      tileCell(EntityTypeId.SPEED, { fields: { direction: "right" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "up" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "down" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "left" } }),
+      tileCell(MapEntityTypeId.SPEED, { fields: { direction: "right" } }),
     ),
   ),
   [{ behavior: speedBoost }],
@@ -254,7 +254,7 @@ function speedDirectionAt(
 ): Direction | null {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.SPEED) continue;
+    if (entity?.type !== MapEntityTypeId.SPEED) continue;
     return entity.direction ?? "right";
   }
   return null;

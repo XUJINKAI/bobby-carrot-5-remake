@@ -1,14 +1,16 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import { bobbyMountId } from "../player/BobbyState.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
+  atlasVisual,
   CONTENT_STACK_ORDER,
   COVER_STACK_ORDER,
-  tileAnimationCell,
+  originalModule,
   tileCell,
   staticEntity,
   SURFACE_STACK_ORDER,
@@ -18,6 +20,7 @@ const fillEggNestOnLeave: Behavior = {
   id: "fill-egg-nest-on-leave",
   onLeave({ actor, self, query, commands }) {
     if (
+      self.entity.state?.filled === true ||
       !query.entityHasTrait(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
@@ -25,9 +28,11 @@ const fillEggNestOnLeave: Behavior = {
     const source = self.entity;
     commands.destroy(source.id);
     commands.spawn({
-      type: EntityTypeId.EGG_FILLED,
+      type: MapEntityTypeId.EGG,
       x: source.anchor.x,
       y: source.anchor.y,
+      state: { filled: true },
+      instanceTraits: ["filled-egg", "blocking"],
       ...(source.direction ? { direction: source.direction } : {}),
     });
     commands.emit({
@@ -91,69 +96,69 @@ function content(
 }
 
 export const staticSurfaceModules: readonly EntityModule[] = [
-  surface(EntityTypeId.START, "Start", tileCell(EntityTypeId.START)),
+  surface(MapEntityTypeId.START, "Start", tileCell(MapEntityTypeId.START)),
   surface(
-    EntityTypeId.SHOVEL_CLEARED_GROUND,
+    RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND,
     "Shovel Cleared Ground",
     tileCell("snow-cloud", { fields: { variant: "ts-8-13" } }),
     ["walkable"],
     false,
   ),
-  surface(EntityTypeId.EXIT, "Exit", tileCell(EntityTypeId.EXIT), [
+  surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
     "exit",
     "requires-unmounted-reach",
   ]),
   surface(
-    EntityTypeId.SHOP_DREAM_MACHINE_TICKET,
+    MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",
-    tileCell(EntityTypeId.SHOP_DREAM_MACHINE_TICKET),
+    tileCell(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
   ),
   surface(
-    EntityTypeId.SHOP_CLOUD9_TICKET,
+    MapEntityTypeId.SHOP_CLOUD9_TICKET,
     "Cloud 9 Ticket",
-    tileCell(EntityTypeId.SHOP_CLOUD9_TICKET),
+    tileCell(MapEntityTypeId.SHOP_CLOUD9_TICKET),
   ),
   surface(
-    EntityTypeId.SHOP_SUPER_KEY,
+    MapEntityTypeId.SHOP_SUPER_KEY,
     "Super Key",
-    tileCell(EntityTypeId.SHOP_SUPER_KEY),
+    tileCell(MapEntityTypeId.SHOP_SUPER_KEY),
   ),
   surface(
-    EntityTypeId.SHOP_STEREO_SYSTEM,
+    MapEntityTypeId.SHOP_STEREO_SYSTEM,
     "Stereo System",
-    tileCell(EntityTypeId.SHOP_STEREO_SYSTEM),
+    tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),
   ),
   surface(
-    EntityTypeId.SHOP_EXTRA_MUSIC,
+    MapEntityTypeId.SHOP_EXTRA_MUSIC,
     "Extra Music",
-    tileCell(EntityTypeId.SHOP_EXTRA_MUSIC),
+    tileCell(MapEntityTypeId.SHOP_EXTRA_MUSIC),
   ),
   surface(
-    EntityTypeId.SHOP_SPEED_SHOES,
+    MapEntityTypeId.SHOP_SPEED_SHOES,
     "Speed Shoes",
-    tileCell(EntityTypeId.SHOP_SPEED_SHOES),
+    tileCell(MapEntityTypeId.SHOP_SPEED_SHOES),
   ),
   surface(
-    EntityTypeId.SHOP_COIN_RADAR,
+    MapEntityTypeId.SHOP_COIN_RADAR,
     "Coin Radar",
-    tileCell(EntityTypeId.SHOP_COIN_RADAR),
+    tileCell(MapEntityTypeId.SHOP_COIN_RADAR),
   ),
   surface(
-    EntityTypeId.SHOP_EMPTY,
+    MapEntityTypeId.SHOP_EMPTY,
     "Empty Shop",
-    tileCell(EntityTypeId.SHOP_EMPTY),
+    tileCell(MapEntityTypeId.SHOP_EMPTY),
   ),
   surface(
-    EntityTypeId.SHOVEL_PICKUP,
+    MapEntityTypeId.SHOVEL_PICKUP,
     "Shovel Pickup",
-    tileCell(EntityTypeId.SHOVEL_PICKUP),
+    tileCell(MapEntityTypeId.SHOVEL_PICKUP),
     ["walkable", "pickup"],
   ),
 ];
 
 const snowDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.SNOW,
+  type: MapEntityTypeId.SNOW,
   traits: ["snow", "shovelable", "blocking", "bean-growth-space"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
@@ -161,124 +166,81 @@ const snowDefinition: EntityModuleDefinition = {
 };
 
 const highGrassDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.HIGH_GRASS,
+  type: MapEntityTypeId.HIGH_GRASS,
   traits: ["mowable", "blocking"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
 };
 
-const highGrassObjectiveDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.HIGH_GRASS_OBJECTIVE,
-  authoring: { palette: false },
-  traits: ["mowable", "blocking", "hidden-objective"],
-  layer: "cover",
-  stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "High Grass Objective" },
-};
-
 export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(snowDefinition, tileCell(EntityTypeId.SNOW)),
-  staticEntity(highGrassDefinition, tileCell(EntityTypeId.HIGH_GRASS)),
-  staticEntity(
-    highGrassObjectiveDefinition,
-    tileCell(EntityTypeId.HIGH_GRASS, { phase: "objective" }),
-  ),
+  staticEntity(snowDefinition, tileCell(MapEntityTypeId.SNOW)),
+  staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS)),
 ];
 
-const consumedCarrotDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.CONSUMED_CARROT,
-  authoring: { palette: false },
-  traits: [],
-  layer: "object",
-  stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Consumed Carrot" },
-};
 const carrotDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.CARROT,
+  type: MapEntityTypeId.CARROT,
   traits: ["collectible"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
-const emptyEggNestDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.EGG_EMPTY,
-  authoring: { palette: false },
+const eggDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.EGG,
   traits: ["egg-nest"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Empty Egg Nest" },
-};
-const filledEggNestDefinition: EntityModuleDefinition = {
-  type: EntityTypeId.EGG_FILLED,
-  authoring: { palette: false },
-  traits: ["egg-nest", "egg", "blocking"],
-  layer: "object",
-  stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Filled Egg Nest" },
+  presentation: { name: "Egg" },
 };
 
+const egg = originalModule(
+  eggDefinition,
+  atlasVisual(eggDefinition, (context) =>
+    context.entity.state?.filled === true
+      ? tileCell(MapEntityTypeId.EGG, { phase: "filled" })
+      : tileCell(MapEntityTypeId.EGG),
+  ),
+  [{ behavior: fillEggNestOnLeave }],
+);
+
+const beanstalkTraits = [
+  "terrain-overlay",
+  "climbable",
+  "walkable",
+  "mower-conditional-overlay",
+] as const;
+
+const windmillDefinition: EntityModuleDefinition = {
+  type: MapEntityTypeId.WINDMILL,
+  traits: ["blocking", "windmill"],
+  layer: "object",
+  stackOrder: CONTENT_STACK_ORDER,
+  presentation: { name: "Windmill" },
+};
+
+const windmill = originalModule(
+  windmillDefinition,
+  atlasVisual(windmillDefinition, (context) =>
+    tileCell(MapEntityTypeId.WINDMILL, {
+      fields: { direction: context.entity.direction ?? "right" },
+    }),
+  ),
+);
+
 export const staticContentModules: readonly EntityModule[] = [
-  staticEntity(
-    consumedCarrotDefinition,
-    tileCell(EntityTypeId.CARROT, { phase: "consumed" }),
+  staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT)),
+  egg,
+  content(
+    MapEntityTypeId.BEANSTALK,
+    "Beanstalk",
+    tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
+    beanstalkTraits,
   ),
-  staticEntity(carrotDefinition, tileCell(EntityTypeId.CARROT)),
-  staticEntity(emptyEggNestDefinition, tileCell("egg"), [
-    { behavior: fillEggNestOnLeave },
-  ]),
-  staticEntity(filledEggNestDefinition, tileCell("egg", { phase: "filled" })),
+  content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), ["pickup"]),
+  windmill,
+  content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), ["pickup"]),
   runtimeOnlyContent(
-    EntityTypeId.BEANSTALK_TIP,
-    "Beanstalk Tip",
-    tileCell("beanstalk", { role: "tip" }),
-    [
-      "terrain-overlay",
-      "climbable",
-      "walkable",
-      "mower-conditional-overlay",
-    ],
-  ),
-  content(EntityTypeId.BEAN, "Bean", tileCell(EntityTypeId.BEAN), ["pickup"]),
-  runtimeOnlyContent(
-    EntityTypeId.WINDMILL_UP,
-    "Windmill Up",
-    tileCell("windmill", { fields: { direction: "up" } }),
-    ["blocking", "windmill"],
-  ),
-  runtimeOnlyContent(
-    EntityTypeId.WINDMILL_DOWN,
-    "Windmill Down",
-    tileCell("windmill", { fields: { direction: "down" } }),
-    ["blocking", "windmill"],
-  ),
-  runtimeOnlyContent(
-    EntityTypeId.WINDMILL_LEFT,
-    "Windmill Left",
-    tileCell("windmill", { fields: { direction: "left" } }),
-    ["blocking", "windmill"],
-  ),
-  runtimeOnlyContent(
-    EntityTypeId.WINDMILL_RIGHT,
-    "Windmill Right",
-    tileCell("windmill", { fields: { direction: "right" } }),
-    ["blocking", "windmill"],
-  ),
-  runtimeOnlyContent(
-    EntityTypeId.PLANK_CRUMBLING,
-    "Crumbling Plank",
-    tileAnimationCell(EntityTypeId.PLANK, "crumbling", 1),
-    ["blocking"],
-  ),
-  runtimeOnlyContent(
-    EntityTypeId.PLANK_FRAGMENT,
-    "Plank Fragment",
-    tileAnimationCell(EntityTypeId.PLANK, "crumbling", 2),
-    ["blocking"],
-  ),
-  content(EntityTypeId.GAS, "Gas", tileCell(EntityTypeId.GAS), ["pickup"]),
-  runtimeOnlyContent(
-    EntityTypeId.BEANSTALK_MID,
+    RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     tileCell("beanstalk", { role: "middle" }),
     [
@@ -289,27 +251,27 @@ export const staticContentModules: readonly EntityModule[] = [
     ],
   ),
   runtimeOnlyContent(
-    EntityTypeId.BEANSTALK_BASE,
+    RuntimeEntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
     tileCell("beanstalk", { role: "base" }),
     ["climbable"],
   ),
   runtimeOnlyContent(
-    EntityTypeId.BEAN_SPROUT,
+    RuntimeEntityTypeId.BEAN_SPROUT,
     "Bean Sprout",
     tileCell("beanstalk", { phase: "sprout" }),
   ),
-  content(EntityTypeId.KITE, "Kite", tileCell(EntityTypeId.KITE), ["pickup"]),
+  content(MapEntityTypeId.KITE, "Kite", tileCell(MapEntityTypeId.KITE), ["pickup"]),
   content(
-    EntityTypeId.GOLDEN_CARROT,
+    MapEntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
-    tileCell(EntityTypeId.GOLDEN_CARROT),
+    tileCell(MapEntityTypeId.GOLDEN_CARROT),
     ["collectible", "golden-carrot"],
   ),
   content(
-    EntityTypeId.BONUS_COIN,
+    MapEntityTypeId.BONUS_COIN,
     "Bonus Coin",
-    tileCell(EntityTypeId.BONUS_COIN),
+    tileCell(MapEntityTypeId.BONUS_COIN),
     ["collectible", "bonus-coin"],
   ),
 ];

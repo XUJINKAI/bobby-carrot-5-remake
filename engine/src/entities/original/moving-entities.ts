@@ -1,5 +1,4 @@
 import {
-  EntityTypeId,
   MapEntityTypeId,
   type Direction,
   type EntityType,
@@ -72,7 +71,7 @@ const movingPlatformBehavior: Behavior = {
     if (
       !direction ||
       !query.entityHasTrait(actor.id, "player") ||
-      self.entity.type !== EntityTypeId.LEAF ||
+      self.entity.type !== MapEntityTypeId.LEAF ||
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running"
     )
@@ -174,7 +173,7 @@ const movingEntityAction: RuntimeActionDefinition = {
 };
 
 export const leaf = movingEntityModule(
-  EntityTypeId.LEAF,
+  MapEntityTypeId.LEAF,
   "Leaf",
   true,
 );
@@ -251,7 +250,7 @@ function movingEntityModule(
   };
   const visual = {
     ...atlasVisual(definition, tileCell(type)),
-    ...(type === EntityTypeId.LEAF
+    ...(type === MapEntityTypeId.LEAF
       ? { supportHeightPx: LEAF_SUPPORT_HEIGHT_PX }
       : {}),
   };
@@ -298,7 +297,7 @@ function nextRoute(
   return {
     direction,
     cadenceMs:
-      entity.type === EntityTypeId.LEAF &&
+      entity.type === MapEntityTypeId.LEAF &&
       query.hasTraitAt(entity.anchor, "waterfall")
         ? DEFAULT_WATERFALL_CELL_MS
         : DEFAULT_MOVING_ENTITY_CELL_MS,
@@ -320,7 +319,7 @@ function tideDirectionAt(
 ): Direction | null {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.TIDE) continue;
+    if (entity?.type !== MapEntityTypeId.TIDE) continue;
     return directionState(entity.direction) ?? null;
   }
   return null;
@@ -333,15 +332,15 @@ function canEnterMovingDomain(
   direction: Direction,
 ): boolean {
   if (!query.inBounds(target)) return false;
-  const domainTrait = entity.type === EntityTypeId.LEAF ? "water" : "cloud-space";
+  const domainTrait = entity.type === MapEntityTypeId.LEAF ? "water" : "cloud-space";
   if (!query.hasTraitAt(target, domainTrait)) return false;
   if (movingSupportOccupiedAt(query, entity, target, domainTrait)) return false;
 
-  if (entity.type === EntityTypeId.LEAF) {
+  if (entity.type === MapEntityTypeId.LEAF) {
     for (const presence of query.presencesAt(target)) {
       const tide = query.entity(presence.entityId);
       if (
-        tide?.type === EntityTypeId.TIDE &&
+        tide?.type === MapEntityTypeId.TIDE &&
         tide.direction === oppositeDirection(direction)
       )
         return false;
@@ -389,7 +388,7 @@ function forcedWindAt(
 function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
   return query.entitiesWithTrait("switch").some(
     (entity) =>
-      entity.type === EntityTypeId.WIND_SWITCH &&
+      entity.type === MapEntityTypeId.WIND_SWITCH &&
       entity.direction === direction &&
       entity.state?.active === true,
   );
@@ -399,13 +398,11 @@ function windmillFor(
   query: WorldQueryApi,
   direction: Direction,
 ): Readonly<EntityInstance> | undefined {
-  const type = {
-    up: EntityTypeId.WINDMILL_UP,
-    down: EntityTypeId.WINDMILL_DOWN,
-    left: EntityTypeId.WINDMILL_LEFT,
-    right: EntityTypeId.WINDMILL_RIGHT,
-  }[direction];
-  return query.entitiesWithTrait("windmill").find((entity) => entity.type === type);
+  return query.entitiesWithTrait("windmill").find(
+    (entity) =>
+      entity.type === MapEntityTypeId.WINDMILL &&
+      entity.direction === direction,
+  );
 }
 
 function insideWindRange(

@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
@@ -124,7 +124,7 @@ function emitDialog(
 }
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.BEAVER,
+  type: MapEntityTypeId.BEAVER,
   traits: ["blocking", "dialog"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
@@ -158,8 +158,8 @@ export const beaver: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
     context.presence.role === "body"
-      ? tileCell(EntityTypeId.BEAVER, { role: "body" })
-      : tileCell(EntityTypeId.BEAVER, { role: "head" }),
+      ? tileCell(MapEntityTypeId.BEAVER, { role: "body" })
+      : tileCell(MapEntityTypeId.BEAVER, { role: "head" }),
   ),
   [{ behavior: bonusKeyVendor }],
 );

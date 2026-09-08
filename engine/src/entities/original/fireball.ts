@@ -1,4 +1,4 @@
-import { EntityTypeId, type Direction, type JsonValue } from "@bobby/model";
+import { MapEntityTypeId, type Direction, type JsonValue } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -15,6 +15,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   CONTENT_STACK_ORDER,
   originalModule,
@@ -116,7 +117,7 @@ const fireballAction: RuntimeActionDefinition = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.FIREBALL,
+  type: RuntimeEntityTypeId.FIREBALL,
   authoring: { palette: false },
   traits: ["projectile"],
   stackOrder: CONTENT_STACK_ORDER + 50,
@@ -126,7 +127,7 @@ const definition: EntityModuleDefinition = {
 const base = originalModule(
   definition,
   {
-    id: EntityTypeId.FIREBALL,
+    id: RuntimeEntityTypeId.FIREBALL,
     renderPass: "effect",
     resolve(context) {
       const pulse = (context.time?.frame ?? 0) % 8 < 4 ? 1 : 0.78;
@@ -189,8 +190,8 @@ function projectileBlockedAt(
 ): boolean {
   return query.presencesAt(cell).some((presence) => {
     const entity = query.entity(presence.entityId);
-    if (entity?.type === EntityTypeId.CRUMBLY_ROCK) return true;
-    if (entity?.type === EntityTypeId.DRAGON && presence.role !== "tail")
+    if (entity?.type === MapEntityTypeId.CRUMBLY_ROCK) return true;
+    if (entity?.type === MapEntityTypeId.DRAGON && presence.role !== "tail")
       return true;
     if (!presence.traits.includes("stateful-block")) return false;
     return entity?.state?.raised !== false;
@@ -205,7 +206,7 @@ function meltIceAt(
 ): void {
   for (const presence of query.presencesAt({ x, y })) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.ICE_BLOCK) continue;
+    if (entity?.type !== MapEntityTypeId.ICE_BLOCK) continue;
     commands.destroy(entity.id);
     commands.emit({ type: "ice-melted", entityId: entity.id, x, y });
   }
@@ -218,7 +219,7 @@ function reflectedDirectionAt(
 ): Direction | null | false {
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
-    if (entity?.type !== EntityTypeId.MIRROR) continue;
+    if (entity?.type !== MapEntityTypeId.MIRROR) continue;
     const variant = Math.max(1, Math.min(4, integerState(entity.state?.variant)));
     const reflection: Partial<Record<Direction, Direction>> =
       variant === 1

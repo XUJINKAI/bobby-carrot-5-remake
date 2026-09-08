@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { World } from "../dist/world/World.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import {
@@ -9,19 +9,13 @@ import {
 } from "../dist/visual/preview.js";
 
 const BLOCKING_TYPES = [
-  EntityTypeId.EGG_FILLED,
-  EntityTypeId.WINDMILL_UP,
-  EntityTypeId.WINDMILL_DOWN,
-  EntityTypeId.WINDMILL_LEFT,
-  EntityTypeId.WINDMILL_RIGHT,
-  EntityTypeId.PLANK_CRUMBLING,
-  EntityTypeId.PLANK_FRAGMENT,
-  EntityTypeId.ICE_BLOCK,
+  MapEntityTypeId.WINDMILL,
+  MapEntityTypeId.ICE_BLOCK,
 ];
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const bobby = (x, y) => ({
-  type: EntityTypeId.BOBBY,
+  type: MapEntityTypeId.BOBBY,
   x,
   y,
   direction: "right",
@@ -107,14 +101,14 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     width: 3,
     height: 1,
     rules: {
-      win: { type: "fill-all", target: "egg-nest", filler: "egg" },
+      win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" },
     },
     entities: [
       ground(0, 0),
       ground(1, 0),
       ground(2, 0),
       bobby(0, 0),
-      { type: EntityTypeId.EGG_EMPTY, x: 1, y: 0 },
+      { type: MapEntityTypeId.EGG, x: 1, y: 0 },
     ],
   });
 
@@ -125,7 +119,11 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_EMPTY),
+      .some(
+        (entity) =>
+          entity.type === MapEntityTypeId.EGG &&
+          entity.state?.filled !== true,
+      ),
     true,
   );
 
@@ -135,22 +133,17 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     leave.events.some((event) => event.type === "fill-egg-nest"),
     true,
   );
-  assert.equal(
-    world.entities
-      .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_EMPTY),
-    false,
-  );
-  assert.equal(
-    world.entities
-      .all()
-      .some((entity) => entity.type === EntityTypeId.EGG_FILLED),
-    true,
-  );
+  const filledEgg = world.entities
+    .all()
+    .find((entity) => entity.type === MapEntityTypeId.EGG);
+  assert.equal(filledEgg?.state?.filled, true);
+  assert.ok(filledEgg);
+  assert.equal(world.query.entityHasTrait(filledEgg.id, "filled-egg"), true);
+  assert.equal(world.query.entityHasTrait(filledEgg.id, "blocking"), true);
   assert.deepEqual(world.winState, {
     type: "fill-all",
     target: "egg-nest",
-    filler: "egg",
+    filler: "filled-egg",
     completed: true,
     remaining: 0,
   });
@@ -166,7 +159,7 @@ test("Ice Block cover blocks Bobby instead of becoming pass-through scenery", ()
       ground(0, 0),
       ground(1, 0),
       bobby(0, 0),
-      { type: EntityTypeId.ICE_BLOCK, x: 1, y: 0 },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 1, y: 0 },
     ],
   });
   assert.equal(move(world, "right").moves[0].moved, false);
@@ -180,7 +173,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
       bobby(0, 0),
     ],
   });
@@ -192,8 +185,8 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.PLANK, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
       bobby(0, 0),
     ],
   });
@@ -301,9 +294,9 @@ test("Color Switch toggles only switches and blocks of the same color", () => {
 });
 
 test("authoring visual preview resolves through canonical Visual definitions", () => {
-  const carrot = resolveEntityVisualPreview({ type: EntityTypeId.CARROT });
+  const carrot = resolveEntityVisualPreview({ type: MapEntityTypeId.CARROT });
   assert.equal(carrot?.layers[0]?.kind, "atlas");
-  const fence = resolveEntityVisualPreview({ type: EntityTypeId.FENCE });
+  const fence = resolveEntityVisualPreview({ type: MapEntityTypeId.FENCE });
   assert.equal(fence?.layers[0]?.kind, "atlas");
 });
 

@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -13,7 +13,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.ICE_BLOCK,
+  type: MapEntityTypeId.ICE_BLOCK,
   traits: ["meltable", "blocking"],
   stackOrder: COVER_STACK_ORDER,
   state: [
@@ -33,7 +33,7 @@ export const iceBlock: EntityModule = originalModule(
   atlasVisual(definition, (context) => {
     const stage = boundedInt(context.entity.state?.meltStage, 0, 3, 0);
     return stage === 0
-      ? tileCell(EntityTypeId.ICE_BLOCK)
-      : tileAnimationCell(EntityTypeId.ICE_BLOCK, "melt", stage);
+      ? tileCell(MapEntityTypeId.ICE_BLOCK)
+      : tileAnimationCell(MapEntityTypeId.ICE_BLOCK, "melt", stage);
   }),
 );

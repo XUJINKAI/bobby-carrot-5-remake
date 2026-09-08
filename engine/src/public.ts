@@ -174,7 +174,6 @@ export type {
   EntitySpawnSpec,
   EntityState,
 } from "./world/entity/EntityInstance.js";
-export { levelEntityRuntimeType } from "./world/entity/EntityInstance.js";
 export type { EntityPresence } from "./world/spatial/EntityPresence.js";
 export {
   footprintCell,

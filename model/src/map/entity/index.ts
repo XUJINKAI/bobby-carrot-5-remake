@@ -1,4 +1,3 @@
-export { EntityTypeId } from "./implementation-ids.js";
 export { MapEntityTypeId } from "./ids.js";
 export type {
   NamedMapEntityType,

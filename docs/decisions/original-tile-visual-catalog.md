@@ -4,6 +4,11 @@
 目录使用 `schemaVersion: 1`，完整覆盖 `ts.png` 与 `ta.png`，并由 Model 在加载时严格
 校验。
 
+该目录不是 Entity 身份或字段合同的定义源。canonical type 与允许持久化的字段由
+Model `EntityMapDefinition` 声明；目录中的 `type / fields` 必须引用并通过该合同校验。
+`role / phase / animations` 只描述视觉 selector，不生成新的 Entity type。Bobby、Portal、
+Push Goal 等没有原版 tile atlas 单元的 Entity 也由同一套 Model Definition 管理。
+
 目录中的 `type` 对应 `LevelEntity.type`。静态单元通过 `base`、
 `coordinateVariants`、`variants` 或 `parts` 表达；运行时表现通过 `phases` 与
 `animations` 表达。调用方使用结构化 selector 查询，不建立平级 visual ID 表。

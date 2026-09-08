@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { speedSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
@@ -13,7 +13,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.SPEED_SWITCH,
+  type: MapEntityTypeId.SPEED_SWITCH,
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
@@ -23,7 +23,7 @@ const definition: EntityModuleDefinition = {
 export const speedSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    tileCell(EntityTypeId.SPEED_SWITCH, {
+    tileCell(MapEntityTypeId.SPEED_SWITCH, {
       fields: { pressed: context.entity.state?.pressed === true },
     }),
   ),

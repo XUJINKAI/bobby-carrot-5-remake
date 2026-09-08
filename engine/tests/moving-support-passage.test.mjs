@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { DEFAULT_MOVING_ENTITY_CELL_MS } from "../dist/entities/original/moving-entities.js";
 import { World } from "../dist/world/World.js";
 
@@ -24,11 +24,11 @@ test("Leaf stops before an occupied water cell", () => {
     height: 1,
     entities: [
       { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.WATER, x: 2, y: 0 },
-      { type: EntityTypeId.LEAF, x: 1, y: 0 },
-      { type: EntityTypeId.CRUMBLY_ROCK, x: 2, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.CRUMBLY_ROCK, x: 2, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const bobby = world.query.entitiesWithTrait("player")[0];
@@ -54,14 +54,14 @@ test("Cloud stops before Plank but may enter Cloud Grid infrastructure", () => {
       { type: MapEntityTypeId.STARFIELD, x: 3, y: 0, variant: "large-star" },
       { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
-        type: EntityTypeId.WIND_SWITCH,
+        type: MapEntityTypeId.WIND_SWITCH,
         x: 0,
         y: 0,
         direction: "right",
         active: true,
       },
       { type: MapEntityTypeId.CLOUD, x: 1, y: 0, color: "red" },
-      { type: EntityTypeId.PLANK, x: 2, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 2, y: 0 },
       { type: MapEntityTypeId.CLOUD_PARKING, x: 3, y: 0, color: "red" },
     ],
   });
@@ -85,7 +85,7 @@ test("Cloud Grid does not count as support occupancy", () => {
       { type: MapEntityTypeId.STARFIELD, x: 2, y: 0, variant: "large-star" },
       { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
-        type: EntityTypeId.WIND_SWITCH,
+        type: MapEntityTypeId.WIND_SWITCH,
         x: 0,
         y: 0,
         direction: "right",

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId, MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_MOVING_ENTITY_CELL_MS,
 } from "../dist/entities/original/moving-entities.js";
@@ -26,11 +26,11 @@ test("Leaf carries co-located Bobby without creating a mount relation", () => {
     height: 1,
     entities: [
       { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 3, y: 0 },
-      { type: EntityTypeId.LEAF, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
@@ -59,12 +59,12 @@ test("Leaf carries every player currently on its cell", () => {
     height: 1,
     entities: [
       { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
-      { type: EntityTypeId.WATER, x: 1, y: 0 },
-      { type: EntityTypeId.WATER, x: 2, y: 0 },
-      { type: EntityTypeId.WATER, x: 3, y: 0 },
-      { type: EntityTypeId.LEAF, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 3, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
   const players = world.query.entitiesWithTrait("player");
@@ -90,7 +90,7 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
       { type: MapEntityTypeId.STARFIELD, x: 3, y: 0, variant: "large-star" },
       { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
       {
-        type: EntityTypeId.WIND_SWITCH,
+        type: MapEntityTypeId.WIND_SWITCH,
         x: 0,
         y: 0,
         direction: "right",
@@ -120,11 +120,11 @@ test("Leaf starts moving on the same tick that a player arrives", () => {
       height: 1,
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
-        { type: EntityTypeId.WATER, x: 1, y: 0 },
-        { type: EntityTypeId.WATER, x: 2, y: 0 },
-        { type: EntityTypeId.WATER, x: 3, y: 0 },
-        { type: EntityTypeId.LEAF, x: 1, y: 0 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+        { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+        { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+        { type: MapEntityTypeId.WATER, x: 3, y: 0 },
+        { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
       ],
     },
     { motionDurationMs: 350 },
@@ -158,13 +158,13 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
       height: 3,
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
-        { type: EntityTypeId.WATER, x: 1, y: 1 },
-        { type: EntityTypeId.WATER, x: 2, y: 1 },
-        { type: EntityTypeId.WATER, x: 2, y: 2 },
-        { type: EntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
-        { type: EntityTypeId.TIDE, x: 2, y: 1, direction: "down" },
-        { type: EntityTypeId.LEAF, x: 1, y: 1 },
-        { type: EntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+        { type: MapEntityTypeId.WATER, x: 1, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 2, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 2, y: 2 },
+        { type: MapEntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
+        { type: MapEntityTypeId.TIDE, x: 2, y: 1, direction: "down" },
+        { type: MapEntityTypeId.LEAF, x: 1, y: 1 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
       ],
     },
     { motionDurationMs: 100 },
@@ -196,11 +196,11 @@ test("Leaf does not launch against Tide", () => {
       width: 3,
       height: 3,
       entities: [
-        { type: EntityTypeId.WATER, x: 1, y: 1 },
+        { type: MapEntityTypeId.WATER, x: 1, y: 1 },
         { type: "grass", variant: "ts-10-1", x: 1, y: 2 },
-        { type: EntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
-        { type: EntityTypeId.LEAF, x: 1, y: 1 },
-        { type: EntityTypeId.BOBBY, x: 1, y: 2, direction: "up" },
+        { type: MapEntityTypeId.TIDE, x: 1, y: 1, direction: "down" },
+        { type: MapEntityTypeId.LEAF, x: 1, y: 1 },
+        { type: MapEntityTypeId.BOBBY, x: 1, y: 2, direction: "up" },
       ],
     },
     { motionDurationMs: 100 },

@@ -15,7 +15,7 @@ function documentWith(entities) {
 test("egg 实体与填充规则使用稳定合同", () => {
   const document = {
     ...documentWith([{ type: "egg", x: 1, y: 1 }]),
-    rules: { win: { type: "fill-all", target: "egg", filler: "egg" } },
+    rules: { win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" } },
   };
   assert.deepEqual(parseMapDocument(document), document);
   assert.throws(

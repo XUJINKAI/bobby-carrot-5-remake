@@ -112,7 +112,7 @@ function cellLayers(
         ref: inspection.ref,
         entity: inspection.entity,
         definition: inspection.definition,
-        label: policy?.label ?? inspection.definition.presentation.name,
+        label: inspection.definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         stackOrder: inspection.presence.stackOrder,
         editableScore: entityEditableScore(inspection.definition, policy),
@@ -146,7 +146,7 @@ function groupEntities(
           .map((ref) => level.entities[ref.index])
           .filter((entity): entity is LevelEntity => Boolean(entity)),
         definition,
-        label: policy?.label ?? definition.presentation.name,
+        label: definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         count: typeRefs.length,
         editableScore: entityEditableScore(definition, policy),

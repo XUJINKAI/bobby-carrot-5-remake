@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  ENTITY_MAP_DEFINITIONS,
+  MapEntityTypeId,
   ORIGINAL_TILE_ANIMATIONS,
   ORIGINAL_TILE_ATLASES,
   ORIGINAL_TILE_VISUALS,
@@ -9,6 +11,13 @@ import {
   originalTileVisual,
   originalTileVisualGroup,
 } from "../dist/index.js";
+
+test("Map Entity ID 与 Definition 使用同一完整集合", () => {
+  assert.deepEqual(
+    [...new Set(Object.values(MapEntityTypeId))].sort(),
+    Object.keys(ENTITY_MAP_DEFINITIONS).sort(),
+  );
+});
 
 test("Original Tile Visual 目录完整覆盖 ts.png", () => {
   const ts = ORIGINAL_TILE_ATLASES.ts;

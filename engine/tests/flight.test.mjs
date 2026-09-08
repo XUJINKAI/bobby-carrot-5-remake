@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { DEFAULT_FLIGHT_CELL_MS } from "../dist/entities/original/flight.js";
 import { World } from "../dist/world/World.js";
 
@@ -29,12 +29,12 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
-      { type: EntityTypeId.ICE_BLOCK, x: 2, y: 0 },
-      { type: EntityTypeId.TRAP, x: 2, y: 0, active: true },
-      { type: EntityTypeId.LANDING, x: 3, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 2, y: 0 },
+      { type: MapEntityTypeId.TRAP, x: 2, y: 0, active: true },
+      { type: MapEntityTypeId.LANDING, x: 3, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
 
@@ -69,8 +69,8 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
     entities: [
       { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
@@ -97,9 +97,9 @@ test("Airborne movement chains without a stationary World tick", () => {
           x,
           y: 0,
         })),
-        { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+        { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
         {
-          type: EntityTypeId.BOBBY,
+          type: MapEntityTypeId.BOBBY,
           x: 0,
           y: 0,
           direction: "right",
@@ -139,9 +139,9 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
 
@@ -177,9 +177,9 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
         x,
         y: 0,
       })),
-      { type: EntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
 

@@ -1,4 +1,4 @@
-import { EntityTypeId, type JsonValue } from "@bobby/model";
+import { MapEntityTypeId, type JsonValue } from "@bobby/model";
 import type { Behavior, MovementContext } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -49,7 +49,7 @@ const carouselPassage: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.CAROUSEL,
+  type: MapEntityTypeId.CAROUSEL,
   traits: ["walkable", "carousel", "directional-passage", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
@@ -67,7 +67,7 @@ export const carousel: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) => {
     const variant = carouselVariant(context.entity.state?.variant);
-    return tileCell(EntityTypeId.CAROUSEL, { fields: { variant } });
+    return tileCell(MapEntityTypeId.CAROUSEL, { fields: { variant } });
   }),
   [{ behavior: carouselPassage }],
 );

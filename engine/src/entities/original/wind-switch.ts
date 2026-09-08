@@ -1,4 +1,4 @@
-import { EntityTypeId, type Direction } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -28,7 +28,7 @@ const toggleWindDirection: Behavior = {
     const active = self.entity.state?.active !== true;
 
     for (const entity of query.entitiesWithTrait("switch")) {
-      if (entity.type !== EntityTypeId.WIND_SWITCH) continue;
+      if (entity.type !== MapEntityTypeId.WIND_SWITCH) continue;
       if (entity.direction !== direction) continue;
       commands.setState(entity.id, {
         ...entity.state,
@@ -39,7 +39,7 @@ const toggleWindDirection: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.WIND_SWITCH,
+  type: MapEntityTypeId.WIND_SWITCH,
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(false),
@@ -55,7 +55,7 @@ export const windSwitch: EntityModule = originalModule(
       ? context.entity.direction as Direction
       : "up";
     const active = context.entity.state?.active === true;
-    return tileCell(EntityTypeId.WIND_SWITCH, {
+    return tileCell(MapEntityTypeId.WIND_SWITCH, {
       fields: { direction, active },
     });
   }),

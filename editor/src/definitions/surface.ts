@@ -1,5 +1,5 @@
 import {
-  EntityTypeId,
+  MapEntityTypeId,
   originalTileCoordinateLabel,
   originalTileVisualGroup,
   type EntityType,
@@ -290,12 +290,12 @@ const fence = terrain({
   slot: "overlay",
   theme: "forest",
   themeFamily: "fence",
-  primary: EntityTypeId.FENCE,
+  primary: MapEntityTypeId.FENCE,
   rows: familyRows("fence"),
   auto: {
     kind: "fence",
     variants: fenceVariants,
-    canonical: EntityTypeId.FENCE,
+    canonical: MapEntityTypeId.FENCE,
   },
 });
 
@@ -421,7 +421,7 @@ const ice = terrain({
   label: "冰面",
   type: "ice",
   theme: "snow",
-  rows: [[variant(EntityTypeId.ICE, "Ice")]],
+  rows: [[variant(MapEntityTypeId.ICE, "Ice")]],
 });
 
 export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [

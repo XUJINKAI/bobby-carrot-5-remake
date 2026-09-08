@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "../../model/dist/index.js";
+import { MapEntityTypeId } from "../../model/dist/index.js";
 import {
   adventureLevelId,
   campaignSequenceForChapter,
@@ -100,20 +100,20 @@ test("map-native currency remains present on every new Adventure level instance"
     width: 3,
     height: 2,
     entities: [
-      { type: EntityTypeId.START, x: 0, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.START, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
-      { type: EntityTypeId.BONUS_COIN, x: 1, y: 0 },
-      { type: EntityTypeId.GOLDEN_CARROT, x: 0, y: 1 },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0 },
+      { type: MapEntityTypeId.GOLDEN_CARROT, x: 0, y: 1 },
     ],
   };
   const save = createAdventureSave();
   const first = createAdventureLevelInstance("1-1", level, save);
   const second = createAdventureLevelInstance("1-1", level, save);
   for (const instance of [first, second]) {
-    assert.equal(instance.entities.some((e) => e.type === EntityTypeId.BONUS_COIN), true);
-    assert.equal(instance.entities.some((e) => e.type === EntityTypeId.GOLDEN_CARROT), true);
+    assert.equal(instance.entities.some((e) => e.type === MapEntityTypeId.BONUS_COIN), true);
+    assert.equal(instance.entities.some((e) => e.type === MapEntityTypeId.GOLDEN_CARROT), true);
   }
 });
 
@@ -138,8 +138,8 @@ test("Bonus runtime parameters are injected by Adventure policy, not Original ma
     width: 4,
     height: 4,
     entities: [
-      { type: EntityTypeId.BEAVER, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.LOCK, x: 2, y: 2 },
+      { type: MapEntityTypeId.BEAVER, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.LOCK, x: 2, y: 2 },
     ],
   };
   const regularPlan = planAdventureSession("1-1", save);

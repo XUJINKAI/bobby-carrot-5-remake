@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import { carouselSwitchBehavior } from "./switch-runtime.js";
 import type {
   EntityModule,
@@ -13,7 +13,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.CAROUSEL_SWITCH,
+  type: MapEntityTypeId.CAROUSEL_SWITCH,
   traits: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
@@ -23,7 +23,7 @@ const definition: EntityModuleDefinition = {
 export const carouselSwitch: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
-    tileCell(EntityTypeId.CAROUSEL_SWITCH, {
+    tileCell(MapEntityTypeId.CAROUSEL_SWITCH, {
       fields: { pressed: context.entity.state?.pressed === true },
     }),
   ),

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { readBobbyInventory } from "../dist/entities/player/BobbyState.js";
 import { World } from "../dist/world/World.js";
 
@@ -32,9 +33,9 @@ test("pickup inventory belongs only to the Bobby that enters the cell", () => {
       ground(0, 0),
       ground(1, 0),
       ground(2, 0),
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
-      { type: EntityTypeId.BOBBY, x: 2, y: 0, direction: "left" },
-      { type: EntityTypeId.GAS, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 2, y: 0, direction: "left" },
+      { type: MapEntityTypeId.GAS, x: 1, y: 0 },
     ],
   });
   const [left, right] = actors(world);
@@ -54,12 +55,12 @@ test("bean pickup increments only the acting Bobby inventory", () => {
       ground(0, 0),
       ground(1, 0),
       {
-        type: EntityTypeId.BOBBY,
+        type: MapEntityTypeId.BOBBY,
         x: 0,
         y: 0,
 
       },
-      { type: EntityTypeId.BEAN, x: 1, y: 0 },
+      { type: MapEntityTypeId.BEAN, x: 1, y: 0 },
     ],
   });
   const [bobby] = actors(world);
@@ -77,8 +78,8 @@ test("shovel pickup leaves a canonical walkable surface behind", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      { type: EntityTypeId.SHOVEL_PICKUP, x: 1, y: 0 },
-      { type: EntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      { type: MapEntityTypeId.SHOVEL_PICKUP, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
   const [bobby] = actors(world);
@@ -90,7 +91,7 @@ test("shovel pickup leaves a canonical walkable surface behind", () => {
   assert.equal(
     world.entities
       .all()
-      .some((entity) => entity.type === EntityTypeId.SHOVEL_CLEARED_GROUND),
+      .some((entity) => entity.type === RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND),
     true,
   );
   assert.equal(world.presencesAt({ x: 1, y: 0 }).some((p) => p.traits.includes("walkable")), true);

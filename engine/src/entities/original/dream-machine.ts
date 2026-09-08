@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -11,7 +11,7 @@ import {
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.DREAM_MACHINE,
+  type: MapEntityTypeId.DREAM_MACHINE,
   traits: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
@@ -27,7 +27,7 @@ export const dreamMachine: EntityModule = originalModule(
   definition,
   atlasVisual(definition, (context) =>
     context.presence.role === "body"
-      ? tileCell(EntityTypeId.DREAM_MACHINE, { role: "body" })
-      : tileCell(EntityTypeId.DREAM_MACHINE, { role: "head" }),
+      ? tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "body" })
+      : tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "head" }),
   ),
 );

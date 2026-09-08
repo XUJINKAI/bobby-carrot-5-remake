@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { AdventureEntityFieldPatch } from "./augment.js";
 import {
   parseAdventureLevelId,
@@ -94,7 +94,7 @@ function bonusEntityPatches(
 ): AdventureEntityFieldPatch[] {
   return [
     {
-      type: EntityTypeId.BEAVER,
+      type: MapEntityTypeId.BEAVER,
       fields: {
         interaction: policy.temporaryKeyVendor.interaction,
         temporaryKeyPriceBonusCoins:
@@ -102,7 +102,7 @@ function bonusEntityPatches(
       },
     },
     {
-      type: EntityTypeId.LOCK,
+      type: MapEntityTypeId.LOCK,
       fields: {
         deathCountdownSeconds: policy.lock.deathCountdownSeconds,
       },

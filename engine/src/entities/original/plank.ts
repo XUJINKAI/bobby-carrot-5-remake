@@ -1,4 +1,4 @@
-import { EntityTypeId } from "@bobby/model";
+import { MapEntityTypeId } from "@bobby/model";
 import type { TransientVisualDefinition } from "../../visual/VisualDefinition.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
@@ -52,7 +52,7 @@ const plankPassage: Behavior = {
 };
 
 const definition: EntityModuleDefinition = {
-  type: EntityTypeId.PLANK,
+  type: MapEntityTypeId.PLANK,
   traits: ["terrain-overlay", "walkable"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Plank" },
@@ -66,7 +66,7 @@ const plankDecayVisual: TransientVisualDefinition = {
   stackOrder: CONTENT_STACK_ORDER,
   resolve({ progress }) {
     const atlas = tileAnimationCell(
-      EntityTypeId.PLANK,
+      MapEntityTypeId.PLANK,
       "crumbling",
       progress < 0.5 ? 1 : 2,
     );
@@ -78,7 +78,7 @@ const plankDecayVisual: TransientVisualDefinition = {
 
 const module = originalModule(
   definition,
-  atlasVisual(definition, tileCell(EntityTypeId.PLANK)),
+  atlasVisual(definition, tileCell(MapEntityTypeId.PLANK)),
   [{ behavior: plankPassage }],
 );
 

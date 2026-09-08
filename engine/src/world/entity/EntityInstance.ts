@@ -1,6 +1,4 @@
 import {
-  EntityTypeId,
-  MapEntityTypeId,
   entityMapDefinition,
   surfaceMappingForEntity,
   type Direction,
@@ -72,7 +70,7 @@ export function instantiateLevelEntity(
 
   return {
     id,
-    type: levelEntityRuntimeType(source),
+    type: source.type,
     anchor: { x: source.x, y: source.y },
     ...(direction ? { direction } : {}),
     ...(Number.isFinite(source.stackOrder)
@@ -83,24 +81,6 @@ export function instantiateLevelEntity(
       ? { instanceTraits: [...instanceTraits] }
       : {}),
   };
-}
-
-/** Map type 到 Engine Runtime type 的唯一加载边界。 */
-export function levelEntityRuntimeType(source: Readonly<LevelEntity>): EntityType {
-  if (source.type === MapEntityTypeId.WINDMILL) {
-    const direction = source["direction"];
-    return {
-      up: EntityTypeId.WINDMILL_UP,
-      down: EntityTypeId.WINDMILL_DOWN,
-      left: EntityTypeId.WINDMILL_LEFT,
-      right: EntityTypeId.WINDMILL_RIGHT,
-    }[isDirection(direction) ? direction : "up"];
-  }
-  if (source.type === MapEntityTypeId.EGG)
-    return EntityTypeId.EGG_EMPTY;
-  if (source.type === MapEntityTypeId.BEANSTALK)
-    return EntityTypeId.BEANSTALK_TIP;
-  return source.type;
 }
 
 export function instantiateSpawnSpec(
