@@ -51,12 +51,17 @@ let resizeDrag: null | {
   startY: number;
 } = null;
 
-function render(): void {
+function applyViewportTransform(): void {
   const view = viewport.snapshot;
+  if (stage.value)
+    stage.value.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+}
+
+function render(): void {
+  applyViewportTransform();
   if (stage.value) {
     stage.value.style.width = `${props.level.width * EDITOR_TILE_SIZE}px`;
     stage.value.style.height = `${props.level.height * EDITOR_TILE_SIZE}px`;
-    stage.value.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
   }
   renderer?.render({
     level: props.level as EditorMap,
@@ -64,7 +69,7 @@ function render(): void {
     placement: props.placement,
     selection: props.selection,
     hover: props.hover,
-    viewport: view,
+    viewport: viewport.snapshot,
   });
 }
 
@@ -166,7 +171,7 @@ onMounted(async () => {
       emit("transform", cell, step, (result) => { changed = result; });
       return changed;
     },
-    viewportChanged: render,
+    viewportChanged: applyViewportTransform,
   });
   await renderer.load();
   await nextTick();
