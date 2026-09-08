@@ -336,6 +336,11 @@ test("Palette keeps explicit directional presets and appends new creatable types
       .map((entry) => entry.direction),
     ["up", "down", "left", "right"],
   );
+  const egg = palette
+    .flatMap((group) => group.rows.flat())
+    .find((entry) => entry.type === MapEntityTypeId.EGG);
+  assert.equal(egg?.label, "Egg");
+  assert.equal(egg?.traits.includes("egg-nest"), true);
 });
 
 test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => {
@@ -467,6 +472,7 @@ test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
     builtinEditorDefinition,
   );
   assert.equal(cell.layers[0]?.definition.type, EntityTypeId.EGG_EMPTY);
+  assert.equal(cell.layers[0]?.label, "Egg");
 
   const multi = buildInspectorModel(
     level,
@@ -485,6 +491,10 @@ test("Inspector 通过 Runtime Definition 解析 canonical Entity", () => {
   assert.equal(
     definitions.get(MapEntityTypeId.WINDMILL),
     EntityTypeId.WINDMILL_LEFT,
+  );
+  assert.equal(
+    multi.groups.find((group) => group.type === MapEntityTypeId.EGG)?.label,
+    "Egg",
   );
 });
 

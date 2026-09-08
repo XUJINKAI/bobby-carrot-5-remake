@@ -60,6 +60,8 @@ export const builtinEditorDefinition: EditorDefinition = {
       ],
       item,
     ),
+    [MapEntityTypeId.EGG]: { ...item, label: "Egg" },
+    [MapEntityTypeId.BEANSTALK]: { label: "Beanstalk" },
     [EntityTypeId.BOBBY]: {
       editorVisual: () => ({
         layers: [
@@ -92,6 +94,7 @@ export const builtinEditorDefinition: EditorDefinition = {
     [EntityTypeId.SPEED]: { defaultDirection: "right", variants: speedVariants },
     [EntityTypeId.TIDE]: { defaultDirection: "right", variants: tideVariants },
     [MapEntityTypeId.WINDMILL]: {
+      label: "Windmill",
       defaultDirection: "right",
       variants: windmillVariants,
     },

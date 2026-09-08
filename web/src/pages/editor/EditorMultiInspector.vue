@@ -50,14 +50,14 @@ const emit = defineEmits<{
       >
         <header class="editor-batch-head">
           <span class="editor-batch-title">
-            <strong>{{ group.definition.presentation.name }}</strong>
+            <strong>{{ group.label }}</strong>
             <code>{{ group.type }}</code>
           </span>
           <span class="editor-batch-count">× {{ group.count }}</span>
           <button
             type="button"
             class="editor-batch-delete"
-            :title="`删除选区内全部 ${group.definition.presentation.name}`"
+            :title="`删除选区内全部 ${group.label}`"
             @click="emit('deleteType', group.type)"
           >
             ✕

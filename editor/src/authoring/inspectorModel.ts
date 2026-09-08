@@ -20,6 +20,7 @@ export interface InspectorEntityModel {
   ref: EntityRef;
   entity: LevelEntity;
   definition: EntityCatalogEntry;
+  label: string;
   editor?: EditorEntityDefinition;
   stackOrder: number;
   editableScore: number;
@@ -30,6 +31,7 @@ export interface InspectorEntityGroupModel {
   refs: readonly EntityRef[];
   entities: readonly LevelEntity[];
   definition: EntityCatalogEntry;
+  label: string;
   editor?: EditorEntityDefinition;
   count: number;
   editableScore: number;
@@ -110,6 +112,7 @@ function cellLayers(
         ref: inspection.ref,
         entity: inspection.entity,
         definition: inspection.definition,
+        label: policy?.label ?? inspection.definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         stackOrder: inspection.presence.stackOrder,
         editableScore: entityEditableScore(inspection.definition, policy),
@@ -143,6 +146,7 @@ function groupEntities(
           .map((ref) => level.entities[ref.index])
           .filter((entity): entity is LevelEntity => Boolean(entity)),
         definition,
+        label: policy?.label ?? definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
         count: typeRefs.length,
         editableScore: entityEditableScore(definition, policy),
@@ -174,6 +178,6 @@ function compareGroups(
     bEditable - aEditable ||
     b.count - a.count ||
     b.editableScore - a.editableScore ||
-    a.definition.presentation.name.localeCompare(b.definition.presentation.name)
+    a.label.localeCompare(b.label)
   );
 }

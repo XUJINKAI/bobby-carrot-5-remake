@@ -15,6 +15,8 @@ import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
   label: string;
+  traits: readonly string[];
+  behaviors: readonly string[];
   previewPreset: EditorPlacementPreset;
   previewWidth: number;
   previewHeight: number;
@@ -126,6 +128,13 @@ function resolveEntry(
   key: string,
 ): PaletteItem {
   const previewPreset = previewPresetFor(entry);
+  const definition = editorCatalogEntry(catalog, {
+    type: entry.type,
+    x: 0,
+    y: 0,
+    ...(entry.direction ? { direction: entry.direction } : {}),
+    ...(entry.fields ?? {}),
+  });
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
     previewPreset,
@@ -136,14 +145,11 @@ function resolveEntry(
     key,
     label:
       entry.label ??
-      editorCatalogEntry(catalog, {
-        type: entry.type,
-        x: 0,
-        y: 0,
-        ...(entry.direction ? { direction: entry.direction } : {}),
-        ...(entry.fields ?? {}),
-      }).presentation.name ??
+      editor.entities?.[entry.type]?.label ??
+      definition.presentation.name ??
       entry.type,
+    traits: definition.traits,
+    behaviors: definition.behaviors ?? [],
     previewPreset,
     previewWidth: layout.width,
     previewHeight: layout.height,

@@ -79,7 +79,7 @@ function dropAt(index: number): void {
         <header class="editor-layer-head">
           <span class="editor-layer-drag" title="拖动调整叠加顺序" aria-hidden="true">⠿</span>
           <span class="editor-layer-title">
-            <strong>{{ layer.definition.presentation.name }}</strong>
+            <strong>{{ layer.label }}</strong>
             <code>{{ layer.entity.type }}</code>
           </span>
           <span class="editor-layer-order">z {{ layer.stackOrder }}</span>

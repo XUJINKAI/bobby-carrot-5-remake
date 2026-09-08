@@ -229,6 +229,54 @@ async function verifyEditorSurfaceInspector(cdp, url) {
       "document.querySelector('.editor-layer-card .editor-surface-variant-btn.active')?.getAttribute('title') ?? ''",
     )) === snapshot.nextTitle,
   );
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('#editor-palette')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-palette-type=\"egg\"]')",
+      ),
+    ),
+  );
+  const eggPoint = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const button = document.querySelector('[data-palette-type="egg"]');
+      if (!button) return null;
+      const rect = button.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    })()`,
+  );
+  if (!eggPoint) throw new Error("Egg Palette item was not measurable");
+  await cdp.send(
+    "Input.dispatchMouseEvent",
+    { type: "mouseMoved", x: eggPoint.x, y: eggPoint.y },
+    sessionId,
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.editor-palette-tooltip')",
+      ),
+    ),
+  );
+  const eggTooltip = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const tooltip = document.querySelector('.editor-palette-tooltip');
+      return {
+        name: tooltip?.querySelector('strong')?.textContent ?? '',
+        type: tooltip?.querySelector('code')?.textContent ?? '',
+      };
+    })()`,
+  );
+  if (eggTooltip.name !== "Egg" || eggTooltip.type !== "egg")
+    throw new Error(`Egg Palette tooltip was incorrect: ${JSON.stringify(eggTooltip)}`);
 }
 
 async function verifyGameplayDialog(cdp, url) {
