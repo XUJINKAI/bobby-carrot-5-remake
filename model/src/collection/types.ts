@@ -72,7 +72,10 @@ export interface CollectionManifestChapter {
   description?: string;
 }
 
-/** 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。 */
+/**
+ * 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。
+ * chapters 只补充一级 chapter 目录的展示信息，省略时使用目录 ID 作为名称。
+ */
 export interface CollectionManifestEntry {
   id: string;
   name: string;

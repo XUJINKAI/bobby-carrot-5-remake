@@ -124,7 +124,7 @@ LOMA Pushbox 使用：
 ```text
 tools/custom/LOMA.txt
   ↓ tools/custom/loma-pushbox.mjs
-custom-maps/loma-pushbox/*.json      # ignored / generated
+custom-maps/loma-pushbox/<chapter>/*.json  # ignored / generated
   ↓ tools/custom/prepare.mjs
 assets/maps/loma-pushbox/index.json
 assets/maps/loma-pushbox/<map-id>.json
@@ -132,7 +132,7 @@ assets/maps/loma-pushbox/<map-id>.json
 
 `LOMA.txt` 是受 Git 管理的第三方源数据；授权与作者信息见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*` 对应该 collection 的 10 个 source pattern，因此生成 JSON 使用 `chapter: "01"` ～ `"10"` 保留这一分组。这里的顶层 `chapter` 是 **custom build-source metadata**：`tools/custom/prepare.mjs` 把它写入 collection `maps[].chapter`，同时从最终 MapDocument 中剥离。它不是 Engine `LevelMap` 字段，也不是 Editor JSON 的持久化字段。
+LOMA 原始 `Title` 的 `LOMA01-*` ～ `LOMA10-*` 对应该 collection 的 10 个 source pattern，因此生成器把地图分别写入 `01` ～ `10` chapter 目录。`tools/custom/prepare.mjs` 从路径得到 collection `maps[].chapter`；chapter 不是 Engine `LevelMap` 字段，也不是 Editor JSON 的持久化字段。
 
 Novoban 使用同一生成边界，但源文件没有自然 chapter，因此保持平铺 collection：
 
@@ -149,7 +149,7 @@ Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-rock`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
-`custom-maps/collections.json` 可为任意 custom collection 定义可选 `chapters`。地图声明 `chapter` 时必须引用其中已定义的 chapter；Explore 仍只读取统一生成的 collection index，不知道该 collection 的数据来源。
+`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
 ## 生成规则
 
