@@ -7,6 +7,7 @@ import { isLevelEntityReservedField, type Direction, type LevelEntity } from "@b
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import {
   editorCatalogEntry,
+  editorEntityDirection,
   isEditorEntityCreatable,
 } from "../definitions/entities.js";
 import type {
@@ -173,10 +174,11 @@ function footprintCells(
   entity: LevelEntity,
   definition: EntityCatalogEntry,
 ): PlacementCell[] {
+  const direction = editorEntityDirection(entity);
   return resolveFootprintCells(
     {
       anchor: { x: entity.x, y: entity.y },
-      ...(entity.direction ? { direction: entity.direction } : {}),
+      ...(direction ? { direction } : {}),
     },
     definition.footprint,
   ).map((cell) => ({
@@ -201,6 +203,6 @@ function createPlacedEntity(
     if (!key || key === "direction" || isLevelEntityReservedField(key)) continue;
     entity[key] = value;
   }
-  if (direction) entity.direction = direction;
+  if (direction) entity["direction"] = direction;
   return entity;
 }

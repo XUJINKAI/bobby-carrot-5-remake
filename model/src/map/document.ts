@@ -11,9 +11,8 @@ export interface LevelEntity {
   type: EntityType;
   x: number;
   y: number;
-  /** 公共类型字段；具体 Entity 是否允许持久化由 EntityMapDefinition 决定。 */
-  direction?: Direction;
   stackOrder?: number;
+  /** 类型专属字段由 EntityMapDefinition 声明，并在地图解析边界校验。 */
   [key: string]: JsonPrimitive | undefined;
 }
 

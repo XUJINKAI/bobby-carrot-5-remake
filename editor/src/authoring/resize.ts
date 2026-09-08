@@ -1,5 +1,13 @@
-import { resolveFootprintCells, type EntityCatalog } from "@bobby/engine";
+import {
+  resolveFootprintCells,
+  type EntityCatalog,
+  type EntityCatalogEntry,
+} from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
+import {
+  editorCatalogEntry,
+  editorEntityDirection,
+} from "../definitions/entities.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
@@ -67,12 +75,17 @@ function entityFits(
   height: number,
   catalog: EntityCatalog,
 ): boolean {
-  if (!catalog.has(entity.type)) return inside(entity.x, entity.y, width, height);
-  const definition = catalog.require(entity.type);
+  let definition: EntityCatalogEntry;
+  try {
+    definition = editorCatalogEntry(catalog, entity);
+  } catch {
+    return inside(entity.x, entity.y, width, height);
+  }
+  const direction = editorEntityDirection(entity);
   const cells = resolveFootprintCells(
     {
       anchor: { x: entity.x, y: entity.y },
-      ...(entity.direction ? { direction: entity.direction } : {}),
+      ...(direction ? { direction } : {}),
     },
     definition.footprint,
   );

@@ -48,9 +48,10 @@ export function instantiateLevelEntity(
 ): EntityInstance {
   const definition = entityMapDefinition(source.type);
   const state: EntityState = {};
+  const sourceDirection = source["direction"];
   let direction: Direction | undefined =
-    definition === undefined && isDirection(source.direction)
-      ? source.direction
+    definition === undefined && isDirection(sourceDirection)
+      ? sourceDirection
       : undefined;
 
   for (const field of definition?.fields ?? []) {
@@ -87,12 +88,13 @@ export function instantiateLevelEntity(
 /** Map type 到 Engine Runtime type 的唯一加载边界。 */
 export function levelEntityRuntimeType(source: Readonly<LevelEntity>): EntityType {
   if (source.type === MapEntityTypeId.WINDMILL) {
+    const direction = source["direction"];
     return {
       up: EntityTypeId.WINDMILL_UP,
       down: EntityTypeId.WINDMILL_DOWN,
       left: EntityTypeId.WINDMILL_LEFT,
       right: EntityTypeId.WINDMILL_RIGHT,
-    }[String(source.direction)] ?? EntityTypeId.WINDMILL_UP;
+    }[isDirection(direction) ? direction : "up"];
   }
   if (source.type === MapEntityTypeId.EGG)
     return EntityTypeId.EGG_EMPTY;

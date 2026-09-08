@@ -6,6 +6,7 @@ import {
   type LevelEntity,
 } from "@bobby/model";
 import { applyEditorVariant } from "../definitions/builtin.js";
+import { editorEntityDirection } from "../definitions/entities.js";
 import type {
   EditorEntityDefinition,
   EditorEntityFields,
@@ -58,9 +59,10 @@ export function cyclePlacementVariant<T extends EditorPlacementPreset>(
   const index = modulo(base + Math.sign(step || 1), variants.length);
   const next = applyEditorVariant(source, variants[index]!);
   const fields = fieldsFromEntity(next);
+  const nextDirection = editorEntityDirection(next);
   return {
     ...preset,
-    ...(next.direction ? { direction: next.direction } : {}),
+    ...(nextDirection ? { direction: nextDirection } : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
@@ -75,8 +77,8 @@ function withDefaults(
     if (result[field.key] === undefined && field.default !== undefined)
       result[field.key] = structuredClone(field.default);
   }
-  if (!result.direction && editor?.defaultDirection)
-    result.direction = editor.defaultDirection;
+  if (!editorEntityDirection(result) && editor?.defaultDirection)
+    result["direction"] = editor.defaultDirection;
   return result;
 }
 
@@ -84,7 +86,7 @@ function variantMatches(
   entity: Readonly<LevelEntity>,
   variant: EditorEntityVariant,
 ): boolean {
-  if (variant.direction && entity.direction !== variant.direction) return false;
+  if (variant.direction && editorEntityDirection(entity) !== variant.direction) return false;
   for (const [key, value] of Object.entries(variant.fields ?? {}))
     if (!same(entity[key], value)) return false;
   return true;

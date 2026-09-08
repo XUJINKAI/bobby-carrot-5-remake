@@ -3,7 +3,7 @@ import {
   type EntityCatalog,
   type EntityCatalogEntry,
 } from "@bobby/engine";
-import type { EntityType, LevelEntity } from "@bobby/model";
+import type { Direction, EntityType, LevelEntity } from "@bobby/model";
 import type { EditorDefinition, EditorEntityExclusion } from "./types.js";
 
 export function isEditorEntityCreatable(
@@ -26,6 +26,16 @@ export function editorCatalogEntry(
   entity: Readonly<LevelEntity>,
 ): EntityCatalogEntry {
   return catalog.require(levelEntityRuntimeType(entity));
+}
+
+/** 读取由具体 EntityMapDefinition 声明并经 parser 校验的方向字段。 */
+export function editorEntityDirection(
+  entity: Readonly<LevelEntity>,
+): Direction | undefined {
+  const value = entity["direction"];
+  return value === "up" || value === "right" || value === "down" || value === "left"
+    ? value
+    : undefined;
 }
 
 function matchesExclusion(

@@ -3,7 +3,11 @@ export { serializeEditorLevel, parseEditorLevel } from "./level/serialization.js
 export { validateEditorLevel } from "./level/validation.js";
 export type { EditorMap, EntityRef, InspectedEditorEntity, LevelValidationIssue } from "./level/types.js";
 export { builtinEditorDefinition, EDITOR_DIRECTIONS, applyEditorVariant } from "./definitions/builtin.js";
-export { editorCatalogEntry, isEditorEntityCreatable } from "./definitions/entities.js";
+export {
+  editorCatalogEntry,
+  editorEntityDirection,
+  isEditorEntityCreatable,
+} from "./definitions/entities.js";
 export type { EditorTool, EditorEntityFields, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";

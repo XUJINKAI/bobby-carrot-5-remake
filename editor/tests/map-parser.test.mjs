@@ -62,6 +62,20 @@ test("Map parser 拒绝未知 Entity、未知字段和错误字段值", () => {
   );
 });
 
+test("类型专属字段只对声明它的 Entity 生效", () => {
+  const windmill = documentWith([
+    { type: "windmill", x: 0, y: 0, direction: "down" },
+  ]);
+  assert.deepEqual(parseMapDocument(windmill), windmill);
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([{ type: "bobby", x: 0, y: 0, direction: "down" }]),
+      ),
+    /bobby 不允许字段 direction/,
+  );
+});
+
 test("LevelMap parser 校验 MapDocument 后只返回 gameplay 字段", () => {
   const document = documentWith([
     { type: "water", x: 1, y: 2, variant: "ripple" },

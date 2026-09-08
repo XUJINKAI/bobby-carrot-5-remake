@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   applyEditorVariant,
+  editorEntityDirection,
   editorVariantIndex,
   surfaceTerrainForEntity,
   surfaceVariantPreset,
@@ -91,6 +92,7 @@ function variantSource(index: number): EditorPlacementPreset {
   const source = props.targets[0]!;
   const variant = props.entityPolicy?.variants?.[index];
   const candidate = variant ? applyEditorVariant(source, variant) : source;
+  const direction = editorEntityDirection(candidate);
   const fields: Record<string, JsonPrimitive> = {};
   for (const field of entityMapDefinition(candidate.type)?.fields ?? []) {
     if (field.key === "direction") continue;
@@ -99,7 +101,7 @@ function variantSource(index: number): EditorPlacementPreset {
   }
   return {
     type: candidate.type,
-    ...(candidate.direction ? { direction: candidate.direction } : {}),
+    ...(direction ? { direction } : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
