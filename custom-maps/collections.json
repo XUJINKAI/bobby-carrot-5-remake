@@ -11,19 +11,7 @@
       "id": "loma-pushbox",
       "name": "LOMA",
       "description": "Levels Of Many Authors：137 张三箱 Sokoban 地图。",
-      "cardSize": "small",
-      "chapters": {
-        "01": { "name": "Pattern", "description": "" },
-        "02": { "name": "Pattern", "description": "" },
-        "03": { "name": "Pattern", "description": "" },
-        "04": { "name": "Pattern", "description": "" },
-        "05": { "name": "Pattern", "description": "" },
-        "06": { "name": "Pattern", "description": "" },
-        "07": { "name": "Pattern", "description": "" },
-        "08": { "name": "Pattern", "description": "" },
-        "09": { "name": "Pattern", "description": "" },
-        "10": { "name": "Pattern", "description": "" }
-      }
+      "cardSize": "small"
     },
     {
       "id": "engine-lab",
