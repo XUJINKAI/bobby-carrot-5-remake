@@ -15,8 +15,9 @@ export function resolveDeletionTarget(
   catalog: EntityCatalog,
   cell: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
+  preview?: EditorPreview,
 ): EntityRef | null {
-  const candidates = deletionCandidatesAt(level, catalog, cell);
+  const candidates = deletionCandidatesAt(level, catalog, cell, preview);
   return (
     editor.deletion?.resolveTarget({ map: level, cell, candidates }) ??
     candidates.at(-1)?.ref ??
@@ -37,12 +38,14 @@ export function resolveDeletion(
   editor: EditorDefinition = builtinEditorDefinition,
 ): EntityRef[] {
   const rect = selectionRect(selection);
+  const preview = new EditorPreview(level, catalog);
   if (rect.width === 1 && rect.height === 1) {
     const target = resolveDeletionTarget(
       level,
       catalog,
       { x: rect.left, y: rect.top },
       editor,
+      preview,
     );
     return target ? [target] : [];
   }
@@ -53,7 +56,7 @@ export function resolveDeletion(
   >();
   for (let y = rect.top; y <= rect.bottom; y += 1) {
     for (let x = rect.left; x <= rect.right; x += 1) {
-      for (const candidate of deletionCandidatesAt(level, catalog, { x, y })) {
+      for (const candidate of deletionCandidatesAt(level, catalog, { x, y }, preview)) {
         const previous = byEntity.get(candidate.ref.index);
         if (!previous || candidate.stackOrder > previous.stackOrder)
           byEntity.set(candidate.ref.index, {
@@ -78,8 +81,9 @@ function deletionCandidatesAt(
   level: EditorMap,
   catalog: EntityCatalog,
   cell: Cell,
+  preview = new EditorPreview(level, catalog),
 ) {
-  const inspection = new EditorPreview(level, catalog).inspectCell(cell.x, cell.y);
+  const inspection = preview.inspectCell(cell.x, cell.y);
   return inspection.presences
     .filter((item) => !isSurfaceEntityType(item.entity.type))
     .map((item) => ({

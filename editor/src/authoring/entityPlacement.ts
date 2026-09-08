@@ -45,6 +45,7 @@ export function resolvePlacement(
   preset: EditorPlacementPreset,
   cursor: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
+  existingPreview?: EditorPreview,
 ): EntityPlacementPlan {
   const authoring = editor.entities?.[preset.type];
   if (!isEditorEntityCreatable(editor, preset.type, catalog)) {
@@ -91,7 +92,7 @@ export function resolvePlacement(
   if (replaceGroup === "surface" && !isSurfaceEntityType(preset.type)) {
     return { entity, cells, replace: [], valid: true };
   }
-  const preview = new EditorPreview(level, catalog);
+  const preview = existingPreview ?? new EditorPreview(level, catalog);
   const replace = new Map<number, EntityRef>();
   for (const cell of cells) {
     for (const existing of preview.inspectCell(cell.x, cell.y).presences) {

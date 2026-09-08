@@ -51,6 +51,17 @@ export async function verifyEditorCanvasPerformance(cdp, sessionId) {
     button: "middle",
     clickCount: 1,
   }, sessionId);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    x: point.x + 90,
+    y: point.y + 70,
+  }, sessionId);
+  await settle(cdp, sessionId);
+  assert.equal(
+    await cdp.evaluate(sessionId, "window.editorDrawCount"),
+    0,
+    "hover 更新应由交互画布绘制",
+  );
 }
 
 async function settle(cdp, sessionId) {

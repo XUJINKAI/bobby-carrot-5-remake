@@ -8,9 +8,11 @@ import {
   type EntityCatalog,
   type ImageManager,
   type VisualRegistry,
+  type VisualQuery,
   type VisualRenderPass,
 } from "@bobby/engine";
 import { resolveDeletionTarget } from "../authoring/deletion.js";
+import { createPlacementPreview } from "../authoring/EditorPlacementPreview.js";
 import {
   entityCells,
   resolvePlacement,
@@ -49,12 +51,15 @@ interface EditorRenderItem {
 }
 
 export class EditorCanvasRenderer {
+  private preview: EditorPreview | null = null;
+
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly images: ImageManager,
     private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
     private readonly visuals: VisualRegistry = builtinVisualRegistry,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
+    private readonly interactionCanvas: HTMLCanvasElement = canvas,
   ) {}
 
   async load(): Promise<void> {
@@ -87,6 +92,7 @@ export class EditorCanvasRenderer {
     context.fillRect(0, 0, cssWidth, cssHeight);
 
     const preview = new EditorPreview(level, this.catalog);
+    this.preview = preview;
     const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
     const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
       world: [],
@@ -108,7 +114,6 @@ export class EditorCanvasRenderer {
       for (const item of passes[pass])
         this.drawPresence(
           context,
-          preview,
           visualQuery,
           item.inspection,
           item.x,
@@ -116,6 +121,29 @@ export class EditorCanvasRenderer {
           deviceScale,
         );
 
+    if (this.interactionCanvas === this.canvas)
+      this.drawInteraction(context, state, preview, deviceScale);
+    else this.renderInteraction(state);
+  }
+
+  renderInteraction(state: EditorCanvasRenderState): void {
+    const preview = this.preview;
+    if (this.interactionCanvas === this.canvas || !preview || preview.level !== state.level) {
+      this.render(state);
+      return;
+    }
+    this.canvas.style.cursor = state.tool === "select"
+      ? "default"
+      : state.tool === "erase" ? "crosshair" : "copy";
+    const context = this.interactionCanvas.getContext("2d");
+    if (!context) return;
+    const width = state.level.width * EDITOR_TILE_SIZE;
+    const height = state.level.height * EDITOR_TILE_SIZE;
+    const deviceScale = resolveDevicePixelRatio();
+    this.interactionCanvas.style.width = `${width}px`;
+    this.interactionCanvas.style.height = `${height}px`;
+    prepareCanvas(this.interactionCanvas, context, width, height, deviceScale);
+    context.clearRect(0, 0, width, height);
     this.drawInteraction(context, state, preview, deviceScale);
   }
 
@@ -155,6 +183,7 @@ export class EditorCanvasRenderer {
         this.catalog,
         hover,
         this.editor,
+        preview,
       );
       if (ref) {
         context.fillStyle = "rgba(90,170,255,.26)";
@@ -192,6 +221,7 @@ export class EditorCanvasRenderer {
       placement,
       hover,
       this.editor,
+      preview,
     );
     if (plan.replace.length > 0) {
       context.fillStyle = "rgba(90,170,255,.26)";
@@ -205,23 +235,12 @@ export class EditorCanvasRenderer {
           );
     }
     if (plan.valid) {
-      const removed = new Set(plan.replace.map((ref) => ref.index));
-      const ghostLevel: EditorMap = {
-        ...state.level,
-        entities: [
-          ...state.level.entities.filter((_, index) => !removed.has(index)),
-          plan.entity,
-        ],
-      };
-      const ghost = new EditorPreview(ghostLevel, this.catalog);
-      const ghostQuery = new SpatialVisualQuery(ghost.entities, ghost.spatial);
-      const ghostRef = { index: ghostLevel.entities.length - 1 };
+      const ghost = createPlacementPreview(preview, plan);
       context.globalAlpha = 0.55;
-      for (const inspection of ghost.presencesFor(ghostRef))
+      for (const inspection of ghost.inspections)
         this.drawPresence(
           context,
-          ghost,
-          ghostQuery,
+          ghost.query,
           inspection,
           inspection.presence.cell.x,
           inspection.presence.cell.y,
@@ -241,14 +260,14 @@ export class EditorCanvasRenderer {
 
   private drawPresence(
     context: CanvasRenderingContext2D,
-    preview: EditorPreview,
-    query: SpatialVisualQuery,
+    query: VisualQuery,
     inspection: EditorPresenceInspection,
     x: number,
     y: number,
     deviceScale: number,
   ): void {
-    const entity = preview.entities.require(inspection.presence.entityId);
+    const entity = query.entity(inspection.presence.entityId);
+    if (!entity) return;
     const resolveContext = { entity, presence: inspection.presence, query };
     const composition =
       this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??
