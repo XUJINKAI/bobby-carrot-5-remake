@@ -13,6 +13,7 @@ export type MapCollectionIcon =
   | { type: "text"; value: string };
 
 export type MapCollectionCardSize = "small" | "medium" | "big";
+export type CollectionManifestVisibility = boolean | "dev";
 
 export interface MapCollectionFilterOption {
   id: string;
@@ -81,6 +82,7 @@ export interface CollectionManifestEntry {
   name: string;
   description?: string;
   cardSize?: MapCollectionCardSize;
+  visible?: CollectionManifestVisibility;
   chapters?: Record<string, CollectionManifestChapter>;
 }
 

@@ -150,6 +150,7 @@ function collectionExamples() {
           name: "Original Patch",
           description: "用于与原版 JAR 对比机关机制的测试地图。",
           cardSize: "medium",
+          visible: "dev",
           chapters: {
             "37": {
               name: "Carousel",

@@ -13,7 +13,7 @@ function run(command, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-export function rebuildAssets() {
+export function rebuildAssets(options = {}) {
   for (const directory of [
     "original/extracted",
     "original/decoded",
@@ -21,15 +21,18 @@ export function rebuildAssets() {
     "assets",
   ])
     cleanUntracked(directory);
-  prepareAssets();
+  prepareAssets(options);
 }
 
-export function prepareAssets() {
+export function prepareAssets({ includeDevCollections = false } = {}) {
   run(process.execPath, ["tools/cli.mjs", "original", "prepare"]);
   fs.mkdirSync(assets, { recursive: true });
   run(process.execPath, ["tools/custom/loma-pushbox.mjs"]);
   run(process.execPath, ["tools/custom/novoban-pushbox.mjs"]);
-  run(process.execPath, ["tools/custom/prepare.mjs"]);
+  run(process.execPath, [
+    "tools/custom/prepare.mjs",
+    ...(includeDevCollections ? ["--dev"] : []),
+  ]);
   buildOriginalCollection();
   buildAdventureIndex();
   fs.rmSync(path.join(assets, "art/hd"), { recursive: true, force: true });

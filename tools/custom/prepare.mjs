@@ -3,10 +3,15 @@ import path from "node:path";
 import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { discoverCollectionSource } from "./collection-source.mjs";
+import {
+  isCollectionVisible,
+  normalizeCollectionVisibility,
+} from "./collection-visibility.mjs";
 
 const sourceRoot = path.join(root, "custom-maps");
 const outputRoot = path.join(root, "assets/maps");
 const cardSizes = new Set(["small", "medium", "big"]);
+const development = process.argv.includes("--dev");
 const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, "collections.json"), "utf8"));
 
 if (!manifest || typeof manifest !== "object" || manifest.schemaVersion !== 1 || !Array.isArray(manifest.collections))
@@ -15,6 +20,9 @@ if (!manifest || typeof manifest !== "object" || manifest.schemaVersion !== 1 ||
 fs.mkdirSync(outputRoot, { recursive: true });
 const ids = new Set();
 const collections = manifest.collections.map(buildCollection);
+const visibleCollections = collections.filter((collection) =>
+  isCollectionVisible(collection.visible, development),
+);
 
 fs.writeFileSync(
   path.join(outputRoot, "index.json"),
@@ -22,7 +30,7 @@ fs.writeFileSync(
     schemaVersion: 1,
     collections: [
       { id: "original", name: "原版关卡", description: "Bobby Carrot 5 原版 40 章地图。" },
-      ...collections.map(({ id, name, description }) => ({
+      ...visibleCollections.map(({ id, name, description }) => ({
         id,
         name,
         ...(description ? { description } : {}),
@@ -32,23 +40,32 @@ fs.writeFileSync(
 );
 
 for (const collection of collections) writeCollection(collection);
-console.log(`构建地图 Collection：${collections.length + 1} 个集合 / ${collections.reduce((sum, item) => sum + item.maps.length, 0)} 张自定义地图。`);
+console.log(
+  `构建地图 Collection：${collections.length + 1} 个集合 / ${collections.reduce((sum, item) => sum + item.maps.length, 0)} 张自定义地图；当前索引展示 ${visibleCollections.length + 1} 个集合。`,
+);
 
 function buildCollection(entry) {
   if (!entry || typeof entry !== "object") throw new Error("collection 定义必须是对象");
-  const { id, name, description = "", cardSize = "medium", chapters: chapterMetadata } = entry;
+  const {
+    id,
+    name,
+    description = "",
+    cardSize = "medium",
+    chapters: chapterMetadata,
+  } = entry;
   if (!isSlug(id)) throw new Error(`无效 collection ID：${String(id)}`);
   if (ids.has(id)) throw new Error(`重复 collection ID：${id}`);
   ids.add(id);
   if (typeof name !== "string" || !name.trim()) throw new Error(`${id}: name 不能为空`);
   if (typeof description !== "string") throw new Error(`${id}: description 必须是字符串`);
   if (!cardSizes.has(cardSize)) throw new Error(`${id}: cardSize 必须是 small / medium / big`);
+  const visible = normalizeCollectionVisibility(entry.visible, id);
   const directory = path.join(sourceRoot, id);
   if (!fs.existsSync(directory)) throw new Error(`${id}: collection 目录不存在`);
   const { chapters, files } = discoverCollectionSource(id, directory, chapterMetadata);
   const maps = readCollectionMaps(id, files);
   if (maps.length === 0) throw new Error(`${id}: collection 至少需要一张地图`);
-  return { id, name, description, cardSize, chapters, maps };
+  return { id, name, description, cardSize, visible, chapters, maps };
 }
 
 function readCollectionMaps(collectionId, files) {

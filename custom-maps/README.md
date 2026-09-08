@@ -4,7 +4,7 @@
 
 没有章节的地图直接放在 `custom-maps/<collection>/<map>.json`。章节地图放在 `custom-maps/<collection>/<chapter>/<map>.json`，例如 `custom-maps/loma-pushbox/01/01-01.json`。构建工具把 collection 下的一级目录识别为 chapter，chapter 目录内禁止继续嵌套目录。
 
-`collections.json` 中的 `chapters` 是可选的展示信息，只能为实际存在的 chapter 目录补充 `name` 和 `description`；未补充时使用目录 ID 作为章节名称。collection、chapter 和 map ID 都由路径决定，地图 JSON 不重复保存这些身份。
+`collections.json` 中的 `chapters` 是可选的展示信息，只能为实际存在的 chapter 目录补充 `name` 和 `description`；未补充时使用目录 ID 作为章节名称。`visible` 可取 `true`、`false` 或 `"dev"`，缺省时按 `true` 处理；`"dev"` 只在 `npm run dev` 生成的 discovery index 中展示。collection、chapter 和 map ID 都由路径决定，地图 JSON 不重复保存这些身份。
 
 构建工具把 collection discovery 写入 `assets/maps/index.json`，并把地图与展示 metadata 写入 `assets/maps/<collection>/`。地图可由 Editor 导入并直接 Play Test。
 

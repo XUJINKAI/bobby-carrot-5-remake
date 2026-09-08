@@ -24,6 +24,9 @@ const collectionsIndex = readJson("assets/maps/index.json");
 assertSchemaV1(collectionsIndex, "assets/maps/index.json");
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
   throw new Error("Runtime collection index 必须包含 original");
+for (const id of ["engine-lab", "original-patch"])
+  if (collectionsIndex.collections.some((collection) => collection.id === id))
+    throw new Error(`生产 collection index 不应展示开发集合 ${id}`);
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
@@ -63,10 +66,9 @@ const novoban = collectionIndexes.find(
 );
 if (novoban?.cardSize !== "medium")
   throw new Error("Novoban collection cardSize 必须为 medium");
-const engineLab = collectionIndexes.find(
-  (collection) => collection.id === "engine-lab",
-);
-if (engineLab?.cardSize !== "big")
+const engineLab = readJson("assets/maps/engine-lab/index.json");
+assertSchemaV1(engineLab, "assets/maps/engine-lab/index.json");
+if (engineLab.cardSize !== "big")
   throw new Error("Engine Lab collection cardSize 必须为 big");
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);

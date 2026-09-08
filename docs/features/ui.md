@@ -53,7 +53,7 @@ Bobby Carrot 5 Remake
 ├── Explore
 │   ├── Original Collection
 │   ├── Sokoban Collection
-│   ├── Engine Lab Collection
+│   ├── Engine Lab Collection（开发环境）
 │   └── Play
 ├── Editor
 │   ├── New Map
@@ -451,7 +451,7 @@ Level Browser：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/novoban-pushbox`、`/explore/loma-pushbox` 与 `/explore/engine-lab` 分别显示 Novoban、LOMA 和 Engine Lab 地图。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
+Explore 的一级导航是地图 collection。`/explore` 与 `/explore/original` 显示原版关卡，`/explore/novoban-pushbox` 与 `/explore/loma-pushbox` 分别显示 Novoban 和 LOMA 地图；开发环境额外展示 `/explore/engine-lab`。Original Tab 平铺 40 章，展示 400 个普通关卡和 80 个 Bonus 奖励关，并提供：
 
 - 最近浏览；
 - 随机一关；

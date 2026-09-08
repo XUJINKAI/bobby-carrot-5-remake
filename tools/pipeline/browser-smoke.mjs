@@ -73,17 +73,6 @@ try {
     "LOMA",
     'href="/explore/play/loma-pushbox/01-01"',
   ]);
-  await smoke(`${origin}/explore/engine-lab`, [
-    'class="explore-custom-collection"',
-    'data-card-size="big"',
-    "Portal Lab",
-    "Maximum Moves Lab",
-  ]);
-  await smoke(`${origin}/explore/play/engine-lab/portal`, [
-    'class="game-page"',
-    'id="game"',
-    "Portal Lab",
-  ]);
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',

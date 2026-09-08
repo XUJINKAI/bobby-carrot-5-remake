@@ -33,8 +33,11 @@ if (group === "original") {
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
   const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
-  if (action === "rebuild") rebuildAssets();
-  else if (action === "prepare") prepareAssets();
+  const options = {
+    includeDevCollections: process.argv.includes("--dev"),
+  };
+  if (action === "rebuild") rebuildAssets(options);
+  else if (action === "prepare") prepareAssets(options);
   else throw new Error("用法：node tools/cli.mjs assets prepare|rebuild");
 } else if (group === "dev") run(process.execPath, ["tools/pipeline/dev.mjs"]);
 else if (group === "build") run(process.execPath, ["tools/pipeline/build.mjs"]);

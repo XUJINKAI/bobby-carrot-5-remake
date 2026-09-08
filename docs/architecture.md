@@ -317,7 +317,7 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 ## Explore content / Custom Map Catalog
 
-Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序与说明：
+Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序、说明与 discovery 可见性：
 
 ```text
 custom-maps/<collection>/<map>.json
@@ -328,7 +328,7 @@ assets/maps/<collection>/index.json
 assets/maps/<collection>/<map>.json
 ```
 
-源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
+源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
 
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 
