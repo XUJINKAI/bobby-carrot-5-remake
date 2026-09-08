@@ -43,4 +43,4 @@ Object Layout 定义它占用的完整 footprint；Dragon 的鼠标落点定义�
 
 官方关卡进入 Editor 时只创建副本，原始 JAR / generated level 永远不会被 Editor 修改。
 
-`examples/mechanics-smoke.json` 是一个故意摆放多种机关的测试地图，可直接 Import 后用于 Engine 开发。
+`../tools/pipeline/mechanics-smoke.json` 是一个故意摆放多种机关的测试地图，可直接 Import 后用于 Engine 开发，并由浏览器冒烟脚本验证导入链路。

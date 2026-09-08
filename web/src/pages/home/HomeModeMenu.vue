@@ -2,6 +2,7 @@
 import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/editor";
 import { ref } from "vue";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const emit = defineEmits<{
   navigate: [path: string];
@@ -37,21 +38,27 @@ function serializeMap(value: unknown): string {
         href="/adventure"
         @click.prevent="emit('navigate', '/adventure')"
       >
-        <strong>冒险模式</strong><span>还原原版关卡体验</span><b>→</b>
+        <strong>冒险模式</strong>
+        <span>还原原版关卡体验</span>
+        <AppIcon name="next" />
       </a>
       <a
         class="home-mode-card"
         href="/explore"
         @click.prevent="emit('navigate', '/explore')"
       >
-        <strong>自由探索</strong><span>浏览原版与扩展地图集合</span><b>→</b>
+        <strong>自由探索</strong>
+        <span>浏览原版与扩展地图集合</span>
+        <AppIcon name="next" />
       </a>
       <a
         class="home-mode-card"
         href="/edit"
         @click.prevent="emit('navigate', '/edit')"
       >
-        <strong>地图编辑器</strong><span>创建或编辑已有地图，并分享给他人</span><b>→</b>
+        <strong>地图编辑器</strong>
+        <span>创建或编辑已有地图，并分享给他人</span>
+        <AppIcon name="next" />
       </a>
       <button
         class="home-mode-card"
@@ -59,7 +66,9 @@ function serializeMap(value: unknown): string {
         type="button"
         @click="importOpen = !importOpen"
       >
-        <strong>导入地图</strong><span>导入已有的地图数据</span><b>＋</b>
+        <strong>导入地图</strong>
+        <span>导入已有的地图数据</span>
+        <AppIcon name="place" />
       </button>
     </div>
     <a
@@ -67,7 +76,8 @@ function serializeMap(value: unknown): string {
       href="/embed"
       @click.prevent="emit('navigate', '/embed')"
     >
-      将自制地图内嵌到其他网页 →
+      <span>将自制地图内嵌到其他网页</span>
+      <AppIcon name="next" />
     </a>
     <div
       v-if="importOpen"
@@ -78,7 +88,9 @@ function serializeMap(value: unknown): string {
       <section class="home-import-dialog" role="dialog" aria-modal="true" aria-label="导入自定义地图">
         <header>
           <strong>导入自定义地图</strong>
-          <button type="button" aria-label="关闭" @click="importOpen = false">×</button>
+          <button type="button" aria-label="关闭" @click="importOpen = false">
+            <AppIcon name="close" />
+          </button>
         </header>
         <DataExchangePanel
           class="home-data-exchange"
@@ -163,7 +175,7 @@ function serializeMap(value: unknown): string {
   color: var(--bc-text);
 }
 
-.home-mode-card b {
+.home-mode-card :deep(.app-icon) {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: center;
@@ -172,6 +184,9 @@ function serializeMap(value: unknown): string {
 }
 
 .home-embed-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   justify-self: start;
   margin: 2px 2px 0;
   color: var(--bc-text-muted);

@@ -3,12 +3,20 @@ import { createDialogBehavior } from "@bobby/engine";
 import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
-import { globalActions, homeIdentity } from "../../app/pageChrome.js";
+import {
+  globalActions,
+  homeIdentity,
+  PROJECT_REPOSITORY_URL,
+  repositoryAction,
+} from "../../app/pageChrome.js";
 import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { configureShell } from "../../shell/shellBridge.js";
-import { getWebSettings } from "../../storage/settingsStorage.js";
+import {
+  getWebSettings,
+  updateWebSettings,
+} from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
 
@@ -25,25 +33,31 @@ export async function renderHome(
       visible: true,
       fixed: true,
       identity: homeIdentity(),
-      actions: globalActions(),
+      actions: [repositoryAction(), ...globalActions()],
     },
     bottomBar: {
       visible: true,
       fixed: false,
       info: [
         { text: "Bobby Carrot 5 Remake" },
-        { text: "XUJINKAI" },
-        { text: "License" },
-        { text: "Third-party Assets" },
+        {
+          text: "XUJINKAI",
+          href: "https://github.com/XUJINKAI",
+          external: true,
+        },
+        { text: "GitHub", href: PROJECT_REPOSITORY_URL, external: true },
       ],
     },
   });
   app.replaceChildren();
+  const initialScreenControlEnabled =
+    getWebSettings().controls.screenControlEnabled;
   const view = reactive<HomeViewState>({
     demoStatus: "方向键 / WASD 移动。Demo 视野固定，不响应滚轮缩放。",
     demoResult: null,
     deathReason: "",
     importFeedback: "",
+    screenControlEnabled: initialScreenControlEnabled,
   });
   let session: Awaited<ReturnType<typeof createGameSession>> | null = null;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
@@ -56,6 +70,16 @@ export async function renderHome(
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => session?.game.restart(),
+    onScreenControl: () => {
+      const enabled = !view.screenControlEnabled;
+      updateWebSettings((settings) => ({
+        ...settings,
+        controls: { ...settings.controls, screenControlEnabled: enabled },
+      }));
+      window.dispatchEvent(
+        new CustomEvent("screen-control-change", { detail: { enabled } }),
+      );
+    },
     onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
       importHomeMap(level, view, navigate),
   });
@@ -102,7 +126,7 @@ export async function renderHome(
           zoom: false,
           debug: false,
           screenJoystick: {
-            enabled: getWebSettings().controls.screenControlEnabled,
+            enabled: initialScreenControlEnabled,
           },
         },
       },
@@ -143,6 +167,7 @@ export async function renderHome(
     const enabled = Boolean(
       (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
     );
+    view.screenControlEnabled = enabled;
     session!.input.setScreenJoystickEnabled(enabled);
   };
   window.addEventListener("shell-dialog-open", onDialogOpen);

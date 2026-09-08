@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { explorePlayPath } from "../../app/routes.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 defineProps<{
   collection: string;
   title: string;
   description: string;
-  summary: string;
+  mapCount: number;
   lastMapId: string;
   lastMapLabel: string;
 }>();
@@ -17,21 +18,21 @@ const emit = defineEmits<{
 <template>
   <section class="level-browser-head">
     <div class="section-title">
-      <div>
-        <div class="eyebrow">EXPLORE MODE</div>
+      <div class="eyebrow">EXPLORE MODE</div>
+      <div class="collection-title-line">
         <h1>{{ title }}</h1>
-        <p>{{ description }}</p>
+        <span class="level-browser-count">{{ mapCount }} 关</span>
       </div>
-      <div class="level-browser-summary muted">
-        {{ summary }}
-      </div>
+      <p>{{ description }}</p>
     </div>
     <div class="level-browser-actions">
-      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
-        继续游玩 · {{ lastMapLabel }}
-      </button>
       <button id="random-level" class="ghost-btn" @click="emit('random')">
+        <AppIcon name="shuffle" />
         随机关卡
+      </button>
+      <button class="primary-btn" @click="emit('navigate', explorePlayPath({ collection, id: lastMapId }))">
+        <AppIcon name="play" weight="fill" />
+        继续游玩 · {{ lastMapLabel }}
       </button>
     </div>
   </section>
@@ -47,10 +48,13 @@ const emit = defineEmits<{
 }
 
 .section-title {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
   margin: 0;
+}
+
+.collection-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
 }
 
 .section-title h1 {
@@ -63,10 +67,24 @@ const emit = defineEmits<{
   color: var(--muted);
 }
 
+.level-browser-count {
+  color: var(--bc-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
 .level-browser-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.level-browser-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 @media (max-width: 700px) {

@@ -17,7 +17,6 @@ import {
   type PageController,
 } from "../../app/pageContracts.js";
 import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
-import { chapterStars } from "../../services/catalog/catalogPresentation.js";
 import { configureShell, type ShellConfig } from "../../shell/shellBridge.js";
 import { globalActions, pageIdentity } from "../../app/pageChrome.js";
 import AdventureChapterPage from "./AdventureChapterPage.vue";
@@ -61,7 +60,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     return {
       number,
       title: chapter.name,
-      stars: chapterStars(chapter.difficulty),
+      difficulty: chapter.difficulty,
       completed: isAdventureChapterCompleted(save, number),
     };
   });
@@ -99,7 +98,7 @@ export function renderAdventureChapter(
       chapterNumber,
       title: chapter.name,
       description: chapter.description,
-      stars: chapterStars(chapter.difficulty),
+      difficulty: chapter.difficulty,
       rows,
       onNavigate: navigate,
     },

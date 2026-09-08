@@ -4,6 +4,7 @@ import type { AdventureHomeView } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
 import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
 import AdventureViewport from "./AdventureViewport.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{ view: AdventureHomeView; images: ImageManager }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
@@ -24,28 +25,34 @@ const emit = defineEmits<{ navigate: [path: string] }>();
         >
           <strong>继续冒险</strong>
           <span>{{ view.resumeLevelId.toUpperCase() }} · {{ view.resumeChapterTitle }}</span>
-          <b>→</b>
+          <AppIcon name="next" />
         </a>
         <a
           class="adventure-menu-card"
           href="/adventure/chapters"
           @click.prevent="emit('navigate', '/adventure/chapters')"
         >
-          <strong>章节选择</strong><span>选择章节与已解锁关卡</span><b>→</b>
+          <strong>章节选择</strong>
+          <span>选择章节与已解锁关卡</span>
+          <AppIcon name="next" />
         </a>
         <a
           class="adventure-menu-card"
           href="/adventure/beaver-shop"
           @click.prevent="emit('navigate', '/adventure/beaver-shop')"
         >
-          <strong>海狸商店</strong><span>购买冒险模式全局物品</span><b>→</b>
+          <strong>海狸商店</strong>
+          <span>购买冒险模式全局物品</span>
+          <AppIcon name="next" />
         </a>
         <a
           class="adventure-menu-card"
           href="/adventure/night-train"
           @click.prevent="emit('navigate', '/adventure/night-train')"
         >
-          <strong>夜间列车</strong><span>Dream Machine · Cloud 9</span><b>→</b>
+          <strong>夜间列车</strong>
+          <span>Dream Machine · Cloud 9</span>
+          <AppIcon name="next" />
         </a>
       </nav>
       <section class="adventure-wallet" aria-label="冒险钱包">
@@ -144,7 +151,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   color: #dbf4f0;
 }
 
-.adventure-menu-card b {
+.adventure-menu-card :deep(.app-icon) {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: center;

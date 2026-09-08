@@ -7,6 +7,7 @@ import type {
 import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import EditorEntityFields from "./EditorEntityFields.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   model: InspectorModel;
@@ -60,7 +61,7 @@ const emit = defineEmits<{
             :title="`删除选区内全部 ${group.label}`"
             @click="emit('deleteType', group.type)"
           >
-            ✕
+            <AppIcon name="delete" />
           </button>
         </header>
         <EditorEntityFields

@@ -5,6 +5,7 @@ import type {
   MapCollectionMap,
 } from "../../services/catalog/catalog.js";
 import ExploreMapGrid from "./ExploreMapGrid.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{
   collectionId: string;
@@ -15,9 +16,6 @@ defineProps<{
 }>();
 const emit = defineEmits<{ navigate: [path: string] }>();
 
-function stars(value: number | undefined): string {
-  return value ? "★".repeat(value) : "";
-}
 </script>
 
 <template>
@@ -25,15 +23,26 @@ function stars(value: number | undefined): string {
     <header class="chapter-head">
       <div class="chapter-title-line">
         <span class="chapter-id">{{ chapter.id }}</span>
-        <span class="chapter-separator">·</span>
-        <span class="chapter-name">{{ chapter.name }}</span>
+        <template v-if="chapter.name !== undefined">
+          <span class="chapter-separator">·</span>
+          <span class="chapter-name">{{ chapter.name }}</span>
+        </template>
+      </div>
+      <div class="chapter-meta">
         <span
           v-if="chapter.difficulty"
           class="chapter-stars"
           :title="`章节难度 ${chapter.difficulty} 星`"
-        >{{ stars(chapter.difficulty) }}</span>
+        >
+          <AppIcon
+            v-for="star in chapter.difficulty"
+            :key="star"
+            name="star"
+            weight="fill"
+          />
+        </span>
+        <span class="muted chapter-count">{{ maps.length }} 关</span>
       </div>
-      <span class="muted chapter-count">{{ maps.length }} 关</span>
     </header>
     <ExploreMapGrid
       :collection-id="collectionId"
@@ -83,11 +92,21 @@ function stars(value: number | undefined): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-transform: uppercase;
+}
+
+.chapter-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .chapter-stars {
+  display: inline-flex;
+  gap: 1px;
   letter-spacing: 0.04em;
+  text-align: right;
 }
 
 @media (max-width: 700px) {
@@ -97,6 +116,12 @@ function stars(value: number | undefined): string {
 
   .chapter-title-line {
     flex-wrap: wrap;
+  }
+
+  .chapter-meta {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
   }
 }
 </style>

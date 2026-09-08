@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { AudioRuntime } from "@bobby/engine";
-import { onMounted, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useGlobalSettings } from "./settings/useGlobalSettings.js";
-import { localizeGlobalActions } from "./pageChrome.js";
+import { localizeGlobalActions, musicActionIcon } from "./pageChrome.js";
 import GlobalDialogLayer from "./dialogs/GlobalDialogLayer.vue";
 import QuickSettingsPanel from "./dialogs/QuickSettingsPanel.vue";
 import AppBottomBar from "../shell/AppBottomBar.vue";
 import AppTopBar from "../shell/AppTopBar.vue";
 import type { Navigate } from "./pageContracts.js";
 import type { ShellViewState } from "../shell/shellBridge.js";
+import { webT } from "../i18n/webI18n.js";
 
 const props = defineProps<{
   shell: ShellViewState;
@@ -19,7 +20,13 @@ const props = defineProps<{
 const content = ref<HTMLDivElement | null>(null);
 const quickSettingsOpen = ref(false);
 const helpOpen = ref(false);
+const musicInteractionRequired = ref(audioInteractionRequired());
 const settings = useGlobalSettings(props.audio);
+const disposeMusicInteraction = props.audio.onMusicInteractionRequiredChange(
+  (required) => {
+    musicInteractionRequired.value = required;
+  },
+);
 
 function openSettings(): void {
   settings.refresh();
@@ -78,6 +85,7 @@ function shellActions() {
   const bottomBar = props.shell.config.bottomBar;
   return [
     ...(topBar?.back ? [topBar.back] : []),
+    ...(topBar?.leading ?? []),
     ...(topBar?.commands ?? []),
     ...(topBar?.actions ?? []),
     ...(bottomBar?.leading ?? []),
@@ -87,7 +95,21 @@ function shellActions() {
 
 function updateActionPressed(id: string, pressed: boolean): void {
   const target = shellActions().find((item) => item.id === id);
-  if (target) target.pressed = pressed;
+  if (!target) return;
+  target.pressed = pressed;
+  if (id === "music") target.icon = musicActionIcon(pressed);
+}
+
+function audioInteractionRequired(): boolean {
+  return props.audio.isMusicInteractionRequired();
+}
+
+function updateMusicInteractionTip(): void {
+  const target = shellActions().find((item) => item.id === "music");
+  if (!target) return;
+  if (musicInteractionRequired.value)
+    target.tip = webT("shell.musicInteractionTip");
+  else delete target.tip;
 }
 
 watch(
@@ -97,12 +119,20 @@ watch(
 );
 
 watch(
-  [() => settings.state.locale, () => props.shell.config],
-  () => localizeGlobalActions(shellActions()),
+  [
+    () => settings.state.locale,
+    () => props.shell.config,
+    musicInteractionRequired,
+  ],
+  () => {
+    localizeGlobalActions(shellActions());
+    updateMusicInteractionTip();
+  },
   { immediate: true },
 );
 
 defineExpose({ openSettings });
+onBeforeUnmount(disposeMusicInteraction);
 onMounted(() => {
   if (content.value) props.onContentReady(content.value);
 });

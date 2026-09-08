@@ -15,6 +15,7 @@ const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   navigate: [path: string];
   restart: [];
+  screenControl: [];
   importMap: [level: EditorMap];
 }>();
 
@@ -86,6 +87,7 @@ onBeforeUnmount(() => {
             :state="state"
             @ready="emit('ready', $event)"
             @restart="emit('restart')"
+            @screen-control="emit('screenControl')"
             @adventure="emit('navigate', '/adventure')"
           />
         </div>

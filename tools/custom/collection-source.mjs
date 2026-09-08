@@ -25,13 +25,16 @@ export function discoverCollectionSource(collectionId, directory, rawChapterMeta
 
   const files = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-    .map((entry) => ({ directory, filename: entry.name }));
+    .map((entry) => ({ directory, filename: entry.name }))
+    .sort((left, right) => left.filename.localeCompare(right.filename));
   const chapters = chapterIds.map((id) => {
     const metadata = chapterMetadata.get(id);
     return {
       id,
-      name: metadata?.name ?? id,
-      description: metadata?.description ?? "",
+      ...(metadata?.name !== undefined ? { name: metadata.name } : {}),
+      ...(metadata?.description !== undefined
+        ? { description: metadata.description }
+        : {}),
     };
   });
 
@@ -49,7 +52,8 @@ export function discoverCollectionSource(collectionId, directory, rawChapterMeta
         directory: chapterDirectory,
         filename: entry.name,
         chapter: chapter.id,
-      })));
+      }))
+      .sort((left, right) => left.filename.localeCompare(right.filename)));
   }
 
   return { chapters, files };

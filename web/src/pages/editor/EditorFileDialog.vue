@@ -4,6 +4,7 @@ import { computed, reactive, watch } from "vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { encodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const props = defineProps<{ open: boolean; level: Readonly<EditorMap> }>();
 const emit = defineEmits<{
@@ -73,7 +74,12 @@ function metadataValue(): { name: string; author?: string; note?: string } {
 <template>
   <div v-if="open" class="editor-dialog-layer" role="presentation" @click.self="emit('close')">
     <section class="editor-dialog" role="dialog" aria-modal="true" aria-label="地图文件">
-      <header><strong>地图文件</strong><button class="editor-mini-btn" type="button" @click="emit('close')">×</button></header>
+      <header>
+        <strong>地图文件</strong>
+        <button class="editor-mini-btn" type="button" aria-label="关闭" @click="emit('close')">
+          <AppIcon name="close" />
+        </button>
+      </header>
       <label class="editor-field"><span>名称</span><input v-model="metadata.name" maxlength="120"></label>
       <label class="editor-field"><span>作者</span><input v-model="metadata.author" maxlength="80" placeholder="可选"></label>
       <label class="editor-field"><span>注记</span><textarea v-model="metadata.note" maxlength="500" rows="4" placeholder="可选"></textarea></label>

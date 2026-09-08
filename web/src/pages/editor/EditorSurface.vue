@@ -15,6 +15,7 @@ import type { EntityCatalog, ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import { computed, ref } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const props = defineProps<{
   brush: SurfaceBrush;
@@ -123,9 +124,13 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
     <div class="editor-palette-head">
       <div class="editor-panel-title">Surface</div>
       <div class="editor-palette-zoom">
-        <button class="editor-mini-btn" type="button" @click="emit('resize', -1)">−</button>
+        <button class="editor-mini-btn" type="button" aria-label="缩小素材" @click="emit('resize', -1)">
+          <AppIcon name="minus" />
+        </button>
         <span>{{ size }}</span>
-        <button class="editor-mini-btn" type="button" @click="emit('resize', 1)">+</button>
+        <button class="editor-mini-btn" type="button" aria-label="放大素材" @click="emit('resize', 1)">
+          <AppIcon name="place" />
+        </button>
       </div>
     </div>
 

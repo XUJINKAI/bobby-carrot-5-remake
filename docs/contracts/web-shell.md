@@ -13,6 +13,7 @@ interface ShellConfig {
     fixed?: boolean;
     identity?: ShellIdentity;
     back?: ShellAction;
+    leading?: ShellAction[];
     commands?: ShellAction[];
     actions?: ShellAction[];
   };
@@ -33,12 +34,12 @@ interface ShellConfig {
 TopBar 使用固定三列：
 
 ```text
-Identity + Back | Commands | Actions / Overflow
+Identity + Back + Leading | Commands | Actions / Overflow
 ```
 
 三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。移动端仍使用同一套 DOM 和三列结构。
 
-`ShellIdentity` 可以声明 icon、产品名、上下文名、首页链接和导航 menu。CSS 按可用宽度依次收敛产品名、上下文名和 menu 指示，不由页面判断 viewport。
+`ShellIdentity` 可以声明 icon、产品名、可选状态文字、上下文名、首页链接和导航 menu。CSS 按可用宽度依次收敛产品名、状态文字、上下文名和 menu 指示，不由页面判断 viewport。首页使用状态文字显示当前开发状态，其它页面不提供该字段。
 
 ## Action 与 Overflow
 
@@ -58,6 +59,12 @@ interface ShellAction {
 
 Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动端保留，`overflow` 收入自动生成的菜单，`hide` 在移动端隐藏。Overflow 菜单由当前配置自动派生。
 
+`href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换。
+
+Action 可以携带短暂 `tip`，Shell 将其锚定到对应控件下方。提示内容与出现条件由 App 或页面决定，Shell 不解释其业务语义。
+
+`ShellIcon` 与页面内图标统一使用 `web/src/shared/icons/AppIcon.vue` 暴露的产品语义名称。业务组件不直接依赖第三方图标组件；Phosphor 的名称映射、默认 weight 与未来替换都集中在该适配层。
+
 ## BottomBar
 
 BottomBar 使用固定三段：
@@ -66,7 +73,7 @@ BottomBar 使用固定三段：
 Leading | Info | Trailing
 ```
 
-`leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
+`leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接，并可带语义图标。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
 
 ## 全局功能与 Help
 

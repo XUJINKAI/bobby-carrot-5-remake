@@ -9,6 +9,7 @@ import {
 const WEB_CATALOGS = {
   "zh-CN": {
     "shell.music": "音乐",
+    "shell.musicInteractionTip": "点击页面即可播放音乐",
     "shell.settings": "设置",
     "shell.help": "帮助",
     "settings.quickTitle": "快速设置",
@@ -26,6 +27,7 @@ const WEB_CATALOGS = {
   },
   en: {
     "shell.music": "Music",
+    "shell.musicInteractionTip": "Click the page to play music",
     "shell.settings": "Settings",
     "shell.help": "Help",
     "settings.quickTitle": "Quick settings",

@@ -4,9 +4,10 @@ import type {
   MapCollectionSummary,
 } from "../../services/catalog/catalog.js";
 import type { ResolvedMapCollection } from "../../app/pageContracts.js";
+import { computed } from "vue";
 import ExploreChapterCard from "./ExploreChapterCard.vue";
 import ExploreHeader from "./ExploreHeader.vue";
-import ExploreCustomCollection from "./ExploreCustomCollection.vue";
+import ExploreUngroupedMaps from "./ExploreUngroupedMaps.vue";
 import ExploreTabs from "./ExploreTabs.vue";
 
 const props = defineProps<{
@@ -22,11 +23,9 @@ const emit = defineEmits<{
   random: [];
 }>();
 
-function summary(): string {
-  return props.activeCollection.chapters.length > 0
-    ? `${props.activeCollection.chapters.length} 章 · ${props.activeCollection.maps.length} 关`
-    : `${props.activeCollection.maps.length} 张地图`;
-}
+const unchapteredMaps = computed(() =>
+  props.activeCollection.maps.filter((map) => map.chapter === undefined),
+);
 </script>
 
 <template>
@@ -40,34 +39,38 @@ function summary(): string {
       :collection="activeCollection.id"
       :title="activeCollection.name"
       :description="activeCollection.description ?? ''"
-      :summary="summary()"
+      :map-count="activeCollection.maps.length"
       :last-map-id="lastMapId"
       :last-map-label="lastMapLabel"
       @navigate="emit('navigate', $event)"
       @random="emit('random')"
     />
-    <div v-if="activeCollection.chapters.length > 0" class="chapter-list">
-      <ExploreChapterCard
-        v-for="chapter in activeCollection.chapters"
-        :key="chapter.id"
-        :collection-id="activeCollection.id"
-        :chapter="chapter"
-        :maps="mapsByChapter.get(chapter.id) ?? []"
+    <div class="collection-sections">
+      <ExploreUngroupedMaps
+        v-if="unchapteredMaps.length > 0"
+        :collection="activeCollection"
+        :maps="unchapteredMaps"
         :completed-ids="completedIds"
-        :card-size="activeCollection.cardSize"
         @navigate="emit('navigate', $event)"
       />
+      <div v-if="activeCollection.chapters.length > 0" class="chapter-list">
+        <ExploreChapterCard
+          v-for="chapter in activeCollection.chapters"
+          :key="chapter.id"
+          :collection-id="activeCollection.id"
+          :chapter="chapter"
+          :maps="mapsByChapter.get(chapter.id) ?? []"
+          :completed-ids="completedIds"
+          :card-size="activeCollection.cardSize"
+          @navigate="emit('navigate', $event)"
+        />
+      </div>
     </div>
-    <ExploreCustomCollection
-      v-else
-      :collection="activeCollection"
-      :completed-ids="completedIds"
-      @navigate="emit('navigate', $event)"
-    />
   </div>
 </template>
 
 <style scoped>
+.collection-sections,
 .chapter-list {
   display: grid;
   gap: 14px;

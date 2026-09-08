@@ -220,7 +220,10 @@ interface MapDocument extends LevelMap {
 }
 ```
 
-`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和下一张导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`，地图注记使用顶层 `LevelMap.note`。
+`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`，地图注记使用顶层 `LevelMap.note`。
+
+> `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
+> [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
 
 `@bobby/model` 的 `parseMapDocument()` 是持久化文档的严格入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口；未知 Entity、未知字段、错误字段值、越界坐标和非法规则都会被拒绝。
 
@@ -238,7 +241,7 @@ Explore collection metadata 位于：
 assets/maps/<collection>/index.json
 ```
 
-它只负责浏览 UI：collection 名称、说明、filter 定义、chapter 分组和 map 列表。直接 Play 不读取该文件。
+它只负责浏览 UI：collection 名称、说明、filter 定义、chapter 分组和 map 列表。Explore Play 读取当前 collection 的该文件，以解析上一关、下一关与地图类型；地图内容仍从独立 MapDocument 加载。
 
 Adventure Campaign topology 位于：
 

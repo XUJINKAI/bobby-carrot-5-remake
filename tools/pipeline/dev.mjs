@@ -8,7 +8,7 @@ const requestedMode = process.argv[2] ?? "web",
   noBuild = process.argv.includes("--no-build"),
   staticOnly = process.argv.includes("--static");
 if (!noBuild)
-  run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
+  run(process.execPath, ["tools/cli.mjs", "assets", "prepare", "--dev"]);
 const base = path.join(root, "dist"),
   port = Number(process.env.PORT ?? (mode === "editor" ? 5175 : 5173)),
   devHost = process.env.BC5R_DEV_HOST ?? "0.0.0.0";

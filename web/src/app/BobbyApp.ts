@@ -292,19 +292,30 @@ export class BobbyApp {
     }
     try {
       const resolved = await resolveMapDocument(ref);
-      const collection = context.collections.find((item) => item.id === ref.collection);
-      const currentIndex = collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
+      const collection = context.collections.find(
+        (item) => item.id === ref.collection,
+      ) ?? {
+        id: ref.collection,
+        ...(await fetchJson<MapCollectionIndex>(
+          siteUrl(`assets/maps/${ref.collection}/index.json`),
+        )),
+      };
+      if (collection.schemaVersion !== 1)
+        throw new Error(`${collection.id}: collection schemaVersion 必须为 1`);
+      const currentIndex = collection.maps.findIndex(
+        (item) => item.id === ref.id,
+      );
+      const explorePreviousMapId =
+        currentIndex > 0 ? collection.maps[currentIndex - 1]?.id : undefined;
       const exploreNextMapId =
-        currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
-      const exploreMapKind =
-        currentIndex >= 0 ? collection?.maps[currentIndex]?.kind : undefined;
+        currentIndex >= 0 ? collection.maps[currentIndex + 1]?.id : undefined;
       this.controller = await renderGamePage({
         ...context,
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
+        ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
-        ...(exploreMapKind ? { exploreMapKind } : {}),
         mode: "explore",
       });
     } catch {

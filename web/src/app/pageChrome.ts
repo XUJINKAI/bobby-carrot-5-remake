@@ -6,11 +6,15 @@ import type {
   ShellIdentity,
 } from "../shell/shellBridge.js";
 
+export const PROJECT_REPOSITORY_URL =
+  "https://github.com/XUJINKAI/bobby-carrot-5-remake";
+
 export function homeIdentity(): ShellIdentity {
   return {
     icon: siteUrl("assets/art/hd/icon.png"),
     productName: "Bobby Carrot 5 Remake",
     productNameVisible: true,
+    statusText: "开发中",
     href: "/",
   };
 }
@@ -48,10 +52,29 @@ export function pageIdentity(
 
 export function globalActions(): ShellAction[] {
   return [
-    translatedGlobalAction("music", "music", "shell.music"),
+    translatedGlobalAction("music", "sound-on", "shell.music"),
     translatedGlobalAction("settings", "settings", "shell.settings"),
     translatedGlobalAction("help", "help", "shell.help"),
   ];
+}
+
+export function musicActionIcon(
+  musicEnabled: boolean,
+): "sound-on" | "sound-off" {
+  return musicEnabled ? "sound-on" : "sound-off";
+}
+
+export function repositoryAction(): ShellAction {
+  return {
+    id: "github-repository",
+    icon: "github",
+    cornerIcon: "external",
+    label: "GitHub",
+    title: "打开 GitHub 仓库",
+    href: PROJECT_REPOSITORY_URL,
+    external: true,
+    collapse: "overflow",
+  };
 }
 
 export function localizeGlobalActions(actions: readonly ShellAction[]): void {
@@ -107,7 +130,7 @@ export const EDITOR_HELP: HelpDescriptor = {
 
 function translatedGlobalAction(
   id: "music" | "settings" | "help",
-  icon: "music" | "settings" | "help",
+  icon: NonNullable<ShellAction["icon"]>,
   key: WebTranslationKey,
 ): ShellAction {
   const label = webT(key);
@@ -116,7 +139,7 @@ function translatedGlobalAction(
     icon,
     label,
     title: label,
-    collapse: "overflow",
+    collapse: id === "music" ? "keep" : "overflow",
   };
 }
 

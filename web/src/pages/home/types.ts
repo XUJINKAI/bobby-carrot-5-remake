@@ -3,4 +3,5 @@ export interface HomeViewState {
   demoResult: "complete" | "death" | null;
   deathReason: string;
   importFeedback: string;
+  screenControlEnabled: boolean;
 }

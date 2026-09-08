@@ -13,6 +13,8 @@ export type MapCollectionIcon =
   | { type: "text"; value: string };
 
 export type MapCollectionCardSize = "small" | "medium" | "big";
+export type CollectionManifestVisibility = boolean | "dev";
+export type MapCollectionFilterSelection = "single" | "multiple";
 
 export interface MapCollectionFilterOption {
   id: string;
@@ -23,23 +25,22 @@ export interface MapCollectionFilterOption {
 export interface MapCollectionFilter {
   id: string;
   name: string;
+  selection: MapCollectionFilterSelection;
   options: MapCollectionFilterOption[];
 }
 
 export interface MapCollectionChapter {
   id: string;
-  name: string;
+  name?: string;
   description?: string;
   difficulty?: number;
 }
 
-/** Runtime collection entry；Original 专属 kind/filters 是可选扩展。 */
 export interface MapCollectionMap {
   id: string;
   name: string;
   description?: string;
   chapter?: string;
-  kind?: string;
   filters?: Record<string, string[]>;
 }
 
@@ -58,7 +59,6 @@ export interface MapCollectionSummary {
   /** 用于解析 assets/maps/<id>/index.json 的资源路径 ID。 */
   id: string;
   name: string;
-  description?: string;
 }
 
 /** assets/maps/index.json；collections[] 数组顺序即展示与导航顺序。 */
@@ -74,13 +74,14 @@ export interface CollectionManifestChapter {
 
 /**
  * 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。
- * chapters 只补充一级 chapter 目录的展示信息，省略时使用目录 ID 作为名称。
+ * chapters 只补充一级 chapter 目录的展示信息；省略的字段不进入 runtime asset。
  */
 export interface CollectionManifestEntry {
   id: string;
   name: string;
   description?: string;
   cardSize?: MapCollectionCardSize;
+  visible?: CollectionManifestVisibility;
   chapters?: Record<string, CollectionManifestChapter>;
 }
 

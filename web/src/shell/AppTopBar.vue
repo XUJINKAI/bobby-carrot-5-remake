@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import type { ShellConfig } from "./shellBridge.js";
 import ShellActionButton from "./ShellActionButton.vue";
 import ShellIdentity from "./ShellIdentity.vue";
+import AppIcon from "../shared/icons/AppIcon.vue";
 
 const props = defineProps<{ config: NonNullable<ShellConfig["topBar"]> }>();
 const emit = defineEmits<{ navigate: [path: string]; action: [id: string] }>();
@@ -24,7 +25,7 @@ function action(id: string): void {
     <div class="shell-topbar-left">
       <ShellIdentity v-if="config.identity" :identity="config.identity" @navigate="emit('navigate', $event)" />
       <ShellActionButton v-if="config.back" :action="config.back" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
-      <span class="shell-development-notice">本项目还在开发中</span>
+      <ShellActionButton v-for="item in config.leading ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
     </div>
     <div class="shell-topbar-center">
       <template v-for="item in config.commands ?? []" :key="item.id">
@@ -35,7 +36,9 @@ function action(id: string): void {
     <div class="shell-topbar-right">
       <ShellActionButton v-for="item in config.actions ?? []" :key="item.id" :action="item" @action="emit('action', $event)" @navigate="emit('navigate', $event)" />
       <details v-if="overflowActions.length" class="shell-overflow" :open="overflowOpen">
-        <summary title="更多操作" aria-label="更多操作" @click.prevent="overflowOpen = !overflowOpen">☰</summary>
+        <summary title="更多操作" aria-label="更多操作" @click.prevent="overflowOpen = !overflowOpen">
+          <AppIcon name="menu" />
+        </summary>
         <div class="shell-overflow-menu">
           <ShellActionButton v-for="item in overflowActions" :key="item.id" :action="item" overflow @action="action" @navigate="emit('navigate', $event)" />
         </div>
@@ -69,12 +72,6 @@ function action(id: string): void {
 
 .shell-topbar-left {
   justify-content: flex-start;
-}
-
-.shell-development-notice {
-  color: red;
-  font-size: 0.9rem;
-  white-space: nowrap;
 }
 
 .shell-topbar-center {

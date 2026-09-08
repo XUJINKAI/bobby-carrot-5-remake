@@ -9,6 +9,8 @@ export interface AudioRuntimeOptions {
   crossfadeMs?: number;
 }
 
+export type MusicInteractionRequiredListener = (required: boolean) => void;
+
 interface PlayingMusic {
   id: string;
   loop: boolean;
@@ -35,6 +37,8 @@ export class AudioRuntime implements AudioBackend {
   private readonly baseUrl: URL;
   private readonly crossfadeSeconds: number;
   private readonly buffers = new Map<string, Promise<AudioBuffer>>();
+  private readonly musicInteractionListeners =
+    new Set<MusicInteractionRequiredListener>();
   private context: AudioContext | null = null;
   private musicGainNode: GainNode | null = null;
   private soundGainNode: GainNode | null = null;
@@ -45,6 +49,7 @@ export class AudioRuntime implements AudioBackend {
   private currentMusic: PlayingMusic | null = null;
   private requestSerial = 0;
   private destroyed = false;
+  private musicInteractionRequired = false;
 
   constructor(options: AudioRuntimeOptions = {}) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl ?? defaultAudioBaseUrl());
@@ -73,12 +78,14 @@ export class AudioRuntime implements AudioBackend {
       offset: 0,
     };
     if (this.musicEnabled) void this.startCurrentMusic(false);
+    this.updateMusicInteractionRequired();
   }
 
   stopMusic(): void {
     this.requestSerial += 1;
     this.stopCurrentSource();
     this.currentMusic = null;
+    this.updateMusicInteractionRequired();
   }
 
   playSound(id: string): void {
@@ -129,13 +136,26 @@ export class AudioRuntime implements AudioBackend {
       if (this.currentMusic) this.currentMusic.offset = this.currentPosition();
       this.requestSerial += 1;
       this.stopCurrentSource();
+      this.updateMusicInteractionRequired();
       return;
     }
     if (this.currentMusic) void this.startCurrentMusic(false);
+    this.updateMusicInteractionRequired();
   }
 
   isMusicEnabled(): boolean {
     return this.musicEnabled;
+  }
+
+  isMusicInteractionRequired(): boolean {
+    return this.musicInteractionRequired;
+  }
+
+  onMusicInteractionRequiredChange(
+    listener: MusicInteractionRequiredListener,
+  ): () => void {
+    this.musicInteractionListeners.add(listener);
+    return () => this.musicInteractionListeners.delete(listener);
   }
 
   setMusicGain(gain: number): void {
@@ -159,7 +179,10 @@ export class AudioRuntime implements AudioBackend {
   resume(): void {
     if (this.destroyed) return;
     void this.ensureContext()
-      .then((context) => context.resume())
+      .then(async (context) => {
+        await context.resume();
+        this.updateMusicInteractionRequired();
+      })
       .catch(() => undefined);
   }
 
@@ -172,6 +195,7 @@ export class AudioRuntime implements AudioBackend {
     this.context = null;
     this.musicGainNode = null;
     this.soundGainNode = null;
+    this.musicInteractionListeners.clear();
     if (context) void context.close().catch(() => undefined);
   }
 
@@ -301,7 +325,25 @@ export class AudioRuntime implements AudioBackend {
     this.context = context;
     this.musicGainNode = musicGain;
     this.soundGainNode = soundGain;
+    context.addEventListener("statechange", this.onContextStateChange);
+    this.updateMusicInteractionRequired();
     return Promise.resolve(context);
+  }
+
+  private readonly onContextStateChange = (): void => {
+    this.updateMusicInteractionRequired();
+  };
+
+  private updateMusicInteractionRequired(): void {
+    const required = Boolean(
+      !this.destroyed &&
+      this.musicEnabled &&
+      this.currentMusic &&
+      this.context?.state === "suspended",
+    );
+    if (required === this.musicInteractionRequired) return;
+    this.musicInteractionRequired = required;
+    for (const listener of this.musicInteractionListeners) listener(required);
   }
 
   private requireMusicGainNode(): GainNode {

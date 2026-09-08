@@ -1,4 +1,6 @@
-export type ShellIcon = "back" | "edit" | "erase" | "fill" | "help" | "info" | "inspector" | "menu" | "music" | "palette" | "place" | "play" | "redo" | "restart" | "select" | "settings" | "share" | "stop" | "undo";
+import type { AppIconName } from "../shared/icons/types.js";
+
+export type ShellIcon = AppIconName;
 
 export interface ShellMenuItem {
   label: string;
@@ -9,6 +11,7 @@ export interface ShellMenuItem {
 export interface ShellIdentity {
   icon: string;
   productName?: string;
+  statusText?: string;
   contextName?: string;
   productNameVisible?: boolean;
   contextNameVisible?: boolean;
@@ -20,18 +23,23 @@ export interface ShellAction {
   id: string;
   label?: string;
   icon?: ShellIcon;
+  cornerIcon?: ShellIcon;
   title?: string;
   href?: string;
+  external?: boolean;
   collapse?: "keep" | "overflow" | "hide";
   disabled?: boolean;
   pressed?: boolean;
+  tip?: string;
   separatorBefore?: boolean;
   badge?: { label: string; title?: string; className?: string };
 }
 
 export interface ShellInfo {
   text: string;
+  icon?: AppIconName;
   href?: string;
+  external?: boolean;
 }
 
 export interface ShellConfig {
@@ -40,6 +48,7 @@ export interface ShellConfig {
     fixed?: boolean;
     identity?: ShellIdentity;
     back?: ShellAction;
+    leading?: ShellAction[];
     commands?: ShellAction[];
     actions?: ShellAction[];
   };
@@ -121,7 +130,7 @@ export function mergeShellRuntimeWarnings(
     ...config,
     bottomBar: {
       ...bottomBar,
-      info: [...info, { text: `⚠ ${first}${suffix}` }],
+      info: [...info, { text: `${first}${suffix}`, icon: "warning" }],
     },
   };
 }

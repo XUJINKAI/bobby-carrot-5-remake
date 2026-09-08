@@ -28,10 +28,12 @@ assets/
 {
   "schemaVersion": 1,
   "collections": [
-    { "id": "original", "name": "原版关卡", "description": "...", "order": 0 }
+    { "id": "original", "name": "原版关卡" }
   ]
 }
 ```
+
+该索引由总资产流水线在 Original 与 custom collection 均生成后统一写入。每个 discovery 项只包含 `id` 与 `name`；description 等完整展示信息只存在于对应 collection 的详细索引。
 
 ## `maps/<collection>/index.json`
 
@@ -40,7 +42,6 @@ assets/
 ```json
 {
   "schemaVersion": 1,
-  "id": "original",
   "name": "原版关卡",
   "description": "...",
   "cardSize": "small",
@@ -54,9 +55,20 @@ assets/
 
 `cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
-`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。chapter 的 `name` 与 `description` 也只在源 manifest 定义时生成并按原值展示；目录只提供 `id`。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+
+Original collection 在 40 个正式章节后追加 ID 为 `special-scenes` 的普通 chapter
+分组，5 张地图通过 `chapter: "special-scenes"` 进入该分组。该分组只表达 Explore
+的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
+
+Original Bonus 地图显式保存 `music: "bonus"`；普通关卡省略 `music`，由播放页面
+在 `ingame0..2` 中随机选择。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
+
+每个 filter 使用 `selection: "single" | "multiple"` 声明选择方式。多个已选
+option 以及不同 filter 之间都按“且”匹配；`single` 只约束该 filter 同时最多保留
+一个 option。Original 的萝卜数使用 `single`，其余 filter 使用 `multiple`。
 
 ```json
 { "type": "entity", "entity": { "type": "carrot" } }
@@ -149,7 +161,7 @@ Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-rock`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
-`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
+`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。只有目录而没有补充信息时，runtime chapter 只包含目录提供的 `id`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime assets 仍统一生成，供本地验证工具使用。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
 ## 生成规则
 

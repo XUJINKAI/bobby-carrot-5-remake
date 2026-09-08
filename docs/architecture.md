@@ -65,6 +65,9 @@ DAT package <-> metadata + level records
 
 `engine/` 是唯一地图内游戏规则实现。核心目标是：**给 Engine 一个纯语义 `LevelMap` 和少量运行配置，就应当能够独立把这张地图完整地玩起来。**
 
+> 背景音乐选曲是否包含在“完整地玩起来”中尚待统一，参见
+> [背景音乐选曲职责 ADR](decisions/background-music-selection-ownership.md)。本节现有边界表述暂予保留。
+
 Engine 负责：
 
 - `Game` / `World`；
@@ -317,7 +320,7 @@ public identity: 1-1 / 1-bonus-1 / ... / 40-10
 
 ## Explore content / Custom Map Catalog
 
-Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序与说明：
+Explore 使用 collection 组织所有自由游玩内容。`custom-maps/collections.json` 定义 collection 名称、顺序、说明与 discovery 可见性：
 
 ```text
 custom-maps/<collection>/<map>.json
@@ -328,7 +331,9 @@ assets/maps/<collection>/index.json
 assets/maps/<collection>/<map>.json
 ```
 
-源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
+源码目录负责内容归类：collection 下的一级目录决定 chapter，根目录中的地图没有 chapter，chapter 目录内不允许继续嵌套目录。同一 collection 混合两类地图时，根目录地图先作为无章节内容进入 index，随后按 chapter 与 map ID 排列章节内容。manifest 负责 collection discovery，其可选 `chapters` 只补充已存在 chapter 的展示信息；`visible: "dev"` 只在 `npm run dev` 时进入 discovery index。每个 collection 的 `index.json` 独立承载展示、搜索和筛选 metadata；游玩和编辑入口直接加载同目录下的纯 `LevelMap`。
+
+`tools/custom/prepare.mjs` 只生成 custom collection 资产并返回可见摘要；`tools/pipeline/assets.mjs` 在 Original 与 custom collection 全部就绪后统一生成 `assets/maps/index.json`。discovery index 只保存 `id` 与 `name`，collection description 只保存在各自的详细索引。
 
 每章 1～3 星难度直接读取原版 DAT chapter metadata `packType`。
 

@@ -2,6 +2,12 @@
   "schemaVersion": 1,
   "collections": [
     {
+      "id": "engine-lab",
+      "name": "Engine Lab",
+      "description": "扩展地图，实验引擎的各种新机制",
+      "cardSize": "small"
+    },
+    {
       "id": "novoban-pushbox",
       "name": "Novoban",
       "description": "François Marques 的 50 张入门 Sokoban 关卡，难度逐渐增加。",
@@ -14,16 +20,11 @@
       "cardSize": "small"
     },
     {
-      "id": "engine-lab",
-      "name": "Engine Lab",
-      "description": "用于验证 Engine 与 Editor 扩展机制的最小地图。",
-      "cardSize": "big"
-    },
-    {
       "id": "original-patch",
       "name": "Original Patch",
       "description": "Patch 到原版 jar 包的验证地图",
-      "cardSize": "small"
+      "cardSize": "small",
+      "visible": "dev"
     }
   ]
 }

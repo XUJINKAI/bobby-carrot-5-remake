@@ -84,7 +84,7 @@ function filterPanel(filter: MapCollectionFilter): string {
   const options = filter.options
     .map((option) => {
       const selectedClass = values.has(option.id) ? " selected" : "";
-      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
+      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
     })
     .join("");
   return `<div class="level-filter-panel" data-filter-panel="${escapeAttribute(filter.id)}" ${activePanel === filter.id ? "" : "hidden"}>${options}</div>`;
@@ -106,9 +106,11 @@ function onFilterClick(event: Event): void {
     const id = option.dataset.filterOption;
     if (!group || !id) return;
     const values = selected.get(group);
-    if (!values) return;
-    if (values.has(id)) values.delete(id);
-    else values.add(id);
+    const filter = currentCollection?.filters.find(
+      (candidate) => candidate.id === group,
+    );
+    if (!values || !filter) return;
+    toggleLevelFilterOption(values, filter, id);
     rerender(option);
     return;
   }
@@ -137,7 +139,6 @@ function applyFilters(): void {
     element.classList.toggle("filter-hidden", !matches);
     if (matches) visibleMaps++;
   }
-  let visibleChapters = 0;
   for (const chapter of document.querySelectorAll<HTMLElement>(".chapter-card")) {
     const maps = [...chapter.querySelectorAll<HTMLElement>("[data-map-id]")];
     const count = maps.filter(
@@ -145,28 +146,16 @@ function applyFilters(): void {
     ).length;
     const hidden = active && count === 0;
     chapter.classList.toggle("filter-hidden", hidden);
-    if (!hidden) visibleChapters++;
     setText(
       chapter.querySelector(".chapter-count"),
       active ? `${count} / ${maps.length} 关` : `${maps.length} 关`,
     );
   }
-  const totalChapters = currentCollection.chapters.length;
-  setText(
-    document.querySelector(".level-browser-summary"),
-    totalChapters > 0
-      ? active
-        ? `${visibleChapters} / ${totalChapters} 章 · ${visibleMaps} / ${currentCollection.maps.length} 关`
-        : `${totalChapters} 章 · ${currentCollection.maps.length} 关`
-      : active
-        ? `${visibleMaps} / ${currentCollection.maps.length} 张地图`
-        : `${currentCollection.maps.length} 张地图`,
-  );
   setText(
     document.querySelector("[data-filter-status]"),
     active
-      ? `匹配 ${visibleMaps} 张地图；同一类别内满足任一条件，不同类别需同时满足。`
-      : "同一类别内为“或”，不同类别之间为“且”。",
+      ? `匹配 ${visibleMaps} 张地图；已选条件需同时满足。`
+      : "所有已选条件需同时满足。",
   );
   let empty = document.querySelector<HTMLElement>(".level-filter-empty");
   if (active && visibleMaps === 0) {
@@ -182,12 +171,32 @@ function applyFilters(): void {
 }
 
 function mapMatchesCurrent(map: MapCollectionMap): boolean {
-  for (const [group, wanted] of selected) {
+  return mapMatchesLevelFilters(map, selected);
+}
+
+export function mapMatchesLevelFilters(
+  map: MapCollectionMap,
+  filters: ReadonlyMap<string, ReadonlySet<string>>,
+): boolean {
+  for (const [group, wanted] of filters) {
     if (wanted.size === 0) continue;
     const values = map.filters?.[group] ?? [];
-    if (!values.some((value) => wanted.has(value))) return false;
+    if (![...wanted].every((value) => values.includes(value))) return false;
   }
   return true;
+}
+
+export function toggleLevelFilterOption(
+  values: Set<string>,
+  filter: MapCollectionFilter,
+  optionId: string,
+): void {
+  if (values.has(optionId)) {
+    values.delete(optionId);
+    return;
+  }
+  if (filter.selection === "single") values.clear();
+  values.add(optionId);
 }
 
 function iconHtml(icon: MapCollectionIcon | undefined): string {

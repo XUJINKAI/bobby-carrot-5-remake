@@ -14,18 +14,18 @@ test("chapter 由一级目录发现，manifest 可以省略 chapters", (t) => {
   const source = discoverCollectionSource("sample", directory);
 
   assert.deepEqual(source.chapters, [
-    { id: "02", name: "02", description: "" },
-    { id: "10", name: "10", description: "" },
+    { id: "02" },
+    { id: "10" },
   ]);
   assert.deepEqual(
     source.files.map((file) => ({
       path: path.relative(directory, path.join(file.directory, file.filename)),
       chapter: file.chapter,
-    })).sort((left, right) => left.path.localeCompare(right.path)),
+    })),
     [
+      { path: "root-map.json", chapter: undefined },
       { path: "02/two.json", chapter: "02" },
       { path: "10/ten.json", chapter: "10" },
-      { path: "root-map.json", chapter: undefined },
     ],
   );
 });

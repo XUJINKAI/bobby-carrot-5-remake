@@ -36,6 +36,7 @@ export {
 export {
   AudioRuntime,
   resolveOriginalMusicUrl,
+  type MusicInteractionRequiredListener,
   type AudioRuntimeOptions,
 } from "./audio/AudioRuntime.js";
 export {

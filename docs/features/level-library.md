@@ -87,6 +87,7 @@ Chapter 40
 
 Explore 模式：
 - 全 480 个正式 Campaign map 开放；
+- 5 个共享 Special Scene 在第 40 章后按 catalog 顺序展示；
 - 使用独立的自由浏览进度；
 - 支持筛选和随机；
 - 完成记录服务自由浏览体验；

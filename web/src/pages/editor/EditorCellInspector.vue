@@ -8,6 +8,7 @@ import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import { ref } from "vue";
 import EditorEntityFields from "./EditorEntityFields.vue";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const props = defineProps<{
   model: InspectorModel;
@@ -77,7 +78,9 @@ function dropAt(index: number): void {
         @drop.prevent="dropAt(index)"
       >
         <header class="editor-layer-head">
-          <span class="editor-layer-drag" title="拖动调整叠加顺序" aria-hidden="true">⠿</span>
+          <span class="editor-layer-drag" title="拖动调整叠加顺序">
+            <AppIcon name="drag" />
+          </span>
           <span class="editor-layer-title">
             <strong>{{ layer.label }}</strong>
             <code>{{ layer.entity.type }}</code>
@@ -89,7 +92,7 @@ function dropAt(index: number): void {
             title="删除这一层"
             @click="emit('delete', layer.ref.index)"
           >
-            ✕
+            <AppIcon name="delete" />
           </button>
         </header>
         <EditorEntityFields

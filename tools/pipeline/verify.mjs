@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { root, run } from "../lib/fs.mjs";
 
+let buildOriginalExploreFilters;
 let parseMapDocument;
 
 run(process.execPath, ["tools/pipeline/source-quality.mjs"]);
@@ -10,6 +11,9 @@ for (const [name, command] of Object.entries(packageJson.scripts ?? {}))
   if (!String(command).startsWith("node tools/cli.mjs "))
     throw new Error(`npm script 必须是 tools/cli.mjs alias：${name}`);
 run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
+({ originalExploreFilters: buildOriginalExploreFilters } = await import(
+  "../original/explore-filter-tags.mjs"
+));
 for (const file of [
   "custom-maps/loma-pushbox/01/01-01.json",
   "custom-maps/novoban-pushbox/01.json",
@@ -22,8 +26,25 @@ run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);
 
 const collectionsIndex = readJson("assets/maps/index.json");
 assertSchemaV1(collectionsIndex, "assets/maps/index.json");
+for (const collection of collectionsIndex.collections) {
+  if (
+    !collection ||
+    typeof collection.id !== "string" || !collection.id ||
+    typeof collection.name !== "string" || !collection.name ||
+    Object.keys(collection).sort().join(",") !== "id,name"
+  )
+    throw new Error(
+      "Runtime collection discovery 项只能包含非空的 id 与 name",
+    );
+}
 if (!collectionsIndex.collections.some((collection) => collection.id === "original"))
   throw new Error("Runtime collection index 必须包含 original");
+if (
+  collectionsIndex.collections.some(
+    (collection) => collection.id === "original-patch",
+  )
+)
+  throw new Error("生产 collection index 不应展示开发集合 original-patch");
 
 const cardSizes = new Set(["small", "medium", "big"]);
 const collectionIndexes = collectionsIndex.collections.map((summary) => {
@@ -38,6 +59,7 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
     !Array.isArray(collection.maps)
   )
     throw new Error(`${relative}: collection 合同不完整`);
+  assertCollectionFilters(collection, relative);
   for (const map of collection.maps) {
     const mapRelative = `assets/maps/${summary.id}/${map.id}.json`;
     const document = readJson(mapRelative);
@@ -54,10 +76,23 @@ const original = collectionIndexes.find((collection) => collection.id === "origi
 if (!original) throw new Error("缺少 Original collection index");
 if (original.cardSize !== "small")
   throw new Error("Original collection cardSize 必须为 small");
-if (original.chapters.length !== 40 || original.maps.length !== 480)
-  throw new Error("Original collection 必须包含 40 章 / 480 张 Campaign map");
+const originalCampaignChapters = original.chapters.filter(
+  (chapter) => chapter.id !== "special-scenes",
+);
+const originalSpecialChapter = original.chapters.find(
+  (chapter) => chapter.id === "special-scenes",
+);
+if (
+  originalCampaignChapters.length !== 40 ||
+  original.maps.length !== 485 ||
+  original.chapters.at(-1) !== originalSpecialChapter
+)
+  throw new Error(
+    "Original collection 必须依次包含 40 章、480 张 Campaign map 与尾部 Special Scene 分组",
+  );
 if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
+assertOriginalExploreFilters(original);
 const novoban = collectionIndexes.find(
   (collection) => collection.id === "novoban-pushbox",
 );
@@ -66,8 +101,17 @@ if (novoban?.cardSize !== "medium")
 const engineLab = collectionIndexes.find(
   (collection) => collection.id === "engine-lab",
 );
-if (engineLab?.cardSize !== "big")
-  throw new Error("Engine Lab collection cardSize 必须为 big");
+if (!engineLab) throw new Error("缺少 Engine Lab collection");
+if (engineLab.cardSize !== "small")
+  throw new Error("Engine Lab collection cardSize 必须为 small");
+const firstEngineLabChapter = engineLab.maps.findIndex((map) => map.chapter);
+if (firstEngineLabChapter <= 0)
+  throw new Error("Engine Lab 必须先展示根目录地图，再展示 chapter 地图");
+if (engineLab.maps.slice(firstEngineLabChapter).some((map) => !map.chapter))
+  throw new Error("Engine Lab 根目录地图必须集中在 chapter 地图之前");
+for (const chapterId of ["portal", "pushbox"])
+  if (!engineLab.chapters.some((chapter) => chapter.id === chapterId))
+    throw new Error(`Engine Lab 必须发现 ${chapterId} chapter`);
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
 
@@ -92,12 +136,18 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
   throw new Error(
     `Original Chapter 1 Explore 顺序错误：${actualFirstChapter.join(",")}`,
   );
-for (const map of original.maps) {
+for (const map of original.maps.filter(
+  (entry) => entry.chapter !== originalSpecialChapter.id,
+)) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
   assertOriginalMapName(map, document, relative);
   assertOriginalStartContract(document, relative);
-  assertOriginalMusicContract(document, relative);
+  assertOriginalMusicContract(
+    document,
+    map.id.includes("-bonus-") ? "bonus" : undefined,
+    relative,
+  );
   assertOriginalWinRule(document, relative);
 }
 const adventure = readJson("assets/adventure/index.json");
@@ -107,6 +157,15 @@ if (adventure.chapters.length !== 40)
 const adventureLevels = adventure.chapters.flatMap((chapter) => chapter.levels);
 if (adventureLevels.length !== 480 || adventure.specialScenes.length !== 5)
   throw new Error("Adventure index 必须包含 480 个 Campaign node / 5 Special Scene");
+const exploreSpecialScenes = original.maps.filter(
+  (map) => map.chapter === originalSpecialChapter.id,
+);
+if (
+  JSON.stringify(exploreSpecialScenes.map((map) => map.id)) !==
+    JSON.stringify(adventure.specialScenes.map((scene) => scene.id)) ||
+  exploreSpecialScenes.length !== 5
+)
+  throw new Error("Original Explore 必须在 40 章后按 catalog 顺序展示 5 个 Special Scene");
 for (const chapter of adventure.chapters) {
   const exploreIds = original.maps
     .filter((map) => map.chapter === chapter.id)
@@ -123,7 +182,7 @@ for (const scene of adventure.specialScenes) {
   assertMapDocument(document, relative);
   if (ref.collection === "original") {
     assertOriginalStartContract(document, relative);
-    assertOriginalMusicContract(document, relative);
+    assertOriginalMusicContract(document, undefined, relative);
   }
 }
 
@@ -273,9 +332,11 @@ function assertOriginalStartContract(document, relative) {
     throw new Error(`${relative}: Original 初始 Bobby 必须与 Start surface 同格`);
 }
 
-function assertOriginalMusicContract(document, relative) {
-  if (Object.hasOwn(document, "music"))
-    throw new Error(`${relative}: Original MapDocument 不应持久化 music`);
+function assertOriginalMusicContract(document, expected, relative) {
+  if (document.music !== expected)
+    throw new Error(
+      `${relative}: Original music 应为 ${expected ?? "未指定"}`,
+    );
 }
 
 function assertOriginalWinRule(document, relative) {
@@ -313,6 +374,57 @@ function parseMapRef(value) {
   if (typeof value !== "string") return null;
   const [collection, id, extra] = value.split("/");
   return collection && id && extra === undefined ? { collection, id } : null;
+}
+
+function assertCollectionFilters(collection, relative) {
+  const filterIds = new Set();
+  const optionsByFilter = new Map();
+  for (const filter of collection.filters) {
+    if (
+      !filter ||
+      typeof filter.id !== "string" ||
+      !filter.id ||
+      typeof filter.name !== "string" ||
+      !filter.name ||
+      !["single", "multiple"].includes(filter.selection) ||
+      !Array.isArray(filter.options) ||
+      filter.options.length === 0 ||
+      filterIds.has(filter.id)
+    )
+      throw new Error(`${relative}: filter 定义无效`);
+    filterIds.add(filter.id);
+    const optionIds = new Set();
+    for (const option of filter.options) {
+      if (
+        !option ||
+        typeof option.id !== "string" ||
+        !option.id ||
+        typeof option.name !== "string" ||
+        !option.name ||
+        optionIds.has(option.id)
+      )
+        throw new Error(`${relative}: filter option 定义无效`);
+      optionIds.add(option.id);
+    }
+    optionsByFilter.set(filter.id, optionIds);
+  }
+  for (const map of collection.maps) {
+    for (const [filterId, values] of Object.entries(map.filters ?? {})) {
+      const options = optionsByFilter.get(filterId);
+      if (
+        !options ||
+        !Array.isArray(values) ||
+        values.some((value) => !options.has(value))
+      )
+        throw new Error(`${relative}: map ${map.id} 使用了未定义的 filter 标签`);
+    }
+  }
+}
+
+function assertOriginalExploreFilters(collection) {
+  const expected = buildOriginalExploreFilters();
+  if (JSON.stringify(collection.filters) !== JSON.stringify(expected))
+    throw new Error("Original filter 必须由统一定义生成");
 }
 
 function readJson(relative) {

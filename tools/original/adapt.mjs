@@ -101,6 +101,7 @@ for (const release of sourceIndex.releases) {
         {
           name: campaignLevelName(sourceLevelIndex),
         },
+        bonusOrdinal === null ? {} : { music: "bonus" },
       );
       documents.set(id, document);
       maps.push({
@@ -190,12 +191,13 @@ function buildSpecialScenes(index, target) {
   return result;
 }
 
-function createMapDocument(source, meta) {
+function createMapDocument(source, meta, options = {}) {
   const canonical = adaptDecodedMap(source);
   const win = deriveOriginalWinCondition(canonical);
   return parseMapDocument({
     schemaVersion: 1,
     meta,
+    ...options,
     ...(win ? { rules: { win } } : {}),
     ...canonical,
   });

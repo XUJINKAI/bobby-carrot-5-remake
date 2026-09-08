@@ -13,6 +13,9 @@ Engine 的公开边界分成两个明确入口：
 
 核心目标始终是：**给 Engine 一份纯语义 `LevelMap` 和少量运行配置，就能够独立运行这张地图。** Campaign、路由、collection、DAT provenance、存档与产品导航都属于 Engine 外层。
 
+> `LevelMap.music` 的选曲归属存在尚待解决的合同冲突，参见
+> [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本合同的现有表述暂予保留。
+
 ## Gameplay runtime
 
 推荐由高层 factory 创建 session：
@@ -242,6 +245,8 @@ runtime: {
 ```
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
+
+浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
 
 ## InputController
 

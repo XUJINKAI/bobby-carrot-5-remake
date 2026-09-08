@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HelpDescriptor } from "../../shell/shellBridge.js";
+import AppIcon from "../../shared/icons/AppIcon.vue";
 
 defineProps<{ descriptor: HelpDescriptor }>();
 const emit = defineEmits<{ close: [] }>();
@@ -7,7 +8,12 @@ const emit = defineEmits<{ close: [] }>();
 
 <template>
   <section class="global-dialog help-dialog" role="dialog" aria-label="帮助">
-    <header>{{ descriptor.title }} <button type="button" aria-label="关闭" @click="emit('close')">×</button></header>
+    <header>
+      {{ descriptor.title }}
+      <button type="button" aria-label="关闭" @click="emit('close')">
+        <AppIcon name="close" />
+      </button>
+    </header>
     <div>
       <section v-for="(section, index) in descriptor.sections" :key="section.title ?? index">
         <h3 v-if="section.title">{{ section.title }}</h3>
