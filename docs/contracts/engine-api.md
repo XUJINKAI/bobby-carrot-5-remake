@@ -13,6 +13,9 @@ Engine 的公开边界分成两个明确入口：
 
 核心目标始终是：**给 Engine 一份纯语义 `LevelMap` 和少量运行配置，就能够独立运行这张地图。** Campaign、路由、collection、DAT provenance、存档与产品导航都属于 Engine 外层。
 
+> `LevelMap.music` 的选曲归属存在尚待解决的合同冲突，参见
+> [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本合同的现有表述暂予保留。
+
 ## Gameplay runtime
 
 推荐由高层 factory 创建 session：

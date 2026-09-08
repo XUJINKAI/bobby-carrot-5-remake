@@ -31,6 +31,9 @@ assets/audio/original/
 
 `createGameplayRuntime()` 未显式传入 audio 时会自行创建并销毁 `AudioRuntime`，因此 Engine 仍满足“给一张 LevelMap 和少量配置即可独立运行”的原则。宿主如果需要跨页面共享音乐状态，也可以注入实现 `AudioBackend` 的 Engine audio 实例；runtime 不拥有外部注入实例的生命周期。
 
+> 本节关于 Engine 独立运行与产品层选曲的表述存在尚待解决的边界冲突，参见
+> [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。现有实现与本节文字暂予保留。
+
 ## 产品层职责
 
 Web / Adventure / Embed 只决定“播放哪首曲子”和产品设置，不实现播放器。例如：
