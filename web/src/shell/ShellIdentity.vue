@@ -88,8 +88,8 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 }
 
 .shell-status-text {
-  color: var(--bc-text-muted);
-  font-size: 1.2rem;
+  color: red;
+  font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: 0.05em;
 }
