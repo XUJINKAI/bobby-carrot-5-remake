@@ -29,9 +29,11 @@ export interface MapCollectionFilter {
 
 export interface MapCollectionChapter {
   id: string;
-  name: string;
+  name?: string;
   description?: string;
   difficulty?: number;
+  /** Original Explore 用它区分正式章节与尾部 Special Scene 分组。 */
+  kind?: "special-scenes";
 }
 
 /** Runtime collection entry；Original 专属 kind/filters 是可选扩展。 */
@@ -75,7 +77,7 @@ export interface CollectionManifestChapter {
 
 /**
  * 人工维护的 collection metadata；成员关系及 chapter/map ID 由文件路径定义。
- * chapters 只补充一级 chapter 目录的展示信息，省略时使用目录 ID 作为名称。
+ * chapters 只补充一级 chapter 目录的展示信息；省略的字段不进入 runtime asset。
  */
 export interface CollectionManifestEntry {
   id: string;

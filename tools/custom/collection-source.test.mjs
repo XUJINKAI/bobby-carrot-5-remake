@@ -14,8 +14,8 @@ test("chapter 由一级目录发现，manifest 可以省略 chapters", (t) => {
   const source = discoverCollectionSource("sample", directory);
 
   assert.deepEqual(source.chapters, [
-    { id: "02", name: "02", description: "" },
-    { id: "10", name: "10", description: "" },
+    { id: "02" },
+    { id: "10" },
   ]);
   assert.deepEqual(
     source.files.map((file) => ({

@@ -71,13 +71,27 @@ function buildOriginalCollection() {
       path.join(target, `${scene.id}.json`),
       `${JSON.stringify(document, null, 2)}\n`,
     );
+    const features = levelFeatures(document);
+    maps.push({
+      id: scene.id,
+      name: document.meta.name,
+      description: "",
+      chapter: "special-scenes",
+      kind: "special-scene",
+      filters: {
+        carrots: [carrotBucket(features.carrotCount)],
+        items: features.specialItems,
+        scenes: features.scenes,
+        mechanics: features.mechanics,
+      },
+    });
   }
   fs.writeFileSync(
     path.join(target, "index.json"),
     `${JSON.stringify({
       schemaVersion: 1,
       name: "原版关卡",
-      description: "Bobby Carrot 5 原版 40 章地图。",
+      description: "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
       cardSize: "small",
       filters: originalFilters(),
       chapters: catalog.chapters.map((chapter) => ({
@@ -85,7 +99,12 @@ function buildOriginalCollection() {
         name: chapter.name,
         description: chapter.description,
         difficulty: chapter.difficulty,
-      })),
+      })).concat({
+        id: "special-scenes",
+        name: "Special Scenes",
+        description: "Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward 与 Campaign Intro。",
+        kind: "special-scenes",
+      }),
       maps,
     }, null, 2)}\n`,
   );

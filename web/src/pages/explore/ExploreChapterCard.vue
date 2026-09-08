@@ -21,12 +21,17 @@ function stars(value: number | undefined): string {
 </script>
 
 <template>
-  <section class="chapter-card">
+  <section
+    class="chapter-card"
+    :data-chapter-kind="chapter.kind ?? 'chapter'"
+  >
     <header class="chapter-head">
       <div class="chapter-title-line">
         <span class="chapter-id">{{ chapter.id }}</span>
-        <span class="chapter-separator">·</span>
-        <span class="chapter-name">{{ chapter.name }}</span>
+        <template v-if="chapter.name !== undefined">
+          <span class="chapter-separator">·</span>
+          <span class="chapter-name">{{ chapter.name }}</span>
+        </template>
       </div>
       <div class="chapter-meta">
         <span
@@ -85,7 +90,6 @@ function stars(value: number | undefined): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-transform: uppercase;
 }
 
 .chapter-meta {

@@ -60,8 +60,20 @@ const original = collectionIndexes.find((collection) => collection.id === "origi
 if (!original) throw new Error("缺少 Original collection index");
 if (original.cardSize !== "small")
   throw new Error("Original collection cardSize 必须为 small");
-if (original.chapters.length !== 40 || original.maps.length !== 480)
-  throw new Error("Original collection 必须包含 40 章 / 480 张 Campaign map");
+const originalCampaignChapters = original.chapters.filter(
+  (chapter) => chapter.kind !== "special-scenes",
+);
+const originalSpecialChapter = original.chapters.find(
+  (chapter) => chapter.kind === "special-scenes",
+);
+if (
+  originalCampaignChapters.length !== 40 ||
+  original.maps.length !== 485 ||
+  original.chapters.at(-1) !== originalSpecialChapter
+)
+  throw new Error(
+    "Original collection 必须依次包含 40 章、480 张 Campaign map 与尾部 Special Scene 分组",
+  );
 if (original.filters.length === 0)
   throw new Error("Original collection 必须提供 Explore filters");
 const novoban = collectionIndexes.find(
@@ -107,7 +119,7 @@ if (JSON.stringify(actualFirstChapter) !== JSON.stringify(expectedFirstChapter))
   throw new Error(
     `Original Chapter 1 Explore 顺序错误：${actualFirstChapter.join(",")}`,
   );
-for (const map of original.maps) {
+for (const map of original.maps.filter((entry) => entry.kind !== "special-scene")) {
   const relative = `assets/maps/original/${map.id}.json`;
   const document = readJson(relative);
   assertOriginalMapName(map, document, relative);
@@ -122,6 +134,15 @@ if (adventure.chapters.length !== 40)
 const adventureLevels = adventure.chapters.flatMap((chapter) => chapter.levels);
 if (adventureLevels.length !== 480 || adventure.specialScenes.length !== 5)
   throw new Error("Adventure index 必须包含 480 个 Campaign node / 5 Special Scene");
+const exploreSpecialScenes = original.maps.filter(
+  (map) => map.kind === "special-scene",
+);
+if (
+  JSON.stringify(exploreSpecialScenes.map((map) => map.id)) !==
+    JSON.stringify(adventure.specialScenes.map((scene) => scene.id)) ||
+  exploreSpecialScenes.some((map) => map.chapter !== originalSpecialChapter.id)
+)
+  throw new Error("Original Explore 必须在 40 章后按 catalog 顺序展示 5 个 Special Scene");
 for (const chapter of adventure.chapters) {
   const exploreIds = original.maps
     .filter((map) => map.chapter === chapter.id)

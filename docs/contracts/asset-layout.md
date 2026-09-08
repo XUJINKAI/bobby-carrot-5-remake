@@ -54,7 +54,9 @@ assets/
 
 `cardSize` 控制该 collection 的地图卡片密度，可取 `small / medium / big`。它属于 collection 的展示数据，因此 chapter 只负责分组，不决定地图卡片尺寸。
 
-`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+`maps` 是 collection 的完整有序地图列表；`chapter` 是 map 的可选分组属性。collection 同时包含根目录地图与 chapter 目录时，根目录地图排在最前并按无章节网格展示，随后按 chapter 与 map ID 顺序展示章节地图。`maps[].name` 直接来自对应 MapDocument 的 `meta.name`，Explore 原样显示该名称。chapter 的 `name` 与 `description` 也只在源 manifest 定义时生成并按原值展示；目录只提供 `id`。数组顺序就是 Explore 顺序，不另存重复的 `order` 字段。
+
+Original collection 在 40 个正式章节后追加 `kind: "special-scenes"` 的展示分组，其中 5 张地图使用 `kind: "special-scene"`。该分组只表达 Explore 的尾部布局，不进入 Adventure 的 Campaign chapter 编号。
 
 filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
 
@@ -149,7 +151,7 @@ Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题
 
 LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-rock`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
-`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime assets 仍统一生成，供本地验证工具使用。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
+`custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。只有目录而没有补充信息时，runtime chapter 只包含目录提供的 `id`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime assets 仍统一生成，供本地验证工具使用。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
 
 ## 生成规则
 

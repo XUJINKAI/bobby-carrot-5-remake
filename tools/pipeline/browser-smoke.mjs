@@ -54,6 +54,10 @@ try {
       'data-filter-trigger="carrots"',
       'data-filter-trigger="mechanics"',
       'data-card-size="small"',
+      'data-chapter-kind="special-scenes"',
+      "Special Scenes",
+      "Dreamland Reward",
+      'href="/explore/play/original/campaign-intro"',
     ],
     ["进入冒险模式"],
   );
@@ -65,22 +69,30 @@ try {
     "Novoban",
     "01 · Be ban 10",
   ]);
-  await smoke(`${origin}/explore/loma-pushbox`, [
-    'class="explore-tabs"',
-    'class="chapter-card"',
-    'class="chapter-name"',
-    'data-card-size="small"',
-    "LOMA",
-    'href="/explore/play/loma-pushbox/01-01"',
-  ]);
-  await smoke(`${origin}/explore/engine-lab`, [
-    'class="explore-custom-collection"',
-    'class="chapter-card"',
-    'data-card-size="small"',
-    "Maximum Moves Lab",
-    "Portal Lab",
-    "Pushbox Lab",
-  ]);
+  await smoke(
+    `${origin}/explore/loma-pushbox`,
+    [
+      'class="explore-tabs"',
+      'class="chapter-card"',
+      'data-card-size="small"',
+      "LOMA",
+      'href="/explore/play/loma-pushbox/01-01"',
+    ],
+    ['class="chapter-name"', 'class="chapter-separator"'],
+  );
+  await smoke(
+    `${origin}/explore/engine-lab`,
+    [
+      'class="explore-custom-collection"',
+      'class="collection-sections"',
+      'class="chapter-card"',
+      'data-card-size="small"',
+      "Maximum Moves Lab",
+      "Portal Lab",
+      "Pushbox Lab",
+    ],
+    ['class="chapter-name"', 'class="chapter-separator"'],
+  );
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',
@@ -136,7 +148,7 @@ try {
   await smoke(`${origin}/edit#map=novoban-pushbox/01`, ["bobby-editor"]);
   const mapPayload = exchangePayload(
     fs.readFileSync(
-      path.join(root, "custom-maps/test/mechanics-smoke.json"),
+      path.join(root, "tools/pipeline/mechanics-smoke.json"),
       "utf8",
     ),
   );

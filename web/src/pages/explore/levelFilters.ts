@@ -9,6 +9,7 @@ import {
   entityVisualStyle,
   styleRecordToText,
 } from "../../services/assets/entityVisual.js";
+import { exploreCollectionSummary } from "./collectionSummary.js";
 
 const selected = new Map<string, Set<string>>();
 let activePanel: string | null = null;
@@ -130,12 +131,18 @@ function applyFilters(): void {
   const active = hasActiveLevelFilters();
   const byId = new Map(currentCollection.maps.map((map) => [map.id, map]));
   let visibleMaps = 0;
+  let visibleCampaignMaps = 0;
+  let visibleSpecialScenes = 0;
   for (const element of document.querySelectorAll<HTMLElement>("[data-map-id]")) {
     const id = element.dataset.mapId;
     const map = id ? byId.get(id) : undefined;
     const matches = !active || Boolean(map && mapMatchesCurrent(map));
     element.classList.toggle("filter-hidden", !matches);
-    if (matches) visibleMaps++;
+    if (matches) {
+      visibleMaps++;
+      if (map?.kind === "special-scene") visibleSpecialScenes++;
+      else visibleCampaignMaps++;
+    }
   }
   let visibleChapters = 0;
   for (const chapter of document.querySelectorAll<HTMLElement>(".chapter-card")) {
@@ -145,22 +152,26 @@ function applyFilters(): void {
     ).length;
     const hidden = active && count === 0;
     chapter.classList.toggle("filter-hidden", hidden);
-    if (!hidden) visibleChapters++;
+    if (!hidden && chapter.dataset.chapterKind !== "special-scenes")
+      visibleChapters++;
     setText(
       chapter.querySelector(".chapter-count"),
       active ? `${count} / ${maps.length} 关` : `${maps.length} 关`,
     );
   }
-  const totalChapters = currentCollection.chapters.length;
   setText(
     document.querySelector(".level-browser-summary"),
-    totalChapters > 0
-      ? active
-        ? `${visibleChapters} / ${totalChapters} 章 · ${visibleMaps} / ${currentCollection.maps.length} 关`
-        : `${totalChapters} 章 · ${currentCollection.maps.length} 关`
-      : active
-        ? `${visibleMaps} / ${currentCollection.maps.length} 张地图`
-        : `${currentCollection.maps.length} 张地图`,
+    exploreCollectionSummary(
+      currentCollection,
+      active
+        ? {
+            chapters: visibleChapters,
+            maps: visibleMaps,
+            campaignMaps: visibleCampaignMaps,
+            specialScenes: visibleSpecialScenes,
+          }
+        : undefined,
+    ),
   );
   setText(
     document.querySelector("[data-filter-status]"),

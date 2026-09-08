@@ -29,7 +29,11 @@ fs.writeFileSync(
   `${JSON.stringify({
     schemaVersion: 1,
     collections: [
-      { id: "original", name: "原版关卡", description: "Bobby Carrot 5 原版 40 章地图。" },
+      {
+        id: "original",
+        name: "原版关卡",
+        description: "Bobby Carrot 5 原版 400 个普通关卡、80 个 Bonus 奖励关与 5 个 Special Scene。",
+      },
       ...visibleCollections.map(({ id, name, description }) => ({
         id,
         name,
