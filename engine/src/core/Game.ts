@@ -485,23 +485,28 @@ export class Game {
   private inputForTick(time: WorldTick): GameplayTickInput {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
+    const controls = this.debugExternalActorId === null
+      ? undefined
+      : [
+          ...this.session.controls.filter(
+            (binding) => binding.input !== "external",
+          ),
+          {
+            input: "external",
+            targets: [{ entityId: this.debugExternalActorId }],
+          } satisfies ControlBinding,
+        ];
     if (this.inputController || !this.heldDirection || this.heldDirectionBlocked)
       return {
         moves: [...queued, ...sampled],
-        ...(this.debugExternalActorId === null
-          ? {}
-          : {
-              controls: [{
-                input: "external",
-                targets: [{ entityId: this.debugExternalActorId }],
-              }],
-            }),
+        ...(controls ? { controls } : {}),
       };
     return {
       moves: [
         ...queued,
         { source: "external", direction: this.heldDirection },
       ],
+      ...(controls ? { controls } : {}),
     };
   }
 
@@ -518,9 +523,14 @@ export class Game {
     for (const [index, result] of tick.phases.entries()) {
       const inputPhase = index > 0;
       this.consumeWorldDeltas(result.deltas);
-      if (result.moves.length > 0) this.lastMove = result.moves[0] ?? null;
-      if (result.events.length > 0) {
+      if (inputPhase) {
+        this.lastMove = result.moves[0] ?? null;
         this.lastWorldEvents = result.events;
+      } else if (result.moves.length > 0) {
+        this.lastMove = result.moves[0] ?? null;
+      }
+      if (result.events.length > 0) {
+        if (!inputPhase) this.lastWorldEvents = result.events;
         this.publishWorldEvents(result.events);
         this.emitTerminalEvents();
       }
