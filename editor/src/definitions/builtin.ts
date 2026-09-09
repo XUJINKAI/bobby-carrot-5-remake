@@ -127,74 +127,32 @@ export const builtinEditorDefinition: EditorDefinition = {
   palette: {
     groups: catalogPaletteGroups([
       {
-        id: "terrain-overlays",
-        label: "地貌对象",
-        rows: [
-          [
-            { type: MapEntityTypeId.CRUMBLY_ROCK },
-            { type: MapEntityTypeId.HIGH_GRASS },
-            { type: MapEntityTypeId.SNOW },
-            { type: MapEntityTypeId.PLANK },
-            { type: MapEntityTypeId.LEAF },
-          ],
-        ],
-      },
-      {
-        id: "actors",
-        label: "玩家与人物",
+        id: "objective",
+        label: "目标及道具",
         rows: [
           [
             { type: MapEntityTypeId.BOBBY },
-            { type: MapEntityTypeId.SANDMAN },
-            { type: MapEntityTypeId.DREAM_MACHINE },
-            { type: MapEntityTypeId.BEAVER },
-          ],
-        ],
-      },
-      {
-        id: "objective",
-        label: "目标与收集",
-        rows: [
-          [
-            { type: MapEntityTypeId.START },
             { type: MapEntityTypeId.EXIT },
             { type: MapEntityTypeId.CARROT },
             { type: MapEntityTypeId.EGG },
-            { type: MapEntityTypeId.PUSH_GOAL },
-            { type: MapEntityTypeId.PUSHABLE_ROCK },
           ],
           [
-            { type: MapEntityTypeId.GOLDEN_CARROT },
-            { type: MapEntityTypeId.BONUS_COIN },
-          ],
-          [
-            { type: MapEntityTypeId.SHOP_CLOUD9_TICKET },
-            { type: MapEntityTypeId.SHOP_COIN_RADAR },
-            { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET },
-            { type: MapEntityTypeId.SHOP_EXTRA_MUSIC },
-            { type: MapEntityTypeId.SHOP_SPEED_SHOES },
-            { type: MapEntityTypeId.SHOP_STEREO_SYSTEM },
-            { type: MapEntityTypeId.SHOP_SUPER_KEY },
-            { type: MapEntityTypeId.SHOP_EMPTY },
-            { type: MapEntityTypeId.LOCK },
-          ],
-        ],
-      },
-      {
-        id: "items",
-        label: "道具",
-        rows: [
-          [
-            { type: MapEntityTypeId.BEAN },
-            { type: MapEntityTypeId.BEAN_FIELD },
-            { type: MapEntityTypeId.BEANSTALK },
             { type: MapEntityTypeId.GAS },
             { type: MapEntityTypeId.MOWER },
             { type: MapEntityTypeId.MOWER_PARKING },
+            { type: MapEntityTypeId.CRUMBLY_ROCK },
+            { type: MapEntityTypeId.HIGH_GRASS },
+            { type: MapEntityTypeId.BEAN },
+            { type: MapEntityTypeId.BEAN_FIELD },
             { type: MapEntityTypeId.SHOVEL_PICKUP },
+            { type: MapEntityTypeId.SNOW },
             { type: MapEntityTypeId.KITE },
             { type: MapEntityTypeId.WHIRLWIND },
             { type: MapEntityTypeId.LANDING },
+          ],
+          [
+            { type: MapEntityTypeId.PUSH_GOAL },
+            { type: MapEntityTypeId.PUSHABLE_ROCK },
           ],
         ],
       },
@@ -247,7 +205,6 @@ export const builtinEditorDefinition: EditorDefinition = {
           [
             { type: MapEntityTypeId.DRAGON },
             { type: MapEntityTypeId.ICE_BLOCK },
-            { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
           ],
           [
             ...directions.map((variant) => ({
@@ -285,6 +242,32 @@ export const builtinEditorDefinition: EditorDefinition = {
               label: "Red Cloud Parking",
               fields: { color: "red" },
             },
+            { type: MapEntityTypeId.PLANK },
+            { type: MapEntityTypeId.LEAF },
+            { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
+          ],
+        ],
+      },
+      {
+        id: "shop",
+        label: "商店",
+        rows: [
+          [
+            { type: MapEntityTypeId.BEAVER },
+            { type: MapEntityTypeId.SANDMAN },
+            { type: MapEntityTypeId.DREAM_MACHINE },
+            { type: MapEntityTypeId.SHOP_CLOUD9_TICKET },
+            { type: MapEntityTypeId.SHOP_COIN_RADAR },
+            { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET },
+            { type: MapEntityTypeId.SHOP_EXTRA_MUSIC },
+            { type: MapEntityTypeId.SHOP_SPEED_SHOES },
+            { type: MapEntityTypeId.SHOP_STEREO_SYSTEM },
+            { type: MapEntityTypeId.SHOP_SUPER_KEY },
+            { type: MapEntityTypeId.LOCK },
+            { type: MapEntityTypeId.GOLDEN_CARROT },
+            { type: MapEntityTypeId.BONUS_COIN },
+            { type: MapEntityTypeId.START },
+            { type: MapEntityTypeId.SHOP_EMPTY },
           ],
         ],
       },
