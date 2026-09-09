@@ -482,12 +482,11 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
-  function cycleVariant(step: number, cell?: Cell): boolean {
+  function cycleVariant(step: number): boolean {
     if (leftPanel.value === "surface") return false;
     if (paletteTool.value !== "place") {
-      const targetCell = cell ?? mapSelection.value?.focus;
+      const targetCell = mapSelection.value?.focus;
       if (!targetCell) return false;
-      if (cell) ensureSelectionAt(cell);
       const inspection = [...preview().inspectCell(targetCell.x, targetCell.y).presences]
         .reverse()
         .find(
@@ -636,7 +635,6 @@ export function useEditorPage(initialLevel: EditorMap) {
     applySurfaceVariant,
     applyBatchSurfaceVariant,
     cycleVariant,
-    transform: (cell: Cell, step: number) => cycleVariant(step, cell),
     updateField,
     updateBatchField,
     setPaletteSize,

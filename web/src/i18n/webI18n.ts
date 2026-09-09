@@ -40,7 +40,7 @@ const WEB_CATALOGS = {
     "settings.musicModern": "Modern",
     "settings.volume": "Volume",
     "settings.more": "More settings",
-    "home.demo.sandmanFirst": "Welcome to Bobby Carrot 5 Remake! Try the arrow keys or WASD and take a few steps in the browser.",
+    "home.demo.sandmanFirst": "Welcome to Bobby Carrot 5 Remake! Take a few steps and continue your journey in the browser.",
     "home.demo.sandmanAgain": "This is the full Engine running here. Continue with Adventure, Explore, or the Editor from the left.",
   },
 } satisfies Readonly<Record<Locale, TranslationCatalog>>;

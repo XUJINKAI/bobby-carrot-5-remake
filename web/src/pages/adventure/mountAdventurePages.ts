@@ -68,7 +68,7 @@ export function renderAdventureChapters(context: PageContext): PageController {
     app,
     AdventureChaptersPage,
     { rows, images, onNavigate: navigate },
-    adventureShell("章节选择", "/adventure"),
+    adventureShell("/adventure"),
   );
 }
 
@@ -102,10 +102,7 @@ export function renderAdventureChapter(
       rows,
       onNavigate: navigate,
     },
-    adventureShell(
-      `${String(chapterNumber).padStart(2, "0")} · ${chapter.name}`,
-      "/adventure/chapters",
-    ),
+    adventureShell("/adventure/chapters"),
   );
 }
 
@@ -135,7 +132,7 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
     app,
     AdventureNightTrainPage,
     { images, destinations, onNavigate: navigate },
-    adventureShell("夜间列车", "/adventure"),
+    adventureShell("/adventure"),
   );
 }
 
@@ -169,18 +166,18 @@ function mountAdventure(
   };
 }
 
-function adventureShell(backLabel?: string, backPath?: string): ShellConfig {
+function adventureShell(backPath?: string): ShellConfig {
   return {
     topBar: {
       visible: true,
       fixed: true,
-      identity: pageIdentity("冒险模式", "/adventure"),
-      ...(backPath && backLabel
+      identity: pageIdentity("冒险模式", "/adventure", false),
+      ...(backPath
         ? {
             back: {
               id: "back",
               icon: "back",
-              label: backLabel,
+              label: "返回",
               title: "返回",
               href: backPath,
             },
@@ -189,9 +186,8 @@ function adventureShell(backLabel?: string, backPath?: string): ShellConfig {
       actions: globalActions(),
     },
     bottomBar: {
-      visible: true,
+      visible: false,
       fixed: true,
-      info: [{ text: "Bobby Carrot 5 · Adventure" }],
     },
   };
 }

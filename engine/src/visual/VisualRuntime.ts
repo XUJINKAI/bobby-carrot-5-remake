@@ -1,5 +1,5 @@
 import type { Direction } from "@bobby/model";
-import { Camera } from "../render/Camera.js";
+import { Camera, type CameraOptions } from "../render/Camera.js";
 import {
   sortRenderItems,
   type RenderItem,
@@ -84,8 +84,9 @@ export class VisualRuntime {
   constructor(
     private readonly visuals: VisualRegistry,
     sourceTileSize: number,
+    cameraOptions?: CameraOptions,
   ) {
-    this.camera = new Camera(sourceTileSize);
+    this.camera = new Camera(sourceTileSize, cameraOptions);
   }
 
   get isAnimating(): boolean {
@@ -288,6 +289,7 @@ export class VisualRuntime {
         },
         world.width,
         world.height,
+        this.frame ?? undefined,
       );
     }
     const scene = buildVisualScene(

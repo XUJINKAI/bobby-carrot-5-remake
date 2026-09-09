@@ -15,7 +15,6 @@ export interface EditorCanvasInputHandlers {
   primaryMove(cell: Cell): void;
   primaryEnd(cell: Cell | null): void;
   contextMenu(request: EditorCanvasContextMenuRequest): void;
-  transform(cell: Cell, step: number): boolean;
   viewportChanged(): void;
 }
 
@@ -143,8 +142,6 @@ export class EditorCanvasInput {
   private readonly onWheel = (event: WheelEvent): void => {
     if (!this.enabled) return;
     event.preventDefault();
-    const cell = this.cell(event);
-    if (cell && this.handlers.transform(cell, event.deltaY > 0 ? 1 : -1)) return;
     const rect = this.canvas.getBoundingClientRect();
     this.viewport.zoomAt(
       event.deltaY < 0 ? 1.08 : 1 / 1.08,

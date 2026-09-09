@@ -9,7 +9,12 @@ import {
   setAdventureResumeLevel,
   type AdventureSave,
 } from "@bobby/adventure";
-import type { AudioRuntime, ImageManager } from "@bobby/engine";
+import {
+  DEFAULT_CAMERA_OPTIONS,
+  type AudioRuntime,
+  type CameraOptions,
+  type ImageManager,
+} from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
@@ -58,31 +63,33 @@ import {
 } from "../../shell/shellBridge.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
-  GAME_HELP,
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
 
 export type GamePageMode = "explore" | "adventure";
 
+// TODO 需要根据屏幕宽度设置更好
+const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
+  explore: {
+    zoom: 1.1,
+    minZoom: .25,
+    maxZoom: 4,
+    panBounds: "map-edge",
+  },
+  adventure: {
+    zoom: 1.05,
+    minZoom: 0.8,
+    maxZoom: 1.15,
+    panBounds: "viewport",
+  },
+};
+
 export interface GameIdentity {
   collection: string;
   id: string;
   title: string;
 }
-
-/** Adventure 用“横向可见格数”表达相机产品策略；Engine 仍只处理 zoom。 */
-export interface AdventureEngineCameraPolicy {
-  minColumns: number;
-  defaultColumns: number;
-  maxColumns: number;
-}
-
-export const DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY: AdventureEngineCameraPolicy = {
-  minColumns: 6,
-  defaultColumns: 7.5,
-  maxColumns: 10,
-};
 
 export interface GamePageContext {
   app: HTMLDivElement;
@@ -100,8 +107,6 @@ export interface GamePageContext {
   adventureScene?: AdventureIndexSpecialScene;
   adventureBackPath?: string;
   adventureCompletionPath?: string;
-  adventureHudEconomy?: boolean;
-  adventureCameraPolicy?: Partial<AdventureEngineCameraPolicy>;
   mode: GamePageMode;
 }
 
@@ -124,8 +129,6 @@ export async function renderGamePage(
     adventureScene,
     adventureBackPath,
     adventureCompletionPath,
-    adventureHudEconomy,
-    adventureCameraPolicy,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -172,14 +175,12 @@ export async function renderGamePage(
     mode === "explore" && loadReplayPanelOpen();
   configureShell(
     gameShellConfig(
-      identity,
       mode,
       screenControlEnabled,
       explorePreviousMapId,
       exploreNextMapId,
       replayPanelInitiallyOpen,
     ),
-    GAME_HELP,
   );
   app.replaceChildren();
   const gamePage = createApp(GamePage, { mode });
@@ -191,7 +192,8 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
-  const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
+  const productTime = app.querySelector<HTMLElement>("[data-product-time]");
+  const productSteps = app.querySelector<HTMLElement>("[data-product-steps]");
 
   const session = await createGameSession({
     canvas,
@@ -212,14 +214,8 @@ export async function renderGamePage(
         : { profile: { superKey: true } }),
     },
     runtime: {
-      hud:
-        mode === "adventure"
-          ? {
-              objective: true,
-              inventory: true,
-              economy: adventureHudEconomy === true,
-            }
-          : { objective: true, inventory: true, economy: true },
+      camera: GAME_CAMERA_OPTIONS[mode],
+      hud: { objective: true, inventory: true },
       input: {
         undo: mode === "explore",
         debug: mode === "explore",
@@ -260,14 +256,12 @@ export async function renderGamePage(
           storeReplayPanelOpen(open);
           configureShell(
             gameShellConfig(
-              identity,
               mode,
               getWebSettings().controls.screenControlEnabled,
               explorePreviousMapId,
               exploreNextMapId,
               open,
             ),
-            GAME_HELP,
           );
         },
         onTimelineRestart() {
@@ -276,34 +270,6 @@ export async function renderGamePage(
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
-
-  const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
-  let adventureCameraViewportWidth = 0;
-  const applyAdventureCamera = (): void => {
-    if (mode !== "adventure") return;
-    const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const tileSize = game.sourceTileSize;
-    const currentColumns =
-      adventureCameraViewportWidth > 0
-        ? adventureCameraViewportWidth / (tileSize * game.zoom)
-        : cameraPolicy.defaultColumns;
-    const targetColumns = Math.min(
-      cameraPolicy.maxColumns,
-      Math.max(cameraPolicy.minColumns, currentColumns),
-    );
-    const zoomForColumns = (columns: number): number =>
-      width / (tileSize * columns);
-    game.setZoomLimits(
-      zoomForColumns(cameraPolicy.maxColumns),
-      zoomForColumns(cameraPolicy.minColumns),
-    );
-    game.setZoom(zoomForColumns(targetColumns));
-    adventureCameraViewportWidth = width;
-  };
-  applyAdventureCamera();
-  if (mode === "adventure") {
-    window.addEventListener("resize", applyAdventureCamera);
-  }
 
   const persistAdventureSession = (): void => {
     if (!adventureSave || !game.hasLevel) return;
@@ -395,8 +361,9 @@ export async function renderGamePage(
 
   const update = (): void => {
     persistAdventureSession();
-    if (productStats && game.hasLevel) {
-      productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
+    if (productTime && productSteps && game.hasLevel) {
+      productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
+      productSteps.textContent = String(game.state.moves);
     }
     renderResult();
     replayPanel.update();
@@ -487,9 +454,6 @@ export async function renderGamePage(
     destroy(): void {
       persistAdventureSession();
       window.clearInterval(statisticsTimer);
-      if (mode === "adventure") {
-        window.removeEventListener("resize", applyAdventureCamera);
-      }
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       replayPanel.destroy();
@@ -509,7 +473,6 @@ function nextAdventureLevel(
 }
 
 function gameShellConfig(
-  identity: GameIdentity,
   mode: GamePageMode,
   screenControlEnabled: boolean,
   explorePreviousMapId?: string,
@@ -529,40 +492,46 @@ function gameShellConfig(
       back: {
         id: "back",
         icon: "back",
-        label: explore ? "返回" : identity.title,
+        label: "返回",
         title: "返回",
       },
-      leading: explore
-        ? [
-            {
-              id: "previous-level",
-              icon: "previous-track",
-              title: "上一关",
-              disabled: !explorePreviousMapId,
-            },
-            {
-              id: "next-level",
-              icon: "next-track",
-              title: "下一关",
-              disabled: !exploreNextMapId,
-            },
-          ]
-        : [],
-      commands: [
+      leading: [
         ...(explore
           ? [
-              { id: "undo", icon: "undo" as const, title: "撤销" },
-              { id: "redo", icon: "redo" as const, title: "重做" },
+              {
+                id: "previous-level",
+                icon: "previous-track" as const,
+                title: "上一关",
+                disabled: !explorePreviousMapId,
+                collapse: "hide" as const,
+              },
+              {
+                id: "next-level",
+                icon: "next-track" as const,
+                title: "下一关",
+                disabled: !exploreNextMapId,
+                collapse: "hide" as const,
+              },
             ]
           : []),
-        { id: "restart", icon: "restart", title: "重新开始" },
+        {
+          id: "restart",
+          icon: "restart" as const,
+          title: "重新开始",
+        },
       ],
+      commands: explore
+        ? [
+            { id: "undo", icon: "undo" as const, title: "撤销" },
+            { id: "redo", icon: "redo" as const, title: "重做" },
+          ]
+        : [],
       actions: [
         ...(explore
           ? [
               {
                 id: "edit",
-                icon: "edit" as const,
+                icon: "edit-map" as const,
                 label: "编辑地图",
                 title: "在编辑器中打开",
                 collapse: "overflow" as const,
@@ -581,19 +550,11 @@ function gameShellConfig(
               id: "replay-record",
               icon: "record",
               label: "录制",
-              title: "录制 Replay 测试输入（Tab）",
+              title: "录制 Replay 测试输入",
               pressed: replayOpen,
             },
           ]
         : [],
-      info: [
-        { text: identity.title },
-        {
-          text: explore
-            ? "WASD / 方向键移动 · Tab 录制 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
-            : "WASD / 方向键移动 · 拖动查看地图",
-        },
-      ],
       trailing: [
         {
           id: "screen-control",
@@ -623,29 +584,6 @@ function backPath(
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
-}
-
-function resolveAdventureCameraPolicy(
-  override?: Partial<AdventureEngineCameraPolicy>,
-): AdventureEngineCameraPolicy {
-  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY;
-  const minColumns = positiveFinite(override?.minColumns, defaults.minColumns);
-  const maxColumns = Math.max(
-    minColumns,
-    positiveFinite(override?.maxColumns, defaults.maxColumns),
-  );
-  const defaultColumns = Math.min(
-    maxColumns,
-    Math.max(
-      minColumns,
-      positiveFinite(override?.defaultColumns, defaults.defaultColumns),
-    ),
-  );
-  return { minColumns, defaultColumns, maxColumns };
-}
-
-function positiveFinite(value: number | undefined, fallback: number): number {
-  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
 function bindGameShell(

@@ -31,11 +31,10 @@ import {
 } from "../pages/import/mountImportPage.js";
 import { renderSettingsPage } from "../pages/settings/mountSettingsPage.js";
 import {
-  defaultHelpDescriptor,
   installShellBridge,
-  type HelpDescriptor,
   type ShellConfig,
   type ShellViewState,
+  unifiedHelpDescriptor,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
@@ -73,7 +72,7 @@ export class BobbyApp {
 
   async start(): Promise<void> {
     installShellBridge({
-      apply: (config, help) => this.applyShell(config, help),
+      apply: (config) => this.applyShell(config),
     });
     const contentReady = new Promise<void>((resolve) => {
       this.vueApp = createApp(AppRoot, {
@@ -107,9 +106,8 @@ export class BobbyApp {
     this.vueRoot = null;
   }
 
-  private applyShell(config: ShellConfig, help: HelpDescriptor): void {
+  private applyShell(config: ShellConfig): void {
     this.shell.config = config;
-    this.shell.help = help;
   }
 
   private readonly resumeAudio = (): void => this.audio.resume();
@@ -181,7 +179,7 @@ export class BobbyApp {
       return;
     }
     if (path === "/adventure/beaver-shop") {
-      await this.renderAdventureScene("beaver-shop", context, "/adventure", true);
+      await this.renderAdventureScene("beaver-shop", context, "/adventure");
       return;
     }
     if (path === "/adventure/night-train") {
@@ -356,7 +354,6 @@ export class BobbyApp {
     sceneId: string,
     context: PageContext,
     backPath: string,
-    economyHud = false,
   ): Promise<void> {
     const scene = this.adventure.specialScenes.find((item) => item.id === sceneId);
     if (!scene) {
@@ -378,7 +375,6 @@ export class BobbyApp {
       adventureScene: scene,
       adventureBackPath: backPath,
       adventureCompletionPath: "/adventure",
-      adventureHudEconomy: economyHud,
       mode: "adventure",
     });
   }
@@ -442,7 +438,7 @@ function isDirectMapRoute(path: string): boolean {
 function defaultShellState(): ShellViewState {
   return {
     config: {},
-    help: defaultHelpDescriptor(),
+    help: unifiedHelpDescriptor(),
   };
 }
 

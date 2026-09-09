@@ -6,18 +6,20 @@
 
 ```text
 WASD / 方向键       -> continuous direction
-R                    -> Restart
-Z / U                -> Undo
+Ctrl+Z               -> Undo
+Ctrl+Y               -> Redo
 + / -                -> Zoom
 ~                    -> Debug
 鼠标左键 / 单指拖动 -> 沿主轴排队移动一格
 鼠标中键拖动        -> Pan
-Pinch / 滚轮         -> Zoom
+双指整体移动         -> Pan
+Pinch                 -> 围绕两指中心 Zoom
+滚轮                  -> 围绕指针位置 Zoom
 ```
 
-鼠标左键或单指从落点开始累计位移。位移达到离散拖动阈值后，Engine 取水平/垂直主轴方向并只排队一次 movement；本次 pointer 生命周期内继续拖动不会连续追加格数。这个 movement 与键盘、Screen Joystick 一样，要等下一次 `WorldTick` 才由 Game 处理，不从 DOM event 直接修改 World。进入双指 Pinch 后，两根 pointer 都退出单指移动判定，松开其中一根也不会产生残留的单格移动。
+鼠标左键或单指从落点开始累计位移。位移达到离散拖动阈值后，Engine 取水平/垂直主轴方向并只排队一次 movement；本次 pointer 生命周期内继续拖动不会连续追加格数。这个 movement 与键盘、Screen Joystick 一样，要等下一次 `WorldTick` 才由 Game 处理，不从 DOM event 直接修改 World。进入双指手势后，两根 pointer 都退出单指移动判定；两指中心位移用于 Pan，两指距离用于 Zoom，松开其中一根也不会产生残留的单格移动。
 
-调用方可以按场景逐项开关 `movement / undo / redo / restart / pan / zoom / debug`。页面差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
+调用方可以按场景逐项开关 `movement / undo / redo / pan / zoom / pinchZoom / wheelZoom / debug`。`zoom` 是键盘 Zoom 的基础能力；`pinchZoom` 与 `wheelZoom` 缺省跟随 `zoom`，也可以由 Embed 等宿主分别覆盖。页面差异通过能力配置表达，`InputController` 不认识 Adventure、Explore 或 Editor 页面。
 
 ## WorldClock 与 Input update
 
@@ -61,7 +63,7 @@ DOM / Joystick events
                     └─ resolve moved / blocked / busy
 ```
 
-`R / Undo / Redo / Zoom / Pan / Debug` 不是普通格子 movement，不必由 Input repeat 状态机采样。其中 Zoom / Pan 属于纯表现操作；Undo / Redo / Restart 是显式 gameplay 命令。
+`Undo / Redo / Zoom / Pan / Debug` 不是普通格子 movement，不必由 Input repeat 状态机采样。其中 Zoom / Pan 属于纯表现操作；Undo / Redo 是显式 gameplay 命令。
 
 WorldClock pause 时不会调用 `InputController.update()`，并且 `Game.move()` 本身也必须拒绝推进 gameplay，避免外部调用形成暂停旁路。
 

@@ -18,6 +18,7 @@ assets/audio/midi/
 assets/maps/
 assets/adventure/
 
+.VSCodeCounter/
 tmp/
 *.tmp.md
 *.tsbuildinfo

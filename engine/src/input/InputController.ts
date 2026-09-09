@@ -29,9 +29,10 @@ export interface InputControllerOptions {
   movement?: boolean;
   undo?: boolean;
   redo?: boolean;
-  restart?: boolean;
   pan?: boolean;
   zoom?: boolean;
+  pinchZoom?: boolean;
+  wheelZoom?: boolean;
   debug?: boolean;
   screenJoystick?: boolean | ScreenJoystickOptions;
   /** Extra delay only between the first and second held move. Default is 0. */
@@ -73,9 +74,10 @@ interface InputCapabilities {
   movement: boolean;
   undo: boolean;
   redo: boolean;
-  restart: boolean;
   pan: boolean;
   zoom: boolean;
+  pinchZoom: boolean;
+  wheelZoom: boolean;
   debug: boolean;
 }
 
@@ -85,9 +87,10 @@ export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
   movement: true,
   undo: true,
   redo: true,
-  restart: true,
   pan: true,
   zoom: true,
+  pinchZoom: true,
+  wheelZoom: true,
   debug: true,
   keyboardRepeatDelayMs: 0,
   externalRepeatDelayMs: 0,
@@ -133,6 +136,7 @@ export class InputController {
   private joystickDirection: Direction | null = null;
   private pinchStartDistance = 0;
   private pinchStartZoom = 1;
+  private gestureCenter: CameraGesturePoint | null = null;
   private suppressNextClick = false;
   private enabled = true;
 
@@ -141,15 +145,17 @@ export class InputController {
     options: InputControllerOptions = {},
   ) {
     this.canvas = game.canvas;
+    const zoom = options.zoom ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.zoom;
     this.capabilities = {
       keyboard: options.keyboard ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboard,
       pointer: options.pointer ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pointer,
       movement: options.movement ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.movement,
       undo: options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
       redo: options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.redo,
-      restart: options.restart ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.restart,
       pan: options.pan ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pan,
-      zoom: options.zoom ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.zoom,
+      zoom,
+      pinchZoom: options.pinchZoom ?? zoom,
+      wheelZoom: options.wheelZoom ?? zoom,
       debug: options.debug ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.debug,
     };
     this.keyboardRepeatDelayMs = Math.max(
@@ -250,7 +256,10 @@ export class InputController {
   setEnabled(value: boolean): void {
     this.enabled = value;
     this.screenJoystick?.setInteractionEnabled(value);
-    if (!value) this.clearHeldMovement();
+    if (!value) {
+      this.clearHeldMovement();
+      this.clearPointerState();
+    }
   }
 
   setKeyboardEnabled(value: boolean): void {
@@ -307,12 +316,23 @@ export class InputController {
       return;
     }
     if (event.repeat) return;
-    if (key === "r" && this.capabilities.restart) this.game.restart();
-    else if (key === "z" && event.shiftKey && this.capabilities.redo)
-      this.game.redo();
-    else if ((key === "z" || key === "u") && this.capabilities.undo)
+    if (
+      key === "z" &&
+      event.ctrlKey &&
+      !event.shiftKey &&
+      this.capabilities.undo
+    ) {
+      event.preventDefault();
       this.game.undo();
-    else if ((key === "=" || key === "+") && this.capabilities.zoom)
+    } else if (
+      key === "y" &&
+      event.ctrlKey &&
+      !event.shiftKey &&
+      this.capabilities.redo
+    ) {
+      event.preventDefault();
+      this.game.redo();
+    } else if ((key === "=" || key === "+") && this.capabilities.zoom)
       this.game.zoomBy(1.1);
     else if ((key === "-" || key === "_") && this.capabilities.zoom)
       this.game.zoomBy(1 / 1.1);
@@ -338,6 +358,7 @@ export class InputController {
   private readonly onBlur = (): void => {
     this.screenJoystick?.reset();
     this.clearHeldMovement();
+    this.clearPointerState();
   };
 
   private clearHeldMovement(): void {
@@ -413,7 +434,7 @@ export class InputController {
       !this.capabilities.pointer ||
       (!this.capabilities.movement &&
         !this.capabilities.pan &&
-        !this.capabilities.zoom)
+        !this.capabilities.pinchZoom)
     )
       return;
     if (
@@ -425,7 +446,13 @@ export class InputController {
 
     const panPointer = event.pointerType === "mouse" && event.button === 1;
     const discreteMovePointer = !panPointer && this.capabilities.movement;
-    if (!panPointer && !discreteMovePointer && !this.capabilities.zoom) return;
+    if (
+      !panPointer &&
+      !discreteMovePointer &&
+      !this.capabilities.pan &&
+      !this.capabilities.pinchZoom
+    )
+      return;
 
     event.preventDefault();
     this.canvas.setPointerCapture(event.pointerId);
@@ -438,9 +465,13 @@ export class InputController {
       discreteMoveIssued: false,
       panPointer,
     });
-    if (this.capabilities.zoom && this.pointers.size === 2) {
+    if (
+      (this.capabilities.pinchZoom || this.capabilities.pan) &&
+      this.pointers.size === 2
+    ) {
       this.pinchStartDistance = this.pointerDistance();
       this.pinchStartZoom = this.game.zoom;
+      this.gestureCenter = this.pointerCenter();
       for (const pointer of this.pointers.values())
         pointer.discreteMoveIssued = true;
     }
@@ -456,15 +487,24 @@ export class InputController {
     if (Math.hypot(pointer.x - pointer.startX, pointer.y - pointer.startY) >= 4)
       pointer.moved = true;
 
-    if (
-      this.capabilities.zoom &&
-      this.pointers.size === 2 &&
-      this.pinchStartDistance > 0
-    ) {
-      this.game.setZoom(
-        this.pinchStartZoom *
-          (this.pointerDistance() / this.pinchStartDistance),
-      );
+    const gestureCenter = this.pointerCenter();
+    if (this.pointers.size === 2 && this.gestureCenter && gestureCenter) {
+      event.preventDefault();
+      if (this.capabilities.pan) {
+        this.game.panByScreen(
+          gestureCenter.x - this.gestureCenter.x,
+          gestureCenter.y - this.gestureCenter.y,
+        );
+      }
+      if (this.capabilities.pinchZoom && this.pinchStartDistance > 0) {
+        this.game.setZoomAt(
+          this.pinchStartZoom *
+            (this.pointerDistance() / this.pinchStartDistance),
+          gestureCenter.x,
+          gestureCenter.y,
+        );
+      }
+      this.gestureCenter = gestureCenter;
       return;
     }
 
@@ -503,7 +543,10 @@ export class InputController {
     const mayProduceClick = event.pointerType !== "mouse" || event.button === 0;
     if (mayProduceClick && (pointer?.moved || wasPinching))
       this.suppressNextClick = true;
-    if (this.pointers.size < 2) this.pinchStartDistance = 0;
+    if (this.pointers.size < 2) {
+      this.pinchStartDistance = 0;
+      this.gestureCenter = null;
+    }
     for (const remaining of this.pointers.values()) {
       remaining.startX = remaining.x;
       remaining.startY = remaining.y;
@@ -516,11 +559,15 @@ export class InputController {
     if (
       !this.enabled ||
       !this.capabilities.pointer ||
-      !this.capabilities.zoom
+      !this.capabilities.wheelZoom
     )
       return;
     event.preventDefault();
-    this.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
+    this.game.setZoomAt(
+      this.game.zoom * (event.deltaY < 0 ? 1.08 : 1 / 1.08),
+      event.clientX,
+      event.clientY,
+    );
   };
 
   private readonly onAuxClick = (event: MouseEvent): void => {
@@ -534,6 +581,28 @@ export class InputController {
     if (!a || !b) return 0;
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
+
+  private pointerCenter(): CameraGesturePoint | null {
+    const values = [...this.pointers.values()];
+    const a = values[0];
+    const b = values[1];
+    if (!a || !b) return null;
+    return {
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+    };
+  }
+
+  private clearPointerState(): void {
+    this.pointers.clear();
+    this.pinchStartDistance = 0;
+    this.gestureCenter = null;
+  }
+}
+
+interface CameraGesturePoint {
+  x: number;
+  y: number;
 }
 
 function inputSourceRank(source: string): number {

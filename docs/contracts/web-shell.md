@@ -27,7 +27,7 @@ interface ShellConfig {
 }
 ```
 
-页面通过 `configureShell(config, helpDescriptor)` 提交当前页面配置。Content DOM 由 Vue 页面直接挂载到 App Root 提供的容器，ShellConfig 不携带 HTML 字符串。
+页面通过 `configureShell(config)` 提交当前页面配置。Content DOM 由 Vue 页面直接挂载到 App Root 提供的容器，ShellConfig 不携带 HTML 字符串。
 
 ## TopBar
 
@@ -39,7 +39,7 @@ Identity + Back + Leading | Commands | Actions / Overflow
 
 三列分别使用 `minmax(0, 1fr) auto minmax(0, 1fr)`，保证 Commands 在桌面视觉居中。移动端仍使用同一套 DOM 和三列结构。
 
-`ShellIdentity` 可以声明 icon、产品名、可选状态文字、上下文名、首页链接和导航 menu。CSS 按可用宽度依次收敛产品名、状态文字、上下文名和 menu 指示，不由页面判断 viewport。首页使用状态文字显示当前开发状态，其它页面不提供该字段。
+`ShellIdentity` 可以声明 icon、产品名、可选状态文字、上下文名、首页链接和导航 menu。页面可以通过 `productNameVisible` 与 `contextNameVisible` 显式隐藏对应文字；CSS 在窄屏依次收敛产品名和上下文名，不由页面判断 viewport。首页使用状态文字显示当前开发状态，并在窄屏保持外露；其它页面不提供该字段。
 
 ## Action 与 Overflow
 
@@ -59,7 +59,7 @@ interface ShellAction {
 
 Shell 只派发 action ID 或执行声明式导航。`collapse=keep` 在移动端保留，`overflow` 收入自动生成的菜单，`hide` 在移动端隐藏。Overflow 菜单由当前配置自动派生。
 
-`href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换。
+`href` 可以声明站内路径或外部链接；外部链接使用 `external=true`，由浏览器按原生链接语义打开。`leading` 用于紧邻 Back 的同组导航动作，例如同一 collection 内的前后关切换和 Restart。左侧 `leading` action 同样支持 `collapse=hide`，用于收敛移动端导航。
 
 Action 可以携带短暂 `tip`，Shell 将其锚定到对应控件下方。提示内容与出现条件由 App 或页面决定，Shell 不解释其业务语义。
 
@@ -79,18 +79,19 @@ Leading | Info | Trailing
 
 Music、Settings、Help 和全局 Dialog 归 `BobbyApp` / App Root 所有。它们以普通 action 进入 Shell，App Root 收到 action ID 后执行产品逻辑。
 
-Help 内容由当前页面以 `HelpDescriptor` 提供。Help Dialog 只渲染标题、分区和说明文本，不根据页面或模式选择内容。
+Help 使用一份全局 `HelpDescriptor`，集中提供 Game 与 Editor 的操作说明。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复操作说明；首页 Demo 的 `home-demo-status` 保留基础移动提示作为首次上手引导。
 
 ## 所有权边界
 
 ```text
 BobbyApp / Page
-       │ ShellConfig + HelpDescriptor
+       │ ShellConfig
        ▼
 Generic Shell
 ├── TopBar
 ├── Content slot
 ├── BottomBar
+├── Unified Help
 └── responsive / overflow / theme
 ```
 

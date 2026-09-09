@@ -14,7 +14,7 @@
 - 按住鼠标中键拖动：平移 Editor 地图视图；
 - 两指手势缩放 Editor viewport；
 - 鼠标悬停时半透明预览当前待放素材；所有即将被删除/替换的完整 Object 会泛蓝高亮；
-- `Ctrl/Cmd + Z` 撤销，`Ctrl/Cmd + Y` 或 `Ctrl/Cmd + Shift + Z` 重做；
+- `Ctrl + Z` 撤销，`Ctrl + Y` 重做；
 - 地图尺寸、校验信息、当前素材 Definition 与当前格 Terrain/Object inspect 都在右侧 Inspector；
 - 一次连续拖动画笔作为一个 History transaction，只产生一次 Undo；
 - 保存后 Undo 回保存 checkpoint 时，文档恢复为未修改状态。

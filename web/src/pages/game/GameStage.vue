@@ -16,7 +16,10 @@ defineProps<{
         v-if="showProductStats"
         class="product-game-statistics"
         data-product-stats
-      />
+      >
+        <span data-product-time />
+        <span data-product-steps />
+      </div>
       <div class="result-overlay" data-result-overlay hidden>
         <div class="result-card" data-result-card>
           <button
@@ -40,16 +43,15 @@ defineProps<{
 .product-game-statistics {
   position: absolute;
   left: 12px;
-  top: 52px;
+  top: 12px;
   z-index: 6;
-  min-height: 32px;
-  padding: 7px 10px;
-  border: 1px solid #ffffff29;
-  border-radius: 999px;
-  background: #06100abd;
+  display: grid;
+  gap: 2px;
   color: #dce8de;
-  font-size: 0.72rem;
+  font-size: 32px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+  opacity: 0.68;
   pointer-events: none;
 }
 

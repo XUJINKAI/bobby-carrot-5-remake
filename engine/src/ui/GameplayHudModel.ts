@@ -8,16 +8,10 @@ export interface GameplayHudModel {
     eggRemaining: number | null;
   };
   inventory: {
-    key: boolean;
-    speedShoes: boolean;
     gas: boolean;
     shovel: boolean;
     kite: boolean;
     beans: number;
-  };
-  economy: {
-    goldenCarrots: number;
-    bonusCoins: number;
   };
 }
 
@@ -42,16 +36,10 @@ export function buildGameplayHudModel(
       ),
     },
     inventory: {
-      key: state.inventory.temporaryKey,
-      speedShoes: state.profile.speedShoes,
       gas: state.inventory.gas,
       shovel: state.inventory.shovel,
       kite: state.inventory.kite,
       beans: Math.max(0, state.inventory.beans),
-    },
-    economy: {
-      goldenCarrots: state.economy.goldenCarrots,
-      bonusCoins: state.economy.bonusCoins,
     },
   };
 }

@@ -1,6 +1,7 @@
 import {
   createGameplayRuntime,
   ImageManager,
+  type CameraOptions,
   type GameplayRuntime,
 } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
@@ -101,6 +102,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const ready = (async (): Promise<void> => {
     const level = await loadEmbedMap({ map: options.map, mapUrl: options.mapUrl });
     if (destroyed) return;
+    const camera = resolveCameraOptions(options);
     const playUrl = await officialPlayUrl(level);
     frameLink.href = playUrl;
     terminal.official.href = playUrl;
@@ -117,6 +119,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           musicStyle: options.musicStyle ?? "modern",
         },
         runtime: {
+          camera,
           hud: true,
           input: {
             keyboard: keyboard !== false,
@@ -124,6 +127,8 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
             movement: true,
             pan: true,
             zoom: false,
+            pinchZoom,
+            wheelZoom,
             debug: false,
             screenJoystick: joystick,
           },
@@ -146,8 +151,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     const audioLevels = applyAudio(runtime, audio);
     runtime.audio.playMusic("ingame1");
     installSoundToggle(runtime, soundButton, audio.enabled, audioLevels, cleanup);
-    applyCamera(runtime, options);
-    installZoomPolicy(runtime, canvas, pinchZoom, wheelZoom, cleanup);
     installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();
     root.addEventListener("pointerdown", resumeAudio, { passive: true });
@@ -274,7 +277,7 @@ function installSoundToggle(
   cleanup.push(() => button.removeEventListener("click", toggle));
 }
 
-function applyCamera(runtime: GameplayRuntime, options: BC5RMountOptions): void {
+function resolveCameraOptions(options: BC5RMountOptions): CameraOptions {
   const min = options.camera?.minZoom ?? 0.5;
   const max = options.camera?.maxZoom ?? 3;
   const zoom = options.camera?.zoom ?? 1;
@@ -287,8 +290,7 @@ function applyCamera(runtime: GameplayRuntime, options: BC5RMountOptions): void 
     throw new Error("BC5R camera zoom limits are invalid");
   if (!Number.isFinite(zoom) || zoom <= 0)
     throw new Error("BC5R camera zoom must be a positive number");
-  runtime.game.setZoomLimits(min, max);
-  runtime.game.setZoom(zoom);
+  return { zoom, minZoom: min, maxZoom: max };
 }
 
 function createTerminalOverlay(lang: string | undefined): TerminalOverlay {
@@ -379,82 +381,6 @@ async function officialPlayUrl(level: LevelMap): Promise<string> {
   const url = new URL("import/v1", publicBaseUrl);
   url.hash = payload;
   return url.href;
-}
-
-interface ZoomPointer {
-  x: number;
-  y: number;
-}
-
-function installZoomPolicy(
-  runtime: GameplayRuntime,
-  canvas: HTMLCanvasElement,
-  pinchZoom: boolean,
-  wheelZoom: boolean,
-  cleanup: Array<() => void>,
-): void {
-  const pointers = new Map<number, ZoomPointer>();
-  let pinchStartDistance = 0;
-  let pinchStartZoom = 1;
-
-  const distance = (): number => {
-    const values = [...pointers.values()];
-    const a = values[0];
-    const b = values[1];
-    if (!a || !b) return 0;
-    return Math.hypot(a.x - b.x, a.y - b.y);
-  };
-
-  const onPointerDown = (event: PointerEvent): void => {
-    if (!pinchZoom) return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pointers.size === 2) {
-      pinchStartDistance = distance();
-      pinchStartZoom = runtime.game.zoom;
-    }
-  };
-  const onPointerMove = (event: PointerEvent): void => {
-    if (!pinchZoom) return;
-    const pointer = pointers.get(event.pointerId);
-    if (!pointer) return;
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
-    if (pointers.size !== 2 || pinchStartDistance <= 0) return;
-    runtime.game.setZoom(pinchStartZoom * (distance() / pinchStartDistance));
-  };
-  const onPointerUp = (event: PointerEvent): void => {
-    if (!pinchZoom) return;
-    pointers.delete(event.pointerId);
-    if (pointers.size < 2) pinchStartDistance = 0;
-  };
-
-  if (pinchZoom) {
-    canvas.addEventListener("pointerdown", onPointerDown, { capture: true });
-    canvas.addEventListener("pointermove", onPointerMove, { capture: true });
-    canvas.addEventListener("pointerup", onPointerUp, { capture: true });
-    canvas.addEventListener("pointercancel", onPointerUp, { capture: true });
-    cleanup.push(() =>
-      canvas.removeEventListener("pointerdown", onPointerDown, { capture: true }),
-    );
-    cleanup.push(() =>
-      canvas.removeEventListener("pointermove", onPointerMove, { capture: true }),
-    );
-    cleanup.push(() =>
-      canvas.removeEventListener("pointerup", onPointerUp, { capture: true }),
-    );
-    cleanup.push(() =>
-      canvas.removeEventListener("pointercancel", onPointerUp, { capture: true }),
-    );
-  }
-
-  if (wheelZoom) {
-    const onWheel = (event: WheelEvent): void => {
-      event.preventDefault();
-      runtime.game.zoomBy(event.deltaY < 0 ? 1.08 : 1 / 1.08);
-    };
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    cleanup.push(() => canvas.removeEventListener("wheel", onWheel));
-  }
 }
 
 function embedArtUrl(path: string): string {

@@ -85,6 +85,8 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 
 Adventure 是主入口，Explore 和 Editor 是并列的次级入口，Import Custom Map 是明确的文件入口。
 
+首页顶栏的 GitHub 仓库入口与“开发中”状态在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
+
 Welcome Demo 使用正式 Engine 运行一张短小的演示地图，用于展示移动、收集物和代表性机关。它有独立 session，不写入 Adventure Save 或 Explore 完成记录。完成或死亡时在原 Stage 中展示重玩和进入 Adventure 的动作。
 
 Hero 以下的项目介绍聚焦三类信息：原作重制、原版研究、Editor / 自定义地图。版本、技术说明和第三方资产权利边界位于更低的信息层级，并链接 [`../../THIRD_PARTY_ASSETS.md`](../../THIRD_PARTY_ASSETS.md)。
@@ -146,25 +148,13 @@ TopBar 固定为三列结构：
 
 三列使用 `minmax(0, 1fr) auto minmax(0, 1fr)`。`Identity` 可包含产品 icon、产品名、页面上下文和页面提供的导航菜单；页面可在左列追加 Back。游戏页将 Undo、Redo、Restart 放在中间，将 Edit 和产品级操作放在右侧。
 
-Music、Settings、Help 与全局 Dialog 由 App 层持有，以普通 action 配置给 Shell。Help 内容由当前页面提供 `HelpDescriptor`。
+Music、Settings、Help 与全局 Dialog 由 App 层持有，以普通 action 配置给 Shell。Help 使用同一份全局 `HelpDescriptor`，不随页面切换。
 
 桌面与移动端复用同一套 DOM。空间收窄时，CSS 依次收敛产品名和上下文名；标记为 `overflow` 的操作自动进入菜单，`keep` 操作保持可见，`hide` 操作隐藏。
 
 ### BottomBar
 
-BottomBar 使用 `Leading | Info | Trailing` 三段结构。页面可配置操作、链接和一句话信息，例如：
-
-```text
-┌───────────────────────────────────────────────────────────────────────────┐
-│ WASD / 方向键移动 · 拖动查看地图                    屏幕摇杆  [ 开 ]      │
-└───────────────────────────────────────────────────────────────────────────┘
-
-┌───────────────────────────────────────────────────────────────────────────┐
-│ Dragon · 8,12 · Q/E 切换方向 · Del 删除完整对象      屏幕摇杆  [ 关 ]     │
-└───────────────────────────────────────────────────────────────────────────┘
-```
-
-BottomBar 信息用于操作提示、选中项、阻挡原因或轻量状态反馈。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
+BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页署名、Editor 校验问题和 Engine 运行时警告等状态反馈，不展示快捷键提示。Explore 游戏与 Adventure 游戏保留各自的 Leading / Trailing 操作且 Info 为空；Adventure 首页、章节选择、夜间列车与 Embed 页面隐藏 BottomBar。首页 Demo 的基础移动引导位于 `home-demo-status`。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
 
 ## GameStage
 
@@ -209,8 +199,8 @@ Adventure HUD：
 
 ```text
 ┌─────────────────────────────────────┐
-│ BONUS 47                       🥕 8 │
-│                           🔑  🫘×2 │
+│                                8 🥕 │
+│                         🪁 2 🫘 🛷 ⛽ │
 │                                     │
 │                GAME                 │
 │                                     │
@@ -221,8 +211,8 @@ Explore HUD：
 
 ```text
 ┌──────────────────────────────────────────────────────┐
-│ 02:31 · 84 STEPS                              🥕 12 │
-│                                          🔑  🫘×2  │
+│ 02:31                                         12 🥕 │
+│ 84                                    🪁 2 🫘 🛷 ⛽  │
 │                                                      │
 │                         GAME                         │
 │                                                      │
@@ -233,21 +223,19 @@ Explore HUD：
 HUD 数据：
 
 - 当前目标与剩余数量；
-- Golden Key、加速鞋、临时钥匙、汽油、雪铲、风筝、魔豆等持有状态；
-- 当前地图取得的 Golden Carrot / Bonus Coin；
+- 当前地图中的风筝、魔豆、雪铲与汽油持有状态；
 - Engine Timed Challenge 剩余时间；
 - 当前模式允许展示的移动步数和统计用时。
 
-Engine HUD 使用原版图标和紧凑 Overlay。所有已获得道具统一锚定在 GameStage 右上角，包括 Golden Key、加速鞋、临时钥匙、汽油、雪铲、风筝、魔豆、Golden Carrot 和 Bonus Coin。道具从右向左排列；空间不足时从右上角向下换行。物品只在持有或数量大于零时出现。
+Engine HUD 使用原版图标和紧凑 Overlay，统一锚定在 GameStage 右上角。第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。两行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
+
+Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为右侧 Engine HUD 应用 36px Jersey 10 像素字体，为左侧 Explore 统计 Overlay 应用 26px Jersey 10 像素字体，两侧均使用 1px 黑色描边。Explore 统计 Overlay 锚定在 GameStage 左上角，分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
 
 ```text
 右上角 HUD 锚点
 
-                              ┌─────────────────────────┐
-                              │ 目标              🥕 12 │
-                              │ 道具  🪙×1  🥕×2  🫘×2  🔑 │
-                              └─────────────────────────┘
-                                      ← 从右向左增长
+                                      12 🥕
+                              🪁  2 🫘  🛷  ⛽
 ```
 
 Adventure 通过 Runtime Config 选择紧凑 HUD，优先保持原作信息边界。Explore 可以在 Engine 基础 HUD 之外叠加 Steps、统计用时和 Debug 入口；统计用时由 Web 记录，不参与地图规则。
@@ -367,13 +355,16 @@ Result Overlay 原地覆盖 GameStage，保留最后一帧世界画面作为上�
 
 Adventure Home：
 
+Adventure 的首页菜单、章节入口、关卡入口与夜间列车入口复用首页按钮的主题色、边框、圆角、阴影和交互状态；切换 Bobby / FC 主题时由同一组 `--bc-*` 变量驱动。
+
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 冒险模式 ▾             ♫ ⚙ ? │
+│ [icon] 冒险模式 ▾                                      ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │                 BOBBY CARROT 5 REMAKE                      │
 │                                                            │
+│                    冒险模式                                 │
 │                    [ 继续 12-4 ]                           │
 │                    [ 选择章节 ]                            │
 │                                                            │
@@ -407,11 +398,11 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 冒险模式 ▾ │ ← 12-4  ↻ │ ♫ ⚙ ? │
+│ [icon] 冒险模式 ▾ │ ← 返回  ↻                         │ ♫ ⚙ ? │
 ├───────────────────────────────────────────────────────────────┤
 │                 ┌─────────────────────────┐                   │
-│                 │                  🥕 12 │                   │
-│                 │              🔑  🫘×2 │                   │
+│                 │                   12 🥕 │                   │
+│                 │               🪁 2 🫘 🛷 │                   │
 │                 │                         │                   │
 │                 │          GAME           │                   │
 │                 │                         │                   │
@@ -420,7 +411,7 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 │                 │             ╰────────╯  │                   │
 │                 └─────────────────────────┘                   │
 ├───────────────────────────────────────────────────────────────┤
-│ WASD / 方向键移动 · 拖动查看地图             屏幕摇杆 [ 开 ] │
+│                                             屏幕摇杆 [ 开 ] │
 └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -465,10 +456,10 @@ Explore Play：
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↶ ↻ ✎ │ ♫ ⚙ ? │
+│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↻ │ ↶ ✎ ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
-│ 02:31 · 84 STEPS                                                🥕 12 │
-│                                                            🔑  🫘×2 │
+│ 02:31                                                         12 🥕 │
+│ 84                                                      🪁 2 🫘 🛷 ⛽ │
 │                                                     ┌────────────────┐ │
 │                      GAME                           │ Tile 14,8      │ │
 │                                                     │ Object: Dragon │ │
@@ -479,7 +470,7 @@ Explore Play：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。页面从当前 collection `index.json` 取得前后关顺序；返回按钮固定显示“返回”，相邻的上一关、下一关使用媒体切换图标。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
+所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。页面从当前 collection `index.json` 取得前后关顺序；顶栏左侧依次显示返回、上一关、下一关和 Restart，移动端收起上一关与下一关。返回按钮固定显示“返回”，相邻的上一关、下一关使用媒体切换图标。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
 
 ### Editor
 
@@ -598,20 +589,28 @@ Settings 是全局 Dialog：
 
 Music TopBar 按钮只负责静音切换，其它音频配置进入 Settings。首次加载时如果浏览器仍在等待用户交互才能播放音乐，按钮下方显示轻量提示；页面收到交互并恢复音频后自动收起。
 
-Help 根据当前上下文展示操作说明：
+Help 在所有页面展示同一份操作说明：
 
 ```text
-┌────────────────────────────────────┐
-│ Explore 操作帮助                × │
-├────────────────────────────────────┤
-│ WASD / 方向键     移动             │
-│ 拖动画面          平移 Camera      │
-│ 滚轮 / Pinch      缩放             │
-│ ~                 Debug            │
-└────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│ 操作说明                          × │
+├──────────────────────────────────────┤
+│ 游戏                                 │
+│ WASD / 方向键：控制移动              │
+│ Ctrl+Z / Ctrl+Y：撤销 / 重做         │
+│ 滚轮：缩放地图                       │
+│ 按住滚轮拖动：平移地图               │
+│ Tab：切换录制面板                    │
+│ ~：切换 Debug                        │
+│                                      │
+│ Editor                               │
+│ Tab：切换 Palette / Surface          │
+│ 1 / 2 / 3 / 4：选择对应编辑工具      │
+│ Ctrl 系列：编辑与剪贴板操作          │
+└──────────────────────────────────────┘
 ```
 
-高频操作优先在 BottomBar 就地提示，Help 保存完整说明。
+Help 是用户界面中完整操作说明的唯一来源；首页 Demo 的 `home-demo-status` 只提供基础移动引导。
 
 ## Overlay 与反馈规则
 

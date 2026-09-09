@@ -14,7 +14,6 @@ import {
   randomFilteredMap,
 } from "./levelFilters.js";
 import {
-  BROWSE_HELP,
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
@@ -41,18 +40,15 @@ export async function renderLevels(
     );
 
   audio.playMusic("title");
-  configureShell(
-    {
-      topBar: {
-        visible: true,
-        fixed: true,
-        identity: pageIdentity("自由探索模式", "/explore"),
-        actions: globalActions(),
-      },
-      bottomBar: { visible: false },
+  configureShell({
+    topBar: {
+      visible: true,
+      fixed: true,
+      identity: pageIdentity("自由探索模式", "/explore"),
+      actions: globalActions(),
     },
-    BROWSE_HELP,
-  );
+    bottomBar: { visible: false },
+  });
   app.replaceChildren();
   const exploreApp = createApp(ExplorePage, {
     activeCollection: collection,

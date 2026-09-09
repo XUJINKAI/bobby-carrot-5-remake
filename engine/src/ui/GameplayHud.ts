@@ -9,7 +9,6 @@ export interface GameplayHudOptions {
   root?: HTMLElement;
   objective?: boolean;
   inventory?: boolean;
-  economy?: boolean;
 }
 
 /** Engine HUD owner: subscribes to Game, derives model, delegates DOM to GameplayHudView. */
@@ -49,9 +48,7 @@ export class GameplayHud {
     const winState = this.game.winState;
     const signature = JSON.stringify({
       winState,
-      profile: state.profile,
       inventory: state.inventory,
-      economy: state.economy,
     });
     if (signature === this.lastSignature) return;
     this.lastSignature = signature;

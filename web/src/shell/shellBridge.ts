@@ -72,30 +72,24 @@ export interface ShellViewState {
 }
 
 export interface ShellBridge {
-  apply(config: ShellConfig, help: HelpDescriptor): void;
+  apply(config: ShellConfig): void;
 }
 
 let activeBridge: ShellBridge | null = null;
 let activeConfig: ShellConfig | null = null;
-let activeHelp: HelpDescriptor = defaultHelpDescriptor();
 let runtimeWarnings: string[] = [];
 
 export function installShellBridge(bridge: ShellBridge | null): void {
   activeBridge = bridge;
   if (bridge) return;
   activeConfig = null;
-  activeHelp = defaultHelpDescriptor();
   runtimeWarnings = [];
 }
 
-export function configureShell(
-  config: ShellConfig,
-  help: HelpDescriptor = defaultHelpDescriptor(),
-): void {
+export function configureShell(config: ShellConfig): void {
   if (!activeBridge) throw new Error("Web Shell 尚未挂载");
   activeConfig = config;
-  activeHelp = help;
-  activeBridge.apply(mergeShellRuntimeWarnings(config, runtimeWarnings), help);
+  activeBridge.apply(mergeShellRuntimeWarnings(config, runtimeWarnings));
 }
 
 /** Gameplay session 的可玩性警告由 Shell 统一叠加，页面不需要重复处理。 */
@@ -104,10 +98,7 @@ export function setShellRuntimeWarnings(warnings: readonly string[]): void {
     ...new Set(warnings.map((warning) => warning.trim()).filter(Boolean)),
   ];
   if (!activeBridge || !activeConfig) return;
-  activeBridge.apply(
-    mergeShellRuntimeWarnings(activeConfig, runtimeWarnings),
-    activeHelp,
-  );
+  activeBridge.apply(mergeShellRuntimeWarnings(activeConfig, runtimeWarnings));
 }
 
 export function mergeShellRuntimeWarnings(
@@ -135,9 +126,44 @@ export function mergeShellRuntimeWarnings(
   };
 }
 
-export function defaultHelpDescriptor(): HelpDescriptor {
+export function unifiedHelpDescriptor(): HelpDescriptor {
   return {
-    title: "操作帮助",
-    sections: [{ lines: ["WASD / 方向键：移动", "拖动画面：查看地图"] }],
+    title: "操作说明",
+    sections: [
+      {
+        title: "游戏",
+        lines: [
+          "WASD / 方向键：控制移动",
+          "Ctrl+Z：撤销（自由探索）",
+          "Ctrl+Y：重做（自由探索）",
+          "+ / -：缩放地图",
+          "滚轮：缩放地图",
+          "按住滚轮拖动：平移地图",
+          "Tab：切换录制面板（自由探索）",
+          "~：切换 Debug（自由探索）",
+        ],
+      },
+      {
+        title: "Editor",
+        lines: [
+          "Tab：切换 Palette / Surface",
+          "1：选择",
+          "2：画笔",
+          "3：Surface 智能填充",
+          "4：Palette 删除工具",
+          "Ctrl+A：全选地图",
+          "Ctrl+Z：撤销",
+          "Ctrl+Y：重做",
+          "Ctrl+C / X / V：复制 / 剪切 / 粘贴",
+          "Delete / Backspace：删除选中的 Entity",
+          "Escape：关闭右键菜单",
+          "Q / E：切换 Palette Entity 形态",
+          "Surface 右键：取样当前 Terrain / Variant",
+          "滚轮：缩放地图",
+          "按住滚轮拖动：平移地图",
+          "双指：缩放地图",
+        ],
+      },
+    ],
   };
 }

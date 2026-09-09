@@ -76,7 +76,7 @@ Palette 和 Surface 使用一致的基础工具语义：
 
 Surface 没有 Erase；基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的删除使用 Selection + Delete/Backspace，而不再占用一个独立顶部 Erase 工具。
 
-`Ctrl/Cmd+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
+`Ctrl+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
 
 ### Pattern 与 Variant
 
@@ -109,7 +109,7 @@ Dragon、Sandman、Dream Machine、Beaver 等多格 Palette Object 在 JSON 中�
 
 - 鼠标指向 body/tail 仍 resolve 到完整 owner；
 - Del 删除完整 owner；
-- Q/E 或滚轮切换支持的 authoring variant；
+- Q/E 切换支持的 authoring variant；
 - runtime occupancy 只在 Engine level-load 边界展开。
 
 ## Play Test
@@ -132,12 +132,12 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 - Select：单选或矩形多选，不直接绘制；
 - Brush：单格/连续绘制；点入已有 Selection 时整块填充；
 - Surface：额外提供 Smart Fill；右键取样；
-- Ctrl/Cmd+A：全选地图；
-- Palette：Q/E 或滚轮切换可变 Entity；
-- 滚轮在没有 Entity variant 操作时缩放地图；
+- Ctrl+A：全选地图；
+- Palette：Q/E 切换可变 Entity；
+- 滚轮：缩放地图；
 - 中键拖动：平移；
 - 两指手势：缩放 Editor viewport；
-- Ctrl/Cmd+Z、Y：Undo / Redo。
+- Ctrl+Z、Y：Undo / Redo。
 
 ## Data Exchange
 

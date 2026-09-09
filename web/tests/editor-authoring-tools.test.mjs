@@ -27,13 +27,13 @@ const entityFields = fs.readFileSync(
   "utf8",
 );
 
-test("Palette and Surface expose the agreed tool shortcuts", () => {
-  assert.match(shell, /id: "editor-tool-select"[\s\S]*选择 \(1\)/);
-  assert.match(shell, /id: "editor-tool-brush"[\s\S]*画笔 \(2\)/);
-  assert.match(shell, /id: "editor-tool-erase"[\s\S]*删除 \(4\)/);
-  assert.match(shell, /id: "editor-surface-select"[\s\S]*选择 \(1\)/);
-  assert.match(shell, /id: "editor-surface-brush"[\s\S]*画笔 \(2\)/);
-  assert.match(shell, /id: "editor-surface-fill"[\s\S]*填充 \(3\)/);
+test("Palette 和 Surface 发布工具动作与简洁标题", () => {
+  assert.match(shell, /id: "editor-tool-select"[\s\S]*title: "选择"/);
+  assert.match(shell, /id: "editor-tool-brush"[\s\S]*title: "画笔"/);
+  assert.match(shell, /id: "editor-tool-erase"[\s\S]*title: "删除"/);
+  assert.match(shell, /id: "editor-surface-select"[\s\S]*title: "选择"/);
+  assert.match(shell, /id: "editor-surface-brush"[\s\S]*title: "画笔"/);
+  assert.match(shell, /id: "editor-surface-fill"[\s\S]*title: "填充"/);
   assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
   assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
   assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);

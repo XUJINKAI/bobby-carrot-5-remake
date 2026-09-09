@@ -31,6 +31,13 @@ test("Web 交互界面不再使用旧 Unicode 图标", async () => {
   assert.deepEqual(violations, []);
 });
 
+test("地图编辑与 Replay 跳转使用指定的 Phosphor 图标", async () => {
+  const source = await readFile(adapter, "utf8");
+  assert.match(source, /"edit-map": PhPencilSimple/);
+  assert.match(source, /"replay-beginning": PhArrowCounterClockwise/);
+  assert.match(source, /"replay-end": PhArrowClockwise/);
+});
+
 async function sourceFiles(url) {
   const path = fileURLToPath(url);
   const info = await stat(path);

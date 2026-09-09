@@ -4,7 +4,6 @@ import type {
   SurfaceTool,
 } from "@bobby/editor";
 import {
-  EDITOR_HELP,
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
@@ -41,7 +40,6 @@ export function configureEditorShell(
       leftPanel,
       surfaceTool,
     ),
-    EDITOR_HELP,
   );
 }
 
@@ -59,19 +57,19 @@ export function editorShellConfig(
           {
             id: "editor-surface-select",
             icon: "select",
-            title: "选择 (1)",
+            title: "选择",
             pressed: surfaceTool === "rect",
           },
           {
             id: "editor-surface-brush",
             icon: "edit",
-            title: "画笔 (2)",
+            title: "画笔",
             pressed: surfaceTool === "brush",
           },
           {
             id: "editor-surface-fill",
             icon: "fill",
-            title: "填充 (3)",
+            title: "填充",
             pressed: surfaceTool === "fill",
           },
         ]
@@ -79,19 +77,19 @@ export function editorShellConfig(
           {
             id: "editor-tool-select",
             icon: "select",
-            title: "选择 (1)",
+            title: "选择",
             pressed: tool === "select",
           },
           {
             id: "editor-tool-brush",
             icon: "edit",
-            title: "画笔 (2)",
+            title: "画笔",
             pressed: tool === "place",
           },
           {
             id: "editor-tool-erase",
             icon: "erase",
-            title: "删除 (4)",
+            title: "删除",
             pressed: tool === "erase",
           },
         ];
