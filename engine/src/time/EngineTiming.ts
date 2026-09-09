@@ -1,4 +1,4 @@
-export const DEFAULT_WORLD_HZ = 16;
+export const DEFAULT_WORLD_HZ = 60;
 export const DEFAULT_PRESENTATION_HZ = 60;
 export const DEFAULT_WORLD_SPEED = 1;
 export const DEFAULT_PRESENTATION_SPEED = 1;

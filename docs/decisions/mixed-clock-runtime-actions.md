@@ -40,7 +40,7 @@ Clock 与 locomotion cadence 是两个概念：
 
 ```ts
 runtime.timing = {
-  worldHz: 16,
+  worldHz: 60,
   presentationHz: 60,
 };
 ```

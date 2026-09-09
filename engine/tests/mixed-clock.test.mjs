@@ -9,11 +9,11 @@ import { PresentationClock } from "../dist/time/PresentationClock.js";
 import { WorldClock } from "../dist/time/WorldClock.js";
 
 test("Engine timing has one configurable entry for world and presentation rates", () => {
-  assert.equal(DEFAULT_WORLD_HZ, 16);
+  assert.equal(DEFAULT_WORLD_HZ, 60);
   assert.equal(DEFAULT_PRESENTATION_HZ, 60);
   assert.deepEqual(resolveEngineTiming(), {
-    worldHz: 16,
-    worldStepMs: 62.5,
+    worldHz: 60,
+    worldStepMs: 1000 / 60,
     presentationHz: 60,
     presentationStepMs: 1000 / 60,
     worldSpeed: 1,
@@ -33,8 +33,8 @@ test("Engine timing resolves independent World and Presentation speeds", () => {
   assert.deepEqual(
     resolveEngineTiming({ worldSpeed: 4, presentationSpeed: 0.5 }),
     {
-      worldHz: 16,
-      worldStepMs: 62.5,
+      worldHz: 60,
+      worldStepMs: 1000 / 60,
       presentationHz: 60,
       presentationStepMs: 1000 / 60,
       worldSpeed: 4,
@@ -60,7 +60,7 @@ test("WorldClock pause and debug step affect gameplay time only", () => {
   assert.equal(clock.step(4, (time) => ticks.push(time.tick)), 4);
   assert.deepEqual(ticks, [0, 1, 2, 3]);
   clock.resume();
-  assert.equal(clock.advance(62.5, (time) => ticks.push(time.tick)), 1);
+  assert.equal(clock.advance(1000 / 60, (time) => ticks.push(time.tick)), 1);
   assert.equal(clock.tickCount, 5);
 });
 

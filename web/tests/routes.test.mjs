@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  canonicalReplayUrl,
   editorMapPath,
   exploreCollectionPath,
   parseEditorMapHash,
@@ -16,6 +17,17 @@ test("replay asset mirrors the map collection and id", () => {
   assert.equal(
     replayAssetUrl("original", "1-1"),
     "/assets/replays/original/1-1.json",
+  );
+});
+
+test("replay metadata uses the canonical site origin", () => {
+  assert.equal(
+    canonicalReplayUrl({
+      pathname: "/explore/play/original/1-1",
+      search: "?mode=test",
+      hash: "#note",
+    }),
+    "https://bc5r.xujinkai.net/explore/play/original/1-1?mode=test#note",
   );
 });
 

@@ -38,6 +38,7 @@ import GamePage from "./GamePage.vue";
 import { bindReplayPanel } from "./bindReplayPanel.js";
 import { resolveGameMusic } from "./gameMusic.js";
 import {
+  canonicalReplayUrl,
   editorMapPath,
   exploreCollectionPath,
   explorePlayPath,
@@ -241,7 +242,7 @@ export async function renderGamePage(
     ),
     meta: {
       name: identity.title,
-      url: window.location.href,
+      url: canonicalReplayUrl(window.location),
     },
     onVisibilityChange(open) {
       configureShell(

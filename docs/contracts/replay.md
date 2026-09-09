@@ -56,6 +56,9 @@ Replay 记录控制映射之后、World 判定之前的 `WorldIntentGroup`。因
 `worldHz` 是 Replay 运行条件，决定固定 `stepMs`。World 速度只决定真实时间内消费
 多少 Tick，不进入 Replay；1×、8×与无头运行必须产生相同 gameplay 结果。
 
+Engine 默认使用 `60Hz`，新录制会保存该值。播放和无头 Runner 始终采用文件中的
+`worldHz`，因此已有 Replay 可以继续使用录制时的频率。
+
 Presentation Hz、Presentation 速度、Camera、Renderer 和音频均不进入 Replay。
 
 ## 格式
@@ -67,12 +70,12 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   "formatVersion": 1,
   "meta": {
     "name": "1-1",
-    "url": "https://example.test/explore/play/original/1-1",
+    "url": "https://bc5r.xujinkai.net/explore/play/original/1-1",
     "final_status": "won",
     "note": ""
   },
   "runtime": {
-    "worldHz": 16,
+    "worldHz": 60,
     "bobbyLocomotion": {
       "moveMs": 350,
       "speedShoesScale": 0.76
@@ -86,6 +89,9 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 `meta.name` 和 `meta.url` 由宿主在开始录制时提供。Engine 在停止录制时写入
 `final_status`，其值为 `playing / won / dead`；`note` 初始为空字符串，Engine 不读取或
 解释其内容，用户可以在 Replay 文本中直接填写。
+
+Web 生成 `meta.url` 时固定使用 `https://bc5r.xujinkai.net/`，并保留当前页面的路径、
+查询参数和 fragment，使本地开发环境录制的文件也指向正式站点。
 
 Replay 本身不解析地图身份。调用方负责选择用于播放或无头执行的 `LevelMap`；Runner
 从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。作为仓库内回归 fixture

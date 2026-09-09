@@ -28,6 +28,11 @@ for (const replayFile of replayFiles) {
     );
 
     const replay = readJson(replayFile);
+    assert.equal(
+      new URL(replay?.meta?.url).origin,
+      "https://bc5r.xujinkai.net",
+      `${relative} 的 meta.url 必须使用正式站点`,
+    );
     const expectedStatus = replay?.meta?.final_status;
     assert.ok(
       expectedStatus === "playing" ||

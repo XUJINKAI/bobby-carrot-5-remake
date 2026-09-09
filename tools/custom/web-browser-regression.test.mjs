@@ -428,7 +428,7 @@ async function verifyReplayPanel(cdp, url) {
     typeof replay.meta?.name !== "string" ||
     !replay.meta.name ||
     typeof replay.meta.url !== "string" ||
-    replay.meta.url !== url ||
+    replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
     replay.meta.note !== "" ||
     !["playing", "won", "dead"].includes(replay.meta.final_status)
   )

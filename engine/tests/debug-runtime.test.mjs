@@ -58,7 +58,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
 
   assert.equal(snapshot.runtime.worldTickCount, 4);
   assert.equal(snapshot.runtime.worldPaused, true);
-  assert.equal(snapshot.runtime.worldHz, 16);
+  assert.equal(snapshot.runtime.worldHz, 60);
   assert.equal(snapshot.runtime.presentationHz, 60);
   assert.equal(snapshot.runtime.presentationFrame, 1);
   assert.equal(snapshot.runtime.presentationPaused, false);

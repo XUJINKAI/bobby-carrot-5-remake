@@ -39,7 +39,7 @@ const runtime = await createGameplayRuntime({
       inventory: true,
     },
     timing: {
-      worldHz: 16,
+      worldHz: 60,
       presentationHz: 60,
     },
   },
@@ -67,7 +67,7 @@ interface WorldTick {
 }
 ```
 
-默认 `worldHz = 16`，即 `stepMs = 62.5ms`。它只驱动：
+默认 `worldHz = 60`，即 `stepMs ≈ 16.67ms`。它只驱动：
 
 - Input gameplay sampling；
 - World / Behavior；
@@ -101,7 +101,7 @@ WorldClock pause 不会暂停 PresentationClock。动画完成也不得反向触
 ```ts
 runtime: {
   timing: {
-    worldHz: 16,
+    worldHz: 60,
     presentationHz: 60,
   },
 }
@@ -276,7 +276,7 @@ runtime: {
     inventory: true,
   },
   timing: {
-    worldHz: 16,
+    worldHz: 60,
     presentationHz: 60,
   },
   tuning: {},

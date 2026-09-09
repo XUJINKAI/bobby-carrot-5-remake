@@ -46,9 +46,9 @@ requestAnimationFrame
 
 ### WorldClock
 
-当前默认 `16Hz / 62.5ms`，负责 Grid Truth 与 gameplay。这个值是现代 Engine 配置，并不是从原版“一次 gameplay step = 62ms”推出的原版事实。
+当前默认 `60Hz / 约 16.67ms`，负责 Grid Truth 与 gameplay。这个值是现代 Engine 的通用采样策略，不复用原版约 32Hz 的 runtime advance 频率。
 
-逆向已经确认原版在每个约 62ms outer loop 内推进两次 gameplay。是否需要因此调整 Web Engine 默认 worldHz，属于后续实现 PR 的问题；本文只记录原版时基。
+逆向已经确认原版在每个约 62ms outer loop 内推进两次 gameplay。原版机制按约 31ms/step 换算各自的时间语义，不改变 Engine 的全局默认频率。
 
 ### PresentationClock
 
