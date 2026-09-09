@@ -1,4 +1,3 @@
-import type { Direction } from "@bobby/model";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import {
   createGameplayRightInset,
@@ -6,18 +5,12 @@ import {
   type GameplayRightInsetLease,
 } from "../ui/gameplayMount.js";
 import type { DebugEntitySnapshot, DebugSnapshot } from "./DebugSnapshot.js";
+import {
+  DebugControlPanel,
+  type DebugControlPanelActions,
+} from "./DebugControlPanel.js";
 
-export interface DebugSidebarActions {
-  pauseWorld(): void;
-  resumeWorld(): void;
-  stepWorld(): void;
-  setHeldDirection(direction: Direction | null): void;
-  selectActor(actorId: EntityId): void;
-  pausePresentation(): void;
-  resumePresentation(): void;
-  stepPresentation(frames: number): void;
-  stepPresentationToNextSprite(): void;
-  stepPresentationToNextChange(): void;
+export interface DebugSidebarActions extends DebugControlPanelActions {
   clearTrace(): void;
   selectEntity(entityId: EntityId): void;
   layoutChanged(): void;
@@ -52,7 +45,7 @@ const INFO_PANE_WIDTH = 440;
  */
 export class DebugSidebar {
   private readonly root: HTMLDivElement;
-  private readonly controlRoot: HTMLDivElement;
+  private readonly controlPanel: DebugControlPanel;
   private readonly toolRoot: HTMLDivElement;
   private readonly gameplayInset: GameplayRightInsetLease;
   private readonly controlToolButton: HTMLButtonElement;
@@ -60,19 +53,6 @@ export class DebugSidebar {
   private enabled = false;
   private controlVisible = true;
   private infoVisible = true;
-
-  private readonly worldStatus: HTMLSpanElement;
-  private readonly presentationStatus: HTMLSpanElement;
-  private readonly worldPauseResumeButton: HTMLButtonElement;
-  private readonly worldStepButton: HTMLButtonElement;
-  private readonly presentationPauseResumeButton: HTMLButtonElement;
-  private readonly frameBackButton: HTMLButtonElement;
-  private readonly frameForwardButton: HTMLButtonElement;
-  private readonly nextSpriteButton: HTMLButtonElement;
-  private readonly nextChangeButton: HTMLButtonElement;
-  private readonly controlActorSelect: HTMLSelectElement;
-  private actorOptionsKey = "";
-  private readonly directionButtons = new Map<Direction | "release", HTMLButtonElement>();
 
   private readonly actorPanel: HTMLDivElement;
   private readonly timelinePanel: HTMLDivElement;
@@ -103,9 +83,6 @@ export class DebugSidebar {
   private inspectEntityRefs: InspectEntityRefs | null = null;
 
   private activeTab: DebugTab = "actor";
-  private worldPaused = false;
-  private presentationPaused = false;
-  private debugHeldDirection: Direction | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -242,151 +219,11 @@ export class DebugSidebar {
     this.inspectPanel.append(this.section("Inspect", inspectSectionBody));
     this.root.append(sidebarHeader, tabs, this.actorPanel, this.timelinePanel, this.inspectPanel);
 
-    this.controlRoot = document.createElement("div");
-    this.controlRoot.className = "engine-debug-control-rail";
-    this.controlRoot.setAttribute("aria-label", "Engine Debug Controls");
-    Object.assign(this.controlRoot.style, {
-      position: "absolute",
-      top: "0",
-      right: `${TOOL_STRIP_WIDTH + INFO_PANE_WIDTH}px`,
-      bottom: "0",
-      width: `${CONTROL_PANE_WIDTH}px`,
-      zIndex: "31",
-      overflow: "auto",
-      boxSizing: "border-box",
-      padding: "10px",
-      borderLeft: "1px solid rgba(255,255,255,.18)",
-      background: "rgba(4, 11, 7, .96)",
-      color: "#e8f3ea",
-      font: "12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-      pointerEvents: "auto",
-    });
-
-    const controlHeader = document.createElement("header");
-    Object.assign(controlHeader.style, {
-      marginBottom: "9px",
-      paddingBottom: "8px",
-      borderBottom: "1px solid rgba(255,255,255,.08)",
-    });
-    const controlTitle = document.createElement("strong");
-    controlTitle.textContent = "DEBUG CONTROL";
-    controlTitle.style.letterSpacing = ".06em";
-    controlHeader.append(controlTitle);
-
-    const controlBody = document.createElement("div");
-    Object.assign(controlBody.style, { display: "grid", gap: "8px" });
-
-    const actorControl = document.createElement("div");
-    const actorControlLabel = document.createElement("div");
-    actorControlLabel.textContent = "Actor";
-    actorControlLabel.style.color = "#8da495";
-    actorControlLabel.style.marginBottom = "4px";
-    this.controlActorSelect = document.createElement("select");
-    Object.assign(this.controlActorSelect.style, {
-      width: "100%",
-      padding: "4px 5px",
-      border: "1px solid rgba(255,255,255,.2)",
-      borderRadius: "4px",
-      background: "#14251a",
-      color: "inherit",
-      font: "inherit",
-    });
-    this.controlActorSelect.addEventListener("change", () => {
-      const actorId = Number(this.controlActorSelect.value);
-      if (Number.isFinite(actorId)) this.actions.selectActor(actorId);
-    });
-    actorControl.append(actorControlLabel, this.controlActorSelect);
-
-    const worldControl = this.controlSection("World");
-    this.worldStatus = document.createElement("span");
-    this.worldStatus.style.color = "#8da495";
-    const worldButtons = document.createElement("div");
-    Object.assign(worldButtons.style, {
-      display: "grid",
-      gridTemplateColumns: "minmax(0,1fr) auto",
-      gap: "5px",
-      marginTop: "5px",
-    });
-    this.worldPauseResumeButton = this.button("⏸ Pause", () => {
-      if (this.worldPaused) this.actions.resumeWorld();
-      else this.actions.pauseWorld();
-    });
-    this.worldStepButton = this.button("Step", () => this.actions.stepWorld());
-    worldButtons.append(this.worldPauseResumeButton, this.worldStepButton);
-    worldControl.append(this.worldStatus, worldButtons);
-
-    const presentationControl = this.controlSection("Presentation");
-    this.presentationStatus = document.createElement("span");
-    this.presentationStatus.style.color = "#8da495";
-    this.presentationPauseResumeButton = this.button("⏸ Pause", () => {
-      if (this.presentationPaused) this.actions.resumePresentation();
-      else this.actions.pausePresentation();
-    });
-    this.presentationPauseResumeButton.style.marginTop = "5px";
-    this.presentationPauseResumeButton.style.width = "100%";
-    const presentationButtons = document.createElement("div");
-    Object.assign(presentationButtons.style, {
-      display: "grid",
-      gridTemplateColumns: "repeat(4,minmax(0,1fr))",
-      gap: "4px",
-      marginTop: "5px",
-    });
-    this.frameBackButton = this.button("-1", () => this.actions.stepPresentation(-1));
-    this.frameForwardButton = this.button("+1", () => this.actions.stepPresentation(1));
-    this.nextSpriteButton = this.button("Sprite", () =>
-      this.actions.stepPresentationToNextSprite(),
+    this.controlPanel = new DebugControlPanel(
+      TOOL_STRIP_WIDTH + INFO_PANE_WIDTH,
+      CONTROL_PANE_WIDTH,
+      this.actions,
     );
-    this.nextSpriteButton.title =
-      "Advance until the selected actor changes sprite frame";
-    this.nextChangeButton = this.button("Next", () =>
-      this.actions.stepPresentationToNextChange(),
-    );
-    this.nextChangeButton.title = "Jump to the end of the current visible motion";
-    presentationButtons.append(
-      this.frameBackButton,
-      this.frameForwardButton,
-      this.nextSpriteButton,
-      this.nextChangeButton,
-    );
-    presentationControl.append(
-      this.presentationStatus,
-      this.presentationPauseResumeButton,
-      presentationButtons,
-    );
-
-    const inputControl = this.controlSection("Input");
-    const padWrap = document.createElement("div");
-    Object.assign(padWrap.style, {
-      display: "flex",
-      justifyContent: "center",
-      marginTop: "2px",
-    });
-    padWrap.append(this.directionPad());
-    const inputHint = document.createElement("div");
-    inputHint.textContent = "Pause World, choose a direction, then Step.";
-    Object.assign(inputHint.style, {
-      marginTop: "6px",
-      color: "#8da495",
-      fontSize: "11px",
-    });
-    inputControl.append(padWrap, inputHint);
-
-    const teleportHint = document.createElement("div");
-    teleportHint.textContent = "Double-click map: teleport selected actor";
-    Object.assign(teleportHint.style, {
-      paddingTop: "2px",
-      color: "#8da495",
-      fontSize: "11px",
-    });
-
-    controlBody.append(
-      actorControl,
-      worldControl,
-      presentationControl,
-      inputControl,
-      teleportHint,
-    );
-    this.controlRoot.append(controlHeader, controlBody);
 
     this.toolRoot = document.createElement("div");
     this.toolRoot.className = "engine-debug-tool-strip";
@@ -420,9 +257,9 @@ export class DebugSidebar {
     });
     this.toolRoot.append(this.controlToolButton, this.infoToolButton);
 
-    mount.append(this.controlRoot, this.root, this.toolRoot);
+    mount.append(this.controlPanel.root, this.root, this.toolRoot);
     this.root.hidden = true;
-    this.controlRoot.hidden = true;
+    this.controlPanel.root.hidden = true;
     this.setTab("actor");
   }
 
@@ -431,7 +268,7 @@ export class DebugSidebar {
     if (!enabled) {
       this.toolRoot.style.display = "none";
       this.root.hidden = true;
-      this.controlRoot.hidden = true;
+      this.controlPanel.root.hidden = true;
       this.gameplayInset.set(0);
       return;
     }
@@ -443,7 +280,7 @@ export class DebugSidebar {
 
   render(snapshot: DebugSnapshot): void {
     if (!this.enabled) return;
-    this.updateControls(snapshot);
+    this.controlPanel.render(snapshot);
     this.renderActor(snapshot);
     this.renderTimeline(snapshot);
     this.renderInspect(snapshot);
@@ -451,7 +288,7 @@ export class DebugSidebar {
 
   destroy(): void {
     this.gameplayInset.release();
-    this.controlRoot.remove();
+    this.controlPanel.root.remove();
     this.root.remove();
     this.toolRoot.remove();
   }
@@ -459,8 +296,8 @@ export class DebugSidebar {
   private applyDockLayout(requestRender = true): void {
     if (!this.enabled) return;
     this.root.hidden = !this.infoVisible;
-    this.controlRoot.hidden = !this.controlVisible;
-    this.controlRoot.style.right = `${
+    this.controlPanel.root.hidden = !this.controlVisible;
+    this.controlPanel.root.style.right = `${
       TOOL_STRIP_WIDTH + (this.infoVisible ? INFO_PANE_WIDTH : 0)
     }px`;
     this.controlToolButton.style.background = this.controlVisible
@@ -477,32 +314,6 @@ export class DebugSidebar {
     if (requestRender) this.actions.layoutChanged();
   }
 
-  private updateControls(snapshot: DebugSnapshot): void {
-    const runtime = snapshot.runtime;
-    this.worldPaused = runtime.worldPaused;
-    this.presentationPaused = runtime.presentationPaused;
-    this.worldStatus.textContent = `W${runtime.worldTickCount} · ${runtime.worldHz}Hz`;
-    this.presentationStatus.textContent =
-      `P${runtime.presentationFrame} · ${runtime.presentationHz}Hz`;
-    this.worldPauseResumeButton.textContent = runtime.worldPaused
-      ? "▶ Resume"
-      : "⏸ Pause";
-    this.presentationPauseResumeButton.textContent = runtime.presentationPaused
-      ? "▶ Resume"
-      : "⏸ Pause";
-    this.worldStepButton.disabled = !runtime.worldPaused;
-    this.frameBackButton.disabled =
-      !runtime.presentationPaused || runtime.presentationFrame <= 0;
-    this.frameForwardButton.disabled = !runtime.presentationPaused;
-    this.nextSpriteButton.disabled =
-      !runtime.presentationPaused ||
-      !snapshot.actor ||
-      !hasActiveActorPresentation(snapshot.actor);
-    this.nextChangeButton.disabled = !runtime.presentationPaused;
-    this.updateActorSelector(snapshot);
-    this.updateDirectionPad(snapshot.actor !== null);
-  }
-
   private renderActor(snapshot: DebugSnapshot): void {
     const actor = snapshot.actor;
     if (!actor) {
@@ -515,10 +326,6 @@ export class DebugSidebar {
       return;
     }
 
-    const external = snapshot.input?.channels.find(
-      (channel) => channel.source === "external",
-    );
-    this.debugHeldDirection = external?.physicalDirection ?? null;
     const activeChannels = snapshot.input?.channels.filter(
       (channel) =>
         channel.physicalDirection !== null ||
@@ -561,80 +368,6 @@ export class DebugSidebar {
       runtime: actor.visual.runtime,
       renderItems: actor.visual.renderItems,
     });
-  }
-
-  private updateActorSelector(snapshot: DebugSnapshot): void {
-    const key = snapshot.actors.map((actor) => `${actor.id}:${actor.type}`).join("|");
-    if (key !== this.actorOptionsKey) {
-      this.actorOptionsKey = key;
-      const fragment = document.createDocumentFragment();
-      for (const actor of snapshot.actors) {
-        const option = document.createElement("option");
-        option.value = String(actor.id);
-        option.textContent = `#${actor.id} ${actor.type}`;
-        fragment.append(option);
-      }
-      this.controlActorSelect.replaceChildren(fragment);
-    }
-    this.controlActorSelect.disabled = snapshot.actors.length === 0;
-    if (snapshot.actor) this.controlActorSelect.value = String(snapshot.actor.id);
-  }
-
-  private directionPad(): HTMLElement {
-    const pad = document.createElement("div");
-    Object.assign(pad.style, {
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 34px)",
-      gridTemplateRows: "repeat(3, 32px)",
-      gap: "4px",
-    });
-    const cells: Array<[string, Direction | "release"] | null> = [
-      null,
-      ["↑", "up"],
-      null,
-      ["←", "left"],
-      ["·", "release"],
-      ["→", "right"],
-      null,
-      ["↓", "down"],
-      null,
-    ];
-    for (const cell of cells) {
-      if (!cell) {
-        pad.append(document.createElement("span"));
-        continue;
-      }
-      const [label, key] = cell;
-      const button = this.button(label, () => {
-        const direction = key === "release" ? null : key;
-        this.actions.setHeldDirection(
-          direction !== null && direction === this.debugHeldDirection
-            ? null
-            : direction,
-        );
-      });
-      button.style.padding = "2px";
-      this.directionButtons.set(key, button);
-      pad.append(button);
-    }
-    return pad;
-  }
-
-  private updateDirectionPad(hasActor: boolean): void {
-    for (const [key, button] of this.directionButtons) {
-      button.disabled = !this.worldPaused || !hasActor;
-      button.title = !hasActor
-        ? "No selected actor"
-        : this.worldPaused
-          ? key === "release"
-            ? "Release debug input"
-            : `Hold debug input ${key}`
-          : "Pause World before injecting debug input";
-      button.style.background =
-        key !== "release" && key === this.debugHeldDirection
-          ? "#477a53"
-          : "#14251a";
-    }
   }
 
   private renderTimeline(snapshot: DebugSnapshot): void {
@@ -766,25 +499,6 @@ export class DebugSidebar {
       button.style.background = key === tab ? "#285135" : "#14251a";
   }
 
-  private controlSection(titleText: string): HTMLDivElement {
-    const section = document.createElement("div");
-    Object.assign(section.style, {
-      padding: "7px",
-      border: "1px solid rgba(255,255,255,.12)",
-      borderRadius: "5px",
-      background: "rgba(255,255,255,.03)",
-    });
-    const title = document.createElement("div");
-    title.textContent = titleText;
-    Object.assign(title.style, {
-      marginBottom: "3px",
-      color: "#9fd6aa",
-      fontWeight: "700",
-    });
-    section.append(title);
-    return section;
-  }
-
   private valueRef(labelText: string): ValueRef {
     const root = document.createElement("div");
     Object.assign(root.style, {
@@ -890,13 +604,6 @@ export class DebugSidebar {
     });
     return button;
   }
-}
-
-function hasActiveActorPresentation(actor: DebugEntitySnapshot): boolean {
-  if (!actor.visual.runtime || typeof actor.visual.runtime !== "object")
-    return false;
-  const runtime = actor.visual.runtime as Record<string, unknown>;
-  return runtime.moving === true || typeof runtime.animation === "string";
 }
 
 function spriteLabel(actor: DebugEntitySnapshot): string {

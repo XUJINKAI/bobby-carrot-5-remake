@@ -39,7 +39,7 @@ const runtime = await createGameplayRuntime({
       inventory: true,
     },
     timing: {
-      worldHz: 16,
+      worldHz: 60,
       presentationHz: 60,
     },
   },
@@ -67,7 +67,7 @@ interface WorldTick {
 }
 ```
 
-默认 `worldHz = 16`，即 `stepMs = 62.5ms`。它只驱动：
+默认 `worldHz = 60`，即 `stepMs ≈ 16.67ms`。它只驱动：
 
 - Input gameplay sampling；
 - World / Behavior；
@@ -101,7 +101,7 @@ WorldClock pause 不会暂停 PresentationClock。动画完成也不得反向触
 ```ts
 runtime: {
   timing: {
-    worldHz: 16,
+    worldHz: 60,
     presentationHz: 60,
   },
 }
@@ -182,6 +182,50 @@ game.inspectCanvasPoint(clientX, clientY);
 
 `setHeldDirection()` 只更新 continuous input state；真正 movement 在后续 `WorldTick` 采样执行。`move()` 是显式一次性语义动作，但同样必须遵守 WorldClock pause 与 gameplay `inputBlocked`，不能作为旁路推进暂停中的 World。
 
+`move()` 会把一次性语义动作排入下一个 World Tick，与键盘、Pointer、摇杆和 Replay
+输入共用 `GameplaySession` 的输入阶段。提交动作时尚未产生 `MoveResult`；执行结果通过
+Game 状态、事件和 Replay Tick 结果观察。
+
+## GameplaySession 与 Replay
+
+`GameplaySession` 是不依赖 DOM、Canvas 和 Renderer 的单局 gameplay 运行边界。它使用
+同一套正式配置创建 World，并支持真实时间推进、显式 Tick 推进和暂停单步。浏览器
+`Game` 与无头 `ReplayRunner` 共用该实现。
+
+Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 WorldSnapshot。完整
+格式、确定性边界与校验规则见 [`replay.md`](replay.md)。
+
+浏览器 `Game` 提供与无头 Runner 共用输入调度的表现层回放入口：
+
+```ts
+game.startReplayRecording({
+  name: "1-1",
+  url: window.location.href,
+});
+const replay = game.stopReplayRecording();
+game.setTimeScale(4);
+game.startReplayPlayback(replay, { skipIdleTime: true });
+game.pauseReplayPlayback();
+game.resumeReplayPlayback();
+game.stopReplayPlayback();
+game.jumpReplayToEnd(replay);
+game.replayPlaying;
+game.replayPaused;
+```
+
+`setTimeScale()` 接受任意有限正数，同时调整 World 与 Presentation 相对真实时间的推进
+倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
+停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
+`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+
+`skipIdleTime` 用于压缩稳定状态下超过一秒的无输入区间，并在下一次输入前保留短暂的
+表现间隔。压缩期间仍逐个执行 World Tick；新的 WorldMotion、阻塞输入的 RuntimeAction
+或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
+该选项默认关闭，不进入 Replay 文件格式。
+
+录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。
+这些 `meta` 字段不参与播放调度，用户可以直接编辑 `note`。
+
 常用只读状态：
 
 ```ts
@@ -237,7 +281,7 @@ runtime: {
     inventory: true,
   },
   timing: {
-    worldHz: 16,
+    worldHz: 60,
     presentationHz: 60,
   },
   tuning: {},

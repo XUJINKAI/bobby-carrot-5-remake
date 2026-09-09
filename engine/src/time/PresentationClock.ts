@@ -1,4 +1,7 @@
-import { DEFAULT_PRESENTATION_HZ } from "./EngineTiming.js";
+import {
+  DEFAULT_PRESENTATION_HZ,
+  DEFAULT_PRESENTATION_SPEED,
+} from "./EngineTiming.js";
 
 export interface PresentationFrame {
   /** 表现层帧序号，与 World tick 无关。 */
@@ -14,8 +17,9 @@ export interface PresentationFrame {
  * presentationHz 只改变采样粒度，不改变动画持续时间。
  */
 export class PresentationClock {
-  readonly hz: number;
-  readonly stepMs: number;
+  private hzValue: number;
+  private stepMsValue: number;
+  private speedValue: number;
   private currentValue: PresentationFrame = { frame: 0, nowMs: 0, deltaMs: 0 };
   private virtualNowMs = 0;
   private originNowMs = 0;
@@ -23,9 +27,22 @@ export class PresentationClock {
   private accumulatorMs = 0;
   private pausedValue = false;
 
-  constructor(hz = DEFAULT_PRESENTATION_HZ) {
-    this.hz = Number.isFinite(hz) && hz > 0 ? hz : DEFAULT_PRESENTATION_HZ;
-    this.stepMs = 1000 / this.hz;
+  constructor(hz = DEFAULT_PRESENTATION_HZ, speed = DEFAULT_PRESENTATION_SPEED) {
+    this.hzValue = positive(hz, DEFAULT_PRESENTATION_HZ);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.speedValue = positive(speed, DEFAULT_PRESENTATION_SPEED);
+  }
+
+  get hz(): number {
+    return this.hzValue;
+  }
+
+  get stepMs(): number {
+    return this.stepMsValue;
+  }
+
+  get speed(): number {
+    return this.speedValue;
   }
 
   get paused(): boolean {
@@ -43,6 +60,17 @@ export class PresentationClock {
 
   resume(): void {
     this.pausedValue = false;
+  }
+
+  setHz(hz: number): void {
+    this.hzValue = positive(hz, this.hzValue);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.accumulatorMs = 0;
+  }
+
+  setSpeed(speed: number): void {
+    this.speedValue = positive(speed, this.speedValue);
+    this.accumulatorMs = 0;
   }
 
   /**
@@ -83,8 +111,9 @@ export class PresentationClock {
     this.lastTimestampMs = timestampMs;
     if (this.pausedValue) return null;
 
-    this.virtualNowMs += deltaMs;
-    this.accumulatorMs += deltaMs;
+    const scaledDeltaMs = deltaMs * this.speedValue;
+    this.virtualNowMs += scaledDeltaMs;
+    this.accumulatorMs += scaledDeltaMs;
     if (this.accumulatorMs + 0.01 < this.stepMs) return null;
 
     const intervals = Math.max(
@@ -109,4 +138,8 @@ export class PresentationClock {
     this.accumulatorMs = 0;
     this.pausedValue = false;
   }
+}
+
+function positive(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }

@@ -1,5 +1,11 @@
 <script setup lang="ts">
-defineProps<{ showProductStats: boolean }>();
+import AppIcon from "../../shared/icons/AppIcon.vue";
+import ReplayPanel from "./ReplayPanel.vue";
+
+defineProps<{
+  showProductStats: boolean;
+  showReplayPanel: boolean;
+}>();
 </script>
 
 <template>
@@ -11,10 +17,22 @@ defineProps<{ showProductStats: boolean }>();
         class="product-game-statistics"
         data-product-stats
       />
+      <div class="result-overlay" data-result-overlay hidden>
+        <div class="result-card" data-result-card>
+          <button
+            class="icon-btn result-card-close"
+            type="button"
+            data-result="close"
+            aria-label="关闭结果"
+            title="关闭"
+          >
+            <AppIcon name="close" :size="16" />
+          </button>
+          <div data-result-card-content />
+        </div>
+      </div>
     </div>
-    <div class="result-overlay" data-result-overlay hidden>
-      <div class="result-card" data-result-card />
-    </div>
+    <ReplayPanel v-if="showReplayPanel" />
   </section>
 </template>
 
@@ -33,5 +51,15 @@ defineProps<{ showProductStats: boolean }>();
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+
+.game-canvas-layer {
+  overflow: hidden;
+}
+
+@media (min-width: 621px) {
+  .game-stage.replay-panel-open .game-canvas-layer {
+    left: 330px;
+  }
 }
 </style>

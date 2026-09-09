@@ -99,6 +99,8 @@ try {
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',
+    'id="replay-record"',
+    "data-replay-panel",
     'id="undo"',
     'id="redo"',
     'id="previous-level"',
@@ -135,7 +137,7 @@ try {
   await smoke(
     `${origin}/adventure/play/1-1`,
     ["original-adventure-game", 'id="game"'],
-    ['id="undo"'],
+    ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
   await smoke(`${origin}/edit`, [
     "bobby-editor",

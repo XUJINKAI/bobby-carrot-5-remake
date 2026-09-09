@@ -17,6 +17,7 @@ npm run verify
   `Adapter → Reverse Adapter → Adapter` 后 canonical `LevelMap` 玩法语义一致；
 - 运行 DAT byte-for-byte record round-trip 测试；
 - 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、Sandman dialogue 和 Adventure map augmentation；
+- 递归读取 `assets/replays/` 的全部内置过法，在对应地图上复跑并校验实际状态等于 `meta.final_status`；
 - 生成临时 patched original JAR，重新读取目标 DAT record 并验证写入结果；
 - 校验依赖方向：Model、Adventure、Engine、Editor、Web 不允许依赖
   `tools/original/dat/`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；

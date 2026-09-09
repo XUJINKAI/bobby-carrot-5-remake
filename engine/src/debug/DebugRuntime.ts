@@ -19,11 +19,15 @@ export interface DebugRuntimeHost {
   pause(): void;
   resume(): void;
   step(count: number): void;
+  setWorldHz(hz: number): void;
+  setWorldSpeed(speed: number): void;
   setHeldDirection(actorId: EntityId, direction: Direction | null): void;
   teleportActor(actorId: EntityId, cell: CellPosition): boolean;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
+  setPresentationHz(hz: number): void;
+  setPresentationSpeed(speed: number): void;
   selectionChanged(cell: CellPosition | null): void;
   requestRender(): void;
 }
@@ -106,6 +110,8 @@ export class DebugRuntime {
           this.host.resume();
         },
         stepWorld: () => this.host.step(1),
+        setWorldHz: (hz) => this.host.setWorldHz(hz),
+        setWorldSpeed: (speed) => this.host.setWorldSpeed(speed),
         setHeldDirection: (direction) => {
           const actorId =
             this.trackedActorId ??
@@ -126,6 +132,8 @@ export class DebugRuntime {
         pausePresentation: () => this.host.pausePresentation(),
         resumePresentation: () => this.host.resumePresentation(),
         stepPresentation: (frames) => this.host.stepPresentation(frames),
+        setPresentationHz: (hz) => this.host.setPresentationHz(hz),
+        setPresentationSpeed: (speed) => this.host.setPresentationSpeed(speed),
         stepPresentationToNextSprite: () =>
           this.stepPresentationToNextSprite(),
         stepPresentationToNextChange: () => this.stepPresentationToNextChange(),

@@ -3,8 +3,23 @@ export interface ExploreMapRef {
   id: string;
 }
 
+const REPLAY_SITE_ORIGIN = "https://bc5r.xujinkai.net";
+
 export function mapAssetUrl(collection: string, id: string): string {
   return `/assets/maps/${encodeURIComponent(collection)}/${encodeURIComponent(id)}.json`;
+}
+
+export function replayAssetUrl(collection: string, id: string): string {
+  return `/assets/replays/${encodeURIComponent(collection)}/${encodeURIComponent(id)}.json`;
+}
+
+export function canonicalReplayUrl(
+  location: Pick<Location, "pathname" | "search" | "hash">,
+): string {
+  return new URL(
+    `${location.pathname}${location.search}${location.hash}`,
+    REPLAY_SITE_ORIGIN,
+  ).href;
 }
 
 export function parseMapPlayUrl(

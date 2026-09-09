@@ -4,7 +4,12 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { createServer } from "vite";
 import { root } from "../lib/fs.mjs";
+import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorCanvasPerformance } from "./editor-performance-browser.mjs";
+import {
+  replayLayout,
+  verifyReplayPanelShortcut,
+} from "./replay-browser-checks.mjs";
 
 const browserEnvironment = { ...process.env };
 delete browserEnvironment.DISPLAY;
@@ -12,7 +17,7 @@ delete browserEnvironment.WAYLAND_DISPLAY;
 delete browserEnvironment.XAUTHORITY;
 
 test(
-  "Web browser regressions cover settings, themes and Engine Dialog lifecycle",
+  "Web browser regressions cover settings, Replay UI and Engine Dialog lifecycle",
   { timeout: 90_000 },
   async () => {
     const browser = findBrowser();
@@ -65,6 +70,7 @@ test(
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, `${origin}/settings`);
       await verifyEditorSurfaceInspector(cdp, `${origin}/edit`);
+      await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
       await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
     } finally {
       cdp.close();
@@ -76,7 +82,7 @@ test(
 
 async function verifyMusicInteractionTip(cdp, url) {
   const sessionId = await openPage(cdp, url);
-  await waitFor(async () =>
+  await waitForBrowserState(async () =>
     Boolean(
       await cdp.evaluate(
         sessionId,
@@ -355,6 +361,276 @@ async function verifyGameplayDialog(cdp, url) {
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowDown", 40);
 }
 
+async function verifyReplayPanel(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 1200, height: 800, deviceScaleFactor: 1, mobile: false },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
+      ),
+    ),
+    20_000,
+  );
+  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "!document.querySelector('[data-replay-panel]')?.hidden",
+      ),
+    ),
+  );
+  await verifyReplayPanelShortcut(cdp, sessionId);
+  const desktopLayout = await replayLayout(cdp, sessionId);
+  if (desktopLayout.canvasLeft < desktopLayout.panelRight - 1)
+    throw new Error("Replay desktop panel did not reserve canvas space");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-replay-status]')?.textContent ?? ''",
+    )) === "正在录制",
+  );
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
+  await waitFor(async () =>
+    !String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-ticks]')?.textContent ?? ''",
+      ),
+    ).includes(" 0 ticks"),
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ).includes("复跑完成"),
+  );
+  const replay = await cdp.evaluate(
+    sessionId,
+    "JSON.parse(document.querySelector('[data-replay-output]').value)",
+  );
+  if (replay.formatVersion !== 1 || replay.endTick < 1 || replay.frames.length < 1)
+    throw new Error("Replay panel did not export recorded World input");
+  if (
+    typeof replay.meta?.name !== "string" ||
+    !replay.meta.name ||
+    typeof replay.meta.url !== "string" ||
+    replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
+    replay.meta.note !== "" ||
+    !["playing", "won", "dead"].includes(replay.meta.final_status)
+  )
+    throw new Error("Replay panel did not export map metadata");
+  if (
+    "levelHash" in replay ||
+    "expectation" in replay ||
+    Object.keys(replay).at(-1) !== "frames"
+  )
+    throw new Error("Replay export did not use the compact field layout");
+  if ("profile" in replay.runtime || "economy" in replay.runtime)
+    throw new Error("Replay runtime included Explore session settings");
+  if ("snapshot" in replay || "entities" in replay)
+    throw new Error("Replay export included runtime state");
+  const controls = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      editable: !document.querySelector('[data-replay-output]').readOnly,
+      speedType: document.querySelector('[data-replay-speed]')?.type,
+      speedValue: document.querySelector('[data-replay-speed]')?.value,
+      actions: [...document.querySelectorAll('[data-replay-action]')]
+        .map((button) => ({
+          action: button.dataset.replayAction,
+          label: button.textContent.trim(),
+        })),
+    }))()`,
+  );
+  if (!controls.editable)
+    throw new Error("Replay output was not editable");
+  if (controls.speedType !== "number" || controls.speedValue !== "1")
+    throw new Error("Replay playback speed was not an editable number");
+  for (const label of [
+    "播放",
+    "停止",
+    "跳到起点",
+    "跳到终点",
+    "复制",
+    "下载",
+    "加载内置过法",
+  ])
+    if (!controls.actions.some((action) => action.label === label))
+      throw new Error(`Replay panel action missing: ${label}`);
+  for (const action of ["slower", "faster"])
+    if (!controls.actions.some((button) => button.action === action))
+      throw new Error(`Replay speed action missing: ${action}`);
+  await cdp.send(
+    "Runtime.evaluate",
+    {
+      expression: `(() => {
+        const input = document.querySelector('[data-replay-speed]');
+        input.value = '1.3';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        document.querySelector('[data-replay-action="faster"]').click();
+      })()`,
+      awaitPromise: true,
+    },
+    sessionId,
+  );
+  const adjustedSpeed = await cdp.send(
+    "Runtime.evaluate",
+    {
+      expression: "document.querySelector('[data-replay-speed]').value",
+      returnByValue: true,
+    },
+    sessionId,
+  );
+  if (adjustedSpeed.result.value !== "1.5")
+    throw new Error("Replay speed preset adjustment did not use the next value");
+  const playbackControls = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const input = document.querySelector('[data-replay-speed]');
+      const play = document.querySelector('[data-replay-action="play"]');
+      const stop = document.querySelector('[data-replay-action="stop-playback"]');
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      play.click();
+      const invalidRejected = input.getAttribute('aria-invalid') === 'true';
+      input.value = '20';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      play.click();
+      const runningLabel = play.textContent.trim();
+      const stopWasEnabled = !stop.disabled;
+      play.click();
+      const pausedLabel = play.textContent.trim();
+      const pausedStatus = document.querySelector('[data-replay-status]').textContent;
+      stop.click();
+      return {
+        invalidRejected,
+        runningLabel,
+        stopWasEnabled,
+        pausedLabel,
+        pausedStatus,
+        stopDisabledAfterExit: stop.disabled,
+        speedValue: input.value,
+        speedInvalidAfterEdit: input.hasAttribute('aria-invalid'),
+        messagePresent: Boolean(document.querySelector('[data-replay-message]')),
+      };
+    })()`,
+  );
+  if (!playbackControls.invalidRejected)
+    throw new Error("Replay playback accepted an empty speed");
+  if (
+    playbackControls.runningLabel !== "暂停" ||
+    !playbackControls.stopWasEnabled ||
+    playbackControls.pausedLabel !== "播放" ||
+    playbackControls.pausedStatus !== "播放已暂停"
+  )
+    throw new Error("Replay play, pause and stop controls did not reflect state");
+  if (
+    !playbackControls.stopDisabledAfterExit ||
+    playbackControls.speedValue !== "20" ||
+    playbackControls.speedInvalidAfterEdit
+  )
+    throw new Error("Replay playback did not accept an unrestricted positive speed");
+  if (playbackControls.messagePresent)
+    throw new Error("Replay panel still mounted the variable-height message");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+    )) === "当前关卡暂无内置过法",
+  );
+
+  await cdp.evaluate(
+    sessionId,
+    "window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', bubbles: true })); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-debug-control-rail')",
+      ),
+    ),
+  );
+  const engineSpeeds = await cdp.evaluate(
+    sessionId,
+    `([...document.querySelectorAll('.engine-debug-control-rail label')]
+      .filter((label) => label.firstChild?.textContent === 'Speed')
+      .map((label) => label.querySelector('select')?.value))`,
+  );
+  if (engineSpeeds.length !== 2 || engineSpeeds.some((speed) => speed !== "20"))
+    throw new Error("Replay panel time scale did not persist in both Engine clocks");
+
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
+    sessionId,
+  );
+  await cdp.evaluate(
+    sessionId,
+    "window.__replayPanelReloadProbe = true; true",
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => {
+          const panel = document.querySelector('[data-replay-panel]');
+          return window.__replayPanelReloadProbe !== true &&
+            document.querySelector('#replay-record') && panel && !panel.hidden;
+        })()`,
+      ),
+    ),
+    20_000,
+  );
+  const mobileLayout = await replayLayout(cdp, sessionId);
+  if (Math.abs(mobileLayout.canvasLeft - mobileLayout.stageLeft) > 1)
+    throw new Error("Replay mobile panel changed the canvas layout");
+  if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
+    throw new Error("Replay mobile panel did not float inside the game stage");
+}
+
+async function clickWhenPresent(cdp, sessionId, selector) {
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => {
+          const element = document.querySelector(${JSON.stringify(selector)});
+          if (!element) return false;
+          element.click();
+          return true;
+        })()`,
+      ),
+    ),
+  );
+}
+
 async function openPage(cdp, url) {
   const { targetId } = await cdp.send("Target.createTarget", { url });
   const { sessionId } = await cdp.send("Target.attachToTarget", {
@@ -396,6 +672,22 @@ function dialogPayload() {
         interaction: "bonus-key-vendor",
       },
       { type: "exit", x: 1, y: 1 },
+    ],
+  };
+  return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");
+}
+
+function replayPayload() {
+  const map = {
+    schemaVersion: 1,
+    meta: { name: "Replay Browser Regression", author: "bc5r" },
+    width: 3,
+    height: 1,
+    entities: [
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 2, y: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0 },
     ],
   };
   return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");
@@ -450,14 +742,7 @@ function createCdpPipe(input, output) {
   };
 }
 
-async function waitFor(check, timeoutMs = 10_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("Browser regression interaction timed out");
-}
+const waitFor = waitForBrowserState;
 
 function findBrowser() {
   const candidates = [

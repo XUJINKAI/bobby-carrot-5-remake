@@ -20,6 +20,7 @@ for (const file of [
 ])
   run("git", ["check-ignore", "--quiet", file]);
 run(process.execPath, ["tools/cli.mjs", "test"]);
+run(process.execPath, ["--test", "tools/replay/replay-assets.test.mjs"]);
 run(process.execPath, ["tools/cli.mjs", "build"]);
 ({ parseMapDocument } = await import("@bobby/model"));
 run(process.execPath, ["tools/pipeline/browser-smoke.mjs"]);

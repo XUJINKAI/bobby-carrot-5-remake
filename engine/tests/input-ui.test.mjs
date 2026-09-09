@@ -171,7 +171,7 @@ test("默认持续输入没有额外首步延迟且与可配置 WorldClock 分�
   assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.keyboardRepeatDelayMs, 0);
   assert.equal(DEFAULT_INPUT_CONTROLLER_OPTIONS.externalRepeatDelayMs, 0);
   assert.equal(DEFAULT_SCREEN_JOYSTICK_OPTIONS.initialRepeatDelayMs, 0);
-  assert.equal(resolveEngineTiming().worldStepMs, 62.5);
+  assert.equal(resolveEngineTiming().worldStepMs, 1000 / 60);
 });
 
 test("屏幕摇杆默认识别区紧贴右下角，默认圆盘完整落在识别区内", () => {

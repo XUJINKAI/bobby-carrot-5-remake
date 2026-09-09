@@ -10,7 +10,8 @@ import {
   GameplayDialog,
   type GameplayDialogOptions,
 } from "../ui/GameplayDialog.js";
-import { Game, type GameOptions, type GameRuntimeOptions } from "./Game.js";
+import { Game } from "./Game.js";
+import type { GameOptions, GameRuntimeOptions } from "./GameOptions.js";
 import {
   validateLevelPlayability,
   type LevelRuntimeWarning,

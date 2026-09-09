@@ -1,6 +1,10 @@
-import { DEFAULT_WORLD_HZ } from "./EngineTiming.js";
+import {
+  DEFAULT_WORLD_HZ,
+  DEFAULT_WORLD_SPEED,
+} from "./EngineTiming.js";
 
-const MAX_CATCH_UP_TICKS = 4;
+const BASE_CATCH_UP_TICKS = 4;
+const MAX_PLAYBACK_CATCH_UP_TICKS = 32;
 
 /** World / gameplay 唯一固定逻辑时间。 */
 export interface WorldTick {
@@ -17,15 +21,29 @@ export type WorldTickListener = (time: WorldTick) => void;
  * RuntimeAction 只接收稳定的 WorldTick。Pause 只暂停 gameplay，不暂停表现层。
  */
 export class WorldClock {
-  readonly hz: number;
-  readonly stepMs: number;
+  private hzValue: number;
+  private stepMsValue: number;
+  private speedValue: number;
   private accumulatorMs = 0;
   private nextTickValue = 0;
   private pausedValue = false;
 
-  constructor(hz = DEFAULT_WORLD_HZ) {
-    this.hz = Number.isFinite(hz) && hz > 0 ? hz : DEFAULT_WORLD_HZ;
-    this.stepMs = 1000 / this.hz;
+  constructor(hz = DEFAULT_WORLD_HZ, speed = DEFAULT_WORLD_SPEED) {
+    this.hzValue = positive(hz, DEFAULT_WORLD_HZ);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.speedValue = positive(speed, DEFAULT_WORLD_SPEED);
+  }
+
+  get hz(): number {
+    return this.hzValue;
+  }
+
+  get stepMs(): number {
+    return this.stepMsValue;
+  }
+
+  get speed(): number {
+    return this.speedValue;
   }
 
   get nextTick(): WorldTick {
@@ -41,14 +59,30 @@ export class WorldClock {
   }
 
   /**
-   * 吸收真实时间并执行 0..N 个固定 gameplay Tick。单次最多追赶 4 Tick；
-   * 超出的后台停顿直接丢弃，避免恢复页面时形成更新风暴。
+   * 吸收真实时间并执行 0..N 个固定 gameplay Tick。真实时间先按基础预算裁剪，
+   * 再乘播放速度；因此 8× 可以在正常 RAF 下消费足量 Tick，后台停顿仍不会形成更新风暴。
    */
-  advance(deltaMs: number, listener: WorldTickListener): number {
+  advance(
+    deltaMs: number,
+    listener: WorldTickListener,
+    maxTicks = Number.POSITIVE_INFINITY,
+  ): number {
     if (this.pausedValue || !Number.isFinite(deltaMs) || deltaMs <= 0) return 0;
-    this.accumulatorMs += Math.min(deltaMs, this.stepMs * MAX_CATCH_UP_TICKS);
+    const boundedRealDeltaMs = Math.min(
+      deltaMs,
+      this.stepMs * BASE_CATCH_UP_TICKS,
+    );
+    this.accumulatorMs += boundedRealDeltaMs * this.speedValue;
+    const tickBudget = Math.min(
+      MAX_PLAYBACK_CATCH_UP_TICKS,
+      Math.max(0, Math.floor(maxTicks)),
+      Math.max(
+        BASE_CATCH_UP_TICKS,
+        Math.ceil(BASE_CATCH_UP_TICKS * this.speedValue),
+      ),
+    );
     let count = 0;
-    while (this.accumulatorMs >= this.stepMs && count < MAX_CATCH_UP_TICKS) {
+    while (this.accumulatorMs >= this.stepMs && count < tickBudget) {
       this.runTick(listener);
       this.accumulatorMs -= this.stepMs;
       count += 1;
@@ -66,9 +100,25 @@ export class WorldClock {
     this.accumulatorMs = 0;
   }
 
+  setHz(hz: number): void {
+    this.hzValue = positive(hz, this.hzValue);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.accumulatorMs = 0;
+  }
+
+  setSpeed(speed: number): void {
+    this.speedValue = positive(speed, this.speedValue);
+    this.accumulatorMs = 0;
+  }
+
   /** Debug 单步只允许在暂停状态推进，避免与 RAF 驱动的 advance() 交错。 */
   step(count: number, listener: WorldTickListener): number {
     if (!this.pausedValue) return 0;
+    return this.advanceTicks(count, listener);
+  }
+
+  /** Replay 与无头测试显式消费固定 Tick，不读取暂停或真实时间状态。 */
+  advanceTicks(count: number, listener: WorldTickListener): number {
     const safeCount = Math.max(0, Math.floor(Number.isFinite(count) ? count : 0));
     for (let index = 0; index < safeCount; index += 1) this.runTick(listener);
     return safeCount;
@@ -85,4 +135,8 @@ export class WorldClock {
     this.nextTickValue += 1;
     listener(time);
   }
+}
+
+function positive(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }

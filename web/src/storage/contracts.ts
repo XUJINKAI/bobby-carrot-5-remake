@@ -9,6 +9,8 @@ export const EXPLORE_STORAGE_PREFIX = "bc5r:explore/";
 export const EDITOR_STORAGE_PREFIX = "bc5r:editor/";
 export const EDITOR_AUTOSAVE_SLOT = "autosave";
 export const EDITOR_AUTOSAVE_STORAGE_KEY = `${EDITOR_STORAGE_PREFIX}${EDITOR_AUTOSAVE_SLOT}`;
+export const REPLAY_PANEL_SESSION_STORAGE_KEY =
+  "bc5r:session/replay-panel-open";
 
 export type WebTheme = "bobby" | "fc";
 export type MusicMode = "follow-theme" | "modern" | "8bit";

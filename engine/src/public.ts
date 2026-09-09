@@ -1,5 +1,20 @@
-export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";
+export { Game } from "./core/Game.js";
+export type {
+  GameOptions,
+  GameRuntimeOptions,
+  RuntimeEntityStateInitializer,
+} from "./core/GameOptions.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
+export {
+  GameplaySession,
+  type GameplayInputAttempt,
+  type GameplayInputResolution,
+  type SerializableGameplaySetup,
+  type GameplaySessionOptions,
+  type GameplayTickInput,
+  type GameplayTickInputProvider,
+  type GameplayTickResult,
+} from "./core/GameplaySession.js";
 export {
   DEFAULT_HISTORY_POLICY,
   shouldCheckpoint,
@@ -19,7 +34,9 @@ export {
 } from "./core/GameplayRuntime.js";
 export {
   DEFAULT_PRESENTATION_HZ,
+  DEFAULT_PRESENTATION_SPEED,
   DEFAULT_WORLD_HZ,
+  DEFAULT_WORLD_SPEED,
   resolveEngineTiming,
   type EngineTiming,
   type EngineTimingOptions,
@@ -96,6 +113,24 @@ export {
   readBobbyInventory,
   type BobbyInventoryState,
 } from "./entities/player/BobbyState.js";
+export {
+  REPLAY_FORMAT_VERSION,
+  type ReplayFinalStatus,
+  type Replay,
+  type ReplayFrame,
+  type ReplayInputGroup,
+  type ReplayMeta,
+  type ReplayMoveIntent,
+  type ReplayRecordingMeta,
+  type ReplayRuntimeSetup,
+} from "./replay/ReplayFormat.js";
+export { ReplayRecorder } from "./replay/ReplayRecorder.js";
+export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
+export {
+  runReplay,
+  type ReplayReport,
+  type ReplayRunOptions,
+} from "./replay/ReplayRunner.js";
 
 /** Canonical 地图序列化合同。 */
 export type {

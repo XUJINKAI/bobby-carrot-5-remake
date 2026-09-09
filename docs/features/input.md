@@ -30,7 +30,7 @@ interface WorldTick {
 }
 ```
 
-默认 `worldHz = 16`，即 `stepMs = 62.5ms`，但这个频率来自统一 `runtime.timing.worldHz` 配置，不是 Input 自己的常量。浏览器事件只记录 input state；真正 movement 统一在 WorldTick 中产生：
+默认 `worldHz = 60`，即 `stepMs ≈ 16.67ms`，但这个频率来自统一 `runtime.timing.worldHz` 配置，不是 Input 自己的常量。浏览器事件只记录 input state；真正 movement 统一在 WorldTick 中产生：
 
 ```ts
 const input = inputController.update(time);
