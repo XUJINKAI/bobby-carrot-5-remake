@@ -419,13 +419,10 @@ export class VisualRuntime {
   }
 
   private appendTransientVisuals(scene: RenderScene): RenderScene {
-    if (!this.frame || this.transients.size === 0) return scene;
-    const passes: Record<VisualRenderPass, RenderItem[]> = {
-      world: [...scene.world],
-      player: [...scene.player],
-      effect: [...scene.effect],
-    };
-    for (const transient of this.transients.values()) {
+    if (!this.frame || this.activeTransientIds.size === 0) return scene;
+    const passes: Partial<Record<VisualRenderPass, RenderItem[]>> = {};
+    for (const id of this.activeTransientIds) {
+      const transient = this.transients.get(id)!;
       const durationMs = Math.max(0, transient.definition.durationMs);
       const elapsedMs = this.frame.nowMs - transient.startedAtMs;
       if (elapsedMs < 0 || durationMs <= 0 || elapsedMs >= durationMs) continue;
@@ -437,7 +434,9 @@ export class VisualRuntime {
       });
       if (!composition) continue;
       const pass = transient.definition.renderPass ?? "effect";
-      passes[pass].push({
+      // 基础场景已排序；只有实际追加特效的 pass 才需要复制和重排。
+      const items = passes[pass] ?? (passes[pass] = [...scene[pass]]);
+      items.push({
         presence: {
           entityId: -transient.id,
           cell: { x: transient.x, y: transient.y },
@@ -450,12 +449,13 @@ export class VisualRuntime {
         visualY: transient.y,
       });
     }
+    if (!passes.world && !passes.player && !passes.effect) return scene;
     return {
       worldWidth: scene.worldWidth,
       worldHeight: scene.worldHeight,
-      world: sortRenderItems(passes.world),
-      player: sortRenderItems(passes.player),
-      effect: sortRenderItems(passes.effect),
+      world: passes.world ? sortRenderItems(passes.world) : scene.world,
+      player: passes.player ? sortRenderItems(passes.player) : scene.player,
+      effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
     };
   }
 
