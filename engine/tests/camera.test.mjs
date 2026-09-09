@@ -26,9 +26,9 @@ test("camera keeps stable defaults when options are omitted or invalid", () => {
   const defaults = new Camera();
   assert.equal(defaults.zoom, 1);
   defaults.setZoom(0);
-  assert.equal(defaults.zoom, 0.3);
-  defaults.setZoom(3);
-  assert.equal(defaults.zoom, 2.75);
+  assert.equal(defaults.zoom, 0.25);
+  defaults.setZoom(5);
+  assert.equal(defaults.zoom, 4);
 
   const invalid = new Camera(48, {
     zoom: Number.NaN,
@@ -37,9 +37,57 @@ test("camera keeps stable defaults when options are omitted or invalid", () => {
   });
   assert.equal(invalid.zoom, 1);
   invalid.setZoom(0);
-  assert.equal(invalid.zoom, 0.3);
-  invalid.setZoom(3);
-  assert.equal(invalid.zoom, 2.75);
+  assert.equal(invalid.zoom, 0.25);
+  invalid.setZoom(5);
+  assert.equal(invalid.zoom, 4);
+});
+
+test("camera zoom keeps the selected screen point anchored", () => {
+  const camera = new Camera(48);
+  camera.setViewport(480, 320);
+  camera.follow({ x: 10, y: 10 }, 30, 30);
+  const anchor = camera.worldToScreen(8.25, 9.75);
+
+  camera.setZoomAt(2, anchor.x, anchor.y);
+  camera.follow({ x: 10, y: 10 }, 30, 30);
+
+  const after = camera.worldToScreen(8.25, 9.75);
+  assert.ok(Math.abs(after.x - anchor.x) < 0.0001);
+  assert.ok(Math.abs(after.y - anchor.y) < 0.0001);
+});
+
+test("camera pan allows each map edge to reach the viewport center", () => {
+  const camera = new Camera(48);
+  camera.setViewport(480, 320);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+
+  camera.panByScreen(10_000, 10_000);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+  assert.deepEqual(camera.worldToScreen(0, 0), { x: 240, y: 160 });
+
+  camera.panByScreen(-10_000, -10_000);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+  assert.deepEqual(camera.worldToScreen(20, 20), { x: 240, y: 160 });
+});
+
+test("camera smooths discontinuous follow target changes", () => {
+  const camera = new Camera(48, { followDurationMs: 400 });
+  camera.setViewport(480, 320);
+  camera.follow({ x: 1, y: 1 }, 20, 20, frame(0));
+  const from = { x: camera.centerX, y: camera.centerY };
+
+  camera.follow({ x: 15, y: 15 }, 20, 20, frame(100));
+  assert.deepEqual({ x: camera.centerX, y: camera.centerY }, from);
+
+  camera.follow({ x: 15, y: 15 }, 20, 20, frame(300));
+  assert.ok(camera.centerX > from.x && camera.centerX < 15.5);
+  assert.ok(camera.centerY > from.y && camera.centerY < 15.5);
+
+  camera.follow({ x: 15, y: 15 }, 20, 20, frame(500));
+  assert.deepEqual(
+    { x: camera.centerX, y: camera.centerY },
+    { x: 15.5, y: 15.5 },
+  );
 });
 
 test("camera shake offsets presentation briefly then returns exactly to baseline", () => {

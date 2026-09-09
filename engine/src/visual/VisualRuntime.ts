@@ -289,6 +289,7 @@ export class VisualRuntime {
         },
         world.width,
         world.height,
+        this.frame ?? undefined,
       );
     }
     const scene = buildVisualScene(

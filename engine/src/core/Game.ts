@@ -267,6 +267,8 @@ export class Game {
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.visual.clear();
+    this.visual.camera.resetFollow();
+    this.visual.camera.resetPan();
     this.debugRuntime.clearSelection();
     this.lastScene = null;
     this.lastMove = null;
@@ -460,6 +462,12 @@ export class Game {
 
   setZoom(value: number): void {
     this.visual.camera.setZoom(value);
+    this.render();
+  }
+
+  setZoomAt(value: number, clientX: number, clientY: number): void {
+    const rect = this.canvas.getBoundingClientRect();
+    this.visual.camera.setZoomAt(value, clientX - rect.left, clientY - rect.top);
     this.render();
   }
 
