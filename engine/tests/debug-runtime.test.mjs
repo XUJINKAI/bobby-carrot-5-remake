@@ -154,8 +154,12 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
+  const controlSource = fs.readFileSync(
+    new URL("../src/debug/DebugControlPanel.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(source, /type DebugTab = "actor" \| "timeline" \| "inspect"/);
-  assert.match(source, /engine-debug-control-rail/);
+  assert.match(controlSource, /engine-debug-control-rail/);
   assert.match(source, /engine-debug-sidebar/);
   assert.match(source, /engine-debug-tool-strip/);
   assert.match(source, /TOOL_STRIP_WIDTH = 44/);
@@ -170,23 +174,23 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
   assert.doesNotMatch(source, /toggleSidebarCollapsed/);
   assert.doesNotMatch(source, /Close Engine Debug/);
   assert.doesNotMatch(source, /close\(\): void/);
-  assert.match(source, /private readonly worldPauseResumeButton/);
-  assert.match(source, /private readonly worldStepButton/);
-  assert.match(source, /private readonly presentationPauseResumeButton/);
-  assert.match(source, /private readonly frameBackButton/);
-  assert.match(source, /private readonly frameForwardButton/);
-  assert.match(source, /private readonly nextSpriteButton/);
-  assert.match(source, /private readonly nextChangeButton/);
-  assert.match(source, /private readonly controlActorSelect/);
-  assert.match(source, /Double-click map: teleport selected actor/);
+  assert.match(controlSource, /private readonly worldPauseResumeButton/);
+  assert.match(controlSource, /private readonly worldStepButton/);
+  assert.match(controlSource, /private readonly presentationPauseResumeButton/);
+  assert.match(controlSource, /private readonly frameBackButton/);
+  assert.match(controlSource, /private readonly frameForwardButton/);
+  assert.match(controlSource, /private readonly nextSpriteButton/);
+  assert.match(controlSource, /private readonly nextChangeButton/);
+  assert.match(controlSource, /private readonly actorSelect/);
+  assert.match(controlSource, /Double-click map: teleport selected actor/);
   assert.match(source, /\["actor", "Actor"\]/);
   assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
   assert.match(source, /Runtime actions/);
   assert.match(source, /Input channels/);
-  assert.match(source, /setHeldDirection/);
-  assert.match(source, /selectActor/);
-  assert.match(source, /stepPresentationToNextSprite/);
+  assert.match(controlSource, /setHeldDirection/);
+  assert.match(controlSource, /selectActor/);
+  assert.match(controlSource, /stepPresentationToNextSprite/);
   assert.match(source, /50 events/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);
