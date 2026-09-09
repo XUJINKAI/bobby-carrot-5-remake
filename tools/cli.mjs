@@ -32,6 +32,8 @@ if (group === "original") {
     run(process.execPath, ["tools/model/examples.mjs", ...process.argv.slice(4)]);
   } else throw new Error("用法：node tools/cli.mjs schema examples [entity-type]");
 } else if (group === "assets") {
+  // 资产模块在加载时就导入 Model；冷启动必须先生成其包入口。
+  run(tscCommand(), ["-b", "model", "--force"]);
   const { rebuildAssets, prepareAssets } = await import("./pipeline/assets.mjs");
   const options = {
     includeDevCollections: process.argv.includes("--dev"),
