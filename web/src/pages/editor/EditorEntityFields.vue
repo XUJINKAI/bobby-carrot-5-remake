@@ -24,14 +24,19 @@ import {
 import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   targets: readonly LevelEntity[];
   definition: EntityCatalogEntry;
   entityPolicy?: EditorEntityDefinition | undefined;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
-}>();
+  showMapFields?: boolean;
+  emptyText?: string;
+}>(), {
+  showMapFields: true,
+  emptyText: "该素材没有可编辑地图字段。",
+});
 const emit = defineEmits<{
   field: [key: string, value: string];
   variant: [index: number];
@@ -70,9 +75,11 @@ const controlledFieldKeys = computed(() => {
   return keys;
 });
 const editableFields = computed(() =>
-  (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
-    (field) => !controlledFieldKeys.value.has(field.key),
-  ),
+  props.showMapFields
+    ? (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
+        (field) => !controlledFieldKeys.value.has(field.key),
+      )
+    : [],
 );
 const hasFields = computed(
   () =>
@@ -95,13 +102,12 @@ function variantSource(index: number): EditorPlacementPreset {
   const direction = editorEntityDirection(candidate);
   const fields: Record<string, JsonPrimitive> = {};
   for (const field of entityMapDefinition(candidate.type)?.fields ?? []) {
-    if (field.key === "direction") continue;
     const value = candidate[field.key];
     if (value !== undefined) fields[field.key] = value;
   }
+  if (direction) fields.direction = direction;
   return {
     type: candidate.type,
-    ...(direction ? { direction } : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
@@ -272,7 +278,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
       </label>
     </section>
 
-    <p v-if="!hasFields" class="editor-muted">该素材没有可编辑地图字段。</p>
+    <p v-if="!hasFields" class="editor-muted">{{ emptyText }}</p>
   </div>
 </template>
 

@@ -18,6 +18,7 @@ import type {
   SurfacePattern,
   SurfaceTerrainId,
   SurfaceTheme,
+  SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
@@ -35,11 +36,14 @@ defineProps<{
   placement: EditorPlacementPreset | null;
   palettePlacement: PaletteItem;
   leftPanel: EditorLeftPanel;
+  surfaceTool: SurfaceTool;
   surfaceBrush: SurfaceBrush;
   surfaceTheme: SurfaceTheme;
   selection: EditorSelection | null;
   hover: Cell | null;
   inspector: InspectorModel;
+  hoverInspector: InspectorModel;
+  deletionTargetIndex: number | null;
   rules: readonly EditorRuleCapability[];
   palette: readonly ResolvedPaletteGroup[];
   paletteSize: number;
@@ -75,6 +79,7 @@ const emit = defineEmits<{
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
+  placementVariant: [index: number];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
@@ -160,6 +165,12 @@ const emit = defineEmits<{
       :catalog="catalog"
       :editor="editor"
       :authoring-panel="leftPanel"
+      :palette-tool="tool"
+      :surface-tool="surfaceTool"
+      :placement="palettePlacement"
+      :surface-brush="surfaceBrush"
+      :hover-model="hoverInspector"
+      :deletion-target-index="deletionTargetIndex"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
       @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
@@ -169,6 +180,7 @@ const emit = defineEmits<{
       @batch-variant="(type, index) => emit('batchVariant', type, index)"
       @batch-surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @batch-delete="emit('batchDelete', $event)"
+      @placement-variant="emit('placementVariant', $event)"
     />
     <EditorLevelInfo
       v-show="!playing && rightPanel === 'level'"

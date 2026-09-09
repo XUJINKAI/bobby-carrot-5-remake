@@ -2,14 +2,21 @@
 import {
   isSurfaceEntityType,
   type EditorDefinition,
+  type EditorTool,
   type EntityCatalog,
   type InspectorModel,
+  type PaletteItem,
+  type SurfaceBrush,
+  type SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
 import { computed, ref, watch } from "vue";
 import EditorCellInspector from "./EditorCellInspector.vue";
+import EditorEraseInspector from "./EditorEraseInspector.vue";
 import EditorMultiInspector from "./EditorMultiInspector.vue";
+import EditorPlacementInspector from "./EditorPlacementInspector.vue";
+import EditorSurfaceToolInspector from "./EditorSurfaceToolInspector.vue";
 
 const props = defineProps<{
   model: InspectorModel;
@@ -17,6 +24,12 @@ const props = defineProps<{
   catalog: EntityCatalog;
   editor: EditorDefinition;
   authoringPanel: "palette" | "surface";
+  paletteTool: EditorTool;
+  surfaceTool: SurfaceTool;
+  placement: PaletteItem;
+  surfaceBrush: SurfaceBrush;
+  hoverModel: InspectorModel;
+  deletionTargetIndex: number | null;
 }>();
 const emit = defineEmits<{
   field: [entityIndex: number, key: string, value: string];
@@ -28,6 +41,7 @@ const emit = defineEmits<{
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
+  placementVariant: [index: number];
 }>();
 
 const showSurface = ref(false);
@@ -75,16 +89,50 @@ const visibleModel = computed<InspectorModel>(() => {
     groups,
   };
 });
+const showPlacement = computed(
+  () => props.authoringPanel === "palette" && props.paletteTool === "place",
+);
+const showDeletion = computed(
+  () => props.authoringPanel === "palette" && props.paletteTool === "erase",
+);
+const showSurfaceTool = computed(
+  () => props.authoringPanel === "surface" && props.surfaceTool !== "rect",
+);
 </script>
 
 <template>
   <aside class="editor-inspector">
     <div class="editor-panel-title">Inspector</div>
+    <EditorPlacementInspector
+      v-if="showPlacement"
+      :placement="placement"
+      :images="images"
+      :catalog="catalog"
+      :editor="editor"
+      @variant="emit('placementVariant', $event)"
+    />
+    <EditorEraseInspector
+      v-else-if="showDeletion"
+      :model="hoverModel"
+      :target-index="deletionTargetIndex"
+      :images="images"
+      :catalog="catalog"
+      :editor="editor"
+    />
+    <EditorSurfaceToolInspector
+      v-else-if="showSurfaceTool"
+      :tool="surfaceTool"
+      :brush="surfaceBrush"
+      :images="images"
+      :catalog="catalog"
+      :editor="editor"
+    />
     <section
-      v-if="visibleModel.mode === 'none'"
-      class="editor-inspector-section editor-muted"
+      v-else-if="visibleModel.mode === 'none'"
+      class="editor-inspector-section editor-empty-selection"
     >
-      使用选择工具点选一个格子，或拖动框选多个格子。
+      <strong>选择工具</strong>
+      <span class="editor-muted">点选一个格子，或拖动框选多个格子。</span>
     </section>
     <EditorCellInspector
       v-else-if="visibleModel.mode === 'cell'"
@@ -117,3 +165,10 @@ const visibleModel = computed<InspectorModel>(() => {
     />
   </aside>
 </template>
+
+<style scoped>
+.editor-empty-selection {
+  display: grid;
+  gap: 4px;
+}
+</style>

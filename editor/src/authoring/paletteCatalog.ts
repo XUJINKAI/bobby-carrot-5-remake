@@ -73,6 +73,28 @@ export function paletteLabel(
   return item.label;
 }
 
+export function resolvePalettePlacement(
+  catalog: EntityCatalog,
+  editor: EditorDefinition,
+  groups: readonly ResolvedPaletteGroup[],
+  preset: EditorPlacementPreset,
+  fallbackLabel?: string,
+): PaletteItem {
+  const match = groups
+    .flatMap((group) => group.rows.flat())
+    .find((item) => samePlacementPreset(item, preset));
+  if (match) return match;
+  return resolveEntry(
+    {
+      ...preset,
+      ...(fallbackLabel ? { label: fallbackLabel } : {}),
+    },
+    catalog,
+    editor,
+    `inspector/${preset.type}/${JSON.stringify(preset.fields ?? {})}`,
+  );
+}
+
 function resolveGroup(
   group: EditorPaletteGroup,
   catalog: EntityCatalog,
@@ -164,12 +186,10 @@ function mergeVariant(
   const fields = {
     ...(entry.fields ?? {}),
     ...(variant.fields ?? {}),
+    ...(variant.direction ? { direction: variant.direction } : {}),
   };
   return {
     type: entry.type,
-    ...(variant.direction ?? entry.direction
-      ? { direction: variant.direction ?? entry.direction }
-      : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
     ...(variant.label !== undefined
       ? { label: variant.label }
@@ -188,11 +208,10 @@ function resolveEntry(
 ): PaletteItem {
   const previewPreset = previewPresetFor(entry);
   const definition = editorCatalogEntry(catalog, {
+    ...(entry.fields ?? {}),
     type: entry.type,
     x: 0,
     y: 0,
-    ...(entry.direction ? { direction: entry.direction } : {}),
-    ...(entry.fields ?? {}),
   });
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
@@ -222,9 +241,20 @@ function previewPresetFor(entry: EditorPaletteEntry): EditorPlacementPreset {
   };
   return {
     type: entry.type,
-    ...(preview?.direction ?? entry.direction
-      ? { direction: preview?.direction ?? entry.direction }
-      : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
+}
+
+function samePlacementPreset(
+  left: EditorPlacementPreset,
+  right: EditorPlacementPreset,
+): boolean {
+  if (left.type !== right.type) return false;
+  const leftFields = left.fields ?? {};
+  const rightFields = right.fields ?? {};
+  const keys = new Set([
+    ...Object.keys(leftFields),
+    ...Object.keys(rightFields),
+  ]);
+  return [...keys].every((key) => Object.is(leftFields[key], rightFields[key]));
 }

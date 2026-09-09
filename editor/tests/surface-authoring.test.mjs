@@ -189,7 +189,7 @@ test("Palette mechanism placement preserves the Surface underneath", () => {
   const level = createBlankLevel(5, 5);
   const next = placeEntity(
     catalog,
-    { type: MapEntityTypeId.SPEED, direction: "right" },
+    { type: MapEntityTypeId.SPEED, fields: { direction: "right" } },
     { x: 1, y: 1 },
     {},
     builtinEditorDefinition,

@@ -20,7 +20,7 @@ export type EditorEntityFields = Readonly<Record<string, JsonPrimitive>>;
 /** What the Editor Core should create when the current placement action is committed. */
 export interface EditorPlacementPreset {
   type: EntityType;
-  direction?: Direction;
+  /** 与 LevelEntity 一致，direction 等类型专属参数统一放在 fields 中。 */
   fields?: EditorEntityFields;
 }
 
@@ -68,7 +68,6 @@ export type EditorEntityExclusion =
   | { prefix: string };
 
 export interface EditorPalettePreview {
-  direction?: Direction;
   fields?: EditorEntityFields;
 }
 

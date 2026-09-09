@@ -52,6 +52,7 @@ function dropAt(index: number): void {
   <div class="editor-cell-inspector">
     <section class="editor-inspector-section editor-selection-summary">
       <span class="editor-summary-text">
+        <span class="editor-tool-kicker">选择工具 · 单格</span>
         <strong>格子 {{ model.rect?.left }}, {{ model.rect?.top }}</strong>
         <span class="editor-muted">{{ model.entityCount }} 层 · 顶层在前</span>
       </span>
@@ -125,6 +126,13 @@ function dropAt(index: number): void {
   display: grid;
   min-width: 0;
   gap: 2px;
+}
+.editor-tool-kicker {
+  color: #8ee7ff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .editor-surface-toggle {
   flex: 0 0 auto;

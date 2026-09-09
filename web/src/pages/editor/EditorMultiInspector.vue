@@ -30,6 +30,7 @@ const emit = defineEmits<{
   <div class="editor-multi-inspector">
     <section class="editor-inspector-section editor-selection-summary">
       <span class="editor-summary-text">
+        <span class="editor-tool-kicker">选择工具 · 框选</span>
         <strong>{{ model.rect?.width }} × {{ model.rect?.height }} 选区</strong>
         <span class="editor-muted">{{ model.entityCount }} Entities</span>
       </span>
@@ -94,6 +95,13 @@ const emit = defineEmits<{
   display: grid;
   min-width: 0;
   gap: 2px;
+}
+.editor-tool-kicker {
+  color: #8ee7ff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .editor-surface-toggle {
   flex: 0 0 auto;

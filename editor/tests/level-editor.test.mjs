@@ -9,9 +9,11 @@ import {
 import {
   EditorDocument,
   EditorPreview,
+  applyPlacementVariant,
   buildInspectorModel,
   builtinEditorDefinition,
   createBlankLevel,
+  cyclePlacementVariant,
   entityCells,
   fromLevelMap,
   isEditorEntityCreatable,
@@ -21,6 +23,7 @@ import {
   reorderEntityStack,
   resolveEditorEntityPreviewLayout,
   resolveEditorPalette,
+  resolvePalettePlacement,
   resolvePlacement,
   serializeEditorLevel,
   toLevelMap,
@@ -121,7 +124,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "right" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "right" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
@@ -144,7 +147,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
@@ -301,7 +304,7 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
     .flatMap((group) => group.rows.flat())
     .filter((entry) => entry.type === MapEntityTypeId.SPEED);
   assert.deepEqual(
-    speed.map((entry) => entry.direction),
+    speed.map((entry) => entry.fields?.direction),
     ["up", "down", "left", "right"],
   );
   assert.equal(
@@ -322,7 +325,7 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
     palette
       .flatMap((group) => group.rows.flat())
       .filter((entry) => entry.type === MapEntityTypeId.WINDMILL)
-      .map((entry) => entry.direction),
+      .map((entry) => entry.fields?.direction),
     ["up", "down", "left", "right"],
   );
   const egg = palette
@@ -330,6 +333,43 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
     .find((entry) => entry.type === MapEntityTypeId.EGG);
   assert.equal(egg?.label, "Egg");
   assert.equal(egg?.traits.includes("egg-nest"), true);
+});
+
+test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
+  const next = cyclePlacementVariant(
+    { type: MapEntityTypeId.SPEED, fields: { direction: "up" } },
+    catalog,
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED],
+    1,
+  );
+  assert.deepEqual(next, {
+    type: MapEntityTypeId.SPEED,
+    fields: { direction: "down" },
+  });
+  assert.equal("direction" in next, false);
+});
+
+test("Inspector variant 切换复用对应的 Palette item", () => {
+  const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
+  const items = palette.flatMap((group) => group.rows.flat());
+  const current = items.find(
+    (entry) =>
+      entry.type === MapEntityTypeId.SPEED &&
+      entry.fields?.direction === "up",
+  );
+  assert.ok(current);
+  const variant = builtinEditorDefinition.entities[MapEntityTypeId.SPEED]
+    .variants[1];
+  const preset = applyPlacementVariant(current, variant);
+  const resolved = resolvePalettePlacement(
+    catalog,
+    builtinEditorDefinition,
+    palette,
+    preset,
+    current.label,
+  );
+  assert.equal(resolved.fields?.direction, "down");
+  assert.equal(items.includes(resolved), true);
 });
 
 test("Palette 表独立控制顺序、预览外观与 variant 展开", () => {
@@ -443,7 +483,7 @@ test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => 
     resolvePlacement(
       level,
       catalog,
-      { type: MapEntityTypeId.WINDMILL, direction: "right" },
+      { type: MapEntityTypeId.WINDMILL, fields: { direction: "right" } },
       { x: 0, y: 1 },
     ).entity.type,
     MapEntityTypeId.WINDMILL,
@@ -488,7 +528,7 @@ test("Editor Preview 将 Surface variant 投影到 Engine visual state", () => {
 test("Palette preview layout derives full multi-cell footprint generically", () => {
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     builtinEditorDefinition,
   );
   assert.equal(layout.width, 3);
@@ -513,6 +553,24 @@ test("single-cell Inspector exposes every layer top-first", () => {
     MapEntityTypeId.CARROT,
     MapEntityTypeId.PORTAL,
   ]);
+});
+
+test("single-cell Inspector exposes the hovered multi-cell Presence role", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push({
+    type: MapEntityTypeId.DRAGON,
+    x: 3,
+    y: 3,
+    direction: "left",
+  });
+  const model = buildInspectorModel(
+    level,
+    catalog,
+    { anchor: { x: 2, y: 3 }, focus: { x: 2, y: 3 } },
+    builtinEditorDefinition,
+  );
+  assert.equal(model.layers[0]?.entity.type, MapEntityTypeId.DRAGON);
+  assert.equal(model.layers[0]?.role, "head");
 });
 
 test("multi-cell Inspector groups same types and prioritizes editable groups", () => {

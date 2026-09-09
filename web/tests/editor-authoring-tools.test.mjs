@@ -26,6 +26,18 @@ const entityFields = fs.readFileSync(
   new URL("../src/pages/editor/EditorEntityFields.vue", import.meta.url),
   "utf8",
 );
+const placementInspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorPlacementInspector.vue", import.meta.url),
+  "utf8",
+);
+const eraseInspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorEraseInspector.vue", import.meta.url),
+  "utf8",
+);
+const surfaceToolInspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorSurfaceToolInspector.vue", import.meta.url),
+  "utf8",
+);
 
 test("Palette 和 Surface 发布工具动作与简洁标题", () => {
   assert.match(shell, /id: "editor-tool-select"[\s\S]*icon: "select"[\s\S]*title: "选择"/);
@@ -84,4 +96,17 @@ test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () =
   assert.match(entityFields, /EditorEntityPreview/);
   assert.match(entityFields, /emit\('surfaceVariant', variant\.type\)/);
   assert.match(entityFields, /if \(surfaceTerrain\.value\) keys\.add\("variant"\)/);
+});
+
+test("Inspector 按当前工具显示选择、素材、删除目标与 Surface 摘要", () => {
+  assert.match(inspector, /showPlacement[\s\S]*paletteTool === "place"/);
+  assert.match(inspector, /showDeletion[\s\S]*paletteTool === "erase"/);
+  assert.match(inspector, /showSurfaceTool[\s\S]*surfaceTool !== "rect"/);
+  assert.match(placementInspector, /EditorEntityFields/);
+  assert.match(placementInspector, /@variant="emit\('variant', \$event\)"/);
+  assert.match(eraseInspector, /layer\.ref\.index === targetIndex/);
+  assert.match(eraseInspector, /点击将删除/);
+  assert.match(surfaceToolInspector, /Auto ·/);
+  assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), catalog, cell, editor\)/);
+  assert.match(pageState, /function applyPlacementVariant/);
 });

@@ -72,9 +72,9 @@ Palette 和 Surface 使用一致的基础工具语义：
 
 - `1 Select`：单击单选，拖动建立矩形多选；选择本身不绘制或删除内容；
 - `2 Brush`：在 Canvas 上绘制当前 Palette Entity 或 Surface Terrain；若按下位置位于当前矩形 Selection 内，则一次性填充整个 Selection；
-- `4 Smart Fill`：仅 Surface 提供。按当前 Terrain 对四方向连通区域进行 flood fill，匹配 Terrain 而忽略具体 visual variant。
+- `4 Delete / Smart Fill`：Palette 中逐格删除视觉栈顶的非 Surface Entity；Surface 中按当前 Terrain 对四方向连通区域进行 flood fill，匹配 Terrain 而忽略具体 visual variant。
 
-Surface 没有 Erase；基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的删除使用 Selection + Delete/Backspace，而不再占用一个独立顶部 Erase 工具。
+Surface 基础地貌通过 Brush 画成另一种 Terrain 来替换。Palette 的 Delete 工具用于逐格删除，Selection + Delete/Backspace 用于删除当前单格或矩形选区的目标层。
 
 `Ctrl+A` 选择整张地图。`Tab` 在编辑状态直接切换 Palette / Surface，并打开对应左侧面板；文本输入和 Play Test 不拦截这些编辑快捷键。
 
@@ -102,7 +102,8 @@ Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinit
 排除出 Object Palette。
 
 Palette 布局由 `EditorPaletteDefinition` 表驱动：`groups[].rows` 的二维顺序就是面板顺序；
-单个条目的 `fields / direction` 是实际放置 preset，`label / preview` 只控制展示；默认一个条目
+单个条目的 `fields` 是实际放置 preset，`direction` 与其它类型专属字段一样写在 `fields` 中，
+`label / preview` 只控制展示；默认一个条目
 只生成一个 tile，显式设置 `expand: "variants"` 时才按对应 `EditorEntityDefinition.variants`
 的顺序展开。需要精确调整部分形态的顺序或外观时，应在 `rows` 中写多个独立条目。
 
@@ -112,6 +113,18 @@ remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original T
 这张表声明，不由 Palette resolver 写死名称或布局。
 
 草下目标通过在同格放置 `high-grass` 与 `carrot` 或 `egg` 创建。云朵停靠格使用带 `color` 的 `cloud-parking`，放置时保留同格基础地形。
+
+## Inspector
+
+Inspector 汇总当前工具和它正在作用的对象：
+
+- Select 单格显示该格完整 Entity stack，并允许编辑字段、切换 variant、调整顺序或删除指定层；
+- Select 矩形选区按 Entity type 分组，提供批量字段、variant 与删除操作；
+- Palette Brush 显示当前素材及其全部 `EditorEntityDefinition.variants`，选择 variant 会同步更新后续放置 preset；
+- Palette Delete 根据鼠标悬浮格显示完整 Entity stack，并明确标记点击时实际删除的非 Surface 层；
+- Surface Brush / Smart Fill 显示当前 Terrain、Pattern 与预览单元。
+
+删除目标与实际删除操作共用 `resolveDeletionTarget()`，Inspector 不另算一套视觉栈规则。
 
 ## Multi-cell Object
 

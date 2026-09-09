@@ -2,6 +2,7 @@ import {
   EditorDocument,
   EditorPreview,
   applyEditorVariant,
+  applyPlacementVariant as applyPlacementVariantPreset,
   applySurfaceTheme,
   buildInspectorModel,
   builtinEditorDefinition,
@@ -25,7 +26,9 @@ import {
   replaceEntities,
   replaceEntity,
   resolveDeletion,
+  resolveDeletionTarget,
   resolveEditorPalette,
+  resolvePalettePlacement,
   resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
@@ -119,6 +122,31 @@ export function useEditorPage(initialLevel: EditorMap) {
   const inspector = computed(() =>
     buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
   );
+  const hoverInspector = computed(() => {
+    const cell = hover.value;
+    if (
+      leftPanel.value !== "palette" ||
+      paletteTool.value !== "erase" ||
+      !cell
+    )
+      return buildInspectorModel(currentLevel(), catalog, null, editor);
+    return buildInspectorModel(
+      currentLevel(),
+      catalog,
+      { anchor: cell, focus: cell },
+      editor,
+    );
+  });
+  const deletionTargetIndex = computed(() => {
+    const cell = hover.value;
+    if (
+      leftPanel.value !== "palette" ||
+      paletteTool.value !== "erase" ||
+      !cell
+    )
+      return null;
+    return resolveDeletionTarget(currentLevel(), catalog, cell, editor)?.index ?? null;
+  });
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
   const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
@@ -511,12 +539,26 @@ export function useEditorPage(initialLevel: EditorMap) {
       step,
     );
     if (!next) return false;
-    placement.value = {
-      ...placement.value,
-      ...cleanPlacementPreset(next),
-      previewPreset: cleanPlacementPreset(next),
-    };
+    setPlacementPreset(cleanPlacementPreset(next));
     return true;
+  }
+
+  function applyPlacementVariant(index: number): boolean {
+    const current = placement.value;
+    const variant = editor.entities?.[current.type]?.variants?.[index];
+    if (!variant) return false;
+    setPlacementPreset(applyPlacementVariantPreset(current, variant));
+    return true;
+  }
+
+  function setPlacementPreset(preset: EditorPlacementPreset): void {
+    placement.value = resolvePalettePlacement(
+      catalog,
+      editor,
+      palette,
+      preset,
+      placement.value.label,
+    );
   }
 
   function updateField(entityIndex: number, key: string, raw: string): void {
@@ -604,6 +646,8 @@ export function useEditorPage(initialLevel: EditorMap) {
     helpDialogOpen,
     paletteSize,
     inspector,
+    hoverInspector,
+    deletionTargetIndex,
     selectedRefs,
     rules,
     levelMap: computed(() => toLevelMap(currentLevel())),
@@ -635,6 +679,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     applySurfaceVariant,
     applyBatchSurfaceVariant,
     cycleVariant,
+    applyPlacementVariant,
     updateField,
     updateBatchField,
     setPaletteSize,
@@ -682,7 +727,6 @@ function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
 function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {
   return {
     type: source.type,
-    ...(source.direction ? { direction: source.direction } : {}),
     ...(source.fields ? { fields: structuredClone(source.fields) } : {}),
   };
 }

@@ -22,6 +22,7 @@ export interface InspectorEntityModel {
   definition: EntityCatalogEntry;
   label: string;
   editor?: EditorEntityDefinition;
+  role?: string;
   stackOrder: number;
   editableScore: number;
 }
@@ -114,6 +115,9 @@ function cellLayers(
         definition: inspection.definition,
         label: inspection.definition.presentation.name,
         ...(policy ? { editor: policy } : {}),
+        ...(inspection.presence.role
+          ? { role: inspection.presence.role }
+          : {}),
         stackOrder: inspection.presence.stackOrder,
         editableScore: entityEditableScore(inspection.definition, policy),
       };

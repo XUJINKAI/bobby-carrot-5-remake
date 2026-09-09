@@ -19,7 +19,7 @@ export { entityCells, placeEntity, resolvePlacement, topEntityRefAt } from "./au
 export type { Cell, EntityPlacementPlan, PlacementCell, PlacementOverrides } from "./authoring/entityPlacement.js";
 export { resolveEditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export type { EditorEntityPreviewLayout } from "./authoring/entityPreview.js";
-export { resolveEditorPalette, paletteItems, paletteGroups, paletteGroup, paletteLabel } from "./authoring/paletteCatalog.js";
+export { resolveEditorPalette, resolvePalettePlacement, paletteItems, paletteGroups, paletteGroup, paletteLabel } from "./authoring/paletteCatalog.js";
 export type { PaletteItem, ResolvedPaletteGroup } from "./authoring/paletteCatalog.js";
 export { resolveDeletion, resolveDeletionTarget, resolveSelectionDeletionTargets } from "./authoring/deletion.js";
 export { selectionRect, selectedEntityRefs } from "./authoring/selection.js";
@@ -29,7 +29,7 @@ export { previewEditorResize, resizeMapEdges } from "./authoring/resize.js";
 export type { EditorResizeEdges, EditorResizeResult } from "./authoring/resize.js";
 export { inspectEditorRules, updateEditorRule } from "./authoring/rules.js";
 export type { EditorRuleCapability, EditorRuleKind } from "./authoring/rules.js";
-export { editorVariantIndex, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
+export { editorVariantIndex, applyPlacementVariant, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
 export { buildInspectorModel } from "./authoring/inspectorModel.js";
 export type { InspectorModel, InspectorMode, InspectorEntityModel, InspectorEntityGroupModel } from "./authoring/inspectorModel.js";
 export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, paintSurface, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";

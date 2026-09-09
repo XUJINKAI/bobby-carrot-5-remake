@@ -57,12 +57,16 @@ export function resolvePlacement(
     };
   }
 
-  const direction = preset.direction ?? authoring?.defaultDirection;
-  const definition = editorCatalogEntry(catalog, {
-    ...(preset.fields ?? {}),
+  const presetEntity: LevelEntity = {
+    ...(preset.fields ? structuredClone(preset.fields) : {}),
     type: preset.type,
     x: cursor.x,
     y: cursor.y,
+  };
+  const direction =
+    editorEntityDirection(presetEntity) ?? authoring?.defaultDirection;
+  const definition = editorCatalogEntry(catalog, {
+    ...presetEntity,
     ...(direction ? { direction } : {}),
   });
   const anchor = resolveAnchor(
@@ -201,7 +205,7 @@ function createPlacedEntity(
     y: anchor.y,
   };
   for (const [key, value] of Object.entries(preset.fields ?? {})) {
-    if (!key || key === "direction" || isLevelEntityReservedField(key)) continue;
+    if (!key || isLevelEntityReservedField(key)) continue;
     entity[key] = value;
   }
   if (direction) entity["direction"] = direction;
