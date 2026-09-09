@@ -85,6 +85,8 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 
 Adventure 是主入口，Explore 和 Editor 是并列的次级入口，Import Custom Map 是明确的文件入口。
 
+首页顶栏的 GitHub 仓库入口在桌面与移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
+
 Welcome Demo 使用正式 Engine 运行一张短小的演示地图，用于展示移动、收集物和代表性机关。它有独立 session，不写入 Adventure Save 或 Explore 完成记录。完成或死亡时在原 Stage 中展示重玩和进入 Adventure 的动作。
 
 Hero 以下的项目介绍聚焦三类信息：原作重制、原版研究、Editor / 自定义地图。版本、技术说明和第三方资产权利边界位于更低的信息层级，并链接 [`../../THIRD_PARTY_ASSETS.md`](../../THIRD_PARTY_ASSETS.md)。
@@ -152,7 +154,7 @@ Music、Settings、Help 与全局 Dialog 由 App 层持有，以普通 action �
 
 ### BottomBar
 
-BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页署名、Editor 校验问题和 Engine 运行时警告等状态反馈，不展示快捷键提示。Explore 游戏与 Adventure 游戏保留各自的 Leading / Trailing 操作且 Info 为空；Adventure 首页、章节选择和夜间列车隐藏 BottomBar。首页 Demo 的基础移动引导位于 `home-demo-status`。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
+BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页署名、Editor 校验问题和 Engine 运行时警告等状态反馈，不展示快捷键提示。Explore 游戏与 Adventure 游戏保留各自的 Leading / Trailing 操作且 Info 为空；Adventure 首页、章节选择、夜间列车与 Embed 页面隐藏 BottomBar。首页 Demo 的基础移动引导位于 `home-demo-status`。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
 
 ## GameStage
 

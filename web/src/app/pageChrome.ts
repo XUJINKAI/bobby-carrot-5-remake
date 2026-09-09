@@ -72,7 +72,7 @@ export function repositoryAction(): ShellAction {
     title: "打开 GitHub 仓库",
     href: PROJECT_REPOSITORY_URL,
     external: true,
-    collapse: "overflow",
+    collapse: "keep",
   };
 }
 

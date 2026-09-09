@@ -14,7 +14,7 @@ export function renderEmbedPage(context: PageContext): PageController {
       identity: pageIdentity("网页内嵌", "/embed"),
       actions: globalActions(),
     },
-    bottomBar: { visible: true },
+    bottomBar: { visible: false },
   });
   context.app.replaceChildren();
   const app = createApp(EmbedPage, { publicBaseUrl: publicBaseUrl() });
