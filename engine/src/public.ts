@@ -6,6 +6,16 @@ export type {
 } from "./core/GameOptions.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
 export {
+  GameplaySession,
+  type GameplayInputAttempt,
+  type GameplayInputResolution,
+  type SerializableGameplaySetup,
+  type GameplaySessionOptions,
+  type GameplayTickInput,
+  type GameplayTickInputProvider,
+  type GameplayTickResult,
+} from "./core/GameplaySession.js";
+export {
   DEFAULT_HISTORY_POLICY,
   shouldCheckpoint,
   type HistoryMode,
@@ -103,6 +113,19 @@ export {
   readBobbyInventory,
   type BobbyInventoryState,
 } from "./entities/player/BobbyState.js";
+export {
+  REPLAY_FORMAT_VERSION,
+  replayLevelHash,
+  replayValueHash,
+  type Replay,
+  type ReplayExpectation,
+  type ReplayFrame,
+  type ReplayInputGroup,
+  type ReplayMoveIntent,
+  type ReplayRuntimeSetup,
+} from "./replay/ReplayFormat.js";
+export { ReplayRecorder } from "./replay/ReplayRecorder.js";
+export { runReplay, type ReplayReport } from "./replay/ReplayRunner.js";
 
 /** Canonical 地图序列化合同。 */
 export type {

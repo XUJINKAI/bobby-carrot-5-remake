@@ -101,6 +101,11 @@ export class WorldClock {
   /** Debug 单步只允许在暂停状态推进，避免与 RAF 驱动的 advance() 交错。 */
   step(count: number, listener: WorldTickListener): number {
     if (!this.pausedValue) return 0;
+    return this.advanceTicks(count, listener);
+  }
+
+  /** Replay 与无头测试显式消费固定 Tick，不读取暂停或真实时间状态。 */
+  advanceTicks(count: number, listener: WorldTickListener): number {
     const safeCount = Math.max(0, Math.floor(Number.isFinite(count) ? count : 0));
     for (let index = 0; index < safeCount; index += 1) this.runTick(listener);
     return safeCount;

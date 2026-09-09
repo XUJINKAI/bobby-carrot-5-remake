@@ -80,6 +80,11 @@ Engine 负责：
 - semantic Definition 与 Object Layout；
 - 通用 `InputController`。
 
+`GameplaySession` 位于浏览器 `Game` 与 `World` 之间，持有一局地图的固定 Tick、
+正式 gameplay 初始化、语义输入提交和历史记录。浏览器 `Game` 负责实时驱动与表现；
+无头 Replay Runner 直接驱动同一个 Session。Replay 执行合同见
+[`contracts/replay.md`](contracts/replay.md)。
+
 Game 的关卡输入只有纯 `LevelMap`：
 
 ```text
