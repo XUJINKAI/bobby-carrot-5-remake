@@ -368,6 +368,39 @@ test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
   );
 });
 
+test("带 fields 的响应式 Palette preset 可用于 Canvas 与 Inspector 预览", () => {
+  const fields = new Proxy({ direction: "up" }, {});
+  const preset = new Proxy({
+    type: MapEntityTypeId.SPEED,
+    fields,
+  }, {});
+  const plan = resolvePlacement(
+    createBlankLevel(4, 4),
+    catalog,
+    preset,
+    { x: 1, y: 1 },
+    builtinEditorDefinition,
+  );
+  assert.equal(plan.valid, true);
+  assert.equal(plan.entity.direction, "up");
+  const previewEntity = resolveEditorEntityPreviewLayout(
+    catalog,
+    preset,
+    builtinEditorDefinition,
+  ).entity;
+  assert.equal(previewEntity.type, MapEntityTypeId.SPEED);
+  assert.equal(previewEntity.direction, "up");
+  assert.equal(
+    cyclePlacementVariant(
+      preset,
+      catalog,
+      builtinEditorDefinition.entities[MapEntityTypeId.SPEED],
+      1,
+    )?.fields?.direction,
+    "down",
+  );
+});
+
 test("Inspector variant 切换复用对应的 Palette item", () => {
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
   const items = palette.flatMap((group) => group.rows.flat());
@@ -686,12 +719,9 @@ test("Bobby Editor visual is fixed to the final down frame", () => {
   });
 });
 
-test("Egg 在 Editor 中固定显示 filled visual 且保持单一放置形态", () => {
+test("Egg 只在 Palette 预览中显示 filled 且保持单一放置形态", () => {
   const policy = builtinEditorDefinition.entities?.[MapEntityTypeId.EGG];
-  assert.ok(policy?.editorVisual);
-  assert.deepEqual(policy.editorVisual({}).layers, [
-    { kind: "atlas", column: 12, row: 12 },
-  ]);
+  assert.equal(policy?.editorVisual, undefined);
   assert.equal(policy.variants, undefined);
 
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
@@ -699,6 +729,8 @@ test("Egg 在 Editor 中固定显示 filled visual 且保持单一放置形态",
     .flatMap((group) => group.rows.flat())
     .filter((entry) => entry.type === MapEntityTypeId.EGG);
   assert.equal(eggs.length, 1);
+  assert.deepEqual(eggs[0].preview?.state, { filled: true });
+  assert.equal(eggs[0].previewPreset.fields, undefined);
   const placed = resolvePlacement(
     createBlankLevel(4, 4),
     catalog,

@@ -24,7 +24,10 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.BOBBY },
           { type: MapEntityTypeId.EXIT },
           { type: MapEntityTypeId.CARROT },
-          { type: MapEntityTypeId.EGG },
+          {
+            type: MapEntityTypeId.EGG,
+            preview: { state: { filled: true } },
+          },
         ],
         [
           { type: MapEntityTypeId.GAS },

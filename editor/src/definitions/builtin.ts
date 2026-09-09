@@ -1,7 +1,6 @@
 import {
   MapEntityTypeId,
   SURFACE_ENTITY_DEFINITIONS,
-  originalTileVisual,
   originalTileVisualGroup,
   type Direction,
   type EntityType,
@@ -38,11 +37,6 @@ const item: EditorEntityDefinition = { replaceGroup: "item" };
 const directSurfaceTypes: readonly EntityType[] = [
   ...SURFACE_ENTITY_DEFINITIONS.map((definition) => definition.type),
 ];
-const filledEggVisual = originalTileVisual({
-  type: MapEntityTypeId.EGG,
-  phase: "filled",
-});
-
 export const builtinEditorDefinition: EditorDefinition = {
   entities: {
     ...withPolicy(directSurfaceTypes, surface),
@@ -74,16 +68,6 @@ export const builtinEditorDefinition: EditorDefinition = {
             offsetY: -12,
           },
         ],
-      }),
-    },
-    [MapEntityTypeId.EGG]: {
-      ...item,
-      editorVisual: () => ({
-        layers: [{
-          kind: "atlas",
-          column: filledEggVisual.column - 1,
-          row: filledEggVisual.row - 1,
-        }],
       }),
     },
     [MapEntityTypeId.DRAGON]: {
@@ -175,8 +159,8 @@ export function applyEditorVariant(
   variant: EditorEntityVariant,
 ): LevelEntity {
   return {
-    ...structuredClone(entity),
-    ...(variant.fields ? structuredClone(variant.fields) : {}),
+    ...entity,
+    ...(variant.fields ?? {}),
   };
 }
 

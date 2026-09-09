@@ -44,6 +44,7 @@ const definition = computed(() =>
           :images="images"
           :catalog="catalog"
           :editor="editor"
+          :preview-state="placement.preview?.state"
           :fallback-text="placement.label.slice(0, 2)"
         />
         <span>

@@ -2,6 +2,7 @@
 import {
   EditorEntityPreviewRenderer,
   type EditorDefinition,
+  type EditorEntityFields,
   type EditorPlacementPreset,
   type EntityCatalog,
 } from "@bobby/editor";
@@ -16,6 +17,7 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
+  previewState?: EditorEntityFields | undefined;
   fallbackIcon?: AppIconName | undefined;
   fallbackText?: string | undefined;
 }>();
@@ -33,11 +35,23 @@ async function draw(): Promise<void> {
     props.catalog,
     props.editor,
   );
-  rendered.value = renderer.render(canvas.value, props.source, props.cellSize);
+  rendered.value = renderer.render(
+    canvas.value,
+    props.source,
+    props.cellSize,
+    props.previewState,
+  );
 }
 
 watch(
-  () => [props.source, props.cellSize, props.images, props.catalog, props.editor],
+  () => [
+    props.source,
+    props.cellSize,
+    props.images,
+    props.catalog,
+    props.editor,
+    props.previewState,
+  ],
   () => { void draw(); },
   { deep: true },
 );

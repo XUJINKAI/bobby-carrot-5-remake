@@ -48,7 +48,7 @@ export function cyclePlacementVariant<T extends EditorPlacementPreset>(
   const variants = definition?.variants ?? [];
   if (variants.length === 0) return null;
   const source: LevelEntity = {
-    ...(preset.fields ? structuredClone(preset.fields) : {}),
+    ...(preset.fields ?? {}),
     type: preset.type,
     x: 0,
     y: 0,

@@ -728,7 +728,7 @@ function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
 function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {
   return {
     type: source.type,
-    ...(source.fields ? { fields: structuredClone(source.fields) } : {}),
+    ...(source.fields ? { fields: { ...source.fields } } : {}),
   };
 }
 

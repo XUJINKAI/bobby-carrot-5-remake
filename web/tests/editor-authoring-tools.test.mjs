@@ -30,6 +30,14 @@ const placementInspector = fs.readFileSync(
   new URL("../src/pages/editor/EditorPlacementInspector.vue", import.meta.url),
   "utf8",
 );
+const palette = fs.readFileSync(
+  new URL("../src/pages/editor/EditorPalette.vue", import.meta.url),
+  "utf8",
+);
+const entityPreview = fs.readFileSync(
+  new URL("../src/pages/editor/EditorEntityPreview.vue", import.meta.url),
+  "utf8",
+);
 const eraseInspector = fs.readFileSync(
   new URL("../src/pages/editor/EditorEraseInspector.vue", import.meta.url),
   "utf8",
@@ -118,4 +126,13 @@ test("Palette 画笔悬浮不重建删除 Inspector", () => {
   );
   assert.match(placementInspector, /const targets = computed/);
   assert.match(placementInspector, /:targets="targets"/);
+});
+
+test("Palette 与画笔 Inspector 把表定义的 visual state 交给缩略图", () => {
+  assert.match(palette, /:preview-state="item\.preview\?\.state"/);
+  assert.match(
+    placementInspector,
+    /:preview-state="placement\.preview\?\.state"/,
+  );
+  assert.match(entityPreview, /props\.previewState/);
 });

@@ -67,6 +67,8 @@ export type EditorEntityExclusion =
 
 export interface EditorPalettePreview {
   fields?: EditorEntityFields;
+  /** 只注入缩略图的 Runtime state，不进入 EditorPlacementPreset 或 LevelMap。 */
+  state?: EditorEntityFields;
 }
 
 export type EditorPaletteExpansion = "variants";

@@ -26,10 +26,8 @@ export function resolveEditorEntityPreviewLayout(
 ): EditorEntityPreviewLayout {
   const entityPolicy = editor.entities?.[source.type];
   const prototype: LevelEntity = {
-    ...(entityPolicy?.defaultFields
-      ? structuredClone(entityPolicy.defaultFields)
-      : {}),
-    ...(source.fields ? structuredClone(source.fields) : {}),
+    ...(entityPolicy?.defaultFields ?? {}),
+    ...(source.fields ?? {}),
     type: source.type,
     x: 0,
     y: 0,

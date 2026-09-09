@@ -58,10 +58,8 @@ export function resolvePlacement(
   }
 
   const presetEntity: LevelEntity = {
-    ...(authoring?.defaultFields
-      ? structuredClone(authoring.defaultFields)
-      : {}),
-    ...(preset.fields ? structuredClone(preset.fields) : {}),
+    ...(authoring?.defaultFields ?? {}),
+    ...(preset.fields ?? {}),
     type: preset.type,
     x: cursor.x,
     y: cursor.y,

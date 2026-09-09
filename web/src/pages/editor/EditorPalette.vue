@@ -102,6 +102,7 @@ function moveTooltip(event: MouseEvent): void {
               :images="images"
               :catalog="catalog"
               :editor="editor"
+              :preview-state="item.preview?.state"
               :fallback-text="glyph(item)"
             />
           </button>
