@@ -191,6 +191,29 @@ test("ReplayRunner 拒绝不符合播放合同的输入", () => {
   assert.throws(() => runReplay(carrotLevel(), replay), /formatVersion 2/);
 });
 
+test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序", () => {
+  const replay = {
+    formatVersion: 1,
+    meta: {
+      name: "属性顺序",
+      url: "/test/property-order",
+      final_status: "playing",
+      note: "",
+    },
+    runtime: {
+      worldHz: 20,
+      bobbyLocomotion: {
+        speedShoesScale: 0.76,
+        moveMs: 100,
+      },
+    },
+    endTick: 0,
+    frames: [],
+  };
+
+  assert.equal(runReplay(carrotLevel(), replay).actual.status, "playing");
+});
+
 test("Replay 录制拒绝不可序列化的 Entity 初始化回调", () => {
   const level = carrotLevel();
   const session = new GameplaySession({ initializeEntityState: () => ({}) });

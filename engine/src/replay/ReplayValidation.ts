@@ -15,9 +15,11 @@ export function validateReplay(
     throw new Error("Replay endTick 必须是非负整数");
   if (!Number.isFinite(replay.runtime?.worldHz) || replay.runtime.worldHz <= 0)
     throw new Error("Replay worldHz 必须是正数");
+  const replayLocomotion = replay.runtime?.bobbyLocomotion;
   if (
-    JSON.stringify(replay.runtime.bobbyLocomotion) !==
-    JSON.stringify(bobbyLocomotion)
+    !replayLocomotion ||
+    replayLocomotion.moveMs !== bobbyLocomotion.moveMs ||
+    replayLocomotion.speedShoesScale !== bobbyLocomotion.speedShoesScale
   )
     throw new Error("Replay 的 Bobby 运动参数与当前 Game 不兼容");
   if (!Array.isArray(replay.frames))
