@@ -33,6 +33,33 @@ test("Map parser 接受 canonical Entity 和显式 Surface variant", () => {
   assert.deepEqual(parseMapDocument(document), document);
 });
 
+test("Portal 接受任意非空 channel、hex color 与常用颜色别名", () => {
+  for (const color of ["#fff", "#12aBcF", "cyan", "orange"]) {
+    const document = documentWith([
+      { type: "portal", x: 1, y: 1, channel: "secret-room", color },
+    ]);
+    assert.deepEqual(parseMapDocument(document), document);
+  }
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([
+          { type: "portal", x: 1, y: 1, channel: "", color: "#fff" },
+        ]),
+      ),
+    /channel 不符合 string 合同/,
+  );
+  assert.throws(
+    () =>
+      parseMapDocument(
+        documentWith([
+          { type: "portal", x: 1, y: 1, channel: "secret", color: "tealish" },
+        ]),
+      ),
+    /color 不符合 string 合同/,
+  );
+});
+
 test("Map parser 拒绝未知 Entity、未知字段和错误字段值", () => {
   assert.throws(
     () => parseMapDocument(documentWith([{ type: "unknown", x: 0, y: 0 }])),

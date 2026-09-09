@@ -176,16 +176,3 @@ export const crumblyRock: EntityModule = originalModule(
   atlasVisual(crumblyRockDefinition, tileCell(MapEntityTypeId.CRUMBLY_ROCK)),
   [{ behavior: smashCrumblyRock }],
 );
-
-const pushableRockDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.PUSHABLE_ROCK,
-  traits: ["blocking", "crumbly-rock", "pushable"],
-  stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Pushable Rock" },
-};
-
-export const pushableRock: EntityModule = originalModule(
-  pushableRockDefinition,
-  atlasVisual(pushableRockDefinition, tileCell(MapEntityTypeId.CRUMBLY_ROCK)),
-  [{ behavior: smashCrumblyRock }],
-);

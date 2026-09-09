@@ -1,6 +1,7 @@
 import {
   EditorDocument,
   EditorPreview,
+  EditorRuleDetector,
   applyEditorVariant,
   applyPlacementVariant as applyPlacementVariantPreset,
   applySurfaceTheme,
@@ -12,6 +13,7 @@ import {
   cyclePlacementVariant,
   defaultSurfaceBrush,
   detectSurfaceTheme,
+  enableEditorRules,
   fillSurface,
   inspectEditorRules,
   isSurfaceEntityType,
@@ -98,10 +100,14 @@ export function useEditorPage(initialLevel: EditorMap) {
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
   const eraseVisited = new Set<string>();
+  const ruleDetector = new EditorRuleDetector();
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
     storeEditorAutosave(next.level as EditorMap);
+    const detected = ruleDetector.detect(next.level as EditorMap, catalog);
+    if (detected.length > 0)
+      document.execute(enableEditorRules(catalog, detected));
   });
   onUnmounted(unsubscribe);
 
@@ -611,6 +617,11 @@ export function useEditorPage(initialLevel: EditorMap) {
     document.execute(updateEditorRule(catalog, kind, enabled));
   }
 
+  function loadLevel(level: EditorMap): void {
+    ruleDetector.reset();
+    document.load(level);
+  }
+
   function setPaletteSize(delta: number): void {
     const index = Math.max(0, EDITOR_PALETTE_SIZES.indexOf(paletteSize.value));
     paletteSize.value =
@@ -686,6 +697,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     setPaletteSize,
     resize,
     setRule,
+    loadLevel,
     setMaxMoves(value: number | null): void {
       document.execute(updateMaxMoves(value));
     },

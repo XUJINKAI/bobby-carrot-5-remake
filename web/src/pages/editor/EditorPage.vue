@@ -159,7 +159,7 @@ function redo(): void {
   else page.document.redo();
 }
 function importLevel(level: EditorMap): void {
-  page.document.load(level);
+  page.loadLevel(level);
   page.fileDialogOpen.value = false;
 }
 function markDownloaded(metadata: {

@@ -15,7 +15,7 @@ import { iceBlock } from "./ice-block.js";
 import { lock } from "./lock.js";
 import { mirror } from "./mirror.js";
 import { cloud, cloudParking, leaf } from "./moving-entities.js";
-import { crumblyRock, mower, mowerParkingTile, pushableRock } from "./mower.js";
+import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
 import { speed } from "./speed.js";
@@ -55,7 +55,6 @@ export const originalEntityModules: readonly EntityModule[] = [
   leaf,
   mower,
   crumblyRock,
-  pushableRock,
   whirlwind,
   landing,
   beanField,

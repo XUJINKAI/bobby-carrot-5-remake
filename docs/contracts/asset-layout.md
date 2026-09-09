@@ -166,7 +166,7 @@ assets/maps/novoban-pushbox/<map-id>.json
 
 Novoban 的 50 张地图按源文件顺序生成 `01` ～ `50`；原注释标题成为地图展示名，作者统一保留为 François Marques。版权与来源边界见根目录 `THIRD_PARTY_ASSETS.md`。
 
-LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-rock`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
+LOMA 与 Novoban 的 XSB 字符转换由 `tools/custom/sokoban-xsb.mjs` 统一负责。墙和地图外部空白使用隐式 Void；普通地板生成带 `ts-10-1` variant 的 `grass`，目标生成 `push-goal`，箱子生成 `pushable-box`，玩家生成 Bobby Entity。标准 `+` 因此自然表示同格 `push-goal surface + Bobby content`，不需要 `playerStart` 或 Start surface。
 
 `custom-maps/collections.json` 可用可选 `chapters` 为已存在的 chapter 目录补充 `name` 与 `description`。只有目录而没有补充信息时，runtime chapter 只包含目录提供的 `id`。`visible` 支持 `true`、`false` 和 `"dev"`：缺省或 `true` 进入所有 discovery index，`false` 不进入 discovery index，`"dev"` 只进入 `npm run dev` 生成的 index。可见性控制 collection discovery 和正式站点路由生成；地图与 collection 自身的 runtime assets 仍统一生成，供本地验证工具使用。chapter 身份和成员关系来自 `custom-maps/<collection>/<chapter>/`；只允许这一层 chapter 目录，根目录地图则没有 chapter。Explore 只读取统一生成的 collection index，不知道该 collection 的数据来源。
 

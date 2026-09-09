@@ -76,6 +76,14 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
   );
 });
 
+test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
+  assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
+  assert.match(pageState, /ruleDetector\.detect\(next\.level as EditorMap, catalog\)/);
+  assert.match(pageState, /document\.execute\(enableEditorRules\(catalog, detected\)\)/);
+  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(level\)/);
+  assert.match(page, /page\.loadLevel\(level\)/);
+});
+
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {
   assert.match(pageState, /function fillSelectionWithBrush/);
   assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*mapSelection\.value = \{ anchor: cell, focus: cell \}/);
@@ -104,6 +112,14 @@ test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () =
   assert.match(entityFields, /EditorEntityPreview/);
   assert.match(entityFields, /emit\('surfaceVariant', variant\.type\)/);
   assert.match(entityFields, /if \(surfaceTerrain\.value\) keys\.add\("variant"\)/);
+});
+
+test("Inspector 为颜色合同提供调色板与颜色文本输入", () => {
+  assert.match(entityFields, /field\.format === "color"/);
+  assert.match(entityFields, /field\.kind === "string" \|\| !controlledFieldKeys/);
+  assert.match(entityFields, /normalizeColorHex/);
+  assert.match(entityFields, /type="color"/);
+  assert.match(entityFields, /#rgb、#rrggbb 或颜色名/);
 });
 
 test("Inspector 按当前工具显示选择、素材、删除目标与 Surface 摘要", () => {

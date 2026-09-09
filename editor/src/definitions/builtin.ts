@@ -19,17 +19,32 @@ import {
   requiredEntityFieldsValidator,
 } from "./validators.js";
 
-const directions: readonly EditorEntityVariant[] = (
-  ["up", "right", "down", "left"] as const
-).map((direction) => ({ fields: { direction }, label: direction }));
+const editorDirections = ["up", "right", "down", "left"] as const;
+const directions: readonly EditorEntityVariant[] = editorDirections.map(
+  (direction) => ({ fields: { direction }, label: direction }),
+);
 
 const horizontalDirections: readonly EditorEntityVariant[] = [
-  { fields: { direction: "left" }, label: "left" },
   { fields: { direction: "right" }, label: "right" },
+  { fields: { direction: "left" }, label: "left" },
 ];
-const speedVariants = catalogVariants(MapEntityTypeId.SPEED);
-const tideVariants = catalogVariants(MapEntityTypeId.TIDE);
-const windmillVariants = catalogVariants(MapEntityTypeId.WINDMILL);
+const cornerVariants: readonly EditorEntityVariant[] = [
+  { fields: { variant: "right-top" }, label: "rt" },
+  { fields: { variant: "right-bottom" }, label: "rb" },
+  { fields: { variant: "left-bottom" }, label: "lb" },
+  { fields: { variant: "left-top" }, label: "lt" },
+];
+const carouselVariants: readonly EditorEntityVariant[] = [
+  ...cornerVariants,
+  { fields: { variant: "vertical" }, label: "vertical" },
+  { fields: { variant: "horizontal" }, label: "horizontal" },
+];
+const windSwitchVariants: readonly EditorEntityVariant[] = editorDirections.map(
+  (direction) => ({
+    fields: { direction, active: false },
+    label: direction,
+  }),
+);
 
 const surface: EditorEntityDefinition = { replaceGroup: "surface" };
 const cover: EditorEntityDefinition = { replaceGroup: "cover" };
@@ -86,15 +101,15 @@ export const builtinEditorDefinition: EditorDefinition = {
     },
     [MapEntityTypeId.SPEED]: {
       defaultFields: { direction: "right" },
-      variants: speedVariants,
+      variants: directions,
     },
     [MapEntityTypeId.TIDE]: {
       defaultFields: { direction: "right" },
-      variants: tideVariants,
+      variants: directions,
     },
     [MapEntityTypeId.WINDMILL]: {
       defaultFields: { direction: "right" },
-      variants: windmillVariants,
+      variants: directions,
     },
     [MapEntityTypeId.TIDE_SWITCH]: {
       variants: catalogVariants(MapEntityTypeId.TIDE_SWITCH),
@@ -106,31 +121,41 @@ export const builtinEditorDefinition: EditorDefinition = {
       variants: catalogVariants(MapEntityTypeId.CAROUSEL_SWITCH),
     },
     [MapEntityTypeId.COLOR_SWITCH]: {
+      defaultFields: { color: "yellow", state: "state-1" },
       variants: catalogVariants(MapEntityTypeId.COLOR_SWITCH),
     },
     [MapEntityTypeId.COLOR_BLOCK]: {
+      defaultFields: { color: "yellow", raised: true },
       variants: catalogVariants(MapEntityTypeId.COLOR_BLOCK),
     },
     [MapEntityTypeId.WIND_SWITCH]: {
-      defaultFields: { direction: "up" },
-      variants: catalogVariants(MapEntityTypeId.WIND_SWITCH),
+      defaultFields: { direction: "up", active: false },
+      variants: windSwitchVariants,
     },
     [MapEntityTypeId.CLOUD]: {
+      defaultFields: { color: "red" },
       variants: catalogVariants(MapEntityTypeId.CLOUD),
     },
     [MapEntityTypeId.CLOUD_PARKING]: {
+      defaultFields: { color: "red" },
       variants: catalogVariants(MapEntityTypeId.CLOUD_PARKING),
     },
     [MapEntityTypeId.TRAP]: { variants: catalogVariants(MapEntityTypeId.TRAP) },
-    [MapEntityTypeId.MIRROR]: { variants: catalogVariants(MapEntityTypeId.MIRROR) },
+    [MapEntityTypeId.MIRROR]: {
+      defaultFields: { variant: "right-top" },
+      variants: cornerVariants,
+    },
     [MapEntityTypeId.CAROUSEL]: {
-      variants: catalogVariants(MapEntityTypeId.CAROUSEL),
+      defaultFields: { variant: "right-top" },
+      variants: carouselVariants,
     },
     [MapEntityTypeId.PORTAL]: {
-      variants: ["blue", "red", "green"].map((channel) => ({
-        label: channel,
-        fields: { channel },
-      })),
+      defaultFields: { channel: "blue", color: "#54e8ff" },
+      variants: [
+        { label: "blue", fields: { channel: "blue", color: "#54e8ff" } },
+        { label: "red", fields: { channel: "red", color: "#ff466e" } },
+        { label: "green", fields: { channel: "green", color: "#31d87b" } },
+      ],
     },
   },
   palette: BUILTIN_PALETTE_DEFINITION,
@@ -148,10 +173,7 @@ export const builtinEditorDefinition: EditorDefinition = {
 };
 
 export const EDITOR_DIRECTIONS: readonly Direction[] = [
-  "up",
-  "right",
-  "down",
-  "left",
+  ...editorDirections,
 ];
 
 export function applyEditorVariant(

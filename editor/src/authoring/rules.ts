@@ -12,6 +12,25 @@ export interface EditorRuleCapability {
   enabled: boolean;
 }
 
+export class EditorRuleDetector {
+  private readonly availableKinds = new Set<EditorRuleKind>();
+
+  detect(map: EditorMap, catalog: EntityCatalog): readonly EditorRuleKind[] {
+    const capabilities = inspectEditorRules(map, catalog);
+    const available = capabilities.filter((item) => item.available);
+    const detected = available
+      .filter((item) => !this.availableKinds.has(item.kind) && !item.enabled)
+      .map((item) => item.kind);
+    this.availableKinds.clear();
+    for (const item of available) this.availableKinds.add(item.kind);
+    return detected;
+  }
+
+  reset(): void {
+    this.availableKinds.clear();
+  }
+}
+
 const RULE_ORDER: readonly EditorRuleKind[] = [
   "carrots",
   "eggs",
@@ -44,6 +63,23 @@ export function updateEditorRule(
   kind: EditorRuleKind,
   enabled: boolean,
 ): EditorCommand {
+  return changeEditorRules(catalog, [{ kind, enabled }]);
+}
+
+export function enableEditorRules(
+  catalog: EntityCatalog,
+  kinds: readonly EditorRuleKind[],
+): EditorCommand {
+  return changeEditorRules(
+    catalog,
+    kinds.map((kind) => ({ kind, enabled: true })),
+  );
+}
+
+function changeEditorRules(
+  catalog: EntityCatalog,
+  changes: readonly { kind: EditorRuleKind; enabled: boolean }[],
+): EditorCommand {
   return {
     apply(map) {
       const capabilities = inspectEditorRules(map, catalog);
@@ -52,8 +88,14 @@ export function updateEditorRule(
           .filter((item) => item.available && item.enabled)
           .map((item) => item.kind),
       );
-      if (enabled) enabledKinds.add(kind);
-      else enabledKinds.delete(kind);
+      const availableKinds = new Set(
+        capabilities.filter((item) => item.available).map((item) => item.kind),
+      );
+      for (const change of changes) {
+        if (change.enabled && availableKinds.has(change.kind))
+          enabledKinds.add(change.kind);
+        else enabledKinds.delete(change.kind);
+      }
       const conditions = RULE_ORDER
         .filter((candidate) => enabledKinds.has(candidate))
         .map(ruleCondition);

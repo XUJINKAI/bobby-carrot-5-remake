@@ -29,7 +29,7 @@ test("Novoban keeps variable box counts and only uses fill-all push goals", () =
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, SOKOBAN_WIN_RULE);
     const pushables = entry.level.entities.filter((entity) =>
-      entity.type === "pushable-rock",
+      entity.type === "pushable-box",
     );
     const goals = countPushGoals(entry.level);
     assert.equal(pushables.length, goals, entry.id);

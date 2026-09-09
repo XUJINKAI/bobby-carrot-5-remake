@@ -43,7 +43,7 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.WHIRLWIND },
           { type: MapEntityTypeId.LANDING },
           { type: MapEntityTypeId.PUSH_GOAL },
-          { type: MapEntityTypeId.PUSHABLE_ROCK },
+          { type: MapEntityTypeId.PUSHABLE_BOX },
         ],
       ],
     },
@@ -75,10 +75,17 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.CLOUD_PARKING},
         ],
         [
-          { type: MapEntityTypeId.TRAP},
+          {
+            type: MapEntityTypeId.TRAP,
+            fields: { active: false },
+            preview: { state: { active: true } },
+          },
           { type: MapEntityTypeId.PLANK },
           { type: MapEntityTypeId.LEAF },
-          { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
+          {
+            type: MapEntityTypeId.PORTAL,
+            fields: { channel: "blue", color: "#54e8ff" },
+          },
         ],
       ],
     },

@@ -15,6 +15,7 @@ export {
 } from "./contract.js";
 export type {
   LevelEntityReservedField,
+  EntityStringFormat,
   EntityMapFieldDefinition,
   EntityMapDefinition,
 } from "./contract.js";

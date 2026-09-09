@@ -30,7 +30,7 @@ interface LevelEntity {
 
 ### Entity 字段与 Runtime State
 
-每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。
+每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、格式、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。`color` 格式支持 `#rgb`、`#rrggbb` 和 Model 颜色别名表中的常用名称。
 
 `LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
 

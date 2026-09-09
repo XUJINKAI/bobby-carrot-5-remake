@@ -2,6 +2,7 @@ import type { JsonPrimitive } from "../shared/json.js";
 import type { LevelEntity, LevelMap, MapDocument, MapMeta } from "./document.js";
 import { entityMapDefinition } from "./entity/catalog.js";
 import type { EntityMapFieldDefinition } from "./entity/contract.js";
+import { normalizeColorHex } from "../shared/color.js";
 import type { LevelLimit, LevelRules, WinCondition } from "./rules.js";
 
 const MAP_FIELDS = new Set([
@@ -136,7 +137,12 @@ function fieldAccepts(
   value: unknown,
 ): value is JsonPrimitive {
   if (field.kind === "boolean") return typeof value === "boolean";
-  if (field.kind === "string") return typeof value === "string";
+  if (field.kind === "string") {
+    if (typeof value !== "string") return false;
+    if (field.format === "non-empty") return value.trim().length > 0;
+    if (field.format === "color") return normalizeColorHex(value) !== null;
+    return true;
+  }
   if (field.kind === "enum") return field.values.includes(value as JsonPrimitive);
   if (field.kind === "integer" && !Number.isInteger(value)) return false;
   if (field.kind === "number" && !isFiniteNumber(value)) return false;

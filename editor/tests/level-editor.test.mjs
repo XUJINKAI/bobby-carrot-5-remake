@@ -298,15 +298,8 @@ test("Engine authoring metadata 隐藏不可直接放置的 Entity", () => {
   );
 });
 
-test("Palette 只发布具有 Model Definition 的 canonical directional preset", () => {
+test("Palette 只发布具有 Model Definition 的 canonical preset", () => {
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
-  const speed = palette
-    .flatMap((group) => group.rows.flat())
-    .filter((entry) => entry.type === MapEntityTypeId.SPEED);
-  assert.deepEqual(
-    speed.map((entry) => entry.fields?.direction),
-    ["up", "down", "left", "right"],
-  );
   assert.equal(
     palette.flatMap((group) => group.rows.flat())
       .some((entry) => entry.type === "ts-1-1"),
@@ -321,13 +314,6 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
   const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
   assert.equal(allTypes.includes(MapEntityTypeId.EGG), true);
   assert.equal(allTypes.every((type) => entityMapDefinition(type)), true);
-  assert.deepEqual(
-    palette
-      .flatMap((group) => group.rows.flat())
-      .filter((entry) => entry.type === MapEntityTypeId.WINDMILL)
-      .map((entry) => entry.fields?.direction),
-    ["up", "down", "left", "right"],
-  );
   const egg = palette
     .flatMap((group) => group.rows.flat())
     .find((entry) => entry.type === MapEntityTypeId.EGG);
@@ -344,7 +330,7 @@ test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
   );
   assert.deepEqual(next, {
     type: MapEntityTypeId.SPEED,
-    fields: { direction: "down" },
+    fields: { direction: "right" },
   });
   assert.equal("direction" in next, false);
   assert.equal(
@@ -397,19 +383,19 @@ test("带 fields 的响应式 Palette preset 可用于 Canvas 与 Inspector 预�
       builtinEditorDefinition.entities[MapEntityTypeId.SPEED],
       1,
     )?.fields?.direction,
-    "down",
+    "right",
   );
 });
 
-test("Inspector variant 切换复用对应的 Palette item", () => {
+test("Inspector variant 切换解析对应的放置 preset", () => {
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
-  const items = palette.flatMap((group) => group.rows.flat());
-  const current = items.find(
-    (entry) =>
-      entry.type === MapEntityTypeId.SPEED &&
-      entry.fields?.direction === "up",
+  const current = resolvePalettePlacement(
+    catalog,
+    builtinEditorDefinition,
+    palette,
+    { type: MapEntityTypeId.SPEED, fields: { direction: "up" } },
+    "Speed",
   );
-  assert.ok(current);
   const variant = builtinEditorDefinition.entities[MapEntityTypeId.SPEED]
     .variants[1];
   const preset = applyPlacementVariant(current, variant);
@@ -420,8 +406,8 @@ test("Inspector variant 切换复用对应的 Palette item", () => {
     preset,
     current.label,
   );
-  assert.equal(resolved.fields?.direction, "down");
-  assert.equal(items.includes(resolved), true);
+  assert.equal(resolved.fields?.direction, "right");
+  assert.equal(resolved.previewPreset.fields?.direction, "right");
 });
 
 test("Palette 表独立控制顺序、预览外观与 variant 展开", () => {
@@ -591,7 +577,14 @@ test("Palette preview layout derives full multi-cell footprint generically", () 
 test("single-cell Inspector exposes every layer top-first", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: MapEntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
+    {
+      type: MapEntityTypeId.PORTAL,
+      x: 3,
+      y: 3,
+      stackOrder: 1000,
+      channel: "blue",
+      color: "#54e8ff",
+    },
     { type: MapEntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
   );
   const model = buildInspectorModel(
@@ -691,7 +684,13 @@ test("Inspector 直接使用 canonical Entity Definition", () => {
 test("reordering a cell stack changes actual Spatial top Presence", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: MapEntityTypeId.PORTAL, x: 3, y: 3 },
+    {
+      type: MapEntityTypeId.PORTAL,
+      x: 3,
+      y: 3,
+      channel: "blue",
+      color: "#54e8ff",
+    },
     { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
   );
   const portalIndex = level.entities.length - 2;

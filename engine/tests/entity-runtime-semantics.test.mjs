@@ -7,6 +7,7 @@ import {
   resolveEntityVisualPreview,
   resolveLevelEntityVisualPreview,
 } from "../dist/visual/preview.js";
+import { portal } from "../dist/entities/custom/portal.js";
 
 const BLOCKING_TYPES = [
   MapEntityTypeId.WINDMILL,
@@ -46,6 +47,103 @@ test("canonical original obstacle semantics keep known blockers blocking", () =>
   for (const type of BLOCKING_TYPES) {
     assert.equal(registry.require(type).traits.includes("blocking"), true, type);
   }
+});
+
+test("Portal visual 接受 hex color 与常用颜色别名", () => {
+  const expectedRings = {
+    "#abc": "#aabbcc",
+    "#12ABef": "#12abef",
+    orange: "#ffa500",
+  };
+  for (const [color, ring] of Object.entries(expectedRings)) {
+    const composition = resolveLevelEntityVisualPreview({
+      type: MapEntityTypeId.PORTAL,
+      channel: "test-channel",
+      color,
+    });
+    const layer = composition?.layers[0];
+    assert.equal(layer?.kind, "canvas");
+    const stops = [];
+    const gradient = {
+      addColorStop(offset, color) {
+        stops.push({ offset, color });
+      },
+    };
+    layer.draw({
+      createRadialGradient: () => gradient,
+      save() {},
+      beginPath() {},
+      arc() {},
+      fill() {},
+      stroke() {},
+      restore() {},
+    }, 0, 0, 48);
+    assert.deepEqual(stops[1], { offset: 0.55, color: ring });
+  }
+});
+
+test("Portal visual 使用固定三帧循环", () => {
+  const radii = [0, 160, 320, 480].map((nowMs) => {
+    const composition = portal.visual.resolve({
+      entity: { id: 1, type: MapEntityTypeId.PORTAL, state: { color: "cyan" } },
+      presence: {},
+      query: {},
+      time: { frame: 0, nowMs, deltaMs: 0 },
+    });
+    const layer = composition.layers[0];
+    let outerRadius = 0;
+    const gradient = { addColorStop() {} };
+    layer.draw({
+      createRadialGradient(_x0, _y0, _r0, _x1, _y1, radius) {
+        outerRadius = radius;
+        return gradient;
+      },
+      save() {},
+      beginPath() {},
+      arc() {},
+      fill() {},
+      stroke() {},
+      restore() {},
+    }, 0, 0, 48);
+    return outerRadius;
+  });
+  assert.equal(new Set(radii.slice(0, 3)).size, 3);
+  assert.equal(radii[3], radii[0]);
+});
+
+test("Pushable Box 使用独立的 Canvas 木箱视觉", () => {
+  const composition = resolveLevelEntityVisualPreview({
+    type: MapEntityTypeId.PUSHABLE_BOX,
+  });
+  const layer = composition?.layers[0];
+  assert.equal(layer?.kind, "canvas");
+  const calls = [];
+  layer.draw({
+    save() {},
+    fillRect(...args) {
+      calls.push(["fillRect", ...args]);
+    },
+    strokeRect(...args) {
+      calls.push(["strokeRect", ...args]);
+    },
+    beginPath() {},
+    moveTo(...args) {
+      calls.push(["moveTo", ...args]);
+    },
+    lineTo(...args) {
+      calls.push(["lineTo", ...args]);
+    },
+    stroke() {},
+    arc(...args) {
+      calls.push(["arc", ...args]);
+    },
+    fill() {},
+    restore() {},
+  }, 0, 0, 48);
+  assert.equal(calls.filter(([kind]) => kind === "fillRect").length, 3);
+  assert.equal(calls.filter(([kind]) => kind === "strokeRect").length, 2);
+  assert.equal(calls.filter(([kind]) => kind === "arc").length, 4);
+  assert.equal(calls.filter(([kind]) => kind === "lineTo").length, 2);
 });
 
 test("Surface atlas family 使用各自的通行语义", () => {

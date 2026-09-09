@@ -17,6 +17,7 @@ import {
 import type { ImageManager } from "@bobby/engine";
 import {
   entityMapDefinition,
+  normalizeColorHex,
   type Direction,
   type EntityMapFieldDefinition,
   type EntityType,
@@ -78,7 +79,8 @@ const controlledFieldKeys = computed(() => {
 const editableFields = computed(() =>
   props.showMapFields
     ? (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
-        (field) => !controlledFieldKeys.value.has(field.key),
+        (field) =>
+          field.kind === "string" || !controlledFieldKeys.value.has(field.key),
       )
     : [],
 );
@@ -164,6 +166,17 @@ function fieldMixed(
 
 function inputType(field: EntityMapFieldDefinition): "number" | "text" {
   return field.kind === "number" || field.kind === "integer" ? "number" : "text";
+}
+
+function isColorField(field: EntityMapFieldDefinition): boolean {
+  return field.kind === "string" && field.format === "color";
+}
+
+function colorInputValue(
+  key: string,
+  fallback: JsonPrimitive | undefined,
+): string {
+  return normalizeColorHex(fieldValue(key, fallback)) ?? "#000000";
 }
 </script>
 
@@ -282,6 +295,19 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
           :checked="fieldValue(field.key, field.default) === 'true'"
           @change="emit('field', field.key, String(($event.target as HTMLInputElement).checked))"
         />
+        <span v-else-if="isColorField(field)" class="editor-color-field">
+          <input
+            type="color"
+            :value="colorInputValue(field.key, field.default)"
+            @input="emit('field', field.key, ($event.target as HTMLInputElement).value)"
+          />
+          <input
+            type="text"
+            :value="fieldValue(field.key, field.default)"
+            :placeholder="fieldMixed(field.key, field.default) ? '多种值' : '#rgb、#rrggbb 或颜色名'"
+            @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
+          />
+        </span>
         <input
           v-else
           :type="inputType(field)"
@@ -360,5 +386,15 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
 .editor-surface-variant-btn.active {
   border-color: var(--editor-accent);
   outline: 1px solid var(--editor-accent);
+}
+.editor-color-field {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 6px;
+}
+.editor-color-field input[type="color"] {
+  width: 36px;
+  min-width: 36px;
+  padding: 2px;
 }
 </style>

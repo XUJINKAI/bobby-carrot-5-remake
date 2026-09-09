@@ -125,8 +125,11 @@ Inspector 汇总当前工具和它正在作用的对象：
 - Surface Brush / Smart Fill 显示当前 Terrain、Pattern 与预览单元。
 
 删除目标与实际删除操作共用 `resolveDeletionTarget()`，Inspector 不另算一套视觉栈规则。
+Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
 只有 Delete 工具会让 Inspector 订阅 Canvas hover；Palette Brush 的悬浮预览不会触发
 variant 网格重新绘制。
+
+规则检测器按 Entity 与 Trait 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
 
 `EditorEntityDefinition.defaultFields`、`EditorEntityVariant.fields`、`EditorPlacementPreset.fields`
 与 `EditorPalettePreview.fields` 共用同一套类型专属字段形状。Egg 在 Editor 中固定使用 filled
