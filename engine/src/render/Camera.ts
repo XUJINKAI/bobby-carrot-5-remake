@@ -13,8 +13,8 @@ export interface CameraOptions {
 
 export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
   zoom: 1,
-  minZoom: 0.3,
-  maxZoom: 2.75,
+  minZoom: .25,
+  maxZoom: 4,
 } as const;
 
 interface PanReturn {

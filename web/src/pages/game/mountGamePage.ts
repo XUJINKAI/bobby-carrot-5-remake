@@ -72,8 +72,9 @@ export type GamePageMode = "explore" | "adventure";
 const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
   explore: DEFAULT_CAMERA_OPTIONS,
   adventure: {
-    ...DEFAULT_CAMERA_OPTIONS,
-    minZoom: 0.72,
+    zoom: 1,
+    minZoom: 0.8,
+    maxZoom: 1.15,
   },
 };
 
