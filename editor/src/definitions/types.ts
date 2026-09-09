@@ -72,8 +72,13 @@ export interface EditorPalettePreview {
   fields?: EditorEntityFields;
 }
 
+export type EditorPaletteExpansion = "variants";
+
 export interface EditorPaletteEntry extends EditorPlacementPreset {
+  /** 未指定时严格保留一个表条目；variants 按 Editor Entity Definition 顺序展开。 */
+  expand?: EditorPaletteExpansion;
   label?: string;
+  /** 只覆盖 Palette 外观，不改变实际放置的字段。 */
   preview?: EditorPalettePreview;
 }
 
@@ -83,8 +88,20 @@ export interface EditorPaletteGroup {
   rows: readonly (readonly EditorPaletteEntry[])[];
 }
 
+export interface EditorPaletteRemainderGroup {
+  id: string;
+  label: string;
+  /** 省略时接收此前分组未消费的全部可创建 Entity。 */
+  types?: readonly EntityType[];
+  expand?: EditorPaletteExpansion;
+  rows: "single" | "by-type";
+  sort?: "type";
+}
+
 export interface EditorPaletteDefinition {
   groups: readonly EditorPaletteGroup[];
+  /** remainder 按声明顺序消费未进入显式 rows 的 Entity。 */
+  remainders?: readonly EditorPaletteRemainderGroup[];
 }
 
 export interface EditorDeletionCandidate {

@@ -2,7 +2,6 @@ import {
   MapEntityTypeId,
   SURFACE_ENTITY_DEFINITIONS,
   originalTileVisualGroup,
-  originalTileVisualGroups,
   type Direction,
   type EntityType,
   type LevelEntity,
@@ -11,9 +10,8 @@ import type {
   EditorDefinition,
   EditorEntityDefinition,
   EditorEntityVariant,
-  EditorPaletteEntry,
-  EditorPaletteGroup,
 } from "./types.js";
+import { BUILTIN_PALETTE_DEFINITION } from "./palette.js";
 import {
   playerPresenceValidator,
   reachTargetValidator,
@@ -112,6 +110,12 @@ export const builtinEditorDefinition: EditorDefinition = {
       defaultDirection: "up",
       variants: catalogVariants(MapEntityTypeId.WIND_SWITCH),
     },
+    [MapEntityTypeId.CLOUD]: {
+      variants: catalogVariants(MapEntityTypeId.CLOUD),
+    },
+    [MapEntityTypeId.CLOUD_PARKING]: {
+      variants: catalogVariants(MapEntityTypeId.CLOUD_PARKING),
+    },
     [MapEntityTypeId.TRAP]: { variants: catalogVariants(MapEntityTypeId.TRAP) },
     [MapEntityTypeId.MIRROR]: { variants: catalogVariants(MapEntityTypeId.MIRROR) },
     [MapEntityTypeId.CAROUSEL]: {
@@ -124,155 +128,7 @@ export const builtinEditorDefinition: EditorDefinition = {
       })),
     },
   },
-  palette: {
-    groups: catalogPaletteGroups([
-      {
-        id: "objective",
-        label: "目标及道具",
-        rows: [
-          [
-            { type: MapEntityTypeId.BOBBY },
-            { type: MapEntityTypeId.EXIT },
-            { type: MapEntityTypeId.CARROT },
-            { type: MapEntityTypeId.EGG },
-          ],
-          [
-            { type: MapEntityTypeId.GAS },
-            { type: MapEntityTypeId.MOWER },
-            { type: MapEntityTypeId.MOWER_PARKING },
-            { type: MapEntityTypeId.CRUMBLY_ROCK },
-            { type: MapEntityTypeId.HIGH_GRASS },
-            { type: MapEntityTypeId.BEAN },
-            { type: MapEntityTypeId.BEAN_FIELD },
-            { type: MapEntityTypeId.SHOVEL_PICKUP },
-            { type: MapEntityTypeId.SNOW },
-            { type: MapEntityTypeId.KITE },
-            { type: MapEntityTypeId.WHIRLWIND },
-            { type: MapEntityTypeId.LANDING },
-          ],
-          [
-            { type: MapEntityTypeId.PUSH_GOAL },
-            { type: MapEntityTypeId.PUSHABLE_ROCK },
-          ],
-        ],
-      },
-      {
-        id: "mechanism",
-        label: "机关",
-        rows: [
-          [
-            ...directions.map((variant) => ({
-              type: MapEntityTypeId.SPEED,
-              direction: variant.direction!,
-            })),
-            { type: MapEntityTypeId.SPEED_SWITCH },
-          ],
-          [
-            ...directions.map((variant) => ({
-              type: MapEntityTypeId.TIDE,
-              direction: variant.direction!,
-            })),
-            { type: MapEntityTypeId.TIDE_SWITCH },
-          ],
-          [
-            {
-              type: MapEntityTypeId.COLOR_SWITCH,
-              label: "Yellow Switch",
-              fields: { color: "yellow", state: "state-1" },
-            },
-            {
-              type: MapEntityTypeId.COLOR_SWITCH,
-              label: "Pink Switch",
-              fields: { color: "pink", state: "state-1" },
-            },
-            {
-              type: MapEntityTypeId.COLOR_BLOCK,
-              label: "Yellow Block",
-              fields: { color: "yellow" },
-            },
-            {
-              type: MapEntityTypeId.COLOR_BLOCK,
-              label: "Pink Block",
-              fields: { color: "pink" },
-            },
-            { type: MapEntityTypeId.TRAP },
-          ],
-          [
-            { type: MapEntityTypeId.MIRROR, fields: { variant: "right-bottom" } },
-            { type: MapEntityTypeId.CAROUSEL, fields: { variant: "right-top" } },
-            { type: MapEntityTypeId.CAROUSEL_SWITCH },
-          ],
-          [
-            { type: MapEntityTypeId.DRAGON },
-            { type: MapEntityTypeId.ICE_BLOCK },
-          ],
-          [
-            ...directions.map((variant) => ({
-              type: MapEntityTypeId.WINDMILL,
-              direction: variant.direction!,
-            })),
-            { type: MapEntityTypeId.WIND_SWITCH, direction: "up" },
-            {
-              type: MapEntityTypeId.CLOUD,
-              label: "Green Cloud",
-              fields: { color: "green" },
-            },
-            {
-              type: MapEntityTypeId.CLOUD,
-              label: "Purple Cloud",
-              fields: { color: "purple" },
-            },
-            {
-              type: MapEntityTypeId.CLOUD,
-              label: "Red Cloud",
-              fields: { color: "red" },
-            },
-            {
-              type: MapEntityTypeId.CLOUD_PARKING,
-              label: "Green Cloud Parking",
-              fields: { color: "green" },
-            },
-            {
-              type: MapEntityTypeId.CLOUD_PARKING,
-              label: "Purple Cloud Parking",
-              fields: { color: "purple" },
-            },
-            {
-              type: MapEntityTypeId.CLOUD_PARKING,
-              label: "Red Cloud Parking",
-              fields: { color: "red" },
-            },
-            { type: MapEntityTypeId.PLANK },
-            { type: MapEntityTypeId.LEAF },
-            { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
-          ],
-        ],
-      },
-      {
-        id: "shop",
-        label: "商店",
-        rows: [
-          [
-            { type: MapEntityTypeId.BEAVER },
-            { type: MapEntityTypeId.SANDMAN },
-            { type: MapEntityTypeId.DREAM_MACHINE },
-            { type: MapEntityTypeId.SHOP_CLOUD9_TICKET },
-            { type: MapEntityTypeId.SHOP_COIN_RADAR },
-            { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET },
-            { type: MapEntityTypeId.SHOP_EXTRA_MUSIC },
-            { type: MapEntityTypeId.SHOP_SPEED_SHOES },
-            { type: MapEntityTypeId.SHOP_STEREO_SYSTEM },
-            { type: MapEntityTypeId.SHOP_SUPER_KEY },
-            { type: MapEntityTypeId.LOCK },
-            { type: MapEntityTypeId.GOLDEN_CARROT },
-            { type: MapEntityTypeId.BONUS_COIN },
-            { type: MapEntityTypeId.START },
-            { type: MapEntityTypeId.SHOP_EMPTY },
-          ],
-        ],
-      },
-    ]),
-  },
+  palette: BUILTIN_PALETTE_DEFINITION,
   validators: [
     registeredEntityTypesValidator,
     requiredEntityFieldsValidator,
@@ -328,50 +184,6 @@ function catalogVariants(type: EntityType): readonly EditorEntityVariant[] {
     });
   }
   return variants;
-}
-
-function catalogPaletteGroups(
-  layout: readonly EditorPaletteGroup[],
-): readonly EditorPaletteGroup[] {
-  const tileTypes = new Set(
-    originalTileVisualGroups("palette").map((group) => group.type),
-  );
-  const customTypes = new Set<EntityType>([
-    MapEntityTypeId.BOBBY,
-    MapEntityTypeId.PUSH_GOAL,
-    MapEntityTypeId.PUSHABLE_ROCK,
-    MapEntityTypeId.PORTAL,
-  ]);
-  const placed = new Set<EntityType>();
-  const groups = layout.map((group) => ({
-    ...group,
-    rows: group.rows.map((row) => row.flatMap((entry) => {
-      if (customTypes.has(entry.type)) return [entry];
-      if (!tileTypes.has(entry.type) || placed.has(entry.type)) return [];
-      placed.add(entry.type);
-      return catalogPaletteEntries(entry.type);
-    })),
-  }));
-  const missing = [...tileTypes].filter((type) => !placed.has(type));
-  if (missing.length > 0) {
-    groups.push({
-      id: "original-tile-catalog",
-      label: "Original Tile",
-      rows: missing.map((type) => catalogPaletteEntries(type)),
-    });
-  }
-  return groups;
-}
-
-function catalogPaletteEntries(type: EntityType): EditorPaletteEntry[] {
-  const variants = catalogVariants(type);
-  if (variants.length === 0) return [{ type }];
-  return variants.map((variant) => ({
-    type,
-    ...(variant.label ? { label: variant.label } : {}),
-    ...(variant.direction ? { direction: variant.direction } : {}),
-    ...(variant.fields ? { fields: variant.fields } : {}),
-  }));
 }
 
 function isDirection(value: unknown): value is Direction {

@@ -332,6 +332,97 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
   assert.equal(egg?.traits.includes("egg-nest"), true);
 });
 
+test("Palette 表独立控制顺序、预览外观与 variant 展开", () => {
+  const editor = {
+    ...builtinEditorDefinition,
+    palette: {
+      groups: [
+        {
+          id: "table",
+          label: "Table",
+          rows: [
+            [
+              {
+                type: MapEntityTypeId.SPEED_SWITCH,
+                label: "默认速度开关",
+                fields: { pressed: false },
+                preview: { fields: { pressed: true } },
+              },
+              {
+                type: MapEntityTypeId.TIDE_SWITCH,
+                expand: "variants",
+              },
+            ],
+            [
+              { type: MapEntityTypeId.EGG },
+              { type: MapEntityTypeId.CARROT },
+            ],
+          ],
+        },
+      ],
+    },
+  };
+  const [group] = resolveEditorPalette(catalog, editor);
+  assert.ok(group);
+  assert.deepEqual(
+    group.rows[0].map((entry) => entry.type),
+    [
+      MapEntityTypeId.SPEED_SWITCH,
+      MapEntityTypeId.TIDE_SWITCH,
+      MapEntityTypeId.TIDE_SWITCH,
+    ],
+  );
+  assert.equal(group.rows[0][0].label, "默认速度开关");
+  assert.deepEqual(group.rows[0][0].fields, { pressed: false });
+  assert.deepEqual(group.rows[0][0].previewPreset.fields, { pressed: true });
+  assert.deepEqual(
+    group.rows[0].slice(1).map((entry) => entry.fields?.pressed),
+    [true, false],
+  );
+  assert.deepEqual(
+    group.rows[1].map((entry) => entry.type),
+    [MapEntityTypeId.EGG, MapEntityTypeId.CARROT],
+  );
+});
+
+test("Palette remainder 按表顺序接收尚未使用的 Entity", () => {
+  const editor = {
+    ...builtinEditorDefinition,
+    palette: {
+      groups: [
+        {
+          id: "main",
+          label: "Main",
+          rows: [[{ type: MapEntityTypeId.EGG }]],
+        },
+      ],
+      remainders: [
+        {
+          id: "remaining",
+          label: "Remaining",
+          types: [
+            MapEntityTypeId.EGG,
+            MapEntityTypeId.CARROT,
+            MapEntityTypeId.BEANSTALK,
+            MapEntityTypeId.SPEED_SWITCH,
+          ],
+          expand: "variants",
+          rows: "by-type",
+        },
+      ],
+    },
+  };
+  const palette = resolveEditorPalette(catalog, editor);
+  assert.deepEqual(palette.map((group) => group.id), ["main", "remaining"]);
+  assert.deepEqual(
+    palette[1].rows.map((row) => row.map((entry) => entry.type)),
+    [
+      [MapEntityTypeId.CARROT],
+      [MapEntityTypeId.SPEED_SWITCH, MapEntityTypeId.SPEED_SWITCH],
+    ],
+  );
+});
+
 test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => {
   const level = createBlankLevel(4, 2);
   level.entities.push(

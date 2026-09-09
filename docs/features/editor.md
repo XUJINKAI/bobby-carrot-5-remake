@@ -101,6 +101,16 @@ Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinit
 不会进入 Editor；`palette: false` 用于把通过 Surface 等其它入口编辑的 canonical Entity
 排除出 Object Palette。
 
+Palette 布局由 `EditorPaletteDefinition` 表驱动：`groups[].rows` 的二维顺序就是面板顺序；
+单个条目的 `fields / direction` 是实际放置 preset，`label / preview` 只控制展示；默认一个条目
+只生成一个 tile，显式设置 `expand: "variants"` 时才按对应 `EditorEntityDefinition.variants`
+的顺序展开。需要精确调整部分形态的顺序或外观时，应在 `rows` 中写多个独立条目。
+
+`remainders` 按声明顺序接收尚未被显式 `rows` 消费的可创建 Entity。`types` 限定候选集合，
+`rows` 决定集中到一行或按 type 分行，`expand` 决定是否展开 variants；省略 `types` 的末级
+remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original Tile 与未分组区域都通过
+这张表声明，不由 Palette resolver 写死名称或布局。
+
 草下目标通过在同格放置 `high-grass` 与 `carrot` 或 `egg` 创建。云朵停靠格使用带 `color` 的 `cloud-parking`，放置时保留同格基础地形。
 
 ## Multi-cell Object
