@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "vitest";
 
-test("游戏统计以半透明的两行 22px 文本显示", async () => {
+test("游戏统计以半透明的两行 32px 文本显示", async () => {
   const [stageSource, pageSource] = await Promise.all([
     readFile(new URL("../src/pages/game/GameStage.vue", import.meta.url), "utf8"),
     readFile(
@@ -11,12 +11,16 @@ test("游戏统计以半透明的两行 22px 文本显示", async () => {
     ),
   ]);
 
-  assert.match(stageSource, /font-size: 22px/);
+  assert.match(stageSource, /font-size: 32px/);
   assert.match(stageSource, /opacity: 0\.68/);
   assert.match(stageSource, /data-product-time/);
   assert.match(stageSource, /data-product-steps/);
   assert.match(pageSource, /productTime\.textContent/);
-  assert.match(pageSource, /productSteps\.textContent/);
+  assert.match(
+    pageSource,
+    /productSteps\.textContent = String\(game\.state\.moves\)/,
+  );
+  assert.doesNotMatch(pageSource, /STEPS/);
 });
 
 test("地图编辑入口使用独立的简洁铅笔图标语义", async () => {

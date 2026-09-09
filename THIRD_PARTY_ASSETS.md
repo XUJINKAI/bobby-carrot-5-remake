@@ -65,7 +65,7 @@ Phosphor Icons 的版权与许可条件以其随包发布的许可证为准。
 
 ## Jersey 10
 
-Engine Gameplay HUD 使用由 Sarah Cadigan-Fried 设计、Soft Type Project 发布的 Jersey 10 字体。字体及其许可证集中保存在 `web/src/shared/fonts/jersey-10/`，Web 在构建时将其作为本地资源打包，不依赖运行时字体 CDN。
+Web gameplay UI 使用由 Sarah Cadigan-Fried 设计、Soft Type Project 发布的 Jersey 10 字体，并将其统一应用于 Engine HUD 与 Explore 统计 Overlay。字体及其许可证集中保存在 `web/src/shared/fonts/jersey-10/`，Web 在构建时将其作为本地资源打包，不依赖运行时字体 CDN。
 
 本仓库采用上游 commit `d8446c4c9c2ba14cf408c295be35213c006e19ff` 中的 `Jersey10-Regular.ttf`，字体按 SIL Open Font License 1.1 发布：
 

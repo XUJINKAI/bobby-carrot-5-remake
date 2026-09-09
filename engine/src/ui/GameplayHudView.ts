@@ -51,10 +51,6 @@ export class GameplayHudView {
       maxWidth: `calc(100% - 24px - var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
       pointerEvents: "none",
       color: "#eef5ef",
-      fontFamily: '"Jersey 10", fantasy',
-      WebkitTextStroke: "1px #000",
-      textShadow:
-        "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000",
       opacity: "0.68",
     });
 
@@ -162,8 +158,9 @@ export class GameplayHudView {
     });
     const value = options.value ? document.createElement("strong") : null;
     if (value && options.valueFontSize) {
-      value.style.fontSize = options.valueFontSize;
-      value.style.fontWeight = "400";
+      value.className = "engine-gameplay-hud-value";
+      value.style.fontSize =
+        `var(--engine-gameplay-hud-value-font-size, ${options.valueFontSize})`;
       value.style.lineHeight = "1";
     }
     if (value && options.valueFirst) root.append(value, icon);

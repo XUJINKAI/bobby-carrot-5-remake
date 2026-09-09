@@ -212,7 +212,7 @@ Explore HUD：
 ```text
 ┌──────────────────────────────────────────────────────┐
 │ 02:31                                         12 🥕 │
-│ 84 STEPS                              🪁 2 🫘 🛷 ⛽  │
+│ 84                                    🪁 2 🫘 🛷 ⛽  │
 │                                                      │
 │                         GAME                         │
 │                                                      │
@@ -227,9 +227,9 @@ HUD 数据：
 - Engine Timed Challenge 剩余时间；
 - 当前模式允许展示的移动步数和统计用时。
 
-Engine HUD 使用原版图标和紧凑 Overlay，统一锚定在 GameStage 右上角。第一行以 26px 字号在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。两行直接显示半透明图标和数字，不使用容器边框、底色或阴影；数字使用 Jersey 10 像素字体和 1px 黑色描边增强复杂地图上的辨识度。物品只在持有或数量大于零时出现。
+Engine HUD 使用原版图标和紧凑 Overlay，统一锚定在 GameStage 右上角。第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。两行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
 
-Explore 的统计 Overlay 锚定在 GameStage 左上角，以 22px 字号分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
+Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为右侧 Engine HUD 应用 36px Jersey 10 像素字体，为左侧 Explore 统计 Overlay 应用 26px Jersey 10 像素字体，两侧均使用 1px 黑色描边。Explore 统计 Overlay 锚定在 GameStage 左上角，分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
 
 ```text
 右上角 HUD 锚点
@@ -459,7 +459,7 @@ Explore Play：
 │ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↻ │ ↶ ✎ ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 02:31                                                         12 🥕 │
-│ 84 STEPS                                                🪁 2 🫘 🛷 ⛽ │
+│ 84                                                      🪁 2 🫘 🛷 ⛽ │
 │                                                     ┌────────────────┐ │
 │                      GAME                           │ Tile 14,8      │ │
 │                                                     │ Object: Dragon │ │

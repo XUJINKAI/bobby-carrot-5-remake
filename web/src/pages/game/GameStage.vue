@@ -48,7 +48,7 @@ defineProps<{
   display: grid;
   gap: 2px;
   color: #dce8de;
-  font-size: 22px;
+  font-size: 32px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   opacity: 0.68;

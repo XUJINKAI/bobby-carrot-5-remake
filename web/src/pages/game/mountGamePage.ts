@@ -384,7 +384,7 @@ export async function renderGamePage(
     persistAdventureSession();
     if (productTime && productSteps && game.hasLevel) {
       productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
-      productSteps.textContent = `${game.state.moves} STEPS`;
+      productSteps.textContent = String(game.state.moves);
     }
     renderResult();
     replayPanel.update();
