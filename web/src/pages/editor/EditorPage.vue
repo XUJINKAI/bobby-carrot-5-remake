@@ -191,14 +191,6 @@ function pasteFromMenu(): void {
   const cell = contextMenu.value?.cell;
   if (cell) page.paste(cell);
 }
-function transform(
-  cell: Cell,
-  step: number,
-  result: (changed: boolean) => void,
-): void {
-  result(page.transform(cell, step));
-}
-
 function selectAll(): void {
   const level = page.snapshot.value.level as EditorMap;
   page.mapSelection.value = {
@@ -220,16 +212,7 @@ function handleKeydown(event: KeyboardEvent): void {
   if (isTextInput(event.target)) return;
   const modifier = event.ctrlKey || event.metaKey;
   const key = event.key.toLowerCase();
-  if (page.playing.value) {
-    if (modifier && key === "z") {
-      event.preventDefault();
-      event.shiftKey ? session?.game.redo() : session?.game.undo();
-    } else if (modifier && key === "y") {
-      event.preventDefault();
-      session?.game.redo();
-    }
-    return;
-  }
+  if (page.playing.value) return;
   if (event.key === "Tab" && !modifier && !event.altKey) {
     event.preventDefault();
     switchAuthoringPanel();
@@ -242,10 +225,10 @@ function handleKeydown(event: KeyboardEvent): void {
   if (modifier && key === "a") {
     event.preventDefault();
     selectAll();
-  } else if (modifier && key === "z") {
+  } else if (modifier && key === "z" && !event.shiftKey) {
     event.preventDefault();
     undo();
-  } else if (modifier && key === "y") {
+  } else if (modifier && key === "y" && !event.shiftKey) {
     event.preventDefault();
     redo();
   } else if (modifier && key === "c") {
@@ -411,7 +394,6 @@ function isMobileEditor(): boolean {
       @primary-move="page.primaryMove"
       @primary-end="page.primaryEnd"
       @context-menu="openContextMenu"
-      @transform="transform"
       @resize="page.resize"
       @field="page.updateField"
       @variant="page.applyVariant"

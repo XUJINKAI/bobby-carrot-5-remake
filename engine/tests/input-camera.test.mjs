@@ -31,12 +31,27 @@ function pointer(pointerId, clientX, clientY) {
   };
 }
 
+function keyboard(key, options = {}) {
+  return {
+    key,
+    code: "",
+    ctrlKey: false,
+    shiftKey: false,
+    repeat: false,
+    defaultPrevented: false,
+    preventDefault() {
+      this.defaultPrevented = true;
+    },
+    ...options,
+  };
+}
+
 function fixture(options = {}) {
   const previousWindow = globalThis.window;
   const windowTarget = new FakeEventTarget();
   const canvas = new FakeEventTarget();
   globalThis.window = windowTarget;
-  const calls = { pan: [], zoom: [] };
+  const calls = { pan: [], zoom: [], undo: 0, redo: 0, restart: 0 };
   const game = {
     canvas,
     hasLevel: true,
@@ -47,6 +62,15 @@ function fixture(options = {}) {
     setZoomAt(value, clientX, clientY) {
       this.zoom = value;
       calls.zoom.push({ value, clientX, clientY });
+    },
+    undo() {
+      calls.undo += 1;
+    },
+    redo() {
+      calls.redo += 1;
+    },
+    restart() {
+      calls.restart += 1;
     },
   };
   const input = new InputController(game, {
@@ -85,6 +109,37 @@ test("双指手势同时按中心位移平移并围绕中心缩放", () => {
       },
       { clientX: 60, clientY: 10 },
     );
+  } finally {
+    view.destroy();
+  }
+});
+
+test("游戏撤销与重做只响应 Ctrl+Z 和 Ctrl+Y", () => {
+  const view = fixture();
+  try {
+    for (const event of [
+      keyboard("r"),
+      keyboard("z"),
+      keyboard("u"),
+      keyboard("z", { shiftKey: true }),
+      keyboard("z", { ctrlKey: true, shiftKey: true }),
+    ]) {
+      globalThis.window.dispatch("keydown", event);
+    }
+
+    assert.equal(view.calls.restart, 0);
+    assert.equal(view.calls.undo, 0);
+    assert.equal(view.calls.redo, 0);
+
+    const undo = keyboard("z", { ctrlKey: true });
+    const redo = keyboard("y", { ctrlKey: true });
+    globalThis.window.dispatch("keydown", undo);
+    globalThis.window.dispatch("keydown", redo);
+
+    assert.equal(view.calls.undo, 1);
+    assert.equal(view.calls.redo, 1);
+    assert.equal(undo.defaultPrevented, true);
+    assert.equal(redo.defaultPrevented, true);
   } finally {
     view.destroy();
   }

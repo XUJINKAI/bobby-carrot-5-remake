@@ -65,7 +65,6 @@ const emit = defineEmits<{
   primaryMove: [cell: Cell];
   primaryEnd: [cell: Cell | null];
   contextMenu: [request: EditorCanvasContextMenuRequest];
-  transform: [cell: Cell, step: number, result: (changed: boolean) => void];
   resize: [edges: EditorResizeEdges];
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
@@ -138,7 +137,6 @@ const emit = defineEmits<{
         @primary-move="emit('primaryMove', $event)"
         @primary-end="emit('primaryEnd', $event)"
         @context-menu="emit('contextMenu', $event)"
-        @transform="(cell, step, result) => emit('transform', cell, step, result)"
         @resize="emit('resize', $event)"
       />
       <canvas v-show="playing" data-editor-game-canvas />

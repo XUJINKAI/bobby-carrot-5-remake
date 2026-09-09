@@ -79,7 +79,7 @@ Leading | Info | Trailing
 
 Music、Settings、Help 和全局 Dialog 归 `BobbyApp` / App Root 所有。它们以普通 action 进入 Shell，App Root 收到 action ID 后执行产品逻辑。
 
-Help 使用一份全局 `HelpDescriptor`，集中说明 Game 与 Editor 的全部公开快捷键。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复快捷键说明；首页 Demo 的 `home-demo-status` 保留基础移动提示作为首次上手引导。
+Help 使用一份全局 `HelpDescriptor`，集中提供 Game 与 Editor 的操作说明。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复操作说明；首页 Demo 的 `home-demo-status` 保留基础移动提示作为首次上手引导。
 
 ## 所有权边界
 

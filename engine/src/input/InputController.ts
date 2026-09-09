@@ -29,7 +29,6 @@ export interface InputControllerOptions {
   movement?: boolean;
   undo?: boolean;
   redo?: boolean;
-  restart?: boolean;
   pan?: boolean;
   zoom?: boolean;
   pinchZoom?: boolean;
@@ -75,7 +74,6 @@ interface InputCapabilities {
   movement: boolean;
   undo: boolean;
   redo: boolean;
-  restart: boolean;
   pan: boolean;
   zoom: boolean;
   pinchZoom: boolean;
@@ -89,7 +87,6 @@ export const DEFAULT_INPUT_CONTROLLER_OPTIONS = {
   movement: true,
   undo: true,
   redo: true,
-  restart: true,
   pan: true,
   zoom: true,
   pinchZoom: true,
@@ -155,7 +152,6 @@ export class InputController {
       movement: options.movement ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.movement,
       undo: options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.undo,
       redo: options.redo ?? options.undo ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.redo,
-      restart: options.restart ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.restart,
       pan: options.pan ?? DEFAULT_INPUT_CONTROLLER_OPTIONS.pan,
       zoom,
       pinchZoom: options.pinchZoom ?? zoom,
@@ -320,12 +316,23 @@ export class InputController {
       return;
     }
     if (event.repeat) return;
-    if (key === "r" && this.capabilities.restart) this.game.restart();
-    else if (key === "z" && event.shiftKey && this.capabilities.redo)
-      this.game.redo();
-    else if ((key === "z" || key === "u") && this.capabilities.undo)
+    if (
+      key === "z" &&
+      event.ctrlKey &&
+      !event.shiftKey &&
+      this.capabilities.undo
+    ) {
+      event.preventDefault();
       this.game.undo();
-    else if ((key === "=" || key === "+") && this.capabilities.zoom)
+    } else if (
+      key === "y" &&
+      event.ctrlKey &&
+      !event.shiftKey &&
+      this.capabilities.redo
+    ) {
+      event.preventDefault();
+      this.game.redo();
+    } else if ((key === "=" || key === "+") && this.capabilities.zoom)
       this.game.zoomBy(1.1);
     else if ((key === "-" || key === "_") && this.capabilities.zoom)
       this.game.zoomBy(1 / 1.1);

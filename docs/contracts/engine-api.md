@@ -274,7 +274,6 @@ runtime: {
     movement: true,
     undo: true,
     redo: true,
-    restart: true,
     pan: true,
     zoom: true,
     pinchZoom: true,

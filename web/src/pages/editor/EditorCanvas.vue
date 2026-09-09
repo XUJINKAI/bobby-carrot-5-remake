@@ -35,7 +35,6 @@ const emit = defineEmits<{
   primaryMove: [cell: Cell];
   primaryEnd: [cell: Cell | null];
   contextMenu: [request: EditorCanvasContextMenuRequest];
-  transform: [cell: Cell, step: number, result: (changed: boolean) => void];
   resize: [edges: EditorResizeEdges];
 }>();
 const stage = ref<HTMLDivElement | null>(null);
@@ -182,11 +181,6 @@ onMounted(async () => {
     primaryMove: (cell) => emit("primaryMove", cell),
     primaryEnd: (cell) => emit("primaryEnd", cell),
     contextMenu: (request) => emit("contextMenu", request),
-    transform: (cell, step) => {
-      let changed = false;
-      emit("transform", cell, step, (result) => { changed = result; });
-      return changed;
-    },
     viewportChanged: applyViewportTransform,
   });
   input.setEnabled(props.enabled);
