@@ -416,7 +416,7 @@ async function verifyReplayPanel(cdp, url) {
         sessionId,
         "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
       ),
-    ).includes("复验通过"),
+    ).includes("复跑完成"),
   );
   const replay = await cdp.evaluate(
     sessionId,
@@ -424,6 +424,23 @@ async function verifyReplayPanel(cdp, url) {
   );
   if (replay.formatVersion !== 1 || replay.endTick < 1 || replay.frames.length < 1)
     throw new Error("Replay panel did not export recorded World input");
+  if (
+    typeof replay.meta?.name !== "string" ||
+    !replay.meta.name ||
+    typeof replay.meta.url !== "string" ||
+    replay.meta.url !== url ||
+    replay.meta.note !== "" ||
+    !["playing", "won", "dead"].includes(replay.meta.final_status)
+  )
+    throw new Error("Replay panel did not export map metadata");
+  if (
+    "levelHash" in replay ||
+    "expectation" in replay ||
+    Object.keys(replay).at(-1) !== "frames"
+  )
+    throw new Error("Replay export did not use the compact field layout");
+  if ("profile" in replay.runtime || "economy" in replay.runtime)
+    throw new Error("Replay runtime included Explore session settings");
   if ("snapshot" in replay || "entities" in replay)
     throw new Error("Replay export included runtime state");
   const controls = await cdp.evaluate(

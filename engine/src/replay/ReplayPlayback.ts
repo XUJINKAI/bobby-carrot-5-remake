@@ -1,4 +1,4 @@
-import type { Direction, LevelMap } from "@bobby/model";
+import type { Direction } from "@bobby/model";
 import type {
   GameplaySession,
   GameplayTickInput,
@@ -9,7 +9,6 @@ import type { PresentationClock } from "../time/PresentationClock.js";
 import type { WorldTick } from "../time/WorldClock.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import {
-  replayLevelHash,
   type Replay,
   type ReplayFrame,
 } from "./ReplayFormat.js";
@@ -57,7 +56,6 @@ export class ReplayPlayback {
   start(replay: Replay): void {
     this.stop();
     validateReplayForPlayback(
-      this.session.level,
       this.session.actorIds,
       this.session.bobbyLocomotion,
       replay,
@@ -119,7 +117,6 @@ export class ReplayPlayback {
   jumpToEnd(replay: Replay): GameplayTickResult[] {
     this.stop();
     validateReplayForPlayback(
-      this.session.level,
       this.session.actorIds,
       this.session.bobbyLocomotion,
       replay,
@@ -145,8 +142,6 @@ export class ReplayPlayback {
 
   private resetToStart(replay: Replay): void {
     this.session.clock.setHz(replay.runtime.worldHz);
-    this.session.setProfile(replay.runtime.profile);
-    this.session.setEconomy(replay.runtime.economy);
     this.session.restart();
   }
 
@@ -157,15 +152,12 @@ export class ReplayPlayback {
 }
 
 function validateReplayForPlayback(
-  level: LevelMap,
   actorIds: readonly EntityId[],
   bobbyLocomotion: BobbyLocomotionTiming,
   replay: Replay,
 ): void {
   if (replay.formatVersion !== 1)
     throw new Error(`不支持 Replay formatVersion ${replay.formatVersion}`);
-  if (replay.levelHash !== replayLevelHash(level))
-    throw new Error("Replay 与当前关卡不匹配");
   if (!Number.isInteger(replay.endTick) || replay.endTick < 0)
     throw new Error("Replay endTick 必须是非负整数");
   if (!Number.isFinite(replay.runtime?.worldHz) || replay.runtime.worldHz <= 0)

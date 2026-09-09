@@ -234,6 +234,10 @@ export async function renderGamePage(
     root: app,
     game,
     filename: `${identity.collection}-${identity.id}`,
+    meta: {
+      name: identity.title,
+      url: window.location.href,
+    },
     onVisibilityChange(open) {
       configureShell(
         gameShellConfig(

@@ -115,13 +115,13 @@ export {
 } from "./entities/player/BobbyState.js";
 export {
   REPLAY_FORMAT_VERSION,
-  replayLevelHash,
-  replayValueHash,
+  type ReplayFinalStatus,
   type Replay,
-  type ReplayExpectation,
   type ReplayFrame,
   type ReplayInputGroup,
+  type ReplayMeta,
   type ReplayMoveIntent,
+  type ReplayRecordingMeta,
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";

@@ -28,9 +28,10 @@ Replay 必须从 tick 0 开始。运行结果只由以下内容重建：
 LevelMap
 + World Hz
 + Bobby gameplay 运动参数
-+ 初始 Profile / Economy
 + 逐 Tick 玩家语义输入
 ```
+
+Web 播放使用当前 Explore Session 的 Profile 与 Economy 设置，它们不进入 Replay。
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
 恢复点。跳转和重新接管通过从 tick 0 快速执行到目标 Tick 实现。现有 Undo / Redo
@@ -57,18 +58,42 @@ Replay 记录控制映射之后、World 判定之前的 `WorldIntentGroup`。因
 
 Presentation Hz、Presentation 速度、Camera、Renderer 和音频均不进入 Replay。
 
-## 校验
+## 格式
 
-Replay 使用规范化 LevelMap 指纹检查地图兼容性，并保存最终终局、移动计数与 canonical
-World state 指纹。Runner 每次从起点运行到 `endTick` 后验证这些结果。
+Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固定放在末尾：
 
-状态指纹是变更检测手段，不代表原版事实。涉及原版机制的预期仍须依据
-`docs/reference/` 或原版验证流程确认。
+```json
+{
+  "formatVersion": 1,
+  "meta": {
+    "name": "1-1",
+    "url": "https://example.test/explore/play/original/1-1",
+    "final_status": "won",
+    "note": ""
+  },
+  "runtime": {
+    "worldHz": 16,
+    "bobbyLocomotion": {
+      "moveMs": 350,
+      "speedShoesScale": 0.76
+    }
+  },
+  "endTick": 120,
+  "frames": []
+}
+```
+
+`meta.name` 和 `meta.url` 由宿主在开始录制时提供。Engine 在停止录制时写入
+`final_status`，其值为 `playing / won / dead`；`note` 初始为空字符串，Engine 不读取或
+解释其内容，用户可以在 Replay 文本中直接填写。
+
+Replay 不承担地图身份匹配和执行结果断言。调用方负责选择用于播放或无头执行的
+`LevelMap`；Runner 从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。
 
 ## Web 录制入口
 
 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
-录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 执行并比较最终状态。
+录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 复跑到录制终点。
 Replay JSON 可以直接编辑，并可按选定倍速从起点播放、暂停、停止、跳转起点或终点、复制
 到剪贴板或下载为 Engine 测试 fixture。播放倍速接受任意有限正数，并在播放或恢复播放时
 校验；快退与快进按钮依次选择 `0.1 / 0.5 / 1 / 1.25 / 1.5 / 2 / 4 / 8` 中相邻的预设值。

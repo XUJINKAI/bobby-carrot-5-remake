@@ -71,8 +71,6 @@ export interface GameplaySessionOptions {
 export interface SerializableGameplaySetup {
   worldHz: number;
   bobbyLocomotion: BobbyLocomotionTiming;
-  profile: ProfileCapabilities;
-  economy: EconomyState;
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
@@ -93,8 +91,6 @@ export class GameplaySession {
   private primaryActorIdValue: EntityId | null = null;
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
-  private initialProfileValue: ProfileCapabilities | null = null;
-  private initialEconomyValue: EconomyState | null = null;
   private readonly history: WorldSnapshot[] = [];
   private readonly future: WorldSnapshot[] = [];
   private pendingHistorySnapshot: WorldSnapshot | null = null;
@@ -187,17 +183,10 @@ export class GameplaySession {
   }
 
   get replaySetup(): SerializableGameplaySetup | null {
-    if (
-      this.initializeEntityState ||
-      !this.initialProfileValue ||
-      !this.initialEconomyValue
-    )
-      return null;
+    if (this.initializeEntityState) return null;
     return {
       worldHz: this.clock.hz,
       bobbyLocomotion: structuredClone(this.bobbyLocomotion),
-      profile: structuredClone(this.initialProfileValue),
-      economy: structuredClone(this.initialEconomyValue),
     };
   }
 
@@ -208,7 +197,6 @@ export class GameplaySession {
       economy: this.initialEconomy,
     });
     this.applyRuntimeEntityStateInitializer();
-    this.captureInitialState();
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.clock.reset();
@@ -227,7 +215,6 @@ export class GameplaySession {
     Object.assign(this.profile, profile);
     this.worldValue = new World(this.initialLevel, { profile, economy });
     this.applyRuntimeEntityStateInitializer();
-    this.captureInitialState();
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.clock.reset();
@@ -506,11 +493,6 @@ export class GameplaySession {
     if (this.world.state.profile.speedShoes)
       duration *= this.bobbyLocomotion.speedShoesScale;
     return duration;
-  }
-
-  private captureInitialState(): void {
-    this.initialProfileValue = structuredClone(this.world.state.profile);
-    this.initialEconomyValue = structuredClone(this.world.state.economy);
   }
 
   private clearHistory(): void {

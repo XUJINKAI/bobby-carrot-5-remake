@@ -1,4 +1,9 @@
-import type { Game, Replay, ReplayReport } from "@bobby/engine";
+import type {
+  Game,
+  Replay,
+  ReplayRecordingMeta,
+  ReplayReport,
+} from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
 
 export interface ReplayPanelController {
@@ -12,6 +17,7 @@ export function bindReplayPanel(options: {
   root: HTMLElement;
   game: Game;
   filename: string;
+  meta: ReplayRecordingMeta;
   onVisibilityChange(open: boolean): void;
   onTimelineRestart(): void;
 }): ReplayPanelController {
@@ -49,10 +55,8 @@ export function bindReplayPanel(options: {
   };
 
   const showReport = (report: ReplayReport): void => {
-    verification.textContent = report.passed
-      ? `复验通过 · ${report.actual.endTick} ticks`
-      : `复验失败 · ${report.errors[0] ?? "结果不一致"}`;
-    verification.classList.toggle("failed", !report.passed);
+    verification.textContent = `复跑完成 · ${report.actual.endTick} ticks`;
+    verification.classList.remove("failed");
   };
 
   const showError = (error: unknown): void => {
@@ -88,7 +92,7 @@ export function bindReplayPanel(options: {
   const startRecording = (): void => {
     try {
       options.onTimelineRestart();
-      options.game.startReplayRecording();
+      options.game.startReplayRecording(options.meta);
       replay = null;
       output.value = "";
       verification.textContent = "正在录制";

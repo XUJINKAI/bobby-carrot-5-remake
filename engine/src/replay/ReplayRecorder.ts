@@ -1,12 +1,11 @@
 import type { GameplaySession, GameplayTickResult } from "../core/GameplaySession.js";
 import {
   REPLAY_FORMAT_VERSION,
-  replayLevelHash,
-  replayValueHash,
   type Replay,
   type ReplayFrame,
   type ReplayInputGroup,
   type ReplayMoveIntent,
+  type ReplayRecordingMeta,
 } from "./ReplayFormat.js";
 
 /** 只记录从关卡起点产生的玩家语义输入；World 自动行为由重放重新计算。 */
@@ -16,7 +15,7 @@ export class ReplayRecorder {
 
   constructor(
     private readonly session: GameplaySession,
-    private readonly level: Parameters<typeof replayLevelHash>[0],
+    private readonly meta: ReplayRecordingMeta,
   ) {
     if (session.clock.tickCount !== 0)
       throw new Error("Replay 录制必须从 tick 0 开始");
@@ -39,15 +38,14 @@ export class ReplayRecorder {
     if (!setup) throw new Error("当前 Session 的初始状态不能序列化为 Replay");
     return {
       formatVersion: REPLAY_FORMAT_VERSION,
-      levelHash: replayLevelHash(this.level),
-      runtime: setup,
-      frames: structuredClone(this.frames),
-      endTick: this.session.clock.tickCount,
-      expectation: {
-        status: this.session.state.status,
-        moves: this.session.state.moves,
-        stateHash: replayValueHash(this.session.world.snapshot()),
+      meta: {
+        ...structuredClone(this.meta),
+        final_status: this.session.state.status,
+        note: "",
       },
+      runtime: setup,
+      endTick: this.session.clock.tickCount,
+      frames: structuredClone(this.frames),
     };
   }
 }

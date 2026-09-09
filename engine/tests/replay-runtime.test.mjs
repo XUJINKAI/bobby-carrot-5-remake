@@ -45,14 +45,17 @@ test("GameplaySession 固定在 World Tick 末尾执行玩家语义输入", () =
   assert.equal(session.state.moves, 1);
 });
 
-test("Replay 从 tick 0 重放输入并验证最终 World 状态", () => {
+test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     timing: { worldHz: 20 },
     bobbyLocomotion: { moveMs: 100 },
   });
   session.loadLevel(level);
-  const recorder = new ReplayRecorder(session, level);
+  const recorder = new ReplayRecorder(session, {
+    name: "测试胡萝卜",
+    url: "/test/carrot",
+  });
   for (const tick of session.advanceTicks(3, (time) =>
     time.tick === 0
       ? { moves: [{ source: "external", direction: "right" }] }
@@ -64,18 +67,24 @@ test("Replay 从 tick 0 重放输入并验证最终 World 状态", () => {
   assert.equal(replay.frames.length, 1);
   assert.equal(replay.frames[0].tick, 0);
   assert.equal(replay.endTick, 3);
-  assert.equal(replay.expectation.status, "won");
+  assert.deepEqual(replay.meta, {
+    name: "测试胡萝卜",
+    url: "/test/carrot",
+    final_status: "won",
+    note: "",
+  });
+  assert.deepEqual(Object.keys(replay.runtime), ["worldHz", "bobbyLocomotion"]);
+  assert.equal(Object.keys(replay).at(-1), "frames");
+  assert.equal("levelHash" in replay, false);
+  assert.equal("expectation" in replay, false);
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
   assert.deepEqual(runReplay(level, replay), {
-    passed: true,
     actual: {
       status: "won",
       moves: 1,
-      stateHash: replay.expectation.stateHash,
       endTick: 3,
     },
-    errors: [],
   });
 });
 
@@ -86,7 +95,10 @@ test("ReplayPlayback 按记录输入播放并恢复宿主时钟状态", () => {
     bobbyLocomotion: { moveMs: 100 },
   });
   session.loadLevel(level);
-  const recorder = new ReplayRecorder(session, level);
+  const recorder = new ReplayRecorder(session, {
+    name: "测试胡萝卜",
+    url: "/test/carrot",
+  });
   for (const tick of session.advanceTicks(3, (time) =>
     time.tick === 0
       ? { moves: [{ source: "external", direction: "right" }] }
@@ -146,7 +158,10 @@ test("Replay 保留受阻的玩家输入尝试", () => {
   };
   const session = new GameplaySession();
   session.loadLevel(level);
-  const recorder = new ReplayRecorder(session, level);
+  const recorder = new ReplayRecorder(session, {
+    name: "受阻输入",
+    url: "/test/blocked-input",
+  });
   const [tick] = session.advanceTicks(1, () => ({
     moves: [{ source: "external", direction: "right" }],
   }));
@@ -155,7 +170,7 @@ test("Replay 保留受阻的玩家输入尝试", () => {
 
   assert.equal(tick.inputResolutions[0].result, "blocked");
   assert.equal(replay.frames[0].groups[0].intents[0].direction, "right");
-  assert.equal(runReplay(level, replay).passed, true);
+  assert.equal(runReplay(level, replay).actual.endTick, replay.endTick);
 });
 
 test("Replay 录制拒绝不可序列化的 Entity 初始化回调", () => {
@@ -163,7 +178,7 @@ test("Replay 录制拒绝不可序列化的 Entity 初始化回调", () => {
   const session = new GameplaySession({ initializeEntityState: () => ({}) });
   session.loadLevel(level);
   assert.throws(
-    () => new ReplayRecorder(session, level),
+    () => new ReplayRecorder(session, { name: "测试", url: "/test" }),
     /初始状态不能序列化/,
   );
 });

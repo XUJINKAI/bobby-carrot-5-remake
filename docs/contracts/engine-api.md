@@ -198,6 +198,11 @@ Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 Wor
 浏览器 `Game` 提供与无头 Runner 共用输入调度的表现层回放入口：
 
 ```ts
+game.startReplayRecording({
+  name: "1-1",
+  url: window.location.href,
+});
+const replay = game.stopReplayRecording();
 game.startReplayPlayback(replay);
 game.setReplayPlaybackSpeed(4);
 game.pauseReplayPlayback();
@@ -212,6 +217,9 @@ game.replayPlaybackSpeed;
 `startReplayPlayback()` 按 Replay 的 `worldHz` 从关卡起点实时执行；任意有限正数倍速同时
 驱动 World 与 Presentation。暂停保留当前位置，停止退出 Replay 控制并恢复宿主时钟状态。
 `jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+
+录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。
+这些 `meta` 字段不参与播放调度，用户可以直接编辑 `note`。
 
 常用只读状态：
 

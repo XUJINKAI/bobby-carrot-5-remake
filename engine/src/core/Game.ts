@@ -40,7 +40,7 @@ import type {
   EntityMotion,
 } from "../world/movement/WorldStepResult.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
-import type { Replay } from "../replay/ReplayFormat.js";
+import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
 import { ReplayPlayback } from "../replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../replay/ReplayRecorder.js";
 import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
@@ -341,11 +341,11 @@ export class Game {
     this.lastWorldEvents = [];
   }
 
-  startReplayRecording(): void {
+  startReplayRecording(meta: ReplayRecordingMeta): void {
     if (!this.session.hasLevel) throw new Error("尚未载入关卡");
     this.replayRecorder = null;
     this.restart();
-    this.replayRecorder = new ReplayRecorder(this.session, this.session.level);
+    this.replayRecorder = new ReplayRecorder(this.session, meta);
     this.emit("change");
   }
 
