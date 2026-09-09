@@ -29,6 +29,7 @@ export type AppIconName =
   | "play"
   | "previous-track"
   | "redo"
+  | "record"
   | "restart"
   | "select"
   | "settings"

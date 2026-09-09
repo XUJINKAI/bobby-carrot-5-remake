@@ -35,6 +35,7 @@ import {
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
+import { bindReplayPanel } from "./bindReplayPanel.js";
 import { resolveGameMusic } from "./gameMusic.js";
 import {
   editorMapPath,
@@ -223,6 +224,28 @@ export async function renderGamePage(
   let visibleResult: "death" | "complete" | null = null;
   let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
+  const replayPanel = bindReplayPanel({
+    root: app,
+    game,
+    filename: `${identity.collection}-${identity.id}`,
+    onVisibilityChange(open) {
+      configureShell(
+        gameShellConfig(
+          identity,
+          mode,
+          getWebSettings().controls.screenControlEnabled,
+          explorePreviousMapId,
+          exploreNextMapId,
+          open,
+        ),
+        GAME_HELP,
+      );
+    },
+    onRecordingStart() {
+      levelStartedAt = performance.now();
+      completionNavigationStarted = false;
+    },
+  });
 
   const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
   let adventureCameraViewportWidth = 0;
@@ -326,6 +349,7 @@ export async function renderGamePage(
       productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
     }
     renderResult();
+    replayPanel.update();
   };
   game.on("change", update);
   game.on("debug-change", update);
@@ -401,6 +425,7 @@ export async function renderGamePage(
     } else if (action === "undo") askUndo();
     else if (action === "redo") askRedo();
     else if (action === "restart") askRestart();
+    else if (action === "replay-record") replayPanel.toggle();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
@@ -414,6 +439,7 @@ export async function renderGamePage(
       }
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
+      replayPanel.destroy();
       session.destroy();
       gamePage.unmount();
     },
@@ -435,6 +461,7 @@ function gameShellConfig(
   screenControlEnabled: boolean,
   explorePreviousMapId?: string,
   exploreNextMapId?: string,
+  replayOpen = false,
 ): ShellConfig {
   const explore = mode === "explore";
   return {
@@ -495,6 +522,15 @@ function gameShellConfig(
     bottomBar: {
       visible: true,
       fixed: true,
+      leading: [
+        {
+          id: "replay-record",
+          icon: "record",
+          label: "录制",
+          title: "录制 Replay 测试输入",
+          pressed: replayOpen,
+        },
+      ],
       info: [
         { text: identity.title },
         {

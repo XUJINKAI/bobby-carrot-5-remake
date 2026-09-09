@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ReplayPanel from "./ReplayPanel.vue";
+
 defineProps<{ showProductStats: boolean }>();
 </script>
 
@@ -12,6 +14,7 @@ defineProps<{ showProductStats: boolean }>();
         data-product-stats
       />
     </div>
+    <ReplayPanel />
     <div class="result-overlay" data-result-overlay hidden>
       <div class="result-card" data-result-card />
     </div>
@@ -33,5 +36,11 @@ defineProps<{ showProductStats: boolean }>();
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+
+@media (min-width: 621px) {
+  .game-stage.replay-panel-open .game-canvas-layer {
+    left: 330px;
+  }
 }
 </style>

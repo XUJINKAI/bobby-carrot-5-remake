@@ -12,7 +12,7 @@ delete browserEnvironment.WAYLAND_DISPLAY;
 delete browserEnvironment.XAUTHORITY;
 
 test(
-  "Web browser regressions cover settings, themes and Engine Dialog lifecycle",
+  "Web browser regressions cover settings, Replay UI and Engine Dialog lifecycle",
   { timeout: 90_000 },
   async () => {
     const browser = findBrowser();
@@ -65,6 +65,7 @@ test(
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, `${origin}/settings`);
       await verifyEditorSurfaceInspector(cdp, `${origin}/edit`);
+      await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
       await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
     } finally {
       cdp.close();
@@ -355,6 +356,136 @@ async function verifyGameplayDialog(cdp, url) {
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowDown", 40);
 }
 
+async function verifyReplayPanel(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 1200, height: 800, deviceScaleFactor: 1, mobile: false },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
+      ),
+    ),
+    20_000,
+  );
+  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "!document.querySelector('[data-replay-panel]')?.hidden",
+      ),
+    ),
+  );
+  const desktopLayout = await replayLayout(cdp, sessionId);
+  if (desktopLayout.canvasLeft < desktopLayout.panelRight - 1)
+    throw new Error("Replay desktop panel did not reserve canvas space");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"start\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-replay-status]')?.textContent ?? ''",
+    )) === "正在录制",
+  );
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
+  await waitFor(async () =>
+    !String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-ticks]')?.textContent ?? ''",
+      ),
+    ).includes(" 0 ticks"),
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"stop\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ).includes("复验通过"),
+  );
+  const replay = await cdp.evaluate(
+    sessionId,
+    "JSON.parse(document.querySelector('[data-replay-output]').value)",
+  );
+  if (replay.formatVersion !== 1 || replay.endTick < 1 || replay.frames.length < 1)
+    throw new Error("Replay panel did not export recorded World input");
+  if ("snapshot" in replay || "entities" in replay)
+    throw new Error("Replay export included runtime state");
+
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(async () =>
+    Boolean(await cdp.evaluate(sessionId, "document.querySelector('#replay-record')")),
+    20_000,
+  );
+  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "!document.querySelector('[data-replay-panel]')?.hidden",
+      ),
+    ),
+  );
+  const mobileLayout = await replayLayout(cdp, sessionId);
+  if (Math.abs(mobileLayout.canvasLeft - mobileLayout.stageLeft) > 1)
+    throw new Error("Replay mobile panel changed the canvas layout");
+  if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
+    throw new Error("Replay mobile panel did not float inside the game stage");
+}
+
+async function replayLayout(cdp, sessionId) {
+  return cdp.evaluate(
+    sessionId,
+    `(() => {
+      const stage = document.querySelector('[data-game-stage]').getBoundingClientRect();
+      const panel = document.querySelector('[data-replay-panel]').getBoundingClientRect();
+      const canvas = document.querySelector('.game-canvas-layer').getBoundingClientRect();
+      return {
+        stageLeft: stage.left,
+        panelLeft: panel.left,
+        panelRight: panel.right,
+        canvasLeft: canvas.left,
+      };
+    })()`,
+  );
+}
+
+async function clickWhenPresent(cdp, sessionId, selector) {
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `(() => {
+          const element = document.querySelector(${JSON.stringify(selector)});
+          if (!element) return false;
+          element.click();
+          return true;
+        })()`,
+      ),
+    ),
+  );
+}
+
 async function openPage(cdp, url) {
   const { targetId } = await cdp.send("Target.createTarget", { url });
   const { sessionId } = await cdp.send("Target.attachToTarget", {
@@ -396,6 +527,22 @@ function dialogPayload() {
         interaction: "bonus-key-vendor",
       },
       { type: "exit", x: 1, y: 1 },
+    ],
+  };
+  return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");
+}
+
+function replayPayload() {
+  const map = {
+    schemaVersion: 1,
+    meta: { name: "Replay Browser Regression", author: "bc5r" },
+    width: 3,
+    height: 1,
+    entities: [
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 2, y: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0 },
     ],
   };
   return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");
