@@ -31,6 +31,10 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
         aria-label="Replay JSON"
         placeholder="停止录制后在这里显示 Replay JSON"
       ></textarea>
+      <label class="replay-panel-skip-thinking">
+        <input data-replay-skip-thinking type="checkbox" checked />
+        <span>跳过思考时间</span>
+      </label>
       <div class="replay-panel-playback-actions">
         <button
           class="primary-btn"
@@ -234,6 +238,29 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
   margin-top: 8px;
 }
 
+.replay-panel-skip-thinking {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  margin-top: 10px;
+  color: var(--bc-text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.replay-panel-skip-thinking input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--bc-active);
+}
+
+.replay-panel-skip-thinking:has(input:disabled) {
+  cursor: default;
+  opacity: 0.5;
+}
+
 .replay-panel-playback-actions {
   display: grid;
   grid-template-columns: 0.72fr 0.72fr 1.55fr;
@@ -332,6 +359,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 }
 
 .replay-panel-result button:focus-visible,
+.replay-panel-skip-thinking input:focus-visible,
 .replay-panel-speed input:focus-visible {
   outline: 2px solid var(--bc-text);
   outline-offset: -3px;

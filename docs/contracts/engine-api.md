@@ -204,7 +204,7 @@ game.startReplayRecording({
 });
 const replay = game.stopReplayRecording();
 game.setTimeScale(4);
-game.startReplayPlayback(replay);
+game.startReplayPlayback(replay, { skipIdleTime: true });
 game.pauseReplayPlayback();
 game.resumeReplayPlayback();
 game.stopReplayPlayback();
@@ -217,6 +217,11 @@ game.replayPaused;
 倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
 停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
 `jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+
+`skipIdleTime` 用于压缩稳定状态下超过一秒的无输入区间，并在下一次输入前保留短暂的
+表现间隔。压缩期间仍逐个执行 World Tick；新的 WorldMotion、阻塞输入的 RuntimeAction
+或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
+该选项默认关闭，不进入 Replay 文件格式。
 
 录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。
 这些 `meta` 字段不参与播放调度，用户可以直接编辑 `note`。

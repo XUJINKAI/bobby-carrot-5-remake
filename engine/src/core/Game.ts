@@ -41,7 +41,10 @@ import type {
 } from "../world/movement/WorldStepResult.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
-import { ReplayPlayback } from "../replay/ReplayPlayback.js";
+import {
+  ReplayPlayback,
+  type ReplayPlaybackOptions,
+} from "../replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../replay/ReplayRecorder.js";
 import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
@@ -64,6 +67,9 @@ type GameEventName =
   | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
+
+const MAX_REPLAY_IDLE_TICKS_PER_FRAME = 128;
+const REPLAY_IDLE_FRAME_BUDGET_MS = 6;
 
 export class Game {
   readonly audio: AudioBackend;
@@ -358,9 +364,12 @@ export class Game {
     return runReplay(this.session.level, replay);
   }
 
-  startReplayPlayback(replay: Replay): void {
+  startReplayPlayback(
+    replay: Replay,
+    options: ReplayPlaybackOptions = {},
+  ): void {
     this.replayRecorder = null;
-    this.replayPlayback.start(replay);
+    this.replayPlayback.start(replay, options);
     this.resetSessionView();
     this.render();
     this.emit("change");
@@ -582,7 +591,11 @@ export class Game {
     };
   }
 
-  private consumeGameplayTick(tick: GameplayTickResult): void {
+  private consumeGameplayTick(
+    tick: GameplayTickResult,
+    emitChange = true,
+  ): boolean {
+    let changed = false;
     this.replayRecorder?.record(tick);
     this.inputController?.resolveMoveAttempts(tick.inputResolutions);
     if (!this.inputController) {
@@ -613,13 +626,37 @@ export class Game {
         result.events.length > 0 ||
         result.motions.length > 0 ||
         result.deltas.length > 0
-      )
-        this.emit("change");
+      ) {
+        changed = true;
+        if (emitChange) this.emit("change");
+      }
     }
     if (this.world.dead || this.world.completed) {
       this.heldDirection = null;
       this.queuedMoves.length = 0;
     }
+    return changed;
+  }
+
+  private advanceReplayIdleTicks(): number {
+    if (!this.worldValue || this.visual.isAnimating || this.world.inputBlocked)
+      return 0;
+    const startedAt = performance.now();
+    let changed = false;
+    const count = this.replayPlayback.advanceIdleTicks(
+      MAX_REPLAY_IDLE_TICKS_PER_FRAME,
+      (tick) => {
+        changed = this.consumeGameplayTick(tick, false) || changed;
+        return (
+          !this.visual.isAnimating &&
+          !this.world.inputBlocked &&
+          tick.result.events.length === 0 &&
+          performance.now() - startedAt < REPLAY_IDLE_FRAME_BUDGET_MS
+        );
+      },
+    );
+    if (changed) this.emit("change");
+    return count;
   }
 
   private setDebugHeldDirection(
@@ -762,6 +799,7 @@ export class Game {
         )
       : [];
     for (const worldTick of worldTicks) this.consumeGameplayTick(worldTick);
+    const idleTickCount = this.advanceReplayIdleTicks();
     if (this.replayPlayback.finishIfComplete()) this.emit("change");
 
     const frame = this.presentationClock.advance(timestamp);
@@ -771,7 +809,7 @@ export class Game {
       this.renderScene();
       if (this.debugValue) this.debugRuntime.render();
       if (wasAnimating && !this.visual.isAnimating) this.emit("change");
-    } else if (worldTicks.length > 0) {
+    } else if (worldTicks.length > 0 || idleTickCount > 0) {
       this.render();
     }
     this.animationFrame = requestAnimationFrame(this.tick);

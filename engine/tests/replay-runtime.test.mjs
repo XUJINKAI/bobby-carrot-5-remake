@@ -148,6 +148,52 @@ test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   assert.equal(session.state.moves, 1);
 });
 
+test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [ground(0), { type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+  };
+  const recordingSession = new GameplaySession({ timing: { worldHz: 20 } });
+  recordingSession.loadLevel(level);
+  const recorder = new ReplayRecorder(recordingSession, {
+    name: "长无输入区间",
+    url: "/test/idle-gap",
+  });
+  for (const tick of recordingSession.advanceTicks(100, (time) =>
+    time.tick === 0 || time.tick === 80
+      ? { moves: [{ source: "external", direction: "right" }] }
+      : {},
+  ))
+    recorder.record(tick);
+  const replay = recorder.stop();
+  const session = new GameplaySession({ timing: { worldHz: 20 } });
+  session.loadLevel(level);
+  const playback = new ReplayPlayback(session, new PresentationClock());
+
+  playback.start(replay);
+  session.advanceTicks(1, (time) => playback.inputForTick(time));
+  assert.equal(playback.advanceIdleTicks(128, () => true), 0);
+
+  playback.start(replay, { skipIdleTime: true });
+  session.advanceTicks(1, (time) => playback.inputForTick(time));
+  const skippedTicks = [];
+  assert.equal(
+    playback.advanceIdleTicks(128, (tick) => {
+      skippedTicks.push(tick.time.tick);
+      return true;
+    }),
+    74,
+  );
+  assert.deepEqual(skippedTicks, Array.from({ length: 74 }, (_, index) => index + 1));
+  assert.equal(session.clock.tickCount, 75);
+
+  const tail = session.advanceTicks(6, (time) => playback.inputForTick(time));
+  assert.equal(tail.at(-1).time.tick, 80);
+  assert.equal(tail.at(-1).inputGroups.length, 1);
+});
+
 test("Replay 保留受阻的玩家输入尝试", () => {
   const level = {
     schemaVersion: 1,

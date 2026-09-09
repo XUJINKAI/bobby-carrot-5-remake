@@ -15,9 +15,19 @@ import { validateReplay } from "./ReplayValidation.js";
 interface ActiveReplayPlayback {
   replay: Replay;
   frames: ReadonlyMap<number, ReplayFrame>;
+  frameTicks: readonly number[];
+  skipIdleTime: boolean;
   restoreWorldPaused: boolean;
   restorePresentationPaused: boolean;
 }
+
+export interface ReplayPlaybackOptions {
+  /** 压缩稳定状态下超过一秒的无输入时间；World Tick 仍会逐个执行。 */
+  skipIdleTime?: boolean;
+}
+
+const IDLE_SKIP_THRESHOLD_MS = 1000;
+const IDLE_SKIP_TAIL_MS = 250;
 
 /** 浏览器 Game 的 Replay 时间线驱动；World 执行仍全部委托给 GameplaySession。 */
 export class ReplayPlayback {
@@ -44,7 +54,7 @@ export class ReplayPlayback {
     );
   }
 
-  start(replay: Replay): void {
+  start(replay: Replay, options: ReplayPlaybackOptions = {}): void {
     this.stop();
     validateReplay(
       this.session.actorIds,
@@ -61,6 +71,8 @@ export class ReplayPlayback {
       frames: new Map(
         replay.frames.map((frame) => [frame.tick, structuredClone(frame)]),
       ),
+      frameTicks: replay.frames.map((frame) => frame.tick),
+      skipIdleTime: options.skipIdleTime ?? false,
       restoreWorldPaused,
       restorePresentationPaused,
     };
@@ -86,6 +98,36 @@ export class ReplayPlayback {
         this.active.frames.get(time.tick)?.groups ?? [],
       ),
     };
+  }
+
+  /**
+   * 快速执行当前长无输入区间，但保留下次输入前的短暂视觉间隔。
+   * consumer 在每个 Tick 后决定是否仍适合继续，例如新运动已经开始时应立即停止。
+   */
+  advanceIdleTicks(
+    maxTicks: number,
+    consumer: (tick: GameplayTickResult) => boolean,
+  ): number {
+    const playback = this.active;
+    const available = this.idleTicksAvailable(playback);
+    const limit = Math.min(
+      available,
+      Math.max(0, Math.floor(Number.isFinite(maxTicks) ? maxTicks : 0)),
+    );
+    let count = 0;
+    while (
+      count < limit &&
+      this.active === playback &&
+      !this.session.clock.paused
+    ) {
+      const [tick] = this.session.advanceTicks(1, (time) =>
+        this.inputForTick(time),
+      );
+      if (!tick) break;
+      count += 1;
+      if (!consumer(tick)) break;
+    }
+    return count;
   }
 
   finishIfComplete(): boolean {
@@ -122,4 +164,35 @@ export class ReplayPlayback {
     this.session.clock.setHz(replay.runtime.worldHz);
     this.session.restart();
   }
+
+  private idleTicksAvailable(playback: ActiveReplayPlayback | null): number {
+    if (!playback?.skipIdleTime || this.session.clock.paused) return 0;
+    const currentTick = this.session.clock.tickCount;
+    const nextInputTick = firstTickAtOrAfter(
+      playback.frameTicks,
+      currentTick,
+    );
+    const boundary = nextInputTick ?? playback.replay.endTick;
+    const idleTicks = Math.max(0, boundary - currentTick);
+    if (idleTicks * this.session.clock.stepMs <= IDLE_SKIP_THRESHOLD_MS)
+      return 0;
+    const tailTicks = Math.ceil(
+      IDLE_SKIP_TAIL_MS / this.session.clock.stepMs,
+    );
+    return Math.max(0, idleTicks - tailTicks);
+  }
+}
+
+function firstTickAtOrAfter(
+  ticks: readonly number[],
+  target: number,
+): number | null {
+  let low = 0;
+  let high = ticks.length;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    if ((ticks[middle] ?? Number.POSITIVE_INFINITY) < target) low = middle + 1;
+    else high = middle;
+  }
+  return ticks[low] ?? null;
 }

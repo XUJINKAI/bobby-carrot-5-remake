@@ -59,6 +59,10 @@ export function bindReplayPanel(options: {
   const faster = actionButton(panel, "faster");
   const speedControl = required<HTMLElement>(panel, ".replay-panel-speed");
   const speedInput = required<HTMLInputElement>(panel, "[data-replay-speed]");
+  const skipThinking = required<HTMLInputElement>(
+    panel,
+    "[data-replay-skip-thinking]",
+  );
   const beginning = actionButton(panel, "beginning");
   const end = actionButton(panel, "end");
   const copy = actionButton(panel, "copy");
@@ -196,7 +200,9 @@ export function bindReplayPanel(options: {
         options.game.resumeReplayPlayback();
       } else {
         options.onTimelineRestart();
-        options.game.startReplayPlayback(selectedReplay);
+        options.game.startReplayPlayback(selectedReplay, {
+          skipIdleTime: skipThinking.checked,
+        });
       }
       update();
     } catch (error) {
@@ -358,6 +364,7 @@ export function bindReplayPanel(options: {
     play.disabled =
       replayTextDirty || replay === null || recording || loadingBuiltin;
     stopPlayback.disabled = !playing;
+    skipThinking.disabled = playing || loadingBuiltin;
     beginning.disabled =
       replayTextDirty || replay === null || recording || loadingBuiltin;
     end.disabled =

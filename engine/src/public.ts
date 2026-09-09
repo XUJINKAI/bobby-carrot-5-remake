@@ -125,6 +125,7 @@ export {
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
+export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {
   runReplay,
   type ReplayReport,
