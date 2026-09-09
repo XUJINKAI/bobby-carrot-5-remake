@@ -117,11 +117,19 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   gap: 8px;
   align-items: center;
   padding: 9px 12px;
-  border: 1px solid rgb(255 255 255 / 12%);
-  border-radius: 8px;
-  background: rgb(10 35 73 / 88%);
-  color: inherit;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: color-mix(in srgb, var(--bc-panel) 92%, transparent);
+  color: var(--bc-text);
   text-decoration: none;
+  box-shadow: var(--bc-panel-shadow);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+a.adventure-level-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--bc-text-muted);
+  background: var(--bc-control-hover);
 }
 
 .adventure-level-row.completed {

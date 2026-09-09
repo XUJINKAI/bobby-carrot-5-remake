@@ -58,19 +58,23 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   gap: 8px;
   align-items: center;
   padding: 7px 11px;
-  border: 1px solid rgb(255 255 255 / 13%);
-  border-radius: 8px;
-  background: rgb(12 41 83 / 88%);
-  color: inherit;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: color-mix(in srgb, var(--bc-panel) 92%, transparent);
+  color: var(--bc-text);
   text-decoration: none;
+  box-shadow: var(--bc-panel-shadow);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .adventure-chapter:hover {
-  background: rgb(18 57 108 / 94%);
+  transform: translateY(-1px);
+  border-color: var(--bc-text-muted);
+  background: var(--bc-control-hover);
 }
 
 .adventure-chapter-no {
-  color: #91aacb;
+  color: var(--bc-text-muted);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }

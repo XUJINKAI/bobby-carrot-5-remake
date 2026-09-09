@@ -125,17 +125,24 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   gap: 4px 12px;
   align-content: center;
   padding: 11px 15px;
-  border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 10px;
-  background: rgb(14 30 57 / 91%);
-  color: #f4f7ff;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: color-mix(in srgb, var(--bc-panel) 92%, transparent);
+  color: var(--bc-text);
   text-decoration: none;
-  box-shadow: 0 7px 20px rgb(0 0 0 / 24%);
+  box-shadow: var(--bc-panel-shadow);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.adventure-menu-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--bc-text-muted);
+  background: var(--bc-control-hover);
 }
 
 .adventure-menu-card.primary {
-  border-color: #55c6bb;
-  background: rgb(25 111 105 / 94%);
+  border-color: var(--bc-highlight);
+  background: var(--bc-active);
 }
 
 .adventure-menu-card strong {
@@ -143,19 +150,19 @@ const emit = defineEmits<{ navigate: [path: string] }>();
 }
 
 .adventure-menu-card span {
-  color: #aebdd2;
+  color: var(--bc-text-muted);
   font-size: 0.68rem;
 }
 
 .adventure-menu-card.primary span {
-  color: #dbf4f0;
+  color: var(--bc-text);
 }
 
 .adventure-menu-card :deep(.app-icon) {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: center;
-  color: #e8fcf8;
+  color: var(--bc-highlight);
   font-size: 1.12rem;
 }
 

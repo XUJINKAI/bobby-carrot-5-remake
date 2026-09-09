@@ -66,16 +66,19 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   align-items: center;
   gap: 12px;
   padding: 11px 16px;
-  border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 9px;
-  background: rgb(8 42 85 / 90%);
-  color: inherit;
+  border: var(--bc-control-border-width) solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: color-mix(in srgb, var(--bc-panel) 92%, transparent);
+  color: var(--bc-text);
   text-decoration: none;
-  box-shadow: 0 7px 18px rgb(0 0 0 / 20%);
+  box-shadow: var(--bc-panel-shadow);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .night-train-menu a:hover {
-  background: rgb(13 60 113 / 94%);
+  transform: translateY(-1px);
+  border-color: var(--bc-text-muted);
+  background: var(--bc-control-hover);
 }
 
 .night-train-map-row {
