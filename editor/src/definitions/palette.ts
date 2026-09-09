@@ -42,8 +42,6 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.KITE },
           { type: MapEntityTypeId.WHIRLWIND },
           { type: MapEntityTypeId.LANDING },
-        ],
-        [
           { type: MapEntityTypeId.PUSH_GOAL },
           { type: MapEntityTypeId.PUSHABLE_ROCK },
         ],
@@ -54,32 +52,30 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
       label: "机关",
       rows: [
         [
-          { type: MapEntityTypeId.SPEED, expand: "variants" },
-          { type: MapEntityTypeId.SPEED_SWITCH, expand: "variants" },
+          { type: MapEntityTypeId.SPEED},
+          { type: MapEntityTypeId.SPEED_SWITCH},
+          { type: MapEntityTypeId.TIDE},
+          { type: MapEntityTypeId.TIDE_SWITCH},
         ],
         [
-          { type: MapEntityTypeId.TIDE, expand: "variants" },
-          { type: MapEntityTypeId.TIDE_SWITCH, expand: "variants" },
-        ],
-        [
-          { type: MapEntityTypeId.COLOR_SWITCH, expand: "variants" },
-          { type: MapEntityTypeId.COLOR_BLOCK, expand: "variants" },
-          { type: MapEntityTypeId.TRAP, expand: "variants" },
-        ],
-        [
-          { type: MapEntityTypeId.MIRROR, expand: "variants" },
-          { type: MapEntityTypeId.CAROUSEL, expand: "variants" },
-          { type: MapEntityTypeId.CAROUSEL_SWITCH, expand: "variants" },
+          { type: MapEntityTypeId.COLOR_SWITCH},
+          { type: MapEntityTypeId.COLOR_BLOCK},
+          { type: MapEntityTypeId.CAROUSEL},
+          { type: MapEntityTypeId.CAROUSEL_SWITCH},
         ],
         [
           { type: MapEntityTypeId.DRAGON },
+          { type: MapEntityTypeId.MIRROR},
           { type: MapEntityTypeId.ICE_BLOCK },
         ],
         [
-          { type: MapEntityTypeId.WINDMILL, expand: "variants" },
-          { type: MapEntityTypeId.WIND_SWITCH, expand: "variants" },
-          { type: MapEntityTypeId.CLOUD, expand: "variants" },
-          { type: MapEntityTypeId.CLOUD_PARKING, expand: "variants" },
+          { type: MapEntityTypeId.WINDMILL},
+          { type: MapEntityTypeId.WIND_SWITCH},
+          { type: MapEntityTypeId.CLOUD},
+          { type: MapEntityTypeId.CLOUD_PARKING},
+        ],
+        [
+          { type: MapEntityTypeId.TRAP},
           { type: MapEntityTypeId.PLANK },
           { type: MapEntityTypeId.LEAF },
           { type: MapEntityTypeId.PORTAL, fields: { channel: "blue" } },
