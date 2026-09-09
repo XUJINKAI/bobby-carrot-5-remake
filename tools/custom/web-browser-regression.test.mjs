@@ -206,10 +206,22 @@ async function verifyEditorSurfaceInspector(cdp, url) {
     Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('.editor-canvas') && document.querySelector('.editor-surface-panel')",
+        "document.querySelector('.editor-canvas') && document.querySelector('[data-palette-type=\"egg\"]')",
       ),
     ),
     20_000,
+  );
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('#editor-surface')?.click(); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.editor-surface-panel')",
+      ),
+    ),
   );
   const point = await cdp.evaluate(
     sessionId,

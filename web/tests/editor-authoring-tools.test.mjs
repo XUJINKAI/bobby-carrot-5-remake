@@ -28,18 +28,20 @@ const entityFields = fs.readFileSync(
 );
 
 test("Palette 和 Surface 发布工具动作与简洁标题", () => {
-  assert.match(shell, /id: "editor-tool-select"[\s\S]*title: "选择"/);
-  assert.match(shell, /id: "editor-tool-brush"[\s\S]*title: "画笔"/);
-  assert.match(shell, /id: "editor-tool-erase"[\s\S]*title: "删除"/);
-  assert.match(shell, /id: "editor-surface-select"[\s\S]*title: "选择"/);
-  assert.match(shell, /id: "editor-surface-brush"[\s\S]*title: "画笔"/);
-  assert.match(shell, /id: "editor-surface-fill"[\s\S]*title: "填充"/);
+  assert.match(shell, /id: "editor-tool-select"[\s\S]*icon: "select"[\s\S]*title: "选择"/);
+  assert.match(shell, /id: "editor-tool-brush"[\s\S]*icon: "edit"[\s\S]*title: "画笔"/);
+  assert.match(shell, /id: "editor-tool-erase"[\s\S]*icon: "delete"[\s\S]*title: "删除"/);
+  assert.match(shell, /id: "editor-surface-select"[\s\S]*icon: "select"[\s\S]*title: "选择"/);
+  assert.match(shell, /id: "editor-surface-brush"[\s\S]*icon: "edit"[\s\S]*title: "画笔"/);
+  assert.match(shell, /id: "editor-surface-fill"[\s\S]*icon: "fill"[\s\S]*title: "填充"/);
   assert.match(page, /key === "3"[\s\S]*setSurfaceTool\("fill"\)/);
   assert.match(page, /key === "4"[\s\S]*setTool\("erase"\)/);
   assert.match(page, /event\.key === "Tab"[\s\S]*switchAuthoringPanel\(\)/);
 });
 
-test("Editor starts in Select semantics and preserves manual Surface inspector preference", () => {
+test("Editor 默认打开 Palette 并使用 Select 语义", () => {
+  assert.match(pageState, /leftPanel = ref<EditorLeftPanel>\("palette"\)/);
+  assert.match(shell, /leftPanel: "palette" \| "surface" = "palette"/);
   assert.match(pageState, /paletteTool = ref<EditorTool>\("select"\)/);
   assert.match(pageState, /surfaceTool = ref<SurfaceTool>\("rect"\)/);
   assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*\? "select"/);

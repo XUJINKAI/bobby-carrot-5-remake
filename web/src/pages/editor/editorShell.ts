@@ -28,7 +28,7 @@ export function configureEditorShell(
   tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
-  leftPanel: "palette" | "surface" = "surface",
+  leftPanel: "palette" | "surface" = "palette",
   surfaceTool: SurfaceTool = "rect",
 ): void {
   configureShell(
@@ -48,7 +48,7 @@ export function editorShellConfig(
   tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
-  leftPanel: "palette" | "surface" = "surface",
+  leftPanel: "palette" | "surface" = "palette",
   surfaceTool: SurfaceTool = "rect",
 ): ShellConfig {
   const authoringCommands: ShellAction[] =
@@ -88,7 +88,7 @@ export function editorShellConfig(
           },
           {
             id: "editor-tool-erase",
-            icon: "erase",
+            icon: "delete",
             title: "删除",
             pressed: tool === "erase",
           },
