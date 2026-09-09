@@ -5,6 +5,7 @@ import type { Camera } from "./Camera.js";
 import {
   prepareCanvas,
   resolveDevicePixelRatio,
+  type PixelRect,
 } from "./CanvasPixelGeometry.js";
 import type { RenderItem, RenderScene } from "./RenderScene.js";
 import { drawVisualComposition } from "./VisualPainter.js";
@@ -61,9 +62,10 @@ export class Renderer {
     context.fillStyle = "#07100b";
     context.fillRect(0, 0, viewport.width, viewport.height);
 
-    this.drawPass(context, scene.world, camera, deviceScale);
-    this.drawPass(context, scene.player, camera, deviceScale);
-    this.drawPass(context, scene.effect, camera, deviceScale);
+    const bounds = { x: 0, y: 0, ...viewport };
+    this.drawPass(context, scene.world, camera, deviceScale, bounds);
+    this.drawPass(context, scene.player, camera, deviceScale, bounds);
+    this.drawPass(context, scene.effect, camera, deviceScale, bounds);
 
     if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);
@@ -76,6 +78,7 @@ export class Renderer {
     items: readonly RenderItem[],
     camera: Camera,
     deviceScale: number,
+    viewport: PixelRect,
   ): void {
     for (const item of items)
       this.drawComposition(
@@ -85,6 +88,7 @@ export class Renderer {
         item.visualY,
         camera,
         deviceScale,
+        viewport,
       );
   }
 
@@ -95,6 +99,7 @@ export class Renderer {
     y: number,
     camera: Camera,
     deviceScale: number,
+    viewport: PixelRect,
   ): void {
     const point = camera.worldToScreen(x, y);
     drawVisualComposition(
@@ -105,6 +110,7 @@ export class Renderer {
       point.y,
       camera.tileScreenSize,
       deviceScale,
+      viewport,
     );
   }
 

@@ -23,6 +23,7 @@ run(
   process.execPath,
   [
     "--test",
+    "tools/pipeline/*.test.mjs",
     "tools/custom/*.test.mjs",
     "tools/original/dat-tests/*.test.mjs",
     "model/tests/*.test.mjs",

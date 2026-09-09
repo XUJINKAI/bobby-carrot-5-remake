@@ -17,6 +17,7 @@ export function drawVisualComposition(
   top: number,
   tileSize: number,
   deviceScale = 1,
+  viewport?: PixelRect,
 ): void {
   if (!composition) return;
   const cell = snapRectToDevicePixels(
@@ -37,8 +38,20 @@ export function drawVisualComposition(
         cell,
         tileSize,
         deviceScale,
+        viewport,
       );
     } else {
+      // 像素对齐后宽高可能不同，奇数次旋转需要交换包围盒宽高。
+      const rotated = Math.abs(layer.rotate ?? 0) % 2 === 1;
+      const bounds = rotated
+        ? {
+            x: cell.x + (cell.width - cell.height) / 2,
+            y: cell.y + (cell.height - cell.width) / 2,
+            width: cell.height,
+            height: cell.width,
+          }
+        : cell;
+      if (!intersectsViewport(bounds, viewport)) continue;
       drawAtlasLayer(context, images, layer, cell);
     }
   }
@@ -51,6 +64,7 @@ function drawImageLayer(
   cell: PixelRect,
   tileSize: number,
   deviceScale: number,
+  viewport?: PixelRect,
 ): void {
   const image = images.image(layer.asset);
   if (!image) return;
@@ -76,6 +90,7 @@ function drawImageLayer(
   const sourceY = Math.floor(frame / columns) * frameHeight;
 
   if (layer.anchor === "fill") {
+    if (!intersectsViewport(cell, viewport)) return;
     context.drawImage(
       image,
       sourceX,
@@ -107,6 +122,7 @@ function drawImageLayer(
     drawY + drawHeight,
     deviceScale,
   );
+  if (!intersectsViewport(drawRect, viewport)) return;
   context.drawImage(
     image,
     sourceX,
@@ -145,6 +161,15 @@ function drawAtlasLayer(
     cell.height,
   );
   context.restore();
+}
+
+function intersectsViewport(rect: PixelRect, viewport?: PixelRect): boolean {
+  return !viewport || (
+    rect.x < viewport.x + viewport.width &&
+    rect.y < viewport.y + viewport.height &&
+    rect.x + rect.width > viewport.x &&
+    rect.y + rect.height > viewport.y
+  );
 }
 
 function positiveInteger(value: number | undefined): number | null {

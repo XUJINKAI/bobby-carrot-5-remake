@@ -142,7 +142,7 @@ RuntimeAction、WorldMotion、ActorLifecycle 与 WorldOutcome 都是 gameplay st
 
 ## Undo / Redo
 
-Game 在玩家语义 move 前保存 gameplay snapshot。Snapshot 包含 Entity / GlobalState / RuntimeAction gameplay state，但不包含视觉插值。
+Game 在启用历史记录且开始新的玩家语义操作时，于 move 前保存 gameplay snapshot。`runtime.history.mode: "disabled"` 时跳过历史快照；`historyBoundary: false` 的续接步骤沿用已有待提交快照。Snapshot 包含 Entity / GlobalState / RuntimeAction gameplay state，但不包含视觉插值。
 
 Undo 后：
 
@@ -259,6 +259,8 @@ const state = input.update(time); // WorldTick
 Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
 
 ## Events
+
+Renderer 按图片图层的实际屏幕像素范围跳过视口外绘制，包含 sprite 帧尺寸、锚点、偏移、旋转和移动插值。自定义 Canvas 图层的绘制范围由回调决定，保持执行。该优化只减少绘制提交；World 更新与场景构建仍处理完整地图，屏幕外机关继续运行。
 
 高层 Game 生命周期事件：
 

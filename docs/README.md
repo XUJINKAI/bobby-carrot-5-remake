@@ -12,5 +12,6 @@
 - `reference/`：从原版 JAR/字节码恢复的事实；“事实”与“设计决定”必须分开。
 - `development.md`：本地开发命令。
 - `verification.md`：完成标准与自动校验。
+- [性能优化记录](performance.md)：Engine / Editor 已完成优化、回归证据、暂缓项目与复测方法。
 
 逆向中尚未确认的观察只能放在 `reference/` 并标明不确定性，禁止直接升级成架构规则。

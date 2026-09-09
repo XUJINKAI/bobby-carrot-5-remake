@@ -72,8 +72,7 @@ export class WorldQueryApi {
   }
 
   entitiesWithTrait(trait: EntityTrait): readonly EntityInstance[] {
-    return this.entities
-      .all()
-      .filter((entity) => this.entityHasTrait(entity.id, trait));
+    return this.spatial.entityIdsWithTrait(trait)
+      .map((id) => this.entities.require(id));
   }
 }

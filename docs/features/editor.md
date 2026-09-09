@@ -125,6 +125,8 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 
 ## 编辑交互
 
+地图内容与 hover、选区、放置预览使用独立画布。文档更新时重建地图预览；交互更新复用该空间视图，放置预览只实例化待放置对象，并查询叠加替换结果后的邻格。平移与缩放通过共同父层的 CSS transform 更新视口。
+
 - Bottom Bar 的 Palette / Surface 在两种 authoring UX 之间即时切换；
 - Tab：Palette / Surface 快速切换；
 - Select：单选或矩形多选，不直接绘制；

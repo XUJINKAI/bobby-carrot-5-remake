@@ -25,8 +25,8 @@ export class WorldRuleEvaluator {
   refreshDerivedState(): void {
     const state = this.state();
     state.goldenCarrotsInLevel =
-      this.query.entitiesWithTrait("golden-carrot").length;
-    state.bonusCoinsInLevel = this.query.entitiesWithTrait("bonus-coin").length;
+      this.spatial.entityCountWithTrait("golden-carrot");
+    state.bonusCoinsInLevel = this.spatial.entityCountWithTrait("bonus-coin");
   }
 
   completionReady(motionRunning: boolean): boolean {
@@ -117,13 +117,7 @@ export class WorldRuleEvaluator {
   }
 
   private matchingEntityCount(selector: string): number {
-    return this.entities
-      .all()
-      .filter(
-        (entity) =>
-          entity.type === selector ||
-          this.query.entityHasTrait(entity.id, selector),
-      ).length;
+    return this.spatial.entityCountMatching(selector);
   }
 
   private hasSelectorAt(
@@ -138,7 +132,8 @@ export class WorldRuleEvaluator {
 
   private spatialCellsMatching(selector: string): { x: number; y: number }[] {
     const result = new Map<string, { x: number; y: number }>();
-    for (const entity of this.entities.all()) {
+    for (const id of this.spatial.entityIdsMatching(selector)) {
+      const entity = this.entities.require(id);
       const typeMatches = entity.type === selector;
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
         if (!typeMatches && !presence.traits.includes(selector)) continue;

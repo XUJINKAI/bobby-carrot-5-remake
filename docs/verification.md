@@ -31,3 +31,11 @@ node tools/pipeline/source-quality.mjs
 ```
 
 `verify` 失败时不能把任务描述为完成。
+
+## 冷启动验证
+
+干净检出在安装依赖后直接执行 `npm run verify`。资产 CLI 入口先编译 Model，再加载依赖其 `dist` 入口的资产模块；CI 与本地共用该顺序。
+
+`tools/pipeline/asset-bootstrap.test.mjs` 在隔离临时目录中复制 Model 源码及 CLI，建立本地 workspace 链接，并分别验证 `assets prepare` 与 `assets rebuild` 从缺少 Model 编译产物的状态生成语义地图。该测试随 `npm run verify` 执行。
+
+修改构建、资产或验证入口时，还应在隔离的干净检出中运行 `npm ci` 和 `npm run verify`，确认完整流水线的结果独立于已有 `dist` 与 `.tsbuildinfo`。

@@ -591,8 +591,8 @@ export class Game {
 
   private startLogicalStep(group: WorldIntentGroup): WorldStepResult | null {
     if (group.intents.length === 0) return null;
-    const before = this.world.snapshot();
-    if (group.historyBoundary !== false) this.pendingHistorySnapshot = before;
+    if (this.historyPolicy.mode !== "disabled" && group.historyBoundary !== false)
+      this.pendingHistorySnapshot = this.world.snapshot();
 
     const result = this.world.step(group);
     this.lastMove = result.moves[0] ?? null;

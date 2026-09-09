@@ -4,6 +4,7 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { createServer } from "vite";
 import { root } from "../lib/fs.mjs";
+import { verifyEditorCanvasPerformance } from "./editor-performance-browser.mjs";
 
 const browserEnvironment = { ...process.env };
 delete browserEnvironment.DISPLAY;
@@ -309,6 +310,7 @@ async function verifyEditorSurfaceInspector(cdp, url) {
   );
   if (eggTooltip.name !== "Egg" || eggTooltip.type !== "egg")
     throw new Error(`Egg Palette tooltip was incorrect: ${JSON.stringify(eggTooltip)}`);
+  await verifyEditorCanvasPerformance(cdp, sessionId);
 }
 
 async function verifyGameplayDialog(cdp, url) {

@@ -40,6 +40,7 @@ const emit = defineEmits<{
 }>();
 const stage = ref<HTMLDivElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
+const interactionCanvas = ref<HTMLCanvasElement | null>(null);
 const resizePreview = ref<EditorResizeResult | null>(null);
 const viewport = new EditorViewport();
 let renderer: EditorCanvasRenderer | null = null;
@@ -51,21 +52,30 @@ let resizeDrag: null | {
   startY: number;
 } = null;
 
-function render(): void {
+function applyViewportTransform(): void {
   const view = viewport.snapshot;
+  if (stage.value)
+    stage.value.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+}
+
+function render(): void {
+  applyViewportTransform();
   if (stage.value) {
     stage.value.style.width = `${props.level.width * EDITOR_TILE_SIZE}px`;
     stage.value.style.height = `${props.level.height * EDITOR_TILE_SIZE}px`;
-    stage.value.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
   }
-  renderer?.render({
+  renderer?.render(renderState());
+}
+
+function renderState() {
+  return {
     level: props.level as EditorMap,
     tool: props.tool,
     placement: props.placement,
     selection: props.selection,
     hover: props.hover,
-    viewport: view,
-  });
+    viewport: viewport.snapshot,
+  };
 }
 
 function previewStyle(): Record<string, string> {
@@ -143,17 +153,28 @@ function fitInitialViewport(): void {
 }
 
 watch(
-  () => [props.revision, props.tool, props.placement, props.selection, props.hover, props.enabled],
-  () => {
-    input?.setEnabled(props.enabled);
-    render();
-  },
+  () => [props.level, props.revision],
+  render,
+);
+
+watch(
+  () => [props.tool, props.placement, props.selection, props.hover],
+  () => renderer?.renderInteraction(renderState()),
   { deep: true },
 );
 
+watch(() => props.enabled, (enabled) => input?.setEnabled(enabled));
+
 onMounted(async () => {
-  if (!canvas.value) return;
-  renderer = new EditorCanvasRenderer(canvas.value, props.images, props.catalog);
+  if (!canvas.value || !interactionCanvas.value) return;
+  renderer = new EditorCanvasRenderer(
+    canvas.value,
+    props.images,
+    props.catalog,
+    undefined,
+    undefined,
+    interactionCanvas.value,
+  );
   input = new EditorCanvasInput(canvas.value, viewport, {
     dimensions: () => ({ width: props.level.width, height: props.level.height }),
     hover: (cell) => emit("hover", cell),
@@ -166,8 +187,9 @@ onMounted(async () => {
       emit("transform", cell, step, (result) => { changed = result; });
       return changed;
     },
-    viewportChanged: render,
+    viewportChanged: applyViewportTransform,
   });
+  input.setEnabled(props.enabled);
   await renderer.load();
   await nextTick();
   requestAnimationFrame(fitInitialViewport);
@@ -179,6 +201,7 @@ onBeforeUnmount(() => input?.destroy());
 <template>
   <div ref="stage" class="editor-canvas-stage">
     <canvas ref="canvas" class="editor-canvas" aria-label="地图编辑画布" />
+    <canvas ref="interactionCanvas" class="editor-canvas-interaction" aria-hidden="true" />
     <div
       v-if="resizePreview"
       class="editor-resize-preview"
@@ -201,6 +224,12 @@ onBeforeUnmount(() => input?.destroy());
 .editor-canvas-stage {
   position: relative;
   transform-origin: 0 0;
+}
+.editor-canvas-interaction {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
 }
 .editor-resize-handle {
   position: absolute;

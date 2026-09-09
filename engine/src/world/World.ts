@@ -25,6 +25,7 @@ import type {
 import type { RuntimeActionRegistry } from "./action/RuntimeActionRegistry.js";
 import { RuntimeActionScheduler } from "./action/RuntimeActionScheduler.js";
 import { BehaviorRuntime } from "./behavior/BehaviorRuntime.js";
+import { TickIndex } from "./behavior/TickIndex.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
 import { WorldDeltaSequence, type WorldDelta } from "./delta/WorldDelta.js";
 import type {
@@ -107,6 +108,7 @@ export class World {
   private readonly ruleEvaluator: WorldRuleEvaluator;
   private readonly reachResolver: ReachResolver;
   private readonly behaviorRuntime: BehaviorRuntime;
+  private readonly tickIndex: TickIndex;
   private readonly movementResolver: WorldMovementResolver;
   private readonly lifecycle: WorldLifecycle;
   private readonly inspector: WorldInspector;
@@ -130,6 +132,7 @@ export class World {
       level.height,
     );
     this.state = createGlobalState(options.profile, options.economy);
+    this.tickIndex = new TickIndex(this.registry, this.behaviors, this.spatial);
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
@@ -471,7 +474,7 @@ export class World {
     }
 
     const tickQueue = new CommandQueue();
-    const snapshot = this.entities.all().map((entity) => entity.id);
+    const snapshot = this.tickIndex.entityIds();
     for (const entityId of snapshot) {
       const entity = this.entities.get(entityId);
       const presence = this.spatial.presencesForEntity(entityId)[0];
