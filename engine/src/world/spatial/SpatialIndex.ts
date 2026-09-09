@@ -63,6 +63,14 @@ export class SpatialIndex {
     return this.selectors.ofType(type);
   }
 
+  entityCountWithTrait(trait: EntityTrait): number {
+    return this.selectors.countWithTrait(trait);
+  }
+
+  entityCountMatching(selector: string): number {
+    return this.selectors.countMatching(selector);
+  }
+
   moveEntity(entityId: EntityId, anchor: CellPosition): void {
     const entity = this.entities.require(entityId);
     this.removeEntity(entityId);

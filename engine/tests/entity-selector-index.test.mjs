@@ -35,6 +35,8 @@ test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复�
       const matching = all.filter((e) => e.type === selector || world.query.entityHasTrait(e.id, selector));
       assert.deepEqual(world.query.entitiesWithTrait(selector), traits);
       assert.deepEqual(world.spatial.entityIdsMatching(selector), matching.map((e) => e.id));
+      assert.equal(world.spatial.entityCountWithTrait(selector), traits.length);
+      assert.equal(world.spatial.entityCountMatching(selector), matching.length);
     }
   }
   check();

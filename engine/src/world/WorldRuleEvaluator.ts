@@ -25,8 +25,8 @@ export class WorldRuleEvaluator {
   refreshDerivedState(): void {
     const state = this.state();
     state.goldenCarrotsInLevel =
-      this.query.entitiesWithTrait("golden-carrot").length;
-    state.bonusCoinsInLevel = this.query.entitiesWithTrait("bonus-coin").length;
+      this.spatial.entityCountWithTrait("golden-carrot");
+    state.bonusCoinsInLevel = this.spatial.entityCountWithTrait("bonus-coin");
   }
 
   completionReady(motionRunning: boolean): boolean {
@@ -117,7 +117,7 @@ export class WorldRuleEvaluator {
   }
 
   private matchingEntityCount(selector: string): number {
-    return this.spatial.entityIdsMatching(selector).length;
+    return this.spatial.entityCountMatching(selector);
   }
 
   private hasSelectorAt(

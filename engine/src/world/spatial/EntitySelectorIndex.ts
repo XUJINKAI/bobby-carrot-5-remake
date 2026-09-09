@@ -42,6 +42,25 @@ export class EntitySelectorIndex {
     return ordered(this.types.get(type) ?? []);
   }
 
+  countWithTrait(trait: string): number {
+    return this.traits.get(trait)?.size ?? 0;
+  }
+
+  countMatching(selector: string): number {
+    const types = this.types.get(selector);
+    const traits = this.traits.get(selector);
+    if (!types) return traits?.size ?? 0;
+    if (!traits) return types.size;
+    // 联合 selector 按 Entity 去重；计数只检查较小集合的交集。
+    const smaller = types.size <= traits.size ? types : traits;
+    const larger = smaller === types ? traits : types;
+    let count = types.size + traits.size;
+    for (const id of smaller) {
+      if (larger.has(id)) count -= 1;
+    }
+    return count;
+  }
+
   matching(selector: string): EntityId[] {
     return ordered(new Set([
       ...(this.types.get(selector) ?? []),
