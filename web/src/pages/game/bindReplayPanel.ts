@@ -40,6 +40,7 @@ export function bindReplayPanel(options: {
   filename: string;
   builtinReplayUrl: string;
   meta: ReplayRecordingMeta;
+  initialOpen?: boolean;
   onVisibilityChange(open: boolean): void;
   onTimelineRestart(): void;
 }): ReplayPanelController {
@@ -70,18 +71,18 @@ export function bindReplayPanel(options: {
   const loadBuiltin = actionButton(panel, "load-builtin");
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
-  let open = false;
+  let open = options.initialOpen ?? false;
   let appliedTimeScale = 1;
   let loadingBuiltin = false;
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
 
-  const setOpen = (value: boolean): void => {
+  const setOpen = (value: boolean, notify = true): void => {
     open = value;
     panel.hidden = !value;
     stage.classList.toggle("replay-panel-open", value);
-    options.onVisibilityChange(value);
+    if (notify) options.onVisibilityChange(value);
     window.dispatchEvent(new Event("resize"));
   };
 
@@ -315,6 +316,21 @@ export function bindReplayPanel(options: {
     options.game.setTimeScale(speed);
   };
 
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (
+      event.key !== "Tab" ||
+      event.repeat ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      event.shiftKey ||
+      isInteractiveTarget(event.target)
+    )
+      return;
+    event.preventDefault();
+    setOpen(!open);
+  };
+
   const onClick = (event: Event): void => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
       "button[data-replay-action]",
@@ -335,6 +351,7 @@ export function bindReplayPanel(options: {
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
   speedInput.addEventListener("input", onSpeedInput);
+  window.addEventListener("keydown", onKeyDown);
 
   const update = (): void => {
     const recording = options.game.replayRecording;
@@ -374,6 +391,7 @@ export function bindReplayPanel(options: {
     loadBuiltin.disabled = recording || playing || loadingBuiltin;
     loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
   };
+  setOpen(open, false);
   update();
 
   return {
@@ -388,6 +406,7 @@ export function bindReplayPanel(options: {
       panel.removeEventListener("click", onClick);
       output.removeEventListener("input", onOutputInput);
       speedInput.removeEventListener("input", onSpeedInput);
+      window.removeEventListener("keydown", onKeyDown);
       stage.classList.remove("replay-panel-open");
     },
   };
@@ -414,4 +433,13 @@ function safeFilename(value: string): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest(
+      "a, button, input, select, textarea, [contenteditable], [tabindex]",
+    ) !== null
+  );
 }

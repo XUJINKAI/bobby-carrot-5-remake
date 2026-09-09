@@ -4,7 +4,12 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { createServer } from "vite";
 import { root } from "../lib/fs.mjs";
+import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorCanvasPerformance } from "./editor-performance-browser.mjs";
+import {
+  replayLayout,
+  verifyReplayPanelShortcut,
+} from "./replay-browser-checks.mjs";
 
 const browserEnvironment = { ...process.env };
 delete browserEnvironment.DISPLAY;
@@ -77,7 +82,7 @@ test(
 
 async function verifyMusicInteractionTip(cdp, url) {
   const sessionId = await openPage(cdp, url);
-  await waitFor(async () =>
+  await waitForBrowserState(async () =>
     Boolean(
       await cdp.evaluate(
         sessionId,
@@ -382,6 +387,7 @@ async function verifyReplayPanel(cdp, url) {
       ),
     ),
   );
+  await verifyReplayPanelShortcut(cdp, sessionId);
   const desktopLayout = await replayLayout(cdp, sessionId);
   if (desktopLayout.canvasLeft < desktopLayout.panelRight - 1)
     throw new Error("Replay desktop panel did not reserve canvas space");
@@ -584,42 +590,29 @@ async function verifyReplayPanel(cdp, url) {
     { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
     sessionId,
   );
-  await cdp.send("Page.reload", {}, sessionId);
-  await waitFor(async () =>
-    Boolean(await cdp.evaluate(sessionId, "document.querySelector('#replay-record')")),
-    20_000,
+  await cdp.evaluate(
+    sessionId,
+    "window.__replayPanelReloadProbe = true; true",
   );
-  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await cdp.send("Page.reload", {}, sessionId);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
         sessionId,
-        "!document.querySelector('[data-replay-panel]')?.hidden",
+        `(() => {
+          const panel = document.querySelector('[data-replay-panel]');
+          return window.__replayPanelReloadProbe !== true &&
+            document.querySelector('#replay-record') && panel && !panel.hidden;
+        })()`,
       ),
     ),
+    20_000,
   );
   const mobileLayout = await replayLayout(cdp, sessionId);
   if (Math.abs(mobileLayout.canvasLeft - mobileLayout.stageLeft) > 1)
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
     throw new Error("Replay mobile panel did not float inside the game stage");
-}
-
-async function replayLayout(cdp, sessionId) {
-  return cdp.evaluate(
-    sessionId,
-    `(() => {
-      const stage = document.querySelector('[data-game-stage]').getBoundingClientRect();
-      const panel = document.querySelector('[data-replay-panel]').getBoundingClientRect();
-      const canvas = document.querySelector('.game-canvas-layer').getBoundingClientRect();
-      return {
-        stageLeft: stage.left,
-        panelLeft: panel.left,
-        panelRight: panel.right,
-        canvasLeft: canvas.left,
-      };
-    })()`,
-  );
 }
 
 async function clickWhenPresent(cdp, sessionId, selector) {
@@ -749,14 +742,7 @@ function createCdpPipe(input, output) {
   };
 }
 
-async function waitFor(check, timeoutMs = 10_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("Browser regression interaction timed out");
-}
+const waitFor = waitForBrowserState;
 
 function findBrowser() {
   const candidates = [

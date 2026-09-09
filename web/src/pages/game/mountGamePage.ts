@@ -41,6 +41,10 @@ import {
 } from "./bindReplayPanel.js";
 import { resolveGameMusic } from "./gameMusic.js";
 import {
+  loadReplayPanelOpen,
+  storeReplayPanelOpen,
+} from "./replayPanelState.js";
+import {
   canonicalReplayUrl,
   editorMapPath,
   exploreCollectionPath,
@@ -164,6 +168,8 @@ export async function renderGamePage(
       )
     : level;
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
+  const replayPanelInitiallyOpen =
+    mode === "explore" && loadReplayPanelOpen();
   configureShell(
     gameShellConfig(
       identity,
@@ -171,6 +177,7 @@ export async function renderGamePage(
       screenControlEnabled,
       explorePreviousMapId,
       exploreNextMapId,
+      replayPanelInitiallyOpen,
     ),
     GAME_HELP,
   );
@@ -248,7 +255,9 @@ export async function renderGamePage(
           name: identity.title,
           url: canonicalReplayUrl(window.location),
         },
+        initialOpen: replayPanelInitiallyOpen,
         onVisibilityChange(open) {
+          storeReplayPanelOpen(open);
           configureShell(
             gameShellConfig(
               identity,
@@ -572,7 +581,7 @@ function gameShellConfig(
               id: "replay-record",
               icon: "record",
               label: "录制",
-              title: "录制 Replay 测试输入",
+              title: "录制 Replay 测试输入（Tab）",
               pressed: replayOpen,
             },
           ]
@@ -581,7 +590,7 @@ function gameShellConfig(
         { text: identity.title },
         {
           text: explore
-            ? "WASD / 方向键移动 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
+            ? "WASD / 方向键移动 · Tab 录制 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
             : "WASD / 方向键移动 · 拖动查看地图",
         },
       ],

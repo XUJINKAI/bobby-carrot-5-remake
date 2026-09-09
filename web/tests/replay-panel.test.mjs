@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "vitest";
 import { replayVerificationPresentation } from "../src/pages/game/bindReplayPanel.ts";
+import {
+  loadReplayPanelOpen,
+  storeReplayPanelOpen,
+} from "../src/pages/game/replayPanelState.ts";
 
 const replayPanelSource = fs.readFileSync(
   new URL("../src/pages/game/ReplayPanel.vue", import.meta.url),
@@ -42,4 +46,18 @@ test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
   assert.ok(checkboxIndex < playButtonIndex);
   assert.match(replayPanelSource, /<span>跳过思考时间<\/span>/);
   assert.match(replayBindingSource, /skipIdleTime: skipThinking\.checked/);
+});
+
+test("Replay 面板开关状态在当前标签页中持久化", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+
+  assert.equal(loadReplayPanelOpen(storage), false);
+  storeReplayPanelOpen(true, storage);
+  assert.equal(loadReplayPanelOpen(storage), true);
+  storeReplayPanelOpen(false, storage);
+  assert.equal(loadReplayPanelOpen(storage), false);
 });
