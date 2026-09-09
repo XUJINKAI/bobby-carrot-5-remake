@@ -147,6 +147,7 @@ function action(id: string): void {
 
   .shell-topbar-right > .collapse-overflow,
   .shell-topbar-center > .collapse-overflow,
+  .shell-topbar-left > .collapse-hide,
   .shell-topbar-right > .collapse-hide,
   .shell-topbar-center > .collapse-hide {
     display: none;

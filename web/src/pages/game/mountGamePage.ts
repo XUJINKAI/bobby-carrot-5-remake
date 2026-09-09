@@ -169,7 +169,6 @@ export async function renderGamePage(
     mode === "explore" && loadReplayPanelOpen();
   configureShell(
     gameShellConfig(
-      identity,
       mode,
       screenControlEnabled,
       explorePreviousMapId,
@@ -250,7 +249,6 @@ export async function renderGamePage(
           storeReplayPanelOpen(open);
           configureShell(
             gameShellConfig(
-              identity,
               mode,
               getWebSettings().controls.screenControlEnabled,
               explorePreviousMapId,
@@ -499,7 +497,6 @@ function nextAdventureLevel(
 }
 
 function gameShellConfig(
-  identity: GameIdentity,
   mode: GamePageMode,
   screenControlEnabled: boolean,
   explorePreviousMapId?: string,
@@ -519,34 +516,40 @@ function gameShellConfig(
       back: {
         id: "back",
         icon: "back",
-        label: explore ? "返回" : identity.title,
+        label: "返回",
         title: "返回",
       },
-      leading: explore
-        ? [
-            {
-              id: "previous-level",
-              icon: "previous-track",
-              title: "上一关",
-              disabled: !explorePreviousMapId,
-            },
-            {
-              id: "next-level",
-              icon: "next-track",
-              title: "下一关",
-              disabled: !exploreNextMapId,
-            },
-          ]
-        : [],
-      commands: [
+      leading: [
         ...(explore
           ? [
-              { id: "undo", icon: "undo" as const, title: "撤销" },
-              { id: "redo", icon: "redo" as const, title: "重做" },
+              {
+                id: "previous-level",
+                icon: "previous-track" as const,
+                title: "上一关",
+                disabled: !explorePreviousMapId,
+                collapse: "hide" as const,
+              },
+              {
+                id: "next-level",
+                icon: "next-track" as const,
+                title: "下一关",
+                disabled: !exploreNextMapId,
+                collapse: "hide" as const,
+              },
             ]
           : []),
-        { id: "restart", icon: "restart", title: "重新开始" },
+        {
+          id: "restart",
+          icon: "restart" as const,
+          title: "重新开始",
+        },
       ],
+      commands: explore
+        ? [
+            { id: "undo", icon: "undo" as const, title: "撤销" },
+            { id: "redo", icon: "redo" as const, title: "重做" },
+          ]
+        : [],
       actions: [
         ...(explore
           ? [

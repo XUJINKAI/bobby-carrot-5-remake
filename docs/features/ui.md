@@ -359,7 +359,7 @@ Adventure 的首页菜单、章节入口、关卡入口与夜间列车入口复�
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 冒险模式 ▾             ♫ ⚙ ? │
+│ [icon] 冒险模式 ▾                                      ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │                 BOBBY CARROT 5 REMAKE                      │
@@ -398,7 +398,7 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 冒险模式 ▾ │ ← 12-4  ↻ │ ♫ ⚙ ? │
+│ [icon] 冒险模式 ▾ │ ← 返回  ↻                         │ ♫ ⚙ ? │
 ├───────────────────────────────────────────────────────────────┤
 │                 ┌─────────────────────────┐                   │
 │                 │                   12 🥕 │                   │
@@ -456,7 +456,7 @@ Explore Play：
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↶ ↻ ✎ │ ♫ ⚙ ? │
+│ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↻ │ ↶ ✎ ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 02:31                                                         12 🥕 │
 │ 84 STEPS                                                🪁 2 🫘 🛷 ⛽ │
@@ -470,7 +470,7 @@ Explore Play：
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。页面从当前 collection `index.json` 取得前后关顺序；返回按钮固定显示“返回”，相邻的上一关、下一关使用媒体切换图标。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
+所有 Explore 地图使用 `/explore/play/<collection>/<map-id>` 进入同一个 GamePage，并在解析后统一向 Engine 提交 `LevelMap`。页面从当前 collection `index.json` 取得前后关顺序；顶栏左侧依次显示返回、上一关、下一关和 Restart，移动端收起上一关与下一关。返回按钮固定显示“返回”，相邻的上一关、下一关使用媒体切换图标。Explore 使用自由 Camera，提供 Undo、Redo、Restart、Debug 和打开地图 clone 到 Editor 的动作；返回操作进入 `/explore/<collection>`。
 
 ### Editor
 
