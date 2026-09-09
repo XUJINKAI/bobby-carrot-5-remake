@@ -16,13 +16,31 @@ test("Engine timing has one configurable entry for world and presentation rates"
     worldStepMs: 62.5,
     presentationHz: 60,
     presentationStepMs: 1000 / 60,
+    worldSpeed: 1,
+    presentationSpeed: 1,
   });
   assert.deepEqual(resolveEngineTiming({ worldHz: 20, presentationHz: 16 }), {
     worldHz: 20,
     worldStepMs: 50,
     presentationHz: 16,
     presentationStepMs: 62.5,
+    worldSpeed: 1,
+    presentationSpeed: 1,
   });
+});
+
+test("Engine timing resolves independent World and Presentation speeds", () => {
+  assert.deepEqual(
+    resolveEngineTiming({ worldSpeed: 4, presentationSpeed: 0.5 }),
+    {
+      worldHz: 16,
+      worldStepMs: 62.5,
+      presentationHz: 60,
+      presentationStepMs: 1000 / 60,
+      worldSpeed: 4,
+      presentationSpeed: 0.5,
+    },
+  );
 });
 
 test("WorldClock uses configurable fixed steps without changing ms semantics", () => {
@@ -44,6 +62,27 @@ test("WorldClock pause and debug step affect gameplay time only", () => {
   clock.resume();
   assert.equal(clock.advance(62.5, (time) => ticks.push(time.tick)), 1);
   assert.equal(clock.tickCount, 5);
+});
+
+test("WorldClock speed changes real-time tick consumption without changing stepMs", () => {
+  const clock = new WorldClock(16, 2);
+  const ticks = [];
+  assert.equal(clock.advance(62.5, (time) => ticks.push(time)), 2);
+  assert.deepEqual(ticks.map((time) => time.tick), [0, 1]);
+  assert.ok(ticks.every((time) => time.stepMs === 62.5));
+  clock.setSpeed(0.5);
+  assert.equal(clock.advance(62.5, (time) => ticks.push(time)), 0);
+  assert.equal(clock.advance(62.5, (time) => ticks.push(time)), 1);
+});
+
+test("WorldClock can change Hz while keeping the logical tick sequence", () => {
+  const clock = new WorldClock(16);
+  clock.pause();
+  clock.step(2, () => {});
+  clock.setHz(20);
+  assert.equal(clock.hz, 20);
+  assert.equal(clock.stepMs, 50);
+  assert.equal(clock.tickCount, 2);
 });
 
 test("PresentationClock samples real time independently from world rate", () => {
@@ -90,4 +129,17 @@ test("PresentationClock pause ignores real elapsed time and steps both direction
   assert.equal(clock.paused, false);
   assert.equal(clock.advance(5010), null);
   assert.ok(clock.current.nowMs < 1030);
+});
+
+test("PresentationClock applies speed independently from sampling Hz", () => {
+  const clock = new PresentationClock(60, 2);
+  clock.advance(1000);
+  const frame = clock.advance(1017);
+  assert.ok(frame);
+  assert.ok(frame.nowMs >= 1034);
+  assert.ok(frame.deltaMs >= 34);
+  clock.setHz(20);
+  assert.equal(clock.stepMs, 50);
+  clock.setSpeed(0.5);
+  assert.equal(clock.speed, 0.5);
 });

@@ -2,15 +2,22 @@ import type { Direction } from "@bobby/model";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { DebugEntitySnapshot, DebugSnapshot } from "./DebugSnapshot.js";
 
+const HZ_OPTIONS = [8, 16, 20, 30, 60] as const;
+const SPEED_OPTIONS = [0.125, 0.25, 0.5, 1, 2, 4, 8] as const;
+
 export interface DebugControlPanelActions {
   pauseWorld(): void;
   resumeWorld(): void;
   stepWorld(): void;
+  setWorldHz(hz: number): void;
+  setWorldSpeed(speed: number): void;
   setHeldDirection(direction: Direction | null): void;
   selectActor(actorId: EntityId): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
+  setPresentationHz(hz: number): void;
+  setPresentationSpeed(speed: number): void;
   stepPresentationToNextSprite(): void;
   stepPresentationToNextChange(): void;
 }
@@ -22,17 +29,22 @@ export class DebugControlPanel {
   private readonly presentationStatus: HTMLSpanElement;
   private readonly worldPauseResumeButton: HTMLButtonElement;
   private readonly worldStepButton: HTMLButtonElement;
+  private readonly worldHzSelect: HTMLSelectElement;
+  private readonly worldSpeedSelect: HTMLSelectElement;
   private readonly presentationPauseResumeButton: HTMLButtonElement;
   private readonly frameBackButton: HTMLButtonElement;
   private readonly frameForwardButton: HTMLButtonElement;
   private readonly nextSpriteButton: HTMLButtonElement;
   private readonly nextChangeButton: HTMLButtonElement;
+  private readonly presentationHzSelect: HTMLSelectElement;
+  private readonly presentationSpeedSelect: HTMLSelectElement;
   private readonly actorSelect: HTMLSelectElement;
   private readonly directionButtons = new Map<Direction | "release", HTMLButtonElement>();
   private actorOptionsKey = "";
   private worldPaused = false;
   private presentationPaused = false;
   private debugHeldDirection: Direction | null = null;
+  private speedsLinked = true;
 
   constructor(
     right: number,
@@ -76,6 +88,19 @@ export class DebugControlPanel {
 
     const worldControl = this.controlSection("World");
     this.worldStatus = statusText();
+    this.worldHzSelect = rateSelect(HZ_OPTIONS, (value) =>
+      this.actions.setWorldHz(value),
+    );
+    this.worldHzSelect.title = "修改 World Hz 会从关卡起点重新运行";
+    this.worldSpeedSelect = rateSelect(SPEED_OPTIONS, (value) => {
+      this.actions.setWorldSpeed(value);
+      if (this.speedsLinked) this.actions.setPresentationSpeed(value);
+    }, "×");
+    worldControl.append(
+      this.worldStatus,
+      rateRow("Hz", this.worldHzSelect),
+      rateRow("Speed", this.worldSpeedSelect),
+    );
     const worldButtons = buttonGrid("minmax(0,1fr) auto");
     this.worldPauseResumeButton = button("⏸ Pause", () => {
       if (this.worldPaused) this.actions.resumeWorld();
@@ -83,10 +108,40 @@ export class DebugControlPanel {
     });
     this.worldStepButton = button("Step", () => this.actions.stepWorld());
     worldButtons.append(this.worldPauseResumeButton, this.worldStepButton);
-    worldControl.append(this.worldStatus, worldButtons);
+    worldControl.append(worldButtons);
 
     const presentationControl = this.controlSection("Presentation");
     this.presentationStatus = statusText();
+    this.presentationHzSelect = rateSelect(HZ_OPTIONS, (value) =>
+      this.actions.setPresentationHz(value),
+    );
+    this.presentationSpeedSelect = rateSelect(SPEED_OPTIONS, (value) => {
+      this.actions.setPresentationSpeed(value);
+      if (this.speedsLinked) this.actions.setWorldSpeed(value);
+    }, "×");
+    const link = document.createElement("label");
+    Object.assign(link.style, {
+      display: "flex",
+      alignItems: "center",
+      gap: "5px",
+      marginTop: "5px",
+      color: "#8da495",
+    });
+    const linkInput = document.createElement("input");
+    linkInput.type = "checkbox";
+    linkInput.checked = true;
+    linkInput.addEventListener("change", () => {
+      this.speedsLinked = linkInput.checked;
+      if (this.speedsLinked)
+        this.actions.setPresentationSpeed(Number(this.worldSpeedSelect.value));
+    });
+    link.append(linkInput, "联动速度");
+    presentationControl.append(
+      this.presentationStatus,
+      rateRow("Hz", this.presentationHzSelect),
+      rateRow("Speed", this.presentationSpeedSelect),
+      link,
+    );
     this.presentationPauseResumeButton = button("⏸ Pause", () => {
       if (this.presentationPaused) this.actions.resumePresentation();
       else this.actions.pausePresentation();
@@ -111,7 +166,6 @@ export class DebugControlPanel {
       this.nextChangeButton,
     );
     presentationControl.append(
-      this.presentationStatus,
       this.presentationPauseResumeButton,
       presentationButtons,
     );
@@ -155,6 +209,10 @@ export class DebugControlPanel {
     this.worldStatus.textContent = `W${runtime.worldTickCount} · ${runtime.worldHz}Hz`;
     this.presentationStatus.textContent =
       `P${runtime.presentationFrame} · ${runtime.presentationHz}Hz`;
+    setSelectValue(this.worldHzSelect, runtime.worldHz);
+    setSelectValue(this.worldSpeedSelect, runtime.worldSpeed);
+    setSelectValue(this.presentationHzSelect, runtime.presentationHz);
+    setSelectValue(this.presentationSpeedSelect, runtime.presentationSpeed);
     this.worldPauseResumeButton.textContent = runtime.worldPaused
       ? "▶ Resume"
       : "⏸ Pause";
@@ -301,6 +359,56 @@ function buttonGrid(columns: string, gap = "5px"): HTMLDivElement {
     marginTop: "5px",
   });
   return root;
+}
+
+function rateRow(labelText: string, control: HTMLElement): HTMLLabelElement {
+  const row = document.createElement("label");
+  Object.assign(row.style, {
+    display: "grid",
+    gridTemplateColumns: "52px minmax(0,1fr)",
+    alignItems: "center",
+    gap: "5px",
+    marginTop: "5px",
+    color: "#8da495",
+  });
+  row.append(labelText, control);
+  return row;
+}
+
+function rateSelect(
+  values: readonly number[],
+  change: (value: number) => void,
+  suffix = "",
+): HTMLSelectElement {
+  const select = document.createElement("select");
+  Object.assign(select.style, {
+    width: "100%",
+    padding: "3px 4px",
+    border: "1px solid rgba(255,255,255,.2)",
+    borderRadius: "4px",
+    background: "#14251a",
+    color: "inherit",
+    font: "inherit",
+  });
+  for (const value of values) {
+    const option = document.createElement("option");
+    option.value = String(value);
+    option.textContent = `${value}${suffix}`;
+    select.append(option);
+  }
+  select.addEventListener("change", () => change(Number(select.value)));
+  return select;
+}
+
+function setSelectValue(select: HTMLSelectElement, value: number): void {
+  const encoded = String(value);
+  if (![...select.options].some((option) => option.value === encoded)) {
+    const option = document.createElement("option");
+    option.value = encoded;
+    option.textContent = encoded;
+    select.append(option);
+  }
+  select.value = encoded;
 }
 
 function statusText(): HTMLSpanElement {

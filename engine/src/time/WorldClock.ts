@@ -1,4 +1,7 @@
-import { DEFAULT_WORLD_HZ } from "./EngineTiming.js";
+import {
+  DEFAULT_WORLD_HZ,
+  DEFAULT_WORLD_SPEED,
+} from "./EngineTiming.js";
 
 const MAX_CATCH_UP_TICKS = 4;
 
@@ -17,15 +20,29 @@ export type WorldTickListener = (time: WorldTick) => void;
  * RuntimeAction 只接收稳定的 WorldTick。Pause 只暂停 gameplay，不暂停表现层。
  */
 export class WorldClock {
-  readonly hz: number;
-  readonly stepMs: number;
+  private hzValue: number;
+  private stepMsValue: number;
+  private speedValue: number;
   private accumulatorMs = 0;
   private nextTickValue = 0;
   private pausedValue = false;
 
-  constructor(hz = DEFAULT_WORLD_HZ) {
-    this.hz = Number.isFinite(hz) && hz > 0 ? hz : DEFAULT_WORLD_HZ;
-    this.stepMs = 1000 / this.hz;
+  constructor(hz = DEFAULT_WORLD_HZ, speed = DEFAULT_WORLD_SPEED) {
+    this.hzValue = positive(hz, DEFAULT_WORLD_HZ);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.speedValue = positive(speed, DEFAULT_WORLD_SPEED);
+  }
+
+  get hz(): number {
+    return this.hzValue;
+  }
+
+  get stepMs(): number {
+    return this.stepMsValue;
+  }
+
+  get speed(): number {
+    return this.speedValue;
   }
 
   get nextTick(): WorldTick {
@@ -46,7 +63,11 @@ export class WorldClock {
    */
   advance(deltaMs: number, listener: WorldTickListener): number {
     if (this.pausedValue || !Number.isFinite(deltaMs) || deltaMs <= 0) return 0;
-    this.accumulatorMs += Math.min(deltaMs, this.stepMs * MAX_CATCH_UP_TICKS);
+    const scaledDeltaMs = deltaMs * this.speedValue;
+    this.accumulatorMs += Math.min(
+      scaledDeltaMs,
+      this.stepMs * MAX_CATCH_UP_TICKS,
+    );
     let count = 0;
     while (this.accumulatorMs >= this.stepMs && count < MAX_CATCH_UP_TICKS) {
       this.runTick(listener);
@@ -63,6 +84,17 @@ export class WorldClock {
 
   resume(): void {
     this.pausedValue = false;
+    this.accumulatorMs = 0;
+  }
+
+  setHz(hz: number): void {
+    this.hzValue = positive(hz, this.hzValue);
+    this.stepMsValue = 1000 / this.hzValue;
+    this.accumulatorMs = 0;
+  }
+
+  setSpeed(speed: number): void {
+    this.speedValue = positive(speed, this.speedValue);
     this.accumulatorMs = 0;
   }
 
@@ -85,4 +117,8 @@ export class WorldClock {
     this.nextTickValue += 1;
     listener(time);
   }
+}
+
+function positive(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }

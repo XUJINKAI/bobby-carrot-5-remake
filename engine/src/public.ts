@@ -1,4 +1,9 @@
-export { Game, type GameOptions, type GameRuntimeOptions, type RuntimeEntityStateInitializer } from "./core/Game.js";
+export { Game } from "./core/Game.js";
+export type {
+  GameOptions,
+  GameRuntimeOptions,
+  RuntimeEntityStateInitializer,
+} from "./core/GameOptions.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
 export {
   DEFAULT_HISTORY_POLICY,
@@ -19,7 +24,9 @@ export {
 } from "./core/GameplayRuntime.js";
 export {
   DEFAULT_PRESENTATION_HZ,
+  DEFAULT_PRESENTATION_SPEED,
   DEFAULT_WORLD_HZ,
+  DEFAULT_WORLD_SPEED,
   resolveEngineTiming,
   type EngineTiming,
   type EngineTimingOptions,

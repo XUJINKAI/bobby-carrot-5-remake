@@ -6,18 +6,15 @@ import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
 import {
   resolveBobbyLocomotionTiming,
   type BobbyLocomotionTiming,
-  type BobbyLocomotionTimingOverride,
 } from "../entities/player/BobbyLocomotion.js";
 import { readBobbyInventory } from "../entities/player/BobbyState.js";
 import { visualRegistry } from "../entities/registry.js";
-import type { ImageManager } from "../image/ImageManager.js";
 import {
   type ControlBinding,
   resolveControlInput,
 } from "../input/ControlBindings.js";
 import {
   InputController,
-  type InputControllerOptions,
   type InputState,
 } from "../input/InputController.js";
 import type { RenderScene } from "../render/RenderScene.js";
@@ -25,21 +22,16 @@ import { Renderer } from "../render/Renderer.js";
 import {
   resolveEngineTiming,
   type EngineTiming,
-  type EngineTimingOptions,
 } from "../time/EngineTiming.js";
 import { PresentationClock } from "../time/PresentationClock.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
-import { GameplayHud, type GameplayHudOptions } from "../ui/GameplayHud.js";
+import { GameplayHud } from "../ui/GameplayHud.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
 import type {
   PresentationTuning,
-  PresentationTuningOverride,
 } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
-import type {
-  EconomyState,
-  ProfileCapabilities,
-} from "../world/GlobalState.js";
+import type { EconomyState, ProfileCapabilities } from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
 import type {
   CellInspection,
@@ -51,8 +43,6 @@ import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   CellPosition,
   EntityId,
-  EntityInstance,
-  EntityState,
 } from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
@@ -69,33 +59,10 @@ import {
   type HistoryPolicy,
 } from "./HistoryPolicy.js";
 import type { GameplayState } from "./GameplayState.js";
-
-export type RuntimeEntityStateInitializer = (
-  entity: Readonly<EntityInstance>,
-) => EntityState | null | undefined;
-
-export interface GameRuntimeOptions {
-  hud?: boolean | GameplayHudOptions;
-  input?: InputControllerOptions;
-  tuning?: PresentationTuningOverride;
-  bobbyLocomotion?: BobbyLocomotionTimingOverride;
-  timing?: EngineTimingOptions;
-  history?: HistoryPolicy;
-  /** Concrete runtime bindings; callers may also call setControlBindings after load. */
-  controls?: readonly ControlBinding[];
-  /** Map Entity 实例化后应用的宿主 Runtime state patch；不会进入序列化结果。 */
-  initializeEntityState?: RuntimeEntityStateInitializer;
-}
-
-export interface GameOptions {
-  canvas: HTMLCanvasElement;
-  images: ImageManager;
-  audio?: AudioBackend;
-  debug?: boolean;
-  profile?: Partial<ProfileCapabilities>;
-  economy?: Partial<EconomyState>;
-  runtime?: GameRuntimeOptions;
-}
+import type {
+  GameOptions,
+  RuntimeEntityStateInitializer,
+} from "./GameOptions.js";
 
 type GameEventName =
   | "change"
@@ -167,8 +134,14 @@ export class Game {
     this.configuredControls = options.runtime?.controls
       ? structuredClone(options.runtime.controls)
       : null;
-    this.worldClock = new WorldClock(this.timing.worldHz);
-    this.presentationClock = new PresentationClock(this.timing.presentationHz);
+    this.worldClock = new WorldClock(
+      this.timing.worldHz,
+      this.timing.worldSpeed,
+    );
+    this.presentationClock = new PresentationClock(
+      this.timing.presentationHz,
+      this.timing.presentationSpeed,
+    );
     if (typeof performance !== "undefined")
       this.presentationClock.advance(performance.now());
     this.debugValue = options.debug ?? false;
@@ -204,12 +177,17 @@ export class Game {
       pause: () => this.pauseDebugClock(),
       resume: () => this.resumeDebugClock(),
       step: (count) => this.stepDebugClock(count),
+      setWorldHz: (hz) => this.setDebugWorldHz(hz),
+      setWorldSpeed: (speed) => this.setDebugWorldSpeed(speed),
       setHeldDirection: (actorId, direction) =>
         this.setDebugHeldDirection(actorId, direction),
       teleportActor: (actorId, cell) => this.debugTeleportActor(actorId, cell),
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
+      setPresentationHz: (hz) => this.setDebugPresentationHz(hz),
+      setPresentationSpeed: (speed) =>
+        this.setDebugPresentationSpeed(speed),
       selectionChanged: (cell) => this.renderer.setDebugSelection(cell),
       requestRender: () => this.render(),
     });
@@ -898,6 +876,17 @@ export class Game {
     this.render();
   }
 
+  private setDebugWorldHz(hz: number): void {
+    if (hz === this.worldClock.hz) return;
+    this.worldClock.setHz(hz);
+    this.restart();
+  }
+
+  private setDebugWorldSpeed(speed: number): void {
+    this.worldClock.setSpeed(speed);
+    this.render();
+  }
+
   private pauseDebugPresentationClock(): void {
     if (this.presentationClock.paused) return;
     this.presentationClock.pause();
@@ -914,6 +903,16 @@ export class Game {
     const frame = this.presentationClock.step(frames);
     if (frame && this.worldValue)
       this.visual.update(frame, this.tuning.motion.easing);
+    this.render();
+  }
+
+  private setDebugPresentationHz(hz: number): void {
+    this.presentationClock.setHz(hz);
+    this.render();
+  }
+
+  private setDebugPresentationSpeed(speed: number): void {
+    this.presentationClock.setSpeed(speed);
     this.render();
   }
 

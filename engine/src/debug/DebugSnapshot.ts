@@ -32,10 +32,12 @@ export interface DebugSnapshot {
     worldTickCount: number;
     worldHz: number;
     worldStepMs: number;
+    worldSpeed: number;
     worldPaused: boolean;
     presentationFrame: number;
     presentationHz: number;
     presentationStepMs: number;
+    presentationSpeed: number;
     presentationPaused: boolean;
     animating: boolean;
     actionCount: number;
@@ -128,12 +130,14 @@ export function buildDebugSnapshot(options: {
   const actions = world?.actions.active ?? [];
   const runtime = {
     worldTickCount: worldClock.tickCount,
-    worldHz: timing.worldHz,
+    worldHz: worldClock.hz,
     worldStepMs: worldClock.stepMs,
+    worldSpeed: worldClock.speed,
     worldPaused: worldClock.paused,
     presentationFrame: presentationClock.current.frame,
-    presentationHz: timing.presentationHz,
-    presentationStepMs: timing.presentationStepMs,
+    presentationHz: presentationClock.hz,
+    presentationStepMs: presentationClock.stepMs,
+    presentationSpeed: presentationClock.speed,
     presentationPaused: presentationClock.paused,
     animating: visual.isAnimating,
     actionCount: actions.length,
