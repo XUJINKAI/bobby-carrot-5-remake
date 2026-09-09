@@ -76,6 +76,7 @@ export {
 } from "./render/CanvasPixelGeometry.js";
 export {
   DEFAULT_CAMERA_OPTIONS,
+  type CameraPanBounds,
   type CameraOptions,
 } from "./render/Camera.js";
 export { drawVisualComposition } from "./render/VisualPainter.js";

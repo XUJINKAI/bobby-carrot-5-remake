@@ -5,11 +5,14 @@ export interface CameraPoint {
   y: number;
 }
 
+export type CameraPanBounds = "viewport" | "map-edge";
+
 export interface CameraOptions {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
   followDurationMs?: number;
+  panBounds?: CameraPanBounds;
 }
 
 export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
@@ -17,6 +20,7 @@ export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
   minZoom: .25,
   maxZoom: 4,
   followDurationMs: 320,
+  panBounds: "viewport",
 } as const;
 
 interface PanReturn {
@@ -56,8 +60,12 @@ export class Camera {
   private panReturn: PanReturn | null = null;
   private followedX: number | null = null;
   private followedY: number | null = null;
+  private followedWorldWidth = 0;
+  private followedWorldHeight = 0;
   private followTransition: FollowTransition | null = null;
   private readonly followDurationMs: number;
+  private readonly panBounds: CameraPanBounds;
+  private panInteractionActive = false;
   private shakeState: CameraShake | null = null;
   private shakeOffsetX = 0;
   private shakeOffsetY = 0;
@@ -68,6 +76,10 @@ export class Camera {
       options.followDurationMs,
       DEFAULT_CAMERA_OPTIONS.followDurationMs,
     );
+    this.panBounds =
+      options.panBounds === "map-edge"
+        ? "map-edge"
+        : DEFAULT_CAMERA_OPTIONS.panBounds;
     const minZoom = positiveFinite(
       options.minZoom,
       DEFAULT_CAMERA_OPTIONS.minZoom,
@@ -139,6 +151,8 @@ export class Camera {
   resetFollow(): void {
     this.followedX = null;
     this.followedY = null;
+    this.followedWorldWidth = 0;
+    this.followedWorldHeight = 0;
     this.followTransition = null;
   }
 
@@ -146,6 +160,7 @@ export class Camera {
     this.panOffsetX = 0;
     this.panOffsetY = 0;
     this.panReturn = null;
+    this.panInteractionActive = false;
   }
 
   panByScreen(dx: number, dy: number): void {
@@ -153,6 +168,7 @@ export class Camera {
     if (!Number.isFinite(dx) || !Number.isFinite(dy) || size <= 0) return;
     this.cancelFollowTransitionForInteraction();
     this.panReturn = null;
+    this.panInteractionActive = true;
     this.panOffsetX -= dx / size;
     this.panOffsetY -= dy / size;
   }
@@ -225,15 +241,23 @@ export class Camera {
     }
     this.followedX = baseX;
     this.followedY = baseY;
+    this.followedWorldWidth = worldWidth;
+    this.followedWorldHeight = worldHeight;
 
-    const desired = this.clampCenter(
-      baseX + this.panOffsetX,
-      baseY + this.panOffsetY,
+    const baseline = this.clampToViewport(
+      baseX,
+      baseY,
       worldWidth,
       worldHeight,
     );
-    this.panOffsetX = desired.x - baseX;
-    this.panOffsetY = desired.y - baseY;
+    const desired = this.clampForInteraction(
+      baseline.x + this.panOffsetX,
+      baseline.y + this.panOffsetY,
+      worldWidth,
+      worldHeight,
+    );
+    this.panOffsetX = desired.x - baseline.x;
+    this.panOffsetY = desired.y - baseline.y;
     const transition = this.followTransition;
     if (!hasFollowTarget || !transition || !frame) {
       this.centerX = desired.x;
@@ -287,8 +311,10 @@ export class Camera {
 
   private cancelFollowTransitionForInteraction(): void {
     this.followTransition = null;
-    if (this.followedX !== null) this.panOffsetX = this.centerX - this.followedX;
-    if (this.followedY !== null) this.panOffsetY = this.centerY - this.followedY;
+    const baseline = this.followBaseline();
+    if (!baseline) return;
+    this.panOffsetX = this.centerX - baseline.x;
+    this.panOffsetY = this.centerY - baseline.y;
   }
 
   private updatePanReturn(frame: PresentationFrame): void {
@@ -304,9 +330,7 @@ export class Camera {
     this.panOffsetX = returning.fromX * remaining;
     this.panOffsetY = returning.fromY * remaining;
     if (raw >= 1) {
-      this.panOffsetX = 0;
-      this.panOffsetY = 0;
-      this.panReturn = null;
+      this.resetPan();
     }
   }
 
@@ -326,15 +350,47 @@ export class Camera {
     this.shakeOffsetY = Math.sin(elapsedMs * 0.173 + 1.2) * amplitude * 0.72;
   }
 
-  private clampCenter(
+  private followBaseline(): CameraPoint | null {
+    if (this.followedX === null || this.followedY === null) return null;
+    return this.clampToViewport(
+      this.followedX,
+      this.followedY,
+      this.followedWorldWidth,
+      this.followedWorldHeight,
+    );
+  }
+
+  private clampForInteraction(
     centerX: number,
     centerY: number,
     worldWidth: number,
     worldHeight: number,
   ): CameraPoint {
+    if (this.panBounds === "viewport" || !this.panInteractionActive) {
+      return this.clampToViewport(
+        centerX,
+        centerY,
+        worldWidth,
+        worldHeight,
+      );
+    }
     return {
       x: Math.min(Math.max(0, worldWidth), Math.max(0, centerX)),
       y: Math.min(Math.max(0, worldHeight), Math.max(0, centerY)),
+    };
+  }
+
+  private clampToViewport(
+    centerX: number,
+    centerY: number,
+    worldWidth: number,
+    worldHeight: number,
+  ): CameraPoint {
+    const visibleWidth = this.viewportWidth / this.tileScreenSize;
+    const visibleHeight = this.viewportHeight / this.tileScreenSize;
+    return {
+      x: clampViewportAxis(centerX, worldWidth, visibleWidth),
+      y: clampViewportAxis(centerY, worldHeight, visibleHeight),
     };
   }
 }
@@ -345,4 +401,16 @@ function positiveFinite(value: number | undefined, fallback: number): number {
 
 function nonNegativeFinite(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
+}
+
+function clampViewportAxis(
+  center: number,
+  worldSize: number,
+  visibleSize: number,
+): number {
+  if (worldSize <= visibleSize) return worldSize / 2;
+  return Math.min(
+    worldSize - visibleSize / 2,
+    Math.max(visibleSize / 2, center),
+  );
 }

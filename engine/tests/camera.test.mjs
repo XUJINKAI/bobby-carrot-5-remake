@@ -42,6 +42,15 @@ test("camera keeps stable defaults when options are omitted or invalid", () => {
   assert.equal(invalid.zoom, 4);
 });
 
+test("camera initially keeps the map against the viewport boundary", () => {
+  const camera = new Camera(48, { panBounds: "map-edge" });
+  camera.setViewport(480, 288);
+
+  camera.follow({ x: 1, y: 1 }, 20, 20);
+
+  assert.deepEqual(camera.worldToScreen(0, 0), { x: 0, y: 0 });
+});
+
 test("camera zoom keeps the selected screen point anchored", () => {
   const camera = new Camera(48);
   camera.setViewport(480, 320);
@@ -57,7 +66,7 @@ test("camera zoom keeps the selected screen point anchored", () => {
 });
 
 test("camera pan allows each map edge to reach the viewport center", () => {
-  const camera = new Camera(48);
+  const camera = new Camera(48, { panBounds: "map-edge" });
   camera.setViewport(480, 320);
   camera.follow({ x: 10, y: 10 }, 20, 20);
 
@@ -68,6 +77,20 @@ test("camera pan allows each map edge to reach the viewport center", () => {
   camera.panByScreen(-10_000, -10_000);
   camera.follow({ x: 10, y: 10 }, 20, 20);
   assert.deepEqual(camera.worldToScreen(20, 20), { x: 240, y: 160 });
+});
+
+test("viewport pan bounds keep map edges against the viewport", () => {
+  const camera = new Camera(48, { panBounds: "viewport" });
+  camera.setViewport(480, 288);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+
+  camera.panByScreen(10_000, 10_000);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+  assert.deepEqual(camera.worldToScreen(0, 0), { x: 0, y: 0 });
+
+  camera.panByScreen(-10_000, -10_000);
+  camera.follow({ x: 10, y: 10 }, 20, 20);
+  assert.deepEqual(camera.worldToScreen(20, 20), { x: 480, y: 288 });
 });
 
 test("camera smooths discontinuous follow target changes", () => {
@@ -86,7 +109,7 @@ test("camera smooths discontinuous follow target changes", () => {
   camera.follow({ x: 15, y: 15 }, 20, 20, frame(500));
   assert.deepEqual(
     { x: camera.centerX, y: camera.centerY },
-    { x: 15.5, y: 15.5 },
+    { x: 15, y: 15.5 },
   );
 });
 

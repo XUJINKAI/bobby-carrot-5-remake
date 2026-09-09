@@ -75,11 +75,13 @@ const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
     zoom: 1.1,
     minZoom: .25,
     maxZoom: 4,
+    panBounds: "map-edge",
   },
   adventure: {
     zoom: 1.05,
     minZoom: 0.8,
     maxZoom: 1.15,
+    panBounds: "viewport",
   },
 };
 
