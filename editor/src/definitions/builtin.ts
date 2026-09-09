@@ -1,6 +1,7 @@
 import {
   MapEntityTypeId,
   SURFACE_ENTITY_DEFINITIONS,
+  originalTileVisual,
   originalTileVisualGroup,
   type Direction,
   type EntityType,
@@ -21,11 +22,11 @@ import {
 
 const directions: readonly EditorEntityVariant[] = (
   ["up", "right", "down", "left"] as const
-).map((direction) => ({ direction, label: direction }));
+).map((direction) => ({ fields: { direction }, label: direction }));
 
 const horizontalDirections: readonly EditorEntityVariant[] = [
-  { direction: "left", label: "left" },
-  { direction: "right", label: "right" },
+  { fields: { direction: "left" }, label: "left" },
+  { fields: { direction: "right" }, label: "right" },
 ];
 const speedVariants = catalogVariants(MapEntityTypeId.SPEED);
 const tideVariants = catalogVariants(MapEntityTypeId.TIDE);
@@ -37,6 +38,10 @@ const item: EditorEntityDefinition = { replaceGroup: "item" };
 const directSurfaceTypes: readonly EntityType[] = [
   ...SURFACE_ENTITY_DEFINITIONS.map((definition) => definition.type),
 ];
+const filledEggVisual = originalTileVisual({
+  type: MapEntityTypeId.EGG,
+  phase: "filled",
+});
 
 export const builtinEditorDefinition: EditorDefinition = {
   entities: {
@@ -71,9 +76,19 @@ export const builtinEditorDefinition: EditorDefinition = {
         ],
       }),
     },
+    [MapEntityTypeId.EGG]: {
+      ...item,
+      editorVisual: () => ({
+        layers: [{
+          kind: "atlas",
+          column: filledEggVisual.column - 1,
+          row: filledEggVisual.row - 1,
+        }],
+      }),
+    },
     [MapEntityTypeId.DRAGON]: {
       placementPoint: { role: "body" },
-      defaultDirection: "left",
+      defaultFields: { direction: "left" },
       variants: horizontalDirections,
     },
     [MapEntityTypeId.SANDMAN]: {
@@ -85,10 +100,16 @@ export const builtinEditorDefinition: EditorDefinition = {
     [MapEntityTypeId.BEAVER]: {
       placementPoint: { role: "body" },
     },
-    [MapEntityTypeId.SPEED]: { defaultDirection: "right", variants: speedVariants },
-    [MapEntityTypeId.TIDE]: { defaultDirection: "right", variants: tideVariants },
+    [MapEntityTypeId.SPEED]: {
+      defaultFields: { direction: "right" },
+      variants: speedVariants,
+    },
+    [MapEntityTypeId.TIDE]: {
+      defaultFields: { direction: "right" },
+      variants: tideVariants,
+    },
     [MapEntityTypeId.WINDMILL]: {
-      defaultDirection: "right",
+      defaultFields: { direction: "right" },
       variants: windmillVariants,
     },
     [MapEntityTypeId.TIDE_SWITCH]: {
@@ -107,7 +128,7 @@ export const builtinEditorDefinition: EditorDefinition = {
       variants: catalogVariants(MapEntityTypeId.COLOR_BLOCK),
     },
     [MapEntityTypeId.WIND_SWITCH]: {
-      defaultDirection: "up",
+      defaultFields: { direction: "up" },
       variants: catalogVariants(MapEntityTypeId.WIND_SWITCH),
     },
     [MapEntityTypeId.CLOUD]: {
@@ -156,7 +177,6 @@ export function applyEditorVariant(
   return {
     ...structuredClone(entity),
     ...(variant.fields ? structuredClone(variant.fields) : {}),
-    ...(variant.direction ? { direction: variant.direction } : {}),
   };
 }
 
@@ -172,20 +192,15 @@ function catalogVariants(type: EntityType): readonly EditorEntityVariant[] {
   const seen = new Set<string>();
   for (const visual of originalTileVisualGroup(type).visuals) {
     if (visual.role || visual.phase) continue;
-    const { direction, ...fields } = visual.fields;
-    const key = JSON.stringify({ direction, fields });
+    const fields = visual.fields;
+    const key = JSON.stringify(fields);
     if (seen.has(key)) continue;
     seen.add(key);
-    if (direction === undefined && Object.keys(fields).length === 0) continue;
+    if (Object.keys(fields).length === 0) continue;
     variants.push({
       label: Object.values(visual.fields).map(String).join(" / "),
-      ...(isDirection(direction) ? { direction } : {}),
-      ...(Object.keys(fields).length > 0 ? { fields } : {}),
+      fields,
     });
   }
   return variants;
-}
-
-function isDirection(value: unknown): value is Direction {
-  return value === "up" || value === "right" || value === "down" || value === "left";
 }

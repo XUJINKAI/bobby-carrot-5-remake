@@ -3,7 +3,6 @@ import type {
   VisualDefinition,
 } from "@bobby/engine";
 import type {
-  Direction,
   EntityType,
   JsonPrimitive,
   LevelEntity,
@@ -43,7 +42,6 @@ export type EditorPlacementPoint =
 
 export interface EditorEntityVariant {
   label?: string;
-  direction?: Direction;
   fields?: EditorEntityFields;
 }
 
@@ -56,7 +54,7 @@ export interface EditorQuickAction {
 /** Entity-specific authoring policy. This belongs to Editor, never Engine. */
 export interface EditorEntityDefinition {
   placementPoint?: EditorPlacementPoint;
-  defaultDirection?: Direction;
+  defaultFields?: EditorEntityFields;
   replaceGroup?: string;
   variants?: readonly EditorEntityVariant[];
   quickActions?: readonly EditorQuickAction[];

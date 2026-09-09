@@ -28,7 +28,6 @@ export interface EntityVisualPreviewSource {
 /** 省略持久化关卡所需坐标的扁平 canonical Map Entity。 */
 export interface LevelEntityVisualPreviewSource {
   type: EntityType;
-  direction?: Direction;
   stackOrder?: number;
   [key: string]: JsonPrimitive | undefined;
 }

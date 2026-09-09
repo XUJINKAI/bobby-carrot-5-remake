@@ -186,7 +186,6 @@ function mergeVariant(
   const fields = {
     ...(entry.fields ?? {}),
     ...(variant.fields ?? {}),
-    ...(variant.direction ? { direction: variant.direction } : {}),
   };
   return {
     type: entry.type,

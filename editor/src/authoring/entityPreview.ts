@@ -24,18 +24,16 @@ export function resolveEditorEntityPreviewLayout(
   source: EditorPlacementPreset,
   editor: EditorDefinition = builtinEditorDefinition,
 ): EditorEntityPreviewLayout {
+  const entityPolicy = editor.entities?.[source.type];
   const prototype: LevelEntity = {
+    ...(entityPolicy?.defaultFields
+      ? structuredClone(entityPolicy.defaultFields)
+      : {}),
     ...(source.fields ? structuredClone(source.fields) : {}),
     type: source.type,
     x: 0,
     y: 0,
   };
-  const direction =
-    editorEntityDirection(prototype) ??
-    editor.entities?.[source.type]?.defaultDirection;
-  Object.assign(prototype, {
-    ...(direction ? { direction } : {}),
-  });
   const definition = editorCatalogEntry(catalog, prototype);
   const prototypeDirection = editorEntityDirection(prototype);
   const cells = resolveFootprintCells(

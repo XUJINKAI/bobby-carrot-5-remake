@@ -58,13 +58,15 @@ export function resolvePlacement(
   }
 
   const presetEntity: LevelEntity = {
+    ...(authoring?.defaultFields
+      ? structuredClone(authoring.defaultFields)
+      : {}),
     ...(preset.fields ? structuredClone(preset.fields) : {}),
     type: preset.type,
     x: cursor.x,
     y: cursor.y,
   };
-  const direction =
-    editorEntityDirection(presetEntity) ?? authoring?.defaultDirection;
+  const direction = editorEntityDirection(presetEntity);
   const definition = editorCatalogEntry(catalog, {
     ...presetEntity,
     ...(direction ? { direction } : {}),
@@ -75,7 +77,7 @@ export function resolvePlacement(
     authoring?.placementPoint,
     direction,
   );
-  const entity = createPlacedEntity(definition, anchor, preset, direction);
+  const entity = createPlacedEntity(anchor, presetEntity);
   const cells = footprintCells(entity, definition);
   if (
     cells.some(
@@ -194,20 +196,17 @@ function footprintCells(
 }
 
 function createPlacedEntity(
-  definition: EntityCatalogEntry,
   anchor: Cell,
-  preset: EditorPlacementPreset,
-  direction: Direction | undefined,
+  source: Readonly<LevelEntity>,
 ): LevelEntity {
   const entity: LevelEntity = {
-    type: preset.type,
+    type: source.type,
     x: anchor.x,
     y: anchor.y,
   };
-  for (const [key, value] of Object.entries(preset.fields ?? {})) {
+  for (const [key, value] of Object.entries(source)) {
     if (!key || isLevelEntityReservedField(key)) continue;
     entity[key] = value;
   }
-  if (direction) entity["direction"] = direction;
   return entity;
 }

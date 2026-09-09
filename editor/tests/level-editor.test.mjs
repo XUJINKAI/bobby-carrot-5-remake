@@ -347,6 +347,25 @@ test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
     fields: { direction: "down" },
   });
   assert.equal("direction" in next, false);
+  assert.equal(
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED]
+      .variants.every((variant) => !("direction" in variant)),
+    true,
+  );
+  assert.deepEqual(
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED].defaultFields,
+    { direction: "right" },
+  );
+  assert.equal(
+    resolvePlacement(
+      createBlankLevel(4, 4),
+      catalog,
+      { type: MapEntityTypeId.SPEED },
+      { x: 1, y: 1 },
+      builtinEditorDefinition,
+    ).entity.direction,
+    "right",
+  );
 });
 
 test("Inspector variant 切换复用对应的 Palette item", () => {
@@ -664,5 +683,32 @@ test("Bobby Editor visual is fixed to the final down frame", () => {
     frameIndex: 7,
     anchor: "bottom",
     offsetY: -12,
+  });
+});
+
+test("Egg 在 Editor 中固定显示 filled visual 且保持单一放置形态", () => {
+  const policy = builtinEditorDefinition.entities?.[MapEntityTypeId.EGG];
+  assert.ok(policy?.editorVisual);
+  assert.deepEqual(policy.editorVisual({}).layers, [
+    { kind: "atlas", column: 12, row: 12 },
+  ]);
+  assert.equal(policy.variants, undefined);
+
+  const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
+  const eggs = palette
+    .flatMap((group) => group.rows.flat())
+    .filter((entry) => entry.type === MapEntityTypeId.EGG);
+  assert.equal(eggs.length, 1);
+  const placed = resolvePlacement(
+    createBlankLevel(4, 4),
+    catalog,
+    eggs[0],
+    { x: 1, y: 1 },
+    builtinEditorDefinition,
+  );
+  assert.deepEqual(placed.entity, {
+    type: MapEntityTypeId.EGG,
+    x: 1,
+    y: 1,
   });
 });

@@ -8,6 +8,7 @@ import {
   surfaceVisualVariant,
   type EditorDefinition,
   type EditorEntityDefinition,
+  type EditorEntityVariant,
   type EditorPlacementPreset,
   type EntityCatalog,
   type EntityCatalogEntry,
@@ -16,6 +17,7 @@ import {
 import type { ImageManager } from "@bobby/engine";
 import {
   entityMapDefinition,
+  type Direction,
   type EntityMapFieldDefinition,
   type EntityType,
   type JsonPrimitive,
@@ -69,7 +71,6 @@ const controlledFieldKeys = computed(() => {
   const keys = new Set<string>();
   if (surfaceTerrain.value) keys.add("variant");
   for (const variant of props.entityPolicy?.variants ?? []) {
-    if (variant.direction) keys.add("direction");
     for (const key of Object.keys(variant.fields ?? {})) keys.add(key);
   }
   return keys;
@@ -92,7 +93,19 @@ const hasFields = computed(
 function variantEntries(directional: boolean) {
   return (props.entityPolicy?.variants ?? [])
     .map((variant, index) => ({ variant, index }))
-    .filter(({ variant }) => Boolean(variant.direction) === directional);
+    .filter(({ variant }) => Boolean(variantDirection(variant)) === directional);
+}
+
+function variantDirection(
+  variant: EditorEntityVariant,
+): Direction | undefined {
+  const direction = variant?.fields?.direction;
+  return direction === "up" ||
+    direction === "right" ||
+    direction === "down" ||
+    direction === "left"
+    ? direction
+    : undefined;
 }
 
 function variantSource(index: number): EditorPlacementPreset {
@@ -114,7 +127,11 @@ function variantSource(index: number): EditorPlacementPreset {
 
 function variantLabel(index: number): string {
   const variant = props.entityPolicy?.variants?.[index];
-  return variant?.label ?? variant?.direction ?? `Variant ${index + 1}`;
+  return (
+    variant?.label ??
+    (variant ? variantDirection(variant) : undefined) ??
+    `Variant ${index + 1}`
+  );
 }
 
 function surfaceVariantSource(variant: SurfaceVariant): EditorPlacementPreset {
@@ -170,7 +187,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
             :images="images"
             :catalog="catalog"
             :editor="editor"
-            :fallback-text="entry.variant.direction"
+            :fallback-text="variantDirection(entry.variant)"
           />
           <small>{{ variantLabel(entry.index) }}</small>
         </button>

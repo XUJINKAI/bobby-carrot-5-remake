@@ -123,12 +123,13 @@ export function useEditorPage(initialLevel: EditorMap) {
     buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
   );
   const hoverInspector = computed(() => {
-    const cell = hover.value;
     if (
       leftPanel.value !== "palette" ||
-      paletteTool.value !== "erase" ||
-      !cell
+      paletteTool.value !== "erase"
     )
+      return buildInspectorModel(currentLevel(), catalog, null, editor);
+    const cell = hover.value;
+    if (!cell)
       return buildInspectorModel(currentLevel(), catalog, null, editor);
     return buildInspectorModel(
       currentLevel(),
@@ -138,13 +139,13 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   });
   const deletionTargetIndex = computed(() => {
-    const cell = hover.value;
     if (
       leftPanel.value !== "palette" ||
-      paletteTool.value !== "erase" ||
-      !cell
+      paletteTool.value !== "erase"
     )
       return null;
+    const cell = hover.value;
+    if (!cell) return null;
     return resolveDeletionTarget(currentLevel(), catalog, cell, editor)?.index ?? null;
   });
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));

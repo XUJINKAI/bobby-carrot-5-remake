@@ -110,3 +110,12 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), catalog, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);
 });
+
+test("Palette 画笔悬浮不重建删除 Inspector", () => {
+  assert.match(
+    pageState,
+    /const hoverInspector = computed\(\(\) => \{[\s\S]*paletteTool\.value !== "erase"[\s\S]*return buildInspectorModel\(currentLevel\(\), catalog, null, editor\);[\s\S]*const cell = hover\.value/,
+  );
+  assert.match(placementInspector, /const targets = computed/);
+  assert.match(placementInspector, /:targets="targets"/);
+});

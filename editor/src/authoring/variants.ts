@@ -71,7 +71,6 @@ export function applyPlacementVariant(
   const fields = {
     ...(preset.fields ?? {}),
     ...(variant.fields ?? {}),
-    ...(variant.direction ? { direction: variant.direction } : {}),
   };
   return {
     type: preset.type,
@@ -89,8 +88,8 @@ function withDefaults(
     if (result[field.key] === undefined && field.default !== undefined)
       result[field.key] = structuredClone(field.default);
   }
-  if (!editorEntityDirection(result) && editor?.defaultDirection)
-    result["direction"] = editor.defaultDirection;
+  for (const [key, value] of Object.entries(editor?.defaultFields ?? {}))
+    if (result[key] === undefined) result[key] = structuredClone(value);
   return result;
 }
 
@@ -98,7 +97,6 @@ function variantMatches(
   entity: Readonly<LevelEntity>,
   variant: EditorEntityVariant,
 ): boolean {
-  if (variant.direction && editorEntityDirection(entity) !== variant.direction) return false;
   for (const [key, value] of Object.entries(variant.fields ?? {}))
     if (!same(entity[key], value)) return false;
   return true;

@@ -27,6 +27,7 @@ const entity = computed<LevelEntity>(() => ({
   x: 0,
   y: 0,
 }));
+const targets = computed<readonly LevelEntity[]>(() => [entity.value]);
 const definition = computed(() =>
   editorCatalogEntry(props.catalog, entity.value),
 );
@@ -53,7 +54,7 @@ const definition = computed(() =>
     </section>
     <section class="editor-inspector-section">
       <EditorEntityFields
-        :targets="[entity]"
+        :targets="targets"
         :definition="definition"
         :entity-policy="editor.entities?.[placement.type]"
         :images="images"
