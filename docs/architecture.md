@@ -417,7 +417,7 @@ GameStage
 
 Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。统计用时、模式导航和 Result 动作属于 Web。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
 
-Engine HUD 使用统一布局约束：所有已获得道具锚定在 GameStage 右上角，各产品模式只配置 HUD 能力，不重新实现道具布局。
+Engine HUD 使用统一布局约束：目标计数和地图内持有道具分成两行锚定在 GameStage 右上角，各产品模式只配置 HUD 能力，不重新实现道具布局。
 
 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test 都创建正式 Engine session。它们通过输入能力、Camera 限制、外层进度和 Result 动作表达差异，不维护各自的 gameplay 实现。
 

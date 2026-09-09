@@ -45,41 +45,25 @@ test("egg-only objective projects to egg counter without carrot", () => {
   assert.equal(model.objectives.eggRemaining, 4);
 });
 
-test("Explore superKey capability does not masquerade as an owned HUD key", () => {
-  const capabilityOnly = buildGameplayHudModel(
-    state({
-      profile: {
-        superKey: true,
-        speedShoes: false,
-        coinRadar: false,
-        bonusKeyTrialUsed: false,
-      },
-    }),
-    null,
-  );
-  assert.equal(capabilityOnly.inventory.key, false);
-
-  const temporaryKey = buildGameplayHudModel(
+test("Gameplay HUD projects the four map-local inventory items", () => {
+  const model = buildGameplayHudModel(
     state({
       inventory: {
-        gas: false,
-        shovel: false,
-        kite: false,
-        beans: 0,
+        gas: true,
+        shovel: true,
+        kite: true,
+        beans: 3,
         temporaryKey: true,
       },
     }),
     null,
   );
-  assert.equal(temporaryKey.inventory.key, true);
-});
-
-test("Gameplay HUD exposes persistent economy independently from gameplay inventory", () => {
-  const model = buildGameplayHudModel(
-    state({ economy: { goldenCarrots: 4, bonusCoins: 9 } }),
-    null,
-  );
-  assert.deepEqual(model.economy, { goldenCarrots: 4, bonusCoins: 9 });
+  assert.deepEqual(model.inventory, {
+    gas: true,
+    shovel: true,
+    kite: true,
+    beans: 3,
+  });
 });
 
 test("Gameplay HUD view keeps nodes mounted and toggles display instead of mixing hidden with inline display", () => {
@@ -102,4 +86,20 @@ test("Gameplay HUD presentation uses semantic ImageManager IDs instead of asset 
   assert.match(source, /hud-egg/);
   assert.match(source, /loadSlice/);
   assert.doesNotMatch(source, /hud\.png|ts\.png|backgroundPosition/);
+});
+
+test("Gameplay HUD uses the compact translucent two-row presentation", () => {
+  const source = fs.readFileSync(
+    new URL("../src/ui/GameplayHudView.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /opacity: "0\.68"/);
+  assert.match(source, /valueFontSize: "26px"/);
+  assert.match(source, /root\.append\(value, icon\)/);
+  assert.match(
+    source,
+    /items\.append\(\s*this\.kiteChip\.root,\s*this\.beanChip\.root,\s*this\.shovelChip\.root,\s*this\.gasChip\.root,/,
+  );
+  assert.doesNotMatch(source, /border:|borderRadius:|background:|boxShadow:/);
+  assert.doesNotMatch(source, /goldenCarrotChip|bonusCoinChip/);
 });

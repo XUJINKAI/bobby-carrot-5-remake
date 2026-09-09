@@ -100,7 +100,6 @@ export interface GamePageContext {
   adventureScene?: AdventureIndexSpecialScene;
   adventureBackPath?: string;
   adventureCompletionPath?: string;
-  adventureHudEconomy?: boolean;
   adventureCameraPolicy?: Partial<AdventureEngineCameraPolicy>;
   mode: GamePageMode;
 }
@@ -124,7 +123,6 @@ export async function renderGamePage(
     adventureScene,
     adventureBackPath,
     adventureCompletionPath,
-    adventureHudEconomy,
     adventureCameraPolicy,
     mode,
   } = context;
@@ -212,14 +210,7 @@ export async function renderGamePage(
         : { profile: { superKey: true } }),
     },
     runtime: {
-      hud:
-        mode === "adventure"
-          ? {
-              objective: true,
-              inventory: true,
-              economy: adventureHudEconomy === true,
-            }
-          : { objective: true, inventory: true, economy: true },
+      hud: { objective: true, inventory: true },
       input: {
         undo: mode === "explore",
         debug: mode === "explore",

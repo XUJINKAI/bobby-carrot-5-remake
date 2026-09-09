@@ -181,7 +181,7 @@ export class BobbyApp {
       return;
     }
     if (path === "/adventure/beaver-shop") {
-      await this.renderAdventureScene("beaver-shop", context, "/adventure", true);
+      await this.renderAdventureScene("beaver-shop", context, "/adventure");
       return;
     }
     if (path === "/adventure/night-train") {
@@ -356,7 +356,6 @@ export class BobbyApp {
     sceneId: string,
     context: PageContext,
     backPath: string,
-    economyHud = false,
   ): Promise<void> {
     const scene = this.adventure.specialScenes.find((item) => item.id === sceneId);
     if (!scene) {
@@ -378,7 +377,6 @@ export class BobbyApp {
       adventureScene: scene,
       adventureBackPath: backPath,
       adventureCompletionPath: "/adventure",
-      adventureHudEconomy: economyHud,
       mode: "adventure",
     });
   }

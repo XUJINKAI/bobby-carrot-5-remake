@@ -1,13 +1,10 @@
-import { MapEntityTypeId } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
-import { resolveEntityVisualPreview } from "../visual/preview.js";
 import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
 
 export interface GameplayHudViewOptions {
   objective?: boolean;
   inventory?: boolean;
-  economy?: boolean;
 }
 
 interface HudChip {
@@ -15,12 +12,11 @@ interface HudChip {
   value: HTMLElement | null;
 }
 
-type HudSprite = "carrot" | "gas" | "key" | "kite" | "shovel" | "egg" | "bean";
+type HudSprite = "carrot" | "gas" | "kite" | "shovel" | "egg" | "bean";
 
 const HUD_SLICE: Record<HudSprite, string> = {
   carrot: "hud-carrot",
   gas: "hud-gas",
-  key: "hud-key",
   kite: "hud-kite",
   shovel: "hud-shovel",
   egg: "hud-egg",
@@ -32,14 +28,10 @@ export class GameplayHudView {
   readonly root: HTMLDivElement;
   private readonly objectiveCarrot: HudChip;
   private readonly objectiveEgg: HudChip;
-  private readonly keyChip: HudChip;
-  private readonly speedShoesChip: HudChip;
   private readonly gasChip: HudChip;
   private readonly shovelChip: HudChip;
   private readonly kiteChip: HudChip;
   private readonly beanChip: HudChip;
-  private readonly goldenCarrotChip: HudChip;
-  private readonly bonusCoinChip: HudChip;
 
   constructor(
     private readonly images: ImageManager,
@@ -55,12 +47,12 @@ export class GameplayHudView {
       zIndex: "5",
       display: "grid",
       justifyItems: "end",
-      gap: "6px",
+      gap: "2px",
       maxWidth: `calc(100% - 24px - var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
       pointerEvents: "none",
       color: "#eef5ef",
       fontFamily: "system-ui, sans-serif",
-      fontSize: "12px",
+      opacity: "0.68",
     });
 
     const objective = document.createElement("div");
@@ -68,48 +60,44 @@ export class GameplayHudView {
     Object.assign(objective.style, {
       display: "flex",
       flexWrap: "wrap",
-      gap: "5px",
+      gap: "8px",
       justifyContent: "flex-end",
     });
-    this.objectiveCarrot = this.chip("目标胡萝卜", this.sprite("carrot"), true);
-    this.objectiveEgg = this.chip("目标彩蛋", this.sprite("egg"), true);
+    this.objectiveCarrot = this.chip("目标胡萝卜", this.sprite("carrot"), {
+      value: true,
+      valueFirst: true,
+      valueFontSize: "26px",
+    });
+    this.objectiveEgg = this.chip("目标彩蛋", this.sprite("egg"), {
+      value: true,
+      valueFirst: true,
+      valueFontSize: "26px",
+    });
     objective.append(this.objectiveCarrot.root, this.objectiveEgg.root);
 
     const items = document.createElement("div");
     items.className = "engine-gameplay-hud-items";
     Object.assign(items.style, {
       display: "flex",
-      flexDirection: "row-reverse",
       flexWrap: "wrap",
-      gap: "5px",
-      justifyContent: "flex-start",
+      alignItems: "center",
+      gap: "8px",
+      justifyContent: "flex-end",
       maxWidth: "100%",
     });
-    this.keyChip = this.chip("钥匙", this.sprite("key"));
-    this.speedShoesChip = this.chip("加速鞋", this.textIcon("👟"));
-    this.gasChip = this.chip("汽油", this.sprite("gas"));
-    this.shovelChip = this.chip("雪铲", this.sprite("shovel"));
     this.kiteChip = this.chip("风筝", this.sprite("kite"));
-    this.beanChip = this.chip("魔豆", this.sprite("bean"), true);
-    this.goldenCarrotChip = this.chip(
-      "Golden Carrot",
-      this.wholeImageIcon("golden-carrot", "🥕"),
-      true,
-    );
-    this.bonusCoinChip = this.chip(
-      "Bonus Coin",
-      this.entityVisualIcon(MapEntityTypeId.BONUS_COIN),
-      true,
-    );
+    this.beanChip = this.chip("魔豆", this.sprite("bean"), {
+      value: true,
+      valueFirst: true,
+      valueFontSize: "18px",
+    });
+    this.shovelChip = this.chip("雪铲", this.sprite("shovel"));
+    this.gasChip = this.chip("汽油", this.sprite("gas"));
     items.append(
-      this.keyChip.root,
-      this.speedShoesChip.root,
-      this.gasChip.root,
-      this.shovelChip.root,
       this.kiteChip.root,
       this.beanChip.root,
-      this.goldenCarrotChip.root,
-      this.bonusCoinChip.root,
+      this.shovelChip.root,
+      this.gasChip.root,
     );
 
     this.root.append(objective, items);
@@ -129,28 +117,14 @@ export class GameplayHudView {
     );
 
     const showInventory = this.options.inventory !== false;
-    this.setChip(this.keyChip, showInventory && model.inventory.key);
-    this.setChip(this.speedShoesChip, showInventory && model.inventory.speedShoes);
-    this.setChip(this.gasChip, showInventory && model.inventory.gas);
-    this.setChip(this.shovelChip, showInventory && model.inventory.shovel);
     this.setChip(this.kiteChip, showInventory && model.inventory.kite);
     this.setChip(
       this.beanChip,
       showInventory && model.inventory.beans > 0,
       model.inventory.beans,
     );
-
-    const showEconomy = this.options.economy === true;
-    this.setChip(
-      this.goldenCarrotChip,
-      showEconomy,
-      model.economy.goldenCarrots,
-    );
-    this.setChip(
-      this.bonusCoinChip,
-      showEconomy,
-      model.economy.bonusCoins,
-    );
+    this.setChip(this.shovelChip, showInventory && model.inventory.shovel);
+    this.setChip(this.gasChip, showInventory && model.inventory.gas);
   }
 
   destroy(): void {
@@ -165,7 +139,15 @@ export class GameplayHudView {
     }
   }
 
-  private chip(title: string, icon: HTMLElement, hasValue = false): HudChip {
+  private chip(
+    title: string,
+    icon: HTMLElement,
+    options: {
+      value?: boolean;
+      valueFirst?: boolean;
+      valueFontSize?: string;
+    } = {},
+  ): HudChip {
     const root = document.createElement("span");
     root.title = title;
     Object.assign(root.style, {
@@ -173,17 +155,16 @@ export class GameplayHudView {
       alignItems: "center",
       justifyContent: "center",
       gap: "4px",
-      minHeight: "32px",
-      padding: "2px 8px",
-      border: "1px solid rgba(255,255,255,.16)",
-      borderRadius: "999px",
-      background: "rgba(6,15,10,.76)",
-      boxShadow: "0 3px 14px rgba(0,0,0,.22)",
       whiteSpace: "nowrap",
     });
-    root.append(icon);
-    const value = hasValue ? document.createElement("strong") : null;
-    if (value) root.append(value);
+    const value = options.value ? document.createElement("strong") : null;
+    if (value && options.valueFontSize) {
+      value.style.fontSize = options.valueFontSize;
+      value.style.lineHeight = "1";
+    }
+    if (value && options.valueFirst) root.append(value, icon);
+    else if (value) root.append(icon, value);
+    else root.append(icon);
     return { root, value };
   }
 
@@ -195,65 +176,6 @@ export class GameplayHudView {
       .then((slice) => drawSlice(canvas, slice))
       .catch(() => undefined);
     return canvas;
-  }
-
-  private entityVisualIcon(type: string): HTMLElement {
-    const composition = resolveEntityVisualPreview({ type });
-    const layer = composition?.layers.find((item) => item.kind === "atlas");
-    if (!layer || layer.kind !== "atlas") return this.textIcon("●");
-
-    const source = this.images.sourceTileSize;
-    const canvas = document.createElement("canvas");
-    canvas.width = source;
-    canvas.height = source;
-    canvas.style.width = "28px";
-    canvas.style.height = "28px";
-    void this.images
-      .load(this.images.atlasId)
-      .then((image) => {
-        canvas
-          .getContext("2d")
-          ?.drawImage(
-            image,
-            layer.column * source,
-            layer.row * source,
-            source,
-            source,
-            0,
-            0,
-            source,
-            source,
-          );
-      })
-      .catch(() => undefined);
-    return canvas;
-  }
-
-  private wholeImageIcon(asset: string, fallback: string): HTMLElement {
-    const canvas = document.createElement("canvas");
-    canvas.width = 28;
-    canvas.height = 28;
-    canvas.style.width = "28px";
-    canvas.style.height = "28px";
-    void this.images
-      .load(asset)
-      .then((image) => drawContained(canvas, image))
-      .catch(() => {
-        const context = canvas.getContext("2d");
-        if (!context) return;
-        context.font = "20px sans-serif";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText(fallback, 14, 14);
-      });
-    return canvas;
-  }
-
-  private textIcon(text: string): HTMLElement {
-    const icon = document.createElement("span");
-    icon.textContent = text;
-    icon.style.fontSize = text.length > 2 ? "9px" : "16px";
-    return icon;
   }
 }
 
@@ -275,19 +197,4 @@ function drawSlice(canvas: HTMLCanvasElement, slice: LoadedImageSlice): void {
       slice.width,
       slice.height,
     );
-}
-
-function drawContained(canvas: HTMLCanvasElement, image: HTMLImageElement): void {
-  const context = canvas.getContext("2d");
-  if (!context || image.width <= 0 || image.height <= 0) return;
-  const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
-  const width = image.width * scale;
-  const height = image.height * scale;
-  context.drawImage(
-    image,
-    (canvas.width - width) / 2,
-    (canvas.height - height) / 2,
-    width,
-    height,
-  );
 }
