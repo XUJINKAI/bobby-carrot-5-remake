@@ -62,7 +62,11 @@ export class WorldClock {
    * 吸收真实时间并执行 0..N 个固定 gameplay Tick。真实时间先按基础预算裁剪，
    * 再乘播放速度；因此 8× 可以在正常 RAF 下消费足量 Tick，后台停顿仍不会形成更新风暴。
    */
-  advance(deltaMs: number, listener: WorldTickListener): number {
+  advance(
+    deltaMs: number,
+    listener: WorldTickListener,
+    maxTicks = Number.POSITIVE_INFINITY,
+  ): number {
     if (this.pausedValue || !Number.isFinite(deltaMs) || deltaMs <= 0) return 0;
     const boundedRealDeltaMs = Math.min(
       deltaMs,
@@ -71,6 +75,7 @@ export class WorldClock {
     this.accumulatorMs += boundedRealDeltaMs * this.speedValue;
     const tickBudget = Math.min(
       MAX_PLAYBACK_CATCH_UP_TICKS,
+      Math.max(0, Math.floor(maxTicks)),
       Math.max(
         BASE_CATCH_UP_TICKS,
         Math.ceil(BASE_CATCH_UP_TICKS * this.speedValue),

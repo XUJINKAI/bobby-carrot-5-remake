@@ -195,6 +195,19 @@ Game 状态、事件和 Replay Tick 结果观察。
 Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 WorldSnapshot。完整
 格式、确定性边界与校验规则见 [`replay.md`](replay.md)。
 
+浏览器 `Game` 提供与无头 Runner 共用输入调度的表现层回放入口：
+
+```ts
+game.startReplayPlayback(replay);
+game.setReplayPlaybackSpeed(4);
+game.jumpReplayToEnd(replay);
+game.replayPlaying;
+game.replayPlaybackSpeed;
+```
+
+`startReplayPlayback()` 按 Replay 的 `worldHz` 从关卡起点实时执行；播放倍速同时驱动
+World 与 Presentation。`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+
 常用只读状态：
 
 ```ts

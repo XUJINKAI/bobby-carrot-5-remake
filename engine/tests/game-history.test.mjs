@@ -26,6 +26,7 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
     clock: { paused: true },
     world: { dead: false, completed: false },
   };
+  game.replayPlayback = { playing: false };
   game.queuedMoves = [];
 
   assert.equal(game.move("right"), undefined);

@@ -36,7 +36,7 @@ export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
   session.loadLevel(level);
   const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
   session.advanceTicks(replay.endTick, (time) => ({
-    groups: (frames.get(time.tick)?.groups ?? []).map(fromReplayInputGroup),
+    groups: replayInputGroups(frames.get(time.tick)?.groups ?? []),
   }));
 
   const actual = {
@@ -58,6 +58,12 @@ export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
       `状态指纹不匹配：期待 ${replay.expectation.stateHash}，实际 ${actual.stateHash}`,
     );
   return { passed: errors.length === 0, actual, errors };
+}
+
+export function replayInputGroups(
+  groups: readonly ReplayInputGroup[],
+): WorldIntentGroup[] {
+  return groups.map(fromReplayInputGroup);
 }
 
 function fromReplayInputGroup(group: ReplayInputGroup): WorldIntentGroup {

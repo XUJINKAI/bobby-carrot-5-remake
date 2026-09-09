@@ -279,11 +279,12 @@ export class GameplaySession {
   advanceRealTime(
     deltaMs: number,
     inputForTick: GameplayTickInputProvider,
+    maxTicks = Number.POSITIVE_INFINITY,
   ): GameplayTickResult[] {
     const results: GameplayTickResult[] = [];
     this.clock.advance(deltaMs, (time) => {
       results.push(this.advanceTick(time, inputForTick(time)));
-    });
+    }, maxTicks);
     return results;
   }
 

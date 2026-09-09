@@ -174,7 +174,10 @@ export async function renderGamePage(
 
   const canvas = required<HTMLCanvasElement>(app, "#game");
   const gameResult = required<HTMLDivElement>(app, "[data-result-overlay]");
-  const resultCard = required<HTMLElement>(gameResult, "[data-result-card]");
+  const resultContent = required<HTMLElement>(
+    gameResult,
+    "[data-result-card-content]",
+  );
   const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
 
   const session = await createGameSession({
@@ -222,6 +225,9 @@ export async function renderGamePage(
 
   let levelStartedAt = performance.now();
   let visibleResult: "death" | "complete" | null = null;
+  let resultDismissed = false;
+  let completionRecorded = false;
+  let completionNextId: string | undefined;
   let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
   const replayPanel = bindReplayPanel({
@@ -241,7 +247,7 @@ export async function renderGamePage(
         GAME_HELP,
       );
     },
-    onRecordingStart() {
+    onTimelineRestart() {
       levelStartedAt = performance.now();
       completionNavigationStarted = false;
     },
@@ -300,8 +306,22 @@ export async function renderGamePage(
     gameResult.hidden = true;
   };
 
+  const recordLevelCompletion = (): void => {
+    if (completionRecorded) return;
+    completionRecorded = true;
+    if (adventureSave && campaignNode) {
+      adventureSave = saveAdventureSave(
+        completeAdventureLevel(adventureSave, adventureLevel!.id),
+      );
+      completionNextId = nextAdventureLevel(adventure, adventureLevel!.id)?.id;
+    } else if (mode === "explore") {
+      markExploreMapCompleted(identity.collection, identity.id);
+      completionNextId = exploreNextMapId;
+    }
+  };
+
   const renderResult = (): void => {
-    if (!game.hasLevel || game.isAnimating) return;
+    if (!game.hasLevel) return;
     const state = game.state;
     const kind =
       state.status === "dead"
@@ -309,7 +329,22 @@ export async function renderGamePage(
         : state.status === "won"
           ? "complete"
           : null;
+    if (kind === "complete") recordLevelCompletion();
+    if (kind === "complete" && game.replayRecording) {
+      resultDismissed = true;
+      replayPanel.stopRecording();
+      closeResult();
+      return;
+    }
+    if (game.isAnimating) return;
     if (!kind) {
+      resultDismissed = false;
+      completionRecorded = false;
+      completionNextId = undefined;
+      closeResult();
+      return;
+    }
+    if (resultDismissed) {
       closeResult();
       return;
     }
@@ -326,19 +361,10 @@ export async function renderGamePage(
     if (visibleResult === kind) return;
     visibleResult = kind;
     if (kind === "complete") {
-      let nextId: string | undefined;
-      if (adventureSave && campaignNode) {
-        adventureSave = saveAdventureSave(
-          completeAdventureLevel(adventureSave, adventureLevel!.id),
-        );
-        nextId = nextAdventureLevel(adventure, adventureLevel!.id)?.id;
-      } else if (mode === "explore") {
-        markExploreMapCompleted(identity.collection, identity.id);
-        nextId = exploreNextMapId;
-      }
-      resultCard.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "返回冒险模式" : "自由探索"}</button></div>`;
+      const nextId = completionNextId;
+      resultContent.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "返回冒险模式" : "自由探索"}</button></div>`;
     } else {
-      resultCard.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
+      resultContent.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
     }
     gameResult.hidden = false;
   };
@@ -383,7 +409,10 @@ export async function renderGamePage(
     );
     if (!button) return;
     const action = button.dataset.result;
-    if (action === "undo") askUndo();
+    if (action === "close") {
+      resultDismissed = true;
+      closeResult();
+    } else if (action === "undo") askUndo();
     else if (action === "retry" || action === "replay") askRestart();
     else if (action === "levels") {
       navigate(backPath(identity, mode, adventureBackPath));

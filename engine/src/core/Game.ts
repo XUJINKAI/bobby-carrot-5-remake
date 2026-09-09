@@ -41,6 +41,7 @@ import type {
 } from "../world/movement/WorldStepResult.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import type { Replay } from "../replay/ReplayFormat.js";
+import { ReplayPlayback } from "../replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../replay/ReplayRecorder.js";
 import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
@@ -84,6 +85,7 @@ export class Game {
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
   private replayRecorder: ReplayRecorder | null = null;
+  private readonly replayPlayback: ReplayPlayback;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -115,6 +117,10 @@ export class Game {
     this.presentationClock = new PresentationClock(
       this.timing.presentationHz,
       this.timing.presentationSpeed,
+    );
+    this.replayPlayback = new ReplayPlayback(
+      this.session,
+      this.presentationClock,
     );
     if (typeof performance !== "undefined")
       this.presentationClock.advance(performance.now());
@@ -234,11 +240,20 @@ export class Game {
     return this.replayRecorder !== null;
   }
 
+  get replayPlaying(): boolean {
+    return this.replayPlayback.playing;
+  }
+
+  get replayPlaybackSpeed(): number {
+    return this.replayPlayback.speed;
+  }
+
   get replayTickCount(): number {
     return this.worldClock.tickCount;
   }
 
   async loadLevel(level: LevelMap): Promise<void> {
+    this.replayPlayback.stop();
     this.session.loadLevel(level);
     this.debugExternalActorId = null;
     this.heldDirection = null;
@@ -262,6 +277,7 @@ export class Game {
   move(direction: Direction, source = "external"): void {
     if (
       !this.worldValue ||
+      this.replayPlayback.playing ||
       this.worldClock.paused ||
       this.world.dead ||
       this.world.completed
@@ -271,6 +287,7 @@ export class Game {
   }
 
   setHeldDirection(direction: Direction | null): void {
+    if (this.replayPlayback.playing) return;
     if (this.inputController) {
       this.inputController.setHeldDirection(direction);
       return;
@@ -300,8 +317,15 @@ export class Game {
 
   restart(): void {
     if (!this.session.hasLevel) return;
+    this.replayPlayback.stop();
     this.replayRecorder = null;
     this.session.restart();
+    this.resetSessionView();
+    this.render();
+    this.emit("change");
+  }
+
+  private resetSessionView(): void {
     this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
@@ -311,8 +335,6 @@ export class Game {
     this.lastScene = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
-    this.render();
-    this.emit("change");
   }
 
   startReplayRecording(): void {
@@ -334,6 +356,35 @@ export class Game {
 
   verifyReplay(replay: Replay): ReplayReport {
     return runReplay(this.session.level, replay);
+  }
+
+  startReplayPlayback(replay: Replay): void {
+    this.replayRecorder = null;
+    this.replayPlayback.start(replay);
+    this.resetSessionView();
+    this.render();
+    this.emit("change");
+  }
+
+  setReplayPlaybackSpeed(speed: number): void {
+    this.replayPlayback.setSpeed(speed);
+    this.render();
+    this.emit("change");
+  }
+
+  jumpReplayToEnd(replay: Replay): void {
+    this.replayRecorder = null;
+    const ticks = this.replayPlayback.jumpToEnd(replay);
+    this.resetSessionView();
+    for (const tick of ticks) {
+      if (tick.result.moves.length > 0)
+        this.lastMove = tick.result.moves[0] ?? null;
+      if (tick.result.events.length > 0)
+        this.lastWorldEvents = tick.result.events;
+    }
+    this.render();
+    this.emitTerminalEvents();
+    this.emit("change");
   }
 
   killPlayer(reason?: string): void {
@@ -679,13 +730,18 @@ export class Game {
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
 
-    const worldTicks =
-      this.worldValue && delta > 0
-        ? this.session.advanceRealTime(delta, (time) =>
-            this.inputForTick(time),
-          )
-        : [];
+    const worldTicks = this.worldValue && delta > 0
+      ? this.session.advanceRealTime(
+          delta,
+          (time) =>
+            this.replayPlayback.playing
+              ? this.replayPlayback.inputForTick(time)
+              : this.inputForTick(time),
+          this.replayPlayback.remainingTicks,
+        )
+      : [];
     for (const worldTick of worldTicks) this.consumeGameplayTick(worldTick);
+    if (this.replayPlayback.finishIfComplete()) this.emit("change");
 
     const frame = this.presentationClock.advance(timestamp);
     if (this.worldValue && frame) {

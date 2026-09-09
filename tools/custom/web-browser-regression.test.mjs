@@ -388,7 +388,7 @@ async function verifyReplayPanel(cdp, url) {
 
   await cdp.evaluate(
     sessionId,
-    "document.querySelector('[data-replay-action=\"start\"]')?.click(); true",
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitFor(async () =>
     (await cdp.evaluate(
@@ -408,7 +408,7 @@ async function verifyReplayPanel(cdp, url) {
   );
   await cdp.evaluate(
     sessionId,
-    "document.querySelector('[data-replay-action=\"stop\"]')?.click(); true",
+    "document.querySelector('[data-replay-action=\"record\"]')?.click(); true",
   );
   await waitFor(async () =>
     String(
@@ -426,6 +426,52 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay panel did not export recorded World input");
   if ("snapshot" in replay || "entities" in replay)
     throw new Error("Replay export included runtime state");
+  const controls = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      editable: !document.querySelector('[data-replay-output]').readOnly,
+      speedType: document.querySelector('[data-replay-speed]')?.type,
+      speedValue: document.querySelector('[data-replay-speed]')?.value,
+      actions: [...document.querySelectorAll('[data-replay-action]')]
+        .map((button) => ({
+          action: button.dataset.replayAction,
+          label: button.textContent.trim(),
+        })),
+    }))()`,
+  );
+  if (!controls.editable)
+    throw new Error("Replay output was not editable");
+  if (controls.speedType !== "number" || controls.speedValue !== "1")
+    throw new Error("Replay playback speed was not an editable number");
+  for (const label of ["播放", "跳到终点", "复制", "下载"])
+    if (!controls.actions.some((action) => action.label === label))
+      throw new Error(`Replay panel action missing: ${label}`);
+  for (const action of ["slower", "faster"])
+    if (!controls.actions.some((button) => button.action === action))
+      throw new Error(`Replay speed action missing: ${action}`);
+  await cdp.send(
+    "Runtime.evaluate",
+    {
+      expression: `(() => {
+        const input = document.querySelector('[data-replay-speed]');
+        input.value = '1.3';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        document.querySelector('[data-replay-action="faster"]').click();
+      })()`,
+      awaitPromise: true,
+    },
+    sessionId,
+  );
+  const adjustedSpeed = await cdp.send(
+    "Runtime.evaluate",
+    {
+      expression: "document.querySelector('[data-replay-speed]').value",
+      returnByValue: true,
+    },
+    sessionId,
+  );
+  if (adjustedSpeed.result.value !== "1.5")
+    throw new Error("Replay speed preset adjustment did not use the next value");
 
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",
