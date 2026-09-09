@@ -276,6 +276,8 @@ runtime: {
     restart: true,
     pan: true,
     zoom: true,
+    pinchZoom: true,
+    wheelZoom: true,
     debug: true,
     screenJoystick: {
       enabled: true,
@@ -304,6 +306,8 @@ runtime: {
 `camera.zoom / minZoom / maxZoom / followDurationMs` 在 `Game` 构造期间应用，第一次加载与渲染关卡时已经生效。`followDurationMs` 控制 Portal、Debug Teleport 等非连续目标跳转的镜头过渡时长。宿主可以为不同产品体验提供不同初值和范围；运行中的手势与产品操作继续使用 `Game` façade 调整 Camera。
 
 `setZoom()` 围绕 Canvas 中心缩放；`setZoomAt()` 接收 Canvas 的浏览器 client 坐标，并保持该屏幕点下的世界位置不动。Camera 平移最多允许地图四条边到达视口中心，便于检查边缘内容，同时避免把整张地图拖离视口。
+
+`input.zoom` 控制键盘 Zoom，并作为 `pinchZoom / wheelZoom` 的缺省值。宿主可以分别配置后两者，例如 Embed 可以启用 Pinch 而关闭滚轮 Zoom。双指手势在 `pan` 启用时同时根据中心位移平移 Camera。
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
 
