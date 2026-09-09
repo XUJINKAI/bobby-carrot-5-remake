@@ -75,6 +75,13 @@ test("WorldClock speed changes real-time tick consumption without changing stepM
   assert.equal(clock.advance(62.5, (time) => ticks.push(time)), 1);
 });
 
+test("WorldClock 8x remains effective at a 60Hz World rate", () => {
+  const clock = new WorldClock(60, 8);
+  const ticks = [];
+  assert.equal(clock.advance(17, (time) => ticks.push(time.tick)), 8);
+  assert.deepEqual(ticks, [0, 1, 2, 3, 4, 5, 6, 7]);
+});
+
 test("WorldClock can change Hz while keeping the logical tick sequence", () => {
   const clock = new WorldClock(16);
   clock.pause();

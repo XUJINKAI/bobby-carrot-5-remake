@@ -3,7 +3,8 @@ import {
   DEFAULT_WORLD_SPEED,
 } from "./EngineTiming.js";
 
-const MAX_CATCH_UP_TICKS = 4;
+const BASE_CATCH_UP_TICKS = 4;
+const MAX_PLAYBACK_CATCH_UP_TICKS = 32;
 
 /** World / gameplay 唯一固定逻辑时间。 */
 export interface WorldTick {
@@ -58,18 +59,25 @@ export class WorldClock {
   }
 
   /**
-   * 吸收真实时间并执行 0..N 个固定 gameplay Tick。单次最多追赶 4 Tick；
-   * 超出的后台停顿直接丢弃，避免恢复页面时形成更新风暴。
+   * 吸收真实时间并执行 0..N 个固定 gameplay Tick。真实时间先按基础预算裁剪，
+   * 再乘播放速度；因此 8× 可以在正常 RAF 下消费足量 Tick，后台停顿仍不会形成更新风暴。
    */
   advance(deltaMs: number, listener: WorldTickListener): number {
     if (this.pausedValue || !Number.isFinite(deltaMs) || deltaMs <= 0) return 0;
-    const scaledDeltaMs = deltaMs * this.speedValue;
-    this.accumulatorMs += Math.min(
-      scaledDeltaMs,
-      this.stepMs * MAX_CATCH_UP_TICKS,
+    const boundedRealDeltaMs = Math.min(
+      deltaMs,
+      this.stepMs * BASE_CATCH_UP_TICKS,
+    );
+    this.accumulatorMs += boundedRealDeltaMs * this.speedValue;
+    const tickBudget = Math.min(
+      MAX_PLAYBACK_CATCH_UP_TICKS,
+      Math.max(
+        BASE_CATCH_UP_TICKS,
+        Math.ceil(BASE_CATCH_UP_TICKS * this.speedValue),
+      ),
     );
     let count = 0;
-    while (this.accumulatorMs >= this.stepMs && count < MAX_CATCH_UP_TICKS) {
+    while (this.accumulatorMs >= this.stepMs && count < tickBudget) {
       this.runTick(listener);
       this.accumulatorMs -= this.stepMs;
       count += 1;
