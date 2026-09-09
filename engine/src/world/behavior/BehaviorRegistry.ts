@@ -5,10 +5,16 @@ import type { Behavior } from "./Behavior.js";
 export class BehaviorRegistry {
   private readonly behaviors = new Map<string, Behavior>();
   private readonly traitBindings = new Map<EntityTrait, string[]>();
+  private version = 0;
+
+  get revision(): number {
+    return this.version;
+  }
 
   register(behavior: Behavior): void {
     if (this.behaviors.has(behavior.id)) throw new Error(`重复 Behavior：${behavior.id}`);
     this.behaviors.set(behavior.id, behavior);
+    this.version += 1;
   }
 
   registerAll(behaviors: readonly Behavior[]): void {
@@ -20,6 +26,13 @@ export class BehaviorRegistry {
     const ids = this.traitBindings.get(trait) ?? [];
     if (!ids.includes(behaviorId)) ids.push(behaviorId);
     this.traitBindings.set(trait, ids);
+    this.version += 1;
+  }
+
+  tickingTraits(): readonly EntityTrait[] {
+    return [...this.traitBindings].filter(([, ids]) =>
+      ids.some((id) => this.require(id).onTick !== undefined),
+    ).map(([trait]) => trait);
   }
 
   get(id: string): Behavior | undefined {

@@ -23,6 +23,8 @@
 
 SpatialIndex 在加载、增删、移动、方向重建与恢复时同步维护 type / Trait 的 Entity 索引。Trait 合并 Definition、实例与全部 footprint Presence，并按 Entity identity 去重、排序。玩家与目标查询复用该索引；机关状态变化仍按既有 phase 顺序结算。
 
+Behavior tick 通过 TickIndex 查询显式绑定或 Trait 绑定了 `onTick` 的候选 Entity，再按首个 Presence 解析实际 hook。候选在 tick phase 开始时按 identity 排序取样，统一 commit 后生成的 Entity 从下一次 tick phase 开始参与。注册表新增 Definition 或 Behavior 绑定时重新解析候选类型；镜头位置不参与候选判断。
+
 每次 `World.step()` / `World.update()` 返回有序 `WorldDelta[]`。`sequence` 是跨 WorldTick 的权威因果顺序；`worldTick` 与 `worldTimeMs` 表示事实发生在哪个 gameplay 时间点。
 
 Delta 包括：

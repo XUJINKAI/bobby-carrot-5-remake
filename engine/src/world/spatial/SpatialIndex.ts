@@ -59,6 +59,10 @@ export class SpatialIndex {
     return this.selectors.matching(selector);
   }
 
+  entityIdsOfType(type: string): readonly EntityId[] {
+    return this.selectors.ofType(type);
+  }
+
   moveEntity(entityId: EntityId, anchor: CellPosition): void {
     const entity = this.entities.require(entityId);
     this.removeEntity(entityId);

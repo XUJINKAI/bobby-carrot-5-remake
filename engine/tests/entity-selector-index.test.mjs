@@ -55,7 +55,7 @@ test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复�
   check();
 });
 
-test("静态大地图的玩家与目标查询共用索引，tick 仅保留行为遍历", () => {
+test("静态大地图通过索引推进 tick 与查询玩家和目标", () => {
   const world = new World({
     schemaVersion: 1, width: 40, height: 40,
     entities: [
@@ -74,8 +74,8 @@ test("静态大地图的玩家与目标查询共用索引，tick 仅保留行为
     return all();
   };
   world.update({ tick: 1, stepMs: 62.5 });
-  assert.equal(scans, 1);
+  assert.equal(scans, 0);
   assert.equal(world.winState.remaining, 1);
   assert.equal(world.query.entitiesWithTrait("player").length, 1);
-  assert.equal(scans, 1);
+  assert.equal(scans, 0);
 });

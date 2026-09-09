@@ -38,6 +38,10 @@ export class EntitySelectorIndex {
     return ordered(this.traits.get(trait) ?? []);
   }
 
+  ofType(type: string): EntityId[] {
+    return ordered(this.types.get(type) ?? []);
+  }
+
   matching(selector: string): EntityId[] {
     return ordered(new Set([
       ...(this.types.get(selector) ?? []),
