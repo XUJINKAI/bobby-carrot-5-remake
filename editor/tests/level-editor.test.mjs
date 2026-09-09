@@ -268,7 +268,7 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   );
 });
 
-test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", () => {
+test("Engine authoring metadata 隐藏不可直接放置的 Entity", () => {
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
@@ -281,6 +281,14 @@ test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", (
     isEditorEntityCreatable(
       builtinEditorDefinition,
       "grass",
+      catalog,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.BEANSTALK,
       catalog,
     ),
     false,
