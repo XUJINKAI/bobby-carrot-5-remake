@@ -41,10 +41,11 @@ export function bindReplayPanel(options: {
   const end = actionButton(panel, "end");
   const copy = actionButton(panel, "copy");
   const download = actionButton(panel, "download");
-  const playbackSpeeds = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
+  const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = false;
   let selectOnClick = true;
+  let appliedTimeScale = 1;
 
   const setOpen = (value: boolean): void => {
     open = value;
@@ -69,7 +70,7 @@ export function bindReplayPanel(options: {
     speedInput.removeAttribute("aria-invalid");
   };
 
-  const readPlaybackSpeed = (): number | null => {
+  const readTimeScale = (): number | null => {
     const value = speedInput.valueAsNumber;
     if (Number.isFinite(value) && value > 0) {
       clearSpeedError();
@@ -122,10 +123,11 @@ export function bindReplayPanel(options: {
       update();
       return;
     }
-    const speed = readPlaybackSpeed();
+    const speed = readTimeScale();
     if (speed === null) return;
     try {
-      options.game.setReplayPlaybackSpeed(speed);
+      options.game.setTimeScale(speed);
+      appliedTimeScale = speed;
       if (options.game.replayPlaying) {
         options.game.resumeReplayPlayback();
       } else {
@@ -143,21 +145,21 @@ export function bindReplayPanel(options: {
     update();
   };
 
-  const adjustPlaybackSpeed = (direction: -1 | 1): void => {
+  const adjustTimeScale = (direction: -1 | 1): void => {
     const entered = speedInput.valueAsNumber;
     const current =
       Number.isFinite(entered) && entered > 0
         ? entered
-        : options.game.replayPlaybackSpeed;
+        : appliedTimeScale;
     const value =
       direction < 0
-        ? [...playbackSpeeds].reverse().find((speed) => speed < current)
-        : playbackSpeeds.find((speed) => speed > current);
+        ? [...timeScales].reverse().find((speed) => speed < current)
+        : timeScales.find((speed) => speed > current);
     const next = value ?? current;
     speedInput.value = String(next);
     clearSpeedError();
-    if (options.game.replayPlaying)
-      options.game.setReplayPlaybackSpeed(next);
+    appliedTimeScale = next;
+    options.game.setTimeScale(next);
   };
 
   const jumpToBeginning = (): void => {
@@ -233,6 +235,10 @@ export function bindReplayPanel(options: {
 
   const onSpeedInput = (): void => {
     clearSpeedError();
+    const speed = speedInput.valueAsNumber;
+    if (!Number.isFinite(speed) || speed <= 0) return;
+    appliedTimeScale = speed;
+    options.game.setTimeScale(speed);
   };
 
   const onClick = (event: Event): void => {
@@ -244,8 +250,8 @@ export function bindReplayPanel(options: {
     else if (action === "record") startRecording();
     else if (action === "play") toggleReplayPlayback();
     else if (action === "stop-playback") exitReplayPlayback();
-    else if (action === "slower") adjustPlaybackSpeed(-1);
-    else if (action === "faster") adjustPlaybackSpeed(1);
+    else if (action === "slower") adjustTimeScale(-1);
+    else if (action === "faster") adjustTimeScale(1);
     else if (action === "beginning") jumpToBeginning();
     else if (action === "end") jumpToEnd();
     else if (action === "copy") void copyReplay();

@@ -539,6 +539,27 @@ async function verifyReplayPanel(cdp, url) {
   if (playbackControls.messagePresent)
     throw new Error("Replay panel still mounted the variable-height message");
 
+  await cdp.evaluate(
+    sessionId,
+    "window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', bubbles: true })); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-debug-control-rail')",
+      ),
+    ),
+  );
+  const engineSpeeds = await cdp.evaluate(
+    sessionId,
+    `([...document.querySelectorAll('.engine-debug-control-rail label')]
+      .filter((label) => label.firstChild?.textContent === 'Speed')
+      .map((label) => label.querySelector('select')?.value))`,
+  );
+  if (engineSpeeds.length !== 2 || engineSpeeds.some((speed) => speed !== "20"))
+    throw new Error("Replay panel time scale did not persist in both Engine clocks");
+
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",
     { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },

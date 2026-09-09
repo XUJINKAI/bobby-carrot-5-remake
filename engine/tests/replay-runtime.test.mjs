@@ -88,7 +88,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   });
 });
 
-test("ReplayPlayback 按记录输入播放并恢复宿主时钟状态", () => {
+test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     timing: { worldHz: 20 },
@@ -119,17 +119,16 @@ test("ReplayPlayback 按记录输入播放并恢复宿主时钟状态", () => {
   assert.equal(session.clock.tickCount, 0);
   assert.equal(session.clock.paused, false);
   assert.equal(presentationClock.paused, false);
-  playback.setSpeed(0.1);
-  assert.equal(session.clock.speed, 0.1);
-  assert.equal(presentationClock.speed, 0.1);
+  assert.equal(session.clock.speed, 0.5);
+  assert.equal(presentationClock.speed, 2);
   playback.pause();
   assert.equal(playback.paused, true);
   assert.equal(session.clock.paused, true);
   assert.equal(presentationClock.paused, true);
   playback.resume();
   assert.equal(playback.paused, false);
-  playback.setSpeed(20);
-  assert.equal(playback.speed, 20);
+  session.clock.setSpeed(20);
+  presentationClock.setSpeed(20);
 
   session.advanceTicks(playback.remainingTicks, (time) =>
     playback.inputForTick(time),
@@ -138,9 +137,9 @@ test("ReplayPlayback 按记录输入播放并恢复宿主时钟状态", () => {
   assert.equal(session.state.moves, 1);
   assert.equal(playback.finishIfComplete(), true);
   assert.equal(playback.playing, false);
-  assert.equal(session.clock.speed, 0.5);
+  assert.equal(session.clock.speed, 20);
   assert.equal(session.clock.paused, true);
-  assert.equal(presentationClock.speed, 2);
+  assert.equal(presentationClock.speed, 20);
   assert.equal(presentationClock.paused, true);
 
   const ticks = playback.jumpToEnd(replay);

@@ -53,8 +53,8 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
             class="ghost-btn"
             type="button"
             data-replay-action="slower"
-            aria-label="降低播放倍速"
-            title="降低播放倍速"
+            aria-label="降低游戏速率"
+            title="降低游戏速率"
           >
             <AppIcon name="rewind" :size="16" />
           </button>
@@ -65,7 +65,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
               inputmode="decimal"
               step="any"
               value="1"
-              aria-label="播放倍速"
+              aria-label="游戏速率"
             />
             <span aria-hidden="true">×</span>
           </label>
@@ -73,8 +73,8 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
             class="ghost-btn"
             type="button"
             data-replay-action="faster"
-            aria-label="提高播放倍速"
-            title="提高播放倍速"
+            aria-label="提高游戏速率"
+            title="提高游戏速率"
           >
             <AppIcon name="fast-forward" :size="16" />
           </button>

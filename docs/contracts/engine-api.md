@@ -203,19 +203,19 @@ game.startReplayRecording({
   url: window.location.href,
 });
 const replay = game.stopReplayRecording();
+game.setTimeScale(4);
 game.startReplayPlayback(replay);
-game.setReplayPlaybackSpeed(4);
 game.pauseReplayPlayback();
 game.resumeReplayPlayback();
 game.stopReplayPlayback();
 game.jumpReplayToEnd(replay);
 game.replayPlaying;
 game.replayPaused;
-game.replayPlaybackSpeed;
 ```
 
-`startReplayPlayback()` 按 Replay 的 `worldHz` 从关卡起点实时执行；任意有限正数倍速同时
-驱动 World 与 Presentation。暂停保留当前位置，停止退出 Replay 控制并恢复宿主时钟状态。
+`setTimeScale()` 接受任意有限正数，同时调整 World 与 Presentation 相对真实时间的推进
+倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
+停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
 `jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
 
 录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。

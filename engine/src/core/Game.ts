@@ -248,10 +248,6 @@ export class Game {
     return this.replayPlayback.paused;
   }
 
-  get replayPlaybackSpeed(): number {
-    return this.replayPlayback.speed;
-  }
-
   get replayTickCount(): number {
     return this.worldClock.tickCount;
   }
@@ -370,8 +366,11 @@ export class Game {
     this.emit("change");
   }
 
-  setReplayPlaybackSpeed(speed: number): void {
-    this.replayPlayback.setSpeed(speed);
+  /** 同时设置 gameplay 与表现层相对真实时间的推进倍率。 */
+  setTimeScale(speed: number): void {
+    if (!Number.isFinite(speed) || speed <= 0) return;
+    this.worldClock.setSpeed(speed);
+    this.presentationClock.setSpeed(speed);
     this.render();
     this.emit("change");
   }

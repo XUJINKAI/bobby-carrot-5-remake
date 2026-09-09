@@ -17,8 +17,6 @@ import { replayInputGroups } from "./ReplayRunner.js";
 interface ActiveReplayPlayback {
   replay: Replay;
   frames: ReadonlyMap<number, ReplayFrame>;
-  restoreWorldSpeed: number;
-  restorePresentationSpeed: number;
   restoreWorldPaused: boolean;
   restorePresentationPaused: boolean;
 }
@@ -26,7 +24,6 @@ interface ActiveReplayPlayback {
 /** 浏览器 Game 的 Replay 时间线驱动；World 执行仍全部委托给 GameplaySession。 */
 export class ReplayPlayback {
   private active: ActiveReplayPlayback | null = null;
-  private speedValue = 1;
 
   constructor(
     private readonly session: GameplaySession,
@@ -39,10 +36,6 @@ export class ReplayPlayback {
 
   get paused(): boolean {
     return this.active !== null && this.session.clock.paused;
-  }
-
-  get speed(): number {
-    return this.speedValue;
   }
 
   get remainingTicks(): number {
@@ -60,8 +53,6 @@ export class ReplayPlayback {
       this.session.bobbyLocomotion,
       replay,
     );
-    const restoreWorldSpeed = this.session.clock.speed;
-    const restorePresentationSpeed = this.presentationClock.speed;
     const restoreWorldPaused = this.session.clock.paused;
     const restorePresentationPaused = this.presentationClock.paused;
     this.resetToStart(replay);
@@ -72,19 +63,10 @@ export class ReplayPlayback {
       frames: new Map(
         replay.frames.map((frame) => [frame.tick, structuredClone(frame)]),
       ),
-      restoreWorldSpeed,
-      restorePresentationSpeed,
       restoreWorldPaused,
       restorePresentationPaused,
     };
-    this.applySpeed();
     if (replay.endTick === 0) this.stop();
-  }
-
-  setSpeed(speed: number): void {
-    if (!Number.isFinite(speed) || speed <= 0) return;
-    this.speedValue = speed;
-    if (this.active) this.applySpeed();
   }
 
   pause(): void {
@@ -132,8 +114,6 @@ export class ReplayPlayback {
     const playback = this.active;
     if (!playback) return;
     this.active = null;
-    this.session.clock.setSpeed(playback.restoreWorldSpeed);
-    this.presentationClock.setSpeed(playback.restorePresentationSpeed);
     if (playback.restoreWorldPaused) this.session.clock.pause();
     else this.session.clock.resume();
     if (playback.restorePresentationPaused) this.presentationClock.pause();
@@ -143,11 +123,6 @@ export class ReplayPlayback {
   private resetToStart(replay: Replay): void {
     this.session.clock.setHz(replay.runtime.worldHz);
     this.session.restart();
-  }
-
-  private applySpeed(): void {
-    this.session.clock.setSpeed(this.speedValue);
-    this.presentationClock.setSpeed(this.speedValue);
   }
 }
 
