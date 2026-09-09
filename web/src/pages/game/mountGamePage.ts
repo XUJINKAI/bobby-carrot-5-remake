@@ -58,7 +58,6 @@ import {
 } from "../../shell/shellBridge.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
-  GAME_HELP,
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
@@ -177,7 +176,6 @@ export async function renderGamePage(
       exploreNextMapId,
       replayPanelInitiallyOpen,
     ),
-    GAME_HELP,
   );
   app.replaceChildren();
   const gamePage = createApp(GamePage, { mode });
@@ -259,7 +257,6 @@ export async function renderGamePage(
               exploreNextMapId,
               open,
             ),
-            GAME_HELP,
           );
         },
         onTimelineRestart() {
@@ -574,19 +571,11 @@ function gameShellConfig(
               id: "replay-record",
               icon: "record",
               label: "录制",
-              title: "录制 Replay 测试输入（Tab）",
+              title: "录制 Replay 测试输入",
               pressed: replayOpen,
             },
           ]
         : [],
-      info: [
-        { text: identity.title },
-        {
-          text: explore
-            ? "WASD / 方向键移动 · Tab 录制 · 拖动查看 · 滚轮缩放 · ~ DEBUG"
-            : "WASD / 方向键移动 · 拖动查看地图",
-        },
-      ],
       trailing: [
         {
           id: "screen-control",

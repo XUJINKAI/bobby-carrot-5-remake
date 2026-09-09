@@ -27,7 +27,7 @@ interface ShellConfig {
 }
 ```
 
-页面通过 `configureShell(config, helpDescriptor)` 提交当前页面配置。Content DOM 由 Vue 页面直接挂载到 App Root 提供的容器，ShellConfig 不携带 HTML 字符串。
+页面通过 `configureShell(config)` 提交当前页面配置。Content DOM 由 Vue 页面直接挂载到 App Root 提供的容器，ShellConfig 不携带 HTML 字符串。
 
 ## TopBar
 
@@ -79,18 +79,19 @@ Leading | Info | Trailing
 
 Music、Settings、Help 和全局 Dialog 归 `BobbyApp` / App Root 所有。它们以普通 action 进入 Shell，App Root 收到 action ID 后执行产品逻辑。
 
-Help 内容由当前页面以 `HelpDescriptor` 提供。Help Dialog 只渲染标题、分区和说明文本，不根据页面或模式选择内容。
+Help 使用一份全局 `HelpDescriptor`，集中说明 Game 与 Editor 的全部公开快捷键。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复快捷键说明。
 
 ## 所有权边界
 
 ```text
 BobbyApp / Page
-       │ ShellConfig + HelpDescriptor
+       │ ShellConfig
        ▼
 Generic Shell
 ├── TopBar
 ├── Content slot
 ├── BottomBar
+├── Unified Help
 └── responsive / overflow / theme
 ```
 

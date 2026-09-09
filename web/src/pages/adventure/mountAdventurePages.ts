@@ -189,9 +189,8 @@ function adventureShell(backLabel?: string, backPath?: string): ShellConfig {
       actions: globalActions(),
     },
     bottomBar: {
-      visible: true,
+      visible: false,
       fixed: true,
-      info: [{ text: "Bobby Carrot 5 · Adventure" }],
     },
   };
 }

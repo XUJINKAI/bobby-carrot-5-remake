@@ -2,6 +2,7 @@ import type { AdventureSave } from "@bobby/adventure";
 import { parseEditorLevel, toLevelMap, type EditorMap } from "@bobby/editor";
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
+import { globalActions } from "../../app/pageChrome.js";
 import { decodeBc5rV1 } from "../../shared/data-exchange/dataExchangeCodec.js";
 import {
   parseAdventureProfileExchange,
@@ -42,7 +43,7 @@ export function renderImportMessage(
     | { status: "error" | "unknown"; message: string; rawText?: string },
 ): PageController {
   configureShell({
-    topBar: { visible: true, fixed: true },
+    topBar: { visible: true, fixed: true, actions: globalActions() },
     bottomBar: { visible: false },
   });
   context.app.replaceChildren();
