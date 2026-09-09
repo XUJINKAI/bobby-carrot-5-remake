@@ -3,19 +3,29 @@ import {
   normalizeColorHex,
   type JsonValue,
 } from "@bobby/model";
-import { defineEntityModule, type EntityModule } from "../EntityModule.js";
+import { createDelayedMoveRuntimeAction } from "../../world/action/builtinActions.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
+import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 
 const portalBehavior: Behavior = {
   id: "portal",
-  onEnter({ query, actor, self, commands }) {
+  onEnter({ query, actor, self, direction, movement, commands }) {
+    if (!direction) return;
     const channel = self.entity.state?.channel;
     const target = query.entitiesWithTrait("portal").find(
       (entity) =>
         entity.id !== self.entity.id && entity.state?.channel === channel,
     );
     if (!target) return;
-    commands.move(actor.id, target.anchor.x, target.anchor.y);
+    commands.relocate(actor.id, target.anchor.x, target.anchor.y);
+    commands.startAction(
+      createDelayedMoveRuntimeAction(actor.id, direction, 0, {
+        mechanism: "portal",
+        sourceEntityId: target.id,
+        blocksInput: true,
+        moveCadenceMs: movement?.motion?.durationMs ?? 0,
+      }),
+    );
     commands.emit({
       type: "teleport",
       entityId: self.entity.id,

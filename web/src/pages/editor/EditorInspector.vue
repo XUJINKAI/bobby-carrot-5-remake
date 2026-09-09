@@ -41,6 +41,7 @@ const emit = defineEmits<{
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
+  placementField: [key: string, value: string];
   placementVariant: [index: number];
 }>();
 
@@ -109,6 +110,7 @@ const showSurfaceTool = computed(
       :images="images"
       :catalog="catalog"
       :editor="editor"
+      @field="(key, value) => emit('placementField', key, value)"
       @variant="emit('placementVariant', $event)"
     />
     <EditorEraseInspector

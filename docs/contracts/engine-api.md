@@ -132,6 +132,8 @@ RuntimeAction   一个正在持续进行的 gameplay 过程
 
 Behavior 通过纯查询 `MovementPolicy` 描述特殊通行、携带关系与 marker；World 将 policies 规范化为一个 `MovementPlan`，负责通用边界、reservation、busy 状态与原子提交。World 不识别具体 Entity 机制或私有 state 字段。
 
+Behavior 的 `CommandQueue.relocate()` 用于 Portal 等中点位置切换：它清除 Entity 当前的 `WorldMotion` 并写入新的整数 anchor。切换后的连续移动必须继续产生 semantic intent，以复用正式通行与碰撞裁决。
+
 RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 CommandQueue 修改 World。Action 可以声明：
 
 ```ts

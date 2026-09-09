@@ -17,6 +17,7 @@ export interface WorldCommandApi {
   spawn(entity: EntitySpawnSpec): void;
   destroy(entityId: EntityId): void;
   move(entityId: EntityId, x: number, y: number): void;
+  relocate(entityId: EntityId, x: number, y: number): void;
   setDirection(entityId: EntityId, direction: Direction): void;
   setState(entityId: EntityId, state: EntityState): void;
   downActor(entityId: EntityId, reason: string): void;
@@ -46,6 +47,10 @@ export class CommandQueue implements WorldCommandApi {
 
   move(entityId: EntityId, x: number, y: number): void {
     this.commands.push({ type: "move", entityId, x, y });
+  }
+
+  relocate(entityId: EntityId, x: number, y: number): void {
+    this.commands.push({ type: "relocate", entityId, x, y });
   }
 
   setDirection(entityId: EntityId, direction: Direction): void {

@@ -103,6 +103,7 @@ export type BehaviorCommand =
   | { type: "spawn"; entity: EntitySpawnSpec }
   | { type: "destroy"; entityId: EntityId }
   | { type: "move"; entityId: EntityId; x: number; y: number }
+  | { type: "relocate"; entityId: EntityId; x: number; y: number }
   | { type: "set-direction"; entityId: EntityId; direction: Direction }
   | SetStateCommand
   | { type: "down-actor"; entityId: EntityId; reason: string }

@@ -79,6 +79,7 @@ const emit = defineEmits<{
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
+  placementField: [key: string, value: string];
   placementVariant: [index: number];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
@@ -180,6 +181,7 @@ const emit = defineEmits<{
       @batch-variant="(type, index) => emit('batchVariant', type, index)"
       @batch-surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @batch-delete="emit('batchDelete', $event)"
+      @placement-field="(key, value) => emit('placementField', key, value)"
       @placement-variant="emit('placementVariant', $event)"
     />
     <EditorLevelInfo

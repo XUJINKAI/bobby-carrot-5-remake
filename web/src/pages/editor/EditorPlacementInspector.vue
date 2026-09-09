@@ -18,6 +18,7 @@ const props = defineProps<{
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
+  field: [key: string, value: string];
   variant: [index: number];
 }>();
 
@@ -61,8 +62,8 @@ const definition = computed(() =>
         :images="images"
         :catalog="catalog"
         :editor="editor"
-        :show-map-fields="false"
-        empty-text="该素材没有可切换的 variant。"
+        empty-text="该素材没有可编辑字段或 variant。"
+        @field="(key, value) => emit('field', key, value)"
         @variant="emit('variant', $event)"
       />
     </section>

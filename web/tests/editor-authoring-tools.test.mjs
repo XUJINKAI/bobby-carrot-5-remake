@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "vitest";
+import { placementPresetWithField } from "../src/pages/editor/editorFieldValues.ts";
 
 const page = fs.readFileSync(
   new URL("../src/pages/editor/EditorPage.vue", import.meta.url),
@@ -8,6 +9,10 @@ const page = fs.readFileSync(
 );
 const pageState = fs.readFileSync(
   new URL("../src/pages/editor/useEditorPage.ts", import.meta.url),
+  "utf8",
+);
+const fieldValues = fs.readFileSync(
+  new URL("../src/pages/editor/editorFieldValues.ts", import.meta.url),
   "utf8",
 );
 const shell = fs.readFileSync(
@@ -122,17 +127,38 @@ test("Inspector 为颜色合同提供调色板与颜色文本输入", () => {
   assert.match(entityFields, /#rgb、#rrggbb 或颜色名/);
 });
 
+test("Palette Inspector 会把 Portal 字段写回当前放置预设", () => {
+  const portal = {
+    type: "portal",
+    fields: { channel: "blue", color: "#54e8ff" },
+  };
+  assert.deepEqual(placementPresetWithField(portal, "channel", "route-a"), {
+    type: "portal",
+    fields: { channel: "route-a", color: "#54e8ff" },
+  });
+  assert.deepEqual(placementPresetWithField(portal, "color", "#abc"), {
+    type: "portal",
+    fields: { channel: "blue", color: "#abc" },
+  });
+  assert.equal(placementPresetWithField(portal, "missing", "value"), null);
+});
+
 test("Inspector 按当前工具显示选择、素材、删除目标与 Surface 摘要", () => {
   assert.match(inspector, /showPlacement[\s\S]*paletteTool === "place"/);
   assert.match(inspector, /showDeletion[\s\S]*paletteTool === "erase"/);
   assert.match(inspector, /showSurfaceTool[\s\S]*surfaceTool !== "rect"/);
   assert.match(placementInspector, /EditorEntityFields/);
+  assert.doesNotMatch(placementInspector, /:show-map-fields="false"/);
+  assert.match(placementInspector, /@field="\(key, value\) => emit\('field', key, value\)"/);
   assert.match(placementInspector, /@variant="emit\('variant', \$event\)"/);
   assert.match(eraseInspector, /layer\.ref\.index === targetIndex/);
   assert.match(eraseInspector, /点击将删除/);
   assert.match(surfaceToolInspector, /Auto ·/);
   assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), catalog, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);
+  assert.match(pageState, /function updatePlacementField/);
+  assert.match(fieldValues, /function placementPresetWithField/);
+  assert.match(page, /@placement-field="page\.updatePlacementField"/);
 });
 
 test("Palette 画笔悬浮不重建删除 Inspector", () => {

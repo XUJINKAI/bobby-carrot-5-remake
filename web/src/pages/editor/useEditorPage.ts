@@ -59,7 +59,6 @@ import {
 } from "@bobby/editor";
 import {
   entityMapDefinition,
-  type EntityMapFieldDefinition,
   type EntityType,
   type JsonPrimitive,
   type LevelEntity,
@@ -74,6 +73,10 @@ import {
   getWebSettings,
   updateWebSettings,
 } from "../../storage/settingsStorage.js";
+import {
+  coerceEditorFieldValue,
+  placementPresetWithField,
+} from "./editorFieldValues.js";
 
 export type EditorLeftPanel = "palette" | "surface";
 
@@ -568,6 +571,11 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
+  function updatePlacementField(key: string, raw: string): void {
+    const next = placementPresetWithField(placement.value, key, raw);
+    if (next) setPlacementPreset(next);
+  }
+
   function updateField(entityIndex: number, key: string, raw: string): void {
     updateFieldsForRefs([{ index: entityIndex }], key, raw);
   }
@@ -590,7 +598,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       if (!field) return [];
       const next: LevelEntity = { ...entity };
       if (raw === "") delete next[key];
-      else next[key] = coerceFieldValue(field, raw);
+      else next[key] = coerceEditorFieldValue(field, raw);
       return [{ ref, entity: next }];
     });
     if (replacements.length > 0) document.execute(replaceEntities(replacements));
@@ -692,6 +700,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     applyBatchSurfaceVariant,
     cycleVariant,
     applyPlacementVariant,
+    updatePlacementField,
     updateField,
     updateBatchField,
     setPaletteSize,
@@ -753,26 +762,6 @@ function shiftedCell(
     x: Math.max(0, Math.min(map.width - 1, cell.x + edges.left)),
     y: Math.max(0, Math.min(map.height - 1, cell.y + edges.top)),
   };
-}
-
-function coerceFieldValue(
-  field: EntityMapFieldDefinition,
-  raw: string,
-): JsonPrimitive {
-  if (field.kind === "number" || field.kind === "integer") {
-    const value = Number(raw);
-    return Number.isFinite(value)
-      ? field.kind === "integer"
-        ? Math.trunc(value)
-        : value
-      : raw;
-  }
-  if (field.kind === "boolean") return raw === "true";
-  if (field.kind === "enum") {
-    const option = field.values.find((candidate) => String(candidate) === raw);
-    if (option !== undefined) return option;
-  }
-  return raw;
 }
 
 function readPaletteSize(): EditorPaletteSize {

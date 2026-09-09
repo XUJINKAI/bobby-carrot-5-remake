@@ -111,7 +111,53 @@ test("Portal visual 使用固定三帧循环", () => {
   assert.equal(radii[3], radii[0]);
 });
 
-test("Pushable Box 使用独立的 Canvas 木箱视觉", () => {
+test("Portal 在进入中点切换出口并沿进入方向续行一格", () => {
+  const vectors = {
+    up: { x: 0, y: -1 },
+    right: { x: 1, y: 0 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+  };
+  const entrance = { x: 2, y: 2 };
+  const exit = { x: 4, y: 2 };
+  for (const [direction, vector] of Object.entries(vectors)) {
+    const world = portalWorld({
+      bobby: {
+        x: entrance.x - vector.x,
+        y: entrance.y - vector.y,
+      },
+      entrance,
+      exit,
+    });
+    move(world, direction);
+    const result = world.update({ tick: 1, stepMs: 50 });
+    const expected = { x: exit.x + vector.x, y: exit.y + vector.y };
+    assert.deepEqual(actor(world).anchor, expected, direction);
+    const motion = world.movement.motions.forEntity(actor(world).id);
+    assert.deepEqual(motion?.from, exit, direction);
+    assert.deepEqual(motion?.to, expected, direction);
+    assert.equal(motion?.direction, direction);
+    const types = result.deltas.map((delta) => delta.type);
+    assert.ok(types.indexOf("motion-cleared") < types.lastIndexOf("motion-started"));
+  }
+});
+
+test("Portal 出口前方不可通行时停在出口 Portal", () => {
+  const exit = { x: 4, y: 2 };
+  const world = portalWorld({
+    bobby: { x: 2, y: 1 },
+    entrance: { x: 2, y: 2 },
+    exit,
+    blocker: { x: 4, y: 3 },
+  });
+  move(world, "down");
+  const result = world.update({ tick: 1, stepMs: 50 });
+  assert.deepEqual(actor(world).anchor, exit);
+  assert.equal(world.movement.motions.forEntity(actor(world).id), undefined);
+  assert.equal(result.moves.at(-1)?.moved, false);
+});
+
+test("Pushable Box 使用正上方视角的独立 Canvas 木箱视觉", () => {
   const composition = resolveLevelEntityVisualPreview({
     type: MapEntityTypeId.PUSHABLE_BOX,
   });
@@ -145,6 +191,59 @@ test("Pushable Box 使用独立的 Canvas 木箱视觉", () => {
   assert.equal(calls.filter(([kind]) => kind === "arc").length, 4);
   assert.equal(calls.filter(([kind]) => kind === "lineTo").length, 2);
 });
+
+test("Push Goal 使用正上方视角的方形目标视觉", () => {
+  const composition = resolveLevelEntityVisualPreview({
+    type: MapEntityTypeId.PUSH_GOAL,
+  });
+  const layer = composition?.layers[0];
+  assert.equal(layer?.kind, "canvas");
+  const calls = [];
+  layer.draw({
+    save() {},
+    fillRect(...args) {
+      calls.push(["fillRect", ...args]);
+    },
+    strokeRect(...args) {
+      calls.push(["strokeRect", ...args]);
+    },
+    restore() {},
+  }, 0, 0, 48);
+  assert.deepEqual(calls[0], ["fillRect", 0, 0, 48, 48]);
+  assert.equal(calls[1]?.[0], "strokeRect");
+  assert.ok(Math.abs(calls[1][1] - 9.6) < Number.EPSILON * 48);
+  assert.ok(Math.abs(calls[1][2] - 9.6) < Number.EPSILON * 48);
+  assert.ok(Math.abs(calls[1][3] - 28.8) < Number.EPSILON * 48);
+  assert.ok(Math.abs(calls[1][4] - 28.8) < Number.EPSILON * 48);
+});
+
+function portalWorld({ bobby: start, entrance, exit, blocker }) {
+  const width = 7;
+  const height = 5;
+  return new World({
+    schemaVersion: 1,
+    width,
+    height,
+    entities: [
+      ...Array.from({ length: width * height }, (_, index) =>
+        ground(index % width, Math.floor(index / width))),
+      bobby(start.x, start.y),
+      {
+        type: MapEntityTypeId.PORTAL,
+        ...entrance,
+        channel: "route",
+        color: "cyan",
+      },
+      {
+        type: MapEntityTypeId.PORTAL,
+        ...exit,
+        channel: "route",
+        color: "cyan",
+      },
+      ...(blocker ? [{ type: MapEntityTypeId.ICE_BLOCK, ...blocker }] : []),
+    ],
+  }, { motionDurationMs: 100 });
+}
 
 test("Surface atlas family 使用各自的通行语义", () => {
   const wall = new World({

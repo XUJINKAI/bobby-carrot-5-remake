@@ -407,6 +407,7 @@ function isMobileEditor(): boolean {
       @batch-variant="page.applyBatchVariant"
       @batch-surface-variant="page.applyBatchSurfaceVariant"
       @batch-delete="page.deleteSelectedType"
+      @placement-field="page.updatePlacementField"
       @placement-variant="page.applyPlacementVariant"
       @rule="page.setRule"
       @max-moves="page.setMaxMoves"
