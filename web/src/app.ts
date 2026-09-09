@@ -6,6 +6,7 @@ import {
 import { installRuntimeSeo } from "./seo/runtimeSeo.js";
 import { initializeWebSettings } from "./storage/settingsStorage.js";
 import { initializeWebTheme } from "./theme/webTheme.js";
+import "./shared/fonts/jersey-10/font.css";
 import "../style.css";
 import "../game-ui.css";
 import "../../editor/style.css";

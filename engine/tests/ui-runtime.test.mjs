@@ -103,3 +103,15 @@ test("Gameplay HUD uses the compact translucent two-row presentation", () => {
   assert.doesNotMatch(source, /border:|borderRadius:|background:|boxShadow:/);
   assert.doesNotMatch(source, /goldenCarrotChip|bonusCoinChip/);
 });
+
+test("Gameplay HUD uses the shared pixel font with a black outline", () => {
+  const source = fs.readFileSync(
+    new URL("../src/ui/GameplayHudView.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /fontFamily: '\"Jersey 10\", fantasy'/);
+  assert.match(source, /WebkitTextStroke: "1px #000"/);
+  assert.match(source, /textShadow:/);
+  assert.match(source, /value\.style\.fontWeight = "400"/);
+});
