@@ -44,12 +44,11 @@ test("所有页面共用完整的快捷键帮助", () => {
   });
 });
 
-test("页面配置不维护独立快捷键文案", async () => {
+test("页面配置不维护完整快捷键清单", async () => {
   const pageSources = await Promise.all([
     "../src/app/pageChrome.ts",
     "../src/pages/editor/editorShell.ts",
     "../src/pages/game/mountGamePage.ts",
-    "../src/pages/home/mountHomePage.ts",
   ].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
   const source = pageSources.join("\n");
 

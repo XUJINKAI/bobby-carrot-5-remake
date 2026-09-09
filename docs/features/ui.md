@@ -152,7 +152,7 @@ Music、Settings、Help 与全局 Dialog 由 App 层持有，以普通 action �
 
 ### BottomBar
 
-BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页署名、Editor 校验问题和 Engine 运行时警告等状态反馈，不展示快捷键提示。Explore 游戏与 Adventure 游戏保留各自的 Leading / Trailing 操作且 Info 为空；Adventure 首页、章节选择和夜间列车隐藏 BottomBar。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
+BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页署名、Editor 校验问题和 Engine 运行时警告等状态反馈，不展示快捷键提示。Explore 游戏与 Adventure 游戏保留各自的 Leading / Trailing 操作且 Info 为空；Adventure 首页、章节选择和夜间列车隐藏 BottomBar。首页 Demo 的基础移动引导位于 `home-demo-status`。需要选择的流程进入 Dialog；游戏完成或死亡进入 Result Overlay。
 
 ## GameStage
 
@@ -602,7 +602,7 @@ Help 在所有页面展示同一份快捷键说明：
 └──────────────────────────────────────┘
 ```
 
-Help 是用户界面中公开快捷键说明的唯一来源。
+Help 是用户界面中完整快捷键说明的唯一来源；首页 Demo 的 `home-demo-status` 只提供基础移动引导。
 
 ## Overlay 与反馈规则
 

@@ -53,7 +53,7 @@ export async function renderHome(
   const initialScreenControlEnabled =
     getWebSettings().controls.screenControlEnabled;
   const view = reactive<HomeViewState>({
-    demoStatus: "Demo 视野固定。",
+    demoStatus: "WASD / 方向键移动",
     demoResult: null,
     deathReason: "",
     importFeedback: "",
@@ -150,7 +150,7 @@ export async function renderHome(
         ? "Demo 完成，可以进入冒险模式。"
         : state.status === "dead"
           ? "Bobby 遇到了危险，可以重新开始。"
-          : `${state.moves} 步${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
+          : `WASD / 方向键移动 · ${state.moves} 步${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
     view.demoResult =
       state.status === "won"
         ? "complete"
