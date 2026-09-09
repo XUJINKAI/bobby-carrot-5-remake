@@ -4,18 +4,22 @@ import assert from "node:assert/strict";
 import { buildGameplayHudModel } from "../dist/ui/GameplayHudModel.js";
 
 function state(overrides = {}) {
+  const inventory = overrides.inventory ?? {
+    gas: false,
+    shovel: false,
+    kite: false,
+    beans: 0,
+    temporaryKey: false,
+  };
   return {
     status: "playing",
+    deathReason: null,
     moves: 0,
+    primaryActorId: 1,
+    actors: [{ id: 1, position: { x: 0, y: 0 }, facing: "down", state: inventory }],
     player: { x: 0, y: 0 },
     facing: "down",
-    inventory: {
-      gas: false,
-      shovel: false,
-      kite: false,
-      beans: 0,
-      temporaryKey: false,
-    },
+    inventory,
     economy: { goldenCarrots: 0, bonusCoins: 0 },
     profile: {
       superKey: false,
@@ -58,12 +62,32 @@ test("Gameplay HUD projects the four map-local inventory items", () => {
     }),
     null,
   );
-  assert.deepEqual(model.inventory, {
+  assert.deepEqual(model.inventories, [{
+    actorId: 1,
+    role: "primary",
     gas: true,
     shovel: true,
     kite: true,
     beans: 3,
-  });
+  }]);
+});
+
+test("Gameplay HUD projects primary and secondary inventories separately", () => {
+  const model = buildGameplayHudModel(state({
+    actors: [
+      { id: 1, position: { x: 0, y: 0 }, facing: "down", state: { beans: 2 } },
+      { id: 2, position: { x: 1, y: 0 }, facing: "down", state: { shovel: true } },
+    ],
+  }), null);
+  assert.deepEqual(model.inventories.map((inventory) => ({
+    actorId: inventory.actorId,
+    role: inventory.role,
+    beans: inventory.beans,
+    shovel: inventory.shovel,
+  })), [
+    { actorId: 1, role: "primary", beans: 2, shovel: false },
+    { actorId: 2, role: "secondary", beans: 0, shovel: true },
+  ]);
 });
 
 test("Gameplay HUD view keeps nodes mounted and toggles display instead of mixing hidden with inline display", () => {
@@ -88,7 +112,7 @@ test("Gameplay HUD presentation uses semantic ImageManager IDs instead of asset 
   assert.doesNotMatch(source, /hud\.png|ts\.png|backgroundPosition/);
 });
 
-test("Gameplay HUD uses the compact translucent two-row presentation", () => {
+test("Gameplay HUD uses objective plus primary and secondary inventory rows", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayHudView.ts", import.meta.url),
     "utf8",
@@ -96,10 +120,9 @@ test("Gameplay HUD uses the compact translucent two-row presentation", () => {
   assert.match(source, /opacity: "0\.68"/);
   assert.match(source, /valueFontSize: "26px"/);
   assert.match(source, /root\.append\(value, icon\)/);
-  assert.match(
-    source,
-    /items\.append\(\s*this\.kiteChip\.root,\s*this\.beanChip\.root,\s*this\.shovelChip\.root,\s*this\.gasChip\.root,/,
-  );
+  assert.match(source, /inventoryRow\("primary", "#ff665e"\)/);
+  assert.match(source, /inventoryRow\("secondary", "#5796ff"\)/);
+  assert.match(source, /root\.append\(marker, kite\.root, bean\.root, shovel\.root, gas\.root\)/);
   assert.doesNotMatch(source, /border:|borderRadius:|background:|boxShadow:/);
   assert.doesNotMatch(source, /goldenCarrotChip|bonusCoinChip/);
 });

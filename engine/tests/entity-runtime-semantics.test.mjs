@@ -157,6 +157,26 @@ test("Portal 出口前方不可通行时停在出口 Portal", () => {
   assert.equal(result.moves.at(-1)?.moved, false);
 });
 
+test("Portal 目标格已有 Bobby 时不会产生重叠", () => {
+  const entrance = { x: 2, y: 2 };
+  const exit = { x: 4, y: 2 };
+  const world = portalWorld({
+    bobby: { x: 2, y: 1 },
+    entrance,
+    exit,
+    targetBobby: true,
+  });
+
+  move(world, "down");
+  const result = world.update({ tick: 1, stepMs: 50 });
+
+  assert.deepEqual(actor(world).anchor, entrance);
+  assert.equal(result.events.some((event) => event.type === "teleport"), false);
+  assert.equal(world.presencesAt(exit).filter((item) =>
+    item.traits.includes("player")
+  ).length, 1);
+});
+
 test("Pushable Box 使用正上方视角的独立 Canvas 木箱视觉", () => {
   const composition = resolveLevelEntityVisualPreview({
     type: MapEntityTypeId.PUSHABLE_BOX,
@@ -217,7 +237,7 @@ test("Push Goal 使用正上方视角的方形目标视觉", () => {
   assert.ok(Math.abs(calls[1][4] - 28.8) < Number.EPSILON * 48);
 });
 
-function portalWorld({ bobby: start, entrance, exit, blocker }) {
+function portalWorld({ bobby: start, entrance, exit, blocker, targetBobby }) {
   const width = 7;
   const height = 5;
   return new World({
@@ -240,6 +260,7 @@ function portalWorld({ bobby: start, entrance, exit, blocker }) {
         channel: "route",
         color: "cyan",
       },
+      ...(targetBobby ? [bobby(exit.x, exit.y)] : []),
       ...(blocker ? [{ type: MapEntityTypeId.ICE_BLOCK, ...blocker }] : []),
     ],
   }, { motionDurationMs: 100 });

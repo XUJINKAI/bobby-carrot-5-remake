@@ -40,6 +40,24 @@ export class WorldMovementResolver {
     private readonly behaviorRuntime: BehaviorRuntime,
   ) {}
 
+  /**
+   * 同组 intent 先声明目的格，使冲突裁决与 intent 的遍历顺序无关。
+   * 即使其中一个移动后来被地形阻止，两个 actor 同 tick 争用同格仍会一起被拒绝。
+   */
+  reserveIntentDestinations(
+    intents: readonly MoveIntent[],
+    transaction: MovementTransaction,
+  ): void {
+    for (const intent of intents) {
+      const actor = this.entities.get(intent.actorId);
+      if (!actor) continue;
+      transaction.reserveDestination(
+        actor.id,
+        addDirection(actor.anchor, intent.direction),
+      );
+    }
+  }
+
   resolve(intent: MoveIntent, group: MovementTransaction): MoveResult {
     const actor = this.entities.get(intent.actorId);
     const missingFrom = actor?.anchor ?? { x: -1, y: -1 };
@@ -271,6 +289,11 @@ export class WorldMovementResolver {
     plan: MovementPlan,
     group: MovementTransaction,
   ): string | null {
+    if (
+      this.query.entityHasTrait(plan.actorId, "player") &&
+      this.playerOccupies(plan.to, plan.actorId)
+    )
+      return "player-occupied";
     if (!group.canReserveDestination(plan.actorId, plan.to))
       return "destination-conflict";
     for (const companion of plan.companions) {
@@ -278,12 +301,25 @@ export class WorldMovementResolver {
       if (!entity) return "missing-companion";
       if (!this.actors.isActive(entity.id)) return "companion-inactive";
       if (!this.spatial.inBounds(companion.to)) return "companion-out-of-bounds";
+      if (
+        this.query.entityHasTrait(entity.id, "player") &&
+        this.playerOccupies(companion.to, entity.id)
+      )
+        return "player-occupied";
       if (this.movement.motions.forEntity(entity.id)?.status === "running")
         return "companion-busy";
       if (!group.canReserveDestination(plan.actorId, companion.to))
         return "destination-conflict";
     }
     return null;
+  }
+
+  private playerOccupies(cell: CellPosition, movingEntityId: EntityId): boolean {
+    return this.spatial.presencesAt(cell).some(
+      (presence) =>
+        presence.entityId !== movingEntityId &&
+        presence.traits.includes("player"),
+    );
   }
 
   private commitMovementPlan(

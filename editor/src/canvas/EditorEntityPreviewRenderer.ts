@@ -87,6 +87,8 @@ export class EditorEntityPreviewRenderer {
           entity: (id) => id === visualEntity.id
             ? visualEntity
             : spatialQuery.entity(id),
+          entitiesWithTrait: (trait) => spatialQuery.entitiesWithTrait(trait)
+            .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
         }
       : spatialQuery;
     const inspections = [...preview.presencesFor({ index: 0 })].sort(

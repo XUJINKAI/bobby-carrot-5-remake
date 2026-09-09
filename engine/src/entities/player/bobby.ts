@@ -1,5 +1,6 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type {
+  CanvasVisualLayer,
   ImageVisualLayer,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
@@ -52,7 +53,7 @@ export const BOBBY_VISUAL_ASSETS = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,
-  traits: ["player"],
+  traits: ["player", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
@@ -293,6 +294,7 @@ function composition(
   },
   background: ImageVisualLayer | null = null,
 ) {
+  const marker = playerMarker(context);
   const foreground: ImageVisualLayer = {
     kind: "image",
     ...frame,
@@ -300,8 +302,51 @@ function composition(
     offsetY: BOBBY_OFFSET_Y - visualElevation(context),
   };
   return {
-    layers: background ? [background, foreground] : [foreground],
+    layers: [
+      ...(marker ? [marker] : []),
+      ...(background ? [background] : []),
+      foreground,
+    ],
   };
+}
+
+function playerMarker(context: VisualResolveContext): CanvasVisualLayer | null {
+  const players = [...context.query.entitiesWithTrait("player")].sort(
+    (left, right) =>
+      playerChannelOrder(left.state?.["controller"]) -
+        playerChannelOrder(right.state?.["controller"]) ||
+      left.id - right.id,
+  );
+  if (players.length < 2) return null;
+  const index = players.findIndex((player) => player.id === context.entity.id);
+  const color = index === 0 ? "#ff665e" : "#5796ff";
+  const elevation = visualElevation(context) / BOBBY_TILE_SIZE;
+  return {
+    kind: "canvas",
+    draw(canvas, x, y, size) {
+      canvas.save();
+      canvas.beginPath();
+      canvas.ellipse(
+        x + size / 2,
+        y + size * (0.8 - elevation),
+        size * 0.34,
+        size * 0.13,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      canvas.fillStyle = `${color}55`;
+      canvas.fill();
+      canvas.strokeStyle = color;
+      canvas.lineWidth = Math.max(1, size * 0.045);
+      canvas.stroke();
+      canvas.restore();
+    },
+  };
+}
+
+function playerChannelOrder(value: unknown): number {
+  return value === "channel-2" ? 1 : 0;
 }
 
 function resolveIdleFrame(

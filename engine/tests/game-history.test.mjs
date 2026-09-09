@@ -130,6 +130,7 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
     definition: () => ({ footprint: undefined }),
     spatial: {
       inBounds: ({ x, y }) => x >= 0 && y >= 0 && x < 4 && y < 3,
+      presencesAt: () => [],
       moveEntity: (id, cell) => {
         moved = { id, cell: { ...cell } };
         actor.anchor = { ...cell };
@@ -172,5 +173,9 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
   assert.deepEqual(game.lastWorldEvents, []);
 
   assert.equal(game.debugTeleportActor(actor.id, { x: 4, y: 2 }), false);
+  assert.deepEqual(actor.anchor, { x: 3, y: 2 });
+
+  world.spatial.presencesAt = () => [{ entityId: 3, traits: ["player"] }];
+  assert.equal(game.debugTeleportActor(actor.id, { x: 1, y: 1 }), false);
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
 });

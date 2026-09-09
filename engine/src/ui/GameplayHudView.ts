@@ -12,6 +12,15 @@ interface HudChip {
   value: HTMLElement | null;
 }
 
+interface InventoryRow {
+  root: HTMLDivElement;
+  marker: HTMLSpanElement;
+  gas: HudChip;
+  shovel: HudChip;
+  kite: HudChip;
+  bean: HudChip;
+}
+
 type HudSprite = "carrot" | "gas" | "kite" | "shovel" | "egg" | "bean";
 
 const HUD_SLICE: Record<HudSprite, string> = {
@@ -28,10 +37,8 @@ export class GameplayHudView {
   readonly root: HTMLDivElement;
   private readonly objectiveCarrot: HudChip;
   private readonly objectiveEgg: HudChip;
-  private readonly gasChip: HudChip;
-  private readonly shovelChip: HudChip;
-  private readonly kiteChip: HudChip;
-  private readonly beanChip: HudChip;
+  private readonly primaryInventory: InventoryRow;
+  private readonly secondaryInventory: InventoryRow;
 
   constructor(
     private readonly images: ImageManager,
@@ -74,32 +81,13 @@ export class GameplayHudView {
     });
     objective.append(this.objectiveCarrot.root, this.objectiveEgg.root);
 
-    const items = document.createElement("div");
-    items.className = "engine-gameplay-hud-items";
-    Object.assign(items.style, {
-      display: "flex",
-      flexWrap: "wrap",
-      alignItems: "center",
-      gap: "8px",
-      justifyContent: "flex-end",
-      maxWidth: "100%",
-    });
-    this.kiteChip = this.chip("风筝", this.sprite("kite"));
-    this.beanChip = this.chip("魔豆", this.sprite("bean"), {
-      value: true,
-      valueFirst: true,
-      valueFontSize: "18px",
-    });
-    this.shovelChip = this.chip("雪铲", this.sprite("shovel"));
-    this.gasChip = this.chip("汽油", this.sprite("gas"));
-    items.append(
-      this.kiteChip.root,
-      this.beanChip.root,
-      this.shovelChip.root,
-      this.gasChip.root,
+    this.primaryInventory = this.inventoryRow("primary", "#ff665e");
+    this.secondaryInventory = this.inventoryRow("secondary", "#5796ff");
+    this.root.append(
+      objective,
+      this.primaryInventory.root,
+      this.secondaryInventory.root,
     );
-
-    this.root.append(objective, items);
   }
 
   render(model: GameplayHudModel): void {
@@ -116,14 +104,19 @@ export class GameplayHudView {
     );
 
     const showInventory = this.options.inventory !== false;
-    this.setChip(this.kiteChip, showInventory && model.inventory.kite);
-    this.setChip(
-      this.beanChip,
-      showInventory && model.inventory.beans > 0,
-      model.inventory.beans,
+    const distinguishPlayers = model.inventories.length > 1;
+    this.renderInventory(
+      this.primaryInventory,
+      model.inventories[0],
+      showInventory,
+      distinguishPlayers,
     );
-    this.setChip(this.shovelChip, showInventory && model.inventory.shovel);
-    this.setChip(this.gasChip, showInventory && model.inventory.gas);
+    this.renderInventory(
+      this.secondaryInventory,
+      model.inventories[1],
+      showInventory,
+      distinguishPlayers,
+    );
   }
 
   destroy(): void {
@@ -136,6 +129,63 @@ export class GameplayHudView {
       const text = String(value);
       if (chip.value.textContent !== text) chip.value.textContent = text;
     }
+  }
+
+  private renderInventory(
+    row: InventoryRow,
+    inventory: GameplayHudModel["inventories"][number] | undefined,
+    enabled: boolean,
+    distinguishPlayers: boolean,
+  ): void {
+    const visible = enabled && inventory !== undefined;
+    row.root.style.display = visible ? "flex" : "none";
+    row.marker.style.display = distinguishPlayers ? "inline-block" : "none";
+    this.setChip(row.kite, visible && inventory?.kite === true);
+    this.setChip(
+      row.bean,
+      visible && (inventory?.beans ?? 0) > 0,
+      inventory?.beans ?? 0,
+    );
+    this.setChip(row.shovel, visible && inventory?.shovel === true);
+    this.setChip(row.gas, visible && inventory?.gas === true);
+  }
+
+  private inventoryRow(
+    role: "primary" | "secondary",
+    color: string,
+  ): InventoryRow {
+    const root = document.createElement("div");
+    root.className = `engine-gameplay-hud-items engine-gameplay-hud-items-${role}`;
+    Object.assign(root.style, {
+      display: "none",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: "8px",
+      justifyContent: "flex-end",
+      maxWidth: "100%",
+    });
+    const marker = document.createElement("span");
+    marker.setAttribute(
+      "aria-label",
+      role === "primary" ? "主 Bobby" : "副 Bobby",
+    );
+    Object.assign(marker.style, {
+      display: "none",
+      color,
+      fontSize: "12px",
+      lineHeight: "1",
+    });
+    marker.textContent = "●";
+    const kite = this.chip("风筝", this.sprite("kite"));
+    const bean = this.chip("魔豆", this.sprite("bean"), {
+      value: true,
+      valueFirst: true,
+      valueFontSize: "18px",
+    });
+    const shovel = this.chip("雪铲", this.sprite("shovel"));
+    const gas = this.chip("汽油", this.sprite("gas"));
+    root.append(marker, kite.root, bean.root, shovel.root, gas.root);
+    return { root, marker, gas, shovel, kite, bean };
   }
 
   private chip(

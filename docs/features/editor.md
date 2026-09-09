@@ -126,6 +126,7 @@ Inspector 汇总当前工具和它正在作用的对象：
 
 删除目标与实际删除操作共用 `resolveDeletionTarget()`，Inspector 不另算一套视觉栈规则。
 Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
+Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通 enum / boolean 控件编辑。
 只有 Delete 工具会让 Inspector 订阅 Canvas hover；Palette Brush 的悬浮预览不会触发
 variant 网格重新绘制。
 

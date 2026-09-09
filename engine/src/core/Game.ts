@@ -477,7 +477,8 @@ export class Game {
   }
 
   zoomBy(factor: number): void {
-    this.setZoom(this.zoom * factor);
+    this.visual.camera.zoomBy(factor);
+    this.render();
   }
 
   panByScreen(dx: number, dy: number): void {
@@ -695,6 +696,13 @@ export class Game {
       definition.footprint,
     );
     if (!footprint.every((part) => this.world.spatial.inBounds(part)))
+      return false;
+    if (
+      this.world.spatial.presencesAt(cell).some(
+        (presence) =>
+          presence.entityId !== actorId && presence.traits.includes("player"),
+      )
+    )
       return false;
 
     this.world.actions.cancelOwnedBy(actorId);

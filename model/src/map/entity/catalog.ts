@@ -25,8 +25,18 @@ const HORIZONTAL_DIRECTIONS = ["left", "right"] as const;
 const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(
     MapEntityTypeId.BOBBY,
-    [],
-    "Player start anchor. Map JSON does not persist Bobby facing direction.",
+    [
+      enumField(
+        "controller",
+        ["channel-1", "channel-2"],
+        "channel-1",
+        false,
+        "输入通道；channel-1 是 primary，channel-2 是 secondary。",
+      ),
+      booleanField("mirrorX", false, false, "水平镜像输入方向。"),
+      booleanField("mirrorY", false, false, "垂直镜像输入方向。"),
+    ],
+    "Player start anchor. Facing direction is runtime state.",
   ),
   defineEntity(
     MapEntityTypeId.ORIGINAL_TILE,

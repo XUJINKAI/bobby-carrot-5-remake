@@ -1,18 +1,24 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { GameplayState } from "../core/GameplayState.js";
+import { readBobbyInventory } from "../entities/player/BobbyState.js";
+import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
+
+export interface GameplayHudInventory {
+  actorId: EntityId;
+  role: "primary" | "secondary";
+  gas: boolean;
+  shovel: boolean;
+  kite: boolean;
+  beans: number;
+}
 
 export interface GameplayHudModel {
   objectives: {
     carrotRemaining: number | null;
     eggRemaining: number | null;
   };
-  inventory: {
-    gas: boolean;
-    shovel: boolean;
-    kite: boolean;
-    beans: number;
-  };
+  inventories: readonly GameplayHudInventory[];
 }
 
 /** Pure projection from public gameplay state to HUD semantics. */
@@ -20,6 +26,11 @@ export function buildGameplayHudModel(
   state: GameplayState,
   winState: WinConditionState | null,
 ): GameplayHudModel {
+  const actors = [...state.actors].sort((left, right) => {
+    if (left.id === state.primaryActorId) return -1;
+    if (right.id === state.primaryActorId) return 1;
+    return 0;
+  });
   return {
     objectives: {
       carrotRemaining: remainingForCondition(
@@ -35,12 +46,17 @@ export function buildGameplayHudModel(
           item.filler === "filled-egg",
       ),
     },
-    inventory: {
-      gas: state.inventory.gas,
-      shovel: state.inventory.shovel,
-      kite: state.inventory.kite,
-      beans: Math.max(0, state.inventory.beans),
-    },
+    inventories: actors.slice(0, 2).map((actor, index) => {
+      const inventory = readBobbyInventory(actor.state);
+      return {
+        actorId: actor.id,
+        role: index === 0 ? "primary" : "secondary",
+        gas: inventory.gas,
+        shovel: inventory.shovel,
+        kite: inventory.kite,
+        beans: Math.max(0, inventory.beans),
+      };
+    }),
   };
 }
 

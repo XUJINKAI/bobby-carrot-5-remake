@@ -4,6 +4,35 @@ import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { buildVisualScene } from "../dist/visual/VisualSceneBuilder.js";
 import { World } from "../dist/world/World.js";
 
+test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉", () => {
+  const visuals = createBuiltinVisualRegistry();
+  const level = {
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+  };
+  const single = buildVisualScene(new World(level), visuals, new Map());
+  assert.deepEqual(single.player[0].composition.layers.map((layer) => layer.kind), ["image"]);
+
+  const multiple = buildVisualScene(
+    new World({
+      ...level,
+      entities: [...level.entities, { type: "bobby", x: 1, y: 0 }],
+    }),
+    visuals,
+    new Map(),
+  );
+  assert.deepEqual(
+    multiple.player.map((item) => item.composition.layers[0].kind),
+    ["canvas", "canvas"],
+  );
+});
+
 test("场景共享一次胜利求值，并在收集与恢复后更新出口视觉", () => {
   const world = new World({
     schemaVersion: 1,

@@ -13,7 +13,7 @@ export class MovementTransaction {
   readonly commands = new CommandQueue();
   readonly motions: EntityMotionRequest[] = [];
   private readonly entryBypasses = new Set<EntityId>();
-  private readonly reservedDestinations = new Map<string, EntityId>();
+  private readonly reservedDestinations = new Map<string, Set<EntityId>>();
 
   allowEntryFor(entityId: EntityId): void {
     this.entryBypasses.add(entityId);
@@ -24,12 +24,15 @@ export class MovementTransaction {
   }
 
   canReserveDestination(entityId: EntityId, cell: CellPosition): boolean {
-    const owner = this.reservedDestinations.get(key(cell));
-    return owner === undefined || owner === entityId;
+    const owners = this.reservedDestinations.get(key(cell));
+    return owners === undefined || (owners.size === 1 && owners.has(entityId));
   }
 
   reserveDestination(entityId: EntityId, cell: CellPosition): void {
-    this.reservedDestinations.set(key(cell), entityId);
+    const cellKey = key(cell);
+    const owners = this.reservedDestinations.get(cellKey) ?? new Set<EntityId>();
+    owners.add(entityId);
+    this.reservedDestinations.set(cellKey, owners);
   }
 
   move(

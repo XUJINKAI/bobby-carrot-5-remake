@@ -4,7 +4,7 @@ import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "../dist/world/World.js";
 
-function runtime(onEnter, { keepWorldAlive = false } = {}) {
+function runtime(onEnter) {
   const entities = new EntityRegistry();
   entities.registerAll([
     { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
@@ -24,7 +24,6 @@ function runtime(onEnter, { keepWorldAlive = false } = {}) {
         { type: "floor", x: 1, y: 0 },
         { type: "player", x: 0, y: 0 },
         { type: "trigger", x: 1, y: 0 },
-        ...(keepWorldAlive ? [{ type: "player", x: 0, y: 0 }] : []),
       ],
     },
     { entities, behaviors, motionDurationMs: 100 },
@@ -112,24 +111,18 @@ test("movement snapshot 保存已跨过的 marker", () => {
   assert.equal(world.query.entitiesWithTrait("trigger")[0].state.hits, 1);
 });
 
-test("revive 清除死亡时冻结的 motion 并恢复到 grid anchor", () => {
-  const { world, actorId } = runtime(
-    ({ actor, commands }) => {
-      commands.downActor(actor.id, "trap");
-    },
-    { keepWorldAlive: true },
-  );
+test("World 失败后拒绝 revive 并保留死亡时冻结的 motion", () => {
+  const { world, actorId } = runtime(({ actor, commands }) => {
+    commands.downActor(actor.id, "trap");
+  });
   moveRight(world, actorId);
   world.update({ tick: 0, stepMs: 60 });
   assert.equal(world.movement.motions.forEntity(actorId).status, "interrupted");
+  assert.equal(world.dead, true);
 
   const revived = world.reviveActor(actorId);
-  assert.equal(world.movement.motions.forEntity(actorId), undefined);
-  assert.deepEqual(
-    world.movement.motions.poseFor(actorId, world.entity(actorId).anchor),
-    { x: 1, y: 0 },
-  );
-  assert.ok(revived.deltas.some((delta) => delta.type === "motion-cleared"));
+  assert.equal(revived.events.length, 0);
+  assert.equal(world.movement.motions.forEntity(actorId).status, "interrupted");
 });
 
 test("destroy 中断并清除实体正在进行的 motion", () => {

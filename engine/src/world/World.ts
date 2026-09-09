@@ -49,7 +49,11 @@ import type {
 } from "./movement/WorldMotion.js";
 import { WorldOutcomeStore, type WorldOutcomeState } from "./outcome/WorldOutcome.js";
 import { ReachResolver } from "./outcome/ReachResolver.js";
-import type { WorldIntent, WorldIntentGroup } from "./movement/WorldIntent.js";
+import type {
+  MoveIntent,
+  WorldIntent,
+  WorldIntentGroup,
+} from "./movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
   mergeWorldMutationSummary,
@@ -140,6 +144,7 @@ export class World {
       () => this.state,
       this.movement.motions,
     );
+    assertDistinctPlayerAnchors(this.query);
     this.inspector = new WorldInspector(this.entities, this.spatial);
     this.behaviorRuntime = new BehaviorRuntime(
       this.registry,
@@ -350,9 +355,12 @@ export class World {
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
     let playerInputMoved = false;
+    const moveIntents = group.intents.filter(
+      (intent): intent is MoveIntent => intent.type === "move",
+    );
+    this.movementResolver.reserveIntentDestinations(moveIntents, transaction);
 
-    for (const intent of group.intents) {
-      if (intent.type !== "move") continue;
+    for (const intent of moveIntents) {
       const result = this.movementResolver.resolve(intent, transaction);
       moves.push(result);
       if (result.moved && intent.cause.type === "player-input")
@@ -673,6 +681,20 @@ export class World {
     };
   }
 
+}
+
+function assertDistinctPlayerAnchors(query: WorldQueryApi): void {
+  const occupied = new Map<string, EntityId>();
+  for (const player of query.entitiesWithTrait("player")) {
+    const key = `${player.anchor.x},${player.anchor.y}`;
+    const existing = occupied.get(key);
+    if (existing !== undefined) {
+      throw new Error(
+        `Player Entity #${existing} 与 #${player.id} 不能占据同一格 ${key}。`,
+      );
+    }
+    occupied.set(key, player.id);
+  }
 }
 
 function absorbCommit(target: WorldStepResult, commit: WorldCommitResult): void {

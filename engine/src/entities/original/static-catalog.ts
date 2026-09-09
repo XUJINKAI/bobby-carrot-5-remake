@@ -107,6 +107,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
     "exit",
+    "reach-all-players",
     "requires-unmounted-reach",
   ]),
   surface(

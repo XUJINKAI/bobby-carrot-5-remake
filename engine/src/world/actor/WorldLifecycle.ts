@@ -51,17 +51,16 @@ export class WorldLifecycle {
     const playerIds = this.query
       .entitiesWithTrait("player")
       .map((actor) => actor.id);
-    if (
-      playerIds.length === 0 ||
-      playerIds.some((actorId) => this.actors.isActive(actorId))
-    ) {
+    const inactiveActorId = [...changedActorIds, ...playerIds].find(
+      (actorId) => playerIds.includes(actorId) && !this.actors.isActive(actorId),
+    );
+    if (inactiveActorId === undefined) {
       this.syncLegacyState();
       return;
     }
-    const actorId = preferredActorId ?? playerIds[0]!;
     const reason =
-      this.actors.state(actorId).reason ?? "No active player remains.";
-    this.finish("lost", result, reason, actorId);
+      this.actors.state(inactiveActorId).reason ?? "A player is inactive.";
+    this.finish("lost", result, reason, inactiveActorId);
   }
 
   evaluateRules(result: WorldStepResult): void {

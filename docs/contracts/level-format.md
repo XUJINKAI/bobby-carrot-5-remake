@@ -91,6 +91,24 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 }
 ```
 
+Bobby 可以通过实例字段声明输入通道和两个可组合的镜像轴：
+
+```json
+[
+  { "type": "bobby", "x": 2, "y": 3, "controller": "channel-1" },
+  {
+    "type": "bobby",
+    "x": 7,
+    "y": 3,
+    "controller": "channel-1",
+    "mirrorX": true,
+    "mirrorY": false
+  }
+]
+```
+
+`controller` 缺省为 `channel-1`。地图只有 `channel-1` 时，方向键和 WASD 都控制该通道中的全部 Bobby；地图同时具有 `channel-1` 与 `channel-2` 时，方向键控制 `channel-1`，WASD 控制 `channel-2`。Pointer、Screen Joystick 与 external 输入控制 `channel-1`。`mirrorX` 交换左右，`mirrorY` 交换上下，两者可以同时启用。
+
 `start` 也是普通 surface Entity，只表达该地面的玩法与视觉，不承担出生语义，也没有特殊 `start` Trait。Bobby 是否出生在 Start 上，只由两个 Entity 的坐标是否相同决定：
 
 ```json
@@ -102,7 +120,7 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 
 Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surface，并把 Bobby Entity 的初始坐标设为同一位置。转换完成后 Start 与 Bobby 互不绑定；移动 Bobby 不会改变 Start，移动或替换 Start 也不会定义新的出生点。
 
-一张可游玩地图必须恰好有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。
+一张可游玩地图至少有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。多个 Bobby 不能占据同一格；Editor 在同格放置 Bobby 时会替换已有 Bobby，同一 tick 的移动组中若多个 actor 请求同一目的格，这些移动会一起被拒绝。
 
 ### 同格 Entity 与 Cell Stack
 
@@ -200,6 +218,8 @@ Sokoban 可以使用 Trait selector：
 ```
 
 Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remaining` progress；HUD 等展示层只能消费这个结果，不复制胜利条件查询逻辑。
+
+`reach` 的多人聚合方式由目标 Entity Definition 声明。Exit 要求所有 Bobby 同时位于任意 Exit 格；Golden Carrot 由任一 Bobby 到达即可完成。任一 Bobby 死亡都会使当前关卡失败。
 
 ## MapDocument
 

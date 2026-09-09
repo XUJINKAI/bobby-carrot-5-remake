@@ -94,12 +94,30 @@ test("类型专属字段只对声明它的 Entity 生效", () => {
     { type: "windmill", x: 0, y: 0, direction: "down" },
   ]);
   assert.deepEqual(parseMapDocument(windmill), windmill);
+  const controlledBobby = documentWith([{
+    type: "bobby",
+    x: 0,
+    y: 0,
+    controller: "channel-2",
+    mirrorX: true,
+    mirrorY: true,
+  }]);
+  assert.deepEqual(parseMapDocument(controlledBobby), controlledBobby);
   assert.throws(
     () =>
       parseMapDocument(
         documentWith([{ type: "bobby", x: 0, y: 0, direction: "down" }]),
       ),
     /bobby 不允许字段 direction/,
+  );
+  assert.throws(
+    () => parseMapDocument(documentWith([{
+      type: "bobby",
+      x: 0,
+      y: 0,
+      controller: "secondary",
+    }])),
+    /controller 不符合 enum 合同/,
   );
 });
 

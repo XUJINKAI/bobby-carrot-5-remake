@@ -26,4 +26,9 @@ export class SpatialVisualQuery implements VisualQuery {
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
     return this.entities.get(id);
   }
+
+  entitiesWithTrait(trait: string): readonly Readonly<EntityInstance>[] {
+    return this.spatial.entityIdsWithTrait(trait)
+      .map((id) => this.entities.require(id));
+  }
 }

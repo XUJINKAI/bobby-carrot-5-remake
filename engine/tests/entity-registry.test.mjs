@@ -74,6 +74,7 @@ test("Start 是普通可步行 Entity，不携带出生语义", () => {
 test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
   const fieldKeys = (type) =>
     entityMapDefinition(type)?.fields.map((field) => field.key) ?? [];
+  assert.deepEqual(fieldKeys("bobby"), ["controller", "mirrorX", "mirrorY"]);
   assert.deepEqual(fieldKeys("speed-switch"), ["pressed"]);
   assert.deepEqual(fieldKeys("tide-switch"), ["pressed"]);
   assert.deepEqual(fieldKeys("carousel-switch"), ["pressed"]);

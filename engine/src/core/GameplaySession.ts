@@ -448,32 +448,50 @@ export class GameplaySession {
 
   private configureActorsAndControls(): void {
     const actorIds = this.actorIds;
-    this.primaryActorIdValue = actorIds[0] ?? null;
+    const targets = actorIds.map((entityId) => {
+      const state = this.world.entities.require(entityId).state;
+      return {
+        controller:
+          state?.["controller"] === "channel-2"
+            ? ("channel-2" as const)
+            : ("channel-1" as const),
+        target: {
+          entityId,
+          directionTransform: {
+            mirrorX: state?.["mirrorX"] === true,
+            mirrorY: state?.["mirrorY"] === true,
+          },
+        },
+      };
+    });
+    const channel1 = targets
+      .filter(({ controller }) => controller === "channel-1")
+      .map(({ target }) => target);
+    const channel2 = targets
+      .filter(({ controller }) => controller === "channel-2")
+      .map(({ target }) => target);
+    const primaryTargets = channel1.length > 0 ? channel1 : channel2;
+    this.primaryActorIdValue = primaryTargets[0]?.entityId ?? null;
     if (this.configuredControls) {
       this.controlBindings = structuredClone(this.configuredControls);
       return;
     }
-    const primary = actorIds[0];
-    if (primary === undefined) {
+    if (primaryTargets.length === 0) {
       this.controlBindings = [];
       return;
     }
-    const secondary = actorIds[1];
-    this.controlBindings = secondary
-      ? [
-          { input: "arrows", targets: [{ entityId: primary }] },
-          { input: "wasd", targets: [{ entityId: secondary }] },
-          { input: "pointer", targets: [{ entityId: primary }] },
-          { input: "joystick", targets: [{ entityId: primary }] },
-          { input: "external", targets: [{ entityId: primary }] },
-        ]
-      : [
-          { input: "arrows", targets: [{ entityId: primary }] },
-          { input: "wasd", targets: [{ entityId: primary }] },
-          { input: "pointer", targets: [{ entityId: primary }] },
-          { input: "joystick", targets: [{ entityId: primary }] },
-          { input: "external", targets: [{ entityId: primary }] },
-        ];
+    this.controlBindings = [
+      { input: "arrows", targets: primaryTargets },
+      {
+        input: "wasd",
+        targets: channel1.length > 0 && channel2.length > 0
+          ? channel2
+          : primaryTargets,
+      },
+      { input: "pointer", targets: primaryTargets },
+      { input: "joystick", targets: primaryTargets },
+      { input: "external", targets: primaryTargets },
+    ];
   }
 
   private applyRuntimeEntityStateInitializer(): void {

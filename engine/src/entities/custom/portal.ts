@@ -17,6 +17,11 @@ const portalBehavior: Behavior = {
         entity.id !== self.entity.id && entity.state?.channel === channel,
     );
     if (!target) return;
+    const targetHasPlayer = query.presencesAt(target.anchor).some(
+      (presence) =>
+        presence.entityId !== actor.id && presence.traits.includes("player"),
+    );
+    if (targetHasPlayer) return;
     commands.relocate(actor.id, target.anchor.x, target.anchor.y);
     commands.startAction(
       createDelayedMoveRuntimeAction(actor.id, direction, 0, {

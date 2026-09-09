@@ -268,29 +268,51 @@ export class VisualRuntime {
     this.entityRuntime.delete(entityId);
   }
 
-  /** Camera focus wins; otherwise follow the first player-trait actor. */
+  /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
     const actorIds = world.query
       .entitiesWithTrait("player")
       .map((entity) => entity.id);
     this.ensureStationaryActorStates(world, actorIds);
-    const defaultTargetId = actorIds[0];
-    const target =
-      (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
-      (defaultTargetId !== undefined
-        ? world.entity(defaultTargetId)
-        : undefined);
-    if (target) {
-      const runtime = this.entityRuntime.get(target.id);
-      this.camera.follow(
-        {
-          x: target.anchor.x + (runtime?.offsetX ?? 0),
-          y: target.anchor.y + (runtime?.offsetY ?? 0),
-        },
-        world.width,
-        world.height,
-        this.frame ?? undefined,
-      );
+    if (actorIds.length > 1) {
+      const targets = actorIds
+        .map((id) => world.entity(id))
+        .filter((entity) => entity !== undefined)
+        .map((entity) => {
+          const runtime = this.entityRuntime.get(entity.id);
+          return {
+            x: entity.anchor.x + (runtime?.offsetX ?? 0),
+            y: entity.anchor.y + (runtime?.offsetY ?? 0),
+          };
+        });
+      const focus = cameraTarget === null ? undefined : world.entity(cameraTarget);
+      if (focus && !actorIds.includes(focus.id)) {
+        const runtime = this.entityRuntime.get(focus.id);
+        targets.push({
+          x: focus.anchor.x + (runtime?.offsetX ?? 0),
+          y: focus.anchor.y + (runtime?.offsetY ?? 0),
+        });
+      }
+      this.camera.followPoints(targets, world.width, world.height);
+    } else {
+      const defaultTargetId = actorIds[0];
+      const target =
+        (cameraTarget !== null ? world.entity(cameraTarget) : undefined) ??
+        (defaultTargetId !== undefined
+          ? world.entity(defaultTargetId)
+          : undefined);
+      if (target) {
+        const runtime = this.entityRuntime.get(target.id);
+        this.camera.follow(
+          {
+            x: target.anchor.x + (runtime?.offsetX ?? 0),
+            y: target.anchor.y + (runtime?.offsetY ?? 0),
+          },
+          world.width,
+          world.height,
+          this.frame ?? undefined,
+        );
+      }
     }
     const scene = buildVisualScene(
       world,

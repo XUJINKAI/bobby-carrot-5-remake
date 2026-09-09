@@ -71,6 +71,7 @@ export const builtinEditorDefinition: EditorDefinition = {
       item,
     ),
     [MapEntityTypeId.BOBBY]: {
+      replaceGroup: "player",
       editorVisual: () => ({
         layers: [
           {

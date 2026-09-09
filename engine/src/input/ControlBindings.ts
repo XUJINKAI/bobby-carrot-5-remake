@@ -2,13 +2,12 @@ import type { Direction } from "@bobby/model";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { MoveIntent, WorldIntentGroup } from "../world/movement/WorldIntent.js";
 
-export type DirectionTransform =
-  | "identity"
-  | "mirror-x"
-  | "mirror-y"
-  | "reverse"
-  | "rotate-cw"
-  | "rotate-ccw";
+export interface DirectionTransform {
+  /** 顺时针旋转的 90 度次数；先旋转，再应用两个镜像轴。 */
+  quarterTurns?: 0 | 1 | 2 | 3;
+  mirrorX?: boolean;
+  mirrorY?: boolean;
+}
 
 export interface ControlTarget {
   entityId: EntityId;
@@ -21,43 +20,30 @@ export interface ControlBinding {
   targets: readonly ControlTarget[];
 }
 
-const REVERSE_DIRECTION: Readonly<Record<Direction, Direction>> = {
-  up: "down",
-  down: "up",
-  left: "right",
-  right: "left",
-};
 const ROTATE_CW_DIRECTION: Readonly<Record<Direction, Direction>> = {
   up: "right",
   right: "down",
   down: "left",
   left: "up",
 };
-const ROTATE_CCW_DIRECTION: Readonly<Record<Direction, Direction>> = {
-  up: "left",
-  left: "down",
-  down: "right",
-  right: "up",
-};
-
 export function transformDirection(
   direction: Direction,
-  transform: DirectionTransform = "identity",
+  transform: DirectionTransform = {},
 ): Direction {
-  if (transform === "identity") return direction;
-  if (transform === "mirror-x") {
-    if (direction === "left") return "right";
-    if (direction === "right") return "left";
-    return direction;
+  let result = direction;
+  const turns = transform.quarterTurns ?? 0;
+  for (let turn = 0; turn < turns; turn += 1) {
+    result = ROTATE_CW_DIRECTION[result];
   }
-  if (transform === "mirror-y") {
-    if (direction === "up") return "down";
-    if (direction === "down") return "up";
-    return direction;
+  if (transform.mirrorX) {
+    if (result === "left") result = "right";
+    else if (result === "right") result = "left";
   }
-  if (transform === "reverse") return REVERSE_DIRECTION[direction];
-  if (transform === "rotate-cw") return ROTATE_CW_DIRECTION[direction];
-  return ROTATE_CCW_DIRECTION[direction];
+  if (transform.mirrorY) {
+    if (result === "up") result = "down";
+    else if (result === "down") result = "up";
+  }
+  return result;
 }
 
 export function resolveControlInput(
