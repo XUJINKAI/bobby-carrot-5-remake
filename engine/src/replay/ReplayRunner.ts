@@ -1,10 +1,14 @@
 import type { LevelMap } from "@bobby/model";
-import { GameplaySession } from "../core/GameplaySession.js";
+import {
+  GameplaySession,
+  type GameplaySessionOptions,
+} from "../core/GameplaySession.js";
 import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
 import {
   type Replay,
   type ReplayInputGroup,
 } from "./ReplayFormat.js";
+import { validateReplay } from "./ReplayValidation.js";
 
 export interface ReplayReport {
   actual: {
@@ -14,14 +18,25 @@ export interface ReplayReport {
   };
 }
 
+export type ReplayRunOptions = Pick<
+  GameplaySessionOptions,
+  "profile" | "economy"
+>;
+
 /** Replay 每次从 LevelMap 起点执行，不读取或保存中途 WorldSnapshot。 */
-export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
+export function runReplay(
+  level: LevelMap,
+  replay: Replay,
+  options: ReplayRunOptions = {},
+): ReplayReport {
   const session = new GameplaySession({
+    ...options,
     timing: { worldHz: replay.runtime.worldHz },
     bobbyLocomotion: replay.runtime.bobbyLocomotion,
     history: { mode: "disabled" },
   });
   session.loadLevel(level);
+  validateReplay(session.actorIds, session.bobbyLocomotion, replay);
   const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
   session.advanceTicks(replay.endTick, (time) => ({
     groups: replayInputGroups(frames.get(time.tick)?.groups ?? []),

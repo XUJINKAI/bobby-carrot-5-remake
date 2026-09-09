@@ -87,15 +87,31 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 `final_status`，其值为 `playing / won / dead`；`note` 初始为空字符串，Engine 不读取或
 解释其内容，用户可以在 Replay 文本中直接填写。
 
-Replay 不承担地图身份匹配和执行结果断言。调用方负责选择用于播放或无头执行的
-`LevelMap`；Runner 从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。
+Replay 本身不解析地图身份。调用方负责选择用于播放或无头执行的 `LevelMap`；Runner
+从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。作为仓库内回归 fixture
+使用时，verify 将 `meta.final_status` 作为期望状态，并与 Runner 的实际状态比较。
+
+## 仓库内置过法
+
+内置过法与地图使用相同的 collection 和 map ID：
+
+```text
+assets/replays/<collection>/<map-id>.json
+assets/maps/<collection>/<map-id>.json
+```
+
+Web 录制面板按当前关卡尝试读取对应 Replay。`npm run verify` 递归扫描
+`assets/replays/` 的全部文件，在对应地图上使用 Explore Profile 从起点复跑，并要求
+实际状态等于 Replay 的 `meta.final_status`。每新增一个 Replay 文件都会自动进入这项
+回归测试，也会随 `assets/` 原样发布到 `dist/assets/`。
 
 ## Web 录制入口
 
 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
 录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 复跑到录制终点。
 Replay JSON 可以直接编辑，并可从起点播放、暂停、停止、跳转起点或终点、复制到剪贴板或
-下载为 Engine 测试 fixture。面板速率是 Engine 的常驻 `timeScale`，同时作用于普通游戏、
+下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。面板速率是
+Engine 的常驻 `timeScale`，同时作用于普通游戏、
 录制和播放。输入合法正数时立即更新 World 与 Presentation；输入为空或非法时保留最近
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退
 与快进按钮依次选择 `0.1 / 0.5 / 1 / 1.25 / 1.5 / 2 / 4 / 8` 中相邻的预设值。

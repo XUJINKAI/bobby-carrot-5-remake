@@ -7,6 +7,10 @@ export function mapAssetUrl(collection: string, id: string): string {
   return `/assets/maps/${encodeURIComponent(collection)}/${encodeURIComponent(id)}.json`;
 }
 
+export function replayAssetUrl(collection: string, id: string): string {
+  return `/assets/replays/${encodeURIComponent(collection)}/${encodeURIComponent(id)}.json`;
+}
+
 export function parseMapPlayUrl(
   pathname: string,
 ): ExploreMapRef | null {

@@ -116,6 +116,13 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
           下载
         </button>
       </div>
+      <button
+        class="ghost-btn replay-panel-builtin"
+        type="button"
+        data-replay-action="load-builtin"
+      >
+        加载内置过法
+      </button>
     </section>
   </aside>
 </template>
@@ -222,7 +229,8 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 
 .replay-panel-playback-actions,
 .replay-panel-seek-actions,
-.replay-panel-export-actions {
+.replay-panel-export-actions,
+.replay-panel-builtin {
   margin-top: 8px;
 }
 
@@ -299,10 +307,15 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 
 .replay-panel-playback-actions button,
 .replay-panel-seek-actions button,
-.replay-panel-export-actions button {
+.replay-panel-export-actions button,
+.replay-panel-builtin {
   min-height: 38px;
   padding-inline: 5px;
   font-weight: 700;
+}
+
+.replay-panel-builtin {
+  width: 100%;
 }
 
 .replay-panel-result button:not(:disabled):hover {

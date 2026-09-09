@@ -13,12 +13,19 @@ assets/
 │       └── <map-id>.json
 ├── adventure/
 │   └── index.json
+├── replays/
+│   └── <collection>/
+│       └── <map-id>.json
 ├── i18n/
 ├── art/
 └── audio/
 ```
 
 `assets/` 是网站 `/assets/` 的静态资源源树。`build` 将其原样复制到 `dist/assets/`。
+
+`replays/` 保存人工录制并由 Git 托管的 Engine 回归 fixture。每个文件与
+`maps/` 下相同相对路径的 MapDocument 配对，具体格式和验证规则见
+`docs/contracts/replay.md`。
 
 ## `maps/index.json`
 

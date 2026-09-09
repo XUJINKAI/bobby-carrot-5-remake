@@ -41,7 +41,9 @@ import {
   editorMapPath,
   exploreCollectionPath,
   explorePlayPath,
+  replayAssetUrl,
 } from "../../app/routes.js";
+import { siteUrl } from "../../services/assets/gameAssets.js";
 import {
   configureShell,
   type ShellConfig,
@@ -234,6 +236,9 @@ export async function renderGamePage(
     root: app,
     game,
     filename: `${identity.collection}-${identity.id}`,
+    builtinReplayUrl: siteUrl(
+      replayAssetUrl(identity.collection, identity.id),
+    ),
     meta: {
       name: identity.title,
       url: window.location.href,

@@ -125,7 +125,11 @@ export {
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
-export { runReplay, type ReplayReport } from "./replay/ReplayRunner.js";
+export {
+  runReplay,
+  type ReplayReport,
+  type ReplayRunOptions,
+} from "./replay/ReplayRunner.js";
 
 /** Canonical 地图序列化合同。 */
 export type {

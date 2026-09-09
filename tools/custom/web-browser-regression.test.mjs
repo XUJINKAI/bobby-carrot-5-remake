@@ -460,7 +460,15 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay output was not editable");
   if (controls.speedType !== "number" || controls.speedValue !== "1")
     throw new Error("Replay playback speed was not an editable number");
-  for (const label of ["播放", "停止", "跳到起点", "跳到终点", "复制", "下载"])
+  for (const label of [
+    "播放",
+    "停止",
+    "跳到起点",
+    "跳到终点",
+    "复制",
+    "下载",
+    "加载内置过法",
+  ])
     if (!controls.actions.some((action) => action.label === label))
       throw new Error(`Replay panel action missing: ${label}`);
   for (const action of ["slower", "faster"])
@@ -538,6 +546,17 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay playback did not accept an unrestricted positive speed");
   if (playbackControls.messagePresent)
     throw new Error("Replay panel still mounted the variable-height message");
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+    )) === "当前关卡暂无内置过法",
+  );
 
   await cdp.evaluate(
     sessionId,

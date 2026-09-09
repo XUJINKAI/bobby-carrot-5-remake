@@ -172,6 +172,25 @@ test("Replay 保留受阻的玩家输入尝试", () => {
   assert.equal(runReplay(level, replay).actual.endTick, replay.endTick);
 });
 
+test("ReplayRunner 拒绝不符合播放合同的输入", () => {
+  const replay = {
+    formatVersion: 2,
+    meta: {
+      name: "错误版本",
+      url: "/test/invalid-version",
+      final_status: "playing",
+      note: "",
+    },
+    runtime: {
+      worldHz: 20,
+      bobbyLocomotion: { moveMs: 100, speedShoesScale: 0.76 },
+    },
+    endTick: 0,
+    frames: [],
+  };
+  assert.throws(() => runReplay(carrotLevel(), replay), /formatVersion 2/);
+});
+
 test("Replay 录制拒绝不可序列化的 Entity 初始化回调", () => {
   const level = carrotLevel();
   const session = new GameplaySession({ initializeEntityState: () => ({}) });

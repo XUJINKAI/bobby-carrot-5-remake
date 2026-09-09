@@ -1,18 +1,16 @@
-import type { Direction } from "@bobby/model";
 import type {
   GameplaySession,
   GameplayTickInput,
   GameplayTickResult,
 } from "../core/GameplaySession.js";
-import type { BobbyLocomotionTiming } from "../entities/player/BobbyLocomotion.js";
 import type { PresentationClock } from "../time/PresentationClock.js";
 import type { WorldTick } from "../time/WorldClock.js";
-import type { EntityId } from "../world/entity/EntityInstance.js";
 import {
   type Replay,
   type ReplayFrame,
 } from "./ReplayFormat.js";
 import { replayInputGroups } from "./ReplayRunner.js";
+import { validateReplay } from "./ReplayValidation.js";
 
 interface ActiveReplayPlayback {
   replay: Replay;
@@ -48,7 +46,7 @@ export class ReplayPlayback {
 
   start(replay: Replay): void {
     this.stop();
-    validateReplayForPlayback(
+    validateReplay(
       this.session.actorIds,
       this.session.bobbyLocomotion,
       replay,
@@ -98,7 +96,7 @@ export class ReplayPlayback {
 
   jumpToEnd(replay: Replay): GameplayTickResult[] {
     this.stop();
-    validateReplayForPlayback(
+    validateReplay(
       this.session.actorIds,
       this.session.bobbyLocomotion,
       replay,
@@ -124,54 +122,4 @@ export class ReplayPlayback {
     this.session.clock.setHz(replay.runtime.worldHz);
     this.session.restart();
   }
-}
-
-function validateReplayForPlayback(
-  actorIds: readonly EntityId[],
-  bobbyLocomotion: BobbyLocomotionTiming,
-  replay: Replay,
-): void {
-  if (replay.formatVersion !== 1)
-    throw new Error(`不支持 Replay formatVersion ${replay.formatVersion}`);
-  if (!Number.isInteger(replay.endTick) || replay.endTick < 0)
-    throw new Error("Replay endTick 必须是非负整数");
-  if (!Number.isFinite(replay.runtime?.worldHz) || replay.runtime.worldHz <= 0)
-    throw new Error("Replay worldHz 必须是正数");
-  if (
-    JSON.stringify(replay.runtime.bobbyLocomotion) !==
-    JSON.stringify(bobbyLocomotion)
-  )
-    throw new Error("Replay 的 Bobby 运动参数与当前 Game 不兼容");
-
-  const actors = new Set(actorIds);
-  let previousTick = -1;
-  for (const frame of replay.frames) {
-    if (
-      !Number.isInteger(frame.tick) ||
-      frame.tick < 0 ||
-      frame.tick >= replay.endTick ||
-      frame.tick <= previousTick
-    )
-      throw new Error("Replay frame tick 必须严格递增且位于运行区间内");
-    previousTick = frame.tick;
-    for (const group of frame.groups) {
-      for (const intent of group.intents) {
-        if (
-          intent.type !== "move" ||
-          !actors.has(intent.actorId) ||
-          !isDirection(intent.direction)
-        )
-          throw new Error("Replay 包含无效的玩家移动输入");
-      }
-    }
-  }
-}
-
-function isDirection(value: unknown): value is Direction {
-  return (
-    value === "up" ||
-    value === "down" ||
-    value === "left" ||
-    value === "right"
-  );
 }

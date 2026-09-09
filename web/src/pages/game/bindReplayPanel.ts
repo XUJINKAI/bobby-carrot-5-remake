@@ -5,6 +5,7 @@ import type {
   ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
+import { loadReplayAsset, parseReplayText } from "./replayAssets.js";
 
 export interface ReplayPanelController {
   toggle(): void;
@@ -17,6 +18,7 @@ export function bindReplayPanel(options: {
   root: HTMLElement;
   game: Game;
   filename: string;
+  builtinReplayUrl: string;
   meta: ReplayRecordingMeta;
   onVisibilityChange(open: boolean): void;
   onTimelineRestart(): void;
@@ -41,11 +43,14 @@ export function bindReplayPanel(options: {
   const end = actionButton(panel, "end");
   const copy = actionButton(panel, "copy");
   const download = actionButton(panel, "download");
+  const loadBuiltin = actionButton(panel, "load-builtin");
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = false;
   let selectOnClick = true;
   let appliedTimeScale = 1;
+  let loadingBuiltin = false;
+  let destroyed = false;
 
   const setOpen = (value: boolean): void => {
     open = value;
@@ -198,6 +203,28 @@ export function bindReplayPanel(options: {
     });
   };
 
+  const loadBuiltinReplay = async (): Promise<void> => {
+    loadingBuiltin = true;
+    verification.textContent = "正在读取内置过法";
+    verification.classList.remove("failed");
+    update();
+    try {
+      const loaded = await loadReplayAsset(options.builtinReplayUrl);
+      if (destroyed) return;
+      options.game.stopReplayPlayback();
+      replay = loaded.replay;
+      output.value = loaded.text;
+      selectOnClick = true;
+      verification.textContent = "内置过法已载入";
+      verification.classList.remove("failed");
+    } catch (error) {
+      if (!destroyed) showError(error);
+    } finally {
+      loadingBuiltin = false;
+      if (!destroyed) update();
+    }
+  };
+
   const onOutputInput = (): void => {
     const text = output.value.trim();
     if (!text) {
@@ -256,6 +283,7 @@ export function bindReplayPanel(options: {
     else if (action === "end") jumpToEnd();
     else if (action === "copy") void copyReplay();
     else if (action === "download") downloadReplay();
+    else if (action === "load-builtin") void loadBuiltinReplay();
   };
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
@@ -287,14 +315,16 @@ export function bindReplayPanel(options: {
           ? `从关卡起点记录 · ${replay.endTick} ticks`
           : "从关卡起点记录 · 0 ticks";
     record.textContent = recording ? "停止录制" : "重新开始并录制";
-    record.disabled = playing;
+    record.disabled = playing || loadingBuiltin;
     play.textContent = playing && !paused ? "暂停" : "播放";
-    play.disabled = replay === null || recording;
+    play.disabled = replay === null || recording || loadingBuiltin;
     stopPlayback.disabled = !playing;
-    beginning.disabled = replay === null || recording;
-    end.disabled = replay === null || recording;
-    copy.disabled = output.value.length === 0;
-    download.disabled = output.value.length === 0;
+    beginning.disabled = replay === null || recording || loadingBuiltin;
+    end.disabled = replay === null || recording || loadingBuiltin;
+    copy.disabled = output.value.length === 0 || loadingBuiltin;
+    download.disabled = output.value.length === 0 || loadingBuiltin;
+    loadBuiltin.disabled = recording || playing || loadingBuiltin;
+    loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
   };
   update();
 
@@ -305,6 +335,7 @@ export function bindReplayPanel(options: {
     update,
     stopRecording,
     destroy(): void {
+      destroyed = true;
       panel.removeEventListener("click", onClick);
       output.removeEventListener("input", onOutputInput);
       output.removeEventListener("focus", onOutputFocus);
@@ -337,11 +368,4 @@ function safeFilename(value: string): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function parseReplayText(text: string): Replay {
-  const value: unknown = JSON.parse(text);
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Replay JSON 必须是对象");
-  return value as Replay;
 }
