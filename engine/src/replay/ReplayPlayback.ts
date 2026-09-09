@@ -38,6 +38,10 @@ export class ReplayPlayback {
     return this.active !== null;
   }
 
+  get paused(): boolean {
+    return this.active !== null && this.session.clock.paused;
+  }
+
   get speed(): number {
     return this.speedValue;
   }
@@ -81,8 +85,20 @@ export class ReplayPlayback {
 
   setSpeed(speed: number): void {
     if (!Number.isFinite(speed) || speed <= 0) return;
-    this.speedValue = Math.min(8, Math.max(0.1, speed));
+    this.speedValue = speed;
     if (this.active) this.applySpeed();
+  }
+
+  pause(): void {
+    if (!this.active) return;
+    this.session.clock.pause();
+    this.presentationClock.pause();
+  }
+
+  resume(): void {
+    if (!this.active) return;
+    this.session.clock.resume();
+    this.presentationClock.resume();
   }
 
   inputForTick(time: WorldTick): GameplayTickInput {

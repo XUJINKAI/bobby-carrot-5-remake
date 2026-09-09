@@ -12,10 +12,6 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
       </div>
     </section>
 
-    <p data-replay-message>
-      开始录制会从关卡起点重新运行。键盘、摇杆与屏幕操作会记录为 World Tick 上的语义输入。
-    </p>
-
     <button
       class="primary-btn replay-panel-record"
       type="button"
@@ -44,6 +40,14 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
         >
           播放
         </button>
+        <button
+          class="ghost-btn"
+          type="button"
+          data-replay-action="stop-playback"
+          disabled
+        >
+          停止
+        </button>
         <div class="replay-panel-speed">
           <button
             class="ghost-btn"
@@ -59,8 +63,6 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
               data-replay-speed
               type="number"
               inputmode="decimal"
-              min="0.1"
-              max="8"
               step="any"
               value="1"
               aria-label="播放倍速"
@@ -77,6 +79,16 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
             <AppIcon name="fast-forward" :size="16" />
           </button>
         </div>
+      </div>
+      <div class="replay-panel-seek-actions">
+        <button
+          class="ghost-btn"
+          type="button"
+          data-replay-action="beginning"
+          disabled
+        >
+          跳到起点
+        </button>
         <button
           class="ghost-btn"
           type="button"
@@ -168,8 +180,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 }
 
 .replay-panel-status small,
-.replay-panel-result-title span,
-.replay-panel > p {
+.replay-panel-result-title span {
   color: var(--bc-text-muted);
 }
 
@@ -177,13 +188,9 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
   color: #ff9c8f;
 }
 
-.replay-panel > p {
-  font-size: 0.78rem;
-  line-height: 1.55;
-}
-
 .replay-panel-record {
   width: 100%;
+  margin-top: 14px;
 }
 
 .replay-panel.recording .replay-panel-record {
@@ -214,13 +221,14 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 }
 
 .replay-panel-playback-actions,
+.replay-panel-seek-actions,
 .replay-panel-export-actions {
   margin-top: 8px;
 }
 
 .replay-panel-playback-actions {
   display: grid;
-  grid-template-columns: 0.72fr 1.55fr 0.95fr;
+  grid-template-columns: 0.72fr 0.72fr 1.55fr;
 }
 
 .replay-panel-speed {
@@ -230,6 +238,11 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
   border: var(--bc-control-border-width) solid var(--bc-panel-border);
   border-radius: var(--bc-control-radius);
   background: var(--bc-control);
+}
+
+.replay-panel-speed.invalid {
+  border-color: #ff7468;
+  box-shadow: 0 0 0 2px rgb(255 116 104 / 24%);
 }
 
 .replay-panel-speed button {
@@ -278,12 +291,14 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
   pointer-events: none;
 }
 
+.replay-panel-seek-actions,
 .replay-panel-export-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
 
 .replay-panel-playback-actions button,
+.replay-panel-seek-actions button,
 .replay-panel-export-actions button {
   min-height: 38px;
   padding-inline: 5px;

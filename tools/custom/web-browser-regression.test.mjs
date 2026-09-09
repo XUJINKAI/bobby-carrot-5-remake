@@ -443,7 +443,7 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay output was not editable");
   if (controls.speedType !== "number" || controls.speedValue !== "1")
     throw new Error("Replay playback speed was not an editable number");
-  for (const label of ["播放", "跳到终点", "复制", "下载"])
+  for (const label of ["播放", "停止", "跳到起点", "跳到终点", "复制", "下载"])
     if (!controls.actions.some((action) => action.label === label))
       throw new Error(`Replay panel action missing: ${label}`);
   for (const action of ["slower", "faster"])
@@ -472,6 +472,55 @@ async function verifyReplayPanel(cdp, url) {
   );
   if (adjustedSpeed.result.value !== "1.5")
     throw new Error("Replay speed preset adjustment did not use the next value");
+  const playbackControls = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const input = document.querySelector('[data-replay-speed]');
+      const play = document.querySelector('[data-replay-action="play"]');
+      const stop = document.querySelector('[data-replay-action="stop-playback"]');
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      play.click();
+      const invalidRejected = input.getAttribute('aria-invalid') === 'true';
+      input.value = '20';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      play.click();
+      const runningLabel = play.textContent.trim();
+      const stopWasEnabled = !stop.disabled;
+      play.click();
+      const pausedLabel = play.textContent.trim();
+      const pausedStatus = document.querySelector('[data-replay-status]').textContent;
+      stop.click();
+      return {
+        invalidRejected,
+        runningLabel,
+        stopWasEnabled,
+        pausedLabel,
+        pausedStatus,
+        stopDisabledAfterExit: stop.disabled,
+        speedValue: input.value,
+        speedInvalidAfterEdit: input.hasAttribute('aria-invalid'),
+        messagePresent: Boolean(document.querySelector('[data-replay-message]')),
+      };
+    })()`,
+  );
+  if (!playbackControls.invalidRejected)
+    throw new Error("Replay playback accepted an empty speed");
+  if (
+    playbackControls.runningLabel !== "暂停" ||
+    !playbackControls.stopWasEnabled ||
+    playbackControls.pausedLabel !== "播放" ||
+    playbackControls.pausedStatus !== "播放已暂停"
+  )
+    throw new Error("Replay play, pause and stop controls did not reflect state");
+  if (
+    !playbackControls.stopDisabledAfterExit ||
+    playbackControls.speedValue !== "20" ||
+    playbackControls.speedInvalidAfterEdit
+  )
+    throw new Error("Replay playback did not accept an unrestricted positive speed");
+  if (playbackControls.messagePresent)
+    throw new Error("Replay panel still mounted the variable-height message");
 
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",

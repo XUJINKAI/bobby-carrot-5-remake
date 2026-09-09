@@ -200,13 +200,18 @@ Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 Wor
 ```ts
 game.startReplayPlayback(replay);
 game.setReplayPlaybackSpeed(4);
+game.pauseReplayPlayback();
+game.resumeReplayPlayback();
+game.stopReplayPlayback();
 game.jumpReplayToEnd(replay);
 game.replayPlaying;
+game.replayPaused;
 game.replayPlaybackSpeed;
 ```
 
-`startReplayPlayback()` 按 Replay 的 `worldHz` 从关卡起点实时执行；播放倍速同时驱动
-World 与 Presentation。`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+`startReplayPlayback()` 按 Replay 的 `worldHz` 从关卡起点实时执行；任意有限正数倍速同时
+驱动 World 与 Presentation。暂停保留当前位置，停止退出 Replay 控制并恢复宿主时钟状态。
+`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
 
 常用只读状态：
 

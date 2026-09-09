@@ -244,6 +244,10 @@ export class Game {
     return this.replayPlayback.playing;
   }
 
+  get replayPaused(): boolean {
+    return this.replayPlayback.paused;
+  }
+
   get replayPlaybackSpeed(): number {
     return this.replayPlayback.speed;
   }
@@ -368,6 +372,24 @@ export class Game {
 
   setReplayPlaybackSpeed(speed: number): void {
     this.replayPlayback.setSpeed(speed);
+    this.render();
+    this.emit("change");
+  }
+
+  pauseReplayPlayback(): void {
+    this.changeReplayPlayback("pause");
+  }
+  resumeReplayPlayback(): void {
+    this.changeReplayPlayback("resume");
+  }
+
+  stopReplayPlayback(): void {
+    this.changeReplayPlayback("stop");
+  }
+
+  private changeReplayPlayback(action: "pause" | "resume" | "stop"): void {
+    if (!this.replayPlayback.playing) return;
+    this.replayPlayback[action]();
     this.render();
     this.emit("change");
   }

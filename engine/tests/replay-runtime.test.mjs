@@ -110,8 +110,14 @@ test("ReplayPlayback 按记录输入播放并恢复宿主时钟状态", () => {
   playback.setSpeed(0.1);
   assert.equal(session.clock.speed, 0.1);
   assert.equal(presentationClock.speed, 0.1);
-  playback.setSpeed(12);
-  assert.equal(playback.speed, 8);
+  playback.pause();
+  assert.equal(playback.paused, true);
+  assert.equal(session.clock.paused, true);
+  assert.equal(presentationClock.paused, true);
+  playback.resume();
+  assert.equal(playback.paused, false);
+  playback.setSpeed(20);
+  assert.equal(playback.speed, 20);
 
   session.advanceTicks(playback.remainingTicks, (time) =>
     playback.inputForTick(time),

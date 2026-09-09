@@ -19,7 +19,6 @@ export function bindReplayPanel(options: {
   const stage = required<HTMLElement>(options.root, "[data-game-stage]");
   const status = required<HTMLElement>(panel, "[data-replay-status]");
   const ticks = required<HTMLElement>(panel, "[data-replay-ticks]");
-  const message = required<HTMLElement>(panel, "[data-replay-message]");
   const verification = required<HTMLElement>(
     panel,
     "[data-replay-verification]",
@@ -27,16 +26,18 @@ export function bindReplayPanel(options: {
   const output = required<HTMLTextAreaElement>(panel, "[data-replay-output]");
   const record = actionButton(panel, "record");
   const play = actionButton(panel, "play");
+  const stopPlayback = actionButton(panel, "stop-playback");
   const slower = actionButton(panel, "slower");
   const faster = actionButton(panel, "faster");
+  const speedControl = required<HTMLElement>(panel, ".replay-panel-speed");
   const speedInput = required<HTMLInputElement>(panel, "[data-replay-speed]");
+  const beginning = actionButton(panel, "beginning");
   const end = actionButton(panel, "end");
   const copy = actionButton(panel, "copy");
   const download = actionButton(panel, "download");
   const playbackSpeeds = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = false;
-  let observedPlaying = false;
   let selectOnClick = true;
 
   const setOpen = (value: boolean): void => {
@@ -59,6 +60,22 @@ export function bindReplayPanel(options: {
     verification.classList.add("failed");
   };
 
+  const clearSpeedError = (): void => {
+    speedControl.classList.remove("invalid");
+    speedInput.removeAttribute("aria-invalid");
+  };
+
+  const readPlaybackSpeed = (): number | null => {
+    const value = speedInput.valueAsNumber;
+    if (Number.isFinite(value) && value > 0) {
+      clearSpeedError();
+      return value;
+    }
+    speedControl.classList.add("invalid");
+    speedInput.setAttribute("aria-invalid", "true");
+    return null;
+  };
+
   const verifyReplay = (): void => {
     if (!replay) return;
     try {
@@ -76,11 +93,9 @@ export function bindReplayPanel(options: {
       output.value = "";
       verification.textContent = "正在录制";
       verification.classList.remove("failed");
-      message.textContent =
-        "继续操作关卡；等待和受阻操作也属于测试过程。完成后选择“停止录制”。";
       update();
     } catch (error) {
-      message.textContent = errorMessage(error);
+      showError(error);
     }
   };
 
@@ -89,41 +104,62 @@ export function bindReplayPanel(options: {
     try {
       replay = options.game.stopReplayRecording();
       output.value = `${JSON.stringify(replay, null, 2)}\n`;
-      message.textContent =
-        "Replay 已从关卡起点重新执行并生成最终状态指纹，可以复制或下载为测试输入。";
       verifyReplay();
-      update();
-    } catch (error) {
-      message.textContent = errorMessage(error);
-    }
-  };
-
-  const playReplay = (): void => {
-    if (!replay) return;
-    try {
-      options.onTimelineRestart();
-      options.game.startReplayPlayback(replay);
-      message.textContent = "Replay 正在从关卡起点按记录的 World Tick 播放。";
       update();
     } catch (error) {
       showError(error);
     }
   };
 
-  const setPlaybackSpeed = (value: number): void => {
-    options.game.setReplayPlaybackSpeed(value);
-    speedInput.value = String(options.game.replayPlaybackSpeed);
+  const toggleReplayPlayback = (): void => {
+    if (!replay) return;
+    if (options.game.replayPlaying && !options.game.replayPaused) {
+      options.game.pauseReplayPlayback();
+      update();
+      return;
+    }
+    const speed = readPlaybackSpeed();
+    if (speed === null) return;
+    try {
+      options.game.setReplayPlaybackSpeed(speed);
+      if (options.game.replayPlaying) {
+        options.game.resumeReplayPlayback();
+      } else {
+        options.onTimelineRestart();
+        options.game.startReplayPlayback(replay);
+      }
+      update();
+    } catch (error) {
+      showError(error);
+    }
+  };
+
+  const exitReplayPlayback = (): void => {
+    options.game.stopReplayPlayback();
+    update();
   };
 
   const adjustPlaybackSpeed = (direction: -1 | 1): void => {
-    const current = options.game.replayPlaybackSpeed;
+    const entered = speedInput.valueAsNumber;
+    const current =
+      Number.isFinite(entered) && entered > 0
+        ? entered
+        : options.game.replayPlaybackSpeed;
     const value =
       direction < 0
         ? [...playbackSpeeds].reverse().find((speed) => speed < current)
         : playbackSpeeds.find((speed) => speed > current);
-    setPlaybackSpeed(
-      value ?? (direction < 0 ? playbackSpeeds[0] : playbackSpeeds[7]),
-    );
+    const next = value ?? current;
+    speedInput.value = String(next);
+    clearSpeedError();
+    if (options.game.replayPlaying)
+      options.game.setReplayPlaybackSpeed(next);
+  };
+
+  const jumpToBeginning = (): void => {
+    options.onTimelineRestart();
+    options.game.restart();
+    update();
   };
 
   const jumpToEnd = (): void => {
@@ -131,7 +167,6 @@ export function bindReplayPanel(options: {
     try {
       options.onTimelineRestart();
       options.game.jumpReplayToEnd(replay);
-      message.textContent = "已从关卡起点快速执行到 Replay 终点。";
       update();
     } catch (error) {
       showError(error);
@@ -193,12 +228,7 @@ export function bindReplayPanel(options: {
   };
 
   const onSpeedInput = (): void => {
-    const value = speedInput.valueAsNumber;
-    if (Number.isFinite(value) && value > 0) setPlaybackSpeed(value);
-  };
-
-  const onSpeedChange = (): void => {
-    speedInput.value = String(options.game.replayPlaybackSpeed);
+    clearSpeedError();
   };
 
   const onClick = (event: Event): void => {
@@ -208,9 +238,11 @@ export function bindReplayPanel(options: {
     const action = button?.dataset.replayAction;
     if (action === "record" && options.game.replayRecording) stopRecording();
     else if (action === "record") startRecording();
-    else if (action === "play") playReplay();
+    else if (action === "play") toggleReplayPlayback();
+    else if (action === "stop-playback") exitReplayPlayback();
     else if (action === "slower") adjustPlaybackSpeed(-1);
     else if (action === "faster") adjustPlaybackSpeed(1);
+    else if (action === "beginning") jumpToBeginning();
     else if (action === "end") jumpToEnd();
     else if (action === "copy") void copyReplay();
     else if (action === "download") downloadReplay();
@@ -221,23 +253,22 @@ export function bindReplayPanel(options: {
   output.addEventListener("click", onOutputClick);
   output.addEventListener("blur", onOutputBlur);
   speedInput.addEventListener("input", onSpeedInput);
-  speedInput.addEventListener("change", onSpeedChange);
 
   const update = (): void => {
     const recording = options.game.replayRecording;
     const playing = options.game.replayPlaying;
-    if (observedPlaying && !playing)
-      message.textContent = "Replay 已播放到记录终点。";
-    observedPlaying = playing;
+    const paused = options.game.replayPaused;
     panel.classList.toggle("recording", recording);
-    panel.classList.toggle("playing", playing);
+    panel.classList.toggle("playing", playing && !paused);
     status.textContent = recording
       ? "正在录制"
-      : playing
-        ? "正在播放"
-        : replay
-          ? "Replay 已载入"
-          : "准备录制";
+      : paused
+        ? "播放已暂停"
+        : playing
+          ? "正在播放"
+          : replay
+            ? "Replay 已载入"
+            : "准备录制";
     ticks.textContent = recording
       ? `World ${options.game.replayTickCount} ticks`
       : playing && replay
@@ -247,12 +278,11 @@ export function bindReplayPanel(options: {
           : "从关卡起点记录 · 0 ticks";
     record.textContent = recording ? "停止录制" : "重新开始并录制";
     record.disabled = playing;
-    play.disabled = replay === null || recording || playing;
-    end.disabled = replay === null || recording || playing;
-    speedInput.value = String(options.game.replayPlaybackSpeed);
-    slower.disabled = options.game.replayPlaybackSpeed <= playbackSpeeds[0];
-    faster.disabled =
-      options.game.replayPlaybackSpeed >= playbackSpeeds[7];
+    play.textContent = playing && !paused ? "暂停" : "播放";
+    play.disabled = replay === null || recording;
+    stopPlayback.disabled = !playing;
+    beginning.disabled = replay === null || recording;
+    end.disabled = replay === null || recording;
     copy.disabled = output.value.length === 0;
     download.disabled = output.value.length === 0;
   };
@@ -271,7 +301,6 @@ export function bindReplayPanel(options: {
       output.removeEventListener("click", onOutputClick);
       output.removeEventListener("blur", onOutputBlur);
       speedInput.removeEventListener("input", onSpeedInput);
-      speedInput.removeEventListener("change", onSpeedChange);
       stage.classList.remove("replay-panel-open");
     },
   };
