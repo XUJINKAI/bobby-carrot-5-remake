@@ -192,7 +192,7 @@ const water = terrain({
   id: "water",
   label: "水",
   type: "water",
-  primary: bg(6, 6),
+  primary: bg(6, 7),
   rows: familyRows("water"),
   auto: weighted([
     [bg(6, 6), 90],
@@ -204,7 +204,7 @@ const waterfall = terrain({
   id: "waterfall",
   label: "瀑布",
   type: "waterfall",
-  primary: bg(6, 13),
+  primary: bg(6, 12),
   rows: familyRows("waterfall"),
   auto: {
     kind: "vertical",
@@ -219,7 +219,7 @@ const starfield = terrain({
   label: "星空",
   type: "sky",
   theme: "space",
-  primary: bg(5, 10),
+  primary: bg(5, 9),
   rows: familyRows("starfield"),
   auto: weighted([
     [bg(5, 8), 5],
@@ -233,6 +233,7 @@ const moon = terrain({
   label: "月亮",
   type: "sky",
   theme: "space",
+  primary: bg(5, 13),
   rows: familyRows("moon"),
 });
 
@@ -243,6 +244,7 @@ const snowCloud = terrain({
   type: "ground",
   theme: "snow",
   themeFamily: "base-ground",
+  primary: walk(9, 7),
   rows: familyRows("snow-cloud"),
   auto: { kind: "weighted", variants: weights(snowCloudTypes), salt: 37 },
 });
@@ -270,6 +272,7 @@ const grass = terrain({
   type: "ground",
   theme: "forest",
   themeFamily: "base-ground",
+  primary: walk(10, 2),
   rows: familyRows("grass"),
   auto: {
     kind: "neighbor",
@@ -304,6 +307,7 @@ const hedge = terrain({
   label: "篱笆",
   type: "solid",
   theme: "forest",
+  primary: bg(5, 7),
   rows: familyRows("hedge"),
 });
 
@@ -312,6 +316,7 @@ const tree = terrain({
   label: "树",
   type: "solid",
   theme: "forest",
+  primary: bg(3, 15),
   rows: familyRows("tree"),
 });
 
@@ -320,6 +325,7 @@ const stoneWall = terrain({
   label: "石墙",
   type: "solid",
   theme: "forest",
+  primary: bg(3, 4),
   rows: familyRows("stone-wall"),
 });
 
@@ -372,6 +378,7 @@ const christmasTree = terrain({
   label: "圣诞树",
   type: "solid",
   theme: "snow",
+  primary: bg(2, 9),
   rows: familyRows("christmas-tree"),
 });
 const snowFenceTypes = familyTypes("snow-fence");
@@ -382,6 +389,7 @@ const snowFence = terrain({
   slot: "overlay",
   theme: "snow",
   themeFamily: "fence",
+  primary: bg(4, 1),
   rows: familyRows("snow-fence"),
   auto: { kind: "fence", variants: snowFenceTypes },
 });
@@ -451,34 +459,28 @@ export const SURFACE_TERRAINS: readonly SurfaceTerrainDefinition[] = [
 
 export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
   {
-    id: "water-space",
-    label: "水与太空",
-    rows: [
-      ["water", "waterfall", "starfield", "moon"],
-      ["snow-cloud"],
-    ],
-  },
-  {
     id: "forest",
     label: "森林",
     rows: [
-      ["grass", "fence", "hedge", "tree"],
-      ["stone-wall", "stump", "flower-pot"],
-      ["stone", "mushroom"],
+      ["grass", "stone-wall", "hedge", "tree"],
+      ["stump", "flower-pot", "stone", "mushroom", "fence"],
+    ],
+  },
+  {
+    id: "water-space",
+    label: "水与太空",
+    rows: [
+      ["water", "waterfall", "starfield", "moon", "snow-cloud"],
+      [],
     ],
   },
   {
     id: "snow",
-    label: "雪地（圣诞）",
+    label: "雪地与沙漠",
     rows: [
-      ["snow-cloud", "snow-rock", "snow-fence", "ice"],
-      ["snowman", "christmas-cane", "christmas-tree"],
+      ["snow-fence", "snowman", "christmas-cane", "christmas-tree"],
+      ["snow-rock", "ice", "sand", "cactus"]
     ],
-  },
-  {
-    id: "desert",
-    label: "沙漠",
-    rows: [["sand", "cactus"]],
   },
 ];
 
