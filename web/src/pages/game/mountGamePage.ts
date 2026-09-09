@@ -69,10 +69,15 @@ import {
 
 export type GamePageMode = "explore" | "adventure";
 
+// TODO 需要根据屏幕宽度设置更好
 const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
-  explore: DEFAULT_CAMERA_OPTIONS,
+  explore: {
+    zoom: 1.1,
+    minZoom: .25,
+    maxZoom: 4,
+  },
   adventure: {
-    zoom: 1,
+    zoom: 1.05,
     minZoom: 0.8,
     maxZoom: 1.15,
   },
