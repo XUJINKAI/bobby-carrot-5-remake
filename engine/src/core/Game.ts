@@ -103,6 +103,7 @@ export class Game {
     this.visual = new VisualRuntime(
       visualRegistry,
       options.images.sourceTileSize,
+      options.runtime?.camera,
     );
     this.audio = options.audio ?? new NullAudioBackend();
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);

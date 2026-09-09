@@ -5,6 +5,18 @@ export interface CameraPoint {
   y: number;
 }
 
+export interface CameraOptions {
+  zoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
+}
+
+export const DEFAULT_CAMERA_OPTIONS: Readonly<Required<CameraOptions>> = {
+  zoom: 1,
+  minZoom: 0.3,
+  maxZoom: 2.75,
+} as const;
+
 interface PanReturn {
   fromX: number;
   fromY: number;
@@ -23,10 +35,10 @@ export class Camera {
   centerY = 0;
   viewportWidth = 1;
   viewportHeight = 1;
-  zoom = 1;
+  zoom: number = DEFAULT_CAMERA_OPTIONS.zoom;
   readonly sourceTileSize: number;
-  private minZoom = 0.3;
-  private maxZoom = 2.75;
+  private minZoom: number = DEFAULT_CAMERA_OPTIONS.minZoom;
+  private maxZoom: number = DEFAULT_CAMERA_OPTIONS.maxZoom;
   private panOffsetX = 0;
   private panOffsetY = 0;
   /** 保留最近一次回中 tween，便于 Debug Presentation 倒一帧。 */
@@ -35,8 +47,18 @@ export class Camera {
   private shakeOffsetX = 0;
   private shakeOffsetY = 0;
 
-  constructor(sourceTileSize = 48) {
+  constructor(sourceTileSize = 48, options: CameraOptions = {}) {
     this.sourceTileSize = sourceTileSize;
+    const minZoom = positiveFinite(
+      options.minZoom,
+      DEFAULT_CAMERA_OPTIONS.minZoom,
+    );
+    const maxZoom = Math.max(
+      minZoom,
+      positiveFinite(options.maxZoom, DEFAULT_CAMERA_OPTIONS.maxZoom),
+    );
+    this.setZoomLimits(minZoom, maxZoom);
+    this.setZoom(positiveFinite(options.zoom, DEFAULT_CAMERA_OPTIONS.zoom));
   }
 
   get tileScreenSize(): number {
@@ -58,9 +80,13 @@ export class Camera {
     this.viewportHeight = Math.max(1, height);
   }
 
-  setZoomLimits(min: number, max = 2.75): void {
-    const safeMin = Number.isFinite(min) ? Math.max(0.1, min) : 0.3;
-    const safeMax = Number.isFinite(max) ? Math.max(safeMin, max) : 2.75;
+  setZoomLimits(min: number, max = DEFAULT_CAMERA_OPTIONS.maxZoom): void {
+    const safeMin = Number.isFinite(min)
+      ? Math.max(0.1, min)
+      : DEFAULT_CAMERA_OPTIONS.minZoom;
+    const safeMax = Number.isFinite(max)
+      ? Math.max(safeMin, max)
+      : DEFAULT_CAMERA_OPTIONS.maxZoom;
     this.minZoom = safeMin;
     this.maxZoom = safeMax;
     this.setZoom(this.zoom);
@@ -218,4 +244,8 @@ export class Camera {
         Math.max(visibleHeight / 2, this.centerY),
       );
   }
+}
+
+function positiveFinite(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }

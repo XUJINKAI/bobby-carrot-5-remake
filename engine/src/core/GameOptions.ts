@@ -3,6 +3,7 @@ import type { BobbyLocomotionTimingOverride } from "../entities/player/BobbyLoco
 import type { ImageManager } from "../image/ImageManager.js";
 import type { ControlBinding } from "../input/ControlBindings.js";
 import type { InputControllerOptions } from "../input/InputController.js";
+import type { CameraOptions } from "../render/Camera.js";
 import type { EngineTimingOptions } from "../time/EngineTiming.js";
 import type { GameplayHudOptions } from "../ui/GameplayHud.js";
 import type { PresentationTuningOverride } from "../visual/tuning/PresentationTuning.js";
@@ -18,6 +19,7 @@ export type RuntimeEntityStateInitializer = (
 ) => EntityState | null | undefined;
 
 export interface GameRuntimeOptions {
+  camera?: CameraOptions;
   hud?: boolean | GameplayHudOptions;
   input?: InputControllerOptions;
   tuning?: PresentationTuningOverride;

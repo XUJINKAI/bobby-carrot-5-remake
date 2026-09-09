@@ -38,6 +38,11 @@ const runtime = await createGameplayRuntime({
       objective: true,
       inventory: true,
     },
+    camera: {
+      zoom: 1,
+      minZoom: 0.3,
+      maxZoom: 2.75,
+    },
     timing: {
       worldHz: 60,
       presentationHz: 60,
@@ -256,7 +261,7 @@ game.renderer.camera.zoom;
 
 ## Runtime Config
 
-基础运行配置覆盖输入、Gameplay HUD、timing 与 presentation tuning：
+基础运行配置覆盖输入、Gameplay HUD、Camera、timing 与 presentation tuning：
 
 ```ts
 runtime: {
@@ -280,6 +285,11 @@ runtime: {
     objective: true,
     inventory: true,
   },
+  camera: {
+    zoom: 1,
+    minZoom: 0.3,
+    maxZoom: 2.75,
+  },
   timing: {
     worldHz: 60,
     presentationHz: 60,
@@ -287,6 +297,8 @@ runtime: {
   tuning: {},
 }
 ```
+
+`camera.zoom / minZoom / maxZoom` 在 `Game` 构造期间应用，第一次加载与渲染关卡时已经生效。宿主可以为不同产品体验提供不同初值和范围；运行中的手势与产品操作继续使用 `Game` façade 调整 Camera。
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
 
