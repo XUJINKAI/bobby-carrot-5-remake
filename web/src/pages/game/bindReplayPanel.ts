@@ -7,6 +7,26 @@ import type {
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
 import { loadReplayAsset, parseReplayText } from "./replayAssets.js";
 
+const REPLAY_PARSE_DELAY_MS = 300;
+
+export function replayVerificationPresentation(
+  report: ReplayReport,
+  expected: Replay,
+): { text: string; failed: boolean } {
+  if (report.actual.status !== expected.meta.final_status) {
+    return {
+      text:
+        `终局不一致 · 记录 ${expected.meta.final_status} / ` +
+        `复跑 ${report.actual.status}`,
+      failed: true,
+    };
+  }
+  return {
+    text: `复跑完成 · ${report.actual.endTick} ticks`,
+    failed: false,
+  };
+}
+
 export interface ReplayPanelController {
   toggle(): void;
   update(): void;
@@ -47,9 +67,10 @@ export function bindReplayPanel(options: {
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = false;
-  let selectOnClick = true;
   let appliedTimeScale = 1;
   let loadingBuiltin = false;
+  let replayTextDirty = false;
+  let replayParseTimer: number | null = null;
   let destroyed = false;
 
   const setOpen = (value: boolean): void => {
@@ -60,9 +81,10 @@ export function bindReplayPanel(options: {
     window.dispatchEvent(new Event("resize"));
   };
 
-  const showReport = (report: ReplayReport): void => {
-    verification.textContent = `复跑完成 · ${report.actual.endTick} ticks`;
-    verification.classList.remove("failed");
+  const showReport = (report: ReplayReport, expected: Replay): void => {
+    const presentation = replayVerificationPresentation(report, expected);
+    verification.textContent = presentation.text;
+    verification.classList.toggle("failed", presentation.failed);
   };
 
   const showError = (error: unknown): void => {
@@ -89,11 +111,43 @@ export function bindReplayPanel(options: {
   const verifyReplay = (): void => {
     if (!replay) return;
     try {
-      showReport(options.game.verifyReplay(replay));
+      showReport(options.game.verifyReplay(replay), replay);
     } catch (error) {
       showError(error);
     }
   };
+
+  const clearReplayParseTimer = (): void => {
+    if (replayParseTimer === null) return;
+    window.clearTimeout(replayParseTimer);
+    replayParseTimer = null;
+  };
+
+  const parseReplayOutput = (): Replay | null => {
+    clearReplayParseTimer();
+    replayTextDirty = false;
+    const text = output.value.trim();
+    if (!text) {
+      replay = null;
+      verification.textContent = "等待录制";
+      verification.classList.remove("failed");
+      update();
+      return null;
+    }
+    try {
+      replay = parseReplayText(text);
+      verification.textContent = "Replay JSON 已更新";
+      verification.classList.remove("failed");
+    } catch (error) {
+      replay = null;
+      showError(error);
+    }
+    update();
+    return replay;
+  };
+
+  const replayForAction = (): Replay | null =>
+    replayTextDirty ? parseReplayOutput() : replay;
 
   const startRecording = (): void => {
     try {
@@ -101,6 +155,8 @@ export function bindReplayPanel(options: {
       options.game.startReplayRecording(options.meta);
       replay = null;
       output.value = "";
+      clearReplayParseTimer();
+      replayTextDirty = false;
       verification.textContent = "正在录制";
       verification.classList.remove("failed");
       update();
@@ -114,6 +170,8 @@ export function bindReplayPanel(options: {
     try {
       replay = options.game.stopReplayRecording();
       output.value = `${JSON.stringify(replay, null, 2)}\n`;
+      clearReplayParseTimer();
+      replayTextDirty = false;
       verifyReplay();
       update();
     } catch (error) {
@@ -122,12 +180,13 @@ export function bindReplayPanel(options: {
   };
 
   const toggleReplayPlayback = (): void => {
-    if (!replay) return;
     if (options.game.replayPlaying && !options.game.replayPaused) {
       options.game.pauseReplayPlayback();
       update();
       return;
     }
+    const selectedReplay = replayForAction();
+    if (!selectedReplay) return;
     const speed = readTimeScale();
     if (speed === null) return;
     try {
@@ -137,7 +196,7 @@ export function bindReplayPanel(options: {
         options.game.resumeReplayPlayback();
       } else {
         options.onTimelineRestart();
-        options.game.startReplayPlayback(replay);
+        options.game.startReplayPlayback(selectedReplay);
       }
       update();
     } catch (error) {
@@ -168,16 +227,18 @@ export function bindReplayPanel(options: {
   };
 
   const jumpToBeginning = (): void => {
+    if (!replayForAction()) return;
     options.onTimelineRestart();
     options.game.restart();
     update();
   };
 
   const jumpToEnd = (): void => {
-    if (!replay) return;
+    const selectedReplay = replayForAction();
+    if (!selectedReplay) return;
     try {
       options.onTimelineRestart();
-      options.game.jumpReplayToEnd(replay);
+      options.game.jumpReplayToEnd(selectedReplay);
       update();
     } catch (error) {
       showError(error);
@@ -214,7 +275,8 @@ export function bindReplayPanel(options: {
       options.game.stopReplayPlayback();
       replay = loaded.replay;
       output.value = loaded.text;
-      selectOnClick = true;
+      clearReplayParseTimer();
+      replayTextDirty = false;
       verification.textContent = "内置过法已载入";
       verification.classList.remove("failed");
     } catch (error) {
@@ -226,38 +288,17 @@ export function bindReplayPanel(options: {
   };
 
   const onOutputInput = (): void => {
-    const text = output.value.trim();
-    if (!text) {
-      replay = null;
-      verification.textContent = "等待录制";
-      verification.classList.remove("failed");
-      update();
-      return;
-    }
-    try {
-      replay = parseReplayText(text);
-      verification.textContent = "Replay JSON 已更新";
-      verification.classList.remove("failed");
-    } catch (error) {
-      replay = null;
-      showError(error);
-    }
+    options.game.stopReplayPlayback();
+    clearReplayParseTimer();
+    replayTextDirty = true;
+    verification.textContent =
+      output.value.length > 0 ? "等待校验" : "等待录制";
+    verification.classList.remove("failed");
+    replayParseTimer = window.setTimeout(() => {
+      replayParseTimer = null;
+      parseReplayOutput();
+    }, REPLAY_PARSE_DELAY_MS);
     update();
-  };
-
-  const onOutputFocus = (): void => {
-    selectOnClick = true;
-    output.select();
-  };
-
-  const onOutputClick = (): void => {
-    if (!selectOnClick) return;
-    output.select();
-    selectOnClick = false;
-  };
-
-  const onOutputBlur = (): void => {
-    selectOnClick = true;
   };
 
   const onSpeedInput = (): void => {
@@ -287,9 +328,6 @@ export function bindReplayPanel(options: {
   };
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
-  output.addEventListener("focus", onOutputFocus);
-  output.addEventListener("click", onOutputClick);
-  output.addEventListener("blur", onOutputBlur);
   speedInput.addEventListener("input", onSpeedInput);
 
   const update = (): void => {
@@ -317,10 +355,13 @@ export function bindReplayPanel(options: {
     record.textContent = recording ? "停止录制" : "重新开始并录制";
     record.disabled = playing || loadingBuiltin;
     play.textContent = playing && !paused ? "暂停" : "播放";
-    play.disabled = replay === null || recording || loadingBuiltin;
+    play.disabled =
+      replayTextDirty || replay === null || recording || loadingBuiltin;
     stopPlayback.disabled = !playing;
-    beginning.disabled = replay === null || recording || loadingBuiltin;
-    end.disabled = replay === null || recording || loadingBuiltin;
+    beginning.disabled =
+      replayTextDirty || replay === null || recording || loadingBuiltin;
+    end.disabled =
+      replayTextDirty || replay === null || recording || loadingBuiltin;
     copy.disabled = output.value.length === 0 || loadingBuiltin;
     download.disabled = output.value.length === 0 || loadingBuiltin;
     loadBuiltin.disabled = recording || playing || loadingBuiltin;
@@ -336,11 +377,9 @@ export function bindReplayPanel(options: {
     stopRecording,
     destroy(): void {
       destroyed = true;
+      clearReplayParseTimer();
       panel.removeEventListener("click", onClick);
       output.removeEventListener("input", onOutputInput);
-      output.removeEventListener("focus", onOutputFocus);
-      output.removeEventListener("click", onOutputClick);
-      output.removeEventListener("blur", onOutputBlur);
       speedInput.removeEventListener("input", onSpeedInput);
       stage.classList.remove("replay-panel-open");
     },

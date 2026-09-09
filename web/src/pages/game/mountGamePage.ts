@@ -35,7 +35,10 @@ import {
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { escapeHtml, formatElapsed } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
-import { bindReplayPanel } from "./bindReplayPanel.js";
+import {
+  bindReplayPanel,
+  type ReplayPanelController,
+} from "./bindReplayPanel.js";
 import { resolveGameMusic } from "./gameMusic.js";
 import {
   canonicalReplayUrl,
@@ -233,35 +236,37 @@ export async function renderGamePage(
   let completionNextId: string | undefined;
   let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
-  const replayPanel = bindReplayPanel({
-    root: app,
-    game,
-    filename: `${identity.collection}-${identity.id}`,
-    builtinReplayUrl: siteUrl(
-      replayAssetUrl(identity.collection, identity.id),
-    ),
-    meta: {
-      name: identity.title,
-      url: canonicalReplayUrl(window.location),
-    },
-    onVisibilityChange(open) {
-      configureShell(
-        gameShellConfig(
-          identity,
-          mode,
-          getWebSettings().controls.screenControlEnabled,
-          explorePreviousMapId,
-          exploreNextMapId,
-          open,
+  const replayPanel: ReplayPanelController = mode === "explore"
+    ? bindReplayPanel({
+        root: app,
+        game,
+        filename: `${identity.collection}-${identity.id}`,
+        builtinReplayUrl: siteUrl(
+          replayAssetUrl(identity.collection, identity.id),
         ),
-        GAME_HELP,
-      );
-    },
-    onTimelineRestart() {
-      levelStartedAt = performance.now();
-      completionNavigationStarted = false;
-    },
-  });
+        meta: {
+          name: identity.title,
+          url: canonicalReplayUrl(window.location),
+        },
+        onVisibilityChange(open) {
+          configureShell(
+            gameShellConfig(
+              identity,
+              mode,
+              getWebSettings().controls.screenControlEnabled,
+              explorePreviousMapId,
+              exploreNextMapId,
+              open,
+            ),
+            GAME_HELP,
+          );
+        },
+        onTimelineRestart() {
+          levelStartedAt = performance.now();
+          completionNavigationStarted = false;
+        },
+      })
+    : NOOP_REPLAY_PANEL_CONTROLLER;
 
   const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
   let adventureCameraViewportWidth = 0;
@@ -561,15 +566,17 @@ function gameShellConfig(
     bottomBar: {
       visible: true,
       fixed: true,
-      leading: [
-        {
-          id: "replay-record",
-          icon: "record",
-          label: "录制",
-          title: "录制 Replay 测试输入",
-          pressed: replayOpen,
-        },
-      ],
+      leading: explore
+        ? [
+            {
+              id: "replay-record",
+              icon: "record",
+              label: "录制",
+              title: "录制 Replay 测试输入",
+              pressed: replayOpen,
+            },
+          ]
+        : [],
       info: [
         { text: identity.title },
         {
@@ -589,6 +596,13 @@ function gameShellConfig(
     },
   };
 }
+
+const NOOP_REPLAY_PANEL_CONTROLLER: ReplayPanelController = {
+  toggle() {},
+  update() {},
+  stopRecording() {},
+  destroy() {},
+};
 
 function backPath(
   identity: GameIdentity,

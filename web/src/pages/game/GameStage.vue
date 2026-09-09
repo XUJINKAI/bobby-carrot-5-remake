@@ -2,7 +2,10 @@
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import ReplayPanel from "./ReplayPanel.vue";
 
-defineProps<{ showProductStats: boolean }>();
+defineProps<{
+  showProductStats: boolean;
+  showReplayPanel: boolean;
+}>();
 </script>
 
 <template>
@@ -29,7 +32,7 @@ defineProps<{ showProductStats: boolean }>();
         </div>
       </div>
     </div>
-    <ReplayPanel />
+    <ReplayPanel v-if="showReplayPanel" />
   </section>
 </template>
 
