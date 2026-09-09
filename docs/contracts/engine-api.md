@@ -260,6 +260,8 @@ Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机�
 
 ## Events
 
+Renderer 按图片图层的实际屏幕像素范围跳过视口外绘制，包含 sprite 帧尺寸、锚点、偏移、旋转和移动插值。自定义 Canvas 图层的绘制范围由回调决定，保持执行。该优化只减少绘制提交；World 更新与场景构建仍处理完整地图，屏幕外机关继续运行。
+
 高层 Game 生命周期事件：
 
 ```ts
