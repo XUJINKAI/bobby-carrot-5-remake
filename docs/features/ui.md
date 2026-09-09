@@ -85,7 +85,7 @@ Home 是产品入口页，承担品牌展示和快速进入模式两项职责。
 
 Adventure 是主入口，Explore 和 Editor 是并列的次级入口，Import Custom Map 是明确的文件入口。
 
-首页顶栏的 GitHub 仓库入口在桌面与移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
+首页顶栏的 GitHub 仓库入口与“开发中”状态在桌面和移动端都保持外露，Settings 与 Help 在移动端进入更多菜单。
 
 Welcome Demo 使用正式 Engine 运行一张短小的演示地图，用于展示移动、收集物和代表性机关。它有独立 session，不写入 Adventure Save 或 Explore 完成记录。完成或死亡时在原 Stage 中展示重玩和进入 Adventure 的动作。
 
@@ -364,6 +364,7 @@ Adventure 的首页菜单、章节入口、关卡入口与夜间列车入口复�
 │                                                            │
 │                 BOBBY CARROT 5 REMAKE                      │
 │                                                            │
+│                    冒险模式                                 │
 │                    [ 继续 12-4 ]                           │
 │                    [ 选择章节 ]                            │
 │                                                            │

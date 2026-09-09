@@ -18,6 +18,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
         <OriginalFlightScene :images="images" :show-stars="false" />
       </div>
       <nav class="adventure-menu" aria-label="冒险模式">
+        <span class="eyebrow adventure-menu-eyebrow">冒险模式</span>
         <a
           class="adventure-menu-card primary"
           :href="'/adventure/play/' + view.resumeLevelId"
@@ -116,6 +117,11 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   padding-top: min(44vh, 320px);
   display: grid;
   gap: 9px;
+}
+
+.adventure-menu-eyebrow {
+  justify-self: start;
+  margin: 0 2px -2px;
 }
 
 .adventure-menu-card {

@@ -126,8 +126,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", dismissOutside
 }
 
 @media (max-width: 900px) {
-  .shell-product-name,
-  .shell-status-text {
+  .shell-product-name {
     display: none;
   }
 }

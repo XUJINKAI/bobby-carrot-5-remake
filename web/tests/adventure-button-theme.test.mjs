@@ -38,4 +38,8 @@ test("Adventure 首页主要入口复用首页激活色", async () => {
     source,
     /\.adventure-menu-card\.primary\s*\{[\s\S]*?border-color: var\(--bc-highlight\);[\s\S]*?background: var\(--bc-active\);/,
   );
+  assert.match(
+    source,
+    /<span class="eyebrow adventure-menu-eyebrow">冒险模式<\/span>\s*<a\s+class="adventure-menu-card primary"/,
+  );
 });
