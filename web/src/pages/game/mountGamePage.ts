@@ -189,7 +189,8 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
-  const productStats = app.querySelector<HTMLElement>("[data-product-stats]");
+  const productTime = app.querySelector<HTMLElement>("[data-product-time]");
+  const productSteps = app.querySelector<HTMLElement>("[data-product-steps]");
 
   const session = await createGameSession({
     canvas,
@@ -386,8 +387,9 @@ export async function renderGamePage(
 
   const update = (): void => {
     persistAdventureSession();
-    if (productStats && game.hasLevel) {
-      productStats.textContent = `${formatElapsed(performance.now() - levelStartedAt)} · ${game.state.moves} STEPS`;
+    if (productTime && productSteps && game.hasLevel) {
+      productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
+      productSteps.textContent = `${game.state.moves} STEPS`;
     }
     renderResult();
     replayPanel.update();
@@ -553,7 +555,7 @@ function gameShellConfig(
           ? [
               {
                 id: "edit",
-                icon: "edit" as const,
+                icon: "edit-map" as const,
                 label: "编辑地图",
                 title: "在编辑器中打开",
                 collapse: "overflow" as const,

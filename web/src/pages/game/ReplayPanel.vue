@@ -91,6 +91,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
           data-replay-action="beginning"
           disabled
         >
+          <AppIcon name="replay-beginning" :size="16" />
           跳到起点
         </button>
         <button
@@ -99,6 +100,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
           data-replay-action="end"
           disabled
         >
+          <AppIcon name="replay-end" :size="16" />
           跳到终点
         </button>
       </div>
@@ -330,6 +332,13 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 .replay-panel-export-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
+}
+
+.replay-panel-seek-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .replay-panel-playback-actions button,

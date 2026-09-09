@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Component } from "vue";
 import {
+  PhArrowClockwise,
   PhArrowCounterClockwise,
   PhArrowLeft,
   PhArrowRight,
@@ -27,6 +28,7 @@ import {
   PhPaintBrush,
   PhPaintBucket,
   PhPalette,
+  PhPencilSimple,
   PhPlay,
   PhPlus,
   PhQuestion,
@@ -68,6 +70,7 @@ const icons: Record<AppIconName, Component> = {
   dropdown: PhCaretDown,
   drag: PhDotsSixVertical,
   edit: PhPaintBrush,
+  "edit-map": PhPencilSimple,
   erase: PhEraser,
   error: PhWarningOctagon,
   external: PhArrowSquareOut,
@@ -91,6 +94,8 @@ const icons: Record<AppIconName, Component> = {
   "previous-track": PhSkipBack,
   redo: PhArrowUUpRight,
   record: PhRecord,
+  "replay-beginning": PhArrowCounterClockwise,
+  "replay-end": PhArrowClockwise,
   rewind: PhRewind,
   restart: PhArrowCounterClockwise,
   select: PhCursorClick,

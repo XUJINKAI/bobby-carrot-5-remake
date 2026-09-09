@@ -61,3 +61,14 @@ test("Replay 面板开关状态在当前标签页中持久化", () => {
   storeReplayPanelOpen(false, storage);
   assert.equal(loadReplayPanelOpen(storage), false);
 });
+
+test("Replay 起点与终点跳转按钮显示对应方向的回转图标", () => {
+  assert.match(
+    replayPanelSource,
+    /<AppIcon name="replay-beginning" :size="16" \/>/,
+  );
+  assert.match(
+    replayPanelSource,
+    /<AppIcon name="replay-end" :size="16" \/>/,
+  );
+});
