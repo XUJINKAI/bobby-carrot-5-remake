@@ -9,7 +9,12 @@ import {
   setAdventureResumeLevel,
   type AdventureSave,
 } from "@bobby/adventure";
-import type { AudioRuntime, ImageManager } from "@bobby/engine";
+import {
+  DEFAULT_CAMERA_OPTIONS,
+  type AudioRuntime,
+  type CameraOptions,
+  type ImageManager,
+} from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
@@ -64,24 +69,19 @@ import {
 
 export type GamePageMode = "explore" | "adventure";
 
+const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
+  explore: DEFAULT_CAMERA_OPTIONS,
+  adventure: {
+    ...DEFAULT_CAMERA_OPTIONS,
+    minZoom: 0.72,
+  },
+};
+
 export interface GameIdentity {
   collection: string;
   id: string;
   title: string;
 }
-
-/** Adventure 用“横向可见格数”表达相机产品策略；Engine 仍只处理 zoom。 */
-export interface AdventureEngineCameraPolicy {
-  minColumns: number;
-  defaultColumns: number;
-  maxColumns: number;
-}
-
-export const DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY: AdventureEngineCameraPolicy = {
-  minColumns: 6,
-  defaultColumns: 7.5,
-  maxColumns: 10,
-};
 
 export interface GamePageContext {
   app: HTMLDivElement;
@@ -99,7 +99,6 @@ export interface GamePageContext {
   adventureScene?: AdventureIndexSpecialScene;
   adventureBackPath?: string;
   adventureCompletionPath?: string;
-  adventureCameraPolicy?: Partial<AdventureEngineCameraPolicy>;
   mode: GamePageMode;
 }
 
@@ -122,7 +121,6 @@ export async function renderGamePage(
     adventureScene,
     adventureBackPath,
     adventureCompletionPath,
-    adventureCameraPolicy,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -208,6 +206,7 @@ export async function renderGamePage(
         : { profile: { superKey: true } }),
     },
     runtime: {
+      camera: GAME_CAMERA_OPTIONS[mode],
       hud: { objective: true, inventory: true },
       input: {
         undo: mode === "explore",
@@ -263,34 +262,6 @@ export async function renderGamePage(
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
-
-  const cameraPolicy = resolveAdventureCameraPolicy(adventureCameraPolicy);
-  let adventureCameraViewportWidth = 0;
-  const applyAdventureCamera = (): void => {
-    if (mode !== "adventure") return;
-    const width = Math.max(1, canvas.getBoundingClientRect().width);
-    const tileSize = game.sourceTileSize;
-    const currentColumns =
-      adventureCameraViewportWidth > 0
-        ? adventureCameraViewportWidth / (tileSize * game.zoom)
-        : cameraPolicy.defaultColumns;
-    const targetColumns = Math.min(
-      cameraPolicy.maxColumns,
-      Math.max(cameraPolicy.minColumns, currentColumns),
-    );
-    const zoomForColumns = (columns: number): number =>
-      width / (tileSize * columns);
-    game.setZoomLimits(
-      zoomForColumns(cameraPolicy.maxColumns),
-      zoomForColumns(cameraPolicy.minColumns),
-    );
-    game.setZoom(zoomForColumns(targetColumns));
-    adventureCameraViewportWidth = width;
-  };
-  applyAdventureCamera();
-  if (mode === "adventure") {
-    window.addEventListener("resize", applyAdventureCamera);
-  }
 
   const persistAdventureSession = (): void => {
     if (!adventureSave || !game.hasLevel) return;
@@ -475,9 +446,6 @@ export async function renderGamePage(
     destroy(): void {
       persistAdventureSession();
       window.clearInterval(statisticsTimer);
-      if (mode === "adventure") {
-        window.removeEventListener("resize", applyAdventureCamera);
-      }
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       replayPanel.destroy();
@@ -608,29 +576,6 @@ function backPath(
     : identity.collection === "imported"
       ? "/"
       : exploreCollectionPath(identity.collection);
-}
-
-function resolveAdventureCameraPolicy(
-  override?: Partial<AdventureEngineCameraPolicy>,
-): AdventureEngineCameraPolicy {
-  const defaults = DEFAULT_ADVENTURE_ENGINE_CAMERA_POLICY;
-  const minColumns = positiveFinite(override?.minColumns, defaults.minColumns);
-  const maxColumns = Math.max(
-    minColumns,
-    positiveFinite(override?.maxColumns, defaults.maxColumns),
-  );
-  const defaultColumns = Math.min(
-    maxColumns,
-    Math.max(
-      minColumns,
-      positiveFinite(override?.defaultColumns, defaults.defaultColumns),
-    ),
-  );
-  return { minColumns, defaultColumns, maxColumns };
-}
-
-function positiveFinite(value: number | undefined, fallback: number): number {
-  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
 function bindGameShell(

@@ -1,6 +1,7 @@
 import {
   createGameplayRuntime,
   ImageManager,
+  type CameraOptions,
   type GameplayRuntime,
 } from "@bobby/engine";
 import type { LevelMap } from "@bobby/model";
@@ -101,6 +102,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
   const ready = (async (): Promise<void> => {
     const level = await loadEmbedMap({ map: options.map, mapUrl: options.mapUrl });
     if (destroyed) return;
+    const camera = resolveCameraOptions(options);
     const playUrl = await officialPlayUrl(level);
     frameLink.href = playUrl;
     terminal.official.href = playUrl;
@@ -117,6 +119,7 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
           musicStyle: options.musicStyle ?? "modern",
         },
         runtime: {
+          camera,
           hud: true,
           input: {
             keyboard: keyboard !== false,
@@ -146,7 +149,6 @@ export function mount(options: BC5RMountOptions): BC5RHandle {
     const audioLevels = applyAudio(runtime, audio);
     runtime.audio.playMusic("ingame1");
     installSoundToggle(runtime, soundButton, audio.enabled, audioLevels, cleanup);
-    applyCamera(runtime, options);
     installZoomPolicy(runtime, canvas, pinchZoom, wheelZoom, cleanup);
     installTerminalOverlay(runtime, terminal, canvasWrap, cleanup);
     const resumeAudio = (): void => runtime?.audio.resume();
@@ -274,7 +276,7 @@ function installSoundToggle(
   cleanup.push(() => button.removeEventListener("click", toggle));
 }
 
-function applyCamera(runtime: GameplayRuntime, options: BC5RMountOptions): void {
+function resolveCameraOptions(options: BC5RMountOptions): CameraOptions {
   const min = options.camera?.minZoom ?? 0.5;
   const max = options.camera?.maxZoom ?? 3;
   const zoom = options.camera?.zoom ?? 1;
@@ -287,8 +289,7 @@ function applyCamera(runtime: GameplayRuntime, options: BC5RMountOptions): void 
     throw new Error("BC5R camera zoom limits are invalid");
   if (!Number.isFinite(zoom) || zoom <= 0)
     throw new Error("BC5R camera zoom must be a positive number");
-  runtime.game.setZoomLimits(min, max);
-  runtime.game.setZoom(zoom);
+  return { zoom, minZoom: min, maxZoom: max };
 }
 
 function createTerminalOverlay(lang: string | undefined): TerminalOverlay {
