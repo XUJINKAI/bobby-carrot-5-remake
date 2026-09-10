@@ -233,7 +233,7 @@ export class BobbyApp {
         );
         this.controller = await renderGamePage({
           ...context,
-          level: importedLevelMap(imported.value),
+          level: imported.level,
           identity: {
             collection: "imported",
             id: "shared-map",

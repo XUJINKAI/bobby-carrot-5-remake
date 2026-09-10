@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import AppIcon from "../../shared/icons/AppIcon.vue";
+
+withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
+  showBuiltin: true,
+});
 </script>
 
 <template>
@@ -123,6 +127,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
         </button>
       </div>
       <button
+        v-if="showBuiltin"
         class="ghost-btn replay-panel-builtin"
         type="button"
         data-replay-action="load-builtin"

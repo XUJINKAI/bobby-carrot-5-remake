@@ -11,6 +11,10 @@ const pageState = fs.readFileSync(
   new URL("../src/pages/editor/useEditorPage.ts", import.meta.url),
   "utf8",
 );
+const workspace = fs.readFileSync(
+  new URL("../src/pages/editor/EditorWorkspace.vue", import.meta.url),
+  "utf8",
+);
 const fieldValues = fs.readFileSync(
   new URL("../src/pages/editor/editorFieldValues.ts", import.meta.url),
   "utf8",
@@ -98,6 +102,15 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
   assert.doesNotMatch(cellInspector, /editor-surface-toggle/);
   assert.doesNotMatch(multiInspector, /editor-surface-toggle/);
   assert.match(multiInspector, /editor-batch-divider/);
+});
+
+test("Editor Play 保持编辑器顶栏并切换为游戏底栏", () => {
+  assert.match(shell, /commands: playing[\s\S]*id: "editor-play"/);
+  assert.match(shell, /leading: playing[\s\S]*id: "editor-replay-record"/);
+  assert.match(shell, /trailing: playing[\s\S]*id: "screen-control"/);
+  assert.match(page, /bindReplayPanel/);
+  assert.match(page, /action === "editor-replay-record"/);
+  assert.match(workspace, /<ReplayPanel v-if="playing" :show-builtin="false" \/>/);
 });
 
 test("Editor 右键切换当前面板的选择工具并建立单格选区", () => {

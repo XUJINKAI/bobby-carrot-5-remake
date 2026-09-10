@@ -38,7 +38,7 @@ export function bindReplayPanel(options: {
   root: HTMLElement;
   game: Game;
   filename: string;
-  builtinReplayUrl: string;
+  builtinReplayUrl?: string;
   meta: ReplayRecordingMeta;
   initialOpen?: boolean;
   onVisibilityChange(open: boolean): void;
@@ -68,7 +68,10 @@ export function bindReplayPanel(options: {
   const end = actionButton(panel, "end");
   const copy = actionButton(panel, "copy");
   const download = actionButton(panel, "download");
-  const loadBuiltin = actionButton(panel, "load-builtin");
+  const loadBuiltin = panel.querySelector<HTMLButtonElement>(
+    '[data-replay-action="load-builtin"]',
+  );
+  const builtinReplayUrl = options.builtinReplayUrl;
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = options.initialOpen ?? false;
@@ -272,12 +275,13 @@ export function bindReplayPanel(options: {
   };
 
   const loadBuiltinReplay = async (): Promise<void> => {
+    if (!builtinReplayUrl) return;
     loadingBuiltin = true;
     verification.textContent = "正在读取内置过法";
     verification.classList.remove("failed");
     update();
     try {
-      const loaded = await loadReplayAsset(options.builtinReplayUrl);
+      const loaded = await loadReplayAsset(builtinReplayUrl);
       if (destroyed) return;
       options.game.stopReplayPlayback();
       replay = loaded.replay;
@@ -388,8 +392,10 @@ export function bindReplayPanel(options: {
       replayTextDirty || replay === null || recording || loadingBuiltin;
     copy.disabled = output.value.length === 0 || loadingBuiltin;
     download.disabled = output.value.length === 0 || loadingBuiltin;
-    loadBuiltin.disabled = recording || playing || loadingBuiltin;
-    loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+    if (loadBuiltin) {
+      loadBuiltin.disabled = recording || playing || loadingBuiltin;
+      loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+    }
   };
   setOpen(open, false);
   update();

@@ -22,7 +22,7 @@ export function replayLayout(cdp, sessionId) {
     `(() => {
       const stage = document.querySelector('[data-game-stage]').getBoundingClientRect();
       const panel = document.querySelector('[data-replay-panel]').getBoundingClientRect();
-      const canvas = document.querySelector('.game-canvas-layer').getBoundingClientRect();
+      const canvas = document.querySelector('.game-canvas-layer, .editor-game-canvas-layer').getBoundingClientRect();
       return {
         stageLeft: stage.left,
         panelLeft: panel.left,

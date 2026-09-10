@@ -506,7 +506,7 @@ EDIT MODE                                  PLAY TEST
                                            TopBar: ■ Stop  ↻ Restart
 ```
 
-TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示当前素材、坐标、变体和操作提示。
+编辑态 TopBar 上下文区域提供地图名称、Undo / Redo、Play Test 和文件入口；BottomBar 展示 Palette、Surface、Inspector 与关卡信息入口。Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制与屏幕摇杆。
 
 Editor Play Test 在当前工作区中切换为正式 GameStage。Stop 销毁临时 Game 和 InputController，并回到相同 Draft。运行时状态不反写 Draft。
 

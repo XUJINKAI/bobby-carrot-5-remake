@@ -7,6 +7,10 @@ import {
 import type { AudioBackend, ImageManager } from "@bobby/engine";
 import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
+import {
+  bindReplayPanel,
+  type ReplayPanelController,
+} from "../game/bindReplayPanel.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
   computed,
@@ -30,13 +34,19 @@ const props = defineProps<{
 const page = useEditorPage(props.initialLevel);
 page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
+let replayPanel: ReplayPanelController | null = null;
 let disposePlayChange = (): void => {};
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
+const editorRoot = ref<HTMLElement | null>(null);
 const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
 const playComplete = ref(false);
+const replayOpen = ref(false);
+const screenControlEnabled = ref(
+  getWebSettings().controls.screenControlEnabled,
+);
 const runtimeIssue = ref<LevelValidationIssue | null>(null);
 const issues = computed(() =>
   validateEditorLevel(
@@ -57,6 +67,9 @@ function syncShell(): void {
     {
       canUndo: session?.game.canUndo ?? false,
       canRedo: session?.game.canRedo ?? false,
+      replayReady: replayPanel !== null,
+      replayOpen: replayOpen.value,
+      screenControlEnabled: screenControlEnabled.value,
     },
     page.leftPanel.value,
     page.surfaceTool.value,
@@ -100,9 +113,29 @@ async function togglePlay(): Promise<void> {
         hud: true,
         input: {
           screenJoystick: {
-            enabled: getWebSettings().controls.screenControlEnabled,
+            enabled: screenControlEnabled.value,
           },
         },
+      },
+    });
+    const root = editorRoot.value;
+    if (!root) throw new Error("Editor Play Test 页面挂载失败");
+    replayPanel = bindReplayPanel({
+      root,
+      game: session.game,
+      filename: `editor-${page.snapshot.value.level.meta.name}`,
+      meta: {
+        name: page.snapshot.value.level.meta.name,
+        url: window.location.href,
+      },
+      initialOpen: false,
+      onVisibilityChange(open) {
+        replayOpen.value = open;
+        syncShell();
+      },
+      onTimelineRestart() {
+        playComplete.value = false;
+        session?.input.setEnabled(true);
       },
     });
     bindPlaySession();
@@ -127,11 +160,15 @@ function syncPlayState(): void {
   playComplete.value = won;
   if (won) session.input.setEnabled(false);
   else if (wasComplete) session.input.setEnabled(true);
+  replayPanel?.update();
   syncShell();
 }
 function stopPlay(): void {
   disposePlayChange();
   disposePlayChange = (): void => {};
+  replayPanel?.destroy();
+  replayPanel = null;
+  replayOpen.value = false;
   playComplete.value = false;
   session?.destroy();
   session = null;
@@ -143,6 +180,7 @@ function restartPlay(): void {
   playComplete.value = false;
   session.input.setEnabled(true);
   session.game.restart();
+  replayPanel?.update();
   syncShell();
 }
 function undo(): void {
@@ -251,6 +289,7 @@ function onShellAction(event: Event): void {
   if (action === "editor-redo") redo();
   if (action === "editor-play") void togglePlay();
   if (action === "editor-restart") restartPlay();
+  if (action === "editor-replay-record") replayPanel?.toggle();
   if (action === "editor-share") page.fileDialogOpen.value = true;
   if (action === "editor-palette") toggleLeftPanel("palette");
   if (action === "editor-surface") toggleLeftPanel("surface");
@@ -279,9 +318,12 @@ function onShellDialogClose(): void {
   if (!playComplete.value) session?.input.setEnabled(true);
 }
 function onScreenControlChange(event: Event): void {
-  session?.input.setScreenJoystickEnabled(
-    Boolean((event as CustomEvent<{ enabled: boolean }>).detail.enabled),
+  const enabled = Boolean(
+    (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
   );
+  screenControlEnabled.value = enabled;
+  session?.input.setScreenJoystickEnabled(enabled);
+  syncShell();
 }
 function onBeforeUnload(event: BeforeUnloadEvent): void {
   if (page.snapshot.value.dirty) event.preventDefault();
@@ -320,6 +362,7 @@ function isMobileEditor(): boolean {
 
 <template>
   <div
+    ref="editorRoot"
     class="bobby-editor"
     :class="{
       'palette-sheet-open': leftOpen,

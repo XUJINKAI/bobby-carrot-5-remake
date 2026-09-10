@@ -181,6 +181,8 @@ EditorMap
 ```
 
 Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport。
+Play Test 保留 Editor TopBar，BottomBar 切换为 Replay 录制与屏幕摇杆。Replay 面板复用
+Explore 的正式录制、播放和导出控制，但不提供与当前 Draft 无关的内置过法入口。
 
 ## 编辑交互
 

@@ -28,6 +28,7 @@ import EditorInspector from "./EditorInspector.vue";
 import EditorLevelInfo from "./EditorLevelInfo.vue";
 import EditorPalette from "./EditorPalette.vue";
 import EditorSurface from "./EditorSurface.vue";
+import ReplayPanel from "../game/ReplayPanel.vue";
 
 defineProps<{
   level: Readonly<EditorMap>;
@@ -127,7 +128,11 @@ const emit = defineEmits<{
       @alternate-b="emit('surfaceAlternateB', $event)"
       @resize="emit('paletteResize', $event)"
     />
-    <section class="editor-map-shell" :class="{ playing }">
+    <section
+      class="editor-map-shell"
+      :class="{ playing }"
+      data-game-stage
+    >
       <EditorCanvas
         v-show="!playing"
         :level="level"
@@ -146,19 +151,22 @@ const emit = defineEmits<{
         @secondary-select="emit('secondarySelect', $event)"
         @resize="emit('resize', $event)"
       />
-      <canvas v-show="playing" data-editor-game-canvas />
-      <div data-editor-game-dialog-root />
-      <div v-if="playing && playComplete" class="result-overlay editor-play-result">
-        <div class="result-card">
-          <div class="result-kicker">PLAY TEST</div>
-          <h2>通关</h2>
-          <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
-          <div class="result-actions">
-            <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
-            <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+      <div v-show="playing" class="editor-game-canvas-layer">
+        <canvas data-editor-game-canvas />
+        <div data-editor-game-dialog-root />
+        <div v-if="playComplete" class="result-overlay editor-play-result">
+          <div class="result-card">
+            <div class="result-kicker">PLAY TEST</div>
+            <h2>通关</h2>
+            <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
+            <div class="result-actions">
+              <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
+              <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+            </div>
           </div>
         </div>
       </div>
+      <ReplayPanel v-if="playing" :show-builtin="false" />
     </section>
     <EditorInspector
       v-show="!playing && rightPanel === 'inspector'"
@@ -209,8 +217,18 @@ const emit = defineEmits<{
 .editor-body.playing {
   grid-template-columns: minmax(0, 1fr);
 }
-.editor-map-shell.playing > canvas[data-editor-game-canvas] {
+.editor-game-canvas-layer {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+}
+.editor-game-canvas-layer > canvas[data-editor-game-canvas] {
   width: calc(100% - var(--engine-gameplay-right-inset, 0px)) !important;
+}
+@media (min-width: 621px) {
+  .editor-map-shell.replay-panel-open .editor-game-canvas-layer {
+    left: 330px;
+  }
 }
 @media (max-width: 1100px) and (min-width: 821px) {
   .editor-body.palette-hidden {
