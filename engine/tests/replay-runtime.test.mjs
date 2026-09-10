@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { ReplayPlayback } from "../dist/replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../dist/replay/ReplayRecorder.js";
+import { replayVerificationStates } from "../dist/replay/ReplayFinalState.js";
 import { runReplay } from "../dist/replay/ReplayRunner.js";
 import { PresentationClock } from "../dist/time/PresentationClock.js";
 
@@ -23,6 +24,17 @@ function carrotLevel() {
       { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
     ],
   };
+}
+
+function assertReplayMatches(level, replay, endTick) {
+  const report = runReplay(level, replay);
+  assert.equal(report.endTick, endTick);
+  const verification = replayVerificationStates(
+    report.actual,
+    replay.finalState,
+  );
+  assert.deepEqual(verification.actual, verification.expected);
+  return report;
 }
 
 test("GameplaySession 固定在 World Tick 末尾执行玩家语义输入", () => {
@@ -78,15 +90,29 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.equal("levelHash" in replay, false);
   assert.deepEqual(replay.finalState, {
     status: "won",
+    moves: 1,
+    elapsedMs: 150,
     counters: { "collect-carrot": 1 },
     completedConditions: [{ type: "collect-all", target: "carrot" }],
   });
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 3,
-  });
+  const report = assertReplayMatches(level, replay, 3);
+  assert.deepEqual(
+    replayVerificationStates(report.actual, { elapsedMs: 999_999 }),
+    { actual: {}, expected: {} },
+  );
+  assert.deepEqual(
+    replayVerificationStates(report.actual, {}),
+    { actual: {}, expected: {} },
+  );
+  assert.deepEqual(
+    replayVerificationStates(report.actual, { moves: 1 }),
+    { actual: { moves: 1 }, expected: { moves: 1 } },
+  );
+  const replayWithoutAssertions = structuredClone(replay);
+  replayWithoutAssertions.finalState = {};
+  assert.equal(runReplay(level, replayWithoutAssertions).actual.status, "won");
 
   for (const field of ["actorId", "source"]) {
     const invalid = structuredClone(replay);
@@ -345,6 +371,8 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
     initialIntents: [],
     finalState: {
       status: "playing",
+      moves: 0,
+      elapsedMs: 0,
       counters: {},
       completedConditions: [],
     },
@@ -498,10 +526,7 @@ test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
     { type: "move", direction: "right" },
     { type: "move", direction: "left", channel: 1 },
   ]);
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 2,
-  });
+  assertReplayMatches(level, replay, 2);
 });
 
 test("多 Bobby 的 actor 动作使用动作时位置", () => {
@@ -542,10 +567,7 @@ test("多 Bobby 的 actor 动作使用动作时位置", () => {
     actor: { x: 3, y: 0 },
     moveDurationMs: 240,
   });
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 1,
-  });
+  assertReplayMatches(level, replay, 1);
 });
 
 test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
@@ -584,8 +606,5 @@ test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
     direction: "left",
     actor: { x: 3, y: 0 },
   });
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 1,
-  });
+  assertReplayMatches(level, replay, 1);
 });

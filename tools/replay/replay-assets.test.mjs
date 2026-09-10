@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { runReplay } from "@bobby/engine";
+import { replayVerificationStates, runReplay } from "@bobby/engine";
 import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { replayMapFile, replayMapRef } from "./replay-fixture.mjs";
@@ -30,17 +30,14 @@ for (const replayFile of replayFiles) {
       `${relative} 指向的地图不存在：${mapRef.collection}/${mapRef.id}`,
     );
 
-    const expectedStatus = replay?.finalState?.status;
-    assert.ok(
-      expectedStatus === "playing" ||
-        expectedStatus === "won" ||
-        expectedStatus === "dead",
-      `${relative} 的 finalState.status 无效`,
-    );
     const level = parseMapDocument(readJson(mapFile));
     const report = runReplay(level, replay);
     assert.equal(report.endTick, replay.endTick);
-    assert.deepEqual(report.actual, replay.finalState);
+    const verification = replayVerificationStates(
+      report.actual,
+      replay.finalState,
+    );
+    assert.deepEqual(verification.actual, verification.expected);
   });
 }
 

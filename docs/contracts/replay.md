@@ -94,6 +94,8 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   ],
   "finalState": {
     "status": "won",
+    "moves": 14,
+    "elapsedMs": 2000,
     "counters": {
       "collect-carrot": 9,
       "fill-egg-nest": 4
@@ -120,18 +122,24 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 `meta.name` 和 `meta.url` 由宿主在开始录制时提供。`note` 初始为空字符串，Engine
 不读取或解释其内容，用户可以在 Replay 文本中直接填写。
 
-`finalState` 是测试使用的轻量终局摘要：`status` 为 `playing / won / dead`；`counters`
-累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
+录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
+本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看录像信息；
+`counters` 累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
 `completedConditions` 展开并列出终点已经满足的 `collect-all / fill-all / reach` 叶子条件。
 它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture
 维护面。
+
+Replay 文件中的 `finalState` 同时是声明式校验子集：回归测试只比较文件实际包含的字段，
+未声明字段不参与比较，`finalState: {}` 表示只验证 Replay 能执行到 `endTick`。`elapsedMs`
+即使存在也始终排除在结果一致性校验之外，因此它只承担录制信息职责。未来增加终局摘要
+字段时，现有 fixture 不会因实际结果多出字段而失效。
 
 Web 生成 `meta.url` 时固定使用 `https://bc5r.xujinkai.net/`，并保留当前页面的路径、
 查询参数和 fragment，使本地开发环境录制的文件也指向正式站点。
 
 Replay 本身不解析地图身份。调用方负责选择用于播放或无头执行的 `LevelMap`；Runner
-从起点执行到 `endTick` 并返回实际 `finalState` 与 Tick 数。仓库 fixture 测试比较完整
-`finalState`；Web 录像面板只比较 `status`，用于提示回放是否到达相同终局。
+从起点执行到 `endTick` 并返回实际 `finalState` 与 Tick 数。仓库 fixture 测试按上述字段
+子集比较；Web 录像面板在文件声明 `status` 时比较该字段，用于提示回放是否到达相同终局。
 
 `initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
 于 tick 0 前应用，并使用同一套位置引用规则。Replay playback 不调用宿主

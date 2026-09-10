@@ -21,6 +21,8 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
     {
       actual: {
         status: "playing",
+        moves: 0,
+        elapsedMs: 34,
         counters: {},
         completedConditions: [],
       },
@@ -36,6 +38,27 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
   assert.deepEqual(presentation, {
     text: "终局不一致 · 记录 won / 复跑 playing",
     failed: true,
+  });
+});
+
+test("Replay 未声明 status 时只报告复跑完成", () => {
+  const presentation = replayVerificationPresentation(
+    {
+      actual: {
+        status: "won",
+        moves: 1,
+        elapsedMs: 100,
+        counters: {},
+        completedConditions: [],
+      },
+      endTick: 2,
+    },
+    { finalState: {} },
+  );
+
+  assert.deepEqual(presentation, {
+    text: "复跑完成 · 2 ticks",
+    failed: false,
   });
 });
 

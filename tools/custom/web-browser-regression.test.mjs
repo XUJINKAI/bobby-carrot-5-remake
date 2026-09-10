@@ -385,6 +385,8 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay export did not use the compact field layout");
   if (
     !["playing", "won", "dead"].includes(replay.finalState?.status) ||
+    !Number.isInteger(replay.finalState?.moves) ||
+    !Number.isInteger(replay.finalState?.elapsedMs) ||
     typeof replay.finalState?.counters !== "object" ||
     !Array.isArray(replay.finalState?.completedConditions)
   )

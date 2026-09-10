@@ -76,6 +76,7 @@ export class ReplayRecorder {
         )),
       finalState: this.events.finalState(
         this.session.state,
+        this.session.world.state.elapsedMs,
         this.session.winState,
       ),
       endTick: this.session.clock.tickCount,

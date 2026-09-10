@@ -148,23 +148,45 @@ function validateActorReference(
 }
 
 function validateFinalState(value: Replay["finalState"]): void {
-  if (!value || !isFinalStatus(value.status))
+  if (!isPlainObject(value))
+    throw new Error("Replay finalState 必须是对象");
+  requireFields(value, [
+    "status",
+    "moves",
+    "elapsedMs",
+    "counters",
+    "completedConditions",
+  ]);
+  if (value.status !== undefined && !isFinalStatus(value.status))
     throw new Error("Replay finalState.status 无效");
-  requireFields(value, ["status", "counters", "completedConditions"]);
-  if (!isPlainObject(value.counters))
-    throw new Error("Replay finalState.counters 必须是对象");
-  for (const [eventType, count] of Object.entries(value.counters)) {
-    if (
-      (!eventType.startsWith("collect-") && !eventType.startsWith("fill-")) ||
-      !Number.isInteger(count) ||
-      count <= 0
-    )
-      throw new Error("Replay finalState.counters 包含无效计数");
+  if (
+    value.moves !== undefined &&
+    (!Number.isInteger(value.moves) || value.moves < 0)
+  )
+    throw new Error("Replay finalState.moves 必须是非负整数");
+  if (
+    value.elapsedMs !== undefined &&
+    (!Number.isInteger(value.elapsedMs) || value.elapsedMs < 0)
+  )
+    throw new Error("Replay finalState.elapsedMs 必须是非负整数");
+  if (value.counters !== undefined) {
+    if (!isPlainObject(value.counters))
+      throw new Error("Replay finalState.counters 必须是对象");
+    for (const [eventType, count] of Object.entries(value.counters)) {
+      if (
+        (!eventType.startsWith("collect-") && !eventType.startsWith("fill-")) ||
+        !Number.isInteger(count) ||
+        count <= 0
+      )
+        throw new Error("Replay finalState.counters 包含无效计数");
+    }
   }
-  if (!Array.isArray(value.completedConditions))
-    throw new Error("Replay finalState.completedConditions 必须是数组");
-  for (const condition of value.completedConditions)
-    validateCompletedCondition(condition);
+  if (value.completedConditions !== undefined) {
+    if (!Array.isArray(value.completedConditions))
+      throw new Error("Replay finalState.completedConditions 必须是数组");
+    for (const condition of value.completedConditions)
+      validateCompletedCondition(condition);
+  }
 }
 
 function validateCompletedCondition(condition: ReplayCompletedCondition): void {

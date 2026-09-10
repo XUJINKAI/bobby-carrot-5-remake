@@ -66,11 +66,17 @@ export type ReplayCompletedCondition =
   | { type: "fill-all"; target: string; filler: string }
   | { type: "reach"; target: string };
 
-export interface ReplayFinalState {
+export interface ReplayActualFinalState {
   status: ReplayFinalStatus;
+  moves: number;
+  /** 仅记录本局 World 时间，不参与 Replay 结果一致性校验。 */
+  elapsedMs: number;
   counters: Record<string, number>;
   completedConditions: ReplayCompletedCondition[];
 }
+
+/** Replay 文件可以只声明需要长期验证的终局字段。 */
+export type ReplayFinalState = Partial<ReplayActualFinalState>;
 
 export interface Replay {
   formatVersion: typeof REPLAY_FORMAT_VERSION;

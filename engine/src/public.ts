@@ -119,6 +119,7 @@ export {
 } from "./entities/player/BobbyState.js";
 export {
   REPLAY_FORMAT_VERSION,
+  type ReplayActualFinalState,
   type ReplayCompletedCondition,
   type ReplayFinalState,
   type ReplayFinalStatus,
@@ -134,6 +135,10 @@ export {
   type ReplayRecordingMeta,
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
+export {
+  replayVerificationStates,
+  type ReplayVerificationStates,
+} from "./replay/ReplayFinalState.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
 export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {
