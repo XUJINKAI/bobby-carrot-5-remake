@@ -11,6 +11,7 @@ import {
   replayLayout,
   verifyReplayPanelShortcut,
 } from "./replay-browser-checks.mjs";
+import { verifySettingsPage } from "./settings-browser-checks.mjs";
 
 const browserEnvironment = { ...process.env };
 delete browserEnvironment.DISPLAY;
@@ -70,7 +71,7 @@ test(
       await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
-      await verifySettingsPage(cdp, `${origin}/settings`);
+      await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));
       await verifyEditorExperience(
         cdp,
         await openPage(cdp, `${origin}/edit`),
@@ -185,22 +186,6 @@ async function chooseTheme(cdp, sessionId, label, expected) {
   );
   if (!usable)
     throw new Error(`Quick Settings became unusable after switching to ${label}`);
-}
-
-async function verifySettingsPage(cdp, url) {
-  const sessionId = await openPage(cdp, url);
-  await waitFor(async () =>
-    Boolean(await cdp.evaluate(sessionId, "document.querySelector('.settings-page')")),
-  );
-  const snapshot = await cdp.evaluate(
-    sessionId,
-    `(() => ({
-      cards: document.querySelectorAll('.save-management-card').length,
-      text: document.querySelector('.settings-page')?.textContent ?? ''
-    }))()`,
-  );
-  if (snapshot.cards < 2 || !snapshot.text.includes("Adventure") || !snapshot.text.includes("Explore"))
-    throw new Error("Settings save management did not expose Adventure and Explore cards");
 }
 
 async function verifyGameplayDialog(cdp, url) {
