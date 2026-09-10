@@ -29,16 +29,9 @@
 
 ## 本地 AI 代码修改流程
 
-1. 开始任务前检查当前分支和工作区状态，确认已有修改归属；保留用户已有工作，避免把无关修改带入任务。
-2. 以本地 `main` 为分支基线创建任务分支。工作区干净时使用：
+1. 开始任务前检查当前分支和工作区状态，并记录当前 `HEAD` commit。开发直接以任务开始时的当前分支和当前工作区为基线；不得主动切换或新建分支、同步其它分支、改写现有提交，或把基线替换为 `main`。
+2. 只有当前分支明确且工作区干净时才可以开始修改。若处于 detached HEAD，存在 staged、unstaged、untracked 修改，或存在未完成的 merge、rebase、cherry-pick 等 Git 操作，必须停止并询问用户；不得自行清理、暂存、提交或切换分支来绕过确认。
 
-   ```sh
-   git switch main
-   git pull --ff-only
-   git switch -c <task-branch>
-   ```
-
-   如果本地 `main` 已经由用户确认是最新基线，可以跳过同步步骤，直接从该节点创建分支。
 3. 按职责边界和可回滚的工作阶段组织修改。每完成一个逻辑完整阶段，先运行与该阶段相关的检查，再创建一个内容聚焦的 commit；提交信息应准确描述当前阶段的结果。
 4. 阶段 commit 应保持可审查、可回滚，并包含必要的测试、文档和验证规则。构建产物、生成目录和临时文件遵循本文件的生成物规则。
 5. 完成修改后按风险选择验证范围，检查工作区状态，并确认最终改动已经提交到当前任务分支：
@@ -47,15 +40,15 @@
    - 其它修改必须执行完整的 `npm run verify`。跨模块修改、Engine / Model / Adventure 逻辑、公共合同、数据格式、构建工具和包含多个逻辑阶段的长任务均属于完整验证范围。
    - 同一任务同时包含低风险修改与其它修改时，按完整验证执行；无法确定风险级别时也按完整验证执行。
 6. 浏览器回归测试需要启动本机 Chromium，必须直接在沙箱外运行；包含该测试的 `npm run verify` 同样直接在沙箱外运行，避免先在沙箱内失败再重试。
-7. 输出 PR message 前，以 `main` 为比较基线检查：
+7. 输出 PR message 前，以任务开始时记录的 `HEAD` commit 为比较基线检查：
 
    ```sh
-   git log --oneline main..HEAD
-   git diff --stat main...HEAD
-   git diff --check main...HEAD
+   git log --oneline <base-commit>..HEAD
+   git diff --stat <base-commit>...HEAD
+   git diff --check <base-commit>...HEAD
    ```
 
-   PR message 根据当前分支相对 `main` 的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
+   PR message 根据当前分支相对任务基线的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
 
 ## Engine 总原则
 
