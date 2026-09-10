@@ -3,8 +3,6 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "../../model/dist/index.js";
 import {
   augmentAdventureLevel,
-  createAdventureSave,
-  createAdventureLevelInstance,
 } from "../dist/index.js";
 
 function sandmanLevel() {
@@ -31,10 +29,8 @@ test("Adventure can add dialogue without changing the base LevelMap", () => {
 });
 
 test("prepareAdventureLevel applies field patches before Engine", () => {
-  const prepared = createAdventureLevelInstance(
-    "1-1",
+  const prepared = augmentAdventureLevel(
     sandmanLevel(),
-    createAdventureSave(),
     [
       {
         x: 1,

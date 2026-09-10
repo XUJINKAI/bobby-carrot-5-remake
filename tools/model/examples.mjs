@@ -268,10 +268,6 @@ function adventureSaveExample() {
       resumeLevelId: "1-4",
     },
     economy: { bonusCoins: 3, goldenCarrots: 1 },
-    claimedRewards: [
-      { levelId: "1-1", type: "bonus-coin", x: 4, y: 7 },
-      { levelId: "1-bonus-1", type: "golden-carrot", x: 12, y: 8 },
-    ],
     items: ["golden-key"],
   });
 }

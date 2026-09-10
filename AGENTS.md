@@ -93,9 +93,9 @@
 8. Engine 不知道 Adventure。`Game.loadLevel()` 只消费纯语义 `LevelMap`；release、chapter、difficulty、record hash、JAR source 等产品/来源字段不能成为 Engine load options。地图内机关实例参数通过 Definition 声明的 `LevelEntity` 顶层字段随 `LevelMap` 进入 Engine。
 9. Engine 对外通过通用 `onWorldEvent()` 报告世界事件，并提供通用 Game 动作。禁止为 Adventure 增加 `bonus-timeout` 等 Campaign 专用 Engine API。
 10. Entity 交互优先通过通用事件形状表达，例如 `object-interaction { objectType, action, x, y }`。地图内后续规则应由 Engine 根据 semantic Entity 与实例字段执行；Adventure 只解释跨关 Campaign 语义。
-11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久奖励与 session plan；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
+11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久道具与 session plan；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
 12. 原版 Bonus 60 秒以 Lock 的 `deathCountdownSeconds` 字段进入 `LevelMap`：成功打开带该字段的 Lock 后由 Engine 启动倒计时；取得目标金胡萝卜则结束挑战，超时由 Engine 触发地图内死亡。自定义地图与 Editor Play Test 使用同一规则。
-13. Adventure Save 是版本化 JSON；持久奖励按稳定 Campaign level ID + Object 类型 + 地图坐标记录，不能修改原始 LevelMap 来表达“已经拿过”。
+13. Adventure Save 是版本化 JSON；关卡内收集的 Bonus Coin 与 Golden Carrot 只在通关时结算到全局经济，死亡、重开或退出会丢弃本局临时奖励，原始 LevelMap 始终保持不变。
 14. Explore 与 Adventure 是两种不同官方地图体验：Explore 全关开放、可筛选/调试/自由缩放；Adventure 才有线性章内进度、全局存档与受限竖屏视野。
 15. Editor 只持久化语义 JSON Draft；Play Test clone/normalize 后把 `LevelMap` 交给 Engine，Runtime 不得反写 Draft。
 16. multi-cell Object 持久化只保存 anchor；唯一 Runtime 展开点是 Engine level-load 边界。Editor owner/preview/variant 必须共用 Engine Object Layout。

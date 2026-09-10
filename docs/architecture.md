@@ -281,7 +281,7 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - 每章 `1,2,3,bonus-1,4,5,6,bonus-2,7,8,9,10` 顺序；
 - 5 个特殊场景的语义身份；
 - Adventure Save contract；
-- 全局经济 / 永久升级 / 一次性奖励位置；
+- 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
 - 条件对白、Bonus Beaver 单次钥匙和永久商品购买等 Campaign 交互 reducer；
 - 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
@@ -293,12 +293,10 @@ base / official LevelMap
         ↓
 Adventure Entity field augmentation
         ↓
-persistent reward filtering
-        ↓
 Engine Game.loadLevel(LevelMap)
 ```
 
-Adventure 可以覆盖角色 `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。持久奖励由 Adventure Save 按 Campaign level ID、Object type 和地图坐标记录；Engine 只报告本局的收集事实。
+Adventure 可以覆盖角色 `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。Engine 只报告本局的收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
@@ -475,13 +473,9 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 
 Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize，Web 负责 localStorage 与文件导入导出。
 
-持久奖励用稳定 ID：
-
-```text
-Campaign level ID + semantic Object type + x/y
-```
-
-已经领取的奖励在进入 Adventure session 前从 LevelMap clone 中移除；原始官方 LevelMap 保持不可变。
+Adventure Save 只保存已经结算的全局经济。每次进入关卡都使用完整 LevelMap；Web session
+暂存本局收集数量，只有 Engine 报告关卡完成时才由 Adventure 与 Campaign 进度一起提交。
+死亡、重开或退出会丢弃暂存奖励。
 
 购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
 币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并

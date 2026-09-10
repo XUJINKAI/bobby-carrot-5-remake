@@ -36,7 +36,7 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 - Adventure 的世界状态以单向 Engine session 推进，Campaign runtime 与 Engine world snapshot 保持一致；
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
-- 已领取全局奖励按地图位置记忆，每个稳定奖励位置只领取一次；
+- 关卡内收集的 Bonus Coin / Golden Carrot 在通关时统一结算，死亡、重开或退出不计入全局经济；
 - 原版 Bonus 60 秒由 Adventure session plan 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
 - Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，倒计时、超时死亡、Undo 和 Restart 等地图内生命周期统一由 Engine 执行。
 

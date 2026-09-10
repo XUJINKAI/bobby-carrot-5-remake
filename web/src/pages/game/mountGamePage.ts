@@ -1,14 +1,11 @@
 import {
-  claimAdventureReward,
-  completeAdventureLevel,
-  createAdventureLevelInstance,
+  augmentAdventureLevel,
   isAdventureLevelUnlocked,
   planAdventurePlayer,
   planAdventureSession,
   resolveBonusKeyVendorInteraction,
   setAdventureResumeLevel,
   type BonusKeyVendorOutcome,
-  type AdventureLevelId,
   type AdventureSave,
 } from "@bobby/adventure";
 import {
@@ -17,7 +14,7 @@ import {
   type CameraOptions,
   type ImageManager,
 } from "@bobby/engine";
-import { MapEntityTypeId, type LevelMap } from "@bobby/model";
+import type { LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
   AdventureIndex,
@@ -47,6 +44,7 @@ import {
   type ReplayPanelController,
 } from "./bindReplayPanel.js";
 import { resolveGameMusic } from "./gameMusic.js";
+import { AdventureRewardSession } from "./adventureRewardSession.js";
 import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
@@ -178,13 +176,8 @@ export async function renderGamePage(
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
-  const sessionLevel = adventureSave && sessionPlan
-    ? createAdventureLevelInstance(
-        adventureLevel!.id,
-        level,
-        adventureSave,
-        sessionPlan.entityPatches,
-      )
+  const sessionLevel = sessionPlan
+    ? augmentAdventureLevel(level, sessionPlan.entityPatches)
     : level;
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
@@ -263,6 +256,7 @@ export async function renderGamePage(
   let completionNextId: string | undefined;
   let completionNavigationStarted = false;
   let replayPanelOpen = replayPanelInitiallyOpen;
+  const adventureRewards = new AdventureRewardSession();
   const updateAdventureToolLayout = (): void => {
     adventureViewport?.classList.toggle(
       "adventure-game-tools-open",
@@ -301,6 +295,7 @@ export async function renderGamePage(
           );
         },
         onTimelineRestart() {
+          adventureRewards.discard();
           levelStartedAt = performance.now();
           completionNavigationStarted = false;
         },
@@ -317,7 +312,7 @@ export async function renderGamePage(
     completionRecorded = true;
     if (adventureSave && campaignNode) {
       adventureSave = saveAdventureSave(
-        completeAdventureLevel(adventureSave, adventureLevel!.id),
+        adventureRewards.complete(adventureSave, adventureLevel!.id),
       );
       completionNextId = nextAdventureLevel(adventure, adventureLevel!.id)?.id;
     } else if (mode === "explore") {
@@ -335,6 +330,7 @@ export async function renderGamePage(
         : state.status === "won"
           ? "complete"
           : null;
+    if (kind === "death") adventureRewards.discard();
     if (kind === "complete") recordLevelCompletion();
     if (kind === "complete" && game.replayRecording) {
       resultDismissed = true;
@@ -401,14 +397,10 @@ export async function renderGamePage(
     }
   };
   const askRestart = async (): Promise<void> => {
+    adventureRewards.discard();
     if (adventureSave && sessionPlan && adventureLevel) {
       await game.loadLevel(
-        createAdventureLevelInstance(
-          adventureLevel.id,
-          level,
-          adventureSave,
-          sessionPlan.entityPatches,
-        ),
+        augmentAdventureLevel(level, sessionPlan.entityPatches),
       );
     } else {
       game.restart();
@@ -486,26 +478,7 @@ export async function renderGamePage(
         pendingVendorSaves.delete(event.requestId);
       }
     }
-    if (
-      !adventureSave ||
-      !adventureLevel ||
-      event.x === undefined ||
-      event.y === undefined ||
-      (event.type !== "collect-bonus-coin" &&
-        event.type !== "collect-golden-carrot")
-    )
-      return;
-    adventureSave = saveAdventureSave(
-      claimAdventureReward(adventureSave, {
-        levelId: adventureLevel.id as AdventureLevelId,
-        type:
-          event.type === "collect-bonus-coin"
-            ? MapEntityTypeId.BONUS_COIN
-            : MapEntityTypeId.GOLDEN_CARROT,
-        x: event.x,
-        y: event.y,
-      }),
-    );
+    if (adventureSave && adventureLevel) adventureRewards.record(event);
   });
   const unsubscribeInteraction = game.onInteractionRequest((request) => {
     if (!adventureSave || !adventureLevel) return;
