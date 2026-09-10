@@ -108,17 +108,18 @@ LevelMap；纯展示对白不会重复写入 Replay。
 
 ## 仓库内置过法
 
-内置过法与地图使用相同的 collection 和 map ID：
+Web 为每张地图约定一个默认内置过法地址：
 
 ```text
 assets/replays/<collection>/<map-id>.json
-assets/maps/<collection>/<map-id>.json
 ```
 
-Web 录制面板按当前关卡尝试读取对应 Replay。`npm run verify` 递归扫描
-`assets/replays/` 的全部文件，在对应地图上从 Replay 自带起点配置复跑，并要求
-实际状态等于 Replay 的 `meta.final_status`。每新增一个 Replay 文件都会自动进入这项
-回归测试，也会随 `assets/` 原样发布到 `dist/assets/`。
+Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地址。测试 fixture 的
+文件名可以表达 take、路径或测试目的，不承担地图身份；`npm run verify` 递归扫描
+`assets/replays/` 的全部 JSON，从每个 Replay 的 `meta.url` 解析
+`/explore/play/<collection>/<map-id>`，再加载对应 `assets/maps/` 地图复跑。因此同一地图
+可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
+`assets/` 原样发布到 `dist/assets/`。
 
 ## Explore Web 录制入口
 
