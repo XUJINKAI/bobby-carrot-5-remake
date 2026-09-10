@@ -38,12 +38,16 @@ Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeA
 
 ## 输入
 
-Replay 在浏览器输入源映射到 controller channel 后记录语义动作。因此它保留：
+Replay 在浏览器输入源映射到 controller channel 后记录产生 gameplay 效果的语义动作。因此它保留：
 
 - 同一 channel 中多个 Bobby 的联动分组与方向变换；
-- 输入的 Tick 与组内顺序；
-- 被阻挡、处于 busy 状态或被 RuntimeAction 消费的输入尝试。
+- 生效输入的 Tick 与组内顺序；
+- 成功启动的移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
 - 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作。
+
+按住方向时，Bobby 移动期间产生的纯 `busy` 重试和没有 gameplay 效果的阻挡输入不会写入
+Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` 线性增长。旧 Replay 中已经
+保存的重复输入仍按相同格式正常播放。
 
 移动使用数字 `channel`，省略表示通道 `0`；键盘、Pointer、摇杆等输入源名称不进入
 Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的

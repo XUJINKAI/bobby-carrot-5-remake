@@ -31,6 +31,7 @@ import type {
 } from "../world/movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
+  hasWorldMutation,
   mergeWorldStepResult,
   type WorldStepResult,
 } from "../world/movement/WorldStepResult.js";
@@ -59,6 +60,7 @@ export interface GameplayTickResult {
   time: WorldTick;
   result: WorldStepResult;
   phases: readonly WorldStepResult[];
+  /** 只包含对 gameplay 状态产生效果、需要 Replay 重放的输入组。 */
   inputGroups: readonly WorldIntentGroup[];
   inputResolutions: readonly GameplayInputResolution[];
 }
@@ -316,16 +318,22 @@ export class GameplaySession {
 
     const resolved = this.resolveTickInput(input);
     for (const group of resolved.groups) {
-      const inputPhase = this.submitIntentGroup(group);
-      if (!inputPhase) continue;
-      phases.push(inputPhase);
-      mergeWorldStepResult(aggregate, inputPhase);
+      if (group.runnable) {
+        const inputPhase = this.submitIntentGroup(group.runnable);
+        if (inputPhase) {
+          phases.push(inputPhase);
+          mergeWorldStepResult(aggregate, inputPhase);
+          if (hasReplayInputEffect(inputPhase)) group.effective = true;
+        }
+      }
     }
     return {
       time,
       result: aggregate,
       phases,
-      inputGroups: resolved.recordedGroups.map((group) => structuredClone(group)),
+      inputGroups: resolved.groups
+        .filter((group) => group.effective)
+        .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
         resolved.sources,
         resolved.blocked,
@@ -378,20 +386,26 @@ export class GameplaySession {
     if (intents.length > 0)
       recordedGroups.push({ intents, historyBoundary: true });
 
-    const normalized: WorldIntentGroup[] = [];
+    const groups: ResolvedInputGroup[] = [];
     const blocked: WorldIntent[] = [];
     let blockedDisposition: GameplayInputAttempt = "busy";
     for (const group of recordedGroups) {
       const partition = this.partitionInputIntents(group.intents);
       blocked.push(...partition.blocked);
-      if (partition.blocked.length > 0)
-        blockedDisposition = this.observeBlockedIntents(partition.blocked);
-      if (partition.runnable.length > 0)
-        normalized.push({ ...group, intents: partition.runnable });
+      const observation = partition.blocked.length > 0
+        ? this.observeBlockedIntents(partition.blocked)
+        : null;
+      if (observation) blockedDisposition = observation.disposition;
+      groups.push({
+        recorded: group,
+        runnable: partition.runnable.length > 0
+          ? { ...group, intents: partition.runnable }
+          : null,
+        effective: observation?.stateChanged ?? false,
+      });
     }
     return {
-      groups: normalized,
-      recordedGroups,
+      groups,
       sources,
       blocked,
       blockedDisposition,
@@ -465,11 +479,15 @@ export class GameplaySession {
 
   private observeBlockedIntents(
     intents: readonly WorldIntent[],
-  ): "busy" | "consumed" {
-    return this.world.actions.observeIntents(intents, this.world.query) ===
-      "consumed"
-      ? "consumed"
-      : "busy";
+  ): { disposition: "busy" | "consumed"; stateChanged: boolean } {
+    const observation = this.world.actions.observeIntentsWithEffects(
+      intents,
+      this.world.query,
+    );
+    return {
+      disposition: observation.disposition === "consumed" ? "consumed" : "busy",
+      stateChanged: observation.stateChanged,
+    };
   }
 
   private configureActorsAndControls(): void {
@@ -565,10 +583,25 @@ export class GameplaySession {
   }
 }
 
+interface ResolvedInputGroup {
+  recorded: WorldIntentGroup;
+  runnable: WorldIntentGroup | null;
+  effective: boolean;
+}
+
 interface ResolvedTickInput {
-  groups: WorldIntentGroup[];
-  recordedGroups: WorldIntentGroup[];
+  groups: ResolvedInputGroup[];
   sources: Map<string, EntityId[]>;
   blocked: WorldIntent[];
   blockedDisposition: GameplayInputAttempt;
+}
+
+function hasReplayInputEffect(result: WorldStepResult): boolean {
+  return (
+    result.moves.some((move) => move.moved) ||
+    result.motions.length > 0 ||
+    result.events.length > 0 ||
+    result.deltas.length > 0 ||
+    hasWorldMutation(result.mutations)
+  );
 }

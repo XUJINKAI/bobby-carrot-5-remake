@@ -97,6 +97,36 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   }
 });
 
+test("Replay 只保存实际生效的持续移动输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 10,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 10 }, (_, x) => ground(x)),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  };
+  const session = new GameplaySession({
+    timing: { worldHz: 60 },
+    bobbyLocomotion: { moveMs: 350 },
+  });
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    name: "持续移动",
+    url: "/test/held-movement",
+  });
+  for (const tick of session.advanceTicks(180, () => ({
+    moves: [{ source: "external", direction: "right" }],
+  })))
+    recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.equal(replay.frames.length, session.state.moves);
+  assert.equal(replay.frames.length, 9);
+  assert.equal(runReplay(level, replay).endTick, replay.endTick);
+});
+
 test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
@@ -160,9 +190,14 @@ test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
 test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   const level = {
     schemaVersion: 1,
-    width: 1,
+    width: 3,
     height: 1,
-    entities: [ground(0), { type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+    entities: [
+      ground(0),
+      ground(1),
+      ground(2),
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+    ],
   };
   const recordingSession = new GameplaySession({ timing: { worldHz: 20 } });
   recordingSession.loadLevel(level);
@@ -172,7 +207,12 @@ test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   });
   for (const tick of recordingSession.advanceTicks(100, (time) =>
     time.tick === 0 || time.tick === 80
-      ? { moves: [{ source: "external", direction: "right" }] }
+      ? {
+          moves: [{
+            source: "external",
+            direction: time.tick === 0 ? "right" : "left",
+          }],
+        }
       : {},
   ))
     recorder.record(tick);
@@ -203,7 +243,7 @@ test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   assert.equal(tail.at(-1).inputGroups.length, 1);
 });
 
-test("Replay 保留受阻的玩家输入尝试", () => {
+test("Replay 省略没有 gameplay 效果的受阻输入", () => {
   const level = {
     schemaVersion: 1,
     width: 1,
@@ -223,8 +263,45 @@ test("Replay 保留受阻的玩家输入尝试", () => {
   const replay = recorder.stop();
 
   assert.equal(tick.inputResolutions[0].result, "blocked");
-  assert.equal(replay.frames[0].groups[0].intents[0].direction, "right");
+  assert.deepEqual(replay.frames, []);
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
+});
+
+test("Replay 保留 RuntimeAction 实际观察到的移动输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 10,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 10 }, (_, x) => ground(x)),
+      { type: MapEntityTypeId.SPEED, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  };
+  const options = {
+    timing: { worldHz: 20 },
+    bobbyLocomotion: { moveMs: 100 },
+  };
+  const session = new GameplaySession(options);
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    name: "Speed 输入观察",
+    url: "/test/speed-observation",
+  });
+  for (const tick of session.advanceTicks(40, () => ({
+    moves: [{ source: "external", direction: "right" }],
+  })))
+    recorder.record(tick);
+  const replay = recorder.stop();
+  const replayed = new GameplaySession(options);
+  replayed.loadLevel(level);
+  const playback = new ReplayPlayback(replayed, new PresentationClock());
+  playback.start(replay);
+  replayed.advanceTicks(replay.endTick, (time) => playback.inputForTick(time));
+
+  assert.ok(replay.frames.length < replay.endTick / 2);
+  assert.deepEqual(replayed.state.player, session.state.player);
+  assert.equal(replayed.state.moves, session.state.moves);
 });
 
 test("ReplayRunner 拒绝不符合播放合同的输入", () => {
