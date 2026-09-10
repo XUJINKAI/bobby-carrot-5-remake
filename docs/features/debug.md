@@ -12,6 +12,8 @@ game.toggleDebug();
 
 `GameOptions.debug: true` 可以让 Debug Runtime 初始即打开。Debug UI 由 `DebugRuntime` / `DebugSidebar` 管理，Web 不再维护 `debug-panel`、`ENGINE MESSAGE` 或独立的格子检查器。
 
+Explore 与 Editor Play Test 提供这个入口。通过 `npm run dev` 启动时，Adventure 游戏页也启用同一套 `~` 入口，便于逐关对照原版；正式构建保持 Adventure 玩家界面。Adventure 只配置 Engine Input 能力，不持有 Debug 实现。
+
 关闭 Debug 时整个 Debug Dock 消失，gameplay viewport 恢复全宽；如果 World / Presentation 仍处于调试暂停状态，Engine 会恢复运行，避免留下不可见的 pause。
 
 ## Dock 布局

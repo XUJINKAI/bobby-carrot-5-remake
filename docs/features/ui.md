@@ -317,7 +317,7 @@ Debug 属于 Explore 和 Editor 调试体验，以右侧浮动 Inspector 展示�
 - passage 判定与置信度；
 - Engine 最近事件或阻挡原因。
 
-关闭 Debug 后 Inspector 完整隐藏，GameStage 恢复为普通游玩视图。Adventure 不提供 Debug 能力。
+关闭 Debug 后 Inspector 完整隐藏，GameStage 恢复为普通游玩视图。`npm run dev` 下的 Adventure 游戏页也提供这套调试能力，正式构建保持 Adventure 玩家界面。
 
 ### Result Overlay
 
@@ -415,7 +415,7 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 └───────────────────────────────────────────────────────────────┘
 ```
 
-Camera 最小 zoom 保持谜题信息边界。通用 App Shell 仍保持可用，Adventure 的能力配置关闭 Undo 和 Debug。
+Camera 最小 zoom 保持谜题信息边界。通用 App Shell 仍保持可用。Adventure 关闭 Undo；开发服务器额外配置 Debug 与 Replay，用于逐关验证和录制。
 
 ### Explore
 

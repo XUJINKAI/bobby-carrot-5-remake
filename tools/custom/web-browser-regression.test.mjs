@@ -74,6 +74,10 @@ test(
         await openPage(cdp, `${origin}/edit`),
       );
       await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
+      await verifyAdventureDeveloperTools(
+        cdp,
+        `${origin}/adventure/play/1-1`,
+      );
       await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
     } finally {
       cdp.close();
@@ -237,6 +241,62 @@ async function verifyGameplayDialog(cdp, url) {
     ),
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+}
+
+async function verifyAdventureDeveloperTools(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 1200, height: 800, deviceScaleFactor: 1, mobile: false },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
+        ),
+      ),
+    20_000,
+  );
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ).includes("内置过法已载入"),
+  );
+
+  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "!document.querySelector('[data-replay-panel]')?.hidden",
+      ),
+    ),
+  );
+  await verifyReplayPanelShortcut(cdp, sessionId);
+  await cdp.evaluate(
+    sessionId,
+    "window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', bubbles: true })); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-debug-control-rail:not([hidden])') && document.querySelector('.adventure-game-tools-open')",
+      ),
+    ),
+  );
 }
 
 async function verifyReplayPanel(cdp, url) {

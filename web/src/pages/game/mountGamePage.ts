@@ -52,11 +52,13 @@ import {
   storeReplayPanelOpen,
 } from "./replayPanelState.js";
 import {
+  canonicalExploreReplayUrl,
   canonicalReplayUrl,
   editorMapPath,
   exploreCollectionPath,
   explorePlayPath,
   replayAssetUrl,
+  type ExploreMapRef,
 } from "../../app/routes.js";
 import { siteUrl } from "../../services/assets/gameAssets.js";
 import {
@@ -72,8 +74,12 @@ import {
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
+import {
+  resolveGamePageCapabilities,
+  type GamePageMode,
+} from "./gamePageCapabilities.js";
 
-export type GamePageMode = "explore" | "adventure";
+export type { GamePageMode } from "./gamePageCapabilities.js";
 
 // TODO 需要根据屏幕宽度设置更好
 const GAME_CAMERA_OPTIONS: Record<GamePageMode, CameraOptions> = {
@@ -113,6 +119,7 @@ export interface GamePageContext {
   adventureScene?: AdventureIndexSpecialScene;
   adventureBackPath?: string;
   adventureCompletionPath?: string;
+  replayMap?: ExploreMapRef;
   mode: GamePageMode;
 }
 
@@ -135,6 +142,7 @@ export async function renderGamePage(
     adventureScene,
     adventureBackPath,
     adventureCompletionPath,
+    replayMap,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -161,6 +169,8 @@ export async function renderGamePage(
     rememberExploreMap(identity.collection, identity.id);
   }
 
+  const capabilities = resolveGamePageCapabilities(mode, import.meta.env.DEV);
+  const replayTarget = replayMap ?? identity;
   const sessionPlan =
     adventureSave && campaignNode
       ? planAdventureSession(adventureLevel!.id, adventureSave)
@@ -178,7 +188,7 @@ export async function renderGamePage(
     : level;
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
-    mode === "explore" && loadReplayPanelOpen();
+    capabilities.replayPanel && loadReplayPanelOpen();
   configureShell(
     gameShellConfig(
       mode,
@@ -186,11 +196,18 @@ export async function renderGamePage(
       explorePreviousMapId,
       exploreNextMapId,
       replayPanelInitiallyOpen,
+      capabilities.replayPanel,
     ),
   );
   app.replaceChildren();
-  const gamePage = createApp(GamePage, { mode });
+  const gamePage = createApp(GamePage, {
+    mode,
+    replayPanelEnabled: capabilities.replayPanel,
+  });
   gamePage.mount(app);
+  const adventureViewport = app.querySelector<HTMLElement>(
+    ".adventure-game-viewport",
+  );
 
   const canvas = required<HTMLCanvasElement>(app, "#game");
   const gameResult = required<HTMLDivElement>(app, "[data-result-overlay]");
@@ -225,7 +242,7 @@ export async function renderGamePage(
       hud: { objective: true, inventory: true },
       input: {
         undo: mode === "explore",
-        debug: mode === "explore",
+        debug: capabilities.debug,
         screenJoystick: {
           enabled: screenControlEnabled,
         },
@@ -245,20 +262,32 @@ export async function renderGamePage(
   let completionRecorded = false;
   let completionNextId: string | undefined;
   let completionNavigationStarted = false;
-  const replayPanel: ReplayPanelController = mode === "explore"
+  let replayPanelOpen = replayPanelInitiallyOpen;
+  const updateAdventureToolLayout = (): void => {
+    adventureViewport?.classList.toggle(
+      "adventure-game-tools-open",
+      game.debug || replayPanelOpen,
+    );
+  };
+  updateAdventureToolLayout();
+  const replayPanel: ReplayPanelController = capabilities.replayPanel
     ? bindReplayPanel({
         root: app,
         game,
-        filename: `${identity.collection}-${identity.id}`,
+        filename: `${replayTarget.collection}-${replayTarget.id}`,
         builtinReplayUrl: siteUrl(
-          replayAssetUrl(identity.collection, identity.id),
+          replayAssetUrl(replayTarget.collection, replayTarget.id),
         ),
         meta: {
           name: identity.title,
-          url: canonicalReplayUrl(window.location),
+          url: replayMap
+            ? canonicalExploreReplayUrl(replayMap)
+            : canonicalReplayUrl(window.location),
         },
         initialOpen: replayPanelInitiallyOpen,
         onVisibilityChange(open) {
+          replayPanelOpen = open;
+          updateAdventureToolLayout();
           storeReplayPanelOpen(open);
           configureShell(
             gameShellConfig(
@@ -267,6 +296,7 @@ export async function renderGamePage(
               explorePreviousMapId,
               exploreNextMapId,
               open,
+              capabilities.replayPanel,
             ),
           );
         },
@@ -345,6 +375,7 @@ export async function renderGamePage(
   };
 
   const update = (): void => {
+    updateAdventureToolLayout();
     if (productTime && productSteps && game.hasLevel) {
       productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
       productSteps.textContent = String(game.state.moves);
@@ -542,6 +573,7 @@ function gameShellConfig(
   explorePreviousMapId?: string,
   exploreNextMapId?: string,
   replayOpen = false,
+  replayEnabled = mode === "explore",
 ): ShellConfig {
   const explore = mode === "explore";
   return {
@@ -608,7 +640,7 @@ function gameShellConfig(
     bottomBar: {
       visible: true,
       fixed: true,
-      leading: explore
+      leading: replayEnabled
         ? [
             {
               id: "replay-record",

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  canonicalExploreReplayUrl,
   canonicalReplayUrl,
   editorMapPath,
   editorPathWithoutMapHash,
@@ -29,6 +30,13 @@ test("replay metadata uses the canonical site origin", () => {
       hash: "#note",
     }),
     "https://bc5r.xujinkai.net/explore/play/original/1-1?mode=test#note",
+  );
+});
+
+test("Adventure recording resolves metadata to its referenced Explore map", () => {
+  assert.equal(
+    canonicalExploreReplayUrl({ collection: "original", id: "1-1" }),
+    "https://bc5r.xujinkai.net/explore/play/original/1-1",
   );
 });
 

@@ -1,19 +1,28 @@
 <script setup lang="ts">
-import type { GamePageMode } from "./mountGamePage.js";
+import type { GamePageMode } from "./gamePageCapabilities.js";
 import AdventureViewport from "../adventure/AdventureViewport.vue";
 import GameStage from "./GameStage.vue";
 
-defineProps<{ mode: GamePageMode }>();
+defineProps<{
+  mode: GamePageMode;
+  replayPanelEnabled: boolean;
+}>();
 </script>
 
 <template>
   <AdventureViewport v-if="mode === 'adventure'" class="adventure-game-viewport">
     <div class="game-page original-adventure-game">
-      <GameStage :show-product-stats="false" :show-replay-panel="false" />
+      <GameStage
+        :show-product-stats="false"
+        :show-replay-panel="replayPanelEnabled"
+      />
     </div>
   </AdventureViewport>
   <div v-else class="game-page">
-    <GameStage :show-product-stats="true" :show-replay-panel="true" />
+    <GameStage
+      :show-product-stats="true"
+      :show-replay-panel="replayPanelEnabled"
+    />
   </div>
 </template>
 
@@ -45,7 +54,9 @@ defineProps<{ mode: GamePageMode }>();
   display: block;
 }
 
-.adventure-game-viewport .debug-panel {
-  display: none !important;
+.adventure-game-viewport.adventure-game-tools-open .adventure-viewport-stage {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: auto !important;
 }
 </style>

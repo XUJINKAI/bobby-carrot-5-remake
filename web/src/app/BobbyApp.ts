@@ -346,6 +346,7 @@ export class BobbyApp {
       adventureChapter: found.chapter,
       adventureLevel: found.level,
       adventureBackPath: "/adventure",
+      replayMap: resolved.ref,
       mode: "adventure",
     });
   }
@@ -375,6 +376,7 @@ export class BobbyApp {
       adventureScene: scene,
       adventureBackPath: backPath,
       adventureCompletionPath: "/adventure",
+      replayMap: resolved.ref,
       mode: "adventure",
     });
   }

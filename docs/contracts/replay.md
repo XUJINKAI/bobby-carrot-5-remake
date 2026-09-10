@@ -149,7 +149,7 @@ Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地�
 可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
 `assets/` 原样发布到 `dist/assets/`。
 
-## Explore Web 录制入口
+## Web 录制入口
 
 Explore 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
 录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 复跑到录制终点。
@@ -171,6 +171,11 @@ Replay 输入、`endTick` 或无头复跑结果。
 Explore 游戏页使用 `Tab` 开关录制面板；焦点位于链接、按钮、输入框、Textarea、Select
 或其它可交互元素时保留浏览器原有的焦点导航。面板开关写入当前标签页的
 `sessionStorage`，因此地图导航与刷新会恢复同一状态。
+
+通过 `npm run dev` 启动时，Adventure 游戏页提供相同的底栏入口与 `Tab` 快捷键；正式
+构建保持 Adventure 玩家界面。Adventure 页面装配器把 Campaign node 实际引用的地图
+身份解析成内置 Replay URL 和 canonical Explore URL 后交给录制面板，因此面板只消费
+普通 URL，不解释 Adventure identity。录制结果可以直接放入 `assets/replays/` 参与回归。
 
 桌面布局为面板保留固定宽度并缩小 Canvas 可用区域；窄屏布局将面板悬浮在游戏区域内，
 保持 Canvas 尺寸。面板开关引起可用区域变化时，Web 必须触发 Engine viewport resize。
