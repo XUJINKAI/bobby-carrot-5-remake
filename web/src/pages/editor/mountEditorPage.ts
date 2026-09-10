@@ -7,7 +7,10 @@ import {
 import { createApp } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import { NOOP_CONTROLLER } from "../../app/pageContracts.js";
-import { parseEditorMapHash } from "../../app/routes.js";
+import {
+  editorPathWithoutMapHash,
+  parseEditorMapHash,
+} from "../../app/routes.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { loadEditorAutosave } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
@@ -26,6 +29,11 @@ export async function renderEditorPage(
       level = fromLevelMap(
         resolved.level,
         `${resolved.document.meta.name} · 副本`,
+      );
+      window.history.replaceState(
+        window.history.state,
+        "",
+        editorPathWithoutMapHash(window.location),
       );
     } catch {
       navigate("/edit");

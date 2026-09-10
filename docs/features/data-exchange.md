@@ -15,6 +15,8 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Profile 及后�
 
 压缩开关只转换 TextBox 当前 draft：Plain 状态显示格式化 JSON，Compressed 状态显示 Share URL 或 `BC5R1:` raw representation。TextBox 对长串文本使用软折行与 `break-all` 字符断行，显示折行不会改变 draft 内容；通过点击获得焦点时自动全选，随后仍可直接输入、粘贴、选择局部文本或调整光标。导入会自动识别表示形式，不依赖开关状态。复制与下载均使用 TextBox 的准确文本。
 
+Editor 的地图文件弹窗默认使用 Compressed 状态，打开后可以直接复制分享 URL。其它消费页面可按场景选择初始表示。
+
 Home 通过独立弹窗导入地图且只接受语义地图；Settings 的 Adventure Profile 导入只接受存档并在写入前要求用户确认覆盖。`/import/v1` 同时接受带用户 metadata 的 `MapDocument` 和 Embed 使用的纯 `LevelMap`，对地图直接创建 Explore gameplay session；纯 `LevelMap` 进入 Editor 时再生成文档名称。Adventure Profile 显示覆盖确认，未知数据只展示错误和原始文本。
 
 ## Transport V1

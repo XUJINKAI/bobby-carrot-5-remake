@@ -145,7 +145,9 @@ try {
     'id="editor-share"',
     'data-palette-type="egg"',
   ]);
-  await smoke(`${origin}/edit#map=novoban-pushbox/01`, ["bobby-editor"]);
+  await interactiveEditorSourceSmoke(
+    `${origin}/edit#map=novoban-pushbox/01`,
+  );
   const mapPayload = exchangePayload(
     fs.readFileSync(
       path.join(root, "tools/pipeline/mechanics-smoke.json"),
@@ -342,6 +344,33 @@ async function interactiveDataExchangeSmoke(url) {
   const payload = lastJsonLine(result.stdout);
   if (!payload.import)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
+}
+async function interactiveEditorSourceSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  for (let i = 0; i < 120 && !document.querySelector('#editor-share'); i += 1)
+    await delay(50);
+  const shareButton = document.querySelector('#editor-share');
+  if (!shareButton) throw new Error('missing editor share button');
+  shareButton.click();
+  let value = '';
+  for (let i = 0; i < 120 && !value; i += 1) {
+    await delay(50);
+    value = document.querySelector('.editor-dialog .data-exchange-text')?.value ?? '';
+  }
+  return JSON.stringify({
+    hash: location.hash,
+    compressed: /\\/import\\/v1#[A-Za-z0-9_-]+$/.test(value),
+  });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Interactive editor source smoke failed: ${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (payload.hash || !payload.compressed)
+    throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {
   const port = 9222 + Math.floor(Math.random() * 1000);

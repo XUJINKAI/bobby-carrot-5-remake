@@ -14,6 +14,8 @@ editor/src
 
 `@bobby/editor` 不创建页面 DOM，也不访问 File、Blob、URL、Dialog、Router、`localStorage` 或 `sessionStorage`。这些产品能力由 Web 页面持有。
 
+从 Explore 通过 `/edit#map=<collection>/<id>` 打开地图时，Web 在成功读取地图后消费该 fragment，并将地址恢复为 `/edit`。后续刷新从 Editor autosave 恢复当前草稿，不会再次用来源地图覆盖。
+
 ## Editor JSON
 
 导入/导出使用当前语义 schema v1，地图 gameplay 内容继续使用统一 Entity 列表：
@@ -36,6 +38,7 @@ editor/src
 ```
 
 当前开发阶段只接受 v1。地图核心仍是 `@bobby/model::LevelMap`；Editor authoring policy 不进入 Engine。
+地图文件弹窗默认生成压缩分享 URL，用户仍可通过“压缩”开关查看和编辑 Plain JSON。
 
 ## Surface 与 Palette
 

@@ -91,6 +91,7 @@ function metadataValue(): { name: string; author?: string; note?: string } {
         :parse="parseMap"
         :public-base-url="publicBaseUrl()"
         :filename="metadata.name || 'bc5r-map'"
+        :default-compressed="true"
         :toolbar="toolbar"
         :reset-key="open ? `${level.meta.name}:${level.width}:${level.height}` : 'closed'"
         @import="emit('import', $event as EditorMap)"
