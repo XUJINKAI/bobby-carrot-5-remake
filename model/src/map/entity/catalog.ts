@@ -28,10 +28,10 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     [
       enumField(
         "controller",
-        ["channel-1", "channel-2"],
-        "channel-1",
+        [0, 1],
+        0,
         false,
-        "输入通道；channel-1 是 primary，channel-2 是 secondary。",
+        "输入通道；0 是默认通道，1 是第二通道。",
       ),
       booleanField("mirrorX", false, false, "水平镜像输入方向。"),
       booleanField("mirrorY", false, false, "垂直镜像输入方向。"),

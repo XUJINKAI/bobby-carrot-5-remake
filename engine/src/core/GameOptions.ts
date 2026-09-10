@@ -20,7 +20,7 @@ export interface GameRuntimeOptions {
   history?: HistoryPolicy;
   /** 具体运行时绑定；调用方也可以在加载后调用 setControlBindings。 */
   controls?: readonly ControlBinding[];
-  /** 每次从 LevelMap 起点创建 World 时应用，并以具体 actor intent 进入 Replay。 */
+  /** 每次从 LevelMap 起点创建 World 时应用，并以稳定位置引用进入 Replay。 */
   initialActorIntents?: readonly InitialActorIntent[];
 }
 

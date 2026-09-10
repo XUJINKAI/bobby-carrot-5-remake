@@ -111,19 +111,19 @@ Bobby 可以通过实例字段声明输入通道和两个可组合的镜像轴�
 
 ```json
 [
-  { "type": "bobby", "x": 2, "y": 3, "controller": "channel-1" },
+  { "type": "bobby", "x": 2, "y": 3, "controller": 0 },
   {
     "type": "bobby",
     "x": 7,
     "y": 3,
-    "controller": "channel-1",
+    "controller": 0,
     "mirrorX": true,
     "mirrorY": false
   }
 ]
 ```
 
-`controller` 缺省为 `channel-1`。地图只有 `channel-1` 时，方向键和 WASD 都控制该通道中的全部 Bobby；地图同时具有 `channel-1` 与 `channel-2` 时，方向键控制 `channel-1`，WASD 控制 `channel-2`。Pointer、Screen Joystick 与 external 输入控制 `channel-1`。`mirrorX` 交换左右，`mirrorY` 交换上下，两者可以同时启用。
+`controller` 使用从 `0` 开始的数字通道，缺省为 `0`。地图只有通道 `0` 时，方向键和 WASD 都控制该通道中的全部 Bobby；地图同时具有通道 `0` 与 `1` 时，方向键控制通道 `0`，WASD 控制通道 `1`。Pointer、Screen Joystick 与 external 输入控制 primary 通道。`mirrorX` 交换左右，`mirrorY` 交换上下，两者可以同时启用。
 
 `start` 也是普通 surface Entity，只表达该地面的玩法与视觉，不承担出生语义，也没有特殊 `start` Trait。Bobby 是否出生在 Start 上，只由两个 Entity 的坐标是否相同决定：
 

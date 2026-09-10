@@ -2,7 +2,14 @@ import type { Direction } from "@bobby/model";
 import type { EntityId } from "../entity/EntityInstance.js";
 
 export type MoveCause =
-  | { type: "player-input"; source?: string }
+  | {
+      type: "player-input";
+      source?: string;
+      /** Map controller channel；World 不解释该值。 */
+      channel?: number;
+      /** 应用 actor 镜像变换前的方向，供 Replay 保存控制语义。 */
+      inputDirection?: Direction;
+    }
   | {
       type: "forced";
       sourceEntityId?: EntityId;

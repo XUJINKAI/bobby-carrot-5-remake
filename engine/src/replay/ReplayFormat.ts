@@ -1,26 +1,29 @@
 import type { Direction } from "@bobby/model";
 import type { BobbyLocomotionTiming } from "../entities/player/BobbyLocomotion.js";
-import type { EntityId } from "../world/entity/EntityInstance.js";
+import type { CellPosition } from "../world/entity/EntityInstance.js";
 
 export const REPLAY_FORMAT_VERSION = 1;
 
 export interface ReplayMoveIntent {
   type: "move";
-  actorId: EntityId;
   direction: Direction;
-  source?: string;
+  /** 省略表示 controller channel 0。 */
+  channel?: number;
+  /** 仅用于绕过 controller 的单 actor 调试移动。 */
+  actor?: CellPosition;
 }
 
 export interface ReplaySetActorLockKeyIntent {
   type: "set-actor-lock-key";
-  actorId: EntityId;
+  /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
+  actor?: CellPosition;
   kind: "single-use" | "reusable";
   enabled: boolean;
 }
 
 export interface ReplaySetActorLocomotionIntent {
   type: "set-actor-locomotion";
-  actorId: EntityId;
+  actor?: CellPosition;
   moveDurationMs: number;
 }
 
@@ -55,8 +58,18 @@ export interface ReplayRecordingMeta {
 }
 
 export interface ReplayMeta extends ReplayRecordingMeta {
-  final_status: ReplayFinalStatus;
   note: string;
+}
+
+export type ReplayCompletedCondition =
+  | { type: "collect-all"; target: string }
+  | { type: "fill-all"; target: string; filler: string }
+  | { type: "reach"; target: string };
+
+export interface ReplayFinalState {
+  status: ReplayFinalStatus;
+  counters: Record<string, number>;
+  completedConditions: ReplayCompletedCondition[];
 }
 
 export interface Replay {
@@ -64,6 +77,7 @@ export interface Replay {
   meta: ReplayMeta;
   runtime: ReplayRuntimeSetup;
   initialIntents: ReplayInitialIntent[];
+  finalState: ReplayFinalState;
   endTick: number;
   frames: ReplayFrame[];
 }

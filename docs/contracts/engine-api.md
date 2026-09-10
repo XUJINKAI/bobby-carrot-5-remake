@@ -259,8 +259,9 @@ game.replayPaused;
 或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
 该选项默认关闭，不进入 Replay 文件格式。
 
-录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。
-这些 `meta` 字段不参与播放调度，用户可以直接编辑 `note`。
+录制调用方提供当前地图的显示名称与 URL；Engine 在停止时写入 `finalState` 和空白
+`note`。`meta` 不参与播放调度，用户可以直接编辑 `note`。Web 复跑只提示
+`finalState.status` 是否一致；仓库 fixture 验证完整 `finalState`。
 
 常用只读状态：
 
@@ -358,7 +359,7 @@ const state = input.update(time); // WorldTick
 
 Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
 
-默认控制绑定从 Bobby 的 Map 字段派生。`channel-1` 是 primary，`channel-2` 是 secondary；只有 primary 通道时方向键与 WASD 都映射到它，同时存在两个通道时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在输入源变成 semantic move intent 前组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。
+默认控制绑定从 Bobby 的 Map 字段派生。`controller` 使用数字通道，省略时为 `0`；只有 primary 通道时方向键与 WASD 都映射到它，同时存在通道 `0` 与 `1` 时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在 channel 输入变成 semantic move intent 时组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。Replay 保存 channel 及原始输入方向，不保存浏览器输入源或临时 entity ID。
 
 ## Events
 

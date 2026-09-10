@@ -64,7 +64,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
         },
       ],
     },
-    controls: [{ input: "external", targets: [{ entityId: bobby.id }] }],
+    controls: [{ input: "external", channel: 0 }],
     gameplayState: {
       status: "playing",
       deathReason: null,

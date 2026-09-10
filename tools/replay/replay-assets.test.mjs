@@ -30,17 +30,17 @@ for (const replayFile of replayFiles) {
       `${relative} 指向的地图不存在：${mapRef.collection}/${mapRef.id}`,
     );
 
-    const expectedStatus = replay?.meta?.final_status;
+    const expectedStatus = replay?.finalState?.status;
     assert.ok(
       expectedStatus === "playing" ||
         expectedStatus === "won" ||
         expectedStatus === "dead",
-      `${relative} 的 meta.final_status 无效`,
+      `${relative} 的 finalState.status 无效`,
     );
     const level = parseMapDocument(readJson(mapFile));
     const report = runReplay(level, replay);
-    assert.equal(report.actual.endTick, replay.endTick);
-    assert.equal(report.actual.status, expectedStatus);
+    assert.equal(report.endTick, replay.endTick);
+    assert.deepEqual(report.actual, replay.finalState);
   });
 }
 

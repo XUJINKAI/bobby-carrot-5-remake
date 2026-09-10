@@ -153,7 +153,7 @@ Inspector 汇总当前工具和它正在作用的对象：
 Inspector 始终显示选区中的完整 Entity 集合；单格按实际 `stackOrder` 从顶层向下排列。
 多格对象显示 footprint、anchor 与当前命中的 Presence role。
 Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
-Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通 enum / boolean 控件编辑。
+Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通数字 enum / boolean 控件编辑。
 Palette 素材提示显示 canonical type、Trait、Behavior 与支持的 Map fields；Surface 素材提示
 显示实际持久化的 canonical type，具体 Variant 另外显示 visual ID 与在 Terrain 中的位置。
 Delete 与 Palette Brush Inspector 订阅离散 Canvas cell hover；Palette Brush 的当前素材字段与

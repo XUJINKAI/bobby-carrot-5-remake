@@ -603,30 +603,42 @@ export class Game {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
     const groups = this.queuedIntentGroups.splice(0);
-    const controls = this.debugExternalActorId === null
-      ? undefined
-      : [
-          ...this.session.controls.filter(
-            (binding) => binding.input !== "external",
-          ),
-          {
-            input: "external",
-            targets: [{ entityId: this.debugExternalActorId }],
-          } satisfies ControlBinding,
-        ];
-    if (this.inputController || !this.heldDirection || this.heldDirectionBlocked)
+    const moves = [...queued, ...sampled];
+    const debugActorMoves = this.debugExternalActorId === null
+      ? []
+      : moves
+          .filter((move) => move.source === "external")
+          .map((move) => ({ ...move, actorId: this.debugExternalActorId! }));
+    const routedMoves = this.debugExternalActorId === null
+      ? moves
+      : moves.filter((move) => move.source !== "external");
+    if (this.inputController || !this.heldDirection || this.heldDirectionBlocked) {
       return {
-        moves: [...queued, ...sampled],
+        moves: routedMoves,
+        actorMoves: debugActorMoves,
         groups,
-        ...(controls ? { controls } : {}),
       };
+    }
+    if (this.debugExternalActorId !== null) {
+      return {
+        moves: routedMoves,
+        actorMoves: [
+          ...debugActorMoves,
+          {
+            source: "external",
+            direction: this.heldDirection,
+            actorId: this.debugExternalActorId,
+          },
+        ],
+        groups,
+      };
+    }
     return {
       moves: [
-        ...queued,
+        ...routedMoves,
         { source: "external", direction: this.heldDirection },
       ],
       groups,
-      ...(controls ? { controls } : {}),
     };
   }
 

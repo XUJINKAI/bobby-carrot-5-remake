@@ -163,7 +163,7 @@ Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
 
 Engine `ScreenJoystick` 负责半透明圆形底座和球头的渲染、pointer capture、dead zone、主轴方向、方向迟滞与回中，并将结果送入同一个 `InputController` held-direction 路径。调用方通过 Runtime Config 决定是否启用、透明度和安全区域。
 
-Bobby 的 `controller` 字段把 actor 放入 `channel-1` 或 `channel-2`，`mirrorX / mirrorY` 组成该 actor 的方向变换。`GameplaySession` 将浏览器输入源映射到通道：单通道时方向键与 WASD 共同控制 primary 通道，双通道时二者分别控制 primary 与 secondary。
+Bobby 的 `controller` 字段使用从 `0` 开始的数字通道，省略时属于通道 `0`；`mirrorX / mirrorY` 组成该 actor 的方向变换。`GameplaySession` 将浏览器输入源映射到通道：单通道时方向键与 WASD 共同控制 primary 通道，双通道时二者分别控制通道 `0` 与 `1`。
 
 外部宿主控件仍可调用 `InputController.setHeldDirection()`，用于无障碍控制器或产品自定义输入；这是一条扩展入口，不承担基础 Screen Joystick 实现。Editor Authoring 输入属于 Editor；Editor Play Test 直接启用 Engine Gameplay Input。
 

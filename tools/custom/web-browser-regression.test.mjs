@@ -313,16 +313,20 @@ async function verifyReplayPanel(cdp, url) {
     !replay.meta.name ||
     typeof replay.meta.url !== "string" ||
     replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
-    replay.meta.note !== "" ||
-    !["playing", "won", "dead"].includes(replay.meta.final_status)
+    replay.meta.note !== ""
   )
     throw new Error("Replay panel did not export map metadata");
   if (
     "levelHash" in replay ||
-    "expectation" in replay ||
     Object.keys(replay).at(-1) !== "frames"
   )
     throw new Error("Replay export did not use the compact field layout");
+  if (
+    !["playing", "won", "dead"].includes(replay.finalState?.status) ||
+    typeof replay.finalState?.counters !== "object" ||
+    !Array.isArray(replay.finalState?.completedConditions)
+  )
+    throw new Error("Replay panel did not export finalState");
   if ("profile" in replay.runtime || "economy" in replay.runtime)
     throw new Error("Replay runtime included Explore session settings");
   if ("snapshot" in replay || "entities" in replay)

@@ -70,23 +70,31 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.deepEqual(replay.meta, {
     name: "测试胡萝卜",
     url: "/test/carrot",
-    final_status: "won",
     note: "",
   });
   assert.deepEqual(Object.keys(replay.runtime), ["worldHz", "bobbyLocomotion"]);
   assert.deepEqual(replay.initialIntents, []);
   assert.equal(Object.keys(replay).at(-1), "frames");
   assert.equal("levelHash" in replay, false);
-  assert.equal("expectation" in replay, false);
+  assert.deepEqual(replay.finalState, {
+    status: "won",
+    counters: { "collect-carrot": 1 },
+    completedConditions: [{ type: "collect-all", target: "carrot" }],
+  });
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
   assert.deepEqual(runReplay(level, replay), {
-    actual: {
-      status: "won",
-      moves: 1,
-      endTick: 3,
-    },
+    actual: replay.finalState,
+    endTick: 3,
   });
+
+  for (const field of ["actorId", "source"]) {
+    const invalid = structuredClone(replay);
+    invalid.frames[0].groups[0].intents[0][field] = field === "actorId"
+      ? 4
+      : "arrows";
+    assert.throws(() => runReplay(level, invalid), /未声明字段/);
+  }
 });
 
 test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
@@ -216,7 +224,7 @@ test("Replay 保留受阻的玩家输入尝试", () => {
 
   assert.equal(tick.inputResolutions[0].result, "blocked");
   assert.equal(replay.frames[0].groups[0].intents[0].direction, "right");
-  assert.equal(runReplay(level, replay).actual.endTick, replay.endTick);
+  assert.equal(runReplay(level, replay).endTick, replay.endTick);
 });
 
 test("ReplayRunner 拒绝不符合播放合同的输入", () => {
@@ -225,7 +233,6 @@ test("ReplayRunner 拒绝不符合播放合同的输入", () => {
     meta: {
       name: "错误版本",
       url: "/test/invalid-version",
-      final_status: "playing",
       note: "",
     },
     runtime: {
@@ -233,6 +240,11 @@ test("ReplayRunner 拒绝不符合播放合同的输入", () => {
       bobbyLocomotion: { moveMs: 100 },
     },
     initialIntents: [],
+    finalState: {
+      status: "playing",
+      counters: {},
+      completedConditions: [],
+    },
     endTick: 0,
     frames: [],
   };
@@ -245,7 +257,6 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
     meta: {
       name: "属性顺序",
       url: "/test/property-order",
-      final_status: "playing",
       note: "",
     },
     runtime: {
@@ -255,6 +266,11 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
       },
     },
     initialIntents: [],
+    finalState: {
+      status: "playing",
+      counters: {},
+      completedConditions: [],
+    },
     endTick: 0,
     frames: [],
   };
@@ -284,7 +300,6 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   assert.deepEqual(replay.initialIntents, [
     {
       type: "set-actor-lock-key",
-      actorId: 4,
       kind: "reusable",
       enabled: true,
     },
@@ -316,7 +331,6 @@ test("运行中的 locomotion 动作进入 Replay frame", () => {
   assert.equal(session.state.actors[0].moveDurationMs, 266);
   assert.deepEqual(replay.frames[0].groups[0].intents[0], {
     type: "set-actor-locomotion",
-    actorId,
     moveDurationMs: 266,
   });
 });
@@ -344,7 +358,6 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
 
   assert.deepEqual(recorder.stop().frames[0].groups[0].intents[0], {
     type: "set-actor-lock-key",
-    actorId,
     kind: "single-use",
     enabled: true,
   });
@@ -369,8 +382,133 @@ test("Replay 初始钥匙动作也省略交互关联字段", () => {
 
   assert.deepEqual(replay.initialIntents, [{
     type: "set-actor-lock-key",
-    actorId: 4,
     kind: "reusable",
     enabled: true,
   }]);
+});
+
+test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    entities: [
+      ground(0),
+      ground(1),
+      ground(2),
+      ground(3),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, controller: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 3, y: 0, controller: 1 },
+    ],
+  };
+  const session = new GameplaySession();
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    name: "双通道",
+    url: "/test/two-channels",
+  });
+  const [first, second] = session.advanceTicks(2, (time) => ({
+    moves: [{
+      source: time.tick === 0 ? "external" : "wasd",
+      direction: time.tick === 0 ? "right" : "left",
+    }],
+  }));
+  recorder.record(first);
+  recorder.record(second);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames.map((frame) => frame.groups[0].intents[0]), [
+    { type: "move", direction: "right" },
+    { type: "move", direction: "left", channel: 1 },
+  ]);
+  assert.deepEqual(runReplay(level, replay), {
+    actual: replay.finalState,
+    endTick: 2,
+  });
+});
+
+test("多 Bobby 的 actor 动作使用动作时位置", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    entities: [
+      ground(0),
+      ground(1),
+      ground(2),
+      ground(3),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, controller: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 3, y: 0, controller: 1 },
+    ],
+  };
+  const session = new GameplaySession();
+  session.loadLevel(level);
+  const secondActorId = session.actorIds[1];
+  const recorder = new ReplayRecorder(session, {
+    name: "位置引用",
+    url: "/test/actor-position",
+  });
+  const [tick] = session.advanceTicks(1, () => ({
+    groups: [{
+      intents: [{
+        type: "set-actor-locomotion",
+        actorId: secondActorId,
+        moveDurationMs: 240,
+      }],
+    }],
+  }));
+  recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames[0].groups[0].intents[0], {
+    type: "set-actor-locomotion",
+    actor: { x: 3, y: 0 },
+    moveDurationMs: 240,
+  });
+  assert.deepEqual(runReplay(level, replay), {
+    actual: replay.finalState,
+    endTick: 1,
+  });
+});
+
+test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    entities: [
+      ground(0),
+      ground(1),
+      ground(2),
+      ground(3),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, controller: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 3, y: 0, controller: 1 },
+    ],
+  };
+  const session = new GameplaySession();
+  session.loadLevel(level);
+  const secondActorId = session.actorIds[1];
+  const recorder = new ReplayRecorder(session, {
+    name: "调试移动",
+    url: "/test/direct-actor-move",
+  });
+  const [tick] = session.advanceTicks(1, () => ({
+    actorMoves: [{
+      source: "external",
+      actorId: secondActorId,
+      direction: "left",
+    }],
+  }));
+  recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames[0].groups[0].intents[0], {
+    type: "move",
+    direction: "left",
+    actor: { x: 3, y: 0 },
+  });
+  assert.deepEqual(runReplay(level, replay), {
+    actual: replay.finalState,
+    endTick: 1,
+  });
 });

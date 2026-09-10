@@ -91,11 +91,7 @@ export {
   type LogicalMoveInput,
 } from "./input/InputController.js";
 export {
-  resolveControlInput,
-  transformDirection,
   type ControlBinding,
-  type ControlTarget,
-  type DirectionTransform,
 } from "./input/ControlBindings.js";
 export {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
@@ -123,6 +119,8 @@ export {
 } from "./entities/player/BobbyState.js";
 export {
   REPLAY_FORMAT_VERSION,
+  type ReplayCompletedCondition,
+  type ReplayFinalState,
   type ReplayFinalStatus,
   type Replay,
   type ReplayFrame,

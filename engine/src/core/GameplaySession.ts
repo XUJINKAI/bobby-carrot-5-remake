@@ -9,8 +9,10 @@ import {
   readBobbyLocomotionMoveMs,
 } from "../entities/player/BobbyState.js";
 import {
+  channelsForInput,
   resolveControlInput,
   type ControlBinding,
+  type ControlTarget,
 } from "../input/ControlBindings.js";
 import type { LogicalMoveInput } from "../input/InputController.js";
 import {
@@ -43,9 +45,9 @@ export type GameplayInputAttempt = "moved" | "blocked" | "busy" | "consumed";
 
 export interface GameplayTickInput {
   moves?: readonly LogicalMoveInput[];
+  /** Debug 等 Engine 内部工具可绕过 input source，直接操作一个运行中 actor。 */
+  actorMoves?: readonly (LogicalMoveInput & { actorId: EntityId })[];
   groups?: readonly WorldIntentGroup[];
-  /** Debug 可以只为当前 Tick 覆盖控制目标，不改变 Session 的正式绑定。 */
-  controls?: readonly ControlBinding[];
 }
 
 export interface GameplayInputResolution {
@@ -92,6 +94,7 @@ export class GameplaySession {
   private initialIntentsValue: readonly ActorEffectIntent[] = [];
   private configuredControls: readonly ControlBinding[] | null;
   private controlBindings: readonly ControlBinding[] = [];
+  private controllerTargets: readonly ControlTarget[] = [];
   private primaryActorIdValue: EntityId | null = null;
   private worldValue: World | null = null;
   private initialLevel: LevelMap | null = null;
@@ -138,6 +141,24 @@ export class GameplaySession {
 
   get controls(): readonly ControlBinding[] {
     return structuredClone(this.controlBindings);
+  }
+
+  get controllerChannels(): readonly number[] {
+    return [...new Set(this.controllerTargets.map((target) => target.channel))]
+      .sort((left, right) => left - right);
+  }
+
+  resolveControllerInput(
+    channel: number,
+    direction: Direction,
+    source = "replay",
+  ): WorldIntentGroup {
+    return resolveControlInput(
+      this.controllerTargets,
+      channel,
+      direction,
+      source,
+    );
   }
 
   get canUndo(): boolean {
@@ -322,19 +343,37 @@ export class GameplaySession {
     const intents: WorldIntent[] = [];
     const claimedActors = new Set<EntityId>();
     for (const move of input.moves ?? []) {
-      const group = resolveControlInput(
-        input.controls ?? this.controlBindings,
-        move.source,
-        move.direction,
-      );
+      const channels = channelsForInput(this.controlBindings, move.source);
       const actorIds: EntityId[] = [];
-      for (const intent of group.intents) {
-        if (claimedActors.has(intent.actorId)) continue;
-        claimedActors.add(intent.actorId);
-        actorIds.push(intent.actorId);
-        intents.push(intent);
+      for (const channel of channels) {
+        const group = this.resolveControllerInput(
+          channel,
+          move.direction,
+          move.source,
+        );
+        for (const intent of group.intents) {
+          if (claimedActors.has(intent.actorId)) continue;
+          claimedActors.add(intent.actorId);
+          actorIds.push(intent.actorId);
+          intents.push(intent);
+        }
       }
       sources.set(move.source, actorIds);
+    }
+    for (const move of input.actorMoves ?? []) {
+      if (claimedActors.has(move.actorId)) continue;
+      claimedActors.add(move.actorId);
+      intents.push({
+        type: "move",
+        actorId: move.actorId,
+        direction: move.direction,
+        cause: {
+          type: "player-input",
+          source: move.source,
+          inputDirection: move.direction,
+        },
+      });
+      sources.set(move.source, [move.actorId]);
     }
     if (intents.length > 0)
       recordedGroups.push({ intents, historyBoundary: true });
@@ -435,49 +474,43 @@ export class GameplaySession {
 
   private configureActorsAndControls(): void {
     const actorIds = this.actorIds;
-    const targets = actorIds.map((entityId) => {
+    const targets: ControlTarget[] = actorIds.map((entityId) => {
       const state = this.world.entities.require(entityId).state;
       return {
-        controller:
-          state?.["controller"] === "channel-2"
-            ? ("channel-2" as const)
-            : ("channel-1" as const),
-        target: {
-          entityId,
-          directionTransform: {
-            mirrorX: state?.["mirrorX"] === true,
-            mirrorY: state?.["mirrorY"] === true,
-          },
+        entityId,
+        channel: state?.["controller"] === 1 ? 1 : 0,
+        directionTransform: {
+          mirrorX: state?.["mirrorX"] === true,
+          mirrorY: state?.["mirrorY"] === true,
         },
       };
     });
-    const channel1 = targets
-      .filter(({ controller }) => controller === "channel-1")
-      .map(({ target }) => target);
-    const channel2 = targets
-      .filter(({ controller }) => controller === "channel-2")
-      .map(({ target }) => target);
-    const primaryTargets = channel1.length > 0 ? channel1 : channel2;
-    this.primaryActorIdValue = primaryTargets[0]?.entityId ?? null;
+    this.controllerTargets = targets;
+    const channel0 = targets.filter(({ channel }) => channel === 0);
+    const channel1 = targets.filter(({ channel }) => channel === 1);
+    const primaryChannel = channel0.length > 0 ? 0 : 1;
+    this.primaryActorIdValue = targets.find(
+      ({ channel }) => channel === primaryChannel,
+    )?.entityId ?? null;
     if (this.configuredControls) {
       this.controlBindings = structuredClone(this.configuredControls);
       return;
     }
-    if (primaryTargets.length === 0) {
+    if (targets.length === 0) {
       this.controlBindings = [];
       return;
     }
     this.controlBindings = [
-      { input: "arrows", targets: primaryTargets },
+      { input: "arrows", channel: primaryChannel },
       {
         input: "wasd",
-        targets: channel1.length > 0 && channel2.length > 0
-          ? channel2
-          : primaryTargets,
+        channel: channel0.length > 0 && channel1.length > 0
+          ? 1
+          : primaryChannel,
       },
-      { input: "pointer", targets: primaryTargets },
-      { input: "joystick", targets: primaryTargets },
-      { input: "external", targets: primaryTargets },
+      { input: "pointer", channel: primaryChannel },
+      { input: "joystick", channel: primaryChannel },
+      { input: "external", channel: primaryChannel },
     ];
   }
 
