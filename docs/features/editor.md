@@ -92,7 +92,7 @@ Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的�
 
 Inspector 编辑 Surface 时复用同一份二维 `rows`，直接显示 atlas visual 网格并高亮当前单元；选择结果写回 canonical type + `variant`。Surface 的 `variant` 不显示为文本下拉框。
 
-Surface 模式右键地图直接取样 Terrain + Exact variant。Palette 右键仍走 Entity 选择/菜单语义。
+地图右键切换当前 authoring 面板的选择工具，并建立当前格的单格选区。
 
 Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标区域自动选择 Start / Middle / End visual variant。
 
@@ -172,7 +172,8 @@ Runtime 不反写 Draft。Stop 销毁临时 Game/Input 后恢复 Editor viewport
 - Tab：Palette / Surface 快速切换；
 - Select：单选或矩形多选，不直接绘制；
 - Brush：单格/连续绘制；点入已有 Selection 时整块填充；
-- Surface：额外提供 Smart Fill；右键取样；
+- Surface：额外提供 Smart Fill；
+- 右键：切换选择工具并选择当前格；
 - Ctrl+A：全选地图；
 - Palette：Q/E 切换可变 Entity；
 - 滚轮：缩放地图；

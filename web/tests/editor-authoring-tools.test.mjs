@@ -100,6 +100,15 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
   assert.match(multiInspector, /editor-batch-divider/);
 });
 
+test("Editor 右键切换当前面板的选择工具并建立单格选区", () => {
+  assert.match(
+    pageState,
+    /function selectCell\(cell: Cell\)[\s\S]*leftPanel\.value === "surface"[\s\S]*surfaceTool\.value = "rect"[\s\S]*paletteTool\.value = "select"[\s\S]*mapSelection\.value = \{ anchor: cell, focus: cell \}/,
+  );
+  assert.match(page, /@secondary-select="page\.selectCell"/);
+  assert.doesNotMatch(page, /EditorContextMenu|contextMenu/);
+});
+
 test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
   assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
   assert.match(pageState, /ruleDetector\.detect\(next\.level as EditorMap, catalog\)/);

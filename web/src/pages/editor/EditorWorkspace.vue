@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {
   Cell,
-  EditorCanvasContextMenuRequest,
   EditorDefinition,
   EditorMap,
   EditorPlacementPreset,
@@ -70,7 +69,7 @@ const emit = defineEmits<{
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
   primaryEnd: [cell: Cell | null];
-  contextMenu: [request: EditorCanvasContextMenuRequest];
+  secondarySelect: [cell: Cell];
   resize: [edges: EditorResizeEdges];
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
@@ -144,7 +143,7 @@ const emit = defineEmits<{
         @primary-start="emit('primaryStart', $event)"
         @primary-move="emit('primaryMove', $event)"
         @primary-end="emit('primaryEnd', $event)"
-        @context-menu="emit('contextMenu', $event)"
+        @secondary-select="emit('secondarySelect', $event)"
         @resize="emit('resize', $event)"
       />
       <canvas v-show="playing" data-editor-game-canvas />

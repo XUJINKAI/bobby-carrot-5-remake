@@ -20,7 +20,6 @@ import {
   isSurfaceEntityType,
   paintSurface,
   pasteClipboard,
-  pickSurfaceBrush,
   placeEntity,
   rectangleCells,
   removeEntities,
@@ -377,26 +376,9 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (refs.length > 0) document.execute(removeEntities(refs));
   }
 
-  function pickSurface(cell: Cell): boolean {
-    const picked = pickSurfaceBrush(currentLevel(), cell);
-    if (!picked) return false;
-    surfaceBrush.value = normalizeSurfaceBrush(picked);
-    activateSurface();
-    return true;
-  }
-
-  function ensureSelectionAt(cell: Cell): void {
-    const selection = mapSelection.value;
-    if (selection) {
-      const rect = selectionRect(selection);
-      if (
-        cell.x >= rect.left &&
-        cell.x <= rect.right &&
-        cell.y >= rect.top &&
-        cell.y <= rect.bottom
-      )
-        return;
-    }
+  function selectCell(cell: Cell): void {
+    if (leftPanel.value === "surface") surfaceTool.value = "rect";
+    else paletteTool.value = "select";
     mapSelection.value = { anchor: cell, focus: cell };
   }
 
@@ -696,11 +678,10 @@ export function useEditorPage(initialLevel: EditorMap) {
     setSurfacePattern,
     setSurfaceExact,
     setSurfaceAlternate,
-    pickSurface,
     primaryStart,
     primaryMove,
     primaryEnd,
-    ensureSelectionAt,
+    selectCell,
     copy,
     cut,
     paste,

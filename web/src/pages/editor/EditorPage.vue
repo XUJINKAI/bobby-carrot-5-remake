@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
   validateEditorLevel,
-  type Cell,
-  type EditorCanvasContextMenuRequest,
   type EditorMap,
   type LevelValidationIssue,
 } from "@bobby/editor";
@@ -18,7 +16,6 @@ import {
   ref,
   watch,
 } from "vue";
-import EditorContextMenu from "./EditorContextMenu.vue";
 import EditorFileDialog from "./EditorFileDialog.vue";
 import EditorWorkspace from "./EditorWorkspace.vue";
 import { configureEditorShell } from "./editorShell.js";
@@ -39,7 +36,6 @@ const leftOpen = ref(true);
 const rightPanel = ref<"inspector" | "level" | null>(
   startsMobile ? null : "inspector",
 );
-const contextMenu = ref<null | { x: number; y: number; cell: Cell }>(null);
 const playComplete = ref(false);
 const runtimeIssue = ref<LevelValidationIssue | null>(null);
 const issues = computed(() =>
@@ -78,7 +74,6 @@ watch(
 );
 
 async function togglePlay(): Promise<void> {
-  closeContextMenu();
   if (page.playing.value) {
     stopPlay();
     return;
@@ -171,40 +166,18 @@ function markDownloaded(metadata: {
   page.document.markSaved();
 }
 
-function openContextMenu(request: EditorCanvasContextMenuRequest): void {
-  if (page.leftPanel.value === "surface") {
-    page.pickSurface(request.cell);
-    closeContextMenu();
-    return;
-  }
-  page.ensureSelectionAt(request.cell);
-  contextMenu.value = {
-    x: request.clientX,
-    y: request.clientY,
-    cell: request.cell,
-  };
-}
-function closeContextMenu(): void {
-  contextMenu.value = null;
-}
-function pasteFromMenu(): void {
-  const cell = contextMenu.value?.cell;
-  if (cell) page.paste(cell);
-}
 function selectAll(): void {
   const level = page.snapshot.value.level as EditorMap;
   page.mapSelection.value = {
     anchor: { x: 0, y: 0 },
     focus: { x: level.width - 1, y: level.height - 1 },
   };
-  closeContextMenu();
 }
 
 function switchAuthoringPanel(): void {
   page.toggleAuthoringPanel();
   leftOpen.value = true;
   if (isMobileEditor()) rightPanel.value = null;
-  closeContextMenu();
   syncShell();
 }
 
@@ -216,10 +189,6 @@ function handleKeydown(event: KeyboardEvent): void {
   if (event.key === "Tab" && !modifier && !event.altKey) {
     event.preventDefault();
     switchAuthoringPanel();
-    return;
-  }
-  if (event.key === "Escape") {
-    closeContextMenu();
     return;
   }
   if (modifier && key === "a") {
@@ -321,7 +290,6 @@ function onBeforeUnload(event: BeforeUnloadEvent): void {
 onMounted(() => {
   syncShell();
   window.addEventListener("keydown", handleKeydown);
-  window.addEventListener("pointerdown", closeContextMenu);
   window.addEventListener("game-shell-action", onShellAction);
   window.addEventListener("shell-dialog-open", onShellDialogOpen);
   window.addEventListener("shell-dialog-close", onShellDialogClose);
@@ -331,7 +299,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPlay();
   window.removeEventListener("keydown", handleKeydown);
-  window.removeEventListener("pointerdown", closeContextMenu);
   window.removeEventListener("game-shell-action", onShellAction);
   window.removeEventListener("shell-dialog-open", onShellDialogOpen);
   window.removeEventListener("shell-dialog-close", onShellDialogClose);
@@ -394,10 +361,10 @@ function isMobileEditor(): boolean {
       @surface-alternate-a="(type) => page.setSurfaceAlternate(0, type)"
       @surface-alternate-b="(type) => page.setSurfaceAlternate(1, type)"
       @hover="page.hover.value = $event"
-      @primary-start="(cell) => { closeContextMenu(); page.primaryStart(cell); }"
+      @primary-start="page.primaryStart"
       @primary-move="page.primaryMove"
       @primary-end="page.primaryEnd"
-      @context-menu="openContextMenu"
+      @secondary-select="page.selectCell"
       @resize="page.resize"
       @field="page.updateField"
       @variant="page.applyVariant"
@@ -416,18 +383,6 @@ function isMobileEditor(): boolean {
       @metadata="page.updateMetadata"
       @play-restart="restartPlay"
       @play-stop="stopPlay"
-    />
-    <EditorContextMenu
-      :open="Boolean(contextMenu)"
-      :x="contextMenu?.x ?? 0"
-      :y="contextMenu?.y ?? 0"
-      :can-paste="Boolean(page.clipboard.value?.entities.length)"
-      :entity-selected="page.selectedRefs.value.length > 0"
-      @close="closeContextMenu"
-      @copy="page.copy"
-      @cut="page.cut"
-      @paste="pasteFromMenu"
-      @delete="page.deleteSelection"
     />
     <EditorFileDialog
       :open="page.fileDialogOpen.value"

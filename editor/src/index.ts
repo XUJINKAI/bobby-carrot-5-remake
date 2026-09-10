@@ -55,7 +55,7 @@ export { EditorCanvasRenderer, EDITOR_TILE_SIZE } from "./canvas/EditorCanvasRen
 export type { EditorCanvasRenderState } from "./canvas/EditorCanvasRenderer.js";
 export { EditorEntityPreviewRenderer } from "./canvas/EditorEntityPreviewRenderer.js";
 export { EditorCanvasInput } from "./canvas/EditorCanvasInput.js";
-export type { EditorCanvasInputHandlers, EditorCanvasContextMenuRequest } from "./canvas/EditorCanvasInput.js";
+export type { EditorCanvasInputHandlers } from "./canvas/EditorCanvasInput.js";
 export { canvasPointToCell } from "./canvas/coordinates.js";
 export { createBuiltinEntityCatalog } from "@bobby/engine";
 export type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
