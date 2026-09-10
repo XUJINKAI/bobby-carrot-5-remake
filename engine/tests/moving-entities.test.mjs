@@ -52,7 +52,7 @@ test("Leaf carries co-located Bobby without creating a mount relation", () => {
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
 });
 
-test("Leaf carries every player currently on its cell", () => {
+test("Leaf 上已有 Bobby 时会阻止另一个 Bobby 进入", () => {
   const world = new World({
     schemaVersion: 1,
     width: 4,
@@ -68,14 +68,12 @@ test("Leaf carries every player currently on its cell", () => {
     ],
   });
   const players = world.query.entitiesWithTrait("player");
-  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  const result = move(world, players[0].id, "right");
 
-  assert.equal(move(world, players[0].id, "right").moves[0].moved, true);
-  const drift = world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
-  assert.equal(drift.motions.length, 3);
-  assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
-  assert.deepEqual(world.entity(players[0].id).anchor, { x: 2, y: 0 });
-  assert.deepEqual(world.entity(players[1].id).anchor, { x: 2, y: 0 });
+  assert.equal(result.moves[0].moved, false);
+  assert.equal(result.moves[0].passage.reason, "player-occupied");
+  assert.deepEqual(world.entity(players[0].id).anchor, { x: 0, y: 0 });
+  assert.deepEqual(world.entity(players[1].id).anchor, { x: 1, y: 0 });
 });
 
 test("Wind drives a Cloud through sky and matching Parking stops it", () => {

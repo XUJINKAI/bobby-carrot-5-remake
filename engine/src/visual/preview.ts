@@ -28,7 +28,6 @@ export interface EntityVisualPreviewSource {
 /** 省略持久化关卡所需坐标的扁平 canonical Map Entity。 */
 export interface LevelEntityVisualPreviewSource {
   type: EntityType;
-  direction?: Direction;
   stackOrder?: number;
   [key: string]: JsonPrimitive | undefined;
 }
@@ -90,6 +89,8 @@ function resolveInstantiatedVisualPreview(
     inBounds: () => true,
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
+    entitiesWithTrait: (trait) =>
+      definition.traits.includes(trait) ? [entity] : [],
   };
   return visualRegistry.resolve(definition, { entity, presence, query });
 }

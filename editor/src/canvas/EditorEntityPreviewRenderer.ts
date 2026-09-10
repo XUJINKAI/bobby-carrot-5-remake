@@ -8,12 +8,14 @@ import {
   type EntityCatalog,
   type ImageManager,
   type VisualRegistry,
+  type VisualQuery,
 } from "@bobby/engine";
 import { resolveEditorEntityPreviewLayout } from "../authoring/entityPreview.js";
 import { EditorPreview } from "../authoring/EditorPreview.js";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
   EditorDefinition,
+  EditorEntityFields,
   EditorPlacementPreset,
 } from "../definitions/types.js";
 import type { EditorMap } from "../level/types.js";
@@ -37,6 +39,7 @@ export class EditorEntityPreviewRenderer {
     canvas: HTMLCanvasElement,
     source: EditorPlacementPreset,
     cellSize: number,
+    previewState?: EditorEntityFields,
   ): boolean {
     const layout = resolveEditorEntityPreviewLayout(
       this.catalog,
@@ -66,13 +69,35 @@ export class EditorEntityPreviewRenderer {
       ],
     };
     const preview = new EditorPreview(level, this.catalog);
-    const query = new SpatialVisualQuery(preview.entities, preview.spatial);
+    const spatialQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
+    const previewEntity = preview.entities.require(1);
+    const visualEntity = previewState
+      ? {
+          ...previewEntity,
+          state: {
+            ...(previewEntity.state ?? {}),
+            ...previewState,
+          },
+        }
+      : previewEntity;
+    const query: VisualQuery = previewState
+      ? {
+          inBounds: (cell) => spatialQuery.inBounds(cell),
+          presencesAt: (cell) => spatialQuery.presencesAt(cell),
+          entity: (id) => id === visualEntity.id
+            ? visualEntity
+            : spatialQuery.entity(id),
+          entitiesWithTrait: (trait) => spatialQuery.entitiesWithTrait(trait)
+            .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
+        }
+      : spatialQuery;
     const inspections = [...preview.presencesFor({ index: 0 })].sort(
       (a, b) => a.presence.stackOrder - b.presence.stackOrder,
     );
     let rendered = false;
     for (const inspection of inspections) {
-      const entity = preview.entities.require(inspection.presence.entityId);
+      const entity = query.entity(inspection.presence.entityId);
+      if (!entity) continue;
       const resolveContext = { entity, presence: inspection.presence, query };
       const composition =
         this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??

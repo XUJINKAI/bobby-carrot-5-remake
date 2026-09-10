@@ -1,28 +1,56 @@
 <script setup lang="ts">
-import { parseEditorLevel, serializeEditorLevel, type EditorMap } from "@bobby/editor";
 import { ref } from "vue";
+import {
+  requireImportedJson,
+  type ImportedData,
+  type ImportedSaveData,
+} from "../../services/import/importPipeline.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
+import ImportSaveConfirmation from "../import/ImportSaveConfirmation.vue";
 
 const emit = defineEmits<{
   navigate: [path: string];
-  importMap: [level: EditorMap];
+  importData: [data: ImportedData];
 }>();
 const importOpen = ref(false);
+const pendingSave = ref<ImportedSaveData | null>(null);
 const toolbar = {
   left: [],
   right: [
     { type: "importText" as const, label: "打开" },
-    { type: "importFile" as const, label: "导入文件" },
+    { type: "importFile" as const, label: "导入文件", accept: "*/*" },
   ],
 };
 
-function parseMap(value: unknown): EditorMap {
-  return parseEditorLevel(JSON.stringify(value));
+function parseImport(value: unknown): ImportedData {
+  return requireImportedJson(value);
 }
 
-function serializeMap(value: unknown): string {
-  return serializeEditorLevel(value as EditorMap);
+function serializeImport(value: unknown): string {
+  return JSON.stringify((value as ImportedData).value, null, 2);
+}
+
+function acceptImport(data: unknown): void {
+  const imported = data as ImportedData;
+  if (imported.type === "map") {
+    closeImport();
+    emit("importData", imported);
+    return;
+  }
+  pendingSave.value = imported;
+}
+
+function confirmSave(): void {
+  const data = pendingSave.value;
+  if (!data) return;
+  closeImport();
+  emit("importData", data);
+}
+
+function closeImport(): void {
+  pendingSave.value = null;
+  importOpen.value = false;
 }
 </script>
 
@@ -64,10 +92,10 @@ function serializeMap(value: unknown): string {
         class="home-mode-card"
         data-home-import
         type="button"
-        @click="importOpen = !importOpen"
+        @click="importOpen ? closeImport() : importOpen = true"
       >
         <strong>导入地图</strong>
-        <span>导入已有的地图数据</span>
+        <span>导入自定义地图或存档</span>
         <AppIcon name="place" />
       </button>
     </div>
@@ -83,23 +111,30 @@ function serializeMap(value: unknown): string {
       v-if="importOpen"
       class="home-import-dialog-layer"
       role="presentation"
-      @click.self="importOpen = false"
+      @click.self="closeImport"
     >
-      <section class="home-import-dialog" role="dialog" aria-modal="true" aria-label="导入自定义地图">
+      <section class="home-import-dialog" role="dialog" aria-modal="true" aria-label="导入数据">
         <header>
-          <strong>导入自定义地图</strong>
-          <button type="button" aria-label="关闭" @click="importOpen = false">
+          <strong>导入数据</strong>
+          <button type="button" aria-label="关闭" @click="closeImport">
             <AppIcon name="close" />
           </button>
         </header>
+        <ImportSaveConfirmation
+          v-if="pendingSave"
+          :data="pendingSave"
+          @confirm="confirmSave"
+          @cancel="pendingSave = null"
+        />
         <DataExchangePanel
+          v-else
           class="home-data-exchange"
-          :serialize="serializeMap"
-          :parse="parseMap"
-          placeholder="粘贴地图 JSON、BC5R 文本或分享链接……"
-          filename="bc5r-map"
+          :serialize="serializeImport"
+          :parse="parseImport"
+          placeholder="粘贴 JSON、BC5R1 文本或分享链接……"
+          filename="bc5r-data"
           :toolbar="toolbar"
-          @import="emit('importMap', $event as EditorMap)"
+          @import="acceptImport"
         />
       </section>
     </div>

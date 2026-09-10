@@ -27,7 +27,7 @@ Original DAT tooling 是原版格式互操作边界，不属于浏览器产品�
 
 ## @bobby/model
 
-`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和严格 parser。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
+`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和 parser。地图结构、坐标、规则与已知 Entity 的声明字段由稳定合同约束；未知 type 和已知 type 的实例字段问题可以跨过读取边界，由 Engine 降级为可见的惰性占位符。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
 
 ```ts
 interface LevelEntity {
@@ -138,7 +138,7 @@ world/                  RuntimeState、事务顺序与世界状态推进
 
 `mechanics/definitions.ts` 是稳定 façade：加载原版 Definition 后注册扩展 Definition，并保持现有 Engine/Editor 查询 API。地图加载时只为当前 `LevelMap` 创建 active rule 列表；移动完成后按注册顺序同步执行。
 
-当前只有 Bobby 一个可控制 Actor。`actors/BobbyActorState` 明确角色状态归属，同时保持 `RuntimeState` snapshot 字段以及 `World.player / facing / dead` 等公开访问方式稳定。
+Engine 允许一张地图包含多个 Bobby Actor。每个 Bobby 的背包和生命周期归属于自身 Entity state；`GameplayState.actors[]` 提供完整状态，`primaryActorId / player / facing / inventory` 是 primary actor 的便利投影。任一 actor 死亡即结束关卡，移动事务负责多人目的格冲突与不可重叠约束。
 
 ### 输入边界
 
@@ -162,6 +162,8 @@ Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
 能力通过配置逐项开关：`movement / undo / restart / pan / zoom / debug`。Controller 不认识 Adventure、Explore 或 Editor 页面。
 
 Engine `ScreenJoystick` 负责半透明圆形底座和球头的渲染、pointer capture、dead zone、主轴方向、方向迟滞与回中，并将结果送入同一个 `InputController` held-direction 路径。调用方通过 Runtime Config 决定是否启用、透明度和安全区域。
+
+Bobby 的 `controller` 字段把 actor 放入 `channel-1` 或 `channel-2`，`mirrorX / mirrorY` 组成该 actor 的方向变换。`GameplaySession` 将浏览器输入源映射到通道：单通道时方向键与 WASD 共同控制 primary 通道，双通道时二者分别控制 primary 与 secondary。
 
 外部宿主控件仍可调用 `InputController.setHeldDirection()`，用于无障碍控制器或产品自定义输入；这是一条扩展入口，不承担基础 Screen Joystick 实现。Editor Authoring 输入属于 Editor；Editor Play Test 直接启用 Engine Gameplay Input。
 
@@ -417,7 +419,7 @@ GameStage
 
 Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。统计用时、模式导航和 Result 动作属于 Web。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
 
-Engine HUD 使用统一布局约束：目标计数和地图内持有道具分成两行锚定在 GameStage 右上角，各产品模式只配置 HUD 能力，不重新实现道具布局。
+Engine HUD 使用统一布局约束并锚定在 GameStage 右上角：第一行是全体共享的目标计数，第二行是 primary actor 的地图内道具；存在第二个 Bobby 时，第三行显示 secondary actor 的道具。各产品模式只配置 HUD 能力，不重新实现道具布局。
 
 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test 都创建正式 Engine session。它们通过输入能力、Camera 限制、外层进度和 Result 动作表达差异，不维护各自的 gameplay 实现。
 
@@ -433,7 +435,7 @@ Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test 都创建�
 
 Web 提供竖屏容器、章节/关卡列表、存档文件导入导出等浏览器表现层；Campaign 规则来自 `@bobby/adventure`，地图内规则来自 Engine。
 
-Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera 最小 zoom，保持谜题的信息边界。
+Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera 最小 zoom，保持谜题的信息边界。多人地图的 Camera 会为所有 Bobby 共同构图；为保证两者始终可见，该构图可以临时低于产品配置的最小 zoom。
 
 正式 URL：
 

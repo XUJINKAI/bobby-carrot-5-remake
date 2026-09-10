@@ -13,8 +13,10 @@ import {
 } from "@bobby/editor";
 import type { EntityCatalog, ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import EditorMaterialTooltip from "./EditorMaterialTooltip.vue";
+import { useEditorMaterialTooltip } from "./editorMaterialTooltip.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -38,7 +40,7 @@ const emit = defineEmits<{
 const patterns: readonly { id: SurfacePattern; label: string }[] = [
   { id: "auto", label: "Auto" },
   { id: "exact", label: "Exact" },
-  { id: "alternate", label: "交错" },
+  { id: "alternate", label: "Alternating" },
 ];
 
 const terrain = computed(() => surfaceTerrain(props.brush.terrain));
@@ -52,70 +54,49 @@ const alternateB = computed(
     variants.value[1]?.type ??
     variants.value[0]?.type,
 );
-const tooltip = ref<null | {
-  x: number;
-  y: number;
-  name: string;
-  type?: string;
-  variantCount?: number;
-  surfaceType?: string;
-  slot?: string;
-  theme?: string;
-  auto?: string;
-  detail?: string;
-}>(null);
+const {
+  tooltip,
+  tooltipId,
+  schedule,
+  showOnFocus,
+  hide,
+} = useEditorMaterialTooltip();
 
-function showTerrainTooltip(
-  definition: SurfaceTerrainDefinition,
-  event: MouseEvent,
-): void {
-  tooltip.value = {
-    x: event.clientX + 14,
-    y: event.clientY + 14,
-    name: definition.label,
-    variantCount: definition.rows.flat().length,
-    surfaceType: definition.type,
-    slot: definition.slot,
-    ...(definition.theme ? { theme: definition.theme } : {}),
-    auto: autoLabel(definition),
+function terrainTooltip(definition: SurfaceTerrainDefinition) {
+  return {
+    title: definition.label,
+    code: surfaceVariantPreset(definition.primary).type,
   };
 }
 
-function showVariantTooltip(
+function variantTooltip(
   definition: SurfaceTerrainDefinition,
   type: EntityType,
   label: string,
-  event: MouseEvent,
-): void {
+) {
   const all = definition.rows.flat();
   const index = all.findIndex((variant) => variant.type === type);
-  tooltip.value = {
-    x: event.clientX + 14,
-    y: event.clientY + 14,
-    name: `${definition.label} · ${label}`,
-    type,
-    detail: `variant ${Math.max(1, index + 1)} / ${all.length}`,
-    surfaceType: definition.type,
-    slot: definition.slot,
+  const statuses: string[] = [];
+  if (props.brush.pattern === "exact" && props.brush.exact === type)
+    statuses.push("Exact");
+  if (props.brush.pattern === "alternate" && alternateA.value === type)
+    statuses.push("A");
+  if (props.brush.pattern === "alternate" && alternateB.value === type)
+    statuses.push("B");
+  return {
+    title: `${definition.label} · ${label}`,
+    code: surfaceVariantPreset(type).type,
+    rows: [
+      { label: "visual", value: type },
+      { label: "variant", value: `${Math.max(1, index + 1)} / ${all.length}` },
+      ...(statuses.length > 0
+        ? [{ label: "selected", value: statuses.join(" + ") }]
+        : []),
+    ],
+    hint: props.brush.pattern === "alternate"
+      ? "Left-click to set A · Right-click to set B"
+      : "Click to select this exact visual",
   };
-}
-
-function moveTooltip(event: MouseEvent): void {
-  if (!tooltip.value) return;
-  tooltip.value = {
-    ...tooltip.value,
-    x: event.clientX + 14,
-    y: event.clientY + 14,
-  };
-}
-
-function autoLabel(definition: SurfaceTerrainDefinition): string {
-  const auto = definition.auto;
-  if (auto.kind === "weighted") return `weighted · ${auto.variants.length} entries`;
-  if (auto.kind === "vertical") return "vertical topology";
-  if (auto.kind === "fence") return `adjacency · ${auto.variants.length} variants`;
-  if (auto.kind === "neighbor") return `neighbor rules · ${auto.rules.length}`;
-  return "primary";
 }
 </script>
 
@@ -182,10 +163,26 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
             type="button"
             class="editor-palette-tile surface-terrain-tile"
             :class="{ active: brush.terrain === terrainId }"
+            :aria-describedby="
+              tooltip?.key === `terrain:${terrainId}` ? tooltipId : undefined
+            "
             @click="emit('terrain', terrainId)"
-            @mouseenter="showTerrainTooltip(surfaceTerrain(terrainId), $event)"
-            @mousemove="moveTooltip"
-            @mouseleave="tooltip = null"
+            @mouseenter="
+              schedule(
+                `terrain:${terrainId}`,
+                $event,
+                terrainTooltip(surfaceTerrain(terrainId)),
+              )
+            "
+            @mouseleave="hide"
+            @focus="
+              showOnFocus(
+                `terrain:${terrainId}`,
+                $event,
+                terrainTooltip(surfaceTerrain(terrainId)),
+              )
+            "
+            @blur="hide"
           >
             <EditorEntityPreview
               :source="surfaceVariantPreset(surfaceTerrain(terrainId).primary)"
@@ -232,11 +229,31 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
             'alternate-b': brush.pattern === 'alternate' && alternateB === variant.type,
           }"
           type="button"
-          @click="brush.pattern === 'alternate' ? emit('alternateA', variant.type) : emit('exact', variant.type)"
+          :aria-describedby="
+            tooltip?.key === `variant:${variant.type}` ? tooltipId : undefined
+          "
+          @click="
+            brush.pattern === 'alternate'
+              ? emit('alternateA', variant.type)
+              : emit('exact', variant.type)
+          "
           @contextmenu.prevent="emit('alternateB', variant.type)"
-          @mouseenter="showVariantTooltip(terrain, variant.type, variant.label, $event)"
-          @mousemove="moveTooltip"
-          @mouseleave="tooltip = null"
+          @mouseenter="
+            schedule(
+              `variant:${variant.type}`,
+              $event,
+              variantTooltip(terrain, variant.type, variant.label),
+            )
+          "
+          @mouseleave="hide"
+          @focus="
+            showOnFocus(
+              `variant:${variant.type}`,
+              $event,
+              variantTooltip(terrain, variant.type, variant.label),
+            )
+          "
+          @blur="hide"
         >
           <EditorEntityPreview
             :source="surfaceVariantPreset(variant.type)"
@@ -250,24 +267,7 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
       </div>
     </section>
 
-    <Teleport to="body">
-      <div
-        v-if="tooltip"
-        class="editor-palette-tooltip surface-tooltip"
-        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
-      >
-        <strong>{{ tooltip.name }}</strong>
-        <code v-if="tooltip.type">{{ tooltip.type }}</code>
-        <div v-if="tooltip.variantCount !== undefined">
-          <span>variants</span> {{ tooltip.variantCount }}
-        </div>
-        <div v-if="tooltip.detail">{{ tooltip.detail }}</div>
-        <div v-if="tooltip.surfaceType"><span>type</span> {{ tooltip.surfaceType }}</div>
-        <div v-if="tooltip.slot"><span>slot</span> {{ tooltip.slot }}</div>
-        <div v-if="tooltip.theme"><span>theme</span> {{ tooltip.theme }}</div>
-        <div v-if="tooltip.auto"><span>auto</span> {{ tooltip.auto }}</div>
-      </div>
-    </Teleport>
+    <EditorMaterialTooltip v-if="tooltip" :id="tooltipId" :model="tooltip" />
   </aside>
 </template>
 
@@ -389,26 +389,5 @@ function autoLabel(definition: SurfaceTerrainDefinition): string {
 .surface-variant.alternate-b::after {
   content: "B";
   right: 2px;
-}
-.surface-tooltip {
-  position: fixed;
-  z-index: 10000;
-  max-width: 320px;
-  pointer-events: none;
-  padding: 8px 10px;
-  border: 1px solid #3d88bb;
-  border-radius: 6px;
-  background: #082f59;
-  color: #fff;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  font-size: 12px;
-}
-.surface-tooltip strong,
-.surface-tooltip code {
-  display: block;
-  margin-bottom: 3px;
-}
-.surface-tooltip span {
-  color: var(--bc-text-muted);
 }
 </style>

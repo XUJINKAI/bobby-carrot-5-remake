@@ -4,6 +4,7 @@ import type { EntityDefinition } from "./EntityDefinition.js";
 /** 所有内置 Entity 共用的 Definition Registry；Registry 不感知源码来源。 */
 export class EntityRegistry {
   private readonly definitions = new Map<EntityType, EntityDefinition>();
+  private readonly unknownDefinitions = new Map<EntityType, EntityDefinition>();
   private version = 0;
 
   get revision(): number {
@@ -31,8 +32,18 @@ export class EntityRegistry {
 
   require(type: EntityType): EntityDefinition {
     const definition = this.definitions.get(type);
-    if (!definition) throw new Error(`未注册 Entity Definition：${type}`);
-    return definition;
+    if (definition) return definition;
+    const existing = this.unknownDefinitions.get(type);
+    if (existing) return existing;
+    const fallback: EntityDefinition = {
+      type,
+      traits: [],
+      placeholder: "unknown",
+      layer: "object",
+      stackOrder: 500,
+    };
+    this.unknownDefinitions.set(type, fallback);
+    return fallback;
   }
 
   all(): readonly EntityDefinition[] {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {
   Cell,
-  EditorCanvasContextMenuRequest,
   EditorDefinition,
   EditorMap,
   EditorPlacementPreset,
@@ -13,11 +12,13 @@ import type {
   EntityCatalog,
   InspectorModel,
   PaletteItem,
+  PlacementInspectorPreviewModel,
   ResolvedPaletteGroup,
   SurfaceBrush,
   SurfacePattern,
   SurfaceTerrainId,
   SurfaceTheme,
+  SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { EntityType } from "@bobby/model";
@@ -27,6 +28,7 @@ import EditorInspector from "./EditorInspector.vue";
 import EditorLevelInfo from "./EditorLevelInfo.vue";
 import EditorPalette from "./EditorPalette.vue";
 import EditorSurface from "./EditorSurface.vue";
+import ReplayPanel from "../game/ReplayPanel.vue";
 
 defineProps<{
   level: Readonly<EditorMap>;
@@ -35,11 +37,15 @@ defineProps<{
   placement: EditorPlacementPreset | null;
   palettePlacement: PaletteItem;
   leftPanel: EditorLeftPanel;
+  surfaceTool: SurfaceTool;
   surfaceBrush: SurfaceBrush;
   surfaceTheme: SurfaceTheme;
   selection: EditorSelection | null;
   hover: Cell | null;
   inspector: InspectorModel;
+  hoverInspector: InspectorModel;
+  placementInspectorPreview: PlacementInspectorPreviewModel;
+  deletionTargetIndex: number | null;
   rules: readonly EditorRuleCapability[];
   palette: readonly ResolvedPaletteGroup[];
   paletteSize: number;
@@ -64,7 +70,7 @@ const emit = defineEmits<{
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
   primaryEnd: [cell: Cell | null];
-  contextMenu: [request: EditorCanvasContextMenuRequest];
+  secondarySelect: [cell: Cell];
   resize: [edges: EditorResizeEdges];
   field: [entityIndex: number, key: string, value: string];
   variant: [entityIndex: number, index: number];
@@ -75,6 +81,8 @@ const emit = defineEmits<{
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
+  placementField: [key: string, value: string];
+  placementVariant: [index: number];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
@@ -120,7 +128,11 @@ const emit = defineEmits<{
       @alternate-b="emit('surfaceAlternateB', $event)"
       @resize="emit('paletteResize', $event)"
     />
-    <section class="editor-map-shell" :class="{ playing }">
+    <section
+      class="editor-map-shell"
+      :class="{ playing }"
+      data-game-stage
+    >
       <EditorCanvas
         v-show="!playing"
         :level="level"
@@ -136,22 +148,25 @@ const emit = defineEmits<{
         @primary-start="emit('primaryStart', $event)"
         @primary-move="emit('primaryMove', $event)"
         @primary-end="emit('primaryEnd', $event)"
-        @context-menu="emit('contextMenu', $event)"
+        @secondary-select="emit('secondarySelect', $event)"
         @resize="emit('resize', $event)"
       />
-      <canvas v-show="playing" data-editor-game-canvas />
-      <div data-editor-game-dialog-root />
-      <div v-if="playing && playComplete" class="result-overlay editor-play-result">
-        <div class="result-card">
-          <div class="result-kicker">PLAY TEST</div>
-          <h2>通关</h2>
-          <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
-          <div class="result-actions">
-            <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
-            <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+      <div v-show="playing" class="editor-game-canvas-layer">
+        <canvas data-editor-game-canvas />
+        <div data-editor-game-dialog-root />
+        <div v-if="playComplete" class="result-overlay editor-play-result">
+          <div class="result-card">
+            <div class="result-kicker">PLAY TEST</div>
+            <h2>通关</h2>
+            <p>测试关卡已经完成。可以立即重玩，或返回编辑器继续调整地图。</p>
+            <div class="result-actions">
+              <button class="primary-btn" type="button" @click="emit('playRestart')">重玩</button>
+              <button class="ghost-btn" type="button" @click="emit('playStop')">返回编辑</button>
+            </div>
           </div>
         </div>
       </div>
+      <ReplayPanel v-if="playing" :show-builtin="false" />
     </section>
     <EditorInspector
       v-show="!playing && rightPanel === 'inspector'"
@@ -160,6 +175,13 @@ const emit = defineEmits<{
       :catalog="catalog"
       :editor="editor"
       :authoring-panel="leftPanel"
+      :palette-tool="tool"
+      :surface-tool="surfaceTool"
+      :placement="palettePlacement"
+      :surface-brush="surfaceBrush"
+      :hover-model="hoverInspector"
+      :placement-preview="placementInspectorPreview"
+      :deletion-target-index="deletionTargetIndex"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"
       @surface-variant="(entityIndex, type) => emit('surfaceVariant', entityIndex, type)"
@@ -169,6 +191,8 @@ const emit = defineEmits<{
       @batch-variant="(type, index) => emit('batchVariant', type, index)"
       @batch-surface-variant="(type, variantType) => emit('batchSurfaceVariant', type, variantType)"
       @batch-delete="emit('batchDelete', $event)"
+      @placement-field="(key, value) => emit('placementField', key, value)"
+      @placement-variant="emit('placementVariant', $event)"
     />
     <EditorLevelInfo
       v-show="!playing && rightPanel === 'level'"
@@ -193,8 +217,18 @@ const emit = defineEmits<{
 .editor-body.playing {
   grid-template-columns: minmax(0, 1fr);
 }
-.editor-map-shell.playing > canvas[data-editor-game-canvas] {
+.editor-game-canvas-layer {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+}
+.editor-game-canvas-layer > canvas[data-editor-game-canvas] {
   width: calc(100% - var(--engine-gameplay-right-inset, 0px)) !important;
+}
+@media (min-width: 621px) {
+  .editor-map-shell.replay-panel-open .editor-game-canvas-layer {
+    left: 330px;
+  }
 }
 @media (max-width: 1100px) and (min-width: 821px) {
   .editor-body.palette-hidden {

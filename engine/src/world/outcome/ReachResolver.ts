@@ -44,6 +44,19 @@ export class ReachResolver {
     });
   }
 
+  /** Definition 通过 trait 声明该 selector 是否要求所有 player 同时到达。 */
+  aggregationFor(selector: string): "any" | "all" {
+    const requiresAll = this.query
+      .entitiesWithTrait("reach-all-players")
+      .some((entity) => {
+        if (entity.type === selector) return true;
+        return this.query
+          .presencesForEntity(entity.id)
+          .some((presence) => presence.traits.includes(selector));
+      });
+    return requiresAll ? "all" : "any";
+  }
+
   selectorsFor(
     actor: Readonly<EntityInstance>,
     presences: readonly EntityPresence[],

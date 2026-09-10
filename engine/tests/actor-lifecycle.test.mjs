@@ -31,50 +31,44 @@ function twoPlayerWorld() {
   };
 }
 
-test("一个 actor downed 不终止双人 World，并可由 engine 能力复活", () => {
+test("任一 actor downed 会立即终止双人 World", () => {
   const { world, actorIds } = twoPlayerWorld();
   const [first, second] = actorIds;
 
   const downed = world.downActor(first, "trap");
-  assert.equal(world.dead, false);
+  assert.equal(world.dead, true);
   assert.equal(world.actorLifecycle(first).phase, "downed");
   assert.equal(world.actorLifecycle(second).phase, "active");
   assert.deepEqual(
     downed.events.map((event) => event.type),
-    ["actor-downed"],
+    ["actor-downed", "death"],
   );
-
-  const revived = world.reviveActor(first);
-  assert.equal(world.actorLifecycle(first).phase, "active");
-  assert.deepEqual(
-    revived.events.map((event) => event.type),
-    ["actor-revived"],
-  );
+  assert.equal(world.outcome.state.actorId, first);
+  assert.equal(world.reviveActor(first).events.length, 0);
 });
 
-test("所有玩家都无法行动时 World 才进入 lost", () => {
+test("失败归因于最先进入非 active 状态的 actor", () => {
   const { world, actorIds } = twoPlayerWorld();
-  world.downActor(actorIds[0], "first trap");
   const result = world.downActor(actorIds[1], "second trap");
 
   assert.equal(world.dead, true);
   assert.equal(world.outcome.state.phase, "lost");
+  assert.equal(world.outcome.state.actorId, actorIds[1]);
+  assert.equal(world.outcome.state.reason, "second trap");
   assert.deepEqual(
     result.deltas
       .filter((delta) => delta.type === "world-outcome-changed")
       .map((delta) => delta.outcome.phase),
     ["lost"],
   );
-  assert.equal(world.reviveActor(actorIds[0]).events.length, 0);
 });
 
 test("actor lifecycle 与 World outcome 进入 snapshot", () => {
   const { world, actorIds } = twoPlayerWorld();
   world.downActor(actorIds[0], "trap");
   const snapshot = world.snapshot();
-  world.reviveActor(actorIds[0]);
 
   world.restore(snapshot);
   assert.equal(world.actorLifecycle(actorIds[0]).phase, "downed");
-  assert.equal(world.outcome.state.phase, "playing");
+  assert.equal(world.outcome.state.phase, "lost");
 });

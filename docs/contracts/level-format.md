@@ -30,7 +30,9 @@ interface LevelEntity {
 
 ### Entity 字段与 Runtime State
 
-每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。
+每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、格式、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。`color` 格式支持 `#rgb`、`#rrggbb` 和 Model 颜色别名表中的常用名称。
+
+读取边界采用宽进严出的前向兼容策略：地图整体结构、坐标与规则仍必须成立；未知 `type` 会作为 opaque Entity 保留。已知 `type` 的未知字段、缺失必填字段或字段值错误形成实例合同 warning，该实例在 Engine/Editor 中降级为无行为 X 占位符，同类型的其它合法实例不受影响。输入中的非 primitive 实例字段会保存为 JSON 文本，并通过 `__invalidJsonFields` 标出来源字段，使输出重新符合顶层 primitive 合同。
 
 `LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
 
@@ -91,6 +93,24 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 }
 ```
 
+Bobby 可以通过实例字段声明输入通道和两个可组合的镜像轴：
+
+```json
+[
+  { "type": "bobby", "x": 2, "y": 3, "controller": "channel-1" },
+  {
+    "type": "bobby",
+    "x": 7,
+    "y": 3,
+    "controller": "channel-1",
+    "mirrorX": true,
+    "mirrorY": false
+  }
+]
+```
+
+`controller` 缺省为 `channel-1`。地图只有 `channel-1` 时，方向键和 WASD 都控制该通道中的全部 Bobby；地图同时具有 `channel-1` 与 `channel-2` 时，方向键控制 `channel-1`，WASD 控制 `channel-2`。Pointer、Screen Joystick 与 external 输入控制 `channel-1`。`mirrorX` 交换左右，`mirrorY` 交换上下，两者可以同时启用。
+
 `start` 也是普通 surface Entity，只表达该地面的玩法与视觉，不承担出生语义，也没有特殊 `start` Trait。Bobby 是否出生在 Start 上，只由两个 Entity 的坐标是否相同决定：
 
 ```json
@@ -102,7 +122,7 @@ Bobby 是普通 Entity，地图不使用 `playerStart`：
 
 Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surface，并把 Bobby Entity 的初始坐标设为同一位置。转换完成后 Start 与 Bobby 互不绑定；移动 Bobby 不会改变 Start，移动或替换 Start 也不会定义新的出生点。
 
-一张可游玩地图必须恰好有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。
+一张可游玩地图至少有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。多个 Bobby 不能占据同一格；Editor 在同格放置 Bobby 时会替换已有 Bobby，同一 tick 的移动组中若多个 actor 请求同一目的格，这些移动会一起被拒绝。
 
 ### 同格 Entity 与 Cell Stack
 
@@ -201,6 +221,8 @@ Sokoban 可以使用 Trait selector：
 
 Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remaining` progress；HUD 等展示层只能消费这个结果，不复制胜利条件查询逻辑。
 
+`reach` 的多人聚合方式由目标 Entity Definition 声明。Exit 要求所有 Bobby 同时位于任意 Exit 格；Golden Carrot 由任一 Bobby 到达即可完成。任一 Bobby 死亡都会使当前关卡失败。
+
 ## MapDocument
 
 网站运行时地图位于：
@@ -225,7 +247,7 @@ interface MapDocument extends LevelMap {
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
 
-`@bobby/model` 的 `parseMapDocument()` 是持久化文档的严格入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口；未知 Entity、未知字段、错误字段值、越界坐标和非法规则都会被拒绝。
+`@bobby/model` 的 `parseMapDocument()` 是持久化文档入口，`parseLevelMap()` 校验后只返回 gameplay 字段。Editor JSON、BC5R1/Embed、Explore 加载和 `npm run verify` 共用这两个入口。地图结构错误、越界坐标和非法规则会被拒绝；Entity type 或实例字段合同问题由可定位 warning、primitive 规范化与惰性占位行为承接。
 
 ## Editor JSON
 

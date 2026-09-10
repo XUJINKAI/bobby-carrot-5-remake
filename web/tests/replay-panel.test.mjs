@@ -62,6 +62,15 @@ test("Replay 面板开关状态在当前标签页中持久化", () => {
   assert.equal(loadReplayPanelOpen(storage), false);
 });
 
+test("Replay 面板可按游戏来源隐藏内置过法入口", () => {
+  assert.match(
+    replayPanelSource,
+    /v-if="showBuiltin"[\s\S]*data-replay-action="load-builtin"/,
+  );
+  assert.match(replayBindingSource, /builtinReplayUrl\?: string/);
+  assert.match(replayBindingSource, /if \(!builtinReplayUrl\) return/);
+});
+
 test("Replay 起点与终点跳转按钮显示对应方向的回转图标", () => {
   assert.match(
     replayPanelSource,

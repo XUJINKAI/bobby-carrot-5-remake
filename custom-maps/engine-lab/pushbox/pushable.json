@@ -60,7 +60,7 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "pushable-rock",
+      "type": "pushable-box",
       "x": 2,
       "y": 2
     },
@@ -71,7 +71,7 @@
       "variant": "ts-10-1"
     },
     {
-      "type": "pushable-rock",
+      "type": "pushable-box",
       "x": 3,
       "y": 2
     },

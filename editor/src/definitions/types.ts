@@ -3,7 +3,6 @@ import type {
   VisualDefinition,
 } from "@bobby/engine";
 import type {
-  Direction,
   EntityType,
   JsonPrimitive,
   LevelEntity,
@@ -20,7 +19,7 @@ export type EditorEntityFields = Readonly<Record<string, JsonPrimitive>>;
 /** What the Editor Core should create when the current placement action is committed. */
 export interface EditorPlacementPreset {
   type: EntityType;
-  direction?: Direction;
+  /** 与 LevelEntity 一致，direction 等类型专属参数统一放在 fields 中。 */
   fields?: EditorEntityFields;
 }
 
@@ -43,7 +42,6 @@ export type EditorPlacementPoint =
 
 export interface EditorEntityVariant {
   label?: string;
-  direction?: Direction;
   fields?: EditorEntityFields;
 }
 
@@ -53,11 +51,25 @@ export interface EditorQuickAction {
   apply(entity: Readonly<LevelEntity>): LevelEntity;
 }
 
-/** Entity-specific authoring policy. This belongs to Editor, never Engine. */
+export type EditorStackSlot =
+  | "surface-base"
+  | "surface-overlay"
+  | "floor-feature"
+  | "content"
+  | "support"
+  | "occupant"
+  | "cover";
+
+export interface EditorStackingDefinition {
+  /** 不同 slot 的推荐共存组合；同 slot 始终执行替换。 */
+  compatibleSlots: readonly (readonly [EditorStackSlot, EditorStackSlot])[];
+}
+
+/** Entity 专属创作策略；只属于 Editor，不进入 Engine。 */
 export interface EditorEntityDefinition {
   placementPoint?: EditorPlacementPoint;
-  defaultDirection?: Direction;
-  replaceGroup?: string;
+  defaultFields?: EditorEntityFields;
+  stackSlot?: EditorStackSlot;
   variants?: readonly EditorEntityVariant[];
   quickActions?: readonly EditorQuickAction[];
   editorVisual?: VisualDefinition["resolve"];
@@ -68,12 +80,18 @@ export type EditorEntityExclusion =
   | { prefix: string };
 
 export interface EditorPalettePreview {
-  direction?: Direction;
   fields?: EditorEntityFields;
+  /** 只注入缩略图的 Runtime state，不进入 EditorPlacementPreset 或 LevelMap。 */
+  state?: EditorEntityFields;
 }
 
+export type EditorPaletteExpansion = "variants";
+
 export interface EditorPaletteEntry extends EditorPlacementPreset {
+  /** 未指定时严格保留一个表条目；variants 按 Editor Entity Definition 顺序展开。 */
+  expand?: EditorPaletteExpansion;
   label?: string;
+  /** 只覆盖 Palette 外观，不改变实际放置的字段。 */
   preview?: EditorPalettePreview;
 }
 
@@ -83,8 +101,20 @@ export interface EditorPaletteGroup {
   rows: readonly (readonly EditorPaletteEntry[])[];
 }
 
+export interface EditorPaletteRemainderGroup {
+  id: string;
+  label: string;
+  /** 省略时接收此前分组未消费的全部可创建 Entity。 */
+  types?: readonly EntityType[];
+  expand?: EditorPaletteExpansion;
+  rows: "single" | "by-type";
+  sort?: "type";
+}
+
 export interface EditorPaletteDefinition {
   groups: readonly EditorPaletteGroup[];
+  /** remainder 按声明顺序消费未进入显式 rows 的 Entity。 */
+  remainders?: readonly EditorPaletteRemainderGroup[];
 }
 
 export interface EditorDeletionCandidate {
@@ -124,6 +154,7 @@ export interface EditorDefinition {
   /** Engine-known types matching these selectors cannot be created through normal Editor tools. */
   exclude?: readonly EditorEntityExclusion[];
   entities?: Partial<Record<EntityType, EditorEntityDefinition>>;
+  stacking?: EditorStackingDefinition;
   palette: EditorPaletteDefinition;
   validators?: readonly EditorMapValidator[];
   deletion?: EditorDeletionDefinition;

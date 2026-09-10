@@ -36,10 +36,10 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
         player = assignPlayer(player, x, y, title);
         goals += 1;
       } else if (symbol === "$") {
-        entities.push(floor(x, y), pushableRock(x, y));
+        entities.push(floor(x, y), pushableBox(x, y));
         boxes += 1;
       } else if (symbol === "*") {
-        entities.push(goal(x, y), pushableRock(x, y));
+        entities.push(goal(x, y), pushableBox(x, y));
         boxes += 1;
         goals += 1;
       } else {
@@ -118,8 +118,8 @@ function goal(x, y) {
   return { type: "push-goal", x, y };
 }
 
-function pushableRock(x, y) {
-  return { type: "pushable-rock", x, y };
+function pushableBox(x, y) {
+  return { type: "pushable-box", x, y };
 }
 
 function key(x, y) {

@@ -120,6 +120,24 @@ export class WorldCommitter {
           }
           break;
         }
+        case "relocate": {
+          const entity = this.entities.get(command.entityId);
+          if (entity) {
+            const motion = this.movement.clearEntity(command.entityId);
+            if (motion)
+              record({
+                type: "motion-cleared",
+                motion,
+                reason: "entity-relocated",
+              });
+            const from = { ...entity.anchor };
+            const to = { x: command.x, y: command.y };
+            this.spatial.moveEntity(command.entityId, to);
+            pushUnique(mutations.moved, command.entityId);
+            record({ type: "entity-moved", entityId: entity.id, from, to });
+          }
+          break;
+        }
         case "set-direction": {
           const entity = this.entities.get(command.entityId);
           if (entity) {

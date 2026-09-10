@@ -116,8 +116,8 @@ test("decoded terrain 与 object 使用统一的 atlas-first 标签", () => {
     assert.equal(encodeDatObject(object), byte);
   }
   assert.equal(decodeDatTerrain(0x3c), "ts-4-13:tree");
-  assert.equal(decodeDatTerrain(0x92), "ts-10-3:stone-wall");
-  assert.equal(decodeDatTerrain(0x93), "ts-10-4:stone-wall");
+  assert.equal(decodeDatTerrain(0x92), "ts-10-3:grass");
+  assert.equal(decodeDatTerrain(0x93), "ts-10-4:grass");
   assert.equal(decodeDatTerrain(0x9e), "ts-10-15:shop-empty");
   assert.equal(decodeDatObject(0xfd), "ts-16-14:fence");
   assert.throws(

@@ -9,18 +9,19 @@ import {
 import {
   EditorDocument,
   EditorPreview,
-  buildInspectorModel,
+  applyPlacementVariant,
   builtinEditorDefinition,
   createBlankLevel,
+  cyclePlacementVariant,
   entityCells,
   fromLevelMap,
   isEditorEntityCreatable,
   paintSurface,
   parseEditorLevel,
   placeEntity,
-  reorderEntityStack,
   resolveEditorEntityPreviewLayout,
   resolveEditorPalette,
+  resolvePalettePlacement,
   resolvePlacement,
   serializeEditorLevel,
   toLevelMap,
@@ -121,7 +122,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "right" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "right" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
@@ -144,7 +145,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   const dragon = resolvePlacement(
     level,
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
   );
@@ -160,43 +161,6 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
     { x: 5, y: 3, role: "body" },
     { x: 6, y: 3, role: "tail" },
   ]);
-});
-
-test("Editor replaceGroup replaces only matching authoring layers", () => {
-  const level = createBlankLevel(8, 8);
-  const before = new EditorPreview(level, catalog).inspectCell(1, 1);
-  assert.deepEqual(before.presences.map((item) => item.entity.type), [
-    MapEntityTypeId.GRASS,
-  ]);
-  const after = placeEntity(
-    catalog,
-    MapEntityTypeId.CARROT,
-    { x: 1, y: 1 },
-  ).apply(
-    paintSurface(
-      catalog,
-      [{ x: 1, y: 1 }],
-      { terrain: "water", pattern: "exact", exact: MapEntityTypeId.WATER, seed: 1 },
-    ).apply(level),
-  );
-  assert.deepEqual(
-    new EditorPreview(after, catalog)
-      .inspectCell(1, 1)
-      .presences.map((item) => item.entity.type),
-    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT],
-  );
-
-  const withLock = placeEntity(
-    catalog,
-    MapEntityTypeId.LOCK,
-    { x: 1, y: 1 },
-  ).apply(after);
-  assert.deepEqual(
-    new EditorPreview(withLock, catalog)
-      .inspectCell(1, 1)
-      .presences.map((item) => item.entity.type),
-    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT, MapEntityTypeId.LOCK],
-  );
 });
 
 test("Entity fields and instance stack order round-trip", () => {
@@ -246,6 +210,29 @@ test("validation is executed through Editor definitions", () => {
   );
 });
 
+test("Editor Preview 将字段无效的已知 Entity 降级为占位定义", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push({
+    type: MapEntityTypeId.GRASS,
+    x: 1,
+    y: 1,
+    variant: "future",
+  });
+  const preview = new EditorPreview(level, catalog);
+  const invalid = preview.inspectCell(1, 1).presences.find(
+    (item) => item.entity.variant === "future",
+  );
+
+  assert.equal(invalid?.definition.placeholder, "unknown");
+  assert.ok(
+    validateEditorLevel(level, catalog, builtinEditorDefinition).some(
+      (issue) =>
+        issue.level === "warning" &&
+        issue.message.includes("variant 不符合 enum 合同"),
+    ),
+  );
+});
+
 test("one placement stroke forms one Undo and returns to the saved Entity state", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();
@@ -268,7 +255,7 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   );
 });
 
-test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", () => {
+test("Engine authoring metadata 隐藏不可直接放置的 Entity", () => {
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
@@ -285,17 +272,18 @@ test("Engine authoring metadata 隐藏 runtime-only 与 raw Original variant", (
     ),
     false,
   );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.BEANSTALK,
+      catalog,
+    ),
+    false,
+  );
 });
 
-test("Palette 只发布具有 Model Definition 的 canonical directional preset", () => {
+test("Palette 只发布具有 Model Definition 的 canonical preset", () => {
   const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
-  const speed = palette
-    .flatMap((group) => group.rows.flat())
-    .filter((entry) => entry.type === MapEntityTypeId.SPEED);
-  assert.deepEqual(
-    speed.map((entry) => entry.direction),
-    ["up", "down", "left", "right"],
-  );
   assert.equal(
     palette.flatMap((group) => group.rows.flat())
       .some((entry) => entry.type === "ts-1-1"),
@@ -310,18 +298,191 @@ test("Palette 只发布具有 Model Definition 的 canonical directional preset"
   const allTypes = palette.flatMap((group) => group.rows.flat()).map((item) => item.type);
   assert.equal(allTypes.includes(MapEntityTypeId.EGG), true);
   assert.equal(allTypes.every((type) => entityMapDefinition(type)), true);
-  assert.deepEqual(
-    palette
-      .flatMap((group) => group.rows.flat())
-      .filter((entry) => entry.type === MapEntityTypeId.WINDMILL)
-      .map((entry) => entry.direction),
-    ["up", "down", "left", "right"],
-  );
   const egg = palette
     .flatMap((group) => group.rows.flat())
     .find((entry) => entry.type === MapEntityTypeId.EGG);
   assert.equal(egg?.label, "Egg");
   assert.equal(egg?.traits.includes("egg-nest"), true);
+});
+
+test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
+  const next = cyclePlacementVariant(
+    { type: MapEntityTypeId.SPEED, fields: { direction: "up" } },
+    catalog,
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED],
+    1,
+  );
+  assert.deepEqual(next, {
+    type: MapEntityTypeId.SPEED,
+    fields: { direction: "right" },
+  });
+  assert.equal("direction" in next, false);
+  assert.equal(
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED]
+      .variants.every((variant) => !("direction" in variant)),
+    true,
+  );
+  assert.deepEqual(
+    builtinEditorDefinition.entities[MapEntityTypeId.SPEED].defaultFields,
+    { direction: "right" },
+  );
+  assert.equal(
+    resolvePlacement(
+      createBlankLevel(4, 4),
+      catalog,
+      { type: MapEntityTypeId.SPEED },
+      { x: 1, y: 1 },
+      builtinEditorDefinition,
+    ).entity.direction,
+    "right",
+  );
+});
+
+test("带 fields 的响应式 Palette preset 可用于 Canvas 与 Inspector 预览", () => {
+  const fields = new Proxy({ direction: "up" }, {});
+  const preset = new Proxy({
+    type: MapEntityTypeId.SPEED,
+    fields,
+  }, {});
+  const plan = resolvePlacement(
+    createBlankLevel(4, 4),
+    catalog,
+    preset,
+    { x: 1, y: 1 },
+    builtinEditorDefinition,
+  );
+  assert.equal(plan.valid, true);
+  assert.equal(plan.entity.direction, "up");
+  const previewEntity = resolveEditorEntityPreviewLayout(
+    catalog,
+    preset,
+    builtinEditorDefinition,
+  ).entity;
+  assert.equal(previewEntity.type, MapEntityTypeId.SPEED);
+  assert.equal(previewEntity.direction, "up");
+  assert.equal(
+    cyclePlacementVariant(
+      preset,
+      catalog,
+      builtinEditorDefinition.entities[MapEntityTypeId.SPEED],
+      1,
+    )?.fields?.direction,
+    "right",
+  );
+});
+
+test("Inspector variant 切换解析对应的放置 preset", () => {
+  const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
+  const current = resolvePalettePlacement(
+    catalog,
+    builtinEditorDefinition,
+    palette,
+    { type: MapEntityTypeId.SPEED, fields: { direction: "up" } },
+    "Speed",
+  );
+  const variant = builtinEditorDefinition.entities[MapEntityTypeId.SPEED]
+    .variants[1];
+  const preset = applyPlacementVariant(current, variant);
+  const resolved = resolvePalettePlacement(
+    catalog,
+    builtinEditorDefinition,
+    palette,
+    preset,
+    current.label,
+  );
+  assert.equal(resolved.fields?.direction, "right");
+  assert.equal(resolved.previewPreset.fields?.direction, "right");
+});
+
+test("Palette 表独立控制顺序、预览外观与 variant 展开", () => {
+  const editor = {
+    ...builtinEditorDefinition,
+    palette: {
+      groups: [
+        {
+          id: "table",
+          label: "Table",
+          rows: [
+            [
+              {
+                type: MapEntityTypeId.SPEED_SWITCH,
+                label: "默认速度开关",
+                fields: { pressed: false },
+                preview: { fields: { pressed: true } },
+              },
+              {
+                type: MapEntityTypeId.TIDE_SWITCH,
+                expand: "variants",
+              },
+            ],
+            [
+              { type: MapEntityTypeId.EGG },
+              { type: MapEntityTypeId.CARROT },
+            ],
+          ],
+        },
+      ],
+    },
+  };
+  const [group] = resolveEditorPalette(catalog, editor);
+  assert.ok(group);
+  assert.deepEqual(
+    group.rows[0].map((entry) => entry.type),
+    [
+      MapEntityTypeId.SPEED_SWITCH,
+      MapEntityTypeId.TIDE_SWITCH,
+      MapEntityTypeId.TIDE_SWITCH,
+    ],
+  );
+  assert.equal(group.rows[0][0].label, "默认速度开关");
+  assert.deepEqual(group.rows[0][0].fields, { pressed: false });
+  assert.deepEqual(group.rows[0][0].previewPreset.fields, { pressed: true });
+  assert.deepEqual(
+    group.rows[0].slice(1).map((entry) => entry.fields?.pressed),
+    [true, false],
+  );
+  assert.deepEqual(
+    group.rows[1].map((entry) => entry.type),
+    [MapEntityTypeId.EGG, MapEntityTypeId.CARROT],
+  );
+});
+
+test("Palette remainder 按表顺序接收尚未使用的 Entity", () => {
+  const editor = {
+    ...builtinEditorDefinition,
+    palette: {
+      groups: [
+        {
+          id: "main",
+          label: "Main",
+          rows: [[{ type: MapEntityTypeId.EGG }]],
+        },
+      ],
+      remainders: [
+        {
+          id: "remaining",
+          label: "Remaining",
+          types: [
+            MapEntityTypeId.EGG,
+            MapEntityTypeId.CARROT,
+            MapEntityTypeId.BEANSTALK,
+            MapEntityTypeId.SPEED_SWITCH,
+          ],
+          expand: "variants",
+          rows: "by-type",
+        },
+      ],
+    },
+  };
+  const palette = resolveEditorPalette(catalog, editor);
+  assert.deepEqual(palette.map((group) => group.id), ["main", "remaining"]);
+  assert.deepEqual(
+    palette[1].rows.map((row) => row.map((entry) => entry.type)),
+    [
+      [MapEntityTypeId.CARROT],
+      [MapEntityTypeId.SPEED_SWITCH, MapEntityTypeId.SPEED_SWITCH],
+    ],
+  );
 });
 
 test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => {
@@ -344,7 +505,7 @@ test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => 
     resolvePlacement(
       level,
       catalog,
-      { type: MapEntityTypeId.WINDMILL, direction: "right" },
+      { type: MapEntityTypeId.WINDMILL, fields: { direction: "right" } },
       { x: 0, y: 1 },
     ).entity.type,
     MapEntityTypeId.WINDMILL,
@@ -389,110 +550,12 @@ test("Editor Preview 将 Surface variant 投影到 Engine visual state", () => {
 test("Palette preview layout derives full multi-cell footprint generically", () => {
   const layout = resolveEditorEntityPreviewLayout(
     catalog,
-    { type: MapEntityTypeId.DRAGON, direction: "left" },
+    { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     builtinEditorDefinition,
   );
   assert.equal(layout.width, 3);
   assert.equal(layout.height, 1);
   assert.equal(layout.entity.type, MapEntityTypeId.DRAGON);
-});
-
-test("single-cell Inspector exposes every layer top-first", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.PORTAL, x: 3, y: 3, stackOrder: 1000 },
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
-  );
-  const model = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 3, y: 3 }, focus: { x: 3, y: 3 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(model.mode, "cell");
-  assert.deepEqual(model.layers.slice(0, 2).map((layer) => layer.entity.type), [
-    MapEntityTypeId.CARROT,
-    MapEntityTypeId.PORTAL,
-  ]);
-});
-
-test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
-    { type: MapEntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
-    { type: MapEntityTypeId.CARROT, x: 1, y: 2 },
-  );
-  const model = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 2 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(model.mode, "multi");
-  assert.equal(model.groups[0].type, MapEntityTypeId.SPEED_SWITCH);
-  assert.equal(model.groups[0].count, 2);
-  assert.equal(
-    model.groups.find((group) => group.type === MapEntityTypeId.GRASS)?.count,
-    4,
-  );
-});
-
-test("Inspector 直接使用 canonical Entity Definition", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.EGG, x: 1, y: 1 },
-    { type: MapEntityTypeId.BEANSTALK, x: 2, y: 1 },
-    { type: MapEntityTypeId.WINDMILL, x: 3, y: 1, direction: "left" },
-  );
-
-  const cell = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(cell.layers[0]?.definition.type, MapEntityTypeId.EGG);
-  assert.equal(cell.layers[0]?.label, "Egg");
-
-  const multi = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 3, y: 1 } },
-    builtinEditorDefinition,
-  );
-  const definitions = new Map(
-    multi.groups.map((group) => [group.type, group.definition.type]),
-  );
-  assert.equal(definitions.get(MapEntityTypeId.EGG), MapEntityTypeId.EGG);
-  assert.equal(
-    definitions.get(MapEntityTypeId.BEANSTALK),
-    MapEntityTypeId.BEANSTALK,
-  );
-  assert.equal(
-    definitions.get(MapEntityTypeId.WINDMILL),
-    MapEntityTypeId.WINDMILL,
-  );
-  assert.equal(
-    multi.groups.find((group) => group.type === MapEntityTypeId.EGG)?.label,
-    "Egg",
-  );
-});
-
-test("reordering a cell stack changes actual Spatial top Presence", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.PORTAL, x: 3, y: 3 },
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
-  );
-  const portalIndex = level.entities.length - 2;
-  const carrotIndex = level.entities.length - 1;
-  const reordered = reorderEntityStack([
-    { index: portalIndex },
-    { index: carrotIndex },
-  ]).apply(level);
-  const preview = new EditorPreview(reordered, catalog);
-  assert.equal(preview.inspectCell(3, 3).top?.entity.type, MapEntityTypeId.PORTAL);
 });
 
 test("Bobby Editor visual is fixed to the final down frame", () => {
@@ -507,5 +570,31 @@ test("Bobby Editor visual is fixed to the final down frame", () => {
     frameIndex: 7,
     anchor: "bottom",
     offsetY: -12,
+  });
+});
+
+test("Egg 只在 Palette 预览中显示 filled 且保持单一放置形态", () => {
+  const policy = builtinEditorDefinition.entities?.[MapEntityTypeId.EGG];
+  assert.equal(policy?.editorVisual, undefined);
+  assert.equal(policy.variants, undefined);
+
+  const palette = resolveEditorPalette(catalog, builtinEditorDefinition);
+  const eggs = palette
+    .flatMap((group) => group.rows.flat())
+    .filter((entry) => entry.type === MapEntityTypeId.EGG);
+  assert.equal(eggs.length, 1);
+  assert.deepEqual(eggs[0].preview?.state, { filled: true });
+  assert.equal(eggs[0].previewPreset.fields, undefined);
+  const placed = resolvePlacement(
+    createBlankLevel(4, 4),
+    catalog,
+    eggs[0],
+    { x: 1, y: 1 },
+    builtinEditorDefinition,
+  );
+  assert.deepEqual(placed.entity, {
+    type: MapEntityTypeId.EGG,
+    x: 1,
+    y: 1,
   });
 });

@@ -33,6 +33,8 @@ export interface EntityFieldDefinition {
 export interface EntityDefinition {
   type: EntityType;
   traits: readonly EntityTrait[];
+  /** 未注册地图 Entity 的无行为占位定义，不参与正式 Catalog。 */
+  placeholder?: "unknown";
   layer?: EntityLayer;
   stackOrder?: number;
   footprint?: FootprintDefinition;

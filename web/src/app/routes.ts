@@ -59,3 +59,9 @@ export function explorePlayPath(ref: ExploreMapRef): string {
 export function editorMapPath(ref: ExploreMapRef): string {
   return `/edit#map=${encodeURIComponent(ref.collection)}/${encodeURIComponent(ref.id)}`;
 }
+
+export function editorPathWithoutMapHash(
+  location: Pick<Location, "pathname" | "search">,
+): string {
+  return `${location.pathname}${location.search}`;
+}

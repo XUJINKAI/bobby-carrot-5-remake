@@ -31,7 +31,8 @@
       "type": "portal",
       "x": 2,
       "y": 0,
-      "channel": "red"
+      "channel": "red",
+      "color": "#ff466e"
     },
     {
       "type": "grass",
@@ -77,7 +78,8 @@
       "type": "portal",
       "x": 1,
       "y": 1,
-      "channel": "blue"
+      "channel": "blue",
+      "color": "#54e8ff"
     },
     {
       "type": "grass",
@@ -107,7 +109,8 @@
       "type": "portal",
       "x": 5,
       "y": 1,
-      "channel": "blue"
+      "channel": "blue",
+      "color": "#54e8ff"
     },
     {
       "type": "exit",
@@ -148,7 +151,8 @@
       "type": "portal",
       "x": 4,
       "y": 2,
-      "channel": "red"
+      "channel": "red",
+      "color": "#ff466e"
     },
     {
       "type": "grass",

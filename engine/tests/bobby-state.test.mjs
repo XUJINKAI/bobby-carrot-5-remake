@@ -24,6 +24,22 @@ function move(world, actorId, direction) {
   });
 }
 
+test("World 拒绝初始位置重叠的 Bobby", () => {
+  assert.throws(
+    () => new World({
+      schemaVersion: 1,
+      width: 1,
+      height: 1,
+      entities: [
+        ground(0, 0),
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      ],
+    }),
+    /不能占据同一格/,
+  );
+});
+
 test("pickup inventory belongs only to the Bobby that enters the cell", () => {
   const world = new World({
     schemaVersion: 1,
@@ -44,6 +60,48 @@ test("pickup inventory belongs only to the Bobby that enters the cell", () => {
   assert.equal(move(world, left.id, "right").moves[0].moved, true);
   assert.equal(readBobbyInventory(world.entity(left.id)?.state).gas, true);
   assert.equal(readBobbyInventory(world.entity(right.id)?.state).gas, false);
+});
+
+test("Bobby 不能进入另一个 Bobby 占据的格子", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+    ],
+  });
+  const [left] = actors(world);
+
+  const result = move(world, left.id, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.equal(result.moves[0].passage.reason, "player-occupied");
+  assert.deepEqual(world.entity(left.id).anchor, { x: 0, y: 0 });
+});
+
+test("飞行中的 Bobby 也不能穿入另一个 Bobby 所在格", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+    ],
+  });
+  const [left] = actors(world);
+  left.state = { ...(left.state ?? {}), flying: true };
+
+  const result = move(world, left.id, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.equal(result.moves[0].passage.reason, "player-occupied");
 });
 
 test("bean pickup increments only the acting Bobby inventory", () => {

@@ -1,8 +1,8 @@
 import { validateLevelPlayability } from "@bobby/engine";
-import { entityMapDefinition } from "@bobby/model";
+import { levelEntityContractIssues } from "@bobby/model";
+import { materializeSurfaceVariants } from "../authoring/surfacePersistence.js";
 import type { LevelValidationIssue } from "../level/types.js";
 import type { EditorMapValidator } from "./types.js";
-import { editorCatalogEntry } from "./entities.js";
 
 export const registeredEntityTypesValidator: EditorMapValidator = ({
   map,
@@ -10,15 +10,10 @@ export const registeredEntityTypesValidator: EditorMapValidator = ({
 }) => {
   const issues: LevelValidationIssue[] = [];
   map.entities.forEach((entity, index) => {
-    try {
-      editorCatalogEntry(catalog, entity);
-      return;
-    } catch {
-      // 统一生成 Editor 可定位的校验问题，不把 Catalog 异常泄漏到 UI。
-    }
+    if (catalog.has(entity.type)) return;
     issues.push({
-      level: "error",
-      message: `Entity #${index + 1} 使用未注册 type：${entity.type}`,
+      level: "warning",
+      message: `Entity #${index + 1} 使用未知 type：${entity.type}`,
     });
   });
   return issues;
@@ -26,14 +21,12 @@ export const registeredEntityTypesValidator: EditorMapValidator = ({
 
 export const requiredEntityFieldsValidator: EditorMapValidator = ({ map }) => {
   const issues: LevelValidationIssue[] = [];
-  map.entities.forEach((entity, index) => {
-    for (const field of entityMapDefinition(entity.type)?.fields ?? []) {
-      if (!field.required || entity[field.key] !== undefined) continue;
+  materializeSurfaceVariants(map).entities.forEach((entity, index) => {
+    for (const issue of levelEntityContractIssues(entity))
       issues.push({
-        level: "error",
-        message: `Entity #${index + 1} (${entity.type}) 缺少必填字段：${field.key}`,
+        level: "warning",
+        message: `Entity #${index + 1} (${entity.type}) ${issue}`,
       });
-    }
   });
   return issues;
 };

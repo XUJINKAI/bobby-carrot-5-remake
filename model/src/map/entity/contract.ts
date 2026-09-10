@@ -12,9 +12,15 @@ interface EntityMapFieldBase {
   required?: boolean;
 }
 
+export type EntityStringFormat = "non-empty" | "color";
+
 export type EntityMapFieldDefinition =
   | (EntityMapFieldBase & { kind: "boolean"; default?: boolean })
-  | (EntityMapFieldBase & { kind: "string"; default?: string })
+  | (EntityMapFieldBase & {
+      kind: "string";
+      default?: string;
+      format?: EntityStringFormat;
+    })
   | (EntityMapFieldBase & { kind: "number"; default?: number; min?: number; max?: number })
   | (EntityMapFieldBase & { kind: "integer"; default?: number; min?: number; max?: number })
   | (EntityMapFieldBase & { kind: "enum"; values: readonly JsonPrimitive[]; default?: JsonPrimitive });
@@ -57,6 +63,7 @@ export function stringField(
   defaultValue?: string,
   required = false,
   description?: string,
+  format?: EntityStringFormat,
 ): EntityMapFieldDefinition {
   return Object.freeze({
     key,
@@ -64,6 +71,7 @@ export function stringField(
     ...(defaultValue !== undefined ? { default: defaultValue } : {}),
     ...(required ? { required: true } : {}),
     ...(description ? { description } : {}),
+    ...(format ? { format } : {}),
   });
 }
 

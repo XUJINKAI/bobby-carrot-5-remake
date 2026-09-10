@@ -121,6 +121,7 @@ function exampleForDefinition(definition) {
 function fieldExample(field) {
   return {
     kind: field.kind,
+    ...(field.kind === "string" && field.format ? { format: field.format } : {}),
     ...(field.kind === "enum" ? { variants: field.values } : {}),
     ...(field.required ? { required: true } : {}),
     ...(field.default !== undefined ? { default: field.default } : {}),
@@ -136,7 +137,8 @@ function exampleFieldValue(field) {
   if (field.kind === "integer" || field.kind === "number")
     return field.min ?? 0;
   if (field.kind === "boolean") return false;
-  if (field.kind === "string") return "example";
+  if (field.kind === "string")
+    return field.format === "color" ? "#54e8ff" : "example";
   return undefined;
 }
 

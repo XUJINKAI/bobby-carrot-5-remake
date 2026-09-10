@@ -6,7 +6,6 @@ import {
   EditorViewport,
   previewEditorResize,
   type Cell,
-  type EditorCanvasContextMenuRequest,
   type EditorMap,
   type EditorPlacementPreset,
   type EditorResizeEdges,
@@ -34,7 +33,7 @@ const emit = defineEmits<{
   primaryStart: [cell: Cell];
   primaryMove: [cell: Cell];
   primaryEnd: [cell: Cell | null];
-  contextMenu: [request: EditorCanvasContextMenuRequest];
+  secondarySelect: [cell: Cell];
   resize: [edges: EditorResizeEdges];
 }>();
 const stage = ref<HTMLDivElement | null>(null);
@@ -180,7 +179,7 @@ onMounted(async () => {
     primaryStart: (cell) => emit("primaryStart", cell),
     primaryMove: (cell) => emit("primaryMove", cell),
     primaryEnd: (cell) => emit("primaryEnd", cell),
-    contextMenu: (request) => emit("contextMenu", request),
+    secondarySelect: (cell) => emit("secondarySelect", cell),
     viewportChanged: applyViewportTransform,
   });
   input.setEnabled(props.enabled);

@@ -33,6 +33,19 @@ test("所有 canonical MapEntityTypeId 恰好注册一次", () => {
   assert.equal(createBuiltinEntityRegistry().all().length, definitions.length);
 });
 
+test("未知 Entity 使用不进入正式 Catalog 的惰性占位定义", () => {
+  const registry = createBuiltinEntityRegistry();
+  const unknown = registry.require("future-mechanic");
+
+  assert.equal(registry.has("future-mechanic"), false);
+  assert.equal(unknown.placeholder, "unknown");
+  assert.deepEqual(unknown.traits, []);
+  assert.equal(
+    registry.all().some((definition) => definition.type === "future-mechanic"),
+    false,
+  );
+});
+
 test("Registry 不包含 original/custom identity 前缀", () => {
   for (const definition of createBuiltinEntityRegistry().all()) {
     assert.equal(definition.type.includes(":"), false, definition.type);
@@ -74,6 +87,7 @@ test("Start 是普通可步行 Entity，不携带出生语义", () => {
 test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
   const fieldKeys = (type) =>
     entityMapDefinition(type)?.fields.map((field) => field.key) ?? [];
+  assert.deepEqual(fieldKeys("bobby"), ["controller", "mirrorX", "mirrorY"]);
   assert.deepEqual(fieldKeys("speed-switch"), ["pressed"]);
   assert.deepEqual(fieldKeys("tide-switch"), ["pressed"]);
   assert.deepEqual(fieldKeys("carousel-switch"), ["pressed"]);

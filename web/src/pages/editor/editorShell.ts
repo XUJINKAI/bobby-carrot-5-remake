@@ -16,11 +16,17 @@ import {
 export interface EditorPlayShellState {
   canUndo: boolean;
   canRedo: boolean;
+  replayReady: boolean;
+  replayOpen: boolean;
+  screenControlEnabled: boolean;
 }
 
 const EMPTY_PLAY_STATE: EditorPlayShellState = {
   canUndo: false,
   canRedo: false,
+  replayReady: false,
+  replayOpen: false,
+  screenControlEnabled: false,
 };
 
 export function configureEditorShell(
@@ -28,7 +34,7 @@ export function configureEditorShell(
   tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
-  leftPanel: "palette" | "surface" = "surface",
+  leftPanel: "palette" | "surface" = "palette",
   surfaceTool: SurfaceTool = "rect",
 ): void {
   configureShell(
@@ -48,7 +54,7 @@ export function editorShellConfig(
   tool: EditorTool = "select",
   issues: readonly LevelValidationIssue[] = [],
   playState: EditorPlayShellState = EMPTY_PLAY_STATE,
-  leftPanel: "palette" | "surface" = "surface",
+  leftPanel: "palette" | "surface" = "palette",
   surfaceTool: SurfaceTool = "rect",
 ): ShellConfig {
   const authoringCommands: ShellAction[] =
@@ -88,7 +94,7 @@ export function editorShellConfig(
           },
           {
             id: "editor-tool-erase",
-            icon: "erase",
+            icon: "delete",
             title: "删除",
             pressed: tool === "erase",
           },
@@ -155,25 +161,45 @@ export function editorShellConfig(
     bottomBar: {
       visible: true,
       fixed: true,
-      leading: [
-        {
-          id: "editor-palette",
-          icon: "palette",
-          label: "Palette",
-          pressed: leftPanel === "palette",
-        },
-        {
-          id: "editor-surface",
-          icon: "palette",
-          label: "Surface",
-          pressed: leftPanel === "surface",
-        },
-      ],
+      leading: playing
+        ? [
+            {
+              id: "editor-replay-record",
+              icon: "record",
+              label: "录制",
+              title: "录制 Replay 测试输入",
+              disabled: !playState.replayReady,
+              pressed: playState.replayOpen,
+            },
+          ]
+        : [
+            {
+              id: "editor-palette",
+              icon: "palette",
+              label: "Palette",
+              pressed: leftPanel === "palette",
+            },
+            {
+              id: "editor-surface",
+              icon: "palette",
+              label: "Surface",
+              pressed: leftPanel === "surface",
+            },
+          ],
       info: shellIssueInfo(issues),
-      trailing: [
-        { id: "editor-inspector", icon: "inspector", label: "Inspector" },
-        { id: "editor-level-info", icon: "info", label: "Level" },
-      ],
+      trailing: playing
+        ? [
+            {
+              id: "screen-control",
+              icon: "joystick",
+              label: "屏幕摇杆",
+              pressed: playState.screenControlEnabled,
+            },
+          ]
+        : [
+            { id: "editor-inspector", icon: "inspector", label: "Inspector" },
+            { id: "editor-level-info", icon: "info", label: "Level" },
+          ],
     },
   };
 }

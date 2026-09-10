@@ -62,6 +62,55 @@ test("reach can complete on a collectible removed by onEnter", () => {
   );
 });
 
+test("任一 Bobby 到达 Golden Carrot 即完成多人关卡", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    rules: { win: { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT } },
+    entities: [
+      ground(0, 0), ground(1, 0), ground(2, 0), ground(3, 0),
+      bobby(0, 0), bobby(3, 0),
+      { type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 },
+    ],
+  });
+  const first = world.query.entitiesWithTrait("player")[0];
+
+  move(world, "right");
+
+  assert.equal(world.completed, true);
+  assert.deepEqual(world.entity(first.id).anchor, { x: 1, y: 0 });
+});
+
+test("Exit 要求所有 Bobby 同时到达 Exit", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 1,
+    rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
+    entities: [
+      ground(0, 0),
+      { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 2, y: 0 },
+      ground(3, 0),
+      bobby(0, 0), bobby(3, 0),
+    ],
+  });
+  const players = world.query.entitiesWithTrait("player");
+
+  move(world, "right");
+  assert.equal(world.completed, false);
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: players[1].id,
+      direction: "left",
+      cause: { type: "player-input", source: "test" },
+    }],
+  });
+  assert.equal(world.completed, true);
+});
+
 test("bonus beaver grants one trial key, then sells temporary keys for three coins", () => {
   const map = corridor([
     {

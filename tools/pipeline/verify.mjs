@@ -302,7 +302,7 @@ function assertPushboxWinRule(document, relative) {
   if (document.entities.some((entity) => entity.type === "start"))
     throw new Error(`${relative}: Sokoban 不使用 Start surface`);
   const pushables = document.entities.filter((entity) =>
-    entity.type === "pushable-rock",
+    entity.type === "pushable-box",
   ).length;
   const goals = document.entities.filter((entity) => entity.type === "push-goal").length;
   if (document.entities.some((entity) => entity.type === "exit"))

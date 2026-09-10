@@ -42,6 +42,19 @@ test("camera keeps stable defaults when options are omitted or invalid", () => {
   assert.equal(invalid.zoom, 4);
 });
 
+test("multi-target framing can zoom below the configured limit", () => {
+  const camera = new Camera(48, { zoom: 1, minZoom: 0.8, maxZoom: 2 });
+  camera.setViewport(240, 144);
+  camera.followPoints([{ x: 0, y: 1 }, { x: 19, y: 1 }], 20, 3);
+
+  assert.ok(camera.zoom < 0.8);
+  assert.ok(camera.worldToScreen(0, 1).x >= 0);
+  assert.ok(camera.worldToScreen(20, 2).x <= 240);
+
+  camera.follow({ x: 1, y: 1 }, 20, 3);
+  assert.equal(camera.zoom, 1);
+});
+
 test("camera initially keeps the map against the viewport boundary", () => {
   const camera = new Camera(48, { panBounds: "map-edge" });
   camera.setViewport(480, 288);

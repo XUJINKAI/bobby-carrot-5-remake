@@ -2,6 +2,7 @@ import type { JsonPrimitive } from "../shared/json.js";
 import type { LevelEntity, LevelMap, MapDocument, MapMeta } from "./document.js";
 import { entityMapDefinition } from "./entity/catalog.js";
 import type { EntityMapFieldDefinition } from "./entity/contract.js";
+import { normalizeColorHex } from "../shared/color.js";
 import type { LevelLimit, LevelRules, WinCondition } from "./rules.js";
 
 const MAP_FIELDS = new Set([
@@ -16,6 +17,7 @@ const MAP_FIELDS = new Set([
 ]);
 const META_FIELDS = new Set(["name", "author"]);
 const ENTITY_BASE_FIELDS = new Set(["type", "x", "y", "stackOrder"]);
+const INVALID_JSON_FIELDS_KEY = "__invalidJsonFields";
 
 /** 校验 MapDocument 的持久化合同，并返回与输入隔离的副本。 */
 export function parseMapDocument(value: unknown): MapDocument {
@@ -39,7 +41,7 @@ function parseMapObject(
   value: unknown,
   requireMeta: boolean,
 ): Record<string, unknown> {
-  const source = requireRecord(value, "地图");
+  const source = structuredClone(requireRecord(value, "地图"));
   rejectUnknownFields(source, MAP_FIELDS, "地图");
   if (source.schemaVersion !== 1)
     throw new Error(
@@ -59,7 +61,7 @@ function parseMapObject(
     throw new Error("地图 note 必须为字符串");
   if (!Array.isArray(source.entities))
     throw new Error("地图 entities 必须为数组");
-  source.entities.forEach((entity, index) =>
+  source.entities = source.entities.map((entity, index) =>
     parseLevelEntity(entity, index, width, height),
   );
   if (source.rules !== undefined) parseLevelRules(source.rules);
@@ -102,14 +104,11 @@ function parseLevelEntity(
   index: number,
   width: number,
   height: number,
-): void {
+): LevelEntity {
   const label = `entities[${index}]`;
   const entity = requireRecord(value, label);
   if (typeof entity.type !== "string" || entity.type.length === 0)
     throw new Error(`${label}.type 必须为非空字符串`);
-  const definition = entityMapDefinition(entity.type);
-  if (!definition)
-    throw new Error(`${label} 使用未知 Entity type：${entity.type}`);
   const x = integer(entity.x, `${label}.x`);
   const y = integer(entity.y, `${label}.y`);
   if (x < 0 || x >= width || y < 0 || y >= height)
@@ -117,18 +116,69 @@ function parseLevelEntity(
   if (entity.stackOrder !== undefined)
     integer(entity.stackOrder, `${label}.stackOrder`);
 
+  const normalized: LevelEntity = {
+    type: entity.type,
+    x,
+    y,
+    ...(entity.stackOrder !== undefined
+      ? { stackOrder: entity.stackOrder as number }
+      : {}),
+  };
+  const invalidJsonFields: string[] = [];
+  for (const [key, fieldValue] of Object.entries(entity)) {
+    if (ENTITY_BASE_FIELDS.has(key)) continue;
+    if (isJsonPrimitive(fieldValue)) {
+      normalized[key] = fieldValue;
+      continue;
+    }
+    normalized[key] = JSON.stringify(fieldValue) ?? String(fieldValue);
+    invalidJsonFields.push(key);
+  }
+  if (invalidJsonFields.length > 0)
+    normalized[INVALID_JSON_FIELDS_KEY] = invalidJsonFields.join(", ");
+  return normalized;
+}
+
+/** 已知 Entity 的实例字段问题由 Engine 降级为占位符，不阻断整张地图。 */
+export function levelEntityContractIssues(
+  entity: Readonly<LevelEntity>,
+  options: { ignoredFields?: readonly string[] } = {},
+): string[] {
+  const definition = entityMapDefinition(entity.type);
+  if (!definition) return [];
+  const issues: string[] = [];
+  const invalidJsonFields = entity[INVALID_JSON_FIELDS_KEY];
+  if (typeof invalidJsonFields === "string" && invalidJsonFields.length > 0)
+    issues.push(`字段 ${invalidJsonFields} 原值不是 primitive`);
   const fields = new Map(definition.fields.map((field) => [field.key, field]));
   for (const key of Object.keys(entity)) {
-    if (ENTITY_BASE_FIELDS.has(key) || fields.has(key)) continue;
-    throw new Error(`${label} 的 ${entity.type} 不允许字段 ${key}`);
+    if (
+      ENTITY_BASE_FIELDS.has(key) ||
+      key === INVALID_JSON_FIELDS_KEY ||
+      fields.has(key) ||
+      options.ignoredFields?.includes(key)
+    ) continue;
+    issues.push(`字段 ${key} 未声明`);
   }
   for (const field of definition.fields) {
-    const fieldValue = entity[field.key];
-    if (field.required && fieldValue === undefined)
-      throw new Error(`${label}.${field.key} 是必填字段`);
-    if (fieldValue !== undefined && !fieldAccepts(field, fieldValue))
-      throw new Error(`${label}.${field.key} 不符合 ${field.kind} 合同`);
+    const value = entity[field.key];
+    if (field.required && value === undefined) {
+      issues.push(`字段 ${field.key} 缺失`);
+      continue;
+    }
+    if (value !== undefined && !fieldAccepts(field, value))
+      issues.push(`字段 ${field.key} 不符合 ${field.kind} 合同`);
   }
+  return issues;
+}
+
+function isJsonPrimitive(value: unknown): value is JsonPrimitive {
+  return (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  );
 }
 
 function fieldAccepts(
@@ -136,7 +186,12 @@ function fieldAccepts(
   value: unknown,
 ): value is JsonPrimitive {
   if (field.kind === "boolean") return typeof value === "boolean";
-  if (field.kind === "string") return typeof value === "string";
+  if (field.kind === "string") {
+    if (typeof value !== "string") return false;
+    if (field.format === "non-empty") return value.trim().length > 0;
+    if (field.format === "color") return normalizeColorHex(value) !== null;
+    return true;
+  }
   if (field.kind === "enum") return field.values.includes(value as JsonPrimitive);
   if (field.kind === "integer" && !Number.isInteger(value)) return false;
   if (field.kind === "number" && !isFiniteNumber(value)) return false;

@@ -25,8 +25,18 @@ const HORIZONTAL_DIRECTIONS = ["left", "right"] as const;
 const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(
     MapEntityTypeId.BOBBY,
-    [],
-    "Player start anchor. Map JSON does not persist Bobby facing direction.",
+    [
+      enumField(
+        "controller",
+        ["channel-1", "channel-2"],
+        "channel-1",
+        false,
+        "输入通道；channel-1 是 primary，channel-2 是 secondary。",
+      ),
+      booleanField("mirrorX", false, false, "水平镜像输入方向。"),
+      booleanField("mirrorY", false, false, "垂直镜像输入方向。"),
+    ],
+    "Player start anchor. Facing direction is runtime state.",
   ),
   defineEntity(
     MapEntityTypeId.ORIGINAL_TILE,
@@ -195,9 +205,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(
-    MapEntityTypeId.PUSHABLE_ROCK,
+    MapEntityTypeId.PUSHABLE_BOX,
     [],
-    "Sokoban box: visually a rock, with pushability defined by its type rather than per-map traits.",
+    "Sokoban box with pushability defined by its type rather than per-map traits.",
   ),
   defineEntity(MapEntityTypeId.KITE),
   defineEntity(MapEntityTypeId.WHIRLWIND),
@@ -205,7 +215,20 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.GOLDEN_CARROT),
   defineEntity(MapEntityTypeId.BONUS_COIN),
   defineEntity(MapEntityTypeId.PORTAL, [
-    enumField("channel", ["blue", "red", "green"], undefined, true),
+    stringField(
+      "channel",
+      undefined,
+      true,
+      "用于配对 Portal 的任意非空频道名。",
+      "non-empty",
+    ),
+    stringField(
+      "color",
+      undefined,
+      true,
+      "Portal 的 #rgb、#rrggbb 或常用颜色别名。",
+      "color",
+    ),
   ]),
   defineEntity(MapEntityTypeId.PUSH_GOAL),
 ];

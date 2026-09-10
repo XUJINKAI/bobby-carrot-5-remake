@@ -90,14 +90,16 @@ export class WorldRuleEvaluator {
       case "reach": {
         const state = this.state();
         const actors = this.query.entitiesWithTrait("player");
+        const actorReaches = (actor: (typeof actors)[number]) =>
+          this.reach.actorReaches(actor, condition.target);
+        const completed = this.reach.aggregationFor(condition.target) === "all"
+          ? actors.length > 0 && actors.every(actorReaches)
+          : actors.some(actorReaches) ||
+            state.lastReachedSelectors.includes(condition.target);
         return {
           type: "reach",
           target: condition.target,
-          completed:
-            actors.some((actor) =>
-              this.reach.actorReaches(actor, condition.target),
-            ) ||
-            state.lastReachedSelectors.includes(condition.target),
+          completed,
         };
       }
       case "fill-all": {

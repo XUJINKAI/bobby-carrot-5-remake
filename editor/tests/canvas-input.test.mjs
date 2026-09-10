@@ -18,7 +18,7 @@ class FakeCanvas {
   }
 
   getBoundingClientRect() {
-    return { left: 10, top: 20 };
+    return { left: 10, top: 20, width: 100, height: 100 };
   }
 }
 
@@ -39,7 +39,7 @@ test("Editor 滚轮只围绕指针缩放地图", () => {
       primaryStart() {},
       primaryMove() {},
       primaryEnd() {},
-      contextMenu() {},
+      secondarySelect() {},
       viewportChanged() {
         viewportChanges += 1;
       },
@@ -60,6 +60,43 @@ test("Editor 滚轮只围绕指针缩放地图", () => {
 
     assert.deepEqual(zoomCalls, [{ factor: 1.08, x: 48, y: 72 }]);
     assert.equal(viewportChanges, 1);
+    assert.equal(event.defaultPrevented, true);
+  } finally {
+    input.destroy();
+  }
+});
+
+test("Editor 右键阻止浏览器菜单并请求选择当前格", () => {
+  const canvas = new FakeCanvas();
+  const selected = [];
+  const input = new EditorCanvasInput(
+    canvas,
+    {},
+    {
+      dimensions: () => ({ width: 10, height: 10 }),
+      hover() {},
+      primaryStart() {},
+      primaryMove() {},
+      primaryEnd() {},
+      secondarySelect(cell) {
+        selected.push(cell);
+      },
+      viewportChanged() {},
+    },
+  );
+  const event = {
+    clientX: 35,
+    clientY: 65,
+    defaultPrevented: false,
+    preventDefault() {
+      this.defaultPrevented = true;
+    },
+  };
+
+  try {
+    canvas.dispatch("contextmenu", event);
+
+    assert.deepEqual(selected, [{ x: 2, y: 4 }]);
     assert.equal(event.defaultPrevented, true);
   } finally {
     input.destroy();

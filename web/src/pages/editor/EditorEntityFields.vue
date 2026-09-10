@@ -8,6 +8,7 @@ import {
   surfaceVisualVariant,
   type EditorDefinition,
   type EditorEntityDefinition,
+  type EditorEntityVariant,
   type EditorPlacementPreset,
   type EntityCatalog,
   type EntityCatalogEntry,
@@ -16,6 +17,8 @@ import {
 import type { ImageManager } from "@bobby/engine";
 import {
   entityMapDefinition,
+  normalizeColorHex,
+  type Direction,
   type EntityMapFieldDefinition,
   type EntityType,
   type JsonPrimitive,
@@ -24,14 +27,19 @@ import {
 import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   targets: readonly LevelEntity[];
   definition: EntityCatalogEntry;
   entityPolicy?: EditorEntityDefinition | undefined;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
-}>();
+  showMapFields?: boolean;
+  emptyText?: string;
+}>(), {
+  showMapFields: true,
+  emptyText: "该素材没有可编辑地图字段。",
+});
 const emit = defineEmits<{
   field: [key: string, value: string];
   variant: [index: number];
@@ -64,15 +72,17 @@ const controlledFieldKeys = computed(() => {
   const keys = new Set<string>();
   if (surfaceTerrain.value) keys.add("variant");
   for (const variant of props.entityPolicy?.variants ?? []) {
-    if (variant.direction) keys.add("direction");
     for (const key of Object.keys(variant.fields ?? {})) keys.add(key);
   }
   return keys;
 });
 const editableFields = computed(() =>
-  (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
-    (field) => !controlledFieldKeys.value.has(field.key),
-  ),
+  props.showMapFields
+    ? (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
+        (field) =>
+          field.kind === "string" || !controlledFieldKeys.value.has(field.key),
+      )
+    : [],
 );
 const hasFields = computed(
   () =>
@@ -85,7 +95,19 @@ const hasFields = computed(
 function variantEntries(directional: boolean) {
   return (props.entityPolicy?.variants ?? [])
     .map((variant, index) => ({ variant, index }))
-    .filter(({ variant }) => Boolean(variant.direction) === directional);
+    .filter(({ variant }) => Boolean(variantDirection(variant)) === directional);
+}
+
+function variantDirection(
+  variant: EditorEntityVariant,
+): Direction | undefined {
+  const direction = variant?.fields?.direction;
+  return direction === "up" ||
+    direction === "right" ||
+    direction === "down" ||
+    direction === "left"
+    ? direction
+    : undefined;
 }
 
 function variantSource(index: number): EditorPlacementPreset {
@@ -95,20 +117,23 @@ function variantSource(index: number): EditorPlacementPreset {
   const direction = editorEntityDirection(candidate);
   const fields: Record<string, JsonPrimitive> = {};
   for (const field of entityMapDefinition(candidate.type)?.fields ?? []) {
-    if (field.key === "direction") continue;
     const value = candidate[field.key];
     if (value !== undefined) fields[field.key] = value;
   }
+  if (direction) fields.direction = direction;
   return {
     type: candidate.type,
-    ...(direction ? { direction } : {}),
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
 
 function variantLabel(index: number): string {
   const variant = props.entityPolicy?.variants?.[index];
-  return variant?.label ?? variant?.direction ?? `Variant ${index + 1}`;
+  return (
+    variant?.label ??
+    (variant ? variantDirection(variant) : undefined) ??
+    `Variant ${index + 1}`
+  );
 }
 
 function surfaceVariantSource(variant: SurfaceVariant): EditorPlacementPreset {
@@ -142,6 +167,17 @@ function fieldMixed(
 function inputType(field: EntityMapFieldDefinition): "number" | "text" {
   return field.kind === "number" || field.kind === "integer" ? "number" : "text";
 }
+
+function isColorField(field: EntityMapFieldDefinition): boolean {
+  return field.kind === "string" && field.format === "color";
+}
+
+function colorInputValue(
+  key: string,
+  fallback: JsonPrimitive | undefined,
+): string {
+  return normalizeColorHex(fieldValue(key, fallback)) ?? "#000000";
+}
 </script>
 
 <template>
@@ -164,7 +200,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
             :images="images"
             :catalog="catalog"
             :editor="editor"
-            :fallback-text="entry.variant.direction"
+            :fallback-text="variantDirection(entry.variant)"
           />
           <small>{{ variantLabel(entry.index) }}</small>
         </button>
@@ -230,6 +266,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
         v-for="field in editableFields"
         :key="field.key"
         class="editor-field"
+        :class="{ 'editor-field-boolean': field.kind === 'boolean' }"
         :title="field.description"
       >
         <span>{{ field.key }}</span>
@@ -259,6 +296,19 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
           :checked="fieldValue(field.key, field.default) === 'true'"
           @change="emit('field', field.key, String(($event.target as HTMLInputElement).checked))"
         />
+        <span v-else-if="isColorField(field)" class="editor-color-field">
+          <input
+            type="color"
+            :value="colorInputValue(field.key, field.default)"
+            @input="emit('field', field.key, ($event.target as HTMLInputElement).value)"
+          />
+          <input
+            type="text"
+            :value="fieldValue(field.key, field.default)"
+            :placeholder="fieldMixed(field.key, field.default) ? '多种值' : '#rgb、#rrggbb 或颜色名'"
+            @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
+          />
+        </span>
         <input
           v-else
           :type="inputType(field)"
@@ -272,7 +322,7 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
       </label>
     </section>
 
-    <p v-if="!hasFields" class="editor-muted">该素材没有可编辑地图字段。</p>
+    <p v-if="!hasFields" class="editor-muted">{{ emptyText }}</p>
   </div>
 </template>
 
@@ -288,6 +338,85 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
 .editor-fields-block > strong {
   font-size: 0.7rem;
   color: var(--editor-muted);
+}
+.editor-field select,
+.editor-field input[type="text"],
+.editor-field input[type="number"] {
+  min-height: 36px;
+  border: 1px solid #34463a;
+  border-radius: 7px;
+  background-color: #0b130e;
+  color: #edf5ef;
+  font: inherit;
+}
+.editor-field select {
+  width: 100%;
+  padding: 7px 32px 7px 9px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9fc5d4 50%),
+    linear-gradient(135deg, #9fc5d4 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.editor-field select:hover,
+.editor-field input:hover {
+  border-color: #547b88;
+}
+.editor-field select:focus-visible,
+.editor-field input:focus-visible {
+  border-color: #8ee7ff;
+  outline: 2px solid rgb(142 231 255 / 28%);
+  outline-offset: 1px;
+}
+.editor-field select:disabled,
+.editor-field input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.editor-field-boolean {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.editor-field-boolean > span {
+  color: #dce9df;
+  font-size: 0.74rem;
+}
+.editor-field-boolean input[type="checkbox"] {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  padding: 2px;
+  appearance: none;
+  border: 1px solid #42564a;
+  border-radius: 999px;
+  background: #111d15;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.editor-field-boolean input[type="checkbox"]::before {
+  content: "";
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #aebdb2;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+  transition: transform 120ms ease, background 120ms ease;
+}
+.editor-field-boolean input[type="checkbox"]:checked {
+  border-color: #8bdfff;
+  background: #0b689c;
+}
+.editor-field-boolean input[type="checkbox"]:checked::before {
+  background: #fff;
+  transform: translateX(16px);
 }
 .editor-variant-grid {
   display: grid;
@@ -337,5 +466,15 @@ function inputType(field: EntityMapFieldDefinition): "number" | "text" {
 .editor-surface-variant-btn.active {
   border-color: var(--editor-accent);
   outline: 1px solid var(--editor-accent);
+}
+.editor-color-field {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 6px;
+}
+.editor-color-field input[type="color"] {
+  width: 36px;
+  min-width: 36px;
+  padding: 2px;
 }
 </style>

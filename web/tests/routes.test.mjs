@@ -3,6 +3,7 @@ import { test } from "vitest";
 import {
   canonicalReplayUrl,
   editorMapPath,
+  editorPathWithoutMapHash,
   exploreCollectionPath,
   parseEditorMapHash,
   replayAssetUrl,
@@ -46,4 +47,11 @@ test("editor map fragment rejects malformed references", () => {
   assert.equal(parseEditorMapHash("#map=original"), null);
   assert.equal(parseEditorMapHash("#map=original/1-1/extra"), null);
   assert.equal(parseEditorMapHash("#other=value"), null);
+});
+
+test("editor consumes the map fragment while preserving path and query", () => {
+  assert.equal(
+    editorPathWithoutMapHash({ pathname: "/edit", search: "?grid=on" }),
+    "/edit?grid=on",
+  );
 });

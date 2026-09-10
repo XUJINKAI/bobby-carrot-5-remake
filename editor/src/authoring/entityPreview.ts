@@ -24,14 +24,13 @@ export function resolveEditorEntityPreviewLayout(
   source: EditorPlacementPreset,
   editor: EditorDefinition = builtinEditorDefinition,
 ): EditorEntityPreviewLayout {
-  const direction =
-    source.direction ?? editor.entities?.[source.type]?.defaultDirection;
+  const entityPolicy = editor.entities?.[source.type];
   const prototype: LevelEntity = {
-    ...(source.fields ? structuredClone(source.fields) : {}),
+    ...(entityPolicy?.defaultFields ?? {}),
+    ...(source.fields ?? {}),
     type: source.type,
     x: 0,
     y: 0,
-    ...(direction ? { direction } : {}),
   };
   const definition = editorCatalogEntry(catalog, prototype);
   const prototypeDirection = editorEntityDirection(prototype);

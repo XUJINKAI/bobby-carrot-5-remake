@@ -107,6 +107,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
     "exit",
+    "reach-all-players",
     "requires-unmounted-reach",
   ]),
   surface(
@@ -230,12 +231,15 @@ const windmill = originalModule(
 export const staticContentModules: readonly EntityModule[] = [
   staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT)),
   egg,
-  content(
-    MapEntityTypeId.BEANSTALK,
-    "Beanstalk",
-    tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
-    beanstalkTraits,
-  ),
+  {
+    ...content(
+      MapEntityTypeId.BEANSTALK,
+      "Beanstalk",
+      tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
+      beanstalkTraits,
+    ),
+    authoring: { palette: false },
+  },
   content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), ["pickup"]),
   windmill,
   content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), ["pickup"]),

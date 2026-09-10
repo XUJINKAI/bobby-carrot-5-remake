@@ -50,10 +50,11 @@ export class Camera {
   centerY = 0;
   viewportWidth = 1;
   viewportHeight = 1;
-  zoom: number = DEFAULT_CAMERA_OPTIONS.zoom;
   readonly sourceTileSize: number;
   private minZoom: number = DEFAULT_CAMERA_OPTIONS.minZoom;
   private maxZoom: number = DEFAULT_CAMERA_OPTIONS.maxZoom;
+  private requestedZoom: number = DEFAULT_CAMERA_OPTIONS.zoom;
+  private framingZoom: number | null = null;
   private panOffsetX = 0;
   private panOffsetY = 0;
   /** 保留最近一次回中 tween，便于 Debug Presentation 倒一帧。 */
@@ -96,6 +97,11 @@ export class Camera {
     return this.sourceTileSize * this.zoom;
   }
 
+  /** 多目标构图可以暂时突破 minZoom，但不会改变用户请求的 zoom。 */
+  get zoom(): number {
+    return Math.min(this.requestedZoom, this.framingZoom ?? Number.POSITIVE_INFINITY);
+  }
+
   get hasPanOffset(): boolean {
     return (
       Math.abs(this.panOffsetX) > 0.0001 || Math.abs(this.panOffsetY) > 0.0001
@@ -120,11 +126,19 @@ export class Camera {
       : DEFAULT_CAMERA_OPTIONS.maxZoom;
     this.minZoom = safeMin;
     this.maxZoom = safeMax;
-    this.setZoom(this.zoom);
+    this.requestedZoom = Math.min(
+      this.maxZoom,
+      Math.max(this.minZoom, this.requestedZoom),
+    );
   }
 
   setZoom(value: number): void {
-    this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, value));
+    this.requestedZoom = Math.min(this.maxZoom, Math.max(this.minZoom, value));
+  }
+
+  zoomBy(factor: number): void {
+    if (!Number.isFinite(factor) || factor <= 0) return;
+    this.setZoom(this.requestedZoom * factor);
   }
 
   setZoomAt(value: number, screenX: number, screenY: number): void {
@@ -154,6 +168,7 @@ export class Camera {
     this.followedWorldWidth = 0;
     this.followedWorldHeight = 0;
     this.followTransition = null;
+    this.framingZoom = null;
   }
 
   resetPan(): void {
@@ -219,6 +234,50 @@ export class Camera {
   }
 
   follow(
+    point: CameraPoint,
+    worldWidth: number,
+    worldHeight: number,
+    frame?: PresentationFrame,
+  ): void {
+    this.framingZoom = null;
+    this.followPoint(point, worldWidth, worldHeight, frame);
+  }
+
+  /** 以完整格边界构图；必要时允许 zoom 低于配置下限以容纳所有目标。 */
+  followPoints(
+    points: readonly CameraPoint[],
+    worldWidth: number,
+    worldHeight: number,
+  ): void {
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      this.follow(points[0]!, worldWidth, worldHeight);
+      return;
+    }
+    const minX = Math.max(0, Math.min(...points.map((point) => point.x)) - 0.5);
+    const minY = Math.max(0, Math.min(...points.map((point) => point.y)) - 0.5);
+    const maxX = Math.min(
+      worldWidth,
+      Math.max(...points.map((point) => point.x + 1)) + 0.5,
+    );
+    const maxY = Math.min(
+      worldHeight,
+      Math.max(...points.map((point) => point.y + 1)) + 0.5,
+    );
+    const fitZoom = Math.min(
+      this.viewportWidth / (Math.max(1, maxX - minX) * this.sourceTileSize),
+      this.viewportHeight / (Math.max(1, maxY - minY) * this.sourceTileSize),
+    );
+    this.framingZoom = positiveFinite(fitZoom, this.requestedZoom);
+    this.resetPan();
+    this.followPoint(
+      { x: (minX + maxX) / 2 - 0.5, y: (minY + maxY) / 2 - 0.5 },
+      worldWidth,
+      worldHeight,
+    );
+  }
+
+  private followPoint(
     point: CameraPoint,
     worldWidth: number,
     worldHeight: number,

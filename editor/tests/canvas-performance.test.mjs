@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createBuiltinEntityCatalog, EntityStore } from "../../engine/dist/public.js";
 import { EditorCanvasRenderer } from "../dist/canvas/EditorCanvasRenderer.js";
+import { EditorEntityPreviewRenderer } from "../dist/canvas/EditorEntityPreviewRenderer.js";
 import { EditorPreview } from "../dist/authoring/EditorPreview.js";
 import { createPlacementPreview } from "../dist/authoring/EditorPlacementPreview.js";
 
 function canvas() {
   let draws = 0;
+  const labels = [];
   const context = {
     setTransform() {},
     fillRect() {},
@@ -20,9 +22,48 @@ function canvas() {
     drawImage() {
       draws += 1;
     },
+    fillText(label) {
+      labels.push(label);
+    },
   };
-  return { style: {}, getContext: () => context, draws: () => draws };
+  return {
+    style: {},
+    getContext: () => context,
+    draws: () => draws,
+    labels: () => labels,
+  };
 }
+
+test("Canvas 为两个以上 Palette 层显示数量角标", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "堆叠角标" },
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "carrot", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+  };
+  const target = canvas();
+  const renderer = new EditorCanvasRenderer(target, {
+    sourceTileSize: 48,
+    atlasId: "atlas",
+    image: () => ({ width: 768, height: 768 }),
+  });
+
+  renderer.render({
+    level,
+    tool: "select",
+    placement: null,
+    selection: null,
+    hover: null,
+    viewport: { zoom: 1, panX: 0, panY: 0 },
+  });
+
+  assert.deepEqual(target.labels(), ["2"]);
+});
 
 test("大地图交互复用底图，放置预览只实例化待放置对象", (t) => {
   const level = {
@@ -80,7 +121,7 @@ test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
   const base = new EditorPreview(level, createBuiltinEntityCatalog());
   const ghost = createPlacementPreview(base, {
     entity: { type: "dragon", x: 2, y: 2, direction: "right" },
-    cells: [], replace: [{ index: 1 }], valid: true,
+    cells: [], replace: [{ index: 1 }], warnings: [], valid: true,
   });
   assert.equal(ghost.inspections.length, 3);
   const id = ghost.inspections[0].presence.entityId;
@@ -91,4 +132,50 @@ test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
   assert.ok(ghost.query.presencesAt({ x: 2, y: 2 }).some((p) => p.entityId === 1));
   assert.ok(base.inspectCell(2, 2).presences.some((p) => p.entity.type === "carrot"));
   assert.deepEqual(level, before);
+});
+
+test("Entity 缩略图可注入只读 visual state", () => {
+  const draws = [];
+  const context = {
+    setTransform() {},
+    clearRect() {},
+    save() {},
+    restore() {},
+    translate() {},
+    rotate() {},
+    scale() {},
+    drawImage(...args) {
+      draws.push(args);
+    },
+    getImageData() {
+      throw new Error("测试使用布局 fallback");
+    },
+  };
+  const originalDocument = globalThis.document;
+  globalThis.document = {
+    createElement: () => ({
+      width: 0,
+      height: 0,
+      style: {},
+      getContext: () => context,
+    }),
+  };
+  try {
+    const renderer = new EditorEntityPreviewRenderer({
+      sourceTileSize: 48,
+      atlasId: "atlas",
+      image: () => ({ width: 768, height: 768 }),
+    });
+    renderer.render(canvas(), { type: "egg" }, 48, { filled: true });
+    assert.equal(draws[0]?.[1], 12 * 48);
+    assert.equal(draws[0]?.[2], 12 * 48);
+
+    draws.length = 0;
+    renderer.render(canvas(), { type: "egg" }, 48);
+    assert.equal(draws[0]?.[1], 11 * 48);
+    assert.equal(draws[0]?.[2], 12 * 48);
+  } finally {
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+  }
 });

@@ -56,6 +56,7 @@ import {
   type GameplayTickInput,
   type GameplayTickResult,
 } from "./GameplaySession.js";
+import { prepareRuntimeLevel } from "./RuntimeLevel.js";
 
 type GameEventName =
   | "change"
@@ -261,7 +262,7 @@ export class Game {
 
   async loadLevel(level: LevelMap): Promise<void> {
     this.replayPlayback.stop();
-    this.session.loadLevel(level);
+    this.session.loadLevel(prepareRuntimeLevel(level));
     this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
@@ -477,7 +478,8 @@ export class Game {
   }
 
   zoomBy(factor: number): void {
-    this.setZoom(this.zoom * factor);
+    this.visual.camera.zoomBy(factor);
+    this.render();
   }
 
   panByScreen(dx: number, dy: number): void {
@@ -695,6 +697,13 @@ export class Game {
       definition.footprint,
     );
     if (!footprint.every((part) => this.world.spatial.inBounds(part)))
+      return false;
+    if (
+      this.world.spatial.presencesAt(cell).some(
+        (presence) =>
+          presence.entityId !== actorId && presence.traits.includes("player"),
+      )
+    )
       return false;
 
     this.world.actions.cancelOwnedBy(actorId);

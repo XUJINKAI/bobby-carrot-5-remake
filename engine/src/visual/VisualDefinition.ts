@@ -83,6 +83,7 @@ export interface VisualQuery {
   inBounds(cell: CellPosition): boolean;
   presencesAt(cell: CellPosition): readonly EntityPresence[];
   entity(id: EntityId): Readonly<EntityInstance> | undefined;
+  entitiesWithTrait(trait: string): readonly Readonly<EntityInstance>[];
 }
 
 export interface VisualResolveContext {

@@ -1,5 +1,6 @@
 import {
   EntityStore,
+  prepareRuntimeLevel,
   SpatialIndex,
   type EntityCatalog,
   type EntityCatalogEntry,
@@ -7,8 +8,8 @@ import {
   type EntityPresence,
 } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
-import { editorCatalogEntry } from "../definitions/entities.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
+import { materializeSurfaceVariants } from "./surfacePersistence.js";
 
 export interface EditorPresenceInspection {
   ref: EntityRef;
@@ -35,7 +36,8 @@ export class EditorPreview {
     readonly level: EditorMap,
     readonly catalog: EntityCatalog,
   ) {
-    this.entities = new EntityStore(level.entities);
+    const runtimeLevel = prepareRuntimeLevel(materializeSurfaceVariants(level));
+    this.entities = new EntityStore(runtimeLevel.entities);
     const runtimeEntities = this.entities.all();
     level.entities.forEach((_source, index) => {
       const entity = runtimeEntities[index];
@@ -77,10 +79,11 @@ export class EditorPreview {
     const entity = this.level.entities[ref.index];
     if (!entity)
       throw new Error(`Editor Preview EntityRef 越界：${ref.index}`);
+    const runtimeEntity = this.entities.require(presence.entityId);
     return {
       ref,
       entity,
-      definition: editorCatalogEntry(this.catalog, entity),
+      definition: this.catalog.require(runtimeEntity.type),
       presence,
     };
   }

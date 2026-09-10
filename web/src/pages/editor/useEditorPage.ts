@@ -1,9 +1,12 @@
 import {
   EditorDocument,
   EditorPreview,
+  EditorRuleDetector,
   applyEditorVariant,
+  applyPlacementVariant as applyPlacementVariantPreset,
   applySurfaceTheme,
   buildInspectorModel,
+  buildPlacementInspectorPreview,
   builtinEditorDefinition,
   copyEntitySelection,
   createBuiltinEntityCatalog,
@@ -11,12 +14,13 @@ import {
   cyclePlacementVariant,
   defaultSurfaceBrush,
   detectSurfaceTheme,
+  enableEditorRules,
   fillSurface,
   inspectEditorRules,
   isSurfaceEntityType,
+  materializeSurfaceVariants,
   paintSurface,
   pasteClipboard,
-  pickSurfaceBrush,
   placeEntity,
   rectangleCells,
   removeEntities,
@@ -25,7 +29,9 @@ import {
   replaceEntities,
   replaceEntity,
   resolveDeletion,
+  resolveDeletionTarget,
   resolveEditorPalette,
+  resolvePalettePlacement,
   resizeMapEdges,
   selectedEntityRefs,
   selectionRect,
@@ -46,6 +52,7 @@ import {
   type EditorTool,
   type EntityRef,
   type PaletteItem,
+  type PlacementInspectorPreviewModel,
   type SurfaceBrush,
   type SurfacePattern,
   type SurfaceTerrainId,
@@ -54,7 +61,6 @@ import {
 } from "@bobby/editor";
 import {
   entityMapDefinition,
-  type EntityMapFieldDefinition,
   type EntityType,
   type JsonPrimitive,
   type LevelEntity,
@@ -69,6 +75,10 @@ import {
   getWebSettings,
   updateWebSettings,
 } from "../../storage/settingsStorage.js";
+import {
+  coerceEditorFieldValue,
+  placementPresetWithField,
+} from "./editorFieldValues.js";
 
 export type EditorLeftPanel = "palette" | "surface";
 
@@ -83,7 +93,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
-  const leftPanel = ref<EditorLeftPanel>("surface");
+  const leftPanel = ref<EditorLeftPanel>("palette");
   const surfaceTool = ref<SurfaceTool>("rect");
   const surfaceBrush = ref<SurfaceBrush>(defaultSurfaceBrush());
   const mapSelection = ref<EditorSelection | null>(null);
@@ -95,10 +105,14 @@ export function useEditorPage(initialLevel: EditorMap) {
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
   const eraseVisited = new Set<string>();
+  const ruleDetector = new EditorRuleDetector();
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
     storeEditorAutosave(next.level as EditorMap);
+    const detected = ruleDetector.detect(next.level as EditorMap, catalog);
+    if (detected.length > 0)
+      document.execute(enableEditorRules(catalog, detected));
   });
   onUnmounted(unsubscribe);
 
@@ -119,6 +133,43 @@ export function useEditorPage(initialLevel: EditorMap) {
   const inspector = computed(() =>
     buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
   );
+  const hoverInspector = computed(() => {
+    if (
+      leftPanel.value !== "palette" ||
+      paletteTool.value !== "erase"
+    )
+      return buildInspectorModel(currentLevel(), catalog, null, editor);
+    const cell = hover.value;
+    if (!cell)
+      return buildInspectorModel(currentLevel(), catalog, null, editor);
+    return buildInspectorModel(
+      currentLevel(),
+      catalog,
+      { anchor: cell, focus: cell },
+      editor,
+    );
+  });
+  const placementInspectorPreview = computed<PlacementInspectorPreviewModel>(
+    () => buildPlacementInspectorPreview(
+      currentLevel(),
+      catalog,
+      placement.value,
+      leftPanel.value === "palette" && paletteTool.value === "place"
+        ? hover.value
+        : null,
+      editor,
+    ),
+  );
+  const deletionTargetIndex = computed(() => {
+    if (
+      leftPanel.value !== "palette" ||
+      paletteTool.value !== "erase"
+    )
+      return null;
+    const cell = hover.value;
+    if (!cell) return null;
+    return resolveDeletionTarget(currentLevel(), catalog, cell, editor)?.index ?? null;
+  });
   const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
   const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
@@ -326,26 +377,9 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (refs.length > 0) document.execute(removeEntities(refs));
   }
 
-  function pickSurface(cell: Cell): boolean {
-    const picked = pickSurfaceBrush(currentLevel(), cell);
-    if (!picked) return false;
-    surfaceBrush.value = normalizeSurfaceBrush(picked);
-    activateSurface();
-    return true;
-  }
-
-  function ensureSelectionAt(cell: Cell): void {
-    const selection = mapSelection.value;
-    if (selection) {
-      const rect = selectionRect(selection);
-      if (
-        cell.x >= rect.left &&
-        cell.x <= rect.right &&
-        cell.y >= rect.top &&
-        cell.y <= rect.bottom
-      )
-        return;
-    }
+  function selectCell(cell: Cell): void {
+    if (leftPanel.value === "surface") surfaceTool.value = "rect";
+    else paletteTool.value = "select";
     mapSelection.value = { anchor: cell, focus: cell };
   }
 
@@ -511,12 +545,31 @@ export function useEditorPage(initialLevel: EditorMap) {
       step,
     );
     if (!next) return false;
-    placement.value = {
-      ...placement.value,
-      ...cleanPlacementPreset(next),
-      previewPreset: cleanPlacementPreset(next),
-    };
+    setPlacementPreset(cleanPlacementPreset(next));
     return true;
+  }
+
+  function applyPlacementVariant(index: number): boolean {
+    const current = placement.value;
+    const variant = editor.entities?.[current.type]?.variants?.[index];
+    if (!variant) return false;
+    setPlacementPreset(applyPlacementVariantPreset(current, variant));
+    return true;
+  }
+
+  function setPlacementPreset(preset: EditorPlacementPreset): void {
+    placement.value = resolvePalettePlacement(
+      catalog,
+      editor,
+      palette,
+      preset,
+      placement.value.label,
+    );
+  }
+
+  function updatePlacementField(key: string, raw: string): void {
+    const next = placementPresetWithField(placement.value, key, raw);
+    if (next) setPlacementPreset(next);
   }
 
   function updateField(entityIndex: number, key: string, raw: string): void {
@@ -541,7 +594,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       if (!field) return [];
       const next: LevelEntity = { ...entity };
       if (raw === "") delete next[key];
-      else next[key] = coerceFieldValue(field, raw);
+      else next[key] = coerceEditorFieldValue(field, raw);
       return [{ ref, entity: next }];
     });
     if (replacements.length > 0) document.execute(replaceEntities(replacements));
@@ -566,6 +619,11 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function setRule(kind: EditorRuleKind, enabled: boolean): void {
     document.execute(updateEditorRule(catalog, kind, enabled));
+  }
+
+  function loadLevel(level: EditorMap): void {
+    ruleDetector.reset();
+    document.load(level);
   }
 
   function setPaletteSize(delta: number): void {
@@ -604,9 +662,14 @@ export function useEditorPage(initialLevel: EditorMap) {
     helpDialogOpen,
     paletteSize,
     inspector,
+    hoverInspector,
+    placementInspectorPreview,
+    deletionTargetIndex,
     selectedRefs,
     rules,
-    levelMap: computed(() => toLevelMap(currentLevel())),
+    levelMap: computed(() =>
+      toLevelMap(materializeSurfaceVariants(currentLevel())),
+    ),
     setTool,
     selectPalette,
     activatePalette,
@@ -618,11 +681,10 @@ export function useEditorPage(initialLevel: EditorMap) {
     setSurfacePattern,
     setSurfaceExact,
     setSurfaceAlternate,
-    pickSurface,
     primaryStart,
     primaryMove,
     primaryEnd,
-    ensureSelectionAt,
+    selectCell,
     copy,
     cut,
     paste,
@@ -635,11 +697,14 @@ export function useEditorPage(initialLevel: EditorMap) {
     applySurfaceVariant,
     applyBatchSurfaceVariant,
     cycleVariant,
+    applyPlacementVariant,
+    updatePlacementField,
     updateField,
     updateBatchField,
     setPaletteSize,
     resize,
     setRule,
+    loadLevel,
     setMaxMoves(value: number | null): void {
       document.execute(updateMaxMoves(value));
     },
@@ -682,8 +747,7 @@ function normalizeSurfaceBrush(brush: SurfaceBrush): SurfaceBrush {
 function cleanPlacementPreset(source: EditorPlacementPreset): EditorPlacementPreset {
   return {
     type: source.type,
-    ...(source.direction ? { direction: source.direction } : {}),
-    ...(source.fields ? { fields: structuredClone(source.fields) } : {}),
+    ...(source.fields ? { fields: { ...source.fields } } : {}),
   };
 }
 
@@ -696,26 +760,6 @@ function shiftedCell(
     x: Math.max(0, Math.min(map.width - 1, cell.x + edges.left)),
     y: Math.max(0, Math.min(map.height - 1, cell.y + edges.top)),
   };
-}
-
-function coerceFieldValue(
-  field: EntityMapFieldDefinition,
-  raw: string,
-): JsonPrimitive {
-  if (field.kind === "number" || field.kind === "integer") {
-    const value = Number(raw);
-    return Number.isFinite(value)
-      ? field.kind === "integer"
-        ? Math.trunc(value)
-        : value
-      : raw;
-  }
-  if (field.kind === "boolean") return raw === "true";
-  if (field.kind === "enum") {
-    const option = field.values.find((candidate) => String(candidate) === raw);
-    if (option !== undefined) return option;
-  }
-  return raw;
 }
 
 function readPaletteSize(): EditorPaletteSize {

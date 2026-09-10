@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { EditorMap } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { getWebTheme, type WebTheme } from "../../theme/webTheme.js";
+import type { ImportedData } from "../../services/import/importPipeline.js";
 import type { HomeViewState } from "./types.js";
 import OriginalFlightScene from "../../shared/original-scenes/OriginalFlightScene.vue";
 import OriginalStarfield from "../../shared/original-scenes/OriginalStarfield.vue";
@@ -16,7 +16,7 @@ const emit = defineEmits<{
   navigate: [path: string];
   restart: [];
   screenControl: [];
-  importMap: [level: EditorMap];
+  importData: [data: ImportedData];
 }>();
 
 const page = ref<HTMLElement | null>(null);
@@ -74,7 +74,7 @@ onBeforeUnmount(() => {
           <div class="home-mode-layer">
             <HomeModeMenu
               @navigate="emit('navigate', $event)"
-              @import-map="emit('importMap', $event)"
+              @import-data="emit('importData', $event)"
             >
               <p class="home-import-feedback" aria-live="polite">
                 {{ state.importFeedback }}

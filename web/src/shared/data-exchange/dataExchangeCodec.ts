@@ -52,6 +52,14 @@ export async function decodeBc5rV1(payload: string): Promise<string> {
   return gunzipText(decodeBase64Url(payload));
 }
 
+/** `/import/v1#` 已经确定 transport，这里只接受 fragment 中的 raw payload。 */
+export async function decodeExchangePayload(
+  payload: string,
+): Promise<DecodedExchangeData> {
+  const jsonText = await decodeBc5rV1(payload);
+  return { value: parseJson(jsonText), format: "bc5r1", jsonText };
+}
+
 export async function encodeExchangeText(
   jsonText: string,
   options: { publicBaseUrl?: string } = {},
@@ -72,8 +80,7 @@ export async function decodeExchangeText(text: string): Promise<DecodedExchangeD
     ? source.slice(PREFIX.length)
     : extractImportPayload(source);
   if (payload !== null) {
-    const jsonText = await decodeBc5rV1(payload);
-    return { value: parseJson(jsonText), format: "bc5r1", jsonText };
+    return decodeExchangePayload(payload);
   }
   if (!source.startsWith("{") && !source.startsWith("[")) {
     throw new DataExchangeError("unknown-representation", "无法识别的数据格式");

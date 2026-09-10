@@ -2,19 +2,13 @@ import type { Cell } from "../authoring/entityPlacement.js";
 import { canvasPointToCell } from "./coordinates.js";
 import { EditorViewport } from "./EditorViewport.js";
 
-export interface EditorCanvasContextMenuRequest {
-  cell: Cell;
-  clientX: number;
-  clientY: number;
-}
-
 export interface EditorCanvasInputHandlers {
   dimensions(): { width: number; height: number };
   hover(cell: Cell | null): void;
   primaryStart(cell: Cell): void;
   primaryMove(cell: Cell): void;
   primaryEnd(cell: Cell | null): void;
-  contextMenu(request: EditorCanvasContextMenuRequest): void;
+  secondarySelect(cell: Cell): void;
   viewportChanged(): void;
 }
 
@@ -136,7 +130,7 @@ export class EditorCanvasInput {
     event.preventDefault();
     const cell = this.cell(event);
     if (!cell) return;
-    this.handlers.contextMenu({ cell, clientX: event.clientX, clientY: event.clientY });
+    this.handlers.secondarySelect(cell);
   };
 
   private readonly onWheel = (event: WheelEvent): void => {

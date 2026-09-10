@@ -1,4 +1,4 @@
-import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
+import { serializeEditorLevel } from "@bobby/editor";
 import { createDialogBehavior } from "@bobby/engine";
 import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
@@ -12,6 +12,10 @@ import {
 import { webT } from "../../i18n/webI18n.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
+import {
+  applyImportedSave,
+  type ImportedData,
+} from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import {
   getWebSettings,
@@ -80,8 +84,8 @@ export async function renderHome(
         new CustomEvent("screen-control-change", { detail: { enabled } }),
       );
     },
-    onImportMap: (level: ReturnType<typeof parseEditorLevel>) =>
-      importHomeMap(level, view, navigate),
+    onImportData: (data: ImportedData) =>
+      importHomeData(data, view, navigate),
   });
   homeApp.mount(app);
 
@@ -185,14 +189,19 @@ export async function renderHome(
   };
 }
 
-function importHomeMap(
-  level: ReturnType<typeof parseEditorLevel>,
+function importHomeData(
+  data: ImportedData,
   view: HomeViewState,
   navigate: PageContext["navigate"],
 ): void {
+  if (data.type !== "map") {
+    view.importFeedback = "";
+    navigate(applyImportedSave(data));
+    return;
+  }
   sessionStorage.setItem(
     "bc5r:pending-play-level",
-    serializeEditorLevel(level),
+    serializeEditorLevel(data.value),
   );
   view.importFeedback = "";
   navigate("/explore/play/imported/shared-map");

@@ -155,7 +155,12 @@ export class MovementRuntime {
       this.progressTo(motion, marker.progress, visitor);
       plan.nextMarkerIndex += 1;
       visitor.marker(structuredClone(motion), structuredClone(marker));
-      if (motion.status !== "running") return;
+      if (
+        !this.motions.mutable(motion.id) ||
+        motion.status !== "running"
+      ) {
+        return;
+      }
     }
 
     this.progressTo(motion, targetProgress, visitor);

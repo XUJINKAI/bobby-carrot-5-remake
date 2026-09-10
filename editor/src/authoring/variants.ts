@@ -48,21 +48,32 @@ export function cyclePlacementVariant<T extends EditorPlacementPreset>(
   const variants = definition?.variants ?? [];
   if (variants.length === 0) return null;
   const source: LevelEntity = {
+    ...(preset.fields ?? {}),
     type: preset.type,
     x: 0,
     y: 0,
-    ...(preset.fields ? structuredClone(preset.fields) : {}),
-    ...(preset.direction ? { direction: preset.direction } : {}),
   };
   const current = editorVariantIndex(source, catalog, definition);
   const base = current >= 0 ? current : 0;
   const index = modulo(base + Math.sign(step || 1), variants.length);
   const next = applyEditorVariant(source, variants[index]!);
   const fields = fieldsFromEntity(next);
-  const nextDirection = editorEntityDirection(next);
   return {
     ...preset,
-    ...(nextDirection ? { direction: nextDirection } : {}),
+    fields,
+  };
+}
+
+export function applyPlacementVariant(
+  preset: EditorPlacementPreset,
+  variant: EditorEntityVariant,
+): EditorPlacementPreset {
+  const fields = {
+    ...(preset.fields ?? {}),
+    ...(variant.fields ?? {}),
+  };
+  return {
+    type: preset.type,
     ...(Object.keys(fields).length > 0 ? { fields } : {}),
   };
 }
@@ -77,8 +88,8 @@ function withDefaults(
     if (result[field.key] === undefined && field.default !== undefined)
       result[field.key] = structuredClone(field.default);
   }
-  if (!editorEntityDirection(result) && editor?.defaultDirection)
-    result["direction"] = editor.defaultDirection;
+  for (const [key, value] of Object.entries(editor?.defaultFields ?? {}))
+    if (result[key] === undefined) result[key] = structuredClone(value);
   return result;
 }
 
@@ -86,7 +97,6 @@ function variantMatches(
   entity: Readonly<LevelEntity>,
   variant: EditorEntityVariant,
 ): boolean {
-  if (variant.direction && editorEntityDirection(entity) !== variant.direction) return false;
   for (const [key, value] of Object.entries(variant.fields ?? {}))
     if (!same(entity[key], value)) return false;
   return true;
@@ -96,7 +106,6 @@ function fieldsFromEntity(entity: Readonly<LevelEntity>): EditorEntityFields {
   const fields: Record<string, JsonPrimitive> = {};
   for (const [key, value] of Object.entries(entity)) {
     if (
-      key === "direction" ||
       isLevelEntityReservedField(key) ||
       value === undefined
     )
