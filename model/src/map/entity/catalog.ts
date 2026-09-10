@@ -164,9 +164,11 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     enumField("direction", HORIZONTAL_DIRECTIONS, undefined, true),
   ]),
   defineEntity(MapEntityTypeId.SANDMAN, [
-    stringField("dialogue", undefined, false, "地图作者设置的对话文本。"),
+    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
   ]),
-  defineEntity(MapEntityTypeId.DREAM_MACHINE),
+  defineEntity(MapEntityTypeId.DREAM_MACHINE, [
+    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
+  ]),
   defineEntity(MapEntityTypeId.MOWER),
   defineEntity(MapEntityTypeId.GAS),
   defineEntity(MapEntityTypeId.BEAN_FIELD),
@@ -181,27 +183,9 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     [],
     "Melt stage is runtime state and is never persisted in a source map.",
   ),
-  defineEntity(
-    MapEntityTypeId.BEAVER,
-    [
-      enumField(
-        "interaction",
-        ["dialog", "bonus-key-vendor"],
-        "dialog",
-        false,
-        "Fixed normal dialog IDs still need reconstruction before v1 freeze.",
-      ),
-      integerField(
-        "temporaryKeyPriceBonusCoins",
-        0,
-        9999,
-        3,
-        false,
-        "Used only by bonus-key-vendor.",
-      ),
-    ],
-    "Beaver needs a fixed interaction/dialog contract; arbitrary dialog IDs are intentionally not frozen.",
-  ),
+  defineEntity(MapEntityTypeId.BEAVER, [
+    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
+  ]),
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(

@@ -28,8 +28,11 @@ const runtime = await createGameplayRuntime({
   level,
   assets,
   audio,
-  profile,
   runtime: {
+    bobbyLocomotion: { moveMs: 350 },
+    initialActorIntents: [
+      { type: "grant-lock-key", actor: "all", kind: "reusable" },
+    ],
     input: {
       keyboard: true,
       pointer: true,
@@ -54,7 +57,7 @@ const runtime = await createGameplayRuntime({
   },
 });
 
-const { game, input } = runtime;
+const { game, input, dialog } = runtime;
 ```
 
 宿主销毁 session 时只需要 `runtime.destroy()`。也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致。
@@ -175,6 +178,12 @@ restore gameplay snapshot
 game.move("left");
 game.setHeldDirection("up");
 game.setHeldDirection(null);
+game.dispatch({
+  type: "set-actor-locomotion",
+  actorId,
+  moveDurationMs: 266,
+});
+game.dispatch({ type: "grant-lock-key", actorId, kind: "single-use" });
 
 game.undo();
 game.redo();
@@ -197,6 +206,11 @@ game.inspectCanvasPoint(clientX, clientY);
 `move()` 会把一次性语义动作排入下一个 World Tick，与键盘、Pointer、摇杆和 Replay
 输入共用 `GameplaySession` 的输入阶段。提交动作时尚未产生 `MoveResult`；执行结果通过
 Game 状态、事件和 Replay Tick 结果观察。
+
+`dispatch()` 只接受 Engine 定义的封闭 `ActorEffectIntent` union。`set-actor-locomotion`
+只影响随后创建的 WorldMotion；`grant-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
+商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影位置、朝向、
+地图内背包与实际移动时长，不暴露 Entity runtime state。
 
 ## GameplaySession 与 Replay
 
@@ -272,6 +286,10 @@ game.renderer.camera.zoom;
 
 ```ts
 runtime: {
+  bobbyLocomotion: {
+    moveMs: 350,
+  },
+  initialActorIntents: [],
   input: {
     keyboard: true,
     pointer: true,
@@ -349,3 +367,21 @@ game.on("level-complete", ...);
 ```
 
 细粒度地图事实通过 `WorldEvent` 暴露。事件只描述语义事实，不泄漏 EntityStore、CommandQueue、Behavior 或 RuntimeAction 实例。
+
+地图内表现订阅完整事件流：
+
+```ts
+game.onWorldEvent((event) => {});
+```
+
+复杂产品交互使用 live-only 请求口：
+
+```ts
+game.onInteractionRequest((request) => {
+  // 外层根据自己的状态显示对白，并按需 game.dispatch(intent)。
+});
+```
+
+可对话角色触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
+`dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
+`dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。

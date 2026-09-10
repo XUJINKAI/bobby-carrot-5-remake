@@ -16,10 +16,6 @@ test("Bobby owns the canonical original locomotion cadence", () => {
     ORIGINAL_TUNING.motion.normalMs,
     ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
   );
-  assert.equal(
-    ORIGINAL_TUNING.motion.speedShoesScale,
-    ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
-  );
   assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
 });
 

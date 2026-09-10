@@ -74,6 +74,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
     note: "",
   });
   assert.deepEqual(Object.keys(replay.runtime), ["worldHz", "bobbyLocomotion"]);
+  assert.deepEqual(replay.initialIntents, []);
   assert.equal(Object.keys(replay).at(-1), "frames");
   assert.equal("levelHash" in replay, false);
   assert.equal("expectation" in replay, false);
@@ -229,8 +230,9 @@ test("ReplayRunner 拒绝不符合播放合同的输入", () => {
     },
     runtime: {
       worldHz: 20,
-      bobbyLocomotion: { moveMs: 100, speedShoesScale: 0.76 },
+      bobbyLocomotion: { moveMs: 100 },
     },
+    initialIntents: [],
     endTick: 0,
     frames: [],
   };
@@ -249,10 +251,10 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
     runtime: {
       worldHz: 20,
       bobbyLocomotion: {
-        speedShoesScale: 0.76,
         moveMs: 100,
       },
     },
+    initialIntents: [],
     endTick: 0,
     frames: [],
   };
@@ -260,12 +262,101 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
   assert.equal(runReplay(carrotLevel(), replay).actual.status, "playing");
 });
 
-test("Replay 录制拒绝不可序列化的 Entity 初始化回调", () => {
+test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   const level = carrotLevel();
-  const session = new GameplaySession({ initializeEntityState: () => ({}) });
+  const session = new GameplaySession({
+    initialActorIntents: [
+      { type: "grant-lock-key", actor: "all", kind: "reusable" },
+    ],
+  });
   session.loadLevel(level);
-  assert.throws(
-    () => new ReplayRecorder(session, { name: "测试", url: "/test" }),
-    /初始状态不能序列化/,
-  );
+  const recorder = new ReplayRecorder(session, {
+    name: "初始钥匙",
+    url: "/test",
+  });
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.initialIntents, [
+    { type: "grant-lock-key", actorId: 4, kind: "reusable" },
+  ]);
+  assert.equal(session.state.inventory.reusableLockKey, true);
+  assert.equal(runReplay(level, replay).actual.status, "playing");
+});
+
+test("运行中的 locomotion 动作进入 Replay frame", () => {
+  const session = new GameplaySession({ bobbyLocomotion: { moveMs: 350 } });
+  session.loadLevel(carrotLevel());
+  const recorder = new ReplayRecorder(session, {
+    name: "动态移动速度",
+    url: "/test",
+  });
+  const actorId = session.state.primaryActorId;
+  const [tick] = session.advanceTicks(1, () => ({
+    groups: [{
+      intents: [{
+        type: "set-actor-locomotion",
+        actorId,
+        moveDurationMs: 266,
+      }],
+    }],
+  }));
+  recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.equal(session.state.actors[0].moveDurationMs, 266);
+  assert.deepEqual(replay.frames[0].groups[0].intents[0], {
+    type: "set-actor-locomotion",
+    actorId,
+    moveDurationMs: 266,
+  });
+});
+
+test("Replay 只保留钥匙动作的 gameplay 字段", () => {
+  const session = new GameplaySession();
+  session.loadLevel(carrotLevel());
+  const recorder = new ReplayRecorder(session, {
+    name: "钥匙交互",
+    url: "/test",
+  });
+  const actorId = session.state.primaryActorId;
+  const [tick] = session.advanceTicks(1, () => ({
+    groups: [{
+      intents: [{
+        type: "grant-lock-key",
+        actorId,
+        kind: "single-use",
+        requestId: 42,
+      }],
+    }],
+  }));
+  recorder.record(tick);
+
+  assert.deepEqual(recorder.stop().frames[0].groups[0].intents[0], {
+    type: "grant-lock-key",
+    actorId,
+    kind: "single-use",
+  });
+});
+
+test("Replay 初始钥匙动作也省略交互关联字段", () => {
+  const level = carrotLevel();
+  const session = new GameplaySession({
+    initialIntents: [{
+      type: "grant-lock-key",
+      actorId: 4,
+      kind: "reusable",
+      requestId: 7,
+    }],
+  });
+  session.loadLevel(level);
+  const replay = new ReplayRecorder(session, {
+    name: "初始钥匙字段",
+    url: "/test",
+  }).stop();
+
+  assert.deepEqual(replay.initialIntents, [{
+    type: "grant-lock-key",
+    actorId: 4,
+    kind: "reusable",
+  }]);
 });

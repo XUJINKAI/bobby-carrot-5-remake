@@ -3,30 +3,34 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildGameplayHudModel } from "../dist/ui/GameplayHudModel.js";
 
-function state(overrides = {}) {
-  const inventory = overrides.inventory ?? {
+function emptyInventory() {
+  return {
     gas: false,
     shovel: false,
     kite: false,
     beans: 0,
-    temporaryKey: false,
+    singleUseLockKey: false,
+    reusableLockKey: false,
   };
+}
+
+function state(overrides = {}) {
+  const inventory = overrides.inventory ?? emptyInventory();
   return {
     status: "playing",
     deathReason: null,
     moves: 0,
     primaryActorId: 1,
-    actors: [{ id: 1, position: { x: 0, y: 0 }, facing: "down", state: inventory }],
+    actors: [{
+      id: 1,
+      position: { x: 0, y: 0 },
+      facing: "down",
+      inventory,
+      moveDurationMs: 350,
+    }],
     player: { x: 0, y: 0 },
     facing: "down",
     inventory,
-    economy: { goldenCarrots: 0, bonusCoins: 0 },
-    profile: {
-      superKey: false,
-      speedShoes: false,
-      coinRadar: false,
-      bonusKeyTrialUsed: false,
-    },
     ridingMower: false,
     forced: null,
     bonusCoinsInLevel: 0,
@@ -57,7 +61,8 @@ test("Gameplay HUD projects the four map-local inventory items", () => {
         shovel: true,
         kite: true,
         beans: 3,
-        temporaryKey: true,
+        singleUseLockKey: true,
+        reusableLockKey: false,
       },
     }),
     null,
@@ -75,8 +80,20 @@ test("Gameplay HUD projects the four map-local inventory items", () => {
 test("Gameplay HUD projects primary and secondary inventories separately", () => {
   const model = buildGameplayHudModel(state({
     actors: [
-      { id: 1, position: { x: 0, y: 0 }, facing: "down", state: { beans: 2 } },
-      { id: 2, position: { x: 1, y: 0 }, facing: "down", state: { shovel: true } },
+      {
+        id: 1,
+        position: { x: 0, y: 0 },
+        facing: "down",
+        inventory: { ...emptyInventory(), beans: 2 },
+        moveDurationMs: 350,
+      },
+      {
+        id: 2,
+        position: { x: 1, y: 0 },
+        facing: "down",
+        inventory: { ...emptyInventory(), shovel: true },
+        moveDurationMs: 350,
+      },
     ],
   }), null);
   assert.deepEqual(model.inventories.map((inventory) => ({

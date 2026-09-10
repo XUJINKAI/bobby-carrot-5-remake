@@ -27,18 +27,14 @@ Replay 必须从 tick 0 开始。运行结果只由以下内容重建：
 ```text
 LevelMap
 + World Hz
-+ Bobby gameplay 运动参数
-+ 逐 Tick 玩家语义输入
++ Bobby 初始 gameplay 移动时长
++ tick 0 actor intents
++ 逐 Tick Gameplay Intent
 ```
-
-Web 播放使用当前 Explore Session 的 Profile 与 Economy 设置，它们不进入 Replay。
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
 恢复点。跳转和重新接管通过从 tick 0 快速执行到目标 Tick 实现。现有 Undo / Redo
 快照仍是单局游戏的内部能力，不属于 Replay 格式。
-
-使用不可序列化 `initializeEntityState` 回调的 Session 不能录制 Replay；对应入口需要先
-提供可序列化、可从起点重建的正式运行配置。
 
 ## 输入
 
@@ -47,6 +43,7 @@ Replay 记录控制映射之后、World 判定之前的 `WorldIntentGroup`。因
 - 多 Actor 同时操作的分组；
 - 输入的 Tick 与组内顺序；
 - 被阻挡、处于 busy 状态或被 RuntimeAction 消费的输入尝试。
+- 宿主提交的 `set-actor-locomotion`、`grant-lock-key` 等封闭 gameplay 动作。
 
 键盘、Pointer 和摇杆原始事件不进入 Replay。机关产生的 forced intent 由 World 在重放
 时重新计算。
@@ -77,10 +74,16 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   "runtime": {
     "worldHz": 60,
     "bobbyLocomotion": {
-      "moveMs": 350,
-      "speedShoesScale": 0.76
+      "moveMs": 350
     }
   },
+  "initialIntents": [
+    {
+      "type": "grant-lock-key",
+      "actorId": 1,
+      "kind": "reusable"
+    }
+  ],
   "endTick": 120,
   "frames": []
 }
@@ -97,6 +100,11 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。作为仓库内回归 fixture
 使用时，verify 将 `meta.final_status` 作为期望状态，并与 Runner 的实际状态比较。
 
+`initialIntents` 是 runtime 的通用 actor target 在建局后解析出的具体动作，按数组顺序
+于 tick 0 前应用。Replay playback 不调用宿主 `onInteractionRequest()`，因此购买等外部
+决定只会按已经录入 frame 的 Engine Intent 执行一次。地图字面 `dialogue` 已存在于
+LevelMap；纯展示对白不会重复写入 Replay。
+
 ## 仓库内置过法
 
 内置过法与地图使用相同的 collection 和 map ID：
@@ -107,7 +115,7 @@ assets/maps/<collection>/<map-id>.json
 ```
 
 Web 录制面板按当前关卡尝试读取对应 Replay。`npm run verify` 递归扫描
-`assets/replays/` 的全部文件，在对应地图上使用 Explore Profile 从起点复跑，并要求
+`assets/replays/` 的全部文件，在对应地图上从 Replay 自带起点配置复跑，并要求
 实际状态等于 Replay 的 `meta.final_status`。每新增一个 Replay 文件都会自动进入这项
 回归测试，也会随 `assets/` 原样发布到 `dist/assets/`。
 

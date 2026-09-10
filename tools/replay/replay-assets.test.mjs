@@ -41,9 +41,7 @@ for (const replayFile of replayFiles) {
       `${relative} 的 meta.final_status 无效`,
     );
     const level = parseMapDocument(readJson(mapFile));
-    const report = runReplay(level, replay, {
-      profile: { superKey: true },
-    });
+    const report = runReplay(level, replay);
     assert.equal(report.actual.endTick, replay.endTick);
     assert.equal(report.actual.status, expectedStatus);
   });

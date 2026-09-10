@@ -1,15 +1,55 @@
-import type { LevelMap } from "@bobby/model";
+import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import type { AdventureEntityFieldPatch } from "./augment.js";
 import { augmentAdventureLevel } from "./augment.js";
-import { normalizeAdventureSave, type AdventureSave } from "./save.js";
+import { parseAdventureLevelId } from "./campaign.js";
+import {
+  normalizeAdventureSave,
+  rewardClaimKey,
+  type AdventureRewardClaim,
+  type AdventureRewardType,
+  type AdventureSave,
+} from "./save.js";
 
 export function createAdventureLevelInstance(
-  _levelId: string,
+  levelId: string,
   level: LevelMap,
-  _save: AdventureSave,
+  save: AdventureSave,
   fieldPatches: readonly AdventureEntityFieldPatch[] = [],
 ): LevelMap {
-  return augmentAdventureLevel(structuredClone(level), fieldPatches);
+  const augmented = augmentAdventureLevel(structuredClone(level), fieldPatches);
+  const normalized = normalizeAdventureSave(save);
+  const parsedLevel = parseAdventureLevelId(levelId);
+  if (!parsedLevel) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
+  const claimed = new Set(normalized.claimedRewards.map(rewardClaimKey));
+  return {
+    ...augmented,
+    entities: augmented.entities.filter((entity) => {
+      if (!isAdventureRewardType(entity.type)) return true;
+      return !claimed.has(
+        rewardClaimKey({
+          levelId: parsedLevel.id,
+          type: entity.type,
+          x: entity.x,
+          y: entity.y,
+        }),
+      );
+    }),
+  };
+}
+
+export function claimAdventureReward(
+  save: AdventureSave,
+  claim: AdventureRewardClaim,
+): AdventureSave {
+  const next = structuredClone(normalizeAdventureSave(save));
+  const key = rewardClaimKey(claim);
+  if (next.claimedRewards.some((item) => rewardClaimKey(item) === key))
+    return next;
+  next.claimedRewards.push(structuredClone(claim));
+  if (claim.type === MapEntityTypeId.BONUS_COIN)
+    next.economy.bonusCoins += 1;
+  else next.economy.goldenCarrots += 1;
+  return normalizeAdventureSave(next);
 }
 
 export function addBonusCoins(
@@ -50,4 +90,11 @@ export function spendGoldenCarrots(
   if (next.economy.goldenCarrots < cost) throw new Error("Golden Carrot 不足");
   next.economy.goldenCarrots -= cost;
   return normalizeAdventureSave(next);
+}
+
+function isAdventureRewardType(type: string): type is AdventureRewardType {
+  return (
+    type === MapEntityTypeId.BONUS_COIN ||
+    type === MapEntityTypeId.GOLDEN_CARROT
+  );
 }

@@ -25,10 +25,9 @@ const unlock: Behavior = {
     if (self.entity.state?.opened === true)
       return { passable: true, reason: "lock-open" };
 
-    const global = query.global();
     const inventory = readBobbyInventory(actor.state);
-    const hasPermanentKey = global.profile.superKey;
-    const hasTemporaryKey = inventory.temporaryKey;
+    const hasPermanentKey = inventory.reusableLockKey;
+    const hasTemporaryKey = inventory.singleUseLockKey;
     if (!hasPermanentKey && !hasTemporaryKey)
       return { passable: false, reason: "lock-needs-key" };
 
@@ -47,7 +46,7 @@ const unlock: Behavior = {
     if (!hasPermanentKey && hasTemporaryKey)
       commands.setState(
         actor.id,
-        patchBobbyInventory(actor.state, { temporaryKey: false }),
+        patchBobbyInventory(actor.state, { singleUseLockKey: false }),
       );
     if (seconds > 0)
       commands.emit({

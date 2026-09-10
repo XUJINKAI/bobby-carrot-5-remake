@@ -1,6 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { GameplayState } from "../core/GameplayState.js";
-import { readBobbyInventory } from "../entities/player/BobbyState.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 
@@ -47,7 +46,7 @@ export function buildGameplayHudModel(
       ),
     },
     inventories: actors.slice(0, 2).map((actor, index) => {
-      const inventory = readBobbyInventory(actor.state);
+      const inventory = actor.inventory;
       return {
         actorId: actor.id,
         role: index === 0 ? "primary" : "secondary",

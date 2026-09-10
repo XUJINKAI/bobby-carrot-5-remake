@@ -1,6 +1,7 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
 import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
+import { objectInteractionTraitBehavior } from "../world/interaction/ObjectInteractionBehavior.js";
 import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
 import { RuntimeEntityTypeId } from "./runtime-types.js";
@@ -21,18 +22,6 @@ const collect: Behavior = {
   },
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
-    const economy = query.global().economy;
-    if (self.entity.type === MapEntityTypeId.BONUS_COIN) {
-      commands.setGlobal("economy", {
-        ...economy,
-        bonusCoins: economy.bonusCoins + 1,
-      });
-    } else if (self.entity.type === MapEntityTypeId.GOLDEN_CARROT) {
-      commands.setGlobal("economy", {
-        ...economy,
-        goldenCarrots: economy.goldenCarrots + 1,
-      });
-    }
     commands.destroy(self.entity.id);
     commands.emit({
       type: `collect-${self.entity.type}`,
@@ -204,6 +193,7 @@ const requiresUnmountedReach: Behavior = {
 const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
   collectible: collect,
   dialog: dialogTraitBehavior,
+  interaction: objectInteractionTraitBehavior,
   hazard,
   mowable,
   "mower-conditional-overlay": mowerConditionalOverlay,

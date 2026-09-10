@@ -52,7 +52,10 @@ test("reach can complete on a collectible removed by onEnter", () => {
   );
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, true);
-  assert.equal(world.state.economy.goldenCarrots, 1);
+  assert.equal(
+    result.events.some((event) => event.type === "collect-golden-carrot"),
+    true,
+  );
   assert.equal(world.completed, true);
   assert.equal(
     world.entities
@@ -111,40 +114,6 @@ test("Exit 要求所有 Bobby 同时到达 Exit", () => {
   assert.equal(world.completed, true);
 });
 
-test("bonus beaver grants one trial key, then sells temporary keys for three coins", () => {
-  const map = corridor([
-    {
-      type: MapEntityTypeId.BEAVER,
-      x: 1,
-      y: 0,
-      interaction: "bonus-key-vendor",
-    },
-  ]);
-  const first = new World(map, { economy: { bonusCoins: 3 } });
-  const firstTouch = move(first, "right");
-  assert.equal(firstTouch.moves[0].moved, false);
-  assert.equal(actor(first).state?.temporaryKey, true);
-  assert.equal(first.state.economy.bonusCoins, 3);
-  assert.equal(first.state.profile.bonusKeyTrialUsed, true);
-  assert.equal(
-    firstTouch.events.some((event) => event.type === "bonus-key-trial-granted"),
-    true,
-  );
-
-  const later = new World(map, {
-    profile: { bonusKeyTrialUsed: true },
-    economy: { bonusCoins: 3 },
-  });
-  const laterTouch = move(later, "right");
-  assert.equal(laterTouch.moves[0].moved, false);
-  assert.equal(actor(later).state?.temporaryKey, true);
-  assert.equal(later.state.economy.bonusCoins, 0);
-  assert.equal(
-    laterTouch.events.some((event) => event.type === "spend-bonus-coins"),
-    true,
-  );
-});
-
 test("bonus lock consumes a temporary key and starts a death countdown", () => {
   const world = new World(
     corridor(
@@ -157,13 +126,13 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
         },
       ],
       undefined,
-      { temporaryKey: true },
+      { singleUseLockKey: true },
     ),
   );
-  actor(world).state = { temporaryKey: true };
+  actor(world).state = { singleUseLockKey: true };
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
-  assert.equal(actor(world).state?.temporaryKey, false);
+  assert.equal(actor(world).state?.singleUseLockKey, false);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
@@ -175,8 +144,16 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
 test("permanent key opens the lock without being consumed", () => {
   const world = new World(
     corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
-    { profile: { superKey: true } },
   );
+  world.step({
+    intents: [
+      {
+        type: "grant-lock-key",
+        actorId: actor(world).id,
+        kind: "reusable",
+      },
+    ],
+  });
   assert.equal(move(world, "right").moves[0].moved, true);
-  assert.equal(world.state.profile.superKey, true);
+  assert.equal(actor(world).state?.reusableLockKey, true);
 });

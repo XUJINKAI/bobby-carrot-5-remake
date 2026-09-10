@@ -227,7 +227,7 @@ async function verifyGameplayDialog(cdp, url) {
   if (text !== "你的金钥匙可以直接打开这把锁。")
     throw new Error(`Engine Dialog rendered unexpected text: ${text}`);
 
-  await dispatchKey(cdp, sessionId, "keyDown", "ArrowDown", 40);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -236,7 +236,7 @@ async function verifyGameplayDialog(cdp, url) {
       ),
     ),
   );
-  await dispatchKey(cdp, sessionId, "keyUp", "ArrowDown", 40);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
 }
 
 async function verifyReplayPanel(cdp, url) {
@@ -541,13 +541,13 @@ function dialogPayload() {
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
-      { type: "start", x: 0, y: 0 },
-      { type: "bobby", x: 0, y: 0 },
+      { type: "start", x: 0, y: 1 },
+      { type: "bobby", x: 0, y: 1 },
       {
         type: "beaver",
         x: 1,
         y: 0,
-        interaction: "bonus-key-vendor",
+        dialogue: "你的金钥匙可以直接打开这把锁。",
       },
       { type: "exit", x: 1, y: 1 },
     ],

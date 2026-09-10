@@ -16,6 +16,16 @@ export const ADVENTURE_ITEM_IDS = [
 ] as const;
 export type AdventureItemId = (typeof ADVENTURE_ITEM_IDS)[number];
 
+export const ADVENTURE_REWARD_TYPES = ["bonus-coin", "golden-carrot"] as const;
+export type AdventureRewardType = (typeof ADVENTURE_REWARD_TYPES)[number];
+
+export interface AdventureRewardClaim {
+  levelId: AdventureLevelId;
+  type: AdventureRewardType;
+  x: number;
+  y: number;
+}
+
 /** 需要持久化的一次性 Adventure 事件；只接受这里明确登记的 ID。 */
 export const ADVENTURE_EVENT_IDS = ["bonus-key-trial"] as const;
 export type AdventureEventId = (typeof ADVENTURE_EVENT_IDS)[number];
@@ -34,6 +44,7 @@ export interface AdventureSave {
     bonusCoins: number;
     goldenCarrots: number;
   };
+  claimedRewards: AdventureRewardClaim[];
   items: AdventureItemId[];
 }
 
@@ -47,6 +58,7 @@ export function createAdventureSave(): AdventureSave {
       resumeLevelId: "1-1",
     },
     economy: { bonusCoins: 0, goldenCarrots: 0 },
+    claimedRewards: [],
     items: [],
   };
 }
@@ -72,6 +84,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
   const completedEvents = stringArray(campaign.completedEvents).filter(isAdventureEventId);
   const parsedResume = parseAdventureLevelId(String(campaign.resumeLevelId ?? ""));
   const items = stringArray(raw.items).filter(isAdventureItemId);
+  const claimedRewards = normalizeRewardClaims(raw.claimedRewards);
   return {
     schemaVersion: 1,
     game: BC5R_GAME_ID,
@@ -84,6 +97,7 @@ export function normalizeAdventureSave(value: unknown): AdventureSave {
       bonusCoins: nonNegativeInteger(economy.bonusCoins),
       goldenCarrots: nonNegativeInteger(economy.goldenCarrots),
     },
+    claimedRewards,
     items: unique(items).sort(),
   };
 }
@@ -206,6 +220,47 @@ function isAdventureItemId(value: string): value is AdventureItemId {
 
 function isAdventureEventId(value: string): value is AdventureEventId {
   return (ADVENTURE_EVENT_IDS as readonly string[]).includes(value);
+}
+
+function normalizeRewardClaims(value: unknown): AdventureRewardClaim[] {
+  if (!Array.isArray(value))
+    throw new Error("Adventure Save claimedRewards 必须为数组");
+  const claims = value.map((item, index) => {
+    const raw = objectValue(item);
+    const level = parseAdventureLevelId(String(raw.levelId ?? ""));
+    if (!level)
+      throw new Error(`Adventure Save claimedRewards[${index}].levelId 无效`);
+    if (!isAdventureRewardType(raw.type))
+      throw new Error(`Adventure Save claimedRewards[${index}].type 无效`);
+    const x = coordinate(raw.x);
+    const y = coordinate(raw.y);
+    if (x === null || y === null)
+      throw new Error(`Adventure Save claimedRewards[${index}] 坐标无效`);
+    return { levelId: level.id, type: raw.type, x, y };
+  });
+  const uniqueClaims = new Map(
+    claims.map((claim) => [rewardClaimKey(claim), claim]),
+  );
+  return [...uniqueClaims.values()].sort((left, right) =>
+    rewardClaimKey(left).localeCompare(rewardClaimKey(right)),
+  );
+}
+
+function isAdventureRewardType(value: unknown): value is AdventureRewardType {
+  return (
+    typeof value === "string" &&
+    (ADVENTURE_REWARD_TYPES as readonly string[]).includes(value)
+  );
+}
+
+function coordinate(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+export function rewardClaimKey(claim: AdventureRewardClaim): string {
+  return `${claim.levelId}:${claim.type}:${claim.x}:${claim.y}`;
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

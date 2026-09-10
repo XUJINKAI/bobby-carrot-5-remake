@@ -4,7 +4,10 @@ import {
   type BobbyLocomotionTiming,
   type BobbyLocomotionTimingOverride,
 } from "../entities/player/BobbyLocomotion.js";
-import { readBobbyInventory } from "../entities/player/BobbyState.js";
+import {
+  readBobbyInventory,
+  readBobbyLocomotionMoveMs,
+} from "../entities/player/BobbyState.js";
 import {
   resolveControlInput,
   type ControlBinding,
@@ -15,13 +18,14 @@ import {
   type EngineTimingOptions,
 } from "../time/EngineTiming.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
-import type { EconomyState, ProfileCapabilities } from "../world/GlobalState.js";
 import { World, type WorldSnapshot } from "../world/World.js";
 import type { MoveResult, WinConditionState } from "../world/WorldTypes.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
   WorldIntentGroup,
+  InitialActorIntent,
+  ActorEffectIntent,
 } from "../world/movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
@@ -34,7 +38,6 @@ import {
   type HistoryPolicy,
 } from "./HistoryPolicy.js";
 import type { GameplayState } from "./GameplayState.js";
-import type { RuntimeEntityStateInitializer } from "./GameOptions.js";
 
 export type GameplayInputAttempt = "moved" | "blocked" | "busy" | "consumed";
 
@@ -59,18 +62,19 @@ export interface GameplayTickResult {
 }
 
 export interface GameplaySessionOptions {
-  profile?: Partial<ProfileCapabilities>;
-  economy?: Partial<EconomyState>;
   timing?: EngineTimingOptions;
   bobbyLocomotion?: BobbyLocomotionTimingOverride;
   history?: HistoryPolicy;
   controls?: readonly ControlBinding[];
-  initializeEntityState?: RuntimeEntityStateInitializer;
+  initialActorIntents?: readonly InitialActorIntent[];
+  /** ReplayRunner 使用的已解析 tick 0 动作。 */
+  initialIntents?: readonly ActorEffectIntent[];
 }
 
 export interface SerializableGameplaySetup {
   worldHz: number;
   bobbyLocomotion: BobbyLocomotionTiming;
+  initialIntents: readonly ActorEffectIntent[];
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
@@ -82,10 +86,10 @@ export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
 export class GameplaySession {
   readonly clock: WorldClock;
   readonly bobbyLocomotion: BobbyLocomotionTiming;
-  private readonly profile: Partial<ProfileCapabilities>;
-  private readonly initialEconomy: Partial<EconomyState>;
   private readonly historyPolicy: HistoryPolicy;
-  private readonly initializeEntityState: RuntimeEntityStateInitializer | null;
+  private readonly initialActorIntents: readonly InitialActorIntent[];
+  private readonly configuredInitialIntents: readonly ActorEffectIntent[] | null;
+  private initialIntentsValue: readonly ActorEffectIntent[] = [];
   private configuredControls: readonly ControlBinding[] | null;
   private controlBindings: readonly ControlBinding[] = [];
   private primaryActorIdValue: EntityId | null = null;
@@ -99,12 +103,13 @@ export class GameplaySession {
     const timing = resolveEngineTiming(options.timing);
     this.clock = new WorldClock(timing.worldHz, timing.worldSpeed);
     this.bobbyLocomotion = resolveBobbyLocomotionTiming(options.bobbyLocomotion);
-    this.profile = options.profile ?? {};
-    this.initialEconomy = options.economy ?? {};
     this.historyPolicy = structuredClone(
       options.history ?? DEFAULT_HISTORY_POLICY,
     );
-    this.initializeEntityState = options.initializeEntityState ?? null;
+    this.initialActorIntents = structuredClone(options.initialActorIntents ?? []);
+    this.configuredInitialIntents = options.initialIntents
+      ? structuredClone(options.initialIntents)
+      : null;
     this.configuredControls = options.controls
       ? structuredClone(options.controls)
       : null;
@@ -152,7 +157,9 @@ export class GameplaySession {
         id,
         position: { ...entity.anchor },
         facing: entity.direction ?? ("down" as Direction),
-        ...(entity.state ? { state: structuredClone(entity.state) } : {}),
+        inventory: readBobbyInventory(entity.state),
+        moveDurationMs:
+          readBobbyLocomotionMoveMs(entity.state) ?? this.bobbyLocomotion.moveMs,
       };
     });
     const primary = this.primaryActorIdValue === null
@@ -167,8 +174,6 @@ export class GameplaySession {
       player: primary ? { ...primary.anchor } : null,
       facing: primary?.direction ?? null,
       inventory: readBobbyInventory(primary?.state),
-      economy: structuredClone(state.economy),
-      profile: structuredClone(state.profile),
       bonusCoinsInLevel: state.bonusCoinsInLevel,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
       canUndo: this.canUndo,
@@ -183,40 +188,32 @@ export class GameplaySession {
   }
 
   get replaySetup(): SerializableGameplaySetup | null {
-    if (this.initializeEntityState) return null;
     return {
       worldHz: this.clock.hz,
       bobbyLocomotion: structuredClone(this.bobbyLocomotion),
+      initialIntents: structuredClone(this.initialIntentsValue),
     };
   }
 
   loadLevel(level: LevelMap): void {
     this.initialLevel = structuredClone(level);
-    this.worldValue = new World(level, {
-      profile: this.profile,
-      economy: this.initialEconomy,
-    });
-    this.applyRuntimeEntityStateInitializer();
+    this.worldValue = new World(level);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
+    this.applyInitialActorIntents(this.configuredInitialIntents ?? undefined);
     this.clock.reset();
     this.clearHistory();
   }
 
-  restart(): void {
+  restart(initialIntents?: readonly ActorEffectIntent[]): void {
     if (!this.initialLevel) return;
     const wasPaused = this.clock.paused;
-    const profile = this.worldValue
-      ? structuredClone(this.world.state.profile)
-      : this.profile;
-    const economy = this.worldValue
-      ? structuredClone(this.world.state.economy)
-      : this.initialEconomy;
-    Object.assign(this.profile, profile);
-    this.worldValue = new World(this.initialLevel, { profile, economy });
-    this.applyRuntimeEntityStateInitializer();
+    this.worldValue = new World(this.initialLevel);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
+    this.applyInitialActorIntents(
+      initialIntents ?? this.configuredInitialIntents ?? undefined,
+    );
     this.clock.reset();
     if (wasPaused) this.clock.pause();
     this.clearHistory();
@@ -226,17 +223,6 @@ export class GameplaySession {
     const controls = structuredClone(bindings);
     this.configuredControls = controls;
     this.controlBindings = controls;
-  }
-
-  setProfile(profile: Partial<ProfileCapabilities>): void {
-    Object.assign(this.profile, profile);
-    if (!this.worldValue) return;
-    this.world.setProfile(profile);
-    this.world.setMotionDurationMs(this.gameplayMotionDuration());
-  }
-
-  setEconomy(economy: Partial<EconomyState>): void {
-    if (this.worldValue) this.world.setEconomy(economy);
   }
 
   undo(): boolean {
@@ -430,10 +416,11 @@ export class GameplaySession {
   } {
     const runnable: WorldIntent[] = [];
     const blocked: WorldIntent[] = [];
-    for (const intent of intents)
-      (this.world.isInputBlockedFor(intent.actorId) ? blocked : runnable).push(
-        intent,
-      );
+    for (const intent of intents) {
+      const actorBusy =
+        intent.type === "move" && this.world.isInputBlockedFor(intent.actorId);
+      (actorBusy ? blocked : runnable).push(intent);
+    }
     return { runnable, blocked };
   }
 
@@ -494,23 +481,47 @@ export class GameplaySession {
     ];
   }
 
-  private applyRuntimeEntityStateInitializer(): void {
-    if (!this.initializeEntityState) return;
-    for (const entity of this.world.entities.all()) {
-      const patch = this.initializeEntityState(structuredClone(entity));
-      if (!patch) continue;
-      entity.state = {
-        ...(entity.state ?? {}),
-        ...structuredClone(patch),
-      };
-    }
+  private gameplayMotionDuration(): number {
+    return this.bobbyLocomotion.moveMs;
   }
 
-  private gameplayMotionDuration(): number {
-    let duration = this.bobbyLocomotion.moveMs;
-    if (this.world.state.profile.speedShoes)
-      duration *= this.bobbyLocomotion.speedShoesScale;
-    return duration;
+  private applyInitialActorIntents(
+    resolvedIntents?: readonly ActorEffectIntent[],
+  ): void {
+    const intents: ActorEffectIntent[] = resolvedIntents
+      ? [...structuredClone(resolvedIntents)]
+      : [];
+    if (resolvedIntents) {
+      this.initialIntentsValue = structuredClone(intents);
+      if (intents.length > 0)
+        this.world.step({ intents, historyBoundary: false });
+      return;
+    }
+    for (const intent of this.initialActorIntents) {
+      const targets = intent.actor === "all"
+        ? this.actorIds
+        : this.primaryActorIdValue === null
+          ? []
+          : [this.primaryActorIdValue];
+      for (const actorId of targets) {
+        if (intent.type === "grant-lock-key") {
+          intents.push({
+            type: intent.type,
+            actorId,
+            kind: intent.kind,
+          });
+        } else {
+          intents.push({
+            type: intent.type,
+            actorId,
+            moveDurationMs: intent.moveDurationMs,
+          });
+        }
+      }
+    }
+    this.initialIntentsValue = structuredClone(intents);
+    if (intents.length > 0)
+      this.world.step({ intents, historyBoundary: false });
   }
 
   private clearHistory(): void {

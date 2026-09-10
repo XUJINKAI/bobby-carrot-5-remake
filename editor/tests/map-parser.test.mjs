@@ -29,6 +29,8 @@ test("Map parser 接受 canonical Entity 和显式 Surface variant", () => {
     { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
     { type: "water", x: 1, y: 0, variant: "ripple" },
     { type: "sandman", x: 1, y: 1, dialogue: "测试对白" },
+    { type: "beaver", x: 2, y: 0, dialogue: "欢迎" },
+    { type: "dream-machine", x: 2, y: 1, dialogue: "做个好梦" },
   ]);
   assert.deepEqual(parseMapDocument(document), document);
 });

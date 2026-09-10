@@ -38,6 +38,20 @@ interface LevelEntity {
 
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
+Sandman、Beaver 与 Dream Machine 可以保存简单的字面对白：
+
+```json
+{
+  "type": "sandman",
+  "x": 5,
+  "y": 4,
+  "dialogue": "前面的冰面很滑，小心脚下。"
+}
+```
+
+`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。角色被碰触时 Engine 发出
+`dialog` 事件并显示该文本；需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
+
 例如同一种 Switch 不再使用 `switch-raised` / `switch-pressed` 两种 type：
 
 ```json

@@ -22,7 +22,39 @@ export interface MoveIntent {
   cause: MoveCause;
 }
 
-export type WorldIntent = MoveIntent;
+/** 修改 actor 后续移动的实际时长；已经开始的 WorldMotion 保持原时长。 */
+export interface SetActorLocomotionIntent {
+  type: "set-actor-locomotion";
+  actorId: EntityId;
+  moveDurationMs: number;
+}
+
+/** 为 actor 提供地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
+export interface GrantLockKeyIntent {
+  type: "grant-lock-key";
+  actorId: EntityId;
+  kind: "single-use" | "reusable";
+  /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
+  requestId?: number;
+}
+
+export type ActorEffectIntent =
+  | SetActorLocomotionIntent
+  | GrantLockKeyIntent;
+
+export type WorldIntent = MoveIntent | ActorEffectIntent;
+
+export type InitialActorIntent =
+  | {
+      type: "grant-lock-key";
+      actor: "primary" | "all";
+      kind: GrantLockKeyIntent["kind"];
+    }
+  | {
+      type: "set-actor-locomotion";
+      actor: "primary" | "all";
+      moveDurationMs: number;
+    };
 
 /** 一次玩家/系统语义操作可以同时向 World 提交多个 intent。 */
 export interface WorldIntentGroup {

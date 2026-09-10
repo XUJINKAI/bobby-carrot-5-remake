@@ -2,6 +2,7 @@ import type { Direction } from "@bobby/model";
 import type { BobbyLocomotionTiming } from "../entities/player/BobbyLocomotion.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { Replay } from "./ReplayFormat.js";
+import type { ReplayGameplayIntent } from "./ReplayFormat.js";
 
 /** 浏览器播放与无头 Runner 共用同一份 Replay 输入合同。 */
 export function validateReplay(
@@ -18,14 +19,17 @@ export function validateReplay(
   const replayLocomotion = replay.runtime?.bobbyLocomotion;
   if (
     !replayLocomotion ||
-    replayLocomotion.moveMs !== bobbyLocomotion.moveMs ||
-    replayLocomotion.speedShoesScale !== bobbyLocomotion.speedShoesScale
+    replayLocomotion.moveMs !== bobbyLocomotion.moveMs
   )
     throw new Error("Replay 的 Bobby 运动参数与当前 Game 不兼容");
+  if (!Array.isArray(replay.initialIntents))
+    throw new Error("Replay initialIntents 必须是数组");
   if (!Array.isArray(replay.frames))
     throw new Error("Replay frames 必须是数组");
 
   const actors = new Set(actorIds);
+  for (const intent of replay.initialIntents)
+    validateIntent(intent, actors, false);
   let previousTick = -1;
   for (const frame of replay.frames) {
     if (
@@ -42,15 +46,37 @@ export function validateReplay(
       if (!Array.isArray(group.intents))
         throw new Error("Replay input group intents 必须是数组");
       for (const intent of group.intents) {
-        if (
-          intent.type !== "move" ||
-          !actors.has(intent.actorId) ||
-          !isDirection(intent.direction)
-        )
-          throw new Error("Replay 包含无效的玩家移动输入");
+        validateIntent(intent, actors, true);
       }
     }
   }
+}
+
+function validateIntent(
+  intent: ReplayGameplayIntent,
+  actors: ReadonlySet<EntityId>,
+  allowMove: boolean,
+): void {
+  if (!intent || typeof intent !== "object" || !actors.has(intent.actorId))
+    throw new Error("Replay 包含无效的 actor intent");
+  if (intent.type === "move") {
+    if (!allowMove || !isDirection(intent.direction))
+      throw new Error("Replay 包含无效的玩家移动输入");
+    return;
+  }
+  if (intent.type === "set-actor-locomotion") {
+    if (
+      !Number.isFinite(intent.moveDurationMs) ||
+      intent.moveDurationMs <= 0
+    )
+      throw new Error("Replay 包含无效的 Bobby 移动时长");
+    return;
+  }
+  if (
+    intent.type !== "grant-lock-key" ||
+    (intent.kind !== "single-use" && intent.kind !== "reusable")
+  )
+    throw new Error("Replay 包含无效的地图内语义动作");
 }
 
 function isDirection(value: unknown): value is Direction {

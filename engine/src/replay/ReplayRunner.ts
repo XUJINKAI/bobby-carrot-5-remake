@@ -1,8 +1,5 @@
 import type { LevelMap } from "@bobby/model";
-import {
-  GameplaySession,
-  type GameplaySessionOptions,
-} from "../core/GameplaySession.js";
+import { GameplaySession } from "../core/GameplaySession.js";
 import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
 import {
   type Replay,
@@ -18,21 +15,15 @@ export interface ReplayReport {
   };
 }
 
-export type ReplayRunOptions = Pick<
-  GameplaySessionOptions,
-  "profile" | "economy"
->;
-
 /** Replay 每次从 LevelMap 起点执行，不读取或保存中途 WorldSnapshot。 */
 export function runReplay(
   level: LevelMap,
   replay: Replay,
-  options: ReplayRunOptions = {},
 ): ReplayReport {
   const session = new GameplaySession({
-    ...options,
     timing: { worldHz: replay.runtime.worldHz },
     bobbyLocomotion: replay.runtime.bobbyLocomotion,
+    initialIntents: replay.initialIntents,
     history: { mode: "disabled" },
   });
   session.loadLevel(level);
@@ -59,11 +50,15 @@ export function replayInputGroups(
 function fromReplayInputGroup(group: ReplayInputGroup): WorldIntentGroup {
   return {
     historyBoundary: true,
-    intents: group.intents.map((intent) => ({
-      type: "move",
-      actorId: intent.actorId,
-      direction: intent.direction,
-      cause: { type: "player-input", source: intent.source ?? "replay" },
-    })),
+    intents: group.intents.map((intent) =>
+      intent.type === "move"
+        ? {
+            type: "move",
+            actorId: intent.actorId,
+            direction: intent.direction,
+            cause: { type: "player-input", source: intent.source ?? "replay" },
+          }
+        : structuredClone(intent),
+    ),
   };
 }

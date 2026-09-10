@@ -11,8 +11,29 @@ export interface ReplayMoveIntent {
   source?: string;
 }
 
+export interface ReplayGrantLockKeyIntent {
+  type: "grant-lock-key";
+  actorId: EntityId;
+  kind: "single-use" | "reusable";
+}
+
+export interface ReplaySetActorLocomotionIntent {
+  type: "set-actor-locomotion";
+  actorId: EntityId;
+  moveDurationMs: number;
+}
+
+export type ReplayGameplayIntent =
+  | ReplayMoveIntent
+  | ReplayGrantLockKeyIntent
+  | ReplaySetActorLocomotionIntent;
+
+export type ReplayInitialIntent =
+  | ReplayGrantLockKeyIntent
+  | ReplaySetActorLocomotionIntent;
+
 export interface ReplayInputGroup {
-  intents: ReplayMoveIntent[];
+  intents: ReplayGameplayIntent[];
 }
 
 export interface ReplayFrame {
@@ -41,6 +62,7 @@ export interface Replay {
   formatVersion: typeof REPLAY_FORMAT_VERSION;
   meta: ReplayMeta;
   runtime: ReplayRuntimeSetup;
+  initialIntents: ReplayInitialIntent[];
   endTick: number;
   frames: ReplayFrame[];
 }

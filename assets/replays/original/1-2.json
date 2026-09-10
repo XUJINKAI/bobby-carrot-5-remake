@@ -9,10 +9,16 @@
   "runtime": {
     "worldHz": 60,
     "bobbyLocomotion": {
-      "moveMs": 350,
-      "speedShoesScale": 0.76
+      "moveMs": 350
     }
   },
+  "initialIntents": [
+    {
+      "type": "grant-lock-key",
+      "actorId": 38,
+      "kind": "reusable"
+    }
+  ],
   "endTick": 2405,
   "frames": [
     {

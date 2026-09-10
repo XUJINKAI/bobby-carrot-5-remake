@@ -33,6 +33,7 @@ export interface GameplayRuntime {
   game: Game;
   input: InputController;
   audio: AudioBackend;
+  dialog: GameplayDialog | null;
   warnings: readonly LevelRuntimeWarning[];
   destroy(): void;
 }
@@ -82,6 +83,7 @@ export async function createGameplayRuntime(
     game,
     input,
     audio,
+    dialog,
     warnings,
     destroy(): void {
       if (!inputOwnedByGame) input.destroy();

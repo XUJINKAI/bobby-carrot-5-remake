@@ -162,7 +162,7 @@ export class ReplayPlayback {
 
   private resetToStart(replay: Replay): void {
     this.session.clock.setHz(replay.runtime.worldHz);
-    this.session.restart();
+    this.session.restart(replay.initialIntents);
   }
 
   private idleTicksAvailable(playback: ActiveReplayPlayback | null): number {
