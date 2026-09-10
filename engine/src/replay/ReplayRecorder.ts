@@ -77,11 +77,12 @@ function toReplayIntent(
 function toReplayActorEffectIntent(
   intent: ActorEffectIntent,
 ): ReplayInitialIntent {
-  if (intent.type === "grant-lock-key") {
+  if (intent.type === "set-actor-lock-key") {
     return {
       type: intent.type,
       actorId: intent.actorId,
       kind: intent.kind,
+      enabled: intent.enabled,
     };
   }
   return {

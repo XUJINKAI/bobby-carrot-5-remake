@@ -53,6 +53,63 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
     presentationClock,
     timing,
     input: null,
+    setup: {
+      worldHz: 60,
+      bobbyLocomotion: { moveMs: 350 },
+      initialIntents: [
+        {
+          type: "set-actor-locomotion",
+          actorId: bobby.id,
+          moveDurationMs: 280,
+        },
+      ],
+    },
+    controls: [{ input: "external", targets: [{ entityId: bobby.id }] }],
+    gameplayState: {
+      status: "playing",
+      deathReason: null,
+      moves: 0,
+      primaryActorId: bobby.id,
+      actors: [
+        {
+          id: bobby.id,
+          position: { x: 0, y: 0 },
+          facing: "right",
+          inventory: {
+            gas: false,
+            kite: false,
+            shovel: false,
+            beans: 0,
+            singleUseLockKey: false,
+            reusableLockKey: false,
+          },
+          moveDurationMs: 280,
+        },
+      ],
+      player: { x: 0, y: 0 },
+      facing: "right",
+      inventory: {
+        gas: false,
+        kite: false,
+        shovel: false,
+        beans: 0,
+        singleUseLockKey: false,
+        reusableLockKey: false,
+      },
+      bonusCoinsInLevel: 0,
+      goldenCarrotsInLevel: 0,
+      canUndo: false,
+      canRedo: false,
+    },
+    pendingIntents: [
+      {
+        type: "set-actor-lock-key",
+        actorId: bobby.id,
+        kind: "single-use",
+        enabled: true,
+      },
+    ],
+    replay: { recording: true, playing: false, paused: false },
     selection: { cell: { x: 0, y: 0 }, entityId: bobby.id },
   });
 
@@ -86,6 +143,13 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
+  assert.equal(snapshot.world?.setup.gameplay.bobbyLocomotion.moveMs, 350);
+  assert.equal(snapshot.world?.setup.gameplay.initialIntents.length, 1);
+  assert.equal(snapshot.world?.setup.controls[0]?.input, "external");
+  assert.equal(snapshot.world?.current.gameplay.actors[0]?.moveDurationMs, 280);
+  assert.equal(snapshot.world?.pendingIntents[0]?.type, "set-actor-lock-key");
+  assert.equal(snapshot.world?.replay.recording, true);
+  assert.equal(snapshot.world?.canDispatchActorEffects, true);
 });
 
 test("Debug snapshot can track a non-primary player actor", () => {
@@ -158,7 +222,18 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
     new URL("../src/debug/DebugControlPanel.ts", import.meta.url),
     "utf8",
   );
-  assert.match(source, /type DebugTab = "actor" \| "timeline" \| "inspect"/);
+  const timelineSource = fs.readFileSync(
+    new URL("../src/debug/DebugTimelinePanel.ts", import.meta.url),
+    "utf8",
+  );
+  const worldSource = fs.readFileSync(
+    new URL("../src/debug/DebugWorldPanel.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /type DebugTab = "inspect" \| "timeline" \| "actor" \| "world"/,
+  );
   assert.match(controlSource, /engine-debug-control-rail/);
   assert.match(source, /engine-debug-sidebar/);
   assert.match(source, /engine-debug-tool-strip/);
@@ -183,15 +258,22 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
   assert.match(controlSource, /private readonly nextChangeButton/);
   assert.match(controlSource, /private readonly actorSelect/);
   assert.match(controlSource, /Double-click map: teleport selected actor/);
-  assert.match(source, /\["actor", "Actor"\]/);
-  assert.match(source, /\["timeline", "Timeline"\]/);
   assert.match(source, /\["inspect", "Inspect"\]/);
+  assert.match(source, /\["timeline", "Timeline"\]/);
+  assert.match(source, /\["actor", "Actor"\]/);
+  assert.match(source, /\["world", "World"\]/);
+  assert.match(source, /this\.setTab\("inspect"\)/);
   assert.match(source, /Runtime actions/);
   assert.match(source, /Input channels/);
   assert.match(controlSource, /setHeldDirection/);
   assert.match(controlSource, /selectActor/);
   assert.match(controlSource, /stepPresentationToNextSprite/);
-  assert.match(source, /50 events/);
+  assert.match(timelineSource, /entry\.kind !== "world-tick"/);
+  assert.match(timelineSource, /this\.worldTicks\.checked = false/);
+  assert.match(worldSource, /Intent injector/);
+  assert.match(worldSource, /set-actor-locomotion/);
+  assert.match(worldSource, /set-actor-lock-key/);
+  assert.match(worldSource, /dispatchIntent/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);
 });
@@ -240,12 +322,16 @@ test("Debug Sidebar keeps details DOM stable during presentation refresh", () =>
     new URL("../src/debug/DebugSidebar.ts", import.meta.url),
     "utf8",
   );
+  const timelineSource = fs.readFileSync(
+    new URL("../src/debug/DebugTimelinePanel.ts", import.meta.url),
+    "utf8",
+  );
   assert.match(source, /private readonly actorInputDetails/);
   assert.match(source, /private readonly actorPresentationDetails/);
   assert.match(source, /private setJson\(/);
   assert.doesNotMatch(source, /this\.actorPanel\.replaceChildren/);
   assert.doesNotMatch(source, /this\.inspectPanel\.replaceChildren/);
-  assert.match(source, /if \(key === this\.timelineKey\) return/);
+  assert.match(timelineSource, /if \(key === this\.renderKey\) return/);
 });
 
 test("Debug World pause freezes only the clock and preserves input state", () => {

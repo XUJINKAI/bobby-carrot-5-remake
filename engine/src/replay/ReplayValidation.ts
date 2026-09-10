@@ -73,8 +73,9 @@ function validateIntent(
     return;
   }
   if (
-    intent.type !== "grant-lock-key" ||
-    (intent.kind !== "single-use" && intent.kind !== "reusable")
+    intent.type !== "set-actor-lock-key" ||
+    (intent.kind !== "single-use" && intent.kind !== "reusable") ||
+    typeof intent.enabled !== "boolean"
   )
     throw new Error("Replay 包含无效的地图内语义动作");
 }

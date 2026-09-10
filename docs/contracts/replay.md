@@ -43,7 +43,7 @@ Replay 记录控制映射之后、World 判定之前的 `WorldIntentGroup`。因
 - 多 Actor 同时操作的分组；
 - 输入的 Tick 与组内顺序；
 - 被阻挡、处于 busy 状态或被 RuntimeAction 消费的输入尝试。
-- 宿主提交的 `set-actor-locomotion`、`grant-lock-key` 等封闭 gameplay 动作。
+- 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作。
 
 键盘、Pointer 和摇杆原始事件不进入 Replay。机关产生的 forced intent 由 World 在重放
 时重新计算。
@@ -79,9 +79,10 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   },
   "initialIntents": [
     {
-      "type": "grant-lock-key",
+      "type": "set-actor-lock-key",
       "actorId": 1,
-      "kind": "reusable"
+      "kind": "reusable",
+      "enabled": true
     }
   ],
   "endTick": 120,

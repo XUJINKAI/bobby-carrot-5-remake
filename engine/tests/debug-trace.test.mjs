@@ -5,6 +5,7 @@ import { DebugTraceRecorder } from "../dist/debug/DebugTrace.js";
 test("Debug trace 同时保留观察顺序、WorldDelta 顺序和双时钟位置", () => {
   const recorder = new DebugTraceRecorder(2);
   recorder.record({
+    kind: "world-delta",
     category: "motion",
     summary: "marker interaction",
     worldTick: 7,
@@ -13,6 +14,7 @@ test("Debug trace 同时保留观察顺序、WorldDelta 顺序和双时钟位置
     presentationFrame: 26,
   });
   recorder.record({
+    kind: "world-delta",
     category: "lifecycle",
     summary: "#3 downed",
     worldTick: 7,
@@ -32,5 +34,32 @@ test("Debug trace 同时保留观察顺序、WorldDelta 顺序和双时钟位置
       { seq: 1, worldSequence: 12, worldTick: 7, presentationFrame: 26 },
       { seq: 2, worldSequence: 13, worldTick: 7, presentationFrame: 26 },
     ],
+  );
+});
+
+test("连续 World Tick 合并为最近一条可过滤记录", () => {
+  const recorder = new DebugTraceRecorder(3);
+  recorder.record({
+    kind: "world-tick",
+    category: "world",
+    summary: "world tick 1 -> 2",
+    worldTick: 2,
+    presentationFrame: 2,
+  });
+  recorder.record({
+    kind: "world-tick",
+    category: "world",
+    summary: "world tick 2 -> 3",
+    worldTick: 3,
+    presentationFrame: 3,
+  });
+
+  assert.deepEqual(
+    recorder.snapshot().map((entry) => ({
+      seq: entry.seq,
+      kind: entry.kind,
+      worldTick: entry.worldTick,
+    })),
+    [{ seq: 2, kind: "world-tick", worldTick: 3 }],
   );
 });

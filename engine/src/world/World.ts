@@ -687,17 +687,17 @@ export class World {
         patchBobbyInventory(
           state,
           intent.kind === "reusable"
-            ? { reusableLockKey: true }
-            : { singleUseLockKey: true },
+            ? { reusableLockKey: intent.enabled }
+            : { singleUseLockKey: intent.enabled },
         ),
       );
       queue.emit({
-        type: "lock-key-granted",
+        type: "actor-lock-key-changed",
         entityId: actor.id,
         ...(intent.requestId !== undefined
           ? { requestId: intent.requestId }
           : {}),
-        data: { kind: intent.kind },
+        data: { kind: intent.kind, enabled: intent.enabled },
       });
     }
     for (const [entityId, state] of states) {

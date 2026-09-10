@@ -29,26 +29,28 @@ export interface SetActorLocomotionIntent {
   moveDurationMs: number;
 }
 
-/** 为 actor 提供地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
-export interface GrantLockKeyIntent {
-  type: "grant-lock-key";
+/** 设置 actor 的地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
+export interface SetActorLockKeyIntent {
+  type: "set-actor-lock-key";
   actorId: EntityId;
   kind: "single-use" | "reusable";
+  enabled: boolean;
   /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
   requestId?: number;
 }
 
 export type ActorEffectIntent =
   | SetActorLocomotionIntent
-  | GrantLockKeyIntent;
+  | SetActorLockKeyIntent;
 
 export type WorldIntent = MoveIntent | ActorEffectIntent;
 
 export type InitialActorIntent =
   | {
-      type: "grant-lock-key";
+      type: "set-actor-lock-key";
       actor: "primary" | "all";
-      kind: GrantLockKeyIntent["kind"];
+      kind: SetActorLockKeyIntent["kind"];
+      enabled: boolean;
     }
   | {
       type: "set-actor-locomotion";

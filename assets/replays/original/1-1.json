@@ -14,9 +14,10 @@
   },
   "initialIntents": [
     {
-      "type": "grant-lock-key",
+      "type": "set-actor-lock-key",
       "actorId": 58,
-      "kind": "reusable"
+      "kind": "reusable",
+      "enabled": true
     }
   ],
   "endTick": 424,

@@ -463,6 +463,55 @@ async function verifyReplayPanel(cdp, url) {
   if (engineSpeeds.length !== 2 || engineSpeeds.some((speed) => speed !== "20"))
     throw new Error("Replay panel time scale did not persist in both Engine clocks");
 
+  const debugLayout = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      tabs: [...document.querySelectorAll('[data-debug-tab]')]
+        .map((button) => button.dataset.debugTab),
+      inspectVisible: !document.querySelector('[data-debug-tab-panel="inspect"]')?.hidden,
+      worldTicksChecked: document.querySelector('[data-debug-timeline-world-ticks]')?.checked,
+    }))()`,
+  );
+  if (debugLayout.tabs.join(",") !== "inspect,timeline,actor,world")
+    throw new Error("Engine Debug tabs did not use the expected order");
+  if (!debugLayout.inspectVisible || debugLayout.worldTicksChecked !== false)
+    throw new Error("Engine Debug did not open Inspect with World ticks filtered");
+
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      document.querySelector('[data-debug-tab="world"]').click();
+      const input = document.querySelector('[data-debug-intent-move-duration]');
+      input.value = '123';
+      document.querySelector('[data-debug-intent-dispatch]').click();
+      return true;
+    })()`,
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-debug-tab-panel=\"world\"]')?.textContent ?? ''",
+      ),
+    ).includes('"moveDurationMs": 123'),
+  );
+  const worldText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab-panel=\"world\"]')?.textContent ?? ''",
+  );
+  if (!worldText.includes("initialIntents") || !worldText.includes("bobbyLocomotion"))
+    throw new Error("Engine Debug World did not expose setup and initial intents");
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab=\"timeline\"]')?.click(); true",
+  );
+  const timelineText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab-panel=\"timeline\"]')?.textContent ?? ''",
+  );
+  if (!timelineText.includes("set-actor-locomotion"))
+    throw new Error("Engine Debug intent injection did not enter Timeline");
+
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",
     { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },

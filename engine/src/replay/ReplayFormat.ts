@@ -11,10 +11,11 @@ export interface ReplayMoveIntent {
   source?: string;
 }
 
-export interface ReplayGrantLockKeyIntent {
-  type: "grant-lock-key";
+export interface ReplaySetActorLockKeyIntent {
+  type: "set-actor-lock-key";
   actorId: EntityId;
   kind: "single-use" | "reusable";
+  enabled: boolean;
 }
 
 export interface ReplaySetActorLocomotionIntent {
@@ -25,11 +26,11 @@ export interface ReplaySetActorLocomotionIntent {
 
 export type ReplayGameplayIntent =
   | ReplayMoveIntent
-  | ReplayGrantLockKeyIntent
+  | ReplaySetActorLockKeyIntent
   | ReplaySetActorLocomotionIntent;
 
 export type ReplayInitialIntent =
-  | ReplayGrantLockKeyIntent
+  | ReplaySetActorLockKeyIntent
   | ReplaySetActorLocomotionIntent;
 
 export interface ReplayInputGroup {

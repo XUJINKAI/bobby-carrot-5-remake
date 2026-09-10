@@ -504,11 +504,12 @@ export class GameplaySession {
           ? []
           : [this.primaryActorIdValue];
       for (const actorId of targets) {
-        if (intent.type === "grant-lock-key") {
+        if (intent.type === "set-actor-lock-key") {
           intents.push({
             type: intent.type,
             actorId,
             kind: intent.kind,
+            enabled: intent.enabled,
           });
         } else {
           intents.push({

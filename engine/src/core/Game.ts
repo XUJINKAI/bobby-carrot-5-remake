@@ -164,6 +164,19 @@ export class Game {
           presentationClock: this.presentationClock,
           timing: this.timing,
           input: this.inputController?.inspectMovement() ?? null,
+          setup: this.session.replaySetup,
+          controls: this.session.controls,
+          gameplayState: this.worldValue ? this.session.state : null,
+          pendingIntents: this.queuedIntentGroups.flatMap((group) =>
+            group.intents.filter(
+              (intent): intent is ActorEffectIntent => intent.type !== "move",
+            ),
+          ),
+          replay: {
+            recording: this.replayRecording,
+            playing: this.replayPlaying,
+            paused: this.replayPaused,
+          },
           actorId,
           selection,
         }),
@@ -177,6 +190,7 @@ export class Game {
       setHeldDirection: (actorId, direction) =>
         this.setDebugHeldDirection(actorId, direction),
       teleportActor: (actorId, cell) => this.debugTeleportActor(actorId, cell),
+      dispatchIntent: (intent) => this.dispatch(intent),
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),

@@ -266,7 +266,12 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     initialActorIntents: [
-      { type: "grant-lock-key", actor: "all", kind: "reusable" },
+      {
+        type: "set-actor-lock-key",
+        actor: "all",
+        kind: "reusable",
+        enabled: true,
+      },
     ],
   });
   session.loadLevel(level);
@@ -277,7 +282,12 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   const replay = recorder.stop();
 
   assert.deepEqual(replay.initialIntents, [
-    { type: "grant-lock-key", actorId: 4, kind: "reusable" },
+    {
+      type: "set-actor-lock-key",
+      actorId: 4,
+      kind: "reusable",
+      enabled: true,
+    },
   ]);
   assert.equal(session.state.inventory.reusableLockKey, true);
   assert.equal(runReplay(level, replay).actual.status, "playing");
@@ -322,9 +332,10 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   const [tick] = session.advanceTicks(1, () => ({
     groups: [{
       intents: [{
-        type: "grant-lock-key",
+        type: "set-actor-lock-key",
         actorId,
         kind: "single-use",
+        enabled: true,
         requestId: 42,
       }],
     }],
@@ -332,9 +343,10 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   recorder.record(tick);
 
   assert.deepEqual(recorder.stop().frames[0].groups[0].intents[0], {
-    type: "grant-lock-key",
+    type: "set-actor-lock-key",
     actorId,
     kind: "single-use",
+    enabled: true,
   });
 });
 
@@ -342,9 +354,10 @@ test("Replay 初始钥匙动作也省略交互关联字段", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     initialIntents: [{
-      type: "grant-lock-key",
+      type: "set-actor-lock-key",
       actorId: 4,
       kind: "reusable",
+      enabled: true,
       requestId: 7,
     }],
   });
@@ -355,8 +368,9 @@ test("Replay 初始钥匙动作也省略交互关联字段", () => {
   }).stop();
 
   assert.deepEqual(replay.initialIntents, [{
-    type: "grant-lock-key",
+    type: "set-actor-lock-key",
     actorId: 4,
     kind: "reusable",
+    enabled: true,
   }]);
 });

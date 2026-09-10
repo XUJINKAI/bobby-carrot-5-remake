@@ -148,12 +148,44 @@ test("permanent key opens the lock without being consumed", () => {
   world.step({
     intents: [
       {
-        type: "grant-lock-key",
+        type: "set-actor-lock-key",
         actorId: actor(world).id,
         kind: "reusable",
+        enabled: true,
       },
     ],
   });
   assert.equal(move(world, "right").moves[0].moved, true);
   assert.equal(actor(world).state?.reusableLockKey, true);
+});
+
+test("lock ability intent applies both enabled states", () => {
+  const world = new World(
+    corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
+  );
+  const actorId = actor(world).id;
+  world.step({
+    intents: [
+      {
+        type: "set-actor-lock-key",
+        actorId,
+        kind: "reusable",
+        enabled: true,
+      },
+    ],
+  });
+  assert.equal(actor(world).state?.reusableLockKey, true);
+
+  world.step({
+    intents: [
+      {
+        type: "set-actor-lock-key",
+        actorId,
+        kind: "reusable",
+        enabled: false,
+      },
+    ],
+  });
+  assert.equal(actor(world).state?.reusableLockKey, false);
+  assert.equal(move(world, "right").moves[0].blocked, true);
 });

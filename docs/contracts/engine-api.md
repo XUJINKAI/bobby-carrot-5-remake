@@ -31,7 +31,12 @@ const runtime = await createGameplayRuntime({
   runtime: {
     bobbyLocomotion: { moveMs: 350 },
     initialActorIntents: [
-      { type: "grant-lock-key", actor: "all", kind: "reusable" },
+      {
+        type: "set-actor-lock-key",
+        actor: "all",
+        kind: "reusable",
+        enabled: true,
+      },
     ],
     input: {
       keyboard: true,
@@ -183,7 +188,12 @@ game.dispatch({
   actorId,
   moveDurationMs: 266,
 });
-game.dispatch({ type: "grant-lock-key", actorId, kind: "single-use" });
+game.dispatch({
+  type: "set-actor-lock-key",
+  actorId,
+  kind: "single-use",
+  enabled: true,
+});
 
 game.undo();
 game.redo();
@@ -208,7 +218,7 @@ game.inspectCanvasPoint(clientX, clientY);
 Game 状态、事件和 Replay Tick 结果观察。
 
 `dispatch()` 只接受 Engine 定义的封闭 `ActorEffectIntent` union。`set-actor-locomotion`
-只影响随后创建的 WorldMotion；`grant-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
+只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
 商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影位置、朝向、
 地图内背包与实际移动时长，不暴露 Entity runtime state。
 

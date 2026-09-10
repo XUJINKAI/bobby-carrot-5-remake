@@ -104,7 +104,12 @@ export async function renderHome(
       },
       runtime: {
         initialActorIntents: [
-          { type: "grant-lock-key", actor: "all", kind: "reusable" },
+          {
+            type: "set-actor-lock-key",
+            actor: "all",
+            kind: "reusable",
+            enabled: true,
+          },
         ],
         hud: true,
         input: {

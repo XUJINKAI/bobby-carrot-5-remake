@@ -9,14 +9,21 @@ import {
   DebugControlPanel,
   type DebugControlPanelActions,
 } from "./DebugControlPanel.js";
+import { DebugTimelinePanel } from "./DebugTimelinePanel.js";
+import {
+  DebugWorldPanel,
+  type DebugWorldPanelActions,
+} from "./DebugWorldPanel.js";
 
-export interface DebugSidebarActions extends DebugControlPanelActions {
+export interface DebugSidebarActions
+  extends DebugControlPanelActions,
+    DebugWorldPanelActions {
   clearTrace(): void;
   selectEntity(entityId: EntityId): void;
   layoutChanged(): void;
 }
 
-type DebugTab = "actor" | "timeline" | "inspect";
+type DebugTab = "inspect" | "timeline" | "actor" | "world";
 type JsonDetailsRef = { details: HTMLDetailsElement; pre: HTMLPreElement };
 type ValueRef = { root: HTMLDivElement; value: HTMLSpanElement };
 
@@ -55,8 +62,9 @@ export class DebugSidebar {
   private infoVisible = true;
 
   private readonly actorPanel: HTMLDivElement;
-  private readonly timelinePanel: HTMLDivElement;
+  private readonly timelinePanel: DebugTimelinePanel;
   private readonly inspectPanel: HTMLDivElement;
+  private readonly worldPanel: DebugWorldPanel;
   private readonly tabButtons = new Map<DebugTab, HTMLButtonElement>();
 
   private readonly actorTitleText: HTMLSpanElement;
@@ -70,10 +78,6 @@ export class DebugSidebar {
   private readonly actorActionsDetails: JsonDetailsRef;
   private readonly actorPresentationDetails: JsonDetailsRef;
 
-  private readonly timelineCount: HTMLSpanElement;
-  private readonly timelineList: HTMLDivElement;
-  private timelineKey = "";
-
   private readonly inspectMessage: HTMLDivElement;
   private readonly inspectBody: HTMLDivElement;
   private readonly inspectCell: ValueRef;
@@ -82,7 +86,7 @@ export class DebugSidebar {
   private inspectStackKey = "";
   private inspectEntityRefs: InspectEntityRefs | null = null;
 
-  private activeTab: DebugTab = "actor";
+  private activeTab: DebugTab = "inspect";
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -129,21 +133,24 @@ export class DebugSidebar {
     const tabs = document.createElement("div");
     Object.assign(tabs.style, {
       display: "grid",
-      gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+      gridTemplateColumns: "repeat(4,minmax(0,1fr))",
       gap: "6px",
       marginBottom: "10px",
     });
     for (const [tab, label] of [
-      ["actor", "Actor"],
-      ["timeline", "Timeline"],
       ["inspect", "Inspect"],
+      ["timeline", "Timeline"],
+      ["actor", "Actor"],
+      ["world", "World"],
     ] as const) {
       const button = this.button(label, () => this.setTab(tab));
+      button.dataset.debugTab = tab;
       this.tabButtons.set(tab, button);
       tabs.append(button);
     }
 
     this.actorPanel = document.createElement("div");
+    this.actorPanel.dataset.debugTabPanel = "actor";
     const actorBody = document.createElement("div");
     const actorFacts = document.createElement("div");
     this.actorValue = this.valueRef("Actor");
@@ -177,26 +184,11 @@ export class DebugSidebar {
     actorTitle.append(this.actorTitleText);
     this.actorPanel.append(actorSection);
 
-    this.timelinePanel = document.createElement("div");
-    const timelineBody = document.createElement("div");
-    const timelineToolbar = document.createElement("div");
-    Object.assign(timelineToolbar.style, {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "7px",
-    });
-    this.timelineCount = document.createElement("span");
-    this.timelineCount.style.color = "#8da495";
-    timelineToolbar.append(
-      this.timelineCount,
-      this.button("Clear", () => this.actions.clearTrace()),
-    );
-    this.timelineList = document.createElement("div");
-    timelineBody.append(timelineToolbar, this.timelineList);
-    this.timelinePanel.append(this.section("Timeline", timelineBody));
+    this.timelinePanel = new DebugTimelinePanel(this.actions);
+    this.timelinePanel.root.dataset.debugTabPanel = "timeline";
 
     this.inspectPanel = document.createElement("div");
+    this.inspectPanel.dataset.debugTabPanel = "inspect";
     const inspectSectionBody = document.createElement("div");
     this.inspectMessage = document.createElement("div");
     this.inspectMessage.textContent =
@@ -217,7 +209,17 @@ export class DebugSidebar {
     );
     inspectSectionBody.append(this.inspectMessage, this.inspectBody);
     this.inspectPanel.append(this.section("Inspect", inspectSectionBody));
-    this.root.append(sidebarHeader, tabs, this.actorPanel, this.timelinePanel, this.inspectPanel);
+
+    this.worldPanel = new DebugWorldPanel(this.actions);
+    this.worldPanel.root.dataset.debugTabPanel = "world";
+    this.root.append(
+      sidebarHeader,
+      tabs,
+      this.inspectPanel,
+      this.timelinePanel.root,
+      this.actorPanel,
+      this.worldPanel.root,
+    );
 
     this.controlPanel = new DebugControlPanel(
       TOOL_STRIP_WIDTH + INFO_PANE_WIDTH,
@@ -260,7 +262,7 @@ export class DebugSidebar {
     mount.append(this.controlPanel.root, this.root, this.toolRoot);
     this.root.hidden = true;
     this.controlPanel.root.hidden = true;
-    this.setTab("actor");
+    this.setTab("inspect");
   }
 
   setEnabled(enabled: boolean): void {
@@ -282,8 +284,9 @@ export class DebugSidebar {
     if (!this.enabled) return;
     this.controlPanel.render(snapshot);
     this.renderActor(snapshot);
-    this.renderTimeline(snapshot);
+    this.timelinePanel.render(snapshot.trace ?? []);
     this.renderInspect(snapshot);
+    this.worldPanel.render(snapshot);
   }
 
   destroy(): void {
@@ -368,41 +371,6 @@ export class DebugSidebar {
       runtime: actor.visual.runtime,
       renderItems: actor.visual.renderItems,
     });
-  }
-
-  private renderTimeline(snapshot: DebugSnapshot): void {
-    const entries = [...(snapshot.trace ?? [])].reverse();
-    const key = entries.map((entry) => entry.seq).join(",");
-    this.timelineCount.textContent = `${entries.length}/50 events`;
-    if (key === this.timelineKey) return;
-    this.timelineKey = key;
-
-    const openEntries = new Set(
-      [...this.timelineList.querySelectorAll("details[open]")]
-        .map((details) => details.getAttribute("data-seq"))
-        .filter((value): value is string => value !== null),
-    );
-    const fragment = document.createDocumentFragment();
-    for (const entry of entries) {
-      const details = document.createElement("details");
-      details.dataset.seq = String(entry.seq);
-      details.open = openEntries.has(String(entry.seq));
-      const summary = document.createElement("summary");
-      summary.style.cursor = "pointer";
-      const world = entry.worldTick === null ? "W-" : `W${entry.worldTick}`;
-      const delta =
-        entry.worldSequence === undefined ? "" : ` Δ${entry.worldSequence}`;
-      const time =
-        entry.worldTimeMs === undefined ? "" : ` ${entry.worldTimeMs}ms`;
-      summary.textContent = `${world}${delta}${time} ${entry.category.padEnd(12)} ${entry.summary}`;
-      const pre = this.pre();
-      pre.textContent = JSON.stringify(entry, null, 2);
-      details.append(summary, pre);
-      fragment.append(details);
-    }
-    if (entries.length === 0)
-      fragment.append(document.createTextNode("No runtime changes recorded yet."));
-    this.timelineList.replaceChildren(fragment);
   }
 
   private renderInspect(snapshot: DebugSnapshot): void {
@@ -493,8 +461,9 @@ export class DebugSidebar {
   private setTab(tab: DebugTab): void {
     this.activeTab = tab;
     this.actorPanel.hidden = tab !== "actor";
-    this.timelinePanel.hidden = tab !== "timeline";
+    this.timelinePanel.root.hidden = tab !== "timeline";
     this.inspectPanel.hidden = tab !== "inspect";
+    this.worldPanel.root.hidden = tab !== "world";
     for (const [key, button] of this.tabButtons)
       button.style.background = key === tab ? "#285135" : "#14251a";
   }

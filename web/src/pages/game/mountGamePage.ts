@@ -214,7 +214,12 @@ export async function renderGamePage(
         : {}),
       initialActorIntents:
         mode === "explore" || plan?.reusableLockKey
-          ? [{ type: "grant-lock-key", actor: "all", kind: "reusable" }]
+          ? [{
+              type: "set-actor-lock-key",
+              actor: "all",
+              kind: "reusable",
+              enabled: true,
+            }]
           : [],
       camera: GAME_CAMERA_OPTIONS[mode],
       hud: { objective: true, inventory: true },
@@ -439,7 +444,11 @@ export async function renderGamePage(
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
   const pendingVendorSaves = new Map<number, AdventureSave>();
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
-    if (event.type === "lock-key-granted" && event.requestId !== undefined) {
+    if (
+      event.type === "actor-lock-key-changed" &&
+      event.data?.enabled === true &&
+      event.requestId !== undefined
+    ) {
       const pending = pendingVendorSaves.get(event.requestId);
       if (pending) {
         adventureSave = saveAdventureSave(pending);
@@ -480,9 +489,10 @@ export async function renderGamePage(
     if (decision.grantSingleUseKey) {
       pendingVendorSaves.set(request.requestId, decision.save);
       game.dispatch({
-        type: "grant-lock-key",
+        type: "set-actor-lock-key",
         actorId: request.actorId,
         kind: "single-use",
+        enabled: true,
         requestId: request.requestId,
       });
     }

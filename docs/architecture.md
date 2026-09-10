@@ -485,7 +485,7 @@ Campaign level ID + semantic Object type + x/y
 
 购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
 币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并
-持久化新 Save。Bonus Beaver 的单次钥匙在 reducer 决策后以 `grant-lock-key` intent
+持久化新 Save。Bonus Beaver 的单次钥匙在 reducer 决策后以 `set-actor-lock-key` intent
 提交给 Engine，并在 Engine 发出带同一 `requestId` 的接受事件后提交 Save。
 
 ## Original JAR Validation

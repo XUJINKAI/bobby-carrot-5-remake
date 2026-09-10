@@ -2,6 +2,7 @@ import type { Direction } from "@bobby/model";
 import type { CellInspection } from "../world/WorldTypes.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
+import type { ActorEffectIntent } from "../world/movement/WorldIntent.js";
 import { DebugSidebar } from "./DebugSidebar.js";
 import { DebugTraceRecorder } from "./DebugTrace.js";
 import type {
@@ -23,6 +24,7 @@ export interface DebugRuntimeHost {
   setWorldSpeed(speed: number): void;
   setHeldDirection(actorId: EntityId, direction: Direction | null): void;
   teleportActor(actorId: EntityId, cell: CellPosition): boolean;
+  dispatchIntent(intent: ActorEffectIntent): void;
   pausePresentation(): void;
   resumePresentation(): void;
   stepPresentation(frames: number): void;
@@ -142,6 +144,23 @@ export class DebugRuntime {
           this.previousSnapshot = null;
           this.host.requestRender();
         },
+        dispatchIntent: (intent) => {
+          this.host.dispatchIntent(intent);
+          const snapshot = this.host.snapshot(
+            this.selection,
+            this.trackedActorId,
+          );
+          this.trace.record({
+            kind: "debug-command",
+            category: "intent",
+            summary: `${intent.type} actor #${intent.actorId}`,
+            worldTick: snapshot.runtime.worldTickCount,
+            presentationFrame: snapshot.runtime.presentationFrame,
+            actorId: intent.actorId,
+            detail: intent,
+          });
+          this.host.requestRender();
+        },
         selectEntity: (entityId) => this.selectEntity(entityId),
         layoutChanged: () => this.host.requestRender(),
       });
@@ -198,6 +217,7 @@ export class DebugRuntime {
 
     if (snapshot.runtime.worldTickCount !== previous.runtime.worldTickCount)
       this.trace.record({
+        kind: "world-tick",
         category: "world",
         summary: `world tick ${previous.runtime.worldTickCount} -> ${snapshot.runtime.worldTickCount}`,
         ...clock,
@@ -213,6 +233,7 @@ export class DebugRuntime {
           (channel.repeater?.pendingAttempt ?? null) !== null,
       );
       this.trace.record({
+        kind: "snapshot",
         category: "input",
         summary:
           active && active.length > 0
@@ -231,6 +252,7 @@ export class DebugRuntime {
 
     if (JSON.stringify(snapshot.actions) !== JSON.stringify(previous.actions))
       this.trace.record({
+        kind: "snapshot",
         category: "action",
         summary: `${snapshot.actions.length} active runtime action${snapshot.actions.length === 1 ? "" : "s"}`,
         detail: snapshot.actions,
@@ -243,6 +265,7 @@ export class DebugRuntime {
         snapshot.runtime.presentationFrame !== previous.runtime.presentationFrame)
     )
       this.trace.record({
+        kind: "snapshot",
         category: "presentation",
         summary: snapshot.runtime.animating
           ? "presentation motion active"
@@ -308,6 +331,7 @@ export class DebugRuntime {
     this.previousSnapshot = null;
     this.host.selectionChanged(this.selection.cell);
     this.trace.record({
+      kind: "debug-command",
       category: "world",
       summary: `debug teleport #${actorId} -> ${inspection.cell.x},${inspection.cell.y}`,
       actorId,
@@ -332,6 +356,7 @@ function traceRecordForDelta(
   presentationFrame: number,
 ): Parameters<DebugTraceRecorder["record"]>[0] {
   const base = {
+    kind: "world-delta" as const,
     worldTick: delta.worldTick,
     worldTimeMs: delta.worldTimeMs,
     worldSequence: delta.sequence,
