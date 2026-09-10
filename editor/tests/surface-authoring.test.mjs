@@ -110,6 +110,8 @@ test("documented Auto weights live in Surface data", () => {
 });
 
 test("Fence is a Surface overlay and preserves base terrain", () => {
+  assert.equal(surfaceTerrain("fence").slot, "overlay");
+  assert.equal(surfaceTerrain("snow-fence").slot, "base");
   let level = createBlankLevel(5, 5);
   level = paintSurface(
     catalog,
@@ -139,6 +141,16 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
   ).apply(level);
   cell = surfacesAt(level, 1, 1);
   assert.equal(cell.some((item) => item.terrain.id === "snow-cloud"), true);
+  assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
+
+  level = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }],
+    { terrain: "snow-fence", pattern: "auto", seed: 1 },
+  ).apply(level);
+  cell = surfacesAt(level, 1, 1);
+  assert.equal(cell.some((item) => item.terrain.id === "snow-cloud"), false);
+  assert.equal(cell.some((item) => item.terrain.id === "snow-fence"), true);
   assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
 });
 
@@ -342,11 +354,15 @@ test("Theme switch changes only recognized visual families", () => {
 
   assert.equal(detectSurfaceTheme(level), "forest");
   const next = applySurfaceTheme(catalog, "snow").apply(level);
-  assert.equal(detectSurfaceTheme(next), "snow");
+  assert.equal(detectSurfaceTheme(next), "mixed");
   assert.equal(surfaceTerrainForEntity(entityAt(next, 0, 0)?.type)?.id, "snow-cloud");
   assert.equal(
-    surfacesAt(next, 2, 0).some((item) => item.terrain.id === "snow-fence"),
+    surfacesAt(next, 2, 0).some((item) => item.terrain.id === "fence"),
     true,
+  );
+  assert.equal(
+    surfacesAt(next, 2, 0).some((item) => item.terrain.id === "snow-fence"),
+    false,
   );
   assert.equal(entityAt(next, 3, 0)?.type, MapEntityTypeId.WATER);
 });

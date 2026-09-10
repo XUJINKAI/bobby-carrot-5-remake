@@ -27,6 +27,7 @@ import {
 import {
   resolvePlacement,
   type Cell,
+  type EntityPlacementStackWarning,
   type PlacementCell,
 } from "./entityPlacement.js";
 
@@ -69,6 +70,7 @@ export interface PlacementInspectorPreviewModel {
   after: InspectorModel;
   placedIndex: number | null;
   replacedCount: number;
+  warnings: readonly EntityPlacementStackWarning[];
   valid: boolean;
 }
 
@@ -86,6 +88,7 @@ export function buildPlacementInspectorPreview(
       after: empty,
       placedIndex: null,
       replacedCount: 0,
+      warnings: [],
       valid: false,
     };
   }
@@ -103,6 +106,7 @@ export function buildPlacementInspectorPreview(
       after: current,
       placedIndex: null,
       replacedCount: 0,
+      warnings: plan.warnings,
       valid: false,
     };
   }
@@ -144,6 +148,7 @@ export function buildPlacementInspectorPreview(
     after: cellInspectorModel(selection, cell, afterLayers),
     placedIndex,
     replacedCount: plan.replace.length,
+    warnings: plan.warnings,
     valid: true,
   };
 }

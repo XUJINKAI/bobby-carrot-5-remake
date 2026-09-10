@@ -386,7 +386,6 @@ const snowFence = terrain({
   id: "snow-fence",
   label: "雪地栅栏",
   type: "solid",
-  slot: "overlay",
   theme: "snow",
   themeFamily: "fence",
   primary: bg(4, 1),

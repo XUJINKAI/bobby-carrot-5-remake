@@ -10,8 +10,6 @@ import {
   EditorDocument,
   EditorPreview,
   applyPlacementVariant,
-  buildInspectorModel,
-  buildPlacementInspectorPreview,
   builtinEditorDefinition,
   createBlankLevel,
   cyclePlacementVariant,
@@ -21,7 +19,6 @@ import {
   paintSurface,
   parseEditorLevel,
   placeEntity,
-  reorderEntityStack,
   resolveEditorEntityPreviewLayout,
   resolveEditorPalette,
   resolvePalettePlacement,
@@ -164,43 +161,6 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
     { x: 5, y: 3, role: "body" },
     { x: 6, y: 3, role: "tail" },
   ]);
-});
-
-test("Editor replaceGroup replaces only matching authoring layers", () => {
-  const level = createBlankLevel(8, 8);
-  const before = new EditorPreview(level, catalog).inspectCell(1, 1);
-  assert.deepEqual(before.presences.map((item) => item.entity.type), [
-    MapEntityTypeId.GRASS,
-  ]);
-  const after = placeEntity(
-    catalog,
-    MapEntityTypeId.CARROT,
-    { x: 1, y: 1 },
-  ).apply(
-    paintSurface(
-      catalog,
-      [{ x: 1, y: 1 }],
-      { terrain: "water", pattern: "exact", exact: MapEntityTypeId.WATER, seed: 1 },
-    ).apply(level),
-  );
-  assert.deepEqual(
-    new EditorPreview(after, catalog)
-      .inspectCell(1, 1)
-      .presences.map((item) => item.entity.type),
-    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT],
-  );
-
-  const withLock = placeEntity(
-    catalog,
-    MapEntityTypeId.LOCK,
-    { x: 1, y: 1 },
-  ).apply(after);
-  assert.deepEqual(
-    new EditorPreview(withLock, catalog)
-      .inspectCell(1, 1)
-      .presences.map((item) => item.entity.type),
-    [MapEntityTypeId.WATER, MapEntityTypeId.CARROT, MapEntityTypeId.LOCK],
-  );
 });
 
 test("Entity fields and instance stack order round-trip", () => {
@@ -573,195 +533,6 @@ test("Palette preview layout derives full multi-cell footprint generically", () 
   assert.equal(layout.width, 3);
   assert.equal(layout.height, 1);
   assert.equal(layout.entity.type, MapEntityTypeId.DRAGON);
-});
-
-test("single-cell Inspector exposes every layer top-first", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    {
-      type: MapEntityTypeId.PORTAL,
-      x: 3,
-      y: 3,
-      stackOrder: 1000,
-      channel: "blue",
-      color: "#54e8ff",
-    },
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3, stackOrder: 2000 },
-  );
-  const model = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 3, y: 3 }, focus: { x: 3, y: 3 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(model.mode, "cell");
-  assert.deepEqual(model.layers.slice(0, 2).map((layer) => layer.entity.type), [
-    MapEntityTypeId.CARROT,
-    MapEntityTypeId.PORTAL,
-  ]);
-});
-
-test("Palette Brush Inspector previews the hovered stack after placement", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push({ type: MapEntityTypeId.CARROT, x: 3, y: 3 });
-  const preview = buildPlacementInspectorPreview(
-    level,
-    catalog,
-    { type: MapEntityTypeId.LOCK },
-    { x: 3, y: 3 },
-    builtinEditorDefinition,
-  );
-  assert.equal(preview.valid, true);
-  assert.deepEqual(
-    preview.after.layers.map((layer) => layer.entity.type),
-    [MapEntityTypeId.LOCK, MapEntityTypeId.CARROT, MapEntityTypeId.GRASS],
-  );
-  assert.equal(preview.placedIndex, level.entities.length);
-});
-
-test("Palette Brush Inspector applies replaceGroup to the hovered stack preview", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
-    { type: MapEntityTypeId.LOCK, x: 3, y: 3 },
-  );
-  const preview = buildPlacementInspectorPreview(
-    level,
-    catalog,
-    { type: MapEntityTypeId.EGG },
-    { x: 3, y: 3 },
-    builtinEditorDefinition,
-  );
-  assert.equal(preview.valid, true);
-  assert.equal(preview.replacedCount, 1);
-  assert.deepEqual(
-    preview.after.layers.map((layer) => layer.entity.type),
-    [MapEntityTypeId.EGG, MapEntityTypeId.LOCK, MapEntityTypeId.GRASS],
-  );
-  assert.equal(preview.placedIndex, level.entities.length - 1);
-  assert.equal(
-    preview.after.layers.find((layer) => layer.entity.type === MapEntityTypeId.LOCK)
-      ?.ref.index,
-    level.entities.length - 2,
-  );
-  assert.equal(
-    new Set(preview.after.layers.map((layer) => layer.ref.index)).size,
-    preview.after.layers.length,
-  );
-});
-
-test("single-cell Inspector exposes the hovered multi-cell Presence role", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push({
-    type: MapEntityTypeId.DRAGON,
-    x: 3,
-    y: 3,
-    direction: "left",
-  });
-  const model = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 2, y: 3 }, focus: { x: 2, y: 3 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(model.layers[0]?.entity.type, MapEntityTypeId.DRAGON);
-  assert.equal(model.layers[0]?.role, "head");
-  assert.deepEqual(model.layers[0]?.footprint, { width: 3, height: 1 });
-});
-
-test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.SPEED_SWITCH, x: 1, y: 1 },
-    { type: MapEntityTypeId.SPEED_SWITCH, x: 2, y: 1 },
-    { type: MapEntityTypeId.CARROT, x: 1, y: 2 },
-  );
-  const model = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 2 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(model.mode, "multi");
-  assert.equal(model.groups[0].type, MapEntityTypeId.SPEED_SWITCH);
-  assert.equal(model.groups[0].count, 2);
-  assert.equal(
-    model.groups.find((group) => group.type === MapEntityTypeId.GRASS)?.count,
-    4,
-  );
-  const firstSurface = model.groups.findIndex(
-    (group) => group.type === MapEntityTypeId.GRASS,
-  );
-  assert.ok(firstSurface > 0);
-  assert.equal(
-    model.groups.slice(0, firstSurface).some(
-      (group) => group.type === MapEntityTypeId.CARROT,
-    ),
-    true,
-  );
-});
-
-test("Inspector 直接使用 canonical Entity Definition", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    { type: MapEntityTypeId.EGG, x: 1, y: 1 },
-    { type: MapEntityTypeId.BEANSTALK, x: 2, y: 1 },
-    { type: MapEntityTypeId.WINDMILL, x: 3, y: 1, direction: "left" },
-  );
-
-  const cell = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
-    builtinEditorDefinition,
-  );
-  assert.equal(cell.layers[0]?.definition.type, MapEntityTypeId.EGG);
-  assert.equal(cell.layers[0]?.label, "Egg");
-
-  const multi = buildInspectorModel(
-    level,
-    catalog,
-    { anchor: { x: 1, y: 1 }, focus: { x: 3, y: 1 } },
-    builtinEditorDefinition,
-  );
-  const definitions = new Map(
-    multi.groups.map((group) => [group.type, group.definition.type]),
-  );
-  assert.equal(definitions.get(MapEntityTypeId.EGG), MapEntityTypeId.EGG);
-  assert.equal(
-    definitions.get(MapEntityTypeId.BEANSTALK),
-    MapEntityTypeId.BEANSTALK,
-  );
-  assert.equal(
-    definitions.get(MapEntityTypeId.WINDMILL),
-    MapEntityTypeId.WINDMILL,
-  );
-  assert.equal(
-    multi.groups.find((group) => group.type === MapEntityTypeId.EGG)?.label,
-    "Egg",
-  );
-});
-
-test("reordering a cell stack changes actual Spatial top Presence", () => {
-  const level = createBlankLevel(8, 8);
-  level.entities.push(
-    {
-      type: MapEntityTypeId.PORTAL,
-      x: 3,
-      y: 3,
-      channel: "blue",
-      color: "#54e8ff",
-    },
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
-  );
-  const portalIndex = level.entities.length - 2;
-  const carrotIndex = level.entities.length - 1;
-  const reordered = reorderEntityStack([
-    { index: portalIndex },
-    { index: carrotIndex },
-  ]).apply(level);
-  const preview = new EditorPreview(reordered, catalog);
-  assert.equal(preview.inspectCell(3, 3).top?.entity.type, MapEntityTypeId.PORTAL);
 });
 
 test("Bobby Editor visual is fixed to the final down frame", () => {

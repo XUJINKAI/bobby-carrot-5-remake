@@ -41,7 +41,7 @@ editor/src
 
 Surface 与 Palette 是两套并列的 authoring UX，不要求与 Engine Entity taxonomy 一一对应。
 
-Surface 表示“这一格的基础地貌是什么”，每格最多保留一个 Surface。Surface 可以影响 gameplay；是否影响解法不是 Surface / Palette 的划分标准。Editor 内部仍用这些语义类型描述基础环境：
+Surface 表示“这一格的地貌是什么”。每格最多保留一个 base Surface；`fence` 是可叠在 base 上的 overlay Surface。`snow-fence` 属于 base，会像其它基础地貌一样替换原 base。Surface 可以影响 gameplay；是否影响解法不是 Surface / Palette 的划分标准。Editor 内部仍用这些语义类型描述基础环境：
 
 ```text
 ground
@@ -64,7 +64,7 @@ Theme 是视觉批量转换入口，不是 Level 全局属性，也不会限制�
 混合 / 森林 / 雪地 / 沙地 / 太空
 ```
 
-Theme 卡使用多个代表 visual 拼成预览，强调视觉识别。点击具体 Theme 时，Editor 自动识别已知的同类 Terrain，并只在相同 SurfaceType / theme family 内换皮，例如草地 ↔ 雪地 ↔ 沙地 ↔ 云层、篱笆 ↔ 带雪篱笆。Water、Ice、Waterfall 等没有对应主题映射的 gameplay terrain 保持不变。地图包含多个主题时显示为“混合”。
+Theme 卡使用多个代表 visual 拼成预览，强调视觉识别。点击具体 Theme 时，Editor 自动识别已知的同类 Terrain，并只在相同 Surface slot / SurfaceType / theme family 内换皮，例如草地 ↔ 雪地 ↔ 沙地 ↔ 云层。Water、Ice、Waterfall 等没有对应主题映射的 gameplay terrain 保持不变。地图包含多个主题时显示为“混合”。
 
 ### 空间工具
 
@@ -116,6 +116,24 @@ remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original T
 
 草下目标通过在同格放置 `high-grass` 与 `carrot` 或 `egg` 创建。云朵停靠格使用带 `color` 的 `cloud-parking`，放置时保留同格基础地形。
 
+### 堆叠规则
+
+Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。它与 Engine 的视觉 `stackOrder` 分离：`stackSlot` 决定放置时替换谁，`stackOrder` 决定最终绘制和 Inspector 展示顺序。
+
+| slot | 内容 |
+| --- | --- |
+| `surface-base` | 基础地貌，包括 `snow-fence` |
+| `surface-overlay` | `fence` |
+| `floor-feature` | 出口、停靠格、目标格、机关地板、开关、Portal 与商店格 |
+| `content` | 胡萝卜、Egg、Gas、Bean、道具与奖励 |
+| `support` | Mower、Cloud、Plank 与 Leaf |
+| `occupant` | Bobby、可推动物、角色、Lock 与多格 Object |
+| `cover` | High Grass、Snow 与 Ice Block |
+
+在任一目标格命中同 slot 素材时，新素材替换完整 owner；多格 Object 会在整个 footprint 上原子处理替换。推荐的跨 slot 组合为：base 可承载 overlay、floor feature、content、support、occupant 或 cover；floor feature 可配 content、support 或 occupant；content 可配 cover；support 可配 occupant。其它组合仍可放置，Canvas 使用琥珀色 hover 框，Inspector 同时显示“非推荐堆叠”提示，便于检查导入地图和特殊设计。
+
+Canvas 会统计每格去重后的 Palette Presence。达到两层时，在格子右上角显示实际层数角标；Surface 不计入该数字，多格素材在每个覆盖格中各计一层。
+
 ## Inspector
 
 Inspector 汇总当前工具和它正在作用的对象：
@@ -124,7 +142,7 @@ Inspector 汇总当前工具和它正在作用的对象：
 - Select 矩形选区按 Entity type 分组，Palette Entity 位于 Surface Entity 之前并以分隔线区分，
   提供批量字段、variant 与删除操作；
 - Palette Brush 显示当前素材及其全部 `EditorEntityDefinition.variants`，选择 variant 会同步更新
-  后续放置 preset；Canvas hover 显示正式放置规则计算出的结果堆叠；
+  后续放置 preset；Canvas hover 显示正式放置规则计算出的结果堆叠，并标记非推荐的跨 slot 组合；
 - Palette Delete 根据鼠标悬浮格显示完整 Entity stack，并明确标记点击时实际删除的非 Surface 层；
 - Surface Brush / Smart Fill 显示当前 Terrain、Pattern 与预览单元。
 

@@ -231,6 +231,8 @@ test("Palette 画笔悬浮显示正式放置规则计算的结果堆叠", () => 
   assert.match(placementInspector, /放置结果/);
   assert.match(placementInspector, /title="放置后"/);
   assert.match(placementInspector, /highlight-index="hoverPreview\.placedIndex"/);
+  assert.match(placementInspector, /hoverPreview\.warnings/);
+  assert.match(placementInspector, /非推荐堆叠/);
   assert.match(placementInspector, /const targets = computed/);
   assert.match(placementInspector, /:targets="targets"/);
 });

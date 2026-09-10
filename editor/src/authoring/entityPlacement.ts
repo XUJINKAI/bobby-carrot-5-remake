@@ -3,7 +3,12 @@ import {
   type EntityCatalog,
   type EntityCatalogEntry,
 } from "@bobby/engine";
-import { isLevelEntityReservedField, type Direction, type LevelEntity } from "@bobby/model";
+import {
+  isLevelEntityReservedField,
+  type Direction,
+  type EntityType,
+  type LevelEntity,
+} from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import {
   editorCatalogEntry,
@@ -14,12 +19,12 @@ import type {
   EditorDefinition,
   EditorPlacementPoint,
   EditorPlacementPreset,
+  EditorStackSlot,
 } from "../definitions/types.js";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
-import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 
 export interface Cell {
   x: number;
@@ -36,7 +41,16 @@ export interface EntityPlacementPlan {
   entity: LevelEntity;
   cells: readonly PlacementCell[];
   replace: readonly EntityRef[];
+  warnings: readonly EntityPlacementStackWarning[];
   valid: boolean;
+}
+
+export interface EntityPlacementStackWarning {
+  cell: Cell;
+  existing: EntityRef;
+  existingType: EntityType;
+  placedSlot: EditorStackSlot;
+  existingSlot: EditorStackSlot;
 }
 
 export function resolvePlacement(
@@ -53,6 +67,7 @@ export function resolvePlacement(
       entity: { type: preset.type, x: cursor.x, y: cursor.y },
       cells: [],
       replace: [],
+      warnings: [],
       valid: false,
     };
   }
@@ -86,26 +101,42 @@ export function resolvePlacement(
         cell.y >= level.height,
     )
   ) {
-    return { entity, cells, replace: [], valid: false };
+    return { entity, cells, replace: [], warnings: [], valid: false };
   }
 
-  const replaceGroup = authoring?.replaceGroup;
-  if (!replaceGroup) return { entity, cells, replace: [], valid: true };
-  // Surface 的区域编辑由 Surface authoring 自己管理。保留直接放置真正 Surface
-  // 时的旧 API 替换语义，但不要让历史上误标为 surface 的机关删除地貌。
-  if (replaceGroup === "surface" && !isSurfaceEntityType(preset.type)) {
-    return { entity, cells, replace: [], valid: true };
+  const stackSlot = authoring?.stackSlot;
+  if (!stackSlot) {
+    return { entity, cells, replace: [], warnings: [], valid: true };
   }
   const preview = existingPreview ?? new EditorPreview(level, catalog);
   const replace = new Map<number, EntityRef>();
+  const warnings = new Map<string, EntityPlacementStackWarning>();
   for (const cell of cells) {
     for (const existing of preview.inspectCell(cell.x, cell.y).presences) {
-      if (editor.entities?.[existing.entity.type]?.replaceGroup !== replaceGroup)
+      const existingSlot = editor.entities?.[existing.entity.type]?.stackSlot;
+      if (!existingSlot) continue;
+      if (existingSlot === stackSlot) {
+        replace.set(existing.ref.index, existing.ref);
         continue;
-      replace.set(existing.ref.index, existing.ref);
+      }
+      if (stackSlotsCompatible(stackSlot, existingSlot, editor)) continue;
+      const key = `${cell.x},${cell.y}:${existing.ref.index}`;
+      warnings.set(key, {
+        cell,
+        existing: existing.ref,
+        existingType: existing.entity.type,
+        placedSlot: stackSlot,
+        existingSlot,
+      });
     }
   }
-  return { entity, cells, replace: [...replace.values()], valid: true };
+  return {
+    entity,
+    cells,
+    replace: [...replace.values()],
+    warnings: [...warnings.values()],
+    valid: true,
+  };
 }
 
 export function placeEntity(
@@ -133,6 +164,17 @@ export function placeEntity(
       });
     },
   };
+}
+
+function stackSlotsCompatible(
+  a: EditorStackSlot,
+  b: EditorStackSlot,
+  editor: EditorDefinition,
+): boolean {
+  return (editor.stacking?.compatibleSlots ?? []).some(
+    ([left, right]) =>
+      (left === a && right === b) || (left === b && right === a),
+  );
 }
 
 export function topEntityRefAt(

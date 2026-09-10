@@ -35,6 +35,13 @@ const targets = computed<readonly LevelEntity[]>(() => [entity.value]);
 const definition = computed(() =>
   editorCatalogEntry(props.catalog, entity.value),
 );
+const warningSummaries = computed(() => [
+  ...new Set(
+    props.hoverPreview.warnings.map(
+      (warning) => `${warning.existingType} · ${warning.existingSlot}`,
+    ),
+  ),
+]);
 </script>
 
 <template>
@@ -84,6 +91,10 @@ const definition = computed(() =>
             无法放置
           </span>
         </header>
+        <div v-if="warningSummaries.length" class="editor-stack-warning">
+          <strong>非推荐堆叠</strong>
+          <span>{{ warningSummaries.join("；") }}</span>
+        </div>
         <div class="editor-placement-stack-result">
           <EditorInspectorStack
             title="放置后"
@@ -165,6 +176,17 @@ const definition = computed(() =>
 }
 .editor-invalid-placement {
   color: #ffb4a9;
+}
+.editor-stack-warning {
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid rgb(245 189 103 / 55%);
+  border-radius: 6px;
+  background: rgb(112 73 16 / 28%);
+  color: #f5d59f;
+  font-size: 0.62rem;
+  line-height: 1.4;
 }
 .editor-placement-stack-result {
   min-width: 0;

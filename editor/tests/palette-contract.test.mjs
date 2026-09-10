@@ -108,6 +108,15 @@ test("Palette 条目暴露 Model Definition 支持的字段名", () => {
   assert.deepEqual(bobby.supportedFields, ["controller", "mirrorX", "mirrorY"]);
 });
 
+test("每个 Palette Entity 都声明 authoring stackSlot", () => {
+  for (const item of paletteItems(catalog)) {
+    assert.ok(
+      builtinEditorDefinition.entities?.[item.type]?.stackSlot,
+      item.type,
+    );
+  }
+});
+
 test("每个可见 Palette 条目都可放置、保存并加载为 World", () => {
   for (const preset of paletteItems(catalog)) {
     const level = createBlankLevel();

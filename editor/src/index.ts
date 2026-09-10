@@ -8,7 +8,32 @@ export {
   editorEntityDirection,
   isEditorEntityCreatable,
 } from "./definitions/entities.js";
-export type { EditorTool, EditorEntityFields, EditorPlacementPreset, EditorSelection, EditorClipboard, EditorPlacementPoint, EditorEntityVariant, EditorQuickAction, EditorEntityDefinition, EditorEntityExclusion, EditorPalettePreview, EditorPaletteExpansion, EditorPaletteEntry, EditorPaletteGroup, EditorPaletteRemainderGroup, EditorPaletteDefinition, EditorDeletionCandidate, EditorDeleteContext, EditorDeletionDefinition, EditorValidationContext, EditorMapValidator, EditorDefinition } from "./definitions/types.js";
+export type {
+  EditorTool,
+  EditorEntityFields,
+  EditorPlacementPreset,
+  EditorSelection,
+  EditorClipboard,
+  EditorPlacementPoint,
+  EditorEntityVariant,
+  EditorQuickAction,
+  EditorStackSlot,
+  EditorStackingDefinition,
+  EditorEntityDefinition,
+  EditorEntityExclusion,
+  EditorPalettePreview,
+  EditorPaletteExpansion,
+  EditorPaletteEntry,
+  EditorPaletteGroup,
+  EditorPaletteRemainderGroup,
+  EditorPaletteDefinition,
+  EditorDeletionCandidate,
+  EditorDeleteContext,
+  EditorDeletionDefinition,
+  EditorValidationContext,
+  EditorMapValidator,
+  EditorDefinition,
+} from "./definitions/types.js";
 export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
 export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityField, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
@@ -21,7 +46,13 @@ export {
   resolvePlacement,
   topEntityRefAt,
 } from "./authoring/entityPlacement.js";
-export type { Cell, EntityPlacementPlan, PlacementCell, PlacementOverrides } from "./authoring/entityPlacement.js";
+export type {
+  Cell,
+  EntityPlacementPlan,
+  EntityPlacementStackWarning,
+  PlacementCell,
+  PlacementOverrides,
+} from "./authoring/entityPlacement.js";
 export { resolveEditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export type { EditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export { resolveEditorPalette, resolvePalettePlacement, paletteItems, paletteGroups, paletteGroup, paletteLabel } from "./authoring/paletteCatalog.js";

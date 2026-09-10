@@ -23,6 +23,7 @@ import {
   type EditorPresenceInspection,
 } from "../authoring/EditorPreview.js";
 import { selectionRect } from "../authoring/selection.js";
+import { isSurfaceEntityType } from "../authoring/surfaceAuthoring.js";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
   EditorDefinition,
@@ -48,6 +49,12 @@ interface EditorRenderItem {
   inspection: EditorPresenceInspection;
   x: number;
   y: number;
+}
+
+interface EditorStackBadge {
+  x: number;
+  y: number;
+  count: number;
 }
 
 export class EditorCanvasRenderer {
@@ -99,15 +106,23 @@ export class EditorCanvasRenderer {
       player: [],
       effect: [],
     };
+    const stackBadges: EditorStackBadge[] = [];
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
-        for (const inspection of preview.inspectCell(x, y).presences) {
+        const inspections = preview.inspectCell(x, y).presences;
+        for (const inspection of inspections) {
           passes[this.visuals.renderPassFor(inspection.definition)].push({
             inspection,
             x,
             y,
           });
         }
+        const paletteCount = new Set(
+          inspections
+            .filter((item) => !isSurfaceEntityType(item.entity.type))
+            .map((item) => item.ref.index),
+        ).size;
+        if (paletteCount >= 2) stackBadges.push({ x, y, count: paletteCount });
       }
     }
     for (const pass of ["world", "player", "effect"] as const)
@@ -120,10 +135,35 @@ export class EditorCanvasRenderer {
           item.y,
           deviceScale,
         );
+    this.drawStackBadges(context, stackBadges);
 
     if (this.interactionCanvas === this.canvas)
       this.drawInteraction(context, state, preview, deviceScale);
     else this.renderInteraction(state);
+  }
+
+  private drawStackBadges(
+    context: CanvasRenderingContext2D,
+    badges: readonly EditorStackBadge[],
+  ): void {
+    context.save();
+    context.font = "700 10px ui-monospace, monospace";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    for (const badge of badges) {
+      const label = String(badge.count);
+      const width = Math.max(16, 8 + label.length * 7);
+      const left = (badge.x + 1) * EDITOR_TILE_SIZE - width - 2;
+      const top = badge.y * EDITOR_TILE_SIZE + 2;
+      context.fillStyle = "#082f59";
+      context.strokeStyle = "#8ee7ff";
+      context.lineWidth = 1;
+      context.fillRect(left, top, width, 16);
+      context.strokeRect(left, top, width, 16);
+      context.fillStyle = "#ffffff";
+      context.fillText(label, left + width / 2, top + 8);
+    }
+    context.restore();
   }
 
   renderInteraction(state: EditorCanvasRenderState): void {
@@ -248,7 +288,11 @@ export class EditorCanvasRenderer {
         );
       context.globalAlpha = 1;
     }
-    context.strokeStyle = plan.valid ? "#99d6ff" : "#ff8e8e";
+    context.strokeStyle = !plan.valid
+      ? "#ff8e8e"
+      : plan.warnings.length > 0
+        ? "#f5bd67"
+        : "#99d6ff";
     context.lineWidth = 2;
     context.strokeRect(
       hover.x * EDITOR_TILE_SIZE + 1,

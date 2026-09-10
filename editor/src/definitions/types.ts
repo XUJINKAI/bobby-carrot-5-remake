@@ -51,11 +51,25 @@ export interface EditorQuickAction {
   apply(entity: Readonly<LevelEntity>): LevelEntity;
 }
 
-/** Entity-specific authoring policy. This belongs to Editor, never Engine. */
+export type EditorStackSlot =
+  | "surface-base"
+  | "surface-overlay"
+  | "floor-feature"
+  | "content"
+  | "support"
+  | "occupant"
+  | "cover";
+
+export interface EditorStackingDefinition {
+  /** 不同 slot 的推荐共存组合；同 slot 始终执行替换。 */
+  compatibleSlots: readonly (readonly [EditorStackSlot, EditorStackSlot])[];
+}
+
+/** Entity 专属创作策略；只属于 Editor，不进入 Engine。 */
 export interface EditorEntityDefinition {
   placementPoint?: EditorPlacementPoint;
   defaultFields?: EditorEntityFields;
-  replaceGroup?: string;
+  stackSlot?: EditorStackSlot;
   variants?: readonly EditorEntityVariant[];
   quickActions?: readonly EditorQuickAction[];
   editorVisual?: VisualDefinition["resolve"];
@@ -140,6 +154,7 @@ export interface EditorDefinition {
   /** Engine-known types matching these selectors cannot be created through normal Editor tools. */
   exclude?: readonly EditorEntityExclusion[];
   entities?: Partial<Record<EntityType, EditorEntityDefinition>>;
+  stacking?: EditorStackingDefinition;
   palette: EditorPaletteDefinition;
   validators?: readonly EditorMapValidator[];
   deletion?: EditorDeletionDefinition;

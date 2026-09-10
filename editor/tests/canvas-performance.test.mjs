@@ -8,6 +8,7 @@ import { createPlacementPreview } from "../dist/authoring/EditorPlacementPreview
 
 function canvas() {
   let draws = 0;
+  const labels = [];
   const context = {
     setTransform() {},
     fillRect() {},
@@ -21,9 +22,48 @@ function canvas() {
     drawImage() {
       draws += 1;
     },
+    fillText(label) {
+      labels.push(label);
+    },
   };
-  return { style: {}, getContext: () => context, draws: () => draws };
+  return {
+    style: {},
+    getContext: () => context,
+    draws: () => draws,
+    labels: () => labels,
+  };
 }
+
+test("Canvas 为两个以上 Palette 层显示数量角标", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "堆叠角标" },
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "carrot", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+  };
+  const target = canvas();
+  const renderer = new EditorCanvasRenderer(target, {
+    sourceTileSize: 48,
+    atlasId: "atlas",
+    image: () => ({ width: 768, height: 768 }),
+  });
+
+  renderer.render({
+    level,
+    tool: "select",
+    placement: null,
+    selection: null,
+    hover: null,
+    viewport: { zoom: 1, panX: 0, panY: 0 },
+  });
+
+  assert.deepEqual(target.labels(), ["2"]);
+});
 
 test("大地图交互复用底图，放置预览只实例化待放置对象", (t) => {
   const level = {
@@ -81,7 +121,7 @@ test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
   const base = new EditorPreview(level, createBuiltinEntityCatalog());
   const ghost = createPlacementPreview(base, {
     entity: { type: "dragon", x: 2, y: 2, direction: "right" },
-    cells: [], replace: [{ index: 1 }], valid: true,
+    cells: [], replace: [{ index: 1 }], warnings: [], valid: true,
   });
   assert.equal(ghost.inspections.length, 3);
   const id = ghost.inspections[0].presence.entityId;
