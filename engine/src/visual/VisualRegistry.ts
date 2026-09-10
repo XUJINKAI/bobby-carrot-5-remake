@@ -10,6 +10,7 @@ import type {
   VisualRenderPass,
   VisualResolveContext,
 } from "./VisualDefinition.js";
+import { unknownEntityVisual } from "./UnknownEntityVisual.js";
 
 export class VisualRegistry {
   private readonly definitions = new Map<VisualId, VisualDefinition>();
@@ -75,6 +76,8 @@ export class VisualRegistry {
     entityDefinition: EntityDefinition,
     context: VisualResolveContext,
   ): VisualComposition | null {
+    if (entityDefinition.placeholder === "unknown")
+      return unknownEntityVisual();
     return this.get(this.visualIdFor(entityDefinition))?.resolve(context) ?? null;
   }
 }

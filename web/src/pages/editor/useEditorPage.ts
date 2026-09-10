@@ -18,6 +18,7 @@ import {
   fillSurface,
   inspectEditorRules,
   isSurfaceEntityType,
+  materializeSurfaceVariants,
   paintSurface,
   pasteClipboard,
   placeEntity,
@@ -666,7 +667,9 @@ export function useEditorPage(initialLevel: EditorMap) {
     deletionTargetIndex,
     selectedRefs,
     rules,
-    levelMap: computed(() => toLevelMap(currentLevel())),
+    levelMap: computed(() =>
+      toLevelMap(materializeSurfaceVariants(currentLevel())),
+    ),
     setTool,
     selectPalette,
     activatePalette,

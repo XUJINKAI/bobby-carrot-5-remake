@@ -210,6 +210,29 @@ test("validation is executed through Editor definitions", () => {
   );
 });
 
+test("Editor Preview 将字段无效的已知 Entity 降级为占位定义", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push({
+    type: MapEntityTypeId.GRASS,
+    x: 1,
+    y: 1,
+    variant: "future",
+  });
+  const preview = new EditorPreview(level, catalog);
+  const invalid = preview.inspectCell(1, 1).presences.find(
+    (item) => item.entity.variant === "future",
+  );
+
+  assert.equal(invalid?.definition.placeholder, "unknown");
+  assert.ok(
+    validateEditorLevel(level, catalog, builtinEditorDefinition).some(
+      (issue) =>
+        issue.level === "warning" &&
+        issue.message.includes("variant 不符合 enum 合同"),
+    ),
+  );
+});
+
 test("one placement stroke forms one Undo and returns to the saved Entity state", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();

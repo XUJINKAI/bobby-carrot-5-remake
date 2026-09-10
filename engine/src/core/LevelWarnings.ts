@@ -4,13 +4,16 @@ import type {
   LevelMap,
   WinCondition,
 } from "@bobby/model";
+import { levelEntityContractIssues } from "@bobby/model";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 
 export type LevelRuntimeWarningCode =
   | "missing-player"
-  | "missing-reach-target";
+  | "missing-reach-target"
+  | "unknown-entity"
+  | "invalid-entity";
 
 export interface LevelRuntimeWarning {
   code: LevelRuntimeWarningCode;
@@ -26,11 +29,31 @@ export function validateLevelPlayability(
   catalog: EntityCatalog,
 ): LevelRuntimeWarning[] {
   const known = level.entities.flatMap((entity) => {
-    return catalog.has(entity.type)
+    return catalog.has(entity.type) && levelEntityContractIssues(entity).length === 0
       ? [{ entity, definition: catalog.require(entity.type) }]
       : [];
   });
   const warnings: LevelRuntimeWarning[] = [];
+
+  for (const type of new Set(
+    level.entities
+      .map((entity) => entity.type)
+      .filter((type) => !catalog.has(type)),
+  )) {
+    warnings.push({
+      code: "unknown-entity",
+      message: `未知 Entity '${type}' 将作为无功能占位符显示。`,
+    });
+  }
+
+  level.entities.forEach((entity, index) => {
+    const issues = levelEntityContractIssues(entity);
+    if (issues.length === 0) return;
+    warnings.push({
+      code: "invalid-entity",
+      message: `Entity #${index + 1} (${entity.type}) 将作为无功能占位符显示：${issues.join("；")}。`,
+    });
+  });
 
   if (!known.some(({ definition }) => definition.traits.includes("player"))) {
     warnings.push({

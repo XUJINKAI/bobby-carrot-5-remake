@@ -56,6 +56,7 @@ import {
   type GameplayTickInput,
   type GameplayTickResult,
 } from "./GameplaySession.js";
+import { prepareRuntimeLevel } from "./RuntimeLevel.js";
 
 type GameEventName =
   | "change"
@@ -261,7 +262,7 @@ export class Game {
 
   async loadLevel(level: LevelMap): Promise<void> {
     this.replayPlayback.stop();
-    this.session.loadLevel(level);
+    this.session.loadLevel(prepareRuntimeLevel(level));
     this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;

@@ -212,10 +212,11 @@ Explore 的正式录制、播放和导出控制，但不提供与当前 Draft �
 Plain JSON
 BC5R1 compressed text
 Share URL fragment
-.json / .bc5r text file
+任意扩展名的文本文件
 ```
 
 `BC5R1` 是 transport 版本，与 JSON `schemaVersion` 独立。
+未知 Entity 及字段合同不匹配的 Entity 会保留在草稿中，并以无功能 X 占位符显示；Inspector 校验区给出 warning，地图其它部分仍可编辑和 Play Test。
 
 ## 原版验证
 

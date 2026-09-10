@@ -16,6 +16,10 @@ export {
   type GameplayTickResult,
 } from "./core/GameplaySession.js";
 export {
+  prepareRuntimeLevel,
+  type RuntimeLevelPreparationOptions,
+} from "./core/RuntimeLevel.js";
+export {
   DEFAULT_HISTORY_POLICY,
   shouldCheckpoint,
   type HistoryMode,

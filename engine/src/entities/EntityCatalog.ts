@@ -16,6 +16,7 @@ export interface EntityCatalogEntry extends EntityDefinition {
 export class EntityCatalog {
   readonly entities = new EntityRegistry();
   private readonly entries = new Map<EntityType, EntityCatalogEntry>();
+  private readonly unknownEntries = new Map<EntityType, EntityCatalogEntry>();
 
   constructor(modules: readonly EntityModule[] = []) {
     for (const module of modules) this.register(module);
@@ -43,8 +44,16 @@ export class EntityCatalog {
 
   require(type: EntityType): EntityCatalogEntry {
     const entry = this.entries.get(type);
-    if (!entry) throw new Error(`未注册 Entity Catalog Entry：${type}`);
-    return entry;
+    if (entry) return entry;
+    const existing = this.unknownEntries.get(type);
+    if (existing) return existing;
+    const fallback: EntityCatalogEntry = {
+      ...this.entities.require(type),
+      presentation: { name: `Unknown Entity · ${type}` },
+      authoring: { palette: false },
+    };
+    this.unknownEntries.set(type, fallback);
+    return fallback;
   }
 
   all(): readonly EntityCatalogEntry[] {

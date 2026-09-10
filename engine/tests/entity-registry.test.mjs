@@ -33,6 +33,19 @@ test("所有 canonical MapEntityTypeId 恰好注册一次", () => {
   assert.equal(createBuiltinEntityRegistry().all().length, definitions.length);
 });
 
+test("未知 Entity 使用不进入正式 Catalog 的惰性占位定义", () => {
+  const registry = createBuiltinEntityRegistry();
+  const unknown = registry.require("future-mechanic");
+
+  assert.equal(registry.has("future-mechanic"), false);
+  assert.equal(unknown.placeholder, "unknown");
+  assert.deepEqual(unknown.traits, []);
+  assert.equal(
+    registry.all().some((definition) => definition.type === "future-mechanic"),
+    false,
+  );
+});
+
 test("Registry 不包含 original/custom identity 前缀", () => {
   for (const definition of createBuiltinEntityRegistry().all()) {
     assert.equal(definition.type.includes(":"), false, definition.type);

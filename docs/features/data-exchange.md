@@ -1,6 +1,6 @@
 # 数据交换
 
-Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Profile 及后续 JSON 数据的统一文本交换能力。文件、TextBox、剪贴板和分享 URL 只负责搬运同一段文本；数据所属业务由消费页面判断。
+Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore Save 及后续 JSON 数据的统一交换能力。文件、TextBox、剪贴板和分享 URL 先还原同一份 JSON；统一导入 pipeline 再判断业务类型并执行对应导入。
 
 ## 用户约定
 
@@ -9,7 +9,7 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Profile 及后�
 - Plain JSON；
 - `BC5R1:<payload>` 压缩文本；
 - 以 `/import/v1#<payload>` 结尾的完整分享 URL；
-- 内容为上述任一表示的 `.json`、`.bc5r` 或 `.txt` 文件。
+- 内容为上述任一表示的文本文件；文件扩展名不参与格式判断。
 
 `.bc5r` 是 UTF-8 文本文件，MIME 为 `text/plain;charset=utf-8`。压缩状态下载的文件内容与 TextBox 当前内容完全一致；正式站点配置 `publicBaseUrl` 后，该内容通常是可点击的完整分享 URL。Plain 状态下载 `.json`。
 
@@ -17,7 +17,16 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Profile 及后�
 
 Editor 的地图文件弹窗默认使用 Compressed 状态，打开后可以直接复制分享 URL。其它消费页面可按场景选择初始表示。
 
-Home 通过独立弹窗导入地图且只接受语义地图；Settings 的 Adventure Profile 导入只接受存档并在写入前要求用户确认覆盖。`/import/v1` 同时接受带用户 metadata 的 `MapDocument` 和 Embed 使用的纯 `LevelMap`，对地图直接创建 Explore gameplay session；纯 `LevelMap` 进入 Editor 时再生成文档名称。Adventure Profile 显示覆盖确认，未知数据只展示错误和原始文本。
+Home 导入弹窗接受 Plain JSON、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 只接受 URL fragment 中的 gzip + Base64URL payload。两者在 transport 解码后共用相同的 JSON 识别顺序：
+
+```text
+MapDocument / LevelMap → 创建 imported Explore gameplay session
+Adventure Save         → 确认后覆盖 Adventure 存档
+Explore Save           → 确认后覆盖 Explore 存档
+其它 JSON              → 报告无法识别并保持原始文本
+```
+
+地图可以携带 `meta`，也可以是纯 `LevelMap`；纯地图会生成 Editor 文档名称。Home 在弹窗内确认存档导入，`/import/v1` 在具有统一 TopBar identity 的导入页面确认。
 
 ## Transport V1
 
@@ -33,7 +42,7 @@ Base64URL 只使用 `A-Z a-z 0-9 - _`，省略尾部 padding。raw representatio
 <publicBaseUrl>/import/v1#<payload>
 ```
 
-Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；Map、Adventure Profile 等 schema 校验由调用方 parser 或 dispatcher detector 完成。
+Payload 位于 fragment，浏览器只在客户端读取。Decoder 只还原 `unknown` JSON；Map、Adventure Save、Explore Save 等 schema 识别由统一 import pipeline 完成。
 
 ## 站点根地址
 
@@ -52,6 +61,6 @@ Vite `base` 负责构建资源路径，`publicBaseUrl` 负责分享地址。构�
 
 `web/src/shared/data-exchange/` 提供 gzip、Base64URL、`BC5R1`、格式识别、分享 URL、文本文件 I/O，以及可配置左右 toolbar、label 和 placeholder 的 `DataExchangePanel`。
 
-公共层不知道 Map、Editor 或 Adventure Profile。页面只提供 serializer、parser、apply handler、文件名与 toolbar 配置。Profile 存储、地图游玩和 Editor Draft 更新仍由各自消费层负责。
+公共层不知道 Map、Editor 或 Save。`web/src/services/import/importPipeline.ts` 在其上组织领域识别与存档应用；Home 和 `/import/v1` 共享该 pipeline，只分别提供文本/文件输入和 URL fragment 输入。地图游玩、确认 UI 与页面导航仍由消费页面负责。
 
 Transport 区分 JSON 格式错误、未知表示、无效 Base64URL、损坏 gzip 与不支持的 transport 版本。领域 parser 提供业务类型错误；解析失败时保留 TextBox draft，且不修改业务数据。

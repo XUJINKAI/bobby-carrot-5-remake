@@ -11,6 +11,8 @@ Engine 的公开边界分成两个明确入口：
 
 `@bobby/engine/authoring` 是显式 opt-in 的编辑/工具入口。Editor 可以复用 Entity Definition、footprint、Presence、SpatialIndex 与 Visual authoring 能力，但这些类型不会因此成为 gameplay runtime API。
 
+Engine 加载地图时为未知 Entity type 和字段合同不匹配的已知 Entity 实例创建惰性占位定义。占位实例保留格子与堆叠位置、显示 X、不携带 Trait 或 Behavior，并通过 level warning 报告原因；其它可识别 Entity 继续正常运行。
+
 核心目标始终是：**给 Engine 一份纯语义 `LevelMap` 和少量运行配置，就能够独立运行这张地图。** Campaign、路由、collection、DAT provenance、存档与产品导航都属于 Engine 外层。
 
 > `LevelMap.music` 的选曲归属存在尚待解决的合同冲突，参见

@@ -313,8 +313,11 @@ export class EditorCanvasRenderer {
     const entity = query.entity(inspection.presence.entityId);
     if (!entity) return;
     const resolveContext = { entity, presence: inspection.presence, query };
+    const editorVisual = inspection.definition.placeholder === "unknown"
+      ? undefined
+      : this.editor.entities?.[inspection.entity.type]?.editorVisual;
     const composition =
-      this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??
+      editorVisual?.(resolveContext) ??
       this.visuals.resolve(inspection.definition, resolveContext);
     drawVisualComposition(
       context,

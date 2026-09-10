@@ -27,7 +27,7 @@ Original DAT tooling 是原版格式互操作边界，不属于浏览器产品�
 
 ## @bobby/model
 
-`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和严格 parser。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
+`model/` 是最底层的稳定语义合同，包含 Entity Map、地图规则、collection JSON 合同和 parser。地图结构、坐标、规则与已知 Entity 的声明字段由稳定合同约束；未知 type 和已知 type 的实例字段问题可以跨过读取边界，由 Engine 降级为可见的惰性占位符。地图 Entity 使用稳定语义 type；类型专属字段由 `EntityMapDefinition` 声明：
 
 ```ts
 interface LevelEntity {

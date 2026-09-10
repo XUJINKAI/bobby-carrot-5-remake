@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseLevelMap, parseMapDocument } from "../../model/dist/index.js";
+import {
+  levelEntityContractIssues,
+  parseLevelMap,
+  parseMapDocument,
+} from "../../model/dist/index.js";
 
 function documentWith(entities) {
   return {
@@ -18,10 +22,6 @@ test("egg 实体与填充规则使用稳定合同", () => {
     rules: { win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" } },
   };
   assert.deepEqual(parseMapDocument(document), document);
-  assert.throws(
-    () => parseMapDocument(documentWith([{ type: "egg-nest", x: 1, y: 1 }])),
-    /未知 Entity type/,
-  );
 });
 
 test("Map parser 接受 canonical Entity 和显式 Surface variant", () => {
@@ -40,52 +40,67 @@ test("Portal 接受任意非空 channel、hex color 与常用颜色别名", () =
     ]);
     assert.deepEqual(parseMapDocument(document), document);
   }
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([
-          { type: "portal", x: 1, y: 1, channel: "", color: "#fff" },
-        ]),
-      ),
-    /channel 不符合 string 合同/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "portal",
+      x: 1,
+      y: 1,
+      channel: "",
+      color: "#fff",
+    }),
+    ["字段 channel 不符合 string 合同"],
   );
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([
-          { type: "portal", x: 1, y: 1, channel: "secret", color: "tealish" },
-        ]),
-      ),
-    /color 不符合 string 合同/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "portal",
+      x: 1,
+      y: 1,
+      channel: "secret",
+      color: "tealish",
+    }),
+    ["字段 color 不符合 string 合同"],
   );
 });
 
-test("Map parser 拒绝未知 Entity、未知字段和错误字段值", () => {
-  assert.throws(
-    () => parseMapDocument(documentWith([{ type: "unknown", x: 0, y: 0 }])),
-    /未知 Entity type：unknown/,
+test("Map parser 保留未知 Entity，并报告已知 Entity 字段问题", () => {
+  assert.deepEqual(
+    parseMapDocument(documentWith([
+      { type: "future-mechanic", x: 0, y: 0, mode: "preview" },
+    ])),
+    documentWith([
+      { type: "future-mechanic", x: 0, y: 0, mode: "preview" },
+    ]),
   );
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([
-          {
-            type: "grass",
-            x: 0,
-            y: 0,
-            variant: "ts-10-1",
-            mystery: true,
-          },
-        ]),
-      ),
-    /不允许字段 mystery/,
+  assert.deepEqual(
+    parseMapDocument(documentWith([
+      { type: "future-mechanic", x: 0, y: 0, config: {} },
+    ])).entities[0],
+    {
+      type: "future-mechanic",
+      x: 0,
+      y: 0,
+      config: "{}",
+      __invalidJsonFields: "config",
+    },
   );
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([{ type: "grass", x: 0, y: 0, variant: "wrong" }]),
-      ),
-    /variant 不符合 enum 合同/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "grass",
+      x: 0,
+      y: 0,
+      variant: "ts-10-1",
+      mystery: true,
+    }),
+    ["字段 mystery 未声明"],
+  );
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "grass",
+      x: 0,
+      y: 0,
+      variant: "wrong",
+    }),
+    ["字段 variant 不符合 enum 合同"],
   );
 });
 
@@ -103,21 +118,23 @@ test("类型专属字段只对声明它的 Entity 生效", () => {
     mirrorY: true,
   }]);
   assert.deepEqual(parseMapDocument(controlledBobby), controlledBobby);
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([{ type: "bobby", x: 0, y: 0, direction: "down" }]),
-      ),
-    /bobby 不允许字段 direction/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "bobby",
+      x: 0,
+      y: 0,
+      direction: "down",
+    }),
+    ["字段 direction 未声明"],
   );
-  assert.throws(
-    () => parseMapDocument(documentWith([{
+  assert.deepEqual(
+    levelEntityContractIssues({
       type: "bobby",
       x: 0,
       y: 0,
       controller: "secondary",
-    }])),
-    /controller 不符合 enum 合同/,
+    }),
+    ["字段 controller 不符合 enum 合同"],
   );
 });
 
@@ -193,18 +210,22 @@ test("Map parser 规范化字段顺序，并将 entities 放在最后", () => {
     "height",
     "entities",
   ]);
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([{ type: "carousel", x: 0, y: 0, variant: 1 }]),
-      ),
-    /variant 不符合 enum 合同/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "carousel",
+      x: 0,
+      y: 0,
+      variant: 1,
+    }),
+    ["字段 variant 不符合 enum 合同"],
   );
-  assert.throws(
-    () =>
-      parseMapDocument(
-        documentWith([{ type: "fence", x: 0, y: 0, variant: 1 }]),
-      ),
-    /variant 不符合 enum 合同/,
+  assert.deepEqual(
+    levelEntityContractIssues({
+      type: "fence",
+      x: 0,
+      y: 0,
+      variant: 1,
+    }),
+    ["字段 variant 不符合 enum 合同"],
   );
 });

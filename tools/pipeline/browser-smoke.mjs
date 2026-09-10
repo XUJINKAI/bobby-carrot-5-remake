@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
+import { BC5R_GAME_ID } from "../../model/dist/index.js";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -38,6 +39,8 @@ try {
       'class="home-sky-brand"',
       'class="home-demo-screen-control"',
       'href="https://github.com/XUJINKAI/bobby-carrot-5-remake"',
+      "导入地图",
+      "导入自定义地图或存档",
     ],
     ["本项目还在开发中"],
   );
@@ -166,12 +169,24 @@ try {
   ]);
   await smoke(`${origin}/import/v1#${profilePayload}`, [
     'class="import-page"',
-    "Adventure Profile",
+    'class="shell-context-name">导入',
+    "Adventure Save",
+    "导入并覆盖",
+  ]);
+  const explorePayload = exchangePayload(JSON.stringify({
+    game: BC5R_GAME_ID,
+    schemaVersion: 1,
+    mode: "explore",
+    collections: {},
+  }));
+  await smoke(`${origin}/import/v1#${explorePayload}`, [
+    'class="import-page"',
+    "Explore Save",
     "导入并覆盖",
   ]);
   await smoke(`${origin}/import/v1#${exchangePayload("{}")}`, [
     'class="import-page"',
-    "无法识别这段 BC5R 数据",
+    "无法识别这段 Bobby Carrot 5 Remake 数据",
   ]);
   await smoke(`${origin}/import/v1#INVALID`, [
     'class="import-page"',
@@ -332,17 +347,44 @@ async function interactiveDataExchangeSmoke(url) {
   const importButton = document.querySelector('[data-home-import]');
   if (!importButton) throw new Error('missing import button');
   importButton.click();
-  await delay(80);
-  const importDialog = document.querySelector('.home-import-dialog');
-  if (!importDialog) throw new Error('missing import dialog');
-  return JSON.stringify({ import: Boolean(importDialog) });
+  const source = {
+    game: ${JSON.stringify(BC5R_GAME_ID)},
+    schemaVersion: 1,
+    mode: 'explore',
+    collections: {
+      original: {
+        game: ${JSON.stringify(BC5R_GAME_ID)},
+        schemaVersion: 1,
+        completedMaps: ['1-1'],
+        lastMap: '1-1',
+      },
+    },
+  };
+  let textarea = null;
+  for (let i = 0; i < 120 && !textarea; i += 1) {
+    await delay(50);
+    textarea = document.querySelector('.home-import-dialog textarea');
+  }
+  if (!textarea) throw new Error('missing import textarea');
+  textarea.value = JSON.stringify(source);
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  const open = [...document.querySelectorAll('.home-import-dialog button')]
+    .find((button) => button.textContent?.trim() === '打开');
+  if (!open) throw new Error('missing open button');
+  open.click();
+  for (let i = 0; i < 120 && !document.querySelector('.import-save-confirmation'); i += 1)
+    await delay(50);
+  const confirmation = document.querySelector('.import-save-confirmation');
+  return JSON.stringify({
+    confirmation: confirmation?.textContent?.includes('Explore Save') ?? false,
+  });
 })()
 `;
   const result = await runBrowserEval(url, script);
   if (result.status !== 0)
     throw new Error(`Interactive home import smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.import)
+  if (!payload.confirmation)
     throw new Error(`Unexpected home import smoke result: ${JSON.stringify(payload)}`);
 }
 async function interactiveEditorSourceSmoke(url) {

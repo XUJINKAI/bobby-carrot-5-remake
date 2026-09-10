@@ -25,10 +25,10 @@ import { renderLevels } from "../pages/explore/mountExplorePage.js";
 import { renderGamePage } from "../pages/game/mountGamePage.js";
 import { renderHome } from "../pages/home/mountHomePage.js";
 import {
-  decodeImportedData,
   importedLevelMap,
   renderImportMessage,
 } from "../pages/import/mountImportPage.js";
+import { decodeImportedPayload } from "../services/import/importPipeline.js";
 import { renderSettingsPage } from "../pages/settings/mountSettingsPage.js";
 import {
   installShellBridge,
@@ -225,7 +225,7 @@ export class BobbyApp {
   private async renderImport(context: PageContext): Promise<void> {
     const payload = location.hash.slice(1);
     try {
-      const imported = await decodeImportedData(payload);
+      const imported = await decodeImportedPayload(payload);
       if (imported.type === "map") {
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
@@ -243,15 +243,15 @@ export class BobbyApp {
         });
         return;
       }
-      this.controller = imported.type === "adventure-profile"
+      this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
-            status: "profile",
-            profile: imported.value,
+            status: "unknown",
+            message: "无法识别这段 Bobby Carrot 5 Remake 数据。",
+            rawText: imported.rawText,
           })
         : renderImportMessage(context, {
-            status: "unknown",
-            message: "无法识别这段 BC5R 数据。",
-            rawText: imported.rawText,
+            status: "save",
+            data: imported,
           });
     } catch (error) {
       this.controller = renderImportMessage(context, {
