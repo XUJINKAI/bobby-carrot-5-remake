@@ -1,5 +1,5 @@
 import type { EntityCatalog } from "@bobby/engine";
-import type { EntityType } from "@bobby/model";
+import { entityMapDefinition, type EntityType } from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import { isEditorEntityCreatable } from "../definitions/entities.js";
 import { editorCatalogEntry } from "../definitions/entities.js";
@@ -19,6 +19,7 @@ export interface PaletteItem extends EditorPaletteEntry {
   label: string;
   traits: readonly string[];
   behaviors: readonly string[];
+  supportedFields: readonly string[];
   previewPreset: EditorPlacementPreset;
   previewWidth: number;
   previewHeight: number;
@@ -226,6 +227,8 @@ function resolveEntry(
       entry.type,
     traits: definition.traits,
     behaviors: definition.behaviors ?? [],
+    supportedFields:
+      entityMapDefinition(entry.type)?.fields.map((field) => field.key) ?? [],
     previewPreset,
     previewWidth: layout.width,
     previewHeight: layout.height,

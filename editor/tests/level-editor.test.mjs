@@ -11,6 +11,7 @@ import {
   EditorPreview,
   applyPlacementVariant,
   buildInspectorModel,
+  buildPlacementInspectorPreview,
   builtinEditorDefinition,
   createBlankLevel,
   cyclePlacementVariant,
@@ -600,6 +601,55 @@ test("single-cell Inspector exposes every layer top-first", () => {
   ]);
 });
 
+test("Palette Brush Inspector previews the hovered stack after placement", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push({ type: MapEntityTypeId.CARROT, x: 3, y: 3 });
+  const preview = buildPlacementInspectorPreview(
+    level,
+    catalog,
+    { type: MapEntityTypeId.LOCK },
+    { x: 3, y: 3 },
+    builtinEditorDefinition,
+  );
+  assert.equal(preview.valid, true);
+  assert.deepEqual(
+    preview.after.layers.map((layer) => layer.entity.type),
+    [MapEntityTypeId.LOCK, MapEntityTypeId.CARROT, MapEntityTypeId.GRASS],
+  );
+  assert.equal(preview.placedIndex, level.entities.length);
+});
+
+test("Palette Brush Inspector applies replaceGroup to the hovered stack preview", () => {
+  const level = createBlankLevel(8, 8);
+  level.entities.push(
+    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
+    { type: MapEntityTypeId.LOCK, x: 3, y: 3 },
+  );
+  const preview = buildPlacementInspectorPreview(
+    level,
+    catalog,
+    { type: MapEntityTypeId.EGG },
+    { x: 3, y: 3 },
+    builtinEditorDefinition,
+  );
+  assert.equal(preview.valid, true);
+  assert.equal(preview.replacedCount, 1);
+  assert.deepEqual(
+    preview.after.layers.map((layer) => layer.entity.type),
+    [MapEntityTypeId.EGG, MapEntityTypeId.LOCK, MapEntityTypeId.GRASS],
+  );
+  assert.equal(preview.placedIndex, level.entities.length - 1);
+  assert.equal(
+    preview.after.layers.find((layer) => layer.entity.type === MapEntityTypeId.LOCK)
+      ?.ref.index,
+    level.entities.length - 2,
+  );
+  assert.equal(
+    new Set(preview.after.layers.map((layer) => layer.ref.index)).size,
+    preview.after.layers.length,
+  );
+});
+
 test("single-cell Inspector exposes the hovered multi-cell Presence role", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push({
@@ -616,6 +666,7 @@ test("single-cell Inspector exposes the hovered multi-cell Presence role", () =>
   );
   assert.equal(model.layers[0]?.entity.type, MapEntityTypeId.DRAGON);
   assert.equal(model.layers[0]?.role, "head");
+  assert.deepEqual(model.layers[0]?.footprint, { width: 3, height: 1 });
 });
 
 test("multi-cell Inspector groups same types and prioritizes editable groups", () => {
@@ -637,6 +688,16 @@ test("multi-cell Inspector groups same types and prioritizes editable groups", (
   assert.equal(
     model.groups.find((group) => group.type === MapEntityTypeId.GRASS)?.count,
     4,
+  );
+  const firstSurface = model.groups.findIndex(
+    (group) => group.type === MapEntityTypeId.GRASS,
+  );
+  assert.ok(firstSurface > 0);
+  assert.equal(
+    model.groups.slice(0, firstSurface).some(
+      (group) => group.type === MapEntityTypeId.CARROT,
+    ),
+    true,
   );
 });
 

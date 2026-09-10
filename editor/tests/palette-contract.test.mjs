@@ -100,6 +100,14 @@ test("Trap 缩略图显示 active，放置 preset 使用 inactive", () => {
   );
 });
 
+test("Palette 条目暴露 Model Definition 支持的字段名", () => {
+  const bobby = paletteItems(catalog).find(
+    (entry) => entry.type === MapEntityTypeId.BOBBY,
+  );
+  assert.ok(bobby);
+  assert.deepEqual(bobby.supportedFields, ["controller", "mirrorX", "mirrorY"]);
+});
+
 test("每个可见 Palette 条目都可放置、保存并加载为 World", () => {
   for (const preset of paletteItems(catalog)) {
     const level = createBlankLevel();

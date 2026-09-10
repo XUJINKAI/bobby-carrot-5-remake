@@ -39,10 +39,13 @@
   padding: 7px 10px;
 }
 .editor-mini-btn {
+  display: grid;
+  place-items: center;
   width: 30px;
   height: 30px;
   padding: 0;
   font-size: 1rem;
+  line-height: 0;
 }
 .editor-btn:hover:not(:disabled),
 .editor-mini-btn:hover:not(:disabled) {
@@ -271,6 +274,20 @@
 .editor-inspector-section:last-child {
   border-bottom: 0;
   margin-bottom: 0;
+}
+.editor-inspector-summary {
+  position: sticky;
+  z-index: 4;
+  top: -12px;
+  padding-top: 12px;
+  background: var(--editor-panel);
+}
+.editor-tool-kicker {
+  color: #8ee7ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .editor-inspector-section > .editor-panel-title {
   margin-bottom: 9px;

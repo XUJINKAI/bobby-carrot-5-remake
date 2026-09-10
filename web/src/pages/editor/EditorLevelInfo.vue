@@ -102,23 +102,22 @@ function applyMetadata(): void {
         <input
           type="number"
           min="1"
+          step="1"
           :value="limit('max-moves') ?? ''"
           placeholder="不限"
           @change="emit('maxMoves', numberValue($event))"
         >
       </label>
       <label class="editor-rule-row editor-rule-limit">
-        <span>最大时间</span>
-        <span class="editor-rule-number">
-          <input
-            type="number"
-            min="1"
-            :value="limit('max-time-seconds') ?? ''"
-            placeholder="不限"
-            @change="emit('maxTime', numberValue($event))"
-          >
-          <small>秒</small>
-        </span>
+        <span>最大时间（秒）</span>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          :value="limit('max-time-seconds') ?? ''"
+          placeholder="不限"
+          @change="emit('maxTime', numberValue($event))"
+        >
       </label>
     </section>
   </aside>
@@ -151,6 +150,4 @@ function applyMetadata(): void {
   color:#edf5ef;
   padding:6px 8px;
 }
-.editor-rule-number { display:flex; align-items:center; gap:5px; }
-.editor-rule-number small { color:var(--editor-muted); }
 </style>

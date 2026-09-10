@@ -1,9 +1,25 @@
 import type { EditorPlacementPreset } from "@bobby/editor";
 import {
   entityMapDefinition,
+  isLevelEntityReservedField,
   type EntityMapFieldDefinition,
   type JsonPrimitive,
+  type LevelEntity,
 } from "@bobby/model";
+
+export function placementPresetFromEntity(
+  entity: Readonly<LevelEntity>,
+): EditorPlacementPreset {
+  const fields: Record<string, JsonPrimitive> = {};
+  for (const [key, value] of Object.entries(entity)) {
+    if (isLevelEntityReservedField(key) || value === undefined) continue;
+    fields[key] = value;
+  }
+  return {
+    type: entity.type,
+    ...(Object.keys(fields).length > 0 ? { fields } : {}),
+  };
+}
 
 export function placementPresetWithField(
   source: EditorPlacementPreset,

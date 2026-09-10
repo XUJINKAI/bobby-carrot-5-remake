@@ -266,6 +266,7 @@ function colorInputValue(
         v-for="field in editableFields"
         :key="field.key"
         class="editor-field"
+        :class="{ 'editor-field-boolean': field.kind === 'boolean' }"
         :title="field.description"
       >
         <span>{{ field.key }}</span>
@@ -337,6 +338,85 @@ function colorInputValue(
 .editor-fields-block > strong {
   font-size: 0.7rem;
   color: var(--editor-muted);
+}
+.editor-field select,
+.editor-field input[type="text"],
+.editor-field input[type="number"] {
+  min-height: 36px;
+  border: 1px solid #34463a;
+  border-radius: 7px;
+  background-color: #0b130e;
+  color: #edf5ef;
+  font: inherit;
+}
+.editor-field select {
+  width: 100%;
+  padding: 7px 32px 7px 9px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9fc5d4 50%),
+    linear-gradient(135deg, #9fc5d4 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.editor-field select:hover,
+.editor-field input:hover {
+  border-color: #547b88;
+}
+.editor-field select:focus-visible,
+.editor-field input:focus-visible {
+  border-color: #8ee7ff;
+  outline: 2px solid rgb(142 231 255 / 28%);
+  outline-offset: 1px;
+}
+.editor-field select:disabled,
+.editor-field input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.editor-field-boolean {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.editor-field-boolean > span {
+  color: #dce9df;
+  font-size: 0.74rem;
+}
+.editor-field-boolean input[type="checkbox"] {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  padding: 2px;
+  appearance: none;
+  border: 1px solid #42564a;
+  border-radius: 999px;
+  background: #111d15;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.editor-field-boolean input[type="checkbox"]::before {
+  content: "";
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #aebdb2;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+  transition: transform 120ms ease, background 120ms ease;
+}
+.editor-field-boolean input[type="checkbox"]:checked {
+  border-color: #8bdfff;
+  background: #0b689c;
+}
+.editor-field-boolean input[type="checkbox"]:checked::before {
+  background: #fff;
+  transform: translateX(16px);
 }
 .editor-variant-grid {
   display: grid;

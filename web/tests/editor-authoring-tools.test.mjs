@@ -51,6 +51,30 @@ const surfaceToolInspector = fs.readFileSync(
   new URL("../src/pages/editor/EditorSurfaceToolInspector.vue", import.meta.url),
   "utf8",
 );
+const cellInspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorCellInspector.vue", import.meta.url),
+  "utf8",
+);
+const multiInspector = fs.readFileSync(
+  new URL("../src/pages/editor/EditorMultiInspector.vue", import.meta.url),
+  "utf8",
+);
+const levelInfo = fs.readFileSync(
+  new URL("../src/pages/editor/EditorLevelInfo.vue", import.meta.url),
+  "utf8",
+);
+const materialTooltip = fs.readFileSync(
+  new URL("../src/pages/editor/EditorMaterialTooltip.vue", import.meta.url),
+  "utf8",
+);
+const tooltipState = fs.readFileSync(
+  new URL("../src/pages/editor/editorMaterialTooltip.ts", import.meta.url),
+  "utf8",
+);
+const editorStyle = fs.readFileSync(
+  new URL("../../editor/style.css", import.meta.url),
+  "utf8",
+);
 
 test("Palette 和 Surface 发布工具动作与简洁标题", () => {
   assert.match(shell, /id: "editor-tool-select"[\s\S]*icon: "select"[\s\S]*title: "选择"/);
@@ -70,15 +94,10 @@ test("Editor 默认打开 Palette 并使用 Select 语义", () => {
   assert.match(pageState, /paletteTool = ref<EditorTool>\("select"\)/);
   assert.match(pageState, /surfaceTool = ref<SurfaceTool>\("rect"\)/);
   assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*\? "select"/);
-  assert.match(inspector, /surfacePreferenceManual = ref\(false\)/);
-  assert.match(
-    inspector,
-    /if \(!surfacePreferenceManual\.value\) showSurface\.value = panel === "surface"/,
-  );
-  assert.match(
-    inspector,
-    /surfacePreferenceManual\.value = true[\s\S]*showSurface\.value = !showSurface\.value/,
-  );
+  assert.doesNotMatch(inspector, /\bshowSurface\b|surfacePreferenceManual/);
+  assert.doesNotMatch(cellInspector, /editor-surface-toggle/);
+  assert.doesNotMatch(multiInspector, /editor-surface-toggle/);
+  assert.match(multiInspector, /editor-batch-divider/);
 });
 
 test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
@@ -106,8 +125,35 @@ test("Surface panel reuses Palette tiles and keeps theme collapsed by default", 
   assert.match(surface, /editor-palette-zoom/);
   assert.match(surface, /editor-palette-tile surface-terrain-tile/);
   assert.match(surface, /editor-palette-tile surface-variant/);
-  assert.match(surface, /editor-palette-tooltip surface-tooltip/);
+  assert.match(surface, /EditorMaterialTooltip/);
+  assert.match(surface, /label: "Alternating"/);
+  assert.match(surface, /surfaceVariantPreset\(definition\.primary\)\.type/);
+  assert.doesNotMatch(surface, /variantCount|slot: definition\.slot|autoLabel/);
   assert.doesNotMatch(surface, /surface-summary|reroll|重新分配/);
+});
+
+test("素材 tooltip 共用即时显示、视口避让与键盘关联", () => {
+  assert.match(palette, /supportedFields/);
+  assert.match(palette, /label: "fields"/);
+  assert.match(palette, /aria-describedby/);
+  assert.match(surface, /Left-click to set A · Right-click to set B/);
+  assert.match(surface, /label: "visual"/);
+  assert.match(materialTooltip, /role="tooltip"/);
+  assert.match(materialTooltip, /fitsRight/);
+  assert.match(tooltipState, /delayMs = 10/);
+  assert.match(tooltipState, /window\.addEventListener\("scroll", hide, true\)/);
+});
+
+test("Editor mini button 显式居中图标", () => {
+  assert.match(
+    editorStyle,
+    /\.editor-mini-btn \{[\s\S]*display: grid;[\s\S]*place-items: center;/,
+  );
+});
+
+test("Level 最大时间把单位放在标签中", () => {
+  assert.match(levelInfo, /最大时间（秒）/);
+  assert.doesNotMatch(levelInfo, /<small>秒<\/small>/);
 });
 
 test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () => {
@@ -154,6 +200,11 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(eraseInspector, /layer\.ref\.index === targetIndex/);
   assert.match(eraseInspector, /点击将删除/);
   assert.match(surfaceToolInspector, /Auto ·/);
+  assert.match(surfaceToolInspector, /Alternating · A\/B/);
+  assert.match(cellInspector, /layer\.footprint\.width/);
+  assert.match(cellInspector, /placementPresetFromEntity/);
+  assert.match(cellInspector, /drop-before/);
+  assert.match(multiInspector, /placementPresetFromEntity/);
   assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), catalog, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);
   assert.match(pageState, /function updatePlacementField/);
@@ -161,11 +212,16 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(page, /@placement-field="page\.updatePlacementField"/);
 });
 
-test("Palette 画笔悬浮不重建删除 Inspector", () => {
+test("Palette 画笔悬浮显示正式放置规则计算的结果堆叠", () => {
   assert.match(
     pageState,
     /const hoverInspector = computed\(\(\) => \{[\s\S]*paletteTool\.value !== "erase"[\s\S]*return buildInspectorModel\(currentLevel\(\), catalog, null, editor\);[\s\S]*const cell = hover\.value/,
   );
+  assert.match(pageState, /buildPlacementInspectorPreview/);
+  assert.match(pageState, /placementInspectorPreview/);
+  assert.match(placementInspector, /放置结果/);
+  assert.match(placementInspector, /title="放置后"/);
+  assert.match(placementInspector, /highlight-index="hoverPreview\.placedIndex"/);
   assert.match(placementInspector, /const targets = computed/);
   assert.match(placementInspector, /:targets="targets"/);
 });

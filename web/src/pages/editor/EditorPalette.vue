@@ -5,8 +5,9 @@ import type {
   ResolvedPaletteGroup,
 } from "@bobby/editor";
 import type { EntityCatalog, ImageManager } from "@bobby/engine";
-import { ref } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import EditorMaterialTooltip from "./EditorMaterialTooltip.vue";
+import { useEditorMaterialTooltip } from "./editorMaterialTooltip.js";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -21,14 +22,13 @@ const emit = defineEmits<{
   select: [item: PaletteItem];
   resize: [delta: number];
 }>();
-const tooltip = ref<null | {
-  x: number;
-  y: number;
-  name: string;
-  type: string;
-  traits: readonly string[];
-  behaviors: readonly string[];
-}>(null);
+const {
+  tooltip,
+  tooltipId,
+  schedule,
+  showOnFocus,
+  hide,
+} = useEditorMaterialTooltip();
 
 function glyph(item: PaletteItem): string {
   return item.label.trim().slice(0, 2).toUpperCase();
@@ -39,22 +39,21 @@ function tileStyle(item: PaletteItem): Record<string, string> {
     gridRow: `span ${item.previewHeight}`,
   };
 }
-function showTooltip(item: PaletteItem, event: MouseEvent): void {
-  tooltip.value = {
-    x: event.clientX + 14,
-    y: event.clientY + 14,
-    name: item.label,
-    type: item.type,
-    traits: item.traits,
-    behaviors: item.behaviors,
-  };
-}
-function moveTooltip(event: MouseEvent): void {
-  if (!tooltip.value) return;
-  tooltip.value = {
-    ...tooltip.value,
-    x: event.clientX + 14,
-    y: event.clientY + 14,
+function tooltipContent(item: PaletteItem) {
+  return {
+    title: item.label,
+    code: item.type,
+    rows: [
+      ...(item.traits.length > 0
+        ? [{ label: "traits", value: item.traits.join(", ") }]
+        : []),
+      ...(item.behaviors.length > 0
+        ? [{ label: "behaviors", value: item.behaviors.join(", ") }]
+        : []),
+      ...(item.supportedFields.length > 0
+        ? [{ label: "fields", value: item.supportedFields.join(", ") }]
+        : []),
+    ],
   };
 }
 </script>
@@ -90,11 +89,13 @@ function moveTooltip(event: MouseEvent): void {
             :class="{ active: placement.key === item.key }"
             :style="tileStyle(item)"
             :aria-label="item.label"
+            :aria-describedby="tooltip?.key === item.key ? tooltipId : undefined"
             :data-palette-type="item.type"
             @click="emit('select', item)"
-            @mouseenter="showTooltip(item, $event)"
-            @mousemove="moveTooltip"
-            @mouseleave="tooltip = null"
+            @mouseenter="schedule(item.key, $event, tooltipContent(item))"
+            @mouseleave="hide"
+            @focus="showOnFocus(item.key, $event, tooltipContent(item))"
+            @blur="hide"
           >
             <EditorEntityPreview
               :source="item.previewPreset"
@@ -109,22 +110,7 @@ function moveTooltip(event: MouseEvent): void {
         </div>
       </section>
     </div>
-    <Teleport to="body">
-      <div
-        v-if="tooltip"
-        class="editor-palette-tooltip"
-        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
-      >
-        <strong>{{ tooltip.name }}</strong>
-        <code>{{ tooltip.type }}</code>
-        <div v-if="tooltip.traits.length">
-          <span>traits</span> {{ tooltip.traits.join(', ') }}
-        </div>
-        <div v-if="tooltip.behaviors.length">
-          <span>behaviors</span> {{ tooltip.behaviors.join(', ') }}
-        </div>
-      </div>
-    </Teleport>
+    <EditorMaterialTooltip v-if="tooltip" :id="tooltipId" :model="tooltip" />
   </aside>
 </template>
 
@@ -145,26 +131,5 @@ function moveTooltip(event: MouseEvent): void {
   min-height: 0;
   border: 0;
   box-shadow: none;
-}
-.editor-palette-tooltip {
-  position: fixed;
-  z-index: 10000;
-  max-width: 320px;
-  pointer-events: none;
-  padding: 8px 10px;
-  border: 1px solid #3d88bb;
-  border-radius: 6px;
-  background: #082f59;
-  color: #fff;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  font-size: 12px;
-}
-.editor-palette-tooltip strong,
-.editor-palette-tooltip code {
-  display: block;
-  margin-bottom: 3px;
-}
-.editor-palette-tooltip span {
-  color: var(--bc-text-muted);
 }
 </style>

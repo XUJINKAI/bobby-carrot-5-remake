@@ -312,14 +312,14 @@ async function verifyEditorSurfaceInspector(cdp, url) {
     Boolean(
       await cdp.evaluate(
         sessionId,
-        "document.querySelector('.editor-palette-tooltip')",
+        "document.querySelector('.editor-material-tooltip')",
       ),
     ),
   );
   const eggTooltip = await cdp.evaluate(
     sessionId,
     `(() => {
-      const tooltip = document.querySelector('.editor-palette-tooltip');
+      const tooltip = document.querySelector('.editor-material-tooltip');
       return {
         name: tooltip?.querySelector('strong')?.textContent ?? '',
         type: tooltip?.querySelector('code')?.textContent ?? '',

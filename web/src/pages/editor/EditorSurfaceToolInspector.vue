@@ -29,14 +29,14 @@ const visuals = computed(() => {
 });
 const patternLabel = computed(() => {
   if (props.brush.pattern === "exact") return "Exact";
-  if (props.brush.pattern === "alternate") return "交错";
+  if (props.brush.pattern === "alternate") return "Alternating · A/B";
   return `Auto · ${terrain.value.auto.kind}`;
 });
 </script>
 
 <template>
   <div class="editor-surface-tool-inspector">
-    <section class="editor-inspector-section editor-surface-tool-summary">
+    <section class="editor-inspector-section editor-surface-tool-summary editor-inspector-summary">
       <span class="editor-tool-kicker">{{ tool === 'fill' ? '填充' : '画笔' }} · Surface</span>
       <strong>{{ terrain.label }}</strong>
       <span class="editor-muted">{{ patternLabel }}</span>

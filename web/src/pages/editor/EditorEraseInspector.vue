@@ -2,17 +2,12 @@
 import {
   isSurfaceEntityType,
   type EditorDefinition,
-  type EditorPlacementPreset,
   type EntityCatalog,
   type InspectorModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import {
-  isLevelEntityReservedField,
-  type JsonPrimitive,
-  type LevelEntity,
-} from "@bobby/model";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import { placementPresetFromEntity } from "./editorFieldValues.js";
 
 defineProps<{
   model: InspectorModel;
@@ -21,23 +16,11 @@ defineProps<{
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
-
-function previewSource(entity: Readonly<LevelEntity>): EditorPlacementPreset {
-  const fields: Record<string, JsonPrimitive> = {};
-  for (const [key, value] of Object.entries(entity)) {
-    if (isLevelEntityReservedField(key) || value === undefined) continue;
-    fields[key] = value;
-  }
-  return {
-    type: entity.type,
-    ...(Object.keys(fields).length > 0 ? { fields } : {}),
-  };
-}
 </script>
 
 <template>
   <div class="editor-erase-inspector">
-    <section class="editor-inspector-section editor-delete-summary">
+    <section class="editor-inspector-section editor-delete-summary editor-inspector-summary">
       <span class="editor-tool-kicker">删除工具</span>
       <template v-if="model.mode === 'cell'">
         <strong>格子 {{ model.rect?.left }}, {{ model.rect?.top }}</strong>
@@ -56,7 +39,7 @@ function previewSource(entity: Readonly<LevelEntity>): EditorPlacementPreset {
         }"
       >
         <EditorEntityPreview
-          :source="previewSource(layer.entity)"
+          :source="placementPresetFromEntity(layer.entity)"
           :cell-size="32"
           :images="images"
           :catalog="catalog"

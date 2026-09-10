@@ -84,9 +84,11 @@ Variant 分配支持：
 
 - Auto：按地图坐标和 seed 稳定分配 variant；同一 seed 不会因刷新而改变；
 - Exact：强制使用一个具体 variant，用于手工修边和原版精确复刻；
-- 交错：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
+- Alternating：两个 variant 按 `(x + y) % 2` 交替，主要用于接缝、atlas mapping 等 Debug。
 
-Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，使整体更接近 atlas 预览。Alternate 模式左键选择 A、右键选择 B。
+Variant 在 Catalog 中直接以二维 `rows` 定义，Surface 面板按原布局展示，不自行重排。
+Variant 单元在同一 row 内紧贴，相邻 row 也紧贴，只用明显的分隔线表达 row 边界，
+使整体更接近 atlas 预览。Alternating 模式左键选择 A、右键选择 B。
 
 Inspector 编辑 Surface 时复用同一份二维 `rows`，直接显示 atlas visual 网格并高亮当前单元；选择结果写回 canonical type + `variant`。Surface 的 `variant` 不显示为文本下拉框。
 
@@ -119,16 +121,22 @@ remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original T
 Inspector 汇总当前工具和它正在作用的对象：
 
 - Select 单格显示该格完整 Entity stack，并允许编辑字段、切换 variant、调整顺序或删除指定层；
-- Select 矩形选区按 Entity type 分组，提供批量字段、variant 与删除操作；
-- Palette Brush 显示当前素材及其全部 `EditorEntityDefinition.variants`，选择 variant 会同步更新后续放置 preset；
+- Select 矩形选区按 Entity type 分组，Palette Entity 位于 Surface Entity 之前并以分隔线区分，
+  提供批量字段、variant 与删除操作；
+- Palette Brush 显示当前素材及其全部 `EditorEntityDefinition.variants`，选择 variant 会同步更新
+  后续放置 preset；Canvas hover 显示正式放置规则计算出的结果堆叠；
 - Palette Delete 根据鼠标悬浮格显示完整 Entity stack，并明确标记点击时实际删除的非 Surface 层；
 - Surface Brush / Smart Fill 显示当前 Terrain、Pattern 与预览单元。
 
 删除目标与实际删除操作共用 `resolveDeletionTarget()`，Inspector 不另算一套视觉栈规则。
+Inspector 始终显示选区中的完整 Entity 集合；单格按实际 `stackOrder` 从顶层向下排列。
+多格对象显示 footprint、anchor 与当前命中的 Presence role。
 Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
 Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通 enum / boolean 控件编辑。
-只有 Delete 工具会让 Inspector 订阅 Canvas hover；Palette Brush 的悬浮预览不会触发
-variant 网格重新绘制。
+Palette 素材提示显示 canonical type、Trait、Behavior 与支持的 Map fields；Surface 素材提示
+显示实际持久化的 canonical type，具体 Variant 另外显示 visual ID 与在 Terrain 中的位置。
+Delete 与 Palette Brush Inspector 订阅离散 Canvas cell hover；Palette Brush 的当前素材字段与
+variant 数据保持稳定，hover 只更新紧凑的放置结果堆叠预览。
 
 规则检测器按 Entity 与 Trait 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
 

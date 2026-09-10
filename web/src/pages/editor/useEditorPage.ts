@@ -6,6 +6,7 @@ import {
   applyPlacementVariant as applyPlacementVariantPreset,
   applySurfaceTheme,
   buildInspectorModel,
+  buildPlacementInspectorPreview,
   builtinEditorDefinition,
   copyEntitySelection,
   createBuiltinEntityCatalog,
@@ -51,6 +52,7 @@ import {
   type EditorTool,
   type EntityRef,
   type PaletteItem,
+  type PlacementInspectorPreviewModel,
   type SurfaceBrush,
   type SurfacePattern,
   type SurfaceTerrainId,
@@ -147,6 +149,17 @@ export function useEditorPage(initialLevel: EditorMap) {
       editor,
     );
   });
+  const placementInspectorPreview = computed<PlacementInspectorPreviewModel>(
+    () => buildPlacementInspectorPreview(
+      currentLevel(),
+      catalog,
+      placement.value,
+      leftPanel.value === "palette" && paletteTool.value === "place"
+        ? hover.value
+        : null,
+      editor,
+    ),
+  );
   const deletionTargetIndex = computed(() => {
     if (
       leftPanel.value !== "palette" ||
@@ -667,6 +680,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     paletteSize,
     inspector,
     hoverInspector,
+    placementInspectorPreview,
     deletionTargetIndex,
     selectedRefs,
     rules,

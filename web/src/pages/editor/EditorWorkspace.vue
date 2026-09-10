@@ -13,6 +13,7 @@ import type {
   EntityCatalog,
   InspectorModel,
   PaletteItem,
+  PlacementInspectorPreviewModel,
   ResolvedPaletteGroup,
   SurfaceBrush,
   SurfacePattern,
@@ -43,6 +44,7 @@ defineProps<{
   hover: Cell | null;
   inspector: InspectorModel;
   hoverInspector: InspectorModel;
+  placementInspectorPreview: PlacementInspectorPreviewModel;
   deletionTargetIndex: number | null;
   rules: readonly EditorRuleCapability[];
   palette: readonly ResolvedPaletteGroup[];
@@ -171,6 +173,7 @@ const emit = defineEmits<{
       :placement="palettePlacement"
       :surface-brush="surfaceBrush"
       :hover-model="hoverInspector"
+      :placement-preview="placementInspectorPreview"
       :deletion-target-index="deletionTargetIndex"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
       @variant="(entityIndex, index) => emit('variant', entityIndex, index)"

@@ -15,7 +15,12 @@ export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, repla
 export type { EditorCommand, EditorEntityReplacement } from "./document/commands.js";
 export { EditorPreview } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
-export { entityCells, placeEntity, resolvePlacement, topEntityRefAt } from "./authoring/entityPlacement.js";
+export {
+  entityCells,
+  placeEntity,
+  resolvePlacement,
+  topEntityRefAt,
+} from "./authoring/entityPlacement.js";
 export type { Cell, EntityPlacementPlan, PlacementCell, PlacementOverrides } from "./authoring/entityPlacement.js";
 export { resolveEditorEntityPreviewLayout } from "./authoring/entityPreview.js";
 export type { EditorEntityPreviewLayout } from "./authoring/entityPreview.js";
@@ -30,8 +35,17 @@ export type { EditorResizeEdges, EditorResizeResult } from "./authoring/resize.j
 export { EditorRuleDetector, enableEditorRules, inspectEditorRules, updateEditorRule } from "./authoring/rules.js";
 export type { EditorRuleCapability, EditorRuleKind } from "./authoring/rules.js";
 export { editorVariantIndex, applyPlacementVariant, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
-export { buildInspectorModel } from "./authoring/inspectorModel.js";
-export type { InspectorModel, InspectorMode, InspectorEntityModel, InspectorEntityGroupModel } from "./authoring/inspectorModel.js";
+export {
+  buildInspectorModel,
+  buildPlacementInspectorPreview,
+} from "./authoring/inspectorModel.js";
+export type {
+  InspectorEntityGroupModel,
+  InspectorEntityModel,
+  InspectorMode,
+  InspectorModel,
+  PlacementInspectorPreviewModel,
+} from "./authoring/inspectorModel.js";
 export { SURFACE_TERRAINS, SURFACE_TERRAIN_GROUPS, SURFACE_THEMES, applySurfaceTheme, defaultSurfaceBrush, detectSurfaceTheme, fillSurface, isSurfaceEntityType, paintSurface, rectangleCells, surfaceTerrain, surfaceTerrainForEntity } from "./authoring/surfaceAuthoring.js";
 export { materializeSurfaceVariants, pickSurfaceBrush, replaceSurfaceVisualVariant, surfaceVariantPreset, surfaceVisualVariant } from "./authoring/surfacePersistence.js";
 export type { SurfaceBrush, SurfacePattern, SurfaceTerrainDefinition, SurfaceTerrainGroup, SurfaceTerrainId, SurfaceTheme, SurfaceThemeDefinition, SurfaceTool, SurfaceType, SurfaceVariant } from "./authoring/surfaceAuthoring.js";

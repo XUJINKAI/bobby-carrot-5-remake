@@ -469,10 +469,7 @@ export const SURFACE_TERRAIN_GROUPS: readonly SurfaceTerrainGroup[] = [
   {
     id: "water-space",
     label: "水与太空",
-    rows: [
-      ["water", "waterfall", "starfield", "moon", "snow-cloud"],
-      [],
-    ],
+    rows: [["water", "waterfall", "starfield", "moon", "snow-cloud"]],
   },
   {
     id: "snow",

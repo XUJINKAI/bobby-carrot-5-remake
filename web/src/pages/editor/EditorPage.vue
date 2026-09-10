@@ -373,6 +373,7 @@ function isMobileEditor(): boolean {
       :hover="page.hover.value"
       :inspector="page.inspector.value"
       :hover-inspector="page.hoverInspector.value"
+      :placement-inspector-preview="page.placementInspectorPreview.value"
       :deletion-target-index="page.deletionTargetIndex.value"
       :rules="page.rules.value"
       :palette="page.palette"

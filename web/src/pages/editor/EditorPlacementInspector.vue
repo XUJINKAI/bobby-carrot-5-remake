@@ -4,15 +4,18 @@ import {
   type EditorDefinition,
   type EntityCatalog,
   type PaletteItem,
+  type PlacementInspectorPreviewModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
 import { computed } from "vue";
 import EditorEntityFields from "./EditorEntityFields.vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
+import EditorInspectorStack from "./EditorInspectorStack.vue";
 
 const props = defineProps<{
   placement: PaletteItem;
+  hoverPreview: PlacementInspectorPreviewModel;
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
@@ -36,7 +39,7 @@ const definition = computed(() =>
 
 <template>
   <div class="editor-placement-inspector">
-    <section class="editor-inspector-section editor-tool-summary">
+    <section class="editor-inspector-section editor-tool-summary editor-inspector-summary">
       <span class="editor-tool-kicker">画笔 · 当前素材</span>
       <div class="editor-placement-current">
         <EditorEntityPreview
@@ -66,6 +69,36 @@ const definition = computed(() =>
         @field="(key, value) => emit('field', key, value)"
         @variant="emit('variant', $event)"
       />
+    </section>
+    <section class="editor-inspector-section editor-placement-hover">
+      <template v-if="hoverPreview.cell">
+        <header class="editor-placement-hover-head">
+          <span>
+            <strong>放置结果</strong>
+            <small>格子 {{ hoverPreview.cell.x }}, {{ hoverPreview.cell.y }}</small>
+          </span>
+          <span v-if="hoverPreview.replacedCount > 0" class="editor-replace-count">
+            替换 {{ hoverPreview.replacedCount }} 个 Entity
+          </span>
+          <span v-else-if="!hoverPreview.valid" class="editor-invalid-placement">
+            无法放置
+          </span>
+        </header>
+        <div class="editor-placement-stack-result">
+          <EditorInspectorStack
+            title="放置后"
+            :model="hoverPreview.after"
+            :highlight-index="hoverPreview.placedIndex"
+            highlight-label="新增"
+            :images="images"
+            :catalog="catalog"
+            :editor="editor"
+          />
+        </div>
+      </template>
+      <p v-else class="editor-muted editor-placement-hover-empty">
+        将指针移到画布格子上，查看放置后的完整堆叠。
+      </p>
     </section>
   </div>
 </template>
@@ -103,5 +136,40 @@ const definition = computed(() =>
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.editor-placement-hover {
+  display: grid;
+  gap: 8px;
+}
+.editor-placement-hover-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.editor-placement-hover-head > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+.editor-placement-hover-head small {
+  color: var(--editor-muted);
+  font-size: 0.62rem;
+}
+.editor-replace-count,
+.editor-invalid-placement {
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.editor-replace-count {
+  color: #8ee7ff;
+}
+.editor-invalid-placement {
+  color: #ffb4a9;
+}
+.editor-placement-stack-result {
+  min-width: 0;
+}
+.editor-placement-hover-empty {
+  margin: 0;
 }
 </style>
