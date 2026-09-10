@@ -1,26 +1,23 @@
 {
   "formatVersion": 1,
   "meta": {
-    "name": "1",
+    "name": "1-1",
     "url": "https://bc5r.xujinkai.net/explore/play/original/1-1",
     "note": ""
   },
   "runtime": {
-    "worldHz": 16,
+    "worldHz": 60,
     "bobbyLocomotion": {
       "moveMs": 350
     }
   },
-  "initialIntents": [
-    {
-      "type": "set-actor-lock-key",
-      "kind": "reusable",
-      "enabled": true
-    }
-  ],
+  "initialIntents": [],
   "finalState": {
     "status": "won",
+    "moves": 84,
+    "elapsedMs": 32467,
     "counters": {
+      "collect-bonus-coin": 2,
       "collect-carrot": 9
     },
     "completedConditions": [
@@ -34,842 +31,10 @@
       }
     ]
   },
-  "endTick": 424,
+  "endTick": 1948,
   "frames": [
     {
-      "tick": 15,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 16,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 17,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 18,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 19,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 20,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 21,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 22,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 25,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 26,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 27,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 28,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 29,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 30,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 31,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 32,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 33,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 34,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 35,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 36,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 37,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 38,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 39,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 40,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 41,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 42,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 43,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 44,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 45,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 46,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 47,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 49,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 50,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 51,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 52,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 53,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 54,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 55,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 56,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 57,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 58,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 59,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 60,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 61,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 63,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 64,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 65,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 66,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 67,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 73,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 74,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 75,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 76,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 77,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 79,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 80,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 81,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 82,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 83,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 85,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 86,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 87,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 88,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 89,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 90,
+      "tick": 70,
       "groups": [
         {
           "intents": [
@@ -895,494 +60,13 @@
       ]
     },
     {
-      "tick": 92,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 93,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 94,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 95,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 96,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 97,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 98,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 99,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 100,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 101,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 102,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 103,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 104,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 105,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 106,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 107,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 110,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 111,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "tick": 112,
       "groups": [
         {
           "intents": [
             {
               "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 113,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 114,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 115,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 116,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 117,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 118,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 119,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 120,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 121,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 122,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 123,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 124,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 125,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 127,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 128,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 129,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 130,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 131,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 132,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
+              "direction": "left"
             }
           ]
         }
@@ -1395,267 +79,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 134,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 135,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 136,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 137,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 138,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 139,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 140,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 141,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 142,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 143,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 144,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 145,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 146,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 147,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 148,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 149,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 150,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 151,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 152,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 153,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
+              "direction": "left"
             }
           ]
         }
@@ -1668,254 +92,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 155,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 156,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 158,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 159,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 160,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 161,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 162,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 163,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 164,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 165,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 166,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 167,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 168,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 169,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 170,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 171,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 172,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 173,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 174,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
+              "direction": "left"
             }
           ]
         }
@@ -1928,176 +105,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 176,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 177,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 179,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 180,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 181,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 182,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 183,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 184,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 188,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 189,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 190,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 194,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 195,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
+              "direction": "left"
             }
           ]
         }
@@ -2105,201 +113,6 @@
     },
     {
       "tick": 196,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 201,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 202,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 204,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 205,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 206,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 207,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 208,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 209,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 210,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 211,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 212,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 213,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 214,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 215,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 216,
       "groups": [
         {
           "intents": [
@@ -2325,520 +138,13 @@
       ]
     },
     {
-      "tick": 218,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 219,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 220,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 221,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 222,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 223,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 224,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 225,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 226,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 227,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 228,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 229,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 230,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 231,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 232,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 233,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 234,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 235,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 236,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 237,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 238,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "tick": 239,
       "groups": [
         {
           "intents": [
             {
               "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 240,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 241,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 242,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 243,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 244,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 247,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 248,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 249,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 250,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 251,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 252,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 253,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 254,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 255,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 256,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 257,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 258,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 259,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
+              "direction": "right"
             }
           ]
         }
@@ -2851,241 +157,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 261,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 262,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 263,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 264,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 265,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 266,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 267,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 270,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 271,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 272,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 273,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 274,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 275,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 276,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 277,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 278,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 279,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 280,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
+              "direction": "right"
             }
           ]
         }
@@ -3098,253 +170,6 @@
           "intents": [
             {
               "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 282,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 283,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 284,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 285,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 286,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 287,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 290,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 291,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 292,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 293,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 294,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 295,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 296,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 297,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 298,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 305,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 306,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 307,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 311,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
               "direction": "right"
             }
           ]
@@ -3352,130 +177,13 @@
       ]
     },
     {
-      "tick": 312,
+      "tick": 302,
       "groups": [
         {
           "intents": [
             {
               "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 313,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 314,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 315,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 316,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 317,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 318,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 319,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "right"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 321,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 322,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
+              "direction": "down"
             }
           ]
         }
@@ -3488,241 +196,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 324,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 325,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 326,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 327,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 328,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 329,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 330,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 331,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 332,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 333,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 334,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 335,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 336,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 337,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "up"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 340,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 341,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 342,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 343,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
+              "direction": "down"
             }
           ]
         }
@@ -3735,267 +209,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 345,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 346,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 347,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 348,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 349,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 350,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 351,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 352,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 353,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 354,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 355,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 356,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 357,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 358,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 359,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 360,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 361,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 362,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 363,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 364,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
+              "direction": "down"
             }
           ]
         }
@@ -4008,241 +222,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 368,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 369,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 370,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 371,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 372,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 373,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 374,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 375,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 376,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 377,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 378,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 379,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 380,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 381,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 382,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 383,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 384,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 385,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
+              "direction": "right"
             }
           ]
         }
@@ -4255,215 +235,7 @@
           "intents": [
             {
               "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 387,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 388,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 389,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 390,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 391,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 392,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 393,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 394,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 395,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 396,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 399,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 400,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 401,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "left"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 404,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 405,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 406,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
+              "direction": "right"
             }
           ]
         }
@@ -4476,79 +248,14 @@
           "intents": [
             {
               "type": "move",
-              "direction": "down"
+              "direction": "right"
             }
           ]
         }
       ]
     },
     {
-      "tick": 408,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 409,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 410,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 411,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 412,
-      "groups": [
-        {
-          "intents": [
-            {
-              "type": "move",
-              "direction": "down"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tick": 415,
+      "tick": 428,
       "groups": [
         {
           "intents": [
@@ -4561,7 +268,7 @@
       ]
     },
     {
-      "tick": 416,
+      "tick": 449,
       "groups": [
         {
           "intents": [
@@ -4574,7 +281,839 @@
       ]
     },
     {
-      "tick": 417,
+      "tick": 470,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 491,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 512,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 533,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 554,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 575,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 596,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 617,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 638,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 659,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 687,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 708,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 729,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 750,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 771,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 792,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 813,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 834,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 855,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 876,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 919,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 944,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 965,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 986,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1007,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1028,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1049,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1070,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1091,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1145,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1171,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1192,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1219,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1240,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1261,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1315,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1336,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1357,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1378,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1399,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1420,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1441,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1462,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1483,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1504,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1525,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1546,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1567,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1588,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1609,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1630,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1651,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1672,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1693,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1714,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1735,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1756,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1777,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "up"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1798,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1819,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1840,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1862,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "left"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1884,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1905,
+      "groups": [
+        {
+          "intents": [
+            {
+              "type": "move",
+              "direction": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tick": 1926,
       "groups": [
         {
           "intents": [
