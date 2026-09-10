@@ -1,6 +1,6 @@
 import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { AudioRuntime } from "@bobby/engine";
-import { createApp, reactive, type App as VueApp } from "vue";
+import { createApp, nextTick, reactive, type App as VueApp } from "vue";
 import {
   createImageManager,
   siteUrl,
@@ -38,6 +38,10 @@ import {
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
+  installButtonFocusPolicy,
+  type ButtonFocusPolicy,
+} from "./buttonFocusPolicy.js";
+import {
   NOOP_CONTROLLER,
   type PageContext,
   type PageController,
@@ -65,6 +69,7 @@ export class BobbyApp {
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
   private vueRoot: AppRootHandle | null = null;
+  private buttonFocusPolicy: ButtonFocusPolicy | null = null;
 
   constructor(mount: HTMLDivElement) {
     this.mount = mount;
@@ -86,6 +91,7 @@ export class BobbyApp {
       });
       this.vueRoot = this.vueApp.mount(this.mount) as unknown as AppRootHandle;
     });
+    this.buttonFocusPolicy = installButtonFocusPolicy(this.mount);
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
@@ -95,6 +101,7 @@ export class BobbyApp {
 
   destroy(): void {
     this.controller.destroy();
+    this.buttonFocusPolicy?.destroy();
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
     window.removeEventListener("popstate", this.onPopState);
@@ -104,6 +111,7 @@ export class BobbyApp {
     this.images.destroy();
     this.vueApp = null;
     this.vueRoot = null;
+    this.buttonFocusPolicy = null;
   }
 
   private applyShell(config: ShellConfig): void {
@@ -135,6 +143,15 @@ export class BobbyApp {
   }
 
   private async renderRoute(): Promise<void> {
+    try {
+      await this.renderCurrentRoute();
+    } finally {
+      await nextTick();
+      this.buttonFocusPolicy?.refresh();
+    }
+  }
+
+  private async renderCurrentRoute(): Promise<void> {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
     const path = localRoutePath();

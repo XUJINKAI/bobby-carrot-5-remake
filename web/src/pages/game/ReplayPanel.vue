@@ -372,7 +372,6 @@ withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
   opacity: 0.42;
 }
 
-.replay-panel-result button:focus-visible,
 .replay-panel-skip-thinking input:focus-visible,
 .replay-panel-speed input:focus-visible {
   outline: 2px solid var(--bc-text);

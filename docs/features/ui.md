@@ -109,6 +109,8 @@ Hero 以下的项目介绍聚焦三类信息：原作重制、原版研究、Edi
 
 页面通过 `ShellConfig` 声明身份、返回、命令、页面操作和底栏信息。Shell 只负责布局、响应式折叠与 action 派发，不识别 Home、Explore、Adventure、Editor 或 Gameplay。
 
+Web 产品中的按钮使用指针与应用快捷键触发，不进入浏览器 Tab 焦点顺序，也不保留点击焦点。这样按键始终由当前页面快捷键或 Engine gameplay 输入解释。输入框、下拉框和文本区保留原生焦点与 Tab 导航，保证 Editor、Settings 和数据交换表单可正常输入。
+
 Shell 允许页面分别配置 TopBar 与 BottomBar 是否固定。固定栏位位于页面滚动视口之外，滚轮、触摸滚动与 Page Up / Page Down 只影响中间的 Content 区域；关闭固定能力时，对应栏位进入 Content 滚动视口并随页面内容移动。
 
 页面按自身滚动模型分别声明固定状态。暂时隐藏的栏位不参与布局。

@@ -4,6 +4,7 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { createServer } from "vite";
 import { root } from "../lib/fs.mjs";
+import { verifyButtonFocusPolicy } from "./button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./editor-browser-checks.mjs";
 import {
@@ -66,6 +67,7 @@ test(
     const origin = `http://127.0.0.1:${address.port}`;
 
     try {
+      await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
       await verifySettingsPage(cdp, `${origin}/settings`);
