@@ -163,7 +163,7 @@ Keyboard / Pointer / Wheel / Pinch       Engine ScreenJoystick
 
 Engine `ScreenJoystick` 负责半透明圆形底座和球头的渲染、pointer capture、dead zone、主轴方向、方向迟滞与回中，并将结果送入同一个 `InputController` held-direction 路径。调用方通过 Runtime Config 决定是否启用、透明度和安全区域。
 
-Bobby 的 `controller` 字段把 actor 放入 `channel-1` 或 `channel-2`，`mirrorX / mirrorY` 组成该 actor 的方向变换。`GameplaySession` 将浏览器输入源映射到通道：单通道时方向键与 WASD 共同控制 primary 通道，双通道时二者分别控制 primary 与 secondary。
+Bobby 的 `controller` 字段使用从 `0` 开始的数字通道，省略时属于通道 `0`；`mirrorX / mirrorY` 组成该 actor 的方向变换。`GameplaySession` 将浏览器输入源映射到通道：单通道时方向键与 WASD 共同控制 primary 通道，双通道时二者分别控制通道 `0` 与 `1`。
 
 外部宿主控件仍可调用 `InputController.setHeldDirection()`，用于无障碍控制器或产品自定义输入；这是一条扩展入口，不承担基础 Screen Joystick 实现。Editor Authoring 输入属于 Editor；Editor Play Test 直接启用 Engine Gameplay Input。
 
@@ -178,7 +178,11 @@ complete
 death
 dialog { text? }
 object-interaction {
+  requestId,
+  actorId,
+  entityId,
   objectType,
+  role,
   action,
   x,
   y
@@ -193,19 +197,22 @@ objectType = ObjectId.LOCK
 action = "open"
 ```
 
-触碰 Sandman 是普通 Definition-driven Object touch：
+触碰可对话角色的 Body 是普通 Definition-driven Object touch：
 
 ```text
 LevelEntity.dialogue
         ↓
 Object Definition touch behavior
-        ↓
-dialog(text | undefined)
-        ↓
-Web presentation
+        ├─ object-interaction
+        └─ dialogue 非空时发出 dialog(text)
+                         ↓
+                  Engine presentation
 ```
 
-没有作者对白时仍产生 `dialog(undefined)`；Web 可以显示空对白框或 `...`。Engine 不恢复、猜测或内置原版对白。
+固定对白是随 JSON 地图传播的字面字符串。复杂条件对白与购买由宿主监听 live
+`onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
+不能取得 BehaviorContext、WorldQuery 或 CommandQueue。Replay playback 保留普通
+`WorldEvent`，但不会再次调用外部交互控制器。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -276,6 +283,7 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - Adventure Save contract；
 - 全局经济 / 永久升级 / 一次性奖励位置；
 - Adventure session plan；
+- 条件对白、Bonus Beaver 单次钥匙和永久商品购买等 Campaign 交互 reducer；
 - 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
 
 地图准备顺序固定为：
@@ -290,7 +298,7 @@ persistent reward filtering
 Engine Game.loadLevel(LevelMap)
 ```
 
-Adventure 可以覆盖 Sandman `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。
+Adventure 可以覆盖角色 `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。持久奖励由 Adventure Save 按 Campaign level ID、Object type 和地图坐标记录；Engine 只报告本局的收集事实。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
@@ -365,7 +373,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。Sandman 的 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。角色 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
@@ -474,6 +482,11 @@ Campaign level ID + semantic Object type + x/y
 ```
 
 已经领取的奖励在进入 Adventure session 前从 LevelMap clone 中移除；原始官方 LevelMap 保持不可变。
+
+购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
+币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并
+持久化新 Save。Bonus Beaver 的单次钥匙在 reducer 决策后以 `set-actor-lock-key` intent
+提交给 Engine，并在 Engine 发出带同一 `requestId` 的接受事件后提交 Save。
 
 ## Original JAR Validation
 

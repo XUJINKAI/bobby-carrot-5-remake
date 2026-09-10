@@ -14,8 +14,7 @@ assets/
 ├── adventure/
 │   └── index.json
 ├── replays/
-│   └── <collection>/
-│       └── <map-id>.json
+│   └── <fixture-name>.json
 ├── i18n/
 ├── art/
 └── audio/
@@ -23,9 +22,10 @@ assets/
 
 `assets/` 是网站 `/assets/` 的静态资源源树。`build` 将其原样复制到 `dist/assets/`。
 
-`replays/` 保存人工录制并由 Git 托管的 Engine 回归 fixture。每个文件与
-`maps/` 下相同相对路径的 MapDocument 配对，具体格式和验证规则见
-`docs/contracts/replay.md`。
+`replays/` 保存人工录制并由 Git 托管的 Engine 回归 fixture。Web 使用
+`<collection>/<map-id>.json` 作为每张地图的默认内置过法；验证工具递归扫描全部 JSON，
+并通过 Replay `meta.url` 关联 MapDocument，因此其它测试文件可以按 take 或测试目的命名。
+具体格式和验证规则见 `docs/contracts/replay.md`。
 
 ## `maps/index.json`
 

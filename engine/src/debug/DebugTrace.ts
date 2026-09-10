@@ -8,10 +8,18 @@ export type DebugTraceCategory =
   | "lifecycle"
   | "outcome"
   | "presentation"
+  | "intent"
   | "event";
+
+export type DebugTraceKind =
+  | "world-tick"
+  | "world-delta"
+  | "snapshot"
+  | "debug-command";
 
 export interface DebugTraceEntry {
   seq: number;
+  kind: DebugTraceKind;
   category: DebugTraceCategory;
   summary: string;
   worldTick: number | null;
@@ -23,6 +31,7 @@ export interface DebugTraceEntry {
 }
 
 export interface DebugTraceRecord {
+  kind: DebugTraceKind;
   category: DebugTraceCategory;
   summary: string;
   worldTick: number | null;
@@ -33,7 +42,7 @@ export interface DebugTraceRecord {
   detail?: unknown;
 }
 
-/** Small debug-only ring buffer. Sequence, not either clock, defines causal order. */
+/** Debug 专用环形缓冲；因果顺序只由 sequence 定义，不依赖任一时钟。 */
 export class DebugTraceRecorder {
   private readonly entries: DebugTraceEntry[] = [];
   private nextSeq = 1;
@@ -41,8 +50,9 @@ export class DebugTraceRecorder {
   constructor(private readonly capacity = 50) {}
 
   record(record: DebugTraceRecord): void {
-    this.entries.push({
+    const entry: DebugTraceEntry = {
       seq: this.nextSeq++,
+      kind: record.kind,
       category: record.category,
       summary: record.summary,
       worldTick: record.worldTick,
@@ -57,7 +67,11 @@ export class DebugTraceRecorder {
       ...(record.detail !== undefined
         ? { detail: structuredClone(record.detail) }
         : {}),
-    });
+    };
+    const previous = this.entries.at(-1);
+    if (record.kind === "world-tick" && previous?.kind === "world-tick")
+      this.entries[this.entries.length - 1] = entry;
+    else this.entries.push(entry);
     while (this.entries.length > this.capacity) this.entries.shift();
   }
 

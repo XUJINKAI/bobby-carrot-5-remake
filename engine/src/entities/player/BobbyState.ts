@@ -11,7 +11,8 @@ export interface BobbyInventoryState {
   kite: boolean;
   shovel: boolean;
   beans: number;
-  temporaryKey: boolean;
+  singleUseLockKey: boolean;
+  reusableLockKey: boolean;
 }
 
 export type BobbySpeedPhase = "full" | "normal" | "slow";
@@ -29,9 +30,15 @@ export const BOBBY_INVENTORY_FIELDS: readonly EntityFieldDefinition[] = [
   { key: "shovel", kind: "boolean", label: "Shovel", default: false },
   { key: "beans", kind: "number", label: "Beans", default: 0 },
   {
-    key: "temporaryKey",
+    key: "singleUseLockKey",
     kind: "boolean",
     label: "Temporary Key",
+    default: false,
+  },
+  {
+    key: "reusableLockKey",
+    kind: "boolean",
+    label: "Reusable Key",
     default: false,
   },
 ];
@@ -44,7 +51,8 @@ export function readBobbyInventory(
     kite: state?.kite === true,
     shovel: state?.shovel === true,
     beans: nonNegativeInt(state?.beans),
-    temporaryKey: state?.temporaryKey === true,
+    singleUseLockKey: state?.singleUseLockKey === true,
+    reusableLockKey: state?.reusableLockKey === true,
   };
 }
 
@@ -59,7 +67,28 @@ export function patchBobbyInventory(
     kite: patch.kite ?? current.kite,
     shovel: patch.shovel ?? current.shovel,
     beans: Math.max(0, Math.floor(patch.beans ?? current.beans)),
-    temporaryKey: patch.temporaryKey ?? current.temporaryKey,
+    singleUseLockKey:
+      patch.singleUseLockKey ?? current.singleUseLockKey,
+    reusableLockKey: patch.reusableLockKey ?? current.reusableLockKey,
+  };
+}
+
+export function readBobbyLocomotionMoveMs(
+  state: EntityState | undefined,
+): number | null {
+  const value = state?.locomotionMoveMs;
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+}
+
+export function patchBobbyLocomotionMoveMs(
+  state: EntityState | undefined,
+  moveDurationMs: number,
+): EntityState {
+  return {
+    ...(state ?? {}),
+    locomotionMoveMs: moveDurationMs,
   };
 }
 

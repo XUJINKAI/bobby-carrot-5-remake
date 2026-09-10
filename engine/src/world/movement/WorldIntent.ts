@@ -2,7 +2,14 @@ import type { Direction } from "@bobby/model";
 import type { EntityId } from "../entity/EntityInstance.js";
 
 export type MoveCause =
-  | { type: "player-input"; source?: string }
+  | {
+      type: "player-input";
+      source?: string;
+      /** Map controller channel；World 不解释该值。 */
+      channel?: number;
+      /** 应用 actor 镜像变换前的方向，供 Replay 保存控制语义。 */
+      inputDirection?: Direction;
+    }
   | {
       type: "forced";
       sourceEntityId?: EntityId;
@@ -22,7 +29,41 @@ export interface MoveIntent {
   cause: MoveCause;
 }
 
-export type WorldIntent = MoveIntent;
+/** 修改 actor 后续移动的实际时长；已经开始的 WorldMotion 保持原时长。 */
+export interface SetActorLocomotionIntent {
+  type: "set-actor-locomotion";
+  actorId: EntityId;
+  moveDurationMs: number;
+}
+
+/** 设置 actor 的地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
+export interface SetActorLockKeyIntent {
+  type: "set-actor-lock-key";
+  actorId: EntityId;
+  kind: "single-use" | "reusable";
+  enabled: boolean;
+  /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
+  requestId?: number;
+}
+
+export type ActorEffectIntent =
+  | SetActorLocomotionIntent
+  | SetActorLockKeyIntent;
+
+export type WorldIntent = MoveIntent | ActorEffectIntent;
+
+export type InitialActorIntent =
+  | {
+      type: "set-actor-lock-key";
+      actor: "primary" | "all";
+      kind: SetActorLockKeyIntent["kind"];
+      enabled: boolean;
+    }
+  | {
+      type: "set-actor-locomotion";
+      actor: "primary" | "all";
+      moveDurationMs: number;
+    };
 
 /** 一次玩家/系统语义操作可以同时向 World 提交多个 intent。 */
 export interface WorldIntentGroup {

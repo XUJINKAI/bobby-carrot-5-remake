@@ -48,7 +48,10 @@ export class GameplayHud {
     const winState = this.game.winState;
     const signature = JSON.stringify({
       winState,
-      actors: state.actors.map((actor) => ({ id: actor.id, state: actor.state })),
+      actors: state.actors.map((actor) => ({
+        id: actor.id,
+        inventory: actor.inventory,
+      })),
       primaryActorId: state.primaryActorId,
     });
     if (signature === this.lastSignature) return;

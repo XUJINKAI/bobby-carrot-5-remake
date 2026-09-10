@@ -12,7 +12,6 @@ import {
 export const ORIGINAL_TUNING: PresentationTuning = {
   motion: {
     normalMs: ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
-    speedShoesScale: ORIGINAL_BOBBY_LOCOMOTION_TIMING.speedShoesScale,
     easing: "linear",
   },
 };

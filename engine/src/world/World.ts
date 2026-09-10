@@ -7,10 +7,13 @@ import {
 import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
-  type EconomyState,
   type GlobalState,
-  type ProfileCapabilities,
 } from "./GlobalState.js";
+import {
+  patchBobbyInventory,
+  patchBobbyLocomotionMoveMs,
+  readBobbyLocomotionMoveMs,
+} from "../entities/player/BobbyState.js";
 import {
   ActorLifecycleStore,
   type ActorLifecycleSnapshot,
@@ -84,8 +87,6 @@ export interface WorldSnapshot {
 }
 
 export interface WorldOptions {
-  profile?: Partial<ProfileCapabilities>;
-  economy?: Partial<EconomyState>;
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
   actions?: RuntimeActionRegistry;
@@ -135,7 +136,7 @@ export class World {
       level.width,
       level.height,
     );
-    this.state = createGlobalState(options.profile, options.economy);
+    this.state = createGlobalState();
     this.tickIndex = new TickIndex(this.registry, this.behaviors, this.spatial);
     this.query = new WorldQueryApi(
       this.entities,
@@ -246,23 +247,6 @@ export class World {
     return actor ? this.spatial.hasTraitAt(actor.anchor, "climbable") : false;
   }
 
-  setProfile(profile: Partial<ProfileCapabilities>): void {
-    this.state.profile = { ...this.state.profile, ...profile };
-  }
-
-  setEconomy(economy: Partial<EconomyState>): void {
-    this.state.economy = {
-      bonusCoins: Math.max(
-        0,
-        Math.floor(economy.bonusCoins ?? this.state.economy.bonusCoins),
-      ),
-      goldenCarrots: Math.max(
-        0,
-        Math.floor(economy.goldenCarrots ?? this.state.economy.goldenCarrots),
-      ),
-    };
-  }
-
   setMotionDurationMs(durationMs: number): void {
     this.motionDurationMs = safeDuration(durationMs);
   }
@@ -352,6 +336,8 @@ export class World {
    * 所有成功 movement 与交互只在整组解析后统一 commit。
    */
   step(group: WorldIntentGroup): WorldStepResult {
+    const result = emptyWorldStepResult();
+    this.applyActorIntents(group.intents, result);
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
     let playerInputMoved = false;
@@ -373,13 +359,8 @@ export class World {
       transaction.commands.setGlobal("lastReachedSelectors", []);
 
     const commit = this.committer.commit(transaction.commands, this.deltaClock());
-    const result: WorldStepResult = {
-      moves,
-      motions: [],
-      events: commit.events,
-      mutations: commit.mutations,
-      deltas: commit.deltas,
-    };
+    result.moves.push(...moves);
+    absorbCommit(result, commit);
     this.startMotions(transaction.motions, result);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
@@ -671,7 +652,58 @@ export class World {
       request.cause.cadenceMs !== undefined
     )
       return safeDuration(request.cause.cadenceMs);
-    return this.motionDurationMs;
+    return readBobbyLocomotionMoveMs(
+      this.entities.get(request.entityId)?.state,
+    ) ?? this.motionDurationMs;
+  }
+
+  private applyActorIntents(
+    intents: readonly WorldIntent[],
+    result: WorldStepResult,
+  ): void {
+    const states = new Map<EntityId, EntityInstance["state"]>();
+    const queue = new CommandQueue();
+    for (const intent of intents) {
+      if (intent.type === "move") continue;
+      const actor = this.entities.get(intent.actorId);
+      if (!actor || !this.query.entityHasTrait(actor.id, "player")) continue;
+      const state = states.get(actor.id) ?? structuredClone(actor.state);
+      if (intent.type === "set-actor-locomotion") {
+        if (!Number.isFinite(intent.moveDurationMs) || intent.moveDurationMs <= 0)
+          continue;
+        states.set(
+          actor.id,
+          patchBobbyLocomotionMoveMs(state, intent.moveDurationMs),
+        );
+        queue.emit({
+          type: "actor-locomotion-changed",
+          entityId: actor.id,
+          data: { moveDurationMs: intent.moveDurationMs },
+        });
+        continue;
+      }
+      states.set(
+        actor.id,
+        patchBobbyInventory(
+          state,
+          intent.kind === "reusable"
+            ? { reusableLockKey: intent.enabled }
+            : { singleUseLockKey: intent.enabled },
+        ),
+      );
+      queue.emit({
+        type: "actor-lock-key-changed",
+        entityId: actor.id,
+        ...(intent.requestId !== undefined
+          ? { requestId: intent.requestId }
+          : {}),
+        data: { kind: intent.kind, enabled: intent.enabled },
+      });
+    }
+    for (const [entityId, state] of states) {
+      if (state) queue.setState(entityId, state);
+    }
+    absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
   }
 
   private deltaClock(): { worldTick: number | null; worldTimeMs: number } {

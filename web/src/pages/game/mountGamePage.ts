@@ -1,12 +1,14 @@
 import {
-  BONUS_KEY_TRIAL_EVENT,
-  completeAdventureEvent,
+  claimAdventureReward,
   completeAdventureLevel,
   createAdventureLevelInstance,
   isAdventureLevelUnlocked,
-  planAdventureProfile,
+  planAdventurePlayer,
   planAdventureSession,
+  resolveBonusKeyVendorInteraction,
   setAdventureResumeLevel,
+  type BonusKeyVendorOutcome,
+  type AdventureLevelId,
   type AdventureSave,
 } from "@bobby/adventure";
 import {
@@ -15,7 +17,7 @@ import {
   type CameraOptions,
   type ImageManager,
 } from "@bobby/engine";
-import type { LevelMap } from "@bobby/model";
+import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
   AdventureIndex,
@@ -62,6 +64,10 @@ import {
   type ShellConfig,
 } from "../../shell/shellBridge.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
+import {
+  webT,
+  type WebTranslationKey,
+} from "../../i18n/webI18n.js";
 import {
   globalActions,
   pageIdentity,
@@ -160,7 +166,7 @@ export async function renderGamePage(
       ? planAdventureSession(adventureLevel!.id, adventureSave)
       : null;
   const plan = adventureSave
-    ? (sessionPlan ?? planAdventureProfile(adventureSave))
+    ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
   const sessionLevel = adventureSave && sessionPlan
     ? createAdventureLevelInstance(
@@ -201,19 +207,20 @@ export async function renderGamePage(
     gameOptions: {
       audio,
       images,
-      ...(adventureSave
-        ? {
-            profile: {
-              superKey: plan!.capabilities.goldenKey,
-              speedShoes: plan!.capabilities.speedShoes,
-              coinRadar: plan!.capabilities.coinRadar,
-              bonusKeyTrialUsed: plan!.capabilities.bonusKeyTrialUsed,
-            },
-            economy: plan!.economy,
-          }
-        : { profile: { superKey: true } }),
     },
     runtime: {
+      ...(plan
+        ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
+        : {}),
+      initialActorIntents:
+        mode === "explore" || plan?.reusableLockKey
+          ? [{
+              type: "set-actor-lock-key",
+              actor: "all",
+              kind: "reusable",
+              enabled: true,
+            }]
+          : [],
       camera: GAME_CAMERA_OPTIONS[mode],
       hud: { objective: true, inventory: true },
       input: {
@@ -225,7 +232,7 @@ export async function renderGamePage(
       },
     },
   });
-  const { game, input } = session;
+  const { game, input, dialog } = session;
   const music = resolveGameMusic(level.music, {
     specialScene: adventureScene !== undefined,
   });
@@ -237,7 +244,6 @@ export async function renderGamePage(
   let resultDismissed = false;
   let completionRecorded = false;
   let completionNextId: string | undefined;
-  let persistedAdventureSignature = "";
   let completionNavigationStarted = false;
   const replayPanel: ReplayPanelController = mode === "explore"
     ? bindReplayPanel({
@@ -270,26 +276,6 @@ export async function renderGamePage(
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
-
-  const persistAdventureSession = (): void => {
-    if (!adventureSave || !game.hasLevel) return;
-    const state = game.state;
-    const signature = JSON.stringify({
-      economy: state.economy,
-      bonusKeyTrialUsed: state.profile.bonusKeyTrialUsed,
-    });
-    if (signature === persistedAdventureSignature) return;
-    persistedAdventureSignature = signature;
-    let next = structuredClone(adventureSave);
-    next.economy = { ...state.economy };
-    if (
-      state.profile.bonusKeyTrialUsed &&
-      !next.campaign.completedEvents.includes(BONUS_KEY_TRIAL_EVENT)
-    ) {
-      next = completeAdventureEvent(next, BONUS_KEY_TRIAL_EVENT);
-    }
-    adventureSave = saveAdventureSave(next);
-  };
 
   const closeResult = (): void => {
     visibleResult = null;
@@ -344,7 +330,6 @@ export async function renderGamePage(
       !completionNavigationStarted
     ) {
       completionNavigationStarted = true;
-      persistAdventureSession();
       navigate(adventureCompletionPath);
       return;
     }
@@ -360,7 +345,6 @@ export async function renderGamePage(
   };
 
   const update = (): void => {
-    persistAdventureSession();
     if (productTime && productSteps && game.hasLevel) {
       productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
       productSteps.textContent = String(game.state.moves);
@@ -385,9 +369,19 @@ export async function renderGamePage(
       closeResult();
     }
   };
-  const askRestart = (): void => {
-    persistAdventureSession();
-    game.restart();
+  const askRestart = async (): Promise<void> => {
+    if (adventureSave && sessionPlan && adventureLevel) {
+      await game.loadLevel(
+        createAdventureLevelInstance(
+          adventureLevel.id,
+          level,
+          adventureSave,
+          sessionPlan.entityPatches,
+        ),
+      );
+    } else {
+      game.restart();
+    }
     levelStartedAt = performance.now();
     completionNavigationStarted = false;
     closeResult();
@@ -404,7 +398,7 @@ export async function renderGamePage(
       resultDismissed = true;
       closeResult();
     } else if (action === "undo") askUndo();
-    else if (action === "retry" || action === "replay") askRestart();
+    else if (action === "retry" || action === "replay") void askRestart();
     else if (action === "levels") {
       navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "next" && button.dataset.next) {
@@ -422,7 +416,6 @@ export async function renderGamePage(
   const onGameShellAction = (event: Event): void => {
     const action = (event as CustomEvent<{ action: string }>).detail.action;
     if (action === "back") {
-      persistAdventureSession();
       navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "previous-level" && explorePreviousMapId) {
       navigate(
@@ -444,23 +437,94 @@ export async function renderGamePage(
       );
     } else if (action === "undo") askUndo();
     else if (action === "redo") askRedo();
-    else if (action === "restart") askRestart();
+    else if (action === "restart") void askRestart();
     else if (action === "replay-record") replayPanel.toggle();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
+  const pendingVendorSaves = new Map<number, AdventureSave>();
+  const unsubscribeWorldEvents = game.onWorldEvent((event) => {
+    if (
+      event.type === "actor-lock-key-changed" &&
+      event.data?.enabled === true &&
+      event.requestId !== undefined
+    ) {
+      const pending = pendingVendorSaves.get(event.requestId);
+      if (pending) {
+        adventureSave = saveAdventureSave(pending);
+        pendingVendorSaves.delete(event.requestId);
+      }
+    }
+    if (
+      !adventureSave ||
+      !adventureLevel ||
+      event.x === undefined ||
+      event.y === undefined ||
+      (event.type !== "collect-bonus-coin" &&
+        event.type !== "collect-golden-carrot")
+    )
+      return;
+    adventureSave = saveAdventureSave(
+      claimAdventureReward(adventureSave, {
+        levelId: adventureLevel.id as AdventureLevelId,
+        type:
+          event.type === "collect-bonus-coin"
+            ? MapEntityTypeId.BONUS_COIN
+            : MapEntityTypeId.GOLDEN_CARROT,
+        x: event.x,
+        y: event.y,
+      }),
+    );
+  });
+  const unsubscribeInteraction = game.onInteractionRequest((request) => {
+    if (!adventureSave || !adventureLevel) return;
+    const actor = game.state.actors.find((item) => item.id === request.actorId);
+    if (!actor) return;
+    const decision = resolveBonusKeyVendorInteraction(adventureSave, {
+      levelId: adventureLevel.id,
+      objectType: request.objectType,
+      hasSingleUseKey: actor.inventory.singleUseLockKey,
+    });
+    if (!decision) return;
+    if (decision.grantSingleUseKey) {
+      pendingVendorSaves.set(request.requestId, decision.save);
+      game.dispatch({
+        type: "set-actor-lock-key",
+        actorId: request.actorId,
+        kind: "single-use",
+        enabled: true,
+        requestId: request.requestId,
+      });
+    }
+    dialog?.show(bonusKeyVendorMessage(decision.outcome, decision.priceBonusCoins));
+  });
 
   return {
     destroy(): void {
-      persistAdventureSession();
       window.clearInterval(statisticsTimer);
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
+      unsubscribeWorldEvents();
+      unsubscribeInteraction();
       replayPanel.destroy();
       session.destroy();
       gamePage.unmount();
     },
   };
+}
+
+function bonusKeyVendorMessage(
+  outcome: BonusKeyVendorOutcome,
+  priceBonusCoins: number,
+): string {
+  const key = ({
+    "reusable-key-owned": "adventure.bonusKey.reusableOwned",
+    "single-use-key-held": "adventure.bonusKey.singleUseHeld",
+    "trial-granted": "adventure.bonusKey.trialGranted",
+    purchased: "adventure.bonusKey.purchased",
+    "insufficient-funds": "adventure.bonusKey.insufficient",
+  } satisfies Record<BonusKeyVendorOutcome, WebTranslationKey>)[outcome];
+  return webT(key).replace("{price}", String(priceBonusCoins));
 }
 
 function nextAdventureLevel(

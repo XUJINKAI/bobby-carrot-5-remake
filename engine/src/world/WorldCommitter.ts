@@ -272,10 +272,21 @@ export class WorldCommitter {
           appendCancellationCommands(index, cancellationQueue);
           break;
         }
-        case "emit":
-          events.push(command.event);
-          record({ type: "world-event", event: command.event });
+        case "emit": {
+          const event = structuredClone(command.event);
+          if (event.type === "object-interaction") {
+            event.requestId = this.state().nextInteractionRequestId;
+            this.state().nextInteractionRequestId += 1;
+            pushUnique(mutations.globalsChanged, "nextInteractionRequestId");
+            record({
+              type: "global-state-changed",
+              key: "nextInteractionRequestId",
+            });
+          }
+          events.push(event);
+          record({ type: "world-event", event });
           break;
+        }
       }
     }
     return { events, mutations, deltas };

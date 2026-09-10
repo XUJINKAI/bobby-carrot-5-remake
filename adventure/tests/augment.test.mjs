@@ -60,10 +60,10 @@ test("type-only Adventure patches apply to every matching Entity", () => {
   const augmented = augmentAdventureLevel(level, [
     {
       type: MapEntityTypeId.BEAVER,
-      fields: { interaction: "bonus-key-vendor" },
+      fields: { dialogue: "欢迎来到 Beaver Shop。" },
     },
   ]);
-  assert.equal(augmented.entities[0].interaction, "bonus-key-vendor");
-  assert.equal(augmented.entities[1].interaction, "bonus-key-vendor");
-  assert.equal(augmented.entities[2].interaction, undefined);
+  assert.equal(augmented.entities[0].dialogue, "欢迎来到 Beaver Shop。");
+  assert.equal(augmented.entities[1].dialogue, "欢迎来到 Beaver Shop。");
+  assert.equal(augmented.entities[2].dialogue, undefined);
 });

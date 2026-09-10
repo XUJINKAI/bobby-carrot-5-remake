@@ -9,7 +9,10 @@ import {
   type Replay,
   type ReplayFrame,
 } from "./ReplayFormat.js";
-import { replayInputGroups } from "./ReplayRunner.js";
+import {
+  resolveReplayInitialIntents,
+  resolveReplayInputGroups,
+} from "./ReplayIntentResolver.js";
 import { validateReplay } from "./ReplayValidation.js";
 
 interface ActiveReplayPlayback {
@@ -56,11 +59,6 @@ export class ReplayPlayback {
 
   start(replay: Replay, options: ReplayPlaybackOptions = {}): void {
     this.stop();
-    validateReplay(
-      this.session.actorIds,
-      this.session.bobbyLocomotion,
-      replay,
-    );
     const restoreWorldPaused = this.session.clock.paused;
     const restorePresentationPaused = this.presentationClock.paused;
     this.resetToStart(replay);
@@ -94,7 +92,8 @@ export class ReplayPlayback {
   inputForTick(time: WorldTick): GameplayTickInput {
     if (!this.active) return {};
     return {
-      groups: replayInputGroups(
+      groups: resolveReplayInputGroups(
+        this.session,
         this.active.frames.get(time.tick)?.groups ?? [],
       ),
     };
@@ -138,15 +137,13 @@ export class ReplayPlayback {
 
   jumpToEnd(replay: Replay): GameplayTickResult[] {
     this.stop();
-    validateReplay(
-      this.session.actorIds,
-      this.session.bobbyLocomotion,
-      replay,
-    );
     this.resetToStart(replay);
     const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
     return this.session.advanceTicks(replay.endTick, (time) => ({
-      groups: replayInputGroups(frames.get(time.tick)?.groups ?? []),
+      groups: resolveReplayInputGroups(
+        this.session,
+        frames.get(time.tick)?.groups ?? [],
+      ),
     }));
   }
 
@@ -162,7 +159,13 @@ export class ReplayPlayback {
 
   private resetToStart(replay: Replay): void {
     this.session.clock.setHz(replay.runtime.worldHz);
-    this.session.restart();
+    this.session.restart([]);
+    validateReplay(this.session, replay);
+    const initialIntents = resolveReplayInitialIntents(
+      this.session,
+      replay.initialIntents,
+    );
+    this.session.restart(initialIntents);
   }
 
   private idleTicksAvailable(playback: ActiveReplayPlayback | null): number {

@@ -13,16 +13,16 @@ export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
 ): { text: string; failed: boolean } {
-  if (report.actual.status !== expected.meta.final_status) {
+  if (report.actual.status !== expected.finalState.status) {
     return {
       text:
-        `终局不一致 · 记录 ${expected.meta.final_status} / ` +
+        `终局不一致 · 记录 ${expected.finalState.status} / ` +
         `复跑 ${report.actual.status}`,
       failed: true,
     };
   }
   return {
-    text: `复跑完成 · ${report.actual.endTick} ticks`,
+    text: `复跑完成 · ${report.endTick} ticks`,
     failed: false,
   };
 }

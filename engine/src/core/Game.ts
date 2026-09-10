@@ -23,14 +23,15 @@ import type {
   PresentationTuning,
 } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
-import type { EconomyState, ProfileCapabilities } from "../world/GlobalState.js";
 import type { World } from "../world/World.js";
 import type {
   CellInspection,
   MoveResult,
+  ObjectInteractionEvent,
   WinConditionState,
   WorldEvent,
 } from "../world/WorldTypes.js";
+import { isObjectInteractionEvent } from "../world/WorldTypes.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   CellPosition,
@@ -39,6 +40,10 @@ import type {
 import type {
   EntityMotion,
 } from "../world/movement/WorldStepResult.js";
+import type {
+  ActorEffectIntent,
+  WorldIntentGroup,
+} from "../world/movement/WorldIntent.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
 import {
@@ -68,6 +73,7 @@ type GameEventName =
   | "level-complete";
 type Listener = (game: Game) => void;
 type WorldEventListener = (event: WorldEvent) => void;
+type InteractionRequestListener = (event: ObjectInteractionEvent) => void;
 
 const MAX_REPLAY_IDLE_TICKS_PER_FRAME = 128;
 const REPLAY_IDLE_FRAME_BUDGET_MS = 6;
@@ -86,11 +92,14 @@ export class Game {
   private lastScene: RenderScene | null = null;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEventListeners = new Set<WorldEventListener>();
+  private readonly interactionRequestListeners =
+    new Set<InteractionRequestListener>();
   private debugValue = false;
   private debugExternalActorId: EntityId | null = null;
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
+  private readonly queuedIntentGroups: WorldIntentGroup[] = [];
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
   private animationFrame = 0;
@@ -110,16 +119,14 @@ export class Game {
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
     this.session = new GameplaySession({
-      ...(options.profile ? { profile: options.profile } : {}),
-      ...(options.economy ? { economy: options.economy } : {}),
       ...(options.runtime?.timing ? { timing: options.runtime.timing } : {}),
       ...(options.runtime?.bobbyLocomotion
         ? { bobbyLocomotion: options.runtime.bobbyLocomotion }
         : {}),
       ...(options.runtime?.history ? { history: options.runtime.history } : {}),
       ...(options.runtime?.controls ? { controls: options.runtime.controls } : {}),
-      ...(options.runtime?.initializeEntityState
-        ? { initializeEntityState: options.runtime.initializeEntityState }
+      ...(options.runtime?.initialActorIntents
+        ? { initialActorIntents: options.runtime.initialActorIntents }
         : {}),
     });
     this.presentationClock = new PresentationClock(
@@ -157,6 +164,19 @@ export class Game {
           presentationClock: this.presentationClock,
           timing: this.timing,
           input: this.inputController?.inspectMovement() ?? null,
+          setup: this.session.replaySetup,
+          controls: this.session.controls,
+          gameplayState: this.worldValue ? this.session.state : null,
+          pendingIntents: this.queuedIntentGroups.flatMap((group) =>
+            group.intents.filter(
+              (intent): intent is ActorEffectIntent => intent.type !== "move",
+            ),
+          ),
+          replay: {
+            recording: this.replayRecording,
+            playing: this.replayPlaying,
+            paused: this.replayPaused,
+          },
           actorId,
           selection,
         }),
@@ -170,6 +190,7 @@ export class Game {
       setHeldDirection: (actorId, direction) =>
         this.setDebugHeldDirection(actorId, direction),
       teleportActor: (actorId, cell) => this.debugTeleportActor(actorId, cell),
+      dispatchIntent: (intent) => this.dispatch(intent),
       pausePresentation: () => this.pauseDebugPresentationClock(),
       resumePresentation: () => this.resumeDebugPresentationClock(),
       stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
@@ -267,6 +288,7 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
+    this.queuedIntentGroups.length = 0;
     this.visual.clear();
     this.visual.camera.resetFollow();
     this.visual.camera.resetPan();
@@ -294,6 +316,21 @@ export class Game {
     )
       return;
     this.queuedMoves.push({ source, direction });
+  }
+
+  /** 将封闭的地图内语义动作排入下一个 World Tick。 */
+  dispatch(intent: ActorEffectIntent): void {
+    if (
+      !this.worldValue ||
+      this.replayPlayback.playing ||
+      this.world.dead ||
+      this.world.completed
+    )
+      return;
+    this.queuedIntentGroups.push({
+      intents: [structuredClone(intent)],
+      historyBoundary: true,
+    });
   }
 
   setHeldDirection(direction: Direction | null): void {
@@ -340,6 +377,7 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
+    this.queuedIntentGroups.length = 0;
     this.resetVisualMotion();
     this.debugRuntime.clearSelection();
     this.lastScene = null;
@@ -453,14 +491,6 @@ export class Game {
     this.emit("change");
   }
 
-  setProfile(profile: Partial<ProfileCapabilities>): void {
-    this.session.setProfile(profile);
-  }
-
-  setEconomy(economy: Partial<EconomyState>): void {
-    this.session.setEconomy(economy);
-  }
-
   setZoom(value: number): void {
     this.visual.camera.setZoom(value);
     this.render();
@@ -534,6 +564,12 @@ export class Game {
     return () => this.worldEventListeners.delete(listener);
   }
 
+  /** 只在 live session 通知外层控制器；Replay 仍保留普通 WorldEvent。 */
+  onInteractionRequest(listener: InteractionRequestListener): () => void {
+    this.interactionRequestListeners.add(listener);
+    return () => this.interactionRequestListeners.delete(listener);
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -556,49 +592,53 @@ export class Game {
   }
 
   private motionPresentationDuration(motion: EntityMotion): number {
-    if (
-      motion.cause.type === "forced" &&
-      motion.cause.cadenceMs !== undefined &&
-      Number.isFinite(motion.cause.cadenceMs) &&
-      motion.cause.cadenceMs > 0
-    )
-      return motion.cause.cadenceMs;
-    return this.presentationMotionDuration();
+    return motion.durationMs;
   }
 
   private presentationMotionDuration(): number {
-    const motion = this.tuning.motion;
-    let duration = motion.normalMs;
-    if (this.world.state.profile.speedShoes)
-      duration *= motion.speedShoesScale;
-    return duration;
+    return this.tuning.motion.normalMs;
   }
 
   private inputForTick(time: WorldTick): GameplayTickInput {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
-    const controls = this.debugExternalActorId === null
-      ? undefined
-      : [
-          ...this.session.controls.filter(
-            (binding) => binding.input !== "external",
-          ),
-          {
-            input: "external",
-            targets: [{ entityId: this.debugExternalActorId }],
-          } satisfies ControlBinding,
-        ];
-    if (this.inputController || !this.heldDirection || this.heldDirectionBlocked)
+    const groups = this.queuedIntentGroups.splice(0);
+    const moves = [...queued, ...sampled];
+    const debugActorMoves = this.debugExternalActorId === null
+      ? []
+      : moves
+          .filter((move) => move.source === "external")
+          .map((move) => ({ ...move, actorId: this.debugExternalActorId! }));
+    const routedMoves = this.debugExternalActorId === null
+      ? moves
+      : moves.filter((move) => move.source !== "external");
+    if (this.inputController || !this.heldDirection || this.heldDirectionBlocked) {
       return {
-        moves: [...queued, ...sampled],
-        ...(controls ? { controls } : {}),
+        moves: routedMoves,
+        actorMoves: debugActorMoves,
+        groups,
       };
+    }
+    if (this.debugExternalActorId !== null) {
+      return {
+        moves: routedMoves,
+        actorMoves: [
+          ...debugActorMoves,
+          {
+            source: "external",
+            direction: this.heldDirection,
+            actorId: this.debugExternalActorId,
+          },
+        ],
+        groups,
+      };
+    }
     return {
       moves: [
-        ...queued,
+        ...routedMoves,
         { source: "external", direction: this.heldDirection },
       ],
-      ...(controls ? { controls } : {}),
+      groups,
     };
   }
 
@@ -838,6 +878,9 @@ export class Game {
       if (event.type === "speed-impact")
         this.visual.camera.shake(this.presentationClock.current);
       for (const listener of this.worldEventListeners) listener(event);
+      if (!this.replayPlayback.playing && isObjectInteractionEvent(event)) {
+        for (const listener of this.interactionRequestListeners) listener(event);
+      }
     }
   }
 

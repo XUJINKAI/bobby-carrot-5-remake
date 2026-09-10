@@ -28,8 +28,16 @@ const runtime = await createGameplayRuntime({
   level,
   assets,
   audio,
-  profile,
   runtime: {
+    bobbyLocomotion: { moveMs: 350 },
+    initialActorIntents: [
+      {
+        type: "set-actor-lock-key",
+        actor: "all",
+        kind: "reusable",
+        enabled: true,
+      },
+    ],
     input: {
       keyboard: true,
       pointer: true,
@@ -54,7 +62,7 @@ const runtime = await createGameplayRuntime({
   },
 });
 
-const { game, input } = runtime;
+const { game, input, dialog } = runtime;
 ```
 
 宿主销毁 session 时只需要 `runtime.destroy()`。也可以直接创建 `Game`，但公开能力仍与同一 façade 保持一致。
@@ -175,6 +183,17 @@ restore gameplay snapshot
 game.move("left");
 game.setHeldDirection("up");
 game.setHeldDirection(null);
+game.dispatch({
+  type: "set-actor-locomotion",
+  actorId,
+  moveDurationMs: 266,
+});
+game.dispatch({
+  type: "set-actor-lock-key",
+  actorId,
+  kind: "single-use",
+  enabled: true,
+});
 
 game.undo();
 game.redo();
@@ -197,6 +216,11 @@ game.inspectCanvasPoint(clientX, clientY);
 `move()` 会把一次性语义动作排入下一个 World Tick，与键盘、Pointer、摇杆和 Replay
 输入共用 `GameplaySession` 的输入阶段。提交动作时尚未产生 `MoveResult`；执行结果通过
 Game 状态、事件和 Replay Tick 结果观察。
+
+`dispatch()` 只接受 Engine 定义的封闭 `ActorEffectIntent` union。`set-actor-locomotion`
+只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
+商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影位置、朝向、
+地图内背包与实际移动时长，不暴露 Entity runtime state。
 
 ## GameplaySession 与 Replay
 
@@ -235,8 +259,9 @@ game.replayPaused;
 或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
 该选项默认关闭，不进入 Replay 文件格式。
 
-录制调用方提供当前地图的显示名称与 URL；Engine 在停止时补充终局状态和空白 `note`。
-这些 `meta` 字段不参与播放调度，用户可以直接编辑 `note`。
+录制调用方提供当前地图的显示名称与 URL；Engine 在停止时写入 `finalState` 和空白
+`note`。`meta` 不参与播放调度，用户可以直接编辑 `note`。Web 复跑只提示
+`finalState.status` 是否一致；仓库 fixture 验证完整 `finalState`。
 
 常用只读状态：
 
@@ -272,6 +297,10 @@ game.renderer.camera.zoom;
 
 ```ts
 runtime: {
+  bobbyLocomotion: {
+    moveMs: 350,
+  },
+  initialActorIntents: [],
   input: {
     keyboard: true,
     pointer: true,
@@ -330,7 +359,7 @@ const state = input.update(time); // WorldTick
 
 Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
 
-默认控制绑定从 Bobby 的 Map 字段派生。`channel-1` 是 primary，`channel-2` 是 secondary；只有 primary 通道时方向键与 WASD 都映射到它，同时存在两个通道时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在输入源变成 semantic move intent 前组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。
+默认控制绑定从 Bobby 的 Map 字段派生。`controller` 使用数字通道，省略时为 `0`；只有 primary 通道时方向键与 WASD 都映射到它，同时存在通道 `0` 与 `1` 时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在 channel 输入变成 semantic move intent 时组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。Replay 保存 channel 及原始输入方向，不保存浏览器输入源或临时 entity ID。
 
 ## Events
 
@@ -349,3 +378,21 @@ game.on("level-complete", ...);
 ```
 
 细粒度地图事实通过 `WorldEvent` 暴露。事件只描述语义事实，不泄漏 EntityStore、CommandQueue、Behavior 或 RuntimeAction 实例。
+
+地图内表现订阅完整事件流：
+
+```ts
+game.onWorldEvent((event) => {});
+```
+
+复杂产品交互使用 live-only 请求口：
+
+```ts
+game.onInteractionRequest((request) => {
+  // 外层根据自己的状态显示对白，并按需 game.dispatch(intent)。
+});
+```
+
+可对话角色触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
+`dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
+`dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。

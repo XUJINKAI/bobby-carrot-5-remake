@@ -3,15 +3,36 @@
   "meta": {
     "name": "1",
     "url": "https://bc5r.xujinkai.net/explore/play/original/1-1",
-    "final_status": "won",
     "note": ""
   },
   "runtime": {
     "worldHz": 16,
     "bobbyLocomotion": {
-      "moveMs": 350,
-      "speedShoesScale": 0.76
+      "moveMs": 350
     }
+  },
+  "initialIntents": [
+    {
+      "type": "set-actor-lock-key",
+      "kind": "reusable",
+      "enabled": true
+    }
+  ],
+  "finalState": {
+    "status": "won",
+    "counters": {
+      "collect-carrot": 9
+    },
+    "completedConditions": [
+      {
+        "type": "collect-all",
+        "target": "carrot"
+      },
+      {
+        "type": "reach",
+        "target": "exit"
+      }
+    ]
   },
   "endTick": 424,
   "frames": [
@@ -22,9 +43,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -37,9 +56,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -52,9 +69,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -67,9 +82,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -82,9 +95,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -97,9 +108,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -112,9 +121,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -127,9 +134,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -142,9 +147,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -157,9 +160,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -172,9 +173,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -187,9 +186,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -202,9 +199,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -217,9 +212,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -232,9 +225,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -247,9 +238,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -262,9 +251,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -277,9 +264,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -292,9 +277,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -307,9 +290,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -322,9 +303,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -337,9 +316,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -352,9 +329,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -367,9 +342,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -382,9 +355,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -397,9 +368,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -412,9 +381,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -427,9 +394,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -442,9 +407,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -457,9 +420,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -472,9 +433,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -487,9 +446,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -502,9 +459,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -517,9 +472,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -532,9 +485,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -547,9 +498,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -562,9 +511,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -577,9 +524,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -592,9 +537,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -607,9 +550,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -622,9 +563,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -637,9 +576,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -652,9 +589,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -667,9 +602,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -682,9 +615,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -697,9 +628,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -712,9 +641,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -727,9 +654,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -742,9 +667,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -757,9 +680,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -772,9 +693,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -787,9 +706,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -802,9 +719,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -817,9 +732,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -832,9 +745,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -847,9 +758,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -862,9 +771,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -877,9 +784,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -892,9 +797,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -907,9 +810,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -922,9 +823,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -937,9 +836,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -952,9 +849,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -967,9 +862,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -982,9 +875,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -997,9 +888,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1012,9 +901,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1027,9 +914,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1042,9 +927,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1057,9 +940,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1072,9 +953,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1087,9 +966,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1102,9 +979,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1117,9 +992,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1132,9 +1005,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1147,9 +1018,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1162,9 +1031,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1177,9 +1044,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1192,9 +1057,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1207,9 +1070,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1222,9 +1083,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1237,9 +1096,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -1252,9 +1109,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1267,9 +1122,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1282,9 +1135,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1297,9 +1148,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1312,9 +1161,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1327,9 +1174,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1342,9 +1187,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1357,9 +1200,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1372,9 +1213,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1387,9 +1226,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1402,9 +1239,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1417,9 +1252,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1432,9 +1265,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1447,9 +1278,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1462,9 +1291,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1477,9 +1304,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1492,9 +1317,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1507,9 +1330,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1522,9 +1343,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1537,9 +1356,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1552,9 +1369,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1567,9 +1382,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1582,9 +1395,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1597,9 +1408,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1612,9 +1421,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1627,9 +1434,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1642,9 +1447,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1657,9 +1460,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1672,9 +1473,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1687,9 +1486,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1702,9 +1499,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1717,9 +1512,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1732,9 +1525,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1747,9 +1538,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1762,9 +1551,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1777,9 +1564,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1792,9 +1577,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1807,9 +1590,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1822,9 +1603,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1837,9 +1616,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1852,9 +1629,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1867,9 +1642,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1882,9 +1655,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1897,9 +1668,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1912,9 +1681,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1927,9 +1694,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1942,9 +1707,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -1957,9 +1720,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1972,9 +1733,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -1987,9 +1746,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2002,9 +1759,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2017,9 +1772,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2032,9 +1785,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2047,9 +1798,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2062,9 +1811,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2077,9 +1824,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2092,9 +1837,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2107,9 +1850,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2122,9 +1863,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2137,9 +1876,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2152,9 +1889,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2167,9 +1902,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2182,9 +1915,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2197,9 +1928,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2212,9 +1941,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2227,9 +1954,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -2242,9 +1967,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2257,9 +1980,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2272,9 +1993,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2287,9 +2006,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2302,9 +2019,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2317,9 +2032,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2332,9 +2045,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2347,9 +2058,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2362,9 +2071,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2377,9 +2084,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2392,9 +2097,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2407,9 +2110,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -2422,9 +2123,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -2437,9 +2136,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -2452,9 +2149,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2467,9 +2162,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2482,9 +2175,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2497,9 +2188,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2512,9 +2201,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2527,9 +2214,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2542,9 +2227,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2557,9 +2240,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2572,9 +2253,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2587,9 +2266,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2602,9 +2279,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2617,9 +2292,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2632,9 +2305,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2647,9 +2318,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2662,9 +2331,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2677,9 +2344,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2692,9 +2357,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2707,9 +2370,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2722,9 +2383,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2737,9 +2396,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2752,9 +2409,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2767,9 +2422,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2782,9 +2435,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2797,9 +2448,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2812,9 +2461,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2827,9 +2474,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2842,9 +2487,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2857,9 +2500,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2872,9 +2513,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2887,9 +2526,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2902,9 +2539,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2917,9 +2552,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2932,9 +2565,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2947,9 +2578,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2962,9 +2591,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2977,9 +2604,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -2992,9 +2617,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3007,9 +2630,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3022,9 +2643,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3037,9 +2656,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3052,9 +2669,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3067,9 +2682,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3082,9 +2695,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3097,9 +2708,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3112,9 +2721,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3127,9 +2734,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3142,9 +2747,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3157,9 +2760,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3172,9 +2773,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3187,9 +2786,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3202,9 +2799,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3217,9 +2812,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3232,9 +2825,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3247,9 +2838,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3262,9 +2851,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3277,9 +2864,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3292,9 +2877,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3307,9 +2890,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3322,9 +2903,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3337,9 +2916,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3352,9 +2929,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3367,9 +2942,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -3382,9 +2955,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3397,9 +2968,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3412,9 +2981,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3427,9 +2994,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3442,9 +3007,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3457,9 +3020,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3472,9 +3033,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3487,9 +3046,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3502,9 +3059,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3517,9 +3072,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3532,9 +3085,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3547,9 +3098,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3562,9 +3111,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3577,9 +3124,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3592,9 +3137,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3607,9 +3150,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3622,9 +3163,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3637,9 +3176,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3652,9 +3189,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3667,9 +3202,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3682,9 +3215,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3697,9 +3228,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3712,9 +3241,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3727,9 +3254,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3742,9 +3267,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3757,9 +3280,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3772,9 +3293,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -3787,9 +3306,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3802,9 +3319,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3817,9 +3332,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3832,9 +3345,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3847,9 +3358,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3862,9 +3371,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3877,9 +3384,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3892,9 +3397,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3907,9 +3410,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3922,9 +3423,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3937,9 +3436,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3952,9 +3449,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -3967,9 +3462,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3982,9 +3475,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -3997,9 +3488,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4012,9 +3501,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4027,9 +3514,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4042,9 +3527,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4057,9 +3540,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4072,9 +3553,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4087,9 +3566,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4102,9 +3579,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4117,9 +3592,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4132,9 +3605,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4147,9 +3618,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4162,9 +3631,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4177,9 +3644,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4192,9 +3657,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4207,9 +3670,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "up",
-              "source": "arrows"
+              "direction": "up"
             }
           ]
         }
@@ -4222,9 +3683,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4237,9 +3696,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4252,9 +3709,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4267,9 +3722,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4282,9 +3735,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4297,9 +3748,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4312,9 +3761,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4327,9 +3774,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4342,9 +3787,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4357,9 +3800,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4372,9 +3813,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4387,9 +3826,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4402,9 +3839,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4417,9 +3852,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4432,9 +3865,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4447,9 +3878,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4462,9 +3891,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4477,9 +3904,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4492,9 +3917,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4507,9 +3930,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4522,9 +3943,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4537,9 +3956,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4552,9 +3969,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4567,9 +3982,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4582,9 +3995,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4597,9 +4008,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -4612,9 +4021,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4627,9 +4034,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4642,9 +4047,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4657,9 +4060,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4672,9 +4073,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4687,9 +4086,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4702,9 +4099,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4717,9 +4112,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4732,9 +4125,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4747,9 +4138,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4762,9 +4151,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4777,9 +4164,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4792,9 +4177,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4807,9 +4190,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4822,9 +4203,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4837,9 +4216,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4852,9 +4229,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4867,9 +4242,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4882,9 +4255,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4897,9 +4268,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4912,9 +4281,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4927,9 +4294,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4942,9 +4307,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4957,9 +4320,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4972,9 +4333,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -4987,9 +4346,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5002,9 +4359,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5017,9 +4372,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5032,9 +4385,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5047,9 +4398,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -5062,9 +4411,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -5077,9 +4424,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "left",
-              "source": "arrows"
+              "direction": "left"
             }
           ]
         }
@@ -5092,9 +4437,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5107,9 +4450,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5122,9 +4463,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5137,9 +4476,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5152,9 +4489,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5167,9 +4502,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5182,9 +4515,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5197,9 +4528,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5212,9 +4541,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "down",
-              "source": "arrows"
+              "direction": "down"
             }
           ]
         }
@@ -5227,9 +4554,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -5242,9 +4567,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }
@@ -5257,9 +4580,7 @@
           "intents": [
             {
               "type": "move",
-              "actorId": 58,
-              "direction": "right",
-              "source": "arrows"
+              "direction": "right"
             }
           ]
         }

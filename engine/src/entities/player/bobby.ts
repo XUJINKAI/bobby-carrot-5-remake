@@ -346,7 +346,7 @@ function playerMarker(context: VisualResolveContext): CanvasVisualLayer | null {
 }
 
 function playerChannelOrder(value: unknown): number {
-  return value === "channel-2" ? 1 : 0;
+  return value === 1 ? 1 : 0;
 }
 
 function resolveIdleFrame(

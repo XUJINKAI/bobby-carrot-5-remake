@@ -11,13 +11,14 @@ export interface DirectionTransform {
 
 export interface ControlTarget {
   entityId: EntityId;
+  channel: number;
   directionTransform?: DirectionTransform;
 }
 
 export interface ControlBinding {
-  /** Logical input channel, e.g. arrows, wasd, joystick-1, external. */
+  /** 浏览器输入源；Replay 只记录解析后的数字 channel。 */
   input: string;
-  targets: readonly ControlTarget[];
+  channel: number;
 }
 
 const ROTATE_CW_DIRECTION: Readonly<Record<Direction, Direction>> = {
@@ -47,21 +48,36 @@ export function transformDirection(
 }
 
 export function resolveControlInput(
-  bindings: readonly ControlBinding[],
-  input: string,
+  targets: readonly ControlTarget[],
+  channel: number,
   direction: Direction,
+  source?: string,
 ): WorldIntentGroup {
   const intents: MoveIntent[] = [];
-  for (const binding of bindings) {
-    if (binding.input !== input) continue;
-    for (const target of binding.targets) {
-      intents.push({
-        type: "move",
-        actorId: target.entityId,
-        direction: transformDirection(direction, target.directionTransform),
-        cause: { type: "player-input", source: input },
-      });
-    }
+  for (const target of targets) {
+    if (target.channel !== channel) continue;
+    intents.push({
+      type: "move",
+      actorId: target.entityId,
+      direction: transformDirection(direction, target.directionTransform),
+      cause: {
+        type: "player-input",
+        channel,
+        inputDirection: direction,
+        ...(source ? { source } : {}),
+      },
+    });
   }
   return { intents, historyBoundary: true };
+}
+
+export function channelsForInput(
+  bindings: readonly ControlBinding[],
+  input: string,
+): number[] {
+  return [...new Set(
+    bindings
+      .filter((binding) => binding.input === input)
+      .map((binding) => binding.channel),
+  )];
 }

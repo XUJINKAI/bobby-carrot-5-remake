@@ -99,6 +99,7 @@ const fireballAction: RuntimeActionDefinition = {
     };
   },
   onIntentResult({ action, intent, result, query, commands }) {
+    if (intent.type !== "move") return;
     const fireballId = action.ownerEntityId;
     if (fireballId === undefined) return;
     if (!result.moved) {

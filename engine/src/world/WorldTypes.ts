@@ -5,7 +5,12 @@ import type { EntityId, EntityState } from "./entity/EntityInstance.js";
 /** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
 export interface WorldEvent {
   type: string;
+  /** 发起交互的 actor；entityId 保持表示被交互的对象。 */
+  actorId?: EntityId;
   entityId?: EntityId;
+  requestId?: number;
+  objectType?: string;
+  role?: string;
   x?: number;
   y?: number;
   direction?: Direction;
@@ -13,6 +18,32 @@ export interface WorldEvent {
   text?: string;
   reason?: string;
   data?: Record<string, JsonValue>;
+}
+
+export interface ObjectInteractionEvent extends WorldEvent {
+  type: "object-interaction";
+  actorId: EntityId;
+  entityId: EntityId;
+  requestId: number;
+  objectType: string;
+  x: number;
+  y: number;
+  action: "touch" | "enter";
+}
+
+export function isObjectInteractionEvent(
+  event: WorldEvent,
+): event is ObjectInteractionEvent {
+  return (
+    event.type === "object-interaction" &&
+    event.actorId !== undefined &&
+    event.entityId !== undefined &&
+    event.requestId !== undefined &&
+    typeof event.objectType === "string" &&
+    event.x !== undefined &&
+    event.y !== undefined &&
+    (event.action === "touch" || event.action === "enter")
+  );
 }
 
 /** 当前 World 对一棵通关条件树的统一求值结果。 */

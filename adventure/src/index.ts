@@ -3,3 +3,4 @@ export * from "./save.js";
 export * from "./rewards.js";
 export * from "./session.js";
 export * from "./augment.js";
+export * from "./interactions.js";

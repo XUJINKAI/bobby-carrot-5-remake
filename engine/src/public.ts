@@ -2,7 +2,6 @@ export { Game } from "./core/Game.js";
 export type {
   GameOptions,
   GameRuntimeOptions,
-  RuntimeEntityStateInitializer,
 } from "./core/GameOptions.js";
 export type { GameplayActorState, GameplayState } from "./core/GameplayState.js";
 export {
@@ -92,11 +91,7 @@ export {
   type LogicalMoveInput,
 } from "./input/InputController.js";
 export {
-  resolveControlInput,
-  transformDirection,
   type ControlBinding,
-  type ControlTarget,
-  type DirectionTransform,
 } from "./input/ControlBindings.js";
 export {
   DEFAULT_SCREEN_JOYSTICK_OPTIONS,
@@ -124,12 +119,18 @@ export {
 } from "./entities/player/BobbyState.js";
 export {
   REPLAY_FORMAT_VERSION,
+  type ReplayCompletedCondition,
+  type ReplayFinalState,
   type ReplayFinalStatus,
   type Replay,
   type ReplayFrame,
+  type ReplayGameplayIntent,
+  type ReplaySetActorLockKeyIntent,
+  type ReplayInitialIntent,
   type ReplayInputGroup,
   type ReplayMeta,
   type ReplayMoveIntent,
+  type ReplaySetActorLocomotionIntent,
   type ReplayRecordingMeta,
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
@@ -138,7 +139,6 @@ export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {
   runReplay,
   type ReplayReport,
-  type ReplayRunOptions,
 } from "./replay/ReplayRunner.js";
 
 /** Canonical 地图序列化合同。 */
@@ -156,12 +156,18 @@ export type {
 export type {
   CellInspection,
   MoveResult,
+  ObjectInteractionEvent,
   PresenceInspection,
   WorldEvent,
 } from "./world/WorldTypes.js";
+export { isObjectInteractionEvent } from "./world/WorldTypes.js";
 export type {
+  ActorEffectIntent,
   MoveCause,
   MoveIntent,
+  SetActorLockKeyIntent,
+  InitialActorIntent,
+  SetActorLocomotionIntent,
   WorldIntent,
   WorldIntentGroup,
 } from "./world/movement/WorldIntent.js";
@@ -188,15 +194,6 @@ export type {
   WorldOutcomePhase,
   WorldOutcomeState,
 } from "./world/outcome/WorldOutcome.js";
-export type {
-  EconomyState,
-  ProfileCapabilities,
-} from "./world/GlobalState.js";
-export {
-  createDialogBehavior,
-  type DialogInitializer,
-} from "./world/dialog/DialogBehavior.js";
-
 export { EntityRegistry } from "./world/entity/EntityRegistry.js";
 export type {
   BehaviorId,

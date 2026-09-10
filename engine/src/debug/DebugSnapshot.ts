@@ -1,4 +1,5 @@
 import type { InputControllerInspection } from "../input/InputController.js";
+import type { ControlBinding } from "../input/ControlBindings.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import type { EngineTiming } from "../time/EngineTiming.js";
 import type { PresentationClock } from "../time/PresentationClock.js";
@@ -6,6 +7,9 @@ import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
+import type { GlobalState } from "../world/GlobalState.js";
+import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
+import type { WinConditionState } from "../world/WorldTypes.js";
 import type { RuntimeActionInstance } from "../world/action/RuntimeAction.js";
 import type { ActorLifecycleState } from "../world/actor/ActorLifecycle.js";
 import type { EntityLayer } from "../world/entity/EntityDefinition.js";
@@ -15,6 +19,11 @@ import type {
 } from "../world/entity/EntityInstance.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import type { WorldMotion, WorldPose } from "../world/movement/WorldMotion.js";
+import type { ActorEffectIntent } from "../world/movement/WorldIntent.js";
+import type {
+  SerializableGameplaySetup,
+} from "../core/GameplaySession.js";
+import type { GameplayState } from "../core/GameplayState.js";
 import type { DebugTraceEntry } from "./DebugTrace.js";
 
 export interface DebugSelection {
@@ -48,8 +57,31 @@ export interface DebugSnapshot {
   actor: DebugEntitySnapshot | null;
   actions: readonly RuntimeActionInstance[];
   input: InputControllerInspection | null;
+  world: DebugWorldSnapshot | null;
   selection: DebugSelectionSnapshot | null;
   trace?: readonly DebugTraceEntry[];
+}
+
+export interface DebugWorldSnapshot {
+  setup: {
+    timing: EngineTiming;
+    gameplay: SerializableGameplaySetup;
+    controls: readonly ControlBinding[];
+  };
+  current: {
+    gameplay: GameplayState;
+    global: GlobalState;
+    outcome: WorldOutcomeState;
+    winCondition: WinConditionState | null;
+    motions: readonly WorldMotion[];
+  };
+  pendingIntents: readonly ActorEffectIntent[];
+  replay: {
+    recording: boolean;
+    playing: boolean;
+    paused: boolean;
+  };
+  canDispatchActorEffects: boolean;
 }
 
 export interface DebugSelectionSnapshot {
@@ -113,6 +145,11 @@ export function buildDebugSnapshot(options: {
   presentationClock: PresentationClock;
   timing: EngineTiming;
   input: InputControllerInspection | null;
+  setup?: SerializableGameplaySetup | null;
+  controls?: readonly ControlBinding[];
+  gameplayState?: GameplayState | null;
+  pendingIntents?: readonly ActorEffectIntent[];
+  replay?: DebugWorldSnapshot["replay"];
   actorId?: EntityId | null;
   selection: DebugSelection | null;
 }): DebugSnapshot {
@@ -124,6 +161,11 @@ export function buildDebugSnapshot(options: {
     presentationClock,
     timing,
     input,
+    setup,
+    controls = [],
+    gameplayState,
+    pendingIntents = [],
+    replay = { recording: false, playing: false, paused: false },
     actorId: requestedActorId,
     selection,
   } = options;
@@ -160,12 +202,51 @@ export function buildDebugSnapshot(options: {
     world && actorId !== undefined
       ? buildEntitySnapshot(world, scene, visual, actorId)
       : null;
+  const worldSnapshot: DebugWorldSnapshot | null =
+    world && setup && gameplayState
+      ? {
+          setup: {
+            timing: structuredClone(timing),
+            gameplay: structuredClone(setup),
+            controls: structuredClone(controls),
+          },
+          current: {
+            gameplay: structuredClone(gameplayState),
+            global: structuredClone(world.state),
+            outcome: world.outcome.state,
+            winCondition: world.winState
+              ? structuredClone(world.winState)
+              : null,
+            motions: structuredClone(world.movement.running),
+          },
+          pendingIntents: structuredClone(pendingIntents),
+          replay: structuredClone(replay),
+          canDispatchActorEffects:
+            world.outcome.playing && !replay.playing,
+        }
+      : null;
 
   if (!world || !selection)
-    return { runtime, actors, actor, actions, input, selection: null };
+    return {
+      runtime,
+      actors,
+      actor,
+      actions,
+      input,
+      world: worldSnapshot,
+      selection: null,
+    };
   const inspection = world.inspect(selection.cell.x, selection.cell.y);
   if (!inspection)
-    return { runtime, actors, actor, actions, input, selection: null };
+    return {
+      runtime,
+      actors,
+      actor,
+      actions,
+      input,
+      world: worldSnapshot,
+      selection: null,
+    };
 
   const presences = world.presencesAt(selection.cell).map((presence) =>
     debugPresence(world, presence),
@@ -183,6 +264,7 @@ export function buildDebugSnapshot(options: {
     actor,
     actions,
     input,
+    world: worldSnapshot,
     selection: {
       cell: { ...inspection.cell },
       presences,

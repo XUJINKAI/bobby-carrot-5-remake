@@ -1,5 +1,4 @@
 import { serializeEditorLevel } from "@bobby/editor";
-import { createDialogBehavior } from "@bobby/engine";
 import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
@@ -23,8 +22,6 @@ import {
 } from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
 import type { HomeViewState } from "./types.js";
-
-const HOME_DEMO_DIALOG_REF = "sandman-dialog-1";
 
 export async function renderHome(
   context: PageContext,
@@ -64,6 +61,7 @@ export async function renderHome(
     screenControlEnabled: initialScreenControlEnabled,
   });
   let session: Awaited<ReturnType<typeof createGameSession>> | null = null;
+  let dialogCount = 0;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
     resolveCanvas = resolve;
@@ -73,7 +71,10 @@ export async function renderHome(
     images,
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
-    onRestart: () => session?.game.restart(),
+    onRestart: () => {
+      dialogCount = 0;
+      session?.game.restart();
+    },
     onScreenControl: () => {
       const enabled = !view.screenControlEnabled;
       updateWebSettings((settings) => ({
@@ -93,23 +94,6 @@ export async function renderHome(
     resolveMapDocument({ collection: "original", id: "campaign-intro" }),
     canvasReady,
   ]);
-  const disposeHomeDialog = createDialogBehavior(
-    HOME_DEMO_DIALOG_REF,
-    ({ self, commands }) => {
-      const storedCount = self.entity.state?.dialogCount;
-      const count =
-        typeof storedCount === "number" && Number.isFinite(storedCount)
-          ? storedCount
-          : 0;
-      commands.setState(self.entity.id, {
-        ...(self.entity.state ?? {}),
-        dialogCount: count + 1,
-      });
-      return webT(
-        count === 0 ? "home.demo.sandmanFirst" : "home.demo.sandmanAgain",
-      );
-    },
-  );
   try {
     session = await createGameSession({
       canvas,
@@ -117,13 +101,16 @@ export async function renderHome(
       gameOptions: {
         audio,
         images,
-        profile: { superKey: true },
       },
       runtime: {
-        initializeEntityState: (entity) =>
-          entity.type === MapEntityTypeId.SANDMAN
-            ? { dialog: { "message-ref": HOME_DEMO_DIALOG_REF } }
-            : undefined,
+        initialActorIntents: [
+          {
+            type: "set-actor-lock-key",
+            actor: "all",
+            kind: "reusable",
+            enabled: true,
+          },
+        ],
         hud: true,
         input: {
           undo: false,
@@ -136,10 +123,20 @@ export async function renderHome(
       },
     });
   } catch (error) {
-    disposeHomeDialog();
     homeApp.unmount();
     throw error;
   }
+
+  const unsubscribeInteraction = session.game.onInteractionRequest((request) => {
+    if (request.objectType !== MapEntityTypeId.SANDMAN) return;
+    session!.dialog?.show(
+      webT(
+        dialogCount++ === 0
+          ? "home.demo.sandmanFirst"
+          : "home.demo.sandmanAgain",
+      ),
+    );
+  });
 
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
@@ -182,7 +179,7 @@ export async function renderHome(
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
-      disposeHomeDialog();
+      unsubscribeInteraction();
       session?.destroy();
       homeApp.unmount();
     },

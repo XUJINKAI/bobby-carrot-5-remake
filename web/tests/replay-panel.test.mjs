@@ -21,13 +21,14 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
     {
       actual: {
         status: "playing",
-        moves: 1,
-        endTick: 2,
+        counters: {},
+        completedConditions: [],
       },
+      endTick: 2,
     },
     {
-      meta: {
-        final_status: "won",
+      finalState: {
+        status: "won",
       },
     },
   );

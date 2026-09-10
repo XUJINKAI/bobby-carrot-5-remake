@@ -25,3 +25,14 @@ test("public Engine API does not expose Editor authoring operations", () => {
   assert.equal("EditorDocument" in engine, false);
   assert.equal("resolveEditorPalette" in engine, false);
 });
+
+test("public Engine API keeps Campaign state and executable dialog callbacks outside", () => {
+  for (const name of [
+    "EconomyState",
+    "ProfileCapabilities",
+    "createDialogBehavior",
+    "DialogInitializer",
+  ]) {
+    assert.equal(name in engine, false, name);
+  }
+});

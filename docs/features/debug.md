@@ -94,12 +94,12 @@ Bobby 的行走 body sequence 为原版顺序 `4 → 5 → 6 → 7 → 8 → 1 �
 
 Presentation stepping 只改变表现时间，不回滚 World / Behavior / RuntimeAction gameplay state。
 
-## Inspector
+## Debug Info
 
-Inspector 有三个稳定 Tab：
+Debug Info 有四个稳定 Tab，打开时默认进入 `Inspect`：
 
 ```text
-Actor | Timeline | Inspect
+Inspect | Timeline | Actor | World
 ```
 
 DOM skeleton 保持挂载，Presentation 60Hz 刷新只更新内容，不重建 `<details>`，因此用户展开的 JSON 不会在刷新时自动收起。
@@ -120,7 +120,9 @@ Actor 展示当前 tracked actor 的运行态，包括：
 
 ### Timeline
 
-Timeline 保存最近 50 条 Debug runtime 事件，记录 sequence、World tick、Presentation frame 以及必要 detail。目前由 DebugRuntime 边界对连续 snapshot 做差异记录，包括：
+Timeline 保存最近 50 条 Debug runtime 事件，记录 sequence、World tick、Presentation frame 以及必要 detail。连续的空闲 World Tick 会合并成最近一条，避免挤掉真正的 gameplay 变化。`World ticks` 过滤项默认关闭，需要检查时钟推进时可以显式打开。
+
+目前由 DebugRuntime 边界对连续 snapshot 做差异记录，包括：
 
 - input；
 - action；
@@ -149,6 +151,20 @@ Selection 显示 Cell Stack，并允许在同格多个 Presence 中选择具体 
 - 当前 resolve 后的 visual layers。
 
 这些数据只供 DebugRuntime 内部消费；不得为了页面显示 Debug 信息而公开 `World`、`EntityStore`、`SpatialIndex`、`BehaviorRegistry`、`RuntimeActionScheduler` 或 `VisualRuntime` 实例。
+
+### World
+
+World 展示 DebugRuntime 从当前 Session 投影出的可序列化信息：
+
+- 解析后的 Engine timing、`bobbyLocomotion` 与 control bindings；
+- 当前关卡创建 World 时实际应用的 `initialIntents`；
+- 当前 gameplay/global/outcome/win-condition 状态与运行中的 WorldMotion；
+- 等待下一个 World Tick 的 actor effect intents；
+- Replay 的 recording / playing / paused 状态。
+
+`Intent injector` 面向当前 tracked actor 构造 `ActorEffectIntent`。目前支持修改 Bobby 的后续移动时长，以及设置 single-use / reusable Lock 能力。动作通过 `Game.dispatch()` 排入正常 World Tick；Replay recording 会记录实际消费的动作。World 暂停时动作保留在 `Pending intents`，点击 Controls 中的 `Step` 后执行。Replay playback 期间注入控件保持禁用，避免改变确定性重放。
+
+World 页消费的是 Debug snapshot，不持有 `World` 实例，也不扩张 `Game` 的公开只读状态边界。
 
 ## Debug Teleport
 

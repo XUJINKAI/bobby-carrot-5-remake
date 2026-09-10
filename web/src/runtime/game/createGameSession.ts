@@ -2,6 +2,7 @@ import {
   createGameplayRuntime,
   type Game,
   type InputController,
+  type GameplayDialog,
   type GameOptions,
   type GameplayRuntimeConfig,
   type LevelMap,
@@ -11,6 +12,7 @@ import { setShellRuntimeWarnings } from "../../shell/shellBridge.js";
 export interface GameSession {
   game: Game;
   input: InputController;
+  dialog: GameplayDialog | null;
   destroy(): void;
 }
 
@@ -32,10 +34,11 @@ export async function createGameSession(
     ...(options.runtime ? { runtime: options.runtime } : {}),
   });
   setShellRuntimeWarnings(runtime.warnings.map((warning) => warning.message));
-  const { game, input } = runtime;
+  const { game, input, dialog } = runtime;
   return {
     game,
     input,
+    dialog,
     destroy(): void {
       setShellRuntimeWarnings([]);
       runtime.destroy();

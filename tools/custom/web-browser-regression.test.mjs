@@ -227,7 +227,7 @@ async function verifyGameplayDialog(cdp, url) {
   if (text !== "你的金钥匙可以直接打开这把锁。")
     throw new Error(`Engine Dialog rendered unexpected text: ${text}`);
 
-  await dispatchKey(cdp, sessionId, "keyDown", "ArrowDown", 40);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -236,7 +236,7 @@ async function verifyGameplayDialog(cdp, url) {
       ),
     ),
   );
-  await dispatchKey(cdp, sessionId, "keyUp", "ArrowDown", 40);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
 }
 
 async function verifyReplayPanel(cdp, url) {
@@ -313,16 +313,20 @@ async function verifyReplayPanel(cdp, url) {
     !replay.meta.name ||
     typeof replay.meta.url !== "string" ||
     replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
-    replay.meta.note !== "" ||
-    !["playing", "won", "dead"].includes(replay.meta.final_status)
+    replay.meta.note !== ""
   )
     throw new Error("Replay panel did not export map metadata");
   if (
     "levelHash" in replay ||
-    "expectation" in replay ||
     Object.keys(replay).at(-1) !== "frames"
   )
     throw new Error("Replay export did not use the compact field layout");
+  if (
+    !["playing", "won", "dead"].includes(replay.finalState?.status) ||
+    typeof replay.finalState?.counters !== "object" ||
+    !Array.isArray(replay.finalState?.completedConditions)
+  )
+    throw new Error("Replay panel did not export finalState");
   if ("profile" in replay.runtime || "economy" in replay.runtime)
     throw new Error("Replay runtime included Explore session settings");
   if ("snapshot" in replay || "entities" in replay)
@@ -463,6 +467,55 @@ async function verifyReplayPanel(cdp, url) {
   if (engineSpeeds.length !== 2 || engineSpeeds.some((speed) => speed !== "20"))
     throw new Error("Replay panel time scale did not persist in both Engine clocks");
 
+  const debugLayout = await cdp.evaluate(
+    sessionId,
+    `(() => ({
+      tabs: [...document.querySelectorAll('[data-debug-tab]')]
+        .map((button) => button.dataset.debugTab),
+      inspectVisible: !document.querySelector('[data-debug-tab-panel="inspect"]')?.hidden,
+      worldTicksChecked: document.querySelector('[data-debug-timeline-world-ticks]')?.checked,
+    }))()`,
+  );
+  if (debugLayout.tabs.join(",") !== "inspect,timeline,actor,world")
+    throw new Error("Engine Debug tabs did not use the expected order");
+  if (!debugLayout.inspectVisible || debugLayout.worldTicksChecked !== false)
+    throw new Error("Engine Debug did not open Inspect with World ticks filtered");
+
+  await cdp.evaluate(
+    sessionId,
+    `(() => {
+      document.querySelector('[data-debug-tab="world"]').click();
+      const input = document.querySelector('[data-debug-intent-move-duration]');
+      input.value = '123';
+      document.querySelector('[data-debug-intent-dispatch]').click();
+      return true;
+    })()`,
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-debug-tab-panel=\"world\"]')?.textContent ?? ''",
+      ),
+    ).includes('"moveDurationMs": 123'),
+  );
+  const worldText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab-panel=\"world\"]')?.textContent ?? ''",
+  );
+  if (!worldText.includes("initialIntents") || !worldText.includes("bobbyLocomotion"))
+    throw new Error("Engine Debug World did not expose setup and initial intents");
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab=\"timeline\"]')?.click(); true",
+  );
+  const timelineText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-debug-tab-panel=\"timeline\"]')?.textContent ?? ''",
+  );
+  if (!timelineText.includes("set-actor-locomotion"))
+    throw new Error("Engine Debug intent injection did not enter Timeline");
+
   await cdp.send(
     "Emulation.setDeviceMetricsOverride",
     { width: 390, height: 760, deviceScaleFactor: 1, mobile: true },
@@ -541,13 +594,13 @@ function dialogPayload() {
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
-      { type: "start", x: 0, y: 0 },
-      { type: "bobby", x: 0, y: 0 },
+      { type: "start", x: 0, y: 1 },
+      { type: "bobby", x: 0, y: 1 },
       {
         type: "beaver",
         x: 1,
         y: 0,
-        interaction: "bonus-key-vendor",
+        dialogue: "你的金钥匙可以直接打开这把锁。",
       },
       { type: "exit", x: 1, y: 1 },
     ],

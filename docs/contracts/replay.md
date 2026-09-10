@@ -27,29 +27,31 @@ Replay 必须从 tick 0 开始。运行结果只由以下内容重建：
 ```text
 LevelMap
 + World Hz
-+ Bobby gameplay 运动参数
-+ 逐 Tick 玩家语义输入
++ Bobby 初始 gameplay 移动时长
++ tick 0 actor intents
++ 逐 Tick Gameplay Intent
 ```
-
-Web 播放使用当前 Explore Session 的 Profile 与 Economy 设置，它们不进入 Replay。
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
 恢复点。跳转和重新接管通过从 tick 0 快速执行到目标 Tick 实现。现有 Undo / Redo
 快照仍是单局游戏的内部能力，不属于 Replay 格式。
 
-使用不可序列化 `initializeEntityState` 回调的 Session 不能录制 Replay；对应入口需要先
-提供可序列化、可从起点重建的正式运行配置。
-
 ## 输入
 
-Replay 记录控制映射之后、World 判定之前的 `WorldIntentGroup`。因此它保留：
+Replay 在浏览器输入源映射到 controller channel 后记录语义动作。因此它保留：
 
-- 多 Actor 同时操作的分组；
+- 同一 channel 中多个 Bobby 的联动分组与方向变换；
 - 输入的 Tick 与组内顺序；
 - 被阻挡、处于 busy 状态或被 RuntimeAction 消费的输入尝试。
+- 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作。
 
-键盘、Pointer 和摇杆原始事件不进入 Replay。机关产生的 forced intent 由 World 在重放
-时重新计算。
+移动使用数字 `channel`，省略表示通道 `0`；键盘、Pointer、摇杆等输入源名称不进入
+Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的
+`controller / mirrorX / mirrorY` 重新解析各 Bobby 的实际方向。
+
+直接针对 actor 的 Debug 移动与 actor effect 使用 Bobby 在该动作处的地图位置 `{ x, y }`
+作为稳定引用。单 Bobby 地图省略该引用；多 Bobby 地图在执行动作前用当前位置解析
+Bobby。机关产生的 forced intent 由 World 在重放时重新计算。
 
 ## 时间与速率
 
@@ -71,45 +73,81 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   "meta": {
     "name": "1-1",
     "url": "https://bc5r.xujinkai.net/explore/play/original/1-1",
-    "final_status": "won",
     "note": ""
   },
   "runtime": {
     "worldHz": 60,
     "bobbyLocomotion": {
-      "moveMs": 350,
-      "speedShoesScale": 0.76
+      "moveMs": 350
     }
   },
+  "initialIntents": [
+    {
+      "type": "set-actor-lock-key",
+      "kind": "reusable",
+      "enabled": true
+    }
+  ],
+  "finalState": {
+    "status": "won",
+    "counters": {
+      "collect-carrot": 9,
+      "fill-egg-nest": 4
+    },
+    "completedConditions": [
+      { "type": "collect-all", "target": "carrot" },
+      { "type": "reach", "target": "exit" }
+    ]
+  },
   "endTick": 120,
-  "frames": []
+  "frames": [
+    {
+      "tick": 0,
+      "groups": [
+        {
+          "intents": [{ "type": "move", "direction": "right" }]
+        }
+      ]
+    }
+  ]
 }
 ```
 
-`meta.name` 和 `meta.url` 由宿主在开始录制时提供。Engine 在停止录制时写入
-`final_status`，其值为 `playing / won / dead`；`note` 初始为空字符串，Engine 不读取或
-解释其内容，用户可以在 Replay 文本中直接填写。
+`meta.name` 和 `meta.url` 由宿主在开始录制时提供。`note` 初始为空字符串，Engine
+不读取或解释其内容，用户可以在 Replay 文本中直接填写。
+
+`finalState` 是测试使用的轻量终局摘要：`status` 为 `playing / won / dead`；`counters`
+累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
+`completedConditions` 展开并列出终点已经满足的 `collect-all / fill-all / reach` 叶子条件。
+它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture
+维护面。
 
 Web 生成 `meta.url` 时固定使用 `https://bc5r.xujinkai.net/`，并保留当前页面的路径、
 查询参数和 fragment，使本地开发环境录制的文件也指向正式站点。
 
 Replay 本身不解析地图身份。调用方负责选择用于播放或无头执行的 `LevelMap`；Runner
-从起点执行到 `endTick` 并返回实际状态、移动计数和 Tick 数。作为仓库内回归 fixture
-使用时，verify 将 `meta.final_status` 作为期望状态，并与 Runner 的实际状态比较。
+从起点执行到 `endTick` 并返回实际 `finalState` 与 Tick 数。仓库 fixture 测试比较完整
+`finalState`；Web 录像面板只比较 `status`，用于提示回放是否到达相同终局。
+
+`initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
+于 tick 0 前应用，并使用同一套位置引用规则。Replay playback 不调用宿主
+`onInteractionRequest()`，因此购买等外部决定只会按已经录入 frame 的 Engine Intent
+执行一次。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。
 
 ## 仓库内置过法
 
-内置过法与地图使用相同的 collection 和 map ID：
+Web 为每张地图约定一个默认内置过法地址：
 
 ```text
 assets/replays/<collection>/<map-id>.json
-assets/maps/<collection>/<map-id>.json
 ```
 
-Web 录制面板按当前关卡尝试读取对应 Replay。`npm run verify` 递归扫描
-`assets/replays/` 的全部文件，在对应地图上使用 Explore Profile 从起点复跑，并要求
-实际状态等于 Replay 的 `meta.final_status`。每新增一个 Replay 文件都会自动进入这项
-回归测试，也会随 `assets/` 原样发布到 `dist/assets/`。
+Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地址。测试 fixture 的
+文件名可以表达 take、路径或测试目的，不承担地图身份；`npm run verify` 递归扫描
+`assets/replays/` 的全部 JSON，从每个 Replay 的 `meta.url` 解析
+`/explore/play/<collection>/<map-id>`，再加载对应 `assets/maps/` 地图复跑。因此同一地图
+可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
+`assets/` 原样发布到 `dist/assets/`。
 
 ## Explore Web 录制入口
 
