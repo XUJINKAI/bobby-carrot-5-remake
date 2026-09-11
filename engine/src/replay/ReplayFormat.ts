@@ -53,12 +53,16 @@ export interface ReplayRuntimeSetup {
 export type ReplayFinalStatus = "playing" | "won" | "dead";
 
 export interface ReplayRecordingMeta {
-  name: string;
+  id: string;
   url: string;
 }
 
 export interface ReplayMeta extends ReplayRecordingMeta {
   note: string;
+}
+
+export function isReplayPathId(value: unknown): value is string {
+  return typeof value === "string" && /^[^/\s]+\/[^/\s]+$/.test(value);
 }
 
 export type ReplayCompletedCondition =

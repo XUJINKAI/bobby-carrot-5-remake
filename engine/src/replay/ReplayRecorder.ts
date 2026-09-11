@@ -1,6 +1,7 @@
 import type { GameplaySession, GameplayTickResult } from "../core/GameplaySession.js";
 import {
   REPLAY_FORMAT_VERSION,
+  isReplayPathId,
   type Replay,
   type ReplayFrame,
   type ReplayGameplayIntent,
@@ -24,6 +25,8 @@ export class ReplayRecorder {
     private readonly session: GameplaySession,
     private readonly meta: ReplayRecordingMeta,
   ) {
+    if (!isReplayPathId(meta.id))
+      throw new Error("Replay meta.id 必须使用 <collection>/<map-id> 路径身份");
     if (session.clock.tickCount !== 0)
       throw new Error("Replay 录制必须从 tick 0 开始");
     if (!session.replaySetup)

@@ -64,8 +64,12 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
     bobbyLocomotion: { moveMs: 100 },
   });
   session.loadLevel(level);
+  assert.throws(
+    () => new ReplayRecorder(session, { id: "carrot", url: "/test/carrot" }),
+    /Replay meta\.id 必须使用/,
+  );
   const recorder = new ReplayRecorder(session, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
   });
   for (const tick of session.advanceTicks(3, (time) =>
@@ -80,7 +84,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.equal(replay.frames[0].tick, 0);
   assert.equal(replay.endTick, 3);
   assert.deepEqual(replay.meta, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
     note: "",
   });
@@ -97,6 +101,19 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   });
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
+  const invalidPathId = structuredClone(replay);
+  invalidPathId.meta.id = "carrot";
+  assert.throws(
+    () => runReplay(level, invalidPathId),
+    /Replay meta\.id 必须使用/,
+  );
+  const mapMetadataShape = structuredClone(replay);
+  mapMetadataShape.meta = {
+    name: "测试胡萝卜",
+    url: "/test/carrot",
+    note: "",
+  };
+  assert.throws(() => runReplay(level, mapMetadataShape), /Replay meta 无效/);
   const report = assertReplayMatches(level, replay, 3);
   assert.deepEqual(
     replayVerificationStates(report.actual, { elapsedMs: 999_999 }),
@@ -139,7 +156,7 @@ test("Replay 只保存实际生效的持续移动输入", () => {
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "持续移动",
+    id: "test/held-movement",
     url: "/test/held-movement",
   });
   for (const tick of session.advanceTicks(180, () => ({
@@ -161,7 +178,7 @@ test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
   });
   for (const tick of session.advanceTicks(3, (time) =>
@@ -228,7 +245,7 @@ test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   const recordingSession = new GameplaySession({ timing: { worldHz: 20 } });
   recordingSession.loadLevel(level);
   const recorder = new ReplayRecorder(recordingSession, {
-    name: "长无输入区间",
+    id: "test/idle-gap",
     url: "/test/idle-gap",
   });
   for (const tick of recordingSession.advanceTicks(100, (time) =>
@@ -279,7 +296,7 @@ test("Replay 省略没有 gameplay 效果的受阻输入", () => {
   const session = new GameplaySession();
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "受阻输入",
+    id: "test/blocked-input",
     url: "/test/blocked-input",
   });
   const [tick] = session.advanceTicks(1, () => ({
@@ -311,7 +328,7 @@ test("Replay 保留 RuntimeAction 实际观察到的移动输入", () => {
   const session = new GameplaySession(options);
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "Speed 输入观察",
+    id: "test/speed-observation",
     url: "/test/speed-observation",
   });
   for (const tick of session.advanceTicks(40, () => ({
@@ -334,7 +351,7 @@ test("ReplayRunner 拒绝不符合播放合同的输入", () => {
   const replay = {
     formatVersion: 2,
     meta: {
-      name: "错误版本",
+      id: "test/invalid-version",
       url: "/test/invalid-version",
       note: "",
     },
@@ -358,7 +375,7 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
   const replay = {
     formatVersion: 1,
     meta: {
-      name: "属性顺序",
+      id: "test/property-order",
       url: "/test/property-order",
       note: "",
     },
@@ -397,7 +414,7 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "初始钥匙",
+    id: "test/initial-key",
     url: "/test",
   });
   const replay = recorder.stop();
@@ -417,7 +434,7 @@ test("运行中的 locomotion 动作进入 Replay frame", () => {
   const session = new GameplaySession({ bobbyLocomotion: { moveMs: 350 } });
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
-    name: "动态移动速度",
+    id: "test/dynamic-locomotion",
     url: "/test",
   });
   const actorId = session.state.primaryActorId;
@@ -444,7 +461,7 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   const session = new GameplaySession();
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
-    name: "钥匙交互",
+    id: "test/key-interaction",
     url: "/test",
   });
   const actorId = session.state.primaryActorId;
@@ -481,7 +498,7 @@ test("Replay 初始钥匙动作也省略交互关联字段", () => {
   });
   session.loadLevel(level);
   const replay = new ReplayRecorder(session, {
-    name: "初始钥匙字段",
+    id: "test/initial-key-fields",
     url: "/test",
   }).stop();
 
@@ -509,7 +526,7 @@ test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
   const session = new GameplaySession();
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "双通道",
+    id: "test/two-channels",
     url: "/test/two-channels",
   });
   const [first, second] = session.advanceTicks(2, (time) => ({
@@ -547,7 +564,7 @@ test("多 Bobby 的 actor 动作使用动作时位置", () => {
   session.loadLevel(level);
   const secondActorId = session.actorIds[1];
   const recorder = new ReplayRecorder(session, {
-    name: "位置引用",
+    id: "test/actor-position",
     url: "/test/actor-position",
   });
   const [tick] = session.advanceTicks(1, () => ({
@@ -588,7 +605,7 @@ test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
   session.loadLevel(level);
   const secondActorId = session.actorIds[1];
   const recorder = new ReplayRecorder(session, {
-    name: "调试移动",
+    id: "test/direct-actor-move",
     url: "/test/direct-actor-move",
   });
   const [tick] = session.advanceTicks(1, () => ({

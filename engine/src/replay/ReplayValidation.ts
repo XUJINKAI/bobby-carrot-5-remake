@@ -6,6 +6,7 @@ import type {
   ReplayCompletedCondition,
   ReplayGameplayIntent,
 } from "./ReplayFormat.js";
+import { isReplayPathId } from "./ReplayFormat.js";
 
 /** 浏览器播放与无头 Runner 共用同一份 Replay 输入合同。 */
 export function validateReplay(
@@ -27,12 +28,14 @@ export function validateReplay(
     throw new Error(`不支持 Replay formatVersion ${replay.formatVersion}`);
   if (
     !isPlainObject(replay.meta) ||
-    typeof replay.meta.name !== "string" ||
+    typeof replay.meta.id !== "string" ||
     typeof replay.meta.url !== "string" ||
     typeof replay.meta.note !== "string"
   )
     throw new Error("Replay meta 无效");
-  requireFields(replay.meta, ["name", "url", "note"]);
+  requireFields(replay.meta, ["id", "url", "note"]);
+  if (!isReplayPathId(replay.meta.id))
+    throw new Error("Replay meta.id 必须使用 <collection>/<map-id> 路径身份");
   if (!isPlainObject(replay.runtime))
     throw new Error("Replay runtime 无效");
   requireFields(replay.runtime, ["worldHz", "bobbyLocomotion"]);
