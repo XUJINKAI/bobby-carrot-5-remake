@@ -105,6 +105,8 @@ export {
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export {
   GameplayDialog,
+  type GameplayDialogChoice,
+  type GameplayDialogChoiceOptions,
   type GameplayDialogOptions,
 } from "./ui/GameplayDialog.js";
 export {

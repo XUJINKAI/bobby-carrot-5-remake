@@ -477,3 +477,17 @@ game.onInteractionRequest((request) => {
 可对话角色触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
 `dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
 `dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
+
+宿主需要双选项交互时，可以等待通用展示层返回选择结果：
+
+```ts
+const choice = await dialog.choose({
+  message: "要购买这个道具吗？",
+  leftLabel: "购买",
+  rightLabel: "算了",
+  primary: "left",
+});
+```
+
+结果为 `left / right / dismissed`。`GameplayDialog` 不接收业务回调，也不读写存档、
+货币或商品状态；宿主在等待期间自行管理输入能力，并在取得结果后提交业务动作。
