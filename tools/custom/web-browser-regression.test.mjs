@@ -330,6 +330,7 @@ async function verifyReplayPanel(cdp, url) {
   );
   await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await new Promise((resolve) => setTimeout(resolve, 200));
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
   await waitFor(async () =>
     !String(
