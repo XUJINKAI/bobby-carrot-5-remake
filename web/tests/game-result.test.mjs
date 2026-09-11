@@ -60,6 +60,8 @@ test("Replay 录制状态不参与结果卡片分支，终局切换对应音乐"
     source,
     /onTimelineRestart\(\)[\s\S]*completionRecorded = false/,
   );
+  assert.match(source, /resultElapsedMs = state\.elapsedMs/);
+  assert.doesNotMatch(source, /performance\.now\(\) - levelStartedAt/);
 });
 
 test("Adventure 商品购买使用同级选项", async () => {

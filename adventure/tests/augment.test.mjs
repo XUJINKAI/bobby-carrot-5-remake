@@ -160,7 +160,7 @@ test("Beaver Shop 通过地图补丁增加场景内容与字面对白", () => {
       .filter((entity) => entity.type === MapEntityTypeId.PORTAL)
       .map(({ x, y, channel }) => ({ x, y, channel })),
     [
-      { x: 11, y: 16, channel: "beaver-shop-shortcut" },
+      { x: 9, y: 13, channel: "beaver-shop-shortcut" },
       { x: 17, y: 8, channel: "beaver-shop-shortcut" },
     ],
   );
@@ -247,7 +247,7 @@ test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => 
       height: 20,
       entities: [{ type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 }],
     },
-    augmentation.savePatches(committed),
+    augmentation.levelPatchesFunction(committed),
   );
   assert.equal(
     purchasedLevel.entities.some(

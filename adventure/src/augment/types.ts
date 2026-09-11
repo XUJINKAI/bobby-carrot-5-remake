@@ -52,7 +52,7 @@ export interface AdventureAugmentation {
   /** 与 Save 无关、可以直接审阅的加载前地图补丁。 */
   levelPatches: readonly LevelPatch[];
   /** 把永久 Adventure 状态投影为本次 Session 的地图补丁。 */
-  savePatches?(save: AdventureSave): readonly LevelPatch[];
+  levelPatchesFunction?(save: AdventureSave): readonly LevelPatch[];
   /** 只处理跨关经济、永久道具等 Campaign 交互。 */
   interaction?: AdventureInteractionHandler;
 }

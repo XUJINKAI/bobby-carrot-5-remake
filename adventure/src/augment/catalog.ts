@@ -84,7 +84,7 @@ const BEAVER_SHOP: AdventureAugmentation = {
       },
     },
   ],
-  savePatches: createLevelPatches,
+  levelPatchesFunction: createLevelPatches,
   interaction: interactWithBeaverShop,
 };
 

@@ -14,7 +14,7 @@ test("已购买商品在进入 Engine 前投影为空商品格", () => {
   };
   const augmentation = {
     levelPatches: [],
-    savePatches: (current) => current.items.includes("golden-key")
+    levelPatchesFunction: (current) => current.items.includes("golden-key")
       ? [{
           operation: "replace-type",
           selector: { type: "lock-key", x: 0, y: 0 },

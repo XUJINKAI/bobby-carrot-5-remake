@@ -351,7 +351,10 @@ Result 保留最后一帧并覆盖在 Stage 中央：
 └──────────────────────────────────────────────┘
 ```
 
-GamePage 通关卡片按行显示自然用时、步数和本关 Bonus Coin 收集数；Adventure 还显示结算后的全局 Bonus Coin。操作区只提供“返回”和主要动作“下一关”，没有下一关时保留禁用状态。失败卡片只显示“失败”，操作区只提供“返回”和主要动作“重新开始”。Welcome Demo 与 Editor Play Test 使用各自宿主的结果流程。
+GamePage 通关卡片按行显示 Engine `GameplayState.elapsedMs` 提供的游戏内用时、步数和本关
+Bonus Coin 收集数；Adventure 还显示结算后的全局 Bonus Coin。操作区只提供“返回”和
+主要动作“下一关”，没有下一关时保留禁用状态。失败卡片只显示“失败”，操作区只提供
+“返回”和主要动作“重新开始”。Welcome Demo 与 Editor Play Test 使用各自宿主的结果流程。
 
 Result Overlay 在 Bobby 的终局表现播放完成后原地覆盖 GameStage。通关使用 `b6.png` 以约 279ms 正向过渡并隐藏 Bobby，失败保留 `b5.png` 末帧；Web 分别播放一次 `cleared` 和 `death`。关卡载入或重开时以约 310ms 倒向播放同一套 `b6.png`，随后恢复普通站立表现。
 

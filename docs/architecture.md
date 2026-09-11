@@ -88,6 +88,10 @@ Engine 负责：
 无头 Replay Runner 直接驱动同一个 Session。Replay 执行合同见
 [`contracts/replay.md`](contracts/replay.md)。
 
+`GamePresentation` 集中持有 Renderer、Camera、VisualRuntime 与 PresentationClock；
+`GameDebugControls` 集中持有 Debug Sidebar、调试时钟和 actor 调试操作。`Game` 保留公开
+API、GameplaySession 编排和 WorldEvent 发布。
+
 Game 的关卡输入只有纯 `LevelMap`：
 
 ```text
@@ -295,7 +299,8 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
 
 每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
-同一个 `AdventureAugmentation` 声明静态 `levelPatches`、可选 `savePatches(save)` 与
+同一个 `AdventureAugmentation` 声明静态 `levelPatches`、可选
+`levelPatchesFunction(save)` 与
 可选 `interaction(context)`：前两者在加载前形成 session map，后者直接处理 Engine 的
 通用 `object-interaction` 请求。补丁执行器位于 Model；Adventure 的经济归约和交互端口
 分别位于 `interactions.ts` 与 `types.ts`，场景配置不
@@ -453,7 +458,7 @@ GameStage
 └── Product Result Overlay
 ```
 
-Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。统计用时、模式导航和 Result 动作属于 Web。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
+Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。Result 从 `GameplayState.elapsedMs` 读取游戏内用时，Web 只负责格式化、模式导航和 Result 动作。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
 
 Engine HUD 使用统一布局约束并锚定在 GameStage 右上角：第一行是全体共享的目标计数，第二行是 primary actor 的地图内道具；存在第二个 Bobby 时，第三行显示 secondary actor 的道具。各产品模式只配置 HUD 能力，不重新实现道具布局。
 
@@ -510,11 +515,13 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 购买请求来自 Engine 的 `object-interaction`。对应地图的 Adventure interaction 回调
 调用纯经济归约，并通过宿主端口展示选项、持久化 Save。购买成功后，回调请求通用
 `commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
-通过 `savePatches(save)` 生成同一替换补丁。Replay 只记录对话选择，宿主业务结果按播放时的 Save
-重新归约。Bonus Beaver 的关卡钥匙在 reducer 决策后以
+通过 `levelPatchesFunction(save)` 生成同一替换补丁。Bonus Beaver 的关卡钥匙在 reducer 决策后以
 `add-actor-inventory-item` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的
 接受事件后提交 Save。永久钥匙通过加载前补丁把 Bonus Lock 的 `requireKey` 设为
 `false`，不进入 Engine 背包。
+
+Replay 的确定性边界是一张独立 LevelMap；Adventure Save、全局经济、永久商品和按 Save
+生成的动态补丁属于 Campaign 会话，不由单关录像重建。
 
 ## Original JAR Validation
 

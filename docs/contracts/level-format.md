@@ -420,7 +420,7 @@ Adventure 的声明式配置统一位于 `adventure/src/augment/`。每项内容
 ```ts
 interface AdventureAugmentation {
   levelPatches: readonly LevelPatch[];
-  savePatches?(save: AdventureSave): readonly LevelPatch[];
+  levelPatchesFunction?(save: AdventureSave): readonly LevelPatch[];
   interaction?(context: AdventureInteractionContext): void | Promise<void>;
 }
 ```
@@ -443,8 +443,9 @@ type LevelPatch =
     };
 ```
 
-固定或循环对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。`savePatches(save)` 把
-永久购买状态投影成 Session 地图，例如将已售出的商品格替换成 `shop-empty`。
+固定或循环对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。
+`levelPatchesFunction(save)` 把永久购买状态投影成 Session 地图，例如将已售出的商品格
+替换成 `shop-empty`。
 `interaction(context)` 是该地图唯一的 Campaign 交互入口，接收通用请求和当前 Save，
 并可调用宿主提供的 `showDialogue / presentDialogue / commitSave /
 addActorInventoryItem / replaceInteractedEntity`。Adventure 不接收 Engine runtime object，

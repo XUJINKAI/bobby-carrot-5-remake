@@ -316,8 +316,6 @@ export async function renderGamePage(
   };
   playLevelMusic();
 
-  let levelStartedAt = performance.now();
-  let waitingForLevelEntrance = true;
   let visibleResult: "death" | "complete" | null = null;
   let audibleResult: "death" | "complete" | null = null;
   let resultElapsedMs = 0;
@@ -365,8 +363,6 @@ export async function renderGamePage(
         },
         onTimelineRestart() {
           adventureRewards.discard();
-          levelStartedAt = performance.now();
-          waitingForLevelEntrance = true;
           resultElapsedMs = 0;
           visibleResult = null;
           audibleResult = null;
@@ -420,7 +416,7 @@ export async function renderGamePage(
     }
     if (audibleResult !== kind) {
       audibleResult = kind;
-      resultElapsedMs = performance.now() - levelStartedAt;
+      resultElapsedMs = state.elapsedMs;
       audio.playMusic(kind === "complete" ? "cleared" : "death");
     }
     if (game.isAnimating) return;
@@ -456,10 +452,6 @@ export async function renderGamePage(
   };
 
   const update = (): void => {
-    if (waitingForLevelEntrance && !game.presentationBlocksInput) {
-      levelStartedAt = performance.now();
-      waitingForLevelEntrance = false;
-    }
     updateAdventureToolLayout();
     renderResult();
     replayPanel.update();
@@ -487,8 +479,6 @@ export async function renderGamePage(
     } else {
       game.restart();
     }
-    levelStartedAt = performance.now();
-    waitingForLevelEntrance = true;
     resultElapsedMs = 0;
     completionNavigationStarted = false;
     closeResult();

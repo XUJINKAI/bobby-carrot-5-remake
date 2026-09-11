@@ -17,7 +17,7 @@ export function prepareAdventureGameplayLevel(
 ): LevelMap {
   return applyLevelPatches(level, [
     ...augmentation.levelPatches,
-    ...(save ? augmentation.savePatches?.(save) ?? [] : []),
+    ...(save ? augmentation.levelPatchesFunction?.(save) ?? [] : []),
     ...sessionPatches,
   ]);
 }

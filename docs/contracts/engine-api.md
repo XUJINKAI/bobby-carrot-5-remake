@@ -238,8 +238,9 @@ LevelMap。商品、价格、货币和永久存档均由外层产品决定。`Ga
 位置、朝向、地图内背包与实际移动时长，不暴露 Entity runtime state。
 
 阻塞对话选择产生的宿主派生效果使用 `game.dispatchInteractionEffect(intent)`。该入口允许
-Replay playback 在消费 `choices` 后重走同一交互流程；派生效果本身不写入 Replay，避免
-把选项决定和业务结果重复记录。
+Replay playback 在消费 `choices` 后重走由当前 LevelMap 与 Session 状态决定的交互流程；
+派生效果本身不写入 Replay。依赖 Adventure Save、全局经济或其它外部可变状态的宿主业务
+不属于 Replay 的可靠重建边界。
 
 ## GameplaySession 与 Replay
 
@@ -281,7 +282,8 @@ game.replayPaused;
 
 录制调用方提供当前地图的路径 ID 与 URL；Engine 在停止时写入 `finalState` 和空白
 `note`。`meta` 不参与播放调度，用户可以直接编辑 `note`。Web 复跑只提示
-`finalState.status` 是否一致；仓库 fixture 验证完整 `finalState`。
+`finalState.status` 是否一致；仓库 fixture 只比较 Replay 文件中实际声明的 `finalState`
+字段，并始终忽略仅用于记录的 `elapsedMs`。
 
 常用只读状态：
 

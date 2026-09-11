@@ -4,6 +4,10 @@ Replay 用于记录一张 `LevelMap` 从正式起点开始的玩家语义输入�
 中通过同一套 `GameplaySession` 重新执行。Replay 的首要用途是生成可长期运行的
 Engine 回归测试。
 
+可靠重建边界是一张独立、纯数据的 `LevelMap`，覆盖 Explore、Editor Play Test 和直接
+加载地图的 Engine 场景。Adventure 的 Save、全局经济、加载前动态补丁和宿主业务回调
+属于跨关 Campaign 状态，不进入 Replay 文件，也不属于 Replay fixture 的确定性保证。
+
 ## 执行模型
 
 一次 World Tick 使用固定顺序：
@@ -154,12 +158,10 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 `onInteractionRequest()`，由同一产品流程再次展示选项并消费序号。缺少选择、选择越界、
 下一 Tick 到来时仍有未消费选择都会立即报错。
 
-商品结算仍由宿主持有：存档更新后，宿主把 Entity 替换提交给当前 World；Adventure
-重开或重新载入时按最新 Save 重新生成地图补丁。该派生结果不进入 Replay frame，播放时
-由已记录的选择重新驱动同一宿主流程。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白
-不会重复写入 Replay。无头 Runner 只验证 Engine 时间线与 `choices` 的静态格式；包含宿主
-业务的选择流程使用浏览器 playback 验证。字符串数组 `dialogue` 的循环游标属于 World
-Runtime State，因此随 Snapshot 与确定性 Tick 时间线推进。
+地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。字符串数组
+`dialogue` 的循环游标属于 World Runtime State，因此随 Snapshot 与确定性 Tick 时间线
+推进。阻塞选择只有在交互结果完全由当前 LevelMap、Session 状态和选择序号决定时才能可靠
+重建；读取或写入外部可变状态的宿主业务回调超出 Replay 边界。
 
 ## 仓库内置过法
 
@@ -188,8 +190,8 @@ Engine 的常驻 `timeScale`，同时作用于普通游戏、
 与快进按钮依次选择 `0.1 / 0.5 / 1 / 1.25 / 1.5 / 2 / 4 / 8` 中相邻的预设值。
 
 带 `choices` 的 Replay 必须按时间线播放，使宿主有机会依次处理每轮交互；终点快进会拒绝
-这类文件。终点快进普通 Replay 时仍逐 Tick 发布沿途 `WorldEvent`，Adventure 因而可以
-暂存收集事件，并在通关事件触发结果渲染前统一结算全局奖励。
+这类文件。终点快进普通 Replay 时仍逐 Tick 发布沿途 `WorldEvent`，以保持独立关卡的事件
+观察顺序。
 
 录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放角色过渡、终局音乐并显示结果卡片；录制中的 take 由用户在面板中停止并生成 Replay JSON。
 
@@ -209,10 +211,10 @@ Explore 游戏页使用 `Tab` 开关录制面板；焦点位于链接、按钮�
 或其它可交互元素时保留浏览器原有的焦点导航。面板开关写入当前标签页的
 `sessionStorage`，因此地图导航与刷新会恢复同一状态。
 
-通过 `npm run dev` 启动时，Adventure 游戏页提供相同的底栏入口与 `Tab` 快捷键；正式
-构建保持 Adventure 玩家界面。Adventure 页面装配器把 Campaign node 实际引用的地图
-身份解析成内置 Replay URL 和 canonical Explore URL 后交给录制面板，因此面板只消费
-普通 URL，不解释 Adventure identity。录制结果可以直接放入 `assets/replays/` 参与回归。
+通过 `npm run dev` 启动时，Adventure 游戏页可以提供相同的底栏入口与 `Tab` 快捷键，用于
+调试底层单关时间线；正式构建保持 Adventure 玩家界面。该入口不会把 Adventure Save、
+全局奖励、永久商品或动态补丁纳入录像。仓库 Replay fixture 以 Explore 的纯 LevelMap URL
+加载并验证。
 
 桌面布局为面板保留固定宽度并缩小 Canvas 可用区域；窄屏布局将面板悬浮在游戏区域内，
 保持 Canvas 尺寸。面板开关引起可用区域变化时，Web 必须触发 Engine viewport resize。
