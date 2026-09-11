@@ -56,6 +56,10 @@ test("Replay 录制状态不参与结果卡片分支，终局切换对应音乐"
     source,
     /audio\.playMusic\(kind === "complete" \? "cleared" : "death"\)/,
   );
+  assert.match(
+    source,
+    /onTimelineRestart\(\)[\s\S]*completionRecorded = false/,
+  );
 });
 
 test("Adventure 商品购买使用同级选项", async () => {

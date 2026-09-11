@@ -337,8 +337,12 @@ export async function renderGamePage(
           levelStartedAt = performance.now();
           waitingForLevelEntrance = true;
           resultElapsedMs = 0;
+          visibleResult = null;
           audibleResult = null;
+          completionRecorded = false;
+          completionNextId = undefined;
           completionNavigationStarted = false;
+          gameResult.hidden = true;
           playLevelMusic();
         },
       })
