@@ -12,17 +12,11 @@ defineProps<{
 <template>
   <AdventureViewport v-if="mode === 'adventure'" class="adventure-game-viewport">
     <div class="game-page original-adventure-game">
-      <GameStage
-        :show-product-stats="false"
-        :show-replay-panel="replayPanelEnabled"
-      />
+      <GameStage :show-replay-panel="replayPanelEnabled" />
     </div>
   </AdventureViewport>
   <div v-else class="game-page">
-    <GameStage
-      :show-product-stats="true"
-      :show-replay-panel="replayPanelEnabled"
-    />
+    <GameStage :show-replay-panel="replayPanelEnabled" />
   </div>
 </template>
 

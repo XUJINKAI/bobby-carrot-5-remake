@@ -165,7 +165,7 @@ BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页
 ```text
 ┌───────────────────────────────────────────────────────────────────────┐
 │ GameStage                                                      🥕 12 │ ← 目标
-│                                                    🔑  🫘×2  🪙×1 │ ← 道具
+│                                             🪁  2 🫘  🛷  ⛽  金币: 10 │ ← 道具与金币
 │                                                                       │
 │                                                                       │
 │                              Canvas                                   │
@@ -180,7 +180,7 @@ BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页
 
 Web Product Layer
 ├── ResultOverlay
-├── DebugOverlay / product statistics
+├── DebugOverlay
 └── Dialog presentation
             ↑
 Engine Gameplay Layer
@@ -224,23 +224,33 @@ Explore HUD：
 
 HUD 数据：
 
+- 本关计时器；
+- 当前移动步数；
 - 当前目标与剩余数量；
-- 当前地图中的风筝、魔豆、雪铲与汽油持有状态；
-- Adventure 本关正向用时，以及 Engine Timed Challenge 剩余时间；
-- 当前模式允许展示的移动步数和统计用时。
+- 当前地图中的风筝、魔豆、雪铲与汽油；
+- 宿主提供的全局金币数。
 
-Adventure 的 Engine HUD 在 GameStage 左上角以 `MM:SS` 显示计时器。普通关卡正向显示本关用时；配置 Timed Challenge 的关卡从开局显示冻结的完整倒计时，Lock 打开后开始递减。其余信息锚定在右上角。右侧第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。各行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
+Engine HUD 在 GameStage 左上角以 `MM:SS` 显示计时器，并可在下一行显示步数。普通关卡正向显示本关用时；配置 Timed Challenge 的关卡从开局显示冻结的完整倒计时，Lock 打开后开始递减。其余信息锚定在右上角。右侧第一行在目标图标左侧显示剩余数量；第二行显示当前持有的风筝、魔豆、雪铲与汽油，并可在同一行显示宿主金币。各行直接显示半透明图标和数字，不使用容器边框、底色或阴影。道具数量为 `1` 时只显示图标，数量大于 `1` 时显示计数；金币始终显示计数，包括 `0`。
 
-Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为右侧 Engine HUD 应用 36px Jersey 10 像素字体，为左侧 Explore 统计 Overlay 应用 26px Jersey 10 像素字体，两侧均使用 1px 黑色描边。Explore 统计 Overlay 锚定在 GameStage 左上角，分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
+Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为 Engine HUD 应用 36px Jersey 10 像素字体与 1px 黑色描边。
 
 ```text
 右上角 HUD 锚点
 
                                       12 🥕
-                              🪁  2 🫘  🛷  ⛽
+                    🪁  2 🫘  🛷  ⛽  金币: 10
 ```
 
-Adventure 通过 Runtime Config 选择紧凑 HUD，优先保持原作信息边界。Explore 可以在 Engine 基础 HUD 之外叠加 Steps、统计用时和 Debug 入口；统计用时由 Web 记录，不参与地图规则。
+各入口的 HUD 项目通过 Runtime Config 独立选择：
+
+| 入口 | 计时器 | 计步器 | 剩余目标 | 道具 | 金币数 |
+| --- | --- | --- | --- | --- | --- |
+| Explore / 默认配置 | 显示 | 显示 | 显示 | 显示 | 隐藏 |
+| Adventure 普通关卡 | 显示 | 隐藏 | 显示 | 显示 | 隐藏 |
+| Beaver Shop | 隐藏 | 隐藏 | 隐藏 | 隐藏 | 显示 |
+| 夜间列车 Special Scene | 隐藏 | 隐藏 | 隐藏 | 隐藏 | 隐藏 |
+
+Beaver Shop 的金币数读取 Adventure Save；夜间列车 Special Scene 包括 Dream Machine、Cloud 9 与 Dreamland Reward。
 
 ### Screen Control
 

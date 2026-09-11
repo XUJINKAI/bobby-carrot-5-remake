@@ -44,7 +44,6 @@ import { createGameSession } from "../../runtime/game/createGameSession.js";
 import {
   completedResultHtml,
   failedResultHtml,
-  formatElapsed,
 } from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
 import {
@@ -89,6 +88,7 @@ import {
   adventureItemReplacementIntent,
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
+import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
 
@@ -236,9 +236,6 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
-  const productTime = app.querySelector<HTMLElement>("[data-product-time]");
-  const productSteps = app.querySelector<HTMLElement>("[data-product-steps]");
-
   const session = await createGameSession({
     canvas,
     level: sessionLevel,
@@ -260,12 +257,11 @@ export async function renderGamePage(
             }]
           : [],
       camera: GAME_CAMERA_OPTIONS[mode],
-      hud: {
-        objective: true,
-        inventory: true,
-        elapsedTime: mode === "adventure",
-        timedChallenge: true,
-      },
+      hud: resolveGameplayHudConfig(
+        mode,
+        adventureScene?.id,
+        () => adventureSave?.economy.bonusCoins ?? 0,
+      ),
       input: {
         undo: mode === "explore",
         debug: capabilities.debug,
@@ -430,17 +426,12 @@ export async function renderGamePage(
       waitingForLevelEntrance = false;
     }
     updateAdventureToolLayout();
-    if (productTime && productSteps && game.hasLevel) {
-      productTime.textContent = formatElapsed(game.state.elapsedMs);
-      productSteps.textContent = String(game.state.moves);
-    }
     renderResult();
     replayPanel.update();
   };
   game.on("change", update);
   game.on("debug-change", update);
   update();
-  const statisticsTimer = window.setInterval(update, 250);
 
   const askUndo = (): void => {
     if (mode === "explore" && game.canUndo) {
@@ -609,7 +600,6 @@ export async function renderGamePage(
 
   return {
     destroy(): void {
-      window.clearInterval(statisticsTimer);
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       unsubscribeWorldEvents();

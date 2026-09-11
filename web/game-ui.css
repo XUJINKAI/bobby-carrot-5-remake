@@ -17,8 +17,7 @@
 }
 
 /* Engine 提供 HUD 结构，产品层统一决定游戏内统计文字的视觉主题。 */
-.engine-gameplay-hud,
-.product-game-statistics {
+.engine-gameplay-hud {
   font-family: "Jersey 10", fantasy;
   font-weight: 400;
   -webkit-text-stroke: 1px #000;

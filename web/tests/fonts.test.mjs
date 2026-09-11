@@ -28,13 +28,13 @@ test("Web 入口加载共享 Jersey 10 字体定义", async () => {
   assert.match(appSource, /shared\/fonts\/jersey-10\/font\.css/);
 });
 
-test("Web 为两侧游戏 HUD 统一应用 Jersey 10 主题", async () => {
+test("Web 为 Engine 游戏 HUD 应用 Jersey 10 主题", async () => {
   const gameUiCss = await readFile(
     new URL("../game-ui.css", import.meta.url),
     "utf8",
   );
 
-  assert.match(gameUiCss, /\.engine-gameplay-hud,\s*\.product-game-statistics/);
+  assert.match(gameUiCss, /\.engine-gameplay-hud \{/);
   assert.match(gameUiCss, /font-family: "Jersey 10", fantasy/);
   assert.match(gameUiCss, /-webkit-text-stroke: 1px #000/);
   assert.match(gameUiCss, /text-shadow:/);
