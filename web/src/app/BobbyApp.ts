@@ -219,6 +219,14 @@ export class BobbyApp {
       );
       return;
     }
+    if (path === "/adventure/night-train/dreamland-reward") {
+      await this.renderAdventureScene(
+        "dreamland-reward",
+        context,
+        "/adventure/night-train",
+      );
+      return;
+    }
     if (path.startsWith("/adventure/chapter/")) {
       const chapter = Number(path.split("/").pop());
       if (!Number.isInteger(chapter)) {

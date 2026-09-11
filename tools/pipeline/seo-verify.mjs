@@ -21,6 +21,10 @@ export function verifySeoArtifacts() {
     robots: "noindex,follow",
     canonical: `${siteOrigin}/adventure/play/1-1`,
   });
+  assertShell("adventure/night-train/dreamland-reward/index.html", {
+    robots: "noindex,follow",
+    canonical: `${siteOrigin}/adventure/night-train/dreamland-reward`,
+  });
   assertShell("explore/play/original/1-1/index.html", {
     robots: "index,follow",
     canonical: `${siteOrigin}/explore/play/original/1-1`,
