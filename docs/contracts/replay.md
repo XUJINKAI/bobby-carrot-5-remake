@@ -146,7 +146,9 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 `initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
 于 tick 0 前应用，并使用同一套位置引用规则。Replay playback 不调用宿主
 `onInteractionRequest()`，因此购买等外部决定只会按已经录入 frame 的 Engine Intent
-执行一次。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。
+执行一次。商品结果使用 `commit-entity-replacement` 保存目标的 `type + x + y` 和替代
+类型，重放不依赖运行时 Entity ID。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白
+不会重复写入 Replay。
 
 ## 仓库内置过法
 

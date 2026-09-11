@@ -394,6 +394,7 @@ export class GameplaySession {
           move.source,
         );
         for (const intent of group.intents) {
+          if (!("actorId" in intent)) continue;
           if (claimedActors.has(intent.actorId)) continue;
           claimedActors.add(intent.actorId);
           actorIds.push(intent.actorId);
@@ -451,11 +452,50 @@ export class GameplaySession {
     if (this.historyPolicy.mode !== "disabled" && group.historyBoundary !== false)
       this.pendingHistorySnapshot = this.world.snapshot();
     const result = this.world.step(group);
+    this.persistCommittedReplacements(group.intents, result);
     this.checkpointPendingHistory(
       result,
-      group.intents.map((intent) => intent.actorId),
+      group.intents.flatMap((intent) =>
+        "actorId" in intent ? [intent.actorId] : [],
+      ),
     );
     return result;
+  }
+
+  private persistCommittedReplacements(
+    intents: readonly WorldIntent[],
+    result: WorldStepResult,
+  ): void {
+    if (!this.initialLevel) return;
+    for (const intent of intents) {
+      if (intent.type !== "commit-entity-replacement") continue;
+      const committed = result.events.some(
+        (event) =>
+          event.type === "entity-replacement-committed" &&
+          event.x === intent.target.x &&
+          event.y === intent.target.y &&
+          event.data?.["replacementType"] === intent.replacementType,
+      );
+      if (!committed) continue;
+      const matches = this.initialLevel.entities
+        .map((entity, index) => ({ entity, index }))
+        .filter(
+          ({ entity }) =>
+            entity.type === intent.target.type &&
+            entity.x === intent.target.x &&
+            entity.y === intent.target.y,
+        );
+      if (matches.length !== 1) continue;
+      const { entity, index } = matches[0]!;
+      this.initialLevel.entities[index] = {
+        type: intent.replacementType,
+        x: entity.x,
+        y: entity.y,
+        ...(entity.stackOrder === undefined
+          ? {}
+          : { stackOrder: entity.stackOrder }),
+      };
+    }
   }
 
   private checkpointPendingHistory(
@@ -490,7 +530,10 @@ export class GameplaySession {
       result: actorIds.some((actorId) => movedActors.has(actorId))
         ? "moved"
         : actorIds.some((actorId) =>
-              blocked.some((intent) => intent.actorId === actorId),
+              blocked.some(
+                (intent) =>
+                  "actorId" in intent && intent.actorId === actorId,
+              ),
             )
           ? blockedDisposition
           : "blocked",

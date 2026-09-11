@@ -123,6 +123,7 @@ export {
 export {
   REPLAY_FORMAT_VERSION,
   type ReplayActualFinalState,
+  type ReplayCommitEntityReplacementIntent,
   type ReplayCompletedCondition,
   type ReplayFinalState,
   type ReplayFinalStatus,
@@ -171,6 +172,9 @@ export type {
 export { isObjectInteractionEvent } from "./world/WorldTypes.js";
 export type {
   ActorEffectIntent,
+  CommitEntityReplacementIntent,
+  EntityTargetReference,
+  GameplayEffectIntent,
   MoveCause,
   MoveIntent,
   SetActorLockKeyIntent,

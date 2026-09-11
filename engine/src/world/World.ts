@@ -337,7 +337,7 @@ export class World {
    */
   step(group: WorldIntentGroup): WorldStepResult {
     const result = emptyWorldStepResult();
-    this.applyActorIntents(group.intents, result);
+    this.applyEffectIntents(group.intents, result);
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
     let playerInputMoved = false;
@@ -657,7 +657,7 @@ export class World {
     ) ?? this.motionDurationMs;
   }
 
-  private applyActorIntents(
+  private applyEffectIntents(
     intents: readonly WorldIntent[],
     result: WorldStepResult,
   ): void {
@@ -665,6 +665,33 @@ export class World {
     const queue = new CommandQueue();
     for (const intent of intents) {
       if (intent.type === "move") continue;
+      if (intent.type === "commit-entity-replacement") {
+        const matches = this.entities.all().filter(
+          (entity) =>
+            entity.type === intent.target.type &&
+            entity.anchor.x === intent.target.x &&
+            entity.anchor.y === intent.target.y,
+        );
+        if (matches.length !== 1) continue;
+        const target = matches[0]!;
+        queue.destroy(target.id);
+        queue.spawn({
+          type: intent.replacementType,
+          x: target.anchor.x,
+          y: target.anchor.y,
+          ...(target.stackOrder === undefined
+            ? {}
+            : { stackOrder: target.stackOrder }),
+        });
+        queue.emit({
+          type: "entity-replacement-committed",
+          entityId: target.id,
+          x: target.anchor.x,
+          y: target.anchor.y,
+          data: { replacementType: intent.replacementType },
+        });
+        continue;
+      }
       const actor = this.entities.get(intent.actorId);
       if (!actor || !this.query.entityHasTrait(actor.id, "player")) continue;
       const state = states.get(actor.id) ?? structuredClone(actor.state);

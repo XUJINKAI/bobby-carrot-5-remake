@@ -130,6 +130,21 @@ function validateIntent(
       throw new Error("Replay 包含无效的 Lock 能力动作");
     return;
   }
+  if (intent.type === "commit-entity-replacement") {
+    requireFields(intent, ["type", "target", "replacementType"]);
+    if (
+      !allowMove ||
+      !isPlainObject(intent.target) ||
+      !isNonEmptyString(intent.target.type) ||
+      !Number.isInteger(intent.target.x) ||
+      !Number.isInteger(intent.target.y) ||
+      !isNonEmptyString(intent.replacementType)
+    ) {
+      throw new Error("Replay 包含无效的 Entity replacement 动作");
+    }
+    requireFields(intent.target, ["type", "x", "y"]);
+    return;
+  }
   throw new Error("Replay 包含无效的地图内语义动作");
 }
 

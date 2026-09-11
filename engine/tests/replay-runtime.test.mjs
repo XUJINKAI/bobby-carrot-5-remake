@@ -170,6 +170,53 @@ test("Replay 只保存实际生效的持续移动输入", () => {
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
 });
 
+test("Replay 使用稳定地图目标记录 Entity replacement", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0),
+      ground(1),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.SHOP_SUPER_KEY, x: 1, y: 0 },
+    ],
+  };
+  const session = new GameplaySession();
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    id: "test/shop-purchase",
+    url: "/test/shop-purchase",
+  });
+  const [tick] = session.advanceTicks(1, () => ({
+    groups: [{
+      historyBoundary: false,
+      intents: [{
+        type: "commit-entity-replacement",
+        target: {
+          type: MapEntityTypeId.SHOP_SUPER_KEY,
+          x: 1,
+          y: 0,
+        },
+        replacementType: MapEntityTypeId.SHOP_EMPTY,
+      }],
+    }],
+  }));
+  recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames[0].groups[0].intents[0], {
+    type: "commit-entity-replacement",
+    target: {
+      type: MapEntityTypeId.SHOP_SUPER_KEY,
+      x: 1,
+      y: 0,
+    },
+    replacementType: MapEntityTypeId.SHOP_EMPTY,
+  });
+  assert.equal(runReplay(level, replay).actual.status, "playing");
+});
+
 test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   const level = carrotLevel();
   const session = new GameplaySession({

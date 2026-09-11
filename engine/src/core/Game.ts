@@ -42,6 +42,7 @@ import type {
 } from "../world/movement/WorldStepResult.js";
 import type {
   ActorEffectIntent,
+  GameplayEffectIntent,
   WorldIntentGroup,
 } from "../world/movement/WorldIntent.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
@@ -171,7 +172,9 @@ export class Game {
           gameplayState: this.worldValue ? this.session.state : null,
           pendingIntents: this.queuedIntentGroups.flatMap((group) =>
             group.intents.filter(
-              (intent): intent is ActorEffectIntent => intent.type !== "move",
+              (intent): intent is ActorEffectIntent =>
+                intent.type !== "move" &&
+                intent.type !== "commit-entity-replacement",
             ),
           ),
           replay: {
@@ -345,7 +348,7 @@ export class Game {
   }
 
   /** 将封闭的地图内语义动作排入下一个 World Tick。 */
-  dispatch(intent: ActorEffectIntent): void {
+  dispatch(intent: GameplayEffectIntent): void {
     if (
       !this.worldValue ||
       this.replayPlayback.playing ||
@@ -355,7 +358,7 @@ export class Game {
       return;
     this.queuedIntentGroups.push({
       intents: [structuredClone(intent)],
-      historyBoundary: true,
+      historyBoundary: intent.type !== "commit-entity-replacement",
     });
   }
 

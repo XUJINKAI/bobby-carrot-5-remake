@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, EntityType } from "@bobby/model";
 import type { EntityId } from "../entity/EntityInstance.js";
 
 export type MoveCause =
@@ -50,7 +50,24 @@ export type ActorEffectIntent =
   | SetActorLocomotionIntent
   | SetActorLockKeyIntent;
 
-export type WorldIntent = MoveIntent | ActorEffectIntent;
+export interface EntityTargetReference {
+  type: EntityType;
+  x: number;
+  y: number;
+}
+
+/** 把宿主持久化的产品结果提交到当前 World，并同步更新本局 Restart 基线。 */
+export interface CommitEntityReplacementIntent {
+  type: "commit-entity-replacement";
+  target: EntityTargetReference;
+  replacementType: EntityType;
+}
+
+export type GameplayEffectIntent =
+  | ActorEffectIntent
+  | CommitEntityReplacementIntent;
+
+export type WorldIntent = MoveIntent | GameplayEffectIntent;
 
 export type InitialActorIntent =
   | {

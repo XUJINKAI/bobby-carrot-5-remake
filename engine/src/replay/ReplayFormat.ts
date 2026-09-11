@@ -27,10 +27,21 @@ export interface ReplaySetActorLocomotionIntent {
   moveDurationMs: number;
 }
 
+export interface ReplayCommitEntityReplacementIntent {
+  type: "commit-entity-replacement";
+  target: {
+    type: string;
+    x: number;
+    y: number;
+  };
+  replacementType: string;
+}
+
 export type ReplayGameplayIntent =
   | ReplayMoveIntent
   | ReplaySetActorLockKeyIntent
-  | ReplaySetActorLocomotionIntent;
+  | ReplaySetActorLocomotionIntent
+  | ReplayCommitEntityReplacementIntent;
 
 export type ReplayInitialIntent =
   | ReplaySetActorLockKeyIntent

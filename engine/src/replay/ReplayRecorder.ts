@@ -104,6 +104,14 @@ function toReplayInputGroup(
   const intents: ReplayGameplayIntent[] = [];
   const recordedMoves = new Set<string>();
   for (const intent of group.intents) {
+    if (intent.type === "commit-entity-replacement") {
+      intents.push({
+        type: intent.type,
+        target: structuredClone(intent.target),
+        replacementType: intent.replacementType,
+      });
+      continue;
+    }
     if (intent.type !== "move") {
       intents.push(
         toReplayActorEffectIntent(
