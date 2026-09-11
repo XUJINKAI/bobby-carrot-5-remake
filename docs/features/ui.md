@@ -201,7 +201,7 @@ Adventure HUD：
 
 ```text
 ┌─────────────────────────────────────┐
-│                                8 🥕 │
+│ 01:00                          8 🥕 │
 │                         🪁 2 🫘 🛷 ⛽ │
 │                                     │
 │                GAME                 │
@@ -226,10 +226,10 @@ HUD 数据：
 
 - 当前目标与剩余数量；
 - 当前地图中的风筝、魔豆、雪铲与汽油持有状态；
-- Engine Timed Challenge 剩余时间；
+- Adventure 本关正向用时，以及 Engine Timed Challenge 剩余时间；
 - 当前模式允许展示的移动步数和统计用时。
 
-Engine HUD 使用原版图标和紧凑 Overlay，统一锚定在 GameStage 右上角。第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。两行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
+Adventure 的 Engine HUD 在 GameStage 左上角以 `MM:SS` 显示计时器。普通关卡正向显示本关用时；配置 Timed Challenge 的关卡从开局显示冻结的完整倒计时，Lock 打开后开始递减。其余信息锚定在右上角。右侧第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。各行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
 
 Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为右侧 Engine HUD 应用 36px Jersey 10 像素字体，为左侧 Explore 统计 Overlay 应用 26px Jersey 10 像素字体，两侧均使用 1px 黑色描边。Explore 统计 Overlay 锚定在 GameStage 左上角，分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
 
@@ -331,25 +331,19 @@ Result 保留最后一帧并覆盖在 Stage 中央：
 │                 GAME WORLD                   │
 │         ┌────────────────────────┐           │
 │         │       关卡完成！       │           │
-│         │                        │           │
-│         │      [ 下一关 ]        │           │
-│         │  [ 重玩 ]  [ 返回 ]    │           │
+│         │      用时: 00:39       │           │
+│         │      步数: 84          │           │
+│         │      金币: 2/2         │           │
+│         │      总金币: 4         │           │
+│         │  [ 返回 ] [ 下一关 ]   │           │
 │         └────────────────────────┘           │
 │                                              │
 └──────────────────────────────────────────────┘
 ```
 
-Engine 只报告完成或死亡事实，Web 根据入口决定动作：
+GamePage 通关卡片按行显示自然用时、步数和本关 Bonus Coin 收集数；Adventure 还显示结算后的全局 Bonus Coin。操作区只提供“返回”和主要动作“下一关”，没有下一关时保留禁用状态。失败卡片只显示“失败”，操作区只提供“返回”和主要动作“重新开始”。Welcome Demo 与 Editor Play Test 使用各自宿主的结果流程。
 
-| 入口 | 完成后的主要动作 | 其它动作 |
-| --- | --- | --- |
-| Welcome Demo | 开始 Adventure | 重玩 |
-| Adventure | 下一关 | 重玩、返回章节 |
-| Explore | 下一关或返回选关 | 重玩、Undo、打开 Editor |
-| Custom | 返回地图信息 | 重玩、打开 Editor |
-| Editor Play Test | 返回编辑 | Restart |
-
-Result Overlay 原地覆盖 GameStage，保留最后一帧世界画面作为上下文。
+Result Overlay 在 Bobby 的终局表现播放完成后原地覆盖 GameStage。通关使用 `b6.png` 以约 279ms 正向过渡并隐藏 Bobby，失败保留 `b5.png` 末帧；Web 分别播放一次 `cleared` 和 `death`。关卡载入或重开时以约 310ms 倒向播放同一套 `b6.png`，随后恢复普通站立表现。
 
 ## 页面规范
 

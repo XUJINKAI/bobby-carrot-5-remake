@@ -156,6 +156,23 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 
 Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
 
+### `b6.png` 关卡过渡
+
+UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作为
+`48px` 宽的 source frame index。素材本身是 `384×72`，因此只有 `0..7` 共 8 张
+图；原版状态机仍使用 `0..9` 共 10 个逻辑槽，`8/9` 落在素材范围外，表现为空白：
+
+- `ab()` 初始化关卡时写入 `aw=6, av=9, be=false`；
+- `O()` 的 `aw=6` 分支在 `be=false` 时逐步递减 `av`，低于 0 后恢复普通正面状态；
+- 通关路径写入 `aw=6, av=0, be=true`；
+- `O()` 在 `be=true` 时逐步递增 `av`，到达 10 后进入结果流程。
+
+两条路径的墙钟长度并不相同。关卡进入状态在当前 animation advance 之后建立，
+后续完整经历 10 个 gameplay step，约为 **310ms**；通关状态在当前 advance 之前
+建立，并在同一轮立即推进一次，剩余间隔为 9 个 gameplay step，约为 **279ms**。
+Web Engine 使用两个独立的毫秒配置承接这一差异，并把 10 个逻辑槽映射为
+“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”。
+
 ## 8. 魔豆与藤蔓
 
 踩到 `0xDF` 豆田且持有魔豆后，原版：

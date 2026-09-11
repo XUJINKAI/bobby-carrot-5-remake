@@ -227,15 +227,15 @@ Lock.deathCountdownSeconds = 60
 运行关系：
 
 ```text
-成功打开带 deathCountdownSeconds 的 Lock
-        ↓
-Engine TimedChallenge
-        ├─ Golden Carrot -> clear
-        ├─ complete / death -> clear
-        └─ timeout -> death
+载入带 deathCountdownSeconds 的 Lock
+        ├─ waiting -> HUD 冻结显示完整时长
+        └─ 成功开锁 -> running
+                         ├─ Golden Carrot -> clear
+                         ├─ complete / death -> clear
+                         └─ timeout -> death
 ```
 
-计时生命周期属于当前 `Game`。Undo 同时恢复 World Snapshot 与计时快照；Restart / loadLevel 重置计时。`game.timedChallengeRemainingMs` 供展示层读取。
+计时生命周期属于当前 `Game`。Undo 同时恢复 World Snapshot 与计时快照；Restart / loadLevel 重置计时。`game.timedChallengePhase` 与 `game.timedChallengeRemainingMs` 供展示层读取。
 
 这条规则不含 Adventure 语义，因此自定义 JSON、Explore 与 Editor Play Test 都可以直接使用。
 

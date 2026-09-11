@@ -47,6 +47,8 @@ const runtime = await createGameplayRuntime({
     hud: {
       objective: true,
       inventory: true,
+      elapsedTime: true,
+      timedChallenge: true,
     },
     camera: {
       zoom: 1,
@@ -207,6 +209,10 @@ game.setZoomLimits(0.8, 4);
 game.zoomBy(1.1);
 game.panByScreen(dx, dy);
 
+game.timedChallengeRemainingMs;
+game.timedChallengePhase;
+game.presentationBlocksInput;
+
 game.toggleDebug();
 game.inspectCanvasPoint(clientX, clientY);
 ```
@@ -321,6 +327,8 @@ runtime: {
   hud: {
     objective: true,
     inventory: true,
+    elapsedTime: true,
+    timedChallenge: true,
   },
   camera: {
     zoom: 1,
@@ -341,11 +349,79 @@ runtime: {
 
 `setZoom()` 围绕 Canvas 中心缩放；`setZoomAt()` 接收 Canvas 的浏览器 client 坐标，并保持该屏幕点下的世界位置不动。Camera 首次加载地图时使用视口边界构图：大于视口的地图贴住窗口边缘，小地图居中。`panBounds: "viewport"` 在后续 Pan 中继续维持该边界；`panBounds: "map-edge"` 允许用户操作后把地图四条边移动到视口中心，同时避免把整张地图拖离视口。
 
-地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立背包。
+地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 左上角投影 Timed Challenge，右上角第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立背包。`objective / inventory / timedChallenge` 可以分别关闭；省略的项目默认开启。
 
 `input.zoom` 控制键盘 Zoom，并作为 `pinchZoom / wheelZoom` 的缺省值。宿主可以分别配置后两者，例如 Embed 可以启用 Pinch 而关闭滚轮 Zoom。双指手势在 `pan` 启用时同时根据中心位移平移 Camera。
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
+
+### Gameplay 表现配置
+
+Gameplay HUD 接受布尔开关或分项配置：
+
+```ts
+runtime: {
+  hud: {
+    enabled: true,
+    root: gameOverlay,
+    objective: true,
+    inventory: true,
+    elapsedTime: true,
+    timedChallenge: true,
+  },
+}
+```
+
+`hud: false` 不创建 HUD，`hud: true` 使用全部默认项。`root` 可以指定 HUD 挂载容器；
+`objective`、`inventory`、`elapsedTime` 和 `timedChallenge` 分别控制目标、地图内背包、
+左上角正向计时和挑战倒计时。`elapsedTime` 默认关闭，Adventure 显式开启；
+地图配置 Timed Challenge 时，它从关卡开局起优先占用同一个左上角计时位置。
+倒计时数值可以通过 `game.timedChallengeRemainingMs` 或
+`game.state.timedChallengeRemainingMs` 读取；`game.timedChallengePhase` 与
+`game.state.timedChallengePhase` 为 `"waiting"` 时显示冻结的完整时长，为
+`"running"` 时由 WorldClock 递减，没有配置时两者均为 `null`。正向计时读取
+`game.state.elapsedMs`。
+
+Timed Challenge 由地图中的 Lock 配置：
+
+```ts
+{
+  type: "lock",
+  x: 4,
+  y: 7,
+  deathCountdownSeconds: 60,
+}
+```
+
+HUD 从关卡开局起使用向上取整的 `MM:SS` 显示完整倒计时；成功打开 Lock 后由
+WorldClock 推进剩余时间。
+`b6.png` 进入/通关过渡属于 Bobby 的内置表现，宿主通过 `ImageManager` 提供
+`bobby-transition` 语义资源。两条过渡使用独立时长，并共用 presentation easing：
+
+```ts
+runtime: {
+  tuning: {
+    motion: {
+      easing: "linear",
+    },
+    levelTransition: {
+      enterMs: 310,
+      exitMs: 279,
+    },
+  },
+}
+```
+
+`enterMs` 覆盖载入或重开时 Bobby 出现的倒播过程，`exitMs` 覆盖胜利时 Bobby
+消失的正播过程。默认值依据原版 `a.class` 的 animation advance 顺序分别换算。
+进入阶段 `game.presentationBlocksInput` 为 `true`，WorldClock 与 Replay tick 暂停，
+期间收到的 gameplay 移动输入会被丢弃；完成后该值恢复为 `false`。
+Carrot 的 `consumed-carrot` 是内置 World runtime state，地图只声明普通 `carrot`，
+收集后由 Engine 转换并使用 semantic atlas mapping 选择 `ts-13-10`。
+
+终局选曲属于宿主产品流程。宿主在 Game 状态进入 `won / dead` 时分别调用
+`audio.playMusic("cleared")` 或 `audio.playMusic("death")`；角色动画和 Result Overlay
+的先后关系不进入音频 API。
 
 浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
 
@@ -369,6 +445,7 @@ Renderer 按图片图层的实际屏幕像素范围跳过视口外绘制，包�
 
 ```ts
 game.on("change", ...);
+game.on("tick", ...);
 game.on("move", ...);
 game.on("blocked", ...);
 game.on("level-loaded", ...);
@@ -376,6 +453,10 @@ game.on("debug-change", ...);
 game.on("death", ...);
 game.on("level-complete", ...);
 ```
+
+`tick` 在每个已消费的 WorldTick 后触发，适合读取 `elapsedMs` 与
+`timedChallengeRemainingMs`；进入过渡期间 WorldClock 暂停，因此不会产生该事件。
+常规状态变化继续通过 `change` 订阅，换关或重载通过 `level-loaded` 订阅。
 
 细粒度地图事实通过 `WorldEvent` 暴露。事件只描述语义事实，不泄漏 EntityStore、CommandQueue、Behavior 或 RuntimeAction 实例。
 
