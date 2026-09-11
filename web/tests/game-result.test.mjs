@@ -57,3 +57,17 @@ test("Replay 录制状态不参与结果卡片分支，终局切换对应音乐"
     /audio\.playMusic\(kind === "complete" \? "cleared" : "death"\)/,
   );
 });
+
+test("Adventure 商品购买使用同级选项", async () => {
+  const source = await readFile(
+    new URL("../src/pages/game/mountGamePage.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /adventureItemReplacementIntent\(offer, request\)/);
+  assert.match(source, /\{ id: "purchase", label: offer\.leftLabel \}/);
+  assert.doesNotMatch(
+    source,
+    /id: "purchase", label: offer\.leftLabel, primary: true/,
+  );
+});

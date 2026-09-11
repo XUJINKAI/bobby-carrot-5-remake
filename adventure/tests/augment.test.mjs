@@ -6,6 +6,7 @@ import {
   augmentAdventureLevel,
   createAdventureInteractionState,
   createAdventureSave,
+  purchasedAdventureItemPatches,
   purchaseAdventureItem,
   resolveAdventureInteraction,
 } from "../dist/index.js";
@@ -104,13 +105,44 @@ test("Adventure 声明式补丁支持新增和删除 Entity", () => {
   ]);
 });
 
+test("Adventure replace-type 补丁只保留新 Entity 的稳定位置字段", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [{
+      type: MapEntityTypeId.SHOP_SUPER_KEY,
+      x: 1,
+      y: 0,
+      stackOrder: 12,
+      futureField: "discarded",
+    }],
+  };
+  const augmented = augmentAdventureLevel(level, [{
+    operation: "replace-type",
+    selector: { type: MapEntityTypeId.SHOP_SUPER_KEY },
+    type: MapEntityTypeId.SHOP_EMPTY,
+  }]);
+
+  assert.deepEqual(augmented.entities, [{
+    type: MapEntityTypeId.SHOP_EMPTY,
+    x: 1,
+    y: 0,
+    stackOrder: 12,
+  }]);
+  assert.equal(level.entities[0].type, MapEntityTypeId.SHOP_SUPER_KEY);
+});
+
 test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   const augmentation = adventureAugmentationFor("beaver-shop");
   const level = {
     schemaVersion: 1,
     width: 25,
     height: 20,
-    entities: [{ type: MapEntityTypeId.BEAVER, x: 6, y: 12 }],
+    entities: [
+      { type: MapEntityTypeId.BEAVER, x: 6, y: 12 },
+      { type: MapEntityTypeId.SHOP_SUPER_KEY, x: 21, y: 6 },
+    ],
   };
   const augmented = augmentAdventureLevel(level, augmentation.levelPatches);
   assert.deepEqual(
@@ -201,6 +233,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   assert.equal(superKey.offer.item, "golden-key");
   assert.equal(superKey.offer.currency, "bonus-coins");
   assert.equal(superKey.offer.price, 1);
+  assert.equal(superKey.offer.replacementType, MapEntityTypeId.SHOP_EMPTY);
   assert.equal(superKey.offer.leftLabel, "购买");
   assert.equal(superKey.offer.rightLabel, "算了");
   assert.match(superKey.offer.message, /1块钱/);
@@ -215,6 +248,23 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   assert.equal(purchase.outcome, "purchased");
   assert.equal(purchase.save.economy.bonusCoins, 0);
   assert.deepEqual(purchase.save.items, ["golden-key"]);
+
+  const purchasedLevel = augmentAdventureLevel(
+    level,
+    purchasedAdventureItemPatches(augmentation, purchase.save),
+  );
+  assert.equal(
+    purchasedLevel.entities.some(
+      (entity) => entity.type === MapEntityTypeId.SHOP_SUPER_KEY,
+    ),
+    false,
+  );
+  assert.equal(
+    purchasedLevel.entities.some(
+      (entity) => entity.type === MapEntityTypeId.SHOP_EMPTY,
+    ),
+    true,
+  );
 });
 
 test("Adventure 对白数组按规则 ID 独立循环", () => {

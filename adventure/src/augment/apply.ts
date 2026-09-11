@@ -30,6 +30,21 @@ export function augmentAdventureLevel(
       continue;
     }
 
+    if (patch.operation === "replace-type") {
+      result.entities = result.entities.map((entity) => {
+        if (!matchesEntity(entity, patch.selector)) return entity;
+        return {
+          type: patch.type,
+          x: entity.x,
+          y: entity.y,
+          ...(entity.stackOrder === undefined
+            ? {}
+            : { stackOrder: entity.stackOrder }),
+        };
+      });
+      continue;
+    }
+
     for (const key of Object.keys(patch.fields)) {
       if (RESERVED_FIELDS.has(key))
         throw new Error(`Adventure 不能覆盖 LevelEntity 保留字段：${key}`);

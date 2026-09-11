@@ -115,6 +115,7 @@ const BEAVER_SHOP: AdventureAugmentation = {
           message: "也不知搬家以后钥匙能不能用了，你要的话1块钱收走吧",
           leftLabel: "购买",
           rightLabel: "算了",
+          replacementType: MapEntityTypeId.SHOP_EMPTY,
           outcomeMessages: {
             "already-owned": "这把 Super Key 已经是你的了。",
             purchased: "成交，这把 Super Key 归你了。",

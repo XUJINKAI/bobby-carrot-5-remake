@@ -15,6 +15,7 @@ import type {
   AdventureItemPurchaseOffer,
   AdventureItemPurchaseOutcome,
   AdventurePurchaseCurrency,
+  AdventureLevelPatch,
 } from "./types.js";
 
 export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
@@ -57,6 +58,33 @@ export interface AdventureItemPurchaseDecision {
 
 export function createAdventureInteractionState(): AdventureInteractionState {
   return { dialogueIndexes: new Map() };
+}
+
+/** 已拥有的永久商品在地图进入 Engine 前投影为购买后的 Entity。 */
+export function purchasedAdventureItemPatches(
+  augmentation: AdventureAugmentation,
+  save: AdventureSave,
+): AdventureLevelPatch[] {
+  const normalized = normalizeAdventureSave(save);
+  return augmentation.interactions.flatMap((rule) => {
+    if (
+      rule.effect.type !== "item-purchase" ||
+      rule.effect.offer.replacementType === undefined ||
+      !hasAdventureItem(normalized, rule.effect.offer.item)
+    ) {
+      return [];
+    }
+    const { type, x, y } = rule.selector;
+    return [{
+      operation: "replace-type" as const,
+      selector: {
+        ...(type === undefined ? {} : { type }),
+        ...(x === undefined ? {} : { x }),
+        ...(y === undefined ? {} : { y }),
+      },
+      type: rule.effect.offer.replacementType,
+    }];
+  });
 }
 
 /** 永久商品的价格、扣款与授予在同一次 Adventure Save 归约中完成。 */

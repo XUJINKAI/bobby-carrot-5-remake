@@ -1,6 +1,5 @@
 import {
   adventureAugmentationFor,
-  augmentAdventureLevel,
   createAdventureInteractionState,
   isAdventureLevelUnlocked,
   planAdventurePlayer,
@@ -17,6 +16,7 @@ import {
   type AudioRuntime,
   type CameraOptions,
   type ImageManager,
+  type ObjectInteractionEvent,
 } from "@bobby/engine";
 import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
@@ -85,6 +85,10 @@ import {
   resolveGamePageCapabilities,
   type GamePageMode,
 } from "./gamePageCapabilities.js";
+import {
+  adventureItemReplacementIntent,
+  prepareAdventureGameplayLevel,
+} from "./adventurePurchase.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
 
@@ -191,10 +195,12 @@ export async function renderGamePage(
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
   const sessionLevel = adventureContentId
-    ? augmentAdventureLevel(level, [
-        ...adventureAugmentation.levelPatches,
-        ...(sessionPlan?.levelPatches ?? []),
-      ])
+    ? prepareAdventureGameplayLevel(
+        level,
+        adventureAugmentation,
+        adventureSave,
+        sessionPlan?.levelPatches ?? [],
+      )
     : level;
   const availableBonusCoins = sessionLevel.entities.filter(
     (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
@@ -546,7 +552,7 @@ export async function renderGamePage(
       return;
     }
     if (interaction.type === "item-purchase") {
-      void presentAdventurePurchase(interaction.offer);
+      void presentAdventurePurchase(interaction.offer, request);
       return;
     }
     const { decision } = interaction;
@@ -565,6 +571,7 @@ export async function renderGamePage(
 
   async function presentAdventurePurchase(
     offer: AdventureItemPurchaseOffer,
+    request: ObjectInteractionEvent,
   ): Promise<void> {
     if (!dialog || !adventureSave || purchaseDialogOpen) return;
     purchaseDialogOpen = true;
@@ -572,7 +579,7 @@ export async function renderGamePage(
       const result = await dialog.present({
         message: offer.message,
         options: [
-          { id: "purchase", label: offer.leftLabel, primary: true },
+          { id: "purchase", label: offer.leftLabel },
           { id: "cancel", label: offer.rightLabel },
         ],
       });
@@ -585,6 +592,8 @@ export async function renderGamePage(
       );
       if (purchase.outcome === "purchased") {
         adventureSave = saveAdventureSave(purchase.save);
+        const replacement = adventureItemReplacementIntent(offer, request);
+        if (replacement) game.dispatch(replacement);
       }
       dialog.show(offer.outcomeMessages[purchase.outcome]);
     } finally {

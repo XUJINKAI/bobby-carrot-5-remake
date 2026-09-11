@@ -24,6 +24,11 @@ export type AdventureLevelPatch =
       operation: "set-fields";
       selector: AdventureEntitySelector;
       fields: Record<string, JsonPrimitive>;
+    }
+  | {
+      operation: "replace-type";
+      selector: AdventureEntitySelector;
+      type: EntityType;
     };
 
 export interface AdventureInteractionSelector extends AdventureEntitySelector {
@@ -83,5 +88,7 @@ export interface AdventureItemPurchaseOffer {
   message: string;
   leftLabel: string;
   rightLabel: string;
+  /** 永久购买完成后用于替换当前地图商品的语义 Entity type。 */
+  replacementType?: EntityType;
   outcomeMessages: Readonly<Record<AdventureItemPurchaseOutcome, string>>;
 }
