@@ -302,7 +302,7 @@ Engine Game.loadLevel(LevelMap)
 
 Engine object-interaction
         ↓ Web 只做边界适配
-resolveAdventureInteraction(augmentation, save, request)
+resolveAdventureInteraction(augmentation, save, request, interactionState)
         ↓
 dialogue / Campaign reducer result
 ```
@@ -310,10 +310,11 @@ dialogue / Campaign reducer result
 Adventure 补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
 `deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
 这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。运行时特殊对话
-按内容 ID、Entity type、坐标、footprint role 与交互动作声明，Adventure 返回领域结果，
-Web 负责显示对白或把领域效果转换成 Engine 的通用动作。Engine 只报告本局的收集事实；
-Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡完成归约中把
-奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
+按内容 ID、Entity type、坐标、footprint role 与交互动作声明；同一规则的 `lines[]` 由
+当前页面持有的交互状态顺序循环。Adventure 返回对白、商品报价或其它领域结果，Web
+负责调用通用对话展示、归约购买或把领域效果转换成 Engine 动作。Engine 只报告本局的
+收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡
+完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 

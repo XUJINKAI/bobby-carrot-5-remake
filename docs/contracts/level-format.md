@@ -401,7 +401,8 @@ type AdventureLevelPatch =
 `remove` 和 `set-fields` 的 selector 至少声明 `type / x / y` 中的一项；`add` 的坐标
 必须位于地图内。补丁在 clone 上执行，不修改 Catalog 提供的基础 `LevelMap`。
 
-运行时规则匹配通用 `object-interaction` 的 `objectType / x / y / action / role`，当前
-效果类型包括字面对白和 Bonus Key Vendor。Adventure 不接收 Engine runtime object，
-也不直接操作 DOM；Web 只把事件投影为 primitive request，再显示返回的对白或分派公开
-Engine intent。
+运行时规则具有稳定 `id`，并匹配通用 `object-interaction` 的
+`objectType / x / y / action / role`。效果可以声明循环对白 `lines[]`、永久商品报价或
+Bonus Key Vendor；循环游标只存在于当前页面的 `AdventureInteractionState`。Adventure
+不接收 Engine runtime object，也不直接操作 DOM；Web 只把事件投影为 primitive request，
+再通过通用对话层显示结果、提交购买归约或分派公开 Engine intent。

@@ -9,8 +9,12 @@ import {
 import { spendBonusCoins, spendGoldenCarrots } from "../rewards.js";
 import type {
   AdventureAugmentation,
+  AdventureInteractionState,
   AdventureInteractionRequest,
   AdventureInteractionRule,
+  AdventureItemPurchaseOffer,
+  AdventureItemPurchaseOutcome,
+  AdventurePurchaseCurrency,
 } from "./types.js";
 
 export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
@@ -37,13 +41,11 @@ export interface BonusKeyVendorRequest {
 
 export type AdventureInteractionDecision =
   | { type: "dialogue"; text: string }
-  | { type: "bonus-key-vendor"; decision: BonusKeyVendorDecision };
-
-export type AdventurePurchaseCurrency = "bonus-coins" | "golden-carrots";
-export type AdventureItemPurchaseOutcome =
-  | "already-owned"
-  | "purchased"
-  | "insufficient-funds";
+  | { type: "bonus-key-vendor"; decision: BonusKeyVendorDecision }
+  | {
+      type: "item-purchase";
+      offer: AdventureItemPurchaseOffer;
+    };
 
 export interface AdventureItemPurchaseDecision {
   outcome: AdventureItemPurchaseOutcome;
@@ -51,6 +53,10 @@ export interface AdventureItemPurchaseDecision {
   currency: AdventurePurchaseCurrency;
   price: number;
   save: AdventureSave;
+}
+
+export function createAdventureInteractionState(): AdventureInteractionState {
+  return { dialogueIndexes: new Map() };
 }
 
 /** 永久商品的价格、扣款与授予在同一次 Adventure Save 归约中完成。 */
@@ -92,13 +98,18 @@ export function resolveAdventureInteraction(
   augmentation: AdventureAugmentation,
   save: AdventureSave,
   request: AdventureInteractionRequest,
+  state: AdventureInteractionState,
 ): AdventureInteractionDecision | null {
   const rule = augmentation.interactions.find((candidate) =>
     matchesInteraction(candidate, request)
   );
   if (!rule) return null;
   if (rule.effect.type === "dialogue") {
-    return { type: "dialogue", text: rule.effect.text };
+    const text = nextDialogueLine(rule, state);
+    return text === null ? null : { type: "dialogue", text };
+  }
+  if (rule.effect.type === "item-purchase") {
+    return { type: "item-purchase", offer: rule.effect.offer };
   }
   return {
     type: "bonus-key-vendor",
@@ -107,6 +118,17 @@ export function resolveAdventureInteraction(
       priceBonusCoins: rule.effect.priceBonusCoins,
     }),
   };
+}
+
+function nextDialogueLine(
+  rule: AdventureInteractionRule,
+  state: AdventureInteractionState,
+): string | null {
+  if (rule.effect.type !== "dialogue" || rule.effect.lines.length === 0)
+    return null;
+  const index = state.dialogueIndexes.get(rule.id) ?? 0;
+  state.dialogueIndexes.set(rule.id, (index + 1) % rule.effect.lines.length);
+  return rule.effect.lines[index % rule.effect.lines.length] ?? null;
 }
 
 /** Campaign 经济只在 Adventure Save 上归约；Engine 只接收最终钥匙动作。 */

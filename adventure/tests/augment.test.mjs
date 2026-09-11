@@ -4,7 +4,9 @@ import { MapEntityTypeId } from "../../model/dist/index.js";
 import {
   adventureAugmentationFor,
   augmentAdventureLevel,
+  createAdventureInteractionState,
   createAdventureSave,
+  purchaseAdventureItem,
   resolveAdventureInteraction,
 } from "../dist/index.js";
 
@@ -102,7 +104,7 @@ test("Adventure 声明式补丁支持新增和删除 Entity", () => {
   ]);
 });
 
-test("Beaver Shop 数据增加 Portal 并为角色和商品提供不同对白", () => {
+test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   const augmentation = adventureAugmentationFor("beaver-shop");
   const level = {
     schemaVersion: 1,
@@ -120,39 +122,127 @@ test("Beaver Shop 数据增加 Portal 并为角色和商品提供不同对白", 
       { x: 17, y: 8, channel: "beaver-shop-shortcut" },
     ],
   );
+  assert.deepEqual(
+    augmented.entities
+      .filter((entity) => entity.type === MapEntityTypeId.DREAM_MACHINE)
+      .map(({ x, y }) => ({ x, y })),
+    [{ x: 21, y: 8 }],
+  );
 
   const save = createAdventureSave();
-  const beaver = resolveAdventureInteraction(augmentation, save, {
-    objectType: MapEntityTypeId.BEAVER,
-    x: 6,
-    y: 13,
-    action: "touch",
-    role: "body",
-    hasSingleUseKey: false,
-  });
+  const interactionState = createAdventureInteractionState();
+  const beaver = resolveAdventureInteraction(
+    augmentation,
+    save,
+    {
+      objectType: MapEntityTypeId.BEAVER,
+      x: 6,
+      y: 13,
+      action: "touch",
+      role: "body",
+      hasSingleUseKey: false,
+    },
+    interactionState,
+  );
   const itemTypes = [
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     MapEntityTypeId.SHOP_CLOUD9_TICKET,
-    MapEntityTypeId.SHOP_SUPER_KEY,
     MapEntityTypeId.SHOP_STEREO_SYSTEM,
     MapEntityTypeId.SHOP_EXTRA_MUSIC,
     MapEntityTypeId.SHOP_SPEED_SHOES,
     MapEntityTypeId.SHOP_COIN_RADAR,
   ];
   const itemDialogues = itemTypes.map((objectType) =>
-    resolveAdventureInteraction(augmentation, save, {
-      objectType,
-      x: 0,
-      y: 0,
-      action: "enter",
-      hasSingleUseKey: false,
-    })?.text
+    resolveAdventureInteraction(
+      augmentation,
+      save,
+      {
+        objectType,
+        x: 0,
+        y: 0,
+        action: "touch",
+        hasSingleUseKey: false,
+      },
+      interactionState,
+    )?.text
   );
   assert.match(beaver.text, /商店暂时不开放/);
   assert.equal(itemDialogues.every(Boolean), true);
   assert.equal(new Set(itemDialogues).size, itemTypes.length);
   assert.match(itemDialogues.at(-2), /Speed Shoes/);
   assert.match(itemDialogues.at(-1), /Coin Radar/);
+
+  const machine = resolveAdventureInteraction(
+    augmentation,
+    save,
+    {
+      objectType: MapEntityTypeId.DREAM_MACHINE,
+      x: 21,
+      y: 9,
+      action: "touch",
+      role: "body",
+      hasSingleUseKey: false,
+    },
+    interactionState,
+  );
+  assert.match(machine.text, /传送门/);
+
+  const superKey = resolveAdventureInteraction(
+    augmentation,
+    save,
+    {
+      objectType: MapEntityTypeId.SHOP_SUPER_KEY,
+      x: 21,
+      y: 6,
+      action: "touch",
+      hasSingleUseKey: false,
+    },
+    interactionState,
+  );
+  assert.equal(superKey.type, "item-purchase");
+  assert.equal(superKey.offer.item, "golden-key");
+  assert.equal(superKey.offer.currency, "bonus-coins");
+  assert.equal(superKey.offer.price, 1);
+  assert.equal(superKey.offer.leftLabel, "购买");
+  assert.equal(superKey.offer.rightLabel, "算了");
+  assert.match(superKey.offer.message, /1块钱/);
+
+  save.economy.bonusCoins = 1;
+  const purchase = purchaseAdventureItem(
+    save,
+    superKey.offer.item,
+    superKey.offer.currency,
+    superKey.offer.price,
+  );
+  assert.equal(purchase.outcome, "purchased");
+  assert.equal(purchase.save.economy.bonusCoins, 0);
+  assert.deepEqual(purchase.save.items, ["golden-key"]);
+});
+
+test("Adventure 对白数组按规则 ID 独立循环", () => {
+  const augmentation = {
+    levelPatches: [],
+    interactions: [{
+      id: "test/cycle",
+      selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
+      effect: { type: "dialogue", lines: ["第一段", "第二段"] },
+    }],
+  };
+  const save = createAdventureSave();
+  const state = createAdventureInteractionState();
+  const request = {
+    objectType: MapEntityTypeId.BEAVER,
+    x: 0,
+    y: 1,
+    action: "touch",
+    role: "body",
+    hasSingleUseKey: false,
+  };
+
+  const lines = [0, 1, 2].map(() =>
+    resolveAdventureInteraction(augmentation, save, request, state).text
+  );
+  assert.deepEqual(lines, ["第一段", "第二段", "第一段"]);
 });
 
 test("Bonus 关卡通过同一数据目录接入钥匙交互", () => {
@@ -168,6 +258,7 @@ test("Bonus 关卡通过同一数据目录接入钥匙交互", () => {
       role: "body",
       hasSingleUseKey: false,
     },
+    createAdventureInteractionState(),
   );
 
   assert.equal(interaction.type, "bonus-key-vendor");
@@ -189,7 +280,7 @@ test("Night Train 三张 Special Scene 分别声明角色对白", () => {
       y: 0,
       action: "touch",
       hasSingleUseKey: false,
-    })?.text
+    }, createAdventureInteractionState())?.text
   );
 
   assert.equal(dialogues.every((text) => text?.includes("暂不开放")), true);

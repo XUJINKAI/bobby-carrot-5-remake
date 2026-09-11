@@ -1,12 +1,15 @@
 import {
   adventureAugmentationFor,
   augmentAdventureLevel,
+  createAdventureInteractionState,
   isAdventureLevelUnlocked,
   planAdventurePlayer,
   planAdventureSession,
+  purchaseAdventureItem,
   resolveAdventureInteraction,
   setAdventureResumeLevel,
   type BonusKeyVendorOutcome,
+  type AdventureItemPurchaseOffer,
   type AdventureSave,
 } from "@bobby/adventure";
 import {
@@ -183,6 +186,7 @@ export async function renderGamePage(
   const adventureAugmentation = adventureContentId
     ? adventureAugmentationFor(adventureContentId)
     : { levelPatches: [], interactions: [] };
+  const adventureInteractionState = createAdventureInteractionState();
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
@@ -504,6 +508,7 @@ export async function renderGamePage(
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
   const pendingVendorSaves = new Map<number, AdventureSave>();
+  let purchaseDialogOpen = false;
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
     if (
       event.type === "actor-lock-key-changed" &&
@@ -533,10 +538,15 @@ export async function renderGamePage(
         ...(request.role ? { role: request.role } : {}),
         hasSingleUseKey: actor.inventory.singleUseLockKey,
       },
+      adventureInteractionState,
     );
     if (!interaction) return;
     if (interaction.type === "dialogue") {
       dialog?.show(interaction.text);
+      return;
+    }
+    if (interaction.type === "item-purchase") {
+      void presentAdventurePurchase(interaction.offer);
       return;
     }
     const { decision } = interaction;
@@ -552,6 +562,38 @@ export async function renderGamePage(
     }
     dialog?.show(bonusKeyVendorMessage(decision.outcome, decision.priceBonusCoins));
   });
+
+  async function presentAdventurePurchase(
+    offer: AdventureItemPurchaseOffer,
+  ): Promise<void> {
+    if (!dialog || !adventureSave || purchaseDialogOpen) return;
+    purchaseDialogOpen = true;
+    const restoreInput = input.isEnabled;
+    input.setEnabled(false);
+    try {
+      const result = await dialog.present({
+        message: offer.message,
+        options: [
+          { id: "purchase", label: offer.leftLabel, primary: true },
+          { id: "cancel", label: offer.rightLabel },
+        ],
+      });
+      if (result.type !== "selected" || result.optionId !== "purchase") return;
+      const purchase = purchaseAdventureItem(
+        adventureSave,
+        offer.item,
+        offer.currency,
+        offer.price,
+      );
+      if (purchase.outcome === "purchased") {
+        adventureSave = saveAdventureSave(purchase.save);
+      }
+      dialog.show(offer.outcomeMessages[purchase.outcome]);
+    } finally {
+      purchaseDialogOpen = false;
+      if (restoreInput) input.setEnabled(true);
+    }
+  }
 
   return {
     destroy(): void {

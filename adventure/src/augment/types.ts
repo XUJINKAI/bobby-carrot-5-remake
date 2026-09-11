@@ -3,6 +3,7 @@ import type {
   JsonPrimitive,
   LevelEntity,
 } from "@bobby/model";
+import type { AdventureItemId } from "../save.js";
 
 export interface AdventureEntitySelector {
   x?: number;
@@ -33,14 +34,19 @@ export interface AdventureInteractionSelector extends AdventureEntitySelector {
 export type AdventureInteractionEffect =
   | {
       type: "dialogue";
-      text: string;
+      lines: readonly string[];
     }
   | {
       type: "bonus-key-vendor";
       priceBonusCoins: number;
+    }
+  | {
+      type: "item-purchase";
+      offer: AdventureItemPurchaseOffer;
     };
 
 export interface AdventureInteractionRule {
+  id: string;
   selector: AdventureInteractionSelector;
   effect: AdventureInteractionEffect;
 }
@@ -58,4 +64,24 @@ export interface AdventureInteractionRequest {
   action: "touch" | "enter";
   role?: string;
   hasSingleUseKey: boolean;
+}
+
+export interface AdventureInteractionState {
+  dialogueIndexes: Map<string, number>;
+}
+
+export type AdventurePurchaseCurrency = "bonus-coins" | "golden-carrots";
+export type AdventureItemPurchaseOutcome =
+  | "already-owned"
+  | "purchased"
+  | "insufficient-funds";
+
+export interface AdventureItemPurchaseOffer {
+  item: AdventureItemId;
+  currency: AdventurePurchaseCurrency;
+  price: number;
+  message: string;
+  leftLabel: string;
+  rightLabel: string;
+  outcomeMessages: Readonly<Record<AdventureItemPurchaseOutcome, string>>;
 }
