@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { MapEntityTypeId, originalTileVisual } from "@bobby/model";
 import { buildGameplayHudModel } from "../dist/ui/GameplayHudModel.js";
 import {
   formatGameplayCountdown,
@@ -144,6 +145,12 @@ test("Gameplay HUD projects primary and secondary inventories separately", () =>
   ]);
 });
 
+test("Gameplay HUD 金币图标使用 Bonus Coin 的 ts-16-9 语义映射", () => {
+  const visual = originalTileVisual({ type: MapEntityTypeId.BONUS_COIN });
+  assert.equal(visual.atlas, "ts");
+  assert.equal(visual.cell, "16-9");
+});
+
 test("Gameplay HUD view keeps nodes mounted and toggles display instead of mixing hidden with inline display", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayHudView.ts", import.meta.url),
@@ -162,8 +169,13 @@ test("Gameplay HUD presentation uses semantic ImageManager IDs instead of asset 
   );
   assert.match(source, /hud-carrot/);
   assert.match(source, /hud-egg/);
+  assert.match(source, /MapEntityTypeId\.BONUS_COIN/);
+  assert.match(source, /originalTileVisual/);
+  assert.match(source, /entitySprite\(MapEntityTypeId\.BONUS_COIN, 32\)/);
+  assert.match(source, /valueFirst: true/);
   assert.match(source, /loadSlice/);
   assert.doesNotMatch(source, /hud\.png|ts\.png|backgroundPosition/);
+  assert.doesNotMatch(source, /x: 384|y: 720/);
 });
 
 test("Gameplay HUD uses objective plus primary and secondary inventory rows", () => {
@@ -176,9 +188,9 @@ test("Gameplay HUD uses objective plus primary and secondary inventory rows", ()
   assert.match(source, /root\.append\(value, icon\)/);
   assert.match(source, /inventoryRow\("primary", "#ff665e"\)/);
   assert.match(source, /inventoryRow\("secondary", "#5796ff"\)/);
-  assert.match(source, /root\.append\(marker, kite\.root, bean\.root, shovel\.root, gas\.root\)/);
-  assert.match(source, /this\.primaryInventory\.root\.append\(this\.coins\)/);
-  assert.match(source, /`金币: \$\{String\(model\.coins\)\}`/);
+  assert.match(source, /root\.append\(marker, bean\.root, gas\.root, shovel\.root, kite\.root\)/);
+  assert.match(source, /this\.primaryInventory\.root\.append\(this\.coins\.root\)/);
+  assert.match(source, /rowGap: "10px"/);
   assert.match(source, /normalized > 1 \? "inline" : "none"/);
   assert.doesNotMatch(source, /border:|borderRadius:|background:|boxShadow:/);
 });

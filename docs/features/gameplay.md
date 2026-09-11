@@ -49,7 +49,7 @@ Lock 时，从开局显示冻结的完整时长，开锁后在同一位置开始
 
 计时、步数、目标、地图内道具和 Timed Challenge 的状态与基础 HUD 渲染属于 Engine。它们在所有 Engine session 中保持相同语义和呈现，包括 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test。宿主持有的全局金币通过 Runtime Config 提供给 Engine HUD，不进入地图状态。
 
-所有已获得道具统一显示在 GameStage 右上角，并在窄屏上换行。数量为 `1` 的道具只显示图标，数量大于 `1` 时显示计数；金币与道具共用一行，并始终显示计数。
+所有已获得道具统一显示在 GameStage 右上角，按魔豆、汽油、雪铲、风筝排列，并在窄屏上换行。数量为 `1` 的道具只显示图标，数量大于 `1` 时显示计数；金币使用缩小的 `ts-16-9` 图标，与道具共用一行，并以数字在前、图标在后的形式始终显示计数。
 
 各产品入口通过 `timer / steps / objective / items / coins` 独立配置 HUD 项目。模式完成记录仍由 Web 处理；HUD 和 Result 的页面布局见 [`ui.md`](ui.md)。
 

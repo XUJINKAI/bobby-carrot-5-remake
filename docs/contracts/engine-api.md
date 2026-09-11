@@ -401,8 +401,9 @@ runtime: {
 全局经济状态；配置后始终显示数值，包括 `0`。函数形式会在 HUD 收到 Engine tick 或
 change 时重新读取，适合可变的存档状态。
 
-道具和金币位于同一行，但由 `items` 与 `coins` 独立配置。道具数量为 `1` 时只显示图标，
-数量大于 `1` 时同时显示计数；金币始终显示计数。
+道具和金币位于同一行，但由 `items` 与 `coins` 独立配置。道具按魔豆、汽油、雪铲、
+风筝排列；数量为 `1` 时只显示图标，数量大于 `1` 时同时显示计数。金币使用
+`ts-16-9` 图标并始终显示计数；数字位于缩小后的金币图标之前。
 
 倒计时数值可以通过 `game.timedChallengeRemainingMs` 或
 `game.state.timedChallengeRemainingMs` 读取；`game.timedChallengePhase` 与

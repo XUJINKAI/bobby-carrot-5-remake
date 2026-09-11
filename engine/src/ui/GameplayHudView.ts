@@ -1,3 +1,4 @@
+import { MapEntityTypeId, originalTileVisual } from "@bobby/model";
 import type { ImageManager, LoadedImageSlice } from "../image/ImageManager.js";
 import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
@@ -17,10 +18,10 @@ interface HudChip {
 interface InventoryRow {
   root: HTMLDivElement;
   marker: HTMLSpanElement;
+  bean: HudChip;
   gas: HudChip;
   shovel: HudChip;
   kite: HudChip;
-  bean: HudChip;
 }
 
 type HudSprite = "carrot" | "gas" | "kite" | "shovel" | "egg" | "bean";
@@ -41,7 +42,7 @@ export class GameplayHudView {
   private readonly steps: HTMLElement;
   private readonly objectiveCarrot: HudChip;
   private readonly objectiveEgg: HudChip;
-  private readonly coins: HTMLElement;
+  private readonly coins: HudChip;
   private readonly primaryInventory: InventoryRow;
   private readonly secondaryInventory: InventoryRow;
 
@@ -101,7 +102,7 @@ export class GameplayHudView {
       right: `calc(12px + var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
       display: "grid",
       justifyItems: "end",
-      gap: "2px",
+      rowGap: "10px",
       maxWidth: `calc(100% - 24px - var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
     });
 
@@ -127,18 +128,17 @@ export class GameplayHudView {
 
     this.primaryInventory = this.inventoryRow("primary", "#ff665e");
     this.secondaryInventory = this.inventoryRow("secondary", "#5796ff");
-    this.coins = document.createElement("strong");
-    this.coins.className =
-      "engine-gameplay-hud-coins engine-gameplay-hud-value";
-    this.coins.setAttribute("aria-label", "金币数");
-    Object.assign(this.coins.style, {
-      display: "none",
-      fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
-      lineHeight: "1",
-      fontVariantNumeric: "tabular-nums",
-      whiteSpace: "nowrap",
-    });
-    this.primaryInventory.root.append(this.coins);
+    this.coins = this.chip(
+      "金币",
+      this.entitySprite(MapEntityTypeId.BONUS_COIN, 32),
+      {
+        value: true,
+        valueFirst: true,
+        valueFontSize: "26px",
+      },
+    );
+    this.coins.root.classList.add("engine-gameplay-hud-coins");
+    this.primaryInventory.root.append(this.coins.root);
     right.append(
       objective,
       this.primaryInventory.root,
@@ -187,8 +187,7 @@ export class GameplayHudView {
 
     const showItems = this.options.items !== false;
     const showCoins = model.coins !== null;
-    this.coins.style.display = showCoins ? "inline" : "none";
-    if (showCoins) this.coins.textContent = `金币: ${String(model.coins)}`;
+    this.setChip(this.coins, showCoins, model.coins ?? undefined);
     const distinguishPlayers = model.inventories.length > 1;
     this.renderInventory(
       this.primaryInventory,
@@ -276,7 +275,7 @@ export class GameplayHudView {
     });
     const shovel = this.itemChip("雪铲", "shovel");
     const gas = this.itemChip("汽油", "gas");
-    root.append(marker, kite.root, bean.root, shovel.root, gas.root);
+    root.append(marker, bean.root, gas.root, shovel.root, kite.root);
     return { root, marker, gas, shovel, kite, bean };
   }
 
@@ -325,6 +324,28 @@ export class GameplayHudView {
     void this.images
       .loadSlice(HUD_SLICE[kind])
       .then((slice) => drawSlice(canvas, slice))
+      .catch(() => undefined);
+    return canvas;
+  }
+
+  private entitySprite(type: string, displaySize: number): HTMLElement {
+    const canvas = document.createElement("canvas");
+    const visual = originalTileVisual({ type });
+    const size = this.images.sourceTileSize;
+    void this.images
+      .load(this.images.atlasId)
+      .then((image) => {
+        drawSlice(canvas, {
+          source: this.images.atlasId,
+          image,
+          x: (visual.column - 1) * size,
+          y: (visual.row - 1) * size,
+          width: size,
+          height: size,
+        });
+        canvas.style.width = `${displaySize}px`;
+        canvas.style.height = `${displaySize}px`;
+      })
       .catch(() => undefined);
     return canvas;
   }
