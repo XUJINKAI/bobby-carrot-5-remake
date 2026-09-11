@@ -29,7 +29,7 @@ LevelMap
 + World Hz
 + Bobby 初始 gameplay 移动时长
 + tick 0 actor intents
-+ 逐 Tick Gameplay Intent
++ 逐 Tick Gameplay Intent 与阻塞对话选择
 ```
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
@@ -43,7 +43,8 @@ Replay 在浏览器输入源映射到 controller channel 后记录产生 gamepla
 - 同一 channel 中多个 Bobby 的联动分组与方向变换；
 - 生效输入的 Tick 与组内顺序；
 - 成功启动的移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
-- 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作。
+- 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作；
+- 阻塞对话按出现顺序确认的一基选项序号。
 
 按住方向时，Bobby 移动期间产生的纯 `busy` 重试和没有 gameplay 效果的阻挡输入不会写入
 Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` 线性增长。旧 Replay 中已经
@@ -52,6 +53,11 @@ Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` �
 移动使用数字 `channel`，省略表示通道 `0`；键盘、Pointer、摇杆等输入源名称不进入
 Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的
 `controller / mirrorX / mirrorY` 重新解析各 Bobby 的实际方向。
+
+同一个 World Tick 可以连续触发多轮阻塞对话。该 Tick 的 `choices` 数组按展示顺序记录
+每轮选择，例如 `choices: [1, 2, 1]`。序号从 `1` 开始，只表达“第几个选项”，不保存
+产品规则 ID、按钮文案或宿主业务动作。无选项的 `dialog.show()` 允许 World 继续推进，
+不写入 Replay。
 
 直接针对 actor 的 Debug 移动与 actor effect 使用 Bobby 在该动作处的地图位置 `{ x, y }`
 作为稳定引用。单 Bobby 地图省略该引用；多 Bobby 地图在执行动作前用当前位置解析
@@ -114,6 +120,11 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
           "intents": [{ "type": "move", "direction": "right" }]
         }
       ]
+    },
+    {
+      "tick": 42,
+      "groups": [],
+      "choices": [1, 2]
     }
   ]
 }
@@ -144,11 +155,16 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 子集比较；Web 录像面板在文件声明 `status` 时比较该字段，用于提示回放是否到达相同终局。
 
 `initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
-于 tick 0 前应用，并使用同一套位置引用规则。Replay playback 不调用宿主
-`onInteractionRequest()`，因此购买等外部决定只会按已经录入 frame 的 Engine Intent
-执行一次。商品结果使用 `commit-entity-replacement` 保存目标的 `type + x + y` 和替代
-类型，重放不依赖运行时 Entity ID。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白
-不会重复写入 Replay。
+于 tick 0 前应用，并使用同一套位置引用规则。普通 Replay Tick 只发布可观察的
+`WorldEvent`；当前 frame 有待消费的 `choices` 时，playback 同时调用宿主
+`onInteractionRequest()`，由同一产品流程再次展示选项并消费序号。缺少选择、选择越界、
+下一 Tick 到来时仍有未消费选择都会立即报错。
+
+商品结算仍由宿主持有：存档更新后，宿主把 Entity 替换提交给当前 World；Adventure
+重开或重新载入时按最新 Save 重新生成地图补丁。该派生结果不进入 Replay frame，播放时
+由已记录的选择重新驱动同一宿主流程。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白
+不会重复写入 Replay。无头 Runner 只验证 Engine 时间线与 `choices` 的静态格式；包含宿主
+业务的选择流程使用浏览器 playback 验证。
 
 ## 仓库内置过法
 
@@ -175,6 +191,10 @@ Engine 的常驻 `timeScale`，同时作用于普通游戏、
 录制和播放。输入合法正数时立即更新 World 与 Presentation；输入为空或非法时保留最近
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退
 与快进按钮依次选择 `0.1 / 0.5 / 1 / 1.25 / 1.5 / 2 / 4 / 8` 中相邻的预设值。
+
+带 `choices` 的 Replay 必须按时间线播放，使宿主有机会依次处理每轮交互；终点快进会拒绝
+这类文件。终点快进普通 Replay 时仍逐 Tick 发布沿途 `WorldEvent`，Adventure 因而可以
+暂存收集事件，并在通关事件触发结果渲染前统一结算全局奖励。
 
 录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放角色过渡、终局音乐并显示结果卡片；录制中的 take 由用户在面板中停止并生成 Replay JSON。
 

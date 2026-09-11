@@ -209,10 +209,11 @@ Object Definition touch behavior
                   Engine presentation
 ```
 
-固定对白是随 JSON 地图传播的字面字符串。复杂条件对白与购买由宿主监听 live
+固定对白是随 JSON 地图传播的字面字符串。复杂条件对白与购买由宿主监听
 `onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。Replay playback 保留普通
-`WorldEvent`，但不会再次调用外部交互控制器。
+不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World，并把同一
+Tick 内各轮选择按一基序号写入 Replay；playback 仅在 frame 有待消费选择时再次调用外部
+交互控制器。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -498,8 +499,9 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
 币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并
 持久化新 Save。购买成功后，Web 把商品声明的替代 Entity 作为通用
-`commit-entity-replacement` intent 提交给 Engine；Adventure 在下次载入地图前根据 Save
-生成同一替换补丁。Bonus Beaver 的单次钥匙在 reducer 决策后以
+`commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
+根据最新 Save 生成同一替换补丁。Replay 只记录对话选择，宿主业务结果按播放时的 Save
+重新归约。Bonus Beaver 的单次钥匙在 reducer 决策后以
 `set-actor-lock-key` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的接受事件
 后提交 Save。
 

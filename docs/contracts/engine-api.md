@@ -239,9 +239,13 @@ game.dispatch({
 ```
 
 目标必须由 `type + x + y` 唯一命中。成功动作销毁目标、在相同 anchor 与 stackOrder
-生成替代 Entity，并同步更新本局 Restart 基线；Replay 保存稳定地图目标，不保存临时
-Entity ID。商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影
+生成替代 Entity。Adventure Restart 重新读取最新 Save，并在载入前把持久结果投影到
+LevelMap。商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影
 位置、朝向、地图内背包与实际移动时长，不暴露 Entity runtime state。
+
+阻塞对话选择产生的宿主派生效果使用 `game.dispatchInteractionEffect(intent)`。该入口允许
+Replay playback 在消费 `choices` 后重走同一交互流程；派生效果本身不写入 Replay，避免
+把选项决定和业务结果重复记录。
 
 ## GameplaySession 与 Replay
 
@@ -256,7 +260,7 @@ Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 Wor
 
 ```ts
 game.startReplayRecording({
-  name: "1-1",
+  id: "original/1-1",
   url: window.location.href,
 });
 const replay = game.stopReplayRecording();
@@ -273,14 +277,15 @@ game.replayPaused;
 `setTimeScale()` 接受任意有限正数，同时调整 World 与 Presentation 相对真实时间的推进
 倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
 停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
-`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态；沿途 WorldEvent 按顺序
+发布给观察者。带阻塞对话 `choices` 的 Replay 需要宿主逐轮处理，因此只能按时间线播放。
 
 `skipIdleTime` 用于压缩稳定状态下超过一秒的无输入区间，并在下一次输入前保留短暂的
 表现间隔。压缩期间仍逐个执行 World Tick；新的 WorldMotion、阻塞输入的 RuntimeAction
 或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
 该选项默认关闭，不进入 Replay 文件格式。
 
-录制调用方提供当前地图的显示名称与 URL；Engine 在停止时写入 `finalState` 和空白
+录制调用方提供当前地图的路径 ID 与 URL；Engine 在停止时写入 `finalState` 和空白
 `note`。`meta` 不参与播放调度，用户可以直接编辑 `note`。Web 复跑只提示
 `finalState.status` 是否一致；仓库 fixture 验证完整 `finalState`。
 
@@ -481,7 +486,7 @@ game.on("level-complete", ...);
 game.onWorldEvent((event) => {});
 ```
 
-复杂产品交互使用 live-only 请求口：
+复杂产品交互使用请求口：
 
 ```ts
 game.onInteractionRequest((request) => {
@@ -505,14 +510,16 @@ const result = await dialog.present({
 });
 ```
 
-`options` 可以省略，也可以包含任意数量的选项；两项时自然按左右排列，更多选项会按
+`dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
 第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
-先立即补全当前文本。选项存在时 `GameplayDialog` 暂停同一 runtime 的 gameplay 输入，
-结束时恢复原输入状态。所有选项使用同级基础样式，当前选项通过高亮边框、背景与阴影
+先立即补全当前文本。`GameplayDialog` 在等待选择时暂停同一 runtime 的 World 与 gameplay
+输入，结束时恢复原状态；暂停期间不产生 World Tick，地图计时也不推进。所有选项使用
+同级基础样式，当前选项通过高亮边框、背景与阴影
 标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
 `GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
 ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
-`0` 可立即显示全文。
+`0` 可立即显示全文。同一个 Tick 连续调用多次 `present()` 时，Replay 依次记录一基选项
+序号；`show()` 始终是无选项、非阻塞的提示，不记录选择。
