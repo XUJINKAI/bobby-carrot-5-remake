@@ -10,6 +10,7 @@ export interface GameplayHudInventory {
   shovel: boolean;
   kite: boolean;
   beans: number;
+  lockKeys: number;
 }
 
 export interface GameplayHudModel {
@@ -65,6 +66,7 @@ export function buildGameplayHudModel(
         shovel: inventory.shovel,
         kite: inventory.kite,
         beans: Math.max(0, inventory.beans),
+        lockKeys: Math.max(0, inventory.lockKeys),
       };
     }),
   };

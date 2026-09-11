@@ -14,8 +14,7 @@ function emptyInventory() {
     shovel: false,
     kite: false,
     beans: 0,
-    singleUseLockKey: false,
-    reusableLockKey: false,
+    lockKeys: 0,
   };
 }
 
@@ -91,7 +90,7 @@ test("Gameplay HUD 正向显示本关已用时间", () => {
   assert.equal(formatGameplayElapsed(60_000), "01:00");
 });
 
-test("Gameplay HUD projects the four map-local inventory items", () => {
+test("Gameplay HUD projects the map-local inventory items", () => {
   const model = buildGameplayHudModel(
     state({
       inventory: {
@@ -99,8 +98,7 @@ test("Gameplay HUD projects the four map-local inventory items", () => {
         shovel: true,
         kite: true,
         beans: 3,
-        singleUseLockKey: true,
-        reusableLockKey: false,
+        lockKeys: 2,
       },
     }),
     null,
@@ -112,6 +110,7 @@ test("Gameplay HUD projects the four map-local inventory items", () => {
     shovel: true,
     kite: true,
     beans: 3,
+    lockKeys: 2,
   }]);
 });
 
@@ -188,7 +187,8 @@ test("Gameplay HUD uses objective plus primary and secondary inventory rows", ()
   assert.match(source, /root\.append\(value, icon\)/);
   assert.match(source, /inventoryRow\("primary", "#ff665e"\)/);
   assert.match(source, /inventoryRow\("secondary", "#5796ff"\)/);
-  assert.match(source, /root\.append\(marker, bean\.root, gas\.root, shovel\.root, kite\.root\)/);
+  assert.match(source, /bean\.root,[\s\S]*gas\.root,[\s\S]*shovel\.root,[\s\S]*kite\.root,[\s\S]*lockKey\.root/);
+  assert.match(source, /"lock-key": "hud-key"/);
   assert.match(source, /this\.primaryInventory\.root\.append\(this\.coins\.root\)/);
   assert.match(source, /rowGap: "10px"/);
   assert.match(source, /normalized > 1 \? "inline" : "none"/);

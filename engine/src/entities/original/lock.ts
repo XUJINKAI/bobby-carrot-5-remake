@@ -25,10 +25,9 @@ const unlock: Behavior = {
     if (self.entity.state?.opened === true)
       return { passable: true, reason: "lock-open" };
 
+    const requireKey = self.entity.state?.requireKey === true;
     const inventory = readBobbyInventory(actor.state);
-    const hasPermanentKey = inventory.reusableLockKey;
-    const hasTemporaryKey = inventory.singleUseLockKey;
-    if (!hasPermanentKey && !hasTemporaryKey)
+    if (requireKey && inventory.lockKeys === 0)
       return { passable: false, reason: "lock-needs-key" };
 
     const seconds = boundedInt(
@@ -43,10 +42,12 @@ const unlock: Behavior = {
       openedByActorId: actor.id,
       deathCountdownRemainingMs: seconds * 1000,
     });
-    if (!hasPermanentKey && hasTemporaryKey)
+    if (requireKey)
       commands.setState(
         actor.id,
-        patchBobbyInventory(actor.state, { singleUseLockKey: false }),
+        patchBobbyInventory(actor.state, {
+          lockKeys: inventory.lockKeys - 1,
+        }),
       );
     if (seconds > 0)
       commands.emit({
@@ -78,6 +79,12 @@ const definition: EntityModuleDefinition = {
   traits: ["blocking", "gate", "timed-challenge"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
+    {
+      key: "requireKey",
+      kind: "boolean",
+      label: "需要钥匙",
+      default: false,
+    },
     {
       key: "deathCountdownSeconds",
       kind: "number",

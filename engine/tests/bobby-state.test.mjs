@@ -129,6 +129,59 @@ test("bean pickup increments only the acting Bobby inventory", () => {
   assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).beans, 3);
 });
 
+test("lock-key pickup increments inventory and leaves walkable ground", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      { type: MapEntityTypeId.LOCK_KEY, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  });
+  const [bobby] = actors(world);
+  assert.ok(bobby);
+
+  const result = move(world, bobby.id, "right");
+  assert.equal(result.moves[0].moved, true);
+  assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).lockKeys, 1);
+  assert.equal(
+    world.entities.all().some((entity) =>
+      entity.type === MapEntityTypeId.SHOP_EMPTY &&
+      entity.anchor.x === 1 &&
+      entity.anchor.y === 0
+    ),
+    true,
+  );
+});
+
+test("不可拾取的 lock-key 阻挡 Bobby 并发出交互", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      { type: MapEntityTypeId.LOCK_KEY, x: 1, y: 0, collectible: false },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  });
+  const [bobby] = actors(world);
+  assert.ok(bobby);
+
+  const result = move(world, bobby.id, "right");
+  assert.equal(result.moves[0].blocked, true);
+  assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).lockKeys, 0);
+  assert.equal(
+    result.events.some((event) =>
+      event.type === "object-interaction" &&
+      event.objectType === MapEntityTypeId.LOCK_KEY
+    ),
+    true,
+  );
+});
+
 test("shovel pickup leaves a canonical walkable surface behind", () => {
   const world = new World({
     schemaVersion: 1,

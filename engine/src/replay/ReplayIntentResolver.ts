@@ -67,12 +67,12 @@ function resolveActorEffectIntent(
   const actorId = intent.actor
     ? resolveActorId(session, intent.actor)
     : onlyActorId(session);
-  if (intent.type === "set-actor-lock-key") {
+  if (intent.type === "add-actor-inventory-item") {
     return {
       type: intent.type,
       actorId,
-      kind: intent.kind,
-      enabled: intent.enabled,
+      item: intent.item,
+      count: intent.count,
     };
   }
   return {

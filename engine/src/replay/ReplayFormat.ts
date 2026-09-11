@@ -13,12 +13,12 @@ export interface ReplayMoveIntent {
   actor?: CellPosition;
 }
 
-export interface ReplaySetActorLockKeyIntent {
-  type: "set-actor-lock-key";
+export interface ReplayAddActorInventoryItemIntent {
+  type: "add-actor-inventory-item";
   /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
   actor?: CellPosition;
-  kind: "single-use" | "reusable";
-  enabled: boolean;
+  item: "lock-key";
+  count: number;
 }
 
 export interface ReplaySetActorLocomotionIntent {
@@ -29,11 +29,11 @@ export interface ReplaySetActorLocomotionIntent {
 
 export type ReplayGameplayIntent =
   | ReplayMoveIntent
-  | ReplaySetActorLockKeyIntent
+  | ReplayAddActorInventoryItemIntent
   | ReplaySetActorLocomotionIntent;
 
 export type ReplayInitialIntent =
-  | ReplaySetActorLockKeyIntent
+  | ReplayAddActorInventoryItemIntent
   | ReplaySetActorLocomotionIntent;
 
 export interface ReplayInputGroup {

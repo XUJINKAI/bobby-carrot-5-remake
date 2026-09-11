@@ -36,19 +36,19 @@ export interface SetActorLocomotionIntent {
   moveDurationMs: number;
 }
 
-/** 设置 actor 的地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
-export interface SetActorLockKeyIntent {
-  type: "set-actor-lock-key";
+/** 为 actor 增加关卡内消耗品；商品、价格和取得条件由宿主决定。 */
+export interface AddActorInventoryItemIntent {
+  type: "add-actor-inventory-item";
   actorId: EntityId;
-  kind: "single-use" | "reusable";
-  enabled: boolean;
+  item: "lock-key";
+  count: number;
   /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
   requestId?: number;
 }
 
 export type ActorEffectIntent =
   | SetActorLocomotionIntent
-  | SetActorLockKeyIntent;
+  | AddActorInventoryItemIntent;
 
 export interface EntityTargetReference {
   type: EntityType;
@@ -70,12 +70,6 @@ export type GameplayEffectIntent =
 export type WorldIntent = MoveIntent | GameplayEffectIntent;
 
 export type InitialActorIntent =
-  | {
-      type: "set-actor-lock-key";
-      actor: "primary" | "all";
-      kind: SetActorLockKeyIntent["kind"];
-      enabled: boolean;
-    }
   | {
       type: "set-actor-locomotion";
       actor: "primary" | "all";

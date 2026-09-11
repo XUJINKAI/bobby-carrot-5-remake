@@ -130,14 +130,15 @@ function validateIntent(
       throw new Error("Replay 包含无效的 Bobby 移动时长");
     return;
   }
-  if (intent.type === "set-actor-lock-key") {
-    requireFields(intent, ["type", "actor", "kind", "enabled"]);
+  if (intent.type === "add-actor-inventory-item") {
+    requireFields(intent, ["type", "actor", "item", "count"]);
     validateActorReference(session, intent.actor);
     if (
-      (intent.kind !== "single-use" && intent.kind !== "reusable") ||
-      typeof intent.enabled !== "boolean"
+      intent.item !== "lock-key" ||
+      !Number.isInteger(intent.count) ||
+      intent.count <= 0
     )
-      throw new Error("Replay 包含无效的 Lock 能力动作");
+      throw new Error("Replay 包含无效的关卡内道具动作");
     return;
   }
   throw new Error("Replay 包含无效的地图内语义动作");

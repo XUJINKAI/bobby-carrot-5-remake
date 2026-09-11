@@ -123,12 +123,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     ["blocking", "interaction"],
   ),
   surface(
-    MapEntityTypeId.SHOP_SUPER_KEY,
-    "Super Key",
-    tileCell(MapEntityTypeId.SHOP_SUPER_KEY),
-    ["blocking", "interaction"],
-  ),
-  surface(
     MapEntityTypeId.SHOP_STEREO_SYSTEM,
     "Stereo System",
     tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),

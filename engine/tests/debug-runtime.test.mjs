@@ -80,8 +80,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
             kite: false,
             shovel: false,
             beans: 0,
-            singleUseLockKey: false,
-            reusableLockKey: false,
+            lockKeys: 0,
           },
           moveDurationMs: 280,
         },
@@ -93,8 +92,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
         kite: false,
         shovel: false,
         beans: 0,
-        singleUseLockKey: false,
-        reusableLockKey: false,
+        lockKeys: 0,
       },
       bonusCoinsInLevel: 0,
       goldenCarrotsInLevel: 0,
@@ -103,10 +101,9 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
     },
     pendingIntents: [
       {
-        type: "set-actor-lock-key",
+        type: "set-actor-locomotion",
         actorId: bobby.id,
-        kind: "single-use",
-        enabled: true,
+        moveDurationMs: 300,
       },
     ],
     replay: { recording: true, playing: false, paused: false },
@@ -147,7 +144,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.world?.setup.gameplay.initialIntents.length, 1);
   assert.equal(snapshot.world?.setup.controls[0]?.input, "external");
   assert.equal(snapshot.world?.current.gameplay.actors[0]?.moveDurationMs, 280);
-  assert.equal(snapshot.world?.pendingIntents[0]?.type, "set-actor-lock-key");
+  assert.equal(snapshot.world?.pendingIntents[0]?.type, "set-actor-locomotion");
   assert.equal(snapshot.world?.replay.recording, true);
   assert.equal(snapshot.world?.canDispatchActorEffects, true);
 });
@@ -272,7 +269,7 @@ test("Debug uses docked control and info panes behind a persistent tool strip", 
   assert.match(timelineSource, /this\.worldTicks\.checked = false/);
   assert.match(worldSource, /Intent injector/);
   assert.match(worldSource, /set-actor-locomotion/);
-  assert.match(worldSource, /set-actor-lock-key/);
+  assert.doesNotMatch(worldSource, /set-actor-lock-key/);
   assert.match(worldSource, /dispatchIntent/);
   assert.match(source, /presence\.stackOrder/);
   assert.match(source, /Resolved layers/);

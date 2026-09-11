@@ -165,12 +165,12 @@ function toReplayActorEffectIntent(
   intent: ActorEffectIntent,
   actor: CellPosition | undefined,
 ): ReplayInitialIntent {
-  if (intent.type === "set-actor-lock-key") {
+  if (intent.type === "add-actor-inventory-item") {
     return {
       type: intent.type,
       ...(actor ? { actor } : {}),
-      kind: intent.kind,
-      enabled: intent.enabled,
+      item: intent.item,
+      count: intent.count,
     };
   }
   return {

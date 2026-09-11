@@ -63,6 +63,26 @@ const pickup: Behavior = {
           patchBobbyInventory(actor.state, { beans: inventory.beans + 1 }),
         );
         break;
+      case MapEntityTypeId.LOCK_KEY:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, {
+            lockKeys: inventory.lockKeys + 1,
+          }),
+        );
+        commands.destroy(self.entity.id);
+        commands.spawn({
+          type: MapEntityTypeId.SHOP_EMPTY,
+          x: self.entity.anchor.x,
+          y: self.entity.anchor.y,
+        });
+        commands.emit({
+          type: `collect-${self.entity.type}`,
+          entityId: self.entity.id,
+          x: self.presence.cell.x,
+          y: self.presence.cell.y,
+        });
+        return;
       case MapEntityTypeId.SHOVEL_PICKUP:
         commands.setState(
           actor.id,

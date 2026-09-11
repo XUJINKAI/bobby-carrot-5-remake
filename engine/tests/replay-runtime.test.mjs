@@ -179,7 +179,7 @@ test("Replay 不重复记录可由对话 choice 重建的 Entity replacement", (
       ground(0),
       ground(1),
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
-      { type: MapEntityTypeId.SHOP_SUPER_KEY, x: 1, y: 0 },
+      { type: MapEntityTypeId.LOCK_KEY, x: 1, y: 0 },
     ],
   };
   const session = new GameplaySession();
@@ -195,7 +195,7 @@ test("Replay 不重复记录可由对话 choice 重建的 Entity replacement", (
       intents: [{
         type: "commit-entity-replacement",
         target: {
-          type: MapEntityTypeId.SHOP_SUPER_KEY,
+          type: MapEntityTypeId.LOCK_KEY,
           x: 1,
           y: 0,
         },
@@ -504,28 +504,26 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   const session = new GameplaySession({
     initialActorIntents: [
       {
-        type: "set-actor-lock-key",
+        type: "set-actor-locomotion",
         actor: "all",
-        kind: "reusable",
-        enabled: true,
+        moveDurationMs: 266,
       },
     ],
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    id: "test/initial-key",
+    id: "test/initial-locomotion",
     url: "/test",
   });
   const replay = recorder.stop();
 
   assert.deepEqual(replay.initialIntents, [
     {
-      type: "set-actor-lock-key",
-      kind: "reusable",
-      enabled: true,
+      type: "set-actor-locomotion",
+      moveDurationMs: 266,
     },
   ]);
-  assert.equal(session.state.inventory.reusableLockKey, true);
+  assert.equal(session.state.actors[0].moveDurationMs, 266);
   assert.equal(runReplay(level, replay).actual.status, "playing");
 });
 
@@ -556,7 +554,7 @@ test("运行中的 locomotion 动作进入 Replay frame", () => {
   });
 });
 
-test("Replay 只保留钥匙动作的 gameplay 字段", () => {
+test("Replay 只保留关卡内道具动作的 gameplay 字段", () => {
   const session = new GameplaySession();
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
@@ -567,10 +565,10 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   const [tick] = session.advanceTicks(1, () => ({
     groups: [{
       intents: [{
-        type: "set-actor-lock-key",
+        type: "add-actor-inventory-item",
         actorId,
-        kind: "single-use",
-        enabled: true,
+        item: "lock-key",
+        count: 1,
         requestId: 42,
       }],
     }],
@@ -578,20 +576,20 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   recorder.record(tick);
 
   assert.deepEqual(recorder.stop().frames[0].groups[0].intents[0], {
-    type: "set-actor-lock-key",
-    kind: "single-use",
-    enabled: true,
+    type: "add-actor-inventory-item",
+    item: "lock-key",
+    count: 1,
   });
 });
 
-test("Replay 初始钥匙动作也省略交互关联字段", () => {
+test("Replay 初始道具动作也省略交互关联字段", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     initialIntents: [{
-      type: "set-actor-lock-key",
+      type: "add-actor-inventory-item",
       actorId: 4,
-      kind: "reusable",
-      enabled: true,
+      item: "lock-key",
+      count: 2,
       requestId: 7,
     }],
   });
@@ -602,9 +600,9 @@ test("Replay 初始钥匙动作也省略交互关联字段", () => {
   }).stop();
 
   assert.deepEqual(replay.initialIntents, [{
-    type: "set-actor-lock-key",
-    kind: "reusable",
-    enabled: true,
+    type: "add-actor-inventory-item",
+    item: "lock-key",
+    count: 2,
   }]);
 });
 

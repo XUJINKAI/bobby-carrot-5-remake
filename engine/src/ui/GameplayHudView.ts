@@ -22,9 +22,17 @@ interface InventoryRow {
   gas: HudChip;
   shovel: HudChip;
   kite: HudChip;
+  lockKey: HudChip;
 }
 
-type HudSprite = "carrot" | "gas" | "kite" | "shovel" | "egg" | "bean";
+type HudSprite =
+  | "carrot"
+  | "gas"
+  | "kite"
+  | "shovel"
+  | "egg"
+  | "bean"
+  | "lock-key";
 
 const HUD_SLICE: Record<HudSprite, string> = {
   carrot: "hud-carrot",
@@ -33,6 +41,7 @@ const HUD_SLICE: Record<HudSprite, string> = {
   shovel: "hud-shovel",
   egg: "hud-egg",
   bean: "hud-bean",
+  "lock-key": "hud-key",
 };
 
 /** DOM-only HUD renderer. It knows semantic image IDs, never URLs or atlas coordinates. */
@@ -233,6 +242,10 @@ export class GameplayHudView {
     this.setItemChip(row.bean, itemRowVisible ? inventory?.beans ?? 0 : 0);
     this.setItemChip(row.shovel, itemRowVisible && inventory?.shovel ? 1 : 0);
     this.setItemChip(row.gas, itemRowVisible && inventory?.gas ? 1 : 0);
+    this.setItemChip(
+      row.lockKey,
+      itemRowVisible ? inventory?.lockKeys ?? 0 : 0,
+    );
   }
 
   private setItemChip(chip: HudChip, count: number): void {
@@ -275,8 +288,16 @@ export class GameplayHudView {
     });
     const shovel = this.itemChip("雪铲", "shovel");
     const gas = this.itemChip("汽油", "gas");
-    root.append(marker, bean.root, gas.root, shovel.root, kite.root);
-    return { root, marker, gas, shovel, kite, bean };
+    const lockKey = this.itemChip("钥匙", "lock-key");
+    root.append(
+      marker,
+      bean.root,
+      gas.root,
+      shovel.root,
+      kite.root,
+      lockKey.root,
+    );
+    return { root, marker, gas, shovel, kite, bean, lockKey };
   }
 
   private itemChip(title: string, sprite: HudSprite): HudChip {

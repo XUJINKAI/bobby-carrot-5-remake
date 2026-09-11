@@ -603,20 +603,11 @@ export class GameplaySession {
           ? []
           : [this.primaryActorIdValue];
       for (const actorId of targets) {
-        if (intent.type === "set-actor-lock-key") {
-          intents.push({
-            type: intent.type,
-            actorId,
-            kind: intent.kind,
-            enabled: intent.enabled,
-          });
-        } else {
-          intents.push({
-            type: intent.type,
-            actorId,
-            moveDurationMs: intent.moveDurationMs,
-          });
-        }
+        intents.push({
+          type: intent.type,
+          actorId,
+          moveDurationMs: intent.moveDurationMs,
+        });
       }
     }
     this.initialIntentsValue = structuredClone(intents);

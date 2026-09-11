@@ -13,7 +13,7 @@ function shopLevel() {
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
       {
-        type: MapEntityTypeId.SHOP_SUPER_KEY,
+        type: MapEntityTypeId.LOCK_KEY,
         x: 1,
         y: 0,
         stackOrder: 12,
@@ -34,7 +34,7 @@ test("Entity replacement 只提交到当前 World，Restart 恢复输入地图",
   session.loadLevel(shopLevel());
   const original = entityAt(
     session,
-    MapEntityTypeId.SHOP_SUPER_KEY,
+    MapEntityTypeId.LOCK_KEY,
     1,
     0,
   );
@@ -46,7 +46,7 @@ test("Entity replacement 只提交到当前 World，Restart 恢复输入地图",
       intents: [{
         type: "commit-entity-replacement",
         target: {
-          type: MapEntityTypeId.SHOP_SUPER_KEY,
+          type: MapEntityTypeId.LOCK_KEY,
           x: 1,
           y: 0,
         },
@@ -58,7 +58,7 @@ test("Entity replacement 只提交到当前 World，Restart 恢复输入地图",
   const replacement = entityAt(session, MapEntityTypeId.SHOP_EMPTY, 1, 0);
   assert.ok(replacement);
   assert.equal(replacement.stackOrder, 12);
-  assert.equal(entityAt(session, MapEntityTypeId.SHOP_SUPER_KEY, 1, 0), undefined);
+  assert.equal(entityAt(session, MapEntityTypeId.LOCK_KEY, 1, 0), undefined);
   assert.deepEqual(tick.result.mutations.destroyed, [original.id]);
   assert.deepEqual(tick.result.mutations.spawned, [replacement.id]);
   assert.deepEqual(tick.result.events.at(-1), {
@@ -70,7 +70,7 @@ test("Entity replacement 只提交到当前 World，Restart 恢复输入地图",
   });
 
   session.restart();
-  assert.ok(entityAt(session, MapEntityTypeId.SHOP_SUPER_KEY, 1, 0));
+  assert.ok(entityAt(session, MapEntityTypeId.LOCK_KEY, 1, 0));
   assert.equal(entityAt(session, MapEntityTypeId.SHOP_EMPTY, 1, 0), undefined);
 });
 
@@ -82,7 +82,7 @@ test("找不到唯一目标时 Entity replacement 保持无副作用", () => {
       intents: [{
         type: "commit-entity-replacement",
         target: {
-          type: MapEntityTypeId.SHOP_SUPER_KEY,
+          type: MapEntityTypeId.LOCK_KEY,
           x: 0,
           y: 0,
         },
@@ -93,5 +93,5 @@ test("找不到唯一目标时 Entity replacement 保持无副作用", () => {
 
   assert.deepEqual(tick.inputGroups, []);
   assert.deepEqual(tick.result.events, []);
-  assert.ok(entityAt(session, MapEntityTypeId.SHOP_SUPER_KEY, 1, 0));
+  assert.ok(entityAt(session, MapEntityTypeId.LOCK_KEY, 1, 0));
 });

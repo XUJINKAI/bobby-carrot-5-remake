@@ -129,7 +129,7 @@ export {
   type Replay,
   type ReplayFrame,
   type ReplayGameplayIntent,
-  type ReplaySetActorLockKeyIntent,
+  type ReplayAddActorInventoryItemIntent,
   type ReplayInitialIntent,
   type ReplayInputGroup,
   type ReplayMeta,
@@ -171,12 +171,12 @@ export type {
 export { isObjectInteractionEvent } from "./world/WorldTypes.js";
 export type {
   ActorEffectIntent,
+  AddActorInventoryItemIntent,
   CommitEntityReplacementIntent,
   EntityTargetReference,
   GameplayEffectIntent,
   MoveCause,
   MoveIntent,
-  SetActorLockKeyIntent,
   InitialActorIntent,
   SetActorLocomotionIntent,
   WorldIntent,

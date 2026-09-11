@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
@@ -12,6 +12,7 @@ import {
 import {
   patchBobbyInventory,
   patchBobbyLocomotionMoveMs,
+  readBobbyInventory,
   readBobbyLocomotionMoveMs,
 } from "../entities/player/BobbyState.js";
 import {
@@ -709,22 +710,26 @@ export class World {
         });
         continue;
       }
+      if (
+        intent.item !== MapEntityTypeId.LOCK_KEY ||
+        !Number.isInteger(intent.count) ||
+        intent.count <= 0
+      ) {
+        continue;
+      }
+      const inventory = readBobbyInventory(state);
+      const lockKeys = inventory.lockKeys + intent.count;
       states.set(
         actor.id,
-        patchBobbyInventory(
-          state,
-          intent.kind === "reusable"
-            ? { reusableLockKey: intent.enabled }
-            : { singleUseLockKey: intent.enabled },
-        ),
+        patchBobbyInventory(state, { lockKeys }),
       );
       queue.emit({
-        type: "actor-lock-key-changed",
+        type: "actor-inventory-item-added",
         entityId: actor.id,
         ...(intent.requestId !== undefined
           ? { requestId: intent.requestId }
           : {}),
-        data: { kind: intent.kind, enabled: intent.enabled },
+        data: { item: intent.item, count: intent.count, total: lockKeys },
       });
     }
     for (const [entityId, state] of states) {
