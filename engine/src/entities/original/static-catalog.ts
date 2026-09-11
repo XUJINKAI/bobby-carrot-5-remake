@@ -237,6 +237,11 @@ const windmill = originalModule(
 
 export const staticContentModules: readonly EntityModule[] = [
   staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT)),
+  runtimeOnlyContent(
+    RuntimeEntityTypeId.CONSUMED_CARROT,
+    "Consumed Carrot",
+    tileCell(MapEntityTypeId.CARROT, { phase: "consumed" }),
+  ),
   egg,
   {
     ...content(

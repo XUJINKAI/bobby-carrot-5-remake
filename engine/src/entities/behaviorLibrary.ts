@@ -23,6 +23,13 @@ const collect: Behavior = {
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
     commands.destroy(self.entity.id);
+    if (self.entity.type === MapEntityTypeId.CARROT) {
+      commands.spawn({
+        type: RuntimeEntityTypeId.CONSUMED_CARROT,
+        x: self.entity.anchor.x,
+        y: self.entity.anchor.y,
+      });
+    }
     commands.emit({
       type: `collect-${self.entity.type}`,
       entityId: self.entity.id,
