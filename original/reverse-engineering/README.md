@@ -61,6 +61,7 @@
 - `semantic/StarShimmer.java`、`SpecialSceneStarfield.java`：gameplay 3-slot 星空闪耀与 Title/Magic Code/Flight 5-slot 滚动星场。
 - `semantic/GameplayRenderOrder.java`：原版 gameplay layer 顺序。
 - `semantic/BobbyAnimationCadence.java`：Bobby walk / idle / death / transition 节奏。
+- `semantic/MowerPresentation.java`：`b7.png` 非均分方向裁切与 `mow.png` 两行节拍。
 - `semantic/GameplayHud.java`、`CameraShake.java`、`OverviewMode.java`、`MissingItemHint.java`：HUD、相机与提示行为。
 
 原版 outer loop 约 62ms，但每轮调用两次 runtime advance；一个 gameplay step 稳态约 **31ms / 32Hz**。不要把旧文档中的 16Hz 当成原版 World tick。
@@ -69,7 +70,8 @@
 
 - `notes/fidelity-discrepancies.md`：只记录已由 class 与当前仓库交叉确认的差异；本逆向分支不修改 Engine / Adapter。
 
-目前明确包括 Speed 状态机、Ice 生命周期、Tide raw direction、Carousel/Tide Switch 命名，以及原版 gameplay-step 与当前默认 World 16Hz 的时基关系。
+当前审计按 Gameplay、跨 Entity 组合顺序、Presentation / Timing 与产品选择分类；
+已经复核对齐的历史候选也在文件末尾收口，避免继续按过期结论修改实现。
 
 ## 可复现工具
 

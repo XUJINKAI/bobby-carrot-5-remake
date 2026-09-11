@@ -167,11 +167,15 @@ UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作�
 - 通关路径写入 `aw=6, av=0, be=true`；
 - `O()` 在 `be=true` 时逐步递增 `av`，到达 10 后进入结果流程。
 
-两条路径的墙钟长度并不相同。关卡进入状态在当前 animation advance 之后建立，
-后续完整经历 10 个 gameplay step，约为 **310ms**；通关状态在当前 advance 之前
-建立，并在同一轮立即推进一次，剩余间隔为 9 个 gameplay step，约为 **279ms**。
-Web Engine 使用两个独立的毫秒配置承接这一差异，并把 10 个逻辑槽映射为
-“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”。
+两条路径的墙钟长度并不相同。`aw=6` 不满足 `O()` 的 fast-motion bypass 条件，
+因此仍受共享 `bf` 隔次门控，逻辑槽约每 2 个 gameplay step、即约 62ms 推进一步。
+关卡进入需要完整倒过 10 个逻辑槽；通关状态可能在建立状态的同一 gameplay step
+先推进一次，通常还剩 9 个门控推进间隔。具体首帧相位受进入该状态时的 `bf` 影响，
+稳定量级分别约为 **620ms** 与 **558ms**，不是逐 gameplay step 切一帧。
+
+Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 10 个逻辑槽映射为
+“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”；当前配置值与上述原版门控
+节拍的差异记录在 `original/reverse-engineering/notes/fidelity-discrepancies.md`。
 
 ## 8. 魔豆与藤蔓
 

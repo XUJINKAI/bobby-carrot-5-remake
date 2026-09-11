@@ -32,9 +32,13 @@ public final class BobbyPresentationStates {
     /**
      * `aw=6` 同一套 b6 帧被双向复用：
      *
-     * - level load/reset：`av=9, be=false`，O() 每次 --av；降到 -1 后恢复 `aw=DOWN,av=3`；
-     * - level clear：`av=0, be=true`，O() 每次 ++av；达到 10 时立即进入 result/campaign flow，
+     * - level load/reset：`av=9, be=false`，O() 在共享 animation gate 放行时 --av；
+     *   降到 -1 后恢复 `aw=DOWN,av=3`；
+     * - level clear：`av=0, be=true`，O() 在共享 animation gate 放行时 ++av；
+     *   达到 10 时立即进入 result/campaign flow，
      *   因此实际可绘制帧为 0..9。
+     *
+     * b6 不满足 fast-motion bypass 条件，因此逻辑槽约每 2 gameplay step 推进一次。
      */
     int advanceLevelTransitionFrame(int frame, boolean clearing) {
         if (clearing) {

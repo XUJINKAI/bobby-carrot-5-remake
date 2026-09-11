@@ -18,7 +18,7 @@
 | MIDI | JAR 14/14 MIDI 已索引；resolver、loop/one-shot、scene override 已恢复 | MusicCatalog / notes/up09-music-index.md |
 | Sound Test | 10/10 菜单项与播放资源已恢复，含此前遗漏的 LEVEL COMPLETE | SoundTest |
 | Save / RMS | BC5Data 单 record 字节顺序、默认值、持久/临时边界已恢复 | PersistentSaveFormat |
-| Presentation | layer order、HUD、Bobby、tile phases、sparkle、particles、camera/shake、Title/Code/Flight 星场已恢复 | GameplayRenderOrder / GameplayHud / TileAnimationClock / SpecialSceneStarfield |
+| Presentation | layer order、HUD、Bobby、Mower 非均分裁切、tile phases、sparkle、particles、camera/shake、Title/Code/Flight 星场已恢复 | GameplayRenderOrder / GameplayHud / MowerPresentation / TileAnimationClock / SpecialSceneStarfield |
 
 ## 音乐与文字的最终答案
 

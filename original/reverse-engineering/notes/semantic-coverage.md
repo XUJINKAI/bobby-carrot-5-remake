@@ -13,7 +13,7 @@
 | Speed | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Help | `SpeedRuntime`, `PlayerMovement`, `BobbyAnimationCadence`, `DialogCatalog` | 无核心缺口 |
 | Ice | ✓ | ✓ | ✓ | ✓ | ✓ | — | `IceSliding`, `BobbyAnimationCadence` | 无核心缺口 |
 | Snow / Shovel | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Help | `PlayerCollisionRules`, `ShovelRuntime`, `AmbientParticles`, `DialogCatalog` | 无核心缺口 |
-| Mower / Gas / Parking | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Music/Help | `MowerRuntime`, `PlayerCollisionRules`, `MusicCatalog`, `DialogCatalog` | 无核心缺口 |
+| Mower / Gas / Parking | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Music/Help | `MowerRuntime`, `MowerPresentation`, `PlayerCollisionRules`, `MusicCatalog`, `DialogCatalog` | 无核心缺口 |
 | Carousel | ✓ | ✓ | — | — | ✓ | ✓ Help | `CarouselPassage`, `MidpointInteractionDispatcher`, `DialogCatalog` | 无核心缺口 |
 | Mirror | ✓ | ✓ | — | — | ✓ | ✓ Help | `MidpointInteractionDispatcher`, `DragonFireball`, `DialogCatalog` | 无核心缺口 |
 | Trap | ✓ | ✓ | — | — | ✓ | ✓ Help | `TrapRuntime`, `DeathPipeline`, `DialogCatalog` | 无核心缺口 |
