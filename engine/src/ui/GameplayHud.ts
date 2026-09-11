@@ -9,6 +9,8 @@ export interface GameplayHudOptions {
   root?: HTMLElement;
   objective?: boolean;
   inventory?: boolean;
+  elapsedTime?: boolean;
+  timedChallenge?: boolean;
 }
 
 /** Engine HUD owner: subscribes to Game, derives model, delegates DOM to GameplayHudView. */
@@ -28,6 +30,7 @@ export class GameplayHud {
     mount.append(this.view.root);
     this.view.root.hidden = options.enabled === false;
     this.unsubscribes = [
+      game.on("tick", () => this.render()),
       game.on("change", () => this.render()),
       game.on("level-loaded", () => {
         this.lastSignature = "";
@@ -53,6 +56,12 @@ export class GameplayHud {
         inventory: actor.inventory,
       })),
       primaryActorId: state.primaryActorId,
+      elapsedSeconds: Math.floor(state.elapsedMs / 1000),
+      timedChallengeSeconds:
+        state.timedChallengeRemainingMs === null
+          ? null
+          : Math.ceil(state.timedChallengeRemainingMs / 1000),
+      timedChallengePhase: state.timedChallengePhase,
     });
     if (signature === this.lastSignature) return;
     this.lastSignature = signature;

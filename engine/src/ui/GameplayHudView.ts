@@ -5,6 +5,8 @@ import type { GameplayHudModel } from "./GameplayHudModel.js";
 export interface GameplayHudViewOptions {
   objective?: boolean;
   inventory?: boolean;
+  elapsedTime?: boolean;
+  timedChallenge?: boolean;
 }
 
 interface HudChip {
@@ -35,6 +37,7 @@ const HUD_SLICE: Record<HudSprite, string> = {
 /** DOM-only HUD renderer. It knows semantic image IDs, never URLs or atlas coordinates. */
 export class GameplayHudView {
   readonly root: HTMLDivElement;
+  private readonly timer: HTMLElement;
   private readonly objectiveCarrot: HudChip;
   private readonly objectiveEgg: HudChip;
   private readonly primaryInventory: InventoryRow;
@@ -49,16 +52,36 @@ export class GameplayHudView {
     this.root.setAttribute("aria-label", "游戏状态");
     Object.assign(this.root.style, {
       position: "absolute",
+      inset: "0",
+      zIndex: "5",
+      pointerEvents: "none",
+      color: "#eef5ef",
+      opacity: "0.68",
+    });
+
+    this.timer = document.createElement("strong");
+    this.timer.className =
+      "engine-gameplay-hud-timer engine-gameplay-hud-value";
+    Object.assign(this.timer.style, {
+      position: "absolute",
+      top: "12px",
+      left: "12px",
+      display: "none",
+      fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
+      lineHeight: "1",
+      fontVariantNumeric: "tabular-nums",
+    });
+
+    const right = document.createElement("div");
+    right.className = "engine-gameplay-hud-right";
+    Object.assign(right.style, {
+      position: "absolute",
       top: "12px",
       right: `calc(12px + var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
-      zIndex: "5",
       display: "grid",
       justifyItems: "end",
       gap: "2px",
       maxWidth: `calc(100% - 24px - var(${GAMEPLAY_RIGHT_INSET_CSS_VAR}, 0px))`,
-      pointerEvents: "none",
-      color: "#eef5ef",
-      opacity: "0.68",
     });
 
     const objective = document.createElement("div");
@@ -83,14 +106,37 @@ export class GameplayHudView {
 
     this.primaryInventory = this.inventoryRow("primary", "#ff665e");
     this.secondaryInventory = this.inventoryRow("secondary", "#5796ff");
-    this.root.append(
+    right.append(
       objective,
       this.primaryInventory.root,
       this.secondaryInventory.root,
     );
+    this.root.append(this.timer, right);
   }
 
   render(model: GameplayHudModel): void {
+    const showTimedChallenge =
+      this.options.timedChallenge !== false &&
+      model.timedChallengeRemainingMs !== null;
+    const showElapsedTime =
+      this.options.elapsedTime === true && !showTimedChallenge;
+    this.timer.style.display =
+      showTimedChallenge || showElapsedTime ? "block" : "none";
+    if (showTimedChallenge) {
+      this.timer.setAttribute(
+        "aria-label",
+        model.timedChallengePhase === "waiting"
+          ? "挑战倒计时，等待开锁"
+          : "挑战剩余时间",
+      );
+      this.timer.textContent = formatGameplayCountdown(
+        model.timedChallengeRemainingMs!,
+      );
+    } else if (showElapsedTime) {
+      this.timer.setAttribute("aria-label", "本关用时");
+      this.timer.textContent = formatGameplayElapsed(model.elapsedMs);
+    }
+
     const showObjective = this.options.objective !== false;
     this.setChip(
       this.objectiveCarrot,
@@ -228,6 +274,22 @@ export class GameplayHudView {
       .catch(() => undefined);
     return canvas;
   }
+}
+
+export function formatGameplayCountdown(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  return formatGameplaySeconds(totalSeconds);
+}
+
+export function formatGameplayElapsed(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return formatGameplaySeconds(totalSeconds);
+}
+
+function formatGameplaySeconds(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function drawSlice(canvas: HTMLCanvasElement, slice: LoadedImageSlice): void {

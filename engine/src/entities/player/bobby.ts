@@ -28,6 +28,8 @@ const BOBBY_IDLE_FRAME_MS = 50;
 const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
+const BOBBY_TRANSITION_FRAME_COUNT = 8;
+const BOBBY_TRANSITION_STEP_COUNT = 10;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   left: 0,
   right: 1,
@@ -45,6 +47,7 @@ export const BOBBY_VISUAL_ASSETS = {
   } satisfies Readonly<Record<Direction, string>>,
   idle: "bobby-idle",
   death: "bobby-death",
+  transition: "bobby-transition",
   mower: "bobby-mower",
   snowplow: "bobby-snowplow",
   kite: "bobby-kite",
@@ -111,6 +114,33 @@ const bobbyVisual = {
           : { frameProgress: progress }),
       });
     }
+
+    if (context.runtime?.animation === "level-enter") {
+      const frameIndex =
+        BOBBY_TRANSITION_STEP_COUNT - 1 - transitionStep(progress);
+      if (frameIndex >= BOBBY_TRANSITION_FRAME_COUNT) return null;
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.transition,
+        frameColumns: BOBBY_TRANSITION_FRAME_COUNT,
+        frameRows: 1,
+        frameIndex,
+      });
+    }
+
+    if (context.runtime?.animation === "level-exit") {
+      if (rawProgress >= 1) return null;
+      const frameIndex = transitionStep(progress);
+      if (frameIndex >= BOBBY_TRANSITION_FRAME_COUNT) return null;
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.transition,
+        frameColumns: BOBBY_TRANSITION_FRAME_COUNT,
+        frameRows: 1,
+        frameIndex,
+      });
+    }
+
+    // World 完成后只允许通关 transition 绘制 Bobby；动画结束后角色保持隐藏。
+    if (context.global?.completed) return null;
 
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));
@@ -217,6 +247,13 @@ function resolveWalkingFrame(progress: number): number {
   const normalized = Math.max(0, Math.min(1, progress));
   const step = Math.min(8, Math.floor(normalized * 8));
   return (BOBBY_STANDING_FRAME + step) % 8;
+}
+
+function transitionStep(progress: number): number {
+  return Math.min(
+    BOBBY_TRANSITION_STEP_COUNT - 1,
+    Math.floor(clampProgress(progress) * BOBBY_TRANSITION_STEP_COUNT),
+  );
 }
 
 function speedTrail(

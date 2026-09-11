@@ -65,6 +65,7 @@ import { prepareRuntimeLevel } from "./RuntimeLevel.js";
 
 type GameEventName =
   | "change"
+  | "tick"
   | "move"
   | "blocked"
   | "level-loaded"
@@ -102,6 +103,7 @@ export class Game {
   private readonly queuedIntentGroups: WorldIntentGroup[] = [];
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
+  private levelLoadPending = false;
   private animationFrame = 0;
   private destroyed = false;
   private lastTimestamp = 0;
@@ -257,6 +259,21 @@ export class Game {
     return this.visual.isAnimating;
   }
 
+  get timedChallengeRemainingMs(): number | null {
+    return this.worldValue
+      ? this.session.state.timedChallengeRemainingMs
+      : null;
+  }
+
+  get timedChallengePhase(): "waiting" | "running" | null {
+    return this.worldValue ? this.session.state.timedChallengePhase : null;
+  }
+
+  /** 关卡载入与 Bobby 出现阶段丢弃 gameplay 输入，不把它们延迟到首个 WorldTick。 */
+  get presentationBlocksInput(): boolean {
+    return this.levelLoadPending || this.visual.blocksGameplay;
+  }
+
   get canUndo(): boolean {
     return this.session.canUndo;
   }
@@ -282,6 +299,7 @@ export class Game {
   }
 
   async loadLevel(level: LevelMap): Promise<void> {
+    this.levelLoadPending = true;
     this.replayPlayback.stop();
     this.session.loadLevel(prepareRuntimeLevel(level));
     this.debugExternalActorId = null;
@@ -296,7 +314,14 @@ export class Game {
     this.lastScene = null;
     this.lastMove = null;
     this.lastWorldEvents = [];
-    await this.renderer.load();
+    try {
+      await this.renderer.load();
+    } catch (error) {
+      this.levelLoadPending = false;
+      throw error;
+    }
+    this.beginLevelPresentation();
+    this.levelLoadPending = false;
     this.render();
     this.emit("level-loaded");
     this.emit("change");
@@ -311,6 +336,7 @@ export class Game {
       !this.worldValue ||
       this.replayPlayback.playing ||
       this.worldClock.paused ||
+      this.presentationBlocksInput ||
       this.world.dead ||
       this.world.completed
     )
@@ -335,6 +361,7 @@ export class Game {
 
   setHeldDirection(direction: Direction | null): void {
     if (this.replayPlayback.playing) return;
+    if (direction !== null && this.presentationBlocksInput) return;
     if (this.inputController) {
       this.inputController.setHeldDirection(direction);
       return;
@@ -379,6 +406,7 @@ export class Game {
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
     this.resetVisualMotion();
+    this.beginLevelPresentation();
     this.debugRuntime.clearSelection();
     this.lastScene = null;
     this.lastMove = null;
@@ -588,6 +616,7 @@ export class Game {
     this.visual.consumeWorldDeltas(this.world, deltas, frame, {
       motionDuration: (motion) => this.motionPresentationDuration(motion),
       stationaryDeathDurationMs: this.presentationMotionDuration(),
+      levelExitDurationMs: this.tuning.levelTransition.exitMs,
     });
   }
 
@@ -648,6 +677,7 @@ export class Game {
   ): boolean {
     let changed = false;
     this.replayRecorder?.record(tick);
+    this.emit("tick");
     this.inputController?.resolveMoveAttempts(tick.inputResolutions);
     if (!this.inputController) {
       const external = tick.inputResolutions.find(
@@ -690,7 +720,12 @@ export class Game {
   }
 
   private advanceReplayIdleTicks(): number {
-    if (!this.worldValue || this.visual.isAnimating || this.world.inputBlocked)
+    if (
+      !this.worldValue ||
+      this.levelLoadPending ||
+      this.visual.isAnimating ||
+      this.world.inputBlocked
+    )
       return 0;
     const startedAt = performance.now();
     let changed = false;
@@ -760,6 +795,33 @@ export class Game {
 
   private resetVisualMotion(): void {
     this.visual.clear();
+  }
+
+  private beginLevelPresentation(): void {
+    if (!this.worldValue) return;
+    const frame = this.presentationClock.current;
+    if (this.session.state.status === "won") {
+      this.visual.beginLevelExit(
+        this.world,
+        this.tuning.levelTransition.exitMs,
+        frame,
+      );
+    } else if (this.session.state.status === "playing") {
+      this.visual.beginLevelEntrance(
+        this.world,
+        this.tuning.levelTransition.enterMs,
+        frame,
+      );
+      this.discardPendingGameplayInput();
+    }
+  }
+
+  private discardPendingGameplayInput(): void {
+    this.heldDirection = null;
+    this.heldDirectionBlocked = false;
+    this.queuedMoves.length = 0;
+    this.queuedIntentGroups.length = 0;
+    this.inputController?.resetMovement();
   }
 
   private pauseDebugClock(): void {
@@ -845,17 +907,22 @@ export class Game {
     if (this.destroyed) return;
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
+    if (this.presentationBlocksInput) this.discardPendingGameplayInput();
 
-    const worldTicks = this.worldValue && delta > 0
-      ? this.session.advanceRealTime(
-          delta,
-          (time) =>
-            this.replayPlayback.playing
-              ? this.replayPlayback.inputForTick(time)
-              : this.inputForTick(time),
-          this.replayPlayback.remainingTicks,
-        )
-      : [];
+    const worldTicks =
+      this.worldValue &&
+      delta > 0 &&
+      !this.levelLoadPending &&
+      !this.visual.blocksGameplay
+        ? this.session.advanceRealTime(
+            delta,
+            (time) =>
+              this.replayPlayback.playing
+                ? this.replayPlayback.inputForTick(time)
+                : this.inputForTick(time),
+            this.replayPlayback.remainingTicks,
+          )
+        : [];
     for (const worldTick of worldTicks) this.consumeGameplayTick(worldTick);
     const idleTickCount = this.advanceReplayIdleTicks();
     if (this.replayPlayback.finishIfComplete()) this.emit("change");

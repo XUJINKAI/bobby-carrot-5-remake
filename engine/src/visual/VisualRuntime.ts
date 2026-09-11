@@ -68,6 +68,7 @@ export interface VisualRuntimeInspection {
 export interface WorldDeltaPresentationOptions {
   motionDuration(motion: WorldMotion): number;
   stationaryDeathDurationMs: number;
+  levelExitDurationMs?: number;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -91,6 +92,13 @@ export class VisualRuntime {
 
   get isAnimating(): boolean {
     return this.activeMotionIds.size > 0 || this.activeTransientIds.size > 0;
+  }
+
+  get blocksGameplay(): boolean {
+    for (const entityId of this.activeMotionIds) {
+      if (this.motions.get(entityId)?.animation === "level-enter") return true;
+    }
+    return false;
   }
 
   get runtimeStates(): ReadonlyMap<EntityId, EntityVisualRuntimeState> {
@@ -161,6 +169,22 @@ export class VisualRuntime {
     );
   }
 
+  beginLevelEntrance(
+    world: World,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginPlayerTransition(world, "level-enter", durationMs, frame);
+  }
+
+  beginLevelExit(
+    world: World,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginPlayerTransition(world, "level-exit", durationMs, frame);
+  }
+
   /** 将有序 World 事实映射为表现状态；不向 World 回写 delay 或 gameplay mutation。 */
   consumeWorldDeltas(
     world: World,
@@ -216,6 +240,17 @@ export class VisualRuntime {
       }
       if (delta.type === "world-event") {
         this.beginTransient(delta.event, frame);
+        continue;
+      }
+      if (delta.type === "world-outcome-changed") {
+        if (delta.outcome.phase === "won") {
+          this.beginLevelExit(
+            world,
+            options.levelExitDurationMs ??
+              options.stationaryDeathDurationMs,
+            frame,
+          );
+        }
         continue;
       }
       if (delta.type !== "actor-lifecycle-changed") continue;
@@ -376,6 +411,23 @@ export class VisualRuntime {
     }
   }
 
+  private beginPlayerTransition(
+    world: World,
+    animation: "level-enter" | "level-exit",
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    for (const actor of world.query.entitiesWithTrait("player")) {
+      this.beginAction(
+        actor.id,
+        animation,
+        actor.direction ?? "down",
+        durationMs,
+        frame,
+      );
+    }
+  }
+
   private beginMotion(
     entityId: EntityId,
     startOffset: { x: number; y: number },
@@ -527,7 +579,8 @@ export class VisualRuntime {
     motion: VisualMotion,
     frame: PresentationFrame,
   ): void {
-    const keepAnimation = motion.animation === "death";
+    const keepAnimation =
+      motion.animation === "death" || motion.animation === "level-exit";
     this.setEntityState(motion.entityId, {
       offsetX: motion.endOffsetX,
       offsetY: motion.endOffsetY,

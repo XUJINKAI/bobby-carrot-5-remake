@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
@@ -139,6 +140,39 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
   );
   world.update({ stepMs: 1000, tick: 1 });
   assert.equal(world.dead, true);
+});
+
+test("GameplayState 投影等待开锁与运行中的 Timed Challenge", () => {
+  const session = new GameplaySession({
+    timing: { worldHz: 10 },
+    initialActorIntents: [{
+      type: "set-actor-lock-key",
+      actor: "all",
+      kind: "reusable",
+      enabled: true,
+    }],
+  });
+  session.loadLevel(
+    corridor([
+      {
+        type: MapEntityTypeId.LOCK,
+        x: 1,
+        y: 0,
+        deathCountdownSeconds: 60,
+      },
+    ]),
+  );
+
+  assert.equal(session.state.timedChallengePhase, "waiting");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  session.world.update({ stepMs: 100, tick: 1 });
+  assert.equal(session.state.timedChallengePhase, "waiting");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  move(session.world, "right");
+  assert.equal(session.state.timedChallengePhase, "running");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  session.world.update({ stepMs: 100, tick: 2 });
+  assert.equal(session.state.timedChallengeRemainingMs, 59_900);
 });
 
 test("permanent key opens the lock without being consumed", () => {

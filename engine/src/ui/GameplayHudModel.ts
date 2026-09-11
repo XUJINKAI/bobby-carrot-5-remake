@@ -13,6 +13,9 @@ export interface GameplayHudInventory {
 }
 
 export interface GameplayHudModel {
+  elapsedMs: number;
+  timedChallengePhase: "waiting" | "running" | null;
+  timedChallengeRemainingMs: number | null;
   objectives: {
     carrotRemaining: number | null;
     eggRemaining: number | null;
@@ -31,6 +34,9 @@ export function buildGameplayHudModel(
     return 0;
   });
   return {
+    elapsedMs: state.elapsedMs,
+    timedChallengePhase: state.timedChallengePhase,
+    timedChallengeRemainingMs: state.timedChallengeRemainingMs,
     objectives: {
       carrotRemaining: remainingForCondition(
         winState,

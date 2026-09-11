@@ -198,7 +198,12 @@ export class InputController {
 
   /** Browser events only maintain held state; each logical channel repeats independently. */
   update(time: WorldTick): InputState {
-    if (!this.enabled || !this.capabilities.movement || !this.game.hasLevel) {
+    if (
+      !this.enabled ||
+      !this.capabilities.movement ||
+      !this.game.hasLevel ||
+      this.game.presentationBlocksInput
+    ) {
       this.clearMovementState();
       return { moves: [] };
     }
@@ -273,7 +278,11 @@ export class InputController {
   }
 
   setHeldDirection(direction: Direction | null): void {
-    if (!this.enabled || !this.capabilities.movement) {
+    if (
+      !this.enabled ||
+      !this.capabilities.movement ||
+      this.game.presentationBlocksInput
+    ) {
       this.externalDirection = null;
       this.syncContinuousInputs();
       return;
@@ -286,6 +295,13 @@ export class InputController {
     const value = this.suppressNextClick;
     this.suppressNextClick = false;
     return value;
+  }
+
+  /** 丢弃尚未进入 WorldTick 的移动输入，避免 presentation 结束后补执行。 */
+  resetMovement(): void {
+    this.screenJoystick?.reset();
+    this.clearHeldMovement();
+    this.clearPointerState();
   }
 
   destroy(): void {
@@ -309,6 +325,7 @@ export class InputController {
     const movement = KEY_INPUT[key];
     if (movement && this.capabilities.movement) {
       event.preventDefault();
+      if (this.game.presentationBlocksInput) return;
       if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
         this.syncContinuousInputs();
@@ -376,6 +393,11 @@ export class InputController {
   private readonly setJoystickDirection = (
     direction: Direction | null,
   ): void => {
+    if (this.game.presentationBlocksInput) {
+      this.joystickDirection = null;
+      this.syncContinuousInputs();
+      return;
+    }
     this.joystickDirection = direction;
     this.syncContinuousInputs();
   };
@@ -438,6 +460,11 @@ export class InputController {
     )
       return;
     if (
+      this.game.presentationBlocksInput &&
+      event.pointerType !== "mouse"
+    )
+      return;
+    if (
       event.pointerType === "mouse" &&
       event.button !== 0 &&
       event.button !== 1
@@ -445,6 +472,7 @@ export class InputController {
       return;
 
     const panPointer = event.pointerType === "mouse" && event.button === 1;
+    if (this.game.presentationBlocksInput && !panPointer) return;
     const discreteMovePointer = !panPointer && this.capabilities.movement;
     if (
       !panPointer &&

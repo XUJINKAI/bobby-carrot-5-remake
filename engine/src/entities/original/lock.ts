@@ -75,7 +75,7 @@ const unlock: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
-  traits: ["blocking", "gate"],
+  traits: ["blocking", "gate", "timed-challenge"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
     {
