@@ -652,7 +652,7 @@ function dialogPayload() {
       {
         type: "beaver",
         x: 1,
-        y: 0,
+        y: 1,
         dialogue: "你的金钥匙可以直接打开这把锁。",
       },
       { type: "exit", x: 1, y: 1 },

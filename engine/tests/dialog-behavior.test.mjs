@@ -17,7 +17,7 @@ function dialogLevel(dialogue, type = MapEntityTypeId.SANDMAN) {
       {
         type,
         x: 1,
-        y: 0,
+        y: 1,
         ...(dialogue === undefined ? {} : { dialogue }),
       },
     ],

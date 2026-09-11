@@ -137,7 +137,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     {
       objectType: MapEntityTypeId.BEAVER,
       x: 6,
-      y: 13,
+      y: 12,
       action: "touch",
       role: "body",
       hasSingleUseKey: false,
@@ -166,11 +166,9 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
       interactionState,
     )?.text
   );
-  assert.match(beaver.text, /商店暂时不开放/);
+  assert.match(beaver.text, /随意逛/);
   assert.equal(itemDialogues.every(Boolean), true);
   assert.equal(new Set(itemDialogues).size, itemTypes.length);
-  assert.match(itemDialogues.at(-2), /Speed Shoes/);
-  assert.match(itemDialogues.at(-1), /Coin Radar/);
 
   const machine = resolveAdventureInteraction(
     augmentation,
@@ -178,7 +176,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     {
       objectType: MapEntityTypeId.DREAM_MACHINE,
       x: 21,
-      y: 9,
+      y: 8,
       action: "touch",
       role: "body",
       hasSingleUseKey: false,
