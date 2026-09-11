@@ -226,10 +226,22 @@ game.inspectCanvasPoint(clientX, clientY);
 输入共用 `GameplaySession` 的输入阶段。提交动作时尚未产生 `MoveResult`；执行结果通过
 Game 状态、事件和 Replay Tick 结果观察。
 
-`dispatch()` 只接受 Engine 定义的封闭 `ActorEffectIntent` union。`set-actor-locomotion`
-只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
-商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影位置、朝向、
-地图内背包与实际移动时长，不暴露 Entity runtime state。
+`dispatch()` 只接受 Engine 定义的封闭 `GameplayEffectIntent` union。
+`set-actor-locomotion` 只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内
+Lock 能力。宿主持久化产品结果后，可以按稳定地图身份提交 Entity 替换：
+
+```ts
+game.dispatch({
+  type: "commit-entity-replacement",
+  target: { type: "shop-super-key", x: 21, y: 6 },
+  replacementType: "shop-empty",
+});
+```
+
+目标必须由 `type + x + y` 唯一命中。成功动作销毁目标、在相同 anchor 与 stackOrder
+生成替代 Entity，并同步更新本局 Restart 基线；Replay 保存稳定地图目标，不保存临时
+Entity ID。商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影
+位置、朝向、地图内背包与实际移动时长，不暴露 Entity runtime state。
 
 ## GameplaySession 与 Replay
 
@@ -487,7 +499,7 @@ game.onInteractionRequest((request) => {
 const result = await dialog.present({
   message: "要购买这个道具吗？",
   options: [
-    { id: "purchase", label: "购买", primary: true },
+    { id: "purchase", label: "购买" },
     { id: "cancel", label: "算了" },
   ],
 });
@@ -497,7 +509,8 @@ const result = await dialog.present({
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
 第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
 先立即补全当前文本。选项存在时 `GameplayDialog` 暂停同一 runtime 的 gameplay 输入，
-结束时恢复原输入状态。
+结束时恢复原输入状态。所有选项使用同级基础样式，当前选项通过高亮边框、背景与阴影
+标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
 `GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项

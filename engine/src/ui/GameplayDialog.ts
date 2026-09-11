@@ -129,7 +129,8 @@ export class GameplayDialog {
         if (!openedByThisMove) this.close();
       }),
       game.on("change", () => {
-        if (game.lastMove === null) this.close();
+        if (game.lastMove === null && game.lastWorldEvents.length === 0)
+          this.close();
       }),
       game.on("level-loaded", () => this.close()),
       game.on("death", () => this.close()),
@@ -177,16 +178,11 @@ export class GameplayDialog {
     button.tabIndex = -1;
     button.textContent = option.label;
     button.dataset.dialogOption = option.id;
-    button.dataset.primary = String(option.primary === true);
     Object.assign(button.style, {
       minHeight: "38px",
-      border: option.primary
-        ? "1px solid rgba(178,255,203,.72)"
-        : "1px solid rgba(255,255,255,.24)",
+      border: "1px solid rgba(255,255,255,.24)",
       borderRadius: "9px",
-      background: option.primary
-        ? "rgba(38,126,70,.92)"
-        : "rgba(255,255,255,.08)",
+      background: "rgba(255,255,255,.08)",
       color: "inherit",
       font: "inherit",
       cursor: "pointer",
@@ -256,15 +252,14 @@ export class GameplayDialog {
       button.dataset.selected = String(selected);
       button.setAttribute("aria-pressed", String(selected));
       button.style.borderColor = selected
-        ? "rgba(255,255,255,.9)"
-        : button.dataset.primary === "true"
-          ? "rgba(178,255,203,.72)"
-          : "rgba(255,255,255,.24)";
+        ? "rgba(255,255,255,.96)"
+        : "rgba(255,255,255,.24)";
       button.style.background = selected
-        ? "rgba(255,255,255,.22)"
-        : button.dataset.primary === "true"
-          ? "rgba(38,126,70,.78)"
-          : "rgba(255,255,255,.08)";
+        ? "rgba(255,255,255,.3)"
+        : "rgba(255,255,255,.08)";
+      button.style.boxShadow = selected
+        ? "0 0 0 2px rgba(255,255,255,.24), 0 4px 14px rgba(0,0,0,.28)"
+        : "none";
       button.style.transform = selected ? "translateY(-1px)" : "none";
     }
   }

@@ -66,6 +66,36 @@ export async function verifyGameplayDialogKeyboard(
   if (!typing) throw new Error("Gameplay Dialog did not type text progressively");
   await dispatchKey(cdp, sessionId, "Enter", 13);
   await expectSelected(cdp, sessionId, "second");
+  const optionStyles = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const first = document.querySelector(
+        '[data-browser-dialog-check] [data-dialog-option="first"]'
+      );
+      const second = document.querySelector(
+        '[data-browser-dialog-check] [data-dialog-option="second"]'
+      );
+      return {
+        first: {
+          background: first?.style.background,
+          border: first?.style.borderColor,
+          shadow: first?.style.boxShadow,
+        },
+        second: {
+          background: second?.style.background,
+          border: second?.style.borderColor,
+          shadow: second?.style.boxShadow,
+        },
+      };
+    })()`,
+  );
+  if (
+    optionStyles.first.background === optionStyles.second.background ||
+    optionStyles.first.border === optionStyles.second.border ||
+    optionStyles.second.shadow === "none"
+  ) {
+    throw new Error("Gameplay Dialog selected option is not visually distinct");
+  }
   const suspended = await cdp.evaluate(
     sessionId,
     "window.__gameplayDialogCheck.input.enabled === false",

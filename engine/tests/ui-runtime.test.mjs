@@ -205,5 +205,9 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
   assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
   assert.match(source, /this\.input\.setEnabled\(false\)/);
   assert.match(source, /dataset\.selected/);
+  assert.match(source, /rgba\(255,255,255,\.96\)/);
+  assert.match(source, /0 0 0 2px rgba\(255,255,255,\.24\)/);
+  assert.doesNotMatch(source, /dataset\.primary/);
+  assert.doesNotMatch(source, /rgba\(38,126,70/);
   assert.doesNotMatch(source, /leftLabel|rightLabel/);
 });
