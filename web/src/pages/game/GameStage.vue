@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppIcon from "../../shared/icons/AppIcon.vue";
 import ReplayPanel from "./ReplayPanel.vue";
 
 defineProps<{
@@ -22,15 +21,6 @@ defineProps<{
       </div>
       <div class="result-overlay" data-result-overlay hidden>
         <div class="result-card" data-result-card>
-          <button
-            class="icon-btn result-card-close"
-            type="button"
-            data-result="close"
-            aria-label="关闭结果"
-            title="关闭"
-          >
-            <AppIcon name="close" :size="16" />
-          </button>
           <div data-result-card-content />
         </div>
       </div>

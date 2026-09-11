@@ -24,6 +24,7 @@ export function createImageManager(): ImageManager {
       "bobby-down": siteUrl("assets/art/hd/b3.png"),
       "bobby-idle": siteUrl("assets/art/hd/b4.png"),
       "bobby-death": siteUrl("assets/art/hd/b5.png"),
+      "bobby-transition": siteUrl("assets/art/hd/b6.png"),
       "bobby-mower": siteUrl("assets/art/hd/b7.png"),
       "bobby-snowplow": siteUrl("assets/art/hd/b8.png"),
       "bobby-kite": siteUrl("assets/art/hd/b9.png"),

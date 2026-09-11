@@ -200,6 +200,7 @@ async function verifyGameplayDialog(cdp, url) {
     20_000,
   );
 
+  await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
   await waitFor(async () =>
     Boolean(
@@ -327,6 +328,7 @@ async function verifyReplayPanel(cdp, url) {
       "document.querySelector('[data-replay-status]')?.textContent ?? ''",
     )) === "正在录制",
   );
+  await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
   await waitFor(async () =>
@@ -354,7 +356,9 @@ async function verifyReplayPanel(cdp, url) {
     "JSON.parse(document.querySelector('[data-replay-output]').value)",
   );
   if (replay.formatVersion !== 1 || replay.endTick < 1 || replay.frames.length < 1)
-    throw new Error("Replay panel did not export recorded World input");
+    throw new Error(
+      `Replay panel did not export recorded World input: ${JSON.stringify(replay)}`,
+    );
   if (
     typeof replay.meta?.name !== "string" ||
     !replay.meta.name ||

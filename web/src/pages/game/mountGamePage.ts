@@ -14,7 +14,7 @@ import {
   type CameraOptions,
   type ImageManager,
 } from "@bobby/engine";
-import type { LevelMap } from "@bobby/model";
+import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
 import type {
   AdventureIndex,
@@ -37,7 +37,11 @@ import {
   markExploreMapCompleted,
 } from "../../storage/exploreProgressStorage.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
-import { escapeHtml, formatElapsed } from "./resultFormatting.js";
+import {
+  completedResultHtml,
+  failedResultHtml,
+  formatElapsed,
+} from "./resultFormatting.js";
 import GamePage from "./GamePage.vue";
 import {
   bindReplayPanel,
@@ -179,6 +183,9 @@ export async function renderGamePage(
   const sessionLevel = sessionPlan
     ? augmentAdventureLevel(level, sessionPlan.entityPatches)
     : level;
+  const availableBonusCoins = sessionLevel.entities.filter(
+    (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
+  ).length;
   const screenControlEnabled = getWebSettings().controls.screenControlEnabled;
   const replayPanelInitiallyOpen =
     capabilities.replayPanel && loadReplayPanelOpen();
@@ -232,7 +239,12 @@ export async function renderGamePage(
             }]
           : [],
       camera: GAME_CAMERA_OPTIONS[mode],
-      hud: { objective: true, inventory: true },
+      hud: {
+        objective: true,
+        inventory: true,
+        elapsedTime: mode === "adventure",
+        timedChallenge: true,
+      },
       input: {
         undo: mode === "explore",
         debug: capabilities.debug,
@@ -246,12 +258,17 @@ export async function renderGamePage(
   const music = resolveGameMusic(level.music, {
     specialScene: adventureScene !== undefined,
   });
-  if (music) audio.playMusic(music);
-  else audio.stopMusic();
+  const playLevelMusic = (): void => {
+    if (music) audio.playMusic(music);
+    else audio.stopMusic();
+  };
+  playLevelMusic();
 
   let levelStartedAt = performance.now();
+  let waitingForLevelEntrance = true;
   let visibleResult: "death" | "complete" | null = null;
-  let resultDismissed = false;
+  let audibleResult: "death" | "complete" | null = null;
+  let resultElapsedMs = 0;
   let completionRecorded = false;
   let completionNextId: string | undefined;
   let completionNavigationStarted = false;
@@ -297,7 +314,11 @@ export async function renderGamePage(
         onTimelineRestart() {
           adventureRewards.discard();
           levelStartedAt = performance.now();
+          waitingForLevelEntrance = true;
+          resultElapsedMs = 0;
+          audibleResult = null;
           completionNavigationStarted = false;
+          playLevelMusic();
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
@@ -332,24 +353,21 @@ export async function renderGamePage(
           : null;
     if (kind === "death") adventureRewards.discard();
     if (kind === "complete") recordLevelCompletion();
-    if (kind === "complete" && game.replayRecording) {
-      resultDismissed = true;
-      replayPanel.stopRecording();
-      closeResult();
-      return;
-    }
-    if (game.isAnimating) return;
     if (!kind) {
-      resultDismissed = false;
+      if (audibleResult !== null) playLevelMusic();
+      audibleResult = null;
+      resultElapsedMs = 0;
       completionRecorded = false;
       completionNextId = undefined;
       closeResult();
       return;
     }
-    if (resultDismissed) {
-      closeResult();
-      return;
+    if (audibleResult !== kind) {
+      audibleResult = kind;
+      resultElapsedMs = performance.now() - levelStartedAt;
+      audio.playMusic(kind === "complete" ? "cleared" : "death");
     }
+    if (game.isAnimating) return;
     if (
       kind === "complete" &&
       adventureCompletionPath &&
@@ -362,18 +380,33 @@ export async function renderGamePage(
     if (visibleResult === kind) return;
     visibleResult = kind;
     if (kind === "complete") {
-      const nextId = completionNextId;
-      resultContent.innerHTML = `<div class="result-kicker">${escapeHtml(identity.title)}</div><h2>关卡完成</h2><p>移动 ${state.moves} 步 · 用时 ${formatElapsed(performance.now() - levelStartedAt)}</p><div class="result-actions">${nextId ? `<button class="primary-btn" data-result="next" data-next="${escapeHtml(nextId)}">下一关 · ${escapeHtml(nextId.toUpperCase())}</button>` : ""}<button class="ghost-btn" data-result="replay">重玩</button><button class="ghost-btn" data-result="levels">${mode === "adventure" ? "返回冒险模式" : "自由探索"}</button></div>`;
+      resultContent.innerHTML = completedResultHtml({
+        elapsedMs: resultElapsedMs,
+        moves: state.moves,
+        collectedCoins: Math.max(
+          0,
+          availableBonusCoins - state.bonusCoinsInLevel,
+        ),
+        availableCoins: availableBonusCoins,
+        ...(adventureSave
+          ? { totalCoins: adventureSave.economy.bonusCoins }
+          : {}),
+        ...(completionNextId ? { nextId: completionNextId } : {}),
+      });
     } else {
-      resultContent.innerHTML = `<div class="result-kicker danger">BOBBY FAILED</div><h2>失败</h2><p>${escapeHtml(state.deathReason ?? "Bobby 没能继续前进。")}</p><div class="result-actions">${mode === "explore" && game.canUndo ? '<button class="primary-btn" data-result="undo">撤销这一步</button>' : ""}<button class="ghost-btn" data-result="retry">重新开始</button><button class="ghost-btn" data-result="levels">返回</button></div>`;
+      resultContent.innerHTML = failedResultHtml();
     }
     gameResult.hidden = false;
   };
 
   const update = (): void => {
+    if (waitingForLevelEntrance && !game.presentationBlocksInput) {
+      levelStartedAt = performance.now();
+      waitingForLevelEntrance = false;
+    }
     updateAdventureToolLayout();
     if (productTime && productSteps && game.hasLevel) {
-      productTime.textContent = formatElapsed(performance.now() - levelStartedAt);
+      productTime.textContent = formatElapsed(game.state.elapsedMs);
       productSteps.textContent = String(game.state.moves);
     }
     renderResult();
@@ -406,6 +439,8 @@ export async function renderGamePage(
       game.restart();
     }
     levelStartedAt = performance.now();
+    waitingForLevelEntrance = true;
+    resultElapsedMs = 0;
     completionNavigationStarted = false;
     closeResult();
     update();
@@ -417,11 +452,7 @@ export async function renderGamePage(
     );
     if (!button) return;
     const action = button.dataset.result;
-    if (action === "close") {
-      resultDismissed = true;
-      closeResult();
-    } else if (action === "undo") askUndo();
-    else if (action === "retry" || action === "replay") void askRestart();
+    if (action === "retry") void askRestart();
     else if (action === "levels") {
       navigate(backPath(identity, mode, adventureBackPath));
     } else if (action === "next" && button.dataset.next) {
