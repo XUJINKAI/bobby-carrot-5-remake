@@ -187,7 +187,7 @@ test("Gameplay HUD exposes host styling hooks without naming a product font", ()
   assert.doesNotMatch(source, /Jersey 10|fontFamily|WebkitTextStroke|textShadow/);
 });
 
-test("Gameplay Dialog renders zero-to-many data-driven options without button focus", () => {
+test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayDialog.ts", import.meta.url),
     "utf8",
@@ -198,5 +198,12 @@ test("Gameplay Dialog renders zero-to-many data-driven options without button fo
   assert.match(source, /repeat\(auto-fit, minmax\(96px, 1fr\)\)/);
   assert.match(source, /button\.tabIndex = -1/);
   assert.match(source, /dataset\.dialogOption = option\.id/);
+  assert.match(source, /characterIntervalMs/);
+  assert.match(source, /Array\.from\(message\)/);
+  assert.match(source, /maxHeight: "min\(42vh, 260px\)"/);
+  assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
+  assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
+  assert.match(source, /this\.input\.setEnabled\(false\)/);
+  assert.match(source, /dataset\.selected/);
   assert.doesNotMatch(source, /leftLabel|rightLabel/);
 });

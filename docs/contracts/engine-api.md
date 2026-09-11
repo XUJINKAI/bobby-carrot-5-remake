@@ -50,6 +50,9 @@ const runtime = await createGameplayRuntime({
       elapsedTime: true,
       timedChallenge: true,
     },
+    dialog: {
+      characterIntervalMs: 28,
+    },
     camera: {
       zoom: 1,
       minZoom: 0.25,
@@ -491,6 +494,12 @@ const result = await dialog.present({
 ```
 
 `options` 可以省略，也可以包含任意数量的选项；两项时自然按左右排列，更多选项会按
-可用宽度自动换行。结果为 `{ type: "selected", optionId }` 或
-`{ type: "dismissed" }`。`GameplayDialog` 不接收业务回调，也不读写存档、货币或
-商品状态；宿主在等待期间自行管理输入能力，并在取得结果后提交业务动作。
+可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
+第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
+先立即补全当前文本。选项存在时 `GameplayDialog` 暂停同一 runtime 的 gameplay 输入，
+结束时恢复原输入状态。
+
+结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
+`GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
+ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
+`0` 可立即显示全文。

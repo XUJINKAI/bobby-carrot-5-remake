@@ -568,8 +568,6 @@ export async function renderGamePage(
   ): Promise<void> {
     if (!dialog || !adventureSave || purchaseDialogOpen) return;
     purchaseDialogOpen = true;
-    const restoreInput = input.isEnabled;
-    input.setEnabled(false);
     try {
       const result = await dialog.present({
         message: offer.message,
@@ -591,7 +589,6 @@ export async function renderGamePage(
       dialog.show(offer.outcomeMessages[purchase.outcome]);
     } finally {
       purchaseDialogOpen = false;
-      if (restoreInput) input.setEnabled(true);
     }
   }
 

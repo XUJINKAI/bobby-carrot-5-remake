@@ -7,6 +7,7 @@ import { root } from "../lib/fs.mjs";
 import { verifyButtonFocusPolicy } from "./button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./editor-browser-checks.mjs";
+import { verifyGameplayDialogKeyboard } from "./gameplay-dialog-browser-checks.mjs";
 import {
   replayLayout,
   verifyReplayPanelShortcut,
@@ -81,7 +82,15 @@ test(
         cdp,
         `${origin}/adventure/play/1-1`,
       );
-      await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
+      const dialogSessionId = await verifyGameplayDialog(
+        cdp,
+        `${origin}/import/v1#${dialogPayload()}`,
+      );
+      await verifyGameplayDialogKeyboard(
+        cdp,
+        dialogSessionId,
+        `${origin}/@fs${path.join(root, "engine/src/ui/GameplayDialog.ts")}`,
+      );
     } finally {
       cdp.close();
       child.kill("SIGKILL");
@@ -212,12 +221,12 @@ async function verifyGameplayDialog(cdp, url) {
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
 
-  const text = await cdp.evaluate(
-    sessionId,
-    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "你的金钥匙可以直接打开这把锁。",
   );
-  if (text !== "你的金钥匙可以直接打开这把锁。")
-    throw new Error(`Engine Dialog rendered unexpected text: ${text}`);
 
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
@@ -229,6 +238,7 @@ async function verifyGameplayDialog(cdp, url) {
     ),
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  return sessionId;
 }
 
 async function verifyAdventureDeveloperTools(cdp, url) {
