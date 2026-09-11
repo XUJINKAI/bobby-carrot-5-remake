@@ -284,19 +284,36 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
 - 条件对白、Bonus Beaver 单次钥匙和永久商品购买等 Campaign 交互 reducer；
-- 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
+- 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
+
+每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
+同一个 `AdventureAugmentation` 同时声明 `levelPatches` 与 `interactions`：前者在加载前
+形成 session map，后者匹配 Engine 的通用 `object-interaction` 请求。执行器和类型分别
+位于 `apply.ts`、`interactions.ts` 和 `types.ts`，场景配置不散落到 Web 路由或 Engine。
 
 地图准备顺序固定为：
 
 ```text
 base / official LevelMap
-        ↓
-Adventure Entity field augmentation
+        ↓ adventureAugmentationFor(contentId).levelPatches
+Adventure session LevelMap
         ↓
 Engine Game.loadLevel(LevelMap)
+
+Engine object-interaction
+        ↓ Web 只做边界适配
+resolveAdventureInteraction(augmentation, save, request)
+        ↓
+dialogue / Campaign reducer result
 ```
 
-Adventure 可以覆盖角色 `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。Engine 只报告本局的收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
+Adventure 补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
+`deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
+这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。运行时特殊对话
+按内容 ID、Entity type、坐标、footprint role 与交互动作声明，Adventure 返回领域结果，
+Web 负责显示对白或把领域效果转换成 Engine 的通用动作。Engine 只报告本局的收集事实；
+Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡完成归约中把
+奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 

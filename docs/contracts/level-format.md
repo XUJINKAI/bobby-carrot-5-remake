@@ -375,3 +375,33 @@ Engine
 ```
 
 增强不修改基础地图。Engine 不知道 Adventure。
+
+Adventure 的声明式配置统一位于 `adventure/src/augment/`。每项内容返回：
+
+```ts
+interface AdventureAugmentation {
+  levelPatches: readonly AdventureLevelPatch[];
+  interactions: readonly AdventureInteractionRule[];
+}
+```
+
+加载前补丁支持三种操作：
+
+```ts
+type AdventureLevelPatch =
+  | { operation: "add"; entity: LevelEntity }
+  | { operation: "remove"; selector: { type?: string; x?: number; y?: number } }
+  | {
+      operation: "set-fields";
+      selector: { type?: string; x?: number; y?: number };
+      fields: Record<string, JsonPrimitive>;
+    };
+```
+
+`remove` 和 `set-fields` 的 selector 至少声明 `type / x / y` 中的一项；`add` 的坐标
+必须位于地图内。补丁在 clone 上执行，不修改 Catalog 提供的基础 `LevelMap`。
+
+运行时规则匹配通用 `object-interaction` 的 `objectType / x / y / action / role`，当前
+效果类型包括字面对白和 Bonus Key Vendor。Adventure 不接收 Engine runtime object，
+也不直接操作 DOM；Web 只把事件投影为 primitive request，再显示返回的对白或分派公开
+Engine intent。

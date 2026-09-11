@@ -1,9 +1,10 @@
 import {
+  adventureAugmentationFor,
   augmentAdventureLevel,
   isAdventureLevelUnlocked,
   planAdventurePlayer,
   planAdventureSession,
-  resolveBonusKeyVendorInteraction,
+  resolveAdventureInteraction,
   setAdventureResumeLevel,
   type BonusKeyVendorOutcome,
   type AdventureSave,
@@ -178,11 +179,18 @@ export async function renderGamePage(
     adventureSave && campaignNode
       ? planAdventureSession(adventureLevel!.id, adventureSave)
       : null;
+  const adventureContentId = adventureLevel?.id ?? adventureScene?.id;
+  const adventureAugmentation = adventureContentId
+    ? adventureAugmentationFor(adventureContentId)
+    : { levelPatches: [], interactions: [] };
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
-  const sessionLevel = sessionPlan
-    ? augmentAdventureLevel(level, sessionPlan.entityPatches)
+  const sessionLevel = adventureContentId
+    ? augmentAdventureLevel(level, [
+        ...adventureAugmentation.levelPatches,
+        ...(sessionPlan?.levelPatches ?? []),
+      ])
     : level;
   const availableBonusCoins = sessionLevel.entities.filter(
     (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
@@ -432,10 +440,8 @@ export async function renderGamePage(
   };
   const askRestart = async (): Promise<void> => {
     adventureRewards.discard();
-    if (adventureSave && sessionPlan && adventureLevel) {
-      await game.loadLevel(
-        augmentAdventureLevel(level, sessionPlan.entityPatches),
-      );
+    if (adventureSave && adventureContentId) {
+      await game.loadLevel(sessionLevel);
     } else {
       game.restart();
     }
@@ -513,15 +519,27 @@ export async function renderGamePage(
     if (adventureSave && adventureLevel) adventureRewards.record(event);
   });
   const unsubscribeInteraction = game.onInteractionRequest((request) => {
-    if (!adventureSave || !adventureLevel) return;
+    if (!adventureSave || !adventureContentId) return;
     const actor = game.state.actors.find((item) => item.id === request.actorId);
     if (!actor) return;
-    const decision = resolveBonusKeyVendorInteraction(adventureSave, {
-      levelId: adventureLevel.id,
-      objectType: request.objectType,
-      hasSingleUseKey: actor.inventory.singleUseLockKey,
-    });
-    if (!decision) return;
+    const interaction = resolveAdventureInteraction(
+      adventureAugmentation,
+      adventureSave,
+      {
+        objectType: request.objectType,
+        x: request.x,
+        y: request.y,
+        action: request.action,
+        ...(request.role ? { role: request.role } : {}),
+        hasSingleUseKey: actor.inventory.singleUseLockKey,
+      },
+    );
+    if (!interaction) return;
+    if (interaction.type === "dialogue") {
+      dialog?.show(interaction.text);
+      return;
+    }
+    const { decision } = interaction;
     if (decision.grantSingleUseKey) {
       pendingVendorSaves.set(request.requestId, decision.save);
       game.dispatch({

@@ -1,6 +1,3 @@
-import { MapEntityTypeId } from "@bobby/model";
-import { parseAdventureLevelId } from "./campaign.js";
-import { spendBonusCoins, spendGoldenCarrots } from "./rewards.js";
 import {
   completeAdventureEvent,
   grantAdventureItem,
@@ -8,7 +5,13 @@ import {
   normalizeAdventureSave,
   type AdventureItemId,
   type AdventureSave,
-} from "./save.js";
+} from "../save.js";
+import { spendBonusCoins, spendGoldenCarrots } from "../rewards.js";
+import type {
+  AdventureAugmentation,
+  AdventureInteractionRequest,
+  AdventureInteractionRule,
+} from "./types.js";
 
 export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
 export const DEFAULT_SINGLE_USE_LOCK_KEY_PRICE_BONUS_COINS = 3;
@@ -28,11 +31,13 @@ export interface BonusKeyVendorDecision {
 }
 
 export interface BonusKeyVendorRequest {
-  levelId: string;
-  objectType: string;
   hasSingleUseKey: boolean;
   priceBonusCoins?: number;
 }
+
+export type AdventureInteractionDecision =
+  | { type: "dialogue"; text: string }
+  | { type: "bonus-key-vendor"; decision: BonusKeyVendorDecision };
 
 export type AdventurePurchaseCurrency = "bonus-coins" | "golden-carrots";
 export type AdventureItemPurchaseOutcome =
@@ -82,17 +87,33 @@ export function purchaseAdventureItem(
   );
 }
 
+/** 声明式规则只返回 Adventure 语义结果，Web 再适配为 Engine 动作和对话展示。 */
+export function resolveAdventureInteraction(
+  augmentation: AdventureAugmentation,
+  save: AdventureSave,
+  request: AdventureInteractionRequest,
+): AdventureInteractionDecision | null {
+  const rule = augmentation.interactions.find((candidate) =>
+    matchesInteraction(candidate, request)
+  );
+  if (!rule) return null;
+  if (rule.effect.type === "dialogue") {
+    return { type: "dialogue", text: rule.effect.text };
+  }
+  return {
+    type: "bonus-key-vendor",
+    decision: resolveBonusKeyVendorInteraction(save, {
+      hasSingleUseKey: request.hasSingleUseKey,
+      priceBonusCoins: rule.effect.priceBonusCoins,
+    }),
+  };
+}
+
 /** Campaign 经济只在 Adventure Save 上归约；Engine 只接收最终钥匙动作。 */
 export function resolveBonusKeyVendorInteraction(
   save: AdventureSave,
   request: BonusKeyVendorRequest,
-): BonusKeyVendorDecision | null {
-  const level = parseAdventureLevelId(request.levelId);
-  if (
-    level?.kind !== "bonus" ||
-    request.objectType !== MapEntityTypeId.BEAVER
-  )
-    return null;
+): BonusKeyVendorDecision {
   const normalized = normalizeAdventureSave(save);
   const price = normalizeBonusKeyPrice(request.priceBonusCoins);
   if (hasAdventureItem(normalized, "golden-key"))
@@ -114,6 +135,20 @@ export function resolveBonusKeyVendorInteraction(
     price,
     true,
     spendBonusCoins(normalized, price),
+  );
+}
+
+function matchesInteraction(
+  rule: AdventureInteractionRule,
+  request: AdventureInteractionRequest,
+): boolean {
+  const selector = rule.selector;
+  return (
+    (selector.type === undefined || selector.type === request.objectType) &&
+    (selector.x === undefined || selector.x === request.x) &&
+    (selector.y === undefined || selector.y === request.y) &&
+    (selector.action === undefined || selector.action === request.action) &&
+    (selector.role === undefined || selector.role === request.role)
   );
 }
 

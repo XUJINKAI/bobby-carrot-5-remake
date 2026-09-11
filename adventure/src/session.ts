@@ -1,5 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
-import type { AdventureEntityFieldPatch } from "./augment.js";
+import type { AdventureLevelPatch } from "./augment/types.js";
 import {
   parseAdventureLevelId,
   type AdventureLevelId,
@@ -43,7 +43,7 @@ export const DEFAULT_ADVENTURE_RUNTIME_POLICY: AdventureRuntimePolicy = {
 
 export interface AdventureSessionPlan extends AdventurePlayerPlan {
   levelId: AdventureLevelId;
-  entityPatches: readonly AdventureEntityFieldPatch[];
+  levelPatches: readonly AdventureLevelPatch[];
 }
 
 export function planAdventurePlayer(
@@ -69,17 +69,18 @@ export function planAdventureSession(
   return {
     levelId: parsed.id,
     ...planAdventurePlayer(save, policy),
-    entityPatches:
+    levelPatches:
       parsed.kind === "bonus" ? bonusEntityPatches(policy.bonus) : [],
   };
 }
 
 function bonusEntityPatches(
   policy: AdventureBonusRuntimePolicy,
-): AdventureEntityFieldPatch[] {
+): AdventureLevelPatch[] {
   return [
     {
-      type: MapEntityTypeId.LOCK,
+      operation: "set-fields",
+      selector: { type: MapEntityTypeId.LOCK },
       fields: {
         deathCountdownSeconds: policy.lock.deathCountdownSeconds,
       },

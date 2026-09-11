@@ -160,7 +160,7 @@ test("Bonus runtime parameters are injected by Adventure policy, not Original ma
     ],
   };
   const regularPlan = planAdventureSession("1-1", save);
-  assert.deepEqual(regularPlan.entityPatches, []);
+  assert.deepEqual(regularPlan.levelPatches, []);
 
   const bonusPlan = planAdventureSession("1-bonus-1", save, {
     locomotion: {
@@ -173,7 +173,7 @@ test("Bonus runtime parameters are injected by Adventure policy, not Original ma
   });
   const prepared = augmentAdventureLevel(
     level,
-    bonusPlan.entityPatches,
+    bonusPlan.levelPatches,
   );
   assert.equal(prepared.entities[0].dialogue, undefined);
   assert.equal(prepared.entities[1].deathCountdownSeconds, 45);
@@ -205,8 +205,6 @@ test("Adventure 只在关卡完成时结算本局奖励", () => {
 test("Bonus Beaver 的试用与购买由 Adventure Save 归约", () => {
   let save = createAdventureSave();
   const trial = resolveBonusKeyVendorInteraction(save, {
-    levelId: "1-bonus-1",
-    objectType: MapEntityTypeId.BEAVER,
     hasSingleUseKey: false,
   });
   assert.equal(trial.outcome, "trial-granted");
@@ -214,8 +212,6 @@ test("Bonus Beaver 的试用与购买由 Adventure Save 归约", () => {
   save = trial.save;
   save.economy.bonusCoins = 3;
   const purchase = resolveBonusKeyVendorInteraction(save, {
-    levelId: "1-bonus-1",
-    objectType: MapEntityTypeId.BEAVER,
     hasSingleUseKey: false,
   });
   assert.equal(purchase.outcome, "purchased");
