@@ -361,8 +361,7 @@ async function verifyReplayPanel(cdp, url) {
       `Replay panel did not export recorded World input: ${JSON.stringify(replay)}`,
     );
   if (
-    typeof replay.meta?.name !== "string" ||
-    !replay.meta.name ||
+    replay.meta?.id !== "imported/shared-map" ||
     typeof replay.meta.url !== "string" ||
     replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
     replay.meta.note !== ""

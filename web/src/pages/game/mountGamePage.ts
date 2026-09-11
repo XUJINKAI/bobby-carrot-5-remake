@@ -53,6 +53,7 @@ import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
 } from "./replayPanelState.js";
+import { replayPathId } from "./replayAssets.js";
 import {
   canonicalExploreReplayUrl,
   canonicalReplayUrl,
@@ -290,7 +291,7 @@ export async function renderGamePage(
           replayAssetUrl(replayTarget.collection, replayTarget.id),
         ),
         meta: {
-          name: identity.title,
+          id: replayPathId(replayTarget.collection, replayTarget.id),
           url: replayMap
             ? canonicalExploreReplayUrl(replayMap)
             : canonicalReplayUrl(window.location),
