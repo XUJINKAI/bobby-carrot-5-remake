@@ -333,19 +333,19 @@ test("Debug Sidebar keeps details DOM stable during presentation refresh", () =>
 
 test("Debug World pause freezes only the clock and preserves input state", () => {
   const source = fs.readFileSync(
-    new URL("../src/core/Game.ts", import.meta.url),
+    new URL("../src/core/GameDebugControls.ts", import.meta.url),
     "utf8",
   );
   const pause = source.match(
-    /private pauseDebugClock\(\): void \{[\s\S]*?\n  \}/,
+    /private pauseWorld\(\): void \{[\s\S]*?\n  \}/,
   );
   assert.ok(pause);
-  assert.match(pause[0], /this\.worldClock\.pause\(\)/);
+  assert.match(pause[0], /this\.session\.clock\.pause\(\)/);
   assert.doesNotMatch(pause[0], /setEnabled\(false\)/);
   assert.doesNotMatch(pause[0], /heldDirection = null/);
   assert.match(source, /input: this\.inputController\?\.inspectMovement\(\) \?\? null/);
   assert.match(source, /setHeldDirection: \(actorId, direction\)/);
-  assert.match(source, /this\.setDebugHeldDirection\(actorId, direction\)/);
+  assert.match(source, /this\.setHeldDirection\(actorId, direction\)/);
   assert.doesNotMatch(source, /close: \(\) => this\.setDebug\(false\)/);
 });
 

@@ -1,25 +1,18 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
-import { DebugRuntime } from "../debug/DebugRuntime.js";
-import { buildDebugSnapshot } from "../debug/DebugSnapshot.js";
-import { visualRegistry } from "../entities/registry.js";
 import type { ControlBinding } from "../input/ControlBindings.js";
 import {
   InputController,
   type LogicalMoveInput,
 } from "../input/InputController.js";
-import type { RenderScene } from "../render/RenderScene.js";
-import { Renderer } from "../render/Renderer.js";
 import {
   resolveEngineTiming,
   type EngineTiming,
 } from "../time/EngineTiming.js";
-import { PresentationClock } from "../time/PresentationClock.js";
 import type { WorldClock, WorldTick } from "../time/WorldClock.js";
 import { GameplayHud } from "../ui/GameplayHud.js";
 import { GameplayDialogControl } from "../ui/GameplayDialogControl.js";
-import { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { PresentationTuning } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type { World } from "../world/World.js";
@@ -31,18 +24,13 @@ import type {
 } from "../world/WorldTypes.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
-  CellPosition,
   EntityId,
 } from "../world/entity/EntityInstance.js";
-import type {
-  EntityMotion,
-} from "../world/movement/WorldStepResult.js";
 import type {
   ActorEffectIntent,
   GameplayEffectIntent,
   WorldIntentGroup,
 } from "../world/movement/WorldIntent.js";
-import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
 import {
   ReplayPlayback,
@@ -52,6 +40,8 @@ import { ReplayRecorder } from "../replay/ReplayRecorder.js";
 import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
 import type { GameOptions } from "./GameOptions.js";
+import { GameDebugControls } from "./GameDebugControls.js";
+import { GamePresentation } from "./GamePresentation.js";
 import { GameplaySession, type GameplayTickInput, type GameplayTickResult } from "./GameplaySession.js";
 import { prepareRuntimeLevel } from "./RuntimeLevel.js";
 import {
@@ -77,19 +67,14 @@ const REPLAY_IDLE_FRAME_BUDGET_MS = 6;
 export class Game {
   readonly audio: AudioBackend;
   readonly inputController: InputController | null;
-  private readonly renderer: Renderer;
-  private readonly visual: VisualRuntime;
+  private readonly presentation: GamePresentation;
   private readonly gameplayHud: GameplayHud | null;
-  private readonly debugRuntime: DebugRuntime;
+  private readonly debugControls: GameDebugControls;
   private readonly tuning: PresentationTuning;
   private readonly timing: EngineTiming;
   private readonly session: GameplaySession;
-  private readonly presentationClock: PresentationClock;
-  private lastScene: RenderScene | null = null;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEvents = new WorldEventDispatcher();
-  private debugValue = false;
-  private debugExternalActorId: EntityId | null = null;
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
@@ -105,15 +90,10 @@ export class Game {
   lastWorldEvents: WorldEvent[] = [];
 
   constructor(options: GameOptions) {
-    this.renderer = new Renderer(options.canvas, options.images);
-    this.visual = new VisualRuntime(
-      visualRegistry,
-      options.images.sourceTileSize,
-      options.runtime?.camera,
-    );
     this.audio = options.audio ?? new NullAudioBackend();
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
+    this.presentation = new GamePresentation(options, this.timing, this.tuning);
     this.session = new GameplaySession({
       ...(options.runtime?.timing ? { timing: options.runtime.timing } : {}),
       ...(options.runtime?.bobbyLocomotion
@@ -125,13 +105,9 @@ export class Game {
         ? { initialActorIntents: options.runtime.initialActorIntents }
         : {}),
     });
-    this.presentationClock = new PresentationClock(
-      this.timing.presentationHz,
-      this.timing.presentationSpeed,
-    );
     this.replayPlayback = new ReplayPlayback(
       this.session,
-      this.presentationClock,
+      this.presentation.clock,
     );
     this.dialogControl = new GameplayDialogControl({
       discardPendingInput: () => this.discardPendingGameplayInput(),
@@ -147,10 +123,6 @@ export class Game {
         });
       },
     });
-    if (typeof performance !== "undefined")
-      this.presentationClock.advance(performance.now());
-    this.debugValue = options.debug ?? false;
-    this.renderer.setDebug(this.debugValue);
     const hud = options.runtime?.hud;
     this.gameplayHud =
       hud === undefined || hud === false
@@ -164,55 +136,45 @@ export class Game {
     this.inputController = options.runtime?.input
       ? new InputController(this, options.runtime.input)
       : null;
-    this.debugRuntime = new DebugRuntime(options.canvas, {
-      snapshot: (selection, actorId) =>
-        buildDebugSnapshot({
-          world: this.worldValue,
-          scene: this.lastScene,
-          visual: this.visual,
-          worldClock: this.worldClock,
-          presentationClock: this.presentationClock,
-          timing: this.timing,
-          input: this.inputController?.inspectMovement() ?? null,
-          setup: this.session.replaySetup,
-          controls: this.session.controls,
-          gameplayState: this.worldValue ? this.session.state : null,
-          pendingIntents: this.queuedIntentGroups.flatMap((group) =>
+    this.debugControls = new GameDebugControls(
+      options.canvas,
+      this.session,
+      this.presentation,
+      this.timing,
+      this.inputController,
+      {
+        world: () => this.worldValue,
+        pendingIntents: () =>
+          this.queuedIntentGroups.flatMap((group) =>
             group.intents.filter(
               (intent): intent is ActorEffectIntent =>
                 intent.type !== "move" &&
                 intent.type !== "commit-entity-replacement",
             ),
           ),
-          replay: {
-            recording: this.replayRecording,
-            playing: this.replayPlaying,
-            paused: this.replayPaused,
-          },
-          actorId,
-          selection,
+        replayState: () => ({
+          recording: this.replayRecording,
+          playing: this.replayPlaying,
+          paused: this.replayPaused,
         }),
-      inspectPoint: (clientX, clientY) =>
-        this.inspectCanvasPoint(clientX, clientY),
-      pause: () => this.pauseDebugClock(),
-      resume: () => this.resumeDebugClock(),
-      step: (count) => this.stepDebugClock(count),
-      setWorldHz: (hz) => this.setDebugWorldHz(hz),
-      setWorldSpeed: (speed) => this.setDebugWorldSpeed(speed),
-      setHeldDirection: (actorId, direction) =>
-        this.setDebugHeldDirection(actorId, direction),
-      teleportActor: (actorId, cell) => this.debugTeleportActor(actorId, cell),
-      dispatchIntent: (intent) => this.dispatch(intent),
-      pausePresentation: () => this.pauseDebugPresentationClock(),
-      resumePresentation: () => this.resumeDebugPresentationClock(),
-      stepPresentation: (frames) => this.stepDebugPresentationClock(frames),
-      setPresentationHz: (hz) => this.setDebugPresentationHz(hz),
-      setPresentationSpeed: (speed) =>
-        this.setDebugPresentationSpeed(speed),
-      selectionChanged: (cell) => this.renderer.setDebugSelection(cell),
-      requestRender: () => this.render(),
-    });
-    this.debugRuntime.setEnabled(this.debugValue);
+        inspectPoint: (clientX, clientY) =>
+          this.inspectCanvasPoint(clientX, clientY),
+        dispatch: (intent) => this.dispatch(intent),
+        setHeldDirection: (direction) => this.setHeldDirection(direction),
+        inputForTick: (time) => this.inputForTick(time),
+        consumeTick: (tick) => {
+          this.consumeGameplayTick(tick);
+        },
+        restart: () => this.restart(),
+        render: () => this.render(),
+        emitDebugChange: () => this.emit("debug-change"),
+        clearLastResults: () => {
+          this.lastMove = null;
+          this.lastWorldEvents = [];
+        },
+      },
+      options.debug ?? false,
+    );
     window.addEventListener("resize", this.onResize);
     this.animationFrame = requestAnimationFrame(this.tick);
   }
@@ -242,7 +204,7 @@ export class Game {
   }
 
   get canvas(): HTMLCanvasElement {
-    return this.renderer.canvas;
+    return this.presentation.canvas;
   }
 
   get state(): GameplayState {
@@ -254,19 +216,19 @@ export class Game {
   }
 
   get debug(): boolean {
-    return this.debugValue;
+    return this.debugControls.enabled;
   }
 
   get zoom(): number {
-    return this.visual.camera.zoom;
+    return this.presentation.zoom;
   }
 
   get sourceTileSize(): number {
-    return this.visual.camera.sourceTileSize;
+    return this.presentation.sourceTileSize;
   }
 
   get isAnimating(): boolean {
-    return this.visual.isAnimating;
+    return this.presentation.isAnimating;
   }
 
   get timedChallengeRemainingMs(): number | null {
@@ -281,7 +243,7 @@ export class Game {
 
   /** 关卡载入与 Bobby 出现阶段丢弃 gameplay 输入，不把它们延迟到首个 WorldTick。 */
   get presentationBlocksInput(): boolean {
-    return this.levelLoadPending || this.visual.blocksGameplay;
+    return this.levelLoadPending || this.presentation.blocksGameplay;
   }
 
   get canUndo(): boolean {
@@ -312,20 +274,16 @@ export class Game {
     this.levelLoadPending = true;
     this.replayPlayback.stop();
     this.session.loadLevel(prepareRuntimeLevel(level));
-    this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
-    this.visual.clear();
-    this.visual.camera.resetFollow();
-    this.visual.camera.resetPan();
-    this.debugRuntime.clearSelection();
-    this.lastScene = null;
+    this.presentation.resetLevelView();
+    this.debugControls.resetSession();
     this.lastMove = null;
     this.lastWorldEvents = [];
     try {
-      await this.renderer.load();
+      await this.presentation.load();
     } catch (error) {
       this.levelLoadPending = false;
       throw error;
@@ -388,7 +346,7 @@ export class Game {
 
   undo(): void {
     if (!this.session.undo()) return;
-    this.resetVisualMotion();
+    this.presentation.resetMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -397,7 +355,7 @@ export class Game {
 
   redo(): void {
     if (!this.session.redo()) return;
-    this.resetVisualMotion();
+    this.presentation.resetMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
     this.render();
@@ -415,15 +373,13 @@ export class Game {
   }
 
   private resetSessionView(): void {
-    this.debugExternalActorId = null;
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
-    this.resetVisualMotion();
+    this.presentation.resetMotion();
     this.beginLevelPresentation();
-    this.debugRuntime.clearSelection();
-    this.lastScene = null;
+    this.debugControls.resetSession();
     this.lastMove = null;
     this.lastWorldEvents = [];
   }
@@ -464,7 +420,7 @@ export class Game {
   setTimeScale(speed: number): void {
     if (!Number.isFinite(speed) || speed <= 0) return;
     this.worldClock.setSpeed(speed);
-    this.presentationClock.setSpeed(speed);
+    this.presentation.setSpeed(speed);
     this.render();
     this.emit("change");
   }
@@ -535,45 +491,36 @@ export class Game {
   }
 
   setZoom(value: number): void {
-    this.visual.camera.setZoom(value);
+    this.presentation.setZoom(value);
     this.render();
   }
 
   setZoomAt(value: number, clientX: number, clientY: number): void {
-    const rect = this.canvas.getBoundingClientRect();
-    this.visual.camera.setZoomAt(value, clientX - rect.left, clientY - rect.top);
+    this.presentation.setZoomAt(value, clientX, clientY);
     this.render();
   }
 
   setZoomLimits(min: number, max?: number): void {
-    this.visual.camera.setZoomLimits(min, max);
+    this.presentation.setZoomLimits(min, max);
     this.render();
   }
 
   zoomBy(factor: number): void {
-    this.visual.camera.zoomBy(factor);
+    this.presentation.zoomBy(factor);
     this.render();
   }
 
   panByScreen(dx: number, dy: number): void {
-    this.visual.camera.panByScreen(dx, dy);
+    this.presentation.panByScreen(dx, dy);
     this.render();
   }
 
   setDebug(value: boolean): void {
-    if (value === this.debugValue) return;
-    if (!value && this.worldClock.paused) this.resumeDebugClock();
-    if (!value && this.presentationClock.paused)
-      this.resumeDebugPresentationClock();
-    this.debugValue = value;
-    this.renderer.setDebug(value);
-    this.debugRuntime.setEnabled(value);
-    this.render();
-    this.emit("debug-change");
+    this.debugControls.setEnabled(value);
   }
 
   toggleDebug(): void {
-    this.setDebug(!this.debugValue);
+    this.setDebug(!this.debug);
   }
 
   inspectCanvasPoint(
@@ -581,18 +528,14 @@ export class Game {
     clientY: number,
   ): CellInspection | null {
     if (!this.worldValue) return null;
-    const rect = this.canvas.getBoundingClientRect();
-    const cell = this.visual.camera.screenToTile(
-      clientX - rect.left,
-      clientY - rect.top,
-    );
+    const cell = this.presentation.inspectCell(clientX, clientY);
     return this.world.inspect(cell.x, cell.y);
   }
 
   render(): void {
-    this.renderScene();
+    this.presentation.render(this.worldValue);
     this.gameplayHud?.render();
-    this.debugRuntime.render();
+    this.debugControls.render();
   }
 
   on(event: GameEventName, listener: Listener): () => void {
@@ -619,36 +562,23 @@ export class Game {
     window.removeEventListener("resize", this.onResize);
     this.inputController?.destroy();
     this.gameplayHud?.destroy();
-    this.debugRuntime.destroy();
+    this.debugControls.destroy();
   }
 
   private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {
     if (deltas.length === 0) return;
-    const frame = this.presentationClock.current;
-    this.debugRuntime.recordWorldDeltas(deltas, frame.frame);
-    this.visual.camera.recenterPan(frame);
-    this.visual.consumeWorldDeltas(this.world, deltas, frame, {
-      motionDuration: (motion) => this.motionPresentationDuration(motion),
-      stationaryDeathDurationMs: this.presentationMotionDuration(),
-      levelExitDurationMs: this.tuning.levelTransition.exitMs,
-    });
+    const frame = this.presentation.clock.current;
+    this.debugControls.recordWorldDeltas(deltas, frame.frame);
+    this.presentation.consumeWorldDeltas(this.world, deltas);
   }
 
   private faceBlockedActors(moves: readonly MoveResult[]): void {
-    const frame = this.presentationClock.current;
+    const frame = this.presentation.clock.current;
     for (const move of moves) {
       if (!move.blocked || move.actorId === undefined) continue;
       if (!this.world.query.entityHasTrait(move.actorId, "player")) continue;
-      this.visual.faceDirection(move.actorId, move.direction, frame);
+      this.presentation.visual.faceDirection(move.actorId, move.direction, frame);
     }
-  }
-
-  private motionPresentationDuration(motion: EntityMotion): number {
-    return motion.durationMs;
-  }
-
-  private presentationMotionDuration(): number {
-    return this.tuning.motion.normalMs;
   }
 
   private inputForTick(time: WorldTick): GameplayTickInput {
@@ -656,12 +586,13 @@ export class Game {
     const queued = this.queuedMoves.splice(0);
     const groups = this.queuedIntentGroups.splice(0);
     const moves = [...queued, ...sampled];
-    const debugActorMoves = this.debugExternalActorId === null
+    const debugActorId = this.debugControls.externalActorId;
+    const debugActorMoves = debugActorId === null
       ? []
       : moves
           .filter((move) => move.source === "external")
-          .map((move) => ({ ...move, actorId: this.debugExternalActorId! }));
-    const routedMoves = this.debugExternalActorId === null
+          .map((move) => ({ ...move, actorId: debugActorId }));
+    const routedMoves = debugActorId === null
       ? moves
       : moves.filter((move) => move.source !== "external");
     if (this.inputController || !this.heldDirection || this.heldDirectionBlocked) {
@@ -671,7 +602,7 @@ export class Game {
         groups,
       };
     }
-    if (this.debugExternalActorId !== null) {
+    if (debugActorId !== null) {
       return {
         moves: routedMoves,
         actorMoves: [
@@ -679,7 +610,7 @@ export class Game {
           {
             source: "external",
             direction: this.heldDirection,
-            actorId: this.debugExternalActorId,
+            actorId: debugActorId,
           },
         ],
         groups,
@@ -749,7 +680,7 @@ export class Game {
     if (
       !this.worldValue ||
       this.levelLoadPending ||
-      this.visual.isAnimating ||
+      this.presentation.isAnimating ||
       this.dialogControl.worldPaused ||
       this.world.inputBlocked
     )
@@ -761,7 +692,7 @@ export class Game {
       (tick) => {
         changed = this.consumeGameplayTick(tick, false) || changed;
         return (
-          !this.visual.isAnimating &&
+          !this.presentation.isAnimating &&
           !this.world.inputBlocked &&
           tick.result.events.length === 0 &&
           performance.now() - startedAt < REPLAY_IDLE_FRAME_BUDGET_MS
@@ -772,75 +703,13 @@ export class Game {
     return count;
   }
 
-  private setDebugHeldDirection(
-    actorId: EntityId,
-    direction: Direction | null,
-  ): void {
-    if (direction === null) {
-      if (this.debugExternalActorId === actorId)
-        this.debugExternalActorId = null;
-      this.setHeldDirection(null);
-      return;
-    }
-    this.debugExternalActorId = actorId;
-    this.setHeldDirection(direction);
-  }
-
-  private debugTeleportActor(actorId: EntityId, cell: CellPosition): boolean {
-    if (!this.debugValue || !this.worldValue) return false;
-    const actor = this.world.entities.get(actorId);
-    if (!actor || !this.actorIds.includes(actorId)) return false;
-    const definition = this.world.definition(actorId);
-    const footprint = resolveFootprintCells(
-      {
-        anchor: cell,
-        ...(actor.direction ? { direction: actor.direction } : {}),
-      },
-      definition.footprint,
-    );
-    if (!footprint.every((part) => this.world.spatial.inBounds(part)))
-      return false;
-    if (
-      this.world.spatial.presencesAt(cell).some(
-        (presence) =>
-          presence.entityId !== actorId && presence.traits.includes("player"),
-      )
-    )
-      return false;
-
-    this.world.actions.cancelOwnedBy(actorId);
-    this.world.movement?.clearEntity(actorId);
-    this.session.discardPendingHistory();
-    if (this.debugExternalActorId === actorId)
-      this.setDebugHeldDirection(actorId, null);
-    this.world.spatial.moveEntity(actorId, cell);
-    this.visual.clearEntity(actorId);
-    this.lastMove = null;
-    this.lastWorldEvents = [];
-    return true;
-  }
-
-  private resetVisualMotion(): void {
-    this.visual.clear();
-  }
-
   private beginLevelPresentation(): void {
     if (!this.worldValue) return;
-    const frame = this.presentationClock.current;
-    if (this.session.state.status === "won") {
-      this.visual.beginLevelExit(
-        this.world,
-        this.tuning.levelTransition.exitMs,
-        frame,
-      );
-    } else if (this.session.state.status === "playing") {
-      this.visual.beginLevelEntrance(
-        this.world,
-        this.tuning.levelTransition.enterMs,
-        frame,
-      );
-      this.discardPendingGameplayInput();
-    }
+    this.presentation.beginLevel(
+      this.world,
+      this.session.state.status,
+      () => this.discardPendingGameplayInput(),
+    );
   }
 
   private discardPendingGameplayInput(): void {
@@ -849,81 +718,6 @@ export class Game {
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
     this.inputController?.resetMovement();
-  }
-
-  private pauseDebugClock(): void {
-    if (this.worldClock.paused) return;
-    this.worldClock.pause();
-    this.render();
-  }
-
-  private resumeDebugClock(): void {
-    if (!this.worldClock.paused) return;
-    this.worldClock.resume();
-    this.render();
-  }
-
-  private stepDebugClock(count: number): void {
-    for (const tick of this.session.stepPaused(count, (time) =>
-      this.inputForTick(time),
-    ))
-      this.consumeGameplayTick(tick);
-    this.render();
-  }
-
-  private setDebugWorldHz(hz: number): void {
-    if (hz === this.worldClock.hz) return;
-    this.worldClock.setHz(hz);
-    this.restart();
-  }
-
-  private setDebugWorldSpeed(speed: number): void {
-    this.worldClock.setSpeed(speed);
-    this.render();
-  }
-
-  private pauseDebugPresentationClock(): void {
-    if (this.presentationClock.paused) return;
-    this.presentationClock.pause();
-    this.render();
-  }
-
-  private resumeDebugPresentationClock(): void {
-    if (!this.presentationClock.paused) return;
-    this.presentationClock.resume();
-    this.render();
-  }
-
-  private stepDebugPresentationClock(frames: number): void {
-    const frame = this.presentationClock.step(frames);
-    if (frame && this.worldValue)
-      this.visual.update(frame, this.tuning.motion.easing);
-    this.render();
-  }
-
-  private setDebugPresentationHz(hz: number): void {
-    this.presentationClock.setHz(hz);
-    this.render();
-  }
-
-  private setDebugPresentationSpeed(speed: number): void {
-    this.presentationClock.setSpeed(speed);
-    this.render();
-  }
-
-  private renderScene(): void {
-    if (!this.worldValue) {
-      this.lastScene = null;
-      return;
-    }
-    const viewport = this.renderer.measureViewport();
-    this.visual.camera.setViewport(viewport.width, viewport.height);
-    const scene = this.visual.scene(
-      this.worldValue,
-      this.world.cameraTarget,
-    );
-    this.lastScene = scene;
-    this.renderer.render(scene, this.visual.camera, viewport);
   }
 
   private readonly onResize = (): void => {
@@ -941,7 +735,7 @@ export class Game {
       this.worldValue &&
       delta > 0 &&
       !this.levelLoadPending &&
-      !this.visual.blocksGameplay &&
+      !this.presentation.blocksGameplay &&
       !this.dialogControl.worldPaused
     ) {
       this.session.advanceRealTime(
@@ -961,13 +755,13 @@ export class Game {
     const idleTickCount = this.advanceReplayIdleTicks();
     if (this.replayPlayback.finishIfComplete()) this.emit("change");
 
-    const frame = this.presentationClock.advance(timestamp);
-    if (this.worldValue && frame) {
-      const wasAnimating = this.visual.isAnimating;
-      this.visual.update(frame, this.tuning.motion.easing);
-      this.renderScene();
-      if (this.debugValue) this.debugRuntime.render();
-      if (wasAnimating && !this.visual.isAnimating) this.emit("change");
+    const presentationFrame = this.presentation.advance(
+      timestamp,
+      this.worldValue,
+    );
+    if (presentationFrame) {
+      if (this.debug) this.debugControls.render();
+      if (presentationFrame.animationCompleted) this.emit("change");
     } else if (worldTicks.length > 0 || idleTickCount > 0) {
       this.render();
     }
@@ -981,8 +775,7 @@ export class Game {
     const notifyRequests = notifyInteractions &&
       (!this.replayPlayback.playing || this.replayPlayback.hasPendingChoices);
     this.worldEvents.publish(events, notifyRequests, (event) => {
-      if (event.type === "speed-impact")
-        this.visual.camera.shake(this.presentationClock.current);
+      if (event.type === "speed-impact") this.presentation.shake();
     });
   }
 
