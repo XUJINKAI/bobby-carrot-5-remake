@@ -6,11 +6,7 @@ import {
 } from "../../model/dist/index.js";
 import {
   adventureAugmentationFor,
-  createAdventureInteractionState,
   createAdventureSave,
-  purchasedAdventureItemPatches,
-  purchaseAdventureItem,
-  resolveAdventureInteraction,
 } from "../dist/index.js";
 
 function sandmanLevel() {
@@ -135,7 +131,7 @@ test("Adventure replace-type 补丁只保留新 Entity 的稳定位置字段", (
   assert.equal(level.entities[0].type, MapEntityTypeId.LOCK_KEY);
 });
 
-test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
+test("Beaver Shop 通过地图补丁增加场景内容与字面对白", () => {
   const augmentation = adventureAugmentationFor("beaver-shop");
   const level = {
     schemaVersion: 1,
@@ -144,6 +140,12 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     entities: [
       { type: MapEntityTypeId.BEAVER, x: 6, y: 12 },
       { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
+      { type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET, x: 1, y: 1 },
+      { type: MapEntityTypeId.SHOP_CLOUD9_TICKET, x: 2, y: 1 },
+      { type: MapEntityTypeId.SHOP_STEREO_SYSTEM, x: 3, y: 1 },
+      { type: MapEntityTypeId.SHOP_EXTRA_MUSIC, x: 4, y: 1 },
+      { type: MapEntityTypeId.SHOP_SPEED_SHOES, x: 5, y: 1 },
+      { type: MapEntityTypeId.SHOP_COIN_RADAR, x: 6, y: 1 },
     ],
   };
   const augmented = applyLevelPatches(level, augmentation.levelPatches);
@@ -168,21 +170,8 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
       .map(({ x, y }) => ({ x, y })),
     [{ x: 21, y: 8 }],
   );
-
-  const save = createAdventureSave();
-  const interactionState = createAdventureInteractionState();
-  const beaver = resolveAdventureInteraction(
-    augmentation,
-    save,
-    {
-      objectType: MapEntityTypeId.BEAVER,
-      x: 6,
-      y: 12,
-      action: "touch",
-      role: "body",
-      lockKeyCount: 0,
-    },
-    interactionState,
+  const beaver = augmented.entities.find(
+    (entity) => entity.type === MapEntityTypeId.BEAVER,
   );
   const itemTypes = [
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
@@ -192,74 +181,73 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     MapEntityTypeId.SHOP_SPEED_SHOES,
     MapEntityTypeId.SHOP_COIN_RADAR,
   ];
-  const itemDialogues = itemTypes.map((objectType) =>
-    resolveAdventureInteraction(
-      augmentation,
-      save,
-      {
-        objectType,
-        x: 0,
-        y: 0,
-        action: "touch",
-        lockKeyCount: 0,
-      },
-      interactionState,
-    )?.text
+  const itemDialogues = itemTypes.map(
+    (type) => augmented.entities.find((entity) => entity.type === type)?.dialogue,
   );
-  assert.match(beaver.text, /随意逛/);
+  assert.ok(Array.isArray(beaver.dialogue));
+  assert.match(beaver.dialogue[0], /随意逛/);
   assert.equal(itemDialogues.every(Boolean), true);
   assert.equal(new Set(itemDialogues).size, itemTypes.length);
-
-  const machine = resolveAdventureInteraction(
-    augmentation,
-    save,
-    {
-      objectType: MapEntityTypeId.DREAM_MACHINE,
-      x: 21,
-      y: 8,
-      action: "touch",
-      role: "body",
-      lockKeyCount: 0,
-    },
-    interactionState,
+  const machine = augmented.entities.find(
+    (entity) =>
+      entity.type === MapEntityTypeId.DREAM_MACHINE &&
+      entity.x === 21 &&
+      entity.y === 8,
   );
-  assert.match(machine.text, /传送门/);
+  assert.match(machine.dialogue[0], /传送门/);
+});
 
-  const superKey = resolveAdventureInteraction(
-    augmentation,
-    save,
-    {
+test("Beaver Shop interaction 回调直接完成 Super Key 购买", async () => {
+  const augmentation = adventureAugmentationFor("beaver-shop");
+  const save = createAdventureSave();
+  save.economy.bonusCoins = 1;
+  let committed = null;
+  let replacement = null;
+  let message = null;
+  await augmentation.interaction({
+    request: {
+      requestId: 3,
+      actorId: 1,
+      entityId: 2,
       objectType: MapEntityTypeId.LOCK_KEY,
       x: 21,
       y: 6,
       action: "touch",
       lockKeyCount: 0,
     },
-    interactionState,
-  );
-  assert.equal(superKey.type, "item-purchase");
-  assert.equal(superKey.offer.item, "golden-key");
-  assert.equal(superKey.offer.currency, "bonus-coins");
-  assert.equal(superKey.offer.price, 1);
-  assert.equal(superKey.offer.replacementType, MapEntityTypeId.SHOP_EMPTY);
-  assert.equal(superKey.offer.leftLabel, "购买");
-  assert.equal(superKey.offer.rightLabel, "算了");
-  assert.match(superKey.offer.message, /1块钱/);
-
-  save.economy.bonusCoins = 1;
-  const purchase = purchaseAdventureItem(
     save,
-    superKey.offer.item,
-    superKey.offer.currency,
-    superKey.offer.price,
-  );
-  assert.equal(purchase.outcome, "purchased");
-  assert.equal(purchase.save.economy.bonusCoins, 0);
-  assert.deepEqual(purchase.save.items, ["golden-key"]);
+    showDialogue: (text) => {
+      message = text;
+    },
+    presentDialogue: async (presentation) => {
+      assert.match(presentation.message, /1块钱/);
+      assert.deepEqual(
+        presentation.options.map((option) => option.label),
+        ["购买", "算了"],
+      );
+      return { type: "selected", optionId: "purchase" };
+    },
+    commitSave: (next) => {
+      committed = next;
+    },
+    addActorInventoryItem: () => assert.fail("商店购买不应发放关卡钥匙"),
+    replaceInteractedEntity: (type) => {
+      replacement = type;
+    },
+  });
+  assert.equal(committed.economy.bonusCoins, 0);
+  assert.deepEqual(committed.items, ["golden-key"]);
+  assert.equal(replacement, MapEntityTypeId.SHOP_EMPTY);
+  assert.match(message, /成交/);
 
   const purchasedLevel = applyLevelPatches(
-    level,
-    purchasedAdventureItemPatches(augmentation, purchase.save),
+    {
+      schemaVersion: 1,
+      width: 25,
+      height: 20,
+      entities: [{ type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 }],
+    },
+    augmentation.savePatches(committed),
   );
   assert.equal(
     purchasedLevel.entities.some(
@@ -275,38 +263,16 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   );
 });
 
-test("Adventure 对白数组按规则 ID 独立循环", () => {
-  const augmentation = {
-    levelPatches: [],
-    interactions: [{
-      id: "test/cycle",
-      selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
-      effect: { type: "dialogue", lines: ["第一段", "第二段"] },
-    }],
-  };
+test("Bonus 关卡通过 interaction 回调接入钥匙交互", async () => {
   const save = createAdventureSave();
-  const state = createAdventureInteractionState();
-  const request = {
-    objectType: MapEntityTypeId.BEAVER,
-    x: 0,
-    y: 1,
-    action: "touch",
-    role: "body",
-    lockKeyCount: 0,
-  };
-
-  const lines = [0, 1, 2].map(() =>
-    resolveAdventureInteraction(augmentation, save, request, state).text
-  );
-  assert.deepEqual(lines, ["第一段", "第二段", "第一段"]);
-});
-
-test("Bonus 关卡通过同一数据目录接入钥匙交互", () => {
-  const save = createAdventureSave();
-  const interaction = resolveAdventureInteraction(
-    adventureAugmentationFor("1-bonus-1"),
-    save,
-    {
+  const augmentation = adventureAugmentationFor("1-bonus-1");
+  let granted = null;
+  let message = null;
+  await augmentation.interaction({
+    request: {
+      requestId: 7,
+      actorId: 1,
+      entityId: 2,
       objectType: MapEntityTypeId.BEAVER,
       x: 0,
       y: 0,
@@ -314,30 +280,44 @@ test("Bonus 关卡通过同一数据目录接入钥匙交互", () => {
       role: "body",
       lockKeyCount: 0,
     },
-    createAdventureInteractionState(),
-  );
+    save,
+    showDialogue: (text) => {
+      message = text;
+    },
+    presentDialogue: async () => ({ type: "dismissed" }),
+    commitSave: () => assert.fail("发放关卡钥匙应等待 Engine 接受"),
+    addActorInventoryItem: (item, count, saveOnAccepted) => {
+      granted = { item, count, saveOnAccepted };
+    },
+    replaceInteractedEntity: () => assert.fail("Bonus Beaver 不替换 Entity"),
+  });
 
-  assert.equal(interaction.type, "bonus-key-vendor");
-  assert.equal(interaction.decision.outcome, "trial-granted");
-  assert.equal(interaction.decision.grantLockKey, true);
+  assert.equal(granted.item, MapEntityTypeId.LOCK_KEY);
+  assert.equal(granted.count, 1);
+  assert.ok(granted.saveOnAccepted.campaign.completedEvents.includes(
+    "bonus-key-trial",
+  ));
+  assert.match(message, /体验钥匙/);
 });
 
-test("Night Train 三张 Special Scene 都声明角色对白", () => {
-  const save = createAdventureSave();
+test("Night Train 三张 Special Scene 都把角色对白写入地图", () => {
   const requests = [
     ["dream-machine", MapEntityTypeId.DREAM_MACHINE],
     ["cloud-9", MapEntityTypeId.SANDMAN],
     ["dreamland-reward", MapEntityTypeId.SANDMAN],
   ];
-  const dialogues = requests.map(([scene, objectType]) =>
-    resolveAdventureInteraction(adventureAugmentationFor(scene), save, {
-      objectType,
-      x: 0,
-      y: 0,
-      action: "touch",
-      lockKeyCount: 0,
-    }, createAdventureInteractionState())?.text
-  );
+  const dialogues = requests.map(([scene, objectType]) => {
+    const level = {
+      schemaVersion: 1,
+      width: 1,
+      height: 1,
+      entities: [{ type: objectType, x: 0, y: 0 }],
+    };
+    return applyLevelPatches(
+      level,
+      adventureAugmentationFor(scene).levelPatches,
+    ).entities[0].dialogue;
+  });
 
   assert.equal(
     dialogues.every((text) => typeof text === "string" && text.length > 0),

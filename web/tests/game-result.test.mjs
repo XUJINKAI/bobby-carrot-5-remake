@@ -64,15 +64,15 @@ test("Replay 录制状态不参与结果卡片分支，终局切换对应音乐"
 
 test("Adventure 商品购买使用同级选项", async () => {
   const source = await readFile(
-    new URL("../src/pages/game/mountGamePage.ts", import.meta.url),
+    new URL("../../adventure/src/augment/catalog.ts", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /adventureItemReplacementIntent\(offer, request\)/);
-  assert.match(source, /game\.dispatchInteractionEffect\(replacement\)/);
-  assert.match(source, /\{ id: "purchase", label: offer\.leftLabel \}/);
+  assert.match(source, /interaction: interactWithBeaverShop/);
+  assert.match(source, /context\.replaceInteractedEntity\(MapEntityTypeId\.SHOP_EMPTY\)/);
+  assert.match(source, /\{ id: "purchase", label: "购买" \}/);
   assert.doesNotMatch(
     source,
-    /id: "purchase", label: offer\.leftLabel, primary: true/,
+    /id: "purchase", label: "购买", primary: true/,
   );
 });

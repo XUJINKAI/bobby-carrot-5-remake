@@ -498,9 +498,24 @@ game.onInteractionRequest((request) => {
 });
 ```
 
-可对话角色触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
-`dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
+可对话 Entity 触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
+`dialog` 并由 `GameplayDialog` 展示。`dialogue` 可以是字符串或字符串数组；数组按
+Entity 独立循环，每个元素可以包含换行。外层动态对白可以调用 runtime 返回的
 `dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
+
+Web 的通用 Session 入口可以同时接收一个交互回调，负责把请求、`Game` 与 Engine
+对话层交给具体产品适配器：
+
+```ts
+const session = await createGameSession({
+  level,
+  interaction: ({ request, game, dialog }) => {
+    // 读取外层产品状态，展示对话并按需分派公开 Gameplay effect。
+  },
+});
+```
+
+`createGameSession()` 只负责订阅与释放该回调，不解释购买、Campaign Save 或地图 ID。
 
 宿主需要选项交互时，可以等待通用展示层返回选择结果：
 

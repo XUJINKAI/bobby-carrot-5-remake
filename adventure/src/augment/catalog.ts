@@ -1,13 +1,18 @@
-import { MapEntityTypeId } from "@bobby/model";
+import { MapEntityTypeId, type LevelPatch } from "@bobby/model";
 import { parseAdventureLevelId } from "../campaign.js";
+import { hasAdventureItem, type AdventureSave } from "../save.js";
+import {
+  purchaseAdventureItem,
+  resolveBonusKeyVendorInteraction,
+  type BonusKeyVendorOutcome,
+} from "./interactions.js";
 import type {
   AdventureAugmentation,
-  AdventureInteractionRule,
+  AdventureInteractionContext,
 } from "./types.js";
 
 const EMPTY_AUGMENTATION: AdventureAugmentation = Object.freeze({
   levelPatches: Object.freeze([]),
-  interactions: Object.freeze([]),
 });
 
 // 对白按顺序循环；后续可直接在数组末尾继续补充台词。
@@ -48,8 +53,30 @@ const BEAVER_SHOP_ITEM_DIALOGUES = [
   },
 ] as const;
 
+const SUPER_KEY_OUTCOME_MESSAGES = {
+  "already-owned": "这把 Super Key 已经是你的了。",
+  purchased: "成交，这把 Super Key 归你了。",
+  "insufficient-funds": "金币不够，攒到1枚再来吧。",
+} as const;
+
+const BONUS_KEY_MESSAGES: Readonly<Record<BonusKeyVendorOutcome, string>> = {
+  "permanent-key-owned": "你的永久钥匙可以直接打开这把锁。",
+  "lock-key-held": "你已经带着一把关卡钥匙了。",
+  "trial-granted": "第一次免费送你一把体验钥匙。找到锁以后，倒计时才会开始！",
+  purchased: "成交！这把钥匙只够开一次锁。",
+  "insufficient-funds": "Bonus Coin 不足；这把关卡钥匙需要3枚。",
+};
+
 const BEAVER_SHOP: AdventureAugmentation = {
   levelPatches: [
+    dialoguePatch(MapEntityTypeId.BEAVER, BEAVER_SHOP_BEAVER_DIALOGUES),
+    dialoguePatch(MapEntityTypeId.DREAM_MACHINE, [
+      "哔哔~我从其他地方搞来了传送门，哔哔~",
+      "哔哔~我是勤奋的科研机器，哔哔~",
+    ]),
+    ...BEAVER_SHOP_ITEM_DIALOGUES.map((item) =>
+      dialoguePatch(item.type, item.text)
+    ),
     {
       operation: "add",
       entity: {
@@ -59,11 +86,6 @@ const BEAVER_SHOP: AdventureAugmentation = {
         channel: "beaver-shop-shortcut",
         color: "#54e8ff",
       },
-    },
-    {
-      operation: "set-fields",
-      selector: { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
-      fields: { collectible: false },
     },
     {
       operation: "add",
@@ -76,137 +98,143 @@ const BEAVER_SHOP: AdventureAugmentation = {
       },
     },
     {
+      operation: "set-fields",
+      selector: { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
+      fields: { collectible: false },
+    },
+    {
       operation: "add",
       entity: {
         type: MapEntityTypeId.DREAM_MACHINE,
         x: 21,
         y: 8,
-      },
-    },
-  ],
-  interactions: [
-    {
-      id: "beaver-shop/beaver",
-      selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
-      effect: {
-        type: "dialogue",
-        lines: BEAVER_SHOP_BEAVER_DIALOGUES,
-      },
-    },
-    {
-      id: "beaver-shop/dream-machine",
-      selector: {
-        type: MapEntityTypeId.DREAM_MACHINE,
-        action: "touch",
-        role: "body",
-      },
-      effect: {
-        type: "dialogue",
-        lines: [
+        dialogue: [
           "哔哔~我从其他地方搞来了传送门，哔哔~",
           "哔哔~我是勤奋的科研机器，哔哔~",
         ],
       },
     },
-    {
-      id: "beaver-shop/super-key",
-      selector: { type: MapEntityTypeId.LOCK_KEY, action: "touch" },
-      effect: {
-        type: "item-purchase",
-        offer: {
-          item: "golden-key",
-          currency: "bonus-coins",
-          price: 1,
-          message: "也不知搬家以后钥匙能不能用了，你要的话1块钱收走吧",
-          leftLabel: "购买",
-          rightLabel: "算了",
-          replacementType: MapEntityTypeId.SHOP_EMPTY,
-          outcomeMessages: {
-            "already-owned": "这把 Super Key 已经是你的了。",
-            purchased: "成交，这把 Super Key 归你了。",
-            "insufficient-funds": "金币不够，攒到1枚再来吧。",
-          },
-        },
-      },
-    },
-    ...BEAVER_SHOP_ITEM_DIALOGUES.map<AdventureInteractionRule>((item) => ({
-      id: `beaver-shop/${item.type}`,
-      selector: { type: item.type, action: "touch" },
-      effect: { type: "dialogue", lines: [item.text] },
-    })),
   ],
+  savePatches: beaverShopSavePatches,
+  interaction: interactWithBeaverShop,
 };
 
 const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
   "beaver-shop": BEAVER_SHOP,
   "dream-machine": {
-    levelPatches: [],
-    interactions: [
-      {
-        id: "dream-machine/beaver",
-        selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
-        effect: {
-          type: "dialogue",
-          lines: ["我还在调试设备。"],
-        },
-      },
-      {
-        id: "dream-machine/machine",
-        selector: { type: MapEntityTypeId.DREAM_MACHINE, action: "touch" },
-        effect: {
-          type: "dialogue",
-          lines: ["哔哔~你有见过我的兄弟吗？哔哔~"],
-        },
-      },
+    levelPatches: [
+      dialoguePatch(MapEntityTypeId.BEAVER, "我还在调试设备。"),
+      dialoguePatch(
+        MapEntityTypeId.DREAM_MACHINE,
+        "哔哔~你有见过我的兄弟吗？哔哔~",
+      ),
     ],
   },
   "cloud-9": {
-    levelPatches: [],
-    interactions: [
-      {
-        id: "cloud-9/sandman",
-        selector: { type: MapEntityTypeId.SANDMAN, action: "touch" },
-        effect: {
-          type: "dialogue",
-          lines: ["咳咳...我...我是怎么到这儿的..."],
-        },
-      },
+    levelPatches: [
+      dialoguePatch(
+        MapEntityTypeId.SANDMAN,
+        "咳咳...我...我是怎么到这儿的...",
+      ),
     ],
   },
   "dreamland-reward": {
-    levelPatches: [],
-    interactions: [
-      {
-        id: "dreamland-reward/sandman",
-        selector: { type: MapEntityTypeId.SANDMAN, action: "touch" },
-        effect: {
-          type: "dialogue",
-          lines: ["咳咳...我...我是怎么到这儿的..."],
-        },
-      },
+    levelPatches: [
+      dialoguePatch(
+        MapEntityTypeId.SANDMAN,
+        "咳咳...我...我是怎么到这儿的...",
+      ),
     ],
   },
 };
 
-const BONUS_LEVEL_INTERACTIONS: readonly AdventureInteractionRule[] = [
-  {
-    id: "bonus/beaver-key-vendor",
-    selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
-    effect: { type: "bonus-key-vendor", priceBonusCoins: 3 },
-  },
-];
+const BONUS_LEVEL_AUGMENTATION: AdventureAugmentation = {
+  levelPatches: [],
+  interaction: interactWithBonusBeaver,
+};
 
-/** 每张 Adventure 内容的补丁和运行时交互规则都从此目录读取。 */
+/** 每张 Adventure 内容的地图补丁与可选交互回调都从此目录读取。 */
 export function adventureAugmentationFor(
   contentId: string,
 ): AdventureAugmentation {
   const scene = SPECIAL_SCENES[contentId];
   if (scene) return scene;
-  if (parseAdventureLevelId(contentId)?.kind === "bonus") {
-    return {
-      levelPatches: [],
-      interactions: BONUS_LEVEL_INTERACTIONS,
-    };
-  }
+  if (parseAdventureLevelId(contentId)?.kind === "bonus")
+    return BONUS_LEVEL_AUGMENTATION;
   return EMPTY_AUGMENTATION;
+}
+
+function dialoguePatch(
+  type: string,
+  dialogue: string | readonly string[],
+): LevelPatch {
+  return {
+    operation: "set-fields",
+    selector: { type },
+    fields: { dialogue },
+  };
+}
+
+function beaverShopSavePatches(save: AdventureSave): readonly LevelPatch[] {
+  if (!hasAdventureItem(save, "golden-key")) return [];
+  return [{
+    operation: "replace-type",
+    selector: { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
+    type: MapEntityTypeId.SHOP_EMPTY,
+  }];
+}
+
+async function interactWithBeaverShop(
+  context: AdventureInteractionContext,
+): Promise<void> {
+  if (
+    context.request.objectType !== MapEntityTypeId.LOCK_KEY ||
+    context.request.action !== "touch" ||
+    context.request.x !== 21 ||
+    context.request.y !== 6
+  ) {
+    return;
+  }
+  const selection = await context.presentDialogue({
+    message: "也不知搬家以后钥匙能不能用了，你要的话1块钱收走吧",
+    options: [
+      { id: "purchase", label: "购买" },
+      { id: "cancel", label: "算了" },
+    ],
+  });
+  if (selection.type !== "selected" || selection.optionId !== "purchase")
+    return;
+  const purchase = purchaseAdventureItem(
+    context.save,
+    "golden-key",
+    "bonus-coins",
+    1,
+  );
+  if (purchase.outcome === "purchased") {
+    context.commitSave(purchase.save);
+    context.replaceInteractedEntity(MapEntityTypeId.SHOP_EMPTY);
+  }
+  context.showDialogue(SUPER_KEY_OUTCOME_MESSAGES[purchase.outcome]);
+}
+
+function interactWithBonusBeaver(context: AdventureInteractionContext): void {
+  if (
+    context.request.objectType !== MapEntityTypeId.BEAVER ||
+    context.request.action !== "touch" ||
+    (context.request.role !== undefined && context.request.role !== "body")
+  ) {
+    return;
+  }
+  const decision = resolveBonusKeyVendorInteraction(context.save, {
+    lockKeyCount: context.request.lockKeyCount,
+    priceBonusCoins: 3,
+  });
+  if (decision.grantLockKey) {
+    context.addActorInventoryItem(
+      MapEntityTypeId.LOCK_KEY,
+      1,
+      decision.save,
+    );
+  }
+  context.showDialogue(BONUS_KEY_MESSAGES[decision.outcome]);
 }

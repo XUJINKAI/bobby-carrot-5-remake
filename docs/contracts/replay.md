@@ -158,7 +158,8 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 重开或重新载入时按最新 Save 重新生成地图补丁。该派生结果不进入 Replay frame，播放时
 由已记录的选择重新驱动同一宿主流程。地图字面 `dialogue` 已存在于 LevelMap；纯展示对白
 不会重复写入 Replay。无头 Runner 只验证 Engine 时间线与 `choices` 的静态格式；包含宿主
-业务的选择流程使用浏览器 playback 验证。
+业务的选择流程使用浏览器 playback 验证。字符串数组 `dialogue` 的循环游标属于 World
+Runtime State，因此随 Snapshot 与确定性 Tick 时间线推进。
 
 ## 仓库内置过法
 

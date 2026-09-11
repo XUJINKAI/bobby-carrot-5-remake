@@ -20,7 +20,7 @@ interface LevelEntity {
   x: number;
   y: number;
   stackOrder?: number;
-  [field: string]: JsonPrimitive | undefined;
+  [field: string]: JsonPrimitive | readonly string[] | undefined;
 }
 ```
 
@@ -30,27 +30,32 @@ interface LevelEntity {
 
 ### Entity 字段与 Runtime State
 
-每种 Entity 可以通过 `EntityMapDefinition` 声明顶层 primitive 字段。字段合同包含类型、格式、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。`color` 格式支持 `#rgb`、`#rrggbb` 和 Model 颜色别名表中的常用名称。
+每种 Entity 可以通过 `EntityMapDefinition` 声明顶层字段。字段通常是 primitive；
+`string-or-string-list` 专用于可保持单句形式、也可扩展成多轮内容的字面文本。字段合同包含类型、格式、枚举值、范围、默认值和是否必填；地图 parser、Editor Inspector 与生成物校验共用该合同。`color` 格式支持 `#rgb`、`#rrggbb` 和 Model 颜色别名表中的常用名称。
 
-读取边界采用宽进严出的前向兼容策略：地图整体结构、坐标与规则仍必须成立；未知 `type` 会作为 opaque Entity 保留。已知 `type` 的未知字段、缺失必填字段或字段值错误形成实例合同 warning，该实例在 Engine/Editor 中降级为无行为 X 占位符，同类型的其它合法实例不受影响。输入中的非 primitive 实例字段会保存为 JSON 文本，并通过 `__invalidJsonFields` 标出来源字段，使输出重新符合顶层 primitive 合同。
+读取边界采用宽进严出的前向兼容策略：地图整体结构、坐标与规则仍必须成立；未知 `type` 会作为 opaque Entity 保留。已知 `type` 的未知字段、缺失必填字段或字段值错误形成实例合同 warning，该实例在 Engine/Editor 中降级为无行为 X 占位符，同类型的其它合法实例不受影响。字符串数组会在声明了 `string-or-string-list` 的字段中原样保留；其它复合实例字段会保存为 JSON 文本，并通过 `__invalidJsonFields` 标出来源字段。
 
 `LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
 
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
-Sandman、Beaver 与 Dream Machine 可以保存简单的字面对白：
+Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。单轮使用字符串；多轮使用字符串数组，每个数组元素是一轮对白，元素内的换行原样保留：
 
 ```json
 {
   "type": "sandman",
   "x": 5,
   "y": 4,
-  "dialogue": "前面的冰面很滑，小心脚下。"
+  "dialogue": [
+    "前面的冰面很滑。\n小心脚下。",
+    "准备好以后再往前走。"
+  ]
 }
 ```
 
-`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。角色被碰触时 Engine 发出
-`dialog` 事件并显示该文本；需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
+`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 使用自身的
+Runtime 游标循环数组并发出 `dialog` 事件；游标进入 Snapshot，但不反写地图。Editor 为
+每轮对白提供独立的可增删多行文本框。需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
 
 Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
 
@@ -415,7 +420,8 @@ Adventure 的声明式配置统一位于 `adventure/src/augment/`。每项内容
 ```ts
 interface AdventureAugmentation {
   levelPatches: readonly LevelPatch[];
-  interactions: readonly AdventureInteractionRule[];
+  savePatches?(save: AdventureSave): readonly LevelPatch[];
+  interaction?(context: AdventureInteractionContext): void | Promise<void>;
 }
 ```
 
@@ -428,7 +434,7 @@ type LevelPatch =
   | {
       operation: "set-fields";
       selector: { type?: string; x?: number; y?: number };
-      fields: Record<string, JsonPrimitive>;
+      fields: Record<string, JsonPrimitive | readonly string[]>;
     }
   | {
       operation: "replace-type";
@@ -437,8 +443,9 @@ type LevelPatch =
     };
 ```
 
-运行时规则具有稳定 `id`，并匹配通用 `object-interaction` 的
-`objectType / x / y / action / role`。效果可以声明循环对白 `lines[]`、永久商品报价或
-Bonus Key Vendor；循环游标只存在于当前页面的 `AdventureInteractionState`。Adventure
-不接收 Engine runtime object，也不直接操作 DOM；Web 只把事件投影为 primitive request，
-再通过通用对话层显示结果、提交购买归约或分派公开 Engine intent。
+固定或循环对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。`savePatches(save)` 把
+永久购买状态投影成 Session 地图，例如将已售出的商品格替换成 `shop-empty`。
+`interaction(context)` 是该地图唯一的 Campaign 交互入口，接收通用请求和当前 Save，
+并可调用宿主提供的 `showDialogue / presentDialogue / commitSave /
+addActorInventoryItem / replaceInteractedEntity`。Adventure 不接收 Engine runtime object，
+也不直接操作 DOM 或 localStorage；Web 只实现这些窄端口。

@@ -1,13 +1,7 @@
 import {
-  purchasedAdventureItemPatches,
   type AdventureAugmentation,
-  type AdventureItemPurchaseOffer,
   type AdventureSave,
 } from "@bobby/adventure";
-import type {
-  CommitEntityReplacementIntent,
-  ObjectInteractionEvent,
-} from "@bobby/engine";
 import {
   applyLevelPatches,
   type LevelMap,
@@ -23,24 +17,7 @@ export function prepareAdventureGameplayLevel(
 ): LevelMap {
   return applyLevelPatches(level, [
     ...augmentation.levelPatches,
-    ...(save ? purchasedAdventureItemPatches(augmentation, save) : []),
+    ...(save ? augmentation.savePatches?.(save) ?? [] : []),
     ...sessionPatches,
   ]);
-}
-
-/** Web 只负责把已结算的购买结果映射为 Engine 通用地图动作。 */
-export function adventureItemReplacementIntent(
-  offer: AdventureItemPurchaseOffer,
-  request: ObjectInteractionEvent,
-): CommitEntityReplacementIntent | null {
-  if (offer.replacementType === undefined) return null;
-  return {
-    type: "commit-entity-replacement",
-    target: {
-      type: request.objectType,
-      x: request.x,
-      y: request.y,
-    },
-    replacementType: offer.replacementType,
-  };
 }

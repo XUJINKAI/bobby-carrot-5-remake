@@ -1,14 +1,9 @@
 import {
   adventureAugmentationFor,
-  createAdventureInteractionState,
   isAdventureLevelUnlocked,
   planAdventurePlayer,
   planAdventureSession,
-  purchaseAdventureItem,
-  resolveAdventureInteraction,
   setAdventureResumeLevel,
-  type BonusKeyVendorOutcome,
-  type AdventureItemPurchaseOffer,
   type AdventureSave,
 } from "@bobby/adventure";
 import {
@@ -16,7 +11,6 @@ import {
   type AudioRuntime,
   type CameraOptions,
   type ImageManager,
-  type ObjectInteractionEvent,
 } from "@bobby/engine";
 import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import { createApp } from "vue";
@@ -73,10 +67,6 @@ import {
 } from "../../shell/shellBridge.js";
 import { getWebSettings } from "../../storage/settingsStorage.js";
 import {
-  webT,
-  type WebTranslationKey,
-} from "../../i18n/webI18n.js";
-import {
   globalActions,
   pageIdentity,
 } from "../../app/pageChrome.js";
@@ -85,7 +75,6 @@ import {
   type GamePageMode,
 } from "./gamePageCapabilities.js";
 import {
-  adventureItemReplacementIntent,
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
@@ -189,8 +178,7 @@ export async function renderGamePage(
   const adventureContentId = adventureLevel?.id ?? adventureScene?.id;
   const adventureAugmentation = adventureContentId
     ? adventureAugmentationFor(adventureContentId)
-    : { levelPatches: [], interactions: [] };
-  const adventureInteractionState = createAdventureInteractionState();
+    : { levelPatches: [] };
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
@@ -236,6 +224,7 @@ export async function renderGamePage(
     gameResult,
     "[data-result-card-content]",
   );
+  const pendingVendorSaves = new Map<number, AdventureSave>();
   const session = await createGameSession({
     canvas,
     level: sessionLevel,
@@ -243,6 +232,61 @@ export async function renderGamePage(
       audio,
       images,
     },
+    ...(adventureAugmentation.interaction
+      ? {
+          interaction: async ({ request, game, dialog }) => {
+            if (!adventureSave) return;
+            const actor = game.state.actors.find(
+              (item) => item.id === request.actorId,
+            );
+            if (!actor) return;
+            await adventureAugmentation.interaction?.({
+              request: {
+                requestId: request.requestId,
+                actorId: request.actorId,
+                entityId: request.entityId,
+                objectType: request.objectType,
+                x: request.x,
+                y: request.y,
+                action: request.action,
+                ...(request.role ? { role: request.role } : {}),
+                lockKeyCount: actor.inventory.lockKeys,
+              },
+              save: adventureSave,
+              showDialogue: (text) => dialog?.show(text),
+              presentDialogue: (presentation) =>
+                dialog?.present(presentation) ??
+                  Promise.resolve({ type: "dismissed" as const }),
+              commitSave: (save) => {
+                adventureSave = saveAdventureSave(save);
+              },
+              addActorInventoryItem: (item, count, saveOnAccepted) => {
+                if (saveOnAccepted) {
+                  pendingVendorSaves.set(request.requestId, saveOnAccepted);
+                }
+                game.dispatchInteractionEffect({
+                  type: "add-actor-inventory-item",
+                  actorId: request.actorId,
+                  item,
+                  count,
+                  requestId: request.requestId,
+                });
+              },
+              replaceInteractedEntity: (replacementType) => {
+                game.dispatchInteractionEffect({
+                  type: "commit-entity-replacement",
+                  target: {
+                    type: request.objectType,
+                    x: request.x,
+                    y: request.y,
+                  },
+                  replacementType,
+                });
+              },
+            });
+          },
+        }
+      : {}),
     runtime: {
       ...(plan
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
@@ -501,8 +545,6 @@ export async function renderGamePage(
   };
   window.addEventListener("game-shell-action", onGameShellAction);
   const disposeGameShell = bindGameShell(input, screenControlEnabled);
-  const pendingVendorSaves = new Map<number, AdventureSave>();
-  let purchaseDialogOpen = false;
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
     if (
       event.type === "actor-inventory-item-added" &&
@@ -517,103 +559,17 @@ export async function renderGamePage(
     }
     if (adventureSave && adventureLevel) adventureRewards.record(event);
   });
-  const unsubscribeInteraction = game.onInteractionRequest((request) => {
-    if (!adventureSave || !adventureContentId) return;
-    const actor = game.state.actors.find((item) => item.id === request.actorId);
-    if (!actor) return;
-    const interaction = resolveAdventureInteraction(
-      adventureAugmentation,
-      adventureSave,
-      {
-        objectType: request.objectType,
-        x: request.x,
-        y: request.y,
-        action: request.action,
-        ...(request.role ? { role: request.role } : {}),
-        lockKeyCount: actor.inventory.lockKeys,
-      },
-      adventureInteractionState,
-    );
-    if (!interaction) return;
-    if (interaction.type === "dialogue") {
-      dialog?.show(interaction.text);
-      return;
-    }
-    if (interaction.type === "item-purchase") {
-      void presentAdventurePurchase(interaction.offer, request);
-      return;
-    }
-    const { decision } = interaction;
-    if (decision.grantLockKey) {
-      pendingVendorSaves.set(request.requestId, decision.save);
-      game.dispatchInteractionEffect({
-        type: "add-actor-inventory-item",
-        actorId: request.actorId,
-        item: "lock-key",
-        count: 1,
-        requestId: request.requestId,
-      });
-    }
-    dialog?.show(bonusKeyVendorMessage(decision.outcome, decision.priceBonusCoins));
-  });
-
-  async function presentAdventurePurchase(
-    offer: AdventureItemPurchaseOffer,
-    request: ObjectInteractionEvent,
-  ): Promise<void> {
-    if (!dialog || !adventureSave || purchaseDialogOpen) return;
-    purchaseDialogOpen = true;
-    try {
-      const result = await dialog.present({
-        message: offer.message,
-        options: [
-          { id: "purchase", label: offer.leftLabel },
-          { id: "cancel", label: offer.rightLabel },
-        ],
-      });
-      if (result.type !== "selected" || result.optionId !== "purchase") return;
-      const purchase = purchaseAdventureItem(
-        adventureSave,
-        offer.item,
-        offer.currency,
-        offer.price,
-      );
-      if (purchase.outcome === "purchased") {
-        adventureSave = saveAdventureSave(purchase.save);
-        const replacement = adventureItemReplacementIntent(offer, request);
-        if (replacement) game.dispatchInteractionEffect(replacement);
-      }
-      dialog.show(offer.outcomeMessages[purchase.outcome]);
-    } finally {
-      purchaseDialogOpen = false;
-    }
-  }
 
   return {
     destroy(): void {
       window.removeEventListener("game-shell-action", onGameShellAction);
       disposeGameShell();
       unsubscribeWorldEvents();
-      unsubscribeInteraction();
       replayPanel.destroy();
       session.destroy();
       gamePage.unmount();
     },
   };
-}
-
-function bonusKeyVendorMessage(
-  outcome: BonusKeyVendorOutcome,
-  priceBonusCoins: number,
-): string {
-  const key = ({
-    "permanent-key-owned": "adventure.bonusKey.permanentOwned",
-    "lock-key-held": "adventure.bonusKey.lockKeyHeld",
-    "trial-granted": "adventure.bonusKey.trialGranted",
-    purchased: "adventure.bonusKey.purchased",
-    "insufficient-funds": "adventure.bonusKey.insufficient",
-  } satisfies Record<BonusKeyVendorOutcome, WebTranslationKey>)[outcome];
-  return webT(key).replace("{price}", String(priceBonusCoins));
 }
 
 function nextAdventureLevel(

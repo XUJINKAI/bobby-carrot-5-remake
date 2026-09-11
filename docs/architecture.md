@@ -35,7 +35,7 @@ interface LevelEntity {
   x: number;
   y: number;
   stackOrder?: number;
-  [field: string]: JsonPrimitive | undefined;
+  [field: string]: JsonPrimitive | readonly string[] | undefined;
 }
 ```
 
@@ -212,7 +212,8 @@ Object Definition touch behavior
                   Engine presentation
 ```
 
-固定对白是随 JSON 地图传播的字面字符串。复杂条件对白与购买由宿主监听
+固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
+Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
 `onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
 不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World，并把同一
 Tick 内各轮选择按一基序号写入 Replay；playback 仅在 frame 有待消费选择时再次调用外部
@@ -290,13 +291,14 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - Adventure Save contract；
 - 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
-- 条件对白、Bonus Beaver 关卡钥匙和永久商品购买等 Campaign 交互 reducer；
+- Bonus Beaver 关卡钥匙和永久商品购买等 Campaign 交互；
 - 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
 
 每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
-同一个 `AdventureAugmentation` 同时声明 `levelPatches` 与 `interactions`：前者在加载前
-形成 session map，后者匹配 Engine 的通用 `object-interaction` 请求。补丁执行器位于
-Model；Adventure 的交互归约和类型分别位于 `interactions.ts` 与 `types.ts`，场景配置不
+同一个 `AdventureAugmentation` 声明静态 `levelPatches`、可选 `savePatches(save)` 与
+可选 `interaction(context)`：前两者在加载前形成 session map，后者直接处理 Engine 的
+通用 `object-interaction` 请求。补丁执行器位于 Model；Adventure 的经济归约和交互端口
+分别位于 `interactions.ts` 与 `types.ts`，场景配置不
 散落到 Web 路由或 Engine。
 
 地图准备顺序固定为：
@@ -311,17 +313,17 @@ Engine Game.loadLevel(LevelMap)
 
 Engine object-interaction
         ↓ Web 只做边界适配
-resolveAdventureInteraction(augmentation, save, request, interactionState)
+adventureAugmentation.interaction(context)
         ↓
-dialogue / Campaign reducer result
+GameplayDialog / Save / public Engine effect
 ```
 
 通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
 `requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
-这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。运行时特殊对话
-按内容 ID、Entity type、坐标、footprint role 与交互动作声明；同一规则的 `lines[]` 由
-当前页面持有的交互状态顺序循环。Adventure 返回对白、商品报价或其它领域结果，Web
-负责调用通用对话展示、归约购买或把领域效果转换成 Engine 动作。Engine 只报告本局的
+这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定与循环对白
+通过 `dialogue` patch 直接进入纯地图；涉及 Campaign Save 的条件与购买写在地图的
+`interaction` 回调中。Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
+Engine 只报告本局的
 收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡
 完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
 
@@ -399,7 +401,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。角色 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
@@ -505,11 +507,10 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 暂存本局收集数量，只有 Engine 报告关卡完成时才由 Adventure 与 Campaign 进度一起提交。
 死亡、重开或退出会丢弃暂存奖励。
 
-购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
-币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并
-持久化新 Save。购买成功后，Web 把商品声明的替代 Entity 作为通用
+购买请求来自 Engine 的 `object-interaction`。对应地图的 Adventure interaction 回调
+调用纯经济归约，并通过宿主端口展示选项、持久化 Save。购买成功后，回调请求通用
 `commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
-根据最新 Save 生成同一替换补丁。Replay 只记录对话选择，宿主业务结果按播放时的 Save
+通过 `savePatches(save)` 生成同一替换补丁。Replay 只记录对话选择，宿主业务结果按播放时的 Save
 重新归约。Bonus Beaver 的关卡钥匙在 reducer 决策后以
 `add-actor-inventory-item` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的
 接受事件后提交 Save。永久钥匙通过加载前补丁把 Bonus Lock 的 `requireKey` 设为

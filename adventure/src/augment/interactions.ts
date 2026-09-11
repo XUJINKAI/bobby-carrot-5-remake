@@ -6,14 +6,8 @@ import {
   type AdventureItemId,
   type AdventureSave,
 } from "../save.js";
-import type { LevelPatch } from "@bobby/model";
 import { spendBonusCoins, spendGoldenCarrots } from "../rewards.js";
 import type {
-  AdventureAugmentation,
-  AdventureInteractionState,
-  AdventureInteractionRequest,
-  AdventureInteractionRule,
-  AdventureItemPurchaseOffer,
   AdventureItemPurchaseOutcome,
   AdventurePurchaseCurrency,
 } from "./types.js";
@@ -40,51 +34,12 @@ export interface BonusKeyVendorRequest {
   priceBonusCoins?: number;
 }
 
-export type AdventureInteractionDecision =
-  | { type: "dialogue"; text: string }
-  | { type: "bonus-key-vendor"; decision: BonusKeyVendorDecision }
-  | {
-      type: "item-purchase";
-      offer: AdventureItemPurchaseOffer;
-    };
-
 export interface AdventureItemPurchaseDecision {
   outcome: AdventureItemPurchaseOutcome;
   item: AdventureItemId;
   currency: AdventurePurchaseCurrency;
   price: number;
   save: AdventureSave;
-}
-
-export function createAdventureInteractionState(): AdventureInteractionState {
-  return { dialogueIndexes: new Map() };
-}
-
-/** 已拥有的永久商品在地图进入 Engine 前投影为购买后的 Entity。 */
-export function purchasedAdventureItemPatches(
-  augmentation: AdventureAugmentation,
-  save: AdventureSave,
-): LevelPatch[] {
-  const normalized = normalizeAdventureSave(save);
-  return augmentation.interactions.flatMap((rule) => {
-    if (
-      rule.effect.type !== "item-purchase" ||
-      rule.effect.offer.replacementType === undefined ||
-      !hasAdventureItem(normalized, rule.effect.offer.item)
-    ) {
-      return [];
-    }
-    const { type, x, y } = rule.selector;
-    return [{
-      operation: "replace-type" as const,
-      selector: {
-        ...(type === undefined ? {} : { type }),
-        ...(x === undefined ? {} : { x }),
-        ...(y === undefined ? {} : { y }),
-      },
-      type: rule.effect.offer.replacementType,
-    }];
-  });
 }
 
 /** 永久商品的价格、扣款与授予在同一次 Adventure Save 归约中完成。 */
@@ -101,7 +56,7 @@ export function purchaseAdventureItem(
   const balance = currency === "bonus-coins"
     ? normalized.economy.bonusCoins
     : normalized.economy.goldenCarrots;
-  if (balance < cost)
+  if (balance < cost) {
     return purchaseDecision(
       "insufficient-funds",
       normalized,
@@ -109,6 +64,7 @@ export function purchaseAdventureItem(
       currency,
       cost,
     );
+  }
   const paid = currency === "bonus-coins"
     ? spendBonusCoins(normalized, cost)
     : spendGoldenCarrots(normalized, cost);
@@ -119,44 +75,6 @@ export function purchaseAdventureItem(
     currency,
     cost,
   );
-}
-
-/** 声明式规则只返回 Adventure 语义结果，Web 再适配为 Engine 动作和对话展示。 */
-export function resolveAdventureInteraction(
-  augmentation: AdventureAugmentation,
-  save: AdventureSave,
-  request: AdventureInteractionRequest,
-  state: AdventureInteractionState,
-): AdventureInteractionDecision | null {
-  const rule = augmentation.interactions.find((candidate) =>
-    matchesInteraction(candidate, request)
-  );
-  if (!rule) return null;
-  if (rule.effect.type === "dialogue") {
-    const text = nextDialogueLine(rule, state);
-    return text === null ? null : { type: "dialogue", text };
-  }
-  if (rule.effect.type === "item-purchase") {
-    return { type: "item-purchase", offer: rule.effect.offer };
-  }
-  return {
-    type: "bonus-key-vendor",
-    decision: resolveBonusKeyVendorInteraction(save, {
-      lockKeyCount: request.lockKeyCount,
-      priceBonusCoins: rule.effect.priceBonusCoins,
-    }),
-  };
-}
-
-function nextDialogueLine(
-  rule: AdventureInteractionRule,
-  state: AdventureInteractionState,
-): string | null {
-  if (rule.effect.type !== "dialogue" || rule.effect.lines.length === 0)
-    return null;
-  const index = state.dialogueIndexes.get(rule.id) ?? 0;
-  state.dialogueIndexes.set(rule.id, (index + 1) % rule.effect.lines.length);
-  return rule.effect.lines[index % rule.effect.lines.length] ?? null;
 }
 
 /** Campaign 经济只在 Adventure Save 上归约；Engine 只接收最终钥匙动作。 */
@@ -185,20 +103,6 @@ export function resolveBonusKeyVendorInteraction(
     price,
     true,
     spendBonusCoins(normalized, price),
-  );
-}
-
-function matchesInteraction(
-  rule: AdventureInteractionRule,
-  request: AdventureInteractionRequest,
-): boolean {
-  const selector = rule.selector;
-  return (
-    (selector.type === undefined || selector.type === request.objectType) &&
-    (selector.x === undefined || selector.x === request.x) &&
-    (selector.y === undefined || selector.y === request.y) &&
-    (selector.action === undefined || selector.action === request.action) &&
-    (selector.role === undefined || selector.role === request.role)
   );
 }
 
