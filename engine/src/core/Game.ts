@@ -620,6 +620,15 @@ export class Game {
     });
   }
 
+  private faceBlockedActors(moves: readonly MoveResult[]): void {
+    const frame = this.presentationClock.current;
+    for (const move of moves) {
+      if (!move.blocked || move.actorId === undefined) continue;
+      if (!this.world.query.entityHasTrait(move.actorId, "player")) continue;
+      this.visual.faceDirection(move.actorId, move.direction, frame);
+    }
+  }
+
   private motionPresentationDuration(motion: EntityMotion): number {
     return motion.durationMs;
   }
@@ -692,6 +701,7 @@ export class Game {
       if (inputPhase) {
         this.lastMove = result.moves[0] ?? null;
         this.lastWorldEvents = result.events;
+        this.faceBlockedActors(result.moves);
       } else if (result.moves.length > 0) {
         this.lastMove = result.moves[0] ?? null;
       }

@@ -478,16 +478,19 @@ game.onInteractionRequest((request) => {
 `dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
 `dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
 
-宿主需要双选项交互时，可以等待通用展示层返回选择结果：
+宿主需要选项交互时，可以等待通用展示层返回选择结果：
 
 ```ts
-const choice = await dialog.choose({
+const result = await dialog.present({
   message: "要购买这个道具吗？",
-  leftLabel: "购买",
-  rightLabel: "算了",
-  primary: "left",
+  options: [
+    { id: "purchase", label: "购买", primary: true },
+    { id: "cancel", label: "算了" },
+  ],
 });
 ```
 
-结果为 `left / right / dismissed`。`GameplayDialog` 不接收业务回调，也不读写存档、
-货币或商品状态；宿主在等待期间自行管理输入能力，并在取得结果后提交业务动作。
+`options` 可以省略，也可以包含任意数量的选项；两项时自然按左右排列，更多选项会按
+可用宽度自动换行。结果为 `{ type: "selected", optionId }` 或
+`{ type: "dismissed" }`。`GameplayDialog` 不接收业务回调，也不读写存档、货币或
+商品状态；宿主在等待期间自行管理输入能力，并在取得结果后提交业务动作。

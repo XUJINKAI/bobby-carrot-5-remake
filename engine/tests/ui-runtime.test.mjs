@@ -186,3 +186,17 @@ test("Gameplay HUD exposes host styling hooks without naming a product font", ()
   assert.match(source, /\$\{options\.valueFontSize\}/);
   assert.doesNotMatch(source, /Jersey 10|fontFamily|WebkitTextStroke|textShadow/);
 });
+
+test("Gameplay Dialog renders zero-to-many data-driven options without button focus", () => {
+  const source = fs.readFileSync(
+    new URL("../src/ui/GameplayDialog.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /presentation\.options \?\? \[\]/);
+  assert.match(source, /options\.map\(\(option\) => this\.optionButton\(option\)\)/);
+  assert.match(source, /repeat\(auto-fit, minmax\(96px, 1fr\)\)/);
+  assert.match(source, /button\.tabIndex = -1/);
+  assert.match(source, /dataset\.dialogOption = option\.id/);
+  assert.doesNotMatch(source, /leftLabel|rightLabel/);
+});

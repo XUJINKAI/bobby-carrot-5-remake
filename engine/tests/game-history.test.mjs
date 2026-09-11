@@ -33,6 +33,37 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   assert.deepEqual(game.queuedMoves, []);
 });
 
+test("blocked player move forwards its attempted direction to presentation", () => {
+  const game = Object.create(Game.prototype);
+  const calls = [];
+  game.presentationClock = {
+    current: { frame: 2, nowMs: 120, deltaMs: 16 },
+  };
+  game.session = {
+    world: {
+      query: { entityHasTrait: (id, trait) => id === 3 && trait === "player" },
+    },
+  };
+  game.visual = {
+    faceDirection: (...args) => calls.push(args),
+  };
+
+  game.faceBlockedActors([
+    {
+      actorId: 3,
+      moved: false,
+      blocked: true,
+      from: { x: 0, y: 0 },
+      to: { x: 0, y: -1 },
+      direction: "up",
+      passage: { reason: "blocked", confidence: "rule" },
+      events: [],
+    },
+  ]);
+
+  assert.deepEqual(calls, [[3, "up", game.presentationClock.current]]);
+});
+
 test("Debug pause freezes only WorldClock and preserves input plus held state", () => {
   const game = Object.create(Game.prototype);
   let paused = false;

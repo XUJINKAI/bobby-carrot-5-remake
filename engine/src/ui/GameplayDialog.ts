@@ -5,14 +5,20 @@ export interface GameplayDialogOptions {
   root?: HTMLElement;
 }
 
-export interface GameplayDialogChoiceOptions {
-  message: string;
-  leftLabel: string;
-  rightLabel: string;
-  primary?: "left" | "right";
+export interface GameplayDialogOption {
+  id: string;
+  label: string;
+  primary?: boolean;
 }
 
-export type GameplayDialogChoice = "left" | "right" | "dismissed";
+export interface GameplayDialogPresentation {
+  message: string;
+  options?: readonly GameplayDialogOption[];
+}
+
+export type GameplayDialogResult =
+  | { type: "selected"; optionId: string }
+  | { type: "dismissed" };
 
 /**
  * Engine 持有的地图内对话层。World 只发最终文本；该层负责展示以及随玩家移动结束对话。
@@ -22,9 +28,10 @@ export class GameplayDialog {
   private readonly text: HTMLDivElement;
   private readonly actions: HTMLDivElement;
   private readonly unsubscribes: (() => void)[];
-  private pendingChoice: {
-    resolve: (choice: GameplayDialogChoice) => void;
+  private pendingPresentation: {
+    resolve: (result: GameplayDialogResult) => void;
   } | null = null;
+  private openedDuringCurrentDispatch = false;
 
   constructor(
     private readonly game: Game,
@@ -81,6 +88,7 @@ export class GameplayDialog {
           this.show(event.text);
       }),
       game.on("move", () => {
+        if (this.openedDuringCurrentDispatch) return;
         const openedByThisMove = game.lastWorldEvents.some(
           (event) => event.type === "dialog",
         );
@@ -100,69 +108,76 @@ export class GameplayDialog {
   }
 
   show(message: string): void {
-    this.settleChoice("dismissed");
+    this.settlePresentation({ type: "dismissed" });
+    this.protectFromCurrentDispatch();
     this.preparePassiveView();
     this.text.textContent = message;
     this.root.hidden = false;
   }
 
-  /** 展示一个通用双选项对话，只返回选择结果，不执行宿主业务。 */
-  choose(options: GameplayDialogChoiceOptions): Promise<GameplayDialogChoice> {
-    this.settleChoice("dismissed");
-    this.root.setAttribute("role", "dialog");
-    this.root.setAttribute("aria-live", "off");
-    this.root.style.pointerEvents = "auto";
-    this.text.textContent = options.message;
-    this.actions.style.display = "grid";
-    this.actions.replaceChildren(
-      this.choiceButton("left", options.leftLabel, options.primary === "left"),
-      this.choiceButton("right", options.rightLabel, options.primary === "right"),
-    );
+  /** 展示零到多个通用选项，只返回选项 ID，不执行宿主业务。 */
+  present(
+    presentation: GameplayDialogPresentation,
+  ): Promise<GameplayDialogResult> {
+    this.settlePresentation({ type: "dismissed" });
+    this.protectFromCurrentDispatch();
+    const options = presentation.options ?? [];
+    this.preparePassiveView();
+    this.text.textContent = presentation.message;
+    if (options.length > 0) {
+      this.root.setAttribute("role", "dialog");
+      this.root.setAttribute("aria-live", "off");
+      this.root.style.pointerEvents = "auto";
+      this.actions.style.display = "grid";
+      this.actions.style.gridTemplateColumns =
+        "repeat(auto-fit, minmax(96px, 1fr))";
+      this.actions.replaceChildren(
+        ...options.map((option) => this.optionButton(option)),
+      );
+    }
     this.root.hidden = false;
     return new Promise((resolve) => {
-      this.pendingChoice = { resolve };
+      this.pendingPresentation = { resolve };
     });
   }
 
   close(): void {
-    this.settleChoice("dismissed");
+    this.settlePresentation({ type: "dismissed" });
     if (this.root.hidden) return;
     this.hide();
   }
 
-  private choiceButton(
-    choice: Exclude<GameplayDialogChoice, "dismissed">,
-    label: string,
-    primary: boolean,
-  ): HTMLButtonElement {
+  private optionButton(option: GameplayDialogOption): HTMLButtonElement {
     const button = document.createElement("button");
     button.type = "button";
     button.tabIndex = -1;
-    button.textContent = label;
-    button.dataset.choice = choice;
+    button.textContent = option.label;
+    button.dataset.dialogOption = option.id;
     Object.assign(button.style, {
       minHeight: "38px",
-      border: primary
+      border: option.primary
         ? "1px solid rgba(178,255,203,.72)"
         : "1px solid rgba(255,255,255,.24)",
       borderRadius: "9px",
-      background: primary
+      background: option.primary
         ? "rgba(38,126,70,.92)"
         : "rgba(255,255,255,.08)",
       color: "inherit",
       font: "inherit",
       cursor: "pointer",
     });
-    button.addEventListener("click", () => this.settleChoice(choice));
+    button.addEventListener("click", () =>
+      this.settlePresentation({ type: "selected", optionId: option.id })
+    );
     return button;
   }
 
-  private settleChoice(choice: GameplayDialogChoice): void {
-    const pending = this.pendingChoice;
+  private settlePresentation(result: GameplayDialogResult): void {
+    const pending = this.pendingPresentation;
     if (!pending) return;
-    this.pendingChoice = null;
+    this.pendingPresentation = null;
     this.hide();
-    pending.resolve(choice);
+    pending.resolve(result);
   }
 
   private preparePassiveView(): void {
@@ -171,6 +186,13 @@ export class GameplayDialog {
     this.root.style.pointerEvents = "none";
     this.actions.style.display = "none";
     this.actions.replaceChildren();
+  }
+
+  private protectFromCurrentDispatch(): void {
+    this.openedDuringCurrentDispatch = true;
+    queueMicrotask(() => {
+      this.openedDuringCurrentDispatch = false;
+    });
   }
 
   private hide(): void {

@@ -303,6 +303,25 @@ export class VisualRuntime {
     this.entityRuntime.delete(entityId);
   }
 
+  /** 阻挡移动只更新表现朝向，并从该方向的静止终止帧开始显示。 */
+  faceDirection(
+    entityId: EntityId,
+    direction: Direction,
+    frame: PresentationFrame,
+  ): void {
+    if (this.activeMotionIds.has(entityId)) return;
+    const current = this.entityRuntime.get(entityId);
+    this.setEntityState(entityId, {
+      offsetX: current?.offsetX ?? 0,
+      offsetY: current?.offsetY ?? 0,
+      elevationPx: current?.elevationPx ?? 0,
+      moving: false,
+      progress: 1,
+      stationarySinceMs: frame.nowMs,
+      direction,
+    });
+  }
+
   /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
     const actorIds = world.query

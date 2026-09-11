@@ -105,9 +105,10 @@ export {
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export {
   GameplayDialog,
-  type GameplayDialogChoice,
-  type GameplayDialogChoiceOptions,
+  type GameplayDialogOption,
   type GameplayDialogOptions,
+  type GameplayDialogPresentation,
+  type GameplayDialogResult,
 } from "./ui/GameplayDialog.js";
 export {
   ORIGINAL_BOBBY_LOCOMOTION_TIMING,
