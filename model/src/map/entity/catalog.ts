@@ -55,7 +55,14 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
 
   defineEntity(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
   defineEntity(MapEntityTypeId.SHOP_CLOUD9_TICKET),
-  defineEntity(MapEntityTypeId.SHOP_SUPER_KEY),
+  defineEntity(MapEntityTypeId.LOCK_KEY, [
+    booleanField(
+      "collectible",
+      true,
+      false,
+      "是否能作为关卡内钥匙拾取；false 时作为阻挡且可交互的陈列物。",
+    ),
+  ]),
   defineEntity(MapEntityTypeId.SHOP_STEREO_SYSTEM),
   defineEntity(MapEntityTypeId.SHOP_EXTRA_MUSIC),
   defineEntity(MapEntityTypeId.SHOP_SPEED_SHOES),
@@ -137,6 +144,12 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     "Filled/empty is runtime state, not a different map entity type.",
   ),
   defineEntity(MapEntityTypeId.LOCK, [
+    booleanField(
+      "requireKey",
+      false,
+      false,
+      "是否需要消耗 Bobby 背包中的一把关卡内钥匙。",
+    ),
     integerField(
       "deathCountdownSeconds",
       0,
