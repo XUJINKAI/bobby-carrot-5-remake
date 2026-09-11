@@ -12,33 +12,39 @@ const EMPTY_AUGMENTATION: AdventureAugmentation = Object.freeze({
 
 // 对白按顺序循环；后续可直接在数组末尾继续补充台词。
 const BEAVER_SHOP_BEAVER_DIALOGUES = [
-  "商店暂时不开放了，搬家以后我的道具都不值钱了，不过你可以随意逛逛。",
+  "商店还在装修中，不过你可以随意逛逛...",
+  "话说，你知道我是怎么到这儿的吗？",
+  "那天，突然出现了一个家伙，他说他叫 XUJINKAI，说是要给我搬家，然后不由分说就把我的店铺打包带走了...",
+  "我都拦不住他，然后就稀里糊涂来到这儿了。",
+  "不过那家伙不错，说是我的道具用处不大了，想帮我把商店改成展览馆。",
+  "你说他不会是画饼吧...",
+  "算了，你随便逛吧...",
 ] as const;
 
 const BEAVER_SHOP_ITEM_DIALOGUES = [
   {
     type: MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
-    text: "Dream Machine 车票暂时不出售，夜间列车现在可以直接前往。",
+    text: "陈列着 Dream Machine 车票，听说现在不需要买票了。",
   },
   {
     type: MapEntityTypeId.SHOP_CLOUD9_TICKET,
-    text: "Cloud 9 车票暂时不出售，夜间列车现在可以直接前往。",
+    text: "陈列着 Cloud 9 车票，听说现在不需要买票了。",
   },
   {
     type: MapEntityTypeId.SHOP_STEREO_SYSTEM,
-    text: "Stereo System 还没有接好，Sound Test 暂不开放。",
+    text: "陈列着 立体声系统，听说现在大家都用无线耳机了。",
   },
   {
     type: MapEntityTypeId.SHOP_EXTRA_MUSIC,
-    text: "Extra Music 还在重新整理，暂时只能听现有曲目。",
+    text: "陈列着 附赠音乐，听说现在大家都喜欢在线听歌。",
   },
   {
     type: MapEntityTypeId.SHOP_SPEED_SHOES,
-    text: "新店的地板太滑，Speed Shoes 暂时不出售。",
+    text: "陈列着 速度鞋，现在似乎用不上了。",
   },
   {
     type: MapEntityTypeId.SHOP_COIN_RADAR,
-    text: "搬家以后金币的位置全变了，Coin Radar 还在重新校准。",
+    text: "陈列着 金币雷达，现在似乎用不上了。",
   },
 ] as const;
 
@@ -91,7 +97,10 @@ const BEAVER_SHOP: AdventureAugmentation = {
       },
       effect: {
         type: "dialogue",
-        lines: ["哔哔~我从其他地方搞来了传送门，哔哔~"],
+        lines: [
+          "哔哔~我从其他地方搞来了传送门，哔哔~",
+          "哔哔~我是勤奋的科研机器，哔哔~",
+        ],
       },
     },
     {
@@ -132,7 +141,7 @@ const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
         selector: { type: MapEntityTypeId.BEAVER, action: "touch" },
         effect: {
           type: "dialogue",
-          lines: ["Dream Machine 还在调试，我暂时不能让它启动。"],
+          lines: ["我还在调试设备。"],
         },
       },
       {
@@ -140,7 +149,7 @@ const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
         selector: { type: MapEntityTypeId.DREAM_MACHINE, action: "touch" },
         effect: {
           type: "dialogue",
-          lines: ["机器没有响应，Dream Machine 暂不开放。"],
+          lines: ["哔哔~你有见过我的兄弟吗？哔哔~"],
         },
       },
     ],
@@ -153,7 +162,7 @@ const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
         selector: { type: MapEntityTypeId.SANDMAN, action: "touch" },
         effect: {
           type: "dialogue",
-          lines: ["Cloud 9 暂不开放，我还在整理这里的梦。"],
+          lines: ["咳咳...我...我是怎么到这儿的..."],
         },
       },
     ],
@@ -166,7 +175,7 @@ const SPECIAL_SCENES: Readonly<Record<string, AdventureAugmentation>> = {
         selector: { type: MapEntityTypeId.SANDMAN, action: "touch" },
         effect: {
           type: "dialogue",
-          lines: ["Dreamland Reward 暂不开放，奖励还在准备中。"],
+          lines: ["咳咳...我...我是怎么到这儿的..."],
         },
       },
     ],
