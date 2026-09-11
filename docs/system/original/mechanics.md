@@ -282,12 +282,12 @@ bf(1,1) --> bf(2,1) --> bf(3,1) --> bf(2,1)
 
 ## Beaver
 
-Beaver 是两格对象，Head / Body 属于同一个 Entity。方向、交互和视觉都不应通过两个独立地图对象维持同步。
+Beaver 是两格对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。Head / Body 属于同一个 Entity，方向、交互和视觉都不应通过两个独立地图对象维持同步。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
 
 ## Sandman
 
-Sandman 是两格角色型对象，由 Head / Body 共同组成一个 Entity。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。
+Sandman 是两格角色型对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
 
 ## Dream Machine
 
-Dream Machine 同样是两格对象，采用单 Entity + footprint。其特殊场景行为与普通 Entity runtime 共用同一套机制。
+Dream Machine 同样是两格对象，采用单 Entity + footprint；Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用同一套机制。

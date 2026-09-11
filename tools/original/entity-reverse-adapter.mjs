@@ -255,8 +255,8 @@ function reverseStackCell(cell) {
       case MapEntityTypeId.BEAVER:
       case MapEntityTypeId.SANDMAN:
       case MapEntityTypeId.DREAM_MACHINE:
-        // 这些 footprint 在原版以 head 定位，其余部件由原版运行时解释。
-        objects.push({ type: tile({ type, role: "head" }), x, y });
+        // canonical anchor 位于 body；原版 objects 表保存其上方 head。
+        objects.push({ type: tile({ type, role: "head" }), x, y: y - 1 });
         continue;
 
       case MapEntityTypeId.BEANSTALK:

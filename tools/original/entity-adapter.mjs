@@ -20,7 +20,7 @@ import {
  * 多个原版表示合并后是否仍保留开局所需的全部语义。
  */
 
-/** 原版多格对象只有 head 或 tip 单元能够生成 canonical anchor。 */
+/** 原版多格对象只有 head 或 tip 单元用于识别 canonical Entity。 */
 const OBJECT_ANCHOR_ROLES = new Set(["head", "tip"]);
 
 /** 这些图块的 phase 是运行过程中的画面，载入地图时折叠到同一个稳定 Entity。 */
@@ -146,6 +146,17 @@ function adaptStackCell(cell, context) {
             entity(MapEntityTypeId.DRAGON, source.x + 1, source.y, {
               direction: "left",
             }),
+          );
+        }
+        break;
+
+      case MapEntityTypeId.BEAVER:
+      case MapEntityTypeId.SANDMAN:
+      case MapEntityTypeId.DREAM_MACHINE:
+        if (visual.role === "head") {
+          // 原版保存上方 head；canonical Entity 保存下方 body anchor。
+          adaptedObjects.push(
+            canonicalVisualEntity(visual, source.x, source.y + 1),
           );
         }
         break;
