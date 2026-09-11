@@ -44,6 +44,7 @@ for (const replayFile of replayFiles) {
 test("Replay fixture 文件名可以独立于关联地图", () => {
   const replay = {
     meta: {
+      id: "original/1-1",
       url: "https://bc5r.xujinkai.net/explore/play/original/1-1?take=fast#finish",
     },
   };
@@ -63,8 +64,23 @@ test("Replay fixture 只接受正式 Explore 地图 URL", () => {
     "https://bc5r.xujinkai.net/adventure/chapter/1/level/1-1",
     "https://bc5r.xujinkai.net/explore/play/original/../1-1",
   ]) {
-    assert.throws(() => replayMapRef({ meta: { url } }), /Replay meta\.url/);
+    assert.throws(
+      () => replayMapRef({ meta: { id: "original/1-1", url } }),
+      /Replay meta\.url|指向的地图不一致/,
+    );
   }
+});
+
+test("Replay fixture 要求路径 ID 与地图 URL 一致", () => {
+  assert.throws(
+    () => replayMapRef({
+      meta: {
+        id: "original/1-2",
+        url: "https://bc5r.xujinkai.net/explore/play/original/1-1",
+      },
+    }),
+    /指向的地图不一致/,
+  );
 });
 
 function listFiles(directory) {

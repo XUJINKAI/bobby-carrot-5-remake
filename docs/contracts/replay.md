@@ -75,7 +75,7 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 {
   "formatVersion": 1,
   "meta": {
-    "name": "1-1",
+    "id": "original/1-1",
     "url": "https://bc5r.xujinkai.net/explore/play/original/1-1",
     "note": ""
   },
@@ -119,7 +119,9 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 }
 ```
 
-`meta.name` 和 `meta.url` 由宿主在开始录制时提供。`note` 初始为空字符串，Engine
+`meta.id` 和 `meta.url` 由宿主在开始录制时提供。`id` 使用
+`<collection>/<map-id>` 路径身份，例如 `original/1-1`；Editor Play Test 使用
+`editor/draft`。`note` 初始为空字符串，Engine
 不读取或解释其内容，用户可以在 Replay 文本中直接填写。
 
 录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
