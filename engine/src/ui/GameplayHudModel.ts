@@ -14,6 +14,8 @@ export interface GameplayHudInventory {
 
 export interface GameplayHudModel {
   elapsedMs: number;
+  moves: number;
+  coins: number | null;
   timedChallengePhase: "waiting" | "running" | null;
   timedChallengeRemainingMs: number | null;
   objectives: {
@@ -27,6 +29,7 @@ export interface GameplayHudModel {
 export function buildGameplayHudModel(
   state: GameplayState,
   winState: WinConditionState | null,
+  coins: number | null = null,
 ): GameplayHudModel {
   const actors = [...state.actors].sort((left, right) => {
     if (left.id === state.primaryActorId) return -1;
@@ -35,6 +38,8 @@ export function buildGameplayHudModel(
   });
   return {
     elapsedMs: state.elapsedMs,
+    moves: state.moves,
+    coins,
     timedChallengePhase: state.timedChallengePhase,
     timedChallengeRemainingMs: state.timedChallengeRemainingMs,
     objectives: {

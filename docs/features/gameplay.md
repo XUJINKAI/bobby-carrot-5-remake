@@ -39,19 +39,19 @@ Result 的下一关、重新开始与返回等产品动作仍由 Web 持有。Ga
 Adventure Gameplay HUD 在左上角显示 `MM:SS`。普通关卡从公开
 `GameplayState.elapsedMs` 正向显示本关用时；配置了 `deathCountdownSeconds` 的
 Lock 时，从开局显示冻结的完整时长，开锁后在同一位置开始递减。宿主可通过
-`runtime.hud.elapsedTime` 与 `runtime.hud.timedChallenge` 分别控制两类投影，
-并通过 `GameplayState.timedChallengePhase` 区分等待开锁与正在计时。
+`runtime.hud.timer` 统一控制两类投影，并通过
+`GameplayState.timedChallengePhase` 区分等待开锁与正在计时。
 
 关卡进入过渡会暂停 WorldClock 并丢弃期间产生的 gameplay 移动输入。本关正向计时、
 地图内倒计时和 Replay tick 都从 Bobby 完成出现后开始推进。
 
 ## HUD 与计时边界
 
-目标、背包、地图内收集物和 Timed Challenge 的状态与基础 HUD 渲染属于 Engine。它们在所有 Engine session 中保持相同语义和呈现，包括 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test。
+计时、步数、目标、地图内道具和 Timed Challenge 的状态与基础 HUD 渲染属于 Engine。它们在所有 Engine session 中保持相同语义和呈现，包括 Welcome Demo、Adventure、Explore、Custom Play 和 Editor Play Test。宿主持有的全局金币通过 Runtime Config 提供给 Engine HUD，不进入地图状态。
 
-所有已获得道具统一显示在 GameStage 右上角。道具从右向左排列，并在窄屏上向下换行；Adventure、Explore、Custom Play 和 Editor Play Test 使用同一布局。
+所有已获得道具统一显示在 GameStage 右上角，并在窄屏上换行。数量为 `1` 的道具只显示图标，数量大于 `1` 时显示计数；金币与道具共用一行，并始终显示计数。
 
-本次游玩用时、模式完成记录等统计信息由 Web 记录，并作为产品 Overlay 展示。统计 Timer 不参与移动、死亡、完成或 Undo Snapshot。HUD 和 Result 的页面布局见 [`ui.md`](ui.md)。
+各产品入口通过 `timer / steps / objective / items / coins` 独立配置 HUD 项目。模式完成记录仍由 Web 处理；HUD 和 Result 的页面布局见 [`ui.md`](ui.md)。
 
 地图完成与死亡是 Engine 事实；下一关、返回章节、打开 Editor 等动作由启动该 session 的产品入口决定。
 

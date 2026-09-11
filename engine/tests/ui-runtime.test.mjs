@@ -76,8 +76,14 @@ test("Gameplay HUD 投影 Timed Challenge 剩余时间", () => {
 });
 
 test("Gameplay HUD 正向显示本关已用时间", () => {
-  const model = buildGameplayHudModel(state({ elapsedMs: 59_999 }), null);
+  const model = buildGameplayHudModel(
+    state({ elapsedMs: 59_999, moves: 84 }),
+    null,
+    0,
+  );
   assert.equal(model.elapsedMs, 59_999);
+  assert.equal(model.moves, 84);
+  assert.equal(model.coins, 0);
   assert.equal(formatGameplayElapsed(999), "00:00");
   assert.equal(formatGameplayElapsed(1_000), "00:01");
   assert.equal(formatGameplayElapsed(59_999), "00:59");
@@ -171,8 +177,30 @@ test("Gameplay HUD uses objective plus primary and secondary inventory rows", ()
   assert.match(source, /inventoryRow\("primary", "#ff665e"\)/);
   assert.match(source, /inventoryRow\("secondary", "#5796ff"\)/);
   assert.match(source, /root\.append\(marker, kite\.root, bean\.root, shovel\.root, gas\.root\)/);
+  assert.match(source, /this\.primaryInventory\.root\.append\(this\.coins\)/);
+  assert.match(source, /`金币: \$\{String\(model\.coins\)\}`/);
+  assert.match(source, /normalized > 1 \? "inline" : "none"/);
   assert.doesNotMatch(source, /border:|borderRadius:|background:|boxShadow:/);
-  assert.doesNotMatch(source, /goldenCarrotChip|bonusCoinChip/);
+});
+
+test("Gameplay HUD 分别配置计时、步数、目标、道具和金币", () => {
+  const [hudSource, viewSource] = [
+    fs.readFileSync(new URL("../src/ui/GameplayHud.ts", import.meta.url), "utf8"),
+    fs.readFileSync(
+      new URL("../src/ui/GameplayHudView.ts", import.meta.url),
+      "utf8",
+    ),
+  ];
+
+  assert.match(hudSource, /timer\?: boolean/);
+  assert.match(hudSource, /steps\?: boolean/);
+  assert.match(hudSource, /objective\?: boolean/);
+  assert.match(hudSource, /items\?: boolean/);
+  assert.match(hudSource, /coins\?: number \| \(\(\) => number\)/);
+  assert.match(viewSource, /this\.options\.timer !== false/);
+  assert.match(viewSource, /this\.options\.steps !== false/);
+  assert.match(viewSource, /this\.options\.objective !== false/);
+  assert.match(viewSource, /this\.options\.items !== false/);
 });
 
 test("Gameplay HUD exposes host styling hooks without naming a product font", () => {

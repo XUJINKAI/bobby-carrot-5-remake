@@ -45,10 +45,11 @@ const runtime = await createGameplayRuntime({
       screenJoystick: { enabled: true },
     },
     hud: {
+      timer: true,
+      steps: true,
       objective: true,
-      inventory: true,
-      elapsedTime: true,
-      timedChallenge: true,
+      items: true,
+      coins: () => save.economy.bonusCoins,
     },
     dialog: {
       characterIntervalMs: 28,
@@ -345,10 +346,10 @@ runtime: {
     },
   },
   hud: {
+    timer: true,
+    steps: true,
     objective: true,
-    inventory: true,
-    elapsedTime: true,
-    timedChallenge: true,
+    items: true,
   },
   camera: {
     zoom: 1,
@@ -369,7 +370,7 @@ runtime: {
 
 `setZoom()` 围绕 Canvas 中心缩放；`setZoomAt()` 接收 Canvas 的浏览器 client 坐标，并保持该屏幕点下的世界位置不动。Camera 首次加载地图时使用视口边界构图：大于视口的地图贴住窗口边缘，小地图居中。`panBounds: "viewport"` 在后续 Pan 中继续维持该边界；`panBounds: "map-edge"` 允许用户操作后把地图四条边移动到视口中心，同时避免把整张地图拖离视口。
 
-地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 左上角投影 Timed Challenge，右上角第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立背包。`objective / inventory / timedChallenge` 可以分别关闭；省略的项目默认开启。
+地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 左上角投影计时器与步数，右上角第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立道具；宿主金币与 primary 道具共用一行。`timer / steps / objective / items` 可以分别关闭，省略的项目默认开启；`coins` 只有宿主提供数值源时才显示。
 
 `input.zoom` 控制键盘 Zoom，并作为 `pinchZoom / wheelZoom` 的缺省值。宿主可以分别配置后两者，例如 Embed 可以启用 Pinch 而关闭滚轮 Zoom。双指手势在 `pan` 启用时同时根据中心位移平移 Camera。
 
@@ -384,18 +385,25 @@ runtime: {
   hud: {
     enabled: true,
     root: gameOverlay,
+    timer: true,
+    steps: true,
     objective: true,
-    inventory: true,
-    elapsedTime: true,
-    timedChallenge: true,
+    items: true,
+    coins: () => adventureSave.economy.bonusCoins,
   },
 }
 ```
 
 `hud: false` 不创建 HUD，`hud: true` 使用全部默认项。`root` 可以指定 HUD 挂载容器；
-`objective`、`inventory`、`elapsedTime` 和 `timedChallenge` 分别控制目标、地图内背包、
-左上角正向计时和挑战倒计时。`elapsedTime` 默认关闭，Adventure 显式开启；
-地图配置 Timed Challenge 时，它从关卡开局起优先占用同一个左上角计时位置。
+`timer`、`steps`、`objective` 和 `items` 分别控制计时器、步数、剩余目标与地图内道具。
+计时器通常正向显示 `GameplayState.elapsedMs`；地图配置 Timed Challenge 时，挑战倒计时
+优先占用同一个左上角计时位置。`coins` 接收非负整数或返回非负整数的函数，由宿主提供
+全局经济状态；配置后始终显示数值，包括 `0`。函数形式会在 HUD 收到 Engine tick 或
+change 时重新读取，适合可变的存档状态。
+
+道具和金币位于同一行，但由 `items` 与 `coins` 独立配置。道具数量为 `1` 时只显示图标，
+数量大于 `1` 时同时显示计数；金币始终显示计数。
+
 倒计时数值可以通过 `game.timedChallengeRemainingMs` 或
 `game.state.timedChallengeRemainingMs` 读取；`game.timedChallengePhase` 与
 `game.state.timedChallengePhase` 为 `"waiting"` 时显示冻结的完整时长，为

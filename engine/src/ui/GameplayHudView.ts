@@ -3,10 +3,10 @@ import { GAMEPLAY_RIGHT_INSET_CSS_VAR } from "./gameplayMount.js";
 import type { GameplayHudModel } from "./GameplayHudModel.js";
 
 export interface GameplayHudViewOptions {
+  timer?: boolean;
+  steps?: boolean;
   objective?: boolean;
-  inventory?: boolean;
-  elapsedTime?: boolean;
-  timedChallenge?: boolean;
+  items?: boolean;
 }
 
 interface HudChip {
@@ -38,8 +38,10 @@ const HUD_SLICE: Record<HudSprite, string> = {
 export class GameplayHudView {
   readonly root: HTMLDivElement;
   private readonly timer: HTMLElement;
+  private readonly steps: HTMLElement;
   private readonly objectiveCarrot: HudChip;
   private readonly objectiveEgg: HudChip;
+  private readonly coins: HTMLElement;
   private readonly primaryInventory: InventoryRow;
   private readonly secondaryInventory: InventoryRow;
 
@@ -59,18 +61,37 @@ export class GameplayHudView {
       opacity: "0.68",
     });
 
+    const left = document.createElement("div");
+    left.className = "engine-gameplay-hud-left";
+    Object.assign(left.style, {
+      position: "absolute",
+      top: "12px",
+      left: "12px",
+      display: "grid",
+      gap: "2px",
+      justifyItems: "start",
+    });
+
     this.timer = document.createElement("strong");
     this.timer.className =
       "engine-gameplay-hud-timer engine-gameplay-hud-value";
     Object.assign(this.timer.style, {
-      position: "absolute",
-      top: "12px",
-      left: "12px",
       display: "none",
       fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
       lineHeight: "1",
       fontVariantNumeric: "tabular-nums",
     });
+    this.steps = document.createElement("strong");
+    this.steps.className =
+      "engine-gameplay-hud-steps engine-gameplay-hud-value";
+    this.steps.setAttribute("aria-label", "本关步数");
+    Object.assign(this.steps.style, {
+      display: "none",
+      fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
+      lineHeight: "1",
+      fontVariantNumeric: "tabular-nums",
+    });
+    left.append(this.timer, this.steps);
 
     const right = document.createElement("div");
     right.className = "engine-gameplay-hud-right";
@@ -106,20 +127,32 @@ export class GameplayHudView {
 
     this.primaryInventory = this.inventoryRow("primary", "#ff665e");
     this.secondaryInventory = this.inventoryRow("secondary", "#5796ff");
+    this.coins = document.createElement("strong");
+    this.coins.className =
+      "engine-gameplay-hud-coins engine-gameplay-hud-value";
+    this.coins.setAttribute("aria-label", "金币数");
+    Object.assign(this.coins.style, {
+      display: "none",
+      fontSize: "var(--engine-gameplay-hud-value-font-size, 26px)",
+      lineHeight: "1",
+      fontVariantNumeric: "tabular-nums",
+      whiteSpace: "nowrap",
+    });
+    this.primaryInventory.root.append(this.coins);
     right.append(
       objective,
       this.primaryInventory.root,
       this.secondaryInventory.root,
     );
-    this.root.append(this.timer, right);
+    this.root.append(left, right);
   }
 
   render(model: GameplayHudModel): void {
     const showTimedChallenge =
-      this.options.timedChallenge !== false &&
+      this.options.timer !== false &&
       model.timedChallengeRemainingMs !== null;
     const showElapsedTime =
-      this.options.elapsedTime === true && !showTimedChallenge;
+      this.options.timer !== false && !showTimedChallenge;
     this.timer.style.display =
       showTimedChallenge || showElapsedTime ? "block" : "none";
     if (showTimedChallenge) {
@@ -136,6 +169,9 @@ export class GameplayHudView {
       this.timer.setAttribute("aria-label", "本关用时");
       this.timer.textContent = formatGameplayElapsed(model.elapsedMs);
     }
+    const showSteps = this.options.steps !== false;
+    this.steps.style.display = showSteps ? "block" : "none";
+    this.steps.textContent = String(model.moves);
 
     const showObjective = this.options.objective !== false;
     this.setChip(
@@ -149,19 +185,24 @@ export class GameplayHudView {
       model.objectives.eggRemaining ?? undefined,
     );
 
-    const showInventory = this.options.inventory !== false;
+    const showItems = this.options.items !== false;
+    const showCoins = model.coins !== null;
+    this.coins.style.display = showCoins ? "inline" : "none";
+    if (showCoins) this.coins.textContent = `金币: ${String(model.coins)}`;
     const distinguishPlayers = model.inventories.length > 1;
     this.renderInventory(
       this.primaryInventory,
       model.inventories[0],
-      showInventory,
+      showItems,
       distinguishPlayers,
+      showCoins,
     );
     this.renderInventory(
       this.secondaryInventory,
       model.inventories[1],
-      showInventory,
+      showItems,
       distinguishPlayers,
+      false,
     );
   }
 
@@ -182,18 +223,23 @@ export class GameplayHudView {
     inventory: GameplayHudModel["inventories"][number] | undefined,
     enabled: boolean,
     distinguishPlayers: boolean,
+    forceRowVisible: boolean,
   ): void {
-    const visible = enabled && inventory !== undefined;
-    row.root.style.display = visible ? "flex" : "none";
-    row.marker.style.display = distinguishPlayers ? "inline-block" : "none";
-    this.setChip(row.kite, visible && inventory?.kite === true);
-    this.setChip(
-      row.bean,
-      visible && (inventory?.beans ?? 0) > 0,
-      inventory?.beans ?? 0,
-    );
-    this.setChip(row.shovel, visible && inventory?.shovel === true);
-    this.setChip(row.gas, visible && inventory?.gas === true);
+    const itemRowVisible = enabled && inventory !== undefined;
+    row.root.style.display =
+      itemRowVisible || forceRowVisible ? "flex" : "none";
+    row.marker.style.display =
+      itemRowVisible && distinguishPlayers ? "inline-block" : "none";
+    this.setItemChip(row.kite, itemRowVisible && inventory?.kite ? 1 : 0);
+    this.setItemChip(row.bean, itemRowVisible ? inventory?.beans ?? 0 : 0);
+    this.setItemChip(row.shovel, itemRowVisible && inventory?.shovel ? 1 : 0);
+    this.setItemChip(row.gas, itemRowVisible && inventory?.gas ? 1 : 0);
+  }
+
+  private setItemChip(chip: HudChip, count: number): void {
+    const normalized = Math.max(0, Math.floor(count));
+    this.setChip(chip, normalized > 0, normalized);
+    if (chip.value) chip.value.style.display = normalized > 1 ? "inline" : "none";
   }
 
   private inventoryRow(
@@ -222,16 +268,24 @@ export class GameplayHudView {
       lineHeight: "1",
     });
     marker.textContent = "●";
-    const kite = this.chip("风筝", this.sprite("kite"));
+    const kite = this.itemChip("风筝", "kite");
     const bean = this.chip("魔豆", this.sprite("bean"), {
       value: true,
       valueFirst: true,
       valueFontSize: "18px",
     });
-    const shovel = this.chip("雪铲", this.sprite("shovel"));
-    const gas = this.chip("汽油", this.sprite("gas"));
+    const shovel = this.itemChip("雪铲", "shovel");
+    const gas = this.itemChip("汽油", "gas");
     root.append(marker, kite.root, bean.root, shovel.root, gas.root);
     return { root, marker, gas, shovel, kite, bean };
+  }
+
+  private itemChip(title: string, sprite: HudSprite): HudChip {
+    return this.chip(title, this.sprite(sprite), {
+      value: true,
+      valueFirst: true,
+      valueFontSize: "18px",
+    });
   }
 
   private chip(
