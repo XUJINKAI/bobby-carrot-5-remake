@@ -7,7 +7,7 @@ import {
   type PlacementInspectorPreviewModel,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { LevelEntity } from "@bobby/model";
+import type { LevelEntity, LevelEntityFieldValue } from "@bobby/model";
 import { computed } from "vue";
 import EditorEntityFields from "./EditorEntityFields.vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
@@ -21,7 +21,7 @@ const props = defineProps<{
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
-  field: [key: string, value: string];
+  field: [key: string, value: LevelEntityFieldValue];
   variant: [index: number];
 }>();
 

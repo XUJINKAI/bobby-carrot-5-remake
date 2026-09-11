@@ -2,11 +2,11 @@
 import {
   EditorEntityPreviewRenderer,
   type EditorDefinition,
-  type EditorEntityFields,
   type EditorPlacementPreset,
   type EntityCatalog,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
+import type { JsonPrimitive } from "@bobby/model";
 import { onMounted, ref, watch } from "vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
 import type { AppIconName } from "../../shared/icons/types.js";
@@ -17,7 +17,7 @@ const props = defineProps<{
   images: ImageManager;
   catalog: EntityCatalog;
   editor: EditorDefinition;
-  previewState?: EditorEntityFields | undefined;
+  previewState?: Readonly<Record<string, JsonPrimitive>> | undefined;
   fallbackIcon?: AppIconName | undefined;
   fallbackText?: string | undefined;
 }>();

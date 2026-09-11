@@ -6,6 +6,9 @@ export type Direction = "up" | "down" | "left" | "right";
 /** Canonical Entity 身份；original/custom 等源码目录不属于该值。 */
 export type EntityType = string;
 
+/** Entity 顶层字段保持扁平；对白是唯一允许使用字符串列表的内容字段。 */
+export type LevelEntityFieldValue = JsonPrimitive | readonly string[];
+
 /** LevelMap.entities[] 的公开持久化形状；类型专属顶层字段由对应 Definition 管理。 */
 export interface LevelEntity {
   type: EntityType;
@@ -13,7 +16,7 @@ export interface LevelEntity {
   y: number;
   stackOrder?: number;
   /** 类型专属字段由 EntityMapDefinition 声明，并在地图解析边界校验。 */
-  [key: string]: JsonPrimitive | undefined;
+  [key: string]: LevelEntityFieldValue | undefined;
 }
 
 export type MusicTrackId = string;

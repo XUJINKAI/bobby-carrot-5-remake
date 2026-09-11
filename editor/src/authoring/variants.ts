@@ -2,8 +2,8 @@ import type { EntityCatalog } from "@bobby/engine";
 import {
   entityMapDefinition,
   isLevelEntityReservedField,
-  type JsonPrimitive,
   type LevelEntity,
+  type LevelEntityFieldValue,
 } from "@bobby/model";
 import { applyEditorVariant } from "../definitions/builtin.js";
 import { editorEntityDirection } from "../definitions/entities.js";
@@ -103,7 +103,7 @@ function variantMatches(
 }
 
 function fieldsFromEntity(entity: Readonly<LevelEntity>): EditorEntityFields {
-  const fields: Record<string, JsonPrimitive> = {};
+  const fields: Record<string, LevelEntityFieldValue> = {};
   for (const [key, value] of Object.entries(entity)) {
     if (
       isLevelEntityReservedField(key) ||
@@ -115,7 +115,10 @@ function fieldsFromEntity(entity: Readonly<LevelEntity>): EditorEntityFields {
   return fields;
 }
 
-function same(left: JsonPrimitive | undefined, right: JsonPrimitive): boolean {
+function same(
+  left: LevelEntityFieldValue | undefined,
+  right: LevelEntityFieldValue,
+): boolean {
   return Object.is(left, right);
 }
 

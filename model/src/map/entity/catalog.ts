@@ -4,6 +4,7 @@ import {
   enumField,
   integerField,
   stringField,
+  stringOrStringListField,
   type EntityMapDefinition,
   type EntityMapFieldDefinition,
 } from "./contract.js";
@@ -53,8 +54,8 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.START),
   defineEntity(MapEntityTypeId.EXIT),
 
-  defineEntity(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
-  defineEntity(MapEntityTypeId.SHOP_CLOUD9_TICKET),
+  defineEntity(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET, [dialogueField()]),
+  defineEntity(MapEntityTypeId.SHOP_CLOUD9_TICKET, [dialogueField()]),
   defineEntity(MapEntityTypeId.LOCK_KEY, [
     booleanField(
       "collectible",
@@ -63,10 +64,10 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
       "是否能作为关卡内钥匙拾取；false 时作为阻挡且可交互的陈列物。",
     ),
   ]),
-  defineEntity(MapEntityTypeId.SHOP_STEREO_SYSTEM),
-  defineEntity(MapEntityTypeId.SHOP_EXTRA_MUSIC),
-  defineEntity(MapEntityTypeId.SHOP_SPEED_SHOES),
-  defineEntity(MapEntityTypeId.SHOP_COIN_RADAR),
+  defineEntity(MapEntityTypeId.SHOP_STEREO_SYSTEM, [dialogueField()]),
+  defineEntity(MapEntityTypeId.SHOP_EXTRA_MUSIC, [dialogueField()]),
+  defineEntity(MapEntityTypeId.SHOP_SPEED_SHOES, [dialogueField()]),
+  defineEntity(MapEntityTypeId.SHOP_COIN_RADAR, [dialogueField()]),
   defineEntity(MapEntityTypeId.SHOP_EMPTY),
 
   defineEntity(MapEntityTypeId.SHOVEL_PICKUP),
@@ -176,12 +177,8 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.DRAGON, [
     enumField("direction", HORIZONTAL_DIRECTIONS, undefined, true),
   ]),
-  defineEntity(MapEntityTypeId.SANDMAN, [
-    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
-  ]),
-  defineEntity(MapEntityTypeId.DREAM_MACHINE, [
-    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
-  ]),
+  defineEntity(MapEntityTypeId.SANDMAN, [dialogueField()]),
+  defineEntity(MapEntityTypeId.DREAM_MACHINE, [dialogueField()]),
   defineEntity(MapEntityTypeId.MOWER),
   defineEntity(MapEntityTypeId.GAS),
   defineEntity(MapEntityTypeId.BEAN_FIELD),
@@ -196,9 +193,7 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
     [],
     "Melt stage is runtime state and is never persisted in a source map.",
   ),
-  defineEntity(MapEntityTypeId.BEAVER, [
-    stringField("dialogue", undefined, false, "角色被碰触时显示的地图对白。"),
-  ]),
+  defineEntity(MapEntityTypeId.BEAVER, [dialogueField()]),
   defineEntity(MapEntityTypeId.LEAF),
   defineEntity(MapEntityTypeId.CRUMBLY_ROCK),
   defineEntity(
@@ -295,7 +290,24 @@ function fieldAccepts(
 ): boolean {
   if (field.kind === "boolean") return typeof value === "boolean";
   if (field.kind === "string") return typeof value === "string";
+  if (field.kind === "string-or-string-list") {
+    return typeof value === "string" || isNonEmptyStringList(value);
+  }
   if (field.kind === "number") return typeof value === "number" && Number.isFinite(value);
   if (field.kind === "integer") return typeof value === "number" && Number.isInteger(value);
   return field.values.includes(value as never);
+}
+
+function dialogueField(): EntityMapFieldDefinition {
+  return stringOrStringListField(
+    "dialogue",
+    false,
+    "角色被碰触时显示的字面对白；数组按实体独立循环。",
+  );
+}
+
+function isNonEmptyStringList(value: unknown): value is readonly string[] {
+  return Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((line) => typeof line === "string" && line.length > 0);
 }

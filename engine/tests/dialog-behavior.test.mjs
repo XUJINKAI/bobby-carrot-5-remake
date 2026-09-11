@@ -63,6 +63,15 @@ test("地图 dialogue 在角色身体被碰触时产生可传播的对白", () =
   );
 });
 
+test("地图 dialogue 数组按 Entity 的 Runtime 游标循环", () => {
+  const world = new World(dialogLevel(["第一段\n允许换行", "第二段"]));
+  const texts = [0, 1, 2].map(() =>
+    move(world, "right").events.find((event) => event.type === "dialog")?.text
+  );
+
+  assert.deepEqual(texts, ["第一段\n允许换行", "第二段", "第一段\n允许换行"]);
+});
+
 test("没有地图对白时仍产生通用交互请求", () => {
   const world = new World(dialogLevel());
   const first = move(world, "right");

@@ -1,5 +1,9 @@
-import type { JsonPrimitive } from "../shared/json.js";
-import type { EntityType, LevelEntity, LevelMap } from "./document.js";
+import type {
+  EntityType,
+  LevelEntity,
+  LevelEntityFieldValue,
+  LevelMap,
+} from "./document.js";
 
 export interface LevelEntitySelector {
   type?: EntityType;
@@ -19,7 +23,7 @@ export type LevelPatch =
   | {
       operation: "set-fields";
       selector: LevelEntitySelector;
-      fields: Record<string, JsonPrimitive>;
+      fields: Record<string, LevelEntityFieldValue>;
     }
   | {
       operation: "replace-type";

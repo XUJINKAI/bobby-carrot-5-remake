@@ -4,6 +4,7 @@ import {
   MapEntityTypeId,
   applyLevelPatches,
   entityMapDefinition,
+  parseLevelMap,
 } from "../dist/index.js";
 
 const base = {
@@ -69,5 +70,26 @@ test("Lock 与关卡内钥匙字段声明包含零倒计时和缺省行为", () 
   assert.equal(
     key.fields.find((field) => field.key === "collectible").default,
     true,
+  );
+});
+
+test("对白字段接受字符串或字符串数组并由 LevelPatch 原样写入", () => {
+  const dialogue = ["第一段\n允许换行", "第二段"];
+  const patched = applyLevelPatches({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BEAVER, x: 0, y: 0 }],
+  }, [{
+    operation: "set-fields",
+    selector: { type: MapEntityTypeId.BEAVER },
+    fields: { dialogue },
+  }]);
+  const parsed = parseLevelMap(patched);
+
+  assert.deepEqual(parsed.entities[0].dialogue, dialogue);
+  assert.equal(
+    entityMapDefinition(MapEntityTypeId.BEAVER).fields[0].kind,
+    "string-or-string-list",
   );
 });

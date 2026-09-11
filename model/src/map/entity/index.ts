@@ -9,6 +9,7 @@ export {
   defineEntity,
   booleanField,
   stringField,
+  stringOrStringListField,
   integerField,
   enumField,
   isLevelEntityReservedField,

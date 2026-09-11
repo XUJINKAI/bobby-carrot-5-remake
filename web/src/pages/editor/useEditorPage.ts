@@ -62,8 +62,8 @@ import {
 import {
   entityMapDefinition,
   type EntityType,
-  type JsonPrimitive,
   type LevelEntity,
+  type LevelEntityFieldValue,
 } from "@bobby/model";
 import { computed, onUnmounted, ref, shallowRef } from "vue";
 import {
@@ -567,23 +567,31 @@ export function useEditorPage(initialLevel: EditorMap) {
     );
   }
 
-  function updatePlacementField(key: string, raw: string): void {
+  function updatePlacementField(key: string, raw: LevelEntityFieldValue): void {
     const next = placementPresetWithField(placement.value, key, raw);
     if (next) setPlacementPreset(next);
   }
 
-  function updateField(entityIndex: number, key: string, raw: string): void {
+  function updateField(
+    entityIndex: number,
+    key: string,
+    raw: LevelEntityFieldValue,
+  ): void {
     updateFieldsForRefs([{ index: entityIndex }], key, raw);
   }
 
-  function updateBatchField(type: EntityType, key: string, raw: string): void {
+  function updateBatchField(
+    type: EntityType,
+    key: string,
+    raw: LevelEntityFieldValue,
+  ): void {
     updateFieldsForRefs(selectedRefsOfType(type), key, raw);
   }
 
   function updateFieldsForRefs(
     refs: readonly EntityRef[],
     key: string,
-    raw: string,
+    raw: LevelEntityFieldValue,
   ): void {
     const replacements = refs.flatMap((ref) => {
       const entity = currentLevel().entities[ref.index];
