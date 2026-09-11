@@ -65,6 +65,7 @@ test("Adventure 商品购买使用同级选项", async () => {
   );
 
   assert.match(source, /adventureItemReplacementIntent\(offer, request\)/);
+  assert.match(source, /game\.dispatchInteractionEffect\(replacement\)/);
   assert.match(source, /\{ id: "purchase", label: offer\.leftLabel \}/);
   assert.doesNotMatch(
     source,

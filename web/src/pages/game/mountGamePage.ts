@@ -194,14 +194,16 @@ export async function renderGamePage(
   const plan = adventureSave
     ? (sessionPlan ?? planAdventurePlayer(adventureSave))
     : null;
-  const sessionLevel = adventureContentId
-    ? prepareAdventureGameplayLevel(
-        level,
-        adventureAugmentation,
-        adventureSave,
-        sessionPlan?.levelPatches ?? [],
-      )
-    : level;
+  const prepareSessionLevel = (): LevelMap =>
+    adventureContentId
+      ? prepareAdventureGameplayLevel(
+          level,
+          adventureAugmentation,
+          adventureSave,
+          sessionPlan?.levelPatches ?? [],
+        )
+      : level;
+  const sessionLevel = prepareSessionLevel();
   const availableBonusCoins = sessionLevel.entities.filter(
     (entity) => entity.type === MapEntityTypeId.BONUS_COIN,
   ).length;
@@ -451,7 +453,7 @@ export async function renderGamePage(
   const askRestart = async (): Promise<void> => {
     adventureRewards.discard();
     if (adventureSave && adventureContentId) {
-      await game.loadLevel(sessionLevel);
+      await game.loadLevel(prepareSessionLevel());
     } else {
       game.restart();
     }
@@ -593,7 +595,7 @@ export async function renderGamePage(
       if (purchase.outcome === "purchased") {
         adventureSave = saveAdventureSave(purchase.save);
         const replacement = adventureItemReplacementIntent(offer, request);
-        if (replacement) game.dispatch(replacement);
+        if (replacement) game.dispatchInteractionEffect(replacement);
       }
       dialog.show(offer.outcomeMessages[purchase.outcome]);
     } finally {

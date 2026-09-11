@@ -56,7 +56,7 @@ export interface EntityTargetReference {
   y: number;
 }
 
-/** 把宿主持久化的产品结果提交到当前 World，并同步更新本局 Restart 基线。 */
+/** 把宿主持久化的产品结果提交到当前 World。 */
 export interface CommitEntityReplacementIntent {
   type: "commit-entity-replacement";
   target: EntityTargetReference;
@@ -88,4 +88,6 @@ export interface WorldIntentGroup {
   intents: WorldIntent[];
   /** 同一 group 只算一个 user-visible history boundary。 */
   historyBoundary?: boolean;
+  /** 由 Replay choice 可重建的宿主效果不重复写入录像。 */
+  recordInReplay?: boolean;
 }

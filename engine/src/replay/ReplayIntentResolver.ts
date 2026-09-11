@@ -35,8 +35,6 @@ function resolveGameplayIntent(
   session: GameplaySession,
   intent: ReplayGameplayIntent,
 ): WorldIntent[] {
-  if (intent.type === "commit-entity-replacement")
-    return [structuredClone(intent)];
   if (intent.type !== "move")
     return [resolveActorEffectIntent(session, intent)];
   if (intent.actor) {

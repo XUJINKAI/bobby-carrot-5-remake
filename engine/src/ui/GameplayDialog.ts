@@ -15,7 +15,7 @@ export interface GameplayDialogOption {
 
 export interface GameplayDialogPresentation {
   message: string;
-  options?: readonly GameplayDialogOption[];
+  options: readonly [GameplayDialogOption, ...GameplayDialogOption[]];
 }
 
 export type GameplayDialogResult =
@@ -49,6 +49,7 @@ export class GameplayDialog {
   private typingIndex = 0;
   private finishTypingCallback: (() => void) | null = null;
   private inputEnabledBeforePresentation: boolean | null = null;
+  private worldPausedForPresentation = false;
   private openedDuringCurrentDispatch = false;
 
   constructor(
@@ -150,19 +151,32 @@ export class GameplayDialog {
     this.typeMessage(message);
   }
 
-  /** 展示零到多个通用选项，只返回选项 ID，不执行宿主业务。 */
+  /** 展示一个或多个通用选项，只返回选项 ID，不执行宿主业务。 */
   present(
     presentation: GameplayDialogPresentation,
   ): Promise<GameplayDialogResult> {
     this.settlePresentation({ type: "dismissed" });
     this.protectFromCurrentDispatch();
-    const options = presentation.options ?? [];
+    const { options } = presentation;
+    if (options.length === 0)
+      throw new Error("GameplayDialog.present() 至少需要一个选项");
     this.preparePassiveView();
     this.root.hidden = false;
     return new Promise((resolve) => {
       this.pendingPresentation = { resolve };
-      if (options.length > 0) this.prepareInteractiveView(options);
+      this.prepareInteractiveView(options);
       this.typeMessage(presentation.message, () => this.revealOptions());
+      const replayChoice = this.game.dialogControl.consumeReplayChoice(
+        options.length,
+      );
+      if (replayChoice !== null) {
+        this.finishTyping();
+        queueMicrotask(() => {
+          const optionId = this.optionIds[replayChoice - 1];
+          if (optionId !== undefined)
+            this.settlePresentation({ type: "selected", optionId });
+        });
+      }
     });
   }
 
@@ -198,6 +212,10 @@ export class GameplayDialog {
   private settlePresentation(result: GameplayDialogResult): void {
     const pending = this.pendingPresentation;
     if (!pending) return;
+    if (result.type === "selected") {
+      const index = this.optionIds.indexOf(result.optionId);
+      if (index >= 0) this.game.dialogControl.recordChoice(index + 1);
+    }
     this.pendingPresentation = null;
     this.hide();
     pending.resolve(result);
@@ -224,7 +242,7 @@ export class GameplayDialog {
     this.optionButtons = options.map((option) => this.optionButton(option));
     const primaryIndex = options.findIndex((option) => option.primary);
     this.selectedOptionIndex = primaryIndex >= 0 ? primaryIndex : 0;
-    this.suspendGameplayInput();
+    this.suspendGameplay();
   }
 
   private revealOptions(): void {
@@ -311,17 +329,27 @@ export class GameplayDialog {
     delete this.text.dataset.typing;
   }
 
-  private suspendGameplayInput(): void {
-    if (!this.input || this.inputEnabledBeforePresentation !== null) return;
-    this.inputEnabledBeforePresentation = this.input.isEnabled;
-    this.input.setEnabled(false);
+  private suspendGameplay(): void {
+    if (!this.worldPausedForPresentation) {
+      this.worldPausedForPresentation = true;
+      this.game.dialogControl.setWorldPaused(true);
+    }
+    if (this.input && this.inputEnabledBeforePresentation === null) {
+      this.inputEnabledBeforePresentation = this.input.isEnabled;
+      this.input.setEnabled(false);
+    }
   }
 
-  private restoreGameplayInput(): void {
-    if (!this.input || this.inputEnabledBeforePresentation === null) return;
-    const enabled = this.inputEnabledBeforePresentation;
-    this.inputEnabledBeforePresentation = null;
-    this.input.setEnabled(enabled);
+  private restoreGameplay(): void {
+    if (this.worldPausedForPresentation) {
+      this.worldPausedForPresentation = false;
+      this.game.dialogControl.setWorldPaused(false);
+    }
+    if (this.input && this.inputEnabledBeforePresentation !== null) {
+      const enabled = this.inputEnabledBeforePresentation;
+      this.inputEnabledBeforePresentation = null;
+      this.input.setEnabled(enabled);
+    }
   }
 
   private protectFromCurrentDispatch(): void {
@@ -333,7 +361,7 @@ export class GameplayDialog {
 
   private hide(): void {
     this.cancelTyping();
-    this.restoreGameplayInput();
+    this.restoreGameplay();
     this.root.hidden = true;
     this.text.textContent = "";
     this.text.removeAttribute("aria-label");

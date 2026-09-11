@@ -33,6 +33,28 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   assert.deepEqual(game.queuedMoves, []);
 });
 
+test("实时推进可在选项对话出现后停止同批后续 Tick", () => {
+  const session = new GameplaySession({ timing: { worldHz: 20 } });
+  session.loadLevel({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+  });
+  const consumed = session.advanceRealTime(
+    1_000,
+    () => ({}),
+    Number.POSITIVE_INFINITY,
+    () => false,
+  );
+
+  assert.equal(consumed.length, 1);
+  assert.equal(session.clock.tickCount, 1);
+});
+
 test("blocked player move forwards its attempted direction to presentation", () => {
   const game = Object.create(Game.prototype);
   const calls = [];

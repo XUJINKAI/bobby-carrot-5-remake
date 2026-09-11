@@ -193,7 +193,8 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
     "utf8",
   );
 
-  assert.match(source, /presentation\.options \?\? \[\]/);
+  assert.match(source, /options: readonly \[GameplayDialogOption/);
+  assert.match(source, /const \{ options \} = presentation/);
   assert.match(source, /options\.map\(\(option\) => this\.optionButton\(option\)\)/);
   assert.match(source, /repeat\(auto-fit, minmax\(96px, 1fr\)\)/);
   assert.match(source, /button\.tabIndex = -1/);
@@ -204,6 +205,10 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
   assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
   assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
   assert.match(source, /this\.input\.setEnabled\(false\)/);
+  assert.match(source, /GameplayDialog\.present\(\) 至少需要一个选项/);
+  assert.match(source, /dialogControl\.setWorldPaused\(true\)/);
+  assert.match(source, /dialogControl\.consumeReplayChoice/);
+  assert.match(source, /dialogControl\.recordChoice/);
   assert.match(source, /dataset\.selected/);
   assert.match(source, /rgba\(255,255,255,\.96\)/);
   assert.match(source, /0 0 0 2px rgba\(255,255,255,\.24\)/);

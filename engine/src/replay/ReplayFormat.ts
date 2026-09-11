@@ -27,21 +27,10 @@ export interface ReplaySetActorLocomotionIntent {
   moveDurationMs: number;
 }
 
-export interface ReplayCommitEntityReplacementIntent {
-  type: "commit-entity-replacement";
-  target: {
-    type: string;
-    x: number;
-    y: number;
-  };
-  replacementType: string;
-}
-
 export type ReplayGameplayIntent =
   | ReplayMoveIntent
   | ReplaySetActorLockKeyIntent
-  | ReplaySetActorLocomotionIntent
-  | ReplayCommitEntityReplacementIntent;
+  | ReplaySetActorLocomotionIntent;
 
 export type ReplayInitialIntent =
   | ReplaySetActorLockKeyIntent
@@ -54,6 +43,8 @@ export interface ReplayInputGroup {
 export interface ReplayFrame {
   tick: number;
   groups: ReplayInputGroup[];
+  /** 当前 Tick 触发的阻塞对话链中，按出现顺序选择的一基选项序号。 */
+  choices?: number[];
 }
 
 export interface ReplayRuntimeSetup {

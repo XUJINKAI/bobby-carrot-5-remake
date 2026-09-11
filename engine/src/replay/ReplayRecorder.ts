@@ -42,18 +42,36 @@ export class ReplayRecorder {
   record(result: GameplayTickResult): void {
     if (this.stopped) return;
     this.events.record(result.result.events);
-    if (result.inputGroups.length > 0) {
+    const groups = result.inputGroups
+      .map((group) =>
+        toReplayInputGroup(
+          this.session.actorIds,
+          this.actorReferences,
+          group,
+        )
+      )
+      .filter((group): group is ReplayInputGroup => group !== null);
+    if (groups.length > 0) {
       this.frames.push({
         tick: result.time.tick,
-        groups: result.inputGroups.map((group) =>
-          toReplayInputGroup(
-            this.session.actorIds,
-            this.actorReferences,
-            group,
-          )),
+        groups,
       });
     }
     this.updateActorReferences();
+  }
+
+  recordChoice(tick: number, choice: number): void {
+    if (this.stopped) return;
+    if (!Number.isInteger(tick) || tick < 0)
+      throw new Error("Replay choice 缺少有效的触发 Tick");
+    if (!Number.isInteger(choice) || choice < 1)
+      throw new Error("Replay choice 必须是从 1 开始的整数");
+    let frame = this.frames.at(-1);
+    if (!frame || frame.tick !== tick) {
+      frame = { tick, groups: [] };
+      this.frames.push(frame);
+    }
+    (frame.choices ??= []).push(choice);
   }
 
   stop(): Replay {
@@ -100,16 +118,11 @@ function toReplayInputGroup(
   actorIds: readonly EntityId[],
   actorReferences: ReadonlyMap<EntityId, CellPosition>,
   group: GameplayTickResult["inputGroups"][number],
-): ReplayInputGroup {
+): ReplayInputGroup | null {
   const intents: ReplayGameplayIntent[] = [];
   const recordedMoves = new Set<string>();
   for (const intent of group.intents) {
     if (intent.type === "commit-entity-replacement") {
-      intents.push({
-        type: intent.type,
-        target: structuredClone(intent.target),
-        replacementType: intent.replacementType,
-      });
       continue;
     }
     if (intent.type !== "move") {
@@ -145,9 +158,7 @@ function toReplayInputGroup(
       ...(actor ? { actor } : {}),
     });
   }
-  return {
-    intents,
-  };
+  return intents.length > 0 ? { intents } : null;
 }
 
 function toReplayActorEffectIntent(

@@ -18,20 +18,17 @@ import {
 import { PresentationClock } from "../time/PresentationClock.js";
 import type { WorldClock, WorldTick } from "../time/WorldClock.js";
 import { GameplayHud } from "../ui/GameplayHud.js";
+import { GameplayDialogControl } from "../ui/GameplayDialogControl.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
-import type {
-  PresentationTuning,
-} from "../visual/tuning/PresentationTuning.js";
+import type { PresentationTuning } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type { World } from "../world/World.js";
 import type {
   CellInspection,
   MoveResult,
-  ObjectInteractionEvent,
   WinConditionState,
   WorldEvent,
 } from "../world/WorldTypes.js";
-import { isObjectInteractionEvent } from "../world/WorldTypes.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   CellPosition,
@@ -54,15 +51,14 @@ import {
 import { ReplayRecorder } from "../replay/ReplayRecorder.js";
 import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
-import type {
-  GameOptions,
-} from "./GameOptions.js";
-import {
-  GameplaySession,
-  type GameplayTickInput,
-  type GameplayTickResult,
-} from "./GameplaySession.js";
+import type { GameOptions } from "./GameOptions.js";
+import { GameplaySession, type GameplayTickInput, type GameplayTickResult } from "./GameplaySession.js";
 import { prepareRuntimeLevel } from "./RuntimeLevel.js";
+import {
+  WorldEventDispatcher,
+  type InteractionRequestListener,
+  type WorldEventListener,
+} from "./WorldEventDispatcher.js";
 
 type GameEventName =
   | "change"
@@ -74,8 +70,6 @@ type GameEventName =
   | "death"
   | "level-complete";
 type Listener = (game: Game) => void;
-type WorldEventListener = (event: WorldEvent) => void;
-type InteractionRequestListener = (event: ObjectInteractionEvent) => void;
 
 const MAX_REPLAY_IDLE_TICKS_PER_FRAME = 128;
 const REPLAY_IDLE_FRAME_BUDGET_MS = 6;
@@ -93,9 +87,7 @@ export class Game {
   private readonly presentationClock: PresentationClock;
   private lastScene: RenderScene | null = null;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
-  private readonly worldEventListeners = new Set<WorldEventListener>();
-  private readonly interactionRequestListeners =
-    new Set<InteractionRequestListener>();
+  private readonly worldEvents = new WorldEventDispatcher();
   private debugValue = false;
   private debugExternalActorId: EntityId | null = null;
   private heldDirection: Direction | null = null;
@@ -104,6 +96,7 @@ export class Game {
   private readonly queuedIntentGroups: WorldIntentGroup[] = [];
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
+  readonly dialogControl: GameplayDialogControl;
   private levelLoadPending = false;
   private animationFrame = 0;
   private destroyed = false;
@@ -140,6 +133,20 @@ export class Game {
       this.session,
       this.presentationClock,
     );
+    this.dialogControl = new GameplayDialogControl({
+      discardPendingInput: () => this.discardPendingGameplayInput(),
+      consumeReplayChoice: (count) => this.replayPlayback.consumeChoice(count),
+      recordChoice: (tick, choice) =>
+        this.replayRecorder?.recordChoice(tick, choice),
+      dispatchEffect: (intent) => {
+        if (!this.worldValue || this.world.dead || this.world.completed) return;
+        this.queuedIntentGroups.push({
+          intents: [structuredClone(intent)],
+          historyBoundary: false,
+          recordInReplay: false,
+        });
+      },
+    });
     if (typeof performance !== "undefined")
       this.presentationClock.advance(performance.now());
     this.debugValue = options.debug ?? false;
@@ -339,6 +346,7 @@ export class Game {
       !this.worldValue ||
       this.replayPlayback.playing ||
       this.worldClock.paused ||
+      this.dialogControl.worldPaused ||
       this.presentationBlocksInput ||
       this.world.dead ||
       this.world.completed
@@ -360,6 +368,10 @@ export class Game {
       intents: [structuredClone(intent)],
       historyBoundary: intent.type !== "commit-entity-replacement",
     });
+  }
+
+  dispatchInteractionEffect(intent: GameplayEffectIntent): void {
+    this.dialogControl.dispatchEffect(intent);
   }
 
   setHeldDirection(direction: Direction | null): void {
@@ -463,7 +475,6 @@ export class Game {
   resumeReplayPlayback(): void {
     this.changeReplayPlayback("resume");
   }
-
   stopReplayPlayback(): void {
     this.changeReplayPlayback("stop");
   }
@@ -484,6 +495,7 @@ export class Game {
         this.lastMove = tick.result.moves[0] ?? null;
       if (tick.result.events.length > 0)
         this.lastWorldEvents = tick.result.events;
+      this.publishWorldEvents(tick.result.events, false);
     }
     this.render();
     this.emitTerminalEvents();
@@ -591,14 +603,13 @@ export class Game {
   }
 
   onWorldEvent(listener: WorldEventListener): () => void {
-    this.worldEventListeners.add(listener);
-    return () => this.worldEventListeners.delete(listener);
+    return this.worldEvents.onWorldEvent(listener);
   }
 
-  /** 只在 live session 通知外层控制器；Replay 仍保留普通 WorldEvent。 */
-  onInteractionRequest(listener: InteractionRequestListener): () => void {
-    this.interactionRequestListeners.add(listener);
-    return () => this.interactionRequestListeners.delete(listener);
+  onInteractionRequest(
+    listener: InteractionRequestListener,
+  ): () => void {
+    return this.worldEvents.onInteractionRequest(listener);
   }
 
   destroy(): void {
@@ -688,6 +699,8 @@ export class Game {
     emitChange = true,
   ): boolean {
     let changed = false;
+    this.dialogControl.beginTick(tick.time.tick);
+    this.replayPlayback.prepareChoices(tick.time.tick);
     this.replayRecorder?.record(tick);
     this.emit("tick");
     this.inputController?.resolveMoveAttempts(tick.inputResolutions);
@@ -737,6 +750,7 @@ export class Game {
       !this.worldValue ||
       this.levelLoadPending ||
       this.visual.isAnimating ||
+      this.dialogControl.worldPaused ||
       this.world.inputBlocked
     )
       return 0;
@@ -922,21 +936,28 @@ export class Game {
     this.lastTimestamp = timestamp;
     if (this.presentationBlocksInput) this.discardPendingGameplayInput();
 
-    const worldTicks =
+    const worldTicks: GameplayTickResult[] = [];
+    if (
       this.worldValue &&
       delta > 0 &&
       !this.levelLoadPending &&
-      !this.visual.blocksGameplay
-        ? this.session.advanceRealTime(
-            delta,
-            (time) =>
-              this.replayPlayback.playing
-                ? this.replayPlayback.inputForTick(time)
-                : this.inputForTick(time),
-            this.replayPlayback.remainingTicks,
-          )
-        : [];
-    for (const worldTick of worldTicks) this.consumeGameplayTick(worldTick);
+      !this.visual.blocksGameplay &&
+      !this.dialogControl.worldPaused
+    ) {
+      this.session.advanceRealTime(
+        delta,
+        (time) =>
+          this.replayPlayback.playing
+            ? this.replayPlayback.inputForTick(time)
+            : this.inputForTick(time),
+        this.replayPlayback.remainingTicks,
+        (worldTick) => {
+          worldTicks.push(worldTick);
+          this.consumeGameplayTick(worldTick);
+          return !this.dialogControl.worldPaused;
+        },
+      );
+    }
     const idleTickCount = this.advanceReplayIdleTicks();
     if (this.replayPlayback.finishIfComplete()) this.emit("change");
 
@@ -953,15 +974,16 @@ export class Game {
     this.animationFrame = requestAnimationFrame(this.tick);
   };
 
-  private publishWorldEvents(events: readonly WorldEvent[]): void {
-    for (const event of events) {
+  private publishWorldEvents(
+    events: readonly WorldEvent[],
+    notifyInteractions = true,
+  ): void {
+    const notifyRequests = notifyInteractions &&
+      (!this.replayPlayback.playing || this.replayPlayback.hasPendingChoices);
+    this.worldEvents.publish(events, notifyRequests, (event) => {
       if (event.type === "speed-impact")
         this.visual.camera.shake(this.presentationClock.current);
-      for (const listener of this.worldEventListeners) listener(event);
-      if (!this.replayPlayback.playing && isObjectInteractionEvent(event)) {
-        for (const listener of this.interactionRequestListeners) listener(event);
-      }
-    }
+    });
   }
 
   private emitTerminalEvents(): void {

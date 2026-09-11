@@ -29,7 +29,7 @@ function entityAt(session, type, x, y) {
   );
 }
 
-test("Entity replacement 提交到当前 World 并成为 Restart 基线", () => {
+test("Entity replacement 只提交到当前 World，Restart 恢复输入地图", () => {
   const session = new GameplaySession();
   session.loadLevel(shopLevel());
   const original = entityAt(
@@ -70,8 +70,8 @@ test("Entity replacement 提交到当前 World 并成为 Restart 基线", () => 
   });
 
   session.restart();
-  assert.ok(entityAt(session, MapEntityTypeId.SHOP_EMPTY, 1, 0));
-  assert.equal(entityAt(session, MapEntityTypeId.SHOP_SUPER_KEY, 1, 0), undefined);
+  assert.ok(entityAt(session, MapEntityTypeId.SHOP_SUPER_KEY, 1, 0));
+  assert.equal(entityAt(session, MapEntityTypeId.SHOP_EMPTY, 1, 0), undefined);
 });
 
 test("找不到唯一目标时 Entity replacement 保持无副作用", () => {

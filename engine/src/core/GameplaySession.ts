@@ -82,6 +82,9 @@ export interface SerializableGameplaySetup {
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
+export type GameplayTickConsumer = (
+  result: GameplayTickResult,
+) => void | boolean;
 
 /**
  * 一局地图的纯 gameplay 运行边界。浏览器 Game 与 ReplayRunner 都通过这里
@@ -310,10 +313,13 @@ export class GameplaySession {
     deltaMs: number,
     inputForTick: GameplayTickInputProvider,
     maxTicks = Number.POSITIVE_INFINITY,
+    consume?: GameplayTickConsumer,
   ): GameplayTickResult[] {
     const results: GameplayTickResult[] = [];
     this.clock.advance(deltaMs, (time) => {
-      results.push(this.advanceTick(time, inputForTick(time)));
+      const result = this.advanceTick(time, inputForTick(time));
+      results.push(result);
+      return consume?.(result);
     }, maxTicks);
     return results;
   }
@@ -366,7 +372,9 @@ export class GameplaySession {
       result: aggregate,
       phases,
       inputGroups: resolved.groups
-        .filter((group) => group.effective)
+        .filter(
+          (group) => group.effective && group.recorded.recordInReplay !== false,
+        )
         .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
         resolved.sources,
@@ -452,7 +460,6 @@ export class GameplaySession {
     if (this.historyPolicy.mode !== "disabled" && group.historyBoundary !== false)
       this.pendingHistorySnapshot = this.world.snapshot();
     const result = this.world.step(group);
-    this.persistCommittedReplacements(group.intents, result);
     this.checkpointPendingHistory(
       result,
       group.intents.flatMap((intent) =>
@@ -460,42 +467,6 @@ export class GameplaySession {
       ),
     );
     return result;
-  }
-
-  private persistCommittedReplacements(
-    intents: readonly WorldIntent[],
-    result: WorldStepResult,
-  ): void {
-    if (!this.initialLevel) return;
-    for (const intent of intents) {
-      if (intent.type !== "commit-entity-replacement") continue;
-      const committed = result.events.some(
-        (event) =>
-          event.type === "entity-replacement-committed" &&
-          event.x === intent.target.x &&
-          event.y === intent.target.y &&
-          event.data?.["replacementType"] === intent.replacementType,
-      );
-      if (!committed) continue;
-      const matches = this.initialLevel.entities
-        .map((entity, index) => ({ entity, index }))
-        .filter(
-          ({ entity }) =>
-            entity.type === intent.target.type &&
-            entity.x === intent.target.x &&
-            entity.y === intent.target.y,
-        );
-      if (matches.length !== 1) continue;
-      const { entity, index } = matches[0]!;
-      this.initialLevel.entities[index] = {
-        type: intent.replacementType,
-        x: entity.x,
-        y: entity.y,
-        ...(entity.stackOrder === undefined
-          ? {}
-          : { stackOrder: entity.stackOrder }),
-      };
-    }
   }
 
   private checkpointPendingHistory(

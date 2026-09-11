@@ -61,7 +61,7 @@ export function validateReplay(
   for (const frame of replay.frames) {
     if (!frame || typeof frame !== "object")
       throw new Error("Replay frame 必须是对象");
-    requireFields(frame, ["tick", "groups"]);
+    requireFields(frame, ["tick", "groups", "choices"]);
     if (
       !Number.isInteger(frame.tick) ||
       frame.tick < 0 ||
@@ -72,6 +72,16 @@ export function validateReplay(
     previousTick = frame.tick;
     if (!Array.isArray(frame.groups))
       throw new Error("Replay frame groups 必须是数组");
+    if (
+      frame.choices !== undefined &&
+      (!Array.isArray(frame.choices) ||
+        frame.choices.length === 0 ||
+        frame.choices.some(
+          (choice) => !Number.isInteger(choice) || choice < 1,
+        ))
+    ) {
+      throw new Error("Replay frame choices 必须是非空正整数数组");
+    }
     for (const group of frame.groups) {
       if (!group || typeof group !== "object")
         throw new Error("Replay input group 必须是对象");
@@ -128,21 +138,6 @@ function validateIntent(
       typeof intent.enabled !== "boolean"
     )
       throw new Error("Replay 包含无效的 Lock 能力动作");
-    return;
-  }
-  if (intent.type === "commit-entity-replacement") {
-    requireFields(intent, ["type", "target", "replacementType"]);
-    if (
-      !allowMove ||
-      !isPlainObject(intent.target) ||
-      !isNonEmptyString(intent.target.type) ||
-      !Number.isInteger(intent.target.x) ||
-      !Number.isInteger(intent.target.y) ||
-      !isNonEmptyString(intent.replacementType)
-    ) {
-      throw new Error("Replay 包含无效的 Entity replacement 动作");
-    }
-    requireFields(intent.target, ["type", "x", "y"]);
     return;
   }
   throw new Error("Replay 包含无效的地图内语义动作");

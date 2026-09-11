@@ -19,6 +19,13 @@ export async function verifyGameplayDialogKeyboard(
           lastWorldEvents: [],
           onWorldEvent: () => () => {},
           on: () => () => {},
+          dialogControl: {
+            worldPaused: false,
+            choices: [],
+            setWorldPaused(value) { this.worldPaused = value; },
+            consumeReplayChoice() { return null; },
+            recordChoice(choice) { this.choices.push(choice); },
+          },
         };
         const input = {
           enabled: true,
@@ -101,6 +108,11 @@ export async function verifyGameplayDialogKeyboard(
     "window.__gameplayDialogCheck.input.enabled === false",
   );
   if (!suspended) throw new Error("Gameplay Dialog did not suspend input");
+  const worldPaused = await cdp.evaluate(
+    sessionId,
+    "window.__gameplayDialogCheck.dialog.game.dialogControl.worldPaused",
+  );
+  if (!worldPaused) throw new Error("Gameplay Dialog did not pause World");
 
   await dispatchKey(cdp, sessionId, "ArrowRight", 39);
   await expectSelected(cdp, sessionId, "third");
@@ -118,11 +130,23 @@ export async function verifyGameplayDialogKeyboard(
           return state?.result?.type === 'selected' &&
             state.result.optionId === 'first' &&
             state.input.enabled === true &&
+            state.dialog.game.dialogControl.worldPaused === false &&
+            state.dialog.game.dialogControl.choices.join(',') === '1' &&
             state.dialog.root.hidden;
         })()`,
       ),
     ),
   );
+  const passive = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const state = window.__gameplayDialogCheck;
+      state.dialog.show('提示');
+      return state.input.enabled === true &&
+        state.dialog.game.dialogControl.worldPaused === false;
+    })()`,
+  );
+  if (!passive) throw new Error("Passive Gameplay Dialog blocked gameplay");
   await cdp.evaluate(
     sessionId,
     "window.__gameplayDialogCheck.dialog.destroy(); true",

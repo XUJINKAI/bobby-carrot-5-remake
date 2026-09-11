@@ -123,7 +123,6 @@ export {
 export {
   REPLAY_FORMAT_VERSION,
   type ReplayActualFinalState,
-  type ReplayCommitEntityReplacementIntent,
   type ReplayCompletedCondition,
   type ReplayFinalState,
   type ReplayFinalStatus,
