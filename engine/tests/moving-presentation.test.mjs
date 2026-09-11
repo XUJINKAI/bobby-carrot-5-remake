@@ -185,26 +185,6 @@ test("blocked Bobby facing uses the attempted direction and standing end frame",
   assert.equal(visual.layers[0].frameIndex, 3);
 });
 
-test("blocked Bobby facing uses the attempted direction and standing end frame", () => {
-  const world = carryWorld();
-  const bobby = world.query.entitiesWithTrait("player")[0];
-  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
-  runtime.faceDirection(
-    bobby.id,
-    "up",
-    { frame: 1, nowMs: 1000, deltaMs: 16 },
-  );
-
-  const state = runtime.inspectEntity(world, bobby.id).runtime;
-  assert.equal(state.direction, "up");
-  assert.equal(state.moving, false);
-  assert.equal(state.progress, 1);
-
-  const visual = bobbyVisualOnSurface(MapEntityTypeId.LEAF, state);
-  assert.equal(visual.layers[0].asset, "bobby-up");
-  assert.equal(visual.layers[0].frameIndex, 3);
-});
-
 test("Bobby steps up onto Leaf exactly at movement midpoint", () => {
   const world = carryWorld();
   const bobby = world.query.entitiesWithTrait("player")[0];
