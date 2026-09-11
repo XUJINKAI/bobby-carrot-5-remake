@@ -103,14 +103,6 @@ export async function renderHome(
         images,
       },
       runtime: {
-        initialActorIntents: [
-          {
-            type: "set-actor-lock-key",
-            actor: "all",
-            kind: "reusable",
-            enabled: true,
-          },
-        ],
         hud: true,
         input: {
           undo: false,

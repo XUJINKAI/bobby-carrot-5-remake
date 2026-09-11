@@ -25,7 +25,7 @@ const BASE_TERRAIN_TYPES = new Set([
   MapEntityTypeId.EXIT,
   MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
   MapEntityTypeId.SHOP_CLOUD9_TICKET,
-  MapEntityTypeId.SHOP_SUPER_KEY,
+  MapEntityTypeId.LOCK_KEY,
   MapEntityTypeId.SHOP_STEREO_SYSTEM,
   MapEntityTypeId.SHOP_EXTRA_MUSIC,
   MapEntityTypeId.SHOP_SPEED_SHOES,

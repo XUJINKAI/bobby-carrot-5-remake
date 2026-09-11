@@ -28,13 +28,13 @@ test("已购买商品在进入 Engine 前投影为空商品格", () => {
     schemaVersion: 1,
     width: 1,
     height: 1,
-    entities: [{ type: "shop-super-key", x: 0, y: 0 }],
+    entities: [{ type: "lock-key", x: 0, y: 0, collectible: false }],
   };
   const augmentation = {
     levelPatches: [],
     interactions: [{
       id: "test/super-key",
-      selector: { type: "shop-super-key", x: 0, y: 0 },
+      selector: { type: "lock-key", x: 0, y: 0 },
       effect: { type: "item-purchase", offer: superKeyOffer() },
     }],
   };
@@ -53,7 +53,7 @@ test("购买结果按交互位置生成稳定 Entity replacement intent", () => 
     actorId: 1,
     entityId: 2,
     requestId: 3,
-    objectType: "shop-super-key",
+    objectType: "lock-key",
     x: 21,
     y: 6,
     action: "touch",
@@ -61,7 +61,7 @@ test("购买结果按交互位置生成稳定 Entity replacement intent", () => 
 
   assert.deepEqual(intent, {
     type: "commit-entity-replacement",
-    target: { type: "shop-super-key", x: 21, y: 6 },
+    target: { type: "lock-key", x: 21, y: 6 },
     replacementType: "shop-empty",
   });
 });

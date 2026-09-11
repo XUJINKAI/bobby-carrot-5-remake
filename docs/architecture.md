@@ -41,7 +41,10 @@ interface LevelEntity {
 
 字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
-`LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
+`LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与
+`applyLevelPatches()`，供首页 Demo、Adventure 等地图生产者在 Engine 加载前对 clone
+执行 `add / remove / set-fields / replace-type`。官方发行记录和 Campaign 节点信息由外层
+Catalog / Adventure 持有。
 
 ## Original DAT tooling
 
@@ -225,6 +228,9 @@ Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持
 Lock.deathCountdownSeconds = 60
 ```
 
+`deathCountdownSeconds = 0` 表示不创建倒计时。Lock 的 `requireKey` 缺省为 `false`；
+为 `true` 时，Engine 要求 Bobby 携带关卡内 `lock-key`，开锁成功后消耗一把。
+
 运行关系：
 
 ```text
@@ -284,19 +290,21 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - Adventure Save contract；
 - 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
-- 条件对白、Bonus Beaver 单次钥匙和永久商品购买等 Campaign 交互 reducer；
+- 条件对白、Bonus Beaver 关卡钥匙和永久商品购买等 Campaign 交互 reducer；
 - 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
 
 每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
 同一个 `AdventureAugmentation` 同时声明 `levelPatches` 与 `interactions`：前者在加载前
-形成 session map，后者匹配 Engine 的通用 `object-interaction` 请求。执行器和类型分别
-位于 `apply.ts`、`interactions.ts` 和 `types.ts`，场景配置不散落到 Web 路由或 Engine。
+形成 session map，后者匹配 Engine 的通用 `object-interaction` 请求。补丁执行器位于
+Model；Adventure 的交互归约和类型分别位于 `interactions.ts` 与 `types.ts`，场景配置不
+散落到 Web 路由或 Engine。
 
 地图准备顺序固定为：
 
 ```text
 base / official LevelMap
         ↓ adventureAugmentationFor(contentId).levelPatches
+        ↓ @bobby/model::applyLevelPatches
 Adventure session LevelMap
         ↓
 Engine Game.loadLevel(LevelMap)
@@ -308,8 +316,8 @@ resolveAdventureInteraction(augmentation, save, request, interactionState)
 dialogue / Campaign reducer result
 ```
 
-Adventure 补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
-`deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
+通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
+`requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
 这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。运行时特殊对话
 按内容 ID、Entity type、坐标、footprint role 与交互动作声明；同一规则的 `lines[]` 由
 当前页面持有的交互状态顺序循环。Adventure 返回对白、商品报价或其它领域结果，Web
@@ -326,6 +334,7 @@ Adventure 根据 Campaign node 判断 Bonus 关，并把原版 60 秒策略写�
 ```text
 Bonus LevelMap
    ↓
+Lock.requireKey = !ownsPermanentKey
 Lock.deathCountdownSeconds = 60
    ↓
 Engine
@@ -501,9 +510,10 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 持久化新 Save。购买成功后，Web 把商品声明的替代 Entity 作为通用
 `commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
 根据最新 Save 生成同一替换补丁。Replay 只记录对话选择，宿主业务结果按播放时的 Save
-重新归约。Bonus Beaver 的单次钥匙在 reducer 决策后以
-`set-actor-lock-key` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的接受事件
-后提交 Save。
+重新归约。Bonus Beaver 的关卡钥匙在 reducer 决策后以
+`add-actor-inventory-item` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的
+接受事件后提交 Save。永久钥匙通过加载前补丁把 Bonus Lock 的 `requireKey` 设为
+`false`，不进入 Engine 背包。
 
 ## Original JAR Validation
 

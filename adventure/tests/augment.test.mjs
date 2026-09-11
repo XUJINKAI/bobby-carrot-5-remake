@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MapEntityTypeId } from "../../model/dist/index.js";
+import {
+  MapEntityTypeId,
+  applyLevelPatches,
+} from "../../model/dist/index.js";
 import {
   adventureAugmentationFor,
-  augmentAdventureLevel,
   createAdventureInteractionState,
   createAdventureSave,
   purchasedAdventureItemPatches,
@@ -22,7 +24,7 @@ function sandmanLevel() {
 
 test("Adventure can add dialogue without changing the base LevelMap", () => {
   const base = sandmanLevel();
-  const augmented = augmentAdventureLevel(base, [
+  const augmented = applyLevelPatches(base, [
     {
       operation: "set-fields",
       selector: {
@@ -38,7 +40,7 @@ test("Adventure can add dialogue without changing the base LevelMap", () => {
 });
 
 test("prepareAdventureLevel applies field patches before Engine", () => {
-  const prepared = augmentAdventureLevel(
+  const prepared = applyLevelPatches(
     sandmanLevel(),
     [
       {
@@ -62,7 +64,7 @@ test("type-only Adventure patches apply to every matching Entity", () => {
       { type: MapEntityTypeId.LOCK, x: 1, y: 2 },
     ],
   };
-  const augmented = augmentAdventureLevel(level, [
+  const augmented = applyLevelPatches(level, [
     {
       operation: "set-fields",
       selector: { type: MapEntityTypeId.BEAVER },
@@ -76,7 +78,7 @@ test("type-only Adventure patches apply to every matching Entity", () => {
 
 test("Adventure 声明式补丁支持新增和删除 Entity", () => {
   const base = sandmanLevel();
-  const augmented = augmentAdventureLevel(base, [
+  const augmented = applyLevelPatches(base, [
     {
       operation: "add",
       entity: {
@@ -111,16 +113,16 @@ test("Adventure replace-type 补丁只保留新 Entity 的稳定位置字段", (
     width: 2,
     height: 1,
     entities: [{
-      type: MapEntityTypeId.SHOP_SUPER_KEY,
+      type: MapEntityTypeId.LOCK_KEY,
       x: 1,
       y: 0,
       stackOrder: 12,
       futureField: "discarded",
     }],
   };
-  const augmented = augmentAdventureLevel(level, [{
+  const augmented = applyLevelPatches(level, [{
     operation: "replace-type",
-    selector: { type: MapEntityTypeId.SHOP_SUPER_KEY },
+    selector: { type: MapEntityTypeId.LOCK_KEY },
     type: MapEntityTypeId.SHOP_EMPTY,
   }]);
 
@@ -130,7 +132,7 @@ test("Adventure replace-type 补丁只保留新 Entity 的稳定位置字段", (
     y: 0,
     stackOrder: 12,
   }]);
-  assert.equal(level.entities[0].type, MapEntityTypeId.SHOP_SUPER_KEY);
+  assert.equal(level.entities[0].type, MapEntityTypeId.LOCK_KEY);
 });
 
 test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
@@ -141,10 +143,16 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     height: 20,
     entities: [
       { type: MapEntityTypeId.BEAVER, x: 6, y: 12 },
-      { type: MapEntityTypeId.SHOP_SUPER_KEY, x: 21, y: 6 },
+      { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
     ],
   };
-  const augmented = augmentAdventureLevel(level, augmentation.levelPatches);
+  const augmented = applyLevelPatches(level, augmentation.levelPatches);
+  assert.equal(
+    augmented.entities.find(
+      (entity) => entity.type === MapEntityTypeId.LOCK_KEY,
+    )?.collectible,
+    false,
+  );
   assert.deepEqual(
     augmented.entities
       .filter((entity) => entity.type === MapEntityTypeId.PORTAL)
@@ -172,7 +180,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
       y: 12,
       action: "touch",
       role: "body",
-      hasSingleUseKey: false,
+      lockKeyCount: 0,
     },
     interactionState,
   );
@@ -193,7 +201,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
         x: 0,
         y: 0,
         action: "touch",
-        hasSingleUseKey: false,
+        lockKeyCount: 0,
       },
       interactionState,
     )?.text
@@ -211,7 +219,7 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
       y: 8,
       action: "touch",
       role: "body",
-      hasSingleUseKey: false,
+      lockKeyCount: 0,
     },
     interactionState,
   );
@@ -221,11 +229,11 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
     augmentation,
     save,
     {
-      objectType: MapEntityTypeId.SHOP_SUPER_KEY,
+      objectType: MapEntityTypeId.LOCK_KEY,
       x: 21,
       y: 6,
       action: "touch",
-      hasSingleUseKey: false,
+      lockKeyCount: 0,
     },
     interactionState,
   );
@@ -249,13 +257,13 @@ test("Beaver Shop 数据增加 Portal、Dream Machine 与商品交互", () => {
   assert.equal(purchase.save.economy.bonusCoins, 0);
   assert.deepEqual(purchase.save.items, ["golden-key"]);
 
-  const purchasedLevel = augmentAdventureLevel(
+  const purchasedLevel = applyLevelPatches(
     level,
     purchasedAdventureItemPatches(augmentation, purchase.save),
   );
   assert.equal(
     purchasedLevel.entities.some(
-      (entity) => entity.type === MapEntityTypeId.SHOP_SUPER_KEY,
+      (entity) => entity.type === MapEntityTypeId.LOCK_KEY,
     ),
     false,
   );
@@ -284,7 +292,7 @@ test("Adventure 对白数组按规则 ID 独立循环", () => {
     y: 1,
     action: "touch",
     role: "body",
-    hasSingleUseKey: false,
+    lockKeyCount: 0,
   };
 
   const lines = [0, 1, 2].map(() =>
@@ -304,14 +312,14 @@ test("Bonus 关卡通过同一数据目录接入钥匙交互", () => {
       y: 0,
       action: "touch",
       role: "body",
-      hasSingleUseKey: false,
+      lockKeyCount: 0,
     },
     createAdventureInteractionState(),
   );
 
   assert.equal(interaction.type, "bonus-key-vendor");
   assert.equal(interaction.decision.outcome, "trial-granted");
-  assert.equal(interaction.decision.grantSingleUseKey, true);
+  assert.equal(interaction.decision.grantLockKey, true);
 });
 
 test("Night Train 三张 Special Scene 都声明角色对白", () => {
@@ -327,7 +335,7 @@ test("Night Train 三张 Special Scene 都声明角色对白", () => {
       x: 0,
       y: 0,
       action: "touch",
-      hasSingleUseKey: false,
+      lockKeyCount: 0,
     }, createAdventureInteractionState())?.text
   );
 

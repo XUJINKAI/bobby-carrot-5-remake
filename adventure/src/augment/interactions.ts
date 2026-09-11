@@ -6,6 +6,7 @@ import {
   type AdventureItemId,
   type AdventureSave,
 } from "../save.js";
+import type { LevelPatch } from "@bobby/model";
 import { spendBonusCoins, spendGoldenCarrots } from "../rewards.js";
 import type {
   AdventureAugmentation,
@@ -15,15 +16,14 @@ import type {
   AdventureItemPurchaseOffer,
   AdventureItemPurchaseOutcome,
   AdventurePurchaseCurrency,
-  AdventureLevelPatch,
 } from "./types.js";
 
 export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
-export const DEFAULT_SINGLE_USE_LOCK_KEY_PRICE_BONUS_COINS = 3;
+export const DEFAULT_LOCK_KEY_PRICE_BONUS_COINS = 3;
 
 export type BonusKeyVendorOutcome =
-  | "reusable-key-owned"
-  | "single-use-key-held"
+  | "permanent-key-owned"
+  | "lock-key-held"
   | "trial-granted"
   | "purchased"
   | "insufficient-funds";
@@ -31,12 +31,12 @@ export type BonusKeyVendorOutcome =
 export interface BonusKeyVendorDecision {
   outcome: BonusKeyVendorOutcome;
   priceBonusCoins: number;
-  grantSingleUseKey: boolean;
+  grantLockKey: boolean;
   save: AdventureSave;
 }
 
 export interface BonusKeyVendorRequest {
-  hasSingleUseKey: boolean;
+  lockKeyCount: number;
   priceBonusCoins?: number;
 }
 
@@ -64,7 +64,7 @@ export function createAdventureInteractionState(): AdventureInteractionState {
 export function purchasedAdventureItemPatches(
   augmentation: AdventureAugmentation,
   save: AdventureSave,
-): AdventureLevelPatch[] {
+): LevelPatch[] {
   const normalized = normalizeAdventureSave(save);
   return augmentation.interactions.flatMap((rule) => {
     if (
@@ -142,7 +142,7 @@ export function resolveAdventureInteraction(
   return {
     type: "bonus-key-vendor",
     decision: resolveBonusKeyVendorInteraction(save, {
-      hasSingleUseKey: request.hasSingleUseKey,
+      lockKeyCount: request.lockKeyCount,
       priceBonusCoins: rule.effect.priceBonusCoins,
     }),
   };
@@ -167,9 +167,9 @@ export function resolveBonusKeyVendorInteraction(
   const normalized = normalizeAdventureSave(save);
   const price = normalizeBonusKeyPrice(request.priceBonusCoins);
   if (hasAdventureItem(normalized, "golden-key"))
-    return decision("reusable-key-owned", price, false, normalized);
-  if (request.hasSingleUseKey)
-    return decision("single-use-key-held", price, false, normalized);
+    return decision("permanent-key-owned", price, false, normalized);
+  if (request.lockKeyCount > 0)
+    return decision("lock-key-held", price, false, normalized);
   if (!normalized.campaign.completedEvents.includes(BONUS_KEY_TRIAL_EVENT)) {
     return decision(
       "trial-granted",
@@ -205,10 +205,10 @@ function matchesInteraction(
 function decision(
   outcome: BonusKeyVendorOutcome,
   priceBonusCoins: number,
-  grantSingleUseKey: boolean,
+  grantLockKey: boolean,
   save: AdventureSave,
 ): BonusKeyVendorDecision {
-  return { outcome, priceBonusCoins, grantSingleUseKey, save };
+  return { outcome, priceBonusCoins, grantLockKey, save };
 }
 
 function normalizePurchasePrice(value: number): number {
@@ -219,7 +219,7 @@ function normalizePurchasePrice(value: number): number {
 
 function normalizeBonusKeyPrice(value: number | undefined): number {
   return value === undefined
-    ? DEFAULT_SINGLE_USE_LOCK_KEY_PRICE_BONUS_COINS
+    ? DEFAULT_LOCK_KEY_PRICE_BONUS_COINS
     : normalizePurchasePrice(value);
 }
 

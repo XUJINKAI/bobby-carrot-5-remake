@@ -1,5 +1,7 @@
-import { MapEntityTypeId } from "@bobby/model";
-import type { AdventureLevelPatch } from "./augment/types.js";
+import {
+  MapEntityTypeId,
+  type LevelPatch,
+} from "@bobby/model";
 import {
   parseAdventureLevelId,
   type AdventureLevelId,
@@ -11,7 +13,6 @@ import {
 
 export interface AdventurePlayerPlan {
   bobbyMoveMs: number;
-  reusableLockKey: boolean;
 }
 
 /** Adventure policy 在进入 Engine 前落实为扁平的 canonical Map 字段。 */
@@ -43,7 +44,7 @@ export const DEFAULT_ADVENTURE_RUNTIME_POLICY: AdventureRuntimePolicy = {
 
 export interface AdventureSessionPlan extends AdventurePlayerPlan {
   levelId: AdventureLevelId;
-  levelPatches: readonly AdventureLevelPatch[];
+  levelPatches: readonly LevelPatch[];
 }
 
 export function planAdventurePlayer(
@@ -55,7 +56,6 @@ export function planAdventurePlayer(
     bobbyMoveMs: normalized.items.includes("speed-shoes")
       ? policy.locomotion.speedShoesMoveMs
       : policy.locomotion.normalMoveMs,
-    reusableLockKey: normalized.items.includes("golden-key"),
   };
 }
 
@@ -70,20 +70,31 @@ export function planAdventureSession(
     levelId: parsed.id,
     ...planAdventurePlayer(save, policy),
     levelPatches:
-      parsed.kind === "bonus" ? bonusEntityPatches(policy.bonus) : [],
+      parsed.kind === "bonus"
+        ? bonusEntityPatches(
+            policy.bonus,
+            normalizedAdventureOwnsPermanentKey(save),
+          )
+        : [],
   };
 }
 
 function bonusEntityPatches(
   policy: AdventureBonusRuntimePolicy,
-): AdventureLevelPatch[] {
+  ownsPermanentKey: boolean,
+): LevelPatch[] {
   return [
     {
       operation: "set-fields",
       selector: { type: MapEntityTypeId.LOCK },
       fields: {
+        requireKey: !ownsPermanentKey,
         deathCountdownSeconds: policy.lock.deathCountdownSeconds,
       },
     },
   ];
+}
+
+function normalizedAdventureOwnsPermanentKey(save: AdventureSave): boolean {
+  return normalizeAdventureSave(save).items.includes("golden-key");
 }

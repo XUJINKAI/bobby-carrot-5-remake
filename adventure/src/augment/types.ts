@@ -1,37 +1,11 @@
 import type {
   EntityType,
-  JsonPrimitive,
-  LevelEntity,
+  LevelEntitySelector,
+  LevelPatch,
 } from "@bobby/model";
 import type { AdventureItemId } from "../save.js";
 
-export interface AdventureEntitySelector {
-  x?: number;
-  y?: number;
-  type?: EntityType;
-}
-
-export type AdventureLevelPatch =
-  | {
-      operation: "add";
-      entity: LevelEntity;
-    }
-  | {
-      operation: "remove";
-      selector: AdventureEntitySelector;
-    }
-  | {
-      operation: "set-fields";
-      selector: AdventureEntitySelector;
-      fields: Record<string, JsonPrimitive>;
-    }
-  | {
-      operation: "replace-type";
-      selector: AdventureEntitySelector;
-      type: EntityType;
-    };
-
-export interface AdventureInteractionSelector extends AdventureEntitySelector {
+export interface AdventureInteractionSelector extends LevelEntitySelector {
   action?: "touch" | "enter";
   role?: string;
 }
@@ -57,7 +31,7 @@ export interface AdventureInteractionRule {
 }
 
 export interface AdventureAugmentation {
-  levelPatches: readonly AdventureLevelPatch[];
+  levelPatches: readonly LevelPatch[];
   interactions: readonly AdventureInteractionRule[];
 }
 
@@ -68,7 +42,7 @@ export interface AdventureInteractionRequest {
   y: number;
   action: "touch" | "enter";
   role?: string;
-  hasSingleUseKey: boolean;
+  lockKeyCount: number;
 }
 
 export interface AdventureInteractionState {

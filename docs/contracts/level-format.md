@@ -52,6 +52,26 @@ Sandman、Beaver 与 Dream Machine 可以保存简单的字面对白：
 `dialogue` 随地图 JSON、分享文本与 Embed 一同传播。角色被碰触时 Engine 发出
 `dialog` 事件并显示该文本；需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
 
+Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
+
+```json
+[
+  { "type": "lock-key", "x": 2, "y": 3 },
+  {
+    "type": "lock",
+    "x": 8,
+    "y": 3,
+    "requireKey": true,
+    "deathCountdownSeconds": 0
+  }
+]
+```
+
+`lock-key` 默认可拾取，并按数量进入触碰它的 Bobby 背包；`requireKey: true` 的 Lock
+成功开启时消耗一把。`requireKey` 缺省为 `false`。`deathCountdownSeconds` 接受
+`0..3600` 的整数，`0` 表示不创建 Timed Challenge。`lock-key.collectible: false` 用于把
+同一视觉作为阻挡且可交互的陈列物，适合由外层商品交互控制。
+
 例如同一种 Switch 不再使用 `switch-raised` / `switch-pressed` 两种 type：
 
 ```json
@@ -366,6 +386,18 @@ raw byte 映射只存在于 Original tooling。官方 DAT round-trip 要求仍�
 
 ## Adventure 地图增强
 
+Model 提供薄的声明式 `LevelPatch` 与 `applyLevelPatches()`。地图生产者先得到最终
+`LevelMap`，再把它交给 Engine：
+
+```ts
+const sessionLevel = applyLevelPatches(baseLevel, patches);
+const session = await createGameSession({ level: sessionLevel });
+```
+
+`createGameSession()` 与 `Game.loadLevel()` 都不接收补丁。通用操作只有 `add / remove /
+set-fields / replace-type`，selector 至少声明 `type / x / y` 中的一项；`add` 坐标必须在
+地图内。补丁在 clone 上执行，不修改调用方持有的基础地图。
+
 Adventure 可以在基础 LevelMap 进入 Engine 前生成 session Entity Map：
 
 ```text
@@ -382,26 +414,28 @@ Adventure 的声明式配置统一位于 `adventure/src/augment/`。每项内容
 
 ```ts
 interface AdventureAugmentation {
-  levelPatches: readonly AdventureLevelPatch[];
+  levelPatches: readonly LevelPatch[];
   interactions: readonly AdventureInteractionRule[];
 }
 ```
 
-加载前补丁支持三种操作：
+加载前补丁支持四种操作：
 
 ```ts
-type AdventureLevelPatch =
+type LevelPatch =
   | { operation: "add"; entity: LevelEntity }
   | { operation: "remove"; selector: { type?: string; x?: number; y?: number } }
   | {
       operation: "set-fields";
       selector: { type?: string; x?: number; y?: number };
       fields: Record<string, JsonPrimitive>;
+    }
+  | {
+      operation: "replace-type";
+      selector: { type?: string; x?: number; y?: number };
+      type: string;
     };
 ```
-
-`remove` 和 `set-fields` 的 selector 至少声明 `type / x / y` 中的一项；`add` 的坐标
-必须位于地图内。补丁在 clone 上执行，不修改 Catalog 提供的基础 `LevelMap`。
 
 运行时规则具有稳定 `id`，并匹配通用 `object-interaction` 的
 `objectType / x / y / action / role`。效果可以声明循环对白 `lines[]`、永久商品报价或

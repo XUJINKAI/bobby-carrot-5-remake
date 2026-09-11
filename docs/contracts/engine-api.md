@@ -30,14 +30,6 @@ const runtime = await createGameplayRuntime({
   audio,
   runtime: {
     bobbyLocomotion: { moveMs: 350 },
-    initialActorIntents: [
-      {
-        type: "set-actor-lock-key",
-        actor: "all",
-        kind: "reusable",
-        enabled: true,
-      },
-    ],
     input: {
       keyboard: true,
       pointer: true,
@@ -194,11 +186,11 @@ game.dispatch({
   actorId,
   moveDurationMs: 266,
 });
-game.dispatch({
-  type: "set-actor-lock-key",
+game.dispatchInteractionEffect({
+  type: "add-actor-inventory-item",
   actorId,
-  kind: "single-use",
-  enabled: true,
+  item: "lock-key",
+  count: 1,
 });
 
 game.undo();
@@ -228,13 +220,14 @@ game.inspectCanvasPoint(clientX, clientY);
 Game 状态、事件和 Replay Tick 结果观察。
 
 `dispatch()` 只接受 Engine 定义的封闭 `GameplayEffectIntent` union。
-`set-actor-locomotion` 只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内
-Lock 能力。宿主持久化产品结果后，可以按稳定地图身份提交 Entity 替换：
+`set-actor-locomotion` 只影响随后创建的 WorldMotion。宿主交互可以通过
+`add-actor-inventory-item` 为 Bobby 增加关卡内钥匙；商品、价格与永久权限仍由宿主负责。
+宿主持久化产品结果后，可以按稳定地图身份提交 Entity 替换：
 
 ```ts
-game.dispatch({
+game.dispatchInteractionEffect({
   type: "commit-entity-replacement",
-  target: { type: "shop-super-key", x: 21, y: 6 },
+  target: { type: "lock-key", x: 21, y: 6 },
   replacementType: "shop-empty",
 });
 ```
@@ -402,7 +395,7 @@ runtime: {
 change 时重新读取，适合可变的存档状态。
 
 道具和金币位于同一行，但由 `items` 与 `coins` 独立配置。道具按魔豆、汽油、雪铲、
-风筝排列；数量为 `1` 时只显示图标，数量大于 `1` 时同时显示计数。金币使用
+风筝、关卡钥匙排列；数量为 `1` 时只显示图标，数量大于 `1` 时同时显示计数。金币使用
 `ts-16-9` 图标并始终显示计数；数字位于缩小后的金币图标之前。
 
 倒计时数值可以通过 `game.timedChallengeRemainingMs` 或
@@ -418,12 +411,14 @@ Timed Challenge 由地图中的 Lock 配置：
   type: "lock",
   x: 4,
   y: 7,
+  requireKey: true,
   deathCountdownSeconds: 60,
 }
 ```
 
 HUD 从关卡开局起使用向上取整的 `MM:SS` 显示完整倒计时；成功打开 Lock 后由
-WorldClock 推进剩余时间。
+WorldClock 推进剩余时间。`deathCountdownSeconds: 0` 表示该 Lock 不创建 Timed
+Challenge；`requireKey` 省略或为 `false` 时开锁不消耗钥匙。
 `b6.png` 进入/通关过渡属于 Bobby 的内置表现，宿主通过 `ImageManager` 提供
 `bobby-transition` 语义资源。两条过渡使用独立时长，并共用 presentation easing：
 

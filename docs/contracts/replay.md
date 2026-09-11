@@ -43,7 +43,7 @@ Replay 在浏览器输入源映射到 controller channel 后记录产生 gamepla
 - 同一 channel 中多个 Bobby 的联动分组与方向变换；
 - 生效输入的 Tick 与组内顺序；
 - 成功启动的移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
-- 宿主提交的 `set-actor-locomotion`、`set-actor-lock-key` 等封闭 gameplay 动作；
+- 宿主提交的 `set-actor-locomotion`、`add-actor-inventory-item` 等封闭 gameplay 动作；
 - 阻塞对话按出现顺序确认的一基选项序号。
 
 按住方向时，Bobby 移动期间产生的纯 `busy` 重试和没有 gameplay 效果的阻挡输入不会写入
@@ -91,13 +91,7 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
       "moveMs": 350
     }
   },
-  "initialIntents": [
-    {
-      "type": "set-actor-lock-key",
-      "kind": "reusable",
-      "enabled": true
-    }
-  ],
+  "initialIntents": [],
   "finalState": {
     "status": "won",
     "moves": 14,

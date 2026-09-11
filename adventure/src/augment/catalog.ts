@@ -61,6 +61,11 @@ const BEAVER_SHOP: AdventureAugmentation = {
       },
     },
     {
+      operation: "set-fields",
+      selector: { type: MapEntityTypeId.LOCK_KEY, x: 21, y: 6 },
+      fields: { collectible: false },
+    },
+    {
       operation: "add",
       entity: {
         type: MapEntityTypeId.PORTAL,
@@ -105,7 +110,7 @@ const BEAVER_SHOP: AdventureAugmentation = {
     },
     {
       id: "beaver-shop/super-key",
-      selector: { type: MapEntityTypeId.SHOP_SUPER_KEY, action: "touch" },
+      selector: { type: MapEntityTypeId.LOCK_KEY, action: "touch" },
       effect: {
         type: "item-purchase",
         offer: {

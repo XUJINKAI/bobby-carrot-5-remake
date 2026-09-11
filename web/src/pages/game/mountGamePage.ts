@@ -247,15 +247,6 @@ export async function renderGamePage(
       ...(plan
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
-      initialActorIntents:
-        mode === "explore" || plan?.reusableLockKey
-          ? [{
-              type: "set-actor-lock-key",
-              actor: "all",
-              kind: "reusable",
-              enabled: true,
-            }]
-          : [],
       camera: GAME_CAMERA_OPTIONS[mode],
       hud: resolveGameplayHudConfig(
         mode,
@@ -514,8 +505,8 @@ export async function renderGamePage(
   let purchaseDialogOpen = false;
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
     if (
-      event.type === "actor-lock-key-changed" &&
-      event.data?.enabled === true &&
+      event.type === "actor-inventory-item-added" &&
+      event.data?.item === MapEntityTypeId.LOCK_KEY &&
       event.requestId !== undefined
     ) {
       const pending = pendingVendorSaves.get(event.requestId);
@@ -539,7 +530,7 @@ export async function renderGamePage(
         y: request.y,
         action: request.action,
         ...(request.role ? { role: request.role } : {}),
-        hasSingleUseKey: actor.inventory.singleUseLockKey,
+        lockKeyCount: actor.inventory.lockKeys,
       },
       adventureInteractionState,
     );
@@ -553,13 +544,13 @@ export async function renderGamePage(
       return;
     }
     const { decision } = interaction;
-    if (decision.grantSingleUseKey) {
+    if (decision.grantLockKey) {
       pendingVendorSaves.set(request.requestId, decision.save);
-      game.dispatch({
-        type: "set-actor-lock-key",
+      game.dispatchInteractionEffect({
+        type: "add-actor-inventory-item",
         actorId: request.actorId,
-        kind: "single-use",
-        enabled: true,
+        item: "lock-key",
+        count: 1,
         requestId: request.requestId,
       });
     }
@@ -616,8 +607,8 @@ function bonusKeyVendorMessage(
   priceBonusCoins: number,
 ): string {
   const key = ({
-    "reusable-key-owned": "adventure.bonusKey.reusableOwned",
-    "single-use-key-held": "adventure.bonusKey.singleUseHeld",
+    "permanent-key-owned": "adventure.bonusKey.permanentOwned",
+    "lock-key-held": "adventure.bonusKey.lockKeyHeld",
     "trial-granted": "adventure.bonusKey.trialGranted",
     purchased: "adventure.bonusKey.purchased",
     "insufficient-funds": "adventure.bonusKey.insufficient",
