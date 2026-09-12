@@ -155,6 +155,22 @@ const shovelable: Behavior = {
     });
     return { result: "clear-and-pass", reason: "shovel-clear" };
   },
+  onTouch({ actor, self, query, commands }) {
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      isRidingMower(actor.state, query) ||
+      readBobbyInventory(actor.state).shovel
+    )
+      return;
+    commands.emit({
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: self.entity.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+      data: { item: "shovel" },
+    });
+  },
 };
 
 const mowerConditionalOverlay: Behavior = {

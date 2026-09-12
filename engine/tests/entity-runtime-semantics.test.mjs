@@ -50,6 +50,37 @@ test("canonical original obstacle semantics keep known blockers blocking", () =>
   }
 });
 
+test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const player = actor(world);
+  const snow = world.query.entitiesWithTrait("snow")[0];
+
+  const result = move(world, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: player.id,
+      entityId: snow.id,
+      x: 1,
+      y: 0,
+      data: { item: "shovel" },
+    },
+  );
+});
+
 test("胡萝卜收集后留下持久的 consumed runtime state", () => {
   const world = new World({
     schemaVersion: 1,

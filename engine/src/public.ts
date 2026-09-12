@@ -163,12 +163,17 @@ export type {
 
 export type {
   CellInspection,
+  MissingItemEvent,
+  MissingItemKind,
   MoveResult,
   ObjectInteractionEvent,
   PresenceInspection,
   WorldEvent,
 } from "./world/WorldTypes.js";
-export { isObjectInteractionEvent } from "./world/WorldTypes.js";
+export {
+  isMissingItemEvent,
+  isObjectInteractionEvent,
+} from "./world/WorldTypes.js";
 export type {
   ActorEffectIntent,
   AddActorInventoryItemIntent,

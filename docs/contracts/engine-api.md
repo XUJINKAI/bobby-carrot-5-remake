@@ -500,6 +500,27 @@ game.on("level-complete", ...);
 game.onWorldEvent((event) => {});
 ```
 
+玩家尝试使用 Mower、Lock、Whirlwind、Snow 或 Bean Field 且缺少对应地图内道具时，
+Engine 发布统一事件：
+
+```ts
+interface MissingItemEvent extends WorldEvent {
+  type: "missing-item";
+  actorId: EntityId;
+  entityId: EntityId;
+  x: number;
+  y: number;
+  data: {
+    item: "gas" | "lock-key" | "kite" | "shovel" | "bean";
+  };
+}
+```
+
+`actorId` 指向缺少道具的 Bobby，`entityId` 指向触发交互的地图 Entity。Engine
+Presentation 将该事件显示为跟随 Bobby 的 Canvas Callout，并通过 `aria-live` 播报对应
+可访问文本；Callout 使用 PresentationClock，不阻塞 gameplay，也不进入 World snapshot
+或 Replay 数据。
+
 复杂产品交互使用请求口：
 
 ```ts

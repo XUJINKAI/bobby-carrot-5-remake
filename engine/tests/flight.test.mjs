@@ -74,13 +74,22 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
     ],
   });
   const actor = world.query.entitiesWithTrait("player")[0];
+  const whirlwind = world.entities
+    .all()
+    .find((entity) => entity.type === MapEntityTypeId.WHIRLWIND);
+  assert.ok(whirlwind);
   const result = move(world, actor.id, "right");
   assert.equal(result.moves[0].moved, false);
-  assert.ok(
-    result.events.some(
-      (event) =>
-        event.type === "missing-item" && event.data?.item === "kite",
-    ),
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: whirlwind.id,
+      x: 1,
+      y: 0,
+      data: { item: "kite" },
+    },
   );
 });
 

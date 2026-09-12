@@ -72,6 +72,7 @@ interface WorldCalloutCue {
   content: WorldCalloutContent;
   placement: "above" | "below" | "auto-vertical";
   durationMs: number;
+  clearanceSourcePx?: number;
   blink?: {
     periodMs: number;
     visibleFromMs: number;
@@ -79,6 +80,9 @@ interface WorldCalloutCue {
   };
 }
 ```
+
+`clearanceSourcePx` 使用原始图片像素描述 Callout 与 Entity 视觉主体之间的避让距离，
+并随 Camera zoom 一起缩放。
 
 `sliceId` 是注入 `ImageManager` 的语义图片切片 ID，不是 URL。创建 Callout 前必须验证切片已经登记。纯文字只接受普通字符串；具体排版由 Renderer 统一完成。
 

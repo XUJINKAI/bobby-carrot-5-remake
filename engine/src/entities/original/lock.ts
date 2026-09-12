@@ -21,7 +21,7 @@ import {
 
 const unlock: Behavior = {
   id: "lock",
-  canEnter({ actor, self, query, commands }) {
+  canEnter({ actor, self, commands }) {
     if (bobbyMountId(actor.state) !== null)
       return { passable: false, reason: "mounted-actor-cannot-unlock" };
     const requireKey = self.entity.state?.requireKey === true;
@@ -62,6 +62,23 @@ const unlock: Behavior = {
         data: { seconds },
       });
     return { passable: true, reason: "lock-unlocked" };
+  },
+  onTouch({ actor, self, query, commands }) {
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      bobbyMountId(actor.state) !== null ||
+      self.entity.state?.requireKey !== true ||
+      readBobbyInventory(actor.state).lockKeys > 0
+    )
+      return;
+    commands.emit({
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: self.entity.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+      data: { item: "lock-key" },
+    });
   },
 };
 

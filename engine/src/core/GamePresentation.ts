@@ -13,6 +13,7 @@ import {
   createWorldCalloutAnnouncer,
   type WorldCalloutAnnouncer,
 } from "../ui/WorldCalloutAnnouncer.js";
+import { createBuiltinWorldCalloutRegistry } from "../visual/callout/builtinCallouts.js";
 
 /**
  * Game 的纯表现侧门面：统一持有 Renderer、Camera、VisualRuntime 与表现时钟。
@@ -38,6 +39,7 @@ export class GamePresentation {
       options.runtime?.camera,
       {
         announce: (message) => this.calloutAnnouncer?.announce(message),
+        callouts: createBuiltinWorldCalloutRegistry(),
       },
     );
     this.clock = new PresentationClock(

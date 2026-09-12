@@ -145,6 +145,34 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
   assert.equal(world.dead, true);
 });
 
+test("requireKey Lock 缺少钥匙时报告完整 missing-item 事件", () => {
+  const world = new World(
+    corridor([{
+      type: MapEntityTypeId.LOCK,
+      x: 1,
+      y: 0,
+      requireKey: true,
+    }]),
+  );
+  const player = actor(world);
+  const lock = world.query.entitiesWithTrait("gate")[0];
+
+  const result = move(world, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: player.id,
+      entityId: lock.id,
+      x: 1,
+      y: 0,
+      data: { item: "lock-key" },
+    },
+  );
+});
+
 test("GameplayState 投影等待开锁与运行中的 Timed Challenge", () => {
   const session = new GameplaySession({ timing: { worldHz: 10 } });
   session.loadLevel(
