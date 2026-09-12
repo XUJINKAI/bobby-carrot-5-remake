@@ -196,7 +196,20 @@ export class World {
       () => this.deltaClock(),
     );
     this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
+    this.initializeEntityBehaviors();
     this.lifecycle.initialize();
+  }
+
+  private initializeEntityBehaviors(): void {
+    const queue = new CommandQueue();
+    const entities = [...this.entities.all()].sort((left, right) =>
+      left.id - right.id
+    );
+    for (const entity of entities) {
+      const presence = this.spatial.presencesForEntity(entity.id)[0];
+      if (presence) this.behaviorRuntime.initialize(entity, presence, queue);
+    }
+    this.committer.commit(queue, this.deltaClock());
   }
 
   get dead(): boolean {

@@ -140,6 +140,11 @@ RuntimeAction   一个正在持续进行的 gameplay 过程
 
 Behavior 通过纯查询 `MovementPolicy` 描述特殊通行、携带关系与 marker；World 将 policies 规范化为一个 `MovementPlan`，负责通用边界、reservation、busy 状态与原子提交。World 不识别具体 Entity 机制或私有 state 字段。
 
+所有 Level Entity 实例化完成后、正式 gameplay 开始前，World 按稳定 Entity identity
+调用一次 Behavior `onInitialize()`。初始化 hook 仍只能通过 `WorldQueryApi + CommandQueue`
+读写世界；例如 Bobby 开局位于 Speed 时，由 Speed Behavior 在这里建立可进入 Snapshot
+与 Replay 的连续移动 Action。
+
 Behavior 的 `CommandQueue.relocate()` 用于 Portal 等中点位置切换：它清除 Entity 当前的 `WorldMotion` 并写入新的整数 anchor。切换后的连续移动必须继续产生 semantic intent，以复用正式通行与碰撞裁决。
 
 RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 CommandQueue 修改 World。Action 可以声明：
@@ -421,6 +426,9 @@ Timed Challenge 由地图中的 Lock 配置：
 HUD 从关卡开局起使用向上取整的 `MM:SS` 显示完整倒计时；成功打开 Lock 后由
 WorldClock 推进剩余时间。`deathCountdownSeconds: 0` 表示该 Lock 不创建 Timed
 Challenge；`requireKey` 省略或为 `false` 时开锁不消耗钥匙。
+开锁成功时 Lock Entity 从空间索引移除；带倒计时的关卡由 Engine 私有 Runtime Entity
+继续持有计时状态，因此 Fence 邻接、通行查询、HUD、Undo 与 Replay 读取的是同一份
+World gameplay state。
 `b6.png` 进入/通关过渡属于 Bobby 的内置表现，宿主通过 `ImageManager` 提供
 `bobby-transition` 语义资源。两条过渡使用独立时长，并共用 presentation easing：
 

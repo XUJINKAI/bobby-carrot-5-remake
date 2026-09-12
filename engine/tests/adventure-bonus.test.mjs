@@ -135,6 +135,8 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, 0);
+  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
+  assert.equal(world.query.entitiesWithTrait("timed-challenge").length, 1);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
@@ -174,6 +176,7 @@ test("缺省 Lock 不要求钥匙", () => {
   );
   assert.equal(move(world, "right").moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, undefined);
+  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
 });
 
 test("关卡内道具动作按数量增加钥匙", () => {

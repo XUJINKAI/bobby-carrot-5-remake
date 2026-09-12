@@ -18,8 +18,7 @@ function eventGame(replayPlaying, hasPendingChoices = false) {
   const game = Object.create(Game.prototype);
   game.replayPlayback = { playing: replayPlaying, hasPendingChoices };
   game.worldEvents = new WorldEventDispatcher();
-  game.visual = { camera: { shake() {} } };
-  game.presentationClock = { current: {} };
+  game.presentation = { shake() {} };
   return game;
 }
 
@@ -75,4 +74,24 @@ test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
   game.jumpReplayToEnd({ frames: [] });
 
   assert.deepEqual(events, [collected]);
+});
+
+test("Speed 与 Mower 冲撞事件使用同一原版幅度的镜头震动", () => {
+  const game = eventGame(false);
+  const shakes = [];
+  game.presentation = {
+    shake(durationMs, amplitudeSourcePx) {
+      shakes.push({ durationMs, amplitudeSourcePx });
+    },
+  };
+
+  game.publishWorldEvents([
+    { type: "speed-impact", entityId: 1 },
+    { type: "crumbly-rock-smashed", entityId: 2 },
+  ]);
+
+  assert.deepEqual(shakes, [
+    { durationMs: 248, amplitudeSourcePx: 42 },
+    { durationMs: 248, amplitudeSourcePx: 42 },
+  ]);
 });

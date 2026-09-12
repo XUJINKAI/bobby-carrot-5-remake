@@ -152,11 +152,10 @@ const bobbyVisual = {
       });
     }
 
-    // 原版 Ice 全程固定在普通移动 strip 的第 7 帧。连续 Ice 格之间
-    // Runtime motion 会短暂回到 stationary，因此静止在 Ice 上也保持同一帧。
+    // Ice 的滑动姿势只属于正在进行的空间运动；停在 Ice 上时仍使用普通站姿。
     if (
-      context.runtime?.animation === "ice" ||
-      (!context.runtime?.moving && isStandingOnIce(context))
+      context.runtime?.animation === "ice" &&
+      context.runtime.moving === true
     ) {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
@@ -202,6 +201,18 @@ const bobbyVisual = {
       });
     }
 
+    // 藤蔓的攀爬姿势始终使用背面人物 strip，朝向状态本身仍由 World 持有。
+    if (isStandingOnClimbable(context)) {
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.move.up,
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: context.runtime?.moving
+          ? resolveWalkingFrame(rawProgress)
+          : BOBBY_STANDING_FRAME,
+      });
+    }
+
     if (!context.runtime?.moving) {
       const idleFrame = resolveIdleFrame(
         context.runtime?.stationarySinceMs,
@@ -236,9 +247,9 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
   { behavior: bobbyMovementPolicy },
 ]);
 
-function isStandingOnIce(context: VisualResolveContext): boolean {
+function isStandingOnClimbable(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    context.query.entity(presence.entityId)?.type === MapEntityTypeId.ICE
+    presence.traits.includes("climbable")
   );
 }
 

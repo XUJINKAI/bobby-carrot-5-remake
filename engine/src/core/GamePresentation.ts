@@ -169,8 +169,12 @@ export class GamePresentation {
     this.clock.setSpeed(speed);
   }
 
-  shake(): void {
-    this.visual.camera.shake(this.clock.current);
+  shake(durationMs: number, amplitudeSourcePx: number): void {
+    this.visual.camera.shake(
+      this.clock.current,
+      durationMs,
+      amplitudeSourcePx,
+    );
   }
 
   render(world: World | null): void {

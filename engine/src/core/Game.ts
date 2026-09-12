@@ -775,7 +775,11 @@ export class Game {
     const notifyRequests = notifyInteractions &&
       (!this.replayPlayback.playing || this.replayPlayback.hasPendingChoices);
     this.worldEvents.publish(events, notifyRequests, (event) => {
-      if (event.type === "speed-impact") this.presentation.shake();
+      if (
+        event.type === "speed-impact" ||
+        event.type === "crumbly-rock-smashed"
+      )
+        this.presentation.shake(248, 42);
     });
   }
 

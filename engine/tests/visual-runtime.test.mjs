@@ -118,7 +118,7 @@ test("Bobby Ice slide stays on movement frame seven", () => {
   });
 });
 
-test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", () => {
+test("Bobby uses the normal standing frame while stationary on Ice", () => {
   const composition = bobbyVisual({
     surfaceType: MapEntityTypeId.ICE,
     direction: "right",
@@ -131,7 +131,25 @@ test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", 
     },
   });
   assert.equal(composition.layers[0].asset, "bobby-right");
-  assert.equal(composition.layers[0].frameIndex, 6);
+  assert.equal(composition.layers[0].frameIndex, 3);
+});
+
+test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
+  const standing = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "left",
+    runtime: { moving: false, progress: 1 },
+  });
+  const moving = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "right",
+    runtime: { moving: true, progress: 0.5 },
+  });
+
+  assert.equal(standing.layers[0].asset, "bobby-up");
+  assert.equal(standing.layers[0].frameIndex, 3);
+  assert.equal(moving.layers[0].asset, "bobby-up");
+  assert.equal(moving.layers[0].frameIndex, 7);
 });
 
 test("Bobby idle starts after five seconds and advances every 50ms", () => {
