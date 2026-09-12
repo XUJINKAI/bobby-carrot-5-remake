@@ -562,6 +562,7 @@ export class Game {
     window.removeEventListener("resize", this.onResize);
     this.inputController?.destroy();
     this.gameplayHud?.destroy();
+    this.presentation.destroy();
     this.debugControls.destroy();
   }
 

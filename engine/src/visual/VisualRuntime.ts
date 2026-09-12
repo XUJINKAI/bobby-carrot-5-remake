@@ -20,6 +20,11 @@ import type {
   VisualRenderPass,
 } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
+import { WorldCalloutRegistry } from "./callout/WorldCalloutRegistry.js";
+import {
+  WorldCalloutRuntime,
+  type WorldCalloutRuntimeOptions,
+} from "./callout/WorldCalloutRuntime.js";
 
 interface VisualTimeline {
   startedAtMs: number;
@@ -71,6 +76,10 @@ export interface WorldDeltaPresentationOptions {
   levelExitDurationMs?: number;
 }
 
+export interface VisualRuntimeOptions extends WorldCalloutRuntimeOptions {
+  callouts?: WorldCalloutRegistry;
+}
+
 /** Pure presentation runtime. It never mutates World gameplay state. */
 export class VisualRuntime {
   readonly camera: Camera;
@@ -79,19 +88,29 @@ export class VisualRuntime {
   private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
   private readonly transients = new Map<number, ActiveTransientVisual>();
   private readonly activeTransientIds = new Set<number>();
+  private readonly callouts: WorldCalloutRuntime;
   private nextTransientId = 1;
   private frame: PresentationFrame | null = null;
 
   constructor(
     private readonly visuals: VisualRegistry,
-    sourceTileSize: number,
+    sourceTileSize = 48,
     cameraOptions?: CameraOptions,
+    options: VisualRuntimeOptions = {},
   ) {
     this.camera = new Camera(sourceTileSize, cameraOptions);
+    this.callouts = new WorldCalloutRuntime(
+      options.callouts ?? new WorldCalloutRegistry(),
+      options,
+    );
   }
 
   get isAnimating(): boolean {
-    return this.activeMotionIds.size > 0 || this.activeTransientIds.size > 0;
+    return (
+      this.activeMotionIds.size > 0 ||
+      this.activeTransientIds.size > 0 ||
+      this.callouts.isAnimating
+    );
   }
 
   get blocksGameplay(): boolean {
@@ -116,6 +135,7 @@ export class VisualRuntime {
       direction?: Direction;
     } = {},
   ): void {
+    this.frame = frame;
     this.beginMotion(
       entityId,
       { x: from.x - to.x, y: from.y - to.y },
@@ -230,19 +250,22 @@ export class VisualRuntime {
         );
         continue;
       }
-      if (delta.type === "motion-cleared" || delta.type === "entity-destroyed") {
-        const entityId =
-          delta.type === "motion-cleared"
-            ? delta.motion.entityId
-            : delta.entityId;
-        this.clearEntity(entityId);
+      if (delta.type === "motion-cleared") {
+        this.clearEntity(delta.motion.entityId);
+        continue;
+      }
+      if (delta.type === "entity-destroyed") {
+        this.clearEntity(delta.entityId);
+        this.callouts.removeEntity(delta.entityId);
         continue;
       }
       if (delta.type === "world-event") {
         this.beginTransient(delta.event, frame);
+        this.callouts.consume(delta.event, frame);
         continue;
       }
       if (delta.type === "world-outcome-changed") {
+        if (delta.outcome.phase !== "playing") this.callouts.clear();
         if (delta.outcome.phase === "won") {
           this.beginLevelExit(
             world,
@@ -286,6 +309,7 @@ export class VisualRuntime {
       this.advanceMotion(motion, frame, progress);
     }
     this.updateTransients(frame);
+    this.callouts.update(frame);
   }
 
   clear(): void {
@@ -295,6 +319,7 @@ export class VisualRuntime {
     this.transients.clear();
     this.activeTransientIds.clear();
     this.nextTransientId = 1;
+    this.callouts.clear();
   }
 
   clearEntity(entityId: EntityId): void {
@@ -374,7 +399,16 @@ export class VisualRuntime {
       this.entityRuntime,
       this.frame ?? undefined,
     );
-    return this.appendTransientVisuals(scene);
+    const withTransients = this.appendTransientVisuals(scene);
+    if (!this.frame) return withTransients;
+    return {
+      ...withTransients,
+      callouts: this.callouts.renderItems(
+        world,
+        this.entityRuntime,
+        this.frame,
+      ),
+    };
   }
 
   inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {

@@ -9,6 +9,10 @@ import { visualRegistry } from "../entities/registry.js";
 import type { World } from "../world/World.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { EntityMotion } from "../world/movement/WorldStepResult.js";
+import {
+  createWorldCalloutAnnouncer,
+  type WorldCalloutAnnouncer,
+} from "../ui/WorldCalloutAnnouncer.js";
 
 /**
  * Game 的纯表现侧门面：统一持有 Renderer、Camera、VisualRuntime 与表现时钟。
@@ -18,6 +22,7 @@ export class GamePresentation {
   readonly renderer: Renderer;
   readonly visual: VisualRuntime;
   readonly clock: PresentationClock;
+  private readonly calloutAnnouncer: WorldCalloutAnnouncer | null;
   private sceneValue: RenderScene | null = null;
 
   constructor(
@@ -26,10 +31,14 @@ export class GamePresentation {
     private readonly tuning: PresentationTuning,
   ) {
     this.renderer = new Renderer(options.canvas, options.images);
+    this.calloutAnnouncer = createWorldCalloutAnnouncer(options.canvas);
     this.visual = new VisualRuntime(
       visualRegistry,
       options.images.sourceTileSize,
       options.runtime?.camera,
+      {
+        announce: (message) => this.calloutAnnouncer?.announce(message),
+      },
     );
     this.clock = new PresentationClock(
       timing.presentationHz,
@@ -68,6 +77,7 @@ export class GamePresentation {
 
   resetLevelView(): void {
     this.visual.clear();
+    this.calloutAnnouncer?.clear();
     this.visual.camera.resetFollow();
     this.visual.camera.resetPan();
     this.sceneValue = null;
@@ -75,6 +85,11 @@ export class GamePresentation {
 
   resetMotion(): void {
     this.visual.clear();
+    this.calloutAnnouncer?.clear();
+  }
+
+  destroy(): void {
+    this.calloutAnnouncer?.destroy();
   }
 
   beginLevel(
