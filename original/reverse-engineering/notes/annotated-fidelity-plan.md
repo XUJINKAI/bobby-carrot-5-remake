@@ -1,6 +1,6 @@
-# 已批注 Entity fidelity 实施设计
+# 已批注 Entity fidelity Engine 机制实施设计
 
-本文把 `fidelity-discrepancies.md` 第 1～9 节中已经确认的批注意见整理为可实施设计。尚未批注的差异不进入本轮实现范围。
+本文把 `fidelity-discrepancies.md` 第 1～9 节中已经确认、且属于 Engine 机制重排的批注意见整理为可实施设计。尚未批注的差异不进入本轮实现范围。地图内提示由独立的 [`world-callout-plan.md`](world-callout-plan.md) 规划和实施。
 
 ## 1. 已确认行为
 
@@ -172,7 +172,7 @@ Shovel 使用 Engine 内的 `RuntimeAction` 表达，动作总时长为 `992ms`�
 5. 删除 Snow，并生成 `shovel-cleared-ground`（`ts-8-13`）；
 6. Engine 通过正常碰撞流程强制重试原移动，不直接修改坐标。
 
-缺少 Shovel 时，Engine 通过 World Overlay 呈现提示。动作表现通过通用事件通知 Presentation：
+缺少 Shovel 时的事件与表现由独立的地图内 Callout 任务闭环。动作表现通过通用事件通知 Presentation：
 
 ```ts
 interface ActorActionCue {
@@ -188,85 +188,7 @@ Visual Runtime 收到事件后播放 `b8`。视觉动画完成不驱动世界状
 
 测试覆盖：动作时间、输入锁定、目标被提前改变时的重校验、清雪后的强制重试、replay 在不同渲染帧率下得到相同 final state。
 
-## 7. World Overlay
-
-World Overlay 属于 Engine Presentation，用于显示与地图实体或格子绑定的轻量内容。内容需要支持文字、图标及其组合，而不是只接受一段字符串。
-
-### 7.1 内容模型
-
-```ts
-type WorldOverlayToken =
-  | {
-      type: "text";
-      text: string;
-      tone?: "normal" | "muted" | "warning";
-    }
-  | {
-      type: "icon";
-      asset: string;
-      label: string;
-      scale?: number;
-    }
-  | {
-      type: "line-break";
-    };
-
-interface WorldOverlayContent {
-  tokens: readonly WorldOverlayToken[];
-  align?: "start" | "center" | "end";
-}
-```
-
-`label` 为图标提供可访问名称。Renderer 可以用 atlas 图标、独立图片或文字共同排版；地图和机制只描述内容，不持有 DOM。
-
-### 7.2 锚点与可见条件
-
-```ts
-type WorldOverlayAnchor =
-  | { type: "entity"; entityId: number }
-  | { type: "cell"; x: number; y: number };
-
-type WorldOverlayVisibility =
-  | { type: "always" }
-  | {
-      type: "timed";
-      durationMs: number;
-      blinkFromMs?: number;
-    }
-  | {
-      type: "actor-distance";
-      actor: "primary" | "any" | number;
-      enterCells: number;
-      leaveCells?: number;
-      metric?: "manhattan" | "chebyshev";
-    };
-
-interface WorldOverlay {
-  id: string;
-  anchor: WorldOverlayAnchor;
-  content: WorldOverlayContent;
-  placement: "above" | "below" | "center";
-  visibility: WorldOverlayVisibility;
-}
-```
-
-“Bobby 距离 5 格以内显示”表示 `actor-distance` 的 `enterCells: 5`。`leaveCells` 可设置为更大值形成迟滞，避免角色在边界移动时闪烁。可见性用整数格坐标计算，画面锚点使用插值后的 Entity pose，保证逻辑确定性和视觉平滑彼此独立。
-
-### 7.3 来源与生命周期
-
-World Overlay 有三种来源：
-
-- Entity Definition 的展示 metadata：随 Entity 存在，适合固定图标或标识。
-- Engine 行为创建的临时 overlay：适合缺少道具、机关反馈和短时提示。
-- Game facade 的通用 overlay API：供宿主呈现地图内语义提示，但不注入 Campaign 状态。
-
-Entity 锚点被删除时，相应 overlay 自动结束；格子锚点由显式 ID 更新或移除。所有定时使用 World 游戏时间，世界暂停时 overlay 的 timed 生命周期也暂停。
-
-渲染顺序由 Presentation 统一管理：地图与 Entity、世界特效、World Overlay、DOM Gameplay HUD。Overlay 不进入碰撞、目标统计或 replay 命令格式。
-
-测试至少覆盖：纯文字、纯图标、混合内容、多行内容、实体与格子锚点、5 格距离进入/离开、定时闪烁、暂停、锚点删除和镜头缩放。
-
-## 8. 实施批次
+## 7. 实施批次
 
 ### 批次 A：定义目录与命名迁移
 
@@ -284,30 +206,21 @@ Entity 锚点被删除时，相应 overlay 自动结束；格子锚点由显式 
 4. 实现 `OverlayPlacementQuery`，迁移 Bean 生长。
 5. 建立 substrate、cover、occupant 的组合矩阵测试。
 
-### 批次 C：World Overlay
-
-1. 实现 token 内容、锚点、距离和定时可见性模型。
-2. 接入 Renderer、Camera 和暂停时钟。
-3. 暴露 Game facade 的通用创建、更新和移除 API。
-4. 把现有地图内轻量提示迁移到统一机制。
-
-### 批次 D：Snow 与 Shovel
+### 批次 C：Snow 与 Shovel
 
 1. 实现 Shovel RuntimeAction 与 `actor-action` cue。
 2. 接入 `b8` 视觉和 `shovel-cleared-ground`。
-3. 使用 World Overlay 显示缺少 Shovel 的反馈。
-4. 补齐确定性与 replay 回归测试。
+3. 补齐确定性与 replay 回归测试。
 
-依赖关系为：批次 B、C 均依赖批次 A；批次 D 依赖批次 C。每个批次独立提交，并执行完整 `npm run verify`。
+依赖关系为：批次 B 依赖批次 A，批次 C 依赖批次 B。每个批次独立提交，并执行完整 `npm run verify`。
 
-## 9. 审阅检查点
+## 8. 审阅检查点
 
 开始实现前需要依次确认：
 
 1. 所有相关 Entity 的 `SpatialProfile` 清单和 Editor `terrain / object` 分类清单。
 2. Water、Waterfall、Tide、Sky、Snow 组合对 overlay 放置的原版事实。
 3. Mower、Bobby、Flight 的有效格子栈读取策略。
-4. World Overlay 的图标资源引用方式与可访问性字段。
-5. Shovel 动作期间 World tick、输入、动画和 replay 的时间关系。
+4. Shovel 动作期间 World tick、输入、动画和 replay 的时间关系。
 
 确认后的结论进入相应合同或机制文档；本文件保留为实施顺序和审阅入口，不复制稳定 API 的完整说明。
