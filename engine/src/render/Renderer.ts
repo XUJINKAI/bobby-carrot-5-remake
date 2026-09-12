@@ -9,6 +9,7 @@ import {
 } from "./CanvasPixelGeometry.js";
 import type { RenderItem, RenderScene } from "./RenderScene.js";
 import { drawVisualComposition } from "./VisualPainter.js";
+import { drawWorldCallout } from "./WorldCalloutRenderer.js";
 
 export interface RenderViewport {
   width: number;
@@ -66,6 +67,15 @@ export class Renderer {
     this.drawPass(context, scene.world, camera, deviceScale, bounds);
     this.drawPass(context, scene.player, camera, deviceScale, bounds);
     this.drawPass(context, scene.effect, camera, deviceScale, bounds);
+    for (const callout of scene.callouts ?? [])
+      drawWorldCallout(
+        context,
+        this.images,
+        callout,
+        camera,
+        bounds,
+        deviceScale,
+      );
 
     if (this.debug) {
       this.drawDebugGrid(context, scene.worldWidth, scene.worldHeight, camera);

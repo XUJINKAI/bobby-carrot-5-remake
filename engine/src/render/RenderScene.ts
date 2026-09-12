@@ -1,5 +1,6 @@
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import type { VisualComposition } from "../visual/VisualDefinition.js";
+import type { WorldCalloutRenderItem } from "../visual/callout/WorldCallout.js";
 
 export interface RenderItem {
   presence: Readonly<EntityPresence>;
@@ -14,6 +15,7 @@ export interface RenderScene {
   world: readonly RenderItem[];
   player: readonly RenderItem[];
   effect: readonly RenderItem[];
+  callouts: readonly WorldCalloutRenderItem[];
 }
 
 /**

@@ -551,6 +551,7 @@ export class VisualRuntime {
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
       player: passes.player ? sortRenderItems(passes.player) : scene.player,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
+      callouts: scene.callouts,
     };
   }
 
