@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { ReplayPlayback } from "../dist/replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../dist/replay/ReplayRecorder.js";
+import { replayVerificationStates } from "../dist/replay/ReplayFinalState.js";
 import { runReplay } from "../dist/replay/ReplayRunner.js";
 import { PresentationClock } from "../dist/time/PresentationClock.js";
 
@@ -23,6 +24,17 @@ function carrotLevel() {
       { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
     ],
   };
+}
+
+function assertReplayMatches(level, replay, endTick) {
+  const report = runReplay(level, replay);
+  assert.equal(report.endTick, endTick);
+  const verification = replayVerificationStates(
+    report.actual,
+    replay.finalState,
+  );
+  assert.deepEqual(verification.actual, verification.expected);
+  return report;
 }
 
 test("GameplaySession 固定在 World Tick 末尾执行玩家语义输入", () => {
@@ -52,8 +64,12 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
     bobbyLocomotion: { moveMs: 100 },
   });
   session.loadLevel(level);
+  assert.throws(
+    () => new ReplayRecorder(session, { id: "carrot", url: "/test/carrot" }),
+    /Replay meta\.id 必须使用/,
+  );
   const recorder = new ReplayRecorder(session, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
   });
   for (const tick of session.advanceTicks(3, (time) =>
@@ -68,7 +84,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.equal(replay.frames[0].tick, 0);
   assert.equal(replay.endTick, 3);
   assert.deepEqual(replay.meta, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
     note: "",
   });
@@ -78,15 +94,42 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.equal("levelHash" in replay, false);
   assert.deepEqual(replay.finalState, {
     status: "won",
+    moves: 1,
+    elapsedMs: 150,
     counters: { "collect-carrot": 1 },
     completedConditions: [{ type: "collect-all", target: "carrot" }],
   });
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 3,
-  });
+  const invalidPathId = structuredClone(replay);
+  invalidPathId.meta.id = "carrot";
+  assert.throws(
+    () => runReplay(level, invalidPathId),
+    /Replay meta\.id 必须使用/,
+  );
+  const mapMetadataShape = structuredClone(replay);
+  mapMetadataShape.meta = {
+    name: "测试胡萝卜",
+    url: "/test/carrot",
+    note: "",
+  };
+  assert.throws(() => runReplay(level, mapMetadataShape), /Replay meta 无效/);
+  const report = assertReplayMatches(level, replay, 3);
+  assert.deepEqual(
+    replayVerificationStates(report.actual, { elapsedMs: 999_999 }),
+    { actual: {}, expected: {} },
+  );
+  assert.deepEqual(
+    replayVerificationStates(report.actual, {}),
+    { actual: {}, expected: {} },
+  );
+  assert.deepEqual(
+    replayVerificationStates(report.actual, { moves: 1 }),
+    { actual: { moves: 1 }, expected: { moves: 1 } },
+  );
+  const replayWithoutAssertions = structuredClone(replay);
+  replayWithoutAssertions.finalState = {};
+  assert.equal(runReplay(level, replayWithoutAssertions).actual.status, "won");
 
   for (const field of ["actorId", "source"]) {
     const invalid = structuredClone(replay);
@@ -97,6 +140,135 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   }
 });
 
+test("Replay 只保存实际生效的持续移动输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 10,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 10 }, (_, x) => ground(x)),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  };
+  const session = new GameplaySession({
+    timing: { worldHz: 60 },
+    bobbyLocomotion: { moveMs: 350 },
+  });
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    id: "test/held-movement",
+    url: "/test/held-movement",
+  });
+  for (const tick of session.advanceTicks(180, () => ({
+    moves: [{ source: "external", direction: "right" }],
+  })))
+    recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.equal(replay.frames.length, session.state.moves);
+  assert.equal(replay.frames.length, 9);
+  assert.equal(runReplay(level, replay).endTick, replay.endTick);
+});
+
+test("Replay 不重复记录可由对话 choice 重建的 Entity replacement", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0),
+      ground(1),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.LOCK_KEY, x: 1, y: 0 },
+    ],
+  };
+  const session = new GameplaySession();
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    id: "test/shop-purchase",
+    url: "/test/shop-purchase",
+  });
+  const [tick] = session.advanceTicks(1, () => ({
+    groups: [{
+      historyBoundary: false,
+      recordInReplay: false,
+      intents: [{
+        type: "commit-entity-replacement",
+        target: {
+          type: MapEntityTypeId.LOCK_KEY,
+          x: 1,
+          y: 0,
+        },
+        replacementType: MapEntityTypeId.SHOP_EMPTY,
+      }],
+    }],
+  }));
+  recorder.record(tick);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames, []);
+  assert.equal(runReplay(level, replay).actual.status, "playing");
+});
+
+test("Replay frame 使用一基 choices 记录同一 Tick 的多轮选择", () => {
+  const session = new GameplaySession();
+  session.loadLevel(carrotLevel());
+  const recorder = new ReplayRecorder(session, {
+    id: "test/dialog-choices",
+    url: "/test/dialog-choices",
+  });
+  const [tick] = session.advanceTicks(1);
+  recorder.record(tick);
+  recorder.recordChoice(0, 1);
+  recorder.recordChoice(0, 3);
+  const replay = recorder.stop();
+
+  assert.deepEqual(replay.frames, [{
+    tick: 0,
+    groups: [],
+    choices: [1, 3],
+  }]);
+
+  const playbackSession = new GameplaySession();
+  playbackSession.loadLevel(carrotLevel());
+  const playback = new ReplayPlayback(
+    playbackSession,
+    new PresentationClock(),
+  );
+  playback.start(replay);
+  playback.prepareChoices(0);
+  assert.equal(playback.consumeChoice(2), 1);
+  assert.equal(playback.consumeChoice(4), 3);
+  assert.equal(playback.finishIfComplete(), false);
+
+  playback.start(replay);
+  playback.prepareChoices(0);
+  assert.equal(playback.consumeChoice(2), 1);
+  assert.throws(() => playback.prepareChoices(1), /未消费的对话 choices/);
+
+  playback.start(replay);
+  playback.prepareChoices(0);
+  assert.equal(playback.consumeChoice(2), 1);
+  assert.throws(() => playback.consumeChoice(2), /超出 2 个选项/);
+
+  const withoutChoice = structuredClone(replay);
+  delete withoutChoice.frames[0].choices;
+  playback.start(withoutChoice);
+  playback.prepareChoices(0);
+  assert.throws(() => playback.consumeChoice(2), /缺少对话 choice/);
+
+  const invalid = structuredClone(replay);
+  invalid.frames[0].choices = [];
+  assert.throws(
+    () => runReplay(carrotLevel(), invalid),
+    /choices 必须是非空正整数数组/,
+  );
+  assert.throws(
+    () => playback.jumpToEnd(replay),
+    /需要按时间线播放/,
+  );
+});
+
 test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
@@ -105,7 +277,7 @@ test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "测试胡萝卜",
+    id: "test/carrot",
     url: "/test/carrot",
   });
   for (const tick of session.advanceTicks(3, (time) =>
@@ -160,19 +332,29 @@ test("ReplayPlayback 按记录输入播放并保留 Engine 速率", () => {
 test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   const level = {
     schemaVersion: 1,
-    width: 1,
+    width: 3,
     height: 1,
-    entities: [ground(0), { type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+    entities: [
+      ground(0),
+      ground(1),
+      ground(2),
+      { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+    ],
   };
   const recordingSession = new GameplaySession({ timing: { worldHz: 20 } });
   recordingSession.loadLevel(level);
   const recorder = new ReplayRecorder(recordingSession, {
-    name: "长无输入区间",
+    id: "test/idle-gap",
     url: "/test/idle-gap",
   });
   for (const tick of recordingSession.advanceTicks(100, (time) =>
     time.tick === 0 || time.tick === 80
-      ? { moves: [{ source: "external", direction: "right" }] }
+      ? {
+          moves: [{
+            source: "external",
+            direction: time.tick === 0 ? "right" : "left",
+          }],
+        }
       : {},
   ))
     recorder.record(tick);
@@ -203,7 +385,7 @@ test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   assert.equal(tail.at(-1).inputGroups.length, 1);
 });
 
-test("Replay 保留受阻的玩家输入尝试", () => {
+test("Replay 省略没有 gameplay 效果的受阻输入", () => {
   const level = {
     schemaVersion: 1,
     width: 1,
@@ -213,7 +395,7 @@ test("Replay 保留受阻的玩家输入尝试", () => {
   const session = new GameplaySession();
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "受阻输入",
+    id: "test/blocked-input",
     url: "/test/blocked-input",
   });
   const [tick] = session.advanceTicks(1, () => ({
@@ -223,15 +405,52 @@ test("Replay 保留受阻的玩家输入尝试", () => {
   const replay = recorder.stop();
 
   assert.equal(tick.inputResolutions[0].result, "blocked");
-  assert.equal(replay.frames[0].groups[0].intents[0].direction, "right");
+  assert.deepEqual(replay.frames, []);
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
+});
+
+test("Replay 保留 RuntimeAction 实际观察到的移动输入", () => {
+  const level = {
+    schemaVersion: 1,
+    width: 10,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 10 }, (_, x) => ground(x)),
+      { type: MapEntityTypeId.SPEED, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  };
+  const options = {
+    timing: { worldHz: 20 },
+    bobbyLocomotion: { moveMs: 100 },
+  };
+  const session = new GameplaySession(options);
+  session.loadLevel(level);
+  const recorder = new ReplayRecorder(session, {
+    id: "test/speed-observation",
+    url: "/test/speed-observation",
+  });
+  for (const tick of session.advanceTicks(40, () => ({
+    moves: [{ source: "external", direction: "right" }],
+  })))
+    recorder.record(tick);
+  const replay = recorder.stop();
+  const replayed = new GameplaySession(options);
+  replayed.loadLevel(level);
+  const playback = new ReplayPlayback(replayed, new PresentationClock());
+  playback.start(replay);
+  replayed.advanceTicks(replay.endTick, (time) => playback.inputForTick(time));
+
+  assert.ok(replay.frames.length < replay.endTick / 2);
+  assert.deepEqual(replayed.state.player, session.state.player);
+  assert.equal(replayed.state.moves, session.state.moves);
 });
 
 test("ReplayRunner 拒绝不符合播放合同的输入", () => {
   const replay = {
     formatVersion: 2,
     meta: {
-      name: "错误版本",
+      id: "test/invalid-version",
       url: "/test/invalid-version",
       note: "",
     },
@@ -255,7 +474,7 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
   const replay = {
     formatVersion: 1,
     meta: {
-      name: "属性顺序",
+      id: "test/property-order",
       url: "/test/property-order",
       note: "",
     },
@@ -268,6 +487,8 @@ test("Replay Bobby 运动参数按字段值校验，不依赖 JSON 属性顺序"
     initialIntents: [],
     finalState: {
       status: "playing",
+      moves: 0,
+      elapsedMs: 0,
       counters: {},
       completedConditions: [],
     },
@@ -283,28 +504,26 @@ test("Replay 保存从通用 actor target 解析出的初始动作", () => {
   const session = new GameplaySession({
     initialActorIntents: [
       {
-        type: "set-actor-lock-key",
+        type: "set-actor-locomotion",
         actor: "all",
-        kind: "reusable",
-        enabled: true,
+        moveDurationMs: 266,
       },
     ],
   });
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "初始钥匙",
+    id: "test/initial-locomotion",
     url: "/test",
   });
   const replay = recorder.stop();
 
   assert.deepEqual(replay.initialIntents, [
     {
-      type: "set-actor-lock-key",
-      kind: "reusable",
-      enabled: true,
+      type: "set-actor-locomotion",
+      moveDurationMs: 266,
     },
   ]);
-  assert.equal(session.state.inventory.reusableLockKey, true);
+  assert.equal(session.state.actors[0].moveDurationMs, 266);
   assert.equal(runReplay(level, replay).actual.status, "playing");
 });
 
@@ -312,7 +531,7 @@ test("运行中的 locomotion 动作进入 Replay frame", () => {
   const session = new GameplaySession({ bobbyLocomotion: { moveMs: 350 } });
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
-    name: "动态移动速度",
+    id: "test/dynamic-locomotion",
     url: "/test",
   });
   const actorId = session.state.primaryActorId;
@@ -335,21 +554,21 @@ test("运行中的 locomotion 动作进入 Replay frame", () => {
   });
 });
 
-test("Replay 只保留钥匙动作的 gameplay 字段", () => {
+test("Replay 只保留关卡内道具动作的 gameplay 字段", () => {
   const session = new GameplaySession();
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
-    name: "钥匙交互",
+    id: "test/key-interaction",
     url: "/test",
   });
   const actorId = session.state.primaryActorId;
   const [tick] = session.advanceTicks(1, () => ({
     groups: [{
       intents: [{
-        type: "set-actor-lock-key",
+        type: "add-actor-inventory-item",
         actorId,
-        kind: "single-use",
-        enabled: true,
+        item: "lock-key",
+        count: 1,
         requestId: 42,
       }],
     }],
@@ -357,33 +576,33 @@ test("Replay 只保留钥匙动作的 gameplay 字段", () => {
   recorder.record(tick);
 
   assert.deepEqual(recorder.stop().frames[0].groups[0].intents[0], {
-    type: "set-actor-lock-key",
-    kind: "single-use",
-    enabled: true,
+    type: "add-actor-inventory-item",
+    item: "lock-key",
+    count: 1,
   });
 });
 
-test("Replay 初始钥匙动作也省略交互关联字段", () => {
+test("Replay 初始道具动作也省略交互关联字段", () => {
   const level = carrotLevel();
   const session = new GameplaySession({
     initialIntents: [{
-      type: "set-actor-lock-key",
+      type: "add-actor-inventory-item",
       actorId: 4,
-      kind: "reusable",
-      enabled: true,
+      item: "lock-key",
+      count: 2,
       requestId: 7,
     }],
   });
   session.loadLevel(level);
   const replay = new ReplayRecorder(session, {
-    name: "初始钥匙字段",
+    id: "test/initial-key-fields",
     url: "/test",
   }).stop();
 
   assert.deepEqual(replay.initialIntents, [{
-    type: "set-actor-lock-key",
-    kind: "reusable",
-    enabled: true,
+    type: "add-actor-inventory-item",
+    item: "lock-key",
+    count: 2,
   }]);
 });
 
@@ -404,7 +623,7 @@ test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
   const session = new GameplaySession();
   session.loadLevel(level);
   const recorder = new ReplayRecorder(session, {
-    name: "双通道",
+    id: "test/two-channels",
     url: "/test/two-channels",
   });
   const [first, second] = session.advanceTicks(2, (time) => ({
@@ -421,10 +640,7 @@ test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
     { type: "move", direction: "right" },
     { type: "move", direction: "left", channel: 1 },
   ]);
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 2,
-  });
+  assertReplayMatches(level, replay, 2);
 });
 
 test("多 Bobby 的 actor 动作使用动作时位置", () => {
@@ -445,7 +661,7 @@ test("多 Bobby 的 actor 动作使用动作时位置", () => {
   session.loadLevel(level);
   const secondActorId = session.actorIds[1];
   const recorder = new ReplayRecorder(session, {
-    name: "位置引用",
+    id: "test/actor-position",
     url: "/test/actor-position",
   });
   const [tick] = session.advanceTicks(1, () => ({
@@ -465,10 +681,7 @@ test("多 Bobby 的 actor 动作使用动作时位置", () => {
     actor: { x: 3, y: 0 },
     moveDurationMs: 240,
   });
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 1,
-  });
+  assertReplayMatches(level, replay, 1);
 });
 
 test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
@@ -489,7 +702,7 @@ test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
   session.loadLevel(level);
   const secondActorId = session.actorIds[1];
   const recorder = new ReplayRecorder(session, {
-    name: "调试移动",
+    id: "test/direct-actor-move",
     url: "/test/direct-actor-move",
   });
   const [tick] = session.advanceTicks(1, () => ({
@@ -507,8 +720,5 @@ test("绕过 controller 的调试移动使用移动前的 actor 位置", () => {
     direction: "left",
     actor: { x: 3, y: 0 },
   });
-  assert.deepEqual(runReplay(level, replay), {
-    actual: replay.finalState,
-    endTick: 1,
-  });
+  assertReplayMatches(level, replay, 1);
 });

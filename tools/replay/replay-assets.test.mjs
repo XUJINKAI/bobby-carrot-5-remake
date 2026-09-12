@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { runReplay } from "@bobby/engine";
+import { replayVerificationStates, runReplay } from "@bobby/engine";
 import { parseMapDocument } from "@bobby/model";
 import { root } from "../lib/fs.mjs";
 import { replayMapFile, replayMapRef } from "./replay-fixture.mjs";
@@ -30,23 +30,21 @@ for (const replayFile of replayFiles) {
       `${relative} 指向的地图不存在：${mapRef.collection}/${mapRef.id}`,
     );
 
-    const expectedStatus = replay?.finalState?.status;
-    assert.ok(
-      expectedStatus === "playing" ||
-        expectedStatus === "won" ||
-        expectedStatus === "dead",
-      `${relative} 的 finalState.status 无效`,
-    );
     const level = parseMapDocument(readJson(mapFile));
     const report = runReplay(level, replay);
     assert.equal(report.endTick, replay.endTick);
-    assert.deepEqual(report.actual, replay.finalState);
+    const verification = replayVerificationStates(
+      report.actual,
+      replay.finalState,
+    );
+    assert.deepEqual(verification.actual, verification.expected);
   });
 }
 
 test("Replay fixture 文件名可以独立于关联地图", () => {
   const replay = {
     meta: {
+      id: "original/1-1",
       url: "https://bc5r.xujinkai.net/explore/play/original/1-1?take=fast#finish",
     },
   };
@@ -66,8 +64,23 @@ test("Replay fixture 只接受正式 Explore 地图 URL", () => {
     "https://bc5r.xujinkai.net/adventure/chapter/1/level/1-1",
     "https://bc5r.xujinkai.net/explore/play/original/../1-1",
   ]) {
-    assert.throws(() => replayMapRef({ meta: { url } }), /Replay meta\.url/);
+    assert.throws(
+      () => replayMapRef({ meta: { id: "original/1-1", url } }),
+      /Replay meta\.url|指向的地图不一致/,
+    );
   }
+});
+
+test("Replay fixture 要求路径 ID 与地图 URL 一致", () => {
+  assert.throws(
+    () => replayMapRef({
+      meta: {
+        id: "original/1-2",
+        url: "https://bc5r.xujinkai.net/explore/play/original/1-1",
+      },
+    }),
+    /指向的地图不一致/,
+  );
 });
 
 function listFiles(directory) {

@@ -10,12 +10,12 @@ import {
   type VisualRegistry,
   type VisualQuery,
 } from "@bobby/engine";
+import type { JsonPrimitive } from "@bobby/model";
 import { resolveEditorEntityPreviewLayout } from "../authoring/entityPreview.js";
 import { EditorPreview } from "../authoring/EditorPreview.js";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import type {
   EditorDefinition,
-  EditorEntityFields,
   EditorPlacementPreset,
 } from "../definitions/types.js";
 import type { EditorMap } from "../level/types.js";
@@ -39,7 +39,7 @@ export class EditorEntityPreviewRenderer {
     canvas: HTMLCanvasElement,
     source: EditorPlacementPreset,
     cellSize: number,
-    previewState?: EditorEntityFields,
+    previewState?: Readonly<Record<string, JsonPrimitive>>,
   ): boolean {
     const layout = resolveEditorEntityPreviewLayout(
       this.catalog,

@@ -13,7 +13,10 @@ export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
 ): { text: string; failed: boolean } {
-  if (report.actual.status !== expected.finalState.status) {
+  if (
+    expected.finalState.status !== undefined &&
+    report.actual.status !== expected.finalState.status
+  ) {
     return {
       text:
         `终局不一致 · 记录 ${expected.finalState.status} / ` +

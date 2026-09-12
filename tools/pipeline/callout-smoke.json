@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "width": 7,
+  "height": 3,
+  "rules": {
+    "win": {
+      "type": "reach",
+      "target": "exit"
+    }
+  },
+  "entities": [
+    { "type": "grass", "variant": "ts-10-1", "x": 0, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 6, "y": 1 },
+    { "type": "grass", "variant": "ts-10-1", "x": 0, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 1, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 2, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 3, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 4, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 5, "y": 2 },
+    { "type": "grass", "variant": "ts-10-1", "x": 6, "y": 2 },
+    { "type": "start", "x": 0, "y": 2 },
+    { "type": "bobby", "x": 0, "y": 2, "direction": "right" },
+    { "type": "mower", "x": 1, "y": 1 },
+    { "type": "lock", "x": 2, "y": 1, "requireKey": true },
+    { "type": "whirlwind", "x": 3, "y": 1 },
+    { "type": "snow", "x": 4, "y": 1 },
+    { "type": "bean-field", "x": 5, "y": 1 },
+    { "type": "exit", "x": 6, "y": 2 }
+  ]
+}

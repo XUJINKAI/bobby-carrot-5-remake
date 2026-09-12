@@ -17,8 +17,7 @@
 }
 
 /* Engine 提供 HUD 结构，产品层统一决定游戏内统计文字的视觉主题。 */
-.engine-gameplay-hud,
-.product-game-statistics {
+.engine-gameplay-hud {
   font-family: "Jersey 10", fantasy;
   font-weight: 400;
   -webkit-text-stroke: 1px #000;
@@ -65,17 +64,6 @@
   text-align: center;
 }
 
-.result-card-close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  padding: 0;
-}
-
 .result-card h2 {
   font-size: 2rem;
   margin: 0.25rem 0 0.55rem;
@@ -84,6 +72,19 @@
 .result-card p {
   color: var(--muted);
   line-height: 1.6;
+}
+
+.result-statistics {
+  display: grid;
+  gap: 2px;
+  margin-top: 12px;
+}
+
+.result-statistics p {
+  margin: 0;
+  color: var(--bc-text);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .result-kicker {

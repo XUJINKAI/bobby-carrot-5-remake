@@ -58,6 +58,8 @@ export async function createGameplayRuntime(
     audio,
     ...(runtime ? { runtime: gameRuntime } : {}),
   });
+  const input = game.inputController ?? new InputController(game);
+  const inputOwnedByGame = game.inputController === input;
   const dialog =
     dialogOptions === false
       ? null
@@ -67,9 +69,8 @@ export async function createGameplayRuntime(
           dialogOptions === true || dialogOptions === undefined
             ? {}
             : dialogOptions,
+          input,
         );
-  const input = game.inputController ?? new InputController(game);
-  const inputOwnedByGame = game.inputController === input;
   try {
     await game.loadLevel(level);
   } catch (error) {

@@ -5,6 +5,10 @@ export interface LoadedReplayAsset {
   text: string;
 }
 
+export function replayPathId(collection: string, id: string): string {
+  return `${collection}/${id}`;
+}
+
 export async function loadReplayAsset(
   url: string,
   fetcher: typeof fetch = fetch,

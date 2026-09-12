@@ -12,7 +12,8 @@ import { fireball } from "./fireball.js";
 import { landing, whirlwind } from "./flight.js";
 import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
-import { lock } from "./lock.js";
+import { lock, timedChallenge } from "./lock.js";
+import { lockKey } from "./lock-key.js";
 import { mirror } from "./mirror.js";
 import { cloud, cloudParking, leaf } from "./moving-entities.js";
 import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
@@ -58,7 +59,9 @@ export const originalEntityModules: readonly EntityModule[] = [
   whirlwind,
   landing,
   beanField,
+  lockKey,
   lock,
+  timedChallenge,
   dragon,
   fireball,
   sandman,

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../dist/core/Game.js";
+import { GameDebugControls } from "../dist/core/GameDebugControls.js";
 import { GameplaySession } from "../dist/core/GameplaySession.js";
 
 test("GameplaySession 在暂停时不按真实时间推进", () => {
@@ -33,12 +34,63 @@ test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   assert.deepEqual(game.queuedMoves, []);
 });
 
-test("Debug pause freezes only WorldClock and preserves input plus held state", () => {
+test("实时推进可在选项对话出现后停止同批后续 Tick", () => {
+  const session = new GameplaySession({ timing: { worldHz: 20 } });
+  session.loadLevel({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+  });
+  const consumed = session.advanceRealTime(
+    1_000,
+    () => ({}),
+    Number.POSITIVE_INFINITY,
+    () => false,
+  );
+
+  assert.equal(consumed.length, 1);
+  assert.equal(session.clock.tickCount, 1);
+});
+
+test("blocked player move forwards its attempted direction to presentation", () => {
   const game = Object.create(Game.prototype);
+  const calls = [];
+  const frame = { frame: 2, nowMs: 120, deltaMs: 16 };
+  game.presentation = {
+    clock: { current: frame },
+    visual: { faceDirection: (...args) => calls.push(args) },
+  };
+  game.session = {
+    world: {
+      query: { entityHasTrait: (id, trait) => id === 3 && trait === "player" },
+    },
+  };
+  game.faceBlockedActors([
+    {
+      actorId: 3,
+      moved: false,
+      blocked: true,
+      from: { x: 0, y: 0 },
+      to: { x: 0, y: -1 },
+      direction: "up",
+      passage: { reason: "blocked", confidence: "rule" },
+      events: [],
+    },
+  ]);
+
+  assert.deepEqual(calls, [[3, "up", frame]]);
+});
+
+test("Debug pause freezes only WorldClock and preserves input plus held state", () => {
+  const controls = Object.create(GameDebugControls.prototype);
   let paused = false;
   let inputEnabled = true;
   const inputTransitions = [];
-  game.session = {
+  controls.session = {
     clock: {
       get paused() {
         return paused;
@@ -51,7 +103,7 @@ test("Debug pause freezes only WorldClock and preserves input plus held state", 
       },
     },
   };
-  game.inputController = {
+  controls.inputController = {
     get isEnabled() {
       return inputEnabled;
     },
@@ -60,29 +112,26 @@ test("Debug pause freezes only WorldClock and preserves input plus held state", 
       inputTransitions.push(value);
     },
   };
-  game.heldDirection = "right";
-  game.heldDirectionBlocked = true;
-  game.render = () => {};
+  const heldState = { direction: "right", blocked: true };
+  controls.host = { render() {} };
 
-  game.pauseDebugClock();
+  controls.pauseWorld();
   assert.equal(paused, true);
   assert.equal(inputEnabled, true);
-  assert.equal(game.heldDirection, "right");
-  assert.equal(game.heldDirectionBlocked, true);
+  assert.deepEqual(heldState, { direction: "right", blocked: true });
   assert.deepEqual(inputTransitions, []);
 
-  game.resumeDebugClock();
+  controls.resumeWorld();
   assert.equal(paused, false);
   assert.equal(inputEnabled, true);
-  assert.equal(game.heldDirection, "right");
-  assert.equal(game.heldDirectionBlocked, true);
+  assert.deepEqual(heldState, { direction: "right", blocked: true });
   assert.deepEqual(inputTransitions, []);
 });
 test("Debug pause leaves host-disabled input disabled", () => {
-  const game = Object.create(Game.prototype);
+  const controls = Object.create(GameDebugControls.prototype);
   let paused = false;
   let inputEnabled = false;
-  game.session = {
+  controls.session = {
     clock: {
       get paused() {
         return paused;
@@ -95,7 +144,7 @@ test("Debug pause leaves host-disabled input disabled", () => {
       },
     },
   };
-  game.inputController = {
+  controls.inputController = {
     get isEnabled() {
       return inputEnabled;
     },
@@ -103,15 +152,15 @@ test("Debug pause leaves host-disabled input disabled", () => {
       inputEnabled = value;
     },
   };
-  game.render = () => {};
+  controls.host = { render() {} };
 
-  game.pauseDebugClock();
-  game.resumeDebugClock();
+  controls.pauseWorld();
+  controls.resumeWorld();
   assert.equal(inputEnabled, false);
 });
 
 test("Debug teleport hard-moves only the selected actor and clears its transient runtime", () => {
-  const game = Object.create(Game.prototype);
+  const controls = Object.create(GameDebugControls.prototype);
   const actor = {
     id: 2,
     type: "bobby",
@@ -122,7 +171,7 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
   let cancelled = null;
   let cleared = null;
   let pendingDiscarded = false;
-  game.debugValue = true;
+  controls.enabledValue = true;
   const world = {
     entities: {
       get: (id) => (id === actor.id ? actor : undefined),
@@ -145,7 +194,7 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
       clearEntity() {},
     },
   };
-  game.session = {
+  controls.session = {
     hasLevel: true,
     world,
     actorIds: [actor.id],
@@ -153,29 +202,34 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
       pendingDiscarded = true;
     },
   };
-  game.visual = {
-    clearEntity: (id) => {
-      cleared = id;
+  controls.presentation = {
+    visual: {
+      clearEntity: (id) => {
+        cleared = id;
+      },
     },
   };
-  game.debugExternalActorId = null;
-  game.inputController = null;
-  game.lastMove = { moved: true };
-  game.lastWorldEvents = [{ type: "message", message: "old" }];
+  controls.externalActorIdValue = null;
+  let clearedLastResults = false;
+  controls.host = {
+    world: () => world,
+    clearLastResults: () => {
+      clearedLastResults = true;
+    },
+  };
 
-  assert.equal(game.debugTeleportActor(actor.id, { x: 3, y: 2 }), true);
+  assert.equal(controls.teleportActor(actor.id, { x: 3, y: 2 }), true);
   assert.deepEqual(moved, { id: actor.id, cell: { x: 3, y: 2 } });
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
   assert.equal(cancelled, actor.id);
   assert.equal(cleared, actor.id);
   assert.equal(pendingDiscarded, true);
-  assert.equal(game.lastMove, null);
-  assert.deepEqual(game.lastWorldEvents, []);
+  assert.equal(clearedLastResults, true);
 
-  assert.equal(game.debugTeleportActor(actor.id, { x: 4, y: 2 }), false);
+  assert.equal(controls.teleportActor(actor.id, { x: 4, y: 2 }), false);
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
 
   world.spatial.presencesAt = () => [{ entityId: 3, traits: ["player"] }];
-  assert.equal(game.debugTeleportActor(actor.id, { x: 1, y: 1 }), false);
+  assert.equal(controls.teleportActor(actor.id, { x: 1, y: 1 }), false);
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
 });

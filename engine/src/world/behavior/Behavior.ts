@@ -30,6 +30,12 @@ export interface BehaviorSubject {
   readonly presence: Readonly<EntityPresence>;
 }
 
+export interface EntityBehaviorContext {
+  readonly self: BehaviorSubject;
+  readonly query: WorldQueryApi;
+  readonly commands: WorldCommandApi;
+}
+
 export interface PassageResult {
   passable: boolean;
   reason?: string;
@@ -57,11 +63,8 @@ export interface MovementContext {
   };
 }
 
-export interface BehaviorContext {
+export interface BehaviorContext extends EntityBehaviorContext {
   readonly actor: Readonly<EntityInstance>;
-  readonly self: BehaviorSubject;
-  readonly query: WorldQueryApi;
-  readonly commands: WorldCommandApi;
   readonly direction?: Direction;
   readonly movement?: MovementContext;
   /** 仅 onTick 提供，由 WorldClock 统一产生。 */
@@ -77,6 +80,8 @@ export interface ReachContext {
 /** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
 export interface Behavior {
   id: string;
+  /** Level Entity 已全部实例化、正式 gameplay 尚未开始时调用一次。 */
+  onInitialize?(context: EntityBehaviorContext): void;
   /** 纯查询的 movement 规则提案；World 负责合并、校验和提交。 */
   planMovement?(context: MovementPlanningContext): MovementPolicy | void;
   /** 目标 Entity 决定当前 actor 是否满足 reach 条件。 */

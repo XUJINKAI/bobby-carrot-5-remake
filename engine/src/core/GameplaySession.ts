@@ -31,6 +31,7 @@ import type {
 } from "../world/movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
+  hasWorldMutation,
   mergeWorldStepResult,
   type WorldStepResult,
 } from "../world/movement/WorldStepResult.js";
@@ -59,6 +60,7 @@ export interface GameplayTickResult {
   time: WorldTick;
   result: WorldStepResult;
   phases: readonly WorldStepResult[];
+  /** 只包含对 gameplay 状态产生效果、需要 Replay 重放的输入组。 */
   inputGroups: readonly WorldIntentGroup[];
   inputResolutions: readonly GameplayInputResolution[];
 }
@@ -80,6 +82,9 @@ export interface SerializableGameplaySetup {
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
+export type GameplayTickConsumer = (
+  result: GameplayTickResult,
+) => void | boolean;
 
 /**
  * 一局地图的纯 gameplay 运行边界。浏览器 Game 与 ReplayRunner 都通过这里
@@ -186,6 +191,7 @@ export class GameplaySession {
     const primary = this.primaryActorIdValue === null
       ? null
       : world.entities.get(this.primaryActorIdValue) ?? null;
+    const timedChallenge = this.timedChallengeState(world);
     return {
       status: world.dead ? "dead" : world.completed ? "won" : "playing",
       deathReason: state.deathReason,
@@ -195,8 +201,11 @@ export class GameplaySession {
       player: primary ? { ...primary.anchor } : null,
       facing: primary?.direction ?? null,
       inventory: readBobbyInventory(primary?.state),
+      elapsedMs: state.elapsedMs,
       bonusCoinsInLevel: state.bonusCoinsInLevel,
       goldenCarrotsInLevel: state.goldenCarrotsInLevel,
+      timedChallengePhase: timedChallenge?.phase ?? null,
+      timedChallengeRemainingMs: timedChallenge?.remainingMs ?? null,
       canUndo: this.canUndo,
       canRedo: this.canRedo,
     };
@@ -206,6 +215,36 @@ export class GameplaySession {
     if (!this.worldValue) return null;
     const win = this.world.winState;
     return win ? structuredClone(win) : null;
+  }
+
+  private timedChallengeState(world: World): {
+    phase: "waiting" | "running";
+    remainingMs: number;
+  } | null {
+    const challenges: Array<{
+      phase: "waiting" | "running";
+      remainingMs: number;
+    }> = [];
+    for (const entity of world.query.entitiesWithTrait("timed-challenge")) {
+      const durationMs = Number(entity.state?.deathCountdownSeconds) * 1000;
+      if (!Number.isFinite(durationMs) || durationMs <= 0) continue;
+      if (entity.state?.opened !== true) {
+        challenges.push({ phase: "waiting", remainingMs: durationMs });
+        continue;
+      }
+      const remainingMs = Number(entity.state?.deathCountdownRemainingMs);
+      if (!Number.isFinite(remainingMs) || remainingMs < 0) continue;
+      challenges.push({ phase: "running", remainingMs });
+    }
+    const running = challenges.filter(
+      (challenge) => challenge.phase === "running",
+    );
+    const visible = running.length > 0 ? running : challenges;
+    return visible.length > 0
+      ? visible.reduce((earliest, challenge) =>
+          challenge.remainingMs < earliest.remainingMs ? challenge : earliest,
+        )
+      : null;
   }
 
   get replaySetup(): SerializableGameplaySetup | null {
@@ -274,10 +313,13 @@ export class GameplaySession {
     deltaMs: number,
     inputForTick: GameplayTickInputProvider,
     maxTicks = Number.POSITIVE_INFINITY,
+    consume?: GameplayTickConsumer,
   ): GameplayTickResult[] {
     const results: GameplayTickResult[] = [];
     this.clock.advance(deltaMs, (time) => {
-      results.push(this.advanceTick(time, inputForTick(time)));
+      const result = this.advanceTick(time, inputForTick(time));
+      results.push(result);
+      return consume?.(result);
     }, maxTicks);
     return results;
   }
@@ -316,16 +358,24 @@ export class GameplaySession {
 
     const resolved = this.resolveTickInput(input);
     for (const group of resolved.groups) {
-      const inputPhase = this.submitIntentGroup(group);
-      if (!inputPhase) continue;
-      phases.push(inputPhase);
-      mergeWorldStepResult(aggregate, inputPhase);
+      if (group.runnable) {
+        const inputPhase = this.submitIntentGroup(group.runnable);
+        if (inputPhase) {
+          phases.push(inputPhase);
+          mergeWorldStepResult(aggregate, inputPhase);
+          if (hasReplayInputEffect(inputPhase)) group.effective = true;
+        }
+      }
     }
     return {
       time,
       result: aggregate,
       phases,
-      inputGroups: resolved.recordedGroups.map((group) => structuredClone(group)),
+      inputGroups: resolved.groups
+        .filter(
+          (group) => group.effective && group.recorded.recordInReplay !== false,
+        )
+        .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
         resolved.sources,
         resolved.blocked,
@@ -352,6 +402,7 @@ export class GameplaySession {
           move.source,
         );
         for (const intent of group.intents) {
+          if (!("actorId" in intent)) continue;
           if (claimedActors.has(intent.actorId)) continue;
           claimedActors.add(intent.actorId);
           actorIds.push(intent.actorId);
@@ -378,20 +429,26 @@ export class GameplaySession {
     if (intents.length > 0)
       recordedGroups.push({ intents, historyBoundary: true });
 
-    const normalized: WorldIntentGroup[] = [];
+    const groups: ResolvedInputGroup[] = [];
     const blocked: WorldIntent[] = [];
     let blockedDisposition: GameplayInputAttempt = "busy";
     for (const group of recordedGroups) {
       const partition = this.partitionInputIntents(group.intents);
       blocked.push(...partition.blocked);
-      if (partition.blocked.length > 0)
-        blockedDisposition = this.observeBlockedIntents(partition.blocked);
-      if (partition.runnable.length > 0)
-        normalized.push({ ...group, intents: partition.runnable });
+      const observation = partition.blocked.length > 0
+        ? this.observeBlockedIntents(partition.blocked)
+        : null;
+      if (observation) blockedDisposition = observation.disposition;
+      groups.push({
+        recorded: group,
+        runnable: partition.runnable.length > 0
+          ? { ...group, intents: partition.runnable }
+          : null,
+        effective: observation?.stateChanged ?? false,
+      });
     }
     return {
-      groups: normalized,
-      recordedGroups,
+      groups,
       sources,
       blocked,
       blockedDisposition,
@@ -405,7 +462,9 @@ export class GameplaySession {
     const result = this.world.step(group);
     this.checkpointPendingHistory(
       result,
-      group.intents.map((intent) => intent.actorId),
+      group.intents.flatMap((intent) =>
+        "actorId" in intent ? [intent.actorId] : [],
+      ),
     );
     return result;
   }
@@ -442,7 +501,10 @@ export class GameplaySession {
       result: actorIds.some((actorId) => movedActors.has(actorId))
         ? "moved"
         : actorIds.some((actorId) =>
-              blocked.some((intent) => intent.actorId === actorId),
+              blocked.some(
+                (intent) =>
+                  "actorId" in intent && intent.actorId === actorId,
+              ),
             )
           ? blockedDisposition
           : "blocked",
@@ -465,11 +527,15 @@ export class GameplaySession {
 
   private observeBlockedIntents(
     intents: readonly WorldIntent[],
-  ): "busy" | "consumed" {
-    return this.world.actions.observeIntents(intents, this.world.query) ===
-      "consumed"
-      ? "consumed"
-      : "busy";
+  ): { disposition: "busy" | "consumed"; stateChanged: boolean } {
+    const observation = this.world.actions.observeIntentsWithEffects(
+      intents,
+      this.world.query,
+    );
+    return {
+      disposition: observation.disposition === "consumed" ? "consumed" : "busy",
+      stateChanged: observation.stateChanged,
+    };
   }
 
   private configureActorsAndControls(): void {
@@ -537,20 +603,11 @@ export class GameplaySession {
           ? []
           : [this.primaryActorIdValue];
       for (const actorId of targets) {
-        if (intent.type === "set-actor-lock-key") {
-          intents.push({
-            type: intent.type,
-            actorId,
-            kind: intent.kind,
-            enabled: intent.enabled,
-          });
-        } else {
-          intents.push({
-            type: intent.type,
-            actorId,
-            moveDurationMs: intent.moveDurationMs,
-          });
-        }
+        intents.push({
+          type: intent.type,
+          actorId,
+          moveDurationMs: intent.moveDurationMs,
+        });
       }
     }
     this.initialIntentsValue = structuredClone(intents);
@@ -565,10 +622,25 @@ export class GameplaySession {
   }
 }
 
+interface ResolvedInputGroup {
+  recorded: WorldIntentGroup;
+  runnable: WorldIntentGroup | null;
+  effective: boolean;
+}
+
 interface ResolvedTickInput {
-  groups: WorldIntentGroup[];
-  recordedGroups: WorldIntentGroup[];
+  groups: ResolvedInputGroup[];
   sources: Map<string, EntityId[]>;
   blocked: WorldIntent[];
   blockedDisposition: GameplayInputAttempt;
+}
+
+function hasReplayInputEffect(result: WorldStepResult): boolean {
+  return (
+    result.moves.some((move) => move.moved) ||
+    result.motions.length > 0 ||
+    result.events.length > 0 ||
+    result.deltas.length > 0 ||
+    hasWorldMutation(result.mutations)
+  );
 }

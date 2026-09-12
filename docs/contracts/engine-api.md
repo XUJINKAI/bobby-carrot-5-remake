@@ -30,14 +30,6 @@ const runtime = await createGameplayRuntime({
   audio,
   runtime: {
     bobbyLocomotion: { moveMs: 350 },
-    initialActorIntents: [
-      {
-        type: "set-actor-lock-key",
-        actor: "all",
-        kind: "reusable",
-        enabled: true,
-      },
-    ],
     input: {
       keyboard: true,
       pointer: true,
@@ -45,8 +37,14 @@ const runtime = await createGameplayRuntime({
       screenJoystick: { enabled: true },
     },
     hud: {
+      timer: true,
+      steps: true,
       objective: true,
-      inventory: true,
+      items: true,
+      coins: () => save.economy.bonusCoins,
+    },
+    dialog: {
+      characterIntervalMs: 28,
     },
     camera: {
       zoom: 1,
@@ -142,6 +140,11 @@ RuntimeAction   一个正在持续进行的 gameplay 过程
 
 Behavior 通过纯查询 `MovementPolicy` 描述特殊通行、携带关系与 marker；World 将 policies 规范化为一个 `MovementPlan`，负责通用边界、reservation、busy 状态与原子提交。World 不识别具体 Entity 机制或私有 state 字段。
 
+所有 Level Entity 实例化完成后、正式 gameplay 开始前，World 按稳定 Entity identity
+调用一次 Behavior `onInitialize()`。初始化 hook 仍只能通过 `WorldQueryApi + CommandQueue`
+读写世界；例如 Bobby 开局位于 Speed 时，由 Speed Behavior 在这里建立可进入 Snapshot
+与 Replay 的连续移动 Action。
+
 Behavior 的 `CommandQueue.relocate()` 用于 Portal 等中点位置切换：它清除 Entity 当前的 `WorldMotion` 并写入新的整数 anchor。切换后的连续移动必须继续产生 semantic intent，以复用正式通行与碰撞裁决。
 
 RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 CommandQueue 修改 World。Action 可以声明：
@@ -188,11 +191,11 @@ game.dispatch({
   actorId,
   moveDurationMs: 266,
 });
-game.dispatch({
-  type: "set-actor-lock-key",
+game.dispatchInteractionEffect({
+  type: "add-actor-inventory-item",
   actorId,
-  kind: "single-use",
-  enabled: true,
+  item: "lock-key",
+  count: 1,
 });
 
 game.undo();
@@ -207,6 +210,10 @@ game.setZoomLimits(0.8, 4);
 game.zoomBy(1.1);
 game.panByScreen(dx, dy);
 
+game.timedChallengeRemainingMs;
+game.timedChallengePhase;
+game.presentationBlocksInput;
+
 game.toggleDebug();
 game.inspectCanvasPoint(clientX, clientY);
 ```
@@ -217,10 +224,28 @@ game.inspectCanvasPoint(clientX, clientY);
 输入共用 `GameplaySession` 的输入阶段。提交动作时尚未产生 `MoveResult`；执行结果通过
 Game 状态、事件和 Replay Tick 结果观察。
 
-`dispatch()` 只接受 Engine 定义的封闭 `ActorEffectIntent` union。`set-actor-locomotion`
-只影响随后创建的 WorldMotion；`set-actor-lock-key` 只表达地图内 Lock 能力。Speed Shoes、
-商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影位置、朝向、
-地图内背包与实际移动时长，不暴露 Entity runtime state。
+`dispatch()` 只接受 Engine 定义的封闭 `GameplayEffectIntent` union。
+`set-actor-locomotion` 只影响随后创建的 WorldMotion。宿主交互可以通过
+`add-actor-inventory-item` 为 Bobby 增加关卡内钥匙；商品、价格与永久权限仍由宿主负责。
+宿主持久化产品结果后，可以按稳定地图身份提交 Entity 替换：
+
+```ts
+game.dispatchInteractionEffect({
+  type: "commit-entity-replacement",
+  target: { type: "lock-key", x: 21, y: 6 },
+  replacementType: "shop-empty",
+});
+```
+
+目标必须由 `type + x + y` 唯一命中。成功动作销毁目标、在相同 anchor 与 stackOrder
+生成替代 Entity。Adventure Restart 重新读取最新 Save，并在载入前把持久结果投影到
+LevelMap。商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影
+位置、朝向、地图内背包与实际移动时长，不暴露 Entity runtime state。
+
+阻塞对话选择产生的宿主派生效果使用 `game.dispatchInteractionEffect(intent)`。该入口允许
+Replay playback 在消费 `choices` 后重走由当前 LevelMap 与 Session 状态决定的交互流程；
+派生效果本身不写入 Replay。依赖 Adventure Save、全局经济或其它外部可变状态的宿主业务
+不属于 Replay 的可靠重建边界。
 
 ## GameplaySession 与 Replay
 
@@ -235,7 +260,7 @@ Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 Wor
 
 ```ts
 game.startReplayRecording({
-  name: "1-1",
+  id: "original/1-1",
   url: window.location.href,
 });
 const replay = game.stopReplayRecording();
@@ -252,16 +277,18 @@ game.replayPaused;
 `setTimeScale()` 接受任意有限正数，同时调整 World 与 Presentation 相对真实时间的推进
 倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
 停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
-`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态。
+`jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态；沿途 WorldEvent 按顺序
+发布给观察者。带阻塞对话 `choices` 的 Replay 需要宿主逐轮处理，因此只能按时间线播放。
 
 `skipIdleTime` 用于压缩稳定状态下超过一秒的无输入区间，并在下一次输入前保留短暂的
 表现间隔。压缩期间仍逐个执行 World Tick；新的 WorldMotion、阻塞输入的 RuntimeAction
 或 WorldEvent 会中断当前批次，因此地图内计时与自动机关保持同一条 gameplay 时间线。
 该选项默认关闭，不进入 Replay 文件格式。
 
-录制调用方提供当前地图的显示名称与 URL；Engine 在停止时写入 `finalState` 和空白
+录制调用方提供当前地图的路径 ID 与 URL；Engine 在停止时写入 `finalState` 和空白
 `note`。`meta` 不参与播放调度，用户可以直接编辑 `note`。Web 复跑只提示
-`finalState.status` 是否一致；仓库 fixture 验证完整 `finalState`。
+`finalState.status` 是否一致；仓库 fixture 只比较 Replay 文件中实际声明的 `finalState`
+字段，并始终忽略仅用于记录的 `elapsedMs`。
 
 常用只读状态：
 
@@ -319,8 +346,10 @@ runtime: {
     },
   },
   hud: {
+    timer: true,
+    steps: true,
     objective: true,
-    inventory: true,
+    items: true,
   },
   camera: {
     zoom: 1,
@@ -341,11 +370,92 @@ runtime: {
 
 `setZoom()` 围绕 Canvas 中心缩放；`setZoomAt()` 接收 Canvas 的浏览器 client 坐标，并保持该屏幕点下的世界位置不动。Camera 首次加载地图时使用视口边界构图：大于视口的地图贴住窗口边缘，小地图居中。`panBounds: "viewport"` 在后续 Pan 中继续维持该边界；`panBounds: "map-edge"` 允许用户操作后把地图四条边移动到视口中心，同时避免把整张地图拖离视口。
 
-地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立背包。
+地图具有多个 player actor 时，Camera 对全部 actor 共同构图。共同构图只会临时降低实际 zoom，并可突破 `minZoom` 以保证所有 actor 同时可见；用户请求的 zoom 仍保留，回到单目标构图时恢复。Gameplay HUD 左上角投影计时器与步数，右上角第一行投影共享目标，后续两行依次投影 primary 与 secondary actor 的独立道具；宿主金币与 primary 道具共用一行。`timer / steps / objective / items` 可以分别关闭，省略的项目默认开启；`coins` 只有宿主提供数值源时才显示。
 
 `input.zoom` 控制键盘 Zoom，并作为 `pinchZoom / wheelZoom` 的缺省值。宿主可以分别配置后两者，例如 Embed 可以启用 Pinch 而关闭滚轮 Zoom。双指手势在 `pan` 启用时同时根据中心位移平移 Camera。
 
 Engine 启用 Screen Joystick 或 Gameplay HUD 后负责它们的完整生命周期。宿主不复制基础 Gameplay 控件，只负责产品层 UI。
+
+### Gameplay 表现配置
+
+Gameplay HUD 接受布尔开关或分项配置：
+
+```ts
+runtime: {
+  hud: {
+    enabled: true,
+    root: gameOverlay,
+    timer: true,
+    steps: true,
+    objective: true,
+    items: true,
+    coins: () => adventureSave.economy.bonusCoins,
+  },
+}
+```
+
+`hud: false` 不创建 HUD，`hud: true` 使用全部默认项。`root` 可以指定 HUD 挂载容器；
+`timer`、`steps`、`objective` 和 `items` 分别控制计时器、步数、剩余目标与地图内道具。
+计时器通常正向显示 `GameplayState.elapsedMs`；地图配置 Timed Challenge 时，挑战倒计时
+优先占用同一个左上角计时位置。`coins` 接收非负整数或返回非负整数的函数，由宿主提供
+全局经济状态；配置后始终显示数值，包括 `0`。函数形式会在 HUD 收到 Engine tick 或
+change 时重新读取，适合可变的存档状态。
+
+道具和金币位于同一行，但由 `items` 与 `coins` 独立配置。道具按魔豆、汽油、雪铲、
+风筝、关卡钥匙排列；数量为 `1` 时只显示图标，数量大于 `1` 时同时显示计数。金币使用
+`ts-16-9` 图标并始终显示计数；数字位于缩小后的金币图标之前。
+
+倒计时数值可以通过 `game.timedChallengeRemainingMs` 或
+`game.state.timedChallengeRemainingMs` 读取；`game.timedChallengePhase` 与
+`game.state.timedChallengePhase` 为 `"waiting"` 时显示冻结的完整时长，为
+`"running"` 时由 WorldClock 递减，没有配置时两者均为 `null`。正向计时读取
+`game.state.elapsedMs`。
+
+Timed Challenge 由地图中的 Lock 配置：
+
+```ts
+{
+  type: "lock",
+  x: 4,
+  y: 7,
+  requireKey: true,
+  deathCountdownSeconds: 60,
+}
+```
+
+HUD 从关卡开局起使用向上取整的 `MM:SS` 显示完整倒计时；成功打开 Lock 后由
+WorldClock 推进剩余时间。`deathCountdownSeconds: 0` 表示该 Lock 不创建 Timed
+Challenge；`requireKey` 省略或为 `false` 时开锁不消耗钥匙。
+开锁成功时 Lock Entity 从空间索引移除；带倒计时的关卡由 Engine 私有 Runtime Entity
+继续持有计时状态，因此 Fence 邻接、通行查询、HUD、Undo 与 Replay 读取的是同一份
+World gameplay state。
+`b6.png` 进入/通关过渡属于 Bobby 的内置表现，宿主通过 `ImageManager` 提供
+`bobby-transition` 语义资源。两条过渡使用独立时长，并共用 presentation easing：
+
+```ts
+runtime: {
+  tuning: {
+    motion: {
+      easing: "linear",
+    },
+    levelTransition: {
+      enterMs: 310,
+      exitMs: 279,
+    },
+  },
+}
+```
+
+`enterMs` 覆盖载入或重开时 Bobby 出现的倒播过程，`exitMs` 覆盖胜利时 Bobby
+消失的正播过程。默认值依据原版 `a.class` 的 animation advance 顺序分别换算。
+进入阶段 `game.presentationBlocksInput` 为 `true`，WorldClock 与 Replay tick 暂停，
+期间收到的 gameplay 移动输入会被丢弃；完成后该值恢复为 `false`。
+Carrot 的 `consumed-carrot` 是内置 World runtime state，地图只声明普通 `carrot`，
+收集后由 Engine 转换并使用 semantic atlas mapping 选择 `ts-13-10`。
+
+终局选曲属于宿主产品流程。宿主在 Game 状态进入 `won / dead` 时分别调用
+`audio.playMusic("cleared")` 或 `audio.playMusic("death")`；角色动画和 Result Overlay
+的先后关系不进入音频 API。
 
 浏览器可能在首次用户交互前暂停 `AudioContext`。`AudioRuntime.isMusicInteractionRequired()` 提供当前阻塞状态，`onMusicInteractionRequiredChange()` 提供状态订阅；宿主据此呈现交互提示，并在用户输入时调用 `resume()`。该状态只描述浏览器音频能力，不进入 Game gameplay state。
 
@@ -369,6 +479,7 @@ Renderer 按图片图层的实际屏幕像素范围跳过视口外绘制，包�
 
 ```ts
 game.on("change", ...);
+game.on("tick", ...);
 game.on("move", ...);
 game.on("blocked", ...);
 game.on("level-loaded", ...);
@@ -376,6 +487,10 @@ game.on("debug-change", ...);
 game.on("death", ...);
 game.on("level-complete", ...);
 ```
+
+`tick` 在每个已消费的 WorldTick 后触发，适合读取 `elapsedMs` 与
+`timedChallengeRemainingMs`；进入过渡期间 WorldClock 暂停，因此不会产生该事件。
+常规状态变化继续通过 `change` 订阅，换关或重载通过 `level-loaded` 订阅。
 
 细粒度地图事实通过 `WorldEvent` 暴露。事件只描述语义事实，不泄漏 EntityStore、CommandQueue、Behavior 或 RuntimeAction 实例。
 
@@ -385,7 +500,28 @@ game.on("level-complete", ...);
 game.onWorldEvent((event) => {});
 ```
 
-复杂产品交互使用 live-only 请求口：
+玩家尝试使用 Mower、Lock、Whirlwind、Snow 或 Bean Field 且缺少对应地图内道具时，
+Engine 发布统一事件：
+
+```ts
+interface MissingItemEvent extends WorldEvent {
+  type: "missing-item";
+  actorId: EntityId;
+  entityId: EntityId;
+  x: number;
+  y: number;
+  data: {
+    item: "gas" | "lock-key" | "kite" | "shovel" | "bean";
+  };
+}
+```
+
+`actorId` 指向缺少道具的 Bobby，`entityId` 指向触发交互的地图 Entity。Engine
+Presentation 将该事件显示为跟随 Bobby 的 Canvas Callout，并通过 `aria-live` 播报对应
+可访问文本；Callout 使用 PresentationClock，不阻塞 gameplay，也不进入 World snapshot
+或 Replay 数据。
+
+复杂产品交互使用请求口：
 
 ```ts
 game.onInteractionRequest((request) => {
@@ -393,6 +529,47 @@ game.onInteractionRequest((request) => {
 });
 ```
 
-可对话角色触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
-`dialog` 并由 `GameplayDialog` 展示。外层动态对白可以调用 runtime 返回的
+可对话 Entity 触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
+`dialog` 并由 `GameplayDialog` 展示。`dialogue` 可以是字符串或字符串数组；数组按
+Entity 独立循环，每个元素可以包含换行。外层动态对白可以调用 runtime 返回的
 `dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
+
+Web 的通用 Session 入口可以同时接收一个交互回调，负责把请求、`Game` 与 Engine
+对话层交给具体产品适配器：
+
+```ts
+const session = await createGameSession({
+  level,
+  interaction: ({ request, game, dialog }) => {
+    // 读取外层产品状态，展示对话并按需分派公开 Gameplay effect。
+  },
+});
+```
+
+`createGameSession()` 只负责订阅与释放该回调，不解释购买、Campaign Save 或地图 ID。
+
+宿主需要选项交互时，可以等待通用展示层返回选择结果：
+
+```ts
+const result = await dialog.present({
+  message: "要购买这个道具吗？",
+  options: [
+    { id: "purchase", label: "购买" },
+    { id: "cancel", label: "算了" },
+  ],
+});
+```
+
+`dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
+可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
+第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
+先立即补全当前文本。`GameplayDialog` 在等待选择时暂停同一 runtime 的 World 与 gameplay
+输入，结束时恢复原状态；暂停期间不产生 World Tick，地图计时也不推进。所有选项使用
+同级基础样式，当前选项通过高亮边框、背景与阴影
+标识；`primary` 只用于声明默认选择位置。
+
+结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
+`GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
+ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
+`0` 可立即显示全文。同一个 Tick 连续调用多次 `present()` 时，Replay 依次记录一基选项
+序号；`show()` 始终是无选项、非阻塞的提示，不记录选择。

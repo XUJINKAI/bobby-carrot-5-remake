@@ -41,7 +41,14 @@ test("40×40 地图只提交视口内图块，平移和插值位置使用同一�
     visualX: index % 40,
     visualY: Math.floor(index / 40),
   }));
-  const scene = { worldWidth: 40, worldHeight: 40, world, player: [], effect: [] };
+  const scene = {
+    worldWidth: 40,
+    worldHeight: 40,
+    world,
+    player: [],
+    effect: [],
+    callouts: [],
+  };
   for (const center of [1, 20]) {
     camera.centerX = center;
     camera.centerY = center;

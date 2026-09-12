@@ -35,6 +35,8 @@ const IDLE_SKIP_TAIL_MS = 250;
 /** 浏览器 Game 的 Replay 时间线驱动；World 执行仍全部委托给 GameplaySession。 */
 export class ReplayPlayback {
   private active: ActiveReplayPlayback | null = null;
+  private choiceTick: number | null = null;
+  private pendingChoices: number[] = [];
 
   constructor(
     private readonly session: GameplaySession,
@@ -57,6 +59,10 @@ export class ReplayPlayback {
     );
   }
 
+  get hasPendingChoices(): boolean {
+    return this.pendingChoices.length > 0;
+  }
+
   start(replay: Replay, options: ReplayPlaybackOptions = {}): void {
     this.stop();
     const restoreWorldPaused = this.session.clock.paused;
@@ -74,7 +80,32 @@ export class ReplayPlayback {
       restoreWorldPaused,
       restorePresentationPaused,
     };
+    this.choiceTick = null;
+    this.pendingChoices = [];
     if (replay.endTick === 0) this.stop();
+  }
+
+  prepareChoices(tick: number): void {
+    if (!this.active) return;
+    this.assertChoicesConsumed();
+    this.choiceTick = tick;
+    this.pendingChoices = [
+      ...(this.active.frames.get(tick)?.choices ?? []),
+    ];
+  }
+
+  consumeChoice(optionCount: number): number | null {
+    if (!this.active) return null;
+    const choice = this.pendingChoices.shift();
+    if (choice === undefined)
+      throw new Error(
+        `Replay tick ${String(this.choiceTick)} 缺少对话 choice`,
+      );
+    if (choice > optionCount)
+      throw new Error(
+        `Replay tick ${String(this.choiceTick)} 的 choice ${choice} 超出 ${optionCount} 个选项`,
+      );
+    return choice;
   }
 
   pause(): void {
@@ -131,11 +162,14 @@ export class ReplayPlayback {
 
   finishIfComplete(): boolean {
     if (!this.active || this.remainingTicks > 0) return false;
+    this.assertChoicesConsumed();
     this.stop();
     return true;
   }
 
   jumpToEnd(replay: Replay): GameplayTickResult[] {
+    if (replay.frames.some((frame) => frame.choices !== undefined))
+      throw new Error("包含对话 choices 的 Replay 需要按时间线播放");
     this.stop();
     this.resetToStart(replay);
     const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
@@ -151,10 +185,19 @@ export class ReplayPlayback {
     const playback = this.active;
     if (!playback) return;
     this.active = null;
+    this.choiceTick = null;
+    this.pendingChoices = [];
     if (playback.restoreWorldPaused) this.session.clock.pause();
     else this.session.clock.resume();
     if (playback.restorePresentationPaused) this.presentationClock.pause();
     else this.presentationClock.resume();
+  }
+
+  private assertChoicesConsumed(): void {
+    if (this.pendingChoices.length === 0) return;
+    throw new Error(
+      `Replay tick ${String(this.choiceTick)} 存在未消费的对话 choices`,
+    );
   }
 
   private resetToStart(replay: Replay): void {

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "meta": {
-    "name": "2",
+    "id": "original/1-2",
     "url": "https://bc5r.xujinkai.net/explore/play/original/1-2",
     "note": ""
   },
@@ -11,13 +11,7 @@
       "moveMs": 350
     }
   },
-  "initialIntents": [
-    {
-      "type": "set-actor-lock-key",
-      "kind": "reusable",
-      "enabled": true
-    }
-  ],
+  "initialIntents": [],
   "finalState": {
     "status": "won",
     "counters": {

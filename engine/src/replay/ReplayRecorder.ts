@@ -1,6 +1,7 @@
 import type { GameplaySession, GameplayTickResult } from "../core/GameplaySession.js";
 import {
   REPLAY_FORMAT_VERSION,
+  isReplayPathId,
   type Replay,
   type ReplayFrame,
   type ReplayGameplayIntent,
@@ -24,6 +25,8 @@ export class ReplayRecorder {
     private readonly session: GameplaySession,
     private readonly meta: ReplayRecordingMeta,
   ) {
+    if (!isReplayPathId(meta.id))
+      throw new Error("Replay meta.id 必须使用 <collection>/<map-id> 路径身份");
     if (session.clock.tickCount !== 0)
       throw new Error("Replay 录制必须从 tick 0 开始");
     if (!session.replaySetup)
@@ -39,18 +42,36 @@ export class ReplayRecorder {
   record(result: GameplayTickResult): void {
     if (this.stopped) return;
     this.events.record(result.result.events);
-    if (result.inputGroups.length > 0) {
+    const groups = result.inputGroups
+      .map((group) =>
+        toReplayInputGroup(
+          this.session.actorIds,
+          this.actorReferences,
+          group,
+        )
+      )
+      .filter((group): group is ReplayInputGroup => group !== null);
+    if (groups.length > 0) {
       this.frames.push({
         tick: result.time.tick,
-        groups: result.inputGroups.map((group) =>
-          toReplayInputGroup(
-            this.session.actorIds,
-            this.actorReferences,
-            group,
-          )),
+        groups,
       });
     }
     this.updateActorReferences();
+  }
+
+  recordChoice(tick: number, choice: number): void {
+    if (this.stopped) return;
+    if (!Number.isInteger(tick) || tick < 0)
+      throw new Error("Replay choice 缺少有效的触发 Tick");
+    if (!Number.isInteger(choice) || choice < 1)
+      throw new Error("Replay choice 必须是从 1 开始的整数");
+    let frame = this.frames.at(-1);
+    if (!frame || frame.tick !== tick) {
+      frame = { tick, groups: [] };
+      this.frames.push(frame);
+    }
+    (frame.choices ??= []).push(choice);
   }
 
   stop(): Replay {
@@ -76,6 +97,7 @@ export class ReplayRecorder {
         )),
       finalState: this.events.finalState(
         this.session.state,
+        this.session.world.state.elapsedMs,
         this.session.winState,
       ),
       endTick: this.session.clock.tickCount,
@@ -96,10 +118,13 @@ function toReplayInputGroup(
   actorIds: readonly EntityId[],
   actorReferences: ReadonlyMap<EntityId, CellPosition>,
   group: GameplayTickResult["inputGroups"][number],
-): ReplayInputGroup {
+): ReplayInputGroup | null {
   const intents: ReplayGameplayIntent[] = [];
   const recordedMoves = new Set<string>();
   for (const intent of group.intents) {
+    if (intent.type === "commit-entity-replacement") {
+      continue;
+    }
     if (intent.type !== "move") {
       intents.push(
         toReplayActorEffectIntent(
@@ -133,21 +158,19 @@ function toReplayInputGroup(
       ...(actor ? { actor } : {}),
     });
   }
-  return {
-    intents,
-  };
+  return intents.length > 0 ? { intents } : null;
 }
 
 function toReplayActorEffectIntent(
   intent: ActorEffectIntent,
   actor: CellPosition | undefined,
 ): ReplayInitialIntent {
-  if (intent.type === "set-actor-lock-key") {
+  if (intent.type === "add-actor-inventory-item") {
     return {
       type: intent.type,
       ...(actor ? { actor } : {}),
-      kind: intent.kind,
-      enabled: intent.enabled,
+      item: intent.item,
+      count: intent.count,
     };
   }
   return {

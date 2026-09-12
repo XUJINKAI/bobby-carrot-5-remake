@@ -1,6 +1,6 @@
 import type { LevelMap } from "@bobby/model";
 import { GameplaySession } from "../core/GameplaySession.js";
-import type { Replay, ReplayFinalState } from "./ReplayFormat.js";
+import type { Replay, ReplayActualFinalState } from "./ReplayFormat.js";
 import { ReplayEventCounter } from "./ReplayFinalState.js";
 import {
   resolveReplayInitialIntents,
@@ -9,7 +9,7 @@ import {
 import { validateReplay } from "./ReplayValidation.js";
 
 export interface ReplayReport {
-  actual: ReplayFinalState;
+  actual: ReplayActualFinalState;
   endTick: number;
 }
 
@@ -39,7 +39,11 @@ export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
   for (const tick of ticks) events.record(tick.result.events);
 
   return {
-    actual: events.finalState(session.state, session.winState),
+    actual: events.finalState(
+      session.state,
+      session.world.state.elapsedMs,
+      session.winState,
+    ),
     endTick: session.clock.tickCount,
   };
 }

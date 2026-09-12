@@ -114,43 +114,37 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",
     tileCell(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_CLOUD9_TICKET,
     "Cloud 9 Ticket",
     tileCell(MapEntityTypeId.SHOP_CLOUD9_TICKET),
-    ["walkable", "interaction"],
-  ),
-  surface(
-    MapEntityTypeId.SHOP_SUPER_KEY,
-    "Super Key",
-    tileCell(MapEntityTypeId.SHOP_SUPER_KEY),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_STEREO_SYSTEM,
     "Stereo System",
     tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_EXTRA_MUSIC,
     "Extra Music",
     tileCell(MapEntityTypeId.SHOP_EXTRA_MUSIC),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_SPEED_SHOES,
     "Speed Shoes",
     tileCell(MapEntityTypeId.SHOP_SPEED_SHOES),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_COIN_RADAR,
     "Coin Radar",
     tileCell(MapEntityTypeId.SHOP_COIN_RADAR),
-    ["walkable", "interaction"],
+    ["blocking", "interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_EMPTY,
@@ -237,6 +231,11 @@ const windmill = originalModule(
 
 export const staticContentModules: readonly EntityModule[] = [
   staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT)),
+  runtimeOnlyContent(
+    RuntimeEntityTypeId.CONSUMED_CARROT,
+    "Consumed Carrot",
+    tileCell(MapEntityTypeId.CARROT, { phase: "consumed" }),
+  ),
   egg,
   {
     ...content(

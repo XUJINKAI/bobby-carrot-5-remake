@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { World } from "../dist/world/World.js";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
@@ -114,7 +115,7 @@ test("Exit 要求所有 Bobby 同时到达 Exit", () => {
   assert.equal(world.completed, true);
 });
 
-test("bonus lock consumes a temporary key and starts a death countdown", () => {
+test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () => {
   const world = new World(
     corridor(
       [
@@ -122,17 +123,20 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
           type: MapEntityTypeId.LOCK,
           x: 1,
           y: 0,
+          requireKey: true,
           deathCountdownSeconds: 1,
         },
       ],
       undefined,
-      { singleUseLockKey: true },
+      { lockKeys: 1 },
     ),
   );
-  actor(world).state = { singleUseLockKey: true };
+  actor(world).state = { lockKeys: 1 };
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
-  assert.equal(actor(world).state?.singleUseLockKey, false);
+  assert.equal(actor(world).state?.lockKeys, 0);
+  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
+  assert.equal(world.query.entitiesWithTrait("timed-challenge").length, 1);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
@@ -141,51 +145,104 @@ test("bonus lock consumes a temporary key and starts a death countdown", () => {
   assert.equal(world.dead, true);
 });
 
-test("permanent key opens the lock without being consumed", () => {
+test("requireKey Lock 缺少钥匙时报告完整 missing-item 事件", () => {
+  const world = new World(
+    corridor([{
+      type: MapEntityTypeId.LOCK,
+      x: 1,
+      y: 0,
+      requireKey: true,
+    }]),
+  );
+  const player = actor(world);
+  const lock = world.query.entitiesWithTrait("gate")[0];
+
+  const result = move(world, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: player.id,
+      entityId: lock.id,
+      x: 1,
+      y: 0,
+      data: { item: "lock-key" },
+    },
+  );
+});
+
+test("GameplayState 投影等待开锁与运行中的 Timed Challenge", () => {
+  const session = new GameplaySession({ timing: { worldHz: 10 } });
+  session.loadLevel(
+    corridor([
+      {
+        type: MapEntityTypeId.LOCK,
+        x: 1,
+        y: 0,
+        deathCountdownSeconds: 60,
+      },
+    ]),
+  );
+
+  assert.equal(session.state.timedChallengePhase, "waiting");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  session.world.update({ stepMs: 100, tick: 1 });
+  assert.equal(session.state.timedChallengePhase, "waiting");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  move(session.world, "right");
+  assert.equal(session.state.timedChallengePhase, "running");
+  assert.equal(session.state.timedChallengeRemainingMs, 60_000);
+  session.world.update({ stepMs: 100, tick: 2 });
+  assert.equal(session.state.timedChallengeRemainingMs, 59_900);
+});
+
+test("缺省 Lock 不要求钥匙", () => {
   const world = new World(
     corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
   );
-  world.step({
-    intents: [
-      {
-        type: "set-actor-lock-key",
-        actorId: actor(world).id,
-        kind: "reusable",
-        enabled: true,
-      },
-    ],
-  });
   assert.equal(move(world, "right").moves[0].moved, true);
-  assert.equal(actor(world).state?.reusableLockKey, true);
+  assert.equal(actor(world).state?.lockKeys, undefined);
+  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
 });
 
-test("lock ability intent applies both enabled states", () => {
+test("关卡内道具动作按数量增加钥匙", () => {
   const world = new World(
-    corridor([{ type: MapEntityTypeId.LOCK, x: 1, y: 0 }]),
+    corridor([{
+      type: MapEntityTypeId.LOCK,
+      x: 1,
+      y: 0,
+      requireKey: true,
+    }]),
   );
   const actorId = actor(world).id;
   world.step({
     intents: [
       {
-        type: "set-actor-lock-key",
+        type: "add-actor-inventory-item",
         actorId,
-        kind: "reusable",
-        enabled: true,
+        item: "lock-key",
+        count: 2,
       },
     ],
   });
-  assert.equal(actor(world).state?.reusableLockKey, true);
+  assert.equal(actor(world).state?.lockKeys, 2);
+  assert.equal(move(world, "right").moves[0].moved, true);
+  assert.equal(actor(world).state?.lockKeys, 1);
+});
 
-  world.step({
-    intents: [
-      {
-        type: "set-actor-lock-key",
-        actorId,
-        kind: "reusable",
-        enabled: false,
-      },
-    ],
-  });
-  assert.equal(actor(world).state?.reusableLockKey, false);
-  assert.equal(move(world, "right").moves[0].blocked, true);
+test("deathCountdownSeconds 为 0 时不创建 Timed Challenge", () => {
+  const session = new GameplaySession();
+  session.loadLevel(corridor([{
+    type: MapEntityTypeId.LOCK,
+    x: 1,
+    y: 0,
+    deathCountdownSeconds: 0,
+  }]));
+
+  assert.equal(session.state.timedChallengePhase, null);
+  assert.equal(move(session.world, "right").moves[0].moved, true);
+  assert.equal(session.state.timedChallengePhase, null);
+  assert.equal(session.state.timedChallengeRemainingMs, null);
 });

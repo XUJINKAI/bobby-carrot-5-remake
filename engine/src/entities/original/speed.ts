@@ -40,6 +40,20 @@ export const DEFAULT_SPEED_CONTINUATION_CELLS = 3;
 
 const speedBoost: Behavior = {
   id: "speed-boost",
+  onInitialize({ self, query, commands }) {
+    const actors = query.presencesAt(self.presence.cell)
+      .filter((presence) => presence.traits.includes("player"))
+      .map((presence) => query.entity(presence.entityId))
+      .filter((entity) => entity !== undefined)
+      .sort((left, right) => left.id - right.id);
+    const beltDirection = self.entity.direction ?? "right";
+    for (const actor of actors) {
+      if (readBobbySpeedBoost(actor.state)) continue;
+      commands.startAction(
+        createSpeedRunRuntimeAction(actor.id, beltDirection, 0, 0),
+      );
+    }
+  },
   onEnter({ actor, self, direction, movement, query, commands }) {
     if (!query.entityHasTrait(actor.id, "player")) return;
     // 同一 Speed run 穿过连续 Speed 时由现有 Action 接管方向，不重复启动。

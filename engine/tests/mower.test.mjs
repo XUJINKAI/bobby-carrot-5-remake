@@ -16,6 +16,37 @@ function move(world, actorId, direction) {
   });
 }
 
+test("Mower 缺少 Gas 时报告完整 missing-item 事件", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.MOWER, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+  });
+  const actor = world.query.entitiesWithTrait("player")[0];
+  const mower = world.query.entitiesWithTrait("mower")[0];
+
+  const result = move(world, actor.id, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: mower.id,
+      x: 1,
+      y: 0,
+      data: { item: "gas" },
+    },
+  );
+});
+
 test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the right", () => {
   const world = new World(
     {

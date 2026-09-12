@@ -25,8 +25,11 @@ export interface GameplayState {
   player: { x: number; y: number } | null;
   facing: Direction | null;
   inventory: Readonly<BobbyInventoryState>;
+  elapsedMs: number;
   bonusCoinsInLevel: number;
   goldenCarrotsInLevel: number;
+  timedChallengePhase: "waiting" | "running" | null;
+  timedChallengeRemainingMs: number | null;
   canUndo: boolean;
   canRedo: boolean;
 }

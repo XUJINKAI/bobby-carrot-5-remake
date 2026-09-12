@@ -14,6 +14,12 @@ export const ORIGINAL_TUNING: PresentationTuning = {
     normalMs: ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
     easing: "linear",
   },
+  levelTransition: {
+    // 原版载入路径在本轮 animation advance 结束后才建立倒播状态。
+    enterMs: 10 * 31,
+    // 原版胜利路径会在建立正播状态的同一轮立即 advance 一次。
+    exitMs: 9 * 31,
+  },
 };
 
 export function resolveOriginalTuning(

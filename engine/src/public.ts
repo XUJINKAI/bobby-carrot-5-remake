@@ -105,7 +105,10 @@ export {
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export {
   GameplayDialog,
+  type GameplayDialogOption,
   type GameplayDialogOptions,
+  type GameplayDialogPresentation,
+  type GameplayDialogResult,
 } from "./ui/GameplayDialog.js";
 export {
   ORIGINAL_BOBBY_LOCOMOTION_TIMING,
@@ -119,13 +122,14 @@ export {
 } from "./entities/player/BobbyState.js";
 export {
   REPLAY_FORMAT_VERSION,
+  type ReplayActualFinalState,
   type ReplayCompletedCondition,
   type ReplayFinalState,
   type ReplayFinalStatus,
   type Replay,
   type ReplayFrame,
   type ReplayGameplayIntent,
-  type ReplaySetActorLockKeyIntent,
+  type ReplayAddActorInventoryItemIntent,
   type ReplayInitialIntent,
   type ReplayInputGroup,
   type ReplayMeta,
@@ -134,6 +138,10 @@ export {
   type ReplayRecordingMeta,
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
+export {
+  replayVerificationStates,
+  type ReplayVerificationStates,
+} from "./replay/ReplayFinalState.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
 export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {
@@ -155,17 +163,25 @@ export type {
 
 export type {
   CellInspection,
+  MissingItemEvent,
+  MissingItemKind,
   MoveResult,
   ObjectInteractionEvent,
   PresenceInspection,
   WorldEvent,
 } from "./world/WorldTypes.js";
-export { isObjectInteractionEvent } from "./world/WorldTypes.js";
+export {
+  isMissingItemEvent,
+  isObjectInteractionEvent,
+} from "./world/WorldTypes.js";
 export type {
   ActorEffectIntent,
+  AddActorInventoryItemIntent,
+  CommitEntityReplacementIntent,
+  EntityTargetReference,
+  GameplayEffectIntent,
   MoveCause,
   MoveIntent,
-  SetActorLockKeyIntent,
   InitialActorIntent,
   SetActorLocomotionIntent,
   WorldIntent,

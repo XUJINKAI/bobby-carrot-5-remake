@@ -6,6 +6,7 @@ import type {
   ReplayCompletedCondition,
   ReplayGameplayIntent,
 } from "./ReplayFormat.js";
+import { isReplayPathId } from "./ReplayFormat.js";
 
 /** 浏览器播放与无头 Runner 共用同一份 Replay 输入合同。 */
 export function validateReplay(
@@ -27,12 +28,14 @@ export function validateReplay(
     throw new Error(`不支持 Replay formatVersion ${replay.formatVersion}`);
   if (
     !isPlainObject(replay.meta) ||
-    typeof replay.meta.name !== "string" ||
+    typeof replay.meta.id !== "string" ||
     typeof replay.meta.url !== "string" ||
     typeof replay.meta.note !== "string"
   )
     throw new Error("Replay meta 无效");
-  requireFields(replay.meta, ["name", "url", "note"]);
+  requireFields(replay.meta, ["id", "url", "note"]);
+  if (!isReplayPathId(replay.meta.id))
+    throw new Error("Replay meta.id 必须使用 <collection>/<map-id> 路径身份");
   if (!isPlainObject(replay.runtime))
     throw new Error("Replay runtime 无效");
   requireFields(replay.runtime, ["worldHz", "bobbyLocomotion"]);
@@ -58,7 +61,7 @@ export function validateReplay(
   for (const frame of replay.frames) {
     if (!frame || typeof frame !== "object")
       throw new Error("Replay frame 必须是对象");
-    requireFields(frame, ["tick", "groups"]);
+    requireFields(frame, ["tick", "groups", "choices"]);
     if (
       !Number.isInteger(frame.tick) ||
       frame.tick < 0 ||
@@ -69,6 +72,16 @@ export function validateReplay(
     previousTick = frame.tick;
     if (!Array.isArray(frame.groups))
       throw new Error("Replay frame groups 必须是数组");
+    if (
+      frame.choices !== undefined &&
+      (!Array.isArray(frame.choices) ||
+        frame.choices.length === 0 ||
+        frame.choices.some(
+          (choice) => !Number.isInteger(choice) || choice < 1,
+        ))
+    ) {
+      throw new Error("Replay frame choices 必须是非空正整数数组");
+    }
     for (const group of frame.groups) {
       if (!group || typeof group !== "object")
         throw new Error("Replay input group 必须是对象");
@@ -117,14 +130,15 @@ function validateIntent(
       throw new Error("Replay 包含无效的 Bobby 移动时长");
     return;
   }
-  if (intent.type === "set-actor-lock-key") {
-    requireFields(intent, ["type", "actor", "kind", "enabled"]);
+  if (intent.type === "add-actor-inventory-item") {
+    requireFields(intent, ["type", "actor", "item", "count"]);
     validateActorReference(session, intent.actor);
     if (
-      (intent.kind !== "single-use" && intent.kind !== "reusable") ||
-      typeof intent.enabled !== "boolean"
+      intent.item !== "lock-key" ||
+      !Number.isInteger(intent.count) ||
+      intent.count <= 0
     )
-      throw new Error("Replay 包含无效的 Lock 能力动作");
+      throw new Error("Replay 包含无效的关卡内道具动作");
     return;
   }
   throw new Error("Replay 包含无效的地图内语义动作");
@@ -148,23 +162,45 @@ function validateActorReference(
 }
 
 function validateFinalState(value: Replay["finalState"]): void {
-  if (!value || !isFinalStatus(value.status))
+  if (!isPlainObject(value))
+    throw new Error("Replay finalState 必须是对象");
+  requireFields(value, [
+    "status",
+    "moves",
+    "elapsedMs",
+    "counters",
+    "completedConditions",
+  ]);
+  if (value.status !== undefined && !isFinalStatus(value.status))
     throw new Error("Replay finalState.status 无效");
-  requireFields(value, ["status", "counters", "completedConditions"]);
-  if (!isPlainObject(value.counters))
-    throw new Error("Replay finalState.counters 必须是对象");
-  for (const [eventType, count] of Object.entries(value.counters)) {
-    if (
-      (!eventType.startsWith("collect-") && !eventType.startsWith("fill-")) ||
-      !Number.isInteger(count) ||
-      count <= 0
-    )
-      throw new Error("Replay finalState.counters 包含无效计数");
+  if (
+    value.moves !== undefined &&
+    (!Number.isInteger(value.moves) || value.moves < 0)
+  )
+    throw new Error("Replay finalState.moves 必须是非负整数");
+  if (
+    value.elapsedMs !== undefined &&
+    (!Number.isInteger(value.elapsedMs) || value.elapsedMs < 0)
+  )
+    throw new Error("Replay finalState.elapsedMs 必须是非负整数");
+  if (value.counters !== undefined) {
+    if (!isPlainObject(value.counters))
+      throw new Error("Replay finalState.counters 必须是对象");
+    for (const [eventType, count] of Object.entries(value.counters)) {
+      if (
+        (!eventType.startsWith("collect-") && !eventType.startsWith("fill-")) ||
+        !Number.isInteger(count) ||
+        count <= 0
+      )
+        throw new Error("Replay finalState.counters 包含无效计数");
+    }
   }
-  if (!Array.isArray(value.completedConditions))
-    throw new Error("Replay finalState.completedConditions 必须是数组");
-  for (const condition of value.completedConditions)
-    validateCompletedCondition(condition);
+  if (value.completedConditions !== undefined) {
+    if (!Array.isArray(value.completedConditions))
+      throw new Error("Replay finalState.completedConditions 必须是数组");
+    for (const condition of value.completedConditions)
+      validateCompletedCondition(condition);
+  }
 }
 
 function validateCompletedCondition(condition: ReplayCompletedCondition): void {

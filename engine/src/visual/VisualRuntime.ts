@@ -20,6 +20,11 @@ import type {
   VisualRenderPass,
 } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
+import { WorldCalloutRegistry } from "./callout/WorldCalloutRegistry.js";
+import {
+  WorldCalloutRuntime,
+  type WorldCalloutRuntimeOptions,
+} from "./callout/WorldCalloutRuntime.js";
 
 interface VisualTimeline {
   startedAtMs: number;
@@ -68,6 +73,11 @@ export interface VisualRuntimeInspection {
 export interface WorldDeltaPresentationOptions {
   motionDuration(motion: WorldMotion): number;
   stationaryDeathDurationMs: number;
+  levelExitDurationMs?: number;
+}
+
+export interface VisualRuntimeOptions extends WorldCalloutRuntimeOptions {
+  callouts?: WorldCalloutRegistry;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -78,19 +88,36 @@ export class VisualRuntime {
   private readonly entityRuntime = new Map<EntityId, EntityVisualRuntimeState>();
   private readonly transients = new Map<number, ActiveTransientVisual>();
   private readonly activeTransientIds = new Set<number>();
+  private readonly callouts: WorldCalloutRuntime;
   private nextTransientId = 1;
   private frame: PresentationFrame | null = null;
 
   constructor(
     private readonly visuals: VisualRegistry,
-    sourceTileSize: number,
+    sourceTileSize = 48,
     cameraOptions?: CameraOptions,
+    options: VisualRuntimeOptions = {},
   ) {
     this.camera = new Camera(sourceTileSize, cameraOptions);
+    this.callouts = new WorldCalloutRuntime(
+      options.callouts ?? new WorldCalloutRegistry(),
+      options,
+    );
   }
 
   get isAnimating(): boolean {
-    return this.activeMotionIds.size > 0 || this.activeTransientIds.size > 0;
+    return (
+      this.activeMotionIds.size > 0 ||
+      this.activeTransientIds.size > 0 ||
+      this.callouts.isAnimating
+    );
+  }
+
+  get blocksGameplay(): boolean {
+    for (const entityId of this.activeMotionIds) {
+      if (this.motions.get(entityId)?.animation === "level-enter") return true;
+    }
+    return false;
   }
 
   get runtimeStates(): ReadonlyMap<EntityId, EntityVisualRuntimeState> {
@@ -108,6 +135,7 @@ export class VisualRuntime {
       direction?: Direction;
     } = {},
   ): void {
+    this.frame = frame;
     this.beginMotion(
       entityId,
       { x: from.x - to.x, y: from.y - to.y },
@@ -161,6 +189,22 @@ export class VisualRuntime {
     );
   }
 
+  beginLevelEntrance(
+    world: World,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginPlayerTransition(world, "level-enter", durationMs, frame);
+  }
+
+  beginLevelExit(
+    world: World,
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    this.beginPlayerTransition(world, "level-exit", durationMs, frame);
+  }
+
   /** 将有序 World 事实映射为表现状态；不向 World 回写 delay 或 gameplay mutation。 */
   consumeWorldDeltas(
     world: World,
@@ -206,16 +250,30 @@ export class VisualRuntime {
         );
         continue;
       }
-      if (delta.type === "motion-cleared" || delta.type === "entity-destroyed") {
-        const entityId =
-          delta.type === "motion-cleared"
-            ? delta.motion.entityId
-            : delta.entityId;
-        this.clearEntity(entityId);
+      if (delta.type === "motion-cleared") {
+        this.clearEntity(delta.motion.entityId);
+        continue;
+      }
+      if (delta.type === "entity-destroyed") {
+        this.clearEntity(delta.entityId);
+        this.callouts.removeEntity(delta.entityId);
         continue;
       }
       if (delta.type === "world-event") {
         this.beginTransient(delta.event, frame);
+        this.callouts.consume(delta.event, frame);
+        continue;
+      }
+      if (delta.type === "world-outcome-changed") {
+        if (delta.outcome.phase !== "playing") this.callouts.clear();
+        if (delta.outcome.phase === "won") {
+          this.beginLevelExit(
+            world,
+            options.levelExitDurationMs ??
+              options.stationaryDeathDurationMs,
+            frame,
+          );
+        }
         continue;
       }
       if (delta.type !== "actor-lifecycle-changed") continue;
@@ -251,6 +309,7 @@ export class VisualRuntime {
       this.advanceMotion(motion, frame, progress);
     }
     this.updateTransients(frame);
+    this.callouts.update(frame);
   }
 
   clear(): void {
@@ -260,12 +319,32 @@ export class VisualRuntime {
     this.transients.clear();
     this.activeTransientIds.clear();
     this.nextTransientId = 1;
+    this.callouts.clear();
   }
 
   clearEntity(entityId: EntityId): void {
     this.motions.delete(entityId);
     this.activeMotionIds.delete(entityId);
     this.entityRuntime.delete(entityId);
+  }
+
+  /** 阻挡移动只更新表现朝向，并从该方向的静止终止帧开始显示。 */
+  faceDirection(
+    entityId: EntityId,
+    direction: Direction,
+    frame: PresentationFrame,
+  ): void {
+    if (this.activeMotionIds.has(entityId)) return;
+    const current = this.entityRuntime.get(entityId);
+    this.setEntityState(entityId, {
+      offsetX: current?.offsetX ?? 0,
+      offsetY: current?.offsetY ?? 0,
+      elevationPx: current?.elevationPx ?? 0,
+      moving: false,
+      progress: 1,
+      stationarySinceMs: frame.nowMs,
+      direction,
+    });
   }
 
   /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
@@ -320,7 +399,16 @@ export class VisualRuntime {
       this.entityRuntime,
       this.frame ?? undefined,
     );
-    return this.appendTransientVisuals(scene);
+    const withTransients = this.appendTransientVisuals(scene);
+    if (!this.frame) return withTransients;
+    return {
+      ...withTransients,
+      callouts: this.callouts.renderItems(
+        world,
+        this.entityRuntime,
+        this.frame,
+      ),
+    };
   }
 
   inspectEntity(world: World, entityId: EntityId): VisualRuntimeInspection {
@@ -372,6 +460,23 @@ export class VisualRuntime {
         motion.cause.type === "carry" ? undefined : motion.direction,
         timeline,
         { startPx: startElevationPx, endPx: endElevationPx },
+      );
+    }
+  }
+
+  private beginPlayerTransition(
+    world: World,
+    animation: "level-enter" | "level-exit",
+    durationMs: number,
+    frame: PresentationFrame,
+  ): void {
+    for (const actor of world.query.entitiesWithTrait("player")) {
+      this.beginAction(
+        actor.id,
+        animation,
+        actor.direction ?? "down",
+        durationMs,
+        frame,
       );
     }
   }
@@ -480,6 +585,7 @@ export class VisualRuntime {
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
       player: passes.player ? sortRenderItems(passes.player) : scene.player,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
+      callouts: scene.callouts,
     };
   }
 
@@ -527,7 +633,8 @@ export class VisualRuntime {
     motion: VisualMotion,
     frame: PresentationFrame,
   ): void {
-    const keepAnimation = motion.animation === "death";
+    const keepAnimation =
+      motion.animation === "death" || motion.animation === "level-exit";
     this.setEntityState(motion.entityId, {
       offsetX: motion.endOffsetX,
       offsetY: motion.endOffsetY,

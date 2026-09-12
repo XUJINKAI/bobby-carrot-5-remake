@@ -23,6 +23,13 @@ const collect: Behavior = {
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
     commands.destroy(self.entity.id);
+    if (self.entity.type === MapEntityTypeId.CARROT) {
+      commands.spawn({
+        type: RuntimeEntityTypeId.CONSUMED_CARROT,
+        x: self.entity.anchor.x,
+        y: self.entity.anchor.y,
+      });
+    }
     commands.emit({
       type: `collect-${self.entity.type}`,
       entityId: self.entity.id,
@@ -56,6 +63,26 @@ const pickup: Behavior = {
           patchBobbyInventory(actor.state, { beans: inventory.beans + 1 }),
         );
         break;
+      case MapEntityTypeId.LOCK_KEY:
+        commands.setState(
+          actor.id,
+          patchBobbyInventory(actor.state, {
+            lockKeys: inventory.lockKeys + 1,
+          }),
+        );
+        commands.destroy(self.entity.id);
+        commands.spawn({
+          type: MapEntityTypeId.SHOP_EMPTY,
+          x: self.entity.anchor.x,
+          y: self.entity.anchor.y,
+        });
+        commands.emit({
+          type: `collect-${self.entity.type}`,
+          entityId: self.entity.id,
+          x: self.presence.cell.x,
+          y: self.presence.cell.y,
+        });
+        return;
       case MapEntityTypeId.SHOVEL_PICKUP:
         commands.setState(
           actor.id,
@@ -127,6 +154,22 @@ const shovelable: Behavior = {
       y: self.presence.cell.y,
     });
     return { result: "clear-and-pass", reason: "shovel-clear" };
+  },
+  onTouch({ actor, self, query, commands }) {
+    if (
+      !query.entityHasTrait(actor.id, "player") ||
+      isRidingMower(actor.state, query) ||
+      readBobbyInventory(actor.state).shovel
+    )
+      return;
+    commands.emit({
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: self.entity.id,
+      x: self.presence.cell.x,
+      y: self.presence.cell.y,
+      data: { item: "shovel" },
+    });
   },
 };
 

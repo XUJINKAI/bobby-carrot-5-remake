@@ -105,6 +105,7 @@ function buildPublicRoutes() {
     ["beaver-shop", "/adventure/beaver-shop"],
     ["dream-machine", "/adventure/night-train/dream-machine"],
     ["cloud-9", "/adventure/night-train/cloud-9"],
+    ["dreamland-reward", "/adventure/night-train/dreamland-reward"],
   ]);
   for (const scene of adventure.specialScenes) {
     const pathname = specialRoutes.get(scene.id);

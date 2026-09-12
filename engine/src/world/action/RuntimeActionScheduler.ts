@@ -8,6 +8,7 @@ import type {
   RuntimeActionCancelReason,
   RuntimeActionId,
   RuntimeActionIntentRequest,
+  RuntimeActionIntentObservation,
   RuntimeActionInputDisposition,
   RuntimeActionInstance,
   RuntimeActionSchedulerSnapshot,
@@ -112,7 +113,15 @@ export class RuntimeActionScheduler {
     intents: readonly WorldIntent[],
     query: WorldQueryApi,
   ): RuntimeActionInputDisposition {
+    return this.observeIntentsWithEffects(intents, query).disposition;
+  }
+
+  observeIntentsWithEffects(
+    intents: readonly WorldIntent[],
+    query: WorldQueryApi,
+  ): RuntimeActionIntentObservation {
     let disposition: RuntimeActionInputDisposition = "retry";
+    let stateChanged = false;
     const ids = [...this.actions.keys()].sort((a, b) => a - b);
     for (const id of ids) {
       if (this.settling.has(id)) continue;
@@ -120,12 +129,14 @@ export class RuntimeActionScheduler {
       if (!action) continue;
       const definition = this.registry.require(action.kind);
       if (!definition.onIntent) continue;
+      const stateBefore = JSON.stringify(action.state);
       for (const intent of intents) {
         const current = definition.onIntent({ action, intent, query });
         if (current === "consumed") disposition = "consumed";
       }
+      if (JSON.stringify(action.state) !== stateBefore) stateChanged = true;
     }
-    return disposition;
+    return { disposition, stateChanged };
   }
 
   update(

@@ -1,6 +1,3 @@
-import { MapEntityTypeId } from "@bobby/model";
-import { parseAdventureLevelId } from "./campaign.js";
-import { spendBonusCoins, spendGoldenCarrots } from "./rewards.js";
 import {
   completeAdventureEvent,
   grantAdventureItem,
@@ -8,14 +5,19 @@ import {
   normalizeAdventureSave,
   type AdventureItemId,
   type AdventureSave,
-} from "./save.js";
+} from "../save.js";
+import { spendBonusCoins, spendGoldenCarrots } from "../rewards.js";
+import type {
+  AdventureItemPurchaseOutcome,
+  AdventurePurchaseCurrency,
+} from "./types.js";
 
 export const BONUS_KEY_TRIAL_EVENT = "bonus-key-trial";
-export const DEFAULT_SINGLE_USE_LOCK_KEY_PRICE_BONUS_COINS = 3;
+export const DEFAULT_LOCK_KEY_PRICE_BONUS_COINS = 3;
 
 export type BonusKeyVendorOutcome =
-  | "reusable-key-owned"
-  | "single-use-key-held"
+  | "permanent-key-owned"
+  | "lock-key-held"
   | "trial-granted"
   | "purchased"
   | "insufficient-funds";
@@ -23,22 +25,14 @@ export type BonusKeyVendorOutcome =
 export interface BonusKeyVendorDecision {
   outcome: BonusKeyVendorOutcome;
   priceBonusCoins: number;
-  grantSingleUseKey: boolean;
+  grantLockKey: boolean;
   save: AdventureSave;
 }
 
 export interface BonusKeyVendorRequest {
-  levelId: string;
-  objectType: string;
-  hasSingleUseKey: boolean;
+  lockKeyCount: number;
   priceBonusCoins?: number;
 }
-
-export type AdventurePurchaseCurrency = "bonus-coins" | "golden-carrots";
-export type AdventureItemPurchaseOutcome =
-  | "already-owned"
-  | "purchased"
-  | "insufficient-funds";
 
 export interface AdventureItemPurchaseDecision {
   outcome: AdventureItemPurchaseOutcome;
@@ -62,7 +56,7 @@ export function purchaseAdventureItem(
   const balance = currency === "bonus-coins"
     ? normalized.economy.bonusCoins
     : normalized.economy.goldenCarrots;
-  if (balance < cost)
+  if (balance < cost) {
     return purchaseDecision(
       "insufficient-funds",
       normalized,
@@ -70,6 +64,7 @@ export function purchaseAdventureItem(
       currency,
       cost,
     );
+  }
   const paid = currency === "bonus-coins"
     ? spendBonusCoins(normalized, cost)
     : spendGoldenCarrots(normalized, cost);
@@ -86,19 +81,13 @@ export function purchaseAdventureItem(
 export function resolveBonusKeyVendorInteraction(
   save: AdventureSave,
   request: BonusKeyVendorRequest,
-): BonusKeyVendorDecision | null {
-  const level = parseAdventureLevelId(request.levelId);
-  if (
-    level?.kind !== "bonus" ||
-    request.objectType !== MapEntityTypeId.BEAVER
-  )
-    return null;
+): BonusKeyVendorDecision {
   const normalized = normalizeAdventureSave(save);
   const price = normalizeBonusKeyPrice(request.priceBonusCoins);
   if (hasAdventureItem(normalized, "golden-key"))
-    return decision("reusable-key-owned", price, false, normalized);
-  if (request.hasSingleUseKey)
-    return decision("single-use-key-held", price, false, normalized);
+    return decision("permanent-key-owned", price, false, normalized);
+  if (request.lockKeyCount > 0)
+    return decision("lock-key-held", price, false, normalized);
   if (!normalized.campaign.completedEvents.includes(BONUS_KEY_TRIAL_EVENT)) {
     return decision(
       "trial-granted",
@@ -120,10 +109,10 @@ export function resolveBonusKeyVendorInteraction(
 function decision(
   outcome: BonusKeyVendorOutcome,
   priceBonusCoins: number,
-  grantSingleUseKey: boolean,
+  grantLockKey: boolean,
   save: AdventureSave,
 ): BonusKeyVendorDecision {
-  return { outcome, priceBonusCoins, grantSingleUseKey, save };
+  return { outcome, priceBonusCoins, grantLockKey, save };
 }
 
 function normalizePurchasePrice(value: number): number {
@@ -134,7 +123,7 @@ function normalizePurchasePrice(value: number): number {
 
 function normalizeBonusKeyPrice(value: number | undefined): number {
   return value === undefined
-    ? DEFAULT_SINGLE_USE_LOCK_KEY_PRICE_BONUS_COINS
+    ? DEFAULT_LOCK_KEY_PRICE_BONUS_COINS
     : normalizePurchasePrice(value);
 }
 

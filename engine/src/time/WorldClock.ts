@@ -14,7 +14,7 @@ export interface WorldTick {
   stepMs: number;
 }
 
-export type WorldTickListener = (time: WorldTick) => void;
+export type WorldTickListener = (time: WorldTick) => void | boolean;
 
 /**
  * 固定步长 gameplay 时钟。RAF 只提供真实经过时间；Input、World、Behavior 与
@@ -83,9 +83,10 @@ export class WorldClock {
     );
     let count = 0;
     while (this.accumulatorMs >= this.stepMs && count < tickBudget) {
-      this.runTick(listener);
+      const continueAdvancing = this.runTick(listener);
       this.accumulatorMs -= this.stepMs;
       count += 1;
+      if (continueAdvancing === false) break;
     }
     return count;
   }
@@ -130,10 +131,10 @@ export class WorldClock {
     this.pausedValue = false;
   }
 
-  private runTick(listener: WorldTickListener): void {
+  private runTick(listener: WorldTickListener): void | boolean {
     const time = this.nextTick;
     this.nextTickValue += 1;
-    listener(time);
+    return listener(time);
   }
 }
 

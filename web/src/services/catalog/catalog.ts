@@ -1,3 +1,4 @@
+import type { AdventureSpecialSceneId } from "@bobby/adventure";
 import type { LevelMap, MapDocument } from "@bobby/model";
 export type {
   MapCollectionCardSize,
@@ -29,7 +30,7 @@ export interface AdventureIndexChapter {
 }
 
 export interface AdventureIndexSpecialScene {
-  id: string;
+  id: AdventureSpecialSceneId;
   name: string;
   map: string;
 }

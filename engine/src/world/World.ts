@@ -1,4 +1,4 @@
-import type { LevelMap } from "@bobby/model";
+import { MapEntityTypeId, type LevelMap } from "@bobby/model";
 import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
@@ -12,6 +12,7 @@ import {
 import {
   patchBobbyInventory,
   patchBobbyLocomotionMoveMs,
+  readBobbyInventory,
   readBobbyLocomotionMoveMs,
 } from "../entities/player/BobbyState.js";
 import {
@@ -195,7 +196,20 @@ export class World {
       () => this.deltaClock(),
     );
     this.motionDurationMs = safeDuration(options.motionDurationMs ?? 0);
+    this.initializeEntityBehaviors();
     this.lifecycle.initialize();
+  }
+
+  private initializeEntityBehaviors(): void {
+    const queue = new CommandQueue();
+    const entities = [...this.entities.all()].sort((left, right) =>
+      left.id - right.id
+    );
+    for (const entity of entities) {
+      const presence = this.spatial.presencesForEntity(entity.id)[0];
+      if (presence) this.behaviorRuntime.initialize(entity, presence, queue);
+    }
+    this.committer.commit(queue, this.deltaClock());
   }
 
   get dead(): boolean {
@@ -337,7 +351,7 @@ export class World {
    */
   step(group: WorldIntentGroup): WorldStepResult {
     const result = emptyWorldStepResult();
-    this.applyActorIntents(group.intents, result);
+    this.applyEffectIntents(group.intents, result);
     const transaction = new MovementTransaction();
     const moves: MoveResult[] = [];
     let playerInputMoved = false;
@@ -657,7 +671,7 @@ export class World {
     ) ?? this.motionDurationMs;
   }
 
-  private applyActorIntents(
+  private applyEffectIntents(
     intents: readonly WorldIntent[],
     result: WorldStepResult,
   ): void {
@@ -665,6 +679,33 @@ export class World {
     const queue = new CommandQueue();
     for (const intent of intents) {
       if (intent.type === "move") continue;
+      if (intent.type === "commit-entity-replacement") {
+        const matches = this.entities.all().filter(
+          (entity) =>
+            entity.type === intent.target.type &&
+            entity.anchor.x === intent.target.x &&
+            entity.anchor.y === intent.target.y,
+        );
+        if (matches.length !== 1) continue;
+        const target = matches[0]!;
+        queue.destroy(target.id);
+        queue.spawn({
+          type: intent.replacementType,
+          x: target.anchor.x,
+          y: target.anchor.y,
+          ...(target.stackOrder === undefined
+            ? {}
+            : { stackOrder: target.stackOrder }),
+        });
+        queue.emit({
+          type: "entity-replacement-committed",
+          entityId: target.id,
+          x: target.anchor.x,
+          y: target.anchor.y,
+          data: { replacementType: intent.replacementType },
+        });
+        continue;
+      }
       const actor = this.entities.get(intent.actorId);
       if (!actor || !this.query.entityHasTrait(actor.id, "player")) continue;
       const state = states.get(actor.id) ?? structuredClone(actor.state);
@@ -682,22 +723,26 @@ export class World {
         });
         continue;
       }
+      if (
+        intent.item !== MapEntityTypeId.LOCK_KEY ||
+        !Number.isInteger(intent.count) ||
+        intent.count <= 0
+      ) {
+        continue;
+      }
+      const inventory = readBobbyInventory(state);
+      const lockKeys = inventory.lockKeys + intent.count;
       states.set(
         actor.id,
-        patchBobbyInventory(
-          state,
-          intent.kind === "reusable"
-            ? { reusableLockKey: intent.enabled }
-            : { singleUseLockKey: intent.enabled },
-        ),
+        patchBobbyInventory(state, { lockKeys }),
       );
       queue.emit({
-        type: "actor-lock-key-changed",
+        type: "actor-inventory-item-added",
         entityId: actor.id,
         ...(intent.requestId !== undefined
           ? { requestId: intent.requestId }
           : {}),
-        data: { kind: intent.kind, enabled: intent.enabled },
+        data: { item: intent.item, count: intent.count, total: lockKeys },
       });
     }
     for (const [entityId, state] of states) {

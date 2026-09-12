@@ -35,13 +35,16 @@ interface LevelEntity {
   x: number;
   y: number;
   stackOrder?: number;
-  [field: string]: JsonPrimitive | undefined;
+  [field: string]: JsonPrimitive | readonly string[] | undefined;
 }
 ```
 
 字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
-`LevelMap` 表示“能被玩/编辑的一张地图”。官方发行记录和 Campaign 节点信息由外层 Catalog / Adventure 持有。
+`LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与
+`applyLevelPatches()`，供首页 Demo、Adventure 等地图生产者在 Engine 加载前对 clone
+执行 `add / remove / set-fields / replace-type`。官方发行记录和 Campaign 节点信息由外层
+Catalog / Adventure 持有。
 
 ## Original DAT tooling
 
@@ -84,6 +87,10 @@ Engine 负责：
 正式 gameplay 初始化、语义输入提交和历史记录。浏览器 `Game` 负责实时驱动与表现；
 无头 Replay Runner 直接驱动同一个 Session。Replay 执行合同见
 [`contracts/replay.md`](contracts/replay.md)。
+
+`GamePresentation` 集中持有 Renderer、Camera、VisualRuntime 与 PresentationClock；
+`GameDebugControls` 集中持有 Debug Sidebar、调试时钟和 actor 调试操作。`Game` 保留公开
+API、GameplaySession 编排和 WorldEvent 发布。
 
 Game 的关卡输入只有纯 `LevelMap`：
 
@@ -177,6 +184,13 @@ collect-golden-carrot
 complete
 death
 dialog { text? }
+missing-item {
+  actorId,
+  entityId,
+  x,
+  y,
+  data: { item }
+}
 object-interaction {
   requestId,
   actorId,
@@ -188,6 +202,11 @@ object-interaction {
   y
 }
 ```
+
+`missing-item` 由地图机关报告缺少 Gas、Lock Key、Kite、Shovel 或 Bean 的语义事实。
+Engine Presentation 将它映射为锚定 Bobby 的 Canvas Callout；图标、闪烁时序和
+`aria-live` 文本都属于表现层，World 与 Replay 只保留导致事件发生的 gameplay 状态和
+输入。
 
 成功打开锁是一个普通 Object interaction：
 
@@ -209,10 +228,12 @@ Object Definition touch behavior
                   Engine presentation
 ```
 
-固定对白是随 JSON 地图传播的字面字符串。复杂条件对白与购买由宿主监听 live
+固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
+Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
 `onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。Replay playback 保留普通
-`WorldEvent`，但不会再次调用外部交互控制器。
+不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World，并把同一
+Tick 内各轮选择按一基序号写入 Replay；playback 仅在 frame 有待消费选择时再次调用外部
+交互控制器。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -224,18 +245,21 @@ Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持
 Lock.deathCountdownSeconds = 60
 ```
 
+`deathCountdownSeconds = 0` 表示不创建倒计时。Lock 的 `requireKey` 缺省为 `false`；
+为 `true` 时，Engine 要求 Bobby 携带关卡内 `lock-key`，开锁成功后消耗一把。
+
 运行关系：
 
 ```text
-成功打开带 deathCountdownSeconds 的 Lock
-        ↓
-Engine TimedChallenge
-        ├─ Golden Carrot -> clear
-        ├─ complete / death -> clear
-        └─ timeout -> death
+载入带 deathCountdownSeconds 的 Lock
+        ├─ waiting -> HUD 冻结显示完整时长
+        └─ 成功开锁 -> running
+                         ├─ Golden Carrot -> clear
+                         ├─ complete / death -> clear
+                         └─ timeout -> death
 ```
 
-计时生命周期属于当前 `Game`。Undo 同时恢复 World Snapshot 与计时快照；Restart / loadLevel 重置计时。`game.timedChallengeRemainingMs` 供展示层读取。
+计时生命周期属于当前 `Game`。Undo 同时恢复 World Snapshot 与计时快照；Restart / loadLevel 重置计时。`game.timedChallengePhase` 与 `game.timedChallengeRemainingMs` 供展示层读取。
 
 这条规则不含 Adventure 语义，因此自定义 JSON、Explore 与 Editor Play Test 都可以直接使用。
 
@@ -281,24 +305,44 @@ Inspector 结合该合同与 Engine authoring metadata，不维护类型特判�
 - 每章 `1,2,3,bonus-1,4,5,6,bonus-2,7,8,9,10` 顺序；
 - 5 个特殊场景的语义身份；
 - Adventure Save contract；
-- 全局经济 / 永久升级 / 一次性奖励位置；
+- 全局经济、关卡完成奖励结算与永久升级；
 - Adventure session plan；
-- 条件对白、Bonus Beaver 单次钥匙和永久商品购买等 Campaign 交互 reducer；
-- 在基础 `LevelMap` 进入 Engine 前按需要增强 Entity 实例字段。
+- Bonus Beaver 关卡钥匙和永久商品购买等 Campaign 交互；
+- 在基础 `LevelMap` 进入 Engine 前按声明式规则新增、删除或增强 Entity。
+
+每张 Adventure 内容的数据集中在 `adventure/src/augment/`。`catalog.ts` 是审阅入口，
+同一个 `AdventureAugmentation` 声明静态 `levelPatches`、可选
+`levelPatchesFunction(save)` 与
+可选 `interaction(context)`：前两者在加载前形成 session map，后者直接处理 Engine 的
+通用 `object-interaction` 请求。补丁执行器位于 Model；Adventure 的经济归约和交互端口
+分别位于 `interactions.ts` 与 `types.ts`，场景配置不
+散落到 Web 路由或 Engine。
 
 地图准备顺序固定为：
 
 ```text
 base / official LevelMap
-        ↓
-Adventure Entity field augmentation
-        ↓
-persistent reward filtering
+        ↓ adventureAugmentationFor(contentId).levelPatches
+        ↓ @bobby/model::applyLevelPatches
+Adventure session LevelMap
         ↓
 Engine Game.loadLevel(LevelMap)
+
+Engine object-interaction
+        ↓ Web 只做边界适配
+adventureAugmentation.interaction(context)
+        ↓
+GameplayDialog / Save / public Engine effect
 ```
 
-Adventure 可以覆盖角色 `dialogue`、Lock `deathCountdownSeconds` 或未来已经由 semantic Definition 定义的实例字段；Engine 不知道这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。持久奖励由 Adventure Save 按 Campaign level ID、Object type 和地图坐标记录；Engine 只报告本局的收集事实。
+通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
+`requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
+这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定与循环对白
+通过 `dialogue` patch 直接进入纯地图；涉及 Campaign Save 的条件与购买写在地图的
+`interaction` 回调中。Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
+Engine 只报告本局的
+收集事实；Web session 暂存本局 Bonus Coin 与 Golden Carrot 数量，Adventure 在关卡
+完成归约中把奖励与进度一起提交到 Save。死亡、重开或退出不会提交本局奖励。
 
 Base/UP、DAT byte、pack file、record SHA、JAR 等 archive provenance 属于 Catalog / DAT 工具链；HTTP、DOM、localStorage 属于 Web adapter。
 
@@ -309,6 +353,7 @@ Adventure 根据 Campaign node 判断 Bonus 关，并把原版 60 秒策略写�
 ```text
 Bonus LevelMap
    ↓
+Lock.requireKey = !ownsPermanentKey
 Lock.deathCountdownSeconds = 60
    ↓
 Engine
@@ -373,7 +418,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。角色 `dialogue`、Lock 的 `deathCountdownSeconds` 都通过这条通用路径编辑并由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
@@ -425,7 +470,7 @@ GameStage
 └── Product Result Overlay
 ```
 
-Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。统计用时、模式导航和 Result 动作属于 Web。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
+Engine 持有基础 Gameplay HUD 的语义、地图内状态、Timer 与渲染，也持有 Screen Joystick 的渲染和交互。Web 为 Engine 提供 GameStage 容器与 Runtime Config，并在其上组合产品 Overlay。Result 从 `GameplayState.elapsedMs` 读取游戏内用时，Web 只负责格式化、模式导航和 Result 动作。具体信息架构与交互见 [`features/ui.md`](features/ui.md)。
 
 Engine HUD 使用统一布局约束并锚定在 GameStage 右上角：第一行是全体共享的目标计数，第二行是 primary actor 的地图内道具；存在第二个 Bobby 时，第三行显示 secondary actor 的道具。各产品模式只配置 HUD 能力，不重新实现道具布局。
 
@@ -475,18 +520,20 @@ Adventure 在桌面也限制为原版式 portrait viewport，并设置 Camera �
 
 Save 是版本化纯 JSON；`@bobby/adventure` 负责 parse/normalize/serialize，Web 负责 localStorage 与文件导入导出。
 
-持久奖励用稳定 ID：
+Adventure Save 只保存已经结算的全局经济。每次进入关卡都使用完整 LevelMap；Web session
+暂存本局收集数量，只有 Engine 报告关卡完成时才由 Adventure 与 Campaign 进度一起提交。
+死亡、重开或退出会丢弃暂存奖励。
 
-```text
-Campaign level ID + semantic Object type + x/y
-```
+购买请求来自 Engine 的 `object-interaction`。对应地图的 Adventure interaction 回调
+调用纯经济归约，并通过宿主端口展示选项、持久化 Save。购买成功后，回调请求通用
+`commit-entity-replacement` intent 提交给当前 World；Adventure 在重开与下次载入地图前
+通过 `levelPatchesFunction(save)` 生成同一替换补丁。Bonus Beaver 的关卡钥匙在 reducer 决策后以
+`add-actor-inventory-item` intent 提交给 Engine，并在 Engine 发出带同一 `requestId` 的
+接受事件后提交 Save。永久钥匙通过加载前补丁把 Bonus Lock 的 `requireKey` 设为
+`false`，不进入 Engine 背包。
 
-已经领取的奖励在进入 Adventure session 前从 LevelMap clone 中移除；原始官方 LevelMap 保持不可变。
-
-购买请求来自 Engine 的 `object-interaction`。Adventure reducer 接收当前 Save、商品、
-币种与价格，在一个纯函数结果中完成余额校验、扣款和永久道具授予；Web 负责展示结果并
-持久化新 Save。Bonus Beaver 的单次钥匙在 reducer 决策后以 `set-actor-lock-key` intent
-提交给 Engine，并在 Engine 发出带同一 `requestId` 的接受事件后提交 Save。
+Replay 的确定性边界是一张独立 LevelMap；Adventure Save、全局经济、永久商品和按 Save
+生成的动态补丁属于 Campaign 会话，不由单关录像重建。
 
 ## Original JAR Validation
 

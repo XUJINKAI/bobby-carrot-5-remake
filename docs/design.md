@@ -36,8 +36,8 @@ Adventure 恢复原版设计依赖的信息边界与流程，并使用适合现�
 - Adventure 的世界状态以单向 Engine session 推进，Campaign runtime 与 Engine world snapshot 保持一致；
 - 独立 Adventure Save；
 - Bonus Coin / Golden Carrot / 永久道具跨关保存；
-- 已领取全局奖励按地图位置记忆，每个稳定奖励位置只领取一次；
-- 原版 Bonus 60 秒由 Adventure session plan 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
+- 关卡内收集的 Bonus Coin / Golden Carrot 在通关时统一结算，死亡、重开或退出不计入全局经济；
+- 原版 Bonus 60 秒与永久钥匙权限由 Adventure session plan 写入 Lock 的地图实例参数，并在成功打开金锁后由 Engine 启动；
 - Adventure 可以在基础 `LevelMap` 进入 Engine 前增强对象实例参数，倒计时、超时死亡、Undo 和 Restart 等地图内生命周期统一由 Engine 执行。
 
 ## Explore
@@ -60,10 +60,10 @@ Editor 编辑的是与 Engine 共用的 semantic `LevelMap`：
 
 - Terrain / Object 都使用稳定语义 ID；
 - 多格对象只持久化 anchor；
-- Entity 实例参数使用由 Model `EntityMapDefinition` 声明的顶层 primitive 字段；
+- Entity 实例参数使用由 Model `EntityMapDefinition` 声明的顶层字段；通常为 primitive，`dialogue` 支持字符串或字符串数组；
 - gameplay Trait 与 runtime state 由 Engine Definition 和 World 持有，不写入地图 JSON；
 - Inspector 根据 Model 字段合同与 Engine authoring metadata 生成当前需要的属性控件；
-- Sandman、Beaver 与 Dream Machine 支持可选 `dialogue`；
+- Sandman、Beaver、Dream Machine 与商店陈列物支持可选 `dialogue`；Editor 以可增删的多行文本框编辑每一轮；
 - 语义 JSON 是用户地图的长期内容格式，TextBox、剪贴板、`.json`、`.bc5r` 与分享 URL 使用统一 Data Exchange 流程；
 
 不提供 DAT 导入导出，也不把 DAT 当作 URL 分享编码。DAT 是原版研究与验证格式，不是面向玩家的地图格式。

@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, EntityType } from "@bobby/model";
 import type { EntityId } from "../entity/EntityInstance.js";
 
 export type MoveCause =
@@ -36,29 +36,40 @@ export interface SetActorLocomotionIntent {
   moveDurationMs: number;
 }
 
-/** 设置 actor 的地图内 Lock 能力；商品、价格和取得条件由宿主决定。 */
-export interface SetActorLockKeyIntent {
-  type: "set-actor-lock-key";
+/** 为 actor 增加关卡内消耗品；商品、价格和取得条件由宿主决定。 */
+export interface AddActorInventoryItemIntent {
+  type: "add-actor-inventory-item";
   actorId: EntityId;
-  kind: "single-use" | "reusable";
-  enabled: boolean;
+  item: "lock-key";
+  count: number;
   /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
   requestId?: number;
 }
 
 export type ActorEffectIntent =
   | SetActorLocomotionIntent
-  | SetActorLockKeyIntent;
+  | AddActorInventoryItemIntent;
 
-export type WorldIntent = MoveIntent | ActorEffectIntent;
+export interface EntityTargetReference {
+  type: EntityType;
+  x: number;
+  y: number;
+}
+
+/** 把宿主持久化的产品结果提交到当前 World。 */
+export interface CommitEntityReplacementIntent {
+  type: "commit-entity-replacement";
+  target: EntityTargetReference;
+  replacementType: EntityType;
+}
+
+export type GameplayEffectIntent =
+  | ActorEffectIntent
+  | CommitEntityReplacementIntent;
+
+export type WorldIntent = MoveIntent | GameplayEffectIntent;
 
 export type InitialActorIntent =
-  | {
-      type: "set-actor-lock-key";
-      actor: "primary" | "all";
-      kind: SetActorLockKeyIntent["kind"];
-      enabled: boolean;
-    }
   | {
       type: "set-actor-locomotion";
       actor: "primary" | "all";
@@ -71,4 +82,6 @@ export interface WorldIntentGroup {
   intents: WorldIntent[];
   /** 同一 group 只算一个 user-visible history boundary。 */
   historyBoundary?: boolean;
+  /** 由 Replay choice 可重建的宿主效果不重复写入录像。 */
+  recordInReplay?: boolean;
 }

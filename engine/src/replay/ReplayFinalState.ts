@@ -1,6 +1,7 @@
 import type { GameplayState } from "../core/GameplayState.js";
 import type { WinConditionState, WorldEvent } from "../world/WorldTypes.js";
 import type {
+  ReplayActualFinalState,
   ReplayCompletedCondition,
   ReplayFinalState,
 } from "./ReplayFormat.js";
@@ -17,17 +18,42 @@ export class ReplayEventCounter {
   }
 
   finalState(
-    gameplay: Pick<GameplayState, "status">,
+    gameplay: Pick<GameplayState, "status" | "moves">,
+    elapsedMs: number,
     winCondition: WinConditionState | null,
-  ): ReplayFinalState {
+  ): ReplayActualFinalState {
     return {
       status: gameplay.status,
+      moves: gameplay.moves,
+      elapsedMs: Math.max(0, Math.round(elapsedMs)),
       counters: Object.fromEntries(
         [...this.counts].sort(([left], [right]) => left.localeCompare(right)),
       ),
       completedConditions: completedConditions(winCondition),
     };
   }
+}
+
+export interface ReplayVerificationStates {
+  actual: ReplayFinalState;
+  expected: ReplayFinalState;
+}
+
+/** 只投影文件声明的校验字段；经过的 World 时间始终只供记录。 */
+export function replayVerificationStates(
+  actual: ReplayActualFinalState,
+  recorded: ReplayFinalState,
+): ReplayVerificationStates {
+  const expected = Object.fromEntries(
+    Object.entries(recorded).filter(([key]) => key !== "elapsedMs"),
+  ) as ReplayFinalState;
+  const projected = Object.fromEntries(
+    Object.keys(expected).map((key) => [
+      key,
+      actual[key as keyof ReplayActualFinalState],
+    ]),
+  ) as ReplayFinalState;
+  return { actual: projected, expected };
 }
 
 function completedConditions(

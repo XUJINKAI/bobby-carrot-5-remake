@@ -13,12 +13,12 @@ export interface ReplayMoveIntent {
   actor?: CellPosition;
 }
 
-export interface ReplaySetActorLockKeyIntent {
-  type: "set-actor-lock-key";
+export interface ReplayAddActorInventoryItemIntent {
+  type: "add-actor-inventory-item";
   /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
   actor?: CellPosition;
-  kind: "single-use" | "reusable";
-  enabled: boolean;
+  item: "lock-key";
+  count: number;
 }
 
 export interface ReplaySetActorLocomotionIntent {
@@ -29,11 +29,11 @@ export interface ReplaySetActorLocomotionIntent {
 
 export type ReplayGameplayIntent =
   | ReplayMoveIntent
-  | ReplaySetActorLockKeyIntent
+  | ReplayAddActorInventoryItemIntent
   | ReplaySetActorLocomotionIntent;
 
 export type ReplayInitialIntent =
-  | ReplaySetActorLockKeyIntent
+  | ReplayAddActorInventoryItemIntent
   | ReplaySetActorLocomotionIntent;
 
 export interface ReplayInputGroup {
@@ -43,6 +43,8 @@ export interface ReplayInputGroup {
 export interface ReplayFrame {
   tick: number;
   groups: ReplayInputGroup[];
+  /** 当前 Tick 触发的阻塞对话链中，按出现顺序选择的一基选项序号。 */
+  choices?: number[];
 }
 
 export interface ReplayRuntimeSetup {
@@ -53,7 +55,7 @@ export interface ReplayRuntimeSetup {
 export type ReplayFinalStatus = "playing" | "won" | "dead";
 
 export interface ReplayRecordingMeta {
-  name: string;
+  id: string;
   url: string;
 }
 
@@ -61,16 +63,26 @@ export interface ReplayMeta extends ReplayRecordingMeta {
   note: string;
 }
 
+export function isReplayPathId(value: unknown): value is string {
+  return typeof value === "string" && /^[^/\s]+\/[^/\s]+$/.test(value);
+}
+
 export type ReplayCompletedCondition =
   | { type: "collect-all"; target: string }
   | { type: "fill-all"; target: string; filler: string }
   | { type: "reach"; target: string };
 
-export interface ReplayFinalState {
+export interface ReplayActualFinalState {
   status: ReplayFinalStatus;
+  moves: number;
+  /** 仅记录本局 World 时间，不参与 Replay 结果一致性校验。 */
+  elapsedMs: number;
   counters: Record<string, number>;
   completedConditions: ReplayCompletedCondition[];
 }
+
+/** Replay 文件可以只声明需要长期验证的终局字段。 */
+export type ReplayFinalState = Partial<ReplayActualFinalState>;
 
 export interface Replay {
   formatVersion: typeof REPLAY_FORMAT_VERSION;
