@@ -519,7 +519,7 @@ interface MissingItemEvent extends WorldEvent {
 `actorId` 指向缺少道具的 Bobby，`entityId` 指向触发交互的地图 Entity。Engine
 Presentation 将该事件显示为跟随 Bobby 的 Canvas Callout，并通过 `aria-live` 播报对应
 可访问文本；Callout 使用 PresentationClock，不阻塞 gameplay，也不进入 World snapshot
-或 Replay 数据。
+或 Replay 数据。完整表现规则见 [`../features/world-callouts.md`](../features/world-callouts.md)。
 
 复杂产品交互使用请求口：
 

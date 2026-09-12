@@ -18,11 +18,22 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - 风筝、龙火、风车、动态云等已恢复逻辑；
 - 完整 World Snapshot Undo、Redo、Restart；
 - 通用 `onWorldEvent()` 世界事件流；
+- 跟随地图位置的非阻塞 Callout；
 - 地图实例参数驱动的 Timed Challenge；
 - 死亡/通关状态与 Web Result 层；
 - Bobby 载入时约 310ms 倒放、通关时约 279ms 正放的 `b6.png` 过渡；
 - 胡萝卜收集后进入持久的 `consumed-carrot` runtime state，并使用 `ts-13-10` 表现；
 - semantic Entity Definition 调试检查；原版 hex provenance 只由 Original tooling 查询。
+
+当前移动表现遵循以下稳定规则：
+
+- Bobby 出生在 Speed 上时，第一个 World tick 建立对应方向的 Speed Action；
+- Bobby 在 Beanstalk 上站立或移动时，统一使用 Up 人物条带；
+- Bobby 在 Ice 上移动时使用第 7 帧，停住后恢复当前方向的普通站立帧；
+- `speed-impact` 与 `crumbly-rock-smashed` 使用确定性的 `248ms / 42 source px` Camera shake。
+
+地图内轻量提示的事件、绘制、时钟和可访问性合同见
+[`world-callouts.md`](world-callouts.md)。
 
 地图内限时挑战由 Lock 的类型专属字段描述：
 

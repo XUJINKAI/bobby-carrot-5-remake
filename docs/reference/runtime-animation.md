@@ -152,6 +152,9 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 
 藤蔓攀爬状态下原版会设置攀爬标志并强制使用 `b2.png`。
 
+Bobby Carrot 5 Remake 已让 Beanstalk 上站立和移动的 Bobby 使用 Up 人物条带；朝向仍由
+World 保存，不因纯表现选择而改写。
+
 原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；连续格移动 cadence 约 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，约 `248ms`。
 
 Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
@@ -175,7 +178,8 @@ UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作�
 
 Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 10 个逻辑槽映射为
 “两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”；当前配置值与上述原版门控
-节拍的差异记录在 `original/reverse-engineering/notes/fidelity-discrepancies.md`。
+节拍的校准任务记录在
+`original/reverse-engineering/notes/fidelity-approved-backlog.md` 的 A10。
 
 ## 8. 魔豆与藤蔓
 
