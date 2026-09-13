@@ -26,6 +26,10 @@ import {
 } from "./MovementPlan.js";
 import { MovementTransaction } from "./MovementTransaction.js";
 import type { MoveIntent } from "./WorldIntent.js";
+import type {
+  PassagePipelineMechanism,
+  PushPipelineMechanism,
+} from "./MovementPipeline.js";
 
 /** 一次 semantic move 的通用 planning、passage 与原子提交裁决。 */
 export class WorldMovementResolver {
@@ -38,6 +42,8 @@ export class WorldMovementResolver {
     private readonly actors: ActorLifecycleStore,
     private readonly outcome: WorldOutcomeStore,
     private readonly behaviorRuntime: BehaviorRuntime,
+    private readonly passage: PassagePipelineMechanism,
+    private readonly push: PushPipelineMechanism,
   ) {}
 
   /**
@@ -168,18 +174,12 @@ export class WorldMovementResolver {
         leave.reason ?? "leave-blocked",
       );
 
-    const pushable = targetStack.find(
-      (presence) =>
-        presence.entityId !== actor.id &&
-        presence.traits.includes("pushable"),
+    const pushed = this.push.propose(
+      actor.id,
+      plan.to,
+      intent.direction,
+      targetStack,
     );
-    const pushed = pushable
-      ? {
-          entityId: pushable.entityId,
-          from: plan.to,
-          to: addDirection(plan.to, intent.direction),
-        }
-      : null;
     if (
       pushed &&
       (!this.canOccupy(pushed.to, pushed.entityId, group) ||
@@ -206,7 +206,7 @@ export class WorldMovementResolver {
       );
     }
 
-    const ignoredEntity = pushable?.entityId ?? null;
+    const ignoredEntity = pushed?.entityId ?? null;
     const resolution = this.resolveEntry(
       targetStack,
       actor,
@@ -379,13 +379,13 @@ export class WorldMovementResolver {
       (presence) =>
         presence.entityId !== movingEntityId &&
         !transaction?.isEntryAllowed(presence.entityId) &&
-        (presence.traits.includes("blocking") ||
-          presence.traits.includes("pushable")),
+        (this.passage.isBlocking(presence) ||
+          this.push.isPushable(presence)),
     );
   }
 
   private hasWalkable(cell: CellPosition): boolean {
-    return this.spatial.hasTraitAt(cell, "walkable");
+    return this.passage.isWalkable(this.spatial.presencesAt(cell));
   }
 
   private resolveEntry(
@@ -459,7 +459,7 @@ export class WorldMovementResolver {
         if (result?.passable === false) return result;
         if (result?.passable === true) explicitPass = true;
       }
-      if (!explicitPass && presence.traits.includes("blocking"))
+      if (!explicitPass && this.passage.isBlocking(presence))
         return { passable: false, reason: `blocking:${entity.type}` };
     }
     return { passable: true };

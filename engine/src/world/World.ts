@@ -175,6 +175,8 @@ export class World {
       this.actors,
       this.outcome,
       this.behaviorRuntime,
+      this.mechanisms.requirePassage(),
+      this.mechanisms.requirePush(),
     );
     this.reachResolver = new ReachResolver(
       this.query,
@@ -269,11 +271,6 @@ export class World {
 
   presencesAt(cell: CellPosition): readonly EntityPresence[] {
     return this.spatial.presencesAt(cell);
-  }
-
-  isActorClimbing(actorId: EntityId): boolean {
-    const actor = this.entities.get(actorId);
-    return actor ? this.spatial.hasTraitAt(actor.anchor, "climbable") : false;
   }
 
   setMotionDurationMs(durationMs: number): void {

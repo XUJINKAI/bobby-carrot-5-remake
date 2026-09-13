@@ -1,4 +1,8 @@
 import type { Behavior } from "../world/behavior/Behavior.js";
+import type {
+  PassagePipelineMechanism,
+  PushPipelineMechanism,
+} from "../world/movement/MovementPipeline.js";
 
 export type MechanismId = string;
 
@@ -10,6 +14,8 @@ export interface EntityMechanismDefinition {
 /** 通用规则注册表只保存协议实现；具体对象的组合由 Entity Definition 声明。 */
 export class MechanismRegistry {
   private readonly definitions = new Map<MechanismId, EntityMechanismDefinition>();
+  private passage: PassagePipelineMechanism | undefined;
+  private push: PushPipelineMechanism | undefined;
   private version = 0;
 
   get revision(): number {
@@ -26,6 +32,28 @@ export class MechanismRegistry {
 
   registerAll(definitions: readonly EntityMechanismDefinition[]): void {
     for (const definition of definitions) this.register(definition);
+  }
+
+  registerPassage(definition: PassagePipelineMechanism): void {
+    if (this.passage) throw new Error("重复 Passage Pipeline Mechanism");
+    this.passage = definition;
+    this.version += 1;
+  }
+
+  registerPush(definition: PushPipelineMechanism): void {
+    if (this.push) throw new Error("重复 Push Pipeline Mechanism");
+    this.push = definition;
+    this.version += 1;
+  }
+
+  requirePassage(): PassagePipelineMechanism {
+    if (!this.passage) throw new Error("缺少 Passage Pipeline Mechanism");
+    return this.passage;
+  }
+
+  requirePush(): PushPipelineMechanism {
+    if (!this.push) throw new Error("缺少 Push Pipeline Mechanism");
+    return this.push;
   }
 
   require(id: MechanismId): EntityMechanismDefinition {

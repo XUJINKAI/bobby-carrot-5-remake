@@ -82,6 +82,12 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: Fact 不得自动绑定 Behavior`);
     }
     if (
+      normalized.startsWith(path.normalize("engine/src/world/movement/")) &&
+      /["'](?:walkable|blocking|pushable)["']/.test(text)
+    ) {
+      errors.push(`${relative}: 通行与 Push Fact 必须由 Pipeline Mechanism 解释`);
+    }
+    if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
         normalized.startsWith(path.normalize(`${directory}/src/`))
       ) &&

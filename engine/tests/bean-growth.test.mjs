@@ -59,7 +59,7 @@ test("Bean growth changes climbable World facts one cell at a time", () => {
   assert.ok(planted.events.some((event) => event.type === "bean-growth-started"));
   assert.equal(world.entity(actor.id).state.beans, 0);
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEAN_SPROUT), true);
-  assert.equal(world.isActorClimbing(actor.id), false);
+  assert.equal(world.query.hasTraitAt(actor.anchor, "climbable"), false);
 
   world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEANSTALK_BASE), true);
