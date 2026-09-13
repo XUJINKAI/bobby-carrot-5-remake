@@ -292,7 +292,7 @@ Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选�
 
 `variant` 的归属由实际语义决定。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。纯视觉字段由地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标由 Model 的 semantic atlas mapping 提供，DAT byte 换算只在 `tools/original/dat/`。
 
-Editor Palette、Inspector、规则检测与 Play Test 复用 Engine 的 Entity Catalog、SpatialIndex 与 Fact 投影；Editor 不实现碰撞、推或机关的第二份规则。未知 Entity 或字段无效的占位实例保持可见和惰性，不获得有效 Fact 与 Behavior。
+Editor definitions 负责 Palette、Surface、隐藏、分组及创建入口，并依据 Model `EntityMapDefinition` 确定可持久化类型。Inspector、规则检测与 Play Test 复用 Engine 的 Entity Catalog、SpatialIndex 与 Fact 投影；Editor 不实现碰撞、推或机关的第二份规则。未知 Entity 或字段无效的占位实例保持可见和惰性，不获得有效 Fact 与 Behavior。
 
 ## 自动门禁与验收
 

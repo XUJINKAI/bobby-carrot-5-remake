@@ -61,8 +61,8 @@ Editor 编辑的是与 Engine 共用的 semantic `LevelMap`：
 - Terrain / Object 都使用稳定语义 ID；
 - 多格对象只持久化 anchor；
 - Entity 实例参数使用由 Model `EntityMapDefinition` 声明的顶层字段；通常为 primitive，`dialogue` 支持字符串或字符串数组；
-- gameplay Trait 与 runtime state 由 Engine Definition 和 World 持有，不写入地图 JSON；
-- Inspector 根据 Model 字段合同与 Engine authoring metadata 生成当前需要的属性控件；
+- gameplay Fact 与 runtime state 由 Engine Definition 和 World 持有，不写入地图 JSON；
+- Inspector 根据 Model 字段合同与 Editor definitions 生成当前需要的属性控件；
 - Sandman、Beaver、Dream Machine 与商店陈列物支持可选 `dialogue`；Editor 以可增删的多行文本框编辑每一轮；
 - 语义 JSON 是用户地图的长期内容格式，TextBox、剪贴板、`.json`、`.bc5r` 与分享 URL 使用统一 Data Exchange 流程；
 

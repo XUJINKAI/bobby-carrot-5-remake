@@ -101,10 +101,10 @@ Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标
 
 Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
 
-Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinition` 和 Engine Definition，
-并读取 Engine Definition 的 `authoring.palette`。Engine 私有临时实体不属于 Map Definition，
-不会进入 Editor；`palette: false` 用于把通过 Surface 等其它入口编辑的 canonical Entity
-排除出 Object Palette。
+可持久化 Entity 由 Model `EntityMapDefinition` 声明。Palette 显式条目与自动补充项从这些
+类型中选取；Editor Surface definitions 决定 Surface 入口，`EditorDefinition.exclude` 声明
+隐藏的直接创建入口，Palette 表决定分组和预设。Engine Catalog 只为编辑预览提供 footprint、
+视觉与当前语义。Runtime-only Entity 缺少 Model map definition，自然不进入 authoring catalog。
 
 Palette 布局由 `EditorPaletteDefinition` 表驱动：`groups[].rows` 的二维顺序就是面板顺序；
 单个条目的 `fields` 是实际放置 preset，`direction` 与其它类型专属字段一样写在 `fields` 中，

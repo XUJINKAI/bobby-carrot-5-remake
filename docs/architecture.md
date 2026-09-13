@@ -286,10 +286,10 @@ Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎�
 
 Fact 是跨层只读语义接口，Behavior 是 World 调用规则的 hook 协议；两者都不是额外层级。World 依赖通用 Entity ID、状态和 Presence 协议，但不导入具体对象实现。通用 Mechanism 通过 World 查询当前 Fact 并提出策略或命令，具体 Entity 定义负责组合。
 
-Editor Palette 只枚举具有 Model `EntityMapDefinition` 的 canonical type；Engine 私有临时实体
-不会进入 Editor。`authoring.palette=false` 用于把应在 Surface 面板等其它入口编辑的 canonical
-type 排除出 Object Palette。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor
-Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
+Editor authoring catalog 的可持久化类型由 Model `EntityMapDefinition` 声明；Engine 私有临时
+Entity 因缺少该定义，不进入 Editor。Editor definitions 决定 Palette、Surface、隐藏、分组与
+创建入口。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor Inspector 结合字段
+合同与 Editor 专属策略生成控件，Engine Catalog 提供 footprint 和视觉解析。
 
 当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 
@@ -416,7 +416,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Editor definitions 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 
