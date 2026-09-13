@@ -39,7 +39,7 @@ interface LevelEntity {
 
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
-Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。单轮使用字符串；多轮使用字符串数组，每个数组元素是一轮对白，元素内的换行原样保留：
+Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。Snowman 是 Surface 图块，只有声明了 `dialogue` 的实例会显示对白。单轮使用字符串；多轮使用字符串数组，每个数组元素是一轮对白，元素内的换行原样保留：
 
 ```json
 {

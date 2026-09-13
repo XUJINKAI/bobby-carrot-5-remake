@@ -1,6 +1,11 @@
 import type { JsonPrimitive } from "../../shared/json.js";
-import { defineEntity, enumField, type EntityMapDefinition } from "./contract.js";
-import type { MapEntityType } from "./ids.js";
+import {
+  defineEntity,
+  enumField,
+  stringOrStringListField,
+  type EntityMapDefinition,
+} from "./contract.js";
+import { MapEntityTypeId, type MapEntityType } from "./ids.js";
 import {
   originalTileCoordinateLabel,
   originalTileVisualGroups,
@@ -33,14 +38,23 @@ export const SURFACE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = Object
       .filter((value): value is JsonPrimitive => value !== undefined);
     return defineEntity(
       group.type as MapEntityType,
-      variants.length > 0
-        ? [enumField(
-            "variant",
-            variants,
-            group.type === "fence" ? undefined : variants[0],
-            group.type !== "fence",
-          )]
-        : [],
+      [
+        ...(variants.length > 0
+          ? [enumField(
+              "variant",
+              variants,
+              group.type === MapEntityTypeId.FENCE ? undefined : variants[0],
+              group.type !== MapEntityTypeId.FENCE,
+            )]
+          : []),
+        ...(group.type === MapEntityTypeId.SNOWMAN
+          ? [stringOrStringListField(
+              "dialogue",
+              false,
+              "触碰雪人时显示的字面对白；数组按图块独立循环。",
+            )]
+          : []),
+      ],
     );
   }),
 );

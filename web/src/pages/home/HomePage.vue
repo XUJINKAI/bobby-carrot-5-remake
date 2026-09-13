@@ -88,7 +88,6 @@ onBeforeUnmount(() => {
             @ready="emit('ready', $event)"
             @restart="emit('restart')"
             @screen-control="emit('screenControl')"
-            @adventure="emit('navigate', '/adventure')"
           />
         </div>
       </section>
