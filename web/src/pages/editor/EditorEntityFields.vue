@@ -21,8 +21,8 @@ import {
   type Direction,
   type EntityMapFieldDefinition,
   type EntityType,
-  type JsonPrimitive,
   type LevelEntity,
+  type LevelEntityFieldValue,
 } from "@bobby/model";
 import { computed } from "vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<{
   emptyText: "该素材没有可编辑地图字段。",
 });
 const emit = defineEmits<{
-  field: [key: string, value: string];
+  field: [key: string, value: LevelEntityFieldValue];
   variant: [index: number];
   surfaceVariant: [type: EntityType];
 }>();
@@ -80,7 +80,9 @@ const editableFields = computed(() =>
   props.showMapFields
     ? (entityMapDefinition(props.definition.type)?.fields ?? []).filter(
         (field) =>
-          field.kind === "string" || !controlledFieldKeys.value.has(field.key),
+          field.kind === "string" ||
+          field.kind === "string-or-string-list" ||
+          !controlledFieldKeys.value.has(field.key),
       )
     : [],
 );
@@ -115,7 +117,7 @@ function variantSource(index: number): EditorPlacementPreset {
   const variant = props.entityPolicy?.variants?.[index];
   const candidate = variant ? applyEditorVariant(source, variant) : source;
   const direction = editorEntityDirection(candidate);
-  const fields: Record<string, JsonPrimitive> = {};
+  const fields: Record<string, LevelEntityFieldValue> = {};
   for (const field of entityMapDefinition(candidate.type)?.fields ?? []) {
     const value = candidate[field.key];
     if (value !== undefined) fields[field.key] = value;
@@ -142,26 +144,29 @@ function surfaceVariantSource(variant: SurfaceVariant): EditorPlacementPreset {
 
 function fieldValue(
   key: string,
-  fallback: JsonPrimitive | undefined,
+  fallback: LevelEntityFieldValue | undefined,
 ): string {
   if (props.targets.length === 0) return "";
   const values = props.targets.map(
     (entity) => entity[key] ?? fallback ?? null,
   );
-  if (!values.every((value) => Object.is(value, values[0]))) return "";
+  const first = JSON.stringify(values[0]);
+  if (!values.every((value) => JSON.stringify(value) === first)) return "";
   const value = values[0];
+  if (Array.isArray(value)) return value.join("\n");
   return value === null ? "" : String(value);
 }
 
 function fieldMixed(
   key: string,
-  fallback: JsonPrimitive | undefined,
+  fallback: LevelEntityFieldValue | undefined,
 ): boolean {
   if (props.targets.length < 2) return false;
   const values = props.targets.map(
     (entity) => entity[key] ?? fallback ?? null,
   );
-  return !values.every((value) => Object.is(value, values[0]));
+  const first = JSON.stringify(values[0]);
+  return !values.every((value) => JSON.stringify(value) === first);
 }
 
 function inputType(field: EntityMapFieldDefinition): "number" | "text" {
@@ -172,11 +177,56 @@ function isColorField(field: EntityMapFieldDefinition): boolean {
   return field.kind === "string" && field.format === "color";
 }
 
+function dialogueLines(
+  key: string,
+  fallback: LevelEntityFieldValue | undefined,
+): string[] {
+  if (props.targets.length === 0 || fieldMixed(key, fallback)) return [];
+  const value = props.targets[0]?.[key] ?? fallback;
+  if (Array.isArray(value)) return [...value];
+  return typeof value === "string" && value.length > 0 ? [value] : [];
+}
+
+function updateDialogueLine(
+  key: string,
+  fallback: LevelEntityFieldValue | undefined,
+  index: number,
+  text: string,
+): void {
+  const lines = dialogueLines(key, fallback);
+  lines[index] = text;
+  emitDialogue(key, lines);
+}
+
+function addDialogueLine(
+  key: string,
+  fallback: LevelEntityFieldValue | undefined,
+): void {
+  emitDialogue(key, [...dialogueLines(key, fallback), "新对白"]);
+}
+
+function removeDialogueLine(
+  key: string,
+  fallback: LevelEntityFieldValue | undefined,
+  index: number,
+): void {
+  const lines = dialogueLines(key, fallback);
+  lines.splice(index, 1);
+  emitDialogue(key, lines);
+}
+
+function emitDialogue(key: string, lines: readonly string[]): void {
+  if (lines.length === 0) emit("field", key, "");
+  else if (lines.length === 1) emit("field", key, lines[0]!);
+  else emit("field", key, lines);
+}
+
 function colorInputValue(
   key: string,
-  fallback: JsonPrimitive | undefined,
+  fallback: LevelEntityFieldValue | undefined,
 ): string {
-  return normalizeColorHex(fieldValue(key, fallback)) ?? "#000000";
+  const value = fieldValue(key, fallback);
+  return normalizeColorHex(value) ?? "#000000";
 }
 </script>
 
@@ -262,7 +312,8 @@ function colorInputValue(
 
     <section v-if="editableFields.length" class="editor-fields-block">
       <strong>地图字段</strong>
-      <label
+      <component
+        :is="field.kind === 'string-or-string-list' ? 'div' : 'label'"
         v-for="field in editableFields"
         :key="field.key"
         class="editor-field"
@@ -309,6 +360,37 @@ function colorInputValue(
             @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
           />
         </span>
+        <span
+          v-else-if="field.kind === 'string-or-string-list'"
+          class="editor-dialogue-list"
+        >
+          <span
+            v-for="(line, index) in dialogueLines(field.key, field.default)"
+            :key="index"
+            class="editor-dialogue-item"
+          >
+            <textarea
+              :value="line"
+              :aria-label="`对白 ${index + 1}`"
+              rows="3"
+              @change="updateDialogueLine(field.key, field.default, index, ($event.target as HTMLTextAreaElement).value)"
+            />
+            <button
+              type="button"
+              :aria-label="`删除对白 ${index + 1}`"
+              @click="removeDialogueLine(field.key, field.default, index)"
+            >
+              删除
+            </button>
+          </span>
+          <small v-if="fieldMixed(field.key, field.default)">当前选中的对白不同</small>
+          <button
+            type="button"
+            @click="addDialogueLine(field.key, field.default)"
+          >
+            添加对白
+          </button>
+        </span>
         <input
           v-else
           :type="inputType(field)"
@@ -319,7 +401,7 @@ function colorInputValue(
           :placeholder="fieldMixed(field.key, field.default) ? '多种值' : ''"
           @change="emit('field', field.key, ($event.target as HTMLInputElement).value)"
         />
-      </label>
+      </component>
     </section>
 
     <p v-if="!hasFields" class="editor-muted">{{ emptyText }}</p>
@@ -338,6 +420,37 @@ function colorInputValue(
 .editor-fields-block > strong {
   font-size: 0.7rem;
   color: var(--editor-muted);
+}
+.editor-dialogue-list {
+  display: grid;
+  gap: 8px;
+}
+.editor-dialogue-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px;
+}
+.editor-dialogue-item textarea {
+  min-height: 64px;
+  padding: 8px 9px;
+  border: 1px solid #34463a;
+  border-radius: 7px;
+  background: #0b130e;
+  color: #edf5ef;
+  font: inherit;
+  resize: vertical;
+}
+.editor-dialogue-list button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid #42564a;
+  border-radius: 7px;
+  background: #111d15;
+  color: #dce9df;
+}
+.editor-dialogue-list > button {
+  justify-self: start;
 }
 .editor-field select,
 .editor-field input[type="text"],

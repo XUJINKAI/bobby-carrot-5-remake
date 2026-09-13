@@ -118,7 +118,7 @@ test("Bobby Ice slide stays on movement frame seven", () => {
   });
 });
 
-test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", () => {
+test("Bobby uses the normal standing frame while stationary on Ice", () => {
   const composition = bobbyVisual({
     surfaceType: MapEntityTypeId.ICE,
     direction: "right",
@@ -131,7 +131,25 @@ test("Bobby keeps Ice frame seven while waiting between consecutive Ice cells", 
     },
   });
   assert.equal(composition.layers[0].asset, "bobby-right");
-  assert.equal(composition.layers[0].frameIndex, 6);
+  assert.equal(composition.layers[0].frameIndex, 3);
+});
+
+test("Bobby uses the Up strip while standing or moving on Beanstalk", () => {
+  const standing = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "left",
+    runtime: { moving: false, progress: 1 },
+  });
+  const moving = bobbyVisual({
+    surfaceType: MapEntityTypeId.BEANSTALK,
+    direction: "right",
+    runtime: { moving: true, progress: 0.5 },
+  });
+
+  assert.equal(standing.layers[0].asset, "bobby-up");
+  assert.equal(standing.layers[0].frameIndex, 3);
+  assert.equal(moving.layers[0].asset, "bobby-up");
+  assert.equal(moving.layers[0].frameIndex, 7);
 });
 
 test("Bobby idle starts after five seconds and advances every 50ms", () => {
@@ -168,6 +186,101 @@ test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () =
   assert.equal(death.layers[0].frameColumns, 8);
   assert.equal(death.layers[0].frameIndex, 7);
   assert.equal(death.layers[0].frameProgress, undefined);
+});
+
+test("Bobby 进入关卡时倒放 b6，通关后正放并隐藏", () => {
+  const enteringHidden = bobbyVisual({
+    runtime: { moving: false, progress: 0, animation: "level-enter" },
+  });
+  const enteringStart = bobbyVisual({
+    runtime: { moving: false, progress: 0.2, animation: "level-enter" },
+  });
+  const enteringEnd = bobbyVisual({
+    runtime: { moving: false, progress: 0.999, animation: "level-enter" },
+  });
+  const exitingStart = bobbyVisual({
+    runtime: { moving: false, progress: 0, animation: "level-exit" },
+    global: { completed: true },
+  });
+  const exitingLastFrame = bobbyVisual({
+    runtime: { moving: false, progress: 0.7, animation: "level-exit" },
+    global: { completed: true },
+  });
+  const exitingHidden = bobbyVisual({
+    runtime: { moving: false, progress: 0.8, animation: "level-exit" },
+    global: { completed: true },
+  });
+  const hidden = bobbyVisual({
+    runtime: { moving: false, progress: 1, animation: "level-exit" },
+    global: { completed: true },
+  });
+
+  assert.equal(enteringHidden, null);
+  assert.equal(enteringStart.layers[0].asset, "bobby-transition");
+  assert.equal(enteringStart.layers[0].frameColumns, 8);
+  assert.equal(enteringStart.layers[0].frameIndex, 7);
+  assert.equal(enteringEnd.layers[0].frameIndex, 0);
+  assert.equal(exitingStart.layers[0].frameIndex, 0);
+  assert.equal(exitingLastFrame.layers[0].frameIndex, 7);
+  assert.equal(exitingHidden, null);
+  assert.equal(hidden, null);
+});
+
+test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const actor = {
+    id: 7,
+    direction: "down",
+    anchor: { x: 0, y: 0 },
+  };
+  const world = {
+    query: {
+      entitiesWithTrait: (trait) => (trait === "player" ? [actor] : []),
+    },
+    entity: (id) => id === actor.id ? actor : undefined,
+    definition: () => ({ type: MapEntityTypeId.BOBBY }),
+  };
+  const frame = { frame: 0, nowMs: 1000, deltaMs: 0 };
+
+  runtime.beginLevelEntrance(world, 100, frame);
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-enter",
+  );
+  assert.equal(runtime.blocksGameplay, true);
+  runtime.update({ frame: 1, nowMs: 1100, deltaMs: 100 }, "linear");
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    undefined,
+  );
+  assert.equal(runtime.blocksGameplay, false);
+
+  runtime.consumeWorldDeltas(
+    world,
+    [{
+      sequence: 1,
+      worldTick: 1,
+      worldTimeMs: 100,
+      type: "world-outcome-changed",
+      outcome: { phase: "won", changedAtMs: 100 },
+    }],
+    { frame: 1, nowMs: 1100, deltaMs: 0 },
+    {
+      motionDuration: () => 100,
+      stationaryDeathDurationMs: 100,
+      levelExitDurationMs: 100,
+    },
+  );
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-exit",
+  );
+  runtime.update({ frame: 2, nowMs: 1200, deltaMs: 100 }, "linear");
+  assert.equal(
+    runtime.inspectEntity(world, actor.id).runtime.animation,
+    "level-exit",
+  );
+  assert.equal(runtime.isAnimating, false);
 });
 
 test("Bobby mower cycles vertically inside the direction column", () => {

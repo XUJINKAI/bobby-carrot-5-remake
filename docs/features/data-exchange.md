@@ -17,6 +17,8 @@ Data Exchange 是 Bobby Carrot 5 Remake 面向地图、Adventure Save、Explore 
 
 Editor 的地图文件弹窗默认使用 Compressed 状态，打开后可以直接复制分享 URL。其它消费页面可按场景选择初始表示。
 
+Settings 的存档管理读取浏览器中实际存在的 `bc5r:adventure` 和 `bc5r:explore/<collection>` records，并为每条存档生成一个 Tab。所有 Tab 共用一个 `DataExchangePanel`；选择 Adventure 时交换完整 Adventure Save，选择 Explore 时只交换当前 collection 的 `ExploreCollectionStorage`，导入也只覆盖当前 Tab 对应的 record。
+
 Home 导入弹窗接受 Plain JSON、`BC5R1`、完整分享 URL 和任意扩展名的文本文件。`/import/v1` 只接受 URL fragment 中的 gzip + Base64URL payload。两者在 transport 解码后共用相同的 JSON 识别顺序：
 
 ```text

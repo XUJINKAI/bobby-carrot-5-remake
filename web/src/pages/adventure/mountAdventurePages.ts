@@ -42,7 +42,6 @@ export function renderAdventureHome(context: PageContext): PageController {
         resumeLevelId: resume?.level.id ?? "1-1",
         resumeChapterTitle: resume?.chapter.name ?? "FAIRY MAGIC",
         bonusCoins: save.economy.bonusCoins,
-        goldenCarrots: save.economy.goldenCarrots,
       },
       images,
       onNavigate: navigate,
@@ -119,6 +118,11 @@ export function renderAdventureNightTrain(context: PageContext): PageController 
       id: "cloud-9",
       label: "CLOUD 9",
       href: "/adventure/night-train/cloud-9",
+    },
+    {
+      id: "dreamland-reward",
+      label: "DREAMLAND REWARD",
+      href: "/adventure/night-train/dreamland-reward",
     },
     ...(hasAdventureItem(save, "night-train-map-1")
       ? [{ id: "map-1", label: "MAP I", note: "AUTHOR EXTRA" }]

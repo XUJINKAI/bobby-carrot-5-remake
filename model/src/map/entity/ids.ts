@@ -34,7 +34,7 @@ export const MapEntityTypeId = {
   EXIT: "exit",
   SHOP_DREAM_MACHINE_TICKET: "shop-dream-machine-ticket",
   SHOP_CLOUD9_TICKET: "shop-cloud9-ticket",
-  SHOP_SUPER_KEY: "shop-super-key",
+  LOCK_KEY: "lock-key",
   SHOP_STEREO_SYSTEM: "shop-stereo-system",
   SHOP_EXTRA_MUSIC: "shop-extra-music",
   SHOP_SPEED_SHOES: "shop-speed-shoes",

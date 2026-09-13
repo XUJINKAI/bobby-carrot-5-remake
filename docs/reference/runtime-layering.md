@@ -4,9 +4,12 @@
 
 ## 两套职责必须分开
 
-### Spatial：`stackOrder`
+### Spatial：`layer` 与 `stackOrder`
 
-`SpatialIndex` 只管理同格 Presence 的逻辑顺序：
+当前 `EntityDefinition.layer` 使用 `surface / object / cover` 描述空间与 authoring 语义；
+省略时按 `object` 处理。它可以被通行查询或 Editor 使用，但不决定同格先后和视觉 pass。
+
+`SpatialIndex` 使用 `stackOrder` 管理同格 Presence 的逻辑顺序：
 
 ```text
 stackOrder ASC
@@ -15,25 +18,28 @@ stackOrder ASC
 
 - `EntityDefinition.stackOrder` 是单格 Entity 与 footprint 的默认基准；
 - `FootprintPart.stackOrder` 可以覆盖单个 part；
-- 没有 `surface/content/cover`、`stackBand` 或其他类别层；
+- `layer` 与 `stackOrder` 是两个独立维度；
 - `topPresenceAt()` 只表达同格逻辑栈顶部，不承担视觉遮挡语义。
 
 原版 Entity module 当前使用约定值：地表 `0`、普通实体 `100`、较高逻辑覆盖对象 `200`。这些只是显式 `stackOrder` 值，不形成新的枚举类型，也不会自动决定 render pass。
 
 ## Presentation：固定 render pass
 
-视觉层序属于 Presentation。`VisualDefinition.renderPass` 只有三个 pass：
+视觉层序属于 Presentation。Entity 的 `VisualDefinition.renderPass` 只有 `world / player /
+effect` 三种；Renderer 在三个 Entity pass 后追加 Callout，再由 Canvas 外的 DOM 显示 HUD：
 
 ```text
 world
 → player
 → effect
+→ callout（Canvas 地图提示）
 → HUD（DOM，canvas 外）
 ```
 
 - `world`：所有正常世界 Entity，包括地面、目标、道具、机关、障碍、冰块、高草、雪等；这是默认 pass；
 - `player`：Bobby 等真正的 Player 表现；
 - `effect`：明确属于表现层、需要最后覆盖的环境或视觉效果，不代表任何 gameplay Entity 分类；
+- `callout`：由语义 WorldEvent 产生、锚定 Entity 或格子的纯表现提示；
 - HUD 由 `GameplayHud` 在 DOM 中呈现，不进入 World/Spatial/RenderScene。
 
 同一个 pass 内只按 `stackOrder` 排序。`visualX` / `visualY` 只决定动画中的绘制坐标，绝不参与层序。
@@ -51,6 +57,9 @@ world
 - Bobby + 蛋巢：蛋巢属于 `world`，Bobby 属于 `player`，不会发生蛋巢盖住 Bobby。
 
 不要为了新视觉效果继续增加 Spatial band，也不要从 surface/content/cover 一类 gameplay 或 authoring 分类推导 render pass。只有真正独立于正常 Entity 绘制的表现效果才使用 `effect`。
+
+Callout 不是 `VisualDefinition.renderPass` 的第四个 Entity pass。它在 Entity 场景完成后由
+独立 Callout Runtime 追加，完整合同见 [`../features/world-callouts.md`](../features/world-callouts.md)。
 
 ## Editor
 

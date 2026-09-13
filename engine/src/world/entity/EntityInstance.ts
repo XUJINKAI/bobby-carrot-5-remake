@@ -3,9 +3,9 @@ import {
   surfaceMappingForEntity,
   type Direction,
   type EntityType,
-  type JsonPrimitive,
   type JsonValue,
   type LevelEntity,
+  type LevelEntityFieldValue,
 } from "@bobby/model";
 import { originalSurfaceTraits } from "../../entities/original/surface-traits.js";
 
@@ -60,7 +60,7 @@ export function instantiateLevelEntity(
       direction = value;
       continue;
     }
-    state[field.key] = structuredClone(value);
+    state[field.key] = structuredClone(value) as JsonValue;
   }
 
   const surfaceMapping = surfaceMappingForEntity(source.type, source);
@@ -102,7 +102,9 @@ export function instantiateSpawnSpec(
   };
 }
 
-function isDirection(value: JsonPrimitive | undefined): value is Direction {
+function isDirection(
+  value: LevelEntityFieldValue | undefined,
+): value is Direction {
   return (
     value === "up" ||
     value === "down" ||

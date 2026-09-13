@@ -12,6 +12,8 @@ game.toggleDebug();
 
 `GameOptions.debug: true` 可以让 Debug Runtime 初始即打开。Debug UI 由 `DebugRuntime` / `DebugSidebar` 管理，Web 不再维护 `debug-panel`、`ENGINE MESSAGE` 或独立的格子检查器。
 
+Explore 与 Editor Play Test 提供这个入口。通过 `npm run dev` 启动时，Adventure 游戏页也启用同一套 `~` 入口，便于逐关对照原版；正式构建保持 Adventure 玩家界面。Adventure 只配置 Engine Input 能力，不持有 Debug 实现。
+
 关闭 Debug 时整个 Debug Dock 消失，gameplay viewport 恢复全宽；如果 World / Presentation 仍处于调试暂停状态，Engine 会恢复运行，避免留下不可见的 pause。
 
 ## Dock 布局
@@ -162,7 +164,7 @@ World 展示 DebugRuntime 从当前 Session 投影出的可序列化信息：
 - 等待下一个 World Tick 的 actor effect intents；
 - Replay 的 recording / playing / paused 状态。
 
-`Intent injector` 面向当前 tracked actor 构造 `ActorEffectIntent`。目前支持修改 Bobby 的后续移动时长，以及设置 single-use / reusable Lock 能力。动作通过 `Game.dispatch()` 排入正常 World Tick；Replay recording 会记录实际消费的动作。World 暂停时动作保留在 `Pending intents`，点击 Controls 中的 `Step` 后执行。Replay playback 期间注入控件保持禁用，避免改变确定性重放。
+`Intent injector` 面向当前 tracked actor 构造 `ActorEffectIntent`，用于修改 Bobby 的后续移动时长。动作通过 `Game.dispatch()` 排入正常 World Tick；Replay recording 会记录实际消费的动作。World 暂停时动作保留在 `Pending intents`，点击 Controls 中的 `Step` 后执行。Replay playback 期间注入控件保持禁用，避免改变确定性重放。
 
 World 页消费的是 Debug snapshot，不持有 `World` 实例，也不扩张 `Game` 的公开只读状态边界。
 

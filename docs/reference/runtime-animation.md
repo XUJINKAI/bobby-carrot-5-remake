@@ -152,9 +152,34 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 
 藤蔓攀爬状态下原版会设置攀爬标志并强制使用 `b2.png`。
 
+Bobby Carrot 5 Remake 已让 Beanstalk 上站立和移动的 Bobby 使用 Up 人物条带；朝向仍由
+World 保存，不因纯表现选择而改写。
+
 原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；连续格移动 cadence 约 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，约 `248ms`。
 
 Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
+
+### `b6.png` 关卡过渡
+
+UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作为
+`48px` 宽的 source frame index。素材本身是 `384×72`，因此只有 `0..7` 共 8 张
+图；原版状态机仍使用 `0..9` 共 10 个逻辑槽，`8/9` 落在素材范围外，表现为空白：
+
+- `ab()` 初始化关卡时写入 `aw=6, av=9, be=false`；
+- `O()` 的 `aw=6` 分支在 `be=false` 时逐步递减 `av`，低于 0 后恢复普通正面状态；
+- 通关路径写入 `aw=6, av=0, be=true`；
+- `O()` 在 `be=true` 时逐步递增 `av`，到达 10 后进入结果流程。
+
+两条路径的墙钟长度并不相同。`aw=6` 不满足 `O()` 的 fast-motion bypass 条件，
+因此仍受共享 `bf` 隔次门控，逻辑槽约每 2 个 gameplay step、即约 62ms 推进一步。
+关卡进入需要完整倒过 10 个逻辑槽；通关状态可能在建立状态的同一 gameplay step
+先推进一次，通常还剩 9 个门控推进间隔。具体首帧相位受进入该状态时的 `bf` 影响，
+稳定量级分别约为 **620ms** 与 **558ms**，不是逐 gameplay step 切一帧。
+
+Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 10 个逻辑槽映射为
+“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”；当前配置值与上述原版门控
+节拍的校准任务记录在
+`original/reverse-engineering/notes/fidelity-approved-backlog.md` 的 A10。
 
 ## 8. 魔豆与藤蔓
 

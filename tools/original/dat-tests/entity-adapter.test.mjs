@@ -443,6 +443,40 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
   );
 });
 
+test("两格角色以 canonical body anchor 往返原版 head 坐标", () => {
+  for (const [type, headByte] of [
+    [MapEntityTypeId.SANDMAN, 0xda],
+    [MapEntityTypeId.DREAM_MACHINE, 0xdb],
+    [MapEntityTypeId.BEAVER, 0xe7],
+  ]) {
+    const map = {
+      schemaVersion: 1,
+      width: 3,
+      height: 2,
+      entities: [
+        { type: "grass", x: 0, y: 0, variant: "ts-6-15" },
+        { type: "grass", x: 1, y: 0, variant: "ts-6-15" },
+        { type: MapEntityTypeId.START, x: 2, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 2, y: 0 },
+        { type: "grass", x: 0, y: 1, variant: "ts-6-15" },
+        { type: "grass", x: 1, y: 1, variant: "ts-6-15" },
+        { type: "grass", x: 2, y: 1, variant: "ts-6-15" },
+        { type, x: 1, y: 1 },
+      ],
+    };
+    const reversed = reverseEntityMap(map);
+    assert.deepEqual(reversed.objects, [
+      { type: objectTile(headByte), x: 1, y: 0 },
+    ]);
+    assert.deepEqual(
+      adaptDecodedMap(reversed).entities.find(
+        (entity) => entity.type === type,
+      ),
+      { type, x: 1, y: 1 },
+    );
+  }
+});
+
 test("六种 DAT Fence 形态全部折叠为一个 canonical Fence", () => {
   for (const [index, type] of [
     objectTile(0xf9),

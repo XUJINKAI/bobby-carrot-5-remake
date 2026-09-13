@@ -127,7 +127,7 @@ function parseLevelEntity(
   const invalidJsonFields: string[] = [];
   for (const [key, fieldValue] of Object.entries(entity)) {
     if (ENTITY_BASE_FIELDS.has(key)) continue;
-    if (isJsonPrimitive(fieldValue)) {
+    if (isJsonPrimitive(fieldValue) || isStringList(fieldValue)) {
       normalized[key] = fieldValue;
       continue;
     }
@@ -149,7 +149,7 @@ export function levelEntityContractIssues(
   const issues: string[] = [];
   const invalidJsonFields = entity[INVALID_JSON_FIELDS_KEY];
   if (typeof invalidJsonFields === "string" && invalidJsonFields.length > 0)
-    issues.push(`字段 ${invalidJsonFields} 原值不是 primitive`);
+    issues.push(`字段 ${invalidJsonFields} 原值不是受支持的顶层值`);
   const fields = new Map(definition.fields.map((field) => [field.key, field]));
   for (const key of Object.keys(entity)) {
     if (
@@ -181,16 +181,26 @@ function isJsonPrimitive(value: unknown): value is JsonPrimitive {
   );
 }
 
+function isStringList(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every((line) => typeof line === "string");
+}
+
 function fieldAccepts(
   field: EntityMapFieldDefinition,
   value: unknown,
-): value is JsonPrimitive {
+): boolean {
   if (field.kind === "boolean") return typeof value === "boolean";
   if (field.kind === "string") {
     if (typeof value !== "string") return false;
     if (field.format === "non-empty") return value.trim().length > 0;
     if (field.format === "color") return normalizeColorHex(value) !== null;
     return true;
+  }
+  if (field.kind === "string-or-string-list") {
+    return typeof value === "string" ||
+      (isStringList(value) &&
+        value.length > 0 &&
+        value.every((line) => line.length > 0));
   }
   if (field.kind === "enum") return field.values.includes(value as JsonPrimitive);
   if (field.kind === "integer" && !Number.isInteger(value)) return false;

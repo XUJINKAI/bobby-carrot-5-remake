@@ -21,7 +21,7 @@ import type {
   SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { EntityType } from "@bobby/model";
+import type { EntityType, LevelEntityFieldValue } from "@bobby/model";
 import type { EditorLeftPanel } from "./useEditorPage.js";
 import EditorCanvas from "./EditorCanvas.vue";
 import EditorInspector from "./EditorInspector.vue";
@@ -72,16 +72,16 @@ const emit = defineEmits<{
   primaryEnd: [cell: Cell | null];
   secondarySelect: [cell: Cell];
   resize: [edges: EditorResizeEdges];
-  field: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: LevelEntityFieldValue];
   variant: [entityIndex: number, index: number];
   surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorderLayers: [refsTopToBottom: number[]];
-  batchField: [type: string, key: string, value: string];
+  batchField: [type: string, key: string, value: LevelEntityFieldValue];
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
-  placementField: [key: string, value: string];
+  placementField: [key: string, value: LevelEntityFieldValue];
   placementVariant: [index: number];
   rule: [kind: EditorRuleKind, enabled: boolean];
   maxMoves: [value: number | null];

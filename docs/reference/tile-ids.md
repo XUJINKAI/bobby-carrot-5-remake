@@ -60,8 +60,8 @@
 | 208–211 / 0xD0–0xD3 | -48…-45 | Windmill Up / Down / Left / Right |
 | 212–214 / 0xD4–0xD6 | -44…-42 | Plank / crumbling / fragment；仅 D4 覆盖不可走 terrain |
 | 215–217 / 0xD7–0xD9 | -41…-39 | Dragon Head / Body / Tail |
-| 218 / 0xDA | -38 | Sandman Head anchor |
-| 219 / 0xDB | -37 | Dream Machine Head anchor |
+| 218 / 0xDA | -38 | Sandman Head；原版 DAT 定位单元 |
+| 219 / 0xDB | -37 | Dream Machine Head；原版 DAT 定位单元 |
 | 220 / 0xDC | -36 | Mower |
 | 221 / 0xDD | -35 | Gas |
 | 222 / 0xDE | -34 | Beanstalk Middle；可覆盖不可走 terrain |
@@ -69,7 +69,7 @@
 | 224–226 / 0xE0–0xE2 | -32…-30 | Red / Purple / Green Cloud；Loader 转为 moving entity |
 | 227 / 0xE3 | -29 | Ice Block |
 | 228–230 / 0xE4–0xE6 | -28…-26 | Ice melt phase 1 / 2 / 3 |
-| 231 / 0xE7 | -25 | Beaver Head anchor |
+| 231 / 0xE7 | -25 | Beaver Head；原版 DAT 定位单元 |
 | 232–233 / 0xE8–0xE9 | -24…-23 | Dragon Head wind-up frames；原版 player collision 不阻挡 |
 | 234 / 0xEA | -22 | Sandman Body |
 | 235 / 0xEB | -21 | Dream Machine Body |

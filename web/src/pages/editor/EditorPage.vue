@@ -125,7 +125,7 @@ async function togglePlay(): Promise<void> {
       game: session.game,
       filename: `editor-${page.snapshot.value.level.meta.name}`,
       meta: {
-        name: page.snapshot.value.level.meta.name,
+        id: "editor/draft",
         url: window.location.href,
       },
       initialOpen: false,

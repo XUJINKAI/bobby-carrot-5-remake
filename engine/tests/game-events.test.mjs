@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Game } from "../dist/core/Game.js";
+import { WorldEventDispatcher } from "../dist/core/WorldEventDispatcher.js";
 
 const interaction = {
   type: "object-interaction",
@@ -16,8 +17,8 @@ const interaction = {
 function eventGame(replayPlaying) {
   const game = Object.create(Game.prototype);
   game.replayPlayback = { playing: replayPlaying };
-  game.worldEventListeners = new Set();
-  game.interactionRequestListeners = new Set();
+  game.worldEvents = new WorldEventDispatcher();
+  game.presentation = { shake() {} };
   return game;
 }
 
@@ -45,4 +46,58 @@ test("Replay playback 只发布可观察的世界事件", () => {
 
   assert.deepEqual(worldEvents, [interaction]);
   assert.deepEqual(requests, []);
+});
+
+test("阻塞对话会终止录制并发布通知", () => {
+  const game = eventGame(false);
+  game.listeners = new Map();
+  game.replayRecorder = {};
+  const notifications = [];
+  game.on("replay-recording-aborted", () => notifications.push("aborted"));
+  game.on("change", () => notifications.push("change"));
+
+  game.abortReplayRecordingForInteractiveChoice();
+
+  assert.equal(game.replayRecording, false);
+  assert.deepEqual(notifications, ["aborted", "change"]);
+  game.abortReplayRecordingForInteractiveChoice();
+  assert.deepEqual(notifications, ["aborted", "change"]);
+});
+
+test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
+  const game = eventGame(false);
+  const collected = { type: "collect-bonus-coin" };
+  const events = [];
+  game.onWorldEvent((event) => events.push(event));
+  game.replayPlayback.jumpToEnd = () => [{
+    result: { moves: [], events: [collected] },
+  }];
+  game.resetSessionView = () => {};
+  game.render = () => {};
+  game.emitTerminalEvents = () => {};
+  game.emit = () => {};
+
+  game.jumpReplayToEnd({ frames: [] });
+
+  assert.deepEqual(events, [collected]);
+});
+
+test("Speed 与 Mower 冲撞事件使用同一原版幅度的镜头震动", () => {
+  const game = eventGame(false);
+  const shakes = [];
+  game.presentation = {
+    shake(durationMs, amplitudeSourcePx) {
+      shakes.push({ durationMs, amplitudeSourcePx });
+    },
+  };
+
+  game.publishWorldEvents([
+    { type: "speed-impact", entityId: 1 },
+    { type: "crumbly-rock-smashed", entityId: 2 },
+  ]);
+
+  assert.deepEqual(shakes, [
+    { durationMs: 248, amplitudeSourcePx: 42 },
+    { durationMs: 248, amplitudeSourcePx: 42 },
+  ]);
 });

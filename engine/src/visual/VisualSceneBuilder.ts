@@ -61,5 +61,6 @@ export function buildVisualScene(
     world: sortRenderItems(passes.world),
     player: sortRenderItems(passes.player),
     effect: sortRenderItems(passes.effect),
+    callouts: [],
   };
 }

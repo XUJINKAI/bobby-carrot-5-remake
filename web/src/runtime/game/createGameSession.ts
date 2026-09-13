@@ -6,6 +6,7 @@ import {
   type GameOptions,
   type GameplayRuntimeConfig,
   type LevelMap,
+  type ObjectInteractionEvent,
 } from "@bobby/engine";
 import { setShellRuntimeWarnings } from "../../shell/shellBridge.js";
 
@@ -21,7 +22,18 @@ export interface CreateGameSessionOptions {
   level: LevelMap;
   gameOptions: Omit<GameOptions, "canvas" | "runtime">;
   runtime?: GameplayRuntimeConfig;
+  interaction?: GameSessionInteractionHandler;
 }
+
+export interface GameSessionInteractionContext {
+  request: ObjectInteractionEvent;
+  game: Game;
+  dialog: GameplayDialog | null;
+}
+
+export type GameSessionInteractionHandler = (
+  context: GameSessionInteractionContext,
+) => void | Promise<void>;
 
 /** 页面决定关卡与 session 语义；Engine runtime 持有地图内 HUD、Dialog 与输入生命周期。 */
 export async function createGameSession(
@@ -35,11 +47,17 @@ export async function createGameSession(
   });
   setShellRuntimeWarnings(runtime.warnings.map((warning) => warning.message));
   const { game, input, dialog } = runtime;
+  const unsubscribeInteraction = options.interaction
+    ? game.onInteractionRequest((request) => {
+        void options.interaction?.({ request, game, dialog });
+      })
+    : () => {};
   return {
     game,
     input,
     dialog,
     destroy(): void {
+      unsubscribeInteraction();
       setShellRuntimeWarnings([]);
       runtime.destroy();
     },

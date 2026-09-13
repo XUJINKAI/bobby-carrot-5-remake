@@ -64,6 +64,7 @@ watch(
 );
 
 async function initializeDraft(): Promise<void> {
+  feedback.value = "";
   if (props.value === undefined) {
     draft.value = "";
     return;

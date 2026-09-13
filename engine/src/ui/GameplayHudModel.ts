@@ -10,9 +10,15 @@ export interface GameplayHudInventory {
   shovel: boolean;
   kite: boolean;
   beans: number;
+  lockKeys: number;
 }
 
 export interface GameplayHudModel {
+  elapsedMs: number;
+  moves: number;
+  coins: number | null;
+  timedChallengePhase: "waiting" | "running" | null;
+  timedChallengeRemainingMs: number | null;
   objectives: {
     carrotRemaining: number | null;
     eggRemaining: number | null;
@@ -24,6 +30,7 @@ export interface GameplayHudModel {
 export function buildGameplayHudModel(
   state: GameplayState,
   winState: WinConditionState | null,
+  coins: number | null = null,
 ): GameplayHudModel {
   const actors = [...state.actors].sort((left, right) => {
     if (left.id === state.primaryActorId) return -1;
@@ -31,6 +38,11 @@ export function buildGameplayHudModel(
     return 0;
   });
   return {
+    elapsedMs: state.elapsedMs,
+    moves: state.moves,
+    coins,
+    timedChallengePhase: state.timedChallengePhase,
+    timedChallengeRemainingMs: state.timedChallengeRemainingMs,
     objectives: {
       carrotRemaining: remainingForCondition(
         winState,
@@ -54,6 +66,7 @@ export function buildGameplayHudModel(
         shovel: inventory.shovel,
         kite: inventory.kite,
         beans: Math.max(0, inventory.beans),
+        lockKeys: Math.max(0, inventory.lockKeys),
       };
     }),
   };

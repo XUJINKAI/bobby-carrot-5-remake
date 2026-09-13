@@ -4,12 +4,15 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 import { createServer } from "vite";
 import { root } from "../lib/fs.mjs";
+import { verifyButtonFocusPolicy } from "./button-focus-browser-checks.mjs";
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 import { verifyEditorExperience } from "./editor-browser-checks.mjs";
+import { verifyGameplayDialogKeyboard } from "./gameplay-dialog-browser-checks.mjs";
 import {
   replayLayout,
   verifyReplayPanelShortcut,
 } from "./replay-browser-checks.mjs";
+import { verifySettingsPage } from "./settings-browser-checks.mjs";
 
 const browserEnvironment = { ...process.env };
 delete browserEnvironment.DISPLAY;
@@ -66,15 +69,28 @@ test(
     const origin = `http://127.0.0.1:${address.port}`;
 
     try {
+      await verifyButtonFocusPolicy(cdp, await openPage(cdp, `${origin}/`));
       await verifyMusicInteractionTip(cdp, `${origin}/`);
       await verifyQuickSettings(cdp, `${origin}/`);
-      await verifySettingsPage(cdp, `${origin}/settings`);
+      await verifySettingsPage(cdp, await openPage(cdp, `${origin}/settings`));
       await verifyEditorExperience(
         cdp,
         await openPage(cdp, `${origin}/edit`),
       );
       await verifyReplayPanel(cdp, `${origin}/import/v1#${replayPayload()}`);
-      await verifyGameplayDialog(cdp, `${origin}/import/v1#${dialogPayload()}`);
+      await verifyAdventureDeveloperTools(
+        cdp,
+        `${origin}/adventure/play/1-1`,
+      );
+      const dialogSessionId = await verifyGameplayDialog(
+        cdp,
+        `${origin}/import/v1#${dialogPayload()}`,
+      );
+      await verifyGameplayDialogKeyboard(
+        cdp,
+        dialogSessionId,
+        `${origin}/@fs${path.join(root, "engine/src/ui/GameplayDialog.ts")}`,
+      );
     } finally {
       cdp.close();
       child.kill("SIGKILL");
@@ -181,22 +197,6 @@ async function chooseTheme(cdp, sessionId, label, expected) {
     throw new Error(`Quick Settings became unusable after switching to ${label}`);
 }
 
-async function verifySettingsPage(cdp, url) {
-  const sessionId = await openPage(cdp, url);
-  await waitFor(async () =>
-    Boolean(await cdp.evaluate(sessionId, "document.querySelector('.settings-page')")),
-  );
-  const snapshot = await cdp.evaluate(
-    sessionId,
-    `(() => ({
-      cards: document.querySelectorAll('.save-management-card').length,
-      text: document.querySelector('.settings-page')?.textContent ?? ''
-    }))()`,
-  );
-  if (snapshot.cards < 2 || !snapshot.text.includes("Adventure") || !snapshot.text.includes("Explore"))
-    throw new Error("Settings save management did not expose Adventure and Explore cards");
-}
-
 async function verifyGameplayDialog(cdp, url) {
   const sessionId = await openPage(cdp, url);
   await waitFor(async () =>
@@ -209,6 +209,7 @@ async function verifyGameplayDialog(cdp, url) {
     20_000,
   );
 
+  await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
   await waitFor(async () =>
     Boolean(
@@ -220,12 +221,12 @@ async function verifyGameplayDialog(cdp, url) {
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
 
-  const text = await cdp.evaluate(
-    sessionId,
-    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "你的金钥匙可以直接打开这把锁。",
   );
-  if (text !== "你的金钥匙可以直接打开这把锁。")
-    throw new Error(`Engine Dialog rendered unexpected text: ${text}`);
 
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
@@ -237,6 +238,63 @@ async function verifyGameplayDialog(cdp, url) {
     ),
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  return sessionId;
+}
+
+async function verifyAdventureDeveloperTools(cdp, url) {
+  const sessionId = await openPage(cdp, url);
+  await cdp.send(
+    "Emulation.setDeviceMetricsOverride",
+    { width: 1200, height: 800, deviceScaleFactor: 1, mobile: false },
+    sessionId,
+  );
+  await cdp.send("Page.reload", {}, sessionId);
+  await waitFor(
+    async () =>
+      Boolean(
+        await cdp.evaluate(
+          sessionId,
+          "document.querySelector('#replay-record') && document.querySelector('[data-replay-panel]')",
+        ),
+      ),
+    20_000,
+  );
+
+  await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-action=\"load-builtin\"]')?.click(); true",
+  );
+  await waitFor(async () =>
+    String(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('[data-replay-verification]')?.textContent ?? ''",
+      ),
+    ).includes("内置过法已载入"),
+  );
+
+  await clickWhenPresent(cdp, sessionId, "#replay-record");
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "!document.querySelector('[data-replay-panel]')?.hidden",
+      ),
+    ),
+  );
+  await verifyReplayPanelShortcut(cdp, sessionId);
+  await cdp.evaluate(
+    sessionId,
+    "window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', bubbles: true })); true",
+  );
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-debug-control-rail:not([hidden])') && document.querySelector('.adventure-game-tools-open')",
+      ),
+    ),
+  );
 }
 
 async function verifyReplayPanel(cdp, url) {
@@ -280,7 +338,9 @@ async function verifyReplayPanel(cdp, url) {
       "document.querySelector('[data-replay-status]')?.textContent ?? ''",
     )) === "正在录制",
   );
+  await new Promise((resolve) => setTimeout(resolve, 1_000));
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await new Promise((resolve) => setTimeout(resolve, 200));
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
   await waitFor(async () =>
     !String(
@@ -307,10 +367,11 @@ async function verifyReplayPanel(cdp, url) {
     "JSON.parse(document.querySelector('[data-replay-output]').value)",
   );
   if (replay.formatVersion !== 1 || replay.endTick < 1 || replay.frames.length < 1)
-    throw new Error("Replay panel did not export recorded World input");
+    throw new Error(
+      `Replay panel did not export recorded World input: ${JSON.stringify(replay)}`,
+    );
   if (
-    typeof replay.meta?.name !== "string" ||
-    !replay.meta.name ||
+    replay.meta?.id !== "imported/shared-map" ||
     typeof replay.meta.url !== "string" ||
     replay.meta.url !== url.replace(new URL(url).origin, "https://bc5r.xujinkai.net") ||
     replay.meta.note !== ""
@@ -323,6 +384,8 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay export did not use the compact field layout");
   if (
     !["playing", "won", "dead"].includes(replay.finalState?.status) ||
+    !Number.isInteger(replay.finalState?.moves) ||
+    !Number.isInteger(replay.finalState?.elapsedMs) ||
     typeof replay.finalState?.counters !== "object" ||
     !Array.isArray(replay.finalState?.completedConditions)
   )
@@ -599,7 +662,7 @@ function dialogPayload() {
       {
         type: "beaver",
         x: 1,
-        y: 0,
+        y: 1,
         dialogue: "你的金钥匙可以直接打开这把锁。",
       },
       { type: "exit", x: 1, y: 1 },

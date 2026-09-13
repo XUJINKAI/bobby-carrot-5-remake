@@ -94,6 +94,13 @@ async function resolveCurrentSeo(): Promise<SeoDescriptor> {
       path,
       false,
     );
+  if (path === "/adventure/night-train/dreamland-reward")
+    return descriptor(
+      `Dreamland Reward | 冒险模式 | ${BRAND}`,
+      "进入《兔子波比5》冒险模式的 Dreamland Reward 特殊场景。",
+      path,
+      false,
+    );
   if (path.startsWith("/adventure/chapter/"))
     return resolveAdventureChapterSeo(path);
   if (path.startsWith("/adventure/play/")) {

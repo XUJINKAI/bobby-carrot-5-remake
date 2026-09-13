@@ -74,6 +74,15 @@ public final class BobbyAnimationCadence {
         return current;
     }
 
+    /**
+     * Level transition、Death、普通 Mower 等不满足 O() 的 fast bypass 条件，
+     * 同样只能在 animationGate=false 的 gameplay step 推进一帧。
+     * 因而 b6 的逻辑槽也约每 2 gameplay step 推进，不是每 step 一帧。
+     */
+    boolean transitionAdvancesThisStep() {
+        return !animationGate;
+    }
+
     void resetIdleCounter() {
         idleSteps = 0;
     }

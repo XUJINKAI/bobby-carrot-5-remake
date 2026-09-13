@@ -14,6 +14,10 @@ Renderer 使用 UP9 高清版 48px 源素材，再乘以 Camera Zoom。Viewport 
 - `runtime.camera` 统一配置初始 Zoom、范围、Pan 边界和非连续跟随过渡时长；
 - 用户 Pan 后，下一次 gameplay movement 触发 Camera 平滑回中。
 
+Speed 撞击和 Mower 撞碎 Crumbly Rock 都触发 `248ms / 42 source px` 的确定性震动。
+震动只偏移 Camera 的表现坐标；World 坐标、Canvas 点选换算和 shake 结束后的跟随基线保持
+不变。
+
 Camera 的中心、Pan、Zoom 与跟随过渡都属于 Presentation，不修改 World 坐标，也不进入 gameplay snapshot。
 
 Explore 使用 `panBounds: "map-edge"` 提供自由视野。Adventure 使用 `panBounds: "viewport"`，在桌面与移动端都维持 portrait puzzle viewport，并设置适合原版信息边界的最小 Zoom。模式只配置 Camera 能力和限制，不复制 Camera 实现。

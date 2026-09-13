@@ -21,6 +21,10 @@ export type EntityMapFieldDefinition =
       default?: string;
       format?: EntityStringFormat;
     })
+  | (EntityMapFieldBase & {
+      kind: "string-or-string-list";
+      default?: string | readonly string[];
+    })
   | (EntityMapFieldBase & { kind: "number"; default?: number; min?: number; max?: number })
   | (EntityMapFieldBase & { kind: "integer"; default?: number; min?: number; max?: number })
   | (EntityMapFieldBase & { kind: "enum"; values: readonly JsonPrimitive[]; default?: JsonPrimitive });
@@ -72,6 +76,19 @@ export function stringField(
     ...(required ? { required: true } : {}),
     ...(description ? { description } : {}),
     ...(format ? { format } : {}),
+  });
+}
+
+export function stringOrStringListField(
+  key: string,
+  required = false,
+  description?: string,
+): EntityMapFieldDefinition {
+  return Object.freeze({
+    key,
+    kind: "string-or-string-list",
+    ...(required ? { required: true } : {}),
+    ...(description ? { description } : {}),
   });
 }
 

@@ -17,9 +17,6 @@ export class DebugWorldPanel {
   private readonly type: HTMLSelectElement;
   private readonly locomotionFields: HTMLDivElement;
   private readonly moveDurationMs: HTMLInputElement;
-  private readonly lockFields: HTMLDivElement;
-  private readonly lockKind: HTMLSelectElement;
-  private readonly lockEnabled: HTMLSelectElement;
   private readonly apply: HTMLButtonElement;
   private readonly message: HTMLDivElement;
   private actorId: number | null = null;
@@ -42,9 +39,7 @@ export class DebugWorldPanel {
     const typeRow = row("Intent");
     this.type = select([
       ["set-actor-locomotion", "Set locomotion"],
-      ["set-actor-lock-key", "Set Lock ability"],
     ]);
-    this.type.addEventListener("change", () => this.updateIntentFields());
     typeRow.value.append(this.type);
 
     this.locomotionFields = document.createElement("div");
@@ -61,22 +56,6 @@ export class DebugWorldPanel {
     durationRow.value.append(this.moveDurationMs, durationSuffix);
     this.locomotionFields.append(durationRow.root);
 
-    this.lockFields = document.createElement("div");
-    Object.assign(this.lockFields.style, { display: "grid", gap: "8px" });
-    const kindRow = row("Key kind");
-    this.lockKind = select([
-      ["single-use", "Single use"],
-      ["reusable", "Reusable"],
-    ]);
-    kindRow.value.append(this.lockKind);
-    const enabledRow = row("Ability");
-    this.lockEnabled = select([
-      ["true", "Enabled"],
-      ["false", "Disabled"],
-    ]);
-    enabledRow.value.append(this.lockEnabled);
-    this.lockFields.append(kindRow.root, enabledRow.root);
-
     this.apply = button("Dispatch intent", () => this.dispatch());
     this.apply.dataset.debugIntentDispatch = "";
     this.message = document.createElement("div");
@@ -85,7 +64,6 @@ export class DebugWorldPanel {
       targetRow.root,
       typeRow.root,
       this.locomotionFields,
-      this.lockFields,
       this.apply,
       this.message,
     );
@@ -96,7 +74,6 @@ export class DebugWorldPanel {
       spaced(this.current.details),
       spaced(this.pending.details),
     );
-    this.updateIntentFields();
   }
 
   render(snapshot: DebugSnapshot): void {
@@ -144,32 +121,17 @@ export class DebugWorldPanel {
     setJson(this.pending, world.pendingIntents);
   }
 
-  private updateIntentFields(): void {
-    const locomotion = this.type.value === "set-actor-locomotion";
-    this.locomotionFields.hidden = !locomotion;
-    this.lockFields.hidden = locomotion;
-  }
-
   private dispatch(): void {
     if (!this.canDispatch || this.actorId === null) return;
-    if (this.type.value === "set-actor-locomotion") {
-      const moveDurationMs = Number(this.moveDurationMs.value);
-      if (!Number.isFinite(moveDurationMs) || moveDurationMs <= 0) {
-        this.message.textContent = "Move duration must be greater than 0 ms.";
-        return;
-      }
-      this.actions.dispatchIntent({
-        type: "set-actor-locomotion",
-        actorId: this.actorId,
-        moveDurationMs,
-      });
+    const moveDurationMs = Number(this.moveDurationMs.value);
+    if (!Number.isFinite(moveDurationMs) || moveDurationMs <= 0) {
+      this.message.textContent = "Move duration must be greater than 0 ms.";
       return;
     }
     this.actions.dispatchIntent({
-      type: "set-actor-lock-key",
+      type: "set-actor-locomotion",
       actorId: this.actorId,
-      kind: this.lockKind.value === "reusable" ? "reusable" : "single-use",
-      enabled: this.lockEnabled.value === "true",
+      moveDurationMs,
     });
   }
 }

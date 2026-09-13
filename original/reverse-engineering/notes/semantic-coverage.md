@@ -13,7 +13,7 @@
 | Speed | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Help | `SpeedRuntime`, `PlayerMovement`, `BobbyAnimationCadence`, `DialogCatalog` | 无核心缺口 |
 | Ice | ✓ | ✓ | ✓ | ✓ | ✓ | — | `IceSliding`, `BobbyAnimationCadence` | 无核心缺口 |
 | Snow / Shovel | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Help | `PlayerCollisionRules`, `ShovelRuntime`, `AmbientParticles`, `DialogCatalog` | 无核心缺口 |
-| Mower / Gas / Parking | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Music/Help | `MowerRuntime`, `PlayerCollisionRules`, `MusicCatalog`, `DialogCatalog` | 无核心缺口 |
+| Mower / Gas / Parking | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ Music/Help | `MowerRuntime`, `MowerPresentation`, `PlayerCollisionRules`, `MusicCatalog`, `DialogCatalog` | 无核心缺口 |
 | Carousel | ✓ | ✓ | — | — | ✓ | ✓ Help | `CarouselPassage`, `MidpointInteractionDispatcher`, `DialogCatalog` | 无核心缺口 |
 | Mirror | ✓ | ✓ | — | — | ✓ | ✓ Help | `MidpointInteractionDispatcher`, `DragonFireball`, `DialogCatalog` | 无核心缺口 |
 | Trap | ✓ | ✓ | — | — | ✓ | ✓ Help | `TrapRuntime`, `DeathPipeline`, `DialogCatalog` | 无核心缺口 |
@@ -84,4 +84,4 @@ JAR 中 14 个 MIDI 资源及所有直接引用已索引到：
 
 UP09 gameplay raw byte、核心运行时状态、资源、Campaign、RMS 与 gameplay Presentation 已闭环，汇总计数和完成边界见 `../COVERAGE.md`。当前没有已知未命名的核心机关或 scene/resource binding。
 
-Base / UP01 只保留 `notes/legacy-runtime.md` 的代际摘要；UP02～UP09 已通过 structural fingerprint 证明核心 runtime 同构，semantic 继续以 UP09 为唯一主基准。后续进入 Engine / Adapter fidelity 实现时，以 `notes/fidelity-discrepancies.md` 为施工入口；本逆向分支仍不修改产品代码。
+Base / UP01 只保留 `notes/legacy-runtime.md` 的代际摘要；UP02～UP09 已通过 structural fingerprint 证明核心 runtime 同构，semantic 继续以 UP09 为唯一主基准。后续 Engine / Adapter fidelity 工作以 `notes/fidelity-discrepancies.md` 为审阅入口，再进入已确认实施清单或待确认问题；semantic 仍只保存原版事实。

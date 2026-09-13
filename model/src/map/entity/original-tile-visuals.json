@@ -241,8 +241,8 @@
       "base": "10-9"
     },
     {
-      "type": "shop-super-key",
-      "note": "商店物品: Super Key",
+      "type": "lock-key",
+      "note": "关卡内钥匙 / 商店 Super Key",
       "base": "10-10"
     },
     {

@@ -43,7 +43,7 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           @click.prevent="emit('navigate', '/adventure/beaver-shop')"
         >
           <strong>海狸商店</strong>
-          <span>购买冒险模式全局物品</span>
+          <span>购买全局物品，当前金币数：{{ view.bonusCoins }}</span>
           <AppIcon name="next" />
         </a>
         <a
@@ -52,14 +52,10 @@ const emit = defineEmits<{ navigate: [path: string] }>();
           @click.prevent="emit('navigate', '/adventure/night-train')"
         >
           <strong>夜间列车</strong>
-          <span>Dream Machine · Cloud 9</span>
+          <span>Dream Machine · Cloud 9 · Dreamland Reward</span>
           <AppIcon name="next" />
         </a>
       </nav>
-      <section class="adventure-wallet" aria-label="冒险钱包">
-        <span><small>BONUS COIN</small><strong>{{ view.bonusCoins }}</strong></span>
-        <span><small>GOLDEN CARROT</small><strong>{{ view.goldenCarrots }}</strong></span>
-      </section>
     </div>
   </AdventureViewport>
 </template>
@@ -170,40 +166,6 @@ const emit = defineEmits<{ navigate: [path: string] }>();
   align-self: center;
   color: var(--bc-highlight);
   font-size: 1.12rem;
-}
-
-.adventure-wallet {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  bottom: 13px;
-  width: min(300px, calc(100% - 32px));
-  transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 9px;
-  overflow: hidden;
-  background: rgb(255 255 255 / 8%);
-  text-align: center;
-}
-
-.adventure-wallet span {
-  display: grid;
-  gap: 2px;
-  padding: 7px 4px;
-  background: rgb(7 17 34 / 88%);
-}
-
-.adventure-wallet small {
-  color: #8196b2;
-  font-size: 0.5rem;
-  letter-spacing: 0.05em;
-}
-
-.adventure-wallet strong {
-  font-size: 0.9rem;
 }
 
 @media (max-height: 650px) {

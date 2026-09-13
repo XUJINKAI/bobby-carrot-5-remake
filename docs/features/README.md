@@ -6,6 +6,7 @@
 - [`gameplay.md`](gameplay.md)：地图运行时行为；
 - [`input.md`](input.md)：通用 gameplay 输入；
 - [`camera.md`](camera.md)：视野与缩放；
+- [`world-callouts.md`](world-callouts.md)：地图内轻量提示与缺少道具反馈；
 - [`audio.md`](audio.md)：音频素材与后端；
 - [`level-library.md`](level-library.md)：正式关卡身份、Adventure 与 Explore；
 - [`editor.md`](editor.md)：语义地图编辑与 Play Test。

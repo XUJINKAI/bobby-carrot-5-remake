@@ -66,6 +66,20 @@ export class BehaviorRuntime {
     };
   }
 
+  initialize(
+    entity: EntityInstance,
+    presence: EntityPresence,
+    queue: CommandQueue,
+  ): void {
+    const context = {
+      self: { entity, presence },
+      query: this.query,
+      commands: queue,
+    };
+    for (const behavior of this.resolve(entity, presence))
+      behavior.onInitialize?.(context);
+  }
+
   runHook(
     hook: BehaviorMovementHook,
     presence: EntityPresence,

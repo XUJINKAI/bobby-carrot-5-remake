@@ -31,6 +31,46 @@ export interface ObjectInteractionEvent extends WorldEvent {
   action: "touch" | "enter";
 }
 
+export type MissingItemKind =
+  | "gas"
+  | "lock-key"
+  | "kite"
+  | "shovel"
+  | "bean";
+
+export interface MissingItemEvent extends WorldEvent {
+  type: "missing-item";
+  actorId: EntityId;
+  entityId: EntityId;
+  x: number;
+  y: number;
+  data: {
+    item: MissingItemKind;
+  };
+}
+
+const MISSING_ITEM_KINDS: readonly MissingItemKind[] = [
+  "gas",
+  "lock-key",
+  "kite",
+  "shovel",
+  "bean",
+];
+
+export function isMissingItemEvent(
+  event: WorldEvent,
+): event is MissingItemEvent {
+  return (
+    event.type === "missing-item" &&
+    event.actorId !== undefined &&
+    event.entityId !== undefined &&
+    event.x !== undefined &&
+    event.y !== undefined &&
+    event.data !== undefined &&
+    MISSING_ITEM_KINDS.includes(event.data.item as MissingItemKind)
+  );
+}
+
 export function isObjectInteractionEvent(
   event: WorldEvent,
 ): event is ObjectInteractionEvent {

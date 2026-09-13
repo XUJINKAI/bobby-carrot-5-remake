@@ -22,6 +22,10 @@ export function canonicalReplayUrl(
   ).href;
 }
 
+export function canonicalExploreReplayUrl(ref: ExploreMapRef): string {
+  return new URL(explorePlayPath(ref), REPLAY_SITE_ORIGIN).href;
+}
+
 export function parseMapPlayUrl(
   pathname: string,
 ): ExploreMapRef | null {

@@ -29,16 +29,9 @@
 
 ## 本地 AI 代码修改流程
 
-1. 开始任务前检查当前分支和工作区状态，确认已有修改归属；保留用户已有工作，避免把无关修改带入任务。
-2. 以本地 `main` 为分支基线创建任务分支。工作区干净时使用：
+1. 开始任务前检查当前分支和工作区状态，并记录当前 `HEAD` commit。开发直接以任务开始时的当前分支和当前工作区为基线；不得主动切换或新建分支、同步其它分支、改写现有提交，或把基线替换为 `main`。
+2. 发现 staged、unstaged 或 untracked 修改时，先判断它们是否与当前任务重叠，以及后续编辑、验证或提交是否可能影响这些修改。能够明确隔离的无关修改应原样保留并继续任务；涉及相同文件或职责、可能被命令改写、无法可靠区分归属，或会使验证结果无法判断时，必须停止并询问用户。处于 detached HEAD 或存在未完成的 merge、rebase、cherry-pick 等 Git 操作时也必须停止。不得自行清理、暂存、提交或切换分支来绕过确认，提交时只纳入当前任务的修改。
 
-   ```sh
-   git switch main
-   git pull --ff-only
-   git switch -c <task-branch>
-   ```
-
-   如果本地 `main` 已经由用户确认是最新基线，可以跳过同步步骤，直接从该节点创建分支。
 3. 按职责边界和可回滚的工作阶段组织修改。每完成一个逻辑完整阶段，先运行与该阶段相关的检查，再创建一个内容聚焦的 commit；提交信息应准确描述当前阶段的结果。
 4. 阶段 commit 应保持可审查、可回滚，并包含必要的测试、文档和验证规则。构建产物、生成目录和临时文件遵循本文件的生成物规则。
 5. 完成修改后按风险选择验证范围，检查工作区状态，并确认最终改动已经提交到当前任务分支：
@@ -47,15 +40,15 @@
    - 其它修改必须执行完整的 `npm run verify`。跨模块修改、Engine / Model / Adventure 逻辑、公共合同、数据格式、构建工具和包含多个逻辑阶段的长任务均属于完整验证范围。
    - 同一任务同时包含低风险修改与其它修改时，按完整验证执行；无法确定风险级别时也按完整验证执行。
 6. 浏览器回归测试需要启动本机 Chromium，必须直接在沙箱外运行；包含该测试的 `npm run verify` 同样直接在沙箱外运行，避免先在沙箱内失败再重试。
-7. 输出 PR message 前，以 `main` 为比较基线检查：
+7. 输出 PR message 前，以任务开始时记录的 `HEAD` commit 为比较基线检查：
 
    ```sh
-   git log --oneline main..HEAD
-   git diff --stat main...HEAD
-   git diff --check main...HEAD
+   git log --oneline <base-commit>..HEAD
+   git diff --stat <base-commit>...HEAD
+   git diff --check <base-commit>...HEAD
    ```
 
-   PR message 根据当前分支相对 `main` 的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
+   PR message 根据当前分支相对任务基线的实际提交和差异生成，至少包含 PR 标题、变更摘要、验证结果和必要的兼容性/迁移说明。完成任务时将该 PR message 一并输出给用户。
 
 ## Engine 总原则
 
@@ -94,15 +87,15 @@
 2. `assets/extracted/`、`assets/generated/`、`dist/`、`tmp/` 都是生成物，不提交 Git，不手工修。
 3. 正式 Campaign 玩家 ID 使用连续章节编号：`1-1 / 1-bonus-1 / ... / 40-10`。`base / up01 ... up09`、DAT 包名和 record slot 只属于 archive provenance；`001...485` 仍只是内部 canonical identity。
 4. 原始 Campaign 内容必须区分：40 章共 400 个普通关卡 + 80 个 Bonus 奖励关；此外还有 5 个共享商店 / Special Scene：Beaver Shop、Cloud 9、Dream Machine、Dreamland Reward、Campaign Intro。技术上可以把前两者统称为 480 个 Campaign map，但面向玩家的文案使用 400 个普通关卡 + 80 个 Bonus 奖励关的产品表述。
-5. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；`LevelEntity` 的类型专属顶层 primitive 字段由 Model Definition 声明，`LevelMap.rules` 承载地图规则，具体执行逻辑与 runtime state 只位于 Engine；禁止加入 JAR/DAT byte、发布包、SHA、HTTP 或 Campaign 信息。
+5. `@bobby/model` 只定义稳定语义身份与纯 `LevelMap`；`LevelEntity` 的类型专属顶层字段由 Model Definition 声明，通常使用 primitive，字面 `dialogue` 可使用字符串或字符串数组；`LevelMap.rules` 承载地图规则，具体执行逻辑与 runtime state 只位于 Engine；禁止加入 JAR/DAT byte、发布包、SHA、HTTP 或 Campaign 信息。
 6. **所有原版 DAT byte ↔ `ts.png` 坐标换算只能位于 `tools/original/dat/`。** 坐标对应的 `type / fields / role / phase` 以 `model/src/map/entity/original-tile-visuals.json` 为唯一来源。Engine / Model 不允许维护第二份 DAT table；Editor/Web 不依赖 Original DAT tooling。
 7. `engine/` 是唯一地图内游戏规则实现。Web、Adventure 与 Editor 禁止复制碰撞、机关、地图内计时、地图内死亡/胜利条件。
 8. Engine 不知道 Adventure。`Game.loadLevel()` 只消费纯语义 `LevelMap`；release、chapter、difficulty、record hash、JAR source 等产品/来源字段不能成为 Engine load options。地图内机关实例参数通过 Definition 声明的 `LevelEntity` 顶层字段随 `LevelMap` 进入 Engine。
 9. Engine 对外通过通用 `onWorldEvent()` 报告世界事件，并提供通用 Game 动作。禁止为 Adventure 增加 `bonus-timeout` 等 Campaign 专用 Engine API。
 10. Entity 交互优先通过通用事件形状表达，例如 `object-interaction { objectType, action, x, y }`。地图内后续规则应由 Engine 根据 semantic Entity 与实例字段执行；Adventure 只解释跨关 Campaign 语义。
-11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久奖励与 session plan；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
+11. `@bobby/adventure` 只依赖 `@bobby/model`。它负责 1～40 Campaign identity/order、Save、全局经济/永久道具与 session plan；禁止知道 Base/UP、DAT bytes、JAR、HTTP、DOM 或 localStorage。
 12. 原版 Bonus 60 秒以 Lock 的 `deathCountdownSeconds` 字段进入 `LevelMap`：成功打开带该字段的 Lock 后由 Engine 启动倒计时；取得目标金胡萝卜则结束挑战，超时由 Engine 触发地图内死亡。自定义地图与 Editor Play Test 使用同一规则。
-13. Adventure Save 是版本化 JSON；持久奖励按稳定 Campaign level ID + Object 类型 + 地图坐标记录，不能修改原始 LevelMap 来表达“已经拿过”。
+13. Adventure Save 是版本化 JSON；关卡内收集的 Bonus Coin 与 Golden Carrot 只在通关时结算到全局经济，死亡、重开或退出会丢弃本局临时奖励，原始 LevelMap 始终保持不变。
 14. Explore 与 Adventure 是两种不同官方地图体验：Explore 全关开放、可筛选/调试/自由缩放；Adventure 才有线性章内进度、全局存档与受限竖屏视野。
 15. Editor 只持久化语义 JSON Draft；Play Test clone/normalize 后把 `LevelMap` 交给 Engine，Runtime 不得反写 Draft。
 16. multi-cell Object 持久化只保存 anchor；唯一 Runtime 展开点是 Engine level-load 边界。Editor owner/preview/variant 必须共用 Engine Object Layout。

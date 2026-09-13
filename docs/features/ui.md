@@ -109,6 +109,8 @@ Hero 以下的项目介绍聚焦三类信息：原作重制、原版研究、Edi
 
 页面通过 `ShellConfig` 声明身份、返回、命令、页面操作和底栏信息。Shell 只负责布局、响应式折叠与 action 派发，不识别 Home、Explore、Adventure、Editor 或 Gameplay。
 
+Web 产品中的按钮使用指针与应用快捷键触发，不进入浏览器 Tab 焦点顺序，也不保留点击焦点。这样按键始终由当前页面快捷键或 Engine gameplay 输入解释。输入框、下拉框和文本区保留原生焦点与 Tab 导航，保证 Editor、Settings 和数据交换表单可正常输入。
+
 Shell 允许页面分别配置 TopBar 与 BottomBar 是否固定。固定栏位位于页面滚动视口之外，滚轮、触摸滚动与 Page Up / Page Down 只影响中间的 Content 区域；关闭固定能力时，对应栏位进入 Content 滚动视口并随页面内容移动。
 
 页面按自身滚动模型分别声明固定状态。暂时隐藏的栏位不参与布局。
@@ -163,7 +165,7 @@ BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页
 ```text
 ┌───────────────────────────────────────────────────────────────────────┐
 │ GameStage                                                      🥕 12 │ ← 目标
-│                                                    🔑  🫘×2  🪙×1 │ ← 道具
+│                                             2 🫘  ⛽  🛷  🪁  10 🪙 │ ← 道具与金币
 │                                                                       │
 │                                                                       │
 │                              Canvas                                   │
@@ -178,7 +180,7 @@ BottomBar 使用 `Leading | Info | Trailing` 三段结构。Info 只用于首页
 
 Web Product Layer
 ├── ResultOverlay
-├── DebugOverlay / product statistics
+├── DebugOverlay
 └── Dialog presentation
             ↑
 Engine Gameplay Layer
@@ -199,8 +201,8 @@ Adventure HUD：
 
 ```text
 ┌─────────────────────────────────────┐
-│                                8 🥕 │
-│                         🪁 2 🫘 🛷 ⛽ │
+│ 01:00                          8 🥕 │
+│                         2 🫘 ⛽ 🛷 🪁 │
 │                                     │
 │                GAME                 │
 │                                     │
@@ -212,7 +214,7 @@ Explore HUD：
 ```text
 ┌──────────────────────────────────────────────────────┐
 │ 02:31                                         12 🥕 │
-│ 84                                    🪁 2 🫘 🛷 ⛽  │
+│ 84                                    2 🫘 ⛽ 🛷 🪁  │
 │                                                      │
 │                         GAME                         │
 │                                                      │
@@ -222,23 +224,33 @@ Explore HUD：
 
 HUD 数据：
 
+- 本关计时器；
+- 当前移动步数；
 - 当前目标与剩余数量；
-- 当前地图中的风筝、魔豆、雪铲与汽油持有状态；
-- Engine Timed Challenge 剩余时间；
-- 当前模式允许展示的移动步数和统计用时。
+- 当前地图中的风筝、魔豆、雪铲与汽油；
+- 宿主提供的全局金币数。
 
-Engine HUD 使用原版图标和紧凑 Overlay，统一锚定在 GameStage 右上角。第一行在目标图标左侧显示剩余数量；第二行只显示当前持有的风筝、魔豆、雪铲与汽油，并按此顺序从左向右排列。两行直接显示半透明图标和数字，不使用容器边框、底色或阴影。物品只在持有或数量大于零时出现。
+Engine HUD 在 GameStage 左上角以 `MM:SS` 显示计时器，并可在下一行显示步数。普通关卡正向显示本关用时；配置 Timed Challenge 的关卡从开局显示冻结的完整倒计时，Lock 打开后开始递减。其余信息锚定在右上角。右侧第一行在目标图标左侧显示剩余数量；第二行显示当前持有的魔豆、汽油、雪铲与风筝，并可在同一行显示宿主金币；双人地图的第三行显示 player2 道具。三行之间保持 `10px` 间隔。各行直接显示半透明图标和数字，不使用容器边框、底色或阴影。道具数量为 `1` 时只显示图标，数量大于 `1` 时显示计数；金币使用缩小的 `ts-16-9` 图标，数字位于图标之前，并始终显示计数，包括 `0`。
 
-Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为右侧 Engine HUD 应用 36px Jersey 10 像素字体，为左侧 Explore 统计 Overlay 应用 26px Jersey 10 像素字体，两侧均使用 1px 黑色描边。Explore 统计 Overlay 锚定在 GameStage 左上角，分两行显示统计用时和移动步数，并与 Engine HUD 使用相同透明度和纯文字样式。
+Engine 通过 `.engine-gameplay-hud-value` 和 `--engine-gameplay-hud-value-font-size` 为宿主提供样式入口，并保留独立运行时的字号 fallback；具体产品字体、描边和字号由 Web 统一配置。Web 为 Engine HUD 应用 36px Jersey 10 像素字体与 1px 黑色描边。
 
 ```text
 右上角 HUD 锚点
 
                                       12 🥕
-                              🪁  2 🫘  🛷  ⛽
+                         2 🫘  ⛽  🛷  🪁  10 🪙
 ```
 
-Adventure 通过 Runtime Config 选择紧凑 HUD，优先保持原作信息边界。Explore 可以在 Engine 基础 HUD 之外叠加 Steps、统计用时和 Debug 入口；统计用时由 Web 记录，不参与地图规则。
+各入口的 HUD 项目通过 Runtime Config 独立选择：
+
+| 入口 | 计时器 | 计步器 | 剩余目标 | 道具 | 金币数 |
+| --- | --- | --- | --- | --- | --- |
+| Explore / 默认配置 | 显示 | 显示 | 显示 | 显示 | 隐藏 |
+| Adventure 普通关卡 | 显示 | 隐藏 | 显示 | 显示 | 隐藏 |
+| Beaver Shop | 隐藏 | 隐藏 | 隐藏 | 隐藏 | 显示 |
+| 夜间列车 Special Scene | 隐藏 | 隐藏 | 隐藏 | 隐藏 | 隐藏 |
+
+Beaver Shop 的金币数读取 Adventure Save；夜间列车 Special Scene 包括 Dream Machine、Cloud 9 与 Dreamland Reward。
 
 ### Screen Control
 
@@ -317,7 +329,7 @@ Debug 属于 Explore 和 Editor 调试体验，以右侧浮动 Inspector 展示�
 - passage 判定与置信度；
 - Engine 最近事件或阻挡原因。
 
-关闭 Debug 后 Inspector 完整隐藏，GameStage 恢复为普通游玩视图。Adventure 不提供 Debug 能力。
+关闭 Debug 后 Inspector 完整隐藏，GameStage 恢复为普通游玩视图。`npm run dev` 下的 Adventure 游戏页也提供这套调试能力，正式构建保持 Adventure 玩家界面。
 
 ### Result Overlay
 
@@ -329,25 +341,22 @@ Result 保留最后一帧并覆盖在 Stage 中央：
 │                 GAME WORLD                   │
 │         ┌────────────────────────┐           │
 │         │       关卡完成！       │           │
-│         │                        │           │
-│         │      [ 下一关 ]        │           │
-│         │  [ 重玩 ]  [ 返回 ]    │           │
+│         │      用时: 00:39       │           │
+│         │      步数: 84          │           │
+│         │      金币: 2/2         │           │
+│         │      总金币: 4         │           │
+│         │  [ 返回 ] [ 下一关 ]   │           │
 │         └────────────────────────┘           │
 │                                              │
 └──────────────────────────────────────────────┘
 ```
 
-Engine 只报告完成或死亡事实，Web 根据入口决定动作：
+GamePage 通关卡片按行显示 Engine `GameplayState.elapsedMs` 提供的游戏内用时、步数和本关
+Bonus Coin 收集数；Adventure 还显示结算后的全局 Bonus Coin。操作区只提供“返回”和
+主要动作“下一关”，没有下一关时保留禁用状态。失败卡片只显示“失败”，操作区只提供
+“返回”和主要动作“重新开始”。Welcome Demo 与 Editor Play Test 使用各自宿主的结果流程。
 
-| 入口 | 完成后的主要动作 | 其它动作 |
-| --- | --- | --- |
-| Welcome Demo | 开始 Adventure | 重玩 |
-| Adventure | 下一关 | 重玩、返回章节 |
-| Explore | 下一关或返回选关 | 重玩、Undo、打开 Editor |
-| Custom | 返回地图信息 | 重玩、打开 Editor |
-| Editor Play Test | 返回编辑 | Restart |
-
-Result Overlay 原地覆盖 GameStage，保留最后一帧世界画面作为上下文。
+Result Overlay 在 Bobby 的终局表现播放完成后原地覆盖 GameStage。通关使用 `b6.png` 以约 279ms 正向过渡并隐藏 Bobby，失败保留 `b5.png` 末帧；Web 分别播放一次 `cleared` 和 `death`。关卡载入或重开时以约 310ms 倒向播放同一套 `b6.png`，随后恢复普通站立表现。
 
 ## 页面规范
 
@@ -355,7 +364,7 @@ Result Overlay 原地覆盖 GameStage，保留最后一帧世界画面作为上�
 
 Adventure Home：
 
-Adventure 的首页菜单、章节入口、关卡入口与夜间列车入口复用首页按钮的主题色、边框、圆角、阴影和交互状态；切换 Bobby / FC 主题时由同一组 `--bc-*` 变量驱动。
+Adventure 的首页菜单、章节入口、关卡入口与夜间列车入口复用首页按钮的主题色、边框、圆角、阴影和交互状态；切换 Bobby / FC 主题时由同一组 `--bc-*` 变量驱动。Adventure 首页在 Beaver Shop 入口说明中显示当前 Bonus Coin 数量，经济信息随使用场景呈现。
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
@@ -402,7 +411,7 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 ├───────────────────────────────────────────────────────────────┤
 │                 ┌─────────────────────────┐                   │
 │                 │                   12 🥕 │                   │
-│                 │               🪁 2 🫘 🛷 │                   │
+│                 │               2 🫘 ⛽ 🛷 🪁 │                   │
 │                 │                         │                   │
 │                 │          GAME           │                   │
 │                 │                         │                   │
@@ -415,7 +424,7 @@ Adventure Play 在桌面也使用 portrait puzzle viewport：
 └───────────────────────────────────────────────────────────────┘
 ```
 
-Camera 最小 zoom 保持谜题信息边界。通用 App Shell 仍保持可用，Adventure 的能力配置关闭 Undo 和 Debug。
+Camera 最小 zoom 保持谜题信息边界。通用 App Shell 仍保持可用。Adventure 关闭 Undo；开发服务器额外配置 Debug 与 Replay，用于逐关验证和录制。
 
 ### Explore
 
@@ -459,7 +468,7 @@ Explore Play：
 │ [icon] Bobby Carrot 5 Remake │ 自由探索模式 ▾ │ ←返回 ⏮ ⏭ ↻ │ ↶ ✎ ♫ ⚙ ? │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 02:31                                                         12 🥕 │
-│ 84                                                      🪁 2 🫘 🛷 ⛽ │
+│ 84                                                      2 🫘 ⛽ 🛷 🪁 │
 │                                                     ┌────────────────┐ │
 │                      GAME                           │ Tile 14,8      │ │
 │                                                     │ Object: Dragon │ │

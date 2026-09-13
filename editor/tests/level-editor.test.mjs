@@ -163,6 +163,29 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   ]);
 });
 
+test("两格角色把 Editor 光标格持久化为 body anchor", () => {
+  const level = createBlankLevel(12, 8);
+  for (const type of [
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.BEAVER,
+    MapEntityTypeId.DREAM_MACHINE,
+  ]) {
+    const placement = resolvePlacement(
+      level,
+      catalog,
+      { type },
+      { x: 5, y: 3 },
+      builtinEditorDefinition,
+    );
+    assert.equal(placement.valid, true, type);
+    assert.deepEqual(placement.entity, { type, x: 5, y: 3 }, type);
+    assert.deepEqual(placement.cells, [
+      { x: 5, y: 2, role: "head" },
+      { x: 5, y: 3, role: "body" },
+    ], type);
+  }
+});
+
 test("Entity fields and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(

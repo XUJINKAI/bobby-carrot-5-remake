@@ -6,7 +6,7 @@ import type {
 } from "@bobby/editor";
 import { isSurfaceEntityType } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { EntityType } from "@bobby/model";
+import type { EntityType, LevelEntityFieldValue } from "@bobby/model";
 import EditorEntityFields from "./EditorEntityFields.vue";
 import EditorEntityPreview from "./EditorEntityPreview.vue";
 import { placementPresetFromEntity } from "./editorFieldValues.js";
@@ -19,7 +19,7 @@ defineProps<{
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
-  field: [type: string, key: string, value: string];
+  field: [type: string, key: string, value: LevelEntityFieldValue];
   variant: [type: string, index: number];
   surfaceVariant: [entityType: string, variantType: EntityType];
   deleteType: [type: string];

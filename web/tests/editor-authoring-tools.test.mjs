@@ -189,10 +189,28 @@ test("Inspector 使用与 Surface Palette 相同的 visual variant 网格", () =
 
 test("Inspector 为颜色合同提供调色板与颜色文本输入", () => {
   assert.match(entityFields, /field\.format === "color"/);
-  assert.match(entityFields, /field\.kind === "string" \|\| !controlledFieldKeys/);
+  assert.match(entityFields, /field\.kind === "string-or-string-list"/);
   assert.match(entityFields, /normalizeColorHex/);
   assert.match(entityFields, /type="color"/);
   assert.match(entityFields, /#rgb、#rrggbb 或颜色名/);
+});
+
+test("Inspector 使用可增删的多行文本框编辑多轮对白", () => {
+  assert.match(entityFields, /v-for="\(line, index\) in dialogueLines/);
+  assert.match(entityFields, /<textarea/);
+  assert.match(entityFields, /addDialogueLine/);
+  assert.match(entityFields, /removeDialogueLine/);
+  assert.deepEqual(
+    placementPresetWithField(
+      { type: "beaver" },
+      "dialogue",
+      ["第一轮\n第二行", "第二轮"],
+    ),
+    {
+      type: "beaver",
+      fields: { dialogue: ["第一轮\n第二行", "第二轮"] },
+    },
+  );
 });
 
 test("Palette Inspector 会把 Portal 字段写回当前放置预设", () => {

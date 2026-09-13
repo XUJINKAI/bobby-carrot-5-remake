@@ -83,7 +83,7 @@ const paletteFloorFeatureTypes: readonly EntityType[] = [
   MapEntityTypeId.SHOP_EXTRA_MUSIC,
   MapEntityTypeId.SHOP_SPEED_SHOES,
   MapEntityTypeId.SHOP_STEREO_SYSTEM,
-  MapEntityTypeId.SHOP_SUPER_KEY,
+  MapEntityTypeId.LOCK_KEY,
   MapEntityTypeId.START,
   MapEntityTypeId.SHOP_EMPTY,
 ];

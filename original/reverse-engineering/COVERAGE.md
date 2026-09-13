@@ -18,7 +18,7 @@
 | MIDI | JAR 14/14 MIDI 已索引；resolver、loop/one-shot、scene override 已恢复 | MusicCatalog / notes/up09-music-index.md |
 | Sound Test | 10/10 菜单项与播放资源已恢复，含此前遗漏的 LEVEL COMPLETE | SoundTest |
 | Save / RMS | BC5Data 单 record 字节顺序、默认值、持久/临时边界已恢复 | PersistentSaveFormat |
-| Presentation | layer order、HUD、Bobby、tile phases、sparkle、particles、camera/shake、Title/Code/Flight 星场已恢复 | GameplayRenderOrder / GameplayHud / TileAnimationClock / SpecialSceneStarfield |
+| Presentation | layer order、HUD、Bobby、Mower 非均分裁切、tile phases、sparkle、particles、camera/shake、Title/Code/Flight 星场已恢复 | GameplayRenderOrder / GameplayHud / MowerPresentation / TileAnimationClock / SpecialSceneStarfield |
 
 ## 音乐与文字的最终答案
 
@@ -47,4 +47,4 @@
 - 恶意损坏 DAT / RMS 的厂商 JVM 异常表现；
 - Base / UP01 的逐方法考古。它们按项目决策只保留代际摘要，UP02..UP09 稳定代以 UP09 为准。
 
-截至本文件落盘，UP09 核心 gameplay、Campaign、音乐、文字、存档与 gameplay Presentation 没有已知未命名机制。后续工作应转入 fidelity-discrepancies.md 所列的 Engine / Adapter 实现阶段，并继续保持原版事实层与产品模型分离。
+截至本文件落盘，UP09 核心 gameplay、Campaign、音乐、文字、存档与 gameplay Presentation 没有已知未命名机制。后续 Engine / Adapter 工作从 `notes/fidelity-discrepancies.md` 进入，并按设计决策、已确认实施与待确认问题分别处理，继续保持原版事实层与产品模型分离。

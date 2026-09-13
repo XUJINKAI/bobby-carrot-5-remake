@@ -103,7 +103,7 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
           { type: MapEntityTypeId.SHOP_EXTRA_MUSIC },
           { type: MapEntityTypeId.SHOP_SPEED_SHOES },
           { type: MapEntityTypeId.SHOP_STEREO_SYSTEM },
-          { type: MapEntityTypeId.SHOP_SUPER_KEY },
+          { type: MapEntityTypeId.LOCK_KEY },
           { type: MapEntityTypeId.LOCK },
           { type: MapEntityTypeId.GOLDEN_CARROT },
           { type: MapEntityTypeId.BONUS_COIN },

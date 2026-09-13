@@ -95,9 +95,21 @@ test("Bean Field without a Bean leaves the field unchanged", () => {
     ],
   });
 
+  const field = world.entities
+    .all()
+    .find((entity) => entity.type === MapEntityTypeId.BEAN_FIELD);
+  assert.ok(field);
   assert.equal(hasType(world, 1, 3, MapEntityTypeId.BEAN_FIELD), true);
-  assert.ok(result.events.some(
-    (event) => event.type === "missing-item" && event.data.item === "bean",
-  ));
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: actor.id,
+      entityId: field.id,
+      x: 1,
+      y: 3,
+      data: { item: "bean" },
+    },
+  );
   assert.equal(world.actions.active.length, 0);
 });

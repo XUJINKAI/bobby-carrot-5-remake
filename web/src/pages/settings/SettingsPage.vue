@@ -3,7 +3,7 @@ import {
   completedAdventureLevelCount,
   type AdventureSave,
 } from "@bobby/adventure";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import { publicBaseUrl } from "../../services/assets/gameAssets.js";
 import {
@@ -12,20 +12,36 @@ import {
   saveAdventureSave,
   serializeAdventureSave,
 } from "../../storage/adventureSaveStorage.js";
+import type { ExploreCollectionStorage } from "../../storage/contracts.js";
 import {
-  loadExploreProgressSave,
-  parseExploreProgressExchange,
-  saveExploreProgressSave,
-  serializeExploreProgressSave,
-  type ExploreProgressSave,
+  loadExploreCollectionSave,
+  parseExploreCollectionExchange,
+  saveExploreCollectionSave,
+  serializeExploreCollectionSave,
 } from "../../storage/exploreProgressStorage.js";
+import {
+  listSaveManagementTargets,
+  type SaveManagementTarget,
+} from "./saveManagementRecords.js";
 
-const adventureSave = ref(loadAdventureSave());
-const exploreSave = ref(loadExploreProgressSave());
-const adventureFeedback = ref("");
-const exploreFeedback = ref("");
-const adventureCompletedCount = computed(() =>
-  completedAdventureLevelCount(adventureSave.value),
+type SaveManagementTab = SaveManagementTarget & {
+  save: AdventureSave | ExploreCollectionStorage;
+  feedback: string;
+};
+
+const saveTabs = ref<SaveManagementTab[]>(
+  listSaveManagementTargets().map((target) => ({
+    ...target,
+    save: target.kind === "adventure"
+      ? loadAdventureSave()
+      : loadExploreCollectionSave(target.collection),
+    feedback: "",
+  })),
+);
+const activeTabId = ref(saveTabs.value[0]?.id ?? "");
+const tabList = ref<HTMLElement | null>(null);
+const activeTab = computed(
+  () => saveTabs.value.find((tab) => tab.id === activeTabId.value) ?? null,
 );
 
 const toolbar = {
@@ -41,46 +57,95 @@ const toolbar = {
   ],
 };
 
-const exploreCompletedCount = computed(() =>
-  Object.values(exploreSave.value.collections).reduce(
-    (total, save) => total + save.completedMaps.length,
-    0,
-  ),
-);
-const exploreRecentCollectionCount = computed(
-  () =>
-    Object.values(exploreSave.value.collections).filter((save) => save.lastMap)
-      .length,
-);
-
-function parseAdventure(value: unknown): AdventureSave {
-  return parseAdventureProfileExchange(value);
+function parseSelected(value: unknown): AdventureSave | ExploreCollectionStorage {
+  const tab = requireActiveTab();
+  return tab.kind === "adventure"
+    ? parseAdventureProfileExchange(value)
+    : parseExploreCollectionExchange(value);
 }
 
-function serializeAdventure(value: unknown): string {
-  return serializeAdventureSave(value as AdventureSave);
+function serializeSelected(value: unknown): string {
+  const tab = requireActiveTab();
+  return tab.kind === "adventure"
+    ? serializeAdventureSave(value as AdventureSave)
+    : serializeExploreCollectionSave(value as ExploreCollectionStorage);
 }
 
-function importAdventure(value: unknown): void {
-  adventureSave.value = saveAdventureSave(value as AdventureSave);
-  adventureFeedback.value = "Adventure 存档已导入。";
+function importSelected(value: unknown): void {
+  const tab = requireActiveTab();
+  if (tab.kind === "adventure") {
+    tab.save = saveAdventureSave(value as AdventureSave);
+    tab.feedback = "Adventure 存档已导入。";
+    return;
+  }
+  tab.save = saveExploreCollectionSave(
+    tab.collection,
+    value as ExploreCollectionStorage,
+  );
+  tab.feedback = `${tab.label} 存档已导入。`;
 }
 
-function parseExplore(value: unknown): ExploreProgressSave {
-  return parseExploreProgressExchange(value);
+function summary(tab: SaveManagementTab): string {
+  if (tab.kind === "adventure") {
+    const save = tab.save as AdventureSave;
+    return [
+      `${completedAdventureLevelCount(save)} 已完成`,
+      `${save.economy.bonusCoins} Bonus Coin`,
+      `${save.economy.goldenCarrots} Golden Carrot`,
+    ].join(" · ");
+  }
+  const save = tab.save as ExploreCollectionStorage;
+  return `${save.completedMaps.length} 已完成${
+    save.lastMap ? ` · 最近 ${save.lastMap}` : ""
+  }`;
 }
 
-function serializeExplore(value: unknown): string {
-  return serializeExploreProgressSave(value as ExploreProgressSave);
+function description(tab: SaveManagementTab): string {
+  return tab.kind === "adventure"
+    ? "Campaign 进度、Bonus Coin 和 Golden Carrot。"
+    : `${tab.collection} 地图集合的完成记录和最近游玩位置。`;
 }
 
-function importExplore(value: unknown): void {
-  exploreSave.value = saveExploreProgressSave(value as ExploreProgressSave);
-  exploreFeedback.value = "Explore 存档已导入。";
+function importNote(tab: SaveManagementTab): string {
+  return tab.kind === "adventure"
+    ? "导入会覆盖当前 Adventure 存档。"
+    : `导入会覆盖 ${tab.collection} 地图集合的 Explore 存档。`;
 }
 
-function exportFilename(kind: "adventure" | "explore"): string {
+function placeholder(tab: SaveManagementTab): string {
+  return tab.kind === "adventure"
+    ? "粘贴 Adventure Save JSON、BC5R 文本或分享链接……"
+    : "粘贴 Explore Collection Save JSON、BC5R 文本或分享链接……";
+}
+
+function exportFilename(tab: SaveManagementTab): string {
+  const kind = tab.kind === "adventure"
+    ? "adventure"
+    : `explore-${safeFilenamePart(tab.collection)}`;
   return `bc5r-${kind}-save-${new Date().toISOString().slice(0, 10)}`;
+}
+
+function safeFilenamePart(value: string): string {
+  return value
+    .replace(/[^a-z0-9_-]+/gi, "-")
+    .replace(/^-+|-+$/g, "") || "collection";
+}
+
+function selectRelativeTab(currentId: string, offset: number): void {
+  const currentIndex = saveTabs.value.findIndex((tab) => tab.id === currentId);
+  const nextIndex = (currentIndex + offset + saveTabs.value.length)
+    % saveTabs.value.length;
+  activeTabId.value = saveTabs.value[nextIndex]!.id;
+  void nextTick(() => {
+    tabList.value
+      ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+      [nextIndex]?.focus();
+  });
+}
+
+function requireActiveTab(): SaveManagementTab {
+  if (!activeTab.value) throw new Error("当前没有可管理的存档");
+  return activeTab.value;
 }
 </script>
 
@@ -89,70 +154,71 @@ function exportFilename(kind: "adventure" | "explore"): string {
     <header class="settings-page-header">
       <div>
         <p class="settings-page-eyebrow">SETTINGS</p>
-        <h1>设置管理</h1>
+        <h1>存档管理</h1>
       </div>
-      <p>管理需要独立页面承载的长期数据和高级选项。</p>
+      <p>导入、复制或下载此浏览器中已有的游戏存档。</p>
     </header>
 
-    <div class="settings-layout">
-      <nav class="settings-tabs" role="tablist" aria-label="设置分类">
-        <button type="button" role="tab" aria-selected="true">存档管理</button>
+    <div v-if="saveTabs.length > 0" class="save-management">
+      <nav
+        ref="tabList"
+        class="save-management-tabs"
+        role="tablist"
+        aria-label="游戏存档"
+      >
+        <button
+          v-for="tab in saveTabs"
+          :id="`save-tab-${tab.id}`"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          :aria-controls="`save-panel-${tab.id}`"
+          :aria-selected="activeTabId === tab.id"
+          :tabindex="activeTabId === tab.id ? 0 : -1"
+          @click="activeTabId = tab.id"
+          @keydown.left.prevent="selectRelativeTab(tab.id, -1)"
+          @keydown.right.prevent="selectRelativeTab(tab.id, 1)"
+        >
+          {{ tab.label }}
+        </button>
       </nav>
 
-      <div class="settings-tab-panel" role="tabpanel">
-        <article class="save-management-card">
-          <header>
-            <div>
-              <h2>Adventure</h2>
-              <p>Campaign 进度、Bonus Coin 和 Golden Carrot。</p>
-            </div>
-            <span class="save-summary">
-              {{ adventureCompletedCount }} 已完成 ·
-              {{ adventureSave.economy.bonusCoins }} Bonus Coin ·
-              {{ adventureSave.economy.goldenCarrots }} Golden Carrot
-            </span>
-          </header>
-          <DataExchangePanel
-            :value="adventureSave"
-            :serialize="serializeAdventure"
-            :parse="parseAdventure"
-            :public-base-url="publicBaseUrl()"
-            :filename="exportFilename('adventure')"
-            placeholder="粘贴 Adventure Save JSON、BC5R 文本或分享链接……"
-            :toolbar="toolbar"
-            @import="importAdventure"
-            @error="adventureFeedback = $event.message"
-          />
-          <p class="save-management-note">导入会覆盖当前 Adventure 存档。</p>
-          <p class="save-management-feedback" aria-live="polite">{{ adventureFeedback }}</p>
-        </article>
+      <article
+        v-if="activeTab"
+        :id="`save-panel-${activeTab.id}`"
+        class="save-management-card"
+        role="tabpanel"
+        :aria-labelledby="`save-tab-${activeTab.id}`"
+      >
+        <header>
+          <div>
+            <h2>{{ activeTab.label }}</h2>
+            <p>{{ description(activeTab) }}</p>
+          </div>
+          <span class="save-summary">{{ summary(activeTab) }}</span>
+        </header>
+        <DataExchangePanel
+          :value="activeTab.save"
+          :serialize="serializeSelected"
+          :parse="parseSelected"
+          :public-base-url="publicBaseUrl()"
+          :filename="exportFilename(activeTab)"
+          :placeholder="placeholder(activeTab)"
+          :toolbar="toolbar"
+          :reset-key="activeTab.id"
+          @import="importSelected"
+          @error="activeTab.feedback = $event.message"
+        />
+        <p class="save-management-note">{{ importNote(activeTab) }}</p>
+        <p class="save-management-feedback" aria-live="polite">
+          {{ activeTab.feedback }}
+        </p>
+      </article>
+    </div>
 
-        <article class="save-management-card">
-          <header>
-            <div>
-              <h2>Explore</h2>
-              <p>各地图集合的完成记录和最近游玩位置。</p>
-            </div>
-            <span class="save-summary">
-              {{ exploreCompletedCount }} 已完成 ·
-              {{ exploreRecentCollectionCount }} 个集合有最近记录
-            </span>
-          </header>
-          <DataExchangePanel
-            :value="exploreSave"
-            :serialize="serializeExplore"
-            :parse="parseExplore"
-            :public-base-url="publicBaseUrl()"
-            :filename="exportFilename('explore')"
-            placeholder="粘贴 Explore Save JSON、BC5R 文本或分享链接……"
-            :toolbar="toolbar"
-            @import="importExplore"
-            @error="exploreFeedback = $event.message"
-          />
-          <p class="save-management-note">导入会覆盖当前 Explore 完成记录和最近游玩位置。</p>
-          <p class="save-management-feedback" aria-live="polite">{{ exploreFeedback }}</p>
-        </article>
-      </div>
+    <div v-else class="save-management-empty">
+      <h2>暂无游戏存档</h2>
+      <p>游玩 Adventure 或 Explore 后，对应存档会显示在这里。</p>
     </div>
   </section>
 </template>
@@ -176,7 +242,9 @@ function exportFilename(kind: "adventure" | "explore"): string {
 .settings-page-header h1,
 .settings-page-header p,
 .save-management-card h2,
-.save-management-card p {
+.save-management-card p,
+.save-management-empty h2,
+.save-management-empty p {
   margin: 0;
 }
 
@@ -194,36 +262,37 @@ function exportFilename(kind: "adventure" | "explore"): string {
   letter-spacing: 0.14em;
 }
 
-.settings-layout {
+.save-management {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
-  gap: 24px;
-}
-
-.settings-tabs {
-  align-self: start;
-  display: grid;
-  gap: 6px;
-}
-
-.settings-tabs button {
-  min-height: 42px;
-  padding: 8px 12px;
-  border: 1px solid var(--bc-panel-border);
-  border-radius: var(--bc-control-radius);
-  background: var(--bc-control-selected);
-  color: var(--bc-control-selected-text);
-  font-weight: 700;
-  text-align: left;
-}
-
-.settings-tab-panel {
-  display: grid;
-  gap: 18px;
+  gap: 14px;
   min-width: 0;
 }
 
-.save-management-card {
+.save-management-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.save-management-tabs button {
+  min-height: 42px;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid var(--bc-panel-border);
+  border-radius: var(--bc-control-radius);
+  background: var(--bc-control);
+  color: var(--bc-text);
+  font-weight: 700;
+}
+
+.save-management-tabs button[aria-selected="true"] {
+  background: var(--bc-control-selected);
+  color: var(--bc-control-selected-text);
+}
+
+.save-management-card,
+.save-management-empty {
   min-width: 0;
   display: grid;
   gap: 14px;
@@ -244,7 +313,8 @@ function exportFilename(kind: "adventure" | "explore"): string {
 .save-management-card header p,
 .save-summary,
 .save-management-note,
-.save-management-feedback {
+.save-management-feedback,
+.save-management-empty p {
   color: var(--bc-text-muted);
   font-size: 0.78rem;
 }
@@ -262,6 +332,10 @@ function exportFilename(kind: "adventure" | "explore"): string {
   min-height: 1.1em;
 }
 
+.save-management-card :deep(.data-exchange-text) {
+  min-height: 360px;
+}
+
 @media (max-width: 760px) {
   .settings-page-header,
   .save-management-card > header {
@@ -274,12 +348,8 @@ function exportFilename(kind: "adventure" | "explore"): string {
     text-align: left;
   }
 
-  .settings-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .settings-tabs {
-    display: flex;
+  .save-management-card :deep(.data-exchange-text) {
+    min-height: 280px;
   }
 }
 </style>

@@ -61,15 +61,19 @@
 - `semantic/StarShimmer.java`、`SpecialSceneStarfield.java`：gameplay 3-slot 星空闪耀与 Title/Magic Code/Flight 5-slot 滚动星场。
 - `semantic/GameplayRenderOrder.java`：原版 gameplay layer 顺序。
 - `semantic/BobbyAnimationCadence.java`：Bobby walk / idle / death / transition 节奏。
+- `semantic/MowerPresentation.java`：`b7.png` 非均分方向裁切与 `mow.png` 两行节拍。
 - `semantic/GameplayHud.java`、`CameraShake.java`、`OverviewMode.java`、`MissingItemHint.java`：HUD、相机与提示行为。
 
 原版 outer loop 约 62ms，但每轮调用两次 runtime advance；一个 gameplay step 稳态约 **31ms / 32Hz**。不要把旧文档中的 16Hz 当成原版 World tick。
 
-### 当前实现差异
+### Fidelity 审阅
 
-- `notes/fidelity-discrepancies.md`：只记录已由 class 与当前仓库交叉确认的差异；本逆向分支不修改 Engine / Adapter。
+- `notes/fidelity-discrepancies.md`：差异审阅入口和状态流转规则；
+- `notes/fidelity-approved-backlog.md`：目标已经确认、等待实现的事项；
+- `notes/fidelity-open-questions.md`：仍需产品判断或原版验证的问题；
+- `../../docs/decisions/original-fidelity-boundaries.md`：Bobby Carrot 5 Remake 明确保留的现代设计。
 
-目前明确包括 Speed 状态机、Ice 生命周期、Tide raw direction、Carousel/Tide Switch 命名，以及原版 gameplay-step 与当前默认 World 16Hz 的时基关系。
+已经实现并验证的行为进入正式合同、功能说明或机制参考，不在逆向差异清单中保留完成记录。
 
 ## 可复现工具
 

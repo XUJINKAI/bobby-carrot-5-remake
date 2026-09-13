@@ -16,7 +16,7 @@ npm run verify
 - 对全部 530 条官方 source 验证
   `Adapter → Reverse Adapter → Adapter` 后 canonical `LevelMap` 玩法语义一致；
 - 运行 DAT byte-for-byte record round-trip 测试；
-- 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、角色 dialogue、Adventure 交互 reducer 和 map augmentation；
+- 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、多轮 dialogue、Adventure interaction 回调和 map augmentation；
 - 递归读取 `assets/replays/` 的全部 JSON，通过 `meta.url` 关联地图，复跑并校验实际终局状态等于 `finalState`；
 - 生成临时 patched original JAR，重新读取目标 DAT record 并验证写入结果；
 - 校验依赖方向：Model、Adventure、Engine、Editor、Web 不允许依赖

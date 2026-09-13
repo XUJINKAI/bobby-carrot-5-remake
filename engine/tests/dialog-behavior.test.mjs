@@ -17,7 +17,7 @@ function dialogLevel(dialogue, type = MapEntityTypeId.SANDMAN) {
       {
         type,
         x: 1,
-        y: 0,
+        y: 1,
         ...(dialogue === undefined ? {} : { dialogue }),
       },
     ],
@@ -63,6 +63,15 @@ test("地图 dialogue 在角色身体被碰触时产生可传播的对白", () =
   );
 });
 
+test("地图 dialogue 数组按 Entity 的 Runtime 游标循环", () => {
+  const world = new World(dialogLevel(["第一段\n允许换行", "第二段"]));
+  const texts = [0, 1, 2].map(() =>
+    move(world, "right").events.find((event) => event.type === "dialog")?.text
+  );
+
+  assert.deepEqual(texts, ["第一段\n允许换行", "第二段", "第一段\n允许换行"]);
+});
+
 test("没有地图对白时仍产生通用交互请求", () => {
   const world = new World(dialogLevel());
   const first = move(world, "right");
@@ -90,7 +99,7 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
   }
 });
 
-test("走入商品地块时产生通用交互请求", () => {
+test("商品地块阻挡移动并在触碰时产生通用交互请求", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -103,11 +112,11 @@ test("走入商品地块时产生通用交互请求", () => {
   });
 
   const result = move(world, "right");
-  assert.equal(result.moves[0].moved, true);
+  assert.equal(result.moves[0].moved, false);
   assert.deepEqual(result.events.map((event) => event.type), [
     "object-interaction",
   ]);
-  assert.equal(result.events[0].action, "enter");
+  assert.equal(result.events[0].action, "touch");
   assert.equal(result.events[0].objectType, MapEntityTypeId.SHOP_SPEED_SHOES);
   assert.equal(result.events[0].requestId, 1);
 });

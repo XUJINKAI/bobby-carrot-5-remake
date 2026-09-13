@@ -11,8 +11,7 @@ export interface BobbyInventoryState {
   kite: boolean;
   shovel: boolean;
   beans: number;
-  singleUseLockKey: boolean;
-  reusableLockKey: boolean;
+  lockKeys: number;
 }
 
 export type BobbySpeedPhase = "full" | "normal" | "slow";
@@ -29,18 +28,7 @@ export const BOBBY_INVENTORY_FIELDS: readonly EntityFieldDefinition[] = [
   { key: "kite", kind: "boolean", label: "Kite", default: false },
   { key: "shovel", kind: "boolean", label: "Shovel", default: false },
   { key: "beans", kind: "number", label: "Beans", default: 0 },
-  {
-    key: "singleUseLockKey",
-    kind: "boolean",
-    label: "Temporary Key",
-    default: false,
-  },
-  {
-    key: "reusableLockKey",
-    kind: "boolean",
-    label: "Reusable Key",
-    default: false,
-  },
+  { key: "lockKeys", kind: "number", label: "Lock Keys", default: 0 },
 ];
 
 export function readBobbyInventory(
@@ -51,8 +39,7 @@ export function readBobbyInventory(
     kite: state?.kite === true,
     shovel: state?.shovel === true,
     beans: nonNegativeInt(state?.beans),
-    singleUseLockKey: state?.singleUseLockKey === true,
-    reusableLockKey: state?.reusableLockKey === true,
+    lockKeys: nonNegativeInt(state?.lockKeys),
   };
 }
 
@@ -67,9 +54,7 @@ export function patchBobbyInventory(
     kite: patch.kite ?? current.kite,
     shovel: patch.shovel ?? current.shovel,
     beans: Math.max(0, Math.floor(patch.beans ?? current.beans)),
-    singleUseLockKey:
-      patch.singleUseLockKey ?? current.singleUseLockKey,
-    reusableLockKey: patch.reusableLockKey ?? current.reusableLockKey,
+    lockKeys: Math.max(0, Math.floor(patch.lockKeys ?? current.lockKeys)),
   };
 }
 

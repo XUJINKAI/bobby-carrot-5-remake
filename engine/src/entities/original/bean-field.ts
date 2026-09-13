@@ -41,7 +41,8 @@ const plantBean: Behavior = {
     if (inventory.beans <= 0) {
       commands.emit({
         type: "missing-item",
-        entityId: actor.id,
+        actorId: actor.id,
+        entityId: self.entity.id,
         x: self.presence.cell.x,
         y: self.presence.cell.y,
         data: { item: "bean" },

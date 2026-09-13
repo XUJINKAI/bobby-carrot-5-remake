@@ -13,7 +13,10 @@ export function replayVerificationPresentation(
   report: ReplayReport,
   expected: Replay,
 ): { text: string; failed: boolean } {
-  if (report.actual.status !== expected.finalState.status) {
+  if (
+    expected.finalState.status !== undefined &&
+    report.actual.status !== expected.finalState.status
+  ) {
     return {
       text:
         `终局不一致 · 记录 ${expected.finalState.status} / ` +
@@ -397,6 +400,18 @@ export function bindReplayPanel(options: {
       loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
     }
   };
+  const unsubscribeRecordingAbort = options.game.on(
+    "replay-recording-aborted",
+    () => {
+      replay = null;
+      output.value = "";
+      clearReplayParseTimer();
+      replayTextDirty = false;
+      if (!open) setOpen(true);
+      showError("interactive host choice is not supported by replay");
+      update();
+    },
+  );
   setOpen(open, false);
   update();
 
@@ -413,6 +428,7 @@ export function bindReplayPanel(options: {
       output.removeEventListener("input", onOutputInput);
       speedInput.removeEventListener("input", onSpeedInput);
       window.removeEventListener("keydown", onKeyDown);
+      unsubscribeRecordingAbort();
       stage.classList.remove("replay-panel-open");
     },
   };

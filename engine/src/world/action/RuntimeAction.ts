@@ -79,6 +79,12 @@ export interface RuntimeActionIntentRequest {
  */
 export type RuntimeActionInputDisposition = "retry" | "consumed";
 
+export interface RuntimeActionIntentObservation {
+  disposition: RuntimeActionInputDisposition;
+  /** onIntent 是否改变了可快照的 Action gameplay state。 */
+  stateChanged: boolean;
+}
+
 export type RuntimeActionStatus = "running" | "complete";
 
 /**

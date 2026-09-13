@@ -9,7 +9,7 @@
 - `b0.png`～`b3.png`：1×8，Bobby 左 / 右 / 上 / 下。
 - `b4.png`：1×3，待机。
 - `b5.png`：1×8，死亡。
-- `b6.png`：1×10，Bobby 关卡进入 / 通关过渡；进入关卡时反向播放，通关时正向播放。
+- `b6.png`：1×8，Bobby 关卡进入 / 通关过渡；进入关卡时以约 310ms 反向播放，通关时以约 279ms 正向播放，两端各包含原版计数器产生的透明槽。
 - `b7.png`：2×4，割草机。
 - `b8.png`：3×4，雪铲。
 - `b9.png`：1×4，风筝。
@@ -47,7 +47,8 @@
 - 胡萝卜是可收集物品，关卡目标是收集胡萝卜时，界面HUD显示胡萝卜剩余数量。
 
 视觉使用 `carrot` 的 base、`consumed` phase，以及 `high-grass` 的 `objective`
-phase。
+phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-carrot` runtime state，
+`ts-13-10` 的坑会保留到本局结束，并随 World Snapshot 被 Undo / Redo 恢复。
 
 ### egg 彩蛋
 
@@ -281,12 +282,12 @@ bf(1,1) --> bf(2,1) --> bf(3,1) --> bf(2,1)
 
 ## Beaver
 
-Beaver 是两格对象，Head / Body 属于同一个 Entity。方向、交互和视觉都不应通过两个独立地图对象维持同步。
+Beaver 是两格对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。Head / Body 属于同一个 Entity，方向、交互和视觉都不应通过两个独立地图对象维持同步。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
 
 ## Sandman
 
-Sandman 是两格角色型对象，由 Head / Body 共同组成一个 Entity。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。
+Sandman 是两格角色型对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
 
 ## Dream Machine
 
-Dream Machine 同样是两格对象，采用单 Entity + footprint。其特殊场景行为与普通 Entity runtime 共用同一套机制。
+Dream Machine 同样是两格对象，采用单 Entity + footprint；Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用同一套机制。

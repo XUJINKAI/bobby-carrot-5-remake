@@ -2,9 +2,13 @@ import path from "node:path";
 
 const REPLAY_SITE_ORIGIN = "https://bc5r.xujinkai.net";
 const MAP_SEGMENT = /^[a-z0-9][a-z0-9._-]*$/i;
+const MAP_PATH_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i;
 
 /** Replay fixture 通过产品 URL 关联地图，文件路径只负责组织测试用例。 */
 export function replayMapRef(replay) {
+  const pathId = replay?.meta?.id;
+  if (typeof pathId !== "string" || !MAP_PATH_ID.test(pathId))
+    throw new Error("Replay meta.id 必须使用 <collection>/<map-id> 路径身份");
   const rawUrl = replay?.meta?.url;
   if (typeof rawUrl !== "string" || rawUrl.length === 0)
     throw new Error("Replay meta.url 必须是正式地图 URL");
@@ -34,6 +38,8 @@ export function replayMapRef(replay) {
   }
   if (!MAP_SEGMENT.test(collection) || !MAP_SEGMENT.test(id))
     throw new Error("Replay meta.url 包含无效的地图身份");
+  if (pathId !== `${collection}/${id}`)
+    throw new Error("Replay meta.id 与 meta.url 指向的地图不一致");
   return { collection, id };
 }
 

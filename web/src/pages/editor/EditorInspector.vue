@@ -10,7 +10,7 @@ import {
   type SurfaceTool,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
-import type { EntityType } from "@bobby/model";
+import type { EntityType, LevelEntityFieldValue } from "@bobby/model";
 import { computed } from "vue";
 import EditorCellInspector from "./EditorCellInspector.vue";
 import EditorEraseInspector from "./EditorEraseInspector.vue";
@@ -33,16 +33,16 @@ const props = defineProps<{
   deletionTargetIndex: number | null;
 }>();
 const emit = defineEmits<{
-  field: [entityIndex: number, key: string, value: string];
+  field: [entityIndex: number, key: string, value: LevelEntityFieldValue];
   variant: [entityIndex: number, index: number];
   surfaceVariant: [entityIndex: number, type: EntityType];
   deleteLayer: [entityIndex: number];
   reorder: [refsTopToBottom: number[]];
-  batchField: [type: string, key: string, value: string];
+  batchField: [type: string, key: string, value: LevelEntityFieldValue];
   batchVariant: [type: string, index: number];
   batchSurfaceVariant: [type: string, variantType: EntityType];
   batchDelete: [type: string];
-  placementField: [key: string, value: string];
+  placementField: [key: string, value: LevelEntityFieldValue];
   placementVariant: [index: number];
 }>();
 

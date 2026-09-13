@@ -130,7 +130,7 @@ test("Dragon 只显式声明 left/right body-centered footprint", () => {
   );
 });
 
-test("Sandman / Dream Machine / Beaver 使用固定 footprint", () => {
+test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
     const footprint = registry.require(type).footprint;
@@ -138,8 +138,8 @@ test("Sandman / Dream Machine / Beaver 使用固定 footprint", () => {
     assert.deepEqual(
       footprint.parts.map((part) => [part.dx, part.dy, part.role]),
       [
-        [0, 0, "head"],
-        [0, 1, "body"],
+        [0, -1, "head"],
+        [0, 0, "body"],
       ],
       type,
     );

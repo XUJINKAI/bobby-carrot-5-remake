@@ -55,6 +55,7 @@ function fixture(options = {}) {
   const game = {
     canvas,
     hasLevel: true,
+    presentationBlocksInput: false,
     zoom: 1,
     panByScreen(dx, dy) {
       calls.pan.push({ dx, dy });
@@ -81,6 +82,7 @@ function fixture(options = {}) {
     canvas,
     calls,
     game,
+    input,
     destroy() {
       input.destroy();
       if (previousWindow === undefined) delete globalThis.window;
@@ -88,6 +90,21 @@ function fixture(options = {}) {
     },
   };
 }
+
+test("关卡进入表现期间丢弃移动输入", () => {
+  const view = fixture();
+  try {
+    view.game.presentationBlocksInput = true;
+    globalThis.window.dispatch("keydown", keyboard("ArrowRight"));
+    view.input.setHeldDirection("left");
+    assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
+
+    view.game.presentationBlocksInput = false;
+    assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
+  } finally {
+    view.destroy();
+  }
+});
 
 test("双指手势同时按中心位移平移并围绕中心缩放", () => {
   const view = fixture();

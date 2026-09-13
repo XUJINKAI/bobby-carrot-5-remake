@@ -8,6 +8,7 @@ import {
   resolveLevelEntityVisualPreview,
 } from "../dist/visual/preview.js";
 import { portal } from "../dist/entities/custom/portal.js";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 
 const BLOCKING_TYPES = [
   MapEntityTypeId.WINDMILL,
@@ -47,6 +48,79 @@ test("canonical original obstacle semantics keep known blockers blocking", () =>
   for (const type of BLOCKING_TYPES) {
     assert.equal(registry.require(type).traits.includes("blocking"), true, type);
   }
+});
+
+test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const player = actor(world);
+  const snow = world.query.entitiesWithTrait("snow")[0];
+
+  const result = move(world, "right");
+
+  assert.equal(result.moves[0].moved, false);
+  assert.deepEqual(
+    result.events.find((event) => event.type === "missing-item"),
+    {
+      type: "missing-item",
+      actorId: player.id,
+      entityId: snow.id,
+      x: 1,
+      y: 0,
+      data: { item: "shovel" },
+    },
+  );
+});
+
+test("胡萝卜收集后留下持久的 consumed runtime state", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    rules: { win: { type: "collect-all", target: MapEntityTypeId.CARROT } },
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+    ],
+  });
+
+  assert.equal(move(world, "right").moves[0].moved, true);
+  assert.equal(
+    world.entities.all().some((entity) => entity.type === MapEntityTypeId.CARROT),
+    false,
+  );
+  const consumed = world.entities.all().find(
+    (entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT,
+  );
+  assert.deepEqual(consumed?.anchor, { x: 1, y: 0 });
+  assert.equal(world.winState.remaining, 0);
+  world.update({ tick: 1, stepMs: 1000 });
+  assert.equal(
+    world.entities
+      .all()
+      .some((entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT),
+    true,
+  );
+
+  const visual = resolveEntityVisualPreview({
+    type: RuntimeEntityTypeId.CONSUMED_CARROT,
+  });
+  assert.deepEqual(visual?.layers[0], {
+    kind: "atlas",
+    column: 9,
+    row: 12,
+  });
 });
 
 test("Portal visual 接受 hex color 与常用颜色别名", () => {

@@ -100,6 +100,12 @@ button {
   cursor: pointer;
 }
 
+/* 按钮由指针和应用快捷键触发，不显示浏览器的键盘焦点框。 */
+button:focus,
+button:focus-visible {
+  outline: none;
+}
+
 .primary-btn,
 .ghost-btn,
 .icon-btn {

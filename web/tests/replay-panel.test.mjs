@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "vitest";
 import { replayVerificationPresentation } from "../src/pages/game/bindReplayPanel.ts";
+import { replayPathId } from "../src/pages/game/replayAssets.ts";
 import {
   loadReplayPanelOpen,
   storeReplayPanelOpen,
@@ -21,6 +22,8 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
     {
       actual: {
         status: "playing",
+        moves: 0,
+        elapsedMs: 34,
         counters: {},
         completedConditions: [],
       },
@@ -37,6 +40,41 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
     text: "终局不一致 · 记录 won / 复跑 playing",
     failed: true,
   });
+});
+
+test("Replay 使用 collection 与地图 ID 组成路径身份", () => {
+  assert.equal(replayPathId("original", "1-1"), "original/1-1");
+});
+
+test("Replay 未声明 status 时只报告复跑完成", () => {
+  const presentation = replayVerificationPresentation(
+    {
+      actual: {
+        status: "won",
+        moves: 1,
+        elapsedMs: 100,
+        counters: {},
+        completedConditions: [],
+      },
+      endTick: 2,
+    },
+    { finalState: {} },
+  );
+
+  assert.deepEqual(presentation, {
+    text: "复跑完成 · 2 ticks",
+    failed: false,
+  });
+});
+
+test("阻塞对话终止录制时清空 take 并显示诊断", () => {
+  assert.match(replayBindingSource, /"replay-recording-aborted"/);
+  assert.match(replayBindingSource, /replay = null;\s+output\.value = ""/);
+  assert.match(
+    replayBindingSource,
+    /interactive host choice is not supported by replay/,
+  );
+  assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
 });
 
 test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {

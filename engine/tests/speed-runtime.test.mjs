@@ -126,6 +126,26 @@ test("Speed keeps one fast cadence for exactly three off-belt cells", () => {
   assert.equal(world.entity(actor).state.speedBoost, undefined);
 });
 
+test("Bobby starts moving in the Speed direction when the level begins", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 5 }, (_, x) => ground(x, 0)),
+      speed(0, 0, "right"),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
+    ],
+  });
+  const actor = actorIds(world)[0];
+
+  assert.equal(world.inputBlocked, true);
+  const first = nextMotion(world);
+  assert.equal(world.entity(actor).anchor.x, 1);
+  assert.equal(first.result.motions[0].cause.mechanism, "speed");
+  assert.equal(first.result.motions[0].direction, "right");
+});
+
 test("same-direction held input renews the three-cell continuation", () => {
   const world = straightWorld(8);
   const actor = actorIds(world)[0];

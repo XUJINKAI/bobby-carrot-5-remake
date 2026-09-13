@@ -2,6 +2,10 @@
 
 本文件只记录从用户提供的 JAR、资源和字节码恢复出的事实，不代表现代 Web 产品必须保留所有历史 UI。
 
+专项事实文档：
+
+- [`beaver-shop.md`](beaver-shop.md)：Beaver Shop 商品、价格、对话、持久状态与运行效果。
+
 ## 平台
 
 Base JAR Manifest：

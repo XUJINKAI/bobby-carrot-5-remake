@@ -1,72 +1,43 @@
-import { MapEntityTypeId, type LevelMap } from "@bobby/model";
-import type { AdventureEntityFieldPatch } from "./augment.js";
-import { augmentAdventureLevel } from "./augment.js";
-import { parseAdventureLevelId } from "./campaign.js";
+import { MapEntityTypeId } from "@bobby/model";
 import {
+  completeAdventureLevel,
   normalizeAdventureSave,
-  rewardClaimKey,
-  type AdventureRewardClaim,
-  type AdventureRewardType,
   type AdventureSave,
 } from "./save.js";
 
-export function createAdventureLevelInstance(
+export interface AdventureLevelRewards {
+  bonusCoins: number;
+  goldenCarrots: number;
+}
+
+export type AdventureLevelRewardType =
+  | typeof MapEntityTypeId.BONUS_COIN
+  | typeof MapEntityTypeId.GOLDEN_CARROT;
+
+export function createAdventureLevelRewards(): AdventureLevelRewards {
+  return { bonusCoins: 0, goldenCarrots: 0 };
+}
+
+export function collectAdventureLevelReward(
+  rewards: AdventureLevelRewards,
+  type: AdventureLevelRewardType,
+): AdventureLevelRewards {
+  const next = normalizeAdventureLevelRewards(rewards);
+  if (type === MapEntityTypeId.BONUS_COIN) next.bonusCoins += 1;
+  else next.goldenCarrots += 1;
+  return next;
+}
+
+/** 关卡进度与本局奖励在同一次 Save 归约中提交。 */
+export function settleAdventureLevelCompletion(
+  save: AdventureSave,
   levelId: string,
-  level: LevelMap,
-  save: AdventureSave,
-  fieldPatches: readonly AdventureEntityFieldPatch[] = [],
-): LevelMap {
-  const augmented = augmentAdventureLevel(structuredClone(level), fieldPatches);
-  const normalized = normalizeAdventureSave(save);
-  const parsedLevel = parseAdventureLevelId(levelId);
-  if (!parsedLevel) throw new Error(`不是 Adventure 关卡 ID：${levelId}`);
-  const claimed = new Set(normalized.claimedRewards.map(rewardClaimKey));
-  return {
-    ...augmented,
-    entities: augmented.entities.filter((entity) => {
-      if (!isAdventureRewardType(entity.type)) return true;
-      return !claimed.has(
-        rewardClaimKey({
-          levelId: parsedLevel.id,
-          type: entity.type,
-          x: entity.x,
-          y: entity.y,
-        }),
-      );
-    }),
-  };
-}
-
-export function claimAdventureReward(
-  save: AdventureSave,
-  claim: AdventureRewardClaim,
+  rewards: AdventureLevelRewards,
 ): AdventureSave {
-  const next = structuredClone(normalizeAdventureSave(save));
-  const key = rewardClaimKey(claim);
-  if (next.claimedRewards.some((item) => rewardClaimKey(item) === key))
-    return next;
-  next.claimedRewards.push(structuredClone(claim));
-  if (claim.type === MapEntityTypeId.BONUS_COIN)
-    next.economy.bonusCoins += 1;
-  else next.economy.goldenCarrots += 1;
-  return normalizeAdventureSave(next);
-}
-
-export function addBonusCoins(
-  save: AdventureSave,
-  amount = 1,
-): AdventureSave {
-  const next = structuredClone(normalizeAdventureSave(save));
-  next.economy.bonusCoins += Math.max(0, Math.floor(amount));
-  return normalizeAdventureSave(next);
-}
-
-export function addGoldenCarrots(
-  save: AdventureSave,
-  amount = 1,
-): AdventureSave {
-  const next = structuredClone(normalizeAdventureSave(save));
-  next.economy.goldenCarrots += Math.max(0, Math.floor(amount));
+  const next = completeAdventureLevel(save, levelId);
+  const earned = normalizeAdventureLevelRewards(rewards);
+  next.economy.bonusCoins += earned.bonusCoins;
+  next.economy.goldenCarrots += earned.goldenCarrots;
   return normalizeAdventureSave(next);
 }
 
@@ -92,9 +63,15 @@ export function spendGoldenCarrots(
   return normalizeAdventureSave(next);
 }
 
-function isAdventureRewardType(type: string): type is AdventureRewardType {
-  return (
-    type === MapEntityTypeId.BONUS_COIN ||
-    type === MapEntityTypeId.GOLDEN_CARROT
-  );
+function normalizeAdventureLevelRewards(
+  rewards: AdventureLevelRewards,
+): AdventureLevelRewards {
+  return {
+    bonusCoins: rewardCount(rewards.bonusCoins),
+    goldenCarrots: rewardCount(rewards.goldenCarrots),
+  };
+}
+
+function rewardCount(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
 }

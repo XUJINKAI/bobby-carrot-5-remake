@@ -5,6 +5,7 @@ import type {
 import type {
   EntityType,
   JsonPrimitive,
+  LevelEntityFieldValue,
   LevelEntity,
 } from "@bobby/model";
 import type { Cell } from "../authoring/entityPlacement.js";
@@ -14,7 +15,7 @@ import type { EditorMap, EntityRef, LevelValidationIssue } from "../level/types.
 export type EditorTool = "select" | "place" | "erase";
 
 /** Editor 专用 preset/variant 携带的扁平 Map 持久化字段。 */
-export type EditorEntityFields = Readonly<Record<string, JsonPrimitive>>;
+export type EditorEntityFields = Readonly<Record<string, LevelEntityFieldValue>>;
 
 /** What the Editor Core should create when the current placement action is committed. */
 export interface EditorPlacementPreset {
@@ -82,7 +83,7 @@ export type EditorEntityExclusion =
 export interface EditorPalettePreview {
   fields?: EditorEntityFields;
   /** 只注入缩略图的 Runtime state，不进入 EditorPlacementPreset 或 LevelMap。 */
-  state?: EditorEntityFields;
+  state?: Readonly<Record<string, JsonPrimitive>>;
 }
 
 export type EditorPaletteExpansion = "variants";

@@ -16,8 +16,8 @@ const definition: EntityModuleDefinition = {
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     parts: [
-      { dx: 0, dy: 0, role: "head" },
-      { dx: 0, dy: 1, role: "body" },
+      { dx: 0, dy: -1, role: "head" },
+      { dx: 0, dy: 0, role: "body" },
     ],
   },
   presentation: { name: "Sandman" },

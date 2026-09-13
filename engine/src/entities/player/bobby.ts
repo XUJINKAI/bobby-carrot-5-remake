@@ -28,6 +28,8 @@ const BOBBY_IDLE_FRAME_MS = 50;
 const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
+const BOBBY_TRANSITION_FRAME_COUNT = 8;
+const BOBBY_TRANSITION_STEP_COUNT = 10;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   left: 0,
   right: 1,
@@ -45,6 +47,7 @@ export const BOBBY_VISUAL_ASSETS = {
   } satisfies Readonly<Record<Direction, string>>,
   idle: "bobby-idle",
   death: "bobby-death",
+  transition: "bobby-transition",
   mower: "bobby-mower",
   snowplow: "bobby-snowplow",
   kite: "bobby-kite",
@@ -112,6 +115,33 @@ const bobbyVisual = {
       });
     }
 
+    if (context.runtime?.animation === "level-enter") {
+      const frameIndex =
+        BOBBY_TRANSITION_STEP_COUNT - 1 - transitionStep(progress);
+      if (frameIndex >= BOBBY_TRANSITION_FRAME_COUNT) return null;
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.transition,
+        frameColumns: BOBBY_TRANSITION_FRAME_COUNT,
+        frameRows: 1,
+        frameIndex,
+      });
+    }
+
+    if (context.runtime?.animation === "level-exit") {
+      if (rawProgress >= 1) return null;
+      const frameIndex = transitionStep(progress);
+      if (frameIndex >= BOBBY_TRANSITION_FRAME_COUNT) return null;
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.transition,
+        frameColumns: BOBBY_TRANSITION_FRAME_COUNT,
+        frameRows: 1,
+        frameIndex,
+      });
+    }
+
+    // World 完成后只允许通关 transition 绘制 Bobby；动画结束后角色保持隐藏。
+    if (context.global?.completed) return null;
+
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));
       return composition(context, {
@@ -122,11 +152,10 @@ const bobbyVisual = {
       });
     }
 
-    // 原版 Ice 全程固定在普通移动 strip 的第 7 帧。连续 Ice 格之间
-    // Runtime motion 会短暂回到 stationary，因此静止在 Ice 上也保持同一帧。
+    // Ice 的滑动姿势只属于正在进行的空间运动；停在 Ice 上时仍使用普通站姿。
     if (
-      context.runtime?.animation === "ice" ||
-      (!context.runtime?.moving && isStandingOnIce(context))
+      context.runtime?.animation === "ice" &&
+      context.runtime.moving === true
     ) {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.move[direction],
@@ -172,6 +201,18 @@ const bobbyVisual = {
       });
     }
 
+    // 藤蔓的攀爬姿势始终使用背面人物 strip，朝向状态本身仍由 World 持有。
+    if (isStandingOnClimbable(context)) {
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.move.up,
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: context.runtime?.moving
+          ? resolveWalkingFrame(rawProgress)
+          : BOBBY_STANDING_FRAME,
+      });
+    }
+
     if (!context.runtime?.moving) {
       const idleFrame = resolveIdleFrame(
         context.runtime?.stationarySinceMs,
@@ -206,9 +247,9 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
   { behavior: bobbyMovementPolicy },
 ]);
 
-function isStandingOnIce(context: VisualResolveContext): boolean {
+function isStandingOnClimbable(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    context.query.entity(presence.entityId)?.type === MapEntityTypeId.ICE
+    presence.traits.includes("climbable")
   );
 }
 
@@ -217,6 +258,13 @@ function resolveWalkingFrame(progress: number): number {
   const normalized = Math.max(0, Math.min(1, progress));
   const step = Math.min(8, Math.floor(normalized * 8));
   return (BOBBY_STANDING_FRAME + step) % 8;
+}
+
+function transitionStep(progress: number): number {
+  return Math.min(
+    BOBBY_TRANSITION_STEP_COUNT - 1,
+    Math.floor(clampProgress(progress) * BOBBY_TRANSITION_STEP_COUNT),
+  );
 }
 
 function speedTrail(
