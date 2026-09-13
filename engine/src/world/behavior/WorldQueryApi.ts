@@ -5,6 +5,7 @@ import type { EntityStore } from "../entity/EntityStore.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { SpatialIndex } from "../spatial/SpatialIndex.js";
+import type { EntitySelector } from "../spatial/EntitySelector.js";
 import type { WorldMotion, WorldMotionStore } from "../movement/WorldMotion.js";
 
 export interface CellQuery {
@@ -56,7 +57,7 @@ export class WorldQueryApi {
 
   presenceMatchesSelector(
     presence: EntityPresence,
-    selector: string,
+    selector: EntitySelector,
   ): boolean {
     return this.spatial.presenceMatchesSelector(presence, selector);
   }

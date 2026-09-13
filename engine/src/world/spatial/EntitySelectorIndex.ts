@@ -1,6 +1,7 @@
 import type { EntityDefinition } from "../entity/EntityDefinition.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
+import type { EntitySelector } from "./EntitySelector.js";
 
 /** 与空间 Presence 同步维护语义索引；多格 Fact 按 Entity 去重。 */
 export class EntitySelectorIndex {
@@ -52,26 +53,21 @@ export class EntitySelectorIndex {
     return this.facts.get(fact)?.size ?? 0;
   }
 
-  countMatching(selector: string): number {
-    const types = this.types.get(selector);
-    const facts = this.facts.get(selector);
-    if (!types) return facts?.size ?? 0;
-    if (!facts) return types.size;
-    // 联合 selector 按 Entity 去重；计数只检查较小集合的交集。
-    const smaller = types.size <= facts.size ? types : facts;
-    const larger = smaller === types ? facts : types;
-    let count = types.size + facts.size;
-    for (const id of smaller) {
-      if (larger.has(id)) count -= 1;
-    }
-    return count;
+  countMatching(selector: EntitySelector): number {
+    return this.matching(selector).length;
   }
 
-  matching(selector: string): EntityId[] {
-    return ordered(new Set([
-      ...(this.types.get(selector) ?? []),
-      ...(this.facts.get(selector) ?? []),
-    ]));
+  matching(selector: EntitySelector): EntityId[] {
+    switch (selector.kind) {
+      case "type":
+        return ordered(this.types.get(selector.value) ?? []);
+      case "fact":
+        return ordered(this.facts.get(selector.value) ?? []);
+      case "any":
+        return ordered(new Set(selector.selectors.flatMap((item) =>
+          this.matching(item)
+        )));
+    }
   }
 }
 

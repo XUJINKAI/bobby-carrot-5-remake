@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
+import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
 import { World } from "./support/World.mjs";
 
 test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后等价于全量查询", () => {
@@ -34,9 +35,9 @@ test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后
       const facts = all.filter((e) => world.query.entityHasFact(e.id, selector));
       const matching = all.filter((e) => e.type === selector || world.query.entityHasFact(e.id, selector));
       assert.deepEqual(world.query.entitiesWithFact(selector), facts);
-      assert.deepEqual(world.spatial.entityIdsMatching(selector), matching.map((e) => e.id));
+      assert.deepEqual(world.spatial.entityIdsMatching(levelRuleSelector(selector)), matching.map((e) => e.id));
       assert.equal(world.spatial.entityCountWithFact(selector), facts.length);
-      assert.equal(world.spatial.entityCountMatching(selector), matching.length);
+      assert.equal(world.spatial.entityCountMatching(levelRuleSelector(selector)), matching.length);
     }
   }
   check();

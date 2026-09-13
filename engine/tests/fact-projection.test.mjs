@@ -4,6 +4,7 @@ import { createBuiltinFactRegistry } from "../dist/mechanism/fact/builtinFacts.j
 import { FactRegistry } from "../dist/mechanism/fact/FactRegistry.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
+import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
 import { World } from "./support/World.mjs";
 
 test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => {
@@ -47,9 +48,9 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   assert.deepEqual(world.query.entityFacts(probe.id), ["whole-target"]);
   assert.equal(head.facts.includes("whole-target"), false);
   assert.equal(tail.facts.includes("whole-target"), false);
-  assert.equal(world.spatial.presenceMatchesSelector(head, "whole-target"), true);
-  assert.equal(world.spatial.presenceMatchesSelector(tail, "whole-target"), true);
-  assert.equal(world.spatial.entityCountMatching("whole-target"), 1);
+  assert.equal(world.spatial.presenceMatchesSelector(head, levelRuleSelector("whole-target")), true);
+  assert.equal(world.spatial.presenceMatchesSelector(tail, levelRuleSelector("whole-target")), true);
+  assert.equal(world.spatial.entityCountMatching(levelRuleSelector("whole-target")), 1);
   assert.equal(world.winState.remaining, 1);
   assert.equal(head.facts.includes("blocking"), true);
   assert.equal(tail.facts.includes("blocking"), false);
@@ -61,7 +62,7 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   assert.equal(updatedHead.facts.includes("hot"), true);
   assert.equal(updatedTail.facts.includes("hot"), false);
   assert.equal(world.query.entityHasFact(probe.id, "hot"), true);
-  assert.equal(world.spatial.entityCountMatching("hot"), 1);
+  assert.equal(world.spatial.entityCountMatching(levelRuleSelector("hot")), 1);
   world.restore(world.snapshot());
   assert.equal(world.query.entityHasFact(probe.id, "hot"), true);
 });

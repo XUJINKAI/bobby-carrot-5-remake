@@ -8,6 +8,7 @@ import type {
 import type { EntityPresence } from "./EntityPresence.js";
 import { resolveFootprintCells } from "./Footprint.js";
 import { EntitySelectorIndex } from "./EntitySelectorIndex.js";
+import type { EntitySelector } from "./EntitySelector.js";
 import { EntityFactProjection } from "../entity/EntityFactProjection.js";
 import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js";
 
@@ -67,12 +68,20 @@ export class SpatialIndex {
 
   presenceMatchesSelector(
     presence: EntityPresence,
-    selector: string,
+    selector: EntitySelector,
   ): boolean {
     const entity = this.entities.require(presence.entityId);
-    return entity.type === selector ||
-      this.hasEntityFact(entity.id, selector) ||
-      presence.facts.includes(selector);
+    switch (selector.kind) {
+      case "type":
+        return entity.type === selector.value;
+      case "fact":
+        return this.hasEntityFact(entity.id, selector.value) ||
+          presence.facts.includes(selector.value);
+      case "any":
+        return selector.selectors.some((item) =>
+          this.presenceMatchesSelector(presence, item)
+        );
+    }
   }
 
   hasFactAt(cell: CellPosition, fact: FactId): boolean {
@@ -85,7 +94,7 @@ export class SpatialIndex {
     return this.selectors.withFact(fact);
   }
 
-  entityIdsMatching(selector: string): readonly EntityId[] {
+  entityIdsMatching(selector: EntitySelector): readonly EntityId[] {
     return this.selectors.matching(selector);
   }
 
@@ -97,7 +106,7 @@ export class SpatialIndex {
     return this.selectors.countWithFact(fact);
   }
 
-  entityCountMatching(selector: string): number {
+  entityCountMatching(selector: EntitySelector): number {
     return this.selectors.countMatching(selector);
   }
 

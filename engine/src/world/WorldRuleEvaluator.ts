@@ -4,6 +4,7 @@ import type { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityStore } from "./entity/EntityStore.js";
 import type { ReachResolver } from "./outcome/ReachResolver.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
+import { levelRuleSelector } from "./spatial/EntitySelector.js";
 import type { WinConditionState } from "./WorldTypes.js";
 
 /** 地图目标、限制和派生计数的集中求值器。 */
@@ -119,7 +120,7 @@ export class WorldRuleEvaluator {
   }
 
   private matchingEntityCount(selector: string): number {
-    return this.spatial.entityCountMatching(selector);
+    return this.spatial.entityCountMatching(levelRuleSelector(selector));
   }
 
   private hasSelectorAt(
@@ -127,16 +128,17 @@ export class WorldRuleEvaluator {
     selector: string,
   ): boolean {
     return this.spatial.presencesAt(cell).some((presence) =>
-      this.spatial.presenceMatchesSelector(presence, selector),
+      this.spatial.presenceMatchesSelector(presence, levelRuleSelector(selector)),
     );
   }
 
   private spatialCellsMatching(selector: string): { x: number; y: number }[] {
     const result = new Map<string, { x: number; y: number }>();
-    for (const id of this.spatial.entityIdsMatching(selector)) {
+    const query = levelRuleSelector(selector);
+    for (const id of this.spatial.entityIdsMatching(query)) {
       const entity = this.entities.require(id);
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (!this.spatial.presenceMatchesSelector(presence, selector)) continue;
+        if (!this.spatial.presenceMatchesSelector(presence, query)) continue;
         result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
       }
     }
