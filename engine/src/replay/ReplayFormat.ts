@@ -17,7 +17,7 @@ export interface ReplayAddActorInventoryItemIntent {
   type: "add-actor-inventory-item";
   /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
   actor?: CellPosition;
-  item: "lock-key";
+  item: string;
   count: number;
 }
 

@@ -51,7 +51,7 @@ test("MissingItemEvent 类型守卫验证完整语义字段", () => {
     isMissingItemEvent({ ...missingItemEvent("gas"), actorId: undefined }),
     false,
   );
-  assert.equal(isMissingItemEvent(missingItemEvent("unknown")), false);
+  assert.equal(isMissingItemEvent(missingItemEvent("unknown")), true);
 });
 
 test("五种缺少道具事件映射到统一 Callout 合同", () => {

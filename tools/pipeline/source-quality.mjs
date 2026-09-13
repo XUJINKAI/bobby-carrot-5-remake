@@ -94,6 +94,12 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: 奖励 Fact 必须由 World Metrics Mechanism 解释`);
     }
     if (
+      normalized.startsWith(path.normalize("engine/src/world/")) &&
+      /["'](?:gas|lock-key|kite|shovel|bean)["']/.test(text)
+    ) {
+      errors.push(`${relative}: 道具 ID 应由 Entity 规则或 Presentation 解释`);
+    }
+    if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
         normalized.startsWith(path.normalize(`${directory}/src/`))
       ) &&

@@ -31,12 +31,7 @@ export interface ObjectInteractionEvent extends WorldEvent {
   action: "touch" | "enter";
 }
 
-export type MissingItemKind =
-  | "gas"
-  | "lock-key"
-  | "kite"
-  | "shovel"
-  | "bean";
+export type MissingItemKind = string;
 
 export interface MissingItemEvent extends WorldEvent {
   type: "missing-item";
@@ -49,14 +44,6 @@ export interface MissingItemEvent extends WorldEvent {
   };
 }
 
-const MISSING_ITEM_KINDS: readonly MissingItemKind[] = [
-  "gas",
-  "lock-key",
-  "kite",
-  "shovel",
-  "bean",
-];
-
 export function isMissingItemEvent(
   event: WorldEvent,
 ): event is MissingItemEvent {
@@ -67,7 +54,7 @@ export function isMissingItemEvent(
     event.x !== undefined &&
     event.y !== undefined &&
     event.data !== undefined &&
-    MISSING_ITEM_KINDS.includes(event.data.item as MissingItemKind)
+    typeof event.data.item === "string"
   );
 }
 

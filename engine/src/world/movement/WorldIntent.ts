@@ -40,7 +40,7 @@ export interface SetActorLocomotionIntent {
 export interface AddActorInventoryItemIntent {
   type: "add-actor-inventory-item";
   actorId: EntityId;
-  item: "lock-key";
+  item: string;
   count: number;
   /** 外部交互用来在 Engine 接受动作后提交对应业务事务。 */
   requestId?: number;

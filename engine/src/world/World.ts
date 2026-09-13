@@ -329,7 +329,6 @@ export class World {
   }
 
   clearTransientEffects(): void {
-    this.state.fireTrail = [];
   }
 
   snapshot(): WorldSnapshot {

@@ -13,7 +13,7 @@ interface MissingItemPresentation {
 }
 
 const MISSING_ITEM_PRESENTATIONS: Readonly<
-  Record<MissingItemKind, MissingItemPresentation>
+  Partial<Record<MissingItemKind, MissingItemPresentation>>
 > = {
   gas: { sliceId: "hud-gas", accessibleText: "需要汽油" },
   "lock-key": { sliceId: "hud-key", accessibleText: "需要钥匙" },
@@ -29,6 +29,7 @@ export const missingItemCalloutDefinition: WorldCalloutDefinition = {
   resolve(event) {
     if (!isMissingItemEvent(event)) return null;
     const presentation = MISSING_ITEM_PRESENTATIONS[event.data.item];
+    if (!presentation) return null;
     return {
       channel: `missing-item:${event.actorId}`,
       anchor: { type: "entity", entityId: event.actorId },
