@@ -8,6 +8,7 @@ import type {
   PassageResult,
 } from "../behavior/Behavior.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
+import { readonlyView } from "../behavior/ReadonlyView.js";
 import type {
   CellPosition,
   EntityId,
@@ -92,14 +93,14 @@ export class WorldMovementResolver {
     const sourceStack = [...this.spatial.presencesAt(from)].reverse();
     const targetStack = [...this.spatial.presencesAt(to)].reverse();
     const planningContext: MovementPlanningContext = {
-      actor,
+      actor: readonlyView(actor),
       query: this.query,
       direction: intent.direction,
-      from,
-      to,
-      cause: intent.cause,
-      source: sourceStack,
-      target: targetStack,
+      from: readonlyView(from),
+      to: readonlyView(to),
+      cause: readonlyView(intent.cause),
+      source: readonlyView(sourceStack),
+      target: readonlyView(targetStack),
     };
     const plan = createMovementPlan(
       planningContext,

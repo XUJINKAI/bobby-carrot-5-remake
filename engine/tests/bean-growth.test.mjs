@@ -38,7 +38,7 @@ function createWorld(beans = 1) {
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  actor.state = { beans };
+  world.entities.require(actor.id).state = { beans };
   return world;
 }
 

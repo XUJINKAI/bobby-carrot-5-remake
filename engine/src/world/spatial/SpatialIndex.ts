@@ -146,14 +146,14 @@ export class SpatialIndex {
         );
       }
       const facts = this.factProjection.presenceFacts(entity, definition, part);
-      const presence: EntityPresence = {
+      const presence: EntityPresence = Object.freeze({
         entityId: entity.id,
-        cell,
+        cell: Object.freeze(cell),
         layer,
         ...(part.role ? { role: part.role } : {}),
-        facts,
+        facts: Object.freeze([...facts]),
         stackOrder: part.stackOrder ?? baseStackOrder + index,
-      };
+      });
       presences.push(presence);
       const list = this.cells.get(key(cell)) ?? [];
       list.push(presence);

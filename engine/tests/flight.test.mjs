@@ -42,7 +42,7 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  actor.state = { kite: true };
+  world.entities.require(actor.id).state = { kite: true };
 
   const takeoff = move(world, actor.id, "right");
   assert.equal(world.entity(actor.id).state.flying, true);
@@ -119,7 +119,7 @@ test("Airborne movement chains without a stationary World tick", () => {
     { motionDurationMs: 350 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  actor.state = { kite: true };
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
 
   let airborne = false;
@@ -158,7 +158,7 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  actor.state = { kite: true };
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   const boundary = world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
@@ -196,7 +196,7 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  actor.state = { kite: true };
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
 
   const downed = world.downActor(actor.id, "test-down");

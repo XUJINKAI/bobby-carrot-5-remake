@@ -2,6 +2,7 @@ import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js"
 import type { EntityDefinition } from "./EntityDefinition.js";
 import type { EntityInstance } from "./EntityInstance.js";
 import type { ResolvedFootprintCell } from "../spatial/Footprint.js";
+import { readonlyView } from "../behavior/ReadonlyView.js";
 
 /** Entity 与空间部位分别投影语义，避免整体属性被复制到每个格子。 */
 export class EntityFactProjection {
@@ -13,7 +14,7 @@ export class EntityFactProjection {
   ): readonly FactId[] {
     return this.resolve([
       ...(definition.entityFacts ?? []),
-      ...(definition.resolveEntityFacts?.({ entity }) ?? []),
+      ...(definition.resolveEntityFacts?.({ entity: readonlyView(entity) }) ?? []),
     ]);
   }
 
@@ -26,7 +27,10 @@ export class EntityFactProjection {
       ...definition.facts,
       ...(entity.instanceFacts ?? []),
       ...(presence.facts ?? []),
-      ...(definition.resolvePresenceFacts?.({ entity, presence }) ?? []),
+      ...(definition.resolvePresenceFacts?.({
+        entity: readonlyView(entity),
+        presence: readonlyView(presence),
+      }) ?? []),
     ]);
   }
 

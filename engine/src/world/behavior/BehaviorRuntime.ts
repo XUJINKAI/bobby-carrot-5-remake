@@ -10,6 +10,7 @@ import type { MechanismRegistry } from "../../mechanism/MechanismRegistry.js";
 import { resolveEffectiveBehaviors } from "./EffectiveBehavior.js";
 import type { CommandQueue } from "./CommandQueue.js";
 import type { WorldQueryApi } from "./WorldQueryApi.js";
+import { readonlyView } from "./ReadonlyView.js";
 
 export type BehaviorMovementHook =
   | "onArrive"
@@ -54,8 +55,8 @@ export class BehaviorRuntime {
     return {
       query: this.query,
       commands: queue,
-      actor,
-      self: { entity: self, presence },
+      actor: readonlyView(actor),
+      self: { entity: readonlyView(self), presence: readonlyView(presence) },
       ...(direction ? { direction } : {}),
       ...(movement ? { movement } : {}),
       ...(time ? { time } : {}),
@@ -68,7 +69,7 @@ export class BehaviorRuntime {
     queue: CommandQueue,
   ): void {
     const context = {
-      self: { entity, presence },
+      self: { entity: readonlyView(entity), presence: readonlyView(presence) },
       query: this.query,
       commands: queue,
     };

@@ -131,7 +131,7 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
       { lockKeys: 1 },
     ),
   );
-  actor(world).state = { lockKeys: 1 };
+  world.entities.require(actor(world).id).state = { lockKeys: 1 };
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, 0);

@@ -65,7 +65,7 @@ function carryWorld() {
     ],
   });
   const bobby = world.query.entitiesWithFact("player")[0];
-  bobby.direction = "right";
+  world.entities.require(bobby.id).direction = "right";
   return world;
 }
 

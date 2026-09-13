@@ -7,6 +7,7 @@ import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { SpatialIndex } from "../spatial/SpatialIndex.js";
 import type { EntitySelector } from "../spatial/EntitySelector.js";
 import type { WorldMotion, WorldMotionStore } from "../movement/WorldMotion.js";
+import { readonlyView } from "./ReadonlyView.js";
 
 export interface CellQuery {
   x: number;
@@ -27,7 +28,8 @@ export class WorldQueryApi {
   }
 
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
-    return this.entities.get(id);
+    const entity = this.entities.get(id);
+    return entity ? readonlyView(entity) : undefined;
   }
 
   definition(entityId: EntityId) {
@@ -36,19 +38,20 @@ export class WorldQueryApi {
   }
 
   presencesAt(cell: CellQuery): readonly EntityPresence[] {
-    return this.spatial.presencesAt(cell);
+    return readonlyView(this.spatial.presencesAt(cell));
   }
 
   topPresenceAt(cell: CellQuery): EntityPresence | undefined {
-    return this.spatial.topPresenceAt(cell);
+    const presence = this.spatial.topPresenceAt(cell);
+    return presence ? readonlyView(presence) : undefined;
   }
 
   presencesForEntity(entityId: EntityId): readonly EntityPresence[] {
-    return this.spatial.presencesForEntity(entityId);
+    return readonlyView(this.spatial.presencesForEntity(entityId));
   }
 
   entityFacts(entityId: EntityId): readonly string[] {
-    return this.spatial.factsForEntity(entityId);
+    return readonlyView(this.spatial.factsForEntity(entityId));
   }
 
   presenceHasFact(presence: EntityPresence, fact: string): boolean {
@@ -67,11 +70,12 @@ export class WorldQueryApi {
   }
 
   global(): Readonly<GlobalState> {
-    return this.globalState();
+    return readonlyView(this.globalState());
   }
 
   motionForEntity(entityId: EntityId): Readonly<WorldMotion> | undefined {
-    return this.motions?.forEntity(entityId);
+    const motion = this.motions?.forEntity(entityId);
+    return motion ? readonlyView(motion) : undefined;
   }
 
   entityHasFact(entityId: EntityId, fact: FactId): boolean {
@@ -79,7 +83,7 @@ export class WorldQueryApi {
   }
 
   entitiesWithFact(fact: FactId): readonly EntityInstance[] {
-    return this.spatial.entityIdsWithFact(fact)
-      .map((id) => this.entities.require(id));
+    return readonlyView(this.spatial.entityIdsWithFact(fact)
+      .map((id) => this.entities.require(id)));
   }
 }

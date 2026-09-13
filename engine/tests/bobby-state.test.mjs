@@ -96,7 +96,7 @@ test("飞行中的 Bobby 也不能穿入另一个 Bobby 所在格", () => {
     ],
   });
   const [left] = actors(world);
-  left.state = { ...(left.state ?? {}), flying: true };
+  world.entities.require(left.id).state = { ...(left.state ?? {}), flying: true };
 
   const result = move(world, left.id, "right");
 
@@ -123,7 +123,7 @@ test("bean pickup increments only the acting Bobby inventory", () => {
   });
   const [bobby] = actors(world);
   assert.ok(bobby);
-  bobby.state = { beans: 2 };
+  world.entities.require(bobby.id).state = { beans: 2 };
 
   move(world, bobby.id, "right");
   assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).beans, 3);
