@@ -85,12 +85,9 @@ try {
     `${origin}/explore/engine-lab`,
     [
       'class="explore-ungrouped-maps"',
-      'class="collection-sections"',
-      'class="chapter-card"',
-      'data-card-size="small"',
-      "Maximum Moves Lab",
-      "Portal Lab",
-      "Pushbox Lab",
+      'data-card-size="medium"',
+      'href="/explore/play/engine-lab/00-intro"',
+      'href="/explore/play/engine-lab/01-control2"',
     ],
     ['class="chapter-name"', 'class="chapter-separator"'],
   );

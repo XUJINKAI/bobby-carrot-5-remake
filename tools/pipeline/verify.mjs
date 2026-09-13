@@ -103,16 +103,17 @@ const engineLab = collectionIndexes.find(
   (collection) => collection.id === "engine-lab",
 );
 if (!engineLab) throw new Error("缺少 Engine Lab collection");
-if (engineLab.cardSize !== "small")
-  throw new Error("Engine Lab collection cardSize 必须为 small");
-const firstEngineLabChapter = engineLab.maps.findIndex((map) => map.chapter);
-if (firstEngineLabChapter <= 0)
-  throw new Error("Engine Lab 必须先展示根目录地图，再展示 chapter 地图");
-if (engineLab.maps.slice(firstEngineLabChapter).some((map) => !map.chapter))
-  throw new Error("Engine Lab 根目录地图必须集中在 chapter 地图之前");
-for (const chapterId of ["portal", "pushbox"])
-  if (!engineLab.chapters.some((chapter) => chapter.id === chapterId))
-    throw new Error(`Engine Lab 必须发现 ${chapterId} chapter`);
+if (engineLab.cardSize !== "medium")
+  throw new Error("Engine Lab collection cardSize 必须为 medium");
+if (engineLab.chapters.length !== 0 || engineLab.maps.length !== 2)
+  throw new Error("Engine Lab 必须包含两张根目录地图");
+if (
+  engineLab.maps[0]?.id !== "00-intro" ||
+  engineLab.maps[1]?.id !== "01-control2" ||
+  engineLab.maps.some((map) => map.chapter)
+) {
+  throw new Error("Engine Lab 地图顺序必须为 intro、control2");
+}
 assertLomaCollection(collectionIndexes);
 assertNovobanCollection(collectionIndexes);
 

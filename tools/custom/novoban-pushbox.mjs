@@ -22,7 +22,15 @@ export function parseNovoban(text) {
     while (index < lines.length && isXsbBoardLine(lines[index])) board.push(lines[index++]);
     const title = titleBeforeBoard(lines, boardStart);
     const id = String(levels.length + 1).padStart(2, "0");
-    levels.push({ id, title, author, board, level: convertXsbBoard(board, `Novoban ${id} · ${title}`) });
+    levels.push({
+      id,
+      title,
+      author,
+      board,
+      level: convertXsbBoard(board, `Novoban ${id} · ${title}`, {
+        mapKey: `novoban-pushbox/${id}`,
+      }),
+    });
   }
   validateCollection(levels);
   return levels;

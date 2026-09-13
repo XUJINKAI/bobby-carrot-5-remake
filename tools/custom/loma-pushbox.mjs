@@ -41,7 +41,17 @@ export function parseLoma(text) {
     if (!match) throw new Error(`LOMA title 无效：${title || "<missing>"}`);
     if (!author) throw new Error(`${title}: 缺少 Author`);
     const id = `${match[1]}-${match[2]}`;
-    levels.push({ id, chapter: match[1], author, comment, board, level: convertXsbBoard(board, title, { expectedBoxes: 3 }) });
+    levels.push({
+      id,
+      chapter: match[1],
+      author,
+      comment,
+      board,
+      level: convertXsbBoard(board, title, {
+        expectedBoxes: 3,
+        mapKey: `loma-pushbox/${id}`,
+      }),
+    });
   }
   validateCollection(levels);
   return levels;
