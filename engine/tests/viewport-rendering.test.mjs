@@ -97,3 +97,20 @@ test("大图、偏移和帧尺寸按实际像素范围裁剪，Canvas 回调保�
   }], 1000);
   assert.equal(callbacks, 1);
 });
+
+test("Image layer 按显式源矩形裁切非等宽人物图", () => {
+  const { draws, context, images } = fixture();
+  images.image = () => ({ width: 216, height: 166 });
+  drawVisualComposition(context, images, {
+    layers: [{
+      kind: "image",
+      asset: "bobby-mower",
+      sourceX: 120,
+      sourceY: 83,
+      frameWidth: 48,
+      frameHeight: 83,
+      anchor: "bottom",
+    }],
+  }, 0, 0, 48);
+  assert.deepEqual(draws[0].slice(1, 5), [120, 83, 48, 83]);
+});

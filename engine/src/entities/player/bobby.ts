@@ -36,6 +36,13 @@ const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   up: 2,
   down: 3,
 };
+const MOWER_SOURCE_RECT: Readonly<Record<Direction, { x: number; width: number }>> = {
+  left: { x: 0, width: 60 },
+  right: { x: 60, width: 60 },
+  up: { x: 120, width: 48 },
+  down: { x: 168, width: 48 },
+};
+const MOWER_FRAME_HEIGHT = 83;
 
 /** Bobby 的原版人物素材与 sprite-sheet 语义集中在 Player module。 */
 export const BOBBY_VISUAL_ASSETS = {
@@ -169,13 +176,16 @@ const bobbyVisual = {
     const mount = mountId === null ? undefined : context.query.entity(mountId);
     if (mount?.type === MapEntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
+      const source = MOWER_SOURCE_RECT[direction];
       return composition(
         context,
         {
           asset: BOBBY_VISUAL_ASSETS.mower,
-          frameColumns: 4,
-          frameRows: 2,
-          frameIndex: DIRECTION_COLUMN[direction] + row * 4,
+          sourceX: source.x,
+          sourceY: row * MOWER_FRAME_HEIGHT,
+          frameWidth: source.width,
+          frameHeight: MOWER_FRAME_HEIGHT,
+          offsetX: source.width === 60 ? -6 : 0,
         },
         speedTrail(context, direction),
       );
@@ -333,13 +343,7 @@ function visualElevation(context: VisualResolveContext): number {
 
 function composition(
   context: VisualResolveContext,
-  frame: {
-    asset: string;
-    frameColumns: number;
-    frameRows: number;
-    frameIndex?: number;
-    frameProgress?: number;
-  },
+  frame: Omit<ImageVisualLayer, "kind" | "anchor" | "offsetY">,
   background: ImageVisualLayer | null = null,
 ) {
   const marker = playerMarker(context);

@@ -179,6 +179,13 @@ UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作�
 Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，并把 10 个逻辑槽映射为
 “两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”。
 
+### `b7.png` Mower 人物图
+
+高清版 `b7.png` 宽 `216px`，两行各高 `83px`。四个方向依次使用
+`Left 0/60`、`Right 60/60`、`Up 120/48`、`Down 168/48` 的源矩形；
+左右方向相对格子中心偏移 `-6px`。Renderer 读取 Image layer 声明的源矩形，
+人物图的像素分割保持在 Bobby Visual Definition 中。
+
 ## 8. 魔豆与藤蔓
 
 踩到 `0xDF` 豆田且持有魔豆后，原版：

@@ -285,16 +285,25 @@ test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
   assert.equal(runtime.isAnimating, false);
 });
 
-test("Bobby mower cycles vertically inside the direction column", () => {
-  const mower = bobbyVisual({
-    direction: "up",
-    mountType: MapEntityTypeId.MOWER,
-    time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
-  });
-  assert.equal(mower.layers[0].asset, "bobby-mower");
-  assert.equal(mower.layers[0].frameColumns, 4);
-  assert.equal(mower.layers[0].frameRows, 2);
-  assert.equal(mower.layers[0].frameIndex, 6);
+test("Bobby Mower 使用各方向独立的 b7.png 源矩形", () => {
+  for (const [direction, sourceX, frameWidth, offsetX] of [
+    ["left", 0, 60, -6],
+    ["right", 60, 60, -6],
+    ["up", 120, 48, 0],
+    ["down", 168, 48, 0],
+  ]) {
+    const mower = bobbyVisual({
+      direction,
+      mountType: MapEntityTypeId.MOWER,
+      time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
+    });
+    assert.equal(mower.layers[0].asset, "bobby-mower");
+    assert.equal(mower.layers[0].sourceX, sourceX);
+    assert.equal(mower.layers[0].sourceY, 83);
+    assert.equal(mower.layers[0].frameWidth, frameWidth);
+    assert.equal(mower.layers[0].frameHeight, 83);
+    assert.equal(mower.layers[0].offsetX, offsetX);
+  }
 });
 
 test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt cells", () => {

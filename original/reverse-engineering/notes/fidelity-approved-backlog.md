@@ -180,31 +180,6 @@ Tail 触发时立即建立输入锁，贯穿 Dragon wind-up 和 Fireball 飞行�
 - `semantic/GameplayCameraFocus.java`
 - `engine/src/entities/original/dragon.ts`
 
-### A7. 修正 Mower 人物图裁切
-
-**现象差异**
-
-`b7.png` 的左右人物各宽 `60px`，上下人物各宽 `48px`，并不是四个等宽方向列。当前按
-四等分裁成 `54px`，会截断当前方向并带入相邻方向的像素。
-
-**可能影响**
-
-所有 Mower 方向都可能出现串图、偏移或边缘缺失。
-
-**目标行为**
-
-按 `Left 0/60`、`Right 60/60`、`Up 120/48`、`Down 168/48` 的源矩形裁切，左右方向使用
-`-6px` 水平偏移，上下方向保持居中。
-
-**原理说明**
-
-该素材需要逐方向 source rect，不能使用统一 `frameColumns`。
-
-**证据**
-
-- `semantic/MowerPresentation.java`
-- `engine/src/entities/player/bobby.ts`
-
 ### A8. 修正 Mower 与割草轨迹节拍
 
 **现象差异**

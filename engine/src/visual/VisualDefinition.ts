@@ -30,6 +30,9 @@ export interface ImageVisualLayer {
   frameWidth?: number;
   /** 规则网格 sprite sheet 的单帧源高度；省略时可由 frameRows 推导。 */
   frameHeight?: number;
+  /** 非等宽 sprite sheet 中显式源矩形的左上角。 */
+  sourceX?: number;
+  sourceY?: number;
   /** sprite sheet 的列数。用于不应在 Entity 中硬编码源图像素尺寸的规则网格。 */
   frameColumns?: number;
   /** sprite sheet 的行数。用于不应在 Entity 中硬编码源图像素尺寸的规则网格。 */

@@ -86,8 +86,8 @@ function drawImageLayer(
   const progress = Math.max(0, Math.min(0.999999, layer.frameProgress ?? 0));
   const requestedFrame = layer.frameIndex ?? Math.floor(progress * frameCount);
   const frame = Math.max(0, Math.min(frameCount - 1, requestedFrame));
-  const sourceX = (frame % columns) * frameWidth;
-  const sourceY = Math.floor(frame / columns) * frameHeight;
+  const sourceX = layer.sourceX ?? (frame % columns) * frameWidth;
+  const sourceY = layer.sourceY ?? Math.floor(frame / columns) * frameHeight;
 
   if (layer.anchor === "fill") {
     if (!intersectsViewport(cell, viewport)) return;
