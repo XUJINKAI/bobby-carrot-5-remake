@@ -6,6 +6,7 @@ import type { ReachResolver } from "./outcome/ReachResolver.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
 import { levelRuleSelector } from "./spatial/EntitySelector.js";
 import type { WinConditionState } from "./WorldTypes.js";
+import type { WorldMetricsMechanism } from "./outcome/WorldMetrics.js";
 
 /** 地图目标、限制和派生计数的集中求值器。 */
 export class WorldRuleEvaluator {
@@ -15,6 +16,7 @@ export class WorldRuleEvaluator {
     private readonly spatial: SpatialIndex,
     private readonly query: WorldQueryApi,
     private readonly reach: ReachResolver,
+    private readonly metrics: WorldMetricsMechanism,
     private readonly state: () => GlobalState,
   ) {}
 
@@ -25,9 +27,7 @@ export class WorldRuleEvaluator {
 
   refreshDerivedState(): void {
     const state = this.state();
-    state.goldenCarrotsInLevel =
-      this.spatial.entityCountWithFact("golden-carrot");
-    state.bonusCoinsInLevel = this.spatial.entityCountWithFact("bonus-coin");
+    state.metrics = { ...this.metrics.project(this.spatial) };
   }
 
   completionReady(motionRunning: boolean): boolean {

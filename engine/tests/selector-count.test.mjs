@@ -58,6 +58,6 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
   };
   world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(world.winState.remaining, 1);
-  assert.equal(world.state.goldenCarrotsInLevel, 1);
-  assert.equal(world.state.bonusCoinsInLevel, 1);
+  assert.equal(world.state.metrics["golden-carrot"], 1);
+  assert.equal(world.state.metrics["bonus-coin"], 1);
 });

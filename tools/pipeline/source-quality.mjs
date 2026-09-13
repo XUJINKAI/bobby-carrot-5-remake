@@ -88,6 +88,12 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: 通行与 Push Fact 必须由 Pipeline Mechanism 解释`);
     }
     if (
+      normalized.startsWith(path.normalize("engine/src/world/")) &&
+      /["'](?:golden-carrot|bonus-coin)["']/.test(text)
+    ) {
+      errors.push(`${relative}: 奖励 Fact 必须由 World Metrics Mechanism 解释`);
+    }
+    if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
         normalized.startsWith(path.normalize(`${directory}/src/`))
       ) &&

@@ -4,6 +4,7 @@ import { objectInteractionBehavior } from "./entity/ObjectInteractionBehavior.js
 import { waterOverlayBehavior } from "./entity/WaterOverlayBehavior.js";
 import { passageMechanism } from "./pipeline/PassageMechanism.js";
 import { pushMechanism } from "./pipeline/PushMechanism.js";
+import { builtinWorldMetricsMechanism } from "./pipeline/BuiltinWorldMetricsMechanism.js";
 
 export function createBuiltinMechanismRegistry(): MechanismRegistry {
   const registry = new MechanismRegistry();
@@ -14,5 +15,6 @@ export function createBuiltinMechanismRegistry(): MechanismRegistry {
   ]);
   registry.registerPassage(passageMechanism);
   registry.registerPush(pushMechanism);
+  registry.registerMetrics(builtinWorldMetricsMechanism);
   return registry;
 }

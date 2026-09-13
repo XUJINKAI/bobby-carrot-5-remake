@@ -200,6 +200,7 @@ export class World {
       this.spatial,
       this.query,
       this.reachResolver,
+      this.mechanisms.requireMetrics(),
       () => this.state,
     );
     this.lifecycle = new WorldLifecycle(

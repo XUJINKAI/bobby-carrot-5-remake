@@ -7,8 +7,7 @@ export interface GlobalState {
   deathReason: string | null;
   moves: number;
   elapsedMs: number;
-  bonusCoinsInLevel: number;
-  goldenCarrotsInLevel: number;
+  metrics: Record<string, number>;
   /** 为宿主交互请求分配可随 Snapshot 恢复的确定性序号。 */
   nextInteractionRequestId: number;
   /** 本次成功移动进入格子的 selector 快照；允许 reach 匹配 onEnter 中被消费的实体。 */
@@ -25,8 +24,7 @@ export function createGlobalState(): GlobalState {
     deathReason: null,
     moves: 0,
     elapsedMs: 0,
-    bonusCoinsInLevel: 0,
-    goldenCarrotsInLevel: 0,
+    metrics: {},
     nextInteractionRequestId: 1,
     lastReachedSelectors: [],
     fireTrail: [],

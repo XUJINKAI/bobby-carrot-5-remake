@@ -3,6 +3,7 @@ import type {
   PassagePipelineMechanism,
   PushPipelineMechanism,
 } from "../world/movement/MovementPipeline.js";
+import type { WorldMetricsMechanism } from "../world/outcome/WorldMetrics.js";
 
 export type MechanismId = string;
 
@@ -16,6 +17,7 @@ export class MechanismRegistry {
   private readonly definitions = new Map<MechanismId, EntityMechanismDefinition>();
   private passage: PassagePipelineMechanism | undefined;
   private push: PushPipelineMechanism | undefined;
+  private metrics: WorldMetricsMechanism | undefined;
   private version = 0;
 
   get revision(): number {
@@ -46,6 +48,12 @@ export class MechanismRegistry {
     this.version += 1;
   }
 
+  registerMetrics(definition: WorldMetricsMechanism): void {
+    if (this.metrics) throw new Error("重复 World Metrics Mechanism");
+    this.metrics = definition;
+    this.version += 1;
+  }
+
   requirePassage(): PassagePipelineMechanism {
     if (!this.passage) throw new Error("缺少 Passage Pipeline Mechanism");
     return this.passage;
@@ -54,6 +62,11 @@ export class MechanismRegistry {
   requirePush(): PushPipelineMechanism {
     if (!this.push) throw new Error("缺少 Push Pipeline Mechanism");
     return this.push;
+  }
+
+  requireMetrics(): WorldMetricsMechanism {
+    if (!this.metrics) throw new Error("缺少 World Metrics Mechanism");
+    return this.metrics;
   }
 
   require(id: MechanismId): EntityMechanismDefinition {
