@@ -110,6 +110,8 @@ Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 等产品/�
 
 ### Engine 内部职责
 
+Engine 内部按 `World / Mechanism / Entity` 分工：World 持有时间、空间、调度、移动裁决与提交；Mechanism 实现可复用的地图规则；Entity 定义对象身份、状态、Fact 投影、机制组合与专属行为。`Fact` 是语义查询接口，`Behavior` 是 hook 调用协议。概念引用图和完整边界见 [`Engine 机制合同`](contracts/engine-mechanisms.md)。
+
 Engine 使用固定 gameplay 生命周期与 Definition Registry 协作：
 
 ```text
@@ -130,20 +132,13 @@ Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明�
 源码职责按以下边界组织：
 
 ```text
-actors/                 当前 Bobby Actor 的状态合同与初始化
-mechanics/definition/   Definition Registry、注册端口与 inspection
-mechanics/traits/       trait 查询
-mechanics/movement/     passage、原子移动提交与 pushable
-mechanics/goals/        地图目标初始化与评估
-mechanics/rules/        当前地图 active rules
-mechanics/interactions/ 通用对象交互能力
-original/terrain/       原版 Terrain Definition 与 augmentation
-original/object/        原版 Object Definition 与 augmentation
-custom/                 扩展 Terrain/Object Definition
-world/                  RuntimeState、事务顺序与世界状态推进
+engine/src/world/       Runtime state、只读查询协议、调度、移动裁决与提交
+engine/src/mechanism/   Pipeline 和 Entity-bound 通用规则
+engine/src/entities/    具体对象的 Definition、组合与专属行为
+engine/src/fact/        Entity/Presence Fact 定义与解析
 ```
 
-`mechanics/definitions.ts` 是稳定 façade：加载原版 Definition 后注册扩展 Definition，并保持现有 Engine/Editor 查询 API。地图加载时只为当前 `LevelMap` 创建 active rule 列表；移动完成后按注册顺序同步执行。
+Engine 组合入口装配内置 Registry，再创建 World。World 的固定阶段调用 Pipeline Mechanism，Entity Definition 显式组合 Entity-bound Mechanism；两者都通过 World 的提案和命令协议执行，不由 Fact 自动绑定 Behavior。
 
 Engine 允许一张地图包含多个 Bobby Actor。每个 Bobby 的背包和生命周期归属于自身 Entity state；`GameplayState.actors[]` 提供完整状态，`primaryActorId / player / facing / inventory` 是 primary actor 的便利投影。任一 actor 死亡即结束关卡，移动事务负责多人目的格冲突与不可重叠约束。
 

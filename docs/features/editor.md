@@ -154,12 +154,12 @@ Inspector 始终显示选区中的完整 Entity 集合；单格按实际 `stackO
 多格对象显示 footprint、anchor 与当前命中的 Presence role。
 Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
 Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通数字 enum / boolean 控件编辑。
-Palette 素材提示显示 canonical type、Trait、Behavior 与支持的 Map fields；Surface 素材提示
+Palette 素材提示显示 canonical type、Fact、Mechanism、Behavior 与支持的 Map fields；Surface 素材提示
 显示实际持久化的 canonical type，具体 Variant 另外显示 visual ID 与在 Terrain 中的位置。
 Delete 与 Palette Brush Inspector 订阅离散 Canvas cell hover；Palette Brush 的当前素材字段与
 variant 数据保持稳定，hover 只更新紧凑的放置结果堆叠预览。
 
-规则检测器按 Entity 与 Trait 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
+规则检测器通过 Engine authoring API 按 Entity Type 与 Entity/Presence Fact 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
 
 `EditorEntityDefinition.defaultFields`、`EditorEntityVariant.fields`、`EditorPlacementPreset.fields`
 与 `EditorPalettePreview.fields` 共用同一套类型专属字段形状。Egg 在 Editor 中固定使用 filled

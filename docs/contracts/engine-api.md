@@ -128,6 +128,8 @@ runtime: {
 
 ## Entity / Behavior / MovementPlan / WorldMotion / RuntimeAction
 
+Engine 内部的 `World / Mechanism / Entity` 职责、Fact 投影、Behavior hook 与移动提案边界见 [`Engine 机制合同`](engine-mechanisms.md)。
+
 持续跨多个 WorldTick 的 gameplay 过程使用 RuntimeAction，而不是 Promise、wall-clock timer 或第二套 Actor 模型：
 
 ```text

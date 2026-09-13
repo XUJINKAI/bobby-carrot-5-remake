@@ -3,7 +3,7 @@
 1. 在 `docs/reference/` 记录原版事实、字节码位置和仍未确认的问题。
 2. 原版 Java 逻辑默认从 UP9 开始逆向。UP9 属于稳定的 UP2+ 代码家族，适合作为当前通用机关行为的第一参考；如果行为存在疑问、与早期关卡表现冲突，或需要判断某项规则何时引入，再按 UP8 → ... → UP2 → UP1 → Base 向前追查版本谱系。代码与资产谱系依据见 `docs/reference/official-release-provenance.md`。
 3. 先判断事实属于即时 mutation、连续 World gameplay 过程还是纯 Presentation。不要按原版 task / class 名直接照搬；使用 [`World Runtime 契约`](../contracts/world-runtime.md) 的“后续 gameplay 是否依赖过程进度”准则。
-4. 在 Engine 唯一实现规则，不在 Web/Editor 复制。
+4. 按 [`Engine 机制合同`](../contracts/engine-mechanisms.md) 确定 Entity Type、对象整体与各 Presence 的 Fact、可复用 Mechanism 和对象专属 Behavior；状态经 World 的 mutation 路径提交。在 Engine 唯一实现规则，不在 Web/Editor 复制。
 5. 增加最小 Node 回归测试。
 6. 在 Editor 建最小测试地图并 Play Test。
 7. 如果行为仍有疑问，将地图导出为 `custom-maps/original-patch/<public-id>.json`，执行 `node tools/cli.mjs original patch`，在原版模拟器跑同一输入。
