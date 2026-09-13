@@ -156,6 +156,7 @@ export class World {
       this.registry,
       () => this.state,
       this.movement.motions,
+      options.facts,
     );
     assertDistinctPlayerAnchors(this.query);
     this.inspector = new WorldInspector(this.entities, this.spatial);

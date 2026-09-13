@@ -62,6 +62,7 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   assert.equal(updatedHead.facts.includes("hot"), true);
   assert.equal(updatedTail.facts.includes("hot"), false);
   assert.equal(world.query.entityHasFact(probe.id, "hot"), true);
+  assert.throws(() => world.query.entityHasFact(probe.id, "unregistered"));
   assert.equal(world.spatial.entityCountMatching(levelRuleSelector("hot")), 1);
   world.restore(world.snapshot());
   assert.equal(world.query.entityHasFact(probe.id, "hot"), true);

@@ -1,5 +1,5 @@
 import type { GlobalState } from "../GlobalState.js";
-import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityStore } from "../entity/EntityStore.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
@@ -21,6 +21,7 @@ export class WorldQueryApi {
     private readonly registry: EntityRegistry,
     private readonly globalState: () => Readonly<GlobalState>,
     private readonly motions?: WorldMotionStore,
+    private readonly facts?: FactRegistry,
   ) {}
 
   inBounds(cell: CellQuery): boolean {
@@ -55,6 +56,7 @@ export class WorldQueryApi {
   }
 
   presenceHasFact(presence: EntityPresence, fact: string): boolean {
+    this.facts?.require(fact);
     return presence.facts.includes(fact);
   }
 
@@ -66,6 +68,7 @@ export class WorldQueryApi {
   }
 
   hasFactAt(cell: CellQuery, fact: FactId): boolean {
+    this.facts?.require(fact);
     return this.spatial.hasFactAt(cell, fact);
   }
 
@@ -79,10 +82,12 @@ export class WorldQueryApi {
   }
 
   entityHasFact(entityId: EntityId, fact: FactId): boolean {
+    this.facts?.require(fact);
     return this.spatial.entityHasFact(entityId, fact);
   }
 
   entitiesWithFact(fact: FactId): readonly EntityInstance[] {
+    this.facts?.require(fact);
     return readonlyView(this.spatial.entityIdsWithFact(fact)
       .map((id) => this.entities.require(id)));
   }
