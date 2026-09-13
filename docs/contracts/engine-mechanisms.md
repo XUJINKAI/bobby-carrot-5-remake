@@ -6,7 +6,7 @@
 
 Engine 接收一张纯语义 `LevelMap` 后，仍能独立完成地图内移动、碰撞、机关、计时、死亡和胜利判定。治理的目标是让新增机关明确回答：对象是什么、对外暴露什么语义、复用什么规则、有哪些专属行为，以及状态由谁保存。
 
-目标结构是：
+运行结构是：
 
 ```text
 Entity：具体对象的身份、实例状态、事实投影与规则组合
@@ -113,7 +113,7 @@ flowchart LR
 
 World 承载、查询和传递 Fact，但只解释其运行协议明确列出的 kernel Fact。`player` 是 ActorLifecycle 确需识别时的候选，具体清单在语义审计阶段确认并逐项说明用途。`walkable`、`blocking` 由 Passage Mechanism 解释，`pushable` 由 Push Mechanism 解释；普通 gameplay Fact 的语义归消费它的 Mechanism。World 接收 Mechanism 与 Entity Behavior 的提案，负责边界、busy、目的格预留、多人冲突、移动参与者一致性、权威 `MoveResult` 和原子提交。
 
-Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专属 Behavior 可以理解具体对象类型；通用 Mechanism 不能以具体 Entity Type 判断它是否适用。World 核心也不应导入具体对象实现。当前 `World.ts` 中的内置注册表接线和 Bobby 专属库存处理，需要在相应迁移阶段转移到 Engine 的组合入口或对象规则中；公开的 `Game.loadLevel(LevelMap)` 使用方式保持简单。
+Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专属 Behavior 可以理解具体对象类型；通用 Mechanism 不以具体 Entity Type 判断它是否适用。World 核心只依赖通用 Entity ID、状态和 Presence 协议，不导入具体对象实现。Engine 的组合入口装配内置 Registry 与 Bobby Actor Policy；公开的 `Game.loadLevel(LevelMap)` 使用方式保持简单。
 
 源码依赖目标：
 
@@ -129,9 +129,9 @@ Presentation 只读 World 事实、WorldDelta 与对象视觉定义
 
 ## Entity 状态与初始化
 
-`LevelEntity` 顶层字段描述开局配置。Loader 和 Runtime spawn 都通过所属 Entity 的初始化规则创建 runtime 对象；字段可以初始化 gameplay state，也可以作为仅需长期读取的配置留在实例中。无需为每个字段固定保存两份相同的值。
+`LevelEntity` 顶层字段描述开局配置，在 Engine 加载边界初始化 runtime 对象。运行中由 Entity 规则请求生成的对象使用 `EntitySpawnSpec` 明确给出初始状态；字段可以初始化 gameplay state，也可以作为仅需长期读取的配置留在实例中。无需为每个字段固定保存两份相同的值。
 
-例如 `pressed`、`raised` 在地图中是初始值，运行中可变化的当前值属于 Entity state。`channel`、`requireKey`、`deathCountdownSeconds` 等字段是否保留为独立只读配置，按对象行为的实际读写需求决定。Runtime spawn 应走与地图加载一致的默认值及字段验证路径；必要的运行时专属输入由 Engine Definition 声明。
+例如 `pressed`、`raised` 在地图中是初始值，运行中可变化的当前值属于 Entity state。`channel`、`requireKey`、`deathCountdownSeconds` 等字段是否保留为独立只读配置，按对象行为的实际读写需求决定。运行时专属生成参数留在 Engine 的 `EntitySpawnSpec`，不进入 `LevelMap`。
 
 Entity gameplay 状态只通过 World 的正式 mutation 路径提交，进入 Snapshot、Undo 和 Replay。跨 WorldTick 的过程进度归 RuntimeAction；格间运动及 marker 进度归 WorldMotion；ActorLifecycle、Outcome 和全局计数归各自 World runtime 对象。Mechanism 不保存共享的可变 gameplay 数组或计数器。
 
@@ -143,36 +143,32 @@ Fact 表示当前 Entity 或其某个 Presence 对其它 Engine 系统公开的�
 
 Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition、实例或具体对象类型。各 Entity Definition 声明自身的解析函数；World 的投影刷新器调用这些函数、校验标识并维护索引。通用 Mechanism 只通过 World 的只读查询协议读取 Fact，不导入具体 Entity 实现。
 
-第一阶段只实现布尔 Fact。注册表中的每个 Fact 必须有唯一 ID 和中文语义说明；使用未知 Fact ID 时在内置定义校验阶段报错。未来确有跨对象数值规则时，再为 Fact Definition 增加值类型与单位，当前 API 命名不预设所有 Fact 永远是布尔量。
+当前 Fact 表示布尔语义。注册表中的每个 Fact 有唯一 ID 和中文语义说明；内置静态声明与运行时 Resolver 使用未知 Fact ID 时会报错。跨对象数值结果由 World Metrics Mechanism 投影为通用指标。
 
 Fact 分为 `EntityFacts` 和 `PresenceFacts` 两种只读投影。前者描述对象整体语义，后者描述某个空间部位在当前格子的语义；两者可分别来自 Entity Definition 的静态声明、Entity 初始配置和当前 Entity state，Presence Fact 还可依赖 role/footprint。解析函数只读取所属 Entity，Presence 解析另可读取当前 Presence；跨对象条件留给运行规则判断。这个局部性让受影响 Fact 投影可以按 Entity 刷新。
 
 ```ts
-interface EntityFactResolveContext {
+interface EntityFactContext {
   readonly entity: Readonly<EntityInstance>;
 }
 
-interface PresenceFactResolveContext extends EntityFactResolveContext {
-  readonly presence: Readonly<EntityPresence>;
+interface PresenceFactContext extends EntityFactContext {
+  readonly presence: Readonly<ResolvedFootprintCell>;
 }
 
-interface EntityFactDefinition {
-  readonly staticEntityFacts?: readonly FactId[];
-  readonly resolveEntityFacts?: (
-    context: EntityFactResolveContext,
-  ) => readonly FactId[];
-  readonly staticPresenceFacts?: readonly FactId[];
-  readonly resolvePresenceFacts?: (
-    context: PresenceFactResolveContext,
-  ) => readonly FactId[];
+interface EntityDefinition {
+  entityFacts?: readonly FactId[];
+  resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
+  facts: readonly FactId[];
+  resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];
 }
 ```
 
-这段形状表达读取边界，具体类型随实现与现有 `EntityDefinition` 整合。Resolver 应集中验证 ID、去重并返回有效 Fact；业务代码不维护第二套类型字符串判断。机制组合本身也不应默认为 Entity 增加 Fact。只有当某个机制的存在必然带来稳定语义、且存在实际查询使用方时，才在 Entity Definition 中明确声明该 Fact。
+`entityFacts` 声明对象整体的静态事实；`facts` 声明每个 Presence 的静态事实，footprint part 还可声明自身的 `facts`。`EntityFactProjection` 合并静态值、实例值及 Resolver 结果，校验 ID 并去重。机制组合本身不会默认为 Entity 增加 Fact；需要向其它规则公开稳定语义时，由 Entity Definition 明确声明。
 
 ### Presence 与 Entity 查询
 
-格子上的通行、碰撞和触发以该格 Presence Fact 为准。多格 Dragon 的 head/body 可以 `blocking`，tail 可以 `walkable`；同一 Entity 的各 Presence 不必拥有同一组 Fact。整体语义保存在 Entity Fact 中，例如 Carrot 的 `collectible-object`、Dragon 的 `boss`；它们无需复制到每个 Presence。
+格子上的通行、碰撞和触发以该格 Presence Fact 为准。多格 Dragon 的 head/body 可以 `blocking`，tail 可以 `walkable`；同一 Entity 的各 Presence 不必拥有同一组 Fact。对象整体语义可保存在 Entity Fact 中，例如对整个对象定义 `boss` 或 `collectible-object`，无需复制到每个 Presence。
 
 Entity 级 Fact 查询命中 `EntityFacts(entityId)` 或任一当前 `PresenceFacts(presence)`，并按 Entity ID 去重。这适合关卡计数和候选集合；它不能代替格子级查询。格子查询使用该格的 Presence Fact，不把另一部位的 Fact 扩散到这里。Type Index 与 Fact Index 存 Entity ID，Fact Index 是两种投影的并集；格子查询保留当前 Presence 身份。索引结果按 Entity ID 排序，避免移动重插入改变 Replay 顺序。
 
@@ -180,24 +176,24 @@ Entity 级 Fact 查询命中 `EntityFacts(entityId)` 或任一当前 `PresenceFa
 
 World 提供唯一的 Entity semantic projection 刷新入口。一次状态提交后，先根据已提交的 Entity state 重算该 Entity 的 Entity Fact 与全部 Presence Fact，再同步 Type/Fact Index 和格子投影；后续 phase 才能读到新结果。刷新覆盖加载、spawn、destroy、替换、状态变化、移动、方向/footprint 重建和 Snapshot restore。Restore 可以全量重建派生索引，普通 mutation 只处理受影响 Entity。
 
-`WorldMotion` 的 source/target Presence 快照保留本次移动的格子、role 与调度身份；marker 执行时的有效 Fact 应从当时已提交的 Entity state 解析。该 marker 内新排队的命令在提交后才改变后续查询。迁移时须用回归测试固定这一读取时点，避免运动途中状态变化使触发结果依赖缓存 Trait。
+`WorldMotion` 的 source/target Presence 快照保留本次移动的格子、role 与调度身份；marker 执行时读取当时已提交的 Fact 投影。该 marker 内新排队的命令在提交后才改变后续查询。
 
 ### 初始分类样例
 
-| 当前用法 | 目标归属 | 判断依据 |
+| 语义 | 归属 | 判断依据 |
 | --- | --- | --- |
 | `blocking`、`walkable`、`pushable` | Fact | 被通用通行或推规则查询 |
-| `player` | 待审计的 kernel Fact | ActorLifecycle 确需直接识别时由 World 协议列明 |
+| `player` | kernel Fact | ActorLifecycle 通过它识别当前 actor |
 | `filled-egg` | 从 Egg state 派生的 Fact | `fill-all` 查询当前填充结果 |
-| `dialog` Trait 的行为分发 | Entity-bound Dialog Mechanism | 通用触碰对白规则 |
+| Dialog | Entity-bound Dialog Mechanism | 通用触碰对白规则 |
 | `mower-conditional-overlay` | 具体对象 Behavior | 含割草机专属通行设计 |
 | `stateful-block` | Color Block 规则及必要的动态 Fact | `raised` 是对象状态，通行还需保持现有行为 |
 
-这张表只是迁移起点。完整审计须逐项记录定义、查询、分发、是否随 state 变化、是否与特定 Entity 耦合，以及迁移后的唯一归属。
+新增 Fact 时明确其定义、查询方、是否随 state 变化及消费规则。只有 World 运行协议明确列出的 Fact 可由 World 直接解释。
 
 ## Selector 合同
 
-Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。`LevelMap.rules.win` 的 `target`、`filler` 继续是字符串，沿用当前“同名 Entity Type 或 Trait 命中”的并集语义。迁移后，Entity 级匹配是 Type、Entity Fact、任一 Presence Fact 的并集，按 Entity ID 去重，不采用优先级判定。
+Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。`LevelMap.rules.win` 的 `target`、`filler` 是字符串，在进入 World 查询时转换为同名 Type 与 Fact 的并集。Entity 级匹配合并 Type、Entity Fact 和任一 Presence Fact，按 Entity ID 去重，不采用优先级判定。
 
 ```ts
 type EntitySelector =
@@ -213,13 +209,13 @@ type EntitySelector =
 
 ## Mechanism 的两种调用方式
 
-Mechanism 只有一层“通用规则”语义，按触发位置使用两种调用方式；第一阶段无需建立复杂的继承体系。两种方式都由明确的注册与校验入口装配，执行顺序不能取决于模块加载顺序。
+Mechanism 只有一层“通用规则”语义，按触发位置使用两种调用方式。两种方式都由明确的注册与校验入口装配，执行顺序不取决于模块加载顺序。
 
 **Pipeline Mechanism** 在 World 的固定 gameplay 阶段统一调用，处理多个对象共同参与的规则。例如标准通行使用当前 Presence 的 `walkable`、`blocking`；Push 读取目标的 `pushable` 并提出附带移动者。Pipeline Mechanism 不属于某个箱子或 Bobby，Entity 只暴露供规则判断的 Fact。
 
-**Entity-bound Mechanism** 由 Entity Definition 显式组合，复用现有 `Behavior` hook 协议。例如 Dialog 可为多个带字面对白的对象处理触碰与游标；Collectible 可承担各类对象共同的收集动作。Entity 自己的特殊 Behavior 与所组合机制的 Behavior 一起形成稳定、有序、去重的有效 Behavior 列表。
+**Entity-bound Mechanism** 由 Entity Definition 显式组合，复用 `Behavior` hook 协议。Dialog 为多个带字面对白的对象处理触碰与游标；Object Interaction 与 Water Overlay 也作为通用机制组合。Entity 自己的特殊 Behavior 与所组合机制的 Behavior 一起形成稳定、有序、去重的有效 Behavior 列表。
 
-Mechanism Registry 记录 ID 与实现，Engine 的组合入口另外提供显式排序的 Pipeline Mechanism 列表；`EntityDefinition.mechanisms` 只引用 Entity-bound Mechanism。初版定义只容纳实际使用的 hook、Behavior ID 与必要的校验信息，不预先建立脚本系统、地图持久化机制 ID 或可变机制实例。
+Mechanism Registry 记录 Entity-bound Mechanism 的 ID 与 Behavior 实现，并通过明确的 Passage、Push 和 World Metrics 注册槽装配 Pipeline Mechanism；`EntityDefinition.mechanisms` 只引用 Entity-bound Mechanism。
 
 下列关系是两个独立方向：
 
@@ -248,7 +244,7 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 
 `unrestricted` passage 已表示 Actor 规则完成其领域判定；它沿当前合同跳过标准地形通行与 Push Pipeline，但仍接受 World 的边界、busy、预留、参与者与原子提交校验。任何新 Pipeline hook 都必须声明自己是否属于 standard passage，不能无条件遍历全局规则列表。
 
-标准通行内部的关键顺序如下，迁移前先用测试固定：
+标准通行内部的关键顺序如下：
 
 ```text
 来源格 canLeave
@@ -259,7 +255,7 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 → 最终预留与原子提交
 ```
 
-`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 不能只做一次 `blocking` 布尔检查，也不能提前提交清除命令。Pipeline 可返回只读的决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。精确 TypeScript 形状在迁移 Push 时由测试和现有 `MovementPolicy` 决定，不另开直接写 EntityStore 的路径。
+`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。Pipeline 返回决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。
 
 Push 的具体行为要求：
 
@@ -269,43 +265,31 @@ Push 的具体行为要求：
 - 失败时继续产生当前约定的阻挡与 `onTouch` 结果，成功时保留 WorldMotion、marker、Replay 和 Undo 语义；
 - Mechanism 不调用 `commands.move()` 绕过 World 的移动裁决，也不先提交箱子再移动 Actor。
 
-`MovementPlan` 仍是 World 规范化并裁决的结果。现有代码在生成 Actor 计划后才进入 Push 判定；因此迁移时 Pipeline 先提交候选或参与者提案，World 再形成可提交的最终计划，不要求 Push 在现有 `createMovementPlan()` 调用点直接返回完整计划。
+`MovementPlan` 是 World 规范化并裁决的结果。Actor 计划形成后，Push Pipeline 提出附带移动者；World 校验整组参与者后提交。
 
-Pipeline 的注册顺序、阶段顺序和同阶段冲突规则应显式声明。两个机制若提出互斥 passage 判断或不同的同一参与者位置，World 应以确定性错误或既定优先级处理；不能依赖 `Set` 迭代、对象属性顺序或注册竞态。
+Pipeline 在 World 的固定阶段调用。相互冲突的 passage 判断或同一参与者位置提案由 World 按确定性规则处理。
 
 ## Entity-bound Behavior 合同
 
 `Behavior` 保持 `planMovement`、`resolveEntry`、`canEnter`、`canLeave`、`canReach`、`onTouch`、`onEnter`、`onLeave`、`onArrive`、`onTick` 等现有 hook。它是调用协议；Behavior ID 查找只负责取得实现。
 
-有效 Behavior 列表由 Entity Definition 的显式 Behavior 与其 Entity-bound Mechanism 的 Behavior 按约定顺序组成，重复 ID 只执行一次。迁移前记录当前各关键 Entity 的 hook 顺序；迁移后在 `BehaviorRuntime`、`TickIndex`、`ReachResolver`、初始化和销毁路径使用同一解析入口。Tick 候选仍在 phase 开始时按 Entity ID 取样，当次新增 Entity 从下一次 tick phase 参与。
+有效 Behavior 列表由 Entity-bound Mechanism 提供的 Behavior 和 Entity Definition 的显式 Behavior 按约定顺序组成，重复 ID 只执行一次。`BehaviorRuntime`、`TickIndex` 和 `ReachResolver` 使用同一解析入口。Tick 候选在 phase 开始时按 Entity ID 取样，当次新增 Entity 从下一次 tick phase 参与。
 
 一个行为只适用于 body 或其它特定 Presence 时，通过 Presence role 和 Entity 的真实结构判断。Entity 级 Mechanism 组合不意味着所有 footprint 部分具有相同 Fact 或触发同样的交互。Dragon head/body/tail 的阻挡与触发差异必须保留。
 
-`behaviorLibrary` 中共享流程与对象特例应分开。当前 Collectible 处理 Carrot 与 Mower 的组合特例；通用收集机制只负责多种 Entity 共同的收集步骤，Carrot 的额外实体生成和割草机限制放回适当的 Entity 专属规则。Dialog 的通用触碰与游标逻辑适合作为第一个 Entity-bound 样板；对话文本和游标仍属于各对象的实例数据及 Entity state。
+对象行为库可以复用若干 Entity 的流程；包含 Carrot、Mower 等具体类型判断的规则仍归 Entity 层。若一个流程能仅凭 Fact 与通用 World 查询执行，才适合提取为通用 Mechanism。Dialog 的通用触碰与游标规则位于 Entity-bound Mechanism，对话文本和游标属于各对象的实例数据及 Entity state。
 
 ## 视觉与 authoring
 
 Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选择画面；World 与 Mechanism 不读取 `VisualRuntime`、`PresentationClock`、Renderer、Canvas 或 DOM。仅影响 sprite、位移插值、闪烁、粒子与镜头的状态由 Presentation 持有。会改变碰撞、可攀爬时点或动作结果的过程继续由 WorldClock 上的 Entity state、RuntimeAction 或 WorldMotion 表示。
 
-不能仅按 `variant` 字段名判断归属。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。迁移逐项判断：纯视觉字段继续由既有地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标继续由 Model 的 semantic atlas mapping 提供，DAT byte 换算仍只在 `tools/original/dat/`。
+`variant` 的归属由实际语义决定。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。纯视觉字段由地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标由 Model 的 semantic atlas mapping 提供，DAT byte 换算只在 `tools/original/dat/`。
 
-Editor Palette、Inspector、规则检测与 Play Test 通过 Engine authoring API 获取 Entity Fact、Mechanism 和 Behavior 元数据；Editor 不实现碰撞、推、机关或 FactResolver 的第二份规则。未知 Entity 或字段无效的占位实例仍保持可见和惰性，不获得有效 Fact 与 Behavior。
-
-## 分阶段实施
-
-每个阶段形成可审查、可回滚的独立 commit；完成该阶段相关检查后再提交。跨模块、公共合同、Engine gameplay 和构建检查的阶段运行完整 `npm run verify`；整个任务最终也运行完整验证。验证中的浏览器测试按仓库流程在沙箱外启动。
-
-1. **语义审计与基线。** 枚举全部 `traits`、`instanceTraits`、`bindTrait`、查询和行为绑定，记录每个 ID 的用途及目标归属；补足 Push、通行、`clear-and-pass`、多格 Presence、Egg 填充、Carrot 收集、Tick 顺序和 Replay/Snapshot 的关键回归。
-2. **Fact 投影与 Selector。** 建立 Fact Definition、Resolver、Entity/Presence 两种投影和索引刷新；同时处理静态与动态 Fact。将内部查询逐步切为 typed Selector，保持 `LevelMap` 字符串的 Type/Fact 并集语义。此阶段保留现有 Behavior dispatch，便于隔离结果差异。
-3. **Entity-bound Mechanism。** 注册简明机制定义，先迁移 Dialog 等通用样板。统一有效 Behavior 解析，覆盖初始化、移动、Reach 和 Tick；按稳定顺序拆除 Trait 自动分发。具体对象特例归回 Entity。
-4. **Pipeline Mechanism。** 固定 standard passage 的阶段与提案合同，先迁 Push，再迁 Passage。World 保持完整校验、最终 `MovementPlan`、单事务提交、WorldMotion 与结果结算；`unrestricted` 的作用范围保持现有语义。
-5. **Presentation、Editor 与文档。** 校正字段分类和 Inspector 展示；更新正式架构、世界运行时、Engine API、Editor 与新增机关流程；将可机械验证的注册、依赖和分发规则加入 `npm run verify`。
-
-第 2～4 阶段的提交须包含对应的最小回归测试。行为依据尚未确认的原版机关先记录为推断，并按 [`新增 / 校正机关流程`](../workflows/add-mechanic.md) 用 Editor 最小地图与原版 JAR 验证。
+Editor Palette、Inspector、规则检测与 Play Test 复用 Engine 的 Entity Catalog、SpatialIndex 与 Fact 投影；Editor 不实现碰撞、推或机关的第二份规则。未知 Entity 或字段无效的占位实例保持可见和惰性，不获得有效 Fact 与 Behavior。
 
 ## 自动门禁与验收
 
-`npm run verify` 应覆盖可机械判断的边界：所有 Fact/Mechanism/Behavior 引用均已注册，ID 不重复；World 对 Fact 的直接语义分支仅使用协议登记的 kernel Fact；Gameplay Behavior dispatch 不使用 `bindTrait`；`engine/src/world/` 不导入 `engine/src/entities/` 的具体规则或 `engine/src/visual/` 的 Presentation runtime；通用 Mechanism 不导入具体 Entity 模块、Original DAT tooling 或浏览器产品模块。新增规则检查与代码迁移应在同一阶段提交。
+`npm run verify` 检查注册 ID、源码依赖方向、源文件质量、关卡生成、Engine/Editor/Web 回归、Replay、构建与浏览器冒烟。World 与通用 Mechanism 不导入具体 Entity 模块或使用具体 Entity Type；World 对通行、Push、奖励和道具的解释边界由源码门禁约束。新机关需要最小回归测试；原版行为尚未确认时按 [`新增 / 校正机关流程`](../workflows/add-mechanic.md) 用 Editor 地图与原版 JAR 验证。
 
 回归至少证明：
 
@@ -317,4 +301,4 @@ Editor Palette、Inspector、规则检测与 Play Test 通过 Engine authoring A
 - WorldMotion marker、RuntimeAction、Undo、Replay 在相同地图和输入序列下保持确定性；
 - Editor Play Test 与普通单图加载共享同一 Engine 规则，草稿保持原样。
 
-完成后的新增机关流程是：确定 Entity Type 与地图字段；分别声明对象整体与各 Presence 的必要 Fact；选择已有通用 Mechanism 或实现对象专属 Behavior；需要跨对象复用的新规则进入 Mechanism；状态通过对应 runtime owner 保存，所有实际变化经 World 裁决和提交。Fact 描述当前语义，Mechanism 提出规则，World 形成权威结果。
+新增机关时先确定 Entity Type 与地图字段，再声明对象整体及各 Presence 的必要 Fact，组合现有 Mechanism 或实现对象专属 Behavior。需要跨对象复用的新规则进入 Mechanism；状态由对应 runtime owner 保存，实际变化经 World 裁决和提交。Fact 描述当前语义，Mechanism 提出规则，World 形成权威结果。

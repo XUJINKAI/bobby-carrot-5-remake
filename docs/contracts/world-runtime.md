@@ -1,6 +1,6 @@
 # World Runtime 契约
 
-本文定义 Engine 内部的 gameplay 时间、空间与终局语义。目标是让原版机关在现代 Trait / Behavior Engine 中得到等价功能与表现，不复刻原版双层 tile 运行时的历史妥协。
+本文定义 Engine 内部的 gameplay 时间、空间与终局语义。World 负责通用运行协议和最终裁决；Entity 组合 Fact、Mechanism 与专属 Behavior 的合同见[Engine 机制合同](engine-mechanisms.md)。
 
 ## 三层事实
 
@@ -9,10 +9,6 @@
 | 网格事实 | Entity anchor、SpatialIndex、entity/global state、actor lifecycle、world outcome | WorldClock | 是 |
 | 运动事实 | WorldMotion、progress、marker、interruption | WorldClock | 是 |
 | 动画表现 | offset、sprite、effect、sound、camera | PresentationClock | 否 |
-
-玩家移动被阻挡时，网格位置、World gameplay 朝向与步数保持不变；Presentation 使用该次
-输入的尝试方向覆盖 Bobby 的显示朝向，并直接显示对应方向的静止终止帧。这项反馈不进入
-World snapshot，也不会让纯阻挡输入成为 Replay gameplay 命令。
 
 玩家移动被阻挡时，网格位置、World gameplay 朝向与步数保持不变；Presentation 使用该次
 输入的尝试方向覆盖 Bobby 的显示朝向，并直接显示对应方向的静止终止帧。这项反馈不进入
@@ -29,9 +25,9 @@ World snapshot，也不会让纯阻挡输入成为 Replay gameplay 命令。
 
 ## WorldDelta
 
-SpatialIndex 在加载、增删、移动、方向重建与恢复时同步维护 type / Trait 的 Entity 索引。Trait 合并 Definition、实例与全部 footprint Presence，并按 Entity identity 去重、排序。玩家与目标查询复用该索引；机关状态变化仍按既有 phase 顺序结算。
+SpatialIndex 在加载、增删、移动、状态或方向重建与恢复时同步维护 Type、Entity Fact 和 Presence Fact 投影。对象查询合并两种 Fact 并按 Entity ID 去重、排序；格子裁决读取对应 Presence 的当前 Fact。World 只解释其协议规定的 kernel Fact，通行、Push 与奖励等 gameplay Fact 由 Mechanism 消费。
 
-Behavior tick 通过 TickIndex 查询显式绑定或 Trait 绑定了 `onTick` 的候选 Entity，再按首个 Presence 解析实际 hook。候选在 tick phase 开始时按 identity 排序取样，统一 commit 后生成的 Entity 从下一次 tick phase 开始参与。注册表新增 Definition 或 Behavior 绑定时重新解析候选类型；镜头位置不参与候选判断。
+Behavior tick 通过 TickIndex 查询显式 Behavior 或 Entity-bound Mechanism 提供了 `onTick` 的候选 Entity，再按首个 Presence 解析实际 hook。候选在 tick phase 开始时按 ID 排序取样；统一 commit 后生成的 Entity 从下一次 tick phase 开始参与。Definition、Behavior 或 Mechanism 注册表变化时重新解析候选类型；镜头位置不参与候选判断。
 
 每次 `World.step()` / `World.update()` 返回有序 `WorldDelta[]`。`sequence` 是跨 WorldTick 的权威因果顺序；`worldTick` 与 `worldTimeMs` 表示事实发生在哪个 gameplay 时间点。
 

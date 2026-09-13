@@ -258,30 +258,31 @@ Lock.deathCountdownSeconds = 60
 
 这条规则不含 Adventure 语义，因此自定义 JSON、Explore 与 Editor Play Test 都可以直接使用。
 
-### Semantic Definition Layer
+### Engine 语义组合
 
 ```text
-Tile Definition Registry
-├─ id
-├─ presentation
-├─ gameplay facts
-├─ behaviors[]
-└─ authoring
-   ├─ palette
-   └─ map fields[]
-      ├─ string
-      └─ enum
+World
+├─ EntityStore / SpatialIndex / Fact projection / Selector Index
+├─ Behavior dispatch / WorldClock / RuntimeAction / WorldMotion
+└─ movement adjudication / atomic commit / Snapshot / Outcome
 
-Entity Layout Definition
-├─ footprint[]
-├─ cursor
-└─ authoringVariants[]
+Mechanism
+├─ FactDefinition / FactRegistry
+├─ Entity-bound：Dialog / Object Interaction 等通用 hook
+└─ Pipeline：Passage / Push / World Metrics
+
+Entity
+├─ EntityDefinition：Type / footprint / EntityFacts / PresenceFacts
+├─ 显式 Mechanism 组合与对象专属 Behavior
+└─ EntityInstance：identity / anchor / gameplay state
 ```
 
 Map Entity 在 Engine World、Editor 预览、校验和 footprint 查询中统一使用 canonical
 type，并直接取得同名 Definition。`windmill` 的方向、`egg` 的填充状态等运行阶段由
 Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎中间段等临时实体
 使用 Engine 私有身份，不进入 Model API 或 LevelMap。
+
+Fact 是跨层只读语义接口，Behavior 是 World 调用规则的 hook 协议；两者都不是额外层级。World 依赖通用 Entity ID、状态和 Presence 协议，但不导入具体对象实现。通用 Mechanism 通过 World 查询当前 Fact 并提出策略或命令，具体 Entity 定义负责组合。
 
 Editor Palette 只枚举具有 Model `EntityMapDefinition` 的 canonical type；Engine 私有临时实体
 不会进入 Editor。`authoring.palette=false` 用于把应在 Surface 面板等其它入口编辑的 canonical
