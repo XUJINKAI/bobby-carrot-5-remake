@@ -14,11 +14,17 @@ export class EntitySelectorIndex {
     this.entries.clear();
   }
 
-  add(entity: EntityInstance, definition: EntityDefinition, presences: readonly EntityPresence[]): void {
+  add(
+    entity: EntityInstance,
+    definition: EntityDefinition,
+    presences: readonly EntityPresence[],
+    entityFacts: readonly string[] = [],
+  ): void {
     this.remove(entity.id);
     const traits = new Set([
       ...definition.traits,
       ...(entity.instanceTraits ?? []),
+      ...entityFacts,
       ...presences.flatMap((presence) => [...presence.traits]),
     ]);
     this.entries.set(entity.id, { type: entity.type, traits });

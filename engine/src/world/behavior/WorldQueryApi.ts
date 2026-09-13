@@ -46,6 +46,25 @@ export class WorldQueryApi {
     return this.spatial.presencesForEntity(entityId);
   }
 
+  entityFacts(entityId: EntityId): readonly string[] {
+    return this.spatial.factsForEntity(entityId);
+  }
+
+  entityHasFact(entityId: EntityId, fact: string): boolean {
+    return this.spatial.entityHasFact(entityId, fact);
+  }
+
+  presenceHasFact(presence: EntityPresence, fact: string): boolean {
+    return presence.facts.includes(fact);
+  }
+
+  presenceMatchesSelector(
+    presence: EntityPresence,
+    selector: string,
+  ): boolean {
+    return this.spatial.presenceMatchesSelector(presence, selector);
+  }
+
   hasTraitAt(cell: CellQuery, trait: EntityTrait): boolean {
     return this.spatial.hasTraitAt(cell, trait);
   }
@@ -59,16 +78,7 @@ export class WorldQueryApi {
   }
 
   entityHasTrait(entityId: EntityId, trait: EntityTrait): boolean {
-    const entity = this.entities.get(entityId);
-    if (!entity) return false;
-    const definition = this.registry.require(entity.type);
-    return (
-      definition.traits.includes(trait) ||
-      entity.instanceTraits?.includes(trait) === true ||
-      this.spatial
-        .presencesForEntity(entityId)
-        .some((presence) => presence.traits.includes(trait))
-    );
+    return this.spatial.entityHasFact(entityId, trait);
   }
 
   entitiesWithTrait(trait: EntityTrait): readonly EntityInstance[] {

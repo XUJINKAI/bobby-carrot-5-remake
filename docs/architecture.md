@@ -135,7 +135,7 @@ Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明�
 engine/src/world/       Runtime state、只读查询协议、调度、移动裁决与提交
 engine/src/mechanism/   Pipeline 和 Entity-bound 通用规则
 engine/src/entities/    具体对象的 Definition、组合与专属行为
-engine/src/fact/        Entity/Presence Fact 定义与解析
+engine/src/mechanism/fact/ Fact 标识、语义与注册表
 ```
 
 Engine 组合入口装配内置 Registry，再创建 World。World 的固定阶段调用 Pipeline Mechanism，Entity Definition 显式组合 Entity-bound Mechanism；两者都通过 World 的提案和命令协议执行，不由 Fact 自动绑定 Behavior。

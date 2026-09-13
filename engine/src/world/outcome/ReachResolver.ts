@@ -38,8 +38,7 @@ export class ReachResolver {
     return this.query.presencesAt(actor.anchor).some((presence) => {
       const entity = this.query.entity(presence.entityId);
       if (!entity) return false;
-      const matches =
-        entity.type === selector || presence.traits.includes(selector);
+      const matches = this.query.presenceMatchesSelector(presence, selector);
       return matches && this.canReach(actor, presence);
     });
   }
@@ -49,7 +48,8 @@ export class ReachResolver {
     const requiresAll = this.query
       .entitiesWithTrait("reach-all-players")
       .some((entity) => {
-        if (entity.type === selector) return true;
+        if (entity.type === selector ||
+            this.query.entityFacts(entity.id).includes(selector)) return true;
         return this.query
           .presencesForEntity(entity.id)
           .some((presence) => presence.traits.includes(selector));
@@ -67,6 +67,7 @@ export class ReachResolver {
       const entity = this.query.entity(presence.entityId);
       if (!entity) continue;
       selectors.add(entity.type);
+      for (const fact of this.query.entityFacts(entity.id)) selectors.add(fact);
       for (const trait of presence.traits) selectors.add(trait);
     }
     return [...selectors];

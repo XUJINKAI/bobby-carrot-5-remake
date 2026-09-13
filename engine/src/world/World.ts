@@ -3,7 +3,9 @@ import {
   behaviorRegistry as builtinBehaviors,
   createBuiltinRuntimeActionRegistry,
   entityRegistry as builtinEntities,
+  factRegistry as builtinFacts,
 } from "../entities/registry.js";
+import type { FactRegistry } from "../mechanism/fact/FactRegistry.js";
 import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
@@ -91,6 +93,7 @@ export interface WorldOptions {
   entities?: EntityRegistry;
   behaviors?: BehaviorRegistry;
   actions?: RuntimeActionRegistry;
+  facts?: FactRegistry;
   /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
   motionDurationMs?: number;
 }
@@ -136,6 +139,7 @@ export class World {
       this.registry,
       level.width,
       level.height,
+      options.facts ?? (options.entities ? undefined : builtinFacts),
     );
     this.state = createGlobalState();
     this.tickIndex = new TickIndex(this.registry, this.behaviors, this.spatial);

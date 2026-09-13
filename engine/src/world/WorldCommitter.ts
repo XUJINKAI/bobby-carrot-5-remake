@@ -151,6 +151,7 @@ export class WorldCommitter {
           const entity = this.entities.get(command.entityId);
           if (entity) {
             entity.state = structuredClone(command.state);
+            this.spatial.rebuildEntity(entity.id);
             pushUnique(mutations.stateChanged, command.entityId);
             record({
               type: "entity-state-changed",

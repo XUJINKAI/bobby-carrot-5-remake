@@ -71,18 +71,20 @@ function resolveInstantiatedVisualPreview(
     Object.keys(state).length > 0 ? { ...source, state } : source;
   const part = resolveFootprintCells(entity, definition.footprint)[0];
   if (!part) return null;
+  const facts = [
+    ...new Set([
+      ...definition.traits,
+      ...(entity.instanceTraits ?? []),
+      ...(part.traits ?? []),
+    ]),
+  ];
   const presence: EntityPresence = {
     entityId: entity.id,
     cell: { x: part.x, y: part.y },
     layer: definition.layer ?? "object",
     ...(part.role ? { role: part.role } : {}),
-    traits: [
-      ...new Set([
-        ...definition.traits,
-        ...(entity.instanceTraits ?? []),
-        ...(part.traits ?? []),
-      ]),
-    ],
+    traits: facts,
+    facts,
     stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,
   };
   const query: VisualQuery = {

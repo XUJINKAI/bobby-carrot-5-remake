@@ -126,19 +126,17 @@ export class WorldRuleEvaluator {
     cell: { x: number; y: number },
     selector: string,
   ): boolean {
-    return this.spatial.presencesAt(cell).some((presence) => {
-      const entity = this.entities.require(presence.entityId);
-      return entity.type === selector || presence.traits.includes(selector);
-    });
+    return this.spatial.presencesAt(cell).some((presence) =>
+      this.spatial.presenceMatchesSelector(presence, selector),
+    );
   }
 
   private spatialCellsMatching(selector: string): { x: number; y: number }[] {
     const result = new Map<string, { x: number; y: number }>();
     for (const id of this.spatial.entityIdsMatching(selector)) {
       const entity = this.entities.require(id);
-      const typeMatches = entity.type === selector;
       for (const presence of this.spatial.presencesForEntity(entity.id)) {
-        if (!typeMatches && !presence.traits.includes(selector)) continue;
+        if (!this.spatial.presenceMatchesSelector(presence, selector)) continue;
         result.set(`${presence.cell.x},${presence.cell.y}`, presence.cell);
       }
     }

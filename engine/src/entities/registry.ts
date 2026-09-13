@@ -1,4 +1,5 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
+import { createBuiltinFactRegistry } from "../mechanism/fact/builtinFacts.js";
 import {
   createBuiltinRuntimeActionRegistry as createCoreRuntimeActionRegistry,
 } from "../world/action/builtinActions.js";
@@ -20,6 +21,20 @@ export const builtinEntityModules: readonly EntityModule[] = [
 export const builtinEntityDefinitions = builtinEntityModules.map(
   (module) => module.definition,
 );
+
+export const factRegistry = createBuiltinFactRegistry();
+for (const definition of builtinEntityDefinitions) {
+  for (const fact of [...definition.traits, ...(definition.entityFacts ?? [])]) {
+    factRegistry.require(fact);
+  }
+  const footprint = definition.footprint;
+  const parts = footprint && "parts" in footprint
+    ? footprint.parts
+    : Object.values(footprint?.byDirection ?? {}).flat();
+  for (const part of parts) {
+    for (const fact of part?.traits ?? []) factRegistry.require(fact);
+  }
+}
 
 export function createBuiltinEntityCatalog(
   modules: readonly EntityModule[] = builtinEntityModules,

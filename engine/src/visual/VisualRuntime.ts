@@ -571,6 +571,7 @@ export class VisualRuntime {
           cell: { x: transient.x, y: transient.y },
           layer: "object",
           traits: [],
+          facts: [],
           stackOrder: transient.definition.stackOrder ?? 0,
         },
         composition,

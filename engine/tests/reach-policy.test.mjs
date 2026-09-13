@@ -20,6 +20,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
     cell: { x: 1, y: 0 },
     layer: "surface",
     traits: [],
+    facts: [],
     stackOrder: 0,
   };
   const query = {
@@ -31,6 +32,9 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
     },
     presencesAt() {
       return [presence];
+    },
+    presenceMatchesSelector(candidate, selector) {
+      return candidate.entityId === target.id && target.type === selector;
     },
   };
   const resolver = new ReachResolver(query, behaviors);

@@ -1,5 +1,16 @@
 import type { EntityType, JsonValue } from "@bobby/model";
 import type { FootprintDefinition } from "../spatial/Footprint.js";
+import type { ResolvedFootprintCell } from "../spatial/Footprint.js";
+import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { EntityInstance } from "./EntityInstance.js";
+
+export interface EntityFactContext {
+  readonly entity: Readonly<EntityInstance>;
+}
+
+export interface PresenceFactContext extends EntityFactContext {
+  readonly presence: Readonly<ResolvedFootprintCell>;
+}
 
 export type EntityTrait = string;
 export type BehaviorId = string;
@@ -33,6 +44,9 @@ export interface EntityFieldDefinition {
 export interface EntityDefinition {
   type: EntityType;
   traits: readonly EntityTrait[];
+  entityFacts?: readonly FactId[];
+  resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
+  resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];
   /** 未注册地图 Entity 的无行为占位定义，不参与正式 Catalog。 */
   placeholder?: "unknown";
   layer?: EntityLayer;
