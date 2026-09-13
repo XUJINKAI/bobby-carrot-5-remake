@@ -1,6 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
-import type { EntityBehaviorBinding } from "./EntityModule.js";
 import { RuntimeEntityTypeId } from "./runtime-types.js";
 import {
   bobbyMountId,
@@ -8,7 +7,7 @@ import {
   readBobbyInventory,
 } from "./player/BobbyState.js";
 
-const collect: Behavior = {
+export const collectBehavior: Behavior = {
   id: "collectible",
   canEnter({ actor, self, query }) {
     if (!isRidingMower(actor.state, query)) return;
@@ -36,7 +35,7 @@ const collect: Behavior = {
   },
 };
 
-const pickup: Behavior = {
+export const pickupBehavior: Behavior = {
   id: "pickup",
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
@@ -111,7 +110,7 @@ const pickup: Behavior = {
   },
 };
 
-const hazard: Behavior = {
+export const hazardBehavior: Behavior = {
   id: "hazard",
   onEnter({ actor, self, query, commands }) {
     if (self.entity.state?.active === false) return;
@@ -120,7 +119,7 @@ const hazard: Behavior = {
   },
 };
 
-const mowable: Behavior = {
+export const mowableBehavior: Behavior = {
   id: "mowable",
   resolveEntry({ actor, query }) {
     if (!isRidingMower(actor.state, query)) return;
@@ -138,7 +137,7 @@ const mowable: Behavior = {
   },
 };
 
-const shovelable: Behavior = {
+export const shovelableBehavior: Behavior = {
   id: "shovelable",
   resolveEntry({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
@@ -170,7 +169,7 @@ const shovelable: Behavior = {
   },
 };
 
-const mowerConditionalOverlay: Behavior = {
+export const mowerConditionalOverlayBehavior: Behavior = {
   id: "mower-conditional-overlay",
   canEnter({ actor, self, query }) {
     if (!isRidingMower(actor.state, query)) return;
@@ -196,7 +195,7 @@ function isRidingMower(
   return mountId !== null && query.entity(mountId)?.type === MapEntityTypeId.MOWER;
 }
 
-const statefulBlock: Behavior = {
+export const statefulBlockBehavior: Behavior = {
   id: "stateful-block",
   canEnter({ self }) {
     return self.entity.state?.raised === false
@@ -205,7 +204,7 @@ const statefulBlock: Behavior = {
   },
 };
 
-const requiresUnmountedReach: Behavior = {
+export const requiresUnmountedReachBehavior: Behavior = {
   id: "requires-unmounted-reach",
   canReach({ actor }) {
     return bobbyMountId(actor.state) === null
@@ -213,28 +212,3 @@ const requiresUnmountedReach: Behavior = {
       : { passable: false, reason: "actor-mounted" };
   },
 };
-
-/** 对象特例的组合由稳定 type 明确声明，不由 Fact 自动安装 Behavior。 */
-const OBJECT_BEHAVIORS: Readonly<Record<string, readonly Behavior[]>> = {
-  [MapEntityTypeId.EXIT]: [requiresUnmountedReach],
-  [MapEntityTypeId.SHOVEL_PICKUP]: [pickup],
-  [MapEntityTypeId.TRAP]: [hazard],
-  [MapEntityTypeId.COLOR_BLOCK]: [statefulBlock],
-  [MapEntityTypeId.SNOW]: [shovelable],
-  [MapEntityTypeId.HIGH_GRASS]: [mowable],
-  [MapEntityTypeId.CARROT]: [collect],
-  [MapEntityTypeId.GOLDEN_CARROT]: [collect],
-  [MapEntityTypeId.BONUS_COIN]: [collect],
-  [MapEntityTypeId.BEANSTALK]: [mowerConditionalOverlay],
-  "beanstalk-mid": [mowerConditionalOverlay],
-  [MapEntityTypeId.BEAN]: [pickup],
-  [MapEntityTypeId.GAS]: [pickup],
-  [MapEntityTypeId.KITE]: [pickup],
-  [MapEntityTypeId.LOCK_KEY]: [pickup],
-};
-
-export function objectBehaviorBindingsForType(
-  type: string,
-): readonly EntityBehaviorBinding[] {
-  return (OBJECT_BEHAVIORS[type] ?? []).map((behavior) => ({ behavior }));
-}

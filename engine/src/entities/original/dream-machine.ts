@@ -13,6 +13,7 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
   facts: ["blocking"],
+  mechanisms: ["object-interaction", "dialog"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     parts: [

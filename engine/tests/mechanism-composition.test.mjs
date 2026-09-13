@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { MapEntityTypeId } from "@bobby/model";
+import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { World } from "./support/World.mjs";
@@ -9,7 +11,7 @@ function touchTarget(type, mechanisms) {
   entities.registerAll([
     { type: "floor", facts: ["walkable"], layer: "surface" },
     { type: "actor", facts: ["player"] },
-    { type, facts: ["blocking", "dialog"], mechanisms },
+    { type, facts: ["blocking", "collectible"], mechanisms },
   ]);
   const world = new World({
     schemaVersion: 1,
@@ -47,4 +49,28 @@ test("两种 Entity 显式组合相同机制，单独声明 Fact 不安装 Behav
     );
   }
   assert.deepEqual(touchTarget("silent", []).map((event) => event.type), []);
+});
+
+test("内置 Entity Definition 直接声明通用机制与专属 Behavior", () => {
+  const registry = createBuiltinEntityRegistry();
+  assert.deepEqual(
+    registry.require(MapEntityTypeId.SANDMAN).mechanisms,
+    ["object-interaction", "dialog"],
+  );
+  assert.deepEqual(
+    registry.require(MapEntityTypeId.WATER).mechanisms,
+    ["water-overlay"],
+  );
+  assert.deepEqual(
+    registry.require(MapEntityTypeId.TIDE).mechanisms,
+    ["water-overlay"],
+  );
+  assert.ok(
+    registry.require(MapEntityTypeId.EXIT).behaviors?.includes(
+      "requires-unmounted-reach",
+    ),
+  );
+  assert.ok(
+    registry.require(MapEntityTypeId.CARROT).behaviors?.includes("collectible"),
+  );
 });

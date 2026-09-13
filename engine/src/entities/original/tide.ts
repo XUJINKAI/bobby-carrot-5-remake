@@ -14,6 +14,7 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE,
   facts: ["water"],
+  mechanisms: ["water-overlay"],
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Tide" },
 };

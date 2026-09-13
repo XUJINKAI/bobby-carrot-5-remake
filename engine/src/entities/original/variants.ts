@@ -47,19 +47,42 @@ const originalTile = originalModule(
 
 export const originalVariantModules: readonly EntityModule[] = [
   originalTile,
-  ...[...semanticSurfaceGroups.entries()].map(([type, mappings]) =>
-    canonicalSurface(type, mappings)
+  ...[...semanticSurfaceGroups.entries()]
+    .filter(([type]) =>
+      type !== MapEntityTypeId.WATER &&
+      type !== MapEntityTypeId.WATERFALL &&
+      type !== MapEntityTypeId.SNOWMAN
+    )
+    .map(([type, mappings]) => canonicalSurface(type, mappings)),
+  canonicalSurface(MapEntityTypeId.WATER, surfaceMappings(MapEntityTypeId.WATER), [
+    "water-overlay",
+  ]),
+  canonicalSurface(
+    MapEntityTypeId.WATERFALL,
+    surfaceMappings(MapEntityTypeId.WATERFALL),
+    ["water-overlay"],
   ),
+  canonicalSurface(MapEntityTypeId.SNOWMAN, surfaceMappings(MapEntityTypeId.SNOWMAN), [
+    "dialog",
+  ]),
 ];
+
+function surfaceMappings(type: string): readonly SurfaceSourceMapping[] {
+  const mappings = semanticSurfaceGroups.get(type);
+  if (!mappings) throw new Error(`缺少 Surface mapping：${type}`);
+  return mappings;
+}
 
 function canonicalSurface(
   type: string,
   mappings: readonly SurfaceSourceMapping[],
+  mechanisms: readonly string[] = [],
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
     authoring: { palette: false },
     facts: sharedOriginalSurfaceFacts(mappings),
+    mechanisms,
     layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,
     presentation: { name: type },

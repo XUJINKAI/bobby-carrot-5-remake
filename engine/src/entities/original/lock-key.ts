@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { pickupBehavior } from "../behaviorLibrary.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -50,5 +51,5 @@ const definition: EntityModuleDefinition = {
 export const lockKey: EntityModule = originalModule(
   definition,
   atlasVisual(definition, tileCell(MapEntityTypeId.LOCK_KEY)),
-  [{ behavior: lockKeyInteraction }],
+  [{ behavior: pickupBehavior }, { behavior: lockKeyInteraction }],
 );

@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { hazardBehavior } from "../behaviorLibrary.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -39,5 +40,5 @@ export const trap: EntityModule = originalModule(
       fields: { active: context.entity.state?.active !== false },
     }),
   ),
-  [{ behavior: armTrapAfterLeave }],
+  [{ behavior: hazardBehavior }, { behavior: armTrapAfterLeave }],
 );

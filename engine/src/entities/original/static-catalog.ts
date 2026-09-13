@@ -1,9 +1,18 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
+  EntityBehaviorBinding,
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import {
+  collectBehavior,
+  mowerConditionalOverlayBehavior,
+  mowableBehavior,
+  pickupBehavior,
+  requiresUnmountedReachBehavior,
+  shovelableBehavior,
+} from "../behaviorLibrary.js";
 import { bobbyMountId } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
@@ -49,17 +58,21 @@ function surface(
   atlas: ReturnType<typeof tileCell>,
   facts: EntityModuleDefinition["facts"] = ["walkable"],
   palette = true,
+  mechanisms: readonly string[] = [],
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return staticEntity(
     {
       type,
       facts,
+      mechanisms,
       ...(palette ? {} : { authoring: { palette: false } }),
       layer: "surface",
       stackOrder: SURFACE_STACK_ORDER,
       presentation: { name },
     },
     atlas,
+    behaviorBindings,
   );
 }
 
@@ -68,8 +81,9 @@ function runtimeOnlyContent(
   name: string,
   atlas: ReturnType<typeof tileCell>,
   facts: EntityModuleDefinition["facts"] = [],
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
-  const module = content(type, name, atlas, facts);
+  const module = content(type, name, atlas, facts, behaviorBindings);
   return {
     ...module,
     authoring: { palette: false },
@@ -81,6 +95,7 @@ function content(
   name: string,
   atlas: ReturnType<typeof tileCell>,
   facts: EntityModuleDefinition["facts"] = [],
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return staticEntity(
     {
@@ -91,6 +106,7 @@ function content(
       presentation: { name },
     },
     atlas,
+    behaviorBindings,
   );
 }
 
@@ -106,42 +122,54 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
     "reach-all-players",
-  ]),
+  ], true, [], [{ behavior: requiresUnmountedReachBehavior }]),
   surface(
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",
     tileCell(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_CLOUD9_TICKET,
     "Cloud 9 Ticket",
     tileCell(MapEntityTypeId.SHOP_CLOUD9_TICKET),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_STEREO_SYSTEM,
     "Stereo System",
     tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_EXTRA_MUSIC,
     "Extra Music",
     tileCell(MapEntityTypeId.SHOP_EXTRA_MUSIC),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_SPEED_SHOES,
     "Speed Shoes",
     tileCell(MapEntityTypeId.SHOP_SPEED_SHOES),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_COIN_RADAR,
     "Coin Radar",
     tileCell(MapEntityTypeId.SHOP_COIN_RADAR),
     ["blocking"],
+    true,
+    ["object-interaction", "dialog"],
   ),
   surface(
     MapEntityTypeId.SHOP_EMPTY,
@@ -153,6 +181,9 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Shovel Pickup",
     tileCell(MapEntityTypeId.SHOVEL_PICKUP),
     ["walkable"],
+    true,
+    [],
+    [{ behavior: pickupBehavior }],
   ),
 ];
 
@@ -173,8 +204,12 @@ const highGrassDefinition: EntityModuleDefinition = {
 };
 
 export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(snowDefinition, tileCell(MapEntityTypeId.SNOW)),
-  staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS)),
+  staticEntity(snowDefinition, tileCell(MapEntityTypeId.SNOW), [
+    { behavior: shovelableBehavior },
+  ]),
+  staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS), [
+    { behavior: mowableBehavior },
+  ]),
 ];
 
 const carrotDefinition: EntityModuleDefinition = {
@@ -229,7 +264,9 @@ const windmill = originalModule(
 );
 
 export const staticContentModules: readonly EntityModule[] = [
-  staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT)),
+  staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT), [
+    { behavior: collectBehavior },
+  ]),
   runtimeOnlyContent(
     RuntimeEntityTypeId.CONSUMED_CARROT,
     "Consumed Carrot",
@@ -242,12 +279,17 @@ export const staticContentModules: readonly EntityModule[] = [
       "Beanstalk",
       tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
       beanstalkFacts,
+      [{ behavior: mowerConditionalOverlayBehavior }],
     ),
     authoring: { palette: false },
   },
-  content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN)),
+  content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), [], [
+    { behavior: pickupBehavior },
+  ]),
   windmill,
-  content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS)),
+  content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), [], [
+    { behavior: pickupBehavior },
+  ]),
   runtimeOnlyContent(
     RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
@@ -257,6 +299,7 @@ export const staticContentModules: readonly EntityModule[] = [
       "climbable",
       "walkable",
     ],
+    [{ behavior: mowerConditionalOverlayBehavior }],
   ),
   runtimeOnlyContent(
     RuntimeEntityTypeId.BEANSTALK_BASE,
@@ -269,17 +312,21 @@ export const staticContentModules: readonly EntityModule[] = [
     "Bean Sprout",
     tileCell("beanstalk", { phase: "sprout" }),
   ),
-  content(MapEntityTypeId.KITE, "Kite", tileCell(MapEntityTypeId.KITE)),
+  content(MapEntityTypeId.KITE, "Kite", tileCell(MapEntityTypeId.KITE), [], [
+    { behavior: pickupBehavior },
+  ]),
   content(
     MapEntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
     tileCell(MapEntityTypeId.GOLDEN_CARROT),
     ["collectible"],
+    [{ behavior: collectBehavior }],
   ),
   content(
     MapEntityTypeId.BONUS_COIN,
     "Bonus Coin",
     tileCell(MapEntityTypeId.BONUS_COIN),
     ["collectible"],
+    [{ behavior: collectBehavior }],
   ),
 ];

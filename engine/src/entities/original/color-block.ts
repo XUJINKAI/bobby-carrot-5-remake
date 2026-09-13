@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { statefulBlockBehavior } from "../behaviorLibrary.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -41,4 +42,5 @@ export const colorBlock: EntityModule = originalModule(
       fields: { color, raised },
     });
   }),
+  [{ behavior: statefulBlockBehavior }],
 );
