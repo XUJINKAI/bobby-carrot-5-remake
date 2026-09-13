@@ -242,10 +242,11 @@ game.dispatchInteractionEffect({
 LevelMap。商品、价格、货币和永久存档均由外层产品决定。`GameplayState.actors` 只投影
 位置、朝向、地图内背包与实际移动时长，不暴露 Entity runtime state。
 
-阻塞对话选择产生的宿主派生效果使用 `game.dispatchInteractionEffect(intent)`。该入口允许
-Replay playback 在消费 `choices` 后重走由当前 LevelMap 与 Session 状态决定的交互流程；
-派生效果本身不写入 Replay。依赖 Adventure Save、全局经济或其它外部可变状态的宿主业务
-不属于 Replay 的可靠重建边界。
+阻塞对话选择产生的宿主派生效果使用 `game.dispatchInteractionEffect(intent)`。这些效果
+属于宿主交互结果，不写入 Replay；Replay 只记录直接提交给 Engine / `GameplaySession`
+的确定性 gameplay 动作。录制期间打开需要选择的阻塞对话会终止本次录制，并发出
+`replay-recording-aborted` 事件。依赖 Adventure Save、全局经济或其它外部可变状态的
+宿主业务不属于 Replay 的可靠重建边界。
 
 ## GameplaySession 与 Replay
 
@@ -253,8 +254,9 @@ Replay playback 在消费 `choices` 后重走由当前 LevelMap 与 Session 状�
 同一套正式配置创建 World，并支持真实时间推进、显式 Tick 推进和暂停单步。浏览器
 `Game` 与无头 `ReplayRunner` 共用该实现。
 
-Replay 必须从 tick 0 开始，不持久化 Entity runtime state 或中途 WorldSnapshot。完整
-格式、确定性边界与校验规则见 [`replay.md`](replay.md)。
+Replay 是 Gameplay 动作回放，不是画面录像。它必须从 tick 0 开始，不持久化 Entity
+runtime state 或中途 WorldSnapshot。完整格式、确定性边界与校验规则见
+[`replay.md`](replay.md)。
 
 浏览器 `Game` 提供与无头 Runner 共用输入调度的表现层回放入口：
 
@@ -278,7 +280,7 @@ game.replayPaused;
 倍率，并作用于普通游戏、录制和播放。Replay 开始与停止不修改倍率。暂停保留当前位置，
 停止退出 Replay 控制并恢复宿主进入播放前的暂停状态。
 `jumpReplayToEnd()` 仍从 tick 0 快速执行，只在终点渲染当前状态；沿途 WorldEvent 按顺序
-发布给观察者。带阻塞对话 `choices` 的 Replay 需要宿主逐轮处理，因此只能按时间线播放。
+发布给观察者；播放不会重新请求宿主交互。
 
 `skipIdleTime` 用于压缩稳定状态下超过一秒的无输入区间，并在下一次输入前保留短暂的
 表现间隔。压缩期间仍逐个执行 World Tick；新的 WorldMotion、阻塞输入的 RuntimeAction
@@ -571,5 +573,5 @@ const result = await dialog.present({
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
 `GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
 ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
-`0` 可立即显示全文。同一个 Tick 连续调用多次 `present()` 时，Replay 依次记录一基选项
-序号；`show()` 始终是无选项、非阻塞的提示，不记录选择。
+`0` 可立即显示全文。`present()` 打开需要选择的阻塞对话时会终止进行中的 Replay 录制；
+`show()` 始终是无选项、非阻塞的提示，不影响录制。

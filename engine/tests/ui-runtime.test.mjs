@@ -247,8 +247,8 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
   assert.match(source, /this\.input\.setEnabled\(false\)/);
   assert.match(source, /GameplayDialog\.present\(\) 至少需要一个选项/);
   assert.match(source, /dialogControl\.setWorldPaused\(true\)/);
-  assert.match(source, /dialogControl\.consumeReplayChoice/);
-  assert.match(source, /dialogControl\.recordChoice/);
+  assert.match(source, /dialogControl\.beginBlockingChoice/);
+  assert.doesNotMatch(source, /consumeReplayChoice|recordChoice/);
   assert.match(source, /dataset\.selected/);
   assert.match(source, /rgba\(255,255,255,\.96\)/);
   assert.match(source, /0 0 0 2px rgba\(255,255,255,\.24\)/);

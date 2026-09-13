@@ -43,8 +43,6 @@ export interface ReplayInputGroup {
 export interface ReplayFrame {
   tick: number;
   groups: ReplayInputGroup[];
-  /** 当前 Tick 触发的阻塞对话链中，按出现顺序选择的一基选项序号。 */
-  choices?: number[];
 }
 
 export interface ReplayRuntimeSetup {

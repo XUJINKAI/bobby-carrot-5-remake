@@ -21,10 +21,9 @@ export async function verifyGameplayDialogKeyboard(
           on: () => () => {},
           dialogControl: {
             worldPaused: false,
-            choices: [],
+            blockingChoices: 0,
             setWorldPaused(value) { this.worldPaused = value; },
-            consumeReplayChoice() { return null; },
-            recordChoice(choice) { this.choices.push(choice); },
+            beginBlockingChoice() { this.blockingChoices += 1; },
           },
         };
         const input = {
@@ -131,7 +130,7 @@ export async function verifyGameplayDialogKeyboard(
             state.result.optionId === 'first' &&
             state.input.enabled === true &&
             state.dialog.game.dialogControl.worldPaused === false &&
-            state.dialog.game.dialogControl.choices.join(',') === '1' &&
+            state.dialog.game.dialogControl.blockingChoices === 1 &&
             state.dialog.root.hidden;
         })()`,
       ),
@@ -143,7 +142,8 @@ export async function verifyGameplayDialogKeyboard(
       const state = window.__gameplayDialogCheck;
       state.dialog.show('提示');
       return state.input.enabled === true &&
-        state.dialog.game.dialogControl.worldPaused === false;
+        state.dialog.game.dialogControl.worldPaused === false &&
+        state.dialog.game.dialogControl.blockingChoices === 1;
     })()`,
   );
   if (!passive) throw new Error("Passive Gameplay Dialog blocked gameplay");

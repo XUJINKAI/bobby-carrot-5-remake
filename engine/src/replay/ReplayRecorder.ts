@@ -60,20 +60,6 @@ export class ReplayRecorder {
     this.updateActorReferences();
   }
 
-  recordChoice(tick: number, choice: number): void {
-    if (this.stopped) return;
-    if (!Number.isInteger(tick) || tick < 0)
-      throw new Error("Replay choice 缺少有效的触发 Tick");
-    if (!Number.isInteger(choice) || choice < 1)
-      throw new Error("Replay choice 必须是从 1 开始的整数");
-    let frame = this.frames.at(-1);
-    if (!frame || frame.tick !== tick) {
-      frame = { tick, groups: [] };
-      this.frames.push(frame);
-    }
-    (frame.choices ??= []).push(choice);
-  }
-
   stop(): Replay {
     if (this.stopped) throw new Error("Replay 录制已经结束");
     this.stopped = true;

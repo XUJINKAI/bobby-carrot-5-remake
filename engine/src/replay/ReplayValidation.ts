@@ -61,7 +61,7 @@ export function validateReplay(
   for (const frame of replay.frames) {
     if (!frame || typeof frame !== "object")
       throw new Error("Replay frame 必须是对象");
-    requireFields(frame, ["tick", "groups", "choices"]);
+    requireFields(frame, ["tick", "groups"]);
     if (
       !Number.isInteger(frame.tick) ||
       frame.tick < 0 ||
@@ -70,24 +70,14 @@ export function validateReplay(
     )
       throw new Error("Replay frame tick 必须严格递增且位于运行区间内");
     previousTick = frame.tick;
-    if (!Array.isArray(frame.groups))
-      throw new Error("Replay frame groups 必须是数组");
-    if (
-      frame.choices !== undefined &&
-      (!Array.isArray(frame.choices) ||
-        frame.choices.length === 0 ||
-        frame.choices.some(
-          (choice) => !Number.isInteger(choice) || choice < 1,
-        ))
-    ) {
-      throw new Error("Replay frame choices 必须是非空正整数数组");
-    }
+    if (!Array.isArray(frame.groups) || frame.groups.length === 0)
+      throw new Error("Replay frame groups 必须是非空数组");
     for (const group of frame.groups) {
       if (!group || typeof group !== "object")
         throw new Error("Replay input group 必须是对象");
       requireFields(group, ["intents"]);
-      if (!Array.isArray(group.intents))
-        throw new Error("Replay input group intents 必须是数组");
+      if (!Array.isArray(group.intents) || group.intents.length === 0)
+        throw new Error("Replay input group intents 必须是非空数组");
       for (const intent of group.intents)
         validateIntent(session, intent, true);
     }

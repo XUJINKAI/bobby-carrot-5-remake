@@ -170,7 +170,7 @@ test("Replay 只保存实际生效的持续移动输入", () => {
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
 });
 
-test("Replay 不重复记录可由对话 choice 重建的 Entity replacement", () => {
+test("Replay 不记录宿主交互派生的 Entity replacement", () => {
   const level = {
     schemaVersion: 1,
     width: 2,
@@ -210,62 +210,28 @@ test("Replay 不重复记录可由对话 choice 重建的 Entity replacement", (
   assert.equal(runReplay(level, replay).actual.status, "playing");
 });
 
-test("Replay frame 使用一基 choices 记录同一 Tick 的多轮选择", () => {
+test("Replay frame 只接受 Gameplay Intent groups", () => {
   const session = new GameplaySession();
   session.loadLevel(carrotLevel());
   const recorder = new ReplayRecorder(session, {
-    id: "test/dialog-choices",
-    url: "/test/dialog-choices",
+    id: "test/actions",
+    url: "/test/actions",
   });
   const [tick] = session.advanceTicks(1);
   recorder.record(tick);
-  recorder.recordChoice(0, 1);
-  recorder.recordChoice(0, 3);
   const replay = recorder.stop();
-
-  assert.deepEqual(replay.frames, [{
-    tick: 0,
-    groups: [],
-    choices: [1, 3],
-  }]);
-
-  const playbackSession = new GameplaySession();
-  playbackSession.loadLevel(carrotLevel());
-  const playback = new ReplayPlayback(
-    playbackSession,
-    new PresentationClock(),
-  );
-  playback.start(replay);
-  playback.prepareChoices(0);
-  assert.equal(playback.consumeChoice(2), 1);
-  assert.equal(playback.consumeChoice(4), 3);
-  assert.equal(playback.finishIfComplete(), false);
-
-  playback.start(replay);
-  playback.prepareChoices(0);
-  assert.equal(playback.consumeChoice(2), 1);
-  assert.throws(() => playback.prepareChoices(1), /未消费的对话 choices/);
-
-  playback.start(replay);
-  playback.prepareChoices(0);
-  assert.equal(playback.consumeChoice(2), 1);
-  assert.throws(() => playback.consumeChoice(2), /超出 2 个选项/);
-
-  const withoutChoice = structuredClone(replay);
-  delete withoutChoice.frames[0].choices;
-  playback.start(withoutChoice);
-  playback.prepareChoices(0);
-  assert.throws(() => playback.consumeChoice(2), /缺少对话 choice/);
+  assert.deepEqual(replay.frames, []);
 
   const invalid = structuredClone(replay);
-  invalid.frames[0].choices = [];
+  invalid.frames.push({ tick: 0, groups: [], choices: [1] });
   assert.throws(
     () => runReplay(carrotLevel(), invalid),
-    /choices 必须是非空正整数数组/,
+    /包含未声明字段/,
   );
+  delete invalid.frames[0].choices;
   assert.throws(
-    () => playback.jumpToEnd(replay),
-    /需要按时间线播放/,
+    () => runReplay(carrotLevel(), invalid),
+    /frame groups 必须是非空数组/,
   );
 });
 

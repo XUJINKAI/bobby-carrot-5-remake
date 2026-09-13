@@ -160,23 +160,13 @@ export class GameplayDialog {
     const { options } = presentation;
     if (options.length === 0)
       throw new Error("GameplayDialog.present() 至少需要一个选项");
+    this.game.dialogControl.beginBlockingChoice();
     this.preparePassiveView();
     this.root.hidden = false;
     return new Promise((resolve) => {
       this.pendingPresentation = { resolve };
       this.prepareInteractiveView(options);
       this.typeMessage(presentation.message, () => this.revealOptions());
-      const replayChoice = this.game.dialogControl.consumeReplayChoice(
-        options.length,
-      );
-      if (replayChoice !== null) {
-        this.finishTyping();
-        queueMicrotask(() => {
-          const optionId = this.optionIds[replayChoice - 1];
-          if (optionId !== undefined)
-            this.settlePresentation({ type: "selected", optionId });
-        });
-      }
     });
   }
 
@@ -212,10 +202,6 @@ export class GameplayDialog {
   private settlePresentation(result: GameplayDialogResult): void {
     const pending = this.pendingPresentation;
     if (!pending) return;
-    if (result.type === "selected") {
-      const index = this.optionIds.indexOf(result.optionId);
-      if (index >= 0) this.game.dialogControl.recordChoice(index + 1);
-    }
     this.pendingPresentation = null;
     this.hide();
     pending.resolve(result);

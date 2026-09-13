@@ -82,6 +82,6 @@ export interface WorldIntentGroup {
   intents: WorldIntent[];
   /** 同一 group 只算一个 user-visible history boundary。 */
   historyBoundary?: boolean;
-  /** 由 Replay choice 可重建的宿主效果不重复写入录像。 */
+  /** 宿主交互派生的结果不属于独立地图的动作回放。 */
   recordInReplay?: boolean;
 }

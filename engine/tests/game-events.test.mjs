@@ -14,9 +14,9 @@ const interaction = {
   action: "touch",
 };
 
-function eventGame(replayPlaying, hasPendingChoices = false) {
+function eventGame(replayPlaying) {
   const game = Object.create(Game.prototype);
-  game.replayPlayback = { playing: replayPlaying, hasPendingChoices };
+  game.replayPlayback = { playing: replayPlaying };
   game.worldEvents = new WorldEventDispatcher();
   game.presentation = { shake() {} };
   return game;
@@ -35,7 +35,7 @@ test("live session 同时发布世界事件与外部交互请求", () => {
   assert.deepEqual(requests, [interaction]);
 });
 
-test("没有 choices 的 Replay playback 只发布可观察的世界事件", () => {
+test("Replay playback 只发布可观察的世界事件", () => {
   const game = eventGame(true);
   const worldEvents = [];
   const requests = [];
@@ -48,14 +48,20 @@ test("没有 choices 的 Replay playback 只发布可观察的世界事件", () 
   assert.deepEqual(requests, []);
 });
 
-test("Replay frame 声明 choices 时重新请求外部交互", () => {
-  const game = eventGame(true, true);
-  const requests = [];
-  game.onInteractionRequest((event) => requests.push(event));
+test("阻塞对话会终止录制并发布通知", () => {
+  const game = eventGame(false);
+  game.listeners = new Map();
+  game.replayRecorder = {};
+  const notifications = [];
+  game.on("replay-recording-aborted", () => notifications.push("aborted"));
+  game.on("change", () => notifications.push("change"));
 
-  game.publishWorldEvents([interaction]);
+  game.abortReplayRecordingForInteractiveChoice();
 
-  assert.deepEqual(requests, [interaction]);
+  assert.equal(game.replayRecording, false);
+  assert.deepEqual(notifications, ["aborted", "change"]);
+  game.abortReplayRecordingForInteractiveChoice();
+  assert.deepEqual(notifications, ["aborted", "change"]);
 });
 
 test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {

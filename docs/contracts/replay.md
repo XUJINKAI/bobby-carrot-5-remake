@@ -1,12 +1,13 @@
 # Replay 合同
 
-Replay 用于记录一张 `LevelMap` 从正式起点开始的玩家语义输入，并在浏览器或 Node
-中通过同一套 `GameplaySession` 重新执行。Replay 的首要用途是生成可长期运行的
-Engine 回归测试。
+Replay 是一张 `LevelMap` 从正式起点开始的 **Gameplay action replay（动作回放）**。
+它记录可直接作用于 Engine / `GameplaySession` 的确定性语义动作及其 World Tick，
+再由同一套 gameplay 规则重新执行；它不保存画面帧，也不重放 Host UI 或 Adventure
+业务逻辑。首要用途是生成可长期运行的 Engine 回归测试。
 
 可靠重建边界是一张独立、纯数据的 `LevelMap`，覆盖 Explore、Editor Play Test 和直接
-加载地图的 Engine 场景。Adventure 的 Save、全局经济、加载前动态补丁和宿主业务回调
-属于跨关 Campaign 状态，不进入 Replay 文件，也不属于 Replay fixture 的确定性保证。
+加载地图的 Engine 场景。Adventure 中的 Replay 仅用于 DEV 调试单关动作；Save、
+Campaign 状态、加载前动态补丁和宿主业务回调不属于回放的确定性保证。
 
 ## 执行模型
 
@@ -33,7 +34,7 @@ LevelMap
 + World Hz
 + Bobby 初始 gameplay 移动时长
 + tick 0 actor intents
-+ 逐 Tick Gameplay Intent 与阻塞对话选择
++ 逐 Tick Gameplay Intent
 ```
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
@@ -48,7 +49,6 @@ Replay 在浏览器输入源映射到 controller channel 后记录产生 gamepla
 - 生效输入的 Tick 与组内顺序；
 - 成功启动的移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
 - 宿主提交的 `set-actor-locomotion`、`add-actor-inventory-item` 等封闭 gameplay 动作；
-- 阻塞对话按出现顺序确认的一基选项序号。
 
 按住方向时，Bobby 移动期间产生的纯 `busy` 重试和没有 gameplay 效果的阻挡输入不会写入
 Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` 线性增长。旧 Replay 中已经
@@ -58,10 +58,12 @@ Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` �
 Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的
 `controller / mirrorX / mirrorY` 重新解析各 Bobby 的实际方向。
 
-同一个 World Tick 可以连续触发多轮阻塞对话。该 Tick 的 `choices` 数组按展示顺序记录
-每轮选择，例如 `choices: [1, 2, 1]`。序号从 `1` 开始，只表达“第几个选项”，不保存
-产品规则 ID、按钮文案或宿主业务动作。无选项的 `dialog.show()` 允许 World 继续推进，
-不写入 Replay。
+每个 `frame` 至少包含一组有效 gameplay action，每组至少包含一个 intent。
+
+`dialog.show()` 这类纯展示对话不写入 Replay。需要用户选择的阻塞对话属于 Host
+交互，当前不属于 Replay 合同；录制期间打开此类对话会废弃本次 take，并在面板提示
+`interactive host choice is not supported by replay`。播放时只发布可观察的
+`WorldEvent`，不请求宿主重新执行交互。
 
 直接针对 actor 的 Debug 移动与 actor effect 使用 Bobby 在该动作处的地图位置 `{ x, y }`
 作为稳定引用。单 Bobby 地图省略该引用；多 Bobby 地图在执行动作前用当前位置解析
@@ -118,11 +120,6 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
           "intents": [{ "type": "move", "direction": "right" }]
         }
       ]
-    },
-    {
-      "tick": 42,
-      "groups": [],
-      "choices": [1, 2]
     }
   ]
 }
@@ -134,7 +131,7 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 不读取或解释其内容，用户可以在 Replay 文本中直接填写。
 
 录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
-本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看录像信息；
+本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
 `counters` 累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
 `completedConditions` 展开并列出终点已经满足的 `collect-all / fill-all / reach` 叶子条件。
 它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture
@@ -150,18 +147,15 @@ Web 生成 `meta.url` 时固定使用 `https://bc5r.xujinkai.net/`，并保留�
 
 Replay 本身不解析地图身份。调用方负责选择用于播放或无头执行的 `LevelMap`；Runner
 从起点执行到 `endTick` 并返回实际 `finalState` 与 Tick 数。仓库 fixture 测试按上述字段
-子集比较；Web 录像面板在文件声明 `status` 时比较该字段，用于提示回放是否到达相同终局。
+子集比较；Web 录制面板在文件声明 `status` 时比较该字段，用于提示回放是否到达相同终局。
 
 `initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
-于 tick 0 前应用，并使用同一套位置引用规则。普通 Replay Tick 只发布可观察的
-`WorldEvent`；当前 frame 有待消费的 `choices` 时，playback 同时调用宿主
-`onInteractionRequest()`，由同一产品流程再次展示选项并消费序号。缺少选择、选择越界、
-下一 Tick 到来时仍有未消费选择都会立即报错。
+于 tick 0 前应用，并使用同一套位置引用规则。Replay Tick 只发布可观察的
+`WorldEvent`；`onInteractionRequest()` 不在播放中调用。
 
 地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。字符串数组
 `dialogue` 的循环游标属于 World Runtime State，因此随 Snapshot 与确定性 Tick 时间线
-推进。阻塞选择只有在交互结果完全由当前 LevelMap、Session 状态和选择序号决定时才能可靠
-重建；读取或写入外部可变状态的宿主业务回调超出 Replay 边界。
+推进。宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
 
 ## 仓库内置过法
 
@@ -189,9 +183,7 @@ Engine 的常驻 `timeScale`，同时作用于普通游戏、
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退
 与快进按钮依次选择 `0.1 / 0.5 / 1 / 1.25 / 1.5 / 2 / 4 / 8` 中相邻的预设值。
 
-带 `choices` 的 Replay 必须按时间线播放，使宿主有机会依次处理每轮交互；终点快进会拒绝
-这类文件。终点快进普通 Replay 时仍逐 Tick 发布沿途 `WorldEvent`，以保持独立关卡的事件
-观察顺序。
+终点快进仍逐 Tick 发布沿途 `WorldEvent`，以保持独立关卡的事件观察顺序。
 
 录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放角色过渡、终局音乐并显示结果卡片；录制中的 take 由用户在面板中停止并生成 Replay JSON。
 
@@ -213,7 +205,7 @@ Explore 游戏页使用 `Tab` 开关录制面板；焦点位于链接、按钮�
 
 通过 `npm run dev` 启动时，Adventure 游戏页可以提供相同的底栏入口与 `Tab` 快捷键，用于
 调试底层单关时间线；正式构建保持 Adventure 玩家界面。该入口不会把 Adventure Save、
-全局奖励、永久商品或动态补丁纳入录像。仓库 Replay fixture 以 Explore 的纯 LevelMap URL
+全局奖励、永久商品或动态补丁纳入动作回放。仓库 Replay fixture 以 Explore 的纯 LevelMap URL
 加载并验证。
 
 桌面布局为面板保留固定宽度并缩小 Canvas 可用区域；窄屏布局将面板悬浮在游戏区域内，

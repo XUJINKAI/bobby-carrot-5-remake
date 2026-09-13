@@ -205,8 +205,8 @@ object-interaction {
 
 `missing-item` 由地图机关报告缺少 Gas、Lock Key、Kite、Shovel 或 Bean 的语义事实。
 Engine Presentation 将它映射为锚定 Bobby 的 Canvas Callout；图标、闪烁时序和
-`aria-live` 文本都属于表现层，World 与 Replay 只保留导致事件发生的 gameplay 状态和
-输入。完整功能合同见 [`features/world-callouts.md`](features/world-callouts.md)。
+`aria-live` 文本都属于表现层；World 保存 gameplay 状态，Replay 记录产生效果的语义输入。
+完整功能合同见 [`features/world-callouts.md`](features/world-callouts.md)。
 
 成功打开锁是一个普通 Object interaction：
 
@@ -231,9 +231,9 @@ Object Definition touch behavior
 固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
 Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
 `onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World，并把同一
-Tick 内各轮选择按一基序号写入 Replay；playback 仅在 frame 有待消费选择时再次调用外部
-交互控制器。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
+不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World；
+需要用户选择时，进行中的 Replay 录制立即终止。Replay 只回放 Engine gameplay 动作，
+播放不会重新请求宿主交互。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -533,7 +533,8 @@ Adventure Save 只保存已经结算的全局经济。每次进入关卡都使�
 `false`，不进入 Engine 背包。
 
 Replay 的确定性边界是一张独立 LevelMap；Adventure Save、全局经济、永久商品和按 Save
-生成的动态补丁属于 Campaign 会话，不由单关录像重建。
+生成的动态补丁属于 Campaign 会话，不由单关动作回放重建。Adventure 中的 Replay 仅为
+DEV 单关调试工具。
 
 ## Original JAR Validation
 

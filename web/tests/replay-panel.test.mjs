@@ -67,6 +67,16 @@ test("Replay 未声明 status 时只报告复跑完成", () => {
   });
 });
 
+test("阻塞对话终止录制时清空 take 并显示诊断", () => {
+  assert.match(replayBindingSource, /"replay-recording-aborted"/);
+  assert.match(replayBindingSource, /replay = null;\s+output\.value = ""/);
+  assert.match(
+    replayBindingSource,
+    /interactive host choice is not supported by replay/,
+  );
+  assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
+});
+
 test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
   const checkboxIndex = replayPanelSource.indexOf("data-replay-skip-thinking");
   const playButtonIndex = replayPanelSource.indexOf('data-replay-action="play"');

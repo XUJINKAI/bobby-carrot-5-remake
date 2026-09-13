@@ -58,7 +58,8 @@ type GameEventName =
   | "level-loaded"
   | "debug-change"
   | "death"
-  | "level-complete";
+  | "level-complete"
+  | "replay-recording-aborted";
 type Listener = (game: Game) => void;
 
 const MAX_REPLAY_IDLE_TICKS_PER_FRAME = 128;
@@ -111,9 +112,7 @@ export class Game {
     );
     this.dialogControl = new GameplayDialogControl({
       discardPendingInput: () => this.discardPendingGameplayInput(),
-      consumeReplayChoice: (count) => this.replayPlayback.consumeChoice(count),
-      recordChoice: (tick, choice) =>
-        this.replayRecorder?.recordChoice(tick, choice),
+      onBlockingChoice: () => this.abortReplayRecordingForInteractiveChoice(),
       dispatchEffect: (intent) => {
         if (!this.worldValue || this.world.dead || this.world.completed) return;
         this.queuedIntentGroups.push({
@@ -401,6 +400,13 @@ export class Game {
     return replay;
   }
 
+  private abortReplayRecordingForInteractiveChoice(): void {
+    if (!this.replayRecorder) return;
+    this.replayRecorder = null;
+    this.emit("replay-recording-aborted");
+    this.emit("change");
+  }
+
   verifyReplay(replay: Replay): ReplayReport {
     return runReplay(this.session.level, replay);
   }
@@ -631,8 +637,6 @@ export class Game {
     emitChange = true,
   ): boolean {
     let changed = false;
-    this.dialogControl.beginTick(tick.time.tick);
-    this.replayPlayback.prepareChoices(tick.time.tick);
     this.replayRecorder?.record(tick);
     this.emit("tick");
     this.inputController?.resolveMoveAttempts(tick.inputResolutions);
@@ -773,8 +777,7 @@ export class Game {
     events: readonly WorldEvent[],
     notifyInteractions = true,
   ): void {
-    const notifyRequests = notifyInteractions &&
-      (!this.replayPlayback.playing || this.replayPlayback.hasPendingChoices);
+    const notifyRequests = notifyInteractions && !this.replayPlayback.playing;
     this.worldEvents.publish(events, notifyRequests, (event) => {
       if (
         event.type === "speed-impact" ||
