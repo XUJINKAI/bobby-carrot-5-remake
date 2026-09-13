@@ -257,23 +257,28 @@ export class GameplaySession {
 
   loadLevel(level: LevelMap): void {
     this.initialLevel = structuredClone(level);
-    this.worldValue = new World(level);
-    this.world.setMotionDurationMs(this.gameplayMotionDuration());
-    this.configureActorsAndControls();
-    this.applyInitialActorIntents(this.configuredInitialIntents ?? undefined);
-    this.clock.reset();
-    this.clearHistory();
+    this.initializeWorld(level, this.configuredInitialIntents ?? undefined, false);
   }
 
   restart(initialIntents?: readonly ActorEffectIntent[]): void {
     if (!this.initialLevel) return;
-    const wasPaused = this.clock.paused;
-    this.worldValue = new World(this.initialLevel);
+    this.initializeWorld(
+      this.initialLevel,
+      initialIntents ?? this.configuredInitialIntents ?? undefined,
+      true,
+    );
+  }
+
+  private initializeWorld(
+    level: LevelMap,
+    initialIntents: readonly ActorEffectIntent[] | undefined,
+    preservePause: boolean,
+  ): void {
+    const wasPaused = preservePause && this.clock.paused;
+    this.worldValue = new World(level);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
-    this.applyInitialActorIntents(
-      initialIntents ?? this.configuredInitialIntents ?? undefined,
-    );
+    this.applyInitialActorIntents(initialIntents);
     this.clock.reset();
     if (wasPaused) this.clock.pause();
     this.clearHistory();

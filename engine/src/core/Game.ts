@@ -366,17 +366,18 @@ export class Game {
     this.replayPlayback.stop();
     this.replayRecorder = null;
     this.session.restart();
-    this.resetSessionView();
+    this.resetSessionView(true);
     this.render();
     this.emit("change");
   }
 
-  private resetSessionView(): void {
+  private resetSessionView(resetCamera = false): void {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
-    this.presentation.resetMotion();
+    if (resetCamera) this.presentation.resetLevelView();
+    else this.presentation.resetMotion();
     this.beginLevelPresentation();
     this.debugControls.resetSession();
     this.lastMove = null;

@@ -20,6 +20,37 @@ test("GameplaySession 在暂停时不按真实时间推进", () => {
   assert.equal(session.clock.tickCount, 0);
 });
 
+test("重开保留暂停状态，载入新地图更新起始 World", () => {
+  const levelAt = (x) => ({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: "bobby", x, y: 0 },
+    ],
+  });
+  const bobbyX = (session) => session.world.entities.all().find(
+    (entity) => entity.type === "bobby",
+  ).anchor.x;
+  const session = new GameplaySession();
+
+  session.loadLevel(levelAt(0));
+  session.advanceTicks(1, () => ({}));
+  session.clock.pause();
+  session.restart();
+  assert.equal(session.clock.paused, true);
+  assert.equal(session.clock.tickCount, 0);
+  assert.equal(bobbyX(session), 0);
+
+  session.loadLevel(levelAt(1));
+  assert.equal(session.clock.paused, false);
+  assert.equal(bobbyX(session), 1);
+  session.restart();
+  assert.equal(bobbyX(session), 1);
+});
+
 test("WorldClock pause blocks direct Game.move gameplay bypass", () => {
   const game = Object.create(Game.prototype);
   game.session = {
