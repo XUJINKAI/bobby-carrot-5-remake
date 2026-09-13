@@ -315,31 +315,34 @@ export class BobbyApp {
     }
     try {
       const resolved = await resolveMapDocument(ref);
-      const collection = context.collections.find(
+      let collection = context.collections.find(
         (item) => item.id === ref.collection,
-      ) ?? {
-        id: ref.collection,
-        ...(await fetchJson<MapCollectionIndex>(
-          siteUrl(`assets/maps/${ref.collection}/index.json`),
-        )),
-      };
-      if (collection.schemaVersion !== 1)
-        throw new Error(`${collection.id}: collection schemaVersion 必须为 1`);
-      const currentIndex = collection.maps.findIndex(
-        (item) => item.id === ref.id,
       );
-      if (currentIndex < 0)
-        throw new Error(`${ref.collection}/${ref.id}: 地图不在 collection index 中`);
+      if (!collection) {
+        try {
+          const index = await fetchJson<MapCollectionIndex>(
+            siteUrl(`assets/maps/${ref.collection}/index.json`),
+          );
+          if (index.schemaVersion === 1 && Array.isArray(index.maps)) {
+            collection = { id: ref.collection, ...index };
+          }
+        } catch {
+          // 地图文件可独立加载；collection index 只补充导航与验证状态。
+        }
+      }
+      const currentIndex = collection?.maps.findIndex(
+        (item) => item.id === ref.id,
+      ) ?? -1;
       const explorePreviousMapId =
-        currentIndex > 0 ? collection.maps[currentIndex - 1]?.id : undefined;
+        currentIndex > 0 ? collection?.maps[currentIndex - 1]?.id : undefined;
       const exploreNextMapId =
-        currentIndex >= 0 ? collection.maps[currentIndex + 1]?.id : undefined;
+        currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
       this.controller = await renderGamePage({
         ...context,
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
-        verified: collection.maps[currentIndex]?.verified === true,
+        verified: collection?.maps[currentIndex]?.verified === true,
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
         mode: "explore",

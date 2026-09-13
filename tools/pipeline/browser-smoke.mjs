@@ -19,9 +19,28 @@ if (!browser)
   throw new Error(
     "Browser smoke test requires Chrome/Chromium. Set BROWSER_PATH if it is not on PATH.",
   );
-const server = http.createServer((request, response) =>
-  serveDistRequest(webRoot, request, response),
-);
+const server = http.createServer((request, response) => {
+  if (
+    request.url === "/assets/maps/original/unlisted-smoke.json" ||
+    request.url === "/assets/maps/standalone-smoke/standalone.json"
+  ) {
+    response.writeHead(200, {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+    });
+    fs.createReadStream(
+      path.join(webRoot, "assets/maps/original/1-1.json"),
+    ).pipe(response);
+    return;
+  }
+  if (
+    request.url === "/explore/play/original/unlisted-smoke" ||
+    request.url === "/explore/play/standalone-smoke/standalone"
+  ) {
+    request.url = "/";
+  }
+  serveDistRequest(webRoot, request, response);
+});
 await new Promise((resolve, reject) => {
   server.once("error", reject);
   server.listen(0, "127.0.0.1", resolve);
@@ -95,7 +114,7 @@ try {
     'class="game-page"',
     'id="game"',
     'class="shell-indicator-button tone-muted"',
-    'aria-label="尚未通过录像验证可通关"',
+    'aria-label="尚未进行通关验证"',
     "01-01",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
@@ -113,8 +132,24 @@ try {
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
     'class="shell-indicator-button tone-success"',
-    'aria-label="已通过录像验证可通关"',
+    'aria-label="已验证可通关"',
   ]);
+  await smoke(
+    `${origin}/explore/play/original/unlisted-smoke`,
+    [
+      'class="game-page"',
+      'id="game"',
+      'aria-label="尚未进行通关验证"',
+    ],
+  );
+  await smoke(
+    `${origin}/explore/play/standalone-smoke/standalone`,
+    [
+      'class="game-page"',
+      'id="game"',
+      'aria-label="尚未进行通关验证"',
+    ],
+  );
   await interactiveReplayVerificationSmoke(
     `${origin}/explore/play/original/1-1`,
   );
@@ -147,7 +182,7 @@ try {
       "original-adventure-game",
       'id="game"',
       'class="shell-indicator-button tone-success"',
-      'aria-label="此地图在自由探索模式下已通过录像验证可通关"',
+      'aria-label="已在自由探索模式中验证可通关"',
     ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
@@ -379,7 +414,7 @@ async function interactiveReplayVerificationSmoke(url) {
     throw new Error(`Replay 验真 tooltip 检查失败：${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
   if (
-    payload.hover !== "已通过录像验证可通关" ||
+    payload.hover !== "已验证可通关" ||
     payload.touch !== payload.hover ||
     !payload.dismissed
   )

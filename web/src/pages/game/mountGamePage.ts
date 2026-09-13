@@ -684,12 +684,12 @@ function replayVerificationTooltip(
 ): string {
   if (mode === "explore") {
     return verified
-      ? "已通过录像验证可通关"
-      : "尚未通过录像验证可通关";
+      ? "已验证可通关"
+      : "尚未进行通关验证";
   }
   return verified
-    ? "此地图在自由探索模式下已通过录像验证可通关"
-    : "此地图尚未在自由探索模式下通过录像验证可通关";
+    ? "已在自由探索模式中验证可通关"
+    : "尚未进行通关验证";
 }
 
 const NOOP_REPLAY_PANEL_CONTROLLER: ReplayPanelController = {
