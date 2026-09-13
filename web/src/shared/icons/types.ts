@@ -1,6 +1,7 @@
 export type AppIconName =
   | "back"
   | "check"
+  | "checks"
   | "close"
   | "copy"
   | "cut"

@@ -75,6 +75,18 @@ const collectionIndexes = collectionsIndex.collections.map((summary) => {
 
 const original = collectionIndexes.find((collection) => collection.id === "original");
 if (!original) throw new Error("缺少 Original collection index");
+for (const id of ["1-1", "1-2"]) {
+  if (original.maps.find((map) => map.id === id)?.verified !== true)
+    throw new Error(`${id}: 获胜 Replay 应写入 collection index`);
+}
+if (original.maps.find((map) => map.id === "1-3")?.verified !== undefined)
+  throw new Error("1-3: 尚无获胜 Replay，不应标记验真");
+for (const collection of collectionIndexes) {
+  for (const map of collection.maps) {
+    if (map.verified !== undefined && map.verified !== true)
+      throw new Error(`${collection.id}/${map.id}: verified 只能为 true`);
+  }
+}
 if (original.cardSize !== "small")
   throw new Error("Original collection cardSize 必须为 small");
 const originalCampaignChapters = original.chapters.filter(

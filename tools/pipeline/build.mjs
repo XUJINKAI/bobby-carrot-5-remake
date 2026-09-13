@@ -34,6 +34,7 @@ run(process.execPath, ["tools/cli.mjs", "assets", "prepare"]);
 
 // Engine、Editor 和 Web 只消费纯 LevelMap 与已生成资产。
 run(tsc, ["-b", "engine", "editor", "embed", "--force"]);
+run(process.execPath, ["tools/replay/mark-verified-maps.mjs"]);
 run(binCommand("vue-tsc"), ["-b", "--force"], {
   cwd: path.join(root, "web"),
 });

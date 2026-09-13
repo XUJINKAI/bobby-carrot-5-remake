@@ -9,6 +9,7 @@ import {
   PhArrowUUpLeft,
   PhArrowUUpRight,
   PhCheck,
+  PhChecks,
   PhClipboard,
   PhCopy,
   PhCaretDown,
@@ -62,6 +63,7 @@ withDefaults(defineProps<{
 const icons: Record<AppIconName, Component> = {
   back: PhArrowLeft,
   check: PhCheck,
+  checks: PhChecks,
   close: PhX,
   copy: PhCopy,
   cut: PhScissors,

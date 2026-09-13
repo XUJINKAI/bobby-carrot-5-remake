@@ -42,6 +42,7 @@ export interface MapCollectionMap {
   description?: string;
   chapter?: string;
   filters?: Record<string, string[]>;
+  verified?: true;
 }
 
 /** assets/maps/<collection>/index.json；collection 身份来自资源路径。 */

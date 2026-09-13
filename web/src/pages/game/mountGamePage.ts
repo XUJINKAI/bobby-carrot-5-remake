@@ -120,6 +120,7 @@ export interface GamePageContext {
   adventureBackPath?: string;
   adventureCompletionPath?: string;
   replayMap?: ExploreMapRef;
+  verified?: boolean;
   mode: GamePageMode;
 }
 
@@ -143,6 +144,7 @@ export async function renderGamePage(
     adventureBackPath,
     adventureCompletionPath,
     replayMap,
+    verified = false,
     mode,
   } = context;
   const campaignNode = Boolean(adventureChapter && adventureLevel);
@@ -206,6 +208,7 @@ export async function renderGamePage(
       exploreNextMapId,
       replayPanelInitiallyOpen,
       capabilities.replayPanel,
+      verified,
     ),
   );
   app.replaceChildren();
@@ -358,6 +361,7 @@ export async function renderGamePage(
               exploreNextMapId,
               open,
               capabilities.replayPanel,
+              verified,
             ),
           );
         },
@@ -578,6 +582,7 @@ function gameShellConfig(
   exploreNextMapId?: string,
   replayOpen = false,
   replayEnabled = mode === "explore",
+  verified = false,
 ): ShellConfig {
   const explore = mode === "explore";
   return {
@@ -655,6 +660,12 @@ function gameShellConfig(
             },
           ]
         : [],
+      leadingIndicators: [{
+        id: "replay-verification",
+        icon: "checks",
+        tone: verified ? "success" : "muted",
+        label: replayVerificationTooltip(mode, verified),
+      }],
       trailing: [
         {
           id: "screen-control",
@@ -665,6 +676,20 @@ function gameShellConfig(
       ],
     },
   };
+}
+
+function replayVerificationTooltip(
+  mode: GamePageMode,
+  verified: boolean,
+): string {
+  if (mode === "explore") {
+    return verified
+      ? "已通过录像验证可通关"
+      : "尚未通过录像验证可通关";
+  }
+  return verified
+    ? "此地图在自由探索模式下已通过录像验证可通关"
+    : "此地图尚未在自由探索模式下通过录像验证可通关";
 }
 
 const NOOP_REPLAY_PANEL_CONTROLLER: ReplayPanelController = {

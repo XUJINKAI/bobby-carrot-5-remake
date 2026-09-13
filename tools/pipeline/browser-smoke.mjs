@@ -94,6 +94,8 @@ try {
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',
+    'class="shell-indicator-button tone-muted"',
+    'aria-label="尚未通过录像验证可通关"',
     "01-01",
   ]);
   await smoke(`${origin}/explore/play/original/1-1`, [
@@ -110,7 +112,12 @@ try {
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
+    'class="shell-indicator-button tone-success"',
+    'aria-label="已通过录像验证可通关"',
   ]);
+  await interactiveReplayVerificationSmoke(
+    `${origin}/explore/play/original/1-1`,
+  );
   await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
     'class="game-page"',
     'id="game"',
@@ -136,7 +143,12 @@ try {
   ]);
   await smoke(
     `${origin}/adventure/play/1-1`,
-    ["original-adventure-game", 'id="game"'],
+    [
+      "original-adventure-game",
+      'id="game"',
+      'class="shell-indicator-button tone-success"',
+      'aria-label="此地图在自由探索模式下已通过录像验证可通关"',
+    ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
   await smoke(`${origin}/edit`, [
@@ -334,6 +346,44 @@ async function interactiveFilterSmoke(url) {
   const payload = lastJsonLine(result.stdout);
   if (!payload.active || !payload.selected || payload.cards <= 0)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
+}
+async function interactiveReplayVerificationSmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let button = null;
+  for (let i = 0; i < 120 && !button; i += 1) {
+    await delay(50);
+    button = document.querySelector('#replay-verification');
+  }
+  if (!button) throw new Error('missing replay verification icon');
+  button.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+  await delay(30);
+  const hover = document.querySelector('[role="tooltip"]')?.textContent;
+  button.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+  button.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+  button.click();
+  await delay(30);
+  const touch = document.querySelector('[role="tooltip"]')?.textContent;
+  document.body.dispatchEvent(new PointerEvent('pointerdown', {
+    pointerType: 'touch',
+    bubbles: true,
+  }));
+  await delay(30);
+  const dismissed = !document.querySelector('[role="tooltip"]');
+  return JSON.stringify({ hover, touch, dismissed });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Replay 验真 tooltip 检查失败：${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (
+    payload.hover !== "已通过录像验证可通关" ||
+    payload.touch !== payload.hover ||
+    !payload.dismissed
+  )
+    throw new Error(`Replay 验真 tooltip 状态异常：${JSON.stringify(payload)}`);
 }
 async function interactiveDataExchangeSmoke(url) {
   const script = `

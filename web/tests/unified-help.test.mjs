@@ -12,8 +12,8 @@ test("所有页面共用完整的操作说明", () => {
   assert.match(content, /<h2>游戏<\/h2>/);
   assert.match(content, /<h2>Editor<\/h2>/);
   assert.match(content, /<li><strong>WASD \/ 方向键<\/strong>：控制移动<\/li>/);
-  assert.match(content, /<li><strong>Ctrl\+Z<\/strong>：撤销（自由探索）<\/li>/);
-  assert.match(content, /<li><strong>双指<\/strong>：缩放地图<\/li>/);
+  assert.match(content, /<li><strong>Ctrl\+Z<\/strong>：撤销<\/li>/);
+  assert.match(content, /<li><strong>滚轮\/\+\-\/双指捏合<\/strong>：缩放地图 &amp; 平移地图<\/li>/);
 });
 
 test("帮助 Markdown 将原始 HTML 转为文本", () => {

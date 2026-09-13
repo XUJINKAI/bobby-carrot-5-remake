@@ -42,6 +42,13 @@ export interface ShellInfo {
   external?: boolean;
 }
 
+export interface ShellIndicator {
+  id: string;
+  icon: AppIconName;
+  label: string;
+  tone?: "success" | "muted";
+}
+
 export interface ShellConfig {
   topBar?: {
     visible?: boolean;
@@ -56,6 +63,7 @@ export interface ShellConfig {
     visible?: boolean;
     fixed?: boolean;
     leading?: ShellAction[];
+    leadingIndicators?: ShellIndicator[];
     info?: ShellInfo[];
     trailing?: ShellAction[];
   };
