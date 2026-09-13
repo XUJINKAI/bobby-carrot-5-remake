@@ -52,19 +52,10 @@ export class ReachResolver {
     });
   }
 
-  /** Definition 通过 fact 声明该 selector 是否要求所有 player 同时到达。 */
+  /** 目标聚合策略由通用 Mechanism 解释，World 只使用结果。 */
   aggregationFor(selector: string): "any" | "all" {
-    const requiresAll = this.query
-      .entitiesWithFact("reach-all-players")
-      .some((entity) => {
-        return this.query
-          .presencesForEntity(entity.id)
-          .some((presence) => this.query.presenceMatchesSelector(
-            presence,
-            levelRuleSelector(selector),
-          ));
-      });
-    return requiresAll ? "all" : "any";
+    return this.mechanisms.requireReachAggregation()
+      .forSelector(this.query, levelRuleSelector(selector));
   }
 
   selectorsFor(

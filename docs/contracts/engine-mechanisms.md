@@ -215,7 +215,7 @@ Mechanism 只有一层“通用规则”语义，按触发位置使用两种调�
 
 **Entity-bound Mechanism** 由 Entity Definition 显式组合，复用 `Behavior` hook 协议。Dialog 为多个带字面对白的对象处理触碰与游标；Object Interaction 与 Water Overlay 也作为通用机制组合。Entity 自己的特殊 Behavior 与所组合机制的 Behavior 一起形成稳定、有序、去重的有效 Behavior 列表。
 
-Mechanism Registry 记录 Entity-bound Mechanism 的 ID 与 Behavior 实现，并通过明确的 Passage、Push 和 World Metrics 注册槽装配 Pipeline Mechanism；`EntityDefinition.mechanisms` 只引用 Entity-bound Mechanism。
+Mechanism Registry 记录 Entity-bound Mechanism 的 ID 与 Behavior 实现，并通过明确的 Passage、Push、World Metrics 和 Reach Aggregation 注册槽装配 Pipeline Mechanism；`EntityDefinition.mechanisms` 只引用 Entity-bound Mechanism。
 
 下列关系是两个独立方向：
 

@@ -269,7 +269,7 @@ World
 Mechanism
 ├─ FactDefinition / FactRegistry
 ├─ Entity-bound：Dialog / Object Interaction 等通用 hook
-└─ Pipeline：Passage / Push / World Metrics
+└─ Pipeline：Passage / Push / World Metrics / Reach Aggregation
 
 Entity
 ├─ EntityDefinition：Type / footprint / EntityFacts / PresenceFacts

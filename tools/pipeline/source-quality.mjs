@@ -82,22 +82,23 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: Fact 不得自动绑定 Behavior`);
     }
     if (
-      normalized.startsWith(path.normalize("engine/src/world/movement/")) &&
-      /["'](?:walkable|blocking|pushable)["']/.test(text)
-    ) {
-      errors.push(`${relative}: 通行与 Push Fact 必须由 Pipeline Mechanism 解释`);
-    }
-    if (
-      normalized.startsWith(path.normalize("engine/src/world/")) &&
-      /["'](?:golden-carrot|bonus-coin)["']/.test(text)
-    ) {
-      errors.push(`${relative}: 奖励 Fact 必须由 World Metrics Mechanism 解释`);
-    }
-    if (
       normalized.startsWith(path.normalize("engine/src/world/")) &&
       /["'](?:gas|lock-key|kite|shovel|bean)["']/.test(text)
     ) {
       errors.push(`${relative}: 道具 ID 应由 Entity 规则或 Presentation 解释`);
+    }
+    if (normalized.startsWith(path.normalize("engine/src/world/"))) {
+      const factQueries = [
+        ...text.matchAll(
+          /\b(?:entityHasFact|presenceHasFact|entitiesWithFact|hasFactAt|entityCountWithFact|hasEntityFact)\s*\(\s*(?:[^,()\n]+,\s*)?["']([^"']+)["']/g,
+        ),
+        ...text.matchAll(/\.facts\.includes\s*\(\s*["']([^"']+)["']/g),
+      ];
+      for (const match of factQueries) {
+        if (match[1] !== "player") {
+          errors.push(`${relative}: World 只能直接解释 kernel Fact：${match[1]}`);
+        }
+      }
     }
     if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
