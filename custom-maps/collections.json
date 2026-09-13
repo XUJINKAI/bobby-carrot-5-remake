@@ -5,7 +5,7 @@
       "id": "engine-lab",
       "name": "Engine Lab",
       "description": "扩展地图，实验引擎的各种新机制",
-      "cardSize": "small"
+      "cardSize": "medium"
     },
     {
       "id": "novoban-pushbox",
