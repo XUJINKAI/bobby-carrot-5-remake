@@ -212,6 +212,8 @@ type EntitySelector =
 
 `collect-all` 按 Entity 去重计数；`fill-all` 先找到目标 Presence 所在格，再在对应格判断 filler：Type 或 Entity Fact 可命中该格的候选 Entity，Presence Fact 只检查该格 Presence，不借用同一对象其它格子的 Fact。`reach` 还要保留目标 Behavior 的 `canReach` 和多玩家聚合语义。`lastReachedSelectors` 的记录与恢复也必须保持当前规则结果。Editor 的规则检测和提示通过 Engine authoring API 获取同一语义，不维护独立的 Fact/Selector 解释器。
 
+`validateLevelPlayability` 使用正式 Entity 初始化路径建立只读 `SpatialIndex`，并以同一 `levelRuleSelector` 检查目标。告警因此可识别静态 `entityFacts`、实例语义、`resolveEntityFacts`、`resolvePresenceFacts` 与 footprint part 的当前投影。
+
 ## Mechanism 的两种调用方式
 
 Mechanism 只有一层“通用规则”语义，按触发位置使用两种调用方式。两种方式都由明确的注册与校验入口装配，执行顺序不取决于模块加载顺序。

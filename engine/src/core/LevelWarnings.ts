@@ -1,13 +1,16 @@
 import type {
-  Direction,
   LevelEntity,
   LevelMap,
   WinCondition,
 } from "@bobby/model";
 import { levelEntityContractIssues } from "@bobby/model";
+import { initializeOriginalLevelEntity } from "../entities/original/initialize-level-entity.js";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
+import { EntityStore } from "../world/entity/EntityStore.js";
+import { levelRuleSelector } from "../world/spatial/EntitySelector.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
+import { SpatialIndex } from "../world/spatial/SpatialIndex.js";
 
 export type LevelRuntimeWarningCode =
   | "missing-player"
@@ -55,7 +58,21 @@ export function validateLevelPlayability(
     });
   });
 
-  if (!known.some(({ definition }) => definition.facts.includes("player"))) {
+  const projectable = known.filter(({ entity, definition }) =>
+    hasProjectableFootprint(entity, definition, level)
+  );
+  const store = new EntityStore(
+    projectable.map(({ entity }) => entity),
+    initializeOriginalLevelEntity,
+  );
+  const spatial = new SpatialIndex(
+    store,
+    catalog.entities,
+    level.width,
+    level.height,
+  );
+
+  if (spatial.entityCountMatching({ kind: "fact", value: "player" }) === 0) {
     warnings.push({
       code: "missing-player",
       message: "地图至少需要一个 player Entity。",
@@ -63,13 +80,7 @@ export function validateLevelPlayability(
   }
 
   for (const selector of requiredReachSelectors(level.rules?.win)) {
-    const exists = known.some(
-      ({ entity, definition }) =>
-        entity.type === selector ||
-        definition.facts.includes(selector) ||
-        footprintHasFact(entity, definition, selector),
-    );
-    if (exists) continue;
+    if (spatial.entityCountMatching(levelRuleSelector(selector)) > 0) continue;
     warnings.push({
       code: "missing-reach-target",
       message: `当前获胜条件需要 selector '${selector}'，地图中没有对应 Entity。`,
@@ -79,31 +90,26 @@ export function validateLevelPlayability(
   return warnings;
 }
 
-function footprintHasFact(
+function hasProjectableFootprint(
   entity: LevelEntity,
   definition: EntityCatalogEntry,
-  fact: string,
+  level: LevelMap,
 ): boolean {
-  if (!definition.footprint) return false;
-  const direction = asDirection(entity["direction"]);
   try {
+    const instance = initializeOriginalLevelEntity(0, entity);
     return resolveFootprintCells(
-      {
-        anchor: { x: entity.x, y: entity.y },
-        ...(direction ? { direction } : {}),
-      },
+      instance,
       definition.footprint,
-    ).some((part) => part.facts?.includes(fact));
+    ).every((part) =>
+      part.x >= 0 &&
+      part.y >= 0 &&
+      part.x < level.width &&
+      part.y < level.height
+    );
   } catch {
-    // 结构有效性由常规加载边界校验；这里仅判断地图是否存在可游玩的 reach target。
+    // 加载边界负责报告结构错误；告警只查询可建立的语义投影。
     return false;
   }
-}
-
-function asDirection(value: unknown): Direction | undefined {
-  return value === "up" || value === "right" || value === "down" || value === "left"
-    ? value
-    : undefined;
 }
 
 function requiredReachSelectors(
