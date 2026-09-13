@@ -1,5 +1,4 @@
 import { serializeEditorLevel } from "@bobby/editor";
-import { MapEntityTypeId } from "@bobby/model";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import {
@@ -8,7 +7,7 @@ import {
   PROJECT_REPOSITORY_URL,
   repositoryAction,
 } from "../../app/pageChrome.js";
-import { webT } from "../../i18n/webI18n.js";
+import { findAdventureLevel } from "../adventure/mountAdventurePages.js";
 import { createGameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import {
@@ -16,11 +15,13 @@ import {
   type ImportedData,
 } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
+import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
   getWebSettings,
   updateWebSettings,
 } from "../../storage/settingsStorage.js";
 import HomePage from "./HomePage.vue";
+import { createHomeDemoLevel } from "./homeDemoLevel.js";
 import type { HomeViewState } from "./types.js";
 
 export async function renderHome(
@@ -61,7 +62,7 @@ export async function renderHome(
     screenControlEnabled: initialScreenControlEnabled,
   });
   let session: Awaited<ReturnType<typeof createGameSession>> | null = null;
-  let dialogCount = 0;
+  let navigatingToAdventure = false;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
     resolveCanvas = resolve;
@@ -72,7 +73,6 @@ export async function renderHome(
     onReady: (canvas: HTMLCanvasElement) => resolveCanvas(canvas),
     onNavigate: navigate,
     onRestart: () => {
-      dialogCount = 0;
       session?.game.restart();
     },
     onScreenControl: () => {
@@ -97,13 +97,13 @@ export async function renderHome(
   try {
     session = await createGameSession({
       canvas,
-      level: demo.level,
+      level: createHomeDemoLevel(demo.level),
       gameOptions: {
         audio,
         images,
       },
       runtime: {
-        hud: true,
+        hud: { timer: false, steps: false },
         input: {
           undo: false,
           zoom: false,
@@ -119,17 +119,6 @@ export async function renderHome(
     throw error;
   }
 
-  const unsubscribeInteraction = session.game.onInteractionRequest((request) => {
-    if (request.objectType !== MapEntityTypeId.SANDMAN) return;
-    session!.dialog?.show(
-      webT(
-        dialogCount++ === 0
-          ? "home.demo.sandmanFirst"
-          : "home.demo.sandmanAgain",
-      ),
-    );
-  });
-
   const updateDemo = (): void => {
     if (!session?.game.hasLevel) return;
     const state = session.game.state;
@@ -140,17 +129,23 @@ export async function renderHome(
         : null;
     view.demoStatus =
       state.status === "won"
-        ? "Demo 完成，可以进入冒险模式。"
+        ? "正在进入冒险模式…"
         : state.status === "dead"
           ? "Bobby 遇到了危险，可以重新开始。"
-          : `WASD / 方向键移动 · ${state.moves} 步${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
+          : `WASD / 方向键移动${remaining === null ? "" : ` · 剩余目标 ${remaining}`}`;
     view.demoResult =
-      state.status === "won"
-        ? "complete"
-        : state.status === "dead"
-          ? "death"
-          : null;
+      state.status === "dead" ? "death" : null;
     view.deathReason = state.deathReason ?? "Bobby 没能继续前进。";
+    if (state.status === "won" && !navigatingToAdventure) {
+      navigatingToAdventure = true;
+      queueMicrotask(() => {
+        const resume = findAdventureLevel(
+          context.adventure,
+          loadAdventureSave().campaign.resumeLevelId,
+        );
+        navigate(`/adventure/play/${resume?.level.id ?? "1-1"}`);
+      });
+    }
   };
   session.game.on("change", updateDemo);
   updateDemo();
@@ -171,7 +166,6 @@ export async function renderHome(
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
-      unsubscribeInteraction();
       session?.destroy();
       homeApp.unmount();
     },

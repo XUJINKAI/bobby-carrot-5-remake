@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 import vue from "@vitejs/plugin-vue";
 
 const webRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -51,6 +52,7 @@ export default defineConfig({
   plugins: [
     vue(),
     developmentDirectory("/assets", path.join(projectRoot, "assets")),
+    replayVerificationWatcher(),
   ],
   build: {
     outDir: "../dist",
@@ -58,6 +60,66 @@ export default defineConfig({
     emptyOutDir: true,
   },
 });
+
+function replayVerificationWatcher() {
+  const engineSource = path.join(projectRoot, "engine/src");
+  const replaySource = path.join(projectRoot, "assets/replays");
+  const verificationScript = path.join(
+    projectRoot,
+    "tools/replay/mark-verified-maps.mjs",
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let needsEngineCompile = false;
+
+  return {
+    name: "bc5r-replay-verification-watcher",
+    configureServer(server: ViteDevServer) {
+      server.watcher.add(replaySource);
+      const changed = (file: string): void => {
+        const engineChanged = file.startsWith(`${engineSource}${path.sep}`);
+        const replayChanged = file.startsWith(`${replaySource}${path.sep}`);
+        if (!engineChanged && !replayChanged) return;
+        needsEngineCompile ||= engineChanged;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (needsEngineCompile) {
+            needsEngineCompile = false;
+            const compiler = path.join(
+              projectRoot,
+              "node_modules/.bin",
+              process.platform === "win32" ? "tsc.cmd" : "tsc",
+            );
+            const compile = spawnSync(compiler, ["-b", "engine", "--force"], {
+              cwd: projectRoot,
+              stdio: "inherit",
+            });
+            if (compile.status !== 0) {
+              clearVerification();
+              server.ws.send({ type: "full-reload" });
+              return;
+            }
+          }
+          const verify = spawnSync(process.execPath, [verificationScript], {
+            cwd: projectRoot,
+            stdio: "inherit",
+          });
+          if (verify.status !== 0) clearVerification();
+          server.ws.send({ type: "full-reload" });
+        }, 150);
+      };
+      server.watcher.on("change", changed);
+      server.watcher.on("add", changed);
+      server.watcher.on("unlink", changed);
+    },
+  };
+
+  function clearVerification(): void {
+    spawnSync(process.execPath, [verificationScript, "--clear"], {
+      cwd: projectRoot,
+      stdio: "inherit",
+    });
+  }
+}
 
 function developmentDirectory(prefix, directory) {
   return {

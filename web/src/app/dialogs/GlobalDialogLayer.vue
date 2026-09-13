@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import type { HelpDescriptor } from "../../shell/shellBridge.js";
 import HelpDialog from "./HelpDialog.vue";
 
-defineProps<{ help: HelpDescriptor }>();
+defineProps<{ help: string }>();
 const emit = defineEmits<{ close: [] }>();
 </script>
 
 <template>
   <div class="global-dialog-layer" data-dialog-layer @click.self="emit('close')">
-    <HelpDialog :descriptor="help" @close="emit('close')" />
+    <HelpDialog :markdown="help" @close="emit('close')" />
   </div>
 </template>
 

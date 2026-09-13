@@ -11,6 +11,7 @@
     "@bobby/i18n": "0.1.0",
     "@bobby/model": "0.1.0",
     "@phosphor-icons/vue": "^2.2.1",
+    "markdown-it": "^15.0.0",
     "vue": "^3.5.41"
   },
   "devDependencies": {

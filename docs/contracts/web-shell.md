@@ -21,6 +21,7 @@ interface ShellConfig {
     visible?: boolean;
     fixed?: boolean;
     leading?: ShellAction[];
+    leadingIndicators?: ShellIndicator[];
     info?: ShellInfo[];
     trailing?: ShellAction[];
   };
@@ -75,11 +76,15 @@ Leading | Info | Trailing
 
 `leading` 和 `trailing` 使用普通 `ShellAction`；`info` 使用文本或链接，并可带语义图标。Palette、Inspector、Screen Control 等 action 的结果由页面或 App 层处理，Shell 不创建业务 Drawer、Dialog 或 Engine 控件。
 
+`leadingIndicators` 紧随左侧 action 显示静态状态图标，包含语义图标、提示文字和
+`success / muted` 颜色语义。Shell 只负责鼠标悬停、键盘聚焦和触摸时展示 tooltip，
+状态含义由页面提供。
+
 ## 全局功能与 Help
 
 Music、Settings、Help 和全局 Dialog 归 `BobbyApp` / App Root 所有。它们以普通 action 进入 Shell，App Root 收到 action ID 后执行产品逻辑。
 
-Help 使用一份全局 `HelpDescriptor`，集中提供 Game 与 Editor 的操作说明。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复操作说明；首页 Demo 的 `home-demo-status` 保留基础移动提示作为首次上手引导。
+Help 使用一份全局 Markdown 文案，集中提供 Game 与 Editor 的操作说明，由 App Dialog 编译渲染。页面不能提交自己的帮助文案，BottomBar 和按钮 tooltip 也不重复操作说明；首页 Demo 的 `home-demo-status` 保留基础移动提示作为首次上手引导。
 
 ## 所有权边界
 

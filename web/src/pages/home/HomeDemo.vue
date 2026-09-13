@@ -6,7 +6,6 @@ defineProps<{ state: HomeViewState }>();
 const emit = defineEmits<{
   ready: [canvas: HTMLCanvasElement];
   restart: [];
-  adventure: [];
   screenControl: [];
 }>();
 
@@ -18,8 +17,7 @@ function reportCanvas(element: unknown): void {
 <template>
   <article class="home-demo-panel">
     <div class="home-demo-toolbar">
-      <span>欢迎来到兔子波比的世界</span>
-      <button type="button" @click="emit('restart')">重新开始</button>
+      <span>欢迎来到兔子波比5重制版</span>
     </div>
     <div class="home-demo-stage">
       <section class="game-stage">
@@ -28,20 +26,9 @@ function reportCanvas(element: unknown): void {
         </div>
         <div v-if="state.demoResult" class="result-overlay">
           <div class="result-card">
-            <h2>{{ state.demoResult === "complete" ? "Demo 完成" : "再试一次" }}</h2>
-            <p>
-              {{ state.demoResult === "complete"
-                ? "从这里继续进入完整冒险。"
-                : state.deathReason }}
-            </p>
+            <h2>再试一次</h2>
+            <p>{{ state.deathReason }}</p>
             <div class="result-actions">
-              <button
-                v-if="state.demoResult === 'complete'"
-                class="primary-btn"
-                @click="emit('adventure')"
-              >
-                开始冒险
-              </button>
               <button class="ghost-btn" @click="emit('restart')">
                 重新开始
               </button>
@@ -84,7 +71,6 @@ function reportCanvas(element: unknown): void {
   min-height: 46px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
   border-bottom: 1px solid var(--bc-panel-border);
@@ -92,20 +78,6 @@ function reportCanvas(element: unknown): void {
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.12em;
-}
-
-.home-demo-toolbar button {
-  padding: 5px 8px;
-  border: 1px solid var(--bc-panel-border);
-  border-radius: var(--bc-control-radius);
-  background: var(--bc-control);
-  color: var(--bc-text);
-  font-size: 0.7rem;
-  letter-spacing: 0;
-}
-
-.home-demo-toolbar button:hover {
-  background: var(--bc-control-hover);
 }
 
 .home-demo-stage {

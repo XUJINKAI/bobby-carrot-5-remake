@@ -172,6 +172,18 @@ Web 录制面板只按当前关卡的 collection 和 map ID 尝试该固定地�
 可以拥有多个 Replay 测试文件。每新增一个 JSON 都会自动进入这项回归测试，也会随
 `assets/` 原样发布到 `dist/assets/`。
 
+构建在生成地图并编译当前 Engine 后复跑全部内置 Replay。只有声明终态与实际终态
+均为 `won`，且 Replay 的终态断言全部通过，才在对应的
+`assets/maps/<collection>/index.json` 地图条目中写入 `verified: true`。同一地图的
+多条获胜 Replay 只产生一个标记；没有获胜验证的条目省略该字段。每次构建都重新计算，
+Replay 校验失败会中止构建。开发服务器启动时执行相同验证，Engine 源码或 Replay
+文件变化时重新验证并刷新页面；验证失败时清除旧标记。
+
+Explore 游戏页底栏使用 `PhChecks` 显示基础地图的验证结果，绿色表示已有获胜录像，
+灰色表示尚未通过录像验证。Adventure 使用相同的基础地图标记，提示文字明确说明
+验证发生在 Explore 模式下；Adventure 的 Save、动态地图补丁与宿主交互不在此标记的
+保证范围内。鼠标悬停、键盘聚焦和触摸图标均可查看提示。
+
 ## Web 录制入口
 
 Explore 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，

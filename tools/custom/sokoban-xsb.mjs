@@ -1,3 +1,5 @@
+import { createPushboxTerrainPicker } from "./pushbox-terrain.mjs";
+
 export const SOKOBAN_WIN_RULE = {
   type: "fill-all",
   target: "push-goal",
@@ -13,6 +15,7 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
 
   const grid = rows.map((row) => row.padEnd(width, " ").split(""));
   const exterior = findExteriorSpaces(grid, width, height);
+  const terrain = createPushboxTerrainPicker(options.mapKey ?? title);
   const entities = [];
   let player = null;
   let boxes = 0;
@@ -21,22 +24,33 @@ export function convertXsbBoard(board, title = "Sokoban", options = {}) {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const symbol = grid[y][x];
-      if (symbol === "#" || (symbol === " " && exterior.has(key(x, y))))
+      const outside = symbol === " " && exterior.has(key(x, y));
+      const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      if (border) {
+        if (symbol !== "#" && !outside) {
+          throw new Error(`${title}: 地图外沿 (${x}, ${y}) 必须是墙或外部空格`);
+        }
+        entities.push(terrain("boundary", x, y));
         continue;
+      }
+      if (symbol === "#" || outside) {
+        entities.push(terrain("obstacle", x, y));
+        continue;
+      }
 
-      if (symbol === " ") entities.push(floor(x, y));
+      if (symbol === " ") entities.push(terrain("ground", x, y));
       else if (symbol === ".") {
         entities.push(goal(x, y));
         goals += 1;
       } else if (symbol === "@") {
-        entities.push(floor(x, y));
+        entities.push(terrain("ground", x, y));
         player = assignPlayer(player, x, y, title);
       } else if (symbol === "+") {
         entities.push(goal(x, y));
         player = assignPlayer(player, x, y, title);
         goals += 1;
       } else if (symbol === "$") {
-        entities.push(floor(x, y), pushableBox(x, y));
+        entities.push(terrain("ground", x, y), pushableBox(x, y));
         boxes += 1;
       } else if (symbol === "*") {
         entities.push(goal(x, y), pushableBox(x, y));
@@ -108,10 +122,6 @@ function findExteriorSpaces(grid, width, height) {
     enqueue(x, y + 1);
   }
   return exterior;
-}
-
-function floor(x, y) {
-  return { type: "grass", x, y, variant: "ts-10-1" };
 }
 
 function goal(x, y) {

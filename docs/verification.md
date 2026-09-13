@@ -18,6 +18,7 @@ npm run verify
 - 运行 DAT byte-for-byte record round-trip 测试；
 - 运行 Adventure / Engine / Editor 回归测试，包括类型专属 Entity 字段、多轮 dialogue、Adventure interaction 回调和 map augmentation；
 - 递归读取 `assets/replays/` 的全部 JSON，通过 `meta.url` 关联地图，复跑并校验实际终局状态等于 `finalState`；
+- 在当前 Engine 编译完成后再次复跑内置 Replay，将获胜地图的 `verified: true` 写入对应 collection 的运行时索引，并校验发布资产与生成资产一致；
 - 生成临时 patched original JAR，重新读取目标 DAT record 并验证写入结果；
 - 校验依赖方向：Model、Adventure、Engine、Editor、Web 不允许依赖
   `tools/original/dat/`，DAT 只属于 tools、官方解码、JAR validation 与测试路径；

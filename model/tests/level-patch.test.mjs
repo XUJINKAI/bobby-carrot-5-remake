@@ -93,3 +93,31 @@ test("对白字段接受字符串或字符串数组并由 LevelPatch 原样写�
     "string-or-string-list",
   );
 });
+
+test("Snowman 图块可在指定位置保存对白", () => {
+  const baseLevel = {
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.SNOWMAN, x: 0, y: 0, variant: "ts-4-3" },
+      { type: MapEntityTypeId.SNOWMAN, x: 1, y: 0, variant: "ts-4-3" },
+    ],
+  };
+  const patched = applyLevelPatches(baseLevel, [{
+    operation: "set-fields",
+    selector: { type: MapEntityTypeId.SNOWMAN, x: 1, y: 0 },
+    fields: { dialogue: "你好，Bobby。" },
+  }]);
+  const parsed = parseLevelMap(patched);
+
+  assert.equal(parsed.entities[0].dialogue, undefined);
+  assert.equal(parsed.entities[1].dialogue, "你好，Bobby。");
+  assert.equal(baseLevel.entities[1].dialogue, undefined);
+  assert.equal(
+    entityMapDefinition(MapEntityTypeId.SNOWMAN).fields.find(
+      (field) => field.key === "dialogue",
+    ).kind,
+    "string-or-string-list",
+  );
+});

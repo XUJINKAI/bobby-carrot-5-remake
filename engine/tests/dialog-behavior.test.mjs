@@ -99,6 +99,32 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
   }
 });
 
+test("Snowman 图块在触碰时发出地图对白", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.SNOWMAN,
+        variant: "ts-4-3",
+        x: 1,
+        y: 0,
+        dialogue: "雪人对白",
+      },
+    ],
+  });
+
+  const result = move(world, "right");
+  assert.equal(result.moves[0].moved, false);
+  assert.equal(
+    result.events.find((event) => event.type === "dialog")?.text,
+    "雪人对白",
+  );
+});
+
 test("商品地块阻挡移动并在触碰时产生通用交互请求", () => {
   const world = new World({
     schemaVersion: 1,
