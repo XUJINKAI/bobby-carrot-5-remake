@@ -176,10 +176,8 @@ UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作�
 先推进一次，通常还剩 9 个门控推进间隔。具体首帧相位受进入该状态时的 `bf` 影响，
 稳定量级分别约为 **620ms** 与 **558ms**，不是逐 gameplay step 切一帧。
 
-Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 10 个逻辑槽映射为
-“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”；当前配置值与上述原版门控
-节拍的校准任务记录在
-`original/reverse-engineering/notes/fidelity-approved-backlog.md` 的 A10。
+Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，并把 10 个逻辑槽映射为
+“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”。
 
 ## 8. 魔豆与藤蔓
 

@@ -303,7 +303,7 @@ for (const [direction, frameIndex] of [
       entity: tide,
       presence,
       query: new SpatialVisualQuery(store, spatial),
-      time: { frame: 1, nowMs: 248, deltaMs: 16 },
+      time: { frame: 1, nowMs: 124, deltaMs: 16 },
     });
     assert.deepEqual(visual.layers[0], {
       kind: "image",

@@ -165,7 +165,9 @@ test("Bobby idle starts after five seconds and advances every 50ms", () => {
     [6000, 0],
     [6050, 1],
     [6100, 2],
-    [6150, 0],
+    [6150, 1],
+    [6200, 0],
+    [6250, 1],
   ]) {
     const idle = bobbyVisual({
       runtime,

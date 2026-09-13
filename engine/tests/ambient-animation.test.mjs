@@ -9,7 +9,7 @@ import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 
-const AMBIENT_STEP_MS = 248;
+const AMBIENT_STEP_MS = 124;
 
 function resolveAt(type, nowMs, direction, winState, variant) {
   const entities = createBuiltinEntityRegistry();
@@ -137,10 +137,13 @@ test("original ta.png Speed and Tide mappings preserve DAT direction order", () 
   }
 });
 
-test("original ta.png phase advances every 248ms without WorldTick input", () => {
+test("original ta.png phase advances every 124ms without WorldTick input", () => {
+  assert.equal(resolveAt(MapEntityTypeId.WATER, 123, undefined, undefined, "ripple").kind, "atlas");
   const phase1 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS, undefined, undefined, "ripple");
+  const phase1End = resolveAt(MapEntityTypeId.WATER, 247, undefined, undefined, "ripple");
   const phase2 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS * 2, undefined, undefined, "ripple");
   assert.equal(phase1.kind, "image");
+  assert.equal(phase1End.frameIndex, 39);
   assert.equal(phase2.kind, "image");
   assert.equal(phase1.frameIndex, 39);
   assert.equal(phase2.frameIndex, 40);

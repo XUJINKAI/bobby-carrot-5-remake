@@ -404,9 +404,8 @@ function resolveIdleFrame(
   if (stationarySinceMs === undefined || nowMs === undefined) return null;
   const idleMs = Math.max(0, nowMs - stationarySinceMs);
   if (idleMs < BOBBY_IDLE_DELAY_MS) return null;
-  return (
-    Math.floor(
-      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
-    ) % 3
-  );
+  const frame = Math.floor(
+    (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
+  ) % 4;
+  return frame <= 2 ? frame : 1;
 }

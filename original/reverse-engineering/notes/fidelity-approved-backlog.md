@@ -229,42 +229,6 @@ Mower 抖动过快，割草时缺少对应效果，Speed 尾迹的帧序和速�
 人物和轨迹可以由 PresentationClock 采样，但动画相位必须来自同一次 Mower 动作的状态，
 不能各自读取无关的绝对帧奇偶。
 
-### A9. 修正 Bobby Idle 帧序
-
-**现象差异**
-
-Bobby Carrot 5 Remake 在静止约 `5s` 后按 `0→1→2→0` 循环 Idle。目标序列为
-`0→1→2→1→0` 往返。
-
-**可能影响**
-
-Idle 动画从最后一帧直接跳回第一帧，动作不连贯。
-
-**目标行为与原理**
-
-保留当前 `5s` 触发等待，改为 ping-pong 帧序。该变化只属于 Presentation，不修改 World
-或 Replay。
-
-### A10. 校准 Bobby 进入与通关动画
-
-**现象差异**
-
-当前进入和通关时长为 `310ms / 279ms`。原版十个逻辑槽受隔步门控，稳定量级约为
-`620ms / 558ms`，所以当前动画约快一倍。
-
-**可能影响**
-
-开局输入锁过早结束，通关角色消失和 Result 流程也更早发生。
-
-**目标行为**
-
-按原版门控校准两条独立时长，继续正确处理 `b6.png` 八张素材帧与两个透明逻辑槽。
-
-**原理说明**
-
-进入和通关仍是 PresentationClock 动画；进入阶段通过既有
-`presentationBlocksInput` 合同暂停 World 输入，不用动画回调修改 World。
-
 ### A11. 恢复 Bonus Coin 的随机闪光
 
 **现象差异**
@@ -285,22 +249,6 @@ Idle 动画从最后一帧直接跳回第一帧，动作不连贯。
 
 随机源属于 Presentation session，并应支持测试注入或固定 seed，避免依赖不可重放的
 `Math.random()` 全局状态。
-
-### A12. 校准通用环境动画到 124ms
-
-**现象差异**
-
-原版 Water、Tide、Windmill、Speed、Exit、Whirlwind 等共享动画 phase，约每 `124ms`
-推进一帧。当前统一使用 `248ms`，画面速度慢一倍。
-
-**可能影响**
-
-水面、传送带、风车和出口等持续动画整体显得迟缓，并与 Bobby 及其它原版节拍不同步。
-
-**目标行为与原理**
-
-把原版 ambient phase 校准为 `124ms`，继续由 PresentationClock 驱动。具体 atlas 帧仍以
-`model/src/map/entity/original-tile-visuals.json` 为唯一来源。
 
 ## 实施约束
 

@@ -34,7 +34,7 @@ interface OriginalAmbientSequence {
 }
 
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
-const ORIGINAL_AMBIENT_FRAME_MS = 248;
+const ORIGINAL_AMBIENT_FRAME_MS = 124;
 const ORIGINAL_TILE_SIZE = 48;
 
 export const SURFACE_STACK_ORDER = 0;
