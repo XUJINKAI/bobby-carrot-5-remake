@@ -33,10 +33,8 @@ flowchart LR
 
   subgraph FACTS["Fact：只读语义接口"]
     FREG["FactDefinition / FactRegistry<br/>合法 ID 与语义"]
-    RES["FactResolver<br/>静态声明 + 当前 state + Presence role"]
     EF["EntityFacts<br/>对象整体语义"]
     PF["PresenceFacts<br/>当前部位的空间语义"]
-    QUERY["Fact Projection / Selector Index<br/>格子按 Presence · 对象按 ID 去重"]
   end
 
   subgraph MECHANISM["Mechanism：通用游戏规则"]
@@ -49,6 +47,8 @@ flowchart LR
   end
 
   subgraph WORLD["World：权威运行核心"]
+    RES["Entity Fact projection refresh<br/>调用 Definition resolver"]
+    QUERY["Fact Projection / Selector Index<br/>格子按 Presence · 对象按 ID 去重"]
     DISPATCH["Behavior dispatch<br/>按 Entity 与 Presence 调用"]
     STAGES["Movement pipeline<br/>固定阶段调用"]
     ADJ["裁决与计划<br/>边界 · busy · 预留 · 冲突<br/>最终 MovementPlan / MoveResult"]
@@ -140,6 +140,8 @@ Entity gameplay 状态只通过 World 的正式 mutation 路径提交，进入 S
 ## Fact 合同
 
 Fact 表示当前 Entity 或其某个 Presence 对其它 Engine 系统公开的稳定语义。Fact 有正式 ID 和定义，可以被 World 查询、Mechanism、Selector 与 Debug 使用。Fact 是派生值，不单独保存，也没有 `setFact`、`addFact` 或 `removeFact` gameplay 命令。
+
+Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition、实例或具体对象类型。各 Entity Definition 声明自身的解析函数；World 的投影刷新器调用这些函数、校验标识并维护索引。通用 Mechanism 只通过 World 的只读查询协议读取 Fact，不导入具体 Entity 实现。
 
 第一阶段只实现布尔 Fact。注册表中的每个 Fact 必须有唯一 ID 和中文语义说明；使用未知 Fact ID 时在内置定义校验阶段报错。未来确有跨对象数值规则时，再为 Fact Definition 增加值类型与单位，当前 API 命名不预设所有 Fact 永远是布尔量。
 
