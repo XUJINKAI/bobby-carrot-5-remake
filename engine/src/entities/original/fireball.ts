@@ -119,7 +119,6 @@ const fireballAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
-  authoring: { palette: false },
   facts: [],
   stackOrder: CONTENT_STACK_ORDER + 50,
   presentation: { name: "Dragon Fireball", renderPass: "effect" },

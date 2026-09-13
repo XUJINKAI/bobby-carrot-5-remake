@@ -252,7 +252,6 @@ export {
 export {
   defineEntityModule,
   type EntityBehaviorBinding,
-  type EntityAuthoringDefinition,
   type EntityModule,
   type EntityModuleDefinition,
   type EntityModuleInput,

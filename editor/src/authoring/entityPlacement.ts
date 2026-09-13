@@ -62,7 +62,7 @@ export function resolvePlacement(
   existingPreview?: EditorPreview,
 ): EntityPlacementPlan {
   const authoring = editor.entities?.[preset.type];
-  if (!isEditorEntityCreatable(editor, preset.type, catalog)) {
+  if (!isEditorEntityCreatable(editor, preset.type)) {
     return {
       entity: { type: preset.type, x: cursor.x, y: cursor.y },
       cells: [],

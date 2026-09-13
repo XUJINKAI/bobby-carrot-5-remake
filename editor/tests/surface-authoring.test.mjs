@@ -54,6 +54,7 @@ test("Surface catalog is independent from Palette", () => {
     .flatMap((group) => group.rows.flat());
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.WATER), false);
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.ICE), false);
+  assert.equal(palette.some((item) => item.type === MapEntityTypeId.GRASS), false);
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.SPEED), true);
 });
 

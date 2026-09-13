@@ -65,6 +65,13 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);
     }
     if (
+      normalized.startsWith(path.normalize("engine/src/")) &&
+      (/\bEntityAuthoringDefinition\b/.test(text) ||
+        /\bauthoring\s*:\s*\{\s*palette\s*:/.test(text))
+    ) {
+      errors.push(`${relative}: Entity 创建策略必须由 Editor definitions 声明`);
+    }
+    if (
       normalized.startsWith(path.normalize("engine/src/world/")) ||
       normalized.startsWith(path.normalize("engine/src/mechanism/"))
     ) {

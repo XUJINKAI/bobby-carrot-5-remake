@@ -278,28 +278,39 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   );
 });
 
-test("Engine authoring metadata 隐藏不可直接放置的 Entity", () => {
+test("Editor definitions 决定可创建入口，Model 定义可持久化身份", () => {
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
       "consumed-carrot",
-      catalog,
     ),
     false,
   );
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      "grass",
-      catalog,
+      MapEntityTypeId.GRASS,
     ),
-    false,
+    true,
   );
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
       MapEntityTypeId.BEANSTALK,
-      catalog,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.ORIGINAL_TILE,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.TRANSPARENT,
     ),
     false,
   );

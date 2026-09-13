@@ -12,14 +12,12 @@ test("World onTick receives the shared WorldTick", () => {
       facts: ["walkable"],
       stackBand: "surface",
       presentation: { name: "Floor", category: "test" },
-      authoring: { palette: true },
     },
     {
       type: "player",
       facts: ["player"],
       stackBand: "content",
       presentation: { name: "Player", category: "test" },
-      authoring: { palette: true },
     },
     {
       type: "ticker",
@@ -27,7 +25,6 @@ test("World onTick receives the shared WorldTick", () => {
       behaviors: ["capture-time"],
       stackBand: "content",
       presentation: { name: "Ticker", category: "test" },
-      authoring: { palette: true },
     },
   ]);
   const behaviors = new BehaviorRegistry();

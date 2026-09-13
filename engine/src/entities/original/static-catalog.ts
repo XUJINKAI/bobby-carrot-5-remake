@@ -57,7 +57,6 @@ function surface(
   name: string,
   atlas: ReturnType<typeof tileCell>,
   facts: EntityModuleDefinition["facts"] = ["walkable"],
-  palette = true,
   mechanisms: readonly string[] = [],
   behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
@@ -66,7 +65,6 @@ function surface(
       type,
       facts,
       mechanisms,
-      ...(palette ? {} : { authoring: { palette: false } }),
       layer: "surface",
       stackOrder: SURFACE_STACK_ORDER,
       presentation: { name },
@@ -74,20 +72,6 @@ function surface(
     atlas,
     behaviorBindings,
   );
-}
-
-function runtimeOnlyContent(
-  type: EntityModuleDefinition["type"],
-  name: string,
-  atlas: ReturnType<typeof tileCell>,
-  facts: EntityModuleDefinition["facts"] = [],
-  behaviorBindings: readonly EntityBehaviorBinding[] = [],
-): EntityModule {
-  const module = content(type, name, atlas, facts, behaviorBindings);
-  return {
-    ...module,
-    authoring: { palette: false },
-  };
 }
 
 function content(
@@ -117,18 +101,16 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Shovel Cleared Ground",
     tileCell("snow-cloud", { fields: { variant: "ts-8-13" } }),
     ["walkable"],
-    false,
   ),
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
     "reach-all-players",
-  ], true, [], [{ behavior: requiresUnmountedReachBehavior }]),
+  ], [], [{ behavior: requiresUnmountedReachBehavior }]),
   surface(
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",
     tileCell(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -136,7 +118,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Cloud 9 Ticket",
     tileCell(MapEntityTypeId.SHOP_CLOUD9_TICKET),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -144,7 +125,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Stereo System",
     tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -152,7 +132,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Extra Music",
     tileCell(MapEntityTypeId.SHOP_EXTRA_MUSIC),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -160,7 +139,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Speed Shoes",
     tileCell(MapEntityTypeId.SHOP_SPEED_SHOES),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -168,7 +146,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Coin Radar",
     tileCell(MapEntityTypeId.SHOP_COIN_RADAR),
     ["blocking"],
-    true,
     ["object-interaction", "dialog"],
   ),
   surface(
@@ -181,7 +158,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     "Shovel Pickup",
     tileCell(MapEntityTypeId.SHOVEL_PICKUP),
     ["walkable"],
-    true,
     [],
     [{ behavior: pickupBehavior }],
   ),
@@ -267,22 +243,19 @@ export const staticContentModules: readonly EntityModule[] = [
   staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT), [
     { behavior: collectBehavior },
   ]),
-  runtimeOnlyContent(
+  content(
     RuntimeEntityTypeId.CONSUMED_CARROT,
     "Consumed Carrot",
     tileCell(MapEntityTypeId.CARROT, { phase: "consumed" }),
   ),
   egg,
-  {
-    ...content(
-      MapEntityTypeId.BEANSTALK,
-      "Beanstalk",
-      tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
-      beanstalkFacts,
-      [{ behavior: mowerConditionalOverlayBehavior }],
-    ),
-    authoring: { palette: false },
-  },
+  content(
+    MapEntityTypeId.BEANSTALK,
+    "Beanstalk",
+    tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
+    beanstalkFacts,
+    [{ behavior: mowerConditionalOverlayBehavior }],
+  ),
   content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), [], [
     { behavior: pickupBehavior },
   ]),
@@ -290,7 +263,7 @@ export const staticContentModules: readonly EntityModule[] = [
   content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), [], [
     { behavior: pickupBehavior },
   ]),
-  runtimeOnlyContent(
+  content(
     RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     tileCell("beanstalk", { role: "middle" }),
@@ -301,13 +274,13 @@ export const staticContentModules: readonly EntityModule[] = [
     ],
     [{ behavior: mowerConditionalOverlayBehavior }],
   ),
-  runtimeOnlyContent(
+  content(
     RuntimeEntityTypeId.BEANSTALK_BASE,
     "Beanstalk Base",
     tileCell("beanstalk", { role: "base" }),
     ["climbable"],
   ),
-  runtimeOnlyContent(
+  content(
     RuntimeEntityTypeId.BEAN_SPROUT,
     "Bean Sprout",
     tileCell("beanstalk", { phase: "sprout" }),

@@ -27,7 +27,6 @@ for (const mapping of SURFACE_SOURCE_MAPPINGS) {
 
 const originalTileDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.ORIGINAL_TILE,
-  authoring: { palette: false },
   facts: [],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
@@ -80,7 +79,6 @@ function canonicalSurface(
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
-    authoring: { palette: false },
     facts: sharedOriginalSurfaceFacts(mappings),
     mechanisms,
     layer: "surface",
