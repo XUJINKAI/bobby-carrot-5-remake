@@ -12,7 +12,7 @@ import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function motion(id, entityId, cause, durationMs, options = {}) {
   const from = options.from ?? { x: 0, y: 0 };

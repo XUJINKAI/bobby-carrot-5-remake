@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
-import { World } from "../../engine/dist/world/World.js";
+import { createWorld } from "../../engine/dist/entities/WorldComposition.js";
 import {
   createBlankLevel,
   EditorRuleDetector,
@@ -124,7 +124,7 @@ test("每个可见 Palette 条目都可放置、保存并加载为 World", () =>
     assert.equal(resolvePlacement(level, catalog, preset, cell).valid, true, preset.type);
     const placed = placeEntity(catalog, preset, cell).apply(level);
     const restored = parseEditorLevel(serializeEditorLevel(placed));
-    assert.doesNotThrow(() => new World(toLevelMap(restored)), preset.type);
+    assert.doesNotThrow(() => createWorld(toLevelMap(restored)), preset.type);
   }
 });
 

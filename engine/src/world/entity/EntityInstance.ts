@@ -1,13 +1,11 @@
 import {
   entityMapDefinition,
-  surfaceMappingForEntity,
   type Direction,
   type EntityType,
   type JsonValue,
   type LevelEntity,
   type LevelEntityFieldValue,
 } from "@bobby/model";
-import { originalSurfaceTraits } from "../../entities/original/surface-traits.js";
 
 export type EntityId = number;
 export type EntityState = Record<string, JsonValue>;
@@ -43,6 +41,7 @@ export interface EntityInstance {
 export function instantiateLevelEntity(
   id: EntityId,
   source: LevelEntity,
+  instanceTraits: readonly string[] = [],
 ): EntityInstance {
   const definition = entityMapDefinition(source.type);
   const state: EntityState = {};
@@ -62,11 +61,6 @@ export function instantiateLevelEntity(
     }
     state[field.key] = structuredClone(value) as JsonValue;
   }
-
-  const surfaceMapping = surfaceMappingForEntity(source.type, source);
-  const instanceTraits = surfaceMapping
-    ? originalSurfaceTraits(surfaceMapping)
-    : [];
 
   return {
     id,

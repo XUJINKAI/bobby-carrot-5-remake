@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function dialogLevel(dialogue, type = MapEntityTypeId.SANDMAN) {
   return {

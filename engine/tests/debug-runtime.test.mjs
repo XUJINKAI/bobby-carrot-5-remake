@@ -8,7 +8,7 @@ import { resolveEngineTiming } from "../dist/time/EngineTiming.js";
 import { PresentationClock } from "../dist/time/PresentationClock.js";
 import { WorldClock } from "../dist/time/WorldClock.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 

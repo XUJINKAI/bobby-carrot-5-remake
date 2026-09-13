@@ -5,7 +5,7 @@ import {
   DEFAULT_BEAN_GROWTH_SEGMENT_MS,
 } from "../dist/entities/original/bean-field.js";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function entitiesAt(world, x, y) {
   return world.presencesAt({ x, y }).map((presence) =>

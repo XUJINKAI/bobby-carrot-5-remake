@@ -7,7 +7,7 @@ import {
   PLANK_DECAY_PHASE_MS,
 } from "../dist/entities/original/plank.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
   return world.step({

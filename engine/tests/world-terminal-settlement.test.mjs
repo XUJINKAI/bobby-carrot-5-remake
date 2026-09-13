@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeActionRegistry } from "../dist/world/action/RuntimeActionRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction, cause = { type: "player-input" }) {
   return world.step({

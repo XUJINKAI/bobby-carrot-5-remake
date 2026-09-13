@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 

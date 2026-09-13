@@ -4,7 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function update(world, tick, stepMs) {
   return world.update({ tick, stepMs });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function delta(sequence, type, motion) {
   return {

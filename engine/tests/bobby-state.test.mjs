@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { readBobbyInventory } from "../dist/entities/player/BobbyState.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 

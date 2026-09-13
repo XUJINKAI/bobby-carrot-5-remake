@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntitySelectorIndex } from "../dist/world/spatial/EntitySelectorIndex.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 test("selector 计数覆盖 type、Trait、交集、多格去重与空集合", () => {
   const index = new EntitySelectorIndex();

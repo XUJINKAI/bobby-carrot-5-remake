@@ -8,7 +8,7 @@ import {
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
   return world.step({

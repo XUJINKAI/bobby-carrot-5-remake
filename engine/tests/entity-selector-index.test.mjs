@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复后等价于全量查询", () => {
   const registry = new EntityRegistry();

@@ -4,7 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 
 test("Fireball owns its obstacle policy instead of target-side projectile traits", () => {

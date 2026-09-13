@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 import { isMissingItemEvent } from "../dist/world/WorldTypes.js";
 import { WorldCalloutRuntime } from "../dist/visual/callout/WorldCalloutRuntime.js";
 import { createBuiltinWorldCalloutRegistry } from "../dist/visual/callout/builtinCallouts.js";

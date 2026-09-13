@@ -5,7 +5,7 @@ import {
   DEFAULT_SPEED_CONTINUATION_CELLS,
   DEFAULT_SPEED_FULL_CADENCE_MS,
 } from "../dist/entities/original/speed.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const speed = (x, y, direction = "right") => ({

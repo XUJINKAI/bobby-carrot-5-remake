@@ -20,7 +20,8 @@ import {
   type EngineTimingOptions,
 } from "../time/EngineTiming.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
-import { World, type WorldSnapshot } from "../world/World.js";
+import type { World, WorldSnapshot } from "../world/World.js";
+import { createWorld } from "../entities/WorldComposition.js";
 import type { MoveResult, WinConditionState } from "../world/WorldTypes.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type {
@@ -275,7 +276,7 @@ export class GameplaySession {
     preservePause: boolean,
   ): void {
     const wasPaused = preservePause && this.clock.paused;
-    this.worldValue = new World(level);
+    this.worldValue = createWorld(level);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.applyInitialActorIntents(initialIntents);

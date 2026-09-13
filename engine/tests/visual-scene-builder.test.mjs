@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { buildVisualScene } from "../dist/visual/VisualSceneBuilder.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉", () => {
   const visuals = createBuiltinVisualRegistry();
@@ -59,7 +59,8 @@ test("场景共享一次胜利求值，并在收集与恢复后更新出口视�
   const snapshot = world.snapshot();
   const actor = world.query.entitiesWithTrait("player")[0];
   const exit = world.entities.all().find((entity) => entity.type === "exit");
-  const getter = Object.getOwnPropertyDescriptor(World.prototype, "winState").get;
+  const kernel = Object.getPrototypeOf(World.prototype);
+  const getter = Object.getOwnPropertyDescriptor(kernel, "winState").get;
   let evaluations = 0;
   Object.defineProperty(world, "winState", {
     get() {

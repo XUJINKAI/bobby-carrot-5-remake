@@ -4,7 +4,7 @@ import { createBuiltinFactRegistry } from "../dist/mechanism/fact/builtinFacts.j
 import { FactRegistry } from "../dist/mechanism/fact/FactRegistry.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => {
   const facts = createBuiltinFactRegistry();

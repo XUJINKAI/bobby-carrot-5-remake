@@ -4,7 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_MOVING_ENTITY_CELL_MS,
 } from "../dist/entities/original/moving-entities.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
   return world.step({
