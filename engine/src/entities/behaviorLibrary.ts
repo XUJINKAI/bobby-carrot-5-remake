@@ -1,8 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../world/behavior/Behavior.js";
-import { dialogTraitBehavior } from "../world/dialog/DialogBehavior.js";
-import { objectInteractionTraitBehavior } from "../world/interaction/ObjectInteractionBehavior.js";
-import type { EntityDefinition } from "../world/entity/EntityDefinition.js";
 import type { EntityBehaviorBinding } from "./EntityModule.js";
 import { RuntimeEntityTypeId } from "./runtime-types.js";
 import {
@@ -199,22 +196,6 @@ function isRidingMower(
   return mountId !== null && query.entityHasTrait(mountId, "mower");
 }
 
-const waterRequiresOverlay: Behavior = {
-  id: "water-requires-overlay",
-  canEnter({ query, self }) {
-    const supported = query
-      .presencesAt(self.presence.cell)
-      .some(
-        (presence) =>
-          presence.entityId !== self.entity.id &&
-          presence.traits.includes("terrain-overlay"),
-      );
-    return supported
-      ? { passable: true, reason: "water-overlay" }
-      : { passable: false, reason: "water-requires-overlay" };
-  },
-};
-
 const statefulBlock: Behavior = {
   id: "stateful-block",
   canEnter({ self }) {
@@ -233,31 +214,27 @@ const requiresUnmountedReach: Behavior = {
   },
 };
 
-const TRAIT_BEHAVIORS: Readonly<Record<string, Behavior>> = {
-  collectible: collect,
-  dialog: dialogTraitBehavior,
-  interaction: objectInteractionTraitBehavior,
-  hazard,
-  mowable,
-  "mower-conditional-overlay": mowerConditionalOverlay,
-  pickup,
-  "requires-unmounted-reach": requiresUnmountedReach,
-  shovelable,
-  water: waterRequiresOverlay,
-  "stateful-block": statefulBlock,
+/** 对象特例的组合由稳定 type 明确声明，不由 Fact 自动安装 Behavior。 */
+const OBJECT_BEHAVIORS: Readonly<Record<string, readonly Behavior[]>> = {
+  [MapEntityTypeId.EXIT]: [requiresUnmountedReach],
+  [MapEntityTypeId.SHOVEL_PICKUP]: [pickup],
+  [MapEntityTypeId.TRAP]: [hazard],
+  [MapEntityTypeId.COLOR_BLOCK]: [statefulBlock],
+  [MapEntityTypeId.SNOW]: [shovelable],
+  [MapEntityTypeId.HIGH_GRASS]: [mowable],
+  [MapEntityTypeId.CARROT]: [collect],
+  [MapEntityTypeId.GOLDEN_CARROT]: [collect],
+  [MapEntityTypeId.BONUS_COIN]: [collect],
+  [MapEntityTypeId.BEANSTALK]: [mowerConditionalOverlay],
+  "beanstalk-mid": [mowerConditionalOverlay],
+  [MapEntityTypeId.BEAN]: [pickup],
+  [MapEntityTypeId.GAS]: [pickup],
+  [MapEntityTypeId.KITE]: [pickup],
+  [MapEntityTypeId.LOCK_KEY]: [pickup],
 };
 
-/** Shared trait behaviors only. Entity-specific behaviors stay beside their EntityModule. */
-export function behaviorBindingsForDefinition(
-  definition: EntityDefinition,
+export function objectBehaviorBindingsForType(
+  type: string,
 ): readonly EntityBehaviorBinding[] {
-  const bindings: EntityBehaviorBinding[] = [];
-  const seen = new Set<string>();
-  for (const trait of definition.traits) {
-    const behavior = TRAIT_BEHAVIORS[trait];
-    if (!behavior || seen.has(`${trait}:${behavior.id}`)) continue;
-    seen.add(`${trait}:${behavior.id}`);
-    bindings.push({ trait, behavior });
-  }
-  return bindings;
+  return (OBJECT_BEHAVIORS[type] ?? []).map((behavior) => ({ behavior }));
 }

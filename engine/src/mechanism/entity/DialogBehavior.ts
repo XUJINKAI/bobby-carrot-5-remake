@@ -1,6 +1,6 @@
-import type { Behavior, BehaviorContext } from "../behavior/Behavior.js";
+import type { Behavior, BehaviorContext } from "../../world/behavior/Behavior.js";
 
-export const dialogTraitBehavior: Behavior = {
+export const dialogBehavior: Behavior = {
   id: "dialog",
   onTouch: emitDialog,
 };

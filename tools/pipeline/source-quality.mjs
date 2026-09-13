@@ -65,6 +65,23 @@ for (const sourceRoot of SOURCE_ROOTS) {
       errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);
     }
     if (
+      normalized.startsWith(path.normalize("engine/src/world/")) ||
+      normalized.startsWith(path.normalize("engine/src/mechanism/"))
+    ) {
+      if (/from\s+["'][^"']*\/entities\//.test(text)) {
+        errors.push(`${relative}: World 与通用 Mechanism 不得导入具体 Entity 模块`);
+      }
+      if (/\bMapEntityTypeId\b/.test(text)) {
+        errors.push(`${relative}: World 与通用 Mechanism 不得按具体 Entity Type 分支`);
+      }
+    }
+    if (
+      normalized.startsWith(path.normalize("engine/src/")) &&
+      /\bbindTrait\s*\(/.test(text)
+    ) {
+      errors.push(`${relative}: Fact 不得自动绑定 Behavior`);
+    }
+    if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>
         normalized.startsWith(path.normalize(`${directory}/src/`))
       ) &&

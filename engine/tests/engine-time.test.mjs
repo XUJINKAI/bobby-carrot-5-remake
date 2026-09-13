@@ -24,6 +24,7 @@ test("World onTick receives the shared WorldTick", () => {
     {
       type: "ticker",
       traits: ["ticker"],
+      behaviors: ["capture-time"],
       stackBand: "content",
       presentation: { name: "Ticker", category: "test" },
       authoring: { palette: true },
@@ -37,7 +38,6 @@ test("World onTick receives the shared WorldTick", () => {
       seen.push(time);
     },
   });
-  behaviors.bindTrait("ticker", "capture-time");
   const world = new World(
     {
       schemaVersion: 1,

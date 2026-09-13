@@ -6,6 +6,8 @@ import {
   createBuiltinBehaviorRegistry,
   createBuiltinRuntimeActionRegistry,
 } from "../dist/entities/registry.js";
+import { createBuiltinMechanismRegistry } from "../dist/mechanism/builtinEntityMechanisms.js";
+import { resolveEffectiveBehaviors } from "../dist/world/behavior/EffectiveBehavior.js";
 
 function moduleFor(type) {
   const module = builtinEntityModules.find((candidate) => candidate.definition.type === type);
@@ -14,30 +16,30 @@ function moduleFor(type) {
 }
 
 function bindingIds(module) {
-  return module.behaviorBindings?.map(({ trait, behavior }) => [trait, behavior.id]) ?? [];
+  return module.behaviorBindings?.map(({ behavior }) => behavior.id) ?? [];
 }
 
-test("EntityModule colocates definition visual and behavior bindings", () => {
+test("EntityModule 显式组合通用 Mechanism 与对象 Behavior", () => {
   const carrot = moduleFor(MapEntityTypeId.CARROT);
   assert.ok(carrot.visual);
-  assert.deepEqual(bindingIds(carrot), [["collectible", "collectible"]]);
+  assert.deepEqual(bindingIds(carrot), ["collectible"]);
   assert.ok(carrot.definition.behaviors?.includes("collectible"));
 
   const water = moduleFor(MapEntityTypeId.WATER);
   assert.ok(water.visual);
-  assert.deepEqual(bindingIds(water), [["water", "water-requires-overlay"]]);
-  assert.ok(water.definition.behaviors?.includes("water-requires-overlay"));
+  assert.deepEqual(bindingIds(water), []);
+  assert.deepEqual(water.definition.mechanisms, ["water-overlay"]);
 
   const portal = moduleFor(MapEntityTypeId.PORTAL);
   assert.ok(portal.visual);
-  assert.deepEqual(bindingIds(portal), [["portal", "portal"]]);
+  assert.deepEqual(bindingIds(portal), ["portal"]);
   assert.ok(portal.definition.behaviors?.includes("portal"));
 
   const ice = moduleFor(MapEntityTypeId.ICE);
-  assert.deepEqual(bindingIds(ice), [[undefined, "ice-slide"]]);
+  assert.deepEqual(bindingIds(ice), ["ice-slide"]);
 
   const speed = moduleFor(MapEntityTypeId.SPEED);
-  assert.deepEqual(bindingIds(speed), [[undefined, "speed-boost"]]);
+  assert.deepEqual(bindingIds(speed), ["speed-boost"]);
   assert.deepEqual(speed.runtimeActions?.map((action) => action.kind), ["speed-run"]);
 });
 
@@ -52,10 +54,16 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
     ),
   ].sort();
   assert.deepEqual(ids, moduleBehaviorIds);
-  assert.equal(registry.resolve([], ["collectible"])[0]?.id, "collectible");
-  assert.equal(
-    registry.resolve([], ["water"])[0]?.id,
-    "water-requires-overlay",
+  assert.equal(registry.resolve(["collectible"])[0]?.id, "collectible");
+  assert.deepEqual(registry.resolve([]), []);
+  const mechanisms = createBuiltinMechanismRegistry();
+  assert.deepEqual(
+    resolveEffectiveBehaviors(
+      moduleFor(MapEntityTypeId.WATER).definition,
+      registry,
+      mechanisms,
+    ).map((behavior) => behavior.id),
+    ["water-requires-overlay"],
   );
 });
 

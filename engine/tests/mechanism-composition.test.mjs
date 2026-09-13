@@ -1,0 +1,50 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
+import { World } from "./support/World.mjs";
+
+function touchTarget(type, mechanisms) {
+  const entities = new EntityRegistry();
+  entities.registerAll([
+    { type: "floor", traits: ["walkable"], layer: "surface" },
+    { type: "actor", traits: ["player"] },
+    { type, traits: ["blocking", "dialog"], mechanisms },
+  ]);
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "floor", x: 0, y: 0 },
+      { type: "floor", x: 1, y: 0 },
+      { type: "actor", x: 0, y: 0 },
+      { type, x: 1, y: 0 },
+    ],
+  }, { entities });
+  const actor = world.entities.all().find((entity) => entity.type === "actor");
+  const target = world.entities.all().find((entity) => entity.type === type);
+  assert.ok(actor);
+  assert.ok(target);
+  const commands = new CommandQueue();
+  commands.setState(target.id, { dialogue: "机关对白" });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  return world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  }).events;
+}
+
+test("两种 Entity 显式组合相同机制，单独声明 Fact 不安装 Behavior", () => {
+  for (const type of ["speaker-one", "speaker-two"]) {
+    assert.deepEqual(
+      touchTarget(type, ["dialog"]).map((event) => event.type),
+      ["dialog"],
+    );
+  }
+  assert.deepEqual(touchTarget("silent", []).map((event) => event.type), []);
+});

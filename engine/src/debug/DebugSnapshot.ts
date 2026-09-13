@@ -7,6 +7,7 @@ import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
+import { resolveEffectiveBehaviors } from "../world/behavior/EffectiveBehavior.js";
 import type { GlobalState } from "../world/GlobalState.js";
 import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
@@ -285,9 +286,11 @@ function buildEntitySnapshot(
   const presences = world.spatial
     .presencesForEntity(entityId)
     .map((presence) => debugPresence(world, presence));
-  const traits = [...new Set(presences.flatMap((presence) => presence.traits))];
-  const behaviors = world.behaviors
-    .resolve(definition.behaviors ?? [], traits)
+  const behaviors = resolveEffectiveBehaviors(
+    definition,
+    world.behaviors,
+    world.mechanisms,
+  )
     .map((behavior) => behavior.id);
   const visualInspection = visual.inspectEntity(world, entityId);
   const renderItems = renderSceneItems(scene)

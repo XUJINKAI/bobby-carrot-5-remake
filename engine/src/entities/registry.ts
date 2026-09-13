@@ -1,5 +1,6 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
 import { createBuiltinFactRegistry } from "../mechanism/fact/builtinFacts.js";
+import { createBuiltinMechanismRegistry } from "../mechanism/builtinEntityMechanisms.js";
 import {
   createBuiltinRuntimeActionRegistry as createCoreRuntimeActionRegistry,
 } from "../world/action/builtinActions.js";
@@ -23,7 +24,11 @@ export const builtinEntityDefinitions = builtinEntityModules.map(
 );
 
 export const factRegistry = createBuiltinFactRegistry();
+export const mechanismRegistry = createBuiltinMechanismRegistry();
 for (const definition of builtinEntityDefinitions) {
+  for (const mechanism of definition.mechanisms ?? []) {
+    mechanismRegistry.require(mechanism);
+  }
   for (const fact of [...definition.traits, ...(definition.entityFacts ?? [])]) {
     factRegistry.require(fact);
   }
@@ -74,12 +79,11 @@ export function createBuiltinBehaviorRegistry(
   const seen = new Set<string>();
   for (const module of modules) {
     for (const binding of module.behaviorBindings ?? []) {
-      const { behavior, trait } = binding;
+      const { behavior } = binding;
       if (!seen.has(behavior.id)) {
         seen.add(behavior.id);
         registry.register(behavior);
       }
-      if (trait) registry.bindTrait(trait, behavior.id);
     }
   }
   return registry;
@@ -98,3 +102,8 @@ export const entityCatalog = createBuiltinEntityCatalog();
 export const entityRegistry = entityCatalog.entities;
 export const visualRegistry = createBuiltinVisualRegistry();
 export const behaviorRegistry = createBuiltinBehaviorRegistry();
+for (const definition of builtinEntityDefinitions) {
+  for (const behavior of definition.behaviors ?? []) {
+    behaviorRegistry.require(behavior);
+  }
+}

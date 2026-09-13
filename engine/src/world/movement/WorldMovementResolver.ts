@@ -403,7 +403,7 @@ export class WorldMovementResolver {
       )
         continue;
       const entity = this.entities.require(presence.entityId);
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence)) {
+      for (const behavior of this.behaviorRuntime.resolve(entity)) {
         const result = behavior.resolveEntry?.(
           this.behaviorRuntime.context(
             actor,
@@ -445,7 +445,7 @@ export class WorldMovementResolver {
         continue;
       const entity = this.entities.require(presence.entityId);
       let explicitPass = false;
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence)) {
+      for (const behavior of this.behaviorRuntime.resolve(entity)) {
         const result = behavior[hook]?.(
           this.behaviorRuntime.context(
             actor,

@@ -17,7 +17,8 @@ import type {
   VisualDefinition,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
-import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
+import { objectBehaviorBindingsForType } from "../behaviorLibrary.js";
+import { mechanismsForOriginalType } from "./mechanism-composition.js";
 import {
   defineEntityModule,
   type EntityBehaviorBinding,
@@ -85,10 +86,16 @@ export function originalModule(
   behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return defineEntityModule({
-    definition,
+    definition: {
+      ...definition,
+      mechanisms: [
+        ...(definition.mechanisms ?? []),
+        ...mechanismsForOriginalType(definition.type),
+      ],
+    },
     visual,
     behaviorBindings: [
-      ...behaviorBindingsForDefinition(definition),
+      ...objectBehaviorBindingsForType(definition.type),
       ...behaviorBindings,
     ],
   });

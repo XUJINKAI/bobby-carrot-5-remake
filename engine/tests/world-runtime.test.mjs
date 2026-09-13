@@ -4,7 +4,7 @@ import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
 
-function registry() {
+function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
     { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
@@ -14,7 +14,13 @@ function registry() {
     { type: "goal", traits: ["walkable", "goal"], layer: "surface", stackOrder: 0 },
     { type: "exit-cell", traits: ["walkable"], layer: "surface", stackOrder: 0 },
     { type: "carrot", traits: [], layer: "object", stackOrder: 100 },
-    { type: "grass", traits: ["blocking", "mowable"], layer: "cover", stackOrder: 200 },
+    {
+      type: "grass",
+      traits: ["blocking", "mowable"],
+      behaviors: grassBehaviors,
+      layer: "cover",
+      stackOrder: 200,
+    },
     { type: "item", traits: ["item"], layer: "object", stackOrder: 100 },
     {
       type: "long",
@@ -184,7 +190,7 @@ test("同一 intent group 的两个 actor 争用同一目标格时全部拒绝",
 });
 
 test("clear-and-pass removes blocking cover and completes the same movement", () => {
-  const entities = registry();
+  const entities = registry({ grassBehaviors: ["clear-cover"] });
   const behaviors = new BehaviorRegistry();
   behaviors.register({
     id: "clear-cover",
@@ -194,7 +200,6 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
       return { result: "clear-and-pass", reason: "test-clear" };
     },
   });
-  behaviors.bindTrait("mowable", "clear-cover");
   const world = new World(
     {
       schemaVersion: 1,

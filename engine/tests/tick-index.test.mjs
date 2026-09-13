@@ -29,7 +29,6 @@ test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序
       }
     },
   });
-  behaviors.bindTrait("clock", "tick");
   const world = new World({
     schemaVersion: 1, width: 100, height: 1,
     entities: [
@@ -49,10 +48,9 @@ test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序
   tick([3, 5]);
   world.restore(snapshot);
   tick([2, 3]);
-  behaviors.bindTrait("late", "tick");
-  tick([1, 3, 5]);
+  tick([3, 5]);
   entities.register({ type: "new-clock", traits: [], behaviors: ["tick"] });
   const spawned = world.entities.spawn({ type: "new-clock", x: 99, y: 0 });
   world.spatial.addEntity(spawned);
-  tick([1, 3, 5, spawned.id]);
+  tick([3, 5, spawned.id]);
 });

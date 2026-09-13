@@ -1,6 +1,6 @@
-import type { Behavior, BehaviorContext } from "../behavior/Behavior.js";
+import type { Behavior, BehaviorContext } from "../../world/behavior/Behavior.js";
 
-export const objectInteractionTraitBehavior: Behavior = {
+export const objectInteractionBehavior: Behavior = {
   id: "object-interaction",
   onTouch: (context) => emitObjectInteraction(context, "touch"),
   onEnter: (context) => emitObjectInteraction(context, "enter"),

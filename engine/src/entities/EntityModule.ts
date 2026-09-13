@@ -3,7 +3,6 @@ import type { Behavior } from "../world/behavior/Behavior.js";
 import type {
   AudioProfileId,
   EntityDefinition,
-  EntityTrait,
   VisualId,
 } from "../world/entity/EntityDefinition.js";
 import type {
@@ -32,8 +31,6 @@ export interface EntityModuleDefinition extends EntityDefinition {
 
 export interface EntityBehaviorBinding {
   behavior: Behavior;
-  /** 该 trait 出现在 Definition 或实例 traits 时触发此 Behavior。省略时只作为显式 behavior。 */
-  trait?: EntityTrait;
 }
 
 /** 一种 Entity 的完整 Engine 模块：gameplay + generic presentation。 */

@@ -1,4 +1,6 @@
 import type { BehaviorRegistry } from "../behavior/BehaviorRegistry.js";
+import type { MechanismRegistry } from "../../mechanism/MechanismRegistry.js";
+import { resolveEffectiveBehaviors } from "../behavior/EffectiveBehavior.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
@@ -8,6 +10,7 @@ export class ReachResolver {
   constructor(
     private readonly query: WorldQueryApi,
     private readonly behaviors: BehaviorRegistry,
+    private readonly mechanisms: MechanismRegistry,
   ) {}
 
   canReach(
@@ -22,9 +25,10 @@ export class ReachResolver {
       self: { entity, presence },
       query: this.query,
     };
-    for (const behavior of this.behaviors.resolve(
-      definition.behaviors,
-      presence.traits,
+    for (const behavior of resolveEffectiveBehaviors(
+      definition,
+      this.behaviors,
+      this.mechanisms,
     )) {
       if (behavior.canReach?.(context)?.passable === false) return false;
     }

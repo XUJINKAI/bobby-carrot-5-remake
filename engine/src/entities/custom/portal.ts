@@ -61,7 +61,7 @@ export const portal: EntityModule = defineEntityModule({
     ],
     presentation: { name: "Portal" },
   },
-  behaviorBindings: [{ trait: "portal", behavior: portalBehavior }],
+  behaviorBindings: [{ behavior: portalBehavior }],
   visual: {
     id: MapEntityTypeId.PORTAL,
     resolve: ({ entity, time }) => ({

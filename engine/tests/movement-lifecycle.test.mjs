@@ -9,11 +9,16 @@ function runtime(onEnter) {
   entities.registerAll([
     { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
     { type: "player", traits: ["player"], layer: "object", stackOrder: 100 },
-    { type: "trigger", traits: ["trigger"], layer: "object", stackOrder: 100 },
+    {
+      type: "trigger",
+      traits: ["trigger"],
+      behaviors: ["trigger-enter"],
+      layer: "object",
+      stackOrder: 100,
+    },
   ]);
   const behaviors = new BehaviorRegistry();
   behaviors.register({ id: "trigger-enter", onEnter });
-  behaviors.bindTrait("trigger", "trigger-enter");
   const world = new World(
     {
       schemaVersion: 1,

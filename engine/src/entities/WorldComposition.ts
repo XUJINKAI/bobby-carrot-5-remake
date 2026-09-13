@@ -7,6 +7,7 @@ import {
   createBuiltinRuntimeActionRegistry,
   entityRegistry,
   factRegistry,
+  mechanismRegistry,
 } from "./registry.js";
 
 /** Engine 组合入口负责把具体对象接入纯 World kernel。 */
@@ -16,6 +17,7 @@ export function composeWorldOptions(
   return {
     entities: options.entities ?? entityRegistry,
     behaviors: options.behaviors ?? behaviorRegistry,
+    mechanisms: options.mechanisms ?? mechanismRegistry,
     actions: options.actions ?? createBuiltinRuntimeActionRegistry(),
     ...(options.facts !== undefined || options.entities === undefined
       ? { facts: options.facts ?? factRegistry }

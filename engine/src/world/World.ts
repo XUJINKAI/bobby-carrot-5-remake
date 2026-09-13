@@ -1,5 +1,6 @@
 import type { LevelMap } from "@bobby/model";
 import type { FactRegistry } from "../mechanism/fact/FactRegistry.js";
+import type { MechanismRegistry } from "../mechanism/MechanismRegistry.js";
 import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
@@ -85,6 +86,7 @@ export interface WorldSnapshot {
 export interface WorldOptions {
   entities: EntityRegistry;
   behaviors: BehaviorRegistry;
+  mechanisms: MechanismRegistry;
   actions: RuntimeActionRegistry;
   facts?: FactRegistry;
   actorPolicy?: ActorPolicy;
@@ -101,6 +103,7 @@ export class World {
   readonly query: WorldQueryApi;
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
+  readonly mechanisms: MechanismRegistry;
   readonly actions: RuntimeActionScheduler;
   readonly movement = new MovementRuntime();
   readonly actors = new ActorLifecycleStore();
@@ -126,6 +129,7 @@ export class World {
     this.rules = structuredClone(level.rules ?? {});
     this.registry = options.entities;
     this.behaviors = options.behaviors;
+    this.mechanisms = options.mechanisms;
     this.actions = new RuntimeActionScheduler(options.actions);
     this.actorPolicy = options.actorPolicy;
     this.entities = new EntityStore(
@@ -140,7 +144,12 @@ export class World {
       options.facts,
     );
     this.state = createGlobalState();
-    this.tickIndex = new TickIndex(this.registry, this.behaviors, this.spatial);
+    this.tickIndex = new TickIndex(
+      this.registry,
+      this.behaviors,
+      this.mechanisms,
+      this.spatial,
+    );
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
@@ -153,8 +162,8 @@ export class World {
     this.behaviorRuntime = new BehaviorRuntime(
       this.registry,
       this.behaviors,
+      this.mechanisms,
       this.entities,
-      this.spatial,
       this.query,
     );
     this.movementResolver = new WorldMovementResolver(
@@ -167,7 +176,11 @@ export class World {
       this.outcome,
       this.behaviorRuntime,
     );
-    this.reachResolver = new ReachResolver(this.query, this.behaviors);
+    this.reachResolver = new ReachResolver(
+      this.query,
+      this.behaviors,
+      this.mechanisms,
+    );
     this.committer = new WorldCommitter(
       this.entities,
       this.spatial,
@@ -493,7 +506,7 @@ export class World {
         undefined,
         time,
       );
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence))
+      for (const behavior of this.behaviorRuntime.resolve(entity))
         behavior.onTick?.(context);
     }
 

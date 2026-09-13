@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { ReachResolver } from "../dist/world/outcome/ReachResolver.js";
+import { MechanismRegistry } from "../dist/mechanism/MechanismRegistry.js";
 
 test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const behavior = {
@@ -37,7 +38,11 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
       return candidate.entityId === target.id && target.type === selector;
     },
   };
-  const resolver = new ReachResolver(query, behaviors);
+  const resolver = new ReachResolver(
+    query,
+    behaviors,
+    new MechanismRegistry(),
+  );
 
   assert.equal(
     resolver.actorReaches(
