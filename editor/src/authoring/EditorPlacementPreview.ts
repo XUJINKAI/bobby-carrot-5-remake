@@ -36,7 +36,7 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
       const entities = base.spatial.entityIdsWithFact(fact)
         .filter((id) => !removed.has(id))
         .map((id) => base.entities.require(id));
-      if (inspections.some((item) => item.presence.facts.includes(fact)))
+      if (ghost.spatial.entityHasFact(1, fact))
         entities.push(entity);
       return entities;
     },

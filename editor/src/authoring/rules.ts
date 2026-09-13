@@ -1,8 +1,9 @@
-import type { EntityCatalog } from "@bobby/engine";
+import { levelRuleSelector, type EntityCatalog } from "@bobby/engine";
 import { MapEntityTypeId, type WinCondition } from "@bobby/model";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
+import { EditorPreview } from "./EditorPreview.js";
 
 export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit";
 
@@ -43,13 +44,15 @@ export function inspectEditorRules(
   catalog: EntityCatalog,
 ): readonly EditorRuleCapability[] {
   const conditions = winConditions(map.rules?.win);
+  const preview = new EditorPreview(map, catalog);
+  const hasSelector = (selector: string) =>
+    preview.spatial.entityCountMatching(levelRuleSelector(selector)) > 0;
   const availability: Record<EditorRuleKind, boolean> = {
-    carrots: map.entities.some((entity) => entity.type === MapEntityTypeId.CARROT),
-    eggs: map.entities.some((entity) => hasSelector(entity, "egg-nest", catalog)),
+    carrots: hasSelector(MapEntityTypeId.CARROT),
+    eggs: hasSelector("egg-nest"),
     pushbox:
-      map.entities.some((entity) => hasSelector(entity, "pushable", catalog)) &&
-      map.entities.some((entity) => hasSelector(entity, "push-goal", catalog)),
-    exit: map.entities.some((entity) => hasSelector(entity, MapEntityTypeId.EXIT, catalog)),
+      hasSelector("pushable") && hasSelector("push-goal"),
+    exit: hasSelector(MapEntityTypeId.EXIT),
   };
   return RULE_ORDER.map((kind) => ({
     kind,
@@ -137,13 +140,4 @@ function matchesRule(kind: EditorRuleKind, condition: WinCondition): boolean {
     case "exit":
       return condition.type === "reach" && condition.target === MapEntityTypeId.EXIT;
   }
-}
-
-function hasSelector(
-  entity: Readonly<EditorMap["entities"][number]>,
-  selector: string,
-  catalog: EntityCatalog,
-): boolean {
-  if (entity.type === selector) return true;
-  return catalog.has(entity.type) && catalog.require(entity.type).facts.includes(selector);
 }

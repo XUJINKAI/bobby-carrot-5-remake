@@ -157,6 +157,29 @@ test("新检测到的可用规则可一次性启用", () => {
   assert.deepEqual(detector.detect(level, catalog), ["carrots"]);
 });
 
+test("Editor 规则提示通过 Engine 投影识别 Entity Fact", () => {
+  const extended = createBuiltinEntityCatalog();
+  extended.register({
+    definition: {
+      type: "whole-egg-target",
+      facts: [],
+      entityFacts: ["egg-nest"],
+    },
+    presentation: { name: "整体目标" },
+  });
+  const level = {
+    ...createBlankLevel(2, 2),
+    entities: [
+      ...createBlankLevel(2, 2).entities,
+      { type: "whole-egg-target", x: 1, y: 1 },
+    ],
+  };
+  assert.deepEqual(
+    inspectEditorRules(level, extended).find(({ kind }) => kind === "eggs"),
+    { kind: "eggs", available: true, enabled: false },
+  );
+});
+
 test("三色云朵停靠格放置后保留底层地形与持久化颜色", () => {
   for (const color of ["red", "purple", "green"]) {
     const level = createBlankLevel();

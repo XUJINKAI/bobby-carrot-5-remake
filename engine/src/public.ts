@@ -246,6 +246,10 @@ export type {
 } from "./world/spatial/Footprint.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
 export {
+  levelRuleSelector,
+  type EntitySelector,
+} from "./world/spatial/EntitySelector.js";
+export {
   defineEntityModule,
   type EntityBehaviorBinding,
   type EntityAuthoringDefinition,

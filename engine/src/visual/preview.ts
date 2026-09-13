@@ -4,7 +4,8 @@ import type {
   JsonPrimitive,
   JsonValue,
 } from "@bobby/model";
-import { entityRegistry, visualRegistry } from "../entities/registry.js";
+import { entityRegistry, factRegistry, visualRegistry } from "../entities/registry.js";
+import { EntityFactProjection } from "../world/entity/EntityFactProjection.js";
 import {
   instantiateLevelEntity,
   instantiateSpawnSpec,
@@ -71,13 +72,9 @@ function resolveInstantiatedVisualPreview(
     Object.keys(state).length > 0 ? { ...source, state } : source;
   const part = resolveFootprintCells(entity, definition.footprint)[0];
   if (!part) return null;
-  const facts = [
-    ...new Set([
-      ...definition.facts,
-      ...(entity.instanceFacts ?? []),
-      ...(part.facts ?? []),
-    ]),
-  ];
+  const projection = new EntityFactProjection(factRegistry);
+  const facts = projection.presenceFacts(entity, definition, part);
+  const entityFacts = projection.entityFacts(entity, definition);
   const presence: EntityPresence = {
     entityId: entity.id,
     cell: { x: part.x, y: part.y },
@@ -91,7 +88,7 @@ function resolveInstantiatedVisualPreview(
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
     entitiesWithFact: (fact) =>
-      definition.facts.includes(fact) ? [entity] : [],
+      entityFacts.includes(fact) || facts.includes(fact) ? [entity] : [],
   };
   return visualRegistry.resolve(definition, { entity, presence, query });
 }
