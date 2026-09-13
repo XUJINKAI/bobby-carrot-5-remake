@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { EntitySelectorIndex } from "../dist/world/spatial/EntitySelectorIndex.js";
 import { World } from "./support/World.mjs";
 
-test("selector 计数覆盖 type、Trait、交集、多格去重与空集合", () => {
+test("selector 计数覆盖 type、Fact、交集、多格去重与空集合", () => {
   const index = new EntitySelectorIndex();
-  function add(id, type, traits) {
-    index.add({ id, type }, { traits }, [
-      { traits },
-      { traits },
+  function add(id, type, facts) {
+    index.add({ id, type }, { facts }, [
+      { facts },
+      { facts },
     ]);
   }
   add(1, "target", ["target"]);
@@ -16,7 +16,7 @@ test("selector 计数覆盖 type、Trait、交集、多格去重与空集合", (
   add(3, "other", ["target"]);
   add(4, "other", ["target"]);
   assert.equal(index.countMatching("target"), 4);
-  assert.equal(index.countWithTrait("target"), 3);
+  assert.equal(index.countWithFact("target"), 3);
   assert.equal(index.countMatching("other"), 2);
   index.remove(4);
   index.remove(3);
@@ -28,7 +28,7 @@ test("selector 计数覆盖 type、Trait、交集、多格去重与空集合", (
   add(5, "other", ["target"]);
   assert.equal(index.countMatching("target"), 1);
   index.clear();
-  assert.equal(index.countWithTrait("target"), 0);
+  assert.equal(index.countWithFact("target"), 0);
   assert.equal(index.countMatching("target"), 0);
 });
 
@@ -48,10 +48,10 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
   world.spatial.entityIdsMatching = () => {
     assert.fail("目标计数应直接读取索引数量");
   };
-  const withTrait = world.spatial.entityIdsWithTrait.bind(world.spatial);
-  world.spatial.entityIdsWithTrait = (trait) => {
-    assert.ok(!["golden-carrot", "bonus-coin"].includes(trait));
-    return withTrait(trait);
+  const withFact = world.spatial.entityIdsWithFact.bind(world.spatial);
+  world.spatial.entityIdsWithFact = (fact) => {
+    assert.ok(!["golden-carrot", "bonus-coin"].includes(fact));
+    return withFact(fact);
   };
   world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(world.winState.remaining, 1);

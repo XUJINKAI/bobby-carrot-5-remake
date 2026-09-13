@@ -290,7 +290,7 @@ export class WorldMovementResolver {
     group: MovementTransaction,
   ): string | null {
     if (
-      this.query.entityHasTrait(plan.actorId, "player") &&
+      this.query.entityHasFact(plan.actorId, "player") &&
       this.playerOccupies(plan.to, plan.actorId)
     )
       return "player-occupied";
@@ -302,7 +302,7 @@ export class WorldMovementResolver {
       if (!this.actors.isActive(entity.id)) return "companion-inactive";
       if (!this.spatial.inBounds(companion.to)) return "companion-out-of-bounds";
       if (
-        this.query.entityHasTrait(entity.id, "player") &&
+        this.query.entityHasFact(entity.id, "player") &&
         this.playerOccupies(companion.to, entity.id)
       )
         return "player-occupied";
@@ -318,7 +318,7 @@ export class WorldMovementResolver {
     return this.spatial.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
-        presence.traits.includes("player"),
+        presence.facts.includes("player"),
     );
   }
 

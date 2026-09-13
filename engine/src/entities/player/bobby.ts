@@ -56,7 +56,7 @@ export const BOBBY_VISUAL_ASSETS = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,
-  traits: ["player", "blocking"],
+  facts: ["player", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
@@ -74,14 +74,14 @@ const bobbyMovementPolicy: Behavior = {
         lifecycle: {
           source: [],
           target: target.filter((presence) =>
-            presence.traits.includes("flight-landing"),
+            presence.facts.includes("flight-landing"),
           ),
         },
         reason: "airborne-passage",
       };
 
     const relation = bobbyMountId(actor.state);
-    if (relation === null || !query.entityHasTrait(relation, "ride-carried"))
+    if (relation === null || !query.entityHasFact(relation, "ride-carried"))
       return;
     return {
       companions: [
@@ -249,7 +249,7 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
 
 function isStandingOnClimbable(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    presence.traits.includes("climbable")
+    presence.facts.includes("climbable")
   );
 }
 
@@ -359,7 +359,7 @@ function composition(
 }
 
 function playerMarker(context: VisualResolveContext): CanvasVisualLayer | null {
-  const players = [...context.query.entitiesWithTrait("player")].sort(
+  const players = [...context.query.entitiesWithFact("player")].sort(
     (left, right) =>
       playerChannelOrder(left.state?.["controller"]) -
         playerChannelOrder(right.state?.["controller"]) ||

@@ -39,7 +39,7 @@ test("未知 Entity 使用不进入正式 Catalog 的惰性占位定义", () => 
 
   assert.equal(registry.has("future-mechanic"), false);
   assert.equal(unknown.placeholder, "unknown");
-  assert.deepEqual(unknown.traits, []);
+  assert.deepEqual(unknown.facts, []);
   assert.equal(
     registry.all().some((definition) => definition.type === "future-mechanic"),
     false,
@@ -54,23 +54,23 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 
 test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.WATER).traits, [
+  assert.deepEqual(registry.require(MapEntityTypeId.WATER).facts, [
     "bean-growth-space",
     "water",
   ]);
-  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).traits, [
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).facts, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).facts, [
     "bean-growth-space",
   ]);
 });
 
 test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.TREE).traits, [
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).facts, ["walkable"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.TREE).facts, [
     "bean-growth-space",
   ]);
-  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).traits, [
+  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).facts, [
     "bean-growth-space",
     "water",
     "waterfall",
@@ -80,8 +80,8 @@ test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
   const start = createBuiltinEntityRegistry().require("start");
   assert.equal(start.stackOrder, 0);
-  assert.deepEqual(start.traits, ["walkable"]);
-  assert.equal(start.traits.includes("start"), false);
+  assert.deepEqual(start.facts, ["walkable"]);
+  assert.equal(start.facts.includes("start"), false);
 });
 
 test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
@@ -149,7 +149,7 @@ test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
   const fence = registry.require(MapEntityTypeId.FENCE);
-  assert.deepEqual(fence.traits, ["blocking", "fence"]);
+  assert.deepEqual(fence.facts, ["blocking", "fence"]);
   assert.equal(
     Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,

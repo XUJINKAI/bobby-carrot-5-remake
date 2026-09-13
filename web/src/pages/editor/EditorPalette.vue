@@ -44,8 +44,8 @@ function tooltipContent(item: PaletteItem) {
     title: item.label,
     code: item.type,
     rows: [
-      ...(item.traits.length > 0
-        ? [{ label: "traits", value: item.traits.join(", ") }]
+      ...(item.facts.length > 0
+        ? [{ label: "facts", value: item.facts.join(", ") }]
         : []),
       ...(item.behaviors.length > 0
         ? [{ label: "behaviors", value: item.behaviors.join(", ") }]

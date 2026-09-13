@@ -15,7 +15,7 @@ import {
 const armTrapAfterLeave: Behavior = {
   id: "arm-trap-after-leave",
   onLeave({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
     if (self.entity.state?.active !== false) return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
@@ -26,7 +26,7 @@ const armTrapAfterLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TRAP,
-  traits: ["walkable", "hazard"],
+  facts: ["walkable", "hazard"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(true),
   presentation: { name: "Trap" },

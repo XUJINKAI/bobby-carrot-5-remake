@@ -81,11 +81,11 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const tideSwitch = world.query.entitiesWithTrait("switch").find(
+  const actor = world.query.entitiesWithFact("player")[0];
+  const tideSwitch = world.query.entitiesWithFact("switch").find(
     (entity) => entity.type === MapEntityTypeId.TIDE_SWITCH,
   );
-  const tide = world.query.entitiesWithTrait("forced-movement").find(
+  const tide = world.query.entitiesWithFact("forced-movement").find(
     (entity) => entity.type === MapEntityTypeId.TIDE,
   );
   assert.ok(actor && tideSwitch && tide);
@@ -118,7 +118,7 @@ test("Bobby walks directly between adjacent stopped Leaves without mount state",
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   assert.ok(actor);
 
   const result = move(world, actor.id, "right");

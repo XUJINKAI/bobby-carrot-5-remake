@@ -21,7 +21,7 @@ export class WorldInspector {
         layer: presence.layer,
         ...(presence.role ? { role: presence.role } : {}),
         stackOrder: presence.stackOrder,
-        traits: presence.traits,
+        facts: presence.facts,
         ...(entity.state ? { state: structuredClone(entity.state) } : {}),
       } satisfies PresenceInspection;
     });
@@ -29,7 +29,7 @@ export class WorldInspector {
     const actorIds = [
       ...new Set(
         rawPresences
-          .filter((presence) => presence.traits.includes("player"))
+          .filter((presence) => presence.facts.includes("player"))
           .map((presence) => presence.entityId),
       ),
     ];

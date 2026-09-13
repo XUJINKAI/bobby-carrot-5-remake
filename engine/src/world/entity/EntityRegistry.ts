@@ -37,7 +37,7 @@ export class EntityRegistry {
     if (existing) return existing;
     const fallback: EntityDefinition = {
       type,
-      traits: [],
+      facts: [],
       placeholder: "unknown",
       layer: "object",
       stackOrder: 500,

@@ -12,7 +12,7 @@ const collect: Behavior = {
   id: "collectible",
   canEnter({ actor, self, query }) {
     if (!isRidingMower(actor.state, query)) return;
-    if (query.hasTraitAt(self.presence.cell, "hidden-objective"))
+    if (query.hasFactAt(self.presence.cell, "hidden-objective"))
       return { passable: true, reason: "objective-hidden-under-grass" };
     if (self.entity.type === MapEntityTypeId.CARROT)
       return { passable: false, reason: "mower-cannot-collect-carrot" };
@@ -154,7 +154,7 @@ const shovelable: Behavior = {
   },
   onTouch({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       isRidingMower(actor.state, query) ||
       readBobbyInventory(actor.state).shovel
     )
@@ -180,7 +180,7 @@ const mowerConditionalOverlay: Behavior = {
         (presence) =>
           presence.entityId !== self.entity.id &&
           presence.layer === "surface" &&
-          presence.traits.includes("walkable"),
+          presence.facts.includes("walkable"),
       );
     return underlyingWalkable
       ? { passable: true, reason: "mower-over-overlay-on-ground" }
@@ -193,7 +193,7 @@ function isRidingMower(
   query: Parameters<NonNullable<Behavior["onEnter"]>>[0]["query"],
 ): boolean {
   const mountId = bobbyMountId(state);
-  return mountId !== null && query.entityHasTrait(mountId, "mower");
+  return mountId !== null && query.entityHasFact(mountId, "mower");
 }
 
 const statefulBlock: Behavior = {

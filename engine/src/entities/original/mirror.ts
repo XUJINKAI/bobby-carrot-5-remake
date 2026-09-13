@@ -17,7 +17,7 @@ const rotateMirrorOnLeave: Behavior = {
   id: "rotate-mirror-on-leave",
   onLeave({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -30,7 +30,7 @@ const rotateMirrorOnLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.MIRROR,
-  traits: ["walkable", "mirror", "rotatable"],
+  facts: ["walkable", "mirror", "rotatable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
     "right-bottom",

@@ -91,6 +91,6 @@ function deletionCandidatesAt(
       entity: item.entity,
       ...(item.presence.role ? { role: item.presence.role } : {}),
       stackOrder: item.presence.stackOrder,
-      traits: item.presence.traits,
+      facts: item.presence.facts,
     }));
 }

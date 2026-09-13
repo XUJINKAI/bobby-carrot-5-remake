@@ -47,16 +47,16 @@ export class ReachResolver {
     });
   }
 
-  /** Definition 通过 trait 声明该 selector 是否要求所有 player 同时到达。 */
+  /** Definition 通过 fact 声明该 selector 是否要求所有 player 同时到达。 */
   aggregationFor(selector: string): "any" | "all" {
     const requiresAll = this.query
-      .entitiesWithTrait("reach-all-players")
+      .entitiesWithFact("reach-all-players")
       .some((entity) => {
         if (entity.type === selector ||
             this.query.entityFacts(entity.id).includes(selector)) return true;
         return this.query
           .presencesForEntity(entity.id)
-          .some((presence) => presence.traits.includes(selector));
+          .some((presence) => presence.facts.includes(selector));
       });
     return requiresAll ? "all" : "any";
   }
@@ -72,7 +72,7 @@ export class ReachResolver {
       if (!entity) continue;
       selectors.add(entity.type);
       for (const fact of this.query.entityFacts(entity.id)) selectors.add(fact);
-      for (const trait of presence.traits) selectors.add(trait);
+      for (const fact of presence.facts) selectors.add(fact);
     }
     return [...selectors];
   }

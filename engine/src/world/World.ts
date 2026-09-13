@@ -719,7 +719,7 @@ export class World {
         continue;
       }
       const actor = this.entities.get(intent.actorId);
-      if (!actor || !this.query.entityHasTrait(actor.id, "player")) continue;
+      if (!actor || !this.query.entityHasFact(actor.id, "player")) continue;
       const state = states.get(actor.id) ?? structuredClone(actor.state);
       const next = this.actorPolicy?.applyEffect(intent, actor, state, queue);
       if (next) states.set(actor.id, next);
@@ -741,7 +741,7 @@ export class World {
 
 function assertDistinctPlayerAnchors(query: WorldQueryApi): void {
   const occupied = new Map<string, EntityId>();
-  for (const player of query.entitiesWithTrait("player")) {
+  for (const player of query.entitiesWithFact("player")) {
     const key = `${player.anchor.x},${player.anchor.y}`;
     const existing = occupied.get(key);
     if (existing !== undefined) {

@@ -10,7 +10,7 @@ import { prepareRuntimeLevel } from "../dist/public.js";
 function definition(type, extra = {}) {
   return {
     type,
-    traits: [],
+    facts: [],
     ...extra,
   };
 }

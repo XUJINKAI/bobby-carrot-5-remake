@@ -1,4 +1,3 @@
-import type { EntityTrait } from "../entity/EntityDefinition.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityStore } from "../entity/EntityStore.js";
 import type {
@@ -76,14 +75,14 @@ export class SpatialIndex {
       presence.facts.includes(selector);
   }
 
-  hasTraitAt(cell: CellPosition, trait: EntityTrait): boolean {
+  hasFactAt(cell: CellPosition, fact: FactId): boolean {
     return this.presencesAt(cell).some((presence) =>
-      presence.traits.includes(trait),
+      presence.facts.includes(fact),
     );
   }
 
-  entityIdsWithTrait(trait: EntityTrait): readonly EntityId[] {
-    return this.selectors.withTrait(trait);
+  entityIdsWithFact(fact: FactId): readonly EntityId[] {
+    return this.selectors.withFact(fact);
   }
 
   entityIdsMatching(selector: string): readonly EntityId[] {
@@ -94,8 +93,8 @@ export class SpatialIndex {
     return this.selectors.ofType(type);
   }
 
-  entityCountWithTrait(trait: EntityTrait): number {
-    return this.selectors.countWithTrait(trait);
+  entityCountWithFact(fact: FactId): number {
+    return this.selectors.countWithFact(fact);
   }
 
   entityCountMatching(selector: string): number {
@@ -143,7 +142,6 @@ export class SpatialIndex {
         cell,
         layer,
         ...(part.role ? { role: part.role } : {}),
-        traits: facts,
         facts,
         stackOrder: part.stackOrder ?? baseStackOrder + index,
       };

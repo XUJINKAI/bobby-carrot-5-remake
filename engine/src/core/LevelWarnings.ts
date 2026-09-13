@@ -55,7 +55,7 @@ export function validateLevelPlayability(
     });
   });
 
-  if (!known.some(({ definition }) => definition.traits.includes("player"))) {
+  if (!known.some(({ definition }) => definition.facts.includes("player"))) {
     warnings.push({
       code: "missing-player",
       message: "地图至少需要一个 player Entity。",
@@ -66,8 +66,8 @@ export function validateLevelPlayability(
     const exists = known.some(
       ({ entity, definition }) =>
         entity.type === selector ||
-        definition.traits.includes(selector) ||
-        footprintHasTrait(entity, definition, selector),
+        definition.facts.includes(selector) ||
+        footprintHasFact(entity, definition, selector),
     );
     if (exists) continue;
     warnings.push({
@@ -79,10 +79,10 @@ export function validateLevelPlayability(
   return warnings;
 }
 
-function footprintHasTrait(
+function footprintHasFact(
   entity: LevelEntity,
   definition: EntityCatalogEntry,
-  trait: string,
+  fact: string,
 ): boolean {
   if (!definition.footprint) return false;
   const direction = asDirection(entity["direction"]);
@@ -93,7 +93,7 @@ function footprintHasTrait(
         ...(direction ? { direction } : {}),
       },
       definition.footprint,
-    ).some((part) => part.traits?.includes(trait));
+    ).some((part) => part.facts?.includes(fact));
   } catch {
     // 结构有效性由常规加载边界校验；这里仅判断地图是否存在可游玩的 reach target。
     return false;

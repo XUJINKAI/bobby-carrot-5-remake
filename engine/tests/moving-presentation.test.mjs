@@ -64,7 +64,7 @@ function carryWorld() {
       { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   bobby.direction = "right";
   return world;
 }
@@ -73,8 +73,8 @@ for (const cadenceMs of [496, 248]) {
   test(`carry presentation group shares ${cadenceMs}ms carrier timeline`, () => {
     const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
     const world = carryWorld();
-    const leaf = world.query.entitiesWithTrait("leaf")[0];
-    const bobby = world.query.entitiesWithTrait("player")[0];
+    const leaf = world.query.entitiesWithFact("leaf")[0];
+    const bobby = world.query.entitiesWithFact("player")[0];
     const carrier = motion(
       1,
       leaf.id,
@@ -167,7 +167,7 @@ test("Bobby carried by a Leaf keeps its own facing and standing frame", () => {
 
 test("blocked Bobby facing uses the attempted direction and standing end frame", () => {
   const world = carryWorld();
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   runtime.faceDirection(
     bobby.id,
@@ -187,7 +187,7 @@ test("blocked Bobby facing uses the attempted direction and standing end frame",
 
 test("Bobby steps up onto Leaf exactly at movement midpoint", () => {
   const world = carryWorld();
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   const entering = motion(
     1,
@@ -223,7 +223,7 @@ test("Bobby steps down from Leaf exactly at movement midpoint", () => {
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
     ],
   });
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   const leaving = motion(
     1,

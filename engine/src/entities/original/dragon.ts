@@ -29,7 +29,7 @@ const triggerDragon: Behavior = {
   onEnter({ actor, self, query, commands }) {
     if (
       self.presence.role !== "tail" ||
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       self.entity.state?.attacking === true
     )
@@ -96,7 +96,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DRAGON,
-  traits: ["dragon"],
+  facts: ["dragon"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     byDirection: {
@@ -105,19 +105,19 @@ const definition: EntityModuleDefinition = {
           dx: -1,
           dy: 0,
           role: "head",
-          traits: ["blocking"],
+          facts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          traits: ["blocking"],
+          facts: ["blocking"],
         },
         {
           dx: 1,
           dy: 0,
           role: "tail",
-          traits: ["walkable", "dragon-trigger"],
+          facts: ["walkable", "dragon-trigger"],
         },
       ],
       right: [
@@ -125,19 +125,19 @@ const definition: EntityModuleDefinition = {
           dx: 1,
           dy: 0,
           role: "head",
-          traits: ["blocking"],
+          facts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          traits: ["blocking"],
+          facts: ["blocking"],
         },
         {
           dx: -1,
           dy: 0,
           role: "tail",
-          traits: ["walkable", "dragon-trigger"],
+          facts: ["walkable", "dragon-trigger"],
         },
       ],
     },

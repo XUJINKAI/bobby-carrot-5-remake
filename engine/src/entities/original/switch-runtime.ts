@@ -9,10 +9,10 @@ import type { Behavior } from "../../world/behavior/Behavior.js";
 export const colorSwitchBehavior: Behavior = {
   id: "color-switch-global-toggle",
   onEnter({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
 
     const color = self.entity.state?.color === "pink" ? "pink" : "yellow";
-    for (const entity of query.entitiesWithTrait("switch")) {
+    for (const entity of query.entitiesWithFact("switch")) {
       if (
         entity.type !== MapEntityTypeId.COLOR_SWITCH ||
         entity.state?.color !== color
@@ -24,7 +24,7 @@ export const colorSwitchBehavior: Behavior = {
       });
     }
 
-    for (const entity of query.entitiesWithTrait("stateful-block")) {
+    for (const entity of query.entitiesWithFact("stateful-block")) {
       if (
         entity.type !== MapEntityTypeId.COLOR_BLOCK ||
         entity.state?.color !== color
@@ -47,11 +47,11 @@ function directionalSwitchBehavior(
   return {
     id,
     onEnter({ actor, self, query, commands }) {
-      if (!query.entityHasTrait(actor.id, "player")) return;
+      if (!query.entityHasFact(actor.id, "player")) return;
       // 原版只有 Raised 状态会启动整图变换；Pressed 状态再次进入不触发。
       if (self.entity.state?.pressed === true) return;
 
-      for (const entity of query.entitiesWithTrait("switch")) {
+      for (const entity of query.entitiesWithFact("switch")) {
         if (entity.type !== switchType) continue;
         commands.setState(entity.id, {
           ...entity.state,
@@ -59,7 +59,7 @@ function directionalSwitchBehavior(
         });
       }
 
-      for (const entity of query.entitiesWithTrait("forced-movement")) {
+      for (const entity of query.entitiesWithFact("forced-movement")) {
         if (entity.type !== targetType) continue;
         commands.setDirection(
           entity.id,
@@ -85,10 +85,10 @@ export const tideSwitchBehavior = directionalSwitchBehavior(
 export const carouselSwitchBehavior: Behavior = {
   id: "carousel-switch-global-rotate",
   onEnter({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
     if (self.entity.state?.pressed === true) return;
 
-    for (const entity of query.entitiesWithTrait("switch")) {
+    for (const entity of query.entitiesWithFact("switch")) {
       if (entity.type !== MapEntityTypeId.CAROUSEL_SWITCH) continue;
       commands.setState(entity.id, {
         ...entity.state,
@@ -96,7 +96,7 @@ export const carouselSwitchBehavior: Behavior = {
       });
     }
 
-    for (const entity of query.entitiesWithTrait("carousel")) {
+    for (const entity of query.entitiesWithFact("carousel")) {
       if (entity.type !== MapEntityTypeId.CAROUSEL) continue;
       commands.setState(entity.id, {
         ...entity.state,

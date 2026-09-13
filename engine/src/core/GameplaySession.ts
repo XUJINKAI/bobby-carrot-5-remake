@@ -141,7 +141,7 @@ export class GameplaySession {
   get actorIds(): readonly EntityId[] {
     if (!this.worldValue) return [];
     return this.world.query
-      .entitiesWithTrait("player")
+      .entitiesWithFact("player")
       .map((entity) => entity.id);
   }
 
@@ -226,7 +226,7 @@ export class GameplaySession {
       phase: "waiting" | "running";
       remainingMs: number;
     }> = [];
-    for (const entity of world.query.entitiesWithTrait("timed-challenge")) {
+    for (const entity of world.query.entitiesWithFact("timed-challenge")) {
       const durationMs = Number(entity.state?.deathCountdownSeconds) * 1000;
       if (!Number.isFinite(durationMs) || durationMs <= 0) continue;
       if (entity.state?.opened !== true) {

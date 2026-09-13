@@ -116,7 +116,7 @@ test("Editor Callout 测试地图依次触发五种缺少道具事件", () => {
     "utf8",
   ));
   const world = new World(level);
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const items = [];
 
   for (let x = 1; x <= 5; x += 1) {

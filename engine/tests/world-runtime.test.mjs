@@ -7,24 +7,24 @@ import { World } from "./support/World.mjs";
 function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "player", traits: ["player"], layer: "object", stackOrder: 100 },
-    { type: "wall", traits: ["blocking"], layer: "object", stackOrder: 100 },
-    { type: "box", traits: ["blocking", "pushable"], layer: "object", stackOrder: 100 },
-    { type: "goal", traits: ["walkable", "goal"], layer: "surface", stackOrder: 0 },
-    { type: "exit-cell", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "carrot", traits: [], layer: "object", stackOrder: 100 },
+    { type: "floor", facts: ["walkable"], layer: "surface", stackOrder: 0 },
+    { type: "player", facts: ["player"], layer: "object", stackOrder: 100 },
+    { type: "wall", facts: ["blocking"], layer: "object", stackOrder: 100 },
+    { type: "box", facts: ["blocking", "pushable"], layer: "object", stackOrder: 100 },
+    { type: "goal", facts: ["walkable", "goal"], layer: "surface", stackOrder: 0 },
+    { type: "exit-cell", facts: ["walkable"], layer: "surface", stackOrder: 0 },
+    { type: "carrot", facts: [], layer: "object", stackOrder: 100 },
     {
       type: "grass",
-      traits: ["blocking", "mowable"],
+      facts: ["blocking", "mowable"],
       behaviors: grassBehaviors,
       layer: "cover",
       stackOrder: 200,
     },
-    { type: "item", traits: ["item"], layer: "object", stackOrder: 100 },
+    { type: "item", facts: ["item"], layer: "object", stackOrder: 100 },
     {
       type: "long",
-      traits: [],
+      facts: [],
       layer: "object",
       stackOrder: 100,
       footprint: {
@@ -47,7 +47,7 @@ function registry({ grassBehaviors = [] } = {}) {
 const floor = (x, y, type = "floor") => ({ type, x, y });
 
 function actorIds(world) {
-  return world.query.entitiesWithTrait("player").map((entity) => entity.id);
+  return world.query.entitiesWithFact("player").map((entity) => entity.id);
 }
 
 function move(world, actorId, direction, source = "test") {
@@ -81,7 +81,7 @@ test("implicit Void blocks and ordinary floor moves", () => {
   assert.equal(world.entity(actor).anchor.x, 1);
 });
 
-test("pushable movement is one transaction and fill-all uses Presence traits", () => {
+test("pushable movement is one transaction and fill-all uses Presence facts", () => {
   const entities = registry();
   const world = new World(
     {
@@ -101,7 +101,7 @@ test("pushable movement is one transaction and fill-all uses Presence traits", (
     { entities, behaviors: new BehaviorRegistry() },
   );
   const actor = actorIds(world)[0];
-  const box = world.query.entitiesWithTrait("pushable")[0];
+  const box = world.query.entitiesWithFact("pushable")[0];
   const step = move(world, actor, "right");
   assert.equal(step.moves[0].moved, true);
   assert.deepEqual(new Set(step.mutations.moved), new Set([actor, box.id]));
@@ -109,7 +109,7 @@ test("pushable movement is one transaction and fill-all uses Presence traits", (
   assert.equal(world.entity(box.id).anchor.x, 2);
 });
 
-test("reach selector can address an Entity type without a matching Trait", () => {
+test("reach selector can address an Entity type without a matching Fact", () => {
   const entities = registry();
   const world = new World(
     {

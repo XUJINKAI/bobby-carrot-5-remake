@@ -13,7 +13,6 @@ export interface PresenceFactContext extends EntityFactContext {
   readonly presence: Readonly<ResolvedFootprintCell>;
 }
 
-export type EntityTrait = string;
 export type BehaviorId = string;
 export type VisualId = string;
 export type AudioProfileId = string;
@@ -44,7 +43,7 @@ export interface EntityFieldDefinition {
  */
 export interface EntityDefinition {
   type: EntityType;
-  traits: readonly EntityTrait[];
+  facts: readonly FactId[];
   entityFacts?: readonly FactId[];
   resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
   resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];

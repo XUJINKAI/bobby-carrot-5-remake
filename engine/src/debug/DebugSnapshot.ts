@@ -97,7 +97,7 @@ export interface DebugPresenceSnapshot {
   layer: EntityLayer;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
 }
 
 export interface DebugEntitySnapshot {
@@ -110,9 +110,9 @@ export interface DebugEntitySnapshot {
   inputBlocked: boolean;
   direction: string | null;
   state: unknown;
-  instanceTraits: readonly string[];
+  instanceFacts: readonly string[];
   definition: {
-    traits: readonly string[];
+    facts: readonly string[];
     layer: EntityLayer;
     stackOrder: number | null;
     footprint: unknown;
@@ -187,7 +187,7 @@ export function buildDebugSnapshot(options: {
     inputBlocked: world?.inputBlocked ?? false,
     cameraTarget: world?.cameraTarget ?? null,
   };
-  const actorEntities = world?.query.entitiesWithTrait("player") ?? [];
+  const actorEntities = world?.query.entitiesWithFact("player") ?? [];
   const actors = actorEntities.map((entity) => ({
     id: entity.id,
     type: entity.type,
@@ -314,9 +314,9 @@ function buildEntitySnapshot(
     inputBlocked: world.isInputBlockedFor(entity.id),
     direction: entity.direction ?? null,
     state: entity.state ? structuredClone(entity.state) : null,
-    instanceTraits: [...(entity.instanceTraits ?? [])],
+    instanceFacts: [...(entity.instanceFacts ?? [])],
     definition: {
-      traits: [...definition.traits],
+      facts: [...definition.facts],
       layer: definition.layer ?? "object",
       stackOrder: definition.stackOrder ?? null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
@@ -356,7 +356,7 @@ function debugPresence(
     layer: presence.layer,
     ...(presence.role ? { role: presence.role } : {}),
     stackOrder: presence.stackOrder,
-    traits: [...presence.traits],
+    facts: [...presence.facts],
   };
 }
 

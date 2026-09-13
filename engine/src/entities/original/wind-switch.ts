@@ -22,12 +22,12 @@ const WIND_SWITCH_DIRECTIONS: readonly Direction[] = [
 const toggleWindDirection: Behavior = {
   id: "wind-switch-direction-toggle",
   onEnter({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
     const direction = self.entity.direction;
     if (!direction) return;
     const active = self.entity.state?.active !== true;
 
-    for (const entity of query.entitiesWithTrait("switch")) {
+    for (const entity of query.entitiesWithFact("switch")) {
       if (entity.type !== MapEntityTypeId.WIND_SWITCH) continue;
       if (entity.direction !== direction) continue;
       commands.setState(entity.id, {
@@ -40,7 +40,7 @@ const toggleWindDirection: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.WIND_SWITCH,
-  traits: ["walkable", "switch"],
+  facts: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(false),
   presentation: { name: "Wind Switch" },

@@ -65,7 +65,7 @@ const unlock: Behavior = {
   },
   onTouch({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       self.entity.state?.requireKey !== true ||
       readBobbyInventory(actor.state).lockKeys > 0
@@ -104,7 +104,7 @@ const trackTimedChallenge: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
-  traits: ["blocking", "gate", "timed-challenge"],
+  facts: ["blocking", "gate", "timed-challenge"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
     {
@@ -132,7 +132,7 @@ export const lock: EntityModule = originalModule(
 export const timedChallenge: EntityModule = defineEntityModule({
   definition: {
     type: RuntimeEntityTypeId.TIMED_CHALLENGE,
-    traits: ["timed-challenge"],
+    facts: ["timed-challenge"],
     state: [
       { key: "opened", kind: "boolean", label: "已启动", default: true },
       {

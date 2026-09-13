@@ -57,7 +57,7 @@ test("场景共享一次胜利求值，并在收集与恢复后更新出口视�
   });
   const visuals = createBuiltinVisualRegistry();
   const snapshot = world.snapshot();
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const exit = world.entities.all().find((entity) => entity.type === "exit");
   const kernel = Object.getPrototypeOf(World.prototype);
   const getter = Object.getOwnPropertyDescriptor(kernel, "winState").get;

@@ -25,7 +25,7 @@ function corridor(extra, rules, bobbyState) {
 }
 
 function actor(world) {
-  const entity = world.query.entitiesWithTrait("player")[0];
+  const entity = world.query.entitiesWithFact("player")[0];
   assert.ok(entity, "test map must contain a player actor");
   return entity;
 }
@@ -78,7 +78,7 @@ test("任一 Bobby 到达 Golden Carrot 即完成多人关卡", () => {
       { type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 },
     ],
   });
-  const first = world.query.entitiesWithTrait("player")[0];
+  const first = world.query.entitiesWithFact("player")[0];
 
   move(world, "right");
 
@@ -100,7 +100,7 @@ test("Exit 要求所有 Bobby 同时到达 Exit", () => {
       bobby(0, 0), bobby(3, 0),
     ],
   });
-  const players = world.query.entitiesWithTrait("player");
+  const players = world.query.entitiesWithFact("player");
 
   move(world, "right");
   assert.equal(world.completed, false);
@@ -135,8 +135,8 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, 0);
-  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
-  assert.equal(world.query.entitiesWithTrait("timed-challenge").length, 1);
+  assert.equal(world.query.entitiesWithFact("gate").length, 0);
+  assert.equal(world.query.entitiesWithFact("timed-challenge").length, 1);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
@@ -155,7 +155,7 @@ test("requireKey Lock 缺少钥匙时报告完整 missing-item 事件", () => {
     }]),
   );
   const player = actor(world);
-  const lock = world.query.entitiesWithTrait("gate")[0];
+  const lock = world.query.entitiesWithFact("gate")[0];
 
   const result = move(world, "right");
 
@@ -204,7 +204,7 @@ test("缺省 Lock 不要求钥匙", () => {
   );
   assert.equal(move(world, "right").moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, undefined);
-  assert.equal(world.query.entitiesWithTrait("gate").length, 0);
+  assert.equal(world.query.entitiesWithFact("gate").length, 0);
 });
 
 test("关卡内道具动作按数量增加钥匙", () => {

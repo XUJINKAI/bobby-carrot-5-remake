@@ -176,7 +176,7 @@ export function applySurfaceTheme(
             sourceLevel,
           ) ?? entity;
         }
-        return applySurfaceInstanceTraits({
+        return applySurfaceInstanceFacts({
           ...stripAutoMetadata(entity),
           ...surfaceEntityForVisual(target.primary, entity),
         }, target);
@@ -355,7 +355,7 @@ function createSurfaceEntity(
   const type = resolveAutoType(item, cell, brush.seed, target, level);
   const entity = surfaceEntityForVisual(type, cell);
   catalog.require(entity.type);
-  return markAuto(applySurfaceInstanceTraits(entity, item), item.id, brush.seed);
+  return markAuto(applySurfaceInstanceFacts(entity, item), item.id, brush.seed);
 }
 
 function createFixedSurfaceEntity(
@@ -366,7 +366,7 @@ function createFixedSurfaceEntity(
 ): LevelEntity {
   const entity = surfaceEntityForVisual(selectedType, cell);
   catalog.require(entity.type);
-  return applySurfaceInstanceTraits(entity, terrain);
+  return applySurfaceInstanceFacts(entity, terrain);
 }
 
 function resolveAutoType(
@@ -448,7 +448,7 @@ function reflowAutoSurfaces(
     catalog.require(resolved.type);
     changed = true;
     return markAuto(
-      applySurfaceInstanceTraits(resolved, terrain),
+      applySurfaceInstanceFacts(resolved, terrain),
       terrain.id,
       metadata.seed,
     );
@@ -456,8 +456,8 @@ function reflowAutoSurfaces(
   return changed ? normalizeEditorLevel({ ...level, entities }) : level;
 }
 
-/** Map JSON 不保存 gameplay Trait 覆盖；Surface 语义由 Engine 持有。 */
-function applySurfaceInstanceTraits(
+/** Map JSON 不保存 gameplay Fact 覆盖；Surface 语义由 Engine 持有。 */
+function applySurfaceInstanceFacts(
   entity: LevelEntity,
   _terrain: SurfaceTerrainDefinition,
 ): LevelEntity {

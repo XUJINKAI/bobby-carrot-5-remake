@@ -8,7 +8,7 @@ import { World } from "./support/World.mjs";
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 
 function actors(world) {
-  return world.query.entitiesWithTrait("player");
+  return world.query.entitiesWithFact("player");
 }
 
 function move(world, actorId, direction) {
@@ -205,5 +205,5 @@ test("shovel pickup leaves a canonical walkable surface behind", () => {
       .some((entity) => entity.type === RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND),
     true,
   );
-  assert.equal(world.presencesAt({ x: 1, y: 0 }).some((p) => p.traits.includes("walkable")), true);
+  assert.equal(world.presencesAt({ x: 1, y: 0 }).some((p) => p.facts.includes("walkable")), true);
 });

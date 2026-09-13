@@ -27,7 +27,7 @@ const plankPassage: Behavior = {
         (presence) =>
           presence.entityId !== self.entity.id &&
           presence.layer === "surface" &&
-          presence.traits.includes("walkable"),
+          presence.facts.includes("walkable"),
       );
     if (bobbyMountId(actor.state) !== null && !underlyingWalkable)
       return { passable: false, reason: "mower-cannot-use-plank-bridge" };
@@ -35,7 +35,7 @@ const plankPassage: Behavior = {
   },
   onLeave({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -53,7 +53,7 @@ const plankPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.PLANK,
-  traits: ["terrain-overlay", "walkable"],
+  facts: ["terrain-overlay", "walkable"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Plank" },
 };

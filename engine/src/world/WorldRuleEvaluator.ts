@@ -25,8 +25,8 @@ export class WorldRuleEvaluator {
   refreshDerivedState(): void {
     const state = this.state();
     state.goldenCarrotsInLevel =
-      this.spatial.entityCountWithTrait("golden-carrot");
-    state.bonusCoinsInLevel = this.spatial.entityCountWithTrait("bonus-coin");
+      this.spatial.entityCountWithFact("golden-carrot");
+    state.bonusCoinsInLevel = this.spatial.entityCountWithFact("bonus-coin");
   }
 
   completionReady(motionRunning: boolean): boolean {
@@ -89,7 +89,7 @@ export class WorldRuleEvaluator {
       }
       case "reach": {
         const state = this.state();
-        const actors = this.query.entitiesWithTrait("player");
+        const actors = this.query.entitiesWithFact("player");
         const actorReaches = (actor: (typeof actors)[number]) =>
           this.reach.actorReaches(actor, condition.target);
         const completed = this.reach.aggregationFor(condition.target) === "all"

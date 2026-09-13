@@ -123,7 +123,7 @@ export interface EditorDeletionCandidate {
   entity: Readonly<LevelEntity>;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
 }
 
 export interface EditorDeleteContext {

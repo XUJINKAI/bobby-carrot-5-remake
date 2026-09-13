@@ -7,7 +7,7 @@ const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 const ice = (x, y) => ({ type: MapEntityTypeId.ICE, x, y });
 
 function actorIds(world) {
-  return world.query.entitiesWithTrait("player").map((entity) => entity.id);
+  return world.query.entitiesWithFact("player").map((entity) => entity.id);
 }
 
 function move(world, actorId, direction) {
@@ -59,7 +59,7 @@ test("Ice emits semantic forced moves until Bobby leaves the Ice surface", () =>
   assert.equal(firstSlide.motions.length, 1);
   assert.deepEqual(firstSlide.motions[0].cause, {
     type: "forced",
-    sourceEntityId: world.presencesAt({ x: 1, y: 0 }).find((presence) => presence.traits.includes("forced-movement")).entityId,
+    sourceEntityId: world.presencesAt({ x: 1, y: 0 }).find((presence) => presence.facts.includes("forced-movement")).entityId,
     mechanism: "ice",
     cadenceMs: 350,
   });

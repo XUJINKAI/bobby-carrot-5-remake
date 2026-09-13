@@ -12,14 +12,14 @@ const portalBehavior: Behavior = {
   onEnter({ query, actor, self, direction, movement, commands }) {
     if (!direction) return;
     const channel = self.entity.state?.channel;
-    const target = query.entitiesWithTrait("portal").find(
+    const target = query.entitiesWithFact("portal").find(
       (entity) =>
         entity.id !== self.entity.id && entity.state?.channel === channel,
     );
     if (!target) return;
     const targetHasPlayer = query.presencesAt(target.anchor).some(
       (presence) =>
-        presence.entityId !== actor.id && presence.traits.includes("player"),
+        presence.entityId !== actor.id && presence.facts.includes("player"),
     );
     if (targetHasPlayer) return;
     commands.relocate(actor.id, target.anchor.x, target.anchor.y);
@@ -43,7 +43,7 @@ const portalBehavior: Behavior = {
 export const portal: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PORTAL,
-    traits: ["portal"],
+    facts: ["portal"],
     stackOrder: 100,
     properties: [
       {

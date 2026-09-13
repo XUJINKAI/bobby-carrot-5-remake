@@ -14,7 +14,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE_SWITCH,
-  traits: ["walkable", "switch"],
+  facts: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
   presentation: { name: "Tide Switch" },

@@ -29,7 +29,7 @@ for (const definition of builtinEntityDefinitions) {
   for (const mechanism of definition.mechanisms ?? []) {
     mechanismRegistry.require(mechanism);
   }
-  for (const fact of [...definition.traits, ...(definition.entityFacts ?? [])]) {
+  for (const fact of [...definition.facts, ...(definition.entityFacts ?? [])]) {
     factRegistry.require(fact);
   }
   const footprint = definition.footprint;
@@ -37,7 +37,7 @@ for (const definition of builtinEntityDefinitions) {
     ? footprint.parts
     : Object.values(footprint?.byDirection ?? {}).flat();
   for (const part of parts) {
-    for (const fact of part?.traits ?? []) factRegistry.require(fact);
+    for (const fact of part?.facts ?? []) factRegistry.require(fact);
   }
 }
 

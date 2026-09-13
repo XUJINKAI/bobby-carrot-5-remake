@@ -350,7 +350,7 @@ export class VisualRuntime {
   /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
     const actorIds = world.query
-      .entitiesWithTrait("player")
+      .entitiesWithFact("player")
       .map((entity) => entity.id);
     this.ensureStationaryActorStates(world, actorIds);
     if (actorIds.length > 1) {
@@ -470,7 +470,7 @@ export class VisualRuntime {
     durationMs: number,
     frame: PresentationFrame,
   ): void {
-    for (const actor of world.query.entitiesWithTrait("player")) {
+    for (const actor of world.query.entitiesWithFact("player")) {
       this.beginAction(
         actor.id,
         animation,
@@ -570,7 +570,6 @@ export class VisualRuntime {
           entityId: -transient.id,
           cell: { x: transient.x, y: transient.y },
           layer: "object",
-          traits: [],
           facts: [],
           stackOrder: transient.definition.stackOrder ?? 0,
         },

@@ -218,7 +218,6 @@ export type {
   EntityFieldKind,
   EntityFieldOption,
   EntityLayer,
-  EntityTrait,
   VisualId,
   AudioProfileId,
 } from "./world/entity/EntityDefinition.js";

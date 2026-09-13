@@ -22,7 +22,7 @@ export interface EntityVisualPreviewSource {
   type: EntityType;
   direction?: Direction;
   state?: EntityState;
-  instanceTraits?: readonly string[];
+  instanceFacts?: readonly string[];
 }
 
 /** 省略持久化关卡所需坐标的扁平 canonical Map Entity。 */
@@ -73,9 +73,9 @@ function resolveInstantiatedVisualPreview(
   if (!part) return null;
   const facts = [
     ...new Set([
-      ...definition.traits,
-      ...(entity.instanceTraits ?? []),
-      ...(part.traits ?? []),
+      ...definition.facts,
+      ...(entity.instanceFacts ?? []),
+      ...(part.facts ?? []),
     ]),
   ];
   const presence: EntityPresence = {
@@ -83,7 +83,6 @@ function resolveInstantiatedVisualPreview(
     cell: { x: part.x, y: part.y },
     layer: definition.layer ?? "object",
     ...(part.role ? { role: part.role } : {}),
-    traits: facts,
     facts,
     stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,
   };
@@ -91,8 +90,8 @@ function resolveInstantiatedVisualPreview(
     inBounds: () => true,
     presencesAt: () => [],
     entity: (id) => (id === entity.id ? entity : undefined),
-    entitiesWithTrait: (trait) =>
-      definition.traits.includes(trait) ? [entity] : [],
+    entitiesWithFact: (fact) =>
+      definition.facts.includes(fact) ? [entity] : [],
   };
   return visualRegistry.resolve(definition, { entity, presence, query });
 }

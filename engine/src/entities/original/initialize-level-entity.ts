@@ -4,7 +4,7 @@ import {
   type EntityId,
   type EntityInstance,
 } from "../../world/entity/EntityInstance.js";
-import { originalSurfaceTraits } from "./surface-traits.js";
+import { originalSurfaceFacts } from "./surface-facts.js";
 
 /** 原版 Surface 的实例语义在具体对象层初始化。 */
 export function initializeOriginalLevelEntity(
@@ -15,6 +15,6 @@ export function initializeOriginalLevelEntity(
   return instantiateLevelEntity(
     id,
     source,
-    mapping ? originalSurfaceTraits(mapping) : [],
+    mapping ? originalSurfaceFacts(mapping) : [],
   );
 }

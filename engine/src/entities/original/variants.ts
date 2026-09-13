@@ -11,7 +11,7 @@ import {
   SURFACE_STACK_ORDER,
   tsCoordinateCell,
 } from "./module.js";
-import { sharedOriginalSurfaceTraits } from "./surface-traits.js";
+import { sharedOriginalSurfaceFacts } from "./surface-facts.js";
 
 const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
 for (const mapping of SURFACE_SOURCE_MAPPINGS) {
@@ -28,7 +28,7 @@ for (const mapping of SURFACE_SOURCE_MAPPINGS) {
 const originalTileDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.ORIGINAL_TILE,
   authoring: { palette: false },
-  traits: [],
+  facts: [],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   state: [{ key: "variant", kind: "string", label: "Original Tile" }],
@@ -59,8 +59,8 @@ function canonicalSurface(
   const definition: EntityModuleDefinition = {
     type,
     authoring: { palette: false },
-    traits: [
-      ...sharedOriginalSurfaceTraits(mappings),
+    facts: [
+      ...sharedOriginalSurfaceFacts(mappings),
       ...(type === MapEntityTypeId.SNOWMAN ? ["dialog"] : []),
     ],
     layer: "surface",

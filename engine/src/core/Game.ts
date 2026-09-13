@@ -584,7 +584,7 @@ export class Game {
     const frame = this.presentation.clock.current;
     for (const move of moves) {
       if (!move.blocked || move.actorId === undefined) continue;
-      if (!this.world.query.entityHasTrait(move.actorId, "player")) continue;
+      if (!this.world.query.entityHasFact(move.actorId, "player")) continue;
       this.presentation.visual.faceDirection(move.actorId, move.direction, frame);
     }
   }

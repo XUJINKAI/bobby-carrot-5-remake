@@ -145,5 +145,5 @@ function hasSelector(
   catalog: EntityCatalog,
 ): boolean {
   if (entity.type === selector) return true;
-  return catalog.has(entity.type) && catalog.require(entity.type).traits.includes(selector);
+  return catalog.has(entity.type) && catalog.require(entity.type).facts.includes(selector);
 }

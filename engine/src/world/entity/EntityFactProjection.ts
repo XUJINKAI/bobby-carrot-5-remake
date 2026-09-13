@@ -23,9 +23,9 @@ export class EntityFactProjection {
     presence: Readonly<ResolvedFootprintCell>,
   ): readonly FactId[] {
     return this.resolve([
-      ...definition.traits,
-      ...(entity.instanceTraits ?? []),
-      ...(presence.traits ?? []),
+      ...definition.facts,
+      ...(entity.instanceFacts ?? []),
+      ...(presence.facts ?? []),
       ...(definition.resolvePresenceFacts?.({ entity, presence }) ?? []),
     ]);
   }

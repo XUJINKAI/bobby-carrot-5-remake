@@ -6,7 +6,7 @@ const item = (id, stackOrder, x, y, visualX = x, visualY = y) => ({
   presence: {
     entityId: id,
     cell: { x, y },
-    traits: [],
+    facts: [],
     stackOrder,
   },
   composition: { layers: [] },

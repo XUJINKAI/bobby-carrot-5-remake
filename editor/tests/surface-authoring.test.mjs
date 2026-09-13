@@ -244,7 +244,7 @@ test("Surface instances leave gameplay semantics to Engine definitions", () => {
     },
   ).apply(createBlankLevel(4, 4));
   const entity = entityAt(next, 1, 1, (item) => item.type === "stone-wall");
-  assert.equal(entity?.traits, undefined);
+  assert.equal(entity?.facts, undefined);
   assert.equal(entity?.variant, "ts-1-4");
 });
 

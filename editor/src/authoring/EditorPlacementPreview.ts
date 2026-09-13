@@ -32,11 +32,11 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
       }
       return presences.sort((a, b) => a.stackOrder - b.stackOrder || a.entityId - b.entityId);
     },
-    entitiesWithTrait(trait) {
-      const entities = base.spatial.entityIdsWithTrait(trait)
+    entitiesWithFact(fact) {
+      const entities = base.spatial.entityIdsWithFact(fact)
         .filter((id) => !removed.has(id))
         .map((id) => base.entities.require(id));
-      if (inspections.some((item) => item.presence.traits.includes(trait)))
+      if (inspections.some((item) => item.presence.facts.includes(fact)))
         entities.push(entity);
       return entities;
     },

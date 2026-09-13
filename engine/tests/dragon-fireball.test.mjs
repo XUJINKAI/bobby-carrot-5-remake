@@ -25,7 +25,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
     { schemaVersion: 1, width: 7, height: 3, entities },
     { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
 
   world.step({
     intents: [
@@ -50,14 +50,14 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
-  const fireball = world.query.entitiesWithTrait("projectile")[0];
+  const fireball = world.query.entitiesWithFact("projectile")[0];
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
 
   const melted = update(world, 3, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
   assert.equal(
-    world.query.entitiesWithTrait("meltable").length,
+    world.query.entitiesWithFact("meltable").length,
     0,
   );
   assert.ok(melted.events.some((event) => event.type === "ice-melted"));
@@ -85,7 +85,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
 
   update(world, 1, 1);
   const impact = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
-  assert.equal(world.query.entitiesWithTrait("projectile").length, 0);
+  assert.equal(world.query.entitiesWithFact("projectile").length, 0);
   assert.equal(world.cameraTarget, null);
   assert.ok(impact.events.some((event) => event.type === "fireball-impact"));
 });

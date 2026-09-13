@@ -21,7 +21,7 @@ const fillEggNestOnLeave: Behavior = {
   onLeave({ actor, self, query, commands }) {
     if (
       self.entity.state?.filled === true ||
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -32,7 +32,7 @@ const fillEggNestOnLeave: Behavior = {
       x: source.anchor.x,
       y: source.anchor.y,
       state: { filled: true },
-      instanceTraits: ["filled-egg", "blocking"],
+      instanceFacts: ["filled-egg", "blocking"],
       ...(source.direction ? { direction: source.direction } : {}),
     });
     commands.emit({
@@ -48,13 +48,13 @@ function surface(
   type: EntityModuleDefinition["type"],
   name: string,
   atlas: ReturnType<typeof tileCell>,
-  traits: EntityModuleDefinition["traits"] = ["walkable"],
+  facts: EntityModuleDefinition["facts"] = ["walkable"],
   palette = true,
 ): EntityModule {
   return staticEntity(
     {
       type,
-      traits,
+      facts,
       ...(palette ? {} : { authoring: { palette: false } }),
       layer: "surface",
       stackOrder: SURFACE_STACK_ORDER,
@@ -68,9 +68,9 @@ function runtimeOnlyContent(
   type: EntityModuleDefinition["type"],
   name: string,
   atlas: ReturnType<typeof tileCell>,
-  traits: EntityModuleDefinition["traits"] = [],
+  facts: EntityModuleDefinition["facts"] = [],
 ): EntityModule {
-  const module = content(type, name, atlas, traits);
+  const module = content(type, name, atlas, facts);
   return {
     ...module,
     authoring: { palette: false },
@@ -81,12 +81,12 @@ function content(
   type: EntityModuleDefinition["type"],
   name: string,
   atlas: ReturnType<typeof tileCell>,
-  traits: EntityModuleDefinition["traits"] = [],
+  facts: EntityModuleDefinition["facts"] = [],
 ): EntityModule {
   return staticEntity(
     {
       type,
-      traits,
+      facts,
       layer: "object",
       stackOrder: CONTENT_STACK_ORDER,
       presentation: { name },
@@ -161,7 +161,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
 
 const snowDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
-  traits: ["snow", "shovelable", "blocking", "bean-growth-space"],
+  facts: ["snow", "shovelable", "blocking", "bean-growth-space"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
@@ -169,7 +169,7 @@ const snowDefinition: EntityModuleDefinition = {
 
 const highGrassDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
-  traits: ["mowable", "blocking"],
+  facts: ["mowable", "blocking"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
@@ -182,14 +182,14 @@ export const staticCoverModules: readonly EntityModule[] = [
 
 const carrotDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CARROT,
-  traits: ["collectible"],
+  facts: ["collectible"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
 const eggDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.EGG,
-  traits: ["egg-nest"],
+  facts: ["egg-nest"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Egg" },
@@ -205,7 +205,7 @@ const egg = originalModule(
   [{ behavior: fillEggNestOnLeave }],
 );
 
-const beanstalkTraits = [
+const beanstalkFacts = [
   "terrain-overlay",
   "climbable",
   "walkable",
@@ -214,7 +214,7 @@ const beanstalkTraits = [
 
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
-  traits: ["blocking", "windmill"],
+  facts: ["blocking", "windmill"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Windmill" },
@@ -242,7 +242,7 @@ export const staticContentModules: readonly EntityModule[] = [
       MapEntityTypeId.BEANSTALK,
       "Beanstalk",
       tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
-      beanstalkTraits,
+      beanstalkFacts,
     ),
     authoring: { palette: false },
   },

@@ -10,38 +10,38 @@ function registry() {
   registry.registerAll([
     {
       type: "water",
-      traits: ["water"],
+      facts: ["water"],
       stackOrder: 0,
       presentation: { name: "Water" },
     },
     {
       type: "coin",
-      traits: ["collectible"],
+      facts: ["collectible"],
       stackOrder: 100,
       presentation: { name: "Coin" },
     },
     {
       type: "grass",
-      traits: ["mowable"],
+      facts: ["mowable"],
       stackOrder: 200,
       presentation: { name: "Grass" },
     },
     {
       type: "dragon",
-      traits: ["dragon"],
+      facts: ["dragon"],
       stackOrder: 100,
       footprint: {
         parts: [
-          { dx: 0, dy: 0, role: "head", traits: ["blocking"] },
-          { dx: 1, dy: 0, role: "body", traits: ["blocking"] },
-          { dx: 2, dy: 0, role: "tail", traits: ["dragon-trigger"] },
+          { dx: 0, dy: 0, role: "head", facts: ["blocking"] },
+          { dx: 1, dy: 0, role: "body", facts: ["blocking"] },
+          { dx: 2, dy: 0, role: "tail", facts: ["dragon-trigger"] },
         ],
       },
       presentation: { name: "Dragon" },
     },
     {
       type: "ice",
-      traits: ["meltable"],
+      facts: ["meltable"],
       stackOrder: 200,
       presentation: { name: "Ice" },
     },

@@ -7,9 +7,9 @@ import { World } from "./support/World.mjs";
 function touchTarget(type, mechanisms) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", traits: ["walkable"], layer: "surface" },
-    { type: "actor", traits: ["player"] },
-    { type, traits: ["blocking", "dialog"], mechanisms },
+    { type: "floor", facts: ["walkable"], layer: "surface" },
+    { type: "actor", facts: ["player"] },
+    { type, facts: ["blocking", "dialog"], mechanisms },
   ]);
   const world = new World({
     schemaVersion: 1,

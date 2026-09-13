@@ -23,7 +23,7 @@ export interface EntitySpawnSpec {
   direction?: Direction;
   stackOrder?: number;
   state?: EntityState;
-  instanceTraits?: readonly string[];
+  instanceFacts?: readonly string[];
 }
 
 /** World 中一个具体 Entity 的运行时身份与可变状态。 */
@@ -34,14 +34,14 @@ export interface EntityInstance {
   direction?: Direction;
   stackOrder?: number;
   state?: EntityState;
-  instanceTraits?: string[];
+  instanceFacts?: string[];
 }
 
 /** 把标准的扁平 Map JSON 转换为 Engine Runtime 结构。 */
 export function instantiateLevelEntity(
   id: EntityId,
   source: LevelEntity,
-  instanceTraits: readonly string[] = [],
+  instanceFacts: readonly string[] = [],
 ): EntityInstance {
   const definition = entityMapDefinition(source.type);
   const state: EntityState = {};
@@ -71,8 +71,8 @@ export function instantiateLevelEntity(
       ? { stackOrder: source.stackOrder }
       : {}),
     ...(Object.keys(state).length > 0 ? { state } : {}),
-    ...(instanceTraits.length > 0
-      ? { instanceTraits: [...instanceTraits] }
+    ...(instanceFacts.length > 0
+      ? { instanceFacts: [...instanceFacts] }
       : {}),
   };
 }
@@ -90,8 +90,8 @@ export function instantiateSpawnSpec(
       ? { stackOrder: source.stackOrder }
       : {}),
     ...(source.state ? { state: structuredClone(source.state) } : {}),
-    ...(source.instanceTraits?.length
-      ? { instanceTraits: [...new Set(source.instanceTraits)] }
+    ...(source.instanceFacts?.length
+      ? { instanceFacts: [...new Set(source.instanceFacts)] }
       : {}),
   };
 }

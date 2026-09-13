@@ -23,7 +23,7 @@ const mowerVehicle: Behavior = {
   id: "mower-vehicle",
   canEnter({ actor, query }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return { passable: false, reason: "mower-collision" };
@@ -33,13 +33,13 @@ const mowerVehicle: Behavior = {
   },
   canLeave({ actor, self, query, movement }) {
     if (bobbyMountId(actor.state) !== self.entity.id) return;
-    if (movement && query.hasTraitAt(movement.to, "moving-platform"))
+    if (movement && query.hasFactAt(movement.to, "moving-platform"))
       return { passable: false, reason: "mower-cannot-enter-moving-platform" };
     return { passable: true, reason: "drive-mower" };
   },
   onTouch({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       readBobbyInventory(actor.state).gas
     )
@@ -55,7 +55,7 @@ const mowerVehicle: Behavior = {
   },
   onArrive({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       !readBobbyInventory(actor.state).gas
     )
@@ -82,7 +82,7 @@ const mowerParking: Behavior = {
   id: "mower-parking",
   onArrive({ actor, self, query, commands }) {
     const mowerId = bobbyMountId(actor.state);
-    if (mowerId === null || !query.entityHasTrait(mowerId, "mower")) return;
+    if (mowerId === null || !query.entityHasFact(mowerId, "mower")) return;
     const mower = query.entity(mowerId);
     if (!mower) return;
     commands.setState(
@@ -110,7 +110,7 @@ const smashCrumblyRock: Behavior = {
     const mowerId = bobbyMountId(actor.state);
     if (
       mowerId === null ||
-      !query.entityHasTrait(mowerId, "mower") ||
+      !query.entityHasFact(mowerId, "mower") ||
       !readBobbySpeedBoost(actor.state)
     )
       return { result: "blocked", reason: "crumbly-rock" };
@@ -128,7 +128,7 @@ const smashCrumblyRock: Behavior = {
 
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
-  traits: ["vehicle", "mower", "ride-carried", "blocking"],
+  facts: ["vehicle", "mower", "ride-carried", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
@@ -153,7 +153,7 @@ export const mower: EntityModule = originalModule(
 
 const parkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER_PARKING,
-  traits: ["walkable", "mower-parking"],
+  facts: ["walkable", "mower-parking"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Mower Parking" },
@@ -167,7 +167,7 @@ export const mowerParkingTile: EntityModule = originalModule(
 
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CRUMBLY_ROCK,
-  traits: ["blocking", "crumbly-rock"],
+  facts: ["blocking", "crumbly-rock"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Crumbly Rock" },
 };

@@ -136,7 +136,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
   assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.entity?.direction, "right");
-  assert.ok(snapshot.selection?.entity?.definition.traits.includes("player"));
+  assert.ok(snapshot.selection?.entity?.definition.facts.includes("player"));
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
@@ -164,7 +164,7 @@ test("Debug snapshot can track a non-primary player actor", () => {
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
   const { timing, worldClock, presentationClock } = debugTime();
   visual.scene(world);
-  const actors = world.query.entitiesWithTrait("player");
+  const actors = world.query.entitiesWithFact("player");
   assert.equal(actors.length, 2);
 
   const snapshot = buildDebugSnapshot({

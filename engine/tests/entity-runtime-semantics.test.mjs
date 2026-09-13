@@ -24,7 +24,7 @@ const bobby = (x, y) => ({
 });
 
 function actor(world) {
-  const entity = world.query.entitiesWithTrait("player")[0];
+  const entity = world.query.entitiesWithFact("player")[0];
   assert.ok(entity, "test map must contain a player actor");
   return entity;
 }
@@ -46,7 +46,7 @@ function move(world, direction) {
 test("canonical original obstacle semantics keep known blockers blocking", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of BLOCKING_TYPES) {
-    assert.equal(registry.require(type).traits.includes("blocking"), true, type);
+    assert.equal(registry.require(type).facts.includes("blocking"), true, type);
   }
 });
 
@@ -63,7 +63,7 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
     ],
   });
   const player = actor(world);
-  const snow = world.query.entitiesWithTrait("snow")[0];
+  const snow = world.query.entitiesWithFact("snow")[0];
 
   const result = move(world, "right");
 
@@ -247,7 +247,7 @@ test("Portal 目标格已有 Bobby 时不会产生重叠", () => {
   assert.deepEqual(actor(world).anchor, entrance);
   assert.equal(result.events.some((event) => event.type === "teleport"), false);
   assert.equal(world.presencesAt(exit).filter((item) =>
-    item.traits.includes("player")
+    item.facts.includes("player")
   ).length, 1);
 });
 
@@ -356,10 +356,10 @@ test("Surface atlas family 使用各自的通行语义", () => {
     .find((entity) => entity.type === MapEntityTypeId.STONE_WALL);
   assert.ok(wallEntity);
   assert.equal(
-    wall.query.entityHasTrait(wallEntity.id, "bean-growth-space"),
+    wall.query.entityHasFact(wallEntity.id, "bean-growth-space"),
     true,
   );
-  assert.equal(wall.query.entityHasTrait(wallEntity.id, "walkable"), false);
+  assert.equal(wall.query.entityHasFact(wallEntity.id, "walkable"), false);
   assert.equal(move(wall, "right").moves[0].moved, false);
 
   const grassRoad = new World({
@@ -378,11 +378,11 @@ test("Surface atlas family 使用各自的通行语义", () => {
     );
   assert.ok(grassPresence);
   assert.equal(
-    grassRoad.query.entityHasTrait(grassPresence.entityId, "bean-growth-space"),
+    grassRoad.query.entityHasFact(grassPresence.entityId, "bean-growth-space"),
     false,
   );
   assert.equal(
-    grassRoad.query.entityHasTrait(grassPresence.entityId, "walkable"),
+    grassRoad.query.entityHasFact(grassPresence.entityId, "walkable"),
     true,
   );
   assert.equal(move(grassRoad, "right").moves[0].moved, true);
@@ -431,8 +431,8 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     .find((entity) => entity.type === MapEntityTypeId.EGG);
   assert.equal(filledEgg?.state?.filled, true);
   assert.ok(filledEgg);
-  assert.equal(world.query.entityHasTrait(filledEgg.id, "filled-egg"), true);
-  assert.equal(world.query.entityHasTrait(filledEgg.id, "blocking"), true);
+  assert.equal(world.query.entityHasFact(filledEgg.id, "filled-egg"), true);
+  assert.equal(world.query.entityHasFact(filledEgg.id, "blocking"), true);
   assert.deepEqual(world.winState, {
     type: "fill-all",
     target: "egg-nest",
@@ -566,8 +566,8 @@ test("Color Switch toggles only switches and blocks of the same color", () => {
   });
 
   assert.equal(move(world, "right").moves[0].moved, true);
-  const switches = world.query.entitiesWithTrait("switch");
-  const blocks = world.query.entitiesWithTrait("stateful-block");
+  const switches = world.query.entitiesWithFact("switch");
+  const blocks = world.query.entitiesWithFact("stateful-block");
   assert.equal(
     switches.find((entity) => entity.state.color === "yellow").state.state,
     "state-2",

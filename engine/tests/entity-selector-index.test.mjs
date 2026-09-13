@@ -3,19 +3,19 @@ import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
 
-test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复后等价于全量查询", () => {
+test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后等价于全量查询", () => {
   const registry = new EntityRegistry();
   registry.registerAll([
-    { type: "actor", traits: ["player", "target"] },
-    { type: "target", traits: ["target"] },
+    { type: "actor", facts: ["player", "target"] },
+    { type: "target", facts: ["target"] },
     {
-      type: "long", traits: [],
+      type: "long", facts: [],
       footprint: { byDirection: {
         right: [
-          { dx: 0, dy: 0, traits: ["target"] },
-          { dx: 1, dy: 0, traits: ["target"] },
+          { dx: 0, dy: 0, facts: ["target"] },
+          { dx: 1, dy: 0, facts: ["target"] },
         ],
-        down: [{ dx: 0, dy: 0, traits: ["other"] }],
+        down: [{ dx: 0, dy: 0, facts: ["other"] }],
       } },
     },
   ]);
@@ -31,20 +31,20 @@ test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复�
   function check() {
     for (const selector of ["player", "target", "other", "instance", "missing"]) {
       const all = world.entities.all();
-      const traits = all.filter((e) => world.query.entityHasTrait(e.id, selector));
-      const matching = all.filter((e) => e.type === selector || world.query.entityHasTrait(e.id, selector));
-      assert.deepEqual(world.query.entitiesWithTrait(selector), traits);
+      const facts = all.filter((e) => world.query.entityHasFact(e.id, selector));
+      const matching = all.filter((e) => e.type === selector || world.query.entityHasFact(e.id, selector));
+      assert.deepEqual(world.query.entitiesWithFact(selector), facts);
       assert.deepEqual(world.spatial.entityIdsMatching(selector), matching.map((e) => e.id));
-      assert.equal(world.spatial.entityCountWithTrait(selector), traits.length);
+      assert.equal(world.spatial.entityCountWithFact(selector), facts.length);
       assert.equal(world.spatial.entityCountMatching(selector), matching.length);
     }
   }
   check();
   const snapshot = world.snapshot();
   world.spatial.moveEntity(1, { x: 1, y: 0 });
-  assert.deepEqual(world.query.entitiesWithTrait("player").map((e) => e.id), [1, 2]);
+  assert.deepEqual(world.query.entitiesWithFact("player").map((e) => e.id), [1, 2]);
   world.entities.require(4).direction = "down";
-  world.entities.require(4).instanceTraits = ["instance"];
+  world.entities.require(4).instanceFacts = ["instance"];
   world.spatial.rebuildEntity(4);
   check();
   const spawned = world.entities.spawn({ type: "target", x: 7, y: 7 });
@@ -78,6 +78,6 @@ test("静态大地图通过索引推进 tick 与查询玩家和目标", () => {
   world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(scans, 0);
   assert.equal(world.winState.remaining, 1);
-  assert.equal(world.query.entitiesWithTrait("player").length, 1);
+  assert.equal(world.query.entitiesWithFact("player").length, 1);
   assert.equal(scans, 0);
 });

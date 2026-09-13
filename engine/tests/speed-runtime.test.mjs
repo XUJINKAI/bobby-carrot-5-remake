@@ -16,7 +16,7 @@ const speed = (x, y, direction = "right") => ({
 });
 
 function actorIds(world) {
-  return world.query.entitiesWithTrait("player").map((entity) => entity.id);
+  return world.query.entitiesWithFact("player").map((entity) => entity.id);
 }
 
 function playerIntent(actorId, direction) {

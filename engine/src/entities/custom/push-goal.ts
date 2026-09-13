@@ -4,7 +4,7 @@ import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 export const pushGoal: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PUSH_GOAL,
-    traits: ["walkable", "push-goal"],
+    facts: ["walkable", "push-goal"],
     stackOrder: 0,
     presentation: { name: "Push Goal" },
   },

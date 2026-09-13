@@ -14,7 +14,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED_SWITCH,
-  traits: ["walkable", "switch"],
+  facts: ["walkable", "switch"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
   presentation: { name: "Speed Switch" },

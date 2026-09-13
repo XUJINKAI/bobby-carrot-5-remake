@@ -120,7 +120,7 @@ const fireballAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
   authoring: { palette: false },
-  traits: ["projectile"],
+  facts: ["projectile"],
   stackOrder: CONTENT_STACK_ORDER + 50,
   presentation: { name: "Dragon Fireball", renderPass: "effect" },
 };
@@ -179,9 +179,9 @@ function projectileTerrainPassableAt(
 ): boolean {
   return query.presencesAt(cell).some(
     (presence) =>
-      presence.traits.includes("walkable") ||
-      presence.traits.includes("water") ||
-      presence.traits.includes("cloud-space"),
+      presence.facts.includes("walkable") ||
+      presence.facts.includes("water") ||
+      presence.facts.includes("cloud-space"),
   );
 }
 
@@ -194,7 +194,7 @@ function projectileBlockedAt(
     if (entity?.type === MapEntityTypeId.CRUMBLY_ROCK) return true;
     if (entity?.type === MapEntityTypeId.DRAGON && presence.role !== "tail")
       return true;
-    if (!presence.traits.includes("stateful-block")) return false;
+    if (!presence.facts.includes("stateful-block")) return false;
     return entity?.state?.raised !== false;
   });
 }

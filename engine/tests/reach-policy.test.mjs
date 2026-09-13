@@ -20,7 +20,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
     entityId: 2,
     cell: { x: 1, y: 0 },
     layer: "surface",
-    traits: [],
+    facts: [],
     facts: [],
     stackOrder: 0,
   };
@@ -29,7 +29,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
       return id === target.id ? target : undefined;
     },
     definition() {
-      return { type: "goal", traits: [], behaviors: [behavior.id] };
+      return { type: "goal", facts: [], behaviors: [behavior.id] };
     },
     presencesAt() {
       return [presence];

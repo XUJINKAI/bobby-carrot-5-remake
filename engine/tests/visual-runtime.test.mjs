@@ -235,7 +235,7 @@ test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
   };
   const world = {
     query: {
-      entitiesWithTrait: (trait) => (trait === "player" ? [actor] : []),
+      entitiesWithFact: (fact) => (fact === "player" ? [actor] : []),
     },
     entity: (id) => id === actor.id ? actor : undefined,
     definition: () => ({ type: MapEntityTypeId.BOBBY }),

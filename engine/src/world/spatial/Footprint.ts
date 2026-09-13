@@ -1,5 +1,5 @@
 import type { Direction } from "@bobby/model";
-import type { EntityTrait } from "../entity/EntityDefinition.js";
+import type { FactId } from "../../mechanism/fact/FactRegistry.js";
 import type { CellPosition } from "../entity/EntityInstance.js";
 
 export interface FootprintPart {
@@ -7,7 +7,7 @@ export interface FootprintPart {
   dy: number;
   role?: string;
   stackOrder?: number;
-  traits?: readonly EntityTrait[];
+  facts?: readonly FactId[];
 }
 
 export interface FixedFootprint {
@@ -28,7 +28,7 @@ export interface FootprintEntity {
 export interface ResolvedFootprintCell extends CellPosition {
   role?: string;
   stackOrder?: number;
-  traits?: readonly EntityTrait[];
+  facts?: readonly FactId[];
 }
 
 export const SINGLE_CELL_FOOTPRINT: FixedFootprint = {
@@ -45,7 +45,7 @@ export function resolveFootprintCells(
       ...cell,
       ...(part.role ? { role: part.role } : {}),
       ...(part.stackOrder !== undefined ? { stackOrder: part.stackOrder } : {}),
-      ...(part.traits ? { traits: part.traits } : {}),
+      ...(part.facts ? { facts: part.facts } : {}),
     };
   });
 }

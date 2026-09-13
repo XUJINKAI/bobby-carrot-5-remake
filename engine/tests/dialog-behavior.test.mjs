@@ -39,7 +39,7 @@ function move(world, direction) {
 }
 
 function actor(world) {
-  const player = world.query.entitiesWithTrait("player")[0];
+  const player = world.query.entitiesWithFact("player")[0];
   assert.ok(player, "test map must contain a player actor");
   return player;
 }

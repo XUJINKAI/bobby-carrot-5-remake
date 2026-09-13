@@ -52,7 +52,7 @@ const movingPlatformBehavior: Behavior = {
     };
   },
   canEnter({ actor, self, query }) {
-    if (!query.entityHasTrait(actor.id, "player"))
+    if (!query.entityHasFact(actor.id, "player"))
       return { passable: false, reason: "moving-entity-collision" };
 
     const moving =
@@ -63,14 +63,14 @@ const movingPlatformBehavior: Behavior = {
       : { passable: true, reason: "moving-platform-support" };
   },
   canLeave({ actor, query }) {
-    return query.entityHasTrait(actor.id, "player")
+    return query.entityHasFact(actor.id, "player")
       ? { passable: true, reason: "leave-moving-platform-support" }
       : undefined;
   },
   onArrive({ actor, self, direction, movement, query, commands }) {
     if (
       !direction ||
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       self.entity.type !== MapEntityTypeId.LEAF ||
       self.entity.state?.moving === true ||
       query.motionForEntity(self.entity.id)?.status === "running"
@@ -88,7 +88,7 @@ const movingPlatformBehavior: Behavior = {
       runtimeStarted: true,
     });
     commands.setDirection(self.entity.id, direction);
-    const cadenceMs = query.hasTraitAt(self.entity.anchor, "waterfall")
+    const cadenceMs = query.hasFactAt(self.entity.anchor, "waterfall")
       ? DEFAULT_WATERFALL_CELL_MS
       : DEFAULT_MOVING_ENTITY_CELL_MS;
     commands.startAction(
@@ -180,7 +180,7 @@ export const leaf = movingEntityModule(
 
 const cloudDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD,
-  traits: [
+  facts: [
     "moving-platform",
     "terrain-overlay",
     "walkable",
@@ -213,7 +213,7 @@ export const cloud: EntityModule = originalModule(
 
 const cloudParkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD_PARKING,
-  traits: [],
+  facts: [],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Cloud Parking" },
@@ -235,7 +235,7 @@ function movingEntityModule(
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
-    traits: [
+    facts: [
       "moving-platform",
       "terrain-overlay",
       "walkable",
@@ -298,7 +298,7 @@ function nextRoute(
     direction,
     cadenceMs:
       entity.type === MapEntityTypeId.LEAF &&
-      query.hasTraitAt(entity.anchor, "waterfall")
+      query.hasFactAt(entity.anchor, "waterfall")
         ? DEFAULT_WATERFALL_CELL_MS
         : DEFAULT_MOVING_ENTITY_CELL_MS,
   };
@@ -310,7 +310,7 @@ function leafDirectionAt(
   fallback: Direction,
 ): Direction {
   return tideDirectionAt(query, cell) ??
-    (query.hasTraitAt(cell, "waterfall") ? "down" : fallback);
+    (query.hasFactAt(cell, "waterfall") ? "down" : fallback);
 }
 
 function tideDirectionAt(
@@ -332,9 +332,9 @@ function canEnterMovingDomain(
   direction: Direction,
 ): boolean {
   if (!query.inBounds(target)) return false;
-  const domainTrait = entity.type === MapEntityTypeId.LEAF ? "water" : "cloud-space";
-  if (!query.hasTraitAt(target, domainTrait)) return false;
-  if (movingSupportOccupiedAt(query, entity, target, domainTrait)) return false;
+  const domainFact = entity.type === MapEntityTypeId.LEAF ? "water" : "cloud-space";
+  if (!query.hasFactAt(target, domainFact)) return false;
+  if (movingSupportOccupiedAt(query, entity, target, domainFact)) return false;
 
   if (entity.type === MapEntityTypeId.LEAF) {
     for (const presence of query.presencesAt(target)) {
@@ -345,7 +345,7 @@ function canEnterMovingDomain(
       )
         return false;
     }
-    return !(direction === "up" && query.hasTraitAt(target, "waterfall"));
+    return !(direction === "up" && query.hasFactAt(target, "waterfall"));
   }
 
   const opposingWind = forcedWindAt(query, target, direction);
@@ -356,10 +356,10 @@ function movingSupportOccupiedAt(
   query: WorldQueryApi,
   mover: Readonly<EntityInstance>,
   target: { x: number; y: number },
-  domainTrait: "water" | "cloud-space",
+  domainFact: "water" | "cloud-space",
 ): boolean {
   return query.presencesAt(target).some((presence) => {
-    if (presence.entityId === mover.id || presence.traits.includes(domainTrait))
+    if (presence.entityId === mover.id || presence.facts.includes(domainFact))
       return false;
     const occupant = query.entity(presence.entityId);
     return !(
@@ -386,7 +386,7 @@ function forcedWindAt(
 }
 
 function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
-  return query.entitiesWithTrait("switch").some(
+  return query.entitiesWithFact("switch").some(
     (entity) =>
       entity.type === MapEntityTypeId.WIND_SWITCH &&
       entity.direction === direction &&
@@ -398,7 +398,7 @@ function windmillFor(
   query: WorldQueryApi,
   direction: Direction,
 ): Readonly<EntityInstance> | undefined {
-  return query.entitiesWithTrait("windmill").find(
+  return query.entitiesWithFact("windmill").find(
     (entity) =>
       entity.type === MapEntityTypeId.WINDMILL &&
       entity.direction === direction,
@@ -439,7 +439,7 @@ function playersAt(
   query: WorldQueryApi,
   cell: { x: number; y: number },
 ): readonly EntityInstance[] {
-  return query.entitiesWithTrait("player").filter(
+  return query.entitiesWithFact("player").filter(
     (actor) => actor.anchor.x === cell.x && actor.anchor.y === cell.y,
   );
 }

@@ -36,7 +36,7 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
     },
     { actions, motionDurationMs: 0 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   world.startAction({
     kind: "terminal-watch",
     ownerEntityId: actor.id,
@@ -79,7 +79,7 @@ test("losing World interrupts a running WorldMotion at its current progress", ()
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const started = move(world, actor.id, "right");
   assert.equal(started.moves[0].moved, true);
   assert.equal(world.movement.running.length, 1);

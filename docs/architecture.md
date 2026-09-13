@@ -39,7 +39,7 @@ interface LevelEntity {
 }
 ```
 
-字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
+字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Fact、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与
 `applyLevelPatches()`，供首页 Demo、Adventure 等地图生产者在 Engine 加载前对 clone
@@ -264,7 +264,7 @@ Lock.deathCountdownSeconds = 60
 Tile Definition Registry
 ├─ id
 ├─ presentation
-├─ gameplay traits
+├─ gameplay facts
 ├─ behaviors[]
 └─ authoring
    ├─ palette

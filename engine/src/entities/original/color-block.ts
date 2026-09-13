@@ -12,7 +12,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.COLOR_BLOCK,
-  traits: ["stateful-block", "walkable"],
+  facts: ["stateful-block", "walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: [
     {

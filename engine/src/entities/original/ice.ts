@@ -17,7 +17,7 @@ export const DEFAULT_ICE_SLIDE_CADENCE_MS = 350;
 const slide: Behavior = {
   id: "ice-slide",
   onEnter({ actor, self, direction, movement, query, commands }) {
-    if (!direction || !query.entityHasTrait(actor.id, "player")) return;
+    if (!direction || !query.entityHasFact(actor.id, "player")) return;
     const cadenceMs = inheritedCadence(movement);
     commands.startAction(
       createDelayedMoveRuntimeAction(
@@ -65,7 +65,7 @@ function inheritedCadence(
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE,
-  traits: ["walkable", "forced-movement"],
+  facts: ["walkable", "forced-movement"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Ice" },

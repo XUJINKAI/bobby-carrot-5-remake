@@ -17,7 +17,7 @@ import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
   label: string;
-  traits: readonly string[];
+  facts: readonly string[];
   behaviors: readonly string[];
   supportedFields: readonly string[];
   previewPreset: EditorPlacementPreset;
@@ -225,7 +225,7 @@ function resolveEntry(
       entry.label ??
       definition.presentation.name ??
       entry.type,
-    traits: definition.traits,
+    facts: definition.facts,
     behaviors: definition.behaviors ?? [],
     supportedFields:
       entityMapDefinition(entry.type)?.fields.map((field) => field.key) ?? [],

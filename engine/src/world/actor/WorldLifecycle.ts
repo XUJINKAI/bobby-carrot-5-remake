@@ -28,7 +28,7 @@ export class WorldLifecycle {
   ) {}
 
   initialize(): void {
-    for (const actor of this.query.entitiesWithTrait("player"))
+    for (const actor of this.query.entitiesWithFact("player"))
       this.actors.state(actor.id);
     this.rules.refreshDerivedState();
     if (this.rules.completionReady(false)) this.finish("won");
@@ -49,7 +49,7 @@ export class WorldLifecycle {
       return;
     }
     const playerIds = this.query
-      .entitiesWithTrait("player")
+      .entitiesWithFact("player")
       .map((actor) => actor.id);
     const inactiveActorId = [...changedActorIds, ...playerIds].find(
       (actorId) => playerIds.includes(actorId) && !this.actors.isActive(actorId),

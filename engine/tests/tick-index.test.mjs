@@ -7,13 +7,13 @@ import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序", () => {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "static", traits: ["late"] },
-    { type: "ticking", traits: ["clock"], behaviors: ["tick"] },
+    { type: "static", facts: ["late"] },
+    { type: "ticking", facts: ["clock"], behaviors: ["tick"] },
     {
-      type: "tail-only", traits: [],
+      type: "tail-only", facts: [],
       footprint: { parts: [
         { dx: 0, dy: 0 },
-        { dx: 1, dy: 0, traits: ["clock"] },
+        { dx: 1, dy: 0, facts: ["clock"] },
       ] },
     },
   ]);
@@ -49,7 +49,7 @@ test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序
   world.restore(snapshot);
   tick([2, 3]);
   tick([3, 5]);
-  entities.register({ type: "new-clock", traits: [], behaviors: ["tick"] });
+  entities.register({ type: "new-clock", facts: [], behaviors: ["tick"] });
   const spawned = world.entities.spawn({ type: "new-clock", x: 99, y: 0 });
   world.spatial.addEntity(spawned);
   tick([3, 5, spawned.id]);

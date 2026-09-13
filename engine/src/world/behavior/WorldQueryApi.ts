@@ -1,5 +1,5 @@
 import type { GlobalState } from "../GlobalState.js";
-import type { EntityTrait } from "../entity/EntityDefinition.js";
+import type { FactId } from "../../mechanism/fact/FactRegistry.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityStore } from "../entity/EntityStore.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
@@ -50,10 +50,6 @@ export class WorldQueryApi {
     return this.spatial.factsForEntity(entityId);
   }
 
-  entityHasFact(entityId: EntityId, fact: string): boolean {
-    return this.spatial.entityHasFact(entityId, fact);
-  }
-
   presenceHasFact(presence: EntityPresence, fact: string): boolean {
     return presence.facts.includes(fact);
   }
@@ -65,8 +61,8 @@ export class WorldQueryApi {
     return this.spatial.presenceMatchesSelector(presence, selector);
   }
 
-  hasTraitAt(cell: CellQuery, trait: EntityTrait): boolean {
-    return this.spatial.hasTraitAt(cell, trait);
+  hasFactAt(cell: CellQuery, fact: FactId): boolean {
+    return this.spatial.hasFactAt(cell, fact);
   }
 
   global(): Readonly<GlobalState> {
@@ -77,12 +73,12 @@ export class WorldQueryApi {
     return this.motions?.forEntity(entityId);
   }
 
-  entityHasTrait(entityId: EntityId, trait: EntityTrait): boolean {
-    return this.spatial.entityHasFact(entityId, trait);
+  entityHasFact(entityId: EntityId, fact: FactId): boolean {
+    return this.spatial.entityHasFact(entityId, fact);
   }
 
-  entitiesWithTrait(trait: EntityTrait): readonly EntityInstance[] {
-    return this.spatial.entityIdsWithTrait(trait)
+  entitiesWithFact(fact: FactId): readonly EntityInstance[] {
+    return this.spatial.entityIdsWithFact(fact)
       .map((id) => this.entities.require(id));
   }
 }

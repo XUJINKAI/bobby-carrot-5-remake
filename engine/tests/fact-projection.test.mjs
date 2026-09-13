@@ -13,12 +13,12 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   const entities = createBuiltinEntityRegistry();
   entities.register({
     type: "fact-probe",
-    traits: [],
+    facts: [],
     entityFacts: ["whole-target"],
     footprint: {
       parts: [
-        { dx: 0, dy: 0, role: "head", traits: ["blocking"] },
-        { dx: 1, dy: 0, role: "tail", traits: ["walkable"] },
+        { dx: 0, dy: 0, role: "head", facts: ["blocking"] },
+        { dx: 1, dy: 0, role: "tail", facts: ["walkable"] },
       ],
     },
     resolvePresenceFacts({ entity, presence }) {

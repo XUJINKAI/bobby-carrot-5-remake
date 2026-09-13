@@ -55,7 +55,7 @@ sky
 waterfall
 ```
 
-`blocking` 保留为 Engine trait / 行为语义，不作为 Surface Type 名称。
+`blocking` 是 Engine Fact，由通用通行 Mechanism 解释，不作为 Surface Type 名称。
 
 用户在 Surface 面板中不直接操作 Type × Theme 矩阵，而是选择具体 Terrain，例如草地、雪地、沙地、石头、墙、水、瀑布、篱笆、带雪篱笆、天空等。每个 Terrain 指定一个主要 visual 作为入口，并通过显式 `rows` 定义其 variant 排列。Terrain 本身也可按 group / row 组织，和 Palette 一样由 Editor 精确控制布局。
 

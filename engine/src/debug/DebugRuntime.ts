@@ -281,7 +281,7 @@ export class DebugRuntime {
     const snapshot = this.host.snapshot(this.selection, this.trackedActorId);
     if (
       snapshot.selection?.entity?.id === entityId &&
-      snapshot.selection.entity.definition.traits.includes("player")
+      snapshot.selection.entity.definition.facts.includes("player")
     ) {
       this.releaseDebugInput();
       this.trackedActorId = entityId;

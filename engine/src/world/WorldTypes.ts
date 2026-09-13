@@ -123,7 +123,7 @@ export interface PresenceInspection {
   layer: EntityLayer;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
   state?: EntityState;
 }
 
