@@ -74,7 +74,7 @@ const bobbyMovementPolicy: Behavior = {
         lifecycle: {
           source: [],
           target: target.filter((presence) =>
-            presence.facts.includes("flight-landing"),
+            query.entity(presence.entityId)?.type === MapEntityTypeId.LANDING,
           ),
         },
         reason: "airborne-passage",

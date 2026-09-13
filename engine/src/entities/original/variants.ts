@@ -59,10 +59,7 @@ function canonicalSurface(
   const definition: EntityModuleDefinition = {
     type,
     authoring: { palette: false },
-    facts: [
-      ...sharedOriginalSurfaceFacts(mappings),
-      ...(type === MapEntityTypeId.SNOWMAN ? ["dialog"] : []),
-    ],
+    facts: sharedOriginalSurfaceFacts(mappings),
     layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,
     presentation: { name: type },

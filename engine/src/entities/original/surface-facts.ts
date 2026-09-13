@@ -23,7 +23,6 @@ export function originalSurfaceFacts(
     facts.add("water");
     facts.add("bean-growth-space");
   }
-  if (mapping.type === MapEntityTypeId.WATERFALL) facts.add("waterfall");
   return [...facts];
 }
 

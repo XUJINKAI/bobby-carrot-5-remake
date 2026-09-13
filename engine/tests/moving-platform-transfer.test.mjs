@@ -82,10 +82,10 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
     { motionDurationMs: 100 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  const tideSwitch = world.query.entitiesWithFact("switch").find(
+  const tideSwitch = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.TIDE_SWITCH }).find(
     (entity) => entity.type === MapEntityTypeId.TIDE_SWITCH,
   );
-  const tide = world.query.entitiesWithFact("forced-movement").find(
+  const tide = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.TIDE }).find(
     (entity) => entity.type === MapEntityTypeId.TIDE,
   );
   assert.ok(actor && tideSwitch && tide);

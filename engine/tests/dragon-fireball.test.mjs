@@ -50,7 +50,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
-  const fireball = world.query.entitiesWithFact("projectile")[0];
+  const fireball = world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL })[0];
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
 
@@ -85,7 +85,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
 
   update(world, 1, 1);
   const impact = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
-  assert.equal(world.query.entitiesWithFact("projectile").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.equal(world.cameraTarget, null);
   assert.ok(impact.events.some((event) => event.type === "fireball-impact"));
 });

@@ -27,7 +27,7 @@ const toggleWindDirection: Behavior = {
     if (!direction) return;
     const active = self.entity.state?.active !== true;
 
-    for (const entity of query.entitiesWithFact("switch")) {
+    for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WIND_SWITCH })) {
       if (entity.type !== MapEntityTypeId.WIND_SWITCH) continue;
       if (entity.direction !== direction) continue;
       commands.setState(entity.id, {
@@ -40,7 +40,7 @@ const toggleWindDirection: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.WIND_SWITCH,
-  facts: ["walkable", "switch"],
+  facts: ["walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: activeState(false),
   presentation: { name: "Wind Switch" },

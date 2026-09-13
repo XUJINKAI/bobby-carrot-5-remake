@@ -226,7 +226,13 @@ export class GameplaySession {
       phase: "waiting" | "running";
       remainingMs: number;
     }> = [];
-    for (const entity of world.query.entitiesWithFact("timed-challenge")) {
+    for (const entity of world.query.entitiesMatching({
+      kind: "any",
+      selectors: [
+        { kind: "type", value: "lock" },
+        { kind: "type", value: "timed-challenge" },
+      ],
+    })) {
       const durationMs = Number(entity.state?.deathCountdownSeconds) * 1000;
       if (!Number.isFinite(durationMs) || durationMs <= 0) continue;
       if (entity.state?.opened !== true) {

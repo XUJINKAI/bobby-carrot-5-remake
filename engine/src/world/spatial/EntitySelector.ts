@@ -1,5 +1,5 @@
 import type { EntityType } from "@bobby/model";
-import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId } from "../../fact/FactRegistry.js";
 
 /** Engine 内部显式区分对象类型与语义 Fact 的查询条件。 */
 export type EntitySelector =

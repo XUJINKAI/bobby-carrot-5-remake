@@ -1,5 +1,5 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
-import { createBuiltinFactRegistry } from "../mechanism/fact/builtinFacts.js";
+import { createBuiltinFactRegistry } from "../fact/builtinFacts.js";
 import { createBuiltinMechanismRegistry } from "../mechanism/builtinEntityMechanisms.js";
 import {
   createBuiltinRuntimeActionRegistry as createCoreRuntimeActionRegistry,

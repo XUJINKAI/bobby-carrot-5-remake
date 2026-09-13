@@ -1,4 +1,3 @@
-import type { EntityDefinition } from "../entity/EntityDefinition.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
 import type { EntitySelector } from "./EntitySelector.js";
@@ -17,14 +16,11 @@ export class EntitySelectorIndex {
 
   add(
     entity: EntityInstance,
-    definition: EntityDefinition,
     presences: readonly EntityPresence[],
     entityFacts: readonly string[] = [],
   ): void {
     this.remove(entity.id);
     const facts = new Set([
-      ...definition.facts,
-      ...(entity.instanceFacts ?? []),
       ...entityFacts,
       ...presences.flatMap((presence) => [...presence.facts]),
     ]);

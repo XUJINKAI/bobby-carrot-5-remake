@@ -10,7 +10,7 @@ import { resolveFootprintCells } from "./Footprint.js";
 import { EntitySelectorIndex } from "./EntitySelectorIndex.js";
 import type { EntitySelector } from "./EntitySelector.js";
 import { EntityFactProjection } from "../entity/EntityFactProjection.js";
-import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 
 export class SpatialIndex {
   private readonly cells = new Map<string, EntityPresence[]>();
@@ -162,7 +162,7 @@ export class SpatialIndex {
     });
     this.byEntity.set(entity.id, presences);
     this.entityFacts.set(entity.id, entityFacts);
-    this.selectors.add(entity, definition, presences, entityFacts);
+    this.selectors.add(entity, presences, entityFacts);
   }
 
   removeEntity(entityId: EntityId): void {

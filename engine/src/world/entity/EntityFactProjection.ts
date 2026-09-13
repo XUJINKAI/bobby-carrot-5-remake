@@ -1,4 +1,4 @@
-import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 import type { EntityDefinition } from "./EntityDefinition.js";
 import type { EntityInstance } from "./EntityInstance.js";
 import type { ResolvedFootprintCell } from "../spatial/Footprint.js";

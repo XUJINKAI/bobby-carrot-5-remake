@@ -205,7 +205,7 @@ const speedRunAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED,
-  facts: ["walkable", "forced-movement"],
+  facts: ["walkable"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Speed" },

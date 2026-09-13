@@ -30,7 +30,7 @@ const rotateMirrorOnLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.MIRROR,
-  facts: ["walkable", "mirror", "rotatable"],
+  facts: ["walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
     "right-bottom",

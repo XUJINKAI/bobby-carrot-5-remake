@@ -1,5 +1,5 @@
 import type { Direction } from "@bobby/model";
-import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId } from "../../fact/FactRegistry.js";
 import type { CellPosition } from "../entity/EntityInstance.js";
 
 export interface FootprintPart {

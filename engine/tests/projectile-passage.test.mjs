@@ -39,7 +39,7 @@ test("Fireball stops when the target terrain is outside its propagation domain",
   world.update({ tick: 1, stepMs: 1 });
   const result = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
 
-  assert.equal(world.query.entitiesWithFact("projectile").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(result.events.some((event) => event.type === "fireball-impact"));
 });
 
@@ -59,6 +59,6 @@ test("Fireball still impacts Crumbly Rock without a blocker fact", () => {
   world.update({ tick: 1, stepMs: 1 });
   const result = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
 
-  assert.equal(world.query.entitiesWithFact("projectile").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(result.events.some((event) => event.type === "fireball-impact"));
 });

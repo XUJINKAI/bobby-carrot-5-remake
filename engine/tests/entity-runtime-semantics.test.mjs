@@ -63,7 +63,7 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
     ],
   });
   const player = actor(world);
-  const snow = world.query.entitiesWithFact("snow")[0];
+  const snow = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.SNOW })[0];
 
   const result = move(world, "right");
 
@@ -566,8 +566,8 @@ test("Color Switch toggles only switches and blocks of the same color", () => {
   });
 
   assert.equal(move(world, "right").moves[0].moved, true);
-  const switches = world.query.entitiesWithFact("switch");
-  const blocks = world.query.entitiesWithFact("stateful-block");
+  const switches = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_SWITCH });
+  const blocks = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_BLOCK });
   assert.equal(
     switches.find((entity) => entity.state.color === "yellow").state.state,
     "state-2",

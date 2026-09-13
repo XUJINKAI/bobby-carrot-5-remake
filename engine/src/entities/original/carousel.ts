@@ -50,7 +50,7 @@ const carouselPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CAROUSEL,
-  facts: ["walkable", "carousel", "directional-passage", "rotatable"],
+  facts: ["walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
     "right-top",

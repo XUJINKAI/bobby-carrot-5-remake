@@ -82,7 +82,7 @@ const mowerParking: Behavior = {
   id: "mower-parking",
   onArrive({ actor, self, query, commands }) {
     const mowerId = bobbyMountId(actor.state);
-    if (mowerId === null || !query.entityHasFact(mowerId, "mower")) return;
+    if (mowerId === null || query.entity(mowerId)?.type !== MapEntityTypeId.MOWER) return;
     const mower = query.entity(mowerId);
     if (!mower) return;
     commands.setState(
@@ -110,7 +110,7 @@ const smashCrumblyRock: Behavior = {
     const mowerId = bobbyMountId(actor.state);
     if (
       mowerId === null ||
-      !query.entityHasFact(mowerId, "mower") ||
+      query.entity(mowerId)?.type !== MapEntityTypeId.MOWER ||
       !readBobbySpeedBoost(actor.state)
     )
       return { result: "blocked", reason: "crumbly-rock" };
@@ -128,7 +128,7 @@ const smashCrumblyRock: Behavior = {
 
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
-  facts: ["vehicle", "mower", "ride-carried", "blocking"],
+  facts: ["ride-carried", "blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
@@ -153,7 +153,7 @@ export const mower: EntityModule = originalModule(
 
 const parkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER_PARKING,
-  facts: ["walkable", "mower-parking"],
+  facts: ["walkable"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Mower Parking" },
@@ -167,7 +167,7 @@ export const mowerParkingTile: EntityModule = originalModule(
 
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CRUMBLY_ROCK,
-  facts: ["blocking", "crumbly-rock"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Crumbly Rock" },
 };

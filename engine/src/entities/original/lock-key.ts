@@ -33,7 +33,7 @@ const lockKeyInteraction: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK_KEY,
-  facts: ["walkable", "pickup"],
+  facts: ["walkable"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   properties: [

@@ -65,7 +65,7 @@ function inheritedCadence(
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE,
-  facts: ["walkable", "forced-movement"],
+  facts: ["walkable"],
   layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Ice" },

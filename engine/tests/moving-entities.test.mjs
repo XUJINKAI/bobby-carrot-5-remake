@@ -100,7 +100,7 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const cloud = world.query.entitiesWithFact("cloud")[0] ??
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0] ??
     world.query.entitiesWithFact("moving-platform")[0];
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
@@ -128,7 +128,7 @@ test("Leaf starts moving on the same tick that a player arrives", () => {
     { motionDurationMs: 350 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  const leaf = world.query.entitiesWithFact("leaf")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   move(world, actor.id, "right");
 
   let handoff = null;
@@ -168,7 +168,7 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
     { motionDurationMs: 100 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  const leaf = world.query.entitiesWithFact("leaf")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
 
   let sawPerpendicularCell = false;
@@ -204,7 +204,7 @@ test("Leaf does not launch against Tide", () => {
     { motionDurationMs: 100 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  const leaf = world.query.entitiesWithFact("leaf")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   assert.equal(move(world, actor.id, "up").moves[0].moved, true);
 
   for (let tick = 1; tick <= 4; tick += 1)

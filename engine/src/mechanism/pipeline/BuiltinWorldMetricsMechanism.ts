@@ -1,11 +1,11 @@
 import type { WorldMetricsMechanism } from "../../world/outcome/WorldMetrics.js";
 
-/** 奖励对象通过 Fact 提供当前语义；计数按 Entity ID 去重。 */
+/** 奖励指标按对象 Type 计数，空间索引按 Entity ID 去重。 */
 export const builtinWorldMetricsMechanism: WorldMetricsMechanism = {
   project(query) {
     return {
-      "golden-carrot": query.entityCountWithFact("golden-carrot"),
-      "bonus-coin": query.entityCountWithFact("bonus-coin"),
+      "golden-carrot": query.entityCountMatching({ kind: "type", value: "golden-carrot" }),
+      "bonus-coin": query.entityCountMatching({ kind: "type", value: "bonus-coin" }),
     };
   },
 };

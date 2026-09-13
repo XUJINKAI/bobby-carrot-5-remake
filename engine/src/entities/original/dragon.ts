@@ -96,7 +96,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DRAGON,
-  facts: ["dragon"],
+  facts: [],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     byDirection: {
@@ -117,7 +117,7 @@ const definition: EntityModuleDefinition = {
           dx: 1,
           dy: 0,
           role: "tail",
-          facts: ["walkable", "dragon-trigger"],
+          facts: ["walkable"],
         },
       ],
       right: [
@@ -137,7 +137,7 @@ const definition: EntityModuleDefinition = {
           dx: -1,
           dy: 0,
           role: "tail",
-          facts: ["walkable", "dragon-trigger"],
+          facts: ["walkable"],
         },
       ],
     },

@@ -193,7 +193,7 @@ function isRidingMower(
   query: Parameters<NonNullable<Behavior["onEnter"]>>[0]["query"],
 ): boolean {
   const mountId = bobbyMountId(state);
-  return mountId !== null && query.entityHasFact(mountId, "mower");
+  return mountId !== null && query.entity(mountId)?.type === MapEntityTypeId.MOWER;
 }
 
 const statefulBlock: Behavior = {

@@ -1,6 +1,6 @@
 import type { EntityLayer } from "../entity/EntityDefinition.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
-import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId } from "../../fact/FactRegistry.js";
 
 /** Entity 在一个 Cell 中的空间投影；Presence 本身不是 Entity。 */
 export interface EntityPresence {

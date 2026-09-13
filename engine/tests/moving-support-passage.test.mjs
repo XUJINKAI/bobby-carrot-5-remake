@@ -32,7 +32,7 @@ test("Leaf stops before an occupied water cell", () => {
     ],
   });
   const bobby = world.query.entitiesWithFact("player")[0];
-  const leaf = world.query.entitiesWithFact("leaf")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
 
   assert.equal(move(world, bobby.id, "right").moves[0].moved, true);
   world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
@@ -67,7 +67,7 @@ test("Cloud stops before Plank but may enter Cloud Grid infrastructure", () => {
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const cloud = world.query.entitiesWithFact("cloud")[0];
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
 
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 0 });
@@ -97,7 +97,7 @@ test("Cloud Grid does not count as support occupancy", () => {
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const cloud = world.query.entitiesWithFact("cloud")[0];
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
 
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });

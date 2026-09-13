@@ -12,7 +12,7 @@ const portalBehavior: Behavior = {
   onEnter({ query, actor, self, direction, movement, commands }) {
     if (!direction) return;
     const channel = self.entity.state?.channel;
-    const target = query.entitiesWithFact("portal").find(
+    const target = query.entitiesMatching({ kind: "type", value: MapEntityTypeId.PORTAL }).find(
       (entity) =>
         entity.id !== self.entity.id && entity.state?.channel === channel,
     );
@@ -43,7 +43,7 @@ const portalBehavior: Behavior = {
 export const portal: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PORTAL,
-    facts: ["portal"],
+    facts: [],
     stackOrder: 100,
     properties: [
       {

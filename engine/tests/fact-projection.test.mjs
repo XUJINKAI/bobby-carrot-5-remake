@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createBuiltinFactRegistry } from "../dist/mechanism/fact/builtinFacts.js";
-import { FactRegistry } from "../dist/mechanism/fact/FactRegistry.js";
+import { MapEntityTypeId } from "@bobby/model";
+import { createBuiltinFactRegistry } from "../dist/fact/builtinFacts.js";
+import { FactRegistry } from "../dist/fact/FactRegistry.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
@@ -73,4 +74,36 @@ test("Fact Registry 拒绝重复和未知标识", () => {
   registry.register({ id: "sample", description: "示例事实" });
   assert.throws(() => registry.register({ id: "sample", description: "重复" }));
   assert.throws(() => registry.require("missing"));
+});
+
+test("Egg 的填充 Fact 随 state 提交刷新", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.EGG, x: 1, y: 0 },
+    ],
+  });
+  const egg = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.EGG,
+  })[0];
+  assert.ok(egg);
+  assert.equal(egg.instanceFacts, undefined);
+  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), false);
+
+  const fill = new CommandQueue();
+  fill.setState(egg.id, { filled: true });
+  world.committer.commit(fill, { worldTick: null, worldTimeMs: 0 });
+  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), true);
+  assert.equal(world.query.entityHasFact(egg.id, "blocking"), true);
+  assert.equal(world.query.entity(egg.id)?.instanceFacts, undefined);
+
+  const clear = new CommandQueue();
+  clear.setState(egg.id, { filled: false });
+  world.committer.commit(clear, { worldTick: null, worldTimeMs: 0 });
+  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), false);
+  assert.equal(world.query.entityHasFact(egg.id, "blocking"), false);
 });

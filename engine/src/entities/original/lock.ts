@@ -104,7 +104,7 @@ const trackTimedChallenge: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
-  facts: ["blocking", "gate", "timed-challenge"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   properties: [
     {
@@ -132,7 +132,7 @@ export const lock: EntityModule = originalModule(
 export const timedChallenge: EntityModule = defineEntityModule({
   definition: {
     type: RuntimeEntityTypeId.TIMED_CHALLENGE,
-    facts: ["timed-challenge"],
+    facts: [],
     state: [
       { key: "opened", kind: "boolean", label: "已启动", default: true },
       {

@@ -14,7 +14,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CAROUSEL_SWITCH,
-  facts: ["walkable", "switch"],
+  facts: ["walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
   presentation: { name: "Carousel Switch" },

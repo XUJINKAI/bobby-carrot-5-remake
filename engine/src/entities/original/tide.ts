@@ -13,7 +13,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE,
-  facts: ["water", "forced-movement"],
+  facts: ["water"],
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Tide" },
 };

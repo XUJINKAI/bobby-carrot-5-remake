@@ -59,7 +59,9 @@ test("Ice emits semantic forced moves until Bobby leaves the Ice surface", () =>
   assert.equal(firstSlide.motions.length, 1);
   assert.deepEqual(firstSlide.motions[0].cause, {
     type: "forced",
-    sourceEntityId: world.presencesAt({ x: 1, y: 0 }).find((presence) => presence.facts.includes("forced-movement")).entityId,
+    sourceEntityId: world.presencesAt({ x: 1, y: 0 }).find((presence) =>
+      world.entity(presence.entityId)?.type === MapEntityTypeId.ICE
+    ).entityId,
     mechanism: "ice",
     cadenceMs: 350,
   });

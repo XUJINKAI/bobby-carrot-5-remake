@@ -32,7 +32,6 @@ const fillEggNestOnLeave: Behavior = {
       x: source.anchor.x,
       y: source.anchor.y,
       state: { filled: true },
-      instanceFacts: ["filled-egg", "blocking"],
       ...(source.direction ? { direction: source.direction } : {}),
     });
     commands.emit({
@@ -106,45 +105,43 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   ),
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
-    "exit",
     "reach-all-players",
-    "requires-unmounted-reach",
   ]),
   surface(
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",
     tileCell(MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_CLOUD9_TICKET,
     "Cloud 9 Ticket",
     tileCell(MapEntityTypeId.SHOP_CLOUD9_TICKET),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_STEREO_SYSTEM,
     "Stereo System",
     tileCell(MapEntityTypeId.SHOP_STEREO_SYSTEM),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_EXTRA_MUSIC,
     "Extra Music",
     tileCell(MapEntityTypeId.SHOP_EXTRA_MUSIC),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_SPEED_SHOES,
     "Speed Shoes",
     tileCell(MapEntityTypeId.SHOP_SPEED_SHOES),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_COIN_RADAR,
     "Coin Radar",
     tileCell(MapEntityTypeId.SHOP_COIN_RADAR),
-    ["blocking", "interaction", "dialog"],
+    ["blocking"],
   ),
   surface(
     MapEntityTypeId.SHOP_EMPTY,
@@ -155,13 +152,13 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     MapEntityTypeId.SHOVEL_PICKUP,
     "Shovel Pickup",
     tileCell(MapEntityTypeId.SHOVEL_PICKUP),
-    ["walkable", "pickup"],
+    ["walkable"],
   ),
 ];
 
 const snowDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
-  facts: ["snow", "shovelable", "blocking", "bean-growth-space"],
+  facts: ["blocking", "bean-growth-space"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
@@ -169,7 +166,7 @@ const snowDefinition: EntityModuleDefinition = {
 
 const highGrassDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
-  facts: ["mowable", "blocking"],
+  facts: ["blocking"],
   layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
@@ -190,6 +187,9 @@ const carrotDefinition: EntityModuleDefinition = {
 const eggDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.EGG,
   facts: ["egg-nest"],
+  resolvePresenceFacts({ entity }) {
+    return entity.state?.filled === true ? ["filled-egg", "blocking"] : [];
+  },
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Egg" },
@@ -209,12 +209,11 @@ const beanstalkFacts = [
   "terrain-overlay",
   "climbable",
   "walkable",
-  "mower-conditional-overlay",
 ] as const;
 
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
-  facts: ["blocking", "windmill"],
+  facts: ["blocking"],
   layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Windmill" },
@@ -246,9 +245,9 @@ export const staticContentModules: readonly EntityModule[] = [
     ),
     authoring: { palette: false },
   },
-  content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), ["pickup"]),
+  content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN)),
   windmill,
-  content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS), ["pickup"]),
+  content(MapEntityTypeId.GAS, "Gas", tileCell(MapEntityTypeId.GAS)),
   runtimeOnlyContent(
     RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
@@ -257,7 +256,6 @@ export const staticContentModules: readonly EntityModule[] = [
       "terrain-overlay",
       "climbable",
       "walkable",
-      "mower-conditional-overlay",
     ],
   ),
   runtimeOnlyContent(
@@ -271,17 +269,17 @@ export const staticContentModules: readonly EntityModule[] = [
     "Bean Sprout",
     tileCell("beanstalk", { phase: "sprout" }),
   ),
-  content(MapEntityTypeId.KITE, "Kite", tileCell(MapEntityTypeId.KITE), ["pickup"]),
+  content(MapEntityTypeId.KITE, "Kite", tileCell(MapEntityTypeId.KITE)),
   content(
     MapEntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
     tileCell(MapEntityTypeId.GOLDEN_CARROT),
-    ["collectible", "golden-carrot"],
+    ["collectible"],
   ),
   content(
     MapEntityTypeId.BONUS_COIN,
     "Bonus Coin",
     tileCell(MapEntityTypeId.BONUS_COIN),
-    ["collectible", "bonus-coin"],
+    ["collectible"],
   ),
 ];

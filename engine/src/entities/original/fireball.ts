@@ -120,7 +120,7 @@ const fireballAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
   authoring: { palette: false },
-  facts: ["projectile"],
+  facts: [],
   stackOrder: CONTENT_STACK_ORDER + 50,
   presentation: { name: "Dragon Fireball", renderPass: "effect" },
 };
@@ -194,7 +194,7 @@ function projectileBlockedAt(
     if (entity?.type === MapEntityTypeId.CRUMBLY_ROCK) return true;
     if (entity?.type === MapEntityTypeId.DRAGON && presence.role !== "tail")
       return true;
-    if (!presence.facts.includes("stateful-block")) return false;
+    if (entity?.type !== MapEntityTypeId.COLOR_BLOCK) return false;
     return entity?.state?.raised !== false;
   });
 }

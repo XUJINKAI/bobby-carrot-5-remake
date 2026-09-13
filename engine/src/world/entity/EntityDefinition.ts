@@ -1,7 +1,7 @@
 import type { EntityType, JsonValue } from "@bobby/model";
 import type { FootprintDefinition } from "../spatial/Footprint.js";
 import type { ResolvedFootprintCell } from "../spatial/Footprint.js";
-import type { FactId } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId } from "../../fact/FactRegistry.js";
 import type { EntityInstance } from "./EntityInstance.js";
 import type { MechanismId } from "../../mechanism/MechanismRegistry.js";
 

@@ -12,7 +12,7 @@ export const colorSwitchBehavior: Behavior = {
     if (!query.entityHasFact(actor.id, "player")) return;
 
     const color = self.entity.state?.color === "pink" ? "pink" : "yellow";
-    for (const entity of query.entitiesWithFact("switch")) {
+    for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_SWITCH })) {
       if (
         entity.type !== MapEntityTypeId.COLOR_SWITCH ||
         entity.state?.color !== color
@@ -24,7 +24,7 @@ export const colorSwitchBehavior: Behavior = {
       });
     }
 
-    for (const entity of query.entitiesWithFact("stateful-block")) {
+    for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_BLOCK })) {
       if (
         entity.type !== MapEntityTypeId.COLOR_BLOCK ||
         entity.state?.color !== color
@@ -51,7 +51,7 @@ function directionalSwitchBehavior(
       // 原版只有 Raised 状态会启动整图变换；Pressed 状态再次进入不触发。
       if (self.entity.state?.pressed === true) return;
 
-      for (const entity of query.entitiesWithFact("switch")) {
+      for (const entity of query.entitiesMatching({ kind: "type", value: switchType })) {
         if (entity.type !== switchType) continue;
         commands.setState(entity.id, {
           ...entity.state,
@@ -59,7 +59,7 @@ function directionalSwitchBehavior(
         });
       }
 
-      for (const entity of query.entitiesWithFact("forced-movement")) {
+      for (const entity of query.entitiesMatching({ kind: "type", value: targetType })) {
         if (entity.type !== targetType) continue;
         commands.setDirection(
           entity.id,
@@ -88,7 +88,7 @@ export const carouselSwitchBehavior: Behavior = {
     if (!query.entityHasFact(actor.id, "player")) return;
     if (self.entity.state?.pressed === true) return;
 
-    for (const entity of query.entitiesWithFact("switch")) {
+    for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CAROUSEL_SWITCH })) {
       if (entity.type !== MapEntityTypeId.CAROUSEL_SWITCH) continue;
       commands.setState(entity.id, {
         ...entity.state,
@@ -96,7 +96,7 @@ export const carouselSwitchBehavior: Behavior = {
       });
     }
 
-    for (const entity of query.entitiesWithFact("carousel")) {
+    for (const entity of query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CAROUSEL })) {
       if (entity.type !== MapEntityTypeId.CAROUSEL) continue;
       commands.setState(entity.id, {
         ...entity.state,

@@ -88,7 +88,10 @@ const movingPlatformBehavior: Behavior = {
       runtimeStarted: true,
     });
     commands.setDirection(self.entity.id, direction);
-    const cadenceMs = query.hasFactAt(self.entity.anchor, "waterfall")
+    const cadenceMs = query.hasSelectorAt(self.entity.anchor, {
+      kind: "type",
+      value: MapEntityTypeId.WATERFALL,
+    })
       ? DEFAULT_WATERFALL_CELL_MS
       : DEFAULT_MOVING_ENTITY_CELL_MS;
     commands.startAction(
@@ -185,7 +188,6 @@ const cloudDefinition: EntityModuleDefinition = {
     "terrain-overlay",
     "walkable",
     "blocking",
-    "cloud",
   ],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
@@ -240,7 +242,6 @@ function movingEntityModule(
       "terrain-overlay",
       "walkable",
       "blocking",
-      isCloud(type) ? "cloud" : "leaf",
     ],
     stackOrder: CONTENT_STACK_ORDER,
     state: [
@@ -298,7 +299,7 @@ function nextRoute(
     direction,
     cadenceMs:
       entity.type === MapEntityTypeId.LEAF &&
-      query.hasFactAt(entity.anchor, "waterfall")
+      query.hasSelectorAt(entity.anchor, { kind: "type", value: MapEntityTypeId.WATERFALL })
         ? DEFAULT_WATERFALL_CELL_MS
         : DEFAULT_MOVING_ENTITY_CELL_MS,
   };
@@ -310,7 +311,7 @@ function leafDirectionAt(
   fallback: Direction,
 ): Direction {
   return tideDirectionAt(query, cell) ??
-    (query.hasFactAt(cell, "waterfall") ? "down" : fallback);
+    (query.hasSelectorAt(cell, { kind: "type", value: MapEntityTypeId.WATERFALL }) ? "down" : fallback);
 }
 
 function tideDirectionAt(
@@ -345,7 +346,13 @@ function canEnterMovingDomain(
       )
         return false;
     }
-    return !(direction === "up" && query.hasFactAt(target, "waterfall"));
+    return !(
+      direction === "up" &&
+      query.hasSelectorAt(target, {
+        kind: "type",
+        value: MapEntityTypeId.WATERFALL,
+      })
+    );
   }
 
   const opposingWind = forcedWindAt(query, target, direction);
@@ -386,7 +393,7 @@ function forcedWindAt(
 }
 
 function windEnabled(query: WorldQueryApi, direction: Direction): boolean {
-  return query.entitiesWithFact("switch").some(
+  return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WIND_SWITCH }).some(
     (entity) =>
       entity.type === MapEntityTypeId.WIND_SWITCH &&
       entity.direction === direction &&
@@ -398,7 +405,7 @@ function windmillFor(
   query: WorldQueryApi,
   direction: Direction,
 ): Readonly<EntityInstance> | undefined {
-  return query.entitiesWithFact("windmill").find(
+  return query.entitiesMatching({ kind: "type", value: MapEntityTypeId.WINDMILL }).find(
     (entity) =>
       entity.type === MapEntityTypeId.WINDMILL &&
       entity.direction === direction,

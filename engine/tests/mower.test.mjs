@@ -29,7 +29,7 @@ test("Mower 缺少 Gas 时报告完整 missing-item 事件", () => {
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  const mower = world.query.entitiesWithFact("mower")[0];
+  const mower = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.MOWER })[0];
 
   const result = move(world, actor.id, "right");
 
@@ -70,7 +70,7 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
     { motionDurationMs: 100 },
   );
   const actor = world.query.entitiesWithFact("player")[0];
-  const mower = world.query.entitiesWithFact("mower")[0];
+  const mower = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.MOWER })[0];
 
   move(world, actor.id, "right");
   world.update({ tick: 1, stepMs: 100 });
@@ -84,9 +84,9 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
 
   move(world, actor.id, "right");
   assert.deepEqual(world.entity(mower.id).anchor, { x: 3, y: 0 });
-  assert.equal(world.query.entitiesWithFact("mowable").length, 1);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.HIGH_GRASS }).length, 1);
   world.update({ tick: 4, stepMs: 100 });
-  assert.equal(world.query.entitiesWithFact("mowable").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.HIGH_GRASS }).length, 0);
 
   move(world, actor.id, "right");
   world.update({ tick: 5, stepMs: 100 });
@@ -123,7 +123,7 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
     ],
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  const mower = world.query.entitiesWithFact("mower")[0];
+  const mower = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.MOWER })[0];
   world.entities.require(actor.id).state = {
     mountId: mower.id,
     speedBoost: { direction: "right", phase: "full" },
@@ -132,7 +132,7 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
 
   const result = move(world, actor.id, "right");
   assert.equal(result.moves[0].moved, true);
-  assert.equal(world.query.entitiesWithFact("crumbly-rock").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CRUMBLY_ROCK }).length, 0);
   assert.ok(
     result.events.some((event) => event.type === "crumbly-rock-smashed"),
   );
@@ -152,7 +152,7 @@ test("Mower cannot complete an Exit reach condition", () => {
     rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
   });
   const actor = world.query.entitiesWithFact("player")[0];
-  const mower = world.query.entitiesWithFact("mower")[0];
+  const mower = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.MOWER })[0];
   world.entities.require(actor.id).state = { mountId: mower.id };
   world.entities.require(mower.id).state = { mountedByActorId: actor.id };
 

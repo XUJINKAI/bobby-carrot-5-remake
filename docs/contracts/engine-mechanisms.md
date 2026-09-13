@@ -14,7 +14,7 @@ Mechanism：可复用的地图内游戏规则
 World：时间、空间、调度、裁决、提交和快照
 ```
 
-`Fact` 是 Entity 或 Presence 的只读语义投影；`Behavior` 是 World 调用规则代码的 hook 协议。二者都不是额外的运行时层级。`Fact` 的成立不会自动安装、卸载或调用 Behavior。
+`Fact` 是 Entity 或 Presence 的只读语义投影；`Behavior` 是 World 调用规则代码的 hook 协议。二者都不是额外的运行时层级。`Fact` 与 `Mechanism` 平级：Entity 产出 Fact，Mechanism 消费，World 维护投影、查询和索引。`Fact` 的成立不会自动安装、卸载或调用 Behavior。
 
 这项治理保持 `LevelMap` 的语义 JSON 合同，以及 Engine、Model、Editor、Adventure 的现有依赖方向。地图实例字段仍由 Model `EntityMapDefinition` 声明；具体规则和运行状态只在 Engine。Editor Play Test 继续把同一份 `LevelMap` 交给正式 Engine，Editor 草稿不接收运行时状态。
 
@@ -119,13 +119,14 @@ Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专�
 
 ```text
 World 定义协议与执行器
+Fact 定义独立的共享语义标识与注册表
 Mechanism 依赖 World 协议，实现通用策略
-Entity 依赖 World 协议与 Mechanism 定义，组合对象规则
+Entity 依赖 World 协议、Fact 与 Mechanism 定义，组合对象规则
 Engine 组合入口装配内置 Registry，再创建 World
 Presentation 只读 World 事实、WorldDelta 与对象视觉定义
 ```
 
-目录是职责的结果。优先在 `engine/src/world/` 保留运行时协议和裁决器，在 `engine/src/mechanism/` 放通用规则，在 `engine/src/entities/` 放对象组合与特例；不为目录形状机械搬迁职责清楚的代码。
+目录是职责的结果。`engine/src/world/` 保存运行时协议和裁决器，`engine/src/fact/` 保存共享语义标识，`engine/src/mechanism/` 保存通用规则，`engine/src/entities/` 保存对象组合与特例。
 
 ## Entity 状态与初始化
 
@@ -187,13 +188,17 @@ World 提供唯一的 Entity semantic projection 刷新入口。一次状态提�
 | `filled-egg` | 从 Egg state 派生的 Fact | `fill-all` 查询当前填充结果 |
 | Dialog | Entity-bound Dialog Mechanism | 通用触碰对白规则 |
 | `mower-conditional-overlay` | 具体对象 Behavior | 含割草机专属通行设计 |
-| `stateful-block` | Color Block 规则及必要的动态 Fact | `raised` 是对象状态，通行还需保持现有行为 |
+| Color Block 的 `raised` | Entity state 与专属 Behavior | 当前状态决定通行结果 |
+| `carousel`、`mower`、`portal` | Entity Type | 规则需要查找具体对象身份 |
+| `bonus-coin`、`golden-carrot` | Entity Type | 奖励指标按 Type 计数 |
 
 新增 Fact 时明确其定义、查询方、是否随 state 变化及消费规则。只有 World 运行协议明确列出的 Fact 可由 World 直接解释。
 
 ## Selector 合同
 
 Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。`LevelMap.rules.win` 的 `target`、`filler` 是字符串，在进入 World 查询时转换为同名 Type 与 Fact 的并集。Entity 级匹配合并 Type、Entity Fact 和任一 Presence Fact，按 Entity ID 去重，不采用优先级判定。
+
+运行规则可通过 `WorldQueryApi.entitiesMatching()` 与 `entityCountMatching()` 使用带类型的 Selector。格子判断使用 `hasSelectorAt()`，并保持当前 Presence 的空间语义；身份明确的对象使用 Type 查询，跨对象能力使用 Fact 查询。奖励指标直接匹配 `bonus-coin` 与 `golden-carrot` Type。
 
 ```ts
 type EntitySelector =

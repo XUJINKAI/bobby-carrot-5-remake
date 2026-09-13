@@ -1,5 +1,5 @@
 import type { GlobalState } from "../GlobalState.js";
-import type { FactId, FactRegistry } from "../../mechanism/fact/FactRegistry.js";
+import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityStore } from "../entity/EntityStore.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
@@ -67,6 +67,13 @@ export class WorldQueryApi {
     return this.spatial.presenceMatchesSelector(presence, selector);
   }
 
+  hasSelectorAt(cell: CellQuery, selector: EntitySelector): boolean {
+    this.validateSelector(selector);
+    return this.spatial.presencesAt(cell).some((presence) =>
+      this.spatial.presenceMatchesSelector(presence, selector)
+    );
+  }
+
   hasFactAt(cell: CellQuery, fact: FactId): boolean {
     this.facts?.require(fact);
     return this.spatial.hasFactAt(cell, fact);
@@ -88,7 +95,24 @@ export class WorldQueryApi {
 
   entitiesWithFact(fact: FactId): readonly EntityInstance[] {
     this.facts?.require(fact);
-    return readonlyView(this.spatial.entityIdsWithFact(fact)
+    return this.entitiesMatching({ kind: "fact", value: fact });
+  }
+
+  entitiesMatching(selector: EntitySelector): readonly EntityInstance[] {
+    this.validateSelector(selector);
+    return readonlyView(this.spatial.entityIdsMatching(selector)
       .map((id) => this.entities.require(id)));
+  }
+
+  entityCountMatching(selector: EntitySelector): number {
+    this.validateSelector(selector);
+    return this.spatial.entityCountMatching(selector);
+  }
+
+  private validateSelector(selector: EntitySelector): void {
+    if (selector.kind === "fact") this.facts?.require(selector.value);
+    if (selector.kind === "any") {
+      for (const item of selector.selectors) this.validateSelector(item);
+    }
   }
 }

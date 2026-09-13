@@ -1,5 +1,5 @@
 import type { LevelMap } from "@bobby/model";
-import type { FactRegistry } from "../mechanism/fact/FactRegistry.js";
+import type { FactRegistry } from "../fact/FactRegistry.js";
 import type { MechanismRegistry } from "../mechanism/MechanismRegistry.js";
 import type { WorldTick } from "../time/WorldClock.js";
 import {

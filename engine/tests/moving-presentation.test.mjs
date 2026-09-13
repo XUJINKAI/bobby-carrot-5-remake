@@ -73,7 +73,7 @@ for (const cadenceMs of [496, 248]) {
   test(`carry presentation group shares ${cadenceMs}ms carrier timeline`, () => {
     const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
     const world = carryWorld();
-    const leaf = world.query.entitiesWithFact("leaf")[0];
+    const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
     const bobby = world.query.entitiesWithFact("player")[0];
     const carrier = motion(
       1,

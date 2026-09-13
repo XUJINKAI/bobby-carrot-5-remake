@@ -12,7 +12,7 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.FENCE,
   authoring: { palette: false },
-  facts: ["blocking", "fence"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
@@ -74,7 +74,8 @@ function fenceVisualContext(context: {
   presence: { cell: { x: number; y: number } };
   query: {
     inBounds(cell: { x: number; y: number }): boolean;
-    presencesAt(cell: { x: number; y: number }): readonly { facts: readonly string[] }[];
+    presencesAt(cell: { x: number; y: number }): readonly { entityId: number }[];
+    entity(id: number): Readonly<{ type: string }> | undefined;
   };
 }): FenceConnections {
   const { x, y } = context.presence.cell;
@@ -82,9 +83,10 @@ function fenceVisualContext(context: {
     const target = { x: x + dx, y: y + dy };
     if (!context.query.inBounds(target)) return true;
     return context.query.presencesAt(target).some(
-      (presence) =>
-        presence.facts.includes("fence") ||
-        presence.facts.includes("gate"),
+      (presence) => {
+        const type = context.query.entity(presence.entityId)?.type;
+        return type === MapEntityTypeId.FENCE || type === MapEntityTypeId.LOCK;
+      },
     );
   };
   return {

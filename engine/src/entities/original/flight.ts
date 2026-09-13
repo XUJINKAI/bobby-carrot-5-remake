@@ -166,7 +166,7 @@ const flightAction: RuntimeActionDefinition = {
 
 const whirlwindDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WHIRLWIND,
-  facts: ["flight-entry", "blocking"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Whirlwind" },
 };
@@ -184,7 +184,7 @@ export const whirlwind: EntityModule = {
 
 const landingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.LANDING,
-  facts: ["flight-landing"],
+  facts: [],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Landing" },
 };

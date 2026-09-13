@@ -12,7 +12,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAVER,
-  facts: ["blocking", "interaction", "dialog"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     parts: [

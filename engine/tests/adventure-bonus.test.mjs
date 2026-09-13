@@ -135,8 +135,8 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
   const unlock = move(world, "right");
   assert.equal(unlock.moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, 0);
-  assert.equal(world.query.entitiesWithFact("gate").length, 0);
-  assert.equal(world.query.entitiesWithFact("timed-challenge").length, 1);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LOCK }).length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: "timed-challenge" }).length, 1);
   assert.equal(
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
@@ -155,7 +155,7 @@ test("requireKey Lock 缺少钥匙时报告完整 missing-item 事件", () => {
     }]),
   );
   const player = actor(world);
-  const lock = world.query.entitiesWithFact("gate")[0];
+  const lock = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LOCK })[0];
 
   const result = move(world, "right");
 
@@ -204,7 +204,7 @@ test("缺省 Lock 不要求钥匙", () => {
   );
   assert.equal(move(world, "right").moves[0].moved, true);
   assert.equal(actor(world).state?.lockKeys, undefined);
-  assert.equal(world.query.entitiesWithFact("gate").length, 0);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LOCK }).length, 0);
 });
 
 test("关卡内道具动作按数量增加钥匙", () => {

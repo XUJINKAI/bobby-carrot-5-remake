@@ -7,7 +7,7 @@ import { World } from "./support/World.mjs";
 test("selector 计数覆盖 type、Fact、交集、多格去重与空集合", () => {
   const index = new EntitySelectorIndex();
   function add(id, type, facts) {
-    index.add({ id, type }, { facts }, [
+    index.add({ id, type }, [
       { facts },
       { facts },
     ]);
@@ -48,13 +48,8 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
     ],
     rules: { win: { type: "collect-all", target: "carrot" } },
   });
-  world.spatial.entityIdsMatching = () => {
-    assert.fail("目标计数应直接读取索引数量");
-  };
-  const withFact = world.spatial.entityIdsWithFact.bind(world.spatial);
-  world.spatial.entityIdsWithFact = (fact) => {
-    assert.ok(!["golden-carrot", "bonus-coin"].includes(fact));
-    return withFact(fact);
+  world.spatial.entityCountWithFact = () => {
+    assert.fail("奖励计数应按 Type 查询");
   };
   world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(world.winState.remaining, 1);

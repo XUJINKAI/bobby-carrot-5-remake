@@ -73,7 +73,6 @@ test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
   assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).facts, [
     "bean-growth-space",
     "water",
-    "waterfall",
   ]);
 });
 
@@ -149,7 +148,7 @@ test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
   const fence = registry.require(MapEntityTypeId.FENCE);
-  assert.deepEqual(fence.facts, ["blocking", "fence"]);
+  assert.deepEqual(fence.facts, ["blocking"]);
   assert.equal(
     Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,

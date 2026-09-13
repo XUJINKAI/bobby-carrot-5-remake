@@ -13,7 +13,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.COLOR_SWITCH,
-  facts: ["walkable", "switch"],
+  facts: ["walkable"],
   stackOrder: SURFACE_STACK_ORDER,
   state: [
     {
