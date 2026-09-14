@@ -129,6 +129,75 @@ test("Cloud 可经过天空中的 Carrot，并在转向受阻后沿原方向续�
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 3, y: 1 });
 });
 
+test("Cloud 在交叉风区逐个尝试可通行的风向", () => {
+  const entities = [];
+  for (let y = 0; y < 5; y += 1) {
+    for (let x = 0; x < 5; x += 1)
+      entities.push({ type: MapEntityTypeId.STARFIELD, x, y, variant: "large-star" });
+  }
+  entities.push(
+    { type: MapEntityTypeId.WINDMILL, x: 2, y: 4, direction: "up" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 2, y: 4, direction: "up", active: true },
+    { type: MapEntityTypeId.WINDMILL, x: 4, y: 2, direction: "left" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 4, y: 2, direction: "left", active: true },
+    { type: MapEntityTypeId.PLANK, x: 2, y: 1 },
+    { type: MapEntityTypeId.CLOUD, x: 2, y: 2, color: "red" },
+  );
+  const world = new World({ schemaVersion: 1, width: 5, height: 5, entities });
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
+
+  world.update({ tick: 1, stepMs: 1 });
+  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 2 });
+});
+
+test("Cloud 进入交叉风区时独立检查逆风", () => {
+  const entities = [];
+  for (let y = 0; y < 4; y += 1) {
+    for (let x = 0; x < 6; x += 1)
+      entities.push({ type: MapEntityTypeId.STARFIELD, x, y, variant: "large-star" });
+  }
+  entities.push(
+    { type: MapEntityTypeId.WINDMILL, x: 0, y: 1, direction: "right" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 0, y: 1, direction: "right", active: true },
+    { type: MapEntityTypeId.WINDMILL, x: 2, y: 3, direction: "up" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 2, y: 3, direction: "up", active: true },
+    { type: MapEntityTypeId.WINDMILL, x: 5, y: 1, direction: "left" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 5, y: 1, direction: "left", active: true },
+    { type: MapEntityTypeId.CLOUD, x: 1, y: 1, color: "red" },
+  );
+  const world = new World({ schemaVersion: 1, width: 6, height: 4, entities });
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
+
+  world.update({ tick: 1, stepMs: 1 });
+  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 1 });
+});
+
+test("初始位于潮流上的 Leaf 自动漂流，普通水面上的 Leaf 保持静止", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 2,
+    entities: [
+      ...[0, 1, 2, 3].flatMap((x) => [
+        { type: MapEntityTypeId.WATER, x, y: 0 },
+        { type: MapEntityTypeId.WATER, x, y: 1 },
+      ]),
+      { type: MapEntityTypeId.TIDE, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 1 },
+    ],
+  });
+  const leaves = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF });
+
+  world.update({ tick: 1, stepMs: 1 });
+  assert.equal(world.actions.active.length, 1);
+  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(leaves[0].id).anchor, { x: 2, y: 0 });
+  assert.deepEqual(world.entity(leaves[1].id).anchor, { x: 1, y: 1 });
+});
+
 test("Leaf 顺流改向受阻时沿原方向续行", () => {
   const world = new World({
     schemaVersion: 1,

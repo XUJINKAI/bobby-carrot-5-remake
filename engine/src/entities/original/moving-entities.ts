@@ -101,8 +101,9 @@ const movingPlatformBehavior: Behavior = {
       ),
     );
   },
-  onTick({ self, commands }) {
-    if (!isCloud(self.entity.type) || self.entity.state?.runtimeStarted === true)
+  onTick({ self, query, commands }) {
+    if (self.entity.state?.runtimeStarted === true ||
+      !hasAutomaticCurrent(query, self.entity))
       return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
@@ -281,17 +282,17 @@ function nextRoute(
   launchDirection: Direction | null = null,
 ): { direction: Direction; cadenceMs: number } | null {
   const initial = directionState(entity.direction) ?? "right";
-  const preferred = isCloud(entity.type)
-    ? forcedWindAt(
-        query,
-        entity.anchor,
-        entity.state?.moving === true ? initial : null,
-      ) ??
-      (entity.state?.moving === true ? initial : null)
-    : launchDirection ?? leafDirectionAt(query, entity.anchor, initial);
-  if (!preferred) return null;
-  const direction = [preferred, initial].find((candidate, index) =>
-    (index === 0 || candidate !== preferred) &&
+  const candidates = isCloud(entity.type)
+    ? [
+        ...activeWindDirectionsAt(
+          query,
+          entity.anchor,
+          entity.state?.moving === true ? initial : null,
+        ),
+        ...(entity.state?.moving === true ? [initial] : []),
+      ]
+    : [launchDirection ?? leafDirectionAt(query, entity.anchor, initial), initial];
+  const direction = candidates.find((candidate) =>
     canEnterMovingDomain(query, entity, addDirection(entity.anchor, candidate), candidate)
   );
   if (!direction) return null;
@@ -364,8 +365,7 @@ function canEnterMovingDomain(
     );
   }
 
-  const opposingWind = forcedWindAt(query, target, direction);
-  return opposingWind !== oppositeDirection(direction);
+  return !windAppliesAt(query, target, oppositeDirection(direction));
 }
 
 function movingSupportOccupiedAt(
@@ -391,19 +391,25 @@ function movingSupportOccupiedAt(
   });
 }
 
-function forcedWindAt(
+function activeWindDirectionsAt(
   query: WorldQueryApi,
   cell: { x: number; y: number },
   currentDirection: Direction | null,
-): Direction | null {
+): Direction[] {
   const directions: readonly Direction[] = ["up", "down", "left", "right"];
-  for (const direction of directions) {
-    if (direction === currentDirection || !windEnabled(query, direction)) continue;
-    const windmill = windmillFor(query, direction);
-    if (windmill && insideWindRange(cell, windmill.anchor, direction))
-      return direction;
-  }
-  return null;
+  return directions.filter((direction) =>
+    direction !== currentDirection && windAppliesAt(query, cell, direction)
+  );
+}
+
+function windAppliesAt(
+  query: WorldQueryApi,
+  cell: { x: number; y: number },
+  direction: Direction,
+): boolean {
+  if (!windEnabled(query, direction)) return false;
+  const windmill = windmillFor(query, direction);
+  return windmill !== undefined && insideWindRange(cell, windmill.anchor, direction);
 }
 
 function windEnabled(query: WorldQueryApi, direction: Direction): boolean {

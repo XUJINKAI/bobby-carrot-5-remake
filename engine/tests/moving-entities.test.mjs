@@ -187,7 +187,7 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
   assert.equal(sawRedirectedCell, true);
 });
 
-test("Leaf does not launch against Tide", () => {
+test("Bobby 逆流登叶不启动该方向，潮流仍保留自动续行", () => {
   const world = new World(
     {
       schemaVersion: 1,
@@ -211,6 +211,6 @@ test("Leaf does not launch against Tide", () => {
     world.update({ tick, stepMs: 50 });
 
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 1 });
-  assert.equal(world.entity(leaf.id).state?.moving, undefined);
-  assert.equal(world.actions.active.length, 0);
+  assert.equal(world.entity(leaf.id).state?.moving, false);
+  assert.equal(world.actions.active.length, 1);
 });
