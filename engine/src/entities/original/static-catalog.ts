@@ -12,8 +12,6 @@ import {
   requiresUnmountedReachBehavior,
   shovelableBehavior,
 } from "../behaviorLibrary.js";
-import { carrot } from "./carrot.js";
-import { egg } from "./egg.js";
 import { bobbyMountId } from "../player/BobbyState.js";
 import { hasBobbyBridgeAt } from "./terrain-semantics.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
@@ -192,8 +190,6 @@ const windmill = originalModule(
 );
 
 export const staticContentModules: readonly EntityModule[] = [
-  carrot,
-  egg,
   content(
     MapEntityTypeId.BEANSTALK,
     "Beanstalk",

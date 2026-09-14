@@ -3,10 +3,12 @@ import { beaver } from "./beaver.js";
 import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
+import { carrot } from "./carrot.js";
 import { colorBlock } from "./color-block.js";
 import { colorSwitch } from "./color-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
+import { egg } from "./egg.js";
 import { fence } from "./fence.js";
 import { fireball } from "./fireball.js";
 import { landing, whirlwind } from "./flight.js";
@@ -50,6 +52,8 @@ export const originalEntityModules: readonly EntityModule[] = [
   ...staticCoverModules,
   plank,
   iceBlock,
+  carrot,
+  egg,
   ...staticContentModules,
   cloud,
   cloudParking,
