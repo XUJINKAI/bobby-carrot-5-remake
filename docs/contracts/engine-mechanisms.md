@@ -136,11 +136,15 @@ Presentation 只读 World 事实、WorldDelta 与对象视觉定义
 
 Entity gameplay 状态只通过 World 的正式 mutation 路径提交，进入 Snapshot、Undo 和 Replay。跨 WorldTick 的过程进度归 RuntimeAction；格间运动及 marker 进度归 WorldMotion；ActorLifecycle、Outcome 和全局计数归各自 World runtime 对象。Mechanism 不保存共享的可变 gameplay 数组或计数器。
 
+对象专属 Behavior 可以读取所属 Entity 的具体 state 字段，并通过 World 命令请求修改；它无需为自身使用的私有状态创建 Fact。通用 Mechanism 依赖 Fact 与通用 World Query 判断规则，不依赖具体 Entity 的私有 state 结构。
+
 对 Behavior 和 Mechanism 暴露的 Entity、Presence、Fact 查询必须是只读视图。TypeScript `Readonly<T>` 只约束类型表面，不能代替运行时引用隔离；实现时要保证调用方无法沿 `query.entity()` 返回值修改 EntityStore。Mutation 在 CommandQueue 收集，按 World 定义的 phase 提交。
 
 ## Fact 合同
 
 Fact 表示当前 Entity 或其某个 Presence 对其它 Engine 系统公开的稳定语义。Fact 有正式 ID 和定义，可以被 World 查询、Mechanism、Selector 与 Debug 使用。Fact 是派生值，不单独保存，也没有 `setFact`、`addFact` 或 `removeFact` gameplay 命令。
+
+Fact 只投影值得跨 Entity 或跨 Mechanism 共享的语义，不逐字段镜像 Entity state；仅供对象专属 Behavior 使用的运行时数据留在所属 Entity state 中。
 
 Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition、实例或具体对象类型。各 Entity Definition 声明自身的解析函数；World 的投影刷新器调用这些函数、校验标识并维护索引。通用 Mechanism 只通过 World 的只读查询协议读取 Fact，不导入具体 Entity 实现。
 
