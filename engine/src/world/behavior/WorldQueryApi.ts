@@ -32,11 +32,16 @@ export class WorldQueryApi {
   }
 
   presencesAt(cell: CellQuery): readonly EntityPresence[] {
+    return readonlyView(this.spatial.contactPresencesAt(cell));
+  }
+
+  /** Render、Editor、Debug 与显式对象特例使用的完整空间栈。 */
+  allPresencesAt(cell: CellQuery): readonly EntityPresence[] {
     return readonlyView(this.spatial.presencesAt(cell));
   }
 
   topPresenceAt(cell: CellQuery): EntityPresence | undefined {
-    const presence = this.spatial.topPresenceAt(cell);
+    const presence = this.presencesAt(cell).at(-1);
     return presence ? readonlyView(presence) : undefined;
   }
 
@@ -61,14 +66,16 @@ export class WorldQueryApi {
   }
 
   hasSelectorAt(cell: CellQuery, selector: EntitySelector): boolean {
-    return this.spatial.presencesAt(cell).some((presence) =>
+    return this.presencesAt(cell).some((presence) =>
       this.spatial.presenceMatchesSelector(presence, selector)
     );
   }
 
   hasFactAt(cell: CellQuery, fact: FactId): boolean {
     this.facts.require(fact);
-    return this.spatial.hasFactAt(cell, fact);
+    return this.presencesAt(cell).some((presence) =>
+      presence.facts.includes(fact)
+    );
   }
 
   global(): Readonly<GlobalState> {

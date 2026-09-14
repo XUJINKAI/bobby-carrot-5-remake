@@ -17,6 +17,7 @@ test("Fact resolver、Behavior 和 WorldQuery 无法修改已提交的 Entity �
       const queried = query.entity(self.entity.id);
       assert.equal(Reflect.set(queried.anchor, "x", 9), false);
       assert.equal(Reflect.set(query.presencesAt({ x: 1, y: 0 }), 0, null), false);
+      assert.equal(Reflect.set(query.allPresencesAt({ x: 1, y: 0 }), 0, null), false);
     },
   });
   const entities = new EntityRegistry();

@@ -43,6 +43,24 @@ export class SpatialIndex {
     return this.cells.get(key(cell)) ?? [];
   }
 
+  /**
+   * 玩法接触只观察最高 contact-cover 所在平面及其上方。
+   * 相同 stackOrder 属于同一接触平面，Entity ID 只用于稳定排序。
+   */
+  contactPresencesAt(cell: CellPosition): readonly EntityPresence[] {
+    const presences = this.presencesAt(cell);
+    let coverOrder: number | null = null;
+    for (const presence of presences) {
+      if (!presence.facts.includes("contact-cover")) continue;
+      coverOrder = coverOrder === null
+        ? presence.stackOrder
+        : Math.max(coverOrder, presence.stackOrder);
+    }
+    return coverOrder === null
+      ? presences
+      : presences.filter((presence) => presence.stackOrder >= coverOrder);
+  }
+
   topPresenceAt(cell: CellPosition): EntityPresence | undefined {
     return this.presencesAt(cell).at(-1);
   }

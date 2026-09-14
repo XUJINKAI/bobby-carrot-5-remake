@@ -95,6 +95,48 @@ test("Fact Registry 拒绝重复和未知标识", () => {
   assert.throws(() => registry.require("missing"));
 });
 
+test("WorldQuery 默认返回接触栈并显式提供完整空间栈", () => {
+  const facts = createBuiltinFactRegistry();
+  facts.register({ id: "lower", description: "下层测试事实" });
+  facts.register({ id: "same-plane", description: "同层测试事实" });
+  const entities = new EntityRegistry();
+  entities.registerAll([
+    { type: "lower", facts: ["lower"] },
+    { type: "cover", facts: ["contact-cover"] },
+    { type: "same-plane", facts: ["same-plane"] },
+    { type: "upper", facts: ["blocking"] },
+  ]);
+  const world = new World({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "lower", x: 0, y: 0, stackOrder: 0 },
+      { type: "cover", x: 0, y: 0, stackOrder: 1 },
+      { type: "same-plane", x: 0, y: 0, stackOrder: 1 },
+      { type: "upper", x: 0, y: 0, stackOrder: 2 },
+    ],
+  }, { entities, facts });
+
+  assert.deepEqual(
+    world.query.presencesAt({ x: 0, y: 0 }).map((presence) =>
+      world.query.entity(presence.entityId)?.type
+    ),
+    ["cover", "same-plane", "upper"],
+  );
+  assert.deepEqual(
+    world.query.allPresencesAt({ x: 0, y: 0 }).map((presence) =>
+      world.query.entity(presence.entityId)?.type
+    ),
+    ["lower", "cover", "same-plane", "upper"],
+  );
+  assert.equal(world.query.hasFactAt({ x: 0, y: 0 }, "lower"), false);
+  assert.equal(world.query.hasSelectorAt(
+    { x: 0, y: 0 },
+    { kind: "fact", value: "same-plane" },
+  ), true);
+});
+
 test("Egg 的阻挡 Fact 随 state 提交刷新", () => {
   const world = new World({
     schemaVersion: 1,
