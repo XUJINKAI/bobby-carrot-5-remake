@@ -1,5 +1,8 @@
 # 原版机关与关卡机制
 
+Plank、Mower、Bean、Cloud、Fireball、Leaf 的精确通行条件与原始字节码依据统一见
+[原版通行与碰撞规则](../../reference/original-passage.md)。本页的玩法概述按该事实表理解。
+
 ## 图集与角色资源
 
 `ts.png` 与 `ta.png` 的尺寸、静态单元和动画序列统一登记在
