@@ -24,7 +24,7 @@ export class SpatialIndex {
     private readonly registry: EntityRegistry,
     readonly width: number,
     readonly height: number,
-    facts?: FactRegistry,
+    facts: FactRegistry,
   ) {
     this.factProjection = new EntityFactProjection(facts);
     this.rebuild();

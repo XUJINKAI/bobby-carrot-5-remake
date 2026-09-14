@@ -245,6 +245,7 @@ export type {
   ResolvedFootprintCell,
 } from "./world/spatial/Footprint.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
+export { createBuiltinFactRegistry } from "./fact/builtinFacts.js";
 export {
   levelRuleSelector,
   type EntitySelector,

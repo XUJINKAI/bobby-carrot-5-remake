@@ -1,5 +1,6 @@
 import {
   EntityStore,
+  createBuiltinFactRegistry,
   prepareRuntimeLevel,
   SpatialIndex,
   type EntityCatalog,
@@ -52,6 +53,7 @@ export class EditorPreview {
       catalog.entities,
       level.width,
       level.height,
+      createBuiltinFactRegistry(),
     );
   }
 

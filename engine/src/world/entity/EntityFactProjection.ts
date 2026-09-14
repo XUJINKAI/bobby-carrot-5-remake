@@ -6,7 +6,7 @@ import { readonlyView } from "../behavior/ReadonlyView.js";
 
 /** Entity 与空间部位分别投影语义，避免整体属性被复制到每个格子。 */
 export class EntityFactProjection {
-  constructor(private readonly registry?: FactRegistry) {}
+  constructor(private readonly registry: FactRegistry) {}
 
   entityFacts(
     entity: Readonly<EntityInstance>,
@@ -36,7 +36,7 @@ export class EntityFactProjection {
 
   private resolve(ids: readonly FactId[]): readonly FactId[] {
     const resolved = unique(ids);
-    for (const id of resolved) this.registry?.require(id);
+    for (const id of resolved) this.registry.require(id);
     return resolved;
   }
 }

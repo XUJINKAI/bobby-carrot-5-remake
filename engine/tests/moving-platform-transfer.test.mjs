@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  factRegistry,
 } from "../dist/entities/registry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
@@ -34,7 +35,7 @@ function resolveTideSwitchVisual(pressed) {
       pressed,
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.require(1);
   const presence = spatial.presencesForEntity(entity.id)[0];
   assert.ok(presence);

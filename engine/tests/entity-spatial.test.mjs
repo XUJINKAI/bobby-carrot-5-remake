@@ -4,6 +4,9 @@ import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
+
+const facts = testFactRegistry("mowable", "dragon", "dragon-trigger");
 
 function registry() {
   const registry = new EntityRegistry();
@@ -56,6 +59,7 @@ function createSpatialPreview(level, entityRegistry = registry()) {
     entityRegistry,
     level.width,
     level.height,
+    facts,
   );
   return {
     entities,
@@ -201,7 +205,7 @@ test("销毁高 stackOrder Entity 后 Dragon tail Presence 自动重新暴露", 
     { type: "dragon", x: 1, y: 1 },
     { type: "ice", x: 3, y: 1 },
   ]);
-  const spatial = new SpatialIndex(store, registry(), 6, 3);
+  const spatial = new SpatialIndex(store, registry(), 6, 3, facts);
   const ice = store.all().find((entity) => entity.type === "ice");
   assert.ok(ice);
   spatial.removeEntity(ice.id);

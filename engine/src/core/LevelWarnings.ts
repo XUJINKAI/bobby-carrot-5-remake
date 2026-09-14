@@ -5,6 +5,8 @@ import type {
 } from "@bobby/model";
 import { levelEntityContractIssues } from "@bobby/model";
 import { initializeOriginalLevelEntity } from "../entities/original/initialize-level-entity.js";
+import { factRegistry } from "../entities/registry.js";
+import type { FactRegistry } from "../fact/FactRegistry.js";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { EntityStore } from "../world/entity/EntityStore.js";
@@ -30,6 +32,7 @@ export interface LevelRuntimeWarning {
 export function validateLevelPlayability(
   level: LevelMap,
   catalog: EntityCatalog,
+  facts: FactRegistry = factRegistry,
 ): LevelRuntimeWarning[] {
   const known = level.entities.flatMap((entity) => {
     return catalog.has(entity.type) && levelEntityContractIssues(entity).length === 0
@@ -70,6 +73,7 @@ export function validateLevelPlayability(
     catalog.entities,
     level.width,
     level.height,
+    facts,
   );
 
   if (spatial.entityCountMatching({ kind: "fact", value: "player" }) === 0) {

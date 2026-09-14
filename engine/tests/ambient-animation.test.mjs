@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  factRegistry,
 } from "../dist/entities/registry.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
@@ -23,7 +24,7 @@ function resolveAt(type, nowMs, direction, winState, variant) {
       ...(variant ? { variant } : {}),
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.all()[0];
   assert.ok(entity);
   const presence = spatial.presencesForEntity(entity.id)[0];

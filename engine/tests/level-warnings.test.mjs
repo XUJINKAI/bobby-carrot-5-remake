@@ -5,6 +5,7 @@ import {
   createBuiltinEntityCatalog,
   validateLevelPlayability,
 } from "../dist/public.js";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", () => {
   const warnings = validateLevelPlayability(
@@ -106,6 +107,7 @@ test("可游玩性检查复用 Entity 与 Presence 的 Fact 投影", () => {
     { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
     { type: "projection-target", x: 1, y: 0, direction: "right" },
   ];
+  const facts = testFactRegistry("whole-target", "ready-target", "tail-target");
 
   for (const selector of [
     "projection-target",
@@ -119,7 +121,7 @@ test("可游玩性检查复用 Entity 与 Presence 的 Fact 投影", () => {
       height: 1,
       entities,
       rules: { win: { type: "reach", target: selector } },
-    }, catalog);
+    }, catalog, facts);
     assert.equal(
       warnings.some((warning) => warning.code === "missing-reach-target"),
       false,

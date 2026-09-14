@@ -9,6 +9,7 @@ import {
   builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  factRegistry,
 } from "../dist/entities/registry.js";
 
 function bobbyVisual(options = {}) {
@@ -35,7 +36,7 @@ function bobbyVisual(options = {}) {
 
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.all().find((entity) => entity.type === MapEntityTypeId.BOBBY);
   assert.ok(bobby);
   bobby.direction = options.direction ?? "right";

@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  factRegistry,
 } from "../dist/entities/registry.js";
 import {
   LEAF_SUPPORT_HEIGHT_PX,
@@ -124,7 +125,7 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
       state,
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.require(2);
   bobby.direction = "right";
   if (Object.keys(state).length > 0) bobby.state = structuredClone(state);
@@ -262,7 +263,7 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
       state: { mountId: 2 },
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.require(3);
   bobby.direction = "right";
   bobby.state = { mountId: 2 };
@@ -295,7 +296,7 @@ for (const [direction, frameIndex] of [
     const store = new EntityStore([
       { type: MapEntityTypeId.TIDE, x: 0, y: 0, direction },
     ]);
-    const spatial = new SpatialIndex(store, entities, 1, 1);
+    const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
     const tide = store.require(1);
     const presence = spatial.presencesForEntity(tide.id)[0];
     assert.ok(presence);

@@ -7,6 +7,7 @@ import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
+  factRegistry,
 } from "../dist/entities/registry.js";
 
 const EXPECTED = new Map([
@@ -26,7 +27,7 @@ function fenceArt(neighbors) {
     source.push({ type: MapEntityTypeId.FENCE, x: 1 + dx, y: 1 + dy });
 
   const store = new EntityStore(source);
-  const spatial = new SpatialIndex(store, registry, 3, 3);
+  const spatial = new SpatialIndex(store, registry, 3, 3, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const entity = store.all()[0];
   const presence = spatial.presencesForEntity(entity.id)[0];
