@@ -7,7 +7,10 @@ export const carrotGoal: GoalDefinition = {
     return query.entityCountMatching({ kind: "type", value: MapEntityTypeId.CARROT }) > 0;
   },
   evaluate({ query }) {
-    const remaining = query.entityCountMatching({ kind: "type", value: MapEntityTypeId.CARROT });
+    const remaining = query.entitiesMatching({
+      kind: "type",
+      value: MapEntityTypeId.CARROT,
+    }).filter((entity) => entity.state?.consumed !== true).length;
     return { completed: remaining === 0, remaining };
   },
 };

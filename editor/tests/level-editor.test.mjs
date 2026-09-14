@@ -54,6 +54,10 @@ test("Editor Play Test 使用语义地图的 Goal，运行过程保持 Draft 原
   const saved = structuredClone(draft);
   const world = new World(toLevelMap(draft));
   const actor = world.query.entitiesWithFact("player")[0];
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
 
   assert.equal(world.winState.completed, false);
   assert.equal(world.step({
@@ -65,6 +69,7 @@ test("Editor Play Test 使用语义地图的 Goal，运行过程保持 Draft 原
     }],
   }).moves[0].moved, true);
   world.update({ tick: 1, stepMs: 350 });
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
   assert.equal(world.winState.conditions[0].completed, true);
   assert.equal(world.winState.completed, false);
   assert.deepEqual(draft, saved);
@@ -321,7 +326,7 @@ test("Editor definitions 决定可创建入口，Model 定义可持久化身份"
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      "consumed-carrot",
+      "fireball",
     ),
     false,
   );

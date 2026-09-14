@@ -235,10 +235,10 @@ type EntitySelector =
 ```
 
 `LevelMap.rules.win` 的叶子是具体 Goal ID。`GoalRegistry` 校验重复与缺失定义；
-World 对组合节点递归求值，对叶子调用对应领域的 Goal。`carrotGoal` 按 Carrot Type
-计数；`eggGoal` 按 Egg ID 读取 `state.filled`；`pushGoal` 按目标格去重并检查
+World 对组合节点递归求值，对叶子调用对应领域的 Goal。`carrotGoal` 按 Carrot ID
+读取 `state.consumed` 并统计尚未收集的对象；`eggGoal` 按 Egg ID 读取 `state.filled`；`pushGoal` 按目标格去重并检查
 `pushable`；`exitGoal` 对所有玩家使用 Exit 的 `canReach`；`goldenCarrotGoal`
-读取已提交的成功交互记录。结果树保留具体 type、completed 和可选 remaining。
+读取已提交的 Golden Carrot 成功收集记录。结果树保留具体 type、completed 和可选 remaining。
 
 `validateLevelPlayability` 与 Editor 规则检测调用同一 Goal 的可用性检查。
 运行目标、编辑提示与 HUD 因此共用对象选择规则。Goal 只获得 World 的只读查询，

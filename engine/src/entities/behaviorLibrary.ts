@@ -9,16 +9,6 @@ import {
 
 export const collectBehavior: Behavior = {
   id: "collectible",
-  canEnter({ actor, self, query }) {
-    if (!isRidingMower(actor.state, query)) return;
-    if (query.hasSelectorAt(self.presence.cell, {
-      kind: "type",
-      value: MapEntityTypeId.HIGH_GRASS,
-    }))
-      return { passable: true, reason: "objective-hidden-under-grass" };
-    if (self.entity.type === MapEntityTypeId.CARROT)
-      return { passable: false, reason: "mower-cannot-collect-carrot" };
-  },
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
     commands.destroy(self.entity.id);
@@ -29,13 +19,6 @@ export const collectBehavior: Behavior = {
           MapEntityTypeId.GOLDEN_CARROT,
         ]),
       ]);
-    }
-    if (self.entity.type === MapEntityTypeId.CARROT) {
-      commands.spawn({
-        type: RuntimeEntityTypeId.CONSUMED_CARROT,
-        x: self.entity.anchor.x,
-        y: self.entity.anchor.y,
-      });
     }
     commands.emit({
       type: `collect-${self.entity.type}`,
@@ -180,7 +163,7 @@ export const shovelableBehavior: Behavior = {
   },
 };
 
-function isRidingMower(
+export function isRidingMower(
   state: Parameters<typeof bobbyMountId>[0],
   query: Parameters<NonNullable<Behavior["onEnter"]>>[0]["query"],
 ): boolean {

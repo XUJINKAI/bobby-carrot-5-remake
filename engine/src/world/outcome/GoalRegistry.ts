@@ -10,7 +10,8 @@ export interface GoalResult {
 export interface GoalContext {
   readonly query: WorldQueryApi;
   readonly reach: ReachResolver;
-  readonly successfulInteractions: readonly string[];
+  /** 已提交的目标交互类型；被消费的目标仍可据此完成 Goal。 */
+  readonly successfulGoalInteractions: readonly string[];
 }
 
 export interface GoalDefinition {

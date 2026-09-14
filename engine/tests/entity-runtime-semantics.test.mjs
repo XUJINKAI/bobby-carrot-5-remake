@@ -8,7 +8,6 @@ import {
   resolveLevelEntityVisualPreview,
 } from "../dist/visual/preview.js";
 import { portal } from "../dist/entities/custom/portal.js";
-import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { beanCanGrowAt } from "../dist/entities/original/terrain-semantics.js";
 
 const BLOCKING_TYPES = [
@@ -82,7 +81,7 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
   );
 });
 
-test("胡萝卜收集后留下持久的 consumed runtime state", () => {
+test("Carrot 收集后保留 Entity ID，并由 consumed state 切换视觉和目标", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -96,32 +95,68 @@ test("胡萝卜收集后留下持久的 consumed runtime state", () => {
     ],
   });
 
-  assert.equal(move(world, "right").moves[0].moved, true);
-  assert.equal(
-    world.entities.all().some((entity) => entity.type === MapEntityTypeId.CARROT),
-    false,
-  );
-  const consumed = world.entities.all().find(
-    (entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT,
-  );
-  assert.deepEqual(consumed?.anchor, { x: 1, y: 0 });
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
+  const snapshot = world.snapshot();
+  const collected = move(world, "right");
+  assert.equal(collected.moves[0].moved, true);
+  assert.equal(collected.events.filter((event) => event.type === "collect-carrot").length, 1);
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
+  assert.deepEqual(world.entity(carrot.id)?.anchor, { x: 1, y: 0 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.CARROT }), 1);
   assert.equal(world.winState.remaining, 0);
   world.update({ tick: 1, stepMs: 1000 });
-  assert.equal(
-    world.entities
-      .all()
-      .some((entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT),
-    true,
-  );
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
 
   const visual = resolveEntityVisualPreview({
-    type: RuntimeEntityTypeId.CONSUMED_CARROT,
+    type: MapEntityTypeId.CARROT,
+    state: { consumed: true },
   });
   assert.deepEqual(visual?.layers[0], {
     kind: "atlas",
     column: 9,
     row: 12,
   });
+  world.restore(snapshot);
+  assert.notEqual(world.entity(carrot.id)?.state?.consumed, true);
+  assert.equal(world.winState.remaining, 1);
+});
+
+test("再次经过已收集 Carrot 时只保留首次收集事件", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    rules: {
+      win: {
+        type: "all",
+        conditions: [{ type: "carrot" }, { type: "exit" }],
+      },
+    },
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      ground(2, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 2, y: 0 },
+    ],
+  });
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
+
+  assert.equal(move(world, "right").events.filter((event) => event.type === "collect-carrot").length, 1);
+  world.update({ tick: 1, stepMs: 1000 });
+  assert.equal(move(world, "left").moves[0].moved, true);
+  world.update({ tick: 2, stepMs: 1000 });
+  const returnMove = move(world, "right");
+  assert.equal(returnMove.moves[0].moved, true);
+  assert.equal(returnMove.events.some((event) => event.type === "collect-carrot"), false);
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
 });
 
 test("Portal visual 接受 hex color 与常用颜色别名", () => {

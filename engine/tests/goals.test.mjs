@@ -48,6 +48,56 @@ test("Carrot 的空目标结果与高草下对象计数一致", () => {
   assert.deepEqual(hidden.winState, { type: "carrot", completed: false, remaining: 1 });
 });
 
+test("Carrot Goal 按未收集对象计数并随 Snapshot 恢复", () => {
+  const world = new World(level([
+    { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 0 },
+  ], { type: "carrot" }));
+  const carrots = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  });
+  const snapshot = world.snapshot();
+  const first = new CommandQueue();
+  first.setState(carrots[0].id, { consumed: true });
+  world.committer.commit(first, { worldTick: null, worldTimeMs: 0 });
+  assert.deepEqual(world.winState, { type: "carrot", completed: false, remaining: 1 });
+
+  const second = new CommandQueue();
+  second.setState(carrots[1].id, { consumed: true });
+  world.committer.commit(second, { worldTick: null, worldTimeMs: 0 });
+  assert.deepEqual(world.winState, { type: "carrot", completed: true, remaining: 0 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.CARROT }), 2);
+
+  world.restore(snapshot);
+  assert.deepEqual(world.winState, { type: "carrot", completed: false, remaining: 2 });
+});
+
+test("Golden Carrot Goal 读取已提交的收集记录并随 Snapshot 恢复", () => {
+  const world = new World(level([
+    { type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 },
+  ], { type: "golden-carrot" }));
+  const actor = world.query.entitiesWithFact("player")[0];
+  const snapshot = world.snapshot();
+
+  assert.equal(world.winState.completed, false);
+  const result = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  assert.equal(result.events.some((event) => event.type === "collect-golden-carrot"), true);
+  assert.deepEqual(world.state.successfulGoalInteractions, [MapEntityTypeId.GOLDEN_CARROT]);
+  assert.equal(world.winState.completed, true);
+
+  world.restore(snapshot);
+  assert.deepEqual(world.state.successfulGoalInteractions, []);
+  assert.equal(world.winState.completed, false);
+});
+
 test("Egg 按 Entity ID 计数，填充状态可由 Snapshot 恢复", () => {
   const world = new World(level([
     { type: MapEntityTypeId.EGG, x: 1, y: 0 },

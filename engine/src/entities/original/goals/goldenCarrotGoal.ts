@@ -6,9 +6,10 @@ export const goldenCarrotGoal: GoalDefinition = {
   available(query) {
     return query.entityCountMatching({ kind: "type", value: MapEntityTypeId.GOLDEN_CARROT }) > 0;
   },
-  evaluate({ successfulInteractions }) {
+  evaluate({ successfulGoalInteractions }) {
+    // Golden Carrot 收集时会被消费；已提交的交互记录保留本局达标事实。
     return {
-      completed: successfulInteractions.includes(MapEntityTypeId.GOLDEN_CARROT),
+      completed: successfulGoalInteractions.includes(MapEntityTypeId.GOLDEN_CARROT),
     };
   },
 };

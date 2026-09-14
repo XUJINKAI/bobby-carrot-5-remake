@@ -22,8 +22,8 @@ function bindingIds(module) {
 test("EntityModule 显式组合通用 Mechanism 与对象 Behavior", () => {
   const carrot = moduleFor(MapEntityTypeId.CARROT);
   assert.ok(carrot.visual);
-  assert.deepEqual(bindingIds(carrot), ["collectible"]);
-  assert.ok(carrot.definition.behaviors?.includes("collectible"));
+  assert.deepEqual(bindingIds(carrot), ["collect-carrot"]);
+  assert.ok(carrot.definition.behaviors?.includes("collect-carrot"));
 
   const water = moduleFor(MapEntityTypeId.WATER);
   assert.ok(water.visual);

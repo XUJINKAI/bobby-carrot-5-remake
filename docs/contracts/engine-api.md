@@ -454,8 +454,8 @@ runtime: {
 消失的正播过程。默认值依据原版 `a.class` 的 animation advance 顺序分别换算。
 进入阶段 `game.presentationBlocksInput` 为 `true`，WorldClock 与 Replay tick 暂停，
 期间收到的 gameplay 移动输入会被丢弃；完成后该值恢复为 `false`。
-Carrot 的 `consumed-carrot` 是内置 World runtime state，地图只声明普通 `carrot`，
-收集后由 Engine 转换并使用 semantic atlas mapping 选择 `ts-13-10`。
+地图只声明普通 `carrot`。收集后同一 Carrot Entity 保留原 ID，
+`state.consumed = true` 驱动目标计数和 `ts-13-10` 视觉；该 state 随 World Snapshot 恢复。
 
 终局选曲属于宿主产品流程。宿主在 Game 状态进入 `won / dead` 时分别调用
 `audio.playMusic("cleared")` 或 `audio.playMusic("death")`；角色动画和 Result Overlay

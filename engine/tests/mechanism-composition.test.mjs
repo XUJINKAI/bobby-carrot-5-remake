@@ -71,6 +71,6 @@ test("内置 Entity Definition 直接声明通用机制与专属 Behavior", () =
     ),
   );
   assert.ok(
-    registry.require(MapEntityTypeId.CARROT).behaviors?.includes("collectible"),
+    registry.require(MapEntityTypeId.CARROT).behaviors?.includes("collect-carrot"),
   );
 });

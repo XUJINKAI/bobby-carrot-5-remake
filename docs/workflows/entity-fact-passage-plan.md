@@ -58,7 +58,7 @@
 
 | 实现 | 查询对象及达标条件 | 计数与边界 |
 | --- | --- | --- |
-| `carrotGoal` | 查询当前 Carrot Entity；全部收集后完成 | remaining 为 Carrot 数量，包含高草下的隐藏对象；计数为零即完成；Editor 对开局零目标给出配置提示 |
+| `carrotGoal` | 查询当前 Carrot Entity 的 `state.consumed`；全部收集后完成 | remaining 为未收集的 Carrot 数量，包含高草下的隐藏对象；计数为零即完成；Editor 对开局零目标给出配置提示 |
 | `eggGoal` | 查询当前 Egg，逐个读取 `state.filled === true` | 按 Entity ID 去重，remaining 为未填数量；至少存在一个 Egg 且全部填充才完成 |
 | `pushGoal` | 查询 Push Goal 的目标格，检查各格是否被具有 pushable 能力的对象占据 | 目标按坐标去重，remaining 为未被占据的目标格数；至少存在一个目标格 |
 | `exitGoal` | 查询玩家和 Exit，使用 Exit 的到达条件 | 至少一个玩家；所有当前玩家均满足 Exit 到达要求，驾驶限制仍由对象规则解释；remaining 可省略 |

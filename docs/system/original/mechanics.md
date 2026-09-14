@@ -50,7 +50,7 @@ Plank、Mower、Bean、Cloud、Fireball、Leaf 的精确通行条件与原始字
 - 胡萝卜是可收集物品，关卡目标是收集胡萝卜时，界面HUD显示胡萝卜剩余数量。
 
 视觉使用 `carrot` 的 base、`consumed` phase，以及 `high-grass` 的 `objective`
-phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-carrot` runtime state，
+phase。收集时同一 Carrot Entity 的 `state.consumed` 变为 `true`，目标读取未收集数量；
 `ts-13-10` 的坑会保留到本局结束，并随 World Snapshot 被 Undo / Redo 恢复。
 
 ### egg 彩蛋

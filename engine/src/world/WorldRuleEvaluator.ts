@@ -82,7 +82,7 @@ export class WorldRuleEvaluator {
         const result = this.goals.require(condition.type).evaluate({
           query: this.query,
           reach: this.reach,
-          successfulInteractions: this.state().successfulGoalInteractions,
+          successfulGoalInteractions: this.state().successfulGoalInteractions,
         });
         return { type: condition.type, ...result };
       }

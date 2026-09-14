@@ -12,6 +12,7 @@ import {
   requiresUnmountedReachBehavior,
   shovelableBehavior,
 } from "../behaviorLibrary.js";
+import { carrot } from "./carrot.js";
 import { egg } from "./egg.js";
 import { bobbyMountId } from "../player/BobbyState.js";
 import { hasBobbyBridgeAt } from "./terrain-semantics.js";
@@ -172,12 +173,6 @@ export const staticCoverModules: readonly EntityModule[] = [
   ]),
 ];
 
-const carrotDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.CARROT,
-  facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Carrot" },
-};
 const beanstalkFacts = ["climbable"] as const;
 
 const windmillDefinition: EntityModuleDefinition = {
@@ -197,14 +192,7 @@ const windmill = originalModule(
 );
 
 export const staticContentModules: readonly EntityModule[] = [
-  staticEntity(carrotDefinition, tileCell(MapEntityTypeId.CARROT), [
-    { behavior: collectBehavior },
-  ]),
-  content(
-    RuntimeEntityTypeId.CONSUMED_CARROT,
-    "Consumed Carrot",
-    tileCell(MapEntityTypeId.CARROT, { phase: "consumed" }),
-  ),
+  carrot,
   egg,
   content(
     MapEntityTypeId.BEANSTALK,

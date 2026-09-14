@@ -239,10 +239,11 @@ Model 严格校验条件形状。确需实例参数时，应由对应 Goal 增�
 { "type": "any", "conditions": [{ "type": "golden-carrot" }, { "type": "exit" }] }
 ```
 
-`carrot` 计算当前 Carrot 数量，零个即达标；`egg` 按 Egg Entity ID 读取当前
+`carrot` 计算当前 `state.consumed !== true` 的 Carrot 数量，零个即达标；
+`egg` 按 Egg Entity ID 读取当前
 `state.filled`，并要求地图至少存在一个 Egg；`push-goal` 按目标格去重，要求每格
 被具有 `pushable` 能力的对象占据。`exit` 要求每个玩家各自满足 Exit 的到达条件；
-`golden-carrot` 读取已提交的成功交互记录，因此目标被收集后结果仍可恢复。
+`golden-carrot` 读取 World 已提交的 Golden Carrot 成功收集记录，记录随 Snapshot 恢复。
 
 Engine 返回同结构的目标结果树。叶子包含 `completed` 和可选 `remaining`，
 HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时机仍由 World
