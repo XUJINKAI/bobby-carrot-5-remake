@@ -48,9 +48,7 @@ function worldWithPlank(surfaceType) {
 test("Plank leaves World immediately and water becomes naturally impassable", () => {
   const world = worldWithPlank(MapEntityTypeId.WATER);
   const actor = world.query.entitiesWithFact("player")[0];
-  const plank = world.query.entitiesWithFact("terrain-overlay").find(
-    (entity) => entity.type === MapEntityTypeId.PLANK,
-  );
+  const plank = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.PLANK })[0];
   assert.ok(actor && plank);
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
@@ -65,9 +63,7 @@ test("Plank leaves World immediately and water becomes naturally impassable", ()
 test("Destroyed Plank on ordinary ground leaves the ground walkable", () => {
   const world = worldWithPlank("grass");
   const actor = world.query.entitiesWithFact("player")[0];
-  const plank = world.query.entitiesWithFact("terrain-overlay").find(
-    (entity) => entity.type === MapEntityTypeId.PLANK,
-  );
+  const plank = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.PLANK })[0];
   assert.ok(actor && plank);
 
   move(world, actor.id, "right");

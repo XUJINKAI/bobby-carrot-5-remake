@@ -220,7 +220,6 @@ export type {
   EntityFieldDefinition,
   EntityFieldKind,
   EntityFieldOption,
-  EntityLayer,
   VisualId,
   AudioProfileId,
 } from "./world/entity/EntityDefinition.js";

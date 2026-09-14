@@ -27,8 +27,8 @@ test("EntityModule 显式组合通用 Mechanism 与对象 Behavior", () => {
 
   const water = moduleFor(MapEntityTypeId.WATER);
   assert.ok(water.visual);
-  assert.deepEqual(bindingIds(water), []);
-  assert.deepEqual(water.definition.mechanisms, ["water-overlay"]);
+  assert.deepEqual(bindingIds(water), ["water-passage"]);
+  assert.deepEqual(water.definition.mechanisms, []);
 
   const portal = moduleFor(MapEntityTypeId.PORTAL);
   assert.ok(portal.visual);
@@ -63,7 +63,7 @@ test("BehaviorRegistry is built from the same builtin EntityModule list", () => 
       registry,
       mechanisms,
     ).map((behavior) => behavior.id),
-    ["water-requires-overlay"],
+    ["water-passage"],
   );
 });
 

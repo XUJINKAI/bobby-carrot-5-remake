@@ -10,25 +10,23 @@ const facts = testFactRegistry("goal", "mowable", "item");
 function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "player", facts: ["player"], layer: "object", stackOrder: 100 },
-    { type: "wall", facts: ["blocking"], layer: "object", stackOrder: 100 },
-    { type: "box", facts: ["blocking", "pushable"], layer: "object", stackOrder: 100 },
-    { type: "push-goal", facts: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "exit", facts: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "carrot", facts: [], layer: "object", stackOrder: 100 },
+    { type: "floor", facts: ["walkable"], stackOrder: 0 },
+    { type: "player", facts: ["player"], stackOrder: 100 },
+    { type: "wall", facts: ["blocking"], stackOrder: 100 },
+    { type: "box", facts: ["blocking", "pushable"], stackOrder: 100 },
+    { type: "push-goal", facts: ["walkable"], stackOrder: 0 },
+    { type: "exit", facts: ["walkable"], stackOrder: 0 },
+    { type: "carrot", facts: [], stackOrder: 100 },
     {
       type: "grass",
       facts: ["blocking", "mowable"],
       behaviors: grassBehaviors,
-      layer: "cover",
       stackOrder: 200,
     },
-    { type: "item", facts: ["item"], layer: "object", stackOrder: 100 },
+    { type: "item", facts: ["item"], stackOrder: 100 },
     {
       type: "long",
       facts: [],
-      layer: "object",
       stackOrder: 100,
       footprint: {
         byDirection: {
@@ -225,7 +223,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
   assert.equal(world.inspect(1, 0).topPresence.type, "item");
 });
 
-test("layer is semantic and independent from stackOrder", () => {
+test("Presence inspection reports semantic facts and stackOrder", () => {
   const entities = registry();
   const world = new World(
     {
@@ -237,8 +235,8 @@ test("layer is semantic and independent from stackOrder", () => {
     { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const inspection = world.inspect(0, 0);
-  assert.equal(inspection.presences.find((item) => item.type === "floor").layer, "surface");
-  assert.equal(inspection.presences.find((item) => item.type === "item").layer, "object");
+  assert.equal(inspection.presences.find((item) => item.type === "floor").facts.includes("walkable"), true);
+  assert.equal(inspection.presences.find((item) => item.type === "item").stackOrder, 100);
 });
 
 test("directional footprint uses the explicitly declared direction layout", () => {

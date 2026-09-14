@@ -78,7 +78,6 @@ function resolveInstantiatedVisualPreview(
   const presence: EntityPresence = {
     entityId: entity.id,
     cell: { x: part.x, y: part.y },
-    layer: definition.layer ?? "object",
     ...(part.role ? { role: part.role } : {}),
     facts,
     stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,

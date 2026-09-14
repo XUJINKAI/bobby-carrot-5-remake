@@ -4,7 +4,7 @@ import {
   parseOriginalTileCoordinateLabel,
   type SurfaceSourceMapping,
 } from "@bobby/model";
-import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
+import type { EntityBehaviorBinding, EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import {
   atlasVisual,
   originalModule,
@@ -12,6 +12,7 @@ import {
   tsCoordinateCell,
 } from "./module.js";
 import { sharedOriginalSurfaceFacts } from "./surface-facts.js";
+import { waterPassage } from "./water-passage.js";
 
 const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
 for (const mapping of SURFACE_SOURCE_MAPPINGS) {
@@ -28,7 +29,6 @@ for (const mapping of SURFACE_SOURCE_MAPPINGS) {
 const originalTileDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.ORIGINAL_TILE,
   facts: [],
-  layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   state: [{ key: "variant", kind: "string", label: "Original Tile" }],
   presentation: { name: "Original Tile" },
@@ -53,13 +53,17 @@ export const originalVariantModules: readonly EntityModule[] = [
       type !== MapEntityTypeId.SNOWMAN
     )
     .map(([type, mappings]) => canonicalSurface(type, mappings)),
-  canonicalSurface(MapEntityTypeId.WATER, surfaceMappings(MapEntityTypeId.WATER), [
-    "water-overlay",
-  ]),
+  canonicalSurface(
+    MapEntityTypeId.WATER,
+    surfaceMappings(MapEntityTypeId.WATER),
+    [],
+    [{ behavior: waterPassage }],
+  ),
   canonicalSurface(
     MapEntityTypeId.WATERFALL,
     surfaceMappings(MapEntityTypeId.WATERFALL),
-    ["water-overlay"],
+    [],
+    [{ behavior: waterPassage }],
   ),
   canonicalSurface(MapEntityTypeId.SNOWMAN, surfaceMappings(MapEntityTypeId.SNOWMAN), [
     "dialog",
@@ -76,12 +80,12 @@ function canonicalSurface(
   type: string,
   mappings: readonly SurfaceSourceMapping[],
   mechanisms: readonly string[] = [],
+  behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
     facts: sharedOriginalSurfaceFacts(mappings),
     mechanisms,
-    layer: "surface",
     stackOrder: SURFACE_STACK_ORDER,
     presentation: { name: type },
   };
@@ -95,5 +99,6 @@ function canonicalSurface(
       ) ?? mappings[0];
       return mapping ? tsCoordinateCell(mapping.source) : null;
     }),
+    behaviorBindings,
   );
 }

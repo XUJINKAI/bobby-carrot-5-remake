@@ -1,4 +1,3 @@
-import type { EntityLayer } from "../entity/EntityDefinition.js";
 import type { CellPosition, EntityId } from "../entity/EntityInstance.js";
 import type { FactId } from "../../fact/FactRegistry.js";
 
@@ -6,11 +5,9 @@ import type { FactId } from "../../fact/FactRegistry.js";
 export interface EntityPresence {
   entityId: EntityId;
   cell: CellPosition;
-  /** surface/object/cover 是空间语义，不由 stackOrder 推断。 */
-  layer: EntityLayer;
   /** footprint part 的语义身份，例如 head/body/tail。 */
   role?: string;
   facts: readonly FactId[];
-  /** 同格排序；不得用作 layer 或 role 的替代。 */
+  /** 同格排序；不得用作 role 的替代。 */
   stackOrder: number;
 }

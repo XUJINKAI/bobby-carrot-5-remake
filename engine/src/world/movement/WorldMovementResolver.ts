@@ -196,7 +196,7 @@ export class WorldMovementResolver {
       );
     }
 
-    if (!this.hasWalkable(plan.to)) {
+    if (!plan.allowUnwalkable && !this.hasWalkable(plan.to)) {
       this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,

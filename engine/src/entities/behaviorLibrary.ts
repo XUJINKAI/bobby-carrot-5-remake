@@ -177,24 +177,6 @@ export const shovelableBehavior: Behavior = {
   },
 };
 
-export const mowerConditionalOverlayBehavior: Behavior = {
-  id: "mower-conditional-overlay",
-  canEnter({ actor, self, query }) {
-    if (!isRidingMower(actor.state, query)) return;
-    const underlyingWalkable = query
-      .presencesAt(self.presence.cell)
-      .some(
-        (presence) =>
-          presence.entityId !== self.entity.id &&
-          presence.layer === "surface" &&
-          presence.facts.includes("walkable"),
-      );
-    return underlyingWalkable
-      ? { passable: true, reason: "mower-over-overlay-on-ground" }
-      : { passable: false, reason: "mower-cannot-use-overlay-bridge" };
-  },
-};
-
 function isRidingMower(
   state: Parameters<typeof bobbyMountId>[0],
   query: Parameters<NonNullable<Behavior["onEnter"]>>[0]["query"],

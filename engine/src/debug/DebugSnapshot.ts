@@ -13,7 +13,6 @@ import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 import type { RuntimeActionInstance } from "../world/action/RuntimeAction.js";
 import type { ActorLifecycleState } from "../world/actor/ActorLifecycle.js";
-import type { EntityLayer } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
   EntityId,
@@ -94,7 +93,6 @@ export interface DebugSelectionSnapshot {
 export interface DebugPresenceSnapshot {
   entityId: EntityId;
   type: string;
-  layer: EntityLayer;
   role?: string;
   stackOrder: number;
   facts: readonly string[];
@@ -113,7 +111,6 @@ export interface DebugEntitySnapshot {
   instanceFacts: readonly string[];
   definition: {
     facts: readonly string[];
-    layer: EntityLayer;
     stackOrder: number | null;
     footprint: unknown;
     propertyFields: unknown;
@@ -317,7 +314,6 @@ function buildEntitySnapshot(
     instanceFacts: [...(entity.instanceFacts ?? [])],
     definition: {
       facts: [...definition.facts],
-      layer: definition.layer ?? "object",
       stackOrder: definition.stackOrder ?? null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
       propertyFields: definition.properties ? structuredClone(definition.properties) : null,
@@ -353,7 +349,6 @@ function debugPresence(
   return {
     entityId: presence.entityId,
     type: world.entity(presence.entityId)?.type ?? "unknown",
-    layer: presence.layer,
     ...(presence.role ? { role: presence.role } : {}),
     stackOrder: presence.stackOrder,
     facts: [...presence.facts],

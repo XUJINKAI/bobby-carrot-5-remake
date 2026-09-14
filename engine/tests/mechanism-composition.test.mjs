@@ -9,7 +9,7 @@ import { World } from "./support/World.mjs";
 function touchTarget(type, mechanisms) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"], layer: "surface" },
+    { type: "floor", facts: ["walkable"] },
     { type: "actor", facts: ["player"] },
     { type, facts: ["blocking", "collectible"], mechanisms },
   ]);
@@ -59,11 +59,11 @@ test("内置 Entity Definition 直接声明通用机制与专属 Behavior", () =
   );
   assert.deepEqual(
     registry.require(MapEntityTypeId.WATER).mechanisms,
-    ["water-overlay"],
+    [],
   );
   assert.deepEqual(
     registry.require(MapEntityTypeId.TIDE).mechanisms,
-    ["water-overlay"],
+    undefined,
   );
   assert.ok(
     registry.require(MapEntityTypeId.EXIT).behaviors?.includes(

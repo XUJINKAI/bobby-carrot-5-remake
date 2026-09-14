@@ -569,7 +569,6 @@ export class VisualRuntime {
         presence: {
           entityId: -transient.id,
           cell: { x: transient.x, y: transient.y },
-          layer: "object",
           facts: [],
           stackOrder: transient.definition.stackOrder ?? 0,
         },

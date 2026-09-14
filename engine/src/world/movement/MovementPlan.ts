@@ -26,6 +26,8 @@ export interface MovementCompanion {
  */
 export interface MovementPolicy {
   passage?: MovementPassage;
+  /** Entity 已确认本次可跨越目标地形；其它对象通行仍逐个裁决。 */
+  allowUnwalkable?: boolean;
   updateDirection?: boolean;
   lifecycle?: MovementLifecycle;
   companions?: readonly MovementCompanion[];
@@ -51,6 +53,7 @@ export interface MovementPlan {
   direction: Direction;
   cause: MoveCause;
   passage: MovementPassage;
+  allowUnwalkable: boolean;
   updateDirection: boolean;
   lifecycle: MovementLifecycle;
   companions: readonly MovementCompanion[];
@@ -62,6 +65,7 @@ export function createMovementPlan(
   policies: readonly (MovementPolicy | void)[],
 ): MovementPlan {
   let passage: MovementPassage = "standard";
+  let allowUnwalkable = false;
   let updateDirection = true;
   let lifecycle: MovementLifecycle = {
     source: clonePresences(context.source),
@@ -80,6 +84,7 @@ export function createMovementPlan(
       passage = policy.passage;
       passageOwner = index;
     }
+    if (policy.allowUnwalkable === true) allowUnwalkable = true;
     if (policy.updateDirection !== undefined) {
       assertCompatible(
         "updateDirection",
@@ -118,6 +123,7 @@ export function createMovementPlan(
     direction: context.direction,
     cause: structuredClone(context.cause),
     passage,
+    allowUnwalkable,
     updateDirection,
     lifecycle,
     companions: [...companions.values()],

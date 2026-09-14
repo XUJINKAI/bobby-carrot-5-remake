@@ -46,7 +46,7 @@ test("Fact resolver、Behavior 和 WorldQuery 无法修改已提交的 Entity �
   const presence = world.query.topPresenceAt({ x: 1, y: 0 });
   assert.ok(presence);
   assert.equal(Reflect.set(presence, "layer", "cover"), false);
-  assert.equal(world.spatial.topPresenceAt({ x: 1, y: 0 }).layer, "object");
+  assert.equal(Object.hasOwn(world.spatial.topPresenceAt({ x: 1, y: 0 }), "layer"), false);
   assert.equal(Reflect.set(world.query.global(), "moves", 99), false);
   assert.equal(world.state.moves, 0);
 });

@@ -10,11 +10,11 @@ import {
   originalModule,
   SURFACE_STACK_ORDER,
 } from "./module.js";
+import { waterPassage } from "./water-passage.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE,
   facts: ["water"],
-  mechanisms: ["water-overlay"],
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Tide" },
 };
@@ -30,4 +30,5 @@ export const tide: EntityModule = originalModule(
       tileCell(MapEntityTypeId.TIDE, { fields: { direction: "right" } }),
     ),
   ),
+  [{ behavior: waterPassage }],
 );

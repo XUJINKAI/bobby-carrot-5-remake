@@ -154,7 +154,6 @@ export const mower: EntityModule = originalModule(
 const parkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER_PARKING,
   facts: ["walkable"],
-  layer: "surface",
   stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Mower Parking" },
 };

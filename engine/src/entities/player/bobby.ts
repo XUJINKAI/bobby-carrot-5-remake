@@ -20,6 +20,7 @@ import {
   isBobbyFlying,
   readBobbySpeedBoost,
 } from "./BobbyState.js";
+import { bobbyCanCrossUnwalkable } from "./bobby-passage.js";
 
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_TILE_SIZE = 48;
@@ -74,7 +75,8 @@ const definition: EntityModuleDefinition = {
 
 const bobbyMovementPolicy: Behavior = {
   id: "bobby-movement-policy",
-  planMovement({ actor, query, to, target }) {
+  planMovement(context) {
+    const { actor, query, to, target } = context;
     if (isBobbyFlying(actor.state))
       return {
         passage: "unrestricted",
@@ -88,9 +90,11 @@ const bobbyMovementPolicy: Behavior = {
       };
 
     const relation = bobbyMountId(actor.state);
-    if (relation === null || !query.entityHasFact(relation, "ride-carried"))
-      return;
+    if (relation === null || query.entity(relation)?.type !== MapEntityTypeId.MOWER) {
+      return { allowUnwalkable: bobbyCanCrossUnwalkable(context) };
+    }
     return {
+      allowUnwalkable: false,
       companions: [
         {
           entityId: relation,

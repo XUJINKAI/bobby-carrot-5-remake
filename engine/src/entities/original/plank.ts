@@ -20,18 +20,9 @@ export const PLANK_DECAY_DURATION_MS = 2 * PLANK_DECAY_PHASE_MS;
 
 const plankPassage: Behavior = {
   id: "plank-passage",
-  canEnter({ actor, self, query }) {
-    const underlyingWalkable = query
-      .presencesAt(self.presence.cell)
-      .some(
-        (presence) =>
-          presence.entityId !== self.entity.id &&
-          presence.layer === "surface" &&
-          presence.facts.includes("walkable"),
-      );
-    if (bobbyMountId(actor.state) !== null && !underlyingWalkable)
-      return { passable: false, reason: "mower-cannot-use-plank-bridge" };
-    return { passable: true, reason: "plank-bridge" };
+  canEnter({ actor }) {
+    if (bobbyMountId(actor.state) === null)
+      return { passable: true, reason: "plank-bridge" };
   },
   onLeave({ actor, self, query, commands }) {
     if (
@@ -40,7 +31,7 @@ const plankPassage: Behavior = {
     )
       return;
 
-    // Gameplay ends immediately. D5/D6 are a Presentation-only corpse animation.
+    // 游戏通行在离开时立即结束；后续碎裂帧仅由表现层播放。
     commands.destroy(self.entity.id);
     commands.emit({
       type: "plank-decay-started",
@@ -53,7 +44,7 @@ const plankPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.PLANK,
-  facts: ["terrain-overlay", "walkable"],
+  facts: [],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Plank" },
 };

@@ -216,7 +216,6 @@ export const cloud: EntityModule = originalModule(
 const cloudParkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD_PARKING,
   facts: [],
-  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Cloud Parking" },
 };

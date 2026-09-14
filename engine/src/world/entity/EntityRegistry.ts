@@ -39,7 +39,6 @@ export class EntityRegistry {
       type,
       facts: [],
       placeholder: "unknown",
-      layer: "object",
       stackOrder: 500,
     };
     this.unknownDefinitions.set(type, fallback);

@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityBehaviorBinding,
   EntityModule,
@@ -6,13 +7,14 @@ import type {
 } from "../EntityModule.js";
 import {
   collectBehavior,
-  mowerConditionalOverlayBehavior,
   mowableBehavior,
   pickupBehavior,
   requiresUnmountedReachBehavior,
   shovelableBehavior,
 } from "../behaviorLibrary.js";
 import { egg } from "./egg.js";
+import { bobbyMountId } from "../player/BobbyState.js";
+import { hasBobbyBridgeAt } from "./terrain-semantics.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
@@ -37,7 +39,6 @@ function surface(
       type,
       facts,
       mechanisms,
-      layer: "surface",
       stackOrder: SURFACE_STACK_ORDER,
       presentation: { name },
     },
@@ -45,6 +46,19 @@ function surface(
     behaviorBindings,
   );
 }
+
+const bobbyBridgeOnCover: Behavior = {
+  id: "bobby-bridge-on-cover",
+  canEnter({ actor, self, query }) {
+    if (
+      query.entityHasFact(actor.id, "player") &&
+      bobbyMountId(actor.state) === null &&
+      hasBobbyBridgeAt(query, self.presence.cell)
+    ) {
+      return { passable: true, reason: "bridge-over-covered-terrain" };
+    }
+  },
+};
 
 function content(
   type: EntityModuleDefinition["type"],
@@ -57,7 +71,6 @@ function content(
     {
       type,
       facts,
-      layer: "object",
       stackOrder: CONTENT_STACK_ORDER,
       presentation: { name },
     },
@@ -137,7 +150,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
 const snowDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
   facts: ["blocking", "bean-growth-space"],
-  layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
 };
@@ -145,7 +157,6 @@ const snowDefinition: EntityModuleDefinition = {
 const highGrassDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
   facts: ["blocking"],
-  layer: "cover",
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
 };
@@ -153,29 +164,25 @@ const highGrassDefinition: EntityModuleDefinition = {
 export const staticCoverModules: readonly EntityModule[] = [
   staticEntity(snowDefinition, tileCell(MapEntityTypeId.SNOW), [
     { behavior: shovelableBehavior },
+    { behavior: bobbyBridgeOnCover },
   ]),
   staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS), [
     { behavior: mowableBehavior },
+    { behavior: bobbyBridgeOnCover },
   ]),
 ];
 
 const carrotDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CARROT,
   facts: ["collectible"],
-  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
-const beanstalkFacts = [
-  "terrain-overlay",
-  "climbable",
-  "walkable",
-] as const;
+const beanstalkFacts = ["climbable"] as const;
 
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
   facts: ["blocking"],
-  layer: "object",
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Windmill" },
 };
@@ -204,7 +211,7 @@ export const staticContentModules: readonly EntityModule[] = [
     "Beanstalk",
     tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
     beanstalkFacts,
-    [{ behavior: mowerConditionalOverlayBehavior }],
+    [],
   ),
   content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), [], [
     { behavior: pickupBehavior },
@@ -217,12 +224,8 @@ export const staticContentModules: readonly EntityModule[] = [
     RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     tileCell("beanstalk", { role: "middle" }),
-    [
-      "terrain-overlay",
-      "climbable",
-      "walkable",
-    ],
-    [{ behavior: mowerConditionalOverlayBehavior }],
+    ["climbable"],
+    [],
   ),
   content(
     RuntimeEntityTypeId.BEANSTALK_BASE,

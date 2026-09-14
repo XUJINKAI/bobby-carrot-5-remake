@@ -16,6 +16,7 @@ import {
   readBobbyInventory,
 } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
+import { beanCanGrowAt } from "./terrain-semantics.js";
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
@@ -84,7 +85,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
       return "running";
 
     const nextY = baseY - height;
-    if (!canGrowInto(query, x, nextY)) {
+    if (!beanCanGrowAt(query, { x, y: nextY })) {
       commands.emit({
         type: "bean-growth-completed",
         x,
@@ -145,17 +146,6 @@ function createBeanGrowthAction(x: number, baseY: number): RuntimeActionSpec {
     kind: BEAN_GROWTH_ACTION,
     state: { x, baseY, height: 1, elapsedMs: 0 },
   };
-}
-
-function canGrowInto(query: WorldQueryApi, x: number, y: number): boolean {
-  const cell = { x, y };
-  if (!query.inBounds(cell) || !query.hasFactAt(cell, "bean-growth-space"))
-    return false;
-  return query.presencesAt(cell).every(
-    (presence) =>
-      presence.layer === "surface" ||
-      presence.facts.includes("bean-growth-space"),
-  );
 }
 
 function stalkTipAt(

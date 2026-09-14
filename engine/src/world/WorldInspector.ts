@@ -18,7 +18,6 @@ export class WorldInspector {
       return {
         entityId: entity.id,
         type: entity.type,
-        layer: presence.layer,
         ...(presence.role ? { role: presence.role } : {}),
         stackOrder: presence.stackOrder,
         facts: presence.facts,

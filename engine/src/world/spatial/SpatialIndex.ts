@@ -137,7 +137,6 @@ export class SpatialIndex {
     const entityFacts = this.factProjection.entityFacts(entity, definition);
     const presences: EntityPresence[] = [];
     const baseStackOrder = entity.stackOrder ?? definition.stackOrder ?? 0;
-    const layer = definition.layer ?? "object";
     resolved.forEach((part, index) => {
       const cell = { x: part.x, y: part.y };
       if (!this.inBounds(cell)) {
@@ -149,7 +148,6 @@ export class SpatialIndex {
       const presence: EntityPresence = Object.freeze({
         entityId: entity.id,
         cell: Object.freeze(cell),
-        layer,
         ...(part.role ? { role: part.role } : {}),
         facts: Object.freeze([...facts]),
         stackOrder: part.stackOrder ?? baseStackOrder + index,

@@ -196,7 +196,7 @@ World 提供唯一的 Entity semantic projection 刷新入口。一次状态提�
 | `player` | kernel Fact | ActorLifecycle 通过它识别当前 actor |
 | Egg `state.filled` | Entity state | Egg 碰撞、视觉与 `eggGoal` 读取同一状态 |
 | Dialog | Entity-bound Dialog Mechanism | 通用触碰对白规则 |
-| `mower-conditional-overlay` | 具体对象 Behavior | 含割草机专属通行设计 |
+| Bobby 的跨地形提案 | Player MovementPolicy | 完整 Plank 和豆茎上段允许普通 Bobby 跨越地形 |
 | Color Block 的 `raised` | Entity state 与专属 Behavior | 当前状态决定通行结果 |
 | `carousel`、`mower`、`portal` | Entity Type | 规则需要查找具体对象身份 |
 | `bonus-coin`、`golden-carrot` | Entity Type | 奖励指标按 Type 计数 |
@@ -271,13 +271,18 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 ```text
 来源格 canLeave
 → Push 候选及目标格可占用性
-→ 目标格 walkable 判断
+→ 目标地形落脚判断；Actor 的跨地形提案只覆盖此步
 → 目标格 resolveEntry
 → 目标格 canEnter 与 blocking 裁决
 → 最终预留与原子提交
 ```
 
 `resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。Pipeline 返回决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。
+
+Bobby 的 `allowUnwalkable` 提案由 Player 规则检查完整 Plank 与豆茎上段；驾驶
+Mower 时依赖目标地形本身可落脚。水域、Snow、高草和 Mirror 各自解释进入条件；
+同格独立对象继续依序执行 `resolveEntry / canEnter`。视觉 `layers`、footprint
+`role` 和同格 `stackOrder` 分别用于绘制、部位身份与排序，不参与地形判断。
 
 Push 的具体行为要求：
 

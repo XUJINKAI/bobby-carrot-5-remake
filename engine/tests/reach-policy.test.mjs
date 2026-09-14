@@ -22,7 +22,6 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const presence = {
     entityId: 2,
     cell: { x: 1, y: 0 },
-    layer: "surface",
     facts: [],
     stackOrder: 0,
   };

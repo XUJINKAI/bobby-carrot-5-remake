@@ -15,6 +15,10 @@ import {
 
 const rotateMirrorOnLeave: Behavior = {
   id: "rotate-mirror-on-leave",
+  canEnter({ actor }) {
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mower-cannot-enter-mirror" };
+  },
   onLeave({ actor, self, query, commands }) {
     if (
       !query.entityHasFact(actor.id, "player") ||
