@@ -167,6 +167,8 @@ interface EntityDefinition {
 
 `entityFacts` 声明对象整体的静态事实；`facts` 声明每个 Presence 的静态事实，footprint part 还可声明自身的 `facts`。`EntityFactProjection` 合并静态值、实例值及 Resolver 结果，校验 ID 并去重。机制组合本身不会默认为 Entity 增加 Fact；需要向其它规则公开稳定语义时，由 Entity Definition 明确声明。
 
+World composition 总是提供 `FactRegistry`：省略注入时使用内置词汇，显式注入时使用调用方词汇。Entity Registry 的选择不改变校验路径；自定义 Entity 产生的新 Fact 由其调用方在 Fact Registry 中声明。
+
 ### Presence 与 Entity 查询
 
 格子上的通行、碰撞和触发以该格 Presence Fact 为准。多格 Dragon 的 head/body 可以 `blocking`，tail 可以 `walkable`；同一 Entity 的各 Presence 不必拥有同一组 Fact。对象整体语义可保存在 Entity Fact 中，例如对整个对象定义 `boss` 或 `collectible-object`，无需复制到每个 Presence。

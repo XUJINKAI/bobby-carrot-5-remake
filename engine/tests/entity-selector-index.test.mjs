@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后等价于全量查询", () => {
   const registry = new EntityRegistry();
@@ -28,7 +29,7 @@ test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后
       { type: "target", x: 3, y: 3 },
       { type: "long", x: 4, y: 4, direction: "right" },
     ],
-  }, { entities: registry });
+  }, { entities: registry, facts: testFactRegistry("target", "other", "instance", "missing") });
   function check() {
     for (const selector of ["player", "target", "other", "instance", "missing"]) {
       const all = world.entities.all();

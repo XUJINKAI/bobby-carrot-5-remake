@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 function runtime(onEnter) {
   const entities = new EntityRegistry();
@@ -31,7 +32,7 @@ function runtime(onEnter) {
         { type: "trigger", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors, motionDurationMs: 100 },
+    { entities, behaviors, facts: testFactRegistry("trigger"), motionDurationMs: 100 },
   );
   return { world, actorId: world.query.entitiesWithFact("player")[0].id };
 }

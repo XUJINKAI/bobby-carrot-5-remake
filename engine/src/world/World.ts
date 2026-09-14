@@ -88,7 +88,7 @@ export interface WorldOptions {
   behaviors: BehaviorRegistry;
   mechanisms: MechanismRegistry;
   actions: RuntimeActionRegistry;
-  facts?: FactRegistry;
+  facts: FactRegistry;
   actorPolicy?: ActorPolicy;
   initializeLevelEntity?: LevelEntityInitializer;
   /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
@@ -154,8 +154,8 @@ export class World {
       this.entities,
       this.spatial,
       () => this.state,
-      this.movement.motions,
       options.facts,
+      this.movement.motions,
     );
     assertDistinctPlayerAnchors(this.query);
     this.inspector = new WorldInspector(this.entities, this.spatial);

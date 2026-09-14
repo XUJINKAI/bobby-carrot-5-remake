@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { World } from "./support/World.mjs";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序", () => {
   const entities = new EntityRegistry();
@@ -37,7 +38,7 @@ test("TickIndex 保持远处机关、去重、commit 边界与快照恢复顺序
       { type: "ticking", x: 91, y: 0 },
       { type: "tail-only", x: 20, y: 0 },
     ],
-  }, { entities, behaviors });
+  }, { entities, behaviors, facts: testFactRegistry("late", "clock") });
   const snapshot = world.snapshot();
   function tick(expected) {
     calls.length = 0;

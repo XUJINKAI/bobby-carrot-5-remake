@@ -19,9 +19,7 @@ export function composeWorldOptions(
     behaviors: options.behaviors ?? behaviorRegistry,
     mechanisms: options.mechanisms ?? mechanismRegistry,
     actions: options.actions ?? createBuiltinRuntimeActionRegistry(),
-    ...(options.facts !== undefined || options.entities === undefined
-      ? { facts: options.facts ?? factRegistry }
-      : {}),
+    facts: options.facts ?? factRegistry,
     actorPolicy: options.actorPolicy ?? bobbyActorPolicy,
     initializeLevelEntity:
       options.initializeLevelEntity ?? initializeOriginalLevelEntity,

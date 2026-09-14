@@ -4,9 +4,30 @@ import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinFactRegistry } from "../dist/fact/builtinFacts.js";
 import { FactRegistry } from "../dist/fact/FactRegistry.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
+import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
+
+test("自定义 Entity 使用固定 Fact 校验路径", () => {
+  const entities = new EntityRegistry();
+  entities.register({ type: "probe", facts: ["probe-active"] });
+  const level = {
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [{ type: "probe", x: 0, y: 0 }],
+  };
+
+  assert.throws(() => new World(level, { entities }), /未注册 Fact：probe-active/);
+
+  const world = new World(level, {
+    entities,
+    facts: testFactRegistry("probe-active"),
+  });
+  assert.equal(world.query.entityHasFact(1, "probe-active"), true);
+});
 
 test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => {
   const facts = createBuiltinFactRegistry();

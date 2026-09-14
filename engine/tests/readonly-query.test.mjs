@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("Fact resolver、Behavior 和 WorldQuery 无法修改已提交的 Entity 与 Presence", () => {
   let observedHook = false;
@@ -33,7 +34,7 @@ test("Fact resolver、Behavior 和 WorldQuery 无法修改已提交的 Entity �
     width: 2,
     height: 1,
     entities: [{ type: "probe", x: 1, y: 0 }],
-  }, { entities, behaviors });
+  }, { entities, behaviors, facts: testFactRegistry("active") });
   const entity = world.entities.all()[0];
   assert.equal(observedHook, true);
   assert.deepEqual(entity.anchor, { x: 1, y: 0 });

@@ -18,8 +18,8 @@ export class WorldQueryApi {
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
     private readonly globalState: () => Readonly<GlobalState>,
+    private readonly facts: FactRegistry,
     private readonly motions?: WorldMotionStore,
-    private readonly facts?: FactRegistry,
   ) {}
 
   inBounds(cell: CellQuery): boolean {
@@ -49,7 +49,7 @@ export class WorldQueryApi {
   }
 
   presenceHasFact(presence: EntityPresence, fact: string): boolean {
-    this.facts?.require(fact);
+    this.facts.require(fact);
     return presence.facts.includes(fact);
   }
 
@@ -67,7 +67,7 @@ export class WorldQueryApi {
   }
 
   hasFactAt(cell: CellQuery, fact: FactId): boolean {
-    this.facts?.require(fact);
+    this.facts.require(fact);
     return this.spatial.hasFactAt(cell, fact);
   }
 
@@ -81,12 +81,12 @@ export class WorldQueryApi {
   }
 
   entityHasFact(entityId: EntityId, fact: FactId): boolean {
-    this.facts?.require(fact);
+    this.facts.require(fact);
     return this.spatial.entityHasFact(entityId, fact);
   }
 
   entitiesWithFact(fact: FactId): readonly EntityInstance[] {
-    this.facts?.require(fact);
+    this.facts.require(fact);
     return this.entitiesMatching({ kind: "fact", value: fact });
   }
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("World onTick receives the shared WorldTick", () => {
   const entities = new EntityRegistry();
@@ -47,7 +48,7 @@ test("World onTick receives the shared WorldTick", () => {
         { type: "ticker", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors },
+    { entities, behaviors, facts: testFactRegistry("ticker") },
   );
   const time = { tick: 7, stepMs: 50 };
   world.update(time);

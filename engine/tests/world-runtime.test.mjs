@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
+
+const facts = testFactRegistry("goal", "mowable", "item");
 
 function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
@@ -73,7 +76,7 @@ test("implicit Void blocks and ordinary floor moves", () => {
       height: 1,
       entities: [floor(0, 0), floor(1, 0), { type: "player", x: 0, y: 0 }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
   assert.equal(move(world, actor, "right").moves[0].moved, true);
@@ -98,7 +101,7 @@ test("pushable movement is one transaction and fill-all uses Presence facts", ()
       ],
       rules: { win: { type: "fill-all", target: "goal", filler: "pushable" } },
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
   const box = world.query.entitiesWithFact("pushable")[0];
@@ -119,7 +122,7 @@ test("reach selector can address an Entity type without a matching Fact", () => 
       entities: [floor(0, 0), floor(1, 0, "exit-cell"), { type: "player", x: 0, y: 0 }],
       rules: { win: { type: "reach", target: "exit-cell" } },
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
   assert.equal(world.completed, false);
@@ -140,7 +143,7 @@ test("World accepts multiple player actors and one intent group counts as one mo
         { type: "player", x: 3, y: 0, direction: "left" },
       ],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const [left, right] = actorIds(world);
   const step = world.step({
@@ -170,7 +173,7 @@ test("同一 intent group 的两个 actor 争用同一目标格时全部拒绝",
         { type: "player", x: 2, y: 0 },
       ],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const [left, right] = actorIds(world);
   const step = world.step({
@@ -212,7 +215,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
         { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors },
+    { entities, behaviors, facts },
   );
   const actor = actorIds(world)[0];
   const step = move(world, actor, "right");
@@ -231,7 +234,7 @@ test("layer is semantic and independent from stackOrder", () => {
       height: 1,
       entities: [floor(0, 0), { type: "item", x: 0, y: 0 }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const inspection = world.inspect(0, 0);
   assert.equal(inspection.presences.find((item) => item.type === "floor").layer, "surface");
@@ -247,7 +250,7 @@ test("directional footprint uses the explicitly declared direction layout", () =
       height: 4,
       entities: [floor(0, 0), { type: "player", x: 0, y: 0 }, { type: "long", x: 2, y: 1, direction: "down" }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const entity = world.entities.all().find((item) => item.type === "long");
   assert.deepEqual(
