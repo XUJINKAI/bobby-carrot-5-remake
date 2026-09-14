@@ -28,6 +28,8 @@ export interface MovementPolicy {
   passage?: MovementPassage;
   /** Entity 已确认本次可跨越目标地形；其它对象通行仍逐个裁决。 */
   allowUnwalkable?: boolean;
+  /** 目标格中由桥接覆盖的 Entity；来源格离开与其它目标对象仍正常裁决。 */
+  bypassTargetEntityIds?: readonly EntityId[];
   updateDirection?: boolean;
   lifecycle?: MovementLifecycle;
   companions?: readonly MovementCompanion[];
@@ -54,6 +56,7 @@ export interface MovementPlan {
   cause: MoveCause;
   passage: MovementPassage;
   allowUnwalkable: boolean;
+  bypassTargetEntityIds: readonly EntityId[];
   updateDirection: boolean;
   lifecycle: MovementLifecycle;
   companions: readonly MovementCompanion[];
@@ -66,6 +69,8 @@ export function createMovementPlan(
 ): MovementPlan {
   let passage: MovementPassage = "standard";
   let allowUnwalkable = false;
+  const bypassTargetEntityIds = new Set<EntityId>();
+  const targetEntityIds = new Set(context.target.map((presence) => presence.entityId));
   let updateDirection = true;
   let lifecycle: MovementLifecycle = {
     source: clonePresences(context.source),
@@ -85,6 +90,11 @@ export function createMovementPlan(
       passageOwner = index;
     }
     if (policy.allowUnwalkable === true) allowUnwalkable = true;
+    for (const entityId of policy.bypassTargetEntityIds ?? []) {
+      if (!targetEntityIds.has(entityId))
+        throw new Error(`MovementPolicy 引用了目标格以外的 Entity：${entityId}`);
+      bypassTargetEntityIds.add(entityId);
+    }
     if (policy.updateDirection !== undefined) {
       assertCompatible(
         "updateDirection",
@@ -124,6 +134,7 @@ export function createMovementPlan(
     cause: structuredClone(context.cause),
     passage,
     allowUnwalkable,
+    bypassTargetEntityIds: [...bypassTargetEntityIds],
     updateDirection,
     lifecycle,
     companions: [...companions.values()],

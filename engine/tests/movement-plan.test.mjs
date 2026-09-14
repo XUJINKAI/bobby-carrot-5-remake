@@ -53,3 +53,17 @@ test("MovementPolicy 拒绝相互冲突的规则", () => {
     /passage.*冲突/,
   );
 });
+
+test("MovementPolicy 只接受目标格内的桥接绕过身份", () => {
+  const target = [{ entityId: 3, cell: { x: 2, y: 1 }, facts: [], stackOrder: 0 }];
+  const plan = createMovementPlan({ ...context, target }, [
+    { allowUnwalkable: true, bypassTargetEntityIds: [3] },
+  ]);
+  assert.deepEqual(plan.bypassTargetEntityIds, [3]);
+  assert.throws(
+    () => createMovementPlan({ ...context, target }, [
+      { bypassTargetEntityIds: [4] },
+    ]),
+    /目标格以外的 Entity/,
+  );
+});

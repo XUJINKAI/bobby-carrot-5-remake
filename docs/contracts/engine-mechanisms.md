@@ -159,9 +159,9 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 | `moving-platform` | Cloud、Leaf | Bobby 与 Mower 的移动关系判断 | 否 |
 | `player` | Bobby | World ActorLifecycle、移动冲突及对象规则 | 否 |
 | `pushable` | 可推动对象 | Push、`pushGoal` | 否 |
-| `sky` | Starfield、Moon | Cloud 路线、Fireball 地形域 | 否 |
-| `walkable` | 可落脚地形及可承载部位 | 标准 Passage、Fireball 的地形筛选 | 否 |
-| `water` | Water、Waterfall 等水域 | Bobby 水域规则、Leaf 路线、Fireball 地形域 | 否 |
+| `sky` | Starfield、Moon | Cloud 路线 | 否 |
+| `walkable` | 可落脚地形及可承载部位 | 标准 Passage | 否 |
+| `water` | Water、Waterfall 等水域 | Bobby 水域规则、Leaf 路线 | 否 |
 
 Bean 的生长目标由 `beanCanGrowAt` 按语义地形与普通对象占用判断。Cloud / Leaf 另按对象阻挡名单和方向规划，Fireball 只从原版地形获得传播许可；Snow 覆盖会阻止下层地面的传播许可。Mirror 的反射读取语义 `variant`，Ice Block 的融化由其对象入口提出命令。这些对象专属规则不扩充 Fact 词汇。
 
@@ -286,7 +286,7 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 ```text
 来源格 canLeave
 → Push 候选及目标格可占用性
-→ 目标地形落脚判断；Actor 的跨地形提案只覆盖此步
+→ 目标地形落脚判断；Actor 的跨地形提案覆盖此步及指定目标地形的交互判断
 → 目标格 resolveEntry
 → 目标格 canEnter 与 blocking 裁决
 → 最终预留与原子提交
@@ -294,9 +294,10 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 
 `resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。Pipeline 返回决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。
 
-Bobby 的 `allowUnwalkable` 提案由 Player 规则检查完整 Plank 与豆茎上段；驾驶
-Mower 时依赖目标地形本身可落脚。水域、Snow、高草和 Mirror 各自解释进入条件；
-同格独立对象继续依序执行 `resolveEntry / canEnter`。视觉 `layers`、footprint
+Bobby 的 `allowUnwalkable` 提案由 Player 规则检查完整 Plank 与豆茎上段，并以
+`bypassTargetEntityIds` 列出被覆盖的目标地形；World 跳过这些地形的目标交互与进入 hook，
+仍执行来源地形的离开规则、同格独立对象的 `resolveEntry / canEnter` 和移动冲突检查。
+驾驶 Mower 时依赖目标地形本身可落脚。视觉 `layers`、footprint
 `role` 和同格 `stackOrder` 分别用于绘制、部位身份与排序，不参与地形判断。
 
 Push 的具体行为要求：

@@ -71,6 +71,41 @@ test("完整木板覆盖高草和 Snow 的地形限制", () => {
   }
 });
 
+test("完整木板覆盖升起色块和竖向 Carousel 的目标地形限制", () => {
+  const terrains = [
+    { type: MapEntityTypeId.COLOR_BLOCK, color: "yellow", raised: true, x: 1, y: 0 },
+    { type: MapEntityTypeId.CAROUSEL, variant: "vertical", x: 1, y: 0 },
+  ];
+  for (const terrain of terrains) {
+    assert.equal(tryRight(passageWorld(terrain)).moved, false, terrain.type);
+    assert.equal(tryRight(passageWorld(terrain, [
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+    ])).moved, true, terrain.type);
+    assert.equal(tryRight(passageWorld(terrain, [
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+    ], true)).moved, false, terrain.type);
+    assert.equal(tryRight(passageWorld(terrain, [
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 1, y: 0 },
+    ])).moved, false, terrain.type);
+  }
+});
+
+test("目标木板不覆盖来源 Carousel 的离开限制", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.CAROUSEL, variant: "vertical", x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+  });
+  assert.equal(tryRight(world).passage.reason, "carousel-direction-blocked");
+});
+
 test("Mower 可经过地面木板，Mirror 由对象规则阻挡", () => {
   assert.equal(tryRight(passageWorld(ground(1), [
     { type: MapEntityTypeId.PLANK, x: 1, y: 0 },

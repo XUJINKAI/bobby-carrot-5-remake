@@ -20,7 +20,7 @@ import {
   isBobbyFlying,
   readBobbySpeedBoost,
 } from "./BobbyState.js";
-import { bobbyCanCrossUnwalkable } from "./bobby-passage.js";
+import { bobbyTerrainBridgePolicy } from "./bobby-passage.js";
 
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_TILE_SIZE = 48;
@@ -91,7 +91,7 @@ const bobbyMovementPolicy: Behavior = {
 
     const relation = bobbyMountId(actor.state);
     if (relation === null || query.entity(relation)?.type !== MapEntityTypeId.MOWER) {
-      return { allowUnwalkable: bobbyCanCrossUnwalkable(context) };
+      return bobbyTerrainBridgePolicy(context);
     }
     return {
       allowUnwalkable: false,

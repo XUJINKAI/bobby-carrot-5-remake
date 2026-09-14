@@ -158,6 +158,10 @@ export class WorldMovementResolver {
     group: MovementTransaction,
   ): MoveResult {
     const local = new MovementTransaction();
+    const bypassed = new Set(plan.bypassTargetEntityIds);
+    const passageTargetStack = targetStack.filter((presence) =>
+      !bypassed.has(presence.entityId)
+    );
     const leave = this.runPassage(
       sourceStack,
       actor,
@@ -186,7 +190,7 @@ export class WorldMovementResolver {
       (!this.canOccupy(pushed.to, pushed.entityId, group) ||
         !group.canReserveDestination(pushed.entityId, pushed.to))
     ) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -197,7 +201,7 @@ export class WorldMovementResolver {
     }
 
     if (!plan.allowUnwalkable && !this.hasWalkable(plan.to)) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -209,7 +213,7 @@ export class WorldMovementResolver {
 
     const ignoredEntity = pushed?.entityId ?? null;
     const resolution = this.resolveEntry(
-      targetStack,
+      passageTargetStack,
       actor,
       intent.direction,
       local,
@@ -217,7 +221,7 @@ export class WorldMovementResolver {
       ignoredEntity,
     );
     if (!resolution.passable) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -228,7 +232,7 @@ export class WorldMovementResolver {
     }
 
     const enter = this.runPassage(
-      targetStack,
+      passageTargetStack,
       actor,
       intent.direction,
       local,
@@ -237,7 +241,7 @@ export class WorldMovementResolver {
       ignoredEntity,
     );
     if (!enter.passable) {
-      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -274,7 +278,8 @@ export class WorldMovementResolver {
       {
         ...plan.lifecycle,
         target: plan.lifecycle.target.filter(
-          (presence) => presence.entityId !== ignoredEntity,
+          (presence) => presence.entityId !== ignoredEntity &&
+            !bypassed.has(presence.entityId),
         ),
       },
     );
