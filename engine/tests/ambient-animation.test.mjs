@@ -82,12 +82,11 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     completed: false,
     conditions: [
       {
-        type: "collect-all",
-        target: MapEntityTypeId.CARROT,
+        type: "carrot",
         completed: false,
         remaining: 1,
       },
-      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+      { type: "exit", completed: false },
     ],
   };
   assert.equal(
@@ -99,12 +98,11 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     ...blocked,
     conditions: [
       {
-        type: "collect-all",
-        target: MapEntityTypeId.CARROT,
+        type: "carrot",
         completed: true,
         remaining: 0,
       },
-      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+      { type: "exit", completed: false },
     ],
   };
   const readyLayer = resolveAt(
@@ -120,7 +118,7 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     MapEntityTypeId.EXIT,
     AMBIENT_STEP_MS,
     undefined,
-    { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+    { type: "exit", completed: false },
   );
   assert.equal(directLayer.kind, "image");
   assert.equal(directLayer.frameIndex, 0);

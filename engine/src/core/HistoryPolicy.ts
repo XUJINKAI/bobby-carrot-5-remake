@@ -14,7 +14,6 @@ export const DEFAULT_HISTORY_POLICY: HistoryPolicy = {
 const NON_CHECKPOINT_GLOBALS = new Set([
   "moves",
   "elapsedMs",
-  "lastReachedSelectors",
   "logicRemainderMs",
 ]);
 

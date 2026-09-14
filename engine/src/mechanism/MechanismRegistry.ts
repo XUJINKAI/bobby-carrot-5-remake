@@ -4,7 +4,6 @@ import type {
   PushPipelineMechanism,
 } from "../world/movement/MovementPipeline.js";
 import type { WorldMetricsMechanism } from "../world/outcome/WorldMetrics.js";
-import type { ReachAggregationMechanism } from "../world/outcome/ReachAggregation.js";
 
 export type MechanismId = string;
 
@@ -19,7 +18,6 @@ export class MechanismRegistry {
   private passage: PassagePipelineMechanism | undefined;
   private push: PushPipelineMechanism | undefined;
   private metrics: WorldMetricsMechanism | undefined;
-  private reachAggregation: ReachAggregationMechanism | undefined;
   private version = 0;
 
   get revision(): number {
@@ -56,12 +54,6 @@ export class MechanismRegistry {
     this.version += 1;
   }
 
-  registerReachAggregation(definition: ReachAggregationMechanism): void {
-    if (this.reachAggregation) throw new Error("重复 Reach Aggregation Mechanism");
-    this.reachAggregation = definition;
-    this.version += 1;
-  }
-
   requirePassage(): PassagePipelineMechanism {
     if (!this.passage) throw new Error("缺少 Passage Pipeline Mechanism");
     return this.passage;
@@ -75,11 +67,6 @@ export class MechanismRegistry {
   requireMetrics(): WorldMetricsMechanism {
     if (!this.metrics) throw new Error("缺少 World Metrics Mechanism");
     return this.metrics;
-  }
-
-  requireReachAggregation(): ReachAggregationMechanism {
-    if (!this.reachAggregation) throw new Error("缺少 Reach Aggregation Mechanism");
-    return this.reachAggregation;
   }
 
   require(id: MechanismId): EntityMechanismDefinition {

@@ -141,8 +141,8 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.CARROT),
   defineEntity(
     MapEntityTypeId.EGG,
-    [],
-    "Filled/empty is runtime state, not a different map entity type.",
+    [booleanField("filled", false, false, "开局是否已经填充。")],
+    "填充状态由同一 Egg Entity 的运行状态维护。",
   ),
   defineEntity(MapEntityTypeId.LOCK, [
     booleanField(

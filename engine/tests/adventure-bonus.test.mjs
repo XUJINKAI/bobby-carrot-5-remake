@@ -48,7 +48,7 @@ test("reach can complete on a collectible removed by onEnter", () => {
   const world = new World(
     corridor(
       [{ type: MapEntityTypeId.GOLDEN_CARROT, x: 1, y: 0 }],
-      { win: { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT } },
+      { win: { type: "golden-carrot" } },
     ),
   );
   const result = move(world, "right");
@@ -71,7 +71,7 @@ test("任一 Bobby 到达 Golden Carrot 即完成多人关卡", () => {
     schemaVersion: 1,
     width: 4,
     height: 1,
-    rules: { win: { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT } },
+    rules: { win: { type: "golden-carrot" } },
     entities: [
       ground(0, 0), ground(1, 0), ground(2, 0), ground(3, 0),
       bobby(0, 0), bobby(3, 0),
@@ -91,7 +91,7 @@ test("Exit 要求所有 Bobby 同时到达 Exit", () => {
     schemaVersion: 1,
     width: 4,
     height: 1,
-    rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
+    rules: { win: { type: "exit" } },
     entities: [
       ground(0, 0),
       { type: MapEntityTypeId.EXIT, x: 1, y: 0 },

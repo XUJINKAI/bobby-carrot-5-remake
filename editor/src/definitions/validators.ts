@@ -38,5 +38,5 @@ export const playerPresenceValidator: EditorMapValidator = ({ map, catalog }) =>
 
 export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) =>
   validateLevelPlayability(map, catalog)
-    .filter((warning) => warning.code === "missing-reach-target")
+    .filter((warning) => warning.code === "missing-goal-target")
     .map((warning) => ({ level: "warning" as const, message: warning.message }));

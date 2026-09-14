@@ -29,6 +29,9 @@ export {
   type LevelRuntimeWarning,
   type LevelRuntimeWarningCode,
 } from "./core/LevelWarnings.js";
+export { goalAvailable, createBuiltinGoalRegistry } from "./entities/goals.js";
+export { GoalRegistry } from "./world/outcome/GoalRegistry.js";
+export type { GoalDefinition, GoalContext, GoalResult } from "./world/outcome/GoalRegistry.js";
 export {
   createGameplayRuntime,
   type GameplayRuntime,

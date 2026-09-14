@@ -651,7 +651,7 @@ function dialogPayload() {
     },
     width: 2,
     height: 2,
-    rules: { win: { type: "reach", target: "exit" } },
+    rules: { win: { type: "exit" } },
     entities: [
       { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },

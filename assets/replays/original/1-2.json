@@ -22,12 +22,10 @@
     },
     "completedConditions": [
       {
-        "type": "collect-all",
-        "target": "carrot"
+        "type": "carrot"
       },
       {
-        "type": "reach",
-        "target": "exit"
+        "type": "exit"
       }
     ]
   },

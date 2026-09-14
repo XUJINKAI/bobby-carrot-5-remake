@@ -124,8 +124,8 @@ export async function renderHome(
     const state = session.game.state;
     const win = session.game.winState;
     const remaining =
-      win?.type === "collect-all" || win?.type === "fill-all"
-        ? win.remaining
+      win?.type === "carrot" || win?.type === "egg" || win?.type === "push-goal"
+        ? win.remaining ?? null
         : null;
     view.demoStatus =
       state.status === "won"

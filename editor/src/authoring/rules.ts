@@ -1,11 +1,11 @@
-import { levelRuleSelector, type EntityCatalog } from "@bobby/engine";
-import { MapEntityTypeId, type WinCondition } from "@bobby/model";
+import { goalAvailable, type EntityCatalog } from "@bobby/engine";
+import type { GoalType, WinCondition } from "@bobby/model";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
 import { EditorPreview } from "./EditorPreview.js";
 
-export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit";
+export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit" | "golden-carrot";
 
 export interface EditorRuleCapability {
   kind: EditorRuleKind;
@@ -37,6 +37,7 @@ const RULE_ORDER: readonly EditorRuleKind[] = [
   "eggs",
   "pushbox",
   "exit",
+  "golden-carrot",
 ];
 
 export function inspectEditorRules(
@@ -45,14 +46,14 @@ export function inspectEditorRules(
 ): readonly EditorRuleCapability[] {
   const conditions = winConditions(map.rules?.win);
   const preview = new EditorPreview(map, catalog);
-  const hasSelector = (selector: string) =>
-    preview.spatial.entityCountMatching(levelRuleSelector(selector)) > 0;
+  const available = (type: GoalType) =>
+    goalAvailable(type, preview.entities, preview.spatial);
   const availability: Record<EditorRuleKind, boolean> = {
-    carrots: hasSelector(MapEntityTypeId.CARROT),
-    eggs: hasSelector("egg-nest"),
-    pushbox:
-      hasSelector("pushable") && hasSelector("push-goal"),
-    exit: hasSelector(MapEntityTypeId.EXIT),
+    carrots: available("carrot"),
+    eggs: available("egg"),
+    pushbox: available("push-goal"),
+    exit: available("exit"),
+    "golden-carrot": available("golden-carrot"),
   };
   return RULE_ORDER.map((kind) => ({
     kind,
@@ -119,25 +120,29 @@ function winConditions(condition: WinCondition | undefined): readonly WinConditi
 function ruleCondition(kind: EditorRuleKind): WinCondition {
   switch (kind) {
     case "carrots":
-      return { type: "collect-all", target: MapEntityTypeId.CARROT };
+      return { type: "carrot" };
     case "eggs":
-      return { type: "fill-all", target: "egg-nest", filler: "filled-egg" };
+      return { type: "egg" };
     case "pushbox":
-      return { type: "fill-all", target: "push-goal", filler: "pushable" };
+      return { type: "push-goal" };
     case "exit":
-      return { type: "reach", target: MapEntityTypeId.EXIT };
+      return { type: "exit" };
+    case "golden-carrot":
+      return { type: "golden-carrot" };
   }
 }
 
 function matchesRule(kind: EditorRuleKind, condition: WinCondition): boolean {
   switch (kind) {
     case "carrots":
-      return condition.type === "collect-all" && condition.target === MapEntityTypeId.CARROT;
+      return condition.type === "carrot";
     case "eggs":
-      return condition.type === "fill-all" && condition.target === "egg-nest" && condition.filler === "filled-egg";
+      return condition.type === "egg";
     case "pushbox":
-      return condition.type === "fill-all" && condition.target === "push-goal" && condition.filler === "pushable";
+      return condition.type === "push-goal";
     case "exit":
-      return condition.type === "reach" && condition.target === MapEntityTypeId.EXIT;
+      return condition.type === "exit";
+    case "golden-carrot":
+      return condition.type === "golden-carrot";
   }
 }

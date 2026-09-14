@@ -69,7 +69,7 @@ test("静态大地图通过索引推进 tick 与查询玩家和目标", () => {
       { type: "bobby", x: 0, y: 0 },
       { type: "carrot", x: 39, y: 39 },
     ],
-    rules: { win: { type: "collect-all", target: "carrot" } },
+    rules: { win: { type: "carrot" } },
   });
   const all = world.entities.all.bind(world.entities);
   let scans = 0;

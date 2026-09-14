@@ -107,8 +107,8 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
       "fill-egg-nest": 4
     },
     "completedConditions": [
-      { "type": "collect-all", "target": "carrot" },
-      { "type": "reach", "target": "exit" }
+      { "type": "carrot" },
+      { "type": "exit" }
     ]
   },
   "endTick": 120,
@@ -133,7 +133,7 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
 本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
 `counters` 累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
-`completedConditions` 展开并列出终点已经满足的 `collect-all / fill-all / reach` 叶子条件。
+`completedConditions` 展开并列出终点已经满足的具体 Goal 叶子条件。
 它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture
 维护面。
 

@@ -27,7 +27,7 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
       schemaVersion: 1,
       width: 2,
       height: 1,
-      rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
+      rules: { win: { type: "exit" } },
       entities: [
         { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
         { type: MapEntityTypeId.EXIT, x: 1, y: 0 },

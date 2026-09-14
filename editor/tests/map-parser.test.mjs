@@ -19,7 +19,7 @@ function documentWith(entities) {
 test("egg 实体与填充规则使用稳定合同", () => {
   const document = {
     ...documentWith([{ type: "egg", x: 1, y: 1 }]),
-    rules: { win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" } },
+    rules: { win: { type: "egg" } },
   };
   assert.deepEqual(parseMapDocument(document), document);
 });
@@ -173,9 +173,9 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     () =>
       parseMapDocument({
         ...documentWith([]),
-        rules: { win: { type: "reach", target: "" } },
+        rules: { win: { type: "exit", target: "" } },
       }),
-    /target 必须为非空字符串/,
+    /不允许字段 target/,
   );
   assert.throws(
     () => parseMapDocument({ ...documentWith([]), meta: { name: "" } }),
@@ -206,7 +206,7 @@ test("Map parser 规范化字段顺序，并将 entities 放在最后", () => {
   const parsed = parseMapDocument({
     entities: [{ type: "carousel", x: 0, y: 0, variant: "left-top" }],
     height: 3,
-    rules: { win: { type: "reach", target: "exit" } },
+    rules: { win: { type: "exit" } },
     width: 3,
     music: "ingame0",
     meta: { name: "字段顺序" },

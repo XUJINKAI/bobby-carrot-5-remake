@@ -49,8 +49,8 @@ test("场景共享一次胜利求值，并在收集与恢复后更新出口视�
       win: {
         type: "all",
         conditions: [
-          { type: "collect-all", target: "carrot" },
-          { type: "reach", target: "exit" },
+          { type: "carrot" },
+          { type: "exit" },
         ],
       },
     },

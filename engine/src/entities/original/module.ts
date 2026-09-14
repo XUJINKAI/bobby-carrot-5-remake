@@ -246,8 +246,7 @@ function exitAnimationReady(
   state: Readonly<WinConditionState> | null | undefined,
 ): boolean {
   if (!state || state.completed) return false;
-  if (state.type === "reach")
-    return state.target === MapEntityTypeId.EXIT;
+  if (state.type === "exit") return true;
   if (state.type !== "all") return false;
 
   let pendingExit = false;

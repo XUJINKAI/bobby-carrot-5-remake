@@ -63,7 +63,6 @@ export interface MovementMarkerDefinition {
   id: string;
   progress: number;
   dispatch?: readonly MovementMarkerDispatch[];
-  recordsReach?: boolean;
 }
 
 export class WorldMotionStore {

@@ -63,7 +63,7 @@ Marker 是持续 gameplay 过程中的一次性语义阈值，不是 sprite fram
 | progress | marker | 语义 |
 | --- | --- | --- |
 | 0.5 | `departed` | 结算来源格 `onLeave` |
-| 0.5 | `interaction` | 结算目标格 `onEnter` 与 reach selector |
+| 0.5 | `interaction` | 结算目标格 `onEnter` 与成功交互记录 |
 | 1.0 | `arrived` | 运动过程完成到达阶段 |
 
 同一进度的 marker 按声明顺序执行。MovementRuntime 保存下一个 marker 索引，所以一个 WorldTick 跨过多个阈值时仍按序各执行一次；snapshot / restore 后也不会重复触发。

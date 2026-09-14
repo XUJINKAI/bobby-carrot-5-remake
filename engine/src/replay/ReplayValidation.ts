@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import { GOAL_TYPES, type Direction } from "@bobby/model";
 import type { GameplaySession } from "../core/GameplaySession.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type {
@@ -196,22 +196,9 @@ function validateFinalState(value: Replay["finalState"]): void {
 function validateCompletedCondition(condition: ReplayCompletedCondition): void {
   if (!condition || typeof condition !== "object")
     throw new Error("Replay finalState 包含无效的通关条件");
-  if (condition.type === "fill-all") {
-    requireFields(condition, ["type", "target", "filler"]);
-    if (
-      !isNonEmptyString(condition.target) ||
-      !isNonEmptyString(condition.filler)
-    )
-      throw new Error("Replay finalState 包含无效的 fill-all 条件");
-    return;
-  }
-  if (condition.type === "collect-all" || condition.type === "reach") {
-    requireFields(condition, ["type", "target"]);
-    if (!isNonEmptyString(condition.target))
-      throw new Error("Replay finalState 包含无效的终局条件");
-    return;
-  }
-  throw new Error("Replay finalState 包含无效的通关条件");
+  requireFields(condition, ["type"]);
+  if (!GOAL_TYPES.includes(condition.type))
+    throw new Error("Replay finalState 包含无效的通关条件");
 }
 
 function requireFields(value: object, allowed: readonly string[]): void {

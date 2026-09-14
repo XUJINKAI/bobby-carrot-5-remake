@@ -41,7 +41,6 @@ export const DEFAULT_MOVEMENT_MARKERS: readonly MovementMarkerDefinition[] = [
     id: "interaction",
     progress: 0.5,
     dispatch: [{ scope: "target", hook: "onEnter" }],
-    recordsReach: true,
   },
   {
     id: "arrived",

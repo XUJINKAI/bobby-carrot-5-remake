@@ -149,7 +149,7 @@ test("Mower cannot complete an Exit reach condition", () => {
       { type: MapEntityTypeId.MOWER, x: 0, y: 0 },
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
-    rules: { win: { type: "reach", target: MapEntityTypeId.EXIT } },
+    rules: { win: { type: "exit" } },
   });
   const actor = world.query.entitiesWithFact("player")[0];
   const mower = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.MOWER })[0];

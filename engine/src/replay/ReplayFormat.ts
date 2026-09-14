@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, GoalType } from "@bobby/model";
 import type { BobbyLocomotionTiming } from "../entities/player/BobbyLocomotion.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 
@@ -65,10 +65,7 @@ export function isReplayPathId(value: unknown): value is string {
   return typeof value === "string" && /^[^/\s]+\/[^/\s]+$/.test(value);
 }
 
-export type ReplayCompletedCondition =
-  | { type: "collect-all"; target: string }
-  | { type: "fill-all"; target: string; filler: string }
-  | { type: "reach"; target: string };
+export type ReplayCompletedCondition = { type: GoalType };
 
 export interface ReplayActualFinalState {
   status: ReplayFinalStatus;

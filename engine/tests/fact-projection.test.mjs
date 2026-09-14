@@ -58,7 +58,6 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
       { type: "bobby", x: 0, y: 0 },
       { type: "fact-probe", x: 1, y: 0 },
     ],
-    rules: { win: { type: "collect-all", target: "whole-target" } },
   }, { entities, facts });
   const probe = world.entities.all().find((entity) =>
     entity.type === "fact-probe",
@@ -73,7 +72,6 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   assert.equal(world.spatial.presenceMatchesSelector(head, levelRuleSelector("whole-target")), true);
   assert.equal(world.spatial.presenceMatchesSelector(tail, levelRuleSelector("whole-target")), true);
   assert.equal(world.spatial.entityCountMatching(levelRuleSelector("whole-target")), 1);
-  assert.equal(world.winState.remaining, 1);
   assert.equal(head.facts.includes("blocking"), true);
   assert.equal(tail.facts.includes("blocking"), false);
 
@@ -97,7 +95,7 @@ test("Fact Registry 拒绝重复和未知标识", () => {
   assert.throws(() => registry.require("missing"));
 });
 
-test("Egg 的填充 Fact 随 state 提交刷新", () => {
+test("Egg 的阻挡 Fact 随 state 提交刷新", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -113,18 +111,16 @@ test("Egg 的填充 Fact 随 state 提交刷新", () => {
   })[0];
   assert.ok(egg);
   assert.equal(egg.instanceFacts, undefined);
-  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), false);
+  assert.equal(world.query.entityHasFact(egg.id, "blocking"), false);
 
   const fill = new CommandQueue();
   fill.setState(egg.id, { filled: true });
   world.committer.commit(fill, { worldTick: null, worldTimeMs: 0 });
-  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), true);
   assert.equal(world.query.entityHasFact(egg.id, "blocking"), true);
   assert.equal(world.query.entity(egg.id)?.instanceFacts, undefined);
 
   const clear = new CommandQueue();
   clear.setState(egg.id, { filled: false });
   world.committer.commit(clear, { worldTick: null, worldTimeMs: 0 });
-  assert.equal(world.query.entityHasFact(egg.id, "filled-egg"), false);
   assert.equal(world.query.entityHasFact(egg.id, "blocking"), false);
 });

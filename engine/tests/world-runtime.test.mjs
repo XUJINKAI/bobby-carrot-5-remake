@@ -14,8 +14,8 @@ function registry({ grassBehaviors = [] } = {}) {
     { type: "player", facts: ["player"], layer: "object", stackOrder: 100 },
     { type: "wall", facts: ["blocking"], layer: "object", stackOrder: 100 },
     { type: "box", facts: ["blocking", "pushable"], layer: "object", stackOrder: 100 },
-    { type: "goal", facts: ["walkable", "goal"], layer: "surface", stackOrder: 0 },
-    { type: "exit-cell", facts: ["walkable"], layer: "surface", stackOrder: 0 },
+    { type: "push-goal", facts: ["walkable"], layer: "surface", stackOrder: 0 },
+    { type: "exit", facts: ["walkable"], layer: "surface", stackOrder: 0 },
     { type: "carrot", facts: [], layer: "object", stackOrder: 100 },
     {
       type: "grass",
@@ -84,7 +84,7 @@ test("implicit Void blocks and ordinary floor moves", () => {
   assert.equal(world.entity(actor).anchor.x, 1);
 });
 
-test("pushable movement is one transaction and fill-all uses Presence facts", () => {
+test("pushable movement is one transaction and push Goal reads Presence facts", () => {
   const entities = registry();
   const world = new World(
     {
@@ -94,12 +94,12 @@ test("pushable movement is one transaction and fill-all uses Presence facts", ()
       entities: [
         floor(0, 0),
         floor(1, 0),
-        floor(2, 0, "goal"),
+        floor(2, 0, "push-goal"),
         floor(3, 0),
         { type: "player", x: 0, y: 0 },
         { type: "box", x: 1, y: 0 },
       ],
-      rules: { win: { type: "fill-all", target: "goal", filler: "pushable" } },
+      rules: { win: { type: "push-goal" } },
     },
     { entities, behaviors: new BehaviorRegistry(), facts },
   );
@@ -112,15 +112,15 @@ test("pushable movement is one transaction and fill-all uses Presence facts", ()
   assert.equal(world.entity(box.id).anchor.x, 2);
 });
 
-test("reach selector can address an Entity type without a matching Fact", () => {
+test("Exit Goal reads Exit Entity type", () => {
   const entities = registry();
   const world = new World(
     {
       schemaVersion: 1,
       width: 2,
       height: 1,
-      entities: [floor(0, 0), floor(1, 0, "exit-cell"), { type: "player", x: 0, y: 0 }],
-      rules: { win: { type: "reach", target: "exit-cell" } },
+      entities: [floor(0, 0), floor(1, 0, "exit"), { type: "player", x: 0, y: 0 }],
+      rules: { win: { type: "exit" } },
     },
     { entities, behaviors: new BehaviorRegistry(), facts },
   );

@@ -206,63 +206,51 @@ LevelMap v1 不持久化 runtime Entity id 或 UUID。Editor 可以使用文档�
 
 ## Rules
 
-规则只依赖 Entity / Presence 的语义 selector，不出现 Terrain/Object 分类：
+地图使用具体 Goal ID 声明胜利条件，`all / any` 递归组合叶子：
 
 ```ts
+type GoalType = "carrot" | "egg" | "exit" | "push-goal" | "golden-carrot";
 type WinCondition =
   | { type: "all"; conditions: WinCondition[] }
   | { type: "any"; conditions: WinCondition[] }
-  | { type: "collect-all"; target: string }
-  | { type: "fill-all"; target: string; filler: string }
-  | { type: "reach"; target: string };
+  | { type: GoalType };
 ```
 
-`target` 与 `filler` 都是 semantic selector：可以直接匹配 Entity type，也可以匹配 Presence Trait。这样稳定的具体目标可以直接写 Entity type，抽象机制则可以继续通过 Trait 组合。
+当前五种 Goal 均只保存 `type`。每种 Goal 的对象选择和完成语义由 Engine 定义；
+Model 严格校验条件形状。确需实例参数时，应由对应 Goal 增加参数字段与校验。
 
-原版三类完成条件分别表达为：
+胡萝卜、Egg 和 Exit 地图可分别表达为：
 
 ```json
-{ "type": "collect-all", "target": "carrot" }
+{ "type": "all", "conditions": [{ "type": "carrot" }, { "type": "exit" }] }
 ```
 
 ```json
-{ "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" }
+{ "type": "all", "conditions": [{ "type": "egg" }, { "type": "exit" }] }
 ```
-
-地图中的鸟巢实体使用 `egg`。填充状态由 Engine 在运行时管理；规则中的
-`egg-nest` 与 `egg` 分别匹配鸟巢位置和已填充状态的 Runtime Trait selector。
 
 ```json
-{ "type": "reach", "target": "exit" }
+{ "type": "exit" }
 ```
 
-Sokoban 可以使用 Trait selector：
+推箱子地图使用 `{ "type": "push-goal" }`。Golden Carrot 与 Exit 的可选关系使用：
 
 ```json
-{
-  "type": "fill-all",
-  "target": "push-goal",
-  "filler": "pushable"
-}
+{ "type": "any", "conditions": [{ "type": "golden-carrot" }, { "type": "exit" }] }
 ```
 
-`all` / `any` 可以递归组合任意条件。例如自定义地图可以同时要求收集胡萝卜、填满彩蛋、完成推箱子并到达出口：
+`carrot` 计算当前 Carrot 数量，零个即达标；`egg` 按 Egg Entity ID 读取当前
+`state.filled`，并要求地图至少存在一个 Egg；`push-goal` 按目标格去重，要求每格
+被具有 `pushable` 能力的对象占据。`exit` 要求每个玩家各自满足 Exit 的到达条件；
+`golden-carrot` 读取已提交的成功交互记录，因此目标被收集后结果仍可恢复。
 
-```json
-{
-  "type": "all",
-  "conditions": [
-    { "type": "collect-all", "target": "carrot" },
-    { "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" },
-    { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
-    { "type": "reach", "target": "exit" }
-  ]
-}
-```
+Engine 返回同结构的目标结果树。叶子包含 `completed` 和可选 `remaining`，
+HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时机仍由 World
+运动与生命周期开关裁决。
 
-Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remaining` progress；HUD 等展示层只能消费这个结果，不复制胜利条件查询逻辑。
-
-`reach` 的多人聚合方式由目标 Entity Definition 声明。Exit 要求所有 Bobby 同时位于任意 Exit 格；Golden Carrot 由任一 Bobby 到达即可完成。任一 Bobby 死亡都会使当前关卡失败。
+现有 schemaVersion 1 开发期地图若保存了标准 `collect-all / fill-all / reach`
+条件，可以运行 `node tools/model/convert-goals.mjs 输入.json 输出.json` 显式转换。
+自定义 selector 条件会报告准确路径，须逐项确定目标语义。
 
 ## MapDocument
 

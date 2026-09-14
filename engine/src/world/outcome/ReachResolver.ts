@@ -54,25 +54,4 @@ export class ReachResolver {
     });
   }
 
-  /** 目标聚合策略由通用 Mechanism 解释，World 只使用结果。 */
-  aggregationFor(selector: string): "any" | "all" {
-    return this.mechanisms.requireReachAggregation()
-      .forSelector(this.query, levelRuleSelector(selector));
-  }
-
-  selectorsFor(
-    actor: Readonly<EntityInstance>,
-    presences: readonly EntityPresence[],
-  ): string[] {
-    const selectors = new Set<string>();
-    for (const presence of presences) {
-      if (!this.canReach(actor, presence)) continue;
-      const entity = this.query.entity(presence.entityId);
-      if (!entity) continue;
-      selectors.add(entity.type);
-      for (const fact of this.query.entityFacts(entity.id)) selectors.add(fact);
-      for (const fact of presence.facts) selectors.add(fact);
-    }
-    return [...selectors];
-  }
 }

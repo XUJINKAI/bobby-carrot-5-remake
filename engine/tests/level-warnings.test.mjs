@@ -5,9 +5,8 @@ import {
   createBuiltinEntityCatalog,
   validateLevelPlayability,
 } from "../dist/public.js";
-import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
-test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", () => {
+test("可游玩性检查使用具体 Goal 的对象选择规则", () => {
   const warnings = validateLevelPlayability(
     {
       schemaVersion: 1,
@@ -16,21 +15,20 @@ test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", (
       entities: [
         { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
         {
-          type: MapEntityTypeId.WINDMILL,
+          type: MapEntityTypeId.EXIT,
           x: 2,
           y: 0,
-          direction: "left",
         },
       ],
       rules: {
-        win: { type: "reach", target: MapEntityTypeId.WINDMILL },
+        win: { type: "exit" },
       },
     },
     createBuiltinEntityCatalog(),
   );
 
   assert.equal(
-    warnings.some((warning) => warning.code === "missing-reach-target"),
+    warnings.some((warning) => warning.code === "missing-goal-target"),
     false,
   );
 });
@@ -81,51 +79,16 @@ test("字段无效的已知 Entity 作为惰性占位并报告具体问题", () 
   );
 });
 
-test("可游玩性检查复用 Entity 与 Presence 的 Fact 投影", () => {
-  const catalog = createBuiltinEntityCatalog();
-  catalog.register({
-    definition: {
-      type: "projection-target",
-      facts: [],
-      entityFacts: ["whole-target"],
-      resolveEntityFacts({ entity }) {
-        return entity.direction === "right" ? ["ready-target"] : [];
-      },
-      resolvePresenceFacts({ presence }) {
-        return presence.role === "tail" ? ["tail-target"] : [];
-      },
-      footprint: {
-        parts: [
-          { dx: 0, dy: 0, role: "head" },
-          { dx: 1, dy: 0, role: "tail" },
-        ],
-      },
-    },
-    presentation: { name: "Projection Target" },
-  });
-  const entities = [
-    { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
-    { type: "projection-target", x: 1, y: 0, direction: "right" },
-  ];
-  const facts = testFactRegistry("whole-target", "ready-target", "tail-target");
-
-  for (const selector of [
-    "projection-target",
-    "whole-target",
-    "ready-target",
-    "tail-target",
-  ]) {
-    const warnings = validateLevelPlayability({
-      schemaVersion: 1,
-      width: 3,
-      height: 1,
-      entities,
-      rules: { win: { type: "reach", target: selector } },
-    }, catalog, facts);
-    assert.equal(
-      warnings.some((warning) => warning.code === "missing-reach-target"),
-      false,
-      selector,
-    );
-  }
+test("可游玩性检查报告缺少具体 Goal 对象", () => {
+  const warnings = validateLevelPlayability({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+    rules: { win: { type: "all", conditions: [{ type: "egg" }, { type: "exit" }] } },
+  }, createBuiltinEntityCatalog());
+  assert.equal(
+    warnings.filter((warning) => warning.code === "missing-goal-target").length,
+    2,
+  );
 });

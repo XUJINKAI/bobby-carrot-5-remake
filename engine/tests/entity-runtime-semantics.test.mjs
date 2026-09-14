@@ -86,7 +86,7 @@ test("胡萝卜收集后留下持久的 consumed runtime state", () => {
     schemaVersion: 1,
     width: 2,
     height: 1,
-    rules: { win: { type: "collect-all", target: MapEntityTypeId.CARROT } },
+    rules: { win: { type: "carrot" } },
     entities: [
       ground(0, 0),
       ground(1, 0),
@@ -394,7 +394,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     width: 3,
     height: 1,
     rules: {
-      win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" },
+      win: { type: "egg" },
     },
     entities: [
       ground(0, 0),
@@ -431,12 +431,9 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     .find((entity) => entity.type === MapEntityTypeId.EGG);
   assert.equal(filledEgg?.state?.filled, true);
   assert.ok(filledEgg);
-  assert.equal(world.query.entityHasFact(filledEgg.id, "filled-egg"), true);
   assert.equal(world.query.entityHasFact(filledEgg.id, "blocking"), true);
   assert.deepEqual(world.winState, {
-    type: "fill-all",
-    target: "egg-nest",
-    filler: "filled-egg",
+    type: "egg",
     completed: true,
     remaining: 0,
   });

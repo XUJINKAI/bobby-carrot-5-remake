@@ -19,6 +19,14 @@ export const collectBehavior: Behavior = {
   onEnter({ actor, self, query, commands }) {
     if (isRidingMower(actor.state, query)) return;
     commands.destroy(self.entity.id);
+    if (self.entity.type === MapEntityTypeId.GOLDEN_CARROT) {
+      commands.setGlobal("successfulGoalInteractions", [
+        ...new Set([
+          ...query.global().successfulGoalInteractions,
+          MapEntityTypeId.GOLDEN_CARROT,
+        ]),
+      ]);
+    }
     if (self.entity.type === MapEntityTypeId.CARROT) {
       commands.spawn({
         type: RuntimeEntityTypeId.CONSUMED_CARROT,

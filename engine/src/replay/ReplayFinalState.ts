@@ -63,12 +63,5 @@ function completedConditions(
   if (condition.type === "all" || condition.type === "any")
     return condition.conditions.flatMap(completedConditions);
   if (!condition.completed) return [];
-  if (condition.type === "fill-all") {
-    return [{
-      type: condition.type,
-      target: condition.target,
-      filler: condition.filler,
-    }];
-  }
-  return [{ type: condition.type, target: condition.target }];
+  return [{ type: condition.type }];
 }

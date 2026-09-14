@@ -8,8 +8,8 @@ export interface GlobalState {
   metrics: Record<string, number>;
   /** 为宿主交互请求分配可随 Snapshot 恢复的确定性序号。 */
   nextInteractionRequestId: number;
-  /** 本次成功移动进入格子的 selector 快照；允许 reach 匹配 onEnter 中被消费的实体。 */
-  lastReachedSelectors: string[];
+  /** 已提交的目标交互；目标 Entity 消费后仍可由 Goal 查询。 */
+  successfulGoalInteractions: string[];
   warnings: string[];
   logicRemainderMs: number;
 }
@@ -23,7 +23,7 @@ export function createGlobalState(): GlobalState {
     elapsedMs: 0,
     metrics: {},
     nextInteractionRequestId: 1,
-    lastReachedSelectors: [],
+    successfulGoalInteractions: [],
     warnings: [],
     logicRemainderMs: 0,
   };

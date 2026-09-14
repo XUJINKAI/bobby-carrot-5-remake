@@ -1,5 +1,4 @@
 import { MapEntityTypeId } from "@bobby/model";
-import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityBehaviorBinding,
   EntityModule,
@@ -13,7 +12,7 @@ import {
   requiresUnmountedReachBehavior,
   shovelableBehavior,
 } from "../behaviorLibrary.js";
-import { bobbyMountId } from "../player/BobbyState.js";
+import { egg } from "./egg.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
@@ -24,33 +23,6 @@ import {
   staticEntity,
   SURFACE_STACK_ORDER,
 } from "./module.js";
-
-const fillEggNestOnLeave: Behavior = {
-  id: "fill-egg-nest-on-leave",
-  onLeave({ actor, self, query, commands }) {
-    if (
-      self.entity.state?.filled === true ||
-      !query.entityHasFact(actor.id, "player") ||
-      bobbyMountId(actor.state) !== null
-    )
-      return;
-    const source = self.entity;
-    commands.destroy(source.id);
-    commands.spawn({
-      type: MapEntityTypeId.EGG,
-      x: source.anchor.x,
-      y: source.anchor.y,
-      state: { filled: true },
-      ...(source.direction ? { direction: source.direction } : {}),
-    });
-    commands.emit({
-      type: "fill-egg-nest",
-      entityId: source.id,
-      x: self.presence.cell.x,
-      y: self.presence.cell.y,
-    });
-  },
-};
 
 function surface(
   type: EntityModuleDefinition["type"],
@@ -104,7 +76,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   ),
   surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
     "walkable",
-    "reach-all-players",
   ], [], [{ behavior: requiresUnmountedReachBehavior }]),
   surface(
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
@@ -195,27 +166,6 @@ const carrotDefinition: EntityModuleDefinition = {
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
-const eggDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.EGG,
-  facts: ["egg-nest"],
-  resolvePresenceFacts({ entity }) {
-    return entity.state?.filled === true ? ["filled-egg", "blocking"] : [];
-  },
-  layer: "object",
-  stackOrder: CONTENT_STACK_ORDER,
-  presentation: { name: "Egg" },
-};
-
-const egg = originalModule(
-  eggDefinition,
-  atlasVisual(eggDefinition, (context) =>
-    context.entity.state?.filled === true
-      ? tileCell(MapEntityTypeId.EGG, { phase: "filled" })
-      : tileCell(MapEntityTypeId.EGG),
-  ),
-  [{ behavior: fillEggNestOnLeave }],
-);
-
 const beanstalkFacts = [
   "terrain-overlay",
   "climbable",

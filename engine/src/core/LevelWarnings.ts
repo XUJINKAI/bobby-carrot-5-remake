@@ -3,20 +3,22 @@ import type {
   LevelMap,
   WinCondition,
 } from "@bobby/model";
-import { levelEntityContractIssues } from "@bobby/model";
+import { levelEntityContractIssues, type GoalType } from "@bobby/model";
 import { initializeOriginalLevelEntity } from "../entities/original/initialize-level-entity.js";
 import { factRegistry } from "../entities/registry.js";
+import { goalRegistry } from "../entities/goals.js";
 import type { FactRegistry } from "../fact/FactRegistry.js";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { EntityStore } from "../world/entity/EntityStore.js";
-import { levelRuleSelector } from "../world/spatial/EntitySelector.js";
+import { WorldQueryApi } from "../world/behavior/WorldQueryApi.js";
+import { createGlobalState } from "../world/GlobalState.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
 import { SpatialIndex } from "../world/spatial/SpatialIndex.js";
 
 export type LevelRuntimeWarningCode =
   | "missing-player"
-  | "missing-reach-target"
+  | "missing-goal-target"
   | "unknown-entity"
   | "invalid-entity";
 
@@ -83,11 +85,12 @@ export function validateLevelPlayability(
     });
   }
 
-  for (const selector of requiredReachSelectors(level.rules?.win)) {
-    if (spatial.entityCountMatching(levelRuleSelector(selector)) > 0) continue;
+  const query = new WorldQueryApi(store, spatial, createGlobalState, facts);
+  for (const type of requiredGoals(level.rules?.win)) {
+    if (goalRegistry.require(type).available(query)) continue;
     warnings.push({
-      code: "missing-reach-target",
-      message: `当前获胜条件需要 selector '${selector}'，地图中没有对应 Entity。`,
+      code: "missing-goal-target",
+      message: `当前获胜条件 '${type}' 缺少所需的 Entity。`,
     });
   }
 
@@ -116,30 +119,29 @@ function hasProjectableFootprint(
   }
 }
 
-function requiredReachSelectors(
+function requiredGoals(
   condition: WinCondition | undefined,
-): Set<string> {
-  const result = new Set<string>();
-  collectRequiredReachSelectors(condition, result);
+): Set<GoalType> {
+  const result = new Set<GoalType>();
+  collectRequiredGoals(condition, result);
   return result;
 }
 
-function collectRequiredReachSelectors(
+function collectRequiredGoals(
   condition: WinCondition | undefined,
-  result: Set<string>,
+  result: Set<GoalType>,
 ): void {
   if (!condition) return;
   switch (condition.type) {
-    case "reach":
-      result.add(condition.target);
-      break;
     case "all":
       for (const child of condition.conditions)
-        collectRequiredReachSelectors(child, result);
+        collectRequiredGoals(child, result);
       break;
     case "any":
       if (condition.conditions.length === 1)
-        collectRequiredReachSelectors(condition.conditions[0], result);
+        collectRequiredGoals(condition.conditions[0], result);
       break;
+    default:
+      result.add(condition.type);
   }
 }

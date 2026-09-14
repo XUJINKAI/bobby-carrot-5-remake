@@ -67,6 +67,7 @@ import { SpatialIndex } from "./spatial/SpatialIndex.js";
 import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
 import { WorldInspector } from "./WorldInspector.js";
 import { WorldRuleEvaluator } from "./WorldRuleEvaluator.js";
+import type { GoalRegistry } from "./outcome/GoalRegistry.js";
 import type {
   CellInspection,
   MoveResult,
@@ -89,6 +90,7 @@ export interface WorldOptions {
   mechanisms: MechanismRegistry;
   actions: RuntimeActionRegistry;
   facts: FactRegistry;
+  goals: GoalRegistry;
   actorPolicy?: ActorPolicy;
   initializeLevelEntity?: LevelEntityInitializer;
   /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
@@ -197,10 +199,10 @@ export class World {
     );
     this.ruleEvaluator = new WorldRuleEvaluator(
       this.rules,
-      this.entities,
       this.spatial,
       this.query,
       this.reachResolver,
+      options.goals,
       this.mechanisms.requireMetrics(),
       () => this.state,
     );
@@ -382,8 +384,6 @@ export class World {
 
     if (playerInputMoved)
       transaction.commands.setGlobal("moves", this.state.moves + 1);
-    if (transaction.motions.length > 0)
-      transaction.commands.setGlobal("lastReachedSelectors", []);
 
     const commit = this.committer.commit(transaction.commands, this.deltaClock());
     result.moves.push(...moves);
@@ -629,16 +629,6 @@ export class World {
           movement,
         );
     }
-    if (marker.recordsReach === true) {
-      const selectors = new Set(this.state.lastReachedSelectors);
-      for (const selector of this.reachResolver.selectorsFor(
-        actor,
-        plan.target,
-      ))
-        selectors.add(selector);
-      queue.setGlobal("lastReachedSelectors", [...selectors]);
-    }
-
     const commit = this.committer.commit(queue, this.deltaClock());
     absorbCommit(result, commit);
     this.ruleEvaluator.refreshDerivedState();

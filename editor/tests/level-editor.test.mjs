@@ -336,7 +336,6 @@ test("Palette 只发布具有 Model Definition 的 canonical preset", () => {
     .flatMap((group) => group.rows.flat())
     .find((entry) => entry.type === MapEntityTypeId.EGG);
   assert.equal(egg?.label, "Egg");
-  assert.equal(egg?.facts.includes("egg-nest"), true);
 });
 
 test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {

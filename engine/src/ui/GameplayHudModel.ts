@@ -1,4 +1,3 @@
-import { MapEntityTypeId } from "@bobby/model";
 import type { GameplayState } from "../core/GameplayState.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
@@ -46,15 +45,11 @@ export function buildGameplayHudModel(
     objectives: {
       carrotRemaining: remainingForCondition(
         winState,
-        (item) =>
-          item.type === "collect-all" && item.target === MapEntityTypeId.CARROT,
+        (item) => item.type === "carrot",
       ),
       eggRemaining: remainingForCondition(
         winState,
-        (item) =>
-          item.type === "fill-all" &&
-          item.target === "egg-nest" &&
-          item.filler === "filled-egg",
+        (item) => item.type === "egg",
       ),
     },
     inventories: actors.slice(0, 2).map((actor, index) => {
@@ -85,7 +80,5 @@ export function remainingForCondition(
     return null;
   }
   if (!predicate(state)) return null;
-  if (state.type === "collect-all" || state.type === "fill-all")
-    return state.remaining;
-  return null;
+  return state.remaining ?? null;
 }

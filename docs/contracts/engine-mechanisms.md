@@ -194,7 +194,7 @@ World 提供唯一的 Entity semantic projection 刷新入口。一次状态提�
 | --- | --- | --- |
 | `blocking`、`walkable`、`pushable` | Fact | 被通用通行或推规则查询 |
 | `player` | kernel Fact | ActorLifecycle 通过它识别当前 actor |
-| `filled-egg` | 从 Egg state 派生的 Fact | `fill-all` 查询当前填充结果 |
+| Egg `state.filled` | Entity state | Egg 碰撞、视觉与 `eggGoal` 读取同一状态 |
 | Dialog | Entity-bound Dialog Mechanism | 通用触碰对白规则 |
 | `mower-conditional-overlay` | 具体对象 Behavior | 含割草机专属通行设计 |
 | Color Block 的 `raised` | Entity state 与专属 Behavior | 当前状态决定通行结果 |
@@ -205,9 +205,9 @@ World 提供唯一的 Entity semantic projection 刷新入口。一次状态提�
 
 ## Selector 合同
 
-Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。`LevelMap.rules.win` 的 `target`、`filler` 是字符串，在进入 World 查询时转换为同名 Type 与 Fact 的并集。Entity 级匹配合并 Type、Entity Fact 和任一 Presence Fact，按 Entity ID 去重，不采用优先级判定。
-
-运行规则可通过 `WorldQueryApi.entitiesMatching()` 与 `entityCountMatching()` 使用带类型的 Selector。格子判断使用 `hasSelectorAt()`，并保持当前 Presence 的空间语义；身份明确的对象使用 Type 查询，跨对象能力使用 Fact 查询。奖励指标直接匹配 `bonus-coin` 与 `golden-carrot` Type。
+Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。运行规则可通过
+`WorldQueryApi.entitiesMatching()` 与 `entityCountMatching()` 查询当前已提交对象；
+格子判断使用 `hasSelectorAt()`。身份明确的对象使用 Type，跨对象能力使用 Fact。
 
 ```ts
 type EntitySelector =
@@ -219,9 +219,15 @@ type EntitySelector =
     };
 ```
 
-`collect-all` 按 Entity 去重计数；`fill-all` 先找到目标 Presence 所在格，再在对应格判断 filler：Type 或 Entity Fact 可命中该格的候选 Entity，Presence Fact 只检查该格 Presence，不借用同一对象其它格子的 Fact。`reach` 还要保留目标 Behavior 的 `canReach` 和多玩家聚合语义。`lastReachedSelectors` 的记录与恢复也必须保持当前规则结果。Editor 的规则检测和提示通过 Engine authoring API 获取同一语义，不维护独立的 Fact/Selector 解释器。
+`LevelMap.rules.win` 的叶子是具体 Goal ID。`GoalRegistry` 校验重复与缺失定义；
+World 对组合节点递归求值，对叶子调用对应领域的 Goal。`carrotGoal` 按 Carrot Type
+计数；`eggGoal` 按 Egg ID 读取 `state.filled`；`pushGoal` 按目标格去重并检查
+`pushable`；`exitGoal` 对所有玩家使用 Exit 的 `canReach`；`goldenCarrotGoal`
+读取已提交的成功交互记录。结果树保留具体 type、completed 和可选 remaining。
 
-`validateLevelPlayability` 使用正式 Entity 初始化路径建立只读 `SpatialIndex`，并以同一 `levelRuleSelector` 检查目标。告警因此可识别静态 `entityFacts`、实例语义、`resolveEntityFacts`、`resolvePresenceFacts` 与 footprint part 的当前投影。
+`validateLevelPlayability` 与 Editor 规则检测调用同一 Goal 的可用性检查。
+运行目标、编辑提示与 HUD 因此共用对象选择规则。Goal 只获得 World 的只读查询，
+不提交命令；World 的最终完成仍等待运动和生命周期结算。
 
 ## Mechanism 的两种调用方式
 
@@ -309,7 +315,7 @@ Editor definitions 负责 Palette、Surface、隐藏、分组及创建入口，�
 
 回归至少证明：
 
-- 官方与自定义地图的 `collect-all`、`fill-all`、`reach` 和多玩家聚合结果保持一致；
+- 官方与自定义地图的五种具体 Goal、组合树和多玩家 Exit 结果保持一致；
 - 同一字符串可同时命中 Type、Entity Fact 与 Presence Fact；只有 Entity Fact 的对象也可被查到，Entity 计数去重，Presence 格子判断不借用其它部位的 Fact；
 - Entity state、spawn、destroy、方向变化与 Snapshot restore 后的 Fact 查询无过期结果；
 - Push 成功、阻挡、目的格冲突、多人竞争和移动中的触发按固定顺序产生同样的 WorldDelta 与 `MoveResult`；

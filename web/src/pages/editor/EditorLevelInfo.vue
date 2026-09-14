@@ -24,6 +24,7 @@ const labels: Record<EditorRuleKind, string> = {
   eggs: "放置彩蛋",
   pushbox: "推箱子",
   exit: "到达终点",
+  "golden-carrot": "取得金胡萝卜",
 };
 
 watch(

@@ -46,7 +46,7 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
       { type: "golden-carrot", x: 2, y: 0 },
       { type: "bonus-coin", x: 3, y: 0 },
     ],
-    rules: { win: { type: "collect-all", target: "carrot" } },
+    rules: { win: { type: "carrot" } },
   });
   world.spatial.entityCountWithFact = () => {
     assert.fail("奖励计数应按 Type 查询");

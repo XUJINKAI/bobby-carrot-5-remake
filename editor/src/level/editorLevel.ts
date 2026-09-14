@@ -162,7 +162,7 @@ function isJsonPrimitive(value: unknown): value is JsonPrimitive {
 }
 
 function defaultWinCondition(): WinCondition {
-  return { type: "reach", target: MapEntityTypeId.EXIT };
+  return { type: "exit" };
 }
 
 function cloneEntity(entity: LevelEntity): LevelEntity {

@@ -5,7 +5,6 @@ import { waterOverlayBehavior } from "./entity/WaterOverlayBehavior.js";
 import { passageMechanism } from "./pipeline/PassageMechanism.js";
 import { pushMechanism } from "./pipeline/PushMechanism.js";
 import { builtinWorldMetricsMechanism } from "./pipeline/BuiltinWorldMetricsMechanism.js";
-import { reachAggregationMechanism } from "./pipeline/ReachAggregationMechanism.js";
 
 export function createBuiltinMechanismRegistry(): MechanismRegistry {
   const registry = new MechanismRegistry();
@@ -17,6 +16,5 @@ export function createBuiltinMechanismRegistry(): MechanismRegistry {
   registry.registerPassage(passageMechanism);
   registry.registerPush(pushMechanism);
   registry.registerMetrics(builtinWorldMetricsMechanism);
-  registry.registerReachAggregation(reachAggregationMechanism);
   return registry;
 }

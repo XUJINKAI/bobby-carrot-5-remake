@@ -1,4 +1,4 @@
-import type { Direction, JsonValue } from "@bobby/model";
+import type { Direction, GoalType, JsonValue } from "@bobby/model";
 import type { EntityLayer } from "./entity/EntityDefinition.js";
 import type { EntityId, EntityState } from "./entity/EntityInstance.js";
 
@@ -86,22 +86,9 @@ export type WinConditionState =
       conditions: WinConditionState[];
     }
   | {
-      type: "collect-all";
-      target: string;
+      type: GoalType;
       completed: boolean;
-      remaining: number;
-    }
-  | {
-      type: "fill-all";
-      target: string;
-      filler: string;
-      completed: boolean;
-      remaining: number;
-    }
-  | {
-      type: "reach";
-      target: string;
-      completed: boolean;
+      remaining?: number;
     };
 
 export interface PresenceInspection {

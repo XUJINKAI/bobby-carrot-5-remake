@@ -15,7 +15,7 @@ function carrotLevel() {
     schemaVersion: 1,
     width: 3,
     height: 1,
-    rules: { win: { type: "collect-all", target: MapEntityTypeId.CARROT } },
+    rules: { win: { type: "carrot" } },
     entities: [
       ground(0),
       ground(1),
@@ -97,7 +97,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
     moves: 1,
     elapsedMs: 150,
     counters: { "collect-carrot": 1 },
-    completedConditions: [{ type: "collect-all", target: "carrot" }],
+    completedConditions: [{ type: "carrot" }],
   });
   assert.equal("snapshot" in replay, false);
   assert.equal("entities" in replay, false);
