@@ -1,8 +1,8 @@
 # Entity Goal、Fact 与通行规则实施计划
 
-状态：实施中。实施基线与规则矩阵见 [Entity Goal 与通行规则实施基线](entity-fact-passage-baseline.md)；各阶段完成后以对应合同和代码为准。
+状态：已实施。实施基线与规则矩阵见 [Entity Goal 与通行规则实施基线](entity-fact-passage-baseline.md)；当前行为以对应合同和代码为准。
 
-原版条件统一引用 [UP9 原版通行与碰撞规则](../reference/original-passage.md)，重制版明确差异引用 [Fidelity 产品边界](../decisions/original-fidelity-boundaries.md)。实现完成时同步更新 [Engine 机制合同](../contracts/engine-mechanisms.md)、[地图合同](../contracts/level-format.md) 和 [World Runtime 合同](../contracts/world-runtime.md)。
+原版条件统一引用 [UP9 原版通行与碰撞规则](../reference/original-passage.md)，重制版明确差异引用 [Fidelity 产品边界](../decisions/original-fidelity-boundaries.md)。当前合同见 [Engine 机制合同](../contracts/engine-mechanisms.md)、[地图合同](../contracts/level-format.md) 和 [World Runtime 合同](../contracts/world-runtime.md)。
 
 ## 1. 目标与职责
 
@@ -281,6 +281,6 @@ Replay 的内嵌地图、completedConditions、哈希和最终结果一起更新
 - 最小地图在 Editor Play Test 运行正式 Engine，Runtime 不反写 Draft。
 - 原版字节码不足以解释的行为，用独立生成的 patch JAR 验证，原始 JAR 保持只读。
 
-## 9. 本文交付范围
+## 9. 实施结果
 
-当前交付为实施文档。具体 Goal、Entity 通行整理、Fact 清理、layer 删除与格式转换均属于后续代码阶段。公开类型、地图条件和 Replay 合同的变化在对应实现提交中说明。
+五种具体 Goal、Entity 领域通行、语义地形与特殊移动、Fact 注册词汇、Editor Play Test 及 Replay 均由正式 Engine 合同约束。Goal 条件及公开类型的转换见 [地图合同](../contracts/level-format.md) 与 [Engine API](../contracts/engine-api.md)；原版像素碰撞粒度对应的产品边界见 [Fidelity 产品边界](../decisions/original-fidelity-boundaries.md)。

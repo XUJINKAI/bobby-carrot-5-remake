@@ -150,6 +150,21 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 
 当前 Fact 表示布尔语义。注册表中的每个 Fact 有唯一 ID 和中文语义说明；内置静态声明与运行时 Resolver 使用未知 Fact ID 时会报错。跨对象数值结果由 World Metrics Mechanism 投影为通用指标。
 
+内置 Fact 的生产方、消费方及状态来源如下；具体对象身份和私有状态由所属 Entity 规则直接读取：
+
+| Fact | 生产方 | 消费方 | 随 state 变化 |
+| --- | --- | --- | --- |
+| `blocking` | Bobby、障碍对象及 Egg 等 Presence | Passage、对象进入裁决 | Egg 等对象会变化 |
+| `climbable` | Beanstalk 各攀爬部位 | Bobby 攀爬姿势与动作 | 否 |
+| `moving-platform` | Cloud、Leaf | Bobby 与 Mower 的移动关系判断 | 否 |
+| `player` | Bobby | World ActorLifecycle、移动冲突及对象规则 | 否 |
+| `pushable` | 可推动对象 | Push、`pushGoal` | 否 |
+| `sky` | Starfield、Moon | Cloud 路线、Fireball 地形域 | 否 |
+| `walkable` | 可落脚地形及可承载部位 | 标准 Passage、Fireball 的地形筛选 | 否 |
+| `water` | Water、Waterfall 等水域 | Bobby 水域规则、Leaf 路线、Fireball 地形域 | 否 |
+
+Bean 的生长目标由 `beanCanGrowAt` 按语义地形与普通对象占用判断。Cloud / Leaf 另按对象阻挡名单和方向规划，Fireball 只从原版地形获得传播许可；Snow 覆盖会阻止下层地面的传播许可。Mirror 的反射读取语义 `variant`，Ice Block 的融化由其对象入口提出命令。这些对象专属规则不扩充 Fact 词汇。
+
 Fact 分为 `EntityFacts` 和 `PresenceFacts` 两种只读投影。前者描述对象整体语义，后者描述某个空间部位在当前格子的语义；两者可分别来自 Entity Definition 的静态声明、Entity 初始配置和当前 Entity state，Presence Fact 还可依赖 role/footprint。解析函数只读取所属 Entity，Presence 解析另可读取当前 Presence；跨对象条件留给运行规则判断。这个局部性让受影响 Fact 投影可以按 Entity 刷新。
 
 ```ts

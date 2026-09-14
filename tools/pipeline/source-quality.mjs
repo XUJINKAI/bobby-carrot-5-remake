@@ -34,6 +34,20 @@ const ORIGINAL_DAT_FORBIDDEN_ROOTS = [
   "editor",
   "web",
 ];
+const OBSOLETE_FACT_IDS = [
+  "bean-growth-space",
+  "cloud-space",
+  "hidden-objective",
+  "meltable",
+  "reach-all-players",
+  "ride-carried",
+  "terrain-overlay",
+];
+const ENTITY_SPATIAL_ROOTS = [
+  "engine/src/world/entity/",
+  "engine/src/world/spatial/",
+  "model/src/map/entity/",
+];
 
 const errors = [];
 const warnings = [];
@@ -60,6 +74,23 @@ for (const sourceRoot of SOURCE_ROOTS) {
     }
     if (normalized.startsWith(path.normalize("engine/src/")) && /\bstackBand\b/.test(text)) {
       errors.push(`${relative}: stackBand 已移除；空间层序只能使用 stackOrder`);
+    }
+    if (normalized.startsWith(path.normalize("engine/src/"))) {
+      for (const id of OBSOLETE_FACT_IDS) {
+        if (text.includes(`"${id}"`) || text.includes(`'${id}'`))
+          errors.push(`${relative}: 已清理的 Fact ID 不得重新进入 Engine：${id}`);
+      }
+      if (/\bfacts\s*:\s*\[[^\]]*["']collectible["']/.test(text))
+        errors.push(`${relative}: 收集对象由 Type 与 Behavior 定义，无需 collectible Fact`);
+    }
+    if (
+      (
+        ENTITY_SPATIAL_ROOTS.some((directory) =>
+          normalized.startsWith(path.normalize(directory))
+        ) || normalized === path.normalize("engine/src/entities/EntityModule.ts")) &&
+      /\blayer\s*[?:]|\.layer\b/.test(text)
+    ) {
+      errors.push(`${relative}: Entity 空间合同使用 Presence、Fact 与 stackOrder`);
     }
     if (normalized.startsWith(path.normalize("engine/src/")) && /\bVisualAssetSources\b/.test(text)) {
       errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);

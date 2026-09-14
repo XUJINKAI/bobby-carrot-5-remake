@@ -28,8 +28,47 @@ import {
   updateMetadata,
   validateEditorLevel,
 } from "../dist/index.js";
+import { World } from "../../engine/tests/support/World.mjs";
 
 const catalog = createBuiltinEntityCatalog();
+
+test("Editor Play Test 使用语义地图的 Goal，运行过程保持 Draft 原样", () => {
+  const draft = {
+    schemaVersion: 1,
+    meta: { name: "Goal Play Test" },
+    width: 3,
+    height: 1,
+    entities: [
+      ...[0, 1, 2].map((x) => ({ type: MapEntityTypeId.GRASS, variant: "ts-10-1", x, y: 0 })),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 2, y: 0 },
+    ],
+    rules: {
+      win: {
+        type: "all",
+        conditions: [{ type: "carrot" }, { type: "exit" }],
+      },
+    },
+  };
+  const saved = structuredClone(draft);
+  const world = new World(toLevelMap(draft));
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  assert.equal(world.winState.completed, false);
+  assert.equal(world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  }).moves[0].moved, true);
+  world.update({ tick: 1, stepMs: 350 });
+  assert.equal(world.winState.conditions[0].completed, true);
+  assert.equal(world.winState.completed, false);
+  assert.deepEqual(draft, saved);
+});
 
 test("Editor JSON only stores canonical Entity Map plus document metadata", () => {
   const level = createBlankLevel(10, 8);

@@ -55,6 +55,8 @@ Entity Behavior 使用纯查询的 `planMovement()` 提出特殊移动规则，W
 
 特殊规则的职责边界为：Entity 决定 policy，World 校验边界、busy 状态与 reservation，并提交 Grid Fact 和 WorldMotion。Behavior 不能借助 policy 直接修改 EntityStore 或推进时间。
 
+Cloud / Leaf 的对象规则在格边界规划下一格：静态阻挡按 Plank、Ice Block、Crumbly Rock、Fence 的对象身份判断；风或水流改向受阻时尝试原方向，停在潮流或瀑布上的 Leaf 继续等待下一次规划。World 对每个提案执行统一的边界、运动状态和目的格预留检查。Fireball 的地形域、对象阻挡、Mirror 入射和 Ice Block 融化同样由 Entity 领域完成。
+
 ## Marker
 
 Marker 是持续 gameplay 过程中的一次性语义阈值，不是 sprite frame、脚步声帧或某个 Entity 的固有属性。
