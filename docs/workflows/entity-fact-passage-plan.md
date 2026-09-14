@@ -1,227 +1,286 @@
-# Entity Fact 与通行规则整理计划
+# Entity Goal、Fact 与通行规则实施计划
 
-状态：待实施。本文是对当前 Engine 的改造方案；原版事实以 [UP9 通行与碰撞规则](../reference/original-passage.md) 为准，当前运行合同仍以 [Engine 机制合同](../contracts/engine-mechanisms.md) 为准。
+状态：待实施。本文规定后续代码修改的职责、接口、阶段和验收；当前 Engine 行为仍以现行合同和代码为准。
 
-## 目标
+原版条件统一引用 [UP9 原版通行与碰撞规则](../reference/original-passage.md)，重制版明确差异引用 [Fidelity 产品边界](../decisions/original-fidelity-boundaries.md)。实现完成时同步更新 [Engine 机制合同](../contracts/engine-mechanisms.md)、[地图合同](../contracts/level-format.md) 和 [World Runtime 合同](../contracts/world-runtime.md)。
 
-- 移除 `EntityDefinition.layer` 及其 Presence、Debug、公开类型投影。
-- Fact 描述对象或部位当前可共享的语义；Entity 组合这些事实、通用 Mechanism 和专属规则，恢复原版碰撞条件。
-- 原版的具体对象名单、方向表、操作时机由所属 Entity 规则管理；World 保持时间、空间、裁决、事务与快照职责。
-- `LevelMap` 继续持久化语义 Entity。视觉 `layers`、`renderPass`、`stackOrder`、footprint `role`、Editor `stackSlot` 各自保留现有职责。
+## 1. 目标与职责
 
-## 当前问题与影响面
+本次改造包含两条完整链路：
 
-| 当前实现 | 需要解决的问题 |
+1. 地图以具体 Goal 声明目标；对应 Goal 读取 Entity 状态，解释达标条件。World 汇总目标树，HUD 与 Editor 复用结果和定义。
+2. 通行、落脚、生长、传播由所属 Entity 规则判断；这些规则组合必要的共享 Fact 与语义特例表。移除 `EntityDefinition.layer` 及相关依赖。
+
+| 所属模块 | 职责 |
 | --- | --- |
-| Plank、覆盖物用 `presence.layer === "surface" && walkable` 判断 Mower 支撑 | 同一通行结果同时依赖 layer 和 Fact；原版还要求先执行 terrain 特判 |
-| Bean 用 `bean-growth-space` 加 `layer === "surface"` 过滤同格对象 | 原版条件是特定 terrain 域与 object grid 空，不等于所有现代 Presence 都必须为空 |
-| Cloud / Leaf 的 `movingSupportOccupiedAt` 拒绝多数域外 Presence | 原版静态阻挡是有限名单，需要与动态实体碰撞分开 |
-| Fireball 以任一 Presence 的 `walkable / water / cloud-space` 确定 terrain 通行 | Plank、豆茎等提供的步行能力可能被当成火球传播所需的地形条件 |
-| `water-overlay` 只处理水面与 `terrain-overlay` 的组合 | 原版 Plank / Bean 的覆盖发生在全部 terrain 特判之后，范围大于水面 |
-| `egg-nest / filled-egg` 同时出现在 Engine、Editor、HUD、Original 目标生成和地图合同 | 属于跨模块选择器变更，需要明确迁移；不能只修改注册表 |
-| `ride-carried` 只由 Mower 声明、Bobby 的 mount relation 分支消费 | 现有关系与专属 Behavior 已能表达，不必为唯一对象维护公共标签 |
-| `surface-facts.ts` 将 atlas 坐标线性化后判断区间 | 原版范围证据与运行语义混合；后续按语义 type / fields / role / phase 定义，坐标换算留在 Original DAT 边界 |
+| Model | 目标条件的数据形状、稳定 Goal ID、地图解析和参数结构 |
+| Entity 领域 | 对象状态、专属通行、对象交互、具体 Goal 实现 |
+| Fact | 跨对象共享的当前语义及注册校验 |
+| Mechanism | 已经能够通过通用 Fact 和协议复用的规则 |
+| World | 时间、空间、调度、目标树求值、移动裁决、命令事务、快照 |
+| Editor / HUD | 通过 Engine 的 Goal 定义与查询结果生成配置、提示和展示 |
 
-检查入口：`engine/src/entities/original/{plank,bean-field,moving-entities,fireball,surface-facts}.ts`、`engine/src/entities/behaviorLibrary.ts`、`engine/src/entities/player/bobby.ts`、`engine/src/mechanism/entity/WaterOverlayBehavior.ts`。
+视觉 `layers`、`renderPass`、`stackOrder`、footprint `role` 和 Editor `stackSlot` 各自保留职责。Fact 与机关实例状态继续属于 Engine；`LevelMap` 保持纯语义地图。
 
-## 抽象准则
+## 2. 地图直接声明具体 Goal
 
-一个 Fact 应能独立解释“对象当前是什么或具备什么能力”，并说明生产方、消费方及状态变化。不把“某个指定对象能通过这里”的最终结论存为通用事实。
+### 条件形状
 
-采用三种表达：
-
-1. **共享事实**：如 `ground`、`water`、`sky`、`walkable`、`blocking`、`climbable`。状态变化由所属 Entity 投影；多格对象按当前 Presence 读取。
-2. **对象私有状态与关系**：如 `egg.state.filled`、`color-block.state.raised`、Mower 驾驶关系、Mirror 方向、Cloud 颜色、Leaf 启动状态。由所属规则读取，仍经 World mutation 提交。
-3. **明确的语义特例表**：如 Cloud / Leaf 的有限静态阻挡名单、Bean 可生长地形集合、Fireball 对 Dragon head/body 的阻挡。表使用 semantic type、实例字段、role 和 gameplay state，放在 `entities/original/` 的对应领域模块。
-
-是否提升为通用 Mechanism，取决于它能否只消费 Fact 与通用协议，以及是否已有不同对象的复用证据。原版多个名单恰好交叉，不足以证明存在共同材质或物理定律。
-
-### 建议的 Fact 处置
-
-以下是计划采用的词汇与职责。`ground` 表示存在固定地面介质，不表示当前 Actor 必然能走；它与 `water / sky` 描述环境，`walkable` 描述步行支撑能力。三者与视觉层序、Editor 放置 slot 独立。
-
-| 当前 Fact | 建议 | 语义和消费方式 |
-| --- | --- | --- |
-| `cloud-space` | 改为 `sky` | 表示天空域；Cloud 和 Fireball 各自决定如何经过，风向条件留在规则中 |
-| `bean-growth-space` | 从通用注册表移除 | Bean 规则查询明确的语义地形集合，并独立判断会占据其生长位置的对象；原版区间包含树桩、雪等，不命名为空地、空气或可种植土壤 |
-| `egg-nest` | 移除 | 用 `egg` Type 选择目标对象 |
-| `filled-egg` | 移除 | Egg 自己读取 `state.filled`，分别回答通行与目标完成查询 |
-| `ride-carried` | 移除 | Bobby / Mower 的明确关系生成 companion 提案；通用 World 只处理参与者与移动事务 |
-| `terrain-overlay` | 用支撑语义与通行组合替代 | `walkable` 表示可落脚能力；哪些地形拒绝可被额外支撑满足、哪些独立障碍仍阻挡，由 passage 提案组合表达 |
-| `walkable / blocking` | 保留并明确作用域 | 供标准步行通行消费；Fireball、Cloud、Leaf 不直接照搬步行的最终结果 |
-| `water` | 保留 | 水域语义；Tide / Waterfall 方向规则由对应对象执行 |
-| `climbable` | 保留 | 部位可攀爬，人物呈现可读取同一事实；不自动赋予跨越底层地形的能力 |
-| `moving-platform` | 保留并核对定义 | 可承载 Actor 的移动支撑；具体是否停止、能否登上、如何启动由对象行为判断 |
-| `player / pushable / collectible / reach-all-players` | 审计后保留各自必要语义 | 分别服务 Actor 生命周期、推、收集选择器和多人目标；Fact 的成立不安装 Behavior |
-| `meltable` | 移除 | 当前 Fireball 按 Ice Block Type 处理，融化请求交给 Ice Block 的领域入口 |
-| `hidden-objective` | 移除失效查询及声明 | Carrot / Egg 与 High Grass 的遮蔽关系由原版对象行为查询；这些行为同属 Entity 层 |
-| 新增 `ground` | 固定地面介质 | 为固定支撑筛选与 Fireball 传播域提供依据；高草、Mirror、色块存在地面介质，其通行仍取决于自身状态和 Actor |
-
-`sky` 的共享性以 Cloud 和 Fireball 的不同消费规则验证。Egg 的填充状态与 Color Block 的升起状态都由所属对象解释；跨系统共享的是查询协议和结果，不是私有字段的同名 Fact。
-
-## Egg 的具体改造
-
-### 状态、通行、目标分别在哪里
-
-将 Egg 定义、填充行为、目标查询和视觉解析集中到 `engine/src/entities/original/egg.ts`，从 `static-catalog.ts` 按领域抽出。
-
-| 职责 | 实施方式 |
-| --- | --- |
-| 持久化初值与 runtime state | 继续使用 `filled` 字段；运行中以 `egg.state.filled === true` 为唯一填充状态 |
-| 填充时机 | 普通 Bobby 离开时经 World 命令设置同一 Egg 的 state，保留 Entity ID；Mower 不触发填充 |
-| 通行 | 与 Color Block 相同，声明需检查的 `blocking` 能力，由 `canEnter` 读取自身 state 返回是否允许 |
-| 视觉 | Egg Visual 直接读取 state 选择空 / 已填画面 |
-| 目标完成 | Egg 提供只读 `isSatisfied` 查询，返回 `state.filled === true` |
-| HUD | 使用 World 返回的目标 remaining，不自行扫描 Egg state |
-
-同一 Egg state 改变后，通行、目标与视觉读取同一权威状态。Snapshot / Undo 直接恢复它；不增加单独保存的完成计数或填充投影。
-
-### 目标协议
-
-Model 增加一种对象目标聚合条件：
+组合节点使用 `all / any`，叶子节点使用具体 Goal ID。示例：
 
 ```json
-{ "type": "satisfy-all", "target": "egg" }
-```
-
-`fill-all { target, filler }` 继续表达目标格被其它对象占据，例如 Push Goal 和箱子。`satisfy-all` 则按 Entity ID 聚合对象自身的完成结果。
-
-Engine 在 Behavior 协议中增加只读查询：
-
-```ts
-interface ObjectiveContext {
-  readonly entity: Readonly<EntityInstance>;
-  readonly query: WorldQueryApi;
-}
-
-interface Behavior {
-  isSatisfied?(context: ObjectiveContext): boolean;
+{
+  "type": "all",
+  "conditions": [
+    { "type": "carrot" },
+    { "type": "exit" }
+  ]
 }
 ```
 
-Egg 的实现只有 `return entity.state.filled === true`。查询不接收 commands，不改变 state，不触发移动 hook。新增 `world/outcome/ObjectiveResolver.ts`，按有效 Behavior 组合调用该查询，结构参照 `ReachResolver`。
-
-聚合合同明确为：
-
-- target 使用现有带类型 Selector 解析路径，按 Entity ID 去重；多部位或多个 Egg 同格都按对象计算。
-- 每个目标的有效 Behavior 组合最多包含一个 `isSatisfied` 实现，重复定义在注册校验时报错。
-- `remaining` 为当前未满足目标数；目标数大于零且 remaining 为零时完成。
-- 匹配对象缺少查询实现时，在可游玩性检查中报告不支持；runtime 视为未满足，不能默认完成。
-- 聚合器读取当前已提交状态，整笔 mutation 提交完成后再计算；保持既有等待运动结束才完成关卡的规则。
-- 查询结果按需计算，不进入 Fact Registry、Selector Index 或 Snapshot。
-
-这使 World 只知道“查询目标、计数、聚合”，Egg 知道如何解释 filled。其它对象只有在实际需要成为自身状态目标时才实现该查询。
-
-### 同步修改位置
-
-- `model/src/map/rules.ts`、`parser.ts` 及对应 schema 生成：增加 `satisfy-all` 形状，Model 不读取 runtime state。
-- `engine/src/world/WorldRuleEvaluator.ts`、`WorldTypes.ts`：增加聚合分支和公开目标状态；注入 ObjectiveResolver。
-- Engine 的 `validateLevelPlayability`：复用同一目标查询能力检查。
-- `editor/src/authoring/rules.ts`：以 Egg Type 检测目标，生成 `satisfy-all`。
-- `tools/original/win-condition.mjs`：生成对应官方地图规则。
-- `engine/src/ui/GameplayHudModel.ts`：从 Egg 的 `satisfy-all` 条件读取 remaining。
-- 地图合同、默认规则、测试、分享/存档迁移调用点一起修改。
-
-## 通行组合的设计重点
-
-### 支撑条件与独立障碍
-
-需要分别表达“是否具备落脚条件”和“是否被其它对象拒绝”。例如水上有木板时普通 Bobby 可落脚；在现代多实体地图中，再叠加一个独立阻挡对象，不能因木板存在就放行该障碍。
-
-原版 Plank / Bean 可覆盖 terrain 特判的拒绝，而底层 terrain 已允许时 Mower 可以经过它们。实施时先为下列输入建立真值表，再确定最小 passage 协议：
-
-- 固定地面提供的支撑与木板、豆茎、平台提供的附加支撑。
-- 地形自身的方向、高草、色块等进入条件。
-- 当前 Actor 是否接受某种支撑，Mower 是否已满足固定地面的通行条件。
-- 同格其它 Presence 的独立进入条件。
-
-采用下面的支撑查询；World 只汇总规范化提案，具体 Entity 生成它。World 不根据 Plank、Mower、DAT 层或图集范围分类。
-
-### 支撑查询与确定性合并
-
-新增无 commands 的 `resolveSupport` hook。它读取 Actor、方向和同格 Presence，返回本 Presence 是否提供支撑，以及需要排除的具体支撑候选引用：
-
-```ts
-interface SupportResolution {
-  readonly available?: boolean;
-  readonly excludes?: readonly PresenceRef[];
+```json
+{
+  "type": "all",
+  "conditions": [
+    { "type": "egg" },
+    { "type": "exit" }
+  ]
 }
 ```
 
-`PresenceRef` 使用实体 ID 与 footprint 部位的稳定身份，不使用 stackOrder 作为身份。默认候选来自 `walkable`；`available` 可根据 Actor 和对象状态覆盖默认值。任一所属 hook 明确返回 false 时，本 Presence 不提供支撑。全部候选生成后统一应用 excludes；排除只对本目标格候选有效，不会取消其它 Presence 的进入拒绝，也不改变事件投递。
+推箱子地图使用 `{ "type": "push-goal" }`。Golden Carrot 地图使用 `{ "type": "golden-carrot" }`，与 Exit 的组合沿用该地图已有的 all / any 关系。
 
-| Entity | 支撑查询 | 进入/离开特判 |
+首批内置 Goal ID 为 `carrot / egg / exit / push-goal / golden-carrot`。条件树通过 `condition.type` 查找对应定义；Goal ID 是目标语义，具体查询哪些 Entity 由 Goal 决定。
+
+每种 Goal 可以声明自己的 `parameters`。当前五种 Goal 均不需要参数，正式输出只保存 type。后续确有需求时，由该 Goal 增加参数的数据合同和校验；Model 只校验数据，Engine 解释运行语义。组合节点只接受 conditions，参数归具体 Goal。
+
+### 具体 Goal 的规则
+
+| 实现 | 查询对象及达标条件 | 计数与边界 |
 | --- | --- | --- |
-| 普通固定地面 | `ground + walkable` 提供候选 | 默认 |
-| 水、天空 | `water / sky` 自身不提供步行候选 | 通过同格其它支撑决定落脚 |
-| Plank、Bean Tip / Middle | 非驾驶 Bobby 提供自身候选；Mower 不从它们取得支撑 | terrain 已有有效支撑时，不额外阻挡 Mower |
-| Bean Base | 不提供额外候选 | 可攀爬依赖已有支撑 |
-| High Grass | 排除其它 `ground` 支撑候选；只向 Mower 提供自身支撑 | Mower 成功移动后割草；隐藏目标互动按覆盖关系执行 |
-| Color Block | 排除其它 `ground` 支撑；降下时提供自身支撑 | raised 在 Color Block 规则中解释；附加 Plank 支撑仍可满足原版覆盖 |
-| Mirror / Carousel | 排除其它 `ground` 支撑；按 Actor 与进入方向提供自身支撑 | Carousel 来源离开限制独立执行 |
-| Snow | 排除其它 `ground` 支撑，自身不提供支撑 | 铲雪请求、原版覆盖下的副作用时机按事实表验证 |
-| 普通独立障碍 | 不提供支撑 | 保持 `blocking / canEnter` 裁决 |
+| `carrotGoal` | 查询当前 Carrot Entity；全部收集后完成 | remaining 为 Carrot 数量，包含高草下的隐藏对象；计数为零即完成；Editor 对开局零目标给出配置提示 |
+| `eggGoal` | 查询当前 Egg，逐个读取 `state.filled === true` | 按 Entity ID 去重，remaining 为未填数量；至少存在一个 Egg 且全部填充才完成 |
+| `pushGoal` | 查询 Push Goal 的目标格，检查各格是否被具有 pushable 能力的对象占据 | 目标按坐标去重，remaining 为未被占据的目标格数；至少存在一个目标格 |
+| `exitGoal` | 查询玩家和 Exit，使用 Exit 的到达条件 | 至少一个玩家；所有当前玩家均满足 Exit 到达要求，驾驶限制仍由对象规则解释；remaining 可省略 |
+| `goldenCarrotGoal` | 任一玩家成功到达并完成 Golden Carrot 的交互 | 保留对象在交互中被消费时的成功记录；开局没有目标不能自动完成 |
 
-处理地形的 Entity 可以在拒绝自身支撑时允许独立进入检查继续；最终是否落脚由全部支撑提案确定。这样 Plank 的候选能满足地形拒绝，独立 Ice Block / Egg 等对象仍由自己的进入分支拒绝。
+`eggGoal` 对同格的两个 Egg 按两个对象计数。`pushGoal` 对同格重叠的目标按一个目标格计数。这些差别由各 Goal 自己规定。
 
-来源 `canLeave`、Push、`resolveEntry` 命令、目标 `canEnter` 和最后事务提交仍按明确阶段执行。把现有 `hasWalkable` 的早期布尔判断改为正式支撑求值；会清除障碍的 `clear-and-pass` 提案必须与移动在同一事务中校验，不能先删对象再重试。主 Actor 与 companion 占用校验复用相同的只读支撑/通行判断，避免 `canOccupy` 只看静态 blocking 而漏读 Egg、Color Block 的状态。
+目标读取当前已提交的 World；组合节点只组合子结果。关卡进入最终完成状态仍遵守既有运动结束时机、死亡和暂停规则。目标失去满足条件时是否仍完成，按具体 Goal 定义：Egg 读取当前状态，Exit 读取当前到达条件，Golden Carrot 使用成功交互记录。
 
-多实体自定义地图中的额外叠放以这些候选与独立拒绝共同裁决。停止对齐的移动载体优先搭乘属于 Bobby 的专属策略；使用通用 proposal / lifecycle 表达命中的目标范围，保持来源离开约束和 World 的预留裁决。
+### Goal 协议与注册
 
-### 地形域与现代叠放
+World 定义最小的只读求值协议：
 
-Fireball 的传播域独立于步行支撑。Bean 生长域也不是 `!walkable`：地图缺少地面、对象提供临时支撑、同格有动态载体等情况都需要单独定义。
+```ts
+interface GoalResult {
+  readonly completed: boolean;
+  readonly remaining?: number;
+}
 
-原版 terrain 与 object 各只有一个值；现代地图可有多个 Presence。先列出 Original Adapter 实际产生的语义组合，包括 Snow、高草与隐藏目标的展开，再为额外叠放建立确定性规则。共享的地面/支撑事实只有在具备独立含义和真实消费方时才进入注册表；保留在 Bean 或 Fireball 内的语义范围表无需为了减少表数量强行升格。
+interface GoalDefinition {
+  readonly type: GoalType;
+  evaluate(context: GoalContext): GoalResult;
+}
+```
 
-Cloud / Leaf 共用一份所属领域的静态碰撞表，方向与停车分别处理；动态实体之间的碰撞交给已有 WorldMotion 与移动事务协议。原版同向放行、3px / 6px 子步差异与现代预留合同需要列为独立的 Fidelity 对照项，不能通过增加 Fact 偷换运动协议。
+`GoalContext` 提供只读 World 查询、当前条件，以及目标需要读取的已提交成功交互记录。当前实现没有参数时，求值器只消费 type。Goal 求值不接收 mutation commands。
 
-### 六类对象的落地文件与规则
+- `world/outcome/GoalRegistry.ts` 保存 Goal ID 与求值实现，校验重复注册和缺失定义。
+- 具体 `carrotGoal / eggGoal / exitGoal / goldenCarrotGoal` 位于 `entities/original/goals/`；`pushGoal` 位于 `entities/custom/goals/`。
+- Engine 组合入口注册这些实现，并将 registry 注入 World。World 源码只依赖 Goal 协议。
+- `WorldRuleEvaluator` 对 all / any 递归求值，对叶子调用 registry 中的 Goal。
+- `WinConditionState` 保留叶子的具体 type、completed 和可选 remaining；组合节点保留完整子结果。
+- 必要的成功交互记录由 World runtime 保存并进入 Snapshot / Undo。Golden Carrot 的消费不能使成功结果丢失；优先复用当前已经保存的到达记录，调整时同时更新 Replay。
+- Goal 实现是无共享可变状态的对象。查询结果按需计算，额外性能缓存必须按 World 提交版本失效。
 
-| 模块 | 具体修改 |
+Goal 的编辑可用性检查与运行求值共用对象选择规则。Engine 对外提供注册 Goal 的可用性结果；Editor 不维护一份 Egg 或箱子判定代码。
+
+## 3. Egg 使用自身状态
+
+将 Egg 定义、填充行为和视觉解析从 `static-catalog.ts` 抽到 `entities/original/egg.ts`。
+
+| 职责 | 实现 |
 | --- | --- |
-| `original/terrain-semantics.ts` | 按 semantic type 和必要实例字段产出 ground / water / sky / walkable；混合 variant 明确逐项声明；移除坐标线性化范围判断 |
-| `original/plank.ts`、Beanstalk 定义 | 组合支撑查询、Mower 条件、climbable 与自身离开行为 |
-| `original/mower.ts`、`player/bobby.ts` | mountId 与 Mower Type 决定 companion；固定支撑走统一支撑求值，碎石与 Speed 条件留在专属规则 |
-| `original/bean-passage.ts` | `canGrowInto(query, cell)` 分别检查明确语义地形集合和阻止生长的持久对象；单独处理 Snow、纯地面与动态载体 |
-| `original/moving-support-passage.ts` | Cloud / Leaf 共享木板、Ice 阶段、碎石、Fence 静态表；Cloud 查询 sky，Leaf 查询 water，再执行风向/潮流条件 |
-| `original/fireball-passage.ts` | 查询固定地形传播域 ground / water / sky；Dragon 按 role、色块按 raised、碎石按 Type 判断；Mirror 入射表与 Ice 融化入口独立 |
-| `original/egg.ts` | state 的初始化、离开填充、通行、目标查询和视觉集中维护 |
+| 初始配置 | 继续由 Model 声明的 filled 字段初始化 runtime state |
+| 填充 | 普通 Bobby 离开时，经 World 命令设置同一 Egg 的 `state.filled = true`；保留 Entity ID |
+| Mower | 经过空 Egg 时不执行填充 |
+| 碰撞 | Egg 的对象规则直接读取 `state.filled` 决定能否进入 |
+| 视觉 | Egg Visual 读取同一 state 选择画面 |
+| 目标 | `eggGoal` 读取同一 state 计算 remaining |
+| 恢复 | Snapshot / Undo 恢复 state，后续碰撞、视觉和目标读取恢复后的值 |
 
-上表新增文件按职责抽取，已有规则从原文件迁入后由原 Entity 模块调用。`world/` 与 `mechanism/` 不导入这些具体对象表。
+Color Block 的 `state.raised` 同样由 Color Block 的规则解释。通用 blocking 的声明或动态投影只表达通行所需的共享语义；具体字段始终由所属对象维护。所有占用入口必须读取同一有效判断，避免主 Actor 可走而 companion 被静态标签错误拒绝。
 
-有 Snow 或其它基础地形替换物的现代叠放，不能仅因下方生成过 `ground` 就让 Fireball 传播；地形域查询必须把 Adapter 产生的替换/覆盖组合规范化为当前有效环境。这个解析在原版 Entity 领域内共用，视图不依赖视觉栈顺序。Bean 的特殊可生长集合留在 Bean 领域，不由 ground 的取反推导。
+## 4. Fact 处置清单
 
-## 实施阶段与提交边界
+Fact 只保存有真实生产方、消费方和独立语义的共享事实；具体目标由 Goal 解释，具体对象规则可以读取 Type、state、实例字段和 role。
 
-1. **事实与基线。** 已有 `original-passage.md` 保存原版表。实现开始时记录当前分支 HEAD、检查工作区，建立原版表 → 语义 Entity 输入 → 预期结果 → 现有测试的矩阵。标出明确产品差异与尚未实现的原版条件。
-2. **Egg 状态目标。** 实现 `satisfy-all`、ObjectiveResolver 和 Egg 的查询；同步 Model、Editor、HUD、Original 生成与已存在地图规则的转换。删除两个 Egg 专属 Fact，验证 state 更新、计数与 Undo。
-3. **支撑通行与 layer 移除。** 实现 `resolveSupport` 及候选排除，迁移 Plank、Mower、Beanstalk 和地形组合，删除 Definition、Presence、Inspector、Debug、preview、公开导出及测试中的语义 `layer`。保留视觉与 Editor 结构各自职责。
-4. **特殊传播与生长。** 迁移 Bean 地形集合和占用规则、Cloud / Leaf 静态阻挡表和方向条件、Fireball 域与特判；同步清理 `surface-facts.ts` 的坐标序号判定。原版语义重建文件补上事实文档已指出的遗漏，复杂规则用链接引用事实表。
-5. **语义词汇与跨模块收尾。** 完成目标选择器、HUD、Editor、Original 目标生成、测试与示例的同步；清理 `ride-carried`、闲置 Fact 和失效查询；将可机械验证的约束加入正式 verify。
+| 当前 Fact | 处理 | 后续归属 |
+| --- | --- | --- |
+| `bean-growth-space` | 删除 | Bean 专属的语义地形集合与生长位置判断 |
+| `cloud-space` | 改为 `sky` | 天空域；Cloud、Fireball 各自解释通行 |
+| `egg-nest` | 删除 | `eggGoal` 按 Egg Type 选择对象 |
+| `filled-egg` | 删除 | Egg state、Egg 碰撞与 `eggGoal` |
+| `ride-carried` | 删除 | Bobby / Mower 的 mountId 关系与 companion 提案 |
+| `terrain-overlay` | 删除 | Plank、Beanstalk 等对象的通行特判 |
+| `meltable` | 删除当前闲置声明 | Ice Block 的融化入口，由 Fireball 规则调用 |
+| `hidden-objective` | 删除失效查询及声明 | High Grass 与 Carrot / Egg 的真实遮蔽关系，由 Entity 规则处理 |
+| `reach-all-players` | 迁移到 `exitGoal` 后删除 | Exit 与 Golden Carrot 分别解释多人达标条件 |
+| `walkable` | 保留 | 标准步行可落脚的部位；特殊移动者使用自己的规则 |
+| `blocking` | 保留 | 需要执行通行阻挡检查的部位，实际条件可由对象行为解释 |
+| `water` | 保留 | 水域语义；潮流和瀑布方向由 Entity 规则处理 |
+| `climbable` | 保留 | 可攀爬部位，动作及人物表现读取相同语义 |
+| `moving-platform` | 保留 | 可承载 Actor 的移动平台；具体搭乘和续行属于对象行为 |
+| `player` | 保留 | World Actor 生命周期所需的 kernel Fact |
+| `pushable` | 保留 | 推机制与 `pushGoal` 共享的能力 |
+| `collectible` | 核对实际消费后收敛 | 通用收集能力有独立消费时保留；Carrot 数量由 `carrotGoal` 按 Type 查询 |
 
-阶段 2～5 按实际依赖可合并为更小数量的完整提交，每次提交必须可独立验证和回滚。实现阶段在提交前运行完整 `npm run verify`；含本机 Chromium 的验证直接在沙箱外执行。
+注册表中每项说明生产方、消费方和是否随 state 变化。`sky` 对混合 Surface variant 按真实语义声明。纯私有字段由对象规则直接解释。
 
-## 回归与验收
+## 5. 通行判断由 Entity 领域实现
 
-- 按事实文档第 10 节覆盖范围边界、阶段变化、Actor 状态与方向组合；已有的产品 Fidelity 差异单独说明。
-- 验证相同 `walkable` 不会使 Fireball 获得木板支撑带来的传播能力；水上支撑允许步行时，独立对象障碍仍有效。
-- 验证 Mower 在允许 terrain 上经过木板/豆茎，在拒绝 terrain 上失败；Bean Base 与 Tip / Middle 不同。
-- 验证 Bean 查询真实语义地形和占用对象，动态 Cloud / Leaf 的存在不会被当成原版 object grid 非空。
-- 验证 Cloud / Leaf 对静态阻挡名单外对象的处理、水流回退、同色 Parking，以及世界移动预留和携带关系。
-- 验证 Egg 的 filled 状态、`satisfy-all` 聚合、Editor 自动规则、HUD 统计、Original 生成和地图导入；两个 Egg 同格仍按两个对象计数。
-- 验证缺少目标、目标缺少查询实现、重复目标查询实现、多部位去重与目标替换；这些情况的规则结果必须明确。
-- 验证支撑排除与候选生成次序无关，同格独立障碍始终执行；空 / 已填 Egg 和升起 / 降下色块在主 Actor 与 companion 校验中一致。
-- 状态修改、spawn、destroy、运动、Undo、Restart、Snapshot restore、Replay 后，Fact 查询与运行结果一致。
-- 最小测试地图在 Editor Play Test 使用正式 Engine，Runtime 保持 Draft 原样；原版证据不足时再 patch 只读原始 JAR 的副本。
-- 门禁按真实类型/字段使用点检查 layer 与已移除 Fact，防止误报视觉 `layers`、局部绘图变量和 Editor 分类。
+### 调用与提交边界
 
-## 兼容性与范围
+| 判断内容 | 所属规则 |
+| --- | --- |
+| Bobby / Mower 的目标地形、木板/豆茎覆盖、搭乘和对象交互 | 玩家与相关原版 Entity 规则 |
+| Bean 的下一格生长条件 | Bean 规则 |
+| Cloud / Leaf 的下一格 terrain、静态阻挡、风向/水流/停车 | 动态载体规则 |
+| Fireball 的传播范围、对象阻挡、反射、融化 | Fireball 规则与被交互对象的领域入口 |
+| 边界、busy、移动预留、多人冲突、原子提交 | World |
 
-`EntityDefinition.layer`、`EntityLayer` 和 Debug 对应字段的删除属于 Engine 对外类型变化。地图 JSON 本身没有该字段，不为它增加兼容运行路径。
+复用 `planMovement`、`canEnter`、`canLeave`、`resolveEntry` 与 RuntimeAction 的调用入口。移除 layer 消费点时，同步把 `hasWalkable` 等提前决定结果的检查调整到对应移动策略中，让特殊对象有机会完成自己的判断。
 
-`egg-nest / filled-egg` 已出现在 `LevelMap.rules.win` 示例与 Editor/Original 默认输出，属于已存在的数据合同。标准旧表达转换为 `satisfy-all { target: "egg" }`，递归处理 all / any。其它包含旧 selector 的自定义组合不能推定等价，迁移检查须报告具体路径与所需处理，避免静默改写自定义含义。
+通行代码只能查询和提出结果；砍草、铲雪、开锁、碎石等命令通过已有事务路径提交。World 不根据某个具体 Entity Type 执行通行分支，领域函数也不直接操作 World 内部存储。
 
-实施时检查仓库地图、用户 Draft、分享地图和内含地图的 Replay。转换位于明确的数据迁移边界，严格 Model parser 与 World 只消费目标合同。Replay 内嵌地图变更会影响哈希和重放版本，须按 Replay 合同处理，不能直接修改地图后声称旧记录仍可验证。新增获胜条件和目标计数方式属于公共合同变化，完整验证包含格式、生成和重放。
+### Bobby / Mower 的直接判断顺序
 
-本计划的 Engine 改造尚未执行；当前提交只更新待实施文档。
+1. World 检查目标边界和运动有效性。
+2. 玩家规则处理 airborne，并检查来源 Carousel 的离开方向。
+3. 非驾驶状态检查目标格停止且对齐的 Cloud / Leaf，按原版搭乘优先级决定进入。
+4. 玩家地形规则判断目标环境，执行高草、色块、Mirror、Carousel、Snow 等专属条件。
+5. 地形拒绝时，非驾驶 Bobby 检查完整 Plank、Bean Tip、Bean Middle；命中则允许跨越该地形。Mower 仍依赖地形本身允许。
+6. 对独立对象执行对应的进入条件。木板对地形的作用范围到第 5 步为止；同格额外 Ice Block、已填 Egg 等对象仍然执行自己的条件。
+7. World 校验全部参与者及目的格预留，提交命令与移动，继续中点/到达/离开生命周期。
+
+原版一个 terrain 和一个 object 的输入按事实表验证。现代多实体输入将“跨越地形”与“其它独立对象的进入限制”分别处理；判定由 Entity 规则直接完成。
+
+| 输入 | 普通 Bobby | Mower |
+| --- | --- | --- |
+| 水＋完整 Plank | 允许 | 拒绝 |
+| 允许通行的地形＋完整 Plank | 允许 | 允许 |
+| 水＋碎裂 Plank | 拒绝 | 拒绝 |
+| 水＋Bean Tip / Middle | 允许 | 拒绝 |
+| 水＋Bean Base | 拒绝 | 拒绝 |
+| 水＋完整 Plank＋独立 Ice Block | 被 Ice Block 拒绝 | 拒绝 |
+| 高草＋完整 Plank | 木板允许跨越该地形 | 按 Mower 高草规则进入 |
+
+来源离开约束、方向特判的副作用、成功搭乘的检查优先级由对应 Entity 保持。现有 `resolveEntry` 对象处理与通行判断应抽成可复用领域代码，由一个权威入口调用，避免同一次尝试执行两遍开锁或清除。
+
+### 语义地形与叠放
+
+原版 Adapter 会把某些一个 terrain 值展开为多个现代 Entity，例如基础地面与 Snow、高草及隐藏目标。因此通行函数要理解这些语义组合：
+
+- Snow 覆盖了地面时，Fireball 不能仅因下方存在 walkable 就通过。
+- 水上有 Plank 时，Plank 的步行能力不能成为 Fireball 的地形传播依据。
+- 高草下的 Carrot 计入目标，但进入、收集与割草顺序由覆盖关系决定。
+- Bean 判断生长位置时，纯地形与 Cloud / Leaf 动态载体不能被当作原版 object grid 的普通占用。
+
+共用的组合识别放在 `entities/original/terrain-semantics.ts`。它只解析 semantic type、实例字段、role 与 state，输出对应领域判断所需的信息。需要共享具体对象名单时，在所属原版领域引用同一张表。
+
+现代自定义地图多种地形叠放的判定必须明确且与渲染排序无关。范围限定为可由语义组合解释的游戏行为；无法由已知语义确定的组合先建立最小例图，在实现阶段写明处理规则和回归结果。
+
+### 六类规则的落地位置
+
+| 文件/领域 | 具体工作 |
+| --- | --- |
+| `entities/player/bobby-passage.ts` | 编排玩家地形、覆盖与对象通行顺序，读取驾驶/飞行关系，复用对象自己的规则 |
+| `entities/original/terrain-semantics.ts` | 识别基础地形与覆盖组合，按明确语义 variant 解释原版地形；替代坐标线性化范围判断 |
+| `entities/original/plank.ts`、Beanstalk 定义 | 木板完整阶段、豆茎部位、离开行为与跨越地形的条件 |
+| `entities/original/mower.ts` | Gas、mountId、停车、割草、Speed 碎石条件 |
+| `entities/original/bean-passage.ts` | 原版可生长语义集合、静态占用、动态载体边界 |
+| `entities/original/moving-support-passage.ts` | Cloud / Leaf 共用静态阻挡表，分别处理 sky / water、逆风/逆流、停车及续行回退 |
+| `entities/original/fireball-passage.ts` | 地形传播范围、Dragon role、Color Block state、Crumbly Rock、Mirror 入射表、Ice 融化 |
+
+新增文件均按领域职责抽取，简单规则保留在所属 Entity。原版编号和 ts 坐标换算只位于 `tools/original/dat/`；事实文档提供原始表，Engine 运行表使用语义身份。
+
+主 Actor、被推物和携带对象的可占用性检查都复用其对应规则。所有运动仍经 World 事务执行；Cloud / Leaf 的原版同向碰撞与快速子步差异应与现代运动预留单独核对，并在 Fidelity 边界明确结果。
+
+## 6. 目标合同、生成与历史数据
+
+现有已提交代码使用 `collect-all / fill-all / reach` 及 target/filler 选择器。本次实施将正式输出统一为具体 Goal 条件，all / any 递归结构保留。
+
+| 现有标准表达 | 新表达 |
+| --- | --- |
+| `collect-all { target: "carrot" }` | `{ type: "carrot" }` |
+| `fill-all { target: "egg-nest", filler: "filled-egg" }` | `{ type: "egg" }` |
+| `fill-all { target: "push-goal", filler: "pushable" }` | `{ type: "push-goal" }` |
+| `reach { target: "exit" }` | `{ type: "exit" }` |
+| `reach { target: "golden-carrot" }` | `{ type: "golden-carrot" }` |
+
+维护方地图和样例统一转换，官方/自定义 collection 生成器直接输出新合同。现有地图合同处于 schemaVersion 1 开发期，实施时明确本次格式变化与转换命令；正式 parser 按更新后的合同严格校验。
+
+对需要保留的旧地图提供显式转换入口，转换工具递归处理上述标准表达。其它自定义 selector 组合逐项审计，能确定含义时配置对应具体 Goal 及确有必要的参数；不能确定时返回条件路径，不静默改变含义。runtime Goal Registry 只维护目标合同。
+
+Replay 的内嵌地图、completedConditions、哈希和最终结果一起更新。旧 Replay 文件保持原样；维护中的验证记录在转换地图后重新执行并生成新版本证据，不能只修改 JSON 后沿用旧校验值。Draft、分享地图和存档恢复入口都须明确接受哪个合同以及如何调用显式转换。
+
+### 同步文件
+
+- `model/src/map/rules.ts`、`parser.ts`、schema 生成：具体 Goal 条件和参数结构。
+- `engine/src/world/WorldRuleEvaluator.ts`、`WorldTypes.ts`：registry 求值与条件结果树。
+- Engine `LevelWarnings` / `validateLevelPlayability`：调用对应 Goal 的配置检查。
+- `editor/src/authoring/rules.ts`：检测、勾选、生成和识别具体 Goal。
+- `engine/src/ui/GameplayHudModel.ts`：按具体 Goal type 读取 remaining。
+- 原版 Exit 视觉对目标状态的读取：跟随具体 Goal 结果，保持目标未完成时的门状态。
+- `tools/original/win-condition.mjs`、自定义地图生成器和 pipeline 校验：输出新条件。
+- `engine/src/replay/`：条件序列化、解析、最终状态对照及消费目标的成功记录。
+- 地图、Engine、World、Replay 合同与使用示例。
+
+## 7. 实施阶段与提交边界
+
+| 阶段 | 修改内容 | 验收重点 |
+| --- | --- | --- |
+| 1. 基线与规则矩阵 | 记录当前分支和 HEAD；把原版事实对应到语义地图与已有测试；整理所有实际目标条件 | 标明原版事实、现有产品差异和待补行为；审计自定义 selector |
+| 2. 具体 Goal 链路 | Goal 协议与 Registry、五个 Goal、Model 条件、World 求值、Editor/HUD/生成器/Replay、显式转换 | 对象状态目标、多人 Exit、Golden Carrot 消费、全部生成地图与回放合同 |
+| 3. 玩家通行与 layer | 整理 Bobby/Mower、Plank/Beanstalk、地形/独立对象判断；删除 Definition、Presence、Debug、preview、公开类型中的 layer | 原版先后顺序、现代额外叠放、主 Actor/推/携带一致性 |
+| 4. 特殊移动与 Fact | Bean、Cloud/Leaf、Fireball 领域表和方向条件；完成 Fact 清理与 semantic variant 声明 | 原版名单逐项、区间边界、阶段/方向/状态组合 |
+| 5. 完整验收与文档 | Editor 最小图、Snapshot/Undo/Replay、正式 verify 门禁、合同和 Fidelity 对照 | 全量通过、提交可审查、工作区干净 |
+
+每个阶段形成内容聚焦的提交；相互依赖的 schema、生成器与消费方一起提交。实现阶段属于跨模块公共合同及 Engine 逻辑修改，每次准备提交前执行完整 `npm run verify`；包含本机 Chromium 的验证直接在沙箱外运行。
+
+## 8. 最小回归与完成标准
+
+### Goal
+
+- Carrot 普通收集、高草覆盖、最后一个目标被消费、开局零目标。
+- Egg 空/已填初值、普通 Bobby 离开、Mower 经过、同格多个 Egg、Undo/Restart。
+- Push Goal 空位、箱子进入/离开、多个目标、目标部位与对象计数边界。
+- Exit 单人、多人分处不同 Exit、驾驶状态、目标尚未达标以及运动完成时机。
+- Golden Carrot 消费后成功记录、任一玩家到达、缺少目标、与 Exit 的 any 组合。
+- all / any 递归结果、缺失 Goal 注册、重复注册、不合法参数、HUD 与 Editor 使用同一结果。
+- 显式转换的标准条件与无法自动解释的自定义条件；Replay 哈希和 completedConditions。
+
+### 通行
+
+按 [原版事实文档的边界清单](../reference/original-passage.md#10-对照用边界清单) 完成六类对象测试，额外覆盖：
+
+- 水＋木板＋独立障碍，地面＋木板＋Mower，高草/Snow 覆盖与隐藏目标。
+- 多格 Dragon 的 head/body/tail，Bean Tip/Middle/Base，以及 Ice/Plank 不同阶段。
+- Bean 空 object 与动态载体，混合 variant 的真实语义。
+- Cloud/Leaf 静态名单内外对象、同色/异色停车、逆风/逆流、改向失败的原向续行。
+- Fireball 的地形域不会从 Plank 的 walkable 获得许可；Mirror 入射和对象 state 特判。
+- 通行失败时命令未提前提交，成功时交互只执行一次；Snapshot、Undo、Replay 恢复同一状态。
+
+### 正式门禁
+
+- 检查已删除 layer 的真实类型/字段引用，保留视觉绘图变量与 Editor slot 的合法使用。
+- 检查已移除 Fact 的声明和消费；历史数据转换、原版事实记录使用显式范围豁免。
+- World 与通用 Mechanism 的依赖方向检查覆盖 Goal Registry 与 Entity 通行入口。
+- Goal ID、条件参数、Fact ID 的注册与运行校验进入 `npm run verify`。
+- 最小地图在 Editor Play Test 运行正式 Engine，Runtime 不反写 Draft。
+- 原版字节码不足以解释的行为，用独立生成的 patch JAR 验证，原始 JAR 保持只读。
+
+## 9. 本文交付范围
+
+当前交付为实施文档。具体 Goal、Entity 通行整理、Fact 清理、layer 删除与格式转换均属于后续代码阶段。公开类型、地图条件和 Replay 合同的变化在对应实现提交中说明。
