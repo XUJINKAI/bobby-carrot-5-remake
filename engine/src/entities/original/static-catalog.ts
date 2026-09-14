@@ -1,5 +1,4 @@
 import { MapEntityTypeId } from "@bobby/model";
-import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityBehaviorBinding,
   EntityModule,
@@ -7,17 +6,13 @@ import type {
 } from "../EntityModule.js";
 import {
   collectBehavior,
-  mowableBehavior,
   pickupBehavior,
   requiresUnmountedReachBehavior,
 } from "../behaviorLibrary.js";
-import { bobbyMountId } from "../player/BobbyState.js";
-import { hasBobbyBridgeAt } from "./terrain-semantics.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
   CONTENT_STACK_ORDER,
-  COVER_STACK_ORDER,
   originalModule,
   tileCell,
   staticEntity,
@@ -44,19 +39,6 @@ function surface(
     behaviorBindings,
   );
 }
-
-const bobbyBridgeOnCover: Behavior = {
-  id: "bobby-bridge-on-cover",
-  canEnter({ actor, self, query }) {
-    if (
-      query.entityHasFact(actor.id, "player") &&
-      bobbyMountId(actor.state) === null &&
-      hasBobbyBridgeAt(query, self.presence.cell)
-    ) {
-      return { passable: true, reason: "bridge-over-covered-terrain" };
-    }
-  },
-};
 
 function content(
   type: EntityModuleDefinition["type"],
@@ -143,20 +125,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     [],
     [{ behavior: pickupBehavior }],
   ),
-];
-
-const highGrassDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.HIGH_GRASS,
-  facts: ["blocking"],
-  stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "High Grass" },
-};
-
-export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS), [
-    { behavior: mowableBehavior },
-    { behavior: bobbyBridgeOnCover },
-  ]),
 ];
 
 const beanstalkFacts = ["climbable"] as const;

@@ -60,6 +60,7 @@ phase。收集时同一 Carrot Entity 的 `state.consumed` 变为 `true`，目�
 视觉使用 `egg` 的 base、`filled` phase，以及 `high-grass` 的 `objective` phase。
 
 注意：胡萝卜和彩蛋洞被高草覆盖的画面visual一样，但含义不同。
+HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内容或单独放置时显示 `ts-13-8`。
 
 ### golden-carrot 金色胡萝卜
 

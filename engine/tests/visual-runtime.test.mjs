@@ -76,6 +76,42 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   );
 });
 
+test("High Grass 根据同格 Carrot 或 Egg 选用隐藏目标图块", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  const visualFor = (contentType) => {
+    const store = new EntityStore([
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      ...(contentType ? [{ type: contentType, x: 0, y: 0 }] : []),
+      { type: MapEntityTypeId.HIGH_GRASS, x: 0, y: 0 },
+    ]);
+    const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
+    const grass = store.all().find((entity) =>
+      entity.type === MapEntityTypeId.HIGH_GRASS);
+    assert.ok(grass);
+    const presence = spatial.presencesForEntity(grass.id)[0];
+    assert.ok(presence);
+    return visuals.resolve(entities.require(MapEntityTypeId.HIGH_GRASS), {
+      entity: grass,
+      presence,
+      query: new SpatialVisualQuery(store, spatial),
+    })?.layers[0];
+  };
+
+  assert.deepEqual(visualFor(MapEntityTypeId.CARROT), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.EGG), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.BONUS_COIN), {
+    kind: "atlas", column: 7, row: 12,
+  });
+  assert.deepEqual(visualFor(null), {
+    kind: "atlas", column: 7, row: 12,
+  });
+});
+
 test("Bobby walking loops from movement frame four back to frame four", () => {
   const start = bobbyVisual({
     runtime: { offsetX: -1, moving: true, progress: 0 },

@@ -12,6 +12,7 @@ import { egg } from "./egg.js";
 import { fence } from "./fence.js";
 import { fireball } from "./fireball.js";
 import { landing, whirlwind } from "./flight.js";
+import { highGrass } from "./high-grass.js";
 import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock, timedChallenge } from "./lock.js";
@@ -26,7 +27,6 @@ import { speed } from "./speed.js";
 import { speedSwitch } from "./speed-switch.js";
 import {
   staticContentModules,
-  staticCoverModules,
   staticSurfaceModules,
 } from "./static-catalog.js";
 import { tide } from "./tide.js";
@@ -50,7 +50,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   carousel,
   colorSwitch,
   colorBlock,
-  ...staticCoverModules,
+  highGrass,
   snow,
   plank,
   iceBlock,
