@@ -55,7 +55,7 @@ function bobbyVisual(options = {}) {
   });
 }
 
-test("world entities stay below Bobby regardless of cover stackOrder", () => {
+test("world entities stay below standing Bobby regardless of cover stackOrder", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   assert.equal(
@@ -72,7 +72,7 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   );
   assert.equal(
     visuals.renderPassFor(entities.require(MapEntityTypeId.BOBBY)),
-    "player",
+    "standing",
   );
 });
 

@@ -1,5 +1,8 @@
 import type { RenderItem, RenderScene } from "../render/RenderScene.js";
-import { sortRenderItems } from "../render/RenderScene.js";
+import {
+  sortRenderItems,
+  sortStandingRenderItems,
+} from "../render/RenderScene.js";
 import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
@@ -21,7 +24,7 @@ export function buildVisualScene(
 ): RenderScene {
   const passes: Record<VisualRenderPass, RenderItem[]> = {
     world: [],
-    player: [],
+    standing: [],
     effect: [],
   };
   const query = new SpatialVisualQuery(world.entities, world.spatial);
@@ -50,6 +53,8 @@ export function buildVisualScene(
           composition,
           visualX: x + (visualRuntime?.offsetX ?? 0),
           visualY: y + (visualRuntime?.offsetY ?? 0),
+          depthX: entity.anchor.x + (visualRuntime?.offsetX ?? 0),
+          depthY: entity.anchor.y + (visualRuntime?.offsetY ?? 0),
         });
       }
     }
@@ -59,7 +64,7 @@ export function buildVisualScene(
     worldWidth: world.width,
     worldHeight: world.height,
     world: sortRenderItems(passes.world),
-    player: sortRenderItems(passes.player),
+    standing: sortStandingRenderItems(passes.standing),
     effect: sortRenderItems(passes.effect),
     callouts: [],
   };

@@ -17,7 +17,7 @@ test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉"
     ],
   };
   const single = buildVisualScene(new World(level), visuals, new Map());
-  assert.deepEqual(single.player[0].composition.layers.map((layer) => layer.kind), ["image"]);
+  assert.deepEqual(single.standing[0].composition.layers.map((layer) => layer.kind), ["image"]);
 
   const multiple = buildVisualScene(
     new World({
@@ -28,7 +28,7 @@ test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉"
     new Map(),
   );
   assert.deepEqual(
-    multiple.player.map((item) => item.composition.layers[0].kind),
+    multiple.standing.map((item) => item.composition.layers[0].kind),
     ["canvas", "canvas"],
   );
 });

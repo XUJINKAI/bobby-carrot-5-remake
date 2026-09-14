@@ -131,6 +131,8 @@ export interface DebugRenderItemSnapshot {
   role: string | null;
   visualX: number;
   visualY: number;
+  depthX: number;
+  depthY: number;
   layers: readonly Record<string, unknown>[];
 }
 
@@ -297,6 +299,8 @@ function buildEntitySnapshot(
       role: item.presence.role ?? null,
       visualX: item.visualX,
       visualY: item.visualY,
+      depthX: item.depthX,
+      depthY: item.depthY,
       layers: item.composition.layers.map(debugVisualLayer),
     }));
 
@@ -335,7 +339,7 @@ function renderSceneItems(scene: RenderScene | null): Array<{
   if (!scene) return [];
   return [
     ...scene.world.map((item) => ({ pass: "world" as const, item })),
-    ...scene.player.map((item) => ({ pass: "player" as const, item })),
+    ...scene.standing.map((item) => ({ pass: "standing" as const, item })),
     ...scene.effect.map((item) => ({ pass: "effect" as const, item })),
   ];
 }

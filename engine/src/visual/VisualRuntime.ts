@@ -2,6 +2,7 @@ import type { Direction } from "@bobby/model";
 import { Camera, type CameraOptions } from "../render/Camera.js";
 import {
   sortRenderItems,
+  sortStandingRenderItems,
   type RenderItem,
   type RenderScene,
 } from "../render/RenderScene.js";
@@ -586,14 +587,18 @@ export class VisualRuntime {
         composition,
         visualX: transient.x,
         visualY: transient.y,
+        depthX: transient.x,
+        depthY: transient.y,
       });
     }
-    if (!passes.world && !passes.player && !passes.effect) return scene;
+    if (!passes.world && !passes.standing && !passes.effect) return scene;
     return {
       worldWidth: scene.worldWidth,
       worldHeight: scene.worldHeight,
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
-      player: passes.player ? sortRenderItems(passes.player) : scene.player,
+      standing: passes.standing
+        ? sortStandingRenderItems(passes.standing)
+        : scene.standing,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
       callouts: scene.callouts,
     };

@@ -11,7 +11,7 @@ import type { WinConditionState, WorldEvent } from "../world/WorldTypes.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
-export type VisualRenderPass = "world" | "player" | "effect";
+export type VisualRenderPass = "world" | "standing" | "effect";
 
 export interface AtlasVisualLayer {
   kind: "atlas";

@@ -49,6 +49,8 @@ interface EditorRenderItem {
   inspection: EditorPresenceInspection;
   x: number;
   y: number;
+  depthX: number;
+  depthY: number;
 }
 
 interface EditorStackBadge {
@@ -103,7 +105,7 @@ export class EditorCanvasRenderer {
     const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
     const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
       world: [],
-      player: [],
+      standing: [],
       effect: [],
     };
     const stackBadges: EditorStackBadge[] = [];
@@ -115,6 +117,8 @@ export class EditorCanvasRenderer {
             inspection,
             x,
             y,
+            depthX: inspection.entity.x,
+            depthY: inspection.entity.y,
           });
         }
         const paletteCount = new Set(
@@ -125,8 +129,11 @@ export class EditorCanvasRenderer {
         if (paletteCount >= 2) stackBadges.push({ x, y, count: paletteCount });
       }
     }
-    for (const pass of ["world", "player", "effect"] as const)
-      for (const item of passes[pass])
+    for (const pass of ["world", "standing", "effect"] as const) {
+      const items = pass === "standing"
+        ? [...passes[pass]].sort(compareStandingEditorItems)
+        : passes[pass];
+      for (const item of items)
         this.drawPresence(
           context,
           visualQuery,
@@ -135,6 +142,7 @@ export class EditorCanvasRenderer {
           item.y,
           deviceScale,
         );
+    }
     this.drawStackBadges(context, stackBadges);
 
     if (this.interactionCanvas === this.canvas)
@@ -329,4 +337,18 @@ export class EditorCanvasRenderer {
       deviceScale,
     );
   }
+}
+
+function compareStandingEditorItems(
+  a: EditorRenderItem,
+  b: EditorRenderItem,
+): number {
+  return (
+    a.depthY - b.depthY ||
+    a.depthX - b.depthX ||
+    a.inspection.presence.stackOrder - b.inspection.presence.stackOrder ||
+    a.inspection.presence.entityId - b.inspection.presence.entityId ||
+    a.y - b.y ||
+    a.x - b.x
+  );
 }

@@ -66,7 +66,7 @@ const definition: EntityModuleDefinition = {
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",
-    renderPass: "player",
+    renderPass: "standing",
   },
 };
 

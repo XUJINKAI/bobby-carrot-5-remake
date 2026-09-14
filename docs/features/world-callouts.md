@@ -68,7 +68,7 @@ interface WorldCalloutCue {
 Renderer 的顺序是：
 
 ```text
-world → player → effect → callout → debug overlay
+world → standing → effect → callout → debug overlay
 ```
 
 DOM Gameplay HUD 位于 Canvas 外部。
