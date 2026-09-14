@@ -19,7 +19,7 @@ const definition: EntityModuleDefinition = {
       { dx: 0, dy: 0, role: "body" },
     ],
   },
-  presentation: { name: "Sandman" },
+  presentation: { name: "Sandman", renderPass: "standing" },
 };
 
 export const sandman: EntityModule = originalModule(

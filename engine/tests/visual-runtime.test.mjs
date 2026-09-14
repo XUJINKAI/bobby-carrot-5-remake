@@ -76,6 +76,22 @@ test("world entities stay below standing Bobby regardless of cover stackOrder", 
   );
 });
 
+test("直立双格角色与 Bobby 共用 standing pass", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  for (const type of [
+    MapEntityTypeId.DREAM_MACHINE,
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.BEAVER,
+  ]) {
+    assert.equal(
+      visuals.renderPassFor(entities.require(type)),
+      "standing",
+      type,
+    );
+  }
+});
+
 test("High Grass 根据同格 Carrot 或 Egg 选用隐藏目标图块", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();

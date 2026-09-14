@@ -19,7 +19,7 @@ const definition: EntityModuleDefinition = {
       { dx: 0, dy: 0, role: "body" },
     ],
   },
-  presentation: { name: "Beaver" },
+  presentation: { name: "Beaver", renderPass: "standing" },
 };
 
 export const beaver: EntityModule = originalModule(

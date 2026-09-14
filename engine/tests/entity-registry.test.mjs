@@ -137,6 +137,23 @@ test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
   }
 });
 
+test("Dream Machine 只有 body Presence 阻挡", () => {
+  const definition = createBuiltinEntityRegistry().require(
+    MapEntityTypeId.DREAM_MACHINE,
+  );
+  assert.deepEqual(definition.facts, []);
+  assert.deepEqual(
+    definition.footprint.parts.map((part) => [
+      part.role,
+      part.facts ?? [],
+    ]),
+    [
+      ["head", []],
+      ["body", ["blocking"]],
+    ],
+  );
+});
+
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
   const fence = registry.require(MapEntityTypeId.FENCE);

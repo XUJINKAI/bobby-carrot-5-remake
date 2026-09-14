@@ -11,15 +11,15 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
-  facts: ["blocking"],
+  facts: [],
   mechanisms: ["object-interaction", "dialog"],
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body" },
+      { dx: 0, dy: 0, role: "body", facts: ["blocking"] },
     ],
   },
-  presentation: { name: "Dream Machine" },
+  presentation: { name: "Dream Machine", renderPass: "standing" },
 };
 
 export const dreamMachine: EntityModule = originalModule(
