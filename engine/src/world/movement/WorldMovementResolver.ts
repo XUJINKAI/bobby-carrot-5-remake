@@ -90,8 +90,8 @@ export class WorldMovementResolver {
         unavailable,
       );
 
-    const sourceStack = [...this.spatial.presencesAt(from)].reverse();
-    const targetStack = [...this.spatial.presencesAt(to)].reverse();
+    const sourceStack = [...this.query.presencesAt(from)].reverse();
+    const targetStack = [...this.query.presencesAt(to)].reverse();
     const planningContext: MovementPlanningContext = {
       actor: readonlyView(actor),
       query: this.query,
@@ -158,10 +158,6 @@ export class WorldMovementResolver {
     group: MovementTransaction,
   ): MoveResult {
     const local = new MovementTransaction();
-    const bypassed = new Set(plan.bypassTargetEntityIds);
-    const passageTargetStack = targetStack.filter((presence) =>
-      !bypassed.has(presence.entityId)
-    );
     const leave = this.runPassage(
       sourceStack,
       actor,
@@ -190,7 +186,7 @@ export class WorldMovementResolver {
       (!this.canOccupy(pushed.to, pushed.entityId, group) ||
         !group.canReserveDestination(pushed.entityId, pushed.to))
     ) {
-      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -201,7 +197,7 @@ export class WorldMovementResolver {
     }
 
     if (!plan.allowUnwalkable && !this.hasWalkable(plan.to)) {
-      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -213,7 +209,7 @@ export class WorldMovementResolver {
 
     const ignoredEntity = pushed?.entityId ?? null;
     const resolution = this.resolveEntry(
-      passageTargetStack,
+      targetStack,
       actor,
       intent.direction,
       local,
@@ -221,7 +217,7 @@ export class WorldMovementResolver {
       ignoredEntity,
     );
     if (!resolution.passable) {
-      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -232,7 +228,7 @@ export class WorldMovementResolver {
     }
 
     const enter = this.runPassage(
-      passageTargetStack,
+      targetStack,
       actor,
       intent.direction,
       local,
@@ -241,7 +237,7 @@ export class WorldMovementResolver {
       ignoredEntity,
     );
     if (!enter.passable) {
-      this.runTouch(passageTargetStack, actor, intent.direction, group.commands, movement);
+      this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
         plan.from,
@@ -277,12 +273,8 @@ export class WorldMovementResolver {
       plan.updateDirection,
       {
         ...plan.lifecycle,
-        source: plan.lifecycle.source.filter(
-          (presence) => !plan.bypassSourceLifecycleEntityIds.includes(presence.entityId),
-        ),
         target: plan.lifecycle.target.filter(
-          (presence) => presence.entityId !== ignoredEntity &&
-            !bypassed.has(presence.entityId),
+          (presence) => presence.entityId !== ignoredEntity,
         ),
       },
     );
@@ -324,7 +316,7 @@ export class WorldMovementResolver {
   }
 
   private playerOccupies(cell: CellPosition, movingEntityId: EntityId): boolean {
-    return this.spatial.presencesAt(cell).some(
+    return this.query.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
         presence.facts.includes("player"),
@@ -384,7 +376,7 @@ export class WorldMovementResolver {
     transaction?: MovementTransaction,
   ): boolean {
     if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
-    return !this.spatial.presencesAt(cell).some(
+    return !this.query.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
         !transaction?.isEntryAllowed(presence.entityId) &&
@@ -394,7 +386,7 @@ export class WorldMovementResolver {
   }
 
   private hasWalkable(cell: CellPosition): boolean {
-    return this.passage.isWalkable(this.spatial.presencesAt(cell));
+    return this.passage.isWalkable(this.query.presencesAt(cell));
   }
 
   private resolveEntry(

@@ -96,21 +96,8 @@ const FIREBALL_TERRAIN = new Set<string>([
   RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND,
 ]);
 
-export function isOriginalTerrainType(type: string): boolean {
+function isOriginalTerrainType(type: string): boolean {
   return BEAN_GROWTH_TERRAIN.has(type) || OTHER_TERRAIN.has(type);
-}
-
-/** 木板及豆茎上段可供普通 Bobby 跨越当前地形。 */
-export function hasBobbyBridgeAt(
-  query: WorldQueryApi,
-  cell: { x: number; y: number },
-): boolean {
-  return query.presencesAt(cell).some((presence) => {
-    const type = query.entity(presence.entityId)?.type;
-    return type === MapEntityTypeId.PLANK ||
-      type === MapEntityTypeId.BEANSTALK ||
-      type === RuntimeEntityTypeId.BEANSTALK_MID;
-  });
 }
 
 /** Adapter 展开的 Snow + 基础地面仍代表一个 terrain；动态载体不占 object grid。 */

@@ -8,7 +8,6 @@ import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { bobbyMountId, readBobbyInventory } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
-import { hasBobbyBridgeAt } from "./terrain-semantics.js";
 import { COVER_STACK_ORDER, staticEntity, tileCell } from "./module.js";
 
 const SHOVEL_ACTION = "shovel-snow";
@@ -17,14 +16,6 @@ export const SHOVEL_ACTION_DURATION_MS = 32 * ORIGINAL_GAMEPLAY_STEP_MS;
 
 const shovelSnow: Behavior = {
   id: "shovel-snow",
-  canEnter({ actor, self, query }) {
-    if (
-      query.entityHasFact(actor.id, "player") &&
-      bobbyMountId(actor.state) === null &&
-      hasBobbyBridgeAt(query, self.presence.cell)
-    )
-      return { passable: true, reason: "bridge-over-covered-terrain" };
-  },
   onTouch({ actor, self, direction, query, commands }) {
     if (!query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null)
@@ -121,7 +112,7 @@ const shovelAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
-  facts: ["blocking"],
+  facts: ["blocking", "contact-cover"],
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
 };
@@ -166,7 +157,7 @@ function adjacentCell(x: number, y: number, direction: Direction) {
 }
 
 function hasWalkableGround(query: WorldQueryApi, x: number, y: number): boolean {
-  return query.presencesAt({ x, y }).some((presence) =>
+  return query.allPresencesAt({ x, y }).some((presence) =>
     presence.facts.includes("walkable"),
   );
 }

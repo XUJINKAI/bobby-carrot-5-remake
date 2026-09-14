@@ -127,7 +127,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   ),
 ];
 
-const beanstalkFacts = ["climbable"] as const;
+const beanstalkCoverFacts = ["climbable", "contact-cover", "walkable"] as const;
 
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
@@ -150,7 +150,7 @@ export const staticContentModules: readonly EntityModule[] = [
     MapEntityTypeId.BEANSTALK,
     "Beanstalk",
     tileCell(MapEntityTypeId.BEANSTALK, { role: "tip" }),
-    beanstalkFacts,
+    beanstalkCoverFacts,
     [],
   ),
   content(MapEntityTypeId.BEAN, "Bean", tileCell(MapEntityTypeId.BEAN), [], [
@@ -164,7 +164,7 @@ export const staticContentModules: readonly EntityModule[] = [
     RuntimeEntityTypeId.BEANSTALK_MID,
     "Beanstalk Mid",
     tileCell("beanstalk", { role: "middle" }),
-    ["climbable"],
+    beanstalkCoverFacts,
     [],
   ),
   content(

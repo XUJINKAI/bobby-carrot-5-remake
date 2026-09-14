@@ -154,8 +154,9 @@ export class SpatialIndex {
     const resolved = resolveFootprintCells(entity, definition.footprint);
     const entityFacts = this.factProjection.entityFacts(entity, definition);
     const presences: EntityPresence[] = [];
-    const baseStackOrder = entity.stackOrder ?? definition.stackOrder ?? 0;
-    resolved.forEach((part, index) => {
+    const baseStackOrder = entity.stackOrder ?? this.nextStackOrder(resolved);
+    if (entity.stackOrder === undefined) entity.stackOrder = baseStackOrder;
+    resolved.forEach((part) => {
       const cell = { x: part.x, y: part.y };
       if (!this.inBounds(cell)) {
         throw new Error(
@@ -168,7 +169,7 @@ export class SpatialIndex {
         cell: Object.freeze(cell),
         ...(part.role ? { role: part.role } : {}),
         facts: Object.freeze([...facts]),
-        stackOrder: part.stackOrder ?? baseStackOrder + index,
+        stackOrder: baseStackOrder,
       });
       presences.push(presence);
       const list = this.cells.get(key(cell)) ?? [];
@@ -179,6 +180,17 @@ export class SpatialIndex {
     this.byEntity.set(entity.id, presences);
     this.entityFacts.set(entity.id, entityFacts);
     this.selectors.add(entity, presences, entityFacts);
+  }
+
+  private nextStackOrder(
+    cells: readonly CellPosition[],
+  ): number {
+    let highest = -1;
+    for (const cell of cells) {
+      for (const presence of this.presencesAt(cell))
+        highest = Math.max(highest, presence.stackOrder);
+    }
+    return highest + 1;
   }
 
   removeEntity(entityId: EntityId): void {

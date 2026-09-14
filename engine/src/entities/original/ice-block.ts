@@ -16,7 +16,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE_BLOCK,
-  facts: ["blocking"],
+  facts: ["blocking", "contact-cover"],
   stackOrder: COVER_STACK_ORDER,
   state: [
     {

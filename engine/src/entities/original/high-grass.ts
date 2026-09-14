@@ -1,33 +1,17 @@
 import { MapEntityTypeId } from "@bobby/model";
-import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { VisualResolveContext } from "../../visual/VisualDefinition.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { mowableBehavior } from "../behaviorLibrary.js";
-import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
   COVER_STACK_ORDER,
   originalModule,
   tileCell,
 } from "./module.js";
-import { hasBobbyBridgeAt } from "./terrain-semantics.js";
-
-const bobbyBridgeOnCover: Behavior = {
-  id: "bobby-bridge-on-cover",
-  canEnter({ actor, self, query }) {
-    if (
-      query.entityHasFact(actor.id, "player") &&
-      bobbyMountId(actor.state) === null &&
-      hasBobbyBridgeAt(query, self.presence.cell)
-    ) {
-      return { passable: true, reason: "bridge-over-covered-terrain" };
-    }
-  },
-};
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
-  facts: ["blocking"],
+  facts: ["blocking", "contact-cover"],
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
 };
@@ -39,7 +23,7 @@ export const highGrass: EntityModule = originalModule(
       ...(coversObjective(context) ? { phase: "objective" } : {}),
     }),
   ),
-  [{ behavior: mowableBehavior }, { behavior: bobbyBridgeOnCover }],
+  [{ behavior: mowableBehavior }],
 );
 
 function coversObjective(context: VisualResolveContext): boolean {

@@ -132,7 +132,7 @@ test("Plank 覆盖 Trap 的进入与离开交互，自身仍会破碎", () => {
   }
 });
 
-test("来源 Plank 覆盖 Carousel 的离开交互但保留方向限制", () => {
+test("来源 Plank 覆盖 Carousel 的离开规则", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
@@ -143,8 +143,32 @@ test("来源 Plank 覆盖 Carousel 的离开交互但保留方向限制", () => 
       ground(1),
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
     ],
-  });
-  assert.equal(tryRight(world).passage.reason, "carousel-direction-blocked");
+  }, { motionDurationMs: 0 });
+  assert.equal(tryRight(world).moved, true);
+  const carousel = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CAROUSEL,
+  })[0];
+  assert.equal(world.entity(carousel.id).state?.variant, "vertical");
+});
+
+test("Plank 覆盖 Exit 的接触到达规则但保留目标查询", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0),
+      { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+    ],
+    rules: { win: { type: "exit" } },
+  }, { motionDurationMs: 0 });
+
+  assert.equal(world.winState?.type, "exit");
+  assert.equal(tryRight(world).moved, true);
+  assert.equal(world.completed, false);
 });
 
 test("Mower 可经过地面木板，Mirror 由对象规则阻挡", () => {

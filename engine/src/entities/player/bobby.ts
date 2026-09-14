@@ -20,7 +20,6 @@ import {
   isBobbyFlying,
   readBobbySpeedBoost,
 } from "./BobbyState.js";
-import { bobbyTerrainBridgePolicy } from "./bobby-passage.js";
 
 const BOBBY_OFFSET_Y = -12;
 const BOBBY_TILE_SIZE = 48;
@@ -91,10 +90,13 @@ const bobbyMovementPolicy: Behavior = {
 
     const relation = bobbyMountId(actor.state);
     if (relation === null || query.entity(relation)?.type !== MapEntityTypeId.MOWER) {
-      return bobbyTerrainBridgePolicy(context);
+      return;
     }
     return {
-      allowUnwalkable: false,
+      // Mower 的重量需要下层支撑；其它接触与机关仍使用默认接触栈。
+      allowUnwalkable: query.allPresencesAt(to).some((presence) =>
+        presence.facts.includes("walkable")
+      ),
       companions: [
         {
           entityId: relation,
