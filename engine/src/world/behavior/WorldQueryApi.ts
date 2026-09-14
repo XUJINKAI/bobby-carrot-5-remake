@@ -2,7 +2,6 @@ import type { GlobalState } from "../GlobalState.js";
 import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityStore } from "../entity/EntityStore.js";
-import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { SpatialIndex } from "../spatial/SpatialIndex.js";
 import type { EntitySelector } from "../spatial/EntitySelector.js";
@@ -18,7 +17,6 @@ export class WorldQueryApi {
   constructor(
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
-    private readonly registry: EntityRegistry,
     private readonly globalState: () => Readonly<GlobalState>,
     private readonly motions?: WorldMotionStore,
     private readonly facts?: FactRegistry,
@@ -31,11 +29,6 @@ export class WorldQueryApi {
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
     const entity = this.entities.get(id);
     return entity ? readonlyView(entity) : undefined;
-  }
-
-  definition(entityId: EntityId) {
-    const entity = this.entities.get(entityId);
-    return entity ? this.registry.require(entity.type) : undefined;
   }
 
   presencesAt(cell: CellQuery): readonly EntityPresence[] {

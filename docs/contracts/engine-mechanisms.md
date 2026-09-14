@@ -173,6 +173,8 @@ interface EntityDefinition {
 
 Entity 级 Fact 查询命中 `EntityFacts(entityId)` 或任一当前 `PresenceFacts(presence)`，并按 Entity ID 去重。这适合关卡计数和候选集合；它不能代替格子级查询。格子查询使用该格的 Presence Fact，不把另一部位的 Fact 扩散到这里。Type Index 与 Fact Index 存 Entity ID，Fact Index 是两种投影的并集；格子查询保留当前 Presence 身份。索引结果按 Entity ID 排序，避免移动重插入改变 Replay 顺序。
 
+`WorldQueryApi` 向 Behavior 提供已提交的 Entity state、Fact、Presence 和 Motion 查询。需要解析 Behavior 组合的 World 内部 Resolver 由 composition 显式注入 `EntityRegistry`；Definition 不通过 Query API 暴露。
+
 ### 刷新与快照
 
 World 提供唯一的 Entity semantic projection 刷新入口。一次状态提交后，先根据已提交的 Entity state 重算该 Entity 的 Entity Fact 与全部 Presence Fact，再同步 Type/Fact Index 和格子投影；后续 phase 才能读到新结果。刷新覆盖加载、spawn、destroy、替换、状态变化、移动、方向/footprint 重建和 Snapshot restore。Restore 可以全量重建派生索引，普通 mutation 只处理受影响 Entity。

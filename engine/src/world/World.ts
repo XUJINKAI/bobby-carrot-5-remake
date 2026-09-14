@@ -153,7 +153,6 @@ export class World {
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
-      this.registry,
       () => this.state,
       this.movement.motions,
       options.facts,
@@ -181,6 +180,7 @@ export class World {
     );
     this.reachResolver = new ReachResolver(
       this.query,
+      this.registry,
       this.behaviors,
       this.mechanisms,
     );

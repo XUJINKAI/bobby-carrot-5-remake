@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { ReachResolver } from "../dist/world/outcome/ReachResolver.js";
 import { MechanismRegistry } from "../dist/mechanism/MechanismRegistry.js";
+import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 
 test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const behavior = {
@@ -15,6 +16,8 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   };
   const behaviors = new BehaviorRegistry();
   behaviors.register(behavior);
+  const entities = new EntityRegistry();
+  entities.register({ type: "goal", facts: [], behaviors: [behavior.id] });
   const target = { id: 2, type: "goal", anchor: { x: 1, y: 0 } };
   const presence = {
     entityId: 2,
@@ -26,9 +29,6 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const query = {
     entity(id) {
       return id === target.id ? target : undefined;
-    },
-    definition() {
-      return { type: "goal", facts: [], behaviors: [behavior.id] };
     },
     presencesAt() {
       return [presence];
@@ -43,6 +43,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   };
   const resolver = new ReachResolver(
     query,
+    entities,
     behaviors,
     new MechanismRegistry(),
   );

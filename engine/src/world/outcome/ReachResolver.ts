@@ -3,6 +3,7 @@ import type { MechanismRegistry } from "../../mechanism/MechanismRegistry.js";
 import { resolveEffectiveBehaviors } from "../behavior/EffectiveBehavior.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityInstance } from "../entity/EntityInstance.js";
+import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import { levelRuleSelector } from "../spatial/EntitySelector.js";
 import { readonlyView } from "../behavior/ReadonlyView.js";
@@ -11,6 +12,7 @@ import { readonlyView } from "../behavior/ReadonlyView.js";
 export class ReachResolver {
   constructor(
     private readonly query: WorldQueryApi,
+    private readonly entities: EntityRegistry,
     private readonly behaviors: BehaviorRegistry,
     private readonly mechanisms: MechanismRegistry,
   ) {}
@@ -20,8 +22,8 @@ export class ReachResolver {
     presence: Readonly<EntityPresence>,
   ): boolean {
     const entity = this.query.entity(presence.entityId);
-    const definition = entity ? this.query.definition(entity.id) : undefined;
-    if (!entity || !definition) return false;
+    if (!entity) return false;
+    const definition = this.entities.require(entity.type);
     const context = {
       actor: readonlyView(actor),
       self: { entity: readonlyView(entity), presence: readonlyView(presence) },
