@@ -20,7 +20,7 @@
 | World | 时间、空间、调度、目标树求值、移动裁决、命令事务、快照 |
 | Editor / HUD | 通过 Engine 的 Goal 定义与查询结果生成配置、提示和展示 |
 
-视觉 `layers`、`renderPass`、`stackOrder`、footprint `role` 和 Editor `stackSlot` 各自保留职责。Fact 与机关实例状态继续属于 Engine；`LevelMap` 保持纯语义地图。
+视觉 `layers`、`renderPass`、footprint `role` 和 Editor `stackSlot` 各自保留职责。实例 `stackOrder` 同时定义完整空间顺序和接触规则顺序；Fact 与机关实例状态继续属于 Engine，`LevelMap` 保持纯语义地图。
 
 ## 2. 地图直接声明具体 Goal
 

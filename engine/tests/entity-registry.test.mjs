@@ -70,7 +70,7 @@ test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
   const start = createBuiltinEntityRegistry().require("start");
-  assert.equal(start.stackOrder, 0);
+  assert.equal(start.stackOrder, undefined);
   assert.deepEqual(start.facts, ["walkable"]);
   assert.equal(start.facts.includes("start"), false);
 });

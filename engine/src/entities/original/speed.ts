@@ -27,7 +27,6 @@ import {
   directionCell,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const SPEED_RUN_ACTION = "speed-run";
@@ -206,7 +205,6 @@ const speedRunAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Speed" },
 };
 

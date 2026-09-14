@@ -8,7 +8,6 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileAnimationCell,
   tileCell,
   originalModule,
@@ -45,7 +44,6 @@ const plankPassage: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.PLANK,
   facts: ["contact-cover", "walkable"],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Plank" },
 };
 
@@ -54,7 +52,6 @@ const plankDecayVisual: TransientVisualDefinition = {
   eventType: "plank-decay-started",
   durationMs: PLANK_DECAY_DURATION_MS,
   renderPass: "world",
-  stackOrder: CONTENT_STACK_ORDER,
   resolve({ progress }) {
     const atlas = tileAnimationCell(
       MapEntityTypeId.PLANK,

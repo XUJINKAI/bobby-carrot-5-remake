@@ -13,10 +13,8 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const mowerVehicle: Behavior = {
@@ -129,7 +127,6 @@ const smashCrumblyRock: Behavior = {
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
       key: "mountedByActorId",
@@ -154,7 +151,6 @@ export const mower: EntityModule = originalModule(
 const parkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER_PARKING,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Mower Parking" },
 };
 
@@ -167,7 +163,6 @@ export const mowerParkingTile: EntityModule = originalModule(
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CRUMBLY_ROCK,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Crumbly Rock" },
 };
 

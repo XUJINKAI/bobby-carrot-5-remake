@@ -10,7 +10,6 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const armTrapAfterLeave: Behavior = {
@@ -28,7 +27,6 @@ const armTrapAfterLeave: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TRAP,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   state: activeState(true),
   presentation: { name: "Trap" },
 };

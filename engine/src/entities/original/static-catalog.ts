@@ -12,11 +12,9 @@ import {
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   originalModule,
   tileCell,
   staticEntity,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 function surface(
@@ -32,7 +30,6 @@ function surface(
       type,
       facts,
       mechanisms,
-      stackOrder: SURFACE_STACK_ORDER,
       presentation: { name },
     },
     atlas,
@@ -51,7 +48,6 @@ function content(
     {
       type,
       facts,
-      stackOrder: CONTENT_STACK_ORDER,
       presentation: { name },
     },
     atlas,
@@ -132,7 +128,6 @@ const beanstalkCoverFacts = ["climbable", "contact-cover", "walkable"] as const;
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Windmill" },
 };
 

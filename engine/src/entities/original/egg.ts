@@ -2,7 +2,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { bobbyMountId } from "../player/BobbyState.js";
-import { atlasVisual, CONTENT_STACK_ORDER, originalModule, tileCell } from "./module.js";
+import { atlasVisual, originalModule, tileCell } from "./module.js";
 
 const fillEggOnLeave: Behavior = {
   id: "fill-egg-on-leave",
@@ -36,7 +36,6 @@ const definition: EntityModuleDefinition = {
   resolvePresenceFacts({ entity }) {
     return entity.state?.filled === true ? ["blocking"] : [];
   },
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Egg" },
 };
 

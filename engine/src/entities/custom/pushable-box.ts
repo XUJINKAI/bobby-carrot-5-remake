@@ -5,7 +5,6 @@ export const pushableBox: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PUSHABLE_BOX,
     facts: ["blocking", "pushable"],
-    stackOrder: 100,
     presentation: { name: "Pushable Box" },
   },
   visual: {

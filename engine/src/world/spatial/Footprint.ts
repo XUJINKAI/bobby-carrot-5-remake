@@ -6,7 +6,6 @@ export interface FootprintPart {
   dx: number;
   dy: number;
   role?: string;
-  stackOrder?: number;
   facts?: readonly FactId[];
 }
 
@@ -27,7 +26,6 @@ export interface FootprintEntity {
 
 export interface ResolvedFootprintCell extends CellPosition {
   role?: string;
-  stackOrder?: number;
   facts?: readonly FactId[];
 }
 
@@ -44,7 +42,6 @@ export function resolveFootprintCells(
     return {
       ...cell,
       ...(part.role ? { role: part.role } : {}),
-      ...(part.stackOrder !== undefined ? { stackOrder: part.stackOrder } : {}),
       ...(part.facts ? { facts: part.facts } : {}),
     };
   });

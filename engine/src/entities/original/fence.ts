@@ -4,7 +4,6 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -12,7 +11,6 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.FENCE,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
       key: "variant",

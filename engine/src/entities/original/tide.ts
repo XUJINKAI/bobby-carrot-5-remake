@@ -8,14 +8,12 @@ import {
   directionCell,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 import { waterPassage } from "./water-passage.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE,
   facts: ["water"],
-  stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Tide" },
 };
 

@@ -284,7 +284,7 @@ type，并直接取得同名 Definition。`windmill` 的方向、`egg` 的填充
 Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎中间段等临时实体
 使用 Engine 私有身份，不进入 Model API 或 LevelMap。
 
-Fact 是跨层只读语义接口，Behavior 是 World 调用规则的 hook 协议；两者都不是额外层级。World 依赖通用 Entity ID、状态和 Presence 协议，但不导入具体对象实现。通用 Mechanism 通过 World 查询当前 Fact 并提出策略或命令，具体 Entity 定义负责组合。
+Fact 是跨层只读语义接口，Behavior 是 World 调用规则的 hook 协议；两者都不是额外层级。World 依赖通用 Entity ID、状态和 Presence 协议，但不导入具体对象实现。通用 Mechanism 通过 World 查询当前 Fact 并提出策略或命令，具体 Entity 定义负责组合。玩法格子查询默认读取由实例 `stackOrder` 与 `contact-cover` 派生的接触栈；完整空间栈只向 Render、Editor、Debug、目标查询和显式对象特例开放。
 
 Editor authoring catalog 的可持久化类型由 Model `EntityMapDefinition` 声明；Engine 私有临时
 Entity 因缺少该定义，不进入 Editor。Editor definitions 决定 Palette、Surface、隐藏、分组与

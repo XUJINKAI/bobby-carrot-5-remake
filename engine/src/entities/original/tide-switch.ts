@@ -9,13 +9,11 @@ import {
   tileCell,
   originalModule,
   pressedState,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE_SWITCH,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   state: pressedState,
   presentation: { name: "Tide Switch" },
 };

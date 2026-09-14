@@ -17,7 +17,6 @@ import type {
 } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
-  CONTENT_STACK_ORDER,
   originalModule,
 } from "./module.js";
 import { meltIceBlocksAt } from "./ice-block.js";
@@ -122,7 +121,6 @@ const fireballAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER + 50,
   presentation: { name: "Dragon Fireball", renderPass: "effect" },
 };
 

@@ -29,6 +29,7 @@ import { EditorPreview } from "./EditorPreview.js";
 export interface Cell {
   x: number;
   y: number;
+  stackOrder?: number;
 }
 
 export interface PlacementCell extends Cell {
@@ -104,11 +105,17 @@ export function resolvePlacement(
     return { entity, cells, replace: [], warnings: [], valid: false };
   }
 
+  const preview = existingPreview ?? new EditorPreview(level, catalog);
   const stackSlot = authoring?.stackSlot;
   if (!stackSlot) {
-    return { entity, cells, replace: [], warnings: [], valid: true };
+    return {
+      entity: withPlacementStackOrder(entity, cells, preview, []),
+      cells,
+      replace: [],
+      warnings: [],
+      valid: true,
+    };
   }
-  const preview = existingPreview ?? new EditorPreview(level, catalog);
   const replace = new Map<number, EntityRef>();
   const warnings = new Map<string, EntityPlacementStackWarning>();
   for (const cell of cells) {
@@ -131,12 +138,38 @@ export function resolvePlacement(
     }
   }
   return {
-    entity,
+    entity: withPlacementStackOrder(
+      entity,
+      cells,
+      preview,
+      [...replace.values()],
+    ),
     cells,
     replace: [...replace.values()],
     warnings: [...warnings.values()],
     valid: true,
   };
+}
+
+function withPlacementStackOrder(
+  entity: LevelEntity,
+  cells: readonly PlacementCell[],
+  preview: EditorPreview,
+  replace: readonly EntityRef[],
+): LevelEntity {
+  const replacedOrders = replace.flatMap((ref) =>
+    preview.presencesFor(ref).map((item) => item.presence.stackOrder)
+  );
+  if (replacedOrders.length > 0) {
+    return { ...entity, stackOrder: Math.min(...replacedOrders) };
+  }
+
+  const highest = cells.reduce((result, cell) => {
+    const cellHighest = preview.inspectCell(cell.x, cell.y).presences.at(-1)
+      ?.presence.stackOrder ?? -1;
+    return Math.max(result, cellHighest);
+  }, -1);
+  return { ...entity, stackOrder: highest + 1 };
 }
 
 export function placeEntity(

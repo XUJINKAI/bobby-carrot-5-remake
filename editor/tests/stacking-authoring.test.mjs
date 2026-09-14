@@ -47,6 +47,12 @@ test("stackSlot 只替换同层素材", () => {
     MapEntityTypeId.CARROT,
     MapEntityTypeId.LOCK,
   ]);
+  assert.deepEqual(
+    new EditorPreview(occupant, catalog)
+      .inspectCell(1, 1)
+      .presences.map((item) => item.presence.stackOrder),
+    [0, 1, 2],
+  );
 });
 
 test("同一 floor-feature slot 的新素材替换旧素材", () => {
@@ -58,6 +64,10 @@ test("同一 floor-feature slot 的新素材替换旧素材", () => {
     MapEntityTypeId.GRASS,
     MapEntityTypeId.SPEED,
   ]);
+  assert.equal(
+    new EditorPreview(level, catalog).inspectCell(1, 1).top?.presence.stackOrder,
+    1,
+  );
 });
 
 test("多格素材会原子替换覆盖范围内的同 slot 素材", () => {

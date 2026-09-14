@@ -8,7 +8,6 @@ import type {
 import {
   tileCell,
   staticEntity,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 /** 同步 World 测试未配置 motion duration 时使用的普通移动回退值。 */
@@ -66,7 +65,6 @@ function inheritedCadence(
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   presentation: { name: "Ice" },
 };
 

@@ -22,7 +22,6 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -167,7 +166,6 @@ const flightAction: RuntimeActionDefinition = {
 const whirlwindDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WHIRLWIND,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Whirlwind" },
 };
 
@@ -185,7 +183,6 @@ export const whirlwind: EntityModule = {
 const landingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.LANDING,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Landing" },
 };
 

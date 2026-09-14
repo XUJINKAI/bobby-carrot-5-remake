@@ -14,25 +14,21 @@ function registry() {
     {
       type: "water",
       facts: ["water"],
-      stackOrder: 0,
       presentation: { name: "Water" },
     },
     {
       type: "coin",
       facts: ["coin"],
-      stackOrder: 100,
       presentation: { name: "Coin" },
     },
     {
       type: "grass",
       facts: ["mowable"],
-      stackOrder: 200,
       presentation: { name: "Grass" },
     },
     {
       type: "dragon",
       facts: ["dragon"],
-      stackOrder: 100,
       footprint: {
         parts: [
           { dx: 0, dy: 0, role: "head", facts: ["blocking"] },
@@ -45,7 +41,6 @@ function registry() {
     {
       type: "ice",
       facts: ["frozen"],
-      stackOrder: 200,
       presentation: { name: "Ice" },
     },
   ]);
@@ -91,16 +86,16 @@ test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
   const cell = preview.inspectCell(1, 1);
   assert.deepEqual(
     cell.presences.map(({ entity }) => entity.type),
-    ["water", "coin", "grass"],
+    ["grass", "coin", "water"],
   );
   assert.deepEqual(
     cell.presences.map(({ presence }) => presence.stackOrder),
-    [0, 100, 200],
+    [0, 1, 2],
   );
-  assert.equal(cell.top?.entity.type, "grass");
+  assert.equal(cell.top?.entity.type, "water");
 });
 
-test("definition stackOrder 为 footprint 提供基准并保留 part 顺序", () => {
+test("多格 Entity 的全部 Presence 共用实例 stackOrder", () => {
   const preview = createSpatialPreview({
     schemaVersion: 1,
     width: 6,
@@ -110,8 +105,23 @@ test("definition stackOrder 为 footprint 提供基准并保留 part 顺序", ()
   const presences = preview.spatial.presencesForEntity(1);
   assert.deepEqual(
     presences.map((presence) => presence.stackOrder),
-    [100, 101, 102],
+    [0, 0, 0],
   );
+});
+
+test("未指定 stackOrder 的 Runtime Entity 从重叠栈顶递增", () => {
+  const store = new EntityStore([{ type: "water", x: 0, y: 0 }]);
+  const spatial = new SpatialIndex(store, registry(), 2, 1, facts);
+  const coin = store.spawn({ type: "coin", x: 0, y: 0 });
+  spatial.addEntity(coin);
+
+  assert.deepEqual(
+    spatial.presencesAt({ x: 0, y: 0 }).map((presence) =>
+      presence.stackOrder
+    ),
+    [0, 1],
+  );
+  assert.equal(coin.stackOrder, 1);
 });
 
 test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", () => {

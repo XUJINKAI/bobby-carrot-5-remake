@@ -8,7 +8,6 @@ import type { EntityBehaviorBinding, EntityModule, EntityModuleDefinition } from
 import {
   atlasVisual,
   originalModule,
-  SURFACE_STACK_ORDER,
   tsCoordinateCell,
 } from "./module.js";
 import { sharedOriginalSurfaceFacts } from "./surface-facts.js";
@@ -29,7 +28,6 @@ for (const mapping of SURFACE_SOURCE_MAPPINGS) {
 const originalTileDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.ORIGINAL_TILE,
   facts: [],
-  stackOrder: SURFACE_STACK_ORDER,
   state: [{ key: "variant", kind: "string", label: "Original Tile" }],
   presentation: { name: "Original Tile" },
 };
@@ -86,7 +84,6 @@ function canonicalSurface(
     type,
     facts: sharedOriginalSurfaceFacts(mappings),
     mechanisms,
-    stackOrder: SURFACE_STACK_ORDER,
     presentation: { name: type },
   };
   return originalModule(

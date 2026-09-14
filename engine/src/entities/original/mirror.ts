@@ -9,7 +9,6 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
@@ -35,7 +34,6 @@ const rotateMirrorOnLeave: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.MIRROR,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
     "right-bottom",
     "left-bottom",

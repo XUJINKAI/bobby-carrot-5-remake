@@ -37,10 +37,6 @@ const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
 const ORIGINAL_AMBIENT_FRAME_MS = 124;
 const ORIGINAL_TILE_SIZE = 48;
 
-export const SURFACE_STACK_ORDER = 0;
-export const CONTENT_STACK_ORDER = 100;
-export const COVER_STACK_ORDER = 200;
-
 const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
 export function tsCoordinateCell(source: OriginalTileCoordinate): AtlasCell {

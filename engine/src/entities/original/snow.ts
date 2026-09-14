@@ -8,7 +8,7 @@ import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { bobbyMountId, readBobbyInventory } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
-import { COVER_STACK_ORDER, staticEntity, tileCell } from "./module.js";
+import { staticEntity, tileCell } from "./module.js";
 
 const SHOVEL_ACTION = "shovel-snow";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
@@ -113,7 +113,6 @@ const shovelAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
   facts: ["blocking", "contact-cover"],
-  stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
 };
 

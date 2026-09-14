@@ -23,7 +23,6 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -189,7 +188,6 @@ const cloudDefinition: EntityModuleDefinition = {
     "walkable",
     "blocking",
   ],
-  stackOrder: CONTENT_STACK_ORDER,
   state: [
     {
       key: "color",
@@ -216,7 +214,6 @@ export const cloud: EntityModule = originalModule(
 const cloudParkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD_PARKING,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Cloud Parking" },
 };
 
@@ -241,7 +238,6 @@ function movingEntityModule(
       "walkable",
       "blocking",
     ],
-    stackOrder: CONTENT_STACK_ORDER,
     state: [
       { key: "moving", kind: "boolean", label: "移动中", default: false },
     ],

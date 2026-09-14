@@ -12,7 +12,6 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
-  CONTENT_STACK_ORDER,
   tileAnimationCell,
   tileCell,
   originalModule,
@@ -97,7 +96,6 @@ const dragonAttackAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DRAGON,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     byDirection: {
       left: [

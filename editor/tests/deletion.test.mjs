@@ -13,8 +13,8 @@ const catalog = createBuiltinEntityCatalog();
 test("single-cell deletion removes only the top non-Surface entity", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
   );
 
   const refs = resolveDeletion(
@@ -30,10 +30,10 @@ test("single-cell deletion removes only the top non-Surface entity", () => {
 test("multi-cell deletion removes only the highest stackOrder layer", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 130 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 130 },
-    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 1 },
   );
 
   const refs = resolveDeletion(
@@ -45,7 +45,7 @@ test("multi-cell deletion removes only the highest stackOrder layer", () => {
   assert.equal(refs.length, 2);
   assert.deepEqual(
     refs.map((ref) => level.entities[ref.index].stackOrder).sort(),
-    [130, 130],
+    [2, 2],
   );
 });
 

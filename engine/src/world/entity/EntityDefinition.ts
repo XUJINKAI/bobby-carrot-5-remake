@@ -36,7 +36,7 @@ export interface EntityFieldDefinition {
 /**
  * 一种 Entity 的纯 gameplay/domain 静态定义。
  * 展示与编辑器元数据属于 EntityModule / EntityCatalog，不进入 World 的 Definition。
- * role 是 footprint part 语义；stackOrder 只负责同格排序。
+ * role 是 footprint part 语义；同格顺序属于 Entity 实例。
  */
 export interface EntityDefinition {
   type: EntityType;
@@ -47,7 +47,6 @@ export interface EntityDefinition {
   mechanisms?: readonly MechanismId[];
   /** 未注册地图 Entity 的无行为占位定义，不参与正式 Catalog。 */
   placeholder?: "unknown";
-  stackOrder?: number;
   footprint?: FootprintDefinition;
   behaviors?: readonly BehaviorId[];
   properties?: readonly EntityFieldDefinition[];

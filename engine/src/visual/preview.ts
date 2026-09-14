@@ -80,7 +80,7 @@ function resolveInstantiatedVisualPreview(
     cell: { x: part.x, y: part.y },
     ...(part.role ? { role: part.role } : {}),
     facts,
-    stackOrder: part.stackOrder ?? definition.stackOrder ?? 0,
+    stackOrder: entity.stackOrder ?? 0,
   };
   const query: VisualQuery = {
     inBounds: () => true,

@@ -156,6 +156,7 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 | --- | --- | --- | --- |
 | `blocking` | Bobby、障碍对象及 Egg 等 Presence | Passage、对象进入裁决 | Egg 等对象会变化 |
 | `climbable` | Beanstalk 各攀爬部位 | Bobby 攀爬姿势与动作 | 否 |
+| `contact-cover` | Plank、豆茎上段、High Grass、Snow、Ice Block | WorldQuery 接触栈投影 | 否 |
 | `moving-platform` | Cloud、Leaf | Bobby 与 Mower 的移动关系判断 | 否 |
 | `player` | Bobby | World ActorLifecycle、移动冲突及对象规则 | 否 |
 | `pushable` | 可推动对象 | Push、`pushGoal` | 否 |
@@ -195,7 +196,12 @@ World composition 总是提供 `FactRegistry`：省略注入时使用内置词�
 
 Entity 级 Fact 查询命中 `EntityFacts(entityId)` 或任一当前 `PresenceFacts(presence)`，并按 Entity ID 去重。这适合关卡计数和候选集合；它不能代替格子级查询。格子查询使用该格的 Presence Fact，不把另一部位的 Fact 扩散到这里。Type Index 与 Fact Index 存 Entity ID，Fact Index 是两种投影的并集；格子查询保留当前 Presence 身份。索引结果按 Entity ID 排序，避免移动重插入改变 Replay 顺序。
 
-`WorldQueryApi` 向 Behavior 提供已提交的 Entity state、Fact、Presence 和 Motion 查询。需要解析 Behavior 组合的 World 内部 Resolver 由 composition 显式注入 `EntityRegistry`；Definition 不通过 Query API 暴露。
+`WorldQueryApi` 向 Behavior 提供已提交的 Entity state、Fact、Presence 和 Motion 查询。
+`presencesAt(cell)`、`hasFactAt()` 与 `hasSelectorAt()` 默认读取最高 `contact-cover` 所在平面及其
+上方的接触栈；`allPresencesAt(cell)` 显式返回完整空间栈，供 Mower 支撑等对象特例使用。
+Entity selector 与计数查询读取完整对象集合，供 Goal 可用性和剩余目标统计使用。需要解析
+Behavior 组合的 World 内部 Resolver 由 composition 显式注入 `EntityRegistry`；Definition
+不通过 Query API 暴露。
 
 ### 刷新与快照
 
@@ -284,23 +290,20 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 标准通行内部的关键顺序如下：
 
 ```text
-来源格 canLeave
+来源接触栈 canLeave
 → Push 候选及目标格可占用性
-→ 目标地形落脚判断；Actor 的跨地形提案覆盖此步及指定目标地形的交互判断
-→ 目标格 resolveEntry
-→ 目标格 canEnter 与 blocking 裁决
+→ 目标接触栈的落脚判断
+→ 目标接触栈 resolveEntry
+→ 目标接触栈 canEnter 与 blocking 裁决
 → 最终预留与原子提交
 ```
 
-`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。Pipeline 返回决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。
+`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。来源和目标的通行、Touch 与 lifecycle 都使用同一次移动规划得到的接触栈。
 
-Bobby 的 `allowUnwalkable` 提案由 Player 规则检查完整 Plank 与豆茎上段，并以
-`bypassTargetEntityIds` 列出被覆盖的目标地形；World 跳过这些地形的目标交互与进入 hook。
-来源格的覆盖物通过 `bypassSourceLifecycleEntityIds` 跳过下层地形的 `onLeave`，
-同时保留地形的 `canLeave` 通行限制、覆盖物自身的衰变交互、同格独立对象的
-`resolveEntry / canEnter` 和移动冲突检查。
-驾驶 Mower 时依赖目标地形本身可落脚。视觉 `layers`、footprint
-`role` 和同格 `stackOrder` 分别用于绘制、部位身份与排序，不参与地形判断。
+Plank 与豆茎上段自身提供 `walkable + contact-cover`，因而普通 Bobby 直接使用标准通行。
+驾驶 Mower 时，Bobby 对目标完整空间栈额外检查一次 `walkable` 支撑，再让交互、阻挡和
+lifecycle 继续使用接触栈；这是 Mower 自身的重量特例。视觉 `layers`、`renderPass` 和
+footprint `role` 不参与接触裁剪。
 
 Push 的具体行为要求：
 

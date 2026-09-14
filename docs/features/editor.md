@@ -121,7 +121,7 @@ remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original T
 
 ### 堆叠规则
 
-Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。它与 Engine 的视觉 `stackOrder` 分离：`stackSlot` 决定放置时替换谁，`stackOrder` 决定最终绘制和 Inspector 展示顺序。
+Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。`stackSlot` 决定放置时替换谁；实例 `stackOrder` 同时决定完整空间栈的绘制/Inspector 顺序，以及 Engine 从哪个 `contact-cover` 平面开始执行接触规则。
 
 | slot | 内容 |
 | --- | --- |
@@ -134,6 +134,10 @@ Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。它
 | `cover` | High Grass、Snow 与 Ice Block |
 
 在任一目标格命中同 slot 素材时，新素材替换完整 owner；多格 Object 会在整个 footprint 上原子处理替换。推荐的跨 slot 组合为：base 可承载 overlay、floor feature、content、support、occupant 或 cover；floor feature 可配 content、support 或 occupant；content 可配 cover；support 可配 occupant。其它组合仍可放置，Canvas 使用琥珀色 hover 框，Inspector 同时显示“非推荐堆叠”提示，便于检查导入地图和特殊设计。
+
+空栈从 `stackOrder: 0` 开始；新放置 Entity 使用所覆盖格的最高值 `+1`，同 slot 替换保留被
+替换 Entity 的顺序，Inspector 重排把当前顺序规范化为从 `0` 开始的连续整数。多格 Entity
+在全部 footprint Presence 上使用同一个 `stackOrder`，因此调整任一部位都会改变整个对象。
 
 Canvas 会统计每格去重后的 Palette Presence。达到两层时，在格子右上角显示实际层数角标；Surface 不计入该数字，多格素材在每个覆盖格中各计一层。
 

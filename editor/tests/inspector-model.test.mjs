@@ -201,4 +201,11 @@ test("调整单格堆叠顺序会改变 Spatial 顶层 Presence", () => {
   ]).apply(level);
   const preview = new EditorPreview(reordered, catalog);
   assert.equal(preview.inspectCell(3, 3).top?.entity.type, MapEntityTypeId.PORTAL);
+  assert.deepEqual(
+    [
+      reordered.entities[portalIndex].stackOrder,
+      reordered.entities[carrotIndex].stackOrder,
+    ],
+    [1, 0],
+  );
 });

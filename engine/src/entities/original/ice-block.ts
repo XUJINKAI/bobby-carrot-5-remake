@@ -8,7 +8,6 @@ import type {
 import {
   atlasVisual,
   boundedInt,
-  COVER_STACK_ORDER,
   tileAnimationCell,
   tileCell,
   originalModule,
@@ -17,7 +16,6 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE_BLOCK,
   facts: ["blocking", "contact-cover"],
-  stackOrder: COVER_STACK_ORDER,
   state: [
     {
       key: "meltStage",

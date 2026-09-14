@@ -111,7 +111,6 @@ export interface DebugEntitySnapshot {
   instanceFacts: readonly string[];
   definition: {
     facts: readonly string[];
-    stackOrder: number | null;
     footprint: unknown;
     propertyFields: unknown;
     stateFields: unknown;
@@ -314,7 +313,6 @@ function buildEntitySnapshot(
     instanceFacts: [...(entity.instanceFacts ?? [])],
     definition: {
       facts: [...definition.facts],
-      stackOrder: definition.stackOrder ?? null,
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
       propertyFields: definition.properties ? structuredClone(definition.properties) : null,
       stateFields: definition.state ? structuredClone(definition.state) : null,

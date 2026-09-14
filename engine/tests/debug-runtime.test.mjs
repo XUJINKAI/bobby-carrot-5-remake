@@ -207,7 +207,7 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
-  assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
+  assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 1);
 });
 
 test("Debug uses docked control and info panes behind a persistent tool strip", () => {

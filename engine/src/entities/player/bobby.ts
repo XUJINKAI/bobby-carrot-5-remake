@@ -11,7 +11,6 @@ import type {
 } from "../EntityModule.js";
 import {
   clampProgress,
-  CONTENT_STACK_ORDER,
   originalModule,
 } from "../original/module.js";
 import {
@@ -64,7 +63,6 @@ export const BOBBY_VISUAL_ASSETS = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,
   facts: ["player", "blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",

@@ -133,7 +133,7 @@ export function reorderEntityStack(
     unique.forEach((ref, index) => {
       entities[ref.index] = {
         ...entities[ref.index]!,
-        stackOrder: (unique.length - index - 1) * 1000,
+        stackOrder: unique.length - index - 1,
       };
     });
     return normalizeEditorLevel({ ...level, entities });

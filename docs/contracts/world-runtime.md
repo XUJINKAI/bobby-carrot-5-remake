@@ -46,7 +46,7 @@ Presentation、Debug、Audio 可以分别消费同一序列。消费者不得通
 Entity Behavior 使用纯查询的 `planMovement()` 提出特殊移动规则，World 将所有 policy 合并并校验为单一 `MovementPlan`，然后统一裁决和原子提交。Policy 可以描述：
 
 - 使用标准 passage，或由 Entity 已完成领域判定的 unrestricted passage；
-- 对标准 passage 提出仅覆盖目标地形落脚检查的 `allowUnwalkable`；
+- Mower 等对象特例对标准 passage 提出仅覆盖落脚检查的 `allowUnwalkable`；
 - primary 是否随方向更新；
 - 本次 movement 的 lifecycle 与 markers；
 - 与 primary 同一事务移动的 companions，例如载具或乘客。

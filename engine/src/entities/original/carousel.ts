@@ -9,7 +9,6 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
@@ -51,7 +50,6 @@ const carouselPassage: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CAROUSEL,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   state: variantState([
     "right-top",
     "left-top",

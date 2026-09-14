@@ -19,7 +19,6 @@ import { RuntimeEntityTypeId } from "../runtime-types.js";
 import { beanCanGrowAt } from "./terrain-semantics.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -126,7 +125,6 @@ const beanGrowthAction: RuntimeActionDefinition = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAN_FIELD,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Bean Field" },
 };
 

@@ -9,7 +9,6 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const WIND_SWITCH_DIRECTIONS: readonly Direction[] = [
@@ -41,7 +40,6 @@ const toggleWindDirection: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.WIND_SWITCH,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   state: activeState(false),
   presentation: { name: "Wind Switch" },
 };

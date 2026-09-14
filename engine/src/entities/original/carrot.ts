@@ -2,7 +2,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { isRidingMower } from "../behaviorLibrary.js";
-import { atlasVisual, CONTENT_STACK_ORDER, originalModule, tileCell } from "./module.js";
+import { atlasVisual, originalModule, tileCell } from "./module.js";
 
 const collectCarrot: Behavior = {
   id: "collect-carrot",
@@ -36,7 +36,6 @@ const collectCarrot: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CARROT,
   facts: [],
-  stackOrder: CONTENT_STACK_ORDER,
   state: [{ key: "consumed", kind: "boolean", label: "已收集", default: false }],
   presentation: { name: "Carrot" },
 };

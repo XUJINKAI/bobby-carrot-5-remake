@@ -5,7 +5,6 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -14,7 +13,6 @@ const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
   facts: ["blocking"],
   mechanisms: ["object-interaction", "dialog"],
-  stackOrder: CONTENT_STACK_ORDER,
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },

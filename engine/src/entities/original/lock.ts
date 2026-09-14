@@ -14,7 +14,6 @@ import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   atlasVisual,
   boundedInt,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -105,7 +104,6 @@ const trackTimedChallenge: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
   facts: ["blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
   properties: [
     {
       key: "requireKey",

@@ -4,7 +4,6 @@ import type { EntityModule, EntityModuleDefinition } from "../EntityModule.js";
 import { mowableBehavior } from "../behaviorLibrary.js";
 import {
   atlasVisual,
-  COVER_STACK_ORDER,
   originalModule,
   tileCell,
 } from "./module.js";
@@ -12,7 +11,6 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
   facts: ["blocking", "contact-cover"],
-  stackOrder: COVER_STACK_ORDER,
   presentation: { name: "High Grass" },
 };
 

@@ -57,6 +57,24 @@ WorldMotion，而不是只看脚下地形。
 
 每块 Plank 是独立 Entity，衰变表现也按 Entity 建立独立实例，不共享原版的全局临时槽。
 
+## 接触栈与覆盖机关
+
+### 现象差异
+
+Plank、豆茎上段、High Grass、Snow 与 Ice Block 会从自身所在 `stackOrder` 平面遮蔽下层接触
+规则。例如 Plank 位于 Carousel 或 Trap 上方时，Bobby 只与 Plank 接触，Carousel 的方向
+限制和 Trap 的进入、离开效果都不会触发。
+
+### 可能影响
+
+Editor 可以通过调整同格顺序直接改变机关组合结果。目标 Entity 仍参与关卡目标计数，但被
+覆盖的 Exit 不满足物理到达条件。
+
+### 设计原理
+
+移动、Push、落脚、Touch、生命周期和 Reach 共用一份接触栈，避免各机关维护覆盖名单。
+Render、Editor、Debug 与目标计数读取完整空间栈；Mower 的重量支撑是显式对象特例。
+
 ## Cloud / Leaf 的动态碰撞粒度
 
 ### 现象差异

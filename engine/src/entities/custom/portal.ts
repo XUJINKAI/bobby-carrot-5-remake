@@ -44,7 +44,6 @@ export const portal: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PORTAL,
     facts: [],
-    stackOrder: 100,
     properties: [
       {
         key: "channel",

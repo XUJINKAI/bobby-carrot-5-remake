@@ -7,7 +7,6 @@ import type {
 } from "../EntityModule.js";
 import {
   originalModule,
-  SURFACE_STACK_ORDER,
   tileCell,
   atlasVisual,
 } from "./module.js";
@@ -35,7 +34,6 @@ const lockKeyInteraction: Behavior = {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK_KEY,
   facts: ["walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
   properties: [
     {
       key: "collectible",
