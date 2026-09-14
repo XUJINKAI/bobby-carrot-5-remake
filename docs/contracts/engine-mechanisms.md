@@ -295,8 +295,10 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 `resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。Pipeline 返回决策、原因、附带移动者或应从目标交互栈排除的 Presence 身份；World 将其并入当前 `MovementTransaction`。
 
 Bobby 的 `allowUnwalkable` 提案由 Player 规则检查完整 Plank 与豆茎上段，并以
-`bypassTargetEntityIds` 列出被覆盖的目标地形；World 跳过这些地形的目标交互与进入 hook，
-仍执行来源地形的离开规则、同格独立对象的 `resolveEntry / canEnter` 和移动冲突检查。
+`bypassTargetEntityIds` 列出被覆盖的目标地形；World 跳过这些地形的目标交互与进入 hook。
+来源格的覆盖物通过 `bypassSourceLifecycleEntityIds` 跳过下层地形的 `onLeave`，
+同时保留地形的 `canLeave` 通行限制、覆盖物自身的衰变交互、同格独立对象的
+`resolveEntry / canEnter` 和移动冲突检查。
 驾驶 Mower 时依赖目标地形本身可落脚。视觉 `layers`、footprint
 `role` 和同格 `stackOrder` 分别用于绘制、部位身份与排序，不参与地形判断。
 

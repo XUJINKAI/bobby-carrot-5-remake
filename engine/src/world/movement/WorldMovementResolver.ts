@@ -277,6 +277,9 @@ export class WorldMovementResolver {
       plan.updateDirection,
       {
         ...plan.lifecycle,
+        source: plan.lifecycle.source.filter(
+          (presence) => !plan.bypassSourceLifecycleEntityIds.includes(presence.entityId),
+        ),
         target: plan.lifecycle.target.filter(
           (presence) => presence.entityId !== ignoredEntity &&
             !bypassed.has(presence.entityId),

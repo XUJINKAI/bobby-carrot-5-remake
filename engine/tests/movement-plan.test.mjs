@@ -67,3 +67,17 @@ test("MovementPolicy 只接受目标格内的桥接绕过身份", () => {
     /目标格以外的 Entity/,
   );
 });
+
+test("MovementPolicy 只接受来源格内的生命周期覆盖身份", () => {
+  const source = [{ entityId: 5, cell: { x: 1, y: 1 }, facts: [], stackOrder: 0 }];
+  const plan = createMovementPlan({ ...context, source }, [
+    { bypassSourceLifecycleEntityIds: [5] },
+  ]);
+  assert.deepEqual(plan.bypassSourceLifecycleEntityIds, [5]);
+  assert.throws(
+    () => createMovementPlan({ ...context, source }, [
+      { bypassSourceLifecycleEntityIds: [6] },
+    ]),
+    /来源格以外的 Entity/,
+  );
+});

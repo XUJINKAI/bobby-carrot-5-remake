@@ -30,6 +30,8 @@ export interface MovementPolicy {
   allowUnwalkable?: boolean;
   /** 目标格中由桥接覆盖的 Entity；来源格离开与其它目标对象仍正常裁决。 */
   bypassTargetEntityIds?: readonly EntityId[];
+  /** 来源格中由覆盖物遮住的 Entity；其 canLeave 仍参与通行裁决。 */
+  bypassSourceLifecycleEntityIds?: readonly EntityId[];
   updateDirection?: boolean;
   lifecycle?: MovementLifecycle;
   companions?: readonly MovementCompanion[];
@@ -57,6 +59,7 @@ export interface MovementPlan {
   passage: MovementPassage;
   allowUnwalkable: boolean;
   bypassTargetEntityIds: readonly EntityId[];
+  bypassSourceLifecycleEntityIds: readonly EntityId[];
   updateDirection: boolean;
   lifecycle: MovementLifecycle;
   companions: readonly MovementCompanion[];
@@ -71,6 +74,8 @@ export function createMovementPlan(
   let allowUnwalkable = false;
   const bypassTargetEntityIds = new Set<EntityId>();
   const targetEntityIds = new Set(context.target.map((presence) => presence.entityId));
+  const bypassSourceLifecycleEntityIds = new Set<EntityId>();
+  const sourceEntityIds = new Set(context.source.map((presence) => presence.entityId));
   let updateDirection = true;
   let lifecycle: MovementLifecycle = {
     source: clonePresences(context.source),
@@ -94,6 +99,11 @@ export function createMovementPlan(
       if (!targetEntityIds.has(entityId))
         throw new Error(`MovementPolicy 引用了目标格以外的 Entity：${entityId}`);
       bypassTargetEntityIds.add(entityId);
+    }
+    for (const entityId of policy.bypassSourceLifecycleEntityIds ?? []) {
+      if (!sourceEntityIds.has(entityId))
+        throw new Error(`MovementPolicy 引用了来源格以外的 Entity：${entityId}`);
+      bypassSourceLifecycleEntityIds.add(entityId);
     }
     if (policy.updateDirection !== undefined) {
       assertCompatible(
@@ -135,6 +145,7 @@ export function createMovementPlan(
     passage,
     allowUnwalkable,
     bypassTargetEntityIds: [...bypassTargetEntityIds],
+    bypassSourceLifecycleEntityIds: [...bypassSourceLifecycleEntityIds],
     updateDirection,
     lifecycle,
     companions: [...companions.values()],
