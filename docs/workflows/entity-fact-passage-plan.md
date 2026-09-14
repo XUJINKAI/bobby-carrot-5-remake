@@ -1,6 +1,6 @@
 # Entity Goal、Fact 与通行规则实施计划
 
-状态：待实施。本文规定后续代码修改的职责、接口、阶段和验收；当前 Engine 行为仍以现行合同和代码为准。
+状态：实施中。实施基线与规则矩阵见 [Entity Goal 与通行规则实施基线](entity-fact-passage-baseline.md)；各阶段完成后以对应合同和代码为准。
 
 原版条件统一引用 [UP9 原版通行与碰撞规则](../reference/original-passage.md)，重制版明确差异引用 [Fidelity 产品边界](../decisions/original-fidelity-boundaries.md)。实现完成时同步更新 [Engine 机制合同](../contracts/engine-mechanisms.md)、[地图合同](../contracts/level-format.md) 和 [World Runtime 合同](../contracts/world-runtime.md)。
 
