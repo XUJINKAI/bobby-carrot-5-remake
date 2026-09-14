@@ -17,7 +17,7 @@ stackOrder ASC
 - 未显式给值的初始或 Runtime Entity 按加载、生成顺序放到重叠范围顶层，空栈从 `0` 开始；
 - Editor 新放置的 Entity 使用当前重叠范围最高值 `+1`，同 slot 替换保留原顺序，手动重排写成从 `0` 开始的连续整数；
 - 相同 `stackOrder` 表示同一接触平面；`entityId` 只保证完整栈的确定性排列；
-- `topPresenceAt()` 表达完整空间栈顶部。
+- `SpatialIndex.topPresenceAt()` 表达完整空间栈顶部，`WorldQueryApi.topPresenceAt()` 表达接触栈顶部。
 
 完整空间栈供 Render、Editor、Debug 和非接触目标查询使用。玩法查询默认读取接触栈：找到
 最高的 `contact-cover` Presence，只保留该 `stackOrder` 平面及其上方的 Presence。没有

@@ -100,7 +100,7 @@ flowchart LR
 读图时注意三种关系：
 
 1. **语义分成两种投影。** Entity Definition 与实例状态形成 `EntityFacts`；具体 Presence 另形成 `PresenceFacts`。对象查询匹配 Type、Entity Fact 或任一 Presence Fact，并按 Entity ID 去重；通行与碰撞读取当前格的 Presence Fact，格子 Selector 还可匹配候选对象的 Type 或 Entity Fact。
-2. **规则按调用位置进入 World。** Entity-bound Mechanism 由 Entity 显式组合，通过 Behavior hook 执行；Pipeline Mechanism 由 World 在固定阶段统一调用。Passage 解释 `walkable`、`blocking`，Push 解释 `pushable`。World 只解释运行协议列明的 kernel Fact，例如经审计确认需要的 `player`。
+2. **规则按调用位置进入 World。** Entity-bound Mechanism 由 Entity 显式组合，通过 Behavior hook 执行；Pipeline Mechanism 由 World 在固定阶段统一调用。Passage 解释 `walkable`、`blocking`，Push 解释 `pushable`。World 只解释运行协议列明的 kernel Fact：`player` 用于 ActorLifecycle，`contact-cover` 用于接触栈查询边界。
 3. **变化由 World 提交。** Mechanism 与对象 Behavior 提出策略、判断或命令请求；World 对移动提案完成裁决、冲突检查与计划构建，并按 phase 提交命令。提交后的状态重新派生 Fact，后续阶段读取更新后的投影。
 
 ## 三层职责
@@ -111,7 +111,7 @@ flowchart LR
 | Mechanism | 多种 Entity 可复用的通行、推、收集、对话等规则 | 策略提案或 Behavior hook 实现 |
 | Entity | 稳定类型、地图初始化、实例 gameplay 状态、footprint、Fact 投影、所组合的 Mechanism、对象专属 Behavior、视觉定义 | 当前 Entity/Presence 语义及专属规则 |
 
-World 承载、查询和传递 Fact，但只解释其运行协议明确列出的 kernel Fact。`player` 是 ActorLifecycle 确需识别时的候选，具体清单在语义审计阶段确认并逐项说明用途。`walkable`、`blocking` 由 Passage Mechanism 解释，`pushable` 由 Push Mechanism 解释；普通 gameplay Fact 的语义归消费它的 Mechanism。World 接收 Mechanism 与 Entity Behavior 的提案，负责边界、busy、目的格预留、多人冲突、移动参与者一致性、权威 `MoveResult` 和原子提交。
+World 承载、查询和传递 Fact，但只解释其运行协议明确列出的 kernel Fact。`player` 供 ActorLifecycle 识别当前 actor，`contact-cover` 定义格子接触栈的裁剪边界。`walkable`、`blocking` 由 Passage Mechanism 解释，`pushable` 由 Push Mechanism 解释；普通 gameplay Fact 的语义归消费它的 Mechanism。World 接收 Mechanism 与 Entity Behavior 的提案，负责边界、busy、目的格预留、多人冲突、移动参与者一致性、权威 `MoveResult` 和原子提交。
 
 Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专属 Behavior 可以理解具体对象类型；通用 Mechanism 不以具体 Entity Type 判断它是否适用。World 核心只依赖通用 Entity ID、状态和 Presence 协议，不导入具体对象实现。Engine 的组合入口装配内置 Registry 与 Bobby Actor Policy；公开的 `Game.loadLevel(LevelMap)` 使用方式保持简单。
 
@@ -156,7 +156,7 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 | --- | --- | --- | --- |
 | `blocking` | Bobby、障碍对象及 Egg 等 Presence | Passage、对象进入裁决 | Egg 等对象会变化 |
 | `climbable` | Beanstalk 各攀爬部位 | Bobby 攀爬姿势与动作 | 否 |
-| `contact-cover` | Plank、豆茎上段、High Grass、Snow、Ice Block | WorldQuery 接触栈投影 | 否 |
+| `contact-cover` | Plank、豆茎上段、High Grass、Snow、Ice Block | WorldQuery 接触栈投影（kernel） | 否 |
 | `moving-platform` | Cloud、Leaf | Bobby 与 Mower 的移动关系判断 | 否 |
 | `player` | Bobby | World ActorLifecycle、移动冲突及对象规则 | 否 |
 | `pushable` | 可推动对象 | Push、`pushGoal` | 否 |
@@ -198,7 +198,7 @@ Entity 级 Fact 查询命中 `EntityFacts(entityId)` 或任一当前 `PresenceFa
 
 `WorldQueryApi` 向 Behavior 提供已提交的 Entity state、Fact、Presence 和 Motion 查询。
 `presencesAt(cell)`、`hasFactAt()` 与 `hasSelectorAt()` 默认读取最高 `contact-cover` 所在平面及其
-上方的接触栈；`allPresencesAt(cell)` 显式返回完整空间栈，供 Mower 支撑等对象特例使用。
+上方的接触栈；`allPresencesAt(cell)` 显式返回完整空间栈，供 Mower 移动等对象特例使用。
 Entity selector 与计数查询读取完整对象集合，供 Goal 可用性和剩余目标统计使用。需要解析
 Behavior 组合的 World 内部 Resolver 由 composition 显式注入 `EntityRegistry`；Definition
 不通过 Query API 暴露。
@@ -290,19 +290,19 @@ Pipeline Mechanism 只提出 gameplay policy。World 拥有最终裁决权和提
 标准通行内部的关键顺序如下：
 
 ```text
-来源接触栈 canLeave
+来源移动接触栈 canLeave
 → Push 候选及目标格可占用性
-→ 目标接触栈的落脚判断
-→ 目标接触栈 resolveEntry
-→ 目标接触栈 canEnter 与 blocking 裁决
+→ 目标移动接触栈的落脚判断
+→ 目标移动接触栈 resolveEntry
+→ 目标移动接触栈 canEnter 与 blocking 裁决
 → 最终预留与原子提交
 ```
 
-`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。来源和目标的通行、Touch 与 lifecycle 都使用同一次移动规划得到的接触栈。
+`resolveEntry` 可能在同一事务中提出 `clear-and-pass` 命令；目标 Presence 的 `canEnter` 可显式允许或拒绝通行。因此 Passage Mechanism 只提出通行判断，不提前提交清除命令。来源和目标的通行、Touch 与 lifecycle 都使用同一次移动规划得到的 Presence 栈；默认是接触栈，对象 policy 可以显式提供完整栈。
 
 Plank 与豆茎上段自身提供 `walkable + contact-cover`，因而普通 Bobby 直接使用标准通行。
-驾驶 Mower 时，Bobby 对目标完整空间栈额外检查一次 `walkable` 支撑，再让交互、阻挡和
-lifecycle 继续使用接触栈；这是 Mower 自身的重量特例。视觉 `layers`、`renderPass` 和
+驾驶 Mower 时，Bobby 的 movement policy 用 `allPresencesAt()` 提供来源和目标完整空间栈，
+让落脚、交互、阻挡和 lifecycle 都读取完整栈；这是 Mower 自身的重量特例。视觉 `layers`、`renderPass` 和
 footprint `role` 不参与接触裁剪。
 
 Push 的具体行为要求：

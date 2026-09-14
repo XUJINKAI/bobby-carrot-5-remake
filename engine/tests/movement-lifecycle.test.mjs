@@ -8,13 +8,12 @@ import { testFactRegistry } from "./support/testFactRegistry.mjs";
 function runtime(onEnter) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"], stackOrder: 0 },
-    { type: "player", facts: ["player"], stackOrder: 100 },
+    { type: "floor", facts: ["walkable"] },
+    { type: "player", facts: ["player"] },
     {
       type: "trigger",
       facts: ["trigger"],
       behaviors: ["trigger-enter"],
-      stackOrder: 100,
     },
   ]);
   const behaviors = new BehaviorRegistry();

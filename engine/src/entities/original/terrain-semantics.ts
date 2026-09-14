@@ -126,6 +126,11 @@ export function fireballCanTraverseTerrainAt(
     query.entity(presence.entityId)?.type === MapEntityTypeId.SNOW
   ))
     return false;
+  // Ice Block 是火球接触后立即融化的目标，本身即可许可这一格移动。
+  if (presences.some((presence) =>
+    query.entity(presence.entityId)?.type === MapEntityTypeId.ICE_BLOCK
+  ))
+    return true;
   return presences.some((presence) => {
     const type = query.entity(presence.entityId)?.type;
     return type !== undefined && FIREBALL_TERRAIN.has(type);

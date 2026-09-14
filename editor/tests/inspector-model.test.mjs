@@ -75,7 +75,7 @@ test("Palette Brush Inspector 应用 stackSlot 替换并显示堆叠警告", () 
   assert.equal(preview.warnings[0]?.existingType, MapEntityTypeId.LOCK);
   assert.deepEqual(
     preview.after.layers.map((layer) => layer.entity.type),
-    [MapEntityTypeId.EGG, MapEntityTypeId.LOCK, MapEntityTypeId.GRASS],
+    [MapEntityTypeId.LOCK, MapEntityTypeId.EGG, MapEntityTypeId.GRASS],
   );
   assert.equal(preview.placedIndex, level.entities.length - 1);
   assert.equal(

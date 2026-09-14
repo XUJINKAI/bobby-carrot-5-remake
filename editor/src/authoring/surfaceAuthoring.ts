@@ -227,20 +227,18 @@ export function paintSurface(
         return surfaceTerrainForEntity(entity.type)?.slot !== slot;
       });
       const sourceLevel = { ...level, entities: kept } as EditorMap;
-      const painted = [...target]
-        .map((key) => {
-          const created = createSurfaceEntity(
-            catalog,
-            brush,
-            parseCellKey(key),
-            target,
-            sourceLevel,
-          );
-          return created
-            ? { ...created, stackOrder: stackOrders.get(key) ?? 0 }
-            : null;
-        })
-        .filter((entity): entity is LevelEntity => entity !== null);
+      const painted: LevelEntity[] = [];
+      for (const key of target) {
+        const created = createSurfaceEntity(
+          catalog,
+          brush,
+          parseCellKey(key),
+          target,
+          sourceLevel,
+        );
+        if (created)
+          painted.push({ ...created, stackOrder: stackOrders.get(key) ?? 0 });
+      }
       const next = normalizeEditorLevel({
         ...level,
         entities: [...kept, ...painted],

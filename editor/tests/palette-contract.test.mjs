@@ -96,7 +96,13 @@ test("Trap 缩略图显示 active，放置 preset 使用 inactive", () => {
       { x: 1, y: 1 },
       builtinEditorDefinition,
     ).entity,
-    { type: MapEntityTypeId.TRAP, x: 1, y: 1, active: false },
+    {
+      type: MapEntityTypeId.TRAP,
+      x: 1,
+      y: 1,
+      active: false,
+      stackOrder: 0,
+    },
   );
 });
 
@@ -183,7 +189,7 @@ test("三色云朵停靠格放置后保留底层地形与持久化颜色", () =>
     const restored = parseEditorLevel(serializeEditorLevel(placed));
     assert.deepEqual(
       restored.entities.filter((entity) => entity.x === 5 && entity.y === 5),
-      [ground, { type: "cloud-parking", ...cell, color }],
+      [ground, { type: "cloud-parking", ...cell, stackOrder: 1, color }],
     );
   }
 });

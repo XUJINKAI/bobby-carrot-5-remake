@@ -195,7 +195,7 @@ Fact 只保存有真实生产方、消费方和独立语义的共享事实；具
 
 | 文件/领域 | 具体工作 |
 | --- | --- |
-| `entities/player/bobby-passage.ts` | 编排玩家地形、覆盖与对象通行顺序，读取驾驶/飞行关系，复用对象自己的规则 |
+| `entities/player/bobby.ts` | 通过 MovementPolicy 编排玩家飞行、驾驶与完整栈对象特例，其余规则使用默认接触栈 |
 | `entities/original/terrain-semantics.ts` | 识别基础地形与覆盖组合，按明确语义 variant 解释原版地形；替代坐标线性化范围判断 |
 | `entities/original/plank.ts`、Beanstalk 定义 | 木板完整阶段、豆茎部位、离开行为与跨越地形的条件 |
 | `entities/original/mower.ts` | Gas、mountId、停车、割草、Speed 碎石条件 |

@@ -73,7 +73,7 @@ Editor 可以通过调整同格顺序直接改变机关组合结果。目标 Ent
 ### 设计原理
 
 移动、Push、落脚、Touch、生命周期和 Reach 共用一份接触栈，避免各机关维护覆盖名单。
-Render、Editor、Debug 与目标计数读取完整空间栈；Mower 的重量支撑是显式对象特例。
+Render、Editor、Debug 与目标计数读取完整空间栈；Mower 的完整移动栈是显式对象特例。
 
 ## Cloud / Leaf 的动态碰撞粒度
 

@@ -124,8 +124,8 @@ export class WorldMovementResolver {
       actor,
       intent,
       plan,
-      sourceStack,
-      targetStack,
+      plan.contacts.source,
+      plan.contacts.target,
       movement,
       group,
     );
@@ -196,7 +196,7 @@ export class WorldMovementResolver {
       );
     }
 
-    if (!plan.allowUnwalkable && !this.hasWalkable(plan.to)) {
+    if (!plan.allowUnwalkable && !this.passage.isWalkable(targetStack)) {
       this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
@@ -292,7 +292,7 @@ export class WorldMovementResolver {
   ): string | null {
     if (
       this.query.entityHasFact(plan.actorId, "player") &&
-      this.playerOccupies(plan.to, plan.actorId)
+      this.stackHasPlayer(plan.contacts.target, plan.actorId)
     )
       return "player-occupied";
     if (!group.canReserveDestination(plan.actorId, plan.to))
@@ -316,7 +316,14 @@ export class WorldMovementResolver {
   }
 
   private playerOccupies(cell: CellPosition, movingEntityId: EntityId): boolean {
-    return this.query.presencesAt(cell).some(
+    return this.stackHasPlayer(this.query.presencesAt(cell), movingEntityId);
+  }
+
+  private stackHasPlayer(
+    stack: readonly EntityPresence[],
+    movingEntityId: EntityId,
+  ): boolean {
+    return stack.some(
       (presence) =>
         presence.entityId !== movingEntityId &&
         presence.facts.includes("player"),

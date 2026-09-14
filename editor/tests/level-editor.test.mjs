@@ -176,6 +176,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
     x: 5,
     y: 3,
     direction: "right",
+    stackOrder: 1,
   });
   assert.deepEqual(dragon.cells, [
     { x: 6, y: 3, role: "head" },
@@ -199,6 +200,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
     x: 5,
     y: 3,
     direction: "left",
+    stackOrder: 1,
   });
   assert.deepEqual(dragon.cells, [
     { x: 4, y: 3, role: "head" },
@@ -222,7 +224,11 @@ test("两格角色把 Editor 光标格持久化为 body anchor", () => {
       builtinEditorDefinition,
     );
     assert.equal(placement.valid, true, type);
-    assert.deepEqual(placement.entity, { type, x: 5, y: 3 }, type);
+    assert.deepEqual(
+      placement.entity,
+      { type, x: 5, y: 3, stackOrder: 1 },
+      type,
+    );
     assert.deepEqual(placement.cells, [
       { x: 5, y: 2, role: "head" },
       { x: 5, y: 3, role: "body" },
@@ -673,5 +679,6 @@ test("Egg 只在 Palette 预览中显示 filled 且保持单一放置形态", ()
     type: MapEntityTypeId.EGG,
     x: 1,
     y: 1,
+    stackOrder: 1,
   });
 });

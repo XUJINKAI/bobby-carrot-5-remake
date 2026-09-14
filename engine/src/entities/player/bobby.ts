@@ -91,10 +91,11 @@ const bobbyMovementPolicy: Behavior = {
       return;
     }
     return {
-      // Mower 的重量需要下层支撑；其它接触与机关仍使用默认接触栈。
-      allowUnwalkable: query.allPresencesAt(to).some((presence) =>
-        presence.facts.includes("walkable")
-      ),
+      // Mower 的重量与机关交互读取完整栈；普通 Bobby 仍使用默认接触栈。
+      contacts: {
+        source: [...query.allPresencesAt(context.from)].reverse(),
+        target: [...query.allPresencesAt(to)].reverse(),
+      },
       companions: [
         {
           entityId: relation,

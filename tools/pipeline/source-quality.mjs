@@ -133,7 +133,7 @@ for (const sourceRoot of SOURCE_ROOTS) {
         ...text.matchAll(/\.facts\.includes\s*\(\s*["']([^"']+)["']/g),
       ];
       for (const match of factQueries) {
-        if (match[1] !== "player") {
+        if (!new Set(["player", "contact-cover"]).has(match[1])) {
           errors.push(`${relative}: World 只能直接解释 kernel Fact：${match[1]}`);
         }
       }

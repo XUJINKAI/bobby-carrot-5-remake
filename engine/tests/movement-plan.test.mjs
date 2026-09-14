@@ -14,9 +14,14 @@ const context = {
 };
 
 test("MovementPolicy 合并为单一 MovementPlan", () => {
+  const fullContacts = {
+    source: [{ entityId: 2, cell: { x: 1, y: 1 }, facts: [], stackOrder: 0 }],
+    target: [{ entityId: 3, cell: { x: 2, y: 1 }, facts: [], stackOrder: 0 }],
+  };
   const plan = createMovementPlan(context, [
     {
       passage: "unrestricted",
+      contacts: fullContacts,
       updateDirection: false,
       reason: "test-passage",
     },
@@ -34,6 +39,8 @@ test("MovementPolicy 合并为单一 MovementPlan", () => {
   assert.equal(plan.passage, "unrestricted");
   assert.equal(plan.updateDirection, false);
   assert.equal(plan.reason, "test-passage");
+  assert.deepEqual(plan.contacts, fullContacts);
+  assert.deepEqual(plan.lifecycle, fullContacts);
   assert.deepEqual(plan.companions, [
     {
       entityId: 2,

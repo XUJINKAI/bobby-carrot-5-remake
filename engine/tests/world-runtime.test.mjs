@@ -10,24 +10,22 @@ const facts = testFactRegistry("goal", "mowable", "item");
 function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"], stackOrder: 0 },
-    { type: "player", facts: ["player"], stackOrder: 100 },
-    { type: "wall", facts: ["blocking"], stackOrder: 100 },
-    { type: "box", facts: ["blocking", "pushable"], stackOrder: 100 },
-    { type: "push-goal", facts: ["walkable"], stackOrder: 0 },
-    { type: "exit", facts: ["walkable"], stackOrder: 0 },
-    { type: "carrot", facts: [], stackOrder: 100 },
+    { type: "floor", facts: ["walkable"] },
+    { type: "player", facts: ["player"] },
+    { type: "wall", facts: ["blocking"] },
+    { type: "box", facts: ["blocking", "pushable"] },
+    { type: "push-goal", facts: ["walkable"] },
+    { type: "exit", facts: ["walkable"] },
+    { type: "carrot", facts: [] },
     {
       type: "grass",
       facts: ["blocking", "mowable"],
       behaviors: grassBehaviors,
-      stackOrder: 200,
     },
-    { type: "item", facts: ["item"], stackOrder: 100 },
+    { type: "item", facts: ["item"] },
     {
       type: "long",
       facts: [],
-      stackOrder: 100,
       footprint: {
         byDirection: {
           right: [
@@ -236,7 +234,7 @@ test("Presence inspection reports semantic facts and stackOrder", () => {
   );
   const inspection = world.inspect(0, 0);
   assert.equal(inspection.presences.find((item) => item.type === "floor").facts.includes("walkable"), true);
-  assert.equal(inspection.presences.find((item) => item.type === "item").stackOrder, 100);
+  assert.equal(inspection.presences.find((item) => item.type === "item").stackOrder, 1);
 });
 
 test("directional footprint uses the explicitly declared direction layout", () => {
