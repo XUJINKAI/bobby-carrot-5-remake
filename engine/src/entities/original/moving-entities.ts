@@ -35,7 +35,7 @@ export const DEFAULT_MOVING_ENTITY_CELL_MS = 16 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const LEAF_SUPPORT_HEIGHT_PX = 12;
 
-/** Leaf / Cloud are walkable moving supports. Player walking never becomes a mount. */
+/** Leaf / Cloud 携带同格玩家，但步行进入不建立驾驶关系。 */
 const movingPlatformBehavior: Behavior = {
   id: "moving-platform-support",
   planMovement({ actor, query, to }) {
@@ -80,8 +80,7 @@ const movingPlatformBehavior: Behavior = {
     const tideDirection = tideDirectionAt(query, self.entity.anchor);
     if (tideDirection === oppositeDirection(direction)) return;
 
-    // A Tide constrains launch only against its current. Perpendicular launch keeps
-    // Bobby's entry direction for the first Leaf cell; later cells follow Tide.
+    // 潮流只禁止逆流启动；首格保留 Bobby 的进入方向，后续再尝试随流。
     commands.setState(self.entity.id, {
       ...self.entity.state,
       moving: true,
@@ -135,7 +134,8 @@ const movingEntityAction: RuntimeActionDefinition = {
 
     const launchDirection = directionState(action.state.launchDirection);
     const route = nextRoute(query, entity, launchDirection);
-    if (!route) return stopMovingEntity(entity, commands, isCloud(entity.type));
+    if (!route)
+      return stopMovingEntity(entity, commands, hasAutomaticCurrent(query, entity));
 
     if (!consumeActionDeadline(action, route.cadenceMs, time.stepMs / 2))
       return "running";
@@ -165,7 +165,7 @@ const movingEntityAction: RuntimeActionDefinition = {
     const entity = entityId === undefined ? undefined : query.entity(entityId);
     if (!entity) return;
     stopMovingEntity(entity, commands);
-    if (!isCloud(entity.type)) commands.cancelAction(action.id);
+    if (!hasAutomaticCurrent(query, entity)) commands.cancelAction(action.id);
   },
   onCancel({ action, reason, query, commands }) {
     const entityId = action.ownerEntityId;
@@ -185,7 +185,6 @@ const cloudDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD,
   facts: [
     "moving-platform",
-    "terrain-overlay",
     "walkable",
     "blocking",
   ],
@@ -238,7 +237,6 @@ function movingEntityModule(
     type,
     facts: [
       "moving-platform",
-      "terrain-overlay",
       "walkable",
       "blocking",
     ],
@@ -283,7 +281,7 @@ function nextRoute(
   launchDirection: Direction | null = null,
 ): { direction: Direction; cadenceMs: number } | null {
   const initial = directionState(entity.direction) ?? "right";
-  const direction = isCloud(entity.type)
+  const preferred = isCloud(entity.type)
     ? forcedWindAt(
         query,
         entity.anchor,
@@ -291,9 +289,12 @@ function nextRoute(
       ) ??
       (entity.state?.moving === true ? initial : null)
     : launchDirection ?? leafDirectionAt(query, entity.anchor, initial);
+  if (!preferred) return null;
+  const direction = [preferred, initial].find((candidate, index) =>
+    (index === 0 || candidate !== preferred) &&
+    canEnterMovingDomain(query, entity, addDirection(entity.anchor, candidate), candidate)
+  );
   if (!direction) return null;
-  const target = addDirection(entity.anchor, direction);
-  if (!canEnterMovingDomain(query, entity, target, direction)) return null;
   return {
     direction,
     cadenceMs:
@@ -311,6 +312,15 @@ function leafDirectionAt(
 ): Direction {
   return tideDirectionAt(query, cell) ??
     (query.hasSelectorAt(cell, { kind: "type", value: MapEntityTypeId.WATERFALL }) ? "down" : fallback);
+}
+
+function hasAutomaticCurrent(
+  query: WorldQueryApi,
+  entity: Readonly<EntityInstance>,
+): boolean {
+  return isCloud(entity.type) ||
+    query.hasSelectorAt(entity.anchor, { kind: "type", value: MapEntityTypeId.TIDE }) ||
+    query.hasSelectorAt(entity.anchor, { kind: "type", value: MapEntityTypeId.WATERFALL });
 }
 
 function tideDirectionAt(
@@ -332,9 +342,9 @@ function canEnterMovingDomain(
   direction: Direction,
 ): boolean {
   if (!query.inBounds(target)) return false;
-  const domainFact = entity.type === MapEntityTypeId.LEAF ? "water" : "cloud-space";
+  const domainFact = entity.type === MapEntityTypeId.LEAF ? "water" : "sky";
   if (!query.hasFactAt(target, domainFact)) return false;
-  if (movingSupportOccupiedAt(query, entity, target, domainFact)) return false;
+  if (movingSupportOccupiedAt(query, entity, target, direction)) return false;
 
   if (entity.type === MapEntityTypeId.LEAF) {
     for (const presence of query.presencesAt(target)) {
@@ -362,17 +372,22 @@ function movingSupportOccupiedAt(
   query: WorldQueryApi,
   mover: Readonly<EntityInstance>,
   target: { x: number; y: number },
-  domainFact: "water" | "cloud-space",
+  direction: Direction,
 ): boolean {
   return query.presencesAt(target).some((presence) => {
-    if (presence.entityId === mover.id || presence.facts.includes(domainFact))
-      return false;
+    if (presence.entityId === mover.id) return false;
     const occupant = query.entity(presence.entityId);
-    return !(
-      isCloud(mover.type) &&
-      occupant !== undefined &&
-      isCloudParkingType(occupant.type)
-    );
+    if (!occupant) return false;
+    if (
+      occupant.type === MapEntityTypeId.PLANK ||
+      occupant.type === MapEntityTypeId.ICE_BLOCK ||
+      occupant.type === MapEntityTypeId.CRUMBLY_ROCK ||
+      occupant.type === MapEntityTypeId.FENCE
+    )
+      return true;
+    if (occupant.type === MapEntityTypeId.CLOUD || occupant.type === MapEntityTypeId.LEAF)
+      return occupant.direction !== direction || occupant.state?.moving !== true;
+    return false;
   });
 }
 
@@ -435,10 +450,6 @@ function isMatchingCloudParking(
     return parking?.type === MapEntityTypeId.CLOUD_PARKING &&
       cloudColor(parking.state?.color) === color;
   });
-}
-
-function isCloudParkingType(type: EntityType): boolean {
-  return type === MapEntityTypeId.CLOUD_PARKING;
 }
 
 function playersAt(

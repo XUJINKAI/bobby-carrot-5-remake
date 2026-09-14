@@ -149,7 +149,7 @@ export const staticSurfaceModules: readonly EntityModule[] = [
 
 const snowDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
-  facts: ["blocking", "bean-growth-space"],
+  facts: ["blocking"],
   stackOrder: COVER_STACK_ORDER,
   presentation: { name: "Snow" },
 };
@@ -174,7 +174,7 @@ export const staticCoverModules: readonly EntityModule[] = [
 
 const carrotDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CARROT,
-  facts: ["collectible"],
+  facts: [],
   stackOrder: CONTENT_STACK_ORDER,
   presentation: { name: "Carrot" },
 };
@@ -245,14 +245,14 @@ export const staticContentModules: readonly EntityModule[] = [
     MapEntityTypeId.GOLDEN_CARROT,
     "Golden Carrot",
     tileCell(MapEntityTypeId.GOLDEN_CARROT),
-    ["collectible"],
+    [],
     [{ behavior: collectBehavior }],
   ),
   content(
     MapEntityTypeId.BONUS_COIN,
     "Bonus Coin",
     tileCell(MapEntityTypeId.BONUS_COIN),
-    ["collectible"],
+    [],
     [{ behavior: collectBehavior }],
   ),
 ];

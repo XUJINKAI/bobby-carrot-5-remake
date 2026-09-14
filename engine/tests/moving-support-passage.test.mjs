@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { DEFAULT_MOVING_ENTITY_CELL_MS } from "../dist/entities/original/moving-entities.js";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
@@ -101,4 +102,84 @@ test("Cloud Grid does not count as support occupancy", () => {
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
 
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
+});
+
+test("Cloud 可经过天空中的 Carrot，并在转向受阻后沿原方向续行", () => {
+  const entities = [];
+  for (let y = 0; y < 4; y += 1) {
+    for (let x = 0; x < 4; x += 1)
+      entities.push({ type: MapEntityTypeId.STARFIELD, x, y, variant: "large-star" });
+  }
+  entities.push(
+    { type: MapEntityTypeId.WINDMILL, x: 0, y: 1, direction: "right" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 0, y: 1, direction: "right", active: true },
+    { type: MapEntityTypeId.WINDMILL, x: 2, y: 3, direction: "up" },
+    { type: MapEntityTypeId.WIND_SWITCH, x: 2, y: 3, direction: "up", active: true },
+    { type: MapEntityTypeId.CLOUD, x: 1, y: 1, color: "red" },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 1 },
+    { type: MapEntityTypeId.PLANK, x: 2, y: 0 },
+  );
+  const world = new World({ schemaVersion: 1, width: 4, height: 4, entities });
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
+
+  world.update({ tick: 1, stepMs: 1 });
+  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 1 });
+  world.update({ tick: 3, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(cloud.id).anchor, { x: 3, y: 1 });
+});
+
+test("Leaf 顺流改向受阻时沿原方向续行", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 4,
+    height: 3,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+      ...[1, 2, 3].map((x) => ({ type: MapEntityTypeId.WATER, x, y: 1 })),
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.TIDE, x: 2, y: 1, direction: "up" },
+      { type: MapEntityTypeId.FENCE, variant: "ts-16-10", x: 2, y: 0 },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 1 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
+
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+  for (let tick = 1; tick <= 3; tick += 1)
+    world.update({ tick, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 3, y: 1 });
+});
+
+test("停在潮流上的 Leaf 会在前方清空后继续漂流", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 1, y: 0 },
+      { type: MapEntityTypeId.WATER, x: 2, y: 0 },
+      { type: MapEntityTypeId.TIDE, x: 1, y: 0, direction: "right" },
+      { type: MapEntityTypeId.LEAF, x: 1, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 2, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
+  const plank = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.PLANK })[0];
+
+  assert.equal(move(world, actor.id, "right").moves[0].moved, true);
+  world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 0 });
+  assert.equal(world.actions.active.length, 1);
+
+  const commands = new CommandQueue();
+  commands.destroy(plank.id);
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
 });

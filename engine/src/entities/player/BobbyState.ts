@@ -99,8 +99,7 @@ export function patchBobbySpeedBoost(
 }
 
 /**
- * mountId is a ride/control relation to a concrete ride-carried vehicle such as
- * Mower. Passive moving supports such as Leaf / Cloud never use mountId.
+ * mountId 记录 Bobby 与 Mower 等具体载具的驾驶关系；移动平台通过移动伴随者携带 Bobby。
  */
 export function bobbyMountId(state: EntityState | undefined): EntityId | null {
   const value = state?.mountId;

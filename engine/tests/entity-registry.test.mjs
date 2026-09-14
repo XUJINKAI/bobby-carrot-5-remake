@@ -54,26 +54,18 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 
 test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.WATER).facts, [
-    "bean-growth-space",
-    "water",
-  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATER).facts, ["water"]);
   assert.deepEqual(registry.require(MapEntityTypeId.GRASS).facts, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).facts, [
-    "bean-growth-space",
-  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).facts, []);
 });
 
 test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
   const registry = createBuiltinEntityRegistry();
   assert.deepEqual(registry.require(MapEntityTypeId.GRASS).facts, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.TREE).facts, [
-    "bean-growth-space",
-  ]);
-  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).facts, [
-    "bean-growth-space",
-    "water",
-  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.TREE).facts, []);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).facts, ["water"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.STARFIELD).facts, ["sky"]);
+  assert.deepEqual(registry.require(MapEntityTypeId.MOON).facts, ["sky"]);
 });
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {

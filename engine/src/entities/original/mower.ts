@@ -128,7 +128,7 @@ const smashCrumblyRock: Behavior = {
 
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
-  facts: ["ride-carried", "blocking"],
+  facts: ["blocking"],
   stackOrder: CONTENT_STACK_ORDER,
   state: [
     {

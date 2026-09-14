@@ -11,7 +11,10 @@ export const collectBehavior: Behavior = {
   id: "collectible",
   canEnter({ actor, self, query }) {
     if (!isRidingMower(actor.state, query)) return;
-    if (query.hasFactAt(self.presence.cell, "hidden-objective"))
+    if (query.hasSelectorAt(self.presence.cell, {
+      kind: "type",
+      value: MapEntityTypeId.HIGH_GRASS,
+    }))
       return { passable: true, reason: "objective-hidden-under-grass" };
     if (self.entity.type === MapEntityTypeId.CARROT)
       return { passable: false, reason: "mower-cannot-collect-carrot" };

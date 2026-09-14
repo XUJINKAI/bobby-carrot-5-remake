@@ -6,7 +6,7 @@ import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
-const facts = testFactRegistry("mowable", "dragon", "dragon-trigger");
+const facts = testFactRegistry("mowable", "dragon", "dragon-trigger", "coin", "frozen");
 
 function registry() {
   const registry = new EntityRegistry();
@@ -19,7 +19,7 @@ function registry() {
     },
     {
       type: "coin",
-      facts: ["collectible"],
+      facts: ["coin"],
       stackOrder: 100,
       presentation: { name: "Coin" },
     },
@@ -44,7 +44,7 @@ function registry() {
     },
     {
       type: "ice",
-      facts: ["meltable"],
+      facts: ["frozen"],
       stackOrder: 200,
       presentation: { name: "Ice" },
     },

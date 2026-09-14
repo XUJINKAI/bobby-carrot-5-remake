@@ -82,3 +82,23 @@ export function beanCanGrowAt(
       type === MapEntityTypeId.LEAF
     ));
 }
+
+/** Fireball 只读取原版地形域；覆盖 Snow 时，下层地面不提供传播许可。 */
+export function fireballCanTraverseTerrainAt(
+  query: WorldQueryApi,
+  cell: { x: number; y: number },
+): boolean {
+  const presences = query.presencesAt(cell);
+  if (presences.some((presence) =>
+    query.entity(presence.entityId)?.type === MapEntityTypeId.SNOW
+  ))
+    return false;
+  return presences.some((presence) => {
+    const type = query.entity(presence.entityId)?.type;
+    return type !== undefined &&
+      isOriginalTerrainType(type) &&
+      presence.facts.some((fact) =>
+        fact === "walkable" || fact === "water" || fact === "sky"
+      );
+  });
+}

@@ -11,7 +11,7 @@ function touchTarget(type, mechanisms) {
   entities.registerAll([
     { type: "floor", facts: ["walkable"] },
     { type: "actor", facts: ["player"] },
-    { type, facts: ["blocking", "collectible"], mechanisms },
+    { type, facts: ["blocking"], mechanisms },
   ]);
   const world = new World({
     schemaVersion: 1,

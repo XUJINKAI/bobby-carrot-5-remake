@@ -9,6 +9,7 @@ import {
 } from "../dist/visual/preview.js";
 import { portal } from "../dist/entities/custom/portal.js";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
+import { beanCanGrowAt } from "../dist/entities/original/terrain-semantics.js";
 
 const BLOCKING_TYPES = [
   MapEntityTypeId.WINDMILL,
@@ -355,10 +356,7 @@ test("Surface atlas family 使用各自的通行语义", () => {
     .all()
     .find((entity) => entity.type === MapEntityTypeId.STONE_WALL);
   assert.ok(wallEntity);
-  assert.equal(
-    wall.query.entityHasFact(wallEntity.id, "bean-growth-space"),
-    true,
-  );
+  assert.equal(beanCanGrowAt(wall.query, { x: 1, y: 0 }), true);
   assert.equal(wall.query.entityHasFact(wallEntity.id, "walkable"), false);
   assert.equal(move(wall, "right").moves[0].moved, false);
 
@@ -377,10 +375,7 @@ test("Surface atlas family 使用各自的通行语义", () => {
       grassRoad.entities.require(presence.entityId).type === MapEntityTypeId.GRASS
     );
   assert.ok(grassPresence);
-  assert.equal(
-    grassRoad.query.entityHasFact(grassPresence.entityId, "bean-growth-space"),
-    false,
-  );
+  assert.equal(beanCanGrowAt(grassRoad.query, { x: 1, y: 0 }), false);
   assert.equal(
     grassRoad.query.entityHasFact(grassPresence.entityId, "walkable"),
     true,

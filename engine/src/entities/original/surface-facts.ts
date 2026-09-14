@@ -3,27 +3,22 @@ import {
   type SurfaceSourceMapping,
 } from "@bobby/model";
 
-/** 根据单个 atlas variant 还原原版 Surface 的地图内语义。 */
+/** 根据 Surface 的语义身份声明共享通行事实。 */
 export function originalSurfaceFacts(
   mapping: Readonly<SurfaceSourceMapping>,
 ): readonly string[] {
+  const type = mapping.type;
+  if (type === MapEntityTypeId.STARFIELD || type === MapEntityTypeId.MOON)
+    return ["sky"];
+  if (type === MapEntityTypeId.WATER || type === MapEntityTypeId.WATERFALL)
+    return ["water"];
   if (
-    mapping.type === MapEntityTypeId.FENCE
-  ) return [];
-
-  const number = (mapping.source.row - 1) * 16 + mapping.source.column;
-  const facts = new Set<string>();
-  if (number >= 95 && number <= 148) facts.add("walkable");
-  if (number <= 94) facts.add("bean-growth-space");
-  if (number >= 72 && number <= 77) facts.add("cloud-space");
-  if (
-    mapping.type === MapEntityTypeId.WATER ||
-    mapping.type === MapEntityTypeId.WATERFALL
-  ) {
-    facts.add("water");
-    facts.add("bean-growth-space");
-  }
-  return [...facts];
+    type === MapEntityTypeId.GRASS ||
+    type === MapEntityTypeId.SNOW_CLOUD ||
+    type === MapEntityTypeId.SAND
+  )
+    return ["walkable"];
+  return [];
 }
 
 /** Definition 只保留同一 type 所有 variant 共有的 Fact。 */
