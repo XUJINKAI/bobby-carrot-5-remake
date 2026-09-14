@@ -260,6 +260,17 @@ export class VisualRuntime {
         continue;
       }
       if (delta.type === "world-event") {
+        if (delta.event.type === "shovel-started" &&
+          delta.event.actorId !== undefined &&
+          delta.event.direction !== undefined &&
+          typeof delta.event.data?.durationMs === "number")
+          this.beginAction(
+            delta.event.actorId,
+            "shovel",
+            delta.event.direction,
+            delta.event.data.durationMs,
+            frame,
+          );
         this.beginTransient(delta.event, frame);
         this.callouts.consume(delta.event, frame);
         continue;

@@ -210,6 +210,11 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 - Fireball：6px/gameplay step，48px 一格约 248ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
 
+持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
+动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。
+Engine 用可快照的 RuntimeAction 推进这段 gameplay，`b8.png` 铲雪动画读取开始事件；
+原版地图展开的 Snow 下方已有 `ts-8-13` 地面，独立放置的 Snow 清除时生成同款可走地面。
+
 这些换算是根据当前恢复出的控制流与稳态主循环得到的近似真实时间；原版 `System.currentTimeMillis()` 调度、设备执行耗时和 sleep 抖动会让实测存在少量偏差。
 
 ## 10. 荷叶

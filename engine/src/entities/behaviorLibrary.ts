@@ -131,38 +131,6 @@ export const mowableBehavior: Behavior = {
   },
 };
 
-export const shovelableBehavior: Behavior = {
-  id: "shovelable",
-  resolveEntry({ actor, self, query, commands }) {
-    if (isRidingMower(actor.state, query)) return;
-    if (!readBobbyInventory(actor.state).shovel) return;
-    commands.destroy(self.entity.id);
-    commands.emit({
-      type: "shovel",
-      entityId: self.entity.id,
-      x: self.presence.cell.x,
-      y: self.presence.cell.y,
-    });
-    return { result: "clear-and-pass", reason: "shovel-clear" };
-  },
-  onTouch({ actor, self, query, commands }) {
-    if (
-      !query.entityHasFact(actor.id, "player") ||
-      isRidingMower(actor.state, query) ||
-      readBobbyInventory(actor.state).shovel
-    )
-      return;
-    commands.emit({
-      type: "missing-item",
-      actorId: actor.id,
-      entityId: self.entity.id,
-      x: self.presence.cell.x,
-      y: self.presence.cell.y,
-      data: { item: "shovel" },
-    });
-  },
-};
-
 export function isRidingMower(
   state: Parameters<typeof bobbyMountId>[0],
   query: Parameters<NonNullable<Behavior["onEnter"]>>[0]["query"],

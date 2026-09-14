@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { World } from "./support/World.mjs";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import {
   resolveEntityVisualPreview,
@@ -9,6 +10,7 @@ import {
 } from "../dist/visual/preview.js";
 import { portal } from "../dist/entities/custom/portal.js";
 import { beanCanGrowAt } from "../dist/entities/original/terrain-semantics.js";
+import { SHOVEL_ACTION_DURATION_MS } from "../dist/entities/original/snow.js";
 
 const BLOCKING_TYPES = [
   MapEntityTypeId.WINDMILL,
@@ -41,6 +43,13 @@ function move(world, direction) {
       },
     ],
   });
+}
+
+function giveShovel(world) {
+  const player = actor(world);
+  const commands = new CommandQueue();
+  commands.setState(player.id, { ...player.state, shovel: true });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
 }
 
 test("canonical original obstacle semantics keep known blockers blocking", () => {
@@ -79,6 +88,73 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
       data: { item: "shovel" },
     },
   );
+});
+
+test("Snow 铲雪动作锁住原位，结束后清雪并按原方向重新移动", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const player = actor(world);
+  giveShovel(world);
+
+  const started = move(world, "right");
+  assert.equal(started.moves[0].moved, false);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
+  assert.equal(world.actions.isInputBlockedFor(player.id), true);
+  assert.equal(started.events.find((event) => event.type === "shovel-started")?.data?.durationMs,
+    SHOVEL_ACTION_DURATION_MS);
+  assert.equal(move(world, "right").moves[0].passage.reason, "actor-busy");
+
+  for (let tick = 1; tick < 32; tick += 1) {
+    world.update({ tick, stepMs: 31 });
+  }
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 1);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
+
+  const completed = world.update({ tick: 32, stepMs: 31 });
+  assert.equal(completed.events.filter((event) => event.type === "shovel").length, 1);
+  assert.equal(completed.moves[0].moved, true);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 0);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 0);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 1, y: 0 });
+  assert.equal(world.actions.isInputBlockedFor(player.id), false);
+});
+
+test("独立 Snow 清除后生成可走地面，动作进度可从快照恢复", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  giveShovel(world);
+  move(world, "right");
+  for (let tick = 1; tick <= 12; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  const snapshot = world.snapshot();
+  for (let tick = 13; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 1);
+
+  world.restore(snapshot);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 1);
+  assert.equal(world.actions.isInputBlockedFor(actor(world).id), true);
+  for (let tick = 13; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 1);
+  assert.deepEqual(world.entity(actor(world).id)?.anchor, { x: 1, y: 0 });
 });
 
 test("Carrot 收集后保留 Entity ID，并由 consumed state 切换视觉和目标", () => {

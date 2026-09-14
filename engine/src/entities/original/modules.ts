@@ -21,6 +21,7 @@ import { cloud, cloudParking, leaf } from "./moving-entities.js";
 import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
+import { snow } from "./snow.js";
 import { speed } from "./speed.js";
 import { speedSwitch } from "./speed-switch.js";
 import {
@@ -50,6 +51,7 @@ export const originalEntityModules: readonly EntityModule[] = [
   colorSwitch,
   colorBlock,
   ...staticCoverModules,
+  snow,
   plank,
   iceBlock,
   carrot,

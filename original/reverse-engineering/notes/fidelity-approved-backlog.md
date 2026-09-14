@@ -60,38 +60,6 @@ Bean 查询“目标格是否存在可承载藤蔓的地面，以及是否已经
 - `semantic/BeanGrowth.java`
 - `engine/src/entities/original/bean-field.ts`
 
-### A3. Snow 使用完整 Shovel 动作
-
-**现象差异**
-
-原版中，Bobby 持有 Shovel 时第一次撞上 Snow 仍会停住，播放约 `992ms` 的铲雪动作，
-Snow 清除后自动重试刚才的方向。当前 Engine 在碰撞解析时立刻删除 Snow，并让 Bobby 在
-同一次移动中直接通过。
-
-**可能影响**
-
-玩家看不到铲雪过程，也没有对应的输入锁；Snow 附近的其它机关会比原版提前约一秒触发，
-Replay 中的动作边界也不同。
-
-**目标行为**
-
-1. 第一次碰撞保持 Bobby 原位；
-2. 建立由该 Bobby 持有的 `992ms` gameplay 动作并锁住其普通输入；
-3. 动作结束时重新确认目标 Snow 仍然存在；
-4. 删除 Snow，生成 `ts-8-13` 对应的清雪地面；
-5. 通过正常移动解析自动重试保存的方向。
-
-**原理说明**
-
-清雪过程会影响输入和后续碰撞，因此属于可快照的 RuntimeAction。`b8.png` 动画只读取动作
-进度，不负责删除 Snow。缺少 Shovel 的 Callout 已由正式 Engine Presentation 处理。
-
-**证据**
-
-- `semantic/ShovelRuntime.java`
-- `engine/src/entities/behaviorLibrary.ts`
-- `engine/src/entities/player/bobby.ts`
-
 ### A4. Mower 按地面高度决定通行
 
 **现象差异**

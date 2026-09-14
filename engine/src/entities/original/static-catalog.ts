@@ -10,7 +10,6 @@ import {
   mowableBehavior,
   pickupBehavior,
   requiresUnmountedReachBehavior,
-  shovelableBehavior,
 } from "../behaviorLibrary.js";
 import { bobbyMountId } from "../player/BobbyState.js";
 import { hasBobbyBridgeAt } from "./terrain-semantics.js";
@@ -146,13 +145,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
   ),
 ];
 
-const snowDefinition: EntityModuleDefinition = {
-  type: MapEntityTypeId.SNOW,
-  facts: ["blocking"],
-  stackOrder: COVER_STACK_ORDER,
-  presentation: { name: "Snow" },
-};
-
 const highGrassDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
   facts: ["blocking"],
@@ -161,10 +153,6 @@ const highGrassDefinition: EntityModuleDefinition = {
 };
 
 export const staticCoverModules: readonly EntityModule[] = [
-  staticEntity(snowDefinition, tileCell(MapEntityTypeId.SNOW), [
-    { behavior: shovelableBehavior },
-    { behavior: bobbyBridgeOnCover },
-  ]),
   staticEntity(highGrassDefinition, tileCell(MapEntityTypeId.HIGH_GRASS), [
     { behavior: mowableBehavior },
     { behavior: bobbyBridgeOnCover },

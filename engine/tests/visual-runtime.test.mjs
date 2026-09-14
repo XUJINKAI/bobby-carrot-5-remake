@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
+import { World } from "./support/World.mjs";
 import {
   builtinEntityModules,
   createBuiltinEntityRegistry,
@@ -411,6 +413,40 @@ test("Bobby snowplow uses three rows inside the attempted direction column", () 
   assert.equal(shovel.layers[0].frameColumns, 4);
   assert.equal(shovel.layers[0].frameRows, 3);
   assert.equal(shovel.layers[0].frameIndex, 7);
+});
+
+test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const commands = new CommandQueue();
+  commands.setState(actor.id, { ...actor.state, shovel: true });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  const result = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  const visual = new VisualRuntime(createBuiltinVisualRegistry());
+  visual.consumeWorldDeltas(world, result.deltas,
+    { frame: 1, nowMs: 0, deltaMs: 0 },
+    { motionDuration: (motion) => motion.durationMs, stationaryDeathDurationMs: 350 });
+  assert.equal(visual.runtimeStates.get(actor.id)?.animation, "shovel");
+  assert.equal(visual.runtimeStates.get(actor.id)?.direction, "right");
+  visual.update({ frame: 2, nowMs: 496, deltaMs: 496 }, "linear");
+  assert.equal(visual.runtimeStates.get(actor.id)?.progress, 0.5);
 });
 
 test("Bobby glider selects one of four direction columns", () => {
