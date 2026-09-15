@@ -48,7 +48,9 @@ DAT level record
 - `objects`：每项为 `type`、`x`、`y` 的紧凑对象表。
 
 canonical `LevelMap` 可以在同一坐标保存多个 Entity。正向 Adapter 把原版压缩表示
-展开为语义堆叠；反向 Adapter 把原版 DAT 能表达的 Entity 压回一层 terrain 与
+展开为语义堆叠，并把每个原版 Cell Stack 从 `stackOrder: 0` 向上连续编号；这也让
+跨格 Entity 在所有 Presence 上沿用 anchor 所在 cell 的明确顺序，不受其它 cell 的
+行优先读取顺序影响。反向 Adapter 把原版 DAT 能表达的 Entity 压回一层 terrain 与
 objects 表。Engine 专属字段与其它扩展地图语义不属于原版 DAT 的无损范围。
 
 ## 验证

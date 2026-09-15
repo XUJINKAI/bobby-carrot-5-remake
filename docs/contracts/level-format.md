@@ -166,6 +166,10 @@ Bobby 可以通过实例字段声明输入通道和两个可组合的镜像轴�
 
 Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surface，并把 Bobby Entity 的初始坐标设为同一位置。转换完成后 Start 与 Bobby 互不绑定；移动 Bobby 不会改变 Start，移动或替换 Start 也不会定义新的出生点。
 
+DAT 的 terrain/object 二层结构在正向转换时按每格实际 Cell Stack 写入连续的
+`stackOrder: 0..n`。跨格 Entity 的全部 Presence 沿用其 anchor Entity 的该值，因此
+后续行优先读取到的相邻地面不会反向覆盖 Dragon 等对象的 body/tail。
+
 一张可游玩地图至少有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。多个 Bobby 不能占据同一格；Editor 在同格放置 Bobby 时会替换已有 Bobby，同一 tick 的移动组中若多个 actor 请求同一目的格，这些移动会一起被拒绝。
 
 ### 同格 Entity 与 Cell Stack

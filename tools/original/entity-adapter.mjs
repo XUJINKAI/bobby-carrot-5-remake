@@ -49,7 +49,12 @@ export function adaptDecodedMap(map) {
   return {
     width: map.width,
     height: map.height,
-    entities: cells.flatMap((cell) => adaptStackCell(cell, context)),
+    entities: cells.flatMap((cell) =>
+      adaptStackCell(cell, context).map((entity, stackOrder) => ({
+        ...entity,
+        stackOrder,
+      })),
+    ),
   };
 }
 
