@@ -241,7 +241,10 @@ test("GameplayDialogView 只渲染逐字文本与通用选项输入", () => {
   assert.match(source, /Array\.from\(message\)/);
   assert.match(source, /maxHeight: "min\(42vh, 260px\)"/);
   assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
-  assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
+  assert.match(
+    source,
+    /"ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"/,
+  );
   assert.match(source, /GameplayDialogView\.present\(\) 至少需要一个选项/);
   assert.doesNotMatch(source, /import type \{ Game \}/);
   assert.doesNotMatch(source, /dialogControl|setWorldPaused|setEnabled/);

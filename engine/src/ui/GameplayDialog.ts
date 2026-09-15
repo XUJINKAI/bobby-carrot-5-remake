@@ -21,6 +21,14 @@ export type GameplayDialogResult =
   | { type: "selected"; optionId: string }
   | { type: "dismissed" };
 
+export type GameplayDialogKeyAction =
+  | "ignore"
+  | "finish-typing"
+  | "dismiss"
+  | "previous"
+  | "next"
+  | "select";
+
 const DEFAULT_CHARACTER_INTERVAL_MS = 28;
 
 /** 纯对话 View：调用方持有 World、输入门禁与交互生命周期。 */
@@ -298,28 +306,27 @@ export class GameplayDialogView {
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      this.root.hidden ||
-      !this.pendingPresentation ||
-      !["ArrowLeft", "ArrowRight", "Enter", "Escape"].includes(event.key)
-    ) {
-      return;
-    }
+    if (this.root.hidden || !this.pendingPresentation) return;
+    const action = resolveGameplayDialogKeyAction(
+      event.key,
+      this.optionIds.length,
+      this.typingTimer !== null,
+      event.repeat,
+    );
+    if (action === "ignore") return;
     event.preventDefault();
     event.stopPropagation();
-    if (event.key === "Escape") {
+    if (action === "dismiss") {
       this.settlePresentation({ type: "dismissed" });
       return;
     }
-    if (this.typingTimer !== null) {
-      if (event.key === "Enter" && !event.repeat) this.finishTyping();
+    if (action === "finish-typing") {
+      this.finishTyping();
       return;
     }
-    if (event.key === "ArrowLeft") this.selectRelative(-1);
-    else if (event.key === "ArrowRight") this.selectRelative(1);
-    else if (!event.repeat && this.optionIds.length === 0) {
-      this.settlePresentation({ type: "dismissed" });
-    } else if (!event.repeat) {
+    if (action === "previous") this.selectRelative(-1);
+    else if (action === "next") this.selectRelative(1);
+    else if (action === "select") {
       const optionId = this.optionIds[this.selectedOptionIndex];
       if (optionId !== undefined) {
         this.settlePresentation({ type: "selected", optionId });
@@ -348,4 +355,29 @@ export function cycleOptionIndex(
 ): number {
   if (count < 1) return -1;
   return ((current + offset) % count + count) % count;
+}
+
+/** 纯按键决策；普通对白允许任意方向键结束并释放宿主 gameplay gate。 */
+export function resolveGameplayDialogKeyAction(
+  key: string,
+  optionCount: number,
+  typing: boolean,
+  repeat: boolean,
+): GameplayDialogKeyAction {
+  if (key === "Escape") return "dismiss";
+  if (optionCount === 0) {
+    if (
+      !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(
+        key,
+      )
+    )
+      return "ignore";
+    if (repeat) return "ignore";
+    return typing ? "finish-typing" : "dismiss";
+  }
+  if (!["ArrowLeft", "ArrowRight", "Enter"].includes(key)) return "ignore";
+  if (typing) return key === "Enter" && !repeat ? "finish-typing" : "ignore";
+  if (key === "ArrowLeft") return "previous";
+  if (key === "ArrowRight") return "next";
+  return repeat ? "ignore" : "select";
 }

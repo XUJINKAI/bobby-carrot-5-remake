@@ -475,6 +475,10 @@ Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机�
 物理输入的可执行时机；`blocked` 作为一次已裁决动作进入 Replay，并抑制该方向直到物理输入
 释放或改变。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
 
+无选项的地图对白完成逐字展示后，任意方向键、Enter、Escape 或点击都可以结束 View；
+结束 Promise 后由 Web 释放 `blocking-interaction` lease。该次结束按键本身不作为移动输入，
+下一次输入才重新进入 gameplay。
+
 默认控制绑定从 Bobby 的 Map 字段派生。`controller` 使用数字通道，省略时为 `0`；只有 primary 通道时方向键与 WASD 都映射到它，同时存在通道 `0` 与 `1` 时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在 channel 输入变成 semantic move intent 时组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。Replay 保存 channel 及原始输入方向，不保存浏览器输入源或临时 entity ID。
 
 ## Events
