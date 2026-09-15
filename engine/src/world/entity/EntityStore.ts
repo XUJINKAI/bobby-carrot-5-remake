@@ -13,21 +13,12 @@ export interface EntityStoreSnapshot {
   nextEntityId: EntityId;
 }
 
-export type LevelEntityInitializer = (
-  id: EntityId,
-  source: LevelEntity,
-) => EntityInstance;
-
 /** 确定性 Entity identity 与实例状态存储。 */
 export class EntityStore {
   private readonly entities = new Map<EntityId, EntityInstance>();
   private nextEntityId = 1;
 
-  constructor(
-    levelEntities: readonly LevelEntity[] = [],
-    private readonly initializeLevelEntity: LevelEntityInitializer =
-      instantiateLevelEntity,
-  ) {
+  constructor(levelEntities: readonly LevelEntity[] = []) {
     for (const source of levelEntities) this.spawnLevelEntity(source);
   }
 
@@ -47,7 +38,7 @@ export class EntityStore {
 
   spawnLevelEntity(source: LevelEntity): EntityInstance {
     const id = this.nextEntityId++;
-    const entity = this.initializeLevelEntity(id, source);
+    const entity = instantiateLevelEntity(id, source);
     this.entities.set(id, entity);
     return entity;
   }

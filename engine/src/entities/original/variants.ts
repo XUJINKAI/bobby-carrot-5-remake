@@ -10,7 +10,7 @@ import {
   originalModule,
   tsCoordinateCell,
 } from "./module.js";
-import { sharedOriginalSurfaceFacts } from "./surface-facts.js";
+import { originalSurfaceFacts } from "./surface-facts.js";
 import { waterPassage } from "./water-passage.js";
 
 const semanticSurfaceGroups = new Map<string, SurfaceSourceMapping[]>();
@@ -27,7 +27,7 @@ for (const mapping of SURFACE_SOURCE_MAPPINGS) {
 
 const originalTileDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.ORIGINAL_TILE,
-  facts: [],
+  presenceFacts: [],
   state: [{ key: "variant", kind: "string", label: "Original Tile" }],
   presentation: { name: "Original Tile" },
 };
@@ -82,20 +82,31 @@ function canonicalSurface(
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
-    facts: sharedOriginalSurfaceFacts(mappings),
+    presenceFacts: [],
+    resolvePresenceFacts({ entity }) {
+      const mapping = resolveSurfaceMapping(mappings, entity.state);
+      return mapping ? originalSurfaceFacts(mapping) : [];
+    },
     mechanisms,
     presentation: { name: type },
   };
   return originalModule(
     definition,
     atlasVisual(definition, (context) => {
-      const mapping = mappings.find((candidate) =>
-        Object.entries(candidate.fields ?? {}).every(
-          ([key, value]) => context.entity.state?.[key] === value,
-        )
-      ) ?? mappings[0];
+      const mapping = resolveSurfaceMapping(mappings, context.entity.state);
       return mapping ? tsCoordinateCell(mapping.source) : null;
     }),
     behaviorBindings,
   );
+}
+
+function resolveSurfaceMapping(
+  mappings: readonly SurfaceSourceMapping[],
+  state: Readonly<Record<string, unknown>> | undefined,
+): SurfaceSourceMapping | undefined {
+  return mappings.find((candidate) =>
+    Object.entries(candidate.fields ?? {}).every(
+      ([key, value]) => state?.[key] === value,
+    )
+  ) ?? mappings[0];
 }

@@ -8,11 +8,11 @@ import { testFactRegistry } from "./support/testFactRegistry.mjs";
 function runtime(onEnter) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"] },
-    { type: "player", facts: ["player"] },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
     {
       type: "trigger",
-      facts: ["trigger"],
+      presenceFacts: ["trigger"],
       behaviors: ["trigger-enter"],
     },
   ]);

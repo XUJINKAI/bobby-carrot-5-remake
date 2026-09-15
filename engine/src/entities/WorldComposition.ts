@@ -1,7 +1,6 @@
 import type { LevelMap } from "@bobby/model";
 import { World, type WorldOptions } from "../world/World.js";
 import { bobbyActorPolicy } from "./player/BobbyActorPolicy.js";
-import { initializeOriginalLevelEntity } from "./original/initialize-level-entity.js";
 import { goalRegistry } from "./goals.js";
 import {
   behaviorRegistry,
@@ -23,8 +22,6 @@ export function composeWorldOptions(
     facts: options.facts ?? factRegistry,
     goals: options.goals ?? goalRegistry,
     actorPolicy: options.actorPolicy ?? bobbyActorPolicy,
-    initializeLevelEntity:
-      options.initializeLevelEntity ?? initializeOriginalLevelEntity,
     ...(options.motionDurationMs !== undefined
       ? { motionDurationMs: options.motionDurationMs }
       : {}),

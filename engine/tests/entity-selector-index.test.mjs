@@ -5,19 +5,23 @@ import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
 import { World } from "./support/World.mjs";
 import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
-test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后等价于全量查询", () => {
+test("语义索引在移动、方向、动态 Fact、生成、销毁和恢复后等价于全量查询", () => {
   const registry = new EntityRegistry();
   registry.registerAll([
-    { type: "actor", facts: ["player", "target"] },
-    { type: "target", facts: ["target"] },
+    { type: "actor", presenceFacts: ["player", "target"] },
+    { type: "target", presenceFacts: ["target"] },
     {
-      type: "long", facts: [],
+      type: "long",
+      presenceFacts: [],
+      resolveEntityFacts({ entity }) {
+        return entity.state?.instance === true ? ["instance"] : [];
+      },
       footprint: { byDirection: {
         right: [
-          { dx: 0, dy: 0, facts: ["target"] },
-          { dx: 1, dy: 0, facts: ["target"] },
+          { dx: 0, dy: 0, presenceFacts: ["target"] },
+          { dx: 1, dy: 0, presenceFacts: ["target"] },
         ],
-        down: [{ dx: 0, dy: 0, facts: ["other"] }],
+        down: [{ dx: 0, dy: 0, presenceFacts: ["other"] }],
       } },
     },
   ]);
@@ -46,7 +50,7 @@ test("语义索引在移动、方向、实例 Fact、生成、销毁和恢复后
   world.spatial.moveEntity(1, { x: 1, y: 0 });
   assert.deepEqual(world.query.entitiesWithFact("player").map((e) => e.id), [1, 2]);
   world.entities.require(4).direction = "down";
-  world.entities.require(4).instanceFacts = ["instance"];
+  world.entities.require(4).state = { instance: true };
   world.spatial.rebuildEntity(4);
   check();
   const spawned = world.entities.spawn({ type: "target", x: 7, y: 7 });

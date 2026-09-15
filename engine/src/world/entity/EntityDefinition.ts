@@ -40,7 +40,7 @@ export interface EntityFieldDefinition {
  */
 export interface EntityDefinition {
   type: EntityType;
-  facts: readonly FactId[];
+  presenceFacts: readonly FactId[];
   entityFacts?: readonly FactId[];
   resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
   resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];

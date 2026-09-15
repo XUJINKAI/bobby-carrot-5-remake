@@ -12,13 +12,18 @@ test("Fireball owns its obstacle policy instead of target-side projectile facts"
   const dragon = registry.require(MapEntityTypeId.DRAGON);
   const rock = registry.require(MapEntityTypeId.CRUMBLY_ROCK);
 
-  assert.equal(rock.facts.includes("dragon-fire-blocking"), false);
+  assert.equal(
+    rock.presenceFacts.includes("dragon-fire-blocking"),
+    false,
+  );
   for (const direction of ["left", "right"]) {
     assert.equal(
       resolveFootprintCells(
         { anchor: { x: 2, y: 0 }, direction },
         dragon.footprint,
-      ).some((part) => part.facts?.includes("dragon-fire-blocking")),
+      ).some((part) =>
+        part.presenceFacts?.includes("dragon-fire-blocking")
+      ),
       false,
     );
   }

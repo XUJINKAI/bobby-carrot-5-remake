@@ -103,7 +103,7 @@ const trackTimedChallenge: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
-  facts: ["blocking"],
+  presenceFacts: ["blocking"],
   properties: [
     {
       key: "requireKey",
@@ -130,7 +130,7 @@ export const lock: EntityModule = originalModule(
 export const timedChallenge: EntityModule = defineEntityModule({
   definition: {
     type: RuntimeEntityTypeId.TIMED_CHALLENGE,
-    facts: [],
+    presenceFacts: [],
     state: [
       { key: "opened", kind: "boolean", label: "已启动", default: true },
       {

@@ -13,34 +13,34 @@ function registry() {
   registry.registerAll([
     {
       type: "water",
-      facts: ["water"],
+      presenceFacts: ["water"],
       presentation: { name: "Water" },
     },
     {
       type: "coin",
-      facts: ["coin"],
+      presenceFacts: ["coin"],
       presentation: { name: "Coin" },
     },
     {
       type: "grass",
-      facts: ["mowable"],
+      presenceFacts: ["mowable"],
       presentation: { name: "Grass" },
     },
     {
       type: "dragon",
-      facts: ["dragon"],
+      presenceFacts: ["dragon"],
       footprint: {
         parts: [
-          { dx: 0, dy: 0, role: "head", facts: ["blocking"] },
-          { dx: 1, dy: 0, role: "body", facts: ["blocking"] },
-          { dx: 2, dy: 0, role: "tail", facts: ["dragon-trigger"] },
+          { dx: 0, dy: 0, role: "head", presenceFacts: ["blocking"] },
+          { dx: 1, dy: 0, role: "body", presenceFacts: ["blocking"] },
+          { dx: 2, dy: 0, role: "tail", presenceFacts: ["dragon-trigger"] },
         ],
       },
       presentation: { name: "Dragon" },
     },
     {
       type: "ice",
-      facts: ["frozen"],
+      presenceFacts: ["frozen"],
       presentation: { name: "Ice" },
     },
   ]);

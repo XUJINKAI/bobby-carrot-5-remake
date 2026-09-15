@@ -4,7 +4,7 @@ import { defineEntityModule, type EntityModule } from "../EntityModule.js";
 export const pushableBox: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PUSHABLE_BOX,
-    facts: ["blocking", "pushable"],
+    presenceFacts: ["blocking", "pushable"],
     presentation: { name: "Pushable Box" },
   },
   visual: {

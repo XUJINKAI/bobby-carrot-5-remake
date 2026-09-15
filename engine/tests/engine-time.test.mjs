@@ -10,19 +10,19 @@ test("World onTick receives the shared WorldTick", () => {
   entities.registerAll([
     {
       type: "floor",
-      facts: ["walkable"],
+      presenceFacts: ["walkable"],
       stackBand: "surface",
       presentation: { name: "Floor", category: "test" },
     },
     {
       type: "player",
-      facts: ["player"],
+      presenceFacts: ["player"],
       stackBand: "content",
       presentation: { name: "Player", category: "test" },
     },
     {
       type: "ticker",
-      facts: ["ticker"],
+      presenceFacts: ["ticker"],
       behaviors: ["capture-time"],
       stackBand: "content",
       presentation: { name: "Ticker", category: "test" },

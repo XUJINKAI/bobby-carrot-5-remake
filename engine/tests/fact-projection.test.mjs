@@ -12,7 +12,7 @@ import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("自定义 Entity 使用固定 Fact 校验路径", () => {
   const entities = new EntityRegistry();
-  entities.register({ type: "probe", facts: ["probe-active"] });
+  entities.register({ type: "probe", presenceFacts: ["probe-active"] });
   const level = {
     schemaVersion: 1,
     width: 1,
@@ -36,12 +36,12 @@ test("Entity Fact 与各 Presence Fact 独立投影并按 Entity 去重", () => 
   const entities = createBuiltinEntityRegistry();
   entities.register({
     type: "fact-probe",
-    facts: [],
+    presenceFacts: [],
     entityFacts: ["whole-target"],
     footprint: {
       parts: [
-        { dx: 0, dy: 0, role: "head", facts: ["blocking"] },
-        { dx: 1, dy: 0, role: "tail", facts: ["walkable"] },
+        { dx: 0, dy: 0, role: "head", presenceFacts: ["blocking"] },
+        { dx: 1, dy: 0, role: "tail", presenceFacts: ["walkable"] },
       ],
     },
     resolvePresenceFacts({ entity, presence }) {
@@ -101,10 +101,10 @@ test("WorldQuery 默认返回接触栈并显式提供完整空间栈", () => {
   facts.register({ id: "same-plane", description: "同层测试事实" });
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "lower", facts: ["lower"] },
-    { type: "cover", facts: ["contact-cover"] },
-    { type: "same-plane", facts: ["same-plane"] },
-    { type: "upper", facts: ["blocking"] },
+    { type: "lower", presenceFacts: ["lower"] },
+    { type: "cover", presenceFacts: ["contact-cover"] },
+    { type: "same-plane", presenceFacts: ["same-plane"] },
+    { type: "upper", presenceFacts: ["blocking"] },
   ]);
   const world = new World({
     schemaVersion: 1,
@@ -152,15 +152,12 @@ test("Egg 的阻挡 Fact 随 state 提交刷新", () => {
     value: MapEntityTypeId.EGG,
   })[0];
   assert.ok(egg);
-  assert.equal(egg.instanceFacts, undefined);
   assert.equal(world.query.entityHasFact(egg.id, "blocking"), false);
 
   const fill = new CommandQueue();
   fill.setState(egg.id, { filled: true });
   world.committer.commit(fill, { worldTick: null, worldTimeMs: 0 });
   assert.equal(world.query.entityHasFact(egg.id, "blocking"), true);
-  assert.equal(world.query.entity(egg.id)?.instanceFacts, undefined);
-
   const clear = new CommandQueue();
   clear.setState(egg.id, { filled: false });
   world.committer.commit(clear, { worldTick: null, worldTimeMs: 0 });

@@ -95,7 +95,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DRAGON,
-  facts: [],
+  presenceFacts: [],
   footprint: {
     byDirection: {
       left: [
@@ -103,19 +103,19 @@ const definition: EntityModuleDefinition = {
           dx: -1,
           dy: 0,
           role: "head",
-          facts: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          facts: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 1,
           dy: 0,
           role: "tail",
-          facts: ["walkable"],
+          presenceFacts: ["walkable"],
         },
       ],
       right: [
@@ -123,19 +123,19 @@ const definition: EntityModuleDefinition = {
           dx: 1,
           dy: 0,
           role: "head",
-          facts: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          facts: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: -1,
           dy: 0,
           role: "tail",
-          facts: ["walkable"],
+          presenceFacts: ["walkable"],
         },
       ],
     },

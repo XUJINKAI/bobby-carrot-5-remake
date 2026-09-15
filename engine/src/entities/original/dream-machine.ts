@@ -11,12 +11,12 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
-  facts: [],
+  presenceFacts: [],
   mechanisms: ["object-interaction", "dialog"],
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body", facts: ["blocking"] },
+      { dx: 0, dy: 0, role: "body", presenceFacts: ["blocking"] },
     ],
   },
   presentation: { name: "Dream Machine", renderPass: "standing" },

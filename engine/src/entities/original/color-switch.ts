@@ -12,7 +12,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.COLOR_SWITCH,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   state: [
     {
       key: "color",

@@ -62,7 +62,7 @@ export const BOBBY_VISUAL_ASSETS = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,
-  facts: ["player", "blocking"],
+  presenceFacts: ["player", "blocking"],
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",

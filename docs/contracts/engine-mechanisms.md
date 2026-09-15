@@ -180,12 +180,17 @@ interface PresenceFactContext extends EntityFactContext {
 interface EntityDefinition {
   entityFacts?: readonly FactId[];
   resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
-  facts: readonly FactId[];
+  presenceFacts: readonly FactId[];
   resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];
 }
 ```
 
-`entityFacts` 声明对象整体的静态事实；`facts` 声明每个 Presence 的静态事实，footprint part 还可声明自身的 `facts`。`EntityFactProjection` 合并静态值、实例值及 Resolver 结果，校验 ID 并去重。机制组合本身不会默认为 Entity 增加 Fact；需要向其它规则公开稳定语义时，由 Entity Definition 明确声明。
+`entityFacts` 声明对象整体的静态事实；`presenceFacts` 声明每个 Presence 的静态事实，
+footprint part 还可声明自身的 `presenceFacts`。`EntityFactProjection` 合并静态声明和
+Resolver 结果，校验 ID 并去重。实例字段需要影响 Fact 时，由 Definition 的 Resolver
+读取 Entity state 并投影；运行时实例不存在额外的 Fact 注入通道。原版 Surface 也遵守
+这个入口，由各自 Definition 根据语义 variant 投影 Presence Fact。
+机制组合本身不会默认为 Entity 增加 Fact；需要向其它规则公开稳定语义时，由 Entity Definition 明确声明。
 
 World composition 总是提供 `FactRegistry`：省略注入时使用内置词汇，显式注入时使用调用方词汇。Entity Registry 的选择不改变校验路径；自定义 Entity 产生的新 Fact 由其调用方在 Fact Registry 中声明。
 `SpatialIndex` 与 `EntityFactProjection` 都接收明确的 Fact Registry；Editor 预览使用内置词汇投影正式地图 Entity。可游玩性检查处理自定义 Entity Catalog 时，由调用方同时传入对应 Fact Registry。

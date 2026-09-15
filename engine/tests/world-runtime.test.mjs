@@ -10,22 +10,22 @@ const facts = testFactRegistry("goal", "mowable", "item");
 function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"] },
-    { type: "player", facts: ["player"] },
-    { type: "wall", facts: ["blocking"] },
-    { type: "box", facts: ["blocking", "pushable"] },
-    { type: "push-goal", facts: ["walkable"] },
-    { type: "exit", facts: ["walkable"] },
-    { type: "carrot", facts: [] },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
+    { type: "wall", presenceFacts: ["blocking"] },
+    { type: "box", presenceFacts: ["blocking", "pushable"] },
+    { type: "push-goal", presenceFacts: ["walkable"] },
+    { type: "exit", presenceFacts: ["walkable"] },
+    { type: "carrot", presenceFacts: [] },
     {
       type: "grass",
-      facts: ["blocking", "mowable"],
+      presenceFacts: ["blocking", "mowable"],
       behaviors: grassBehaviors,
     },
-    { type: "item", facts: ["item"] },
+    { type: "item", presenceFacts: ["item"] },
     {
       type: "long",
-      facts: [],
+      presenceFacts: [],
       footprint: {
         byDirection: {
           right: [

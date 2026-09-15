@@ -32,7 +32,7 @@ const fillEggOnLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.EGG,
-  facts: [],
+  presenceFacts: [],
   resolvePresenceFacts({ entity }) {
     return entity.state?.filled === true ? ["blocking"] : [];
   },

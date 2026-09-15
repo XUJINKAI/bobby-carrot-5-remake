@@ -21,14 +21,14 @@ function surface(
   type: EntityModuleDefinition["type"],
   name: string,
   atlas: ReturnType<typeof tileCell>,
-  facts: EntityModuleDefinition["facts"] = ["walkable"],
+  presenceFacts: EntityModuleDefinition["presenceFacts"] = ["walkable"],
   mechanisms: readonly string[] = [],
   behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return staticEntity(
     {
       type,
-      facts,
+      presenceFacts,
       mechanisms,
       presentation: { name },
     },
@@ -41,13 +41,13 @@ function content(
   type: EntityModuleDefinition["type"],
   name: string,
   atlas: ReturnType<typeof tileCell>,
-  facts: EntityModuleDefinition["facts"] = [],
+  presenceFacts: EntityModuleDefinition["presenceFacts"] = [],
   behaviorBindings: readonly EntityBehaviorBinding[] = [],
 ): EntityModule {
   return staticEntity(
     {
       type,
-      facts,
+      presenceFacts,
       presentation: { name },
     },
     atlas,
@@ -127,7 +127,7 @@ const beanstalkCoverFacts = ["climbable", "contact-cover", "walkable"] as const;
 
 const windmillDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WINDMILL,
-  facts: ["blocking"],
+  presenceFacts: ["blocking"],
   presentation: { name: "Windmill" },
 };
 

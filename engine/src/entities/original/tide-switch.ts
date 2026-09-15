@@ -13,7 +13,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE_SWITCH,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   state: pressedState,
   presentation: { name: "Tide Switch" },
 };

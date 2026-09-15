@@ -23,7 +23,7 @@ test("Fact resolver、Behavior 和 WorldQuery 无法修改已提交的 Entity �
   const entities = new EntityRegistry();
   entities.register({
     type: "probe",
-    facts: [],
+    presenceFacts: [],
     behaviors: ["probe"],
     resolvePresenceFacts({ entity }) {
       assert.equal(Reflect.set(entity.anchor, "x", 9), false);

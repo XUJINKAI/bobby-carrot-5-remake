@@ -23,7 +23,6 @@ export interface EntityVisualPreviewSource {
   type: EntityType;
   direction?: Direction;
   state?: EntityState;
-  instanceFacts?: readonly string[];
 }
 
 /** 省略持久化关卡所需坐标的扁平 canonical Map Entity。 */

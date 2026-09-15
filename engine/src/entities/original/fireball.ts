@@ -120,7 +120,7 @@ const fireballAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
-  facts: [],
+  presenceFacts: [],
   presentation: { name: "Dragon Fireball", renderPass: "effect" },
 };
 

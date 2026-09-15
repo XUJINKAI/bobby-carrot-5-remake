@@ -35,7 +35,7 @@ const collectCarrot: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CARROT,
-  facts: [],
+  presenceFacts: [],
   state: [{ key: "consumed", kind: "boolean", label: "已收集", default: false }],
   presentation: { name: "Carrot" },
 };

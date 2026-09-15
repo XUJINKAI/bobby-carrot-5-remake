@@ -10,7 +10,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.HIGH_GRASS,
-  facts: ["blocking", "contact-cover"],
+  presenceFacts: ["blocking", "contact-cover"],
   presentation: { name: "High Grass" },
 };
 

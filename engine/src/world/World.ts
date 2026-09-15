@@ -35,7 +35,6 @@ import type { EntityRegistry } from "./entity/EntityRegistry.js";
 import {
   EntityStore,
   type EntityStoreSnapshot,
-  type LevelEntityInitializer,
 } from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
@@ -92,7 +91,6 @@ export interface WorldOptions {
   facts: FactRegistry;
   goals: GoalRegistry;
   actorPolicy?: ActorPolicy;
-  initializeLevelEntity?: LevelEntityInitializer;
   /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
   motionDurationMs?: number;
 }
@@ -134,10 +132,7 @@ export class World {
     this.mechanisms = options.mechanisms;
     this.actions = new RuntimeActionScheduler(options.actions);
     this.actorPolicy = options.actorPolicy;
-    this.entities = new EntityStore(
-      level.entities,
-      options.initializeLevelEntity,
-    );
+    this.entities = new EntityStore(level.entities);
     this.spatial = new SpatialIndex(
       this.entities,
       this.registry,

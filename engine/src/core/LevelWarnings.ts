@@ -4,13 +4,13 @@ import type {
   WinCondition,
 } from "@bobby/model";
 import { levelEntityContractIssues, type GoalType } from "@bobby/model";
-import { initializeOriginalLevelEntity } from "../entities/original/initialize-level-entity.js";
 import { factRegistry } from "../entities/registry.js";
 import { goalRegistry } from "../entities/goals.js";
 import type { FactRegistry } from "../fact/FactRegistry.js";
 import type { EntityCatalog } from "../entities/EntityCatalog.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { EntityStore } from "../world/entity/EntityStore.js";
+import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
 import { WorldQueryApi } from "../world/behavior/WorldQueryApi.js";
 import { createGlobalState } from "../world/GlobalState.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
@@ -66,10 +66,7 @@ export function validateLevelPlayability(
   const projectable = known.filter(({ entity, definition }) =>
     hasProjectableFootprint(entity, definition, level)
   );
-  const store = new EntityStore(
-    projectable.map(({ entity }) => entity),
-    initializeOriginalLevelEntity,
-  );
+  const store = new EntityStore(projectable.map(({ entity }) => entity));
   const spatial = new SpatialIndex(
     store,
     catalog.entities,
@@ -103,7 +100,7 @@ function hasProjectableFootprint(
   level: LevelMap,
 ): boolean {
   try {
-    const instance = initializeOriginalLevelEntity(0, entity);
+    const instance = instantiateLevelEntity(0, entity);
     return resolveFootprintCells(
       instance,
       definition.footprint,

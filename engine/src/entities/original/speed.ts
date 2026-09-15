@@ -204,7 +204,7 @@ const speedRunAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   presentation: { name: "Speed" },
 };
 

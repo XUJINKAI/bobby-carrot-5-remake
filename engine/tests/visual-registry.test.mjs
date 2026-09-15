@@ -11,7 +11,7 @@ import { factRegistry } from "../dist/entities/registry.js";
 function definition(type, extra = {}) {
   return {
     type,
-    facts: [],
+    presenceFacts: [],
     ...extra,
   };
 }

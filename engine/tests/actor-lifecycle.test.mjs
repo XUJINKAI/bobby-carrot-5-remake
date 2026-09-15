@@ -7,8 +7,8 @@ import { World } from "./support/World.mjs";
 function twoPlayerWorld() {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", facts: ["walkable"] },
-    { type: "player", facts: ["player"] },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
   ]);
   const world = new World(
     {

@@ -11,6 +11,7 @@ import {
   builtinEditorDefinition,
   createBlankLevel,
   detectSurfaceTheme,
+  EditorPreview,
   fillSurface,
   isSurfaceEntityType,
   materializeSurfaceVariants,
@@ -247,6 +248,26 @@ test("Surface instances leave gameplay semantics to Engine definitions", () => {
   const entity = entityAt(next, 1, 1, (item) => item.type === "stone-wall");
   assert.equal(entity?.facts, undefined);
   assert.equal(entity?.variant, "ts-1-4");
+});
+
+test("Editor Preview uses the same Surface Presence Fact projection as runtime", () => {
+  const next = paintSurface(
+    catalog,
+    [{ x: 1, y: 1 }],
+    {
+      terrain: "water",
+      pattern: "exact",
+      exact: "ts-6-6",
+      seed: 1,
+    },
+  ).apply(createBlankLevel(4, 4));
+  const preview = new EditorPreview(next, catalog);
+  const water = preview.inspectCell(1, 1).presences.find(
+    (item) => item.entity.type === MapEntityTypeId.WATER,
+  );
+
+  assert.ok(water);
+  assert.deepEqual(water.presence.facts, ["water"]);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {

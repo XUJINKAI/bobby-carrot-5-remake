@@ -11,7 +11,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SANDMAN,
-  facts: ["blocking"],
+  presenceFacts: ["blocking"],
   mechanisms: ["object-interaction", "dialog"],
   footprint: {
     parts: [

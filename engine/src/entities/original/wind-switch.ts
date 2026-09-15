@@ -39,7 +39,7 @@ const toggleWindDirection: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.WIND_SWITCH,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   state: activeState(false),
   presentation: { name: "Wind Switch" },
 };

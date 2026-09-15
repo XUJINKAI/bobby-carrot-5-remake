@@ -31,9 +31,8 @@ interface InspectEntityRefs {
   entityId: EntityId;
   direction: ValueRef;
   visual: ValueRef;
-  facts: JsonDetailsRef;
+  presenceFacts: JsonDetailsRef;
   behaviors: JsonDetailsRef;
-  instanceFacts: JsonDetailsRef;
   state: JsonDetailsRef;
   footprint: JsonDetailsRef;
   presence: JsonDetailsRef;
@@ -415,9 +414,8 @@ export class DebugSidebar {
       entityId: entity.id,
       direction: this.valueRef("Direction"),
       visual: this.valueRef("Visual"),
-      facts: this.jsonDetails("Facts", true),
+      presenceFacts: this.jsonDetails("Presence facts", true),
       behaviors: this.jsonDetails("Behaviors", true),
-      instanceFacts: this.jsonDetails("Instance facts"),
       state: this.jsonDetails("State"),
       footprint: this.jsonDetails("Footprint"),
       presence: this.jsonDetails("Presence"),
@@ -428,9 +426,8 @@ export class DebugSidebar {
     body.append(
       refs.direction.root,
       refs.visual.root,
-      refs.facts.details,
+      refs.presenceFacts.details,
       refs.behaviors.details,
-      refs.instanceFacts.details,
       refs.state.details,
       refs.footprint.details,
       refs.presence.details,
@@ -448,9 +445,8 @@ export class DebugSidebar {
     if (!refs) return;
     this.setValue(refs.direction, entity.direction ?? "-");
     this.setValue(refs.visual, entity.visual.visualId);
-    this.setJson(refs.facts, entity.definition.facts);
+    this.setJson(refs.presenceFacts, entity.definition.presenceFacts);
     this.setJson(refs.behaviors, entity.behaviors);
-    this.setJson(refs.instanceFacts, entity.instanceFacts);
     this.setJson(refs.state, entity.state);
     this.setJson(refs.footprint, entity.definition.footprint);
     this.setJson(refs.presence, entity.presences);

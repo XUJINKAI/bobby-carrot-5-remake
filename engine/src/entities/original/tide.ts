@@ -13,7 +13,7 @@ import { waterPassage } from "./water-passage.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TIDE,
-  facts: ["water"],
+  presenceFacts: ["water"],
   presentation: { name: "Tide" },
 };
 

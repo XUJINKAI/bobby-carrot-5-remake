@@ -108,9 +108,8 @@ export interface DebugEntitySnapshot {
   inputBlocked: boolean;
   direction: string | null;
   state: unknown;
-  instanceFacts: readonly string[];
   definition: {
-    facts: readonly string[];
+    presenceFacts: readonly string[];
     footprint: unknown;
     propertyFields: unknown;
     stateFields: unknown;
@@ -314,9 +313,8 @@ function buildEntitySnapshot(
     inputBlocked: world.isInputBlockedFor(entity.id),
     direction: entity.direction ?? null,
     state: entity.state ? structuredClone(entity.state) : null,
-    instanceFacts: [...(entity.instanceFacts ?? [])],
     definition: {
-      facts: [...definition.facts],
+      presenceFacts: [...definition.presenceFacts],
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
       propertyFields: definition.properties ? structuredClone(definition.properties) : null,
       stateFields: definition.state ? structuredClone(definition.state) : null,

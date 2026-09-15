@@ -136,7 +136,9 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
   assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.entity?.direction, "right");
-  assert.ok(snapshot.selection?.entity?.definition.facts.includes("player"));
+  assert.ok(
+    snapshot.selection?.entity?.definition.presenceFacts.includes("player"),
+  );
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);

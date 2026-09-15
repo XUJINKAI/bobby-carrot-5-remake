@@ -55,7 +55,11 @@ function giveShovel(world) {
 test("canonical original obstacle semantics keep known blockers blocking", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of BLOCKING_TYPES) {
-    assert.equal(registry.require(type).facts.includes("blocking"), true, type);
+    assert.equal(
+      registry.require(type).presenceFacts.includes("blocking"),
+      true,
+      type,
+    );
   }
 });
 

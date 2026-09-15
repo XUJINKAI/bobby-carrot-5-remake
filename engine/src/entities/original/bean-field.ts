@@ -124,7 +124,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAN_FIELD,
-  facts: [],
+  presenceFacts: [],
   presentation: { name: "Bean Field" },
 };
 

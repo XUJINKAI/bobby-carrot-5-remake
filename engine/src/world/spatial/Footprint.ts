@@ -6,7 +6,7 @@ export interface FootprintPart {
   dx: number;
   dy: number;
   role?: string;
-  facts?: readonly FactId[];
+  presenceFacts?: readonly FactId[];
 }
 
 export interface FixedFootprint {
@@ -26,7 +26,7 @@ export interface FootprintEntity {
 
 export interface ResolvedFootprintCell extends CellPosition {
   role?: string;
-  facts?: readonly FactId[];
+  presenceFacts?: readonly FactId[];
 }
 
 export const SINGLE_CELL_FOOTPRINT: FixedFootprint = {
@@ -42,7 +42,9 @@ export function resolveFootprintCells(
     return {
       ...cell,
       ...(part.role ? { role: part.role } : {}),
-      ...(part.facts ? { facts: part.facts } : {}),
+      ...(part.presenceFacts
+        ? { presenceFacts: part.presenceFacts }
+        : {}),
     };
   });
 }

@@ -43,7 +43,7 @@ const portalBehavior: Behavior = {
 export const portal: EntityModule = defineEntityModule({
   definition: {
     type: MapEntityTypeId.PORTAL,
-    facts: [],
+    presenceFacts: [],
     properties: [
       {
         key: "channel",

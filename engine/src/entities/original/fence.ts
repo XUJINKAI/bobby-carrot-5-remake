@@ -10,7 +10,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.FENCE,
-  facts: ["blocking"],
+  presenceFacts: ["blocking"],
   state: [
     {
       key: "variant",

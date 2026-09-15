@@ -11,7 +11,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAVER,
-  facts: ["blocking"],
+  presenceFacts: ["blocking"],
   mechanisms: ["object-interaction", "dialog"],
   footprint: {
     parts: [

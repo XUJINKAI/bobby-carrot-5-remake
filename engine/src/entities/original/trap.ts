@@ -26,7 +26,7 @@ const armTrapAfterLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TRAP,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   state: activeState(true),
   presentation: { name: "Trap" },
 };

@@ -17,7 +17,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const behaviors = new BehaviorRegistry();
   behaviors.register(behavior);
   const entities = new EntityRegistry();
-  entities.register({ type: "goal", facts: [], behaviors: [behavior.id] });
+  entities.register({ type: "goal", presenceFacts: [], behaviors: [behavior.id] });
   const target = { id: 2, type: "goal", anchor: { x: 1, y: 0 } };
   const presence = {
     entityId: 2,

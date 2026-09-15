@@ -49,7 +49,7 @@ const carouselPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CAROUSEL,
-  facts: ["walkable"],
+  presenceFacts: ["walkable"],
   state: variantState([
     "right-top",
     "left-top",

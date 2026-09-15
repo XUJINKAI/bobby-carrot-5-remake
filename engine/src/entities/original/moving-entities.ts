@@ -183,7 +183,7 @@ export const leaf = movingEntityModule(
 
 const cloudDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD,
-  facts: [
+  presenceFacts: [
     "moving-platform",
     "walkable",
     "blocking",
@@ -213,7 +213,7 @@ export const cloud: EntityModule = originalModule(
 
 const cloudParkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD_PARKING,
-  facts: [],
+  presenceFacts: [],
   presentation: { name: "Cloud Parking" },
 };
 
@@ -233,7 +233,7 @@ function movingEntityModule(
 ): EntityModule {
   const definition: EntityModuleDefinition = {
     type,
-    facts: [
+    presenceFacts: [
       "moving-platform",
       "walkable",
       "blocking",
