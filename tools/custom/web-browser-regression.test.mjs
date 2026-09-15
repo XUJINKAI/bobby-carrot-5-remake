@@ -227,18 +227,34 @@ async function verifyGameplayDialog(cdp, url) {
   );
 
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const repeatedText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  );
+  if (repeatedText !== "你的金钥匙可以直接打开这把锁。")
+    throw new Error("按键重复改变了当前对白段落");
+
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     (await cdp.evaluate(
       sessionId,
-      `(() => {
-        const dialog = document.querySelector('.engine-gameplay-dialog');
-        const text = document.querySelector('.engine-gameplay-dialog-text');
-        return dialog && !dialog.hidden && text?.textContent === '一直按住方向键也会直接翻到下一句。';
-      })()`,
-    )) === true,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "向着海狸的方向按键可以继续交谈。",
   );
 
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const repeatedSecondText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  );
+  if (repeatedSecondText !== "向着海狸的方向按键可以继续交谈。")
+    throw new Error("按键重复结束了对白");
+
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -276,8 +292,16 @@ async function verifyGameplayDialog(cdp, url) {
       "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
     )) === "你的金钥匙可以直接打开这把锁。",
   );
-  await dispatchKey(cdp, sessionId, "keyDown", "Escape", 27);
-  await dispatchKey(cdp, sessionId, "keyUp", "Escape", 27);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowLeft", 37);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-gameplay-dialog')?.hidden",
+      ),
+    ),
+  );
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowLeft", 37);
   return sessionId;
 }
 
@@ -710,22 +734,24 @@ function dialogPayload() {
       author: "bc5r",
     },
     width: 2,
-    height: 2,
+    height: 3,
     rules: { win: { type: "exit" } },
     entities: [
       { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
-      { type: "start", x: 1, y: 1 },
-      { type: "bobby", x: 1, y: 1 },
+      { type: "grass", x: 0, y: 2, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 2, variant: "ts-10-1" },
+      { type: "start", x: 1, y: 2 },
+      { type: "bobby", x: 1, y: 2 },
       {
         type: "beaver",
         x: 1,
-        y: 0,
+        y: 1,
         dialogue: [
           "你的金钥匙可以直接打开这把锁。",
-          "一直按住方向键也会直接翻到下一句。",
+          "向着海狸的方向按键可以继续交谈。",
         ],
       },
       { type: "exit", x: 0, y: 0 },

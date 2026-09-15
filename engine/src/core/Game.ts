@@ -46,6 +46,7 @@ import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
 import type { GameOptions } from "./GameOptions.js";
 import { GameDebugControls } from "./GameDebugControls.js";
+import { GameDialogueInput } from "./GameDialogueInput.js";
 import { GamePresentation } from "./GamePresentation.js";
 import { GameplaySession, type GameplayTickInput, type GameplayTickResult } from "./GameplaySession.js";
 import { prepareRuntimeLevel } from "./RuntimeLevel.js";
@@ -87,6 +88,7 @@ export class Game {
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
   private readonly queuedIntentGroups: WorldIntentGroup[] = [];
+  private readonly dialogueInput = new GameDialogueInput();
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
   private hostGameplayPaused = false;
@@ -146,6 +148,10 @@ export class Game {
           {
             acquireBlock: () => this.acquireDialogueBlock(),
             now: runtimeNow,
+            directionForDialogue: (request) =>
+              this.dialogueInput.directionFor(this.worldValue, request),
+            moveFromDialogue: (actorId, direction) =>
+              this.queueDialogueMove(actorId, direction),
           },
           dialog === true ? {} : dialog,
         );
@@ -296,6 +302,7 @@ export class Game {
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
+    this.dialogueInput.clear();
     this.presentation.resetLevelView();
     this.debugControls.resetSession();
     this.lastMove = null;
@@ -418,6 +425,7 @@ export class Game {
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
+    this.dialogueInput.clear();
     if (resetCamera) this.presentation.resetLevelView();
     else this.presentation.resetMotion();
     this.beginLevelPresentation();
@@ -636,6 +644,7 @@ export class Game {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
     const groups = this.queuedIntentGroups.splice(0);
+    groups.push(...this.dialogueInput.ready(this.world));
     const moves = [...queued, ...sampled];
     const debugActorId = this.debugControls.externalActorId;
     const debugActorMoves = debugActorId === null
@@ -840,6 +849,11 @@ export class Game {
         this.presentation.shake(248, 42);
       },
     );
+  }
+
+  private queueDialogueMove(actorId: EntityId, direction: Direction): void {
+    if (this.replayPlayback.playing) return;
+    this.dialogueInput.queue(this.worldValue, actorId, direction);
   }
 
   private acquireDialogueBlock(): { release(): void } {

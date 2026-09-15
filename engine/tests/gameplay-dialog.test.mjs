@@ -12,16 +12,35 @@ test("GameplayDialogView 左右选择在任意数量选项间循环", () => {
   assert.equal(cycleOptionIndex(2, 0, 1), -1);
 });
 
-test("无选项对白由任意方向键推进，同一次持续按键也可翻页", () => {
-  for (const key of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"])
-    assert.equal(resolveGameplayDialogKeyAction(key, 0, false, false), "advance");
+test("实体对白按接触方向翻页，其他方向结束并移动", () => {
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, false, true),
+    resolveGameplayDialogKeyAction("ArrowUp", 0, false, false, "up"),
     "advance",
   );
+  for (const key of ["ArrowDown", "ArrowLeft", "ArrowRight"])
+    assert.equal(
+      resolveGameplayDialogKeyAction(key, 0, false, false, "up"),
+      "move",
+    );
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, true, false),
+    resolveGameplayDialogKeyAction("ArrowUp", 0, false, true, "up"),
+    "ignore",
+  );
+  assert.equal(
+    resolveGameplayDialogKeyAction("ArrowUp", 0, true, false, "up"),
+    "ignore",
+  );
+  assert.equal(
+    resolveGameplayDialogKeyAction("ArrowLeft", 0, true, false, "up"),
+    "move",
+  );
+  assert.equal(
+    resolveGameplayDialogKeyAction("Enter", 0, true, false, "up"),
     "finish-typing",
+  );
+  assert.equal(
+    resolveGameplayDialogKeyAction("ArrowUp", 0, false, false),
+    "ignore",
   );
   assert.equal(
     resolveGameplayDialogKeyAction("ArrowUp", 2, false, false),

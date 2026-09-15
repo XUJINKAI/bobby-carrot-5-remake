@@ -23,12 +23,13 @@ function fixture() {
   let releases = 0;
   const pending = [];
   const calls = [];
+  const moves = [];
   const view = {
     show(message) {
       return this.showSequence([message]);
     },
-    showSequence(messages) {
-      calls.push({ type: "sequence", messages: [...messages] });
+    showSequence(messages, direction) {
+      calls.push({ type: "sequence", messages: [...messages], direction });
       return new Promise((resolve) => pending.push(resolve));
     },
     present(presentation) {
@@ -55,10 +56,15 @@ function fixture() {
       };
     },
     now: () => now,
+    directionForDialogue: () => "up",
+    moveFromDialogue: (actorId, direction) => {
+      moves.push({ actorId, direction });
+    },
   });
   return {
     controller,
     calls,
+    moves,
     pending,
     counts: () => ({ blocks, releases }),
     setNow: (value) => {
@@ -79,12 +85,23 @@ test("Entity dialogue 把完整段落交给同一个 View 生命周期", async (
   assert.deepEqual(f.calls, [{
     type: "sequence",
     messages: ["第一句", "第二句"],
+    direction: "up",
   }]);
   assert.deepEqual(f.counts(), { blocks: 1, releases: 0 });
 
   f.pending.shift()(DISMISSED);
   await settle();
   assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+});
+
+test("实体对白关闭后解除输入门禁并提交发起者的移动", async () => {
+  const f = fixture();
+  f.controller.handleEntityDialogue(request(7, 9));
+  f.pending.shift()({ type: "move", direction: "left" });
+  await settle();
+
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+  assert.deepEqual(f.moves, [{ actorId: 7, direction: "left" }]);
 });
 
 test("Entity dialogue 按 actor/entity 隔离 pending 与 500ms 冷却", async () => {

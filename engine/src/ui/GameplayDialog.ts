@@ -1,3 +1,4 @@
+import type { Direction } from "@bobby/model";
 import { resolveGameplayMount } from "./gameplayMount.js";
 
 export interface GameplayDialogViewOptions {
@@ -17,14 +18,19 @@ export interface GameplayDialogPresentation {
   options: readonly [GameplayDialogOption, ...GameplayDialogOption[]];
 }
 
-export type GameplayDialogResult =
+export type GameplayDialogOptionResult =
   | { type: "selected"; optionId: string }
   | { type: "dismissed" };
+
+export type GameplayDialogResult =
+  | GameplayDialogOptionResult
+  | { type: "move"; direction: Direction };
 
 export type GameplayDialogKeyAction =
   | "ignore"
   | "finish-typing"
   | "advance"
+  | "move"
   | "dismiss"
   | "previous"
   | "next"
@@ -46,6 +52,7 @@ export class GameplayDialogView {
   private selectedOptionIndex = -1;
   private passiveMessages: string[] = [];
   private passiveMessageIndex = -1;
+  private passiveDirection: Direction | null = null;
   private typingTimer: number | null = null;
   private typingCharacters: string[] = [];
   private typingIndex = 0;
@@ -128,13 +135,17 @@ export class GameplayDialogView {
   }
 
   /** 在同一 View 生命周期内逐段展示文本，不在段落之间隐藏对话框。 */
-  showSequence(messages: readonly string[]): Promise<GameplayDialogResult> {
+  showSequence(
+    messages: readonly string[],
+    direction: Direction | null = null,
+  ): Promise<GameplayDialogResult> {
     if (messages.length === 0)
       throw new Error("GameplayDialogView.showSequence() 至少需要一段文本");
     this.settlePresentation({ type: "dismissed" });
     this.prepareView();
     this.passiveMessages = [...messages];
     this.passiveMessageIndex = 0;
+    this.passiveDirection = direction;
     this.root.hidden = false;
     this.typeMessage(this.passiveMessages[0]!);
     return new Promise((resolve) => {
@@ -207,6 +218,7 @@ export class GameplayDialogView {
     this.selectedOptionIndex = -1;
     this.passiveMessages = [];
     this.passiveMessageIndex = -1;
+    this.passiveDirection = null;
   }
 
   private prepareInteractiveView(
@@ -337,6 +349,7 @@ export class GameplayDialogView {
       this.optionIds.length,
       this.typingTimer !== null,
       event.repeat,
+      this.passiveDirection,
     );
     if (action === "ignore") return;
     event.preventDefault();
@@ -351,6 +364,12 @@ export class GameplayDialogView {
     }
     if (action === "advance") {
       this.advancePassiveMessage();
+      return;
+    }
+    if (action === "move") {
+      const direction = directionForArrowKey(event.key);
+      if (direction)
+        this.settlePresentation({ type: "move", direction });
       return;
     }
     if (action === "previous") this.selectRelative(-1);
@@ -386,26 +405,34 @@ export function cycleOptionIndex(
   return ((current + offset) % count + count) % count;
 }
 
-/** 纯按键决策；普通对白允许按键重复在同一窗口中逐段推进。 */
+/** 普通对白的方向键按接触方向裁决；持续按键只触发一次。 */
 export function resolveGameplayDialogKeyAction(
   key: string,
   optionCount: number,
   typing: boolean,
   repeat: boolean,
+  dialogueDirection: Direction | null = null,
 ): GameplayDialogKeyAction {
   if (key === "Escape") return "dismiss";
   if (optionCount === 0) {
-    if (
-      !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(
-        key,
-      )
-    )
-      return "ignore";
-    return typing ? "finish-typing" : "advance";
+    if (repeat) return "ignore";
+    if (key === "Enter") return typing ? "finish-typing" : "advance";
+    const direction = directionForArrowKey(key);
+    if (!direction || !dialogueDirection) return "ignore";
+    if (direction !== dialogueDirection) return "move";
+    return typing ? "ignore" : "advance";
   }
   if (!["ArrowLeft", "ArrowRight", "Enter"].includes(key)) return "ignore";
   if (typing) return key === "Enter" && !repeat ? "finish-typing" : "ignore";
   if (key === "ArrowLeft") return "previous";
   if (key === "ArrowRight") return "next";
   return repeat ? "ignore" : "select";
+}
+
+function directionForArrowKey(key: string): Direction | null {
+  if (key === "ArrowUp") return "up";
+  if (key === "ArrowDown") return "down";
+  if (key === "ArrowLeft") return "left";
+  if (key === "ArrowRight") return "right";
+  return null;
 }

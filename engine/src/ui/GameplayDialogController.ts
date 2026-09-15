@@ -1,6 +1,8 @@
+import type { Direction } from "@bobby/model";
 import type { DialogueRequestEvent } from "../world/WorldTypes.js";
 import {
   GameplayDialogView,
+  type GameplayDialogOptionResult,
   type GameplayDialogPresentation,
   type GameplayDialogResult,
   type GameplayDialogViewOptions,
@@ -21,11 +23,16 @@ interface GameplayDialogBlockLease {
 export interface GameplayDialogControllerHost {
   acquireBlock(reason: "dialogue"): GameplayDialogBlockLease;
   now(): number;
+  directionForDialogue(request: DialogueRequestEvent): Direction | null;
+  moveFromDialogue(actorId: number, direction: Direction): void;
 }
 
 interface GameplayDialogSurface {
   show(message: string): Promise<GameplayDialogResult>;
-  showSequence(messages: readonly string[]): Promise<GameplayDialogResult>;
+  showSequence(
+    messages: readonly string[],
+    direction?: Direction | null,
+  ): Promise<GameplayDialogResult>;
   present(
     presentation: GameplayDialogPresentation,
   ): Promise<GameplayDialogResult>;
@@ -74,14 +81,16 @@ export class GameplayDialogController {
     );
   }
 
-  show(message: string): Promise<GameplayDialogResult> {
-    return this.enqueue(() => this.view.show(message));
+  show(message: string): Promise<GameplayDialogOptionResult> {
+    return this.enqueue(() => this.view.show(message))
+      .then(expectOptionResult);
   }
 
   present(
     presentation: GameplayDialogPresentation,
-  ): Promise<GameplayDialogResult> {
-    return this.enqueue(() => this.view.present(presentation));
+  ): Promise<GameplayDialogOptionResult> {
+    return this.enqueue(() => this.view.present(presentation))
+      .then(expectOptionResult);
   }
 
   /** World 的私有 dialogue request 入口；同一 actor/entity 在冷却或队列中时直接消费。 */
@@ -98,9 +107,12 @@ export class GameplayDialogController {
 
     this.pendingEntities.add(key);
     const generation = this.generation;
-    void this.enqueue(() => this.view.showSequence(request.lines))
-      .then(() => {
+    const direction = this.host.directionForDialogue(request);
+    void this.enqueue(() => this.view.showSequence(request.lines, direction))
+      .then((result) => {
         if (this.destroyed || generation !== this.generation) return;
+        if (result.type === "move")
+          this.host.moveFromDialogue(request.actorId, result.direction);
         this.entityCooldowns.set(
           key,
           this.host.now() + this.repeatCooldownMs,
@@ -181,4 +193,12 @@ function resolveRepeatCooldown(value: number | undefined): number {
 
 function entityDialogueKey(actorId: number, entityId: number): string {
   return `${actorId}:${entityId}`;
+}
+
+function expectOptionResult(
+  result: GameplayDialogResult,
+): GameplayDialogOptionResult {
+  if (result.type === "move")
+    throw new Error("选项与通用提示对话不能返回 Entity 方向移动");
+  return result;
 }

@@ -544,6 +544,9 @@ game.onInteractionRequest((request) => {
 不会把该请求发布给宿主。`dialogue` 可以是字符串或字符串数组；数组从第一段开始在同一个
 对话框内依次翻页，每个元素可以包含换行。关闭最后一段后，同一 `(actorId, entityId)` 在
 500ms 内不会重复打开。World 本身仍不持有 DOM、Promise、暂停或输入状态。
+Entity 字面对白以 Bobby 到接触 Body 格的方向作为翻页方向：该方向键在当前段完整显示后
+进入下一段，其他方向键立即关闭对话并在下一次 gameplay tick 让发起对话的 Bobby 向按键
+方向移动。持续按键不会连续翻页；Enter 和点击仍可完成逐字展示与翻页。
 
 需要宿主条件、分支、购买或存档的 Entity 不得配置 `dialogue`；它只产生
 `object-interaction`，由宿主决定是否以及如何调用 Controller。

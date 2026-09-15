@@ -243,7 +243,7 @@ test("GameplayDialogView 只渲染逐字文本与通用选项输入", () => {
   assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
   assert.match(
     source,
-    /"ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"/,
+    /directionForArrowKey\(event\.key\)/,
   );
   assert.match(source, /GameplayDialogView\.present\(\) 至少需要一个选项/);
   assert.doesNotMatch(source, /import type \{ Game \}/);
