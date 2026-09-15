@@ -5,6 +5,7 @@ import {
   surfaceTerrain,
   surfaceVariantPreset,
   type EditorDefinition,
+  type EngineEnvironment,
   type SurfaceBrush,
   type SurfacePattern,
   type SurfaceTerrainDefinition,
@@ -24,6 +25,7 @@ const props = defineProps<{
   currentTheme: SurfaceTheme;
   size: number;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
@@ -134,7 +136,7 @@ function variantTooltip(
               :source="surfaceVariantPreset(type)"
               :cell-size="23"
               :images="images"
-              :catalog="catalog"
+              :environment="environment"
               :editor="editor"
               fallback-text=""
             />
@@ -188,7 +190,7 @@ function variantTooltip(
               :source="surfaceVariantPreset(surfaceTerrain(terrainId).primary)"
               :cell-size="size"
               :images="images"
-              :catalog="catalog"
+              :environment="environment"
               :editor="editor"
               fallback-text=""
             />
@@ -259,7 +261,7 @@ function variantTooltip(
             :source="surfaceVariantPreset(variant.type)"
             :cell-size="size"
             :images="images"
-            :catalog="catalog"
+            :environment="environment"
             :editor="editor"
             fallback-text=""
           />

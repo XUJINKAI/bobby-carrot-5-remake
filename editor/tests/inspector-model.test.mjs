@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   EditorPreview,
   buildInspectorModel,
@@ -11,7 +11,8 @@ import {
   reorderEntityStack,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("单格 Inspector 按视觉堆叠顺序由上到下显示所有层", () => {
   const level = createBlankLevel(8, 8);
@@ -28,7 +29,7 @@ test("单格 Inspector 按视觉堆叠顺序由上到下显示所有层", () => 
   );
   const model = buildInspectorModel(
     level,
-    catalog,
+    environment,
     { anchor: { x: 3, y: 3 }, focus: { x: 3, y: 3 } },
     builtinEditorDefinition,
   );
@@ -44,7 +45,7 @@ test("Palette Brush Inspector 显示鼠标格子的放置后堆叠", () => {
   level.entities.push({ type: MapEntityTypeId.CARROT, x: 3, y: 3 });
   const preview = buildPlacementInspectorPreview(
     level,
-    catalog,
+    environment,
     { type: MapEntityTypeId.LOCK },
     { x: 3, y: 3 },
     builtinEditorDefinition,
@@ -65,7 +66,7 @@ test("Palette Brush Inspector 应用 stackSlot 替换并显示堆叠警告", () 
   );
   const preview = buildPlacementInspectorPreview(
     level,
-    catalog,
+    environment,
     { type: MapEntityTypeId.EGG },
     { x: 3, y: 3 },
     builtinEditorDefinition,
@@ -99,7 +100,7 @@ test("单格 Inspector 显示鼠标所在多格 Presence 的 role", () => {
   });
   const model = buildInspectorModel(
     level,
-    catalog,
+    environment,
     { anchor: { x: 2, y: 3 }, focus: { x: 2, y: 3 } },
     builtinEditorDefinition,
   );
@@ -117,7 +118,7 @@ test("多格 Inspector 聚合同类素材并优先排列可编辑组", () => {
   );
   const model = buildInspectorModel(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 2 } },
     builtinEditorDefinition,
   );
@@ -150,7 +151,7 @@ test("Inspector 直接使用 canonical Entity Definition", () => {
 
   const cell = buildInspectorModel(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );
@@ -159,7 +160,7 @@ test("Inspector 直接使用 canonical Entity Definition", () => {
 
   const multi = buildInspectorModel(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 3, y: 1 } },
     builtinEditorDefinition,
   );
@@ -199,7 +200,7 @@ test("调整单格堆叠顺序会改变 Spatial 顶层 Presence", () => {
     { index: portalIndex },
     { index: carrotIndex },
   ]).apply(level);
-  const preview = new EditorPreview(reordered, catalog);
+  const preview = new EditorPreview(reordered, environment);
   assert.equal(preview.inspectCell(3, 3).top?.entity.type, MapEntityTypeId.PORTAL);
   assert.deepEqual(
     [

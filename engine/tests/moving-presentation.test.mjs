@@ -4,8 +4,8 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import {
   LEAF_SUPPORT_HEIGHT_PX,
 } from "../dist/entities/original/moving-entities.js";
@@ -14,6 +14,8 @@ import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "./support/World.mjs";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function motion(id, entityId, cause, durationMs, options = {}) {
   const from = options.from ?? { x: 0, y: 0 };

@@ -1,4 +1,10 @@
 export { Game } from "./core/Game.js";
+export {
+  builtinEngineEnvironment,
+  createEngineEnvironment,
+  type EngineEnvironment,
+  type EngineEnvironmentOptions,
+} from "./environment/EngineEnvironment.js";
 export type {
   GameOptions,
   GameRuntimeOptions,
@@ -268,8 +274,6 @@ export {
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  entityCatalog,
-  visualRegistry,
 } from "./entities/registry.js";
 export { VisualRegistry } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";

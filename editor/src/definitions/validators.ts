@@ -6,8 +6,9 @@ import type { EditorMapValidator } from "./types.js";
 
 export const registeredEntityTypesValidator: EditorMapValidator = ({
   map,
-  catalog,
+  environment,
 }) => {
+  const catalog = environment.catalog;
   const issues: LevelValidationIssue[] = [];
   map.entities.forEach((entity, index) => {
     if (catalog.has(entity.type)) return;
@@ -31,12 +32,12 @@ export const requiredEntityFieldsValidator: EditorMapValidator = ({ map }) => {
   return issues;
 };
 
-export const playerPresenceValidator: EditorMapValidator = ({ map, catalog }) =>
-  validateLevelPlayability(map, catalog)
+export const playerPresenceValidator: EditorMapValidator = ({ map, environment }) =>
+  validateLevelPlayability(map, environment)
     .filter((warning) => warning.code === "missing-player")
     .map((warning) => ({ level: "warning" as const, message: warning.message }));
 
-export const reachTargetValidator: EditorMapValidator = ({ map, catalog }) =>
-  validateLevelPlayability(map, catalog)
+export const reachTargetValidator: EditorMapValidator = ({ map, environment }) =>
+  validateLevelPlayability(map, environment)
     .filter((warning) => warning.code === "missing-goal-target")
     .map((warning) => ({ level: "warning" as const, message: warning.message }));

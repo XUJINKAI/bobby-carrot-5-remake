@@ -1,5 +1,5 @@
 import type {
-  EntityCatalog,
+  EngineEnvironment,
   VisualDefinition,
 } from "@bobby/engine";
 import type {
@@ -138,7 +138,7 @@ export interface EditorDeletionDefinition {
 
 export interface EditorValidationContext {
   map: Readonly<EditorMap>;
-  catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }
 

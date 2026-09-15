@@ -9,6 +9,7 @@ import {
   type EditorDefinition,
   type EditorEntityDefinition,
   type EditorEntityVariant,
+  type EngineEnvironment,
   type EditorPlacementPreset,
   type EntityCatalog,
   type EntityCatalogEntry,
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<{
   definition: EntityCatalogEntry;
   entityPolicy?: EditorEntityDefinition | undefined;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
   showMapFields?: boolean;
@@ -248,7 +250,7 @@ function colorInputValue(
             :source="variantSource(entry.index)"
             :cell-size="28"
             :images="images"
-            :catalog="catalog"
+          :environment="environment"
             :editor="editor"
             :fallback-text="variantDirection(entry.variant)"
           />
@@ -273,7 +275,7 @@ function colorInputValue(
             :source="variantSource(entry.index)"
             :cell-size="28"
             :images="images"
-            :catalog="catalog"
+          :environment="environment"
             :editor="editor"
             fallback-icon="shape"
           />
@@ -302,7 +304,7 @@ function colorInputValue(
             :source="surfaceVariantSource(variant)"
             :cell-size="32"
             :images="images"
-            :catalog="catalog"
+          :environment="environment"
             :editor="editor"
             fallback-text=""
           />

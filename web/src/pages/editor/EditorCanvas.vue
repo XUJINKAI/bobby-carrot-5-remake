@@ -12,6 +12,7 @@ import {
   type EditorResizeResult,
   type EditorSelection,
   type EditorTool,
+  type EngineEnvironment,
   type EntityCatalog,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
@@ -26,6 +27,7 @@ const props = defineProps<{
   hover: Cell | null;
   enabled: boolean;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
 }>();
 const emit = defineEmits<{
@@ -168,8 +170,7 @@ onMounted(async () => {
   renderer = new EditorCanvasRenderer(
     canvas.value,
     props.images,
-    props.catalog,
-    undefined,
+    props.environment,
     undefined,
     interactionCanvas.value,
   );

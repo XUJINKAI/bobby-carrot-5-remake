@@ -113,7 +113,7 @@ flowchart LR
 
 World 承载、查询和传递 Fact，但只解释其运行协议明确列出的 kernel Fact。`player` 供 ActorLifecycle 识别当前 actor，`contact-cover` 定义格子接触栈的裁剪边界。`walkable`、`blocking` 由 Passage Mechanism 解释，`pushable` 由 Push Mechanism 解释；普通 gameplay Fact 的语义归消费它的 Mechanism。World 接收 Mechanism 与 Entity Behavior 的提案，负责边界、busy、目的格预留、多人冲突、移动参与者一致性、权威 `MoveResult` 和原子提交。
 
-Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专属 Behavior 可以理解具体对象类型；通用 Mechanism 不以具体 Entity Type 判断它是否适用。World 核心只依赖通用 Entity ID、状态和 Presence 协议，不导入具体对象实现。Engine 的组合入口装配内置 Registry 与 Bobby Actor Policy；公开的 `Game.loadLevel(LevelMap)` 使用方式保持简单。
+Mechanism 通过 World 的只读查询与提案/命令协议工作。Entity 专属 Behavior 可以理解具体对象类型；通用 Mechanism 不以具体 Entity Type 判断它是否适用。World 核心只依赖通用 Entity ID、状态和 Presence 协议，不导入具体对象实现。`EngineEnvironment` 一次性组合 Entity Catalog、各类 Registry 与 Actor Policy；公开的 `Game.loadLevel(LevelMap)` 使用方式保持简单。
 
 源码依赖目标：
 
@@ -122,7 +122,7 @@ World 定义协议与执行器
 Fact 定义独立的共享语义标识与注册表
 Mechanism 依赖 World 协议，实现通用策略
 Entity 依赖 World 协议、Fact 与 Mechanism 定义，组合对象规则
-Engine 组合入口装配内置 Registry，再创建 World
+EngineEnvironment 组合全部 Registry，Session 再创建 World
 Presentation 只读 World 事实、WorldDelta 与对象视觉定义
 ```
 
@@ -192,8 +192,8 @@ Resolver 结果，校验 ID 并去重。实例字段需要影响 Fact 时，由 
 这个入口，由各自 Definition 根据语义 variant 投影 Presence Fact。
 机制组合本身不会默认为 Entity 增加 Fact；需要向其它规则公开稳定语义时，由 Entity Definition 明确声明。
 
-World composition 总是提供 `FactRegistry`：省略注入时使用内置词汇，显式注入时使用调用方词汇。Entity Registry 的选择不改变校验路径；自定义 Entity 产生的新 Fact 由其调用方在 Fact Registry 中声明。
-`SpatialIndex` 与 `EntityFactProjection` 都接收明确的 Fact Registry；Editor 预览使用内置词汇投影正式地图 Entity。可游玩性检查处理自定义 Entity Catalog 时，由调用方同时传入对应 Fact Registry。
+World composition 总是从同一份 `EngineEnvironment` 获得 `EntityRegistry` 与 `FactRegistry`。自定义 Entity 产生的新 Fact 由调用方在自定义环境的 Fact Registry 中声明；创建环境时会立即校验 Entity 静态声明引用的 Fact、Mechanism 与 Behavior。
+`SpatialIndex` 与 `EntityFactProjection` 都接收环境中的 Fact Registry；Runtime、Replay、可游玩性校验与 Editor 预览共享同一个环境，不允许只替换 Catalog、却在下游悄悄退回内置 Fact 或 Visual Registry。
 
 ### Presence 与 Entity 查询
 

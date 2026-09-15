@@ -7,8 +7,10 @@ import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 const EXPECTED = new Map([
   [48, { column: 9, row: 15 }],

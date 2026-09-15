@@ -9,7 +9,7 @@ import {
   buildPlacementInspectorPreview,
   builtinEditorDefinition,
   copyEntitySelection,
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   cycleEntityVariant,
   cyclePlacementVariant,
   defaultSurfaceBrush,
@@ -83,7 +83,8 @@ import {
 export type EditorLeftPanel = "palette" | "surface";
 
 export function useEditorPage(initialLevel: EditorMap) {
-  const catalog = createBuiltinEntityCatalog();
+  const environment = builtinEngineEnvironment;
+  const catalog = environment.catalog;
   const editor = builtinEditorDefinition;
   const palette = resolveEditorPalette(catalog, editor);
   const first = palette.flatMap((group) => group.rows.flat())[0];
@@ -110,14 +111,14 @@ export function useEditorPage(initialLevel: EditorMap) {
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
     storeEditorAutosave(next.level as EditorMap);
-    const detected = ruleDetector.detect(next.level as EditorMap, catalog);
+    const detected = ruleDetector.detect(next.level as EditorMap, environment);
     if (detected.length > 0)
-      document.execute(enableEditorRules(catalog, detected));
+      document.execute(enableEditorRules(environment, detected));
   });
   onUnmounted(unsubscribe);
 
   const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
-  const preview = (): EditorPreview => new EditorPreview(currentLevel(), catalog);
+  const preview = (): EditorPreview => new EditorPreview(currentLevel(), environment);
   const tool = computed<EditorTool>(() =>
     leftPanel.value === "surface"
       ? surfaceTool.value === "rect"
@@ -131,20 +132,20 @@ export function useEditorPage(initialLevel: EditorMap) {
       : [],
   );
   const inspector = computed(() =>
-    buildInspectorModel(currentLevel(), catalog, mapSelection.value, editor),
+    buildInspectorModel(currentLevel(), environment, mapSelection.value, editor),
   );
   const hoverInspector = computed(() => {
     if (
       leftPanel.value !== "palette" ||
       paletteTool.value !== "erase"
     )
-      return buildInspectorModel(currentLevel(), catalog, null, editor);
+      return buildInspectorModel(currentLevel(), environment, null, editor);
     const cell = hover.value;
     if (!cell)
-      return buildInspectorModel(currentLevel(), catalog, null, editor);
+      return buildInspectorModel(currentLevel(), environment, null, editor);
     return buildInspectorModel(
       currentLevel(),
-      catalog,
+      environment,
       { anchor: cell, focus: cell },
       editor,
     );
@@ -152,7 +153,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   const placementInspectorPreview = computed<PlacementInspectorPreviewModel>(
     () => buildPlacementInspectorPreview(
       currentLevel(),
-      catalog,
+      environment,
       placement.value,
       leftPanel.value === "palette" && paletteTool.value === "place"
         ? hover.value
@@ -168,9 +169,9 @@ export function useEditorPage(initialLevel: EditorMap) {
       return null;
     const cell = hover.value;
     if (!cell) return null;
-    return resolveDeletionTarget(currentLevel(), catalog, cell, editor)?.index ?? null;
+    return resolveDeletionTarget(currentLevel(), environment, cell, editor)?.index ?? null;
   });
-  const rules = computed(() => inspectEditorRules(currentLevel(), catalog));
+  const rules = computed(() => inspectEditorRules(currentLevel(), environment));
   const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
   function setTool(next: EditorTool): void {
@@ -299,7 +300,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function surfacePrimaryStart(cell: Cell): void {
     if (surfaceTool.value === "fill") {
-      document.execute(fillSurface(catalog, currentLevel(), cell, surfaceBrush.value));
+      document.execute(fillSurface(environment, currentLevel(), cell, surfaceBrush.value));
       return;
     }
     if (surfaceTool.value === "rect") {
@@ -308,7 +309,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     }
     document.beginTransaction();
     transactionActive = true;
-    document.execute(paintSurface(catalog, [cell], surfaceBrush.value));
+    document.execute(paintSurface(environment, [cell], surfaceBrush.value));
   }
 
   function surfacePrimaryMove(cell: Cell): void {
@@ -318,7 +319,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       return;
     }
     if (surfaceTool.value === "brush" && transactionActive)
-      document.execute(paintSurface(catalog, [cell], surfaceBrush.value));
+      document.execute(paintSurface(environment, [cell], surfaceBrush.value));
   }
 
   function fillSelectionWithBrush(cell: Cell): boolean {
@@ -329,7 +330,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       leftPanel.value === "surface" &&
       surfaceTool.value === "brush"
     ) {
-      document.execute(paintSurface(catalog, cells, surfaceBrush.value));
+      document.execute(paintSurface(environment, cells, surfaceBrush.value));
       return true;
     }
     if (
@@ -361,7 +362,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function applyPaletteBrush(cell: Cell): void {
-    document.execute(placeEntity(catalog, placement.value, cell, {}, editor));
+    document.execute(placeEntity(environment, placement.value, cell, {}, editor));
   }
 
   function applyErase(cell: Cell): void {
@@ -370,7 +371,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     eraseVisited.add(key);
     const refs = resolveDeletion(
       currentLevel(),
-      catalog,
+      environment,
       { anchor: cell, focus: cell },
       editor,
     );
@@ -395,7 +396,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (!mapSelection.value) return false;
     clipboard.value = copyEntitySelection(
       currentLevel(),
-      catalog,
+      environment,
       mapSelection.value,
     );
     return clipboard.value.entities.length > 0;
@@ -411,7 +412,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (leftPanel.value === "surface" || !mapSelection.value) return false;
     const refs = resolveDeletion(
       currentLevel(),
-      catalog,
+      environment,
       mapSelection.value,
       editor,
     );
@@ -538,9 +539,9 @@ export function useEditorPage(initialLevel: EditorMap) {
       return document.execute(replaceEntity(inspection.ref, next));
     }
     const definition = editor.entities?.[placement.value.type];
-    const next = cyclePlacementVariant(
-      placement.value,
-      catalog,
+      const next = cyclePlacementVariant(
+        placement.value,
+        catalog,
       definition,
       step,
     );
@@ -626,7 +627,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function setRule(kind: EditorRuleKind, enabled: boolean): void {
-    document.execute(updateEditorRule(catalog, kind, enabled));
+    document.execute(updateEditorRule(environment, kind, enabled));
   }
 
   function loadLevel(level: EditorMap): void {
@@ -650,6 +651,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   return {
+    environment,
     catalog,
     editor,
     palette,

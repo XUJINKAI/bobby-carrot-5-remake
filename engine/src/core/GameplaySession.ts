@@ -1,5 +1,9 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
+import {
   resolveBobbyLocomotionTiming,
   type BobbyLocomotionTiming,
   type BobbyLocomotionTimingOverride,
@@ -67,6 +71,7 @@ export interface GameplayTickResult {
 }
 
 export interface GameplaySessionOptions {
+  environment?: EngineEnvironment;
   timing?: EngineTimingOptions;
   bobbyLocomotion?: BobbyLocomotionTimingOverride;
   history?: HistoryPolicy;
@@ -95,6 +100,7 @@ export class GameplaySession {
   readonly clock: WorldClock;
   readonly bobbyLocomotion: BobbyLocomotionTiming;
   private readonly historyPolicy: HistoryPolicy;
+  private readonly environment: EngineEnvironment;
   private readonly initialActorIntents: readonly InitialActorIntent[];
   private readonly configuredInitialIntents: readonly ActorEffectIntent[] | null;
   private initialIntentsValue: readonly ActorEffectIntent[] = [];
@@ -112,6 +118,7 @@ export class GameplaySession {
     const timing = resolveEngineTiming(options.timing);
     this.clock = new WorldClock(timing.worldHz, timing.worldSpeed);
     this.bobbyLocomotion = resolveBobbyLocomotionTiming(options.bobbyLocomotion);
+    this.environment = options.environment ?? builtinEngineEnvironment;
     this.historyPolicy = structuredClone(
       options.history ?? DEFAULT_HISTORY_POLICY,
     );
@@ -284,7 +291,7 @@ export class GameplaySession {
     preservePause: boolean,
   ): void {
     const wasPaused = preservePause && this.clock.paused;
-    this.worldValue = createWorld(level);
+    this.worldValue = createWorld(level, this.environment);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
     this.applyInitialActorIntents(initialIntents);

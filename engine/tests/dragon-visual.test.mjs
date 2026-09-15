@@ -4,11 +4,13 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityCatalog,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function dragonLayers(direction, state) {
   const catalog = createBuiltinEntityCatalog();

@@ -1,5 +1,5 @@
 import { GOAL_TYPES, type GoalType } from "@bobby/model";
-import { createBuiltinFactRegistry } from "../fact/builtinFacts.js";
+import type { EngineEnvironment } from "../environment/EngineEnvironment.js";
 import { WorldQueryApi } from "../world/behavior/WorldQueryApi.js";
 import type { EntityStore } from "../world/entity/EntityStore.js";
 import { createGlobalState } from "../world/GlobalState.js";
@@ -20,19 +20,18 @@ export function createBuiltinGoalRegistry(): GoalRegistry {
   return registry;
 }
 
-export const goalRegistry = createBuiltinGoalRegistry();
-
 /** Editor 的可用性查询与运行 Goal 使用同一对象选择规则。 */
 export function goalAvailable(
   type: GoalType,
   entities: EntityStore,
   spatial: SpatialIndex,
+  environment: EngineEnvironment,
 ): boolean {
   const query = new WorldQueryApi(
     entities,
     spatial,
     createGlobalState,
-    createBuiltinFactRegistry(),
+    environment.facts,
   );
-  return goalRegistry.require(type).available(query);
+  return environment.goals.require(type).available(query);
 }

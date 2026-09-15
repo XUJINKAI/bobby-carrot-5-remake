@@ -1,4 +1,4 @@
-import { goalAvailable, type EntityCatalog } from "@bobby/engine";
+import { goalAvailable, type EngineEnvironment } from "@bobby/engine";
 import type { GoalType, WinCondition } from "@bobby/model";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
@@ -16,8 +16,8 @@ export interface EditorRuleCapability {
 export class EditorRuleDetector {
   private readonly availableKinds = new Set<EditorRuleKind>();
 
-  detect(map: EditorMap, catalog: EntityCatalog): readonly EditorRuleKind[] {
-    const capabilities = inspectEditorRules(map, catalog);
+  detect(map: EditorMap, environment: EngineEnvironment): readonly EditorRuleKind[] {
+    const capabilities = inspectEditorRules(map, environment);
     const available = capabilities.filter((item) => item.available);
     const detected = available
       .filter((item) => !this.availableKinds.has(item.kind) && !item.enabled)
@@ -42,12 +42,12 @@ const RULE_ORDER: readonly EditorRuleKind[] = [
 
 export function inspectEditorRules(
   map: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
 ): readonly EditorRuleCapability[] {
   const conditions = winConditions(map.rules?.win);
-  const preview = new EditorPreview(map, catalog);
+  const preview = new EditorPreview(map, environment);
   const available = (type: GoalType) =>
-    goalAvailable(type, preview.entities, preview.spatial);
+    goalAvailable(type, preview.entities, preview.spatial, environment);
   const availability: Record<EditorRuleKind, boolean> = {
     carrots: available("carrot"),
     eggs: available("egg"),
@@ -63,30 +63,30 @@ export function inspectEditorRules(
 }
 
 export function updateEditorRule(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   kind: EditorRuleKind,
   enabled: boolean,
 ): EditorCommand {
-  return changeEditorRules(catalog, [{ kind, enabled }]);
+  return changeEditorRules(environment, [{ kind, enabled }]);
 }
 
 export function enableEditorRules(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   kinds: readonly EditorRuleKind[],
 ): EditorCommand {
   return changeEditorRules(
-    catalog,
+    environment,
     kinds.map((kind) => ({ kind, enabled: true })),
   );
 }
 
 function changeEditorRules(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   changes: readonly { kind: EditorRuleKind; enabled: boolean }[],
 ): EditorCommand {
   return {
     apply(map) {
-      const capabilities = inspectEditorRules(map, catalog);
+      const capabilities = inspectEditorRules(map, environment);
       const enabledKinds = new Set(
         capabilities
           .filter((item) => item.available && item.enabled)

@@ -4,13 +4,14 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 
 const AMBIENT_STEP_MS = 124;
+const factRegistry = builtinEngineEnvironment.facts;
 
 function resolveAt(type, nowMs, direction, winState, variant) {
   const entities = createBuiltinEntityRegistry();

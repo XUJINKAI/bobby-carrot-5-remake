@@ -1,4 +1,8 @@
 import type { LevelMap } from "@bobby/model";
+import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
 import { GameplaySession } from "../core/GameplaySession.js";
 import type { Replay, ReplayActualFinalState } from "./ReplayFormat.js";
 import { ReplayEventCounter } from "./ReplayFinalState.js";
@@ -14,8 +18,13 @@ export interface ReplayReport {
 }
 
 /** Replay 每次从 LevelMap 起点执行，不读取或保存中途 WorldSnapshot。 */
-export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
+export function runReplay(
+  level: LevelMap,
+  replay: Replay,
+  environment: EngineEnvironment = builtinEngineEnvironment,
+): ReplayReport {
   const session = new GameplaySession({
+    environment,
     timing: { worldHz: replay.runtime.worldHz },
     bobbyLocomotion: replay.runtime.bobbyLocomotion,
     history: { mode: "disabled" },

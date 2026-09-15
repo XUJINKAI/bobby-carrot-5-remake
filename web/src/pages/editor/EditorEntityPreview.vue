@@ -3,7 +3,7 @@ import {
   EditorEntityPreviewRenderer,
   type EditorDefinition,
   type EditorPlacementPreset,
-  type EntityCatalog,
+  type EngineEnvironment,
 } from "@bobby/editor";
 import type { ImageManager } from "@bobby/engine";
 import type { JsonPrimitive } from "@bobby/model";
@@ -15,7 +15,7 @@ const props = defineProps<{
   source: EditorPlacementPreset;
   cellSize: number;
   images: ImageManager;
-  catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
   previewState?: Readonly<Record<string, JsonPrimitive>> | undefined;
   fallbackIcon?: AppIconName | undefined;
@@ -32,7 +32,7 @@ async function draw(): Promise<void> {
   if (generation !== drawGeneration || !canvas.value) return;
   renderer ??= new EditorEntityPreviewRenderer(
     props.images,
-    props.catalog,
+    props.environment,
     props.editor,
   );
   rendered.value = renderer.render(
@@ -48,7 +48,7 @@ watch(
     props.source,
     props.cellSize,
     props.images,
-    props.catalog,
+    props.environment,
     props.editor,
     props.previewState,
   ],

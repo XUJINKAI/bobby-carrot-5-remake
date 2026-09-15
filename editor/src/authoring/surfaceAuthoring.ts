@@ -1,4 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine";
+import type { EngineEnvironment, EntityCatalog } from "@bobby/engine";
 import {
   MapEntityTypeId,
   parseOriginalTileCoordinateLabel,
@@ -196,10 +196,11 @@ export function applySurfaceTheme(
 }
 
 export function paintSurface(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   cells: readonly Cell[],
   brush: SurfaceBrush,
 ): EditorCommand {
+  const catalog = environment.catalog;
   return {
     apply(level) {
       const target = new Set(
@@ -208,7 +209,7 @@ export function paintSurface(
       if (target.size === 0) return level;
       const terrain = surfaceTerrain(brush.terrain);
       const slot = terrain.slot;
-      const preview = new EditorPreview(level, catalog);
+      const preview = new EditorPreview(level, environment);
       const stackOrders = new Map<string, number>();
       for (const key of target) {
         const cell = parseCellKey(key);
@@ -249,15 +250,16 @@ export function paintSurface(
 }
 
 export function fillSurface(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   level: Readonly<EditorMap>,
   origin: Cell,
   brush: SurfaceBrush,
 ): EditorCommand {
+  const catalog = environment.catalog;
   const targetTerrain = surfaceTerrain(brush.terrain);
   const source = surfaceAt(level, origin, targetTerrain.slot);
   const sourceTerrain = source ? surfaceTerrainForEntity(source.type) : null;
-  if (!sourceTerrain) return paintSurface(catalog, [origin], brush);
+  if (!sourceTerrain) return paintSurface(environment, [origin], brush);
 
   const cells: Cell[] = [];
   const visited = new Set<string>();
@@ -278,7 +280,7 @@ export function fillSurface(
       { x: cell.x, y: cell.y + 1 },
     );
   }
-  return paintSurface(catalog, cells, brush);
+  return paintSurface(environment, cells, brush);
 }
 
 export function rectangleCells(anchor: Cell, focus: Cell): Cell[] {

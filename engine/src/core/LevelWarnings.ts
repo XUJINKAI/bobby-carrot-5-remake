@@ -4,10 +4,10 @@ import type {
   WinCondition,
 } from "@bobby/model";
 import { levelEntityContractIssues, type GoalType } from "@bobby/model";
-import { factRegistry } from "../entities/registry.js";
-import { goalRegistry } from "../entities/goals.js";
-import type { FactRegistry } from "../fact/FactRegistry.js";
-import type { EntityCatalog } from "../entities/EntityCatalog.js";
+import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
 import { EntityStore } from "../world/entity/EntityStore.js";
 import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
@@ -33,9 +33,9 @@ export interface LevelRuntimeWarning {
  */
 export function validateLevelPlayability(
   level: LevelMap,
-  catalog: EntityCatalog,
-  facts: FactRegistry = factRegistry,
+  environment: EngineEnvironment = builtinEngineEnvironment,
 ): LevelRuntimeWarning[] {
+  const { catalog, facts, goals } = environment;
   const known = level.entities.flatMap((entity) => {
     return catalog.has(entity.type) && levelEntityContractIssues(entity).length === 0
       ? [{ entity, definition: catalog.require(entity.type) }]
@@ -84,7 +84,7 @@ export function validateLevelPlayability(
 
   const query = new WorldQueryApi(store, spatial, createGlobalState, facts);
   for (const type of requiredGoals(level.rules?.win)) {
-    if (goalRegistry.require(type).available(query)) continue;
+    if (goals.require(type).available(query)) continue;
     warnings.push({
       code: "missing-goal-target",
       message: `当前获胜条件 '${type}' 缺少所需的 Entity。`,

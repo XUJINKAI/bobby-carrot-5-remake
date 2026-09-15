@@ -33,6 +33,10 @@ import type {
 } from "../world/movement/WorldIntent.js";
 import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
 import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
+import {
   ReplayPlayback,
   type ReplayPlaybackOptions,
 } from "../replay/ReplayPlayback.js";
@@ -74,6 +78,7 @@ export class Game {
   private readonly tuning: PresentationTuning;
   private readonly timing: EngineTiming;
   private readonly session: GameplaySession;
+  private readonly environment: EngineEnvironment;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEvents = new WorldEventDispatcher();
   private heldDirection: Direction | null = null;
@@ -91,11 +96,18 @@ export class Game {
   lastWorldEvents: WorldEvent[] = [];
 
   constructor(options: GameOptions) {
+    this.environment = options.environment ?? builtinEngineEnvironment;
     this.audio = options.audio ?? new NullAudioBackend();
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
-    this.presentation = new GamePresentation(options, this.timing, this.tuning);
+    this.presentation = new GamePresentation(
+      options,
+      this.timing,
+      this.tuning,
+      this.environment,
+    );
     this.session = new GameplaySession({
+      environment: this.environment,
       ...(options.runtime?.timing ? { timing: options.runtime.timing } : {}),
       ...(options.runtime?.bobbyLocomotion
         ? { bobbyLocomotion: options.runtime.bobbyLocomotion }
@@ -409,7 +421,7 @@ export class Game {
   }
 
   verifyReplay(replay: Replay): ReplayReport {
-    return runReplay(this.session.level, replay);
+    return runReplay(this.session.level, replay, this.environment);
   }
 
   startReplayPlayback(

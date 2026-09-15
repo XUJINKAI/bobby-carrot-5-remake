@@ -51,7 +51,7 @@ const runtimeIssue = ref<LevelValidationIssue | null>(null);
 const issues = computed(() =>
   validateEditorLevel(
     page.snapshot.value.level as EditorMap,
-    page.catalog,
+    page.environment,
     page.editor,
   ),
 );
@@ -107,6 +107,7 @@ async function togglePlay(): Promise<void> {
       gameOptions: {
         images: props.images,
         audio: props.audio,
+        environment: page.environment,
         debug: false,
       },
       runtime: {
@@ -393,6 +394,7 @@ function isMobileEditor(): boolean {
       :playing="page.playing.value"
       :play-complete="playComplete"
       :images="props.images"
+      :environment="page.environment"
       :catalog="page.catalog"
       :editor="page.editor"
       @select="page.selectPalette"

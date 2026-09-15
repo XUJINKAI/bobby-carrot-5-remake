@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   createBlankLevel,
   isSurfaceEntityType,
@@ -13,7 +13,8 @@ import {
   surfaceTerrain,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 function surfaceAt(level, x, y) {
   return [...level.entities]
@@ -32,7 +33,7 @@ function hasAutoMetadata(entity) {
 
 test("Auto Surface is materialized before persistence and stays stable after reopen", () => {
   const draft = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     { terrain: "grass", pattern: "auto", seed: 37 },
   ).apply(createBlankLevel(4, 4));
@@ -54,7 +55,7 @@ test("Auto Surface is materialized before persistence and stays stable after reo
 test("Exact Surface persists the selected concrete visual", () => {
   const selected = "ts-8-1";
   const draft = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 1 }],
     { terrain: "grass", pattern: "exact", exact: selected, seed: 1 },
   ).apply(createBlankLevel(4, 4));

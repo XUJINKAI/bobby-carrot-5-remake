@@ -138,7 +138,7 @@ engine/src/mechanism/   Pipeline 和 Entity-bound 通用规则
 engine/src/entities/    具体对象的 Definition、组合与专属行为
 ```
 
-Engine 组合入口装配内置 Registry，再创建 World。World 的固定阶段调用 Pipeline Mechanism，Entity Definition 显式组合 Entity-bound Mechanism；两者都通过 World 的提案和命令协议执行，不由 Fact 自动绑定 Behavior。
+`EngineEnvironment` 统一装配 Entity Catalog、Fact / Mechanism / Behavior / Action / Goal / Visual / Callout Registry 与 Actor Policy，再由 Session 创建 World。Gameplay、Replay、表现层、校验和 Editor 预览必须消费同一环境。World 的固定阶段调用 Pipeline Mechanism，Entity Definition 显式组合 Entity-bound Mechanism；两者都通过 World 的提案和命令协议执行，不由 Fact 自动绑定 Behavior。
 
 Engine 允许一张地图包含多个 Bobby Actor。每个 Bobby 的背包和生命周期归属于自身 Entity state；`GameplayState.actors[]` 提供完整状态，`primaryActorId / player / facing / inventory` 是 primary actor 的便利投影。任一 actor 死亡即结束关卡，移动事务负责多人目的格冲突与不可重叠约束。
 

@@ -1,4 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine";
+import type { EngineEnvironment } from "@bobby/engine";
 import type { LevelEntity } from "@bobby/model";
 import type { EditorClipboard, EditorSelection } from "../definitions/types.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
@@ -10,24 +10,24 @@ import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 
 export function copySelection(
   level: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   selection: EditorSelection,
 ): EditorClipboard {
   return copyRefs(
     level,
     selection,
-    selectedEntityRefs(level, new EditorPreview(level, catalog), selection),
+    selectedEntityRefs(level, new EditorPreview(level, environment), selection),
   );
 }
 
 export function copyEntitySelection(
   level: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   selection: EditorSelection,
 ): EditorClipboard {
   const refs = selectedEntityRefs(
     level,
-    new EditorPreview(level, catalog),
+    new EditorPreview(level, environment),
     selection,
   ).filter((ref) => {
     const entity = level.entities[ref.index];

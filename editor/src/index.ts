@@ -88,5 +88,14 @@ export { EditorEntityPreviewRenderer } from "./canvas/EditorEntityPreviewRendere
 export { EditorCanvasInput } from "./canvas/EditorCanvasInput.js";
 export type { EditorCanvasInputHandlers } from "./canvas/EditorCanvasInput.js";
 export { canvasPointToCell } from "./canvas/coordinates.js";
-export { createBuiltinEntityCatalog } from "@bobby/engine";
-export type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
+export {
+  builtinEngineEnvironment,
+  createBuiltinEntityCatalog,
+  createEngineEnvironment,
+} from "@bobby/engine";
+export type {
+  EngineEnvironment,
+  EngineEnvironmentOptions,
+  EntityCatalog,
+  EntityCatalogEntry,
+} from "@bobby/engine";

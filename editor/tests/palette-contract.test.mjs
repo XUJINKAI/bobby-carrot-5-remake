@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import { createWorld } from "../../engine/dist/entities/WorldComposition.js";
 import {
   createBlankLevel,
@@ -19,7 +19,8 @@ import {
   updateEditorRule,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("Inspector 与快捷键使用稳定的方向和转角顺序", () => {
   const fields = (type) =>
@@ -91,7 +92,7 @@ test("Trap 缩略图显示 active，放置 preset 使用 inactive", () => {
   assert.deepEqual(
     resolvePlacement(
       createBlankLevel(4, 4),
-      catalog,
+      environment,
       trap,
       { x: 1, y: 1 },
       builtinEditorDefinition,
@@ -127,8 +128,8 @@ test("每个可见 Palette 条目都可放置、保存并加载为 World", () =>
   for (const preset of paletteItems(catalog)) {
     const level = createBlankLevel();
     const cell = { x: 5, y: 5 };
-    assert.equal(resolvePlacement(level, catalog, preset, cell).valid, true, preset.type);
-    const placed = placeEntity(catalog, preset, cell).apply(level);
+    assert.equal(resolvePlacement(level, environment, preset, cell).valid, true, preset.type);
+    const placed = placeEntity(environment, preset, cell).apply(level);
     const restored = parseEditorLevel(serializeEditorLevel(placed));
     assert.doesNotThrow(() => createWorld(toLevelMap(restored)), preset.type);
   }
@@ -143,10 +144,10 @@ test("新检测到的可用规则可一次性启用", () => {
     ],
   };
   assert.deepEqual(
-    inspectEditorRules(level, catalog).find(({ kind }) => kind === "carrots"),
+    inspectEditorRules(level, environment).find(({ kind }) => kind === "carrots"),
     { kind: "carrots", available: true, enabled: false },
   );
-  const enabled = enableEditorRules(catalog, ["carrots", "exit"]).apply(level);
+  const enabled = enableEditorRules(environment, ["carrots", "exit"]).apply(level);
   assert.deepEqual(enabled.rules?.win, {
     type: "all",
     conditions: [
@@ -155,12 +156,12 @@ test("新检测到的可用规则可一次性启用", () => {
     ],
   });
   const detector = new EditorRuleDetector();
-  assert.deepEqual(detector.detect(level, catalog), ["carrots"]);
-  assert.deepEqual(detector.detect(level, catalog), []);
-  const disabled = updateEditorRule(catalog, "carrots", false).apply(enabled);
-  assert.deepEqual(detector.detect(disabled, catalog), []);
+  assert.deepEqual(detector.detect(level, environment), ["carrots"]);
+  assert.deepEqual(detector.detect(level, environment), []);
+  const disabled = updateEditorRule(environment, "carrots", false).apply(enabled);
+  assert.deepEqual(detector.detect(disabled, environment), []);
   detector.reset();
-  assert.deepEqual(detector.detect(level, catalog), ["carrots"]);
+  assert.deepEqual(detector.detect(level, environment), ["carrots"]);
 });
 
 test("Editor 规则提示通过 Engine Goal 识别 Egg", () => {
@@ -172,7 +173,7 @@ test("Editor 规则提示通过 Engine Goal 识别 Egg", () => {
     ],
   };
   assert.deepEqual(
-    inspectEditorRules(level, catalog).find(({ kind }) => kind === "eggs"),
+    inspectEditorRules(level, environment).find(({ kind }) => kind === "eggs"),
     { kind: "eggs", available: true, enabled: false },
   );
 });
@@ -182,7 +183,7 @@ test("三色云朵停靠格放置后保留底层地形与持久化颜色", () =>
     const level = createBlankLevel();
     const cell = { x: 5, y: 5 };
     const ground = level.entities.find((entity) => entity.x === 5 && entity.y === 5);
-    const placed = placeEntity(catalog, {
+    const placed = placeEntity(environment, {
       type: "cloud-parking",
       fields: { color },
     }, cell).apply(level);
@@ -198,7 +199,7 @@ test("草下胡萝卜与 egg 组合可以往返保存", () => {
   for (const type of ["carrot", "egg"]) {
     let level = createBlankLevel();
     for (const entityType of [type, "high-grass"])
-      level = placeEntity(catalog, entityType, { x: 5, y: 5 }).apply(level);
+      level = placeEntity(environment, entityType, { x: 5, y: 5 }).apply(level);
     const restored = parseEditorLevel(serializeEditorLevel(level));
     assert.deepEqual(
       restored.entities.filter((entity) => entity.x === 5 && entity.y === 5)

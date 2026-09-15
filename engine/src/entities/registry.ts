@@ -1,6 +1,4 @@
 import { VisualRegistry } from "../visual/VisualRegistry.js";
-import { createBuiltinFactRegistry } from "../fact/builtinFacts.js";
-import { createBuiltinMechanismRegistry } from "../mechanism/builtinEntityMechanisms.js";
 import {
   createBuiltinRuntimeActionRegistry as createCoreRuntimeActionRegistry,
 } from "../world/action/builtinActions.js";
@@ -22,27 +20,6 @@ export const builtinEntityModules: readonly EntityModule[] = [
 export const builtinEntityDefinitions = builtinEntityModules.map(
   (module) => module.definition,
 );
-
-export const factRegistry = createBuiltinFactRegistry();
-export const mechanismRegistry = createBuiltinMechanismRegistry();
-for (const definition of builtinEntityDefinitions) {
-  for (const mechanism of definition.mechanisms ?? []) {
-    mechanismRegistry.require(mechanism);
-  }
-  for (const fact of [
-    ...definition.presenceFacts,
-    ...(definition.entityFacts ?? []),
-  ]) {
-    factRegistry.require(fact);
-  }
-  const footprint = definition.footprint;
-  const parts = footprint && "parts" in footprint
-    ? footprint.parts
-    : Object.values(footprint?.byDirection ?? {}).flat();
-  for (const part of parts) {
-    for (const fact of part?.presenceFacts ?? []) factRegistry.require(fact);
-  }
-}
 
 export function createBuiltinEntityCatalog(
   modules: readonly EntityModule[] = builtinEntityModules,
@@ -99,14 +76,4 @@ export function createBuiltinRuntimeActionRegistry(
   for (const module of modules)
     for (const action of module.runtimeActions ?? []) registry.register(action);
   return registry;
-}
-
-export const entityCatalog = createBuiltinEntityCatalog();
-export const entityRegistry = entityCatalog.entities;
-export const visualRegistry = createBuiltinVisualRegistry();
-export const behaviorRegistry = createBuiltinBehaviorRegistry();
-for (const definition of builtinEntityDefinitions) {
-  for (const behavior of definition.behaviors ?? []) {
-    behaviorRegistry.require(behavior);
-  }
 }

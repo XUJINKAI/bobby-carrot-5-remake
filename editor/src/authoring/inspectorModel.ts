@@ -1,4 +1,8 @@
-import type { EntityCatalog, EntityCatalogEntry } from "@bobby/engine";
+import type {
+  EngineEnvironment,
+  EntityCatalog,
+  EntityCatalogEntry,
+} from "@bobby/engine";
 import {
   entityMapDefinition,
   type EntityType,
@@ -76,11 +80,12 @@ export interface PlacementInspectorPreviewModel {
 
 export function buildPlacementInspectorPreview(
   level: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   preset: EditorPlacementPreset,
   cell: Cell | null,
   editor: EditorDefinition = builtinEditorDefinition,
 ): PlacementInspectorPreviewModel {
+  const catalog = environment.catalog;
   if (!cell) {
     const empty = emptyInspector();
     return {
@@ -93,13 +98,13 @@ export function buildPlacementInspectorPreview(
     };
   }
   const selection = { anchor: cell, focus: cell };
-  const preview = new EditorPreview(level, catalog);
+  const preview = new EditorPreview(level, environment);
   const current = cellInspectorModel(
     selection,
     cell,
     cellLayers(preview, editor, cell.x, cell.y),
   );
-  const plan = resolvePlacement(level, catalog, preset, cell, editor, preview);
+  const plan = resolvePlacement(level, environment, preset, cell, editor, preview);
   if (!plan.valid) {
     return {
       cell,
@@ -155,13 +160,14 @@ export function buildPlacementInspectorPreview(
 
 export function buildInspectorModel(
   level: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   selection: EditorSelection | null,
   editor: EditorDefinition = builtinEditorDefinition,
 ): InspectorModel {
+  const catalog = environment.catalog;
   if (!selection) return emptyInspector();
   const rect = selectionRect(selection);
-  const preview = new EditorPreview(level, catalog);
+  const preview = new EditorPreview(level, environment);
   if (rect.width === 1 && rect.height === 1) {
     const layers = cellLayers(preview, editor, rect.left, rect.top);
     return cellInspectorModel(selection, { x: rect.left, y: rect.top }, layers);

@@ -1,5 +1,6 @@
 import {
   resolveFootprintCells,
+  type EngineEnvironment,
   type EntityCatalog,
   type EntityCatalogEntry,
 } from "@bobby/engine";
@@ -56,12 +57,13 @@ export interface EntityPlacementStackWarning {
 
 export function resolvePlacement(
   level: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   preset: EditorPlacementPreset,
   cursor: Cell,
   editor: EditorDefinition = builtinEditorDefinition,
   existingPreview?: EditorPreview,
 ): EntityPlacementPlan {
+  const catalog = environment.catalog;
   const authoring = editor.entities?.[preset.type];
   if (!isEditorEntityCreatable(editor, preset.type)) {
     return {
@@ -105,7 +107,7 @@ export function resolvePlacement(
     return { entity, cells, replace: [], warnings: [], valid: false };
   }
 
-  const preview = existingPreview ?? new EditorPreview(level, catalog);
+  const preview = existingPreview ?? new EditorPreview(level, environment);
   const stackSlot = authoring?.stackSlot;
   if (!stackSlot) {
     return {
@@ -173,7 +175,7 @@ function withPlacementStackOrder(
 }
 
 export function placeEntity(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   presetOrType: EditorPlacementPreset | string,
   cursor: Cell,
   overrides: PlacementOverrides = {},
@@ -185,7 +187,7 @@ export function placeEntity(
       : presetOrType;
   return {
     apply(level) {
-      const plan = resolvePlacement(level, catalog, preset, cursor, editor);
+      const plan = resolvePlacement(level, environment, preset, cursor, editor);
       if (!plan.valid) return level;
       const removed = new Set(plan.replace.map((ref) => ref.index));
       return normalizeEditorLevel({

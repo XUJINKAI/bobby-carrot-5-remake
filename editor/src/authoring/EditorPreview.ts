@@ -1,9 +1,8 @@
 import {
   EntityStore,
-  createBuiltinFactRegistry,
   prepareRuntimeLevel,
   SpatialIndex,
-  type EntityCatalog,
+  type EngineEnvironment,
   type EntityCatalogEntry,
   type EntityId,
   type EntityPresence,
@@ -35,7 +34,7 @@ export class EditorPreview {
 
   constructor(
     readonly level: EditorMap,
-    readonly catalog: EntityCatalog,
+    readonly environment: EngineEnvironment,
   ) {
     const runtimeLevel = prepareRuntimeLevel(materializeSurfaceVariants(level));
     this.entities = new EntityStore(runtimeLevel.entities);
@@ -50,10 +49,10 @@ export class EditorPreview {
     });
     this.spatial = new SpatialIndex(
       this.entities,
-      catalog.entities,
+      environment.catalog.entities,
       level.width,
       level.height,
-      createBuiltinFactRegistry(),
+      environment.facts,
     );
   }
 
@@ -85,7 +84,7 @@ export class EditorPreview {
     return {
       ref,
       entity,
-      definition: this.catalog.require(runtimeEntity.type),
+      definition: this.environment.catalog.require(runtimeEntity.type),
       presence,
     };
   }

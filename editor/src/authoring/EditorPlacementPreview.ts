@@ -7,7 +7,7 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
   const ghost = new EditorPreview({
     ...base.level,
     entities: [plan.entity],
-  }, base.catalog);
+  }, base.environment);
   // 预览对象排在同层现有对象之后，与正式放置时追加 Entity 的顺序一致。
   const entity = { ...ghost.entities.require(1), id: Number.MAX_SAFE_INTEGER };
   const inspections = ghost.presencesFor({ index: 0 }).map((inspection) => ({

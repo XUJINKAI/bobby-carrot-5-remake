@@ -1,19 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   copyEntitySelection,
   createBlankLevel,
   pasteClipboard,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("Entity clipboard copies without Surface and pastes at the requested origin", () => {
   const level = createBlankLevel(6, 6);
   level.entities.push({ type: MapEntityTypeId.CARROT, x: 1, y: 1 });
-  const clipboard = copyEntitySelection(level, catalog, {
+  const clipboard = copyEntitySelection(level, environment, {
     anchor: { x: 1, y: 1 },
     focus: { x: 1, y: 1 },
   });

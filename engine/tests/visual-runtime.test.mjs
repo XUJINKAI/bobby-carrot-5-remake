@@ -11,8 +11,10 @@ import {
   builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();

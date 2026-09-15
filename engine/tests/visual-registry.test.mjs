@@ -5,8 +5,9 @@ import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRegistry } from "../dist/visual/VisualRegistry.js";
-import { prepareRuntimeLevel } from "../dist/public.js";
-import { factRegistry } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment, prepareRuntimeLevel } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function definition(type, extra = {}) {
   return {

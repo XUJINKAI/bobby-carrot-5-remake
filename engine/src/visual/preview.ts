@@ -4,7 +4,10 @@ import type {
   JsonPrimitive,
   JsonValue,
 } from "@bobby/model";
-import { entityRegistry, factRegistry, visualRegistry } from "../entities/registry.js";
+import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
 import { EntityFactProjection } from "../world/entity/EntityFactProjection.js";
 import {
   instantiateLevelEntity,
@@ -35,6 +38,7 @@ export interface LevelEntityVisualPreviewSource {
 /** 直接解析 Runtime spawn spec。 */
 export function resolveEntityVisualPreview(
   source: EntityVisualPreviewSource,
+  environment: EngineEnvironment = builtinEngineEnvironment,
 ): VisualComposition | null {
   return resolveInstantiatedVisualPreview(
     instantiateSpawnSpec(1, {
@@ -42,12 +46,14 @@ export function resolveEntityVisualPreview(
       x: 0,
       y: 0,
     }),
+    environment,
   );
 }
 
 /** 转换并解析扁平 canonical Map Entity，包括该 type 持有的字段。 */
 export function resolveLevelEntityVisualPreview(
   source: LevelEntityVisualPreviewSource,
+  environment: EngineEnvironment = builtinEngineEnvironment,
 ): VisualComposition | null {
   return resolveInstantiatedVisualPreview(
     instantiateLevelEntity(1, {
@@ -55,13 +61,15 @@ export function resolveLevelEntityVisualPreview(
       x: 0,
       y: 0,
     }),
+    environment,
   );
 }
 
 function resolveInstantiatedVisualPreview(
   source: EntityInstance,
+  environment: EngineEnvironment,
 ): VisualComposition | null {
-  const definition = entityRegistry.require(source.type);
+  const definition = environment.catalog.entities.require(source.type);
   const state = {
     ...defaults(definition.properties),
     ...defaults(definition.state),
@@ -71,7 +79,7 @@ function resolveInstantiatedVisualPreview(
     Object.keys(state).length > 0 ? { ...source, state } : source;
   const part = resolveFootprintCells(entity, definition.footprint)[0];
   if (!part) return null;
-  const projection = new EntityFactProjection(factRegistry);
+  const projection = new EntityFactProjection(environment.facts);
   const facts = projection.presenceFacts(entity, definition, part);
   const entityFacts = projection.entityFacts(entity, definition);
   const presence: EntityPresence = {
@@ -88,7 +96,7 @@ function resolveInstantiatedVisualPreview(
     entitiesWithFact: (fact) =>
       entityFacts.includes(fact) || facts.includes(fact) ? [entity] : [],
   };
-  return visualRegistry.resolve(definition, { entity, presence, query });
+  return environment.visuals.resolve(definition, { entity, presence, query });
 }
 
 function defaults(

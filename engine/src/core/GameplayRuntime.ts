@@ -4,7 +4,7 @@ import {
   AudioRuntime,
   type AudioRuntimeOptions,
 } from "../audio/AudioRuntime.js";
-import { entityCatalog } from "../entities/registry.js";
+import { builtinEngineEnvironment } from "../environment/EngineEnvironment.js";
 import { InputController } from "../input/InputController.js";
 import {
   GameplayDialog,
@@ -49,12 +49,14 @@ export async function createGameplayRuntime(
     audioOptions,
     ...gameOptions
   } = options;
-  const warnings = validateLevelPlayability(level, entityCatalog);
+  const environment = gameOptions.environment ?? builtinEngineEnvironment;
+  const warnings = validateLevelPlayability(level, environment);
   const { dialog: dialogOptions, ...gameRuntime } = runtime ?? {};
   const ownedAudio = suppliedAudio ? null : new AudioRuntime(audioOptions);
   const audio = suppliedAudio ?? ownedAudio!;
   const game = new Game({
     ...gameOptions,
+    environment,
     audio,
     ...(runtime ? { runtime: gameRuntime } : {}),
   });

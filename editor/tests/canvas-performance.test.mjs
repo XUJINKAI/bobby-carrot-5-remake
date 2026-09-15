@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createBuiltinEntityCatalog, EntityStore } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment, EntityStore } from "../../engine/dist/public.js";
 import { EditorCanvasRenderer } from "../dist/canvas/EditorCanvasRenderer.js";
 import { EditorEntityPreviewRenderer } from "../dist/canvas/EditorEntityPreviewRenderer.js";
 import { EditorPreview } from "../dist/authoring/EditorPreview.js";
@@ -118,7 +118,7 @@ test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
     ],
   };
   const before = structuredClone(level);
-  const base = new EditorPreview(level, createBuiltinEntityCatalog());
+  const base = new EditorPreview(level, builtinEngineEnvironment);
   const ghost = createPlacementPreview(base, {
     entity: { type: "dragon", x: 2, y: 2, direction: "right" },
     cells: [], replace: [{ index: 1 }], warnings: [], valid: true,

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   validateLevelPlayability,
 } from "../dist/public.js";
 
@@ -24,7 +24,7 @@ test("可游玩性检查使用具体 Goal 的对象选择规则", () => {
         win: { type: "exit" },
       },
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.equal(
@@ -44,7 +44,7 @@ test("可游玩性检查报告未知 Entity 的惰性占位行为", () => {
         { type: "future-mechanic", x: 1, y: 0 },
       ],
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.deepEqual(
@@ -66,7 +66,7 @@ test("字段无效的已知 Entity 作为惰性占位并报告具体问题", () 
         { type: MapEntityTypeId.BOBBY, x: 0, y: 0, controller: "future" },
       ],
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.equal(
@@ -86,7 +86,7 @@ test("可游玩性检查报告缺少具体 Goal 对象", () => {
     height: 1,
     entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
     rules: { win: { type: "all", conditions: [{ type: "egg" }, { type: "exit" }] } },
-  }, createBuiltinEntityCatalog());
+  }, builtinEngineEnvironment);
   assert.equal(
     warnings.filter((warning) => warning.code === "missing-goal-target").length,
     2,

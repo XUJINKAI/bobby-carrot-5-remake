@@ -1,14 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   builtinEditorDefinition,
   createBlankLevel,
   resolveDeletion,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("single-cell deletion removes only the top non-Surface entity", () => {
   const level = createBlankLevel(5, 5);
@@ -19,7 +20,7 @@ test("single-cell deletion removes only the top non-Surface entity", () => {
 
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );
@@ -38,7 +39,7 @@ test("multi-cell deletion removes only the highest stackOrder layer", () => {
 
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 1 } },
     builtinEditorDefinition,
   );
@@ -53,7 +54,7 @@ test("Palette deletion never selects Surface", () => {
   const level = createBlankLevel(5, 5);
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );

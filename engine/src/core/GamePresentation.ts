@@ -1,11 +1,11 @@
 import type { GameOptions } from "./GameOptions.js";
+import type { EngineEnvironment } from "../environment/EngineEnvironment.js";
 import type { RenderScene } from "../render/RenderScene.js";
 import { Renderer } from "../render/Renderer.js";
 import type { EngineTiming } from "../time/EngineTiming.js";
 import { PresentationClock } from "../time/PresentationClock.js";
 import { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { PresentationTuning } from "../visual/tuning/PresentationTuning.js";
-import { visualRegistry } from "../entities/registry.js";
 import type { World } from "../world/World.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type { EntityMotion } from "../world/movement/WorldStepResult.js";
@@ -13,7 +13,6 @@ import {
   createWorldCalloutAnnouncer,
   type WorldCalloutAnnouncer,
 } from "../ui/WorldCalloutAnnouncer.js";
-import { createBuiltinWorldCalloutRegistry } from "../visual/callout/builtinCallouts.js";
 
 /**
  * Game 的纯表现侧门面：统一持有 Renderer、Camera、VisualRuntime 与表现时钟。
@@ -30,16 +29,17 @@ export class GamePresentation {
     options: GameOptions,
     timing: EngineTiming,
     private readonly tuning: PresentationTuning,
+    environment: EngineEnvironment,
   ) {
     this.renderer = new Renderer(options.canvas, options.images);
     this.calloutAnnouncer = createWorldCalloutAnnouncer(options.canvas);
     this.visual = new VisualRuntime(
-      visualRegistry,
+      environment.visuals,
       options.images.sourceTileSize,
       options.runtime?.camera,
       {
         announce: (message) => this.calloutAnnouncer?.announce(message),
-        callouts: createBuiltinWorldCalloutRegistry(),
+        callouts: environment.callouts,
       },
     );
     this.clock = new PresentationClock(

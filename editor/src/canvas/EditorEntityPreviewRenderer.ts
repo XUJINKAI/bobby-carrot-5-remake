@@ -1,15 +1,13 @@
 import {
   buildSpatialScene,
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
   SpatialVisualQuery,
-  visualRegistry as builtinVisualRegistry,
-  type EntityCatalog,
+  type EngineEnvironment,
   type ImageManager,
-  type VisualRegistry,
   type VisualQuery,
 } from "@bobby/engine";
 import type { JsonPrimitive } from "@bobby/model";
@@ -32,9 +30,8 @@ interface PixelBounds {
 export class EditorEntityPreviewRenderer {
   constructor(
     private readonly images: ImageManager,
-    private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
+    private readonly environment: EngineEnvironment = builtinEngineEnvironment,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
-    private readonly visuals: VisualRegistry = builtinVisualRegistry,
   ) {}
 
   render(
@@ -44,7 +41,7 @@ export class EditorEntityPreviewRenderer {
     previewState?: Readonly<Record<string, JsonPrimitive>>,
   ): boolean {
     const layout = resolveEditorEntityPreviewLayout(
-      this.catalog,
+      this.environment.catalog,
       source,
       this.editor,
     );
@@ -70,7 +67,7 @@ export class EditorEntityPreviewRenderer {
         },
       ],
     };
-    const preview = new EditorPreview(level, this.catalog);
+    const preview = new EditorPreview(level, this.environment);
     const spatialQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
     const previewEntity = preview.entities.require(1);
     const visualEntity = previewState
@@ -96,16 +93,16 @@ export class EditorEntityPreviewRenderer {
     const source = createIndexedSpatialSceneSource(
       preview.entities,
       preview.spatial,
-      this.catalog.entities,
+      this.environment.catalog.entities,
       { query, entity: (id) => query.entity(id) },
     );
     const scene = buildSpatialScene({
       source,
-      visuals: this.visuals,
+      visuals: this.environment.visuals,
       resolveVisual: (definition, resolveContext) =>
         this.editor.entities?.[resolveContext.entity.type]?.editorVisual?.(
           resolveContext,
-        ) ?? this.visuals.resolve(definition, resolveContext),
+        ) ?? this.environment.visuals.resolve(definition, resolveContext),
     });
     const items = [...scene.world, ...scene.standing, ...scene.effect];
     const rendered = items.some((item) => item.composition.layers.length > 0);

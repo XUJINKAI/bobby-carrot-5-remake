@@ -4,12 +4,14 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { LEAF_SUPPORT_HEIGHT_PX } from "../dist/entities/original/moving-entities.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function resolveCarouselSwitch(pressed) {
   const entities = createBuiltinEntityRegistry();

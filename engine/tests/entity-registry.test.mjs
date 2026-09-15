@@ -9,10 +9,12 @@ import {
   builtinEntityDefinitions,
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
-  factRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 test("所有 Map Entity 合同都对应可加载的 Runtime Definition", () => {
   const registry = createBuiltinEntityRegistry();

@@ -1,14 +1,12 @@
 import {
   buildSpatialScene,
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
-  visualRegistry as builtinVisualRegistry,
-  type EntityCatalog,
+  type EngineEnvironment,
   type ImageManager,
-  type VisualRegistry,
   type VisualQuery,
 } from "@bobby/engine";
 import { resolveDeletionTarget } from "../authoring/deletion.js";
@@ -57,8 +55,7 @@ export class EditorCanvasRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly images: ImageManager,
-    private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
-    private readonly visuals: VisualRegistry = builtinVisualRegistry,
+    private readonly environment: EngineEnvironment = builtinEngineEnvironment,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
     private readonly interactionCanvas: HTMLCanvasElement = canvas,
   ) {}
@@ -92,22 +89,22 @@ export class EditorCanvasRenderer {
     context.fillStyle = "#09110c";
     context.fillRect(0, 0, cssWidth, cssHeight);
 
-    const preview = new EditorPreview(level, this.catalog);
+    const preview = new EditorPreview(level, this.environment);
     this.preview = preview;
     const source = createIndexedSpatialSceneSource(
       preview.entities,
       preview.spatial,
-      this.catalog.entities,
+      this.environment.catalog.entities,
     );
     const scene = buildSpatialScene({
       source,
-      visuals: this.visuals,
+      visuals: this.environment.visuals,
       resolveVisual: (definition, resolveContext) => {
         const editorVisual = definition.placeholder === "unknown"
           ? undefined
           : this.editor.entities?.[resolveContext.entity.type]?.editorVisual;
         return editorVisual?.(resolveContext) ??
-          this.visuals.resolve(definition, resolveContext);
+          this.environment.visuals.resolve(definition, resolveContext);
       },
     });
     const stackBadges: EditorStackBadge[] = [];
@@ -220,7 +217,7 @@ export class EditorCanvasRenderer {
     if (state.tool === "erase") {
       const ref = resolveDeletionTarget(
         state.level,
-        this.catalog,
+        this.environment,
         hover,
         this.editor,
         preview,
@@ -257,7 +254,7 @@ export class EditorCanvasRenderer {
     if (!hover || !placement) return;
     const plan = resolvePlacement(
       state.level,
-      this.catalog,
+      this.environment,
       placement,
       hover,
       this.editor,
@@ -318,7 +315,7 @@ export class EditorCanvasRenderer {
       : this.editor.entities?.[inspection.entity.type]?.editorVisual;
     const composition =
       editorVisual?.(resolveContext) ??
-      this.visuals.resolve(inspection.definition, resolveContext);
+      this.environment.visuals.resolve(inspection.definition, resolveContext);
     drawVisualComposition(
       context,
       this.images,
