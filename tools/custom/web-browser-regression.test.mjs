@@ -385,11 +385,24 @@ async function verifyReplayPanel(cdp, url) {
   if (
     !["playing", "won", "dead"].includes(replay.finalState?.status) ||
     !Number.isInteger(replay.finalState?.moves) ||
+    !Array.isArray(replay.finalState?.position) ||
     !Number.isInteger(replay.finalState?.elapsedMs) ||
     typeof replay.finalState?.counters !== "object" ||
     !Array.isArray(replay.finalState?.completedConditions)
   )
     throw new Error("Replay panel did not export finalState");
+  const replayText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-output]').value",
+  );
+  const serializedFrameLines = replayText
+    .split("\n")
+    .filter((line) => /"tick":\d+/.test(line));
+  if (
+    serializedFrameLines.length !== replay.frames.length ||
+    serializedFrameLines.some((line) => !/^    \{.*\},?$/.test(line))
+  )
+    throw new Error("Replay panel did not serialize one frame per line");
   if ("profile" in replay.runtime || "economy" in replay.runtime)
     throw new Error("Replay runtime included Explore session settings");
   if ("snapshot" in replay || "entities" in replay)

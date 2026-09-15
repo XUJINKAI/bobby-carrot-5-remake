@@ -1,8 +1,9 @@
-import type {
-  Game,
-  Replay,
-  ReplayRecordingMeta,
-  ReplayReport,
+import {
+  serializeReplay,
+  type Game,
+  type Replay,
+  type ReplayRecordingMeta,
+  type ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
 import { loadReplayAsset, parseReplayText } from "./replayAssets.js";
@@ -180,7 +181,7 @@ export function bindReplayPanel(options: {
     if (!options.game.replayRecording) return;
     try {
       replay = options.game.stopReplayRecording();
-      output.value = `${JSON.stringify(replay, null, 2)}\n`;
+      output.value = serializeReplay(replay);
       clearReplayParseTimer();
       replayTextDirty = false;
       verifyReplay();

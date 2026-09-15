@@ -151,6 +151,7 @@ export {
   replayVerificationStates,
   type ReplayVerificationStates,
 } from "./replay/ReplayFinalState.js";
+export { serializeReplay } from "./replay/ReplaySerialization.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
 export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {

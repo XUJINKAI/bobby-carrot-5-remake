@@ -5,6 +5,7 @@ import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { HeldDirectionRepeater } from "../dist/input/HeldDirectionRepeater.js";
 import { ReplayPlayback } from "../dist/replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../dist/replay/ReplayRecorder.js";
+import { serializeReplay } from "../dist/replay/ReplaySerialization.js";
 import { replayVerificationStates } from "../dist/replay/ReplayFinalState.js";
 import { runReplay } from "../dist/replay/ReplayRunner.js";
 import { PresentationClock } from "../dist/time/PresentationClock.js";
@@ -147,6 +148,30 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
       : "arrows";
     assert.throws(() => runReplay(level, invalid), /未声明字段/);
   }
+});
+
+test("Replay 序列化让 frames 中的每一帧独占一行", () => {
+  const replay = {
+    formatVersion: 1,
+    meta: { id: "test/serialization", url: "/test", note: "" },
+    runtime: { worldHz: 60, bobbyLocomotion: { moveMs: 350 } },
+    initialIntents: [],
+    finalState: {},
+    endTick: 2,
+    frames: [
+      { tick: 0, groups: [{ intents: [{ type: "move", direction: "right" }] }] },
+      { tick: 1, groups: [{ intents: [{ type: "move", direction: "down" }] }] },
+    ],
+  };
+
+  const serialized = serializeReplay(replay);
+  const frameLines = serialized.split("\n").filter((line) => /"tick":\d+/.test(line));
+  assert.deepEqual(frameLines, [
+    '    {"tick":0,"groups":[{"intents":[{"type":"move","direction":"right"}]}]},',
+    '    {"tick":1,"groups":[{"intents":[{"type":"move","direction":"down"}]}]}',
+  ]);
+  assert.deepEqual(JSON.parse(serialized), replay);
+  assert.equal(serialized.endsWith("\n"), true);
 });
 
 test("Replay 记录持续输入的实际动作并保留一次撞墙", () => {

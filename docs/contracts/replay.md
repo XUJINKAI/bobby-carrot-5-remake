@@ -116,17 +116,13 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   },
   "endTick": 120,
   "frames": [
-    {
-      "tick": 0,
-      "groups": [
-        {
-          "intents": [{ "type": "move", "direction": "right" }]
-        }
-      ]
-    }
+    {"tick":0,"groups":[{"intents":[{"type":"move","direction":"right"}]}]}
   ]
 }
 ```
+
+Replay 导出时保留顶层与终局摘要的两空格缩进；`frames` 中每个 frame 连同其 groups 和
+intents 压成一行。这样长 Replay 仍是一帧一行的可扫描数组，也保持标准 JSON，可直接编辑。
 
 `meta.id` 和 `meta.url` 由宿主在开始录制时提供。`id` 使用
 `<collection>/<map-id>` 路径身份，例如 `original/1-1`；Editor Play Test 使用

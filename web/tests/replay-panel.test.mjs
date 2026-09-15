@@ -23,6 +23,7 @@ test("Replay 面板提示复跑终局与记录不一致", () => {
       actual: {
         status: "playing",
         moves: 0,
+        position: [{ x: 0, y: 0 }],
         elapsedMs: 34,
         counters: {},
         completedConditions: [],
@@ -52,6 +53,7 @@ test("Replay 未声明 status 时只报告复跑完成", () => {
       actual: {
         status: "won",
         moves: 1,
+        position: [{ x: 1, y: 0 }],
         elapsedMs: 100,
         counters: {},
         completedConditions: [],
@@ -75,6 +77,10 @@ test("阻塞对话终止录制时清空 take 并显示诊断", () => {
     /interactive host choice is not supported by replay/,
   );
   assert.match(replayBindingSource, /unsubscribeRecordingAbort\(\)/);
+});
+
+test("Replay 面板使用一帧一行的统一序列化", () => {
+  assert.match(replayBindingSource, /output\.value = serializeReplay\(replay\)/);
 });
 
 test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
