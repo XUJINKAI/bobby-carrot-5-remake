@@ -68,6 +68,8 @@ Callout 不是 `VisualDefinition.renderPass` 的第四个 Entity pass。它在 E
 
 ## Editor
 
-Editor Canvas 使用与 Runtime 相同的 VisualRegistry 与 `world → standing → effect` pass，并按
-相同 body anchor 规则排列 `standing`，因此编辑器预览和实际游戏保持同一层序语义。Editor
-的删除、Inspector 与重排读取完整空间栈；Engine gameplay 统一从同一 `stackOrder` 派生接触栈。
+Runtime 与 Editor Canvas 都通过纯 `SpatialSceneBuilder` 把 `EntityStore + SpatialIndex`
+投影为 `RenderScene`，共用 VisualRegistry、`world → standing → effect` 分桶、body anchor
+与排序实现。两侧只提供各自的 source/context；Editor 的选择框、堆叠角标与放置 ghost
+仍属于 authoring overlay。Editor 的删除、Inspector 与重排读取完整空间栈；Engine gameplay
+统一从同一 `stackOrder` 派生接触栈。

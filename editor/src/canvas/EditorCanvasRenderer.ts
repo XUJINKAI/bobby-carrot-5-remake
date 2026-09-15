@@ -1,15 +1,15 @@
 import {
+  buildSpatialScene,
   createBuiltinEntityCatalog,
+  createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
-  SpatialVisualQuery,
   visualRegistry as builtinVisualRegistry,
   type EntityCatalog,
   type ImageManager,
   type VisualRegistry,
   type VisualQuery,
-  type VisualRenderPass,
 } from "@bobby/engine";
 import { resolveDeletionTarget } from "../authoring/deletion.js";
 import { createPlacementPreview } from "../authoring/EditorPlacementPreview.js";
@@ -43,14 +43,6 @@ export interface EditorCanvasRenderState {
   selection: EditorSelection | null;
   hover: Cell | null;
   viewport: Readonly<EditorViewportState>;
-}
-
-interface EditorRenderItem {
-  inspection: EditorPresenceInspection;
-  x: number;
-  y: number;
-  depthX: number;
-  depthY: number;
 }
 
 interface EditorStackBadge {
@@ -102,25 +94,26 @@ export class EditorCanvasRenderer {
 
     const preview = new EditorPreview(level, this.catalog);
     this.preview = preview;
-    const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
-    const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
-      world: [],
-      standing: [],
-      effect: [],
-    };
+    const source = createIndexedSpatialSceneSource(
+      preview.entities,
+      preview.spatial,
+      this.catalog.entities,
+    );
+    const scene = buildSpatialScene({
+      source,
+      visuals: this.visuals,
+      resolveVisual: (definition, resolveContext) => {
+        const editorVisual = definition.placeholder === "unknown"
+          ? undefined
+          : this.editor.entities?.[resolveContext.entity.type]?.editorVisual;
+        return editorVisual?.(resolveContext) ??
+          this.visuals.resolve(definition, resolveContext);
+      },
+    });
     const stackBadges: EditorStackBadge[] = [];
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
         const inspections = preview.inspectCell(x, y).presences;
-        for (const inspection of inspections) {
-          passes[this.visuals.renderPassFor(inspection.definition)].push({
-            inspection,
-            x,
-            y,
-            depthX: inspection.entity.x,
-            depthY: inspection.entity.y,
-          });
-        }
         const paletteCount = new Set(
           inspections
             .filter((item) => !isSurfaceEntityType(item.entity.type))
@@ -130,16 +123,15 @@ export class EditorCanvasRenderer {
       }
     }
     for (const pass of ["world", "standing", "effect"] as const) {
-      const items = pass === "standing"
-        ? [...passes[pass]].sort(compareStandingEditorItems)
-        : passes[pass];
+      const items = scene[pass];
       for (const item of items)
-        this.drawPresence(
+        drawVisualComposition(
           context,
-          visualQuery,
-          item.inspection,
-          item.x,
-          item.y,
+          this.images,
+          item.composition,
+          item.visualX * EDITOR_TILE_SIZE,
+          item.visualY * EDITOR_TILE_SIZE,
+          EDITOR_TILE_SIZE,
           deviceScale,
         );
     }
@@ -337,18 +329,4 @@ export class EditorCanvasRenderer {
       deviceScale,
     );
   }
-}
-
-function compareStandingEditorItems(
-  a: EditorRenderItem,
-  b: EditorRenderItem,
-): number {
-  return (
-    a.depthY - b.depthY ||
-    a.depthX - b.depthX ||
-    a.inspection.presence.stackOrder - b.inspection.presence.stackOrder ||
-    a.inspection.presence.entityId - b.inspection.presence.entityId ||
-    a.y - b.y ||
-    a.x - b.x
-  );
 }

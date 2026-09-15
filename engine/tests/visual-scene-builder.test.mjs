@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { buildVisualScene } from "../dist/visual/VisualSceneBuilder.js";
+import {
+  buildSpatialScene,
+  createIndexedSpatialSceneSource,
+} from "../dist/visual/SpatialSceneBuilder.js";
 import { World } from "./support/World.mjs";
 
 test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉", () => {
@@ -31,6 +35,36 @@ test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉"
     multiple.standing.map((item) => item.composition.layers[0].kind),
     ["canvas", "canvas"],
   );
+});
+
+test("World wrapper and shared spatial builder use the same pass ordering", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 1,
+    height: 3,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 2 },
+      { type: "dream-machine", x: 0, y: 1 },
+      { type: "bobby", x: 0, y: 2 },
+    ],
+  });
+  const visuals = createBuiltinVisualRegistry();
+  const wrapped = buildVisualScene(world, visuals, new Map());
+  const shared = buildSpatialScene({
+    source: createIndexedSpatialSceneSource(
+      world.entities,
+      world.spatial,
+      world.registry,
+    ),
+    visuals,
+  });
+  const ids = (items) => items.map((item) => item.presence.entityId);
+
+  assert.deepEqual(ids(shared.world), ids(wrapped.world));
+  assert.deepEqual(ids(shared.standing), ids(wrapped.standing));
+  assert.deepEqual(ids(shared.effect), ids(wrapped.effect));
 });
 
 test("场景共享一次胜利求值，并在收集与恢复后更新出口视觉", () => {

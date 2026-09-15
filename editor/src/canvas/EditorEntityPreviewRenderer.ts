@@ -1,5 +1,7 @@
 import {
+  buildSpatialScene,
   createBuiltinEntityCatalog,
+  createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
@@ -91,24 +93,29 @@ export class EditorEntityPreviewRenderer {
             .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
         }
       : spatialQuery;
-    const inspections = [...preview.presencesFor({ index: 0 })].sort(
-      (a, b) => a.presence.stackOrder - b.presence.stackOrder,
+    const source = createIndexedSpatialSceneSource(
+      preview.entities,
+      preview.spatial,
+      this.catalog.entities,
+      { query, entity: (id) => query.entity(id) },
     );
-    let rendered = false;
-    for (const inspection of inspections) {
-      const entity = query.entity(inspection.presence.entityId);
-      if (!entity) continue;
-      const resolveContext = { entity, presence: inspection.presence, query };
-      const composition =
-        this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??
-        this.visuals.resolve(inspection.definition, resolveContext);
-      rendered ||= Boolean(composition?.layers.length);
+    const scene = buildSpatialScene({
+      source,
+      visuals: this.visuals,
+      resolveVisual: (definition, resolveContext) =>
+        this.editor.entities?.[resolveContext.entity.type]?.editorVisual?.(
+          resolveContext,
+        ) ?? this.visuals.resolve(definition, resolveContext),
+    });
+    const items = [...scene.world, ...scene.standing, ...scene.effect];
+    const rendered = items.some((item) => item.composition.layers.length > 0);
+    for (const item of items) {
       drawVisualComposition(
         context,
         this.images,
-        composition,
-        inspection.presence.cell.x * naturalTile,
-        inspection.presence.cell.y * naturalTile,
+        item.composition,
+        item.visualX * naturalTile,
+        item.visualY * naturalTile,
         naturalTile,
       );
     }

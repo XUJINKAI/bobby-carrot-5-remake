@@ -274,6 +274,13 @@ export {
 export { VisualRegistry } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
 export {
+  buildSpatialScene,
+  createIndexedSpatialSceneSource,
+  type BuildSpatialSceneOptions,
+  type SpatialSceneContext,
+  type SpatialSceneSource,
+} from "./visual/SpatialSceneBuilder.js";
+export {
   resolveEntityVisualPreview,
   resolveLevelEntityVisualPreview,
   type EntityVisualPreviewSource,
