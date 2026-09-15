@@ -48,7 +48,7 @@ test("Replay playback 只发布可观察的世界事件", () => {
   assert.deepEqual(requests, []);
 });
 
-test("阻塞对话会终止录制并发布通知", () => {
+test("宿主阻塞交互会终止录制并发布通知", () => {
   const game = eventGame(false);
   game.listeners = new Map();
   game.replayRecorder = {};
@@ -56,11 +56,11 @@ test("阻塞对话会终止录制并发布通知", () => {
   game.on("replay-recording-aborted", () => notifications.push("aborted"));
   game.on("change", () => notifications.push("change"));
 
-  game.abortReplayRecordingForInteractiveChoice();
+  game.abortReplayRecording();
 
   assert.equal(game.replayRecording, false);
   assert.deepEqual(notifications, ["aborted", "change"]);
-  game.abortReplayRecordingForInteractiveChoice();
+  game.abortReplayRecording();
   assert.deepEqual(notifications, ["aborted", "change"]);
 });
 
