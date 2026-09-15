@@ -42,7 +42,7 @@ export type GameSessionInteractionHandler = (
   context: GameSessionInteractionContext,
 ) => void | Promise<void>;
 
-/** 页面决定关卡与 session 语义；Engine runtime 持有地图内 HUD、Dialog 与输入生命周期。 */
+/** Web Session 组合 Engine runtime、纯 Dialog View 与页面级 gameplay 门禁。 */
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {

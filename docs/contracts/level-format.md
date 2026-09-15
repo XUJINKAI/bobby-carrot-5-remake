@@ -59,7 +59,8 @@ Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面�
 ```
 
 `dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 使用自身的
-Runtime 游标循环数组并发出 `dialog` 事件；游标进入 Snapshot，但不反写地图。Editor 为
+Runtime 游标循环数组，并在 `object-interaction` 事件中携带本轮 `text`；游标进入 Snapshot，
+但不反写地图。Editor 为
 每轮对白提供独立的可增删多行文本框。需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
 
 Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
