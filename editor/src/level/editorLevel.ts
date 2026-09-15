@@ -1,7 +1,7 @@
 import {
   MapEntityTypeId,
-  type JsonPrimitive,
   type LevelEntity,
+  type LevelEntityFieldValue,
   type LevelLimit,
   type LevelMap,
   type WinCondition,
@@ -146,18 +146,21 @@ function normalizeEntity(raw: LevelEntity): LevelEntity | null {
   for (const [key, value] of Object.entries(raw)) {
     if (key === "type" || key === "x" || key === "y" || key === "stackOrder")
       continue;
-    if (!key || !isJsonPrimitive(value)) continue;
-    entity[key] = value;
+    if (!key || !isLevelEntityFieldValue(value)) continue;
+    entity[key] = structuredClone(value);
   }
   return entity;
 }
 
-function isJsonPrimitive(value: unknown): value is JsonPrimitive {
+function isLevelEntityFieldValue(
+  value: unknown,
+): value is LevelEntityFieldValue {
   return (
     value === null ||
     typeof value === "string" ||
     typeof value === "boolean" ||
-    (typeof value === "number" && Number.isFinite(value))
+    (typeof value === "number" && Number.isFinite(value)) ||
+    (Array.isArray(value) && value.every((item) => typeof item === "string"))
   );
 }
 

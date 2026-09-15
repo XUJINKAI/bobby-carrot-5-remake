@@ -25,6 +25,7 @@ import {
   resolvePlacement,
   serializeEditorLevel,
   toLevelMap,
+  updateEntityField,
   updateMetadata,
   validateEditorLevel,
 } from "../dist/index.js";
@@ -259,6 +260,42 @@ test("Entity fields and instance stack order round-trip", () => {
       (entity) => entity.type === MapEntityTypeId.CRUMBLY_ROCK,
     )?.facts,
     undefined,
+  );
+});
+
+test("dialogue string lists survive the complete Editor document round-trip", () => {
+  const map = {
+    schemaVersion: 1,
+    width: 3,
+    height: 3,
+    entities: [
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.BEAVER,
+        x: 1,
+        y: 1,
+        dialogue: ["first", "second"],
+      },
+    ],
+  };
+  const document = new EditorDocument(fromLevelMap(map));
+  const beaverIndex = document.getSnapshot().level.entities.findIndex(
+    (entity) => entity.type === MapEntityTypeId.BEAVER,
+  );
+
+  assert.equal(document.execute(updateEntityField(
+    { index: beaverIndex },
+    "dialogue",
+    ["third", "fourth"],
+  )), true);
+
+  const saved = serializeEditorLevel(document.getSnapshot().level);
+  const restored = toLevelMap(parseEditorLevel(saved));
+  assert.deepEqual(
+    restored.entities.find(
+      (entity) => entity.type === MapEntityTypeId.BEAVER,
+    )?.dialogue,
+    ["third", "fourth"],
   );
 });
 
