@@ -21,6 +21,8 @@ function fixture() {
   let now = 0;
   let blocks = 0;
   let releases = 0;
+  let inputReleases = 0;
+  let inputConsumer = null;
   const pending = [];
   const calls = [];
   const moves = [];
@@ -35,6 +37,9 @@ function fixture() {
     present(presentation) {
       calls.push({ type: "presentation", presentation });
       return new Promise((resolve) => pending.push(resolve));
+    },
+    handleInput(input) {
+      calls.push({ type: "input", input });
     },
     close() {
       pending.shift()?.(DISMISSED);
@@ -55,6 +60,18 @@ function fixture() {
         },
       };
     },
+    acquireInput(_reason, consumer) {
+      inputConsumer = consumer;
+      let active = true;
+      return {
+        release() {
+          if (!active) return;
+          active = false;
+          inputConsumer = null;
+          inputReleases += 1;
+        },
+      };
+    },
     now: () => now,
     directionForDialogue: () => "up",
     moveFromDialogue: (actorId, direction) => {
@@ -66,7 +83,8 @@ function fixture() {
     calls,
     moves,
     pending,
-    counts: () => ({ blocks, releases }),
+    counts: () => ({ blocks, releases, inputReleases }),
+    input: (value) => inputConsumer?.(value),
     setNow: (value) => {
       now = value;
     },
@@ -87,11 +105,17 @@ test("Entity dialogue 把完整段落交给同一个 View 生命周期", async (
     messages: ["第一句", "第二句"],
     direction: "up",
   }]);
-  assert.deepEqual(f.counts(), { blocks: 1, releases: 0 });
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 0, inputReleases: 0 });
+
+  f.input({ type: "direction", source: "wasd", direction: "up" });
+  assert.deepEqual(f.calls.at(-1), {
+    type: "input",
+    input: { type: "direction", source: "wasd", direction: "up" },
+  });
 
   f.pending.shift()(DISMISSED);
   await settle();
-  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1, inputReleases: 1 });
 });
 
 test("实体对白关闭后解除输入门禁并提交发起者的移动", async () => {
@@ -100,7 +124,7 @@ test("实体对白关闭后解除输入门禁并提交发起者的移动", async
   f.pending.shift()({ type: "move", direction: "left" });
   await settle();
 
-  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1, inputReleases: 1 });
   assert.deepEqual(f.moves, [{ actorId: 7, direction: "left" }]);
 });
 
@@ -137,6 +161,6 @@ test("宿主 show/present 共用串行门禁，reset 关闭当前项并清空队
   assert.deepEqual(await first, DISMISSED);
   assert.deepEqual(await second, DISMISSED);
   await settle();
-  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1, inputReleases: 1 });
   assert.equal(f.calls.length, 1);
 });

@@ -1,4 +1,5 @@
 import type { Direction } from "@bobby/model";
+import type { LogicalInputAction } from "../input/InputController.js";
 import { resolveGameplayMount } from "./gameplayMount.js";
 
 export interface GameplayDialogViewOptions {
@@ -26,7 +27,7 @@ export type GameplayDialogResult =
   | GameplayDialogOptionResult
   | { type: "move"; direction: Direction };
 
-export type GameplayDialogKeyAction =
+export type GameplayDialogInputAction =
   | "ignore"
   | "finish-typing"
   | "advance"
@@ -122,7 +123,6 @@ export class GameplayDialogView {
     panel.addEventListener("click", this.onPanelClick);
     this.root.append(panel);
     mount.append(this.root);
-    window.addEventListener("keydown", this.onKeyDown, true);
   }
 
   get open(): boolean {
@@ -342,18 +342,15 @@ export class GameplayDialogView {
     this.typeMessage(nextMessage);
   }
 
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
+  handleInput(input: LogicalInputAction): void {
     if (this.root.hidden || !this.pendingPresentation) return;
-    const action = resolveGameplayDialogKeyAction(
-      event.key,
+    const action = resolveGameplayDialogInputAction(
+      input,
       this.optionIds.length,
       this.typingTimer !== null,
-      event.repeat,
       this.passiveDirection,
     );
     if (action === "ignore") return;
-    event.preventDefault();
-    event.stopPropagation();
     if (action === "dismiss") {
       this.settlePresentation({ type: "dismissed" });
       return;
@@ -367,9 +364,8 @@ export class GameplayDialogView {
       return;
     }
     if (action === "move") {
-      const direction = directionForArrowKey(event.key);
-      if (direction)
-        this.settlePresentation({ type: "move", direction });
+      if (input.type === "direction")
+        this.settlePresentation({ type: "move", direction: input.direction });
       return;
     }
     if (action === "previous") this.selectRelative(-1);
@@ -380,11 +376,10 @@ export class GameplayDialogView {
         this.settlePresentation({ type: "selected", optionId });
       }
     }
-  };
+  }
 
   destroy(): void {
     this.close();
-    window.removeEventListener("keydown", this.onKeyDown, true);
     this.panel.removeEventListener("click", this.onPanelClick);
     this.root.remove();
   }
@@ -405,34 +400,24 @@ export function cycleOptionIndex(
   return ((current + offset) % count + count) % count;
 }
 
-/** 普通对白的方向键按接触方向裁决；持续按键只触发一次。 */
-export function resolveGameplayDialogKeyAction(
-  key: string,
+/** 普通对白按接触方向裁决；输入设备差异已经由 InputController 消除。 */
+export function resolveGameplayDialogInputAction(
+  input: LogicalInputAction,
   optionCount: number,
   typing: boolean,
-  repeat: boolean,
   dialogueDirection: Direction | null = null,
-): GameplayDialogKeyAction {
-  if (key === "Escape") return "dismiss";
+): GameplayDialogInputAction {
+  if (input.type === "cancel") return "dismiss";
   if (optionCount === 0) {
-    if (repeat) return "ignore";
-    if (key === "Enter") return typing ? "finish-typing" : "advance";
-    const direction = directionForArrowKey(key);
-    if (!direction || !dialogueDirection) return "ignore";
-    if (direction !== dialogueDirection) return "move";
-    return typing ? "ignore" : "advance";
+    if (input.type === "confirm")
+      return typing ? "finish-typing" : "advance";
+    if (dialogueDirection && input.direction !== dialogueDirection)
+      return "move";
+    return typing ? "finish-typing" : "advance";
   }
-  if (!["ArrowLeft", "ArrowRight", "Enter"].includes(key)) return "ignore";
-  if (typing) return key === "Enter" && !repeat ? "finish-typing" : "ignore";
-  if (key === "ArrowLeft") return "previous";
-  if (key === "ArrowRight") return "next";
-  return repeat ? "ignore" : "select";
-}
-
-function directionForArrowKey(key: string): Direction | null {
-  if (key === "ArrowUp") return "up";
-  if (key === "ArrowDown") return "down";
-  if (key === "ArrowLeft") return "left";
-  if (key === "ArrowRight") return "right";
-  return null;
+  if (input.type === "confirm") return typing ? "finish-typing" : "select";
+  if (typing) return "ignore";
+  if (input.direction === "left") return "previous";
+  if (input.direction === "right") return "next";
+  return "ignore";
 }

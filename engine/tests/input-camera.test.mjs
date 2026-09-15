@@ -106,6 +106,35 @@ test("关卡进入表现期间丢弃移动输入", () => {
   }
 });
 
+test("输入门禁内的模态消费者仍接收 WASD、方向键与 Swipe", () => {
+  const view = fixture();
+  try {
+    const actions = [];
+    const block = view.input.acquireBlock("dialogue");
+    const consumer = view.input.acquireConsumer("dialogue", (action) => {
+      actions.push(action);
+    });
+
+    globalThis.window.dispatch("keydown", keyboard("w"));
+    globalThis.window.dispatch("keydown", keyboard("ArrowLeft"));
+    view.canvas.dispatch("pointerdown", pointer(1, 10, 10));
+    view.canvas.dispatch("pointermove", pointer(1, 50, 12));
+    view.canvas.dispatch("pointerup", pointer(1, 50, 12));
+
+    assert.deepEqual(actions, [
+      { type: "direction", source: "wasd", direction: "up" },
+      { type: "direction", source: "arrows", direction: "left" },
+      { type: "direction", source: "pointer", direction: "right" },
+    ]);
+    assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
+
+    consumer.release();
+    block.release();
+  } finally {
+    view.destroy();
+  }
+});
+
 test("双指手势同时按中心位移平移并围绕中心缩放", () => {
   const view = fixture();
   try {

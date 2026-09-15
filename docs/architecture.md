@@ -231,7 +231,10 @@ Engine GameplayDialogController → GameplayDialogView
 BehaviorContext、WorldQuery 或 CommandQueue。Web 在处理外部请求期间持有
 `blocking-interaction` lease，由它暂停 World、阻塞输入并终止进行中的 Replay 录制；
 Controller 在实际展示期间再持有可叠加的 Engine dialogue lease。
-`GameplayDialogView` 是 Controller 内部无 World 引用的 DOM View。
+`InputController` 在 Dialog 激活期间把 Keyboard、Pointer Swipe、Screen Joystick 与外部
+方向控件归一化为逻辑输入，并交给 Controller 持有的模态消费者；World gameplay 保持暂停，
+输入采集本身继续工作。`GameplayDialogView` 是 Controller 内部无 World 与浏览器输入监听的
+DOM View。
 Replay 只回放 Engine gameplay 动作，播放不会重新请求宿主交互。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。

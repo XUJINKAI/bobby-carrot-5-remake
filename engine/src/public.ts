@@ -96,7 +96,10 @@ export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,
+  type InputConsumerLease,
   type InputState,
+  type LogicalInputAction,
+  type LogicalInputConsumer,
   type LogicalMoveInput,
 } from "./input/InputController.js";
 export {

@@ -544,9 +544,10 @@ game.onInteractionRequest((request) => {
 不会把该请求发布给宿主。`dialogue` 可以是字符串或字符串数组；数组从第一段开始在同一个
 对话框内依次翻页，每个元素可以包含换行。关闭最后一段后，同一 `(actorId, entityId)` 在
 500ms 内不会重复打开。World 本身仍不持有 DOM、Promise、暂停或输入状态。
-Entity 字面对白以 Bobby 到接触 Body 格的方向作为翻页方向：该方向键在当前段完整显示后
-进入下一段，其他方向键立即关闭对话并在下一次 gameplay tick 让发起对话的 Bobby 向按键
-方向移动。持续按键不会连续翻页；Enter 和点击仍可完成逐字展示与翻页。
+Entity 字面对白以 Bobby 到接触 Body 格的方向作为翻页方向：同方向逻辑输入先完成逐字展示，
+再次输入进入下一段；其他方向立即关闭对话，并在下一次 gameplay tick 让发起对话的 Bobby
+向该方向移动。Keyboard 方向键、WASD、Pointer Swipe、Screen Joystick 与外部方向控件都由
+`InputController` 归一化后交给当前 Dialog；持续按键产生的后续输入使用同一规则。
 
 需要宿主条件、分支、购买或存档的 Entity 不得配置 `dialogue`；它只产生
 `object-interaction`，由宿主决定是否以及如何调用 Controller。
@@ -581,15 +582,16 @@ const result = await dialog.present({
 
 `dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
-第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
-先立即补全当前文本。无选项文本通过 `dialog.show()` 展示，回车、方向键或点击先补全文本，
+第一项。玩家使用左右逻辑输入循环选择、确认输入提交，也可以直接点击；确认输入在逐字展示
+期间先立即补全当前文本。无选项文本通过 `dialog.show()` 展示，确认、方向或点击先补全文本，
 再次操作返回 `{ type: "dismissed" }`。所有选项使用
 同级基础样式，当前选项通过高亮边框、背景与阴影
 标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
 `GameplayDialogController` 是 Engine 的唯一公共对话入口；它不接收业务回调，也不读写
-存档、货币或商品状态。Controller 串行展示请求并在 View 打开期间阻塞 gameplay。
+存档、货币或商品状态。Controller 串行展示请求并在 View 打开期间暂停 gameplay，同时从
+`InputController` 取得模态输入消费者租约；View 不直接监听 Keyboard 或 Pointer 事件。
 外部 interaction 的宿主 gate 覆盖完整业务事务，可与 Controller lease 安全叠加；宿主等待
 通用结果后再执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为 `0`
 可立即显示全文。

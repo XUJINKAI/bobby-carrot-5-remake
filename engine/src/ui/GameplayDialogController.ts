@@ -1,4 +1,8 @@
 import type { Direction } from "@bobby/model";
+import type {
+  LogicalInputAction,
+  LogicalInputConsumer,
+} from "../input/InputController.js";
 import type { DialogueRequestEvent } from "../world/WorldTypes.js";
 import {
   GameplayDialogView,
@@ -22,6 +26,10 @@ interface GameplayDialogBlockLease {
 
 export interface GameplayDialogControllerHost {
   acquireBlock(reason: "dialogue"): GameplayDialogBlockLease;
+  acquireInput(
+    reason: "dialogue",
+    consumer: LogicalInputConsumer,
+  ): GameplayDialogBlockLease;
   now(): number;
   directionForDialogue(request: DialogueRequestEvent): Direction | null;
   moveFromDialogue(actorId: number, direction: Direction): void;
@@ -36,6 +44,7 @@ interface GameplayDialogSurface {
   present(
     presentation: GameplayDialogPresentation,
   ): Promise<GameplayDialogResult>;
+  handleInput(input: LogicalInputAction): void;
   close(): void;
   destroy(): void;
 }
@@ -161,11 +170,16 @@ export class GameplayDialogController {
         const dialog = this.queue.shift();
         if (!dialog) break;
         const lease = this.host.acquireBlock("dialogue");
+        const inputLease = this.host.acquireInput(
+          "dialogue",
+          (input) => this.view.handleInput(input),
+        );
         try {
           dialog.resolve(await dialog.run());
         } catch (error) {
           dialog.reject(error);
         } finally {
+          inputLease.release();
           lease.release();
         }
       }

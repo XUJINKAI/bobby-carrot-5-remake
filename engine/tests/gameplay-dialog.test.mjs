@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   cycleOptionIndex,
-  resolveGameplayDialogKeyAction,
+  resolveGameplayDialogInputAction,
 } from "../dist/ui/GameplayDialog.js";
+
+const direction = (value, source = "arrows") => ({
+  type: "direction",
+  source,
+  direction: value,
+});
 
 test("GameplayDialogView 左右选择在任意数量选项间循环", () => {
   assert.equal(cycleOptionIndex(0, 5, 1), 1);
@@ -12,42 +18,55 @@ test("GameplayDialogView 左右选择在任意数量选项间循环", () => {
   assert.equal(cycleOptionIndex(2, 0, 1), -1);
 });
 
-test("实体对白按接触方向翻页，其他方向结束并移动", () => {
+test("实体对白按统一方向输入翻页，其他方向结束并移动", () => {
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, false, false, "up"),
+    resolveGameplayDialogInputAction(direction("up"), 0, false, "up"),
     "advance",
   );
-  for (const key of ["ArrowDown", "ArrowLeft", "ArrowRight"])
+  for (const value of ["down", "left", "right"])
     assert.equal(
-      resolveGameplayDialogKeyAction(key, 0, false, false, "up"),
+      resolveGameplayDialogInputAction(direction(value), 0, false, "up"),
       "move",
     );
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, false, true, "up"),
-    "ignore",
-  );
-  assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, true, false, "up"),
-    "ignore",
-  );
-  assert.equal(
-    resolveGameplayDialogKeyAction("ArrowLeft", 0, true, false, "up"),
-    "move",
-  );
-  assert.equal(
-    resolveGameplayDialogKeyAction("Enter", 0, true, false, "up"),
+    resolveGameplayDialogInputAction(direction("up", "wasd"), 0, true, "up"),
     "finish-typing",
   );
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 0, false, false),
+    resolveGameplayDialogInputAction(direction("left", "pointer"), 0, true, "up"),
+    "move",
+  );
+  assert.equal(
+    resolveGameplayDialogInputAction(
+      { type: "confirm", source: "keyboard" },
+      0,
+      true,
+      "up",
+    ),
+    "finish-typing",
+  );
+  assert.equal(
+    resolveGameplayDialogInputAction(direction("up"), 0, false),
+    "advance",
+  );
+  assert.equal(
+    resolveGameplayDialogInputAction(direction("up"), 2, false),
     "ignore",
   );
   assert.equal(
-    resolveGameplayDialogKeyAction("ArrowUp", 2, false, false),
-    "ignore",
-  );
-  assert.equal(
-    resolveGameplayDialogKeyAction("Enter", 2, false, false),
+    resolveGameplayDialogInputAction(
+      { type: "confirm", source: "keyboard" },
+      2,
+      false,
+    ),
     "select",
+  );
+  assert.equal(
+    resolveGameplayDialogInputAction(
+      { type: "cancel", source: "keyboard" },
+      2,
+      false,
+    ),
+    "dismiss",
   );
 });

@@ -147,6 +147,10 @@ export class Game {
           options.canvas,
           {
             acquireBlock: () => this.acquireDialogueBlock(),
+            acquireInput: (_reason, consumer) =>
+              this.inputController?.acquireConsumer("dialogue", consumer) ?? {
+                release() {},
+              },
             now: runtimeNow,
             directionForDialogue: (request) =>
               this.dialogueInput.directionFor(this.worldValue, request),
@@ -377,15 +381,15 @@ export class Game {
 
   setHeldDirection(direction: Direction | null): void {
     if (this.replayPlayback.playing) return;
+    if (this.inputController) {
+      this.inputController.setHeldDirection(direction);
+      return;
+    }
     if (
       direction !== null &&
       (this.presentationBlocksInput || this.gameplayPaused)
     )
       return;
-    if (this.inputController) {
-      this.inputController.setHeldDirection(direction);
-      return;
-    }
     if (direction === this.heldDirection) return;
     this.heldDirection = direction;
     this.heldDirectionBlocked = false;
@@ -857,7 +861,6 @@ export class Game {
   }
 
   private acquireDialogueBlock(): { release(): void } {
-    const inputLease = this.inputController?.acquireBlock("dialogue");
     this.dialogueBlockCount += 1;
     this.presentation.setDialogueActive(true, this.worldValue);
     this.discardPendingGameplayInput();
@@ -871,7 +874,6 @@ export class Game {
           this.dialogueBlockCount > 0,
           this.worldValue,
         );
-        inputLease?.release();
       },
     };
   }
