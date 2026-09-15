@@ -539,9 +539,9 @@ export function useEditorPage(initialLevel: EditorMap) {
       return document.execute(replaceEntity(inspection.ref, next));
     }
     const definition = editor.entities?.[placement.value.type];
-      const next = cyclePlacementVariant(
-        placement.value,
-        catalog,
+    const next = cyclePlacementVariant(
+      placement.value,
+      catalog,
       definition,
       step,
     );

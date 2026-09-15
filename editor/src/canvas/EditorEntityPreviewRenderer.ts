@@ -90,14 +90,14 @@ export class EditorEntityPreviewRenderer {
             .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
         }
       : spatialQuery;
-    const source = createIndexedSpatialSceneSource(
+    const sceneSource = createIndexedSpatialSceneSource(
       preview.entities,
       preview.spatial,
       this.environment.catalog.entities,
       { query, entity: (id) => query.entity(id) },
     );
     const scene = buildSpatialScene({
-      source,
+      source: sceneSource,
       visuals: this.environment.visuals,
       resolveVisual: (definition, resolveContext) =>
         this.editor.entities?.[resolveContext.entity.type]?.editorVisual?.(

@@ -81,7 +81,7 @@ test("大地图交互复用底图，放置预览只实例化待放置对象", (t
     sourceTileSize: 48,
     atlasId: "atlas",
     image: () => ({ width: 480, height: 480 }),
-  }, undefined, undefined, undefined, overlay);
+  }, undefined, undefined, overlay);
   const state = {
     level, tool: "select", placement: null, selection: null, hover: null,
     viewport: { zoom: 1, panX: 0, panY: 0 },
