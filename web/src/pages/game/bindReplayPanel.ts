@@ -443,6 +443,10 @@ export function bindReplayPanel(options: {
       update();
     },
   );
+  const unsubscribeLevelComplete = options.game.on(
+    "level-complete",
+    stopRecording,
+  );
   setOpen(open, false);
   update();
 
@@ -460,6 +464,7 @@ export function bindReplayPanel(options: {
       speedInput.removeEventListener("input", onSpeedInput);
       window.removeEventListener("keydown", onKeyDown);
       unsubscribeRecordingAbort();
+      unsubscribeLevelComplete();
       stage.classList.remove("replay-panel-open");
     },
   };

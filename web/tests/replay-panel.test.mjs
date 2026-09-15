@@ -83,6 +83,14 @@ test("Replay 面板使用一帧一行的统一序列化", () => {
   assert.match(replayBindingSource, /output\.value = serializeReplay\(replay\)/);
 });
 
+test("关卡通关后自动结束 Replay 录制", () => {
+  assert.match(
+    replayBindingSource,
+    /options\.game\.on\(\s*"level-complete",\s*stopRecording/,
+  );
+  assert.match(replayBindingSource, /unsubscribeLevelComplete\(\)/);
+});
+
 test("Replay 面板在播放按钮上方提供跳过思考时间选项", () => {
   const checkboxIndex = replayPanelSource.indexOf("data-replay-skip-thinking");
   const playButtonIndex = replayPanelSource.indexOf('data-replay-action="play"');
