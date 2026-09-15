@@ -30,9 +30,7 @@ export class WorldLifecycle {
   initialize(): void {
     for (const actor of this.query.entitiesWithFact("player"))
       this.actors.state(actor.id);
-    this.rules.refreshDerivedState();
     if (this.rules.completionReady(false)) this.finish("won");
-    else this.syncLegacyState();
   }
 
   settle(result: WorldStepResult, preferredActorId?: EntityId): void {
@@ -45,7 +43,6 @@ export class WorldLifecycle {
     for (const actorId of changedActorIds) this.interruptInactive(actorId, result);
 
     if (!this.outcome.playing) {
-      this.syncLegacyState();
       return;
     }
     const playerIds = this.query
@@ -55,7 +52,6 @@ export class WorldLifecycle {
       (actorId) => playerIds.includes(actorId) && !this.actors.isActive(actorId),
     );
     if (inactiveActorId === undefined) {
-      this.syncLegacyState();
       return;
     }
     const reason =
@@ -64,7 +60,6 @@ export class WorldLifecycle {
   }
 
   evaluateRules(result: WorldStepResult): void {
-    this.rules.refreshDerivedState();
     if (!this.outcome.playing) return;
     if (this.rules.completionReady(this.movement.running.length > 0)) {
       this.finish("won", result);
@@ -72,15 +67,6 @@ export class WorldLifecycle {
     }
     const reason = this.rules.exceededLimitReason();
     if (reason) this.finish("lost", result, reason);
-  }
-
-  syncLegacyState(): void {
-    const state = this.state();
-    const outcome = this.outcome.state;
-    state.dead = outcome.phase === "lost";
-    state.completed = outcome.phase === "won";
-    state.deathReason =
-      outcome.phase === "lost" ? outcome.reason ?? null : null;
   }
 
   private interruptInactive(actorId: EntityId, result: WorldStepResult): void {
@@ -113,7 +99,6 @@ export class WorldLifecycle {
         ? this.outcome.win(state.elapsedMs)
         : this.outcome.lose(reason, state.elapsedMs, actorId);
     if (!outcome) return;
-    this.syncLegacyState();
     if (!result) return;
 
     result.deltas.push(
@@ -134,12 +119,5 @@ export class WorldLifecycle {
     result.deltas.push(
       this.sequence.create({ type: "world-event", event }, this.clock()),
     );
-    pushUnique(result.mutations.globalsChanged, "dead");
-    pushUnique(result.mutations.globalsChanged, "completed");
-    pushUnique(result.mutations.globalsChanged, "deathReason");
   }
-}
-
-function pushUnique<T>(values: T[], value: T): void {
-  if (!values.includes(value)) values.push(value);
 }

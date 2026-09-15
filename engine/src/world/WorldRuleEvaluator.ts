@@ -24,21 +24,17 @@ export class WorldRuleEvaluator {
     return condition ? this.evaluateWin(condition) : null;
   }
 
-  refreshDerivedState(): void {
-    const state = this.state();
-    state.metrics = { ...this.metrics.project(this.spatial) };
+  get derivedMetrics(): Readonly<Record<string, number>> {
+    return this.metrics.project(this.spatial);
   }
 
   completionReady(motionRunning: boolean): boolean {
-    const state = this.state();
-    if (state.completed || state.dead || motionRunning) return false;
+    if (motionRunning) return false;
     const win = this.winState;
     return win?.completed === true;
   }
 
   exceededLimitReason(): string | null {
-    const state = this.state();
-    if (state.completed || state.dead) return null;
     for (const limit of this.rules?.limits ?? []) {
       if (!this.limitExceeded(limit)) continue;
       return (

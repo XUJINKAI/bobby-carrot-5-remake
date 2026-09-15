@@ -50,7 +50,7 @@ function bobbyVisual(options = {}) {
     presence,
     query: new SpatialVisualQuery(store, spatial),
     ...(options.runtime ? { runtime: options.runtime } : {}),
-    ...(options.global ? { global: options.global } : {}),
+    ...(options.outcome ? { outcome: options.outcome } : {}),
     ...(options.time ? { time: options.time } : {}),
   });
 }
@@ -237,7 +237,7 @@ test("Bobby idle starts after five seconds and advances every 50ms", () => {
 test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () => {
   const death = bobbyVisual({
     runtime: { moving: false, progress: 1, animation: "death" },
-    global: { dead: true },
+    outcome: { phase: "lost", changedAtMs: 0 },
   });
   assert.equal(death.layers[0].asset, "bobby-death");
   assert.equal(death.layers[0].frameColumns, 8);
@@ -257,19 +257,19 @@ test("Bobby 进入关卡时倒放 b6，通关后正放并隐藏", () => {
   });
   const exitingStart = bobbyVisual({
     runtime: { moving: false, progress: 0, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const exitingLastFrame = bobbyVisual({
     runtime: { moving: false, progress: 0.7, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const exitingHidden = bobbyVisual({
     runtime: { moving: false, progress: 0.8, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const hidden = bobbyVisual({
     runtime: { moving: false, progress: 1, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
 
   assert.equal(enteringHidden, null);

@@ -102,7 +102,9 @@ Actor 独立处于 `active | downed | eliminated`；World 独立处于 `playing 
 - `reviveActor()` 只提供 Engine 能力，把 playing World 中的 downed actor 恢复为 active，并清除死亡时保留的 interrupted motion；具体距离、消耗、动画和机关不属于本次基础设施。
 - World 已进入终态后不会通过 revive 重新打开。
 
-为兼容现有外层状态，`GlobalState.dead/completed/deathReason` 由 WorldOutcome 同步；它们不再是 actor 死亡的源事实。
+`WorldOutcome` 是关卡终局的唯一状态；终局原因、关联 actor 与发生时间都从该 Store
+读取。`GlobalState` 只保存步数、经过时间、交互序号等真实可变的 world-level 值，
+空间计数由当前 Spatial 事实即时投影。
 
 Motion 终态使用有序 delta 表达：down 保留 interrupted pose 供死亡表现读取；revive 发出 `motion-cleared` 后回到权威 grid anchor；destroy 依次产生 interrupt、clear、entity destroy。Presentation 只消费这段事实序列。
 

@@ -14,7 +14,6 @@ export const DEFAULT_HISTORY_POLICY: HistoryPolicy = {
 const NON_CHECKPOINT_GLOBALS = new Set([
   "moves",
   "elapsedMs",
-  "logicRemainderMs",
 ]);
 
 /**
@@ -32,6 +31,7 @@ export function shouldCheckpoint(
   const controlled = new Set(controlledActorIds);
   const mutation = result.mutations;
   if (
+    result.deltas.some((delta) => delta.type === "world-outcome-changed") ||
     mutation.stateChanged.length > 0 ||
     mutation.spawned.length > 0 ||
     mutation.destroyed.length > 0 ||

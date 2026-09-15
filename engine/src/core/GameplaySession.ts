@@ -193,9 +193,11 @@ export class GameplaySession {
       ? null
       : world.entities.get(this.primaryActorIdValue) ?? null;
     const timedChallenge = this.timedChallengeState(world);
+    const outcome = world.outcome.state;
+    const metrics = world.metrics;
     return {
       status: world.dead ? "dead" : world.completed ? "won" : "playing",
-      deathReason: state.deathReason,
+      deathReason: outcome.phase === "lost" ? outcome.reason ?? null : null,
       moves: state.moves,
       primaryActorId: this.primaryActorIdValue,
       actors,
@@ -203,8 +205,8 @@ export class GameplaySession {
       facing: primary?.direction ?? null,
       inventory: readBobbyInventory(primary?.state),
       elapsedMs: state.elapsedMs,
-      bonusCoinsInLevel: state.metrics["bonus-coin"] ?? 0,
-      goldenCarrotsInLevel: state.metrics["golden-carrot"] ?? 0,
+      bonusCoinsInLevel: metrics["bonus-coin"] ?? 0,
+      goldenCarrotsInLevel: metrics["golden-carrot"] ?? 0,
       timedChallengePhase: timedChallenge?.phase ?? null,
       timedChallengeRemainingMs: timedChallenge?.remainingMs ?? null,
       canUndo: this.canUndo,

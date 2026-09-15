@@ -116,7 +116,7 @@ const bobbyVisual = {
     const rawProgress = context.runtime?.progress ?? 1;
     const progress = clampProgress(rawProgress);
 
-    if (context.global?.dead) {
+    if (context.outcome?.phase === "lost") {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.death,
         frameColumns: 8,
@@ -152,7 +152,7 @@ const bobbyVisual = {
     }
 
     // World 完成后只允许通关 transition 绘制 Bobby；动画结束后角色保持隐藏。
-    if (context.global?.completed) return null;
+    if (context.outcome?.phase === "won") return null;
 
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));

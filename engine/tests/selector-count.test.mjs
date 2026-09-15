@@ -51,10 +51,9 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
   world.spatial.entityCountWithFact = () => {
     assert.fail("奖励计数应按 Type 查询");
   };
-  world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(world.winState.remaining, 1);
   assert.equal(world.query.entityCountMatching(levelRuleSelector("carrot")), 1);
   assert.equal(world.query.entitiesMatching(levelRuleSelector("carrot")).length, 1);
-  assert.equal(world.state.metrics["golden-carrot"], 1);
-  assert.equal(world.state.metrics["bonus-coin"], 1);
+  assert.equal(world.metrics["golden-carrot"], 1);
+  assert.equal(world.metrics["bonus-coin"], 1);
 });

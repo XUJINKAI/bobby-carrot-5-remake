@@ -245,6 +245,11 @@ export class World {
     return this.ruleEvaluator.winState;
   }
 
+  /** 由当前空间事实即时投影；不进入 GlobalState 或 Snapshot。 */
+  get metrics(): Readonly<Record<string, number>> {
+    return this.ruleEvaluator.derivedMetrics;
+  }
+
   get inputBlocked(): boolean {
     return this.actions.inputBlocked || this.movement.running.length > 0;
   }
@@ -309,7 +314,6 @@ export class World {
     queue.reviveActor(entityId);
     const result = emptyWorldStepResult();
     absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
-    this.lifecycle.syncLegacyState();
     return result;
   }
 
@@ -352,7 +356,6 @@ export class World {
     this.movement.restore(snapshot.movement);
     this.actors.restore(snapshot.actors);
     this.outcome.restore(snapshot.outcome);
-    this.lifecycle.syncLegacyState();
     this.spatial.rebuild();
   }
 
@@ -631,7 +634,6 @@ export class World {
     }
     const commit = this.committer.commit(queue, this.deltaClock());
     absorbCommit(result, commit);
-    this.ruleEvaluator.refreshDerivedState();
     this.lifecycle.settle(result, motion.entityId);
   }
 
