@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "vitest";
-import { replayVerificationPresentation } from "../src/pages/game/bindReplayPanel.ts";
+import {
+  replayVerificationPresentation,
+  validateBuiltinReplaySave,
+} from "../src/pages/game/bindReplayPanel.ts";
 import { replayPathId } from "../src/pages/game/replayAssets.ts";
 import {
   loadReplayPanelOpen,
@@ -130,7 +133,39 @@ test("开发模式在加载内置过法旁显示同路径保存按钮", () => {
   assert.ok(loadIndex > -1 && saveIndex > loadIndex);
   assert.match(replayPanelSource, /const canSaveBuiltin = import\.meta\.env\.DEV/);
   assert.match(replayPanelSource, /v-if="canSaveBuiltin"/);
+  assert.match(replayBindingSource, /validateBuiltinReplaySave\(options\.game, selectedReplay\)/);
   assert.match(replayBindingSource, /saveReplayAsset\(builtinReplayUrl, output\.value\)/);
+});
+
+test("保存内置过法只要求声明与实际复跑终局均为 won", () => {
+  const replay = { finalState: { status: "won" } };
+  const report = {
+    actual: { status: "won" },
+    endTick: 12,
+  };
+  assert.equal(
+    validateBuiltinReplaySave({ verifyReplay: () => report }, replay),
+    report,
+  );
+  assert.throws(
+    () => validateBuiltinReplaySave(
+      { verifyReplay: () => report },
+      { finalState: { status: "playing" } },
+    ),
+    /必须声明 won 终局/,
+  );
+  assert.throws(
+    () => validateBuiltinReplaySave(
+      {
+        verifyReplay: () => ({
+          actual: { status: "playing" },
+          endTick: 12,
+        }),
+      },
+      replay,
+    ),
+    /复跑后未通关/,
+  );
 });
 
 test("Replay 起点与终点跳转按钮显示对应方向的回转图标", () => {

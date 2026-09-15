@@ -35,6 +35,18 @@ export function replayVerificationPresentation(
   };
 }
 
+export function validateBuiltinReplaySave(
+  game: Pick<Game, "verifyReplay">,
+  replay: Replay,
+): ReplayReport {
+  const report = game.verifyReplay(replay);
+  if (replay.finalState.status !== "won")
+    throw new Error("内置过法必须声明 won 终局");
+  if (report.actual.status !== "won")
+    throw new Error("Replay 在当前关卡复跑后未通关");
+  return report;
+}
+
 export interface ReplayPanelController {
   toggle(): void;
   update(): void;
@@ -317,6 +329,9 @@ export function bindReplayPanel(options: {
     verification.classList.remove("failed");
     update();
     try {
+      const selectedReplay = replayForAction();
+      if (!selectedReplay) return;
+      validateBuiltinReplaySave(options.game, selectedReplay);
       await saveReplayAsset(builtinReplayUrl, output.value);
       if (!destroyed) verification.textContent = "内置过法已保存";
     } catch (error) {
