@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   validateLevelPlayability,
 } from "../dist/public.js";
 
-test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", () => {
+test("可游玩性检查使用具体 Goal 的对象选择规则", () => {
   const warnings = validateLevelPlayability(
     {
       schemaVersion: 1,
@@ -15,21 +15,20 @@ test("可游玩性检查使用 canonical Entity 对应的 Runtime Definition", (
       entities: [
         { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
         {
-          type: MapEntityTypeId.WINDMILL,
+          type: MapEntityTypeId.EXIT,
           x: 2,
           y: 0,
-          direction: "left",
         },
       ],
       rules: {
-        win: { type: "reach", target: MapEntityTypeId.WINDMILL },
+        win: { type: "exit" },
       },
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.equal(
-    warnings.some((warning) => warning.code === "missing-reach-target"),
+    warnings.some((warning) => warning.code === "missing-goal-target"),
     false,
   );
 });
@@ -45,7 +44,7 @@ test("可游玩性检查报告未知 Entity 的惰性占位行为", () => {
         { type: "future-mechanic", x: 1, y: 0 },
       ],
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.deepEqual(
@@ -67,7 +66,7 @@ test("字段无效的已知 Entity 作为惰性占位并报告具体问题", () 
         { type: MapEntityTypeId.BOBBY, x: 0, y: 0, controller: "future" },
       ],
     },
-    createBuiltinEntityCatalog(),
+    builtinEngineEnvironment,
   );
 
   assert.equal(
@@ -77,5 +76,19 @@ test("字段无效的已知 Entity 作为惰性占位并报告具体问题", () 
   assert.equal(
     warnings.some((warning) => warning.code === "missing-player"),
     true,
+  );
+});
+
+test("可游玩性检查报告缺少具体 Goal 对象", () => {
+  const warnings = validateLevelPlayability({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BOBBY, x: 0, y: 0 }],
+    rules: { win: { type: "all", conditions: [{ type: "egg" }, { type: "exit" }] } },
+  }, builtinEngineEnvironment);
+  assert.equal(
+    warnings.filter((warning) => warning.code === "missing-goal-target").length,
+    2,
   );
 });

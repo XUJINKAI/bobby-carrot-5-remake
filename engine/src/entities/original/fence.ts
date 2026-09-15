@@ -4,16 +4,13 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.FENCE,
-  authoring: { palette: false },
-  traits: ["blocking", "fence"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: ["blocking"],
   state: [
     {
       key: "variant",
@@ -74,7 +71,8 @@ function fenceVisualContext(context: {
   presence: { cell: { x: number; y: number } };
   query: {
     inBounds(cell: { x: number; y: number }): boolean;
-    presencesAt(cell: { x: number; y: number }): readonly { traits: readonly string[] }[];
+    presencesAt(cell: { x: number; y: number }): readonly { entityId: number }[];
+    entity(id: number): Readonly<{ type: string }> | undefined;
   };
 }): FenceConnections {
   const { x, y } = context.presence.cell;
@@ -82,9 +80,10 @@ function fenceVisualContext(context: {
     const target = { x: x + dx, y: y + dy };
     if (!context.query.inBounds(target)) return true;
     return context.query.presencesAt(target).some(
-      (presence) =>
-        presence.traits.includes("fence") ||
-        presence.traits.includes("gate"),
+      (presence) => {
+        const type = context.query.entity(presence.entityId)?.type;
+        return type === MapEntityTypeId.FENCE || type === MapEntityTypeId.LOCK;
+      },
     );
   };
   return {

@@ -1,8 +1,8 @@
 # 地图内 Callout
 
 World Callout 是 Engine 在地图 Canvas 中显示的轻量提示。它与 Entity 或格子绑定，跟随
-Camera 和移动插值，不阻塞 gameplay。带选项或需要暂停游戏的对白由 `GameplayDialog`
-承担。
+Camera 和移动插值，不阻塞 gameplay。阻塞对白由 Engine
+`GameplayDialogController` 统一承担；外部业务交互可以在它之外叠加 Web gate。
 
 原版依据见 `original/reverse-engineering/semantic/MissingItemHint.java` 与
 `GameplayRenderOrder.java`。图片切片来自原版第三方资产，权利边界以根目录
@@ -68,7 +68,7 @@ interface WorldCalloutCue {
 Renderer 的顺序是：
 
 ```text
-world → player → effect → callout → debug overlay
+world → standing → effect → callout → debug overlay
 ```
 
 DOM Gameplay HUD 位于 Canvas 外部。

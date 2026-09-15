@@ -87,6 +87,7 @@ test("world-change history ignores pure controlled movement but checkpoints puzz
     moves: [{ actorId: 1, moved: true }],
     motions: [],
     events: [],
+    deltas: [],
     mutations: {
       moved: [1],
       stateChanged: [],

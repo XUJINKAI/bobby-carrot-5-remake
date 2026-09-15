@@ -5,12 +5,13 @@ import {
   originalTileCoordinateLabel,
   originalTileVisualGroup,
 } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   applySurfaceTheme,
   builtinEditorDefinition,
   createBlankLevel,
   detectSurfaceTheme,
+  EditorPreview,
   fillSurface,
   isSurfaceEntityType,
   materializeSurfaceVariants,
@@ -23,7 +24,8 @@ import {
   surfaceTerrainForEntity,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 function entityAt(level, x, y, predicate = () => true) {
   return [...level.entities]
@@ -54,6 +56,7 @@ test("Surface catalog is independent from Palette", () => {
     .flatMap((group) => group.rows.flat());
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.WATER), false);
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.ICE), false);
+  assert.equal(palette.some((item) => item.type === MapEntityTypeId.GRASS), false);
   assert.equal(palette.some((item) => item.type === MapEntityTypeId.SPEED), true);
 });
 
@@ -114,7 +117,7 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
   assert.equal(surfaceTerrain("snow-fence").slot, "base");
   let level = createBlankLevel(5, 5);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     { terrain: "fence", pattern: "auto", seed: 1 },
   ).apply(level);
@@ -130,7 +133,7 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
   );
 
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     {
       terrain: "snow-cloud",
@@ -144,7 +147,7 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
   assert.equal(cell.some((item) => item.terrain.id === "fence"), true);
 
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     { terrain: "snow-fence", pattern: "auto", seed: 1 },
   ).apply(level);
@@ -157,7 +160,7 @@ test("Fence is a Surface overlay and preserves base terrain", () => {
 test("Fence supports Auto and explicit fixed variants", () => {
   const level = createBlankLevel(5, 5);
   const auto = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }, { x: 2, y: 1 }],
     { terrain: "fence", pattern: "auto", seed: 1 },
   ).apply(level);
@@ -168,7 +171,7 @@ test("Fence supports Auto and explicit fixed variants", () => {
 
   const exactType = surfaceTerrain("fence").rows[0][2].type;
   const exact = paintSurface(
-    catalog,
+    environment,
     [{ x: 3, y: 1 }],
     { terrain: "fence", pattern: "exact", exact: exactType, seed: 1 },
   ).apply(auto);
@@ -179,7 +182,7 @@ test("Fence supports Auto and explicit fixed variants", () => {
 
 test("serialize materializes Auto Surface visuals and strips editor metadata", () => {
   const level = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }, { x: 2, y: 1 }],
     { terrain: "fence", pattern: "auto", seed: 9 },
   ).apply(createBlankLevel(5, 5));
@@ -200,7 +203,7 @@ test("serialize materializes Auto Surface visuals and strips editor metadata", (
 test("Palette mechanism placement preserves the Surface underneath", () => {
   const level = createBlankLevel(5, 5);
   const next = placeEntity(
-    catalog,
+    environment,
     { type: MapEntityTypeId.SPEED, fields: { direction: "right" } },
     { x: 1, y: 1 },
     {},
@@ -216,7 +219,7 @@ test("painting Surface replaces only its Surface slot and preserves stacked enti
   const level = createBlankLevel(5, 5);
   level.entities.push({ type: MapEntityTypeId.CARROT, x: 2, y: 2 });
   const next = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 2 }],
     {
       terrain: "water",
@@ -234,7 +237,7 @@ test("painting Surface replaces only its Surface slot and preserves stacked enti
 
 test("Surface instances leave gameplay semantics to Engine definitions", () => {
   const next = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     {
       terrain: "stone-wall",
@@ -244,14 +247,34 @@ test("Surface instances leave gameplay semantics to Engine definitions", () => {
     },
   ).apply(createBlankLevel(4, 4));
   const entity = entityAt(next, 1, 1, (item) => item.type === "stone-wall");
-  assert.equal(entity?.traits, undefined);
+  assert.equal(entity?.facts, undefined);
   assert.equal(entity?.variant, "ts-1-4");
+});
+
+test("Editor Preview uses the same Surface Presence Fact projection as runtime", () => {
+  const next = paintSurface(
+    environment,
+    [{ x: 1, y: 1 }],
+    {
+      terrain: "water",
+      pattern: "exact",
+      exact: "ts-6-6",
+      seed: 1,
+    },
+  ).apply(createBlankLevel(4, 4));
+  const preview = new EditorPreview(next, environment);
+  const water = preview.inspectCell(1, 1).presences.find(
+    (item) => item.entity.type === MapEntityTypeId.WATER,
+  );
+
+  assert.ok(water);
+  assert.deepEqual(water.presence.facts, ["water"]);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {
   let level = createBlankLevel(5, 3);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     {
       terrain: "grass",
@@ -261,7 +284,7 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
     },
   ).apply(level);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 1 }],
     {
       terrain: "grass",
@@ -271,7 +294,7 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
     },
   ).apply(level);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 3, y: 1 }],
     {
       terrain: "water",
@@ -282,7 +305,7 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
   ).apply(level);
 
   const next = fillSurface(
-    catalog,
+    environment,
     level,
     { x: 1, y: 1 },
     {
@@ -307,7 +330,7 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
 test("Alternate Surface pattern is a stable coordinate checker", () => {
   const level = createBlankLevel(4, 4);
   const next = paintSurface(
-    catalog,
+    environment,
     rectangleCells({ x: 0, y: 0 }, { x: 1, y: 1 }),
     {
       terrain: "grass",
@@ -329,25 +352,25 @@ test("Auto Surface remains deterministic for the same seed and map context", () 
   const level = createBlankLevel(4, 4);
   const cells = rectangleCells({ x: 0, y: 0 }, { x: 3, y: 3 });
   const brush = { terrain: "grass", pattern: "auto", seed: 37 };
-  const a = paintSurface(catalog, cells, brush).apply(level);
-  const b = paintSurface(catalog, cells, brush).apply(level);
+  const a = paintSurface(environment, cells, brush).apply(level);
+  const b = paintSurface(environment, cells, brush).apply(level);
   assert.deepEqual(a.entities, b.entities);
 });
 
 test("Theme switch changes only recognized visual families", () => {
   let level = createBlankLevel(4, 2);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 0, y: 0 }, { x: 1, y: 0 }],
     { terrain: "grass", pattern: "auto", seed: 1 },
   ).apply(level);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 0 }],
     { terrain: "fence", pattern: "auto", seed: 1 },
   ).apply(level);
   level = paintSurface(
-    catalog,
+    environment,
     [{ x: 3, y: 0 }],
     { terrain: "water", pattern: "exact", exact: "ts-6-6", seed: 1 },
   ).apply(level);
@@ -370,7 +393,7 @@ test("Theme switch changes only recognized visual families", () => {
 test("Waterfall Auto resolves vertical top middle bottom variants", () => {
   const level = createBlankLevel(5, 5);
   const next = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 1 }, { x: 2, y: 2 }, { x: 2, y: 3 }],
     { terrain: "waterfall", pattern: "auto", seed: 1 },
   ).apply(level);
@@ -385,7 +408,7 @@ test("Waterfall Auto resolves vertical top middle bottom variants", () => {
 
 test("Cactus Auto stays cell-local", () => {
   const next = paintSurface(
-    catalog,
+    environment,
     [{ x: 2, y: 1 }, { x: 2, y: 2 }],
     { terrain: "cactus", pattern: "auto", seed: 1 },
   ).apply(createBlankLevel(5, 5));

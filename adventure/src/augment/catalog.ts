@@ -185,10 +185,12 @@ async function interactWithBeaverShop(
     context.commitSave(purchase.save);
     context.replaceInteractedEntity(MapEntityTypeId.SHOP_EMPTY);
   }
-  context.showDialogue(SUPER_KEY_OUTCOME_MESSAGES[purchase.outcome]);
+  await context.showDialogue(SUPER_KEY_OUTCOME_MESSAGES[purchase.outcome]);
 }
 
-function interactWithBonusBeaver(context: AdventureInteractionContext): void {
+async function interactWithBonusBeaver(
+  context: AdventureInteractionContext,
+): Promise<void> {
   if (
     context.request.objectType !== MapEntityTypeId.BEAVER ||
     context.request.action !== "touch" ||
@@ -207,5 +209,5 @@ function interactWithBonusBeaver(context: AdventureInteractionContext): void {
       decision.save,
     );
   }
-  context.showDialogue(BONUS_KEY_MESSAGES[decision.outcome]);
+  await context.showDialogue(BONUS_KEY_MESSAGES[decision.outcome]);
 }

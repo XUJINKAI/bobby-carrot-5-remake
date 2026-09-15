@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { statefulBlockBehavior } from "../behaviorLibrary.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -7,13 +8,11 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.COLOR_BLOCK,
-  traits: ["stateful-block", "walkable"],
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   state: [
     {
       key: "color",
@@ -41,4 +40,5 @@ export const colorBlock: EntityModule = originalModule(
       fields: { color, raised },
     });
   }),
+  [{ behavior: statefulBlockBehavior }],
 );

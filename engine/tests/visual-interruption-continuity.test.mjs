@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function delta(sequence, type, motion) {
   return {
@@ -26,7 +26,7 @@ test("motion interruption keeps the current authoritative visual position", () =
       { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   assert.ok(actor);
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   const started = {

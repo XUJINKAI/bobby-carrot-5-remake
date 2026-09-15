@@ -77,7 +77,7 @@ export interface ReachContext {
   readonly query: WorldQueryApi;
 }
 
-/** Trait/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
+/** Fact/Definition 选择 Behavior；Behavior 只通过 Query + Command 与 World 交互。 */
 export interface Behavior {
   id: string;
   /** Level Entity 已全部实例化、正式 gameplay 尚未开始时调用一次。 */

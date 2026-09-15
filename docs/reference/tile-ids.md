@@ -2,6 +2,9 @@
 
 这里只记录已经通过 UP9 高清版 a.class、资源或 Help 文本确认的事实。所有数值同时给出 unsigned 与 Java signed byte，避免 DAT / Adapter 交叉检查时混淆。
 
+涉及 Plank、Mower、Bean、Cloud、Fireball、Leaf 的条件组合与完整通行表见
+[原版通行与碰撞规则](original-passage.md)，其中使用一基 `ts-行-列` 坐标。
+
 ## Terrain ID
 
 | U8 / Hex | Signed | 已确认含义与 runtime 角色 |

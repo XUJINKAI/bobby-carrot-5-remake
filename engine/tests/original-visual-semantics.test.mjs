@@ -5,10 +5,13 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { LEAF_SUPPORT_HEIGHT_PX } from "../dist/entities/original/moving-entities.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function resolveCarouselSwitch(pressed) {
   const entities = createBuiltinEntityRegistry();
@@ -21,7 +24,7 @@ function resolveCarouselSwitch(pressed) {
       pressed,
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.require(1);
   const presence = spatial.presencesForEntity(entity.id)[0];
   assert.ok(presence);

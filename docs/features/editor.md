@@ -55,7 +55,7 @@ sky
 waterfall
 ```
 
-`blocking` 保留为 Engine trait / 行为语义，不作为 Surface Type 名称。
+`blocking` 是 Engine Fact，由通用通行 Mechanism 解释，不作为 Surface Type 名称。
 
 用户在 Surface 面板中不直接操作 Type × Theme 矩阵，而是选择具体 Terrain，例如草地、雪地、沙地、石头、墙、水、瀑布、篱笆、带雪篱笆、天空等。每个 Terrain 指定一个主要 visual 作为入口，并通过显式 `rows` 定义其 variant 排列。Terrain 本身也可按 group / row 组织，和 Palette 一样由 Editor 精确控制布局。
 
@@ -101,10 +101,10 @@ Waterfall 属于 Surface。Auto 绘制连续竖向瀑布时，根据本次目标
 
 Palette 只负责独立放置的 Actor、Item、Mechanism 等对象。Palette 放置不会删除已有 Surface；Surface 区域操作也不会删除叠在其上的 Palette Entity。
 
-Palette 显式条目与自动补充项必须同时具有 Model `EntityMapDefinition` 和 Engine Definition，
-并读取 Engine Definition 的 `authoring.palette`。Engine 私有临时实体不属于 Map Definition，
-不会进入 Editor；`palette: false` 用于把通过 Surface 等其它入口编辑的 canonical Entity
-排除出 Object Palette。
+可持久化 Entity 由 Model `EntityMapDefinition` 声明。Palette 显式条目与自动补充项从这些
+类型中选取；Editor Surface definitions 决定 Surface 入口，`EditorDefinition.exclude` 声明
+隐藏的直接创建入口，Palette 表决定分组和预设。Engine Catalog 只为编辑预览提供 footprint、
+视觉与当前语义。Runtime-only Entity 缺少 Model map definition，自然不进入 authoring catalog。
 
 Palette 布局由 `EditorPaletteDefinition` 表驱动：`groups[].rows` 的二维顺序就是面板顺序；
 单个条目的 `fields` 是实际放置 preset，`direction` 与其它类型专属字段一样写在 `fields` 中，
@@ -121,7 +121,7 @@ remainder 可用于收纳其它可创建 Entity。Builtin Palette 的 Original T
 
 ### 堆叠规则
 
-Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。它与 Engine 的视觉 `stackOrder` 分离：`stackSlot` 决定放置时替换谁，`stackOrder` 决定最终绘制和 Inspector 展示顺序。
+Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。`stackSlot` 决定放置时替换谁；实例 `stackOrder` 同时决定完整空间栈的绘制/Inspector 顺序，以及 Engine 从哪个 `contact-cover` 平面开始执行接触规则。
 
 | slot | 内容 |
 | --- | --- |
@@ -134,6 +134,10 @@ Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。它
 | `cover` | High Grass、Snow 与 Ice Block |
 
 在任一目标格命中同 slot 素材时，新素材替换完整 owner；多格 Object 会在整个 footprint 上原子处理替换。推荐的跨 slot 组合为：base 可承载 overlay、floor feature、content、support、occupant 或 cover；floor feature 可配 content、support 或 occupant；content 可配 cover；support 可配 occupant。其它组合仍可放置，Canvas 使用琥珀色 hover 框，Inspector 同时显示“非推荐堆叠”提示，便于检查导入地图和特殊设计。
+
+空栈从 `stackOrder: 0` 开始；新放置 Entity 使用所覆盖格的最高值 `+1`，同 slot 替换保留被
+替换 Entity 的顺序，Inspector 重排把当前顺序规范化为从 `0` 开始的连续整数。多格 Entity
+在全部 footprint Presence 上使用同一个 `stackOrder`，因此调整任一部位都会改变整个对象。
 
 Canvas 会统计每格去重后的 Palette Presence。达到两层时，在格子右上角显示实际层数角标；Surface 不计入该数字，多格素材在每个覆盖格中各计一层。
 
@@ -154,12 +158,12 @@ Inspector 始终显示选区中的完整 Entity 集合；单格按实际 `stackO
 多格对象显示 footprint、anchor 与当前命中的 Presence role。
 Model 字段合同标记为 `color` 的字符串由 Inspector 显示为调色板与文本输入，可直接写十六进制颜色或常用颜色别名。
 Bobby 的 `controller / mirrorX / mirrorY` 直接来自 Model 字段合同，因此在单格选择与 Palette Brush Inspector 中使用普通数字 enum / boolean 控件编辑。
-Palette 素材提示显示 canonical type、Trait、Behavior 与支持的 Map fields；Surface 素材提示
+Palette 素材提示显示 canonical type、Fact、Mechanism、Behavior 与支持的 Map fields；Surface 素材提示
 显示实际持久化的 canonical type，具体 Variant 另外显示 visual ID 与在 Terrain 中的位置。
 Delete 与 Palette Brush Inspector 订阅离散 Canvas cell hover；Palette Brush 的当前素材字段与
 variant 数据保持稳定，hover 只更新紧凑的放置结果堆叠预览。
 
-规则检测器按 Entity 与 Trait 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
+规则检测器通过 Engine authoring API 按 Entity Type 与 Entity/Presence Fact 判断当前可用的关卡完成条件。某项能力首次出现时，Editor 默认启用对应规则；能力持续存在期间，Inspector 中的手动关闭状态保持有效。导入另一张地图时重新开始检测。
 
 `EditorEntityDefinition.defaultFields`、`EditorEntityVariant.fields`、`EditorPlacementPreset.fields`
 与 `EditorPalettePreview.fields` 共用同一套类型专属字段形状。Egg 在 Editor 中固定使用 filled

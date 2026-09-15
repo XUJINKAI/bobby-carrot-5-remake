@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   EditorDefinition,
+  EngineEnvironment,
   EntityCatalog,
   InspectorModel,
 } from "@bobby/editor";
@@ -15,6 +16,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 const props = defineProps<{
   model: InspectorModel;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
@@ -94,7 +96,7 @@ function dropClass(index: number): string | undefined {
             :source="placementPresetFromEntity(layer.entity)"
             :cell-size="34"
             :images="images"
-            :catalog="catalog"
+            :environment="environment"
             :editor="editor"
             :fallback-text="layer.label.slice(0, 2)"
           />
@@ -123,6 +125,7 @@ function dropClass(index: number): string | undefined {
           :definition="layer.definition"
           :entity-policy="layer.editor"
           :images="images"
+          :environment="environment"
           :catalog="catalog"
           :editor="editor"
           @field="(key, value) => emit('field', layer.ref.index, key, value)"

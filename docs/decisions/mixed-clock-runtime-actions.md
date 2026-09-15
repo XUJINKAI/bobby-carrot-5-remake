@@ -72,7 +72,10 @@ focus?: {
 
 自动移动不能再通过 `GlobalState.forced` 驱动某个默认 Bobby。Ice / Leaf / Fireball 等机制应由 RuntimeAction 明确持有 owner / target Entity，并产生对应 actor/entity 的 movement intent。
 
-RuntimeAction 不得用 `commands.move()` 实现规则意义上的移动。需要经过 passage / collision / onLeave / onEnter 的移动必须产生 semantic `WorldIntent`，再交回 World resolver。低层 `move` command 只用于 resolver 已经批准后的 transaction commit。
+RuntimeAction 不得用 `commands.move()` 实现规则意义上的移动。需要经过 passage / collision /
+onLeave / onEnter 的移动必须产生 semantic `MoveIntent`，再交回 World resolver。普通 mutation
+继续走 `CommandQueue`；RuntimeAction 不提交宿主 effect intent。低层 `move` command 只用于
+resolver 已经批准后的 transaction commit。
 
 例如 Ice：
 
@@ -157,7 +160,7 @@ Undo 边界属于玩家发起的 semantic intent group，而不是 `forced: bool
 ## Hard rules
 
 1. Animation complete callback 不得推进 World。
-2. RuntimeAction 不得直接修改 EntityStore；普通 mutation 走 CommandQueue，需要规则解析的 movement 必须走 semantic WorldIntent。
+2. RuntimeAction 不得直接修改 EntityStore；普通 mutation 走 CommandQueue，需要规则解析的 movement 必须走 semantic MoveIntent。
 3. WorldClock pause 时任何普通 movement API 都不得绕过时钟推进 gameplay。
 4. PresentationClock 可以在 gameplay pause 时继续运行。
 5. Pure cosmetic animation 不进入 World state。

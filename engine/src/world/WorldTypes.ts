@@ -1,5 +1,4 @@
-import type { Direction, JsonValue } from "@bobby/model";
-import type { EntityLayer } from "./entity/EntityDefinition.js";
+import type { Direction, GoalType, JsonValue } from "@bobby/model";
 import type { EntityId, EntityState } from "./entity/EntityInstance.js";
 
 /** World 对外只暴露语义事件，不暴露 Terrain/Object 历史模型。 */
@@ -15,7 +14,7 @@ export interface WorldEvent {
   y?: number;
   direction?: Direction;
   action?: string;
-  text?: string;
+  lines?: readonly string[];
   reason?: string;
   data?: Record<string, JsonValue>;
 }
@@ -31,12 +30,19 @@ export interface ObjectInteractionEvent extends WorldEvent {
   action: "touch" | "enter";
 }
 
-export type MissingItemKind =
-  | "gas"
-  | "lock-key"
-  | "kite"
-  | "shovel"
-  | "bean";
+/** World 交给 Game 消费的内部字面对白请求，不属于宿主事件 API。 */
+export interface DialogueRequestEvent extends WorldEvent {
+  type: "dialogue-request";
+  actorId: EntityId;
+  entityId: EntityId;
+  objectType: string;
+  x: number;
+  y: number;
+  action: "touch" | "enter";
+  lines: readonly string[];
+}
+
+export type MissingItemKind = string;
 
 export interface MissingItemEvent extends WorldEvent {
   type: "missing-item";
@@ -49,14 +55,6 @@ export interface MissingItemEvent extends WorldEvent {
   };
 }
 
-const MISSING_ITEM_KINDS: readonly MissingItemKind[] = [
-  "gas",
-  "lock-key",
-  "kite",
-  "shovel",
-  "bean",
-];
-
 export function isMissingItemEvent(
   event: WorldEvent,
 ): event is MissingItemEvent {
@@ -67,7 +65,7 @@ export function isMissingItemEvent(
     event.x !== undefined &&
     event.y !== undefined &&
     event.data !== undefined &&
-    MISSING_ITEM_KINDS.includes(event.data.item as MissingItemKind)
+    typeof event.data.item === "string"
   );
 }
 
@@ -86,6 +84,23 @@ export function isObjectInteractionEvent(
   );
 }
 
+export function isDialogueRequestEvent(
+  event: WorldEvent,
+): event is DialogueRequestEvent {
+  return (
+    event.type === "dialogue-request" &&
+    event.actorId !== undefined &&
+    event.entityId !== undefined &&
+    typeof event.objectType === "string" &&
+    event.x !== undefined &&
+    event.y !== undefined &&
+    (event.action === "touch" || event.action === "enter") &&
+    Array.isArray(event.lines) &&
+    event.lines.length > 0 &&
+    event.lines.every((line) => typeof line === "string" && line.length > 0)
+  );
+}
+
 /** 当前 World 对一棵通关条件树的统一求值结果。 */
 export type WinConditionState =
   | {
@@ -99,31 +114,17 @@ export type WinConditionState =
       conditions: WinConditionState[];
     }
   | {
-      type: "collect-all";
-      target: string;
+      type: GoalType;
       completed: boolean;
-      remaining: number;
-    }
-  | {
-      type: "fill-all";
-      target: string;
-      filler: string;
-      completed: boolean;
-      remaining: number;
-    }
-  | {
-      type: "reach";
-      target: string;
-      completed: boolean;
+      remaining?: number;
     };
 
 export interface PresenceInspection {
   entityId: EntityId;
   type: string;
-  layer: EntityLayer;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
   state?: EntityState;
 }
 

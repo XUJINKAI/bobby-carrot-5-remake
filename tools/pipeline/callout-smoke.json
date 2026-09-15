@@ -4,8 +4,7 @@
   "height": 3,
   "rules": {
     "win": {
-      "type": "reach",
-      "target": "exit"
+      "type": "exit"
     }
   },
   "entities": [

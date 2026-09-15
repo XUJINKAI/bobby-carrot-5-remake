@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { pickupBehavior } from "../behaviorLibrary.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -6,7 +7,6 @@ import type {
 } from "../EntityModule.js";
 import {
   originalModule,
-  SURFACE_STACK_ORDER,
   tileCell,
   atlasVisual,
 } from "./module.js";
@@ -33,9 +33,7 @@ const lockKeyInteraction: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK_KEY,
-  traits: ["walkable", "pickup"],
-  layer: "surface",
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   properties: [
     {
       key: "collectible",
@@ -50,5 +48,5 @@ const definition: EntityModuleDefinition = {
 export const lockKey: EntityModule = originalModule(
   definition,
   atlasVisual(definition, tileCell(MapEntityTypeId.LOCK_KEY)),
-  [{ behavior: lockKeyInteraction }],
+  [{ behavior: pickupBehavior }, { behavior: lockKeyInteraction }],
 );

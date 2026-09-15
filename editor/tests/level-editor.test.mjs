@@ -2,9 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { entityMapDefinition, MapEntityTypeId } from "@bobby/model";
 import {
-  createBuiltinEntityCatalog,
+  builtinEngineEnvironment,
   SpatialVisualQuery,
-  visualRegistry,
 } from "../../engine/dist/public.js";
 import {
   EditorDocument,
@@ -25,11 +24,58 @@ import {
   resolvePlacement,
   serializeEditorLevel,
   toLevelMap,
+  updateEntityField,
   updateMetadata,
   validateEditorLevel,
 } from "../dist/index.js";
+import { World } from "../../engine/tests/support/World.mjs";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
+const visualRegistry = environment.visuals;
+
+test("Editor Play Test 使用语义地图的 Goal，运行过程保持 Draft 原样", () => {
+  const draft = {
+    schemaVersion: 1,
+    meta: { name: "Goal Play Test" },
+    width: 3,
+    height: 1,
+    entities: [
+      ...[0, 1, 2].map((x) => ({ type: MapEntityTypeId.GRASS, variant: "ts-10-1", x, y: 0 })),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 2, y: 0 },
+    ],
+    rules: {
+      win: {
+        type: "all",
+        conditions: [{ type: "carrot" }, { type: "exit" }],
+      },
+    },
+  };
+  const saved = structuredClone(draft);
+  const world = new World(toLevelMap(draft));
+  const actor = world.query.entitiesWithFact("player")[0];
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
+
+  assert.equal(world.winState.completed, false);
+  assert.equal(world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  }).moves[0].moved, true);
+  world.update({ tick: 1, stepMs: 350 });
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
+  assert.equal(world.winState.conditions[0].completed, true);
+  assert.equal(world.winState.completed, false);
+  assert.deepEqual(draft, saved);
+});
 
 test("Editor JSON only stores canonical Entity Map plus document metadata", () => {
   const level = createBlankLevel(10, 8);
@@ -98,7 +144,7 @@ test("multi-cell persistence stays anchor-only while Preview expands Presence ro
     { type: MapEntityTypeId.DRAGON, x: 3, y: 3, direction: "left" },
   ]);
 
-  const preview = new EditorPreview(level, catalog);
+  const preview = new EditorPreview(level, environment);
   const ref = {
     index: level.entities.findIndex(
       (entity) => entity.type === MapEntityTypeId.DRAGON,
@@ -121,7 +167,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
   const level = createBlankLevel(12, 8);
   const dragon = resolvePlacement(
     level,
-    catalog,
+    environment,
     { type: MapEntityTypeId.DRAGON, fields: { direction: "right" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
@@ -132,6 +178,7 @@ test("Dragon right-facing footprint mirrors around the placement body", () => {
     x: 5,
     y: 3,
     direction: "right",
+    stackOrder: 1,
   });
   assert.deepEqual(dragon.cells, [
     { x: 6, y: 3, role: "head" },
@@ -144,7 +191,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
   const level = createBlankLevel(12, 8);
   const dragon = resolvePlacement(
     level,
-    catalog,
+    environment,
     { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     { x: 5, y: 3 },
     builtinEditorDefinition,
@@ -155,6 +202,7 @@ test("placement derives persisted anchor from Editor role placementPoint", () =>
     x: 5,
     y: 3,
     direction: "left",
+    stackOrder: 1,
   });
   assert.deepEqual(dragon.cells, [
     { x: 4, y: 3, role: "head" },
@@ -172,13 +220,17 @@ test("两格角色把 Editor 光标格持久化为 body anchor", () => {
   ]) {
     const placement = resolvePlacement(
       level,
-      catalog,
+      environment,
       { type },
       { x: 5, y: 3 },
       builtinEditorDefinition,
     );
     assert.equal(placement.valid, true, type);
-    assert.deepEqual(placement.entity, { type, x: 5, y: 3 }, type);
+    assert.deepEqual(
+      placement.entity,
+      { type, x: 5, y: 3, stackOrder: 1 },
+      type,
+    );
     assert.deepEqual(placement.cells, [
       { x: 5, y: 2, role: "head" },
       { x: 5, y: 3, role: "body" },
@@ -207,15 +259,51 @@ test("Entity fields and instance stack order round-trip", () => {
   assert.equal(
     parsed.entities.find(
       (entity) => entity.type === MapEntityTypeId.CRUMBLY_ROCK,
-    )?.traits,
+    )?.facts,
     undefined,
+  );
+});
+
+test("dialogue string lists survive the complete Editor document round-trip", () => {
+  const map = {
+    schemaVersion: 1,
+    width: 3,
+    height: 3,
+    entities: [
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.BEAVER,
+        x: 1,
+        y: 1,
+        dialogue: ["first", "second"],
+      },
+    ],
+  };
+  const document = new EditorDocument(fromLevelMap(map));
+  const beaverIndex = document.getSnapshot().level.entities.findIndex(
+    (entity) => entity.type === MapEntityTypeId.BEAVER,
+  );
+
+  assert.equal(document.execute(updateEntityField(
+    { index: beaverIndex },
+    "dialogue",
+    ["third", "fourth"],
+  )), true);
+
+  const saved = serializeEditorLevel(document.getSnapshot().level);
+  const restored = toLevelMap(parseEditorLevel(saved));
+  assert.deepEqual(
+    restored.entities.find(
+      (entity) => entity.type === MapEntityTypeId.BEAVER,
+    )?.dialogue,
+    ["third", "fourth"],
   );
 });
 
 test("validation is executed through Editor definitions", () => {
   const level = createBlankLevel(8, 8);
   assert.deepEqual(
-    validateEditorLevel(level, catalog, builtinEditorDefinition),
+    validateEditorLevel(level, environment, builtinEditorDefinition),
     [],
   );
   const withoutPlayer = {
@@ -227,7 +315,7 @@ test("validation is executed through Editor definitions", () => {
   assert.ok(
     validateEditorLevel(
       withoutPlayer,
-      catalog,
+      environment,
       builtinEditorDefinition,
     ).some((issue) => issue.message.includes("一个 player Entity")),
   );
@@ -241,14 +329,14 @@ test("Editor Preview 将字段无效的已知 Entity 降级为占位定义", () 
     y: 1,
     variant: "future",
   });
-  const preview = new EditorPreview(level, catalog);
+  const preview = new EditorPreview(level, environment);
   const invalid = preview.inspectCell(1, 1).presences.find(
     (item) => item.entity.variant === "future",
   );
 
   assert.equal(invalid?.definition.placeholder, "unknown");
   assert.ok(
-    validateEditorLevel(level, catalog, builtinEditorDefinition).some(
+    validateEditorLevel(level, environment, builtinEditorDefinition).some(
       (issue) =>
         issue.level === "warning" &&
         issue.message.includes("variant 不符合 enum 合同"),
@@ -259,15 +347,15 @@ test("Editor Preview 将字段无效的已知 Entity 降级为占位定义", () 
 test("one placement stroke forms one Undo and returns to the saved Entity state", () => {
   const document = new EditorDocument(createBlankLevel(8, 8));
   document.beginTransaction();
-  document.execute(placeEntity(catalog, MapEntityTypeId.CARROT, { x: 1, y: 1 }));
-  document.execute(placeEntity(catalog, MapEntityTypeId.CARROT, { x: 2, y: 1 }));
+  document.execute(placeEntity(environment, MapEntityTypeId.CARROT, { x: 1, y: 1 }));
+  document.execute(placeEntity(environment, MapEntityTypeId.CARROT, { x: 2, y: 1 }));
   document.commitTransaction();
   assert.equal(document.getSnapshot().canUndo, true);
   assert.equal(document.getSnapshot().dirty, true);
   document.undo();
   assert.equal(document.getSnapshot().canUndo, false);
   assert.equal(document.getSnapshot().dirty, false);
-  const preview = new EditorPreview(document.getSnapshot().level, catalog);
+  const preview = new EditorPreview(document.getSnapshot().level, environment);
   assert.equal(
     preview.inspectCell(1, 1).top?.entity.type,
     MapEntityTypeId.GRASS,
@@ -278,28 +366,39 @@ test("one placement stroke forms one Undo and returns to the saved Entity state"
   );
 });
 
-test("Engine authoring metadata 隐藏不可直接放置的 Entity", () => {
+test("Editor definitions 决定可创建入口，Model 定义可持久化身份", () => {
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      "consumed-carrot",
-      catalog,
+      "fireball",
     ),
     false,
   );
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
-      "grass",
-      catalog,
+      MapEntityTypeId.GRASS,
     ),
-    false,
+    true,
   );
   assert.equal(
     isEditorEntityCreatable(
       builtinEditorDefinition,
       MapEntityTypeId.BEANSTALK,
-      catalog,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.ORIGINAL_TILE,
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorEntityCreatable(
+      builtinEditorDefinition,
+      MapEntityTypeId.TRANSPARENT,
     ),
     false,
   );
@@ -325,7 +424,6 @@ test("Palette 只发布具有 Model Definition 的 canonical preset", () => {
     .flatMap((group) => group.rows.flat())
     .find((entry) => entry.type === MapEntityTypeId.EGG);
   assert.equal(egg?.label, "Egg");
-  assert.equal(egg?.traits.includes("egg-nest"), true);
 });
 
 test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
@@ -352,7 +450,7 @@ test("EditorPlacementPreset 将 direction 保存在 fields 中", () => {
   assert.equal(
     resolvePlacement(
       createBlankLevel(4, 4),
-      catalog,
+      environment,
       { type: MapEntityTypeId.SPEED },
       { x: 1, y: 1 },
       builtinEditorDefinition,
@@ -369,7 +467,7 @@ test("带 fields 的响应式 Palette preset 可用于 Canvas 与 Inspector 预�
   }, {});
   const plan = resolvePlacement(
     createBlankLevel(4, 4),
-    catalog,
+    environment,
     preset,
     { x: 1, y: 1 },
     builtinEditorDefinition,
@@ -515,19 +613,19 @@ test("Editor 对合并后的 canonical Entity 共用 Runtime Definition", () => 
     { type: MapEntityTypeId.EGG, x: 2, y: 0 },
   );
   assert.deepEqual(
-    validateEditorLevel(level, catalog, builtinEditorDefinition),
+    validateEditorLevel(level, environment, builtinEditorDefinition),
     [],
   );
   assert.deepEqual(
     [1, 2].map(
-      (x) => new EditorPreview(level, catalog).inspectCell(x, 0).top?.entity.type,
+      (x) => new EditorPreview(level, environment).inspectCell(x, 0).top?.entity.type,
     ),
     [MapEntityTypeId.WINDMILL, MapEntityTypeId.EGG],
   );
   assert.equal(
     resolvePlacement(
       level,
-      catalog,
+      environment,
       { type: MapEntityTypeId.WINDMILL, fields: { direction: "right" } },
       { x: 0, y: 1 },
     ).entity.type,
@@ -549,7 +647,7 @@ test("Editor Preview 将 Surface variant 投影到 Engine visual state", () => {
     y: 0,
     variant: "ts-10-1",
   });
-  const preview = new EditorPreview(level, catalog);
+  const preview = new EditorPreview(level, environment);
   const entities = preview.entities.all().slice(-2);
   assert.deepEqual(
     entities.map((entity) => entity.state?.variant),
@@ -610,7 +708,7 @@ test("Egg 只在 Palette 预览中显示 filled 且保持单一放置形态", ()
   assert.equal(eggs[0].previewPreset.fields, undefined);
   const placed = resolvePlacement(
     createBlankLevel(4, 4),
-    catalog,
+    environment,
     eggs[0],
     { x: 1, y: 1 },
     builtinEditorDefinition,
@@ -619,5 +717,6 @@ test("Egg 只在 Palette 预览中显示 filled 且保持单一放置形态", ()
     type: MapEntityTypeId.EGG,
     x: 1,
     y: 1,
+    stackOrder: 1,
   });
 });

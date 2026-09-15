@@ -11,7 +11,7 @@ Engine 的公开边界分成两个明确入口：
 
 `@bobby/engine/authoring` 是显式 opt-in 的编辑/工具入口。Editor 可以复用 Entity Definition、footprint、Presence、SpatialIndex 与 Visual authoring 能力，但这些类型不会因此成为 gameplay runtime API。
 
-Engine 加载地图时为未知 Entity type 和字段合同不匹配的已知 Entity 实例创建惰性占位定义。占位实例保留格子与堆叠位置、显示 X、不携带 Trait 或 Behavior，并通过 level warning 报告原因；其它可识别 Entity 继续正常运行。
+Engine 加载地图时为未知 Entity type 和字段合同不匹配的已知 Entity 实例创建惰性占位定义。占位实例保留格子与堆叠位置、显示 X、不携带 Fact 或 Behavior，并通过 level warning 报告原因；其它可识别 Entity 继续正常运行。
 
 核心目标始终是：**给 Engine 一份纯语义 `LevelMap` 和少量运行配置，就能够独立运行这张地图。** Campaign、路由、collection、DAT provenance、存档与产品导航都属于 Engine 外层。
 
@@ -128,6 +128,8 @@ runtime: {
 
 ## Entity / Behavior / MovementPlan / WorldMotion / RuntimeAction
 
+Engine 内部的 `World / Mechanism / Entity` 职责、Fact 投影、Behavior hook 与移动提案边界见 [`Engine 机制合同`](engine-mechanisms.md)。
+
 持续跨多个 WorldTick 的 gameplay 过程使用 RuntimeAction，而不是 Promise、wall-clock timer 或第二套 Actor 模型：
 
 ```text
@@ -158,7 +160,10 @@ RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 
 
 `inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
 
-RuntimeAction 产生 semantic intent 后，由 World 回传带 action identity 的权威 `MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时 `onCancel` 按明确 reason 清理 owner-local gameplay state。
+RuntimeAction 只产生 semantic `MoveIntent`，由 World 回传带 action identity 的权威
+`MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时
+`onCancel` 按明确 reason 清理 owner-local gameplay state。普通 gameplay mutation 继续走
+`CommandQueue`；宿主派生的 effect intent 由公开 `Game` façade 提交。
 
 RuntimeAction、WorldMotion、ActorLifecycle 与 WorldOutcome 都是 gameplay state，因此进入 World snapshot。Presentation tween / Camera transition 不进入 snapshot。
 
@@ -452,8 +457,8 @@ runtime: {
 消失的正播过程。默认值依据原版 `a.class` 的 animation advance 顺序分别换算。
 进入阶段 `game.presentationBlocksInput` 为 `true`，WorldClock 与 Replay tick 暂停，
 期间收到的 gameplay 移动输入会被丢弃；完成后该值恢复为 `false`。
-Carrot 的 `consumed-carrot` 是内置 World runtime state，地图只声明普通 `carrot`，
-收集后由 Engine 转换并使用 semantic atlas mapping 选择 `ts-13-10`。
+地图只声明普通 `carrot`。收集后同一 Carrot Entity 保留原 ID，
+`state.consumed = true` 驱动目标计数和 `ts-13-10` 视觉；该 state 随 World Snapshot 恢复。
 
 终局选曲属于宿主产品流程。宿主在 Game 状态进入 `won / dead` 时分别调用
 `audio.playMusic("cleared")` 或 `audio.playMusic("death")`；角色动画和 Result Overlay
@@ -469,7 +474,13 @@ Carrot 的 `consumed-carrot` 是内置 World runtime state，地图只声明普�
 const state = input.update(time); // WorldTick
 ```
 
-Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
+Game 尝试 movement 后把 `moved / blocked / busy` 回填给 repeat 状态机。`busy` 继续等待同一
+物理输入的可执行时机；`blocked` 作为一次已裁决动作进入 Replay，并抑制该方向直到物理输入
+释放或改变。Pointer pan / pinch / wheel zoom 是 presentation 操作，可以即时调用 Game façade，不等待 WorldTick。
+
+无选项的地图对白完成逐字展示后，任意方向键、Enter、Escape 或点击都可以结束 View；
+结束 Promise 后由 Web 释放 `blocking-interaction` lease。该次结束按键本身不作为移动输入，
+下一次输入才重新进入 gameplay。
 
 默认控制绑定从 Bobby 的 Map 字段派生。`controller` 使用数字通道，省略时为 `0`；只有 primary 通道时方向键与 WASD 都映射到它，同时存在通道 `0` 与 `1` 时方向键与 WASD 分别映射到二者。每个目标的 `mirrorX / mirrorY` 在 channel 输入变成 semantic move intent 时组合应用。一个输入采样生成的多 actor intent 使用同一 movement transaction；目的格冲突会原子地拒绝所有争用者。Replay 保存 channel 及原始输入方向，不保存浏览器输入源或临时 entity ID。
 
@@ -531,24 +542,34 @@ game.onInteractionRequest((request) => {
 });
 ```
 
-可对话 Entity 触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
-`dialog` 并由 `GameplayDialog` 展示。`dialogue` 可以是字符串或字符串数组；数组按
-Entity 独立循环，每个元素可以包含换行。外层动态对白可以调用 runtime 返回的
-`dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
+`dialogue` 与外部 `object-interaction` 是二选一。Entity 存在非空 `dialogue` 时，World
+产生只供 Game 消费的私有 `dialogue-request`，Game 直接调用 `GameplayDialogController`，
+不会把该请求发布给宿主。`dialogue` 可以是字符串或字符串数组；数组从第一段开始在同一个
+对话框内依次翻页，每个元素可以包含换行。关闭最后一段后，同一 `(actorId, entityId)` 在
+500ms 内不会重复打开。World 本身仍不持有 DOM、Promise、暂停或输入状态。
+Entity 字面对白以 Bobby 到接触 Body 格的方向作为翻页方向：同方向逻辑输入先完成逐字展示，
+再次输入进入下一段；其他方向立即关闭对话，并在下一次 gameplay tick 让发起对话的 Bobby
+向该方向移动。Keyboard 方向键、WASD、Pointer Swipe、Screen Joystick 与外部方向控件都由
+`InputController` 归一化后交给当前 Dialog；持续按键产生的后续输入使用同一规则。
+
+需要宿主条件、分支、购买或存档的 Entity 不得配置 `dialogue`；它只产生
+`object-interaction`，由宿主决定是否以及如何调用 Controller。
 
 Web 的通用 Session 入口可以同时接收一个交互回调，负责把请求、`Game` 与 Engine
-对话层交给具体产品适配器：
+Controller 交给具体产品适配器：
 
 ```ts
 const session = await createGameSession({
   level,
   interaction: ({ request, game, dialog }) => {
-    // 读取外层产品状态，展示对话并按需分派公开 Gameplay effect。
+    // 读取外层产品状态，调用 Controller 并按需分派公开 Gameplay effect。
   },
 });
 ```
 
-`createGameSession()` 只负责订阅与释放该回调，不解释购买、Campaign Save 或地图 ID。
+`createGameSession()` 为每个请求取得 `blocking-interaction` gate lease，在请求处理完成后
+释放；该 lease 合成 World pause 与 InputController block，并在进入阻塞交互时终止录制。
+购买、Campaign Save 与地图 ID 仍由具体产品适配器解释。
 
 宿主需要选项交互时，可以等待通用展示层返回选择结果：
 
@@ -564,14 +585,16 @@ const result = await dialog.present({
 
 `dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
-第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
-先立即补全当前文本。`GameplayDialog` 在等待选择时暂停同一 runtime 的 World 与 gameplay
-输入，结束时恢复原状态；暂停期间不产生 World Tick，地图计时也不推进。所有选项使用
+第一项。玩家使用左右逻辑输入循环选择、确认输入提交，也可以直接点击；确认输入在逐字展示
+期间先立即补全当前文本。无选项文本通过 `dialog.show()` 展示，确认、方向或点击先补全文本，
+再次操作返回 `{ type: "dismissed" }`。所有选项使用
 同级基础样式，当前选项通过高亮边框、背景与阴影
 标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
-`GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
-ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
-`0` 可立即显示全文。`present()` 打开需要选择的阻塞对话时会终止进行中的 Replay 录制；
-`show()` 始终是无选项、非阻塞的提示，不影响录制。
+`GameplayDialogController` 是 Engine 的唯一公共对话入口；它不接收业务回调，也不读写
+存档、货币或商品状态。Controller 串行展示请求并在 View 打开期间暂停 gameplay，同时从
+`InputController` 取得模态输入消费者租约；View 不直接监听 Keyboard 或 Pointer 事件。
+外部 interaction 的宿主 gate 覆盖完整业务事务，可与 Controller lease 安全叠加；宿主等待
+通用结果后再执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为 `0`
+可立即显示全文。

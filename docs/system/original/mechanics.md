@@ -1,5 +1,8 @@
 # 原版机关与关卡机制
 
+Plank、Mower、Bean、Cloud、Fireball、Leaf 的精确通行条件与原始字节码依据统一见
+[原版通行与碰撞规则](../../reference/original-passage.md)。本页的玩法概述按该事实表理解。
+
 ## 图集与角色资源
 
 `ts.png` 与 `ta.png` 的尺寸、静态单元和动画序列统一登记在
@@ -47,7 +50,7 @@
 - 胡萝卜是可收集物品，关卡目标是收集胡萝卜时，界面HUD显示胡萝卜剩余数量。
 
 视觉使用 `carrot` 的 base、`consumed` phase，以及 `high-grass` 的 `objective`
-phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-carrot` runtime state，
+phase。收集时同一 Carrot Entity 的 `state.consumed` 变为 `true`，目标读取未收集数量；
 `ts-13-10` 的坑会保留到本局结束，并随 World Snapshot 被 Undo / Redo 恢复。
 
 ### egg 彩蛋
@@ -57,6 +60,7 @@ phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-car
 视觉使用 `egg` 的 base、`filled` phase，以及 `high-grass` 的 `objective` phase。
 
 注意：胡萝卜和彩蛋洞被高草覆盖的画面visual一样，但含义不同。
+HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内容或单独放置时显示 `ts-13-8`。
 
 ### golden-carrot 金色胡萝卜
 

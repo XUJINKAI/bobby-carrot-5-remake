@@ -45,7 +45,7 @@ test("40×40 地图只提交视口内图块，平移和插值位置使用同一�
     worldWidth: 40,
     worldHeight: 40,
     world,
-    player: [],
+    standing: [],
     effect: [],
     callouts: [],
   };
@@ -57,11 +57,13 @@ test("40×40 地图只提交视口内图块，平移和插值位置使用同一�
     assert.equal(draws.length, 4);
   }
   scene.world = [];
-  scene.player = [{
+  scene.standing = [{
     presence: { cell: { x: 0, y: 0 } },
     composition: { layers: [atlas] },
     visualX: 18.5,
     visualY: 19,
+    depthX: 18.5,
+    depthY: 19,
   }];
   draws.length = 0;
   renderer.render(scene, camera, viewport);
@@ -96,4 +98,21 @@ test("大图、偏移和帧尺寸按实际像素范围裁剪，Canvas 回调保�
     },
   }], 1000);
   assert.equal(callbacks, 1);
+});
+
+test("Image layer 按显式源矩形裁切非等宽人物图", () => {
+  const { draws, context, images } = fixture();
+  images.image = () => ({ width: 216, height: 166 });
+  drawVisualComposition(context, images, {
+    layers: [{
+      kind: "image",
+      asset: "bobby-mower",
+      sourceX: 120,
+      sourceY: 83,
+      frameWidth: 48,
+      frameHeight: 83,
+      anchor: "bottom",
+    }],
+  }, 0, 0, 48);
+  assert.deepEqual(draws[0].slice(1, 5), [120, 83, 48, 83]);
 });

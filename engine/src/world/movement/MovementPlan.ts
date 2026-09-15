@@ -26,10 +26,19 @@ export interface MovementCompanion {
  */
 export interface MovementPolicy {
   passage?: MovementPassage;
+  /** Entity 已确认本次可跨越目标地形；其它对象通行仍逐个裁决。 */
+  allowUnwalkable?: boolean;
+  /** Entity 特例可显式替换本次移动读取的 source / target Presence 栈。 */
+  contacts?: MovementContacts;
   updateDirection?: boolean;
   lifecycle?: MovementLifecycle;
   companions?: readonly MovementCompanion[];
   reason?: string;
+}
+
+export interface MovementContacts {
+  readonly source: readonly EntityPresence[];
+  readonly target: readonly EntityPresence[];
 }
 
 export interface MovementPlanningContext {
@@ -51,6 +60,8 @@ export interface MovementPlan {
   direction: Direction;
   cause: MoveCause;
   passage: MovementPassage;
+  allowUnwalkable: boolean;
+  contacts: MovementContacts;
   updateDirection: boolean;
   lifecycle: MovementLifecycle;
   companions: readonly MovementCompanion[];
@@ -62,13 +73,13 @@ export function createMovementPlan(
   policies: readonly (MovementPolicy | void)[],
 ): MovementPlan {
   let passage: MovementPassage = "standard";
+  let allowUnwalkable = false;
+  let contacts = cloneContacts(context);
   let updateDirection = true;
-  let lifecycle: MovementLifecycle = {
-    source: clonePresences(context.source),
-    target: clonePresences(context.target),
-  };
+  let lifecycle: MovementLifecycle | null = null;
   let reason = "passable";
   let passageOwner: number | null = null;
+  let contactsOwner: number | null = null;
   let directionOwner: number | null = null;
   let lifecycleOwner: number | null = null;
   const companions = new Map<EntityId, MovementCompanion>();
@@ -79,6 +90,13 @@ export function createMovementPlan(
       assertCompatible("passage", passageOwner, passage, policy.passage);
       passage = policy.passage;
       passageOwner = index;
+    }
+    if (policy.allowUnwalkable === true) allowUnwalkable = true;
+    if (policy.contacts !== undefined) {
+      if (contactsOwner !== null)
+        throw new Error("多个 MovementPolicy 同时定义 contacts");
+      contacts = cloneContacts(policy.contacts);
+      contactsOwner = index;
     }
     if (policy.updateDirection !== undefined) {
       assertCompatible(
@@ -118,10 +136,19 @@ export function createMovementPlan(
     direction: context.direction,
     cause: structuredClone(context.cause),
     passage,
+    allowUnwalkable,
+    contacts,
     updateDirection,
-    lifecycle,
+    lifecycle: lifecycle ?? cloneLifecycle(contacts),
     companions: [...companions.values()],
     reason,
+  };
+}
+
+function cloneContacts(contacts: MovementContacts): MovementContacts {
+  return {
+    source: clonePresences(contacts.source),
+    target: clonePresences(contacts.target),
   };
 }
 

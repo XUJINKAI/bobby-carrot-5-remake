@@ -22,7 +22,7 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - 地图实例参数驱动的 Timed Challenge；
 - 死亡/通关状态与 Web Result 层；
 - Bobby 载入时约 310ms 倒放、通关时约 279ms 正放的 `b6.png` 过渡；
-- 胡萝卜收集后进入持久的 `consumed-carrot` runtime state，并使用 `ts-13-10` 表现；
+- 胡萝卜收集后同一 Entity 的 `state.consumed` 变为 `true`，并使用 `ts-13-10` 表现；
 - semantic Entity Definition 调试检查；原版 hex provenance 只由 Original tooling 查询。
 
 当前移动表现遵循以下稳定规则：

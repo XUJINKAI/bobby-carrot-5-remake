@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import type { Direction, GoalType } from "@bobby/model";
 import type { BobbyLocomotionTiming } from "../entities/player/BobbyLocomotion.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 
@@ -17,7 +17,7 @@ export interface ReplayAddActorInventoryItemIntent {
   type: "add-actor-inventory-item";
   /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
   actor?: CellPosition;
-  item: "lock-key";
+  item: string;
   count: number;
 }
 
@@ -65,14 +65,13 @@ export function isReplayPathId(value: unknown): value is string {
   return typeof value === "string" && /^[^/\s]+\/[^/\s]+$/.test(value);
 }
 
-export type ReplayCompletedCondition =
-  | { type: "collect-all"; target: string }
-  | { type: "fill-all"; target: string; filler: string }
-  | { type: "reach"; target: string };
+export type ReplayCompletedCondition = { type: GoalType };
 
 export interface ReplayActualFinalState {
   status: ReplayFinalStatus;
   moves: number;
+  /** 按 GameplaySession actor 顺序记录所有 Bobby 的最终 anchor。 */
+  position: CellPosition[];
   /** 仅记录本局 World 时间，不参与 Replay 结果一致性校验。 */
   elapsedMs: number;
   counters: Record<string, number>;

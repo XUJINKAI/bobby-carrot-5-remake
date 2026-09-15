@@ -97,7 +97,7 @@ test("blocked player move forwards its attempted direction to presentation", () 
   };
   game.session = {
     world: {
-      query: { entityHasTrait: (id, trait) => id === 3 && trait === "player" },
+      query: { entityHasFact: (id, fact) => id === 3 && fact === "player" },
     },
   };
   game.faceBlockedActors([
@@ -260,7 +260,7 @@ test("Debug teleport hard-moves only the selected actor and clears its transient
   assert.equal(controls.teleportActor(actor.id, { x: 4, y: 2 }), false);
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
 
-  world.spatial.presencesAt = () => [{ entityId: 3, traits: ["player"] }];
+  world.spatial.presencesAt = () => [{ entityId: 3, facts: ["player"] }];
   assert.equal(controls.teleportActor(actor.id, { x: 1, y: 1 }), false);
   assert.deepEqual(actor.anchor, { x: 3, y: 2 });
 });

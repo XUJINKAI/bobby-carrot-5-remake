@@ -53,6 +53,14 @@ export type WorldDelta = WorldDeltaBase & WorldDeltaPayload;
 export class WorldDeltaSequence {
   private nextSequence = 1;
 
+  checkpoint(): number {
+    return this.nextSequence;
+  }
+
+  restore(nextSequence: number): void {
+    this.nextSequence = Math.max(1, Math.floor(nextSequence));
+  }
+
   create(
     payload: WorldDeltaPayload,
     clock: { worldTick: number | null; worldTimeMs: number },

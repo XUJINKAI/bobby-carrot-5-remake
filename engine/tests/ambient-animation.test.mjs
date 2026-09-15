@@ -5,11 +5,13 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 
-const AMBIENT_STEP_MS = 248;
+const AMBIENT_STEP_MS = 124;
+const factRegistry = builtinEngineEnvironment.facts;
 
 function resolveAt(type, nowMs, direction, winState, variant) {
   const entities = createBuiltinEntityRegistry();
@@ -23,7 +25,7 @@ function resolveAt(type, nowMs, direction, winState, variant) {
       ...(variant ? { variant } : {}),
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.all()[0];
   assert.ok(entity);
   const presence = spatial.presencesForEntity(entity.id)[0];
@@ -81,12 +83,11 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     completed: false,
     conditions: [
       {
-        type: "collect-all",
-        target: MapEntityTypeId.CARROT,
+        type: "carrot",
         completed: false,
         remaining: 1,
       },
-      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+      { type: "exit", completed: false },
     ],
   };
   assert.equal(
@@ -98,12 +99,11 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     ...blocked,
     conditions: [
       {
-        type: "collect-all",
-        target: MapEntityTypeId.CARROT,
+        type: "carrot",
         completed: true,
         remaining: 0,
       },
-      { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+      { type: "exit", completed: false },
     ],
   };
   const readyLayer = resolveAt(
@@ -119,7 +119,7 @@ test("Exit animates only when reach Exit is the only unfinished objective", () =
     MapEntityTypeId.EXIT,
     AMBIENT_STEP_MS,
     undefined,
-    { type: "reach", target: MapEntityTypeId.EXIT, completed: false },
+    { type: "exit", completed: false },
   );
   assert.equal(directLayer.kind, "image");
   assert.equal(directLayer.frameIndex, 0);
@@ -137,10 +137,13 @@ test("original ta.png Speed and Tide mappings preserve DAT direction order", () 
   }
 });
 
-test("original ta.png phase advances every 248ms without WorldTick input", () => {
+test("original ta.png phase advances every 124ms without WorldTick input", () => {
+  assert.equal(resolveAt(MapEntityTypeId.WATER, 123, undefined, undefined, "ripple").kind, "atlas");
   const phase1 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS, undefined, undefined, "ripple");
+  const phase1End = resolveAt(MapEntityTypeId.WATER, 247, undefined, undefined, "ripple");
   const phase2 = resolveAt(MapEntityTypeId.WATER, AMBIENT_STEP_MS * 2, undefined, undefined, "ripple");
   assert.equal(phase1.kind, "image");
+  assert.equal(phase1End.frameIndex, 39);
   assert.equal(phase2.kind, "image");
   assert.equal(phase1.frameIndex, 39);
   assert.equal(phase2.frameIndex, 40);

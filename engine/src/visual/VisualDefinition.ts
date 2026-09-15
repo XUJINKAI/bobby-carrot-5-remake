@@ -8,10 +8,11 @@ import type {
   EntityInstance,
 } from "../world/entity/EntityInstance.js";
 import type { WinConditionState, WorldEvent } from "../world/WorldTypes.js";
+import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
 import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 
 export type QuarterTurn = 0 | 1 | 2 | 3;
-export type VisualRenderPass = "world" | "player" | "effect";
+export type VisualRenderPass = "world" | "standing" | "effect";
 
 export interface AtlasVisualLayer {
   kind: "atlas";
@@ -30,6 +31,9 @@ export interface ImageVisualLayer {
   frameWidth?: number;
   /** 规则网格 sprite sheet 的单帧源高度；省略时可由 frameRows 推导。 */
   frameHeight?: number;
+  /** 非等宽 sprite sheet 中显式源矩形的左上角。 */
+  sourceX?: number;
+  sourceY?: number;
   /** sprite sheet 的列数。用于不应在 Entity 中硬编码源图像素尺寸的规则网格。 */
   frameColumns?: number;
   /** sprite sheet 的行数。用于不应在 Entity 中硬编码源图像素尺寸的规则网格。 */
@@ -83,7 +87,7 @@ export interface VisualQuery {
   inBounds(cell: CellPosition): boolean;
   presencesAt(cell: CellPosition): readonly EntityPresence[];
   entity(id: EntityId): Readonly<EntityInstance> | undefined;
-  entitiesWithTrait(trait: string): readonly Readonly<EntityInstance>[];
+  entitiesWithFact(fact: string): readonly Readonly<EntityInstance>[];
 }
 
 export interface VisualResolveContext {
@@ -93,6 +97,8 @@ export interface VisualResolveContext {
   runtime?: Readonly<EntityVisualRuntimeState>;
   /** Runtime 可以提供只读全局 gameplay 状态；Editor preview 可省略。 */
   global?: Readonly<GlobalState>;
+  /** World 终局的唯一只读来源；Editor preview 可省略。 */
+  outcome?: Readonly<WorldOutcomeState>;
   /** 当前只读目标树；用于表现目标是否已进入可达阶段。 */
   winState?: Readonly<WinConditionState> | null;
   /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */

@@ -1,20 +1,12 @@
-import { MapEntityTypeId, type LevelMap } from "@bobby/model";
-import {
-  behaviorRegistry as builtinBehaviors,
-  createBuiltinRuntimeActionRegistry,
-  entityRegistry as builtinEntities,
-} from "../entities/registry.js";
+import type { LevelMap } from "@bobby/model";
+import type { FactRegistry } from "../fact/FactRegistry.js";
+import type { MechanismRegistry } from "../mechanism/MechanismRegistry.js";
 import type { WorldTick } from "../time/WorldClock.js";
 import {
   createGlobalState,
   type GlobalState,
 } from "./GlobalState.js";
-import {
-  patchBobbyInventory,
-  patchBobbyLocomotionMoveMs,
-  readBobbyInventory,
-  readBobbyLocomotionMoveMs,
-} from "../entities/player/BobbyState.js";
+import type { ActorPolicy } from "./actor/ActorPolicy.js";
 import {
   ActorLifecycleStore,
   type ActorLifecycleSnapshot,
@@ -40,7 +32,10 @@ import { WorldQueryApi } from "./behavior/WorldQueryApi.js";
 import type { EntityDefinition } from "./entity/EntityDefinition.js";
 import type { CellPosition, EntityId, EntityInstance } from "./entity/EntityInstance.js";
 import type { EntityRegistry } from "./entity/EntityRegistry.js";
-import { EntityStore, type EntityStoreSnapshot } from "./entity/EntityStore.js";
+import {
+  EntityStore,
+  type EntityStoreSnapshot,
+} from "./entity/EntityStore.js";
 import { MovementTransaction } from "./movement/MovementTransaction.js";
 import {
   MovementRuntime,
@@ -71,6 +66,7 @@ import { SpatialIndex } from "./spatial/SpatialIndex.js";
 import { WorldCommitter, type WorldCommitResult } from "./WorldCommitter.js";
 import { WorldInspector } from "./WorldInspector.js";
 import { WorldRuleEvaluator } from "./WorldRuleEvaluator.js";
+import type { GoalRegistry } from "./outcome/GoalRegistry.js";
 import type {
   CellInspection,
   MoveResult,
@@ -88,9 +84,13 @@ export interface WorldSnapshot {
 }
 
 export interface WorldOptions {
-  entities?: EntityRegistry;
-  behaviors?: BehaviorRegistry;
-  actions?: RuntimeActionRegistry;
+  entities: EntityRegistry;
+  behaviors: BehaviorRegistry;
+  mechanisms: MechanismRegistry;
+  actions: RuntimeActionRegistry;
+  facts: FactRegistry;
+  goals: GoalRegistry;
+  actorPolicy?: ActorPolicy;
   /** Game 注入正式 gameplay cadence；省略时 World.step 保持同步测试语义。 */
   motionDurationMs?: number;
 }
@@ -103,6 +103,7 @@ export class World {
   readonly query: WorldQueryApi;
   readonly registry: EntityRegistry;
   readonly behaviors: BehaviorRegistry;
+  readonly mechanisms: MechanismRegistry;
   readonly actions: RuntimeActionScheduler;
   readonly movement = new MovementRuntime();
   readonly actors = new ActorLifecycleStore();
@@ -118,32 +119,39 @@ export class World {
   private readonly movementResolver: WorldMovementResolver;
   private readonly lifecycle: WorldLifecycle;
   private readonly inspector: WorldInspector;
+  private readonly actorPolicy: ActorPolicy | undefined;
   private motionDurationMs: number;
   private currentWorldTick: number | null = null;
 
-  constructor(level: LevelMap, options: WorldOptions = {}) {
+  constructor(level: LevelMap, options: WorldOptions) {
     this.width = level.width;
     this.height = level.height;
     this.rules = structuredClone(level.rules ?? {});
-    this.registry = options.entities ?? builtinEntities;
-    this.behaviors = options.behaviors ?? builtinBehaviors;
-    this.actions = new RuntimeActionScheduler(
-      options.actions ?? createBuiltinRuntimeActionRegistry(),
-    );
+    this.registry = options.entities;
+    this.behaviors = options.behaviors;
+    this.mechanisms = options.mechanisms;
+    this.actions = new RuntimeActionScheduler(options.actions);
+    this.actorPolicy = options.actorPolicy;
     this.entities = new EntityStore(level.entities);
     this.spatial = new SpatialIndex(
       this.entities,
       this.registry,
       level.width,
       level.height,
+      options.facts,
     );
     this.state = createGlobalState();
-    this.tickIndex = new TickIndex(this.registry, this.behaviors, this.spatial);
+    this.tickIndex = new TickIndex(
+      this.registry,
+      this.behaviors,
+      this.mechanisms,
+      this.spatial,
+    );
     this.query = new WorldQueryApi(
       this.entities,
       this.spatial,
-      this.registry,
       () => this.state,
+      options.facts,
       this.movement.motions,
     );
     assertDistinctPlayerAnchors(this.query);
@@ -151,8 +159,8 @@ export class World {
     this.behaviorRuntime = new BehaviorRuntime(
       this.registry,
       this.behaviors,
+      this.mechanisms,
       this.entities,
-      this.spatial,
       this.query,
     );
     this.movementResolver = new WorldMovementResolver(
@@ -164,8 +172,15 @@ export class World {
       this.actors,
       this.outcome,
       this.behaviorRuntime,
+      this.mechanisms.requirePassage(),
+      this.mechanisms.requirePush(),
     );
-    this.reachResolver = new ReachResolver(this.query, this.behaviors);
+    this.reachResolver = new ReachResolver(
+      this.query,
+      this.registry,
+      this.behaviors,
+      this.mechanisms,
+    );
     this.committer = new WorldCommitter(
       this.entities,
       this.spatial,
@@ -179,10 +194,11 @@ export class World {
     );
     this.ruleEvaluator = new WorldRuleEvaluator(
       this.rules,
-      this.entities,
       this.spatial,
       this.query,
       this.reachResolver,
+      options.goals,
+      this.mechanisms.requireMetrics(),
       () => this.state,
     );
     this.lifecycle = new WorldLifecycle(
@@ -224,6 +240,11 @@ export class World {
     return this.ruleEvaluator.winState;
   }
 
+  /** 由当前空间事实即时投影；不进入 GlobalState 或 Snapshot。 */
+  get metrics(): Readonly<Record<string, number>> {
+    return this.ruleEvaluator.derivedMetrics;
+  }
+
   get inputBlocked(): boolean {
     return this.actions.inputBlocked || this.movement.running.length > 0;
   }
@@ -254,11 +275,6 @@ export class World {
 
   presencesAt(cell: CellPosition): readonly EntityPresence[] {
     return this.spatial.presencesAt(cell);
-  }
-
-  isActorClimbing(actorId: EntityId): boolean {
-    const actor = this.entities.get(actorId);
-    return actor ? this.spatial.hasTraitAt(actor.anchor, "climbable") : false;
   }
 
   setMotionDurationMs(durationMs: number): void {
@@ -293,7 +309,6 @@ export class World {
     queue.reviveActor(entityId);
     const result = emptyWorldStepResult();
     absorbCommit(result, this.committer.commit(queue, this.deltaClock()));
-    this.lifecycle.syncLegacyState();
     return result;
   }
 
@@ -316,7 +331,6 @@ export class World {
   }
 
   clearTransientEffects(): void {
-    this.state.fireTrail = [];
   }
 
   snapshot(): WorldSnapshot {
@@ -337,7 +351,6 @@ export class World {
     this.movement.restore(snapshot.movement);
     this.actors.restore(snapshot.actors);
     this.outcome.restore(snapshot.outcome);
-    this.lifecycle.syncLegacyState();
     this.spatial.rebuild();
   }
 
@@ -350,6 +363,13 @@ export class World {
    * 所有成功 movement 与交互只在整组解析后统一 commit。
    */
   step(group: WorldIntentGroup): WorldStepResult {
+    const result = this.resolveIntentGroup(group);
+    this.settleTerminalRuntime(result);
+    return result;
+  }
+
+  /** RuntimeAction 需要先收到本组权威结果，再统一清理终局运行时。 */
+  private resolveIntentGroup(group: WorldIntentGroup): WorldStepResult {
     const result = emptyWorldStepResult();
     this.applyEffectIntents(group.intents, result);
     const transaction = new MovementTransaction();
@@ -369,8 +389,6 @@ export class World {
 
     if (playerInputMoved)
       transaction.commands.setGlobal("moves", this.state.moves + 1);
-    if (transaction.motions.length > 0)
-      transaction.commands.setGlobal("lastReachedSelectors", []);
 
     const commit = this.committer.commit(transaction.commands, this.deltaClock());
     result.moves.push(...moves);
@@ -378,7 +396,6 @@ export class World {
     this.startMotions(transaction.motions, result);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
-    this.settleTerminalRuntime(result);
 
     return result;
   }
@@ -450,7 +467,7 @@ export class World {
 
     const readyActionRequests = [...actionRequests, ...handoffRequests];
     if (readyActionRequests.length > 0) {
-      const actionStep = this.step({
+      const actionStep = this.resolveIntentGroup({
         intents: readyActionRequests.map((request) => request.intent),
         historyBoundary: false,
       });
@@ -491,7 +508,7 @@ export class World {
         undefined,
         time,
       );
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence))
+      for (const behavior of this.behaviorRuntime.resolve(entity))
         behavior.onTick?.(context);
     }
 
@@ -616,19 +633,8 @@ export class World {
           movement,
         );
     }
-    if (marker.recordsReach === true) {
-      const selectors = new Set(this.state.lastReachedSelectors);
-      for (const selector of this.reachResolver.selectorsFor(
-        actor,
-        plan.target,
-      ))
-        selectors.add(selector);
-      queue.setGlobal("lastReachedSelectors", [...selectors]);
-    }
-
     const commit = this.committer.commit(queue, this.deltaClock());
     absorbCommit(result, commit);
-    this.ruleEvaluator.refreshDerivedState();
     this.lifecycle.settle(result, motion.entityId);
   }
 
@@ -666,7 +672,7 @@ export class World {
       request.cause.cadenceMs !== undefined
     )
       return safeDuration(request.cause.cadenceMs);
-    return readBobbyLocomotionMoveMs(
+    return this.actorPolicy?.movementDurationMs(
       this.entities.get(request.entityId)?.state,
     ) ?? this.motionDurationMs;
   }
@@ -707,43 +713,10 @@ export class World {
         continue;
       }
       const actor = this.entities.get(intent.actorId);
-      if (!actor || !this.query.entityHasTrait(actor.id, "player")) continue;
+      if (!actor || !this.query.entityHasFact(actor.id, "player")) continue;
       const state = states.get(actor.id) ?? structuredClone(actor.state);
-      if (intent.type === "set-actor-locomotion") {
-        if (!Number.isFinite(intent.moveDurationMs) || intent.moveDurationMs <= 0)
-          continue;
-        states.set(
-          actor.id,
-          patchBobbyLocomotionMoveMs(state, intent.moveDurationMs),
-        );
-        queue.emit({
-          type: "actor-locomotion-changed",
-          entityId: actor.id,
-          data: { moveDurationMs: intent.moveDurationMs },
-        });
-        continue;
-      }
-      if (
-        intent.item !== MapEntityTypeId.LOCK_KEY ||
-        !Number.isInteger(intent.count) ||
-        intent.count <= 0
-      ) {
-        continue;
-      }
-      const inventory = readBobbyInventory(state);
-      const lockKeys = inventory.lockKeys + intent.count;
-      states.set(
-        actor.id,
-        patchBobbyInventory(state, { lockKeys }),
-      );
-      queue.emit({
-        type: "actor-inventory-item-added",
-        entityId: actor.id,
-        ...(intent.requestId !== undefined
-          ? { requestId: intent.requestId }
-          : {}),
-        data: { item: intent.item, count: intent.count, total: lockKeys },
-      });
+      const next = this.actorPolicy?.applyEffect(intent, actor, state, queue);
+      if (next) states.set(actor.id, next);
     }
     for (const [entityId, state] of states) {
       if (state) queue.setState(entityId, state);
@@ -762,7 +735,7 @@ export class World {
 
 function assertDistinctPlayerAnchors(query: WorldQueryApi): void {
   const occupied = new Map<string, EntityId>();
-  for (const player of query.entitiesWithTrait("player")) {
+  for (const player of query.entitiesWithFact("player")) {
     const key = `${player.anchor.x},${player.anchor.y}`;
     const existing = occupied.get(key);
     if (existing !== undefined) {

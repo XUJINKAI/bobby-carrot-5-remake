@@ -1,4 +1,5 @@
 import { MapEntityTypeId } from "@bobby/model";
+import { hazardBehavior } from "../behaviorLibrary.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type {
   EntityModule,
@@ -9,13 +10,12 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const armTrapAfterLeave: Behavior = {
   id: "arm-trap-after-leave",
   onLeave({ actor, self, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
     if (self.entity.state?.active !== false) return;
     commands.setState(self.entity.id, {
       ...self.entity.state,
@@ -26,8 +26,7 @@ const armTrapAfterLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.TRAP,
-  traits: ["walkable", "hazard"],
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   state: activeState(true),
   presentation: { name: "Trap" },
 };
@@ -39,5 +38,5 @@ export const trap: EntityModule = originalModule(
       fields: { active: context.entity.state?.active !== false },
     }),
   ),
-  [{ behavior: armTrapAfterLeave }],
+  [{ behavior: hazardBehavior }, { behavior: armTrapAfterLeave }],
 );

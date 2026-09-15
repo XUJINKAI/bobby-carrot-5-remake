@@ -39,7 +39,7 @@ interface LevelEntity {
 }
 ```
 
-字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Trait、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
+字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Fact、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与
 `applyLevelPatches()`，供首页 Demo、Adventure 等地图生产者在 Engine 加载前对 clone
@@ -110,6 +110,8 @@ Catalog、release、chapter、difficulty、HTTP、JAR、DAT mapping 等产品/�
 
 ### Engine 内部职责
 
+Engine 内部按 `World / Mechanism / Entity` 分工：World 持有时间、空间、调度、移动裁决与提交；Mechanism 实现可复用的地图规则；Entity 定义对象身份、状态、Fact 投影、机制组合与专属行为。`Fact` 是语义查询接口，`Behavior` 是 hook 调用协议。概念引用图和完整边界见 [`Engine 机制合同`](contracts/engine-mechanisms.md)。
+
 Engine 使用固定 gameplay 生命周期与 Definition Registry 协作：
 
 ```text
@@ -130,20 +132,13 @@ Gameplay hook 使用同步函数调用，执行顺序由 World transaction 明�
 源码职责按以下边界组织：
 
 ```text
-actors/                 当前 Bobby Actor 的状态合同与初始化
-mechanics/definition/   Definition Registry、注册端口与 inspection
-mechanics/traits/       trait 查询
-mechanics/movement/     passage、原子移动提交与 pushable
-mechanics/goals/        地图目标初始化与评估
-mechanics/rules/        当前地图 active rules
-mechanics/interactions/ 通用对象交互能力
-original/terrain/       原版 Terrain Definition 与 augmentation
-original/object/        原版 Object Definition 与 augmentation
-custom/                 扩展 Terrain/Object Definition
-world/                  RuntimeState、事务顺序与世界状态推进
+engine/src/world/       Runtime state、只读查询协议、调度、移动裁决与提交
+engine/src/fact/        共享 Fact 标识、语义与注册表
+engine/src/mechanism/   Pipeline 和 Entity-bound 通用规则
+engine/src/entities/    具体对象的 Definition、组合与专属行为
 ```
 
-`mechanics/definitions.ts` 是稳定 façade：加载原版 Definition 后注册扩展 Definition，并保持现有 Engine/Editor 查询 API。地图加载时只为当前 `LevelMap` 创建 active rule 列表；移动完成后按注册顺序同步执行。
+`EngineEnvironment` 统一装配 Entity Catalog、Fact / Mechanism / Behavior / Action / Goal / Visual / Callout Registry 与 Actor Policy，再由 Session 创建 World。Gameplay、Replay、表现层、校验和 Editor 预览必须消费同一环境。World 的固定阶段调用 Pipeline Mechanism，Entity Definition 显式组合 Entity-bound Mechanism；两者都通过 World 的提案和命令协议执行，不由 Fact 自动绑定 Behavior。
 
 Engine 允许一张地图包含多个 Bobby Actor。每个 Bobby 的背包和生命周期归属于自身 Entity state；`GameplayState.actors[]` 提供完整状态，`primaryActorId / player / facing / inventory` 是 primary actor 的便利投影。任一 actor 死亡即结束关卡，移动事务负责多人目的格冲突与不可重叠约束。
 
@@ -183,7 +178,6 @@ collect-bonus-coin
 collect-golden-carrot
 complete
 death
-dialog { text? }
 missing-item {
   actorId,
   entityId,
@@ -205,7 +199,8 @@ object-interaction {
 
 `missing-item` 由地图机关报告缺少 Gas、Lock Key、Kite、Shovel 或 Bean 的语义事实。
 Engine Presentation 将它映射为锚定 Bobby 的 Canvas Callout；图标、闪烁时序和
-`aria-live` 文本都属于表现层；World 保存 gameplay 状态，Replay 记录产生效果的语义输入。
+`aria-live` 文本都属于表现层；World 保存 gameplay 状态，Replay 记录已裁决的语义输入，
+包括一次没有位移的受阻尝试。
 完整功能合同见 [`features/world-callouts.md`](features/world-callouts.md)。
 
 成功打开锁是一个普通 Object interaction：
@@ -222,18 +217,25 @@ action = "open"
 LevelEntity.dialogue
         ↓
 Object Definition touch behavior
-        ├─ object-interaction
-        └─ dialogue 非空时发出 dialog(text)
-                         ↓
-                  Engine presentation
+        ↓
+dialogue-request（World→Game 私有）
+        ↓
+Engine GameplayDialogController → GameplayDialogView
 ```
 
-固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
-Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
-`onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World；
-需要用户选择时，进行中的 Replay 录制立即终止。Replay 只回放 Engine gameplay 动作，
-播放不会重新请求宿主交互。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
+固定对白是随 JSON 地图传播的字面字符串或字符串数组。Engine 在每次接触时从第一段开始，
+数组在同一个对话框内依次翻页；结束后按 `(actorId, entityId)` 抑制 500ms 内的重复打开。
+这类请求由 `Game` 消费，不进入 `onWorldEvent()` 或 `onInteractionRequest()`。复杂条件对白与
+购买必须使用不含 `dialogue` 字段的 Entity，由宿主监听 `onInteractionRequest()` 后处理；
+宿主只可调用公共 `GameplayDialogController` 或提交封闭 Gameplay Intent，不能取得
+BehaviorContext、WorldQuery 或 CommandQueue。Web 在处理外部请求期间持有
+`blocking-interaction` lease，由它暂停 World、阻塞输入并终止进行中的 Replay 录制；
+Controller 在实际展示期间再持有可叠加的 Engine dialogue lease。
+`InputController` 在 Dialog 激活期间把 Keyboard、Pointer Swipe、Screen Joystick 与外部
+方向控件归一化为逻辑输入，并交给 Controller 持有的模态消费者；World gameplay 保持暂停，
+输入采集本身继续工作。`GameplayDialogView` 是 Controller 内部无 World 与浏览器输入监听的
+DOM View。
+Replay 只回放 Engine gameplay 动作，播放不会重新请求宿主交互。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -263,24 +265,25 @@ Lock.deathCountdownSeconds = 60
 
 这条规则不含 Adventure 语义，因此自定义 JSON、Explore 与 Editor Play Test 都可以直接使用。
 
-### Semantic Definition Layer
+### Engine 语义组合
 
 ```text
-Tile Definition Registry
-├─ id
-├─ presentation
-├─ gameplay traits
-├─ behaviors[]
-└─ authoring
-   ├─ palette
-   └─ map fields[]
-      ├─ string
-      └─ enum
+World
+├─ EntityStore / SpatialIndex / Fact projection / Selector Index
+├─ Behavior dispatch / WorldClock / RuntimeAction / WorldMotion
+└─ movement adjudication / atomic commit / Snapshot / Outcome
 
-Entity Layout Definition
-├─ footprint[]
-├─ cursor
-└─ authoringVariants[]
+Mechanism
+├─ Entity-bound：Dialog / Object Interaction 等通用 hook
+└─ Pipeline：Passage / Push / World Metrics / Reach Aggregation
+
+Fact
+└─ FactDefinition / FactRegistry：跨层共享的语义协议
+
+Entity
+├─ EntityDefinition：Type / footprint / EntityFacts / PresenceFacts
+├─ 显式 Mechanism 组合与对象专属 Behavior
+└─ EntityInstance：identity / anchor / gameplay state
 ```
 
 Map Entity 在 Engine World、Editor 预览、校验和 footprint 查询中统一使用 canonical
@@ -288,10 +291,12 @@ type，并直接取得同名 Definition。`windmill` 的方向、`egg` 的填充
 Engine runtime state 表达；Engine 运行过程中生成的 Fireball、豆茎中间段等临时实体
 使用 Engine 私有身份，不进入 Model API 或 LevelMap。
 
-Editor Palette 只枚举具有 Model `EntityMapDefinition` 的 canonical type；Engine 私有临时实体
-不会进入 Editor。`authoring.palette=false` 用于把应在 Surface 面板等其它入口编辑的 canonical
-type 排除出 Object Palette。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor
-Inspector 结合该合同与 Engine authoring metadata，不维护类型特判表。
+Fact 是跨层只读语义接口，Behavior 是 World 调用规则的 hook 协议；两者都不是额外层级。World 依赖通用 Entity ID、状态和 Presence 协议，但不导入具体对象实现。通用 Mechanism 通过 World 查询当前 Fact 并提出策略或命令，具体 Entity 定义负责组合。玩法格子查询默认读取由实例 `stackOrder` 与 `contact-cover` 派生的接触栈；完整空间栈只向 Render、Editor、Debug、目标查询和显式对象特例开放。
+
+Editor authoring catalog 的可持久化类型由 Model `EntityMapDefinition` 声明；Engine 私有临时
+Entity 因缺少该定义，不进入 Editor。Editor definitions 决定 Palette、Surface、隐藏、分组与
+创建入口。Model `EntityMapDefinition.fields` 描述可持久化字段；Editor Inspector 结合字段
+合同与 Editor 专属策略生成控件，Engine Catalog 提供 footprint 和视觉解析。
 
 当前只需要简单实例属性。不要提前扩张为脚本系统、通用表单引擎或对白树。
 
@@ -332,12 +337,12 @@ Engine object-interaction
         ↓ Web 只做边界适配
 adventureAugmentation.interaction(context)
         ↓
-GameplayDialog / Save / public Engine effect
+GameplayDialogController / Save / public Engine effect
 ```
 
 通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
 `requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
-这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定与循环对白
+这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定多页对白
 通过 `dialogue` patch 直接进入纯地图；涉及 Campaign Save 的条件与购买写在地图的
 `interaction` 回调中。Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
 Engine 只报告本局的
@@ -418,7 +423,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Engine Definition 的 authoring metadata 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Editor definitions 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑同一会话的每一页对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 

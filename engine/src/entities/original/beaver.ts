@@ -5,22 +5,21 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAVER,
-  traits: ["blocking", "interaction", "dialog"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: ["blocking"],
+  mechanisms: ["object-interaction"],
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },
       { dx: 0, dy: 0, role: "body" },
     ],
   },
-  presentation: { name: "Beaver" },
+  presentation: { name: "Beaver", renderPass: "standing" },
 };
 
 export const beaver: EntityModule = originalModule(

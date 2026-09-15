@@ -3,7 +3,7 @@ import type { LevelEntity, LevelMap, MapDocument, MapMeta } from "./document.js"
 import { entityMapDefinition } from "./entity/catalog.js";
 import type { EntityMapFieldDefinition } from "./entity/contract.js";
 import { normalizeColorHex } from "../shared/color.js";
-import type { LevelLimit, LevelRules, WinCondition } from "./rules.js";
+import { GOAL_TYPES, type GoalType, type LevelLimit, type LevelRules, type WinCondition } from "./rules.js";
 
 const MAP_FIELDS = new Set([
   "schemaVersion",
@@ -197,7 +197,7 @@ function fieldAccepts(
     return true;
   }
   if (field.kind === "string-or-string-list") {
-    return typeof value === "string" ||
+    return (typeof value === "string" && value.length > 0) ||
       (isStringList(value) &&
         value.length > 0 &&
         value.every((line) => line.length > 0));
@@ -238,24 +238,8 @@ function parseWinCondition(value: unknown, label: string): WinCondition {
     );
     return structuredClone(condition) as unknown as WinCondition;
   }
-  if (condition.type === "collect-all") {
-    rejectUnknownFields(condition, new Set(["type", "target"]), label);
-    selector(condition.target, `${label}.target`);
-    return structuredClone(condition) as unknown as WinCondition;
-  }
-  if (condition.type === "fill-all") {
-    rejectUnknownFields(
-      condition,
-      new Set(["type", "target", "filler"]),
-      label,
-    );
-    selector(condition.target, `${label}.target`);
-    selector(condition.filler, `${label}.filler`);
-    return structuredClone(condition) as unknown as WinCondition;
-  }
-  if (condition.type === "reach") {
-    rejectUnknownFields(condition, new Set(["type", "target"]), label);
-    selector(condition.target, `${label}.target`);
+  if (GOAL_TYPES.includes(condition.type as GoalType)) {
+    rejectUnknownFields(condition, new Set(["type"]), label);
     return structuredClone(condition) as unknown as WinCondition;
   }
   throw new Error(`${label}.type 不是受支持的获胜条件`);
@@ -292,12 +276,6 @@ function rejectUnknownFields(
 ): void {
   for (const key of Object.keys(value))
     if (!allowed.has(key)) throw new Error(`${label} 不允许字段 ${key}`);
-}
-
-function selector(value: unknown, label: string): string {
-  if (typeof value !== "string" || value.length === 0)
-    throw new Error(`${label} 必须为非空字符串`);
-  return value;
 }
 
 function integer(value: unknown, label: string): number {

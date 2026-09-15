@@ -11,7 +11,6 @@ import type {
 } from "../EntityModule.js";
 import {
   clampProgress,
-  CONTENT_STACK_ORDER,
   originalModule,
 } from "../original/module.js";
 import {
@@ -36,6 +35,13 @@ const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   up: 2,
   down: 3,
 };
+const MOWER_SOURCE_RECT: Readonly<Record<Direction, { x: number; width: number }>> = {
+  left: { x: 0, width: 60 },
+  right: { x: 60, width: 60 },
+  up: { x: 120, width: 48 },
+  down: { x: 168, width: 48 },
+};
+const MOWER_FRAME_HEIGHT = 83;
 
 /** Bobby 的原版人物素材与 sprite-sheet 语义集中在 Player module。 */
 export const BOBBY_VISUAL_ASSETS = {
@@ -56,34 +62,40 @@ export const BOBBY_VISUAL_ASSETS = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BOBBY,
-  traits: ["player", "blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: ["player", "blocking"],
   state: BOBBY_INVENTORY_FIELDS,
   presentation: {
     name: "Bobby",
-    renderPass: "player",
+    renderPass: "standing",
   },
 };
 
 const bobbyMovementPolicy: Behavior = {
   id: "bobby-movement-policy",
-  planMovement({ actor, query, to, target }) {
+  planMovement(context) {
+    const { actor, query, to, target } = context;
     if (isBobbyFlying(actor.state))
       return {
         passage: "unrestricted",
         lifecycle: {
           source: [],
           target: target.filter((presence) =>
-            presence.traits.includes("flight-landing"),
+            query.entity(presence.entityId)?.type === MapEntityTypeId.LANDING,
           ),
         },
         reason: "airborne-passage",
       };
 
     const relation = bobbyMountId(actor.state);
-    if (relation === null || !query.entityHasTrait(relation, "ride-carried"))
+    if (relation === null || query.entity(relation)?.type !== MapEntityTypeId.MOWER) {
       return;
+    }
     return {
+      // Mower 的重量与机关交互读取完整栈；普通 Bobby 仍使用默认接触栈。
+      contacts: {
+        source: [...query.allPresencesAt(context.from)].reverse(),
+        target: [...query.allPresencesAt(to)].reverse(),
+      },
       companions: [
         {
           entityId: relation,
@@ -104,7 +116,7 @@ const bobbyVisual = {
     const rawProgress = context.runtime?.progress ?? 1;
     const progress = clampProgress(rawProgress);
 
-    if (context.global?.dead) {
+    if (context.outcome?.phase === "lost") {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.death,
         frameColumns: 8,
@@ -140,7 +152,7 @@ const bobbyVisual = {
     }
 
     // World 完成后只允许通关 transition 绘制 Bobby；动画结束后角色保持隐藏。
-    if (context.global?.completed) return null;
+    if (context.outcome?.phase === "won") return null;
 
     if (context.runtime?.animation === "shovel") {
       const row = Math.min(2, Math.floor(progress * 3));
@@ -169,13 +181,16 @@ const bobbyVisual = {
     const mount = mountId === null ? undefined : context.query.entity(mountId);
     if (mount?.type === MapEntityTypeId.MOWER) {
       const row = (context.time?.frame ?? 0) % 2;
+      const source = MOWER_SOURCE_RECT[direction];
       return composition(
         context,
         {
           asset: BOBBY_VISUAL_ASSETS.mower,
-          frameColumns: 4,
-          frameRows: 2,
-          frameIndex: DIRECTION_COLUMN[direction] + row * 4,
+          sourceX: source.x,
+          sourceY: row * MOWER_FRAME_HEIGHT,
+          frameWidth: source.width,
+          frameHeight: MOWER_FRAME_HEIGHT,
+          offsetX: source.width === 60 ? -6 : 0,
         },
         speedTrail(context, direction),
       );
@@ -249,7 +264,7 @@ export const bobby: EntityModule = originalModule(definition, bobbyVisual, [
 
 function isStandingOnClimbable(context: VisualResolveContext): boolean {
   return context.query.presencesAt(context.entity.anchor).some((presence) =>
-    presence.traits.includes("climbable")
+    presence.facts.includes("climbable")
   );
 }
 
@@ -333,13 +348,7 @@ function visualElevation(context: VisualResolveContext): number {
 
 function composition(
   context: VisualResolveContext,
-  frame: {
-    asset: string;
-    frameColumns: number;
-    frameRows: number;
-    frameIndex?: number;
-    frameProgress?: number;
-  },
+  frame: Omit<ImageVisualLayer, "kind" | "anchor" | "offsetY">,
   background: ImageVisualLayer | null = null,
 ) {
   const marker = playerMarker(context);
@@ -359,7 +368,7 @@ function composition(
 }
 
 function playerMarker(context: VisualResolveContext): CanvasVisualLayer | null {
-  const players = [...context.query.entitiesWithTrait("player")].sort(
+  const players = [...context.query.entitiesWithFact("player")].sort(
     (left, right) =>
       playerChannelOrder(left.state?.["controller"]) -
         playerChannelOrder(right.state?.["controller"]) ||
@@ -404,9 +413,8 @@ function resolveIdleFrame(
   if (stationarySinceMs === undefined || nowMs === undefined) return null;
   const idleMs = Math.max(0, nowMs - stationarySinceMs);
   if (idleMs < BOBBY_IDLE_DELAY_MS) return null;
-  return (
-    Math.floor(
-      (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
-    ) % 3
-  );
+  const frame = Math.floor(
+    (idleMs - BOBBY_IDLE_DELAY_MS) / BOBBY_IDLE_FRAME_MS,
+  ) % 4;
+  return frame <= 2 ? frame : 1;
 }

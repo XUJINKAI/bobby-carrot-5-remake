@@ -43,16 +43,18 @@ Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeA
 
 ## 输入
 
-Replay 在浏览器输入源映射到 controller channel 后记录产生 gameplay 效果的语义动作。因此它保留：
+Replay 在浏览器输入源映射到 controller channel 后记录已经由 gameplay 裁决的语义动作。因此它保留：
 
 - 同一 channel 中多个 Bobby 的联动分组与方向变换；
-- 生效输入的 Tick 与组内顺序；
-- 成功启动的移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
+- 已裁决动作的 Tick 与组内顺序；
+- 成功启动的移动、一次明确的受阻移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
 - 宿主提交的 `set-actor-locomotion`、`add-actor-inventory-item` 等封闭 gameplay 动作；
 
-按住方向时，Bobby 移动期间产生的纯 `busy` 重试和没有 gameplay 效果的阻挡输入不会写入
-Replay。记录数量因此由实际 gameplay 动作决定，不随 `worldHz` 线性增长。旧 Replay 中已经
-保存的重复输入仍按相同格式正常播放。
+浏览器的 key repeat 和每帧 held 状态只维护 `InputController` 的连续输入状态，不直接写入
+Replay。每次实际尝试由 `HeldDirectionRepeater` 送进 World：Bobby 移动期间的纯 `busy`
+重试不会记录；移动成功会记录一次；第一次撞墙也会作为 `blocked` 动作记录一次，随后同一
+次持续按住会被 repeater 抑制，直到释放或改变方向。因此记录数量由实际动作决定，不随
+`worldHz` 或按住帧数线性增长。旧 Replay 中已经保存的重复输入仍按相同格式正常播放。
 
 移动使用数字 `channel`，省略表示通道 `0`；键盘、Pointer、摇杆等输入源名称不进入
 Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的
@@ -101,29 +103,26 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   "finalState": {
     "status": "won",
     "moves": 14,
+    "position": [{ "x": 7, "y": 5 }],
     "elapsedMs": 2000,
     "counters": {
       "collect-carrot": 9,
       "fill-egg-nest": 4
     },
     "completedConditions": [
-      { "type": "collect-all", "target": "carrot" },
-      { "type": "reach", "target": "exit" }
+      { "type": "carrot" },
+      { "type": "exit" }
     ]
   },
   "endTick": 120,
   "frames": [
-    {
-      "tick": 0,
-      "groups": [
-        {
-          "intents": [{ "type": "move", "direction": "right" }]
-        }
-      ]
-    }
+    {"tick":0,"groups":[{"intents":[{"type":"move","direction":"right"}]}]}
   ]
 }
 ```
+
+Replay 导出时保留顶层与终局摘要的两空格缩进；`frames` 中每个 frame 连同其 groups 和
+intents 压成一行。这样长 Replay 仍是一帧一行的可扫描数组，也保持标准 JSON，可直接编辑。
 
 `meta.id` 和 `meta.url` 由宿主在开始录制时提供。`id` 使用
 `<collection>/<map-id>` 路径身份，例如 `original/1-1`；Editor Play Test 使用
@@ -131,9 +130,10 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 不读取或解释其内容，用户可以在 Replay 文本中直接填写。
 
 录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
-本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
+本局成功的玩家移动步数；`position` 按 GameplaySession 的 actor 顺序记录所有 Bobby 的
+最终 anchor，因此也覆盖多 Bobby 地图；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
 `counters` 累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
-`completedConditions` 展开并列出终点已经满足的 `collect-all / fill-all / reach` 叶子条件。
+`completedConditions` 展开并列出终点已经满足的具体 Goal 叶子条件。
 它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture
 维护面。
 
@@ -153,9 +153,10 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 于 tick 0 前应用，并使用同一套位置引用规则。Replay Tick 只发布可观察的
 `WorldEvent`；`onInteractionRequest()` 不在播放中调用。
 
-地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。字符串数组
-`dialogue` 的循环游标属于 World Runtime State，因此随 Snapshot 与确定性 Tick 时间线
-推进。宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
+地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。每次会话固定从
+第一项开始，翻页位置与 500ms 重复打开冷却都是 Controller 的 Presentation 状态，不进入
+World Snapshot 或确定性 Tick 时间线。Replay 播放期间 Game 忽略内部对白展示请求。
+宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
 
 ## 仓库内置过法
 
@@ -187,9 +188,15 @@ Explore 游戏页底栏使用 `PhChecks` 显示基础地图的验证结果，绿
 ## Web 录制入口
 
 Explore 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
-录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 复跑到录制终点。
+录制期间同一按钮可以手动停止；关卡通关时自动结束。停止后立即调用无头 Runner 从 tick 0
+复跑到录制终点。
 Replay JSON 可以直接编辑，并可从起点播放、暂停、停止、跳转起点或终点、复制到剪贴板或
-下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。面板速率是
+下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。在 `npm run dev`
+模式下，旁边的“保存内置过法”把当前 Replay 文本写到同一个
+`assets/replays/<collection>/<map-id>.json` 地址；Explore 与 Adventure 使用相同的路径
+规则。保存前使用当前关卡从 tick 0 复跑到 `endTick`，只接受文件声明与实际结果均为
+`won` 的 Replay；步数、位置、计数与耗时不作为保存条件。保存后开发服务器沿用仓库现有的
+内置过法验证与页面刷新流程。面板速率是
 Engine 的常驻 `timeScale`，同时作用于普通游戏、
 录制和播放。输入合法正数时立即更新 World 与 Presentation；输入为空或非法时保留最近
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退
@@ -197,7 +204,9 @@ Engine 的常驻 `timeScale`，同时作用于普通游戏、
 
 终点快进仍逐 Tick 发布沿途 `WorldEvent`，以保持独立关卡的事件观察顺序。
 
-录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放角色过渡、终局音乐并显示结果卡片；录制中的 take 由用户在面板中停止并生成 Replay JSON。
+录制面板的打开状态和 Replay 录制状态都不改变 GamePage 的终局流程。通关与失败照常播放
+角色过渡、终局音乐并显示结果卡片；通关事件在获胜 Tick 写入 Recorder 后自动停止 take 并
+生成 Replay JSON。失败状态保留 take，允许用户手动决定是否保存这段调试输入。
 
 关卡进入表现期间 WorldClock 不推进，键盘、指针、摇杆和外部移动意图会被丢弃，
 因此进入动画不增加 Replay tick、`elapsedMs` 或输入 frame。Replay 播放从同一个

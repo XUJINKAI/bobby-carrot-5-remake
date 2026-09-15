@@ -13,6 +13,11 @@ export interface EntityStoreSnapshot {
   nextEntityId: EntityId;
 }
 
+export interface EntityStoreMutationCheckpoint {
+  readonly nextEntityId: EntityId;
+  readonly entities: Map<EntityId, EntityInstance | null>;
+}
+
 /** 确定性 Entity identity 与实例状态存储。 */
 export class EntityStore {
   private readonly entities = new Map<EntityId, EntityInstance>();
@@ -70,5 +75,36 @@ export class EntityStore {
     for (const entity of structuredClone(snapshot.entities))
       this.entities.set(entity.id, entity);
     this.nextEntityId = snapshot.nextEntityId;
+  }
+
+  /**
+   * Commit 正常路径只保存实际触碰的 Entity；失败恢复时再清理本次生成的 ID。
+   * 这样事务原子性不会让每次移动都复制整张地图。
+   */
+  createMutationCheckpoint(): EntityStoreMutationCheckpoint {
+    return {
+      nextEntityId: this.nextEntityId,
+      entities: new Map(),
+    };
+  }
+
+  captureForMutation(
+    checkpoint: EntityStoreMutationCheckpoint,
+    id: EntityId,
+  ): void {
+    if (checkpoint.entities.has(id)) return;
+    const entity = this.entities.get(id);
+    checkpoint.entities.set(id, entity ? structuredClone(entity) : null);
+  }
+
+  restoreMutationCheckpoint(checkpoint: EntityStoreMutationCheckpoint): void {
+    for (const id of [...this.entities.keys()]) {
+      if (id >= checkpoint.nextEntityId) this.entities.delete(id);
+    }
+    for (const [id, entity] of checkpoint.entities) {
+      if (entity) this.entities.set(id, structuredClone(entity));
+      else this.entities.delete(id);
+    }
+    this.nextEntityId = checkpoint.nextEntityId;
   }
 }

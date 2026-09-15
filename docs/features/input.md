@@ -73,6 +73,8 @@ WorldClock pause 时不会调用 `InputController.update()`，并且 `Game.move(
 
 Continuous Input 的第一格在下一次 WorldTick 立即尝试；第二格必须经过 input source 自己的 `initialRepeatDelayMs`。首次方向 edge 会被缓冲到下一 Tick：即使用户在同一个 World step 内完成按下并松开，仍会保留一次单格移动，但因为 held state 已经清空，不会进入 repeat。
 
+模态 gameplay UI 只接收物理按键首次按下产生的归一化输入，忽略浏览器 `keydown.repeat`；连续 gameplay 移动仍统一由 WorldTick 中的 repeat 状态机采样，避免一次长按连续跳过多段对话。
+
 当前默认手感：
 
 | Input Source | Initial Repeat Delay |

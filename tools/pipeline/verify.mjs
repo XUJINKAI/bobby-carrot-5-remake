@@ -302,13 +302,9 @@ function assertOriginalMapName(map, document, relative) {
 }
 
 function assertPushboxWinRule(document, relative) {
-  const expected = {
-    type: "fill-all",
-    target: "push-goal",
-    filler: "pushable",
-  };
+  const expected = { type: "push-goal" };
   if (JSON.stringify(document.rules?.win) !== JSON.stringify(expected))
-    throw new Error(`${relative}: 获胜条件必须只有 fill-all push-goal`);
+    throw new Error(`${relative}: 获胜条件必须只有 push-goal`);
   const bobbies = document.entities.filter((entity) => entity.type === "bobby");
   if (bobbies.length !== 1)
     throw new Error(`${relative}: Sokoban 必须恰好包含一个 Bobby Entity`);
@@ -355,10 +351,10 @@ function assertOriginalMusicContract(document, expected, relative) {
 
 function assertOriginalWinRule(document, relative) {
   const types = new Set(document.entities.map((entity) => entity.type));
-  const exit = types.has("exit") ? { type: "reach", target: "exit" } : null;
+  const exit = types.has("exit") ? { type: "exit" } : null;
   let expected;
   if (types.has("golden-carrot")) {
-    const goldenCarrot = { type: "reach", target: "golden-carrot" };
+    const goldenCarrot = { type: "golden-carrot" };
     expected = exit
       ? {
           type: "any",
@@ -366,14 +362,10 @@ function assertOriginalWinRule(document, relative) {
         }
       : goldenCarrot;
   } else if (types.has("carrot")) {
-    const carrots = { type: "collect-all", target: "carrot" };
+    const carrots = { type: "carrot" };
     expected = exit ? { type: "all", conditions: [carrots, exit] } : carrots;
   } else if (types.has("egg")) {
-    const eggs = {
-      type: "fill-all",
-      target: "egg-nest",
-      filler: "filled-egg",
-    };
+    const eggs = { type: "egg" };
     expected = exit ? { type: "all", conditions: [eggs, exit] } : eggs;
   } else if (exit) {
     expected = exit;

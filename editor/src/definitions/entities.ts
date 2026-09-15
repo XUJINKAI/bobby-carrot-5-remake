@@ -10,14 +10,10 @@ import type { EditorDefinition, EditorEntityExclusion } from "./types.js";
 export function isEditorEntityCreatable(
   editor: EditorDefinition,
   type: EntityType,
-  catalog?: EntityCatalog,
 ): boolean {
   if ((editor.exclude ?? []).some((selector) => matchesExclusion(selector, type)))
     return false;
-  if (!entityMapDefinition(type)) return false;
-  if (!catalog) return true;
-  const definition = catalog.get(type);
-  return definition !== undefined && definition.authoring?.palette !== false;
+  return entityMapDefinition(type) !== undefined;
 }
 
 /** Editor 与 Engine 共用 canonical Entity Definition。 */

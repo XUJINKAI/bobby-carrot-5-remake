@@ -5,10 +5,13 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function move(world, actorId, direction) {
   return world.step({
@@ -34,7 +37,7 @@ function resolveTideSwitchVisual(pressed) {
       pressed,
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const entity = store.require(1);
   const presence = spatial.presencesForEntity(entity.id)[0];
   assert.ok(presence);
@@ -81,11 +84,11 @@ test("Raised Tide Switch reverses Tide and becomes pressed", () => {
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const tideSwitch = world.query.entitiesWithTrait("switch").find(
+  const actor = world.query.entitiesWithFact("player")[0];
+  const tideSwitch = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.TIDE_SWITCH }).find(
     (entity) => entity.type === MapEntityTypeId.TIDE_SWITCH,
   );
-  const tide = world.query.entitiesWithTrait("forced-movement").find(
+  const tide = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.TIDE }).find(
     (entity) => entity.type === MapEntityTypeId.TIDE,
   );
   assert.ok(actor && tideSwitch && tide);
@@ -118,7 +121,7 @@ test("Bobby walks directly between adjacent stopped Leaves without mount state",
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   assert.ok(actor);
 
   const result = move(world, actor.id, "right");

@@ -1,71 +1,69 @@
-import type { EntityDefinition } from "../entity/EntityDefinition.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityPresence } from "./EntityPresence.js";
+import type { EntitySelector } from "./EntitySelector.js";
 
-/** 与空间 Presence 同步维护语义索引；多格 Trait 按 Entity 去重。 */
+/** 与空间 Presence 同步维护语义索引；多格 Fact 按 Entity 去重。 */
 export class EntitySelectorIndex {
-  private readonly traits = new Map<string, Set<EntityId>>();
+  private readonly facts = new Map<string, Set<EntityId>>();
   private readonly types = new Map<string, Set<EntityId>>();
-  private readonly entries = new Map<EntityId, { type: string; traits: Set<string> }>();
+  private readonly entries = new Map<EntityId, { type: string; facts: Set<string> }>();
 
   clear(): void {
-    this.traits.clear();
+    this.facts.clear();
     this.types.clear();
     this.entries.clear();
   }
 
-  add(entity: EntityInstance, definition: EntityDefinition, presences: readonly EntityPresence[]): void {
+  add(
+    entity: EntityInstance,
+    presences: readonly EntityPresence[],
+    entityFacts: readonly string[] = [],
+  ): void {
     this.remove(entity.id);
-    const traits = new Set([
-      ...definition.traits,
-      ...(entity.instanceTraits ?? []),
-      ...presences.flatMap((presence) => [...presence.traits]),
+    const facts = new Set([
+      ...entityFacts,
+      ...presences.flatMap((presence) => [...presence.facts]),
     ]);
-    this.entries.set(entity.id, { type: entity.type, traits });
+    this.entries.set(entity.id, { type: entity.type, facts });
     addTo(this.types, entity.type, entity.id);
-    for (const trait of traits) addTo(this.traits, trait, entity.id);
+    for (const fact of facts) addTo(this.facts, fact, entity.id);
   }
 
   remove(id: EntityId): void {
     const entry = this.entries.get(id);
     if (!entry) return;
     removeFrom(this.types, entry.type, id);
-    for (const trait of entry.traits) removeFrom(this.traits, trait, id);
+    for (const fact of entry.facts) removeFrom(this.facts, fact, id);
     this.entries.delete(id);
   }
 
-  withTrait(trait: string): EntityId[] {
-    return ordered(this.traits.get(trait) ?? []);
+  withFact(fact: string): EntityId[] {
+    return ordered(this.facts.get(fact) ?? []);
   }
 
   ofType(type: string): EntityId[] {
     return ordered(this.types.get(type) ?? []);
   }
 
-  countWithTrait(trait: string): number {
-    return this.traits.get(trait)?.size ?? 0;
+  countWithFact(fact: string): number {
+    return this.facts.get(fact)?.size ?? 0;
   }
 
-  countMatching(selector: string): number {
-    const types = this.types.get(selector);
-    const traits = this.traits.get(selector);
-    if (!types) return traits?.size ?? 0;
-    if (!traits) return types.size;
-    // 联合 selector 按 Entity 去重；计数只检查较小集合的交集。
-    const smaller = types.size <= traits.size ? types : traits;
-    const larger = smaller === types ? traits : types;
-    let count = types.size + traits.size;
-    for (const id of smaller) {
-      if (larger.has(id)) count -= 1;
+  countMatching(selector: EntitySelector): number {
+    return this.matching(selector).length;
+  }
+
+  matching(selector: EntitySelector): EntityId[] {
+    switch (selector.kind) {
+      case "type":
+        return ordered(this.types.get(selector.value) ?? []);
+      case "fact":
+        return ordered(this.facts.get(selector.value) ?? []);
+      case "any":
+        return ordered(new Set(selector.selectors.flatMap((item) =>
+          this.matching(item)
+        )));
     }
-    return count;
-  }
-
-  matching(selector: string): EntityId[] {
-    return ordered(new Set([
-      ...(this.types.get(selector) ?? []),
-      ...(this.traits.get(selector) ?? []),
-    ]));
   }
 }
 

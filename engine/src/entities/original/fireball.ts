@@ -1,4 +1,4 @@
-import { MapEntityTypeId, type Direction, type JsonValue } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
   RuntimeActionSpec,
@@ -17,9 +17,10 @@ import type {
 } from "../EntityModule.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
-  CONTENT_STACK_ORDER,
   originalModule,
 } from "./module.js";
+import { meltIceBlocksAt } from "./ice-block.js";
+import { fireballCanTraverseTerrainAt } from "./terrain-semantics.js";
 
 const FIREBALL_ACTION = "dragon-fireball";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
@@ -70,7 +71,7 @@ const fireballAction: RuntimeActionDefinition = {
     const target = addDirection(fireball.anchor, direction);
     if (
       !query.inBounds(target) ||
-      !projectileTerrainPassableAt(query, target) ||
+      !fireballCanTraverseTerrainAt(query, target) ||
       projectileBlockedAt(query, target)
     ) {
       destroyFireball(commands, fireballId, target.x, target.y);
@@ -99,7 +100,6 @@ const fireballAction: RuntimeActionDefinition = {
     };
   },
   onIntentResult({ action, intent, result, query, commands }) {
-    if (intent.type !== "move") return;
     const fireballId = action.ownerEntityId;
     if (fireballId === undefined) return;
     if (!result.moved) {
@@ -107,7 +107,7 @@ const fireballAction: RuntimeActionDefinition = {
       destroyFireball(commands, fireballId, result.to.x, result.to.y);
       return;
     }
-    meltIceAt(query, commands, result.to.x, result.to.y);
+    meltIceBlocksAt(query, commands, result.to);
     const reflected = reflectedDirectionAt(
       query,
       result.to,
@@ -119,9 +119,7 @@ const fireballAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: RuntimeEntityTypeId.FIREBALL,
-  authoring: { palette: false },
-  traits: ["projectile"],
-  stackOrder: CONTENT_STACK_ORDER + 50,
+  presenceFacts: [],
   presentation: { name: "Dragon Fireball", renderPass: "effect" },
 };
 
@@ -173,18 +171,6 @@ function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
   };
 }
 
-function projectileTerrainPassableAt(
-  query: WorldQueryApi,
-  cell: { x: number; y: number },
-): boolean {
-  return query.presencesAt(cell).some(
-    (presence) =>
-      presence.traits.includes("walkable") ||
-      presence.traits.includes("water") ||
-      presence.traits.includes("cloud-space"),
-  );
-}
-
 function projectileBlockedAt(
   query: WorldQueryApi,
   cell: { x: number; y: number },
@@ -194,23 +180,9 @@ function projectileBlockedAt(
     if (entity?.type === MapEntityTypeId.CRUMBLY_ROCK) return true;
     if (entity?.type === MapEntityTypeId.DRAGON && presence.role !== "tail")
       return true;
-    if (!presence.traits.includes("stateful-block")) return false;
+    if (entity?.type !== MapEntityTypeId.COLOR_BLOCK) return false;
     return entity?.state?.raised !== false;
   });
-}
-
-function meltIceAt(
-  query: WorldQueryApi,
-  commands: WorldCommandApi,
-  x: number,
-  y: number,
-): void {
-  for (const presence of query.presencesAt({ x, y })) {
-    const entity = query.entity(presence.entityId);
-    if (entity?.type !== MapEntityTypeId.ICE_BLOCK) continue;
-    commands.destroy(entity.id);
-    commands.emit({ type: "ice-melted", entityId: entity.id, x, y });
-  }
 }
 
 function reflectedDirectionAt(
@@ -221,15 +193,14 @@ function reflectedDirectionAt(
   for (const presence of query.presencesAt(cell)) {
     const entity = query.entity(presence.entityId);
     if (entity?.type !== MapEntityTypeId.MIRROR) continue;
-    const variant = Math.max(1, Math.min(4, integerState(entity.state?.variant)));
     const reflection: Partial<Record<Direction, Direction>> =
-      variant === 1
-        ? { left: "down", up: "right" }
-        : variant === 2
-          ? { right: "down", up: "left" }
-          : variant === 3
-            ? { left: "up", down: "right" }
-            : { right: "up", down: "left" };
+      entity.state?.variant === "left-bottom"
+        ? { right: "down", up: "left" }
+        : entity.state?.variant === "right-top"
+          ? { left: "up", down: "right" }
+          : entity.state?.variant === "left-top"
+            ? { right: "up", down: "left" }
+            : { left: "down", up: "right" };
     return reflection[incoming] ?? false;
   }
   return null;
@@ -253,12 +224,4 @@ function addDirection(
   if (direction === "down") return { x: cell.x, y: cell.y + 1 };
   if (direction === "left") return { x: cell.x - 1, y: cell.y };
   return { x: cell.x + 1, y: cell.y };
-}
-
-function numberState(value: JsonValue | undefined): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function integerState(value: JsonValue | undefined): number {
-  return Math.max(0, Math.floor(numberState(value)));
 }

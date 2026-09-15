@@ -17,8 +17,8 @@ test("Bobby owns the canonical original locomotion cadence", () => {
     ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs,
   );
   assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
-  assert.equal(ORIGINAL_TUNING.levelTransition.enterMs, 310);
-  assert.equal(ORIGINAL_TUNING.levelTransition.exitMs, 279);
+  assert.equal(ORIGINAL_TUNING.levelTransition.enterMs, 620);
+  assert.equal(ORIGINAL_TUNING.levelTransition.exitMs, 558);
 });
 
 test("presentation override does not mutate canonical Bobby gameplay timing", () => {

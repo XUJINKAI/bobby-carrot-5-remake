@@ -36,6 +36,8 @@ page.surfaceTool.value = "rect";
 let session: GameSession | null = null;
 let replayPanel: ReplayPanelController | null = null;
 let disposePlayChange = (): void => {};
+let playCompleteLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
+let shellDialogLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
 const startsMobile = window.matchMedia("(max-width: 620px)").matches;
 const editorRoot = ref<HTMLElement | null>(null);
 const leftOpen = ref(true);
@@ -51,7 +53,7 @@ const runtimeIssue = ref<LevelValidationIssue | null>(null);
 const issues = computed(() =>
   validateEditorLevel(
     page.snapshot.value.level as EditorMap,
-    page.catalog,
+    page.environment,
     page.editor,
   ),
 );
@@ -107,6 +109,7 @@ async function togglePlay(): Promise<void> {
       gameOptions: {
         images: props.images,
         audio: props.audio,
+        environment: page.environment,
         debug: false,
       },
       runtime: {
@@ -135,7 +138,8 @@ async function togglePlay(): Promise<void> {
       },
       onTimelineRestart() {
         playComplete.value = false;
-        session?.input.setEnabled(true);
+        playCompleteLease?.release();
+        playCompleteLease = null;
       },
     });
     bindPlaySession();
@@ -158,8 +162,12 @@ function syncPlayState(): void {
   const won = session.game.state.status === "won";
   const wasComplete = playComplete.value;
   playComplete.value = won;
-  if (won) session.input.setEnabled(false);
-  else if (wasComplete) session.input.setEnabled(true);
+  if (won && !playCompleteLease)
+    playCompleteLease = session.gates.acquire("play-complete");
+  else if (!won && wasComplete) {
+    playCompleteLease?.release();
+    playCompleteLease = null;
+  }
   replayPanel?.update();
   syncShell();
 }
@@ -170,6 +178,10 @@ function stopPlay(): void {
   replayPanel = null;
   replayOpen.value = false;
   playComplete.value = false;
+  playCompleteLease?.release();
+  playCompleteLease = null;
+  shellDialogLease?.release();
+  shellDialogLease = null;
   session?.destroy();
   session = null;
   page.playing.value = false;
@@ -178,7 +190,8 @@ function stopPlay(): void {
 function restartPlay(): void {
   if (!session) return;
   playComplete.value = false;
-  session.input.setEnabled(true);
+  playCompleteLease?.release();
+  playCompleteLease = null;
   session.game.restart();
   replayPanel?.update();
   syncShell();
@@ -312,10 +325,12 @@ function toggleRightPanel(panel: "inspector" | "level"): void {
 }
 
 function onShellDialogOpen(): void {
-  session?.input.setEnabled(false);
+  if (session && !shellDialogLease)
+    shellDialogLease = session.gates.acquire("shell-dialog");
 }
 function onShellDialogClose(): void {
-  if (!playComplete.value) session?.input.setEnabled(true);
+  shellDialogLease?.release();
+  shellDialogLease = null;
 }
 function onScreenControlChange(event: Event): void {
   const enabled = Boolean(
@@ -393,6 +408,7 @@ function isMobileEditor(): boolean {
       :playing="page.playing.value"
       :play-complete="playComplete"
       :images="props.images"
+      :environment="page.environment"
       :catalog="page.catalog"
       :editor="page.editor"
       @select="page.selectPalette"

@@ -1,15 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
+import { World } from "./support/World.mjs";
 import {
   builtinEntityModules,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function bobbyVisual(options = {}) {
   const entities = createBuiltinEntityRegistry();
@@ -35,7 +40,7 @@ function bobbyVisual(options = {}) {
 
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.all().find((entity) => entity.type === MapEntityTypeId.BOBBY);
   assert.ok(bobby);
   bobby.direction = options.direction ?? "right";
@@ -47,12 +52,12 @@ function bobbyVisual(options = {}) {
     presence,
     query: new SpatialVisualQuery(store, spatial),
     ...(options.runtime ? { runtime: options.runtime } : {}),
-    ...(options.global ? { global: options.global } : {}),
+    ...(options.outcome ? { outcome: options.outcome } : {}),
     ...(options.time ? { time: options.time } : {}),
   });
 }
 
-test("world entities stay below Bobby regardless of cover stackOrder", () => {
+test("world entities stay below standing Bobby regardless of cover stackOrder", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   assert.equal(
@@ -69,8 +74,60 @@ test("world entities stay below Bobby regardless of cover stackOrder", () => {
   );
   assert.equal(
     visuals.renderPassFor(entities.require(MapEntityTypeId.BOBBY)),
-    "player",
+    "standing",
   );
+});
+
+test("直立双格角色与 Bobby 共用 standing pass", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  for (const type of [
+    MapEntityTypeId.DREAM_MACHINE,
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.BEAVER,
+  ]) {
+    assert.equal(
+      visuals.renderPassFor(entities.require(type)),
+      "standing",
+      type,
+    );
+  }
+});
+
+test("High Grass 根据同格 Carrot 或 Egg 选用隐藏目标图块", () => {
+  const entities = createBuiltinEntityRegistry();
+  const visuals = createBuiltinVisualRegistry();
+  const visualFor = (contentType) => {
+    const store = new EntityStore([
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      ...(contentType ? [{ type: contentType, x: 0, y: 0 }] : []),
+      { type: MapEntityTypeId.HIGH_GRASS, x: 0, y: 0 },
+    ]);
+    const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
+    const grass = store.all().find((entity) =>
+      entity.type === MapEntityTypeId.HIGH_GRASS);
+    assert.ok(grass);
+    const presence = spatial.presencesForEntity(grass.id)[0];
+    assert.ok(presence);
+    return visuals.resolve(entities.require(MapEntityTypeId.HIGH_GRASS), {
+      entity: grass,
+      presence,
+      query: new SpatialVisualQuery(store, spatial),
+    })?.layers[0];
+  };
+
+  assert.deepEqual(visualFor(MapEntityTypeId.CARROT), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.EGG), {
+    kind: "atlas", column: 8, row: 12,
+  });
+  assert.deepEqual(visualFor(MapEntityTypeId.BONUS_COIN), {
+    kind: "atlas", column: 7, row: 12,
+  });
+  assert.deepEqual(visualFor(null), {
+    kind: "atlas", column: 7, row: 12,
+  });
 });
 
 test("Bobby walking loops from movement frame four back to frame four", () => {
@@ -165,7 +222,9 @@ test("Bobby idle starts after five seconds and advances every 50ms", () => {
     [6000, 0],
     [6050, 1],
     [6100, 2],
-    [6150, 0],
+    [6150, 1],
+    [6200, 0],
+    [6250, 1],
   ]) {
     const idle = bobbyVisual({
       runtime,
@@ -180,7 +239,7 @@ test("Bobby idle starts after five seconds and advances every 50ms", () => {
 test("Bobby death uses the eight-frame b5 strip and keeps its final frame", () => {
   const death = bobbyVisual({
     runtime: { moving: false, progress: 1, animation: "death" },
-    global: { dead: true },
+    outcome: { phase: "lost", changedAtMs: 0 },
   });
   assert.equal(death.layers[0].asset, "bobby-death");
   assert.equal(death.layers[0].frameColumns, 8);
@@ -200,19 +259,19 @@ test("Bobby 进入关卡时倒放 b6，通关后正放并隐藏", () => {
   });
   const exitingStart = bobbyVisual({
     runtime: { moving: false, progress: 0, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const exitingLastFrame = bobbyVisual({
     runtime: { moving: false, progress: 0.7, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const exitingHidden = bobbyVisual({
     runtime: { moving: false, progress: 0.8, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
   const hidden = bobbyVisual({
     runtime: { moving: false, progress: 1, animation: "level-exit" },
-    global: { completed: true },
+    outcome: { phase: "won", changedAtMs: 0 },
   });
 
   assert.equal(enteringHidden, null);
@@ -235,7 +294,7 @@ test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
   };
   const world = {
     query: {
-      entitiesWithTrait: (trait) => (trait === "player" ? [actor] : []),
+      entitiesWithFact: (fact) => (fact === "player" ? [actor] : []),
     },
     entity: (id) => id === actor.id ? actor : undefined,
     definition: () => ({ type: MapEntityTypeId.BOBBY }),
@@ -283,16 +342,25 @@ test("VisualRuntime 为关卡进入和胜利启动 Bobby transition", () => {
   assert.equal(runtime.isAnimating, false);
 });
 
-test("Bobby mower cycles vertically inside the direction column", () => {
-  const mower = bobbyVisual({
-    direction: "up",
-    mountType: MapEntityTypeId.MOWER,
-    time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
-  });
-  assert.equal(mower.layers[0].asset, "bobby-mower");
-  assert.equal(mower.layers[0].frameColumns, 4);
-  assert.equal(mower.layers[0].frameRows, 2);
-  assert.equal(mower.layers[0].frameIndex, 6);
+test("Bobby Mower 使用各方向独立的 b7.png 源矩形", () => {
+  for (const [direction, sourceX, frameWidth, offsetX] of [
+    ["left", 0, 60, -6],
+    ["right", 60, 60, -6],
+    ["up", 120, 48, 0],
+    ["down", 168, 48, 0],
+  ]) {
+    const mower = bobbyVisual({
+      direction,
+      mountType: MapEntityTypeId.MOWER,
+      time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
+    });
+    assert.equal(mower.layers[0].asset, "bobby-mower");
+    assert.equal(mower.layers[0].sourceX, sourceX);
+    assert.equal(mower.layers[0].sourceY, 83);
+    assert.equal(mower.layers[0].frameWidth, frameWidth);
+    assert.equal(mower.layers[0].frameHeight, 83);
+    assert.equal(mower.layers[0].offsetX, offsetX);
+  }
 });
 
 test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt cells", () => {
@@ -399,6 +467,40 @@ test("Bobby snowplow uses three rows inside the attempted direction column", () 
   assert.equal(shovel.layers[0].frameColumns, 4);
   assert.equal(shovel.layers[0].frameRows, 3);
   assert.equal(shovel.layers[0].frameIndex, 7);
+});
+
+test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  const commands = new CommandQueue();
+  commands.setState(actor.id, { ...actor.state, shovel: true });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+  const result = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  const visual = new VisualRuntime(createBuiltinVisualRegistry());
+  visual.consumeWorldDeltas(world, result.deltas,
+    { frame: 1, nowMs: 0, deltaMs: 0 },
+    { motionDuration: (motion) => motion.durationMs, stationaryDeathDurationMs: 350 });
+  assert.equal(visual.runtimeStates.get(actor.id)?.animation, "shovel");
+  assert.equal(visual.runtimeStates.get(actor.id)?.direction, "right");
+  visual.update({ frame: 2, nowMs: 496, deltaMs: 496 }, "linear");
+  assert.equal(visual.runtimeStates.get(actor.id)?.progress, 0.5);
 });
 
 test("Bobby glider selects one of four direction columns", () => {

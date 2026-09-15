@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { readBobbyInventory } from "../dist/entities/player/BobbyState.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 
 function actors(world) {
-  return world.query.entitiesWithTrait("player");
+  return world.query.entitiesWithFact("player");
 }
 
 function move(world, actorId, direction) {
@@ -96,7 +96,7 @@ test("飞行中的 Bobby 也不能穿入另一个 Bobby 所在格", () => {
     ],
   });
   const [left] = actors(world);
-  left.state = { ...(left.state ?? {}), flying: true };
+  world.entities.require(left.id).state = { ...(left.state ?? {}), flying: true };
 
   const result = move(world, left.id, "right");
 
@@ -123,7 +123,7 @@ test("bean pickup increments only the acting Bobby inventory", () => {
   });
   const [bobby] = actors(world);
   assert.ok(bobby);
-  bobby.state = { beans: 2 };
+  world.entities.require(bobby.id).state = { beans: 2 };
 
   move(world, bobby.id, "right");
   assert.equal(readBobbyInventory(world.entity(bobby.id)?.state).beans, 3);
@@ -205,5 +205,5 @@ test("shovel pickup leaves a canonical walkable surface behind", () => {
       .some((entity) => entity.type === RuntimeEntityTypeId.SHOVEL_CLEARED_GROUND),
     true,
   );
-  assert.equal(world.presencesAt({ x: 1, y: 0 }).some((p) => p.traits.includes("walkable")), true);
+  assert.equal(world.presencesAt({ x: 1, y: 0 }).some((p) => p.facts.includes("walkable")), true);
 });

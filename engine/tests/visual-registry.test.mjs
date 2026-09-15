@@ -5,12 +5,14 @@ import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRegistry } from "../dist/visual/VisualRegistry.js";
-import { prepareRuntimeLevel } from "../dist/public.js";
+import { builtinEngineEnvironment, prepareRuntimeLevel } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function definition(type, extra = {}) {
   return {
     type,
-    traits: [],
+    presenceFacts: [],
     ...extra,
   };
 }
@@ -25,7 +27,7 @@ test("Visual resolver 可以只读查询任意 Cell/Presence/Entity", () => {
     { type: "sensor", x: 0, y: 0 },
     { type: "marker", x: 2, y: 0 },
   ]);
-  const spatial = new SpatialIndex(store, entities, 3, 1);
+  const spatial = new SpatialIndex(store, entities, 3, 1, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const visuals = new VisualRegistry();
   visuals.register({
@@ -69,7 +71,7 @@ test("未知 Entity 解析为无素材依赖的 X 占位视觉", () => {
   const store = new EntityStore([
     { type: "future-mechanic", x: 0, y: 0 },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const entity = store.all()[0];
   const presence = spatial.presencesAt({ x: 0, y: 0 })[0];
@@ -98,7 +100,7 @@ test("字段无效的已知 Entity 也使用 X 占位视觉", () => {
   assert.equal(entity.type, "invalid:grass");
 
   const definition = entities.require(entity.type);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const presence = spatial.presencesAt({ x: 0, y: 0 })[0];
   assert.ok(presence);

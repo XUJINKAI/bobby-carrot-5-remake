@@ -4,45 +4,43 @@ import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
+
+const facts = testFactRegistry("mowable", "dragon", "dragon-trigger", "coin", "frozen");
 
 function registry() {
   const registry = new EntityRegistry();
   registry.registerAll([
     {
       type: "water",
-      traits: ["water"],
-      stackOrder: 0,
+      presenceFacts: ["water"],
       presentation: { name: "Water" },
     },
     {
       type: "coin",
-      traits: ["collectible"],
-      stackOrder: 100,
+      presenceFacts: ["coin"],
       presentation: { name: "Coin" },
     },
     {
       type: "grass",
-      traits: ["mowable"],
-      stackOrder: 200,
+      presenceFacts: ["mowable"],
       presentation: { name: "Grass" },
     },
     {
       type: "dragon",
-      traits: ["dragon"],
-      stackOrder: 100,
+      presenceFacts: ["dragon"],
       footprint: {
         parts: [
-          { dx: 0, dy: 0, role: "head", traits: ["blocking"] },
-          { dx: 1, dy: 0, role: "body", traits: ["blocking"] },
-          { dx: 2, dy: 0, role: "tail", traits: ["dragon-trigger"] },
+          { dx: 0, dy: 0, role: "head", presenceFacts: ["blocking"] },
+          { dx: 1, dy: 0, role: "body", presenceFacts: ["blocking"] },
+          { dx: 2, dy: 0, role: "tail", presenceFacts: ["dragon-trigger"] },
         ],
       },
       presentation: { name: "Dragon" },
     },
     {
       type: "ice",
-      traits: ["meltable"],
-      stackOrder: 200,
+      presenceFacts: ["frozen"],
       presentation: { name: "Ice" },
     },
   ]);
@@ -56,6 +54,7 @@ function createSpatialPreview(level, entityRegistry = registry()) {
     entityRegistry,
     level.width,
     level.height,
+    facts,
   );
   return {
     entities,
@@ -87,16 +86,16 @@ test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
   const cell = preview.inspectCell(1, 1);
   assert.deepEqual(
     cell.presences.map(({ entity }) => entity.type),
-    ["water", "coin", "grass"],
+    ["grass", "coin", "water"],
   );
   assert.deepEqual(
     cell.presences.map(({ presence }) => presence.stackOrder),
-    [0, 100, 200],
+    [0, 1, 2],
   );
-  assert.equal(cell.top?.entity.type, "grass");
+  assert.equal(cell.top?.entity.type, "water");
 });
 
-test("definition stackOrder 为 footprint 提供基准并保留 part 顺序", () => {
+test("多格 Entity 的全部 Presence 共用实例 stackOrder", () => {
   const preview = createSpatialPreview({
     schemaVersion: 1,
     width: 6,
@@ -106,8 +105,23 @@ test("definition stackOrder 为 footprint 提供基准并保留 part 顺序", ()
   const presences = preview.spatial.presencesForEntity(1);
   assert.deepEqual(
     presences.map((presence) => presence.stackOrder),
-    [100, 101, 102],
+    [0, 0, 0],
   );
+});
+
+test("未指定 stackOrder 的 Runtime Entity 从重叠栈顶递增", () => {
+  const store = new EntityStore([{ type: "water", x: 0, y: 0 }]);
+  const spatial = new SpatialIndex(store, registry(), 2, 1, facts);
+  const coin = store.spawn({ type: "coin", x: 0, y: 0 });
+  spatial.addEntity(coin);
+
+  assert.deepEqual(
+    spatial.presencesAt({ x: 0, y: 0 }).map((presence) =>
+      presence.stackOrder
+    ),
+    [0, 1],
+  );
+  assert.equal(coin.stackOrder, 1);
 });
 
 test("Dragon 保持一个 Entity，footprint 生成 head/body/tail Presence", () => {
@@ -201,7 +215,7 @@ test("销毁高 stackOrder Entity 后 Dragon tail Presence 自动重新暴露", 
     { type: "dragon", x: 1, y: 1 },
     { type: "ice", x: 3, y: 1 },
   ]);
-  const spatial = new SpatialIndex(store, registry(), 6, 3);
+  const spatial = new SpatialIndex(store, registry(), 6, 3, facts);
   const ice = store.all().find((entity) => entity.type === "ice");
   assert.ok(ice);
   spatial.removeEntity(ice.id);

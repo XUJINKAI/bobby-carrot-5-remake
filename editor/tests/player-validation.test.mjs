@@ -6,16 +6,17 @@ import {
   createBlankLevel,
   validateEditorLevel,
 } from "../dist/index.js";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("zero players is an authoring warning instead of an error", () => {
   const level = createBlankLevel(8, 8);
   level.entities = level.entities.filter(
     (entity) => entity.type !== MapEntityTypeId.BOBBY,
   );
-  const issues = validateEditorLevel(level, catalog, builtinEditorDefinition);
+  const issues = validateEditorLevel(level, environment, builtinEditorDefinition);
   assert.equal(issues.some((issue) => issue.level === "error"), false);
   assert.equal(
     issues.some(
@@ -28,6 +29,6 @@ test("zero players is an authoring warning instead of an error", () => {
 test("multiple players are valid authoring content", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push({ type: MapEntityTypeId.BOBBY, x: 2, y: 2 });
-  const issues = validateEditorLevel(level, catalog, builtinEditorDefinition);
+  const issues = validateEditorLevel(level, environment, builtinEditorDefinition);
   assert.equal(issues.some((issue) => issue.message.includes("player")), false);
 });

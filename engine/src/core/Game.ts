@@ -12,7 +12,7 @@ import {
 } from "../time/EngineTiming.js";
 import type { WorldClock, WorldTick } from "../time/WorldClock.js";
 import { GameplayHud } from "../ui/GameplayHud.js";
-import { GameplayDialogControl } from "../ui/GameplayDialogControl.js";
+import { GameplayDialogController } from "../ui/GameplayDialogController.js";
 import type { PresentationTuning } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type { World } from "../world/World.js";
@@ -22,6 +22,7 @@ import type {
   WinConditionState,
   WorldEvent,
 } from "../world/WorldTypes.js";
+import { isDialogueRequestEvent } from "../world/WorldTypes.js";
 import type { WorldDelta } from "../world/delta/WorldDelta.js";
 import type {
   EntityId,
@@ -33,6 +34,10 @@ import type {
 } from "../world/movement/WorldIntent.js";
 import type { Replay, ReplayRecordingMeta } from "../replay/ReplayFormat.js";
 import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
+import {
   ReplayPlayback,
   type ReplayPlaybackOptions,
 } from "../replay/ReplayPlayback.js";
@@ -41,6 +46,7 @@ import { runReplay, type ReplayReport } from "../replay/ReplayRunner.js";
 import type { GameplayState } from "./GameplayState.js";
 import type { GameOptions } from "./GameOptions.js";
 import { GameDebugControls } from "./GameDebugControls.js";
+import { GameDialogueInput } from "./GameDialogueInput.js";
 import { GamePresentation } from "./GamePresentation.js";
 import { GameplaySession, type GameplayTickInput, type GameplayTickResult } from "./GameplaySession.js";
 import { prepareRuntimeLevel } from "./RuntimeLevel.js";
@@ -68,21 +74,25 @@ const REPLAY_IDLE_FRAME_BUDGET_MS = 6;
 export class Game {
   readonly audio: AudioBackend;
   readonly inputController: InputController | null;
+  readonly dialog: GameplayDialogController | null;
   private readonly presentation: GamePresentation;
   private readonly gameplayHud: GameplayHud | null;
   private readonly debugControls: GameDebugControls;
   private readonly tuning: PresentationTuning;
   private readonly timing: EngineTiming;
   private readonly session: GameplaySession;
+  private readonly environment: EngineEnvironment;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEvents = new WorldEventDispatcher();
   private heldDirection: Direction | null = null;
   private heldDirectionBlocked = false;
   private readonly queuedMoves: LogicalMoveInput[] = [];
   private readonly queuedIntentGroups: WorldIntentGroup[] = [];
+  private readonly dialogueInput = new GameDialogueInput();
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
-  readonly dialogControl: GameplayDialogControl;
+  private hostGameplayPaused = false;
+  private dialogueBlockCount = 0;
   private levelLoadPending = false;
   private animationFrame = 0;
   private destroyed = false;
@@ -91,11 +101,18 @@ export class Game {
   lastWorldEvents: WorldEvent[] = [];
 
   constructor(options: GameOptions) {
+    this.environment = options.environment ?? builtinEngineEnvironment;
     this.audio = options.audio ?? new NullAudioBackend();
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
-    this.presentation = new GamePresentation(options, this.timing, this.tuning);
+    this.presentation = new GamePresentation(
+      options,
+      this.timing,
+      this.tuning,
+      this.environment,
+    );
     this.session = new GameplaySession({
+      environment: this.environment,
       ...(options.runtime?.timing ? { timing: options.runtime.timing } : {}),
       ...(options.runtime?.bobbyLocomotion
         ? { bobbyLocomotion: options.runtime.bobbyLocomotion }
@@ -110,18 +127,6 @@ export class Game {
       this.session,
       this.presentation.clock,
     );
-    this.dialogControl = new GameplayDialogControl({
-      discardPendingInput: () => this.discardPendingGameplayInput(),
-      onBlockingChoice: () => this.abortReplayRecordingForInteractiveChoice(),
-      dispatchEffect: (intent) => {
-        if (!this.worldValue || this.world.dead || this.world.completed) return;
-        this.queuedIntentGroups.push({
-          intents: [structuredClone(intent)],
-          historyBoundary: false,
-          recordInReplay: false,
-        });
-      },
-    });
     const hud = options.runtime?.hud;
     this.gameplayHud =
       hud === undefined || hud === false
@@ -135,6 +140,25 @@ export class Game {
     this.inputController = options.runtime?.input
       ? new InputController(this, options.runtime.input)
       : null;
+    const dialog = options.runtime?.dialog;
+    this.dialog = dialog === undefined || dialog === false
+      ? null
+      : GameplayDialogController.create(
+          options.canvas,
+          {
+            acquireBlock: () => this.acquireDialogueBlock(),
+            acquireInput: (_reason, consumer) =>
+              this.inputController?.acquireConsumer("dialogue", consumer) ?? {
+                release() {},
+              },
+            now: runtimeNow,
+            directionForDialogue: (request) =>
+              this.dialogueInput.directionFor(this.worldValue, request),
+            moveFromDialogue: (actorId, direction) =>
+              this.queueDialogueMove(actorId, direction),
+          },
+          dialog === true ? {} : dialog,
+        );
     this.debugControls = new GameDebugControls(
       options.canvas,
       this.session,
@@ -245,6 +269,10 @@ export class Game {
     return this.levelLoadPending || this.presentation.blocksGameplay;
   }
 
+  private get gameplayPaused(): boolean {
+    return this.hostGameplayPaused || this.dialogueBlockCount > 0;
+  }
+
   get canUndo(): boolean {
     return this.session.canUndo;
   }
@@ -271,12 +299,14 @@ export class Game {
 
   async loadLevel(level: LevelMap): Promise<void> {
     this.levelLoadPending = true;
+    this.dialog?.reset();
     this.replayPlayback.stop();
     this.session.loadLevel(prepareRuntimeLevel(level));
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
+    this.dialogueInput.clear();
     this.presentation.resetLevelView();
     this.debugControls.resetSession();
     this.lastMove = null;
@@ -303,7 +333,7 @@ export class Game {
       !this.worldValue ||
       this.replayPlayback.playing ||
       this.worldClock.paused ||
-      this.dialogControl.worldPaused ||
+      this.gameplayPaused ||
       this.presentationBlocksInput ||
       this.world.dead ||
       this.world.completed
@@ -328,16 +358,38 @@ export class Game {
   }
 
   dispatchInteractionEffect(intent: GameplayEffectIntent): void {
-    this.dialogControl.dispatchEffect(intent);
+    if (
+      this.destroyed ||
+      !this.worldValue ||
+      this.world.dead ||
+      this.world.completed
+    )
+      return;
+    this.queuedIntentGroups.push({
+      intents: [structuredClone(intent)],
+      historyBoundary: false,
+      recordInReplay: false,
+    });
+  }
+
+  /** 宿主持有阻塞原因的租约；Game 只消费最终的 gameplay pause 状态。 */
+  setHostGameplayPaused(value: boolean): void {
+    if (this.hostGameplayPaused === value) return;
+    this.hostGameplayPaused = value;
+    if (value) this.discardPendingGameplayInput();
   }
 
   setHeldDirection(direction: Direction | null): void {
     if (this.replayPlayback.playing) return;
-    if (direction !== null && this.presentationBlocksInput) return;
     if (this.inputController) {
       this.inputController.setHeldDirection(direction);
       return;
     }
+    if (
+      direction !== null &&
+      (this.presentationBlocksInput || this.gameplayPaused)
+    )
+      return;
     if (direction === this.heldDirection) return;
     this.heldDirection = direction;
     this.heldDirectionBlocked = false;
@@ -372,10 +424,12 @@ export class Game {
   }
 
   private resetSessionView(resetCamera = false): void {
+    this.dialog?.reset();
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
+    this.dialogueInput.clear();
     if (resetCamera) this.presentation.resetLevelView();
     else this.presentation.resetMotion();
     this.beginLevelPresentation();
@@ -401,7 +455,7 @@ export class Game {
     return replay;
   }
 
-  private abortReplayRecordingForInteractiveChoice(): void {
+  abortReplayRecording(): void {
     if (!this.replayRecorder) return;
     this.replayRecorder = null;
     this.emit("replay-recording-aborted");
@@ -409,7 +463,7 @@ export class Game {
   }
 
   verifyReplay(replay: Replay): ReplayReport {
-    return runReplay(this.session.level, replay);
+    return runReplay(this.session.level, replay, this.environment);
   }
 
   startReplayPlayback(
@@ -457,7 +511,7 @@ export class Game {
       if (tick.result.moves.length > 0)
         this.lastMove = tick.result.moves[0] ?? null;
       if (tick.result.events.length > 0)
-        this.lastWorldEvents = tick.result.events;
+        this.lastWorldEvents = observableWorldEvents(tick.result.events);
       this.publishWorldEvents(tick.result.events, false);
     }
     this.render();
@@ -478,7 +532,7 @@ export class Game {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.consumeWorldDeltas(result.deltas);
-    this.lastWorldEvents = result.events;
+    this.lastWorldEvents = observableWorldEvents(result.events);
     this.publishWorldEvents(result.events);
     this.render();
     this.emitTerminalEvents();
@@ -491,7 +545,7 @@ export class Game {
     const result = this.world.reviveActor(actorId);
     if (result.events.length === 0) return;
     this.consumeWorldDeltas(result.deltas);
-    this.lastWorldEvents = result.events;
+    this.lastWorldEvents = observableWorldEvents(result.events);
     this.publishWorldEvents(result.events);
     this.render();
     this.emit("change");
@@ -567,6 +621,7 @@ export class Game {
     this.destroyed = true;
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener("resize", this.onResize);
+    this.dialog?.destroy();
     this.inputController?.destroy();
     this.gameplayHud?.destroy();
     this.presentation.destroy();
@@ -584,7 +639,7 @@ export class Game {
     const frame = this.presentation.clock.current;
     for (const move of moves) {
       if (!move.blocked || move.actorId === undefined) continue;
-      if (!this.world.query.entityHasTrait(move.actorId, "player")) continue;
+      if (!this.world.query.entityHasFact(move.actorId, "player")) continue;
       this.presentation.visual.faceDirection(move.actorId, move.direction, frame);
     }
   }
@@ -593,6 +648,7 @@ export class Game {
     const sampled = this.inputController?.update(time).moves ?? [];
     const queued = this.queuedMoves.splice(0);
     const groups = this.queuedIntentGroups.splice(0);
+    groups.push(...this.dialogueInput.ready(this.world));
     const moves = [...queued, ...sampled];
     const debugActorId = this.debugControls.externalActorId;
     const debugActorMoves = debugActorId === null
@@ -653,13 +709,14 @@ export class Game {
       this.consumeWorldDeltas(result.deltas);
       if (inputPhase) {
         this.lastMove = result.moves[0] ?? null;
-        this.lastWorldEvents = result.events;
+        this.lastWorldEvents = observableWorldEvents(result.events);
         this.faceBlockedActors(result.moves);
       } else if (result.moves.length > 0) {
         this.lastMove = result.moves[0] ?? null;
       }
       if (result.events.length > 0) {
-        if (!inputPhase) this.lastWorldEvents = result.events;
+        if (!inputPhase)
+          this.lastWorldEvents = observableWorldEvents(result.events);
         this.publishWorldEvents(result.events);
         this.emitTerminalEvents();
       }
@@ -687,7 +744,7 @@ export class Game {
       !this.worldValue ||
       this.levelLoadPending ||
       this.presentation.isAnimating ||
-      this.dialogControl.worldPaused ||
+      this.gameplayPaused ||
       this.world.inputBlocked
     )
       return 0;
@@ -742,7 +799,7 @@ export class Game {
       delta > 0 &&
       !this.levelLoadPending &&
       !this.presentation.blocksGameplay &&
-      !this.dialogControl.worldPaused
+      !this.gameplayPaused
     ) {
       this.session.advanceRealTime(
         delta,
@@ -754,7 +811,7 @@ export class Game {
         (worldTick) => {
           worldTicks.push(worldTick);
           this.consumeGameplayTick(worldTick);
-          return !this.dialogControl.worldPaused;
+          return !this.gameplayPaused;
         },
       );
     }
@@ -779,13 +836,46 @@ export class Game {
     notifyInteractions = true,
   ): void {
     const notifyRequests = notifyInteractions && !this.replayPlayback.playing;
-    this.worldEvents.publish(events, notifyRequests, (event) => {
+    if (notifyRequests && this.dialog) {
+      for (const event of events) {
+        if (isDialogueRequestEvent(event))
+          this.dialog.handleEntityDialogue(event);
+      }
+    }
+    this.worldEvents.publish(
+      observableWorldEvents(events),
+      notifyRequests,
+      (event) => {
       if (
         event.type === "speed-impact" ||
         event.type === "crumbly-rock-smashed"
       )
         this.presentation.shake(248, 42);
-    });
+      },
+    );
+  }
+
+  private queueDialogueMove(actorId: EntityId, direction: Direction): void {
+    if (this.replayPlayback.playing) return;
+    this.dialogueInput.queue(this.worldValue, actorId, direction);
+  }
+
+  private acquireDialogueBlock(): { release(): void } {
+    this.dialogueBlockCount += 1;
+    this.presentation.setDialogueActive(true, this.worldValue);
+    this.discardPendingGameplayInput();
+    let active = true;
+    return {
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.dialogueBlockCount = Math.max(0, this.dialogueBlockCount - 1);
+        this.presentation.setDialogueActive(
+          this.dialogueBlockCount > 0,
+          this.worldValue,
+        );
+      },
+    };
   }
 
   private emitTerminalEvents(): void {
@@ -797,4 +887,12 @@ export class Game {
   private emit(event: GameEventName): void {
     for (const listener of this.listeners.get(event) ?? []) listener(this);
   }
+}
+
+function observableWorldEvents(events: readonly WorldEvent[]): WorldEvent[] {
+  return events.filter((event) => !isDialogueRequestEvent(event));
+}
+
+function runtimeNow(): number {
+  return typeof performance === "undefined" ? Date.now() : performance.now();
 }

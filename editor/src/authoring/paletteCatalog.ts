@@ -1,5 +1,9 @@
 import type { EntityCatalog } from "@bobby/engine";
-import { entityMapDefinition, type EntityType } from "@bobby/model";
+import {
+  ENTITY_MAP_DEFINITIONS,
+  entityMapDefinition,
+  type EntityType,
+} from "@bobby/model";
 import { builtinEditorDefinition } from "../definitions/builtin.js";
 import { isEditorEntityCreatable } from "../definitions/entities.js";
 import { editorCatalogEntry } from "../definitions/entities.js";
@@ -17,7 +21,7 @@ import { isSurfaceEntityType } from "./surfaceAuthoring.js";
 export interface PaletteItem extends EditorPaletteEntry {
   key: string;
   label: string;
-  traits: readonly string[];
+  presenceFacts: readonly string[];
   behaviors: readonly string[];
   supportedFields: readonly string[];
   previewPreset: EditorPlacementPreset;
@@ -117,9 +121,9 @@ function resolveRemainderGroup(
   editor: EditorDefinition,
   used: Set<EntityType>,
 ): ResolvedPaletteGroup {
-  const candidates = group.types ?? catalog.all().map((definition) => definition.type);
+  const candidates = group.types ?? Object.keys(ENTITY_MAP_DEFINITIONS);
   const types = [...new Set(candidates)].filter((type) =>
-    !used.has(type) && isPaletteEntryAvailable(type, catalog, editor)
+    !used.has(type) && isPaletteEntryAvailable(type, editor)
   );
   if (group.sort === "type") types.sort((a, b) => a.localeCompare(b));
   const rows = group.rows === "by-type"
@@ -146,7 +150,7 @@ function resolveRow(
   used: Set<EntityType>,
 ): PaletteItem[] {
   return row.flatMap((entry, columnIndex) => {
-    if (!isPaletteEntryAvailable(entry.type, catalog, editor)) return [];
+    if (!isPaletteEntryAvailable(entry.type, editor)) return [];
     used.add(entry.type);
     return expandEntry(entry, editor).map((resolved, variantIndex) =>
       resolveEntry(
@@ -161,12 +165,11 @@ function resolveRow(
 
 function isPaletteEntryAvailable(
   type: EntityType,
-  catalog: EntityCatalog,
   editor: EditorDefinition,
 ): boolean {
   return (
     !isSurfaceEntityType(type) &&
-    isEditorEntityCreatable(editor, type, catalog)
+    isEditorEntityCreatable(editor, type)
   );
 }
 
@@ -225,7 +228,7 @@ function resolveEntry(
       entry.label ??
       definition.presentation.name ??
       entry.type,
-    traits: definition.traits,
+    presenceFacts: definition.presenceFacts,
     behaviors: definition.behaviors ?? [],
     supportedFields:
       entityMapDefinition(entry.type)?.fields.map((field) => field.key) ?? [],

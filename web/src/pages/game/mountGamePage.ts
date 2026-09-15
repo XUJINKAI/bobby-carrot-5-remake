@@ -34,7 +34,10 @@ import {
   rememberExploreMap,
   markExploreMapCompleted,
 } from "../../storage/exploreProgressStorage.js";
-import { createGameSession } from "../../runtime/game/createGameSession.js";
+import {
+  createGameSession,
+  type GameSession,
+} from "../../runtime/game/createGameSession.js";
 import {
   completedResultHtml,
   failedResultHtml,
@@ -256,7 +259,9 @@ export async function renderGamePage(
                 lockKeyCount: actor.inventory.lockKeys,
               },
               save: adventureSave,
-              showDialogue: (text) => dialog?.show(text),
+              showDialogue: (text) =>
+                dialog?.show(text) ??
+                  Promise.resolve({ type: "dismissed" as const }),
               presentDialogue: (presentation) =>
                 dialog?.present(presentation) ??
                   Promise.resolve({ type: "dismissed" as const }),
@@ -309,7 +314,7 @@ export async function renderGamePage(
       },
     },
   });
-  const { game, input, dialog } = session;
+  const { game, input, gates } = session;
   const music = resolveGameMusic(level.music, {
     specialScene: adventureScene !== undefined,
   });
@@ -538,7 +543,11 @@ export async function renderGamePage(
     else if (action === "replay-record") replayPanel.toggle();
   };
   window.addEventListener("game-shell-action", onGameShellAction);
-  const disposeGameShell = bindGameShell(input, screenControlEnabled);
+  const disposeGameShell = bindGameShell(
+    input,
+    gates,
+    screenControlEnabled,
+  );
   const unsubscribeWorldEvents = game.onWorldEvent((event) => {
     if (
       event.type === "actor-inventory-item-added" &&
@@ -713,9 +722,9 @@ function backPath(
 
 function bindGameShell(
   input: {
-    setEnabled(value: boolean): void;
     setScreenJoystickEnabled(value: boolean): void;
   },
+  gates: GameSession["gates"],
   initialScreenControlEnabled: boolean,
 ): () => void {
   let screenControlEnabled = initialScreenControlEnabled;
@@ -729,12 +738,19 @@ function bindGameShell(
     );
     updateScreenControl();
   };
-  const onDialogOpen = (): void => input.setEnabled(false);
-  const onDialogClose = (): void => input.setEnabled(true);
+  let shellDialogLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
+  const onDialogOpen = (): void => {
+    shellDialogLease ??= gates.acquire("shell-dialog");
+  };
+  const onDialogClose = (): void => {
+    shellDialogLease?.release();
+    shellDialogLease = null;
+  };
   window.addEventListener("screen-control-change", onScreenControlChange);
   window.addEventListener("shell-dialog-open", onDialogOpen);
   window.addEventListener("shell-dialog-close", onDialogClose);
   return () => {
+    shellDialogLease?.release();
     window.removeEventListener("screen-control-change", onScreenControlChange);
     window.removeEventListener("shell-dialog-open", onDialogOpen);
     window.removeEventListener("shell-dialog-close", onDialogClose);

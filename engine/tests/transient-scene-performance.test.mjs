@@ -6,7 +6,7 @@ import { VisualRegistry } from "../dist/visual/VisualRegistry.js";
 test("瞬态特效只复制受影响的绘制层，结束与倒帧保持场景复用和层序", () => {
   const registry = new VisualRegistry();
   let resolutions = 0;
-  for (const pass of ["world", "player", "effect"]) {
+  for (const pass of ["world", "standing", "effect"]) {
     registry.registerTransient({
       id: pass,
       eventType: pass,
@@ -29,7 +29,7 @@ test("瞬态特效只复制受影响的绘制层，结束与倒帧保持场景�
     worldWidth: 1,
     worldHeight: 1,
     world: Object.freeze([]),
-    player: Object.freeze([]),
+    standing: Object.freeze([]),
     effect: Object.freeze([]),
   };
   function update(nowMs) {
@@ -51,14 +51,14 @@ test("瞬态特效只复制受影响的绘制层，结束与倒帧保持场景�
   emit("world", 0);
   const first = append();
   assert.notEqual(first.world, scene.world);
-  assert.equal(first.player, scene.player);
+  assert.equal(first.standing, scene.standing);
   assert.equal(first.effect, scene.effect);
   emit("world", 0);
-  emit("player", 0);
+  emit("standing", 0);
   emit("effect", 0);
   const active = append();
   assert.deepEqual(active.world.map((item) => item.presence.entityId), [-3, -2]);
-  assert.equal(active.player.length, 1);
+  assert.equal(active.standing.length, 1);
   assert.equal(active.effect.length, 1);
   update(100);
   resolutions = 0;

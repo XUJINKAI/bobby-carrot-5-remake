@@ -8,7 +8,7 @@ import { resolveEngineTiming } from "../dist/time/EngineTiming.js";
 import { PresentationClock } from "../dist/time/PresentationClock.js";
 import { WorldClock } from "../dist/time/WorldClock.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
 
@@ -136,7 +136,9 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.equal(snapshot.selection?.entity?.id, bobby.id);
   assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
   assert.equal(snapshot.selection?.entity?.direction, "right");
-  assert.ok(snapshot.selection?.entity?.definition.traits.includes("player"));
+  assert.ok(
+    snapshot.selection?.entity?.definition.presenceFacts.includes("player"),
+  );
   assert.ok(snapshot.selection?.entity?.behaviors.length >= 0);
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
@@ -164,7 +166,7 @@ test("Debug snapshot can track a non-primary player actor", () => {
   const visual = new VisualRuntime(createBuiltinVisualRegistry());
   const { timing, worldClock, presentationClock } = debugTime();
   visual.scene(world);
-  const actors = world.query.entitiesWithTrait("player");
+  const actors = world.query.entitiesWithFact("player");
   assert.equal(actors.length, 2);
 
   const snapshot = buildDebugSnapshot({
@@ -207,7 +209,7 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     selection: { cell: { x: 0, y: 0 } },
   });
   assert.equal(snapshot.selection?.entity?.type, MapEntityTypeId.BOBBY);
-  assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 100);
+  assert.equal(snapshot.selection?.presences.at(-1)?.stackOrder, 1);
 });
 
 test("Debug uses docked control and info panes behind a persistent tool strip", () => {

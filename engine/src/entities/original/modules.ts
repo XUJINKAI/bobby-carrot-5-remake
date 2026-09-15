@@ -3,13 +3,16 @@ import { beaver } from "./beaver.js";
 import { beanField } from "./bean-field.js";
 import { carousel } from "./carousel.js";
 import { carouselSwitch } from "./carousel-switch.js";
+import { carrot } from "./carrot.js";
 import { colorBlock } from "./color-block.js";
 import { colorSwitch } from "./color-switch.js";
 import { dragon } from "./dragon.js";
 import { dreamMachine } from "./dream-machine.js";
+import { egg } from "./egg.js";
 import { fence } from "./fence.js";
 import { fireball } from "./fireball.js";
 import { landing, whirlwind } from "./flight.js";
+import { highGrass } from "./high-grass.js";
 import { ice } from "./ice.js";
 import { iceBlock } from "./ice-block.js";
 import { lock, timedChallenge } from "./lock.js";
@@ -19,11 +22,11 @@ import { cloud, cloudParking, leaf } from "./moving-entities.js";
 import { crumblyRock, mower, mowerParkingTile } from "./mower.js";
 import { plank } from "./plank.js";
 import { sandman } from "./sandman.js";
+import { snow } from "./snow.js";
 import { speed } from "./speed.js";
 import { speedSwitch } from "./speed-switch.js";
 import {
   staticContentModules,
-  staticCoverModules,
   staticSurfaceModules,
 } from "./static-catalog.js";
 import { tide } from "./tide.js";
@@ -47,9 +50,12 @@ export const originalEntityModules: readonly EntityModule[] = [
   carousel,
   colorSwitch,
   colorBlock,
-  ...staticCoverModules,
+  highGrass,
+  snow,
   plank,
   iceBlock,
+  carrot,
+  egg,
   ...staticContentModules,
   cloud,
   cloudParking,

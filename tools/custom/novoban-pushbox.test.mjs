@@ -24,7 +24,7 @@ test("Novoban source parses into the original 50-level order", () => {
   assert.equal(levels.every((level) => level.author === "François Marques"), true);
 });
 
-test("Novoban keeps variable box counts and only uses fill-all push goals", () => {
+test("Novoban keeps variable box counts and uses push goals", () => {
   const boxCounts = new Set();
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, SOKOBAN_WIN_RULE);

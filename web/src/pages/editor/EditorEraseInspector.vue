@@ -2,6 +2,7 @@
 import {
   isSurfaceEntityType,
   type EditorDefinition,
+  type EngineEnvironment,
   type EntityCatalog,
   type InspectorModel,
 } from "@bobby/editor";
@@ -14,6 +15,7 @@ defineProps<{
   targetIndex: number | null;
   images: ImageManager;
   catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }>();
 </script>
@@ -42,7 +44,7 @@ defineProps<{
           :source="placementPresetFromEntity(layer.entity)"
           :cell-size="32"
           :images="images"
-          :catalog="catalog"
+          :environment="environment"
           :editor="editor"
           :fallback-text="layer.label.slice(0, 2)"
         />

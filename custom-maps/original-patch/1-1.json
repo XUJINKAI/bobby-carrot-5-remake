@@ -345,8 +345,7 @@
       "type": "all",
       "conditions": [
         {
-          "type": "reach",
-          "target": "exit"
+          "type": "exit"
         }
       ]
     }

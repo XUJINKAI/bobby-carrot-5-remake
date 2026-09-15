@@ -9,15 +9,18 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
 const rotateMirrorOnLeave: Behavior = {
   id: "rotate-mirror-on-leave",
+  canEnter({ actor }) {
+    if (bobbyMountId(actor.state) !== null)
+      return { passable: false, reason: "mower-cannot-enter-mirror" };
+  },
   onLeave({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -30,8 +33,7 @@ const rotateMirrorOnLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.MIRROR,
-  traits: ["walkable", "mirror", "rotatable"],
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   state: variantState([
     "right-bottom",
     "left-bottom",

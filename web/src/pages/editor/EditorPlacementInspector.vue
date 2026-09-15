@@ -2,6 +2,7 @@
 import {
   editorCatalogEntry,
   type EditorDefinition,
+  type EngineEnvironment,
   type EntityCatalog,
   type PaletteItem,
   type PlacementInspectorPreviewModel,
@@ -17,6 +18,7 @@ const props = defineProps<{
   placement: PaletteItem;
   hoverPreview: PlacementInspectorPreviewModel;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
@@ -53,7 +55,7 @@ const warningSummaries = computed(() => [
           :source="placement.previewPreset"
           :cell-size="48"
           :images="images"
-          :catalog="catalog"
+          :environment="environment"
           :editor="editor"
           :preview-state="placement.preview?.state"
           :fallback-text="placement.label.slice(0, 2)"
@@ -70,6 +72,7 @@ const warningSummaries = computed(() => [
         :definition="definition"
         :entity-policy="editor.entities?.[placement.type]"
         :images="images"
+        :environment="environment"
         :catalog="catalog"
         :editor="editor"
         empty-text="该素材没有可编辑字段或 variant。"
@@ -102,6 +105,7 @@ const warningSummaries = computed(() => [
             :highlight-index="hoverPreview.placedIndex"
             highlight-label="新增"
             :images="images"
+            :environment="environment"
             :catalog="catalog"
             :editor="editor"
           />

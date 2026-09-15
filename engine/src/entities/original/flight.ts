@@ -22,7 +22,6 @@ import {
 } from "../player/BobbyState.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -34,7 +33,7 @@ const whirlwindBehavior: Behavior = {
   id: "kite-takeoff",
   canEnter({ actor, query }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       isBobbyFlying(actor.state)
     )
@@ -45,7 +44,7 @@ const whirlwindBehavior: Behavior = {
   },
   onTouch({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       readBobbyInventory(actor.state).kite
     )
@@ -61,7 +60,7 @@ const whirlwindBehavior: Behavior = {
   },
   onEnter({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       isBobbyFlying(actor.state) ||
       !readBobbyInventory(actor.state).kite
@@ -77,7 +76,7 @@ const whirlwindBehavior: Behavior = {
   },
   onArrive({ actor, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       actor.state?.flightTransition !== "takeoff"
     )
       return;
@@ -166,8 +165,7 @@ const flightAction: RuntimeActionDefinition = {
 
 const whirlwindDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WHIRLWIND,
-  traits: ["flight-entry", "blocking"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: ["blocking"],
   presentation: { name: "Whirlwind" },
 };
 
@@ -184,8 +182,7 @@ export const whirlwind: EntityModule = {
 
 const landingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.LANDING,
-  traits: ["flight-landing"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: [],
   presentation: { name: "Landing" },
 };
 

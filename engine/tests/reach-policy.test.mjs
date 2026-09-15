@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { ReachResolver } from "../dist/world/outcome/ReachResolver.js";
+import { MechanismRegistry } from "../dist/mechanism/MechanismRegistry.js";
+import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
 
 test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   const behavior = {
@@ -14,26 +16,36 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   };
   const behaviors = new BehaviorRegistry();
   behaviors.register(behavior);
+  const entities = new EntityRegistry();
+  entities.register({ type: "goal", presenceFacts: [], behaviors: [behavior.id] });
   const target = { id: 2, type: "goal", anchor: { x: 1, y: 0 } };
   const presence = {
     entityId: 2,
     cell: { x: 1, y: 0 },
-    layer: "surface",
-    traits: [],
+    facts: [],
     stackOrder: 0,
   };
   const query = {
     entity(id) {
       return id === target.id ? target : undefined;
     },
-    definition() {
-      return { type: "goal", traits: [], behaviors: [behavior.id] };
-    },
     presencesAt() {
       return [presence];
     },
+    presenceMatchesSelector(candidate, selector) {
+      return candidate.entityId === target.id &&
+        selector.kind === "any" &&
+        selector.selectors.some((item) =>
+          item.kind === "type" && item.value === target.type
+        );
+    },
   };
-  const resolver = new ReachResolver(query, behaviors);
+  const resolver = new ReachResolver(
+    query,
+    entities,
+    behaviors,
+    new MechanismRegistry(),
+  );
 
   assert.equal(
     resolver.actorReaches(

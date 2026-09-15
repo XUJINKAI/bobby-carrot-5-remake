@@ -50,9 +50,7 @@ function state(overrides = {}) {
 
 test("egg-only objective projects to egg counter without carrot", () => {
   const model = buildGameplayHudModel(state(), {
-    type: "fill-all",
-    target: "egg-nest",
-    filler: "filled-egg",
+    type: "egg",
     completed: false,
     remaining: 4,
   });
@@ -227,7 +225,7 @@ test("Gameplay HUD exposes host styling hooks without naming a product font", ()
   assert.doesNotMatch(source, /Jersey 10|fontFamily|WebkitTextStroke|textShadow/);
 });
 
-test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () => {
+test("GameplayDialogView 只渲染逐字文本并消费归一化输入", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayDialog.ts", import.meta.url),
     "utf8",
@@ -243,11 +241,12 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
   assert.match(source, /Array\.from\(message\)/);
   assert.match(source, /maxHeight: "min\(42vh, 260px\)"/);
   assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
-  assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
-  assert.match(source, /this\.input\.setEnabled\(false\)/);
-  assert.match(source, /GameplayDialog\.present\(\) 至少需要一个选项/);
-  assert.match(source, /dialogControl\.setWorldPaused\(true\)/);
-  assert.match(source, /dialogControl\.beginBlockingChoice/);
+  assert.match(source, /handleInput\(input: LogicalInputAction\)/);
+  assert.match(source, /resolveGameplayDialogInputAction/);
+  assert.doesNotMatch(source, /window\.addEventListener\("keydown"/);
+  assert.match(source, /GameplayDialogView\.present\(\) 至少需要一个选项/);
+  assert.doesNotMatch(source, /import type \{ Game \}/);
+  assert.doesNotMatch(source, /dialogControl|setWorldPaused|setEnabled/);
   assert.doesNotMatch(source, /consumeReplayChoice|recordChoice/);
   assert.match(source, /dataset\.selected/);
   assert.match(source, /rgba\(255,255,255,\.96\)/);

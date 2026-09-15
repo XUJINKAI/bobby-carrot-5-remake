@@ -210,7 +210,7 @@ async function verifyGameplayDialog(cdp, url) {
   );
 
   await new Promise((resolve) => setTimeout(resolve, 1_000));
-  await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -219,8 +219,6 @@ async function verifyGameplayDialog(cdp, url) {
       ),
     ),
   );
-  await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
-
   await waitFor(async () =>
     (await cdp.evaluate(
       sessionId,
@@ -228,6 +226,34 @@ async function verifyGameplayDialog(cdp, url) {
     )) === "你的金钥匙可以直接打开这把锁。",
   );
 
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const repeatedText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  );
+  if (repeatedText !== "你的金钥匙可以直接打开这把锁。")
+    throw new Error("按键重复改变了当前对白段落");
+
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "向着海狸的方向按键可以继续交谈。",
+  );
+
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const repeatedSecondText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+  );
+  if (repeatedSecondText !== "向着海狸的方向按键可以继续交谈。")
+    throw new Error("按键重复结束了对白");
+
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
   await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
@@ -238,6 +264,44 @@ async function verifyGameplayDialog(cdp, url) {
     ),
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const reopenedDuringCooldown = await cdp.evaluate(
+    sessionId,
+    "!document.querySelector('.engine-gameplay-dialog')?.hidden",
+  );
+  if (reopenedDuringCooldown)
+    throw new Error("Gameplay dialogue reopened during the 500ms cooldown");
+
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-gameplay-dialog:not([hidden])')",
+      ),
+    ),
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "你的金钥匙可以直接打开这把锁。",
+  );
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowLeft", 37);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-gameplay-dialog')?.hidden",
+      ),
+    ),
+  );
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowLeft", 37);
   return sessionId;
 }
 
@@ -259,6 +323,7 @@ async function verifyAdventureDeveloperTools(cdp, url) {
       ),
     20_000,
   );
+  await verifyReplaySaveButton(cdp, sessionId);
 
   await cdp.evaluate(
     sessionId,
@@ -314,6 +379,7 @@ async function verifyReplayPanel(cdp, url) {
     ),
     20_000,
   );
+  await verifyReplaySaveButton(cdp, sessionId);
   await clickWhenPresent(cdp, sessionId, "#replay-record");
   await waitFor(async () =>
     Boolean(
@@ -385,11 +451,24 @@ async function verifyReplayPanel(cdp, url) {
   if (
     !["playing", "won", "dead"].includes(replay.finalState?.status) ||
     !Number.isInteger(replay.finalState?.moves) ||
+    !Array.isArray(replay.finalState?.position) ||
     !Number.isInteger(replay.finalState?.elapsedMs) ||
     typeof replay.finalState?.counters !== "object" ||
     !Array.isArray(replay.finalState?.completedConditions)
   )
     throw new Error("Replay panel did not export finalState");
+  const replayText = await cdp.evaluate(
+    sessionId,
+    "document.querySelector('[data-replay-output]').value",
+  );
+  const serializedFrameLines = replayText
+    .split("\n")
+    .filter((line) => /"tick":\d+/.test(line));
+  if (
+    serializedFrameLines.length !== replay.frames.length ||
+    serializedFrameLines.some((line) => !/^    \{.*\},?$/.test(line))
+  )
+    throw new Error("Replay panel did not serialize one frame per line");
   if ("profile" in replay.runtime || "economy" in replay.runtime)
     throw new Error("Replay runtime included Explore session settings");
   if ("snapshot" in replay || "entities" in replay)
@@ -609,6 +688,18 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay mobile panel did not float inside the game stage");
 }
 
+async function verifyReplaySaveButton(cdp, sessionId) {
+  const adjacent = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const load = document.querySelector('[data-replay-action="load-builtin"]');
+      const save = document.querySelector('[data-replay-action="save-builtin"]');
+      return Boolean(load && save && load.parentElement === save.parentElement);
+    })()`,
+  );
+  if (!adjacent) throw new Error("内置过法加载与保存按钮未并排显示");
+}
+
 async function clickWhenPresent(cdp, sessionId, selector) {
   await waitFor(async () =>
     Boolean(
@@ -634,10 +725,17 @@ async function openPage(cdp, url) {
   return sessionId;
 }
 
-async function dispatchKey(cdp, sessionId, type, key, windowsVirtualKeyCode) {
+async function dispatchKey(
+  cdp,
+  sessionId,
+  type,
+  key,
+  windowsVirtualKeyCode,
+  autoRepeat = false,
+) {
   await cdp.send(
     "Input.dispatchKeyEvent",
-    { type, key, code: key, windowsVirtualKeyCode },
+    { type, key, code: key, windowsVirtualKeyCode, autoRepeat },
     sessionId,
   );
 }
@@ -650,22 +748,27 @@ function dialogPayload() {
       author: "bc5r",
     },
     width: 2,
-    height: 2,
-    rules: { win: { type: "reach", target: "exit" } },
+    height: 3,
+    rules: { win: { type: "exit" } },
     entities: [
       { type: "grass", x: 0, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
-      { type: "start", x: 0, y: 1 },
-      { type: "bobby", x: 0, y: 1 },
+      { type: "grass", x: 0, y: 2, variant: "ts-10-1" },
+      { type: "grass", x: 1, y: 2, variant: "ts-10-1" },
+      { type: "start", x: 1, y: 2 },
+      { type: "bobby", x: 1, y: 2 },
       {
         type: "beaver",
         x: 1,
         y: 1,
-        dialogue: "你的金钥匙可以直接打开这把锁。",
+        dialogue: [
+          "你的金钥匙可以直接打开这把锁。",
+          "向着海狸的方向按键可以继续交谈。",
+        ],
       },
-      { type: "exit", x: 1, y: 1 },
+      { type: "exit", x: 0, y: 0 },
     ],
   };
   return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");

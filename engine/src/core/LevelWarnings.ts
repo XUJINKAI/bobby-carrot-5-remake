@@ -1,17 +1,24 @@
 import type {
-  Direction,
   LevelEntity,
   LevelMap,
   WinCondition,
 } from "@bobby/model";
-import { levelEntityContractIssues } from "@bobby/model";
-import type { EntityCatalog } from "../entities/EntityCatalog.js";
+import { levelEntityContractIssues, type GoalType } from "@bobby/model";
+import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
 import type { EntityCatalogEntry } from "../entities/EntityCatalog.js";
+import { EntityStore } from "../world/entity/EntityStore.js";
+import { instantiateLevelEntity } from "../world/entity/EntityInstance.js";
+import { WorldQueryApi } from "../world/behavior/WorldQueryApi.js";
+import { createGlobalState } from "../world/GlobalState.js";
 import { resolveFootprintCells } from "../world/spatial/Footprint.js";
+import { SpatialIndex } from "../world/spatial/SpatialIndex.js";
 
 export type LevelRuntimeWarningCode =
   | "missing-player"
-  | "missing-reach-target"
+  | "missing-goal-target"
   | "unknown-entity"
   | "invalid-entity";
 
@@ -26,8 +33,9 @@ export interface LevelRuntimeWarning {
  */
 export function validateLevelPlayability(
   level: LevelMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment = builtinEngineEnvironment,
 ): LevelRuntimeWarning[] {
+  const { catalog, facts, goals } = environment;
   const known = level.entities.flatMap((entity) => {
     return catalog.has(entity.type) && levelEntityContractIssues(entity).length === 0
       ? [{ entity, definition: catalog.require(entity.type) }]
@@ -55,81 +63,82 @@ export function validateLevelPlayability(
     });
   });
 
-  if (!known.some(({ definition }) => definition.traits.includes("player"))) {
+  const projectable = known.filter(({ entity, definition }) =>
+    hasProjectableFootprint(entity, definition, level)
+  );
+  const store = new EntityStore(projectable.map(({ entity }) => entity));
+  const spatial = new SpatialIndex(
+    store,
+    catalog.entities,
+    level.width,
+    level.height,
+    facts,
+  );
+
+  if (spatial.entityCountMatching({ kind: "fact", value: "player" }) === 0) {
     warnings.push({
       code: "missing-player",
       message: "地图至少需要一个 player Entity。",
     });
   }
 
-  for (const selector of requiredReachSelectors(level.rules?.win)) {
-    const exists = known.some(
-      ({ entity, definition }) =>
-        entity.type === selector ||
-        definition.traits.includes(selector) ||
-        footprintHasTrait(entity, definition, selector),
-    );
-    if (exists) continue;
+  const query = new WorldQueryApi(store, spatial, createGlobalState, facts);
+  for (const type of requiredGoals(level.rules?.win)) {
+    if (goals.require(type).available(query)) continue;
     warnings.push({
-      code: "missing-reach-target",
-      message: `当前获胜条件需要 selector '${selector}'，地图中没有对应 Entity。`,
+      code: "missing-goal-target",
+      message: `当前获胜条件 '${type}' 缺少所需的 Entity。`,
     });
   }
 
   return warnings;
 }
 
-function footprintHasTrait(
+function hasProjectableFootprint(
   entity: LevelEntity,
   definition: EntityCatalogEntry,
-  trait: string,
+  level: LevelMap,
 ): boolean {
-  if (!definition.footprint) return false;
-  const direction = asDirection(entity["direction"]);
   try {
+    const instance = instantiateLevelEntity(0, entity);
     return resolveFootprintCells(
-      {
-        anchor: { x: entity.x, y: entity.y },
-        ...(direction ? { direction } : {}),
-      },
+      instance,
       definition.footprint,
-    ).some((part) => part.traits?.includes(trait));
+    ).every((part) =>
+      part.x >= 0 &&
+      part.y >= 0 &&
+      part.x < level.width &&
+      part.y < level.height
+    );
   } catch {
-    // 结构有效性由常规加载边界校验；这里仅判断地图是否存在可游玩的 reach target。
+    // 加载边界负责报告结构错误；告警只查询可建立的语义投影。
     return false;
   }
 }
 
-function asDirection(value: unknown): Direction | undefined {
-  return value === "up" || value === "right" || value === "down" || value === "left"
-    ? value
-    : undefined;
-}
-
-function requiredReachSelectors(
+function requiredGoals(
   condition: WinCondition | undefined,
-): Set<string> {
-  const result = new Set<string>();
-  collectRequiredReachSelectors(condition, result);
+): Set<GoalType> {
+  const result = new Set<GoalType>();
+  collectRequiredGoals(condition, result);
   return result;
 }
 
-function collectRequiredReachSelectors(
+function collectRequiredGoals(
   condition: WinCondition | undefined,
-  result: Set<string>,
+  result: Set<GoalType>,
 ): void {
   if (!condition) return;
   switch (condition.type) {
-    case "reach":
-      result.add(condition.target);
-      break;
     case "all":
       for (const child of condition.conditions)
-        collectRequiredReachSelectors(child, result);
+        collectRequiredGoals(child, result);
       break;
     case "any":
       if (condition.conditions.length === 1)
-        collectRequiredReachSelectors(condition.conditions[0], result);
+        collectRequiredGoals(condition.conditions[0], result);
       break;
+    default:
+      result.add(condition.type);
   }
 }

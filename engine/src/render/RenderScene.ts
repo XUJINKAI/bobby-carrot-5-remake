@@ -7,13 +7,16 @@ export interface RenderItem {
   composition: VisualComposition;
   visualX: number;
   visualY: number;
+  /** 直立对象的脚底排序锚点；与具体 Presence 的绘制位置正交。 */
+  depthX: number;
+  depthY: number;
 }
 
 export interface RenderScene {
   worldWidth: number;
   worldHeight: number;
   world: readonly RenderItem[];
-  player: readonly RenderItem[];
+  standing: readonly RenderItem[];
   effect: readonly RenderItem[];
   callouts: readonly WorldCalloutRenderItem[];
 }
@@ -26,8 +29,29 @@ export function sortRenderItems(items: readonly RenderItem[]): readonly RenderIt
   return [...items].sort(compareRenderItems);
 }
 
+/** 直立对象按共享的脚底锚点排序；同一锚点才回落到实例堆叠顺序。 */
+export function sortStandingRenderItems(
+  items: readonly RenderItem[],
+): readonly RenderItem[] {
+  return [...items].sort(compareStandingRenderItems);
+}
+
 export function compareRenderItems(a: RenderItem, b: RenderItem): number {
   return (
+    a.presence.stackOrder - b.presence.stackOrder ||
+    a.presence.entityId - b.presence.entityId ||
+    a.presence.cell.y - b.presence.cell.y ||
+    a.presence.cell.x - b.presence.cell.x
+  );
+}
+
+export function compareStandingRenderItems(
+  a: RenderItem,
+  b: RenderItem,
+): number {
+  return (
+    a.depthY - b.depthY ||
+    a.depthX - b.depthX ||
     a.presence.stackOrder - b.presence.stackOrder ||
     a.presence.entityId - b.presence.entityId ||
     a.presence.cell.y - b.presence.cell.y ||

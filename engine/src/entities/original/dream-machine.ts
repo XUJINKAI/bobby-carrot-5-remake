@@ -5,22 +5,21 @@ import type {
 } from "../EntityModule.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
-  traits: ["blocking", "interaction", "dialog"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: [],
+  mechanisms: ["object-interaction"],
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body" },
+      { dx: 0, dy: 0, role: "body", presenceFacts: ["blocking"] },
     ],
   },
-  presentation: { name: "Dream Machine" },
+  presentation: { name: "Dream Machine", renderPass: "standing" },
 };
 
 export const dreamMachine: EntityModule = originalModule(

@@ -4,7 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_MOVING_ENTITY_CELL_MS,
 } from "../dist/entities/original/moving-entities.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
   return world.step({
@@ -33,8 +33,8 @@ test("Leaf carries co-located Bobby without creating a mount relation", () => {
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const leaf = world.query.entitiesWithTrait("moving-platform")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesWithFact("moving-platform")[0];
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   assert.equal(world.entity(actor.id).state?.mountId, undefined);
@@ -67,7 +67,7 @@ test("Leaf 上已有 Bobby 时会阻止另一个 Bobby 进入", () => {
       { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
-  const players = world.query.entitiesWithTrait("player");
+  const players = world.query.entitiesWithFact("player");
   const result = move(world, players[0].id, "right");
 
   assert.equal(result.moves[0].moved, false);
@@ -100,8 +100,8 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const cloud = world.query.entitiesWithTrait("cloud")[0] ??
-    world.query.entitiesWithTrait("moving-platform")[0];
+  const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0] ??
+    world.query.entitiesWithFact("moving-platform")[0];
   world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
   world.update({ tick: 3, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
@@ -127,8 +127,8 @@ test("Leaf starts moving on the same tick that a player arrives", () => {
     },
     { motionDurationMs: 350 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   move(world, actor.id, "right");
 
   let handoff = null;
@@ -167,8 +167,8 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
 
   let sawPerpendicularCell = false;
@@ -187,7 +187,7 @@ test("Leaf can launch perpendicular to Tide and follows Tide after the first cel
   assert.equal(sawRedirectedCell, true);
 });
 
-test("Leaf does not launch against Tide", () => {
+test("Bobby 逆流登叶不启动该方向，潮流仍保留自动续行", () => {
   const world = new World(
     {
       schemaVersion: 1,
@@ -203,14 +203,14 @@ test("Leaf does not launch against Tide", () => {
     },
     { motionDurationMs: 100 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  const leaf = world.query.entitiesWithTrait("leaf")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
+  const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
   assert.equal(move(world, actor.id, "up").moves[0].moved, true);
 
   for (let tick = 1; tick <= 4; tick += 1)
     world.update({ tick, stepMs: 50 });
 
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 1 });
-  assert.equal(world.entity(leaf.id).state?.moving, undefined);
-  assert.equal(world.actions.active.length, 0);
+  assert.equal(world.entity(leaf.id).state?.moving, false);
+  assert.equal(world.actions.active.length, 1);
 });

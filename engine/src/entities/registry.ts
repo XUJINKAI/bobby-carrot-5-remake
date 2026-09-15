@@ -59,12 +59,11 @@ export function createBuiltinBehaviorRegistry(
   const seen = new Set<string>();
   for (const module of modules) {
     for (const binding of module.behaviorBindings ?? []) {
-      const { behavior, trait } = binding;
+      const { behavior } = binding;
       if (!seen.has(behavior.id)) {
         seen.add(behavior.id);
         registry.register(behavior);
       }
-      if (trait) registry.bindTrait(trait, behavior.id);
     }
   }
   return registry;
@@ -78,8 +77,3 @@ export function createBuiltinRuntimeActionRegistry(
     for (const action of module.runtimeActions ?? []) registry.register(action);
   return registry;
 }
-
-export const entityCatalog = createBuiltinEntityCatalog();
-export const entityRegistry = entityCatalog.entities;
-export const visualRegistry = createBuiltinVisualRegistry();
-export const behaviorRegistry = createBuiltinBehaviorRegistry();

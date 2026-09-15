@@ -60,38 +60,6 @@ Bean 查询“目标格是否存在可承载藤蔓的地面，以及是否已经
 - `semantic/BeanGrowth.java`
 - `engine/src/entities/original/bean-field.ts`
 
-### A3. Snow 使用完整 Shovel 动作
-
-**现象差异**
-
-原版中，Bobby 持有 Shovel 时第一次撞上 Snow 仍会停住，播放约 `992ms` 的铲雪动作，
-Snow 清除后自动重试刚才的方向。当前 Engine 在碰撞解析时立刻删除 Snow，并让 Bobby 在
-同一次移动中直接通过。
-
-**可能影响**
-
-玩家看不到铲雪过程，也没有对应的输入锁；Snow 附近的其它机关会比原版提前约一秒触发，
-Replay 中的动作边界也不同。
-
-**目标行为**
-
-1. 第一次碰撞保持 Bobby 原位；
-2. 建立由该 Bobby 持有的 `992ms` gameplay 动作并锁住其普通输入；
-3. 动作结束时重新确认目标 Snow 仍然存在；
-4. 删除 Snow，生成 `ts-8-13` 对应的清雪地面；
-5. 通过正常移动解析自动重试保存的方向。
-
-**原理说明**
-
-清雪过程会影响输入和后续碰撞，因此属于可快照的 RuntimeAction。`b8.png` 动画只读取动作
-进度，不负责删除 Snow。缺少 Shovel 的 Callout 已由正式 Engine Presentation 处理。
-
-**证据**
-
-- `semantic/ShovelRuntime.java`
-- `engine/src/entities/behaviorLibrary.ts`
-- `engine/src/entities/player/bobby.ts`
-
 ### A4. Mower 按地面高度决定通行
 
 **现象差异**
@@ -180,31 +148,6 @@ Tail 触发时立即建立输入锁，贯穿 Dragon wind-up 和 Fireball 飞行�
 - `semantic/GameplayCameraFocus.java`
 - `engine/src/entities/original/dragon.ts`
 
-### A7. 修正 Mower 人物图裁切
-
-**现象差异**
-
-`b7.png` 的左右人物各宽 `60px`，上下人物各宽 `48px`，并不是四个等宽方向列。当前按
-四等分裁成 `54px`，会截断当前方向并带入相邻方向的像素。
-
-**可能影响**
-
-所有 Mower 方向都可能出现串图、偏移或边缘缺失。
-
-**目标行为**
-
-按 `Left 0/60`、`Right 60/60`、`Up 120/48`、`Down 168/48` 的源矩形裁切，左右方向使用
-`-6px` 水平偏移，上下方向保持居中。
-
-**原理说明**
-
-该素材需要逐方向 source rect，不能使用统一 `frameColumns`。
-
-**证据**
-
-- `semantic/MowerPresentation.java`
-- `engine/src/entities/player/bobby.ts`
-
 ### A8. 修正 Mower 与割草轨迹节拍
 
 **现象差异**
@@ -229,42 +172,6 @@ Mower 抖动过快，割草时缺少对应效果，Speed 尾迹的帧序和速�
 人物和轨迹可以由 PresentationClock 采样，但动画相位必须来自同一次 Mower 动作的状态，
 不能各自读取无关的绝对帧奇偶。
 
-### A9. 修正 Bobby Idle 帧序
-
-**现象差异**
-
-Bobby Carrot 5 Remake 在静止约 `5s` 后按 `0→1→2→0` 循环 Idle。目标序列为
-`0→1→2→1→0` 往返。
-
-**可能影响**
-
-Idle 动画从最后一帧直接跳回第一帧，动作不连贯。
-
-**目标行为与原理**
-
-保留当前 `5s` 触发等待，改为 ping-pong 帧序。该变化只属于 Presentation，不修改 World
-或 Replay。
-
-### A10. 校准 Bobby 进入与通关动画
-
-**现象差异**
-
-当前进入和通关时长为 `310ms / 279ms`。原版十个逻辑槽受隔步门控，稳定量级约为
-`620ms / 558ms`，所以当前动画约快一倍。
-
-**可能影响**
-
-开局输入锁过早结束，通关角色消失和 Result 流程也更早发生。
-
-**目标行为**
-
-按原版门控校准两条独立时长，继续正确处理 `b6.png` 八张素材帧与两个透明逻辑槽。
-
-**原理说明**
-
-进入和通关仍是 PresentationClock 动画；进入阶段通过既有
-`presentationBlocksInput` 合同暂停 World 输入，不用动画回调修改 World。
-
 ### A11. 恢复 Bonus Coin 的随机闪光
 
 **现象差异**
@@ -285,22 +192,6 @@ Idle 动画从最后一帧直接跳回第一帧，动作不连贯。
 
 随机源属于 Presentation session，并应支持测试注入或固定 seed，避免依赖不可重放的
 `Math.random()` 全局状态。
-
-### A12. 校准通用环境动画到 124ms
-
-**现象差异**
-
-原版 Water、Tide、Windmill、Speed、Exit、Whirlwind 等共享动画 phase，约每 `124ms`
-推进一帧。当前统一使用 `248ms`，画面速度慢一倍。
-
-**可能影响**
-
-水面、传送带、风车和出口等持续动画整体显得迟缓，并与 Bobby 及其它原版节拍不同步。
-
-**目标行为与原理**
-
-把原版 ambient phase 校准为 `124ms`，继续由 PresentationClock 驱动。具体 atlas 帧仍以
-`model/src/map/entity/original-tile-visuals.json` 为唯一来源。
 
 ## 实施约束
 

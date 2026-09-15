@@ -4,12 +4,9 @@ import {
   AudioRuntime,
   type AudioRuntimeOptions,
 } from "../audio/AudioRuntime.js";
-import { entityCatalog } from "../entities/registry.js";
-import { InputController } from "../input/InputController.js";
-import {
-  GameplayDialog,
-  type GameplayDialogOptions,
-} from "../ui/GameplayDialog.js";
+import { builtinEngineEnvironment } from "../environment/EngineEnvironment.js";
+import type { InputController } from "../input/InputController.js";
+import type { GameplayDialogController } from "../ui/GameplayDialogController.js";
 import { Game } from "./Game.js";
 import type { GameOptions, GameRuntimeOptions } from "./GameOptions.js";
 import {
@@ -17,9 +14,7 @@ import {
   type LevelRuntimeWarning,
 } from "./LevelWarnings.js";
 
-export interface GameplayRuntimeConfig extends GameRuntimeOptions {
-  dialog?: boolean | GameplayDialogOptions;
-}
+export type GameplayRuntimeConfig = GameRuntimeOptions;
 
 export interface CreateGameplayRuntimeOptions
   extends Omit<GameOptions, "runtime" | "audio"> {
@@ -32,8 +27,8 @@ export interface CreateGameplayRuntimeOptions
 export interface GameplayRuntime {
   game: Game;
   input: InputController;
+  dialog: GameplayDialogController | null;
   audio: AudioBackend;
-  dialog: GameplayDialog | null;
   warnings: readonly LevelRuntimeWarning[];
   destroy(): void;
 }
@@ -49,33 +44,30 @@ export async function createGameplayRuntime(
     audioOptions,
     ...gameOptions
   } = options;
-  const warnings = validateLevelPlayability(level, entityCatalog);
-  const { dialog: dialogOptions, ...gameRuntime } = runtime ?? {};
+  const environment = gameOptions.environment ?? builtinEngineEnvironment;
+  const warnings = validateLevelPlayability(level, environment);
   const ownedAudio = suppliedAudio ? null : new AudioRuntime(audioOptions);
   const audio = suppliedAudio ?? ownedAudio!;
+  const resolvedRuntime: GameRuntimeOptions = {
+    ...runtime,
+    input: runtime?.input ?? {},
+    dialog: runtime?.dialog ?? true,
+  };
   const game = new Game({
     ...gameOptions,
+    environment,
     audio,
-    ...(runtime ? { runtime: gameRuntime } : {}),
+    runtime: resolvedRuntime,
   });
-  const input = game.inputController ?? new InputController(game);
-  const inputOwnedByGame = game.inputController === input;
-  const dialog =
-    dialogOptions === false
-      ? null
-      : new GameplayDialog(
-          game,
-          gameOptions.canvas,
-          dialogOptions === true || dialogOptions === undefined
-            ? {}
-            : dialogOptions,
-          input,
-        );
+  const input = game.inputController;
+  if (!input) {
+    game.destroy();
+    ownedAudio?.destroy();
+    throw new Error("createGameplayRuntime() 未能创建 InputController");
+  }
   try {
     await game.loadLevel(level);
   } catch (error) {
-    if (!inputOwnedByGame) input.destroy();
-    dialog?.destroy();
     game.destroy();
     ownedAudio?.destroy();
     throw error;
@@ -83,12 +75,10 @@ export async function createGameplayRuntime(
   return {
     game,
     input,
+    dialog: game.dialog,
     audio,
-    dialog,
     warnings,
     destroy(): void {
-      if (!inputOwnedByGame) input.destroy();
-      dialog?.destroy();
       game.destroy();
       ownedAudio?.destroy();
     },

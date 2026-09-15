@@ -1,5 +1,5 @@
 import type {
-  EntityCatalog,
+  EngineEnvironment,
   VisualDefinition,
 } from "@bobby/engine";
 import type {
@@ -123,7 +123,7 @@ export interface EditorDeletionCandidate {
   entity: Readonly<LevelEntity>;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
 }
 
 export interface EditorDeleteContext {
@@ -138,7 +138,7 @@ export interface EditorDeletionDefinition {
 
 export interface EditorValidationContext {
   map: Readonly<EditorMap>;
-  catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }
 
@@ -152,7 +152,7 @@ export type EditorMapValidator = (
  * can evolve without changing selection/history/canvas/clipboard algorithms.
  */
 export interface EditorDefinition {
-  /** Engine-known types matching these selectors cannot be created through normal Editor tools. */
+  /** 这些 Model Entity 不通过通用放置入口创建。 */
   exclude?: readonly EditorEntityExclusion[];
   entities?: Partial<Record<EntityType, EditorEntityDefinition>>;
   stacking?: EditorStackingDefinition;

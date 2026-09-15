@@ -11,8 +11,8 @@ test("Original carrot map keeps Exit as the final required objective", () => {
     {
       type: "all",
       conditions: [
-        { type: "collect-all", target: MapEntityTypeId.CARROT },
-        { type: "reach", target: MapEntityTypeId.EXIT },
+        { type: "carrot" },
+        { type: "exit" },
       ],
     },
   );
@@ -22,8 +22,8 @@ test("Original egg map keeps Exit as the final required objective", () => {
   const expected = {
     type: "all",
     conditions: [
-      { type: "fill-all", target: "egg-nest", filler: "filled-egg" },
-      { type: "reach", target: MapEntityTypeId.EXIT },
+      { type: "egg" },
+      { type: "exit" },
     ],
   };
   assert.deepEqual(
@@ -42,8 +42,8 @@ test("Original Golden Carrot map keeps its existing alternative Exit rule", () =
     {
       type: "any",
       conditions: [
-        { type: "reach", target: MapEntityTypeId.GOLDEN_CARROT },
-        { type: "reach", target: MapEntityTypeId.EXIT },
+        { type: "golden-carrot" },
+        { type: "exit" },
       ],
     },
   );
@@ -52,7 +52,7 @@ test("Original Golden Carrot map keeps its existing alternative Exit rule", () =
 test("Original exit-only map completes by reaching the exit", () => {
   assert.deepEqual(
     deriveOriginalWinCondition(level(MapEntityTypeId.EXIT)),
-    { type: "reach", target: MapEntityTypeId.EXIT },
+    { type: "exit" },
   );
 });
 

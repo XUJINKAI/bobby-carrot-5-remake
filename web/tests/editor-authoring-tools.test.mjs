@@ -11,6 +11,10 @@ const pageState = fs.readFileSync(
   new URL("../src/pages/editor/useEditorPage.ts", import.meta.url),
   "utf8",
 );
+const canvas = fs.readFileSync(
+  new URL("../src/pages/editor/EditorCanvas.vue", import.meta.url),
+  "utf8",
+);
 const workspace = fs.readFileSync(
   new URL("../src/pages/editor/EditorWorkspace.vue", import.meta.url),
   "utf8",
@@ -124,17 +128,29 @@ test("Editor 右键切换当前面板的选择工具并建立单格选区", () =
 
 test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
   assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
-  assert.match(pageState, /ruleDetector\.detect\(next\.level as EditorMap, catalog\)/);
-  assert.match(pageState, /document\.execute\(enableEditorRules\(catalog, detected\)\)/);
-  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(level\)/);
+  assert.match(pageState, /function execute\(command: EditorCommand\)[\s\S]*ruleDetector\.detect\(next, environment\)[\s\S]*enableEditorRules\(environment, detected\)\.apply\(next\)/);
+  const subscription = pageState.match(
+    /const unsubscribe = document\.subscribe\(\(next\) => \{([\s\S]*?)\n  \}\);/,
+  )?.[1] ?? "";
+  assert.doesNotMatch(subscription, /document\.execute\(/);
+  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(prepared\)/);
   assert.match(page, /page\.loadLevel\(level\)/);
+});
+
+test("Editor 合并高频持久化与 Canvas 重绘", () => {
+  assert.match(pageState, /EDITOR_AUTOSAVE_DELAY_MS = 200/);
+  assert.match(pageState, /setTimeout\(flushAutosave, EDITOR_AUTOSAVE_DELAY_MS\)/);
+  assert.match(pageState, /onUnmounted\([\s\S]*flushAutosave\(\)/);
+  assert.match(canvas, /requestAnimationFrame\(flushRender\)/);
+  assert.match(canvas, /if \(baseRenderPending\) render\(\)/);
+  assert.match(canvas, /cancelAnimationFrame\(renderFrame\)/);
 });
 
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {
   assert.match(pageState, /function fillSelectionWithBrush/);
   assert.match(pageState, /surfaceTool\.value === "rect"[\s\S]*mapSelection\.value = \{ anchor: cell, focus: cell \}/);
   assert.doesNotMatch(pageState, /surfaceRectAnchor/);
-  assert.match(pageState, /paintSurface\(catalog, cells, surfaceBrush\.value\)/);
+  assert.match(pageState, /paintSurface\(environment, cells, surfaceBrush\.value\)/);
   assert.match(pageState, /for \(const target of cells\) applyPaletteBrush\(target\)/);
   assert.doesNotMatch(page, /startSurfaceSelection|fillSelectionWithBrush/);
 });
@@ -245,7 +261,7 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
   assert.match(cellInspector, /placementPresetFromEntity/);
   assert.match(cellInspector, /drop-before/);
   assert.match(multiInspector, /placementPresetFromEntity/);
-  assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), catalog, cell, editor\)/);
+  assert.match(pageState, /resolveDeletionTarget\(currentLevel\(\), environment, cell, editor\)/);
   assert.match(pageState, /function applyPlacementVariant/);
   assert.match(pageState, /function updatePlacementField/);
   assert.match(fieldValues, /function placementPresetWithField/);
@@ -255,7 +271,7 @@ test("Inspector 按当前工具显示选择、素材、删除目标与 Surface �
 test("Palette 画笔悬浮显示正式放置规则计算的结果堆叠", () => {
   assert.match(
     pageState,
-    /const hoverInspector = computed\(\(\) => \{[\s\S]*paletteTool\.value !== "erase"[\s\S]*return buildInspectorModel\(currentLevel\(\), catalog, null, editor\);[\s\S]*const cell = hover\.value/,
+    /const hoverInspector = computed\(\(\) => \{[\s\S]*paletteTool\.value !== "erase"[\s\S]*return buildInspectorModel\(currentLevel\(\), environment, null, editor\);[\s\S]*const cell = hover\.value/,
   );
   assert.match(pageState, /buildPlacementInspectorPreview/);
   assert.match(pageState, /placementInspectorPreview/);

@@ -5,7 +5,7 @@ import {
   DEFAULT_BEAN_GROWTH_SEGMENT_MS,
 } from "../dist/entities/original/bean-field.js";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function entitiesAt(world, x, y) {
   return world.presencesAt({ x, y }).map((presence) =>
@@ -37,14 +37,14 @@ function createWorld(beans = 1) {
       },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
-  actor.state = { beans };
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { beans };
   return world;
 }
 
 test("Bean growth changes climbable World facts one cell at a time", () => {
   const world = createWorld();
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
 
   const planted = world.step({
     intents: [
@@ -59,12 +59,12 @@ test("Bean growth changes climbable World facts one cell at a time", () => {
   assert.ok(planted.events.some((event) => event.type === "bean-growth-started"));
   assert.equal(world.entity(actor.id).state.beans, 0);
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEAN_SPROUT), true);
-  assert.equal(world.isActorClimbing(actor.id), false);
+  assert.equal(world.query.hasFactAt(actor.anchor, "climbable"), false);
 
   world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEANSTALK_BASE), true);
   assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
-  assert.equal(world.query.hasTraitAt({ x: 1, y: 2 }, "climbable"), true);
+  assert.equal(world.query.hasFactAt({ x: 1, y: 2 }, "climbable"), true);
 
   world.update({ tick: 2, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
   assert.equal(hasType(world, 1, 2, RuntimeEntityTypeId.BEANSTALK_MID), true);
@@ -83,7 +83,7 @@ test("Bean growth changes climbable World facts one cell at a time", () => {
 
 test("Bean Field without a Bean leaves the field unchanged", () => {
   const world = createWorld(0);
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const result = world.step({
     intents: [
       {

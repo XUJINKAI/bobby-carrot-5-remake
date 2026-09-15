@@ -1,4 +1,3 @@
-import type { EntityTrait } from "../entity/EntityDefinition.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityStore } from "../entity/EntityStore.js";
 import type {
@@ -9,18 +8,25 @@ import type {
 import type { EntityPresence } from "./EntityPresence.js";
 import { resolveFootprintCells } from "./Footprint.js";
 import { EntitySelectorIndex } from "./EntitySelectorIndex.js";
+import type { EntitySelector } from "./EntitySelector.js";
+import { EntityFactProjection } from "../entity/EntityFactProjection.js";
+import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 
 export class SpatialIndex {
   private readonly cells = new Map<string, EntityPresence[]>();
   private readonly byEntity = new Map<EntityId, EntityPresence[]>();
+  private readonly entityFacts = new Map<EntityId, readonly FactId[]>();
   private readonly selectors = new EntitySelectorIndex();
+  private readonly factProjection: EntityFactProjection;
 
   constructor(
     private readonly entities: EntityStore,
     private readonly registry: EntityRegistry,
     readonly width: number,
     readonly height: number,
+    facts: FactRegistry,
   ) {
+    this.factProjection = new EntityFactProjection(facts);
     this.rebuild();
   }
 
@@ -37,6 +43,24 @@ export class SpatialIndex {
     return this.cells.get(key(cell)) ?? [];
   }
 
+  /**
+   * 玩法接触只观察最高 contact-cover 所在平面及其上方。
+   * 相同 stackOrder 属于同一接触平面，Entity ID 只用于稳定排序。
+   */
+  contactPresencesAt(cell: CellPosition): readonly EntityPresence[] {
+    const presences = this.presencesAt(cell);
+    let coverOrder: number | null = null;
+    for (const presence of presences) {
+      if (!presence.facts.includes("contact-cover")) continue;
+      coverOrder = coverOrder === null
+        ? presence.stackOrder
+        : Math.max(coverOrder, presence.stackOrder);
+    }
+    return coverOrder === null
+      ? presences
+      : presences.filter((presence) => presence.stackOrder >= coverOrder);
+  }
+
   topPresenceAt(cell: CellPosition): EntityPresence | undefined {
     return this.presencesAt(cell).at(-1);
   }
@@ -45,17 +69,50 @@ export class SpatialIndex {
     return this.byEntity.get(entityId) ?? [];
   }
 
-  hasTraitAt(cell: CellPosition, trait: EntityTrait): boolean {
+  factsForEntity(entityId: EntityId): readonly FactId[] {
+    return this.entityFacts.get(entityId) ?? [];
+  }
+
+  hasEntityFact(entityId: EntityId, fact: FactId): boolean {
+    return this.factsForEntity(entityId).includes(fact);
+  }
+
+  entityHasFact(entityId: EntityId, fact: FactId): boolean {
+    return this.hasEntityFact(entityId, fact) ||
+      this.presencesForEntity(entityId).some((presence) =>
+        presence.facts.includes(fact),
+      );
+  }
+
+  presenceMatchesSelector(
+    presence: EntityPresence,
+    selector: EntitySelector,
+  ): boolean {
+    const entity = this.entities.require(presence.entityId);
+    switch (selector.kind) {
+      case "type":
+        return entity.type === selector.value;
+      case "fact":
+        return this.hasEntityFact(entity.id, selector.value) ||
+          presence.facts.includes(selector.value);
+      case "any":
+        return selector.selectors.some((item) =>
+          this.presenceMatchesSelector(presence, item)
+        );
+    }
+  }
+
+  hasFactAt(cell: CellPosition, fact: FactId): boolean {
     return this.presencesAt(cell).some((presence) =>
-      presence.traits.includes(trait),
+      presence.facts.includes(fact),
     );
   }
 
-  entityIdsWithTrait(trait: EntityTrait): readonly EntityId[] {
-    return this.selectors.withTrait(trait);
+  entityIdsWithFact(fact: FactId): readonly EntityId[] {
+    return this.selectors.withFact(fact);
   }
 
-  entityIdsMatching(selector: string): readonly EntityId[] {
+  entityIdsMatching(selector: EntitySelector): readonly EntityId[] {
     return this.selectors.matching(selector);
   }
 
@@ -63,11 +120,11 @@ export class SpatialIndex {
     return this.selectors.ofType(type);
   }
 
-  entityCountWithTrait(trait: EntityTrait): number {
-    return this.selectors.countWithTrait(trait);
+  entityCountWithFact(fact: FactId): number {
+    return this.selectors.countWithFact(fact);
   }
 
-  entityCountMatching(selector: string): number {
+  entityCountMatching(selector: EntitySelector): number {
     return this.selectors.countMatching(selector);
   }
 
@@ -87,6 +144,7 @@ export class SpatialIndex {
   rebuild(): void {
     this.cells.clear();
     this.byEntity.clear();
+    this.entityFacts.clear();
     this.selectors.clear();
     for (const entity of this.entities.all()) this.addEntity(entity);
   }
@@ -94,31 +152,25 @@ export class SpatialIndex {
   addEntity(entity: EntityInstance): void {
     const definition = this.registry.require(entity.type);
     const resolved = resolveFootprintCells(entity, definition.footprint);
+    const entityFacts = this.factProjection.entityFacts(entity, definition);
     const presences: EntityPresence[] = [];
-    const baseStackOrder = entity.stackOrder ?? definition.stackOrder ?? 0;
-    const layer = definition.layer ?? "object";
-    resolved.forEach((part, index) => {
+    const baseStackOrder = entity.stackOrder ?? this.nextStackOrder(resolved);
+    if (entity.stackOrder === undefined) entity.stackOrder = baseStackOrder;
+    resolved.forEach((part) => {
       const cell = { x: part.x, y: part.y };
       if (!this.inBounds(cell)) {
         throw new Error(
           `Entity ${entity.type}#${entity.id} footprint 超出地图：${cell.x},${cell.y}`,
         );
       }
-      const traits = [
-        ...new Set([
-          ...definition.traits,
-          ...(entity.instanceTraits ?? []),
-          ...(part.traits ?? []),
-        ]),
-      ];
-      const presence: EntityPresence = {
+      const facts = this.factProjection.presenceFacts(entity, definition, part);
+      const presence: EntityPresence = Object.freeze({
         entityId: entity.id,
-        cell,
-        layer,
+        cell: Object.freeze(cell),
         ...(part.role ? { role: part.role } : {}),
-        traits,
-        stackOrder: part.stackOrder ?? baseStackOrder + index,
-      };
+        facts: Object.freeze([...facts]),
+        stackOrder: baseStackOrder,
+      });
       presences.push(presence);
       const list = this.cells.get(key(cell)) ?? [];
       list.push(presence);
@@ -126,7 +178,19 @@ export class SpatialIndex {
       this.cells.set(key(cell), list);
     });
     this.byEntity.set(entity.id, presences);
-    this.selectors.add(entity, definition, presences);
+    this.entityFacts.set(entity.id, entityFacts);
+    this.selectors.add(entity, presences, entityFacts);
+  }
+
+  private nextStackOrder(
+    cells: readonly CellPosition[],
+  ): number {
+    let highest = -1;
+    for (const cell of cells) {
+      for (const presence of this.presencesAt(cell))
+        highest = Math.max(highest, presence.stackOrder);
+    }
+    return highest + 1;
   }
 
   removeEntity(entityId: EntityId): void {
@@ -140,6 +204,7 @@ export class SpatialIndex {
       else this.cells.delete(cellKey);
     }
     this.byEntity.delete(entityId);
+    this.entityFacts.delete(entityId);
     this.selectors.remove(entityId);
   }
 }

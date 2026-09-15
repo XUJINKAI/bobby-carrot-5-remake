@@ -176,10 +176,15 @@ UP9 `a.class` 的 player renderer 在 `aw=6` 时从 `b6.png` 取图，`av` 作�
 先推进一次，通常还剩 9 个门控推进间隔。具体首帧相位受进入该状态时的 `bf` 影响，
 稳定量级分别约为 **620ms** 与 **558ms**，不是逐 gameplay step 切一帧。
 
-Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 10 个逻辑槽映射为
-“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”；当前配置值与上述原版门控
-节拍的校准任务记录在
-`original/reverse-engineering/notes/fidelity-approved-backlog.md` 的 A10。
+Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，并把 10 个逻辑槽映射为
+“两个透明槽 + 8 张素材帧”或“8 张素材帧 + 两个透明槽”。
+
+### `b7.png` Mower 人物图
+
+高清版 `b7.png` 宽 `216px`，两行各高 `83px`。四个方向依次使用
+`Left 0/60`、`Right 60/60`、`Up 120/48`、`Down 168/48` 的源矩形；
+左右方向相对格子中心偏移 `-6px`。Renderer 读取 Image layer 声明的源矩形，
+人物图的像素分割保持在 Bobby Visual Definition 中。
 
 ## 8. 魔豆与藤蔓
 
@@ -204,6 +209,11 @@ Web Engine 使用两个独立的毫秒配置承接进入/通关差异，并把 1
 - Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：对应 `ts-14-8 → ts-15-9 → ts-15-10 → ts-14-8`，每阶段 6 step，约 186ms；
 - Fireball：6px/gameplay step，48px 一格约 248ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
+
+持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
+动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。
+Engine 用可快照的 RuntimeAction 推进这段 gameplay，`b8.png` 铲雪动画读取开始事件；
+原版地图展开的 Snow 下方已有 `ts-8-13` 地面，独立放置的 Snow 清除时生成同款可走地面。
 
 这些换算是根据当前恢复出的控制流与稳态主循环得到的近似真实时间；原版 `System.currentTimeMillis()` 调度、设备执行耗时和 sleep 抖动会让实测存在少量偏差。
 

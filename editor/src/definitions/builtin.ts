@@ -130,6 +130,11 @@ const compatibleSlots: EditorStackingDefinition["compatibleSlots"] = [
   ["support", "occupant"],
 ];
 export const builtinEditorDefinition: EditorDefinition = {
+  exclude: [
+    MapEntityTypeId.BEANSTALK,
+    MapEntityTypeId.ORIGINAL_TILE,
+    MapEntityTypeId.TRANSPARENT,
+  ],
   entities: {
     ...withPolicy(
       directSurfaceTypes.filter((type) => type !== MapEntityTypeId.FENCE),

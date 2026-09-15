@@ -8,6 +8,7 @@ import type {
   PassageResult,
 } from "../behavior/Behavior.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
+import { readonlyView } from "../behavior/ReadonlyView.js";
 import type {
   CellPosition,
   EntityId,
@@ -26,6 +27,10 @@ import {
 } from "./MovementPlan.js";
 import { MovementTransaction } from "./MovementTransaction.js";
 import type { MoveIntent } from "./WorldIntent.js";
+import type {
+  PassagePipelineMechanism,
+  PushPipelineMechanism,
+} from "./MovementPipeline.js";
 
 /** 一次 semantic move 的通用 planning、passage 与原子提交裁决。 */
 export class WorldMovementResolver {
@@ -38,6 +43,8 @@ export class WorldMovementResolver {
     private readonly actors: ActorLifecycleStore,
     private readonly outcome: WorldOutcomeStore,
     private readonly behaviorRuntime: BehaviorRuntime,
+    private readonly passage: PassagePipelineMechanism,
+    private readonly push: PushPipelineMechanism,
   ) {}
 
   /**
@@ -83,17 +90,17 @@ export class WorldMovementResolver {
         unavailable,
       );
 
-    const sourceStack = [...this.spatial.presencesAt(from)].reverse();
-    const targetStack = [...this.spatial.presencesAt(to)].reverse();
+    const sourceStack = [...this.query.presencesAt(from)].reverse();
+    const targetStack = [...this.query.presencesAt(to)].reverse();
     const planningContext: MovementPlanningContext = {
-      actor,
+      actor: readonlyView(actor),
       query: this.query,
       direction: intent.direction,
-      from,
-      to,
-      cause: intent.cause,
-      source: sourceStack,
-      target: targetStack,
+      from: readonlyView(from),
+      to: readonlyView(to),
+      cause: readonlyView(intent.cause),
+      source: readonlyView(sourceStack),
+      target: readonlyView(targetStack),
     };
     const plan = createMovementPlan(
       planningContext,
@@ -117,8 +124,8 @@ export class WorldMovementResolver {
       actor,
       intent,
       plan,
-      sourceStack,
-      targetStack,
+      plan.contacts.source,
+      plan.contacts.target,
       movement,
       group,
     );
@@ -168,18 +175,12 @@ export class WorldMovementResolver {
         leave.reason ?? "leave-blocked",
       );
 
-    const pushable = targetStack.find(
-      (presence) =>
-        presence.entityId !== actor.id &&
-        presence.traits.includes("pushable"),
+    const pushed = this.push.propose(
+      actor.id,
+      plan.to,
+      intent.direction,
+      targetStack,
     );
-    const pushed = pushable
-      ? {
-          entityId: pushable.entityId,
-          from: plan.to,
-          to: addDirection(plan.to, intent.direction),
-        }
-      : null;
     if (
       pushed &&
       (!this.canOccupy(pushed.to, pushed.entityId, group) ||
@@ -195,7 +196,7 @@ export class WorldMovementResolver {
       );
     }
 
-    if (!this.hasWalkable(plan.to)) {
+    if (!plan.allowUnwalkable && !this.passage.isWalkable(targetStack)) {
       this.runTouch(targetStack, actor, intent.direction, group.commands, movement);
       return blockedResult(
         actor.id,
@@ -206,7 +207,7 @@ export class WorldMovementResolver {
       );
     }
 
-    const ignoredEntity = pushable?.entityId ?? null;
+    const ignoredEntity = pushed?.entityId ?? null;
     const resolution = this.resolveEntry(
       targetStack,
       actor,
@@ -290,8 +291,8 @@ export class WorldMovementResolver {
     group: MovementTransaction,
   ): string | null {
     if (
-      this.query.entityHasTrait(plan.actorId, "player") &&
-      this.playerOccupies(plan.to, plan.actorId)
+      this.query.entityHasFact(plan.actorId, "player") &&
+      this.stackHasPlayer(plan.contacts.target, plan.actorId)
     )
       return "player-occupied";
     if (!group.canReserveDestination(plan.actorId, plan.to))
@@ -302,7 +303,7 @@ export class WorldMovementResolver {
       if (!this.actors.isActive(entity.id)) return "companion-inactive";
       if (!this.spatial.inBounds(companion.to)) return "companion-out-of-bounds";
       if (
-        this.query.entityHasTrait(entity.id, "player") &&
+        this.query.entityHasFact(entity.id, "player") &&
         this.playerOccupies(companion.to, entity.id)
       )
         return "player-occupied";
@@ -315,10 +316,17 @@ export class WorldMovementResolver {
   }
 
   private playerOccupies(cell: CellPosition, movingEntityId: EntityId): boolean {
-    return this.spatial.presencesAt(cell).some(
+    return this.stackHasPlayer(this.query.presencesAt(cell), movingEntityId);
+  }
+
+  private stackHasPlayer(
+    stack: readonly EntityPresence[],
+    movingEntityId: EntityId,
+  ): boolean {
+    return stack.some(
       (presence) =>
         presence.entityId !== movingEntityId &&
-        presence.traits.includes("player"),
+        presence.facts.includes("player"),
     );
   }
 
@@ -375,17 +383,17 @@ export class WorldMovementResolver {
     transaction?: MovementTransaction,
   ): boolean {
     if (!this.spatial.inBounds(cell) || !this.hasWalkable(cell)) return false;
-    return !this.spatial.presencesAt(cell).some(
+    return !this.query.presencesAt(cell).some(
       (presence) =>
         presence.entityId !== movingEntityId &&
         !transaction?.isEntryAllowed(presence.entityId) &&
-        (presence.traits.includes("blocking") ||
-          presence.traits.includes("pushable")),
+        (this.passage.isBlocking(presence) ||
+          this.push.isPushable(presence)),
     );
   }
 
   private hasWalkable(cell: CellPosition): boolean {
-    return this.spatial.hasTraitAt(cell, "walkable");
+    return this.passage.isWalkable(this.query.presencesAt(cell));
   }
 
   private resolveEntry(
@@ -403,7 +411,7 @@ export class WorldMovementResolver {
       )
         continue;
       const entity = this.entities.require(presence.entityId);
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence)) {
+      for (const behavior of this.behaviorRuntime.resolve(entity)) {
         const result = behavior.resolveEntry?.(
           this.behaviorRuntime.context(
             actor,
@@ -445,7 +453,7 @@ export class WorldMovementResolver {
         continue;
       const entity = this.entities.require(presence.entityId);
       let explicitPass = false;
-      for (const behavior of this.behaviorRuntime.resolve(entity, presence)) {
+      for (const behavior of this.behaviorRuntime.resolve(entity)) {
         const result = behavior[hook]?.(
           this.behaviorRuntime.context(
             actor,
@@ -459,7 +467,7 @@ export class WorldMovementResolver {
         if (result?.passable === false) return result;
         if (result?.passable === true) explicitPass = true;
       }
-      if (!explicitPass && presence.traits.includes("blocking"))
+      if (!explicitPass && this.passage.isBlocking(presence))
         return { passable: false, reason: `blocking:${entity.type}` };
     }
     return { passable: true };
