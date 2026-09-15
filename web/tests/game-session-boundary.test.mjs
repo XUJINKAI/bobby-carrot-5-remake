@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import test from "node:test";
+import { test } from "vitest";
 
 test("Web 只把外部 interaction 交给业务层并复用 Engine dialog controller", () => {
   const source = fs.readFileSync(
