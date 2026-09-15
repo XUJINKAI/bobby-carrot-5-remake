@@ -363,6 +363,13 @@ export class World {
    * 所有成功 movement 与交互只在整组解析后统一 commit。
    */
   step(group: WorldIntentGroup): WorldStepResult {
+    const result = this.resolveIntentGroup(group);
+    this.settleTerminalRuntime(result);
+    return result;
+  }
+
+  /** RuntimeAction 需要先收到本组权威结果，再统一清理终局运行时。 */
+  private resolveIntentGroup(group: WorldIntentGroup): WorldStepResult {
     const result = emptyWorldStepResult();
     this.applyEffectIntents(group.intents, result);
     const transaction = new MovementTransaction();
@@ -389,7 +396,6 @@ export class World {
     this.startMotions(transaction.motions, result);
     this.lifecycle.settle(result);
     this.lifecycle.evaluateRules(result);
-    this.settleTerminalRuntime(result);
 
     return result;
   }
@@ -461,7 +467,7 @@ export class World {
 
     const readyActionRequests = [...actionRequests, ...handoffRequests];
     if (readyActionRequests.length > 0) {
-      const actionStep = this.step({
+      const actionStep = this.resolveIntentGroup({
         intents: readyActionRequests.map((request) => request.intent),
         historyBoundary: false,
       });

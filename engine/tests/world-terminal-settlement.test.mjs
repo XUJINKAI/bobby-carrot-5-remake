@@ -64,6 +64,58 @@ test("winning World cancels remaining RuntimeActions with world-finished", () =>
   );
 });
 
+test("winning RuntimeAction move receives its result before terminal settlement", () => {
+  const observedResults = [];
+  const cancellations = [];
+  const actions = new RuntimeActionRegistry();
+  actions.register({
+    kind: "terminal-move",
+    update({ action }) {
+      return {
+        status: "complete",
+        intents: [
+          {
+            type: "move",
+            actorId: action.ownerEntityId,
+            direction: "right",
+            cause: { type: "forced", mechanism: "terminal-test" },
+          },
+        ],
+      };
+    },
+    onIntentResult({ result }) {
+      observedResults.push(result.moved);
+    },
+    onCancel({ reason }) {
+      cancellations.push(reason);
+    },
+  });
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      rules: { win: { type: "exit" } },
+      entities: [
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      ],
+    },
+    { actions, motionDurationMs: 0 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.startAction({ kind: "terminal-move", ownerEntityId: actor.id });
+
+  const result = world.update({ tick: 0, stepMs: 50 });
+
+  assert.equal(result.moves[0]?.moved, true);
+  assert.equal(world.completed, true);
+  assert.deepEqual(observedResults, [true]);
+  assert.deepEqual(cancellations, []);
+  assert.equal(world.actions.active.length, 0);
+});
+
 test("losing World interrupts a running WorldMotion at its current progress", () => {
   const world = new World(
     {
