@@ -539,18 +539,23 @@ game.onInteractionRequest((request) => {
 });
 ```
 
-可对话 Entity 只触发一个 `object-interaction`；地图存在非空 `dialogue` 时，请求的
-`text` 字段携带当前对白。`dialogue` 可以是字符串或字符串数组；数组按 Entity 独立
-循环，每个元素可以包含换行。World 不持有 DOM、Promise、暂停或输入状态。
+`dialogue` 与外部 `object-interaction` 是二选一。Entity 存在非空 `dialogue` 时，World
+产生只供 Game 消费的私有 `dialogue-request`，Game 直接调用 `GameplayDialogController`，
+不会把该请求发布给宿主。`dialogue` 可以是字符串或字符串数组；数组从第一段开始在同一个
+对话框内依次翻页，每个元素可以包含换行。关闭最后一段后，同一 `(actorId, entityId)` 在
+500ms 内不会重复打开。World 本身仍不持有 DOM、Promise、暂停或输入状态。
+
+需要宿主条件、分支、购买或存档的 Entity 不得配置 `dialogue`；它只产生
+`object-interaction`，由宿主决定是否以及如何调用 Controller。
 
 Web 的通用 Session 入口可以同时接收一个交互回调，负责把请求、`Game` 与 Engine
-纯对话 View 交给具体产品适配器：
+Controller 交给具体产品适配器：
 
 ```ts
 const session = await createGameSession({
   level,
-  interaction: ({ request, game, dialogView }) => {
-    // 读取外层产品状态，调用 View 并按需分派公开 Gameplay effect。
+  interaction: ({ request, game, dialog }) => {
+    // 读取外层产品状态，调用 Controller 并按需分派公开 Gameplay effect。
   },
 });
 ```
@@ -562,7 +567,7 @@ const session = await createGameSession({
 宿主需要选项交互时，可以等待通用展示层返回选择结果：
 
 ```ts
-const result = await dialogView.present({
+const result = await dialog.present({
   message: "要购买这个道具吗？",
   options: [
     { id: "purchase", label: "购买" },
@@ -571,15 +576,17 @@ const result = await dialogView.present({
 });
 ```
 
-`dialogView.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
+`dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
 第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
-先立即补全当前文本。无选项文本通过 `dialogView.show()` 展示，回车或点击先补全文本，
+先立即补全当前文本。无选项文本通过 `dialog.show()` 展示，回车、方向键或点击先补全文本，
 再次操作返回 `{ type: "dismissed" }`。所有选项使用
 同级基础样式，当前选项通过高亮边框、背景与阴影
 标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
-`GameplayDialogView` 不接收 `Game`、`World`、`InputController` 或业务回调，也不读写
-存档、货币或商品状态。宿主持有 gate lease，只等待通用结果，并在取得结果后执行产品
-业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为 `0` 可立即显示全文。
+`GameplayDialogController` 是 Engine 的唯一公共对话入口；它不接收业务回调，也不读写
+存档、货币或商品状态。Controller 串行展示请求并在 View 打开期间阻塞 gameplay。
+外部 interaction 的宿主 gate 覆盖完整业务事务，可与 Controller lease 安全叠加；宿主等待
+通用结果后再执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为 `0`
+可立即显示全文。

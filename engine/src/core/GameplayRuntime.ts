@@ -5,7 +5,7 @@ import {
   type AudioRuntimeOptions,
 } from "../audio/AudioRuntime.js";
 import { builtinEngineEnvironment } from "../environment/EngineEnvironment.js";
-import { InputController } from "../input/InputController.js";
+import type { InputController } from "../input/InputController.js";
 import type { GameplayDialogController } from "../ui/GameplayDialogController.js";
 import { Game } from "./Game.js";
 import type { GameOptions, GameRuntimeOptions } from "./GameOptions.js";
@@ -59,12 +59,15 @@ export async function createGameplayRuntime(
     audio,
     runtime: resolvedRuntime,
   });
-  const input = game.inputController ?? new InputController(game);
-  const inputOwnedByGame = game.inputController === input;
+  const input = game.inputController;
+  if (!input) {
+    game.destroy();
+    ownedAudio?.destroy();
+    throw new Error("createGameplayRuntime() 未能创建 InputController");
+  }
   try {
     await game.loadLevel(level);
   } catch (error) {
-    if (!inputOwnedByGame) input.destroy();
     game.destroy();
     ownedAudio?.destroy();
     throw error;
@@ -76,7 +79,6 @@ export async function createGameplayRuntime(
     audio,
     warnings,
     destroy(): void {
-      if (!inputOwnedByGame) input.destroy();
       game.destroy();
       ownedAudio?.destroy();
     },

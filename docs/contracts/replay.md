@@ -153,9 +153,10 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 于 tick 0 前应用，并使用同一套位置引用规则。Replay Tick 只发布可观察的
 `WorldEvent`；`onInteractionRequest()` 不在播放中调用。
 
-地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。字符串数组
-`dialogue` 的循环游标属于 World Runtime State，因此随 Snapshot 与确定性 Tick 时间线
-推进。宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
+地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。每次会话固定从
+第一项开始，翻页位置与 500ms 重复打开冷却都是 Controller 的 Presentation 状态，不进入
+World Snapshot 或确定性 Tick 时间线。Replay 播放期间 Game 忽略内部对白展示请求。
+宿主选择、由选择派生的业务效果和外部可变状态不进入 Replay。
 
 ## 仓库内置过法
 

@@ -44,7 +44,7 @@ interface LevelEntity {
 
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
-Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。Snowman 是 Surface 图块，只有声明了 `dialogue` 的实例会显示对白。单轮使用字符串；多轮使用字符串数组，每个数组元素是一轮对白，元素内的换行原样保留：
+Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。Snowman 是 Surface 图块，只有声明了 `dialogue` 的实例会显示对白。单页使用非空字符串；多页使用非空字符串数组，每个数组元素是一页对白，元素内的换行原样保留：
 
 ```json
 {
@@ -58,10 +58,11 @@ Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面�
 }
 ```
 
-`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 使用自身的
-Runtime 游标循环数组，并在 `object-interaction` 事件中携带本轮 `text`；游标进入 Snapshot，
-但不反写地图。Editor 为
-每轮对白提供独立的可增删多行文本框。需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
+`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 从第一项开始，
+在同一个对话框中依次展示数组；关闭最后一页后，同一 Bobby 与 Entity 组合有 500ms 的
+重复打开冷却。该行为由 Engine 内部处理，不产生宿主 `object-interaction`，也没有进入
+Snapshot 的对白游标。Editor 为每页对白提供独立的可增删多行文本框。需要条件、分支或
+业务状态的对白必须省略 `dialogue`，由宿主通过通用交互请求和公共对话 Controller 实现。
 
 Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
 
@@ -442,7 +443,7 @@ type LevelPatch =
     };
 ```
 
-固定或循环对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。
+固定或多页对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。
 `levelPatchesFunction(save)` 把永久购买状态投影成 Session 地图，例如将已售出的商品格
 替换成 `shop-empty`。
 `interaction(context)` 是该地图唯一的 Campaign 交互入口，接收通用请求和当前 Save，

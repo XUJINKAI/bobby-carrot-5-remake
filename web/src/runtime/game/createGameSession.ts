@@ -1,9 +1,8 @@
 import {
   createGameplayRuntime,
-  GameplayDialogView,
+  type GameplayDialogController,
   type Game,
   type InputController,
-  type GameplayDialogViewOptions,
   type GameOptions,
   type GameplayRuntimeConfig,
   type LevelMap,
@@ -15,7 +14,7 @@ import { GameplayGateManager } from "./GameplayGateManager.js";
 export interface GameSession {
   game: Game;
   input: InputController;
-  dialogView: GameplayDialogView | null;
+  dialog: GameplayDialogController | null;
   gates: GameplayGateManager;
   destroy(): void;
 }
@@ -28,49 +27,37 @@ export interface CreateGameSessionOptions {
   interaction?: GameSessionInteractionHandler;
 }
 
-export interface GameSessionRuntimeConfig extends GameplayRuntimeConfig {
-  dialog?: boolean | GameplayDialogViewOptions;
-}
+export type GameSessionRuntimeConfig = GameplayRuntimeConfig;
 
 export interface GameSessionInteractionContext {
   request: ObjectInteractionEvent;
   game: Game;
-  dialogView: GameplayDialogView | null;
+  dialog: GameplayDialogController | null;
 }
 
 export type GameSessionInteractionHandler = (
   context: GameSessionInteractionContext,
 ) => void | Promise<void>;
 
-/** Web Session 组合 Engine runtime、纯 Dialog View 与页面级 gameplay 门禁。 */
+/** Web Session 组合 Engine runtime 与仅针对外部业务交互的页面级门禁。 */
 export async function createGameSession(
   options: CreateGameSessionOptions,
 ): Promise<GameSession> {
-  const { dialog: dialogOptions, ...gameRuntime } = options.runtime ?? {};
   const runtime = await createGameplayRuntime({
     canvas: options.canvas,
     level: options.level,
     ...options.gameOptions,
-    ...(options.runtime ? { runtime: gameRuntime } : {}),
+    ...(options.runtime ? { runtime: options.runtime } : {}),
   });
   setShellRuntimeWarnings(runtime.warnings.map((warning) => warning.message));
-  const { game, input } = runtime;
-  const dialogView = dialogOptions === false
-    ? null
-    : new GameplayDialogView(
-        options.canvas,
-        dialogOptions === true || dialogOptions === undefined
-          ? {}
-          : dialogOptions,
-      );
+  const { game, input, dialog } = runtime;
   const gates = new GameplayGateManager(game, input);
   let interactionChain = Promise.resolve();
   const unsubscribeInteraction = game.onInteractionRequest((request) => {
     const lease = gates.acquire("blocking-interaction");
     interactionChain = interactionChain
       .then(async () => {
-        if (request.text && dialogView) await dialogView.show(request.text);
-        await options.interaction?.({ request, game, dialogView });
+        await options.interaction?.({ request, game, dialog });
       })
       .catch((error: unknown) => {
         console.error("Gameplay interaction failed", error);
@@ -80,12 +67,11 @@ export async function createGameSession(
   return {
     game,
     input,
-    dialogView,
+    dialog,
     gates,
     destroy(): void {
       unsubscribeInteraction();
       gates.destroy();
-      dialogView?.destroy();
       setShellRuntimeWarnings([]);
       runtime.destroy();
     },

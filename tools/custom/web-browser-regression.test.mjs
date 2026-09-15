@@ -210,7 +210,7 @@ async function verifyGameplayDialog(cdp, url) {
   );
 
   await new Promise((resolve) => setTimeout(resolve, 1_000));
-  await dispatchKey(cdp, sessionId, "keyDown", "ArrowRight", 39);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -219,8 +219,6 @@ async function verifyGameplayDialog(cdp, url) {
       ),
     ),
   );
-  await dispatchKey(cdp, sessionId, "keyUp", "ArrowRight", 39);
-
   await waitFor(async () =>
     (await cdp.evaluate(
       sessionId,
@@ -228,7 +226,19 @@ async function verifyGameplayDialog(cdp, url) {
     )) === "你的金钥匙可以直接打开这把锁。",
   );
 
-  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      `(() => {
+        const dialog = document.querySelector('.engine-gameplay-dialog');
+        const text = document.querySelector('.engine-gameplay-dialog-text');
+        return dialog && !dialog.hidden && text?.textContent === '一直按住方向键也会直接翻到下一句。';
+      })()`,
+    )) === true,
+  );
+
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38, true);
   await waitFor(async () =>
     Boolean(
       await cdp.evaluate(
@@ -238,6 +248,36 @@ async function verifyGameplayDialog(cdp, url) {
     ),
   );
   await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const reopenedDuringCooldown = await cdp.evaluate(
+    sessionId,
+    "!document.querySelector('.engine-gameplay-dialog')?.hidden",
+  );
+  if (reopenedDuringCooldown)
+    throw new Error("Gameplay dialogue reopened during the 500ms cooldown");
+
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  await dispatchKey(cdp, sessionId, "keyDown", "ArrowUp", 38);
+  await dispatchKey(cdp, sessionId, "keyUp", "ArrowUp", 38);
+  await waitFor(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        "document.querySelector('.engine-gameplay-dialog:not([hidden])')",
+      ),
+    ),
+  );
+  await waitFor(async () =>
+    (await cdp.evaluate(
+      sessionId,
+      "document.querySelector('.engine-gameplay-dialog-text')?.textContent ?? ''",
+    )) === "你的金钥匙可以直接打开这把锁。",
+  );
+  await dispatchKey(cdp, sessionId, "keyDown", "Escape", 27);
+  await dispatchKey(cdp, sessionId, "keyUp", "Escape", 27);
   return sessionId;
 }
 
@@ -647,10 +687,17 @@ async function openPage(cdp, url) {
   return sessionId;
 }
 
-async function dispatchKey(cdp, sessionId, type, key, windowsVirtualKeyCode) {
+async function dispatchKey(
+  cdp,
+  sessionId,
+  type,
+  key,
+  windowsVirtualKeyCode,
+  autoRepeat = false,
+) {
   await cdp.send(
     "Input.dispatchKeyEvent",
-    { type, key, code: key, windowsVirtualKeyCode },
+    { type, key, code: key, windowsVirtualKeyCode, autoRepeat },
     sessionId,
   );
 }
@@ -670,15 +717,18 @@ function dialogPayload() {
       { type: "grass", x: 1, y: 0, variant: "ts-10-1" },
       { type: "grass", x: 0, y: 1, variant: "ts-10-1" },
       { type: "grass", x: 1, y: 1, variant: "ts-10-1" },
-      { type: "start", x: 0, y: 1 },
-      { type: "bobby", x: 0, y: 1 },
+      { type: "start", x: 1, y: 1 },
+      { type: "bobby", x: 1, y: 1 },
       {
         type: "beaver",
         x: 1,
-        y: 1,
-        dialogue: "你的金钥匙可以直接打开这把锁。",
+        y: 0,
+        dialogue: [
+          "你的金钥匙可以直接打开这把锁。",
+          "一直按住方向键也会直接翻到下一句。",
+        ],
       },
-      { type: "exit", x: 1, y: 1 },
+      { type: "exit", x: 0, y: 0 },
     ],
   };
   return gzipSync(Buffer.from(JSON.stringify(map), "utf8")).toString("base64url");

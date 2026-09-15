@@ -4,6 +4,7 @@ import {
   MapEntityTypeId,
   applyLevelPatches,
   entityMapDefinition,
+  levelEntityContractIssues,
   parseLevelMap,
 } from "../dist/index.js";
 
@@ -102,8 +103,12 @@ test("对白字段拒绝空字符串和含空段落的数组", () => {
     entities: [{ type: MapEntityTypeId.BEAVER, x: 0, y: 0, dialogue }],
   });
 
-  assert.throws(() => parseLevelMap(level("")), /dialogue/);
-  assert.throws(() => parseLevelMap(level(["第一句", ""])), /dialogue/);
+  for (const dialogue of ["", ["第一句", ""]]) {
+    const parsed = parseLevelMap(level(dialogue));
+    assert.deepEqual(levelEntityContractIssues(parsed.entities[0]), [
+      "字段 dialogue 不符合 string-or-string-list 合同",
+    ]);
+  }
 });
 
 test("Snowman 图块可在指定位置保存对白", () => {

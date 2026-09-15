@@ -240,7 +240,7 @@ export async function renderGamePage(
     },
     ...(adventureAugmentation.interaction
       ? {
-          interaction: async ({ request, game, dialogView }) => {
+          interaction: async ({ request, game, dialog }) => {
             if (!adventureSave) return;
             const actor = game.state.actors.find(
               (item) => item.id === request.actorId,
@@ -260,10 +260,10 @@ export async function renderGamePage(
               },
               save: adventureSave,
               showDialogue: (text) =>
-                dialogView?.show(text) ??
+                dialog?.show(text) ??
                   Promise.resolve({ type: "dismissed" as const }),
               presentDialogue: (presentation) =>
-                dialogView?.present(presentation) ??
+                dialog?.present(presentation) ??
                   Promise.resolve({ type: "dismissed" as const }),
               commitSave: (save) => {
                 adventureSave = saveAdventureSave(save);

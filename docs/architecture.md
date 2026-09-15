@@ -193,8 +193,7 @@ object-interaction {
   role,
   action,
   x,
-  y,
-  text?
+  y
 }
 ```
 
@@ -219,19 +218,20 @@ LevelEntity.dialogue
         ↓
 Object Definition touch behavior
         ↓
-object-interaction { text? }
+dialogue-request（World→Game 私有）
         ↓
-Web blocking-interaction lease
-        ↓
-Engine GameplayDialogView
+Engine GameplayDialogController → GameplayDialogView
 ```
 
-固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
-Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
-`onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。Web 在处理请求期间持有
-`blocking-interaction` lease，由它暂停 World、阻塞输入并终止进行中的 Replay 录制。
-`GameplayDialogView` 是无 World 引用的调用式 DOM View，只返回通用选择或关闭结果。
+固定对白是随 JSON 地图传播的字面字符串或字符串数组。Engine 在每次接触时从第一段开始，
+数组在同一个对话框内依次翻页；结束后按 `(actorId, entityId)` 抑制 500ms 内的重复打开。
+这类请求由 `Game` 消费，不进入 `onWorldEvent()` 或 `onInteractionRequest()`。复杂条件对白与
+购买必须使用不含 `dialogue` 字段的 Entity，由宿主监听 `onInteractionRequest()` 后处理；
+宿主只可调用公共 `GameplayDialogController` 或提交封闭 Gameplay Intent，不能取得
+BehaviorContext、WorldQuery 或 CommandQueue。Web 在处理外部请求期间持有
+`blocking-interaction` lease，由它暂停 World、阻塞输入并终止进行中的 Replay 录制；
+Controller 在实际展示期间再持有可叠加的 Engine dialogue lease。
+`GameplayDialogView` 是 Controller 内部无 World 引用的 DOM View。
 Replay 只回放 Engine gameplay 动作，播放不会重新请求宿主交互。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
@@ -334,12 +334,12 @@ Engine object-interaction
         ↓ Web 只做边界适配
 adventureAugmentation.interaction(context)
         ↓
-GameplayDialogView / Save / public Engine effect
+GameplayDialogController / Save / public Engine effect
 ```
 
 通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock
 `requireKey / deathCountdownSeconds` 等已经由 semantic Definition 定义的实例字段；Engine 不知道
-这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定与循环对白
+这些值来自 Adventure，也不区分官方地图、Editor 地图或其它生产者。固定多页对白
 通过 `dialogue` patch 直接进入纯地图；涉及 Campaign Save 的条件与购买写在地图的
 `interaction` 回调中。Web 只为回调提供对话展示、存档提交与公开 Engine effect 端口。
 Engine 只报告本局的
@@ -420,7 +420,7 @@ EditorLevel / LevelMap
 
 Editor 不导入、不导出 DAT，也不生成 DAT-backed URL share。`BC5R1` 只压缩 UTF-8 JSON，并与 Map schema 版本保持独立。完整合同见 [`features/data-exchange.md`](features/data-exchange.md)。
 
-Inspector 根据 Model 字段合同与 Editor definitions 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑每一轮对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
+Inspector 根据 Model 字段合同与 Editor definitions 生成属性编辑控件。`dialogue` 使用可增删的多行文本框编辑同一会话的每一页对白；Lock 的 `deathCountdownSeconds` 通过同一通用路径编辑，二者都由 JSON round-trip 保留。
 
 Editor Play Test 把 Draft 转成纯 `LevelMap` 后调用正式 Engine；所有地图内 gameplay 规则与普通游玩使用同一实现。
 

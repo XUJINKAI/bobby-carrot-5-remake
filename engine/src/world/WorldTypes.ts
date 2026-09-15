@@ -14,7 +14,6 @@ export interface WorldEvent {
   y?: number;
   direction?: Direction;
   action?: string;
-  text?: string;
   lines?: readonly string[];
   reason?: string;
   data?: Record<string, JsonValue>;
