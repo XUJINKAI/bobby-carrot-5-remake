@@ -7,14 +7,19 @@ import type {
   WorldDeltaSequence,
 } from "./delta/WorldDelta.js";
 import type { MovementRuntime } from "./movement/MovementRuntime.js";
-import type { WorldOutcomeStore } from "./outcome/WorldOutcome.js";
+import type {
+  WorldOutcomeState,
+  WorldOutcomeStore,
+} from "./outcome/WorldOutcome.js";
 import {
   emptyMutationSummary,
   type WorldMutationSummary,
 } from "./movement/WorldStepResult.js";
 import { CommandQueue } from "./behavior/CommandQueue.js";
 import type { WorldQueryApi } from "./behavior/WorldQueryApi.js";
+import type { EntityId } from "./entity/EntityInstance.js";
 import type { EntityStore } from "./entity/EntityStore.js";
+import type { EntityStoreMutationCheckpoint } from "./entity/EntityStore.js";
 import type { SpatialIndex } from "./spatial/SpatialIndex.js";
 import type { WorldEvent } from "./WorldTypes.js";
 
@@ -50,7 +55,17 @@ export class WorldCommitter {
     const record = (payload: Parameters<WorldDeltaSequence["create"]>[0]) =>
       deltas.push(this.sequence.create(payload, clock));
 
-    const pending = queue.drain();
+    const pending = queue.snapshot();
+    const rollback = new WorldCommitRollback(
+      this.entities,
+      this.spatial,
+      this.actions,
+      this.movement,
+      this.actors,
+      this.outcome,
+      this.state,
+      this.sequence,
+    );
     const appendCancellationCommands = (
       index: number,
       cancellationQueue: CommandQueue,
@@ -67,9 +82,10 @@ export class WorldCommitter {
       }
     };
 
-    for (let index = 0; index < pending.length; index += 1) {
-      const command = pending[index]!;
-      switch (command.type) {
+    try {
+      for (let index = 0; index < pending.length; index += 1) {
+        const command = pending[index]!;
+        switch (command.type) {
         case "spawn": {
           const entity = this.entities.spawn(command.entity);
           this.spatial.addEntity(entity);
@@ -78,6 +94,9 @@ export class WorldCommitter {
           break;
         }
         case "destroy": {
+          rollback.captureEntity(command.entityId);
+          rollback.captureActions();
+          rollback.captureMovement();
           const cancellationQueue = new CommandQueue();
           const cancelled = this.actions.cancelOwnedBy(command.entityId, {
             query: this.query,
@@ -112,6 +131,7 @@ export class WorldCommitter {
         case "move": {
           const entity = this.entities.get(command.entityId);
           if (entity) {
+            rollback.captureEntity(command.entityId);
             const from = { ...entity.anchor };
             const to = { x: command.x, y: command.y };
             this.spatial.moveEntity(command.entityId, to);
@@ -123,6 +143,8 @@ export class WorldCommitter {
         case "relocate": {
           const entity = this.entities.get(command.entityId);
           if (entity) {
+            rollback.captureEntity(command.entityId);
+            rollback.captureMovement();
             const motion = this.movement.clearEntity(command.entityId);
             if (motion)
               record({
@@ -141,6 +163,7 @@ export class WorldCommitter {
         case "set-direction": {
           const entity = this.entities.get(command.entityId);
           if (entity) {
+            rollback.captureEntity(command.entityId);
             entity.direction = command.direction;
             this.spatial.rebuildEntity(entity.id);
             record({ type: "entity-direction-changed", entityId: entity.id });
@@ -150,6 +173,7 @@ export class WorldCommitter {
         case "set-state": {
           const entity = this.entities.get(command.entityId);
           if (entity) {
+            rollback.captureEntity(command.entityId);
             entity.state = structuredClone(command.state);
             this.spatial.rebuildEntity(entity.id);
             pushUnique(mutations.stateChanged, command.entityId);
@@ -162,6 +186,8 @@ export class WorldCommitter {
           break;
         }
         case "down-actor": {
+          rollback.captureActors();
+          rollback.captureActions();
           const actor = this.actors.down(
             command.entityId,
             command.reason,
@@ -187,6 +213,8 @@ export class WorldCommitter {
           break;
         }
         case "revive-actor": {
+          rollback.captureActors();
+          rollback.captureMovement();
           const actor = this.actors.revive(command.entityId, clock.worldTimeMs);
           if (!actor) break;
           const cleared = this.movement.clearEntity(actor.entityId);
@@ -206,6 +234,8 @@ export class WorldCommitter {
           break;
         }
         case "eliminate-actor": {
+          rollback.captureActors();
+          rollback.captureActions();
           const actor = this.actors.eliminate(
             command.entityId,
             command.reason,
@@ -231,6 +261,7 @@ export class WorldCommitter {
           break;
         }
         case "lose-world": {
+          rollback.captureOutcome();
           const outcome = this.outcome.lose(
             command.reason,
             clock.worldTimeMs,
@@ -250,18 +281,21 @@ export class WorldCommitter {
           break;
         }
         case "set-global":
+          rollback.captureGlobal(command.key);
           (this.state() as unknown as Record<string, unknown>)[command.key] =
             structuredClone(command.value);
           pushUnique(mutations.globalsChanged, command.key);
           record({ type: "global-state-changed", key: command.key });
           break;
         case "start-action": {
+          rollback.captureActions();
           const id = this.actions.start(command.action);
           pushUnique(mutations.actionsStarted, id);
           record({ type: "action-started", actionId: id });
           break;
         }
         case "cancel-action": {
+          rollback.captureActions();
           const cancellationQueue = new CommandQueue();
           const cancelled = this.actions.cancel(command.actionId, {
             query: this.query,
@@ -276,6 +310,7 @@ export class WorldCommitter {
         case "emit": {
           const event = structuredClone(command.event);
           if (event.type === "object-interaction") {
+            rollback.captureGlobal("nextInteractionRequestId");
             event.requestId = this.state().nextInteractionRequestId;
             this.state().nextInteractionRequestId += 1;
             pushUnique(mutations.globalsChanged, "nextInteractionRequestId");
@@ -288,9 +323,77 @@ export class WorldCommitter {
           record({ type: "world-event", event });
           break;
         }
+        }
       }
+      queue.clear();
+    } catch (error) {
+      rollback.restore();
+      throw error;
     }
     return { events, mutations, deltas };
+  }
+}
+
+class WorldCommitRollback {
+  private readonly entityCheckpoint: EntityStoreMutationCheckpoint;
+  private actionsSnapshot: ReturnType<RuntimeActionScheduler["snapshot"]> | null = null;
+  private movementSnapshot: ReturnType<MovementRuntime["snapshot"]> | null = null;
+  private actorsSnapshot: ReturnType<ActorLifecycleStore["snapshot"]> | null = null;
+  private outcomeSnapshot: WorldOutcomeState | null = null;
+  private readonly globals = new Map<keyof GlobalState, GlobalState[keyof GlobalState]>();
+  private readonly sequenceCheckpoint: number;
+
+  constructor(
+    private readonly entities: EntityStore,
+    private readonly spatial: SpatialIndex,
+    private readonly actions: RuntimeActionScheduler,
+    private readonly movement: MovementRuntime,
+    private readonly actors: ActorLifecycleStore,
+    private readonly outcome: WorldOutcomeStore,
+    private readonly state: () => GlobalState,
+    private readonly sequence: WorldDeltaSequence,
+  ) {
+    this.entityCheckpoint = entities.createMutationCheckpoint();
+    this.sequenceCheckpoint = sequence.checkpoint();
+  }
+
+  captureEntity(entityId: EntityId): void {
+    this.entities.captureForMutation(this.entityCheckpoint, entityId);
+  }
+
+  captureActions(): void {
+    this.actionsSnapshot ??= this.actions.snapshot();
+  }
+
+  captureMovement(): void {
+    this.movementSnapshot ??= this.movement.snapshot();
+  }
+
+  captureActors(): void {
+    this.actorsSnapshot ??= this.actors.snapshot();
+  }
+
+  captureOutcome(): void {
+    this.outcomeSnapshot ??= this.outcome.state;
+  }
+
+  captureGlobal<K extends keyof GlobalState>(key: K): void {
+    if (this.globals.has(key)) return;
+    this.globals.set(key, structuredClone(this.state()[key]));
+  }
+
+  restore(): void {
+    this.entities.restoreMutationCheckpoint(this.entityCheckpoint);
+    if (this.actionsSnapshot) this.actions.restore(this.actionsSnapshot);
+    if (this.movementSnapshot) this.movement.restore(this.movementSnapshot);
+    if (this.actorsSnapshot) this.actors.restore(this.actorsSnapshot);
+    if (this.outcomeSnapshot) this.outcome.restore(this.outcomeSnapshot);
+    for (const [key, value] of this.globals) {
+      (this.state() as unknown as Record<string, unknown>)[key] =
+        structuredClone(value);
+    }
+    this.sequence.restore(this.sequenceCheckpoint);
+    this.spatial.rebuild();
   }
 }
 
