@@ -103,6 +103,7 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
   "finalState": {
     "status": "won",
     "moves": 14,
+    "position": [{ "x": 7, "y": 5 }],
     "elapsedMs": 2000,
     "counters": {
       "collect-carrot": 9,
@@ -133,7 +134,8 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
 不读取或解释其内容，用户可以在 Replay 文本中直接填写。
 
 录制器生成完整的轻量 `finalState` 摘要：`status` 为 `playing / won / dead`；`moves` 记录
-本局成功的玩家移动步数；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
+本局成功的玩家移动步数；`position` 按 GameplaySession 的 actor 顺序记录所有 Bobby 的
+最终 anchor，因此也覆盖多 Bobby 地图；`elapsedMs` 记录取整后的 World 时间，只用于查看回放信息；
 `counters` 累计本次运行中实际发出的 `collect-* / fill-*` WorldEvent，零值省略；
 `completedConditions` 展开并列出终点已经满足的具体 Goal 叶子条件。
 它不复制完整 World 或 Entity state，因此地图中与终局无关的细节调整不会扩大 fixture

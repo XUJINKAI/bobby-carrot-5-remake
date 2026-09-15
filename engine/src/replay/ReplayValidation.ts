@@ -157,6 +157,7 @@ function validateFinalState(value: Replay["finalState"]): void {
   requireFields(value, [
     "status",
     "moves",
+    "position",
     "elapsedMs",
     "counters",
     "completedConditions",
@@ -168,6 +169,19 @@ function validateFinalState(value: Replay["finalState"]): void {
     (!Number.isInteger(value.moves) || value.moves < 0)
   )
     throw new Error("Replay finalState.moves 必须是非负整数");
+  if (value.position !== undefined) {
+    if (!Array.isArray(value.position))
+      throw new Error("Replay finalState.position 必须是数组");
+    for (const position of value.position) {
+      if (
+        !isPlainObject(position) ||
+        !Number.isInteger(position.x) ||
+        !Number.isInteger(position.y)
+      )
+        throw new Error("Replay finalState.position 包含无效位置");
+      requireFields(position, ["x", "y"]);
+    }
+  }
   if (
     value.elapsedMs !== undefined &&
     (!Number.isInteger(value.elapsedMs) || value.elapsedMs < 0)

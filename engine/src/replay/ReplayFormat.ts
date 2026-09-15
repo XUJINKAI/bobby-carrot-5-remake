@@ -70,6 +70,8 @@ export type ReplayCompletedCondition = { type: GoalType };
 export interface ReplayActualFinalState {
   status: ReplayFinalStatus;
   moves: number;
+  /** 按 GameplaySession actor 顺序记录所有 Bobby 的最终 anchor。 */
+  position: CellPosition[];
   /** 仅记录本局 World 时间，不参与 Replay 结果一致性校验。 */
   elapsedMs: number;
   counters: Record<string, number>;

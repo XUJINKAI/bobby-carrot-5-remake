@@ -96,6 +96,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.deepEqual(replay.finalState, {
     status: "won",
     moves: 1,
+    position: [{ x: 1, y: 0 }],
     elapsedMs: 150,
     counters: { "collect-carrot": 1 },
     completedConditions: [{ type: "carrot" }],
@@ -127,6 +128,13 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   assert.deepEqual(
     replayVerificationStates(report.actual, { moves: 1 }),
     { actual: { moves: 1 }, expected: { moves: 1 } },
+  );
+  assert.deepEqual(
+    replayVerificationStates(report.actual, { position: [{ x: 2, y: 0 }] }),
+    {
+      actual: { position: [{ x: 1, y: 0 }] },
+      expected: { position: [{ x: 2, y: 0 }] },
+    },
   );
   const replayWithoutAssertions = structuredClone(replay);
   replayWithoutAssertions.finalState = {};
@@ -622,6 +630,10 @@ test("Replay 使用数字 channel 表达多 Bobby 控制输入", () => {
   assert.deepEqual(replay.frames.map((frame) => frame.groups[0].intents[0]), [
     { type: "move", direction: "right" },
     { type: "move", direction: "left", channel: 1 },
+  ]);
+  assert.deepEqual(replay.finalState.position, [
+    { x: 1, y: 0 },
+    { x: 2, y: 0 },
   ]);
   assertReplayMatches(level, replay, 2);
 });
