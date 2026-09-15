@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { loadReplayAsset } from "../src/pages/game/replayAssets.ts";
+import {
+  loadReplayAsset,
+  saveReplayAsset,
+} from "../src/pages/game/replayAssets.ts";
 
 test("loads a built-in replay as editable source text", async () => {
   const text = JSON.stringify({ formatVersion: 1, meta: {} });
@@ -24,4 +27,15 @@ test("reports a missing built-in replay", async () => {
     ),
     /当前关卡暂无内置过法/,
   );
+});
+
+test("保存内置过法向加载地址写入当前文本", async () => {
+  const url = "/assets/replays/original/1-1.json";
+  const text = '{"formatVersion":1,"frames":[]}';
+  await saveReplayAsset(url, text, async (requestedUrl, options) => {
+    assert.equal(requestedUrl, url);
+    assert.equal(options?.method, "PUT");
+    assert.equal(options?.body, text);
+    return new Response(null, { status: 204 });
+  });
 });

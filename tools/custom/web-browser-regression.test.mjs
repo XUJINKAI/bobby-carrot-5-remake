@@ -323,6 +323,7 @@ async function verifyAdventureDeveloperTools(cdp, url) {
       ),
     20_000,
   );
+  await verifyReplaySaveButton(cdp, sessionId);
 
   await cdp.evaluate(
     sessionId,
@@ -378,6 +379,7 @@ async function verifyReplayPanel(cdp, url) {
     ),
     20_000,
   );
+  await verifyReplaySaveButton(cdp, sessionId);
   await clickWhenPresent(cdp, sessionId, "#replay-record");
   await waitFor(async () =>
     Boolean(
@@ -684,6 +686,18 @@ async function verifyReplayPanel(cdp, url) {
     throw new Error("Replay mobile panel changed the canvas layout");
   if (mobileLayout.panelLeft < mobileLayout.stageLeft + 9)
     throw new Error("Replay mobile panel did not float inside the game stage");
+}
+
+async function verifyReplaySaveButton(cdp, sessionId) {
+  const adjacent = await cdp.evaluate(
+    sessionId,
+    `(() => {
+      const load = document.querySelector('[data-replay-action="load-builtin"]');
+      const save = document.querySelector('[data-replay-action="save-builtin"]');
+      return Boolean(load && save && load.parentElement === save.parentElement);
+    })()`,
+  );
+  if (!adjacent) throw new Error("内置过法加载与保存按钮未并排显示");
 }
 
 async function clickWhenPresent(cdp, sessionId, selector) {

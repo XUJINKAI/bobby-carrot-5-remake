@@ -116,6 +116,15 @@ test("Replay 面板可按游戏来源隐藏内置过法入口", () => {
   assert.match(replayBindingSource, /if \(!builtinReplayUrl\) return/);
 });
 
+test("开发模式在加载内置过法旁显示同路径保存按钮", () => {
+  const loadIndex = replayPanelSource.indexOf('data-replay-action="load-builtin"');
+  const saveIndex = replayPanelSource.indexOf('data-replay-action="save-builtin"');
+  assert.ok(loadIndex > -1 && saveIndex > loadIndex);
+  assert.match(replayPanelSource, /const canSaveBuiltin = import\.meta\.env\.DEV/);
+  assert.match(replayPanelSource, /v-if="canSaveBuiltin"/);
+  assert.match(replayBindingSource, /saveReplayAsset\(builtinReplayUrl, output\.value\)/);
+});
+
 test("Replay 起点与终点跳转按钮显示对应方向的回转图标", () => {
   assert.match(
     replayPanelSource,

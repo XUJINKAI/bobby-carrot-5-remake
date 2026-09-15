@@ -190,7 +190,10 @@ Explore 游戏页底栏使用 `PhChecks` 显示基础地图的验证结果，绿
 Explore 游戏页底栏左侧提供“录制”入口。“重新开始并录制”从关卡正式起点创建一次 take，
 录制期间同一按钮用于停止；停止后立即调用无头 Runner 从 tick 0 复跑到录制终点。
 Replay JSON 可以直接编辑，并可从起点播放、暂停、停止、跳转起点或终点、复制到剪贴板或
-下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。面板速率是
+下载为 Engine 测试 fixture；“加载内置过法”按当前关卡读取仓库 fixture。在 `npm run dev`
+模式下，旁边的“保存内置过法”把当前 Replay 文本写到同一个
+`assets/replays/<collection>/<map-id>.json` 地址；Explore 与 Adventure 使用相同的路径
+规则。保存后开发服务器沿用仓库现有的内置过法验证与页面刷新流程。面板速率是
 Engine 的常驻 `timeScale`，同时作用于普通游戏、
 录制和播放。输入合法正数时立即更新 World 与 Presentation；输入为空或非法时保留最近
 一次合法倍率，并在尝试播放时标红。开始、暂停和停止 Replay 均不改变已选择的倍率。快退

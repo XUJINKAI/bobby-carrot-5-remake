@@ -6,7 +6,11 @@ import {
   type ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
-import { loadReplayAsset, parseReplayText } from "./replayAssets.js";
+import {
+  loadReplayAsset,
+  parseReplayText,
+  saveReplayAsset,
+} from "./replayAssets.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
@@ -75,12 +79,16 @@ export function bindReplayPanel(options: {
   const loadBuiltin = panel.querySelector<HTMLButtonElement>(
     '[data-replay-action="load-builtin"]',
   );
+  const saveBuiltin = panel.querySelector<HTMLButtonElement>(
+    '[data-replay-action="save-builtin"]',
+  );
   const builtinReplayUrl = options.builtinReplayUrl;
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = options.initialOpen ?? false;
   let appliedTimeScale = 1;
   let loadingBuiltin = false;
+  let savingBuiltin = false;
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
@@ -302,6 +310,23 @@ export function bindReplayPanel(options: {
     }
   };
 
+  const saveBuiltinReplay = async (): Promise<void> => {
+    if (!builtinReplayUrl) return;
+    savingBuiltin = true;
+    verification.textContent = "正在保存内置过法";
+    verification.classList.remove("failed");
+    update();
+    try {
+      await saveReplayAsset(builtinReplayUrl, output.value);
+      if (!destroyed) verification.textContent = "内置过法已保存";
+    } catch (error) {
+      if (!destroyed) showError(error);
+    } finally {
+      savingBuiltin = false;
+      if (!destroyed) update();
+    }
+  };
+
   const onOutputInput = (): void => {
     options.game.stopReplayPlayback();
     clearReplayParseTimer();
@@ -355,6 +380,7 @@ export function bindReplayPanel(options: {
     else if (action === "copy") void copyReplay();
     else if (action === "download") downloadReplay();
     else if (action === "load-builtin") void loadBuiltinReplay();
+    else if (action === "save-builtin") void saveBuiltinReplay();
   };
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
@@ -397,8 +423,12 @@ export function bindReplayPanel(options: {
     copy.disabled = output.value.length === 0 || loadingBuiltin;
     download.disabled = output.value.length === 0 || loadingBuiltin;
     if (loadBuiltin) {
-      loadBuiltin.disabled = recording || playing || loadingBuiltin;
+      loadBuiltin.disabled = recording || playing || loadingBuiltin || savingBuiltin;
       loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+    }
+    if (saveBuiltin) {
+      saveBuiltin.disabled = savingBuiltin || loadingBuiltin;
+      saveBuiltin.textContent = savingBuiltin ? "保存中…" : "保存内置过法";
     }
   };
   const unsubscribeRecordingAbort = options.game.on(
