@@ -89,3 +89,26 @@ export class EditorPreview {
     };
   }
 }
+
+const previewCache = new WeakMap<
+  EditorMap,
+  WeakMap<EngineEnvironment, EditorPreview>
+>();
+
+/** 同一不可变 Editor revision 与 Environment 只建立一次空间投影。 */
+export function editorPreviewFor(
+  level: EditorMap,
+  environment: EngineEnvironment,
+): EditorPreview {
+  let byEnvironment = previewCache.get(level);
+  if (!byEnvironment) {
+    byEnvironment = new WeakMap();
+    previewCache.set(level, byEnvironment);
+  }
+  let preview = byEnvironment.get(environment);
+  if (!preview) {
+    preview = new EditorPreview(level, environment);
+    byEnvironment.set(environment, preview);
+  }
+  return preview;
+}

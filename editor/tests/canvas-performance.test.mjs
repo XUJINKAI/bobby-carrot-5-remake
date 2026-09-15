@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { builtinEngineEnvironment, EntityStore } from "../../engine/dist/public.js";
 import { EditorCanvasRenderer } from "../dist/canvas/EditorCanvasRenderer.js";
 import { EditorEntityPreviewRenderer } from "../dist/canvas/EditorEntityPreviewRenderer.js";
-import { EditorPreview } from "../dist/authoring/EditorPreview.js";
+import {
+  EditorPreview,
+  editorPreviewFor,
+} from "../dist/authoring/EditorPreview.js";
 import { createPlacementPreview } from "../dist/authoring/EditorPlacementPreview.js";
 
 function canvas() {
@@ -106,6 +109,24 @@ test("大地图交互复用底图，放置预览只实例化待放置对象", (t
   assert.ok(overlay.draws() > 0);
   assert.ok(sizes.length > 0);
   assert.ok(sizes.every((size) => size === 1));
+});
+
+test("同一不可变关卡 revision 复用空间投影", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "空间投影缓存" },
+    width: 2,
+    height: 1,
+    entities: [{ type: "grass", variant: "ts-10-1", x: 0, y: 0 }],
+  };
+  assert.equal(
+    editorPreviewFor(level, builtinEngineEnvironment),
+    editorPreviewFor(level, builtinEngineEnvironment),
+  );
+  assert.notEqual(
+    editorPreviewFor(structuredClone(level), builtinEngineEnvironment),
+    editorPreviewFor(level, builtinEngineEnvironment),
+  );
 });
 
 test("放置预览保留邻格与多格身份，并隔离替换结果", () => {

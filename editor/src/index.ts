@@ -38,7 +38,7 @@ export { EditorDocument } from "./document/EditorDocument.js";
 export type { EditorSnapshot, EditorDocumentListener } from "./document/EditorDocument.js";
 export { addEntity, addEntities, removeEntity, removeEntities, moveEntity, replaceEntity, replaceEntities, reorderEntityStack, setEntityDirection, updateEntityField, updateMetadata, resizeDocument, updateWinCondition, updateMaxMoves, updateMaxTimeSeconds } from "./document/commands.js";
 export type { EditorCommand, EditorEntityReplacement } from "./document/commands.js";
-export { EditorPreview } from "./authoring/EditorPreview.js";
+export { EditorPreview, editorPreviewFor } from "./authoring/EditorPreview.js";
 export type { EditorCellInspection, EditorPresenceInspection } from "./authoring/EditorPreview.js";
 export {
   entityCells,

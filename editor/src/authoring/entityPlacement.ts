@@ -25,7 +25,7 @@ import type {
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
-import { EditorPreview } from "./EditorPreview.js";
+import { EditorPreview, editorPreviewFor } from "./EditorPreview.js";
 
 export interface Cell {
   x: number;
@@ -107,7 +107,7 @@ export function resolvePlacement(
     return { entity, cells, replace: [], warnings: [], valid: false };
   }
 
-  const preview = existingPreview ?? new EditorPreview(level, environment);
+  const preview = existingPreview ?? editorPreviewFor(level, environment);
   const stackSlot = authoring?.stackSlot;
   if (!stackSlot) {
     return {

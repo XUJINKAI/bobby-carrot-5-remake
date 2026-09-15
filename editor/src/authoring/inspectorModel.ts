@@ -20,6 +20,7 @@ import type { EditorMap, EntityRef } from "../level/types.js";
 import { createPlacementPreview } from "./EditorPlacementPreview.js";
 import {
   EditorPreview,
+  editorPreviewFor,
   type EditorPresenceInspection,
 } from "./EditorPreview.js";
 import { isSurfaceEntityType } from "./surfaceAuthoring.js";
@@ -98,7 +99,7 @@ export function buildPlacementInspectorPreview(
     };
   }
   const selection = { anchor: cell, focus: cell };
-  const preview = new EditorPreview(level, environment);
+  const preview = editorPreviewFor(level, environment);
   const current = cellInspectorModel(
     selection,
     cell,
@@ -167,7 +168,7 @@ export function buildInspectorModel(
   const catalog = environment.catalog;
   if (!selection) return emptyInspector();
   const rect = selectionRect(selection);
-  const preview = new EditorPreview(level, environment);
+  const preview = editorPreviewFor(level, environment);
   if (rect.width === 1 && rect.height === 1) {
     const layers = cellLayers(preview, editor, rect.left, rect.top);
     return cellInspectorModel(selection, { x: rect.left, y: rect.top }, layers);

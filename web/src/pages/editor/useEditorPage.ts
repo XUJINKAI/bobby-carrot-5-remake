@@ -15,6 +15,7 @@ import {
   defaultSurfaceBrush,
   detectSurfaceTheme,
   enableEditorRules,
+  editorPreviewFor,
   fillSurface,
   inspectEditorRules,
   isSurfaceEntityType,
@@ -43,6 +44,7 @@ import {
   updateMetadata,
   type Cell,
   type EditorClipboard,
+  type EditorCommand,
   type EditorMap,
   type EditorPlacementPreset,
   type EditorResizeEdges,
@@ -82,6 +84,8 @@ import {
 
 export type EditorLeftPanel = "palette" | "surface";
 
+const EDITOR_AUTOSAVE_DELAY_MS = 200;
+
 export function useEditorPage(initialLevel: EditorMap) {
   const environment = builtinEngineEnvironment;
   const catalog = environment.catalog;
@@ -90,7 +94,11 @@ export function useEditorPage(initialLevel: EditorMap) {
   const first = palette.flatMap((group) => group.rows.flat())[0];
   if (!first) throw new Error("Editor Palette 不能为空");
 
+  const ruleDetector = new EditorRuleDetector();
   const document = new EditorDocument(initialLevel);
+  const initialDetected = ruleDetector.detect(initialLevel, environment);
+  if (initialDetected.length > 0)
+    document.execute(enableEditorRules(environment, initialDetected));
   const snapshot = shallowRef<EditorSnapshot>(document.getSnapshot());
   const paletteTool = ref<EditorTool>("select");
   const placement = ref<PaletteItem>(first);
@@ -106,19 +114,49 @@ export function useEditorPage(initialLevel: EditorMap) {
   const paletteSize = ref(readPaletteSize());
   let transactionActive = false;
   const eraseVisited = new Set<string>();
-  const ruleDetector = new EditorRuleDetector();
+  let pendingAutosave: EditorMap | null = null;
+  let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   const unsubscribe = document.subscribe((next) => {
     snapshot.value = next;
-    storeEditorAutosave(next.level as EditorMap);
-    const detected = ruleDetector.detect(next.level as EditorMap, environment);
-    if (detected.length > 0)
-      document.execute(enableEditorRules(environment, detected));
+    scheduleAutosave(next.level as EditorMap);
+    ruleDetector.detect(next.level as EditorMap, environment);
   });
-  onUnmounted(unsubscribe);
+  onUnmounted(() => {
+    unsubscribe();
+    flushAutosave();
+  });
 
   const currentLevel = (): EditorMap => snapshot.value.level as EditorMap;
-  const preview = (): EditorPreview => new EditorPreview(currentLevel(), environment);
+  const preview = (): EditorPreview =>
+    editorPreviewFor(currentLevel(), environment);
+
+  function execute(command: EditorCommand): boolean {
+    return document.execute({
+      apply(level) {
+        const next = command.apply(level);
+        if (next === level) return level;
+        const detected = ruleDetector.detect(next, environment);
+        return detected.length > 0
+          ? enableEditorRules(environment, detected).apply(next)
+          : next;
+      },
+    });
+  }
+
+  function scheduleAutosave(level: EditorMap): void {
+    pendingAutosave = level;
+    if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(flushAutosave, EDITOR_AUTOSAVE_DELAY_MS);
+  }
+
+  function flushAutosave(): void {
+    if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    const level = pendingAutosave;
+    pendingAutosave = null;
+    if (level) storeEditorAutosave(level);
+  }
   const tool = computed<EditorTool>(() =>
     leftPanel.value === "surface"
       ? surfaceTool.value === "rect"
@@ -213,7 +251,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function setSurfaceTheme(theme: SurfaceTheme): boolean {
     activateSurface();
-    return document.execute(applySurfaceTheme(catalog, theme));
+    return execute(applySurfaceTheme(catalog, theme));
   }
 
   function setSurfacePattern(pattern: SurfacePattern): void {
@@ -300,7 +338,7 @@ export function useEditorPage(initialLevel: EditorMap) {
 
   function surfacePrimaryStart(cell: Cell): void {
     if (surfaceTool.value === "fill") {
-      document.execute(fillSurface(environment, currentLevel(), cell, surfaceBrush.value));
+      execute(fillSurface(environment, currentLevel(), cell, surfaceBrush.value));
       return;
     }
     if (surfaceTool.value === "rect") {
@@ -309,7 +347,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     }
     document.beginTransaction();
     transactionActive = true;
-    document.execute(paintSurface(environment, [cell], surfaceBrush.value));
+    execute(paintSurface(environment, [cell], surfaceBrush.value));
   }
 
   function surfacePrimaryMove(cell: Cell): void {
@@ -319,7 +357,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       return;
     }
     if (surfaceTool.value === "brush" && transactionActive)
-      document.execute(paintSurface(environment, [cell], surfaceBrush.value));
+      execute(paintSurface(environment, [cell], surfaceBrush.value));
   }
 
   function fillSelectionWithBrush(cell: Cell): boolean {
@@ -330,7 +368,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       leftPanel.value === "surface" &&
       surfaceTool.value === "brush"
     ) {
-      document.execute(paintSurface(environment, cells, surfaceBrush.value));
+      execute(paintSurface(environment, cells, surfaceBrush.value));
       return true;
     }
     if (
@@ -362,7 +400,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function applyPaletteBrush(cell: Cell): void {
-    document.execute(placeEntity(environment, placement.value, cell, {}, editor));
+    execute(placeEntity(environment, placement.value, cell, {}, editor));
   }
 
   function applyErase(cell: Cell): void {
@@ -375,7 +413,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       { anchor: cell, focus: cell },
       editor,
     );
-    if (refs.length > 0) document.execute(removeEntities(refs));
+    if (refs.length > 0) execute(removeEntities(refs));
   }
 
   function selectCell(cell: Cell): void {
@@ -405,7 +443,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   function cut(): boolean {
     if (!copy()) return false;
     const refs = entitySelectedRefs();
-    return refs.length > 0 && document.execute(removeEntities(refs));
+    return refs.length > 0 && execute(removeEntities(refs));
   }
 
   function deleteSelection(): boolean {
@@ -416,20 +454,20 @@ export function useEditorPage(initialLevel: EditorMap) {
       mapSelection.value,
       editor,
     );
-    return refs.length > 0 && document.execute(removeEntities(refs));
+    return refs.length > 0 && execute(removeEntities(refs));
   }
 
   function deleteLayer(entityIndex: number): boolean {
-    return document.execute(removeEntities([{ index: entityIndex }]));
+    return execute(removeEntities([{ index: entityIndex }]));
   }
 
   function deleteSelectedType(type: EntityType): boolean {
     const refs = selectedRefsOfType(type);
-    return refs.length > 0 && document.execute(removeEntities(refs));
+    return refs.length > 0 && execute(removeEntities(refs));
   }
 
   function reorderLayers(refsTopToBottom: readonly number[]): boolean {
-    return document.execute(
+    return execute(
       reorderEntityStack(refsTopToBottom.map((index) => ({ index }))),
     );
   }
@@ -437,7 +475,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   function paste(origin: Cell): boolean {
     const source = clipboard.value;
     if (!source || source.entities.length === 0) return false;
-    const changed = document.execute({
+    const changed = execute({
       apply(level) {
         return pasteClipboard(level, source, origin);
       },
@@ -459,7 +497,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     if (!entity) return false;
     const variant = editor.entities?.[entity.type]?.variants?.[index];
     if (!variant) return false;
-    return document.execute(
+    return execute(
       replaceEntity({ index: entityIndex }, applyEditorVariant(entity, variant)),
     );
   }
@@ -479,7 +517,7 @@ export function useEditorPage(initialLevel: EditorMap) {
           replacement !== null,
       );
     return (
-      replacements.length > 0 && document.execute(replaceEntities(replacements))
+      replacements.length > 0 && execute(replaceEntities(replacements))
     );
   }
 
@@ -492,7 +530,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     const replacement = replaceSurfaceVisualVariant(entity, variantType);
     return Boolean(
       replacement &&
-      document.execute(replaceEntity({ index: entityIndex }, replacement)),
+      execute(replaceEntity({ index: entityIndex }, replacement)),
     );
   }
 
@@ -513,7 +551,7 @@ export function useEditorPage(initialLevel: EditorMap) {
           replacement !== null,
       );
     return (
-      replacements.length > 0 && document.execute(replaceEntities(replacements))
+      replacements.length > 0 && execute(replaceEntities(replacements))
     );
   }
 
@@ -536,7 +574,7 @@ export function useEditorPage(initialLevel: EditorMap) {
         step,
       );
       if (!next) return false;
-      return document.execute(replaceEntity(inspection.ref, next));
+      return execute(replaceEntity(inspection.ref, next));
     }
     const definition = editor.entities?.[placement.value.type];
     const next = cyclePlacementVariant(
@@ -606,7 +644,7 @@ export function useEditorPage(initialLevel: EditorMap) {
       else next[key] = coerceEditorFieldValue(field, raw);
       return [{ ref, entity: next }];
     });
-    if (replacements.length > 0) document.execute(replaceEntities(replacements));
+    if (replacements.length > 0) execute(replaceEntities(replacements));
   }
 
   function selectedRefsOfType(type: EntityType): EntityRef[] {
@@ -617,7 +655,7 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function resize(edges: EditorResizeEdges): void {
-    const changed = document.execute(resizeMapEdges(catalog, edges));
+    const changed = execute(resizeMapEdges(catalog, edges));
     if (!changed || !mapSelection.value) return;
     const map = currentLevel();
     mapSelection.value = {
@@ -627,12 +665,16 @@ export function useEditorPage(initialLevel: EditorMap) {
   }
 
   function setRule(kind: EditorRuleKind, enabled: boolean): void {
-    document.execute(updateEditorRule(environment, kind, enabled));
+    execute(updateEditorRule(environment, kind, enabled));
   }
 
   function loadLevel(level: EditorMap): void {
     ruleDetector.reset();
-    document.load(level);
+    const detected = ruleDetector.detect(level, environment);
+    const prepared = detected.length > 0
+      ? enableEditorRules(environment, detected).apply(level)
+      : level;
+    document.load(prepared);
   }
 
   function setPaletteSize(delta: number): void {
@@ -716,17 +758,17 @@ export function useEditorPage(initialLevel: EditorMap) {
     setRule,
     loadLevel,
     setMaxMoves(value: number | null): void {
-      document.execute(updateMaxMoves(value));
+      execute(updateMaxMoves(value));
     },
     setMaxTimeSeconds(value: number | null): void {
-      document.execute(updateMaxTimeSeconds(value));
+      execute(updateMaxTimeSeconds(value));
     },
     updateMetadata(metadata: {
       name: string;
       author?: string;
       note?: string;
     }): void {
-      document.execute(updateMetadata(metadata));
+      execute(updateMetadata(metadata));
     },
   };
 }

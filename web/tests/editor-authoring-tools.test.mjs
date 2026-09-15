@@ -11,6 +11,10 @@ const pageState = fs.readFileSync(
   new URL("../src/pages/editor/useEditorPage.ts", import.meta.url),
   "utf8",
 );
+const canvas = fs.readFileSync(
+  new URL("../src/pages/editor/EditorCanvas.vue", import.meta.url),
+  "utf8",
+);
 const workspace = fs.readFileSync(
   new URL("../src/pages/editor/EditorWorkspace.vue", import.meta.url),
   "utf8",
@@ -124,10 +128,22 @@ test("Editor 右键切换当前面板的选择工具并建立单格选区", () =
 
 test("新检测到的关卡规则默认启用且导入时重置检测状态", () => {
   assert.match(pageState, /ruleDetector = new EditorRuleDetector\(\)/);
-  assert.match(pageState, /ruleDetector\.detect\(next\.level as EditorMap, environment\)/);
-  assert.match(pageState, /document\.execute\(enableEditorRules\(environment, detected\)\)/);
-  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(level\)/);
+  assert.match(pageState, /function execute\(command: EditorCommand\)[\s\S]*ruleDetector\.detect\(next, environment\)[\s\S]*enableEditorRules\(environment, detected\)\.apply\(next\)/);
+  const subscription = pageState.match(
+    /const unsubscribe = document\.subscribe\(\(next\) => \{([\s\S]*?)\n  \}\);/,
+  )?.[1] ?? "";
+  assert.doesNotMatch(subscription, /document\.execute\(/);
+  assert.match(pageState, /function loadLevel[\s\S]*ruleDetector\.reset\(\)[\s\S]*document\.load\(prepared\)/);
   assert.match(page, /page\.loadLevel\(level\)/);
+});
+
+test("Editor 合并高频持久化与 Canvas 重绘", () => {
+  assert.match(pageState, /EDITOR_AUTOSAVE_DELAY_MS = 200/);
+  assert.match(pageState, /setTimeout\(flushAutosave, EDITOR_AUTOSAVE_DELAY_MS\)/);
+  assert.match(pageState, /onUnmounted\([\s\S]*flushAutosave\(\)/);
+  assert.match(canvas, /requestAnimationFrame\(flushRender\)/);
+  assert.match(canvas, /if \(baseRenderPending\) render\(\)/);
+  assert.match(canvas, /cancelAnimationFrame\(renderFrame\)/);
 });
 
 test("Selection is non-painting and Brush fills an existing rectangular selection", () => {

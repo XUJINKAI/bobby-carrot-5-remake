@@ -3,7 +3,7 @@ import type { LevelEntity } from "@bobby/model";
 import type { EditorClipboard, EditorSelection } from "../definitions/types.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
-import { EditorPreview } from "./EditorPreview.js";
+import { editorPreviewFor } from "./EditorPreview.js";
 import type { Cell } from "./entityPlacement.js";
 import { selectedEntityRefs, selectionRect } from "./selection.js";
 import { isSurfaceEntityType } from "./surfaceAuthoring.js";
@@ -16,7 +16,7 @@ export function copySelection(
   return copyRefs(
     level,
     selection,
-    selectedEntityRefs(level, new EditorPreview(level, environment), selection),
+    selectedEntityRefs(level, editorPreviewFor(level, environment), selection),
   );
 }
 
@@ -27,7 +27,7 @@ export function copyEntitySelection(
 ): EditorClipboard {
   const refs = selectedEntityRefs(
     level,
-    new EditorPreview(level, environment),
+    editorPreviewFor(level, environment),
     selection,
   ).filter((ref) => {
     const entity = level.entities[ref.index];

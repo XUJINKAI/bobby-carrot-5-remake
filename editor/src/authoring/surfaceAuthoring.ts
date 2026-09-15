@@ -28,7 +28,7 @@ import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
 import type { Cell } from "./entityPlacement.js";
-import { EditorPreview } from "./EditorPreview.js";
+import { editorPreviewFor } from "./EditorPreview.js";
 
 export {
   SURFACE_TERRAIN_GROUPS,
@@ -209,7 +209,7 @@ export function paintSurface(
       if (target.size === 0) return level;
       const terrain = surfaceTerrain(brush.terrain);
       const slot = terrain.slot;
-      const preview = new EditorPreview(level, environment);
+      const preview = editorPreviewFor(level, environment);
       const stackOrders = new Map<string, number>();
       for (const key of target) {
         const cell = parseCellKey(key);

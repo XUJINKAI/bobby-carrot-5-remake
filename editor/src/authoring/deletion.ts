@@ -5,7 +5,7 @@ import type {
   EditorSelection,
 } from "../definitions/types.js";
 import type { EditorMap, EntityRef } from "../level/types.js";
-import { EditorPreview } from "./EditorPreview.js";
+import { EditorPreview, editorPreviewFor } from "./EditorPreview.js";
 import type { Cell } from "./entityPlacement.js";
 import { selectionRect } from "./selection.js";
 import { isSurfaceEntityType } from "./surfaceAuthoring.js";
@@ -38,7 +38,7 @@ export function resolveDeletion(
   editor: EditorDefinition = builtinEditorDefinition,
 ): EntityRef[] {
   const rect = selectionRect(selection);
-  const preview = new EditorPreview(level, environment);
+  const preview = editorPreviewFor(level, environment);
   if (rect.width === 1 && rect.height === 1) {
     const target = resolveDeletionTarget(
       level,
@@ -81,7 +81,7 @@ function deletionCandidatesAt(
   level: EditorMap,
   environment: EngineEnvironment,
   cell: Cell,
-  preview = new EditorPreview(level, environment),
+  preview = editorPreviewFor(level, environment),
 ) {
   const inspection = preview.inspectCell(cell.x, cell.y);
   return inspection.presences

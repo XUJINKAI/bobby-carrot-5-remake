@@ -45,6 +45,9 @@ const resizePreview = ref<EditorResizeResult | null>(null);
 const viewport = new EditorViewport();
 let renderer: EditorCanvasRenderer | null = null;
 let input: EditorCanvasInput | null = null;
+let renderFrame: number | null = null;
+let baseRenderPending = false;
+let interactionRenderPending = false;
 let resizeDrag: null | {
   pointerId: number;
   corner: "nw" | "ne" | "sw" | "se";
@@ -65,6 +68,22 @@ function render(): void {
     stage.value.style.height = `${props.level.height * EDITOR_TILE_SIZE}px`;
   }
   renderer?.render(renderState());
+}
+
+function scheduleRender(base: boolean): void {
+  if (base) baseRenderPending = true;
+  else interactionRenderPending = true;
+  if (renderFrame !== null) return;
+  renderFrame = requestAnimationFrame(flushRender);
+}
+
+function flushRender(): void {
+  renderFrame = null;
+  if (baseRenderPending) render();
+  else if (interactionRenderPending)
+    renderer?.renderInteraction(renderState());
+  baseRenderPending = false;
+  interactionRenderPending = false;
 }
 
 function renderState() {
@@ -154,12 +173,12 @@ function fitInitialViewport(): void {
 
 watch(
   () => [props.level, props.revision],
-  render,
+  () => scheduleRender(true),
 );
 
 watch(
   () => [props.tool, props.placement, props.selection, props.hover],
-  () => renderer?.renderInteraction(renderState()),
+  () => scheduleRender(false),
   { deep: true },
 );
 
@@ -189,7 +208,10 @@ onMounted(async () => {
   requestAnimationFrame(fitInitialViewport);
 });
 
-onBeforeUnmount(() => input?.destroy());
+onBeforeUnmount(() => {
+  if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+  input?.destroy();
+});
 </script>
 
 <template>

@@ -3,7 +3,7 @@ import type { GoalType, WinCondition } from "@bobby/model";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
-import { EditorPreview } from "./EditorPreview.js";
+import { editorPreviewFor } from "./EditorPreview.js";
 
 export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit" | "golden-carrot";
 
@@ -45,7 +45,7 @@ export function inspectEditorRules(
   environment: EngineEnvironment,
 ): readonly EditorRuleCapability[] {
   const conditions = winConditions(map.rules?.win);
-  const preview = new EditorPreview(map, environment);
+  const preview = editorPreviewFor(map, environment);
   const available = (type: GoalType) =>
     goalAvailable(type, preview.entities, preview.spatial, environment);
   const availability: Record<EditorRuleKind, boolean> = {

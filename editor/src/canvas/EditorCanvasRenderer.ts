@@ -18,6 +18,7 @@ import {
 } from "../authoring/entityPlacement.js";
 import {
   EditorPreview,
+  editorPreviewFor,
   type EditorPresenceInspection,
 } from "../authoring/EditorPreview.js";
 import { selectionRect } from "../authoring/selection.js";
@@ -89,7 +90,7 @@ export class EditorCanvasRenderer {
     context.fillStyle = "#09110c";
     context.fillRect(0, 0, cssWidth, cssHeight);
 
-    const preview = new EditorPreview(level, this.environment);
+    const preview = editorPreviewFor(level, this.environment);
     this.preview = preview;
     const source = createIndexedSpatialSceneSource(
       preview.entities,
