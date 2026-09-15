@@ -117,6 +117,11 @@ test("输入门禁内的模态消费者仍接收 WASD、方向键与 Swipe", () 
 
     globalThis.window.dispatch("keydown", keyboard("w"));
     globalThis.window.dispatch("keydown", keyboard("ArrowLeft"));
+    globalThis.window.dispatch(
+      "keydown",
+      keyboard("ArrowLeft", { repeat: true }),
+    );
+    globalThis.window.dispatch("keydown", keyboard("Enter", { repeat: true }));
     view.canvas.dispatch("pointerdown", pointer(1, 10, 10));
     view.canvas.dispatch("pointermove", pointer(1, 50, 12));
     view.canvas.dispatch("pointerup", pointer(1, 50, 12));

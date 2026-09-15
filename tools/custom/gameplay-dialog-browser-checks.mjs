@@ -47,7 +47,10 @@ export async function verifyGameplayDialogKeyboard(
     })()`,
   );
   if (!typing) throw new Error("Gameplay Dialog did not type text progressively");
-  await dispatchKey(cdp, sessionId, "Enter", 13);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
   await expectSelected(cdp, sessionId, "second");
   const optionStyles = await cdp.evaluate(
     sessionId,
@@ -79,12 +82,27 @@ export async function verifyGameplayDialogKeyboard(
   ) {
     throw new Error("Gameplay Dialog selected option is not visually distinct");
   }
-  await dispatchKey(cdp, sessionId, "ArrowRight", 39);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "right",
+  });
   await expectSelected(cdp, sessionId, "third");
-  await dispatchKey(cdp, sessionId, "ArrowLeft", 37);
-  await dispatchKey(cdp, sessionId, "ArrowLeft", 37);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "left",
+  });
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "left",
+  });
   await expectSelected(cdp, sessionId, "first");
-  await dispatchKey(cdp, sessionId, "Enter", 13);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
 
   await waitForBrowserState(async () =>
     Boolean(
@@ -110,8 +128,14 @@ export async function verifyGameplayDialogKeyboard(
       return true;
     })()`,
   );
-  await dispatchKey(cdp, sessionId, "Enter", 13);
-  await dispatchKey(cdp, sessionId, "Enter", 13);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
   await waitForBrowserState(async () =>
     Boolean(
       await cdp.evaluate(
@@ -140,15 +164,9 @@ async function expectSelected(cdp, sessionId, optionId) {
   );
 }
 
-async function dispatchKey(cdp, sessionId, key, windowsVirtualKeyCode) {
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyDown", key, code: key, windowsVirtualKeyCode },
+async function dispatchDialogInput(cdp, sessionId, input) {
+  await cdp.evaluate(
     sessionId,
-  );
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyUp", key, code: key, windowsVirtualKeyCode },
-    sessionId,
+    `window.__gameplayDialogCheck.dialog.handleInput(${JSON.stringify(input)}); true`,
   );
 }

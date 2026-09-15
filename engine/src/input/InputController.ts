@@ -411,6 +411,7 @@ export class InputController {
       (this.capabilities.movement || this.consumers.size > 0)
     ) {
       event.preventDefault();
+      if (event.repeat && this.consumers.size > 0) return;
       if (
         this.dispatchLogicalInput({
           type: "direction",
@@ -431,6 +432,10 @@ export class InputController {
       : key === "escape"
         ? { type: "cancel" as const, source: "keyboard" }
         : null;
+    if (dialogAction && event.repeat && this.consumers.size > 0) {
+      event.preventDefault();
+      return;
+    }
     if (dialogAction && this.dispatchLogicalInput(dialogAction)) {
       event.preventDefault();
       return;
