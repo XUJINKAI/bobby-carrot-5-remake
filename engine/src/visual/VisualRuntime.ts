@@ -1,4 +1,4 @@
-import type { Direction } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
 import { Camera, type CameraOptions } from "../render/Camera.js";
 import {
   sortRenderItems,
@@ -357,6 +357,18 @@ export class VisualRuntime {
       stationarySinceMs: frame.nowMs,
       direction,
     });
+  }
+
+  /** 对话展示期间从当前表现时间重新计 Bobby 的静止时长。 */
+  restartBobbyIdle(world: World, frame: PresentationFrame): void {
+    for (const entity of world.query.entitiesWithFact("player")) {
+      if (entity.type !== MapEntityTypeId.BOBBY) continue;
+      const current = this.entityRuntime.get(entity.id);
+      this.entityRuntime.set(entity.id, {
+        ...current,
+        stationarySinceMs: frame.nowMs,
+      });
+    }
   }
 
   /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */

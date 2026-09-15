@@ -24,6 +24,7 @@ export class GamePresentation {
   readonly clock: PresentationClock;
   private readonly calloutAnnouncer: WorldCalloutAnnouncer | null;
   private sceneValue: RenderScene | null = null;
+  private dialogueActive = false;
 
   constructor(
     options: GameOptions,
@@ -88,6 +89,12 @@ export class GamePresentation {
   resetMotion(): void {
     this.visual.clear();
     this.calloutAnnouncer?.clear();
+  }
+
+  setDialogueActive(active: boolean, world: World | null): void {
+    this.dialogueActive = active;
+    if (active && world)
+      this.visual.restartBobbyIdle(world, this.clock.current);
   }
 
   destroy(): void {
@@ -199,6 +206,8 @@ export class GamePresentation {
       this.sceneValue = null;
       return;
     }
+    if (this.dialogueActive)
+      this.visual.restartBobbyIdle(world, this.clock.current);
     const viewport = this.renderer.measureViewport();
     this.visual.camera.setViewport(viewport.width, viewport.height);
     const scene = this.visual.scene(world, world.cameraTarget);

@@ -859,6 +859,7 @@ export class Game {
   private acquireDialogueBlock(): { release(): void } {
     const inputLease = this.inputController?.acquireBlock("dialogue");
     this.dialogueBlockCount += 1;
+    this.presentation.setDialogueActive(true, this.worldValue);
     this.discardPendingGameplayInput();
     let active = true;
     return {
@@ -866,6 +867,10 @@ export class Game {
         if (!active) return;
         active = false;
         this.dialogueBlockCount = Math.max(0, this.dialogueBlockCount - 1);
+        this.presentation.setDialogueActive(
+          this.dialogueBlockCount > 0,
+          this.worldValue,
+        );
         inputLease?.release();
       },
     };
