@@ -15,6 +15,7 @@ export interface WorldEvent {
   direction?: Direction;
   action?: string;
   text?: string;
+  lines?: readonly string[];
   reason?: string;
   data?: Record<string, JsonValue>;
 }
@@ -28,7 +29,18 @@ export interface ObjectInteractionEvent extends WorldEvent {
   x: number;
   y: number;
   action: "touch" | "enter";
-  text?: string;
+}
+
+/** World 交给 Game 消费的内部字面对白请求，不属于宿主事件 API。 */
+export interface DialogueRequestEvent extends WorldEvent {
+  type: "dialogue-request";
+  actorId: EntityId;
+  entityId: EntityId;
+  objectType: string;
+  x: number;
+  y: number;
+  action: "touch" | "enter";
+  lines: readonly string[];
 }
 
 export type MissingItemKind = string;
@@ -67,10 +79,26 @@ export function isObjectInteractionEvent(
     event.entityId !== undefined &&
     event.requestId !== undefined &&
     typeof event.objectType === "string" &&
-    (event.text === undefined || typeof event.text === "string") &&
     event.x !== undefined &&
     event.y !== undefined &&
     (event.action === "touch" || event.action === "enter")
+  );
+}
+
+export function isDialogueRequestEvent(
+  event: WorldEvent,
+): event is DialogueRequestEvent {
+  return (
+    event.type === "dialogue-request" &&
+    event.actorId !== undefined &&
+    event.entityId !== undefined &&
+    typeof event.objectType === "string" &&
+    event.x !== undefined &&
+    event.y !== undefined &&
+    (event.action === "touch" || event.action === "enter") &&
+    Array.isArray(event.lines) &&
+    event.lines.length > 0 &&
+    event.lines.every((line) => typeof line === "string" && line.length > 0)
   );
 }
 

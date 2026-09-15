@@ -44,24 +44,31 @@ function actor(world) {
   return player;
 }
 
-test("地图 dialogue 在角色身体被碰触时产生可传播的对白", () => {
+test("地图 dialogue 在角色身体被碰触时产生 Engine 私有对白请求", () => {
   const world = new World(dialogLevel("hello world!"));
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
-  assert.deepEqual(result.events.map((event) => event.type), ["object-interaction"]);
+  assert.deepEqual(result.events.map((event) => event.type), ["dialogue-request"]);
   const interaction = result.events[0];
   assert.equal(interaction.actorId, actor(world).id);
   assert.equal(interaction.objectType, MapEntityTypeId.SANDMAN);
   assert.equal(interaction.role, "body");
-  assert.equal(interaction.requestId, 1);
-  assert.equal(interaction.text, "hello world!");
+  assert.equal(interaction.requestId, undefined);
+  assert.deepEqual(interaction.lines, ["hello world!"]);
 });
 
-test("地图 dialogue 数组按 Entity 的 Runtime 游标循环", () => {
+test("地图 dialogue 数组每次触碰都提交完整会话且不写 Runtime 游标", () => {
   const world = new World(dialogLevel(["第一段\n允许换行", "第二段"]));
-  const texts = [0, 1, 2].map(() => move(world, "right").events[0]?.text);
+  const sessions = [0, 1, 2].map(
+    () => move(world, "right").events[0]?.lines,
+  );
 
-  assert.deepEqual(texts, ["第一段\n允许换行", "第二段", "第一段\n允许换行"]);
+  assert.deepEqual(sessions, [
+    ["第一段\n允许换行", "第二段"],
+    ["第一段\n允许换行", "第二段"],
+    ["第一段\n允许换行", "第二段"],
+  ]);
+  assert.equal(actor(world).state?.dialogueIndex, undefined);
 });
 
 test("没有地图对白时仍产生通用交互请求", () => {
@@ -84,7 +91,7 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
     MapEntityTypeId.DREAM_MACHINE,
   ]) {
     const result = move(new World(dialogLevel(type, type)), "right");
-    assert.equal(result.events[0]?.text, type);
+    assert.deepEqual(result.events[0]?.lines, [type]);
   }
 });
 
@@ -108,7 +115,7 @@ test("Snowman 图块在触碰时发出地图对白", () => {
 
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
-  assert.equal(result.events[0]?.text, "雪人对白");
+  assert.deepEqual(result.events[0]?.lines, ["雪人对白"]);
 });
 
 test("商品地块阻挡移动并在触碰时产生通用交互请求", () => {

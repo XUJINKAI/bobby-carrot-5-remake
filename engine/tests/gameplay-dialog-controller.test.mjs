@@ -1,0 +1,125 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { GameplayDialogController } from "../dist/ui/GameplayDialogController.js";
+
+const DISMISSED = { type: "dismissed" };
+
+function request(actorId, entityId, lines = ["第一句", "第二句"]) {
+  return {
+    type: "dialogue-request",
+    actorId,
+    entityId,
+    objectType: "beaver",
+    x: 1,
+    y: 1,
+    action: "touch",
+    lines,
+  };
+}
+
+function fixture() {
+  let now = 0;
+  let blocks = 0;
+  let releases = 0;
+  const pending = [];
+  const calls = [];
+  const view = {
+    show(message) {
+      return this.showSequence([message]);
+    },
+    showSequence(messages) {
+      calls.push({ type: "sequence", messages: [...messages] });
+      return new Promise((resolve) => pending.push(resolve));
+    },
+    present(presentation) {
+      calls.push({ type: "presentation", presentation });
+      return new Promise((resolve) => pending.push(resolve));
+    },
+    close() {
+      pending.shift()?.(DISMISSED);
+    },
+    destroy() {
+      this.close();
+    },
+  };
+  const controller = new GameplayDialogController(view, {
+    acquireBlock() {
+      blocks += 1;
+      let active = true;
+      return {
+        release() {
+          if (!active) return;
+          active = false;
+          releases += 1;
+        },
+      };
+    },
+    now: () => now,
+  });
+  return {
+    controller,
+    calls,
+    pending,
+    counts: () => ({ blocks, releases }),
+    setNow: (value) => {
+      now = value;
+    },
+  };
+}
+
+async function settle() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+test("Entity dialogue 把完整段落交给同一个 View 生命周期", async () => {
+  const f = fixture();
+
+  assert.equal(f.controller.handleEntityDialogue(request(1, 2)), true);
+  assert.deepEqual(f.calls, [{
+    type: "sequence",
+    messages: ["第一句", "第二句"],
+  }]);
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 0 });
+
+  f.pending.shift()(DISMISSED);
+  await settle();
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+});
+
+test("Entity dialogue 按 actor/entity 隔离 pending 与 500ms 冷却", async () => {
+  const f = fixture();
+
+  assert.equal(f.controller.handleEntityDialogue(request(1, 2)), true);
+  assert.equal(f.controller.handleEntityDialogue(request(1, 2)), false);
+  assert.equal(f.controller.handleEntityDialogue(request(2, 2)), true);
+  f.pending.shift()(DISMISSED);
+  await settle();
+  f.pending.shift()(DISMISSED);
+  await settle();
+
+  f.setNow(499);
+  assert.equal(f.controller.handleEntityDialogue(request(1, 2)), false);
+  f.setNow(500);
+  assert.equal(f.controller.handleEntityDialogue(request(1, 2)), true);
+  assert.equal(f.calls.length, 3);
+  f.pending.shift()(DISMISSED);
+  await settle();
+});
+
+test("宿主 show/present 共用串行门禁，reset 关闭当前项并清空队列", async () => {
+  const f = fixture();
+  const first = f.controller.show("外部对白");
+  const second = f.controller.present({
+    message: "购买？",
+    options: [{ id: "yes", label: "购买" }],
+  });
+
+  assert.equal(f.calls.length, 1);
+  f.controller.reset();
+  assert.deepEqual(await first, DISMISSED);
+  assert.deepEqual(await second, DISMISSED);
+  await settle();
+  assert.deepEqual(f.counts(), { blocks: 1, releases: 1 });
+  assert.equal(f.calls.length, 1);
+});

@@ -197,7 +197,7 @@ function fieldAccepts(
     return true;
   }
   if (field.kind === "string-or-string-list") {
-    return typeof value === "string" ||
+    return (typeof value === "string" && value.length > 0) ||
       (isStringList(value) &&
         value.length > 0 &&
         value.every((line) => line.length > 0));

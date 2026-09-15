@@ -120,6 +120,12 @@ export {
   type GameplayDialogResult,
 } from "./ui/GameplayDialog.js";
 export {
+  DEFAULT_DIALOGUE_REPEAT_COOLDOWN_MS,
+  GameplayDialogController,
+  type GameplayDialogControllerHost,
+  type GameplayDialogControllerOptions,
+} from "./ui/GameplayDialogController.js";
+export {
   ORIGINAL_BOBBY_LOCOMOTION_TIMING,
   resolveBobbyLocomotionTiming,
   type BobbyLocomotionTiming,

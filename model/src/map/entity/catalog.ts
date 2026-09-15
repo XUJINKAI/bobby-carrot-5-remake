@@ -291,7 +291,8 @@ function fieldAccepts(
   if (field.kind === "boolean") return typeof value === "boolean";
   if (field.kind === "string") return typeof value === "string";
   if (field.kind === "string-or-string-list") {
-    return typeof value === "string" || isNonEmptyStringList(value);
+    return (typeof value === "string" && value.length > 0) ||
+      isNonEmptyStringList(value);
   }
   if (field.kind === "number") return typeof value === "number" && Number.isFinite(value);
   if (field.kind === "integer") return typeof value === "number" && Number.isInteger(value);
@@ -302,7 +303,7 @@ function dialogueField(): EntityMapFieldDefinition {
   return stringOrStringListField(
     "dialogue",
     false,
-    "角色被碰触时显示的字面对白；数组按实体独立循环。",
+    "Engine 在角色被碰触时显示的内建对白；数组在同一对话框内依次翻页。",
   );
 }
 

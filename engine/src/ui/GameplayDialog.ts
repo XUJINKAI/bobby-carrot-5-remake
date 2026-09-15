@@ -24,6 +24,7 @@ export type GameplayDialogResult =
 export type GameplayDialogKeyAction =
   | "ignore"
   | "finish-typing"
+  | "advance"
   | "dismiss"
   | "previous"
   | "next"
@@ -43,6 +44,8 @@ export class GameplayDialogView {
   private optionButtons: HTMLButtonElement[] = [];
   private optionIds: string[] = [];
   private selectedOptionIndex = -1;
+  private passiveMessages: string[] = [];
+  private passiveMessageIndex = -1;
   private typingTimer: number | null = null;
   private typingCharacters: string[] = [];
   private typingIndex = 0;
@@ -121,10 +124,19 @@ export class GameplayDialogView {
 
   /** 展示单段阻塞文本；Enter/点击先完成逐字展示，再结束对话。 */
   show(message: string): Promise<GameplayDialogResult> {
+    return this.showSequence([message]);
+  }
+
+  /** 在同一 View 生命周期内逐段展示文本，不在段落之间隐藏对话框。 */
+  showSequence(messages: readonly string[]): Promise<GameplayDialogResult> {
+    if (messages.length === 0)
+      throw new Error("GameplayDialogView.showSequence() 至少需要一段文本");
     this.settlePresentation({ type: "dismissed" });
     this.prepareView();
+    this.passiveMessages = [...messages];
+    this.passiveMessageIndex = 0;
     this.root.hidden = false;
-    this.typeMessage(message);
+    this.typeMessage(this.passiveMessages[0]!);
     return new Promise((resolve) => {
       this.pendingPresentation = { resolve };
     });
@@ -193,6 +205,8 @@ export class GameplayDialogView {
     this.optionButtons = [];
     this.optionIds = [];
     this.selectedOptionIndex = -1;
+    this.passiveMessages = [];
+    this.passiveMessageIndex = -1;
   }
 
   private prepareInteractiveView(
@@ -302,8 +316,19 @@ export class GameplayDialogView {
       this.finishTyping();
       return;
     }
-    this.settlePresentation({ type: "dismissed" });
+    this.advancePassiveMessage();
   };
+
+  private advancePassiveMessage(): void {
+    const nextIndex = this.passiveMessageIndex + 1;
+    const nextMessage = this.passiveMessages[nextIndex];
+    if (nextMessage === undefined) {
+      this.settlePresentation({ type: "dismissed" });
+      return;
+    }
+    this.passiveMessageIndex = nextIndex;
+    this.typeMessage(nextMessage);
+  }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (this.root.hidden || !this.pendingPresentation) return;
@@ -322,6 +347,10 @@ export class GameplayDialogView {
     }
     if (action === "finish-typing") {
       this.finishTyping();
+      return;
+    }
+    if (action === "advance") {
+      this.advancePassiveMessage();
       return;
     }
     if (action === "previous") this.selectRelative(-1);
@@ -357,7 +386,7 @@ export function cycleOptionIndex(
   return ((current + offset) % count + count) % count;
 }
 
-/** 纯按键决策；普通对白允许任意方向键结束并释放宿主 gameplay gate。 */
+/** 纯按键决策；普通对白允许按键重复在同一窗口中逐段推进。 */
 export function resolveGameplayDialogKeyAction(
   key: string,
   optionCount: number,
@@ -372,8 +401,7 @@ export function resolveGameplayDialogKeyAction(
       )
     )
       return "ignore";
-    if (repeat) return "ignore";
-    return typing ? "finish-typing" : "dismiss";
+    return typing ? "finish-typing" : "advance";
   }
   if (!["ArrowLeft", "ArrowRight", "Enter"].includes(key)) return "ignore";
   if (typing) return key === "Enter" && !repeat ? "finish-typing" : "ignore";

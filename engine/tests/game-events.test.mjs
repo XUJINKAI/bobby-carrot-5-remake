@@ -19,6 +19,7 @@ function eventGame(replayPlaying) {
   game.replayPlayback = { playing: replayPlaying };
   game.worldEvents = new WorldEventDispatcher();
   game.presentation = { shake() {} };
+  game.dialog = null;
   return game;
 }
 
@@ -33,6 +34,56 @@ test("live session 同时发布世界事件与外部交互请求", () => {
 
   assert.deepEqual(worldEvents, [interaction]);
   assert.deepEqual(requests, [interaction]);
+});
+
+test("地图字面对白由 Engine 消费且不会传播给宿主", () => {
+  const game = eventGame(false);
+  const worldEvents = [];
+  const requests = [];
+  const dialogues = [];
+  game.dialog = {
+    handleEntityDialogue(event) {
+      dialogues.push(event);
+    },
+  };
+  game.onWorldEvent((event) => worldEvents.push(event));
+  game.onInteractionRequest((event) => requests.push(event));
+  const dialogue = {
+    type: "dialogue-request",
+    actorId: 1,
+    entityId: 2,
+    objectType: "beaver",
+    role: "body",
+    x: 4,
+    y: 5,
+    action: "touch",
+    lines: ["第一句", "第二句"],
+  };
+
+  game.publishWorldEvents([dialogue]);
+
+  assert.deepEqual(dialogues, [dialogue]);
+  assert.deepEqual(worldEvents, []);
+  assert.deepEqual(requests, []);
+});
+
+test("Replay 不显示也不传播地图字面对白", () => {
+  const game = eventGame(true);
+  const dialogues = [];
+  game.dialog = { handleEntityDialogue: (event) => dialogues.push(event) };
+
+  game.publishWorldEvents([{
+    type: "dialogue-request",
+    actorId: 1,
+    entityId: 2,
+    objectType: "beaver",
+    x: 4,
+    y: 5,
+    action: "touch",
+    lines: ["对白"],
+  }]);
+
+  assert.deepEqual(dialogues, []);
 });
 
 test("Replay playback 只发布可观察的世界事件", () => {

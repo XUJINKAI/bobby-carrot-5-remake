@@ -94,6 +94,18 @@ test("对白字段接受字符串或字符串数组并由 LevelPatch 原样写�
   );
 });
 
+test("对白字段拒绝空字符串和含空段落的数组", () => {
+  const level = (dialogue) => ({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [{ type: MapEntityTypeId.BEAVER, x: 0, y: 0, dialogue }],
+  });
+
+  assert.throws(() => parseLevelMap(level("")), /dialogue/);
+  assert.throws(() => parseLevelMap(level(["第一句", ""])), /dialogue/);
+});
+
 test("Snowman 图块可在指定位置保存对白", () => {
   const baseLevel = {
     schemaVersion: 1,

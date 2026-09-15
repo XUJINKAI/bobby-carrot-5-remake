@@ -44,8 +44,8 @@ function touchTarget(type, mechanisms) {
 test("两种 Entity 显式组合相同机制，单独声明 Fact 不安装 Behavior", () => {
   for (const type of ["speaker-one", "speaker-two"]) {
     assert.deepEqual(
-      touchTarget(type, ["object-interaction"]).map((event) => [event.type, event.text]),
-      [["object-interaction", "机关对白"]],
+      touchTarget(type, ["object-interaction"]).map((event) => [event.type, event.lines]),
+      [["dialogue-request", ["机关对白"]]],
     );
   }
   assert.deepEqual(touchTarget("silent", []).map((event) => event.type), []);
