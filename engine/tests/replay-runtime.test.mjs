@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { GameplaySession } from "../dist/core/GameplaySession.js";
+import { HeldDirectionRepeater } from "../dist/input/HeldDirectionRepeater.js";
 import { ReplayPlayback } from "../dist/replay/ReplayPlayback.js";
 import { ReplayRecorder } from "../dist/replay/ReplayRecorder.js";
 import { replayVerificationStates } from "../dist/replay/ReplayFinalState.js";
@@ -140,7 +141,7 @@ test("Replay 从 tick 0 重放输入并报告最终 World 状态", () => {
   }
 });
 
-test("Replay 只保存实际生效的持续移动输入", () => {
+test("Replay 记录持续输入的实际动作并保留一次撞墙", () => {
   const level = {
     schemaVersion: 1,
     width: 10,
@@ -159,14 +160,27 @@ test("Replay 只保存实际生效的持续移动输入", () => {
     id: "test/held-movement",
     url: "/test/held-movement",
   });
-  for (const tick of session.advanceTicks(180, () => ({
-    moves: [{ source: "external", direction: "right" }],
-  })))
+  const repeater = new HeldDirectionRepeater();
+  repeater.setInput({
+    source: "external",
+    direction: "right",
+    initialRepeatDelayMs: 0,
+  });
+  for (let index = 0; index < 240; index += 1) {
+    const direction = repeater.update(1000 / 60);
+    const [tick] = session.advanceTicks(1, () => direction
+      ? { moves: [{ source: "external", direction }] }
+      : {});
     recorder.record(tick);
+    const resolution = tick.inputResolutions[0];
+    if (resolution) repeater.resolveAttempt(resolution.result);
+  }
   const replay = recorder.stop();
 
-  assert.equal(replay.frames.length, session.state.moves);
-  assert.equal(replay.frames.length, 9);
+  assert.equal(session.state.moves, 9);
+  assert.equal(replay.frames.length, session.state.moves + 1);
+  assert.equal(replay.frames.length, 10);
+  assert.equal(replay.frames.at(-1).groups[0].intents[0].direction, "right");
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
 });
 
@@ -351,7 +365,7 @@ test("ReplayPlayback 只压缩长无输入区间并保留下次输入", () => {
   assert.equal(tail.at(-1).inputGroups.length, 1);
 });
 
-test("Replay 省略没有 gameplay 效果的受阻输入", () => {
+test("Replay 保留没有位移的受阻动作", () => {
   const level = {
     schemaVersion: 1,
     width: 1,
@@ -371,7 +385,10 @@ test("Replay 省略没有 gameplay 效果的受阻输入", () => {
   const replay = recorder.stop();
 
   assert.equal(tick.inputResolutions[0].result, "blocked");
-  assert.deepEqual(replay.frames, []);
+  assert.deepEqual(replay.frames, [{
+    tick: 0,
+    groups: [{ intents: [{ type: "move", direction: "right" }] }],
+  }]);
   assert.equal(runReplay(level, replay).endTick, replay.endTick);
 });
 

@@ -65,7 +65,7 @@ export interface GameplayTickResult {
   time: WorldTick;
   result: WorldStepResult;
   phases: readonly WorldStepResult[];
-  /** 只包含对 gameplay 状态产生效果、需要 Replay 重放的输入组。 */
+  /** 包含已裁决的 gameplay 动作；纯 busy 帧与显式排除项不会进入 Replay。 */
   inputGroups: readonly WorldIntentGroup[];
   inputResolutions: readonly GameplayInputResolution[];
 }
@@ -384,7 +384,7 @@ export class GameplaySession {
         if (inputPhase) {
           phases.push(inputPhase);
           mergeWorldStepResult(aggregate, inputPhase);
-          if (hasReplayInputEffect(inputPhase)) group.effective = true;
+          if (isReplayInputResult(inputPhase)) group.recordable = true;
         }
       }
     }
@@ -394,7 +394,7 @@ export class GameplaySession {
       phases,
       inputGroups: resolved.groups
         .filter(
-          (group) => group.effective && group.recorded.recordInReplay !== false,
+          (group) => group.recordable && group.recorded.recordInReplay !== false,
         )
         .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
@@ -465,7 +465,7 @@ export class GameplaySession {
         runnable: partition.runnable.length > 0
           ? { ...group, intents: partition.runnable }
           : null,
-        effective: observation?.stateChanged ?? false,
+        recordable: observation?.stateChanged ?? false,
       });
     }
     return {
@@ -646,7 +646,7 @@ export class GameplaySession {
 interface ResolvedInputGroup {
   recorded: WorldIntentGroup;
   runnable: WorldIntentGroup | null;
-  effective: boolean;
+  recordable: boolean;
 }
 
 interface ResolvedTickInput {
@@ -656,9 +656,9 @@ interface ResolvedTickInput {
   blockedDisposition: GameplayInputAttempt;
 }
 
-function hasReplayInputEffect(result: WorldStepResult): boolean {
+function isReplayInputResult(result: WorldStepResult): boolean {
   return (
-    result.moves.some((move) => move.moved) ||
+    result.moves.length > 0 ||
     result.motions.length > 0 ||
     result.events.length > 0 ||
     result.deltas.length > 0 ||

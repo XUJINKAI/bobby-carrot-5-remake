@@ -12,7 +12,7 @@
 
 玩家移动被阻挡时，网格位置、World gameplay 朝向与步数保持不变；Presentation 使用该次
 输入的尝试方向覆盖 Bobby 的显示朝向，并直接显示对应方向的静止终止帧。这项反馈不进入
-World snapshot，也不会让纯阻挡输入成为 Replay gameplay 命令。
+World snapshot；Replay 仍把首次受阻尝试保存为玩家动作，以便重现撞墙输入时序。
 
 一次移动提交时，Entity anchor 可以立即变成目标整数格；同时 WorldMotion 保留 `from → to` 和连续 progress。因而 Bobby 在中点死亡时：
 

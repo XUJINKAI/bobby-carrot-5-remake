@@ -200,7 +200,8 @@ object-interaction {
 
 `missing-item` 由地图机关报告缺少 Gas、Lock Key、Kite、Shovel 或 Bean 的语义事实。
 Engine Presentation 将它映射为锚定 Bobby 的 Canvas Callout；图标、闪烁时序和
-`aria-live` 文本都属于表现层；World 保存 gameplay 状态，Replay 记录产生效果的语义输入。
+`aria-live` 文本都属于表现层；World 保存 gameplay 状态，Replay 记录已裁决的语义输入，
+包括一次没有位移的受阻尝试。
 完整功能合同见 [`features/world-callouts.md`](features/world-callouts.md)。
 
 成功打开锁是一个普通 Object interaction：
