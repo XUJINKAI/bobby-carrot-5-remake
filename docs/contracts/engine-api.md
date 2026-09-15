@@ -533,29 +533,30 @@ game.onInteractionRequest((request) => {
 });
 ```
 
-可对话 Entity 触发 `object-interaction`；地图存在非空 `dialogue` 时，Engine 紧接着发出
-`dialog` 并由 `GameplayDialog` 展示。`dialogue` 可以是字符串或字符串数组；数组按
-Entity 独立循环，每个元素可以包含换行。外层动态对白可以调用 runtime 返回的
-`dialog.show(text)`，该展示调用不改变 World，也不进入 Replay。
+可对话 Entity 只触发一个 `object-interaction`；地图存在非空 `dialogue` 时，请求的
+`text` 字段携带当前对白。`dialogue` 可以是字符串或字符串数组；数组按 Entity 独立
+循环，每个元素可以包含换行。World 不持有 DOM、Promise、暂停或输入状态。
 
 Web 的通用 Session 入口可以同时接收一个交互回调，负责把请求、`Game` 与 Engine
-对话层交给具体产品适配器：
+纯对话 View 交给具体产品适配器：
 
 ```ts
 const session = await createGameSession({
   level,
-  interaction: ({ request, game, dialog }) => {
-    // 读取外层产品状态，展示对话并按需分派公开 Gameplay effect。
+  interaction: ({ request, game, dialogView }) => {
+    // 读取外层产品状态，调用 View 并按需分派公开 Gameplay effect。
   },
 });
 ```
 
-`createGameSession()` 只负责订阅与释放该回调，不解释购买、Campaign Save 或地图 ID。
+`createGameSession()` 为每个请求取得 `blocking-interaction` gate lease，在请求处理完成后
+释放；该 lease 合成 World pause 与 InputController block，并在进入阻塞交互时终止录制。
+购买、Campaign Save 与地图 ID 仍由具体产品适配器解释。
 
 宿主需要选项交互时，可以等待通用展示层返回选择结果：
 
 ```ts
-const result = await dialog.present({
+const result = await dialogView.present({
   message: "要购买这个道具吗？",
   options: [
     { id: "purchase", label: "购买" },
@@ -564,16 +565,15 @@ const result = await dialog.present({
 });
 ```
 
-`dialog.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
+`dialogView.present()` 接收一个或多个选项；两项时自然按左右排列，更多选项会按
 可用宽度自动换行。Engine 在逐字展示完成后显示选项，默认选择 `primary` 项，否则选择
 第一项。玩家使用左右方向键循环选择、回车确认，也可以直接点击；回车在逐字展示期间
-先立即补全当前文本。`GameplayDialog` 在等待选择时暂停同一 runtime 的 World 与 gameplay
-输入，结束时恢复原状态；暂停期间不产生 World Tick，地图计时也不推进。所有选项使用
+先立即补全当前文本。无选项文本通过 `dialogView.show()` 展示，回车或点击先补全文本，
+再次操作返回 `{ type: "dismissed" }`。所有选项使用
 同级基础样式，当前选项通过高亮边框、背景与阴影
 标识；`primary` 只用于声明默认选择位置。
 
 结果为 `{ type: "selected", optionId }` 或 `{ type: "dismissed" }`。
-`GameplayDialog` 不接收业务回调，也不读写存档、货币或商品状态；宿主只等待通用选项
-ID，并在取得结果后执行产品业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为
-`0` 可立即显示全文。`present()` 打开需要选择的阻塞对话时会终止进行中的 Replay 录制；
-`show()` 始终是无选项、非阻塞的提示，不影响录制。
+`GameplayDialogView` 不接收 `Game`、`World`、`InputController` 或业务回调，也不读写
+存档、货币或商品状态。宿主持有 gate lease，只等待通用结果，并在取得结果后执行产品
+业务。`characterIntervalMs` 控制逐字间隔，默认 `28ms`，设为 `0` 可立即显示全文。

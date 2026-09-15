@@ -6,10 +6,6 @@ import {
 } from "../audio/AudioRuntime.js";
 import { builtinEngineEnvironment } from "../environment/EngineEnvironment.js";
 import { InputController } from "../input/InputController.js";
-import {
-  GameplayDialog,
-  type GameplayDialogOptions,
-} from "../ui/GameplayDialog.js";
 import { Game } from "./Game.js";
 import type { GameOptions, GameRuntimeOptions } from "./GameOptions.js";
 import {
@@ -17,9 +13,7 @@ import {
   type LevelRuntimeWarning,
 } from "./LevelWarnings.js";
 
-export interface GameplayRuntimeConfig extends GameRuntimeOptions {
-  dialog?: boolean | GameplayDialogOptions;
-}
+export type GameplayRuntimeConfig = GameRuntimeOptions;
 
 export interface CreateGameplayRuntimeOptions
   extends Omit<GameOptions, "runtime" | "audio"> {
@@ -33,7 +27,6 @@ export interface GameplayRuntime {
   game: Game;
   input: InputController;
   audio: AudioBackend;
-  dialog: GameplayDialog | null;
   warnings: readonly LevelRuntimeWarning[];
   destroy(): void;
 }
@@ -51,33 +44,20 @@ export async function createGameplayRuntime(
   } = options;
   const environment = gameOptions.environment ?? builtinEngineEnvironment;
   const warnings = validateLevelPlayability(level, environment);
-  const { dialog: dialogOptions, ...gameRuntime } = runtime ?? {};
   const ownedAudio = suppliedAudio ? null : new AudioRuntime(audioOptions);
   const audio = suppliedAudio ?? ownedAudio!;
   const game = new Game({
     ...gameOptions,
     environment,
     audio,
-    ...(runtime ? { runtime: gameRuntime } : {}),
+    ...(runtime ? { runtime } : {}),
   });
   const input = game.inputController ?? new InputController(game);
   const inputOwnedByGame = game.inputController === input;
-  const dialog =
-    dialogOptions === false
-      ? null
-      : new GameplayDialog(
-          game,
-          gameOptions.canvas,
-          dialogOptions === true || dialogOptions === undefined
-            ? {}
-            : dialogOptions,
-          input,
-        );
   try {
     await game.loadLevel(level);
   } catch (error) {
     if (!inputOwnedByGame) input.destroy();
-    dialog?.destroy();
     game.destroy();
     ownedAudio?.destroy();
     throw error;
@@ -86,11 +66,9 @@ export async function createGameplayRuntime(
     game,
     input,
     audio,
-    dialog,
     warnings,
     destroy(): void {
       if (!inputOwnedByGame) input.destroy();
-      dialog?.destroy();
       game.destroy();
       ownedAudio?.destroy();
     },

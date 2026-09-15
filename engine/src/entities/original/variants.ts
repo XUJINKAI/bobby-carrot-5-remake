@@ -64,7 +64,7 @@ export const originalVariantModules: readonly EntityModule[] = [
     [{ behavior: waterPassage }],
   ),
   canonicalSurface(MapEntityTypeId.SNOWMAN, surfaceMappings(MapEntityTypeId.SNOWMAN), [
-    "dialog",
+    "object-interaction",
   ]),
 ];
 

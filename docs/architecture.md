@@ -178,7 +178,6 @@ collect-bonus-coin
 collect-golden-carrot
 complete
 death
-dialog { text? }
 missing-item {
   actorId,
   entityId,
@@ -194,7 +193,8 @@ object-interaction {
   role,
   action,
   x,
-  y
+  y,
+  text?
 }
 ```
 
@@ -217,18 +217,21 @@ action = "open"
 LevelEntity.dialogue
         ↓
 Object Definition touch behavior
-        ├─ object-interaction
-        └─ dialogue 非空时发出 dialog(text)
-                         ↓
-                  Engine presentation
+        ↓
+object-interaction { text? }
+        ↓
+Web blocking-interaction lease
+        ↓
+Engine GameplayDialogView
 ```
 
 固定对白是随 JSON 地图传播的字面字符串或字符串数组；数组由 Engine 在该 Entity 的
 Runtime State 中维护游标并循环播放，数组元素自身可以包含换行。复杂条件对白与购买由宿主监听
 `onInteractionRequest()` 后处理；宿主只可显示产品对白或提交封闭 Gameplay Intent，
-不能取得 BehaviorContext、WorldQuery 或 CommandQueue。阻塞对话暂停 World；
-需要用户选择时，进行中的 Replay 录制立即终止。Replay 只回放 Engine gameplay 动作，
-播放不会重新请求宿主交互。无选项提示保持非阻塞，只随普通 `WorldEvent` 展示。
+不能取得 BehaviorContext、WorldQuery 或 CommandQueue。Web 在处理请求期间持有
+`blocking-interaction` lease，由它暂停 World、阻塞输入并终止进行中的 Replay 录制。
+`GameplayDialogView` 是无 World 引用的调用式 DOM View，只返回通用选择或关闭结果。
+Replay 只回放 Engine gameplay 动作，播放不会重新请求宿主交互。
 
 Adventure 专用 Campaign 语义保持在 `@bobby/adventure`；Engine API 维持通用 gameplay/runtime 边界。
 
@@ -330,7 +333,7 @@ Engine object-interaction
         ↓ Web 只做边界适配
 adventureAugmentation.interaction(context)
         ↓
-GameplayDialog / Save / public Engine effect
+GameplayDialogView / Save / public Engine effect
 ```
 
 通用补丁可以新增 Entity、按 selector 删除 Entity，或覆盖 Lock

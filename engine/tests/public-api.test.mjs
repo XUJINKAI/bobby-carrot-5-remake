@@ -6,6 +6,7 @@ test("public Engine API exposes gameplay plus generic Entity and Visual structur
   for (const name of [
     "Game",
     "createGameplayRuntime",
+    "GameplayDialogView",
     "AudioRuntime",
     "InputController",
     "EntityStore",

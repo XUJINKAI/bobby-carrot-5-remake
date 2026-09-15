@@ -44,8 +44,8 @@ function touchTarget(type, mechanisms) {
 test("两种 Entity 显式组合相同机制，单独声明 Fact 不安装 Behavior", () => {
   for (const type of ["speaker-one", "speaker-two"]) {
     assert.deepEqual(
-      touchTarget(type, ["dialog"]).map((event) => event.type),
-      ["dialog"],
+      touchTarget(type, ["object-interaction"]).map((event) => [event.type, event.text]),
+      [["object-interaction", "机关对白"]],
     );
   }
   assert.deepEqual(touchTarget("silent", []).map((event) => event.type), []);
@@ -55,7 +55,7 @@ test("内置 Entity Definition 直接声明通用机制与专属 Behavior", () =
   const registry = createBuiltinEntityRegistry();
   assert.deepEqual(
     registry.require(MapEntityTypeId.SANDMAN).mechanisms,
-    ["object-interaction", "dialog"],
+    ["object-interaction"],
   );
   assert.deepEqual(
     registry.require(MapEntityTypeId.WATER).mechanisms,

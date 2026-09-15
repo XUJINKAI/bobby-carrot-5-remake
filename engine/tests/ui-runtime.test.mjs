@@ -225,7 +225,7 @@ test("Gameplay HUD exposes host styling hooks without naming a product font", ()
   assert.doesNotMatch(source, /Jersey 10|fontFamily|WebkitTextStroke|textShadow/);
 });
 
-test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () => {
+test("GameplayDialogView 只渲染逐字文本与通用选项输入", () => {
   const source = fs.readFileSync(
     new URL("../src/ui/GameplayDialog.ts", import.meta.url),
     "utf8",
@@ -243,9 +243,9 @@ test("Gameplay Dialog 由 Engine 渲染逐字文本与通用选项输入", () =>
   assert.match(source, /background: "rgba\(8,14,22,\.72\)"/);
   assert.match(source, /"ArrowLeft", "ArrowRight", "Enter"/);
   assert.match(source, /this\.input\.setEnabled\(false\)/);
-  assert.match(source, /GameplayDialog\.present\(\) 至少需要一个选项/);
-  assert.match(source, /dialogControl\.setWorldPaused\(true\)/);
-  assert.match(source, /dialogControl\.beginBlockingChoice/);
+  assert.match(source, /GameplayDialogView\.present\(\) 至少需要一个选项/);
+  assert.doesNotMatch(source, /import type \{ Game \}/);
+  assert.doesNotMatch(source, /dialogControl|setWorldPaused|setEnabled/);
   assert.doesNotMatch(source, /consumeReplayChoice|recordChoice/);
   assert.match(source, /dataset\.selected/);
   assert.match(source, /rgba\(255,255,255,\.96\)/);

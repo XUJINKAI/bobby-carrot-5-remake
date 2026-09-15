@@ -29,7 +29,7 @@ export type AdventureDialogResult =
 export interface AdventureInteractionContext {
   request: AdventureInteractionRequest;
   save: AdventureSave;
-  showDialogue(text: string): void;
+  showDialogue(text: string): Promise<AdventureDialogResult>;
   presentDialogue(presentation: {
     message: string;
     options: readonly [AdventureDialogOption, ...AdventureDialogOption[]];

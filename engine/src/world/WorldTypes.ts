@@ -28,6 +28,7 @@ export interface ObjectInteractionEvent extends WorldEvent {
   x: number;
   y: number;
   action: "touch" | "enter";
+  text?: string;
 }
 
 export type MissingItemKind = string;
@@ -66,6 +67,7 @@ export function isObjectInteractionEvent(
     event.entityId !== undefined &&
     event.requestId !== undefined &&
     typeof event.objectType === "string" &&
+    (event.text === undefined || typeof event.text === "string") &&
     event.x !== undefined &&
     event.y !== undefined &&
     (event.action === "touch" || event.action === "enter")

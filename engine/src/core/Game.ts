@@ -12,7 +12,6 @@ import {
 } from "../time/EngineTiming.js";
 import type { WorldClock, WorldTick } from "../time/WorldClock.js";
 import { GameplayHud } from "../ui/GameplayHud.js";
-import { GameplayDialogControl } from "../ui/GameplayDialogControl.js";
 import type { PresentationTuning } from "../visual/tuning/PresentationTuning.js";
 import { resolveOriginalTuning } from "../visual/tuning/original.js";
 import type { World } from "../world/World.js";
@@ -87,7 +86,7 @@ export class Game {
   private readonly queuedIntentGroups: WorldIntentGroup[] = [];
   private replayRecorder: ReplayRecorder | null = null;
   private readonly replayPlayback: ReplayPlayback;
-  readonly dialogControl: GameplayDialogControl;
+  private hostGameplayPaused = false;
   private levelLoadPending = false;
   private animationFrame = 0;
   private destroyed = false;
@@ -122,18 +121,6 @@ export class Game {
       this.session,
       this.presentation.clock,
     );
-    this.dialogControl = new GameplayDialogControl({
-      discardPendingInput: () => this.discardPendingGameplayInput(),
-      onBlockingChoice: () => this.abortReplayRecordingForInteractiveChoice(),
-      dispatchEffect: (intent) => {
-        if (!this.worldValue || this.world.dead || this.world.completed) return;
-        this.queuedIntentGroups.push({
-          intents: [structuredClone(intent)],
-          historyBoundary: false,
-          recordInReplay: false,
-        });
-      },
-    });
     const hud = options.runtime?.hud;
     this.gameplayHud =
       hud === undefined || hud === false
@@ -315,7 +302,7 @@ export class Game {
       !this.worldValue ||
       this.replayPlayback.playing ||
       this.worldClock.paused ||
-      this.dialogControl.worldPaused ||
+      this.hostGameplayPaused ||
       this.presentationBlocksInput ||
       this.world.dead ||
       this.world.completed
@@ -340,7 +327,25 @@ export class Game {
   }
 
   dispatchInteractionEffect(intent: GameplayEffectIntent): void {
-    this.dialogControl.dispatchEffect(intent);
+    if (
+      this.destroyed ||
+      !this.worldValue ||
+      this.world.dead ||
+      this.world.completed
+    )
+      return;
+    this.queuedIntentGroups.push({
+      intents: [structuredClone(intent)],
+      historyBoundary: false,
+      recordInReplay: false,
+    });
+  }
+
+  /** 宿主持有阻塞原因的租约；Game 只消费最终的 gameplay pause 状态。 */
+  setHostGameplayPaused(value: boolean): void {
+    if (this.hostGameplayPaused === value) return;
+    this.hostGameplayPaused = value;
+    if (value) this.discardPendingGameplayInput();
   }
 
   setHeldDirection(direction: Direction | null): void {
@@ -413,7 +418,7 @@ export class Game {
     return replay;
   }
 
-  private abortReplayRecordingForInteractiveChoice(): void {
+  abortReplayRecording(): void {
     if (!this.replayRecorder) return;
     this.replayRecorder = null;
     this.emit("replay-recording-aborted");
@@ -699,7 +704,7 @@ export class Game {
       !this.worldValue ||
       this.levelLoadPending ||
       this.presentation.isAnimating ||
-      this.dialogControl.worldPaused ||
+      this.hostGameplayPaused ||
       this.world.inputBlocked
     )
       return 0;
@@ -754,7 +759,7 @@ export class Game {
       delta > 0 &&
       !this.levelLoadPending &&
       !this.presentation.blocksGameplay &&
-      !this.dialogControl.worldPaused
+      !this.hostGameplayPaused
     ) {
       this.session.advanceRealTime(
         delta,
@@ -766,7 +771,7 @@ export class Game {
         (worldTick) => {
           worldTicks.push(worldTick);
           this.consumeGameplayTick(worldTick);
-          return !this.dialogControl.worldPaused;
+          return !this.hostGameplayPaused;
         },
       );
     }

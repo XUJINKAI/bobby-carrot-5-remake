@@ -48,26 +48,18 @@ test("地图 dialogue 在角色身体被碰触时产生可传播的对白", () =
   const world = new World(dialogLevel("hello world!"));
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
-  assert.deepEqual(
-    result.events.map((event) => event.type),
-    ["object-interaction", "dialog"],
-  );
+  assert.deepEqual(result.events.map((event) => event.type), ["object-interaction"]);
   const interaction = result.events[0];
   assert.equal(interaction.actorId, actor(world).id);
   assert.equal(interaction.objectType, MapEntityTypeId.SANDMAN);
   assert.equal(interaction.role, "body");
   assert.equal(interaction.requestId, 1);
-  assert.equal(
-    result.events.find((event) => event.type === "dialog")?.text,
-    "hello world!",
-  );
+  assert.equal(interaction.text, "hello world!");
 });
 
 test("地图 dialogue 数组按 Entity 的 Runtime 游标循环", () => {
   const world = new World(dialogLevel(["第一段\n允许换行", "第二段"]));
-  const texts = [0, 1, 2].map(() =>
-    move(world, "right").events.find((event) => event.type === "dialog")?.text
-  );
+  const texts = [0, 1, 2].map(() => move(world, "right").events[0]?.text);
 
   assert.deepEqual(texts, ["第一段\n允许换行", "第二段", "第一段\n允许换行"]);
 });
@@ -92,10 +84,7 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
     MapEntityTypeId.DREAM_MACHINE,
   ]) {
     const result = move(new World(dialogLevel(type, type)), "right");
-    assert.equal(
-      result.events.find((event) => event.type === "dialog")?.text,
-      type,
-    );
+    assert.equal(result.events[0]?.text, type);
   }
 });
 
@@ -119,10 +108,7 @@ test("Snowman 图块在触碰时发出地图对白", () => {
 
   const result = move(world, "right");
   assert.equal(result.moves[0].moved, false);
-  assert.equal(
-    result.events.find((event) => event.type === "dialog")?.text,
-    "雪人对白",
-  );
+  assert.equal(result.events[0]?.text, "雪人对白");
 });
 
 test("商品地块阻挡移动并在触碰时产生通用交互请求", () => {

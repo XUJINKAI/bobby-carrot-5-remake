@@ -1,7 +1,7 @@
 # 地图内 Callout
 
 World Callout 是 Engine 在地图 Canvas 中显示的轻量提示。它与 Entity 或格子绑定，跟随
-Camera 和移动插值，不阻塞 gameplay。带选项或需要暂停游戏的对白由 `GameplayDialog`
+Camera 和移动插值，不阻塞 gameplay。阻塞对白由 Web gate 与 `GameplayDialogView`
 承担。
 
 原版依据见 `original/reverse-engineering/semantic/MissingItemHint.java` 与

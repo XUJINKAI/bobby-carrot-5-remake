@@ -113,9 +113,9 @@ export {
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export {
-  GameplayDialog,
+  GameplayDialogView,
   type GameplayDialogOption,
-  type GameplayDialogOptions,
+  type GameplayDialogViewOptions,
   type GameplayDialogPresentation,
   type GameplayDialogResult,
 } from "./ui/GameplayDialog.js";

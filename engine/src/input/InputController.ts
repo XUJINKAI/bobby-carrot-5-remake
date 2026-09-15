@@ -68,6 +68,10 @@ export interface InputControllerInspection {
   channels: readonly InputChannelInspection[];
 }
 
+export interface InputBlockLease {
+  release(): void;
+}
+
 interface InputCapabilities {
   keyboard: boolean;
   pointer: boolean;
@@ -138,6 +142,8 @@ export class InputController {
   private pinchStartZoom = 1;
   private gestureCenter: CameraGesturePoint | null = null;
   private suppressNextClick = false;
+  private requestedEnabled = true;
+  private readonly blockers = new Set<symbol>();
   private enabled = true;
 
   constructor(
@@ -259,9 +265,32 @@ export class InputController {
   }
 
   setEnabled(value: boolean): void {
-    this.enabled = value;
-    this.screenJoystick?.setInteractionEnabled(value);
-    if (!value) {
+    this.requestedEnabled = value;
+    this.syncEnabled();
+  }
+
+  /** 外层功能以租约叠加输入门禁，任意租约存续时都不会被其它关闭事件误恢复。 */
+  acquireBlock(_reason: string): InputBlockLease {
+    const token = Symbol();
+    this.blockers.add(token);
+    this.syncEnabled();
+    let active = true;
+    return {
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.blockers.delete(token);
+        this.syncEnabled();
+      },
+    };
+  }
+
+  private syncEnabled(): void {
+    const enabled = this.requestedEnabled && this.blockers.size === 0;
+    if (this.enabled === enabled) return;
+    this.enabled = enabled;
+    this.screenJoystick?.setInteractionEnabled(enabled);
+    if (!enabled) {
       this.clearHeldMovement();
       this.clearPointerState();
     }

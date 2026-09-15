@@ -12,7 +12,7 @@ import {
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
   presenceFacts: [],
-  mechanisms: ["object-interaction", "dialog"],
+  mechanisms: ["object-interaction"],
   footprint: {
     parts: [
       { dx: 0, dy: -1, role: "head" },

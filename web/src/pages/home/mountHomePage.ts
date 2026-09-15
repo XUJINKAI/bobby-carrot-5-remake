@@ -8,7 +8,10 @@ import {
   repositoryAction,
 } from "../../app/pageChrome.js";
 import { findAdventureLevel } from "../adventure/mountAdventurePages.js";
-import { createGameSession } from "../../runtime/game/createGameSession.js";
+import {
+  createGameSession,
+  type GameSession,
+} from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import {
   applyImportedSave,
@@ -149,8 +152,14 @@ export async function renderHome(
   };
   session.game.on("change", updateDemo);
   updateDemo();
-  const onDialogOpen = (): void => session!.input.setEnabled(false);
-  const onDialogClose = (): void => session!.input.setEnabled(true);
+  let shellDialogLease: ReturnType<GameSession["gates"]["acquire"]> | null = null;
+  const onDialogOpen = (): void => {
+    shellDialogLease ??= session!.gates.acquire("shell-dialog");
+  };
+  const onDialogClose = (): void => {
+    shellDialogLease?.release();
+    shellDialogLease = null;
+  };
   const onScreenControlChange = (event: Event): void => {
     const enabled = Boolean(
       (event as CustomEvent<{ enabled: boolean }>).detail.enabled,
@@ -163,6 +172,7 @@ export async function renderHome(
   window.addEventListener("screen-control-change", onScreenControlChange);
   return {
     destroy(): void {
+      shellDialogLease?.release();
       window.removeEventListener("shell-dialog-open", onDialogOpen);
       window.removeEventListener("shell-dialog-close", onDialogClose);
       window.removeEventListener("screen-control-change", onScreenControlChange);
