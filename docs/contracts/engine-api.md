@@ -160,7 +160,10 @@ RuntimeAction 按 action id 稳定顺序在 WorldClock 上推进，通过同一 
 
 `inputBlocked` 从当前 active actions 派生，不依靠手工 `counter++ / counter--` 配平。`focus` 只是 gameplay policy；Camera 如何平滑跟随仍属于 Presentation。
 
-RuntimeAction 产生 semantic intent 后，由 World 回传带 action identity 的权威 `MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时 `onCancel` 按明确 reason 清理 owner-local gameplay state。
+RuntimeAction 只产生 semantic `MoveIntent`，由 World 回传带 action identity 的权威
+`MoveResult`。Blocked、边界与 destination conflict 在 `onIntentResult` 处理；取消时
+`onCancel` 按明确 reason 清理 owner-local gameplay state。普通 gameplay mutation 继续走
+`CommandQueue`；宿主派生的 effect intent 由公开 `Game` façade 提交。
 
 RuntimeAction、WorldMotion、ActorLifecycle 与 WorldOutcome 都是 gameplay state，因此进入 World snapshot。Presentation tween / Camera transition 不进入 snapshot。
 
