@@ -22,11 +22,13 @@ export class EditorCanvasInput {
   private lastPrimaryCell = "";
   private readonly pointers = new Map<number, PointerPosition>();
   private pinchDistance = 0;
+  private pinchCenter: PointerPosition | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly viewport: EditorViewport,
     private readonly handlers: EditorCanvasInputHandlers,
+    private readonly viewportElement: Pick<HTMLElement, "getBoundingClientRect"> = canvas,
   ) {
     canvas.addEventListener("pointerdown", this.onPointerDown);
     canvas.addEventListener("pointermove", this.onPointerMove);
@@ -61,7 +63,9 @@ export class EditorCanvasInput {
       this.canvas.setPointerCapture(event.pointerId);
     if (this.pointers.size >= 2) {
       this.finishPrimary(null);
-      this.pinchDistance = pointerDistance([...this.pointers.values()]);
+      const points = [...this.pointers.values()];
+      this.pinchDistance = pointerDistance(points);
+      this.pinchCenter = pointerCenter(points);
       return;
     }
     if (event.button === 1) {
@@ -88,9 +92,21 @@ export class EditorCanvasInput {
       const points = [...this.pointers.values()];
       const distance = pointerDistance(points);
       const center = pointerCenter(points);
-      if (this.pinchDistance > 0)
-        this.viewport.zoomAt(distance / this.pinchDistance, center.x, center.y);
+      if (this.pinchCenter)
+        this.viewport.panBy(
+          center.x - this.pinchCenter.x,
+          center.y - this.pinchCenter.y,
+        );
+      if (this.pinchDistance > 0) {
+        const rect = this.viewportElement.getBoundingClientRect();
+        this.viewport.zoomAt(
+          distance / this.pinchDistance,
+          center.x - rect.left,
+          center.y - rect.top,
+        );
+      }
       this.pinchDistance = distance;
+      this.pinchCenter = center;
       this.handlers.viewportChanged();
       return;
     }
@@ -117,7 +133,10 @@ export class EditorCanvasInput {
       this.lastMiddle = null;
     }
     if (this.primaryPointer === event.pointerId) this.finishPrimary(cell);
-    if (this.pointers.size < 2) this.pinchDistance = 0;
+    if (this.pointers.size < 2) {
+      this.pinchDistance = 0;
+      this.pinchCenter = null;
+    }
   };
 
   private readonly onPointerLeave = (): void => {
