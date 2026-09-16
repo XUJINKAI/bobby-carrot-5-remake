@@ -8,35 +8,6 @@
 
 ## P0：会改变通行或持续状态
 
-### A5. Ice Block 完成融化后再删除
-
-**现象差异**
-
-原版 Fireball 命中 Ice Block 后，冰块依次显示三个融化阶段，每阶段约 `186ms`，最后才
-消失。当前 Engine 命中后立即删除 Ice Block；已经登记的融化视觉没有机会显示。
-
-**可能影响**
-
-冰块在规则和画面上过早消失，玩家无法判断火球是否命中；冰块后方路径也会比原版提前
-开放。
-
-**目标行为**
-
-Fireball 命中后把 Ice Block 置入 E4、E5、E6 三阶段融化过程，动画结束时再销毁 Entity。
-运行中碰撞读取当前融化阶段，画面读取同一 gameplay state。
-
-**原理说明**
-
-融化期间冰块是否仍阻挡会影响后续移动和火球，因此阶段属于 World gameplay state，并由
-RuntimeAction 推进。原版“最多五个融化任务”的全局槽限制是否保留，见
-[`Q05`](fidelity-open-questions.md#q05-同时融化很多冰块时采用什么并发规则)。
-
-**证据**
-
-- `semantic/IceMelting.java`
-- `semantic/DragonFireball.java`
-- `engine/src/entities/original/ice-block.ts`
-
 ## P1：输入生命周期和画面校准
 
 ### A6. Dragon 从踩 Tail 起锁定普通输入

@@ -170,8 +170,8 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 Bean 的生长目标读取完整空间栈：格内至少存在一个 `growth-substrate`，并且不存在
 `vertical-occupant`。该规则把原版 terrain/object 两层约束投影为可组合 Fact；动态
 Cloud / Leaf 不占据垂直生长空间。Fireball 只从原版地形获得传播许可；Snow 覆盖会阻止
-下层地面的传播许可。Mirror 的反射读取语义 `variant`，Ice Block 的融化由其对象入口提出
-命令。
+下层地面的传播许可。Mirror 的反射读取语义 `variant`。Fireball 命中 Ice Block 后，每个
+冰块独立启动 RuntimeAction，按三个 `186ms` gameplay 阶段推进 `meltStage`，最后才销毁。
 
 Fact 分为 `EntityFacts` 和 `PresenceFacts` 两种只读投影。前者描述对象整体语义，后者描述某个空间部位在当前格子的语义；两者可分别来自 Entity Definition 的静态声明、Entity 初始配置和当前 Entity state，Presence Fact 还可依赖 role/footprint。解析函数只读取所属 Entity，Presence 解析另可读取当前 Presence；跨对象条件留给运行规则判断。这个局部性让受影响 Fact 投影可以按 Entity 刷新。
 

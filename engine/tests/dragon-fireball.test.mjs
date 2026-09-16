@@ -4,6 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
 import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
+import { ICE_MELT_STAGE_MS } from "../dist/entities/original/ice-block.js";
 import { World } from "./support/World.mjs";
 
 function update(world, tick, stepMs) {
@@ -56,11 +57,18 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
 
   const melted = update(world, 3, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
+  const meltingIce = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  })[0];
+  assert.equal(meltingIce.state.meltStage, 1);
   assert.equal(
     world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.ICE_BLOCK }).length,
-    0,
+    1,
   );
-  assert.ok(melted.events.some((event) => event.type === "ice-melted"));
+  assert.ok(melted.events.some(
+    (event) => event.type === "ice-melting-started",
+  ));
 
   update(world, 4, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
@@ -68,6 +76,63 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
 
   update(world, 5, DEFAULT_FIREBALL_CELL_MS);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 1 });
+  assert.equal(world.entity(meltingIce.id).state.meltStage, 3);
+  const remainingMeltMs = ICE_MELT_STAGE_MS * 3 -
+    DEFAULT_FIREBALL_CELL_MS * 2;
+  const finished = update(world, 6, remainingMeltMs);
+  assert.equal(world.entity(meltingIce.id), undefined);
+  assert.ok(finished.events.some((event) => event.type === "ice-melted"));
+});
+
+test("more than five Ice Blocks melt independently and survive snapshot restore", () => {
+  const entities = [];
+  for (let y = 0; y < 6; y += 1) {
+    entities.push(
+      { type: "grass", variant: "ts-10-1", x: 0, y },
+      { type: "grass", variant: "ts-10-1", x: 1, y },
+      { type: MapEntityTypeId.ICE_BLOCK, x: 1, y },
+      { type: RuntimeEntityTypeId.FIREBALL, x: 0, y, direction: "right" },
+    );
+  }
+  const world = new World(
+    { schemaVersion: 1, width: 2, height: 6, entities },
+    { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
+  );
+
+  update(world, 1, 1);
+  update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  const iceBlocks = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  });
+  assert.equal(iceBlocks.length, 6);
+  assert.ok(iceBlocks.every((ice) => ice.state.meltStage === 1));
+  assert.equal(world.actions.active.filter(
+    (action) => action.kind === "ice-block-melt",
+  ).length, 6);
+
+  update(world, 3, ICE_MELT_STAGE_MS);
+  const snapshot = world.snapshot();
+  assert.ok(world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  }).every((ice) => ice.state.meltStage === 2));
+  update(world, 4, ICE_MELT_STAGE_MS * 2);
+  assert.equal(world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  }).length, 0);
+
+  world.restore(snapshot);
+  assert.equal(world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  }).length, 6);
+  update(world, 4, ICE_MELT_STAGE_MS * 2);
+  assert.equal(world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.ICE_BLOCK,
+  }).length, 0);
 });
 
 test("Fireball impact removes the projectile and releases camera focus", () => {
