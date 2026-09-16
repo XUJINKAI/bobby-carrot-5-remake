@@ -111,10 +111,6 @@ const landingBehavior: Behavior = {
 
 const flightAction: RuntimeActionDefinition = {
   kind: FLIGHT_ACTION,
-  onIntent() {
-    // 飞行过程收到的持续按键属于本次强制移动，落地后不能补执行一步。
-    return "consumed";
-  },
   update({ action, time, query }) {
     const actorId = action.ownerEntityId;
     if (actorId === undefined) return "complete";

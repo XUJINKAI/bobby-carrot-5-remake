@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { GameplaySession } from "../dist/core/GameplaySession.js";
 import { DEFAULT_FLIGHT_CELL_MS } from "../dist/entities/original/flight.js";
 import { World } from "./support/World.mjs";
 
@@ -57,7 +58,7 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
       }],
       world.query,
     ),
-    "consumed",
+    "retry",
   );
 
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
@@ -71,6 +72,51 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
   assert.equal(world.entity(actor.id).state.flying, false);
   assert.ok(landing.events.some((event) => event.type === "kite-landed"));
   assert.equal(world.actions.active.length, 0);
+});
+
+test("持续方向在 Landing 完成后恢复普通移动", () => {
+  const session = new GameplaySession({
+    timing: { worldHz: 4 },
+    bobbyLocomotion: { moveMs: DEFAULT_FLIGHT_CELL_MS },
+  });
+  session.loadLevel({
+    schemaVersion: 1,
+    width: 5,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 5 }, (_, x) => ({
+        type: "grass",
+        variant: "ts-10-1",
+        x,
+        y: 0,
+      })),
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.LANDING, x: 3, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+  });
+  const actor = session.world.query.entitiesWithFact("player")[0];
+  session.world.entities.require(actor.id).state = { kite: true };
+
+  const ticks = session.advanceTicks(12, () => ({
+    moves: [{ source: "external", direction: "right" }],
+  }));
+  const landingTick = ticks.find((tick) =>
+    tick.result.events.some((event) => event.type === "kite-landed")
+  );
+
+  assert.ok(landingTick);
+  assert.equal(
+    ticks.some((tick) =>
+      tick.inputResolutions.some((resolution) => resolution.result === "busy")
+    ),
+    true,
+  );
+  assert.equal(
+    landingTick.inputResolutions.find((item) => item.source === "external")?.result,
+    "moved",
+  );
+  assert.deepEqual(session.world.entity(actor.id).anchor, { x: 4, y: 0 });
 });
 
 test("Whirlwind without Kite blocks and emits a missing-item event", () => {
