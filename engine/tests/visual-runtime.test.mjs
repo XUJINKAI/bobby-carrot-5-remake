@@ -78,7 +78,7 @@ test("world entities stay below standing Bobby regardless of cover stackOrder", 
   );
 });
 
-test("直立双格角色与 Bobby 共用 standing pass", () => {
+test("直立角色与 Bobby 共用 standing pass", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
   for (const type of [

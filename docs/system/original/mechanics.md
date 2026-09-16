@@ -282,16 +282,24 @@ bf(1,1) --> bf(2,1) --> bf(3,1) --> bf(2,1)
 
 ## 角色对象
 
-这些对象虽然在原版 DAT 中可能由多个格子和多个 byte ID 组成，但在 BC5R 中应优先建模为一个 Entity + footprint / presence，而不是拆成多个互不关联的 Entity。
+这些对象虽然在原版 DAT 中可能由多个格子和多个 byte ID 组成，但在 BC5R 中保持单一
+Entity identity。真正参与 gameplay 的多格结构使用 footprint；只用于表现的延伸部分由
+VisualComposition 组合。
 
 ## Beaver
 
-Beaver 是两格对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。Head / Body 属于同一个 Entity，方向、交互和视觉都不应通过两个独立地图对象维持同步。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
+Beaver 的 Body 是 canonical anchor 与唯一 Presence，Head 作为相对 Body 向上一格的视觉
+图层绘制。碰撞与交互只读取 Body；原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor
+下移一格。
 
 ## Sandman
 
-Sandman 是两格角色型对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
+Sandman 的 Body 是 canonical anchor 与唯一 Presence，Head 和 Body 由同一个 standing
+VisualComposition 组合。Editor 以 Body anchor 放置和选中对象；原版 DAT 保存 Head 定位
+单元，Adapter 导入后将 anchor 下移一格。
 
 ## Dream Machine
 
-Dream Machine 同样是两格对象，采用单 Entity + footprint；Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用同一套机制。
+Dream Machine 同样以 Body 作为唯一 Presence，并向上绘制 Head 图层。原版 DAT 保存 Head
+定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用
+同一套机制。

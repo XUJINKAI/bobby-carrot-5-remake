@@ -205,7 +205,9 @@ Loader 根据 Definition 生成 Presence 与 Cell Stack，例如 `surface -> con
 
 Dragon Definition 的 footprint 生成 head/body/tail Presence。`head`、`body`、`tail` 是 Presence role，不是独立 Entity type。点击任一 footprint cell 时，Editor inspect 必须能解析到同一个 Dragon Entity 以及光标所在 role。
 
-Sandman、Beaver 与 Dream Machine 也以 Body 作为 canonical anchor；Head 是相对 anchor 的 `(0, -1)` Presence。原版 DAT 只保存 Head 定位单元，坐标平移由 Original Adapter 边界负责。
+Sandman、Beaver 与 Dream Machine 以 Body 作为 canonical anchor，并只在该格建立
+Presence；Head 是从 Body 向上绘制的视觉图层。原版 DAT 只保存 Head 定位单元，坐标平移由
+Original Adapter 边界负责。
 
 地图永远不保存展开后的 footprint Presence。
 

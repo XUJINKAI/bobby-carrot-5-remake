@@ -21,6 +21,10 @@ export interface AtlasVisualLayer {
   rotate?: QuarterTurn;
   flipX?: boolean;
   flipY?: boolean;
+  /** 相对所在格的原始素材像素偏移；Renderer 会随 tile 缩放。 */
+  offsetX?: number;
+  /** 相对所在格的原始素材像素偏移；Renderer 会随 tile 缩放。 */
+  offsetY?: number;
 }
 
 /** 独立图片、横向 sprite strip 或规则网格 sprite sheet。asset 是语义资源 ID，不是 URL。 */

@@ -125,42 +125,12 @@ test("Dragon 只显式声明 left/right body-centered footprint", () => {
   );
 });
 
-test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
+test("Sandman / Dream Machine / Beaver 只使用 body anchor Presence", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
-    const footprint = registry.require(type).footprint;
-    assert.equal("parts" in footprint, true, type);
-    assert.deepEqual(
-      footprint.parts.map((part) => [part.dx, part.dy, part.role]),
-      [
-        [0, -1, "head"],
-        [0, 0, "body"],
-      ],
-      type,
-    );
-  }
-});
-
-test("直立双格交互对象只有 body Presence 阻挡", () => {
-  const registry = createBuiltinEntityRegistry();
-  for (const type of [
-    MapEntityTypeId.SANDMAN,
-    MapEntityTypeId.DREAM_MACHINE,
-    MapEntityTypeId.BEAVER,
-  ]) {
     const definition = registry.require(type);
-    assert.deepEqual(definition.presenceFacts, [], type);
-    assert.deepEqual(
-      definition.footprint.parts.map((part) => [
-        part.role,
-        part.presenceFacts ?? [],
-      ]),
-      [
-        ["head", []],
-        ["body", ["blocking"]],
-      ],
-      type,
-    );
+    assert.equal(definition.footprint, undefined, type);
+    assert.deepEqual(definition.presenceFacts, ["blocking"], type);
   }
 });
 

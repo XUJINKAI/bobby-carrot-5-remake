@@ -88,6 +88,8 @@ test("大图、偏移和帧尺寸按实际像素范围裁剪，Canvas 回调保�
   assert.equal(paint([sprite], 0, 200), 0);
   assert.equal(paint([atlas], -48), 0);
   assert.equal(paint([atlas], -47.5, 0, 48, 2), 1);
+  assert.equal(paint([{ ...atlas, offsetX: -48 }], 96), 1);
+  assert.equal(paint([{ ...atlas, offsetY: -48 }], 0, 96), 1);
   // 非整数缩放产生不同的像素对齐宽高，旋转后仍可能露出视口。
   assert.equal(paint([{ ...atlas, rotate: 1 }], -48.25, 0, 48.25, 2), 1);
   let callbacks = 0;

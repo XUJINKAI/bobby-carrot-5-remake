@@ -4,29 +4,23 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  atlasVisual,
-  tileCell,
   originalModule,
+  tileCell,
+  uprightAtlasVisual,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
-  presenceFacts: [],
+  presenceFacts: ["blocking"],
   mechanisms: ["object-interaction"],
-  footprint: {
-    parts: [
-      { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body", presenceFacts: ["blocking"] },
-    ],
-  },
   presentation: { name: "Dream Machine", renderPass: "standing" },
 };
 
 export const dreamMachine: EntityModule = originalModule(
   definition,
-  atlasVisual(definition, (context) =>
-    context.presence.role === "body"
-      ? tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "body" })
-      : tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "head" }),
+  uprightAtlasVisual(
+    definition,
+    tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "head" }),
+    tileCell(MapEntityTypeId.DREAM_MACHINE, { role: "body" }),
   ),
 );

@@ -56,7 +56,7 @@ test("地图 dialogue 在角色身体被碰触时产生 Engine 私有对白请�
   const interaction = result.events[0];
   assert.equal(interaction.actorId, actor(world).id);
   assert.equal(interaction.objectType, MapEntityTypeId.SANDMAN);
-  assert.equal(interaction.role, "body");
+  assert.equal(interaction.role, undefined);
   assert.equal(interaction.requestId, undefined);
   assert.deepEqual(interaction.lines, ["hello world!"]);
 });
@@ -99,7 +99,7 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
   }
 });
 
-test("直立双格对象的 passable head 按进入的 Presence 触发对白", () => {
+test("直立对象的视觉 head 不参与碰撞或对白", () => {
   for (const type of [
     MapEntityTypeId.SANDMAN,
     MapEntityTypeId.BEAVER,
@@ -108,17 +108,11 @@ test("直立双格对象的 passable head 按进入的 Presence 触发对白", (
     const world = new World(dialogLevel(type, type, 0));
     const started = move(world, "right");
     assert.equal(started.moves[0].moved, true, type);
-    const interaction = started.events.find((event) =>
-      event.type === "dialogue-request"
-    );
-    assert.ok(interaction, type);
-    assert.equal(interaction.role, "head", type);
-    assert.equal(interaction.action, "enter", type);
-    assert.deepEqual(interaction.lines, [type], type);
+    assert.deepEqual(started.events, [], type);
   }
 });
 
-test("passable head 没有字面对白时产生通用交互请求", () => {
+test("没有字面对白时经过视觉 head 不产生通用交互请求", () => {
   const world = new World(dialogLevel(
     undefined,
     MapEntityTypeId.DREAM_MACHINE,
@@ -127,10 +121,7 @@ test("passable head 没有字面对白时产生通用交互请求", () => {
   const result = move(world, "right");
 
   assert.equal(result.moves[0].moved, true);
-  assert.equal(result.events[0]?.type, "object-interaction");
-  assert.equal(result.events[0]?.role, "head");
-  assert.equal(result.events[0]?.action, "enter");
-  assert.equal(result.events[0]?.requestId, 1);
+  assert.deepEqual(result.events, []);
 });
 
 test("Snowman 图块在触碰时发出地图对白", () => {

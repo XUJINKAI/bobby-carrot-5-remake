@@ -41,18 +41,28 @@ export function drawVisualComposition(
         viewport,
       );
     } else {
+      const scale = tileSize / images.sourceTileSize;
+      const offsetX = (layer.offsetX ?? 0) * scale;
+      const offsetY = (layer.offsetY ?? 0) * scale;
+      const atlasCell = snapRectToDevicePixels(
+        cell.x + offsetX,
+        cell.y + offsetY,
+        cell.x + cell.width + offsetX,
+        cell.y + cell.height + offsetY,
+        deviceScale,
+      );
       // 像素对齐后宽高可能不同，奇数次旋转需要交换包围盒宽高。
       const rotated = Math.abs(layer.rotate ?? 0) % 2 === 1;
       const bounds = rotated
         ? {
-            x: cell.x + (cell.width - cell.height) / 2,
-            y: cell.y + (cell.height - cell.width) / 2,
-            width: cell.height,
-            height: cell.width,
+            x: atlasCell.x + (atlasCell.width - atlasCell.height) / 2,
+            y: atlasCell.y + (atlasCell.height - atlasCell.width) / 2,
+            width: atlasCell.height,
+            height: atlasCell.width,
           }
-        : cell;
+        : atlasCell;
       if (!intersectsViewport(bounds, viewport)) continue;
-      drawAtlasLayer(context, images, layer, cell);
+      drawAtlasLayer(context, images, layer, atlasCell);
     }
   }
 }

@@ -171,7 +171,10 @@ visual 帮助识别，地图仍放置一个没有可切换 variant 的 canonical
 
 ## Multi-cell Object
 
-Dragon、Sandman、Dream Machine、Beaver 等多格 Palette Object 在 JSON 中只保存 anchor。footprint 与 authoring variant 通过 Engine Object Layout 和 Editor policy 解析。Surface atlas 单元始终是单格 Entity，视觉拼图使用相同 semantic type 的不同 `ts-*` variant：
+Dragon 等多格 Palette Object 在 JSON 中只保存 anchor。footprint 与 authoring variant
+通过 Engine Object Layout 和 Editor policy 解析。Sandman、Dream Machine 与 Beaver 以
+Body 单格 anchor 放置，向上延伸的 Head 只属于 VisualComposition。Surface atlas 单元始终
+是单格 Entity，视觉拼图使用相同 semantic type 的不同 `ts-*` variant：
 
 - 鼠标指向 body/tail 仍 resolve 到完整 owner；
 - Del 删除完整 owner；

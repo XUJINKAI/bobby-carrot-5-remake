@@ -40,7 +40,7 @@ function moveRight(world) {
   }).moves[0];
 }
 
-test("Bobby 可以经过直立双格交互对象的 head，但不能进入 body", () => {
+test("Bobby 可以经过直立对象的视觉 head，但不能进入 body anchor", () => {
   for (const type of [
     MapEntityTypeId.SANDMAN,
     MapEntityTypeId.DREAM_MACHINE,
@@ -78,11 +78,33 @@ test("Dream Machine 以 body anchor 与 Bobby 形成前后遮挡", () => {
   assert.deepEqual(standingTypes(0), [
     MapEntityTypeId.BOBBY,
     MapEntityTypeId.DREAM_MACHINE,
-    MapEntityTypeId.DREAM_MACHINE,
   ]);
   assert.deepEqual(standingTypes(2), [
     MapEntityTypeId.DREAM_MACHINE,
-    MapEntityTypeId.DREAM_MACHINE,
     MapEntityTypeId.BOBBY,
   ]);
+});
+
+test("直立对象从 body anchor 组合 head 与 body 视觉", () => {
+  for (const type of [
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.DREAM_MACHINE,
+    MapEntityTypeId.BEAVER,
+  ]) {
+    const world = passageWorld(type, 0);
+    const item = buildVisualScene(
+      world,
+      createBuiltinVisualRegistry(),
+      new Map(),
+    ).standing.find((candidate) =>
+      world.entity(candidate.presence.entityId)?.type === type
+    );
+    assert.ok(item, type);
+    assert.equal(item.presence.cell.y, 1, type);
+    assert.equal(item.composition.layers.length, 2, type);
+    assert.equal(item.composition.layers[0].kind, "atlas", type);
+    assert.equal(item.composition.layers[0].offsetY, -48, type);
+    assert.equal(item.composition.layers[1].kind, "atlas", type);
+    assert.equal(item.composition.layers[1].offsetY, undefined, type);
+  }
 });

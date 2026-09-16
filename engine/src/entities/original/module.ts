@@ -13,6 +13,7 @@ import {
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
 import type { WinConditionState } from "../../world/WorldTypes.js";
 import type {
+  AtlasVisualLayer,
   ImageVisualLayer,
   VisualDefinition,
   VisualResolveContext,
@@ -104,6 +105,34 @@ export function atlasVisual(
             column: atlas.column,
             row: atlas.row,
           },
+        ],
+      };
+    },
+  };
+}
+
+/** 以脚底格为唯一 Presence，向上组合原版直立双格素材。 */
+export function uprightAtlasVisual(
+  definition: EntityModuleDefinition,
+  head: AtlasCell,
+  body: AtlasCell,
+): VisualDefinition {
+  const layer = (
+    atlas: AtlasCell,
+    offsetY = 0,
+  ): AtlasVisualLayer => ({
+    kind: "atlas",
+    column: atlas.column,
+    row: atlas.row,
+    ...(offsetY === 0 ? {} : { offsetY }),
+  });
+  return {
+    id: definition.presentation.visual ?? definition.type,
+    resolve() {
+      return {
+        layers: [
+          layer(head, -ORIGINAL_TILE_SIZE),
+          layer(body),
         ],
       };
     },

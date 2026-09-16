@@ -4,29 +4,23 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  atlasVisual,
-  tileCell,
   originalModule,
+  tileCell,
+  uprightAtlasVisual,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SANDMAN,
-  presenceFacts: [],
+  presenceFacts: ["blocking"],
   mechanisms: ["object-interaction"],
-  footprint: {
-    parts: [
-      { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body", presenceFacts: ["blocking"] },
-    ],
-  },
   presentation: { name: "Sandman", renderPass: "standing" },
 };
 
 export const sandman: EntityModule = originalModule(
   definition,
-  atlasVisual(definition, (context) =>
-    context.presence.role === "body"
-      ? tileCell(MapEntityTypeId.SANDMAN, { role: "body" })
-      : tileCell(MapEntityTypeId.SANDMAN, { role: "head" }),
+  uprightAtlasVisual(
+    definition,
+    tileCell(MapEntityTypeId.SANDMAN, { role: "head" }),
+    tileCell(MapEntityTypeId.SANDMAN, { role: "body" }),
   ),
 );
