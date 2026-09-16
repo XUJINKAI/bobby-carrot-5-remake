@@ -8,13 +8,11 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.COLOR_SWITCH,
-  traits: ["walkable", "switch"],
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   state: [
     {
       key: "color",

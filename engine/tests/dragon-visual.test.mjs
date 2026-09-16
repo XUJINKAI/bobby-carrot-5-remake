@@ -5,16 +5,19 @@ import {
   createBuiltinEntityCatalog,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function dragonLayers(direction, state) {
   const catalog = createBuiltinEntityCatalog();
   const store = new EntityStore([
     { type: MapEntityTypeId.DRAGON, x: 2, y: 1, direction },
   ]);
-  const spatial = new SpatialIndex(store, catalog.entities, 5, 3);
+  const spatial = new SpatialIndex(store, catalog.entities, 5, 3, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const visuals = createBuiltinVisualRegistry();
   const entity = store.all()[0];

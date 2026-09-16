@@ -99,7 +99,7 @@
 14. Explore 与 Adventure 是两种不同官方地图体验：Explore 全关开放、可筛选/调试/自由缩放；Adventure 才有线性章内进度、全局存档与受限竖屏视野。
 15. Editor 只持久化语义 JSON Draft；Play Test clone/normalize 后把 `LevelMap` 交给 Engine，Runtime 不得反写 Draft。
 16. multi-cell Object 持久化只保存 anchor；唯一 Runtime 展开点是 Engine level-load 边界。Editor owner/preview/variant 必须共用 Engine Object Layout。
-17. Editor Palette 是否允许某个 Object 出现属于 Engine Definition 的 authoring metadata，不维护 Editor 私有 ID 黑名单。
+17. 可持久化 Entity 由 Model `EntityMapDefinition` 声明；Palette、Surface、隐藏、分组与创建入口由 Editor definitions 声明。Engine Definition 提供运行语义、footprint 与视觉解析。
 18. `ts.png` / `ta.png` 坐标属于 semantic atlas mapping，不允许由 DAT byte 推导。
 19. 新机关必须有最小回归测试，并能在 Editor 测试地图验证；需要确认原版行为时再用 `npm run original:patch` 打回原版 JAR。
 20. 原版验证工具只 patch 目标 DAT level record，尽量保留其它 JAR/DAT 内容；修改后失效的签名文件必须移除，Manifest 保留。

@@ -27,7 +27,6 @@ import {
   directionCell,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
 } from "./module.js";
 
 const SPEED_RUN_ACTION = "speed-run";
@@ -42,7 +41,7 @@ const speedBoost: Behavior = {
   id: "speed-boost",
   onInitialize({ self, query, commands }) {
     const actors = query.presencesAt(self.presence.cell)
-      .filter((presence) => presence.traits.includes("player"))
+      .filter((presence) => presence.facts.includes("player"))
       .map((presence) => query.entity(presence.entityId))
       .filter((entity) => entity !== undefined)
       .sort((left, right) => left.id - right.id);
@@ -55,7 +54,7 @@ const speedBoost: Behavior = {
     }
   },
   onEnter({ actor, self, direction, movement, query, commands }) {
-    if (!query.entityHasTrait(actor.id, "player")) return;
+    if (!query.entityHasFact(actor.id, "player")) return;
     // 同一 Speed run 穿过连续 Speed 时由现有 Action 接管方向，不重复启动。
     if (readBobbySpeedBoost(actor.state)) return;
     const beltDirection = self.entity.direction ?? direction;
@@ -205,9 +204,7 @@ const speedRunAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SPEED,
-  traits: ["walkable", "forced-movement"],
-  layer: "surface",
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   presentation: { name: "Speed" },
 };
 

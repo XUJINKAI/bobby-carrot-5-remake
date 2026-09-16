@@ -16,9 +16,9 @@ import {
   readBobbyInventory,
 } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
+import { beanCanGrowAt } from "./terrain-semantics.js";
 import {
   atlasVisual,
-  CONTENT_STACK_ORDER,
   tileCell,
   originalModule,
 } from "./module.js";
@@ -33,7 +33,7 @@ const plantBean: Behavior = {
   id: "plant-bean",
   onEnter({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -84,7 +84,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
       return "running";
 
     const nextY = baseY - height;
-    if (!canGrowInto(query, x, nextY)) {
+    if (!beanCanGrowAt(query, { x, y: nextY })) {
       commands.emit({
         type: "bean-growth-completed",
         x,
@@ -124,8 +124,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAN_FIELD,
-  traits: [],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: [],
   presentation: { name: "Bean Field" },
 };
 
@@ -145,17 +144,6 @@ function createBeanGrowthAction(x: number, baseY: number): RuntimeActionSpec {
     kind: BEAN_GROWTH_ACTION,
     state: { x, baseY, height: 1, elapsedMs: 0 },
   };
-}
-
-function canGrowInto(query: WorldQueryApi, x: number, y: number): boolean {
-  const cell = { x, y };
-  if (!query.inBounds(cell) || !query.hasTraitAt(cell, "bean-growth-space"))
-    return false;
-  return query.presencesAt(cell).every(
-    (presence) =>
-      presence.layer === "surface" ||
-      presence.traits.includes("bean-growth-space"),
-  );
 }
 
 function stalkTipAt(

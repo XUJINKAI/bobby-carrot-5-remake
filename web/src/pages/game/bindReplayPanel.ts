@@ -1,11 +1,16 @@
-import type {
-  Game,
-  Replay,
-  ReplayRecordingMeta,
-  ReplayReport,
+import {
+  serializeReplay,
+  type Game,
+  type Replay,
+  type ReplayRecordingMeta,
+  type ReplayReport,
 } from "@bobby/engine";
 import { downloadExchangeText } from "../../shared/data-exchange/dataExchangeFile.js";
-import { loadReplayAsset, parseReplayText } from "./replayAssets.js";
+import {
+  loadReplayAsset,
+  parseReplayText,
+  saveReplayAsset,
+} from "./replayAssets.js";
 
 const REPLAY_PARSE_DELAY_MS = 300;
 
@@ -28,6 +33,18 @@ export function replayVerificationPresentation(
     text: `复跑完成 · ${report.endTick} ticks`,
     failed: false,
   };
+}
+
+export function validateBuiltinReplaySave(
+  game: Pick<Game, "verifyReplay">,
+  replay: Replay,
+): ReplayReport {
+  const report = game.verifyReplay(replay);
+  if (replay.finalState.status !== "won")
+    throw new Error("内置过法必须声明 won 终局");
+  if (report.actual.status !== "won")
+    throw new Error("Replay 在当前关卡复跑后未通关");
+  return report;
 }
 
 export interface ReplayPanelController {
@@ -74,12 +91,16 @@ export function bindReplayPanel(options: {
   const loadBuiltin = panel.querySelector<HTMLButtonElement>(
     '[data-replay-action="load-builtin"]',
   );
+  const saveBuiltin = panel.querySelector<HTMLButtonElement>(
+    '[data-replay-action="save-builtin"]',
+  );
   const builtinReplayUrl = options.builtinReplayUrl;
   const timeScales = [0.1, 0.5, 1, 1.25, 1.5, 2, 4, 8] as const;
   let replay: Replay | null = null;
   let open = options.initialOpen ?? false;
   let appliedTimeScale = 1;
   let loadingBuiltin = false;
+  let savingBuiltin = false;
   let replayTextDirty = false;
   let replayParseTimer: number | null = null;
   let destroyed = false;
@@ -180,7 +201,7 @@ export function bindReplayPanel(options: {
     if (!options.game.replayRecording) return;
     try {
       replay = options.game.stopReplayRecording();
-      output.value = `${JSON.stringify(replay, null, 2)}\n`;
+      output.value = serializeReplay(replay);
       clearReplayParseTimer();
       replayTextDirty = false;
       verifyReplay();
@@ -301,6 +322,26 @@ export function bindReplayPanel(options: {
     }
   };
 
+  const saveBuiltinReplay = async (): Promise<void> => {
+    if (!builtinReplayUrl) return;
+    savingBuiltin = true;
+    verification.textContent = "正在保存内置过法";
+    verification.classList.remove("failed");
+    update();
+    try {
+      const selectedReplay = replayForAction();
+      if (!selectedReplay) return;
+      validateBuiltinReplaySave(options.game, selectedReplay);
+      await saveReplayAsset(builtinReplayUrl, output.value);
+      if (!destroyed) verification.textContent = "内置过法已保存";
+    } catch (error) {
+      if (!destroyed) showError(error);
+    } finally {
+      savingBuiltin = false;
+      if (!destroyed) update();
+    }
+  };
+
   const onOutputInput = (): void => {
     options.game.stopReplayPlayback();
     clearReplayParseTimer();
@@ -354,6 +395,7 @@ export function bindReplayPanel(options: {
     else if (action === "copy") void copyReplay();
     else if (action === "download") downloadReplay();
     else if (action === "load-builtin") void loadBuiltinReplay();
+    else if (action === "save-builtin") void saveBuiltinReplay();
   };
   panel.addEventListener("click", onClick);
   output.addEventListener("input", onOutputInput);
@@ -396,8 +438,12 @@ export function bindReplayPanel(options: {
     copy.disabled = output.value.length === 0 || loadingBuiltin;
     download.disabled = output.value.length === 0 || loadingBuiltin;
     if (loadBuiltin) {
-      loadBuiltin.disabled = recording || playing || loadingBuiltin;
+      loadBuiltin.disabled = recording || playing || loadingBuiltin || savingBuiltin;
       loadBuiltin.textContent = loadingBuiltin ? "读取中…" : "加载内置过法";
+    }
+    if (saveBuiltin) {
+      saveBuiltin.disabled = savingBuiltin || loadingBuiltin;
+      saveBuiltin.textContent = savingBuiltin ? "保存中…" : "保存内置过法";
     }
   };
   const unsubscribeRecordingAbort = options.game.on(
@@ -411,6 +457,10 @@ export function bindReplayPanel(options: {
       showError("interactive host choice is not supported by replay");
       update();
     },
+  );
+  const unsubscribeLevelComplete = options.game.on(
+    "level-complete",
+    stopRecording,
   );
   setOpen(open, false);
   update();
@@ -429,6 +479,7 @@ export function bindReplayPanel(options: {
       speedInput.removeEventListener("input", onSpeedInput);
       window.removeEventListener("keydown", onKeyDown);
       unsubscribeRecordingAbort();
+      unsubscribeLevelComplete();
       stage.classList.remove("replay-panel-open");
     },
   };

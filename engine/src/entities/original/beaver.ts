@@ -4,30 +4,23 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
-  atlasVisual,
-  CONTENT_STACK_ORDER,
-  tileCell,
   originalModule,
+  tileCell,
+  uprightAtlasVisual,
 } from "./module.js";
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.BEAVER,
-  traits: ["blocking", "interaction", "dialog"],
-  stackOrder: CONTENT_STACK_ORDER,
-  footprint: {
-    parts: [
-      { dx: 0, dy: -1, role: "head" },
-      { dx: 0, dy: 0, role: "body" },
-    ],
-  },
-  presentation: { name: "Beaver" },
+  presenceFacts: ["blocking"],
+  mechanisms: ["object-interaction"],
+  presentation: { name: "Beaver", renderPass: "standing" },
 };
 
 export const beaver: EntityModule = originalModule(
   definition,
-  atlasVisual(definition, (context) =>
-    context.presence.role === "body"
-      ? tileCell(MapEntityTypeId.BEAVER, { role: "body" })
-      : tileCell(MapEntityTypeId.BEAVER, { role: "head" }),
+  uprightAtlasVisual(
+    definition,
+    tileCell(MapEntityTypeId.BEAVER, { role: "head" }),
+    tileCell(MapEntityTypeId.BEAVER, { role: "body" }),
   ),
 );

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   EditorPreview,
   builtinEditorDefinition,
@@ -11,10 +11,11 @@ import {
   resolvePlacement,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 function typesAt(level, x, y) {
-  return new EditorPreview(level, catalog)
+  return new EditorPreview(level, environment)
     .inspectCell(x, y)
     .presences.map((item) => item.entity.type);
 }
@@ -22,7 +23,7 @@ function typesAt(level, x, y) {
 test("stackSlot 只替换同层素材", () => {
   const level = createBlankLevel(8, 8);
   const surface = paintSurface(
-    catalog,
+    environment,
     [{ x: 1, y: 1 }],
     {
       terrain: "water",
@@ -32,12 +33,12 @@ test("stackSlot 只替换同层素材", () => {
     },
   ).apply(level);
   const content = placeEntity(
-    catalog,
+    environment,
     MapEntityTypeId.CARROT,
     { x: 1, y: 1 },
   ).apply(surface);
   const occupant = placeEntity(
-    catalog,
+    environment,
     MapEntityTypeId.LOCK,
     { x: 1, y: 1 },
   ).apply(content);
@@ -47,17 +48,27 @@ test("stackSlot 只替换同层素材", () => {
     MapEntityTypeId.CARROT,
     MapEntityTypeId.LOCK,
   ]);
+  assert.deepEqual(
+    new EditorPreview(occupant, environment)
+      .inspectCell(1, 1)
+      .presences.map((item) => item.presence.stackOrder),
+    [0, 1, 2],
+  );
 });
 
 test("同一 floor-feature slot 的新素材替换旧素材", () => {
   let level = createBlankLevel(8, 8);
-  level = placeEntity(catalog, MapEntityTypeId.TRAP, { x: 1, y: 1 }).apply(level);
-  level = placeEntity(catalog, MapEntityTypeId.SPEED, { x: 1, y: 1 }).apply(level);
+  level = placeEntity(environment, MapEntityTypeId.TRAP, { x: 1, y: 1 }).apply(level);
+  level = placeEntity(environment, MapEntityTypeId.SPEED, { x: 1, y: 1 }).apply(level);
 
   assert.deepEqual(typesAt(level, 1, 1), [
     MapEntityTypeId.GRASS,
     MapEntityTypeId.SPEED,
   ]);
+  assert.equal(
+    new EditorPreview(level, environment).inspectCell(1, 1).top?.presence.stackOrder,
+    1,
+  );
 });
 
 test("多格素材会原子替换覆盖范围内的同 slot 素材", () => {
@@ -68,7 +79,7 @@ test("多格素材会原子替换覆盖范围内的同 slot 素材", () => {
   );
 
   const placed = placeEntity(
-    catalog,
+    environment,
     { type: MapEntityTypeId.DRAGON, fields: { direction: "left" } },
     { x: 3, y: 3 },
   ).apply(level);
@@ -84,10 +95,10 @@ test("多格素材会原子替换覆盖范围内的同 slot 素材", () => {
 
 test("非推荐的跨 slot 堆叠会返回结构化警告", () => {
   let level = createBlankLevel(8, 8);
-  level = placeEntity(catalog, MapEntityTypeId.LOCK, { x: 2, y: 2 }).apply(level);
+  level = placeEntity(environment, MapEntityTypeId.LOCK, { x: 2, y: 2 }).apply(level);
   const warning = resolvePlacement(
     level,
-    catalog,
+    environment,
     { type: MapEntityTypeId.EGG },
     { x: 2, y: 2 },
     builtinEditorDefinition,

@@ -65,7 +65,7 @@ export class Renderer {
 
     const bounds = { x: 0, y: 0, ...viewport };
     this.drawPass(context, scene.world, camera, deviceScale, bounds);
-    this.drawPass(context, scene.player, camera, deviceScale, bounds);
+    this.drawPass(context, scene.standing, camera, deviceScale, bounds);
     this.drawPass(context, scene.effect, camera, deviceScale, bounds);
     for (const callout of scene.callouts ?? [])
       drawWorldCallout(

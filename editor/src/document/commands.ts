@@ -1,8 +1,8 @@
 import {
   isLevelEntityReservedField,
   type Direction,
-  type JsonPrimitive,
   type LevelEntity,
+  type LevelEntityFieldValue,
   type LevelLimit,
   type WinCondition,
 } from "@bobby/model";
@@ -84,13 +84,13 @@ export function setEntityDirection(
 export function updateEntityField(
   ref: EntityRef,
   key: string,
-  value: JsonPrimitive | undefined,
+  value: LevelEntityFieldValue | undefined,
 ): EditorCommand {
   if (!key || isLevelEntityReservedField(key)) return command((level) => level);
   return updateEntity(ref, (entity) => {
     const next = { ...entity };
     if (value === undefined) delete next[key];
-    else next[key] = value;
+    else next[key] = structuredClone(value);
     return next;
   });
 }
@@ -133,7 +133,7 @@ export function reorderEntityStack(
     unique.forEach((ref, index) => {
       entities[ref.index] = {
         ...entities[ref.index]!,
-        stackOrder: (unique.length - index - 1) * 1000,
+        stackOrder: unique.length - index - 1,
       };
     });
     return normalizeEditorLevel({ ...level, entities });

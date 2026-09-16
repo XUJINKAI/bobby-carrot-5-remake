@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { DEFAULT_FLIGHT_CELL_MS } from "../dist/entities/original/flight.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
   return world.step({
@@ -41,8 +41,8 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
       },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
-  actor.state = { kite: true };
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { kite: true };
 
   const takeoff = move(world, actor.id, "right");
   assert.equal(world.entity(actor.id).state.flying, true);
@@ -73,7 +73,7 @@ test("Whirlwind without Kite blocks and emits a missing-item event", () => {
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const whirlwind = world.entities
     .all()
     .find((entity) => entity.type === MapEntityTypeId.WHIRLWIND);
@@ -118,8 +118,8 @@ test("Airborne movement chains without a stationary World tick", () => {
     },
     { motionDurationMs: 350 },
   );
-  const actor = world.query.entitiesWithTrait("player")[0];
-  actor.state = { kite: true };
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
 
   let airborne = false;
@@ -157,8 +157,8 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
       },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
-  actor.state = { kite: true };
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   const boundary = world.update({ tick: 2, stepMs: DEFAULT_FLIGHT_CELL_MS });
@@ -195,8 +195,8 @@ test("Downing an airborne actor cancels flight and clears flight state", () => {
       },
     ],
   });
-  const actor = world.query.entitiesWithTrait("player")[0];
-  actor.state = { kite: true };
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
 
   const downed = world.downActor(actor.id, "test-down");

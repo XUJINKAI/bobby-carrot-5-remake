@@ -141,8 +141,8 @@ const CORE_ENTITY_DEFINITIONS: readonly EntityMapDefinition[] = [
   defineEntity(MapEntityTypeId.CARROT),
   defineEntity(
     MapEntityTypeId.EGG,
-    [],
-    "Filled/empty is runtime state, not a different map entity type.",
+    [booleanField("filled", false, false, "开局是否已经填充。")],
+    "填充状态由同一 Egg Entity 的运行状态维护。",
   ),
   defineEntity(MapEntityTypeId.LOCK, [
     booleanField(
@@ -291,7 +291,8 @@ function fieldAccepts(
   if (field.kind === "boolean") return typeof value === "boolean";
   if (field.kind === "string") return typeof value === "string";
   if (field.kind === "string-or-string-list") {
-    return typeof value === "string" || isNonEmptyStringList(value);
+    return (typeof value === "string" && value.length > 0) ||
+      isNonEmptyStringList(value);
   }
   if (field.kind === "number") return typeof value === "number" && Number.isFinite(value);
   if (field.kind === "integer") return typeof value === "number" && Number.isInteger(value);
@@ -302,7 +303,7 @@ function dialogueField(): EntityMapFieldDefinition {
   return stringOrStringListField(
     "dialogue",
     false,
-    "角色被碰触时显示的字面对白；数组按实体独立循环。",
+    "Engine 在角色被碰触时显示的内建对白；数组在同一对话框内依次翻页。",
   );
 }
 

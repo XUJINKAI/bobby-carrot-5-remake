@@ -4,11 +4,13 @@ import type { EntityInstance } from "../entity/EntityInstance.js";
 import type { MovementContext } from "./Behavior.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
-import type { SpatialIndex } from "../spatial/SpatialIndex.js";
 import type { Behavior, BehaviorContext } from "./Behavior.js";
 import type { BehaviorRegistry } from "./BehaviorRegistry.js";
+import type { MechanismRegistry } from "../../mechanism/MechanismRegistry.js";
+import { resolveEffectiveBehaviors } from "./EffectiveBehavior.js";
 import type { CommandQueue } from "./CommandQueue.js";
 import type { WorldQueryApi } from "./WorldQueryApi.js";
+import { readonlyView } from "./ReadonlyView.js";
 
 export type BehaviorMovementHook =
   | "onArrive"
@@ -21,29 +23,24 @@ export class BehaviorRuntime {
   constructor(
     private readonly registry: EntityRegistry,
     private readonly behaviors: BehaviorRegistry,
+    private readonly mechanisms: MechanismRegistry,
     private readonly entities: {
       get(id: number): EntityInstance | undefined;
     },
-    private readonly spatial: SpatialIndex,
     private readonly query: WorldQueryApi,
   ) {}
 
-  resolve(
-    entity: EntityInstance,
-    presence: EntityPresence,
-  ): readonly Behavior[] {
+  resolve(entity: EntityInstance): readonly Behavior[] {
     const definition = this.registry.require(entity.type);
-    return this.behaviors.resolve(definition.behaviors, presence.traits);
+    return resolveEffectiveBehaviors(
+      definition,
+      this.behaviors,
+      this.mechanisms,
+    );
   }
 
   resolveForMovement(entity: EntityInstance): readonly Behavior[] {
-    const definition = this.registry.require(entity.type);
-    const traits = new Set(
-      this.spatial
-        .presencesForEntity(entity.id)
-        .flatMap((presence) => [...presence.traits]),
-    );
-    return this.behaviors.resolve(definition.behaviors, [...traits]);
+    return this.resolve(entity);
   }
 
   context(
@@ -58,8 +55,8 @@ export class BehaviorRuntime {
     return {
       query: this.query,
       commands: queue,
-      actor,
-      self: { entity: self, presence },
+      actor: readonlyView(actor),
+      self: { entity: readonlyView(self), presence: readonlyView(presence) },
       ...(direction ? { direction } : {}),
       ...(movement ? { movement } : {}),
       ...(time ? { time } : {}),
@@ -72,11 +69,11 @@ export class BehaviorRuntime {
     queue: CommandQueue,
   ): void {
     const context = {
-      self: { entity, presence },
+      self: { entity: readonlyView(entity), presence: readonlyView(presence) },
       query: this.query,
       commands: queue,
     };
-    for (const behavior of this.resolve(entity, presence))
+    for (const behavior of this.resolve(entity))
       behavior.onInitialize?.(context);
   }
 
@@ -98,7 +95,7 @@ export class BehaviorRuntime {
       queue,
       movement,
     );
-    for (const behavior of this.resolve(entity, presence))
+    for (const behavior of this.resolve(entity))
       behavior[hook]?.(context);
   }
 }

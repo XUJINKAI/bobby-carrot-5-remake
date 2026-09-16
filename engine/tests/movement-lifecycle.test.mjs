@@ -2,18 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 function runtime(onEnter) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "player", traits: ["player"], layer: "object", stackOrder: 100 },
-    { type: "trigger", traits: ["trigger"], layer: "object", stackOrder: 100 },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
+    {
+      type: "trigger",
+      presenceFacts: ["trigger"],
+      behaviors: ["trigger-enter"],
+    },
   ]);
   const behaviors = new BehaviorRegistry();
   behaviors.register({ id: "trigger-enter", onEnter });
-  behaviors.bindTrait("trigger", "trigger-enter");
   const world = new World(
     {
       schemaVersion: 1,
@@ -26,9 +30,9 @@ function runtime(onEnter) {
         { type: "trigger", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors, motionDurationMs: 100 },
+    { entities, behaviors, facts: testFactRegistry("trigger"), motionDurationMs: 100 },
   );
-  return { world, actorId: world.query.entitiesWithTrait("player")[0].id };
+  return { world, actorId: world.query.entitiesWithFact("player")[0].id };
 }
 
 function moveRight(world, actorId) {
@@ -54,10 +58,10 @@ test("movement interaction marker 在任意 WorldTick 跨过中点时只执行�
   const started = moveRight(world, actorId);
   assert.equal(world.entity(actorId).anchor.x, 1);
   assert.equal(started.events.length, 0);
-  assert.equal(world.query.entitiesWithTrait("trigger")[0].state, undefined);
+  assert.equal(world.query.entitiesWithFact("trigger")[0].state, undefined);
 
   const crossed = world.update({ tick: 0, stepMs: 60 });
-  assert.equal(world.query.entitiesWithTrait("trigger")[0].state.hits, 1);
+  assert.equal(world.query.entitiesWithFact("trigger")[0].state.hits, 1);
   assert.deepEqual(
     crossed.deltas
       .filter((delta) => delta.type === "motion-marker")
@@ -66,7 +70,7 @@ test("movement interaction marker 在任意 WorldTick 跨过中点时只执行�
   );
 
   world.update({ tick: 1, stepMs: 10 });
-  assert.equal(world.query.entitiesWithTrait("trigger")[0].state.hits, 1);
+  assert.equal(world.query.entitiesWithFact("trigger")[0].state.hits, 1);
 });
 
 test("midpoint death 冻结 World pose 并保持 marker 到中断的因果顺序", () => {
@@ -108,7 +112,7 @@ test("movement snapshot 保存已跨过的 marker", () => {
 
   world.restore(snapshot);
   world.update({ tick: 1, stepMs: 40 });
-  assert.equal(world.query.entitiesWithTrait("trigger")[0].state.hits, 1);
+  assert.equal(world.query.entitiesWithFact("trigger")[0].state.hits, 1);
 });
 
 test("World 失败后拒绝 revive 并保留死亡时冻结的 motion", () => {

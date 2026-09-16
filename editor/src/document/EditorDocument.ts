@@ -19,12 +19,15 @@ export class EditorDocument {
   private readonly history = new EditorHistory();
   private readonly listeners = new Set<EditorDocumentListener>();
   private revision = 0;
+  private currentFingerprint: string;
   private savedFingerprint: string;
   private transactionStart: EditorMap | null = null;
+  private transactionStartFingerprint: string | null = null;
 
   constructor(level: EditorMap) {
     this.level = normalizeEditorLevel(level);
-    this.savedFingerprint = fingerprint(this.level);
+    this.currentFingerprint = fingerprint(this.level);
+    this.savedFingerprint = this.currentFingerprint;
   }
 
   getSnapshot(): EditorSnapshot {
@@ -33,7 +36,7 @@ export class EditorDocument {
       revision: this.revision,
       canUndo: this.history.canUndo,
       canRedo: this.history.canRedo,
-      dirty: fingerprint(this.level) !== this.savedFingerprint,
+      dirty: this.currentFingerprint !== this.savedFingerprint,
     };
   }
 
@@ -48,22 +51,29 @@ export class EditorDocument {
   }
 
   beginTransaction(): void {
-    if (!this.transactionStart) this.transactionStart = cloneEditorLevel(this.level);
+    if (this.transactionStart) return;
+    this.transactionStart = cloneEditorLevel(this.level);
+    this.transactionStartFingerprint = this.currentFingerprint;
   }
 
   commitTransaction(): void {
     const start = this.transactionStart;
+    const startFingerprint = this.transactionStartFingerprint;
     this.transactionStart = null;
-    if (!start || fingerprint(start) === fingerprint(this.level)) return;
+    this.transactionStartFingerprint = null;
+    if (!start || startFingerprint === this.currentFingerprint) return;
     this.history.record(start);
     this.changed();
   }
 
   cancelTransaction(): void {
     const start = this.transactionStart;
+    const startFingerprint = this.transactionStartFingerprint;
     this.transactionStart = null;
-    if (!start || fingerprint(start) === fingerprint(this.level)) return;
+    this.transactionStartFingerprint = null;
+    if (!start || startFingerprint === this.currentFingerprint) return;
     this.level = start;
+    this.currentFingerprint = startFingerprint ?? fingerprint(start);
     this.changed();
   }
 
@@ -72,6 +82,7 @@ export class EditorDocument {
     const previous = this.history.undo(this.level);
     if (!previous) return;
     this.level = previous;
+    this.currentFingerprint = fingerprint(previous);
     this.changed();
   }
 
@@ -80,28 +91,34 @@ export class EditorDocument {
     const next = this.history.redo(this.level);
     if (!next) return;
     this.level = next;
+    this.currentFingerprint = fingerprint(next);
     this.changed();
   }
 
   load(level: EditorMap): void {
     this.transactionStart = null;
+    this.transactionStartFingerprint = null;
     this.level = normalizeEditorLevel(level);
+    this.currentFingerprint = fingerprint(this.level);
     this.history.clear();
-    this.savedFingerprint = fingerprint(this.level);
+    this.savedFingerprint = this.currentFingerprint;
     this.changed();
   }
 
   markSaved(): void {
-    this.savedFingerprint = fingerprint(this.level);
+    this.savedFingerprint = this.currentFingerprint;
     this.emit();
   }
 
   private applyCommand(command: EditorCommand): boolean {
     const next = command.apply(this.level);
-    if (next === this.level || fingerprint(next) === fingerprint(this.level))
-      return false;
+    if (next === this.level) return false;
+    const normalized = normalizeEditorLevel(next);
+    const nextFingerprint = fingerprint(normalized);
+    if (nextFingerprint === this.currentFingerprint) return false;
     if (!this.transactionStart) this.history.record(this.level);
-    this.level = normalizeEditorLevel(next);
+    this.level = normalized;
+    this.currentFingerprint = nextFingerprint;
     this.changed();
     return true;
   }

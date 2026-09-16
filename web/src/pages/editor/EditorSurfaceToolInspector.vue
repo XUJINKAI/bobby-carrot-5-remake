@@ -3,6 +3,7 @@ import {
   surfaceTerrain,
   surfaceVariantPreset,
   type EditorDefinition,
+  type EngineEnvironment,
   type EntityCatalog,
   type SurfaceBrush,
   type SurfaceTool,
@@ -16,6 +17,7 @@ const props = defineProps<{
   brush: SurfaceBrush;
   images: ImageManager;
   catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }>();
 
@@ -47,8 +49,8 @@ const patternLabel = computed(() => {
           <EditorEntityPreview
             :source="surfaceVariantPreset(visual)"
             :cell-size="44"
-            :images="images"
-            :catalog="catalog"
+          :images="images"
+          :environment="environment"
             :editor="editor"
             fallback-text=""
           />

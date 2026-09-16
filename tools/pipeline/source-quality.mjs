@@ -34,6 +34,20 @@ const ORIGINAL_DAT_FORBIDDEN_ROOTS = [
   "editor",
   "web",
 ];
+const OBSOLETE_FACT_IDS = [
+  "bean-growth-space",
+  "cloud-space",
+  "hidden-objective",
+  "meltable",
+  "reach-all-players",
+  "ride-carried",
+  "terrain-overlay",
+];
+const ENTITY_SPATIAL_ROOTS = [
+  "engine/src/world/entity/",
+  "engine/src/world/spatial/",
+  "model/src/map/entity/",
+];
 
 const errors = [];
 const warnings = [];
@@ -61,8 +75,68 @@ for (const sourceRoot of SOURCE_ROOTS) {
     if (normalized.startsWith(path.normalize("engine/src/")) && /\bstackBand\b/.test(text)) {
       errors.push(`${relative}: stackBand 已移除；空间层序只能使用 stackOrder`);
     }
+    if (normalized.startsWith(path.normalize("engine/src/"))) {
+      for (const id of OBSOLETE_FACT_IDS) {
+        if (text.includes(`"${id}"`) || text.includes(`'${id}'`))
+          errors.push(`${relative}: 已清理的 Fact ID 不得重新进入 Engine：${id}`);
+      }
+      if (/\bfacts\s*:\s*\[[^\]]*["']collectible["']/.test(text))
+        errors.push(`${relative}: 收集对象由 Type 与 Behavior 定义，无需 collectible Fact`);
+    }
+    if (
+      (
+        ENTITY_SPATIAL_ROOTS.some((directory) =>
+          normalized.startsWith(path.normalize(directory))
+        ) || normalized === path.normalize("engine/src/entities/EntityModule.ts")) &&
+      /\blayer\s*[?:]|\.layer\b/.test(text)
+    ) {
+      errors.push(`${relative}: Entity 空间合同使用 Presence、Fact 与 stackOrder`);
+    }
     if (normalized.startsWith(path.normalize("engine/src/")) && /\bVisualAssetSources\b/.test(text)) {
       errors.push(`${relative}: VisualAssetSources 已移除；图片资源必须注入 ImageManager`);
+    }
+    if (
+      normalized.startsWith(path.normalize("engine/src/")) &&
+      (/\bEntityAuthoringDefinition\b/.test(text) ||
+        /\bauthoring\s*:\s*\{\s*palette\s*:/.test(text))
+    ) {
+      errors.push(`${relative}: Entity 创建策略必须由 Editor definitions 声明`);
+    }
+    if (
+      normalized.startsWith(path.normalize("engine/src/world/")) ||
+      normalized.startsWith(path.normalize("engine/src/mechanism/"))
+    ) {
+      if (/from\s+["'][^"']*\/entities\//.test(text)) {
+        errors.push(`${relative}: World 与通用 Mechanism 不得导入具体 Entity 模块`);
+      }
+      if (/\bMapEntityTypeId\b/.test(text)) {
+        errors.push(`${relative}: World 与通用 Mechanism 不得按具体 Entity Type 分支`);
+      }
+    }
+    if (
+      normalized.startsWith(path.normalize("engine/src/")) &&
+      /\bbindTrait\s*\(/.test(text)
+    ) {
+      errors.push(`${relative}: Fact 不得自动绑定 Behavior`);
+    }
+    if (
+      normalized.startsWith(path.normalize("engine/src/world/")) &&
+      /["'](?:gas|lock-key|kite|shovel|bean)["']/.test(text)
+    ) {
+      errors.push(`${relative}: 道具 ID 应由 Entity 规则或 Presentation 解释`);
+    }
+    if (normalized.startsWith(path.normalize("engine/src/world/"))) {
+      const factQueries = [
+        ...text.matchAll(
+          /\b(?:entityHasFact|presenceHasFact|entitiesWithFact|hasFactAt|entityCountWithFact|hasEntityFact)\s*\(\s*(?:[^,()\n]+,\s*)?["']([^"']+)["']/g,
+        ),
+        ...text.matchAll(/\.facts\.includes\s*\(\s*["']([^"']+)["']/g),
+      ];
+      for (const match of factQueries) {
+        if (!new Set(["player", "contact-cover"]).has(match[1])) {
+          errors.push(`${relative}: World 只能直接解释 kernel Fact：${match[1]}`);
+        }
+      }
     }
     if (
       ORIGINAL_DAT_FORBIDDEN_ROOTS.some((directory) =>

@@ -1,4 +1,10 @@
 export { Game } from "./core/Game.js";
+export {
+  builtinEngineEnvironment,
+  createEngineEnvironment,
+  type EngineEnvironment,
+  type EngineEnvironmentOptions,
+} from "./environment/EngineEnvironment.js";
 export type {
   GameOptions,
   GameRuntimeOptions,
@@ -29,6 +35,9 @@ export {
   type LevelRuntimeWarning,
   type LevelRuntimeWarningCode,
 } from "./core/LevelWarnings.js";
+export { goalAvailable, createBuiltinGoalRegistry } from "./entities/goals.js";
+export { GoalRegistry } from "./world/outcome/GoalRegistry.js";
+export type { GoalDefinition, GoalContext, GoalResult } from "./world/outcome/GoalRegistry.js";
 export {
   createGameplayRuntime,
   type GameplayRuntime,
@@ -87,7 +96,10 @@ export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,
+  type InputConsumerLease,
   type InputState,
+  type LogicalInputAction,
+  type LogicalInputConsumer,
   type LogicalMoveInput,
 } from "./input/InputController.js";
 export {
@@ -104,12 +116,16 @@ export {
 } from "./input/ScreenJoystick.js";
 export { GameplayHud, type GameplayHudOptions } from "./ui/GameplayHud.js";
 export {
-  GameplayDialog,
   type GameplayDialogOption,
-  type GameplayDialogOptions,
   type GameplayDialogPresentation,
   type GameplayDialogResult,
 } from "./ui/GameplayDialog.js";
+export {
+  DEFAULT_DIALOGUE_REPEAT_COOLDOWN_MS,
+  GameplayDialogController,
+  type GameplayDialogControllerHost,
+  type GameplayDialogControllerOptions,
+} from "./ui/GameplayDialogController.js";
 export {
   ORIGINAL_BOBBY_LOCOMOTION_TIMING,
   resolveBobbyLocomotionTiming,
@@ -128,13 +144,9 @@ export {
   type ReplayFinalStatus,
   type Replay,
   type ReplayFrame,
-  type ReplayGameplayIntent,
-  type ReplayAddActorInventoryItemIntent,
-  type ReplayInitialIntent,
   type ReplayInputGroup,
   type ReplayMeta,
   type ReplayMoveIntent,
-  type ReplaySetActorLocomotionIntent,
   type ReplayRecordingMeta,
   type ReplayRuntimeSetup,
 } from "./replay/ReplayFormat.js";
@@ -142,6 +154,7 @@ export {
   replayVerificationStates,
   type ReplayVerificationStates,
 } from "./replay/ReplayFinalState.js";
+export { serializeReplay } from "./replay/ReplaySerialization.js";
 export { ReplayRecorder } from "./replay/ReplayRecorder.js";
 export type { ReplayPlaybackOptions } from "./replay/ReplayPlayback.js";
 export {
@@ -182,7 +195,6 @@ export type {
   GameplayEffectIntent,
   MoveCause,
   MoveIntent,
-  InitialActorIntent,
   SetActorLocomotionIntent,
   WorldIntent,
   WorldIntentGroup,
@@ -217,8 +229,6 @@ export type {
   EntityFieldDefinition,
   EntityFieldKind,
   EntityFieldOption,
-  EntityLayer,
-  EntityTrait,
   VisualId,
   AudioProfileId,
 } from "./world/entity/EntityDefinition.js";
@@ -246,10 +256,14 @@ export type {
   ResolvedFootprintCell,
 } from "./world/spatial/Footprint.js";
 export { SpatialIndex } from "./world/spatial/SpatialIndex.js";
+export { createBuiltinFactRegistry } from "./fact/builtinFacts.js";
+export {
+  levelRuleSelector,
+  type EntitySelector,
+} from "./world/spatial/EntitySelector.js";
 export {
   defineEntityModule,
   type EntityBehaviorBinding,
-  type EntityAuthoringDefinition,
   type EntityModule,
   type EntityModuleDefinition,
   type EntityModuleInput,
@@ -263,11 +277,16 @@ export {
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
-  entityCatalog,
-  visualRegistry,
 } from "./entities/registry.js";
 export { VisualRegistry } from "./visual/VisualRegistry.js";
 export { SpatialVisualQuery } from "./visual/SpatialVisualQuery.js";
+export {
+  buildSpatialScene,
+  createIndexedSpatialSceneSource,
+  type BuildSpatialSceneOptions,
+  type SpatialSceneContext,
+  type SpatialSceneSource,
+} from "./visual/SpatialSceneBuilder.js";
 export {
   resolveEntityVisualPreview,
   resolveLevelEntityVisualPreview,

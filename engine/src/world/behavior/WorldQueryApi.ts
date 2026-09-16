@@ -1,11 +1,12 @@
 import type { GlobalState } from "../GlobalState.js";
-import type { EntityTrait } from "../entity/EntityDefinition.js";
+import type { FactId, FactRegistry } from "../../fact/FactRegistry.js";
 import type { EntityId, EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityStore } from "../entity/EntityStore.js";
-import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
 import type { SpatialIndex } from "../spatial/SpatialIndex.js";
+import type { EntitySelector } from "../spatial/EntitySelector.js";
 import type { WorldMotion, WorldMotionStore } from "../movement/WorldMotion.js";
+import { readonlyView } from "./ReadonlyView.js";
 
 export interface CellQuery {
   x: number;
@@ -16,8 +17,8 @@ export class WorldQueryApi {
   constructor(
     private readonly entities: EntityStore,
     private readonly spatial: SpatialIndex,
-    private readonly registry: EntityRegistry,
     private readonly globalState: () => Readonly<GlobalState>,
+    private readonly facts: FactRegistry,
     private readonly motions?: WorldMotionStore,
   ) {}
 
@@ -26,53 +27,96 @@ export class WorldQueryApi {
   }
 
   entity(id: EntityId): Readonly<EntityInstance> | undefined {
-    return this.entities.get(id);
-  }
-
-  definition(entityId: EntityId) {
-    const entity = this.entities.get(entityId);
-    return entity ? this.registry.require(entity.type) : undefined;
+    const entity = this.entities.get(id);
+    return entity ? readonlyView(entity) : undefined;
   }
 
   presencesAt(cell: CellQuery): readonly EntityPresence[] {
-    return this.spatial.presencesAt(cell);
+    return readonlyView(this.spatial.contactPresencesAt(cell));
+  }
+
+  /** Render、Editor、Debug 与显式对象特例使用的完整空间栈。 */
+  allPresencesAt(cell: CellQuery): readonly EntityPresence[] {
+    return readonlyView(this.spatial.presencesAt(cell));
   }
 
   topPresenceAt(cell: CellQuery): EntityPresence | undefined {
-    return this.spatial.topPresenceAt(cell);
+    const presence = this.presencesAt(cell).at(-1);
+    return presence ? readonlyView(presence) : undefined;
   }
 
   presencesForEntity(entityId: EntityId): readonly EntityPresence[] {
-    return this.spatial.presencesForEntity(entityId);
+    return readonlyView(this.spatial.presencesForEntity(entityId));
   }
 
-  hasTraitAt(cell: CellQuery, trait: EntityTrait): boolean {
-    return this.spatial.hasTraitAt(cell, trait);
+  entityFacts(entityId: EntityId): readonly string[] {
+    return readonlyView(this.spatial.factsForEntity(entityId));
   }
 
-  global(): Readonly<GlobalState> {
-    return this.globalState();
+  presenceHasFact(presence: EntityPresence, fact: string): boolean {
+    this.facts.require(fact);
+    return presence.facts.includes(fact);
   }
 
-  motionForEntity(entityId: EntityId): Readonly<WorldMotion> | undefined {
-    return this.motions?.forEntity(entityId);
+  presenceMatchesSelector(
+    presence: EntityPresence,
+    selector: EntitySelector,
+  ): boolean {
+    this.validateSelector(selector);
+    return this.spatial.presenceMatchesSelector(presence, selector);
   }
 
-  entityHasTrait(entityId: EntityId, trait: EntityTrait): boolean {
-    const entity = this.entities.get(entityId);
-    if (!entity) return false;
-    const definition = this.registry.require(entity.type);
-    return (
-      definition.traits.includes(trait) ||
-      entity.instanceTraits?.includes(trait) === true ||
-      this.spatial
-        .presencesForEntity(entityId)
-        .some((presence) => presence.traits.includes(trait))
+  hasSelectorAt(cell: CellQuery, selector: EntitySelector): boolean {
+    this.validateSelector(selector);
+    return this.presencesAt(cell).some((presence) =>
+      this.spatial.presenceMatchesSelector(presence, selector)
     );
   }
 
-  entitiesWithTrait(trait: EntityTrait): readonly EntityInstance[] {
-    return this.spatial.entityIdsWithTrait(trait)
-      .map((id) => this.entities.require(id));
+  hasFactAt(cell: CellQuery, fact: FactId): boolean {
+    this.facts.require(fact);
+    return this.presencesAt(cell).some((presence) =>
+      presence.facts.includes(fact)
+    );
+  }
+
+  global(): Readonly<GlobalState> {
+    return readonlyView(this.globalState());
+  }
+
+  motionForEntity(entityId: EntityId): Readonly<WorldMotion> | undefined {
+    const motion = this.motions?.forEntity(entityId);
+    return motion ? readonlyView(motion) : undefined;
+  }
+
+  entityHasFact(entityId: EntityId, fact: FactId): boolean {
+    this.facts.require(fact);
+    return this.spatial.entityHasFact(entityId, fact);
+  }
+
+  entitiesWithFact(fact: FactId): readonly EntityInstance[] {
+    this.facts.require(fact);
+    return this.entitiesMatching({ kind: "fact", value: fact });
+  }
+
+  entitiesMatching(selector: EntitySelector): readonly EntityInstance[] {
+    this.validateSelector(selector);
+    return readonlyView(this.spatial.entityIdsMatching(selector)
+      .map((id) => this.entities.require(id)));
+  }
+
+  entityCountMatching(selector: EntitySelector): number {
+    this.validateSelector(selector);
+    return this.spatial.entityCountMatching(selector);
+  }
+
+  private validateSelector(selector: EntitySelector): void {
+    if (selector.kind === "fact") {
+      this.facts.require(selector.value);
+      return;
+    }
+    if (selector.kind === "any") {
+      for (const child of selector.selectors) this.validateSelector(child);
+    }
   }
 }

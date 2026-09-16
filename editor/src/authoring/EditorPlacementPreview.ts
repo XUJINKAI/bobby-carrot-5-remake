@@ -7,7 +7,7 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
   const ghost = new EditorPreview({
     ...base.level,
     entities: [plan.entity],
-  }, base.catalog);
+  }, base.environment);
   // 预览对象排在同层现有对象之后，与正式放置时追加 Entity 的顺序一致。
   const entity = { ...ghost.entities.require(1), id: Number.MAX_SAFE_INTEGER };
   const inspections = ghost.presencesFor({ index: 0 }).map((inspection) => ({
@@ -32,11 +32,11 @@ export function createPlacementPreview(base: EditorPreview, plan: EntityPlacemen
       }
       return presences.sort((a, b) => a.stackOrder - b.stackOrder || a.entityId - b.entityId);
     },
-    entitiesWithTrait(trait) {
-      const entities = base.spatial.entityIdsWithTrait(trait)
+    entitiesWithFact(fact) {
+      const entities = base.spatial.entityIdsWithFact(fact)
         .filter((id) => !removed.has(id))
         .map((id) => base.entities.require(id));
-      if (inspections.some((item) => item.presence.traits.includes(trait)))
+      if (ghost.spatial.entityHasFact(1, fact))
         entities.push(entity);
       return entities;
     },

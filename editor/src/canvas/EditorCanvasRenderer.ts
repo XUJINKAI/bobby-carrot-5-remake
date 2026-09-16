@@ -1,15 +1,13 @@
 import {
-  createBuiltinEntityCatalog,
+  buildSpatialScene,
+  builtinEngineEnvironment,
+  createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
-  SpatialVisualQuery,
-  visualRegistry as builtinVisualRegistry,
-  type EntityCatalog,
+  type EngineEnvironment,
   type ImageManager,
-  type VisualRegistry,
   type VisualQuery,
-  type VisualRenderPass,
 } from "@bobby/engine";
 import { resolveDeletionTarget } from "../authoring/deletion.js";
 import { createPlacementPreview } from "../authoring/EditorPlacementPreview.js";
@@ -20,6 +18,7 @@ import {
 } from "../authoring/entityPlacement.js";
 import {
   EditorPreview,
+  editorPreviewFor,
   type EditorPresenceInspection,
 } from "../authoring/EditorPreview.js";
 import { selectionRect } from "../authoring/selection.js";
@@ -45,12 +44,6 @@ export interface EditorCanvasRenderState {
   viewport: Readonly<EditorViewportState>;
 }
 
-interface EditorRenderItem {
-  inspection: EditorPresenceInspection;
-  x: number;
-  y: number;
-}
-
 interface EditorStackBadge {
   x: number;
   y: number;
@@ -63,8 +56,7 @@ export class EditorCanvasRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly images: ImageManager,
-    private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
-    private readonly visuals: VisualRegistry = builtinVisualRegistry,
+    private readonly environment: EngineEnvironment = builtinEngineEnvironment,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
     private readonly interactionCanvas: HTMLCanvasElement = canvas,
   ) {}
@@ -98,25 +90,28 @@ export class EditorCanvasRenderer {
     context.fillStyle = "#09110c";
     context.fillRect(0, 0, cssWidth, cssHeight);
 
-    const preview = new EditorPreview(level, this.catalog);
+    const preview = editorPreviewFor(level, this.environment);
     this.preview = preview;
-    const visualQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
-    const passes: Record<VisualRenderPass, EditorRenderItem[]> = {
-      world: [],
-      player: [],
-      effect: [],
-    };
+    const source = createIndexedSpatialSceneSource(
+      preview.entities,
+      preview.spatial,
+      this.environment.catalog.entities,
+    );
+    const scene = buildSpatialScene({
+      source,
+      visuals: this.environment.visuals,
+      resolveVisual: (definition, resolveContext) => {
+        const editorVisual = definition.placeholder === "unknown"
+          ? undefined
+          : this.editor.entities?.[resolveContext.entity.type]?.editorVisual;
+        return editorVisual?.(resolveContext) ??
+          this.environment.visuals.resolve(definition, resolveContext);
+      },
+    });
     const stackBadges: EditorStackBadge[] = [];
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
         const inspections = preview.inspectCell(x, y).presences;
-        for (const inspection of inspections) {
-          passes[this.visuals.renderPassFor(inspection.definition)].push({
-            inspection,
-            x,
-            y,
-          });
-        }
         const paletteCount = new Set(
           inspections
             .filter((item) => !isSurfaceEntityType(item.entity.type))
@@ -125,16 +120,19 @@ export class EditorCanvasRenderer {
         if (paletteCount >= 2) stackBadges.push({ x, y, count: paletteCount });
       }
     }
-    for (const pass of ["world", "player", "effect"] as const)
-      for (const item of passes[pass])
-        this.drawPresence(
+    for (const pass of ["world", "standing", "effect"] as const) {
+      const items = scene[pass];
+      for (const item of items)
+        drawVisualComposition(
           context,
-          visualQuery,
-          item.inspection,
-          item.x,
-          item.y,
+          this.images,
+          item.composition,
+          item.visualX * EDITOR_TILE_SIZE,
+          item.visualY * EDITOR_TILE_SIZE,
+          EDITOR_TILE_SIZE,
           deviceScale,
         );
+    }
     this.drawStackBadges(context, stackBadges);
 
     if (this.interactionCanvas === this.canvas)
@@ -220,7 +218,7 @@ export class EditorCanvasRenderer {
     if (state.tool === "erase") {
       const ref = resolveDeletionTarget(
         state.level,
-        this.catalog,
+        this.environment,
         hover,
         this.editor,
         preview,
@@ -257,7 +255,7 @@ export class EditorCanvasRenderer {
     if (!hover || !placement) return;
     const plan = resolvePlacement(
       state.level,
-      this.catalog,
+      this.environment,
       placement,
       hover,
       this.editor,
@@ -318,7 +316,7 @@ export class EditorCanvasRenderer {
       : this.editor.entities?.[inspection.entity.type]?.editorVisual;
     const composition =
       editorVisual?.(resolveContext) ??
-      this.visuals.resolve(inspection.definition, resolveContext);
+      this.environment.visuals.resolve(inspection.definition, resolveContext);
     drawVisualComposition(
       context,
       this.images,

@@ -4,6 +4,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
   showBuiltin: true,
 });
+const canSaveBuiltin = import.meta.env.DEV;
 </script>
 
 <template>
@@ -126,14 +127,23 @@ withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
           下载
         </button>
       </div>
-      <button
-        v-if="showBuiltin"
-        class="ghost-btn replay-panel-builtin"
-        type="button"
-        data-replay-action="load-builtin"
-      >
-        加载内置过法
-      </button>
+      <div v-if="showBuiltin" class="replay-panel-builtin-actions">
+        <button
+          class="ghost-btn"
+          type="button"
+          data-replay-action="load-builtin"
+        >
+          加载内置过法
+        </button>
+        <button
+          v-if="canSaveBuiltin"
+          class="ghost-btn"
+          type="button"
+          data-replay-action="save-builtin"
+        >
+          保存内置过法
+        </button>
+      </div>
     </section>
   </aside>
 </template>
@@ -241,7 +251,7 @@ withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
 .replay-panel-playback-actions,
 .replay-panel-seek-actions,
 .replay-panel-export-actions,
-.replay-panel-builtin {
+.replay-panel-builtin-actions {
   margin-top: 8px;
 }
 
@@ -349,14 +359,16 @@ withDefaults(defineProps<{ showBuiltin?: boolean }>(), {
 .replay-panel-playback-actions button,
 .replay-panel-seek-actions button,
 .replay-panel-export-actions button,
-.replay-panel-builtin {
+.replay-panel-builtin-actions button {
   min-height: 38px;
   padding-inline: 5px;
   font-weight: 700;
 }
 
-.replay-panel-builtin {
-  width: 100%;
+.replay-panel-builtin-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
 }
 
 .replay-panel-result button:not(:disabled):hover {

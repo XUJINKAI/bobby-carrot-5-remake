@@ -1,25 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { createBuiltinEntityCatalog } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment } from "../../engine/dist/public.js";
 import {
   builtinEditorDefinition,
   createBlankLevel,
   resolveDeletion,
 } from "../dist/index.js";
 
-const catalog = createBuiltinEntityCatalog();
+const environment = builtinEngineEnvironment;
+const catalog = environment.catalog;
 
 test("single-cell deletion removes only the top non-Surface entity", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
   );
 
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );
@@ -30,22 +31,22 @@ test("single-cell deletion removes only the top non-Surface entity", () => {
 test("multi-cell deletion removes only the highest stackOrder layer", () => {
   const level = createBlankLevel(5, 5);
   level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 110 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 130 },
-    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 130 },
-    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 120 },
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1, stackOrder: 1 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.BONUS_COIN, x: 2, y: 1, stackOrder: 2 },
+    { type: MapEntityTypeId.CARROT, x: 2, y: 1, stackOrder: 1 },
   );
 
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 2, y: 1 } },
     builtinEditorDefinition,
   );
   assert.equal(refs.length, 2);
   assert.deepEqual(
     refs.map((ref) => level.entities[ref.index].stackOrder).sort(),
-    [130, 130],
+    [2, 2],
   );
 });
 
@@ -53,7 +54,7 @@ test("Palette deletion never selects Surface", () => {
   const level = createBlankLevel(5, 5);
   const refs = resolveDeletion(
     level,
-    catalog,
+    environment,
     { anchor: { x: 1, y: 1 }, focus: { x: 1, y: 1 } },
     builtinEditorDefinition,
   );

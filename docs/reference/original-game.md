@@ -4,6 +4,7 @@
 
 专项事实文档：
 
+- [原版通行与碰撞规则](original-passage.md)：Plank、Mower、Bean、Cloud、Fireball、Leaf 的完整条件、判定顺序、图集坐标与字节码入口。
 - [`beaver-shop.md`](beaver-shop.md)：Beaver Shop 商品、价格、对话、持久状态与运行效果。
 
 ## 平台

@@ -1,10 +1,11 @@
-import type { EntityCatalog } from "@bobby/engine";
-import { MapEntityTypeId, type WinCondition } from "@bobby/model";
+import { goalAvailable, type EngineEnvironment } from "@bobby/engine";
+import type { GoalType, WinCondition } from "@bobby/model";
 import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
+import { editorPreviewFor } from "./EditorPreview.js";
 
-export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit";
+export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit" | "golden-carrot";
 
 export interface EditorRuleCapability {
   kind: EditorRuleKind;
@@ -15,8 +16,8 @@ export interface EditorRuleCapability {
 export class EditorRuleDetector {
   private readonly availableKinds = new Set<EditorRuleKind>();
 
-  detect(map: EditorMap, catalog: EntityCatalog): readonly EditorRuleKind[] {
-    const capabilities = inspectEditorRules(map, catalog);
+  detect(map: EditorMap, environment: EngineEnvironment): readonly EditorRuleKind[] {
+    const capabilities = inspectEditorRules(map, environment);
     const available = capabilities.filter((item) => item.available);
     const detected = available
       .filter((item) => !this.availableKinds.has(item.kind) && !item.enabled)
@@ -36,20 +37,23 @@ const RULE_ORDER: readonly EditorRuleKind[] = [
   "eggs",
   "pushbox",
   "exit",
+  "golden-carrot",
 ];
 
 export function inspectEditorRules(
   map: EditorMap,
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
 ): readonly EditorRuleCapability[] {
   const conditions = winConditions(map.rules?.win);
+  const preview = editorPreviewFor(map, environment);
+  const available = (type: GoalType) =>
+    goalAvailable(type, preview.entities, preview.spatial, environment);
   const availability: Record<EditorRuleKind, boolean> = {
-    carrots: map.entities.some((entity) => entity.type === MapEntityTypeId.CARROT),
-    eggs: map.entities.some((entity) => hasSelector(entity, "egg-nest", catalog)),
-    pushbox:
-      map.entities.some((entity) => hasSelector(entity, "pushable", catalog)) &&
-      map.entities.some((entity) => hasSelector(entity, "push-goal", catalog)),
-    exit: map.entities.some((entity) => hasSelector(entity, MapEntityTypeId.EXIT, catalog)),
+    carrots: available("carrot"),
+    eggs: available("egg"),
+    pushbox: available("push-goal"),
+    exit: available("exit"),
+    "golden-carrot": available("golden-carrot"),
   };
   return RULE_ORDER.map((kind) => ({
     kind,
@@ -59,30 +63,30 @@ export function inspectEditorRules(
 }
 
 export function updateEditorRule(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   kind: EditorRuleKind,
   enabled: boolean,
 ): EditorCommand {
-  return changeEditorRules(catalog, [{ kind, enabled }]);
+  return changeEditorRules(environment, [{ kind, enabled }]);
 }
 
 export function enableEditorRules(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   kinds: readonly EditorRuleKind[],
 ): EditorCommand {
   return changeEditorRules(
-    catalog,
+    environment,
     kinds.map((kind) => ({ kind, enabled: true })),
   );
 }
 
 function changeEditorRules(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   changes: readonly { kind: EditorRuleKind; enabled: boolean }[],
 ): EditorCommand {
   return {
     apply(map) {
-      const capabilities = inspectEditorRules(map, catalog);
+      const capabilities = inspectEditorRules(map, environment);
       const enabledKinds = new Set(
         capabilities
           .filter((item) => item.available && item.enabled)
@@ -116,34 +120,29 @@ function winConditions(condition: WinCondition | undefined): readonly WinConditi
 function ruleCondition(kind: EditorRuleKind): WinCondition {
   switch (kind) {
     case "carrots":
-      return { type: "collect-all", target: MapEntityTypeId.CARROT };
+      return { type: "carrot" };
     case "eggs":
-      return { type: "fill-all", target: "egg-nest", filler: "filled-egg" };
+      return { type: "egg" };
     case "pushbox":
-      return { type: "fill-all", target: "push-goal", filler: "pushable" };
+      return { type: "push-goal" };
     case "exit":
-      return { type: "reach", target: MapEntityTypeId.EXIT };
+      return { type: "exit" };
+    case "golden-carrot":
+      return { type: "golden-carrot" };
   }
 }
 
 function matchesRule(kind: EditorRuleKind, condition: WinCondition): boolean {
   switch (kind) {
     case "carrots":
-      return condition.type === "collect-all" && condition.target === MapEntityTypeId.CARROT;
+      return condition.type === "carrot";
     case "eggs":
-      return condition.type === "fill-all" && condition.target === "egg-nest" && condition.filler === "filled-egg";
+      return condition.type === "egg";
     case "pushbox":
-      return condition.type === "fill-all" && condition.target === "push-goal" && condition.filler === "pushable";
+      return condition.type === "push-goal";
     case "exit":
-      return condition.type === "reach" && condition.target === MapEntityTypeId.EXIT;
+      return condition.type === "exit";
+    case "golden-carrot":
+      return condition.type === "golden-carrot";
   }
-}
-
-function hasSelector(
-  entity: Readonly<EditorMap["entities"][number]>,
-  selector: string,
-  catalog: EntityCatalog,
-): boolean {
-  if (entity.type === selector) return true;
-  return catalog.has(entity.type) && catalog.require(entity.type).traits.includes(selector);
 }

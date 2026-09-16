@@ -10,6 +10,8 @@
 - `patterns/`：可复用实现模式。
 - `decisions/`：长期有效的重要决策与原因。
 - `reference/`：从原版 JAR/字节码恢复的事实；“事实”与“设计决定”必须分开。
+- [原版通行与碰撞规则](reference/original-passage.md)：六类机关的条件表、判定顺序与原始证据。
+- [Entity Goal、Fact 与通行实施计划](workflows/entity-fact-passage-plan.md)：具体目标求值、Entity 通行规则、Fact 取舍、layer 移除与迁移验证。
 - `development.md`：本地开发命令。
 - `verification.md`：完成标准与自动校验。
 - [性能优化记录](performance.md)：Engine / Editor 已完成优化、回归证据、暂缓项目与复测方法。

@@ -10,6 +10,11 @@ import {
   createBuiltinEntityCatalog,
   createBuiltinEntityRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
+import { EntityStore } from "../dist/world/entity/EntityStore.js";
+import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 test("所有 Map Entity 合同都对应可加载的 Runtime Definition", () => {
   const registry = createBuiltinEntityRegistry();
@@ -39,7 +44,7 @@ test("未知 Entity 使用不进入正式 Catalog 的惰性占位定义", () => 
 
   assert.equal(registry.has("future-mechanic"), false);
   assert.equal(unknown.placeholder, "unknown");
-  assert.deepEqual(unknown.traits, []);
+  assert.deepEqual(unknown.presenceFacts, []);
   assert.equal(
     registry.all().some((definition) => definition.type === "future-mechanic"),
     false,
@@ -54,34 +59,24 @@ test("Registry 不包含 original/custom identity 前缀", () => {
 
 test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
   const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.WATER).traits, [
-    "bean-growth-space",
-    "water",
-  ]);
-  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).traits, [
-    "bean-growth-space",
-  ]);
+  assert.deepEqual(registry.require(MapEntityTypeId.WATER).presenceFacts, []);
+  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).presenceFacts, []);
+  assert.deepEqual(registry.require(MapEntityTypeId.STUMP).presenceFacts, []);
 });
 
-test("稳定 Surface ABI 由 Engine 直接注册通行语义", () => {
-  const registry = createBuiltinEntityRegistry();
-  assert.deepEqual(registry.require(MapEntityTypeId.GRASS).traits, ["walkable"]);
-  assert.deepEqual(registry.require(MapEntityTypeId.TREE).traits, [
-    "bean-growth-space",
-  ]);
-  assert.deepEqual(registry.require(MapEntityTypeId.WATERFALL).traits, [
-    "bean-growth-space",
-    "water",
-    "waterfall",
-  ]);
+test("稳定 Surface ABI 由各 Definition 的 Presence Fact resolver 投影", () => {
+  assert.deepEqual(projectedFacts(MapEntityTypeId.GRASS), ["walkable"]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.TREE), []);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.WATERFALL), ["water"]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.STARFIELD), ["sky"]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.MOON), ["sky"]);
 });
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
   const start = createBuiltinEntityRegistry().require("start");
-  assert.equal(start.stackOrder, 0);
-  assert.deepEqual(start.traits, ["walkable"]);
-  assert.equal(start.traits.includes("start"), false);
+  assert.equal(start.stackOrder, undefined);
+  assert.deepEqual(start.presenceFacts, ["walkable"]);
+  assert.equal(start.presenceFacts.includes("start"), false);
 });
 
 test("合并类型的稳定 Map 字段由 Model contract 声明", () => {
@@ -130,28 +125,28 @@ test("Dragon 只显式声明 left/right body-centered footprint", () => {
   );
 });
 
-test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
+test("Sandman / Dream Machine / Beaver 只使用 body anchor Presence", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of ["sandman", "dream-machine", "beaver"]) {
-    const footprint = registry.require(type).footprint;
-    assert.equal("parts" in footprint, true, type);
-    assert.deepEqual(
-      footprint.parts.map((part) => [part.dx, part.dy, part.role]),
-      [
-        [0, -1, "head"],
-        [0, 0, "body"],
-      ],
-      type,
-    );
+    const definition = registry.require(type);
+    assert.equal(definition.footprint, undefined, type);
+    assert.deepEqual(definition.presenceFacts, ["blocking"], type);
   }
 });
 
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
   const fence = registry.require(MapEntityTypeId.FENCE);
-  assert.deepEqual(fence.traits, ["blocking", "fence"]);
+  assert.deepEqual(fence.presenceFacts, ["blocking"]);
   assert.equal(
     Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,
   );
 });
+
+function projectedFacts(type) {
+  const registry = createBuiltinEntityRegistry();
+  const store = new EntityStore([{ type, x: 0, y: 0 }]);
+  const spatial = new SpatialIndex(store, registry, 1, 1, factRegistry);
+  return spatial.presencesAt({ x: 0, y: 0 })[0]?.facts ?? [];
+}

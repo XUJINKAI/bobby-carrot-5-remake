@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type ViteDevServer } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { replaySaveMiddleware } from "./dev/replaySaveMiddleware.js";
 
 const webRoot = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(webRoot, "..");
@@ -51,6 +52,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    developmentReplaySave(),
     developmentDirectory("/assets", path.join(projectRoot, "assets")),
     replayVerificationWatcher(),
   ],
@@ -60,6 +62,17 @@ export default defineConfig({
     emptyOutDir: true,
   },
 });
+
+function developmentReplaySave() {
+  return {
+    name: "bc5r-development-replay-save",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(
+        replaySaveMiddleware(path.join(projectRoot, "assets/replays")),
+      );
+    },
+  };
+}
 
 function replayVerificationWatcher() {
   const engineSource = path.join(projectRoot, "engine/src");

@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createBuiltinEntityCatalog, EntityStore } from "../../engine/dist/public.js";
+import { builtinEngineEnvironment, EntityStore } from "../../engine/dist/public.js";
 import { EditorCanvasRenderer } from "../dist/canvas/EditorCanvasRenderer.js";
 import { EditorEntityPreviewRenderer } from "../dist/canvas/EditorEntityPreviewRenderer.js";
-import { EditorPreview } from "../dist/authoring/EditorPreview.js";
+import {
+  EditorPreview,
+  editorPreviewFor,
+} from "../dist/authoring/EditorPreview.js";
 import { createPlacementPreview } from "../dist/authoring/EditorPlacementPreview.js";
 
 function canvas() {
@@ -81,7 +84,7 @@ test("大地图交互复用底图，放置预览只实例化待放置对象", (t
     sourceTileSize: 48,
     atlasId: "atlas",
     image: () => ({ width: 480, height: 480 }),
-  }, undefined, undefined, undefined, overlay);
+  }, undefined, undefined, overlay);
   const state = {
     level, tool: "select", placement: null, selection: null, hover: null,
     viewport: { zoom: 1, panX: 0, panY: 0 },
@@ -108,6 +111,24 @@ test("大地图交互复用底图，放置预览只实例化待放置对象", (t
   assert.ok(sizes.every((size) => size === 1));
 });
 
+test("同一不可变关卡 revision 复用空间投影", () => {
+  const level = {
+    schemaVersion: 1,
+    meta: { name: "空间投影缓存" },
+    width: 2,
+    height: 1,
+    entities: [{ type: "grass", variant: "ts-10-1", x: 0, y: 0 }],
+  };
+  assert.equal(
+    editorPreviewFor(level, builtinEngineEnvironment),
+    editorPreviewFor(level, builtinEngineEnvironment),
+  );
+  assert.notEqual(
+    editorPreviewFor(structuredClone(level), builtinEngineEnvironment),
+    editorPreviewFor(level, builtinEngineEnvironment),
+  );
+});
+
 test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
   const level = {
     schemaVersion: 1, meta: { name: "预览" }, width: 8, height: 4,
@@ -118,7 +139,7 @@ test("放置预览保留邻格与多格身份，并隔离替换结果", () => {
     ],
   };
   const before = structuredClone(level);
-  const base = new EditorPreview(level, createBuiltinEntityCatalog());
+  const base = new EditorPreview(level, builtinEngineEnvironment);
   const ghost = createPlacementPreview(base, {
     entity: { type: "dragon", x: 2, y: 2, direction: "right" },
     cells: [], replace: [{ index: 1 }], warnings: [], valid: true,

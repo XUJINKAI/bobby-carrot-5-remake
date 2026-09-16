@@ -17,7 +17,6 @@ import type {
   VisualDefinition,
   VisualResolveContext,
 } from "../../visual/VisualDefinition.js";
-import { behaviorBindingsForDefinition } from "../behaviorLibrary.js";
 import {
   defineEntityModule,
   type EntityBehaviorBinding,
@@ -35,12 +34,8 @@ interface OriginalAmbientSequence {
 }
 
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
-const ORIGINAL_AMBIENT_FRAME_MS = 248;
+const ORIGINAL_AMBIENT_FRAME_MS = 124;
 const ORIGINAL_TILE_SIZE = 48;
-
-export const SURFACE_STACK_ORDER = 0;
-export const CONTENT_STACK_ORDER = 100;
-export const COVER_STACK_ORDER = 200;
 
 const cell = (column: number, row: number): AtlasCell => ({ column, row });
 
@@ -87,10 +82,7 @@ export function originalModule(
   return defineEntityModule({
     definition,
     visual,
-    behaviorBindings: [
-      ...behaviorBindingsForDefinition(definition),
-      ...behaviorBindings,
-    ],
+    behaviorBindings,
   });
 }
 
@@ -113,6 +105,30 @@ export function atlasVisual(
             row: atlas.row,
           },
         ],
+      };
+    },
+  };
+}
+
+/** 以脚底格为唯一 Presence，向上组合原版直立双格素材。 */
+export function uprightAtlasVisual(
+  definition: EntityModuleDefinition,
+  head: AtlasCell,
+  body: AtlasCell,
+): VisualDefinition {
+  if (body.column !== head.column || body.row !== head.row + 1)
+    throw new Error("直立双格素材必须是 atlas 中纵向连续的 head/body");
+  return {
+    id: definition.presentation.visual ?? definition.type,
+    resolve() {
+      return {
+        layers: [{
+          kind: "atlas",
+          column: head.column,
+          row: head.row,
+          rows: 2,
+          anchor: "bottom",
+        }],
       };
     },
   };
@@ -250,8 +266,7 @@ function exitAnimationReady(
   state: Readonly<WinConditionState> | null | undefined,
 ): boolean {
   if (!state || state.completed) return false;
-  if (state.type === "reach")
-    return state.target === MapEntityTypeId.EXIT;
+  if (state.type === "exit") return true;
   if (state.type !== "all") return false;
 
   let pendingExit = false;

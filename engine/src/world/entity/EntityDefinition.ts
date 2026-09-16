@@ -1,13 +1,21 @@
 import type { EntityType, JsonValue } from "@bobby/model";
 import type { FootprintDefinition } from "../spatial/Footprint.js";
+import type { ResolvedFootprintCell } from "../spatial/Footprint.js";
+import type { FactId } from "../../fact/FactRegistry.js";
+import type { EntityInstance } from "./EntityInstance.js";
+import type { MechanismId } from "../../mechanism/MechanismRegistry.js";
 
-export type EntityTrait = string;
+export interface EntityFactContext {
+  readonly entity: Readonly<EntityInstance>;
+}
+
+export interface PresenceFactContext extends EntityFactContext {
+  readonly presence: Readonly<ResolvedFootprintCell>;
+}
+
 export type BehaviorId = string;
 export type VisualId = string;
 export type AudioProfileId = string;
-
-/** Spatial/authoring semantic layer. stackOrder remains ordering only. */
-export type EntityLayer = "surface" | "object" | "cover";
 
 export type EntityFieldKind = "string" | "number" | "boolean" | "enum";
 
@@ -28,15 +36,17 @@ export interface EntityFieldDefinition {
 /**
  * 一种 Entity 的纯 gameplay/domain 静态定义。
  * 展示与编辑器元数据属于 EntityModule / EntityCatalog，不进入 World 的 Definition。
- * layer 是空间语义；role 是 footprint part 语义；stackOrder 只负责同格排序。
+ * role 是 footprint part 语义；同格顺序属于 Entity 实例。
  */
 export interface EntityDefinition {
   type: EntityType;
-  traits: readonly EntityTrait[];
+  presenceFacts: readonly FactId[];
+  entityFacts?: readonly FactId[];
+  resolveEntityFacts?: (context: EntityFactContext) => readonly FactId[];
+  resolvePresenceFacts?: (context: PresenceFactContext) => readonly FactId[];
+  mechanisms?: readonly MechanismId[];
   /** 未注册地图 Entity 的无行为占位定义，不参与正式 Catalog。 */
   placeholder?: "unknown";
-  layer?: EntityLayer;
-  stackOrder?: number;
   footprint?: FootprintDefinition;
   behaviors?: readonly BehaviorId[];
   properties?: readonly EntityFieldDefinition[];

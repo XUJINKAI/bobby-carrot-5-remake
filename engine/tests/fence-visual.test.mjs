@@ -8,6 +8,9 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 const EXPECTED = new Map([
   [48, { column: 9, row: 15 }],
@@ -26,7 +29,7 @@ function fenceArt(neighbors) {
     source.push({ type: MapEntityTypeId.FENCE, x: 1 + dx, y: 1 + dy });
 
   const store = new EntityStore(source);
-  const spatial = new SpatialIndex(store, registry, 3, 3);
+  const spatial = new SpatialIndex(store, registry, 3, 3, factRegistry);
   const query = new SpatialVisualQuery(store, spatial);
   const entity = store.all()[0];
   const presence = spatial.presencesForEntity(entity.id)[0];

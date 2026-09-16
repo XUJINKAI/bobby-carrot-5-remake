@@ -30,7 +30,7 @@ test("LOMA source parses into 137 maps grouped by the ten source patterns", () =
   assert.equal(levels.at(-1)?.id, "10-13");
 });
 
-test("LOMA XSB conversion preserves geometry and uses only entity fill-all push goals", () => {
+test("LOMA XSB conversion preserves geometry and uses push goals", () => {
   const map0103 = levels.find((level) => level.id === "01-03");
   assert.ok(map0103);
   assert.equal(map0103.level.width, 8);
@@ -38,9 +38,7 @@ test("LOMA XSB conversion preserves geometry and uses only entity fill-all push 
 
   for (const entry of levels) {
     assert.deepEqual(entry.level.rules.win, {
-      type: "fill-all",
-      target: "push-goal",
-      filler: "pushable",
+      type: "push-goal",
     });
     assert.equal(
       entry.level.entities.filter((entity) => entity.type === "pushable-box")

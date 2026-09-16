@@ -9,7 +9,6 @@ import {
   atlasVisual,
   tileCell,
   originalModule,
-  SURFACE_STACK_ORDER,
   variantState,
 } from "./module.js";
 
@@ -37,7 +36,7 @@ const carouselPassage: Behavior = {
   },
   onLeave({ actor, self, query, commands }) {
     if (
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null
     )
       return;
@@ -50,8 +49,7 @@ const carouselPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.CAROUSEL,
-  traits: ["walkable", "carousel", "directional-passage", "rotatable"],
-  stackOrder: SURFACE_STACK_ORDER,
+  presenceFacts: ["walkable"],
   state: variantState([
     "right-top",
     "left-top",

@@ -12,7 +12,6 @@ import type {
 import { bobbyMountId } from "../player/BobbyState.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
-  CONTENT_STACK_ORDER,
   tileAnimationCell,
   tileCell,
   originalModule,
@@ -29,7 +28,7 @@ const triggerDragon: Behavior = {
   onEnter({ actor, self, query, commands }) {
     if (
       self.presence.role !== "tail" ||
-      !query.entityHasTrait(actor.id, "player") ||
+      !query.entityHasFact(actor.id, "player") ||
       bobbyMountId(actor.state) !== null ||
       self.entity.state?.attacking === true
     )
@@ -96,8 +95,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DRAGON,
-  traits: ["dragon"],
-  stackOrder: CONTENT_STACK_ORDER,
+  presenceFacts: [],
   footprint: {
     byDirection: {
       left: [
@@ -105,19 +103,19 @@ const definition: EntityModuleDefinition = {
           dx: -1,
           dy: 0,
           role: "head",
-          traits: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          traits: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 1,
           dy: 0,
           role: "tail",
-          traits: ["walkable", "dragon-trigger"],
+          presenceFacts: ["walkable"],
         },
       ],
       right: [
@@ -125,19 +123,19 @@ const definition: EntityModuleDefinition = {
           dx: 1,
           dy: 0,
           role: "head",
-          traits: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: 0,
           dy: 0,
           role: "body",
-          traits: ["blocking"],
+          presenceFacts: ["blocking"],
         },
         {
           dx: -1,
           dy: 0,
           role: "tail",
-          traits: ["walkable", "dragon-trigger"],
+          presenceFacts: ["walkable"],
         },
       ],
     },

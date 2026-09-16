@@ -2,7 +2,7 @@ import {
   EntityStore,
   prepareRuntimeLevel,
   SpatialIndex,
-  type EntityCatalog,
+  type EngineEnvironment,
   type EntityCatalogEntry,
   type EntityId,
   type EntityPresence,
@@ -34,7 +34,7 @@ export class EditorPreview {
 
   constructor(
     readonly level: EditorMap,
-    readonly catalog: EntityCatalog,
+    readonly environment: EngineEnvironment,
   ) {
     const runtimeLevel = prepareRuntimeLevel(materializeSurfaceVariants(level));
     this.entities = new EntityStore(runtimeLevel.entities);
@@ -49,9 +49,10 @@ export class EditorPreview {
     });
     this.spatial = new SpatialIndex(
       this.entities,
-      catalog.entities,
+      environment.catalog.entities,
       level.width,
       level.height,
+      environment.facts,
     );
   }
 
@@ -83,8 +84,31 @@ export class EditorPreview {
     return {
       ref,
       entity,
-      definition: this.catalog.require(runtimeEntity.type),
+      definition: this.environment.catalog.require(runtimeEntity.type),
       presence,
     };
   }
+}
+
+const previewCache = new WeakMap<
+  EditorMap,
+  WeakMap<EngineEnvironment, EditorPreview>
+>();
+
+/** 同一不可变 Editor revision 与 Environment 只建立一次空间投影。 */
+export function editorPreviewFor(
+  level: EditorMap,
+  environment: EngineEnvironment,
+): EditorPreview {
+  let byEnvironment = previewCache.get(level);
+  if (!byEnvironment) {
+    byEnvironment = new WeakMap();
+    previewCache.set(level, byEnvironment);
+  }
+  let preview = byEnvironment.get(environment);
+  if (!preview) {
+    preview = new EditorPreview(level, environment);
+    byEnvironment.set(environment, preview);
+  }
+  return preview;
 }

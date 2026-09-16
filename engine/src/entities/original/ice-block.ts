@@ -1,4 +1,6 @@
 import { MapEntityTypeId } from "@bobby/model";
+import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
+import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
@@ -6,7 +8,6 @@ import type {
 import {
   atlasVisual,
   boundedInt,
-  COVER_STACK_ORDER,
   tileAnimationCell,
   tileCell,
   originalModule,
@@ -14,8 +15,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.ICE_BLOCK,
-  traits: ["meltable", "blocking"],
-  stackOrder: COVER_STACK_ORDER,
+  presenceFacts: ["blocking", "contact-cover"],
   state: [
     {
       key: "meltStage",
@@ -37,3 +37,22 @@ export const iceBlock: EntityModule = originalModule(
       : tileAnimationCell(MapEntityTypeId.ICE_BLOCK, "melt", stage);
   }),
 );
+
+/** 火球命中 Ice Block 后，由对象领域提出融化命令。 */
+export function meltIceBlocksAt(
+  query: WorldQueryApi,
+  commands: WorldCommandApi,
+  cell: { x: number; y: number },
+): void {
+  for (const presence of query.presencesAt(cell)) {
+    const entity = query.entity(presence.entityId);
+    if (entity?.type !== MapEntityTypeId.ICE_BLOCK) continue;
+    commands.destroy(entity.id);
+    commands.emit({
+      type: "ice-melted",
+      entityId: entity.id,
+      x: cell.x,
+      y: cell.y,
+    });
+  }
+}

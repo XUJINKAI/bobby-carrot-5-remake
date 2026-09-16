@@ -1,9 +1,7 @@
 import { createPushboxTerrainPicker } from "./pushbox-terrain.mjs";
 
 export const SOKOBAN_WIN_RULE = {
-  type: "fill-all",
-  target: "push-goal",
-  filler: "pushable",
+  type: "push-goal",
 };
 
 export function convertXsbBoard(board, title = "Sokoban", options = {}) {

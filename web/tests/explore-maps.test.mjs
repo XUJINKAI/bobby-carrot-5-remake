@@ -20,7 +20,7 @@ test("直达 Play 只按 URL 加载一个 canonical MapDocument", async () => {
           { type: "bobby", x: 0, y: 0 },
           { type: "exit", x: 1, y: 0 },
         ],
-        rules: { win: { type: "reach", target: "exit" } },
+        rules: { win: { type: "exit" } },
       }),
     );
   };
@@ -48,7 +48,7 @@ test("直达 Play 只按 URL 加载一个 canonical MapDocument", async () => {
   }
 });
 
-test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () => {
+test("直达 Play 保留 canonical Bobby Entity 与 push-goal 规则", async () => {
   const previousFetch = globalThis.fetch;
   const previousDocument = globalThis.document;
   globalThis.document = { baseURI: "https://example.test/" };
@@ -66,9 +66,7 @@ test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () =
         ],
         rules: {
           win: {
-            type: "fill-all",
-            target: "push-goal",
-            filler: "pushable",
+            type: "push-goal",
           },
         },
       }),
@@ -85,9 +83,7 @@ test("直达 Play 保留 canonical Bobby Entity 与 fill-all 规则", async () =
       ),
     );
     assert.deepEqual(resolved.level.rules?.win, {
-      type: "fill-all",
-      target: "push-goal",
-      filler: "pushable",
+      type: "push-goal",
     });
     assert.equal(Object.hasOwn(resolved.level, "meta"), false);
     assert.equal(resolved.level.schemaVersion, 1);

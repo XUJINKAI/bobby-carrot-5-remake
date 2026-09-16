@@ -6,6 +6,7 @@ test("public Engine API exposes gameplay plus generic Entity and Visual structur
   for (const name of [
     "Game",
     "createGameplayRuntime",
+    "GameplayDialogController",
     "AudioRuntime",
     "InputController",
     "EntityStore",
@@ -35,4 +36,9 @@ test("public Engine API keeps Campaign state and executable dialog callbacks out
   ]) {
     assert.equal(name in engine, false, name);
   }
+});
+
+test("public Engine API exposes the dialog controller without exposing its DOM View", () => {
+  assert.equal(typeof engine.GameplayDialogController, "function");
+  assert.equal("GameplayDialogView" in engine, false);
 });

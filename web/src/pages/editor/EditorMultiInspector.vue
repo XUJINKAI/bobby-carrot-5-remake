@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   EditorDefinition,
+  EngineEnvironment,
   EntityCatalog,
   InspectorModel,
 } from "@bobby/editor";
@@ -15,6 +16,7 @@ import AppIcon from "../../shared/icons/AppIcon.vue";
 defineProps<{
   model: InspectorModel;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
@@ -54,7 +56,7 @@ const emit = defineEmits<{
               :source="placementPresetFromEntity(group.entities[0]!)"
               :cell-size="34"
               :images="images"
-              :catalog="catalog"
+              :environment="environment"
               :editor="editor"
               :fallback-text="group.label.slice(0, 2)"
             />
@@ -78,6 +80,7 @@ const emit = defineEmits<{
             :definition="group.definition"
             :entity-policy="group.editor"
             :images="images"
+            :environment="environment"
             :catalog="catalog"
             :editor="editor"
             @field="(key, value) => emit('field', group.type, key, value)"

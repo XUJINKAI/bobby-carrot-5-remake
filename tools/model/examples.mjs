@@ -63,7 +63,7 @@ function mapDocumentExample() {
     music: "ingame0",
     note: "验证 Carousel 与 Speed 的初始地图语义。",
     rules: {
-      win: { type: "reach", target: "exit" },
+      win: { type: "exit" },
       limits: [{ type: "max-moves", moves: 100 }],
     },
     width: 8,

@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
 import { buildVisualScene } from "../dist/visual/VisualSceneBuilder.js";
-import { World } from "../dist/world/World.js";
+import {
+  buildSpatialScene,
+  createIndexedSpatialSceneSource,
+} from "../dist/visual/SpatialSceneBuilder.js";
+import { World } from "./support/World.mjs";
 
 test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉", () => {
   const visuals = createBuiltinVisualRegistry();
@@ -17,7 +21,7 @@ test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉"
     ],
   };
   const single = buildVisualScene(new World(level), visuals, new Map());
-  assert.deepEqual(single.player[0].composition.layers.map((layer) => layer.kind), ["image"]);
+  assert.deepEqual(single.standing[0].composition.layers.map((layer) => layer.kind), ["image"]);
 
   const multiple = buildVisualScene(
     new World({
@@ -28,9 +32,39 @@ test("双 Bobby 使用不同颜色的 player 标记，单 Bobby 保持原视觉"
     new Map(),
   );
   assert.deepEqual(
-    multiple.player.map((item) => item.composition.layers[0].kind),
+    multiple.standing.map((item) => item.composition.layers[0].kind),
     ["canvas", "canvas"],
   );
+});
+
+test("World wrapper and shared spatial builder use the same pass ordering", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 1,
+    height: 3,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
+      { type: "grass", variant: "ts-10-1", x: 0, y: 2 },
+      { type: "dream-machine", x: 0, y: 1 },
+      { type: "bobby", x: 0, y: 2 },
+    ],
+  });
+  const visuals = createBuiltinVisualRegistry();
+  const wrapped = buildVisualScene(world, visuals, new Map());
+  const shared = buildSpatialScene({
+    source: createIndexedSpatialSceneSource(
+      world.entities,
+      world.spatial,
+      world.registry,
+    ),
+    visuals,
+  });
+  const ids = (items) => items.map((item) => item.presence.entityId);
+
+  assert.deepEqual(ids(shared.world), ids(wrapped.world));
+  assert.deepEqual(ids(shared.standing), ids(wrapped.standing));
+  assert.deepEqual(ids(shared.effect), ids(wrapped.effect));
 });
 
 test("场景共享一次胜利求值，并在收集与恢复后更新出口视觉", () => {
@@ -49,17 +83,18 @@ test("场景共享一次胜利求值，并在收集与恢复后更新出口视�
       win: {
         type: "all",
         conditions: [
-          { type: "collect-all", target: "carrot" },
-          { type: "reach", target: "exit" },
+          { type: "carrot" },
+          { type: "exit" },
         ],
       },
     },
   });
   const visuals = createBuiltinVisualRegistry();
   const snapshot = world.snapshot();
-  const actor = world.query.entitiesWithTrait("player")[0];
+  const actor = world.query.entitiesWithFact("player")[0];
   const exit = world.entities.all().find((entity) => entity.type === "exit");
-  const getter = Object.getOwnPropertyDescriptor(World.prototype, "winState").get;
+  const kernel = Object.getPrototypeOf(World.prototype);
+  const getter = Object.getOwnPropertyDescriptor(kernel, "winState").get;
   let evaluations = 0;
   Object.defineProperty(world, "winState", {
     get() {

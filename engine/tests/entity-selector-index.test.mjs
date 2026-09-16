@@ -1,21 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { levelRuleSelector } from "../dist/world/spatial/EntitySelector.js";
+import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
-test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复后等价于全量查询", () => {
+test("语义索引在移动、方向、动态 Fact、生成、销毁和恢复后等价于全量查询", () => {
   const registry = new EntityRegistry();
   registry.registerAll([
-    { type: "actor", traits: ["player", "target"] },
-    { type: "target", traits: ["target"] },
+    { type: "actor", presenceFacts: ["player", "target"] },
+    { type: "target", presenceFacts: ["target"] },
     {
-      type: "long", traits: [],
+      type: "long",
+      presenceFacts: [],
+      resolveEntityFacts({ entity }) {
+        return entity.state?.instance === true ? ["instance"] : [];
+      },
       footprint: { byDirection: {
         right: [
-          { dx: 0, dy: 0, traits: ["target"] },
-          { dx: 1, dy: 0, traits: ["target"] },
+          { dx: 0, dy: 0, presenceFacts: ["target"] },
+          { dx: 1, dy: 0, presenceFacts: ["target"] },
         ],
-        down: [{ dx: 0, dy: 0, traits: ["other"] }],
+        down: [{ dx: 0, dy: 0, presenceFacts: ["other"] }],
       } },
     },
   ]);
@@ -27,24 +33,24 @@ test("语义索引在移动、方向、实例 Trait、生成、销毁和恢复�
       { type: "target", x: 3, y: 3 },
       { type: "long", x: 4, y: 4, direction: "right" },
     ],
-  }, { entities: registry });
+  }, { entities: registry, facts: testFactRegistry("target", "other", "instance", "missing") });
   function check() {
     for (const selector of ["player", "target", "other", "instance", "missing"]) {
       const all = world.entities.all();
-      const traits = all.filter((e) => world.query.entityHasTrait(e.id, selector));
-      const matching = all.filter((e) => e.type === selector || world.query.entityHasTrait(e.id, selector));
-      assert.deepEqual(world.query.entitiesWithTrait(selector), traits);
-      assert.deepEqual(world.spatial.entityIdsMatching(selector), matching.map((e) => e.id));
-      assert.equal(world.spatial.entityCountWithTrait(selector), traits.length);
-      assert.equal(world.spatial.entityCountMatching(selector), matching.length);
+      const facts = all.filter((e) => world.query.entityHasFact(e.id, selector));
+      const matching = all.filter((e) => e.type === selector || world.query.entityHasFact(e.id, selector));
+      assert.deepEqual(world.query.entitiesWithFact(selector), facts);
+      assert.deepEqual(world.spatial.entityIdsMatching(levelRuleSelector(selector)), matching.map((e) => e.id));
+      assert.equal(world.spatial.entityCountWithFact(selector), facts.length);
+      assert.equal(world.spatial.entityCountMatching(levelRuleSelector(selector)), matching.length);
     }
   }
   check();
   const snapshot = world.snapshot();
   world.spatial.moveEntity(1, { x: 1, y: 0 });
-  assert.deepEqual(world.query.entitiesWithTrait("player").map((e) => e.id), [1, 2]);
+  assert.deepEqual(world.query.entitiesWithFact("player").map((e) => e.id), [1, 2]);
   world.entities.require(4).direction = "down";
-  world.entities.require(4).instanceTraits = ["instance"];
+  world.entities.require(4).state = { instance: true };
   world.spatial.rebuildEntity(4);
   check();
   const spawned = world.entities.spawn({ type: "target", x: 7, y: 7 });
@@ -67,7 +73,7 @@ test("静态大地图通过索引推进 tick 与查询玩家和目标", () => {
       { type: "bobby", x: 0, y: 0 },
       { type: "carrot", x: 39, y: 39 },
     ],
-    rules: { win: { type: "collect-all", target: "carrot" } },
+    rules: { win: { type: "carrot" } },
   });
   const all = world.entities.all.bind(world.entities);
   let scans = 0;
@@ -78,6 +84,6 @@ test("静态大地图通过索引推进 tick 与查询玩家和目标", () => {
   world.update({ tick: 1, stepMs: 62.5 });
   assert.equal(scans, 0);
   assert.equal(world.winState.remaining, 1);
-  assert.equal(world.query.entitiesWithTrait("player").length, 1);
+  assert.equal(world.query.entitiesWithFact("player").length, 1);
   assert.equal(scans, 0);
 });

@@ -1,13 +1,11 @@
 import {
   entityMapDefinition,
-  surfaceMappingForEntity,
   type Direction,
   type EntityType,
   type JsonValue,
   type LevelEntity,
   type LevelEntityFieldValue,
 } from "@bobby/model";
-import { originalSurfaceTraits } from "../../entities/original/surface-traits.js";
 
 export type EntityId = number;
 export type EntityState = Record<string, JsonValue>;
@@ -25,7 +23,6 @@ export interface EntitySpawnSpec {
   direction?: Direction;
   stackOrder?: number;
   state?: EntityState;
-  instanceTraits?: readonly string[];
 }
 
 /** World 中一个具体 Entity 的运行时身份与可变状态。 */
@@ -36,7 +33,6 @@ export interface EntityInstance {
   direction?: Direction;
   stackOrder?: number;
   state?: EntityState;
-  instanceTraits?: string[];
 }
 
 /** 把标准的扁平 Map JSON 转换为 Engine Runtime 结构。 */
@@ -63,11 +59,6 @@ export function instantiateLevelEntity(
     state[field.key] = structuredClone(value) as JsonValue;
   }
 
-  const surfaceMapping = surfaceMappingForEntity(source.type, source);
-  const instanceTraits = surfaceMapping
-    ? originalSurfaceTraits(surfaceMapping)
-    : [];
-
   return {
     id,
     type: source.type,
@@ -77,9 +68,6 @@ export function instantiateLevelEntity(
       ? { stackOrder: source.stackOrder }
       : {}),
     ...(Object.keys(state).length > 0 ? { state } : {}),
-    ...(instanceTraits.length > 0
-      ? { instanceTraits: [...instanceTraits] }
-      : {}),
   };
 }
 
@@ -96,9 +84,6 @@ export function instantiateSpawnSpec(
       ? { stackOrder: source.stackOrder }
       : {}),
     ...(source.state ? { state: structuredClone(source.state) } : {}),
-    ...(source.instanceTraits?.length
-      ? { instanceTraits: [...new Set(source.instanceTraits)] }
-      : {}),
   };
 }
 

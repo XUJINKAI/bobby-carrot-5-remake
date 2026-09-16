@@ -19,6 +19,7 @@ function eventGame(replayPlaying) {
   game.replayPlayback = { playing: replayPlaying };
   game.worldEvents = new WorldEventDispatcher();
   game.presentation = { shake() {} };
+  game.dialog = null;
   return game;
 }
 
@@ -35,6 +36,56 @@ test("live session 同时发布世界事件与外部交互请求", () => {
   assert.deepEqual(requests, [interaction]);
 });
 
+test("地图字面对白由 Engine 消费且不会传播给宿主", () => {
+  const game = eventGame(false);
+  const worldEvents = [];
+  const requests = [];
+  const dialogues = [];
+  game.dialog = {
+    handleEntityDialogue(event) {
+      dialogues.push(event);
+    },
+  };
+  game.onWorldEvent((event) => worldEvents.push(event));
+  game.onInteractionRequest((event) => requests.push(event));
+  const dialogue = {
+    type: "dialogue-request",
+    actorId: 1,
+    entityId: 2,
+    objectType: "beaver",
+    role: "body",
+    x: 4,
+    y: 5,
+    action: "touch",
+    lines: ["第一句", "第二句"],
+  };
+
+  game.publishWorldEvents([dialogue]);
+
+  assert.deepEqual(dialogues, [dialogue]);
+  assert.deepEqual(worldEvents, []);
+  assert.deepEqual(requests, []);
+});
+
+test("Replay 不显示也不传播地图字面对白", () => {
+  const game = eventGame(true);
+  const dialogues = [];
+  game.dialog = { handleEntityDialogue: (event) => dialogues.push(event) };
+
+  game.publishWorldEvents([{
+    type: "dialogue-request",
+    actorId: 1,
+    entityId: 2,
+    objectType: "beaver",
+    x: 4,
+    y: 5,
+    action: "touch",
+    lines: ["对白"],
+  }]);
+
+  assert.deepEqual(dialogues, []);
+});
+
 test("Replay playback 只发布可观察的世界事件", () => {
   const game = eventGame(true);
   const worldEvents = [];
@@ -48,7 +99,7 @@ test("Replay playback 只发布可观察的世界事件", () => {
   assert.deepEqual(requests, []);
 });
 
-test("阻塞对话会终止录制并发布通知", () => {
+test("宿主阻塞交互会终止录制并发布通知", () => {
   const game = eventGame(false);
   game.listeners = new Map();
   game.replayRecorder = {};
@@ -56,12 +107,35 @@ test("阻塞对话会终止录制并发布通知", () => {
   game.on("replay-recording-aborted", () => notifications.push("aborted"));
   game.on("change", () => notifications.push("change"));
 
-  game.abortReplayRecordingForInteractiveChoice();
+  game.abortReplayRecording();
 
   assert.equal(game.replayRecording, false);
   assert.deepEqual(notifications, ["aborted", "change"]);
-  game.abortReplayRecordingForInteractiveChoice();
+  game.abortReplayRecording();
   assert.deepEqual(notifications, ["aborted", "change"]);
+});
+
+test("非移动 gameplay intent 会在排队前终止 Replay 录制", () => {
+  const game = eventGame(false);
+  game.listeners = new Map();
+  game.replayRecorder = {};
+  game.session = {
+    hasLevel: true,
+    world: { dead: false, completed: false },
+  };
+  game.queuedIntentGroups = [];
+  const notifications = [];
+  game.on("replay-recording-aborted", () => notifications.push("aborted"));
+
+  game.dispatch({
+    type: "set-actor-locomotion",
+    actorId: 1,
+    moveDurationMs: 266,
+  });
+
+  assert.equal(game.replayRecording, false);
+  assert.deepEqual(notifications, ["aborted"]);
+  assert.equal(game.queuedIntentGroups.length, 1);
 });
 
 test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {

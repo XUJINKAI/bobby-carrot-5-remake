@@ -2,31 +2,30 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
 test("World onTick receives the shared WorldTick", () => {
   const entities = new EntityRegistry();
   entities.registerAll([
     {
       type: "floor",
-      traits: ["walkable"],
+      presenceFacts: ["walkable"],
       stackBand: "surface",
       presentation: { name: "Floor", category: "test" },
-      authoring: { palette: true },
     },
     {
       type: "player",
-      traits: ["player"],
+      presenceFacts: ["player"],
       stackBand: "content",
       presentation: { name: "Player", category: "test" },
-      authoring: { palette: true },
     },
     {
       type: "ticker",
-      traits: ["ticker"],
+      presenceFacts: ["ticker"],
+      behaviors: ["capture-time"],
       stackBand: "content",
       presentation: { name: "Ticker", category: "test" },
-      authoring: { palette: true },
     },
   ]);
   const behaviors = new BehaviorRegistry();
@@ -37,7 +36,6 @@ test("World onTick receives the shared WorldTick", () => {
       seen.push(time);
     },
   });
-  behaviors.bindTrait("ticker", "capture-time");
   const world = new World(
     {
       schemaVersion: 1,
@@ -50,7 +48,7 @@ test("World onTick receives the shared WorldTick", () => {
         { type: "ticker", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors },
+    { entities, behaviors, facts: testFactRegistry("ticker") },
   );
   const time = { tick: 7, stepMs: 50 };
   world.update(time);

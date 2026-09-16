@@ -1,4 +1,4 @@
-import type { EntityCatalog } from "@bobby/engine";
+import type { EngineEnvironment, EntityCatalog } from "@bobby/engine";
 import {
   MapEntityTypeId,
   parseOriginalTileCoordinateLabel,
@@ -28,6 +28,7 @@ import type { EditorCommand } from "../document/commands.js";
 import { normalizeEditorLevel } from "../level/editorLevel.js";
 import type { EditorMap } from "../level/types.js";
 import type { Cell } from "./entityPlacement.js";
+import { editorPreviewFor } from "./EditorPreview.js";
 
 export {
   SURFACE_TERRAIN_GROUPS,
@@ -119,7 +120,14 @@ export function surfaceEntityForVisual(
   cell: Cell = { x: 0, y: 0 },
 ): LevelEntity {
   const coordinate = parseOriginalTileCoordinateLabel(visual);
-  if (!coordinate) return { type: visual, x: cell.x, y: cell.y };
+  if (!coordinate) {
+    return {
+      type: visual,
+      x: cell.x,
+      y: cell.y,
+      ...(cell.stackOrder !== undefined ? { stackOrder: cell.stackOrder } : {}),
+    };
+  }
   const mapping = surfaceMappingForTs(coordinate.row, coordinate.column);
   if (!mapping)
     throw new Error(`该 Original Tile 不属于 Surface 面板：${visual}`);
@@ -127,6 +135,7 @@ export function surfaceEntityForVisual(
     type: mapping.type,
     x: cell.x,
     y: cell.y,
+    ...(cell.stackOrder !== undefined ? { stackOrder: cell.stackOrder } : {}),
     ...(mapping.fields ?? {}),
   };
 }
@@ -176,7 +185,7 @@ export function applySurfaceTheme(
             sourceLevel,
           ) ?? entity;
         }
-        return applySurfaceInstanceTraits({
+        return applySurfaceInstanceFacts({
           ...stripAutoMetadata(entity),
           ...surfaceEntityForVisual(target.primary, entity),
         }, target);
@@ -187,10 +196,11 @@ export function applySurfaceTheme(
 }
 
 export function paintSurface(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   cells: readonly Cell[],
   brush: SurfaceBrush,
 ): EditorCommand {
+  const catalog = environment.catalog;
   return {
     apply(level) {
       const target = new Set(
@@ -199,22 +209,37 @@ export function paintSurface(
       if (target.size === 0) return level;
       const terrain = surfaceTerrain(brush.terrain);
       const slot = terrain.slot;
+      const preview = editorPreviewFor(level, environment);
+      const stackOrders = new Map<string, number>();
+      for (const key of target) {
+        const cell = parseCellKey(key);
+        const inspection = preview.inspectCell(cell.x, cell.y);
+        const replaced = inspection.presences.find(
+          (item) => surfaceTerrainForEntity(item.entity.type)?.slot === slot,
+        );
+        const topOrder = inspection.presences.at(-1)?.presence.stackOrder ?? -1;
+        stackOrders.set(
+          key,
+          replaced?.presence.stackOrder ?? topOrder + 1,
+        );
+      }
       const kept = level.entities.filter((entity) => {
         if (!target.has(cellKey(entity))) return true;
         return surfaceTerrainForEntity(entity.type)?.slot !== slot;
       });
       const sourceLevel = { ...level, entities: kept } as EditorMap;
-      const painted = [...target]
-        .map((key) =>
-          createSurfaceEntity(
-            catalog,
-            brush,
-            parseCellKey(key),
-            target,
-            sourceLevel,
-          ),
-        )
-        .filter((entity): entity is LevelEntity => entity !== null);
+      const painted: LevelEntity[] = [];
+      for (const key of target) {
+        const created = createSurfaceEntity(
+          catalog,
+          brush,
+          parseCellKey(key),
+          target,
+          sourceLevel,
+        );
+        if (created)
+          painted.push({ ...created, stackOrder: stackOrders.get(key) ?? 0 });
+      }
       const next = normalizeEditorLevel({
         ...level,
         entities: [...kept, ...painted],
@@ -225,15 +250,16 @@ export function paintSurface(
 }
 
 export function fillSurface(
-  catalog: EntityCatalog,
+  environment: EngineEnvironment,
   level: Readonly<EditorMap>,
   origin: Cell,
   brush: SurfaceBrush,
 ): EditorCommand {
+  const catalog = environment.catalog;
   const targetTerrain = surfaceTerrain(brush.terrain);
   const source = surfaceAt(level, origin, targetTerrain.slot);
   const sourceTerrain = source ? surfaceTerrainForEntity(source.type) : null;
-  if (!sourceTerrain) return paintSurface(catalog, [origin], brush);
+  if (!sourceTerrain) return paintSurface(environment, [origin], brush);
 
   const cells: Cell[] = [];
   const visited = new Set<string>();
@@ -254,7 +280,7 @@ export function fillSurface(
       { x: cell.x, y: cell.y + 1 },
     );
   }
-  return paintSurface(catalog, cells, brush);
+  return paintSurface(environment, cells, brush);
 }
 
 export function rectangleCells(anchor: Cell, focus: Cell): Cell[] {
@@ -355,7 +381,7 @@ function createSurfaceEntity(
   const type = resolveAutoType(item, cell, brush.seed, target, level);
   const entity = surfaceEntityForVisual(type, cell);
   catalog.require(entity.type);
-  return markAuto(applySurfaceInstanceTraits(entity, item), item.id, brush.seed);
+  return markAuto(applySurfaceInstanceFacts(entity, item), item.id, brush.seed);
 }
 
 function createFixedSurfaceEntity(
@@ -366,7 +392,7 @@ function createFixedSurfaceEntity(
 ): LevelEntity {
   const entity = surfaceEntityForVisual(selectedType, cell);
   catalog.require(entity.type);
-  return applySurfaceInstanceTraits(entity, terrain);
+  return applySurfaceInstanceFacts(entity, terrain);
 }
 
 function resolveAutoType(
@@ -448,7 +474,7 @@ function reflowAutoSurfaces(
     catalog.require(resolved.type);
     changed = true;
     return markAuto(
-      applySurfaceInstanceTraits(resolved, terrain),
+      applySurfaceInstanceFacts(resolved, terrain),
       terrain.id,
       metadata.seed,
     );
@@ -456,8 +482,8 @@ function reflowAutoSurfaces(
   return changed ? normalizeEditorLevel({ ...level, entities }) : level;
 }
 
-/** Map JSON 不保存 gameplay Trait 覆盖；Surface 语义由 Engine 持有。 */
-function applySurfaceInstanceTraits(
+/** Map JSON 不保存 gameplay Fact 覆盖；Surface 语义由 Engine 持有。 */
+function applySurfaceInstanceFacts(
   entity: LevelEntity,
   _terrain: SurfaceTerrainDefinition,
 ): LevelEntity {

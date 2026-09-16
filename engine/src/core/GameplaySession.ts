@@ -1,5 +1,9 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
+import {
   resolveBobbyLocomotionTiming,
   type BobbyLocomotionTiming,
   type BobbyLocomotionTimingOverride,
@@ -20,14 +24,13 @@ import {
   type EngineTimingOptions,
 } from "../time/EngineTiming.js";
 import { WorldClock, type WorldTick } from "../time/WorldClock.js";
-import { World, type WorldSnapshot } from "../world/World.js";
+import type { World, WorldSnapshot } from "../world/World.js";
+import { createWorld } from "../entities/WorldComposition.js";
 import type { MoveResult, WinConditionState } from "../world/WorldTypes.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
   WorldIntentGroup,
-  InitialActorIntent,
-  ActorEffectIntent,
 } from "../world/movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
@@ -60,25 +63,22 @@ export interface GameplayTickResult {
   time: WorldTick;
   result: WorldStepResult;
   phases: readonly WorldStepResult[];
-  /** 只包含对 gameplay 状态产生效果、需要 Replay 重放的输入组。 */
+  /** 包含已裁决的 gameplay 动作；纯 busy 帧不会进入 Replay。 */
   inputGroups: readonly WorldIntentGroup[];
   inputResolutions: readonly GameplayInputResolution[];
 }
 
 export interface GameplaySessionOptions {
+  environment?: EngineEnvironment;
   timing?: EngineTimingOptions;
   bobbyLocomotion?: BobbyLocomotionTimingOverride;
   history?: HistoryPolicy;
   controls?: readonly ControlBinding[];
-  initialActorIntents?: readonly InitialActorIntent[];
-  /** ReplayRunner 使用的已解析 tick 0 动作。 */
-  initialIntents?: readonly ActorEffectIntent[];
 }
 
 export interface SerializableGameplaySetup {
   worldHz: number;
   bobbyLocomotion: BobbyLocomotionTiming;
-  initialIntents: readonly ActorEffectIntent[];
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
@@ -94,9 +94,7 @@ export class GameplaySession {
   readonly clock: WorldClock;
   readonly bobbyLocomotion: BobbyLocomotionTiming;
   private readonly historyPolicy: HistoryPolicy;
-  private readonly initialActorIntents: readonly InitialActorIntent[];
-  private readonly configuredInitialIntents: readonly ActorEffectIntent[] | null;
-  private initialIntentsValue: readonly ActorEffectIntent[] = [];
+  private readonly environment: EngineEnvironment;
   private configuredControls: readonly ControlBinding[] | null;
   private controlBindings: readonly ControlBinding[] = [];
   private controllerTargets: readonly ControlTarget[] = [];
@@ -111,13 +109,10 @@ export class GameplaySession {
     const timing = resolveEngineTiming(options.timing);
     this.clock = new WorldClock(timing.worldHz, timing.worldSpeed);
     this.bobbyLocomotion = resolveBobbyLocomotionTiming(options.bobbyLocomotion);
+    this.environment = options.environment ?? builtinEngineEnvironment;
     this.historyPolicy = structuredClone(
       options.history ?? DEFAULT_HISTORY_POLICY,
     );
-    this.initialActorIntents = structuredClone(options.initialActorIntents ?? []);
-    this.configuredInitialIntents = options.initialIntents
-      ? structuredClone(options.initialIntents)
-      : null;
     this.configuredControls = options.controls
       ? structuredClone(options.controls)
       : null;
@@ -140,7 +135,7 @@ export class GameplaySession {
   get actorIds(): readonly EntityId[] {
     if (!this.worldValue) return [];
     return this.world.query
-      .entitiesWithTrait("player")
+      .entitiesWithFact("player")
       .map((entity) => entity.id);
   }
 
@@ -192,9 +187,11 @@ export class GameplaySession {
       ? null
       : world.entities.get(this.primaryActorIdValue) ?? null;
     const timedChallenge = this.timedChallengeState(world);
+    const outcome = world.outcome.state;
+    const metrics = world.metrics;
     return {
       status: world.dead ? "dead" : world.completed ? "won" : "playing",
-      deathReason: state.deathReason,
+      deathReason: outcome.phase === "lost" ? outcome.reason ?? null : null,
       moves: state.moves,
       primaryActorId: this.primaryActorIdValue,
       actors,
@@ -202,8 +199,8 @@ export class GameplaySession {
       facing: primary?.direction ?? null,
       inventory: readBobbyInventory(primary?.state),
       elapsedMs: state.elapsedMs,
-      bonusCoinsInLevel: state.bonusCoinsInLevel,
-      goldenCarrotsInLevel: state.goldenCarrotsInLevel,
+      bonusCoinsInLevel: metrics["bonus-coin"] ?? 0,
+      goldenCarrotsInLevel: metrics["golden-carrot"] ?? 0,
       timedChallengePhase: timedChallenge?.phase ?? null,
       timedChallengeRemainingMs: timedChallenge?.remainingMs ?? null,
       canUndo: this.canUndo,
@@ -225,7 +222,13 @@ export class GameplaySession {
       phase: "waiting" | "running";
       remainingMs: number;
     }> = [];
-    for (const entity of world.query.entitiesWithTrait("timed-challenge")) {
+    for (const entity of world.query.entitiesMatching({
+      kind: "any",
+      selectors: [
+        { kind: "type", value: "lock" },
+        { kind: "type", value: "timed-challenge" },
+      ],
+    })) {
       const durationMs = Number(entity.state?.deathCountdownSeconds) * 1000;
       if (!Number.isFinite(durationMs) || durationMs <= 0) continue;
       if (entity.state?.opened !== true) {
@@ -251,34 +254,27 @@ export class GameplaySession {
     return {
       worldHz: this.clock.hz,
       bobbyLocomotion: structuredClone(this.bobbyLocomotion),
-      initialIntents: structuredClone(this.initialIntentsValue),
     };
   }
 
   loadLevel(level: LevelMap): void {
     this.initialLevel = structuredClone(level);
-    this.initializeWorld(level, this.configuredInitialIntents ?? undefined, false);
+    this.initializeWorld(level, false);
   }
 
-  restart(initialIntents?: readonly ActorEffectIntent[]): void {
+  restart(): void {
     if (!this.initialLevel) return;
-    this.initializeWorld(
-      this.initialLevel,
-      initialIntents ?? this.configuredInitialIntents ?? undefined,
-      true,
-    );
+    this.initializeWorld(this.initialLevel, true);
   }
 
   private initializeWorld(
     level: LevelMap,
-    initialIntents: readonly ActorEffectIntent[] | undefined,
     preservePause: boolean,
   ): void {
     const wasPaused = preservePause && this.clock.paused;
-    this.worldValue = new World(level);
+    this.worldValue = createWorld(level, this.environment);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
-    this.applyInitialActorIntents(initialIntents);
     this.clock.reset();
     if (wasPaused) this.clock.pause();
     this.clearHistory();
@@ -368,7 +364,7 @@ export class GameplaySession {
         if (inputPhase) {
           phases.push(inputPhase);
           mergeWorldStepResult(aggregate, inputPhase);
-          if (hasReplayInputEffect(inputPhase)) group.effective = true;
+          if (isReplayInputResult(inputPhase)) group.recordable = true;
         }
       }
     }
@@ -377,9 +373,7 @@ export class GameplaySession {
       result: aggregate,
       phases,
       inputGroups: resolved.groups
-        .filter(
-          (group) => group.effective && group.recorded.recordInReplay !== false,
-        )
+        .filter((group) => group.recordable)
         .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
         resolved.sources,
@@ -449,7 +443,7 @@ export class GameplaySession {
         runnable: partition.runnable.length > 0
           ? { ...group, intents: partition.runnable }
           : null,
-        effective: observation?.stateChanged ?? false,
+        recordable: observation?.stateChanged ?? false,
       });
     }
     return {
@@ -589,37 +583,6 @@ export class GameplaySession {
     return this.bobbyLocomotion.moveMs;
   }
 
-  private applyInitialActorIntents(
-    resolvedIntents?: readonly ActorEffectIntent[],
-  ): void {
-    const intents: ActorEffectIntent[] = resolvedIntents
-      ? [...structuredClone(resolvedIntents)]
-      : [];
-    if (resolvedIntents) {
-      this.initialIntentsValue = structuredClone(intents);
-      if (intents.length > 0)
-        this.world.step({ intents, historyBoundary: false });
-      return;
-    }
-    for (const intent of this.initialActorIntents) {
-      const targets = intent.actor === "all"
-        ? this.actorIds
-        : this.primaryActorIdValue === null
-          ? []
-          : [this.primaryActorIdValue];
-      for (const actorId of targets) {
-        intents.push({
-          type: intent.type,
-          actorId,
-          moveDurationMs: intent.moveDurationMs,
-        });
-      }
-    }
-    this.initialIntentsValue = structuredClone(intents);
-    if (intents.length > 0)
-      this.world.step({ intents, historyBoundary: false });
-  }
-
   private clearHistory(): void {
     this.history.length = 0;
     this.future.length = 0;
@@ -630,7 +593,7 @@ export class GameplaySession {
 interface ResolvedInputGroup {
   recorded: WorldIntentGroup;
   runnable: WorldIntentGroup | null;
-  effective: boolean;
+  recordable: boolean;
 }
 
 interface ResolvedTickInput {
@@ -640,9 +603,9 @@ interface ResolvedTickInput {
   blockedDisposition: GameplayInputAttempt;
 }
 
-function hasReplayInputEffect(result: WorldStepResult): boolean {
+function isReplayInputResult(result: WorldStepResult): boolean {
   return (
-    result.moves.some((move) => move.moved) ||
+    result.moves.length > 0 ||
     result.motions.length > 0 ||
     result.events.length > 0 ||
     result.deltas.length > 0 ||

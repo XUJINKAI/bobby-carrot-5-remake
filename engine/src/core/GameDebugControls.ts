@@ -156,7 +156,7 @@ export class GameDebugControls {
     if (
       world.spatial.presencesAt(cell).some(
         (presence) =>
-          presence.entityId !== actorId && presence.traits.includes("player"),
+          presence.entityId !== actorId && presence.facts.includes("player"),
       )
     ) return false;
 

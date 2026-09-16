@@ -1,10 +1,10 @@
-import type { Direction } from "@bobby/model";
+import { GOAL_TYPES, type Direction } from "@bobby/model";
 import type { GameplaySession } from "../core/GameplaySession.js";
 import type { CellPosition } from "../world/entity/EntityInstance.js";
 import type {
   Replay,
   ReplayCompletedCondition,
-  ReplayGameplayIntent,
+  ReplayMoveIntent,
 } from "./ReplayFormat.js";
 import { isReplayPathId } from "./ReplayFormat.js";
 
@@ -19,7 +19,6 @@ export function validateReplay(
     "formatVersion",
     "meta",
     "runtime",
-    "initialIntents",
     "finalState",
     "endTick",
     "frames",
@@ -50,13 +49,9 @@ export function validateReplay(
   )
     throw new Error("Replay 的 Bobby 运动参数与当前 Game 不兼容");
   requireFields(replayLocomotion, ["moveMs"]);
-  if (!Array.isArray(replay.initialIntents))
-    throw new Error("Replay initialIntents 必须是数组");
   if (!Array.isArray(replay.frames))
     throw new Error("Replay frames 必须是数组");
 
-  for (const intent of replay.initialIntents)
-    validateIntent(session, intent, false);
   let previousTick = -1;
   for (const frame of replay.frames) {
     if (!frame || typeof frame !== "object")
@@ -79,7 +74,7 @@ export function validateReplay(
       if (!Array.isArray(group.intents) || group.intents.length === 0)
         throw new Error("Replay input group intents 必须是非空数组");
       for (const intent of group.intents)
-        validateIntent(session, intent, true);
+        validateIntent(session, intent);
     }
   }
   validateFinalState(replay.finalState);
@@ -87,14 +82,13 @@ export function validateReplay(
 
 function validateIntent(
   session: GameplaySession,
-  intent: ReplayGameplayIntent,
-  allowMove: boolean,
+  intent: ReplayMoveIntent,
 ): void {
   if (!intent || typeof intent !== "object")
     throw new Error("Replay 包含无效的 gameplay intent");
   if (intent.type === "move") {
     requireFields(intent, ["type", "direction", "channel", "actor"]);
-    if (!allowMove || !isDirection(intent.direction))
+    if (!isDirection(intent.direction))
       throw new Error("Replay 包含无效的玩家移动输入");
     if (intent.actor !== undefined && intent.channel !== undefined)
       throw new Error("Replay move 不能同时指定 channel 与 actor");
@@ -113,25 +107,7 @@ function validateIntent(
       validateActorReference(session, intent.actor);
     return;
   }
-  if (intent.type === "set-actor-locomotion") {
-    requireFields(intent, ["type", "actor", "moveDurationMs"]);
-    validateActorReference(session, intent.actor);
-    if (!Number.isFinite(intent.moveDurationMs) || intent.moveDurationMs <= 0)
-      throw new Error("Replay 包含无效的 Bobby 移动时长");
-    return;
-  }
-  if (intent.type === "add-actor-inventory-item") {
-    requireFields(intent, ["type", "actor", "item", "count"]);
-    validateActorReference(session, intent.actor);
-    if (
-      intent.item !== "lock-key" ||
-      !Number.isInteger(intent.count) ||
-      intent.count <= 0
-    )
-      throw new Error("Replay 包含无效的关卡内道具动作");
-    return;
-  }
-  throw new Error("Replay 包含无效的地图内语义动作");
+  throw new Error("Replay 只支持玩家移动输入");
 }
 
 function validateActorReference(
@@ -157,6 +133,7 @@ function validateFinalState(value: Replay["finalState"]): void {
   requireFields(value, [
     "status",
     "moves",
+    "position",
     "elapsedMs",
     "counters",
     "completedConditions",
@@ -168,6 +145,19 @@ function validateFinalState(value: Replay["finalState"]): void {
     (!Number.isInteger(value.moves) || value.moves < 0)
   )
     throw new Error("Replay finalState.moves 必须是非负整数");
+  if (value.position !== undefined) {
+    if (!Array.isArray(value.position))
+      throw new Error("Replay finalState.position 必须是数组");
+    for (const position of value.position) {
+      if (
+        !isPlainObject(position) ||
+        !Number.isInteger(position.x) ||
+        !Number.isInteger(position.y)
+      )
+        throw new Error("Replay finalState.position 包含无效位置");
+      requireFields(position, ["x", "y"]);
+    }
+  }
   if (
     value.elapsedMs !== undefined &&
     (!Number.isInteger(value.elapsedMs) || value.elapsedMs < 0)
@@ -196,22 +186,9 @@ function validateFinalState(value: Replay["finalState"]): void {
 function validateCompletedCondition(condition: ReplayCompletedCondition): void {
   if (!condition || typeof condition !== "object")
     throw new Error("Replay finalState 包含无效的通关条件");
-  if (condition.type === "fill-all") {
-    requireFields(condition, ["type", "target", "filler"]);
-    if (
-      !isNonEmptyString(condition.target) ||
-      !isNonEmptyString(condition.filler)
-    )
-      throw new Error("Replay finalState 包含无效的 fill-all 条件");
-    return;
-  }
-  if (condition.type === "collect-all" || condition.type === "reach") {
-    requireFields(condition, ["type", "target"]);
-    if (!isNonEmptyString(condition.target))
-      throw new Error("Replay finalState 包含无效的终局条件");
-    return;
-  }
-  throw new Error("Replay finalState 包含无效的通关条件");
+  requireFields(condition, ["type"]);
+  if (!GOAL_TYPES.includes(condition.type))
+    throw new Error("Replay finalState 包含无效的通关条件");
 }
 
 function requireFields(value: object, allowed: readonly string[]): void {
@@ -221,10 +198,6 @@ function requireFields(value: object, allowed: readonly string[]): void {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
 }
 
 function isFinalStatus(value: unknown): boolean {

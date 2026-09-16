@@ -2,25 +2,30 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+import { testFactRegistry } from "./support/testFactRegistry.mjs";
 
-function registry() {
+const facts = testFactRegistry("goal", "mowable", "item");
+
+function registry({ grassBehaviors = [] } = {}) {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "player", traits: ["player"], layer: "object", stackOrder: 100 },
-    { type: "wall", traits: ["blocking"], layer: "object", stackOrder: 100 },
-    { type: "box", traits: ["blocking", "pushable"], layer: "object", stackOrder: 100 },
-    { type: "goal", traits: ["walkable", "goal"], layer: "surface", stackOrder: 0 },
-    { type: "exit-cell", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "carrot", traits: [], layer: "object", stackOrder: 100 },
-    { type: "grass", traits: ["blocking", "mowable"], layer: "cover", stackOrder: 200 },
-    { type: "item", traits: ["item"], layer: "object", stackOrder: 100 },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
+    { type: "wall", presenceFacts: ["blocking"] },
+    { type: "box", presenceFacts: ["blocking", "pushable"] },
+    { type: "push-goal", presenceFacts: ["walkable"] },
+    { type: "exit", presenceFacts: ["walkable"] },
+    { type: "carrot", presenceFacts: [] },
+    {
+      type: "grass",
+      presenceFacts: ["blocking", "mowable"],
+      behaviors: grassBehaviors,
+    },
+    { type: "item", presenceFacts: ["item"] },
     {
       type: "long",
-      traits: [],
-      layer: "object",
-      stackOrder: 100,
+      presenceFacts: [],
       footprint: {
         byDirection: {
           right: [
@@ -41,7 +46,7 @@ function registry() {
 const floor = (x, y, type = "floor") => ({ type, x, y });
 
 function actorIds(world) {
-  return world.query.entitiesWithTrait("player").map((entity) => entity.id);
+  return world.query.entitiesWithFact("player").map((entity) => entity.id);
 }
 
 function move(world, actorId, direction, source = "test") {
@@ -67,7 +72,7 @@ test("implicit Void blocks and ordinary floor moves", () => {
       height: 1,
       entities: [floor(0, 0), floor(1, 0), { type: "player", x: 0, y: 0 }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
   assert.equal(move(world, actor, "right").moves[0].moved, true);
@@ -75,7 +80,7 @@ test("implicit Void blocks and ordinary floor moves", () => {
   assert.equal(world.entity(actor).anchor.x, 1);
 });
 
-test("pushable movement is one transaction and fill-all uses Presence traits", () => {
+test("pushable movement is one transaction and push Goal reads Presence facts", () => {
   const entities = registry();
   const world = new World(
     {
@@ -85,17 +90,17 @@ test("pushable movement is one transaction and fill-all uses Presence traits", (
       entities: [
         floor(0, 0),
         floor(1, 0),
-        floor(2, 0, "goal"),
+        floor(2, 0, "push-goal"),
         floor(3, 0),
         { type: "player", x: 0, y: 0 },
         { type: "box", x: 1, y: 0 },
       ],
-      rules: { win: { type: "fill-all", target: "goal", filler: "pushable" } },
+      rules: { win: { type: "push-goal" } },
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
-  const box = world.query.entitiesWithTrait("pushable")[0];
+  const box = world.query.entitiesWithFact("pushable")[0];
   const step = move(world, actor, "right");
   assert.equal(step.moves[0].moved, true);
   assert.deepEqual(new Set(step.mutations.moved), new Set([actor, box.id]));
@@ -103,17 +108,17 @@ test("pushable movement is one transaction and fill-all uses Presence traits", (
   assert.equal(world.entity(box.id).anchor.x, 2);
 });
 
-test("reach selector can address an Entity type without a matching Trait", () => {
+test("Exit Goal reads Exit Entity type", () => {
   const entities = registry();
   const world = new World(
     {
       schemaVersion: 1,
       width: 2,
       height: 1,
-      entities: [floor(0, 0), floor(1, 0, "exit-cell"), { type: "player", x: 0, y: 0 }],
-      rules: { win: { type: "reach", target: "exit-cell" } },
+      entities: [floor(0, 0), floor(1, 0, "exit"), { type: "player", x: 0, y: 0 }],
+      rules: { win: { type: "exit" } },
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const actor = actorIds(world)[0];
   assert.equal(world.completed, false);
@@ -134,7 +139,7 @@ test("World accepts multiple player actors and one intent group counts as one mo
         { type: "player", x: 3, y: 0, direction: "left" },
       ],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const [left, right] = actorIds(world);
   const step = world.step({
@@ -164,7 +169,7 @@ test("同一 intent group 的两个 actor 争用同一目标格时全部拒绝",
         { type: "player", x: 2, y: 0 },
       ],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const [left, right] = actorIds(world);
   const step = world.step({
@@ -184,7 +189,7 @@ test("同一 intent group 的两个 actor 争用同一目标格时全部拒绝",
 });
 
 test("clear-and-pass removes blocking cover and completes the same movement", () => {
-  const entities = registry();
+  const entities = registry({ grassBehaviors: ["clear-cover"] });
   const behaviors = new BehaviorRegistry();
   behaviors.register({
     id: "clear-cover",
@@ -194,7 +199,6 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
       return { result: "clear-and-pass", reason: "test-clear" };
     },
   });
-  behaviors.bindTrait("mowable", "clear-cover");
   const world = new World(
     {
       schemaVersion: 1,
@@ -207,7 +211,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
         { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       ],
     },
-    { entities, behaviors },
+    { entities, behaviors, facts },
   );
   const actor = actorIds(world)[0];
   const step = move(world, actor, "right");
@@ -217,7 +221,7 @@ test("clear-and-pass removes blocking cover and completes the same movement", ()
   assert.equal(world.inspect(1, 0).topPresence.type, "item");
 });
 
-test("layer is semantic and independent from stackOrder", () => {
+test("Presence inspection reports semantic facts and stackOrder", () => {
   const entities = registry();
   const world = new World(
     {
@@ -226,11 +230,11 @@ test("layer is semantic and independent from stackOrder", () => {
       height: 1,
       entities: [floor(0, 0), { type: "item", x: 0, y: 0 }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const inspection = world.inspect(0, 0);
-  assert.equal(inspection.presences.find((item) => item.type === "floor").layer, "surface");
-  assert.equal(inspection.presences.find((item) => item.type === "item").layer, "object");
+  assert.equal(inspection.presences.find((item) => item.type === "floor").facts.includes("walkable"), true);
+  assert.equal(inspection.presences.find((item) => item.type === "item").stackOrder, 1);
 });
 
 test("directional footprint uses the explicitly declared direction layout", () => {
@@ -242,7 +246,7 @@ test("directional footprint uses the explicitly declared direction layout", () =
       height: 4,
       entities: [floor(0, 0), { type: "player", x: 0, y: 0 }, { type: "long", x: 2, y: 1, direction: "down" }],
     },
-    { entities, behaviors: new BehaviorRegistry() },
+    { entities, behaviors: new BehaviorRegistry(), facts },
   );
   const entity = world.entities.all().find((item) => item.type === "long");
   assert.deepEqual(

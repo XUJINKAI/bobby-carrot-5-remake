@@ -72,9 +72,15 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
     objects: [],
   });
   assert.deepEqual(result.entities, [
-    { type: MapEntityTypeId.GRASS, x: 0, y: 0, variant: "ts-6-15" },
-    { type: MapEntityTypeId.START, x: 1, y: 0 },
-    { type: MapEntityTypeId.BOBBY, x: 1, y: 0 },
+    {
+      type: MapEntityTypeId.GRASS,
+      x: 0,
+      y: 0,
+      variant: "ts-6-15",
+      stackOrder: 0,
+    },
+    { type: MapEntityTypeId.START, x: 1, y: 0, stackOrder: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 1, y: 0, stackOrder: 1 },
   ]);
 });
 
@@ -153,6 +159,7 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
       y: 0,
       direction: "left",
       active: true,
+      stackOrder: 0,
     },
   );
 });
@@ -230,17 +237,17 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
     [
-      canonicalMowedGroundAt(1, 0),
-      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
-      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
+      { ...canonicalMowedGroundAt(1, 0), stackOrder: 0 },
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0, stackOrder: 1 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0, stackOrder: 2 },
     ],
   );
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
     [
-      canonicalMowedGroundAt(2, 0),
-      { type: MapEntityTypeId.CARROT, x: 2, y: 0 },
-      { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0 },
+      { ...canonicalMowedGroundAt(2, 0), stackOrder: 0 },
+      { type: MapEntityTypeId.CARROT, x: 2, y: 0, stackOrder: 1 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0, stackOrder: 2 },
     ],
   );
 });
@@ -255,9 +262,9 @@ test("High Grass 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠",
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
     [
-      canonicalMowedGroundAt(1, 0),
-      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0 },
-      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
+      { ...canonicalMowedGroundAt(1, 0), stackOrder: 0 },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0, stackOrder: 1 },
+      { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0, stackOrder: 2 },
     ],
   );
 });
@@ -277,9 +284,10 @@ test("Snow 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠", () =>
         x: 1,
         y: 0,
         variant: "ts-8-13",
+        stackOrder: 0,
       },
-      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0 },
-      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0, stackOrder: 1 },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0, stackOrder: 2 },
     ],
   );
 });
@@ -426,7 +434,13 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
     adaptDecodedMap(reversed).entities.find(
       (entity) => entity.type === MapEntityTypeId.DRAGON,
     ),
-    { type: MapEntityTypeId.DRAGON, x: 2, y: 0, direction: "left" },
+    {
+      type: MapEntityTypeId.DRAGON,
+      x: 2,
+      y: 0,
+      direction: "left",
+      stackOrder: 1,
+    },
   );
 
   assert.throws(
@@ -441,6 +455,27 @@ test("Dragon canonical body anchor round-trips to original head coordinate", () 
       }),
     /Dragon 只支持 left direction/,
   );
+});
+
+test("Dragon 的 order 来自 head Cell Stack，body/tail 地面保持在下层", () => {
+  const result = adaptDecodedMap({
+    width: 4,
+    height: 1,
+    terrain: [[terrain(0x95), terrain(0x5e), terrain(0x5e), terrain(0x5e)]],
+    objects: [{ type: objectTile(0xd7), x: 1, y: 0 }],
+  });
+  const dragon = result.entities.find(
+    (entity) => entity.type === MapEntityTypeId.DRAGON,
+  );
+  assert.equal(dragon.stackOrder, 1);
+  for (const x of [1, 2, 3]) {
+    assert.equal(
+      result.entities.find(
+        (entity) => entity.type === MapEntityTypeId.GRASS && entity.x === x,
+      )?.stackOrder,
+      0,
+    );
+  }
 });
 
 test("两格角色以 canonical body anchor 往返原版 head 坐标", () => {
@@ -472,7 +507,7 @@ test("两格角色以 canonical body anchor 往返原版 head 坐标", () => {
       adaptDecodedMap(reversed).entities.find(
         (entity) => entity.type === type,
       ),
-      { type, x: 1, y: 1 },
+      { type, x: 1, y: 1, stackOrder: 1 },
     );
   }
 });
@@ -537,9 +572,9 @@ test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", ()
     objects: [],
   });
   assert.deepEqual(result.entities.filter((entity) => entity.type === MapEntityTypeId.MOON), [
-    { type: MapEntityTypeId.MOON, x: 0, y: 0, variant: "ts-5-11" },
-    { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12" },
-    { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13" },
+    { type: MapEntityTypeId.MOON, x: 0, y: 0, variant: "ts-5-11", stackOrder: 0 },
+    { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12", stackOrder: 0 },
+    { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13", stackOrder: 0 },
   ]);
 });
 
@@ -558,7 +593,9 @@ function adaptTerrainCell(type, x, y) {
     height,
     terrain: terrainRows,
     objects: [],
-  }).entities.filter((entity) => entity.x === x && entity.y === y);
+  }).entities
+    .filter((entity) => entity.x === x && entity.y === y)
+    .map(withoutStackOrder);
 }
 
 /** 通过整图入口扣除基础 terrain，得到指定 object 对 Cell Stack 的贡献。 */
@@ -581,17 +618,21 @@ function adaptObjectCell(object) {
     baselineCounts.set(key, (baselineCounts.get(key) ?? 0) + 1);
   }
 
-  return adaptDecodedMap({ ...source, objects: [object] }).entities.filter(
-    (entity) => {
+  return adaptDecodedMap({ ...source, objects: [object] }).entities
+    .filter((entity) => {
       const key = JSON.stringify(entity);
       const count = baselineCounts.get(key) ?? 0;
       if (count === 0) return true;
       baselineCounts.set(key, count - 1);
       return false;
-    },
-  );
+    })
+    .map(withoutStackOrder);
 }
 
 function canonicalMowedGroundAt(x, y) {
   return { type: MapEntityTypeId.GRASS, x, y, variant: mowedGroundAt(x, y) };
+}
+
+function withoutStackOrder({ stackOrder: _stackOrder, ...entity }) {
+  return entity;
 }

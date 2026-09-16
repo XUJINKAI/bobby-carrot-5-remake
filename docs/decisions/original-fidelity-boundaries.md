@@ -57,6 +57,38 @@ WorldMotion，而不是只看脚下地形。
 
 每块 Plank 是独立 Entity，衰变表现也按 Entity 建立独立实例，不共享原版的全局临时槽。
 
+## 接触栈与覆盖机关
+
+### 现象差异
+
+Plank、豆茎上段、High Grass、Snow 与 Ice Block 会从自身所在 `stackOrder` 平面遮蔽下层接触
+规则。例如 Plank 位于 Carousel 或 Trap 上方时，Bobby 只与 Plank 接触，Carousel 的方向
+限制和 Trap 的进入、离开效果都不会触发。
+
+### 可能影响
+
+Editor 可以通过调整同格顺序直接改变机关组合结果。目标 Entity 仍参与关卡目标计数，但被
+覆盖的 Exit 不满足物理到达条件。
+
+### 设计原理
+
+移动、Push、落脚、Touch、生命周期和 Reach 共用一份接触栈，避免各机关维护覆盖名单。
+Render、Editor、Debug 与目标计数读取完整空间栈；Mower 的完整移动栈是显式对象特例。
+
+## Cloud / Leaf 的动态碰撞粒度
+
+### 现象差异
+
+原版在格边界使用动态实体像素矩形规划，并在快速子步再次检查碰撞。Bobby Carrot 5 Remake 在格边界检查目标格的载体方向，并由 World 的通用运动预留裁决本次移动。
+
+### 可能影响
+
+多个 Cloud / Leaf 在同一格附近交会时，极短的像素级擦碰时机可能不同。相同方向的移动载体可以续行；异向或停止的载体阻挡目标格。
+
+### 设计原理
+
+WorldMotion 持有连续位置和运动进度，规则提交仍以语义格移动为单位。目标格预留与其它 Entity 移动使用同一事务边界，Snapshot、Undo 和 Replay 因而读取相同的世界事实。
+
 ## Kite 的地图边缘恢复
 
 ### 现象差异

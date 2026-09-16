@@ -24,6 +24,20 @@ export async function loadReplayAsset(
   return { replay: parseReplayText(text), text };
 }
 
+export async function saveReplayAsset(
+  url: string,
+  text: string,
+  fetcher: typeof fetch = fetch,
+): Promise<void> {
+  const response = await fetcher(url, {
+    method: "PUT",
+    headers: { "content-type": "application/json; charset=utf-8" },
+    body: text,
+  });
+  if (!response.ok)
+    throw new Error(`保存内置过法失败（HTTP ${response.status}）`);
+}
+
 export function parseReplayText(text: string): Replay {
   const value: unknown = JSON.parse(text);
   if (!value || typeof value !== "object" || Array.isArray(value))

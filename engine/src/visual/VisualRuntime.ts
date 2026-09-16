@@ -1,7 +1,8 @@
-import type { Direction } from "@bobby/model";
+import { MapEntityTypeId, type Direction } from "@bobby/model";
 import { Camera, type CameraOptions } from "../render/Camera.js";
 import {
   sortRenderItems,
+  sortStandingRenderItems,
   type RenderItem,
   type RenderScene,
 } from "../render/RenderScene.js";
@@ -260,6 +261,17 @@ export class VisualRuntime {
         continue;
       }
       if (delta.type === "world-event") {
+        if (delta.event.type === "shovel-started" &&
+          delta.event.actorId !== undefined &&
+          delta.event.direction !== undefined &&
+          typeof delta.event.data?.durationMs === "number")
+          this.beginAction(
+            delta.event.actorId,
+            "shovel",
+            delta.event.direction,
+            delta.event.data.durationMs,
+            frame,
+          );
         this.beginTransient(delta.event, frame);
         this.callouts.consume(delta.event, frame);
         continue;
@@ -347,10 +359,22 @@ export class VisualRuntime {
     });
   }
 
+  /** 对话展示期间从当前表现时间重新计 Bobby 的静止时长。 */
+  restartBobbyIdle(world: World, frame: PresentationFrame): void {
+    for (const entity of world.query.entitiesWithFact("player")) {
+      if (entity.type !== MapEntityTypeId.BOBBY) continue;
+      const current = this.entityRuntime.get(entity.id);
+      this.entityRuntime.set(entity.id, {
+        ...current,
+        stationarySinceMs: frame.nowMs,
+      });
+    }
+  }
+
   /** 多 player 始终共同构图；单 player 时 camera focus 可临时接管。 */
   scene(world: World, cameraTarget: EntityId | null = null): RenderScene {
     const actorIds = world.query
-      .entitiesWithTrait("player")
+      .entitiesWithFact("player")
       .map((entity) => entity.id);
     this.ensureStationaryActorStates(world, actorIds);
     if (actorIds.length > 1) {
@@ -470,7 +494,7 @@ export class VisualRuntime {
     durationMs: number,
     frame: PresentationFrame,
   ): void {
-    for (const actor of world.query.entitiesWithTrait("player")) {
+    for (const actor of world.query.entitiesWithFact("player")) {
       this.beginAction(
         actor.id,
         animation,
@@ -569,21 +593,24 @@ export class VisualRuntime {
         presence: {
           entityId: -transient.id,
           cell: { x: transient.x, y: transient.y },
-          layer: "object",
-          traits: [],
+          facts: [],
           stackOrder: transient.definition.stackOrder ?? 0,
         },
         composition,
         visualX: transient.x,
         visualY: transient.y,
+        depthX: transient.x,
+        depthY: transient.y,
       });
     }
-    if (!passes.world && !passes.player && !passes.effect) return scene;
+    if (!passes.world && !passes.standing && !passes.effect) return scene;
     return {
       worldWidth: scene.worldWidth,
       worldHeight: scene.worldHeight,
       world: passes.world ? sortRenderItems(passes.world) : scene.world,
-      player: passes.player ? sortRenderItems(passes.player) : scene.player,
+      standing: passes.standing
+        ? sortStandingRenderItems(passes.standing)
+        : scene.standing,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
       callouts: scene.callouts,
     };

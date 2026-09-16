@@ -1,11 +1,12 @@
 import type { LevelMap } from "@bobby/model";
+import {
+  builtinEngineEnvironment,
+  type EngineEnvironment,
+} from "../environment/EngineEnvironment.js";
 import { GameplaySession } from "../core/GameplaySession.js";
 import type { Replay, ReplayActualFinalState } from "./ReplayFormat.js";
 import { ReplayEventCounter } from "./ReplayFinalState.js";
-import {
-  resolveReplayInitialIntents,
-  resolveReplayInputGroups,
-} from "./ReplayIntentResolver.js";
+import { resolveReplayInputGroups } from "./ReplayIntentResolver.js";
 import { validateReplay } from "./ReplayValidation.js";
 
 export interface ReplayReport {
@@ -14,19 +15,19 @@ export interface ReplayReport {
 }
 
 /** Replay 每次从 LevelMap 起点执行，不读取或保存中途 WorldSnapshot。 */
-export function runReplay(level: LevelMap, replay: Replay): ReplayReport {
+export function runReplay(
+  level: LevelMap,
+  replay: Replay,
+  environment: EngineEnvironment = builtinEngineEnvironment,
+): ReplayReport {
   const session = new GameplaySession({
+    environment,
     timing: { worldHz: replay.runtime.worldHz },
     bobbyLocomotion: replay.runtime.bobbyLocomotion,
     history: { mode: "disabled" },
   });
   session.loadLevel(level);
   validateReplay(session, replay);
-  const initialIntents = resolveReplayInitialIntents(
-    session,
-    replay.initialIntents,
-  );
-  session.restart(initialIntents);
 
   const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
   const events = new ReplayEventCounter();

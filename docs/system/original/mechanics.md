@@ -1,5 +1,8 @@
 # 原版机关与关卡机制
 
+Plank、Mower、Bean、Cloud、Fireball、Leaf 的精确通行条件与原始字节码依据统一见
+[原版通行与碰撞规则](../../reference/original-passage.md)。本页的玩法概述按该事实表理解。
+
 ## 图集与角色资源
 
 `ts.png` 与 `ta.png` 的尺寸、静态单元和动画序列统一登记在
@@ -47,7 +50,7 @@
 - 胡萝卜是可收集物品，关卡目标是收集胡萝卜时，界面HUD显示胡萝卜剩余数量。
 
 视觉使用 `carrot` 的 base、`consumed` phase，以及 `high-grass` 的 `objective`
-phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-carrot` runtime state，
+phase。收集时同一 Carrot Entity 的 `state.consumed` 变为 `true`，目标读取未收集数量；
 `ts-13-10` 的坑会保留到本局结束，并随 World Snapshot 被 Undo / Redo 恢复。
 
 ### egg 彩蛋
@@ -57,6 +60,7 @@ phase。收集时原始 `carrot` 转换为不参与目标计数的 `consumed-car
 视觉使用 `egg` 的 base、`filled` phase，以及 `high-grass` 的 `objective` phase。
 
 注意：胡萝卜和彩蛋洞被高草覆盖的画面visual一样，但含义不同。
+HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内容或单独放置时显示 `ts-13-8`。
 
 ### golden-carrot 金色胡萝卜
 
@@ -278,16 +282,24 @@ bf(1,1) --> bf(2,1) --> bf(3,1) --> bf(2,1)
 
 ## 角色对象
 
-这些对象虽然在原版 DAT 中可能由多个格子和多个 byte ID 组成，但在 BC5R 中应优先建模为一个 Entity + footprint / presence，而不是拆成多个互不关联的 Entity。
+这些对象虽然在原版 DAT 中可能由多个格子和多个 byte ID 组成，但在 BC5R 中保持单一
+Entity identity。真正参与 gameplay 的多格结构使用 footprint；只用于表现的延伸部分由
+VisualComposition 组合。
 
 ## Beaver
 
-Beaver 是两格对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。Head / Body 属于同一个 Entity，方向、交互和视觉都不应通过两个独立地图对象维持同步。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
+Beaver 的 Body 是 canonical anchor 与唯一 Presence，Head 作为相对 Body 向上一格的视觉
+图层绘制。碰撞与交互只读取 Body；原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor
+下移一格。
 
 ## Sandman
 
-Sandman 是两格角色型对象，Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。视觉和碰撞都应从 footprint 展开，Editor 不应把它伪装成一张单格大图。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。
+Sandman 的 Body 是 canonical anchor 与唯一 Presence，Head 和 Body 由同一个 standing
+VisualComposition 组合。Editor 以 Body anchor 放置和选中对象；原版 DAT 保存 Head 定位
+单元，Adapter 导入后将 anchor 下移一格。
 
 ## Dream Machine
 
-Dream Machine 同样是两格对象，采用单 Entity + footprint；Body 是 canonical anchor，Head 位于相对坐标 `(0, -1)`。原版 DAT 保存 Head 定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用同一套机制。
+Dream Machine 同样以 Body 作为唯一 Presence，并向上绘制 Head 图层。原版 DAT 保存 Head
+定位单元，Adapter 导入后将 anchor 下移一格。其特殊场景行为与普通 Entity runtime 共用
+同一套机制。

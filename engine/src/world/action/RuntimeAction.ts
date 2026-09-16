@@ -3,7 +3,7 @@ import type { WorldTick } from "../../time/WorldClock.js";
 import type { WorldCommandApi } from "../behavior/CommandQueue.js";
 import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityId } from "../entity/EntityInstance.js";
-import type { WorldIntent } from "../movement/WorldIntent.js";
+import type { MoveIntent, WorldIntent } from "../movement/WorldIntent.js";
 import type { MoveResult } from "../WorldTypes.js";
 
 export type RuntimeActionId = number;
@@ -49,7 +49,7 @@ export interface RuntimeActionIntentContext {
 
 export interface RuntimeActionIntentResultContext {
   readonly action: RuntimeActionInstance;
-  readonly intent: WorldIntent;
+  readonly intent: MoveIntent;
   readonly result: MoveResult;
   readonly query: WorldQueryApi;
   readonly commands: WorldCommandApi;
@@ -70,7 +70,7 @@ export interface RuntimeActionCancelContext {
 
 export interface RuntimeActionIntentRequest {
   actionId: RuntimeActionId;
-  intent: WorldIntent;
+  intent: MoveIntent;
 }
 
 /**
@@ -88,14 +88,14 @@ export interface RuntimeActionIntentObservation {
 export type RuntimeActionStatus = "running" | "complete";
 
 /**
- * Action 可以在 WorldTick 中请求 semantic intent；真正的 passage / collision /
+ * Action 可以在 WorldTick 中请求 semantic MoveIntent；真正的 passage / collision /
  * enter-leave hooks 仍由 World resolver 执行，Action 不能用 commands.move 绕过规则。
  * complete 表示不再产生后续工作；若同时带 intents，Scheduler 会保留 Action，
  * 直到这些 intent 的权威 MoveResult 全部结算后再正常完成。
  */
 export interface RuntimeActionUpdate {
   status: RuntimeActionStatus;
-  intents?: WorldIntent[];
+  intents?: MoveIntent[];
 }
 
 export type RuntimeActionResult = RuntimeActionStatus | RuntimeActionUpdate;

@@ -2,13 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BehaviorRegistry } from "../dist/world/behavior/BehaviorRegistry.js";
 import { EntityRegistry } from "../dist/world/entity/EntityRegistry.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
 
 function twoPlayerWorld() {
   const entities = new EntityRegistry();
   entities.registerAll([
-    { type: "floor", traits: ["walkable"], layer: "surface", stackOrder: 0 },
-    { type: "player", traits: ["player"], layer: "object", stackOrder: 100 },
+    { type: "floor", presenceFacts: ["walkable"] },
+    { type: "player", presenceFacts: ["player"] },
   ]);
   const world = new World(
     {
@@ -27,7 +27,7 @@ function twoPlayerWorld() {
   );
   return {
     world,
-    actorIds: world.query.entitiesWithTrait("player").map((actor) => actor.id),
+    actorIds: world.query.entitiesWithFact("player").map((actor) => actor.id),
   };
 }
 

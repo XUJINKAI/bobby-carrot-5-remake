@@ -2,6 +2,7 @@
 import {
   type EditorDefinition,
   type EditorTool,
+  type EngineEnvironment,
   type EntityCatalog,
   type InspectorModel,
   type PaletteItem,
@@ -21,6 +22,7 @@ import EditorSurfaceToolInspector from "./EditorSurfaceToolInspector.vue";
 const props = defineProps<{
   model: InspectorModel;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
   authoringPanel: "palette" | "surface";
@@ -64,6 +66,7 @@ const showSurfaceTool = computed(
       v-if="showPlacement"
       :placement="placement"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       :hover-preview="placementPreview"
@@ -75,6 +78,7 @@ const showSurfaceTool = computed(
       :model="hoverModel"
       :target-index="deletionTargetIndex"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
     />
@@ -83,6 +87,7 @@ const showSurfaceTool = computed(
       :tool="surfaceTool"
       :brush="surfaceBrush"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
     />
@@ -97,6 +102,7 @@ const showSurfaceTool = computed(
       v-else-if="model.mode === 'cell'"
       :model="model"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       @field="(entityIndex, key, value) => emit('field', entityIndex, key, value)"
@@ -109,6 +115,7 @@ const showSurfaceTool = computed(
       v-else
       :model="model"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       @field="(type, key, value) => emit('batchField', type, key, value)"

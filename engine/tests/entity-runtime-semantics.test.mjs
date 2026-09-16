@@ -1,14 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
 import {
   resolveEntityVisualPreview,
   resolveLevelEntityVisualPreview,
 } from "../dist/visual/preview.js";
 import { portal } from "../dist/entities/custom/portal.js";
-import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
+import { beanCanGrowAt } from "../dist/entities/original/terrain-semantics.js";
+import { SHOVEL_ACTION_DURATION_MS } from "../dist/entities/original/snow.js";
 
 const BLOCKING_TYPES = [
   MapEntityTypeId.WINDMILL,
@@ -24,7 +26,7 @@ const bobby = (x, y) => ({
 });
 
 function actor(world) {
-  const entity = world.query.entitiesWithTrait("player")[0];
+  const entity = world.query.entitiesWithFact("player")[0];
   assert.ok(entity, "test map must contain a player actor");
   return entity;
 }
@@ -43,10 +45,21 @@ function move(world, direction) {
   });
 }
 
+function giveShovel(world) {
+  const player = actor(world);
+  const commands = new CommandQueue();
+  commands.setState(player.id, { ...player.state, shovel: true });
+  world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
+}
+
 test("canonical original obstacle semantics keep known blockers blocking", () => {
   const registry = createBuiltinEntityRegistry();
   for (const type of BLOCKING_TYPES) {
-    assert.equal(registry.require(type).traits.includes("blocking"), true, type);
+    assert.equal(
+      registry.require(type).presenceFacts.includes("blocking"),
+      true,
+      type,
+    );
   }
 });
 
@@ -63,7 +76,7 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
     ],
   });
   const player = actor(world);
-  const snow = world.query.entitiesWithTrait("snow")[0];
+  const snow = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.SNOW })[0];
 
   const result = move(world, "right");
 
@@ -81,12 +94,79 @@ test("Snow 缺少 Shovel 时报告完整 missing-item 事件", () => {
   );
 });
 
-test("胡萝卜收集后留下持久的 consumed runtime state", () => {
+test("Snow 铲雪动作锁住原位，结束后清雪并按原方向重新移动", () => {
   const world = new World({
     schemaVersion: 1,
     width: 2,
     height: 1,
-    rules: { win: { type: "collect-all", target: MapEntityTypeId.CARROT } },
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  const player = actor(world);
+  giveShovel(world);
+
+  const started = move(world, "right");
+  assert.equal(started.moves[0].moved, false);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
+  assert.equal(world.actions.isInputBlockedFor(player.id), true);
+  assert.equal(started.events.find((event) => event.type === "shovel-started")?.data?.durationMs,
+    SHOVEL_ACTION_DURATION_MS);
+  assert.equal(move(world, "right").moves[0].passage.reason, "actor-busy");
+
+  for (let tick = 1; tick < 32; tick += 1) {
+    world.update({ tick, stepMs: 31 });
+  }
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 1);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 0, y: 0 });
+
+  const completed = world.update({ tick: 32, stepMs: 31 });
+  assert.equal(completed.events.filter((event) => event.type === "shovel").length, 1);
+  assert.equal(completed.moves[0].moved, true);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 0);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 0);
+  assert.deepEqual(world.entity(player.id)?.anchor, { x: 1, y: 0 });
+  assert.equal(world.actions.isInputBlockedFor(player.id), false);
+});
+
+test("独立 Snow 清除后生成可走地面，动作进度可从快照恢复", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0 },
+    ],
+  });
+  giveShovel(world);
+  move(world, "right");
+  for (let tick = 1; tick <= 12; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  const snapshot = world.snapshot();
+  for (let tick = 13; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 1);
+
+  world.restore(snapshot);
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.SNOW }), 1);
+  assert.equal(world.actions.isInputBlockedFor(actor(world).id), true);
+  for (let tick = 13; tick <= 32; tick += 1)
+    world.update({ tick, stepMs: 31 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: "shovel-cleared-ground" }), 1);
+  assert.deepEqual(world.entity(actor(world).id)?.anchor, { x: 1, y: 0 });
+});
+
+test("Carrot 收集后保留 Entity ID，并由 consumed state 切换视觉和目标", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    rules: { win: { type: "carrot" } },
     entities: [
       ground(0, 0),
       ground(1, 0),
@@ -95,32 +175,68 @@ test("胡萝卜收集后留下持久的 consumed runtime state", () => {
     ],
   });
 
-  assert.equal(move(world, "right").moves[0].moved, true);
-  assert.equal(
-    world.entities.all().some((entity) => entity.type === MapEntityTypeId.CARROT),
-    false,
-  );
-  const consumed = world.entities.all().find(
-    (entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT,
-  );
-  assert.deepEqual(consumed?.anchor, { x: 1, y: 0 });
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
+  const snapshot = world.snapshot();
+  const collected = move(world, "right");
+  assert.equal(collected.moves[0].moved, true);
+  assert.equal(collected.events.filter((event) => event.type === "collect-carrot").length, 1);
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
+  assert.deepEqual(world.entity(carrot.id)?.anchor, { x: 1, y: 0 });
+  assert.equal(world.query.entityCountMatching({ kind: "type", value: MapEntityTypeId.CARROT }), 1);
   assert.equal(world.winState.remaining, 0);
   world.update({ tick: 1, stepMs: 1000 });
-  assert.equal(
-    world.entities
-      .all()
-      .some((entity) => entity.type === RuntimeEntityTypeId.CONSUMED_CARROT),
-    true,
-  );
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
 
   const visual = resolveEntityVisualPreview({
-    type: RuntimeEntityTypeId.CONSUMED_CARROT,
+    type: MapEntityTypeId.CARROT,
+    state: { consumed: true },
   });
   assert.deepEqual(visual?.layers[0], {
     kind: "atlas",
     column: 9,
     row: 12,
   });
+  world.restore(snapshot);
+  assert.notEqual(world.entity(carrot.id)?.state?.consumed, true);
+  assert.equal(world.winState.remaining, 1);
+});
+
+test("再次经过已收集 Carrot 时只保留首次收集事件", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 3,
+    height: 1,
+    rules: {
+      win: {
+        type: "all",
+        conditions: [{ type: "carrot" }, { type: "exit" }],
+      },
+    },
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      ground(2, 0),
+      bobby(0, 0),
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 2, y: 0 },
+    ],
+  });
+  const carrot = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CARROT,
+  })[0];
+
+  assert.equal(move(world, "right").events.filter((event) => event.type === "collect-carrot").length, 1);
+  world.update({ tick: 1, stepMs: 1000 });
+  assert.equal(move(world, "left").moves[0].moved, true);
+  world.update({ tick: 2, stepMs: 1000 });
+  const returnMove = move(world, "right");
+  assert.equal(returnMove.moves[0].moved, true);
+  assert.equal(returnMove.events.some((event) => event.type === "collect-carrot"), false);
+  assert.equal(world.entity(carrot.id)?.state?.consumed, true);
 });
 
 test("Portal visual 接受 hex color 与常用颜色别名", () => {
@@ -247,7 +363,7 @@ test("Portal 目标格已有 Bobby 时不会产生重叠", () => {
   assert.deepEqual(actor(world).anchor, entrance);
   assert.equal(result.events.some((event) => event.type === "teleport"), false);
   assert.equal(world.presencesAt(exit).filter((item) =>
-    item.traits.includes("player")
+    item.facts.includes("player")
   ).length, 1);
 });
 
@@ -355,11 +471,8 @@ test("Surface atlas family 使用各自的通行语义", () => {
     .all()
     .find((entity) => entity.type === MapEntityTypeId.STONE_WALL);
   assert.ok(wallEntity);
-  assert.equal(
-    wall.query.entityHasTrait(wallEntity.id, "bean-growth-space"),
-    true,
-  );
-  assert.equal(wall.query.entityHasTrait(wallEntity.id, "walkable"), false);
+  assert.equal(beanCanGrowAt(wall.query, { x: 1, y: 0 }), true);
+  assert.equal(wall.query.entityHasFact(wallEntity.id, "walkable"), false);
   assert.equal(move(wall, "right").moves[0].moved, false);
 
   const grassRoad = new World({
@@ -377,12 +490,9 @@ test("Surface atlas family 使用各自的通行语义", () => {
       grassRoad.entities.require(presence.entityId).type === MapEntityTypeId.GRASS
     );
   assert.ok(grassPresence);
+  assert.equal(beanCanGrowAt(grassRoad.query, { x: 1, y: 0 }), false);
   assert.equal(
-    grassRoad.query.entityHasTrait(grassPresence.entityId, "bean-growth-space"),
-    false,
-  );
-  assert.equal(
-    grassRoad.query.entityHasTrait(grassPresence.entityId, "walkable"),
+    grassRoad.query.entityHasFact(grassPresence.entityId, "walkable"),
     true,
   );
   assert.equal(move(grassRoad, "right").moves[0].moved, true);
@@ -394,7 +504,7 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     width: 3,
     height: 1,
     rules: {
-      win: { type: "fill-all", target: "egg-nest", filler: "filled-egg" },
+      win: { type: "egg" },
     },
     entities: [
       ground(0, 0),
@@ -431,12 +541,9 @@ test("Egg Nest fills only when Bobby leaves the empty nest", () => {
     .find((entity) => entity.type === MapEntityTypeId.EGG);
   assert.equal(filledEgg?.state?.filled, true);
   assert.ok(filledEgg);
-  assert.equal(world.query.entityHasTrait(filledEgg.id, "filled-egg"), true);
-  assert.equal(world.query.entityHasTrait(filledEgg.id, "blocking"), true);
+  assert.equal(world.query.entityHasFact(filledEgg.id, "blocking"), true);
   assert.deepEqual(world.winState, {
-    type: "fill-all",
-    target: "egg-nest",
-    filler: "filled-egg",
+    type: "egg",
     completed: true,
     remaining: 0,
   });
@@ -566,8 +673,8 @@ test("Color Switch toggles only switches and blocks of the same color", () => {
   });
 
   assert.equal(move(world, "right").moves[0].moved, true);
-  const switches = world.query.entitiesWithTrait("switch");
-  const blocks = world.query.entitiesWithTrait("stateful-block");
+  const switches = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_SWITCH });
+  const blocks = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.COLOR_BLOCK });
   assert.equal(
     switches.find((entity) => entity.state.color === "yellow").state.state,
     "state-2",

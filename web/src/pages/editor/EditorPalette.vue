@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   EditorDefinition,
+  EngineEnvironment,
   PaletteItem,
   ResolvedPaletteGroup,
 } from "@bobby/editor";
@@ -16,6 +17,7 @@ const props = defineProps<{
   size: number;
   images: ImageManager;
   catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }>();
 const emit = defineEmits<{
@@ -44,8 +46,8 @@ function tooltipContent(item: PaletteItem) {
     title: item.label,
     code: item.type,
     rows: [
-      ...(item.traits.length > 0
-        ? [{ label: "traits", value: item.traits.join(", ") }]
+      ...(item.presenceFacts.length > 0
+        ? [{ label: "presence facts", value: item.presenceFacts.join(", ") }]
         : []),
       ...(item.behaviors.length > 0
         ? [{ label: "behaviors", value: item.behaviors.join(", ") }]
@@ -101,7 +103,7 @@ function tooltipContent(item: PaletteItem) {
               :source="item.previewPreset"
               :cell-size="size"
               :images="images"
-              :catalog="catalog"
+              :environment="environment"
               :editor="editor"
               :preview-state="item.preview?.state"
               :fallback-text="glyph(item)"

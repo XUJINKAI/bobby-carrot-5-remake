@@ -1,13 +1,13 @@
 import {
-  createBuiltinEntityCatalog,
+  buildSpatialScene,
+  builtinEngineEnvironment,
+  createIndexedSpatialSceneSource,
   drawVisualComposition,
   prepareCanvas,
   resolveDevicePixelRatio,
   SpatialVisualQuery,
-  visualRegistry as builtinVisualRegistry,
-  type EntityCatalog,
+  type EngineEnvironment,
   type ImageManager,
-  type VisualRegistry,
   type VisualQuery,
 } from "@bobby/engine";
 import type { JsonPrimitive } from "@bobby/model";
@@ -30,9 +30,8 @@ interface PixelBounds {
 export class EditorEntityPreviewRenderer {
   constructor(
     private readonly images: ImageManager,
-    private readonly catalog: EntityCatalog = createBuiltinEntityCatalog(),
+    private readonly environment: EngineEnvironment = builtinEngineEnvironment,
     private readonly editor: EditorDefinition = builtinEditorDefinition,
-    private readonly visuals: VisualRegistry = builtinVisualRegistry,
   ) {}
 
   render(
@@ -42,7 +41,7 @@ export class EditorEntityPreviewRenderer {
     previewState?: Readonly<Record<string, JsonPrimitive>>,
   ): boolean {
     const layout = resolveEditorEntityPreviewLayout(
-      this.catalog,
+      this.environment.catalog,
       source,
       this.editor,
     );
@@ -68,7 +67,7 @@ export class EditorEntityPreviewRenderer {
         },
       ],
     };
-    const preview = new EditorPreview(level, this.catalog);
+    const preview = new EditorPreview(level, this.environment);
     const spatialQuery = new SpatialVisualQuery(preview.entities, preview.spatial);
     const previewEntity = preview.entities.require(1);
     const visualEntity = previewState
@@ -87,28 +86,33 @@ export class EditorEntityPreviewRenderer {
           entity: (id) => id === visualEntity.id
             ? visualEntity
             : spatialQuery.entity(id),
-          entitiesWithTrait: (trait) => spatialQuery.entitiesWithTrait(trait)
+          entitiesWithFact: (fact) => spatialQuery.entitiesWithFact(fact)
             .map((entity) => entity.id === visualEntity.id ? visualEntity : entity),
         }
       : spatialQuery;
-    const inspections = [...preview.presencesFor({ index: 0 })].sort(
-      (a, b) => a.presence.stackOrder - b.presence.stackOrder,
+    const sceneSource = createIndexedSpatialSceneSource(
+      preview.entities,
+      preview.spatial,
+      this.environment.catalog.entities,
+      { query, entity: (id) => query.entity(id) },
     );
-    let rendered = false;
-    for (const inspection of inspections) {
-      const entity = query.entity(inspection.presence.entityId);
-      if (!entity) continue;
-      const resolveContext = { entity, presence: inspection.presence, query };
-      const composition =
-        this.editor.entities?.[inspection.entity.type]?.editorVisual?.(resolveContext) ??
-        this.visuals.resolve(inspection.definition, resolveContext);
-      rendered ||= Boolean(composition?.layers.length);
+    const scene = buildSpatialScene({
+      source: sceneSource,
+      visuals: this.environment.visuals,
+      resolveVisual: (definition, resolveContext) =>
+        this.editor.entities?.[resolveContext.entity.type]?.editorVisual?.(
+          resolveContext,
+        ) ?? this.environment.visuals.resolve(definition, resolveContext),
+    });
+    const items = [...scene.world, ...scene.standing, ...scene.effect];
+    const rendered = items.some((item) => item.composition.layers.length > 0);
+    for (const item of items) {
       drawVisualComposition(
         context,
         this.images,
-        composition,
-        inspection.presence.cell.x * naturalTile,
-        inspection.presence.cell.y * naturalTile,
+        item.composition,
+        item.visualX * naturalTile,
+        item.visualY * naturalTile,
         naturalTile,
       );
     }

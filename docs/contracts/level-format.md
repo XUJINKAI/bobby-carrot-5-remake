@@ -37,9 +37,14 @@ interface LevelEntity {
 
 `LevelEntity` 只声明 `type / x / y / stackOrder` 公共字段。`direction`、`variant`、`pressed` 等类型专属字段只由对应的 `EntityMapDefinition` 声明。
 
+`stackOrder` 是实例在重叠空间中的顺序，不由 Entity type 提供默认常量。同一多格 Entity 的
+全部 Presence 共用该值。省略时，Engine 按 `entities` 的加载顺序把实例放到其 footprint
+重叠范围的顶层，空栈从 `0` 开始；Runtime spawn 使用相同规则。Editor 新建顺序从 `0`
+向上递增，并在手动重排时写入连续整数。相同值表示同一接触平面。
+
 地图字段只描述开局语义。Loader 将这些字段投影为 Engine runtime state，Behavior 后续只修改 runtime Entity；motion progress、animation clock、runtime Entity id、Presence、RenderNode 与道具库存都不进入 LevelMap。
 
-Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。Snowman 是 Surface 图块，只有声明了 `dialogue` 的实例会显示对白。单轮使用字符串；多轮使用字符串数组，每个数组元素是一轮对白，元素内的换行原样保留：
+Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面对白。Snowman 是 Surface 图块，只有声明了 `dialogue` 的实例会显示对白。单页使用非空字符串；多页使用非空字符串数组，每个数组元素是一页对白，元素内的换行原样保留：
 
 ```json
 {
@@ -53,9 +58,11 @@ Snowman、Sandman、Beaver、Dream Machine 与商店陈列物可以保存字面�
 }
 ```
 
-`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 使用自身的
-Runtime 游标循环数组并发出 `dialog` 事件；游标进入 Snapshot，但不反写地图。Editor 为
-每轮对白提供独立的可增删多行文本框。需要条件、分支或业务状态的对白由宿主通过通用交互请求实现。
+`dialogue` 随地图 JSON、分享文本与 Embed 一同传播。Entity 被碰触时 Engine 从第一项开始，
+在同一个对话框中依次展示数组；关闭最后一页后，同一 Bobby 与 Entity 组合有 500ms 的
+重复打开冷却。该行为由 Engine 内部处理，不产生宿主 `object-interaction`，也没有进入
+Snapshot 的对白游标。Editor 为每页对白提供独立的可增删多行文本框。需要条件、分支或
+业务状态的对白必须省略 `dialogue`，由宿主通过通用交互请求和公共对话 Controller 实现。
 
 Lock 与关卡内钥匙组成可直接用于普通地图的组合机关：
 
@@ -161,6 +168,10 @@ Bobby 可以通过实例字段声明输入通道和两个可组合的镜像轴�
 
 Original Adapter 读取 DAT 时，在 Start terrain 的坐标生成 `start` surface，并把 Bobby Entity 的初始坐标设为同一位置。转换完成后 Start 与 Bobby 互不绑定；移动 Bobby 不会改变 Start，移动或替换 Start 也不会定义新的出生点。
 
+DAT 的 terrain/object 二层结构在正向转换时按每格实际 Cell Stack 写入连续的
+`stackOrder: 0..n`。跨格 Entity 的全部 Presence 沿用其 anchor Entity 的该值，因此
+后续行优先读取到的相邻地面不会反向覆盖 Dragon 等对象的 body/tail。
+
 一张可游玩地图至少有一个具有 player 身份的 Entity；具体判断来自 Entity Definition / Trait，而不是硬编码 type 名称。多个 Bobby 不能占据同一格；Editor 在同格放置 Bobby 时会替换已有 Bobby，同一 tick 的移动组中若多个 actor 请求同一目的格，这些移动会一起被拒绝。
 
 ### 同格 Entity 与 Cell Stack
@@ -194,7 +205,9 @@ Loader 根据 Definition 生成 Presence 与 Cell Stack，例如 `surface -> con
 
 Dragon Definition 的 footprint 生成 head/body/tail Presence。`head`、`body`、`tail` 是 Presence role，不是独立 Entity type。点击任一 footprint cell 时，Editor inspect 必须能解析到同一个 Dragon Entity 以及光标所在 role。
 
-Sandman、Beaver 与 Dream Machine 也以 Body 作为 canonical anchor；Head 是相对 anchor 的 `(0, -1)` Presence。原版 DAT 只保存 Head 定位单元，坐标平移由 Original Adapter 边界负责。
+Sandman、Beaver 与 Dream Machine 以 Body 作为 canonical anchor，并只在该格建立
+Presence；Head/Body 在 atlas 中先作为一个连续的双格源矩形组合，再以 Body 底边为锚点
+整体缩放绘制。原版 DAT 只保存 Head 定位单元，坐标平移由 Original Adapter 边界负责。
 
 地图永远不保存展开后的 footprint Presence。
 
@@ -206,63 +219,52 @@ LevelMap v1 不持久化 runtime Entity id 或 UUID。Editor 可以使用文档�
 
 ## Rules
 
-规则只依赖 Entity / Presence 的语义 selector，不出现 Terrain/Object 分类：
+地图使用具体 Goal ID 声明胜利条件，`all / any` 递归组合叶子：
 
 ```ts
+type GoalType = "carrot" | "egg" | "exit" | "push-goal" | "golden-carrot";
 type WinCondition =
   | { type: "all"; conditions: WinCondition[] }
   | { type: "any"; conditions: WinCondition[] }
-  | { type: "collect-all"; target: string }
-  | { type: "fill-all"; target: string; filler: string }
-  | { type: "reach"; target: string };
+  | { type: GoalType };
 ```
 
-`target` 与 `filler` 都是 semantic selector：可以直接匹配 Entity type，也可以匹配 Presence Trait。这样稳定的具体目标可以直接写 Entity type，抽象机制则可以继续通过 Trait 组合。
+当前五种 Goal 均只保存 `type`。每种 Goal 的对象选择和完成语义由 Engine 定义；
+Model 严格校验条件形状。确需实例参数时，应由对应 Goal 增加参数字段与校验。
 
-原版三类完成条件分别表达为：
+胡萝卜、Egg 和 Exit 地图可分别表达为：
 
 ```json
-{ "type": "collect-all", "target": "carrot" }
+{ "type": "all", "conditions": [{ "type": "carrot" }, { "type": "exit" }] }
 ```
 
 ```json
-{ "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" }
+{ "type": "all", "conditions": [{ "type": "egg" }, { "type": "exit" }] }
 ```
-
-地图中的鸟巢实体使用 `egg`。填充状态由 Engine 在运行时管理；规则中的
-`egg-nest` 与 `egg` 分别匹配鸟巢位置和已填充状态的 Runtime Trait selector。
 
 ```json
-{ "type": "reach", "target": "exit" }
+{ "type": "exit" }
 ```
 
-Sokoban 可以使用 Trait selector：
+推箱子地图使用 `{ "type": "push-goal" }`。Golden Carrot 与 Exit 的可选关系使用：
 
 ```json
-{
-  "type": "fill-all",
-  "target": "push-goal",
-  "filler": "pushable"
-}
+{ "type": "any", "conditions": [{ "type": "golden-carrot" }, { "type": "exit" }] }
 ```
 
-`all` / `any` 可以递归组合任意条件。例如自定义地图可以同时要求收集胡萝卜、填满彩蛋、完成推箱子并到达出口：
+`carrot` 计算当前 `state.consumed !== true` 的 Carrot 数量，零个即达标；
+`egg` 按 Egg Entity ID 读取当前
+`state.filled`，并要求地图至少存在一个 Egg；`push-goal` 按目标格去重，要求每格
+被具有 `pushable` 能力的对象占据。`exit` 要求每个玩家各自满足 Exit 的到达条件；
+`golden-carrot` 读取 World 已提交的 Golden Carrot 成功收集记录，记录随 Snapshot 恢复。
 
-```json
-{
-  "type": "all",
-  "conditions": [
-    { "type": "collect-all", "target": "carrot" },
-    { "type": "fill-all", "target": "egg-nest", "filler": "filled-egg" },
-    { "type": "fill-all", "target": "push-goal", "filler": "pushable" },
-    { "type": "reach", "target": "exit" }
-  ]
-}
-```
+Engine 返回同结构的目标结果树。叶子包含 `completed` 和可选 `remaining`，
+HUD 与 Editor 使用 Engine 的结果和可用性定义。关卡最终完成时机仍由 World
+运动与生命周期开关裁决。
 
-Engine 对同一份规则树同时计算完成状态与可量化叶子的 `remaining` progress；HUD 等展示层只能消费这个结果，不复制胜利条件查询逻辑。
-
-`reach` 的多人聚合方式由目标 Entity Definition 声明。Exit 要求所有 Bobby 同时位于任意 Exit 格；Golden Carrot 由任一 Bobby 到达即可完成。任一 Bobby 死亡都会使当前关卡失败。
+现有 schemaVersion 1 开发期地图若保存了标准 `collect-all / fill-all / reach`
+条件，可以运行 `node tools/model/convert-goals.mjs 输入.json 输出.json` 显式转换。
+自定义 selector 条件会报告准确路径，须逐项确定目标语义。
 
 ## MapDocument
 
@@ -443,7 +445,7 @@ type LevelPatch =
     };
 ```
 
-固定或循环对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。
+固定或多页对白直接通过 `levelPatches` 写入 Entity 的 `dialogue`。
 `levelPatchesFunction(save)` 把永久购买状态投影成 Session 地图，例如将已售出的商品格
 替换成 `shop-empty`。
 `interaction(context)` 是该地图唯一的 Campaign 交互入口，接收通用请求和当前 Save，

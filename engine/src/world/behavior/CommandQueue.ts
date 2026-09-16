@@ -112,6 +112,14 @@ export class CommandQueue implements WorldCommandApi {
     this.commands.push(...commands.map((command) => structuredClone(command)));
   }
 
+  snapshot(): BehaviorCommand[] {
+    return this.commands.map((command) => structuredClone(command));
+  }
+
+  clear(): void {
+    this.commands.length = 0;
+  }
+
   drain(): BehaviorCommand[] {
     return this.commands.splice(0, this.commands.length);
   }

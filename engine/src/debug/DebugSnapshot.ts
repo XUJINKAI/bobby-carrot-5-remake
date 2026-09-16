@@ -7,12 +7,12 @@ import type { WorldClock } from "../time/WorldClock.js";
 import type { VisualRuntime } from "../visual/VisualRuntime.js";
 import type { VisualRenderPass } from "../visual/VisualDefinition.js";
 import type { World } from "../world/World.js";
+import { resolveEffectiveBehaviors } from "../world/behavior/EffectiveBehavior.js";
 import type { GlobalState } from "../world/GlobalState.js";
 import type { WorldOutcomeState } from "../world/outcome/WorldOutcome.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 import type { RuntimeActionInstance } from "../world/action/RuntimeAction.js";
 import type { ActorLifecycleState } from "../world/actor/ActorLifecycle.js";
-import type { EntityLayer } from "../world/entity/EntityDefinition.js";
 import type {
   CellPosition,
   EntityId,
@@ -93,10 +93,9 @@ export interface DebugSelectionSnapshot {
 export interface DebugPresenceSnapshot {
   entityId: EntityId;
   type: string;
-  layer: EntityLayer;
   role?: string;
   stackOrder: number;
-  traits: readonly string[];
+  facts: readonly string[];
 }
 
 export interface DebugEntitySnapshot {
@@ -109,11 +108,8 @@ export interface DebugEntitySnapshot {
   inputBlocked: boolean;
   direction: string | null;
   state: unknown;
-  instanceTraits: readonly string[];
   definition: {
-    traits: readonly string[];
-    layer: EntityLayer;
-    stackOrder: number | null;
+    presenceFacts: readonly string[];
     footprint: unknown;
     propertyFields: unknown;
     stateFields: unknown;
@@ -134,6 +130,8 @@ export interface DebugRenderItemSnapshot {
   role: string | null;
   visualX: number;
   visualY: number;
+  depthX: number;
+  depthY: number;
   layers: readonly Record<string, unknown>[];
 }
 
@@ -186,7 +184,7 @@ export function buildDebugSnapshot(options: {
     inputBlocked: world?.inputBlocked ?? false,
     cameraTarget: world?.cameraTarget ?? null,
   };
-  const actorEntities = world?.query.entitiesWithTrait("player") ?? [];
+  const actorEntities = world?.query.entitiesWithFact("player") ?? [];
   const actors = actorEntities.map((entity) => ({
     id: entity.id,
     type: entity.type,
@@ -285,9 +283,11 @@ function buildEntitySnapshot(
   const presences = world.spatial
     .presencesForEntity(entityId)
     .map((presence) => debugPresence(world, presence));
-  const traits = [...new Set(presences.flatMap((presence) => presence.traits))];
-  const behaviors = world.behaviors
-    .resolve(definition.behaviors ?? [], traits)
+  const behaviors = resolveEffectiveBehaviors(
+    definition,
+    world.behaviors,
+    world.mechanisms,
+  )
     .map((behavior) => behavior.id);
   const visualInspection = visual.inspectEntity(world, entityId);
   const renderItems = renderSceneItems(scene)
@@ -298,6 +298,8 @@ function buildEntitySnapshot(
       role: item.presence.role ?? null,
       visualX: item.visualX,
       visualY: item.visualY,
+      depthX: item.depthX,
+      depthY: item.depthY,
       layers: item.composition.layers.map(debugVisualLayer),
     }));
 
@@ -311,11 +313,8 @@ function buildEntitySnapshot(
     inputBlocked: world.isInputBlockedFor(entity.id),
     direction: entity.direction ?? null,
     state: entity.state ? structuredClone(entity.state) : null,
-    instanceTraits: [...(entity.instanceTraits ?? [])],
     definition: {
-      traits: [...definition.traits],
-      layer: definition.layer ?? "object",
-      stackOrder: definition.stackOrder ?? null,
+      presenceFacts: [...definition.presenceFacts],
       footprint: definition.footprint ? structuredClone(definition.footprint) : null,
       propertyFields: definition.properties ? structuredClone(definition.properties) : null,
       stateFields: definition.state ? structuredClone(definition.state) : null,
@@ -338,7 +337,7 @@ function renderSceneItems(scene: RenderScene | null): Array<{
   if (!scene) return [];
   return [
     ...scene.world.map((item) => ({ pass: "world" as const, item })),
-    ...scene.player.map((item) => ({ pass: "player" as const, item })),
+    ...scene.standing.map((item) => ({ pass: "standing" as const, item })),
     ...scene.effect.map((item) => ({ pass: "effect" as const, item })),
   ];
 }
@@ -350,10 +349,9 @@ function debugPresence(
   return {
     entityId: presence.entityId,
     type: world.entity(presence.entityId)?.type ?? "unknown",
-    layer: presence.layer,
     ...(presence.role ? { role: presence.role } : {}),
     stackOrder: presence.stackOrder,
-    traits: [...presence.traits],
+    facts: [...presence.facts],
   };
 }
 

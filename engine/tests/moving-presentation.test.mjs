@@ -5,6 +5,7 @@ import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
+import { builtinEngineEnvironment } from "../dist/public.js";
 import {
   LEAF_SUPPORT_HEIGHT_PX,
 } from "../dist/entities/original/moving-entities.js";
@@ -12,7 +13,9 @@ import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
 import { SpatialVisualQuery } from "../dist/visual/SpatialVisualQuery.js";
 import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
-import { World } from "../dist/world/World.js";
+import { World } from "./support/World.mjs";
+
+const factRegistry = builtinEngineEnvironment.facts;
 
 function motion(id, entityId, cause, durationMs, options = {}) {
   const from = options.from ?? { x: 0, y: 0 };
@@ -64,8 +67,8 @@ function carryWorld() {
       { type: MapEntityTypeId.BOBBY, x: 1, y: 0, direction: "right" },
     ],
   });
-  const bobby = world.query.entitiesWithTrait("player")[0];
-  bobby.direction = "right";
+  const bobby = world.query.entitiesWithFact("player")[0];
+  world.entities.require(bobby.id).direction = "right";
   return world;
 }
 
@@ -73,8 +76,8 @@ for (const cadenceMs of [496, 248]) {
   test(`carry presentation group shares ${cadenceMs}ms carrier timeline`, () => {
     const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
     const world = carryWorld();
-    const leaf = world.query.entitiesWithTrait("leaf")[0];
-    const bobby = world.query.entitiesWithTrait("player")[0];
+    const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
+    const bobby = world.query.entitiesWithFact("player")[0];
     const carrier = motion(
       1,
       leaf.id,
@@ -124,7 +127,7 @@ function bobbyVisualOnSurface(surfaceType, runtime, state = {}) {
       state,
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.require(2);
   bobby.direction = "right";
   if (Object.keys(state).length > 0) bobby.state = structuredClone(state);
@@ -167,7 +170,7 @@ test("Bobby carried by a Leaf keeps its own facing and standing frame", () => {
 
 test("blocked Bobby facing uses the attempted direction and standing end frame", () => {
   const world = carryWorld();
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   runtime.faceDirection(
     bobby.id,
@@ -187,7 +190,7 @@ test("blocked Bobby facing uses the attempted direction and standing end frame",
 
 test("Bobby steps up onto Leaf exactly at movement midpoint", () => {
   const world = carryWorld();
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   const entering = motion(
     1,
@@ -223,7 +226,7 @@ test("Bobby steps down from Leaf exactly at movement midpoint", () => {
       { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "left" },
     ],
   });
-  const bobby = world.query.entitiesWithTrait("player")[0];
+  const bobby = world.query.entitiesWithFact("player")[0];
   const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48);
   const leaving = motion(
     1,
@@ -262,7 +265,7 @@ test("Mower mount still uses the dedicated Bobby mower sprite", () => {
       state: { mountId: 2 },
     },
   ]);
-  const spatial = new SpatialIndex(store, entities, 1, 1);
+  const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
   const bobby = store.require(3);
   bobby.direction = "right";
   bobby.state = { mountId: 2 };
@@ -295,7 +298,7 @@ for (const [direction, frameIndex] of [
     const store = new EntityStore([
       { type: MapEntityTypeId.TIDE, x: 0, y: 0, direction },
     ]);
-    const spatial = new SpatialIndex(store, entities, 1, 1);
+    const spatial = new SpatialIndex(store, entities, 1, 1, factRegistry);
     const tide = store.require(1);
     const presence = spatial.presencesForEntity(tide.id)[0];
     assert.ok(presence);
@@ -303,7 +306,7 @@ for (const [direction, frameIndex] of [
       entity: tide,
       presence,
       query: new SpatialVisualQuery(store, spatial),
-      time: { frame: 1, nowMs: 248, deltaMs: 16 },
+      time: { frame: 1, nowMs: 124, deltaMs: 16 },
     });
     assert.deepEqual(visual.layers[0], {
       kind: "image",

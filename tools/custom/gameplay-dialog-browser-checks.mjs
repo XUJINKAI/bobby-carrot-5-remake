@@ -1,6 +1,6 @@
 import { waitForBrowserState } from "./browser-regression-wait.mjs";
 
-/** 在真实浏览器里验证 Engine 对话框的选项导航与输入租约。 */
+/** 在真实浏览器里验证纯对话 View 的逐字展示、选项导航与结果返回。 */
 export async function verifyGameplayDialogKeyboard(
   cdp,
   sessionId,
@@ -10,40 +10,17 @@ export async function verifyGameplayDialogKeyboard(
     sessionId,
     `(() => {
       window.__gameplayDialogCheck = { ready: false };
-      import(${JSON.stringify(moduleUrl)}).then(({ GameplayDialog }) => {
+      import(${JSON.stringify(moduleUrl)}).then(({ GameplayDialogView }) => {
         const canvas = document.querySelector('#game');
         const mount = canvas?.parentElement;
         if (!canvas || !mount) throw new Error('Gameplay canvas is missing');
-        const game = {
-          lastMove: null,
-          lastWorldEvents: [],
-          onWorldEvent: () => () => {},
-          on: () => () => {},
-          dialogControl: {
-            worldPaused: false,
-            blockingChoices: 0,
-            setWorldPaused(value) { this.worldPaused = value; },
-            beginBlockingChoice() { this.blockingChoices += 1; },
-          },
-        };
-        const input = {
-          enabled: true,
-          changes: [],
-          get isEnabled() { return this.enabled; },
-          setEnabled(value) {
-            this.enabled = value;
-            this.changes.push(value);
-          },
-        };
-        const dialog = new GameplayDialog(
-          game,
+        const dialog = new GameplayDialogView(
           canvas,
           { root: mount, characterIntervalMs: 200 },
-          input,
         );
         dialog.root.dataset.browserDialogCheck = 'true';
         const state = window.__gameplayDialogCheck;
-        Object.assign(state, { ready: true, dialog, input, result: null });
+        Object.assign(state, { ready: true, dialog, result: null });
         void dialog.present({
           message: '请选择',
           options: [
@@ -70,7 +47,10 @@ export async function verifyGameplayDialogKeyboard(
     })()`,
   );
   if (!typing) throw new Error("Gameplay Dialog did not type text progressively");
-  await dispatchKey(cdp, sessionId, "Enter", 13);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
   await expectSelected(cdp, sessionId, "second");
   const optionStyles = await cdp.evaluate(
     sessionId,
@@ -102,23 +82,27 @@ export async function verifyGameplayDialogKeyboard(
   ) {
     throw new Error("Gameplay Dialog selected option is not visually distinct");
   }
-  const suspended = await cdp.evaluate(
-    sessionId,
-    "window.__gameplayDialogCheck.input.enabled === false",
-  );
-  if (!suspended) throw new Error("Gameplay Dialog did not suspend input");
-  const worldPaused = await cdp.evaluate(
-    sessionId,
-    "window.__gameplayDialogCheck.dialog.game.dialogControl.worldPaused",
-  );
-  if (!worldPaused) throw new Error("Gameplay Dialog did not pause World");
-
-  await dispatchKey(cdp, sessionId, "ArrowRight", 39);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "right",
+  });
   await expectSelected(cdp, sessionId, "third");
-  await dispatchKey(cdp, sessionId, "ArrowLeft", 37);
-  await dispatchKey(cdp, sessionId, "ArrowLeft", 37);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "left",
+  });
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "direction",
+    source: "arrows",
+    direction: "left",
+  });
   await expectSelected(cdp, sessionId, "first");
-  await dispatchKey(cdp, sessionId, "Enter", 13);
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
 
   await waitForBrowserState(async () =>
     Boolean(
@@ -128,25 +112,39 @@ export async function verifyGameplayDialogKeyboard(
           const state = window.__gameplayDialogCheck;
           return state?.result?.type === 'selected' &&
             state.result.optionId === 'first' &&
-            state.input.enabled === true &&
-            state.dialog.game.dialogControl.worldPaused === false &&
-            state.dialog.game.dialogControl.blockingChoices === 1 &&
             state.dialog.root.hidden;
         })()`,
       ),
     ),
   );
-  const passive = await cdp.evaluate(
+  await cdp.evaluate(
     sessionId,
     `(() => {
       const state = window.__gameplayDialogCheck;
-      state.dialog.show('提示');
-      return state.input.enabled === true &&
-        state.dialog.game.dialogControl.worldPaused === false &&
-        state.dialog.game.dialogControl.blockingChoices === 1;
+      state.passiveResult = null;
+      void state.dialog.show('提示').then((result) => {
+        state.passiveResult = result;
+      });
+      return true;
     })()`,
   );
-  if (!passive) throw new Error("Passive Gameplay Dialog blocked gameplay");
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
+  await dispatchDialogInput(cdp, sessionId, {
+    type: "confirm",
+    source: "keyboard",
+  });
+  await waitForBrowserState(async () =>
+    Boolean(
+      await cdp.evaluate(
+        sessionId,
+        `window.__gameplayDialogCheck?.passiveResult?.type === 'dismissed' &&
+          window.__gameplayDialogCheck.dialog.root.hidden`,
+      ),
+    ),
+  );
   await cdp.evaluate(
     sessionId,
     "window.__gameplayDialogCheck.dialog.destroy(); true",
@@ -166,15 +164,9 @@ async function expectSelected(cdp, sessionId, optionId) {
   );
 }
 
-async function dispatchKey(cdp, sessionId, key, windowsVirtualKeyCode) {
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyDown", key, code: key, windowsVirtualKeyCode },
+async function dispatchDialogInput(cdp, sessionId, input) {
+  await cdp.evaluate(
     sessionId,
-  );
-  await cdp.send(
-    "Input.dispatchKeyEvent",
-    { type: "keyUp", key, code: key, windowsVirtualKeyCode },
-    sessionId,
+    `window.__gameplayDialogCheck.dialog.handleInput(${JSON.stringify(input)}); true`,
   );
 }

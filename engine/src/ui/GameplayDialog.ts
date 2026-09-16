@@ -1,7 +1,8 @@
-import type { Game } from "../core/Game.js";
+import type { Direction } from "@bobby/model";
+import type { LogicalInputAction } from "../input/InputController.js";
 import { resolveGameplayMount } from "./gameplayMount.js";
 
-export interface GameplayDialogOptions {
+export interface GameplayDialogViewOptions {
   root?: HTMLElement;
   /** 每个 Unicode 字符的展示间隔；设为 0 时立即显示全文。 */
   characterIntervalMs?: number;
@@ -18,25 +19,31 @@ export interface GameplayDialogPresentation {
   options: readonly [GameplayDialogOption, ...GameplayDialogOption[]];
 }
 
-export type GameplayDialogResult =
+export type GameplayDialogOptionResult =
   | { type: "selected"; optionId: string }
   | { type: "dismissed" };
 
-interface GameplayDialogInput {
-  readonly isEnabled: boolean;
-  setEnabled(value: boolean): void;
-}
+export type GameplayDialogResult =
+  | GameplayDialogOptionResult
+  | { type: "move"; direction: Direction };
+
+export type GameplayDialogInputAction =
+  | "ignore"
+  | "finish-typing"
+  | "advance"
+  | "move"
+  | "dismiss"
+  | "previous"
+  | "next"
+  | "select";
 
 const DEFAULT_CHARACTER_INTERVAL_MS = 28;
 
-/**
- * Engine 持有的地图内对话层。World 只发最终文本；该层负责展示以及随玩家移动结束对话。
- */
-export class GameplayDialog {
+/** 纯对话 View：调用方持有 World、输入门禁与交互生命周期。 */
+export class GameplayDialogView {
   readonly root: HTMLDivElement;
   private readonly text: HTMLDivElement;
   private readonly actions: HTMLDivElement;
-  private readonly unsubscribes: (() => void)[];
   private readonly characterIntervalMs: number;
   private pendingPresentation: {
     resolve: (result: GameplayDialogResult) => void;
@@ -44,21 +51,20 @@ export class GameplayDialog {
   private optionButtons: HTMLButtonElement[] = [];
   private optionIds: string[] = [];
   private selectedOptionIndex = -1;
+  private passiveMessages: string[] = [];
+  private passiveMessageIndex = -1;
+  private passiveDirection: Direction | null = null;
   private typingTimer: number | null = null;
   private typingCharacters: string[] = [];
   private typingIndex = 0;
   private finishTypingCallback: (() => void) | null = null;
-  private inputEnabledBeforePresentation: boolean | null = null;
-  private worldPausedForPresentation = false;
-  private openedDuringCurrentDispatch = false;
+  private readonly panel: HTMLDivElement;
 
   constructor(
-    private readonly game: Game,
     canvas: HTMLCanvasElement,
-    options: GameplayDialogOptions = {},
-    private readonly input: GameplayDialogInput | null = null,
+    options: GameplayDialogViewOptions = {},
   ) {
-    const mount = resolveGameplayMount(canvas, options.root, "GameplayDialog");
+    const mount = resolveGameplayMount(canvas, options.root, "GameplayDialogView");
     this.characterIntervalMs = resolveCharacterInterval(
       options.characterIntervalMs,
     );
@@ -113,42 +119,38 @@ export class GameplayDialog {
       marginTop: "12px",
     });
     panel.append(this.text, this.actions);
+    this.panel = panel;
+    panel.addEventListener("click", this.onPanelClick);
     this.root.append(panel);
     mount.append(this.root);
-    window.addEventListener("keydown", this.onKeyDown, true);
-
-    this.unsubscribes = [
-      game.onWorldEvent((event) => {
-        if (event.type === "dialog" && typeof event.text === "string")
-          this.show(event.text);
-      }),
-      game.on("move", () => {
-        if (this.openedDuringCurrentDispatch) return;
-        const openedByThisMove = game.lastWorldEvents.some(
-          (event) => event.type === "dialog",
-        );
-        if (!openedByThisMove) this.close();
-      }),
-      game.on("change", () => {
-        if (game.lastMove === null && game.lastWorldEvents.length === 0)
-          this.close();
-      }),
-      game.on("level-loaded", () => this.close()),
-      game.on("death", () => this.close()),
-      game.on("level-complete", () => this.close()),
-    ];
   }
 
   get open(): boolean {
     return !this.root.hidden;
   }
 
-  show(message: string): void {
+  /** 展示单段阻塞文本；Enter/点击先完成逐字展示，再结束对话。 */
+  show(message: string): Promise<GameplayDialogResult> {
+    return this.showSequence([message]);
+  }
+
+  /** 在同一 View 生命周期内逐段展示文本，不在段落之间隐藏对话框。 */
+  showSequence(
+    messages: readonly string[],
+    direction: Direction | null = null,
+  ): Promise<GameplayDialogResult> {
+    if (messages.length === 0)
+      throw new Error("GameplayDialogView.showSequence() 至少需要一段文本");
     this.settlePresentation({ type: "dismissed" });
-    this.protectFromCurrentDispatch();
-    this.preparePassiveView();
+    this.prepareView();
+    this.passiveMessages = [...messages];
+    this.passiveMessageIndex = 0;
+    this.passiveDirection = direction;
     this.root.hidden = false;
-    this.typeMessage(message);
+    this.typeMessage(this.passiveMessages[0]!);
+    return new Promise((resolve) => {
+      this.pendingPresentation = { resolve };
+    });
   }
 
   /** 展示一个或多个通用选项，只返回选项 ID，不执行宿主业务。 */
@@ -156,12 +158,10 @@ export class GameplayDialog {
     presentation: GameplayDialogPresentation,
   ): Promise<GameplayDialogResult> {
     this.settlePresentation({ type: "dismissed" });
-    this.protectFromCurrentDispatch();
     const { options } = presentation;
     if (options.length === 0)
-      throw new Error("GameplayDialog.present() 至少需要一个选项");
-    this.game.dialogControl.beginBlockingChoice();
-    this.preparePassiveView();
+      throw new Error("GameplayDialogView.present() 至少需要一个选项");
+    this.prepareView();
     this.root.hidden = false;
     return new Promise((resolve) => {
       this.pendingPresentation = { resolve };
@@ -207,28 +207,27 @@ export class GameplayDialog {
     pending.resolve(result);
   }
 
-  private preparePassiveView(): void {
-    this.root.setAttribute("role", "status");
-    this.root.setAttribute("aria-live", "polite");
-    this.root.style.pointerEvents = "none";
+  private prepareView(): void {
+    this.root.setAttribute("role", "dialog");
+    this.root.setAttribute("aria-live", "off");
+    this.root.style.pointerEvents = "auto";
     this.actions.style.display = "none";
     this.actions.replaceChildren();
     this.optionButtons = [];
     this.optionIds = [];
     this.selectedOptionIndex = -1;
+    this.passiveMessages = [];
+    this.passiveMessageIndex = -1;
+    this.passiveDirection = null;
   }
 
   private prepareInteractiveView(
     options: readonly GameplayDialogOption[],
   ): void {
-    this.root.setAttribute("role", "dialog");
-    this.root.setAttribute("aria-live", "off");
-    this.root.style.pointerEvents = "auto";
     this.optionIds = options.map((option) => option.id);
     this.optionButtons = options.map((option) => this.optionButton(option));
     const primaryIndex = options.findIndex((option) => option.primary);
     this.selectedOptionIndex = primaryIndex >= 0 ? primaryIndex : 0;
-    this.suspendGameplay();
   }
 
   private revealOptions(): void {
@@ -315,74 +314,73 @@ export class GameplayDialog {
     delete this.text.dataset.typing;
   }
 
-  private suspendGameplay(): void {
-    if (!this.worldPausedForPresentation) {
-      this.worldPausedForPresentation = true;
-      this.game.dialogControl.setWorldPaused(true);
-    }
-    if (this.input && this.inputEnabledBeforePresentation === null) {
-      this.inputEnabledBeforePresentation = this.input.isEnabled;
-      this.input.setEnabled(false);
-    }
-  }
-
-  private restoreGameplay(): void {
-    if (this.worldPausedForPresentation) {
-      this.worldPausedForPresentation = false;
-      this.game.dialogControl.setWorldPaused(false);
-    }
-    if (this.input && this.inputEnabledBeforePresentation !== null) {
-      const enabled = this.inputEnabledBeforePresentation;
-      this.inputEnabledBeforePresentation = null;
-      this.input.setEnabled(enabled);
-    }
-  }
-
-  private protectFromCurrentDispatch(): void {
-    this.openedDuringCurrentDispatch = true;
-    queueMicrotask(() => {
-      this.openedDuringCurrentDispatch = false;
-    });
-  }
-
   private hide(): void {
     this.cancelTyping();
-    this.restoreGameplay();
     this.root.hidden = true;
     this.text.textContent = "";
     this.text.removeAttribute("aria-label");
-    this.preparePassiveView();
+    this.prepareView();
   }
 
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      this.root.hidden ||
-      !this.pendingPresentation ||
-      this.optionIds.length === 0 ||
-      !["ArrowLeft", "ArrowRight", "Enter"].includes(event.key)
-    ) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
+  private readonly onPanelClick = (): void => {
+    if (!this.pendingPresentation || this.optionIds.length > 0) return;
     if (this.typingTimer !== null) {
-      if (event.key === "Enter" && !event.repeat) this.finishTyping();
+      this.finishTyping();
       return;
     }
-    if (event.key === "ArrowLeft") this.selectRelative(-1);
-    else if (event.key === "ArrowRight") this.selectRelative(1);
-    else if (!event.repeat) {
+    this.advancePassiveMessage();
+  };
+
+  private advancePassiveMessage(): void {
+    const nextIndex = this.passiveMessageIndex + 1;
+    const nextMessage = this.passiveMessages[nextIndex];
+    if (nextMessage === undefined) {
+      this.settlePresentation({ type: "dismissed" });
+      return;
+    }
+    this.passiveMessageIndex = nextIndex;
+    this.typeMessage(nextMessage);
+  }
+
+  handleInput(input: LogicalInputAction): void {
+    if (this.root.hidden || !this.pendingPresentation) return;
+    const action = resolveGameplayDialogInputAction(
+      input,
+      this.optionIds.length,
+      this.typingTimer !== null,
+      this.passiveDirection,
+    );
+    if (action === "ignore") return;
+    if (action === "dismiss") {
+      this.settlePresentation({ type: "dismissed" });
+      return;
+    }
+    if (action === "finish-typing") {
+      this.finishTyping();
+      return;
+    }
+    if (action === "advance") {
+      this.advancePassiveMessage();
+      return;
+    }
+    if (action === "move") {
+      if (input.type === "direction")
+        this.settlePresentation({ type: "move", direction: input.direction });
+      return;
+    }
+    if (action === "previous") this.selectRelative(-1);
+    else if (action === "next") this.selectRelative(1);
+    else if (action === "select") {
       const optionId = this.optionIds[this.selectedOptionIndex];
       if (optionId !== undefined) {
         this.settlePresentation({ type: "selected", optionId });
       }
     }
-  };
+  }
 
   destroy(): void {
     this.close();
-    window.removeEventListener("keydown", this.onKeyDown, true);
-    for (const unsubscribe of this.unsubscribes) unsubscribe();
+    this.panel.removeEventListener("click", this.onPanelClick);
     this.root.remove();
   }
 }
@@ -400,4 +398,26 @@ export function cycleOptionIndex(
 ): number {
   if (count < 1) return -1;
   return ((current + offset) % count + count) % count;
+}
+
+/** 普通对白按接触方向裁决；输入设备差异已经由 InputController 消除。 */
+export function resolveGameplayDialogInputAction(
+  input: LogicalInputAction,
+  optionCount: number,
+  typing: boolean,
+  dialogueDirection: Direction | null = null,
+): GameplayDialogInputAction {
+  if (input.type === "cancel") return "dismiss";
+  if (optionCount === 0) {
+    if (input.type === "confirm")
+      return typing ? "finish-typing" : "advance";
+    if (dialogueDirection && input.direction !== dialogueDirection)
+      return "move";
+    return typing ? "finish-typing" : "advance";
+  }
+  if (input.type === "confirm") return typing ? "finish-typing" : "select";
+  if (typing) return "ignore";
+  if (input.direction === "left") return "previous";
+  if (input.direction === "right") return "next";
+  return "ignore";
 }

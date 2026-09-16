@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   EditorDefinition,
+  EngineEnvironment,
   EntityCatalog,
   InspectorModel,
 } from "@bobby/editor";
@@ -15,6 +16,7 @@ defineProps<{
   highlightLabel?: string;
   images: ImageManager;
   catalog: EntityCatalog;
+  environment: EngineEnvironment;
   editor: EditorDefinition;
 }>();
 </script>
@@ -35,7 +37,7 @@ defineProps<{
           :source="placementPresetFromEntity(layer.entity)"
           :cell-size="28"
           :images="images"
-          :catalog="catalog"
+          :environment="environment"
           :editor="editor"
           :fallback-text="layer.label.slice(0, 2)"
         />

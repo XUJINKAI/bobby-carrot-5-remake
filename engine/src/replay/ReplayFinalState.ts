@@ -18,13 +18,14 @@ export class ReplayEventCounter {
   }
 
   finalState(
-    gameplay: Pick<GameplayState, "status" | "moves">,
+    gameplay: Pick<GameplayState, "status" | "moves" | "actors">,
     elapsedMs: number,
     winCondition: WinConditionState | null,
   ): ReplayActualFinalState {
     return {
       status: gameplay.status,
       moves: gameplay.moves,
+      position: gameplay.actors.map((actor) => ({ ...actor.position })),
       elapsedMs: Math.max(0, Math.round(elapsedMs)),
       counters: Object.fromEntries(
         [...this.counts].sort(([left], [right]) => left.localeCompare(right)),
@@ -63,12 +64,5 @@ function completedConditions(
   if (condition.type === "all" || condition.type === "any")
     return condition.conditions.flatMap(completedConditions);
   if (!condition.completed) return [];
-  if (condition.type === "fill-all") {
-    return [{
-      type: condition.type,
-      target: condition.target,
-      filler: condition.filler,
-    }];
-  }
-  return [{ type: condition.type, target: condition.target }];
+  return [{ type: condition.type }];
 }

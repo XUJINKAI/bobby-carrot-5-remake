@@ -48,25 +48,28 @@ function inputRight(session, historyBoundary = true) {
   }));
 }
 
+function carrotConsumed(session) {
+  const carrot = session.world.query.entitiesMatching({
+    kind: "type",
+    value: "carrot",
+  })[0];
+  assert.ok(carrot);
+  return carrot.state?.consumed === true;
+}
+
 for (const mode of ["disabled", "world-change", "every-intent"]) {
   test(`历史策略 ${mode} 按需创建快照并保持移动与收集语义`, () => {
     const { session, actorId, snapshotCount } = createSession(mode);
     inputRight(session);
     session.advanceTicks(2);
     assert.equal(session.world.entity(actorId).anchor.x, 1);
-    assert.equal(
-      session.world.entities.all().some((entity) => entity.type === "carrot"),
-      false,
-    );
+    assert.equal(carrotConsumed(session), true);
     assert.equal(snapshotCount(), mode === "disabled" ? 0 : 1);
     assert.equal(session.canUndo, mode !== "disabled");
 
     session.undo();
     assert.equal(session.world.entity(actorId).anchor.x, mode === "disabled" ? 1 : 0);
-    assert.equal(
-      session.world.entities.all().some((entity) => entity.type === "carrot"),
-      mode !== "disabled",
-    );
+    assert.equal(carrotConsumed(session), mode === "disabled");
     session.redo();
     assert.equal(session.world.entity(actorId).anchor.x, 1);
   });
@@ -86,8 +89,5 @@ test("续接步骤复用待提交快照，并让 Undo 回到操作起点", () =>
   assert.equal(session.canUndo, true);
   session.undo();
   assert.equal(session.world.entity(actorId).anchor.x, 0);
-  assert.equal(
-    session.world.entities.all().some((entity) => entity.type === "carrot"),
-    true,
-  );
+  assert.equal(carrotConsumed(session), false);
 });

@@ -46,6 +46,17 @@ export interface LogicalMoveInput {
   direction: Direction;
 }
 
+export type LogicalInputAction =
+  | {
+      type: "direction";
+      source: string;
+      direction: Direction;
+    }
+  | { type: "confirm"; source: string }
+  | { type: "cancel"; source: string };
+
+export type LogicalInputConsumer = (action: LogicalInputAction) => void;
+
 export interface InputState {
   /** One logical channel can emit at most one move per WorldTick. */
   moves: readonly LogicalMoveInput[];
@@ -66,6 +77,14 @@ export interface InputChannelInspection {
 export interface InputControllerInspection {
   enabled: boolean;
   channels: readonly InputChannelInspection[];
+}
+
+export interface InputBlockLease {
+  release(): void;
+}
+
+export interface InputConsumerLease {
+  release(): void;
 }
 
 interface InputCapabilities {
@@ -138,6 +157,9 @@ export class InputController {
   private pinchStartZoom = 1;
   private gestureCenter: CameraGesturePoint | null = null;
   private suppressNextClick = false;
+  private requestedEnabled = true;
+  private readonly blockers = new Set<symbol>();
+  private readonly consumers = new Map<symbol, LogicalInputConsumer>();
   private enabled = true;
 
   constructor(
@@ -259,9 +281,53 @@ export class InputController {
   }
 
   setEnabled(value: boolean): void {
-    this.enabled = value;
-    this.screenJoystick?.setInteractionEnabled(value);
-    if (!value) {
+    this.requestedEnabled = value;
+    this.syncEnabled();
+  }
+
+  /** 外层功能以租约叠加输入门禁，任意租约存续时都不会被其它关闭事件误恢复。 */
+  acquireBlock(_reason: string): InputBlockLease {
+    const token = Symbol();
+    this.blockers.add(token);
+    this.syncEnabled();
+    let active = true;
+    return {
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.blockers.delete(token);
+        this.syncEnabled();
+      },
+    };
+  }
+
+  /** 模态 gameplay UI 取得归一化输入；最后取得的消费者拥有当前输入。 */
+  acquireConsumer(
+    _reason: string,
+    consumer: LogicalInputConsumer,
+  ): InputConsumerLease {
+    const token = Symbol();
+    this.consumers.set(token, consumer);
+    this.syncEnabled();
+    let active = true;
+    return {
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.consumers.delete(token);
+        this.syncEnabled();
+      },
+    };
+  }
+
+  private syncEnabled(): void {
+    const enabled = this.requestedEnabled && this.blockers.size === 0;
+    const changed = this.enabled !== enabled;
+    this.enabled = enabled;
+    this.screenJoystick?.setInteractionEnabled(
+      this.requestedEnabled && (enabled || this.consumers.size > 0),
+    );
+    if (changed && !enabled) {
       this.clearHeldMovement();
       this.clearPointerState();
     }
@@ -278,6 +344,20 @@ export class InputController {
   }
 
   setHeldDirection(direction: Direction | null): void {
+    const changed = direction !== this.externalDirection;
+    this.externalDirection = direction;
+    if (
+      changed &&
+      direction &&
+      this.dispatchLogicalInput({
+        type: "direction",
+        source: "external",
+        direction,
+      })
+    ) {
+      this.syncContinuousInputs();
+      return;
+    }
     if (
       !this.enabled ||
       !this.capabilities.movement ||
@@ -287,7 +367,6 @@ export class InputController {
       this.syncContinuousInputs();
       return;
     }
-    this.externalDirection = direction;
     this.syncContinuousInputs();
   }
 
@@ -319,19 +398,49 @@ export class InputController {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (!this.enabled || !this.capabilities.keyboard || !this.game.hasLevel)
+    if (
+      !this.acceptsLogicalInput ||
+      !this.capabilities.keyboard ||
+      !this.game.hasLevel
+    )
       return;
     const key = event.key.toLowerCase();
     const movement = KEY_INPUT[key];
-    if (movement && this.capabilities.movement) {
+    if (
+      movement &&
+      (this.capabilities.movement || this.consumers.size > 0)
+    ) {
       event.preventDefault();
-      if (this.game.presentationBlocksInput) return;
+      if (event.repeat && this.consumers.size > 0) return;
+      if (
+        this.dispatchLogicalInput({
+          type: "direction",
+          source: movement.source,
+          direction: movement.direction,
+        })
+      )
+        return;
+      if (!this.enabled || this.game.presentationBlocksInput) return;
       if (!event.repeat && !this.heldMovementKeys.includes(key)) {
         this.heldMovementKeys.push(key);
         this.syncContinuousInputs();
       }
       return;
     }
+    const dialogAction = key === "enter"
+      ? { type: "confirm" as const, source: "keyboard" }
+      : key === "escape"
+        ? { type: "cancel" as const, source: "keyboard" }
+        : null;
+    if (dialogAction && event.repeat && this.consumers.size > 0) {
+      event.preventDefault();
+      return;
+    }
+    if (dialogAction && this.dispatchLogicalInput(dialogAction)) {
+      event.preventDefault();
+      return;
+    }
+    if (!this.enabled) return;
     if (event.repeat) return;
     if (
       key === "z" &&
@@ -393,12 +502,25 @@ export class InputController {
   private readonly setJoystickDirection = (
     direction: Direction | null,
   ): void => {
-    if (this.game.presentationBlocksInput) {
+    const changed = direction !== this.joystickDirection;
+    this.joystickDirection = direction;
+    if (
+      changed &&
+      direction &&
+      this.dispatchLogicalInput({
+        type: "direction",
+        source: "joystick",
+        direction,
+      })
+    ) {
+      this.syncContinuousInputs();
+      return;
+    }
+    if (!this.enabled || this.game.presentationBlocksInput) {
       this.joystickDirection = null;
       this.syncContinuousInputs();
       return;
     }
-    this.joystickDirection = direction;
     this.syncContinuousInputs();
   };
 
@@ -451,14 +573,32 @@ export class InputController {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
+    const modalDirection =
+      this.requestedEnabled && this.consumers.size > 0;
     if (
-      !this.enabled ||
       !this.capabilities.pointer ||
-      (!this.capabilities.movement &&
+      (!modalDirection && !this.enabled) ||
+      (!modalDirection &&
+        !this.capabilities.movement &&
         !this.capabilities.pan &&
         !this.capabilities.pinchZoom)
     )
       return;
+    if (modalDirection) {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      event.preventDefault();
+      this.canvas.setPointerCapture(event.pointerId);
+      this.pointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+        discreteMoveIssued: false,
+        panPointer: false,
+      });
+      return;
+    }
     if (
       this.game.presentationBlocksInput &&
       event.pointerType !== "mouse"
@@ -514,6 +654,25 @@ export class InputController {
     pointer.y = event.clientY;
     if (Math.hypot(pointer.x - pointer.startX, pointer.y - pointer.startY) >= 4)
       pointer.moved = true;
+
+    if (this.consumers.size > 0) {
+      if (!pointer.discreteMoveIssued) {
+        const direction = directionForDiscreteDrag(
+          pointer.x - pointer.startX,
+          pointer.y - pointer.startY,
+        );
+        if (direction) {
+          pointer.discreteMoveIssued = true;
+          pointer.moved = true;
+          this.dispatchLogicalInput({
+            type: "direction",
+            source: "pointer",
+            direction,
+          });
+        }
+      }
+      return;
+    }
 
     const gestureCenter = this.pointerCenter();
     if (this.pointers.size === 2 && this.gestureCenter && gestureCenter) {
@@ -625,6 +784,17 @@ export class InputController {
     this.pointers.clear();
     this.pinchStartDistance = 0;
     this.gestureCenter = null;
+  }
+
+  private get acceptsLogicalInput(): boolean {
+    return this.requestedEnabled && (this.enabled || this.consumers.size > 0);
+  }
+
+  private dispatchLogicalInput(action: LogicalInputAction): boolean {
+    const consumer = [...this.consumers.values()].at(-1);
+    if (!consumer) return false;
+    consumer(structuredClone(action));
+    return true;
   }
 }
 

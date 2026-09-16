@@ -9,6 +9,7 @@ import type {
   EditorRuleKind,
   EditorSelection,
   EditorTool,
+  EngineEnvironment,
   EntityCatalog,
   InspectorModel,
   PaletteItem,
@@ -54,6 +55,7 @@ defineProps<{
   playing: boolean;
   playComplete: boolean;
   images: ImageManager;
+  environment: EngineEnvironment;
   catalog: EntityCatalog;
   editor: EditorDefinition;
 }>();
@@ -107,6 +109,7 @@ const emit = defineEmits<{
       :placement="palettePlacement"
       :size="paletteSize"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       @select="emit('select', $event)"
@@ -118,6 +121,7 @@ const emit = defineEmits<{
       :current-theme="surfaceTheme"
       :size="paletteSize"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       @terrain="emit('surfaceTerrain', $event)"
@@ -143,6 +147,7 @@ const emit = defineEmits<{
         :hover="hover"
         :enabled="!playing"
         :images="images"
+        :environment="environment"
         :catalog="catalog"
         @hover="emit('hover', $event)"
         @primary-start="emit('primaryStart', $event)"
@@ -172,6 +177,7 @@ const emit = defineEmits<{
       v-show="!playing && rightPanel === 'inspector'"
       :model="inspector"
       :images="images"
+      :environment="environment"
       :catalog="catalog"
       :editor="editor"
       :authoring-panel="leftPanel"
