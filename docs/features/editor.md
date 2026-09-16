@@ -138,6 +138,7 @@ Editor 使用显式 `stackSlot` 管理 Palette 与 Surface 的创作语义。`st
 空栈从 `stackOrder: 0` 开始；新放置 Entity 使用所覆盖格的最高值 `+1`，同 slot 替换保留被
 替换 Entity 的顺序，Inspector 重排把当前顺序规范化为从 `0` 开始的连续整数。多格 Entity
 在全部 footprint Presence 上使用同一个 `stackOrder`，因此调整任一部位都会改变整个对象。
+Editor 保存 JSON 时省略值为 `0` 的 `stackOrder`，其它层序显式写出。
 
 Canvas 会统计每格去重后的 Palette Presence。达到两层时，在格子右上角显示实际层数角标；Surface 不计入该数字，多格素材在每个覆盖格中各计一层。
 

@@ -72,7 +72,7 @@ function createSpatialPreview(level, entityRegistry = registry()) {
   };
 }
 
-test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
+test("缺省 Level Entity 处于同一个第零接触平面", () => {
   const preview = createSpatialPreview({
     schemaVersion: 1,
     width: 3,
@@ -90,7 +90,7 @@ test("同格 Entity 只按 stackOrder 形成稳定 Cell Stack", () => {
   );
   assert.deepEqual(
     cell.presences.map(({ presence }) => presence.stackOrder),
-    [0, 1, 2],
+    [0, 0, 0],
   );
   assert.equal(cell.top?.entity.type, "water");
 });

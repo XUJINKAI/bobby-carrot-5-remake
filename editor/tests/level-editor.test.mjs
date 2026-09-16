@@ -237,6 +237,7 @@ test("直立角色只把 Editor 光标格作为可选中的 body anchor", () => 
 
 test("Entity fields and instance stack order round-trip", () => {
   const level = createBlankLevel(8, 8);
+  level.entities[0].stackOrder = 0;
   level.entities.push(
     {
       type: MapEntityTypeId.SPEED_SWITCH,
@@ -247,7 +248,10 @@ test("Entity fields and instance stack order round-trip", () => {
     },
     { type: MapEntityTypeId.CRUMBLY_ROCK, x: 4, y: 3 },
   );
-  const parsed = parseEditorLevel(serializeEditorLevel(level));
+  const serialized = serializeEditorLevel(level);
+  const stored = JSON.parse(serialized);
+  assert.equal(stored.entities[0].stackOrder, undefined);
+  const parsed = parseEditorLevel(serialized);
   const speedSwitch = parsed.entities.find(
     (entity) => entity.type === MapEntityTypeId.SPEED_SWITCH,
   );

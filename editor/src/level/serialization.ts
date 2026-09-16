@@ -6,7 +6,14 @@ import type { EditorMap } from "./types.js";
 export function serializeEditorLevel(level: EditorMap): string {
   const materialized = materializeSurfaceVariants(level);
   const canonical = parseMapDocument(normalizeEditorLevel(materialized));
-  return `${JSON.stringify(canonical, null, 2)}\n`;
+  return `${JSON.stringify({
+    ...canonical,
+    entities: canonical.entities.map((entity) => {
+      if (entity.stackOrder !== 0) return entity;
+      const { stackOrder: _stackOrder, ...withoutStackOrder } = entity;
+      return withoutStackOrder;
+    }),
+  }, null, 2)}\n`;
 }
 
 export function parseEditorLevel(text: string): EditorMap {

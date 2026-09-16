@@ -39,6 +39,8 @@ interface LevelEntity {
 }
 ```
 
+`LevelEntity.stackOrder` 省略时表示第 `0` 层；运行时生成合同省略层序时，Engine 才会根据完整 footprint 放到当前重叠范围的最高层之上。
+
 字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Fact、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与

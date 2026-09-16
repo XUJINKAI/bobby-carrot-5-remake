@@ -52,7 +52,7 @@ export function adaptDecodedMap(map) {
     entities: cells.flatMap((cell) =>
       adaptStackCell(cell, context).map((entity, stackOrder) => ({
         ...entity,
-        stackOrder,
+        ...(stackOrder === 0 ? {} : { stackOrder }),
       })),
     ),
   };

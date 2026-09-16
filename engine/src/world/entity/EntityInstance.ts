@@ -64,9 +64,7 @@ export function instantiateLevelEntity(
     type: source.type,
     anchor: { x: source.x, y: source.y },
     ...(direction ? { direction } : {}),
-    ...(Number.isFinite(source.stackOrder)
-      ? { stackOrder: source.stackOrder }
-      : {}),
+    stackOrder: Number.isFinite(source.stackOrder) ? source.stackOrder! : 0,
     ...(Object.keys(state).length > 0 ? { state } : {}),
   };
 }
