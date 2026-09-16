@@ -92,6 +92,8 @@ export class EntityStore {
     checkpoint: EntityStoreMutationCheckpoint,
     id: EntityId,
   ): void {
+    // 事务内生成的 Entity 在 checkpoint 中本来不存在，失败时只应被清理。
+    if (id >= checkpoint.nextEntityId) return;
     if (checkpoint.entities.has(id)) return;
     const entity = this.entities.get(id);
     checkpoint.entities.set(id, entity ? structuredClone(entity) : null);

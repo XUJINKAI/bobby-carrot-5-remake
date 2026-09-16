@@ -85,6 +85,28 @@ test("World commit 失败时恢复 Entity、GlobalState、Delta 序号与原命�
   assert.equal(world.committer.commit(next, clock).deltas[0].sequence, 1);
 });
 
+test("World commit 回滚不会恢复事务内生成后又被修改的 Entity", () => {
+  const world = fixture();
+  const before = world.entities.snapshot();
+  const queue = new CommandQueue();
+  queue.spawn({ type: "carrot", x: 1, y: 0 });
+  queue.setState(before.nextEntityId, { consumed: true });
+  queue.spawn({ type: "carrot", x: 2, y: 0 });
+
+  assert.throws(() => world.committer.commit(queue, clock), /footprint 超出地图/);
+  assert.deepEqual(world.entities.snapshot(), before);
+  assert.deepEqual(world.spatial.presencesAt({ x: 1, y: 0 }), []);
+
+  const next = new CommandQueue();
+  next.spawn({ type: "carrot", x: 1, y: 0 });
+  world.committer.commit(next, clock);
+  assert.equal(world.entities.require(before.nextEntityId).type, "carrot");
+  assert.deepEqual(
+    world.spatial.presencesAt({ x: 1, y: 0 }).map((presence) => presence.entityId),
+    [before.nextEntityId],
+  );
+});
+
 test("Action cancellation 的次生命令失败时恢复 Action", () => {
   const registry = new RuntimeActionRegistry();
   registry.register({
