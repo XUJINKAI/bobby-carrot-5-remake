@@ -31,7 +31,7 @@ test("Bonus Coin 共用 1/8 gate，并以 124ms 播放三帧闪光", () => {
   assert.deepEqual(repeated, sequence);
 });
 
-test("Snow 与 Butterfly 数量按 CSS 视窗面积和密度计算", () => {
+test("Snow 与 Butterfly 数量按可见地图面积计算并留在地图边界内", () => {
   assert.equal(densityCount(240, 320, 65), 5);
   assert.equal(densityCount(480, 640, 65), 20);
   assert.equal(densityCount(240, 320, 13), 1);
@@ -52,9 +52,30 @@ test("Snow 与 Butterfly 数量按 CSS 视窗面积和密度计算", () => {
   });
   snowRuntime.camera.setViewport(240, 320);
   snowRuntime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
-  assert.equal(snowRuntime.scene(snowWorld).ambientForeground.length, 5);
+  let snow = snowRuntime.scene(snowWorld).ambientForeground;
+  assert.equal(snow.length, 1);
+  assertScreenItemsInsideMap(snow, snowWorld, snowRuntime.camera);
   snowRuntime.camera.setViewport(480, 640);
-  assert.equal(snowRuntime.scene(snowWorld).ambientForeground.length, 20);
+  snow = snowRuntime.scene(snowWorld).ambientForeground;
+  assert.equal(snow.length, 1);
+  assertScreenItemsInsideMap(snow, snowWorld, snowRuntime.camera);
+
+  const largeSnowWorld = terrainWorld(20, 20, [
+    { type: MapEntityTypeId.SNOW, x: 0, y: 0 },
+    { type: MapEntityTypeId.BOBBY, x: 10, y: 10 },
+  ]);
+  const largeSnowRuntime = new VisualRuntime(visuals, 48, {}, {
+    ambient: { seed: 7, snowDensity: 65 },
+  });
+  largeSnowRuntime.camera.setViewport(240, 320);
+  largeSnowRuntime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  snow = largeSnowRuntime.scene(largeSnowWorld).ambientForeground;
+  assert.equal(snow.length, 5);
+  assertScreenItemsInsideMap(snow, largeSnowWorld, largeSnowRuntime.camera);
+  largeSnowRuntime.camera.setViewport(480, 640);
+  snow = largeSnowRuntime.scene(largeSnowWorld).ambientForeground;
+  assert.equal(snow.length, 20);
+  assertScreenItemsInsideMap(snow, largeSnowWorld, largeSnowRuntime.camera);
 
   const outdoorWorld = new World({
     schemaVersion: 1,
@@ -70,6 +91,71 @@ test("Snow 与 Butterfly 数量按 CSS 视窗面积和密度计算", () => {
   const butterflies = butterflyRuntime.scene(outdoorWorld).ambientForeground;
   assert.equal(butterflies.length, 1);
   assert.equal(butterflies[0].composition.layers[0].asset, "ambient-butterfly");
+  assertScreenItemsInsideMap(
+    butterflies,
+    outdoorWorld,
+    butterflyRuntime.camera,
+  );
+});
+
+test("纯 Sky 地图不显示蝴蝶，混合地图保留蝴蝶", () => {
+  const visuals = createBuiltinVisualRegistry();
+  const pureSky = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 0, y: 0 },
+      { type: MapEntityTypeId.MOON, variant: "ts-5-11", x: 1, y: 0 },
+    ],
+  });
+  const runtime = new VisualRuntime(visuals, 48, {}, {
+    ambient: { seed: 4, butterflyDensity: 100 },
+  });
+  runtime.camera.setViewport(240, 160);
+  runtime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  assert.deepEqual(runtime.scene(pureSky).ambientForeground, []);
+
+  const mixed = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 0, y: 0 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+    ],
+  });
+  assert.ok(runtime.scene(mixed).ambientForeground.length > 0);
+});
+
+test("Butterfly 使用可复现的独立慢速航点", () => {
+  const world = terrainWorld(20, 20, [
+    { type: MapEntityTypeId.BOBBY, x: 10, y: 10 },
+  ]);
+  const createRuntime = () => {
+    const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+      ambient: { seed: 71, butterflyDensity: 30 },
+    });
+    runtime.camera.setViewport(320, 320);
+    return runtime;
+  };
+  const runtime = createRuntime();
+  runtime.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  const start = runtime.scene(world).ambientForeground;
+  runtime.update({ frame: 1, nowMs: 1000, deltaMs: 1000 }, "linear");
+  const moved = runtime.scene(world).ambientForeground;
+  assert.ok(start.length >= 2);
+  assert.notDeepEqual(
+    { x: moved[0].x - start[0].x, y: moved[0].y - start[0].y },
+    { x: moved[1].x - start[1].x, y: moved[1].y - start[1].y },
+  );
+  assertScreenItemsInsideMap(moved, world, runtime.camera);
+
+  const repeated = createRuntime();
+  repeated.update({ frame: 0, nowMs: 0, deltaMs: 0 }, "linear");
+  repeated.scene(world);
+  repeated.update({ frame: 1, nowMs: 1000, deltaMs: 1000 }, "linear");
+  assert.deepEqual(repeated.scene(world).ambientForeground, moved);
 });
 
 test("Gameplay Sky shimmer 复用 Title 的 ta.png 切片", () => {
@@ -101,6 +187,65 @@ test("Gameplay Sky shimmer 复用 Title 的 ta.png 切片", () => {
   assert.equal(layer.frameHeight, 16);
 });
 
+test("Sky shimmer 只选择没有非 Sky Presence 的格子", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 0, y: 0 },
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 1, y: 0 },
+      { type: MapEntityTypeId.CARROT, x: 1, y: 0 },
+    ],
+  });
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+    ambient: { seed: 3 },
+  });
+  runtime.camera.setViewport(96, 48);
+  for (let index = 0; index < 30; index += 1) {
+    runtime.update({
+      frame: index,
+      nowMs: index * 124,
+      deltaMs: 124,
+    }, "linear");
+    for (const shimmer of runtime.scene(world).ambientBackground)
+      assert.ok(shimmer.visualX < 0.5);
+  }
+});
+
+test("Snow 天气不关闭空 Sky 格的 shimmer", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 0, y: 0 },
+      { type: MapEntityTypeId.SNOW, x: 0, y: 0 },
+      { type: MapEntityTypeId.STARFIELD, variant: "empty", x: 1, y: 0 },
+    ],
+  });
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry(), 48, {}, {
+    ambient: { seed: 3 },
+  });
+  runtime.camera.setViewport(96, 48);
+  let sawShimmer = false;
+  for (let index = 0; index < 30; index += 1) {
+    runtime.update({
+      frame: index,
+      nowMs: index * 124,
+      deltaMs: 124,
+    }, "linear");
+    const scene = runtime.scene(world);
+    assert.ok(scene.ambientForeground.length > 0);
+    assert.equal(
+      scene.ambientForeground[0].composition.layers[0].kind,
+      "canvas",
+    );
+    sawShimmer ||= scene.ambientBackground.length > 0;
+  }
+  assert.equal(sawShimmer, true);
+});
+
 test("所有 Bonus Coin 读取同一共享闪光帧", () => {
   const entities = createBuiltinEntityRegistry();
   const visuals = createBuiltinVisualRegistry();
@@ -129,3 +274,29 @@ test("所有 Bonus Coin 读取同一共享闪光帧", () => {
   assert.deepEqual(layers[0], layers[1]);
   assert.equal(layers[0].frameIndex, 16);
 });
+
+function terrainWorld(width, height, extraEntities = []) {
+  const entities = [];
+  for (let y = 0; y < height; y += 1)
+    for (let x = 0; x < width; x += 1)
+      entities.push({ type: "grass", variant: "ts-10-1", x, y });
+  entities.push(...extraEntities);
+  return new World({ schemaVersion: 1, width, height, entities });
+}
+
+function assertScreenItemsInsideMap(items, world, camera) {
+  const start = camera.worldToScreen(0, 0);
+  const end = camera.worldToScreen(world.width, world.height);
+  const left = Math.max(0, Math.min(start.x, end.x));
+  const top = Math.max(0, Math.min(start.y, end.y));
+  const right = Math.min(camera.viewportWidth, Math.max(start.x, end.x));
+  const bottom = Math.min(camera.viewportHeight, Math.max(start.y, end.y));
+  for (const item of items) {
+    assert.ok(item.x >= left - 1e-9, `${item.x} >= ${left}`);
+    assert.ok(item.y >= top - 1e-9, `${item.y} >= ${top}`);
+    assert.ok(item.x + item.size <= right + 1e-9,
+      `${item.x + item.size} <= ${right}`);
+    assert.ok(item.y + item.size <= bottom + 1e-9,
+      `${item.y + item.size} <= ${bottom}`);
+  }
+}

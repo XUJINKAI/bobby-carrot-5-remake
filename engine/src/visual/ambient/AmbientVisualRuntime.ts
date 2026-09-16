@@ -18,7 +18,18 @@ const SKY_SHIMMER_SLOTS = 3;
 const DEFAULT_AMBIENT_SEED = 0x5b0bb7;
 const DENSITY_AREA = 1_000_000;
 const DEFAULT_SNOW_DENSITY = 65;
-const DEFAULT_BUTTERFLY_DENSITY = 13;
+const DEFAULT_BUTTERFLY_DENSITY = 1;
+const SNOWFLAKE_SIZE = 8;
+const BUTTERFLY_SIZE = 48;
+
+interface ScreenRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
 
 export interface AmbientVisualOptions {
   seed?: number;
@@ -41,7 +52,9 @@ export class AmbientVisualRuntime {
   private originMs: number | null = null;
   private lastBonusCoinSlot = -1;
   private bonusCoinFrame: number | null = null;
+  private environmentWorld: World | null = null;
   private snowWeather: boolean | null = null;
+  private pureSky: boolean | null = null;
 
   constructor(options: AmbientVisualOptions = {}) {
     this.seed = finiteInteger(options.seed, DEFAULT_AMBIENT_SEED);
@@ -76,20 +89,23 @@ export class AmbientVisualRuntime {
     camera: Camera,
     frame: PresentationFrame | undefined,
   ): AmbientVisualEffects {
-    if (this.snowWeather === null) {
+    if (this.environmentWorld !== world) {
+      this.environmentWorld = world;
       this.snowWeather = world.query.entityCountMatching({
         kind: "type",
         value: MapEntityTypeId.SNOW,
       }) > 0;
+      this.pureSky = isPureSkyWorld(world);
     }
     const elapsedMs = frame ? this.elapsed(frame) : 0;
-    const width = camera.viewportWidth;
-    const height = camera.viewportHeight;
+    const bounds = visibleMapRect(world, camera);
     return {
       background: this.skyShimmers(world, camera, elapsedMs),
-      foreground: this.snowWeather
-        ? this.snowflakes(width, height, elapsedMs)
-        : this.butterflies(width, height, elapsedMs),
+      foreground: this.snowWeather === true
+        ? this.snowflakes(bounds, elapsedMs)
+        : this.pureSky === true
+          ? []
+          : this.butterflies(bounds, elapsedMs),
     };
   }
 
@@ -97,7 +113,9 @@ export class AmbientVisualRuntime {
     this.originMs = null;
     this.lastBonusCoinSlot = -1;
     this.bonusCoinFrame = null;
+    this.environmentWorld = null;
     this.snowWeather = null;
+    this.pureSky = null;
   }
 
   private elapsed(frame: PresentationFrame): number {
@@ -158,44 +176,57 @@ export class AmbientVisualRuntime {
   }
 
   private snowflakes(
-    width: number,
-    height: number,
+    bounds: ScreenRect,
     elapsedMs: number,
   ): ScreenOverlayItem[] {
-    const count = densityCount(width, height, this.snowDensity);
+    if (bounds.width < SNOWFLAKE_SIZE || bounds.height < SNOWFLAKE_SIZE)
+      return [];
+    const count = densityCount(bounds.width, bounds.height, this.snowDensity);
+    const inset = insetRect(bounds, SNOWFLAKE_SIZE / 2);
     return Array.from({ length: count }, (_, index) => {
       const cycleMs = 2600 + hash01(this.seed, index, 3) * 1800;
       const progress = ((elapsedMs + hash01(this.seed, index, 5) * cycleMs) %
         cycleMs) / cycleMs;
-      const baseX = hash01(this.seed, index, 7) * width;
+      const baseX = lerp(inset.left, inset.right, hash01(this.seed, index, 7));
       const drift = Math.sin(elapsedMs / 700 + index * 2.1) * 12;
       return {
-        x: wrap(baseX + drift, width),
-        y: progress * (height + 16) - 8,
-        size: 8,
+        x: clamp(baseX + drift, inset.left, inset.right) - SNOWFLAKE_SIZE / 2,
+        y: lerp(inset.top, inset.bottom, progress) - SNOWFLAKE_SIZE / 2,
+        size: SNOWFLAKE_SIZE,
         composition: { layers: [{ kind: "canvas", draw: drawSnowflake }] },
       };
     });
   }
 
   private butterflies(
-    width: number,
-    height: number,
+    bounds: ScreenRect,
     elapsedMs: number,
   ): ScreenOverlayItem[] {
-    const count = densityCount(width, height, this.butterflyDensity);
-    const frameStep = Math.floor(elapsedMs / 93) % 6;
-    const frame = frameStep < 3 ? frameStep : 5 - frameStep;
+    if (bounds.width < BUTTERFLY_SIZE || bounds.height < BUTTERFLY_SIZE)
+      return [];
+    const count = densityCount(
+      bounds.width,
+      bounds.height,
+      this.butterflyDensity,
+    );
+    const inset = insetRect(bounds, BUTTERFLY_SIZE / 2);
     return Array.from({ length: count }, (_, index) => {
-      const phase = hash01(this.seed, index, 11) * Math.PI * 2;
-      const x = (0.5 + 0.46 * Math.sin(elapsedMs / 1900 + phase)) *
-        Math.max(1, width - 48);
-      const y = (0.5 + 0.44 * Math.sin(elapsedMs / 1300 + phase * 1.7)) *
-        Math.max(1, height - 48);
+      const segmentMs = 9000 + hash01(this.seed, index, 11) * 8000;
+      const shiftedMs = elapsedMs + hash01(this.seed, index, 13) * segmentMs;
+      const segment = Math.floor(shiftedMs / segmentMs);
+      const progress = (shiftedMs % segmentMs) / segmentMs;
+      const start = butterflyWaypoint(this.seed, index, segment, inset);
+      const control = butterflyControlPoint(this.seed, index, segment, inset);
+      const end = butterflyWaypoint(this.seed, index, segment + 1, inset);
+      const point = quadraticPoint(start, control, end, smoothStep(progress));
+      const frameStep = Math.floor(
+        (elapsedMs + hash01(this.seed, index, 19) * 558) / 93,
+      ) % 6;
+      const frame = frameStep < 3 ? frameStep : 5 - frameStep;
       return {
-        x,
-        y,
-        size: 48,
+        x: point.x - BUTTERFLY_SIZE / 2,
+        y: point.y - BUTTERFLY_SIZE / 2,
+        size: BUTTERFLY_SIZE,
         composition: {
           layers: [{
             kind: "image",
@@ -241,9 +272,8 @@ function visibleSkyCells(world: World, camera: Camera) {
       const presences = world.query.allPresencesAt({ x, y });
       if (!presences.some((presence) => presence.facts.includes("sky")))
         continue;
-      if (presences.some((presence) =>
-        presence.facts.includes("vertical-occupant")
-      )) continue;
+      if (presences.some((presence) => !presence.facts.includes("sky")))
+        continue;
       cells.push({ x, y });
     }
   }
@@ -276,9 +306,107 @@ function hash01(seed: number, first: number, second: number): number {
   return ((value ^ (value >>> 16)) >>> 0) / 0x1_0000_0000;
 }
 
-function wrap(value: number, limit: number): number {
-  if (limit <= 0) return 0;
-  return ((value % limit) + limit) % limit;
+function visibleMapRect(world: World, camera: Camera): ScreenRect {
+  const start = camera.worldToScreen(0, 0);
+  const end = camera.worldToScreen(world.width, world.height);
+  const left = clamp(Math.min(start.x, end.x), 0, camera.viewportWidth);
+  const top = clamp(Math.min(start.y, end.y), 0, camera.viewportHeight);
+  const right = clamp(Math.max(start.x, end.x), 0, camera.viewportWidth);
+  const bottom = clamp(Math.max(start.y, end.y), 0, camera.viewportHeight);
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+  };
+}
+
+function isPureSkyWorld(world: World): boolean {
+  if (world.width <= 0 || world.height <= 0) return false;
+  for (let y = 0; y < world.height; y += 1) {
+    for (let x = 0; x < world.width; x += 1) {
+      if (!world.query.allPresencesAt({ x, y }).some((presence) =>
+        presence.facts.includes("sky")
+      )) return false;
+    }
+  }
+  return true;
+}
+
+function insetRect(rect: ScreenRect, inset: number): ScreenRect {
+  const left = rect.left + inset;
+  const top = rect.top + inset;
+  const right = rect.right - inset;
+  const bottom = rect.bottom - inset;
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+  };
+}
+
+function butterflyWaypoint(
+  seed: number,
+  index: number,
+  segment: number,
+  bounds: ScreenRect,
+): { x: number; y: number } {
+  return {
+    x: lerp(bounds.left, bounds.right, hash01(seed, index * 2 + 101, segment)),
+    y: lerp(bounds.top, bounds.bottom, hash01(seed, index * 2 + 102, segment)),
+  };
+}
+
+function butterflyControlPoint(
+  seed: number,
+  index: number,
+  segment: number,
+  bounds: ScreenRect,
+): { x: number; y: number } {
+  return {
+    x: lerp(
+      bounds.left,
+      bounds.right,
+      hash01(seed, index * 2 + 201, segment),
+    ),
+    y: lerp(
+      bounds.top,
+      bounds.bottom,
+      hash01(seed, index * 2 + 202, segment),
+    ),
+  };
+}
+
+function quadraticPoint(
+  start: { x: number; y: number },
+  control: { x: number; y: number },
+  end: { x: number; y: number },
+  progress: number,
+): { x: number; y: number } {
+  const remaining = 1 - progress;
+  return {
+    x: remaining ** 2 * start.x +
+      2 * remaining * progress * control.x + progress ** 2 * end.x,
+    y: remaining ** 2 * start.y +
+      2 * remaining * progress * control.y + progress ** 2 * end.y,
+  };
+}
+
+function smoothStep(value: number): number {
+  return value * value * (3 - 2 * value);
+}
+
+function lerp(start: number, end: number, progress: number): number {
+  return start + (end - start) * progress;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function finiteInteger(value: number | undefined, fallback: number): number {
