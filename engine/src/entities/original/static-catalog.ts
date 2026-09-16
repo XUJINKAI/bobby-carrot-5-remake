@@ -47,7 +47,7 @@ function content(
   return staticEntity(
     {
       type,
-      presenceFacts,
+      presenceFacts: ["vertical-occupant", ...presenceFacts],
       presentation: { name },
     },
     atlas,

@@ -103,7 +103,7 @@ const trackTimedChallenge: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.LOCK,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   properties: [
     {
       key: "requireKey",

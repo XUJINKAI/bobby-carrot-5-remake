@@ -128,7 +128,7 @@ const smashCrumblyRock: Behavior = {
 
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   state: [
     {
       key: "mountedByActorId",
@@ -164,7 +164,7 @@ export const mowerParkingTile: EntityModule = originalModule(
 
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CRUMBLY_ROCK,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   presentation: { name: "Crumbly Rock" },
 };
 

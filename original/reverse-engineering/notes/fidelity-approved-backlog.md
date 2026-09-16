@@ -8,34 +8,6 @@
 
 ## P0：会改变通行或持续状态
 
-### A2. Bean 生长改用通用空间事实
-
-**现象差异**
-
-原版 Beanstalk 可以越过 Tide 等地形。当前 Bean 只允许向带 `bean-growth-space` trait 的
-Entity 生长，因此会在 Tide 前提前停止。
-
-**可能影响**
-
-依赖藤蔓跨越水域或 Tide 的官方关卡可能无法完成；自定义地图还会因为某个无关 Entity
-缺少 Bean 专用 trait 而截断生长。
-
-**目标行为**
-
-Bean 查询“目标格是否存在可承载藤蔓的地面，以及是否已经有占据生长空间的高位对象”，
-不再查询以 Bean 命名的空间类别。通行判断与藤蔓放置判断保持独立。
-
-**原理说明**
-
-原版通过 terrain 范围和单个 object 槽判断；现代 Entity Map 需要从可复用的地面承载能力
-与占用事实得到同样结论。各类地形的精确允许表仍由
-[`Q03`](fidelity-open-questions.md#q03-beanstalk-具体可以长过哪些现代-entity-组合) 收口。
-
-**证据**
-
-- `semantic/BeanGrowth.java`
-- `engine/src/entities/original/bean-field.ts`
-
 ### A5. Ice Block 完成融化后再删除
 
 **现象差异**

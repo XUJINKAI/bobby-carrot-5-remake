@@ -8,15 +8,25 @@ export function originalSurfaceFacts(
   mapping: Readonly<SurfaceSourceMapping>,
 ): readonly string[] {
   const type = mapping.type;
+  const growth = isOriginalGrowthSubstrate(mapping)
+    ? ["growth-substrate"]
+    : [];
   if (type === MapEntityTypeId.STARFIELD || type === MapEntityTypeId.MOON)
-    return ["sky"];
+    return ["sky", ...growth];
   if (type === MapEntityTypeId.WATER || type === MapEntityTypeId.WATERFALL)
-    return ["water"];
+    return ["water", ...growth];
   if (
     type === MapEntityTypeId.GRASS ||
     type === MapEntityTypeId.SNOW_CLOUD ||
     type === MapEntityTypeId.SAND
   )
-    return ["walkable"];
-  return [];
+    return ["walkable", ...growth];
+  return growth;
+}
+
+function isOriginalGrowthSubstrate(
+  mapping: Readonly<SurfaceSourceMapping>,
+): boolean {
+  return mapping.source.row < 6 ||
+    (mapping.source.row === 6 && mapping.source.column <= 14);
 }

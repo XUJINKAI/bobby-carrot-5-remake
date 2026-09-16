@@ -113,3 +113,42 @@ test("Bean Field without a Bean leaves the field unchanged", () => {
   );
   assert.equal(world.actions.active.length, 0);
 });
+
+test("Bean grows across Tide and stops at a vertical occupant", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 4,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 3 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 3 },
+      { type: MapEntityTypeId.TIDE, direction: "left", x: 1, y: 2 },
+      { type: MapEntityTypeId.WATER, variant: "still", x: 1, y: 1 },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1 },
+      { type: MapEntityTypeId.BEAN_FIELD, x: 1, y: 3 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 3 },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { beans: 1 };
+
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
+
+  const stopped = world.update({
+    tick: 2,
+    stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS,
+  });
+  assert.equal(hasType(world, 1, 1, MapEntityTypeId.BEANSTALK), false);
+  assert.ok(stopped.events.some(
+    (event) => event.type === "bean-growth-completed" && event.data.height === 2,
+  ));
+});

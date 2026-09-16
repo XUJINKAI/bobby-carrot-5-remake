@@ -54,28 +54,6 @@ Snow 或多层自定义组合又可能丢失必要的底层地面事实。
 先列出所有相关 Entity 的实际空间事实和查询使用者，再决定是补全现有 layer、增加独立
 物理 profile，还是采用更小的能力集合。不能先确定类型名字再反推规则。
 
-### Q03. Beanstalk 具体可以长过哪些现代 Entity 组合
-
-**现象差异**
-
-原版允许 Beanstalk 长过 raw terrain `<= 0x5D` 且 object 为空的格子，其中包括 Tide、
-Water、Waterfall、Snow 和 Sky 的若干表示。现代 Entity Map 可以把这些内容与额外 Entity
-任意叠放，已经超出原版单 object 槽能表达的范围。
-
-**可能影响**
-
-允许范围过窄会截断官方藤蔓路线；允许范围过宽会让藤蔓穿过墙、角色或其它高位机关。
-
-**原理说明**
-
-已确认的方向是移除 Bean 专用空间 trait，改用通用承载与占用事实。仍需把原版 raw 范围
-翻译成现代 `Grass / Water / Waterfall / Tide / Snow / Sky + overlay` 组合表。
-
-**待确认**
-
-为每类 substrate 建最小原版验证图，确定 Snow 作为覆盖物时看底层还是看 Snow 自身，并
-明确 Plank、目标物和角色是否占用藤蔓空间。
-
 ### Q04. Ice 撞墙后是否要在同一拍接续玩家输入
 
 **现象差异**

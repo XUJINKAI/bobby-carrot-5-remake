@@ -11,7 +11,7 @@ import {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.DREAM_MACHINE,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   mechanisms: ["object-interaction"],
   presentation: { name: "Dream Machine", renderPass: "standing" },
 };

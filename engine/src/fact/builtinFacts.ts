@@ -6,12 +6,14 @@ export const builtinFactDefinitions: readonly FactDefinition[] = [
   { id: "climbable", description: "允许攀爬的部位" },
   { id: "contact-cover", description: "遮蔽较低接触层的部位" },
   { id: "elevated-obstacle", description: "占据高于地面的实体空间" },
+  { id: "growth-substrate", description: "允许垂直生长过程依附的地面" },
   { id: "moving-platform", description: "可承载 Actor 的移动平台" },
   { id: "player", description: "ActorLifecycle 识别的可控角色" },
   { id: "pushable", description: "可由推机制考虑的部位" },
   { id: "sky", description: "天空地形，供 Cloud 与 Fireball 查询" },
   { id: "walkable", description: "标准通行可落脚的部位" },
   { id: "water", description: "水面部位" },
+  { id: "vertical-occupant", description: "占用格子上方生长空间的实体" },
 ];
 
 export function createBuiltinFactRegistry(): FactRegistry {

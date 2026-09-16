@@ -213,7 +213,7 @@ export const cloud: EntityModule = originalModule(
 
 const cloudParkingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CLOUD_PARKING,
-  presenceFacts: [],
+  presenceFacts: ["vertical-occupant"],
   presentation: { name: "Cloud Parking" },
 };
 
