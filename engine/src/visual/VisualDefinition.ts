@@ -18,6 +18,12 @@ export interface AtlasVisualLayer {
   kind: "atlas";
   column: number;
   row: number;
+  /** 连续 atlas 源矩形的横向 tile 数；默认 1。 */
+  columns?: number;
+  /** 连续 atlas 源矩形的纵向 tile 数；默认 1。 */
+  rows?: number;
+  /** 多 tile 源矩形相对所在格的锚定方式；默认 center。 */
+  anchor?: "center" | "bottom";
   rotate?: QuarterTurn;
   flipX?: boolean;
   flipY?: boolean;

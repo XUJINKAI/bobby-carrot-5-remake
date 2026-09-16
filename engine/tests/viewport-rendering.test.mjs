@@ -118,3 +118,20 @@ test("Image layer 按显式源矩形裁切非等宽人物图", () => {
   }, 0, 0, 48);
   assert.deepEqual(draws[0].slice(1, 5), [120, 83, 48, 83]);
 });
+
+test("连续双格 atlas 先组合为一个源矩形再整体缩放", () => {
+  const { draws, context, images } = fixture();
+  drawVisualComposition(context, images, {
+    layers: [{
+      kind: "atlas",
+      column: 2,
+      row: 3,
+      rows: 2,
+      anchor: "bottom",
+    }],
+  }, 0, 0.51, 12.51, 1);
+
+  assert.equal(draws.length, 1);
+  assert.deepEqual(draws[0].slice(1, 5), [96, 144, 48, 96]);
+  assert.deepEqual(draws[0].slice(5), [0, -12, 13, 25]);
+});

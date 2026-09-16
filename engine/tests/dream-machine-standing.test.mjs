@@ -85,7 +85,7 @@ test("Dream Machine 以 body anchor 与 Bobby 形成前后遮挡", () => {
   ]);
 });
 
-test("直立对象从 body anchor 组合 head 与 body 视觉", () => {
+test("直立对象从 body anchor 绘制连续的 head/body atlas 区域", () => {
   for (const type of [
     MapEntityTypeId.SANDMAN,
     MapEntityTypeId.DREAM_MACHINE,
@@ -101,10 +101,11 @@ test("直立对象从 body anchor 组合 head 与 body 视觉", () => {
     );
     assert.ok(item, type);
     assert.equal(item.presence.cell.y, 1, type);
-    assert.equal(item.composition.layers.length, 2, type);
+    assert.equal(item.composition.layers.length, 1, type);
     assert.equal(item.composition.layers[0].kind, "atlas", type);
-    assert.equal(item.composition.layers[0].offsetY, -48, type);
-    assert.equal(item.composition.layers[1].kind, "atlas", type);
-    assert.equal(item.composition.layers[1].offsetY, undefined, type);
+    assert.equal(item.composition.layers[0].columns, undefined, type);
+    assert.equal(item.composition.layers[0].rows, 2, type);
+    assert.equal(item.composition.layers[0].anchor, "bottom", type);
+    assert.equal(item.composition.layers[0].offsetY, undefined, type);
   }
 });

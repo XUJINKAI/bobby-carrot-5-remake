@@ -58,9 +58,9 @@ world
 - 水 + 木板：水和木板都进入 `world` pass；木板通过 `contact-cover` 使水不参与接触规则，木板消失后水重新进入接触栈。
 - 高草 + 收集物：两者都进入 `world` pass；高草位于目标上方时隐藏并阻挡目标的接触交互，但目标计数仍读取完整对象集合。
 - Bobby + 蛋巢：蛋巢属于 `world`，Bobby 属于 `standing`，不会发生蛋巢盖住 Bobby。
-- Sandman、Dream Machine 与 Beaver 只在 body anchor 建立 Presence，head/body 由同一个
-  `standing` VisualComposition 绘制；Bobby 位于视觉 head 格时先绘制，位于 body 下方时后
-  绘制。视觉 head 不参与通行或接触。
+- Sandman、Dream Machine 与 Beaver 只在 body anchor 建立 Presence，head/body 作为连续
+  atlas 源矩形由同一个 `standing` VisualComposition 整体缩放；Bobby 位于视觉 head 格时
+  先绘制，位于 body 下方时后绘制。视觉 head 不参与通行或接触。
 
 不要为了新视觉效果继续增加 Spatial band，也不要从 surface/content/cover 一类 gameplay 或 authoring 分类推导 render pass。只有真正独立于正常 Entity 绘制的表现效果才使用 `effect`。
 

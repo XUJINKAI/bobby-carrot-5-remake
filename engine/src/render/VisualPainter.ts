@@ -41,28 +41,16 @@ export function drawVisualComposition(
         viewport,
       );
     } else {
-      const scale = tileSize / images.sourceTileSize;
-      const offsetX = (layer.offsetX ?? 0) * scale;
-      const offsetY = (layer.offsetY ?? 0) * scale;
-      const atlasCell = snapRectToDevicePixels(
-        cell.x + offsetX,
-        cell.y + offsetY,
-        cell.x + cell.width + offsetX,
-        cell.y + cell.height + offsetY,
+      drawAtlasLayer(
+        context,
+        images,
+        layer,
+        left,
+        top,
+        tileSize,
         deviceScale,
+        viewport,
       );
-      // 像素对齐后宽高可能不同，奇数次旋转需要交换包围盒宽高。
-      const rotated = Math.abs(layer.rotate ?? 0) % 2 === 1;
-      const bounds = rotated
-        ? {
-            x: atlasCell.x + (atlasCell.width - atlasCell.height) / 2,
-            y: atlasCell.y + (atlasCell.height - atlasCell.width) / 2,
-            width: atlasCell.height,
-            height: atlasCell.width,
-          }
-        : atlasCell;
-      if (!intersectsViewport(bounds, viewport)) continue;
-      drawAtlasLayer(context, images, layer, atlasCell);
     }
   }
 }
@@ -150,25 +138,77 @@ function drawAtlasLayer(
   context: CanvasRenderingContext2D,
   images: ImageManager,
   layer: AtlasVisualLayer,
-  cell: PixelRect,
+  left: number,
+  top: number,
+  tileSize: number,
+  deviceScale: number,
+  viewport?: PixelRect,
 ): void {
   const atlas = images.image(images.atlasId);
   if (!atlas) return;
   const sourceTile = images.sourceTileSize;
+  const columns = positiveInteger(layer.columns) ?? 1;
+  const rows = positiveInteger(layer.rows) ?? 1;
+  const scale = tileSize / sourceTile;
+  const drawWidth = columns * tileSize;
+  const drawHeight = rows * tileSize;
+  const drawX =
+    left + tileSize / 2 - drawWidth / 2 + (layer.offsetX ?? 0) * scale;
+  const drawY =
+    (layer.anchor === "bottom"
+      ? top + tileSize - drawHeight
+      : top + tileSize / 2 - drawHeight / 2) +
+    (layer.offsetY ?? 0) * scale;
+  const rect = snapRectToDevicePixels(
+    drawX,
+    drawY,
+    drawX + drawWidth,
+    drawY + drawHeight,
+    deviceScale,
+  );
+  // 像素对齐后宽高可能不同，奇数次旋转需要交换包围盒宽高。
+  const rotated = Math.abs(layer.rotate ?? 0) % 2 === 1;
+  const bounds = rotated
+    ? {
+        x: rect.x + (rect.width - rect.height) / 2,
+        y: rect.y + (rect.height - rect.width) / 2,
+        width: rect.height,
+        height: rect.width,
+      }
+    : rect;
+  if (!intersectsViewport(bounds, viewport)) return;
+  const sourceX = layer.column * sourceTile;
+  const sourceY = layer.row * sourceTile;
+  const sourceWidth = columns * sourceTile;
+  const sourceHeight = rows * sourceTile;
+  if (!layer.rotate && !layer.flipX && !layer.flipY) {
+    context.drawImage(
+      atlas,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+    );
+    return;
+  }
   context.save();
-  context.translate(cell.x + cell.width / 2, cell.y + cell.height / 2);
+  context.translate(rect.x + rect.width / 2, rect.y + rect.height / 2);
   context.rotate((layer.rotate ?? 0) * (Math.PI / 2));
   context.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
   context.drawImage(
     atlas,
-    layer.column * sourceTile,
-    layer.row * sourceTile,
-    sourceTile,
-    sourceTile,
-    -cell.width / 2,
-    -cell.height / 2,
-    cell.width,
-    cell.height,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    -rect.width / 2,
+    -rect.height / 2,
+    rect.width,
+    rect.height,
   );
   context.restore();
 }

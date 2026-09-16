@@ -13,7 +13,6 @@ import {
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
 import type { WinConditionState } from "../../world/WorldTypes.js";
 import type {
-  AtlasVisualLayer,
   ImageVisualLayer,
   VisualDefinition,
   VisualResolveContext,
@@ -117,23 +116,19 @@ export function uprightAtlasVisual(
   head: AtlasCell,
   body: AtlasCell,
 ): VisualDefinition {
-  const layer = (
-    atlas: AtlasCell,
-    offsetY = 0,
-  ): AtlasVisualLayer => ({
-    kind: "atlas",
-    column: atlas.column,
-    row: atlas.row,
-    ...(offsetY === 0 ? {} : { offsetY }),
-  });
+  if (body.column !== head.column || body.row !== head.row + 1)
+    throw new Error("直立双格素材必须是 atlas 中纵向连续的 head/body");
   return {
     id: definition.presentation.visual ?? definition.type,
     resolve() {
       return {
-        layers: [
-          layer(head, -ORIGINAL_TILE_SIZE),
-          layer(body),
-        ],
+        layers: [{
+          kind: "atlas",
+          column: head.column,
+          row: head.row,
+          rows: 2,
+          anchor: "bottom",
+        }],
       };
     },
   };
