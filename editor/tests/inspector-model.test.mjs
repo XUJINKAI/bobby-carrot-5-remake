@@ -61,8 +61,8 @@ test("Palette Brush Inspector 显示鼠标格子的放置后堆叠", () => {
 test("Palette Brush Inspector 应用 stackSlot 替换并显示堆叠警告", () => {
   const level = createBlankLevel(8, 8);
   level.entities.push(
-    { type: MapEntityTypeId.CARROT, x: 3, y: 3 },
-    { type: MapEntityTypeId.LOCK, x: 3, y: 3 },
+    { type: MapEntityTypeId.CARROT, x: 3, y: 3, stackOrder: 1 },
+    { type: MapEntityTypeId.LOCK, x: 3, y: 3, stackOrder: 2 },
   );
   const preview = buildPlacementInspectorPreview(
     level,

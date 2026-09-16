@@ -186,7 +186,13 @@ test("Debug snapshot defaults selection to the top Presence", () => {
     height: 1,
     entities: [
       ground(0, 0),
-      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "down" },
+      {
+        type: MapEntityTypeId.BOBBY,
+        x: 0,
+        y: 0,
+        direction: "down",
+        stackOrder: 1,
+      },
     ],
   });
   const visual = new VisualRuntime(createBuiltinVisualRegistry());

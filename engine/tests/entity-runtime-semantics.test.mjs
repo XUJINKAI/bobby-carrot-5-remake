@@ -586,7 +586,7 @@ test("Water requires a terrain overlay for ordinary Bobby movement", () => {
     entities: [
       ground(0, 0),
       { type: MapEntityTypeId.WATER, x: 1, y: 0 },
-      { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
+      { type: MapEntityTypeId.PLANK, x: 1, y: 0, stackOrder: 1 },
       bobby(0, 0),
     ],
   });

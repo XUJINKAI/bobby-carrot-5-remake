@@ -228,7 +228,10 @@ test("Presence inspection reports semantic facts and stackOrder", () => {
       schemaVersion: 1,
       width: 1,
       height: 1,
-      entities: [floor(0, 0), { type: "item", x: 0, y: 0 }],
+      entities: [
+        floor(0, 0),
+        { type: "item", x: 0, y: 0, stackOrder: 1 },
+      ],
     },
     { entities, behaviors: new BehaviorRegistry(), facts },
   );
