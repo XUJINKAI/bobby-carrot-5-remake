@@ -152,12 +152,16 @@ function validateMapShape(map) {
  */
 function reverseStackCell(cell) {
   const terrainCandidates = [];
-  const coverTerrains = [];
   const objects = [];
   const { x, y } = cell;
 
-  for (const entity of cell.entities) {
+  for (const [entityIndex, entity] of cell.entities.entries()) {
     const { type } = entity;
+    const addTerrain = (terrain) => terrainCandidates.push({
+      terrain,
+      stackOrder: entity.stackOrder ?? 0,
+      entityIndex,
+    });
     switch (type) {
       case MapEntityTypeId.BOBBY:
         // Bobby 的出生位置由同格 Start terrain 表达。
@@ -165,13 +169,13 @@ function reverseStackCell(cell) {
 
       case MapEntityTypeId.SNOW:
       case MapEntityTypeId.HIGH_GRASS:
-        // 原版把 cover 直接保存为 terrain byte，稍后覆盖同格底层 Surface。
-        coverTerrains.push(tile({ type }));
+        // 原版把 cover 直接保存为 terrain byte，与其它可编码地形统一参与层序选择。
+        addTerrain(tile({ type }));
         continue;
 
       case MapEntityTypeId.TIDE:
       case MapEntityTypeId.SPEED:
-        terrainCandidates.push(
+        addTerrain(
           tile({ type, fields: { direction: entity.direction } }),
         );
         continue;
@@ -180,13 +184,13 @@ function reverseStackCell(cell) {
       case MapEntityTypeId.TIDE_SWITCH:
       case MapEntityTypeId.CAROUSEL_SWITCH:
         // canonical JSON 可以省略默认 false；selector 必须显式补齐才能唯一匹配。
-        terrainCandidates.push(
+        addTerrain(
           tile({ type, fields: { pressed: entity.pressed ?? false } }),
         );
         continue;
 
       case MapEntityTypeId.WIND_SWITCH:
-        terrainCandidates.push(
+        addTerrain(
           tile({
             type,
             fields: {
@@ -199,20 +203,20 @@ function reverseStackCell(cell) {
 
       case MapEntityTypeId.TRAP:
         // Trap 的 canonical 默认值是 active=true。
-        terrainCandidates.push(
+        addTerrain(
           tile({ type, fields: { active: entity.active ?? true } }),
         );
         continue;
 
       case MapEntityTypeId.MIRROR:
       case MapEntityTypeId.CAROUSEL:
-        terrainCandidates.push(
+        addTerrain(
           tile({ type, fields: { variant: entity.variant } }),
         );
         continue;
 
       case MapEntityTypeId.COLOR_SWITCH:
-        terrainCandidates.push(
+        addTerrain(
           tile({
             type,
             fields: {
@@ -224,7 +228,7 @@ function reverseStackCell(cell) {
         continue;
 
       case MapEntityTypeId.COLOR_BLOCK:
-        terrainCandidates.push(
+        addTerrain(
           tile({
             type,
             fields: {
@@ -240,7 +244,7 @@ function reverseStackCell(cell) {
         if (!visual) {
           throw new Error("original-tile 的 variant 必须是有效 ts.png 坐标");
         }
-        terrainCandidates.push(decodedTileLabel(visual));
+        addTerrain(decodedTileLabel(visual));
         continue;
       }
 
@@ -291,7 +295,7 @@ function reverseStackCell(cell) {
 
       default:
         if (BASE_TERRAIN_TYPES.has(type)) {
-          terrainCandidates.push(tile({ type }));
+          addTerrain(tile({ type }));
           continue;
         }
         if (BASE_OBJECT_TYPES.has(type)) {
@@ -311,25 +315,26 @@ function reverseStackCell(cell) {
           if (!visual) {
             throw new Error(`Surface 缺少原版 Tile Visual：${type}`);
           }
-          terrainCandidates.push(decodedTileLabel(visual));
+          addTerrain(decodedTileLabel(visual));
           continue;
         }
         throw new Error(`Entity type 无法编码为原版 DAT：${type}`);
     }
   }
 
-  if (coverTerrains.length > 1) {
-    throw new Error(`Patch map ${x},${y} 包含多个可编码的覆盖地形 Entity`);
-  }
-  if (coverTerrains.length === 1) {
-    return { terrain: coverTerrains[0], objects };
-  }
-  if (terrainCandidates.length !== 1) {
+  if (terrainCandidates.length === 0) {
     throw new Error(
-      `Patch map ${x},${y} 必须恰好包含一个可编码的地形 Entity，实际为 ${terrainCandidates.length}`,
+      `Patch map ${x},${y} 必须至少包含一个可编码的地形 Entity`,
     );
   }
-  return { terrain: terrainCandidates[0], objects };
+  const top = terrainCandidates.reduce((previous, candidate) =>
+    candidate.stackOrder > previous.stackOrder ||
+    (candidate.stackOrder === previous.stackOrder &&
+      candidate.entityIndex > previous.entityIndex)
+      ? candidate
+      : previous
+  );
+  return { terrain: top.terrain, objects };
 }
 
 /** selector 必须唯一匹配目录条目；返回带可读名称的 decoded 坐标标签。 */

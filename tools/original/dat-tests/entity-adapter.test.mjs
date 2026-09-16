@@ -289,7 +289,7 @@ test("Snow 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠", () =>
   );
 });
 
-test("Patch 以 Snow 作为 terrain，并忽略同格底层 Surface", () => {
+test("Patch 在同层地形中使用实体顺序最后的 terrain", () => {
   const reversed = reverseEntityMap({
     schemaVersion: 1,
     width: 2,
@@ -311,6 +311,28 @@ test("Patch 以 Snow 作为 terrain，并忽略同格底层 Surface", () => {
   assert.deepEqual(reversed.objects, [
     { type: objectTile(0xf8), x: 1, y: 0 },
   ]);
+});
+
+test("Patch 使用 stackOrder 最高的可编码 terrain", () => {
+  const reversed = reverseEntityMap({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.START, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.GRASS,
+        x: 1,
+        y: 0,
+        variant: "ts-6-15",
+        stackOrder: 2,
+      },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0, stackOrder: 1 },
+    ],
+  });
+
+  assert.equal(reversed.terrain[0][1], terrain(0x5e));
 });
 
 test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty Nest", () => {
