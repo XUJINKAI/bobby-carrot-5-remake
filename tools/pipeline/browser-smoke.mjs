@@ -296,45 +296,22 @@ async function smoke(url, expected, forbidden = []) {
       `Browser reported a fatal module/runtime error for ${url}: ${fatal}`,
     );
 }
-function runBrowser(url) {
-  return new Promise((resolve, reject) => {
-    const profile = createBrowserProfile();
-    const child = spawn(
-      browser,
-      [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-background-networking",
-        `--user-data-dir=${profile}`,
-        "--virtual-time-budget=10000",
-        "--dump-dom",
-        url,
-      ],
-      { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
-    );
-    let stdout = "",
-      stderr = "";
-    const max = 8 * 1024 * 1024,
-      timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
-    child.stdout.on("data", (chunk) => {
-      if (stdout.length < max) stdout += String(chunk);
-    });
-    child.stderr.on("data", (chunk) => {
-      if (stderr.length < max) stderr += String(chunk);
-    });
-    child.on("error", (error) => {
-      clearTimeout(timer);
-      removeBrowserProfile(profile);
-      reject(error);
-    });
-    child.on("close", (status) => {
-      clearTimeout(timer);
-      removeBrowserProfile(profile);
-      resolve({ status, stdout, stderr });
-    });
-  });
+async function runBrowser(url) {
+  const result = await runBrowserEval(
+    url,
+    `(async () => {
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      for (let index = 0; index < 40 && document.readyState !== 'complete'; index += 1)
+        await delay(50);
+      await delay(700);
+      return document.documentElement.outerHTML;
+    })()`,
+  );
+  return {
+    status: result.status,
+    stdout: typeof result.value === "string" ? result.value : result.stdout,
+    stderr: result.stderr,
+  };
 }
 function findBrowser() {
   const configured = process.env.BROWSER_PATH;
@@ -497,7 +474,6 @@ async function interactiveEditorSourceSmoke(url) {
     throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {
-  const port = 9222 + Math.floor(Math.random() * 1000);
   const profile = createBrowserProfile();
   const child = spawn(
     browser,
@@ -508,54 +484,49 @@ async function runBrowserEval(url, script) {
       "--disable-dev-shm-usage",
       "--disable-background-networking",
       `--user-data-dir=${profile}`,
-      `--remote-debugging-port=${port}`,
+      "--remote-debugging-pipe",
       "about:blank",
     ],
-    { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
+    {
+      env: browserEnvironment,
+      stdio: ["ignore", "pipe", "pipe", "pipe", "pipe"],
+    },
   );
   let stdout = "",
     stderr = "";
   child.stdout.on("data", (chunk) => (stdout += String(chunk)));
   child.stderr.on("data", (chunk) => (stderr += String(chunk)));
+  const input = child.stdio[3];
+  const output = child.stdio[4];
+  if (!input || !output) {
+    child.kill("SIGKILL");
+    removeBrowserProfile(profile);
+    return { status: 1, stdout, stderr: "Chromium CDP pipe failed to open" };
+  }
+  const cdp = createCdpPipe(input, output);
   try {
-    const endpoint = await waitForDebugEndpoint(port);
-    const page = await fetch(`${endpoint}/json/new?about:blank`, {
-      method: "PUT",
-    }).then((response) => response.json());
-    const ws = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-      ws.addEventListener("open", resolve, { once: true });
-      ws.addEventListener("error", reject, { once: true });
+    const { targetId } = await cdp.send("Target.createTarget", { url });
+    const { sessionId } = await cdp.send("Target.attachToTarget", {
+      targetId,
+      flatten: true,
     });
-    let id = 0;
-    const pending = new Map();
-    ws.addEventListener("message", (event) => {
-      const message = JSON.parse(String(event.data));
-      const deferred = pending.get(message.id);
-      if (!deferred) return;
-      pending.delete(message.id);
-      deferred.resolve(message);
-    });
-    const send = (method, params = {}) =>
-      new Promise((resolve, reject) => {
-        const requestId = ++id;
-        pending.set(requestId, { resolve, reject });
-        ws.send(JSON.stringify({ id: requestId, method, params }));
-      });
-    await send("Page.enable");
-    await send("Runtime.enable");
-    await send("Page.navigate", { url });
+    await cdp.send("Page.enable", {}, sessionId);
+    await cdp.send("Runtime.enable", {}, sessionId);
     await new Promise((resolve) => setTimeout(resolve, 700));
-    const evaluation = await send("Runtime.evaluate", {
-      expression: script,
-      awaitPromise: true,
-      returnByValue: true,
-    });
-    ws.close();
-    const exception = evaluation.result?.exceptionDetails;
+    const evaluation = await cdp.send(
+      "Runtime.evaluate",
+      { expression: script, awaitPromise: true, returnByValue: true },
+      sessionId,
+    );
+    const exception = evaluation.exceptionDetails;
     if (exception) throw new Error(exception.text || "browser evaluation failed");
-    const value = evaluation.result?.result?.value;
-    return { status: 0, stdout: `${stdout}\n${JSON.stringify(value)}\n`, stderr };
+    const value = evaluation.result?.value;
+    return {
+      status: 0,
+      stdout: `${stdout}\n${JSON.stringify(value)}\n`,
+      stderr,
+      value,
+    };
   } catch (error) {
     return {
       status: 1,
@@ -563,6 +534,7 @@ async function runBrowserEval(url, script) {
       stderr: `${stderr}\n${error instanceof Error ? error.stack : String(error)}`,
     };
   } finally {
+    cdp.close();
     child.kill("SIGKILL");
     await waitForBrowserClose(child);
     removeBrowserProfile(profile);
@@ -582,17 +554,43 @@ function waitForBrowserClose(child) {
     return Promise.resolve();
   return new Promise((resolve) => child.once("close", resolve));
 }
-async function waitForDebugEndpoint(port) {
-  for (let i = 0; i < 80; i += 1) {
-    try {
-      const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((response) =>
-        response.json(),
-      );
-      if (version.webSocketDebuggerUrl) return `http://127.0.0.1:${port}`;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("Chrome DevTools endpoint did not start");
+function createCdpPipe(input, output) {
+  let nextId = 1;
+  let buffer = "";
+  const pending = new Map();
+  output.on("data", (chunk) => {
+    buffer += chunk.toString();
+    let boundary = buffer.indexOf("\0");
+    while (boundary >= 0) {
+      const packet = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 1);
+      if (packet) {
+        const message = JSON.parse(packet);
+        const request = message.id ? pending.get(message.id) : undefined;
+        if (request) {
+          pending.delete(message.id);
+          if (message.error) request.reject(new Error(message.error.message));
+          else request.resolve(message.result ?? {});
+        }
+      }
+      boundary = buffer.indexOf("\0");
+    }
+  });
+  return {
+    send(method, params = {}, sessionId) {
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+      });
+    },
+    close() {
+      input.end();
+      for (const request of pending.values())
+        request.reject(new Error("Chromium CDP pipe closed"));
+      pending.clear();
+    },
+  };
 }
 function lastJsonLine(value) {
   const lines = value.trim().split(/\r?\n/).reverse();
