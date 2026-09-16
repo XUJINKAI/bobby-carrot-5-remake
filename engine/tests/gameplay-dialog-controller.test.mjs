@@ -74,8 +74,8 @@ function fixture() {
     },
     now: () => now,
     directionForDialogue: () => "up",
-    moveFromDialogue: (actorId, direction) => {
-      moves.push({ actorId, direction });
+    moveFromDialogue: (actorId, direction, source) => {
+      moves.push({ actorId, direction, source });
     },
   });
   return {
@@ -121,11 +121,11 @@ test("Entity dialogue 把完整段落交给同一个 View 生命周期", async (
 test("实体对白关闭后解除输入门禁并提交发起者的移动", async () => {
   const f = fixture();
   f.controller.handleEntityDialogue(request(7, 9));
-  f.pending.shift()({ type: "move", direction: "left" });
+  f.pending.shift()({ type: "move", direction: "left", source: "pointer" });
   await settle();
 
   assert.deepEqual(f.counts(), { blocks: 1, releases: 1, inputReleases: 1 });
-  assert.deepEqual(f.moves, [{ actorId: 7, direction: "left" }]);
+  assert.deepEqual(f.moves, [{ actorId: 7, direction: "left", source: "pointer" }]);
 });
 
 test("Entity dialogue 按 actor/entity 隔离 pending 与 500ms 冷却", async () => {

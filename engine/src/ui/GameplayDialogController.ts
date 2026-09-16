@@ -32,7 +32,7 @@ export interface GameplayDialogControllerHost {
   ): GameplayDialogBlockLease;
   now(): number;
   directionForDialogue(request: DialogueRequestEvent): Direction | null;
-  moveFromDialogue(actorId: number, direction: Direction): void;
+  moveFromDialogue(actorId: number, direction: Direction, source: string): void;
 }
 
 interface GameplayDialogSurface {
@@ -121,7 +121,11 @@ export class GameplayDialogController {
       .then((result) => {
         if (this.destroyed || generation !== this.generation) return;
         if (result.type === "move")
-          this.host.moveFromDialogue(request.actorId, result.direction);
+          this.host.moveFromDialogue(
+            request.actorId,
+            result.direction,
+            result.source,
+          );
         this.entityCooldowns.set(
           key,
           this.host.now() + this.repeatCooldownMs,

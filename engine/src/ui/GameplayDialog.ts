@@ -25,7 +25,7 @@ export type GameplayDialogOptionResult =
 
 export type GameplayDialogResult =
   | GameplayDialogOptionResult
-  | { type: "move"; direction: Direction };
+  | { type: "move"; direction: Direction; source: string };
 
 export type GameplayDialogInputAction =
   | "ignore"
@@ -365,7 +365,11 @@ export class GameplayDialogView {
     }
     if (action === "move") {
       if (input.type === "direction")
-        this.settlePresentation({ type: "move", direction: input.direction });
+        this.settlePresentation({
+          type: "move",
+          direction: input.direction,
+          source: input.source,
+        });
       return;
     }
     if (action === "previous") this.selectRelative(-1);

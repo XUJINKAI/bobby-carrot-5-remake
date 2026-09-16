@@ -156,8 +156,8 @@ export class Game {
             now: runtimeNow,
             directionForDialogue: (request) =>
               this.dialogueInput.directionFor(this.worldValue, request),
-            moveFromDialogue: (actorId, direction) =>
-              this.queueDialogueMove(actorId, direction),
+            moveFromDialogue: (actorId, direction, source) =>
+              this.queueDialogueMove(actorId, direction, source),
           },
           dialog === true ? {} : dialog,
         );
@@ -783,12 +783,13 @@ export class Game {
     );
   }
 
-  private discardPendingGameplayInput(): void {
+  private discardPendingGameplayInput(preservePhysicalInput = false): void {
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
     this.queuedIntentGroups.length = 0;
-    this.inputController?.resetMovement();
+    if (preservePhysicalInput) this.inputController?.suspendMovement();
+    else this.inputController?.resetMovement();
   }
 
   private readonly onResize = (): void => {
@@ -799,7 +800,8 @@ export class Game {
     if (this.destroyed) return;
     const delta = this.lastTimestamp > 0 ? timestamp - this.lastTimestamp : 0;
     this.lastTimestamp = timestamp;
-    if (this.presentationBlocksInput) this.discardPendingGameplayInput();
+    if (this.presentationBlocksInput)
+      this.discardPendingGameplayInput(this.dialogueBlockCount > 0);
 
     const worldTicks: GameplayTickResult[] = [];
     if (
@@ -869,15 +871,20 @@ export class Game {
     this.music.resume();
   }
 
-  private queueDialogueMove(actorId: EntityId, direction: Direction): void {
+  private queueDialogueMove(
+    actorId: EntityId,
+    direction: Direction,
+    source: string,
+  ): void {
     if (this.replayPlayback.playing) return;
+    if (source !== "pointer") return;
     this.dialogueInput.queue(this.worldValue, actorId, direction);
   }
 
   private acquireDialogueBlock(): { release(): void } {
     this.dialogueBlockCount += 1;
     this.presentation.setDialogueActive(true, this.worldValue);
-    this.discardPendingGameplayInput();
+    this.discardPendingGameplayInput(true);
     let active = true;
     return {
       release: () => {
