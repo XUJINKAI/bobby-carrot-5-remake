@@ -57,3 +57,37 @@ test("目标求值和派生奖励计数直接使用计数接口", () => {
   assert.equal(world.metrics["golden-carrot"], 1);
   assert.equal(world.metrics["bonus-coin"], 1);
 });
+
+test("WorldQueryApi 递归拒绝 typed selector 中未注册的 Fact", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 1,
+    height: 1,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+      { type: "bobby", x: 0, y: 0 },
+    ],
+    rules: { win: { type: "carrot" } },
+  });
+  const missing = { kind: "fact", value: "missing-fact" };
+  const nested = {
+    kind: "any",
+    selectors: [
+      { kind: "type", value: "bobby" },
+      missing,
+    ],
+  };
+  const presence = world.query.presencesAt({ x: 0, y: 0 })[0];
+
+  assert.throws(() => world.query.entitiesMatching(missing), /未注册 Fact：missing-fact/);
+  assert.throws(() => world.query.entityCountMatching(nested), /未注册 Fact：missing-fact/);
+  assert.throws(
+    () => world.query.hasSelectorAt({ x: 0, y: 0 }, missing),
+    /未注册 Fact：missing-fact/,
+  );
+  assert.throws(
+    () => world.query.presenceMatchesSelector(presence, missing),
+    /未注册 Fact：missing-fact/,
+  );
+  assert.equal(world.query.entityCountMatching(levelRuleSelector("bobby")), 1);
+});

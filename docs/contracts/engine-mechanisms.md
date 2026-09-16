@@ -239,11 +239,16 @@ Engine 内部使用带类型的 Selector，区分 `type` 和 `fact`。运行规�
 type EntitySelector =
   | { readonly kind: "type"; readonly value: EntityType }
   | { readonly kind: "fact"; readonly value: FactId }
+  | { readonly kind: "type-or-fact"; readonly value: string }
   | {
       readonly kind: "any";
       readonly selectors: readonly EntitySelector[];
     };
 ```
+
+显式 `fact` selector 在查询前递归校验注册状态，包括 `any` 的全部分支。
+`type-or-fact` 只表达 LevelMap 字符串目标的并集语义，不把候选字符串声明为 Fact；
+Engine 内部已知具体身份或能力时分别使用 `type` 或 `fact`。
 
 `LevelMap.rules.win` 的叶子是具体 Goal ID。`GoalRegistry` 校验重复与缺失定义；
 World 对组合节点递归求值，对叶子调用对应领域的 Goal。`carrotGoal` 按 Carrot ID

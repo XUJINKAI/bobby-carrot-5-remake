@@ -95,6 +95,10 @@ export class SpatialIndex {
       case "fact":
         return this.hasEntityFact(entity.id, selector.value) ||
           presence.facts.includes(selector.value);
+      case "type-or-fact":
+        return entity.type === selector.value ||
+          this.hasEntityFact(entity.id, selector.value) ||
+          presence.facts.includes(selector.value);
       case "any":
         return selector.selectors.some((item) =>
           this.presenceMatchesSelector(presence, item)

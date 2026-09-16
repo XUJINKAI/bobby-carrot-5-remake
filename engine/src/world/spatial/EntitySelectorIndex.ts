@@ -59,6 +59,11 @@ export class EntitySelectorIndex {
         return ordered(this.types.get(selector.value) ?? []);
       case "fact":
         return ordered(this.facts.get(selector.value) ?? []);
+      case "type-or-fact":
+        return ordered(new Set([
+          ...(this.types.get(selector.value) ?? []),
+          ...(this.facts.get(selector.value) ?? []),
+        ]));
       case "any":
         return ordered(new Set(selector.selectors.flatMap((item) =>
           this.matching(item)

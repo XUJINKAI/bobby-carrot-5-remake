@@ -10,7 +10,10 @@ export const exitGoal: GoalDefinition = {
     const actors = query.entitiesWithFact("player");
     return {
       completed: actors.length > 0 && actors.every((actor) =>
-        reach.actorReaches(actor, MapEntityTypeId.EXIT)
+        reach.actorReaches(actor, {
+          kind: "type",
+          value: MapEntityTypeId.EXIT,
+        })
       ),
     };
   },

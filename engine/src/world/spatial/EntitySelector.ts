@@ -5,15 +5,10 @@ import type { FactId } from "../../fact/FactRegistry.js";
 export type EntitySelector =
   | { readonly kind: "type"; readonly value: EntityType }
   | { readonly kind: "fact"; readonly value: FactId }
+  | { readonly kind: "type-or-fact"; readonly value: string }
   | { readonly kind: "any"; readonly selectors: readonly EntitySelector[] };
 
 /** LevelMap 的字符串目标沿用 Type 与 Fact 的并集语义。 */
 export function levelRuleSelector(value: string): EntitySelector {
-  return {
-    kind: "any",
-    selectors: [
-      { kind: "type", value },
-      { kind: "fact", value },
-    ],
-  };
+  return { kind: "type-or-fact", value };
 }

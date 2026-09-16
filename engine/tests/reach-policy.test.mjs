@@ -34,10 +34,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
     },
     presenceMatchesSelector(candidate, selector) {
       return candidate.entityId === target.id &&
-        selector.kind === "any" &&
-        selector.selectors.some((item) =>
-          item.kind === "type" && item.value === target.type
-        );
+        selector.kind === "type" && selector.value === target.type;
     },
   };
   const resolver = new ReachResolver(
@@ -50,7 +47,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
   assert.equal(
     resolver.actorReaches(
       { id: 1, type: "actor", anchor: { x: 1, y: 0 } },
-      "goal",
+      { kind: "type", value: "goal" },
     ),
     false,
   );
@@ -62,7 +59,7 @@ test("ReachResolver 通过目标 Behavior 判断 actor 资格", () => {
         anchor: { x: 1, y: 0 },
         state: { token: true },
       },
-      "goal",
+      { kind: "type", value: "goal" },
     ),
     true,
   );

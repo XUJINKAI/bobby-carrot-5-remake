@@ -62,10 +62,12 @@ export class WorldQueryApi {
     presence: EntityPresence,
     selector: EntitySelector,
   ): boolean {
+    this.validateSelector(selector);
     return this.spatial.presenceMatchesSelector(presence, selector);
   }
 
   hasSelectorAt(cell: CellQuery, selector: EntitySelector): boolean {
+    this.validateSelector(selector);
     return this.presencesAt(cell).some((presence) =>
       this.spatial.presenceMatchesSelector(presence, selector)
     );
@@ -98,11 +100,23 @@ export class WorldQueryApi {
   }
 
   entitiesMatching(selector: EntitySelector): readonly EntityInstance[] {
+    this.validateSelector(selector);
     return readonlyView(this.spatial.entityIdsMatching(selector)
       .map((id) => this.entities.require(id)));
   }
 
   entityCountMatching(selector: EntitySelector): number {
+    this.validateSelector(selector);
     return this.spatial.entityCountMatching(selector);
+  }
+
+  private validateSelector(selector: EntitySelector): void {
+    if (selector.kind === "fact") {
+      this.facts.require(selector.value);
+      return;
+    }
+    if (selector.kind === "any") {
+      for (const child of selector.selectors) this.validateSelector(child);
+    }
   }
 }

@@ -5,7 +5,7 @@ import type { WorldQueryApi } from "../behavior/WorldQueryApi.js";
 import type { EntityInstance } from "../entity/EntityInstance.js";
 import type { EntityRegistry } from "../entity/EntityRegistry.js";
 import type { EntityPresence } from "../spatial/EntityPresence.js";
-import { levelRuleSelector } from "../spatial/EntitySelector.js";
+import type { EntitySelector } from "../spatial/EntitySelector.js";
 import { readonlyView } from "../behavior/ReadonlyView.js";
 
 /** 通过目标 Entity Behavior 判断某个空间投影是否构成 gameplay reach。 */
@@ -41,14 +41,14 @@ export class ReachResolver {
 
   actorReaches(
     actor: Readonly<EntityInstance>,
-    selector: string,
+    selector: EntitySelector,
   ): boolean {
     return this.query.presencesAt(actor.anchor).some((presence) => {
       const entity = this.query.entity(presence.entityId);
       if (!entity) return false;
       const matches = this.query.presenceMatchesSelector(
         presence,
-        levelRuleSelector(selector),
+        selector,
       );
       return matches && this.canReach(actor, presence);
     });

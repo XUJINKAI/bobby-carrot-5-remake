@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
+import { createEngineEnvironment } from "../dist/environment/EngineEnvironment.js";
+import { createWorld } from "../dist/entities/WorldComposition.js";
+import { builtinEntityModules } from "../dist/entities/registry.js";
+import { createBuiltinFactRegistry } from "../dist/fact/builtinFacts.js";
 import { GoalRegistry } from "../dist/world/outcome/GoalRegistry.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { World } from "./support/World.mjs";
@@ -135,4 +139,37 @@ test("Exit 要求所有玩家各自到达任意 Exit", () => {
   commands.relocate(secondary.id, 2, 0);
   world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
   assert.equal(world.winState.completed, true);
+});
+
+test("Exit 只接受 Exit Type，不接受同名 Fact", () => {
+  const facts = createBuiltinFactRegistry();
+  facts.register({ id: "exit", description: "测试同名 Fact 不冒充 Exit 身份" });
+  const environment = createEngineEnvironment({
+    facts,
+    modules: [
+      ...builtinEntityModules,
+      {
+        definition: {
+          type: "false-exit",
+          presenceFacts: ["walkable", "exit"],
+        },
+        presentation: { name: "False Exit" },
+      },
+    ],
+  });
+  const world = createWorld({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      ground(0, 0),
+      ground(1, 0),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      { type: "false-exit", x: 0, y: 0 },
+      { type: MapEntityTypeId.EXIT, x: 1, y: 0 },
+    ],
+    rules: { win: { type: "exit" } },
+  }, environment);
+
+  assert.equal(world.winState.completed, false);
 });
