@@ -171,9 +171,18 @@ test("Plank 覆盖 Exit 的接触到达规则但保留目标查询", () => {
   assert.equal(world.completed, false);
 });
 
-test("Mower 可经过地面木板，Mirror 由对象规则阻挡", () => {
+test("Mower 可经过平坦机关，并由通用高位空间事实阻挡", () => {
   assert.equal(tryRight(passageWorld(ground(1), [
     { type: MapEntityTypeId.PLANK, x: 1, y: 0 },
   ], true)).moved, true);
-  assert.equal(tryRight(passageWorld({ type: MapEntityTypeId.MIRROR, x: 1, y: 0 }, [], true)).moved, false);
+  const mirrorWorld = passageWorld(
+    { type: MapEntityTypeId.MIRROR, x: 1, y: 0 },
+    [],
+    true,
+  );
+  assert.ok(mirrorWorld.query.hasFactAt({ x: 1, y: 0 }, "elevated-obstacle"));
+  assert.equal(
+    tryRight(mirrorWorld).passage.reason,
+    "mower-cannot-enter-elevated-obstacle",
+  );
 });

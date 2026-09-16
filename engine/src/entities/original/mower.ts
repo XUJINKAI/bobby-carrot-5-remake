@@ -33,6 +33,8 @@ const mowerVehicle: Behavior = {
     if (bobbyMountId(actor.state) !== self.entity.id) return;
     if (movement && query.hasFactAt(movement.to, "moving-platform"))
       return { passable: false, reason: "mower-cannot-enter-moving-platform" };
+    if (movement && query.hasFactAt(movement.to, "elevated-obstacle"))
+      return { passable: false, reason: "mower-cannot-enter-elevated-obstacle" };
     return { passable: true, reason: "drive-mower" };
   },
   onTouch({ actor, self, query, commands }) {

@@ -5,6 +5,7 @@ export const builtinFactDefinitions: readonly FactDefinition[] = [
   { id: "blocking", description: "标准通行需要检查的阻挡部位" },
   { id: "climbable", description: "允许攀爬的部位" },
   { id: "contact-cover", description: "遮蔽较低接触层的部位" },
+  { id: "elevated-obstacle", description: "占据高于地面的实体空间" },
   { id: "moving-platform", description: "可承载 Actor 的移动平台" },
   { id: "player", description: "ActorLifecycle 识别的可控角色" },
   { id: "pushable", description: "可由推机制考虑的部位" },

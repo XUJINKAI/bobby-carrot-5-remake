@@ -36,34 +36,6 @@ Bean 查询“目标格是否存在可承载藤蔓的地面，以及是否已经
 - `semantic/BeanGrowth.java`
 - `engine/src/entities/original/bean-field.ts`
 
-### A4. Mower 按地面高度决定通行
-
-**现象差异**
-
-原版 Mower 可以驶过 Speed 等平坦地面机关，会被 Mirror 这类有高度的机关挡住。当前
-Mirror 没有 mounted Bobby 的通行限制，因此 Mower 可以驶入。
-
-**可能影响**
-
-Mirror 附近的官方谜题可以被错误穿过；继续为每个机关单独增加 Mower 特判，也会让通行
-规则越来越难审阅。
-
-**目标行为**
-
-Mower 可以驶过普通地面和无高度的地面机关，明确被 Mirror 等高位障碍阻挡。High Grass
-等覆盖物的处理方式在 [`Q01`](fidelity-open-questions.md#q01-high-grass-遮住目标时应该怎样参与通行) 决定后并入同一空间查询。
-
-**原理说明**
-
-Mower 需要读取 Entity 的通用空间事实，而不是维护一份机关 ID 白名单。具体字段和有效格子
-视图与 [`Q02`](fidelity-open-questions.md#q02-engine-应该怎样表达格子中的地面主体和覆盖物) 一起确认。
-
-**证据**
-
-- `semantic/MowerRuntime.java`
-- `semantic/PlayerCollisionRules.java`
-- `engine/src/entities/original/mirror.ts`
-
 ### A5. Ice Block 完成融化后再删除
 
 **现象差异**
