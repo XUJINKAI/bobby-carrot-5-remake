@@ -60,6 +60,11 @@ const unlock: Behavior = {
         entityId: actor.id,
         data: { seconds },
       });
+    if (seconds > 0)
+      commands.emit({
+        type: "music-state",
+        data: { source: "timed-bonus", track: "bonus" },
+      });
     return { passable: true, reason: "lock-unlocked" };
   },
   onTouch({ actor, self, query, commands }) {

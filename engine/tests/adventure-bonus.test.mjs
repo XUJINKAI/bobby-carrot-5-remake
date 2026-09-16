@@ -141,6 +141,10 @@ test("requireKey Lock 消耗一把关卡内钥匙并启动死亡倒计时", () =
     unlock.events.some((event) => event.type === "death-countdown-started"),
     true,
   );
+  assert.deepEqual(
+    unlock.events.find((event) => event.type === "music-state")?.data,
+    { source: "timed-bonus", track: "bonus" },
+  );
   world.update({ stepMs: 1000, tick: 1 });
   assert.equal(world.dead, true);
 });

@@ -101,7 +101,7 @@ for (const release of sourceIndex.releases) {
         {
           name: campaignLevelName(sourceLevelIndex),
         },
-        bonusOrdinal === null ? {} : { music: "bonus" },
+        bonusOrdinal === null ? {} : { music: "shop" },
       );
       documents.set(id, document);
       maps.push({

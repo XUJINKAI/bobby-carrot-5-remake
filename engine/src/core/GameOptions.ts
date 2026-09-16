@@ -15,6 +15,8 @@ import type { AmbientVisualOptions } from "../visual/ambient/AmbientVisualRuntim
 export interface GameRuntimeOptions {
   camera?: CameraOptions;
   ambient?: AmbientVisualOptions;
+  /** 宿主页面可覆盖地图基础音乐；null 表示该页面保持静音。 */
+  levelMusicOverride?: string | null;
   hud?: boolean | GameplayHudOptions;
   /** Engine 内建与宿主显式调用共用的 gameplay dialogue controller。 */
   dialog?: boolean | GameplayDialogControllerOptions;

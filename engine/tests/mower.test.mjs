@@ -81,8 +81,12 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
   move(world, actor.id, "right");
   world.update({ tick: 2, stepMs: 50 });
   assert.equal(world.entity(actor.id).state.mountId, undefined);
-  world.update({ tick: 3, stepMs: 50 });
+  const mounted = world.update({ tick: 3, stepMs: 50 });
   assert.equal(world.entity(actor.id).state.mountId, mower.id);
+  assert.deepEqual(
+    mounted.events.find((event) => event.type === "music-state")?.data,
+    { source: "mower", track: "mow" },
+  );
 
   move(world, actor.id, "right");
   assert.deepEqual(world.entity(mower.id).anchor, { x: 3, y: 0 });
@@ -91,10 +95,14 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
   assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.HIGH_GRASS }).length, 0);
 
   move(world, actor.id, "right");
-  world.update({ tick: 5, stepMs: 100 });
+  const parked = world.update({ tick: 5, stepMs: 100 });
   assert.deepEqual(world.entity(mower.id).anchor, { x: 4, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 5, y: 0 });
   assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.deepEqual(
+    parked.events.find((event) => event.type === "music-state")?.data,
+    { source: "mower", track: null },
+  );
 });
 
 test("Only a speed-continued Mower smashes Crumbly Rock", () => {

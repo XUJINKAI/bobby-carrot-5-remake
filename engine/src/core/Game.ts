@@ -1,6 +1,7 @@
 import type { Direction, LevelMap } from "@bobby/model";
 import type { AudioBackend } from "../audio/AudioBackend.js";
 import { NullAudioBackend } from "../audio/AudioBackend.js";
+import { LevelMusicController } from "../audio/LevelMusicController.js";
 import type { ControlBinding } from "../input/ControlBindings.js";
 import {
   InputController,
@@ -82,6 +83,8 @@ export class Game {
   private readonly timing: EngineTiming;
   private readonly session: GameplaySession;
   private readonly environment: EngineEnvironment;
+  private readonly music: LevelMusicController;
+  private readonly levelMusicOverride: string | null | undefined;
   private readonly listeners = new Map<GameEventName, Set<Listener>>();
   private readonly worldEvents = new WorldEventDispatcher();
   private heldDirection: Direction | null = null;
@@ -103,6 +106,8 @@ export class Game {
   constructor(options: GameOptions) {
     this.environment = options.environment ?? builtinEngineEnvironment;
     this.audio = options.audio ?? new NullAudioBackend();
+    this.music = new LevelMusicController(this.audio);
+    this.levelMusicOverride = options.runtime?.levelMusicOverride;
     this.tuning = resolveOriginalTuning(options.runtime?.tuning);
     this.timing = resolveEngineTiming(options.runtime?.timing);
     this.presentation = new GamePresentation(
@@ -299,6 +304,7 @@ export class Game {
     this.dialog?.reset();
     this.replayPlayback.stop();
     this.session.loadLevel(prepareRuntimeLevel(level));
+    this.music.load(level.music, this.levelMusicOverride);
     this.heldDirection = null;
     this.heldDirectionBlocked = false;
     this.queuedMoves.length = 0;
@@ -398,6 +404,7 @@ export class Game {
     this.presentation.resetMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
+    this.music.syncWorld(this.world);
     this.render();
     this.emit("change");
   }
@@ -407,6 +414,7 @@ export class Game {
     this.presentation.resetMotion();
     this.lastMove = null;
     this.lastWorldEvents = [];
+    this.music.syncWorld(this.world);
     this.render();
     this.emit("change");
   }
@@ -416,6 +424,7 @@ export class Game {
     this.replayPlayback.stop();
     this.replayRecorder = null;
     this.session.restart();
+    this.music.resetMechanics();
     this.resetSessionView(true);
     this.render();
     this.emit("change");
@@ -624,6 +633,7 @@ export class Game {
     this.gameplayHud?.destroy();
     this.presentation.destroy();
     this.debugControls.destroy();
+    this.music.stop();
   }
 
   private consumeWorldDeltas(deltas: readonly WorldDelta[]): void {
@@ -833,6 +843,7 @@ export class Game {
     events: readonly WorldEvent[],
     notifyInteractions = true,
   ): void {
+    for (const event of events) this.music.observe(event);
     const notifyRequests = notifyInteractions && !this.replayPlayback.playing;
     if (notifyRequests && this.dialog) {
       for (const event of events) {
@@ -851,6 +862,11 @@ export class Game {
         this.presentation.shake(248, 42);
       },
     );
+  }
+
+  /** 页面结算音乐结束后，恢复当前地图与机关共同决定的音乐状态。 */
+  resumeMusicState(): void {
+    this.music.resume();
   }
 
   private queueDialogueMove(actorId: EntityId, direction: Direction): void {

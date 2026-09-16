@@ -75,6 +75,10 @@ const mowerVehicle: Behavior = {
       y: self.presence.cell.y,
       data: { mowerId: self.entity.id },
     });
+    commands.emit({
+      type: "music-state",
+      data: { source: "mower", track: "mow" },
+    });
   },
 };
 
@@ -100,6 +104,10 @@ const mowerParking: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
       data: { mowerId: mower.id, exitX: self.presence.cell.x + 1 },
+    });
+    commands.emit({
+      type: "music-state",
+      data: { source: "mower", track: null },
     });
   },
 };

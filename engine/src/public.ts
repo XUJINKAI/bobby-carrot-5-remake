@@ -74,6 +74,10 @@ export {
   type MusicStyle,
 } from "./audio/AudioBackend.js";
 export {
+  LevelMusicController,
+  resolveLevelMusic,
+} from "./audio/LevelMusicController.js";
+export {
   ImageManager,
   type ImageManagerOptions,
   type ImageSliceDefinition,

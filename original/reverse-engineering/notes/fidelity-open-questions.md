@@ -259,27 +259,3 @@ Entity 响应同一 lifecycle。两者没有天然等价关系。
 原版而重建整套全局更新器。
 
 ## 环境表现与音乐
-
-### Q17. Mower 与 Timed Bonus 是否动态切换音乐
-
-**现象差异**
-
-原版完成 Mower mount 后播放 `/mow.mid`，Parking 下车后恢复关卡音乐；Timed Bonus 在
-Lock 打开、倒计时开始时切换 Bonus 音乐。当前 Web 在载入关卡时选曲一次，不消费这些
-WorldEvent 动态切换。
-
-**可能影响**
-
-地图规则保持正确，但 Mower 和 Bonus 挑战缺少原版的音乐反馈。恢复曲目时还必须知道进入
-覆盖音乐前播放的是哪一首。
-
-**原理说明**
-
-Engine 已报告 mount、dismount 和 countdown 事件，争议在于地图内选曲由 Engine Audio
-处理还是宿主产品处理。该边界与
-[`docs/decisions/background-music-selection-ownership.md`](../../../docs/decisions/background-music-selection-ownership.md)
-是同一个未决问题。
-
-**待确认**
-
-先完成音乐职责 ADR，再决定事件消费者和恢复策略。

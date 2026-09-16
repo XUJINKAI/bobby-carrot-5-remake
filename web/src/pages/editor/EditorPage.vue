@@ -113,6 +113,7 @@ async function togglePlay(): Promise<void> {
         debug: false,
       },
       runtime: {
+        levelMusicOverride: null,
         hud: true,
         input: {
           screenJoystick: {
