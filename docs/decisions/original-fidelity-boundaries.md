@@ -105,6 +105,22 @@ WorldMotion 持有连续位置和运动进度，规则提交仍以语义格移�
 
 地图边界是 Engine 的硬约束。Flight Action 在移动请求被边界拒绝后完成自己的状态清理。
 
+## Exit 的完成时点
+
+### 现象差异
+
+原版 Bobby 走过目标格中点时开始通关消失。Bobby Carrot 5 Remake 在 Bobby 的逻辑 anchor
+进入 Exit 后，等待本次 WorldMotion 完全抵达再宣布完成。
+
+### 可能影响
+
+胜利动画、地图计时和输入结束点约晚半格开始，不改变 Exit 的可达性与最终胜利结果。
+
+### 设计原理
+
+Exit Goal 读取已经提交并完成运动的 World 状态。完整抵达作为统一完成边界，使胜利判断、
+Snapshot、Undo 与 Replay 不需要引入只服务于 Exit 的跨格中点 marker。
+
 ## Dragon 实例与 Head 碰撞
 
 ### 现象差异

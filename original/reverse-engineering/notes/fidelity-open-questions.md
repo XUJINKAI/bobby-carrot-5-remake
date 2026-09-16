@@ -320,26 +320,6 @@ Entity 响应同一 lifecycle。两者没有天然等价关系。
 先收集至少两个会改变实际结果的组合图，再判断是否值得增加机制 phase；不能为了形式上像
 原版而重建整套全局更新器。
 
-### Q15. Exit 在跨格中点还是抵达后完成
-
-**现象差异**
-
-原版 Bobby 走过目标格中点时就开始通关消失。当前 Engine 在 Bobby 的逻辑 anchor 已进入
-Exit 后，仍等待本次 WorldMotion 完全抵达才宣布完成。
-
-**可能影响**
-
-当前胜利动画约晚半格开始，地图计时和输入结束点也略晚；一般不会改变 Exit 是否可达。
-
-**原理说明**
-
-原版中点同时承担交互和视觉切换。当前 Engine 把整数格事实、连续 WorldMotion 和 World
-完成状态分开，需要明确完成条件读取 anchor 还是 motion marker。
-
-**待确认**
-
-确认计时成绩和 Adventure 手感是否要求中点完成，再决定是否为 `reach` 增加 marker 语义。
-
 ## 环境表现与音乐
 
 ### Q16. Snow、Butterfly 与 Sky shimmer 是否进入正式 Renderer
