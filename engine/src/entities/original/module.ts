@@ -195,6 +195,11 @@ function originalAmbientLayer(
   context: VisualResolveContext,
 ): ImageVisualLayer | null {
   if (!context.time) return null;
+  if (context.entity.type === MapEntityTypeId.BONUS_COIN) {
+    const frame = context.ambient?.bonusCoinSparkleFrame;
+    if (frame === null || frame === undefined) return null;
+    return originalAnimationFrame({ type: MapEntityTypeId.BONUS_COIN, id: "ambient" }, frame);
+  }
   if (
     context.entity.type === MapEntityTypeId.EXIT &&
     !exitAnimationReady(context.winState)
@@ -230,9 +235,7 @@ function originalAmbientSequence(
 ): OriginalAmbientSequence | null {
   let selector: Parameters<typeof originalTileAnimation>[0] | null = null;
   if (
-    type === MapEntityTypeId.EXIT ||
-    type === MapEntityTypeId.BONUS_COIN ||
-    type === MapEntityTypeId.WHIRLWIND
+    type === MapEntityTypeId.EXIT || type === MapEntityTypeId.WHIRLWIND
   ) {
     selector = { type, id: "ambient" };
   } else if (type === MapEntityTypeId.WINDMILL) {
@@ -250,6 +253,23 @@ function originalAmbientSequence(
     throw new Error(`原版 ambient 动画必须使用 ta.png：${selector.type}/${selector.id}`);
   }
   return { frames };
+}
+
+function originalAnimationFrame(
+  selector: Parameters<typeof originalTileAnimation>[0],
+  frame: number,
+): ImageVisualLayer | null {
+  const source = originalTileAnimation(selector).frames[frame];
+  if (!source || source.atlas !== "ta") return null;
+  return {
+    kind: "image",
+    asset: ORIGINAL_ANIMATED_TILES_ASSET,
+    frameWidth: ORIGINAL_TILE_SIZE,
+    frameHeight: ORIGINAL_TILE_SIZE,
+    frameIndex:
+      (source.row - 1) * ORIGINAL_TILE_ATLASES.ta.columns + source.column - 1,
+    anchor: "fill",
+  };
 }
 
 function windmillAnimation(

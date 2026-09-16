@@ -100,6 +100,11 @@ export interface VisualQuery {
   entitiesWithFact(fact: string): readonly Readonly<EntityInstance>[];
 }
 
+/** 一次表现会话内共享、可确定重建的环境动画状态。 */
+export interface AmbientVisualState {
+  bonusCoinSparkleFrame: number | null;
+}
+
 export interface VisualResolveContext {
   entity: Readonly<EntityInstance>;
   presence: Readonly<EntityPresence>;
@@ -113,6 +118,8 @@ export interface VisualResolveContext {
   winState?: Readonly<WinConditionState> | null;
   /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
   time?: PresentationFrame;
+  /** Runtime 中共享的环境表现状态；Editor preview 可省略。 */
+  ambient?: Readonly<AmbientVisualState>;
 }
 
 /** 一种 Entity 的表现解析逻辑。Visual 可以读取任意格的只读 World 信息。 */

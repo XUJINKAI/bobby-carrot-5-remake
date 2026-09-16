@@ -13,6 +13,7 @@ import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import type { WorldMotion } from "../world/movement/WorldMotion.js";
 import type { WorldEvent } from "../world/WorldTypes.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
+import { AmbientVisualRuntime } from "./ambient/AmbientVisualRuntime.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type {
@@ -79,6 +80,8 @@ export interface WorldDeltaPresentationOptions {
 
 export interface VisualRuntimeOptions extends WorldCalloutRuntimeOptions {
   callouts?: WorldCalloutRegistry;
+  /** 固定 seed 只影响纯表现随机序列，便于视觉测试稳定复现。 */
+  ambientSeed?: number;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -90,6 +93,7 @@ export class VisualRuntime {
   private readonly transients = new Map<number, ActiveTransientVisual>();
   private readonly activeTransientIds = new Set<number>();
   private readonly callouts: WorldCalloutRuntime;
+  private readonly ambient: AmbientVisualRuntime;
   private nextTransientId = 1;
   private frame: PresentationFrame | null = null;
 
@@ -104,6 +108,7 @@ export class VisualRuntime {
       options.callouts ?? new WorldCalloutRegistry(),
       options,
     );
+    this.ambient = new AmbientVisualRuntime(options.ambientSeed);
   }
 
   get isAnimating(): boolean {
@@ -310,6 +315,7 @@ export class VisualRuntime {
 
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
+    this.ambient.update(frame);
     this.camera.update(frame);
     const timelineProgress = new Map<VisualTimeline, TimelineProgress>();
     for (const motion of this.motions.values()) {
@@ -331,6 +337,7 @@ export class VisualRuntime {
     this.transients.clear();
     this.activeTransientIds.clear();
     this.nextTransientId = 1;
+    this.ambient.clear();
     this.callouts.clear();
   }
 
@@ -422,6 +429,7 @@ export class VisualRuntime {
       this.visuals,
       this.entityRuntime,
       this.frame ?? undefined,
+      this.ambient.state,
     );
     const withTransients = this.appendTransientVisuals(scene);
     if (!this.frame) return withTransients;
