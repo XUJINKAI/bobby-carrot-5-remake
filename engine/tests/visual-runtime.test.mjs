@@ -526,6 +526,31 @@ test("Bobby glider selects one of four direction columns", () => {
   assert.equal(flight.layers[0].frameIndex, 0);
 });
 
+test("Flight 在后半格完成 24px 起飞和降落", () => {
+  const takeoff = bobbyVisual({
+    direction: "right",
+    state: { flightTransition: "takeoff" },
+    runtime: { moving: true, progress: 0.75 },
+  });
+  assert.equal(takeoff.layers[0].asset, "bobby-kite");
+  assert.equal(takeoff.layers[0].offsetY, -24);
+
+  const airborne = bobbyVisual({
+    direction: "right",
+    state: { flying: true },
+    runtime: { moving: true, progress: 0.25 },
+  });
+  assert.equal(airborne.layers[0].offsetY, -36);
+
+  const landing = bobbyVisual({
+    direction: "right",
+    state: { flying: true, flightTransition: "landing" },
+    runtime: { moving: true, progress: 0.75 },
+  });
+  assert.equal(landing.layers[0].asset, "bobby-kite");
+  assert.equal(landing.layers[0].offsetY, -24);
+});
+
 test("VisualRuntime motion interpolation follows PresentationFrame milliseconds", () => {
   const runtime = new VisualRuntime(createBuiltinVisualRegistry());
   runtime.beginMove(

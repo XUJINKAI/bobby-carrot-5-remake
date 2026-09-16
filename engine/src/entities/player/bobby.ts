@@ -214,7 +214,11 @@ const bobbyVisual = {
       });
     }
 
-    if (isBobbyFlying(context.entity.state)) {
+    if (
+      isBobbyFlying(context.entity.state) ||
+      context.entity.state?.flightTransition === "takeoff" ||
+      context.entity.state?.flightTransition === "landing"
+    ) {
       return composition(context, {
         asset: BOBBY_VISUAL_ASSETS.kite,
         frameColumns: 4,
@@ -358,6 +362,14 @@ function speedTrailOffset(direction: Direction): { x: number; y: number } {
 }
 
 function visualElevation(context: VisualResolveContext): number {
+  const progress = clampProgress(context.runtime?.progress ?? 1);
+  if (context.entity.state?.flightTransition === "takeoff") {
+    return progress < 0.5 ? 0 : (progress - 0.5) * 48;
+  }
+  if (context.entity.state?.flightTransition === "landing") {
+    return progress < 0.5 ? 24 : (1 - progress) * 48;
+  }
+  if (isBobbyFlying(context.entity.state)) return 24;
   const value = context.runtime?.elevationPx;
   return typeof value === "number" && Number.isFinite(value)
     ? Math.max(0, value)

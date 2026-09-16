@@ -47,6 +47,18 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
   const takeoff = move(world, actor.id, "right");
   assert.equal(world.entity(actor.id).state.flying, true);
   assert.ok(takeoff.events.some((event) => event.type === "kite-airborne"));
+  assert.equal(
+    world.actions.observeIntents(
+      [{
+        type: "move",
+        actorId: actor.id,
+        direction: "right",
+        cause: { type: "player-input" },
+      }],
+      world.query,
+    ),
+    "consumed",
+  );
 
   world.update({ tick: 1, stepMs: DEFAULT_FLIGHT_CELL_MS });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
