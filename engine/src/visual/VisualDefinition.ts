@@ -86,6 +86,8 @@ export interface EntityVisualRuntimeState {
   progress?: number;
   /** 上一次进入静止状态的 PresentationTime；供 Entity 自己决定何时进入 idle。 */
   stationarySinceMs?: number;
+  /** 当前表现动作的起点；Entity 动画不得依赖无关的全局帧奇偶。 */
+  animationStartedAtMs?: number;
   /** 纯表现动作名；例如 shovel。不得被 gameplay 读取。 */
   animation?: string;
   /** blocked action 也可以用尝试方向覆盖当前 gameplay facing。 */
@@ -139,7 +141,7 @@ export interface VisualDefinition {
 export interface TransientVisualDefinition {
   id: string;
   eventType: string;
-  durationMs: number;
+  durationMs: number | ((event: Readonly<WorldEvent>) => number);
   renderPass?: VisualRenderPass;
   stackOrder?: number;
   resolve(context: {

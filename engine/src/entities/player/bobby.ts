@@ -24,7 +24,9 @@ const BOBBY_OFFSET_Y = -12;
 const BOBBY_TILE_SIZE = 48;
 const BOBBY_IDLE_DELAY_MS = 5000;
 const BOBBY_IDLE_FRAME_MS = 50;
-const BOBBY_SPEED_TRAIL_FRAME_MS = 80;
+const MOWER_FRAME_MS = 62;
+const SPEED_MOWER_FRAME_MS = 31;
+const SPEED_MOW_TRAIL_FRAME_MS = 93;
 const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
 const BOBBY_TRANSITION_FRAME_COUNT = 8;
@@ -180,7 +182,12 @@ const bobbyVisual = {
     const mountId = bobbyMountId(context.entity.state);
     const mount = mountId === null ? undefined : context.query.entity(mountId);
     if (mount?.type === MapEntityTypeId.MOWER) {
-      const row = (context.time?.frame ?? 0) % 2;
+      const accelerated = readBobbySpeedBoost(context.entity.state) !== null;
+      const row = timedFrame(
+        context,
+        accelerated ? SPEED_MOWER_FRAME_MS : MOWER_FRAME_MS,
+        2,
+      );
       const source = MOWER_SOURCE_RECT[direction];
       return composition(
         context,
@@ -298,22 +305,33 @@ function speedTrail(
   )
     return null;
 
-  const frame =
-    Math.floor(
-      Math.max(0, context.time?.nowMs ?? 0) / BOBBY_SPEED_TRAIL_FRAME_MS,
-    ) % 5;
+  const frame = timedFrame(
+    context,
+    SPEED_MOW_TRAIL_FRAME_MS,
+    4,
+  );
   const offset = speedTrailOffset(direction);
   return {
     kind: "image",
     asset: BOBBY_VISUAL_ASSETS.speedTrail,
     frameColumns: 5,
     frameRows: 2,
-    // mow.png 第二行的 5 帧是 Bobby / mower 共用的加速尾焰。
+    // mow.png 第二行只有前四列参与 gameplay renderer。
     frameIndex: 5 + frame,
     anchor: "bottom",
     offsetX: offset.x,
     offsetY: BOBBY_OFFSET_Y - visualElevation(context) + offset.y,
   };
+}
+
+function timedFrame(
+  context: VisualResolveContext,
+  frameMs: number,
+  frameCount: number,
+): number {
+  const nowMs = context.time?.nowMs ?? 0;
+  const startedAtMs = context.runtime?.animationStartedAtMs ?? 0;
+  return Math.floor(Math.max(0, nowMs - startedAtMs) / frameMs) % frameCount;
 }
 
 function isInFirstHalfOfSpeedMotion(

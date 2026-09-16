@@ -14,6 +14,10 @@ import type { WorldMotion } from "../world/movement/WorldMotion.js";
 import type { WorldEvent } from "../world/WorldTypes.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
 import { AmbientVisualRuntime } from "./ambient/AmbientVisualRuntime.js";
+import {
+  resolveTransientDuration,
+  type ActiveTransientVisual,
+} from "./TransientVisualRuntime.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type {
@@ -51,15 +55,6 @@ interface VisualMotion {
 interface VisualMovementGroup {
   primary: WorldMotion;
   motions: WorldMotion[];
-}
-
-interface ActiveTransientVisual {
-  id: number;
-  definition: TransientVisualDefinition;
-  event: WorldEvent;
-  x: number;
-  y: number;
-  startedAtMs: number;
 }
 
 interface TimelineProgress {
@@ -362,6 +357,7 @@ export class VisualRuntime {
       moving: false,
       progress: 1,
       stationarySinceMs: frame.nowMs,
+      animationStartedAtMs: current?.animationStartedAtMs ?? frame.nowMs,
       direction,
     });
   }
@@ -558,6 +554,7 @@ export class VisualRuntime {
     )
       return;
     const id = this.nextTransientId++;
+    const durationMs = resolveTransientDuration(definition, event);
     this.transients.set(id, {
       id,
       definition,
@@ -565,15 +562,16 @@ export class VisualRuntime {
       x: event.x,
       y: event.y,
       startedAtMs: frame.nowMs,
+      durationMs,
     });
-    if (definition.durationMs > 0) this.activeTransientIds.add(id);
+    if (durationMs > 0) this.activeTransientIds.add(id);
   }
 
   private updateTransients(frame: PresentationFrame): void {
     for (const transient of this.transients.values()) {
       const visible =
         frame.nowMs >= transient.startedAtMs &&
-        frame.nowMs < transient.startedAtMs + Math.max(0, transient.definition.durationMs);
+        frame.nowMs < transient.startedAtMs + transient.durationMs;
       if (visible) this.activeTransientIds.add(transient.id);
       else this.activeTransientIds.delete(transient.id);
     }
@@ -584,7 +582,7 @@ export class VisualRuntime {
     const passes: Partial<Record<VisualRenderPass, RenderItem[]>> = {};
     for (const id of this.activeTransientIds) {
       const transient = this.transients.get(id)!;
-      const durationMs = Math.max(0, transient.definition.durationMs);
+      const durationMs = transient.durationMs;
       const elapsedMs = this.frame.nowMs - transient.startedAtMs;
       if (elapsedMs < 0 || durationMs <= 0 || elapsedMs >= durationMs) continue;
       const progress = Math.max(0, Math.min(1, elapsedMs / durationMs));
@@ -659,6 +657,7 @@ export class VisualRuntime {
           : motion.endElevationPx,
       moving: motion.moving,
       progress: animationProgress,
+      animationStartedAtMs: motion.timeline.startedAtMs,
       ...(motion.animation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
     });
@@ -677,6 +676,7 @@ export class VisualRuntime {
       moving: false,
       progress: 1,
       stationarySinceMs: frame.nowMs,
+      animationStartedAtMs: motion.timeline.startedAtMs,
       ...(keepAnimation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
     });

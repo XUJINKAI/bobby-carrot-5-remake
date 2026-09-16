@@ -352,7 +352,8 @@ test("Bobby Mower 使用各方向独立的 b7.png 源矩形", () => {
     const mower = bobbyVisual({
       direction,
       mountType: MapEntityTypeId.MOWER,
-      time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
+      runtime: { animationStartedAtMs: 100 },
+      time: { frame: 1, nowMs: 162, deltaMs: 62 },
     });
     assert.equal(mower.layers[0].asset, "bobby-mower");
     assert.equal(mower.layers[0].sourceX, sourceX);
@@ -381,7 +382,7 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
     asset: "bobby-speed-trail",
     frameColumns: 5,
     frameRows: 2,
-    frameIndex: 8,
+    frameIndex: 7,
     anchor: "bottom",
     offsetX: -48,
     offsetY: -12,
@@ -452,6 +453,17 @@ test("accelerated mower uses the same one-cell-behind trail", () => {
   assert.equal(mower.layers[0].offsetX, 48);
   assert.equal(mower.layers[0].offsetY, -12);
   assert.equal(mower.layers[1].asset, "bobby-mower");
+});
+
+test("Speed Mower 每 31ms 切换人物帧", () => {
+  const mower = bobbyVisual({
+    direction: "right",
+    mountType: MapEntityTypeId.MOWER,
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: { animationStartedAtMs: 100 },
+    time: { frame: 1, nowMs: 131, deltaMs: 31 },
+  });
+  assert.equal(mower.layers.at(-1).sourceY, 83);
 });
 
 test("Bobby snowplow uses three rows inside the attempted direction column", () => {

@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
+import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
@@ -136,6 +138,53 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
   assert.ok(
     result.events.some((event) => event.type === "crumbly-rock-smashed"),
   );
+});
+
+test("割 High Grass 使用 mow.png 第一行前四帧", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      entities: [
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+        { type: MapEntityTypeId.MOWER, x: 0, y: 0 },
+        { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 0 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+  const mower = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.MOWER,
+  })[0];
+  world.entities.require(actor.id).state = { mountId: mower.id };
+  world.entities.require(mower.id).state = { mountedByActorId: actor.id };
+
+  const result = move(world, actor.id, "right");
+  const visual = new VisualRuntime(createBuiltinVisualRegistry(), 48);
+  const start = { frame: 1, nowMs: 1000, deltaMs: 0 };
+  visual.consumeWorldDeltas(world, result.deltas, start, {
+    motionDuration: () => 0,
+    stationaryDeathDurationMs: 0,
+  });
+  visual.update(start, "linear");
+  const effect = visual.scene(world).effect.find(
+    (item) => item.presence.entityId < 0,
+  );
+  assert.ok(effect);
+  assert.deepEqual(effect.composition.layers[0], {
+    kind: "image",
+    asset: "bobby-speed-trail",
+    frameColumns: 5,
+    frameRows: 2,
+    frameIndex: 0,
+    anchor: "bottom",
+    offsetY: -12,
+  });
 });
 
 test("Mower cannot complete an Exit reach condition", () => {

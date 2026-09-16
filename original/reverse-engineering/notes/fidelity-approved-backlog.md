@@ -124,30 +124,6 @@ Tail 触发时立即建立输入锁，贯穿 Dragon wind-up 和 Fireball 飞行�
 - `semantic/GameplayCameraFocus.java`
 - `engine/src/entities/original/dragon.ts`
 
-### A8. 修正 Mower 与割草轨迹节拍
-
-**现象差异**
-
-原版普通 Mower 约每 `62ms` 切换人物帧，Speed Mower 约每 `31ms` 切换。`mow.png` 的
-第 1 行用于割 High Grass，第 2 行用于 Speed 尾迹，而且每行只使用前四列。当前人物动画
-约每 `16.7ms` 切换，轨迹只使用第 2 行、使用五列并固定为 `80ms` 一帧。
-
-**可能影响**
-
-Mower 抖动过快，割草时缺少对应效果，Speed 尾迹的帧序和速度也不正确。
-
-**目标行为**
-
-- 普通与 Speed Mower 分别使用原版确认的帧间隔；
-- High Grass 割草显示 `mow.png` 第 1 行；
-- Speed 尾迹显示第 2 行；
-- 两类效果都只循环前四列，并使用各自确认的节拍。
-
-**原理说明**
-
-人物和轨迹可以由 PresentationClock 采样，但动画相位必须来自同一次 Mower 动作的状态，
-不能各自读取无关的绝对帧奇偶。
-
 ## 实施约束
 
 1. 每项修改必须先建立最小 Engine 回归测试；涉及组合关系时再增加组合地图。
