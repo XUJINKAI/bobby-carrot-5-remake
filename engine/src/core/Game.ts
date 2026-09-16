@@ -119,9 +119,6 @@ export class Game {
         : {}),
       ...(options.runtime?.history ? { history: options.runtime.history } : {}),
       ...(options.runtime?.controls ? { controls: options.runtime.controls } : {}),
-      ...(options.runtime?.initialActorIntents
-        ? { initialActorIntents: options.runtime.initialActorIntents }
-        : {}),
     });
     this.replayPlayback = new ReplayPlayback(
       this.session,
@@ -351,6 +348,7 @@ export class Game {
       this.world.completed
     )
       return;
+    this.abortReplayRecording();
     this.queuedIntentGroups.push({
       intents: [structuredClone(intent)],
       historyBoundary: intent.type !== "commit-entity-replacement",
@@ -365,10 +363,10 @@ export class Game {
       this.world.completed
     )
       return;
+    this.abortReplayRecording();
     this.queuedIntentGroups.push({
       intents: [structuredClone(intent)],
       historyBoundary: false,
-      recordInReplay: false,
     });
   }
 

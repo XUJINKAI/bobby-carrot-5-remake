@@ -56,13 +56,6 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
     setup: {
       worldHz: 60,
       bobbyLocomotion: { moveMs: 350 },
-      initialIntents: [
-        {
-          type: "set-actor-locomotion",
-          actorId: bobby.id,
-          moveDurationMs: 280,
-        },
-      ],
     },
     controls: [{ input: "external", channel: 0 }],
     gameplayState: {
@@ -143,7 +136,7 @@ test("Debug snapshot exposes runtime clocks, selected actor, actions and inspect
   assert.ok(snapshot.selection?.entity?.visual.visualId);
   assert.ok((snapshot.selection?.entity?.visual.renderItems.length ?? 0) > 0);
   assert.equal(snapshot.world?.setup.gameplay.bobbyLocomotion.moveMs, 350);
-  assert.equal(snapshot.world?.setup.gameplay.initialIntents.length, 1);
+  assert.equal("initialIntents" in snapshot.world?.setup.gameplay, false);
   assert.equal(snapshot.world?.setup.controls[0]?.input, "external");
   assert.equal(snapshot.world?.current.gameplay.actors[0]?.moveDurationMs, 280);
   assert.equal(snapshot.world?.pendingIntents[0]?.type, "set-actor-locomotion");

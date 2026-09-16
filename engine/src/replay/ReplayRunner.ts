@@ -6,10 +6,7 @@ import {
 import { GameplaySession } from "../core/GameplaySession.js";
 import type { Replay, ReplayActualFinalState } from "./ReplayFormat.js";
 import { ReplayEventCounter } from "./ReplayFinalState.js";
-import {
-  resolveReplayInitialIntents,
-  resolveReplayInputGroups,
-} from "./ReplayIntentResolver.js";
+import { resolveReplayInputGroups } from "./ReplayIntentResolver.js";
 import { validateReplay } from "./ReplayValidation.js";
 
 export interface ReplayReport {
@@ -31,11 +28,6 @@ export function runReplay(
   });
   session.loadLevel(level);
   validateReplay(session, replay);
-  const initialIntents = resolveReplayInitialIntents(
-    session,
-    replay.initialIntents,
-  );
-  session.restart(initialIntents);
 
   const frames = new Map(replay.frames.map((frame) => [frame.tick, frame]));
   const events = new ReplayEventCounter();

@@ -31,8 +31,6 @@ import type { EntityId } from "../world/entity/EntityInstance.js";
 import type {
   WorldIntent,
   WorldIntentGroup,
-  InitialActorIntent,
-  ActorEffectIntent,
 } from "../world/movement/WorldIntent.js";
 import {
   emptyWorldStepResult,
@@ -65,7 +63,7 @@ export interface GameplayTickResult {
   time: WorldTick;
   result: WorldStepResult;
   phases: readonly WorldStepResult[];
-  /** 包含已裁决的 gameplay 动作；纯 busy 帧与显式排除项不会进入 Replay。 */
+  /** 包含已裁决的 gameplay 动作；纯 busy 帧不会进入 Replay。 */
   inputGroups: readonly WorldIntentGroup[];
   inputResolutions: readonly GameplayInputResolution[];
 }
@@ -76,15 +74,11 @@ export interface GameplaySessionOptions {
   bobbyLocomotion?: BobbyLocomotionTimingOverride;
   history?: HistoryPolicy;
   controls?: readonly ControlBinding[];
-  initialActorIntents?: readonly InitialActorIntent[];
-  /** ReplayRunner 使用的已解析 tick 0 动作。 */
-  initialIntents?: readonly ActorEffectIntent[];
 }
 
 export interface SerializableGameplaySetup {
   worldHz: number;
   bobbyLocomotion: BobbyLocomotionTiming;
-  initialIntents: readonly ActorEffectIntent[];
 }
 
 export type GameplayTickInputProvider = (time: WorldTick) => GameplayTickInput;
@@ -101,9 +95,6 @@ export class GameplaySession {
   readonly bobbyLocomotion: BobbyLocomotionTiming;
   private readonly historyPolicy: HistoryPolicy;
   private readonly environment: EngineEnvironment;
-  private readonly initialActorIntents: readonly InitialActorIntent[];
-  private readonly configuredInitialIntents: readonly ActorEffectIntent[] | null;
-  private initialIntentsValue: readonly ActorEffectIntent[] = [];
   private configuredControls: readonly ControlBinding[] | null;
   private controlBindings: readonly ControlBinding[] = [];
   private controllerTargets: readonly ControlTarget[] = [];
@@ -122,10 +113,6 @@ export class GameplaySession {
     this.historyPolicy = structuredClone(
       options.history ?? DEFAULT_HISTORY_POLICY,
     );
-    this.initialActorIntents = structuredClone(options.initialActorIntents ?? []);
-    this.configuredInitialIntents = options.initialIntents
-      ? structuredClone(options.initialIntents)
-      : null;
     this.configuredControls = options.controls
       ? structuredClone(options.controls)
       : null;
@@ -267,34 +254,27 @@ export class GameplaySession {
     return {
       worldHz: this.clock.hz,
       bobbyLocomotion: structuredClone(this.bobbyLocomotion),
-      initialIntents: structuredClone(this.initialIntentsValue),
     };
   }
 
   loadLevel(level: LevelMap): void {
     this.initialLevel = structuredClone(level);
-    this.initializeWorld(level, this.configuredInitialIntents ?? undefined, false);
+    this.initializeWorld(level, false);
   }
 
-  restart(initialIntents?: readonly ActorEffectIntent[]): void {
+  restart(): void {
     if (!this.initialLevel) return;
-    this.initializeWorld(
-      this.initialLevel,
-      initialIntents ?? this.configuredInitialIntents ?? undefined,
-      true,
-    );
+    this.initializeWorld(this.initialLevel, true);
   }
 
   private initializeWorld(
     level: LevelMap,
-    initialIntents: readonly ActorEffectIntent[] | undefined,
     preservePause: boolean,
   ): void {
     const wasPaused = preservePause && this.clock.paused;
     this.worldValue = createWorld(level, this.environment);
     this.world.setMotionDurationMs(this.gameplayMotionDuration());
     this.configureActorsAndControls();
-    this.applyInitialActorIntents(initialIntents);
     this.clock.reset();
     if (wasPaused) this.clock.pause();
     this.clearHistory();
@@ -393,9 +373,7 @@ export class GameplaySession {
       result: aggregate,
       phases,
       inputGroups: resolved.groups
-        .filter(
-          (group) => group.recordable && group.recorded.recordInReplay !== false,
-        )
+        .filter((group) => group.recordable)
         .map((group) => structuredClone(group.recorded)),
       inputResolutions: this.resolveInputAttempts(
         resolved.sources,
@@ -603,37 +581,6 @@ export class GameplaySession {
 
   private gameplayMotionDuration(): number {
     return this.bobbyLocomotion.moveMs;
-  }
-
-  private applyInitialActorIntents(
-    resolvedIntents?: readonly ActorEffectIntent[],
-  ): void {
-    const intents: ActorEffectIntent[] = resolvedIntents
-      ? [...structuredClone(resolvedIntents)]
-      : [];
-    if (resolvedIntents) {
-      this.initialIntentsValue = structuredClone(intents);
-      if (intents.length > 0)
-        this.world.step({ intents, historyBoundary: false });
-      return;
-    }
-    for (const intent of this.initialActorIntents) {
-      const targets = intent.actor === "all"
-        ? this.actorIds
-        : this.primaryActorIdValue === null
-          ? []
-          : [this.primaryActorIdValue];
-      for (const actorId of targets) {
-        intents.push({
-          type: intent.type,
-          actorId,
-          moveDurationMs: intent.moveDurationMs,
-        });
-      }
-    }
-    this.initialIntentsValue = structuredClone(intents);
-    if (intents.length > 0)
-      this.world.step({ intents, historyBoundary: false });
   }
 
   private clearHistory(): void {

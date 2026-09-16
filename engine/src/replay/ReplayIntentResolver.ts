@@ -1,24 +1,9 @@
 import type { GameplaySession } from "../core/GameplaySession.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
-import type {
-  ActorEffectIntent,
-  WorldIntent,
-  WorldIntentGroup,
-} from "../world/movement/WorldIntent.js";
-import type {
-  ReplayGameplayIntent,
-  ReplayInitialIntent,
-  ReplayInputGroup,
-} from "./ReplayFormat.js";
+import type { WorldIntent, WorldIntentGroup } from "../world/movement/WorldIntent.js";
+import type { ReplayInputGroup, ReplayMoveIntent } from "./ReplayFormat.js";
 
 /** Replay 的稳定引用只在执行边界解析成当前 World 的临时 entity ID。 */
-export function resolveReplayInitialIntents(
-  session: GameplaySession,
-  intents: readonly ReplayInitialIntent[],
-): ActorEffectIntent[] {
-  return intents.map((intent) => resolveActorEffectIntent(session, intent));
-}
-
 export function resolveReplayInputGroups(
   session: GameplaySession,
   groups: readonly ReplayInputGroup[],
@@ -33,10 +18,8 @@ export function resolveReplayInputGroups(
 
 function resolveGameplayIntent(
   session: GameplaySession,
-  intent: ReplayGameplayIntent,
+  intent: ReplayMoveIntent,
 ): WorldIntent[] {
-  if (intent.type !== "move")
-    return [resolveActorEffectIntent(session, intent)];
   if (intent.actor) {
     return [{
       type: "move",
@@ -58,34 +41,6 @@ function resolveGameplayIntent(
   if (group.intents.length === 0)
     throw new Error(`Replay controller channel ${channel} 没有 Bobby`);
   return [...group.intents];
-}
-
-function resolveActorEffectIntent(
-  session: GameplaySession,
-  intent: ReplayInitialIntent,
-): ActorEffectIntent {
-  const actorId = intent.actor
-    ? resolveActorId(session, intent.actor)
-    : onlyActorId(session);
-  if (intent.type === "add-actor-inventory-item") {
-    return {
-      type: intent.type,
-      actorId,
-      item: intent.item,
-      count: intent.count,
-    };
-  }
-  return {
-    type: intent.type,
-    actorId,
-    moveDurationMs: intent.moveDurationMs,
-  };
-}
-
-function onlyActorId(session: GameplaySession): EntityId {
-  if (session.actorIds.length !== 1)
-    throw new Error("多 Bobby 地图的 Replay actor 动作必须指定位置");
-  return session.actorIds[0]!;
 }
 
 function resolveActorId(

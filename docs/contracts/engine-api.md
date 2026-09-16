@@ -232,6 +232,8 @@ Game 状态、事件和 Replay Tick 结果观察。
 `dispatch()` 只接受 Engine 定义的封闭 `GameplayEffectIntent` union。
 `set-actor-locomotion` 只影响随后创建的 WorldMotion。宿主交互可以通过
 `add-actor-inventory-item` 为 Bobby 增加关卡内钥匙；商品、价格与永久权限仍由宿主负责。
+Replay 只记录 `MoveIntent`；录制期间调用 `dispatch()` 或
+`dispatchInteractionEffect()` 会终止当前 take。
 宿主持久化产品结果后，可以按稳定地图身份提交 Entity 替换：
 
 ```ts
@@ -334,7 +336,6 @@ runtime: {
   bobbyLocomotion: {
     moveMs: 350,
   },
-  initialActorIntents: [],
   input: {
     keyboard: true,
     pointer: true,

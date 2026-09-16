@@ -13,31 +13,8 @@ export interface ReplayMoveIntent {
   actor?: CellPosition;
 }
 
-export interface ReplayAddActorInventoryItemIntent {
-  type: "add-actor-inventory-item";
-  /** 单 Bobby 地图省略；多 Bobby 地图使用动作发生时的 anchor。 */
-  actor?: CellPosition;
-  item: string;
-  count: number;
-}
-
-export interface ReplaySetActorLocomotionIntent {
-  type: "set-actor-locomotion";
-  actor?: CellPosition;
-  moveDurationMs: number;
-}
-
-export type ReplayGameplayIntent =
-  | ReplayMoveIntent
-  | ReplayAddActorInventoryItemIntent
-  | ReplaySetActorLocomotionIntent;
-
-export type ReplayInitialIntent =
-  | ReplayAddActorInventoryItemIntent
-  | ReplaySetActorLocomotionIntent;
-
 export interface ReplayInputGroup {
-  intents: ReplayGameplayIntent[];
+  intents: ReplayMoveIntent[];
 }
 
 export interface ReplayFrame {
@@ -85,7 +62,6 @@ export interface Replay {
   formatVersion: typeof REPLAY_FORMAT_VERSION;
   meta: ReplayMeta;
   runtime: ReplayRuntimeSetup;
-  initialIntents: ReplayInitialIntent[];
   finalState: ReplayFinalState;
   endTick: number;
   frames: ReplayFrame[];

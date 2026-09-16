@@ -4,12 +4,10 @@ import {
   isReplayPathId,
   type Replay,
   type ReplayFrame,
-  type ReplayGameplayIntent,
-  type ReplayInitialIntent,
   type ReplayInputGroup,
+  type ReplayMoveIntent,
   type ReplayRecordingMeta,
 } from "./ReplayFormat.js";
-import type { ActorEffectIntent } from "../world/movement/WorldIntent.js";
 import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import { ReplayEventCounter } from "./ReplayFinalState.js";
 
@@ -17,7 +15,6 @@ import { ReplayEventCounter } from "./ReplayFinalState.js";
 export class ReplayRecorder {
   private readonly frames: ReplayFrame[] = [];
   private readonly events = new ReplayEventCounter();
-  private readonly initialActorReferences = new Map<EntityId, CellPosition>();
   private readonly actorReferences = new Map<EntityId, CellPosition>();
   private stopped = false;
 
@@ -34,7 +31,6 @@ export class ReplayRecorder {
     for (const actorId of session.actorIds) {
       const actor = session.world.entity(actorId);
       if (!actor) continue;
-      this.initialActorReferences.set(actorId, { ...actor.anchor });
       this.actorReferences.set(actorId, { ...actor.anchor });
     }
   }
@@ -65,22 +61,13 @@ export class ReplayRecorder {
     this.stopped = true;
     const setup = this.session.replaySetup;
     if (!setup) throw new Error("当前 Session 的初始状态不能序列化为 Replay");
-    const { initialIntents, ...runtime } = setup;
     return {
       formatVersion: REPLAY_FORMAT_VERSION,
       meta: {
         ...structuredClone(this.meta),
         note: "",
       },
-      runtime,
-      initialIntents: initialIntents.map((intent) =>
-        toReplayActorEffectIntent(
-          intent,
-          replayActorReference(
-            this.session.actorIds,
-            this.initialActorReferences.get(intent.actorId),
-          ),
-        )),
+      runtime: setup,
       finalState: this.events.finalState(
         this.session.state,
         this.session.world.state.elapsedMs,
@@ -105,24 +92,11 @@ function toReplayInputGroup(
   actorReferences: ReadonlyMap<EntityId, CellPosition>,
   group: GameplayTickResult["inputGroups"][number],
 ): ReplayInputGroup | null {
-  const intents: ReplayGameplayIntent[] = [];
+  const intents: ReplayMoveIntent[] = [];
   const recordedMoves = new Set<string>();
   for (const intent of group.intents) {
-    if (intent.type === "commit-entity-replacement") {
-      continue;
-    }
-    if (intent.type !== "move") {
-      intents.push(
-        toReplayActorEffectIntent(
-          intent,
-          replayActorReference(
-            actorIds,
-            actorReferences.get(intent.actorId),
-          ),
-        ),
-      );
-      continue;
-    }
+    if (intent.type !== "move")
+      throw new Error(`Replay 只支持 MoveIntent，不能记录 ${intent.type}`);
     const channel = intent.cause.type === "player-input"
       ? intent.cause.channel
       : undefined;
@@ -145,25 +119,6 @@ function toReplayInputGroup(
     });
   }
   return intents.length > 0 ? { intents } : null;
-}
-
-function toReplayActorEffectIntent(
-  intent: ActorEffectIntent,
-  actor: CellPosition | undefined,
-): ReplayInitialIntent {
-  if (intent.type === "add-actor-inventory-item") {
-    return {
-      type: intent.type,
-      ...(actor ? { actor } : {}),
-      item: intent.item,
-      count: intent.count,
-    };
-  }
-  return {
-    type: intent.type,
-    ...(actor ? { actor } : {}),
-    moveDurationMs: intent.moveDurationMs,
-  };
 }
 
 function replayActorReference(

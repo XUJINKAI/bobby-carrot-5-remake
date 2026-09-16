@@ -115,6 +115,29 @@ test("宿主阻塞交互会终止录制并发布通知", () => {
   assert.deepEqual(notifications, ["aborted", "change"]);
 });
 
+test("非移动 gameplay intent 会在排队前终止 Replay 录制", () => {
+  const game = eventGame(false);
+  game.listeners = new Map();
+  game.replayRecorder = {};
+  game.session = {
+    hasLevel: true,
+    world: { dead: false, completed: false },
+  };
+  game.queuedIntentGroups = [];
+  const notifications = [];
+  game.on("replay-recording-aborted", () => notifications.push("aborted"));
+
+  game.dispatch({
+    type: "set-actor-locomotion",
+    actorId: 1,
+    moveDurationMs: 266,
+  });
+
+  assert.equal(game.replayRecording, false);
+  assert.deepEqual(notifications, ["aborted"]);
+  assert.equal(game.queuedIntentGroups.length, 1);
+});
+
 test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
   const game = eventGame(false);
   const collected = { type: "collect-bonus-coin" };

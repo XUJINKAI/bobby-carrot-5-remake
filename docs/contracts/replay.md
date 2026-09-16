@@ -1,7 +1,7 @@
 # Replay 合同
 
-Replay 是一张 `LevelMap` 从正式起点开始的 **Gameplay action replay（动作回放）**。
-它记录可直接作用于 Engine / `GameplaySession` 的确定性语义动作及其 World Tick，
+Replay 是一张 `LevelMap` 从正式起点开始的 **MoveIntent replay（移动回放）**。
+它记录由 Engine / `GameplaySession` 裁决的玩家移动及其 World Tick，
 再由同一套 gameplay 规则重新执行；它不保存画面帧，也不重放 Host UI 或 Adventure
 业务逻辑。首要用途是生成可长期运行的 Engine 回归测试。
 
@@ -33,8 +33,7 @@ Replay 必须从 tick 0 开始。运行结果只由以下内容重建：
 LevelMap
 + World Hz
 + Bobby 初始 gameplay 移动时长
-+ tick 0 actor intents
-+ 逐 Tick Gameplay Intent
++ 逐 Tick MoveIntent
 ```
 
 Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeAction 或中途
@@ -43,12 +42,11 @@ Replay 不保存 `WorldSnapshot`、Entity runtime state、WorldMotion、RuntimeA
 
 ## 输入
 
-Replay 在浏览器输入源映射到 controller channel 后记录已经由 gameplay 裁决的语义动作。因此它保留：
+Replay 在浏览器输入源映射到 controller channel 后记录已经由 gameplay 裁决的移动。因此它保留：
 
 - 同一 channel 中多个 Bobby 的联动分组与方向变换；
 - 已裁决动作的 Tick 与组内顺序；
-- 成功启动的移动、一次明确的受阻移动，以及改变 World / RuntimeAction 状态或产生 WorldEvent 的输入；
-- 宿主提交的 `set-actor-locomotion`、`add-actor-inventory-item` 等封闭 gameplay 动作；
+- 成功启动的移动与一次明确的受阻移动；
 
 浏览器的 key repeat 和每帧 held 状态只维护 `InputController` 的连续输入状态，不直接写入
 Replay。每次实际尝试由 `HeldDirectionRepeater` 送进 World：Bobby 移动期间的纯 `busy`
@@ -60,16 +58,18 @@ Replay。每次实际尝试由 `HeldDirectionRepeater` 送进 World：Bobby 移�
 Replay。一个 channel 同时控制多个 Bobby 时只记录一次输入方向，播放时根据地图中的
 `controller / mirrorX / mirrorY` 重新解析各 Bobby 的实际方向。
 
-每个 `frame` 至少包含一组有效 gameplay action，每组至少包含一个 intent。
+每个 `frame` 至少包含一组有效移动，每组至少包含一个 `MoveIntent`。
+`set-actor-locomotion`、`add-actor-inventory-item`、Entity replacement 等非移动动作不属于
+Replay 合同；录制过程中提交这些动作会终止当前 take，防止生成无法由移动输入重建的回放。
 
 `dialog.show()` 这类纯展示对话不写入 Replay。需要用户选择的阻塞对话属于 Host
 交互，当前不属于 Replay 合同；录制期间打开此类对话会废弃本次 take，并在面板提示
 `interactive host choice is not supported by replay`。播放时只发布可观察的
 `WorldEvent`，不请求宿主重新执行交互。
 
-直接针对 actor 的 Debug 移动与 actor effect 使用 Bobby 在该动作处的地图位置 `{ x, y }`
-作为稳定引用。单 Bobby 地图省略该引用；多 Bobby 地图在执行动作前用当前位置解析
-Bobby。机关产生的 forced intent 由 World 在重放时重新计算。
+直接针对 actor 的 Debug 移动使用 Bobby 在该动作处的地图位置 `{ x, y }` 作为稳定引用。
+单 Bobby 地图省略该引用；多 Bobby 地图在执行动作前用当前位置解析 Bobby。机关产生的
+forced intent 由 World 在重放时重新计算。
 
 ## 时间与速率
 
@@ -99,7 +99,6 @@ Replay 顶层字段按以下顺序序列化，体积通常最大的 `frames` 固
       "moveMs": 350
     }
   },
-  "initialIntents": [],
   "finalState": {
     "status": "won",
     "moves": 14,
@@ -149,9 +148,7 @@ Replay 本身不解析地图身份。调用方负责选择用于播放或无头�
 从起点执行到 `endTick` 并返回实际 `finalState` 与 Tick 数。仓库 fixture 测试按上述字段
 子集比较；Web 录制面板在文件声明 `status` 时比较该字段，用于提示回放是否到达相同终局。
 
-`initialIntents` 是 runtime 的通用 actor target 在建局后得到的 gameplay 动作，按数组顺序
-于 tick 0 前应用，并使用同一套位置引用规则。Replay Tick 只发布可观察的
-`WorldEvent`；`onInteractionRequest()` 不在播放中调用。
+Replay Tick 只发布可观察的 `WorldEvent`；`onInteractionRequest()` 不在播放中调用。
 
 地图字面 `dialogue` 已存在于 LevelMap；纯展示对白不会重复写入 Replay。每次会话固定从
 第一项开始，翻页位置与 500ms 重复打开冷却都是 Controller 的 Presentation 状态，不进入

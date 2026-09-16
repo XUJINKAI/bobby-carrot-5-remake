@@ -159,12 +159,11 @@ Selection 显示 Cell Stack，并允许在同格多个 Presence 中选择具体 
 World 展示 DebugRuntime 从当前 Session 投影出的可序列化信息：
 
 - 解析后的 Engine timing、`bobbyLocomotion` 与 control bindings；
-- 当前关卡创建 World 时实际应用的 `initialIntents`；
 - 当前 gameplay/global/outcome/win-condition 状态与运行中的 WorldMotion；
 - 等待下一个 World Tick 的 actor effect intents；
 - Replay 的 recording / playing / paused 状态。
 
-`Intent injector` 面向当前 tracked actor 构造 `ActorEffectIntent`，用于修改 Bobby 的后续移动时长。动作通过 `Game.dispatch()` 排入正常 World Tick；Replay recording 会记录实际消费的动作。World 暂停时动作保留在 `Pending intents`，点击 Controls 中的 `Step` 后执行。Replay playback 期间注入控件保持禁用，避免改变确定性重放。
+`Intent injector` 面向当前 tracked actor 构造 `ActorEffectIntent`，用于修改 Bobby 的后续移动时长。动作通过 `Game.dispatch()` 排入正常 World Tick；Replay 只支持移动，录制期间注入会终止当前 take。World 暂停时动作保留在 `Pending intents`，点击 Controls 中的 `Step` 后执行。Replay playback 期间注入控件保持禁用，避免改变确定性重放。
 
 World 页消费的是 Debug snapshot，不持有 `World` 实例，也不扩张 `Game` 的公开只读状态边界。
 

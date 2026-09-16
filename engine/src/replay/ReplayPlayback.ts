@@ -10,7 +10,6 @@ import {
   type ReplayFrame,
 } from "./ReplayFormat.js";
 import {
-  resolveReplayInitialIntents,
   resolveReplayInputGroups,
 } from "./ReplayIntentResolver.js";
 import { validateReplay } from "./ReplayValidation.js";
@@ -159,13 +158,8 @@ export class ReplayPlayback {
 
   private resetToStart(replay: Replay): void {
     this.session.clock.setHz(replay.runtime.worldHz);
-    this.session.restart([]);
+    this.session.restart();
     validateReplay(this.session, replay);
-    const initialIntents = resolveReplayInitialIntents(
-      this.session,
-      replay.initialIntents,
-    );
-    this.session.restart(initialIntents);
   }
 
   private idleTicksAvailable(playback: ActiveReplayPlayback | null): number {
