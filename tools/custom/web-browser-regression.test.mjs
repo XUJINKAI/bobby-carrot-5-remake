@@ -645,8 +645,8 @@ async function verifyReplayPanel(cdp, url) {
     sessionId,
     "document.querySelector('[data-debug-tab-panel=\"world\"]')?.textContent ?? ''",
   );
-  if (!worldText.includes("initialIntents") || !worldText.includes("bobbyLocomotion"))
-    throw new Error("Engine Debug World did not expose setup and initial intents");
+  if (worldText.includes("initialIntents") || !worldText.includes("bobbyLocomotion"))
+    throw new Error("Engine Debug World did not expose the move-only Replay setup");
   await cdp.evaluate(
     sessionId,
     "document.querySelector('[data-debug-tab=\"timeline\"]')?.click(); true",
