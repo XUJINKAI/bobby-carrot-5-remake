@@ -43,7 +43,10 @@ const runFireball: Behavior = {
       ...self.entity.state,
       runtimeStarted: true,
     });
-    commands.startAction(createFireballAction(self.entity.id));
+    commands.startAction(createFireballAction(
+      self.entity.id,
+      integerState(self.entity.state?.inputLockActionId),
+    ));
   },
 };
 
@@ -74,13 +77,25 @@ const fireballAction: RuntimeActionDefinition = {
       !fireballCanTraverseTerrainAt(query, target) ||
       projectileBlockedAt(query, target)
     ) {
-      destroyFireball(commands, fireballId, target.x, target.y);
+      destroyFireball(
+        commands,
+        fireballId,
+        target.x,
+        target.y,
+        integerState(action.state.inputLockActionId),
+      );
       return "complete";
     }
 
     const reflected = reflectedDirectionAt(query, target, direction);
     if (reflected === false) {
-      destroyFireball(commands, fireballId, target.x, target.y);
+      destroyFireball(
+        commands,
+        fireballId,
+        target.x,
+        target.y,
+        integerState(action.state.inputLockActionId),
+      );
       return "complete";
     }
     return {
@@ -104,7 +119,13 @@ const fireballAction: RuntimeActionDefinition = {
     if (fireballId === undefined) return;
     if (!result.moved) {
       commands.cancelAction(action.id);
-      destroyFireball(commands, fireballId, result.to.x, result.to.y);
+      destroyFireball(
+        commands,
+        fireballId,
+        result.to.x,
+        result.to.y,
+        integerState(action.state.inputLockActionId),
+      );
       return;
     }
     meltIceBlocksAt(query, commands, result.to);
@@ -152,12 +173,18 @@ export const fireball: EntityModule = {
   runtimeActions: [fireballAction],
 };
 
-function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
+function createFireballAction(
+  ownerEntityId: EntityId,
+  inputLockActionId: number | null,
+): RuntimeActionSpec {
   return {
     kind: FIREBALL_ACTION,
     ownerEntityId,
     focus: { entityId: ownerEntityId },
-    state: { elapsedMs: DEFAULT_FIREBALL_CELL_MS },
+    state: {
+      elapsedMs: DEFAULT_FIREBALL_CELL_MS,
+      ...(inputLockActionId === null ? {} : { inputLockActionId }),
+    },
   };
 }
 
@@ -201,9 +228,16 @@ function destroyFireball(
   entityId: EntityId,
   x: number,
   y: number,
+  inputLockActionId: number | null,
 ): void {
   commands.destroy(entityId);
+  if (inputLockActionId !== null)
+    commands.cancelAction(inputLockActionId);
   commands.emit({ type: "fireball-impact", entityId, x, y });
+}
+
+function integerState(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
 }
 
 function addDirection(

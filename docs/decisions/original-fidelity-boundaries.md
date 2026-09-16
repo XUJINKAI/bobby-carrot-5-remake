@@ -136,6 +136,9 @@ Snapshot、Undo 与 Replay 不需要引入只服务于 Exit 的跨格中点 mark
 ### 设计原理
 
 Dragon 的持续状态归属于对应 Entity 和 RuntimeAction。Head 的碰撞身份不随纯视觉帧改变。
+踩下 Tail 时，Dragon RuntimeAction 立即锁定触发它的 Bobby；生成的 Fireball 保存该 Action
+身份，并在自身销毁的同一次 World 提交中释放输入锁。Camera 只在 Fireball 生命周期内跟随
+Fireball，输入锁本身不改变 wind-up 阶段的镜头目标。
 
 ## Lock、关卡钥匙与倒计时
 

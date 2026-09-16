@@ -38,6 +38,8 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
       },
     ],
   });
+  assert.equal(world.isInputBlockedFor(actor.id), true);
+  assert.equal(world.cameraTarget, null);
   const almostSpawned = update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
   assert.equal(
     almostSpawned.events.some(
@@ -51,6 +53,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
+  assert.equal(world.isInputBlockedFor(actor.id), true);
   const fireball = world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL })[0];
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
@@ -82,6 +85,62 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   const finished = update(world, 6, remainingMeltMs);
   assert.equal(world.entity(meltingIce.id), undefined);
   assert.ok(finished.events.some((event) => event.type === "ice-melted"));
+});
+
+test("Dragon locks the triggering Bobby from Tail entry through Fireball removal", () => {
+  const entities = [];
+  for (let x = 0; x < 7; x += 1)
+    entities.push({ type: "grass", variant: "ts-10-1", x, y: 0 });
+  entities.push(
+    { type: MapEntityTypeId.DRAGON, x: 4, y: 0, direction: "left" },
+    { type: MapEntityTypeId.BOBBY, x: 6, y: 0, direction: "left" },
+  );
+  const world = new World(
+    { schemaVersion: 1, width: 7, height: 1, entities },
+    { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "left",
+      cause: { type: "player-input" },
+    }],
+  });
+  assert.equal(world.isInputBlockedFor(actor.id), true);
+
+  const blocked = world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  assert.equal(blocked.moves[0].moved, false);
+  assert.equal(blocked.moves[0].passage.reason, "actor-busy");
+
+  update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
+  update(world, 2, DEFAULT_FIREBALL_CELL_MS / 2);
+  assert.equal(world.isInputBlockedFor(actor.id), true);
+  assert.notEqual(world.cameraTarget, null);
+
+  let tick = 3;
+  while (world.query.entitiesMatching({
+    kind: "type",
+    value: RuntimeEntityTypeId.FIREBALL,
+  }).length > 0 && tick < 12) {
+    update(world, tick, DEFAULT_FIREBALL_CELL_MS);
+    tick += 1;
+  }
+  assert.equal(world.query.entitiesMatching({
+    kind: "type",
+    value: RuntimeEntityTypeId.FIREBALL,
+  }).length, 0);
+  assert.equal(world.isInputBlockedFor(actor.id), false);
+  assert.equal(world.cameraTarget, null);
 });
 
 test("more than five Ice Blocks melt independently and survive snapshot restore", () => {

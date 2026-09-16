@@ -37,7 +37,7 @@ const triggerDragon: Behavior = {
       ...self.entity.state,
       attacking: true,
     });
-    commands.startAction(createDragonAttackAction(self.entity.id));
+    commands.startAction(createDragonAttackAction(self.entity.id, actor.id));
     commands.emit({
       type: "dragon-attack-started",
       entityId: self.entity.id,
@@ -50,10 +50,17 @@ const triggerDragon: Behavior = {
 const dragonAttackAction: RuntimeActionDefinition = {
   kind: DRAGON_ATTACK_ACTION,
   update({ action, time, query, commands }) {
-    const dragonId = action.ownerEntityId;
-    if (dragonId === undefined) return "complete";
+    const dragonId = integerState(action.state.dragonId);
+    if (dragonId === null) return "complete";
     const dragon = query.entity(dragonId);
     if (!dragon) return "complete";
+    if (action.state.fireballSpawned === true) {
+      const fireballExists = query.entitiesMatching({
+        kind: "type",
+        value: RuntimeEntityTypeId.FIREBALL,
+      }).some((entity) => entity.state?.inputLockActionId === action.id);
+      return fireballExists ? "running" : "complete";
+    }
     const elapsedMs = Number(action.state.elapsedMs ?? 0) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
     if (elapsedMs < DRAGON_ATTACK_FRAME_MS) return "running";
@@ -75,6 +82,7 @@ const dragonAttackAction: RuntimeActionDefinition = {
         x: head.cell.x,
         y: head.cell.y,
         direction: dragon.direction ?? "left",
+        state: { inputLockActionId: action.id },
       });
       commands.emit({
         type: "dragon-fireball-spawned",
@@ -89,7 +97,19 @@ const dragonAttackAction: RuntimeActionDefinition = {
       attacking: false,
       attackFrame: 0,
     });
-    return "complete";
+    action.state.fireballSpawned = true;
+    return "running";
+  },
+  onCancel({ action, query, commands }) {
+    const dragonId = integerState(action.state.dragonId);
+    if (dragonId === null) return;
+    const dragon = query.entity(dragonId);
+    if (dragon?.type !== MapEntityTypeId.DRAGON) return;
+    commands.setState(dragon.id, {
+      ...dragon.state,
+      attacking: false,
+      attackFrame: 0,
+    });
   },
 };
 
@@ -182,10 +202,18 @@ export const dragon: EntityModule = {
   runtimeActions: [dragonAttackAction],
 };
 
-function createDragonAttackAction(ownerEntityId: number): RuntimeActionSpec {
+function createDragonAttackAction(
+  dragonId: number,
+  actorId: number,
+): RuntimeActionSpec {
   return {
     kind: DRAGON_ATTACK_ACTION,
-    ownerEntityId,
-    state: { elapsedMs: 0 },
+    ownerEntityId: actorId,
+    blocksInput: true,
+    state: { dragonId, elapsedMs: 0, fireballSpawned: false },
   };
+}
+
+function integerState(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
 }
