@@ -268,6 +268,22 @@ export class VisualRuntime {
             delta.event.data.durationMs,
             frame,
           );
+        if (delta.event.type === "fireball-termination-started" &&
+          delta.event.entityId !== undefined &&
+          delta.event.direction !== undefined &&
+          typeof delta.event.data?.durationMs === "number") {
+          const endOffset = directionOffset(delta.event.direction, 0.5);
+          this.beginMotion(
+            delta.event.entityId,
+            { x: 0, y: 0 },
+            endOffset,
+            delta.event.data.durationMs,
+            frame,
+            true,
+            "fireball-termination",
+            delta.event.direction,
+          );
+        }
         this.beginTransient(delta.event, frame);
         this.callouts.consume(delta.event, frame);
         continue;
@@ -754,6 +770,16 @@ function resolveTimelineProgress(
     raw,
     position: applyMotionEasing(raw, easing),
   };
+}
+
+function directionOffset(
+  direction: Direction,
+  distance: number,
+): { x: number; y: number } {
+  if (direction === "up") return { x: 0, y: -distance };
+  if (direction === "down") return { x: 0, y: distance };
+  if (direction === "left") return { x: -distance, y: 0 };
+  return { x: distance, y: 0 };
 }
 
 function buildVisualMovementGroups(

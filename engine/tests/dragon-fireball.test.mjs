@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
-import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
+import {
+  DEFAULT_FIREBALL_CELL_MS,
+  DEFAULT_FIREBALL_TERMINAL_MS,
+} from "../dist/entities/original/fireball.js";
 import { ICE_MELT_STAGE_MS } from "../dist/entities/original/ice-block.js";
 import { World } from "./support/World.mjs";
 
@@ -208,10 +211,28 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   });
 
   update(world, 1, 1);
-  const impact = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  const terminating = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
+  assert.notEqual(world.cameraTarget, null);
+  assert.ok(terminating.events.some(
+    (event) => event.type === "fireball-termination-started" &&
+      event.data?.durationMs === DEFAULT_FIREBALL_TERMINAL_MS,
+  ));
+  const snapshot = world.snapshot();
+  const impact = update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.equal(world.cameraTarget, null);
-  assert.ok(impact.events.some((event) => event.type === "fireball-impact"));
+  assert.ok(impact.events.some(
+    (event) => event.type === "fireball-impact" &&
+      event.x === 0.5 && event.y === 0,
+  ));
+
+  world.restore(snapshot);
+  const restoredImpact = update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
+  assert.ok(restoredImpact.events.some(
+    (event) => event.type === "fireball-impact" && event.x === 0.5,
+  ));
 });
 
 test("Fireball 只按目标地形传播，Snow 与水上的 Plank 均不能提供许可", () => {
@@ -236,6 +257,8 @@ test("Fireball 只按目标地形传播，Snow 与水上的 Plank 均不能提�
     });
     update(world, 1, 1);
     update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+    assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
+    update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
     assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   }
 });
@@ -289,10 +312,19 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
         kind: "type",
         value: RuntimeEntityTypeId.FIREBALL,
       });
-      assert.equal(fireballs.length, table[incoming] ? 1 : 0, `${variant}/${incoming}`);
+      assert.equal(fireballs.length, 1, `${variant}/${incoming}`);
       if (fireballs.length === 1) {
-        assert.deepEqual(fireballs[0].anchor, { x: 1, y: 1 });
-        assert.equal(fireballs[0].direction, table[incoming], `${variant}/${incoming}`);
+        if (table[incoming]) {
+          assert.deepEqual(fireballs[0].anchor, { x: 1, y: 1 });
+          assert.equal(fireballs[0].direction, table[incoming], `${variant}/${incoming}`);
+        } else {
+          assert.deepEqual(fireballs[0].anchor, start);
+          update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+          assert.equal(world.query.entitiesMatching({
+            kind: "type",
+            value: RuntimeEntityTypeId.FIREBALL,
+          }).length, 0, `${variant}/${incoming}`);
+        }
       }
     }
   }

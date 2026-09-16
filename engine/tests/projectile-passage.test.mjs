@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { createBuiltinEntityRegistry } from "../dist/entities/registry.js";
-import { DEFAULT_FIREBALL_CELL_MS } from "../dist/entities/original/fireball.js";
+import {
+  DEFAULT_FIREBALL_CELL_MS,
+  DEFAULT_FIREBALL_TERMINAL_MS,
+} from "../dist/entities/original/fireball.js";
 import { World } from "./support/World.mjs";
 import { resolveFootprintCells } from "../dist/world/spatial/Footprint.js";
 
@@ -42,8 +45,13 @@ test("Fireball stops when the target terrain is outside its propagation domain",
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const result = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
+  const terminating = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
 
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
+  assert.ok(terminating.events.some(
+    (event) => event.type === "fireball-termination-started",
+  ));
+  const result = world.update({ tick: 3, stepMs: DEFAULT_FIREBALL_TERMINAL_MS });
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(result.events.some((event) => event.type === "fireball-impact"));
 });
@@ -92,8 +100,13 @@ test("Fireball still impacts Crumbly Rock without a blocker fact", () => {
   });
 
   world.update({ tick: 1, stepMs: 1 });
-  const result = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
+  const terminating = world.update({ tick: 2, stepMs: DEFAULT_FIREBALL_CELL_MS });
 
+  assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
+  assert.ok(terminating.events.some(
+    (event) => event.type === "fireball-termination-started",
+  ));
+  const result = world.update({ tick: 3, stepMs: DEFAULT_FIREBALL_TERMINAL_MS });
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(result.events.some((event) => event.type === "fireball-impact"));
 });

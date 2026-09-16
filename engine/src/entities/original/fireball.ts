@@ -1,6 +1,7 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
+  RuntimeActionInstance,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
 import {
@@ -26,6 +27,7 @@ const FIREBALL_ACTION = "dragon-fireball";
 const ORIGINAL_GAMEPLAY_STEP_MS = 31;
 
 export const DEFAULT_FIREBALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
+export const DEFAULT_FIREBALL_TERMINAL_MS = DEFAULT_FIREBALL_CELL_MS / 2;
 
 const runFireball: Behavior = {
   id: "run-dragon-fireball",
@@ -58,6 +60,25 @@ const fireballAction: RuntimeActionDefinition = {
     const fireball = query.entity(fireballId);
     if (!fireball) return "complete";
     accrueActionDeadline(action, time);
+
+    if (action.state.phase === "terminating") {
+      if (!consumeActionDeadline(
+        action,
+        DEFAULT_FIREBALL_TERMINAL_MS,
+        0,
+      )) return "running";
+      const direction = fireball.direction ?? "left";
+      const impact = halfCellAhead(fireball.anchor, direction);
+      destroyFireball(
+        commands,
+        fireballId,
+        impact.x,
+        impact.y,
+        integerState(action.state.inputLockActionId),
+      );
+      return "complete";
+    }
+
     if (query.motionForEntity(fireballId)?.status === "running")
       return "running";
 
@@ -77,26 +98,14 @@ const fireballAction: RuntimeActionDefinition = {
       !fireballCanTraverseTerrainAt(query, target) ||
       projectileBlockedAt(query, target)
     ) {
-      destroyFireball(
-        commands,
-        fireballId,
-        target.x,
-        target.y,
-        integerState(action.state.inputLockActionId),
-      );
-      return "complete";
+      beginFireballTermination(action, commands, fireball);
+      return "running";
     }
 
     const reflected = reflectedDirectionAt(query, target, direction);
     if (reflected === false) {
-      destroyFireball(
-        commands,
-        fireballId,
-        target.x,
-        target.y,
-        integerState(action.state.inputLockActionId),
-      );
-      return "complete";
+      beginFireballTermination(action, commands, fireball);
+      return "running";
     }
     return {
       status: "running",
@@ -118,14 +127,8 @@ const fireballAction: RuntimeActionDefinition = {
     const fireballId = action.ownerEntityId;
     if (fireballId === undefined) return;
     if (!result.moved) {
-      commands.cancelAction(action.id);
-      destroyFireball(
-        commands,
-        fireballId,
-        result.to.x,
-        result.to.y,
-        integerState(action.state.inputLockActionId),
-      );
+      const fireball = query.entity(fireballId);
+      if (fireball) beginFireballTermination(action, commands, fireball);
       return;
     }
     meltIceBlocksAt(query, commands, result.to);
@@ -236,6 +239,29 @@ function destroyFireball(
   commands.emit({ type: "fireball-impact", entityId, x, y });
 }
 
+function beginFireballTermination(
+  action: RuntimeActionInstance,
+  commands: WorldCommandApi,
+  fireball: {
+    id: EntityId;
+    anchor: { x: number; y: number };
+    direction?: Direction;
+  },
+): void {
+  if (action.state.phase === "terminating") return;
+  const direction = fireball.direction ?? "left";
+  action.state.phase = "terminating";
+  action.state.elapsedMs = 0;
+  commands.emit({
+    type: "fireball-termination-started",
+    entityId: fireball.id,
+    x: fireball.anchor.x,
+    y: fireball.anchor.y,
+    direction,
+    data: { durationMs: DEFAULT_FIREBALL_TERMINAL_MS },
+  });
+}
+
 function integerState(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) ? value : null;
 }
@@ -248,4 +274,14 @@ function addDirection(
   if (direction === "down") return { x: cell.x, y: cell.y + 1 };
   if (direction === "left") return { x: cell.x - 1, y: cell.y };
   return { x: cell.x + 1, y: cell.y };
+}
+
+function halfCellAhead(
+  cell: { x: number; y: number },
+  direction: Direction,
+): { x: number; y: number } {
+  if (direction === "up") return { x: cell.x, y: cell.y - 0.5 };
+  if (direction === "down") return { x: cell.x, y: cell.y + 0.5 };
+  if (direction === "left") return { x: cell.x - 0.5, y: cell.y };
+  return { x: cell.x + 0.5, y: cell.y };
 }

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
@@ -13,6 +14,7 @@ import {
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
 import { builtinEngineEnvironment } from "../dist/public.js";
+import { DEFAULT_FIREBALL_TERMINAL_MS } from "../dist/entities/original/fireball.js";
 
 const factRegistry = builtinEngineEnvironment.facts;
 
@@ -709,6 +711,49 @@ test("explicit presentation motion duration is independent from WorldClock rate"
   assert.equal(runtime.isAnimating, true);
   runtime.update({ frame: 2, nowMs: 2132, deltaMs: 7 }, "linear");
   assert.equal(runtime.isAnimating, false);
+});
+
+test("Fireball terminal event presents a half-cell move before destruction", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 2, y: 1 } }),
+    definition: () => ({ type: RuntimeEntityTypeId.FIREBALL }),
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [{
+      sequence: 1,
+      worldTick: 1,
+      worldTimeMs: 0,
+      type: "world-event",
+      event: {
+        type: "fireball-termination-started",
+        entityId: 7,
+        x: 2,
+        y: 1,
+        direction: "right",
+        data: { durationMs: DEFAULT_FIREBALL_TERMINAL_MS },
+      },
+    }],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({
+    frame: 1,
+    nowMs: 1000 + DEFAULT_FIREBALL_TERMINAL_MS / 2,
+    deltaMs: DEFAULT_FIREBALL_TERMINAL_MS / 2,
+  }, "linear");
+  const halfway = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(halfway.animation, "fireball-termination");
+  assert.equal(halfway.offsetX, 0.25);
+  assert.equal(halfway.offsetY, 0);
+
+  runtime.update({
+    frame: 2,
+    nowMs: 1000 + DEFAULT_FIREBALL_TERMINAL_MS,
+    deltaMs: DEFAULT_FIREBALL_TERMINAL_MS / 2,
+  }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.offsetX, 0.5);
 });
 
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {
