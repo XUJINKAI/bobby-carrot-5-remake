@@ -101,7 +101,9 @@ for (const release of sourceIndex.releases) {
         {
           name: campaignLevelName(sourceLevelIndex),
         },
-        bonusOrdinal === null ? {} : { music: "shop" },
+        bonusOrdinal === null
+          ? {}
+          : { music: "shop", lockDeathCountdownSeconds: 60 },
       );
       documents.set(id, document);
       maps.push({
@@ -193,11 +195,23 @@ function buildSpecialScenes(index, target) {
 
 function createMapDocument(source, meta, options = {}) {
   const canonical = adaptDecodedMap(source);
+  const {
+    lockDeathCountdownSeconds,
+    ...documentOptions
+  } = options;
+  if (lockDeathCountdownSeconds !== undefined) {
+    const locks = canonical.entities.filter((entity) => entity.type === "lock");
+    if (locks.length !== 1)
+      throw new Error(
+        `${source.source.packFile}-${String(source.source.levelIndex).padStart(2, "0")}: Bonus map 必须恰好包含一个 Lock，实际 ${locks.length}`,
+      );
+    locks[0].deathCountdownSeconds = lockDeathCountdownSeconds;
+  }
   const win = deriveOriginalWinCondition(canonical);
   return parseMapDocument({
     schemaVersion: 1,
     meta,
-    ...options,
+    ...documentOptions,
     ...(win ? { rules: { win } } : {}),
     ...canonical,
   });
