@@ -843,7 +843,7 @@ export class Game {
     events: readonly WorldEvent[],
     notifyInteractions = true,
   ): void {
-    for (const event of events) this.music.observe(event);
+    for (const event of events) this.music?.observe(event);
     const notifyRequests = notifyInteractions && !this.replayPlayback.playing;
     if (notifyRequests && this.dialog) {
       for (const event of events) {
