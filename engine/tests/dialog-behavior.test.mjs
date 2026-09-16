@@ -3,7 +3,11 @@ import test from "node:test";
 import { MapEntityTypeId } from "@bobby/model";
 import { World } from "./support/World.mjs";
 
-function dialogLevel(dialogue, type = MapEntityTypeId.SANDMAN) {
+function dialogLevel(
+  dialogue,
+  type = MapEntityTypeId.SANDMAN,
+  bobbyY = 1,
+) {
   return {
     schemaVersion: 1,
     width: 2,
@@ -13,7 +17,7 @@ function dialogLevel(dialogue, type = MapEntityTypeId.SANDMAN) {
       { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
       { type: "grass", variant: "ts-10-1", x: 0, y: 1 },
       { type: "grass", variant: "ts-10-1", x: 1, y: 1 },
-      { type: MapEntityTypeId.BOBBY, x: 0, y: 1, direction: "right" },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: bobbyY, direction: "right" },
       {
         type,
         x: 1,
@@ -93,6 +97,40 @@ test("Sandman、Beaver 与 Dream Machine 共用地图对白合同", () => {
     const result = move(new World(dialogLevel(type, type)), "right");
     assert.deepEqual(result.events[0]?.lines, [type]);
   }
+});
+
+test("直立双格对象的 passable head 按进入的 Presence 触发对白", () => {
+  for (const type of [
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.BEAVER,
+    MapEntityTypeId.DREAM_MACHINE,
+  ]) {
+    const world = new World(dialogLevel(type, type, 0));
+    const started = move(world, "right");
+    assert.equal(started.moves[0].moved, true, type);
+    const interaction = started.events.find((event) =>
+      event.type === "dialogue-request"
+    );
+    assert.ok(interaction, type);
+    assert.equal(interaction.role, "head", type);
+    assert.equal(interaction.action, "enter", type);
+    assert.deepEqual(interaction.lines, [type], type);
+  }
+});
+
+test("passable head 没有字面对白时产生通用交互请求", () => {
+  const world = new World(dialogLevel(
+    undefined,
+    MapEntityTypeId.DREAM_MACHINE,
+    0,
+  ));
+  const result = move(world, "right");
+
+  assert.equal(result.moves[0].moved, true);
+  assert.equal(result.events[0]?.type, "object-interaction");
+  assert.equal(result.events[0]?.role, "head");
+  assert.equal(result.events[0]?.action, "enter");
+  assert.equal(result.events[0]?.requestId, 1);
 });
 
 test("Snowman 图块在触碰时发出地图对白", () => {

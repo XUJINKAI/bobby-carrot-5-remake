@@ -211,12 +211,12 @@ objectType = ObjectId.LOCK
 action = "open"
 ```
 
-触碰可对话角色的 Body 是普通 Definition-driven Object touch：
+触碰或进入可对话角色的 Presence 是普通 Definition-driven Object interaction：
 
 ```text
 LevelEntity.dialogue
         ↓
-Object Definition touch behavior
+Object Definition interaction behavior
         ↓
 dialogue-request（World→Game 私有）
         ↓

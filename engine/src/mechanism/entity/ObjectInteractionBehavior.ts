@@ -10,8 +10,6 @@ function emitObjectInteraction(
   context: BehaviorContext,
   action: "touch" | "enter",
 ): void {
-  if (context.self.presence.role && context.self.presence.role !== "body")
-    return;
   const dialogue = context.self.entity.state?.dialogue;
   if (dialogue !== undefined) {
     const lines = dialogueLines(dialogue);

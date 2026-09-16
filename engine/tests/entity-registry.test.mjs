@@ -141,21 +141,27 @@ test("Sandman / Dream Machine / Beaver 使用 body anchor", () => {
   }
 });
 
-test("Dream Machine 只有 body Presence 阻挡", () => {
-  const definition = createBuiltinEntityRegistry().require(
+test("直立双格交互对象只有 body Presence 阻挡", () => {
+  const registry = createBuiltinEntityRegistry();
+  for (const type of [
+    MapEntityTypeId.SANDMAN,
     MapEntityTypeId.DREAM_MACHINE,
-  );
-  assert.deepEqual(definition.presenceFacts, []);
-  assert.deepEqual(
-    definition.footprint.parts.map((part) => [
-      part.role,
-      part.presenceFacts ?? [],
-    ]),
-    [
-      ["head", []],
-      ["body", ["blocking"]],
-    ],
-  );
+    MapEntityTypeId.BEAVER,
+  ]) {
+    const definition = registry.require(type);
+    assert.deepEqual(definition.presenceFacts, [], type);
+    assert.deepEqual(
+      definition.footprint.parts.map((part) => [
+        part.role,
+        part.presenceFacts ?? [],
+      ]),
+      [
+        ["head", []],
+        ["body", ["blocking"]],
+      ],
+      type,
+    );
+  }
 });
 
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {

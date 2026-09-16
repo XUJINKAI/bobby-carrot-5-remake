@@ -266,7 +266,7 @@ Mechanism 只有一层“通用规则”语义，按触发位置使用两种调�
 
 **Pipeline Mechanism** 在 World 的固定 gameplay 阶段统一调用，处理多个对象共同参与的规则。例如标准通行使用当前 Presence 的 `walkable`、`blocking`；Push 读取目标的 `pushable` 并提出附带移动者。Pipeline Mechanism 不属于某个箱子或 Bobby，Entity 只暴露供规则判断的 Fact。
 
-**Entity-bound Mechanism** 由 Entity Definition 显式组合，复用 `Behavior` hook 协议。Dialog 为多个带字面对白的对象处理触碰与游标；Object Interaction 与 Water Overlay 也作为通用机制组合。Entity 自己的特殊 Behavior 与所组合机制的 Behavior 一起形成稳定、有序、去重的有效 Behavior 列表。
+**Entity-bound Mechanism** 由 Entity Definition 显式组合，复用 `Behavior` hook 协议。Dialog 为多个带字面对白的对象处理触碰与游标；Object Interaction 按实际触碰或进入的 Presence 产生交互，不内置对象 role 白名单；Water Overlay 也作为通用机制组合。Entity 自己的特殊 Behavior 与所组合机制的 Behavior 一起形成稳定、有序、去重的有效 Behavior 列表。
 
 Mechanism Registry 记录 Entity-bound Mechanism 的 ID 与 Behavior 实现，并通过明确的 Passage、Push、World Metrics 和 Reach Aggregation 注册槽装配 Pipeline Mechanism；`EntityDefinition.mechanisms` 只引用 Entity-bound Mechanism。
 

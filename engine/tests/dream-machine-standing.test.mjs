@@ -12,7 +12,7 @@ const ground = (x, y) => ({
   y,
 });
 
-function passageWorld(bobbyY) {
+function passageWorld(type, bobbyY) {
   return new World({
     schemaVersion: 1,
     width: 2,
@@ -22,7 +22,7 @@ function passageWorld(bobbyY) {
       ground(1, 0),
       ground(0, 1),
       ground(1, 1),
-      { type: MapEntityTypeId.DREAM_MACHINE, x: 1, y: 1 },
+      { type, x: 1, y: 1 },
       { type: MapEntityTypeId.BOBBY, x: 0, y: bobbyY },
     ],
   });
@@ -40,9 +40,15 @@ function moveRight(world) {
   }).moves[0];
 }
 
-test("Bobby 可以经过 Dream Machine head，但不能进入 body", () => {
-  assert.equal(moveRight(passageWorld(0)).moved, true);
-  assert.equal(moveRight(passageWorld(1)).moved, false);
+test("Bobby 可以经过直立双格交互对象的 head，但不能进入 body", () => {
+  for (const type of [
+    MapEntityTypeId.SANDMAN,
+    MapEntityTypeId.DREAM_MACHINE,
+    MapEntityTypeId.BEAVER,
+  ]) {
+    assert.equal(moveRight(passageWorld(type, 0)).moved, true, `${type} head`);
+    assert.equal(moveRight(passageWorld(type, 1)).moved, false, `${type} body`);
+  }
 });
 
 function standingTypes(bobbyY) {

@@ -547,7 +547,7 @@ game.onInteractionRequest((request) => {
 不会把该请求发布给宿主。`dialogue` 可以是字符串或字符串数组；数组从第一段开始在同一个
 对话框内依次翻页，每个元素可以包含换行。关闭最后一段后，同一 `(actorId, entityId)` 在
 500ms 内不会重复打开。World 本身仍不持有 DOM、Promise、暂停或输入状态。
-Entity 字面对白以 Bobby 到接触 Body 格的方向作为翻页方向：同方向逻辑输入先完成逐字展示，
+Entity 字面对白以触发交互的移动方向作为翻页方向：同方向逻辑输入先完成逐字展示，
 再次输入进入下一段；其他方向立即关闭对话，并在下一次 gameplay tick 让发起对话的 Bobby
 向该方向移动。Keyboard 方向键、WASD、Pointer Swipe、Screen Joystick 与外部方向控件都由
 `InputController` 归一化后交给当前 Dialog；持续按键产生的后续输入使用同一规则。
