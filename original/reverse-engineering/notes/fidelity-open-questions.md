@@ -260,26 +260,6 @@ Entity 响应同一 lifecycle。两者没有天然等价关系。
 
 ## 环境表现与音乐
 
-### Q16. Snow、Butterfly 与 Sky shimmer 是否进入正式 Renderer
-
-**现象差异**
-
-原版有三类地图环境表现：存在 Snow 时显示五粒跟随 Camera 的雪花；其它地图运行一只随机
-Butterfly；Sky 空格维护三个随机 shimmer。当前 Gameplay Renderer 没有这些效果。
-
-**可能影响**
-
-不改变解法，但雪地图、普通户外和天空场景缺少明显的原版氛围。
-
-**原理说明**
-
-三者都是 Presentation 状态。是否出现取决于地图 Entity，随机位置和动画由表现时钟管理，
-不应进入 World snapshot。
-
-**待确认**
-
-确认三类效果的产品优先级，以及随机表现是否需要 session seed 以支持稳定视觉测试。
-
 ### Q17. Mower 与 Timed Bonus 是否动态切换音乐
 
 **现象差异**

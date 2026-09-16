@@ -65,6 +65,16 @@ export class Renderer {
 
     const bounds = { x: 0, y: 0, ...viewport };
     this.drawPass(context, scene.world, camera, deviceScale, bounds);
+    for (const item of scene.ambientBackground ?? [])
+      this.drawComposition(
+        context,
+        item.composition,
+        item.visualX,
+        item.visualY,
+        camera,
+        deviceScale,
+        bounds,
+      );
     this.drawPass(context, scene.standing, camera, deviceScale, bounds);
     this.drawPass(context, scene.effect, camera, deviceScale, bounds);
     for (const callout of scene.callouts ?? [])
@@ -75,6 +85,17 @@ export class Renderer {
         camera,
         bounds,
         deviceScale,
+      );
+    for (const item of scene.ambientForeground ?? [])
+      drawVisualComposition(
+        context,
+        this.images,
+        item.composition,
+        item.x,
+        item.y,
+        item.size,
+        deviceScale,
+        bounds,
       );
 
     if (this.debug) {

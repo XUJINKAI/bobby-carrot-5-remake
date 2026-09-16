@@ -348,6 +348,11 @@ Pipeline 在 World 的固定阶段调用。相互冲突的 passage 判断或同�
 
 Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选择画面；World 与 Mechanism 不读取 `VisualRuntime`、`PresentationClock`、Renderer、Canvas 或 DOM。仅影响 sprite、位移插值、闪烁、粒子与镜头的状态由 Presentation 持有。会改变碰撞、可攀爬时点或动作结果的过程继续由 WorldClock 上的 Entity state、RuntimeAction 或 WorldMotion 表示。
 
+环境表现由同一 `AmbientVisualRuntime` 按 PresentationTime 和 session seed 生成。Sky shimmer
+使用世界坐标并只选择视窗中的空 Sky 格；Snow 与 Butterfly 使用屏幕坐标，数量分别由
+`snowDensity`、`butterflyDensity` 按 CSS 视窗面积计算。存在 Snow 的关卡固定使用雪花天气，
+其余关卡使用 Butterfly；视窗尺寸变化只重算表现数量和位置，不写入 World。
+
 `variant` 的归属由实际语义决定。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。纯视觉字段由地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标由 Model 的 semantic atlas mapping 提供，DAT byte 换算只在 `tools/original/dat/`。
 
 Editor definitions 负责 Palette、Surface、隐藏、分组及创建入口，并依据 Model `EntityMapDefinition` 确定可持久化类型。Inspector、规则检测与 Play Test 复用 Engine 的 Entity Catalog、SpatialIndex 与 Fact 投影；Editor 不实现碰撞、推或机关的第二份规则。未知 Entity 或字段无效的占位实例保持可见和惰性，不获得有效 Fact 与 Behavior。

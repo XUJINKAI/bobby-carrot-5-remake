@@ -93,6 +93,15 @@ export {
 } from "./render/Camera.js";
 export { drawVisualComposition } from "./render/VisualPainter.js";
 export {
+  ORIGINAL_TILE_SIZE,
+  STAR_SPARKLE_SHEET,
+  sparkleFrameRect,
+  type SpriteRect as OriginalAmbientSpriteRect,
+} from "./visual/ambient/OriginalAmbientSprites.js";
+export type {
+  AmbientVisualOptions,
+} from "./visual/ambient/AmbientVisualRuntime.js";
+export {
   DEFAULT_INPUT_CONTROLLER_OPTIONS,
   InputController,
   type InputControllerOptions,

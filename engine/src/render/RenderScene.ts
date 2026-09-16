@@ -2,6 +2,19 @@ import type { EntityPresence } from "../world/spatial/EntityPresence.js";
 import type { VisualComposition } from "../visual/VisualDefinition.js";
 import type { WorldCalloutRenderItem } from "../visual/callout/WorldCallout.js";
 
+export interface WorldOverlayItem {
+  composition: VisualComposition;
+  visualX: number;
+  visualY: number;
+}
+
+export interface ScreenOverlayItem {
+  composition: VisualComposition;
+  x: number;
+  y: number;
+  size: number;
+}
+
 export interface RenderItem {
   presence: Readonly<EntityPresence>;
   composition: VisualComposition;
@@ -18,7 +31,11 @@ export interface RenderScene {
   world: readonly RenderItem[];
   standing: readonly RenderItem[];
   effect: readonly RenderItem[];
+  /** 静态世界之后、standing Entity 之前绘制的世界坐标环境效果。 */
+  ambientBackground: readonly WorldOverlayItem[];
   callouts: readonly WorldCalloutRenderItem[];
+  /** Callout 之后绘制的屏幕坐标天气与生物粒子。 */
+  ambientForeground: readonly ScreenOverlayItem[];
 }
 
 /**

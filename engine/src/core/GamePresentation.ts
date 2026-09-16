@@ -41,6 +41,9 @@ export class GamePresentation {
       {
         announce: (message) => this.calloutAnnouncer?.announce(message),
         callouts: environment.callouts,
+        ...(options.runtime?.ambient
+          ? { ambient: options.runtime.ambient }
+          : {}),
       },
     );
     this.clock = new PresentationClock(

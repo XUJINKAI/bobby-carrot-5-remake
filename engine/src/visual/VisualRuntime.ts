@@ -13,11 +13,8 @@ import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import type { WorldMotion } from "../world/movement/WorldMotion.js";
 import type { WorldEvent } from "../world/WorldTypes.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
-import { AmbientVisualRuntime } from "./ambient/AmbientVisualRuntime.js";
-import {
-  resolveTransientDuration,
-  type ActiveTransientVisual,
-} from "./TransientVisualRuntime.js";
+import { AmbientVisualRuntime, type AmbientVisualOptions } from "./ambient/AmbientVisualRuntime.js";
+import { resolveTransientDuration, type ActiveTransientVisual } from "./TransientVisualRuntime.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type {
@@ -75,8 +72,7 @@ export interface WorldDeltaPresentationOptions {
 
 export interface VisualRuntimeOptions extends WorldCalloutRuntimeOptions {
   callouts?: WorldCalloutRegistry;
-  /** 固定 seed 只影响纯表现随机序列，便于视觉测试稳定复现。 */
-  ambientSeed?: number;
+  ambient?: AmbientVisualOptions;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -103,7 +99,7 @@ export class VisualRuntime {
       options.callouts ?? new WorldCalloutRegistry(),
       options,
     );
-    this.ambient = new AmbientVisualRuntime(options.ambientSeed);
+    this.ambient = new AmbientVisualRuntime(options.ambient);
   }
 
   get isAnimating(): boolean {
@@ -427,7 +423,12 @@ export class VisualRuntime {
       this.frame ?? undefined,
       this.ambient.state,
     );
-    const withTransients = this.appendTransientVisuals(scene);
+    const ambient = this.ambient.effects(world, this.camera, this.frame ?? undefined);
+    const withTransients = this.appendTransientVisuals({
+      ...scene,
+      ambientBackground: ambient.background,
+      ambientForeground: ambient.foreground,
+    });
     if (!this.frame) return withTransients;
     return {
       ...withTransients,
@@ -618,7 +619,9 @@ export class VisualRuntime {
         ? sortStandingRenderItems(passes.standing)
         : scene.standing,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
+      ambientBackground: scene.ambientBackground,
       callouts: scene.callouts,
+      ambientForeground: scene.ambientForeground,
     };
   }
 

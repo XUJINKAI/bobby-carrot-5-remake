@@ -107,7 +107,9 @@ export function buildSpatialScene(
     world: sortRenderItems(passes.world),
     standing: sortStandingRenderItems(passes.standing),
     effect: sortRenderItems(passes.effect),
+    ambientBackground: [],
     callouts: [],
+    ambientForeground: [],
   };
 }
 

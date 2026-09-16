@@ -30,6 +30,7 @@ export function createImageManager(): ImageManager {
       "bobby-kite": siteUrl("assets/art/hd/b9.png"),
       "bobby-speed-trail": siteUrl("assets/art/hd/mow.png"),
       "dragon-fireball": siteUrl("assets/art/hd/hud.png"),
+      "ambient-butterfly": siteUrl("assets/art/hd/bf.png"),
       "hud-atlas": siteUrl("assets/art/hd/hud.png"),
       "golden-carrot": siteUrl("assets/art/hd/icon.png"),
     },

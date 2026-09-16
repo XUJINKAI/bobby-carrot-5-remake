@@ -10,9 +10,11 @@ import type { GameplayDialogControllerOptions } from "../ui/GameplayDialogContro
 import type { PresentationTuningOverride } from "../visual/tuning/PresentationTuning.js";
 import type { HistoryPolicy } from "./HistoryPolicy.js";
 import type { EngineEnvironment } from "../environment/EngineEnvironment.js";
+import type { AmbientVisualOptions } from "../visual/ambient/AmbientVisualRuntime.js";
 
 export interface GameRuntimeOptions {
   camera?: CameraOptions;
+  ambient?: AmbientVisualOptions;
   hud?: boolean | GameplayHudOptions;
   /** Engine 内建与宿主显式调用共用的 gameplay dialogue controller。 */
   dialog?: boolean | GameplayDialogControllerOptions;
