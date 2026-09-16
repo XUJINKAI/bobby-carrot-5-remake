@@ -8,6 +8,7 @@ import {
   EditorRuleDetector,
   builtinEditorDefinition,
   enableEditorRules,
+  editorRuleMode,
   inspectEditorRules,
   paletteItems,
   parseEditorLevel,
@@ -17,6 +18,7 @@ import {
   serializeEditorLevel,
   toLevelMap,
   updateEditorRule,
+  updateEditorRuleMode,
 } from "../dist/index.js";
 
 const environment = builtinEngineEnvironment;
@@ -162,6 +164,40 @@ test("新检测到的可用规则可一次性启用", () => {
   assert.deepEqual(detector.detect(disabled, environment), []);
   detector.reset();
   assert.deepEqual(detector.detect(level, environment), ["carrots"]);
+});
+
+test("Editor 保留并切换一层胜利条件的 any/all 模式", () => {
+  const blank = createBlankLevel(4, 4);
+  const level = {
+    ...blank,
+    entities: [
+      ...blank.entities,
+      { type: MapEntityTypeId.CARROT, x: 1, y: 1 },
+    ],
+    rules: {
+      win: {
+        type: "any",
+        conditions: [{ type: "carrot" }, { type: "exit" }],
+      },
+    },
+  };
+
+  assert.equal(editorRuleMode(level), "any");
+  assert.equal(
+    inspectEditorRules(level, environment).find(({ kind }) => kind === "carrots")?.enabled,
+    true,
+  );
+  const withoutCarrots = updateEditorRule(environment, "carrots", false).apply(level);
+  assert.deepEqual(withoutCarrots.rules?.win, {
+    type: "any",
+    conditions: [{ type: "exit" }],
+  });
+  const all = updateEditorRuleMode("all").apply(withoutCarrots);
+  assert.equal(editorRuleMode(all), "all");
+  assert.deepEqual(all.rules?.win, {
+    type: "all",
+    conditions: [{ type: "exit" }],
+  });
 });
 
 test("Editor 规则提示通过 Engine Goal 识别 Egg", () => {

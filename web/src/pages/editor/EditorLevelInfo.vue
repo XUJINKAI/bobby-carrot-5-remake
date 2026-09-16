@@ -3,18 +3,21 @@ import type {
   EditorMap,
   EditorRuleCapability,
   EditorRuleKind,
+  EditorRuleMode,
 } from "@bobby/editor";
 import { ref, watch } from "vue";
 
 const props = defineProps<{
   level: Readonly<EditorMap>;
   rules: readonly EditorRuleCapability[];
+  ruleMode: EditorRuleMode;
 }>();
 const emit = defineEmits<{
   metadata: [value: { name: string; author?: string; note?: string }];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   rule: [kind: EditorRuleKind, enabled: boolean];
+  ruleMode: [mode: EditorRuleMode];
 }>();
 const name = ref("");
 const author = ref("");
@@ -81,7 +84,17 @@ function applyMetadata(): void {
       </label>
     </section>
     <section class="editor-inspector-section editor-level-rules">
-      <strong>关卡规则</strong>
+      <div class="editor-rule-title">
+        <strong>关卡规则</strong>
+        <button
+          type="button"
+          class="editor-rule-mode"
+          :aria-label="ruleMode === 'all' ? '当前要求满足全部条件，点击改为任一条件' : '当前要求满足任一条件，点击改为全部条件'"
+          @click="emit('ruleMode', ruleMode === 'all' ? 'any' : 'all')"
+        >
+          {{ ruleMode === "all" ? "全部" : "任一" }}
+        </button>
+      </div>
       <div
         v-for="rule in rules.filter((item) => item.available)"
         :key="rule.kind"
@@ -126,6 +139,20 @@ function applyMetadata(): void {
 
 <style scoped>
 .editor-level-rules { display:grid; gap:10px; }
+.editor-rule-title {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.editor-rule-mode {
+  min-width:58px;
+  padding:5px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel2);
+  color:inherit;
+}
 .editor-rule-row {
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto;

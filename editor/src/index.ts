@@ -63,8 +63,8 @@ export type { SelectionRect } from "./authoring/selection.js";
 export { copySelection, copyEntitySelection, pasteClipboard } from "./authoring/clipboard.js";
 export { previewEditorResize, resizeMapEdges } from "./authoring/resize.js";
 export type { EditorResizeEdges, EditorResizeResult } from "./authoring/resize.js";
-export { EditorRuleDetector, enableEditorRules, inspectEditorRules, updateEditorRule } from "./authoring/rules.js";
-export type { EditorRuleCapability, EditorRuleKind } from "./authoring/rules.js";
+export { EditorRuleDetector, editorRuleMode, enableEditorRules, inspectEditorRules, updateEditorRule, updateEditorRuleMode } from "./authoring/rules.js";
+export type { EditorRuleCapability, EditorRuleKind, EditorRuleMode } from "./authoring/rules.js";
 export { editorVariantIndex, applyPlacementVariant, cycleEntityVariant, cyclePlacementVariant } from "./authoring/variants.js";
 export {
   buildInspectorModel,
