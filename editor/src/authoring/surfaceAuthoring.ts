@@ -259,19 +259,22 @@ export function fillSurface(
   const targetTerrain = surfaceTerrain(brush.terrain);
   const source = surfaceAt(level, origin, targetTerrain.slot);
   const sourceTerrain = source ? surfaceTerrainForEntity(source.type) : null;
-  if (!sourceTerrain) return paintSurface(environment, [origin], brush);
 
   const cells: Cell[] = [];
   const visited = new Set<string>();
   const queue: Cell[] = [origin];
-  while (queue.length > 0) {
-    const cell = queue.shift()!;
+  let cursor = 0;
+  while (cursor < queue.length) {
+    const cell = queue[cursor++]!;
     const key = cellKey(cell);
     if (visited.has(key) || !inBounds(level, cell)) continue;
     visited.add(key);
-    const entity = surfaceAt(level, cell, sourceTerrain.slot);
+    const entity = surfaceAt(level, cell, targetTerrain.slot);
     const item = entity ? surfaceTerrainForEntity(entity.type) : null;
-    if (!item || item.id !== sourceTerrain.id) continue;
+    const matches = sourceTerrain
+      ? item?.id === sourceTerrain.id
+      : item === null;
+    if (!matches) continue;
     cells.push(cell);
     queue.push(
       { x: cell.x - 1, y: cell.y },
