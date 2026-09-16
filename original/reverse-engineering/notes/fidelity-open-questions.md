@@ -163,26 +163,6 @@ Fireball 建立自己的 RuntimeAction 后，要到下一个 World tick 才开�
 
 测量可见延迟并验证出生点附近碰撞，再决定支持“同拍首步”还是保留稳定的下一 tick 启动。
 
-### Q08. Fireball 使用原版图片还是程序绘制效果
-
-**现象差异**
-
-原版使用 `hud.png` 中两张 `28×28` Fireball 图片，约每 `124ms` 切换。当前使用程序绘制
-的两层圆形，并按 Presentation frame 做明暗变化。
-
-**可能影响**
-
-碰撞规则不变，但外观、尺寸和闪烁速度与原版明显不同。
-
-**原理说明**
-
-这是纯 Presentation 选择，不需要修改 Fireball gameplay state；图片资产仍受
-`THIRD_PARTY_ASSETS.md` 的权利边界约束。
-
-**待确认**
-
-确认正式产品是否采用原版 Fireball sprite 及 `124ms` 节拍。
-
 ## 移动平台与风
 
 ### Q09. Cloud 和 Leaf 相遇时使用像素碰撞还是整格占用

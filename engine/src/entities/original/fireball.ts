@@ -129,28 +129,18 @@ const base = originalModule(
     id: RuntimeEntityTypeId.FIREBALL,
     renderPass: "effect",
     resolve(context) {
-      const pulse = (context.time?.frame ?? 0) % 8 < 4 ? 1 : 0.78;
+      const frame =
+        Math.floor(Math.max(0, context.time?.nowMs ?? 0) / 124) % 2;
       return {
-        layers: [
-          {
-            kind: "canvas",
-            draw(canvas, x, y, size) {
-              const centerX = x + size / 2;
-              const centerY = y + size / 2;
-              canvas.save();
-              canvas.globalAlpha = pulse;
-              canvas.fillStyle = "#ff5a1f";
-              canvas.beginPath();
-              canvas.arc(centerX, centerY, size * 0.2, 0, Math.PI * 2);
-              canvas.fill();
-              canvas.fillStyle = "#ffd166";
-              canvas.beginPath();
-              canvas.arc(centerX, centerY, size * 0.1, 0, Math.PI * 2);
-              canvas.fill();
-              canvas.restore();
-            },
-          },
-        ],
+        layers: [{
+          kind: "image",
+          asset: "dragon-fireball",
+          sourceX: frame === 0 ? 282 : 310,
+          sourceY: 0,
+          frameWidth: 28,
+          frameHeight: 28,
+          anchor: "center",
+        }],
       };
     },
   },

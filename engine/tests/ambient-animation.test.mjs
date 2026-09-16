@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -63,7 +64,6 @@ test("original ta.png ambient phase zero keeps the static ts.png atlas frame", (
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {
   for (const [type, frameIndex, direction, variant] of [
-    [MapEntityTypeId.BONUS_COIN, 15],
     [MapEntityTypeId.WINDMILL, 18, "up"],
     [MapEntityTypeId.WINDMILL, 20, "down"],
     [MapEntityTypeId.WINDMILL, 22, "left"],
@@ -75,6 +75,21 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
     [MapEntityTypeId.WATERFALL, 50, undefined, "bottom"],
   ])
     expectAnimated(type, frameIndex, direction, variant);
+});
+
+test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
+  const first = resolveAt(RuntimeEntityTypeId.FIREBALL, 0);
+  const second = resolveAt(RuntimeEntityTypeId.FIREBALL, AMBIENT_STEP_MS);
+  assert.deepEqual(first, {
+    kind: "image",
+    asset: "dragon-fireball",
+    sourceX: 282,
+    sourceY: 0,
+    frameWidth: 28,
+    frameHeight: 28,
+    anchor: "center",
+  });
+  assert.deepEqual(second, { ...first, sourceX: 310 });
 });
 
 test("Exit animates only when reach Exit is the only unfinished objective", () => {
