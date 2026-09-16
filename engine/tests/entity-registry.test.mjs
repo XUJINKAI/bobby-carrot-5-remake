@@ -66,10 +66,21 @@ test("Surface 与 Object 都只注册稳定语义 Entity Definition", () => {
 
 test("稳定 Surface ABI 由各 Definition 的 Presence Fact resolver 投影", () => {
   assert.deepEqual(projectedFacts(MapEntityTypeId.GRASS), ["walkable"]);
-  assert.deepEqual(projectedFacts(MapEntityTypeId.TREE), []);
-  assert.deepEqual(projectedFacts(MapEntityTypeId.WATERFALL), ["water"]);
-  assert.deepEqual(projectedFacts(MapEntityTypeId.STARFIELD), ["sky"]);
-  assert.deepEqual(projectedFacts(MapEntityTypeId.MOON), ["sky"]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.TREE), [
+    "growth-substrate",
+  ]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.WATERFALL), [
+    "water",
+    "growth-substrate",
+  ]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.STARFIELD), [
+    "sky",
+    "growth-substrate",
+  ]);
+  assert.deepEqual(projectedFacts(MapEntityTypeId.MOON), [
+    "sky",
+    "growth-substrate",
+  ]);
 });
 
 test("Start 是普通可步行 Entity，不携带出生语义", () => {
@@ -130,14 +141,18 @@ test("Sandman / Dream Machine / Beaver 只使用 body anchor Presence", () => {
   for (const type of ["sandman", "dream-machine", "beaver"]) {
     const definition = registry.require(type);
     assert.equal(definition.footprint, undefined, type);
-    assert.deepEqual(definition.presenceFacts, ["blocking"], type);
+    assert.deepEqual(
+      definition.presenceFacts,
+      ["blocking", "vertical-occupant"],
+      type,
+    );
   }
 });
 
 test("Fence 只有一个 canonical EntityType，视觉拓扑不再编码进 type", () => {
   const registry = createBuiltinEntityRegistry();
   const fence = registry.require(MapEntityTypeId.FENCE);
-  assert.deepEqual(fence.presenceFacts, ["blocking"]);
+  assert.deepEqual(fence.presenceFacts, ["blocking", "vertical-occupant"]);
   assert.equal(
     Object.values(MapEntityTypeId).some((type) => /^fence-\d$/.test(type)),
     false,

@@ -268,7 +268,7 @@ test("Editor Preview uses the same Surface Presence Fact projection as runtime",
   );
 
   assert.ok(water);
-  assert.deepEqual(water.presence.facts, ["water"]);
+  assert.deepEqual(water.presence.facts, ["water", "growth-substrate"]);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {
