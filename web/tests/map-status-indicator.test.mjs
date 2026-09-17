@@ -5,7 +5,7 @@ import {
   mapVerificationText,
 } from "../src/pages/game/mapStatusIndicator.ts";
 
-test("地图状态在没有作者和注记时使用 Check Circle", () => {
+test("地图状态在没有作者和注记时使用 Minus Circle", () => {
   assert.deepEqual(mapStatusIndicator("explore", true), {
     id: "map-status",
     icon: "map-status",
