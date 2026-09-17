@@ -59,6 +59,8 @@ Adapter 结果先写入 `encoded/<release>/levels/<pack>-<slot>.json`，其格�
 
 把输出 JAR 放入 KEmulator/J2ME Loader 等环境。进入被替换的目标关，记录移动、Tick、触发条件、动画/阻挡/死亡等结果。
 
+当前 patch 输出使用高清兼容构建，因此适合验证项目采用的 48px presentation，也可作为 gameplay 运行交叉检查。碰撞、机关、存档或 Campaign 结论仍以普通版 UP9 字节码为第一基准；若模拟器观察与普通版控制流不能互相解释，应再用同一 DAT 最小地图核对普通版，并分别记录两份 JAR 的 hash 与结果。双基准规则见 [`官方发行包、代码与资产谱系`](../reference/official-release-provenance.md)。
+
 ## 5. 回到 Engine
 
 如果原版与 bc5r 不同：
