@@ -260,6 +260,7 @@ export class BobbyApp {
         this.controller = await renderGamePage({
           ...this.pageContext(),
           level: imported.level,
+          mapMeta: imported.value.meta,
           identity: {
             collection: "imported",
             id: "shared-map",
@@ -318,6 +319,7 @@ export class BobbyApp {
       this.controller = await gamePage.renderGamePage({
         ...this.pageContext(),
         level: importPage.importedLevelMap(level),
+        mapMeta: level.meta,
         identity: { ...ref, title: level.meta.name },
         mode: "explore",
       });

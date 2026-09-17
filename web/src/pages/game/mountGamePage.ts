@@ -80,6 +80,7 @@ import {
   prepareAdventureGameplayLevel,
 } from "./adventurePurchase.js";
 import { resolveGameplayHudConfig } from "./gameplayHudConfig.js";
+import { mapStatusIndicator } from "./mapStatusIndicator.js";
 
 export type { GamePageMode } from "./gamePageCapabilities.js";
 
@@ -211,6 +212,7 @@ export async function renderGamePage(
       replayPanelInitiallyOpen,
       capabilities.replayPanel,
       verified,
+      mapMeta,
     ),
   );
   app.replaceChildren();
@@ -359,6 +361,7 @@ export async function renderGamePage(
               open,
               capabilities.replayPanel,
               verified,
+              mapMeta,
             ),
           );
         },
@@ -584,6 +587,7 @@ function gameShellConfig(
   replayOpen = false,
   replayEnabled = mode === "explore",
   verified = false,
+  mapMeta?: MapMeta,
 ): ShellConfig {
   const explore = mode === "explore";
   return {
@@ -661,12 +665,7 @@ function gameShellConfig(
             },
           ]
         : [],
-      leadingIndicators: [{
-        id: "replay-verification",
-        icon: "checks",
-        tone: verified ? "success" : "muted",
-        label: replayVerificationTooltip(mode, verified),
-      }],
+      leadingIndicators: [mapStatusIndicator(mode, verified, mapMeta)],
       trailing: [
         {
           id: "screen-control",
@@ -677,20 +676,6 @@ function gameShellConfig(
       ],
     },
   };
-}
-
-function replayVerificationTooltip(
-  mode: GamePageMode,
-  verified: boolean,
-): string {
-  if (mode === "explore") {
-    return verified
-      ? "已验证可通关"
-      : "尚未进行通关验证";
-  }
-  return verified
-    ? "已在自由探索模式中验证可通关"
-    : "尚未进行通关验证";
 }
 
 const NOOP_REPLAY_PANEL_CONTROLLER: ReplayPanelController = {

@@ -5,6 +5,10 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
 import { BC5R_GAME_ID } from "../../model/dist/index.js";
+import {
+  assertMapStatusSmoke,
+  mapStatusSmokeScript,
+} from "./browser-smoke/map-status.mjs";
 import { root } from "../lib/fs.mjs";
 import { serveDistRequest } from "../lib/static-server.mjs";
 const browserEnvironment = { ...process.env };
@@ -115,10 +119,23 @@ try {
   await smoke(`${origin}/explore/play/loma-pushbox/01-01`, [
     'class="game-page"',
     'id="game"',
+    'id="map-status"',
+    'data-icon="map-details"',
     'class="shell-indicator-button tone-muted"',
-    'aria-label="尚未进行通关验证"',
+    'aria-label="地图状态：通关验证 尚未进行通关验证；作者 Aymeric du Peloux"',
     "01-01",
   ]);
+  await interactiveMapStatusSmoke(
+    `${origin}/explore/play/loma-pushbox/01-01`,
+    {
+      icon: "map-details",
+      tone: "muted",
+      details: {
+        verification: "尚未进行通关验证",
+        author: "Aymeric du Peloux",
+      },
+    },
+  );
   await smoke(`${origin}/explore/play/original/1-1`, [
     'class="game-page"',
     'id="game"',
@@ -133,15 +150,17 @@ try {
     'class="shell-topbar-left"',
     'class="shell-topbar-center"',
     'class="shell-topbar-right"',
+    'id="map-status"',
+    'data-icon="map-status"',
     'class="shell-indicator-button tone-success"',
-    'aria-label="已验证可通关"',
+    'aria-label="地图状态：通关验证 已验证可通关"',
   ]);
   await smoke(
     `${origin}/explore/play/original/unlisted-smoke`,
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证"',
     ],
   );
   await smoke(
@@ -149,12 +168,14 @@ try {
     [
       'class="game-page"',
       'id="game"',
-      'aria-label="尚未进行通关验证"',
+      'aria-label="地图状态：通关验证 尚未进行通关验证"',
     ],
   );
-  await interactiveReplayVerificationSmoke(
-    `${origin}/explore/play/original/1-1`,
-  );
+  await interactiveMapStatusSmoke(`${origin}/explore/play/original/1-1`, {
+    icon: "map-status",
+    tone: "success",
+    details: { verification: "已验证可通关" },
+  });
   await smoke(`${origin}/explore/play/novoban-pushbox/01`, [
     'class="game-page"',
     'id="game"',
@@ -183,8 +204,10 @@ try {
     [
       "original-adventure-game",
       'id="game"',
+      'id="map-status"',
+      'data-icon="map-status"',
       'class="shell-indicator-button tone-success"',
-      'aria-label="已在自由探索模式中验证可通关"',
+      'aria-label="地图状态：通关验证 已在自由探索模式中验证可通关"',
     ],
     ['id="undo"', 'id="replay-record"', "data-replay-panel"],
   );
@@ -209,10 +232,22 @@ try {
   const profilePayload = exchangePayload(
     serializeAdventureSave(createAdventureSave()),
   );
-  await smoke(`${origin}/import/v1#${mapPayload}`, [
+  const importedMapUrl = `${origin}/import/v1#${mapPayload}`;
+  await smoke(importedMapUrl, [
     'class="game-page"',
     'id="game"',
+    'id="map-status"',
+    'data-icon="map-details"',
   ]);
+  await interactiveMapStatusSmoke(importedMapUrl, {
+    icon: "map-details",
+    tone: "muted",
+    details: {
+      verification: "尚未进行通关验证",
+      author: "bc5r",
+      note: "Editor → Engine / Original JAR 回归测试夹具；不是正式谜题关。",
+    },
+  });
   await smoke(`${origin}/import/v1#${profilePayload}`, [
     'class="import-page"',
     'class="shell-context-name">导入',
@@ -392,43 +427,11 @@ async function exploreDifficultySmoke(url) {
   if (payload.color !== "rgb(247, 212, 95)")
     throw new Error(`Explore 难度星级颜色异常：${JSON.stringify(payload)}`);
 }
-async function interactiveReplayVerificationSmoke(url) {
-  const script = `
-(async () => {
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  let button = null;
-  for (let i = 0; i < 120 && !button; i += 1) {
-    await delay(50);
-    button = document.querySelector('#replay-verification');
-  }
-  if (!button) throw new Error('missing replay verification icon');
-  button.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
-  await delay(30);
-  const hover = document.querySelector('[role="tooltip"]')?.textContent;
-  button.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
-  button.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
-  button.click();
-  await delay(30);
-  const touch = document.querySelector('[role="tooltip"]')?.textContent;
-  document.body.dispatchEvent(new PointerEvent('pointerdown', {
-    pointerType: 'touch',
-    bubbles: true,
-  }));
-  await delay(30);
-  const dismissed = !document.querySelector('[role="tooltip"]');
-  return JSON.stringify({ hover, touch, dismissed });
-})()
-`;
-  const result = await runBrowserEval(url, script);
+async function interactiveMapStatusSmoke(url, expected) {
+  const result = await runBrowserEval(url, mapStatusSmokeScript);
   if (result.status !== 0)
-    throw new Error(`Replay 验真 tooltip 检查失败：${result.stderr || result.stdout}`);
-  const payload = lastJsonLine(result.stdout);
-  if (
-    payload.hover !== "已验证可通关" ||
-    payload.touch !== payload.hover ||
-    !payload.dismissed
-  )
-    throw new Error(`Replay 验真 tooltip 状态异常：${JSON.stringify(payload)}`);
+    throw new Error(`地图状态 tooltip 检查失败：${result.stderr || result.stdout}`);
+  assertMapStatusSmoke(lastJsonLine(result.stdout), expected);
 }
 async function interactiveDataExchangeSmoke(url) {
   const script = `

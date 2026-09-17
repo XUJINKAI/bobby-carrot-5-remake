@@ -46,7 +46,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <span class="shell-indicator">
+  <span
+    class="shell-indicator"
+    @pointerdown="onPointerDown"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+  >
     <button
       :id="indicator.id"
       ref="button"
@@ -55,9 +60,6 @@ onBeforeUnmount(() => {
       :class="`tone-${indicator.tone ?? 'muted'}`"
       :aria-label="indicator.label"
       :aria-describedby="visible ? `${indicator.id}-tooltip` : undefined"
-      @pointerdown="onPointerDown"
-      @pointerenter="onPointerEnter"
-      @pointerleave="onPointerLeave"
       @focus="onFocus"
       @blur="visible = false"
       @click="onClick"
@@ -70,8 +72,23 @@ onBeforeUnmount(() => {
       v-if="visible"
       :id="`${indicator.id}-tooltip`"
       class="shell-indicator-tooltip"
+      :class="{ 'has-details': indicator.details?.length }"
       role="tooltip"
-    >{{ indicator.label }}</span>
+    >
+      <span v-if="indicator.details?.length" class="shell-indicator-details">
+        <span
+          v-for="detail in indicator.details"
+          :key="detail.id"
+          class="shell-indicator-detail"
+          :class="{ 'shell-indicator-detail-note': detail.kind === 'note' }"
+          :data-indicator-detail="detail.id"
+        >
+          <strong>{{ detail.label }}</strong>
+          <span class="shell-indicator-detail-value">{{ detail.text }}</span>
+        </span>
+      </span>
+      <template v-else>{{ indicator.label }}</template>
+    </span>
   </span>
 </template>
 
@@ -124,5 +141,50 @@ onBeforeUnmount(() => {
   line-height: 1.4;
   white-space: normal;
   pointer-events: none;
+}
+
+.shell-indicator-tooltip.has-details {
+  width: min(400px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 96px));
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.shell-indicator-details {
+  display: grid;
+  gap: 8px;
+}
+
+.shell-indicator-detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.shell-indicator-detail strong {
+  color: var(--bc-text-muted);
+  white-space: nowrap;
+}
+
+.shell-indicator-detail-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.shell-indicator-detail-note {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid var(--bc-panel-border);
+}
+
+.shell-indicator-detail-note strong,
+.shell-indicator-detail-note .shell-indicator-detail-value {
+  display: block;
+}
+
+.shell-indicator-detail-note .shell-indicator-detail-value {
+  margin-top: 4px;
+  white-space: pre-wrap;
 }
 </style>

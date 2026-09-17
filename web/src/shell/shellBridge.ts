@@ -48,6 +48,14 @@ export interface ShellIndicator {
   icon: AppIconName;
   label: string;
   tone?: "success" | "muted";
+  details?: ShellIndicatorDetail[];
+}
+
+export interface ShellIndicatorDetail {
+  id: string;
+  label: string;
+  text: string;
+  kind?: "note";
 }
 
 export interface ShellConfig {

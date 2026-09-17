@@ -1,7 +1,6 @@
 export type AppIconName =
   | "back"
   | "check"
-  | "checks"
   | "close"
   | "copy"
   | "cut"
@@ -21,6 +20,8 @@ export type AppIconName =
   | "inspector"
   | "joystick"
   | "lock"
+  | "map-details"
+  | "map-status"
   | "menu"
   | "minus"
   | "music"
