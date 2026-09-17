@@ -82,6 +82,7 @@ try {
     ],
     ["进入冒险模式"],
   );
+  await exploreDifficultySmoke(`${origin}/explore`);
   await interactiveFilterSmoke(`${origin}/explore`);
   await smoke(`${origin}/explore/novoban-pushbox`, [
     'class="explore-tabs"',
@@ -370,6 +371,26 @@ async function interactiveFilterSmoke(url) {
   const payload = lastJsonLine(result.stdout);
   if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 2)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
+}
+async function exploreDifficultySmoke(url) {
+  const script = `
+(async () => {
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let star = null;
+  for (let i = 0; i < 120 && !star; i += 1) {
+    await delay(50);
+    star = document.querySelector('.chapter-stars .app-icon');
+  }
+  if (!star) throw new Error('missing Explore difficulty star');
+  return JSON.stringify({ color: getComputedStyle(star).color });
+})()
+`;
+  const result = await runBrowserEval(url, script);
+  if (result.status !== 0)
+    throw new Error(`Explore 难度星级检查失败：${result.stderr || result.stdout}`);
+  const payload = lastJsonLine(result.stdout);
+  if (payload.color !== "rgb(247, 212, 95)")
+    throw new Error(`Explore 难度星级颜色异常：${JSON.stringify(payload)}`);
 }
 async function interactiveReplayVerificationSmoke(url) {
   const script = `

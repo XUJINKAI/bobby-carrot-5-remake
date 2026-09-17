@@ -138,6 +138,14 @@ button:focus-visible {
   color: var(--muted);
 }
 
+/* Explore 与 Adventure 共用章节难度星级，必须随应用基础样式同步加载。 */
+.chapter-stars {
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  color: #f7d45f;
+  text-shadow: 0 1px 2px #000;
+}
+
 /* Explore 关卡卡片和游戏 TopBar 徽章共用同一套难度语义。 */
 .difficulty-badge {
   display: inline-flex;
