@@ -163,8 +163,9 @@ Cloud 与 Cloud Parking 视觉由 `color` 选择；Wind Switch 视觉由 `direct
 
 - Kite是关卡内的可收集物品
 - 拥有Kite的 Bobby 走到 Whirlwind 上会起飞
+- 起飞在入格移动中点开始：普通 Bobby 按 6px 阶段上抬，抵达后切换为固定抬高 24px 的 `b9.png` 风筝姿态
 - airborne 状态完全绕过普通 terrain/object 碰撞，只保持当前方向逐格飞行
-- airborne Bobby 跨过 Landing 的移动中点时开始降落
+- airborne Bobby 跨过 Landing 的移动中点时开始降落，风筝姿态按四个 6px 阶段降到地面
 - 原版 class 没有“飞到地图边缘自动降落/停止”的逻辑；正常 flight path 必须在出界前由 Landing 收尾
 
 如果 airborne Bobby 被异常地图布局引导出 grid 数组边界，下一 movement cycle 会访问越界坐标；这是无保护的异常路径，而不是一种正常玩法结算。

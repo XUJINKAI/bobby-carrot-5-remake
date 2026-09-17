@@ -176,9 +176,18 @@ World 保存，不因纯表现选择而改写。
 
 Kite 起飞完成时原版同时写入 `airborne=true` 与 `aN=1`。airborne 移动分支不递减 `aN`，所以 Flight 全程都满足 `N()` 的快速条件，每 step 推进 6px，而不是普通 Bobby 的 3px。Engine 根据 37-2 实测使用 `208ms/格`。
 
+Whirlwind 的起飞表现从入格移动中点开始。此时原版设置 `bb=1, aW=0`，但仍绘制
+`b0.png..b3.png` 的普通方向人物；后半格每个 gameplay step 将纯绘制高度 `aW`
+增加 6px。普通 3px/step 移动对应 8 个上抬阶段，内部在抵达时到达 48px；快速
+6px/step 移动对应 4 个阶段，到达 24px。抵达结算随后才设置 `airborne=true`、把
+`aW` 固定为 24px，并切换四方向 `b9.png` 风筝素材。Landing 保持 `b9.png`，在后半格
+以四个 6px 阶段从 24px 降到 0，再恢复普通人物。
+
 Landing 抵达后 `airborne` 清除，`aN=1` 仍保留到下一次 `M()`，因此 Bobby 会按当前方向自动尝试续行一格。未持续按住同方向时，该次移动建立后 `aN` 减为 0，所以使用 3px/step 的普通 cadence。受阻分支设置 `aO=8`，与 Speed / Mower impact 共用 8 阶段 Camera shake；当前每阶段按实测校准为 `26ms`。
 
-Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
+Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实
+`durationMs` 插值。起飞和降落阶段按同一 WorldMotion 的后半段真实毫秒进度分段采样，
+不会把原版 gameplay step 绑定到浏览器渲染帧。
 
 ### `b6.png` 关卡过渡
 

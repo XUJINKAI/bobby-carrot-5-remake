@@ -52,7 +52,10 @@ public final class KiteFlight {
 
     /**
      * 对应 `H()` 在本格剩余视觉移动期间的 takeoff offset。
-     * 每 gameplay step +6；本格移动完全结束后切 `airborne=true` 并固定 offset=24。
+     * 每 gameplay step +6，期间仍绘制普通方向人物：
+     * - 普通 3px/step 移动在后半格执行 8 次，抵达结算前内部 offset 到 48；
+     * - 快速 6px/step 移动在后半格执行 4 次，offset 到 24。
+     * 本格移动完全结束后切 `airborne=true`、改绘 b9.png 并固定 offset=24。
      */
     void advanceTakeoffOffset() {
         if (transition == 1) {

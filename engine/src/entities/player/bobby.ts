@@ -31,6 +31,11 @@ const BOBBY_STANDING_FRAME = 3;
 const BOBBY_ICE_FRAME = 6;
 const BOBBY_TRANSITION_FRAME_COUNT = 8;
 const BOBBY_TRANSITION_STEP_COUNT = 10;
+const FLIGHT_ELEVATION_STEP_PX = 6;
+const FLIGHT_ELEVATION_PX = 24;
+const NORMAL_TAKEOFF_STAGE_COUNT = 8;
+const FAST_TAKEOFF_STAGE_COUNT = 4;
+const LANDING_STAGE_COUNT = 4;
 const DIRECTION_COLUMN: Readonly<Record<Direction, number>> = {
   left: 0,
   right: 1,
@@ -214,9 +219,21 @@ const bobbyVisual = {
       });
     }
 
+    // 原版在进入 Whirlwind 的后半格仍绘制普通 Bobby，只通过 aW 分阶段上抬；
+    // 抵达后才切换 b9.png。逆向依据见 docs/reference/runtime-animation.md。
+    if (context.entity.state?.flightTransition === "takeoff") {
+      return composition(context, {
+        asset: BOBBY_VISUAL_ASSETS.move[direction],
+        frameColumns: 8,
+        frameRows: 1,
+        frameIndex: context.runtime?.moving
+          ? resolveWalkingFrame(rawProgress)
+          : BOBBY_STANDING_FRAME,
+      });
+    }
+
     if (
       isBobbyFlying(context.entity.state) ||
-      context.entity.state?.flightTransition === "takeoff" ||
       context.entity.state?.flightTransition === "landing"
     ) {
       return composition(context, {
@@ -362,16 +379,38 @@ function speedTrailOffset(direction: Direction): { x: number; y: number } {
 function visualElevation(context: VisualResolveContext): number {
   const progress = clampProgress(context.runtime?.progress ?? 1);
   if (context.entity.state?.flightTransition === "takeoff") {
-    return progress < 0.5 ? 0 : (progress - 0.5) * 48;
+    const stages = context.runtime?.animation === "speed"
+      ? FAST_TAKEOFF_STAGE_COUNT
+      : NORMAL_TAKEOFF_STAGE_COUNT;
+    return completedFlightTransitionStages(progress, stages) *
+      FLIGHT_ELEVATION_STEP_PX;
   }
   if (context.entity.state?.flightTransition === "landing") {
-    return progress < 0.5 ? 24 : (1 - progress) * 48;
+    return Math.max(
+      0,
+      FLIGHT_ELEVATION_PX -
+        completedFlightTransitionStages(progress, LANDING_STAGE_COUNT) *
+          FLIGHT_ELEVATION_STEP_PX,
+    );
   }
-  if (isBobbyFlying(context.entity.state)) return 24;
+  if (isBobbyFlying(context.entity.state)) return FLIGHT_ELEVATION_PX;
   const value = context.runtime?.elevationPx;
   return typeof value === "number" && Number.isFinite(value)
     ? Math.max(0, value)
     : 0;
+}
+
+/**
+ * 原版在移动中点开始更新 aW；每完成一个等分的 Presentation 毫秒区间推进一阶段。
+ * progress 来自 WorldMotion 的真实 durationMs，因此不同渲染帧率采样结果一致。
+ */
+function completedFlightTransitionStages(
+  progress: number,
+  stageCount: number,
+): number {
+  if (progress <= 0.5) return 0;
+  const phaseProgress = Math.min(1, (progress - 0.5) * 2);
+  return Math.min(stageCount, Math.floor(phaseProgress * stageCount));
 }
 
 function composition(
