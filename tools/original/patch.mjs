@@ -3,12 +3,12 @@ import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import {
-  decodeDatLevelRecord,
   encodeDatLevelRecord,
   replaceDatLevelRecord,
   splitDatPackage,
 } from "./dat/index.mjs";
 import { reverseEntityMap } from "./entity-reverse-adapter.mjs";
+import { parseLevelRecord } from "./level-format.mjs";
 import { RELEASES } from "./source-definitions.mjs";
 import { patchZipEntries, readZipEntry } from "../lib/zip-patch.mjs";
 
@@ -29,8 +29,9 @@ const maps = readPatchMaps(inputDir, catalog);
 
 fs.rmSync(outputDir, { recursive: true, force: true });
 fs.mkdirSync(outputDir, { recursive: true });
+const encodedMaps = writeEncodedMaps(maps, path.join(outputDir, "encoded"));
 const patchTimestamp = formatPatchTimestamp(new Date());
-for (const [releaseId, replacements] of groupByRelease(maps)) {
+for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
   const release = RELEASES.find((item) => item.id === releaseId);
   if (!release) throw new Error(`未知原版 release：${releaseId}`);
   const original = path.join(root, "original/official-hd", release.jar);
@@ -47,6 +48,39 @@ for (const [releaseId, replacements] of groupByRelease(maps)) {
   console.log(
     `${path.relative(root, out)}: ${replacements.map((item) => item.id).join(", ")} · DAT record 写入校验：OK${patched.removedSignatures.length ? ` · 已移除失效签名：${patched.removedSignatures.join(", ")}` : ""}`,
   );
+}
+
+/**
+ * 先把 Entity Map 固化为与 original/decoded 相同的可审阅格式。
+ * 后续编码会重新读取这些文件，确保落盘中间层就是 DAT 的实际输入。
+ */
+function writeEncodedMaps(sourceMaps, directory) {
+  const seen = new Set();
+  const encodedMaps = sourceMaps.map((item) => {
+    const relativePath = item.source.decodedPath;
+    if (typeof relativePath !== "string") {
+      throw new Error(`${item.id} 缺少 decodedPath provenance`);
+    }
+    const output = resolveChildPath(directory, relativePath);
+    if (seen.has(output)) {
+      throw new Error(`Patch 输入映射到重复的 DAT record：${relativePath}`);
+    }
+    seen.add(output);
+
+    const originalDecoded = readJson(
+      resolveChildPath(path.join(root, "original/decoded"), relativePath),
+    );
+    const record = Buffer.from(
+      encodeDatLevelRecord(reverseEntityMap(item.map)),
+    );
+    const encoded = parseLevelRecord(record, originalDecoded.source);
+    writeJson(output, encoded);
+    return { ...item, encodedPath: output };
+  });
+  console.log(
+    `${path.relative(root, directory)}: ${encodedMaps.length} 张 DAT 编码中间地图`,
+  );
+  return encodedMaps;
 }
 
 function readPatchMaps(directory, catalog) {
@@ -82,7 +116,9 @@ function patchDatEntries(original, maps) {
   for (const item of maps) {
     const entry = `${item.source.packFile}.dat`;
     const current = byEntry.get(entry) ?? readZipEntry(jar, entry);
-    const replacement = Buffer.from(encodeDatLevelRecord(reverseEntityMap(item.map)));
+    const replacement = Buffer.from(
+      encodeDatLevelRecord(readEncodedLevel(item.encodedPath)),
+    );
     byEntry.set(
       entry,
       replaceDatLevelRecord(current, item.source.levelIndex, replacement),
@@ -99,11 +135,23 @@ function verifyPatchedJar(file, maps) {
       item.source.levelIndex - 1
     ];
     if (!record) throw new Error(`Patch 后缺少 ${item.id} 的 DAT record`);
-    const decoded = decodeDatLevelRecord(record).map;
-    const expected = reverseEntityMap(item.map);
-    if (!isDeepStrictEqual(decoded, expected))
+    const expected = readEncodedLevel(item.encodedPath);
+    const actual = parseLevelRecord(Buffer.from(record), expected.source);
+    if (!isDeepStrictEqual(actual, expected)) {
       throw new Error(`Patch 后 ${item.id} 的 DAT record 写入校验失败`);
+    }
   }
+}
+
+function readEncodedLevel(file) {
+  const encoded = readJson(file);
+  if (
+    encoded.schemaVersion !== 1 ||
+    encoded.terrainEncoding !== "semantic-row-major"
+  ) {
+    throw new Error(`DAT 编码中间地图合同无效：${file}`);
+  }
+  return encoded;
 }
 
 function listJsonFiles(directory) {
@@ -137,6 +185,19 @@ function validateDirectories(input, output) {
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function writeJson(file, value) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function resolveChildPath(parent, relativePath) {
+  const child = path.resolve(parent, relativePath);
+  if (!child.startsWith(`${path.resolve(parent)}${path.sep}`)) {
+    throw new Error(`路径必须位于目标目录内：${relativePath}`);
+  }
+  return child;
 }
 
 function formatPatchTimestamp(date) {

@@ -550,7 +550,10 @@ DEV 单关调试工具。
 ```text
 Editor semantic JSON map
       ├──> Bobby Carrot 5 Remake Engine
-      └──> tools/original/dat encode
+      └──> Original Adapter
+                    ↓
+        tmp/original-patch/encoded
+                    ↓ tools/original/dat encode
                     ↓
                patch one original DAT record
                     ↓
@@ -565,7 +568,7 @@ node tools/cli.mjs original patch \
   --out tmp/original-patch
 ```
 
-输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。
+输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。Adapter 先按 `original/decoded/<release>/levels/<pack>-<slot>.json` 的合同生成可审阅中间地图；默认输出位于 `tmp/original-patch/encoded/`，DAT encoder 重新读取该中间地图后再打包 JAR。
 
 ## Tools / Assets
 

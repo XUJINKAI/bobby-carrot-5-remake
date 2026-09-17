@@ -26,6 +26,8 @@ node tools/cli.mjs original patch \
 ```text
 tmp/original-patch/base-patched-20260831-114500.jar
 tmp/original-patch/up01-patched-20260831-114500.jar
+tmp/original-patch/encoded/base/levels/01-01.json
+tmp/original-patch/encoded/up01/levels/01-01.json
 ...
 ```
 
@@ -38,6 +40,9 @@ node tools/cli.mjs original patch
 ```
 
 当前 Entity Map 会经 Original Adapter 还原为 DAT 可表达的地图；覆盖地形下的默认地面、隐藏目标和原版对象内部形态遵循 Adapter 的规范化规则。
+Adapter 结果先写入 `encoded/<release>/levels/<pack>-<slot>.json`，其格式与
+`original/decoded/` 的单关 JSON 一致。DAT encoder 从这些落盘文件重新读取地图，便于在
+运行模拟器前直接审阅实际参与打包的 terrain、objects、动态槽位和 record SHA。
 
 ## 3. 工具自动验证的内容
 
@@ -47,6 +52,7 @@ node tools/cli.mjs original patch
 - DAT metadata 与其它关卡 record 原字节保留；
 - JAR 其它 entry 尽可能原 local ZIP block 保留；
 - 失效签名 entry 被移除；
+- encoded 中间地图的 record 长度与 SHA 对应最终写入的 DAT record；
 - 输出 JAR 再读取后的目标 DAT record 与反向 Adapter 输出一致。
 
 ## 4. 在原版模拟器运行
