@@ -570,6 +570,10 @@ node tools/cli.mjs original patch \
 
 输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。Adapter 先按 `original/decoded/<release>/levels/<pack>-<slot>.json` 的合同生成可审阅中间地图；默认输出位于 `tmp/original-patch/encoded/`，DAT encoder 重新读取该中间地图后再打包 JAR。
 
+Patch 默认使用 `original/official/` 普通版 JAR。传入 `--hd` 时使用
+`original/official-hd/` 高清版，并把输出命名为
+`<release>-patched-<timestamp>-hd.jar`；两种输出共用同一 encoded DAT 中间合同。
+
 ## Tools / Assets
 
 `assets/original/` 是不可变原始输入；`assets/extracted/`、`assets/generated/` 是可重建产物。Tools 负责 JAR 解包、source provenance、Catalog、章节星级、筛选索引和原版验证 JAR。

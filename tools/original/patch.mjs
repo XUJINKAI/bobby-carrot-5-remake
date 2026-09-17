@@ -20,6 +20,10 @@ const inputDir = path.resolve(
 const outputDir = path.resolve(
   args.out ?? path.join(root, "tmp/original-patch"),
 );
+const jarDirectory = path.join(
+  root,
+  args.hd ? "original/official-hd" : "original/official",
+);
 validateDirectories(inputDir, outputDir);
 
 const catalog = readJson(path.join(root, "original/adapted/catalog.json"));
@@ -34,14 +38,14 @@ const patchTimestamp = formatPatchTimestamp(new Date());
 for (const [releaseId, replacements] of groupByRelease(encodedMaps)) {
   const release = RELEASES.find((item) => item.id === releaseId);
   if (!release) throw new Error(`未知原版 release：${releaseId}`);
-  const original = path.join(root, "original/official-hd", release.jar);
+  const original = path.join(jarDirectory, release.jar);
   const replacementEntries = patchDatEntries(original, replacements);
   const patched = patchZipEntries(fs.readFileSync(original), replacementEntries, {
     removeSignatures: true,
   });
   const out = path.join(
     outputDir,
-    `${releaseId}-patched-${patchTimestamp}.jar`,
+    `${releaseId}-patched-${patchTimestamp}${args.hd ? "-hd" : ""}.jar`,
   );
   fs.writeFileSync(out, patched.buffer);
   verifyPatchedJar(out, replacements);
@@ -175,10 +179,15 @@ function validateDirectories(input, output) {
   const tmp = path.join(root, "tmp");
   if (output === tmp || !output.startsWith(`${tmp}${path.sep}`))
     throw new Error("Patch 输出目录必须位于 tmp 的子目录中");
-  const official = path.join(root, "original/official-hd");
+  const officialDirectories = [
+    path.join(root, "original/official"),
+    path.join(root, "original/official-hd"),
+  ];
   if (
-    [path.parse(output).root, root, official].includes(output) ||
-    output.startsWith(`${official}${path.sep}`)
+    [path.parse(output).root, root, ...officialDirectories].includes(output) ||
+    officialDirectories.some((directory) =>
+      output.startsWith(`${directory}${path.sep}`),
+    )
   )
     throw new Error("Patch 输出目录必须是安全的生成目录");
 }
@@ -220,6 +229,10 @@ function parseArgs(values) {
   for (let index = 0; index < values.length; index += 1) {
     const key = values[index];
     if (!key?.startsWith("--")) continue;
+    if (key === "--hd") {
+      result.hd = true;
+      continue;
+    }
     const value = values[++index];
     if (!value || value.startsWith("--")) throw new Error(`${key} 缺少目录参数`);
     result[key.slice(2)] = value;

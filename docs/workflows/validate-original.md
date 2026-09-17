@@ -16,12 +16,12 @@
 ## 2. 生成验证 JAR
 
 ```bash
-node tools/cli.mjs original patch \
+npm run patch -- \
   --in custom-maps/original-patch \
   --out tmp/original-patch
 ```
 
-省略参数时，默认输入与输出目录也是这两个路径。输入目录中的每个 `.json` 文件使用文件名作为 Campaign public ID，例如 `1-1.json`、`1-bonus-1.json`、`40-10.json`。工具按照 Catalog provenance 自动定位原始 JAR、DAT 包和 record slot，并将同一 JAR 的全部替换合并到一个输出文件：
+省略参数时，默认输入与输出目录也是这两个路径，并使用 `original/official/` 中的普通版 JAR。输入目录中的每个 `.json` 文件使用文件名作为 Campaign public ID，例如 `1-1.json`、`1-bonus-1.json`、`40-10.json`。工具按照 Catalog provenance 自动定位原始 JAR、DAT 包和 record slot，并将同一 JAR 的全部替换合并到一个输出文件：
 
 ```text
 tmp/original-patch/base-patched-20260831-114500.jar
@@ -31,12 +31,22 @@ tmp/original-patch/encoded/up01/levels/01-01.json
 ...
 ```
 
-输入目录内只放入需要验证的地图。每次执行都会清空输出目录后重建；`assets/original/official-hd/` 永远不会被写入。
+需要生成高清验证包时使用：
+
+```bash
+npm run patch -- --hd
+```
+
+高清输出文件名在时间戳后增加 `-hd`，例如
+`tmp/original-patch/base-patched-20260831-114500-hd.jar`。普通版与高清版共用相同的
+`encoded/` 中间地图合同。
+
+输入目录内只放入需要验证的地图。每次执行都会清空输出目录后重建；`original/official/` 与 `original/official-hd/` 永远不会被写入。
 
 例如只验证 `1-1.json`：
 
 ```bash
-node tools/cli.mjs original patch
+npm run patch
 ```
 
 当前 Entity Map 会经 Original Adapter 还原为 DAT 可表达的地图；覆盖地形下的默认地面、隐藏目标和原版对象内部形态遵循 Adapter 的规范化规则。
@@ -59,7 +69,7 @@ Adapter 结果先写入 `encoded/<release>/levels/<pack>-<slot>.json`，其格�
 
 把输出 JAR 放入 KEmulator/J2ME Loader 等环境。进入被替换的目标关，记录移动、Tick、触发条件、动画/阻挡/死亡等结果。
 
-当前 patch 输出使用高清兼容构建，因此适合验证项目采用的 48px presentation，也可作为 gameplay 运行交叉检查。碰撞、机关、存档或 Campaign 结论仍以普通版 UP9 字节码为第一基准；若模拟器观察与普通版控制流不能互相解释，应再用同一 DAT 最小地图核对普通版，并分别记录两份 JAR 的 hash 与结果。双基准规则见 [`官方发行包、代码与资产谱系`](../reference/official-release-provenance.md)。
+默认 patch 输出使用普通版，适合验证碰撞、机关、存档与 Campaign；`--hd` 输出适合验证项目采用的 48px presentation，并作为 gameplay 运行交叉检查。若两版观察不同，应分别记录两份 JAR 的 hash 与结果。双基准规则见 [`官方发行包、代码与资产谱系`](../reference/official-release-provenance.md)。
 
 ## 5. 回到 Engine
 

@@ -123,6 +123,9 @@ node tools/cli.mjs original patch \
 
 工具以输入目录内 JSON 文件名匹配 Campaign public ID，根据 Catalog provenance 找到所属原始 JAR、DAT 与 record slot；同一 JAR 的多个目标会合并输出，并在输出后重新读取目标 DAT record，确认内容与反向 Adapter 的输出一致。
 
+命令默认 patch `original/official/` 普通版。需要高清验证包时运行
+`npm run patch -- --hd`，输出 JAR 文件名以 `-hd.jar` 结尾。
+
 详细流程见 [`workflows/validate-original.md`](workflows/validate-original.md)。
 
 ## 完成前验证
