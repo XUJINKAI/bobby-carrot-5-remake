@@ -45,15 +45,17 @@ runtime.timing = {
 };
 ```
 
-`worldHz` / `presentationHz` 只控制两个 clock 如何采样。Bobby 普通移动一格需要多久属于 Bobby locomotion policy，由 `entities/player/BobbyLocomotion.ts` 定义；Ice / Speed / Leaf / Flight 等持续机制的 cadence 由各自 Entity / RuntimeAction 定义。
+`worldHz` / `presentationHz` 只控制两个 clock 如何采样。Bobby 普通移动一格需要多久属于 Bobby locomotion policy，由 `entities/player/BobbyLocomotion.ts` 定义；Ice / Speed / Leaf / Flight 等持续机制的 cadence 由各自 Entity / RuntimeAction 定义。Flight 不从 Bobby 普通移动配置隐式取值。
 
-原版 Bobby 默认普通移动 cadence：
+Bobby Carrot 5 Remake 默认普通移动 cadence：
 
 ```ts
 ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs = 350;
 ```
 
 Presentation 默认可以采用同样的持续时间来保持视觉同步，但 presentation override 不能反向改变 gameplay cadence。
+
+重复分段的 WorldMotion 只能在固定 World tick 边界完成，每段独立向上取整会让误差随距离累积。这类 RuntimeAction 必须结转舍入余量，并使用足够长的路径在 `30 / 60 / 120Hz` 下验证，总时长误差不超过一个 World tick。
 
 所有 gameplay 持续时间使用毫秒语义，不把 `4 ticks`、`16 ticks` 之类采样数量散落到业务代码。这样未来调整 WorldClock 频率不会自动改变真实动作时长。
 

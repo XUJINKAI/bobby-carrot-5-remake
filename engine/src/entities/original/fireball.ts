@@ -7,6 +7,7 @@ import type {
 import {
   accrueActionDeadline,
   consumeActionDeadline,
+  quantizedActionCadenceMs,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
@@ -120,7 +121,11 @@ const fireballAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "fireball",
-            cadenceMs: nextFireballCellDuration(action, time.stepMs),
+            cadenceMs: quantizedActionCadenceMs(
+              action,
+              ORIGINAL_FIREBALL_TIMING.cellMs,
+              time.stepMs,
+            ),
           },
         },
       ],
@@ -195,24 +200,6 @@ function createFireballAction(
       ...(inputLockActionId === null ? {} : { inputLockActionId }),
     },
   };
-}
-
-/**
- * WorldMotion 只能在固定 World tick 边界结束。把每格舍入误差带到下一格，能让
- * 长距离平均速度保持配置的毫秒值，而不是每格都向上取整后持续变慢。
- */
-function nextFireballCellDuration(
-  action: RuntimeActionInstance,
-  stepMs: number,
-): number {
-  const safeStepMs = Number.isFinite(stepMs) && stepMs > 0 ? stepMs : 1;
-  const carryMs = finiteState(action.state.cadenceCarryMs);
-  const targetMs = ORIGINAL_FIREBALL_TIMING.cellMs + carryMs;
-  const ticks = Math.max(1, Math.round(targetMs / safeStepMs));
-  const quantizedMs = ticks * safeStepMs;
-  action.state.cadenceCarryMs = targetMs - quantizedMs;
-  // 浮点乘加可能让 N 个 step 比 N * stepMs 小极少量，留出微秒级余量避免多等一拍。
-  return Math.max(Number.EPSILON, quantizedMs - 0.001);
 }
 
 function projectileBlockedAt(

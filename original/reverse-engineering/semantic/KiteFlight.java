@@ -26,6 +26,9 @@ public final class KiteFlight {
     /** 对应 `aW`：人物飞行表现使用的垂直/高度偏移。 */
     private int flightPixelOffset;
 
+    /** 对应 `aN`；起飞完成后保持为 1，使 `N()` 每 step 移动 6px。 */
+    private int speedContinuation;
+
     void collectKite(int x, int y) {
         if ((objectGrid[y][x] & 0xFF) != KITE || airborne) {
             return;
@@ -64,6 +67,7 @@ public final class KiteFlight {
         transition = 0;
         airborne = true;
         flightPixelOffset = FLIGHT_PIXEL_OFFSET;
+        speedContinuation = 1;
     }
 
     /**
@@ -71,7 +75,8 @@ public final class KiteFlight {
      * - 不调用普通 `canPlayerMove()`；
      * - 不检查目标 terrain/object；
      * - 不检查目标 X/Y 边界；
-     * - 只按当前方向把 grid 坐标推进一格并令 ay=48。
+     * - 只按当前方向把 grid 坐标推进一格并令 ay=48；
+     * - airborne 分支不递减 `aN`，因此 `N()` 持续以 6px/step 完成每格。
      *
      * 所以飞行不是“ignore blocking 但保留 edge collision”，而是真正绕过普通格碰撞。
      */

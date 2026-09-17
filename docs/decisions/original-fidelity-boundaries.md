@@ -10,19 +10,25 @@ Bobby Carrot 5 Remake 的选择和理由。
 
 ### 现象差异
 
-原版普通移动和 Flight 每格约 `496ms`，Speed 每格约 `248ms`。Bobby Carrot 5 Remake
-默认使用普通移动和 Flight `350ms`、Speed `175ms`。
+原版普通移动为 3px/step，按循环目标估算每格约 `496ms`；Speed 为
+6px/step，同方法估算每格约 `248ms`。Bobby Carrot 5 Remake 默认使用普通移动
+`350ms`、Speed `175ms`。
+
+Kite Flight 在原版起飞完成后持续保留快速条件，每 step 移动 6px。37-2 的
+82 格纯飞行路径原版实测约 18s，Engine 使用独立的 `208ms/格`
+毫秒配置，理论时长为 17.056s。
 
 ### 可能影响
 
-玩家操作更紧凑；Bobby 与仍按原版毫秒换算的 Bean、Cloud、Leaf、Dragon 等持续机关相遇
-时，先后顺序可能与原版不同。需要精确还原原版节奏的宿主可以通过公开 locomotion 配置
-覆盖移动时长。
+玩家普通移动与 Speed 操作更紧凑；Bobby 与仍按原版毫秒换算的 Bean、Cloud、Leaf、
+Dragon 等持续机关相遇时，先后顺序可能与原版不同。需要调整 Bobby 操作节奏的宿主
+可以通过公开 locomotion 配置覆盖普通移动时长。Flight 使用自己的原版校准节拍。
 
 ### 设计原理
 
-移动 cadence 是 Bobby 和各机关的策略，不是 WorldClock 频率。Engine 保留现代默认值，
-并继续使用毫秒和 WorldMotion 表达规则，使改变 `worldHz` 不会改变真实动作时长。
+移动 cadence 是 Bobby 和各机关的策略，不是 WorldClock 频率。Engine 使用毫秒和
+WorldMotion 表达规则；Flight 这类重复分段动作还会把固定 World tick 的舍入误差
+结转到下一格，使长距离平均速度不随 `worldHz` 改变。
 
 ## Ice 的开局与人物姿势
 

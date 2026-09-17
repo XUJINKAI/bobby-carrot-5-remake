@@ -10,4 +10,11 @@
 8. 对比原版与 Bobby Carrot 5 Remake，再回到字节码解释差异。
 9. `npm run verify` 全量验证后再完成任务。
 
+持续移动或动画的原版校准还需要：
+
+- 分别记录每 step 位移/帧相位、完整路径墙钟实测和 Engine 毫秒配置；
+- 实测注明地图、起止事件、格数或像素距离，并尽量使用长路径降低人工计时误差；
+- gameplay 重复分段动作在 `30 / 60 / 120Hz` 下验证长距离总时长；
+- 纯 Presentation 动画在任意采样时点验证帧边界，不使用渲染帧数表达时长。
+
 原版验证不是另一个 Engine Playground：测试地图仍由 Editor authoring，Bobby Carrot 5 Remake 侧仍调用正式 Engine；JAR 工具只负责原版格式互操作。

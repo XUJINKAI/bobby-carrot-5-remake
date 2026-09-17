@@ -6,6 +6,7 @@ import type {
 import {
   accrueActionDeadline,
   consumeActionDeadline,
+  quantizedActionCadenceMs,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
@@ -13,7 +14,6 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
-import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../player/BobbyLocomotion.js";
 import {
   bobbyMountId,
   isBobbyFlying,
@@ -27,7 +27,16 @@ import {
 } from "./module.js";
 
 const FLIGHT_ACTION = "kite-flight";
-export const DEFAULT_FLIGHT_CELL_MS = ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs;
+
+export interface KiteFlightTiming {
+  /** Kite Flight 通过一个完整格子的墙钟时间。 */
+  readonly cellMs: number;
+}
+
+/** 37-2 的 82 格纯飞行路径实测校准；运行时只消费毫秒。 */
+export const ORIGINAL_KITE_FLIGHT_TIMING: KiteFlightTiming = {
+  cellMs: 208,
+};
 
 const whirlwindBehavior: Behavior = {
   id: "kite-takeoff",
@@ -119,7 +128,11 @@ const flightAction: RuntimeActionDefinition = {
     accrueActionDeadline(action, time);
     if (query.motionForEntity(actorId)?.status === "running") return "running";
 
-    if (!consumeActionDeadline(action, DEFAULT_FLIGHT_CELL_MS, time.stepMs / 2))
+    if (!consumeActionDeadline(
+      action,
+      ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+      time.stepMs / 2,
+    ))
       return "running";
     const direction = actor.direction;
     if (!direction) return "complete";
@@ -133,7 +146,11 @@ const flightAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "flight",
-            cadenceMs: DEFAULT_FLIGHT_CELL_MS,
+            cadenceMs: quantizedActionCadenceMs(
+              action,
+              ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+              time.stepMs,
+            ),
           },
         },
       ],
@@ -197,6 +214,9 @@ function createFlightAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FLIGHT_ACTION,
     ownerEntityId,
     blocksInput: true,
-    state: { elapsedMs: DEFAULT_FLIGHT_CELL_MS },
+    state: {
+      elapsedMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+      cadenceCarryMs: 0,
+    },
   };
 }

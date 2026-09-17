@@ -14,12 +14,29 @@ outer loop start
   -> 补 sleep，使整个 outer loop 约 62ms
 ```
 
-因此需要区分两个时间单位：
+因此需要区分两个代码结构上的时间单位：
 
-- outer loop：约 62ms，约 16Hz；
-- gameplay step：一次 `b()` 调用，稳态约 31ms，约 32Hz。
+- outer loop：目标约 62ms，约 16Hz；
+- gameplay step：一次 `b()` 调用，按循环目标换算约 31ms，约 32Hz。
 
-`H/N/P/Q/R/S/V/...` 等 gameplay 方法按 `b()` 调用推进，而不是每个 outer loop 只推进一次。原版以“6 tick / 16 tick”实现的机关，换算真实时间时必须按 gameplay step 计算。
+`H/N/P/Q/R/S/V/...` 等 gameplay 方法按 `b()` 调用推进，而不是每个 outer loop 只推进一次。原版以“6 step / 16 step”实现的机关，应先保留 step 数这一结构事实，再用同路径墙钟实测校准可执行的毫秒值。循环目标、设备调度、模拟器与每轮工作耗时都可能使实际墙钟间隔偏离 31ms。
+
+### 墙钟校准记录
+
+时间结论分为三层，不得用其中一层替代其余两层：
+
+1. 原版结构事实：每 step 位移量、状态所需 step 数与帧相位；
+2. 原版墙钟实测：固定地图、起止事件、距离与运行环境；
+3. Engine 毫秒配置：在不同 World / Presentation 帧率下保持的可执行时间。
+
+当前直接校准结果：
+
+- Fireball 和 Kite Flight 都为 48px / 6px，即 8 gameplay step/格；
+- Fireball 长路径与 37-2 的 82 格纯 Flight 实测均支持约 `208ms/格`；
+- 37-2 的 Whirlwind `x=4` 到 Landing `x=86`，理论 Flight 时长为
+  `82 × 208ms = 17.056s`，原版人工计时约 18s。
+
+这项校准只确认同类快速位移的墙钟节拍，不会把所有原版 step 计数机械换算为 26ms。其他机关仍需保留自己的结构证据并独立校准。
 
 这是原版实现事实，不代表 Web 版必须复制这种“双 update + 单 repaint”的循环结构。
 
@@ -48,7 +65,7 @@ requestAnimationFrame
 
 当前默认 `60Hz / 约 16.67ms`，负责 Grid Truth 与 gameplay。这个值是现代 Engine 的通用采样策略，不复用原版约 32Hz 的 runtime advance 频率。
 
-逆向已经确认原版在每个约 62ms outer loop 内推进两次 gameplay。原版机制按约 31ms/step 换算各自的时间语义，不改变 Engine 的全局默认频率。
+逆向已经确认原版在每个目标约 62ms outer loop 内推进两次 gameplay。缺少实测时可用约 31ms/step 作为代码结构估算；有可重复的同路径墙钟证据时，以该结果校准机制自身的毫秒配置，不改变 Engine 的全局默认频率。
 
 ### PresentationClock
 
@@ -68,7 +85,7 @@ requestAnimationFrame
 N 个 Web WorldTick
 ```
 
-原版若明确以 N 次 `b()` gameplay step 控制状态，则先保存这个原版计数事实，再按约 31ms/step 换算原版时长。Web 实现仍应优先把行为表达为可解释的时间语义，而不是盲目复制混淆代码计数器。
+原版若明确以 N 次 `b()` gameplay step 控制状态，则先保存这个原版计数事实，再使用墙钟实测或循环目标估算换算时长。Web 实现仍应优先把行为表达为可解释的时间语义，而不是盲目复制混淆代码计数器。
 
 ## 3. Grid Truth 与视觉过渡
 
@@ -155,7 +172,9 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 Bobby Carrot 5 Remake 已让 Beanstalk 上站立和移动的 Bobby 使用 Up 人物条带；朝向仍由
 World 保存，不因纯表现选择而改写。
 
-原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；连续格移动 cadence 约 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，约 `248ms`。
+原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；按循环目标估算为 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，按同一方法估算为 `248ms`。
+
+Kite 起飞完成时原版同时写入 `airborne=true` 与 `aN=1`。airborne 移动分支不递减 `aN`，所以 Flight 全程都满足 `N()` 的快速条件，每 step 推进 6px，而不是普通 Bobby 的 3px。Engine 根据 37-2 实测使用 `208ms/格`。
 
 Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
 
