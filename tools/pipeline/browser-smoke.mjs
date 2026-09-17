@@ -360,7 +360,7 @@ async function interactiveFilterSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 4)
+  if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 2)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
 }
 async function interactiveReplayVerificationSmoke(url) {
