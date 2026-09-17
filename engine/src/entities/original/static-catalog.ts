@@ -7,7 +7,6 @@ import type {
 import {
   collectBehavior,
   pickupBehavior,
-  requiresUnmountedReachBehavior,
 } from "../behaviorLibrary.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
@@ -63,9 +62,6 @@ export const staticSurfaceModules: readonly EntityModule[] = [
     tileCell("snow-cloud", { fields: { variant: "ts-8-13" } }),
     ["walkable"],
   ),
-  surface(MapEntityTypeId.EXIT, "Exit", tileCell(MapEntityTypeId.EXIT), [
-    "walkable",
-  ], [], [{ behavior: requiresUnmountedReachBehavior }]),
   surface(
     MapEntityTypeId.SHOP_DREAM_MACHINE_TICKET,
     "Dream Machine Ticket",

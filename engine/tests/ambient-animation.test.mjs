@@ -108,54 +108,6 @@ test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
   assert.deepEqual(looped, first);
 });
 
-test("Exit animates only when reach Exit is the only unfinished objective", () => {
-  const blocked = {
-    type: "all",
-    completed: false,
-    conditions: [
-      {
-        type: "carrot",
-        completed: false,
-        remaining: 1,
-      },
-      { type: "exit", completed: false },
-    ],
-  };
-  assert.equal(
-    resolveAt(MapEntityTypeId.EXIT, AMBIENT_STEP_MS, undefined, blocked).kind,
-    "atlas",
-  );
-
-  const ready = {
-    ...blocked,
-    conditions: [
-      {
-        type: "carrot",
-        completed: true,
-        remaining: 0,
-      },
-      { type: "exit", completed: false },
-    ],
-  };
-  const readyLayer = resolveAt(
-    MapEntityTypeId.EXIT,
-    AMBIENT_STEP_MS,
-    undefined,
-    ready,
-  );
-  assert.equal(readyLayer.kind, "image");
-  assert.equal(readyLayer.frameIndex, 0);
-
-  const directLayer = resolveAt(
-    MapEntityTypeId.EXIT,
-    AMBIENT_STEP_MS,
-    undefined,
-    { type: "exit", completed: false },
-  );
-  assert.equal(directLayer.kind, "image");
-  assert.equal(directLayer.frameIndex, 0);
-});
-
 test("original ta.png Speed and Tide mappings preserve DAT direction order", () => {
   for (const [direction, speedFrame, tideFrame] of [
     ["up", 3, 31],

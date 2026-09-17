@@ -68,8 +68,8 @@ HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内�
 
 ### exit 出口
 
-- 其他目标未完成时，Exit 使用 `exit` 的 base。
-- 通关条件只剩 reach Exit 时，播放 `exit/ambient` 动画。
+- Engine 保持 `all` / `any` 的目标树结构，只把尚未完成的 `exit` 分支投影为完成；投影后整棵通关条件成立时，播放 `exit/ambient` 动画，否则使用 `exit` 的 base。
+- 因此 `any(exit, golden-carrot)` 从关卡开始即可通过 Exit 通关，Exit 也从关卡开始播放提示动画；`all(carrot, exit)` 则在 carrot 目标完成后启用动画。
 
 ## 移动类机关
 
