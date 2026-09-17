@@ -209,6 +209,16 @@ function writeNotFoundPage() {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,follow" />
     <title>${escapeHtml(title)}</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KZKWTSQXMP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-KZKWTSQXMP");
+    </script>
     <style>
       * { box-sizing: border-box; }
       html, body { min-height: 100%; margin: 0; }

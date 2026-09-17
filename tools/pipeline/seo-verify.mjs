@@ -49,6 +49,8 @@ export function verifySeoArtifacts() {
     throw new Error("404.html 必须显示 sleep.png");
   if (!notFound.includes('<a href="/">返回首页</a>'))
     throw new Error("404.html 必须提供返回首页链接");
+  if (!notFound.includes('gtag("config", "G-KZKWTSQXMP")'))
+    throw new Error("404.html 必须包含 GA4 追踪代码");
   if (!fs.existsSync(path.join(dist, "assets/art/hd/sleep.png")))
     throw new Error("404.html 使用的 sleep.png 必须发布到 dist");
 
@@ -94,6 +96,13 @@ function assertShell(relative, expected) {
     throw new Error(`${relative}: canonical 错误`);
   if (!html.includes('property="og:image"'))
     throw new Error(`${relative}: 缺少 og:image`);
+  if (
+    !html.includes(
+      "https://www.googletagmanager.com/gtag/js?id=G-KZKWTSQXMP",
+    ) ||
+    !html.includes('gtag("config", "G-KZKWTSQXMP")')
+  )
+    throw new Error(`${relative}: 缺少 GA4 追踪代码`);
   if (expected.title && !html.includes(`<title>${expected.title}</title>`))
     throw new Error(`${relative}: title 错误`);
 }
