@@ -4,8 +4,7 @@ import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
 import {
-  DEFAULT_FIREBALL_CELL_MS,
-  DEFAULT_FIREBALL_TERMINAL_MS,
+  ORIGINAL_FIREBALL_TIMING,
 } from "../dist/entities/original/fireball.js";
 import { ICE_MELT_STAGE_MS } from "../dist/entities/original/ice-block.js";
 import { World } from "./support/World.mjs";
@@ -13,6 +12,68 @@ import { World } from "./support/World.mjs";
 function update(world, tick, stepMs) {
   return world.update({ tick, stepMs });
 }
+
+function measureFireballLifetime(hz, cellCount) {
+  const entities = [];
+  for (let x = 0; x <= cellCount; x += 1) {
+    entities.push({ type: "grass", variant: "ts-10-1", x, y: 0 });
+  }
+  entities.push({
+    type: RuntimeEntityTypeId.FIREBALL,
+    x: 0,
+    y: 0,
+    direction: "right",
+  });
+  const world = new World({
+    schemaVersion: 1,
+    width: cellCount + 1,
+    height: 1,
+    entities,
+  });
+  const stepMs = 1000 / hz;
+  let elapsedMs = 0;
+  let launchedAtMs = null;
+
+  for (let tick = 0; tick < 10_000; tick += 1) {
+    const result = update(world, tick, stepMs);
+    elapsedMs += stepMs;
+    if (
+      launchedAtMs === null &&
+      result.motions.some(
+        (motion) => motion.cause?.mechanism === "fireball",
+      )
+    ) {
+      launchedAtMs = elapsedMs;
+    }
+    if (result.events.some((event) => event.type === "fireball-impact")) {
+      assert.notEqual(launchedAtMs, null);
+      return elapsedMs - launchedAtMs;
+    }
+  }
+
+  assert.fail(`Fireball 在 ${hz}Hz 下未结束`);
+}
+
+test("Fireball 毫秒配置在不同 World Hz 下保持长距离速度", () => {
+  assert.deepEqual(ORIGINAL_FIREBALL_TIMING, {
+    cellMs: 208,
+    frameMs: 104,
+    terminalMs: 104,
+  });
+  const cellCount = 117;
+  const expectedMs =
+    cellCount * ORIGINAL_FIREBALL_TIMING.cellMs +
+    ORIGINAL_FIREBALL_TIMING.terminalMs;
+
+  for (const hz of [30, 60, 120]) {
+    const actualMs = measureFireballLifetime(hz, cellCount);
+    const toleranceMs = 1000 / hz + 0.01;
+    assert.ok(
+      Math.abs(actualMs - expectedMs) <= toleranceMs,
+      `${hz}Hz: expected ${expectedMs}ms, got ${actualMs}ms`,
+    );
+  }
+});
 
 test("Dragon Fireball moves through World cells, melts Ice, and reflects", () => {
   const entities = [];
@@ -27,7 +88,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   );
   const world = new World(
     { schemaVersion: 1, width: 7, height: 3, entities },
-    { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
+    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
   );
   const actor = world.query.entitiesWithFact("player")[0];
 
@@ -52,7 +113,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   );
   // Dragon is triggered at the entering motion's midpoint. Only the remainder
   // of that WorldTick belongs to the newly started wind-up Action.
-  const spawned = update(world, 2, DEFAULT_FIREBALL_CELL_MS / 2);
+  const spawned = update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs / 2);
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
@@ -61,7 +122,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
 
-  const melted = update(world, 3, DEFAULT_FIREBALL_CELL_MS);
+  const melted = update(world, 3, ORIGINAL_FIREBALL_TIMING.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
   const meltingIce = world.query.entitiesMatching({
     kind: "type",
@@ -76,15 +137,15 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
     (event) => event.type === "ice-melting-started",
   ));
 
-  update(world, 4, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 4, ORIGINAL_FIREBALL_TIMING.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
   assert.equal(world.entity(fireball.id).direction, "down");
 
-  update(world, 5, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 5, ORIGINAL_FIREBALL_TIMING.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 1 });
   assert.equal(world.entity(meltingIce.id).state.meltStage, 3);
   const remainingMeltMs = ICE_MELT_STAGE_MS * 3 -
-    DEFAULT_FIREBALL_CELL_MS * 2;
+    ORIGINAL_FIREBALL_TIMING.cellMs * 2;
   const finished = update(world, 6, remainingMeltMs);
   assert.equal(world.entity(meltingIce.id), undefined);
   assert.ok(finished.events.some((event) => event.type === "ice-melted"));
@@ -100,7 +161,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
   );
   const world = new World(
     { schemaVersion: 1, width: 7, height: 1, entities },
-    { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
+    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
   );
   const actor = world.query.entitiesWithFact("player")[0];
 
@@ -126,7 +187,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
   assert.equal(blocked.moves[0].passage.reason, "actor-busy");
 
   update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
-  update(world, 2, DEFAULT_FIREBALL_CELL_MS / 2);
+  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs / 2);
   assert.equal(world.isInputBlockedFor(actor.id), true);
   assert.notEqual(world.cameraTarget, null);
 
@@ -135,7 +196,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
     kind: "type",
     value: RuntimeEntityTypeId.FIREBALL,
   }).length > 0 && tick < 12) {
-    update(world, tick, DEFAULT_FIREBALL_CELL_MS);
+    update(world, tick, ORIGINAL_FIREBALL_TIMING.cellMs);
     tick += 1;
   }
   assert.equal(world.query.entitiesMatching({
@@ -158,11 +219,11 @@ test("more than five Ice Blocks melt independently and survive snapshot restore"
   }
   const world = new World(
     { schemaVersion: 1, width: 2, height: 6, entities },
-    { motionDurationMs: DEFAULT_FIREBALL_CELL_MS },
+    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
   );
 
   update(world, 1, 1);
-  update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
   const iceBlocks = world.query.entitiesMatching({
     kind: "type",
     value: MapEntityTypeId.ICE_BLOCK,
@@ -211,15 +272,15 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   });
 
   update(world, 1, 1);
-  const terminating = update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  const terminating = update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
   assert.notEqual(world.cameraTarget, null);
   assert.ok(terminating.events.some(
     (event) => event.type === "fireball-termination-started" &&
-      event.data?.durationMs === DEFAULT_FIREBALL_TERMINAL_MS,
+      event.data?.durationMs === ORIGINAL_FIREBALL_TIMING.terminalMs,
   ));
   const snapshot = world.snapshot();
-  const impact = update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+  const impact = update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.equal(world.cameraTarget, null);
   assert.ok(impact.events.some(
@@ -228,7 +289,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   ));
 
   world.restore(snapshot);
-  const restoredImpact = update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+  const restoredImpact = update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(restoredImpact.events.some(
     (event) => event.type === "fireball-impact" && event.x === 0.5,
@@ -256,9 +317,9 @@ test("Fireball 只按目标地形传播，Snow 与水上的 Plank 均不能提�
       ],
     });
     update(world, 1, 1);
-    update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+    update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
     assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
-    update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+    update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
     assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   }
 });
@@ -277,7 +338,7 @@ test("Fireball 可以经过 Moon 天空地形和普通对象", () => {
   });
   const fireball = world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL })[0];
   update(world, 1, 1);
-  update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
 });
 
@@ -307,7 +368,7 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
       );
       const world = new World({ schemaVersion: 1, width: 3, height: 3, entities });
       update(world, 1, 1);
-      update(world, 2, DEFAULT_FIREBALL_CELL_MS);
+      update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
       const fireballs = world.query.entitiesMatching({
         kind: "type",
         value: RuntimeEntityTypeId.FIREBALL,
@@ -319,7 +380,7 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
           assert.equal(fireballs[0].direction, table[incoming], `${variant}/${incoming}`);
         } else {
           assert.deepEqual(fireballs[0].anchor, start);
-          update(world, 3, DEFAULT_FIREBALL_TERMINAL_MS);
+          update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
           assert.equal(world.query.entitiesMatching({
             kind: "type",
             value: RuntimeEntityTypeId.FIREBALL,

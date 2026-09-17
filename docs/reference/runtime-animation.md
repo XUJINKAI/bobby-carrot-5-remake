@@ -207,8 +207,13 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 - Ice Block melting：每阶段 6 step，约 186ms；
 - Plank `D5→D6→empty`：每阶段 6 step，约 186ms；
 - Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：对应 `ts-14-8 → ts-15-9 → ts-15-10 → ts-14-8`，每阶段 6 step，约 186ms；
-- Fireball：6px/gameplay step，48px 一格约 248ms；
+- Fireball：6px/gameplay step，48px 一格；同距离原版实测校准为约 208ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
+
+Fireball 的现代实现以 `ORIGINAL_FIREBALL_TIMING` 统一声明墙钟毫秒：整格移动
+`208ms`、两张 `hud.png` 素材各 `104ms`、障碍边界半格收尾 `104ms`。RuntimeAction
+会把固定 World tick 的舍入余量带到下一格，因此长距离速度在不同 World Hz 下保持一致；
+Visual 直接读取 Presentation 毫秒选择素材帧，不依赖渲染帧数。
 
 持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
 动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。

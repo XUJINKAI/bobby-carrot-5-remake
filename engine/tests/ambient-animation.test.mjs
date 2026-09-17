@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import {
+  ORIGINAL_FIREBALL_TIMING,
+} from "../dist/entities/original/fireball.js";
+import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
@@ -79,7 +82,18 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
 
 test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
   const first = resolveAt(RuntimeEntityTypeId.FIREBALL, 0);
-  const second = resolveAt(RuntimeEntityTypeId.FIREBALL, AMBIENT_STEP_MS);
+  const beforeSecond = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    ORIGINAL_FIREBALL_TIMING.frameMs - 0.001,
+  );
+  const second = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    ORIGINAL_FIREBALL_TIMING.frameMs,
+  );
+  const looped = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    ORIGINAL_FIREBALL_TIMING.frameMs * 2,
+  );
   assert.deepEqual(first, {
     kind: "image",
     asset: "dragon-fireball",
@@ -89,7 +103,9 @@ test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
     frameHeight: 28,
     anchor: "center",
   });
+  assert.deepEqual(beforeSecond, first);
   assert.deepEqual(second, { ...first, sourceX: 310 });
+  assert.deepEqual(looped, first);
 });
 
 test("Exit animates only when reach Exit is the only unfinished objective", () => {
