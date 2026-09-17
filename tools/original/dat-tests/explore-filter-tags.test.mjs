@@ -102,7 +102,7 @@ test("Original Explore 场景只由五类明确 Entity 确认", () => {
   );
 });
 
-test("Original Explore 道具与机关按玩法组合并提供组合图标", () => {
+test("Original Explore 道具与机关发布当前分类与组合图标", () => {
   const result = filters({
     types: [
       MapEntityTypeId.HIGH_GRASS,
@@ -121,12 +121,12 @@ test("Original Explore 道具与机关按玩法组合并提供组合图标", () 
   });
 
   assert.deepEqual(result.mechanics, [
-    "mower",
+    "speed",
+    "highgrass",
     "bean",
     "shovel",
     "kite",
-    "speed",
-    "tide",
+    "leaf",
     "color",
     "carousel",
     "dragon",
@@ -147,53 +147,68 @@ test("Original Explore 道具与机关按玩法组合并提供组合图标", () 
     })),
     [
       {
+        id: "speed",
+        name: "加速带",
+        icons: ["speed", "speed-switch"],
+      },
+      {
         id: "mower",
-        name: "汽油 / 割草机 / 易碎岩石 / 高草",
-        icons: ["gas", "mower", "crumbly-rock", "high-grass"],
+        name: "割草机/高草",
+        icons: ["gas", "mower"],
+      },
+      {
+        id: "highgrass",
+        name: "高草",
+        icons: ["high-grass"],
+      },
+      {
+        id: "crumblyrock",
+        name: "易碎岩石",
+        icons: ["crumbly-rock"],
       },
       {
         id: "bean",
-        name: "魔豆 / 魔豆田",
+        name: "魔豆",
         icons: ["bean", "bean-field"],
       },
       {
         id: "shovel",
-        name: "雪铲 / 积雪",
+        name: "雪铲/积雪",
         icons: ["shovel-pickup", "snow"],
       },
       {
         id: "kite",
-        name: "风筝 / 龙卷风 / 降落点",
+        name: "风筝/龙卷风",
         icons: ["kite", "whirlwind", "landing"],
       },
       {
-        id: "speed",
-        name: "加速带 / 速度开关",
-        icons: ["speed", "speed-switch"],
+        id: "tide",
+        name: "潮汐",
+        icons: ["tide", "tide-switch"],
       },
       {
-        id: "tide",
-        name: "潮汐 / 潮汐开关 / 叶子",
-        icons: ["tide", "tide-switch", "leaf"],
+        id: "leaf",
+        name: "叶子",
+        icons: ["leaf"],
       },
       {
         id: "color",
-        name: "彩色方块 / 彩色开关",
+        name: "彩色方块",
         icons: ["color-block", "color-switch"],
       },
       {
         id: "carousel",
-        name: "旋转通道 / 旋转通道开关",
+        name: "旋转通道",
         icons: ["carousel", "carousel-switch"],
       },
       {
         id: "dragon",
-        name: "龙 / 魔法镜 / 冰块",
+        name: "龙/镜子/冰块",
         icons: ["dragon", "mirror", "ice-block"],
       },
       {
         id: "wind",
-        name: "风车 / 风向开关 / 云",
+        name: "风车/云",
         icons: ["windmill", "wind-switch", "cloud"],
       },
       { id: "trap", name: "陷阱", icons: ["trap"] },
