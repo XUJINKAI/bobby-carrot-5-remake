@@ -4,7 +4,7 @@ import type { WorldIntentGroup } from "../world/movement/WorldIntent.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { DialogueRequestEvent } from "../world/WorldTypes.js";
 
-/** 对话关闭后的方向动作属于 Game 输入队列，等发起者可行动时才提交。 */
+/** 对话关闭后的离散方向动作属于 Game 输入队列，等发起者可行动时才提交。 */
 export class GameDialogueInput {
   private readonly pending: Array<{
     actorId: EntityId;

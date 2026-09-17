@@ -7,6 +7,7 @@ import type {
   EditorResizeEdges,
   EditorRuleCapability,
   EditorRuleKind,
+  EditorRuleMode,
   EditorSelection,
   EditorTool,
   EngineEnvironment,
@@ -48,6 +49,7 @@ defineProps<{
   placementInspectorPreview: PlacementInspectorPreviewModel;
   deletionTargetIndex: number | null;
   rules: readonly EditorRuleCapability[];
+  ruleMode: EditorRuleMode;
   palette: readonly ResolvedPaletteGroup[];
   paletteSize: number;
   leftOpen: boolean;
@@ -86,6 +88,7 @@ const emit = defineEmits<{
   placementField: [key: string, value: LevelEntityFieldValue];
   placementVariant: [index: number];
   rule: [kind: EditorRuleKind, enabled: boolean];
+  ruleMode: [mode: EditorRuleMode];
   maxMoves: [value: number | null];
   maxTime: [value: number | null];
   metadata: [value: { name: string; author?: string }];
@@ -204,8 +207,10 @@ const emit = defineEmits<{
       v-show="!playing && rightPanel === 'level'"
       :level="level"
       :rules="rules"
+      :rule-mode="ruleMode"
       @metadata="emit('metadata', $event)"
       @rule="(kind, enabled) => emit('rule', kind, enabled)"
+      @rule-mode="emit('ruleMode', $event)"
       @max-moves="emit('maxMoves', $event)"
       @max-time="emit('maxTime', $event)"
     />

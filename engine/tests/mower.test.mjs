@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { createBuiltinVisualRegistry } from "../dist/entities/registry.js";
+import { VisualRuntime } from "../dist/visual/VisualRuntime.js";
 import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
@@ -79,8 +81,12 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
   move(world, actor.id, "right");
   world.update({ tick: 2, stepMs: 50 });
   assert.equal(world.entity(actor.id).state.mountId, undefined);
-  world.update({ tick: 3, stepMs: 50 });
+  const mounted = world.update({ tick: 3, stepMs: 50 });
   assert.equal(world.entity(actor.id).state.mountId, mower.id);
+  assert.deepEqual(
+    mounted.events.find((event) => event.type === "music-state")?.data,
+    { source: "mower", track: "mow" },
+  );
 
   move(world, actor.id, "right");
   assert.deepEqual(world.entity(mower.id).anchor, { x: 3, y: 0 });
@@ -89,10 +95,14 @@ test("Mower mounts on arrival, cuts on arrival, and parks with Bobby to the righ
   assert.equal(world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.HIGH_GRASS }).length, 0);
 
   move(world, actor.id, "right");
-  world.update({ tick: 5, stepMs: 100 });
+  const parked = world.update({ tick: 5, stepMs: 100 });
   assert.deepEqual(world.entity(mower.id).anchor, { x: 4, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 5, y: 0 });
   assert.equal(world.entity(actor.id).state.mountId, undefined);
+  assert.deepEqual(
+    parked.events.find((event) => event.type === "music-state")?.data,
+    { source: "mower", track: null },
+  );
 });
 
 test("Only a speed-continued Mower smashes Crumbly Rock", () => {
@@ -136,6 +146,53 @@ test("Only a speed-continued Mower smashes Crumbly Rock", () => {
   assert.ok(
     result.events.some((event) => event.type === "crumbly-rock-smashed"),
   );
+});
+
+test("割 High Grass 使用 mow.png 第一行前四帧", () => {
+  const world = new World(
+    {
+      schemaVersion: 1,
+      width: 2,
+      height: 1,
+      entities: [
+        { type: "grass", variant: "ts-10-1", x: 0, y: 0 },
+        { type: "grass", variant: "ts-10-1", x: 1, y: 0 },
+        { type: MapEntityTypeId.MOWER, x: 0, y: 0 },
+        { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0 },
+        { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+      ],
+    },
+    { motionDurationMs: 0 },
+  );
+  const actor = world.query.entitiesWithFact("player")[0];
+  const mower = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.MOWER,
+  })[0];
+  world.entities.require(actor.id).state = { mountId: mower.id };
+  world.entities.require(mower.id).state = { mountedByActorId: actor.id };
+
+  const result = move(world, actor.id, "right");
+  const visual = new VisualRuntime(createBuiltinVisualRegistry(), 48);
+  const start = { frame: 1, nowMs: 1000, deltaMs: 0 };
+  visual.consumeWorldDeltas(world, result.deltas, start, {
+    motionDuration: () => 0,
+    stationaryDeathDurationMs: 0,
+  });
+  visual.update(start, "linear");
+  const effect = visual.scene(world).effect.find(
+    (item) => item.presence.entityId < 0,
+  );
+  assert.ok(effect);
+  assert.deepEqual(effect.composition.layers[0], {
+    kind: "image",
+    asset: "bobby-speed-trail",
+    frameColumns: 5,
+    frameRows: 2,
+    frameIndex: 0,
+    anchor: "bottom",
+    offsetY: -12,
+  });
 });
 
 test("Mower cannot complete an Exit reach condition", () => {

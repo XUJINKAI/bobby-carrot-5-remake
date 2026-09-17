@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
-import { DEFAULT_MOVING_ENTITY_CELL_MS } from "../dist/entities/original/moving-entities.js";
+import { CLOUD_MOVEMENT } from "../dist/entities/movement/MovementCadence.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { World } from "./support/World.mjs";
 
@@ -36,7 +36,7 @@ test("Leaf stops before an occupied water cell", () => {
   const leaf = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.LEAF })[0];
 
   assert.equal(move(world, bobby.id, "right").moves[0].moved, true);
-  world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 1, stepMs: CLOUD_MOVEMENT.cellMs });
 
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 0 });
   assert.equal(world.entity(leaf.id).state?.moving, false);
@@ -69,7 +69,7 @@ test("Cloud stops before Plank but may enter Cloud Grid infrastructure", () => {
 
   world.update({ tick: 1, stepMs: 1 });
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
 
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 0 });
   assert.equal(world.entity(cloud.id).state?.moving, false);
@@ -99,7 +99,7 @@ test("Cloud Grid does not count as support occupancy", () => {
 
   world.update({ tick: 1, stepMs: 1 });
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
 
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
 });
@@ -123,9 +123,9 @@ test("Cloud 可经过天空中的 Carrot，并在转向受阻后沿原方向续�
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
 
   world.update({ tick: 1, stepMs: 1 });
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 1 });
-  world.update({ tick: 3, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 3, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 3, y: 1 });
 });
 
@@ -147,7 +147,7 @@ test("Cloud 在交叉风区逐个尝试可通行的风向", () => {
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
 
   world.update({ tick: 1, stepMs: 1 });
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 2 });
 });
 
@@ -170,7 +170,7 @@ test("Cloud 进入交叉风区时独立检查逆风", () => {
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0];
 
   world.update({ tick: 1, stepMs: 1 });
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 1, y: 1 });
 });
 
@@ -193,7 +193,7 @@ test("初始位于潮流上的 Leaf 自动漂流，普通水面上的 Leaf 保�
 
   world.update({ tick: 1, stepMs: 1 });
   assert.equal(world.actions.active.length, 1);
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaves[0].id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(leaves[1].id).anchor, { x: 1, y: 1 });
 });
@@ -218,7 +218,7 @@ test("Leaf 顺流改向受阻时沿原方向续行", () => {
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   for (let tick = 1; tick <= 3; tick += 1)
-    world.update({ tick, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+    world.update({ tick, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 3, y: 1 });
 });
 
@@ -242,13 +242,13 @@ test("停在潮流上的 Leaf 会在前方清空后继续漂流", () => {
   const plank = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.PLANK })[0];
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
-  world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 1, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 1, y: 0 });
   assert.equal(world.actions.active.length, 1);
 
   const commands = new CommandQueue();
   commands.destroy(plank.id);
   world.committer.commit(commands, { worldTick: null, worldTimeMs: 0 });
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
 });

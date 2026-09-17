@@ -157,14 +157,21 @@ Fact Definition/Registry 只定义标识与语义，不依赖 Entity Definition�
 | `blocking` | Bobby、障碍对象及 Egg 等 Presence | Passage、对象进入裁决 | Egg 等对象会变化 |
 | `climbable` | Beanstalk 各攀爬部位 | Bobby 攀爬姿势与动作 | 否 |
 | `contact-cover` | Plank、豆茎上段、High Grass、Snow、Ice Block | WorldQuery 接触栈投影（kernel） | 否 |
+| `elevated-obstacle` | Mirror 等高位障碍 | Mower 通行判断 | 否 |
+| `growth-substrate` | 原版允许生长的地形、Tide、Snow | Bean 生长判断 | 否 |
 | `moving-platform` | Cloud、Leaf | Bobby 与 Mower 的移动关系判断 | 否 |
 | `player` | Bobby | World ActorLifecycle、移动冲突及对象规则 | 否 |
 | `pushable` | 可推动对象 | Push、`pushGoal` | 否 |
 | `sky` | Starfield、Moon | Cloud 路线 | 否 |
 | `walkable` | 可落脚地形及可承载部位 | 标准 Passage | 否 |
 | `water` | Water、Waterfall 等水域 | Bobby 水域规则、Leaf 路线 | 否 |
+| `vertical-occupant` | 原版对象层中的实体 | Bean 生长判断 | 否 |
 
-Bean 的生长目标由 `beanCanGrowAt` 按语义地形与普通对象占用判断。Cloud / Leaf 另按对象阻挡名单和方向规划，Fireball 只从原版地形获得传播许可；Snow 覆盖会阻止下层地面的传播许可。Mirror 的反射读取语义 `variant`，Ice Block 的融化由其对象入口提出命令。这些对象专属规则不扩充 Fact 词汇。
+Bean 的生长目标读取完整空间栈：格内至少存在一个 `growth-substrate`，并且不存在
+`vertical-occupant`。该规则把原版 terrain/object 两层约束投影为可组合 Fact；动态
+Cloud / Leaf 不占据垂直生长空间。Fireball 只从原版地形获得传播许可；Snow 覆盖会阻止
+下层地面的传播许可。Mirror 的反射读取语义 `variant`。Fireball 命中 Ice Block 后，每个
+冰块独立启动 RuntimeAction，按三个 `186ms` gameplay 阶段推进 `meltStage`，最后才销毁。
 
 Fact 分为 `EntityFacts` 和 `PresenceFacts` 两种只读投影。前者描述对象整体语义，后者描述某个空间部位在当前格子的语义；两者可分别来自 Entity Definition 的静态声明、Entity 初始配置和当前 Entity state，Presence Fact 还可依赖 role/footprint。解析函数只读取所属 Entity，Presence 解析另可读取当前 Presence；跨对象条件留给运行规则判断。这个局部性让受影响 Fact 投影可以按 Entity 刷新。
 
@@ -340,6 +347,11 @@ Pipeline 在 World 的固定阶段调用。相互冲突的 passage 判断或同�
 ## 视觉与 authoring
 
 Presentation 使用 WorldDelta、WorldMotion、Entity state 和只读 Fact 选择画面；World 与 Mechanism 不读取 `VisualRuntime`、`PresentationClock`、Renderer、Canvas 或 DOM。仅影响 sprite、位移插值、闪烁、粒子与镜头的状态由 Presentation 持有。会改变碰撞、可攀爬时点或动作结果的过程继续由 WorldClock 上的 Entity state、RuntimeAction 或 WorldMotion 表示。
+
+环境表现由同一 `AmbientVisualRuntime` 按 PresentationTime 和 session seed 生成。Sky shimmer
+使用世界坐标并只选择视窗中的空 Sky 格；Snow 与 Butterfly 使用屏幕坐标，数量分别由
+`snowDensity`、`butterflyDensity` 按 CSS 视窗面积计算。存在 Snow 的关卡固定使用雪花天气，
+其余关卡使用 Butterfly；视窗尺寸变化只重算表现数量和位置，不写入 World。
 
 `variant` 的归属由实际语义决定。原版 Surface 的某些 atlas variant 对应不同地图内语义；Carousel 的 `variant` 影响通行方向，Mirror 的 `variant` 参与机关结果。纯视觉字段由地图字段和 Visual Definition 使用，具有 gameplay 含义的值留在对象状态或初始配置并投影必要 Fact。稳定地图字段不因内部分类而改名。`ts.png` / `ta.png` 坐标由 Model 的 semantic atlas mapping 提供，DAT byte 换算只在 `tools/original/dat/`。
 

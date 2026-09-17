@@ -14,7 +14,7 @@ stackOrder ASC
 ```
 
 - `stackOrder` 属于 Level / Runtime Entity 实例，同一多格 Entity 的全部 Presence 共用一个值；
-- 未显式给值的初始或 Runtime Entity 按加载、生成顺序放到重叠范围顶层，空栈从 `0` 开始；
+- Level Entity 未显式给值时固定为 `0`；Runtime 生成 Entity 未显式给值时放到重叠范围顶层，空栈从 `0` 开始；
 - Editor 新放置的 Entity 使用当前重叠范围最高值 `+1`，同 slot 替换保留原顺序，手动重排写成从 `0` 开始的连续整数；
 - 相同 `stackOrder` 表示同一接触平面；`entityId` 只保证完整栈的确定性排列；
 - `SpatialIndex.topPresenceAt()` 表达完整空间栈顶部，`WorldQueryApi.topPresenceAt()` 表达接触栈顶部。

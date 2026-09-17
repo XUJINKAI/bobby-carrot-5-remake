@@ -41,6 +41,9 @@ export class GamePresentation {
       {
         announce: (message) => this.calloutAnnouncer?.announce(message),
         callouts: environment.callouts,
+        ...(options.runtime?.ambient
+          ? { ambient: options.runtime.ambient }
+          : {}),
       },
     );
     this.clock = new PresentationClock(
@@ -198,6 +201,19 @@ export class GamePresentation {
       this.clock.current,
       durationMs,
       amplitudeSourcePx,
+    );
+  }
+
+  shakeStepped(
+    stageMs: number,
+    stages: number,
+    initialSpanSourcePx: number,
+  ): void {
+    this.visual.camera.shakeStepped(
+      this.clock.current,
+      stageMs,
+      stages,
+      initialSpanSourcePx,
     );
   }
 

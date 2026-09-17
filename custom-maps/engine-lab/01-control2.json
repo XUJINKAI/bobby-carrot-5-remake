@@ -445,7 +445,8 @@
       "type": "hedge",
       "x": 0,
       "y": 4,
-      "variant": "ts-5-4"
+      "variant": "ts-5-4",
+      "stackOrder": 1
     },
     {
       "type": "grass",
@@ -551,23 +552,27 @@
     {
       "type": "bobby",
       "x": 3,
-      "y": 1
+      "y": 1,
+      "stackOrder": 1
     },
     {
       "type": "bobby",
       "x": 9,
       "y": 1,
-      "mirrorX": false
+      "mirrorX": false,
+      "stackOrder": 1
     },
     {
       "type": "exit",
       "x": 3,
-      "y": 7
+      "y": 7,
+      "stackOrder": 1
     },
     {
       "type": "exit",
       "x": 9,
-      "y": 7
+      "y": 7,
+      "stackOrder": 1
     },
     {
       "type": "rock",

@@ -29,6 +29,25 @@ export function consumeActionDeadline(
 }
 
 /**
+ * WorldMotion 只能在固定 World tick 边界结束。把本段的舍入误差带到下一段，
+ * 使重复动作的长期平均 cadence 保持配置的毫秒值。
+ */
+export function quantizedActionCadenceMs(
+  action: RuntimeActionInstance,
+  cadenceMs: number,
+  stepMs: number,
+): number {
+  const safeStepMs = positiveNumber(stepMs) || 1;
+  const carryMs = finiteNumber(action.state.cadenceCarryMs);
+  const targetMs = positiveNumber(cadenceMs) + carryMs;
+  const ticks = Math.max(1, Math.round(targetMs / safeStepMs));
+  const quantizedMs = ticks * safeStepMs;
+  action.state.cadenceCarryMs = targetMs - quantizedMs;
+  // 浮点乘加可能让 N 个 step 比 N * stepMs 小极少量，留出微秒级余量避免多等一拍。
+  return Math.max(Number.EPSILON, quantizedMs - 0.001);
+}
+
+/**
  * midpoint 接管已有 motion 时，预先计入“已等待”的部分；motion 抵达时 deadline
  * 恰好到期。没有进行中的 motion 时返回完整 cadence，表示下一 tick 可立即启动。
  */

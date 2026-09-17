@@ -96,7 +96,7 @@ public final class DragonFireball {
 
     /**
      * 火球视觉不是按 ms 单独计时：每 4 gameplay-step 换一帧。
-     * 稳态约 31ms/step，因此单帧约 124ms，完整两帧循环约 248ms。
+     * 同距离原版实测约 26ms/step，因此单帧约 104ms，完整两帧循环约 208ms。
      */
     int hudFireballFrame() {
         return presentationPhase < 4 ? 0 : 1;

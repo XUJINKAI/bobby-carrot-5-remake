@@ -68,8 +68,8 @@ HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内�
 
 ### exit 出口
 
-- 其他目标未完成时，Exit 使用 `exit` 的 base。
-- 通关条件只剩 reach Exit 时，播放 `exit/ambient` 动画。
+- Engine 保持 `all` / `any` 的目标树结构，只把尚未完成的 `exit` 分支投影为完成；投影后整棵通关条件成立时，播放 `exit/ambient` 动画，否则使用 `exit` 的 base。
+- 因此 `any(exit, golden-carrot)` 从关卡开始即可通过 Exit 通关，Exit 也从关卡开始播放提示动画；`all(carrot, exit)` 则在 carrot 目标完成后启用动画。
 
 ## 移动类机关
 
@@ -82,7 +82,7 @@ HIGH_GRASS 与同格 Carrot 或 Egg 叠放时显示 `ts-13-9`；覆盖其它内�
 
 加速效果：
 - Bobby 走上 Speed 之后，会拥有加速效果，移动速度加快
-- Bobby 走出 Speed 之后，加速效果至少还会保持3格，如果一直按着加速方向键，则加速效果会一直保持，直到撞停
+- Bobby 走出 Speed 之后会自动续行 3 格；未续按同方向时前两格保持快速，最后一格恢复普通速度。如果一直按着加速方向键，则快速效果会一直保持，直到撞停
 - Bobby 开着割草机上 Speed 也会获得加速效果，拥有加速效果的割草机可以撞碎易碎岩石。
 
 四个方向分别使用对应 `direction` 的 `speed/ambient` 动画。
@@ -163,8 +163,9 @@ Cloud 与 Cloud Parking 视觉由 `color` 选择；Wind Switch 视觉由 `direct
 
 - Kite是关卡内的可收集物品
 - 拥有Kite的 Bobby 走到 Whirlwind 上会起飞
+- 起飞在入格移动中点开始：普通 Bobby 按 6px 阶段上抬，抵达后切换为固定抬高 24px 的 `b9.png` 风筝姿态
 - airborne 状态完全绕过普通 terrain/object 碰撞，只保持当前方向逐格飞行
-- airborne Bobby 跨过 Landing 的移动中点时开始降落
+- airborne Bobby 跨过 Landing 的移动中点时开始降落，风筝姿态按四个 6px 阶段降到地面
 - 原版 class 没有“飞到地图边缘自动降落/停止”的逻辑；正常 flight path 必须在出界前由 Landing 收尾
 
 如果 airborne Bobby 被异常地图布局引导出 grid 数组边界，下一 movement cycle 会访问越界坐标；这是无保护的异常路径，而不是一种正常玩法结算。

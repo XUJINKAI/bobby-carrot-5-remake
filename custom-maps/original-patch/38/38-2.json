@@ -1,0 +1,7839 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "name": "38-2"
+  },
+  "note": "original 50 cell: waterfall 11s. bean growth 21s.",
+  "rules": {
+    "win": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "exit"
+        }
+      ]
+    }
+  },
+  "width": 19,
+  "height": 68,
+  "entities": [
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 8,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 7,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 9,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 6,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 11,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 4,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 12,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 13,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 14,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 18,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 17,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 16,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 1,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 0,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 2,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 3,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 29,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 28,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 30,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 27,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 31,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 26,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 32,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 25,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 33,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 24,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 34,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 23,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 35,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 22,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 36,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 21,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 37,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 20,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 38,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 19,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 39,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 40,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 41,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 42,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 43,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 44,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 45,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 46,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 47,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 48,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 49,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 50,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 52,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 53,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 54,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 55,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 56,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 57,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 58,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 59,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 60,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 61,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 5,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 10,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 15,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "start",
+      "x": 5,
+      "y": 2,
+      "stackOrder": 1
+    },
+    {
+      "type": "bobby",
+      "x": 5,
+      "y": 2,
+      "stackOrder": 2
+    },
+    {
+      "type": "exit",
+      "x": 5,
+      "y": 0,
+      "stackOrder": 1
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 18,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 18,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 18,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 17,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 19,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 17,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 19,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 17,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 19,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 16,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 16,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 16,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 15,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 15,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 15,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 14,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 14,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 14,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 13,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 13,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 13,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 12,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 12,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 12,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 11,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 11,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 11,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 10,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 10,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 10,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 9,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 9,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 9,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 8,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 8,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 8,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 7,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 7,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 7,
+      "variant": "middle"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 4,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 4,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 4,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 5,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 5,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 5,
+      "variant": "still"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 6,
+      "variant": "top"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 6,
+      "variant": "top"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 6,
+      "variant": "top"
+    },
+    {
+      "type": "leaf",
+      "x": 5,
+      "y": 4,
+      "stackOrder": 1
+    },
+    {
+      "type": "leaf",
+      "x": 6,
+      "y": 4,
+      "stackOrder": 1
+    },
+    {
+      "type": "leaf",
+      "x": 7,
+      "y": 4,
+      "stackOrder": 1
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 20,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 20,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 20,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 21,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 22,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 23,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 24,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 25,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 26,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 27,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 28,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 29,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 30,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 31,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 32,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 35,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 36,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 36,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 35,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 31,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 30,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 29,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 28,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 27,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 26,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 25,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 24,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 23,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 22,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 21,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 21,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 22,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 23,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 24,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 25,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 26,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 27,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 28,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 29,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 30,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 31,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 32,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 32,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 35,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 36,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 37,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 38,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 39,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 40,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 37,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 38,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 39,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 40,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 41,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 42,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 45,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 46,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 37,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 38,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 39,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 42,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 44,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 46,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 45,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 43,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 40,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 41,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 41,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 42,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 44,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 43,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 43,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 44,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 45,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 46,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 47,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 48,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 49,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 50,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 47,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 48,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 49,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 49,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 48,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 47,
+      "variant": "middle"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 51,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 51,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 52,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 51,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 50,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 50,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 51,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 52,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 53,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 53,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 52,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 53,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 54,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 54,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 54,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 55,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 5,
+      "y": 56,
+      "variant": "bottom"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 55,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 55,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 7,
+      "y": 56,
+      "variant": "bottom"
+    },
+    {
+      "type": "waterfall",
+      "x": 6,
+      "y": 56,
+      "variant": "bottom"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 57,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 57,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 57,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 59,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 58,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 58,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 58,
+      "variant": "ripple"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 59,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 59,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 7,
+      "y": 60,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 6,
+      "y": 60,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 5,
+      "y": 60,
+      "variant": "still"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 10,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 9,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 8,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 12,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 7,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 13,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 6,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 14,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 5,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 15,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 4,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 16,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 65,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 3,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 17,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 64,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 66,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 2,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 18,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 63,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 67,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 1,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "grass",
+      "x": 0,
+      "y": 62,
+      "variant": "ts-6-15"
+    },
+    {
+      "type": "bean-field",
+      "x": 11,
+      "y": 56,
+      "stackOrder": 1
+    },
+    {
+      "type": "bean",
+      "x": 11,
+      "y": 57,
+      "stackOrder": 1
+    },
+    {
+      "type": "bean",
+      "x": 12,
+      "y": 57,
+      "stackOrder": 1
+    },
+    {
+      "type": "bean",
+      "x": 13,
+      "y": 57,
+      "stackOrder": 1
+    },
+    {
+      "type": "bean-field",
+      "x": 12,
+      "y": 56,
+      "stackOrder": 1
+    },
+    {
+      "type": "bean-field",
+      "x": 13,
+      "y": 56,
+      "stackOrder": 1
+    },
+    {
+      "type": "stump",
+      "x": 11,
+      "y": 55
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 52,
+      "variant": "ts-1-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 52,
+      "variant": "ts-1-5"
+    },
+    {
+      "type": "stone-wall",
+      "x": 13,
+      "y": 52,
+      "variant": "ts-1-6"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 53,
+      "variant": "ts-2-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 53,
+      "variant": "ts-2-5"
+    },
+    {
+      "type": "stone-wall",
+      "x": 13,
+      "y": 53,
+      "variant": "ts-2-6"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 54,
+      "variant": "ts-3-4"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 54,
+      "variant": "ts-3-5"
+    },
+    {
+      "type": "stone-wall",
+      "x": 13,
+      "y": 54,
+      "variant": "ts-3-6"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 55,
+      "variant": "ts-4-7"
+    },
+    {
+      "type": "stone-wall",
+      "x": 13,
+      "y": 55,
+      "variant": "ts-4-8"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 51,
+      "variant": "ts-4-9"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 51,
+      "variant": "ts-4-10"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 48,
+      "variant": "ts-1-7"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 48,
+      "variant": "ts-1-8"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 49,
+      "variant": "ts-2-7"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 49,
+      "variant": "ts-2-8"
+    },
+    {
+      "type": "stone-wall",
+      "x": 11,
+      "y": 50,
+      "variant": "ts-3-7"
+    },
+    {
+      "type": "stone-wall",
+      "x": 12,
+      "y": 50,
+      "variant": "ts-3-8"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 51,
+      "variant": "ts-4-4"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 50,
+      "variant": "ts-4-5"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 49,
+      "variant": "ts-5-1"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 48,
+      "variant": "ts-5-2"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 47,
+      "variant": "ts-5-3"
+    },
+    {
+      "type": "hedge",
+      "x": 12,
+      "y": 47,
+      "variant": "ts-5-4"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 47,
+      "variant": "ts-5-5"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 46,
+      "variant": "ts-5-6"
+    },
+    {
+      "type": "hedge",
+      "x": 12,
+      "y": 46,
+      "variant": "ts-5-7"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 46,
+      "variant": "ts-6-1"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 45,
+      "variant": "ts-6-2"
+    },
+    {
+      "type": "hedge",
+      "x": 12,
+      "y": 45,
+      "variant": "ts-6-3"
+    },
+    {
+      "type": "hedge",
+      "x": 13,
+      "y": 45,
+      "variant": "ts-6-4"
+    },
+    {
+      "type": "hedge",
+      "x": 11,
+      "y": 44,
+      "variant": "ts-6-5"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 44,
+      "variant": "ts-1-11"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 44,
+      "variant": "ts-1-12"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 43,
+      "variant": "ts-1-13"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 43,
+      "variant": "ts-1-14"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 43,
+      "variant": "ts-1-15"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 42,
+      "variant": "ts-1-16"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 42,
+      "variant": "ts-2-11"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 42,
+      "variant": "ts-2-12"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 41,
+      "variant": "ts-2-13"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 41,
+      "variant": "ts-2-14"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 41,
+      "variant": "ts-2-15"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 40,
+      "variant": "ts-2-16"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 40,
+      "variant": "ts-3-11"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 40,
+      "variant": "ts-3-12"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 39,
+      "variant": "ts-3-13"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 39,
+      "variant": "ts-3-14"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 39,
+      "variant": "ts-3-15"
+    },
+    {
+      "type": "tree",
+      "x": 13,
+      "y": 38,
+      "variant": "ts-3-16"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 38,
+      "variant": "ts-4-11"
+    },
+    {
+      "type": "tree",
+      "x": 12,
+      "y": 38,
+      "variant": "ts-4-12"
+    },
+    {
+      "type": "tree",
+      "x": 11,
+      "y": 37,
+      "variant": "ts-4-13"
+    },
+    {
+      "type": "flower-pot",
+      "x": 12,
+      "y": 37
+    },
+    {
+      "type": "rock",
+      "x": 13,
+      "y": 37
+    },
+    {
+      "type": "mushroom",
+      "x": 11,
+      "y": 36
+    },
+    {
+      "type": "water",
+      "x": 12,
+      "y": 36,
+      "variant": "still"
+    },
+    {
+      "type": "water",
+      "x": 13,
+      "y": 36,
+      "variant": "ripple"
+    },
+    {
+      "type": "waterfall",
+      "x": 11,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 12,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 13,
+      "y": 34,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 13,
+      "y": 35,
+      "variant": "bottom"
+    },
+    {
+      "type": "waterfall",
+      "x": 12,
+      "y": 35,
+      "variant": "bottom"
+    },
+    {
+      "type": "waterfall",
+      "x": 11,
+      "y": 35,
+      "variant": "bottom"
+    },
+    {
+      "type": "waterfall",
+      "x": 11,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 12,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 13,
+      "y": 33,
+      "variant": "middle"
+    },
+    {
+      "type": "waterfall",
+      "x": 13,
+      "y": 32,
+      "variant": "top"
+    },
+    {
+      "type": "waterfall",
+      "x": 12,
+      "y": 32,
+      "variant": "top"
+    },
+    {
+      "type": "waterfall",
+      "x": 11,
+      "y": 32,
+      "variant": "top"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 31,
+      "variant": "large-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 30,
+      "variant": "small-star"
+    },
+    {
+      "type": "moon",
+      "x": 13,
+      "y": 31,
+      "variant": "ts-5-13"
+    },
+    {
+      "type": "moon",
+      "x": 12,
+      "y": 31,
+      "variant": "ts-5-12"
+    },
+    {
+      "type": "moon",
+      "x": 13,
+      "y": 30,
+      "variant": "ts-5-11"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 30,
+      "variant": "empty"
+    },
+    {
+      "type": "snow-fence",
+      "x": 11,
+      "y": 29,
+      "variant": "ts-2-1"
+    },
+    {
+      "type": "snow-fence",
+      "x": 12,
+      "y": 29,
+      "variant": "ts-2-2"
+    },
+    {
+      "type": "snow-fence",
+      "x": 13,
+      "y": 29,
+      "variant": "ts-2-3"
+    },
+    {
+      "type": "snow-fence",
+      "x": 11,
+      "y": 28,
+      "variant": "ts-3-1"
+    },
+    {
+      "type": "snow-fence",
+      "x": 11,
+      "y": 27,
+      "variant": "ts-4-1"
+    },
+    {
+      "type": "snowman",
+      "x": 12,
+      "y": 27,
+      "variant": "ts-3-3"
+    },
+    {
+      "type": "snowman",
+      "x": 12,
+      "y": 28,
+      "variant": "ts-4-3"
+    },
+    {
+      "type": "candy-cane",
+      "x": 13,
+      "y": 27,
+      "variant": "ts-3-2"
+    },
+    {
+      "type": "candy-cane",
+      "x": 13,
+      "y": 28,
+      "variant": "ts-4-2"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 11,
+      "y": 24,
+      "variant": "ts-1-9"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 12,
+      "y": 24,
+      "variant": "ts-1-10"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 11,
+      "y": 25,
+      "variant": "ts-2-9"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 12,
+      "y": 25,
+      "variant": "ts-2-10"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 11,
+      "y": 26,
+      "variant": "ts-3-9"
+    },
+    {
+      "type": "christmas-tree",
+      "x": 12,
+      "y": 26,
+      "variant": "ts-3-10"
+    },
+    {
+      "type": "snowy-rock",
+      "x": 13,
+      "y": 26
+    },
+    {
+      "type": "cactus",
+      "x": 13,
+      "y": 24,
+      "variant": "tall-head"
+    },
+    {
+      "type": "cactus",
+      "x": 13,
+      "y": 25,
+      "variant": "tall-body"
+    },
+    {
+      "type": "cactus",
+      "x": 11,
+      "y": 23,
+      "variant": "small"
+    },
+    {
+      "type": "cactus",
+      "x": 12,
+      "y": 23,
+      "variant": "round"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 23,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 22,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 21,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 20,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 19,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 18,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 12,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 11,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 10,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 9,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 8,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 7,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 7,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 7,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 8,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 9,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 10,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 11,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 12,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 13,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 14,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 15,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 16,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 17,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 19,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 20,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 21,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 22,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 22,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 21,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 20,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 19,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 18,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 16,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 15,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 14,
+      "variant": "small-star"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 13,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 8,
+      "variant": "large-star"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 9,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 10,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 11,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 12,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 13,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 14,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 15,
+      "variant": "large-star"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 16,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 13,
+      "y": 17,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 12,
+      "y": 17,
+      "variant": "empty"
+    },
+    {
+      "type": "starfield",
+      "x": 11,
+      "y": 18,
+      "variant": "empty"
+    },
+    {
+      "type": "snow-cloud",
+      "x": 12,
+      "y": 6,
+      "variant": "ts-9-13"
+    },
+    {
+      "type": "grass",
+      "x": 11,
+      "y": 6,
+      "variant": "ts-8-5"
+    },
+    {
+      "type": "sand",
+      "x": 13,
+      "y": 6
+    }
+  ]
+}

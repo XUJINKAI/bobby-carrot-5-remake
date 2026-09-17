@@ -84,7 +84,11 @@ function filterPanel(filter: MapCollectionFilter): string {
   const options = filter.options
     .map((option) => {
       const selectedClass = values.has(option.id) ? " selected" : "";
-      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconHtml(option.icon)}<span>${escapeHtml(option.name)}</span></button>`;
+      const icons = (option.icons ?? []).map(iconHtml).join("");
+      const iconGroup = icons
+        ? `<span class="level-filter-icons" aria-hidden="true">${icons}</span>`
+        : "";
+      return `<button class="level-filter-option${selectedClass}" data-filter-group="${escapeAttribute(filter.id)}" data-filter-option="${escapeAttribute(option.id)}" aria-pressed="${values.has(option.id)}">${iconGroup}<span>${escapeHtml(option.name)}</span></button>`;
     })
     .join("");
   return `<div class="level-filter-panel" data-filter-panel="${escapeAttribute(filter.id)}" ${activePanel === filter.id ? "" : "hidden"}>${options}</div>`;
@@ -199,25 +203,24 @@ export function toggleLevelFilterOption(
   values.add(optionId);
 }
 
-function iconHtml(icon: MapCollectionIcon | undefined): string {
-  if (!icon) return "";
+function iconHtml(icon: MapCollectionIcon): string {
   if (icon.type === "text") {
-    return `<span class="level-filter-icon" aria-hidden="true">${escapeHtml(icon.value)}</span>`;
+    return `<span class="level-filter-icon">${escapeHtml(icon.value)}</span>`;
   }
   if (icon.type === "image") {
     if (!currentImages) return "";
     const id = `collection-icon:${icon.src}`;
     currentImages.registerSource(id, new URL(icon.src, document.baseURI).href);
-    return `<img class="level-filter-icon" aria-hidden="true" src="${escapeAttribute(currentImages.url(id))}">`;
+    return `<img class="level-filter-icon" src="${escapeAttribute(currentImages.url(id))}">`;
   }
   const style = currentImages
     ? entityVisualStyle(currentImages, icon.entity, 24)
     : null;
   if (style) {
-    return `<i class="level-filter-icon" aria-hidden="true" style="${escapeAttribute(styleRecordToText(style))}"></i>`;
+    return `<i class="level-filter-icon" style="${escapeAttribute(styleRecordToText(style))}"></i>`;
   }
   const glyph = entityGlyph(icon.entity.type);
-  return `<span class="level-filter-icon" aria-hidden="true" title="${escapeAttribute(icon.entity.type)}">${escapeHtml(glyph)}</span>`;
+  return `<span class="level-filter-icon" title="${escapeAttribute(icon.entity.type)}">${escapeHtml(glyph)}</span>`;
 }
 
 function entityGlyph(type: string): string {

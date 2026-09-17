@@ -159,9 +159,11 @@ for (const map of original.maps.filter(
   assertOriginalStartContract(document, relative);
   assertOriginalMusicContract(
     document,
-    map.id.includes("-bonus-") ? "bonus" : undefined,
+    map.id.includes("-bonus-") ? "shop" : undefined,
     relative,
   );
+  if (map.id.includes("-bonus-"))
+    assertOriginalBonusLockContract(document, relative);
   assertOriginalWinRule(document, relative);
 }
 const adventure = readJson("assets/adventure/index.json");
@@ -347,6 +349,14 @@ function assertOriginalMusicContract(document, expected, relative) {
     throw new Error(
       `${relative}: Original music 应为 ${expected ?? "未指定"}`,
     );
+}
+
+function assertOriginalBonusLockContract(document, relative) {
+  const locks = document.entities.filter((entity) => entity.type === "lock");
+  if (locks.length !== 1)
+    throw new Error(`${relative}: Bonus map 必须恰好包含一个 Lock`);
+  if (locks[0].deathCountdownSeconds !== 60)
+    throw new Error(`${relative}: Bonus Lock deathCountdownSeconds 必须为 60`);
 }
 
 function assertOriginalWinRule(document, relative) {

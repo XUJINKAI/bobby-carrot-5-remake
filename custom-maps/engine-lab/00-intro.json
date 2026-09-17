@@ -489,17 +489,20 @@
       "type": "dream-machine",
       "x": 4,
       "y": 2,
-      "dialogue": "哔哔~这里是引擎实验室~哔哔"
+      "dialogue": "哔哔~这里是引擎实验室~哔哔",
+      "stackOrder": 1
     },
     {
       "type": "bobby",
       "x": 2,
-      "y": 4
+      "y": 4,
+      "stackOrder": 1
     },
     {
       "type": "exit",
       "x": 0,
-      "y": 4
+      "y": 4,
+      "stackOrder": 1
     },
     {
       "type": "hedge",
@@ -750,22 +753,26 @@
     {
       "type": "push-goal",
       "x": 2,
-      "y": 7
+      "y": 7,
+      "stackOrder": 1
     },
     {
       "type": "pushable-box",
       "x": 2,
-      "y": 6
+      "y": 6,
+      "stackOrder": 1
     },
     {
       "type": "pushable-box",
       "x": 1,
-      "y": 6
+      "y": 6,
+      "stackOrder": 1
     },
     {
       "type": "push-goal",
       "x": 1,
-      "y": 7
+      "y": 7,
+      "stackOrder": 1
     },
     {
       "type": "rock",
@@ -802,19 +809,22 @@
       "x": 9,
       "y": 6,
       "channel": "blue",
-      "color": "#54e8ff"
+      "color": "#54e8ff",
+      "stackOrder": 1
     },
     {
       "type": "portal",
       "x": 7,
       "y": 6,
       "channel": "blue",
-      "color": "#54e8ff"
+      "color": "#54e8ff",
+      "stackOrder": 1
     },
     {
       "type": "golden-carrot",
       "x": 12,
-      "y": 6
+      "y": 6,
+      "stackOrder": 1
     },
     {
       "type": "mushroom",
@@ -825,22 +835,26 @@
       "type": "dragon",
       "x": 9,
       "y": 1,
-      "direction": "right"
+      "direction": "right",
+      "stackOrder": 1
     },
     {
       "type": "ice-block",
       "x": 12,
-      "y": 1
+      "y": 1,
+      "stackOrder": 1
     },
     {
       "type": "kite",
       "x": 12,
-      "y": 1
+      "y": 1,
+      "stackOrder": 2
     },
     {
       "type": "whirlwind",
       "x": 12,
-      "y": 3
+      "y": 3,
+      "stackOrder": 1
     }
   ]
 }

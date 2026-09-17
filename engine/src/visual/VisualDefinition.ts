@@ -86,6 +86,8 @@ export interface EntityVisualRuntimeState {
   progress?: number;
   /** 上一次进入静止状态的 PresentationTime；供 Entity 自己决定何时进入 idle。 */
   stationarySinceMs?: number;
+  /** 当前表现动作的起点；Entity 动画不得依赖无关的全局帧奇偶。 */
+  animationStartedAtMs?: number;
   /** 纯表现动作名；例如 shovel。不得被 gameplay 读取。 */
   animation?: string;
   /** blocked action 也可以用尝试方向覆盖当前 gameplay facing。 */
@@ -98,6 +100,11 @@ export interface VisualQuery {
   presencesAt(cell: CellPosition): readonly EntityPresence[];
   entity(id: EntityId): Readonly<EntityInstance> | undefined;
   entitiesWithFact(fact: string): readonly Readonly<EntityInstance>[];
+}
+
+/** 一次表现会话内共享、可确定重建的环境动画状态。 */
+export interface AmbientVisualState {
+  bonusCoinSparkleFrame: number | null;
 }
 
 export interface VisualResolveContext {
@@ -113,6 +120,8 @@ export interface VisualResolveContext {
   winState?: Readonly<WinConditionState> | null;
   /** Runtime 中当前表现帧；Editor preview 可省略。不得用于 gameplay 判定。 */
   time?: PresentationFrame;
+  /** Runtime 中共享的环境表现状态；Editor preview 可省略。 */
+  ambient?: Readonly<AmbientVisualState>;
 }
 
 /** 一种 Entity 的表现解析逻辑。Visual 可以读取任意格的只读 World 信息。 */
@@ -132,7 +141,7 @@ export interface VisualDefinition {
 export interface TransientVisualDefinition {
   id: string;
   eventType: string;
-  durationMs: number;
+  durationMs: number | ((event: Readonly<WorldEvent>) => number);
   renderPass?: VisualRenderPass;
   stackOrder?: number;
   resolve(context: {

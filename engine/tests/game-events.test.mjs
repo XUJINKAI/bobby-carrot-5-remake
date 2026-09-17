@@ -18,7 +18,14 @@ function eventGame(replayPlaying) {
   const game = Object.create(Game.prototype);
   game.replayPlayback = { playing: replayPlaying };
   game.worldEvents = new WorldEventDispatcher();
-  game.presentation = { shake() {} };
+  game.presentation = { shakeStepped() {} };
+  game.tuning = {
+    impactShake: {
+      stageMs: 26,
+      stages: 8,
+      initialSpanSourcePx: 42,
+    },
+  };
   game.dialog = null;
   return game;
 }
@@ -156,22 +163,28 @@ test("Replay 跳转终点仍按顺序发布沿途 WorldEvent", () => {
   assert.deepEqual(events, [collected]);
 });
 
-test("Speed 与 Mower 冲撞事件使用同一原版幅度的镜头震动", () => {
+test("Speed、Flight Landing 与 Mower 冲撞共用原版分段震动", () => {
   const game = eventGame(false);
   const shakes = [];
   game.presentation = {
-    shake(durationMs, amplitudeSourcePx) {
-      shakes.push({ durationMs, amplitudeSourcePx });
+    shakeStepped(stageMs, stages, initialSpanSourcePx) {
+      shakes.push({ stageMs, stages, initialSpanSourcePx });
     },
   };
 
   game.publishWorldEvents([
     { type: "speed-impact", entityId: 1 },
-    { type: "crumbly-rock-smashed", entityId: 2 },
+    {
+      type: "forced-movement-impact",
+      entityId: 2,
+      data: { mechanism: "flight-landing" },
+    },
+    { type: "crumbly-rock-smashed", entityId: 3 },
   ]);
 
   assert.deepEqual(shakes, [
-    { durationMs: 248, amplitudeSourcePx: 42 },
-    { durationMs: 248, amplitudeSourcePx: 42 },
+    { stageMs: 26, stages: 8, initialSpanSourcePx: 42 },
+    { stageMs: 26, stages: 8, initialSpanSourcePx: 42 },
+    { stageMs: 26, stages: 8, initialSpanSourcePx: 42 },
   ]);
 });

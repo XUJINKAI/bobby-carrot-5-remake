@@ -8,12 +8,16 @@ import {
   consumeActionDeadline,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
+import { createDelayedMoveRuntimeAction } from "../../world/action/builtinActions.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
-import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../player/BobbyLocomotion.js";
+import {
+  KITE_FLIGHT_MOVEMENT,
+  resolveActionMovementCadenceMs,
+} from "../movement/MovementCadence.js";
 import {
   bobbyMountId,
   isBobbyFlying,
@@ -27,7 +31,6 @@ import {
 } from "./module.js";
 
 const FLIGHT_ACTION = "kite-flight";
-export const DEFAULT_FLIGHT_CELL_MS = ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs;
 
 const whirlwindBehavior: Behavior = {
   id: "kite-takeoff",
@@ -98,7 +101,7 @@ const landingBehavior: Behavior = {
       y: self.presence.cell.y,
     });
   },
-  onArrive({ actor, commands }) {
+  onArrive({ actor, self, direction, commands }) {
     if (
       !isBobbyFlying(actor.state) ||
       actor.state?.flightTransition !== "landing"
@@ -106,6 +109,16 @@ const landingBehavior: Behavior = {
       return;
     commands.setState(actor.id, patchBobbyFlight(actor.state, false));
     commands.emit({ type: "kite-landed", entityId: actor.id });
+    const runoutDirection = direction ?? actor.direction;
+    if (!runoutDirection) return;
+    commands.startAction(
+      createDelayedMoveRuntimeAction(actor.id, runoutDirection, 0, {
+        mechanism: "flight-landing",
+        sourceEntityId: self.entity.id,
+        blocksInput: true,
+        impactOnBlocked: true,
+      }),
+    );
   },
 };
 
@@ -119,7 +132,11 @@ const flightAction: RuntimeActionDefinition = {
     accrueActionDeadline(action, time);
     if (query.motionForEntity(actorId)?.status === "running") return "running";
 
-    if (!consumeActionDeadline(action, DEFAULT_FLIGHT_CELL_MS, time.stepMs / 2))
+    if (!consumeActionDeadline(
+      action,
+      KITE_FLIGHT_MOVEMENT.cellMs,
+      time.stepMs / 2,
+    ))
       return "running";
     const direction = actor.direction;
     if (!direction) return "complete";
@@ -133,7 +150,11 @@ const flightAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "flight",
-            cadenceMs: DEFAULT_FLIGHT_CELL_MS,
+            cadenceMs: resolveActionMovementCadenceMs(
+              action,
+              KITE_FLIGHT_MOVEMENT,
+              time.stepMs,
+            ),
           },
         },
       ],
@@ -165,7 +186,7 @@ const flightAction: RuntimeActionDefinition = {
 
 const whirlwindDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.WHIRLWIND,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   presentation: { name: "Whirlwind" },
 };
 
@@ -182,7 +203,7 @@ export const whirlwind: EntityModule = {
 
 const landingDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.LANDING,
-  presenceFacts: [],
+  presenceFacts: ["vertical-occupant"],
   presentation: { name: "Landing" },
 };
 
@@ -197,6 +218,9 @@ function createFlightAction(ownerEntityId: EntityId): RuntimeActionSpec {
     kind: FLIGHT_ACTION,
     ownerEntityId,
     blocksInput: true,
-    state: { elapsedMs: DEFAULT_FLIGHT_CELL_MS },
+    state: {
+      elapsedMs: KITE_FLIGHT_MOVEMENT.cellMs,
+      cadenceCarryMs: 0,
+    },
   };
 }

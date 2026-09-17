@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
+import {
+  FIREBALL_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -63,7 +67,6 @@ test("original ta.png ambient phase zero keeps the static ts.png atlas frame", (
 
 test("original ta.png confirmed fixed Entity mappings use PresentationTime", () => {
   for (const [type, frameIndex, direction, variant] of [
-    [MapEntityTypeId.BONUS_COIN, 15],
     [MapEntityTypeId.WINDMILL, 18, "up"],
     [MapEntityTypeId.WINDMILL, 20, "down"],
     [MapEntityTypeId.WINDMILL, 22, "left"],
@@ -77,52 +80,32 @@ test("original ta.png confirmed fixed Entity mappings use PresentationTime", () 
     expectAnimated(type, frameIndex, direction, variant);
 });
 
-test("Exit animates only when reach Exit is the only unfinished objective", () => {
-  const blocked = {
-    type: "all",
-    completed: false,
-    conditions: [
-      {
-        type: "carrot",
-        completed: false,
-        remaining: 1,
-      },
-      { type: "exit", completed: false },
-    ],
-  };
-  assert.equal(
-    resolveAt(MapEntityTypeId.EXIT, AMBIENT_STEP_MS, undefined, blocked).kind,
-    "atlas",
+test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
+  const first = resolveAt(RuntimeEntityTypeId.FIREBALL, 0);
+  const beforeSecond = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    FIREBALL_MOVEMENT.frameMs - 0.001,
   );
-
-  const ready = {
-    ...blocked,
-    conditions: [
-      {
-        type: "carrot",
-        completed: true,
-        remaining: 0,
-      },
-      { type: "exit", completed: false },
-    ],
-  };
-  const readyLayer = resolveAt(
-    MapEntityTypeId.EXIT,
-    AMBIENT_STEP_MS,
-    undefined,
-    ready,
+  const second = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    FIREBALL_MOVEMENT.frameMs,
   );
-  assert.equal(readyLayer.kind, "image");
-  assert.equal(readyLayer.frameIndex, 0);
-
-  const directLayer = resolveAt(
-    MapEntityTypeId.EXIT,
-    AMBIENT_STEP_MS,
-    undefined,
-    { type: "exit", completed: false },
+  const looped = resolveAt(
+    RuntimeEntityTypeId.FIREBALL,
+    FIREBALL_MOVEMENT.frameMs * 2,
   );
-  assert.equal(directLayer.kind, "image");
-  assert.equal(directLayer.frameIndex, 0);
+  assert.deepEqual(first, {
+    kind: "image",
+    asset: "dragon-fireball",
+    sourceX: 282,
+    sourceY: 0,
+    frameWidth: 28,
+    frameHeight: 28,
+    anchor: "center",
+  });
+  assert.deepEqual(beforeSecond, first);
+  assert.deepEqual(second, { ...first, sourceX: 310 });
+  assert.deepEqual(looped, first);
 });
 
 test("original ta.png Speed and Tide mappings preserve DAT direction order", () => {

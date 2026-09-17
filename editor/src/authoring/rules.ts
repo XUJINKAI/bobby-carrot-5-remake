@@ -6,6 +6,7 @@ import type { EditorMap } from "../level/types.js";
 import { editorPreviewFor } from "./EditorPreview.js";
 
 export type EditorRuleKind = "carrots" | "eggs" | "pushbox" | "exit" | "golden-carrot";
+export type EditorRuleMode = "all" | "any";
 
 export interface EditorRuleCapability {
   kind: EditorRuleKind;
@@ -70,6 +71,27 @@ export function updateEditorRule(
   return changeEditorRules(environment, [{ kind, enabled }]);
 }
 
+export function editorRuleMode(map: Readonly<EditorMap>): EditorRuleMode {
+  const win = map.rules?.win;
+  return win?.type === "any" ? "any" : "all";
+}
+
+export function updateEditorRuleMode(mode: EditorRuleMode): EditorCommand {
+  return {
+    apply(map) {
+      const conditions = winConditions(map.rules?.win);
+      if (conditions.length === 0 || editorRuleMode(map) === mode) return map;
+      return normalizeEditorLevel({
+        ...map,
+        rules: {
+          ...(map.rules ?? {}),
+          win: { type: mode, conditions: structuredClone([...conditions]) },
+        },
+      });
+    },
+  };
+}
+
 export function enableEditorRules(
   environment: EngineEnvironment,
   kinds: readonly EditorRuleKind[],
@@ -105,7 +127,7 @@ function changeEditorRules(
         .map(ruleCondition);
       const rules = { ...(map.rules ?? {}) };
       if (conditions.length > 0)
-        rules.win = { type: "all", conditions };
+        rules.win = { type: editorRuleMode(map), conditions };
       else delete rules.win;
       return normalizeEditorLevel({ ...map, rules });
     },
@@ -114,7 +136,9 @@ function changeEditorRules(
 
 function winConditions(condition: WinCondition | undefined): readonly WinCondition[] {
   if (!condition) return [];
-  return condition.type === "all" ? condition.conditions : [condition];
+  return condition.type === "all" || condition.type === "any"
+    ? condition.conditions
+    : [condition];
 }
 
 function ruleCondition(kind: EditorRuleKind): WinCondition {

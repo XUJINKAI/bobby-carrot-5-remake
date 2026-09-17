@@ -39,6 +39,8 @@ interface LevelEntity {
 }
 ```
 
+`LevelEntity.stackOrder` 省略时表示第 `0` 层；运行时生成合同省略层序时，Engine 才会根据完整 footprint 放到当前重叠范围的最高层之上。
+
 字段与 `LevelMap.rules` 承载声明式地图 gameplay semantics。Fact、runtime state 和具体执行逻辑只位于 Engine；地图字段不表达 DAT、Catalog、Adventure 或 Editor 来源。Engine 始终只接收一份 `LevelMap`。
 
 `LevelMap` 表示“能被玩/编辑的一张地图”。Model 还提供薄的 `LevelPatch` 与
@@ -548,7 +550,10 @@ DEV 单关调试工具。
 ```text
 Editor semantic JSON map
       ├──> Bobby Carrot 5 Remake Engine
-      └──> tools/original/dat encode
+      └──> Original Adapter
+                    ↓
+        tmp/original-patch/encoded
+                    ↓ tools/original/dat encode
                     ↓
                patch one original DAT record
                     ↓
@@ -563,7 +568,11 @@ node tools/cli.mjs original patch \
   --out tmp/original-patch
 ```
 
-输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。
+输入目录的 JSON 文件名是目标 public ID；工具通过 Catalog provenance 找回原始 JAR / DAT / slot，并按 JAR 合并输出。Adapter 先按 `original/decoded/<release>/levels/<pack>-<slot>.json` 的合同生成可审阅中间地图；默认输出位于 `tmp/original-patch/encoded/`，DAT encoder 重新读取该中间地图后再打包 JAR。
+
+Patch 默认使用 `original/official/` 普通版 JAR。传入 `--hd` 时使用
+`original/official-hd/` 高清版，并把输出命名为
+`<release>-patched-<timestamp>-hd.jar`；两种输出共用同一 encoded DAT 中间合同。
 
 ## Tools / Assets
 

@@ -33,6 +33,8 @@ const mowerVehicle: Behavior = {
     if (bobbyMountId(actor.state) !== self.entity.id) return;
     if (movement && query.hasFactAt(movement.to, "moving-platform"))
       return { passable: false, reason: "mower-cannot-enter-moving-platform" };
+    if (movement && query.hasFactAt(movement.to, "elevated-obstacle"))
+      return { passable: false, reason: "mower-cannot-enter-elevated-obstacle" };
     return { passable: true, reason: "drive-mower" };
   },
   onTouch({ actor, self, query, commands }) {
@@ -73,6 +75,10 @@ const mowerVehicle: Behavior = {
       y: self.presence.cell.y,
       data: { mowerId: self.entity.id },
     });
+    commands.emit({
+      type: "music-state",
+      data: { source: "mower", track: "mow" },
+    });
   },
 };
 
@@ -98,6 +104,10 @@ const mowerParking: Behavior = {
       x: self.presence.cell.x,
       y: self.presence.cell.y,
       data: { mowerId: mower.id, exitX: self.presence.cell.x + 1 },
+    });
+    commands.emit({
+      type: "music-state",
+      data: { source: "mower", track: null },
     });
   },
 };
@@ -126,7 +136,7 @@ const smashCrumblyRock: Behavior = {
 
 const mowerDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.MOWER,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   state: [
     {
       key: "mountedByActorId",
@@ -162,7 +172,7 @@ export const mowerParkingTile: EntityModule = originalModule(
 
 const crumblyRockDefinition: EntityModuleDefinition = {
   type: MapEntityTypeId.CRUMBLY_ROCK,
-  presenceFacts: ["blocking"],
+  presenceFacts: ["blocking", "vertical-occupant"],
   presentation: { name: "Crumbly Rock" },
 };
 

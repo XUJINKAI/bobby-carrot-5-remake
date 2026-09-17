@@ -112,7 +112,7 @@ const shovelAction: RuntimeActionDefinition = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.SNOW,
-  presenceFacts: ["blocking", "contact-cover"],
+  presenceFacts: ["blocking", "contact-cover", "growth-substrate"],
   presentation: { name: "Snow" },
 };
 

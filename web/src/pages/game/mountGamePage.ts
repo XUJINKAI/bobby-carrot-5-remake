@@ -47,7 +47,6 @@ import {
   bindReplayPanel,
   type ReplayPanelController,
 } from "./bindReplayPanel.js";
-import { resolveGameMusic } from "./gameMusic.js";
 import { AdventureRewardSession } from "./adventureRewardSession.js";
 import {
   loadReplayPanelOpen,
@@ -300,6 +299,7 @@ export async function renderGamePage(
         ? { bobbyLocomotion: { moveMs: plan.bobbyMoveMs } }
         : {}),
       camera: GAME_CAMERA_OPTIONS[mode],
+      ...(adventureScene ? { levelMusicOverride: "title" } : {}),
       hud: resolveGameplayHudConfig(
         mode,
         adventureScene?.id,
@@ -315,14 +315,6 @@ export async function renderGamePage(
     },
   });
   const { game, input, gates } = session;
-  const music = resolveGameMusic(level.music, {
-    specialScene: adventureScene !== undefined,
-  });
-  const playLevelMusic = (): void => {
-    if (music) audio.playMusic(music);
-    else audio.stopMusic();
-  };
-  playLevelMusic();
 
   let visibleResult: "death" | "complete" | null = null;
   let audibleResult: "death" | "complete" | null = null;
@@ -379,7 +371,7 @@ export async function renderGamePage(
           completionNextId = undefined;
           completionNavigationStarted = false;
           gameResult.hidden = true;
-          playLevelMusic();
+          game.resumeMusicState();
         },
       })
     : NOOP_REPLAY_PANEL_CONTROLLER;
@@ -415,7 +407,7 @@ export async function renderGamePage(
     if (kind === "death") adventureRewards.discard();
     if (kind === "complete") recordLevelCompletion();
     if (!kind) {
-      if (audibleResult !== null) playLevelMusic();
+      if (audibleResult !== null) game.resumeMusicState();
       audibleResult = null;
       resultElapsedMs = 0;
       completionRecorded = false;

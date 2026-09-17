@@ -13,6 +13,8 @@ import type { CellPosition, EntityId } from "../world/entity/EntityInstance.js";
 import type { WorldMotion } from "../world/movement/WorldMotion.js";
 import type { WorldEvent } from "../world/WorldTypes.js";
 import { buildVisualScene } from "./VisualSceneBuilder.js";
+import { AmbientVisualRuntime, type AmbientVisualOptions } from "./ambient/AmbientVisualRuntime.js";
+import { resolveTransientDuration, type ActiveTransientVisual } from "./TransientVisualRuntime.js";
 import type { MotionEasing } from "./tuning/PresentationTuning.js";
 import { applyMotionEasing } from "./tuning/PresentationTuning.js";
 import type {
@@ -52,15 +54,6 @@ interface VisualMovementGroup {
   motions: WorldMotion[];
 }
 
-interface ActiveTransientVisual {
-  id: number;
-  definition: TransientVisualDefinition;
-  event: WorldEvent;
-  x: number;
-  y: number;
-  startedAtMs: number;
-}
-
 interface TimelineProgress {
   raw: number;
   position: number;
@@ -79,6 +72,7 @@ export interface WorldDeltaPresentationOptions {
 
 export interface VisualRuntimeOptions extends WorldCalloutRuntimeOptions {
   callouts?: WorldCalloutRegistry;
+  ambient?: AmbientVisualOptions;
 }
 
 /** Pure presentation runtime. It never mutates World gameplay state. */
@@ -90,6 +84,7 @@ export class VisualRuntime {
   private readonly transients = new Map<number, ActiveTransientVisual>();
   private readonly activeTransientIds = new Set<number>();
   private readonly callouts: WorldCalloutRuntime;
+  private readonly ambient: AmbientVisualRuntime;
   private nextTransientId = 1;
   private frame: PresentationFrame | null = null;
 
@@ -104,6 +99,7 @@ export class VisualRuntime {
       options.callouts ?? new WorldCalloutRegistry(),
       options,
     );
+    this.ambient = new AmbientVisualRuntime(options.ambient);
   }
 
   get isAnimating(): boolean {
@@ -272,6 +268,22 @@ export class VisualRuntime {
             delta.event.data.durationMs,
             frame,
           );
+        if (delta.event.type === "fireball-termination-started" &&
+          delta.event.entityId !== undefined &&
+          delta.event.direction !== undefined &&
+          typeof delta.event.data?.durationMs === "number") {
+          const endOffset = directionOffset(delta.event.direction, 0.5);
+          this.beginMotion(
+            delta.event.entityId,
+            { x: 0, y: 0 },
+            endOffset,
+            delta.event.data.durationMs,
+            frame,
+            true,
+            "fireball-termination",
+            delta.event.direction,
+          );
+        }
         this.beginTransient(delta.event, frame);
         this.callouts.consume(delta.event, frame);
         continue;
@@ -310,6 +322,7 @@ export class VisualRuntime {
 
   update(frame: PresentationFrame, easing: MotionEasing): void {
     this.frame = frame;
+    this.ambient.update(frame);
     this.camera.update(frame);
     const timelineProgress = new Map<VisualTimeline, TimelineProgress>();
     for (const motion of this.motions.values()) {
@@ -331,6 +344,7 @@ export class VisualRuntime {
     this.transients.clear();
     this.activeTransientIds.clear();
     this.nextTransientId = 1;
+    this.ambient.clear();
     this.callouts.clear();
   }
 
@@ -355,6 +369,7 @@ export class VisualRuntime {
       moving: false,
       progress: 1,
       stationarySinceMs: frame.nowMs,
+      animationStartedAtMs: current?.animationStartedAtMs ?? frame.nowMs,
       direction,
     });
   }
@@ -422,8 +437,14 @@ export class VisualRuntime {
       this.visuals,
       this.entityRuntime,
       this.frame ?? undefined,
+      this.ambient.state,
     );
-    const withTransients = this.appendTransientVisuals(scene);
+    const ambient = this.ambient.effects(world, this.camera, this.frame ?? undefined);
+    const withTransients = this.appendTransientVisuals({
+      ...scene,
+      ambientBackground: ambient.background,
+      ambientForeground: ambient.foreground,
+    });
     if (!this.frame) return withTransients;
     return {
       ...withTransients,
@@ -550,6 +571,7 @@ export class VisualRuntime {
     )
       return;
     const id = this.nextTransientId++;
+    const durationMs = resolveTransientDuration(definition, event);
     this.transients.set(id, {
       id,
       definition,
@@ -557,15 +579,16 @@ export class VisualRuntime {
       x: event.x,
       y: event.y,
       startedAtMs: frame.nowMs,
+      durationMs,
     });
-    if (definition.durationMs > 0) this.activeTransientIds.add(id);
+    if (durationMs > 0) this.activeTransientIds.add(id);
   }
 
   private updateTransients(frame: PresentationFrame): void {
     for (const transient of this.transients.values()) {
       const visible =
         frame.nowMs >= transient.startedAtMs &&
-        frame.nowMs < transient.startedAtMs + Math.max(0, transient.definition.durationMs);
+        frame.nowMs < transient.startedAtMs + transient.durationMs;
       if (visible) this.activeTransientIds.add(transient.id);
       else this.activeTransientIds.delete(transient.id);
     }
@@ -576,7 +599,7 @@ export class VisualRuntime {
     const passes: Partial<Record<VisualRenderPass, RenderItem[]>> = {};
     for (const id of this.activeTransientIds) {
       const transient = this.transients.get(id)!;
-      const durationMs = Math.max(0, transient.definition.durationMs);
+      const durationMs = transient.durationMs;
       const elapsedMs = this.frame.nowMs - transient.startedAtMs;
       if (elapsedMs < 0 || durationMs <= 0 || elapsedMs >= durationMs) continue;
       const progress = Math.max(0, Math.min(1, elapsedMs / durationMs));
@@ -612,7 +635,9 @@ export class VisualRuntime {
         ? sortStandingRenderItems(passes.standing)
         : scene.standing,
       effect: passes.effect ? sortRenderItems(passes.effect) : scene.effect,
+      ambientBackground: scene.ambientBackground,
       callouts: scene.callouts,
+      ambientForeground: scene.ambientForeground,
     };
   }
 
@@ -651,6 +676,7 @@ export class VisualRuntime {
           : motion.endElevationPx,
       moving: motion.moving,
       progress: animationProgress,
+      animationStartedAtMs: motion.timeline.startedAtMs,
       ...(motion.animation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
     });
@@ -669,6 +695,7 @@ export class VisualRuntime {
       moving: false,
       progress: 1,
       stationarySinceMs: frame.nowMs,
+      animationStartedAtMs: motion.timeline.startedAtMs,
       ...(keepAnimation ? { animation: motion.animation } : {}),
       ...(motion.direction ? { direction: motion.direction } : {}),
     });
@@ -743,6 +770,16 @@ function resolveTimelineProgress(
     raw,
     position: applyMotionEasing(raw, easing),
   };
+}
+
+function directionOffset(
+  direction: Direction,
+  distance: number,
+): { x: number; y: number } {
+  if (direction === "up") return { x: 0, y: -distance };
+  if (direction === "down") return { x: 0, y: distance };
+  if (direction === "left") return { x: -distance, y: 0 };
+  return { x: distance, y: 0 };
 }
 
 function buildVisualMovementGroups(

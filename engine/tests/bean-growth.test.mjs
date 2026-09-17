@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  DEFAULT_BEAN_GROWTH_SEGMENT_MS,
-} from "../dist/entities/original/bean-field.js";
+  BEAN_GROWTH_TIMING,
+} from "../dist/entities/movement/MovementCadence.js";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { World } from "./support/World.mjs";
 
@@ -61,18 +61,18 @@ test("Bean growth changes climbable World facts one cell at a time", () => {
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEAN_SPROUT), true);
   assert.equal(world.query.hasFactAt(actor.anchor, "climbable"), false);
 
-  world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  world.update({ tick: 1, stepMs: BEAN_GROWTH_TIMING.segmentMs });
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEANSTALK_BASE), true);
   assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
   assert.equal(world.query.hasFactAt({ x: 1, y: 2 }, "climbable"), true);
 
-  world.update({ tick: 2, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  world.update({ tick: 2, stepMs: BEAN_GROWTH_TIMING.segmentMs });
   assert.equal(hasType(world, 1, 2, RuntimeEntityTypeId.BEANSTALK_MID), true);
   assert.equal(hasType(world, 1, 1, MapEntityTypeId.BEANSTALK), true);
 
   const stopped = world.update({
     tick: 3,
-    stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS,
+    stepMs: BEAN_GROWTH_TIMING.segmentMs,
   });
   assert.equal(hasType(world, 1, 0, MapEntityTypeId.BEANSTALK), false);
   assert.ok(stopped.events.some(
@@ -112,4 +112,43 @@ test("Bean Field without a Bean leaves the field unchanged", () => {
     },
   );
   assert.equal(world.actions.active.length, 0);
+});
+
+test("Bean grows across Tide and stops at a vertical occupant", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 2,
+    height: 4,
+    entities: [
+      { type: "grass", variant: "ts-10-1", x: 0, y: 3 },
+      { type: "grass", variant: "ts-10-1", x: 1, y: 3 },
+      { type: MapEntityTypeId.TIDE, direction: "left", x: 1, y: 2 },
+      { type: MapEntityTypeId.WATER, variant: "still", x: 1, y: 1 },
+      { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 1 },
+      { type: MapEntityTypeId.BEAN_FIELD, x: 1, y: 3 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 3 },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { beans: 1 };
+
+  world.step({
+    intents: [{
+      type: "move",
+      actorId: actor.id,
+      direction: "right",
+      cause: { type: "player-input" },
+    }],
+  });
+  world.update({ tick: 1, stepMs: BEAN_GROWTH_TIMING.segmentMs });
+  assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
+
+  const stopped = world.update({
+    tick: 2,
+    stepMs: BEAN_GROWTH_TIMING.segmentMs,
+  });
+  assert.equal(hasType(world, 1, 1, MapEntityTypeId.BEANSTALK), false);
+  assert.ok(stopped.events.some(
+    (event) => event.type === "bean-growth-completed" && event.data.height === 2,
+  ));
 });

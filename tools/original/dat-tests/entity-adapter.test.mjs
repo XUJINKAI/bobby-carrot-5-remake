@@ -77,9 +77,8 @@ test("DAT Start 保留普通地面，并在相同坐标生成 Bobby", () => {
       x: 0,
       y: 0,
       variant: "ts-6-15",
-      stackOrder: 0,
     },
-    { type: MapEntityTypeId.START, x: 1, y: 0, stackOrder: 0 },
+    { type: MapEntityTypeId.START, x: 1, y: 0 },
     { type: MapEntityTypeId.BOBBY, x: 1, y: 0, stackOrder: 1 },
   ]);
 });
@@ -159,7 +158,6 @@ test("Wind Switch DAT 数字只在 adapter 边界映射到 direction", () => {
       y: 0,
       direction: "left",
       active: true,
-      stackOrder: 0,
     },
   );
 });
@@ -237,7 +235,7 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
     [
-      { ...canonicalMowedGroundAt(1, 0), stackOrder: 0 },
+      canonicalMowedGroundAt(1, 0),
       { type: MapEntityTypeId.CARROT, x: 1, y: 0, stackOrder: 1 },
       { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0, stackOrder: 2 },
     ],
@@ -245,7 +243,7 @@ test("隐藏主目标在 Adapter 阶段 materialize 到草下，同格已有显�
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 2 && entity.y === 0),
     [
-      { ...canonicalMowedGroundAt(2, 0), stackOrder: 0 },
+      canonicalMowedGroundAt(2, 0),
       { type: MapEntityTypeId.CARROT, x: 2, y: 0, stackOrder: 1 },
       { type: MapEntityTypeId.HIGH_GRASS, x: 2, y: 0, stackOrder: 2 },
     ],
@@ -262,7 +260,7 @@ test("High Grass 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠",
   assert.deepEqual(
     result.entities.filter((entity) => entity.x === 1 && entity.y === 0),
     [
-      { ...canonicalMowedGroundAt(1, 0), stackOrder: 0 },
+      canonicalMowedGroundAt(1, 0),
       { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0, stackOrder: 1 },
       { type: MapEntityTypeId.HIGH_GRASS, x: 1, y: 0, stackOrder: 2 },
     ],
@@ -284,7 +282,6 @@ test("Snow 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠", () =>
         x: 1,
         y: 0,
         variant: "ts-8-13",
-        stackOrder: 0,
       },
       { type: MapEntityTypeId.BONUS_COIN, x: 1, y: 0, stackOrder: 1 },
       { type: MapEntityTypeId.SNOW, x: 1, y: 0, stackOrder: 2 },
@@ -292,7 +289,7 @@ test("Snow 上的显式 Bonus Coin 转换为 ground/content/cover 堆叠", () =>
   );
 });
 
-test("Patch 以 Snow 作为 terrain，并忽略同格底层 Surface", () => {
+test("Patch 在同层地形中使用实体顺序最后的 terrain", () => {
   const reversed = reverseEntityMap({
     schemaVersion: 1,
     width: 2,
@@ -314,6 +311,28 @@ test("Patch 以 Snow 作为 terrain，并忽略同格底层 Surface", () => {
   assert.deepEqual(reversed.objects, [
     { type: objectTile(0xf8), x: 1, y: 0 },
   ]);
+});
+
+test("Patch 使用 stackOrder 最高的可编码 terrain", () => {
+  const reversed = reverseEntityMap({
+    schemaVersion: 1,
+    width: 2,
+    height: 1,
+    entities: [
+      { type: MapEntityTypeId.START, x: 0, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0 },
+      {
+        type: MapEntityTypeId.GRASS,
+        x: 1,
+        y: 0,
+        variant: "ts-6-15",
+        stackOrder: 2,
+      },
+      { type: MapEntityTypeId.SNOW, x: 1, y: 0, stackOrder: 1 },
+    ],
+  });
+
+  assert.equal(reversed.terrain[0][1], terrain(0x5e));
 });
 
 test("没有显式胡萝卜的原版地图把隐藏目标 materialize 为 Empty Nest", () => {
@@ -473,7 +492,7 @@ test("Dragon 的 order 来自 head Cell Stack，body/tail 地面保持在下层"
       result.entities.find(
         (entity) => entity.type === MapEntityTypeId.GRASS && entity.x === x,
       )?.stackOrder,
-      0,
+      undefined,
     );
   }
 });
@@ -572,9 +591,9 @@ test("拼图式 Surface 的每个 atlas 单元保持独立 canonical Entity", ()
     objects: [],
   });
   assert.deepEqual(result.entities.filter((entity) => entity.type === MapEntityTypeId.MOON), [
-    { type: MapEntityTypeId.MOON, x: 0, y: 0, variant: "ts-5-11", stackOrder: 0 },
-    { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12", stackOrder: 0 },
-    { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13", stackOrder: 0 },
+    { type: MapEntityTypeId.MOON, x: 0, y: 0, variant: "ts-5-11" },
+    { type: MapEntityTypeId.MOON, x: 1, y: 0, variant: "ts-5-12" },
+    { type: MapEntityTypeId.MOON, x: 2, y: 0, variant: "ts-5-13" },
   ]);
 });
 

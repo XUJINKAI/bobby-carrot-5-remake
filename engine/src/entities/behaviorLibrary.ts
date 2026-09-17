@@ -5,6 +5,7 @@ import {
   bobbyMountId,
   patchBobbyInventory,
   readBobbyInventory,
+  readBobbySpeedBoost,
 } from "./player/BobbyState.js";
 
 export const collectBehavior: Behavior = {
@@ -127,6 +128,7 @@ export const mowableBehavior: Behavior = {
       entityId: self.entity.id,
       x: self.presence.cell.x,
       y: self.presence.cell.y,
+      data: { accelerated: readBobbySpeedBoost(actor.state) !== null },
     });
   },
 };

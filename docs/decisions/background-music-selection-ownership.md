@@ -2,76 +2,36 @@
 
 ## 状态
 
-待决策。2026-09-09 记录现状与合同冲突；在形成完整方案前维持当前运行方式。
+已决定。Engine 管理地图运行期音乐；宿主页面可以通过显式覆盖表达页面场景。
 
-## 背景
+## 决定
 
-音频系统同时涉及三类职责：
+`Game.loadLevel()` 解析 `LevelMap.music` 并通过注入的 `AudioBackend` 播放基础曲目：
 
-- `LevelMap.music` 保存地图声明的语义音乐 ID、`random` 或 `none`；
-- Engine `AudioRuntime` 负责浏览器音频加载、解码、缓存、播放和设置；
-- Web 根据当前产品页面调用共享的 `AudioRuntime`。
+- `none` 停止音乐；
+- 明确 ID 播放对应曲目；
+- `random` 或省略字段时，从 `ingame0..2` 选择一首。
 
-当前 [`gameMusic.ts`](../../web/src/pages/game/gameMusic.ts) 在 Web 中解析
-`LevelMap.music`，并为普通地图选择 `ingame0..2`。游戏页和其它页面均由 Web
-发出背景音乐播放请求。Engine 的 `Game.loadLevel()` 与
-`createGameplayRuntime()` 不根据 `LevelMap.music` 自动播放背景音乐。
+`runtime.levelMusicOverride` 允许宿主在创建 runtime 时覆盖基础曲目。字符串表示页面指定曲目，
+`null` 表示页面保持静音，省略则完全服从地图。Home Demo 与 Adventure Special Scene 使用
+`title`，Editor Play Test 使用静音；普通 Game 与 Embed 直接使用地图音乐。
 
-`BobbyApp` 在整个应用生命周期中只创建一个共享 `AudioRuntime`。因此当前实现中
-背景音乐只有 Web 一个选曲者；`AudioRuntime` 负责让切曲遵循最后一次请求，并阻止
-已经过期的异步加载结果重新接管播放。
+## 地图内覆盖
 
-## 合同冲突
+Entity 行为通过通用 `music-state` WorldEvent 声明地图内覆盖：
 
-现有文档包含两种尚未统一的边界表述：
+- Mower mount 设置 `mower → mow`，Parking unmount 清除 `mower`；
+- 带倒计时的 Lock 打开后设置 `timed-bonus → bonus`；
+- Mower 优先于 Timed Bonus，所以下车后会恢复 `bonus`，普通关卡则恢复基础曲目。
 
-1. Engine 总原则要求仅凭纯语义 `LevelMap` 和少量运行配置即可独立运行地图；
-   `LevelMap.music` 又被定义为地图内音乐字段。严格解释时，Engine 应当消费该字段。
-2. 音频功能文档把“播放哪首曲子”列为 Web / Adventure / Embed 的产品层职责，
-   与当前实现一致。
+`LevelMusicController` 保存基础曲目和当前覆盖。Undo / Redo 从 World 中的 Timed Challenge 与
+Bobby mount 状态重建覆盖，Restart 清除地图内覆盖。该状态属于表现协调，不进入 World
+Snapshot；产生它的 gameplay 状态仍完整进入 Snapshot、Undo 与 Replay。
 
-这里的分歧是背景音乐选曲是否属于“完整运行一张地图”，而不是浏览器播放器的归属。
-`AudioRuntime` 属于 Engine 这一点没有争议。
+## 宿主覆盖
 
-## 暂行决定
+页面仍可为结算、导航等产品状态直接播放 `cleared`、`death` 或 `title`。产品覆盖结束后调用
+`Game.resumeMusicState()`，恢复 Engine 当前计算出的地图音乐，而不是重新解析或复制地图规则。
 
-在最终边界确定前维持当前运行方式：
-
-- Web 是背景音乐的唯一选曲者；
-- Engine 提供 `AudioRuntime`，不在 `Game.loadLevel()` 中自动解析
-  `LevelMap.music`；
-- 不单独引入“仅空闲时播放”作为所有权补丁；该行为无法阻止 Play 页先播放页面
-  默认音乐、随后再被地图音乐替换；
-- 涉及背景音乐所有权的改动必须作为一次完整迁移处理，不能让同一 Play 页面同时由
-  Web 和 Engine 选曲。
-
-这项暂行决定只描述决策期间的稳定实现边界，不裁定最终架构。
-
-## 待评估方案
-
-### 宿主统一选曲
-
-Web / Embed 等宿主解析 `LevelMap.music`，Engine 只提供音频能力。该方案保持单一
-选曲者和简单页面生命周期，但需要重新界定“Engine 独立运行”的音频范围。
-
-### Engine 管理地图音乐
-
-Engine 在加载地图时解析 `LevelMap.music`；Web 只为没有地图 runtime 的页面选曲。
-该方案让独立地图天然遵守音乐字段，但必须同时定义共享播放器的接管、释放、加载失败、
-Home Demo、Editor Play Test 和页面切换行为。
-
-### 带所有者的音乐协调器
-
-由统一协调器接收页面与地图的音乐意图，通过 owner token 或 scope 管理优先级和释放。
-该方案能显式处理并发生命周期，但会增加 API 与状态管理成本。
-
-## 作出最终决定的条件
-
-后续方案至少需要同时验证：
-
-- 直接加载一张带 `music` 的地图时行为明确；
-- 进入 Play 页面时不会短暂播放另一首默认音乐；
-- 页面切换、异步加载取消和 runtime 销毁不会留下旧音乐；
-- Home Demo 与 Editor Play Test 的嵌套生命周期有唯一选曲者；
-- `none`、`random` 和明确曲目 ID 的语义在所有宿主中一致；
-- 音乐开关、音量、风格和首次交互恢复仍由共享播放器统一维护。
+共享 `AudioRuntime` 继续负责加载、缓存、播放、音量、风格、首次交互恢复和过期异步请求
+取消。选曲状态与浏览器音频资源生命周期因此保持分离。

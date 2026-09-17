@@ -30,7 +30,8 @@ Engine 负责恢复原版地图内规则，并提供现代浏览器所需的运�
 - Bobby 出生在 Speed 上时，第一个 World tick 建立对应方向的 Speed Action；
 - Bobby 在 Beanstalk 上站立或移动时，统一使用 Up 人物条带；
 - Bobby 在 Ice 上移动时使用第 7 帧，停住后恢复当前方向的普通站立帧；
-- `speed-impact` 与 `crumbly-rock-smashed` 使用确定性的 `248ms / 42 source px` Camera shake。
+- Speed 撞击、Kite Landing 续步受阻与 `crumbly-rock-smashed` 使用每阶段
+  `26ms`、共 8 阶段的 Camera shake，初始随机窗口宽度为 42 source px。
 
 地图内轻量提示的事件、绘制、时钟和可访问性合同见
 [`world-callouts.md`](world-callouts.md)。

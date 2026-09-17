@@ -3,6 +3,7 @@ import type { PresentationFrame } from "../time/PresentationClock.js";
 import type { World } from "../world/World.js";
 import type { EntityId } from "../world/entity/EntityInstance.js";
 import type { EntityVisualRuntimeState } from "./VisualDefinition.js";
+import type { AmbientVisualState } from "./VisualDefinition.js";
 import type { VisualRegistry } from "./VisualRegistry.js";
 import {
   buildSpatialScene,
@@ -17,6 +18,7 @@ export function buildVisualScene(
   visuals: VisualRegistry,
   runtime: VisualRuntimeState,
   time?: PresentationFrame,
+  ambient?: Readonly<AmbientVisualState>,
 ): RenderScene {
   // 同一次场景构建读取同一个 World；规则求值可能扫描实体，应由所有视觉共享。
   const winState = world.winState;
@@ -33,6 +35,7 @@ export function buildVisualScene(
       outcome: world.outcome.state,
       winState,
       ...(time ? { time } : {}),
+      ...(ambient ? { ambient } : {}),
     },
   });
 }

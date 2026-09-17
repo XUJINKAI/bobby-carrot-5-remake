@@ -1,6 +1,7 @@
 import { MapEntityTypeId, type Direction } from "@bobby/model";
 import type {
   RuntimeActionDefinition,
+  RuntimeActionInstance,
   RuntimeActionSpec,
 } from "../../world/action/RuntimeAction.js";
 import {
@@ -15,6 +16,10 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import {
+  FIREBALL_MOVEMENT,
+  resolveActionMovementCadenceMs,
+} from "../movement/MovementCadence.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   originalModule,
@@ -23,9 +28,6 @@ import { meltIceBlocksAt } from "./ice-block.js";
 import { fireballCanTraverseTerrainAt } from "./terrain-semantics.js";
 
 const FIREBALL_ACTION = "dragon-fireball";
-const ORIGINAL_GAMEPLAY_STEP_MS = 31;
-
-export const DEFAULT_FIREBALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 
 const runFireball: Behavior = {
   id: "run-dragon-fireball",
@@ -43,7 +45,10 @@ const runFireball: Behavior = {
       ...self.entity.state,
       runtimeStarted: true,
     });
-    commands.startAction(createFireballAction(self.entity.id));
+    commands.startAction(createFireballAction(
+      self.entity.id,
+      integerState(self.entity.state?.inputLockActionId),
+    ));
   },
 };
 
@@ -54,17 +59,27 @@ const fireballAction: RuntimeActionDefinition = {
     if (fireballId === undefined) return "complete";
     const fireball = query.entity(fireballId);
     if (!fireball) return "complete";
-    accrueActionDeadline(action, time);
-    if (query.motionForEntity(fireballId)?.status === "running")
-      return "running";
 
-    if (
-      !consumeActionDeadline(
+    if (action.state.phase === "terminating") {
+      accrueActionDeadline(action, time);
+      if (!consumeActionDeadline(
         action,
-        DEFAULT_FIREBALL_CELL_MS,
-        time.stepMs / 2,
-      )
-    )
+        FIREBALL_MOVEMENT.terminalMs,
+        0,
+      )) return "running";
+      const direction = fireball.direction ?? "left";
+      const impact = halfCellAhead(fireball.anchor, direction);
+      destroyFireball(
+        commands,
+        fireballId,
+        impact.x,
+        impact.y,
+        integerState(action.state.inputLockActionId),
+      );
+      return "complete";
+    }
+
+    if (query.motionForEntity(fireballId)?.status === "running")
       return "running";
 
     const direction = fireball.direction ?? "left";
@@ -74,14 +89,14 @@ const fireballAction: RuntimeActionDefinition = {
       !fireballCanTraverseTerrainAt(query, target) ||
       projectileBlockedAt(query, target)
     ) {
-      destroyFireball(commands, fireballId, target.x, target.y);
-      return "complete";
+      beginFireballTermination(action, commands, fireball);
+      return "running";
     }
 
     const reflected = reflectedDirectionAt(query, target, direction);
     if (reflected === false) {
-      destroyFireball(commands, fireballId, target.x, target.y);
-      return "complete";
+      beginFireballTermination(action, commands, fireball);
+      return "running";
     }
     return {
       status: "running",
@@ -93,7 +108,11 @@ const fireballAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "fireball",
-            cadenceMs: DEFAULT_FIREBALL_CELL_MS,
+            cadenceMs: resolveActionMovementCadenceMs(
+              action,
+              FIREBALL_MOVEMENT,
+              time.stepMs,
+            ),
           },
         },
       ],
@@ -103,8 +122,8 @@ const fireballAction: RuntimeActionDefinition = {
     const fireballId = action.ownerEntityId;
     if (fireballId === undefined) return;
     if (!result.moved) {
-      commands.cancelAction(action.id);
-      destroyFireball(commands, fireballId, result.to.x, result.to.y);
+      const fireball = query.entity(fireballId);
+      if (fireball) beginFireballTermination(action, commands, fireball);
       return;
     }
     meltIceBlocksAt(query, commands, result.to);
@@ -129,28 +148,21 @@ const base = originalModule(
     id: RuntimeEntityTypeId.FIREBALL,
     renderPass: "effect",
     resolve(context) {
-      const pulse = (context.time?.frame ?? 0) % 8 < 4 ? 1 : 0.78;
+      const frame =
+        Math.floor(
+          Math.max(0, context.time?.nowMs ?? 0) /
+            FIREBALL_MOVEMENT.frameMs,
+        ) % 2;
       return {
-        layers: [
-          {
-            kind: "canvas",
-            draw(canvas, x, y, size) {
-              const centerX = x + size / 2;
-              const centerY = y + size / 2;
-              canvas.save();
-              canvas.globalAlpha = pulse;
-              canvas.fillStyle = "#ff5a1f";
-              canvas.beginPath();
-              canvas.arc(centerX, centerY, size * 0.2, 0, Math.PI * 2);
-              canvas.fill();
-              canvas.fillStyle = "#ffd166";
-              canvas.beginPath();
-              canvas.arc(centerX, centerY, size * 0.1, 0, Math.PI * 2);
-              canvas.fill();
-              canvas.restore();
-            },
-          },
-        ],
+        layers: [{
+          kind: "image",
+          asset: "dragon-fireball",
+          sourceX: frame === 0 ? 282 : 310,
+          sourceY: 0,
+          frameWidth: 28,
+          frameHeight: 28,
+          anchor: "center",
+        }],
       };
     },
   },
@@ -162,12 +174,18 @@ export const fireball: EntityModule = {
   runtimeActions: [fireballAction],
 };
 
-function createFireballAction(ownerEntityId: EntityId): RuntimeActionSpec {
+function createFireballAction(
+  ownerEntityId: EntityId,
+  inputLockActionId: number | null,
+): RuntimeActionSpec {
   return {
     kind: FIREBALL_ACTION,
     ownerEntityId,
     focus: { entityId: ownerEntityId },
-    state: { elapsedMs: DEFAULT_FIREBALL_CELL_MS },
+    state: {
+      cadenceCarryMs: 0,
+      ...(inputLockActionId === null ? {} : { inputLockActionId }),
+    },
   };
 }
 
@@ -211,9 +229,43 @@ function destroyFireball(
   entityId: EntityId,
   x: number,
   y: number,
+  inputLockActionId: number | null,
 ): void {
   commands.destroy(entityId);
+  if (inputLockActionId !== null)
+    commands.cancelAction(inputLockActionId);
   commands.emit({ type: "fireball-impact", entityId, x, y });
+}
+
+function beginFireballTermination(
+  action: RuntimeActionInstance,
+  commands: WorldCommandApi,
+  fireball: {
+    id: EntityId;
+    anchor: { x: number; y: number };
+    direction?: Direction;
+  },
+): void {
+  if (action.state.phase === "terminating") return;
+  const direction = fireball.direction ?? "left";
+  action.state.phase = "terminating";
+  action.state.elapsedMs = 0;
+  commands.emit({
+    type: "fireball-termination-started",
+    entityId: fireball.id,
+    x: fireball.anchor.x,
+    y: fireball.anchor.y,
+    direction,
+    data: { durationMs: FIREBALL_MOVEMENT.terminalMs },
+  });
+}
+
+function integerState(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
+}
+
+function finiteState(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 function addDirection(
@@ -224,4 +276,14 @@ function addDirection(
   if (direction === "down") return { x: cell.x, y: cell.y + 1 };
   if (direction === "left") return { x: cell.x - 1, y: cell.y };
   return { x: cell.x + 1, y: cell.y };
+}
+
+function halfCellAhead(
+  cell: { x: number; y: number },
+  direction: Direction,
+): { x: number; y: number } {
+  if (direction === "up") return { x: cell.x, y: cell.y - 0.5 };
+  if (direction === "down") return { x: cell.x, y: cell.y + 0.5 };
+  if (direction === "left") return { x: cell.x - 0.5, y: cell.y };
+  return { x: cell.x + 0.5, y: cell.y };
 }

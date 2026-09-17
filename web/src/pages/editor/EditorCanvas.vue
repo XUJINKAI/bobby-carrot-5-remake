@@ -201,7 +201,7 @@ onMounted(async () => {
     primaryEnd: (cell) => emit("primaryEnd", cell),
     secondarySelect: (cell) => emit("secondarySelect", cell),
     viewportChanged: applyViewportTransform,
-  });
+  }, stage.value?.parentElement ?? canvas.value);
   input.setEnabled(props.enabled);
   await renderer.load();
   await nextTick();
@@ -241,6 +241,7 @@ onBeforeUnmount(() => {
   position: relative;
   transform-origin: 0 0;
 }
+.editor-canvas { touch-action:none; }
 .editor-canvas-interaction {
   position: absolute;
   left: 0;

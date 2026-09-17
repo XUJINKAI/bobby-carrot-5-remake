@@ -223,10 +223,14 @@ export class InputController {
     if (
       !this.enabled ||
       !this.capabilities.movement ||
-      !this.game.hasLevel ||
-      this.game.presentationBlocksInput
+      !this.game.hasLevel
     ) {
       this.clearMovementState();
+      return { moves: [] };
+    }
+    if (this.game.presentationBlocksInput) {
+      if (this.consumers.size > 0) this.suspendMovement();
+      else this.resetMovement();
       return { moves: [] };
     }
 
@@ -331,6 +335,7 @@ export class InputController {
       this.clearHeldMovement();
       this.clearPointerState();
     }
+    if (changed && enabled) this.syncContinuousInputs();
   }
 
   setKeyboardEnabled(value: boolean): void {
@@ -346,6 +351,7 @@ export class InputController {
   setHeldDirection(direction: Direction | null): void {
     const changed = direction !== this.externalDirection;
     this.externalDirection = direction;
+    this.syncContinuousInputs();
     if (
       changed &&
       direction &&
@@ -355,7 +361,7 @@ export class InputController {
         direction,
       })
     ) {
-      this.syncContinuousInputs();
+      this.repeaters.get("external")?.markHeldActionObserved();
       return;
     }
     if (
@@ -367,7 +373,6 @@ export class InputController {
       this.syncContinuousInputs();
       return;
     }
-    this.syncContinuousInputs();
   }
 
   consumePointerClickSuppression(): boolean {
@@ -381,6 +386,14 @@ export class InputController {
     this.screenJoystick?.reset();
     this.clearHeldMovement();
     this.clearPointerState();
+  }
+
+  /** 模态 gameplay UI 只暂停逻辑 repeat，物理 held 状态继续由浏览器事件维护。 */
+  suspendMovement(): void {
+    this.discreteMoves.length = 0;
+    this.syncContinuousInputs();
+    for (const repeater of this.repeaters.values())
+      repeater.markHeldActionObserved();
   }
 
   destroy(): void {
@@ -412,19 +425,21 @@ export class InputController {
     ) {
       event.preventDefault();
       if (event.repeat && this.consumers.size > 0) return;
+      if (!event.repeat && !this.heldMovementKeys.includes(key)) {
+        this.heldMovementKeys.push(key);
+        this.syncContinuousInputs();
+      }
       if (
         this.dispatchLogicalInput({
           type: "direction",
           source: movement.source,
           direction: movement.direction,
         })
-      )
+      ) {
+        this.repeaters.get(movement.source)?.markHeldActionObserved();
         return;
-      if (!this.enabled || this.game.presentationBlocksInput) return;
-      if (!event.repeat && !this.heldMovementKeys.includes(key)) {
-        this.heldMovementKeys.push(key);
-        this.syncContinuousInputs();
       }
+      if (!this.enabled || this.game.presentationBlocksInput) return;
       return;
     }
     const dialogAction = key === "enter"
@@ -504,6 +519,7 @@ export class InputController {
   ): void => {
     const changed = direction !== this.joystickDirection;
     this.joystickDirection = direction;
+    this.syncContinuousInputs();
     if (
       changed &&
       direction &&
@@ -513,7 +529,7 @@ export class InputController {
         direction,
       })
     ) {
-      this.syncContinuousInputs();
+      this.repeaters.get("joystick")?.markHeldActionObserved();
       return;
     }
     if (!this.enabled || this.game.presentationBlocksInput) {
@@ -521,7 +537,6 @@ export class InputController {
       this.syncContinuousInputs();
       return;
     }
-    this.syncContinuousInputs();
   };
 
   private syncContinuousInputs(): void {

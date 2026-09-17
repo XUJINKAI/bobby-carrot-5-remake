@@ -39,7 +39,8 @@ const delayedMoveAction: RuntimeActionDefinition = {
     const mechanism = stringState(action.state.mechanism);
     const sourceEntityId = positiveIntegerState(action.state.sourceEntityId);
     const moveCadenceMs =
-      positiveNumberState(action.state.moveCadenceMs) ?? durationMs;
+      positiveNumberState(action.state.moveCadenceMs) ??
+      positiveNumberState(action.state.durationMs);
     return {
       status: "complete",
       intents: [
@@ -51,11 +52,27 @@ const delayedMoveAction: RuntimeActionDefinition = {
             type: "forced",
             ...(sourceEntityId !== null ? { sourceEntityId } : {}),
             ...(mechanism ? { mechanism } : {}),
-            cadenceMs: moveCadenceMs,
+            ...(moveCadenceMs === null ? {} : { cadenceMs: moveCadenceMs }),
           },
         },
       ],
     };
+  },
+  onIntentResult({ action, result, query, commands }) {
+    if (result.moved || action.state.impactOnBlocked !== true) return;
+    const ownerEntityId = action.ownerEntityId;
+    const owner = ownerEntityId === undefined
+      ? undefined
+      : query.entity(ownerEntityId);
+    if (!owner) return;
+    const mechanism = stringState(action.state.mechanism);
+    commands.emit({
+      type: "forced-movement-impact",
+      entityId: owner.id,
+      x: owner.anchor.x,
+      y: owner.anchor.y,
+      ...(mechanism ? { data: { mechanism } } : {}),
+    });
   },
 };
 
@@ -103,6 +120,7 @@ export function createDelayedMoveRuntimeAction(
     blocksInput?: boolean;
     focus?: { entityId: EntityId };
     moveCadenceMs?: number;
+    impactOnBlocked?: boolean;
   } = {},
 ): RuntimeActionSpec {
   const state: Record<string, JsonValue> = {
@@ -115,6 +133,7 @@ export function createDelayedMoveRuntimeAction(
     state.sourceEntityId = options.sourceEntityId;
   if (options.moveCadenceMs !== undefined)
     state.moveCadenceMs = safeDuration(options.moveCadenceMs);
+  if (options.impactOnBlocked === true) state.impactOnBlocked = true;
   return {
     kind: DELAYED_MOVE_RUNTIME_ACTION,
     ownerEntityId,

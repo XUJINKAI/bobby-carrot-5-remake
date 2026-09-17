@@ -5,13 +5,11 @@ import {
   originalTileVisual,
   type JsonPrimitive,
   type OriginalTileCoordinate,
-  type OriginalTileSource,
   type Direction,
   type EntityType,
   type JsonValue,
 } from "@bobby/model";
 import type { EntityFieldDefinition } from "../../world/entity/EntityDefinition.js";
-import type { WinConditionState } from "../../world/WorldTypes.js";
 import type {
   ImageVisualLayer,
   VisualDefinition,
@@ -27,10 +25,6 @@ import {
 export interface AtlasCell {
   column: number;
   row: number;
-}
-
-interface OriginalAmbientSequence {
-  frames: readonly OriginalTileSource[];
 }
 
 const ORIGINAL_ANIMATED_TILES_ASSET = "original-animated-tiles";
@@ -195,23 +189,36 @@ function originalAmbientLayer(
   context: VisualResolveContext,
 ): ImageVisualLayer | null {
   if (!context.time) return null;
-  if (
-    context.entity.type === MapEntityTypeId.EXIT &&
-    !exitAnimationReady(context.winState)
-  )
-    return null;
-  const sequence = originalAmbientSequence(
+  if (context.entity.type === MapEntityTypeId.BONUS_COIN) {
+    const frame = context.ambient?.bonusCoinSparkleFrame;
+    if (frame === null || frame === undefined) return null;
+    return originalAnimationFrame({ type: MapEntityTypeId.BONUS_COIN, id: "ambient" }, frame);
+  }
+  const selector = originalAmbientSelector(
     context.entity.type,
     context.entity.direction,
     context.entity.state?.variant,
   );
-  if (!sequence) return null;
-  const cycleLength = sequence.frames.length + 1;
+  return selector
+    ? originalAmbientAnimationLayer(selector, context.time.nowMs)
+    : null;
+}
+
+/** 原版 ta.png ambient 序列按 Presentation 毫秒取样，phase 0 使用静态 ts.png。 */
+export function originalAmbientAnimationLayer(
+  selector: Parameters<typeof originalTileAnimation>[0],
+  nowMs: number,
+): ImageVisualLayer | null {
+  const frames = originalTileAnimation(selector).frames;
+  if (frames.some((frame) => frame.atlas !== "ta")) {
+    throw new Error(`原版 ambient 动画必须使用 ta.png：${selector.type}/${selector.id}`);
+  }
+  const cycleLength = frames.length + 1;
   const phase =
-    Math.floor(Math.max(0, context.time.nowMs) / ORIGINAL_AMBIENT_FRAME_MS) %
+    Math.floor(Math.max(0, nowMs) / ORIGINAL_AMBIENT_FRAME_MS) %
     cycleLength;
   if (phase === 0) return null;
-  const source = sequence.frames[phase - 1]!;
+  const source = frames[phase - 1]!;
   return {
     kind: "image",
     asset: ORIGINAL_ANIMATED_TILES_ASSET,
@@ -223,17 +230,13 @@ function originalAmbientLayer(
   };
 }
 
-function originalAmbientSequence(
+function originalAmbientSelector(
   type: EntityType,
   direction: Direction | undefined,
   variant: JsonValue | undefined,
-): OriginalAmbientSequence | null {
+): Parameters<typeof originalTileAnimation>[0] | null {
   let selector: Parameters<typeof originalTileAnimation>[0] | null = null;
-  if (
-    type === MapEntityTypeId.EXIT ||
-    type === MapEntityTypeId.BONUS_COIN ||
-    type === MapEntityTypeId.WHIRLWIND
-  ) {
+  if (type === MapEntityTypeId.WHIRLWIND) {
     selector = { type, id: "ambient" };
   } else if (type === MapEntityTypeId.WINDMILL) {
     selector = windmillAnimation(direction ?? "right");
@@ -244,12 +247,24 @@ function originalAmbientSequence(
   } else if (type === MapEntityTypeId.SPEED || type === MapEntityTypeId.TIDE) {
     selector = { type, id: "ambient", fields: { direction: direction ?? "right" } };
   }
-  if (!selector) return null;
-  const frames = originalTileAnimation(selector).frames;
-  if (frames.some((frame) => frame.atlas !== "ta")) {
-    throw new Error(`原版 ambient 动画必须使用 ta.png：${selector.type}/${selector.id}`);
-  }
-  return { frames };
+  return selector;
+}
+
+function originalAnimationFrame(
+  selector: Parameters<typeof originalTileAnimation>[0],
+  frame: number,
+): ImageVisualLayer | null {
+  const source = originalTileAnimation(selector).frames[frame];
+  if (!source || source.atlas !== "ta") return null;
+  return {
+    kind: "image",
+    asset: ORIGINAL_ANIMATED_TILES_ASSET,
+    frameWidth: ORIGINAL_TILE_SIZE,
+    frameHeight: ORIGINAL_TILE_SIZE,
+    frameIndex:
+      (source.row - 1) * ORIGINAL_TILE_ATLASES.ta.columns + source.column - 1,
+    anchor: "fill",
+  };
 }
 
 function windmillAnimation(
@@ -260,20 +275,4 @@ function windmillAnimation(
     id: "ambient",
     fields: { direction },
   };
-}
-
-function exitAnimationReady(
-  state: Readonly<WinConditionState> | null | undefined,
-): boolean {
-  if (!state || state.completed) return false;
-  if (state.type === "exit") return true;
-  if (state.type !== "all") return false;
-
-  let pendingExit = false;
-  for (const condition of state.conditions) {
-    if (condition.completed) continue;
-    if (!exitAnimationReady(condition)) return false;
-    pendingExit = true;
-  }
-  return pendingExit;
 }

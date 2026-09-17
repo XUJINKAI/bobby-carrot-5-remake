@@ -19,7 +19,7 @@ export type MapCollectionFilterSelection = "single" | "multiple";
 export interface MapCollectionFilterOption {
   id: string;
   name: string;
-  icon?: MapCollectionIcon;
+  icons?: MapCollectionIcon[];
 }
 
 export interface MapCollectionFilter {

@@ -20,6 +20,11 @@ export const ORIGINAL_TUNING: PresentationTuning = {
     // 原版胜利路径会在建立正播状态的同一轮立即 advance 一次。
     exitMs: 9 * 62,
   },
+  impactShake: {
+    stageMs: 26,
+    stages: 8,
+    initialSpanSourcePx: 42,
+  },
 };
 
 export function resolveOriginalTuning(

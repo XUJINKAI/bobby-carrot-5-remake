@@ -32,7 +32,7 @@ const fillEggOnLeave: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.EGG,
-  presenceFacts: [],
+  presenceFacts: ["vertical-occupant"],
   resolvePresenceFacts({ entity }) {
     return entity.state?.filled === true ? ["blocking"] : [];
   },

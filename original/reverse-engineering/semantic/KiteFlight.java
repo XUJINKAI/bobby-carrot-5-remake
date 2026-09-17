@@ -26,6 +26,9 @@ public final class KiteFlight {
     /** 对应 `aW`：人物飞行表现使用的垂直/高度偏移。 */
     private int flightPixelOffset;
 
+    /** 对应 `aN`；起飞完成后保持为 1，使 `N()` 每 step 移动 6px。 */
+    private int speedContinuation;
+
     void collectKite(int x, int y) {
         if ((objectGrid[y][x] & 0xFF) != KITE || airborne) {
             return;
@@ -49,7 +52,10 @@ public final class KiteFlight {
 
     /**
      * 对应 `H()` 在本格剩余视觉移动期间的 takeoff offset。
-     * 每 gameplay step +6；本格移动完全结束后切 `airborne=true` 并固定 offset=24。
+     * 每 gameplay step +6，期间仍绘制普通方向人物：
+     * - 普通 3px/step 移动在后半格执行 8 次，抵达结算前内部 offset 到 48；
+     * - 快速 6px/step 移动在后半格执行 4 次，offset 到 24。
+     * 本格移动完全结束后切 `airborne=true`、改绘 b9.png 并固定 offset=24。
      */
     void advanceTakeoffOffset() {
         if (transition == 1) {
@@ -64,6 +70,7 @@ public final class KiteFlight {
         transition = 0;
         airborne = true;
         flightPixelOffset = FLIGHT_PIXEL_OFFSET;
+        speedContinuation = 1;
     }
 
     /**
@@ -71,7 +78,8 @@ public final class KiteFlight {
      * - 不调用普通 `canPlayerMove()`；
      * - 不检查目标 terrain/object；
      * - 不检查目标 X/Y 边界；
-     * - 只按当前方向把 grid 坐标推进一格并令 ay=48。
+     * - 只按当前方向把 grid 坐标推进一格并令 ay=48；
+     * - airborne 分支不递减 `aN`，因此 `N()` 持续以 6px/step 完成每格。
      *
      * 所以飞行不是“ignore blocking 但保留 edge collision”，而是真正绕过普通格碰撞。
      */
@@ -123,6 +131,25 @@ public final class KiteFlight {
     }
 
     /**
+     * Landing 完成后 `aN` 仍为 1，下一次 `M()` 因此会按当前方向尝试续行一格。
+     * 未持续按住同方向时，`M()` 在建立移动后把 `aN` 减为 0，所以 `N()` 使用
+     * 3px/step 的普通速度。受阻则清除 `aN` 并设置 `aO=8` 启动镜头震动。
+     */
+    boolean tryLandingRunout(PlayerPosition player, int direction) {
+        if (speedContinuation <= 0) {
+            return false;
+        }
+        if (!canPlayerMoveForward(direction)) {
+            speedContinuation = 0;
+            startImpactShake(8);
+            return false;
+        }
+        advanceGroundedGrid(player, direction);
+        speedContinuation--;
+        return true;
+    }
+
+    /**
      * 原版 class 中没有“飞到地图边缘自动降落/自动停止”的路径。
      *
      * 反而 `M()` 开头会先读取 `terrainGrid[playerY][playerX]` 与 objectGrid；如果官方地图
@@ -135,6 +162,14 @@ public final class KiteFlight {
     boolean hasAutomaticMapEdgeLanding() {
         return false;
     }
+
+    private boolean canPlayerMoveForward(int direction) {
+        throw new UnsupportedOperationException("see PlayerCollisionRules.java");
+    }
+
+    private void advanceGroundedGrid(PlayerPosition player, int direction) {}
+
+    private void startImpactShake(int steps) {}
 
     static final class PlayerPosition {
         int gridX;

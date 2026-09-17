@@ -15,6 +15,7 @@ import {
   defaultSurfaceBrush,
   detectSurfaceTheme,
   enableEditorRules,
+  editorRuleMode,
   editorPreviewFor,
   fillSurface,
   inspectEditorRules,
@@ -39,6 +40,7 @@ import {
   surfaceTerrain,
   toLevelMap,
   updateEditorRule,
+  updateEditorRuleMode,
   updateMaxMoves,
   updateMaxTimeSeconds,
   updateMetadata,
@@ -49,6 +51,7 @@ import {
   type EditorPlacementPreset,
   type EditorResizeEdges,
   type EditorRuleKind,
+  type EditorRuleMode,
   type EditorSelection,
   type EditorSnapshot,
   type EditorTool,
@@ -210,6 +213,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     return resolveDeletionTarget(currentLevel(), environment, cell, editor)?.index ?? null;
   });
   const rules = computed(() => inspectEditorRules(currentLevel(), environment));
+  const ruleMode = computed(() => editorRuleMode(currentLevel()));
   const surfaceTheme = computed(() => detectSurfaceTheme(currentLevel()));
 
   function setTool(next: EditorTool): void {
@@ -668,6 +672,10 @@ export function useEditorPage(initialLevel: EditorMap) {
     execute(updateEditorRule(environment, kind, enabled));
   }
 
+  function setRuleMode(mode: EditorRuleMode): void {
+    execute(updateEditorRuleMode(mode));
+  }
+
   function loadLevel(level: EditorMap): void {
     ruleDetector.reset();
     const detected = ruleDetector.detect(level, environment);
@@ -719,6 +727,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     deletionTargetIndex,
     selectedRefs,
     rules,
+    ruleMode,
     levelMap: computed(() =>
       toLevelMap(materializeSurfaceVariants(currentLevel())),
     ),
@@ -756,6 +765,7 @@ export function useEditorPage(initialLevel: EditorMap) {
     setPaletteSize,
     resize,
     setRule,
+    setRuleMode,
     loadLevel,
     setMaxMoves(value: number | null): void {
       execute(updateMaxMoves(value));

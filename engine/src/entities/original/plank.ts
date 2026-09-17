@@ -43,7 +43,7 @@ const plankPassage: Behavior = {
 
 const definition: EntityModuleDefinition = {
   type: MapEntityTypeId.PLANK,
-  presenceFacts: ["contact-cover", "walkable"],
+  presenceFacts: ["contact-cover", "vertical-occupant", "walkable"],
   presentation: { name: "Plank" },
 };
 

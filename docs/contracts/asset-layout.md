@@ -71,21 +71,28 @@ Original collection 在 40 个正式章节后追加 ID 为 `special-scenes` 的�
 Original Bonus 地图显式保存 `music: "bonus"`；普通关卡省略 `music`，由播放页面
 在 `ingame0..2` 中随机选择。
 
-filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object：
+filter option 的 Gameplay 图标使用统一 Entity preview descriptor，不区分 Original/Custom，也不区分 Terrain/Object。每个 option 通过 `icons` 数组按顺序提供一个或多个图标：
 
 每个 filter 使用 `selection: "single" | "multiple"` 声明选择方式。多个已选
 option 以及不同 filter 之间都按“且”匹配；`single` 只约束该 filter 同时最多保留
-一个 option。Original 的萝卜数使用 `single`，其余 filter 使用 `multiple`。
+一个 option。Original 的目标与目标数使用 `single`，场景及道具与机关使用 `multiple`。
 
 ```json
-{ "type": "entity", "entity": { "type": "carrot" } }
-{ "type": "entity", "entity": { "type": "tide", "direction": "right" } }
-{ "type": "entity", "entity": { "type": "mirror", "variant": "right-bottom" } }
+{
+  "id": "mower",
+  "name": "汽油 / 割草机 / 易碎岩石 / 高草",
+  "icons": [
+    { "type": "entity", "entity": { "type": "gas" } },
+    { "type": "entity", "entity": { "type": "mower" } },
+    { "type": "entity", "entity": { "type": "crumbly-rock" } },
+    { "type": "entity", "entity": { "type": "high-grass" } }
+  ]
+}
 ```
 
-`entity` 使用与 `LevelEntity` 相同的 `type` 与类型专属顶层字段，但作为预览描述不包含坐标。Explore 应通过 Engine VisualDefinition/preview 能力绘制它，而不是按 ID 自己维护一套 atlas 或 CSS 映射。
+每个 `entity` 使用与 `LevelEntity` 相同的 `type` 与类型专属顶层字段，但作为预览描述不包含坐标。Explore 应通过 Engine VisualDefinition/preview 能力绘制它，而不是按 ID 自己维护一套 atlas 或 CSS 映射。
 
-纯 UI 图标仍可使用：
+`icons` 中的纯 UI 图标可使用：
 
 ```json
 { "type": "image", "src": "assets/..." }

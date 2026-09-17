@@ -121,6 +121,7 @@ test("输入门禁内的模态消费者仍接收 WASD、方向键与 Swipe", () 
       "keydown",
       keyboard("ArrowLeft", { repeat: true }),
     );
+    view.input.setHeldDirection("down");
     globalThis.window.dispatch("keydown", keyboard("Enter", { repeat: true }));
     view.canvas.dispatch("pointerdown", pointer(1, 10, 10));
     view.canvas.dispatch("pointermove", pointer(1, 50, 12));
@@ -129,12 +130,32 @@ test("输入门禁内的模态消费者仍接收 WASD、方向键与 Swipe", () 
     assert.deepEqual(actions, [
       { type: "direction", source: "wasd", direction: "up" },
       { type: "direction", source: "arrows", direction: "left" },
+      { type: "direction", source: "external", direction: "down" },
       { type: "direction", source: "pointer", direction: "right" },
     ]);
     assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
 
     consumer.release();
     block.release();
+    assert.deepEqual(view.input.update({ tick: 1, stepMs: 16 }).moves, [
+      { source: "wasd", direction: "up" },
+      { source: "arrows", direction: "left" },
+      { source: "external", direction: "down" },
+    ]);
+  } finally {
+    view.destroy();
+  }
+});
+
+test("对话期间释放方向键不会在门禁解除后补移动", () => {
+  const view = fixture();
+  try {
+    const consumer = view.input.acquireConsumer("dialogue", () => {});
+    globalThis.window.dispatch("keydown", keyboard("ArrowUp"));
+    globalThis.window.dispatch("keyup", keyboard("ArrowUp"));
+    consumer.release();
+
+    assert.deepEqual(view.input.update({ tick: 0, stepMs: 16 }).moves, []);
   } finally {
     view.destroy();
   }

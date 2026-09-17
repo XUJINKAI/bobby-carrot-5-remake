@@ -1,4 +1,5 @@
 import type { ActorEffectIntent } from "../world/movement/WorldIntent.js";
+import { BOBBY_MOVEMENT } from "../entities/movement/MovementCadence.js";
 import type { DebugSnapshot } from "./DebugSnapshot.js";
 
 export interface DebugWorldPanelActions {
@@ -49,7 +50,7 @@ export class DebugWorldPanel {
     this.moveDurationMs.dataset.debugIntentMoveDuration = "";
     this.moveDurationMs.min = "1";
     this.moveDurationMs.step = "1";
-    this.moveDurationMs.value = "350";
+    this.moveDurationMs.value = String(BOBBY_MOVEMENT.normalCellMs);
     styleInput(this.moveDurationMs);
     const durationSuffix = document.createElement("span");
     durationSuffix.textContent = " ms";

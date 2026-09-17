@@ -73,6 +73,15 @@ export class HeldDirectionRepeater {
     this.blocked = false;
   }
 
+  /** 当前 held action 已被模态 UI 观察；恢复 gameplay 时只继续真实仍按住的输入。 */
+  markHeldActionObserved(): void {
+    this.pendingInitialInput = null;
+    this.pendingAttempt = null;
+    this.initialMoveDone = this.heldInput !== null;
+    this.elapsedAfterInitialMoveMs = 0;
+    this.blocked = false;
+  }
+
   inspect(): HeldDirectionRepeaterInspection {
     return {
       heldInput: this.heldInput ? { ...this.heldInput } : null,

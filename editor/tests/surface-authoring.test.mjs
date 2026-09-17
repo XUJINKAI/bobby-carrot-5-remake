@@ -268,7 +268,7 @@ test("Editor Preview uses the same Surface Presence Fact projection as runtime",
   );
 
   assert.ok(water);
-  assert.deepEqual(water.presence.facts, ["water"]);
+  assert.deepEqual(water.presence.facts, ["water", "growth-substrate"]);
 });
 
 test("Fill matches connected terrain while ignoring exact variant", () => {
@@ -325,6 +325,42 @@ test("Fill matches connected terrain while ignoring exact variant", () => {
     "sand",
   );
   assert.equal(entityAt(next, 3, 1, (entity) => isSurfaceEntityType(entity.type))?.type, MapEntityTypeId.WATER);
+});
+
+test("Fill covers a connected empty Surface slot without crossing occupied cells", () => {
+  const level = createBlankLevel(4, 3);
+  level.entities = level.entities.filter((entity) => {
+    const terrain = surfaceTerrainForEntity(entity.type);
+    return entity.x >= 2 || terrain?.slot !== "base";
+  });
+  level.entities.push(
+    { type: MapEntityTypeId.CARROT, x: 1, y: 1 },
+    { type: MapEntityTypeId.FENCE, x: 0, y: 1 },
+  );
+
+  const next = fillSurface(
+    environment,
+    level,
+    { x: 0, y: 0 },
+    {
+      terrain: "sand",
+      pattern: "exact",
+      exact: "ts-9-16",
+      seed: 1,
+    },
+  ).apply(level);
+
+  const sand = next.entities.filter(
+    (entity) => surfaceTerrainForEntity(entity.type)?.id === "sand",
+  );
+  assert.equal(sand.length, 6);
+  assert.ok(entityAt(next, 1, 1, (entity) => entity.type === MapEntityTypeId.CARROT));
+  assert.ok(entityAt(next, 0, 1, (entity) => entity.type === MapEntityTypeId.FENCE));
+  assert.equal(
+    surfaceTerrainForEntity(entityAt(next, 2, 1, (entity) =>
+      surfaceTerrainForEntity(entity.type)?.slot === "base")?.type)?.id,
+    "grass",
+  );
 });
 
 test("Alternate Surface pattern is a stable coordinate checker", () => {

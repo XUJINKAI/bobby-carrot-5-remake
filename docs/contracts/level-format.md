@@ -337,10 +337,17 @@ Engine / Editor / Web
 ```text
 Entity Map v1
   ↓ Original Adapter
-DAT terrain + object anchors
-  ↓ encode
+tmp/original-patch/encoded/<release>/levels/<pack>-<slot>.json
+  ↓ DAT encoder
+DAT level record
+  ↓ patch
 patched JAR
 ```
+
+`encoded/` 中间地图与 `original/decoded/` 的单关 JSON 使用同一合同，保留
+`terrainEncoding / source / recordLength / recordSha256 / dynamicSlots` 以及
+`width / height / terrain / objects`。Patch 流程从落盘后的中间地图重新读取
+`width / height / terrain / objects`，再生成目标 DAT record。
 
 Original Adapter 负责所有历史表示转换，例如：
 

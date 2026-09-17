@@ -19,6 +19,7 @@ import type { EntityStore } from "../world/entity/EntityStore.js";
 import type { WinConditionState } from "../world/WorldTypes.js";
 import { SpatialVisualQuery } from "./SpatialVisualQuery.js";
 import type {
+  AmbientVisualState,
   EntityVisualRuntimeState,
   VisualComposition,
   VisualQuery,
@@ -41,6 +42,7 @@ export interface SpatialSceneContext {
   outcome?: Readonly<WorldOutcomeState>;
   winState?: Readonly<WinConditionState> | null;
   time?: PresentationFrame;
+  ambient?: Readonly<AmbientVisualState>;
 }
 
 export interface BuildSpatialSceneOptions {
@@ -105,7 +107,9 @@ export function buildSpatialScene(
     world: sortRenderItems(passes.world),
     standing: sortStandingRenderItems(passes.standing),
     effect: sortRenderItems(passes.effect),
+    ambientBackground: [],
     callouts: [],
+    ambientForeground: [],
   };
 }
 

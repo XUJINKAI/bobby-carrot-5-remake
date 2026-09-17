@@ -37,7 +37,8 @@ public final class CameraShake {
     /**
      * aO=8 的第一次 G() 会先变 7，所以实际随机 span 序列为：
      * 42, 36, 30, 24, 18, 12, 6, 0 px。
-     * 稳态总生命周期 8 gameplay step ≈ 248ms。
+     * Fireball / Flight 同路径墙钟实测校准为约 26ms/step，因此当前以
+     * 8 × 26ms = 208ms 表达完整震动生命周期。
      */
     int currentStepsRemaining() {
         return stepsRemaining;

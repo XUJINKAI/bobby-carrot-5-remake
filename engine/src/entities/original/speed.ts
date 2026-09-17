@@ -17,7 +17,10 @@ import type { WorldQueryApi } from "../../world/behavior/WorldQueryApi.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type { EntityModule } from "../EntityModule.js";
 import type { EntityModuleDefinition } from "../EntityModule.js";
-import { ORIGINAL_BOBBY_LOCOMOTION_TIMING } from "../player/BobbyLocomotion.js";
+import {
+  resolveActionMovementCadenceMs,
+  SPEED_MOVEMENT,
+} from "../movement/MovementCadence.js";
 import {
   patchBobbySpeedBoost,
   readBobbySpeedBoost,
@@ -31,10 +34,6 @@ import {
 
 const SPEED_RUN_ACTION = "speed-run";
 
-/** 原版 Speed 恒为普通 Bobby 的两倍速度。 */
-export const DEFAULT_SPEED_FULL_CADENCE_MS = Math.round(
-  ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs * 0.5,
-);
 export const DEFAULT_SPEED_CONTINUATION_CELLS = 3;
 
 const speedBoost: Behavior = {
@@ -176,13 +175,24 @@ const speedRunAction: RuntimeActionDefinition = {
       action.state.continuation = DEFAULT_SPEED_CONTINUATION_CELLS;
     }
 
-    const cadenceMs = DEFAULT_SPEED_FULL_CADENCE_MS;
+    const normalRunout =
+      !beltDirection && integerState(action.state.continuation) === 1;
+    const cadenceMs = normalRunout
+      ? undefined
+      : resolveActionMovementCadenceMs(
+          action,
+          SPEED_MOVEMENT.full,
+          time.stepMs,
+        );
     commands.setState(
       ownerEntityId,
-      patchBobbySpeedBoost(owner.state, { direction, phase: "full" }),
+      patchBobbySpeedBoost(owner.state, {
+        direction,
+        phase: normalRunout ? "normal" : "full",
+      }),
     );
     action.state.direction = direction;
-    action.state.waitMs = cadenceMs;
+    action.state.waitMs = cadenceMs ?? 0;
 
     return {
       status: "running",
@@ -194,7 +204,7 @@ const speedRunAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "speed",
-            cadenceMs,
+            ...(cadenceMs === undefined ? {} : { cadenceMs }),
           },
         },
       ],
@@ -244,6 +254,7 @@ function createSpeedRunRuntimeAction(
       pendingMove: false,
       elapsedMs: initialElapsedMs,
       waitMs: initialWaitMs,
+      cadenceCarryMs: 0,
     },
   };
 }
@@ -256,7 +267,7 @@ function incomingCadence(
     Number.isFinite(cause.cadenceMs) &&
     cause.cadenceMs > 0
     ? cause.cadenceMs
-    : ORIGINAL_BOBBY_LOCOMOTION_TIMING.moveMs;
+    : SPEED_MOVEMENT.normalRunoutCellMs;
 }
 
 function speedDirectionAt(

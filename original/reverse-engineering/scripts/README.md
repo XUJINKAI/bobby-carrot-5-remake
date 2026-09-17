@@ -4,6 +4,10 @@
 `original/official-hd/*.jar`，只写入 `original/reverse-engineering/` 和
 `tmp/original-reverse/`，不会创建 commit 或 push 分支。
 
+当前脚本输出对应高清机械基准。新增 gameplay 结论还需按
+[`逆向工作区双基准`](../README.md#双基准)核对 `original/official/` 中的普通版 class；
+不得把高清兼容构建的 classfile、资源加载入口或显示常量直接概括为两版共同事实。
+
 所有命令都从仓库根目录执行：
 
 ```sh

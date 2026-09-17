@@ -10,19 +10,30 @@ Bobby Carrot 5 Remake 的选择和理由。
 
 ### 现象差异
 
-原版普通移动和 Flight 每格约 `496ms`，Speed 每格约 `248ms`。Bobby Carrot 5 Remake
-默认使用普通移动和 Flight `350ms`、Speed `175ms`。
+原版普通移动为 3px/step，按循环目标估算每格约 `496ms`；Speed 为
+6px/step，同方法估算每格约 `248ms`。Bobby Carrot 5 Remake 默认使用普通移动
+`350ms`、Speed `175ms`。
+
+Kite Flight 在原版起飞完成后持续保留快速条件，每 step 移动 6px。37-2 的
+82 格纯飞行路径原版实测约 18s，Engine 使用独立的 `208ms/格`
+毫秒配置，理论时长为 17.056s。
+抵达 Landing 后保留的最后一次 continuation 会使 Bobby 按当前方向以普通移动
+cadence 自动续行一格；前方受阻时停在 Landing 并触发 impact shake。
 
 ### 可能影响
 
-玩家操作更紧凑；Bobby 与仍按原版毫秒换算的 Bean、Cloud、Leaf、Dragon 等持续机关相遇
-时，先后顺序可能与原版不同。需要精确还原原版节奏的宿主可以通过公开 locomotion 配置
-覆盖移动时长。
+玩家普通移动与 Speed 操作更紧凑；Bobby 与仍按原版毫秒换算的 Bean、Cloud、Leaf、
+Dragon 等持续机关相遇时，先后顺序可能与原版不同。需要调整 Bobby 操作节奏的宿主
+可以通过公开 locomotion 配置覆盖普通移动时长。Flight 使用自己的原版校准节拍。
 
 ### 设计原理
 
-移动 cadence 是 Bobby 和各机关的策略，不是 WorldClock 频率。Engine 保留现代默认值，
-并继续使用毫秒和 WorldMotion 表达规则，使改变 `worldHz` 不会改变真实动作时长。
+移动 cadence 是 Bobby 和各机关的策略，不是 WorldClock 频率。Engine 使用毫秒和
+WorldMotion 表达规则；Flight 这类重复分段动作还会把固定 World tick 的舍入误差
+结转到下一格，使长距离平均速度不随 `worldHz` 改变。
+
+Flight 与 Fireball 的快速位移均以 `208ms/格` 完成校准。长路径人工计时允许约一秒的
+观察误差；该误差范围内不继续追求原版设备循环、模拟器调度与现代浏览器时钟的逐拍一致。
 
 ## Ice 的开局与人物姿势
 
@@ -105,6 +116,22 @@ WorldMotion 持有连续位置和运动进度，规则提交仍以语义格移�
 
 地图边界是 Engine 的硬约束。Flight Action 在移动请求被边界拒绝后完成自己的状态清理。
 
+## Exit 的完成时点
+
+### 现象差异
+
+原版 Bobby 走过目标格中点时开始通关消失。Bobby Carrot 5 Remake 在 Bobby 的逻辑 anchor
+进入 Exit 后，等待本次 WorldMotion 完全抵达再宣布完成。
+
+### 可能影响
+
+胜利动画、地图计时和输入结束点约晚半格开始，不改变 Exit 的可达性与最终胜利结果。
+
+### 设计原理
+
+Exit Goal 读取已经提交并完成运动的 World 状态。完整抵达作为统一完成边界，使胜利判断、
+Snapshot、Undo 与 Replay 不需要引入只服务于 Exit 的跨格中点 marker。
+
 ## Dragon 实例与 Head 碰撞
 
 ### 现象差异
@@ -120,6 +147,30 @@ WorldMotion 持有连续位置和运动进度，规则提交仍以语义格移�
 ### 设计原理
 
 Dragon 的持续状态归属于对应 Entity 和 RuntimeAction。Head 的碰撞身份不随纯视觉帧改变。
+踩下 Tail 时，Dragon RuntimeAction 立即锁定触发它的 Bobby；生成的 Fireball 保存该 Action
+身份，并在自身销毁的同一次 World 提交中释放输入锁。Camera 只在 Fireball 生命周期内跟随
+Fireball，输入锁本身不改变 wind-up 阶段的镜头目标。
+
+## Fireball 格级运行时
+
+### 现象差异
+
+原版 Fireball 以 `6px/gameplay step` 推进，在格内固定阶段检查碰撞，并在 Dragon 完成
+喷火准备的同一 gameplay step 推进第一步。Bobby Carrot 5 Remake 以语义格规划 Fireball
+移动：开始一格运动前检查目标格，碰到障碍时播放半格收尾；Dragon 创建 Fireball 后由下一
+个 World tick 启动其 RuntimeAction。
+
+### 可能影响
+
+如果目标格中的动态 Entity 恰好在 Fireball 接近边界时改变状态，碰撞或 Mirror 转向的
+精确时点可能与原版相差一个格内阶段。生成后的首次运动最多延后一个 World tick。静态路径、
+传播地形、对象阻挡、Mirror 方向、Ice Block 融化与整体飞行速度保持既有语义。
+
+### 设计原理
+
+Fireball 与其它 Entity 共用语义格移动、World reservation、Snapshot、Undo 和 Replay
+边界。`208ms/格`、`104ms/帧` 与 `104ms` 障碍收尾保持原版可感知节奏；格级裁决和稳定的
+下一 tick 启动使 RuntimeAction 不需要引入只服务于 Fireball 的像素碰撞与调度旁路。
 
 ## Lock、关卡钥匙与倒计时
 

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
+import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { CommandQueue } from "../dist/world/behavior/CommandQueue.js";
 import { EntityStore } from "../dist/world/entity/EntityStore.js";
 import { SpatialIndex } from "../dist/world/spatial/SpatialIndex.js";
@@ -13,6 +14,7 @@ import {
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
 import { builtinEngineEnvironment } from "../dist/public.js";
+import { FIREBALL_MOVEMENT } from "../dist/entities/movement/MovementCadence.js";
 
 const factRegistry = builtinEngineEnvironment.facts;
 
@@ -352,7 +354,8 @@ test("Bobby Mower 使用各方向独立的 b7.png 源矩形", () => {
     const mower = bobbyVisual({
       direction,
       mountType: MapEntityTypeId.MOWER,
-      time: { frame: 1, nowMs: 16.6667, deltaMs: 16.6667 },
+      runtime: { animationStartedAtMs: 100 },
+      time: { frame: 1, nowMs: 162, deltaMs: 62 },
     });
     assert.equal(mower.layers[0].asset, "bobby-mower");
     assert.equal(mower.layers[0].sourceX, sourceX);
@@ -381,7 +384,7 @@ test("mow.png trail stays one cell behind and only covers the first 1.5 off-belt
     asset: "bobby-speed-trail",
     frameColumns: 5,
     frameRows: 2,
-    frameIndex: 8,
+    frameIndex: 7,
     anchor: "bottom",
     offsetX: -48,
     offsetY: -12,
@@ -454,6 +457,17 @@ test("accelerated mower uses the same one-cell-behind trail", () => {
   assert.equal(mower.layers[1].asset, "bobby-mower");
 });
 
+test("Speed Mower 每 31ms 切换人物帧", () => {
+  const mower = bobbyVisual({
+    direction: "right",
+    mountType: MapEntityTypeId.MOWER,
+    state: { speedBoost: { direction: "right", phase: "full" } },
+    runtime: { animationStartedAtMs: 100 },
+    time: { frame: 1, nowMs: 131, deltaMs: 31 },
+  });
+  assert.equal(mower.layers.at(-1).sourceY, 83);
+});
+
 test("Bobby snowplow uses three rows inside the attempted direction column", () => {
   const shovel = bobbyVisual({
     runtime: {
@@ -501,17 +515,6 @@ test("Snow 开始事件让 Bobby 播放铲雪动作", () => {
   assert.equal(visual.runtimeStates.get(actor.id)?.direction, "right");
   visual.update({ frame: 2, nowMs: 496, deltaMs: 496 }, "linear");
   assert.equal(visual.runtimeStates.get(actor.id)?.progress, 0.5);
-});
-
-test("Bobby glider selects one of four direction columns", () => {
-  const flight = bobbyVisual({
-    direction: "left",
-    state: { flying: true },
-  });
-  assert.equal(flight.layers[0].asset, "bobby-kite");
-  assert.equal(flight.layers[0].frameColumns, 4);
-  assert.equal(flight.layers[0].frameRows, 1);
-  assert.equal(flight.layers[0].frameIndex, 0);
 });
 
 test("VisualRuntime motion interpolation follows PresentationFrame milliseconds", () => {
@@ -672,6 +675,49 @@ test("explicit presentation motion duration is independent from WorldClock rate"
   assert.equal(runtime.isAnimating, true);
   runtime.update({ frame: 2, nowMs: 2132, deltaMs: 7 }, "linear");
   assert.equal(runtime.isAnimating, false);
+});
+
+test("Fireball terminal event presents a half-cell move before destruction", () => {
+  const runtime = new VisualRuntime(createBuiltinVisualRegistry());
+  const world = {
+    entity: () => ({ id: 7, anchor: { x: 2, y: 1 } }),
+    definition: () => ({ type: RuntimeEntityTypeId.FIREBALL }),
+  };
+  runtime.consumeWorldDeltas(
+    world,
+    [{
+      sequence: 1,
+      worldTick: 1,
+      worldTimeMs: 0,
+      type: "world-event",
+      event: {
+        type: "fireball-termination-started",
+        entityId: 7,
+        x: 2,
+        y: 1,
+        direction: "right",
+        data: { durationMs: FIREBALL_MOVEMENT.terminalMs },
+      },
+    }],
+    { frame: 0, nowMs: 1000, deltaMs: 0 },
+    { motionDuration: () => 100, stationaryDeathDurationMs: 100 },
+  );
+  runtime.update({
+    frame: 1,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs / 2,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
+  }, "linear");
+  const halfway = runtime.inspectEntity(world, 7).runtime;
+  assert.equal(halfway.animation, "fireball-termination");
+  assert.equal(halfway.offsetX, 0.25);
+  assert.equal(halfway.offsetY, 0);
+
+  runtime.update({
+    frame: 2,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
+  }, "linear");
+  assert.equal(runtime.inspectEntity(world, 7).runtime.offsetX, 0.5);
 });
 
 test("builtin Entity modules own their visual definitions beside gameplay definitions", () => {

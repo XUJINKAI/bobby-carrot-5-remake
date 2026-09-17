@@ -72,7 +72,8 @@ try {
       'class="explore-tabs"',
       'class="level-browser-head"',
       'class="level-filter-shell"',
-      'data-filter-trigger="carrots"',
+      'data-filter-trigger="targets"',
+      'data-filter-trigger="target-count"',
       'data-filter-trigger="mechanics"',
       'data-card-size="small"',
       "Special Scenes",
@@ -296,45 +297,20 @@ async function smoke(url, expected, forbidden = []) {
       `Browser reported a fatal module/runtime error for ${url}: ${fatal}`,
     );
 }
-function runBrowser(url) {
-  return new Promise((resolve, reject) => {
-    const profile = createBrowserProfile();
-    const child = spawn(
-      browser,
-      [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-background-networking",
-        `--user-data-dir=${profile}`,
-        "--virtual-time-budget=10000",
-        "--dump-dom",
-        url,
-      ],
-      { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
-    );
-    let stdout = "",
-      stderr = "";
-    const max = 8 * 1024 * 1024,
-      timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
-    child.stdout.on("data", (chunk) => {
-      if (stdout.length < max) stdout += String(chunk);
-    });
-    child.stderr.on("data", (chunk) => {
-      if (stderr.length < max) stderr += String(chunk);
-    });
-    child.on("error", (error) => {
-      clearTimeout(timer);
-      removeBrowserProfile(profile);
-      reject(error);
-    });
-    child.on("close", (status) => {
-      clearTimeout(timer);
-      removeBrowserProfile(profile);
-      resolve({ status, stdout, stderr });
-    });
-  });
+async function runBrowser(url) {
+  const result = await runBrowserEval(
+    url,
+    `(async () => {
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      await delay(700);
+      return document.documentElement.outerHTML;
+    })()`,
+  );
+  return {
+    status: result.status,
+    stdout: typeof result.value === "string" ? result.value : result.stdout,
+    stderr: result.stderr,
+  };
 }
 function findBrowser() {
   const configured = process.env.BROWSER_PATH;
@@ -353,25 +329,28 @@ async function interactiveFilterSmoke(url) {
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const find = (selector) => document.querySelector(selector);
-  for (let i = 0; i < 120 && !find('[data-filter-trigger="carrots"]'); i += 1)
+  for (let i = 0; i < 120 && !find('[data-filter-trigger="target-count"]'); i += 1)
     await delay(50);
-  const trigger = find('[data-filter-trigger="carrots"]');
-  if (!trigger) throw new Error('missing carrot trigger');
+  const trigger = find('[data-filter-trigger="target-count"]');
+  if (!trigger) throw new Error('missing target count trigger');
   trigger.click();
   await delay(80);
-  const option = find('[data-filter-group="carrots"][data-filter-option]');
-  if (!option) throw new Error('missing carrot filter option');
+  const option = find('[data-filter-group="target-count"][data-filter-option]');
+  if (!option) throw new Error('missing target count filter option');
   const optionId = option.getAttribute('data-filter-option');
   option.click();
   await delay(80);
-  const currentTrigger = find('[data-filter-trigger="carrots"]');
+  const currentTrigger = find('[data-filter-trigger="target-count"]');
   const currentOption = optionId
-    ? find('[data-filter-group="carrots"][data-filter-option="' + optionId + '"]')
+    ? find('[data-filter-group="target-count"][data-filter-option="' + optionId + '"]')
     : null;
+  const mowerIcons = find('[data-filter-group="mechanics"][data-filter-option="mower"]')
+    ?.querySelectorAll('.level-filter-icon').length;
   return JSON.stringify({
     active: Boolean(currentTrigger?.classList.contains('active')),
     selected: Boolean(currentOption?.classList.contains('selected')),
     cards: document.querySelectorAll('[data-map-id]:not(.filter-hidden)').length,
+    mowerIcons,
   });
 })()
 `;
@@ -379,7 +358,7 @@ async function interactiveFilterSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.active || !payload.selected || payload.cards <= 0)
+  if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 2)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
 }
 async function interactiveReplayVerificationSmoke(url) {
@@ -497,7 +476,6 @@ async function interactiveEditorSourceSmoke(url) {
     throw new Error(`Unexpected editor source result: ${JSON.stringify(payload)}`);
 }
 async function runBrowserEval(url, script) {
-  const port = 9222 + Math.floor(Math.random() * 1000);
   const profile = createBrowserProfile();
   const child = spawn(
     browser,
@@ -508,54 +486,61 @@ async function runBrowserEval(url, script) {
       "--disable-dev-shm-usage",
       "--disable-background-networking",
       `--user-data-dir=${profile}`,
-      `--remote-debugging-port=${port}`,
+      "--remote-debugging-pipe",
       "about:blank",
     ],
-    { env: browserEnvironment, stdio: ["ignore", "pipe", "pipe"] },
+    {
+      env: browserEnvironment,
+      stdio: ["ignore", "pipe", "pipe", "pipe", "pipe"],
+    },
   );
   let stdout = "",
     stderr = "";
   child.stdout.on("data", (chunk) => (stdout += String(chunk)));
   child.stderr.on("data", (chunk) => (stderr += String(chunk)));
+  const input = child.stdio[3];
+  const output = child.stdio[4];
+  if (!input || !output) {
+    child.kill("SIGKILL");
+    removeBrowserProfile(profile);
+    return { status: 1, stdout, stderr: "Chromium CDP pipe failed to open" };
+  }
+  const cdp = createCdpPipe(input, output, child);
   try {
-    const endpoint = await waitForDebugEndpoint(port);
-    const page = await fetch(`${endpoint}/json/new?about:blank`, {
-      method: "PUT",
-    }).then((response) => response.json());
-    const ws = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-      ws.addEventListener("open", resolve, { once: true });
-      ws.addEventListener("error", reject, { once: true });
-    });
-    let id = 0;
-    const pending = new Map();
-    ws.addEventListener("message", (event) => {
-      const message = JSON.parse(String(event.data));
-      const deferred = pending.get(message.id);
-      if (!deferred) return;
-      pending.delete(message.id);
-      deferred.resolve(message);
-    });
-    const send = (method, params = {}) =>
-      new Promise((resolve, reject) => {
-        const requestId = ++id;
-        pending.set(requestId, { resolve, reject });
-        ws.send(JSON.stringify({ id: requestId, method, params }));
-      });
-    await send("Page.enable");
-    await send("Runtime.enable");
-    await send("Page.navigate", { url });
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    const evaluation = await send("Runtime.evaluate", {
-      expression: script,
-      awaitPromise: true,
-      returnByValue: true,
-    });
-    ws.close();
-    const exception = evaluation.result?.exceptionDetails;
-    if (exception) throw new Error(exception.text || "browser evaluation failed");
-    const value = evaluation.result?.result?.value;
-    return { status: 0, stdout: `${stdout}\n${JSON.stringify(value)}\n`, stderr };
+    return await withTimeout(
+      (async () => {
+        const { targetId } = await cdp.send("Target.createTarget", {
+          url: "about:blank",
+        });
+        const { sessionId } = await cdp.send("Target.attachToTarget", {
+          targetId,
+          flatten: true,
+        });
+        await cdp.send("Page.enable", {}, sessionId);
+        await cdp.send("Runtime.enable", {}, sessionId);
+        const navigation = await cdp.send("Page.navigate", { url }, sessionId);
+        if (navigation.errorText)
+          throw new Error(`Chromium navigation failed: ${navigation.errorText}`);
+        await waitForPageReady(cdp, sessionId, url);
+        const evaluation = await cdp.send(
+          "Runtime.evaluate",
+          { expression: script, awaitPromise: true, returnByValue: true },
+          sessionId,
+        );
+        const exception = evaluation.exceptionDetails;
+        if (exception)
+          throw new Error(exception.text || "browser evaluation failed");
+        const value = evaluation.result?.value;
+        return {
+          status: 0,
+          stdout: `${stdout}\n${JSON.stringify(value)}\n`,
+          stderr,
+          value,
+        };
+      })(),
+      20_000,
+      `Chromium timed out while loading ${url}`,
+    );
   } catch (error) {
     return {
       status: 1,
@@ -563,10 +548,66 @@ async function runBrowserEval(url, script) {
       stderr: `${stderr}\n${error instanceof Error ? error.stack : String(error)}`,
     };
   } finally {
+    cdp.close();
     child.kill("SIGKILL");
     await waitForBrowserClose(child);
     removeBrowserProfile(profile);
   }
+}
+
+async function waitForPageReady(cdp, sessionId, url) {
+  const expected = new URL(url);
+  const expectedDocumentUrl = `${expected.origin}${expected.pathname}${expected.search}`;
+  const deadline = Date.now() + 12_000;
+  while (Date.now() < deadline) {
+    try {
+      const evaluation = await cdp.send(
+        "Runtime.evaluate",
+        {
+          expression:
+            "({ documentUrl: location.origin + location.pathname + location.search, readyState: document.readyState })",
+          returnByValue: true,
+        },
+        sessionId,
+      );
+      const state = evaluation.result?.value;
+      if (
+        state?.documentUrl === expectedDocumentUrl &&
+        state.readyState === "complete"
+      ) return;
+    } catch (error) {
+      if (!isNavigationContextError(error)) throw error;
+    }
+    await delay(50);
+  }
+  throw new Error(`Chromium page did not become ready: ${url}`);
+}
+
+function isNavigationContextError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Execution context was destroyed|Cannot find context|Inspected target navigated|Cannot find default execution context|No frame with given id/i.test(
+    message,
+  );
+}
+
+function withTimeout(task, timeoutMs, message) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    task.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function createBrowserProfile() {
@@ -582,17 +623,74 @@ function waitForBrowserClose(child) {
     return Promise.resolve();
   return new Promise((resolve) => child.once("close", resolve));
 }
-async function waitForDebugEndpoint(port) {
-  for (let i = 0; i < 80; i += 1) {
-    try {
-      const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((response) =>
-        response.json(),
-      );
-      if (version.webSocketDebuggerUrl) return `http://127.0.0.1:${port}`;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error("Chrome DevTools endpoint did not start");
+function createCdpPipe(input, output, child) {
+  let nextId = 1;
+  let buffer = "";
+  let closed = false;
+  const pending = new Map();
+  const fail = (error) => {
+    if (closed) return;
+    closed = true;
+    const failure = error instanceof Error ? error : new Error(String(error));
+    for (const request of pending.values()) request.reject(failure);
+    pending.clear();
+  };
+  child.once("error", fail);
+  child.once("exit", (code, signal) => {
+    fail(
+      new Error(
+        `Chromium exited before CDP completed (${signal ?? `code ${code ?? "unknown"}`})`,
+      ),
+    );
+  });
+  input.once("error", fail);
+  output.once("error", fail);
+  output.once("close", () => fail(new Error("Chromium CDP pipe closed")));
+  output.on("data", (chunk) => {
+    if (closed) return;
+    buffer += chunk.toString();
+    let boundary = buffer.indexOf("\0");
+    while (boundary >= 0) {
+      const packet = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 1);
+      if (packet) {
+        try {
+          const message = JSON.parse(packet);
+          const request = message.id ? pending.get(message.id) : undefined;
+          if (request) {
+            pending.delete(message.id);
+            if (message.error) request.reject(new Error(message.error.message));
+            else request.resolve(message.result ?? {});
+          }
+        } catch (error) {
+          fail(error);
+          return;
+        }
+      }
+      boundary = buffer.indexOf("\0");
+    }
+  });
+  return {
+    send(method, params = {}, sessionId) {
+      if (closed) return Promise.reject(new Error("Chromium CDP pipe is closed"));
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        try {
+          input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+        } catch (error) {
+          pending.delete(id);
+          reject(error);
+        }
+      });
+    },
+    close() {
+      if (!closed) {
+        input.end();
+        fail(new Error("Chromium CDP pipe closed"));
+      }
+    },
+  };
 }
 function lastJsonLine(value) {
   const lines = value.trim().split(/\r?\n/).reverse();

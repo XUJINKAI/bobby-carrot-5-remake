@@ -1,10 +1,19 @@
 # 原版 Runtime 逆向工作区
 
-本目录用于从 `original/official-hd/` 中只读的官方 JAR 建立可审查、可追溯的原版运行逻辑研究基准。
+本目录用于从 `original/official/` 普通版与 `original/official-hd/` 高清版只读 JAR 建立可审查、可追溯的原版研究基准。普通版用于 gameplay 控制流，高清版用于 48px presentation；完整依据见 [`../../docs/reference/official-release-provenance.md`](../../docs/reference/official-release-provenance.md)。
+
+## 双基准
+
+- 碰撞、机关、移动时序、Campaign、RMS 存档和原始 Java ME API：先核对普通版 UP9 `a.class`。
+- 48px 图集、Sprite 裁切、HUD、动画与绘制尺度：先核对高清版 UP9 的 class 和资源。
+- DAT 与 MIDI：两版逐 entry hash 相等时可任选来源；文字按 locale 和版本索引分别记录。
+- 结论存在歧义时，用同一最小 DAT 地图运行两版，并记录各自 JAR SHA-256 与观察结果。
+
+现有 `decompiled/up09/`、`bytecode/up09/`、`semantic/` 和 `notes/` 主要由高清版机械基准整理。它们继续作为已标明来源的研究证据；新增通用 gameplay 结论时补普通版方法级核对。
 
 ## 目录
 
-- `decompiled/up09/`：CFR 0.152 对稳定代 `up09.jar` 的直接反编译结果。UP02～UP09 的核心 Runtime 已由 structural bytecode fingerprint 确认一致，因此该目录作为 UP02～UP09 的主反编译基准。
+- `decompiled/up09/`：CFR 0.152 对高清版稳定代 `up09.jar` 的直接反编译结果。UP02～UP09 高清构建的核心 Runtime 已由 structural bytecode fingerprint 确认一致，因此该目录作为现有高清 UP02～UP09 的机械反编译基准。
 - `decompiled/up01/`：UP01 legacy generation 的机械反编译基准，只保留大致代际差异。
 - `decompiled/base/`：Base 1.0.3 legacy generation 的机械反编译基准，只保留大致代际差异。
 - `bytecode/`：`javap` 字节码基准与关键方法切片；反编译器无法可靠结构化时回退到这里。
@@ -85,14 +94,15 @@
 
 ## 证据优先级
 
-1. `a.class` 控制流 / `javap` bytecode：精确执行事实；
-2. `EN.dat` Help / UI 文本：原版作者面向玩家的语义；
-3. 官方地图最小复现与原版运行实测：确认 presentation / 异常边角；
-4. 旧观察文档：只作为寻找问题的线索。
+1. 普通版 `a.class` 控制流 / `javap` bytecode：gameplay 与原始 API 的第一执行证据；
+2. 高清版 class 与 48px 资源：presentation 第一证据，同时交叉检查 gameplay 控制流；
+3. `EN.dat` Help / UI 文本：原版作者面向玩家的语义；
+4. 同一最小地图在两版的运行实测：确认 presentation、兼容差异和异常边角；
+5. 旧观察文档：只作为寻找问题的线索。
 
 ## 原则
 
-1. `original/official-hd/` 永远只读。
+1. `original/official/` 与 `original/official-hd/` 永远只读。
 2. `decompiled/` 只保存机械反编译结果，不手工美化或改名。
 3. `semantic/` 才进行语义命名、职责拆分和控制流整理。
 4. 每个语义结论记录原始 class / method / field 依据，并区分“已由字节码确认”“由运行实测确认”“推断”。

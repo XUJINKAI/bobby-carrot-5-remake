@@ -14,12 +14,41 @@ outer loop start
   -> 补 sleep，使整个 outer loop 约 62ms
 ```
 
-因此需要区分两个时间单位：
+因此需要区分两个代码结构上的时间单位：
 
-- outer loop：约 62ms，约 16Hz；
-- gameplay step：一次 `b()` 调用，稳态约 31ms，约 32Hz。
+- outer loop：目标约 62ms，约 16Hz；
+- gameplay step：一次 `b()` 调用，按循环目标换算约 31ms，约 32Hz。
 
-`H/N/P/Q/R/S/V/...` 等 gameplay 方法按 `b()` 调用推进，而不是每个 outer loop 只推进一次。原版以“6 tick / 16 tick”实现的机关，换算真实时间时必须按 gameplay step 计算。
+`H/N/P/Q/R/S/V/...` 等 gameplay 方法按 `b()` 调用推进，而不是每个 outer loop 只推进一次。原版以“6 step / 16 step”实现的机关，应先保留 step 数这一结构事实，再用同路径墙钟实测校准可执行的毫秒值。循环目标、设备调度、模拟器与每轮工作耗时都可能使实际墙钟间隔偏离 31ms。
+
+### 墙钟校准记录
+
+时间结论分为三层，不得用其中一层替代其余两层：
+
+1. 原版结构事实：每 step 位移量、状态所需 step 数与帧相位；
+2. 原版墙钟实测：固定地图、起止事件、距离与运行环境；
+3. Engine 毫秒配置：在不同 World / Presentation 帧率下保持的可执行时间。
+
+当前直接校准结果：
+
+- Fireball 和 Kite Flight 都为 48px / 6px，即 8 gameplay step/格；
+- `custom-maps/original-patch/38/38-1.json` 的 100 格人工计时中，Bobby、Leaf、Cloud、
+  Ice Floor Slide 均约 42s，Kite Flight、Speed、Speed Mower、Fireball、Speed Shoes Bobby
+  均约 21s；
+- `custom-maps/original-patch/38/38-2.json` 的 50 格人工计时中，Waterfall 约 11s，
+  Bean Growth 约 21s；
+- 上述结果支持原版慢速 `416ms/格`、原版快速 `208ms/格`；50 格 Waterfall 的
+  `10.4s` 与 50 段 Bean 的 `20.8s` 也落在人工计时误差内；
+- Fireball 长路径与 37-2 的 82 格纯 Flight 实测同样支持约 `208ms/格`；
+- 37-2 的 Whirlwind `x=4` 到 Landing `x=86`，理论 Flight 时长为
+  `82 × 208ms = 17.056s`，原版人工计时约 18s。
+
+长路径人工计时允许约一秒的观察误差。Engine 在
+`engine/src/entities/movement/MovementCadence.ts` 集中维护两档原版速度和两档 Bobby
+调校速度，并由每种 Entity 的独有配置引用。后续实现不以追平原版设备循环或模拟器调度的
+逐拍误差为目标。
+
+这项校准只确认同类快速位移的墙钟节拍，不会把所有原版 step 计数机械换算为 26ms。其他机关仍需保留自己的结构证据并独立校准。
 
 这是原版实现事实，不代表 Web 版必须复制这种“双 update + 单 repaint”的循环结构。
 
@@ -48,7 +77,7 @@ requestAnimationFrame
 
 当前默认 `60Hz / 约 16.67ms`，负责 Grid Truth 与 gameplay。这个值是现代 Engine 的通用采样策略，不复用原版约 32Hz 的 runtime advance 频率。
 
-逆向已经确认原版在每个约 62ms outer loop 内推进两次 gameplay。原版机制按约 31ms/step 换算各自的时间语义，不改变 Engine 的全局默认频率。
+逆向已经确认原版在每个目标约 62ms outer loop 内推进两次 gameplay。缺少实测时可用约 31ms/step 作为代码结构估算；有可重复的同路径墙钟证据时，以该结果校准机制自身的毫秒配置，不改变 Engine 的全局默认频率。
 
 ### PresentationClock
 
@@ -68,7 +97,7 @@ requestAnimationFrame
 N 个 Web WorldTick
 ```
 
-原版若明确以 N 次 `b()` gameplay step 控制状态，则先保存这个原版计数事实，再按约 31ms/step 换算原版时长。Web 实现仍应优先把行为表达为可解释的时间语义，而不是盲目复制混淆代码计数器。
+原版若明确以 N 次 `b()` gameplay step 控制状态，则先保存这个原版计数事实，再使用墙钟实测或循环目标估算换算时长。Web 实现仍应优先把行为表达为可解释的时间语义，而不是盲目复制混淆代码计数器。
 
 ## 3. Grid Truth 与视觉过渡
 
@@ -155,9 +184,25 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 Bobby Carrot 5 Remake 已让 Beanstalk 上站立和移动的 Bobby 使用 Up 人物条带；朝向仍由
 World 保存，不因纯表现选择而改写。
 
-原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；连续格移动 cadence 约 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，约 `248ms`。
+原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；Speed / 特殊快速状态
+每次推进 6px，共 8 step。按循环目标估算分别为 `496ms` 与 `248ms`，38-1 的 100 格
+墙钟实测则支持 `416ms` 与 `208ms`，因此 Engine 对已实测移动采用后者。现代 Bobby
+为了操作手感采用 `350ms` 与 `175ms` 两档。
 
-Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
+Kite 起飞完成时原版同时写入 `airborne=true` 与 `aN=1`。airborne 移动分支不递减 `aN`，所以 Flight 全程都满足 `N()` 的快速条件，每 step 推进 6px，而不是普通 Bobby 的 3px。Engine 根据 37-2 实测使用 `208ms/格`。
+
+Whirlwind 的起飞表现从入格移动中点开始。此时原版设置 `bb=1, aW=0`，但仍绘制
+`b0.png..b3.png` 的普通方向人物；后半格每个 gameplay step 将纯绘制高度 `aW`
+增加 6px。普通 3px/step 移动对应 8 个上抬阶段，内部在抵达时到达 48px；快速
+6px/step 移动对应 4 个阶段，到达 24px。抵达结算随后才设置 `airborne=true`、把
+`aW` 固定为 24px，并切换四方向 `b9.png` 风筝素材。Landing 保持 `b9.png`，在后半格
+以四个 6px 阶段从 24px 降到 0，再恢复普通人物。
+
+Landing 抵达后 `airborne` 清除，`aN=1` 仍保留到下一次 `M()`，因此 Bobby 会按当前方向自动尝试续行一格。未持续按住同方向时，该次移动建立后 `aN` 减为 0，所以使用 3px/step 的普通 cadence。受阻分支设置 `aO=8`，与 Speed / Mower impact 共用 8 阶段 Camera shake；当前每阶段按实测校准为 `26ms`。
+
+Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实
+`durationMs` 插值。起飞和降落阶段按同一 WorldMotion 的后半段真实毫秒进度分段采样，
+不会把原版 gameplay step 绑定到浏览器渲染帧。
 
 ### `b6.png` 关卡过渡
 
@@ -196,7 +241,8 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 4. 可继续生长时，旧顶端变 `0xDE` 中段，基座为 `0xEE`，新顶端为 `0xCE`；
 5. 向上重复，直到越界、目标格已有对象，或目标地形 unsigned ID 大于 `0x5D`。
 
-相邻两次生长 mutation 相隔约 **16 个 gameplay step ≈ 496ms**。
+相邻两次生长 mutation 相隔 16 个 gameplay step。38-2 的 50 段墙钟实测约 21s，
+Engine 因此使用 `416ms/段`；生长 Action 通过累计 elapsed 余量维持长期平均节拍。
 
 `0xCE` Tip 与 `0xDE` Middle 能覆盖本来不可普通步行的 terrain；`0xEE` Base 只有 terrain 自身可走时才能进入。三者都可触发 climbing presentation，但碰撞 override 不相同。
 
@@ -207,8 +253,13 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 - Ice Block melting：每阶段 6 step，约 186ms；
 - Plank `D5→D6→empty`：每阶段 6 step，约 186ms；
 - Dragon Head 喷火准备 `D7→E8→E9→D7 + fireball`：对应 `ts-14-8 → ts-15-9 → ts-15-10 → ts-14-8`，每阶段 6 step，约 186ms；
-- Fireball：6px/gameplay step，48px 一格约 248ms；
+- Fireball：6px/gameplay step，48px 一格；同距离原版实测校准为约 208ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
+
+Fireball 的现代实现以 `FIREBALL_MOVEMENT` 统一声明墙钟毫秒：整格移动
+`208ms`、两张 `hud.png` 素材各 `104ms`、障碍边界半格收尾 `104ms`。RuntimeAction
+会把固定 World tick 的舍入余量带到下一格，因此长距离速度在不同 World Hz 下保持一致；
+Visual 直接读取 Presentation 毫秒选择素材帧，不依赖渲染帧数。
 
 持有 Shovel 的 Bobby 首次撞到 Snow 时停在原位；清雪期间普通输入被锁住。
 动作结束后目标 Snow 被清除，Bobby 按碰撞时保存的方向重新执行一次普通移动判定。
