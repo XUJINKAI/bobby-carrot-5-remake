@@ -65,13 +65,13 @@ Phosphor Icons 的版权与许可条件以其随包发布的许可证为准。
 
 ## markdown-it
 
-Web Help 面板使用 `markdown-it` 编译仓库维护的 Markdown 文案。该第三方库由 markdown-it 项目维护，按 MIT License 发布：
+Web 构建流程使用 `markdown-it` 把仓库维护的 Help Markdown 编译为 HTML；浏览器构建只包含编译结果。该第三方库由 markdown-it 项目维护，按 MIT License 发布：
 
 ```text
 https://github.com/markdown-it/markdown-it
 ```
 
-`markdown-it` 的版权与许可条件以其随包发布的 `LICENSE` 为准；构建产物中的该库代码不属于本项目根目录 `LICENSE` 对原创材料的授权范围。
+`markdown-it` 的版权与许可条件以其随包发布的 `LICENSE` 为准。
 
 ## Jersey 10
 

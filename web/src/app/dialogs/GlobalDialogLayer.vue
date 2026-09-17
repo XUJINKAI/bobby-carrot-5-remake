@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import HelpDialog from "./HelpDialog.vue";
 
-defineProps<{ help: string }>();
+defineProps<{ helpHtml: string }>();
 const emit = defineEmits<{ close: [] }>();
 </script>
 
 <template>
   <div class="global-dialog-layer" data-dialog-layer @click.self="emit('close')">
-    <HelpDialog :markdown="help" @close="emit('close')" />
+    <HelpDialog :html="helpHtml" @close="emit('close')" />
   </div>
 </template>
 

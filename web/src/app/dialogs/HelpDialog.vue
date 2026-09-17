@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
-import { renderHelpMarkdown } from "./helpMarkdown.js";
 
-const props = defineProps<{ markdown: string }>();
+defineProps<{ html: string }>();
 const emit = defineEmits<{ close: [] }>();
-const contentHtml = computed(() => renderHelpMarkdown(props.markdown));
 </script>
 
 <template>
@@ -16,7 +13,7 @@ const contentHtml = computed(() => renderHelpMarkdown(props.markdown));
         <AppIcon name="close" />
       </button>
     </header>
-    <div class="help-dialog-content" v-html="contentHtml" />
+    <div class="help-dialog-content" v-html="html" />
   </section>
 </template>
 

@@ -9,7 +9,6 @@ import { initializeWebTheme } from "./theme/webTheme.js";
 import "./shared/fonts/jersey-10/font.css";
 import "../style.css";
 import "../game-ui.css";
-import "../../editor/style.css";
 
 const browserLocales = navigator.languages.length
   ? navigator.languages

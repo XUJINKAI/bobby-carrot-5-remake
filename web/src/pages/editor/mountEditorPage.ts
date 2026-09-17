@@ -15,6 +15,7 @@ import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
 import { loadEditorAutosave } from "../../storage/editorDraftStorage.js";
 import EditorPage from "./EditorPage.vue";
 import { configureEditorShell } from "./editorShell.js";
+import "../../../../editor/style.css";
 
 export async function renderEditorPage(
   context: PageContext,

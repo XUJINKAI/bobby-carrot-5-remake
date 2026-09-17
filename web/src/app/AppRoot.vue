@@ -191,7 +191,7 @@ onMounted(() => {
 
     <GlobalDialogLayer
       v-if="helpOpen"
-      :help="shell.help"
+      :help-html="shell.helpHtml"
       @close="closeHelp"
     />
   </div>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import {
-  requireImportedJson,
-  type ImportedData,
-  type ImportedSaveData,
+import type {
+  ImportedData,
+  ImportedSaveData,
 } from "../../services/import/importPipeline.js";
 import DataExchangePanel from "../../shared/data-exchange/DataExchangePanel.vue";
 import AppIcon from "../../shared/icons/AppIcon.vue";
@@ -23,7 +22,10 @@ const toolbar = {
   ],
 };
 
-function parseImport(value: unknown): ImportedData {
+async function parseImport(value: unknown): Promise<ImportedData> {
+  const { requireImportedJson } = await import(
+    "../../services/import/importPipeline.js"
+  );
   return requireImportedJson(value);
 }
 

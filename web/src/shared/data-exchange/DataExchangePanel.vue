@@ -18,7 +18,7 @@ import type {
 const props = withDefaults(defineProps<{
   value?: unknown;
   serialize: (value: unknown) => string;
-  parse: (value: unknown) => unknown;
+  parse: (value: unknown) => unknown | Promise<unknown>;
   publicBaseUrl?: string;
   placeholder?: string;
   filename?: string;
@@ -79,7 +79,7 @@ async function importDraft(): Promise<void> {
   try {
     busy.value = true;
     const decoded = await decodeExchangeText(draft.value);
-    const value = props.parse(decoded.value);
+    const value = await props.parse(decoded.value);
     emit("import", value);
     const plain = prettyJson(props.serialize(value));
     draft.value = decoded.format === "bc5r1"
