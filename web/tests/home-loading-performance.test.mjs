@@ -33,7 +33,7 @@ test("Editor 样式和 Help Markdown 由所属构建阶段处理", async () => {
   ]);
   const manifest = JSON.parse(packageJson);
 
-  assert.match(editorMount, /editor\.css/);
+  assert.match(editorMount, /editor\/style\.css/);
   assert.ok(sourceFiles[0].length > 0);
   assert.match(sourceFiles[1], /from "markdown-it"/);
   assert.equal(manifest.dependencies?.["markdown-it"], undefined);
