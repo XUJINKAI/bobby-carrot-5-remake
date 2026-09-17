@@ -186,10 +186,12 @@ function collectionExamples() {
             {
               id: "dragon",
               name: "Dragon",
-              icon: {
-                type: "entity",
-                entity: { type: "dragon", direction: "left" },
-              },
+              icons: [
+                {
+                  type: "entity",
+                  entity: { type: "dragon", direction: "left" },
+                },
+              ],
             },
           ],
         },

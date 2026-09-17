@@ -202,6 +202,12 @@ const unchapteredMaps = computed(() =>
   box-shadow: 0 0 0 1px #ffffff40;
 }
 
+.level-filter-icons {
+  display: inline-flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+
 .level-filter-status {
   min-height: 18px;
   padding: 0 12px 9px;

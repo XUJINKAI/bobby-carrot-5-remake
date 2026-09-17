@@ -72,7 +72,8 @@ try {
       'class="explore-tabs"',
       'class="level-browser-head"',
       'class="level-filter-shell"',
-      'data-filter-trigger="carrots"',
+      'data-filter-trigger="targets"',
+      'data-filter-trigger="target-count"',
       'data-filter-trigger="mechanics"',
       'data-card-size="small"',
       "Special Scenes",
@@ -330,25 +331,28 @@ async function interactiveFilterSmoke(url) {
 (async () => {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const find = (selector) => document.querySelector(selector);
-  for (let i = 0; i < 120 && !find('[data-filter-trigger="carrots"]'); i += 1)
+  for (let i = 0; i < 120 && !find('[data-filter-trigger="target-count"]'); i += 1)
     await delay(50);
-  const trigger = find('[data-filter-trigger="carrots"]');
-  if (!trigger) throw new Error('missing carrot trigger');
+  const trigger = find('[data-filter-trigger="target-count"]');
+  if (!trigger) throw new Error('missing target count trigger');
   trigger.click();
   await delay(80);
-  const option = find('[data-filter-group="carrots"][data-filter-option]');
-  if (!option) throw new Error('missing carrot filter option');
+  const option = find('[data-filter-group="target-count"][data-filter-option]');
+  if (!option) throw new Error('missing target count filter option');
   const optionId = option.getAttribute('data-filter-option');
   option.click();
   await delay(80);
-  const currentTrigger = find('[data-filter-trigger="carrots"]');
+  const currentTrigger = find('[data-filter-trigger="target-count"]');
   const currentOption = optionId
-    ? find('[data-filter-group="carrots"][data-filter-option="' + optionId + '"]')
+    ? find('[data-filter-group="target-count"][data-filter-option="' + optionId + '"]')
     : null;
+  const mowerIcons = find('[data-filter-group="mechanics"][data-filter-option="mower"]')
+    ?.querySelectorAll('.level-filter-icon').length;
   return JSON.stringify({
     active: Boolean(currentTrigger?.classList.contains('active')),
     selected: Boolean(currentOption?.classList.contains('selected')),
     cards: document.querySelectorAll('[data-map-id]:not(.filter-hidden)').length,
+    mowerIcons,
   });
 })()
 `;
@@ -356,7 +360,7 @@ async function interactiveFilterSmoke(url) {
   if (result.status !== 0)
     throw new Error(`Interactive filter smoke failed: ${result.stderr || result.stdout}`);
   const payload = lastJsonLine(result.stdout);
-  if (!payload.active || !payload.selected || payload.cards <= 0)
+  if (!payload.active || !payload.selected || payload.cards <= 0 || payload.mowerIcons !== 4)
     throw new Error(`Unexpected filter smoke result: ${JSON.stringify(payload)}`);
 }
 async function interactiveReplayVerificationSmoke(url) {

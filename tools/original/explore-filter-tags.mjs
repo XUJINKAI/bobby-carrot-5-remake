@@ -4,14 +4,23 @@ import { MapEntityTypeId } from "@bobby/model";
  * Original Explore filter 的人工审阅入口。
  *
  * 每个 option 在同一行声明 UI 信息与 canonical Entity 匹配依据。生成 collection
- * index 时只发布 id/name/icon；生成 map 标签时使用 match。表外 Entity 不参与推断。
+ * index 时只发布 id/name/icons；生成 map 标签时使用 match。表外 Entity 不参与推断。
  * `snow-cloud` 是雪地与星空共用的底板，因此场景分别由 `snow` 和 `starfield`
  * 确认，不能从共用底板猜测。
  */
 export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
   {
-    id: "carrots",
-    name: "萝卜数",
+    id: "targets",
+    name: "目标",
+    selection: "single",
+    options: [
+      goalOption("carrot", "萝卜", MapEntityTypeId.CARROT),
+      goalOption("egg", "彩蛋", MapEntityTypeId.EGG),
+    ],
+  },
+  {
+    id: "target-count",
+    name: "目标数",
     selection: "single",
     options: [
       countOption("0-10", 0, 10),
@@ -26,135 +35,197 @@ export const ORIGINAL_EXPLORE_FILTER_DEFINITIONS = [
     name: "场景",
     selection: "multiple",
     options: [
-      entityOption("grassland", "草地", "grass", [MapEntityTypeId.GRASS], {
-        variant: "ts-10-1",
-      }),
+      entityOption("grassland", "草地", [MapEntityTypeId.GRASS], [
+        entityIcon(MapEntityTypeId.GRASS, { variant: "ts-10-1" }),
+      ]),
       entityOption(
         "water",
         "水域",
-        "water",
         [
           MapEntityTypeId.WATER,
           MapEntityTypeId.WATERFALL,
           MapEntityTypeId.TIDE,
         ],
-        { variant: "ripple" },
+        [entityIcon(MapEntityTypeId.WATER, { variant: "ripple" })],
       ),
-      entityOption("snow", "雪地", "snow", [MapEntityTypeId.SNOW]),
+      entityOption("snow", "雪地", [MapEntityTypeId.SNOW], [
+        entityIcon(MapEntityTypeId.SNOW),
+      ]),
       entityOption(
         "starfield",
         "星空",
-        "starfield",
         [MapEntityTypeId.STARFIELD],
-        { variant: "large-star" },
+        [
+          entityIcon(MapEntityTypeId.STARFIELD, {
+            variant: "large-star",
+          }),
+        ],
       ),
-      entityOption("desert", "沙漠", "sand", [MapEntityTypeId.SAND]),
-    ],
-  },
-  {
-    id: "items",
-    name: "特殊道具",
-    selection: "multiple",
-    options: [
-      entityOption("shovel", "雪铲", "shovel-pickup", [
-        MapEntityTypeId.SHOVEL_PICKUP,
-      ]),
-      entityOption("gas", "汽油", "gas", [MapEntityTypeId.GAS]),
-      entityOption("bean", "魔豆", "bean", [MapEntityTypeId.BEAN]),
-      entityOption("kite", "风筝", "kite", [MapEntityTypeId.KITE]),
-      entityOption("golden-carrot", "金胡萝卜", "golden-carrot", [
-        MapEntityTypeId.GOLDEN_CARROT,
-      ]),
-      entityOption("bonus-coin", "Bonus Coin", "bonus-coin", [
-        MapEntityTypeId.BONUS_COIN,
+      entityOption("desert", "沙漠", [MapEntityTypeId.SAND], [
+        entityIcon(MapEntityTypeId.SAND),
       ]),
     ],
   },
   {
     id: "mechanics",
-    name: "机关",
+    name: "道具与机关",
     selection: "multiple",
     options: [
       entityOption(
-        "tide",
-        "潮汐",
-        "tide",
-        [MapEntityTypeId.TIDE, MapEntityTypeId.TIDE_SWITCH],
-        { direction: "right" },
-      ),
-      entityOption(
         "speed",
         "加速带",
-        "speed",
         [MapEntityTypeId.SPEED, MapEntityTypeId.SPEED_SWITCH],
-        { direction: "right" },
+        [
+          entityIcon(MapEntityTypeId.SPEED, { direction: "right" }),
+          entityIcon(MapEntityTypeId.SPEED_SWITCH, { pressed: false }),
+        ],
+      ),
+      entityOption(
+        "mower",
+        "割草机/高草",
+        [
+          MapEntityTypeId.MOWER,
+          MapEntityTypeId.GAS,
+        ],
+        [
+          entityIcon(MapEntityTypeId.GAS),
+          entityIcon(MapEntityTypeId.MOWER),
+        ],
+      ),
+      entityOption(
+        "highgrass",
+        "高草",
+        [
+          MapEntityTypeId.HIGH_GRASS,
+        ],
+        [
+          entityIcon(MapEntityTypeId.HIGH_GRASS),
+        ],
+      ),
+      entityOption(
+        "crumblyrock",
+        "易碎岩石",
+        [
+          MapEntityTypeId.CRUMBLY_ROCK,
+        ],
+        [
+          entityIcon(MapEntityTypeId.CRUMBLY_ROCK),
+        ],
+      ),
+      entityOption(
+        "bean",
+        "魔豆",
+        [MapEntityTypeId.BEAN, MapEntityTypeId.BEAN_FIELD],
+        [
+          entityIcon(MapEntityTypeId.BEAN),
+          entityIcon(MapEntityTypeId.BEAN_FIELD),
+        ],
+      ),
+      entityOption(
+        "shovel",
+        "雪铲/积雪",
+        [MapEntityTypeId.SHOVEL_PICKUP, MapEntityTypeId.SNOW],
+        [
+          entityIcon(MapEntityTypeId.SHOVEL_PICKUP),
+          entityIcon(MapEntityTypeId.SNOW),
+        ],
+      ),
+      entityOption(
+        "kite",
+        "风筝/龙卷风",
+        [
+          MapEntityTypeId.KITE,
+          MapEntityTypeId.WHIRLWIND,
+          MapEntityTypeId.LANDING,
+        ],
+        [
+          entityIcon(MapEntityTypeId.KITE),
+          entityIcon(MapEntityTypeId.WHIRLWIND),
+          entityIcon(MapEntityTypeId.LANDING),
+        ],
+      ),
+      entityOption(
+        "tide",
+        "潮汐",
+        [
+          MapEntityTypeId.TIDE,
+          MapEntityTypeId.TIDE_SWITCH,
+        ],
+        [
+          entityIcon(MapEntityTypeId.TIDE, { direction: "right" }),
+          entityIcon(MapEntityTypeId.TIDE_SWITCH, { pressed: false }),
+        ],
+      ),
+      entityOption(
+        "leaf",
+        "叶子",
+        [
+          MapEntityTypeId.LEAF,
+        ],
+        [
+          entityIcon(MapEntityTypeId.LEAF),
+        ],
+      ),
+      entityOption(
+        "color",
+        "彩色方块",
+        [MapEntityTypeId.COLOR_BLOCK, MapEntityTypeId.COLOR_SWITCH],
+        [
+          entityIcon(MapEntityTypeId.COLOR_BLOCK, {
+            color: "yellow",
+            raised: true,
+          }),
+          entityIcon(MapEntityTypeId.COLOR_SWITCH, {
+            color: "yellow",
+            state: "state-1",
+          }),
+        ],
       ),
       entityOption(
         "carousel",
         "旋转通道",
-        "carousel",
         [MapEntityTypeId.CAROUSEL, MapEntityTypeId.CAROUSEL_SWITCH],
-        { variant: "right-top" },
+        [
+          entityIcon(MapEntityTypeId.CAROUSEL, { variant: "right-top" }),
+          entityIcon(MapEntityTypeId.CAROUSEL_SWITCH, { pressed: false }),
+        ],
+      ),
+      entityOption(
+        "dragon",
+        "龙/镜子/冰块",
+        [
+          MapEntityTypeId.DRAGON,
+          MapEntityTypeId.MIRROR,
+          MapEntityTypeId.ICE_BLOCK,
+        ],
+        [
+          entityIcon(MapEntityTypeId.DRAGON, { direction: "left" }),
+          entityIcon(MapEntityTypeId.MIRROR, { variant: "right-bottom" }),
+          entityIcon(MapEntityTypeId.ICE_BLOCK),
+        ],
       ),
       entityOption(
         "wind",
-        "风车 / 云",
-        "windmill",
+        "风车/云",
         [
-          MapEntityTypeId.WIND_SWITCH,
           MapEntityTypeId.WINDMILL,
+          MapEntityTypeId.WIND_SWITCH,
           MapEntityTypeId.CLOUD,
-          MapEntityTypeId.CLOUD_PARKING,
         ],
-        { direction: "right" },
+        [
+          entityIcon(MapEntityTypeId.WINDMILL, { direction: "right" }),
+          entityIcon(MapEntityTypeId.WIND_SWITCH, {
+            direction: "right",
+            active: false,
+          }),
+          entityIcon(MapEntityTypeId.CLOUD, { color: "red" }),
+        ],
       ),
-      entityOption(
-        "mirror",
-        "魔法镜",
-        "mirror",
-        [MapEntityTypeId.MIRROR],
-        { variant: "right-bottom" },
-      ),
-      entityOption(
-        "trap",
-        "陷阱",
-        "trap",
-        [MapEntityTypeId.TRAP],
-        { active: true },
-      ),
-      entityOption(
-        "color-switch",
-        "彩色开关",
-        "color-switch",
-        [MapEntityTypeId.COLOR_SWITCH, MapEntityTypeId.COLOR_BLOCK],
-        { color: "yellow", state: "state-1" },
-      ),
-      entityOption("mower", "割草机", "mower", [
-        MapEntityTypeId.MOWER,
-        MapEntityTypeId.GAS,
-        MapEntityTypeId.MOWER_PARKING,
-        MapEntityTypeId.HIGH_GRASS,
+      entityOption("trap", "陷阱", [MapEntityTypeId.TRAP], [
+        entityIcon(MapEntityTypeId.TRAP, { active: true }),
       ]),
-      entityOption("beanstalk", "魔豆藤", "beanstalk", [
-        MapEntityTypeId.BEAN,
-        MapEntityTypeId.BEAN_FIELD,
-        MapEntityTypeId.BEANSTALK,
-      ]),
-      entityOption(
-        "dragon",
-        "龙",
-        "dragon",
-        [MapEntityTypeId.DRAGON],
-        { direction: "left" },
-      ),
-      entityOption("plank", "木板", "plank", [MapEntityTypeId.PLANK]),
-      entityOption("whirlwind", "龙卷风 / 风筝", "whirlwind", [
-        MapEntityTypeId.WHIRLWIND,
-        MapEntityTypeId.KITE,
-        MapEntityTypeId.LANDING,
-      ]),
-      entityOption("ice-block", "冰块", "ice-block", [
-        MapEntityTypeId.ICE_BLOCK,
+      entityOption("plank", "木板", [MapEntityTypeId.PLANK], [
+        entityIcon(MapEntityTypeId.PLANK),
       ]),
     ],
   },
@@ -178,7 +249,9 @@ export function originalExploreMapFilters(level) {
     ORIGINAL_EXPLORE_FILTER_DEFINITIONS.map((filter) => [
       filter.id,
       filter.options
-        .filter((option) => matches(option.match, entityTypes, entitySet, counts))
+        .filter((option) =>
+          matches(option.match, entityTypes, entitySet, counts, level),
+        )
         .map((option) => option.id),
     ]),
   );
@@ -188,21 +261,32 @@ function countOption(id, min, max) {
   return {
     id,
     name: id,
-    icon: entityIcon(MapEntityTypeId.CARROT),
+    icons: [
+      entityIcon(MapEntityTypeId.EGG),
+    ],
     match: {
       type: "entity-count",
-      entityType: MapEntityTypeId.CARROT,
+      entityTypes: [MapEntityTypeId.EGG],
       min,
       ...(max === undefined ? {} : { max }),
     },
   };
 }
 
-function entityOption(id, name, iconType, entityTypes, iconFields = {}) {
+function goalOption(id, name, goalType) {
   return {
     id,
     name,
-    icon: entityIcon(iconType, iconFields),
+    icons: [entityIcon(goalType)],
+    match: { type: "win-goal", goalType },
+  };
+}
+
+function entityOption(id, name, entityTypes, icons) {
+  return {
+    id,
+    name,
+    icons,
     match: { type: "entity-any", entityTypes },
   };
 }
@@ -211,14 +295,29 @@ function entityIcon(type, fields = {}) {
   return { type: "entity", entity: { type, ...fields } };
 }
 
-function matches(match, entityTypes, entitySet, counts) {
+function matches(match, entityTypes, entitySet, counts, level) {
   if (match.type === "entity-any") {
     return match.entityTypes.some((type) => entitySet.has(type));
   }
-  let count = counts.get(match.entityType);
+  if (match.type === "win-goal") {
+    return winConditionHasGoal(level.rules?.win, match.goalType);
+  }
+  const countKey = match.entityTypes.join("\u0000");
+  let count = counts.get(countKey);
   if (count === undefined) {
-    count = entityTypes.filter((type) => type === match.entityType).length;
-    counts.set(match.entityType, count);
+    const countedTypes = new Set(match.entityTypes);
+    count = entityTypes.filter((type) => countedTypes.has(type)).length;
+    counts.set(countKey, count);
   }
   return count >= match.min && (match.max === undefined || count <= match.max);
+}
+
+function winConditionHasGoal(condition, goalType) {
+  if (!condition) return false;
+  if (condition.type === "all" || condition.type === "any") {
+    return condition.conditions.some((child) =>
+      winConditionHasGoal(child, goalType),
+    );
+  }
+  return condition.type === goalType;
 }
