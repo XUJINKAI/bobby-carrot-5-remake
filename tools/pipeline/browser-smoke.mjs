@@ -270,7 +270,7 @@ async function expectStatus(url, expectedStatus, typePrefix) {
     throw new Error(`404 request ${url} incorrectly received SPA HTML`);
 }
 async function smoke(url, expected, forbidden = []) {
-  const result = await runBrowser(url);
+  const result = await runBrowser(url, expected);
   if (result.status !== 0)
     throw new Error(
       `Browser failed for ${url} (exit ${result.status})\n${result.stderr || result.stdout}`,
@@ -297,13 +297,23 @@ async function smoke(url, expected, forbidden = []) {
       `Browser reported a fatal module/runtime error for ${url}: ${fatal}`,
     );
 }
-async function runBrowser(url) {
+async function runBrowser(url, expected) {
   const result = await runBrowserEval(
     url,
     `(async () => {
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      await delay(700);
-      return document.documentElement.outerHTML;
+      const expected = ${JSON.stringify(expected)};
+      const snapshot = () => {
+        const errors = globalThis.__bc5rSmokeErrors?.join("\\n") ?? "";
+        return errors + "\\n" + document.documentElement.outerHTML;
+      };
+      for (let i = 0; i < 120; i += 1) {
+        const html = document.documentElement.outerHTML;
+        if (expected.every((fragment) => html.includes(fragment)))
+          return snapshot();
+        await delay(50);
+      }
+      return snapshot();
     })()`,
   );
   return {
@@ -518,6 +528,34 @@ async function runBrowserEval(url, script) {
         });
         await cdp.send("Page.enable", {}, sessionId);
         await cdp.send("Runtime.enable", {}, sessionId);
+        await cdp.send("Network.enable", {}, sessionId);
+        await cdp.send(
+          "Network.setBlockedURLs",
+          {
+            urls: [
+              "https://www.googletagmanager.com/*",
+              "https://www.google-analytics.com/*",
+            ],
+          },
+          sessionId,
+        );
+        await cdp.send(
+          "Page.addScriptToEvaluateOnNewDocument",
+          {
+            source: `
+globalThis.__bc5rSmokeErrors = [];
+addEventListener("error", (event) => {
+  const detail = event.error?.stack ?? event.message ?? "页面运行错误";
+  globalThis.__bc5rSmokeErrors.push(String(detail));
+});
+addEventListener("unhandledrejection", (event) => {
+  const detail = event.reason?.stack ?? event.reason ?? "未处理的 Promise 拒绝";
+  globalThis.__bc5rSmokeErrors.push(String(detail));
+});
+`,
+          },
+          sessionId,
+        );
         const navigation = await cdp.send("Page.navigate", { url }, sessionId);
         if (navigation.errorText)
           throw new Error(`Chromium navigation failed: ${navigation.errorText}`);

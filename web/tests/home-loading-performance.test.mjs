@@ -14,6 +14,8 @@ test("Home 首屏按路由加载页面代码和非关键数据", async () => {
   assert.match(app, /prefetchMaps\(/);
   assert.doesNotMatch(app, /images\.preload\(\)/);
   assert.doesNotMatch(entry, /editor\.css/);
+  assert.doesNotMatch(entry, /await app\.start\(\)/);
+  assert.match(entry, /void app\.start\(\)/);
 });
 
 test("Editor 样式和 Help Markdown 由所属构建阶段处理", async () => {

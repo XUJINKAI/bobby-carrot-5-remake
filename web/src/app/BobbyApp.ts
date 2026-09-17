@@ -327,22 +327,21 @@ export class BobbyApp {
       const [maps, gamePage, collection] = await Promise.all([
         import("../services/catalog/exploreMaps.js"),
         import("../pages/game/mountGamePage.js"),
-        this.catalog.loadCollection(ref.collection),
+        this.catalog.loadCollection(ref.collection).catch(() => null),
       ]);
       const resolved = await maps.resolveMapDocument(ref);
-      const currentIndex = collection.maps.findIndex(
-        (item) => item.id === ref.id,
-      );
+      const currentIndex =
+        collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
       const explorePreviousMapId =
-        currentIndex > 0 ? collection.maps[currentIndex - 1]?.id : undefined;
+        currentIndex > 0 ? collection?.maps[currentIndex - 1]?.id : undefined;
       const exploreNextMapId =
-        currentIndex >= 0 ? collection.maps[currentIndex + 1]?.id : undefined;
+        currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
       this.controller = await gamePage.renderGamePage({
         ...this.pageContext(),
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
-        verified: collection.maps[currentIndex]?.verified === true,
+        verified: collection?.maps[currentIndex]?.verified === true,
         ...(explorePreviousMapId ? { explorePreviousMapId } : {}),
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
         mode: "explore",
