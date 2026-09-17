@@ -302,8 +302,6 @@ async function runBrowser(url) {
     url,
     `(async () => {
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      for (let index = 0; index < 40 && document.readyState !== 'complete'; index += 1)
-        await delay(50);
       await delay(700);
       return document.documentElement.outerHTML;
     })()`,
@@ -507,30 +505,42 @@ async function runBrowserEval(url, script) {
     removeBrowserProfile(profile);
     return { status: 1, stdout, stderr: "Chromium CDP pipe failed to open" };
   }
-  const cdp = createCdpPipe(input, output);
+  const cdp = createCdpPipe(input, output, child);
   try {
-    const { targetId } = await cdp.send("Target.createTarget", { url });
-    const { sessionId } = await cdp.send("Target.attachToTarget", {
-      targetId,
-      flatten: true,
-    });
-    await cdp.send("Page.enable", {}, sessionId);
-    await cdp.send("Runtime.enable", {}, sessionId);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    const evaluation = await cdp.send(
-      "Runtime.evaluate",
-      { expression: script, awaitPromise: true, returnByValue: true },
-      sessionId,
+    return await withTimeout(
+      (async () => {
+        const { targetId } = await cdp.send("Target.createTarget", {
+          url: "about:blank",
+        });
+        const { sessionId } = await cdp.send("Target.attachToTarget", {
+          targetId,
+          flatten: true,
+        });
+        await cdp.send("Page.enable", {}, sessionId);
+        await cdp.send("Runtime.enable", {}, sessionId);
+        const navigation = await cdp.send("Page.navigate", { url }, sessionId);
+        if (navigation.errorText)
+          throw new Error(`Chromium navigation failed: ${navigation.errorText}`);
+        await waitForPageReady(cdp, sessionId, url);
+        const evaluation = await cdp.send(
+          "Runtime.evaluate",
+          { expression: script, awaitPromise: true, returnByValue: true },
+          sessionId,
+        );
+        const exception = evaluation.exceptionDetails;
+        if (exception)
+          throw new Error(exception.text || "browser evaluation failed");
+        const value = evaluation.result?.value;
+        return {
+          status: 0,
+          stdout: `${stdout}\n${JSON.stringify(value)}\n`,
+          stderr,
+          value,
+        };
+      })(),
+      20_000,
+      `Chromium timed out while loading ${url}`,
     );
-    const exception = evaluation.exceptionDetails;
-    if (exception) throw new Error(exception.text || "browser evaluation failed");
-    const value = evaluation.result?.value;
-    return {
-      status: 0,
-      stdout: `${stdout}\n${JSON.stringify(value)}\n`,
-      stderr,
-      value,
-    };
   } catch (error) {
     return {
       status: 1,
@@ -543,6 +553,57 @@ async function runBrowserEval(url, script) {
     await waitForBrowserClose(child);
     removeBrowserProfile(profile);
   }
+}
+
+async function waitForPageReady(cdp, sessionId, url) {
+  const expectedUrl = new URL(url).href;
+  const deadline = Date.now() + 12_000;
+  while (Date.now() < deadline) {
+    try {
+      const evaluation = await cdp.send(
+        "Runtime.evaluate",
+        {
+          expression:
+            "({ href: location.href, readyState: document.readyState })",
+          returnByValue: true,
+        },
+        sessionId,
+      );
+      const state = evaluation.result?.value;
+      if (state?.href === expectedUrl && state.readyState === "complete") return;
+    } catch (error) {
+      if (!isNavigationContextError(error)) throw error;
+    }
+    await delay(50);
+  }
+  throw new Error(`Chromium page did not become ready: ${url}`);
+}
+
+function isNavigationContextError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Execution context was destroyed|Cannot find context|Inspected target navigated|Cannot find default execution context|No frame with given id/i.test(
+    message,
+  );
+}
+
+function withTimeout(task, timeoutMs, message) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    task.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function createBrowserProfile() {
@@ -558,23 +619,48 @@ function waitForBrowserClose(child) {
     return Promise.resolve();
   return new Promise((resolve) => child.once("close", resolve));
 }
-function createCdpPipe(input, output) {
+function createCdpPipe(input, output, child) {
   let nextId = 1;
   let buffer = "";
+  let closed = false;
   const pending = new Map();
+  const fail = (error) => {
+    if (closed) return;
+    closed = true;
+    const failure = error instanceof Error ? error : new Error(String(error));
+    for (const request of pending.values()) request.reject(failure);
+    pending.clear();
+  };
+  child.once("error", fail);
+  child.once("exit", (code, signal) => {
+    fail(
+      new Error(
+        `Chromium exited before CDP completed (${signal ?? `code ${code ?? "unknown"}`})`,
+      ),
+    );
+  });
+  input.once("error", fail);
+  output.once("error", fail);
+  output.once("close", () => fail(new Error("Chromium CDP pipe closed")));
   output.on("data", (chunk) => {
+    if (closed) return;
     buffer += chunk.toString();
     let boundary = buffer.indexOf("\0");
     while (boundary >= 0) {
       const packet = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 1);
       if (packet) {
-        const message = JSON.parse(packet);
-        const request = message.id ? pending.get(message.id) : undefined;
-        if (request) {
-          pending.delete(message.id);
-          if (message.error) request.reject(new Error(message.error.message));
-          else request.resolve(message.result ?? {});
+        try {
+          const message = JSON.parse(packet);
+          const request = message.id ? pending.get(message.id) : undefined;
+          if (request) {
+            pending.delete(message.id);
+            if (message.error) request.reject(new Error(message.error.message));
+            else request.resolve(message.result ?? {});
+          }
+        } catch (error) {
+          fail(error);
+          return;
         }
       }
       boundary = buffer.indexOf("\0");
@@ -582,17 +668,23 @@ function createCdpPipe(input, output) {
   });
   return {
     send(method, params = {}, sessionId) {
+      if (closed) return Promise.reject(new Error("Chromium CDP pipe is closed"));
       const id = nextId++;
       return new Promise((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+        try {
+          input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+        } catch (error) {
+          pending.delete(id);
+          reject(error);
+        }
       });
     },
     close() {
-      input.end();
-      for (const request of pending.values())
-        request.reject(new Error("Chromium CDP pipe closed"));
-      pending.clear();
+      if (!closed) {
+        input.end();
+        fail(new Error("Chromium CDP pipe closed"));
+      }
     },
   };
 }
