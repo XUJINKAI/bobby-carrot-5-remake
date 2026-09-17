@@ -55,14 +55,15 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
         [
           { type: MapEntityTypeId.SPEED},
           { type: MapEntityTypeId.SPEED_SWITCH},
-          { type: MapEntityTypeId.TIDE},
-          { type: MapEntityTypeId.TIDE_SWITCH},
-        ],
-        [
           { type: MapEntityTypeId.COLOR_SWITCH},
           { type: MapEntityTypeId.COLOR_BLOCK},
+        ],
+        [
           { type: MapEntityTypeId.CAROUSEL},
           { type: MapEntityTypeId.CAROUSEL_SWITCH},
+          { type: MapEntityTypeId.TIDE},
+          { type: MapEntityTypeId.TIDE_SWITCH},
+          { type: MapEntityTypeId.LEAF },
         ],
         [
           { type: MapEntityTypeId.DRAGON },
@@ -82,7 +83,6 @@ export const BUILTIN_PALETTE_DEFINITION: EditorPaletteDefinition = {
             preview: { state: { active: true } },
           },
           { type: MapEntityTypeId.PLANK },
-          { type: MapEntityTypeId.LEAF },
           { type: MapEntityTypeId.LOCK },
           { type: MapEntityTypeId.LOCK_KEY },
         ],
