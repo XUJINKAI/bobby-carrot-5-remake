@@ -281,11 +281,12 @@ interface MapDocument extends LevelMap {
   meta: {
     name: string;
     author?: string;
+    note?: string;
   };
 }
 ```
 
-`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`，地图注记使用顶层 `LevelMap.note`。
+`MapDocument` 不持久化资源 ID 和导航关系。collection 与 map ID 来自 `/assets/maps/<collection>/<map-id>.json` 路径；列表、分组和前后关导航由 collection `index.json` 决定。地图内音乐使用 `LevelMap.music`；地图名称、作者与注记统一位于 `MapDocument.meta`，由 Web 等产品层消费，不进入 Engine 的 `LevelMap`。
 
 > `LevelMap.music` 的字段归属已经确定，运行时由哪一层解析选曲仍待决策，参见
 > [背景音乐选曲职责 ADR](../decisions/background-music-selection-ownership.md)。本节字段合同暂予保留。
@@ -294,7 +295,7 @@ interface MapDocument extends LevelMap {
 
 ## Editor JSON
 
-Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 name、author 与顶层 note。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
+Editor 导入、导出与分享直接保存同一套 `schemaVersion: 1` Entity Map，并可编辑 `meta.name / author / note`。Editor 不维护 Terrain/Object persistence model，也不解析历史 schema。
 
 `BC5R1` 是 JSON 的传输编码版本，不是地图 schemaVersion。
 

@@ -61,7 +61,6 @@ export function toLevelMap(level: EditorMap): LevelMap {
     width: normalized.width,
     height: normalized.height,
     ...(normalized.music ? { music: normalized.music } : {}),
-    ...(normalized.note ? { note: normalized.note } : {}),
     entities: normalized.entities.map(cloneEntity),
     ...(normalized.rules ? { rules: structuredClone(normalized.rules) } : {}),
   };
@@ -95,10 +94,10 @@ export function normalizeEditorLevel(input: EditorMap): EditorMap {
   };
   if (input.meta?.author)
     level.meta.author = String(input.meta.author).slice(0, 80);
+  if (typeof input.meta?.note === "string" && input.meta.note)
+    level.meta.note = input.meta.note.slice(0, 500);
   if (typeof input.music === "string" && input.music)
     level.music = input.music;
-  if (typeof input.note === "string" && input.note)
-    level.note = input.note.slice(0, 500);
   const limits = normalizeLimits(input.rules?.limits);
   level.rules = {
     ...(limits.length > 0 ? { limits } : {}),

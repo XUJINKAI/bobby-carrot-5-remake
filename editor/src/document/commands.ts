@@ -151,10 +151,9 @@ export function updateMetadata(metadata: {
       meta: {
         name: metadata.name,
         ...(metadata.author ? { author: metadata.author } : {}),
+        ...(metadata.note ? { note: metadata.note } : {}),
       },
     };
-    if (metadata.note) next.note = metadata.note;
-    else delete next.note;
     return normalizeEditorLevel(next);
   });
 }

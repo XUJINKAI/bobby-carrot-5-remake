@@ -59,9 +59,12 @@ function mapExamples(document) {
 function mapDocumentExample() {
   return parseMapDocument({
     schemaVersion: 1,
-    meta: { name: "Carousel Direction Test", author: "Alice" },
+    meta: {
+      name: "Carousel Direction Test",
+      author: "Alice",
+      note: "验证 Carousel 与 Speed 的初始地图语义。",
+    },
     music: "ingame0",
-    note: "验证 Carousel 与 Speed 的初始地图语义。",
     rules: {
       win: { type: "exit" },
       limits: [{ type: "max-moves", moves: 100 }],

@@ -35,7 +35,7 @@ watch(
   (level) => {
     name.value = level.meta.name;
     author.value = level.meta.author ?? "";
-    note.value = level.note ?? "";
+    note.value = level.meta.note ?? "";
   },
   { immediate: true, deep: true },
 );

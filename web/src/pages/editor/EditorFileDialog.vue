@@ -18,7 +18,7 @@ watch(
   () => {
     metadata.name = props.level.meta.name;
     metadata.author = props.level.meta.author ?? "";
-    metadata.note = props.level.note ?? "";
+    metadata.note = props.level.meta.note ?? "";
   },
   { immediate: true },
 );
@@ -28,10 +28,9 @@ const exchangeLevel = computed<EditorMap>(() => {
     meta: {
       name: metadata.name,
       ...(metadata.author ? { author: metadata.author } : {}),
+      ...(metadata.note ? { note: metadata.note } : {}),
     },
   };
-  if (metadata.note) level.note = metadata.note;
-  else delete level.note;
   return level;
 });
 const embedUrl = computed(() => new URL("embed", publicBaseUrl()).href);

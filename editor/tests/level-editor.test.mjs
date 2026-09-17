@@ -114,18 +114,21 @@ test("Editor JSON only stores canonical Entity Map plus document metadata", () =
   );
 });
 
-test("Editor metadata command edits and clears the top-level note", () => {
+test("Editor metadata command edits and clears meta.note", () => {
   const level = createBlankLevel(10, 8);
   const withNote = updateMetadata({
     name: "Note Test",
     author: "xjk",
     note: "地图注记",
   }).apply(level);
-  assert.equal(withNote.note, "地图注记");
-  assert.deepEqual(withNote.meta, { name: "Note Test", author: "xjk" });
+  assert.deepEqual(withNote.meta, {
+    name: "Note Test",
+    author: "xjk",
+    note: "地图注记",
+  });
 
   const withoutNote = updateMetadata({ name: "Note Test" }).apply(withNote);
-  assert.equal("note" in withoutNote, false);
+  assert.equal("note" in withoutNote.meta, false);
 });
 
 test("multi-cell persistence stays anchor-only while Preview expands Presence roles", () => {

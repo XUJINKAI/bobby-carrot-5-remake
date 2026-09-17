@@ -150,9 +150,10 @@ test("类型专属字段只对声明它的 Entity 生效", () => {
 });
 
 test("LevelMap parser 校验 MapDocument 后只返回 gameplay 字段", () => {
-  const document = documentWith([
-    { type: "water", x: 1, y: 2, variant: "ripple" },
-  ]);
+  const document = {
+    ...documentWith([{ type: "water", x: 1, y: 2, variant: "ripple" }]),
+    meta: { name: "合同测试", author: "作者", note: "产品注记" },
+  };
   assert.deepEqual(parseLevelMap(document), {
     schemaVersion: 1,
     width: 3,
@@ -190,8 +191,15 @@ test("Map parser 校验坐标、规则树和文档 metadata", () => {
     /不允许字段 description/,
   );
   assert.deepEqual(
-    parseMapDocument({ ...documentWith([]), note: "作者注记" }).note,
+    parseMapDocument({
+      ...documentWith([]),
+      meta: { name: "合同测试", note: "作者注记" },
+    }).meta.note,
     "作者注记",
+  );
+  assert.throws(
+    () => parseMapDocument({ ...documentWith([]), note: "旧位置" }),
+    /地图 不允许字段 note/,
   );
 });
 

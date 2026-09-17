@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "meta": {
-    "name": "38-1"
+    "name": "38-1",
+    "note": "original 100 cell: bobby 42s. leaf 42s. cloud 42s. ice floor slide 42s. kite flight 21s. speed 21s. mower speed 21s. fireball 21s. bobby speed shoes 21s. bobby speed shoes 21s."
   },
-  "note": "original 100 cell: bobby 42s. leaf 42s. cloud 42s. ice floor slide 42s. kite flight 21s. speed 21s. mower speed 21s. fireball 21s. bobby speed shoes 21s. bobby speed shoes 21s.",
   "rules": {
     "win": {
       "type": "all",
