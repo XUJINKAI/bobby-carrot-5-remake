@@ -556,7 +556,8 @@ async function runBrowserEval(url, script) {
 }
 
 async function waitForPageReady(cdp, sessionId, url) {
-  const expectedUrl = new URL(url).href;
+  const expected = new URL(url);
+  const expectedDocumentUrl = `${expected.origin}${expected.pathname}${expected.search}`;
   const deadline = Date.now() + 12_000;
   while (Date.now() < deadline) {
     try {
@@ -564,13 +565,16 @@ async function waitForPageReady(cdp, sessionId, url) {
         "Runtime.evaluate",
         {
           expression:
-            "({ href: location.href, readyState: document.readyState })",
+            "({ documentUrl: location.origin + location.pathname + location.search, readyState: document.readyState })",
           returnByValue: true,
         },
         sessionId,
       );
       const state = evaluation.result?.value;
-      if (state?.href === expectedUrl && state.readyState === "complete") return;
+      if (
+        state?.documentUrl === expectedDocumentUrl &&
+        state.readyState === "complete"
+      ) return;
     } catch (error) {
       if (!isNavigationContextError(error)) throw error;
     }
