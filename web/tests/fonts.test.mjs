@@ -8,12 +8,15 @@ const fontDirectory = new URL(
 );
 
 test("Jersey 10 字体与许可证封装在共享目录", async () => {
-  const [fontInfo, license] = await Promise.all([
+  const [fontInfo, compressedFontInfo, license] = await Promise.all([
     stat(new URL("Jersey10-Regular.ttf", fontDirectory)),
+    stat(new URL("Jersey10-Regular.woff2", fontDirectory)),
     readFile(new URL("OFL.txt", fontDirectory), "utf8"),
   ]);
 
   assert.ok(fontInfo.size > 0);
+  assert.ok(compressedFontInfo.size > 0);
+  assert.ok(compressedFontInfo.size < fontInfo.size);
   assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/);
 });
 
@@ -24,7 +27,7 @@ test("Web 入口加载共享 Jersey 10 字体定义", async () => {
   ]);
 
   assert.match(fontCss, /font-family: "Jersey 10"/);
-  assert.match(fontCss, /url\("\.\/Jersey10-Regular\.ttf"\)/);
+  assert.match(fontCss, /url\("\.\/Jersey10-Regular\.woff2"\) format\("woff2"\)/);
   assert.match(appSource, /shared\/fonts\/jersey-10\/font\.css/);
 });
 

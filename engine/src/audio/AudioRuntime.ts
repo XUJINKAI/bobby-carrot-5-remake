@@ -50,6 +50,7 @@ export class AudioRuntime implements AudioBackend {
   private requestSerial = 0;
   private destroyed = false;
   private musicInteractionRequired = false;
+  private cancelCounterpartPreload: (() => void) | null = null;
 
   constructor(options: AudioRuntimeOptions = {}) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl ?? defaultAudioBaseUrl());
@@ -67,6 +68,7 @@ export class AudioRuntime implements AudioBackend {
         void this.startCurrentMusic(false);
       return;
     }
+    this.cancelPendingCounterpartPreload();
     this.stopCurrentSource();
     this.currentMusic = {
       id,
@@ -83,6 +85,7 @@ export class AudioRuntime implements AudioBackend {
 
   stopMusic(): void {
     this.requestSerial += 1;
+    this.cancelPendingCounterpartPreload();
     this.stopCurrentSource();
     this.currentMusic = null;
     this.updateMusicInteractionRequired();
@@ -135,6 +138,7 @@ export class AudioRuntime implements AudioBackend {
     if (!enabled) {
       if (this.currentMusic) this.currentMusic.offset = this.currentPosition();
       this.requestSerial += 1;
+      this.cancelPendingCounterpartPreload();
       this.stopCurrentSource();
       this.updateMusicInteractionRequired();
       return;
@@ -200,6 +204,7 @@ export class AudioRuntime implements AudioBackend {
   }
 
   private async startCurrentMusic(crossfade: boolean): Promise<void> {
+    this.cancelPendingCounterpartPreload();
     const state = this.currentMusic;
     if (!state || !this.musicEnabled || this.destroyed) return;
     const serial = ++this.requestSerial;
@@ -215,12 +220,34 @@ export class AudioRuntime implements AudioBackend {
         return;
       const position = this.currentPosition();
       this.replaceSource(context, state, buffer, position, crossfade);
-      const counterpart: MusicStyle =
-        this.musicStyle === "modern" ? "8bit" : "modern";
-      void this.loadBuffer(state.id, counterpart).catch(() => undefined);
+      this.scheduleCounterpartPreload(state, serial);
     } catch (error) {
       console.warn(`OGG 音乐加载失败：${state.id}`, error);
     }
+  }
+
+  private scheduleCounterpartPreload(
+    state: PlayingMusic,
+    serial: number,
+  ): void {
+    const counterpart: MusicStyle =
+      this.musicStyle === "modern" ? "8bit" : "modern";
+    this.cancelCounterpartPreload = scheduleWhenIdle(() => {
+      this.cancelCounterpartPreload = null;
+      if (
+        serial !== this.requestSerial ||
+        state !== this.currentMusic ||
+        !this.musicEnabled ||
+        this.destroyed
+      )
+        return;
+      void this.loadBuffer(state.id, counterpart).catch(() => undefined);
+    });
+  }
+
+  private cancelPendingCounterpartPreload(): void {
+    this.cancelCounterpartPreload?.();
+    this.cancelCounterpartPreload = null;
   }
 
   private replaceSource(
@@ -398,4 +425,22 @@ function defaultAudioBaseUrl(): URL {
 function documentBaseUrl(): string {
   if (typeof document !== "undefined") return document.baseURI;
   return "http://localhost/";
+}
+
+interface IdleCallbackHost {
+  requestIdleCallback?: (
+    callback: () => void,
+    options: { timeout: number },
+  ) => number;
+  cancelIdleCallback?: (handle: number) => void;
+}
+
+function scheduleWhenIdle(task: () => void): () => void {
+  const host = globalThis as IdleCallbackHost;
+  if (host.requestIdleCallback) {
+    const handle = host.requestIdleCallback(task, { timeout: 5_000 });
+    return () => host.cancelIdleCallback?.(handle);
+  }
+  const handle = globalThis.setTimeout(task, 1_000);
+  return () => globalThis.clearTimeout(handle);
 }

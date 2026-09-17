@@ -435,6 +435,8 @@ Web 是浏览器产品壳：Home、Explore、Adventure UI、Editor route、Setti
 
 Web 不依赖 Original DAT tooling，产品 `dist/` 也不发布 DAT browser module。
 
+产品路由按页面动态加载实现代码与样式。Home 首屏挂载完成后才在浏览器空闲期预取 Adventure、Explore discovery 与默认 collection index；Adventure / Explore 游玩页在当前地图就绪后空闲预取前后相邻地图。Catalog discovery、collection 与 Adventure index 分别缓存，页面只等待自身渲染所需的数据。
+
 Web 的通用 Game Session 负责提供 `LevelMap + Runtime Config`、组合 Engine 生命周期并展示通用 `dialog` WorldEvent；它不实现基础 HUD、Screen Joystick 或地图规则。
 
 Web 源码按产品职责组织：
