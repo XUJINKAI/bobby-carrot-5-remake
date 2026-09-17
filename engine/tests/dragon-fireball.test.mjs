@@ -4,8 +4,8 @@ import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { DEFAULT_DRAGON_WINDUP_MS } from "../dist/entities/original/dragon.js";
 import {
-  ORIGINAL_FIREBALL_TIMING,
-} from "../dist/entities/original/fireball.js";
+  FIREBALL_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import { ICE_MELT_STAGE_MS } from "../dist/entities/original/ice-block.js";
 import { World } from "./support/World.mjs";
 
@@ -55,15 +55,16 @@ function measureFireballLifetime(hz, cellCount) {
 }
 
 test("Fireball 毫秒配置在不同 World Hz 下保持长距离速度", () => {
-  assert.deepEqual(ORIGINAL_FIREBALL_TIMING, {
+  assert.deepEqual(FIREBALL_MOVEMENT, {
     cellMs: 208,
     frameMs: 104,
     terminalMs: 104,
+    quantizeActionMotion: true,
   });
   const cellCount = 117;
   const expectedMs =
-    cellCount * ORIGINAL_FIREBALL_TIMING.cellMs +
-    ORIGINAL_FIREBALL_TIMING.terminalMs;
+    cellCount * FIREBALL_MOVEMENT.cellMs +
+    FIREBALL_MOVEMENT.terminalMs;
 
   for (const hz of [30, 60, 120]) {
     const actualMs = measureFireballLifetime(hz, cellCount);
@@ -88,7 +89,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   );
   const world = new World(
     { schemaVersion: 1, width: 7, height: 3, entities },
-    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
+    { motionDurationMs: FIREBALL_MOVEMENT.cellMs },
   );
   const actor = world.query.entitiesWithFact("player")[0];
 
@@ -113,7 +114,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   );
   // Dragon is triggered at the entering motion's midpoint. Only the remainder
   // of that WorldTick belongs to the newly started wind-up Action.
-  const spawned = update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs / 2);
+  const spawned = update(world, 2, FIREBALL_MOVEMENT.cellMs / 2);
   assert.ok(spawned.events.some(
     (event) => event.type === "dragon-fireball-spawned",
   ));
@@ -122,7 +123,7 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
   assert.deepEqual(fireball.anchor, { x: 3, y: 0 });
   assert.equal(world.cameraTarget, fireball.id);
 
-  const melted = update(world, 3, ORIGINAL_FIREBALL_TIMING.cellMs);
+  const melted = update(world, 3, FIREBALL_MOVEMENT.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 2, y: 0 });
   const meltingIce = world.query.entitiesMatching({
     kind: "type",
@@ -137,15 +138,15 @@ test("Dragon Fireball moves through World cells, melts Ice, and reflects", () =>
     (event) => event.type === "ice-melting-started",
   ));
 
-  update(world, 4, ORIGINAL_FIREBALL_TIMING.cellMs);
+  update(world, 4, FIREBALL_MOVEMENT.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
   assert.equal(world.entity(fireball.id).direction, "down");
 
-  update(world, 5, ORIGINAL_FIREBALL_TIMING.cellMs);
+  update(world, 5, FIREBALL_MOVEMENT.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 1 });
   assert.equal(world.entity(meltingIce.id).state.meltStage, 3);
   const remainingMeltMs = ICE_MELT_STAGE_MS * 3 -
-    ORIGINAL_FIREBALL_TIMING.cellMs * 2;
+    FIREBALL_MOVEMENT.cellMs * 2;
   const finished = update(world, 6, remainingMeltMs);
   assert.equal(world.entity(meltingIce.id), undefined);
   assert.ok(finished.events.some((event) => event.type === "ice-melted"));
@@ -161,7 +162,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
   );
   const world = new World(
     { schemaVersion: 1, width: 7, height: 1, entities },
-    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
+    { motionDurationMs: FIREBALL_MOVEMENT.cellMs },
   );
   const actor = world.query.entitiesWithFact("player")[0];
 
@@ -187,7 +188,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
   assert.equal(blocked.moves[0].passage.reason, "actor-busy");
 
   update(world, 1, DEFAULT_DRAGON_WINDUP_MS);
-  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs / 2);
+  update(world, 2, FIREBALL_MOVEMENT.cellMs / 2);
   assert.equal(world.isInputBlockedFor(actor.id), true);
   assert.notEqual(world.cameraTarget, null);
 
@@ -196,7 +197,7 @@ test("Dragon locks the triggering Bobby from Tail entry through Fireball removal
     kind: "type",
     value: RuntimeEntityTypeId.FIREBALL,
   }).length > 0 && tick < 12) {
-    update(world, tick, ORIGINAL_FIREBALL_TIMING.cellMs);
+    update(world, tick, FIREBALL_MOVEMENT.cellMs);
     tick += 1;
   }
   assert.equal(world.query.entitiesMatching({
@@ -219,11 +220,11 @@ test("more than five Ice Blocks melt independently and survive snapshot restore"
   }
   const world = new World(
     { schemaVersion: 1, width: 2, height: 6, entities },
-    { motionDurationMs: ORIGINAL_FIREBALL_TIMING.cellMs },
+    { motionDurationMs: FIREBALL_MOVEMENT.cellMs },
   );
 
   update(world, 1, 1);
-  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
+  update(world, 2, FIREBALL_MOVEMENT.cellMs);
   const iceBlocks = world.query.entitiesMatching({
     kind: "type",
     value: MapEntityTypeId.ICE_BLOCK,
@@ -272,15 +273,15 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   });
 
   update(world, 1, 1);
-  const terminating = update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
+  const terminating = update(world, 2, FIREBALL_MOVEMENT.cellMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
   assert.notEqual(world.cameraTarget, null);
   assert.ok(terminating.events.some(
     (event) => event.type === "fireball-termination-started" &&
-      event.data?.durationMs === ORIGINAL_FIREBALL_TIMING.terminalMs,
+      event.data?.durationMs === FIREBALL_MOVEMENT.terminalMs,
   ));
   const snapshot = world.snapshot();
-  const impact = update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
+  const impact = update(world, 3, FIREBALL_MOVEMENT.terminalMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.equal(world.cameraTarget, null);
   assert.ok(impact.events.some(
@@ -289,7 +290,7 @@ test("Fireball impact removes the projectile and releases camera focus", () => {
   ));
 
   world.restore(snapshot);
-  const restoredImpact = update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
+  const restoredImpact = update(world, 3, FIREBALL_MOVEMENT.terminalMs);
   assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   assert.ok(restoredImpact.events.some(
     (event) => event.type === "fireball-impact" && event.x === 0.5,
@@ -317,9 +318,9 @@ test("Fireball 只按目标地形传播，Snow 与水上的 Plank 均不能提�
       ],
     });
     update(world, 1, 1);
-    update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
+    update(world, 2, FIREBALL_MOVEMENT.cellMs);
     assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 1);
-    update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
+    update(world, 3, FIREBALL_MOVEMENT.terminalMs);
     assert.equal(world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL }).length, 0);
   }
 });
@@ -338,7 +339,7 @@ test("Fireball 可以经过 Moon 天空地形和普通对象", () => {
   });
   const fireball = world.query.entitiesMatching({ kind: "type", value: RuntimeEntityTypeId.FIREBALL })[0];
   update(world, 1, 1);
-  update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
+  update(world, 2, FIREBALL_MOVEMENT.cellMs);
   assert.deepEqual(world.entity(fireball.id).anchor, { x: 1, y: 0 });
 });
 
@@ -368,7 +369,7 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
       );
       const world = new World({ schemaVersion: 1, width: 3, height: 3, entities });
       update(world, 1, 1);
-      update(world, 2, ORIGINAL_FIREBALL_TIMING.cellMs);
+      update(world, 2, FIREBALL_MOVEMENT.cellMs);
       const fireballs = world.query.entitiesMatching({
         kind: "type",
         value: RuntimeEntityTypeId.FIREBALL,
@@ -380,7 +381,7 @@ test("Fireball 按四种 Mirror 语义 variant 反射，并拒绝其余入射方
           assert.equal(fireballs[0].direction, table[incoming], `${variant}/${incoming}`);
         } else {
           assert.deepEqual(fireballs[0].anchor, start);
-          update(world, 3, ORIGINAL_FIREBALL_TIMING.terminalMs);
+          update(world, 3, FIREBALL_MOVEMENT.terminalMs);
           assert.equal(world.query.entitiesMatching({
             kind: "type",
             value: RuntimeEntityTypeId.FIREBALL,

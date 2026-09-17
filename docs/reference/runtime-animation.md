@@ -32,12 +32,21 @@ outer loop start
 当前直接校准结果：
 
 - Fireball 和 Kite Flight 都为 48px / 6px，即 8 gameplay step/格；
-- Fireball 长路径与 37-2 的 82 格纯 Flight 实测均支持约 `208ms/格`；
+- `custom-maps/original-patch/38/38-1.json` 的 100 格人工计时中，Bobby、Leaf、Cloud、
+  Ice Floor Slide 均约 42s，Kite Flight、Speed、Speed Mower、Fireball、Speed Shoes Bobby
+  均约 21s；
+- `custom-maps/original-patch/38/38-2.json` 的 50 格人工计时中，Waterfall 约 11s，
+  Bean Growth 约 21s；
+- 上述结果支持原版慢速 `416ms/格`、原版快速 `208ms/格`；50 格 Waterfall 的
+  `10.4s` 与 50 段 Bean 的 `20.8s` 也落在人工计时误差内；
+- Fireball 长路径与 37-2 的 82 格纯 Flight 实测同样支持约 `208ms/格`；
 - 37-2 的 Whirlwind `x=4` 到 Landing `x=86`，理论 Flight 时长为
   `82 × 208ms = 17.056s`，原版人工计时约 18s。
 
-长路径人工计时允许约一秒的观察误差。Flight 与 Fireball 的 `208ms/格` 校准据此完成；
-后续实现不以追平原版设备循环或模拟器调度的逐拍误差为目标。
+长路径人工计时允许约一秒的观察误差。Engine 在
+`engine/src/entities/movement/MovementCadence.ts` 集中维护两档原版速度和两档 Bobby
+调校速度，并由每种 Entity 的独有配置引用。后续实现不以追平原版设备循环或模拟器调度的
+逐拍误差为目标。
 
 这项校准只确认同类快速位移的墙钟节拍，不会把所有原版 step 计数机械换算为 26ms。其他机关仍需保留自己的结构证据并独立校准。
 
@@ -175,7 +184,10 @@ Bonus Coin 的随机门控也已完整恢复：`bE==0` 的四步窗口每步更�
 Bobby Carrot 5 Remake 已让 Beanstalk 上站立和移动的 Bobby 使用 Up 人物条带；朝向仍由
 World 保存，不因纯表现选择而改写。
 
-原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；按循环目标估算为 `16 × 31ms ≈ 496ms`。Speed / 特殊快速状态每次推进 6px，共 8 step，按同一方法估算为 `248ms`。
+原版普通格移动每次 `N()` 推进 3px，共需 16 次 gameplay step；Speed / 特殊快速状态
+每次推进 6px，共 8 step。按循环目标估算分别为 `496ms` 与 `248ms`，38-1 的 100 格
+墙钟实测则支持 `416ms` 与 `208ms`，因此 Engine 对已实测移动采用后者。现代 Bobby
+为了操作手感采用 `350ms` 与 `175ms` 两档。
 
 Kite 起飞完成时原版同时写入 `airborne=true` 与 `aN=1`。airborne 移动分支不递减 `aN`，所以 Flight 全程都满足 `N()` 的快速条件，每 step 推进 6px，而不是普通 Bobby 的 3px。Engine 根据 37-2 实测使用 `208ms/格`。
 
@@ -229,7 +241,8 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 4. 可继续生长时，旧顶端变 `0xDE` 中段，基座为 `0xEE`，新顶端为 `0xCE`；
 5. 向上重复，直到越界、目标格已有对象，或目标地形 unsigned ID 大于 `0x5D`。
 
-相邻两次生长 mutation 相隔约 **16 个 gameplay step ≈ 496ms**。
+相邻两次生长 mutation 相隔 16 个 gameplay step。38-2 的 50 段墙钟实测约 21s，
+Engine 因此使用 `416ms/段`；生长 Action 通过累计 elapsed 余量维持长期平均节拍。
 
 `0xCE` Tip 与 `0xDE` Middle 能覆盖本来不可普通步行的 terrain；`0xEE` Base 只有 terrain 自身可走时才能进入。三者都可触发 climbing presentation，但碰撞 override 不相同。
 
@@ -243,7 +256,7 @@ Web Engine 使用 `620ms / 558ms` 两个独立配置承接进入/通关差异，
 - Fireball：6px/gameplay step，48px 一格；同距离原版实测校准为约 208ms；
 - Shovel：32 gameplay step 后清除 Snow，约 992ms。
 
-Fireball 的现代实现以 `ORIGINAL_FIREBALL_TIMING` 统一声明墙钟毫秒：整格移动
+Fireball 的现代实现以 `FIREBALL_MOVEMENT` 统一声明墙钟毫秒：整格移动
 `208ms`、两张 `hud.png` 素材各 `104ms`、障碍边界半格收尾 `104ms`。RuntimeAction
 会把固定 World tick 的舍入余量带到下一格，因此长距离速度在不同 World Hz 下保持一致；
 Visual 直接读取 Presentation 毫秒选择素材帧，不依赖渲染帧数。

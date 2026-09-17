@@ -10,6 +10,7 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { BEAN_GROWTH_TIMING } from "../movement/MovementCadence.js";
 import {
   bobbyMountId,
   patchBobbyInventory,
@@ -24,10 +25,6 @@ import {
 } from "./module.js";
 
 const BEAN_GROWTH_ACTION = "bean-growth";
-const ORIGINAL_GAMEPLAY_STEP_MS = 31;
-
-export const DEFAULT_BEAN_GROWTH_SEGMENT_MS =
-  16 * ORIGINAL_GAMEPLAY_STEP_MS;
 
 const plantBean: Behavior = {
   id: "plant-bean",
@@ -80,7 +77,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
     const height = Math.max(1, integerState(action.state.height));
     const elapsedMs = numberState(action.state.elapsedMs) + time.stepMs;
     action.state.elapsedMs = elapsedMs;
-    if (elapsedMs + time.stepMs / 2 < DEFAULT_BEAN_GROWTH_SEGMENT_MS)
+    if (elapsedMs + time.stepMs / 2 < BEAN_GROWTH_TIMING.segmentMs)
       return "running";
 
     const nextY = baseY - height;
@@ -116,7 +113,7 @@ const beanGrowthAction: RuntimeActionDefinition = {
     action.state.height = height + 1;
     action.state.elapsedMs = Math.max(
       0,
-      elapsedMs - DEFAULT_BEAN_GROWTH_SEGMENT_MS,
+      elapsedMs - BEAN_GROWTH_TIMING.segmentMs,
     );
     return "running";
   },

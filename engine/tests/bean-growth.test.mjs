@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  DEFAULT_BEAN_GROWTH_SEGMENT_MS,
-} from "../dist/entities/original/bean-field.js";
+  BEAN_GROWTH_TIMING,
+} from "../dist/entities/movement/MovementCadence.js";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import { World } from "./support/World.mjs";
 
@@ -61,18 +61,18 @@ test("Bean growth changes climbable World facts one cell at a time", () => {
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEAN_SPROUT), true);
   assert.equal(world.query.hasFactAt(actor.anchor, "climbable"), false);
 
-  world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  world.update({ tick: 1, stepMs: BEAN_GROWTH_TIMING.segmentMs });
   assert.equal(hasType(world, 1, 3, RuntimeEntityTypeId.BEANSTALK_BASE), true);
   assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
   assert.equal(world.query.hasFactAt({ x: 1, y: 2 }, "climbable"), true);
 
-  world.update({ tick: 2, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  world.update({ tick: 2, stepMs: BEAN_GROWTH_TIMING.segmentMs });
   assert.equal(hasType(world, 1, 2, RuntimeEntityTypeId.BEANSTALK_MID), true);
   assert.equal(hasType(world, 1, 1, MapEntityTypeId.BEANSTALK), true);
 
   const stopped = world.update({
     tick: 3,
-    stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS,
+    stepMs: BEAN_GROWTH_TIMING.segmentMs,
   });
   assert.equal(hasType(world, 1, 0, MapEntityTypeId.BEANSTALK), false);
   assert.ok(stopped.events.some(
@@ -140,12 +140,12 @@ test("Bean grows across Tide and stops at a vertical occupant", () => {
       cause: { type: "player-input" },
     }],
   });
-  world.update({ tick: 1, stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS });
+  world.update({ tick: 1, stepMs: BEAN_GROWTH_TIMING.segmentMs });
   assert.equal(hasType(world, 1, 2, MapEntityTypeId.BEANSTALK), true);
 
   const stopped = world.update({
     tick: 2,
-    stepMs: DEFAULT_BEAN_GROWTH_SEGMENT_MS,
+    stepMs: BEAN_GROWTH_TIMING.segmentMs,
   });
   assert.equal(hasType(world, 1, 1, MapEntityTypeId.BEANSTALK), false);
   assert.ok(stopped.events.some(

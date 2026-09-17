@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
   DEFAULT_SPEED_CONTINUATION_CELLS,
-  DEFAULT_SPEED_FULL_CADENCE_MS,
 } from "../dist/entities/original/speed.js";
+import {
+  SPEED_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import { World } from "./support/World.mjs";
 
 const ground = (x, y) => ({ type: "grass", variant: "ts-10-1", x, y });
@@ -67,6 +69,13 @@ function finishAction(world, startTick = 0, stepMs = 50, limit = 40) {
   assert.fail("expected Speed action to complete");
 }
 
+function assertQuantizedSpeedCadence(cadenceMs, stepMs = 50) {
+  assert.ok(
+    Math.abs(cadenceMs - SPEED_MOVEMENT.full.cellMs) <= stepMs / 2 + 0.01,
+    `expected ${cadenceMs}ms to represent the ${SPEED_MOVEMENT.full.cellMs}ms cadence`,
+  );
+}
+
 function straightWorld(width = 6) {
   return new World({
     schemaVersion: 1,
@@ -80,6 +89,58 @@ function straightWorld(width = 6) {
   });
 }
 
+function measureContinuousSpeedDuration(hz, cellCount) {
+  const width = cellCount + 2;
+  const world = new World({
+    schemaVersion: 1,
+    width,
+    height: 1,
+    entities: [
+      ...Array.from({ length: width }, (_, x) => ground(x, 0)),
+      ...Array.from({ length: cellCount + 1 }, (_, index) =>
+        speed(index + 1, 0)
+      ),
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+  });
+  const actor = actorIds(world)[0];
+  move(world, actor, "right");
+
+  const stepMs = 1000 / hz;
+  let elapsedMs = 0;
+  let startedAtMs = null;
+  let speedMotionCount = 0;
+  for (let tick = 0; tick < 10_000; tick += 1) {
+    const result = world.update({ tick, stepMs });
+    elapsedMs += stepMs;
+    speedMotionCount += result.motions.filter(
+      (motion) => motion.cause.mechanism === "speed",
+    ).length;
+    if (startedAtMs === null && speedMotionCount > 0)
+      startedAtMs = elapsedMs;
+    if (
+      speedMotionCount === cellCount &&
+      world.movement.motions.forEntity(actor)?.status !== "running"
+    ) {
+      assert.notEqual(startedAtMs, null);
+      return elapsedMs - startedAtMs;
+    }
+  }
+  assert.fail(`Speed 在 ${hz}Hz 下未完成 ${cellCount} 格`);
+}
+
+test("Speed 在不同 World Hz 下保持 100 格平均 cadence", () => {
+  const cellCount = 100;
+  const expectedMs = cellCount * SPEED_MOVEMENT.full.cellMs;
+  for (const hz of [30, 60, 120]) {
+    const actualMs = measureContinuousSpeedDuration(hz, cellCount);
+    assert.ok(
+      Math.abs(actualMs - expectedMs) <= 1000 / hz + 0.01,
+      `${hz}Hz: expected ${expectedMs}ms, got ${actualMs}ms`,
+    );
+  }
+});
+
 test("Speed 未续按时前两格保持快速，最后一格恢复普通速度", () => {
   const world = straightWorld();
   const actor = actorIds(world)[0];
@@ -91,10 +152,7 @@ test("Speed 未续按时前两格保持快速，最后一格恢复普通速度",
   const first = nextMotion(world);
   assert.equal(world.entity(actor).anchor.x, 2);
   assert.equal(first.result.motions[0].cause.mechanism, "speed");
-  assert.equal(
-    first.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_FULL_CADENCE_MS,
-  );
+  assertQuantizedSpeedCadence(first.result.motions[0].cause.cadenceMs);
   assert.deepEqual(world.entity(actor).state.speedBoost, {
     direction: "right",
     phase: "full",
@@ -102,10 +160,7 @@ test("Speed 未续按时前两格保持快速，最后一格恢复普通速度",
 
   const second = nextMotion(world, first.nextTick);
   assert.equal(world.entity(actor).anchor.x, 3);
-  assert.equal(
-    second.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_FULL_CADENCE_MS,
-  );
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
   assert.deepEqual(world.entity(actor).state.speedBoost, {
     direction: "right",
     phase: "full",
@@ -156,10 +211,7 @@ test("same-direction held input renews the three-cell continuation", () => {
 
   const second = nextMotion(world, first.nextTick);
   assert.equal(world.entity(actor).anchor.x, 3);
-  assert.equal(
-    second.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_FULL_CADENCE_MS,
-  );
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
   assert.equal(world.entity(actor).state.speedBoost.phase, "full");
 
   const third = nextMotion(world, second.nextTick);
@@ -178,15 +230,15 @@ test("held same-direction input can renew Speed on every cell", () => {
   const first = nextMotion(world);
   assert.equal(observe(world, actor, "right"), "retry");
   const second = nextMotion(world, first.nextTick);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
 
   assert.equal(observe(world, actor, "right"), "retry");
   const third = nextMotion(world, second.nextTick);
-  assert.equal(third.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(third.result.motions[0].cause.cadenceMs);
 
   assert.equal(observe(world, actor, "right"), "retry");
   const fourth = nextMotion(world, third.nextTick);
-  assert.equal(fourth.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(fourth.result.motions[0].cause.cadenceMs);
   assert.equal(world.entity(actor).anchor.x, 5);
 });
 
@@ -199,7 +251,7 @@ test("other-direction input does not cancel the fixed continuation", () => {
   assert.equal(observe(world, actor, "up"), "retry");
 
   const second = nextMotion(world, first.nextTick);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
   assert.equal(world.entity(actor).state.speedBoost.phase, "full");
 });
 
@@ -211,10 +263,10 @@ test("same-direction input while still on the Speed surface does not pre-arm off
   assert.equal(observe(world, actor, "right"), "retry");
   const first = nextMotion(world);
   assert.equal(world.entity(actor).anchor.x, 2);
-  assert.equal(first.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(first.result.motions[0].cause.cadenceMs);
 
   const second = nextMotion(world, first.nextTick);
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
 });
 
 test("blocked Speed forced movement emits impact and clears the boost", () => {
@@ -269,7 +321,7 @@ test("Speed boost state and observed input belong only to the owning Bobby", () 
   assert.equal(observe(world, other, "right"), "retry");
   const second = nextMotion(world, first.nextTick);
 
-  assert.equal(second.result.motions[0].cause.cadenceMs, DEFAULT_SPEED_FULL_CADENCE_MS);
+  assertQuantizedSpeedCadence(second.result.motions[0].cause.cadenceMs);
   assert.equal(world.entity(boosted).state.speedBoost.phase, "full");
   assert.equal(world.entity(other).state?.speedBoost, undefined);
   assert.deepEqual(world.entity(other).anchor, { x: 0, y: 1 });

@@ -14,7 +14,7 @@ import {
   createBuiltinVisualRegistry,
 } from "../dist/entities/registry.js";
 import { builtinEngineEnvironment } from "../dist/public.js";
-import { ORIGINAL_FIREBALL_TIMING } from "../dist/entities/original/fireball.js";
+import { FIREBALL_MOVEMENT } from "../dist/entities/movement/MovementCadence.js";
 
 const factRegistry = builtinEngineEnvironment.facts;
 
@@ -696,7 +696,7 @@ test("Fireball terminal event presents a half-cell move before destruction", () 
         x: 2,
         y: 1,
         direction: "right",
-        data: { durationMs: ORIGINAL_FIREBALL_TIMING.terminalMs },
+        data: { durationMs: FIREBALL_MOVEMENT.terminalMs },
       },
     }],
     { frame: 0, nowMs: 1000, deltaMs: 0 },
@@ -704,8 +704,8 @@ test("Fireball terminal event presents a half-cell move before destruction", () 
   );
   runtime.update({
     frame: 1,
-    nowMs: 1000 + ORIGINAL_FIREBALL_TIMING.terminalMs / 2,
-    deltaMs: ORIGINAL_FIREBALL_TIMING.terminalMs / 2,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs / 2,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
   }, "linear");
   const halfway = runtime.inspectEntity(world, 7).runtime;
   assert.equal(halfway.animation, "fireball-termination");
@@ -714,8 +714,8 @@ test("Fireball terminal event presents a half-cell move before destruction", () 
 
   runtime.update({
     frame: 2,
-    nowMs: 1000 + ORIGINAL_FIREBALL_TIMING.terminalMs,
-    deltaMs: ORIGINAL_FIREBALL_TIMING.terminalMs / 2,
+    nowMs: 1000 + FIREBALL_MOVEMENT.terminalMs,
+    deltaMs: FIREBALL_MOVEMENT.terminalMs / 2,
   }, "linear");
   assert.equal(runtime.inspectEntity(world, 7).runtime.offsetX, 0.5);
 });

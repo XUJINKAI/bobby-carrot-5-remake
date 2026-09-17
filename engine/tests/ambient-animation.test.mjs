@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { RuntimeEntityTypeId } from "../dist/entities/runtime-types.js";
 import {
-  ORIGINAL_FIREBALL_TIMING,
-} from "../dist/entities/original/fireball.js";
+  FIREBALL_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import {
   createBuiltinEntityRegistry,
   createBuiltinVisualRegistry,
@@ -84,15 +84,15 @@ test("Fireball 使用 hud.png 的两张 28px 原版帧", () => {
   const first = resolveAt(RuntimeEntityTypeId.FIREBALL, 0);
   const beforeSecond = resolveAt(
     RuntimeEntityTypeId.FIREBALL,
-    ORIGINAL_FIREBALL_TIMING.frameMs - 0.001,
+    FIREBALL_MOVEMENT.frameMs - 0.001,
   );
   const second = resolveAt(
     RuntimeEntityTypeId.FIREBALL,
-    ORIGINAL_FIREBALL_TIMING.frameMs,
+    FIREBALL_MOVEMENT.frameMs,
   );
   const looped = resolveAt(
     RuntimeEntityTypeId.FIREBALL,
-    ORIGINAL_FIREBALL_TIMING.frameMs * 2,
+    FIREBALL_MOVEMENT.frameMs * 2,
   );
   assert.deepEqual(first, {
     kind: "image",

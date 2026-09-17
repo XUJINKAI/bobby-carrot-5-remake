@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import {
-  DEFAULT_MOVING_ENTITY_CELL_MS,
-} from "../dist/entities/original/moving-entities.js";
+  CLOUD_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
@@ -18,6 +18,75 @@ function move(world, actorId, direction) {
     ],
   });
 }
+
+function measureCloudDuration(hz, cellCount) {
+  const width = cellCount + 2;
+  const world = new World({
+    schemaVersion: 1,
+    width,
+    height: 1,
+    entities: [
+      ...Array.from({ length: width }, (_, x) => ({
+        type: MapEntityTypeId.STARFIELD,
+        x,
+        y: 0,
+        variant: "large-star",
+      })),
+      { type: MapEntityTypeId.WINDMILL, x: 0, y: 0, direction: "right" },
+      {
+        type: MapEntityTypeId.WIND_SWITCH,
+        x: 0,
+        y: 0,
+        direction: "right",
+        active: true,
+      },
+      { type: MapEntityTypeId.CLOUD, x: 1, y: 0, color: "red" },
+      {
+        type: MapEntityTypeId.CLOUD_PARKING,
+        x: cellCount + 1,
+        y: 0,
+        color: "red",
+      },
+    ],
+  });
+  const cloud = world.query.entitiesMatching({
+    kind: "type",
+    value: MapEntityTypeId.CLOUD,
+  })[0];
+  const stepMs = 1000 / hz;
+  let elapsedMs = 0;
+  let startedAtMs = null;
+  let cloudMotionCount = 0;
+  for (let tick = 0; tick < 10_000; tick += 1) {
+    const result = world.update({ tick, stepMs });
+    elapsedMs += stepMs;
+    cloudMotionCount += result.motions.filter(
+      (motion) => motion.cause.mechanism === "cloud",
+    ).length;
+    if (startedAtMs === null && cloudMotionCount > 0)
+      startedAtMs = elapsedMs;
+    if (
+      cloudMotionCount === cellCount &&
+      world.entity(cloud.id).state.moving === false
+    ) {
+      assert.notEqual(startedAtMs, null);
+      return elapsedMs - startedAtMs;
+    }
+  }
+  assert.fail(`Cloud 在 ${hz}Hz 下未完成 ${cellCount} 格`);
+}
+
+test("Cloud 在不同 World Hz 下保持 100 格平均 cadence", () => {
+  const cellCount = 100;
+  const expectedMs = cellCount * CLOUD_MOVEMENT.cellMs;
+  for (const hz of [30, 60, 120]) {
+    const actualMs = measureCloudDuration(hz, cellCount);
+    assert.ok(
+      Math.abs(actualMs - expectedMs) <= 1000 / hz + 0.01,
+      `${hz}Hz: expected ${expectedMs}ms, got ${actualMs}ms`,
+    );
+  }
+});
 
 test("Leaf carries co-located Bobby without creating a mount relation", () => {
   const world = new World({
@@ -38,13 +107,13 @@ test("Leaf carries co-located Bobby without creating a mount relation", () => {
 
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
   assert.equal(world.entity(actor.id).state?.mountId, undefined);
-  const drift = world.update({ tick: 1, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  const drift = world.update({ tick: 1, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.equal(drift.motions.length, 2);
   assert.deepEqual(world.entity(leaf.id).anchor, { x: 2, y: 0 });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
   assert.equal(world.entity(actor.id).state?.mountId, undefined);
 
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.equal(world.entity(leaf.id).state.moving, false);
   assert.equal(world.actions.active.length, 0);
   assert.equal(move(world, actor.id, "right").moves[0].moved, true);
@@ -102,11 +171,11 @@ test("Wind drives a Cloud through sky and matching Parking stops it", () => {
   world.update({ tick: 1, stepMs: 1 });
   const cloud = world.query.entitiesMatching({ kind: "type", value: MapEntityTypeId.CLOUD })[0] ??
     world.query.entitiesWithFact("moving-platform")[0];
-  world.update({ tick: 2, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 2, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 2, y: 0 });
-  world.update({ tick: 3, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 3, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(cloud.id).anchor, { x: 3, y: 0 });
-  world.update({ tick: 4, stepMs: DEFAULT_MOVING_ENTITY_CELL_MS });
+  world.update({ tick: 4, stepMs: CLOUD_MOVEMENT.cellMs });
   assert.equal(world.entity(cloud.id).state.moving, false);
 });
 

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { MapEntityTypeId } from "@bobby/model";
 import { GameplaySession } from "../dist/core/GameplaySession.js";
 import {
-  ORIGINAL_KITE_FLIGHT_TIMING,
-} from "../dist/entities/original/flight.js";
+  KITE_FLIGHT_MOVEMENT,
+} from "../dist/entities/movement/MovementCadence.js";
 import { World } from "./support/World.mjs";
 
 function move(world, actorId, direction) {
@@ -70,10 +70,10 @@ function measureFlightDuration(hz, cellCount) {
 }
 
 test("Kite Flight 毫秒配置在不同 World Hz 下保持长距离速度", () => {
-  assert.deepEqual(ORIGINAL_KITE_FLIGHT_TIMING, { cellMs: 208 });
+  assert.equal(KITE_FLIGHT_MOVEMENT.cellMs, 208);
   // 37-2 的 Whirlwind x=4 到 Landing x=86，纯飞行路径共 82 格。
   const cellCount = 82;
-  const expectedMs = cellCount * ORIGINAL_KITE_FLIGHT_TIMING.cellMs;
+  const expectedMs = cellCount * KITE_FLIGHT_MOVEMENT.cellMs;
 
   for (const hz of [30, 60, 120]) {
     const actualMs = measureFlightDuration(hz, cellCount);
@@ -128,16 +128,16 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
     "retry",
   );
 
-  world.update({ tick: 1, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  world.update({ tick: 1, stepMs: KITE_FLIGHT_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });
   assert.equal(world.actorLifecycle(actor.id).phase, "active");
 
-  world.update({ tick: 2, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  world.update({ tick: 2, stepMs: KITE_FLIGHT_MOVEMENT.cellMs });
   assert.deepEqual(world.entity(actor.id).anchor, { x: 3, y: 0 });
   assert.equal(world.entity(actor.id).state.flying, true);
   const landing = world.update({
     tick: 3,
-    stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+    stepMs: KITE_FLIGHT_MOVEMENT.cellMs,
   });
   assert.equal(world.entity(actor.id).state.flying, false);
   assert.ok(landing.events.some((event) => event.type === "kite-landed"));
@@ -176,11 +176,11 @@ test("Landing 完成后以 Bobby 普通 cadence 自动向前续行一格", () =>
     locomotionMoveMs: 420,
   };
 
-  world.update({ tick: 1, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
-  world.update({ tick: 2, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  world.update({ tick: 1, stepMs: KITE_FLIGHT_MOVEMENT.cellMs });
+  world.update({ tick: 2, stepMs: KITE_FLIGHT_MOVEMENT.cellMs });
   const landing = world.update({
     tick: 3,
-    stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+    stepMs: KITE_FLIGHT_MOVEMENT.cellMs,
   });
 
   assert.ok(landing.events.some((event) => event.type === "kite-landed"));
@@ -202,7 +202,7 @@ test("Landing 完成后以 Bobby 普通 cadence 自动向前续行一格", () =>
 test("持续方向在 Landing 续步期间等待，完成后恢复普通移动", () => {
   const session = new GameplaySession({
     timing: { worldHz: 4 },
-    bobbyLocomotion: { moveMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs },
+    bobbyLocomotion: { moveMs: KITE_FLIGHT_MOVEMENT.cellMs },
   });
   session.loadLevel({
     schemaVersion: 1,
@@ -348,10 +348,10 @@ test("Flight boundary leaves the actor in a coherent grounded state", () => {
   const actor = world.query.entitiesWithFact("player")[0];
   world.entities.require(actor.id).state = { kite: true };
   move(world, actor.id, "right");
-  world.update({ tick: 1, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  world.update({ tick: 1, stepMs: KITE_FLIGHT_MOVEMENT.cellMs });
   const boundary = world.update({
     tick: 2,
-    stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+    stepMs: KITE_FLIGHT_MOVEMENT.cellMs,
   });
 
   assert.deepEqual(world.entity(actor.id).anchor, { x: 2, y: 0 });

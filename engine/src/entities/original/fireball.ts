@@ -7,7 +7,6 @@ import type {
 import {
   accrueActionDeadline,
   consumeActionDeadline,
-  quantizedActionCadenceMs,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import type { WorldCommandApi } from "../../world/behavior/CommandQueue.js";
@@ -17,6 +16,10 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import {
+  FIREBALL_MOVEMENT,
+  resolveActionMovementCadenceMs,
+} from "../movement/MovementCadence.js";
 import { RuntimeEntityTypeId } from "../runtime-types.js";
 import {
   originalModule,
@@ -25,22 +28,6 @@ import { meltIceBlocksAt } from "./ice-block.js";
 import { fireballCanTraverseTerrainAt } from "./terrain-semantics.js";
 
 const FIREBALL_ACTION = "dragon-fireball";
-
-export interface FireballTiming {
-  /** 火球通过一个完整格子的墙钟时间。 */
-  readonly cellMs: number;
-  /** `hud.png` 两张火球素材中每一帧的显示时间。 */
-  readonly frameMs: number;
-  /** 火球在障碍边界前完成半格收尾所需的时间。 */
-  readonly terminalMs: number;
-}
-
-/** 同距离原版实测校准；运行时只消费毫秒，不依赖 World 或 Presentation 帧率。 */
-export const ORIGINAL_FIREBALL_TIMING: FireballTiming = {
-  cellMs: 208,
-  frameMs: 104,
-  terminalMs: 104,
-};
 
 const runFireball: Behavior = {
   id: "run-dragon-fireball",
@@ -77,7 +64,7 @@ const fireballAction: RuntimeActionDefinition = {
       accrueActionDeadline(action, time);
       if (!consumeActionDeadline(
         action,
-        ORIGINAL_FIREBALL_TIMING.terminalMs,
+        FIREBALL_MOVEMENT.terminalMs,
         0,
       )) return "running";
       const direction = fireball.direction ?? "left";
@@ -121,9 +108,9 @@ const fireballAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "fireball",
-            cadenceMs: quantizedActionCadenceMs(
+            cadenceMs: resolveActionMovementCadenceMs(
               action,
-              ORIGINAL_FIREBALL_TIMING.cellMs,
+              FIREBALL_MOVEMENT,
               time.stepMs,
             ),
           },
@@ -164,7 +151,7 @@ const base = originalModule(
       const frame =
         Math.floor(
           Math.max(0, context.time?.nowMs ?? 0) /
-            ORIGINAL_FIREBALL_TIMING.frameMs,
+            FIREBALL_MOVEMENT.frameMs,
         ) % 2;
       return {
         layers: [{
@@ -269,7 +256,7 @@ function beginFireballTermination(
     x: fireball.anchor.x,
     y: fireball.anchor.y,
     direction,
-    data: { durationMs: ORIGINAL_FIREBALL_TIMING.terminalMs },
+    data: { durationMs: FIREBALL_MOVEMENT.terminalMs },
   });
 }
 

@@ -5,13 +5,11 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import { ICE_MOVEMENT } from "../movement/MovementCadence.js";
 import {
   tileCell,
   staticEntity,
 } from "./module.js";
-
-/** 同步 World 测试未配置 motion duration 时使用的普通移动回退值。 */
-export const DEFAULT_ICE_SLIDE_CADENCE_MS = 350;
 
 const slide: Behavior = {
   id: "ice-slide",
@@ -59,7 +57,7 @@ function inheritedCadence(
     Number.isFinite(causeCadenceMs) &&
     causeCadenceMs > 0
     ? causeCadenceMs
-    : DEFAULT_ICE_SLIDE_CADENCE_MS;
+    : ICE_MOVEMENT.normalCellMs;
 }
 
 const definition: EntityModuleDefinition = {

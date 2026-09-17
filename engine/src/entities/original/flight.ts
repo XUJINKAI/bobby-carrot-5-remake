@@ -6,7 +6,6 @@ import type {
 import {
   accrueActionDeadline,
   consumeActionDeadline,
-  quantizedActionCadenceMs,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
 import { createDelayedMoveRuntimeAction } from "../../world/action/builtinActions.js";
@@ -15,6 +14,10 @@ import type {
   EntityModule,
   EntityModuleDefinition,
 } from "../EntityModule.js";
+import {
+  KITE_FLIGHT_MOVEMENT,
+  resolveActionMovementCadenceMs,
+} from "../movement/MovementCadence.js";
 import {
   bobbyMountId,
   isBobbyFlying,
@@ -28,16 +31,6 @@ import {
 } from "./module.js";
 
 const FLIGHT_ACTION = "kite-flight";
-
-export interface KiteFlightTiming {
-  /** Kite Flight 通过一个完整格子的墙钟时间。 */
-  readonly cellMs: number;
-}
-
-/** 37-2 的 82 格纯飞行路径实测校准；运行时只消费毫秒。 */
-export const ORIGINAL_KITE_FLIGHT_TIMING: KiteFlightTiming = {
-  cellMs: 208,
-};
 
 const whirlwindBehavior: Behavior = {
   id: "kite-takeoff",
@@ -141,7 +134,7 @@ const flightAction: RuntimeActionDefinition = {
 
     if (!consumeActionDeadline(
       action,
-      ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+      KITE_FLIGHT_MOVEMENT.cellMs,
       time.stepMs / 2,
     ))
       return "running";
@@ -157,9 +150,9 @@ const flightAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "flight",
-            cadenceMs: quantizedActionCadenceMs(
+            cadenceMs: resolveActionMovementCadenceMs(
               action,
-              ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+              KITE_FLIGHT_MOVEMENT,
               time.stepMs,
             ),
           },
@@ -226,7 +219,7 @@ function createFlightAction(ownerEntityId: EntityId): RuntimeActionSpec {
     ownerEntityId,
     blocksInput: true,
     state: {
-      elapsedMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+      elapsedMs: KITE_FLIGHT_MOVEMENT.cellMs,
       cadenceCarryMs: 0,
     },
   };

@@ -22,16 +22,18 @@ import type {
   EntityModuleDefinition,
 } from "../EntityModule.js";
 import {
+  CLOUD_MOVEMENT,
+  LEAF_MOVEMENT,
+  resolveActionMovementCadenceMs,
+  type ActionMovementCadence,
+} from "../movement/MovementCadence.js";
+import {
   atlasVisual,
   tileCell,
   originalModule,
 } from "./module.js";
 
 const MOVING_ENTITY_ACTION = "moving-entity";
-const ORIGINAL_GAMEPLAY_STEP_MS = 31;
-
-export const DEFAULT_MOVING_ENTITY_CELL_MS = 16 * ORIGINAL_GAMEPLAY_STEP_MS;
-export const DEFAULT_WATERFALL_CELL_MS = 8 * ORIGINAL_GAMEPLAY_STEP_MS;
 export const LEAF_SUPPORT_HEIGHT_PX = 12;
 
 /** Leaf / Cloud 携带同格玩家，但步行进入不建立驾驶关系。 */
@@ -86,16 +88,11 @@ const movingPlatformBehavior: Behavior = {
       runtimeStarted: true,
     });
     commands.setDirection(self.entity.id, direction);
-    const cadenceMs = query.hasSelectorAt(self.entity.anchor, {
-      kind: "type",
-      value: MapEntityTypeId.WATERFALL,
-    })
-      ? DEFAULT_WATERFALL_CELL_MS
-      : DEFAULT_MOVING_ENTITY_CELL_MS;
+    const movementCadence = movementFor(query, self.entity);
     commands.startAction(
       createMovingEntityAction(
         self.entity.id,
-        primeDeadlineForHandoff(cadenceMs, movement?.motion),
+        primeDeadlineForHandoff(movementCadence.cellMs, movement?.motion),
         tideDirection !== null ? direction : null,
       ),
     );
@@ -110,7 +107,10 @@ const movingPlatformBehavior: Behavior = {
       runtimeStarted: true,
     });
     commands.startAction(
-      createMovingEntityAction(self.entity.id, DEFAULT_MOVING_ENTITY_CELL_MS),
+      createMovingEntityAction(
+        self.entity.id,
+        movementFor(query, self.entity).cellMs,
+      ),
     );
   },
 };
@@ -137,7 +137,7 @@ const movingEntityAction: RuntimeActionDefinition = {
     if (!route)
       return stopMovingEntity(entity, commands, hasAutomaticCurrent(query, entity));
 
-    if (!consumeActionDeadline(action, route.cadenceMs, time.stepMs / 2))
+    if (!consumeActionDeadline(action, route.movement.cellMs, time.stepMs / 2))
       return "running";
     if (launchDirection !== null) delete action.state.launchDirection;
     if (entity.direction !== route.direction)
@@ -153,7 +153,11 @@ const movingEntityAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: isCloud(entity.type) ? "cloud" : "leaf",
-            cadenceMs: route.cadenceMs,
+            cadenceMs: resolveActionMovementCadenceMs(
+              action,
+              route.movement,
+              time.stepMs,
+            ),
           },
         },
       ],
@@ -267,6 +271,7 @@ function createMovingEntityAction(
     ownerEntityId,
     state: {
       elapsedMs: initialElapsedMs,
+      cadenceCarryMs: 0,
       ...(launchDirection !== null ? { launchDirection } : {}),
     },
   };
@@ -276,7 +281,7 @@ function nextRoute(
   query: WorldQueryApi,
   entity: Readonly<EntityInstance>,
   launchDirection: Direction | null = null,
-): { direction: Direction; cadenceMs: number } | null {
+): { direction: Direction; movement: ActionMovementCadence } | null {
   const initial = directionState(entity.direction) ?? "right";
   const candidates = isCloud(entity.type)
     ? [
@@ -294,12 +299,21 @@ function nextRoute(
   if (!direction) return null;
   return {
     direction,
-    cadenceMs:
-      entity.type === MapEntityTypeId.LEAF &&
-      query.hasSelectorAt(entity.anchor, { kind: "type", value: MapEntityTypeId.WATERFALL })
-        ? DEFAULT_WATERFALL_CELL_MS
-        : DEFAULT_MOVING_ENTITY_CELL_MS,
+    movement: movementFor(query, entity),
   };
+}
+
+function movementFor(
+  query: WorldQueryApi,
+  entity: Readonly<EntityInstance>,
+): ActionMovementCadence {
+  if (isCloud(entity.type)) return CLOUD_MOVEMENT;
+  return query.hasSelectorAt(entity.anchor, {
+    kind: "type",
+    value: MapEntityTypeId.WATERFALL,
+  })
+    ? LEAF_MOVEMENT.waterfall
+    : LEAF_MOVEMENT.normal;
 }
 
 function leafDirectionAt(
