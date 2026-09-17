@@ -1,40 +1,12 @@
-import { parseEditorLevel, serializeEditorLevel } from "@bobby/editor";
 import { AudioRuntime } from "@bobby/engine";
 import { createApp, nextTick, reactive, type App as VueApp } from "vue";
-import {
-  createImageManager,
-  siteUrl,
-} from "../services/assets/gameAssets.js";
-import {
-  fetchJson,
-  type AdventureIndex,
-  type MapCollectionIndex,
-  type MapCollectionsIndex,
-} from "../services/catalog/catalog.js";
-import { resolveMapDocument } from "../services/catalog/exploreMaps.js";
-import {
-  findAdventureLevel,
-  renderAdventureChapter,
-  renderAdventureChapters,
-  renderAdventureHome,
-  renderAdventureNightTrain,
-} from "../pages/adventure/mountAdventurePages.js";
-import { renderEditorPage } from "../pages/editor/mountEditorPage.js";
-import { renderEmbedPage } from "../pages/embed/mountEmbedPage.js";
-import { renderLevels } from "../pages/explore/mountExplorePage.js";
-import { renderGamePage } from "../pages/game/mountGamePage.js";
-import { renderHome } from "../pages/home/mountHomePage.js";
-import {
-  importedLevelMap,
-  renderImportMessage,
-} from "../pages/import/mountImportPage.js";
-import { decodeImportedPayload } from "../services/import/importPipeline.js";
-import { renderSettingsPage } from "../pages/settings/mountSettingsPage.js";
+import { createImageManager } from "../services/assets/gameAssets.js";
+import { CatalogRuntime } from "../services/catalog/catalogRuntime.js";
 import {
   installShellBridge,
   type ShellConfig,
   type ShellViewState,
-  unifiedHelpDescriptor,
+  unifiedHelpContent,
 } from "../shell/shellBridge.js";
 import AppRoot from "./AppRoot.vue";
 import {
@@ -45,8 +17,8 @@ import {
   NOOP_CONTROLLER,
   type PageContext,
   type PageController,
-  type ResolvedMapCollection,
 } from "./pageContracts.js";
+import { scheduleIdleTask, type CancelIdleTask } from "./idleTasks.js";
 import {
   parseMapPlayUrl,
   type ExploreMapRef,
@@ -60,11 +32,9 @@ export class BobbyApp {
   private readonly mount: HTMLDivElement;
   private readonly audio = new AudioRuntime();
   private readonly images = createImageManager();
+  private readonly catalog = new CatalogRuntime();
   private readonly shell = reactive<ShellViewState>(defaultShellState());
-  private collectionsIndex: MapCollectionsIndex = EMPTY_COLLECTIONS_INDEX;
-  private collections: ResolvedMapCollection[] = [];
-  private adventure: AdventureIndex = EMPTY_ADVENTURE_INDEX;
-  private indexesLoaded = false;
+  private idleTasks: CancelIdleTask[] = [];
   private content!: HTMLDivElement;
   private controller: PageController = NOOP_CONTROLLER;
   private vueApp: VueApp<Element> | null = null;
@@ -95,12 +65,13 @@ export class BobbyApp {
     document.addEventListener("pointerdown", this.resumeAudio, { passive: true });
     document.addEventListener("keydown", this.resumeAudio);
     window.addEventListener("popstate", this.onPopState);
-    await Promise.all([contentReady, this.images.preload()]);
+    await contentReady;
     await this.renderRoute();
   }
 
   destroy(): void {
     this.controller.destroy();
+    this.clearIdleTasks();
     this.buttonFocusPolicy?.destroy();
     document.removeEventListener("pointerdown", this.resumeAudio);
     document.removeEventListener("keydown", this.resumeAudio);
@@ -133,9 +104,9 @@ export class BobbyApp {
   private pageContext(): PageContext {
     return {
       app: this.content,
-      collectionsIndex: this.collectionsIndex,
-      collections: this.collections,
-      adventure: this.adventure,
+      collectionsIndex: this.catalog.collectionsIndex,
+      collections: this.catalog.collections,
+      adventure: this.catalog.adventure,
       audio: this.audio,
       images: this.images,
       navigate: this.navigate,
@@ -154,45 +125,72 @@ export class BobbyApp {
   private async renderCurrentRoute(): Promise<void> {
     this.controller.destroy();
     this.controller = NOOP_CONTROLLER;
+    this.clearIdleTasks();
     const path = localRoutePath();
-    if (!isDirectMapRoute(path)) await this.ensureIndexes();
-    const context = this.pageContext();
 
     if (path === "/") {
+      const { renderHome } = await import("../pages/home/mountHomePage.js");
+      const context = this.pageContext();
       this.controller = await renderHome(context);
+      this.scheduleHomePrefetch();
       return;
     }
     if (path === "/embed") {
+      const { renderEmbedPage } = await import("../pages/embed/mountEmbedPage.js");
+      const context = this.pageContext();
       this.controller = renderEmbedPage(context);
       return;
     }
     if (path === "/import/v1") {
-      await this.renderImport(context);
-      return;
-    }
-    if (path === "/explore") {
-      this.controller = await renderLevels(context, "original");
+      await this.renderImport();
       return;
     }
     if (path.startsWith("/explore/play/")) {
-      await this.renderExplorePlay(path, context);
+      await this.renderExplorePlay(path);
       return;
     }
-    if (path.startsWith("/explore/")) {
-      const collection = decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
-      this.controller = await renderLevels(context, collection);
+    if (path === "/explore" || path.startsWith("/explore/")) {
+      const collection = path === "/explore"
+        ? "original"
+        : decodeURIComponent(path.split("/")[2] ?? "").toLowerCase();
+      const [{ renderLevels }] = await Promise.all([
+        import("../pages/explore/mountExplorePage.js"),
+        this.catalog.loadCollectionsIndex(),
+        this.catalog.loadCollection(collection),
+      ]);
+      this.controller = await renderLevels(this.pageContext(), collection);
       return;
     }
     if (path === "/settings") {
+      const { renderSettingsPage } = await import(
+        "../pages/settings/mountSettingsPage.js"
+      );
+      const context = this.pageContext();
       this.controller = renderSettingsPage(context);
       return;
     }
+    if (path === "/edit") {
+      const { renderEditorPage } = await import(
+        "../pages/editor/mountEditorPage.js"
+      );
+      this.controller = await renderEditorPage(this.pageContext());
+      return;
+    }
+    if (!path.startsWith("/adventure")) {
+      this.navigate("/");
+      return;
+    }
+    await this.catalog.loadAdventure();
+    const adventurePages = await import(
+      "../pages/adventure/mountAdventurePages.js"
+    );
+    const context = this.pageContext();
     if (path === "/adventure") {
-      this.controller = renderAdventureHome(context);
+      this.controller = adventurePages.renderAdventureHome(context);
       return;
     }
     if (path === "/adventure/chapters") {
-      this.controller = renderAdventureChapters(context);
+      this.controller = adventurePages.renderAdventureChapters(context);
       return;
     }
     if (path === "/adventure/beaver-shop") {
@@ -200,7 +198,7 @@ export class BobbyApp {
       return;
     }
     if (path === "/adventure/night-train") {
-      this.controller = renderAdventureNightTrain(context);
+      this.controller = adventurePages.renderAdventureNightTrain(context);
       return;
     }
     if (path === "/adventure/night-train/dream-machine") {
@@ -233,31 +231,34 @@ export class BobbyApp {
         this.navigate("/adventure/chapters");
         return;
       }
-      this.controller = renderAdventureChapter(context, chapter);
+      this.controller = adventurePages.renderAdventureChapter(context, chapter);
       return;
     }
     if (path.startsWith("/adventure/play/")) {
-      await this.renderAdventurePlay(path, context);
-      return;
-    }
-    if (path === "/edit") {
-      this.controller = await renderEditorPage(context);
+      await this.renderAdventurePlay(path, adventurePages.findAdventureLevel);
       return;
     }
     this.navigate("/");
   }
 
-  private async renderImport(context: PageContext): Promise<void> {
+  private async renderImport(): Promise<void> {
     const payload = location.hash.slice(1);
     try {
+      const { decodeImportedPayload } = await import(
+        "../services/import/importPipeline.js"
+      );
       const imported = await decodeImportedPayload(payload);
       if (imported.type === "map") {
+        const [{ serializeEditorLevel }, { renderGamePage }] = await Promise.all([
+          import("@bobby/editor"),
+          import("../pages/game/mountGamePage.js"),
+        ]);
         sessionStorage.setItem(
           "bc5r:pending-editor-level",
           serializeEditorLevel(imported.value),
         );
         this.controller = await renderGamePage({
-          ...context,
+          ...this.pageContext(),
           level: imported.level,
           identity: {
             collection: "imported",
@@ -268,6 +269,10 @@ export class BobbyApp {
         });
         return;
       }
+      const { renderImportMessage } = await import(
+        "../pages/import/mountImportPage.js"
+      );
+      const context = this.pageContext();
       this.controller = imported.type === "unknown"
         ? renderImportMessage(context, {
             status: "unknown",
@@ -279,17 +284,17 @@ export class BobbyApp {
             data: imported,
           });
     } catch (error) {
-      this.controller = renderImportMessage(context, {
+      const { renderImportMessage } = await import(
+        "../pages/import/mountImportPage.js"
+      );
+      this.controller = renderImportMessage(this.pageContext(), {
         status: "error",
         message: error instanceof Error ? error.message : String(error),
       });
     }
   }
 
-  private async renderExplorePlay(
-    path: string,
-    context: PageContext,
-  ): Promise<void> {
+  private async renderExplorePlay(path: string): Promise<void> {
     const ref = parseMapPlayUrl(path);
     if (!ref) {
       this.navigate("/explore");
@@ -303,42 +308,36 @@ export class BobbyApp {
         this.navigate("/");
         return;
       }
-      const level = parseEditorLevel(pending);
+      const [editor, importPage, gamePage] = await Promise.all([
+        import("@bobby/editor"),
+        import("../pages/import/mountImportPage.js"),
+        import("../pages/game/mountGamePage.js"),
+      ]);
+      const level = editor.parseEditorLevel(pending);
       sessionStorage.setItem("bc5r:pending-editor-level", pending);
-      this.controller = await renderGamePage({
-        ...context,
-        level: importedLevelMap(level),
+      this.controller = await gamePage.renderGamePage({
+        ...this.pageContext(),
+        level: importPage.importedLevelMap(level),
         identity: { ...ref, title: level.meta.name },
         mode: "explore",
       });
       return;
     }
     try {
-      const resolved = await resolveMapDocument(ref);
-      let collection = context.collections.find(
-        (item) => item.id === ref.collection,
-      );
-      if (!collection) {
-        try {
-          const index = await fetchJson<MapCollectionIndex>(
-            siteUrl(`assets/maps/${ref.collection}/index.json`),
-          );
-          if (index.schemaVersion === 1 && Array.isArray(index.maps)) {
-            collection = { id: ref.collection, ...index };
-          }
-        } catch {
-          // 地图文件可独立加载；collection index 只补充导航与验证状态。
-        }
-      }
-      const currentIndex = collection?.maps.findIndex(
-        (item) => item.id === ref.id,
-      ) ?? -1;
+      const [maps, gamePage, collection] = await Promise.all([
+        import("../services/catalog/exploreMaps.js"),
+        import("../pages/game/mountGamePage.js"),
+        this.catalog.loadCollection(ref.collection).catch(() => null),
+      ]);
+      const resolved = await maps.resolveMapDocument(ref);
+      const currentIndex =
+        collection?.maps.findIndex((item) => item.id === ref.id) ?? -1;
       const explorePreviousMapId =
         currentIndex > 0 ? collection?.maps[currentIndex - 1]?.id : undefined;
       const exploreNextMapId =
         currentIndex >= 0 ? collection?.maps[currentIndex + 1]?.id : undefined;
-      this.controller = await renderGamePage({
-        ...context,
+      this.controller = await gamePage.renderGamePage({
+        ...this.pageContext(),
         level: resolved.level,
         mapMeta: resolved.document.meta,
         identity: { ...resolved.ref, title: resolved.document.meta.name },
@@ -347,6 +346,14 @@ export class BobbyApp {
         ...(exploreNextMapId ? { exploreNextMapId } : {}),
         mode: "explore",
       });
+      this.prefetchMaps([
+        ...(explorePreviousMapId
+          ? [{ collection: ref.collection, id: explorePreviousMapId }]
+          : []),
+        ...(exploreNextMapId
+          ? [{ collection: ref.collection, id: exploreNextMapId }]
+          : []),
+      ]);
     } catch {
       this.navigate("/explore");
     }
@@ -354,22 +361,30 @@ export class BobbyApp {
 
   private async renderAdventurePlay(
     path: string,
-    context: PageContext,
+    findAdventureLevel: typeof import(
+      "../pages/adventure/mountAdventurePages.js"
+    )["findAdventureLevel"],
   ): Promise<void> {
     const id = decodeURIComponent(path.split("/").pop() ?? "").toLowerCase();
-    const found = findAdventureLevel(this.adventure, id);
+    const adventure = this.catalog.adventure;
+    const found = findAdventureLevel(adventure, id);
     if (!found) {
       this.navigate("/adventure/chapters");
       return;
     }
     const ref = parseMapReference(found.level.map);
     if (!ref) throw new Error(`无效 Adventure map reference：${found.level.map}`);
-    const resolved = await resolveMapDocument(ref);
-    const verified = this.collections.find(
-      (collection) => collection.id === ref.collection,
-    )?.maps.some((map) => map.id === ref.id && map.verified === true) ?? false;
-    this.controller = await renderGamePage({
-      ...context,
+    const [maps, gamePage, collection] = await Promise.all([
+      import("../services/catalog/exploreMaps.js"),
+      import("../pages/game/mountGamePage.js"),
+      this.catalog.loadCollection(ref.collection),
+    ]);
+    const resolved = await maps.resolveMapDocument(ref);
+    const verified = collection.maps.some(
+      (map) => map.id === ref.id && map.verified === true,
+    );
+    this.controller = await gamePage.renderGamePage({
+      ...this.pageContext(),
       level: resolved.level,
       mapMeta: resolved.document.meta,
       identity: {
@@ -384,6 +399,7 @@ export class BobbyApp {
       verified,
       mode: "adventure",
     });
+    this.prefetchMaps(adventureNeighborRefs(adventure, found.level.id));
   }
 
   private async renderAdventureScene(
@@ -391,18 +407,25 @@ export class BobbyApp {
     context: PageContext,
     backPath: string,
   ): Promise<void> {
-    const scene = this.adventure.specialScenes.find((item) => item.id === sceneId);
+    const scene = this.catalog.adventure.specialScenes.find(
+      (item) => item.id === sceneId,
+    );
     if (!scene) {
       this.navigate(backPath);
       return;
     }
     const ref = parseMapReference(scene.map);
     if (!ref) throw new Error(`无效 Adventure scene map reference：${scene.map}`);
-    const resolved = await resolveMapDocument(ref);
-    const verified = this.collections.find(
-      (collection) => collection.id === ref.collection,
-    )?.maps.some((map) => map.id === ref.id && map.verified === true) ?? false;
-    this.controller = await renderGamePage({
+    const [maps, gamePage, collection] = await Promise.all([
+      import("../services/catalog/exploreMaps.js"),
+      import("../pages/game/mountGamePage.js"),
+      this.catalog.loadCollection(ref.collection),
+    ]);
+    const resolved = await maps.resolveMapDocument(ref);
+    const verified = collection.maps.some(
+      (map) => map.id === ref.id && map.verified === true,
+    );
+    this.controller = await gamePage.renderGamePage({
       ...context,
       level: resolved.level,
       mapMeta: resolved.document.meta,
@@ -420,66 +443,58 @@ export class BobbyApp {
     });
   }
 
-  private async ensureIndexes(): Promise<void> {
-    if (this.indexesLoaded) return;
-    const collectionsIndex = await fetchJson<MapCollectionsIndex>(
-      siteUrl("assets/maps/index.json"),
-    );
-    if (collectionsIndex.schemaVersion !== 1)
-      throw new Error("maps/index.json schemaVersion 必须为 1");
-    const [collections, adventure] = await Promise.all([
-      Promise.all(
-        collectionsIndex.collections.map(async (collection) => ({
-          id: collection.id,
-          ...(await fetchJson<MapCollectionIndex>(
-            siteUrl(`assets/maps/${collection.id}/index.json`),
-          )),
-        })),
-      ),
-      fetchJson<AdventureIndex>(siteUrl("assets/adventure/index.json")),
-    ]);
-    for (const collection of collections)
-      if (collection.schemaVersion !== 1)
-        throw new Error(`${collection.id}: collection schemaVersion 必须为 1`);
-    if (adventure.schemaVersion !== 1)
-      throw new Error("adventure/index.json schemaVersion 必须为 1");
-    this.collectionsIndex = collectionsIndex;
-    this.collections = collections;
-    this.adventure = adventure;
-    this.indexesLoaded = true;
+  private scheduleHomePrefetch(): void {
+    this.scheduleIdle(async () => {
+      await Promise.all([
+        this.catalog.loadAdventure(),
+        this.catalog.loadCollectionsIndex(),
+        this.catalog.loadCollection("original"),
+      ]);
+    });
+  }
+
+  private prefetchMaps(refs: readonly ExploreMapRef[]): void {
+    if (refs.length === 0) return;
+    this.scheduleIdle(async () => {
+      const { prefetchMapDocument } = await import(
+        "../services/catalog/exploreMaps.js"
+      );
+      await Promise.all(refs.map((ref) => prefetchMapDocument(ref)));
+    });
+  }
+
+  private scheduleIdle(task: () => void | Promise<void>): void {
+    this.idleTasks.push(scheduleIdleTask(task));
+  }
+
+  private clearIdleTasks(): void {
+    for (const cancel of this.idleTasks) cancel();
+    this.idleTasks = [];
   }
 }
-
-const EMPTY_COLLECTIONS_INDEX: MapCollectionsIndex = {
-  schemaVersion: 1,
-  collections: [],
-};
-
-const EMPTY_ADVENTURE_INDEX: AdventureIndex = {
-  schemaVersion: 1,
-  name: "Bobby Carrot 5 Remake",
-  chapters: [],
-  specialScenes: [],
-};
 
 function parseMapReference(value: string): ExploreMapRef | null {
   const [collection, id, extra] = value.split("/");
   return collection && id && extra === undefined ? { collection, id } : null;
 }
 
-function isDirectMapRoute(path: string): boolean {
-  return (
-    path === "/embed" ||
-    path === "/settings" ||
-    path === "/edit" ||
-    path.startsWith("/explore/play/")
-  );
+
+function adventureNeighborRefs(
+  adventure: PageContext["adventure"],
+  currentId: string,
+): ExploreMapRef[] {
+  const levels = adventure.chapters.flatMap((chapter) => chapter.levels);
+  const index = levels.findIndex((level) => level.id === currentId);
+  if (index < 0) return [];
+  return [levels[index - 1], levels[index + 1]]
+    .flatMap((level) => (level ? [parseMapReference(level.map)] : []))
+    .filter((ref): ref is ExploreMapRef => ref !== null);
 }
 
 function defaultShellState(): ShellViewState {
   return {
     config: {},
-    help: unifiedHelpDescriptor(),
+    helpHtml: unifiedHelpContent(),
   };
 }
 

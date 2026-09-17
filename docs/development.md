@@ -67,6 +67,8 @@ dist/
 
 Web 仍使用同一套 SPA bundle。构建会根据 Map / Adventure Catalog 为合法公开路径生成静态 route shell，并同时生成 `sitemap.xml`、`robots.txt` 与 `404.html`。每个 route shell 只提供该 URL 对应的 HTML `<head>` 和 SPA 挂载入口，页面交互继续由 Web SPA 接管。
 
+Vercel 对 `/app/` 下带内容哈希的 JavaScript、CSS 与字体资源发送一年期 immutable 缓存头；HTML route shell 与路径稳定的 `/assets/` 内容继续按部署平台的更新策略获取。构建门禁会检查 Web 入口 chunk 不超过 500 kB。
+
 以下目录均为生成物，不提交 Git：
 
 ```text

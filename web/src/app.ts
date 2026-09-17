@@ -9,7 +9,6 @@ import { initializeWebTheme } from "./theme/webTheme.js";
 import "./shared/fonts/jersey-10/font.css";
 import "../style.css";
 import "../game-ui.css";
-import "../../editor/style.css";
 
 const browserLocales = navigator.languages.length
   ? navigator.languages
@@ -24,4 +23,4 @@ installRuntimeSeo();
 const root = document.querySelector<HTMLDivElement>("#app");
 if (!root) throw new Error("#app not found");
 const app = new BobbyApp(root);
-await app.start();
+void app.start();

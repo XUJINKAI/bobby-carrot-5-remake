@@ -1,4 +1,3 @@
-import { serializeEditorLevel } from "@bobby/editor";
 import { createApp, reactive } from "vue";
 import type { PageContext, PageController } from "../../app/pageContracts.js";
 import {
@@ -7,16 +6,9 @@ import {
   PROJECT_REPOSITORY_URL,
   repositoryAction,
 } from "../../app/pageChrome.js";
-import { findAdventureLevel } from "../adventure/mountAdventurePages.js";
-import {
-  createGameSession,
-  type GameSession,
-} from "../../runtime/game/createGameSession.js";
+import type { GameSession } from "../../runtime/game/createGameSession.js";
 import { resolveMapDocument } from "../../services/catalog/exploreMaps.js";
-import {
-  applyImportedSave,
-  type ImportedData,
-} from "../../services/import/importPipeline.js";
+import type { ImportedData } from "../../services/import/importPipeline.js";
 import { configureShell } from "../../shell/shellBridge.js";
 import { loadAdventureSave } from "../../storage/adventureSaveStorage.js";
 import {
@@ -64,7 +56,7 @@ export async function renderHome(
     importFeedback: "",
     screenControlEnabled: initialScreenControlEnabled,
   });
-  let session: Awaited<ReturnType<typeof createGameSession>> | null = null;
+  let session: GameSession | null = null;
   let navigatingToAdventure = false;
   let resolveCanvas!: (canvas: HTMLCanvasElement) => void;
   const canvasReady = new Promise<HTMLCanvasElement>((resolve) => {
@@ -93,7 +85,8 @@ export async function renderHome(
   });
   homeApp.mount(app);
 
-  const [demo, canvas] = await Promise.all([
+  const [{ createGameSession }, demo, canvas] = await Promise.all([
+    import("../../runtime/game/createGameSession.js"),
     resolveMapDocument({ collection: "original", id: "campaign-intro" }),
     canvasReady,
   ]);
@@ -143,11 +136,8 @@ export async function renderHome(
     if (state.status === "won" && !navigatingToAdventure) {
       navigatingToAdventure = true;
       queueMicrotask(() => {
-        const resume = findAdventureLevel(
-          context.adventure,
-          loadAdventureSave().campaign.resumeLevelId,
-        );
-        navigate(`/adventure/play/${resume?.level.id ?? "1-1"}`);
+        const resumeLevelId = loadAdventureSave().campaign.resumeLevelId;
+        navigate(`/adventure/play/${resumeLevelId}`);
       });
     }
   };
@@ -183,16 +173,20 @@ export async function renderHome(
   };
 }
 
-function importHomeData(
+async function importHomeData(
   data: ImportedData,
   view: HomeViewState,
   navigate: PageContext["navigate"],
-): void {
+): Promise<void> {
   if (data.type !== "map") {
+    const { applyImportedSave } = await import(
+      "../../services/import/importPipeline.js"
+    );
     view.importFeedback = "";
     navigate(applyImportedSave(data));
     return;
   }
+  const { serializeEditorLevel } = await import("@bobby/editor");
   sessionStorage.setItem(
     "bc5r:pending-play-level",
     serializeEditorLevel(data.value),

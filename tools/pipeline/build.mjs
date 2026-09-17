@@ -9,6 +9,7 @@ import {
 } from "../lib/fs.mjs";
 import { generateSeoArtifacts } from "./seo.mjs";
 import { verifySeoArtifacts } from "./seo-verify.mjs";
+import { verifyWebPerformanceArtifacts } from "./web-performance-verify.mjs";
 
 const dist = path.join(root, "dist");
 const generatedAssets = path.join(root, "assets");
@@ -50,5 +51,6 @@ copyTree(generatedAssets, path.join(dist, "assets"));
 
 generateSeoArtifacts();
 verifySeoArtifacts();
+verifyWebPerformanceArtifacts();
 
 console.log("Build complete: dist");

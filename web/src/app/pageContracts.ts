@@ -1,9 +1,9 @@
 import type { AudioRuntime, ImageManager } from "@bobby/engine";
 import type {
   AdventureIndex,
-  MapCollectionIndex,
   MapCollectionsIndex,
 } from "../services/catalog/catalog.js";
+import type { ResolvedMapCollection } from "../services/catalog/catalogRuntime.js";
 
 export type Navigate = (path: string) => void;
 
@@ -15,8 +15,7 @@ export const NOOP_CONTROLLER: PageController = {
   destroy() {},
 };
 
-/** Runtime wrapper；序列化 MapCollectionIndex 的身份仍来自资源路径。 */
-export type ResolvedMapCollection = MapCollectionIndex & { id: string };
+export type { ResolvedMapCollection };
 
 export interface PageContext {
   app: HTMLDivElement;

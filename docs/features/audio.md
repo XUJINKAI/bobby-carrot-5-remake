@@ -26,7 +26,7 @@ assets/audio/original/
 - 音乐播放、停止与循环；
 - `modern` / `8bit` 风格切换；
 - 切换风格时从当前播放位置继续；
-- 短 crossfade 与另一风格当前曲目的预加载；
+- 短 crossfade，并在浏览器空闲期预加载当前曲目的另一风格；
 - 音乐和音效 gain，允许超过 `1.0`（100%）。
 
 `createGameplayRuntime()` 未显式传入 audio 时会自行创建并销毁 `AudioRuntime`，因此 Engine 仍满足“给一张 LevelMap 和少量配置即可独立运行”的原则。宿主如果需要跨页面共享音乐状态，也可以注入实现 `AudioBackend` 的 Engine audio 实例；runtime 不拥有外部注入实例的生命周期。

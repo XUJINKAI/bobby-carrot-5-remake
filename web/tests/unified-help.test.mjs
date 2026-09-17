@@ -3,27 +3,27 @@ import { readFile } from "node:fs/promises";
 import { test } from "vitest";
 import { createSSRApp } from "vue";
 import { renderToString } from "vue/server-renderer";
+import { renderBuildMarkdown } from "../build/markdownHtmlPlugin.ts";
 import HelpDialog from "../src/app/dialogs/HelpDialog.vue";
-import { renderHelpMarkdown } from "../src/app/dialogs/helpMarkdown.ts";
-import { unifiedHelpDescriptor } from "../src/shell/shellBridge.ts";
+import { unifiedHelpContent } from "../src/shell/shellBridge.ts";
 
 test("所有页面共用完整的操作说明", () => {
-  const content = renderHelpMarkdown(unifiedHelpDescriptor());
+  const content = unifiedHelpContent();
   assert.match(content, /<h2>游戏<\/h2>/);
   assert.match(content, /<h2>Editor<\/h2>/);
   assert.match(content, /<li><strong>WASD \/ 方向键<\/strong>：控制移动<\/li>/);
   assert.match(content, /<li><strong>Ctrl\+Z<\/strong>：撤销<\/li>/);
-  assert.match(content, /<li><strong>滚轮\/\+\-\/双指捏合<\/strong>：缩放地图 &amp; 平移地图<\/li>/);
+  assert.match(content, /<li><strong>滚轮 \/ \+\/- \/ 双指捏合<\/strong>：缩放地图与平移地图<\/li>/);
 });
 
-test("帮助 Markdown 将原始 HTML 转为文本", () => {
-  const content = renderHelpMarkdown("## 测试\n\n<script>alert(1)</script>");
+test("构建期 Markdown 将原始 HTML 转为文本", () => {
+  const content = renderBuildMarkdown("## 测试\n\n<script>alert(1)</script>");
   assert.match(content, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   assert.doesNotMatch(content, /<script>/);
 });
 
 test("Help Dialog 渲染 Markdown 标题和列表", async () => {
-  const app = createSSRApp(HelpDialog, { markdown: unifiedHelpDescriptor() });
+  const app = createSSRApp(HelpDialog, { html: unifiedHelpContent() });
   const html = await renderToString(app);
   assert.match(html, /<h2>游戏<\/h2>/);
   assert.match(html, /<ul>/);

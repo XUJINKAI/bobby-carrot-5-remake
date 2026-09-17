@@ -65,19 +65,19 @@ Phosphor Icons 的版权与许可条件以其随包发布的许可证为准。
 
 ## markdown-it
 
-Web Help 面板使用 `markdown-it` 编译仓库维护的 Markdown 文案。该第三方库由 markdown-it 项目维护，按 MIT License 发布：
+Web 构建流程使用 `markdown-it` 把仓库维护的 Help Markdown 编译为 HTML；浏览器构建只包含编译结果。该第三方库由 markdown-it 项目维护，按 MIT License 发布：
 
 ```text
 https://github.com/markdown-it/markdown-it
 ```
 
-`markdown-it` 的版权与许可条件以其随包发布的 `LICENSE` 为准；构建产物中的该库代码不属于本项目根目录 `LICENSE` 对原创材料的授权范围。
+`markdown-it` 的版权与许可条件以其随包发布的 `LICENSE` 为准。
 
 ## Jersey 10
 
 Web gameplay UI 使用由 Sarah Cadigan-Fried 设计、Soft Type Project 发布的 Jersey 10 字体，并将其统一应用于 Engine HUD 与 Explore 统计 Overlay。字体及其许可证集中保存在 `web/src/shared/fonts/jersey-10/`，Web 在构建时将其作为本地资源打包，不依赖运行时字体 CDN。
 
-本仓库采用上游 commit `d8446c4c9c2ba14cf408c295be35213c006e19ff` 中的 `Jersey10-Regular.ttf`，字体按 SIL Open Font License 1.1 发布：
+本仓库采用上游 commit `d8446c4c9c2ba14cf408c295be35213c006e19ff` 中的 `Jersey10-Regular.ttf`，并从该文件生成内容相同的 WOFF2 压缩版本。字体按 SIL Open Font License 1.1 发布：
 
 ```text
 https://github.com/scfried/soft-type-jersey
