@@ -450,12 +450,18 @@ runtime: {
       enterMs: 310,
       exitMs: 279,
     },
+    impactShake: {
+      stageMs: 26,
+      stages: 8,
+      initialSpanSourcePx: 42,
+    },
   },
 }
 ```
 
 `enterMs` 覆盖载入或重开时 Bobby 出现的倒播过程，`exitMs` 覆盖胜利时 Bobby
-消失的正播过程。默认值依据原版 `a.class` 的 animation advance 顺序分别换算。
+消失的正播过程。`impactShake` 使用毫秒阶段、阶段数和原始 source-pixel
+随机窗口宽度配置冲撞震动。默认值依据原版 `a.class` 状态转移与墙钟校准换算。
 进入阶段 `game.presentationBlocksInput` 为 `true`，WorldClock 与 Replay tick 暂停，
 期间收到的 gameplay 移动输入会被丢弃；完成后该值恢复为 `false`。
 地图只声明普通 `carrot`。收集后同一 Carrot Entity 保留原 ID，

@@ -80,9 +80,10 @@ function straightWorld(width = 6) {
   });
 }
 
-test("Speed keeps one fast cadence for exactly three off-belt cells", () => {
+test("Speed 未续按时前两格保持快速，最后一格恢复普通速度", () => {
   const world = straightWorld();
   const actor = actorIds(world)[0];
+  world.entities.require(actor).state = { locomotionMoveMs: 350 };
   assert.equal(move(world, actor, "right").moves[0].moved, true);
   assert.equal(world.entity(actor).anchor.x, 1);
   assert.equal(world.inputBlocked, true);
@@ -112,13 +113,11 @@ test("Speed keeps one fast cadence for exactly three off-belt cells", () => {
 
   const third = nextMotion(world, second.nextTick);
   assert.equal(world.entity(actor).anchor.x, 4);
-  assert.equal(
-    third.result.motions[0].cause.cadenceMs,
-    DEFAULT_SPEED_FULL_CADENCE_MS,
-  );
+  assert.equal(third.result.motions[0].cause.cadenceMs, undefined);
+  assert.equal(world.movement.motions.forEntity(actor).durationMs, 350);
   assert.deepEqual(world.entity(actor).state.speedBoost, {
     direction: "right",
-    phase: "full",
+    phase: "normal",
   });
 
   finishAction(world, third.nextTick);

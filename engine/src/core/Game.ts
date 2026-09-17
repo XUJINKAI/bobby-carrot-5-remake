@@ -859,9 +859,16 @@ export class Game {
       (event) => {
       if (
         event.type === "speed-impact" ||
+        event.type === "forced-movement-impact" ||
         event.type === "crumbly-rock-smashed"
-      )
-        this.presentation.shake(248, 42);
+      ) {
+        const shake = this.tuning.impactShake;
+        this.presentation.shakeStepped(
+          shake.stageMs,
+          shake.stages,
+          shake.initialSpanSourcePx,
+        );
+      }
       },
     );
   }

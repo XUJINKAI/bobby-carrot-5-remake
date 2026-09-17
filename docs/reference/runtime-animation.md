@@ -176,6 +176,8 @@ World 保存，不因纯表现选择而改写。
 
 Kite 起飞完成时原版同时写入 `airborne=true` 与 `aN=1`。airborne 移动分支不递减 `aN`，所以 Flight 全程都满足 `N()` 的快速条件，每 step 推进 6px，而不是普通 Bobby 的 3px。Engine 根据 37-2 实测使用 `208ms/格`。
 
+Landing 抵达后 `airborne` 清除，`aN=1` 仍保留到下一次 `M()`，因此 Bobby 会按当前方向自动尝试续行一格。未持续按住同方向时，该次移动建立后 `aN` 减为 0，所以使用 3px/step 的普通 cadence。受阻分支设置 `aO=8`，与 Speed / Mower impact 共用 8 阶段 Camera shake；当前每阶段按实测校准为 `26ms`。
+
 Web 版 Bobby 的逻辑位置由 World move 瞬时确定；像素位移由 PresentationFrame 以真实 `durationMs` 插值。
 
 ### `b6.png` 关卡过渡

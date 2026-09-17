@@ -19,6 +19,11 @@ test("Bobby owns the canonical original locomotion cadence", () => {
   assert.equal(ORIGINAL_TUNING.motion.easing, "linear");
   assert.equal(ORIGINAL_TUNING.levelTransition.enterMs, 620);
   assert.equal(ORIGINAL_TUNING.levelTransition.exitMs, 558);
+  assert.deepEqual(ORIGINAL_TUNING.impactShake, {
+    stageMs: 26,
+    stages: 8,
+    initialSpanSourcePx: 42,
+  });
 });
 
 test("presentation override does not mutate canonical Bobby gameplay timing", () => {
@@ -31,12 +36,22 @@ test("presentation override does not mutate canonical Bobby gameplay timing", ()
       enterMs: 40,
       exitMs: 30,
     },
+    impactShake: {
+      stageMs: 20,
+      stages: 6,
+      initialSpanSourcePx: 30,
+    },
   });
   const gameplay = resolveBobbyLocomotionTiming();
 
   assert.equal(presentation.motion.normalMs, 20);
   assert.equal(presentation.levelTransition.enterMs, 40);
   assert.equal(presentation.levelTransition.exitMs, 30);
+  assert.deepEqual(presentation.impactShake, {
+    stageMs: 20,
+    stages: 6,
+    initialSpanSourcePx: 30,
+  });
   assert.equal(gameplay.moveMs, 350);
 });
 

@@ -73,7 +73,8 @@ public final class SpeedRuntime {
      *
      * 成功后：
      * - grid truth 立即前进一格；
-     * - 48px visual move 使用 6px/tick；
+     * - countdown 减到 2/1 时，48px visual move 使用 6px/step；
+     * - 未持续按住同方向时，最后一格在 countdown 减到 0 后使用 3px/step；
      * - 同方向 held 时 countdown 直接续回 3；
      * - 未 held 时 countdown 3→2→1→0；
      * - 撞停时 countdown 立即清 0。
@@ -121,7 +122,7 @@ public final class SpeedRuntime {
         return true;
     }
 
-    /** aN > 0 时 `a.N()` 固定使用 6px/tick，即 48px / 8 tick。 */
+    /** `M()` 更新 aN 后，`N()` 按当前值选择 6px/step 或 3px/step。 */
     int pixelsPerTick() {
         return continuationTiles > 0 ? FAST_PIXELS_PER_TICK : 3;
     }

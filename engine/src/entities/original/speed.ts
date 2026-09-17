@@ -176,13 +176,20 @@ const speedRunAction: RuntimeActionDefinition = {
       action.state.continuation = DEFAULT_SPEED_CONTINUATION_CELLS;
     }
 
-    const cadenceMs = DEFAULT_SPEED_FULL_CADENCE_MS;
+    const normalRunout =
+      !beltDirection && integerState(action.state.continuation) === 1;
+    const cadenceMs = normalRunout
+      ? undefined
+      : DEFAULT_SPEED_FULL_CADENCE_MS;
     commands.setState(
       ownerEntityId,
-      patchBobbySpeedBoost(owner.state, { direction, phase: "full" }),
+      patchBobbySpeedBoost(owner.state, {
+        direction,
+        phase: normalRunout ? "normal" : "full",
+      }),
     );
     action.state.direction = direction;
-    action.state.waitMs = cadenceMs;
+    action.state.waitMs = cadenceMs ?? 0;
 
     return {
       status: "running",
@@ -194,7 +201,7 @@ const speedRunAction: RuntimeActionDefinition = {
           cause: {
             type: "forced",
             mechanism: "speed",
-            cadenceMs,
+            ...(cadenceMs === undefined ? {} : { cadenceMs }),
           },
         },
       ],

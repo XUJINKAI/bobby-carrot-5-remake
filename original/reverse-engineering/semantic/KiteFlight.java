@@ -128,6 +128,25 @@ public final class KiteFlight {
     }
 
     /**
+     * Landing 完成后 `aN` 仍为 1，下一次 `M()` 因此会按当前方向尝试续行一格。
+     * 未持续按住同方向时，`M()` 在建立移动后把 `aN` 减为 0，所以 `N()` 使用
+     * 3px/step 的普通速度。受阻则清除 `aN` 并设置 `aO=8` 启动镜头震动。
+     */
+    boolean tryLandingRunout(PlayerPosition player, int direction) {
+        if (speedContinuation <= 0) {
+            return false;
+        }
+        if (!canPlayerMoveForward(direction)) {
+            speedContinuation = 0;
+            startImpactShake(8);
+            return false;
+        }
+        advanceGroundedGrid(player, direction);
+        speedContinuation--;
+        return true;
+    }
+
+    /**
      * 原版 class 中没有“飞到地图边缘自动降落/自动停止”的路径。
      *
      * 反而 `M()` 开头会先读取 `terrainGrid[playerY][playerX]` 与 objectGrid；如果官方地图
@@ -140,6 +159,14 @@ public final class KiteFlight {
     boolean hasAutomaticMapEdgeLanding() {
         return false;
     }
+
+    private boolean canPlayerMoveForward(int direction) {
+        throw new UnsupportedOperationException("see PlayerCollisionRules.java");
+    }
+
+    private void advanceGroundedGrid(PlayerPosition player, int direction) {}
+
+    private void startImpactShake(int steps) {}
 
     static final class PlayerPosition {
         int gridX;

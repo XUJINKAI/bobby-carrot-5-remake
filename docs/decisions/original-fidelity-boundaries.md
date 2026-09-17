@@ -17,6 +17,8 @@ Bobby Carrot 5 Remake 的选择和理由。
 Kite Flight 在原版起飞完成后持续保留快速条件，每 step 移动 6px。37-2 的
 82 格纯飞行路径原版实测约 18s，Engine 使用独立的 `208ms/格`
 毫秒配置，理论时长为 17.056s。
+抵达 Landing 后保留的最后一次 continuation 会使 Bobby 按当前方向以普通移动
+cadence 自动续行一格；前方受阻时停在 Landing 并触发 impact shake。
 
 ### 可能影响
 

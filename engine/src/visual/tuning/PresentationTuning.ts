@@ -12,9 +12,18 @@ export interface LevelTransitionPresentationTuning {
   exitMs: number;
 }
 
+export interface ImpactShakePresentationTuning {
+  /** 原版每个震动阶段的墙钟时间。 */
+  stageMs: number;
+  stages: number;
+  /** 第一阶段的原版随机窗口宽度，不是单侧最大偏移。 */
+  initialSpanSourcePx: number;
+}
+
 export interface PresentationTuning {
   motion: MotionPresentationTuning;
   levelTransition: LevelTransitionPresentationTuning;
+  impactShake: ImpactShakePresentationTuning;
 }
 
 export interface PresentationTuningOverride {
@@ -25,6 +34,11 @@ export interface PresentationTuningOverride {
   levelTransition?: {
     enterMs?: number;
     exitMs?: number;
+  };
+  impactShake?: {
+    stageMs?: number;
+    stages?: number;
+    initialSpanSourcePx?: number;
   };
 }
 
@@ -41,6 +55,13 @@ export function mergePresentationTuning(
       enterMs:
         override.levelTransition?.enterMs ?? base.levelTransition.enterMs,
       exitMs: override.levelTransition?.exitMs ?? base.levelTransition.exitMs,
+    },
+    impactShake: {
+      stageMs: override.impactShake?.stageMs ?? base.impactShake.stageMs,
+      stages: override.impactShake?.stages ?? base.impactShake.stages,
+      initialSpanSourcePx:
+        override.impactShake?.initialSpanSourcePx ??
+        base.impactShake.initialSpanSourcePx,
     },
   };
 }

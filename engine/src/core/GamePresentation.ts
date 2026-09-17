@@ -204,6 +204,19 @@ export class GamePresentation {
     );
   }
 
+  shakeStepped(
+    stageMs: number,
+    stages: number,
+    initialSpanSourcePx: number,
+  ): void {
+    this.visual.camera.shakeStepped(
+      this.clock.current,
+      stageMs,
+      stages,
+      initialSpanSourcePx,
+    );
+  }
+
   render(world: World | null): void {
     if (!world) {
       this.sceneValue = null;

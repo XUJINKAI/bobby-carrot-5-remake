@@ -9,6 +9,7 @@ import {
   quantizedActionCadenceMs,
 } from "../../world/action/ActionDeadline.js";
 import type { Behavior } from "../../world/behavior/Behavior.js";
+import { createDelayedMoveRuntimeAction } from "../../world/action/builtinActions.js";
 import type { EntityId } from "../../world/entity/EntityInstance.js";
 import type {
   EntityModule,
@@ -107,7 +108,7 @@ const landingBehavior: Behavior = {
       y: self.presence.cell.y,
     });
   },
-  onArrive({ actor, commands }) {
+  onArrive({ actor, self, direction, commands }) {
     if (
       !isBobbyFlying(actor.state) ||
       actor.state?.flightTransition !== "landing"
@@ -115,6 +116,16 @@ const landingBehavior: Behavior = {
       return;
     commands.setState(actor.id, patchBobbyFlight(actor.state, false));
     commands.emit({ type: "kite-landed", entityId: actor.id });
+    const runoutDirection = direction ?? actor.direction;
+    if (!runoutDirection) return;
+    commands.startAction(
+      createDelayedMoveRuntimeAction(actor.id, runoutDirection, 0, {
+        mechanism: "flight-landing",
+        sourceEntityId: self.entity.id,
+        blocksInput: true,
+        impactOnBlocked: true,
+      }),
+    );
   },
 };
 

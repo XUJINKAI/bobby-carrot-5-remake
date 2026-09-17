@@ -300,9 +300,7 @@ function speedTrail(
   const boost = readBobbySpeedBoost(context.entity.state);
   if (!boost || boost.phase === "slow") return null;
 
-  // Legacy normal/slow phases remain presentation-compatible even though the
-  // current fixed continuation policy emits full. Presentation consumes the
-  // recorded state and must not reinterpret its producer.
+  // normal 表示 Speed 未续按时的最后一格；拖尾只保留到该格中点。
   if (
     boost.phase === "normal" &&
     !isInFirstHalfOfSpeedMotion(context, direction)

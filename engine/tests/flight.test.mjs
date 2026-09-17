@@ -141,20 +141,75 @@ test("Kite flight crosses blocking cells, ignores their interactions, and lands"
   });
   assert.equal(world.entity(actor.id).state.flying, false);
   assert.ok(landing.events.some((event) => event.type === "kite-landed"));
+  assert.ok(
+    landing.events.some(
+      (event) =>
+        event.type === "forced-movement-impact" &&
+        event.data?.mechanism === "flight-landing",
+    ),
+  );
   assert.equal(world.actions.active.length, 0);
 });
 
-test("持续方向在 Landing 完成后恢复普通移动", () => {
+test("Landing 完成后以 Bobby 普通 cadence 自动向前续行一格", () => {
+  const world = new World({
+    schemaVersion: 1,
+    width: 5,
+    height: 1,
+    entities: [
+      ...Array.from({ length: 5 }, (_, x) => ({
+        type: "grass",
+        variant: "ts-10-1",
+        x,
+        y: 0,
+      })),
+      { type: MapEntityTypeId.WHIRLWIND, x: 1, y: 0 },
+      { type: MapEntityTypeId.LANDING, x: 3, y: 0 },
+      { type: MapEntityTypeId.BOBBY, x: 0, y: 0, direction: "right" },
+    ],
+  });
+  const actor = world.query.entitiesWithFact("player")[0];
+  world.entities.require(actor.id).state = { kite: true };
+  move(world, actor.id, "right");
+  world.entities.require(actor.id).state = {
+    ...world.entity(actor.id).state,
+    locomotionMoveMs: 420,
+  };
+
+  world.update({ tick: 1, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  world.update({ tick: 2, stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs });
+  const landing = world.update({
+    tick: 3,
+    stepMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs,
+  });
+
+  assert.ok(landing.events.some((event) => event.type === "kite-landed"));
+  assert.equal(
+    landing.events.some((event) => event.type === "forced-movement-impact"),
+    false,
+  );
+  assert.deepEqual(world.entity(actor.id).anchor, { x: 4, y: 0 });
+  assert.equal(world.entity(actor.id).state.flying, false);
+  const runout = world.movement.motions.forEntity(actor.id);
+  assert.equal(runout.cause.mechanism, "flight-landing");
+  assert.equal(runout.cause.cadenceMs, undefined);
+  assert.equal(runout.durationMs, 420);
+
+  world.update({ tick: 4, stepMs: 420 });
+  assert.equal(world.inputBlocked, false);
+});
+
+test("持续方向在 Landing 续步期间等待，完成后恢复普通移动", () => {
   const session = new GameplaySession({
     timing: { worldHz: 4 },
     bobbyLocomotion: { moveMs: ORIGINAL_KITE_FLIGHT_TIMING.cellMs },
   });
   session.loadLevel({
     schemaVersion: 1,
-    width: 5,
+    width: 6,
     height: 1,
     entities: [
-      ...Array.from({ length: 5 }, (_, x) => ({
+      ...Array.from({ length: 6 }, (_, x) => ({
         type: "grass",
         variant: "ts-10-1",
         x,
@@ -184,9 +239,14 @@ test("持续方向在 Landing 完成后恢复普通移动", () => {
   );
   assert.equal(
     landingTick.inputResolutions.find((item) => item.source === "external")?.result,
-    "moved",
+    "busy",
   );
-  assert.deepEqual(session.world.entity(actor.id).anchor, { x: 4, y: 0 });
+  assert.ok(
+    landingTick.result.motions.some(
+      (motion) => motion.cause.mechanism === "flight-landing",
+    ),
+  );
+  assert.deepEqual(session.world.entity(actor.id).anchor, { x: 5, y: 0 });
 });
 
 test("Whirlwind without Kite blocks and emits a missing-item event", () => {

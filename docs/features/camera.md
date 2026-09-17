@@ -14,9 +14,11 @@ Renderer 使用 UP9 高清版 48px 源素材，再乘以 Camera Zoom。Viewport 
 - `runtime.camera` 统一配置初始 Zoom、范围、Pan 边界和非连续跟随过渡时长；
 - 用户 Pan 后，下一次 gameplay movement 触发 Camera 平滑回中。
 
-Speed 撞击和 Mower 撞碎 Crumbly Rock 都触发 `248ms / 42 source px` 的确定性震动。
+Speed 撞击、Kite Landing 续步受阻和 Mower 撞碎 Crumbly Rock 共用原版 impact
+shake。表现配置默认为 8 阶段、每阶段 `26ms`；原版随机窗口宽度依次为
+`42 / 36 / 30 / 24 / 18 / 12 / 6 / 0 source px`，总时长 `208ms`。
 震动只偏移 Camera 的表现坐标；World 坐标、Canvas 点选换算和 shake 结束后的跟随基线保持
-不变。
+不变。每个阶段使用 Presentation 时间的确定性位置，不依赖渲染帧率。
 
 Camera 的中心、Pan、Zoom 与跟随过渡都属于 Presentation，不修改 World 坐标，也不进入 gameplay snapshot。
 

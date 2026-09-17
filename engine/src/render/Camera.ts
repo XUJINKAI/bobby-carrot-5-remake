@@ -31,9 +31,12 @@ interface PanReturn {
 }
 
 interface CameraShake {
+  mode: "smooth" | "stepped";
   startedAtMs: number;
   durationMs: number;
   amplitudeSourcePx: number;
+  stageMs?: number;
+  stages?: number;
 }
 
 interface FollowTransition {
@@ -214,9 +217,37 @@ export class Camera {
     amplitudeSourcePx = 6,
   ): void {
     this.shakeState = {
+      mode: "smooth",
       startedAtMs: frame.nowMs,
       durationMs: Math.max(0, durationMs),
       amplitudeSourcePx: Math.max(0, amplitudeSourcePx),
+    };
+    this.shakeOffsetX = 0;
+    this.shakeOffsetY = 0;
+  }
+
+  /** 原版 impact 按离散阶段更新随机窗口，采样仍由 PresentationClock 驱动。 */
+  shakeStepped(
+    frame: PresentationFrame,
+    stageMs: number,
+    stages: number,
+    initialSpanSourcePx: number,
+  ): void {
+    const safeStageMs = Math.max(0, Number.isFinite(stageMs) ? stageMs : 0);
+    const safeStages = Math.max(
+      1,
+      Number.isFinite(stages) ? Math.floor(stages) : 1,
+    );
+    this.shakeState = {
+      mode: "stepped",
+      startedAtMs: frame.nowMs,
+      durationMs: safeStageMs * safeStages,
+      amplitudeSourcePx: Math.max(
+        0,
+        Number.isFinite(initialSpanSourcePx) ? initialSpanSourcePx : 0,
+      ),
+      stageMs: safeStageMs,
+      stages: safeStages,
     };
     this.shakeOffsetX = 0;
     this.shakeOffsetY = 0;
@@ -403,10 +434,28 @@ export class Camera {
       this.resetShake();
       return;
     }
+    if (shake.mode === "stepped") {
+      this.updateSteppedShake(shake, elapsedMs);
+      return;
+    }
     const amplitude = shake.amplitudeSourcePx * this.zoom * (1 - raw);
     // Deterministic presentation-time oscillation keeps Debug rewind reproducible.
     this.shakeOffsetX = Math.sin(elapsedMs * 0.115) * amplitude;
     this.shakeOffsetY = Math.sin(elapsedMs * 0.173 + 1.2) * amplitude * 0.72;
+  }
+
+  private updateSteppedShake(shake: CameraShake, elapsedMs: number): void {
+    const stages = shake.stages ?? 1;
+    const stageMs = shake.stageMs ?? shake.durationMs;
+    const stage = stageMs <= 0
+      ? stages - 1
+      : Math.min(stages - 1, Math.floor(elapsedMs / stageMs));
+    const remaining = stages - 1 - stage;
+    const span = stages <= 1
+      ? 0
+      : Math.round(shake.amplitudeSourcePx * remaining / (stages - 1));
+    this.shakeOffsetX = steppedShakeOffset(stage, 0, span) * this.zoom;
+    this.shakeOffsetY = steppedShakeOffset(stage, 1, span) * this.zoom;
   }
 
   private followBaseline(): CameraPoint | null {
@@ -460,6 +509,16 @@ function positiveFinite(value: number | undefined, fallback: number): number {
 
 function nonNegativeFinite(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
+}
+
+function steppedShakeOffset(stage: number, axis: number, span: number): number {
+  if (span <= 0) return 0;
+  let hash = Math.imul(stage + 1, 0x45d9f3b) ^ Math.imul(axis + 7, 0x119de1f3);
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x45d9f3b);
+  hash ^= hash >>> 16;
+  const sample = (hash >>> 0) / 0x1_0000_0000;
+  return Math.floor(sample * (span + 1)) - (span >> 1);
 }
 
 function clampViewportAxis(

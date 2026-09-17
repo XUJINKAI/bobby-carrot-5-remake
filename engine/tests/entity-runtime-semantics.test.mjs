@@ -345,6 +345,10 @@ test("Portal 出口前方不可通行时停在出口 Portal", () => {
   assert.deepEqual(actor(world).anchor, exit);
   assert.equal(world.movement.motions.forEntity(actor(world).id), undefined);
   assert.equal(result.moves.at(-1)?.moved, false);
+  assert.equal(
+    result.events.some((event) => event.type === "forced-movement-impact"),
+    false,
+  );
 });
 
 test("Portal 目标格已有 Bobby 时不会产生重叠", () => {
